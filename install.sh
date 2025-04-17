@@ -150,6 +150,11 @@ wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-
 unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip
 mkdir -p /home/cinemata/cinematacms/media_files/hls
 
+# Create user logos directory and default avatar
+echo "Creating default user avatar..."
+mkdir -p /home/cinemata/cinematacms/media_files/userlogos
+wget -O /home/cinemata/cinematacms/media_files/userlogos/user.jpg https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y
+
 # last, set default owner
 chown -R www-data. /home/cinemata/
 
