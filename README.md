@@ -1,4 +1,4 @@
-## Cinemata: An Enhanced MediaCMS-based Video Platform for Asia-Pacific Social Issue Films
+## CinemataCMS: An Enhanced MediaCMS-based Video Platform for Asia-Pacific Social Issue Films
 
 [Cinemata](https://cinemata.org) is an open-source project that builds upon MediaCMS, enhancing it with features specifically designed for showcasing social issue films from the Asia-Pacific region. Since its public release in 2021, Cinemata has developed numerous features that were previously exclusive to its platform and not available in the core MediaCMS. The project is managed by EngageMedia, an Asia-Pacific non-profit advocating for digital rights, open-technology and social issue films.
 
@@ -7,6 +7,7 @@ Our goal is to make these Cinemata-specific integrations and improvements to Med
 ### Key features:
 - [Core MediaCMS features](https://github.com/mediacms-io/mediacms)
 - Cinemata-specific enhancements:
+  - [Multi-Factor Authentication] (https://github.com/EngageMedia-Tech/cinematacms/blob/main/docs/guides/mfa_authentication.md)
   - Custom CSS and UI components for a unique, tailored look distinct from baseline MediaCMS
   - Featured video and playlists on the front page
   - Customized playlists and embedding options on the front page
