@@ -4,11 +4,11 @@
 
 {% block innercontent %}
 <div class="user-action-form-wrap">
+  <div class="alert-banner">
+    {% include "account/messages/mfa_reminder.txt" %}
+  </div>
   <div class="user-action-form-inner">
     
-    <div class="alert-banner">
-      {% include "account/messages/mfa_reminder.txt" %}
-    </div>
     
     {% if form.errors %}
       <div class="alert error" style="margin-block:1em;">

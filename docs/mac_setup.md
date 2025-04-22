@@ -3,7 +3,7 @@
 This guide will help you set up Cinemata for local development on Mac OSX.
 
 > [!WARNING]
-> This guide has been tested for Mac OSX Ventura 13.0 and Sonoma 15.2. It may not work for older versions so proceed accordingly.
+> This guide has been tested for Mac OSX Ventura 13.0 and Sonoma 15.2. It may not work for versions below 13.0 so proceed accordingly.
 
 # Steps
 

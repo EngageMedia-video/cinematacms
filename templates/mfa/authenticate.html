@@ -62,11 +62,6 @@
       <p style="font-weight:400">Don't have your authenticator app?</p>
       <div style="display: flex; justify-content:center;">
         <p><a href="#" id="toggle-recovery-mode">Use a backup code</a></p>
-        {% block comment %}
-          {% if ACCOUNT_LOGIN_BY_CODE_ENABLED %}
-            <p><a href="/login/code/">Send code via email</a></p>
-          {% endif %}
-        {% endblock %}
       </div>
       <p style="display:flex;flex-direction:column;font-weight:300;font-size:10px;color:grey;">
         <span>

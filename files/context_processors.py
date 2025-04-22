@@ -64,5 +64,5 @@ def stuff(request):
     ret["POPUP_URL"] = popup_url
     if request.user.is_superuser:
         ret["DJANGO_ADMIN_URL"] = settings.DJANGO_ADMIN_URL
-    # ret["MFA_REQ_DATE"] = 'July 3, 2025'
+    ret["MFA_REQ_DATE"] = 'April 21, 2025'
     return ret

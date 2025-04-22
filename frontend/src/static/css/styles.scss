@@ -125,6 +125,21 @@ button{
 
 	margin:2em 1em 1em;
 
+	.alert-banner{
+		color: var(--body-text-color);
+		font-weight: 500;
+
+		max-width: 480px;
+    margin-inline: auto;
+    background-color: #ED7C30;
+    padding: 2em;
+    position: relative;
+
+		@media screen and (min-width:1220px){
+			max-width:640px;
+		}
+	}
+
 	@media screen and (min-width:1220px){
 
 		.sliding-sidebar &{
@@ -227,16 +242,6 @@ button{
 		// font-size:0.92857em;
 		margin-top:0.25em;
 		margin-bottom:2em;
-	}
-
-	.alert-banner{
-		background-color: #F47836;
-		color: white;
-		padding: 1rem;
-		margin-bottom: 1rem;
-		text-align: center;
-		width: 100%;
-		font-weight: 500;
 	}
 
 	.qr-code-div {
