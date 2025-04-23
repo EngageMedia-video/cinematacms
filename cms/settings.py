@@ -456,8 +456,9 @@ ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""
 WHISPER_COMMAND = "/home/cinemata/bin/whisper"
 WHISPER_SIZE = "base"
 
-WHISPER_CPP_COMMAND = "/home/cinemata/whisper.cpp/main"
+WHISPER_CPP_COMMAND = "/home/cinemata/whisper.cpp/build/bin/main"
 WHISPER_CPP_MODEL = "/home/cinemata/whisper.cpp/models/ggml-large-v3.bin"
+
 
 
 ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
