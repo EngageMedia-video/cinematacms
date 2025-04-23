@@ -5,6 +5,7 @@ This subfolder contains all relevant docs made to aid in better understanding or
 ### Table of Contents
 
 1. Setup guides
+  - [Ubuntu 22.04](docs/ubuntu-22.04-setup.md)
   - [Mac](./mac_setup.md)
   - Windows
 2. [Post-installation guide](docs/guides/Post-installation-guide.md)
