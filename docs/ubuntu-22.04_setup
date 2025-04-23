@@ -1,3 +1,5 @@
+# Cinemata Installation Instructions
+
 The instructions have been tested on Ubuntu 22.04. Ensure no other services are running in the system, specifically no nginx/Postgresql, as the installation script will install them and replace any configs.
 
 As root, clone the repository on /home/mediacms.io and run install.sh:
