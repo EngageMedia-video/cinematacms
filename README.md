@@ -1,6 +1,6 @@
 ## CinemataCMS: An Enhanced MediaCMS-based Video Platform for Asia-Pacific Social Issue Films
 
-[Cinemata](https://cinemata.org) is an open-source project that builds upon MediaCMS, enhancing it with features specifically designed for showcasing social issue films from the Asia-Pacific region. Since its public release in 2021, Cinemata has developed numerous features that were previously exclusive to its platform and not available in the core MediaCMS. The project is managed by EngageMedia, an Asia-Pacific non-profit advocating for digital rights, open-technology and social issue films.
+[Cinemata](https://cinemata.org) is an open-source project that builds upon [MediaCMS](https://github.com/mediacms-io/mediacms), enhancing it with features specifically designed for showcasing social issue films from the Asia-Pacific region. Since its public release in 2021, Cinemata has developed numerous features that were previously exclusive to its platform and not available in the core MediaCMS. The project is managed by EngageMedia, an Asia-Pacific non-profit advocating for digital rights, open-technology and social issue films.
 
 Our goal is to make these Cinemata-specific integrations and improvements to MediaCMS available to the public, enabling more organizations to maximize the potential of this powerful video content management system.
 
@@ -132,14 +132,14 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 - Add the ability to schedule content releases and set availability periods
 
 #### 5. Mobile Platform Development
-- Develop and launch a mobile-optimized version of Cinemata
+- Develop and launch a mobile-optimised version of Cinemata
 - Enhance platform accessibility and user experience across devices
 
 #### 6. Community Screening Features
 - Implement tools for online community screening and small film festival events
 
 ## Installation
-The instructions have been tested on Ubuntu 22.04. Make sure there is no other services running in the system, specifically no nginx/postgresql, as the installation script will install them and replace any configs.
+The instructions have been tested on Ubuntu 22.04. Make sure no other services are running in the system, specifically no nginx/Postgresql, as the installation script will install them and replace any configs.
 
 As root, clone the repository on /home/mediacms.io and run install.sh:
 
@@ -154,3 +154,15 @@ As root, clone the repository on /home/mediacms.io and run install.sh:
 This should take a few minutes with dependencies etc. Make sure you enter a valid domain when asked (eg staging.cinemata.org)
 
 **Note**: For locally setting up the application in Mac OSX (Ventura 13.0), you may refer to [this guide](docs/mac_setup.md) for more information.
+
+**Check out [Index](docs/index.md) for more information. 
+
+## Contributors
+
+Thanks to all the amazing people who have contributed to this project:
+
+[Markos Gogoulos](https://github.com/mgogoulos)
+[Yiannis Stergiou](https://github.com/styiannis)
+[Anna Helme](https://github.com/ahelme)
+[Jay Cruz](https://github.com/jmcruz14) 
+
