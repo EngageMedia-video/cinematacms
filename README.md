@@ -155,7 +155,7 @@ This should take a few minutes with dependencies etc. Make sure you enter a vali
 
 **Note**: For locally setting up the application in Mac OSX (Ventura 13.0), you may refer to [this guide](docs/mac_setup.md) for more information.
 
-**Check out [Index](docs/index.md) for more information. 
+**Check out [Index](docs/index.md)** for more information. 
 
 ## Contributors
 
