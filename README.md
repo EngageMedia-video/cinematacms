@@ -166,3 +166,6 @@ Thanks to all the amazing people who have contributed to this project:
 [Anna Helme](https://github.com/ahelme)
 [Jay Cruz](https://github.com/jmcruz14) 
 
+Want to contribute? Check out our [contribution guidelines](docs/CONTRIBUTING.md).
+
+
