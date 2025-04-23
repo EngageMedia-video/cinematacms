@@ -10,9 +10,10 @@ Our goal is to make these Cinemata-specific integrations and improvements to Med
   - [Multi-Factor Authentication](https://github.com/EngageMedia-Tech/cinematacms/blob/main/docs/guides/mfa_authentication.md)
   - Custom CSS and UI components for a unique, tailored look distinct from baseline MediaCMS
   - Featured video and playlists on the front page
-  - Customized playlists and embedding options on the front page
-  - Integration of Open AI Foundation's Whisper ASR model for English translation
+  - Customised playlists and embedding options on the front page
+  - Integration of [whisper.cpp](https://github.com/ggml-org/whisper.cpp) ASR model for English translation
   - Ability to upload, edit, and download .SRT files for subtitles or captions
+  - Expanded user roles that include a Truster User, who has greater access to site features relating to publishing and the ASR model.  
 
 ### Screenshots
 
@@ -167,5 +168,3 @@ Thanks to all the amazing people who have contributed to this project:
 [Jay Cruz](https://github.com/jmcruz14) 
 
 Want to contribute? Check out our [contribution guidelines](docs/CONTRIBUTING.md).
-
-
