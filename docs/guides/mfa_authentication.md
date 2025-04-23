@@ -1,5 +1,5 @@
 # Multi-Factor Authentication
-__Implemented by Jay Cruz__ (Philippines)
+__Implemented by [Jay Cruz](https://github.com/jmcruz14)__ (Philippines)
 (Up-to-date as of April 20, 2025)
 
 ## Table of Contents
