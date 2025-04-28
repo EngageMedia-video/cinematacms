@@ -158,7 +158,7 @@ As root, clone the repository on /home/mediacms.io and run install.sh:
 ```
 # cd /home
 # mkdir cinemata && cd cinemata
-# git clone https://github.com/EngageMedia-Tech/cinematacms cinematacms && cd cinematacms
+# git clone https://github.com/EngageMedia-video/cinematacms cinematacms && cd cinematacms
 # chmod +x install.sh
 # ./install.sh
 ```
