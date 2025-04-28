@@ -63,7 +63,7 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 - Organize virtual workshops and hackathons to encourage community involvement
 
 #### 4. File Upload System
-- Implementation of reliable chunked upload system
+- Implementation of a reliable chunked upload system
 - Cloudflare Pro integration and configuration
 - Upload size management based on user roles
 - Enhanced upload progress monitoring and error handling
@@ -139,6 +139,17 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 #### 6. Community Screening Features
 - Implement tools for online community screening and small film festival events
 
+## 🤝Paid Development Opportunities💼
+
+In addition to volunteer contributions, CinemataCMS offers paid development opportunities specifically for Southeast Asian developers. These opportunities are part of our commitment to supporting regional tech talent.
+
+### How it works:
+- Specific roadmap features may be designated for paid development
+- Southeast Asian developers can apply through our [Expression of Interest Form](https://airtable.com/app4WS5NS7qe0Pc7s/pagHGqVvJ3PbaBHfS/form)
+- Selection is based on relevant skills, experience, and commitment to the project's vision
+
+Note that many features and improvements remain open for volunteer contributions from our global community.
+
 ## Installation
 The instructions have been tested on Ubuntu 22.04. Make sure no other services are running in the system, specifically no nginx/Postgresql, as the installation script will install them and replace any configs.
 
@@ -154,7 +165,7 @@ As root, clone the repository on /home/mediacms.io and run install.sh:
 
 This should take a few minutes with dependencies etc. Make sure you enter a valid domain when asked (eg staging.cinemata.org)
 
-**Note**: For locally setting up the application in Mac OSX (Ventura 13.0), you may refer to [this guide](docs/mac_setup.md) for more information.
+**Note**: For locally setting up the application in Mac OSX (Ventura 13.0 and Sequoia 15.2), you may refer to [this guide](docs/mac_setup.md) for more information.
 
 **Check out [Index](docs/index.md)** for more information. 
 
