@@ -90,6 +90,15 @@ We're currently focused on the following areas, as outlined in our [roadmap](REA
 
 When contributing, please consider focusing on these priority areas. If you have ideas that align with our roadmap but aren't explicitly mentioned, please start a discussion about them before investing significant development time.
 
+## 🤝Paid Development Opportunities💼
+
+In addition to volunteer contributions, CinemataCMS offers paid development opportunities specifically for Southeast Asian developers. These opportunities are part of our commitment to supporting regional tech talent.
+
+### How it works:
+- Specific roadmap features may be designated for paid development
+- Southeast Asian developers can apply through our [Expression of Interest Form](https://airtable.com/app4WS5NS7qe0Pc7s/pagHGqVvJ3PbaBHfS/form)
+- Selection is based on relevant skills, experience, and commitment to the project's vision
+
 ## Questions?
 
 If you have any questions or need clarification on any aspect of the contribution process, please don't hesitate to ask in our [GitHub Discussions](https://github.com/EngageMedia-Tech/cinematacms/discussions) or comment on the relevant issue.
