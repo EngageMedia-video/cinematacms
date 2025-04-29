@@ -18,9 +18,10 @@ Our goal is to make these Cinemata-specific integrations and improvements to Med
 ### Screenshots
 
 <p align="center">
-    <img src="https://github.com/EngageMedia-video/cinemata/blob/main/images/Github-Cinemata-Screenshot1.png" width="340">
-    <img src="https://github.com/EngageMedia-video/cinemata/blob/main/images/Github-Cinemata-Screenshot2.png" width="340">
+    <img src="images/IMG_1934.jpeg" width="340">
+    <img src="images/IMG_1935.jpeg" width="340">
     <img src="https://github.com/EngageMedia-video/cinemata/blob/main/images/Integration%20of%20Whisper%20ASR%20for%20English%20Translation.png" width="340">
+    <img src="images/IMG_1931.jpeg" width="340">
 </p>
 
 ### History
