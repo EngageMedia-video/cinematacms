@@ -66,18 +66,14 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 - Implementation of security audit recommendations
 - Improved authentication and authorization systems
 - Enhanced privacy controls for content access
-
-#### 2. Performance Optimization
-- Implement caching and Content Delivery Network (CDN) solutions to improve website loading speed
-- Server location optimization assessment
-
-#### 3. Open-sourcing initiative
+- 
+#### 2. Open-sourcing initiative
 - Create comprehensive developer documentation and API references
 - Develop user guides with visual tutorials for common workflows
 - Initiate outreach programs targeting FOSS communities in Southeast Asia
 - Organize virtual workshops and hackathons to encourage community involvement
 
-#### 4. [Cloudflare Integration & File Upload System Improvements for CinemataCMS](https://github.com/EngageMedia-video/cinematacms/issues/20) 
+#### 3. [Cloudflare Integration & File Upload System Improvements for CinemataCMS](https://github.com/EngageMedia-video/cinematacms/issues/20) 
 - Implementation of a reliable chunked upload system
 - Cloudflare Pro integration and configuration
 - Upload size management based on user roles
