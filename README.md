@@ -66,7 +66,7 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 - Implementation of security audit recommendations
 - Improved authentication and authorization systems
 - Enhanced privacy controls for content access
-- 
+  
 #### 2. Open-sourcing initiative
 - Create comprehensive developer documentation and API references
 - Develop user guides with visual tutorials for common workflows
@@ -102,36 +102,35 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 - Regional content categorization
 - Culturally relevant features
 
-
-#### 3. [Expanded Django Admin Functionality](https://github.com/EngageMedia-video/cinematacms/issues/36)
+#### 4. [Expanded Django Admin Functionality](https://github.com/EngageMedia-video/cinematacms/issues/36)
 - Enhanced content management tools
 - User management improvements
 - Manage transcodes and Whisper.cpp functionalities via Django admin
 - Batch operations for content
 
-#### 4. [Expand notification triggers](https://github.com/EngageMedia-video/cinematacms/issues/29) 
+#### 5. [Expand notification triggers](https://github.com/EngageMedia-video/cinematacms/issues/29) 
 - Comments on user's content
 - Likes on user's content
 - User's promotion to a Trusted User and other user roles
 
-#### 5. [Content Curation and Discovery](https://github.com/EngageMedia-video/cinematacms/issues/33)
+#### 6. [Content Curation and Discovery](https://github.com/EngageMedia-video/cinematacms/issues/33)
 - Advanced search capabilities
 - Recommendation engine improvements
 - Collections and playlists
 - Featured content management
 
-#### 6. [Video Upload Process Enhancements](https://github.com/EngageMedia-video/cinematacms/issues/32)
+#### 7. [Video Upload Process Enhancements](https://github.com/EngageMedia-video/cinematacms/issues/32)
 - Redesign the upload flow to allow metadata input before video upload
 - Add the ability for users to easily remove or replace uploaded videos
 - Implement a progress bar and estimated time for video processing
 
-#### 7. [Add Monetization Options](https://github.com/EngageMedia-video/cinematacms/issues/27)
+#### 8. [Add Monetization Options](https://github.com/EngageMedia-video/cinematacms/issues/27)
 - Build a donation system for viewers to support content creators via mobile wallets
 
-#### 8. [Members-only Features](https://github.com/EngageMedia-video/cinematacms/issues/28)
+#### 9. [Members-only Features](https://github.com/EngageMedia-video/cinematacms/issues/28)
 - Unique featured video and playlists on the front page as a precursor for 'Cinemata Premium/Prism'
 
-#### 9. Cloud Infrastructure Exploration
+#### 10. Cloud Infrastructure Exploration
 - Move media processing (video transcoding, thumbnail generation, Whisper translations) to cloud-native platform while maintaining current core infrastructure
 - Set up content delivery optimization through cloud services
 - Implement monitoring system for cloud resource usage
