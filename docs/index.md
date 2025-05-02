@@ -16,3 +16,4 @@ This subfolder contains all relevant docs made to aid in better understanding or
   - [How to create a superuser within your local/staging database](./creating_superuser.md)
   - [Directory structure](./directory.md)
   - [Understanding CinemataCMS Video Recommendations](docs/CinemataCMS-recommendations-algorithms.md)
+  - [Cinemata Sidebar Content Guide](docs/sidebar-content-guide.md)
