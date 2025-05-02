@@ -17,3 +17,4 @@ This subfolder contains all relevant docs made to aid in better understanding or
   - [Directory structure](./directory.md)
   - [Understanding CinemataCMS Video Recommendations](docs/CinemataCMS-recommendations-algorithms.md)
   - [Cinemata Sidebar Content Guide](docs/sidebar-content-guide.md)
+  - [Customise Social Media Links](docs/Customise-social-media-links.md)
