@@ -63,52 +63,62 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 - Initiate outreach programs targeting FOSS communities in Southeast Asia
 - Organize virtual workshops and hackathons to encourage community involvement
 
-#### 4. File Upload System
+#### 4. [Cloudflare Integration & File Upload System Improvements for CinemataCMS](https://github.com/EngageMedia-video/cinematacms/issues/20) 
 - Implementation of a reliable chunked upload system
 - Cloudflare Pro integration and configuration
 - Upload size management based on user roles
 - Enhanced upload progress monitoring and error handling
 
-#### 4. Rich Text Input Enhancements
+#### 4. [Rich Text Input Enhancements](https://github.com/EngageMedia-video/cinematacms/issues/6)
 - Upgrade the existing rich text formatting functionality in Media and Static pages input fields to improve user experience, increase reliability, and expand formatting options
 - Add form creation support in sidebar pages to host Trusted User applications
 
 ## [Milestone 2: 6 months to one year](https://github.com/EngageMedia-video/cinematacms/milestone/2)
 
-#### 1. Community Engagement Features
+#### 1. [Enhance Community Engagement Features](https://github.com/EngageMedia-video/cinematacms/issues/30)
 - Enhance the comments and likes interface and related moderation tools
 - Build the ability to follow other users
 - Develop a notification system for new content and interactions
 
-#### 2. Co-viewing Experience
-- Enhance the UI of the Media Page to better view comments
+#### 2. [Enhance Co-viewing Experience](https://github.com/EngageMedia-video/cinematacms/issues/35)
+- Synchronized video viewing
+- Group watch features
+- Live chat during viewing
+- Virtual screening rooms
 
-#### 3. Localisation
-- Translate the user interface into multiple languages, focusing on Asia-Pacific languages
-- Implement region-specific content recommendations
+#### 3. [Localisation](https://github.com/EngageMedia-video/cinematacms/issues/34)
+- Multi-language interface
+- Subtitle management improvements
+- Regional content categorization
+- Culturally relevant features
 
-#### 3. Expanded Django Admin Functionality
-- Configure maximum upload sizes for each user role: Contributor, Trusted user, Editor and Manager
-- Ability to reset transcoding and Whisper translations via Django admin
 
-#### 4. Notification System
+#### 3. [Expanded Django Admin Functionality](https://github.com/EngageMedia-video/cinematacms/issues/36)
+- Enhanced content management tools
+- User management improvements
+- Manage transcodes and Whisper.cpp functionalities via Django admin
+- Batch operations for content
+
+#### 4. [Expand notification triggers](https://github.com/EngageMedia-video/cinematacms/issues/29) 
 - Comments on user's content
 - Likes on user's content
 - User's promotion to a Trusted User and other user roles
 
-#### 5. Content Curation and Discovery
-- Easily view curated playlists and collections based on themes or genres
-- Improve and implement the site's tagging system for more granular content categorization
+#### 5. [Content Curation and Discovery](https://github.com/EngageMedia-video/cinematacms/issues/33)
+- Advanced search capabilities
+- Recommendation engine improvements
+- Collections and playlists
+- Featured content management
 
-#### 6. Video Upload Process Enhancements
+#### 6. [Video Upload Process Enhancements](https://github.com/EngageMedia-video/cinematacms/issues/32)
 - Redesign the upload flow to allow metadata input before video upload
 - Add the ability for users to easily remove or replace uploaded videos
 - Implement a progress bar and estimated time for video processing
 
-#### 7. Monetization Options
+#### 7. [Add Monetization Options](https://github.com/EngageMedia-video/cinematacms/issues/27)
 - Build a donation system for viewers to support content creators via mobile wallets
 
-#### 8. Members-only Features
+#### 8. [Members-only Features](https://github.com/EngageMedia-video/cinematacms/issues/28)
 - Unique featured video and playlists on the front page as a precursor for 'Cinemata Premium/Prism'
 
 #### 9. Cloud Infrastructure Exploration
@@ -118,22 +128,22 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 
 ## [Milestone 3: 2 to 3 years](https://github.com/EngageMedia-video/cinematacms/milestone/3)
 
-#### 1. Enhanced Site Design Layout
+#### 1. [Enhanced Site Design Layout](https://github.com/EngageMedia-video/cinematacms/issues/26)
 - New color scheme and typography
 - Improve the appearance of the playlist page
 
-#### 2. Live Streaming Integration
+#### 2. [Live Streaming Integration](https://github.com/EngageMedia-video/cinematacms/issues/25)
 - Develop infrastructure to support live-streaming
 - Implement features for scheduled streams and notifications
 
-#### 3. Creator Dashboard
+#### 3. [Creator Dashboard](https://github.com/EngageMedia-video/cinematacms/issues/24)
 - Develop a basic analytics dashboard for content creators
 - Include metrics like views, engagement rates, and viewer demographics
 
-#### 4. Advanced Creator Tools
+#### 4. [Develop an Advanced Creator Tools](https://github.com/EngageMedia-video/cinematacms/issues/23)
 - Add the ability to schedule content releases and set availability periods
 
-#### 5. Mobile Platform Development
+#### 5. [Mobile Platform Development](https://github.com/EngageMedia-video/cinematacms/issues/22)
 - Develop and launch a mobile-optimised version of Cinemata
 - Enhance platform accessibility and user experience across devices
 
