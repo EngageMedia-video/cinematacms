@@ -74,7 +74,6 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 #### 3. Open-sourcing initiative
 - Create comprehensive developer documentation and API references
 - Develop user guides with visual tutorials for common workflows
-- Establish contribution guidelines and code of conduct
 - Initiate outreach programs targeting FOSS communities in Southeast Asia
 - Organize virtual workshops and hackathons to encourage community involvement
 
