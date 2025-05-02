@@ -13,7 +13,22 @@ Our goal is to make these Cinemata-specific integrations and improvements to Med
   - Customised playlists and embedding options on the front page
   - Integration of [whisper.cpp](https://github.com/ggml-org/whisper.cpp) ASR model for English translation
   - Ability to upload, edit, and download .SRT files for subtitles or captions
-  - Expanded user roles that include a Truster User, who has greater access to site features relating to publishing and the ASR model.  
+  - Expanded user roles that include a Truster User, who has greater access to site features relating to publishing and the ASR model.
+ 
+### Potential Use Cases for CinemataCMS
+CinemataCMS can serve a wide range of organizations and initiatives that need to manage, showcase, and distribute video content with a focus on social impact:
+
+- **Educational institutions** - Universities, film schools, and educational programs can use CinemataCMS for teaching references, student submissions, and creating accessible archives of instructional materials
+- **Community archiving initiatives** - Cultural and community organisations working to preserve local stories and historical footage
+- **Film festivals** - Both virtual and physical film festivals looking for platforms to showcase submissions and curated collections
+- **Independent media organisations** - News outlets, documentary collectives, and citizen journalism projects requiring secure hosting for sensitive content
+- **Human rights documentation** - NGOs and advocacy groups documenting human rights situations in sensitive contexts
+- **Cultural heritage preservation** - Museums, libraries, and archives digitising and showcasing audiovisual cultural heritage
+- **Environmental advocacy** - Organisations using video to document environmental issues and climate change impacts
+- **Research institutions** - Academic and scientific organisations sharing visual research outputs and findings
+- **Digital storytelling projects** - Initiatives promoting digital storytelling as a tool for empowerment and social change
+
+The platform's emphasis on privacy, security, and community engagement makes it particularly suitable for projects prioritising ethical content management and user protection. 
 
 ### Screenshots
 
