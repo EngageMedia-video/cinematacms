@@ -25,4 +25,7 @@ pids/celery_short.service.pid
 static/debug_toolbar/js/redirect.js
 static/mptt/
 static/rest_framework/js/jquery-3.4.1.min.js
-
+static_collected/*
+actions/migrations/*
+files/migrations/*
+users/migrations/*
