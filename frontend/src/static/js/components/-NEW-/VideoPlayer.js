@@ -2,7 +2,10 @@ import React, { useRef, useEffect, useContext } from "react";
 import PropTypes from "prop-types";
 import urlParse from "url-parse";
 
-import MediaPlayer from "@mediacms/media-player/dist/mediacms-media-player.js";
+// Import the script for side effects only
+import "@mediacms/media-player/dist/mediacms-media-player.js";
+// The MediaPlayer is exposed as a global variable
+const MediaPlayer = window.MediaPlayer;
 
 import "@mediacms/media-player/dist/mediacms-media-player.css";
 
@@ -242,7 +245,7 @@ export function VideoPlayer(props) {
 			const timestamp = !isNaN(paramT) ? paramT : 0;
 			player.player.currentTime(timestamp);
 		  });
-	  
+
 		return () => {
 			unsetPlayer();
 

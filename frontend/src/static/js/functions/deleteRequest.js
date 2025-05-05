@@ -1,5 +1,5 @@
 // import { post as axiosPost } from 'axios';
-import * as axios from 'axios';
+import axios from 'axios';
 import { error as logError } from "./log";
 
 async function deleteRequest(url, configData, sync, callback, errorCallback) {
