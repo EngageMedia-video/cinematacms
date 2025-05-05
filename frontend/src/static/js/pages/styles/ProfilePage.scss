@@ -1010,14 +1010,14 @@ $side-empty-space: 40px;
 
 /* #################################################################################################### */
 
-@media (max-width: ( -1 + ( 2 * $side-empty-space ) + ( 2 * $item-width ) )  and (max-width: 709px)) {
+@media (max-width: ( -1 + ( 2 * $side-empty-space ) + ( 2 * $item-width ) )) and (max-width: 709px) {
 
 	.profile-page-header .profile-nav.fixed-nav .profile-nav{
 		padding-left:1em;
 	}
 }
 
-@media (max-width: ( -1 + ( 2 * $side-empty-space ) + ( 2 * $item-width ) )  and (max-width: 768px)) {
+@media (max-width: ( -1 + ( 2 * $side-empty-space ) + ( 2 * $item-width ) )) and (max-width: 768px) {
 	.profile-page-header .profile-nav.fixed-nav .profile-nav{
 		padding-left:1.5em;
 	}
