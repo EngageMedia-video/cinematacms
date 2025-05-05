@@ -3622,6 +3622,7 @@ function generatePlugin(/*videojs*/) {
 
 	videojs.registerPlugin("mediaCmsVjsPlugin", MediaCmsVjsPlugin);
 
+
 	return MediaCmsVjsPlugin;
 }
 

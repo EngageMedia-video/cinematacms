@@ -1,7 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
-var sass = require('node-sass');
+var sass = require('sass');
 
 let iconsIndex = [];
 
@@ -62,7 +62,7 @@ module.exports = function(grunt) {
     grunt.registerTask('generate-font', function() {
         var done = this.async();
 
-        let webfontsGenerator = require('webfonts-generator');
+        let { generateFonts } = require('fantasticon');
 
         let iconConfig = grunt.file.readJSON(path.join(__dirname, '..', 'mediacms/icons.json'));
 
@@ -87,44 +87,72 @@ module.exports = function(grunt) {
 
         icons = iconConfig.icons;
 
-        let iconFiles = icons.map(function(icon) {
-            // If root-dir is specified for a specific icon, use that.
+        // Create a map of icon names to SVG file paths
+        let inputDir = path.resolve('temp-svg-icons');
+        let outputDir = path.resolve('build/fonts');
+
+        // Ensure the temp directory exists
+        if (!fs.existsSync(inputDir)) {
+            fs.mkdirSync(inputDir, { recursive: true });
+        }
+
+        // Ensure the output directory exists
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+
+        // Create scss directory if it doesn't exist
+        let scssDir = path.resolve('scss');
+        if (!fs.existsSync(scssDir)) {
+            fs.mkdirSync(scssDir, { recursive: true });
+        }
+
+        // Create temporary SVG files with correct names for fantasticon
+        for (let icon of icons) {
+            let sourcePath;
             if (icon['root-dir']) {
-                return icon['root-dir'] + icon.svg;
+                sourcePath = icon['root-dir'] + icon.svg;
+            } else {
+                sourcePath = svgRootDir + icon.svg;
             }
 
-            // Otherwise, use the default root-dir.
-            return svgRootDir + icon.svg;
-        });
+            // Create a copy with the icon name as the filename
+            let targetPath = path.join(inputDir, `${icon.name}.svg`);
+            fs.copyFileSync(sourcePath, targetPath);
+        }
 
-        webfontsGenerator({
-            files: iconFiles,
-            dest: 'build/fonts/',
-            fontName: iconConfig['font-name'],
-            cssDest: 'scss/_icons.scss',
-            cssTemplate: './templates/scss.hbs',
-            htmlDest: 'index.html',
-            htmlTemplate: './templates/html.hbs',
-            html: true,
-            rename: function(iconPath) {
-                let fileName = path.basename(iconPath);
-
-                let iconName = _.result(_.find(icons, function(icon) {
-                    let svgName = path.basename(icon.svg);
-
-                    return svgName === fileName;
-                }), 'name');
-
-                return iconName;
+        generateFonts({
+            inputDir: inputDir,
+            outputDir: outputDir,
+            name: iconConfig['font-name'],
+            fontTypes: ['svg', 'woff', 'ttf'],
+            assetTypes: ['css', 'html'],
+            fontHeight: 300,
+            normalize: true,
+            templates: {
+                css: './templates/scss.hbs',
+                html: './templates/html.hbs'
             },
-            types: ['svg', 'woff', 'ttf']
-        }, function(error) {
-            if (error) {
-                console.error(error);
-                done(false);
+            pathOptions: {
+                css: path.resolve('scss/_icons.scss'),
+                html: path.resolve('index.html')
+            },
+            formatOptions: {
+                json: {
+                    indent: 2
+                }
             }
-
+        }).then(function() {
+            // Clean up temporary directory
+            fs.rmSync(inputDir, { recursive: true, force: true });
             done();
+        }).catch(function(error) {
+            console.error(error);
+            // Clean up temporary directory even on error
+            if (fs.existsSync(inputDir)) {
+                fs.rmSync(inputDir, { recursive: true, force: true });
+            }
+            done(false);
         });
     });
 

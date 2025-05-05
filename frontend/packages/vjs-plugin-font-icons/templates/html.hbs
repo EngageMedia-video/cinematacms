@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>{{fontName}}</title>
+	<title>{{name}}</title>
 	<link href="css/videojs-icons.css" rel="stylesheet">
 
   <style>
@@ -31,15 +31,15 @@
 </head>
 <body>
   <header>
-	   <h1>{{fontName}} Icons</h1>
+	   <h1>{{name}} Icons</h1>
      <p>All icons prefixed by <code>vjs-icon-</code></p>
    </header>
-  {{#each names}}
+  {{#each assets}}
 	<div class="preview">
 		<div class="preview-icon">
-			<span class="vjs-icon-{{this}}"></span>
+			<span class="vjs-icon-{{@key}}"></span>
 		</div>
-		<span>{{this}}</span>
+		<span>{{@key}}</span>
 	</div>
 	{{/each}}
 </body>
