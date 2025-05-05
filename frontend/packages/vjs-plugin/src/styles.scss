@@ -1,5 +1,5 @@
-@import "../../node_modules/compass-mixins/lib/compass/support";
-@import "../../node_modules/compass-mixins/lib/compass/css3";
+@use "node_modules/compass-mixins/lib/compass/support";
+@use "node_modules/compass-mixins/lib/compass/css3" as css3;
 
 @mixin multiline_texts_excerpt(
 	$font-size: 1em,
@@ -561,7 +561,7 @@ $controlBarAnimationsDuration: 0.1s;
         opacity: 0;
         height:0;
         visibility: hidden;
-        @include transition( opacity 0.25s cubic-bezier(0.0,0.0,0.2,1) );
+        @include css3.transition( opacity 0.25s cubic-bezier(0.0,0.0,0.2,1) );
         will-change:height;*/
 
 		&.vjs-visible-panel {
@@ -1741,7 +1741,7 @@ $controlBarAnimationsDuration: 0.1s;
 
 	.vjs-progress-control {
 		.vjs-progress-holder {
-			// @include box-shadow( 0 1px 3px 0 rgba(#000, 0.1) );
+			// @include css3.box-shadow( 0 1px 3px 0 rgba(#000, 0.1) );
 
 			.vjs-play-progress {
 				background-color: $intense-color;
@@ -1991,7 +1991,7 @@ $controlBarAnimationsDuration: 0.1s;
 				.vjs-preview-thumb {
 					opacity: 0;
 					visibility: hidden;
-					@include transition(visibility 1s linear, opacity 1s linear);
+					@include css3.transition(visibility 1s linear, opacity 1s linear);
 				}
 			}
 		}
@@ -2021,7 +2021,7 @@ $controlBarAnimationsDuration: 0.1s;
 
 		border: 0;
 		border-radius: 0;
-		@include opacity(1);
+		@include css3.opacity(1);
 
 		-webkit-animation-delay: 0.44s;
 		animation-delay: 0.44s;
