@@ -22,7 +22,6 @@
     "@babel/core": "^7.27.1",
     "@babel/preset-env": "^7.27.1",
     "@babel/preset-react": "^7.27.1",
-
     "autoprefixer": "^10.4.21",
     "babel-loader": "^10.0.0",
     "compass-mixins": "^0.12.12",
@@ -35,7 +34,7 @@
     "dotenv": "^16.5.0",
     "dotenv-webpack": "^8.1.0",
     "ejs": "^3.1.10",
-    "ejs-compiled-loader": "^3.1.0",
+    "ejs-compiled-loader": "file:packages/ejs-compiled-loader",
     "html-prettify": "^1.0.7",
     "html-webpack-plugin": "^5.6.3",
     "install": "^0.13.0",
