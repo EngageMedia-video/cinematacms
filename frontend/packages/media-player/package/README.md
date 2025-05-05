@@ -1,2 +1,0 @@
-# @mediacms/media-player
-
