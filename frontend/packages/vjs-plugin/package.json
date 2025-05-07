@@ -38,7 +38,6 @@
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.1",
-    "compass-mixins": "^0.12.12",
     "core-js": "^3.42.0",
     "global": "^4.4.0",
     "sass": "^1.87.0",

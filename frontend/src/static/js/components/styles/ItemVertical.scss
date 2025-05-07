@@ -1,4 +1,4 @@
-@import '../../../css/config/index.scss';
+@use '../../../css/config/index.scss';
 
 .items-list-ver .feat-first-item{
 
@@ -50,12 +50,12 @@ $side-empty-space: 40px;
 	}
 
 	.items-list-ver.media-list-wrapper .media-list-row .item-main{
-		
+
 		h3{
-			
+
 			margin:0.5714285em 0;
 			// margin:0.714285714em 0;
-			
+
 			span{
 
 			}
@@ -66,7 +66,7 @@ $side-empty-space: 40px;
 /* #################################################################################################### */
 
 @media (min-width: ( ( 2 * $side-empty-space ) + ( 2 * $item-width ) ) ) {
-	
+
 	.items-list-ver .feat-first-item .item:first-child {
 		float:left;
 		max-width: calc( 3 * var( --item-width, var(--default-item-width) ) );
@@ -78,7 +78,7 @@ $side-empty-space: 40px;
 $item-width: 218px;
 
 @media (min-width: ( ( 2 * $side-empty-space ) + ( 4 * $item-width ) ) ) {
-	
+
 	.items-list-ver .feat-first-item .item:nth-child(4n + 4){
 		clear:left;
 	}
@@ -90,11 +90,11 @@ $item-width: 218px;
 }
 
 @media (min-width: ( ( 2 * $side-empty-space ) + ( 5 * $item-width ) ) ) {
-	
+
 	.items-list-ver .feat-first-item .item:nth-child(4n + 4){
 		clear:none;
 	}
-	
+
 	.items-list-ver .feat-first-item .item:nth-child(5n + 6){
 		clear:left;
 	}
@@ -111,7 +111,7 @@ $item-width: 218px;
 }
 
 @media (min-width: ( ( 2 * $side-empty-space ) + ( 6 * $item-width ) ) ) {
-	
+
 	.items-list-ver .feat-first-item .item:nth-child(5n + 6){
 		clear:none;
 	}
@@ -168,12 +168,12 @@ $item-width: 218px;
 }
 
 @media (min-width: ( ( 2 * $side-empty-space ) + ( 6 * $item-width ) ) ) {
-	
+
 	.sliding-sidebar .items-list-ver .feat-first-item .item:nth-child(4n + 4),
 	.visible-sidebar .items-list-ver .feat-first-item .item:nth-child(4n + 4){
 		clear:none;
 	}
-	
+
 	.sliding-sidebar .items-list-ver .feat-first-item .item:nth-child(5n + 6),
 	.visible-sidebar .items-list-ver .feat-first-item .item:nth-child(5n + 6){
 		clear:left;

@@ -1,4 +1,4 @@
-@import '../../../css/config/index.scss';
+@use '../../../css/config/index.scss';
 
 @media (min-width: 390px) {
 
@@ -6,7 +6,7 @@
 		max-width:100%;
 		margin-bottom: 8px;
 	}
-		
+
 	.items-list-hor .item-content{
 		padding-left: calc( 218px - 4px );
 	}
@@ -21,7 +21,7 @@
 	}
 
 	.items-list-hor .item-main{
-		
+
 		min-height: calc( 0.5611 * calc( 218px - 4px ) );
 		padding-left: var( --horizontal-item-margin-right-width, var(--default-horizontal-item-margin-right-width) );
 
@@ -69,7 +69,7 @@
 		}
 
 		.item{
-			
+
 		}
 
 		.item-content{

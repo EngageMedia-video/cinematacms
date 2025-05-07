@@ -1,5 +1,5 @@
-@import '../../../css/includes/_variables.scss';
-
+@use '../../../css/includes/_theme_variables.scss' as *;
+@use '../../../css/includes/_mixins.scss' as *;
 .comments-form-inner{
 
 	.form{

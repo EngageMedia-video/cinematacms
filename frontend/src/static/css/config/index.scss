@@ -1,5 +1,5 @@
-@import './_light_theme.scss';
-@import './_dark_theme.scss';
+@use '_light_theme.scss';
+@use '_dark_theme.scss';
 
 body {
 

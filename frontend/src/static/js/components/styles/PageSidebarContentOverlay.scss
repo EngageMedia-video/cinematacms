@@ -1,4 +1,4 @@
-@import '../../../css/includes/_variables_dimensions.scss';
+@use '../../../css/includes/_variables_dimensions.scss' as *;
 
 .page-sidebar-content-overlay{
     position:fixed;
@@ -22,7 +22,7 @@
     #page-media-audio &,
     #page-media-image &,
     #page-media-pdf &{
-        
+
         body.visible-sidebar &{
             display:block;
             opacity:0.5;

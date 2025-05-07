@@ -1,4 +1,4 @@
-@import '../../../css/config/index.scss';
+@use '../../../css/config/index.scss';
 
 .media-list-wrapper{
 	position:relative;
@@ -47,13 +47,13 @@
 	&.items-list-ver {
 
 		padding:0 16px;
-		
+
 		@media (min-width: 710px) {
 			padding:0 24px;
 		}
 
 		.media-list-row{
-			
+
 
 			.sliding-sidebar &{
 				transition-property: width;
@@ -64,14 +64,14 @@
 	}
 
 	&.items-list-hor{
-		
+
 		.media-list-row{
 			max-width: 100%;
 		}
 	}
 
 	&.items-list-ver{
-		
+
 		.media-list-row{
 			// width: var( --max-item-width, var(--default-max-item-width) );
 			max-width: var( --max-item-width, var(--default-max-item-width) );
@@ -115,7 +115,7 @@ $side-empty-space: 40px;
 	.media-list-wrapper.items-list-ver {
 		padding:0;
 	}
-	
+
 	.media-list-wrapper.items-list-ver .media-list-row {
 		max-width:100%;
 	}
@@ -266,7 +266,7 @@ $item-width: 218px;
 }
 
 .media-filters-row + .media-list-header{
-	
+
 	padding-top:0;
 
 	h2{
@@ -326,7 +326,7 @@ $item-width: 218px;
 			margin-top:-1px;
 		}
 	}
-	
+
 	.popup{
 		position:absolute;
 		top:100%;
@@ -356,7 +356,7 @@ $item-width: 218px;
 		clear: right;
 
 		.popup-trigger{
-		
+
 			.filter-button-label{
 				font-size:14px;
 				letter-spacing: 0.007px;
@@ -381,7 +381,7 @@ $item-width: 218px;
 		padding:8px 0;
 
 		.media-filter-option{
-			
+
 			button{
 				width:100%;
 				padding:0 16px;

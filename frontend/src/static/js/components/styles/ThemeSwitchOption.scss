@@ -1,5 +1,5 @@
-@import '../../../css/includes/_variables.scss';
-@import '../../../css/includes/_variables_dimensions.scss';
+@use '../../../css/includes/_theme_variables.scss' as *;
+@use '../../../css/includes/_mixins.scss' as *;@use '../../../css/includes/_variables_dimensions.scss' as *;
 
 .theme-switch{
 
@@ -7,7 +7,7 @@
 	display:table;
 	width:100%;
 
-	@if $_use_rem_unit{
+	@if $use_rem_unit{
 		padding:0 1.5rem;
 		margin:0.75rem 0;
 	}
@@ -20,7 +20,7 @@
 		outline: var( --dotted-outline );
 		// background-color: var(--in-popup-nav-menu-item-hover-bg-color);
 	}
-	
+
 	> * {
 		display:table-cell;
 		vertical-align:middle;

@@ -1,5 +1,5 @@
-@import './_mixins.scss';
-@import './_theme_variables.scss';
+@use '_mixins.scss' as *;
+@use '_theme_variables.scss' as *;
 
 /*// @link: https://ricostacruz.com/til/css-media-query-breakpoints
 $breakpoint_mobile_portrait: 480px;

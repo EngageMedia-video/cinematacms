@@ -1,5 +1,6 @@
-@import '../../../css/includes/_variables.scss';
-@import '../../../css/includes/_variables_dimensions.scss';
+@use '../../../css/includes/_theme_variables.scss' as *;
+@use '../../../css/includes/_mixins.scss' as *;
+@use '../../../css/includes/_variables_dimensions.scss' as *;
 
 #page-profile-home,
 #page-profile-videos,
@@ -265,7 +266,7 @@
 				// min-height:80px;
 			}
 
-			padding-bottom: 1% * (100 / 6.2);
+			padding-bottom: calc(1% * (100 / 6.2));
 		}
 
 		@media screen and (max-width: 339px){
@@ -433,7 +434,7 @@
 		position:relative;
 		// transform: translate3d(0px, 0px, 0px);	// @todo: Recheck this.
 		z-index:+1;
-		height:$_authorPage-navHeight;
+		height:$authorPage-navHeight;
 		border-bottom-width:1px;
 		border-bottom-style: solid;
 
@@ -509,7 +510,7 @@
 
 				a{
 					display:block;
-					line-height:$_authorPage-navHeight;
+					line-height:$authorPage-navHeight;
 					// padding:0 $_authorPage-navItem-padding-horizontal;
 					width:109px;
 					text-decoration:none;
@@ -590,7 +591,7 @@
 	&.fixed-nav{
 
 		.profile-info-nav-wrap{
-			padding-bottom:$_authorPage-navHeight;
+			padding-bottom:$authorPage-navHeight;
 		}
 
 		.profile-nav{
@@ -1031,7 +1032,9 @@ $side-empty-space: 40px;
 		padding:96px 0 48px;
 	}
 
-	text-align:center;
+	& {
+		text-align:center;
+	}
 
 	.welcome-title{
 		display:block;

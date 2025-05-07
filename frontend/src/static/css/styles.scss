@@ -1,14 +1,13 @@
-@import '~compass-mixins';
+@use "sass:meta";
+@use 'includes/_variables.scss';
+@use 'includes/_variables_dimensions.scss';
 
-@import './includes/_variables.scss';
-@import './includes/_variables_dimensions.scss';
+@use 'config/index.scss';
 
-@import './config/index.scss';
+@use 'includes/_theme_color.scss';
+@use "includes/theme_variables";
 
-@import './includes/_theme_color.scss';
-
-
-@import '~normalize.css/normalize.css';
+@use 'normalize.css/normalize.css';
 
 .material-icons {
     vertical-align: middle;
@@ -51,8 +50,8 @@ body{
 	}
 }
 
-@import './includes/typography/_typography.scss';
-@import './includes/form_controls/_form_controls.scss';
+@include meta.load-css('includes/typography/_typography.scss');
+@include meta.load-css('includes/form_controls/_form_controls.scss');
 
 a{
 	color: var( --theme-color, var(--default-theme-color) );
@@ -148,30 +147,25 @@ button{
 		}
 
 		.visible-sidebar &{
-			padding-right: $_sidebar-width-value * 1px;
+			padding-right: variables_dimensions.$sidebar-width-value * 1px;
 		}
 	}
 }
 
-.user-action-form-inner{
-
-	position:relative;
-	margin:0 auto;
+.user-action-form{
 	width:100%;
+	position: relative;
 	max-width:480px;
+	padding:2em 2em;
+	font-size:14px;
+	line-height:1.5;
+	background-color: var(--user-action-form-inner-bg-color);
+	border-radius: 2px;
+	box-shadow: 0px 4px 8px 0 rgba(17, 17, 17, 0.06);
 
 	@media screen and (min-width:1220px){
 		max-width:640px;
 	}
-
-	padding:2em 2em;
-	font-size:14px;
-	line-height:1.5;
-
-	background-color: var(--user-action-form-inner-bg-color);
-
-	border-radius: 2px;
-	box-shadow: 0px 4px 8px 0 rgba(17, 17, 17, 0.06);
 
 	form,
 	label,
@@ -245,7 +239,7 @@ button{
 	}
 
 	.qr-code-div {
-		display: flex; 
+		display: flex;
 		justify-content: center;
 
 		img {
@@ -495,29 +489,29 @@ button{
     			margin: 0;
 				}
 			}
-			
+
 		}
 
 		#recovery-input-container {
-			display: none; 
+			display: none;
     	margin: 20px 0 30px 0;
-			
+
 			input#recovery-code {
-				width: 100%; 
-				padding: 10px; 
+				width: 100%;
+				padding: 10px;
 				font-size: 16px;
 				color: var(--user-action-form-inner-recovery-code-input-text-color);
-				background-color: transparent; 
-				text-align: center; 
-				border: 2px solid #3e3e3e; 
-				border-radius: 4px; 
-				
+				background-color: transparent;
+				text-align: center;
+				border: 2px solid #3e3e3e;
+				border-radius: 4px;
+
 				&:focus{
 					outline: none;
 					border-color: #ED7C30;
 					box-shadow: 0 0 0 1px #ED7C30;
 				}
-		
+
 				&::-webkit-outer-spin-button,
 				&::-webkit-inner-spin-button {
 					-webkit-appearance: none;
@@ -584,10 +578,10 @@ button{
 		&.error{
 
 			input{
-				border-color: rgba($color-error-red, .4);
+				border-color: rgba(theme_variables.$color-error-red, .4);
 
 				+ p {
-					color: $color-error-red;
+					color: theme_variables.$color-error-red;
 				}
 			}
 		}
@@ -600,8 +594,8 @@ button{
 		margin: 0 0 1rem;
 		list-style:lower-latin;
 		list-style-position:inside;
-		color: $message-default-color;
-		background-color: $message-error-bg-color;
+		color: theme_variables.$message-default-color;
+		background-color: theme_variables.$message-error-bg-color;
 
 		li{
 			margin:0 0 0.75rem 0;
@@ -716,24 +710,24 @@ input#authenticator_secret{
 	overflow:hidden;
 	font-size:14px;
 	font-weight:500;
-	color: $message-default-color;
-	background-color: $message-default-bg-color;
+	color: theme_variables.$message-default-color;
+	background-color: theme_variables.$message-default-bg-color;
 
 	&.info{
-		background-color: $message-info-bg-color;
+		background-color: theme_variables.$message-info-bg-color;
 	}
 
 	&.error{
-		background-color: $message-error-bg-color;
+		background-color: theme_variables.$message-error-bg-color;
 	}
 
 	&.warn,
 	&.warning{
-		background-color: $message-warning-bg-color;
+		background-color: theme_variables.$message-warning-bg-color;
 	}
 
 	&.success{
-		background-color: $message-success-bg-color;
+		background-color: theme_variables.$message-success-bg-color;
 	}
 
 	&.alert-dismissible{
@@ -757,7 +751,7 @@ input#authenticator_secret{
 		display:block;
 		padding:0;
 		text-align:center;
-		color: $message-default-color;
+		color: theme_variables.$message-default-color;
 		outline:0;
 		border:0;
 		background:none;
@@ -808,164 +802,6 @@ input#authenticator_secret{
 .page-main-inner .custom-page-wrapper{
 	padding:0 2em 1em;
 }
-
-
-
-/*.license_controls{}
-
-.license_controls_header{
-	position:relative;
-	padding-right: 96px;
-}
-
-.license_controls_header span{
-	width:100%;
-	display: inline-block;
-	line-height:1.3;
-	padding:0.57142875em;
-	border-radius: 1px 0 0 1px;
-	border-style:solid;
-	border-width:1px 0 1px 1px;
-	border-color: var(--input-border-color);
-	background-color: var(--input-bg-color);
-}
-
-.license_controls_header button{
-	position:absolute;
-	top:0;
-	right:0;
-	bottom:0;
-	padding:0;
-	width:96px;
-}
-
-.license_controls_options {
-	position:fixed;
-	top:56px;
-	left:0;
-	right:0;
-	bottom:0;
-	z-index:+1;
-	display:block;
-}
-
-.license_controls_options.is-hidden{
-	display:none;
-}
-
-.license_controls_options:before{
-	content:"";
-	position:absolute;
-	display:block;
-	top:0;
-	left:0;
-	right:0;
-	bottom:0;
-	background-color:rgba(black, 0.5);
-}
-
-.license_controls_options > div {
-	display:table;
-	width:100%;
-	height:100%;
-}
-
-.license_controls_options > div > div {
-	display:table-cell;
-	vertical-align: middle;
-}
-
-.license_controls_options .license-form{
-	position:relative;
-	display:block;
-	width:100%;
-	max-width: 640px;
-	margin:0 auto;
-	box-shadow: 0 16px 24px 2px rgba(0, 0, 0, 0.14), 0 6px 30px 5px rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(0, 0, 0, 0.4);
-	background-color: var(--user-action-form-inner-bg-color);
-}
-
-.license_controls_options .license-form p{
-	margin:0 0 12px;
-}
-
-.license_controls_options .license-form p:last-child{
-	margin-bottom:0;
-}
-
-.license_controls_options .license-form p a{
-	margin:0;
-}
-
-.license_controls_options .license-form strong{
-	font-weight:500;
-}
-
-.license_controls_options .license-form label input{
-	margin-left:0;
-}
-
-.license_controls_options .license-form .license-radio-options {
-	display:block;
-	margin-bottom:16px;
-}
-
-.license_controls_options .license-form .license-radio-options p{
-	margin:0;
-	border-radius: 1px;
-	padding-bottom:6px;
-	background-color: var(--body-bg-color);
-}
-
-.license_controls_options .license-form .license-radio-options p + p {
-	margin-top:4px;
-}
-
-.license_controls_options .license-form .license-radio-options p span{
-	display: block;
-	padding:12px 16px;
-	margin-bottom:6px;
-	border-bottom:1px solid;
-	border-color: var(--input-border-color);
-}
-
-.license_controls_options .license-form .license-radio-options p label{
-	width:100%;
-	padding:6px 16px;
-}
-
-.license_controls_options .license-form-content{
-	position:relative;
-	display:block;
-	padding:24px 24px;
-	max-height:70vh;
-	overflow:auto;
-}
-
-.license_controls_options .license-form-buttons{
-	position:relative;
-	display:inline-block;
-	width:100%;
-	float:left;
-	padding:16px 24px;
-	border-top: 1px solid var(--body-bg-color);
-	background-color: var(--user-action-form-inner-bg-color);
-}
-
-.license_controls_options .license-form-buttons button{
-	position:relative;
-	display:inline-block;
-	line-height:38px;
-	padding:0 12px;
-}
-
-.license_controls_options .license-form-buttons button.btn-close-license{
-	float:left;
-}
-
-.license_controls_options .license-form-buttons button.btn-choose-license{
-	float:right;
-}*/
 
 .license_controls{}
 

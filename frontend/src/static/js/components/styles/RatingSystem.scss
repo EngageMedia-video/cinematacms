@@ -1,3 +1,5 @@
+@use "sass:math";
+
 .ratings-container{
 	position:relative;
 	margin:-9px 0 16px;
@@ -69,7 +71,7 @@
 
 		> div {
 			position:relative;
-			width: (1/6) * 100%;
+			width: math.div(1, 6) * 100%;
 			display:inline-block;
 			text-align:center;
 		}
@@ -101,7 +103,7 @@
 
 		padding:1em;
 		text-align:center;
-		
+
 		a,
 		button{
 			padding:0.625rem 1rem;
@@ -203,9 +205,9 @@
 	.rating-category {
 
 		.stars{
-			
+
 			width:320px;
-	
+
 			.circle-icon-button{
 				width:45px;
 				height:45px;
@@ -224,9 +226,9 @@
 	.rating-category {
 
 		.stars{
-			
+
 			width:360px;
-	
+
 			.circle-icon-button{
 				width:50px;
 				height:50px;

@@ -24,7 +24,6 @@
     "@babel/preset-react": "^7.27.1",
     "autoprefixer": "^10.4.21",
     "babel-loader": "^10.0.0",
-    "compass-mixins": "^0.12.12",
     "copy-webpack-plugin": "^13.0.0",
     "core-js": "^3.42.0",
     "cross-spawn": "^7.0.6",

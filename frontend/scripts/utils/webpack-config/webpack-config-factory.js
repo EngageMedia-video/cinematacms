@@ -26,18 +26,43 @@ const webpackConfigFactory = (env, inputConfig) => {
 	return {
 		mode: "production",
 		devtool: "testing" === env ? "source-map" : false,
+		performance: {
+			hints: "warning",
+			maxEntrypointSize: 600000,
+			maxAssetSize: 600000,
+		},
 		optimization: {
 			minimize: "testing" !== env,
 			runtimeChunk: false,
 			splitChunks: {
 				chunks: "all",
 				automaticNameDelimiter: "-",
+				maxInitialRequests: 5,
 				cacheGroups: {
 					vendors: {
 						test: /[\\/]node_modules[\\/]/,
 						name: "_commons",
 						priority: 1,
 						chunks: "initial",
+					},
+					videoJs: {
+						test: /[\\/]node_modules[\\/]video\.js|video-js/,
+						name: "video-js-chunk",
+						priority: 10,
+						chunks: "all",
+					},
+					styles: {
+						name: "styles",
+						test: /\.css$/,
+						chunks: "all",
+						enforce: true,
+					},
+					mediaComponents: {
+						test: /[\\/]components[\\/]MediaViewer/,
+						name: "media-components",
+						priority: 5,
+						chunks: "async",
+						enforce: true,
 					},
 				},
 			},

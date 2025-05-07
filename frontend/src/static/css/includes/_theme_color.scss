@@ -1,4 +1,9 @@
-@import './_variables.scss';
+@use "sass:list";
+@use "sass:map";
+@use "sass:math";
+@use "sass:meta";
+@use '_variables.scss';
+@use "theme_variables";
 
 /*
  * @link: https://www.sitepoint.com/building-linear-gradient-mixin-sass/
@@ -30,8 +35,8 @@
     	to top left     : bottom right
   	);
 
-  	@if map-has-key($conversion-map, $value) {
-  		@return map-get($conversion-map, $value);
+  	@if map.has-key($conversion-map, $value) {
+  		@return map.get($conversion-map, $value);
   	}
 
   	@return 90deg - $value;
@@ -41,8 +46,8 @@
 /// @param {*} $value - Value to test
 /// @return {Bool}
 @function is-direction($value) {
-  	$is-keyword: index((to top, to top right, to right top, to right, to bottom right, to right bottom, to bottom, to bottom left, to left bottom, to left, to left top, to top left), $value);
-  	$is-angle: type-of($value) == 'number' and index('deg' 'grad' 'turn' 'rad', unit($value));
+  	$is-keyword: list.index((to top, to top right, to right top, to right, to bottom right, to right bottom, to bottom, to bottom left, to left bottom, to left, to left top, to top left), $value);
+  	$is-angle: meta.type-of($value) == 'number' and list.index('deg' 'grad' 'turn' 'rad', math.unit($value));
 
   	@return $is-keyword or $is-angle;
 }
@@ -55,39 +60,39 @@
 		$direction: 180deg;
 	}
 
-	background: nth(nth($color-stops, 1), 1);
+	background: list.nth(list.nth($color-stops, 1), 1);
 	background: -webkit-linear-gradient(legacy-direction($direction), $color-stops);
 	background: linear-gradient($direction, $color-stops);
 }
 
-$bg-color_theme-color: $theme-color;
+$bg-color_theme-color: theme_variables.$theme-color;
 
 @mixin font_color_gradient() {
-	color: $theme-color;
+	color: theme_variables.$theme-color;
 	/*background: -webkit-linear-gradient( $theme-color, scale-lightness( $theme-color, -15 ) );
 	-webkit-background-clip: text;
 	-webkit-text-fill-color: transparent;*/
 }
 
 @mixin font_color_gradient_important() {
-	color: $theme-color !important;
+	color: theme_variables.$theme-color !important;
 	/*background: -webkit-linear-gradient( $theme-color, scale-lightness( $theme-color, -15 ) ) !important;
 	-webkit-background-clip: text !important;
 	-webkit-text-fill-color: transparent !important;*/
 }
 
 @mixin background_color_gradient() {
-	background-color: $theme-color;
+	background-color: theme_variables.$theme-color;
 	// @include linear-gradient( to bottom right, $theme-color 0%, scale-lightness( $theme-color, -10 ) 100%);
 }
 
 @mixin background_gradient() {
-	background: $theme-color;
+	background: theme_variables.$theme-color;
 	// @include linear-gradient( to bottom right, $theme-color 0%, scale-lightness( $theme-color, -10 ) 100%);
 }
 
 @mixin border_color_gradient() {
-	border-color: $theme-color;
+	border-color: theme_variables.$theme-color;
 	// @include linear-gradient( to bottom right, $theme-color 0%, scale-lightness( $theme-color, -10 ) 100%);
 }
 
@@ -268,7 +273,7 @@ dialog {
     .qq-dialog-buttons {
 
         button {
-            color: $theme-color !important;
+            color: theme_variables.$theme-color !important;
         }
     }
 }
@@ -441,7 +446,7 @@ dialog {
 .form-actions-bottom{
 
 	button{
-		color: $theme-color !important;
+		color: theme_variables.$theme-color !important;
 	}
 }
 

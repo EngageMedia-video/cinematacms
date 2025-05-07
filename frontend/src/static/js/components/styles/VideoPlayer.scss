@@ -1,6 +1,7 @@
-@import '../../../lib/video-js/7.18.1/video-js.css';
+@use '../../../lib/video-js/7.18.1/video-js.css';
+@use "sass:math";
 
-@import '../../../css/includes/_variables.scss';
+@use '../../../css/includes/_mixins.scss' as *;
 
 @keyframes up-next-circle-countdown {
     from {
@@ -185,8 +186,10 @@
             	margin-bottom:5px;
             }
 
-            font-size:1.1em;
-            color:#fff;
+            & {
+                font-size:1.1em;
+                color:#fff;
+            }
         }
 
         .up-next-cancel{
@@ -457,7 +460,7 @@
         @each $c in $columns {
             &.grid-col-#{$c}{
                 .more-media-item {
-                    width:(1/$c) * 100%;
+                    width: math.div(1, $c) * 100%;
                 }
             }
         }
@@ -466,7 +469,7 @@
 
             &.grid-row-#{$r}{
                 .more-media-item {
-                    height:(1/$r) * 100%;
+                    height: math.div(1, $r) * 100%;
                 }
             }
         }

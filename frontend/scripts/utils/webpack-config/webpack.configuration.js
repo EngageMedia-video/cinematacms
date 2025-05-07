@@ -124,11 +124,11 @@ const webpackConfiguration = (env, pages, config) => {
 		ret.push(
 			new MiniCssExtractPlugin({
 				filename: cssbuild + "[name].css",
+				ignoreOrder: true,
 			})
 		);
 
 		if ("development" !== env) {
-			ret.push(new LimitChunkCountPlugin({ maxChunks: 1 }));
 			ret.push(new ProgressBarPlugin({ clear: false }));
 
 			if ("production" === env) {

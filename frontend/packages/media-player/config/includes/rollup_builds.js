@@ -81,7 +81,9 @@ export default function rollup_builds( input_file, output_folder, pkg ){
 
     function browser_build( filename, visualize, minimize, compact ){
 
-        const plugins = [ !! minimize ? postcss_plugin_minimized : postcss_plugin, json(), babel(), resolve(), commonjs(), beautify_plugin() ];
+        const plugins = [ !! minimize ? postcss_plugin_minimized : postcss_plugin, json(), babel({
+            babelHelpers: 'bundled'
+        }), resolve(), commonjs(), beautify_plugin() ];
 
         if( !!minimize ){
 

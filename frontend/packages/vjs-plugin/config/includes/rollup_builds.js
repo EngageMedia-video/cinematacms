@@ -20,10 +20,11 @@ export default function rollup_builds( input_file, output_folder, pkg ){
     const commonjs_format = 'cjs';
 
     const postcss_config = {
-        extract: true,
-        modules: false, // Avoid adding prefixes to classnames (etc).
-        extensions: ['.css', '.sss', '.pcss', '.scss'],
-    };
+					extract: true,
+					modules: false,
+					extensions: ['.css', '.sss', '.pcss', '.scss'],
+					use: ['sass'] // This is enough when using the `sass` npm package
+			};
 
     const postcss_plugin = postcss( postcss_config );
     const postcss_plugin_minimized = postcss({ ...postcss_config, minimize: true });

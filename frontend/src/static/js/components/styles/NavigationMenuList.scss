@@ -1,4 +1,4 @@
-@import '../../../css/includes/_variables_dimensions.scss';
+@use '../../../css/includes/_variables_dimensions.scss' as *;
 
 .nav-menu{
 
@@ -47,11 +47,11 @@
 
 			&:hover,
 			&:focus{
-				
+
 				.popup & {
 
 				}
-				
+
 			}
 		}
 
@@ -61,10 +61,10 @@
 
 				font-weight:500;
 				cursor:default;
-			
+
 				&:hover,
 				&:focus{
-					background-color: transparent;					
+					background-color: transparent;
 				}
 			}
 		}
@@ -95,7 +95,7 @@
 	}
 
 	.menu-item-icon{
-		
+
 		margin-right:24px;
 
 		color:#888;
@@ -127,13 +127,13 @@
 
 			&:hover,
 			&:focus{
-				
+
 				background-color: var( --nav-menu-item-hover-bg-color );
 
 				.popup & {
 					background-color: var( --in-popup-nav-menu-item-hover-bg-color );
 				}
-				
+
 			}
 		}
 	}
