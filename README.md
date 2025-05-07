@@ -60,7 +60,7 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 
 # Cinemata 2.0 Roadmap
 
-## [Milestone 1: 3 to 6 months](https://github.com/EngageMedia-video/cinematacms/milestone/1)
+## [Milestone 1: 3 to 6 months](https://github.com/EngageMedia-video/cinematacms/milestone/4)
 
 #### 1. Security and Privacy Improvements
 - Implementation of security audit recommendations
