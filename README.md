@@ -79,7 +79,7 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 - Upload size management based on user roles
 - Enhanced upload progress monitoring and error handling
 
-#### 4. [Rich Text Input Enhancements](https://github.com/EngageMedia-video/cinematacms/issues/6)
+#### 4. [Rich Text Input Enhancements](https://github.com/EngageMedia-video/cinematacms/issues/51)
 - Upgrade the existing rich text formatting functionality in Media and Static pages input fields to improve user experience, increase reliability, and expand formatting options
 - Add form creation support in sidebar pages to host Trusted User applications
 
