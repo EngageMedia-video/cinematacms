@@ -149,7 +149,12 @@ const webpackConfiguration = (env, pages, config) => {
 		return [
 			{
 				test: /\.(jsx|js)?$/,
-				use: "babel-loader",
+				use: {
+					loader: "babel-loader",
+					options: {
+						presets: ["@babel/preset-react"],
+					},
+				},
 			},
 			{
 				test: /\.ejs$/,
@@ -234,6 +239,9 @@ const webpackConfiguration = (env, pages, config) => {
 		plugins: plugins(),
 		module: {
 			rules: rules(),
+		},
+		resolve: {
+			extensions: ['.js', '.jsx', '.json']
 		},
 	};
 };
