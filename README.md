@@ -68,7 +68,7 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 - Enhanced privacy controls for content access
   
 #### 2. Open-sourcing initiative
-- Create comprehensive developer documentation and API references
+- [Create comprehensive developer documentation and API references](https://github.com/EngageMedia-video/cinematacms/issues/56)
 - Develop user guides with visual tutorials for common workflows
 - Initiate outreach programs targeting FOSS communities in Southeast Asia
 - Organize virtual workshops and hackathons to encourage community involvement
