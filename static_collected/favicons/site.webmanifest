@@ -1,0 +1,19 @@
+{
+    "name": "cinemata.net",
+    "short_name": "cinemata.net",
+    "icons": [
+        {
+            "src": "/android-chrome-192x192.png?v=1.0",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/android-chrome-256x256.png?v=1.0",
+            "sizes": "256x256",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#122537",
+    "background_color": "#122537",
+    "display": "standalone"
+}
