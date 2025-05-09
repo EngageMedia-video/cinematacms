@@ -50,8 +50,8 @@ Create a folder to hold all your project files:
 
 ```zsh
 cd ~/Desktop
-mkdir mediacms.io
-cd mediacms.io
+mkdir cinemata
+cd cinemata
 ```
 
 ## Installation
@@ -59,8 +59,8 @@ cd mediacms.io
 First, clone the Cinemata repository:
 
 ```zsh
-git clone https://github.com/EngageMedia-video/cinemata mediacms
-cd mediacms
+git clone https://github.com/EngageMedia-video/cinematacms cinematacms
+cd cinematacms
 ```
 
 Then clone the Whisper speech recognition repository:
@@ -75,10 +75,10 @@ cd ..
 ```
 
 2. ### Create environment files
-Go back to the `/mediacms` folder and create an `.env` file:
+Go back to the `/cinematacms` folder and create an `.env` file:
 
 ```zsh
-cd mediacms
+cd cinematacms
 touch .env
 ```
 
@@ -101,7 +101,7 @@ GRANT ALL PRIVILEGES ON DATABASE mediacms TO mediacms;
 Set up Python 3.10 as your local Python version:
 
 ```zsh
-cd ~/Desktop/mediacms.io
+cd ~/Desktop/cinemata
 pyenv install 3.10 # If you don't already have Python 3.10 installed
 
 pyenv local 3.10
@@ -116,7 +116,7 @@ Your terminal prompt should now show `(venv)` at the beginning.
 Install all required Python packages:
 
 ```zsh
-cd mediacms
+cd cinematacms
 pip install -r requirements.txt
 ```
 
@@ -162,7 +162,7 @@ load_dotenv()
 BASE_DIR = os.path.abspath('.')
 
 FRONTEND_HOST='http://127.0.0.1:8000'
-PORTAL_NAME='MediaCMS'
+PORTAL_NAME='CinemataCMS'
 SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'https')
 SECRET_KEY=os.getenv('SECRET_KEY')
 LOCAL_INSTALL=True
@@ -172,14 +172,14 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
 
 # Whisper CPP directory
-WHISPER_CPP_COMMAND = os.path.expanduser("~/Desktop/mediacms.io/whisper.cpp/main")
-WHISPER_CPP_MODEL = os.path.expanduser("~/Desktop/mediacms.io/whisper.cpp/models/ggml-large-v3.bin")
+WHISPER_CPP_COMMAND = os.path.expanduser("~/Desktop/cinemata/whisper.cpp/main")
+WHISPER_CPP_MODEL = os.path.expanduser("~/Desktop/cinemata/whisper.cpp/models/ggml-large-v3.bin")
 ```
 
 Save and close the file.
 
 8. ### Set up database and static files
-Go back to the `/mediacms` directory and create necessary folders and run the Django management commands:
+Go back to the `/cinematacms` directory and create necessary folders and run the Django management commands:
 
 ```zsh
 cd ..
@@ -238,10 +238,9 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO medi
 ## Additional Tips
 - When the Terminal shows `(venv)` at the beginning of your prompt, it means your virtual environment is active
 - To deactivate the virtual environment, simply type `deactivate` in the Terminal
-- To activate it again, run `source ~/Desktop/mediacms.io/venv/bin/activate`
+- To activate it again, run `source ~/Desktop/cinemata/venv/bin/activate`
 - If you close your Terminal and come back later, you'll need to activate the virtual environment again
 - If the server needs to be stopped, press `Ctrl+C` in the Terminal window where it's running
-
 ## Suggested Dev Notes
 
 > [!NOTE]

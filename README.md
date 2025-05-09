@@ -60,7 +60,7 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 
 # Cinemata 2.0 Roadmap
 
-## [Milestone 1: 3 to 6 months](https://github.com/EngageMedia-video/cinematacms/milestone/1)
+## [Milestone 1: 3 to 6 months](https://github.com/EngageMedia-video/cinematacms/milestone/4)
 
 #### 1. Security and Privacy Improvements
 - Implementation of security audit recommendations
@@ -68,8 +68,8 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 - Enhanced privacy controls for content access
   
 #### 2. Open-sourcing initiative
-- Create comprehensive developer documentation and API references
-- Develop user guides with visual tutorials for common workflows
+- [Create comprehensive developer documentation and API references](https://github.com/EngageMedia-video/cinematacms/issues/56)
+- [Develop user guides with visual tutorials for common workflows](https://github.com/EngageMedia-video/cinematacms/issues/60)
 - Initiate outreach programs targeting FOSS communities in Southeast Asia
 - Organize virtual workshops and hackathons to encourage community involvement
 
@@ -79,7 +79,7 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 - Upload size management based on user roles
 - Enhanced upload progress monitoring and error handling
 
-#### 4. [Rich Text Input Enhancements](https://github.com/EngageMedia-video/cinematacms/issues/6)
+#### 4. [Rich Text Input Enhancements](https://github.com/EngageMedia-video/cinematacms/issues/51)
 - Upgrade the existing rich text formatting functionality in Media and Static pages input fields to improve user experience, increase reliability, and expand formatting options
 - Add form creation support in sidebar pages to host Trusted User applications
 
