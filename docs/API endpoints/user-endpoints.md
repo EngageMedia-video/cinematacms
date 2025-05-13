@@ -126,7 +126,7 @@ Returns the full user profile (excluding password or sensitive info), with field
 - `description` (string): The description of the user.
 - `date_added` (string): Timestamp of when the user was created.
 - `name` (string): The full name of the user.
-- `is_featured` (boolean): Whether the user is featured.
+- `is_featured` (boolean): If the user is featured.
 - `thumbnail_url` (string): URL of the user's profile image.
 - `url` (string): Absolute URL to the user's profile page.
 - `api_url` (string): Absolute API URL to the user's API endpoint.
