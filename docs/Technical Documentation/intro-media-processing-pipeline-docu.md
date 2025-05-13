@@ -4,3 +4,7 @@ CinemataCMS's sophisticated media processing pipeline is a core component that t
 
 
 ---
+
+![Diagram](technical-docs-assets/media-processing-pipeline.png)
+
+---
