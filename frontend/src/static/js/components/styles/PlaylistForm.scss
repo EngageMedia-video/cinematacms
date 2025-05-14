@@ -1,5 +1,5 @@
-// import theme variables directly
-@use '../../../css/includes/_theme_variables.scss' as *;
+@import '../../../css/includes/_variables.scss';
+
 .playlist-form-field{
 
 	&.playlist-title,
@@ -137,7 +137,7 @@
 
 			&.create-btn{
 				float:right;
-				color: $theme-color;
+				color:$theme-color;
 			}
 		}
 	}

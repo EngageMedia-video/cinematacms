@@ -1,5 +1,5 @@
-@use '_mixins_form_controls.scss';
-// @use './_buttons.scss';
+@import './_mixins_form_controls.scss';
+// @import './_buttons.scss';
 
-@include mixins_form_controls.form_controls();
+@include form_controls();
 // @include buttons;

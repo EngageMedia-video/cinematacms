@@ -129,6 +129,7 @@ const webpackConfiguration = (env, pages, config) => {
 		);
 
 		if ("development" !== env) {
+			ret.push(new LimitChunkCountPlugin({ maxChunks: 1 }));
 			ret.push(new ProgressBarPlugin({ clear: false }));
 
 			if ("production" === env) {
@@ -241,7 +242,7 @@ const webpackConfiguration = (env, pages, config) => {
 			rules: rules(),
 		},
 		resolve: {
-			extensions: ['.js', '.jsx', '.json']
+			extensions: ['.js', '.jsx',]
 		},
 	};
 };

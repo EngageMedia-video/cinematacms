@@ -1,18 +1,19 @@
-@use '../../../css/includes/_theme_variables.scss' as *;
-@use '../../../css/includes/_mixins.scss' as *;
+@import '../../../css/includes/_variables.scss';
+
 .notifications{
 	position:fixed;
 	bottom:0;
 	left:0;
+
+	> * {
+		position:relative;
+	}
+
 	height:auto !important;
 	max-width:100%;
 	justify-content:space-between;
 	font-size:14px;
 	z-index:+5;
-
-	> * {
-		position:relative;
-	}
 }
 
 .notification-item{

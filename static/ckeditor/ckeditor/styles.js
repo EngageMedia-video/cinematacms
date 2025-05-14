@@ -1,5 +1,5 @@
 ﻿/**
- * Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -43,38 +43,6 @@ CKEDITOR.stylesSet.add( 'default', [
 			background: '#eee',
 			border: '1px solid #ccc'
 		}
-	},
-
-	/* Cinemata extra styles */
-	{
-		name: 'Tick list',
-		element: 'ul',
-		attributes: { 'class': 'tick-list' }
-	},
-	{
-		name: 'Box list - 2 cols',
-		element: 'ul',
-		attributes: { 'class': 'box-list box-list-half' }
-	},
-	{
-		name: 'Box list - 3 cols',
-		element: 'ul',
-		attributes: { 'class': 'box-list box-list-third' }
-	},
-	{
-		name: 'Colored emphasis',
-		element: 'p',
-		attributes: { 'class': 'emphasis' }
-	},
-	{
-		name: 'Colored emphasis - large font',
-		element: 'p',
-		attributes: { 'class': 'emphasis-large' }
-	},
-	{
-		name: 'Colored box',
-		element: 'p',
-		attributes: { 'class': 'box' }
 	},
 
 	/* Inline styles */

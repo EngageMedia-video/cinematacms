@@ -5,10 +5,8 @@
  * https://designsystem.digital.gov/design-tokens/typesetting/font-family/
  * https://designsystem.digital.gov/utilities/font-size-and-family/
  * https://designsystem.digital.gov/design-tokens/typesetting/line-height/
- *
+ * 
  */
-
-@use "sass:math";
 
 $font-family-serif: "Roboto Slab", "Merriweather Web", "Georgia", "Cambria", "Times New Roman", "Times", serif;
 $font-family-sans-serif: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
@@ -32,7 +30,7 @@ $font-size-monospace: 0.83125 * 16px;
 
 @mixin typeset( $font-size, $line-height, $font-family ) {
 
-	$font-size: math.div($font-size, 16px) * 16px/*rem*/;
+	$font-size: ( $font-size / 16px ) * 16px/*rem*/;
 
     font-size: $font-size;
     font-family: $font-family;
@@ -89,13 +87,13 @@ $font-size-monospace: 0.83125 * 16px;
 		// font-size: $font-size * 0.93125;
 		font-size: 0.93125em;
 	}
-
+	
 	.sub-heading,
 	.font-size-x-small,{
 		// font-size: $font-size * 0.8625;
 		font-size: 0.8625em;
 	}
-
+	
 	.section-intro{
 		// font-size: $font-size * 1.25;
 		font-size: 1.25em;
@@ -182,7 +180,7 @@ $font-size-monospace: 0.83125 * 16px;
 	}
 
 	li{
-
+		
 	}
 
 	blockquote{

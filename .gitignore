@@ -29,3 +29,8 @@ static_collected/*
 actions/migrations/*
 files/migrations/*
 users/migrations/*
+
+
+
+celerybeat-schedule.db
+celerybeat.pid

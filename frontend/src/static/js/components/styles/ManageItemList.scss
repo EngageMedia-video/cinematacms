@@ -1,21 +1,21 @@
-@use '../../../css/includes/_theme_variables.scss' as *;
-@use '../../../css/includes/_mixins.scss' as *;@use '../../../css/includes/_variables_dimensions.scss' as *;
+@import '../../../css/includes/_variables.scss';
+@import '../../../css/includes/_variables_dimensions.scss';
 
-@use '../../../css/config/index.scss';
-
-@use "sass:math";
+@import '../../../css/config/index.scss';
 
 #page-manage-media,
 #page-manage-users,
 #page-manage-comments{
-
+	
 	.media-list-wrapper{
+		
 		padding:0 16px;
-		max-width: calc( 48px + calc( var(--default-item-width)  * var(--default-max-row-items) ) );
 
 		@media (min-width: 710px) {
 			padding:0 24px;
 		}
+
+		max-width: calc( 48px + calc( var(--default-item-width)  * var(--default-max-row-items) ) );
 	}
 
 	.manage-items-list{
@@ -33,7 +33,7 @@
 		position:relative;
 		display:inline-block;
 		width: 100%;
-
+		
 		// min-height: 218px;
 		min-height: 0;
 	}
@@ -73,7 +73,7 @@
 	width:100%;
 	margin-bottom: 24px;
 	word-break: break-word;
-
+	
 	border-radius:1px;
 	box-shadow: 0px 4px 8px 0 rgba(17, 17, 17, 0.06);
 	overflow:auto;
@@ -138,7 +138,7 @@
 	}
 
 	&:nth-child(2n + 1){
-
+		
 		background-color: #f5f5f5;
 
 		.dark_theme &{
@@ -147,7 +147,7 @@
 	}
 
 	&:hover{
-
+		
 		background-color: #eaeaea;
 		box-shadow: 0px 1px 2px 0 rgba(#000, 0.12);
 
@@ -220,7 +220,7 @@
 	 		padding-top:4px;
 
 			button{
-
+	 		
 		 		font-size:12px;
 				color:var(--danger-color);
 				border:0;
@@ -272,7 +272,7 @@
 	&.manage-media-item{
 
 		> * {
-			width: math.div(100, 10) * 1%;
+			width: (100/10) * 1%;
 			text-align: center;
 		}
 
@@ -326,7 +326,7 @@
 	&.manage-users-item{
 
 		> * {
-			width: math.div(1, 8) * 100%;
+			width: (1/8) * 100%;
 		}
 
 		.mi-added,
@@ -396,14 +396,14 @@
 
 		.mi-comment,
 		.mi-added{
-			width: 100%;
+			width: 100%;			
 		}
 
 		.mi-author{
 			min-width:160px;
 			font-weight:500;
 		}
-
+		
 		.mi-comment{
 			min-width: 240px;
 
@@ -423,7 +423,7 @@
 
 					&:after{
 						content:" |";
-					}
+					}	
 
 					&:last-child{
 						margin-right:0;
@@ -435,7 +435,7 @@
 				}
 
 				button{
-
+		 		
 			 		// font-size:12px;
 					color:var(--danger-color);
 					border:0;
@@ -528,7 +528,7 @@
 		> .mi-col-sort{
 
 			.mi-col-sort-icons{
-
+				
 				position:relative;
 				display:inline;
 				vertical-align:top;
@@ -559,16 +559,14 @@
 				}
 			}
 
-			& {
-				cursor:pointer;
-			}
+			cursor:pointer;
 
 			&:hover{
 
 				text-decoration:underline;
 
 				.mi-col-sort-icons{
-
+					
 					> *{
 						opacity:0.35;
 					}
@@ -578,7 +576,7 @@
 			&.desc{
 
 				.mi-col-sort-icons{
-
+					
 					> *:last-child{
 						opacity:0.8;
 					}
@@ -588,11 +586,11 @@
 			&.asc{
 
 				.mi-col-sort-icons{
-
+					
 					> *:first-child{
 						opacity:0.8;
 					}
-				}
+				}				
 			}
 		}
 	}
@@ -611,7 +609,7 @@
 	float:left;
 	display:inline-block;
 	margin-bottom:12px;
-
+	
 	> select{
 		margin-right:16px;
 		margin-bottom:12px;
@@ -667,7 +665,7 @@
 				float:right;
 				color: var(--default-theme-color);
 			}
-
+			
 			&.cancel-profile-removal{
 				float:left;
 			}
@@ -720,7 +718,7 @@
 
 		&.active{
 			color:var(--user-action-form-inner-bg-color);
-
+			
 			.dark_theme & {
 				color:inherit;
 			}

@@ -1,6 +1,5 @@
-@use "../../../css/includes/_variables.scss";
-@use "../../../css/includes/_variables_dimensions.scss";
-@use "sass:math";
+@import "../../../css/includes/_variables.scss";
+@import "../../../css/includes/_variables_dimensions.scss";
 
 .visible-sidebar .page-main-wrap {
 	padding-left: 0;
@@ -500,7 +499,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 	.player-container {
 		position: relative;
 		// min-height: 256px;
-		padding-top: math.div(9, 16) * 100%;
+		padding-top: (9 / 16) * 100%;
 
 		@media screen and (min-width: 640px) {
 			.viewer-section.theater-mode & {
@@ -1198,10 +1197,8 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 									width: 220px;
 								}
 
-								& {
-									box-shadow: 0 16px 24px 2px rgba(#000, 0.14),
-										0 6px 30px 5px rgba(#000, 0.12), 0 8px 10px -5px rgba(#000, 0.4);
-								}
+								box-shadow: 0 16px 24px 2px rgba(#000, 0.14),
+									0 6px 30px 5px rgba(#000, 0.12), 0 8px 10px -5px rgba(#000, 0.4);
 
 								&.main-options,
 								&.video-download-options {
@@ -1304,10 +1301,8 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 									width: 220px;
 								}
 
-								& {
-									box-shadow: 0 16px 24px 2px rgba(#000, 0.14),
-										0 6px 30px 5px rgba(#000, 0.12), 0 8px 10px -5px rgba(#000, 0.4);
-								}
+								box-shadow: 0 16px 24px 2px rgba(#000, 0.14),
+									0 6px 30px 5px rgba(#000, 0.12), 0 8px 10px -5px rgba(#000, 0.4);
 
 								&.main-options,
 								&.video-download-options {
@@ -1341,9 +1336,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 				}
 			}
 		}
-		& {
-			margin-top: 8px;
-		}
+		margin-top: 8px;
 		@media screen and (max-width: 1007px) and (min-width: 840px), (min-width: 1280px) {
 			margin-top: 0px;
 		}
@@ -1673,16 +1666,16 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 
 	word-break: break-word;
 
-	font-size: 14px;
-	font-weight: 500;
-	line-height: 21px;
-	color: var(--body-text-color);
-
 	> * {
 		position: relative;
 		display: inline-block;
 		margin-right: 4px;
 	}
+
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 21px;
+	color: var(--body-text-color);
 
 	a {
 		text-decoration: none;
@@ -1954,7 +1947,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 
 	@media screen and (min-width: 1157px) {
 		.on-left {
-			width: math.div(2, 3) * 100%;
+			width: (2/3) * 100%;
 		}
 
 		.on-right {
@@ -1962,7 +1955,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 			right: 0;
 			top: 0;
 			bottom: 0;
-			width: math.div(1, 3) * 100%;
+			width: (1/3) * 100%;
 		}
 
 		.on-right-bottom {
@@ -1995,7 +1988,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 		.video-js.vjs-mediacms {
 			// padding-top: (2/5) * 100%;
 			// padding-top: (3/4) * 100%;
-			padding-top: math.div(9, 16) * 100%;
+			padding-top: (9/16) * 100%;
 
 			@media screen and (min-width: 420px) {
 			}

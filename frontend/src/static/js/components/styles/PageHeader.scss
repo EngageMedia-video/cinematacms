@@ -1,5 +1,5 @@
-@use '../../../css/includes/_theme_variables.scss' as *;
-@use '../../../css/includes/_mixins.scss' as *;@use '../../../css/includes/_variables_dimensions.scss' as *;
+@import '../../../css/includes/_variables.scss';
+@import '../../../css/includes/_variables_dimensions.scss';
 
 .page-header{
 
@@ -193,8 +193,8 @@ $__button-link-horizontal-padding: 16;
 	}
 
 	.button-link{
-		@if $use_rem_unit{
-			padding: calc(($__button-link-vertical-padding * 1rem) / 16) calc(($__button-link-horizontal-padding * 1rem) / 16);
+		@if $_use_rem_unit{
+			padding: ( ( $__button-link-vertical-padding * 1rem ) / 16 ) ( ( $__button-link-horizontal-padding * 1rem ) / 16 );
 		}
 		@else {
 			padding: ( $__button-link-vertical-padding * 1px ) ( $__button-link-horizontal-padding * 1px );
@@ -261,9 +261,7 @@ $__button-link-horizontal-padding: 16;
 		width:60px;
 	}
 
-	& {
-		text-align:center;
-	}
+	text-align:center;
 }
 
 .sign-in-wrap,

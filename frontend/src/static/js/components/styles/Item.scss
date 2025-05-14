@@ -1,19 +1,7 @@
-@use '../../../css/includes/_theme_variables.scss' as *;
-@use '../../../css/includes/_mixins.scss' as *;@use '../../../css/includes/_variables_dimensions.scss' as *;
+@import '../../../css/includes/_variables.scss';
+@import '../../../css/includes/_variables_dimensions.scss';
 
-@use '../../../css/config/index.scss';
-
-@mixin multiline-ellipsis($font-size, $line-height, $lines-to-show, $bg-color: transparent) {
-	font-size: $font-size;
-	line-height: $line-height;
-	display: -webkit-box;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	-webkit-line-clamp: $lines-to-show;
-	background-color: $bg-color;
-	max-height: $line-height * $lines-to-show;
-}
+@import '../../../css/config/index.scss';
 
 .item{
 	vertical-align:top;
@@ -24,7 +12,7 @@
 }
 
 .item-thumb,
-a.item-thumb{
+a.item-thumb{	
 	position:relative;
 	display:block;
 	height:auto;
@@ -277,7 +265,7 @@ a.item-thumb{
 }
 
 .item-categories{
-
+	
 	display:block;
 
 	span{
@@ -371,7 +359,7 @@ a.item-thumb{
 	max-height: $descr-max-lines * $descr-line-height;
 
 	div{
-		@include multiline-ellipsis($font-size: $descr-font-size, $line-height: $descr-line-height, $lines-to-show: $descr-max-lines, $bg-color: transparent);
+		@include multiline_texts_excerpt($font-size: $descr-font-size, $line-height: $descr-line-height, $lines-to-show: $descr-max-lines, $bg-color: transparent);
 	}
 }
 
@@ -417,7 +405,7 @@ a.item-thumb{
 		}
 
 		span{
-
+			
 			line-height: var( --item-title-line-height );
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -544,7 +532,7 @@ a.item-edit-link{
 	}
 
 	&:hover{
-
+		
 		.playlist-hover-play-all{
 			opacity: 1;
 		}
@@ -557,7 +545,7 @@ a.item-edit-link{
 			line-height:18px;
 			color:rgb(96,96,96);
 		} */
-
+		
 		.item-meta{
 
 		}

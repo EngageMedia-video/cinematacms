@@ -1,324 +1,365 @@
-(function () {
-    var $$ = {
-        on: function(root, eventName, selector, fn) {
-            root.addEventListener(eventName, function(event) {
-                var target = event.target.closest(selector);
-                if (root.contains(target)) {
-                    fn.call(target, event);
-                }
-            });
-        },
-        show: function(element) {
-            element.style.display = 'block';
-        },
-        hide: function(element) {
-            element.style.display = 'none';
-        },
-        toggle: function(element, value) {
-            if (value) {
-                $$.show(element);
-            } else {
-                $$.hide(element);
+import { $$, ajax, replaceToolbarState, debounce } from "./utils.js";
+
+function onKeyDown(event) {
+    if (event.keyCode === 27) {
+        djdt.hideOneLevel();
+    }
+}
+
+function getDebugElement() {
+    // Fetch the debug element from the DOM.
+    // This is used to avoid writing the element's id
+    // everywhere the element is being selected. A fixed reference
+    // to the element should be avoided because the entire DOM could
+    // be reloaded such as via HTMX boosting.
+    return document.getElementById("djDebug");
+}
+
+const djdt = {
+    handleDragged: false,
+    init() {
+        const djDebug = getDebugElement();
+        $$.on(djDebug, "click", "#djDebugPanelList li a", function (event) {
+            event.preventDefault();
+            if (!this.className) {
+                return;
             }
-        },
-        visible: function(element) {
-            style = getComputedStyle(element);
-            return style.display !== 'none';
-        },
-        executeScripts: function(root) {
-            root.querySelectorAll('script').forEach(function(e) {
-                var clone = document.createElement('script');
-                clone.src = e.src;
-                root.appendChild(clone);
-            });
-        },
-    };
-
-    var onKeyDown = function(event) {
-        if (event.keyCode == 27) {
-            djdt.hide_one_level();
-        }
-    };
-
-    var ajax = function(url, init) {
-        init = Object.assign({credentials: 'same-origin'}, init);
-        return fetch(url, init).then(function(response) {
-            if (response.ok) {
-                return response.text();
+            const panelId = this.className;
+            const current = document.getElementById(panelId);
+            if ($$.visible(current)) {
+                djdt.hidePanels();
             } else {
-                var win = document.querySelector('#djDebugWindow');
-                win.innerHTML = '<div class="djDebugPanelTitle"><a class="djDebugClose djDebugBack" href=""></a><h3>'+response.status+': '+response.statusText+'</h3></div>';
-                $$.show(win);
-                return Promise.reject();
+                djdt.hidePanels();
+
+                $$.show(current);
+                this.parentElement.classList.add("djdt-active");
+
+                const inner = current.querySelector(
+                        ".djDebugPanelContent .djdt-scroll"
+                    ),
+                    storeId = djDebug.dataset.storeId;
+                if (storeId && inner.children.length === 0) {
+                    const url = new URL(
+                        djDebug.dataset.renderPanelUrl,
+                        window.location
+                    );
+                    url.searchParams.append("store_id", storeId);
+                    url.searchParams.append("panel_id", panelId);
+                    ajax(url).then(function (data) {
+                        inner.previousElementSibling.remove(); // Remove AJAX loader
+                        inner.innerHTML = data.content;
+                        $$.executeScripts(data.scripts);
+                        $$.applyStyles(inner);
+                        djDebug.dispatchEvent(
+                            new CustomEvent("djdt.panel.render", {
+                                detail: { panelId: panelId },
+                            })
+                        );
+                    });
+                } else {
+                    djDebug.dispatchEvent(
+                        new CustomEvent("djdt.panel.render", {
+                            detail: { panelId: panelId },
+                        })
+                    );
+                }
             }
         });
-    };
-
-    var djdt = {
-        handleDragged: false,
-        events: {
-            ready: []
-        },
-        isReady: false,
-        init: function() {
-            var djDebug = document.querySelector('#djDebug');
-            $$.show(djDebug);
-            $$.on(djDebug.querySelector('#djDebugPanelList'), 'click', 'li a', function(event) {
-                event.preventDefault();
-                if (!this.className) {
-                    return;
-                }
-                var current = djDebug.querySelector('#' + this.className);
-                if ($$.visible(current)) {
-                    djdt.hide_panels();
-                } else {
-                    djdt.hide_panels();
-
-                    $$.show(current);
-                    this.parentElement.classList.add('djdt-active');
-
-                    var inner = current.querySelector('.djDebugPanelContent .djdt-scroll'),
-                        store_id = djDebug.dataset.storeId;
-                    if (store_id && inner.children.length === 0) {
-                        var url = djDebug.dataset.renderPanelUrl;
-                        var url_params = new URLSearchParams();
-                        url_params.append('store_id', store_id);
-                        url_params.append('panel_id', this.className);
-                        url += '?' + url_params.toString();
-                        ajax(url).then(function(body) {
-                            inner.previousElementSibling.remove();  // Remove AJAX loader
-                            inner.innerHTML = body;
-                            $$.executeScripts(inner);
-                        });
+        $$.on(djDebug, "click", ".djDebugClose", function () {
+            djdt.hideOneLevel();
+        });
+        $$.on(
+            djDebug,
+            "click",
+            ".djDebugPanelButton input[type=checkbox]",
+            function () {
+                djdt.cookie.set(
+                    this.dataset.cookie,
+                    this.checked ? "on" : "off",
+                    {
+                        path: "/",
+                        expires: 10,
                     }
-                }
+                );
+            }
+        );
+
+        // Used by the SQL and template panels
+        $$.on(djDebug, "click", ".remoteCall", function (event) {
+            event.preventDefault();
+
+            let url;
+            const ajaxData = {};
+
+            if (this.tagName === "BUTTON") {
+                const form = this.closest("form");
+                url = this.formAction;
+                ajaxData.method = form.method.toUpperCase();
+                ajaxData.body = new FormData(form);
+            } else if (this.tagName === "A") {
+                url = this.href;
+            }
+
+            ajax(url, ajaxData).then(function (data) {
+                const win = document.getElementById("djDebugWindow");
+                win.innerHTML = data.content;
+                $$.show(win);
             });
-            $$.on(djDebug, 'click', 'a.djDebugClose', function(event) {
-                event.preventDefault();
-                djdt.hide_one_level();
-            });
-            $$.on(djDebug, 'click', '.djDebugPanelButton input[type=checkbox]', function() {
-                djdt.cookie.set(this.dataset.cookie, this.checked ? 'on' : 'off', {
-                    path: '/',
-                    expires: 10
+        });
+
+        // Used by the cache, profiling and SQL panels
+        $$.on(djDebug, "click", ".djToggleSwitch", function () {
+            const id = this.dataset.toggleId;
+            const toggleOpen = "+";
+            const toggleClose = "-";
+            const openMe = this.textContent === toggleOpen;
+            const name = this.dataset.toggleName;
+            const container = document.getElementById(name + "_" + id);
+            container
+                .querySelectorAll(".djDebugCollapsed")
+                .forEach(function (e) {
+                    $$.toggle(e, openMe);
                 });
-            });
-
-            // Used by the SQL and template panels
-            $$.on(djDebug, 'click', '.remoteCall', function(event) {
-                event.preventDefault();
-
-                var name = this.tagName.toLowerCase();
-                var ajax_data = {};
-
-                if (name == 'button') {
-                    var form = this.closest('form');
-                    ajax_data.url = this.getAttribute('formaction');
-
-                    if (form) {
-                        ajax_data.body = new FormData(form);
-                        ajax_data.method = form.getAttribute('method') || 'POST';
-                    }
-                }
-
-                if (name == 'a') {
-                    ajax_data.url = this.getAttribute('href');
-                }
-
-                ajax(ajax_data.url, ajax_data).then(function(body) {
-                    var win = djDebug.querySelector('#djDebugWindow');
-                    win.innerHTML = body;
-                    $$.executeScripts(win);
-                    $$.show(win);
+            container
+                .querySelectorAll(".djDebugUncollapsed")
+                .forEach(function (e) {
+                    $$.toggle(e, !openMe);
                 });
-            });
-
-            // Used by the cache, profiling and SQL panels
-            $$.on(djDebug, 'click', 'a.djToggleSwitch', function(event) {
-                event.preventDefault();
-                var self = this;
-                var id = this.dataset.toggleId;
-                var open_me = this.textContent == this.dataset.toggleOpen;
-                if (id === '' || !id) {
-                    return;
-                }
-                var name = this.dataset.toggleName;
-                var container = this.closest('.djDebugPanelContent').querySelector('#' + name + '_' + id);
-                container.querySelectorAll('.djDebugCollapsed').forEach(function(e) {
-                    $$.toggle(e, open_me);
-                });
-                container.querySelectorAll('.djDebugUncollapsed').forEach(function(e) {
-                    $$.toggle(e, !open_me);
-                });
-                this.closest('.djDebugPanelContent').querySelectorAll('.djToggleDetails_' + id).forEach(function(e) {
-                    if (open_me) {
-                        e.classList.add('djSelected');
-                        e.classList.remove('djUnselected');
-                        self.textContent = self.dataset.toggleClose;
+            const self = this;
+            this.closest(".djDebugPanelContent")
+                .querySelectorAll(".djToggleDetails_" + id)
+                .forEach(function (e) {
+                    if (openMe) {
+                        e.classList.add("djSelected");
+                        e.classList.remove("djUnselected");
+                        self.textContent = toggleClose;
                     } else {
-                        e.classList.remove('djSelected');
-                        e.classList.add('djUnselected');
-                        self.textContent = self.dataset.toggleOpen;
+                        e.classList.remove("djSelected");
+                        e.classList.add("djUnselected");
+                        self.textContent = toggleOpen;
                     }
-                    var switch_ = e.querySelector('.djToggleSwitch')
-                    if (switch_) switch_.textContent = self.textContent;
-                });
-            });
-
-            djDebug.querySelector('#djHideToolBarButton').addEventListener('click', function(event) {
-                event.preventDefault();
-                djdt.hide_toolbar(true);
-            });
-            djDebug.querySelector('#djShowToolBarButton').addEventListener('click', function(event) {
-                event.preventDefault();
-                if (!djdt.handleDragged) {
-                    djdt.show_toolbar();
-                }
-            });
-            var startPageY, baseY;
-            var handle = document.querySelector('#djDebugToolbarHandle');
-            var onHandleMove = function(event) {
-                // Chrome can send spurious mousemove events, so don't do anything unless the
-                // cursor really moved.  Otherwise, it will be impossible to expand the toolbar
-                // due to djdt.handleDragged being set to true.
-                if (djdt.handleDragged || event.pageY != startPageY) {
-                    var top = baseY + event.pageY;
-
-                    if (top < 0) {
-                        top = 0;
-                    } else if (top + handle.offsetHeight > window.innerHeight) {
-                        top = window.innerHeight - handle.offsetHeight;
+                    const switch_ = e.querySelector(".djToggleSwitch");
+                    if (switch_) {
+                        switch_.textContent = self.textContent;
                     }
-
-                    handle.style.top = top + 'px';
-                    djdt.handleDragged = true;
-                }
-            };
-            djDebug.querySelector('#djShowToolBarButton').addEventListener('mousedown', function(event) {
-                event.preventDefault();
-                startPageY = event.pageY;
-                baseY = handle.offsetTop - startPageY;
-                document.addEventListener('mousemove', onHandleMove);
-            });
-            document.addEventListener('mouseup', function (event) {
-                document.removeEventListener('mousemove', onHandleMove);
-                if (djdt.handleDragged) {
-                    event.preventDefault();
-                    djdt.cookie.set('djdttop', handle.offsetTop, {
-                        path: '/',
-                        expires: 10
-                    });
-                    setTimeout(function () {
-                        djdt.handleDragged = false;
-                    }, 10);
-                }
-            });
-            if (djdt.cookie.get('djdt') == 'hide') {
-                djdt.hide_toolbar(false);
-            } else {
-                djdt.show_toolbar();
-            }
-            djdt.isReady = true;
-            djdt.events.ready.forEach(function(callback) {
-                callback(djdt);
-            });
-        },
-        hide_panels: function() {
-            $$.hide(djDebug.querySelector('#djDebugWindow'));
-            djDebug.querySelectorAll('.djdt-panelContent').forEach(function(e) {
-                $$.hide(e);
-            });
-            djDebug.querySelectorAll('#djDebugToolbar li').forEach(function(e) {
-                e.classList.remove('djdt-active');
-            });
-        },
-        hide_toolbar: function(setCookie) {
-            djdt.hide_panels();
-            $$.hide(djDebug.querySelector('#djDebugToolbar'));
-
-            var handle = document.querySelector('#djDebugToolbarHandle');
-            $$.show(handle);
-            // set handle position
-            var handleTop = djdt.cookie.get('djdttop');
-            if (handleTop) {
-                handleTop = Math.min(handleTop, window.innerHeight - handle.offsetHeight);
-                handle.style.top = handleTop + 'px';
-            }
-
-            document.removeEventListener('keydown', onKeyDown);
-
-            if (setCookie) {
-                djdt.cookie.set('djdt', 'hide', {
-                    path: '/',
-                    expires: 10
                 });
+        });
+
+        $$.on(djDebug, "click", "#djHideToolBarButton", function (event) {
+            event.preventDefault();
+            djdt.hideToolbar();
+        });
+
+        $$.on(djDebug, "click", "#djShowToolBarButton", function () {
+            if (!djdt.handleDragged) {
+                djdt.showToolbar();
             }
-        },
-        hide_one_level: function(skipDebugWindow) {
-            if ($$.visible(djDebug.querySelector('#djDebugWindow'))) {
-                $$.hide(djDebug.querySelector('#djDebugWindow'));
-            } else if (djDebug.querySelector('#djDebugToolbar li.djdt-active')) {
-                djdt.hide_panels();
-            } else {
-                djdt.hide_toolbar(true);
-            }
-        },
-        show_toolbar: function() {
-            document.addEventListener('keydown', onKeyDown);
-            $$.hide(djDebug.querySelector('#djDebugToolbarHandle'));
-            $$.show(djDebug.querySelector('#djDebugToolbar'));
-            djdt.cookie.set('djdt', 'show', {
-                path: '/',
-                expires: 10
-            });
-        },
-        ready: function(callback){
-            if (djdt.isReady) {
-                callback(djdt);
-            } else {
-                djdt.events.ready.push(callback);
-            }
-        },
-        cookie: {
-            get: function(key){
-                if (document.cookie.indexOf(key) === -1) return null;
+        });
+        let startPageY, baseY;
+        const handle = document.getElementById("djDebugToolbarHandle");
+        function onHandleMove(event) {
+            // Chrome can send spurious mousemove events, so don't do anything unless the
+            // cursor really moved.  Otherwise, it will be impossible to expand the toolbar
+            // due to djdt.handleDragged being set to true.
+            if (djdt.handleDragged || event.pageY !== startPageY) {
+                let top = baseY + event.pageY;
 
-                var cookieArray = document.cookie.split('; '),
-                    cookies = {};
-
-                cookieArray.forEach(function(e){
-                    var parts = e.split('=');
-                    cookies[ parts[0] ] = parts[1];
-                });
-
-                return cookies[ key ];
-            },
-            set: function(key, value, options){
-                options = options || {};
-
-                if (typeof options.expires === 'number') {
-                    var days = options.expires, t = options.expires = new Date();
-                    t.setDate(t.getDate() + days);
+                if (top < 0) {
+                    top = 0;
+                } else if (top + handle.offsetHeight > window.innerHeight) {
+                    top = window.innerHeight - handle.offsetHeight;
                 }
 
-                document.cookie = [
-                    encodeURIComponent(key) + '=' + String(value),
-                    options.expires ? '; expires=' + options.expires.toUTCString() : '',
-                    options.path    ? '; path=' + options.path : '',
-                    options.domain  ? '; domain=' + options.domain : '',
-                    options.secure  ? '; secure' : ''
-                ].join('');
-
-                return value;
+                handle.style.top = top + "px";
+                djdt.handleDragged = true;
             }
+        }
+        $$.on(djDebug, "mousedown", "#djShowToolBarButton", function (event) {
+            event.preventDefault();
+            startPageY = event.pageY;
+            baseY = handle.offsetTop - startPageY;
+            document.addEventListener("mousemove", onHandleMove);
+
+            document.addEventListener(
+                "mouseup",
+                function (event) {
+                    document.removeEventListener("mousemove", onHandleMove);
+                    if (djdt.handleDragged) {
+                        event.preventDefault();
+                        localStorage.setItem("djdt.top", handle.offsetTop);
+                        requestAnimationFrame(function () {
+                            djdt.handleDragged = false;
+                        });
+                        djdt.ensureHandleVisibility();
+                    }
+                },
+                { once: true }
+            );
+        });
+
+        // Make sure the debug element is rendered at least once.
+        // showToolbar will continue to show it in the future if the
+        // entire DOM is reloaded.
+        $$.show(djDebug);
+        const show =
+            localStorage.getItem("djdt.show") || djDebug.dataset.defaultShow;
+        if (show === "true") {
+            djdt.showToolbar();
+        } else {
+            djdt.hideToolbar();
+        }
+        if (djDebug.dataset.sidebarUrl !== undefined) {
+            djdt.updateOnAjax();
+        }
+    },
+    hidePanels() {
+        const djDebug = getDebugElement();
+        $$.hide(document.getElementById("djDebugWindow"));
+        djDebug.querySelectorAll(".djdt-panelContent").forEach(function (e) {
+            $$.hide(e);
+        });
+        document.querySelectorAll("#djDebugToolbar li").forEach(function (e) {
+            e.classList.remove("djdt-active");
+        });
+    },
+    ensureHandleVisibility() {
+        const handle = document.getElementById("djDebugToolbarHandle");
+        // set handle position
+        const handleTop = Math.min(
+            localStorage.getItem("djdt.top") || 0,
+            window.innerHeight - handle.offsetWidth
+        );
+        handle.style.top = handleTop + "px";
+    },
+    hideToolbar() {
+        djdt.hidePanels();
+
+        $$.hide(document.getElementById("djDebugToolbar"));
+
+        const handle = document.getElementById("djDebugToolbarHandle");
+        $$.show(handle);
+        djdt.ensureHandleVisibility();
+        window.addEventListener("resize", djdt.ensureHandleVisibility);
+        document.removeEventListener("keydown", onKeyDown);
+
+        localStorage.setItem("djdt.show", "false");
+    },
+    hideOneLevel() {
+        const win = document.getElementById("djDebugWindow");
+        if ($$.visible(win)) {
+            $$.hide(win);
+        } else {
+            const toolbar = document.getElementById("djDebugToolbar");
+            if (toolbar.querySelector("li.djdt-active")) {
+                djdt.hidePanels();
+            } else {
+                djdt.hideToolbar();
+            }
+        }
+    },
+    showToolbar() {
+        document.addEventListener("keydown", onKeyDown);
+        $$.show(document.getElementById("djDebug"));
+        $$.hide(document.getElementById("djDebugToolbarHandle"));
+        $$.show(document.getElementById("djDebugToolbar"));
+        localStorage.setItem("djdt.show", "true");
+        window.removeEventListener("resize", djdt.ensureHandleVisibility);
+    },
+    updateOnAjax() {
+        const sidebarUrl =
+            document.getElementById("djDebug").dataset.sidebarUrl;
+        const slowjax = debounce(ajax, 200);
+
+        function handleAjaxResponse(storeId) {
+            storeId = encodeURIComponent(storeId);
+            const dest = `${sidebarUrl}?store_id=${storeId}`;
+            slowjax(dest).then(function (data) {
+                replaceToolbarState(storeId, data);
+            });
+        }
+
+        // Patch XHR / traditional AJAX requests
+        const origOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function () {
+            this.addEventListener("load", function () {
+                // Chromium emits a "Refused to get unsafe header" uncatchable warning
+                // when the header can't be fetched. While it doesn't impede execution
+                // it's worrisome to developers.
+                if (
+                    this.getAllResponseHeaders().indexOf("djdt-store-id") >= 0
+                ) {
+                    handleAjaxResponse(this.getResponseHeader("djdt-store-id"));
+                }
+            });
+            origOpen.apply(this, arguments);
+        };
+
+        const origFetch = window.fetch;
+        window.fetch = function () {
+            const promise = origFetch.apply(this, arguments);
+            promise.then(function (response) {
+                if (response.headers.get("djdt-store-id") !== null) {
+                    handleAjaxResponse(response.headers.get("djdt-store-id"));
+                }
+                // Don't resolve the response via .json(). Instead
+                // continue to return it to allow the caller to consume as needed.
+                return response;
+            });
+            return promise;
+        };
+    },
+    cookie: {
+        get(key) {
+            if (!document.cookie.includes(key)) {
+                return null;
+            }
+
+            const cookieArray = document.cookie.split("; "),
+                cookies = {};
+
+            cookieArray.forEach(function (e) {
+                const parts = e.split("=");
+                cookies[parts[0]] = parts[1];
+            });
+
+            return cookies[key];
         },
-    };
-    window.djdt = {
-        show_toolbar: djdt.show_toolbar,
-        hide_toolbar: djdt.hide_toolbar,
-        init: djdt.init,
-        close: djdt.hide_one_level,
-        cookie: djdt.cookie,
-    };
-    document.addEventListener('DOMContentLoaded', djdt.init);
-})();
+        set(key, value, options) {
+            options = options || {};
+
+            if (typeof options.expires === "number") {
+                const days = options.expires,
+                    t = (options.expires = new Date());
+                t.setDate(t.getDate() + days);
+            }
+
+            document.cookie = [
+                encodeURIComponent(key) + "=" + String(value),
+                options.expires
+                    ? "; expires=" + options.expires.toUTCString()
+                    : "",
+                options.path ? "; path=" + options.path : "",
+                options.domain ? "; domain=" + options.domain : "",
+                options.secure ? "; secure" : "",
+                "sameSite" in options
+                    ? "; sameSite=" + options.samesite
+                    : "; sameSite=Lax",
+            ].join("");
+
+            return value;
+        },
+    },
+};
+window.djdt = {
+    show_toolbar: djdt.showToolbar,
+    hide_toolbar: djdt.hideToolbar,
+    init: djdt.init,
+    close: djdt.hideOneLevel,
+    cookie: djdt.cookie,
+};
+
+if (document.readyState !== "loading") {
+    djdt.init();
+} else {
+    document.addEventListener("DOMContentLoaded", djdt.init);
+}

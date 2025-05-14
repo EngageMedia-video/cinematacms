@@ -48,19 +48,19 @@
 
 	width:$width;
 
-	@media (min-width: #{$vertSpace + 2 * $width}) {
+	@media (min-width: $vertSpace + ( 2 * $width )){
 		width: 2 * $width ;
 	}
 
-	@media (min-width: #{$vertSpace + 3 * $width}) {
+	@media (min-width: $vertSpace + ( 3 * $width )){
 		width: 3 * $width ;
 	}
 
-	@media (min-width: #{$vertSpace + 4 * $width}) {
+	@media (min-width: $vertSpace + ( 4 * $width )){
 		width: 4 * $width ;
 	}
 
-	@media (min-width: #{$vertSpace + 5 * $width}) {
+	@media (min-width: $vertSpace + ( 5 * $width )){
 		width: 5 * $width ;
 	}
 
@@ -68,7 +68,7 @@
 	// 	width: 6 * $width ;
 	// }
 
-	@media (min-width: #{$vertSpace + 7 * $width}) {
+	@media (min-width: $vertSpace + ( 7 * $width )){
 		width: 6 * $width ;
 	}
 
@@ -90,19 +90,19 @@
 
 	.visible-sidebar &{
 
-		@media (min-width: #{$vertSpace + 2 * $width}) {
+		@media (min-width: $vertSpace + ( 2 * $width )){
 			width: 1 * $width ;
 		}
 
-		@media (min-width: #{$vertSpace + 3 * $width}) {
+		@media (min-width: $vertSpace + ( 3 * $width )){
 			width: 2 * $width ;
 		}
 
-		@media (min-width: #{$vertSpace + 4 * $width}) {
+		@media (min-width: $vertSpace + ( 4 * $width )){
 			width: 3 * $width ;
 		}
 
-		@media (min-width: #{$vertSpace + 5 * $width}) {
+		@media (min-width: $vertSpace + ( 5 * $width )){
 			width: 4 * $width ;
 		}
 
@@ -110,7 +110,7 @@
 		// 	width: 5 * $width ;
 		// }
 
-		@media (min-width: #{$vertSpace + 7 * $width}) {
+		@media (min-width: $vertSpace + ( 7 * $width )){
 			width: 6 * $width ;
 		}
 

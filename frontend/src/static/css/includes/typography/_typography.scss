@@ -1,7 +1,7 @@
-// @use './_material_icons.scss';
-// @use './_gfonts.scss';
+// @import './_material_icons.scss';
+// @import './_gfonts.scss';
 
-@use '_mixins_typoghraphy.scss';
+@import './_mixins_typoghraphy.scss';
 
 $body-font-family: 'Roboto', Arial, sans-serif;
 
@@ -11,4 +11,4 @@ $body-font-family: 'Roboto', Arial, sans-serif;
 $body-font-size: 14px;
 $body-line-height: 1.5;
 
-@include mixins_typoghraphy.mediacms_typography($body-font-size, $body-font-family, $body-line-height);
+@include mediacms_typography($body-font-size, $body-font-family, $body-line-height);

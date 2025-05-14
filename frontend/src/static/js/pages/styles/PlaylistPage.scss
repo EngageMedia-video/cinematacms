@@ -1,5 +1,5 @@
-@use '../../../css/includes/_theme_variables.scss' as *;
-@use '../../../css/includes/_variables_dimensions.scss' as *;
+@import '../../../css/includes/_variables.scss';
+@import '../../../css/includes/_variables_dimensions.scss';
 
 #page-playlist{
 	background-color: var(--playlist-page-bg-color);
@@ -162,7 +162,7 @@
 
 		> * {
 			background: none;
-		}
+		}	
 	}
 
 	.item{
@@ -238,7 +238,7 @@
 					background-color:rgba(0,0,0,0);
 				} */
 			}
-		}
+		}		
 	}
 }
 
@@ -277,7 +277,7 @@
 	}
 
 	@media screen and (min-width:492px){
-
+	
 		.item-content{
 			padding-right:48px;
 		}
@@ -798,9 +798,9 @@
 		}
 
 		@media screen and (max-width:1007px){
-
+			
 			&:last-child{
-
+				
 				margin-bottom:1px !important;
 
 				&:after{
@@ -928,7 +928,7 @@
 			margin-top:-20px;
 			text-align:initial;
 
-			.popup{
+			.popup{	
 				bottom:auto;
 
 				top:-12px;
@@ -948,7 +948,7 @@
 	}
 
 	.item{
-
+	
 		&:last-child,
 		&:nth-last-child(2){
 
@@ -981,7 +981,7 @@
 }
 
 .playlist-videos-list.draggable{
-
+	
 	// overflow:visible;
 
 	.item{

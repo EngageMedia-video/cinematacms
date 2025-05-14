@@ -1,13 +1,7 @@
-@use '../../../css/includes/_theme_variables.scss' as *;
-@use '../../../css/includes/_mixins.scss' as *;@use '../../../css/includes/_variables_dimensions.scss' as *;
+@import '../../../css/includes/_variables.scss';
+@import '../../../css/includes/_variables_dimensions.scss';
 
-@use '../../../css/config/index.scss';
-
-
-@use './Item.scss';
-@use './ItemVertical.scss';
-@use './ItemHorizontal.scss';
-
+@import '../../../css/config/index.scss';
 
 .items-list-outer{
 
@@ -15,7 +9,7 @@
 	display:block;
 
 	&.list-inline.list-slider{
-
+		
 		margin:0 8px;
 
 		.previous-slide,
@@ -69,7 +63,7 @@
 
 			.next-slide{
 				right: calc( -20px + var( --item-margin-right-width, var(--default-item-margin-right-width) ) );
-			}
+			}			
 		}
 	}
 }
@@ -155,7 +149,7 @@ button.load-more{
 	padding: 0;
 	border: 0;
 	background: none;
-
+	
 	color: var(--item-list-load-more-text-color);
 
 	&:hover,
@@ -164,3 +158,7 @@ button.load-more{
 		box-shadow:none;
 	}
 }
+
+@import './Item.scss';
+@import './ItemVertical.scss';
+@import './ItemHorizontal.scss';

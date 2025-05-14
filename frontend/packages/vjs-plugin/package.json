@@ -29,7 +29,7 @@
     "video.js": "^7.18.1"
   },
   "dependencies": {
-    "@mediacms/vjs-plugin-font-icons": "file:../vjs-plugin-font-icons"
+    "mediacms/vjs-plugin-font-icons": "file:../vjs-plugin-font-icons"
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",

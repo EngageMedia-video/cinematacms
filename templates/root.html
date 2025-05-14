@@ -38,14 +38,12 @@
 
     {% block aftercontent %}{% endblock %}
 
-    {# Video.js is now loaded on-demand via JavaScript #}
-    {% comment %}
+    {# Video.js loading #}
     {% if LOAD_FROM_CDN %}
     <script src="https://vjs.zencdn.net/7.18.1/video.min.js"></script>
     {% else %}
     <script src="{% static "lib/video-js/7.18.1/video.min.js" %}"></script>
     {% endif %}
-    {% endcomment %}
 
     {% block externalscripts %}{% endblock externalscripts %}
 
