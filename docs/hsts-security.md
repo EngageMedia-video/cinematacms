@@ -13,7 +13,8 @@ Before enabling these settings, ensure:
 - Django is running with `DEBUG = False`.
 - If you're using a reverse proxy (like Nginx or Apache), it is forwarding the correct headers.
 
-**Warning:** enabling this only in production site as it requires a valid ssl certificate and without that your site might not behave properly.
+> [!WARNING]
+>Warning: enabling this only in production site as it requires a valid ssl certificate and without that your site might not behave properly.
 ---
 
 ## `cms/settings.py` Configuration 
