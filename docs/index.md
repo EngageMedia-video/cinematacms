@@ -13,8 +13,8 @@ This subfolder contains all relevant docs made to aid in better understanding or
   - [Multi-Factor Authentication](./guides/mfa_authentication.md)
 4. [Site Branding](docs/guides/site-branding.md)
 5. Security enhancement
-  - [HSTS-HTTP Strict Transport Security](docs/hsts-security.md)
-  - [Rate limiting](docs/Rate-limiting-with-django-axes.md)
+  - [HSTS-HTTP Strict Transport Security](./hsts-security.md)
+  - [Rate limiting](./Rate-limiting-with-django-axes.md)
 6. Miscellaneous
   - [How to create a superuser within your local/staging database](./creating_superuser.md)
   - [Directory structure](./directory.md)
