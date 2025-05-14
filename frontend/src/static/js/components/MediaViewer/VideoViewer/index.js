@@ -404,10 +404,12 @@ export default class VideoViewer extends React.PureComponent {
 			return;
 		}
 
-		this.playerInstance.player.off(
-			"fullscreenchange",
-			this.recommendedMedia.onResize
-		);
+		if (this.playerInstance && this.playerInstance.player) {
+			this.playerInstance.player.off(
+				"fullscreenchange",
+				this.recommendedMedia.onResize
+			);
+		}
 
 		PageStore.removeListener("window_resize", this.recommendedMedia.onResize);
 
