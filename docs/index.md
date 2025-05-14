@@ -12,7 +12,10 @@ This subfolder contains all relevant docs made to aid in better understanding or
 3. Cinemata 2.0 features (with dev notes)
   - [Multi-Factor Authentication](./guides/mfa_authentication.md)
 4. [Site Branding](docs/guides/site-branding.md)
-5. Miscellaneous
+5. Security enhancement
+  - [HSTS-HTTP Strict Transport Security](docs/hsts-security.md)
+  - [Rate limiting](docs/Rate-limiting-with-django-axes.md)
+6. Miscellaneous
   - [How to create a superuser within your local/staging database](./creating_superuser.md)
   - [Directory structure](./directory.md)
   - [Understanding CinemataCMS Video Recommendations](./CinemataCMS-recommendations-algorithms.md)
