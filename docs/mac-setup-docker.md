@@ -150,7 +150,7 @@ load_dotenv()
 BASE_DIR = os.path.abspath('.')
 
 FRONTEND_HOST='http://127.0.0.1:8000'
-PORTAL_NAME='MediaCMS'
+PORTAL_NAME='CinemataCMS'
 SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'http')
 SECRET_KEY=os.getenv('SECRET_KEY')
 LOCAL_INSTALL=True
