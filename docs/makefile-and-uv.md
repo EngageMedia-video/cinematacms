@@ -27,6 +27,27 @@ The Cinemata CMS project includes a Makefile with various commands to help with 
 | `make sync` | Sync Python dependencies using uv |
 | `make dev-server` | Start the Django development server |
 
+### Celery Commands
+
+| Command | Description |
+|---------|-------------|
+| `make celery-beat-start` | Start Celery beat scheduler |
+| `make celery-beat-stop` | Stop Celery beat scheduler |
+| `make celery-beat-restart` | Restart Celery beat scheduler |
+| `make celery-long-start` | Start long tasks worker |
+| `make celery-long-stop` | Stop long tasks worker |
+| `make celery-long-restart` | Restart long tasks worker |
+| `make celery-short-start` | Start short tasks worker |
+| `make celery-short-stop` | Stop short tasks worker |
+| `make celery-short-restart` | Restart short tasks worker |
+| `make celery-whisper-start` | Start whisper tasks worker |
+| `make celery-whisper-stop` | Stop whisper tasks worker |
+| `make celery-whisper-restart` | Restart whisper tasks worker |
+| `make celery-start-all` | Start all Celery services |
+| `make celery-stop-all` | Stop all Celery services |
+| `make celery-restart-all` | Restart all Celery services |
+| `make celery-status` | Show Celery process status |
+
 ## Using uv for Dependency Management
 
 [uv](https://github.com/astral-sh/uv) is a Python package installer and resolver that's designed to be fast and reliable. Cinemata CMS integrates uv for dependency management.
