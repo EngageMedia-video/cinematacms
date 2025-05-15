@@ -219,8 +219,17 @@ Send a contact message to a user.
 
 **Body Parameters:**
 
-- `message` (string, required) – The body of the message
+- `subject` (string, required) – The Subject of the message
+- `body` (string, required) – The body of the message
 
+
+```json
+{
+  "subject": "Welcome Message",
+  "body": "Hello, Welcome to Cinemata!"
+}
+
+```
 **Response:**  
 - `200 OK` on success  
 - `400 Bad Request` on validation error
