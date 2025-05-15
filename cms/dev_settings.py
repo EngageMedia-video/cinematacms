@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "uploader.apps.UploaderConfig",
     "djcelery_email",
-    "ckeditor",
+    "tinymce",
     "captcha",
 ]
 
@@ -328,34 +328,18 @@ EMAIL_HOST = "mediacms.io"
 EMAIL_PORT = 587
 ADMIN_EMAIL_LIST = ["info@mediacms.io"]
 
-CKEDITOR_CONFIGS = {
-    "default": {
-        "toolbar": "Custom",
-        "width": "100%",
-        "toolbar_Custom": [
-            ["Styles"],
-            ["Format"],
-            ["Bold", "Italic", "Underline"],
-            ["HorizontalRule"],
-            [
-                "NumberedList",
-                "BulletedList",
-                "-",
-                "Outdent",
-                "Indent",
-                "-",
-                "JustifyLeft",
-                "JustifyCenter",
-                "JustifyRight",
-                "JustifyBlock",
-            ],
-            ["Link", "Unlink"],
-            ["Image"],
-            ["RemoveFormat", "Source"],
-        ],
-        "allowedContent": True,
-    },
-    "extraAllowedContent": "ul(tick-list,box-list,box-list-half,box-list-third) p(emphasis,emphasis-large) span(board-member,box-icon-title,open-tech,video4change,research,skills-build) a(external-link)",
+TINYMCE_DEFAULT_CONFIG = {
+    "theme": "silver",
+    "height": 500,
+    "menubar": True,
+    "plugins": "advlist,autolink,lists,link,image,charmap,print,preview,anchor,"
+    "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,"
+    "code,help,wordcount",
+    "toolbar": "undo redo | formatselect | "
+    "bold italic backcolor | alignleft aligncenter "
+    "alignright alignjustify | bullist numlist outdent indent | "
+    "removeformat | help",
+    "promotion": False
 }
 
 # settings that are related with UX/appearance

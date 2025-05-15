@@ -29,7 +29,7 @@ flake8
 pep8
 django-silk
 django-debug-toolbar==4.1.0
-django-ckeditor==6.6.1
+# django-ckeditor==6.6.1
 whitenoise
 django-cors-headers
 
@@ -37,3 +37,6 @@ django-cors-headers
 python-dotenv
 fido2
 qrcode
+
+# rich text editor
+django-tinymce

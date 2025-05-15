@@ -11,4 +11,6 @@ urlpatterns = [
     re_path(r"^", include("users.urls")),
     re_path(r"^accounts/", include("allauth.urls")),
     re_path(r"^api-auth/", include("rest_framework.urls")),
+    # for rich text editor
+    path('tinymce/', include('tinymce.urls')),
 ]

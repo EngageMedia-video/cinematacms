@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
-    'allauth.mfa',
+    "allauth.mfa",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
@@ -43,8 +43,9 @@ INSTALLED_APPS = [
     "crispy_forms",
     "uploader.apps.UploaderConfig",
     "djcelery_email",
-    "ckeditor",
+    # "ckeditor",
     "captcha",
+    "tinymce",
 ]
 
 MIDDLEWARE = [
@@ -133,7 +134,7 @@ LOGGING = {
         },
     },
 }
-                                 
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -143,9 +144,9 @@ DATABASES = {
         "USER": "mediacms",
         "PASSWORD": "mediacms",
         "TEST": {
-          "MIRROR": "default", # mirror - default enables you to work on the database's copy
-          "MIGRATE": False
-        }
+            "MIRROR": "default",  # mirror - default enables you to work on the database's copy
+            "MIGRATE": False,
+        },
     }
 }
 
@@ -247,9 +248,9 @@ ACCOUNT_LOGIN_BY_CODE_ENABLED = True
 
 # MFA custom configurations here
 MFA_FORMS = {
-  'authenticate': 'users.forms.CustomAuthenticateForm',
-  'reauthenticate': 'users.forms.CustomReauthenticateTOTPForm',
-  'activate_totp': 'users.forms.CustomActivateTOTPForm'
+    "authenticate": "users.forms.CustomAuthenticateForm",
+    "reauthenticate": "users.forms.CustomReauthenticateTOTPForm",
+    "activate_totp": "users.forms.CustomActivateTOTPForm",
 }
 MFA_RECOVERY_CODE_COUNT = 10
 MFA_RECOVERY_CODE_DIGITS = 12
@@ -415,34 +416,20 @@ EMAIL_HOST = "mediacms.io"
 EMAIL_PORT = 587
 ADMIN_EMAIL_LIST = ["info@mediacms.io"]
 
-CKEDITOR_CONFIGS = {
-    "default": {
-        "toolbar": "Custom",
-        "width": "100%",
-        "toolbar_Custom": [
-            ["Styles"],
-            ["Format"],
-            ["Bold", "Italic", "Underline"],
-            ["HorizontalRule"],
-            [
-                "NumberedList",
-                "BulletedList",
-                "-",
-                "Outdent",
-                "Indent",
-                "-",
-                "JustifyLeft",
-                "JustifyCenter",
-                "JustifyRight",
-                "JustifyBlock",
-            ],
-            ["Link", "Unlink"],
-            ["Image"],
-            ["RemoveFormat", "Source"],
-        ],
-        "allowedContent": True,
-    },
-    "extraAllowedContent": "ul(tick-list,box-list,box-list-half,box-list-third) p(emphasis,emphasis-large) span(board-member,box-icon-title,open-tech,video4change,research,skills-build) a(external-link)",
+TINYMCE_DEFAULT_CONFIG = {
+    "theme": "silver",
+    "height": 500,
+    "menubar": True,
+    "plugins": "advlist,autolink,lists,link,image,charmap,print,preview,"
+    "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,"
+    "code,help,wordcount",
+    "toolbar": "undo redo | formatselect | "
+    "bold italic blocks | alignleft aligncenter "
+    "alignright alignjustify | bullist numlist | "
+    "removeformat | help",
+    # Remove content_security_policy config here if site has its own csp
+    "content_security_policy": "default-src 'none'; script-src 'self'; connect-src 'self' blob:; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self';",
+    "promotion": False,
 }
 
 # settings that are related with UX/appearance

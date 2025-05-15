@@ -104,7 +104,7 @@ So your page slugs should be:
 
 ## Step 5: Content Formatting
 
-The Description field uses CKEditor, which provides rich text formatting. You can:
+The Description field uses TinyMCE, which provides rich text formatting. You can:
 - Format text with bold, italic, etc.
 - Create headings and lists
 - Insert links and images
@@ -234,7 +234,7 @@ If you want to add, remove, or change the sidebar menu items themselves, you'll 
 
 For more customization options:
 - Refer to the Django admin documentation
-- Review CKEditor documentation for advanced content formatting
+- Review TinyMCE documentation for advanced content formatting
 - Check the CinemataCMS GitHub repository for template customization options
 
 ## Adding a Custom "Help & Resources" Link to the Sidebar
