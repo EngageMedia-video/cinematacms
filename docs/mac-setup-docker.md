@@ -1,6 +1,6 @@
 # About
 
-__Implemented by [Jay Cruz](https://github.com/jmcruz14) and [King Catoy](https://github.com/Kingcatz)__ (Philippines)
+__Implemented by [Adryan Eka Vandra](https://github.com/adryanev) (Indonesia)__
 
 This guide will help you set up Cinemata for local development on Mac OSX.
 
