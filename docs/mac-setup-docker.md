@@ -150,8 +150,8 @@ load_dotenv()
 BASE_DIR = os.path.abspath('.')
 
 FRONTEND_HOST='http://127.0.0.1:8000'
-PORTAL_NAME='CinemataCMS'
-SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'https')
+PORTAL_NAME='MediaCMS'
+SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'http')
 SECRET_KEY=os.getenv('SECRET_KEY')
 LOCAL_INSTALL=True
 DEBUG = True
@@ -160,11 +160,20 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
 
 # Whisper CPP directory
-WHISPER_CPP_COMMAND = os.path.expanduser("~/Desktop/cinemata/whisper.cpp/main")
-WHISPER_CPP_MODEL = os.path.expanduser("~/Desktop/cinemata/whisper.cpp/models/ggml-large-v3.bin")
+WHISPER_CPP_COMMAND = "/Users/YOUR_USERNAME/Desktop/cinemata/whisper.cpp/main"
+WHISPER_CPP_MODEL = "/Users/YOUR_USERNAME/Desktop/cinemata/whisper.cpp/models/large-v3.bin"
+
+# Explicitly set Redis as broker
+REDIS_LOCATION = "redis://127.0.0.1:6379/1"
+BROKER_URL = REDIS_LOCATION
+CELERY_RESULT_BACKEND = BROKER_URL
+
+MP4HLS_COMMAND = (
+    "/opt/homebrew/bin/mp4hls"
+)
 ```
 
-Save and close the file.
+Change the path accordingly, save and close the file.
 
 8. ### Set up database and static files
 Go back to the `/cinematacms` directory and create necessary folders and run the Django management commands:
