@@ -1,3 +1,8 @@
+Before creating or modifying superusers:
+1. Ensure the application is installed and accessible
+2. Run all commands as a user with access to the CinemataCMS environment
+3. Activate the virtual environment to ensure proper dependency handling
+
 # Add a new superuser:
 The process needs to activate virtual environment.
 
