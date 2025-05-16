@@ -4,7 +4,7 @@ This documents all user related endpoints. All endpoints prefixed with `/api/v1/
 
 ---
 
-### 🔹 `GET /api/v1/users`
+## 🔹 `GET /api/v1/users`
 
 **Description:**  
 Retrieves a list of all users.
@@ -43,7 +43,7 @@ Retrieves a list of all users.
 
 ---
 
-### 🔹 `GET /api/v1/users/{username}`
+## 🔹 `GET /api/v1/users/{username}`
 
 **Description:**  
 Retrieve details of a specific user.
@@ -52,22 +52,6 @@ Retrieve details of a specific user.
 
 - `username` (string, required): The username of the user to retrieve.
 
-**Response:**  
-Returns the full user profile (excluding password or sensitive info), with fields such as:
-
-- `description` (string): The description of the user.
-- `date_added` (string): Timestamp of when the user was created.
-- `name` (string): The full name of the user.
-- `is_featured` (boolean): If the user is featured.
-- `thumbnail_url` (string): URL of the user's profile image.
-- `url` (string): Absolute URL to the user's profile page.
-- `api_url` (string): Absolute API URL to the user's API endpoint.
-- `username` (string): The username of the user.
-- `advancedUser` (boolean): Whether the user is an advanced user.
-- `is_editor` (boolean): Whether the user is an editor.
-- `is_manager` (boolean): Whether the user is a manager.
-- `email_is_verified` (boolean): Whether the user's email is verified.
-- `media_count` (integer): The number of media associated with the user.
 
 **Example Response:**
 ```json
@@ -77,59 +61,32 @@ Returns the full user profile (excluding password or sensitive info), with field
   "name": "",
   "is_featured": false,
   "thumbnail_url": "http://127.0.0.1:8000/media/userlogos/user.jpg",
-  "url": "http://127.0.0.1:8000/%2Fuser/admin/",
-  "api_url": "http://127.0.0.1:8000/api/v1/users/admin",
-  "username": "admin",
-  "advancedUser": false,
-  "is_editor": false,
-  "is_manager": false,
-  "email_is_verified": false,
-  "media_count": 2
-}
-```
-
----
-
-### 🔹 `PATCH /api/v1/users/{username}`  
-**OR**  
-### 🔹 `PUT /api/v1/users/{username}`
-
-**Description:**  
-Update user details.
-
-**Authentication:** ✅ Required
-
-**Body Parameters:**  
-Partial or full user profile fields. Examples:
-
-- `name` (string)  
-- `email` (string)  
-- `thumbnail_url` (string)  
-- `password` (string, optional – if changing password)
-- `description` (string, optional): The description of the user.
-- `is_featured` (boolean, optional): Whether the user is featured.
-
-
-
-**Response:**  
-Returns updated user object or validation errors.
-
-
-**Example Request**
-```json
-{
-   "username": "john_doe",
-   "email": "john_doe@example.com",
-   "password": "new_securepassword123",
-   "name": "John Doe",
-   "is_featured": true
+  "banner_thumbnail_url": "/media/userlogos/banner.jpg",
+  "url": "http://127.0.0.1:8000/%2Fuser/johndoe/",
+  "username": "johndoe",
+  "media_info": {
+    "results": [],
+    "user_media": "/api/v1/media?author=johndoe"
+  },
+  "api_url": "http://127.0.0.1:8000/api/v1/users/johndoe",
+  "edit_url": "/user/johndoe/edit",
+  "default_channel_edit_url": "/channel/CsMVcUYOZ/edit",
+  "home_page": "",
+  "social_media_links": "",
+  "location_info": [
+    {
+      "title": "International",
+      "url": "/members?location=International"
+    }
+  ]
 }
 
 ```
 
+
 ---
 
-### 🔹 `DELETE /api/v1/users/{username}`
+## 🔹 `DELETE /api/v1/users/{username}`
 
 **Description:**  
 Delete a user account.
@@ -154,6 +111,11 @@ Send a contact message to a user.
 - `subject` (string, required) – The Subject of the message
 - `body` (string, required) – The body of the message
 
+**Status Codes**  
+- `200 OK` on success  
+- `400 Bad Request` on validation error
+- `204 No Content` 
+
 
 ```json
 {
@@ -162,10 +124,6 @@ Send a contact message to a user.
 }
 
 ```
-**Response:**  
-- `200 OK` on success  
-- `400 Bad Request` on validation error
-- `204 No Content` 
 
 ---
 
