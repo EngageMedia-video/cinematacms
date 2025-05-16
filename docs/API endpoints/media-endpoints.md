@@ -443,9 +443,7 @@ Perform actions on media such as liking, disliking, or reporting inappropriate c
 ### ✅ Example Request:
 
 ```json
-POST /api/v1/media/U3prbIyQM/actions
-Content-Type: application/json
-Authorization: Bearer your_token
+
 
 {
   "type": "like"
