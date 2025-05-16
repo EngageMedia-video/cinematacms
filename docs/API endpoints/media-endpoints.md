@@ -9,6 +9,7 @@ This documents all media-related endpoints. All endpoints prefixed with `/api/v1
 * 200 OK: Successful request
 * 400 Bad Request: Invalid parameters
 **Response:** Returns an object containing media entries.
+  
 **Example Response:**
 
 ```
