@@ -7,67 +7,76 @@ This document outlines the permission model used in CinemataCMS to manage access
 
 | Term         | Description |
 |--------------|-------------|
-| **Role**     | A set of permissions assigned to a user. |
-| **Permission** | A specific capability (e.g., `edit:content`). |
-| **Context**  | A scoping entity (e.g., per project or section). |
-| **User**     | An individual account with assigned roles. |
-| **Resource** | An item (e.g., a video, article, collection) subject to access rules. |
+| **Role**     | A named collection of permissions granted to a user. |
+| **Permission** | A specific capability defined in `verb:resource` format. |
+| **Context**  | An optional scope for permissions (e.g., per project, section, or domain). |
+| **User**     | An individual account with one or more assigned roles. |
+| **Resource** | Any manageable entity within the platform (e.g., video, article, playlist). |
 
 ---
 
 ## 🧑‍💼 Built-in Roles
 
-CinemataCMS includes several default roles with predefined permissions.
+CinemataCMS includes several built-in roles with predefined permissions. These can be customized or extended as needed.
 
-| Role            | Description                             | Key Permissions |
-|------------------|-----------------------------------------|------------------|
-| **Admin**        | Full access to all features.            | `*` (all) |
-| **Editor**       | Can create, edit, and publish content.  | `read:*`, `edit:*`, `publish:*` |
-| **Contributor**  | Can create and edit drafts.             | `read:*`, `create:*`, `edit:own` |
-| **Viewer**       | Read-only access to backend interface.  | `read:*` |
+| Role            | Description                             | Example Permissions |
+|------------------|-----------------------------------------|----------------------|
+| **Administrator** | Full platform control. Intended for system-level access and configuration. | `*` (all permissions) |
+| **Manager**       | Oversees content and user coordination. | `read:*`, `edit:*`, `manage:users` |
+| **Editor**        | Responsible for curating and moderating content. | `read:*`, `edit:*`, `publish:*`, `delete:content` |
+| **Contributor**   | Authenticated users who can create and edit their own drafts. | `read:*`, `create:content`, `edit:own` |
+| **Viewer**        | Read-only access to platform interfaces and data. | `read:*` |
 
-> ✅ **Note**: You can create custom roles using the Admin UI or API.
+> 💡 **Note**: Additional roles can be created and assigned with any combination of permissions. Multiple roles may be assigned to the same user.
+
 
 ---
 
-## 🛡️ Permissions
+## 🛡️ Permission Model
 
-Permissions use the `verb:resource` naming convention. Wildcards are supported (`read:*`, `edit:media`, etc.).
+Permissions follow a `verb:resource` naming scheme and support wildcard patterns for flexibility.
 
 ### Common Permissions
 
-| Permission        | Description                             |
-|-------------------|-----------------------------------------|
-| `read:content`    | View published content                  |
-| `create:content`  | Add new articles or videos              |
-| `edit:content`    | Edit existing content                   |
-| `edit:own`        | Edit only user’s own content            |
-| `publish:content` | Publish/unpublish content               |
-| `delete:content`  | Remove content from the system          |
-| `manage:media`    | Access and organize Media Library       |
-| `manage:users`    | Create, edit, and assign user roles     |
-| `manage:settings` | Update system-level configurations      |
+| Permission          | Description                                 |
+|---------------------|---------------------------------------------|
+| `read:content`      | View published content                      |
+| `create:content`    | Add new articles, videos, or posts          |
+| `edit:content`      | Edit any existing content                   |
+| `edit:own`          | Edit content created by the same user       |
+| `publish:content`   | Publish or unpublish content                |
+| `delete:content`    | Remove content from the platform            |
+| `read:media`        | Access Media Library                        |
+| `edit:media`        | Modify media metadata or arrangement        |
+| `delete:media`      | Delete media files                          |
+| `manage:users`      | Assign roles and manage user accounts       |
+| `manage:settings`   | Change system-level settings and configs    |
+
+> ✅ Permissions are additive — users inherit all permissions from every role they hold.
 
 ---
 
-## 🏗️ Role Management
+## 🧱 Custom Role Management
 
-### Viewing Roles
+Custom roles allow more granular and context-specific control.
 
-- Go to `Settings > Roles & Permissions`
-- View system and custom roles
+### Viewing and Managing Roles
 
-### Creating Custom Roles
+- Navigate to the **Roles & Permissions** section in the configuration dashboard
+- View all system-defined and custom roles
+- Filter by name or assigned permissions
 
-Admins can create roles with specific permissions:
+### Creating a Custom Role
 
-1. Go to `Settings > Roles & Permissions > Add Role`
-2. Define:
-   - Role name
-   - Permissions (select from checklist)
-3. Save the role
+1. Open the **Roles & Permissions** configuration panel
+2. Choose **Create New Role**
+3. Provide:
+   - **Role name**
+   - **Description** (optional)
+   - **Permissions** (select or define explicitly)
+4. Save the role and assign it to users as needed
 
-Example JSON representation:
+#### Example Role Definition (JSON):
 
 ```json
 {
