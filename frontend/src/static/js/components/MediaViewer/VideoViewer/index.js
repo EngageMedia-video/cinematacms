@@ -221,10 +221,10 @@ export default class VideoViewer extends React.PureComponent {
 		if (this.videoSources.length) {
 			this.recommendedMedia = this.props.data.related_media.length
 				? new PlayerRecommendedMedia(
-						this.props.data.related_media,
-						this.props.inEmbed,
-						!PageStore.get("config-media-item").displayViews
-				  )
+					this.props.data.related_media,
+					this.props.inEmbed,
+					!PageStore.get("config-media-item").displayViews
+				)
 				: null;
 
 			this.upNextLoaderView =
@@ -260,11 +260,11 @@ export default class VideoViewer extends React.PureComponent {
 					userThumbLink.setAttribute(
 						"style",
 						"background-image:url(" +
-							formatInnerLink(
-								MediaPageStore.get("media-author-thumbnail-url"),
-								this.props.siteUrl
-							) +
-							")"
+						formatInnerLink(
+							MediaPageStore.get("media-author-thumbnail-url"),
+							this.props.siteUrl
+						) +
+						")"
 					);
 				}
 
@@ -590,12 +590,12 @@ export default class VideoViewer extends React.PureComponent {
 
 		const previewSprite = !!this.props.data.sprites_url
 			? {
-					url:
-						this.props.siteUrl +
-						"/" +
-						this.props.data.sprites_url.replace(/^\//g, ""),
-					frame: { width: 160, height: 90, seconds: 10 },
-			  }
+				url:
+					this.props.siteUrl +
+					"/" +
+					this.props.data.sprites_url.replace(/^\//g, ""),
+				frame: { width: 160, height: 90, seconds: 10 },
+			}
 			: null;
 
 		return (
@@ -609,14 +609,14 @@ export default class VideoViewer extends React.PureComponent {
 			>
 				<div className="player-container-inner" ref="playerContainerInner">
 					{this.state.displayPlayer &&
-					null !== MediaPageStore.get("media-load-error-type") ? (
+						null !== MediaPageStore.get("media-load-error-type") ? (
 						<VideoPlayer
 							errorMessage={MediaPageStore.get("media-load-error-message")}
 						/>
 					) : null}
 
 					{this.state.displayPlayer &&
-					null == MediaPageStore.get("media-load-error-type") ? (
+						null == MediaPageStore.get("media-load-error-type") ? (
 						<div
 							className="video-player"
 							ref="videoPlayerWrapper"
