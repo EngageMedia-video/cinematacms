@@ -26,7 +26,7 @@
     "pack": "npm run build && npm pack"
   },
   "peerDependencies": {
-    "video.js": "^7.18.1"
+    "video.js": "^7.20.2"
   },
   "dependencies": {
     "@mediacms/vjs-plugin-font-icons": "file:../vjs-plugin-font-icons"
