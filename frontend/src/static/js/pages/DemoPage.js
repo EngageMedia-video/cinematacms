@@ -87,7 +87,7 @@ export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
 	useEffect(() => {
 		// Ensure stores are available before proceeding
 		if (typeof MediaPageActions !== 'undefined' && typeof PageStore !== 'undefined' && typeof MediaPageStore !== 'undefined') {
-			const demoMediaId = 'r27rSNkAE'; // Extracted from previous hardcoded mediaData
+			const demoMediaId = '1rCGGuMR4'; // Extracted from previous hardcoded mediaData
 
 			// Ensure window.MediaCMS object exists
 			if (typeof window.MediaCMS === 'undefined') {
@@ -190,7 +190,7 @@ export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
 		<div className="demo-page">
 			<h1 className="demo-page__title">{pageTitle}</h1>
 
-			<div className="demo-page__info">
+			<div className="demo-page__warning">
 				<p>This is a demo page showcasing a video viewer component, adapted with VideoMediaPage functionality.</p>
 			</div>
 
