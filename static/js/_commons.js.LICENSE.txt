@@ -16,6 +16,9 @@ object-assign
 
 /*! @name pkcs7 @version 1.0.4 @license Apache-2.0 */
 
+/*! videojs-markers - v1.0.1 - 2018-02-03
+  * Copyright (c) 2018 ; Licensed  */
+
 /**
  * @license
  * Video.js 7.21.7 <http://videojs.com/>
