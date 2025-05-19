@@ -1,45 +1,48 @@
 # 🧰 CinemataCMS Troubleshooting Guide for Common Administrative Issues
 
-This guide outlines how to identify and resolve common issues faced by **authorized users** when managing roles, permissions, and content in **CinemataCMS**.
+This guide helps **authorized users** (including *Site Administrators* and *MediaCMS Managers*) diagnose and resolve common issues when managing users, roles, content, and media systems in **CinemataCMS**.
+
+> 📍 Administrative access is available via **Django Admin** (`/admin/`) and the CinemataCMS sidebar (e.g., “Manage Media”, “Manage Users”, “Manage Comments”).
 
 ---
 
 ## 🧑‍💻 1. User Cannot Access Expected Features
 
 ### 🔍 Problem
-- User reports missing menu items or inaccessible pages  
-- "Permission Denied" or similar errors when navigating the platform
+- User cannot see sidebar options like “Manage Media” or “Manage Users”
+- Error: “Permission Denied”
 
 ### ✅ Steps to Resolve
-1. **Check Assigned Roles**  
-   Go to `Auth > Users` and confirm that the user has the correct role(s).
+1. **Check User Role**  
+   Go to Django Admin: `/admin/users/user/` → Ensure the user has the appropriate role(s).
 
 2. **Verify Role Permissions**  
-   Ensure the role(s) contain relevant permissions (e.g., `read:content`, `edit:content`, etc.).
+   Roles must include permissions such as `read:content`, `edit:content`, etc.  
+   Check in `/admin/auth/group/`.
 
-3. **Review Group Memberships**  
-   Check if the user belongs to appropriate groups that inherit necessary permissions.
+3. **Check Group Assignment**  
+   Ensure the user is assigned to the correct group (see `users/models.py`).
 
-4. **Impersonate Temporarily**  
-   Assign the same role(s) to your account and replicate the issue to test.
+4. **Reproduce the Issue**  
+   Temporarily assign the same role to your admin account and try accessing the feature.
 
 ---
 
 ## 🔐 2. Cannot Edit or Remove Certain Content
 
 ### 🔍 Problem
-- Content appears in dashboards but cannot be modified or removed  
-- Error indicating insufficient permissions
+- Content is visible but cannot be edited or deleted  
+- Error: “You do not have permission to perform this action”
 
 ### ✅ Steps to Resolve
 1. **Validate Role Permissions**  
-   Make sure the user has `edit:content`, `delete:content`, or broader access where required.
+   Make sure the user has `edit:content`, `delete:content`, or `edit:own`.
 
 2. **Content Ownership Limitations**  
-   If using `edit:own`, ensure the user attempting to edit is the original creator.
+   With `edit:own`, users can only edit their own uploads.
 
 3. **Check Object-Level Constraints**  
-   If object-level permissions are enabled, confirm that the user has access to specific content items.
+   If object-level permissions are enabled, inspect the relevant entries in the database via Django Admin or shell.
 
 ---
 
@@ -64,100 +67,181 @@ This guide outlines how to identify and resolve common issues faced by **authori
 ## 📹 4. Video Uploads Not Appearing in Public Interface
 
 ### 🔍 Problem
-- Videos are uploaded successfully but not publicly visible  
-- Content curators do not receive notifications
+- Uploaded video does not appear on the frontend
 
 ### ✅ Steps to Resolve
-1. **Check Video Visibility Settings**  
-   Ensure the video is not still marked as `private` or `unlisted`.
+1. **Check Video Visibility Status**  
+   See if the media is set to `private` or `unlisted` at `/admin/files/mediafile/`.
 
-2. **Determine User Type**  
-   - Uploads by regular users are private by default and require review.  
-   - Trusted users can assign visibility immediately.
+2. **Review Uploader Type**  
+   - Regular users: Default to `private` uploads, may require approval  
+   - Trusted users: Can set public visibility on upload
 
-3. **Verify Notification Delivery**  
-   Check if the platform is sending notification emails successfully.
+3. **Check Notification System**  
+   Confirm that email notifications are configured and working (`cms/settings.py`)
 
-4. **Review Moderation Queue**  
-   Go to the content moderation dashboard and check for pending reviews.
+4. **Check Moderation Queue**  
+   Go to “Manage Media” from the sidebar and verify pending items.
 
 ---
 
 ## 👥 5. Unable to Update User Group Assignments
 
 ### 🔍 Problem
-- Attempts to add/remove users from groups fail  
-- Changes to group settings are not saved
+- Cannot assign or remove users from groups
 
 ### ✅ Steps to Resolve
-1. **Ensure Permission to Manage Users**  
-   Confirm the user managing roles has `manage:users` permission.
+1. **Ensure `manage:users` Permission**  
+   The admin role must allow user management in Django Admin.
 
-2. **Use Correct Workflow**  
-   Navigate to each user's profile via `Auth > Users > [Username]` and edit their group memberships.
+2. **Use Proper Workflow**  
+   Navigate to `/admin/users/user/` → Select user → Adjust group assignments.
 
-3. **Inspect Group Configuration**  
-   Make sure the group exists and includes the intended permissions.
+3. **Check Group Definitions**  
+   Groups should be correctly defined and include valid permissions.
 
 ---
 
-## 💾 6. Errors During Backup or Restore
-
-> ⚠️ For full backup and recovery procedures, refer to the dedicated documentation file.
+## ⚙️ 6. Media Processing Issues
 
 ### 🔍 Problem
-- Backups are incomplete or fail to execute  
-- Errors during restoration from backup files
+- Encoding stuck in “Running”
+- Missing thumbnails or HLS streams
+- Failed transcriptions
 
-### ✅ Quick Checks
-1. **Storage Capacity**  
-   Ensure the server has enough disk space for backup files.
-
-2. **Correct Commands** (for Django installations)
+### ✅ Steps to Resolve
+1. **Check Celery Workers**  
    ```bash
-   # Backup
-   python manage.py dumpdata > backup.json
+   celery -A cms inspect active
+   ```
 
-   # Restore
+2. **Check Transcoding or Whisper Logs**  
+   Currently only runnable via Bash:
+   ```bash
+   python manage.py process_tasks
+   ```
+
+3. **Inspect Encoding Status in Django Admin**  
+   Visit `/admin/files/encoding/` and review stuck or failed jobs.
+
+> ⚠️ Currently, these actions can only be triggered via Bash. Adding Django Admin support is a recommended future improvement.
+
+---
+
+## 📁 7. File Upload Issues
+
+### 🔍 Problem
+- Chunked uploads fail
+- File size exceeds limits
+- Upload permission denied
+
+### ✅ Steps to Resolve
+1. **Inspect FineUploader Logs**  
+   Use browser developer tools → Check if all chunks were sent successfully.
+
+2. **Check Upload Size Settings**  
+   Configured via `MAX_UPLOAD_SIZE` in `cms/settings.py`.
+
+3. **Verify Upload Permissions**  
+   Review `CAN_ADD_MEDIA` and ensure the user's role allows uploads.
+
+> Debugging upload issues is currently possible only via Bash or server logs.
+
+---
+
+## 🛡️ 8. Multi-Factor Authentication (MFA) Issues
+
+### 🔍 Problem
+- User cannot log in after enabling MFA
+
+### ✅ Steps to Resolve
+- Refer users to the official MFA setup guide:  
+  📄 `docs/guides/mfa_setup.md`
+  ---
+
+## 💾 9. Errors During Backup or Restore
+
+### 🔍 Problem
+- Backup incomplete  
+- Restore process fails
+
+### ✅ Steps to Resolve
+1. **Check Disk Space**  
+   Run `df -h` to ensure sufficient space.
+
+2. **Use Django Commands**  
+   ```bash
+   python manage.py dumpdata > backup.json
    python manage.py loaddata backup.json
    ```
 
-3. **Database Migrations**
-   Run migrations to keep schema up to date:
+3. **Apply Migrations if Needed**  
    ```bash
    python manage.py migrate
    ```
 
 ---
 
-## 🔒 7. Lost Access to High-Level Account
+## 🔒 10. Lost Access to High-Level Account
 
-> ⚠️ For secure recovery procedures, refer to the **security best practices** documentation.
+### 🔍 Problem
+- A user with elevated privileges (e.g., site administrator) is locked out and cannot log in  
+- No other high-level users are available to restore access
 
-### ✅ Steps to Resolve (via CLI)
-1. **Access Django Shell**
+### ✅ Steps to Resolve
+1. **Access the Django Shell**
    ```bash
    python manage.py shell
    ```
 
-2. **Reset Account Password**
+2. **Reset the Password**
+   Replace `'target_username'` and `'new_secure_password'` with actual values:
    ```python
-   from django.contrib.auth.models import User
+   from users.models import User
    user = User.objects.get(username='target_username')
    user.set_password('new_secure_password')
    user.save()
    ```
 
+3. **Re-enable User if Deactivated**
+   ```python
+   user.is_active = True
+   user.save()
+   ```
+
+4. **Assign Admin Permissions (if removed)**
+   ```python
+   user.is_superuser = True
+   user.is_staff = True
+   user.save()
+   ```
+
+> 🔐 For long-term recovery and prevention, see the **Security Best Practices** documentation.
+
 ---
 
-## 🧹 8. Removing Spam Accounts or Inappropriate Content
+## 🧹 11. Removing Spam Accounts or Inappropriate Content
+
+### 🔍 Problem
+- Suspicious user accounts are repeatedly uploading spam or irrelevant media  
+- Inappropriate content is visible before moderation  
+- Blocked accounts return using different credentials or IP addresses
 
 ### ✅ Steps to Resolve
 1. **Identify Suspicious Accounts**
-   Look for unusual upload patterns or irrelevant metadata.
+   - Look for users with unusually high upload frequency
+   - Review account metadata such as usernames, email domains, and IP addresses
 
-2. **Batch Review in Interface**
-   Use filters to locate problematic users or content, and take action.
+2. **Batch Review in Admin Interface**
+   - Go to Django Admin:  
+     `/admin/users/user/` for user accounts  
+     `/admin/files/file/` for media  
+   - Use filters to locate and deactivate/delete accounts or media
 
 3. **Implement Blocklists**
-   Prevent repeated abuse by flagging IP addresses or email domains.
+   - Prevent recurring abuse by flagging known IP addresses or email domains
+   - Add them to your reverse proxy or firewall blocklists if needed
+
+4. **Enable Pre-Moderation**
+   - Ensure uploads from untrusted users are not publicly visible by default
+   - Configure `CAN_ADD_MEDIA` settings to restrict auto-publishing
