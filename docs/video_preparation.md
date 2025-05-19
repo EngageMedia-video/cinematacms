@@ -45,18 +45,6 @@ To ensure your video uploads to CinemataCMS are processed smoothly and deliver t
 
 ---
 
-## 📝 Metadata (Optional but Recommended)
-
-Include metadata for better accessibility and searchability:
-- Title
-- Description
-- Creator(s)
-- Language
-- Keywords or Tags
-- License (e.g., CC BY-NC-SA)
-
----
-
 ## 🛠 Encoding Tips
 
 Use tools like **HandBrake**, **FFmpeg**, or **Shutter Encoder** to convert and compress videos before upload.
