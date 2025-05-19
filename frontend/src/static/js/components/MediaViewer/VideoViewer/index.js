@@ -141,6 +141,13 @@ export default class VideoViewer extends React.PureComponent {
 				);
 				return;
 			}
+			addPageMetadata({
+				videoUrl: formatInnerLink(
+					this.videoSources[this.videoSources.length - 1].src,
+					this.props.siteUrl
+				),
+				videoDuration: this.props.data.duration,
+			});
 		} else {
 			switch (MediaPageStore.get('media-load-error-type')) {
 				case 'encodingRunning':
