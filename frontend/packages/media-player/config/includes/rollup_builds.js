@@ -1,6 +1,6 @@
 import gzip from 'rollup-plugin-gzip';
 import postcss from 'rollup-plugin-postcss';
-import babel from 'rollup-plugin-babel';
+import babel from '@rollup/plugin-babel';
 import cleanup from 'rollup-plugin-cleanup';
 // import { uglify } from "rollup-plugin-uglify";
 import commonjs from '@rollup/plugin-commonjs';
@@ -22,7 +22,7 @@ export default function rollup_builds( input_file, output_folder, pkg ){
     const postcss_config = {
         extract: true,
         modules: false, // Avoid adding prefixes to classnames (etc).
-        extensions: ['.css', '.sss', '.pcss', '.scss'],        
+        extensions: ['.css', '.sss', '.pcss', '.scss'],
     };
 
     const postcss_plugin = postcss( postcss_config );
@@ -60,7 +60,7 @@ export default function rollup_builds( input_file, output_folder, pkg ){
             external: !! bundle ? {} : dependencies_names,
             output: [ { format: esm_format,  file: filename } ],
             plugins: plugins,
-        };        
+        };
     }
 
     function commonjs_build( filename, visualize, bundle ){
@@ -81,7 +81,9 @@ export default function rollup_builds( input_file, output_folder, pkg ){
 
     function browser_build( filename, visualize, minimize, compact ){
 
-        const plugins = [ !! minimize ? postcss_plugin_minimized : postcss_plugin, json(), babel(), resolve(), commonjs(), beautify_plugin() ];
+        const plugins = [ !! minimize ? postcss_plugin_minimized : postcss_plugin, json(), babel({
+            babelHelpers: 'bundled'
+        }), resolve(), commonjs(), beautify_plugin() ];
 
         if( !!minimize ){
 

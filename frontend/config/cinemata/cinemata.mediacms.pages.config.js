@@ -215,6 +215,24 @@ pages["editorial-policy"] = mediacmsDefaultPagesStatic(
 	}
 );
 
+// Register our Demo page
+pages.demo = mediacmsDefaultPages(
+	"demo",
+	"Demo Page - Cinemata",
+	"DemoPage",
+	{
+		// Optional additional window.MediaCMS configuration
+		window: {
+			MediaCMS: {
+				demoOptions: {
+					defaultCounterValue: 0,
+					maxCounters: 5
+				}
+			}
+		}
+	}
+);
+
 module.exports = {
 	pages,
 };

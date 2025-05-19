@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { get as axiosGet } from 'axios';
 import { error as logError } from "./log";
 
 async function getRequest(url, sync, callback, errorCallback) {
@@ -52,10 +51,10 @@ async function getRequest(url, sync, callback, errorCallback) {
     }
 
     if( sync ){
-        await axiosGet(url, requestConfig).then(responseHandler).catch(errorHandler || null);
+        await axios.get(url, requestConfig).then(responseHandler).catch(errorHandler || null);
     }
     else{
-        axiosGet(url, requestConfig).then(responseHandler).catch(errorHandler || null);
+        axios.get(url, requestConfig).then(responseHandler).catch(errorHandler || null);
     }
 }
 

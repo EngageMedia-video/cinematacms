@@ -9,8 +9,6 @@ module.exports = (ctx) => {
 			autoprefixer: {},
 			// cssnano: /*ctx.env === "production" ?*/ {} /*: false*/,  // Breaks customs properties support of 'postcss-custom-properties'.
 			"postcss-custom-properties": {
-				importFrom: "./src/config/css_properties.css",
-				disableDeprecationNotice: true,
 				preserve: false,
 			},
 		},

@@ -9,7 +9,7 @@
         {% include "common/head-meta.html" %}
 
         {% block headermeta %}
-        
+
         <meta property="og:title" content="{{PORTAL_NAME}}">
         <meta property="og:type" content="website">
 
@@ -22,7 +22,7 @@
         {% block topimports %}{%endblock topimports %}
 
         {% include "config/index.html" %}
-        
+
     {% endblock head %}
 
 </head>
@@ -38,10 +38,11 @@
 
     {% block aftercontent %}{% endblock %}
 
+    {# Video.js loading #}
     {% if LOAD_FROM_CDN %}
-    <script src="https://vjs.zencdn.net/7.18.1/video.min.js"></script>
+    <script src="https://vjs.zencdn.net/7.20.2/video.min.js"></script>
     {% else %}
-    <script src="{% static "lib/video-js/7.18.1/video.min.js" %}"></script>
+    <script src="{% static "lib/video-js/7.20.2/video.min.js" %}"></script>
     {% endif %}
 
     {% block externalscripts %}{% endblock externalscripts %}

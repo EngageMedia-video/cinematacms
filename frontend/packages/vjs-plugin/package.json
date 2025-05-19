@@ -4,6 +4,7 @@
   "description": "",
   "author": "styiannis",
   "license": "Apache-2.0",
+  "type": "module",
   "keywords": [
     "mediacms",
     "videojs",
@@ -21,30 +22,31 @@
   "scripts": {
     "start": "npx rollup -w -c config/rollup.config.js",
     "build": "npm run clean:build && npx rollup -c ./config/rollup.config.build.js",
-    "clean:build": "node ./scripts/rmrf.js ./dist",
+    "clean:build": "node ./scripts/rmrf.cjs ./dist",
     "pack": "npm run build && npm pack"
   },
   "peerDependencies": {
-    "video.js": "^7.18.1"
+    "video.js": "^7.20.2"
   },
   "dependencies": {
-    "@mediacms/vjs-plugin-font-icons": "file:./packages/vjs-plugin-font-icons",
-    "rollup-plugin-visualizer": "^5.6.0"
+    "@mediacms/vjs-plugin-font-icons": "file:../vjs-plugin-font-icons"
   },
   "devDependencies": {
-    "@babel/core": "^7.16.5",
-    "@babel/preset-env": "^7.16.5",
-    "@rollup/plugin-commonjs": "^21.0.1",
-    "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^13.1.1",
-    "compass-mixins": "^0.12.10",
-    "core-js": "^3.20.1",
+    "@babel/core": "^7.27.1",
+    "@babel/preset-env": "^7.27.1",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "core-js": "^3.42.0",
     "global": "^4.4.0",
-    "node-sass": "^7.0.1",
-    "rollup": "^2.62.0",
-    "rollup-plugin-babel": "^4.3.3",
+    "sass": "^1.87.0",
+    "postcss": "^8.5.3",
+    "rollup": "^4.40.1",
     "rollup-plugin-cleanup": "^3.2.1",
-    "rollup-plugin-gzip": "^3.0.0",
-    "rollup-plugin-postcss": "^4.0.2"
+    "rollup-plugin-gzip": "^4.0.1",
+    "rollup-plugin-postcss": "^4.0.2",
+    "rollup-plugin-visualizer": "^5.14.0",
+    "rimraf": "^6.0.1"
   }
 }

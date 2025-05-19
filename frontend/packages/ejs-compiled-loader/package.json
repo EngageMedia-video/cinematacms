@@ -1,0 +1,40 @@
+{
+  "name": "ejs-compiled-loader",
+  "version": "3.1.0",
+  "description": "EJS webpack loader (without frontend dependencies)",
+  "main": "index.js",
+  "scripts": {
+    "test": "cd test && ../node_modules/.bin/webpack && node bundle.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bazilio91/ejs-compiled-loader.git"
+  },
+  "keywords": [
+    "ejs",
+    "webpack",
+    "loader",
+    "template",
+    "es6"
+  ],
+  "contributors": [
+    "Vasily Ostanin <bazilio91@gmail.com>",
+    "Sebastian Vollnhals <node@yetzt.me>"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bazilio91/ejs-compiled-loader/issues"
+  },
+  "homepage": "https://github.com/bazilio91/ejs-compiled-loader",
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "html-minifier-terser": "^7.2.0",
+    "loader-utils": "^2.0.0",
+    "terser": "^4.8.1"
+  },
+  "devDependencies": {
+    "assert": "^2.1.0",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
+  }
+}

@@ -16,4 +16,5 @@ MediaListRow.propTypes = {
 	title: PropTypes.string,
 	viewAllLink: PropTypes.string,
 	viewAllText: PropTypes.string,
+	children: PropTypes.node,
 };

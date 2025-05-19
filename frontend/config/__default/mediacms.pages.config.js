@@ -278,13 +278,13 @@ function mediacmsDefaultPages(id, title, component, extendObj, filename) {
 					links: [
 						{
 							rel: "preload",
-							href: "./static/lib/video-js/7.18.1/video.min.js",
+							href: "./static/lib/video-js/7.20.2/video.min.js",
 							as: "script",
 						},
 					],
 				},
 				body: {
-					scripts: [{ src: "./static/lib/video-js/7.18.1/video.min.js" }],
+					scripts: [{ src: "./static/lib/video-js/7.20.2/video.min.js" }],
 				},
 			},
 		},
@@ -307,13 +307,13 @@ function mediacmsTaxonomyPages(id, title, component, extendObj, filename) {
 					links: [
 						{
 							rel: "preload",
-							href: "./static/lib/video-js/7.18.1/video.min.js",
+							href: "./static/lib/video-js/7.20.2/video.min.js",
 							as: "script",
 						},
 					],
 				},
 				body: {
-					scripts: [{ src: "./static/lib/video-js/7.18.1/video.min.js" }],
+					scripts: [{ src: "./static/lib/video-js/7.20.2/video.min.js" }],
 				},
 			},
 		},
@@ -337,13 +337,13 @@ function mediacmsManagementPages(id, title, component, extendObj, filename) {
 					links: [
 						{
 							rel: "preload",
-							href: "./static/lib/video-js/7.18.1/video.min.js",
+							href: "./static/lib/video-js/7.20.2/video.min.js",
 							as: "script",
 						},
 					],
 				},
 				body: {
-					scripts: [{ src: "./static/lib/video-js/7.18.1/video.min.js" }],
+					scripts: [{ src: "./static/lib/video-js/7.20.2/video.min.js" }],
 				},
 			},
 		},
@@ -384,13 +384,13 @@ function mediacmsDefaultPagesCustomRender(
 					links: [
 						{
 							rel: "preload",
-							href: "./static/lib/video-js/7.18.1/video.min.js",
+							href: "./static/lib/video-js/7.20.2/video.min.js",
 							as: "script",
 						},
 					],
 				},
 				body: {
-					scripts: [{ src: "./static/lib/video-js/7.18.1/video.min.js" }],
+					scripts: [{ src: "./static/lib/video-js/7.20.2/video.min.js" }],
 				},
 			},
 		},
