@@ -28,7 +28,7 @@ This outlines the flow of how media uploads are handled from the frontend to the
     - Else → **Single Upload**
 
 #### Saving the Upload
-- Handled by the `.save()` method for both single and chunked uploads:
+- Handled by the `.save()` method for both (single and chunked uploads)[video-processing-overview.md]:
   - **Chunked Uploads:**
     - Chunks are saved individually via `self._save_chunk()` into `/chunks/<uuid>/<index>`.
     - If it's the final chunk and not using concurrent uploads:

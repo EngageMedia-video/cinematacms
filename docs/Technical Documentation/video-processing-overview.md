@@ -1,6 +1,6 @@
 # 📼 Video Processing (`tasks.py`)
 
-This outlines how encoding and optional chunking of uploaded video files is being handled. FFmpeg is the tool used to handle video encoding and chunking. Celery, on the other hand, is used to schedule and run background video processing tasks. Whisper is used for speech recognition to transcribe the dialogue of the video.
+This outlines how encoding and optional chunking of uploaded video files is being handled. FFmpeg is the tool used to handle video encoding and chunking. Celery, on the other hand, is used to schedule and run background video processing tasks. [Whisper](whisper-speech-reconition.md) is used for speech recognition to transcribe the dialogue of the video.
 
 ---
 
