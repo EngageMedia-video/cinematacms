@@ -5,23 +5,17 @@ Playlists in CinemataCMS are curated collections of videos that can be grouped b
 ## Creating a Playlist
 
 1. **Navigate to the Dashboard**
-   - Log in to your CinemataCMS account.
-   - Go to the **Content** section in the main navigation.
+   - Log in to your CinemataCMS account. Sign-up for an account if you haven't done it. 
+   - Go to the **Media Page** of the video by clicking it.
 
 2. **Create a New Playlist**
-   - Click on the **Playlists** tab.
+   - Click on the **Save** just below the player.
    - Click **Create Playlist**.
    - Fill in the following fields:
      - **Title**: Required. The public name of the playlist.
      - **Description**: Optional. A brief explanation of the playlist theme or purpose.
-     - **Thumbnail**: Optional. Upload an image to represent the playlist visually.
-     - **Visibility**:
-       - *Public*: Anyone can view the playlist.
-       - *Unlisted*: Only users with the link can view the playlist.
-       - *Private*: Only you can view the playlist.
-
-3. **Save**
-   - Click **Save** to create the playlist. You will be redirected to the playlist management page.
+     - - Click **Save** to create the playlist.
+       - # Note for Nisa: A lot of incorrect information here. Please revise
 
 ## Adding Content to a Playlist
 
