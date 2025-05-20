@@ -38,7 +38,7 @@ CinemataCMS supports multiple media visibility states:
 
 | User Role       | Default Upload Visibility   | Notes                                                                 |
 |------------------|-----------------------------|-----------------------------------------------------------------------|
-| **Trusted User** | User-defined (`public`, `private`, etc.) | Bypasses preliminary moderation; still subject to post-publish review |
+| **Trusted User** | User-defined (`public`, `private`, and `restricted` ) | Bypasses preliminary moderation; still subject to post-publish review |
 | **Regular User** | `private`                   | Requires curator review before any public exposure                    |
 
 > 🔎 **Trusted User** is a privilege granted by site admins.  
@@ -79,11 +79,23 @@ MEDIA_IS_REVIEWED = True
 
 This setting activates moderation workflows.
 
+### Who can Review
+
+| Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
+|:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
+| Access content review dashboard | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Review and approve submitted content | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Handle reported content | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Set content visibility status | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Access moderation logs | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+
+> See: [Cinemata User Roles Permission Matrix](https://github.com/EngageMedia-video/cinematacms/blob/main/docs/cinematacms-roles-permission-matrix.md))
+
 ### How to Review
 
-1. **Access the Moderation Queue**
-   - Location: Django Admin → `Content > Media > Pending Review`
-   - Code path: `files/views.py`
+1. **Access the Moderation Queue through the Media **
+   - Location: Index Page Sidebar → `Manage Media Dashboard`
+   - Endpoint: `manage/media`
 
 2. **Evaluate Based On**:
    - Editorial Policy
