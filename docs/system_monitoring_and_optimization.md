@@ -11,17 +11,24 @@ This document outlines recommended procedures, tools, and practices to monitor a
 - **Error Tracking**: Django error logs, systemd logs, FFmpeg stderr output.
 - **Traffic Patterns**: Upload surges, search bursts, API endpoint stress.
 
-## 🔧 Core Tools & Services (Planned / Suggested)
+## 🔧 Current System Configuration
 
-| Tool / Stack              | Purpose                                  | Status                    |
-|--------------------------|------------------------------------------|---------------------------|
-| Prometheus + Grafana     | Real-time server metrics and dashboards  | Not implemented – Suggested |
-| Sentry                   | Exception/error tracking                 | Not implemented – Suggested |
-| Django Debug Toolbar     | Development profiling of queries/views   | Dev-only – Optional       |
-| Celery + Flower          | Task queue and job queue insights        | Not implemented – Suggested |
-| PostgreSQL Logs + pg_stat_statements | Database profiling             | Available, verify activation |
-| NGINX Logs + GoAccess    | Web server traffic stats                 | Partially available       |
-| UptimeRobot / StatusCake | Public uptime/SSL checks                 | Not in use                |
+### Implemented Tools
+| Component | Status | Configuration |
+|-----------|---------|---------------|
+| Django Logging | ✅ Active | `/logs/debug.log`, ERROR level |
+| Celery + Redis | ✅ Active | Background task processing |
+| PostgreSQL | ✅ Active | Primary database |
+| Redis Cache | ✅ Active | Session and content caching |
+| Debug Toolbar | ⚠️ Dev Only | Available but disabled in production |
+
+### Suggested Additions
+| Tool | Purpose | Implementation Priority |
+|------|---------|------------------------|
+| Prometheus + Grafana | Real-time metrics & dashboards | Medium |
+| Sentry | Exception tracking | High |
+| Flower | Celery monitoring UI | Low |
+| pg_stat_statements | PostgreSQL query analysis | Medium |
 
 ## 📂 Log File Locations (CinemataCMS)
 - **Django App Logs**: `/home/cinemata/cinematacms/logs/`
@@ -83,32 +90,42 @@ This document outlines recommended procedures, tools, and practices to monitor a
 - Recommendation logic under heavy traffic
 - Thumbnail sprite generation delays
 
-## ⚙️ Routine Maintenance Schedule
+## ⚙️ Maintenance Procedures
 
-| Task                             | Frequency         |
-|----------------------------------|-------------------|
-| Check system logs and dashboard  | Daily             |
-| Review Django errors             | Daily             |
-| Restart Celery if worker hangs   | Weekly (or as needed) |
-| Vacuum & analyze PostgreSQL      | Weekly            |
-| Check encoding failure rate      | Weekly            |
-| Audit query logs                 | Monthly           |
-| Load test `/media/list/` & `/search/` | Quarterly     |
+### Current Automated Tasks
+- Session cleanup (weekly via Celery beat)
+- Popular media refresh (every 10 hours)
+- Thumbnail updates (every 30 hours)
 
-## 🔐 Alerting & Incident Response (To Be Implemented)
-- Use Prometheus Alertmanager or cloud provider alerts for thresholds (CPU > 80%, DB latency > 500ms).
-- Integrate alerts with Slack/Email/Discord for real-time notifications.
-- Define incident severity levels and escalation contacts.
-- Maintain an internal runbook for known issues and step-by-step recovery procedures, such as:
-  - Restarting Celery workers
-  - Clearing stalled task queues
-  - Debugging failed encodings (FFmpeg)
-  - Rolling back problematic deployments
+### Manual Maintenance
+- Monitor `/logs/debug.log` for errors
+- Check Celery worker status via systemd
+- Review encoding failure patterns
+- Database maintenance (vacuuming, analyzing)
 
-## 📌 Notes for Implementation Team
-- Tools like Prometheus/Sentry/Flower are not yet implemented. This document treats them as recommended integrations.
-- Future versions should reflect actual metrics from production.
-- Coordinate with DevOps for log shipping and visualization pipeline if monitoring stack is pursued.
+## 🔐 Security & Performance Settings
 
-## 🔍 For future updates
-- Document actual performance baselines, encoding durations, and storage growth curves.
+Configured in `settings.py`:
+- Celery soft time limit: 2 hours
+- Session cookie age: 8 hours
+- CSRF token session-based
+- HSTS enabled for security
+- Static file serving optimized
+
+## 📌 Implementation Notes
+
+### Current Limitations
+- No real-time monitoring dashboard
+- Limited performance metrics collection
+- Manual error log review required
+- No automated alerting system
+
+### Future Considerations
+- Implement structured logging for better analysis
+- Add performance middleware for request timing
+- Consider APM (Application Performance Monitoring) tools
+- Set up automated backup monitoring
+
+---
+
+*This guide reflects the current state of CinemataCMS based on codebase analysis. Suggested enhancements are provided for consideration but are not required implementations.*
