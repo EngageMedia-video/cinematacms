@@ -19,15 +19,14 @@ Metadata provides essential information about your content. It helps:
 | Field           | Description                                                                 |
 |----------------|-----------------------------------------------------------------------------|
 | **Title**       | Use a clear, concise, and descriptive title. Avoid generic names.           |
-| **Description** | Write a compelling summary (2–3 sentences) of what the video is about.      |
-| **Creators**    | List the individuals or organizations involved in the production.           |
+| **Description** | Write a compelling summary (under 60 words) of what the video is about. Often using film logline format is more compelling 
+| **More Information and Credits** | Use this to provide additional context about the video and/or include the cast and crew involved in the production
 | **Tags**        | Add relevant keywords (e.g., "climate change", "indigenous rights").        |
 | **Language**    | Specify the spoken and/or subtitle language(s) in the video.                |
 | **Country**     | Indicate where the video was produced or is thematically related to.        |
 | **Year**        | Mention the year of production or publication.                              |
 | **License**     | Choose a license (e.g., CC BY-NC-SA) to clarify how others may reuse it.    |
-| **Subtitles**   | Note the availability of subtitles and in which languages.                  |
-| **Duration**    | Add the length of the video (e.g., `12m 45s`).                              |
+| **Subtitles**   | Note the availability of subtitles and in which languages.                  |                             |
 | **Accessibility** | Include info about captions, sign language, or audio descriptions.       |
 
 ---
@@ -45,7 +44,7 @@ Metadata provides essential information about your content. It helps:
 
 ### 3. **Be Specific**
 - Avoid vague tags like "video", "documentary"
-- Instead, use `environment`, `indigenous voices`, `southeast asia`, etc.
+- Instead, use `environment`, `indigenous voices`, `Southeast Asia`, etc.
 
 ### 4. **Include a License**
 - Creative Commons licenses (e.g., CC BY, CC BY-SA) encourage sharing
@@ -62,7 +61,6 @@ Metadata provides essential information about your content. It helps:
 ```yaml
 title: "Defending Ancestral Lands in Mindanao"
 description: "This documentary captures the resistance of Lumad communities in Southern Philippines against land encroachment and militarization."
-creators: "Lumad Network, Indigenous Media Lab"
 tags: ["indigenous rights", "land defense", "Philippines", "climate justice"]
 language: "Cebuano, English"
 subtitles: "English, Filipino"
