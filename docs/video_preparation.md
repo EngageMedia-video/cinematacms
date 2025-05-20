@@ -21,7 +21,7 @@ To ensure your video uploads to CinemataCMS are processed smoothly and deliver t
 | **Frame Rate**   | 24, 25, or 30 fps (constant frame rate)  |
 | **Aspect Ratio** | 16:9 preferred                           |
 | **Scan Type**    | Progressive (not interlaced)             |
-| **Max File Size**| 2 GB                                     |
+| **Max File Size**| 4 GB (configurable)                                     |
 
 ---
 
@@ -58,9 +58,9 @@ Use tools like **HandBrake**, **FFmpeg**, or **Shutter Encoder** to convert and 
 
 ## ✅ Pre-upload Checklist
 
-- [x] Video file is in `.mp4` format  
+- [x] Video file is in `.mov`, `.webm`, `.mkv`, `.avi` formats  
 - [x] Uses H.264 video and AAC audio codecs  
-- [x] File size under 2 GB  
+- [x] File size under 4 GB  
 - [x] Subtitles (if any) are in `.srt` or `.vtt`  
 - [x] Video plays correctly on local devices  
 - [x] Metadata is filled in (optional but helpful)  
