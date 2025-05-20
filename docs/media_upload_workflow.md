@@ -8,21 +8,20 @@ This document outlines the complete workflow for uploading, managing, and publis
 
 **Steps:**
 1. Users register via the Sign Up form (email verification required).
-2. Optionally link social accounts (Google, Facebook).
-3. Log in using credentials or OAuth.
+2. Log in using credentials or OAuth.
 
 **Permissions:**
 - Regular users: Can upload and manage their own content.
-- Curators/Admins: Can approve, reject, feature, or remove content.
+- Site administrators/managers/editors: Can approve, reject, feature, or remove content.
 
 ---
 
 ## 📤 2. Media Upload
 
-**Access:** Dashboard → "Upload Media" button
+**Access:** Dashboard → "Upload Media" button on the header or sidebar
 
 ### Upload Requirements
-- **Accepted Formats:** MP4, MOV, AVI
+- **Accepted Formats:** MP4, MOV, AVI, MKV
 - **Max File Size:** 5GB (configurable)
 - **Recommended Resolution:** Minimum 720p, ideally 1080p
 - **Audio Codec:** AAC, MP3
@@ -30,9 +29,11 @@ This document outlines the complete workflow for uploading, managing, and publis
 ### Upload Form Fields
 - **Title** *(required)*
 - **Description** *(required)*
+- **More Information and Credits**
+- **Country** *(required)*
 - **Thumbnail** *(optional but recommended)*
 - **Tags** *(for discoverability)*
-- **Category / Topic** *(e.g., Human Rights, Climate Change)*
+- **Category / Topic** *(e.g., Human Rights, Climate Change)* *(required)*
 - **Languages**
 - **Subtitles File (.srt or .vtt)** *(optional)*
 - **License Type** (e.g., CC BY-NC, All Rights Reserved)
@@ -73,23 +74,14 @@ After upload, the user can:
 ### Admin/Curator Workflow:
 1. Review submissions from the moderation panel
 2. Approve or reject with notes
-3. Assign to collections, playlists, or channels
+3. Assign to playlists
 4. Optionally **feature** the video on homepage or category page
-
-**Video Status Options:**
-- **Pending Review**
-- **Approved**
-- **Rejected**
-- **Draft**
-- **Published**
 
 ---
 
 ## 📚 6. Content Organization
 
-- **Collections:** Thematic groupings of videos
 - **Playlists:** Ordered lists, e.g., for training or series
-- **Channels:** Public profile pages of creators or organizations
 
 ---
 
@@ -131,10 +123,6 @@ Once approved (or if no moderation is required), the video becomes:
 
 For each video:
 - View counts (total and unique)
-- Engagement metrics (play rate, average watch time)
-- Download count
-- Referral sources
-- Geographic audience distribution
 
 ---
 
