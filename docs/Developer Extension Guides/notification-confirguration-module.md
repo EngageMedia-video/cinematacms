@@ -1,7 +1,7 @@
 
 # Notification Configuration Module
 
-The `Notification` module manages customizable notification messages for user interactions such as liking or disliking media in the CinemataCMS platform.
+The [Notification](../../frontend/src/static/js/mediacms/notifications.js) module manages customizable notification messages for user interactions such as liking or disliking media in the CinemataCMS platform.
 
 ---
 

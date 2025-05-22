@@ -1,6 +1,6 @@
 # ⚙️Theme Configuration Module
 
-This module provides customizable theme settings for the application, including light/dark mode, toggle switch settings, and theme-specific logos.
+The [Theme](../../frontend/src/static/js/mediacms/theme.js) module provides customizable theme settings for the application, including light/dark mode, toggle switch settings, and theme-specific logos.
 
 ---
 

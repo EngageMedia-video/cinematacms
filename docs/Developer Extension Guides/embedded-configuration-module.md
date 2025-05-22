@@ -1,7 +1,7 @@
 
 # Embedded Video Configuration Module
 
-The `Embedded` module manages configuration of embedded video display settings within the CinemataCMS platform.
+The [Embedded](../../frontend/src/static/js/mediacms/optionsEmbedded.js) module manages configuration of embedded video display settings within the CinemataCMS platform.
 
 ---
 
@@ -63,5 +63,12 @@ console.log(settings().video.dimensions.widthUnit)
 - If `init()` is not called, the embedded video configuration remains uninitialized (`null`).
 - Units are restricted to `'px'` or `'percent'`.
 - This module supports flexible sizing options for embedded video content, facilitating responsive design.
+
+
+## Current Bugs to address
+
+- `percent` and `px` units are not correctly assigned to the embedded video dimensions.
+- Embedded video are defaulted to `px` ignoring the passed settings.
+
 
 ---

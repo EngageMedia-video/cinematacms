@@ -1,6 +1,6 @@
 # ⚙️MEDIA Configuration Module
 
-The `MEDIA` module is responsible for configuring the display of media items and share options within the Cinematas platform.
+The [MEDIA](../../frontend/src/static/js/mediacms/media.js) module is responsible for configuring the display of media items and share options within the Cinematas platform.
 
 ---
 
