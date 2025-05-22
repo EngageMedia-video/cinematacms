@@ -1,56 +1,62 @@
 # Playlist Creation and Management
 
-Playlists in CinemataCMS are curated collections of videos that can be grouped by theme, topic, or event. This feature allows you to organize content meaningfully for easier discovery and navigation.
+This document provides instructions for creating and managing playlists in CinemataCMS to organize video content into themed collections.
+
+---
 
 ## Creating a Playlist
 
-1. **Navigate to the Dashboard**
-   - Log in to your CinemataCMS account. Sign-up for an account if you haven't done it. 
-   - Go to the **Media Page** of the video by clicking it.
+Follow these steps after uploading your video:
 
-2. **Create a New Playlist**
-   - Click on the **Save** just below the player.
-   - Click **Create Playlist**.
-   - Fill in the following fields:
-     - **Title**: Required. The public name of the playlist.
-     - **Description**: Optional. A brief explanation of the playlist theme or purpose.
-     - - Click **Save** to create the playlist.
-       - # Note for Nisa: A lot of incorrect information here. Please revise
+1. **Go to the Video Player Window**  
+   Once your video is uploaded, go to its **Play Media** window.
 
-## Adding Content to a Playlist
+2. **Click the "Save" Button**  
+   - Locate the **"Save"** button in the lower right corner of the video player.
+   - Clicking this will open the **Playlist pop-up window**.
 
-1. Go to the playlist you've created.
-2. Click **Add Videos**.
-3. Search for existing published videos by title, tags, or creator.
-4. Select one or more videos using the checkboxes.
-5. Click **Add to Playlist**.
+3. **Create a New Playlist**  
+   - In the pop-up window, click the **"Create New"** button in the upper right corner.
+   - Fill in the following:
+     - **Playlist Title** – e.g., `35th Gawad Alternatibo Curated Sections`
+     - **Description** – Provide a brief summary of the playlist. *(You may copy-paste the description from another source if needed.)*
+   - Confirm creation.
 
-## Reordering Videos in a Playlist
+4. **Add the Video to the Playlist**  
+   - After creating the playlist, the current video is automatically added to it.
 
-1. Within the playlist page, click the **Reorder** button (if available).
-2. Drag and drop videos into the desired order.
-3. Click **Save Order** to apply changes.
+---
 
-## Editing a Playlist
+## Adding Additional Videos to an Existing Playlist
 
-To update the playlist’s details:
+For each additional film that should belong to the same playlist:
 
-1. Open the playlist you want to edit.
-2. Click **Edit Playlist**.
-3. Update the title, description, thumbnail, or visibility settings.
-4. Click **Save** to apply changes.
+1. Go to the video’s **Play Media** window.
+2. Click the **"Save"** button again.
+3. In the pop-up, select the relevant playlist name from the list shown.
 
-## Removing Content from a Playlist
+Repeat this process for all related videos.
 
-1. Open the playlist.
-2. Click the **three-dot menu** (⋮) beside the video you want to remove.
-3. Select **Remove from Playlist**.
-4. Confirm the action if prompted.
+---
 
-## Deleting a Playlist
+## Viewing and Managing Your Playlists
 
-1. Open the playlist.
-2. Click **Delete Playlist**.
-3. Confirm the deletion.
-   - **Note**: Deleting a playlist does not delete the videos it contains. Videos remain accessible in the library.
+1. **Access Your Playlists**  
+   - Navigate to your **Account** > **Playlists**.
+   - This section displays all playlists you've created.
 
+2. **View Playlist Content**  
+   - Click on a playlist to open it.
+   - You will see all the videos it contains.
+
+3. **Reorder Videos**  
+   - Rearrange the video order by dragging items up or down in the list.
+
+---
+
+## Notes
+
+- Playlists are useful for **curating thematic content**, **grouping films for festivals**, or **presenting learning modules**.
+- You can always edit playlist titles and descriptions later via the **Playlists** tab in your account.
+
+---
