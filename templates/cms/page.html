@@ -31,13 +31,11 @@
 {% endblock headermeta %}
 
 {% block innercontent %}
-<script type="text/javascript" src="{% static "ckeditor/ckeditor-init.js" %}"></script>
-<script type="text/javascript" src="{% static "ckeditor/ckeditor/ckeditor.js" %}"></script>
 
 <div class="custom-page-wrapper">
 
 	<h1>{{page.title}}</h1>
-	
+
 	{{page.description|safe}}
 
 {% endblock %}

@@ -1,6 +1,7 @@
-from ckeditor.widgets import CKEditorWidget
+# from ckeditor.widgets import CKEditorWidget
 from django import forms
 from django.contrib import admin
+from tinymce.widgets import TinyMCE
 
 from users.models import User
 
@@ -131,16 +132,17 @@ class MediaLanguageAdmin(admin.ModelAdmin):
 
 
 class PageAdminForm(forms.ModelForm):
-    description = forms.CharField(widget=CKEditorWidget())
-
     class Meta:
         model = Page
         fields = "__all__"
+        widgets = {
+            "description": TinyMCE(),
+        }
 
 
 class PageAdmin(admin.ModelAdmin):
     form = PageAdminForm
-
+    
 
 class TopMessageAdmin(admin.ModelAdmin):
     list_display = ("text", "add_date", "active")
