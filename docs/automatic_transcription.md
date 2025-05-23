@@ -1,6 +1,8 @@
 # Automatic Transcription
 
-The **Automatic Transcription** feature in CinemataCMS enables users to generate captions or subtitles from the audio of uploaded video content using speech-to-text technology. In CinemataCMS, please note that this feature is only available for Trusted User/Editor/Manager. 
+The **Automatic Transcription** feature in CinemataCMS enables users to generate captions or subtitles from the audio of uploaded video content using speech-to-text technology.
+
+> **Note:** This feature is only available to users with the roles of **Trusted User**, **Editor**, or **Manager**.
 
 ## 🎯 Purpose
 
