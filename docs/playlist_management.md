@@ -8,21 +8,22 @@ This document provides instructions for creating and managing playlists in Cinem
 
 Follow these steps after uploading your video:
 
-1. **Go to the Video Player Window**  
-   Once your video is uploaded, go to its **Play Media** window.
+1. **Go to the Video’s Play Media Window**  
+   - Log in to your CinemataCMS account.  
+   - Click on the video you’ve uploaded to open its **Play Media** window.
 
-2. **Click the "Save" Button**  
-   - Locate the **"Save"** button in the lower right corner of the video player.
-   - Clicking this will open the **Playlist pop-up window**.
+2. **Click the “Save” Button**  
+   - Below the video player (bottom right corner), click the **Save** button.  
+   - This will open the **Playlist pop-up window**.
 
 3. **Create a New Playlist**  
-   - In the pop-up window, click the **"Create New"** button in the upper right corner.
-   - Fill in the following:
-     - **Playlist Title** – e.g., `35th Gawad Alternatibo Curated Sections`
-     - **Description** – Provide a brief summary of the playlist. *(You may copy-paste the description from another source if needed.)*
-   - Confirm creation.
+   - In the pop-up, click the **"Create New"** button in the top right corner.  
+   - Fill in the playlist details:
+     - **Title** – *Required.* This is the public name of your playlist.
+     - **Description** – *Optional.* Add a short description explaining the playlist's theme or purpose.
+   - Click **Save** to confirm creation.
 
-4. **Add the Video to the Playlist**  
+4. **Video is Added Automatically**  
    - After creating the playlist, the current video is automatically added to it.
 
 ---
@@ -56,7 +57,8 @@ Repeat this process for all related videos.
 
 ## Notes
 
-- Playlists are useful for **curating thematic content**, **grouping films for festivals**, or **presenting learning modules**.
+- Playlists are useful for:
+  - **Curating thematic content**
+  - **Grouping films for festivals**
+  - **Presenting learning modules**
 - You can always edit playlist titles and descriptions later via the **Playlists** tab in your account.
-
----
