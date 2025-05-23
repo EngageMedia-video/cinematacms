@@ -485,7 +485,7 @@ export default class VideoViewer extends React.PureComponent {
 				}
 
 				if (actionsAnimEl) {
-					actionsAnimEl.style.display = 'none';
+					actionsAnimEl.style.display = "none";
 				}
 
 				window.location.href = nextMediaUrl;
@@ -652,6 +652,8 @@ const observer = new MutationObserver((mutations, me) => {
 	if (playerContainer) {
 		const video = playerContainer.querySelector('video');
 		if (video) {
+			video.style.opacity = "1";
+			video.style.visibility = "visible";
 			handleCanvas(video);
 			me.disconnect();
 		}
