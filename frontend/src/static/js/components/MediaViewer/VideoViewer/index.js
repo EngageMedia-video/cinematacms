@@ -28,7 +28,7 @@ import BrowserCache from "../../../classes/BrowserCache.js";
 
 import SiteContext, { SiteConsumer } from "../../../contexts/SiteContext";
 
-import { VideoPlayer } from "../../-NEW-/VideoPlayer.js";
+import { VideoPlayer, VideoPlayerError } from "../../-NEW-/VideoPlayer.js";
 
 import "../../styles/VideoViewer.scss";
 
