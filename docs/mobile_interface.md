@@ -1,7 +1,5 @@
 # Cinemata.org Mobile Interface Documentation
 
-## Overview
-
 The Cinemata.org platform offers a responsive user interface designed to provide a seamless media browsing and viewing experience across devices, including desktops, tablets, and mobile phones. The mobile interface adapts dynamically to various screen sizes and orientations to ensure usability and accessibility.
 
 ---
