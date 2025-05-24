@@ -20,8 +20,8 @@ The Cinemata.org platform offers a responsive user interface designed to provide
   - Controls (play/pause, volume, full screen) remain easily tappable and accessible.  
   - Support for portrait and landscape orientations with smooth transitions.
 
-- **Search and Filtering**  
-  Search bars and filtering options collapse or slide in/out to optimize space usage on mobile devices.
+- **Search bar**  
+  Search bars or slide in/out to optimize space usage on mobile devices.
 
 - **Comments and Social Features**  
   Comment threads and social sharing buttons are stacked vertically and use touch-friendly elements for interaction.
