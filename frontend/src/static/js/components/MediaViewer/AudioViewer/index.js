@@ -4,7 +4,10 @@ import PropTypes from "prop-types";
 
 import SiteContext from "../../../contexts/SiteContext";
 
-import MediaPlayer from "@mediacms/media-player/dist/mediacms-media-player.js";
+// Import the script for side effects only
+import "@mediacms/media-player/dist/mediacms-media-player.js";
+// The MediaPlayer is exposed as a global variable
+const MediaPlayer = window.MediaPlayer;
 import MediaPlayerStyles from "@mediacms/media-player/dist/mediacms-media-player.css";
 
 import MediaPageStore from "../../../pages/MediaPage/store.js";

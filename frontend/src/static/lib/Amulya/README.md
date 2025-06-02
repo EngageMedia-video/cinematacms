@@ -14,7 +14,7 @@ You may adapt the `url('path')` in `amulya.css` depends on your Website Filesyst
 Import `amulya.css` at the top of you main Stylesheet.
 
 ```
-@import url('amulya.css');
+@use url('amulya.css');
 ```
 
 ## 5.

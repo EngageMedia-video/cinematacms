@@ -1,4 +1,4 @@
-import { put as axiosPut } from 'axios';
+import axios from 'axios';
 import { error as logError } from "./log";
 
 async function putRequest(url, putData, configData, sync, callback, errorCallback) {
@@ -18,10 +18,10 @@ async function putRequest(url, putData, configData, sync, callback, errorCallbac
     }
 
     if( sync ){
-        await axiosPut(url, putData, configData || null).then(responseHandler).catch(errorHandler || null);
+        await axios.put(url, putData, configData || null).then(responseHandler).catch(errorHandler || null);
     }
     else{
-        axiosPut(url, putData, configData || null).then(responseHandler).catch(errorHandler || null);
+        axios.put(url, putData, configData || null).then(responseHandler).catch(errorHandler || null);
     }
 };
 

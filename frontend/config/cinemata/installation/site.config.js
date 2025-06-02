@@ -5,19 +5,19 @@ module.exports = {
 	url: process.env.MEDIACMS_URL || "UNDEFINED_URL",
 	api: process.env.MEDIACMS_API || "UNDEFINED_API",
 	theme: {
-		mode: "dark", // Valid values: 'light', 'dark'.
+		mode: "light", // Valid values: 'light', 'dark'.
 		switch: {
 			position: "sidebar", // Valid values: 'header', 'sidebar'.
 		},
 	},
 	logo: {
 		lightMode: {
-			img: "./static/images/logos/cinemata_logo-darkbg.png",
-			svg: "./static/images/logos/cinemata_logo-darkbg.svg",
+			img: "./static/images/placeholder-logo-lightbg.svg",
+			svg: "./static/images/placeholder-logo-lightbg.svg",
 		},
 		darkMode: {
-			img: "./static/images/logos/cinemata_logo-darkbg.png",
-			svg: "./static/images/logos/cinemata_logo-darkbg.svg",
+			img: "./static/images/placeholder-logo-darkbg.svg",
+			svg: "./static/images/placeholder-logo-darkbg.svg",
 		},
 	},
 	pages: {

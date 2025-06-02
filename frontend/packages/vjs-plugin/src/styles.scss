@@ -1,5 +1,5 @@
-@import "../../node_modules/compass-mixins/lib/compass/support";
-@import "../../node_modules/compass-mixins/lib/compass/css3";
+@use "sass:color";
+@use "sass:math";
 
 @mixin multiline_texts_excerpt(
 	$font-size: 1em,
@@ -21,34 +21,6 @@
 	-webkit-line-clamp: $lines-to-show;
 	-webkit-box-orient: vertical;
 	white-space: normal;
-
-	// @note: Probably doesn't need.
-	/*@-moz-document url-prefix() {
-
-        position: relative;
-        padding-right: $font-size * 1.1;
-        overflow: hidden;
-
-        &:before {
-            background-color: $bg-color;
-            bottom: 0;
-            position: absolute;
-            right: 0;
-            float: right;
-            text-align:right;
-            content: '\2026';
-            width: $font-size * 1.1;
-        }
-
-        &:after {
-            content: '';
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            z-index: +1;
-            background: $bg-color;
-        }
-    }*/
 }
 
 $theme-color: #009933;
@@ -59,7 +31,7 @@ $big-play-button: true;
 $center-big-play-button: true;
 
 $big-play-width: 2.65em;
-$big-play-height: $big-play-width * (9/16);
+$big-play-height: $big-play-width * math.div(9, 16);
 $big-play-radius: 0.15em;
 $big-play-font-size: 2.5em;
 
@@ -561,7 +533,7 @@ $controlBarAnimationsDuration: 0.1s;
         opacity: 0;
         height:0;
         visibility: hidden;
-        @include transition( opacity 0.25s cubic-bezier(0.0,0.0,0.2,1) );
+        @include css3.transition( opacity 0.25s cubic-bezier(0.0,0.0,0.2,1) );
         will-change:height;*/
 
 		&.vjs-visible-panel {
@@ -769,8 +741,8 @@ $controlBarAnimationsDuration: 0.1s;
 			@if $center-big-play-button {
 				top: 50%;
 				left: 50%;
-				margin-left: $big-play-width / -2;
-				margin-top: $big-play-height / -2;
+				margin-left: math.div($big-play-width, -2);
+				margin-top: math.div($big-play-height, -2);
 			} @else {
 				left: 0.5em;
 				top: 0.5em;
@@ -785,8 +757,8 @@ $controlBarAnimationsDuration: 0.1s;
 	.vjs-bottom-bg {
 		position: absolute;
 		bottom: 0;
-		left: $control-bar-horizontal-space / -1;
-		right: $control-bar-horizontal-space / -1;
+		left: math.div($control-bar-horizontal-space, -1);
+		right: math.div($control-bar-horizontal-space, -1);
 		height: $control-bar-height;
 		display: block;
 		pointer-events: none;
@@ -1741,7 +1713,7 @@ $controlBarAnimationsDuration: 0.1s;
 
 	.vjs-progress-control {
 		.vjs-progress-holder {
-			// @include box-shadow( 0 1px 3px 0 rgba(#000, 0.1) );
+			// @include css3.box-shadow( 0 1px 3px 0 rgba(#000, 0.1) );
 
 			.vjs-play-progress {
 				background-color: $intense-color;
@@ -1991,7 +1963,7 @@ $controlBarAnimationsDuration: 0.1s;
 				.vjs-preview-thumb {
 					opacity: 0;
 					visibility: hidden;
-					@include transition(visibility 1s linear, opacity 1s linear);
+					transition: visibility 1s linear, opacity 1s linear;
 				}
 			}
 		}
@@ -2016,12 +1988,12 @@ $controlBarAnimationsDuration: 0.1s;
 	.vjs-loading-spinner {
 		width: $spinner-container-width;
 		height: $spinner-container-width;
-		margin: (-0.5 * $spinner-container-width) 0 0
-			(-0.5 * $spinner-container-width);
+		margin: (-0.5 * $spinner-container-width) 0 0 (-0.5 * $spinner-container-width);
 
 		border: 0;
 		border-radius: 0;
-		@include opacity(1);
+		opacity: 1;
+
 
 		-webkit-animation-delay: 0.44s;
 		animation-delay: 0.44s;
