@@ -207,6 +207,8 @@ Thanks to all the amazing people who have contributed to this project:
 [Markos Gogoulos](https://github.com/mgogoulos)
 [Yiannis Stergiou](https://github.com/styiannis)
 [Anna Helme](https://github.com/ahelme)
+[King Catoy](https://github.com/Kingcatz)
+[Ashraf Haque](https://github.com/securenetizen)
 [Jay Cruz](https://github.com/jmcruz14) 
 [Adryan Eka Vandra](https://github.com/adryanev)
 
