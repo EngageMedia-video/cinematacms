@@ -1,6 +1,6 @@
-var fs = require('fs');
-var path = require('path');
-var rimraf = require('rimraf');
+import fs from 'fs';
+import path from 'path';
+import rimraf from 'rimraf';
 
 var cliArgs = process.argv.slice(2);
 

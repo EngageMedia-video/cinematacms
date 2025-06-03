@@ -1,11 +1,13 @@
-@import '../../../css/includes/_variables.scss';
+@use '../../../css/includes/_theme_variables.scss' as *;
+@use '../../../css/includes/_mixins.scss' as *;
+@use "sass:math";
 
 dialog {
     background-color: var(--add-media-page-tmplt-dialog-bg-color);
 }
 
 .media-uploader{
-    background-color: var(--add-media-page-tmplt-uploader-bg-color) 
+    background-color: var(--add-media-page-tmplt-uploader-bg-color)
 }
 
 .media-dropzone{
@@ -145,12 +147,12 @@ dialog {
 .media-uploader-bottom-left-wrap {
     min-height: 225px;
     height: 0;
-    padding-top: (3/4) * 100%;
+    padding-top: math.div(3, 4) * 100%;
     @media screen and (min-width: 480px) {
-        padding-top: (5/8) * 100%;
+        padding-top: math.div(5, 8) * 100%;
     }
     @media screen and (min-width:768px) {
-        padding-top: (9/16) * 100%;
+        padding-top: math.div(9, 16) * 100%;
     }
     @media screen and (min-width:1024px) {
         position: absolute;
@@ -301,11 +303,12 @@ dialog {
             right: 0;
             display: block;
             height: 1px;
+            background-color:rgba(17, 17, 17, .06);
+
             @media screen and (min-width: 1024px) {
                 left: 0.75rem;
                 right: 0.75rem;
             }
-            background-color:rgba(17, 17, 17, .06);
         }
         &:first-child {
             &:before {
@@ -327,12 +330,14 @@ $thumbnail-height-small: 80px;
     display: inline-block;
     width: $thumbnail-height-small;
     height: $thumbnail-height-small;
+    overflow:hidden;
+    border-radius: 1px;
+
     @media screen and (min-width: 480px) {
         width: $thumbnail-height;
         height: $thumbnail-height;
     }
-    overflow:hidden;
-    border-radius: 1px;
+
     .media-upload-items-list li:hover & {}
     img {
         height: 100%;
@@ -357,7 +362,11 @@ $thumbnail-height-small: 80px;
         height: $thumbnail-height;
         line-height: $thumbnail-height - 2;
     }
-    text-align:center;
+
+    & {
+        text-align:center;
+    }
+
     i {
         padding: 0;
         line-height: 1;
@@ -578,4 +587,16 @@ $media-upload-item-name-line-height: 20px;
 
 .qq-hide {
     display: none;
+}
+
+.sixteen-by-nine-ratio-thumb {
+    padding-top: math.div(9, 16) * 100%;
+}
+
+.four-by-three-ratio-thumb {
+    padding-top: math.div(3, 4) * 100%;
+}
+
+.five-by-eight-ratio-thumb {
+    padding-top: math.div(5, 8) * 100%;
 }

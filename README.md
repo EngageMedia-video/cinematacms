@@ -170,11 +170,21 @@ In addition to volunteer contributions, CinemataCMS offers paid development oppo
 
 Note that many features and improvements remain open for volunteer contributions from our global community.
 
-## Installation
+##  🚀 Installation
 The instructions have been tested on Ubuntu 22.04. Make sure no other services are running in the system, specifically no nginx/Postgresql, as the installation script will install them and replace any configs.
 
-As root, clone the repository on /home/mediacms.io and run install.sh:
+As root, clone the repository on /home/cinemata and run install.sh:
 
+### For Beta Users (Stable)
+
+```
+# cd /home
+# mkdir cinemata && cd cinemata
+# git clone -b release/cinemata-2.0-beta https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
+# chmod +x install.sh
+# ./install.sh
+```
+### For Development (Latest)
 ```
 # cd /home
 # mkdir cinemata && cd cinemata
@@ -182,6 +192,7 @@ As root, clone the repository on /home/mediacms.io and run install.sh:
 # chmod +x install.sh
 # ./install.sh
 ```
+⚠️ Note: Main branch contains latest development code and may have unstable features.
 
 This should take a few minutes with dependencies etc. Make sure you enter a valid domain when asked (eg staging.cinemata.org)
 
@@ -196,6 +207,9 @@ Thanks to all the amazing people who have contributed to this project:
 [Markos Gogoulos](https://github.com/mgogoulos)
 [Yiannis Stergiou](https://github.com/styiannis)
 [Anna Helme](https://github.com/ahelme)
+[King Catoy](https://github.com/Kingcatz)
+[Ashraf Haque](https://github.com/securenetizen)
 [Jay Cruz](https://github.com/jmcruz14) 
+[Adryan Eka Vandra](https://github.com/adryanev)
 
 Want to contribute? Check out our [contribution guidelines](docs/CONTRIBUTING.md).

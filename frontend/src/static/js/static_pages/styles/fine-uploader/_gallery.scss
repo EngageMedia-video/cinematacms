@@ -1,4 +1,4 @@
-@import '../../../includes/variables';
+@use '../../../includes/variables';
 
 .qq-gallery {
 
@@ -66,7 +66,7 @@ $upload-button-margin-bottom: 0.5rem;
         // padding: 7px 10px;
         // float: left;
         // text-align: center;
-        
+
         // color: #fff;
         // border: 1px solid #37B7CC;
         // background: #00ABC7;
@@ -91,7 +91,7 @@ $upload-button-margin-bottom: 0.5rem;
         // opacity: 1;
 
         .circle-icon-button{
-            
+
         }
     }
 
@@ -130,7 +130,7 @@ $upload-button-margin-bottom: 0.5rem;
         left: 0;
         width: 100%;
         text-align: center;
-        
+
         // font-size: 200%;
         // opacity: 0.25;
         // filter: alpha(opacity=25);
@@ -272,7 +272,7 @@ $upload-button-margin-bottom: 0.5rem;
 }
 
 .qq-gallery .qq-upload-retrying {
-    
+
     .qq-upload-status-text {
         display: inline-block;
     }
@@ -565,7 +565,7 @@ $upload-button-margin-bottom: 0.5rem;
 /* <dialog> element styles */
 
 .qq-gallery.qq-uploader {
-    
+
     DIALOG {
 
         display: none;

@@ -1,5 +1,5 @@
-import rollup_builds from "./includes/rollup_builds";
-import pckg from '../package.json';
+import rollup_builds from "./includes/rollup_builds.js";
+import pckg from '../package.json' with { type: 'json' };
 
 const dists = rollup_builds( './src/index.js', "./out", pckg );
 

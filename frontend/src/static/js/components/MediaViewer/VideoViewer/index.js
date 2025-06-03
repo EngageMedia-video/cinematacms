@@ -28,26 +28,24 @@ import BrowserCache from "../../../classes/BrowserCache.js";
 
 import SiteContext, { SiteConsumer } from "../../../contexts/SiteContext";
 
-import { VideoPlayer } from "../../-NEW-/VideoPlayer.js";
+import { VideoPlayer, VideoPlayerError } from "../../-NEW-/VideoPlayer.js";
 
 import "../../styles/VideoViewer.scss";
 
+
 function filterVideoEncoding(encoding_status) {
 	switch (encoding_status) {
-		case "running":
-			MediaPageStore.set("media-load-error-type", "encodingRunning");
-			MediaPageStore.set(
-				"media-load-error-message",
-				"Media encoding is currently running. Try again in few minutes."
-			);
+		case 'running':
+			MediaPageStore.set('media-load-error-type', 'encodingRunning');
+			MediaPageStore.set('media-load-error-message', 'Media encoding is currently running. Try again in few minutes.');
 			break;
-		case "pending":
-			MediaPageStore.set("media-load-error-type", "encodingPending");
-			MediaPageStore.set("media-load-error-message", "Media encoding is pending");
+		case 'pending':
+			MediaPageStore.set('media-load-error-type', 'encodingPending');
+			MediaPageStore.set('media-load-error-message', 'Media encoding is pending');
 			break;
-		case "fail":
-			MediaPageStore.set("media-load-error-type", "encodingFailed");
-			MediaPageStore.set("media-load-error-message", "Media encoding failed");
+		case 'fail':
+			MediaPageStore.set('media-load-error-type', 'encodingFailed');
+			MediaPageStore.set('media-load-error-message', 'Media encoding failed');
 			break;
 	}
 }
@@ -64,51 +62,34 @@ export default class VideoViewer extends React.PureComponent {
 
 		filterVideoEncoding(this.props.data.encoding_status);
 
-		if (null !== MediaPageStore.get("media-load-error-type")) {
+		if (null !== MediaPageStore.get('media-load-error-type')) {
 			this.state.displayPlayer = true;
 			return;
 		}
 
-		if ("string" === typeof this.props.data.poster_url) {
-			this.videoPoster = formatInnerLink(
-				this.props.data.poster_url,
-				this.props.siteUrl
-			);
-		} else if ("string" === typeof this.props.data.thumbnail_url) {
-			this.videoPoster = formatInnerLink(
-				this.props.data.thumbnail_url,
-				this.props.siteUrl
-			);
+		if ('string' === typeof this.props.data.poster_url) {
+			this.videoPoster = formatInnerLink(this.props.data.poster_url, this.props.siteUrl);
+		} else if ('string' === typeof this.props.data.thumbnail_url) {
+			this.videoPoster = formatInnerLink(this.props.data.thumbnail_url, this.props.siteUrl);
 		}
 
-		this.videoInfo = videoAvailableCodecsAndResolutions(
-			this.props.data.encodings_info,
-			this.props.data.hls_info
-		);
+		this.videoInfo = videoAvailableCodecsAndResolutions(this.props.data.encodings_info, this.props.data.hls_info);
 
 		const resolutionsKeys = Object.keys(this.videoInfo);
-
-		// console.log( resolutionsKeys );
 
 		if (!resolutionsKeys.length) {
 			this.videoInfo = null;
 		} else {
-			let defaultResolution = VideoPlayerStore.get("video-quality");
+			let defaultResolution = VideoPlayerStore.get('video-quality');
 
-			if (
-				null === defaultResolution ||
-				("Auto" === defaultResolution && void 0 === this.videoInfo["Auto"])
-			) {
+			if (null === defaultResolution || ('Auto' === defaultResolution && void 0 === this.videoInfo['Auto'])) {
 				defaultResolution = 720; // Default resolution.
 			}
 
-			let defaultVideoResolution = extractDefaultVideoResolution(
-				defaultResolution,
-				this.videoInfo
-			);
+			let defaultVideoResolution = extractDefaultVideoResolution(defaultResolution, this.videoInfo);
 
-			if ("Auto" === defaultResolution && void 0 !== this.videoInfo["Auto"]) {
-				this.videoSources.push({ src: this.videoInfo["Auto"].url[0] });
+			if ('Auto' === defaultResolution && void 0 !== this.videoInfo['Auto']) {
+				this.videoSources.push({ src: this.videoInfo['Auto'].url[0] });
 			}
 
 			const supportedFormats = orderedSupportedVideoFormats();
@@ -117,31 +98,24 @@ export default class VideoViewer extends React.PureComponent {
 
 			k = 0;
 			while (k < this.videoInfo[defaultVideoResolution].format.length) {
-				if ("hls" === this.videoInfo[defaultVideoResolution].format[k]) {
-					this.videoSources.push({
-						src: this.videoInfo[defaultVideoResolution].url[k],
-					});
+				if ('hls' === this.videoInfo[defaultVideoResolution].format[k]) {
+					this.videoSources.push({ src: this.videoInfo[defaultVideoResolution].url[k] });
 					break;
 				}
 				k += 1;
 			}
 
 			for (k in this.props.data.encodings_info[defaultVideoResolution]) {
-				if (
-					this.props.data.encodings_info[defaultVideoResolution].hasOwnProperty(k)
-				) {
+				if (this.props.data.encodings_info[defaultVideoResolution].hasOwnProperty(k)) {
 					if (supportedFormats.support[k]) {
 						srcUrl = this.props.data.encodings_info[defaultVideoResolution][k].url;
 
 						if (!!srcUrl) {
-							// @note: In some cases, url value is 'null'.
-
 							srcUrl = formatInnerLink(srcUrl, this.props.siteUrl);
 
 							this.videoSources.push({
 								src: srcUrl /*.replace("http://", "//").replace("https://", "//")*/,
-								encodings_status:
-									this.props.data.encodings_info[defaultVideoResolution][k].status,
+								encodings_status: this.props.data.encodings_info[defaultVideoResolution][k].status,
 							});
 						}
 					}
@@ -158,16 +132,15 @@ export default class VideoViewer extends React.PureComponent {
 			if (
 				!this.props.inEmbed &&
 				1 === this.videoSources.length &&
-				"running" === this.videoSources[0].encodings_status
+				'running' === this.videoSources[0].encodings_status
 			) {
-				MediaPageStore.set("media-load-error-type", "encodingRunning");
+				MediaPageStore.set('media-load-error-type', 'encodingRunning');
 				MediaPageStore.set(
-					"media-load-error-message",
-					"Media encoding is currently running. Try again in few minutes."
+					'media-load-error-message',
+					'Media encoding is currently running. Try again in few minutes.'
 				);
 				return;
 			}
-
 			addPageMetadata({
 				videoUrl: formatInnerLink(
 					this.videoSources[this.videoSources.length - 1].src,
@@ -176,20 +149,17 @@ export default class VideoViewer extends React.PureComponent {
 				videoDuration: this.props.data.duration,
 			});
 		} else {
-			switch (MediaPageStore.get("media-load-error-type")) {
-				case "encodingRunning":
-				case "encodingPending":
-				case "encodingFailed":
+			switch (MediaPageStore.get('media-load-error-type')) {
+				case 'encodingRunning':
+				case 'encodingPending':
+				case 'encodingFailed':
 					break;
 				default:
-					console.warn("VIDEO DEBUG:", "Video files don't exist");
+					console.warn('VIDEO DEBUG:', "Video files don't exist");
 			}
 		}
 
-		PageStore.on(
-			"switched_media_auto_play",
-			this.onUpdateMediaAutoPlay.bind(this)
-		);
+		PageStore.on('switched_media_auto_play', this.onUpdateMediaAutoPlay.bind(this));
 
 		this.browserCache = new BrowserCache(SiteContext._currentValue.id, 86400); // Keep cache data "fresh" for one day.
 
@@ -211,20 +181,16 @@ export default class VideoViewer extends React.PureComponent {
 
 		this.onVideoEnd = this.onVideoEnd.bind(this);
 		this.onVideoRestart = this.onVideoRestart.bind(this);
-
-		// console.log( "***************" );
-		// console.log( this.videoSources );
-		// console.log( "***************" );
 	}
 
 	componentDidMount() {
 		if (this.videoSources.length) {
 			this.recommendedMedia = this.props.data.related_media.length
 				? new PlayerRecommendedMedia(
-						this.props.data.related_media,
-						this.props.inEmbed,
-						!PageStore.get("config-media-item").displayViews
-				  )
+					this.props.data.related_media,
+					this.props.inEmbed,
+					!PageStore.get('config-media-item').displayViews
+				)
 				: null;
 
 			this.upNextLoaderView =
@@ -235,36 +201,30 @@ export default class VideoViewer extends React.PureComponent {
 			let topLeftHtml = null;
 
 			if (this.props.inEmbed) {
-				let titleLink = document.createElement("a");
-				let userThumbLink = document.createElement("a");
+				let titleLink = document.createElement('a');
+				let userThumbLink = document.createElement('a');
 
-				topLeftHtml = document.createElement("div");
-				topLeftHtml.setAttribute("class", "media-links-top-left");
+				topLeftHtml = document.createElement('div');
+				topLeftHtml.setAttribute('class', 'media-links-top-left');
 
 				if (titleLink) {
-					titleLink.setAttribute("class", "title-link");
-					titleLink.setAttribute("href", this.props.data.url);
-					titleLink.setAttribute("title", this.props.data.title);
-					titleLink.setAttribute("target", "_blank");
+					titleLink.setAttribute('class', 'title-link');
+					titleLink.setAttribute('href', this.props.data.url);
+					titleLink.setAttribute('title', this.props.data.title);
+					titleLink.setAttribute('target', '_blank');
 					titleLink.innerHTML = this.props.data.title;
 				}
 
 				if (userThumbLink) {
-					userThumbLink.setAttribute("class", "user-thumb-link");
+					userThumbLink.setAttribute('class', 'user-thumb-link');
+					userThumbLink.setAttribute('href', formatInnerLink(this.props.data.author_profile, this.props.siteUrl));
+					userThumbLink.setAttribute('title', this.props.data.author_name);
+					userThumbLink.setAttribute('target', '_blank');
 					userThumbLink.setAttribute(
-						"href",
-						formatInnerLink(this.props.data.author_profile, this.props.siteUrl)
-					);
-					userThumbLink.setAttribute("title", this.props.data.author_name);
-					userThumbLink.setAttribute("target", "_blank");
-					userThumbLink.setAttribute(
-						"style",
-						"background-image:url(" +
-							formatInnerLink(
-								MediaPageStore.get("media-author-thumbnail-url"),
-								this.props.siteUrl
-							) +
-							")"
+						'style',
+						'background-image:url(' +
+						formatInnerLink(MediaPageStore.get('media-author-thumbnail-url'), this.props.siteUrl) +
+						')'
 					);
 				}
 
@@ -272,7 +232,8 @@ export default class VideoViewer extends React.PureComponent {
 				topLeftHtml.appendChild(titleLink);
 			}
 
-			const mediaUrl = MediaPageStore.get("media-url");
+			const mediaUrl = MediaPageStore.get('media-url');
+
 			let bottomRightHTML =
 				'<button class="share-video-btn"><i class="material-icons">share</i><span>Share</span></button>';
 			bottomRightHTML +=
@@ -302,7 +263,9 @@ export default class VideoViewer extends React.PureComponent {
 											<div class="sh-option share-telegram">\
 												<a href="https://t.me/share/url?url=' +
 				mediaUrl +
-				'&amp;text=Pretty Good Podcast Episode 11: A Conversation with a Pro-Democracy Activist in Myanmar" title="" target="_blank"><span></span><span>Telegram</span></a>\
+				'&amp;text=' +
+				this.props.data.title +
+				'" title="" target="_blank"><span></span><span>Telegram</span></a>\
 											</div>\
 											<div class="sh-option share-linkedin">\
 													<a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=' +
@@ -312,12 +275,16 @@ export default class VideoViewer extends React.PureComponent {
 											<div class="sh-option share-reddit">\
 												<a href="https://reddit.com/submit?url=' +
 				mediaUrl +
-				'&amp;title=Pretty Good Podcast Episode 11: A Conversation with a Pro-Democracy Activist in Myanmar" title="" target="_blank"><span></span><span>reddit</span></a>\
+				'&amp;title=' +
+				this.props.data.title +
+				'" title="" target="_blank"><span></span><span>reddit</span></a>\
 											</div>\
 											<div class="sh-option share-tumblr">\
 												<a href="https://www.tumblr.com/widgets/share/tool?canonicalUrl=' +
 				mediaUrl +
-				'&amp;title=Pretty Good Podcast Episode 11: A Conversation with a Pro-Democracy Activist in Myanmar" title="" target="_blank"><span></span><span>Tumblr</span></a>\
+				'&amp;title=' +
+				this.props.data.title +
+				'" title="" target="_blank"><span></span><span>Tumblr</span></a>\
 											</div>\
 											<div class="sh-option share-pinterest">\
 												<a href="http://pinterest.com/pin/create/link/?url=' +
@@ -338,7 +305,6 @@ export default class VideoViewer extends React.PureComponent {
 				topRight: this.upNextLoaderView ? this.upNextLoaderView.html() : null,
 				bottomLeft: this.recommendedMedia ? this.recommendedMedia.html() : null,
 				bottomRight: this.props.inEmbed ? bottomRightHTML : null,
-				// bottomRight: bottomRightHTML,
 			};
 
 			this.setState(
@@ -347,32 +313,24 @@ export default class VideoViewer extends React.PureComponent {
 				},
 				function () {
 					setTimeout(function () {
-						const shareBtn = document.querySelector(".share-video-btn");
-						const shareWrap = document.querySelector(".share-options-wrapper");
-						const shareInner = document.querySelector(".share-options-inner");
+						const shareBtn = document.querySelector('.share-video-btn');
+						const shareWrap = document.querySelector('.share-options-wrapper');
+						const shareInner = document.querySelector('.share-options-inner');
 						if (shareBtn) {
-							shareBtn.addEventListener("click", function (ev) {
-								addClassname(
-									document.querySelector(".video-js.vjs-mediacms"),
-									"vjs-visible-share-options"
-								);
+							shareBtn.addEventListener('click', function (ev) {
+								addClassname(document.querySelector('.video-js.vjs-mediacms'), 'vjs-visible-share-options');
 							});
 						}
 						if (shareWrap) {
-							shareWrap.addEventListener("click", function (ev) {
+							shareWrap.addEventListener('click', function (ev) {
 								if (ev.target === shareInner || ev.target === shareWrap) {
-									removeClassname(
-										document.querySelector(".video-js.vjs-mediacms"),
-										"vjs-visible-share-options"
-									);
+									removeClassname(document.querySelector('.video-js.vjs-mediacms'), 'vjs-visible-share-options');
 								}
 							});
 						}
 					}, 1000);
 				}
 			);
-
-			// console.log( this.videoInfo );
 		}
 	}
 
@@ -389,78 +347,77 @@ export default class VideoViewer extends React.PureComponent {
 			this.recommendedMedia.init();
 		}
 
-		this.playerInstance.player.on(
-			"fullscreenchange",
-			this.recommendedMedia.onResize
-		);
+		this.playerInstance.player.on('fullscreenchange', this.recommendedMedia.onResize);
 
-		PageStore.on("window_resize", this.recommendedMedia.onResize);
+		PageStore.on('window_resize', this.recommendedMedia.onResize);
 
-		VideoPlayerStore.on("changed_viewer_mode", this.recommendedMedia.onResize);
+		VideoPlayerStore.on('changed_viewer_mode', this.recommendedMedia.onResize);
 	}
 
 	unsetRecommendedMedia() {
 		if (null === this.recommendedMedia) {
 			return;
 		}
-
-		this.playerInstance.player.off(
-			"fullscreenchange",
-			this.recommendedMedia.onResize
-		);
-
-		PageStore.removeListener("window_resize", this.recommendedMedia.onResize);
-
-		VideoPlayerStore.removeListener(
-			"changed_viewer_mode",
-			this.recommendedMedia.onResize
-		);
-
+		this.playerInstance.player.off('fullscreenchange', this.recommendedMedia.onResize);
+		PageStore.removeListener('window_resize', this.recommendedMedia.onResize);
+		VideoPlayerStore.removeListener('changed_viewer_mode', this.recommendedMedia.onResize);
 		this.recommendedMedia.destroy();
 	}
 
 	onClickNext() {
-		const playlistId = MediaPageStore.get("playlist-id");
+		const playlistId = MediaPageStore.get('playlist-id');
+
+		let nextLink;
 
 		if (playlistId) {
-			// console.log( "GO TO", MediaPageStore.get('playlist-next-media-url') );
-			window.location.href = MediaPageStore.get("playlist-next-media-url");
+			nextLink = MediaPageStore.get('playlist-next-media-url');
+
+			if (null === nextLink) {
+				nextLink = this.props.data.related_media[0].url;
+			}
 		} else if (!this.props.inEmbed) {
-			// console.log( "GO TO", this.props.data.related_media[0].url );
-			window.location.href = this.props.data.related_media[0].url;
+			nextLink = this.props.data.related_media[0].url;
 		}
+
+		window.location.href = nextLink;
 	}
 
 	onClickPrevious() {
-		const playlistId = MediaPageStore.get("playlist-id");
+		const playlistId = MediaPageStore.get('playlist-id');
+
+		let previousLink;
 
 		if (playlistId) {
-			// console.log( "GO TO", MediaPageStore.get('playlist-previous-media-url') );
-			window.location.href = MediaPageStore.get("playlist-previous-media-url");
+			previousLink = MediaPageStore.get('playlist-previous-media-url');
+
+			if (null === previousLink) {
+				previousLink = this.props.data.related_media[0].url;
+			}
 		} else if (!this.props.inEmbed) {
-			// console.log( "GO TO", this.props.data.related_media[0].url );
-			window.location.href = this.props.data.related_media[0].url;
+			previousLink = this.props.data.related_media[0].url;
 		}
+
+		window.location.href = previousLink;
 	}
 
 	onStateUpdate(newState) {
-		if (VideoPlayerStore.get("in-theater-mode") !== newState.theaterMode) {
+		if (VideoPlayerStore.get('in-theater-mode') !== newState.theaterMode) {
 			VideoPlayerActions.set_viewer_mode(newState.theaterMode);
 		}
 
-		if (VideoPlayerStore.get("player-volume") !== newState.volume) {
+		if (VideoPlayerStore.get('player-volume') !== newState.volume) {
 			VideoPlayerActions.set_player_volume(newState.volume);
 		}
 
-		if (VideoPlayerStore.get("player-sound-muted") !== newState.soundMuted) {
+		if (VideoPlayerStore.get('player-sound-muted') !== newState.soundMuted) {
 			VideoPlayerActions.set_player_sound_muted(newState.soundMuted);
 		}
 
-		if (VideoPlayerStore.get("video-quality") !== newState.quality) {
+		if (VideoPlayerStore.get('video-quality') !== newState.quality) {
 			VideoPlayerActions.set_video_quality(newState.quality);
 		}
 
-		if (VideoPlayerStore.get("video-playback-speed") !== newState.playbackSpeed) {
+		if (VideoPlayerStore.get('video-playback-speed') !== newState.playbackSpeed) {
 			VideoPlayerActions.set_video_playback_speed(newState.playbackSpeed);
 		}
 	}
@@ -482,23 +439,23 @@ export default class VideoViewer extends React.PureComponent {
 			this.recommendedMedia.initWrappers(this.playerElem.parentNode);
 
 			if (this.props.inEmbed) {
-				this.playerInstance.player.one("pause", this.recommendedMedia.init);
+				this.playerInstance.player.one('pause', this.recommendedMedia.init);
 				this.initRecommendedMedia();
 			}
 		}
 
-		this.playerInstance.player.one("ended", this.onVideoEnd);
+		this.playerInstance.player.one('ended', this.onVideoEnd);
 	}
 
 	onVideoRestart() {
 		if (null !== this.recommendedMedia) {
-			this.recommendedMedia.updateDisplayType("inline");
+			this.recommendedMedia.updateDisplayType('inline');
 
 			if (this.props.inEmbed) {
-				this.playerInstance.player.one("pause", this.recommendedMedia.init);
+				this.playerInstance.player.one('pause', this.recommendedMedia.init);
 			}
 
-			this.playerInstance.player.one("ended", this.onVideoEnd);
+			this.playerInstance.player.one('ended', this.onVideoEnd);
 		}
 	}
 
@@ -508,27 +465,23 @@ export default class VideoViewer extends React.PureComponent {
 				this.initRecommendedMedia();
 			}
 
-			this.recommendedMedia.updateDisplayType("full");
-			this.playerInstance.player.one("playing", this.onVideoRestart);
+			this.recommendedMedia.updateDisplayType('full');
+			this.playerInstance.player.one('playing', this.onVideoRestart);
 		}
 
-		const playlistId = this.props.inEmbed
-			? null
-			: MediaPageStore.get("playlist-id");
+		const playlistId = this.props.inEmbed ? null : MediaPageStore.get('playlist-id');
 
 		if (playlistId) {
-			const moreMediaEl = document.querySelector(".video-player .more-media");
-			const actionsAnimEl = document.querySelector(
-				".video-player .vjs-actions-anim"
-			);
+			const moreMediaEl = document.querySelector('.video-player .more-media');
+			const actionsAnimEl = document.querySelector('.video-player .vjs-actions-anim');
 
 			this.upNextLoaderView.cancelTimer();
 
-			const nextMediaUrl = MediaPageStore.get("playlist-next-media-url");
+			const nextMediaUrl = MediaPageStore.get('playlist-next-media-url');
 
 			if (nextMediaUrl) {
 				if (moreMediaEl) {
-					moreMediaEl.style.display = "none";
+					moreMediaEl.style.display = 'none';
 				}
 
 				if (actionsAnimEl) {
@@ -544,10 +497,10 @@ export default class VideoViewer extends React.PureComponent {
 		}
 
 		if (this.upNextLoaderView) {
-			if (PageStore.get("media-auto-play")) {
+			if (PageStore.get('media-auto-play')) {
 				this.upNextLoaderView.startTimer();
 				this.playerInstance.player.one(
-					"play",
+					'play',
 					function () {
 						this.upNextLoaderView.cancelTimer();
 					}.bind(this)
@@ -560,7 +513,7 @@ export default class VideoViewer extends React.PureComponent {
 
 	onUpdateMediaAutoPlay() {
 		if (this.upNextLoaderView) {
-			if (PageStore.get("media-auto-play")) {
+			if (PageStore.get('media-auto-play')) {
 				this.upNextLoaderView.showTimerView(this.playerInstance.isEnded());
 			} else {
 				this.upNextLoaderView.hideTimerView();
@@ -572,65 +525,45 @@ export default class VideoViewer extends React.PureComponent {
 		let nextLink = null;
 		let previousLink = null;
 
-		const playlistId = this.props.inEmbed
-			? null
-			: MediaPageStore.get("playlist-id");
+		const playlistId = this.props.inEmbed ? null : MediaPageStore.get('playlist-id');
 
 		if (playlistId) {
-			nextLink = MediaPageStore.get("playlist-next-media-url");
-			previousLink = MediaPageStore.get("playlist-previous-media-url");
+			nextLink = MediaPageStore.get('playlist-next-media-url');
+			previousLink = MediaPageStore.get('playlist-previous-media-url');
 		} else {
 			nextLink =
-				this.props.data.related_media.length && !this.props.inEmbed
-					? this.props.data.related_media[0].url
-					: null;
+				this.props.data.related_media.length && !this.props.inEmbed ? this.props.data.related_media[0].url : null;
 		}
 
 		const previewSprite = !!this.props.data.sprites_url
 			? {
-					url:
-						this.props.siteUrl +
-						"/" +
-						this.props.data.sprites_url.replace(/^\//g, ""),
-					frame: { width: 160, height: 90, seconds: 10 },
-			  }
+				url: this.props.siteUrl + '/' + this.props.data.sprites_url.replace(/^\//g, ''),
+				frame: { width: 160, height: 90, seconds: 10 },
+			}
 			: null;
 
 		return (
 			<div
-				key={(this.props.inEmbed ? "embed-" : "") + "player-container"}
-				className={
-					"player-container" +
-					(this.videoSources.length ? "" : " player-container-error")
-				}
+				key={(this.props.inEmbed ? 'embed-' : '') + 'player-container'}
+				className={'player-container' + (this.videoSources.length ? '' : ' player-container-error')}
+				style={this.props.containerStyles}
 				ref="playerContainer"
 			>
-				<div className="player-container-inner" ref="playerContainerInner">
-					{this.state.displayPlayer &&
-					null !== MediaPageStore.get("media-load-error-type") ? (
-						<VideoPlayer
-							errorMessage={MediaPageStore.get("media-load-error-message")}
-						/>
+				<div className="player-container-inner" ref="playerContainerInner" style={this.props.containerStyles}>
+					{this.state.displayPlayer && null !== MediaPageStore.get('media-load-error-type') ? (
+						<VideoPlayerError errorMessage={MediaPageStore.get('media-load-error-message')} />
 					) : null}
 
-					{this.state.displayPlayer &&
-					null == MediaPageStore.get("media-load-error-type") ? (
-						<div
-							className="video-player"
-							ref="videoPlayerWrapper"
-							key="videoPlayerWrapper"
-						>
+					{this.state.displayPlayer && null == MediaPageStore.get('media-load-error-type') ? (
+						<div className="video-player" ref="videoPlayerWrapper" key="videoPlayerWrapper">
 							<SiteConsumer>
 								{(site) => (
 									<VideoPlayer
-										playerVolume={this.browserCache.get("player-volume")}
-										playerSoundMuted={this.browserCache.get("player-sound-muted")}
-										videoQuality={this.browserCache.get("video-quality")}
-										videoPlaybackSpeed={parseInt(
-											this.browserCache.get("video-playback-speed"),
-											10
-										)}
-										inTheaterMode={this.browserCache.get("in-theater-mode")}
+										playerVolume={this.browserCache.get('player-volume')}
+										playerSoundMuted={this.browserCache.get('player-sound-muted')}
+										videoQuality={this.browserCache.get('video-quality')}
+										videoPlaybackSpeed={parseInt(this.browserCache.get('video-playback-speed'), 10)}
+										inTheaterMode={this.browserCache.get('in-theater-mode')}
 										siteId={site.id}
 										siteUrl={site.url}
 										info={this.videoInfo}
@@ -644,7 +577,7 @@ export default class VideoViewer extends React.PureComponent {
 										hasTheaterMode={!this.props.inEmbed}
 										hasNextLink={!!nextLink}
 										hasPreviousLink={!!previousLink}
-										errorMessage={MediaPageStore.get("media-load-error-message")}
+										errorMessage={MediaPageStore.get('media-load-error-message')}
 										onClickNextCallback={this.onClickNext}
 										onClickPreviousCallback={this.onClickPrevious}
 										onStateUpdateCallback={this.onStateUpdate}
@@ -669,63 +602,64 @@ VideoViewer.propTypes = {
 	inEmbed: PropTypes.bool,
 };
 
-// callback executed when canvas was found
 function findGetParameter(parameterName) {
-	var result = null,
-		tmp = [];
-	var items = location.search.substr(1).split("&");
-	// console.log( items );
-	for (var index = 0; index < items.length; index++) {
-		tmp = items[index].split("=");
-		if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
+	let result = null;
+	let tmp = [];
+	var items = location.search.substr(1).split('&');
+	for (let i = 0; i < items.length; i++) {
+		tmp = items[i].split('=');
+		if (tmp[0] === parameterName) {
+			result = decodeURIComponent(tmp[1]);
+		}
 	}
 	return result;
 }
-function handleCanvas() {
-	var Player = videojs(document.getElementById("vjs_video_3_html5_api"));
+
+function handleCanvas(videoElem) { // Make sure it's a video element
+
+	if (!videoElem || !videoElem.tagName || videoElem.tagName.toLowerCase() !== 'video') {
+		console.error('Invalid video element:', videoElem);
+		return;
+	}
+
+	const Player = videojs(videoElem);
 	Player.playsinline(true);
-	//   //Player.controls(false);
 
-	//   console.log( '#####' );
-	//   console.log( location.search );
-	//     console.log( findGetParameter("muted") );
-	//     console.log( findGetParameter("time") );
-	//     console.log( findGetParameter("autoplay") );
-	//     console.log( '#####' );
-	//     return;
+	Player.on('loadedmetadata', function () {
+		const muted = parseInt(findGetParameter('muted'));
+		const autoplay = parseInt(findGetParameter('autoplay'));
+		const timestamp = parseInt(findGetParameter('t'));
 
-	//   if(findGetParameter("muted")==1){
-	//         Player.muted(true);
-	//   }
-	//   if(findGetParameter("time")>=0){
-	//         Player.currentTime(findGetParameter("time"));
-	//   }
-	//   if(findGetParameter("autoplay")==1){
-	//         Player.play();
-	//   }
-}
-
-// set up the mutation observer
-var observer = new MutationObserver(function (mutations, me) {
-	// `mutations` is an array of mutations that occurred
-	// `me` is the MutationObserver instance
-	var canvas = document.getElementById("vjs_video_3_html5_api");
-	if (canvas) {
-		// console.log( document.querySelector('.video-js.vjs-mediacms.vjs-loading-video video') );
-
-		const videoElem = document.querySelector(".video-js.vjs-mediacms video");
-		if (videoElem) {
-			videoElem.style.opacity = "1";
-			videoElem.style.visibility = "visible";
+		if (muted == 1) {
+			Player.muted(true);
 		}
 
-		handleCanvas();
-		me.disconnect(); // stop observing
-		return;
+		if (timestamp >= 0 && timestamp < Player.duration()) {
+			// Start the video from the given time
+			Player.currentTime(timestamp);
+		} else if (timestamp >= 0 && timestamp >= Player.duration()) {
+			// Restart the video if the given time is greater than the duration
+			Player.play();
+		}
+		if (autoplay === 1) {
+			Player.play();
+		}
+	});
+}
+
+const observer = new MutationObserver((mutations, me) => {
+	const playerContainer = document.querySelector('.video-js.vjs-mediacms');
+	if (playerContainer) {
+		const video = playerContainer.querySelector('video');
+		if (video) {
+			video.style.opacity = "1";
+			video.style.visibility = "visible";
+			handleCanvas(video);
+			me.disconnect();
+		}
 	}
 });
 
-// start observing
 observer.observe(document, {
 	childList: true,
 	subtree: true,

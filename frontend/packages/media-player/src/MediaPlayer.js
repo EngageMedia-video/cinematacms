@@ -57,7 +57,7 @@ const defaults = {
         }
     }
 };
- 
+
 /**
  * Filter plugin options values.
  * @param  {Object} opt Options object.
@@ -343,13 +343,13 @@ export function MediaPlayer(domPlayer, pluginOptions, pluginState, videoResoluti
         pluginVideoPlaybackSpeeds = {};
 
     if( !! videoResolutions ){
-    
+
         for (k in videoResolutions) {
 
             if (videoResolutions.hasOwnProperty(k)) {
-                
+
                 if( isArray( videoResolutions[k].url ) && videoResolutions[k].url.length && isArray( videoResolutions[k].format ) && videoResolutions[k].format.length ){
-                    
+
                     pluginVideoResolutions[k] = {
                         title: k,
                         src: sourcesSrcs( videoResolutions[k].url ),

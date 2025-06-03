@@ -1,22 +1,41 @@
-import React, { useRef, useEffect, useContext } from "react";
-import PropTypes from "prop-types";
-import urlParse from "url-parse";
+import React, { useRef, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import urlParse from 'url-parse';
+import videojs from 'video.js';
 
-import MediaPlayer from "@mediacms/media-player/dist/mediacms-media-player.js";
+// Import the CSS only
+import '@mediacms/media-player/dist/mediacms-media-player.css';
+// Import the JS file for side effects (it will define a global)
+import '@mediacms/media-player/dist/mediacms-media-player.js';
 
-import "@mediacms/media-player/dist/mediacms-media-player.css";
-
-import "../styles/VideoPlayer.scss";
+import '../styles/VideoPlayer.scss';
 
 export function formatInnerLink(url, baseUrl) {
 	let link = urlParse(url, {});
 
-	if ("" === link.origin || "null" === link.origin || !link.origin) {
-		link = urlParse(baseUrl + "/" + url.replace(/^\//g, ""), {});
+	if ('' === link.origin || 'null' === link.origin || !link.origin) {
+		link = urlParse(baseUrl + '/' + url.replace(/^\//g, ''), {});
 	}
 
 	return link.toString();
 }
+
+export function VideoPlayerError(props) {
+	return (
+		<div className="error-container">
+			<div className="error-container-inner">
+				<span className="icon-wrap">
+					<i className="material-icons">error_outline</i>
+				</span>
+				<span className="msg-wrap">{props.errorMessage}</span>
+			</div>
+		</div>
+	);
+}
+
+VideoPlayerError.propTypes = {
+	errorMessage: PropTypes.string.isRequired,
+};
 
 export function VideoPlayer(props) {
 	const videoElemRef = useRef(null);
@@ -32,19 +51,11 @@ export function VideoPlayer(props) {
 	};
 
 	playerStates.playerVolume =
-		null === playerStates.playerVolume
-			? 1
-			: Math.max(Math.min(Number(playerStates.playerVolume), 1), 0);
-	playerStates.playerSoundMuted =
-		null !== playerStates.playerSoundMuted ? playerStates.playerSoundMuted : !1;
-	playerStates.videoQuality =
-		null !== playerStates.videoQuality ? playerStates.videoQuality : "Auto";
-	playerStates.videoPlaybackSpeed =
-		null !== playerStates.videoPlaybackSpeed
-			? playerStates.videoPlaybackSpeed
-			: !1;
-	playerStates.inTheaterMode =
-		null !== playerStates.inTheaterMode ? playerStates.inTheaterMode : !1;
+		null === playerStates.playerVolume ? 1 : Math.max(Math.min(Number(playerStates.playerVolume), 1), 0);
+	playerStates.playerSoundMuted = null !== playerStates.playerSoundMuted ? playerStates.playerSoundMuted : !1;
+	playerStates.videoQuality = null !== playerStates.videoQuality ? playerStates.videoQuality : 'Auto';
+	playerStates.videoPlaybackSpeed = null !== playerStates.videoPlaybackSpeed ? playerStates.videoPlaybackSpeed : !1;
+	playerStates.inTheaterMode = null !== playerStates.inTheaterMode ? playerStates.inTheaterMode : !1;
 
 	function onClickNext() {
 		if (void 0 !== props.onClickNextCallback) {
@@ -90,8 +101,8 @@ export function VideoPlayer(props) {
 		}
 
 		if (!props.inEmbed) {
-			window.removeEventListener("focus", initPlayer);
-			document.removeEventListener("visibilitychange", initPlayer);
+			window.removeEventListener('focus', initPlayer);
+			document.removeEventListener('visibilitychange', initPlayer);
 		}
 
 		if (!videoElemRef.current) {
@@ -106,11 +117,7 @@ export function VideoPlayer(props) {
 			on: false,
 		};
 
-		if (
-			void 0 !== props.subtitlesInfo &&
-			null !== props.subtitlesInfo &&
-			props.subtitlesInfo.length
-		) {
+		if (void 0 !== props.subtitlesInfo && null !== props.subtitlesInfo && props.subtitlesInfo.length) {
 			subtitles.languages = [];
 
 			let i = 0;
@@ -135,15 +142,16 @@ export function VideoPlayer(props) {
 			}
 		}
 
-		player = new MediaPlayer(
+		// Get MediaPlayer from the global object
+		const MediaPlayerClass = window['@mediacms/media-player'];
+
+		player = new MediaPlayerClass(
 			videoElemRef.current,
 			{
 				enabledTouchControls: true,
 				sources: props.sources,
 				poster: props.poster,
 				autoplay: props.enableAutoplay,
-				// preload: 'metadata',
-				// bigPlayButton: props.inEmbed,
 				bigPlayButton: true,
 				controlBar: {
 					theaterMode: props.hasTheaterMode,
@@ -159,9 +167,7 @@ export function VideoPlayer(props) {
 				volume: playerStates.playerVolume,
 				soundMuted: playerStates.playerSoundMuted,
 				theaterMode: playerStates.inTheaterMode,
-				// theSelectedQuality: playerStates.videoQuality,
-				theSelectedQuality:
-					/*this.isDefaultResolutionAuto && void 0 !== this.videoInfo.Auto ? null : this.defaultVideoResolution*/ void 0, // @note: Allow auto resolution selection by sources order.
+				theSelectedQuality: void 0, // @note: Allow auto resolution selection by sources order.
 				theSelectedPlaybackSpeed: playerStates.videoPlaybackSpeed || 1,
 			},
 			props.info,
@@ -170,44 +176,6 @@ export function VideoPlayer(props) {
 			onClickNext,
 			onClickPrevious
 		);
-
-		// const newPlayer = new MediaPlayer(
-		// 	videoElemRef.current,
-		// 	{
-		// 		enabledTouchControls: true,
-		// 		sources: props.sources,
-		// 		poster: props.poster,
-		// 		autoplay: props.enableAutoplay,
-		// 		// preload: 'metadata',
-		// 		// bigPlayButton: props.inEmbed,
-		// 		bigPlayButton: true,
-		// 		controlBar: {
-		// 			theaterMode: props.hasTheaterMode,
-		// 			pictureInPicture: false,
-		// 			next: props.hasNextLink ? true : false,
-		// 			previous: props.hasPreviousLink ? true : false,
-		// 		},
-		// 		subtitles: subtitles,
-		// 		cornerLayers: props.cornerLayers,
-		//         videoPreviewThumb: props.previewSprite,
-		// 	},
-		// 	{
-		// 		volume: playerStates.playerVolume,
-		// 		soundMuted: playerStates.playerSoundMuted,
-		// 		theaterMode: playerStates.inTheaterMode,
-		// 		// theSelectedQuality: playerStates.videoQuality,
-		// 		theSelectedQuality: /*this.isDefaultResolutionAuto && void 0 !== this.videoInfo.Auto ? null : this.defaultVideoResolution*/ void 0,	// @note: Allow auto resolution selection by sources order.
-		// 		theSelectedPlaybackSpeed: playerStates.videoPlaybackSpeed || 1,
-		// 	},
-		//        props.info,
-		//        [ 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2 ],
-		//        onPlayerStateUpdate,
-		//        onClickNext,
-		//        onClickPrevious,
-		//    );
-
-		// console.log( player );
-		// console.log( newPlayer );
 
 		if (void 0 !== props.onPlayerInitCallback) {
 			props.onPlayerInitCallback(player, videoElemRef.current);
@@ -222,27 +190,23 @@ export function VideoPlayer(props) {
 		player = null;
 	}
 
-
 	useEffect(() => {
-		if (
-			props.inEmbed ||
-			document.hasFocus() ||
-			"visible" === document.visibilityState
-		) {
-			// setTimeout(function(ins){ ins.initPlayer( ins.refs.videoElem ); }, 1000, this);
+		if (props.inEmbed || document.hasFocus() || 'visible' === document.visibilityState) {
 			initPlayer();
 		} else {
-			window.addEventListener("focus", initPlayer);
-			document.addEventListener("visibilitychange", initPlayer);
+			window.addEventListener('focus', initPlayer);
+			document.addEventListener('visibilitychange', initPlayer);
 		}
 
-		player && player.player.one('loadedmetadata', () => {
-			const urlParams = new URLSearchParams(window.location.search);
-			const paramT = Number(urlParams.get('t'));
-			const timestamp = !isNaN(paramT) ? paramT : 0;
-			player.player.currentTime(timestamp);
-		  });
-	  
+		/*
+				// We don't need this because we have a custom function in frontend/src/static/js/components/media-viewer/VideoViewer/index.js:617
+				player && player.player.one('loadedmetadata', () => {
+				const urlParams = new URLSearchParams(window.location.search);
+				const paramT = Number(urlParams.get('t'));
+				const timestamp = !isNaN(paramT) ? paramT : 0;
+				player.player.currentTime(timestamp);
+		}); */
+
 		return () => {
 			unsetPlayer();
 
@@ -253,10 +217,7 @@ export function VideoPlayer(props) {
 	}, []);
 
 	return null === props.errorMessage ? (
-		<video
-			ref={videoElemRef}
-			className="video-js vjs-mediacms native-dimensions"
-		></video>
+		<video ref={videoElemRef} className="video-js vjs-mediacms native-dimensions"></video>
 	) : (
 		<div className="error-container">
 			<div className="error-container-inner">
@@ -270,7 +231,7 @@ export function VideoPlayer(props) {
 }
 
 VideoPlayer.propTypes = {
-	playerVolume: PropTypes.number,
+	playerVolume: PropTypes.string,
 	playerSoundMuted: PropTypes.bool,
 	videoQuality: PropTypes.string,
 	videoPlaybackSpeed: PropTypes.number,

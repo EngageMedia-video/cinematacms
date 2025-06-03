@@ -51,7 +51,7 @@ su -c "psql -c \"CREATE DATABASE mediacms\"" postgres
 su -c "psql -c \"CREATE USER mediacms WITH ENCRYPTED PASSWORD 'mediacms'\"" postgres
 su -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE mediacms TO mediacms\"" postgres
 
-echo 'Creating python virtualenv on /home/mediacms.io'
+echo 'Creating python virtualenv on /home/cinemata'
 
 cd /home/cinemata
 virtualenv . --python=python3

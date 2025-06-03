@@ -1,4 +1,4 @@
-import { post as axiosPost } from 'axios';
+import axios from 'axios';
 import { error as logError } from "./log";
 
 async function postRequest(url, postData, configData, sync, callback, errorCallback) {
@@ -18,10 +18,10 @@ async function postRequest(url, postData, configData, sync, callback, errorCallb
     }
 
     if( sync ){
-        await axiosPost(url, postData, configData || null).then(responseHandler).catch(errorHandler || null);
+        await axios.post(url, postData, configData || null).then(responseHandler).catch(errorHandler || null);
     }
     else{
-        axiosPost(url, postData, configData || null).then(responseHandler).catch(errorHandler || null);
+        axios.post(url, postData, configData || null).then(responseHandler).catch(errorHandler || null);
     }
 };
 
