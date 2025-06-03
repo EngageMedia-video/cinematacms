@@ -6,17 +6,17 @@
 
 When you log in, the dashboard highlights important video content with three main sections:
 
-- **Main Video:**  
+- **Featured Video:**  
   A single highlighted video displayed prominently for quick access or promotion.  
   ![Main Video Screenshot](./main-video.png)
 
-- **Featured Videos:**  
-  A curated list of videos selected for their importance or popularity.  
-  ![Featured Videos Screenshot](./featured-videos.png)
-
-- **Recent Videos:**  
+  - **Recent Videos:**  
   The newest videos added or updated, helping you stay updated on the latest content.  
   ![Recent Videos Screenshot](./recent-videos.png)
+
+- **Featured Playlists:**  
+  A curated list of videos selected for their thematic relevance or urgency.  
+  ![Featured Videos Screenshot](./featured-videos.png)
 
 This setup prioritizes key videos for easy management and overview.
 
