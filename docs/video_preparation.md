@@ -1,13 +1,13 @@
 # Technical Specifications Guide for Optimal Video Preparation
 
-To ensure your video uploads to CinemataCMS are processed smoothly and deliver the best playback experience across devices and networks, please follow the technical guidelines below.
+To ensure your video uploads to CinemataCMS are processed smoothly, optimise server storage and deliver the best playback experience across devices and networks, please follow the technical guidelines below.
 
 ---
 
 ## 📁 File Format and Container
 
 - **Preferred Container**: `.mp4`
-- **Alternative Supported Formats**: `.mov`, `.webm`, `.mkv`, `.avi` *(note: some may require re-encoding for optimal playback)*
+- **Alternative Supported Formats**: `.mov`, `.webm`, `.mkv`, `.avi` 
 
 ---
 
@@ -23,6 +23,7 @@ To ensure your video uploads to CinemataCMS are processed smoothly and deliver t
 | **Scan Type**    | Progressive (not interlaced)             |
 | **Max File Size**| 4 GB (configurable)                                     |
 
+Note: CinemataCMS was tested to support encoding Apple ProRes and other professional intermediate codecs. However, due to their large file sizes, they may not be the most efficient choice for server storage optimisation.
 ---
 
 ## 🔊 Audio Specifications
