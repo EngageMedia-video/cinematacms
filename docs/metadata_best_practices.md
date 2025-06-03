@@ -34,6 +34,7 @@ Metadata provides essential information about your content. It helps:
 ## ✅ Best Practices
 
 ### 1. **Use Consistent Formatting**
+- Remove filename extensions like .mp4, .mov, etc. 
 - Capitalize titles correctly: `The Future of Forests`, not `the future of forests`
 - Separate tags with commas
 - Use standard country names and ISO language codes when possible

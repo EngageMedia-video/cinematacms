@@ -1,5 +1,7 @@
 # Playlist Creation and Management
 
+by [Khairunnisa Isma Hanifah](https://github.com/KhairunnisaIsma)
+
 This document provides instructions for creating and managing playlists in CinemataCMS to organize video content into themed collections.
 
 ---

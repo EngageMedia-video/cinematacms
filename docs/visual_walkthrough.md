@@ -1,5 +1,7 @@
 # CinemataCMS Visual Walkthrough
 
+by [Khairunnisa Isma Hanifah](https://github.com/KhairunnisaIsma)
+
 ---
 
 ## 1. Welcome and Dashboard Tour
@@ -17,6 +19,7 @@ When you log in, the dashboard highlights important video content with three mai
 - **Featured Playlists:**  
   A curated list of videos selected for their thematic relevance or urgency.  
   ![Featured Videos Screenshot](./featured-videos.png)
+  
 
 This setup prioritizes key videos for easy management and overview.
 

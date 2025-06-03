@@ -1,5 +1,7 @@
 # 📄 Media Upload and Management Workflow
 
+by [Khairunnisa Isma Hanifah](https://github.com/KhairunnisaIsma)
+
 This document outlines the complete workflow for uploading, managing, and publishing media (primarily video) content on a platform similar to Cinemata.org. It includes all stages from account registration to final publication, including moderation and metadata management.
 
 ---
@@ -22,7 +24,7 @@ This document outlines the complete workflow for uploading, managing, and publis
 
 ### Upload Requirements
 - **Accepted Formats:** MP4, MOV, AVI, MKV
-- **Max File Size:** 5GB (configurable)
+- **Max File Size:** 4GB (configurable)
 - **Recommended Resolution:** Minimum 720p, ideally 1080p
 - **Audio Codec:** AAC, MP3
 
@@ -38,10 +40,10 @@ This document outlines the complete workflow for uploading, managing, and publis
 - **Subtitles File (.srt or .vtt)** *(optional)*
 - **License Type** (e.g., CC BY-NC, All Rights Reserved)
 - **Allow Embedding:** Yes/No
-- **Visibility:** Public / Private / Unlisted
+- **Visibility:** Private (Regular Users) & Private / Public / Unlisted / Restricted with Password (Trusted Users, Editors, Managers and Administrators)
 
 ### Upload Process
-- Drag-and-drop or select from file system
+- Drag-and-drop or select from file system (Trusted Users can upload to 10 files)
 - Upload progress bar displayed
 - Video is queued for encoding (transcoding for streaming compatibility)
 

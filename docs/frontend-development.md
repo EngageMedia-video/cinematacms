@@ -1,5 +1,7 @@
 # Cinemata Frontend Development Guide
 
+__Implemented by [Adryan Eka Vandra](https://github.com/adryanev) (Indonesia)__
+
 This document provides instructions for setting up and working with the Cinemata frontend codebase.
 
 ## Prerequisites

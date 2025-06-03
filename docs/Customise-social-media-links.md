@@ -1,6 +1,6 @@
 # Guide: How to Customize Social Media Links in the Sidebar
 
-If you want to change the social media links that appear in the sidebar of your Cinemata-based site, you'll need to modify a specific configuration file. This guide will walk you through the process step by step.
+If you want to change the social media links that appear in the sidebar of your CinemataCMS-based site, you'll need to modify a specific configuration file. This guide will walk you through the process step by step.
 
 ## Locating the File to Edit
 

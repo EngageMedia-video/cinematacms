@@ -1,5 +1,7 @@
 # 🛡️ Security Best Practices for CinemataCMS Administrators
 
+**Status: In Development**
+
 This document provides key security measures to protect your CinemataCMS installation and maintain secure administrative access.
 
 ---
