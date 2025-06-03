@@ -6,17 +6,18 @@
 
 When you log in, the dashboard highlights important video content with three main sections:
 
-- **Featured Video:**  
+- **Main Video:**  
   A single highlighted video displayed prominently for quick access or promotion.  
-  ![Main Video Screenshot](./main-video.png)
+  ![Main Video Screenshot](./main-video.PNG)
 
-  - **Recent Videos:**  
-  The newest videos added or updated, helping you stay updated on the latest content.  
-  ![Recent Videos Screenshot](./recent-videos.png)
-
-- **Featured Playlists:**  
+- **Featured Videos:**  
   A curated list of videos selected for their thematic relevance or urgency.  
-  ![Featured Videos Screenshot](./featured-videos.png)
+  ![Featured Videos Screenshot](./featured-videos.PNG)
+
+- **Recent Videos:**  
+  The newest videos added or updated, helping you stay updated on the latest content.  
+  ![Recent Videos Screenshot](./recent-videos.PNG)
+
 
 This setup prioritizes key videos for easy management and overview.
 
@@ -33,7 +34,7 @@ From the dashboard or Upload Media menu, click the **Browse Your File** button t
 > Any media not complying with the policy will be deleted from Cinemata.org.  
 > Trusted Users may upload up to 10 media files. Contact us to apply for Trusted User status.
 
-![Upload Step 1 - Navigate to Upload](./upload-step1.png)
+![Upload Step 1 - Navigate to Upload](./upload-step1.PNG)
 
 ### Step 2: Select File and Input Metadata
 
@@ -42,27 +43,27 @@ From the dashboard or Upload Media menu, click the **Browse Your File** button t
 - Add relevant tags to improve discoverability.  
 - Specify language and any other metadata fields required.
 
-![Upload Step 2 - File and Metadata Input](./upload-step2.png)
+![Upload Step 2 - File and Metadata Input](./upload-step2.PNG)
 
 ### Step 3: Upload Confirmation and Processing Status
 
 Review your input and confirm the upload. The system will process the video and notify you once completed.
 
-![Upload Step 3 - Confirmation and Processing](./upload-step3.png)
+![Upload Step 3 - Confirmation and Processing](./upload-step3.PNG)
 
 ---
 
 ## 3. Content Management Flow
 
-### Step 1: Browse Videos
+### Step 1: Browse Categories
 
-Go to the **Videos** section to see a list or table of all videos.
+Go to the **Categories** section to see a list or table of all videos categories.
 
-![Video List](./video-list.png)
+![Category List](./category-list.PNG)
 
 ### Step 2: Search bar
 
 Use the search bar to find videos by title.
 
-![Search bar](./search-bar.png)
+![Search bar](./search-bar.PNG)
 
