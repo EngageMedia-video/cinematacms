@@ -1,5 +1,7 @@
 # User Management for CinemataCMS
 
+by [Khairunnisa Isma Hanifah](https://github.com/KhairunnisaIsma)
+
 User management in **CinemataCMS** ensures that the right individuals have the appropriate access to the platform’s features and content. This guide will walk through the process of creating, managing users, handling user roles, and managing permissions to ensure security and usability.
 
 
@@ -66,6 +68,6 @@ You can assign permissions to:
 - Groups (preferred approach)
 - Roles (via group or custom logic)
 
-Use the Django Admin Interface under `Auth > Users` or `Auth > Groups` to manage permissions visually.
+Use the Django Admin Interface under `Auth > Groups` to manage permissions visually.
 
 ---

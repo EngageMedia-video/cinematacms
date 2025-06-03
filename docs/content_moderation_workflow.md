@@ -1,5 +1,7 @@
 # 🧹 CinemataCMS Content Moderation Workflow
 
+by [Khairunnisa Isma Hanifah](https://github.com/KhairunnisaIsma)
+
 CinemataCMS supports a structured yet flexible moderation process to ensure user-submitted media aligns with the platform’s mission: promoting independent, socially relevant films from the Asia-Pacific region.
 
 This guide provides an overview of the contributors, user roles, media visibility, and moderation responsibilities in the system.
@@ -136,7 +138,7 @@ Once approved, content is:
 
 | Tool / Interface        | Functionality                                                                   |
 |--------------------------|-------------------------------------------------------------------------------|
-| **Moderation Queue**      | Review interface for pending/reported uploads                            |
+| **Manage Media**      | Review interface for pending/reported uploads                            |
 | **Report System**         | Users report content via **Report** button                               |
 | **Role-Based Dashboards** | UIs vary based on user roles (Curator, Contributor, etc.)                |
 | **Bulk Moderation**       | Available to Editors and Trusted Users (with limits)                     |

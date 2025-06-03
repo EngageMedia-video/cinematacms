@@ -1,5 +1,7 @@
 # Technical Specifications Guide for Optimal Video Preparation
 
+by [Khairunnisa Isma Hanifah](https://github.com/KhairunnisaIsma)
+
 To ensure your video uploads to CinemataCMS are processed smoothly, optimise server storage and deliver the best playback experience across devices and networks, please follow the technical guidelines below.
 
 ---

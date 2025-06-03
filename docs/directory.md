@@ -1,5 +1,7 @@
 ### Definitions
 
+by [Jay Cruz](https://github.com/jmcruz14) (Philippines)
+
 - `actions/` - contains models/views/apps pertaining to user actions that are implemented for the application
 - `cms/` - core Django settings and configurations
 - `deploy/` - contains relevant deployment scripts that are utilized when attempting to deploy and instantiate Cinemata in a staging or production environment
