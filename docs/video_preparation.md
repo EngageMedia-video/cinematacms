@@ -24,6 +24,7 @@ To ensure your video uploads to CinemataCMS are processed smoothly, optimise ser
 | **Max File Size**| 4 GB (configurable)                                     |
 
 Note: CinemataCMS was tested to support encoding Apple ProRes and other professional intermediate codecs. However, due to their large file sizes, they may not be the most efficient choice for server storage optimisation.
+
 ---
 
 ## 🔊 Audio Specifications
