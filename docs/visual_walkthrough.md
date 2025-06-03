@@ -57,7 +57,7 @@ Review your input and confirm the upload. The system will process the video and 
 
 ### Step 1: Browse Categories
 
-Go to the **Categories** section to see a list or table of all videos.
+Go to the **Categories** section to see a list or table of all videos categories.
 
 ![Category List](./category-list.PNG)
 
