@@ -94,11 +94,6 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 - [📝 Documentation Template](contributing/documentation.md)
 - [🔄 Pull Request Template](contributing/PULL_REQUEST_TEMPLATE.md)
 
-## 📚 References
-
-### Additional Resources
-- [⚛️ Frontend Development Reference](references/frontend/README.md)
-
 ---
 
 ## 💡 Quick Navigation Tips
