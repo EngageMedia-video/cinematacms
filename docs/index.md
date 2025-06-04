@@ -85,15 +85,6 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 - [♿ Accessibility & Keyboard Shortcuts](features/Cinemata_Accessibility_Keyboard_Shortcuts.md)
 - [🎙️ Automatic Transcription](features/automatic_transcription.md)
 
-## 🤝 Contributing
-
-### Development & Contributions
-- [🤝 Contributing Guidelines](contributing/CONTRIBUTING.md)
-- [🐛 Bug Report Template](contributing/bug_report.md)
-- [💡 Feature Request Template](contributing/feature_request.md)
-- [📝 Documentation Template](contributing/documentation.md)
-- [🔄 Pull Request Template](contributing/PULL_REQUEST_TEMPLATE.md)
-
 ---
 
 ## 💡 Quick Navigation Tips
