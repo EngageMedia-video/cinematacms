@@ -1,5 +1,7 @@
 # 📘 User API Endpoints
 
+by [Mico Balina](https://github.com/Micokoko) (Philippines)
+
 This documents all user related endpoints. All endpoints prefixed with `/api/v1/` are RESTful and return JSON.
 
 ---

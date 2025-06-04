@@ -1,5 +1,7 @@
 # ⚙️Taxonomies Configuration Module
 
+by [Mico Balina](https://github.com/Micokoko) (Philippines)
+
 The [Taxonomies](../../frontend/src/static/js/mediacms/taxonomies.js) module manages the configuration of various taxonomy types (such as tags, categories, topics) used in the CinemataCMS platform.
 
 ---

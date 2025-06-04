@@ -1,5 +1,7 @@
 # ⚙️Pages Configuration Module
 
+by [Mico Balina](https://github.com/Micokoko) (Philippines)
+
 The [Pages](../../frontend/src/static/js/mediacms/pages.js) module manages configuration of various special pages (e.g., latest uploads, featured content) within the CinemataCMS platform.
 
 ---
