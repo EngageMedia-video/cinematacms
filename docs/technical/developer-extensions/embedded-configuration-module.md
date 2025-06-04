@@ -1,6 +1,8 @@
 
 # Embedded Video Configuration Module
 
+by [Mico Balina](https://github.com/Micokoko) (Philippines)
+
 The [Embedded](../../frontend/src/static/js/mediacms/optionsEmbedded.js) module manages configuration of embedded video display settings within the CinemataCMS platform.
 
 ---

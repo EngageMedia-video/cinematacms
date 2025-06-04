@@ -1,4 +1,3 @@
-# Cinemata.org User Guide: Step-by-Step Walkthroughs
 
 ---
 

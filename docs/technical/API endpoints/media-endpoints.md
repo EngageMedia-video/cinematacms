@@ -1,4 +1,7 @@
 # 📼 Media API Endpoints #
+
+by [Mico Balina](https://github.com/Micokoko) (Philippines)
+
 This documents all media-related endpoints. All endpoints prefixed with `/api/v1/` are RESTful and return JSON.
 
 ## 🔹 `GET /api/v1/media`
