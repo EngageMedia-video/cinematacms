@@ -196,7 +196,7 @@ As root, clone the repository on /home/cinemata and run install.sh:
 
 This should take a few minutes with dependencies etc. Make sure you enter a valid domain when asked (eg staging.cinemata.org)
 
-**Note**: For locally setting up the application in Mac OSX (Ventura 13.0 and Sequoia 15.2), you may refer to [this guide](docs/mac_setup.md) for more information.
+**Note**: For setting up the application locally on macOS (Ventura 13.0 and Sequoia 15.2), refer to [this guide](docs/mac_setup.md) for more information.
 
 **Check out [Index](docs/index.md)** for more information. 
 
@@ -209,6 +209,8 @@ Thanks to all the amazing people who have contributed to this project:
 [Anna Helme](https://github.com/ahelme)
 [King Catoy](https://github.com/Kingcatz)
 [Ashraf Haque](https://github.com/securenetizen)
+[Mico Balina](https://github.com/Micokoko)
+[Khairunnisa Isma Hanifah](https://github.com/KhairunnisaIsma)
 [Jay Cruz](https://github.com/jmcruz14) 
 [Adryan Eka Vandra](https://github.com/adryanev)
 
