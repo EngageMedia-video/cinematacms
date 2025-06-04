@@ -130,17 +130,16 @@ Send a contact message to a user.
 ### 🔹 `GET /accounts/2fa/totp/success`
 
 **Description:**  
-Returns a success message after completing 2FA (Two-Factor Authentication) via TOTP.
+Returns a success page after completing 2FA (Two-Factor Authentication) via TOTP.
+
+**Authentication:** ✅ Required
 
 **Response:**  
-JSON with confirmation of successful 2FA login.
+HTML page confirming successful 2FA setup or login.
 
-```json
-{
-  "status": "success",
-  "message": "2FA completed successfully."
-}
-```
+**Content-Type:** `text/html`
+
+**Note:** This endpoint returns an HTML page, not JSON. It renders the `mfa/totp/success.html` template.
 
 
 ### 🔹 Error Codes
@@ -164,5 +163,3 @@ To prevent abuse, the API applies rate limiting. The following headers are used:
 **Best Practices:**
 - Avoid making excessive requests in a short period of time.
 - Cache responses where possible to reduce unnecessary requests.
-
-
