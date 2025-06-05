@@ -7,6 +7,7 @@ cms/local_settings.py
 .idea/
 .DS_Store
 venv/
+.venv/
 .env
 pyvenv.cfg
 
