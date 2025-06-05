@@ -10,7 +10,6 @@ def redirect_admin_login(request):
 
 urlpatterns = [
     re_path(r"^__debug__/", include(debug_toolbar.urls)),
-    path('admin/login/', redirect_admin_login), # Excluded for security purposes
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
     re_path(r"^", include("files.urls")),
     re_path(r"^", include("users.urls")),
