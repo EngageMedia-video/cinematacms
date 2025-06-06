@@ -183,6 +183,10 @@ button {
 	border-radius: 2px;
 	box-shadow: 0px 4px 8px 0 rgba(17, 17, 17, 0.06);
 
+	@media screen and (max-width: 480px) {
+		padding: 1.25em
+	}
+
 	form,
 	label,
 	select,
@@ -493,6 +497,37 @@ button {
 				text-align: center;
 				margin-inline: 0.25em;
 
+				// Mobile responsiveness
+				@media screen and (max-width: 768px) {
+          width: 12%;
+          height: 48px;
+          font-size: 18px;
+          margin-inline: 0.15em;
+          padding: 0px;
+					
+          // Ensure minimum touch target size (44px recommended)
+          min-height: 44px;
+          min-width: 44px;
+        }
+
+        @media screen and (max-width: 480px) {
+          width: 14%;
+          height: 50px;
+          font-size: 16px;
+          margin-inline: 0.1em;
+
+          // Larger touch targets for small screens
+          min-height: 48px;
+					min-width: 1px;
+        }
+
+        // Extra small screens (very small phones)
+        @media screen and (max-width: 320px) {
+          width: 15%;
+          font-size: 14px;
+          margin-inline: 0.05em;
+        }
+
 				&:focus {
 					outline: none;
 					border-color: #ED7C30;
@@ -521,6 +556,24 @@ button {
 				text-align: center;
 				border: 2px solid #3e3e3e;
 				border-radius: 4px;
+
+				// Mobile responsiveness for recovery code input
+        @media screen and (max-width: 768px) {
+          padding: 14px 12px;
+          font-size: 16px;
+          min-height: 48px;
+        }
+
+        @media screen and (max-width: 480px) {
+          padding: 16px 10px;
+          font-size: 15px;
+          min-height: 50px;
+        }
+
+        @media screen and (max-width: 320px) {
+          padding: 14px 8px;
+          font-size: 14px;
+        }
 
 				&:focus {
 					outline: none;
