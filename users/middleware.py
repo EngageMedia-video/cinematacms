@@ -9,7 +9,8 @@ class AdminMFAMiddleware:
     # Only check admin paths, NEVER upload paths
     if (request.path.startswith('/admin/') and 
       not request.path.startswith('/fu/') and  # Exclude file uploads
-      not request.path.startswith('/api/')):   # Exclude API endpoints
+      not request.path.startswith('/api/') and   # Exclude API endpoints
+			not request.path.startswith('/manage/')): # Exclude user management endpoints
       
       if not request.user.is_authenticated:
           return HttpResponseRedirect('/accounts/login/')
