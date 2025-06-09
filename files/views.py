@@ -32,6 +32,7 @@ from cms.permissions import (
     user_allowed_to_upload,
 )
 from users.models import User
+from allauth.mfa.utils import is_mfa_enabled
 
 from . import lists
 from .forms import ContactForm, EditSubtitleForm, MediaForm, SubtitleForm
@@ -143,10 +144,11 @@ def view_page(request, slug):
 def manage_users(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
+    
+    if request.user.is_superuser and not is_mfa_enabled(request.user):
+        return HttpResponseRedirect('/accounts/2fa/totp/activate')
 
-    if not (
-        request.user.is_superuser or request.user.is_manager or request.user.is_editor
-    ):
+    if request.user.is_manager or request.user.is_editor:
         return HttpResponseRedirect("/")
 
     context = {}
@@ -157,9 +159,10 @@ def manage_media(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    if not (
-        request.user.is_superuser or request.user.is_manager or request.user.is_editor
-    ):
+    if request.user.is_superuser and not is_mfa_enabled(request.user):
+        return HttpResponseRedirect('/accounts/2fa/totp/activate')
+
+    if request.user.is_manager or request.user.is_editor:
         return HttpResponseRedirect("/")
 
     context = {}
@@ -170,9 +173,10 @@ def manage_comments(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    if not (
-        request.user.is_superuser or request.user.is_manager or request.user.is_editor
-    ):
+    if request.user.is_superuser and not is_mfa_enabled(request.user):
+        return HttpResponseRedirect('/accounts/2fa/totp/activate')
+
+    if request.user.is_manager or request.user.is_editor:
         return HttpResponseRedirect("/")
 
     context = {}

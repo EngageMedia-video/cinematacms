@@ -57,6 +57,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "users.middleware.AdminMFAMiddleware"
 ]
 
 ROOT_URLCONF = "cms.urls"
