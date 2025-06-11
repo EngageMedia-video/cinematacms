@@ -36,7 +36,7 @@ dependencies = [
     "fido2==1.2.0",
     "uwsgi==2.0.29",
     "qrcode==8.2",
-    "django-tinymce",
+    "django-tinymce==4.1.0",
 ]
 
 [dependency-groups]

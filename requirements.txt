@@ -28,7 +28,7 @@ pep8==1.7.1
 django-silk==5.3.2
 django-debug-toolbar==4.1.0
 # django-ckeditor==6.6.1
-django-tinymce
+django-tinymce==4.1.0
 whitenoise==6.9.0
 django-cors-headers==4.7.0
 
