@@ -132,7 +132,6 @@ class MediaLanguageAdmin(admin.ModelAdmin):
 
 
 class PageAdminForm(forms.ModelForm):
-    # description = forms.CharField(widget=CKEditorWidget())
     description = forms.CharField(widget=TinyMCE())
 
     class Meta:
