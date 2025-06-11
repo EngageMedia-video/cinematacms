@@ -36,7 +36,7 @@ dependencies = [
     "fido2==1.2.0",
     "uwsgi==2.0.29",
     "qrcode==8.2",
-    "django-tinymce>=4.1.0",
+    "django-tinymce",
 ]
 
 [dependency-groups]
@@ -44,3 +44,6 @@ dev = [
     "basedpyright>=1.29.2",
     "ruff>=0.11.13",
 ]
+
+[tool.uv.sources]
+django-tinymce = { git = "https://github.com/jazzband/django-tinymce.git", rev = "685236d36af37afbb8e069099879b3489bbe8216" }
