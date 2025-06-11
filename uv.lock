@@ -319,7 +319,7 @@ requires-dist = [
     { name = "django-recaptcha", specifier = "==3.0.0" },
     { name = "django-redis", specifier = "==4.12.1" },
     { name = "django-silk", specifier = "==5.3.2" },
-    { name = "django-tinymce", specifier = ">=4.1.0" },
+    { name = "django-tinymce", git = "https://github.com/jazzband/django-tinymce.git?rev=685236d36af37afbb8e069099879b3489bbe8216" },
     { name = "djangorestframework", specifier = "==3.15.2" },
     { name = "fido2", specifier = "==1.2.0" },
     { name = "filetype", specifier = "==1.2.0" },
@@ -600,13 +600,9 @@ wheels = [
 [[package]]
 name = "django-tinymce"
 version = "4.1.0"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/jazzband/django-tinymce.git?rev=685236d36af37afbb8e069099879b3489bbe8216#685236d36af37afbb8e069099879b3489bbe8216" }
 dependencies = [
     { name = "django" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b3/36/56faa2cb1bde28c66ffe38d67ddbacab9c416baecbb7dd911bfabc5fa409/django_tinymce-4.1.0.tar.gz", hash = "sha256:02e3b70e940fd299f0fbef4315aee5c185664e1eb8cd396b176963954e4357c9", size = 1087250, upload-time = "2024-06-21T07:07:03.915Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/a6/467464d08495360689380906db8e67427c381545ce8af9ce633e0128b004/django_tinymce-4.1.0-py3-none-any.whl", hash = "sha256:9804836e6d2b08de3b03a27c100f8c2e9633549913eff8b323678a10cd48b94e", size = 1317923, upload-time = "2024-06-21T07:07:40.454Z" },
 ]
 
 [[package]]
