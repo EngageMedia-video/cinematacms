@@ -28,7 +28,7 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
-    'allauth.mfa',
+    "allauth.mfa",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     "crispy_forms",
     "uploader.apps.UploaderConfig",
     "djcelery_email",
-    "ckeditor",
+    # "ckeditor",
+    "tinymce",
     "captcha",
 ]
 
@@ -59,7 +60,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "allauth.account.middleware.AccountMiddleware",
-    "users.middleware.AdminMFAMiddleware"
+    "users.middleware.AdminMFAMiddleware",
 ]
 
 ROOT_URLCONF = "cms.urls"
@@ -145,9 +146,9 @@ DATABASES = {
         "USER": "mediacms",
         "PASSWORD": "mediacms",
         "TEST": {
-          "MIRROR": "default", # mirror - default enables you to work on the database's copy
-          "MIGRATE": False
-        }
+            "MIRROR": "default",  # mirror - default enables you to work on the database's copy
+            "MIGRATE": False,
+        },
     }
 }
 
@@ -249,9 +250,9 @@ ACCOUNT_LOGIN_BY_CODE_ENABLED = True
 
 # MFA custom configurations here
 MFA_FORMS = {
-  'authenticate': 'users.forms.CustomAuthenticateForm',
-  'reauthenticate': 'users.forms.CustomReauthenticateTOTPForm',
-  'activate_totp': 'users.forms.CustomActivateTOTPForm'
+    "authenticate": "users.forms.CustomAuthenticateForm",
+    "reauthenticate": "users.forms.CustomReauthenticateTOTPForm",
+    "activate_totp": "users.forms.CustomActivateTOTPForm",
 }
 MFA_RECOVERY_CODE_COUNT = 10
 MFA_RECOVERY_CODE_DIGITS = 12
@@ -456,10 +457,11 @@ DJANGO_ADMIN_URL = "admin/"
 
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths()
 from .local_settings import *
+
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
 WHISPER_SIZE = "base"
 
 ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
 
-RECAPTCHA_PRIVATE_KEY = ''
-RECAPTCHA_PUBLIC_KEY = ''
+RECAPTCHA_PRIVATE_KEY = ""
+RECAPTCHA_PUBLIC_KEY = ""

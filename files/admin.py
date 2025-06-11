@@ -1,6 +1,7 @@
 from ckeditor.widgets import CKEditorWidget
 from django import forms
 from django.contrib import admin
+from tinymce.widgets import TinyMCE
 
 from users.models import User
 
@@ -131,7 +132,8 @@ class MediaLanguageAdmin(admin.ModelAdmin):
 
 
 class PageAdminForm(forms.ModelForm):
-    description = forms.CharField(widget=CKEditorWidget())
+    # description = forms.CharField(widget=CKEditorWidget())
+    description = forms.CharField(widget=TinyMCE())
 
     class Meta:
         model = Page
