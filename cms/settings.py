@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     "crispy_forms",
     "uploader.apps.UploaderConfig",
     "djcelery_email",
-    # "ckeditor",
     "tinymce",
     "captcha",
 ]
