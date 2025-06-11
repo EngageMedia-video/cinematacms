@@ -267,7 +267,6 @@ dependencies = [
     { name = "django" },
     { name = "django-allauth" },
     { name = "django-celery-email" },
-    { name = "django-ckeditor" },
     { name = "django-cors-headers" },
     { name = "django-crispy-forms" },
     { name = "django-debug-toolbar" },
@@ -309,7 +308,6 @@ requires-dist = [
     { name = "django", specifier = "==5.2" },
     { name = "django-allauth", specifier = "==65.7.0" },
     { name = "django-celery-email", specifier = "==3.0.0" },
-    { name = "django-ckeditor", specifier = "==6.6.1" },
     { name = "django-cors-headers", specifier = "==4.7.0" },
     { name = "django-crispy-forms", specifier = "==1.9.0" },
     { name = "django-debug-toolbar", specifier = "==4.1.0" },
@@ -458,19 +456,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/48/78/95c9959978c1b8abd587735cf084065b0ac8196580f6f30b2c9e9636401a/django-celery-email-3.0.0.tar.gz", hash = "sha256:5546cbba80952cc3b8a0ffa4206ce90a4a996a7ffd1c385a2bdb65903ca18ece", size = 12644, upload-time = "2019-12-11T15:32:11.6Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/87/2f/0120d868a2c2919afaed34c73c9c4f8c9208262668fa0218f330cfda3e18/django_celery_email-3.0.0-py2.py3-none-any.whl", hash = "sha256:0f72da39cb2ea83c69440566e87f27cd72f68f247f98ce99fb29889fcf329406", size = 9450, upload-time = "2019-12-11T15:32:09.919Z" },
-]
-
-[[package]]
-name = "django-ckeditor"
-version = "6.6.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-    { name = "django-js-asset" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/13/63/31b6ecafd258eb32396ffd43718d64d8d0c5cc234ed08aac69bc5bda5c3a/django-ckeditor-6.6.1.tar.gz", hash = "sha256:a804a98137058c00fc092aafc475e9491b2ca7c68c84d6ca12c4fa2453696017", size = 1723669, upload-time = "2023-06-23T08:17:19.063Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4e/f4/95807c94c9cb9fd1b2dbbff540a3fcbe2be830f7d138b9122504772cc276/django_ckeditor-6.6.1-py3-none-any.whl", hash = "sha256:44894c2a1050f58edcab6f9e631dbb63fa5532e7432a5650cfd878b6f33b0d46", size = 2441195, upload-time = "2023-06-23T08:17:15.833Z" },
 ]
 
 [[package]]
