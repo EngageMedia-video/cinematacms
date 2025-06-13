@@ -103,7 +103,7 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "users.password_validators.CustomCommonPasswordValidator",
     },
     {
-        # Checks whether the password ’isnt entirely numeric
+        # Checks whether the password 'isnt entirely numeric
         "NAME": "users.password_validators.CustomNumericPasswordValidator",
     },
 ]
@@ -421,13 +421,46 @@ TINYMCE_DEFAULT_CONFIG = {
     "menubar": True,
     "plugins": "advlist,autolink,autosave,lists,link,image,charmap,print,preview,anchor,"
     "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,directionality,"
-    "code,help,wordcount,emoticons,",
+    "code,help,wordcount,emoticons,file,image,media",
     "toolbar": "undo redo | code preview |  "
     "bold italic | alignleft aligncenter "
     "alignright alignjustify ltr rtl | bullist numlist outdent indent | "
-    "removeformat | restoredraft help",
+    "removeformat | restoredraft help | image media",
     "branding": False,
     "promotion": False,
+    "images_upload_url": "/tinymce/upload/",
+    "images_upload_handler": "tinymce.views.upload_image",
+    "media_upload_url": "/tinymce/upload/",
+    "media_upload_handler": "tinymce.views.upload_media",
+    "automatic_uploads": True,
+    "file_picker_types": "image media",
+    "images_reuse_filename": True,
+    "media_reuse_filename": True,
+    "paste_data_images": True,
+    "paste_as_text": False,
+    "paste_enable_default_filters": True,
+    "paste_word_valid_elements": "b,strong,i,em,h1,h2,h3,h4,h5,h6,p,br,a,ul,ol,li",
+    "paste_retain_style_properties": "all",
+    "paste_remove_styles": False,
+    "paste_remove_styles_if_webkit": False,
+    "paste_strip_class_attributes": False,
+    "paste_merge_formats": True,
+    "paste_auto_cleanup_on_paste": False,
+    "paste_convert_headers_to_strong": False,
+    "paste_convert_middot_lists": False,
+    "paste_unindented_list_class": "unindentedList",
+    "paste_indent": True,
+    "paste_convert_word_fake_lists": False,
+    "paste_remove_styles_if_webkit": False,
+    "paste_remove_styles": False,
+    "paste_strip_class_attributes": False,
+    "paste_merge_formats": True,
+    "paste_auto_cleanup_on_paste": False,
+    "paste_convert_headers_to_strong": False,
+    "paste_convert_middot_lists": False,
+    "paste_unindented_list_class": "unindentedList",
+    "paste_indent": True,
+    "paste_convert_word_fake_lists": False,
 }
 
 # settings that are related with UX/appearance
