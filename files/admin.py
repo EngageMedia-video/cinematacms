@@ -22,6 +22,7 @@ from .models import (
     Tag,
     Topic,
     TopMessage,
+    TinyMCEMedia,
 )
 
 
@@ -152,6 +153,15 @@ class IndexPageFeaturedAdmin(admin.ModelAdmin):
 
 class HomepagePopupAdmin(admin.ModelAdmin):
     list_display = ("text", "url", "popup", "add_date", "active")
+
+
+@admin.register(TinyMCEMedia)
+class TinyMCEMediaAdmin(admin.ModelAdmin):
+    list_display = ['original_filename', 'file_type', 'uploaded_at', 'user']
+    list_filter = ['file_type', 'uploaded_at']
+    search_fields = ['original_filename']
+    readonly_fields = ['uploaded_at']
+    date_hierarchy = 'uploaded_at'
 
 
 admin.site.register(EncodeProfile, EncodeProfileAdmin)
