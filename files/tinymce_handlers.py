@@ -5,22 +5,24 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.utils import timezone
+from .models import TinyMCEMedia
 
 @csrf_exempt
 def upload_image(request):
     if request.method == "POST":
         file_obj = request.FILES.get('file')
         if file_obj:
-            # Create a unique filename
-            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"tinymce_images/{timestamp}_{file_obj.name}"
-            
-            # Save the file
-            path = default_storage.save(filename, ContentFile(file_obj.read()))
-            url = default_storage.url(path)
+            # Create a new TinyMCEMedia instance for the image
+            media = TinyMCEMedia(
+                file=file_obj,
+                file_type='image',
+                original_filename=file_obj.name,
+                user=request.user if request.user.is_authenticated else None
+            )
+            media.save()
             
             return JsonResponse({
-                'location': url
+                'location': media.url
             })
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
@@ -29,15 +31,16 @@ def upload_media(request):
     if request.method == "POST":
         file_obj = request.FILES.get('file')
         if file_obj:
-            # Create a unique filename
-            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"tinymce_media/{timestamp}_{file_obj.name}"
-            
-            # Save the file
-            path = default_storage.save(filename, ContentFile(file_obj.read()))
-            url = default_storage.url(path)
+            # Create a new TinyMCEMedia instance for the media file
+            media = TinyMCEMedia(
+                file=file_obj,
+                file_type='media',
+                original_filename=file_obj.name,
+                user=request.user if request.user.is_authenticated else None
+            )
+            media.save()
             
             return JsonResponse({
-                'location': url
+                'location': media.url
             })
     return JsonResponse({'error': 'Invalid request'}, status=400) 
