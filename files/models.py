@@ -1568,6 +1568,29 @@ class TranscriptionRequest(models.Model):
     translate_to_english = models.BooleanField(default=False)
 
 
+class TinyMCEMedia(models.Model):
+    file = models.FileField(upload_to='tinymce_media/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    file_type = models.CharField(max_length=10, choices=(
+        ('image', 'Image'),
+        ('media', 'Media'),
+    ))
+    original_filename = models.CharField(max_length=255)
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE, null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'TinyMCE Media'
+        verbose_name_plural = 'TinyMCE Media'
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"{self.original_filename} ({self.file_type})"
+
+    @property
+    def url(self):
+        return self.file.url
+
+
 @receiver(post_save, sender=Media)
 def media_save(sender, instance, created, **kwargs):
     # media_file path is not set correctly until mode is saved
