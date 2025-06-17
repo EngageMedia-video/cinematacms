@@ -1,3 +1,4 @@
+import re
 from django import forms
 from django.contrib import admin
 from tinymce.widgets import TinyMCE
@@ -137,6 +138,17 @@ class PageAdminForm(forms.ModelForm):
     class Meta:
         model = Page
         fields = "__all__"
+
+    def clean_description(self):
+        # Get the raw content from the description field
+        content = self.cleaned_data.get('description', '')
+
+        # Remove the <div class="custom-page-wrapper"> wrapper
+        content = re.sub(r'<div class="custom-page-wrapper">', '', content)
+        content = re.sub(r'</div>', '', content)
+
+        # Return the cleaned content
+        return content
 
 
 class PageAdmin(admin.ModelAdmin):
