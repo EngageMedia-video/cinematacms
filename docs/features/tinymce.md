@@ -114,17 +114,30 @@ Files uploaded through TinyMCE are stored in the `TinyMCEMedia` model, which pro
    - Review release notes for breaking changes
 
 2. **Update Dependencies**
-   - Remove the Git source from `pyproject.toml`:
+   - Remove the Git source from `pyproject.toml` and `requirements.txt`:
    ```toml
    # Remove this section
    [tool.uv.sources]
    django-tinymce = { git = "https://github.com/jazzband/django-tinymce.git", rev = "685236d36af37afbb8e069099879b3489bbe8216" }
    ```
+   In `requirements.txt`, remove this section:
+   ```
+   ...
+   django-tinymce @ git+https://github.com/jazzband/django-tinymce.git@685236d36af37afbb8e069099879b3489bbe8216
+   ...
+   ```
    - Add the PyPI version:
+   In `pyproject.toml`, update the dependencies section:
    ```toml
    dependencies = [
        "django-tinymce==NEW_VERSION",  # Replace with latest stable version
    ]
+   ```
+   In `requirements.txt`, remove the Git source:
+   ```txt
+   ...
+   django-tinymce==NEW_VERSION
+   ...
    ```
 
 3. **Configuration Updates**
@@ -140,7 +153,6 @@ Files uploaded through TinyMCE are stored in the `TinyMCEMedia` model, which pro
    - Deploy to staging
    - Verify functionality
    - Deploy to production
-
 ## Customizing TinyMCE
 
 ### Adding New Plugins
@@ -170,20 +182,26 @@ TinyMCE's appearance can be customized through:
 ### Common Issues
 
 1. **Upload Failures**
-   - Check file permissions
-   - Verify media storage configuration
-   - Check user authentication
+   - TinyMCE only allows images to be uploaded. Make sure that you are only uploading images.
+   - Check if you have write permissions for `media/tinymce_media` using
+   ```bash
+   ls -la media/tinymce_media
+   ```
+   If the directory does not exist, create it with the following command:
+   ```bash
+   mkdir -p media/tinymce_media
+   ```
 
 2. **Editor Not Loading**
-   - Verify static files are served correctly
-   - Check browser console for errors
-   - Verify TinyMCE initialization
-
-3. **Configuration Issues**
-   - Check for syntax errors in `TINYMCE_DEFAULT_CONFIG`
-   - Verify all required plugins are included
-   - Check URL configurations
-
+   - Verify static files are served correctly. You can run the following commands to ensure that static files are served correctly:
+   ```python
+   python manage.py collectstatic --noinput
+   ```
+   or
+   ```python
+   uv run manage.py collectstatic --noinput
+   ```
+   
 ### Getting Help
 
 - [django-tinymce Documentation](https://django-tinymce.readthedocs.io/)
