@@ -132,7 +132,6 @@ urlpatterns = [
     re_path("^(?P<slug>[\w.-]*)$", views.view_page, name="get_page"),
     # TinyMCE upload handlers
     path("tinymce/upload/", tinymce_handlers.upload_image, name="tinymce_upload_image"),
-    path("tinymce/upload/media/", tinymce_handlers.upload_media, name="tinymce_upload_media"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # urlpatterns = format_suffix_patterns(urlpatterns)
