@@ -418,7 +418,16 @@ ADMIN_EMAIL_LIST = ["info@mediacms.io"]
 TINYMCE_DEFAULT_CONFIG = {
     "theme": "silver",
     "height": 500,
-    "menubar": True,
+    "resize": "both",
+    "menubar": "file edit view insert format tools table help",
+    "menu": {
+        "format": {
+            "title": "Format",
+            "items": "bold italic underline strikethrough superscript subscript code | "
+            "blocks fontfamily fontsize align lineheight | "
+            "forecolor backcolor removeformat",
+        },
+    },
     "plugins": "advlist,autolink,autosave,lists,link,image,charmap,print,preview,anchor,"
     "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,directionality,"
     "code,help,wordcount,emoticons,file,image,media",
@@ -426,8 +435,19 @@ TINYMCE_DEFAULT_CONFIG = {
     "bold italic | alignleft aligncenter "
     "alignright alignjustify ltr rtl | bullist numlist outdent indent | "
     "removeformat | restoredraft help | image media",
-    "branding": False,
-    "promotion": False,
+    "branding": False,  # remove branding
+    "promotion": False,  # remove promotion
+    "content_css": "/static/lib/tinymce/tinymce_editor.css",  # extra css to load on the body of the editor
+    "body_class": "page-main-inner custom-page-wrapper",  # class of the body element in tinymce
+    "block_formats": "Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3;",
+    "formats": {  # customize h2 to always have emphasis-large class
+        "h2": {"block": "h2", "classes": "emphasis-large"},
+    },
+    "font_family_formats": (
+        "Amulya='Amulya',sans-serif;Facultad='Facultad',sans-serif;"
+    ),
+    "font_css": "/static/lib/Amulya/amulya.css,/static/lib/Facultad/Facultad-Regular.css",
+    "font_size_formats": "16px 24px 32px",
     "images_upload_url": "/tinymce/upload/",
     "images_upload_handler": "tinymce.views.upload_image",
     "media_upload_url": "/tinymce/upload/",
