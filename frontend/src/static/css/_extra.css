@@ -1948,9 +1948,14 @@ body.dark_theme .manage-users-item .mi-name > a {
 
 /* #################################################################################################### */
 
+/* This css file is being used in the TinyMCE editor. */
+
 .page-main-inner .custom-page-wrapper {
     display: block;
     margin: 0 auto;
+    /* the 2 rules below is tinymce-only */
+    /* padding-left: 8px !important;
+    padding-right: 8px !important; */
     padding-top: 32px !important;
     padding-bottom: 64px !important;
     width: 1366px;
@@ -1986,6 +1991,8 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
     font-weight: 500;
     line-height: 1.5;
     letter-spacing: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 
     /* Make the last paragraph not have 30px margin-bottom */
     &:not(:last-child) {
@@ -1997,8 +2004,20 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
     padding-left: 50px;
 }
 
+/* Make images and videos responsive */
+.page-main-inner .custom-page-wrapper img,
+.page-main-inner .custom-page-wrapper iframe {
+    max-width: 100%;
+    height: auto;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
 .page-main-inner .custom-page-wrapper a {
     text-decoration: underline;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .page-main-inner .custom-page-wrapper a:hover {
@@ -2013,6 +2032,8 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
     font-size: 32px;
     line-height: 1.2;
     color: #000;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .page-main-inner .custom-page-wrapper h2 {
@@ -2024,10 +2045,26 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
     line-height: 1.2;
     letter-spacing: 0.01;
     color: #000;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
-body.dark_theme .page-main-inner .custom-page-wrapper h1,
-body.dark_theme .page-main-inner .custom-page-wrapper h2 {
+.page-main-inner .custom-page-wrapper h3 {
+    position: relative;
+    display: block;
+    padding-bottom: 10px;
+    font-family: 'Facultad', Arial, sans-serif;
+    font-size: 18px;
+    line-height: 1.5;
+    letter-spacing: 0.01;
+    color: #000;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+body.dark_theme.page-main-inner .custom-page-wrapper h1,
+body.dark_theme.page-main-inner .custom-page-wrapper h2,
+body.dark_theme.page-main-inner .custom-page-wrapper h3 {
     color: #fff;
 }
 
