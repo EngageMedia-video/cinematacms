@@ -1993,6 +1993,10 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
     }
 }
 
+.page-main-inner .custom-page-wrapper ul {
+    padding-left: 50px;
+}
+
 .page-main-inner .custom-page-wrapper a {
     text-decoration: underline;
 }

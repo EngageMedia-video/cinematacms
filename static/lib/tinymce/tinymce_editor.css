@@ -1,3 +1,5 @@
+/* This css file is being used in the TinyMCE editor. */
+
 .page-main-inner.custom-page-wrapper {
     display: block;
     margin: 0 auto;
@@ -44,6 +46,10 @@ body.dark_theme .page-main-inner.custom-page-wrapper {
     &:not(:last-child) {
         margin-bottom: 30px;
     }
+}
+
+.page-main-inner.custom-page-wrapper ul {
+    padding-left: 50px;
 }
 
 .page-main-inner.custom-page-wrapper a {
