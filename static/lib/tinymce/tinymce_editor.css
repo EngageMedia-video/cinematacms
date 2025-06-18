@@ -56,12 +56,16 @@ body.dark_theme .page-main-inner.custom-page-wrapper {
 
 /* Make images and videos responsive */
 .page-main-inner.custom-page-wrapper img,
-.page-main-inner.custom-page-wrapper video {
+.page-main-inner.custom-page-wrapper iframe {
     max-width: 100%;
     height: auto;
     margin-left: auto;
     margin-right: auto;
     display: block;
+}
+
+.page-main-inner.custom-page-wrapper iframe {
+    aspect-ratio: 16 / 9;
 }
 
 .page-main-inner.custom-page-wrapper a {
