@@ -425,8 +425,8 @@ TINYMCE_DEFAULT_CONFIG = {
     "menu": {
         "format": {
             "title": "Format",
-            "items": "bold italic underline strikethrough superscript subscript code | "
-            "blocks fontfamily fontsize align lineheight | "
+            "items": "blocks | bold italic underline strikethrough superscript subscript code | "
+            "fontfamily fontsize align lineheight | "
             "forecolor backcolor removeformat",
         },
     },
@@ -449,7 +449,7 @@ TINYMCE_DEFAULT_CONFIG = {
         "Amulya='Amulya',sans-serif;Facultad='Facultad',sans-serif;"
     ),
     "font_css": "/static/lib/Amulya/amulya.css,/static/lib/Facultad/Facultad-Regular.css",
-    "font_size_formats": "16px 24px 32px",
+    "font_size_formats": "16px 18px 24px 32px",
     "images_upload_url": "/tinymce/upload/",
     "images_upload_handler": "tinymce.views.upload_image",
     "automatic_uploads": True,
