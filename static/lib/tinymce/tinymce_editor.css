@@ -50,8 +50,15 @@ body.dark_theme .page-main-inner.custom-page-wrapper {
     }
 }
 
+.page-main-inner.custom-page-wrapper ul li {
+    padding-left: 0;
+    margin-left: 0;
+}
+
 .page-main-inner.custom-page-wrapper ul {
-    padding-left: 50px;
+    padding-left: 0;
+    margin-left: 20px;
+    list-style-position: outside;
 }
 
 /* Make images and videos responsive */
