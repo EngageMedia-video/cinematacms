@@ -23,7 +23,16 @@ The current TinyMCE configuration includes:
 TINYMCE_DEFAULT_CONFIG = {
     "theme": "silver",
     "height": 500,
-    "menubar": True,
+    "resize": "both",
+    "menubar": "file edit view insert format tools table help",
+    "menu": {
+        "format": {
+            "title": "Format",
+            "items": "bold italic underline strikethrough superscript subscript code | "
+            "blocks fontfamily fontsize align lineheight | "
+            "forecolor backcolor removeformat",
+        },
+    },
     "plugins": "advlist,autolink,autosave,lists,link,image,charmap,print,preview,anchor,"
     "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,directionality,"
     "code,help,wordcount,emoticons,file,image,media",
@@ -31,31 +40,30 @@ TINYMCE_DEFAULT_CONFIG = {
     "bold italic | alignleft aligncenter "
     "alignright alignjustify ltr rtl | bullist numlist outdent indent | "
     "removeformat | restoredraft help | image media",
-    "branding": False,
-    "promotion": False,
+    "branding": False,  # remove branding
+    "promotion": False,  # remove promotion
+    "content_css": "/static/lib/tinymce/tinymce_editor.css",  # extra css to load on the body of the editor
+    "body_class": "page-main-inner custom-page-wrapper",  # class of the body element in tinymce
+    "block_formats": "Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3;",
+    "formats": {  # customize h2 to always have emphasis-large class
+        "h2": {"block": "h2", "classes": "emphasis-large"},
+    },
+    "font_family_formats": (
+        "Amulya='Amulya',sans-serif;Facultad='Facultad',sans-serif;"
+    ),
+    "font_css": "/static/lib/Amulya/amulya.css,/static/lib/Facultad/Facultad-Regular.css",
+    "font_size_formats": "16px 24px 32px",
     "images_upload_url": "/tinymce/upload/",
     "images_upload_handler": "tinymce.views.upload_image",
-    "media_upload_url": "/tinymce/upload/",
-    "media_upload_handler": "tinymce.views.upload_media",
     "automatic_uploads": True,
-    "file_picker_types": "image media",
-    "images_reuse_filename": True,
-    "media_reuse_filename": True,
+    "file_picker_types": "image",
     "paste_data_images": True,
     "paste_as_text": False,
     "paste_enable_default_filters": True,
     "paste_word_valid_elements": "b,strong,i,em,h1,h2,h3,h4,h5,h6,p,br,a,ul,ol,li",
     "paste_retain_style_properties": "all",
     "paste_remove_styles": False,
-    "paste_remove_styles_if_webkit": False,
-    "paste_strip_class_attributes": False,
     "paste_merge_formats": True,
-    "paste_auto_cleanup_on_paste": False,
-    "paste_convert_headers_to_strong": False,
-    "paste_convert_middot_lists": False,
-    "paste_unindented_list_class": "unindentedList",
-    "paste_indent": True,
-    "paste_convert_word_fake_lists": False,
 }
 ```
 
@@ -70,14 +78,15 @@ TINYMCE_DEFAULT_CONFIG = {
 ### Media Management
 1. **Inserting Images**:
    - Click the image button in the toolbar
-   - Choose to upload a new image or select from existing ones
+   - Choose to upload a new image or use the url of an existing image
    - Set image properties (size, alignment, alt text)
    - Click "Insert" to add to content
+   - You may also drag and drop an image to upload it and right-click to edit properties
 
 2. **Inserting Media**:
+   To insert media like videos, it is advised that you use the embed option.
    - Click the media button in the toolbar
-   - Upload a new media file or select from existing ones
-   - Configure media properties
+   - Click `embed` and paste the embed code of the media you want to insert
    - Click "Insert" to add to content
 
 3. **Managing Uploaded Files**:
@@ -98,7 +107,6 @@ TINYMCE_DEFAULT_CONFIG = {
 Files uploaded through TinyMCE are stored in the `TinyMCEMedia` model, which provides:
 
 - File storage in the `tinymce_media/` directory
-- Tracking of file type (image/media)
 - Original filename preservation
 - Upload timestamp
 - User association (if authenticated)
