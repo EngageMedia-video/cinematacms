@@ -4,7 +4,7 @@ from django.conf.urls.static import static
 from django.urls import path, re_path
 from django.views.static import serve
 
-from . import management_views, views
+from . import management_views, views, tinymce_handlers
 from .feeds import IndexRSSFeed, SearchRSSFeed
 
 urlpatterns = [
@@ -130,6 +130,8 @@ urlpatterns = [
     ),
     ################################
     re_path("^(?P<slug>[\w.-]*)$", views.view_page, name="get_page"),
+    # TinyMCE upload handlers
+    path("tinymce/upload/", tinymce_handlers.upload_image, name="tinymce_upload_image"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # urlpatterns = format_suffix_patterns(urlpatterns)

@@ -8,7 +8,6 @@ dependencies = [
     "celery==4.4.7",
     "django-allauth==65.7.0",
     "django-celery-email==3.0.0",
-    "django-ckeditor==6.6.1",
     "django-cors-headers==4.7.0",
     "django-crispy-forms==1.9.0",
     "django-debug-toolbar==4.1.0",
@@ -35,5 +34,15 @@ dependencies = [
     "whitenoise==6.9.0",
     "fido2==1.2.0",
     "uwsgi==2.0.29",
-    "qrcode==8.2"
+    "qrcode==8.2",
+    "django-tinymce==4.1.0",
 ]
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.29.2",
+    "ruff>=0.11.13",
+]
+
+[tool.uv.sources]
+django-tinymce = { git = "https://github.com/jazzband/django-tinymce.git", rev = "685236d36af37afbb8e069099879b3489bbe8216" }

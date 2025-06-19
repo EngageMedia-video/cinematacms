@@ -1,6 +1,7 @@
-from ckeditor.widgets import CKEditorWidget
+import re
 from django import forms
 from django.contrib import admin
+from tinymce.widgets import TinyMCE
 
 from users.models import User
 
@@ -22,6 +23,7 @@ from .models import (
     Tag,
     Topic,
     TopMessage,
+    TinyMCEMedia,
 )
 
 
@@ -131,11 +133,22 @@ class MediaLanguageAdmin(admin.ModelAdmin):
 
 
 class PageAdminForm(forms.ModelForm):
-    description = forms.CharField(widget=CKEditorWidget())
+    description = forms.CharField(widget=TinyMCE())
 
     class Meta:
         model = Page
         fields = "__all__"
+
+    def clean_description(self):
+        # Get the raw content from the description field
+        content = self.cleaned_data.get('description', '')
+
+        # Remove the <div class="custom-page-wrapper"> wrapper
+        content = re.sub(r'<div class="custom-page-wrapper">', '', content)
+        content = re.sub(r'</div>', '', content)
+
+        # Return the cleaned content
+        return content
 
 
 class PageAdmin(admin.ModelAdmin):
@@ -152,6 +165,15 @@ class IndexPageFeaturedAdmin(admin.ModelAdmin):
 
 class HomepagePopupAdmin(admin.ModelAdmin):
     list_display = ("text", "url", "popup", "add_date", "active")
+
+
+@admin.register(TinyMCEMedia)
+class TinyMCEMediaAdmin(admin.ModelAdmin):
+    list_display = ['original_filename', 'file_type', 'uploaded_at', 'user']
+    list_filter = ['file_type', 'uploaded_at']
+    search_fields = ['original_filename']
+    readonly_fields = ['uploaded_at']
+    date_hierarchy = 'uploaded_at'
 
 
 admin.site.register(EncodeProfile, EncodeProfileAdmin)

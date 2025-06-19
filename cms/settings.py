@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
-    'allauth.mfa',
+    "allauth.mfa",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "uploader.apps.UploaderConfig",
     "djcelery_email",
-    "ckeditor",
+    "tinymce",
     "captcha",
 ]
 
@@ -57,7 +57,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "allauth.account.middleware.AccountMiddleware",
-    "users.middleware.AdminMFAMiddleware"
+    "users.middleware.AdminMFAMiddleware",
 ]
 
 ROOT_URLCONF = "cms.urls"
@@ -103,7 +103,7 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "users.password_validators.CustomCommonPasswordValidator",
     },
     {
-        # Checks whether the password ’isnt entirely numeric
+        # Checks whether the password 'isnt entirely numeric
         "NAME": "users.password_validators.CustomNumericPasswordValidator",
     },
 ]
@@ -143,9 +143,9 @@ DATABASES = {
         "USER": "mediacms",
         "PASSWORD": "mediacms",
         "TEST": {
-          "MIRROR": "default", # mirror - default enables you to work on the database's copy
-          "MIGRATE": False
-        }
+            "MIRROR": "default",  # mirror - default enables you to work on the database's copy
+            "MIGRATE": False,
+        },
     }
 }
 
@@ -247,9 +247,9 @@ ACCOUNT_LOGIN_BY_CODE_ENABLED = True
 
 # MFA custom configurations here
 MFA_FORMS = {
-  'authenticate': 'users.forms.CustomAuthenticateForm',
-  'reauthenticate': 'users.forms.CustomReauthenticateTOTPForm',
-  'activate_totp': 'users.forms.CustomActivateTOTPForm'
+    "authenticate": "users.forms.CustomAuthenticateForm",
+    "reauthenticate": "users.forms.CustomReauthenticateTOTPForm",
+    "activate_totp": "users.forms.CustomActivateTOTPForm",
 }
 MFA_RECOVERY_CODE_COUNT = 10
 MFA_RECOVERY_CODE_DIGITS = 12
@@ -415,34 +415,50 @@ EMAIL_HOST = "mediacms.io"
 EMAIL_PORT = 587
 ADMIN_EMAIL_LIST = ["info@mediacms.io"]
 
-CKEDITOR_CONFIGS = {
-    "default": {
-        "toolbar": "Custom",
-        "width": "100%",
-        "toolbar_Custom": [
-            ["Styles"],
-            ["Format"],
-            ["Bold", "Italic", "Underline"],
-            ["HorizontalRule"],
-            [
-                "NumberedList",
-                "BulletedList",
-                "-",
-                "Outdent",
-                "Indent",
-                "-",
-                "JustifyLeft",
-                "JustifyCenter",
-                "JustifyRight",
-                "JustifyBlock",
-            ],
-            ["Link", "Unlink"],
-            ["Image"],
-            ["RemoveFormat", "Source"],
-        ],
-        "allowedContent": True,
+TINYMCE_DEFAULT_CONFIG = {
+    "theme": "silver",
+    "height": 500,
+    "resize": "both",
+    "menubar": "file edit view insert format tools table help",
+    "menu": {
+        "format": {
+            "title": "Format",
+            "items": "blocks | bold italic underline strikethrough superscript subscript code | "
+            "fontfamily fontsize align lineheight | "
+            "forecolor backcolor removeformat",
+        },
     },
-    "extraAllowedContent": "ul(tick-list,box-list,box-list-half,box-list-third) p(emphasis,emphasis-large) span(board-member,box-icon-title,open-tech,video4change,research,skills-build) a(external-link)",
+    "plugins": "advlist,autolink,autosave,lists,link,image,charmap,print,preview,anchor,"
+    "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,directionality,"
+    "code,help,wordcount,emoticons,file,image,media",
+    "toolbar": "undo redo | code preview | blocks | "
+    "bold italic | alignleft aligncenter "
+    "alignright alignjustify ltr rtl | bullist numlist outdent indent | "
+    "removeformat | restoredraft help | image media",
+    "branding": False,  # remove branding
+    "promotion": False,  # remove promotion
+    "content_css": "/static/lib/tinymce/tinymce_editor.css",  # extra css to load on the body of the editor
+    "body_class": "page-main-inner custom-page-wrapper",  # class of the body element in tinymce
+    "block_formats": "Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3;",
+    "formats": {  # customize h2 to always have emphasis-large class
+        "h2": {"block": "h2", "classes": "emphasis-large"},
+    },
+    "font_family_formats": (
+        "Amulya='Amulya',sans-serif;Facultad='Facultad',sans-serif;"
+    ),
+    "font_css": "/static/lib/Amulya/amulya.css,/static/lib/Facultad/Facultad-Regular.css",
+    "font_size_formats": "16px 18px 24px 32px",
+    "images_upload_url": "/tinymce/upload/",
+    "images_upload_handler": "tinymce.views.upload_image",
+    "automatic_uploads": True,
+    "file_picker_types": "image",
+    "paste_data_images": True,
+    "paste_as_text": False,
+    "paste_enable_default_filters": True,
+    "paste_word_valid_elements": "b,strong,i,em,h1,h2,h3,h4,h5,h6,p,br,a,ul,ol,li",
+    "paste_retain_style_properties": "all",
+    "paste_remove_styles": False,
+    "paste_merge_formats": True,
 }
 
 # settings that are related with UX/appearance
@@ -452,6 +468,7 @@ VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
 # allow option to override the default admin url
 DJANGO_ADMIN_URL = "admin/"
 from .local_settings import *
+
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
 
 WHISPER_COMMAND = "/home/cinemata/bin/whisper"
@@ -461,8 +478,7 @@ WHISPER_CPP_COMMAND = "/home/cinemata/whisper.cpp/build/bin/main"
 WHISPER_CPP_MODEL = "/home/cinemata/whisper.cpp/models/ggml-large-v3.bin"
 
 
+ALLOWED_MEDIA_UPLOAD_TYPES = ["video"]
 
-ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
-
-RECAPTCHA_PRIVATE_KEY = ''
-RECAPTCHA_PUBLIC_KEY = ''
+RECAPTCHA_PRIVATE_KEY = ""
+RECAPTCHA_PUBLIC_KEY = ""
