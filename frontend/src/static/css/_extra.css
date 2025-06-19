@@ -2073,9 +2073,9 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
     overflow-wrap: break-word;
 }
 
-body.dark_theme.page-main-inner .custom-page-wrapper h1,
-body.dark_theme.page-main-inner .custom-page-wrapper h2,
-body.dark_theme.page-main-inner .custom-page-wrapper h3 {
+body.dark_theme .page-main-inner .custom-page-wrapper h1,
+body.dark_theme .page-main-inner .custom-page-wrapper h2,
+body.dark_theme .page-main-inner .custom-page-wrapper h3 {
     color: #fff;
 }
 
