@@ -431,7 +431,7 @@ TINYMCE_DEFAULT_CONFIG = {
     "plugins": "advlist,autolink,autosave,lists,link,image,charmap,print,preview,anchor,"
     "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,directionality,"
     "code,help,wordcount,emoticons,file,image,media",
-    "toolbar": "undo redo | code preview |  "
+    "toolbar": "undo redo | code preview | blocks | "
     "bold italic | alignleft aligncenter "
     "alignright alignjustify ltr rtl | bullist numlist outdent indent | "
     "removeformat | restoredraft help | image media",
