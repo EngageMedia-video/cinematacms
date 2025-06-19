@@ -213,5 +213,6 @@ Thanks to all the amazing people who have contributed to this project:
 [Khairunnisa Isma Hanifah](https://github.com/KhairunnisaIsma)
 [Jay Cruz](https://github.com/jmcruz14) 
 [Adryan Eka Vandra](https://github.com/adryanev)
+[John Henry Galino](https://github.com/jhgalino)
 
 Want to contribute? Check out our [contribution guidelines](docs/CONTRIBUTING.md).
