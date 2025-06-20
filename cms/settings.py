@@ -461,6 +461,7 @@ TINYMCE_DEFAULT_CONFIG = {
     "paste_retain_style_properties": "all",
     "paste_remove_styles": False,
     "paste_merge_formats": True,
+    "sandbox_iframes": False,
 }
 
 # settings that are related with UX/appearance
