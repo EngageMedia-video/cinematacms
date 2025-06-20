@@ -135,21 +135,15 @@ class MediaLanguageAdmin(admin.ModelAdmin):
 class PageAdminForm(forms.ModelForm):
     description = forms.CharField(widget=TinyMCE())
 
+    def clean_description(self):
+        content = self.cleaned_data['description']
+        # Add sandbox attribute to all iframes
+        content = content.replace('<iframe ', '<iframe sandbox="allow-scripts allow-same-origin allow-presentation" ')
+        return content
+
     class Meta:
         model = Page
         fields = "__all__"
-
-    def clean_description(self):
-        # Get the raw content from the description field
-        content = self.cleaned_data.get('description', '')
-
-        # Remove the <div class="custom-page-wrapper"> wrapper
-        content = re.sub(r'<div class="custom-page-wrapper">', '', content)
-        content = re.sub(r'</div>', '', content)
-
-        # Return the cleaned content
-        return content
-
 
 class PageAdmin(admin.ModelAdmin):
     form = PageAdminForm
