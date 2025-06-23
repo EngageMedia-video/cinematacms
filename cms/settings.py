@@ -1,5 +1,7 @@
 import os
+from pathlib import Path
 from celery.schedules import crontab
+from .settings_utils import get_whisper_cpp_paths
 
 # PORTAL SETTINGS
 PORTAL_NAME = "EngageMedia Video"  #  this is shown on several places, eg on contact email, or html title
@@ -468,18 +470,13 @@ VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
 
 # allow option to override the default admin url
 DJANGO_ADMIN_URL = "admin/"
+
+WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths()
 from .local_settings import *
-
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
-
-WHISPER_COMMAND = "/home/cinemata/bin/whisper"
 WHISPER_SIZE = "base"
 
-WHISPER_CPP_COMMAND = "/home/cinemata/whisper.cpp/build/bin/main"
-WHISPER_CPP_MODEL = "/home/cinemata/whisper.cpp/models/ggml-large-v3.bin"
-
-
-ALLOWED_MEDIA_UPLOAD_TYPES = ["video"]
+ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
 
 RECAPTCHA_PRIVATE_KEY = ""
 RECAPTCHA_PUBLIC_KEY = ""

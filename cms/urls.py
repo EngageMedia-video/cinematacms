@@ -5,11 +5,6 @@ from django.conf.urls import include
 from django.conf import settings
 import debug_toolbar
 
-
-def redirect_admin_login(request):
-    return HttpResponseRedirect("/")
-
-
 urlpatterns = [
     re_path(r"^__debug__/", include(debug_toolbar.urls)),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
