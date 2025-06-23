@@ -455,14 +455,6 @@ VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
 DJANGO_ADMIN_URL = "admin/"
 
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths()
-
-# curr_file_path = Path(__file__)
-# cinematacms_root = curr_file_path.parent.parent
-# __root = cinematacms_root.parent
-# WHISPER_CPP_DIR = __root / "whisper.cpp"
-# WHISPER_CPP_COMMAND = WHISPER_CPP_DIR / "build" / "bin" / "main"
-# WHISPER_CPP_MODEL = WHISPER_CPP_DIR / "models" / "ggml-large-v3.bin"
-
 from .local_settings import *
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
 WHISPER_SIZE = "base"

@@ -21,9 +21,7 @@ def get_whisper_cpp_paths():
   
   # Define paths for whisper.cpp components
   whisper_cpp_main_paths = [
-      whisper_cpp_dir / "main",                    # Standard build location
-      whisper_cpp_dir / "build" / "bin" / "main",  # CMake build location
-      whisper_cpp_dir / "build" / "main",          # Alternative build location
+      whisper_cpp_dir / "build" / "bin" / "whisper-cli", # New main loc
   ]
   
   # Find the actual whisper.cpp main executable
