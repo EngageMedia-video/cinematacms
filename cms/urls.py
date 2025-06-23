@@ -5,7 +5,6 @@ from django.conf.urls import include
 from django.conf import settings
 import debug_toolbar
 
-
 urlpatterns = [
     re_path(r"^__debug__/", include(debug_toolbar.urls)),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),

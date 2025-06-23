@@ -473,7 +473,6 @@ DJANGO_ADMIN_URL = "admin/"
 
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths()
 from .local_settings import *
-
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
 WHISPER_SIZE = "base"
 
