@@ -511,7 +511,6 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
       # NOTE: any configurations for running the whisper transcription task should be added/removed here!
       whisper_cmd_conf = [
         "--entropy-thold", "2.8",
-        "--suppress-nst", "false",
         "--max-context", "0", 
         "--language", "auto"
       ]
