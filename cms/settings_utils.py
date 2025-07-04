@@ -36,6 +36,8 @@ def get_whisper_cpp_paths():
       whisper_cpp_command = str(whisper_cpp_main_paths[0])
   
   # Define model path
-  whisper_cpp_model = str(whisper_cpp_dir / "models" / "ggml-large-v3.bin")
+  # NOTE: to change models, make sure that the replacement model is installed within the /whisper.cpp repo
+  # before updating the .bin file associated with this variable
+  whisper_cpp_model = str(whisper_cpp_dir / "models" / "ggml-base.bin")
   
   return (str(whisper_cpp_dir), whisper_cpp_command, whisper_cpp_model)
