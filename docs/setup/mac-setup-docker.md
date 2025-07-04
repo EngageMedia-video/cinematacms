@@ -60,7 +60,7 @@ Then clone the Whisper speech recognition repository:
 cd ..
 git clone https://github.com/ggerganov/whisper.cpp.git
 cd whisper.cpp/
-sh ./models/download-ggml-model.sh large-v3
+sh ./models/download-ggml-model.sh base
 make
 cd ..
 ```
@@ -158,10 +158,6 @@ DEBUG = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
-
-# Whisper CPP directory
-WHISPER_CPP_COMMAND = "/Users/YOUR_USERNAME/Desktop/cinemata/whisper.cpp/main"
-WHISPER_CPP_MODEL = "/Users/YOUR_USERNAME/Desktop/cinemata/whisper.cpp/models/large-v3.bin"
 
 # Explicitly set Redis as broker
 REDIS_LOCATION = "redis://127.0.0.1:6379/1"

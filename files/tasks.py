@@ -413,80 +413,176 @@ def encode_media(
 
 @task(name="whisper_transcribe", queue="whisper_tasks")
 def whisper_transcribe(friendly_token, translate=False, notify=True):
-    # in case multiple requests arrive at the same time, avoid having them create
-    # a Request for the same media...
-    time.sleep(random.uniform(0, 20))
-    try:
-        media = Media.objects.get(friendly_token=friendly_token)
-    except:
-        logger.info("failed to get media with friendly_token %s" % friendly_token)
+  """
+    Transcribe media using Whisper.cpp
+  """
+  logger.info(f"Starting whisper_transcribe for {friendly_token}, translate={translate}")
+  
+  # in case multiple requests arrive at the same time, avoid having them create
+  # a Request for the same media...
+  time.sleep(random.uniform(0, 20))
+
+  logger.info(f"Whisper command path: {settings.WHISPER_CPP_COMMAND}")
+  logger.info(f"Whisper model path: {settings.WHISPER_CPP_MODEL}")
+
+  if not os.path.exists(settings.WHISPER_CPP_COMMAND):
+    logger.error(f"Whisper command not found at: {settings.WHISPER_CPP_COMMAND}")
+    return False
+  
+  if not os.path.exists(settings.WHISPER_CPP_MODEL):
+        logger.error(f"Whisper model not found at: {settings.WHISPER_CPP_MODEL}")
         return False
 
-    if translate:
-        language_code = "automatic-translation"
-    else:
-        language_code = "automatic"
-    language = Language.objects.filter(code=language_code).first()
+  try:
+    media = Media.objects.get(friendly_token=friendly_token)
+  except:
+    logger.error("failed to get media with friendly_token %s" % friendly_token)
+    return False
+  
+  if not os.path.exists(media.media_file.path):
+    logger.error(f"Media file not found at: {media.media_file.path}")
+    return False
+  
+  if translate:
+    language_code = 'automatic-translation'
+  else:
+    language_code = 'automatic'
+  language = Language.objects.filter(code=language_code).first()
 
-    if not language:
+  if not language:
+    logger.error(f"Language '{language_code}' not found in database")
+    return False
+
+  if translate:
+      if TranscriptionRequest.objects.filter(
+          media=media, translate_to_english=True
+      ).exists():
+        logger.info(f"Translation request already exists for {friendly_token}")
+        return False
+  else:
+      if TranscriptionRequest.objects.filter(
+          media=media, translate_to_english=False
+      ).exists():
+        logger.info(f"Transcription request already exists for {friendly_token}")
         return False
 
-    if translate:
-        if TranscriptionRequest.objects.filter(
-            media=media, translate_to_english=True
-        ).exists():
-            return False
-    else:
-        if TranscriptionRequest.objects.filter(
-            media=media, translate_to_english=False
-        ).exists():
-            return False
+  TranscriptionRequest.objects.create(media=media, translate_to_english=translate)
+  logger.info(f"Created transcription request for {friendly_token}")
 
-    TranscriptionRequest.objects.create(media=media, translate_to_english=translate)
-
-    with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as tmpdirname:
-        video_file_path = get_file_name(media.media_file.name)
-        video_file_path = ".".join(
-            video_file_path.split(".")[:-1]
-        )  # needed by whisper without the extension
-        subtitle_name = f"{video_file_path}"
-        output_name = f"{tmpdirname}/{subtitle_name}"  # whisper.cpp will add the .vtt
-        output_name_with_vtt_ending = f"{output_name}.vtt"
-        wav_file = f"{tmpdirname}/{subtitle_name}.wav"
-        cmd = f"{settings.FFMPEG_COMMAND} -i {media.media_file.path} -ar 16000 -ac 1 -c:a pcm_s16le {wav_file}"
-        ret = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+  with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as tmpdirname:
+      video_file_path = get_file_name(media.media_file.name)
+      video_file_path = ".".join(
+          video_file_path.split(".")[:-1]
+      )  # needed by whisper without the extension
+      subtitle_name = f"{video_file_path}"
+      output_name = f"{tmpdirname}/{subtitle_name}"  # whisper.cpp will add the .vtt
+      output_name_with_vtt_ending = f"{output_name}.vtt"
+      wav_file = f"{tmpdirname}/{subtitle_name}.wav"
+      
+      logger.info(f"Video file path: {video_file_path}")
+      logger.info(f"Output name: {output_name}")
+      logger.info(f"WAV file: {wav_file}")
+      
+      cmd = f"{settings.FFMPEG_COMMAND} -i {media.media_file.path} -ar 16000 -ac 1 -c:a pcm_s16le {wav_file}"
+      logger.info(f"Running ffmpeg command: {cmd}")
+      
+      try:
+        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        logger.info(f"ffmpeg return code: {ret.returncode}")
+        
+        if ret.returncode != 0:
+            stderr = ret.stderr.decode('utf-8')
+            logger.error(f"ffmpeg error: {stderr}")
+            return False
+            
         if not os.path.exists(wav_file):
-            logger.info(f"ffmpeg error converting to wav\n: {ret}")
+            logger.error(f"WAV file not created at: {wav_file}")
             return False
-
-        cmd = f"{settings.WHISPER_CPP_COMMAND} -m {settings.WHISPER_CPP_MODEL} -f {wav_file} --output-vtt --output-file {output_name}"
-        if translate:
-            cmd = f"{settings.WHISPER_CPP_COMMAND} -m {settings.WHISPER_CPP_MODEL} -f {wav_file} --translate --output-vtt --output-file {output_name}"
-        ret = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
-
-        if os.path.exists(output_name_with_vtt_ending):
-            subtitle = Subtitle.objects.create(
-                media=media, user=media.user, language=language
-            )
-
-            with open(output_name_with_vtt_ending, "rb") as f:
-                subtitle.subtitle_file.save(subtitle_name, File(f))
-
-            if notify:
-                extra_info = ""
-                if translate:
-                    extra_info = "translation"
-                notify_users(
-                    friendly_token=media.friendly_token,
-                    action="media_auto_transcription",
-                    extra=extra_info,
-                )
-
-            return True
-        else:
-            logger.info(f"output of ret, to see what went wrong\n: {ret}")
-
+            
+        logger.info(f"WAV file created successfully: {os.path.getsize(wav_file)} bytes")
+      except Exception as e:
+        logger.error(f"Exception running ffmpeg: {str(e)}")
         return False
+
+      if not os.path.exists(wav_file):
+        logger.info(f"ffmpeg error converting to wav\n: {ret}")
+        return False
+
+      # NOTE: any configurations for running the whisper transcription task should be added/removed here!
+      whisper_cmd_conf = [
+        "--entropy-thold", "2.8",
+        "--max-context", "0", 
+        "--language", "auto"
+      ]
+    
+      # Run whisper.cpp
+      whisper_cmd = [
+          settings.WHISPER_CPP_COMMAND,
+          "-m", settings.WHISPER_CPP_MODEL,
+          *whisper_cmd_conf,
+          "-f", wav_file
+      ]
+      
+      if translate:
+          whisper_cmd.append("--translate")
+          
+      whisper_cmd.extend(["--output-vtt", "--output-file", output_name])
+      
+      cmd_str = " ".join(whisper_cmd)
+      logger.info(f"Running whisper command: {cmd_str}")
+      
+      try:
+          ret = subprocess.run(whisper_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+          logger.info(f"Whisper return code: {ret.returncode}")
+          
+          stdout = ret.stdout.decode('utf-8')
+          stderr = ret.stderr.decode('utf-8')
+          
+          if stdout:
+              logger.info(f"Whisper stdout: {stdout}")
+          
+          if stderr:
+              logger.error(f"Whisper stderr: {stderr}")
+              
+          if ret.returncode != 0:
+              logger.error(f"Whisper command failed with return code {ret.returncode}")
+              return False
+              
+          if not os.path.exists(output_name_with_vtt_ending):
+              logger.error(f"Output VTT file not created at: {output_name_with_vtt_ending}")
+              return False
+              
+          logger.info(f"VTT file created successfully: {os.path.getsize(output_name_with_vtt_ending)} bytes")
+      except Exception as e:
+          logger.error(f"Exception running whisper: {str(e)}")
+          return False
+
+      # Create the subtitle entry in the database
+      try:
+          subtitle = Subtitle.objects.create(
+              media=media, user=media.user, language=language
+          )
+
+          with open(output_name_with_vtt_ending, "rb") as f:
+              subtitle.subtitle_file.save(subtitle_name, File(f))
+          
+          logger.info("Subtitle created and saved to database")
+          
+          if notify:
+              extra_info = ""
+              if translate:
+                  extra_info = "translation"
+              notify_users(
+                  friendly_token=media.friendly_token,
+                  action="media_auto_transcription",
+                  extra=extra_info,
+              )
+              logger.info(f"Notification sent for {friendly_token}")
+
+          return True
+      except Exception as e:
+          logger.error(f"Exception saving subtitle: {str(e)}")
+          return False
 
 
 @task(name="produce_sprite_from_video", queue="long_tasks")
