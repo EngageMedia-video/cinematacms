@@ -24,6 +24,7 @@ from .models import (
     Topic,
     TopMessage,
     TinyMCEMedia,
+    TranscriptionRequest,
 )
 
 
@@ -161,6 +162,68 @@ class HomepagePopupAdmin(admin.ModelAdmin):
     list_display = ("text", "url", "popup", "add_date", "active")
 
 
+class TranscriptionRequestAdmin(admin.ModelAdmin):
+    list_display = ['media_title', 'add_date', 'language', 'country', 'translate_to_english']
+    search_fields = ['media__title']
+    list_filter = ['translate_to_english', 'add_date']
+    readonly_fields = ['add_date']
+    ordering = ['-add_date']
+    actions = ['delete_selected_requests']
+    
+    def get_actions(self, request):
+        """Override to remove the default delete action and keep only our custom one"""
+        actions = super().get_actions(request)
+        # Remove the default 'delete_selected' action
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+
+    def media_title(self, obj):
+        return obj.media.title if obj.media else "Unknown"
+    media_title.short_description = "Media Title"
+    
+    def language(self, obj):
+        """Get the language of the media"""
+        if obj.media and obj.media.media_language:
+            # Get the display name from the choices
+            from . import lists
+            language_dict = dict(lists.video_languages)
+            return language_dict.get(obj.media.media_language, obj.media.media_language)
+        return "Not specified"
+    language.short_description = "Language"
+    
+    def country(self, obj):
+        """Get the country of the media"""
+        if obj.media and obj.media.media_country:
+            # Get the display name from the choices
+            from . import lists
+            country_dict = dict(lists.video_countries)
+            return country_dict.get(obj.media.media_country, obj.media.media_country)
+        return "Not specified"
+    country.short_description = "Country"
+    
+    def delete_selected_requests(self, request, queryset):
+        """Allow retranscoding by deleting transcription requests"""
+        count = queryset.count()
+        media_titles = [req.media.title for req in queryset if req.media]
+        queryset.delete()
+        
+        if count == 1:
+            self.message_user(
+                request, 
+                f"Deleted transcription request for '{media_titles[0]}'. "
+                f"You can now retry transcription from the media interface."
+            )
+        else:
+            self.message_user(
+                request, 
+                f"Deleted {count} transcription requests. "
+                f"You can now retry transcription for affected media."
+            )
+    
+    delete_selected_requests.short_description = "Delete requests (enable retranscoding)"
+
+
 @admin.register(TinyMCEMedia)
 class TinyMCEMediaAdmin(admin.ModelAdmin):
     list_display = ['original_filename', 'file_type', 'uploaded_at', 'user']
@@ -187,3 +250,4 @@ admin.site.register(TopMessage, TopMessageAdmin)
 admin.site.register(IndexPageFeatured, IndexPageFeaturedAdmin)
 admin.site.register(MediaLanguage, MediaLanguageAdmin)
 admin.site.register(HomepagePopup, HomepagePopupAdmin)
+admin.site.register(TranscriptionRequest, TranscriptionRequestAdmin)
