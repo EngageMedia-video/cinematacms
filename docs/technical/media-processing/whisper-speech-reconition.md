@@ -4,6 +4,51 @@ This explains how Whisper is integrated to transcribe the audio for subtitle gen
 
 ---
 
+## Admin Management
+
+### Re-running Failed Transcriptions
+
+To re-run Whisper transcription when it fails or needs updating:
+
+**Step 1: Delete Existing Subtitles First**
+Before deleting transcription requests, remove any existing subtitles:
+
+**Option A - Via Edit Media Interface:**
+1. Go to Edit Media page for your video
+2. Click "Edit Subtitle" 
+3. Delete existing subtitle files
+4. Look for "Auto-detect & Translate to English" subtitles and delete them
+
+**Option B - Via Django Admin:**
+1. Go to `/admin/files/subtitle/`
+2. Find subtitles for your media
+3. Delete the subtitle records
+
+**Step 2: Delete Transcription Requests**
+1. Go to `/admin/files/transcriptionrequest/`
+2. Find the failed transcription request(s)
+3. Select the checkbox(es) next to the requests
+4. Choose "Delete requests (enable retranscoding)" from the Actions dropdown
+5. Click "Go"
+6. You'll see a success message confirming deletion
+
+**Step 3: Retry Transcription**
+1. Go back to the Edit Media page
+2. The "Translate to English" checkbox should now be unchecked
+3. Check the transcription option you want and save
+4. Whisper will start processing again
+
+### TranscriptionRequest Admin Interface
+
+The admin interface provides:
+- **List View**: Media title, date, language, country, translation status
+- **Search**: Filter by media title
+- **Filters**: Translation status and date
+- **Bulk Actions**: Delete multiple requests at once
+- **Status Monitoring**: See all transcription requests in one place
+
+---
+
 ## Model Configuration
 
 CinemataCMS uses the **ggml-base.bin** model by default for optimal memory efficiency and broad compatibility. This model provides good transcription quality while using approximately 1GB of RAM.
@@ -153,6 +198,7 @@ ls -la /path/to/whisper.cpp/models/ggml-*.bin
 ### Manual Recovery
 - **Clear Stuck Tasks**: Restart Celery workers if tasks get stuck
 - **Model Switching**: Change to smaller model for memory-constrained systems
+- **Admin Interface**: Use `/admin/files/transcriptionrequest/` to manage failed requests
 
 ### Logging
 All transcription attempts are logged with:
@@ -196,5 +242,6 @@ whisper_cmd_conf = [
 - **File Storage**: VTT files stored in Django media storage
 - **User Notifications**: Integrated with CinemataCMS notification system
 - **API Integration**: Results accessible via Media API endpoints
+- **Admin Management**: Full admin interface for transcription request management
 
 For additional troubleshooting and advanced configuration, see the [Whisper.cpp Integration Fix Documentation](../technical/whisper-cpp-integration-fix.md).
