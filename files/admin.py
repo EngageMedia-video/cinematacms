@@ -206,6 +206,14 @@ class TranscriptionRequestAdmin(admin.ModelAdmin):
         """Allow retranscoding by deleting transcription requests"""
         count = queryset.count()
         media_titles = [req.media.title for req in queryset if req.media]
+        
+        # Reset the Media model fields to allow retranscoding
+        for req in queryset:
+            if req.media:
+                req.media.allow_whisper_transcribe = False
+                req.media.allow_whisper_transcribe_and_translate = False
+                req.media.save(update_fields=['allow_whisper_transcribe', 'allow_whisper_transcribe_and_translate'])
+
         queryset.delete()
         
         if count == 1:
