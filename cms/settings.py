@@ -285,10 +285,13 @@ REST_FRAMEWORK = {
 }
 
 
-# mediacms related
-
-# valid choices here are 'public', 'private', 'unlisted
-PORTAL_WORKFLOW = "public"
+# cinematacms related
+# Portal workflow options:
+# 'public' - All uploads are public by default
+# 'private' - All uploads are private by default (requires manual approval)
+# 'unlisted' - All uploads are unlisted by default
+# 'private_verified' - Regular users: private, Trusted users: unlisted (RECOMMENDED)
+PORTAL_WORKFLOW = "private_verified"
 
 TEMP_DIRECTORY = "/tmp"  # Don't use a temp directory inside BASE_DIR!!!
 
