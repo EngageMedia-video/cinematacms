@@ -77,6 +77,7 @@ TEMPLATES = [
                 "django.template.context_processors.media",
                 "django.contrib.messages.context_processors.messages",
                 "files.context_processors.stuff",
+                'cms.context_processors.ui_settings',
             ],
         },
     },
@@ -470,6 +471,9 @@ TINYMCE_DEFAULT_CONFIG = {
 # settings that are related with UX/appearance
 # whether a featured item appears enlarged with player on index page
 VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
+
+# Video UI/UX settings
+USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
 
 # allow option to override the default admin url
 DJANGO_ADMIN_URL = "admin/"

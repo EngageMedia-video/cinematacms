@@ -23,8 +23,46 @@
 
         {% include "config/index.html" %}
 
-    {% endblock head %}
+         <!-- Rounded corners CSS (inline approach) -->
+        {% if USE_ROUNDED_CORNERS %}
+        <style>
+            /* Rounded Corners for Videos - CinematCMS */
+            .item-thumb,
+            a.item-thumb,
+            .item.video-item,
+            .item-content,
+            .video-js,
+            .video-player {
+                border-radius: 6px !important;
+                overflow: hidden;
+            }
 
+            @media (max-width: 767px) {
+                .item-thumb,
+                a.item-thumb,
+                .item.video-item,
+                .video-js,
+                .video-player {
+                    border-radius: 0 !important;
+                }
+            }
+        </style>
+        {% endif %}
+        
+        <!-- Rounded corners conditional override -->
+        {% if not USE_ROUNDED_CORNERS %}
+        <style>
+            .item-thumb,
+            a.item-thumb,
+            .item.video-item,
+            .item-content,
+            .video-js,
+            .video-player {
+                border-radius: 0 !important;
+            }
+        </style>
+        {% endif %}
+    {% endblock head %}
 </head>
 
 <body>
