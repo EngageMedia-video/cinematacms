@@ -7,7 +7,7 @@ Our goal is to make these Cinemata-specific integrations and improvements to Med
 ### Key features:
 - [Core MediaCMS features](https://github.com/mediacms-io/mediacms)
 - Cinemata-specific enhancements:
-  - [Multi-Factor Authentication](https://github.com/EngageMedia-Tech/cinematacms/blob/main/docs/guides/mfa_authentication.md)
+  - [Multi-Factor Authentication](https://github.com/EngageMedia-video/cinematacms/blob/main/docs/security/mfa_authentication.md)
   - Custom CSS and UI components for a unique, tailored look distinct from baseline MediaCMS
   - Featured video and playlists on the front page
   - Customised playlists and embedding options on the front page
@@ -196,7 +196,7 @@ As root, clone the repository on /home/cinemata and run install.sh:
 
 This should take a few minutes with dependencies etc. Make sure you enter a valid domain when asked (eg staging.cinemata.org)
 
-**Note**: For setting up the application locally on macOS (Ventura 13.0 and Sequoia 15.2), refer to [this guide](docs/mac_setup.md) for more information.
+**Note**: For setting up the application locally on macOS (Ventura 13.0 and Sequoia 15.2), refer to [this guide](https://github.com/EngageMedia-video/cinematacms/blob/main/docs/setup/mac_setup.md) for more information.
 
 **Check out [Index](docs/index.md)** for more information. 
 
