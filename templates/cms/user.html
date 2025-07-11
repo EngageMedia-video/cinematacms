@@ -16,7 +16,28 @@
 {% block topimports %}
 <link href="{% static "css/profile-home.css" %}" rel="preload" as="style">
 <link href="{% static "css/profile-home.css" %}" rel="stylesheet">
-{%endblock topimports %}
+
+<!-- Admin user media: bottom corners only (fixes EDIT MEDIA button overlay) -->
+{% if USE_ROUNDED_CORNERS %}
+<style>
+    /* Use maximum CSS specificity to override existing styles */
+    body #page-profile-home .item-thumb,
+    body #page-profile-home .item.video-item {
+        border-radius: 0 0 6px 6px !important;
+        overflow: hidden !important;
+        -webkit-border-radius: 0 0 6px 6px !important; /* Safari fallback */
+    }
+
+    @media (max-width: 480px) {
+        body #page-profile-home .item-thumb,
+        body #page-profile-home .item.video-item {
+            border-radius: 0 !important;
+        }
+    }
+</style>
+{% endif %}
+
+{% endblock topimports %}
 
 {% block innercontent %}
 {% if user %}{% else %}
