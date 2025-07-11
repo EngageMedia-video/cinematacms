@@ -1,3 +1,4 @@
+
 video_languages = (
     ("ar", "Arabic"),
     ("ba", "Bangla"),
@@ -51,7 +52,6 @@ video_languages = (
     ("ur", "Urdu"),
     ("vi", "Vietnamese"),
 )
-
 video_topics = (
     ("poverty", "Poverty"),
     ("indigenous", "Indigenous"),
