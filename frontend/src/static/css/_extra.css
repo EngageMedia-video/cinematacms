@@ -3345,9 +3345,9 @@ body .items-list-ver .feat-first-item.hw-most-recent-videos .item:nth-child(2) {
 }
 */
 
-body .items-list-ver .feat-first-item.hw-most-recent-videos .item:first-child {
+/* body .items-list-ver .feat-first-item.hw-most-recent-videos .item:first-child {
 	display: none;
-}
+} */
 
 /* Homepage Popup */
 .homepage-popup {

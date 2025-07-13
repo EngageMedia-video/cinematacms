@@ -63,6 +63,7 @@ export class HomeSingleFeaturedPage extends Page {
 		return <ApiUrlConsumer>
 				{ apiUrl =>
 				<>
+					{/* Featured section */}
 					<MediaMultiListWrapper className="items-list-ver">
 
 						{ this.state.loadedLatest && ! this.state.visibleLatest ? null :
@@ -86,6 +87,7 @@ export class HomeSingleFeaturedPage extends Page {
 							</MediaListRow> }
 					</MediaMultiListWrapper>
 
+					{/* Set of other featured lists (showcases, festival lineups, etc.) */}
 					{this.state.indexFeaturedList.map((item, index) => (
 							<MediaMultiListWrapper key={index} className={ "items-list-ver " + (index % 2 === 0 ? 'hw-even-list' : 'hw-odd-list')}>
 								{ this.state.loadedLatest && ! this.state.visibleLatest ? null :
@@ -110,8 +112,8 @@ export class HomeSingleFeaturedPage extends Page {
 
 								<LazyLoadItemListAsync
 									headingText="Recent videos"
-									firstItemViewer={ true }
-									firstItemDescr={ true }
+									firstItemViewer={ false }
+									firstItemDescr={ false }
 									requestUrl={ apiUrl.media }
 									itemsCountCallback={ this.onLoadLatest }
 									hideViews={true}

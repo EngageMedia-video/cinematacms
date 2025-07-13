@@ -52,6 +52,13 @@ export function LazyLoadItemListAsync(props){
 
                         { items.map( ( itm, index ) => {
                             
+                            if(props.headingText === 'Recent videos' && index === 0) {
+                                return (
+                                    <section className="hw-recent-videos-section" key={index}>
+                                        <h1>{props.headingText}</h1>
+                                        <ListItem key={ index } { ...listItemProps( props, itm, index ) } />
+                                    </section>)
+                            }
 
                             if(props.firstItemViewer && index === 1) {
                                 return (
