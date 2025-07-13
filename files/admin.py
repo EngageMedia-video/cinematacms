@@ -40,6 +40,7 @@ class MediaAdmin(admin.ModelAdmin):
     list_display = [
         "title",
         "user",
+        "get_file_size",
         "add_date",
         "views",
         "year_produced",
@@ -54,6 +55,24 @@ class MediaAdmin(admin.ModelAdmin):
     list_filter = ["state", "is_reviewed", "encoding_status", "featured", "category"]
     ordering = ("-add_date",)
     readonly_fields = ("tags", "category", "channel")
+
+    def get_file_size(self, obj):
+        """Display the file size of the media"""
+        if obj.size:
+            return obj.size
+        elif obj.media_file:
+            try:
+                # If size is not set, calculate it from the file
+                import os
+                from . import helpers
+                file_size = os.path.getsize(obj.media_file.path)
+                return helpers.show_file_size(file_size)
+            except (OSError, ValueError):
+                return "N/A"
+        return "N/A"
+    
+    get_file_size.short_description = "File Size"
+    get_file_size.admin_order_field = "size"  # Allow sorting by this column
 
     def get_comments_count(self, obj):
         return obj.comments.count()
