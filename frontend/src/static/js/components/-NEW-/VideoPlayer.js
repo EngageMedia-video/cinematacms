@@ -10,6 +10,48 @@ import '@mediacms/media-player/dist/mediacms-media-player.js';
 
 import '../styles/VideoPlayer.scss';
 
+// Device tier detection utilities
+function isDeviceDetectionReliable() {
+	// Check if we have access to the key APIs for reliable detection
+	// navigator.deviceMemory: Only ~77% support (Chrome/Edge/Opera only, no Firefox/Safari)
+	// navigator.hardwareConcurrency: Better support but still not universal
+	return !!(navigator.deviceMemory && navigator.hardwareConcurrency);
+}
+
+function getDeviceTier() {
+	const hardwareConcurrency = navigator.hardwareConcurrency || 2;
+	const deviceMemory = navigator.deviceMemory || 2; // GB
+	const screenWidth = screen.width || 1024;
+
+	// If detection is not reliable, default to conservative 'mid' tier
+	if (!isDeviceDetectionReliable()) {
+		return 'mid';
+	}
+
+	// Low-tier device detection
+	if (hardwareConcurrency <= 2 || deviceMemory <= 2 || screenWidth <= 768) {
+		return 'low';
+	}
+
+	// High-tier device detection
+	if (hardwareConcurrency >= 8 || deviceMemory >= 8 || screenWidth >= 1920) {
+		return 'high';
+	}
+
+	// Default to mid-tier
+	return 'mid';
+}
+
+function getEstimatedBandwidth(deviceTier) {
+	const bandwidthMap = {
+		low: 500_000,     // 0.5 Mbps
+		mid: 1_500_000,   // 1.5 Mbps
+		high: 3_000_000   // 3.0 Mbps
+	};
+
+	return bandwidthMap[deviceTier] || bandwidthMap.mid;
+}
+
 export function formatInnerLink(url, baseUrl) {
 	let link = urlParse(url, {});
 
@@ -41,6 +83,33 @@ export function VideoPlayer(props) {
 	const videoElemRef = useRef(null);
 
 	let player = null;
+
+	// Device tier detection and bandwidth estimation
+	const deviceDetectionReliable = isDeviceDetectionReliable();
+	const deviceTier = props.forceTier || getDeviceTier();
+	const estimatedBandwidth = getEstimatedBandwidth(deviceTier);
+
+	// Debug logging if enabled
+	if (props.debug) {
+		console.log('VideoPlayer Debug Info:', {
+			deviceDetectionReliable,
+			deviceTier,
+			estimatedBandwidth,
+			hardwareConcurrency: navigator.hardwareConcurrency,
+			deviceMemory: navigator.deviceMemory,
+			screenWidth: screen.width,
+			browserSupport: {
+				deviceMemory: !!navigator.deviceMemory,
+				hardwareConcurrency: !!navigator.hardwareConcurrency,
+			}
+		});
+
+		// Export for analytics/debugging
+		if (typeof window !== 'undefined') {
+			window.deviceTier = deviceTier;
+			window.deviceDetectionReliable = deviceDetectionReliable;
+		}
+	}
 
 	const playerStates = {
 		playerVolume: props.playerVolume,
@@ -145,24 +214,47 @@ export function VideoPlayer(props) {
 		// Get MediaPlayer from the global object
 		const MediaPlayerClass = window['@mediacms/media-player'];
 
+		// Enhanced player options with VHS bandwidth hinting
+		const playerOptions = {
+			enabledTouchControls: true,
+			sources: props.sources,
+			poster: props.poster,
+			autoplay: props.enableAutoplay,
+			bigPlayButton: true,
+			controlBar: {
+				theaterMode: props.hasTheaterMode,
+				pictureInPicture: false,
+				next: props.hasNextLink ? true : false,
+				previous: props.hasPreviousLink ? true : false,
+			},
+			subtitles: subtitles,
+			cornerLayers: props.cornerLayers,
+			videoPreviewThumb: props.previewSprite,
+
+			vhsOptions: {
+				bandwidth: estimatedBandwidth,
+				useBandwidthFromLocalStorage: false,
+				enableLowInitialPlaylist: props.enableLowInitialPlaylist ?? true,
+				limitRenditionByPlayerDimensions: true,
+				useDevicePixelRatio: true
+			}
+		};
+
+		if (props.debug) {
+			console.log('VideoPlayer Configuration:', {
+				deviceTier,
+				estimatedBandwidth,
+				enableLowInitialPlaylist: props.enableLowInitialPlaylist ?? true,
+				note: deviceDetectionReliable
+					? 'Device detection reliable: using estimated bandwidth with conservative enableLowInitialPlaylist=true for safety'
+					: 'Device detection unreliable (Firefox/Safari): enableLowInitialPlaylist=true ensures conservative startup',
+				playerOptions
+			});
+		}
+
 		player = new MediaPlayerClass(
 			videoElemRef.current,
-			{
-				enabledTouchControls: true,
-				sources: props.sources,
-				poster: props.poster,
-				autoplay: props.enableAutoplay,
-				bigPlayButton: true,
-				controlBar: {
-					theaterMode: props.hasTheaterMode,
-					pictureInPicture: false,
-					next: props.hasNextLink ? true : false,
-					previous: props.hasPreviousLink ? true : false,
-				},
-				subtitles: subtitles,
-				cornerLayers: props.cornerLayers,
-				videoPreviewThumb: props.previewSprite,
-			},
+			playerOptions,
 			{
 				volume: playerStates.playerVolume,
 				soundMuted: playerStates.playerSoundMuted,
@@ -255,6 +347,10 @@ VideoPlayer.propTypes = {
 	onPlayerInitCallback: PropTypes.func,
 	onStateUpdateCallback: PropTypes.func,
 	onUnmountCallback: PropTypes.func,
+	// New props for device tier detection and debugging
+	debug: PropTypes.bool,
+	forceTier: PropTypes.oneOf(['low', 'mid', 'high']),
+	enableLowInitialPlaylist: PropTypes.bool,
 };
 
 VideoPlayer.defaultProps = {
