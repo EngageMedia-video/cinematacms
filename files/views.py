@@ -695,7 +695,17 @@ class MediaDetail(APIView):
             # this need be explicitly called, and will call
             # has_object_permission() after has_permission has succeeded
             self.check_object_permissions(self.request, media)
-            if media.state == "restricted" and not (
+            # Handle PRIVATE media first (only owner/editor can access)
+            if media.state == "private" and not (
+                self.request.user == media.user or is_mediacms_editor(self.request.user)
+            ):
+                return Response(
+                    {"detail": "media is private"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+            
+            # Handle RESTRICTED media (password-protected, no login required)
+            elif media.state == "restricted" and not (
                 self.request.user == media.user or is_mediacms_editor(self.request.user)
             ):
                 if (
@@ -707,13 +717,6 @@ class MediaDetail(APIView):
                         {"detail": "media is restricted"},
                         status=status.HTTP_401_UNAUTHORIZED,
                     )
-            if media.state == "private" and not (
-                self.request.user == media.user or is_mediacms_editor(self.request.user)
-            ):
-                return Response(
-                    {"detail": "media is private"},
-                    status=status.HTTP_401_UNAUTHORIZED,
-                )
             return media
         except PermissionDenied:
             return Response(
@@ -727,7 +730,7 @@ class MediaDetail(APIView):
 
     def get(self, request, friendly_token, format=None):
         # Get media details
-        password = request.GET.get("password")
+        password = request.GET.get("password") or request.POST.get("password")
         media = self.get_object(friendly_token, password=password)
         if isinstance(media, Response):
             return media
