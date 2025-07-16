@@ -152,6 +152,8 @@ DATABASES = {
     }
 }
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 
 REDIS_LOCATION = "redis://127.0.0.1:6379/1"
 CACHES = {
@@ -234,16 +236,14 @@ TIME_TO_ACTION_ANONYMOUS = 10 * 60
 
 # django-allauth settings
 ACCOUNT_SESSION_REMEMBER = True
-ACCOUNT_AUTHENTICATION_METHOD = "username_email"
-ACCOUNT_EMAIL_REQUIRED = True  #  new users need to specify email
+ACCOUNT_LOGIN_METHODS = {'username', 'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*']
 ACCOUNT_EMAIL_VERIFICATION = "optional"  # 'mandatory' 'none'
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_USERNAME_MIN_LENGTH = "4"
 ACCOUNT_ADAPTER = "users.adapter.MyAccountAdapter"
 ACCOUNT_SIGNUP_FORM_CLASS = "users.forms.SignupForm"
 ACCOUNT_USERNAME_VALIDATORS = "users.validators.custom_username_validators"
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
-ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
 ACCOUNT_LOGIN_BY_CODE_ENABLED = True
