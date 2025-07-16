@@ -46,7 +46,7 @@ function getEstimatedBandwidth(deviceTier) {
 	const bandwidthMap = {
 		low: 500_000,     // 0.5 Mbps
 		mid: 1_500_000,   // 1.5 Mbps
-		high: 3_000_000   // 3.0 Mbps
+		high: null        // No bandwidth limitation
 	};
 
 	return bandwidthMap[deviceTier] || bandwidthMap.mid;
@@ -214,12 +214,14 @@ export function VideoPlayer(props) {
 		// Get MediaPlayer from the global object
 		const MediaPlayerClass = window['@mediacms/media-player'];
 
-		// Enhanced player options with VHS bandwidth hinting
+		// Enhanced player options with VHS bandwidth hinting and anti-buffering configuration
 		const playerOptions = {
 			enabledTouchControls: true,
 			sources: props.sources,
 			poster: props.poster,
 			autoplay: props.enableAutoplay,
+			// Prevent buffering until user interaction (unless autoplay is enabled)
+			preload: props.enableAutoplay ? 'metadata' : 'none',
 			bigPlayButton: true,
 			controlBar: {
 				theaterMode: props.hasTheaterMode,
@@ -232,11 +234,18 @@ export function VideoPlayer(props) {
 			videoPreviewThumb: props.previewSprite,
 
 			vhsOptions: {
-				bandwidth: estimatedBandwidth,
+				...(estimatedBandwidth !== null && { bandwidth: estimatedBandwidth }),
 				useBandwidthFromLocalStorage: false,
-				enableLowInitialPlaylist: props.enableLowInitialPlaylist ?? true,
+				// Force conservative startup for all devices to prevent buffering
+				enableLowInitialPlaylist: true,
 				limitRenditionByPlayerDimensions: true,
-				useDevicePixelRatio: true
+				useDevicePixelRatio: true,
+				// Modern VHS options for better performance and reduced buffering
+				handlePartialData: true,
+				// Enable Network Information API for high-tier devices only
+				useNetworkInformationApi: deviceTier === 'high',
+				maxPlaylistRetries: 2,
+				playlistExclusionDuration: 60
 			}
 		};
 
@@ -244,10 +253,22 @@ export function VideoPlayer(props) {
 			console.log('VideoPlayer Configuration:', {
 				deviceTier,
 				estimatedBandwidth,
-				enableLowInitialPlaylist: props.enableLowInitialPlaylist ?? true,
+				preloadStrategy: props.enableAutoplay ? 'metadata' : 'none',
+				antiBufferingMode: true,
+				enableLowInitialPlaylist: true,
 				note: deviceDetectionReliable
-					? 'Device detection reliable: using estimated bandwidth with conservative enableLowInitialPlaylist=true for safety'
-					: 'Device detection unreliable (Firefox/Safari): enableLowInitialPlaylist=true ensures conservative startup',
+					? 'Device detection reliable: using estimated bandwidth with anti-buffering configuration'
+					: 'Device detection unreliable (Firefox/Safari): conservative startup with anti-buffering enabled',
+				antiBufferingExplanation: {
+					preload: props.enableAutoplay ? 'metadata only (autoplay enabled)' : 'none (prevents startup buffering)',
+					enableLowInitialPlaylist: 'forced true (starts with lowest quality)',
+					handlePartialData: 'enabled (allows partial segment rendering for faster startup)',
+					useNetworkInformationApi: deviceTier === 'high'
+						? 'enabled (high-tier devices can benefit from real-time network data)'
+						: 'disabled (conflicts with bandwidth limits for low/mid devices)',
+					maxPlaylistRetries: '2 (quick failover)',
+					playlistExclusionDuration: '60 seconds (faster recovery)'
+				},
 				playerOptions
 			});
 		}
@@ -347,10 +368,10 @@ VideoPlayer.propTypes = {
 	onPlayerInitCallback: PropTypes.func,
 	onStateUpdateCallback: PropTypes.func,
 	onUnmountCallback: PropTypes.func,
-	// New props for device tier detection and debugging
+	// New props for device tier detection, debugging, and anti-buffering
 	debug: PropTypes.bool,
 	forceTier: PropTypes.oneOf(['low', 'mid', 'high']),
-	enableLowInitialPlaylist: PropTypes.bool,
+	enableLowInitialPlaylist: PropTypes.bool, // Note: Always forced to true for anti-buffering
 };
 
 VideoPlayer.defaultProps = {
