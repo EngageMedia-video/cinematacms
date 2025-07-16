@@ -3,7 +3,6 @@ import os
 import logging
 from pathlib import Path
 from django.test import TestCase
-from django.core.management.base import BaseCommand
 from django.conf import settings
 
 class WhisperCPPDirectoryTestCase(TestCase):
@@ -28,15 +27,15 @@ class WhisperCPPDirectoryTestCase(TestCase):
         self.fail(f"WHISPER_CPP_COMMAND does not exist: {cmd_path}")
 
   def test_whisper_model_exists(self):
-    model_path = Path(settings.WHISPER_CPP_MODEL)
-    self.assertTrue(model_path.exists(), "WHISPER_CPP_MODEL not found in /root directory")
+    model_path = settings.WHISPER_CPP_MODEL
+    self.assertTrue(model_path, "WHISPER_CPP_MODEL not found in /root directory")
 
-  def test_whisper_model_is_file(self):
+  def test_whisper_model_is_bin(self):
     """Test that WHISPER_CPP_MODEL is a file (not directory)"""
     model_path = Path(settings.WHISPER_CPP_MODEL)
-    if model_path.exists():
-        self.assertTrue(
-            model_path.is_file(),
+    if model_path:
+        self.assertEqual(
+            model_path.suffix.lower(), '.bin',
             f"WHISPER_CPP_MODEL exists but is not a file: {model_path}"
         )
     else:
