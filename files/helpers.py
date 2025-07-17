@@ -750,3 +750,54 @@ def clean_query(query):
     for char in chars:
         query = query.replace(char, "")
     return query.lower()
+
+
+def is_advanced_user(user):
+    """
+    Check if user has advanced playlist privileges.
+    Advanced users: Trusted Users, Editors, Managers, Superusers
+    """
+    if not user.is_authenticated:
+        return False
+    
+    from .methods import is_mediacms_editor, is_mediacms_manager
+    
+    # Check if user is superuser
+    if user.is_superuser:
+        return True
+    
+    # Check if user is editor or manager
+    if is_mediacms_editor(user) or is_mediacms_manager(user):
+        return True
+    
+    # Check if user is trusted user (advancedUser attribute)
+    try:
+        if hasattr(user, 'advancedUser') and user.advancedUser:
+            return True
+    except:
+        pass
+    
+    return False
+
+
+def can_user_see_video_in_playlist(user, media):
+    """
+    Check if user can see a video thumbnail/metadata in a playlist.
+    This is different from video playback access.
+    """
+    if not media:
+        return False
+    
+    # Public videos - everyone can see
+    if media.state == "public":
+        return True
+    
+    # Private videos - excluded from all playlists
+    if media.state == "private":
+        return False
+    
+    # Unlisted and Restricted videos - authenticated users can see thumbnails
+    if media.state in ["unlisted", "restricted"]:
+        return user.is_authenticated
+    
+    return False
