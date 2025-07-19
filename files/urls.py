@@ -138,25 +138,14 @@ urlpatterns = [
 
 
 if settings.DEBUG:
-    # problem with start with /
+    # Fixed: removed leading slash and removed all duplicate patterns
     urlpatterns += [
         re_path(
-            r"^/media/(?P<path>.*)$",
+            r"^media/(?P<path>.*)$",  # NO leading slash
             serve,
             {
                 "document_root": settings.MEDIA_ROOT,
             },
         ),
-        re_path(
-            r"^/api/v1/playlists/(?P<friendly_token>[\w]*)$",
-            views.PlaylistDetail.as_view(),
-        ),
-        re_path(
-            r"^/%2Fapi/v1/playlists/(?P<friendly_token>[\w]*)$",
-            views.PlaylistDetail.as_view(),
-        ),
-        re_path(
-            r"^//%2Fapi/v1/playlists/(?P<friendly_token>[\w]*)$",
-            views.PlaylistDetail.as_view(),
-        ),
+        # ALL duplicate playlist patterns REMOVED
     ]
