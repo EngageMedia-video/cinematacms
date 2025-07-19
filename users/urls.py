@@ -54,8 +54,5 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns += [
-        # problem with start with /
-        re_path("^/user/(?P<username>[\w@._-]*)$", views.view_user, name="get_user"),
-        re_path("^/user/(?P<username>[\w@._-]*)/$", views.view_user, name="get_user"),
-    ]
+    # DEBUG section cleaned up - no duplicate patterns needed
+    pass
