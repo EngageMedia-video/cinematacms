@@ -3458,6 +3458,23 @@ body .video-js.vjs-mediacms .vjs-big-play-button {
 	position: absolute !important;
 }
 
+@media screen and (width <= 425px) {
+	body .video-js.vjs-mediacms .vjs-big-play-button {
+		width: 48px !important;
+		height: 48px !important;
+		line-height: 48px !important;
+		bottom: 24px !important;
+		left: 24px !important;
+		top: auto !important;
+		margin: 0 !important;
+		font-size: 33px !important;
+		border-radius: 50% !important;
+		background-color: #026690 !important;
+		position: absolute !important;
+	}
+}
+
+
 body .video-js.vjs-mediacms .vjs-big-play-button:hover {
 	background-color: #ED7C30 !important;
 	transform: scale(1.1) !important;
