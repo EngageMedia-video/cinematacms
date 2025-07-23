@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.db.models import Subquery, OuterRef
 from allauth.mfa.utils import is_mfa_enabled
 from allauth.mfa.models import Authenticator
+import os
+from files import helpers
 
 from .models import BlackListedEmail, User
 
@@ -34,6 +36,7 @@ class UserAdmin(admin.ModelAdmin):
         "name",
         "email",
         "media_count",
+        "get_total_media_size",  # Add this to your list_display
         "logo",
         "date_added",
         "is_superuser",
@@ -44,6 +47,40 @@ class UserAdmin(admin.ModelAdmin):
     ]
     list_filter = ["is_superuser", "is_editor", "is_manager"]
     ordering = ("-date_added",)
+    list_per_page = 25  # Limit to 25 users per page for better performance
+
+    def get_total_media_size(self, obj):
+        """Display the total size of all media files uploaded by the user"""
+        media_files = obj.media_set.all()
+        total_size_bytes = 0
+
+        for media in media_files:
+            if media.size:
+                # Parse the size string (e.g., "15.2MB" -> bytes)
+                try:
+                    size_str = media.size.replace('MB', '').replace('GB', '').replace('KB', '')
+                    size_value = float(size_str)
+                    if 'GB' in media.size:
+                        total_size_bytes += size_value * 1000 * 1000 * 1000
+                    elif 'MB' in media.size:
+                        total_size_bytes += size_value * 1000 * 1000
+                    elif 'KB' in media.size:
+                        total_size_bytes += size_value * 1000
+                except (ValueError, AttributeError):
+                    pass
+            elif media.media_file:
+                # Fallback: calculate from actual file
+                try:
+                    file_size = os.path.getsize(media.media_file.path)
+                    total_size_bytes += file_size
+                except (OSError, ValueError):
+                    pass
+
+        if total_size_bytes > 0:
+            return helpers.show_file_size(total_size_bytes)
+        return "0MB"
+
+    get_total_media_size.short_description = "Total Media Size"
 
     def has_mfa_enabled(self, obj):
         return Authenticator.objects.filter(user=obj).exists()
@@ -53,6 +90,8 @@ class UserAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
+        # Add prefetch_related for better performance
+        queryset = queryset.prefetch_related('media_set')
         queryset = queryset.annotate(
             mfa_created=Subquery(
                 Authenticator.objects.filter(user=OuterRef('pk'))
@@ -64,6 +103,7 @@ class UserAdmin(admin.ModelAdmin):
 
     def mfa_created_at(self, obj):
         return obj.mfa_created
+
 
 # unregister regular authenticator model
 admin.site.unregister(Authenticator)
