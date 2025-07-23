@@ -1,9 +1,33 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block headtitle %} - error{% endblock headtitle %}
+{% block headtitle %}404 - {{PORTAL_NAME}}{% endblock headtitle %}
+
+{% block headermeta %}
+<meta charset="utf-8">
+<meta http-equiv="x-ua-compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page Not Found - {{ PORTAL_NAME }}</title>
+{% endblock headermeta %}
+
+{% block topimports %}
+<link rel="stylesheet" href="{% static "css/error.css" %}">
+{% endblock topimports %}
 
 {% block innercontent %}
-	<p>you are lost!</p>
+<body>
+    <!-- This HTML structure matches your frontend-built error.html -->
+    <div id="app-header"></div>
+    <div id="app-sidebar"></div>
+		<div class="page-main">
+				<div class="page-main-inner">
+						<div id="page-error" class="error-page-wrap"></div>
+				</div>
+				<div class="page-sidebar-content-overlay"></div>
+		</div>
+    <div id="app-footer"></div>
+    
+    <!-- Load the frontend-built JavaScript -->
+    <script src="{% static 'js/error.js' %}"></script>
+</body>
 {% endblock %}
-
-
