@@ -1172,18 +1172,44 @@ class PlaylistDetail(APIView):
         playlist = self.get_playlist(friendly_token)
         if isinstance(playlist, Response):
             return playlist
+        
         serializer = PlaylistDetailSerializer(playlist, context={"request": request})
-        playlist_media = PlaylistMedia.objects.filter(
-            playlist=playlist, media__state="public"
-        ).prefetch_related("media__user")
-        playlist_media = [c.media for c in playlist_media]
+        
+        # Import helper functions
+        from .helpers import is_advanced_user, can_user_see_video_in_playlist
+        
+        # Determine which videos to show based on user permissions
+        if is_advanced_user(request.user) and playlist.user == request.user:
+            # Advanced users viewing their own playlists can see all non-private videos
+            playlist_media_queryset = PlaylistMedia.objects.filter(
+                playlist=playlist
+            ).exclude(media__state="private").prefetch_related("media__user")
+        elif request.user.is_authenticated:
+            # Authenticated users can see public, unlisted, and restricted videos
+            playlist_media_queryset = PlaylistMedia.objects.filter(
+                playlist=playlist
+            ).exclude(media__state="private").prefetch_related("media__user")
+        else:
+            # Anonymous users see only public videos
+            playlist_media_queryset = PlaylistMedia.objects.filter(
+                playlist=playlist, media__state="public"
+            ).prefetch_related("media__user")
+        
+        # Filter videos based on what the current viewer can see
+        accessible_media = []
+        for playlist_media in playlist_media_queryset:
+            if can_user_see_video_in_playlist(request.user, playlist_media.media):
+                accessible_media.append(playlist_media.media)
+        
         playlist_media_serializer = MediaSerializer(
-            playlist_media, many=True, context={"request": request}
+            accessible_media, many=True, context={"request": request}
         )
+        
         ret = serializer.data
         ret["playlist_media"] = playlist_media_serializer.data
         # needed for index page featured
         ret["results"] = playlist_media_serializer.data[:8]
+        
         return Response(ret)
 
     def post(self, request, friendly_token, format=None):
@@ -1212,12 +1238,33 @@ class PlaylistDetail(APIView):
                 pass
 
         if action in ["add", "remove", "ordering"]:
-            media = (
-                Media.objects.exclude(state="private")
-                .filter(friendly_token=media_friendly_token, media_type="video")
-                .first()
-            )
+            # Import helper functions
+            from .helpers import is_advanced_user, can_user_see_video_in_playlist
+            
+            # Determine media query based on user permissions
+            if (is_advanced_user(request.user) and 
+                playlist.user == request.user):
+                # Advanced users can add public, unlisted, and restricted videos
+                media = Media.objects.filter(
+                    friendly_token=media_friendly_token, 
+                    media_type="video"
+                ).exclude(state="private").first()
+            else:
+                # Regular users can only add public videos (existing behavior)
+                media = Media.objects.filter(
+                    friendly_token=media_friendly_token, 
+                    media_type="video",
+                    state="public"
+                ).first()
+            
             if media:
+                # Additional access check - ensure user can see this video in playlist
+                if not can_user_see_video_in_playlist(request.user, media):
+                    return Response(
+                        {"detail": "insufficient permissions to access this video"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                
                 if action == "add":
                     media_in_playlist = PlaylistMedia.objects.filter(
                         playlist=playlist
@@ -1255,7 +1302,8 @@ class PlaylistDetail(APIView):
                         )
             else:
                 return Response(
-                    {"detail": "media is not valid"}, status=status.HTTP_400_BAD_REQUEST
+                    {"detail": "media is not valid or accessible"}, 
+                    status=status.HTTP_400_BAD_REQUEST
                 )
         return Response(
             {"detail": "invalid or not specified action"},
