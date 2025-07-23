@@ -100,7 +100,6 @@ export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
 
 						{ displayViews ? <div className="media-views">{ formatNumber( this.props.views, true ) } { 1 >= this.props.views ? 'view' : 'views' }</div> : null }
 						{ UserContext._currentValue.can.likeMedia ? <MediaLikeIcon/> : null }
-						{ UserContext._currentValue.can.dislikeMedia ? <MediaDislikeIcon/> : null }
 						{ UserContext._currentValue.can.shareMedia ? <MediaShareButton isVideo={true} /> : null }
 
 						{ ! UserContext._currentValue.is.anonymous && UserContext._currentValue.can.saveMedia && -1 < PlaylistsContext._currentValue.mediaTypes.indexOf( MediaPageStore.get( 'media-type' ) ) ? <MediaSaveButton/> : null }
