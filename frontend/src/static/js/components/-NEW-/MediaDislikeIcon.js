@@ -16,8 +16,8 @@ export function MediaDislikeIcon(props){
 
 	const counterRef = useRef(null);
 
-	const [ dislikedMedia, setDislikedMedia ] = useState( MediaPageStore.get('user-liked-media') );
-	const [ dislikesCounter, setDislikesCounter ] = useState( formatNumber( MediaPageStore.get('media-likes'), false ) );
+	const [ dislikedMedia, setDislikedMedia ] = useState( MediaPageStore.get('user-disliked-media') );
+	const [ dislikesCounter, setDislikesCounter ] = useState( formatNumber( MediaPageStore.get('media-dislikes'), false ) );
 
 	function updateStateValues(){
 		setDislikedMedia( MediaPageStore.get('user-disliked-media') );
@@ -55,7 +55,7 @@ export function MediaDislikeIcon(props){
 		};
 	}, []);
 
-	return ( <div className="like">
+	return ( <div className="dislike">
 				<button onClick={ toggleDislike }>
 					<CircleIconButton type="span"><MaterialIcon type="thumb_down" /></CircleIconButton>
 					<span className="dislikes-counter">{ dislikesCounter }</span>
