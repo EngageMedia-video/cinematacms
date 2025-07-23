@@ -1,0 +1,149 @@
+.error-page-content {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 2rem;
+	text-align: center;
+	
+	.error-header {
+		margin-bottom: 3rem;
+		
+		.error-code {
+				font-size: 8rem;
+				font-weight: bold;
+				color: #4db6ac;
+				line-height: 1;
+				margin-bottom: 1rem;
+				
+				@media (max-width: 768px) {
+						font-size: 6rem;
+				}
+		}
+		
+		.error-title {
+				font-size: 2.5rem;
+				color: var(--page-main-text-color);
+				margin-bottom: 1rem;
+				
+				@media (max-width: 768px) {
+						font-size: 2rem;
+				}
+		}
+		
+		.error-description {
+			font-size: 1.1rem;
+			color: var(--page-main-secondary-text-color);
+			max-width: 600px;
+			margin: 0 auto;
+			line-height: 1.6;
+		}
+	}
+
+	.error-actions {
+		display: flex;
+		gap: 1rem;
+		justify-content: center;
+		margin-bottom: 4rem;
+		flex-wrap: wrap;
+		
+		.error-btn {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			padding: 0.75rem 1.5rem;
+			border: 2px solid;
+			border-radius: 8px;
+			font-size: 1rem;
+			font-weight: 500;
+			text-decoration: none;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			
+			.material-icons {
+				font-size: 1.2rem;
+			}
+			
+			&.error-btn-primary {
+				background-color: #4db6ac;
+				color: white;
+				border-color: #26a69a;
+				
+				&:hover {
+					background-color: #26a69a;
+					border-color: #1e7873;
+					transform: translateY(-2px);
+				}
+
+			}
+			
+			&.error-btn-secondary {
+				background-color: var(--page-main-bg-color);
+				color: var(--page-main-text-color);
+				border-color: var(--page-main-border-color);
+				
+				&:hover {
+					background-color: var(--page-main-hover-bg-color);
+					border-color: #252828;
+					transform: translateY(-2px);
+				}
+			}
+	}
+	}
+	
+}
+
+// Dark theme support
+body.dark_theme .error-page-content {
+	.error-header .error-code {
+			color: #80cbc4;
+	}
+	
+	.error-actions .error-btn {
+		&.error-btn-primary {
+			background-color: #26a69a;
+			
+			&:hover {
+				background-color: #4db6ac;
+			}
+		}
+
+		&.error-btn-secondary {
+			&:hover {
+				border-color: #FEFDE6
+			}
+		}
+	}
+	
+	.error-search-section .error-search-form .search-input-wrapper .search-input {
+		&:focus {
+				border-color: #80cbc4;
+		}
+	}
+	
+	.error-categories-section .categories-grid .category-card {
+		&:hover {
+				border-color: #80cbc4;
+		}
+	}
+}
+
+// Mobile responsiveness
+@media (max-width: 768px) {
+	.error-page-content {
+		padding: 1rem;
+		
+		.error-actions {
+			flex-direction: column;
+			align-items: center;
+			
+			.error-btn {
+					width: 100%;
+					max-width: 300px;
+			}
+		}
+		
+		.error-categories-section .categories-grid {
+			grid-template-columns: 1fr;
+			gap: 0.75rem;
+		}
+	}
+}

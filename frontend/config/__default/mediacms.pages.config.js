@@ -656,6 +656,7 @@ const pages = {
 			render: templates.renderAddMediaPageContent(),
 		}
 	),
+
 	// Static pages.
 	error: mediacmsDefaultPagesStatic("error", "Error", "ErrorPage", {
 		html: {
@@ -663,8 +664,10 @@ const pages = {
 				snippet: staticTemplates.errorPage(),
 			},
 		},
-		render: templates.renderBase(),
-		buildExclude: true,
+		render: templates.renderPageContent({
+			page: { id: "page-error", component: "ErrorPage" },
+		}),
+		buildExclude: false,
 	}),
 	about: mediacmsDefaultPagesStatic("about", "About", "AboutPage", {
 		html: {
@@ -683,6 +686,7 @@ const pages = {
 		},
 		render: templates.renderBase(),
 	}),
+
 	// Dev-only static pages.
 	"edit-media": mediacmsDefaultPagesStatic(
 		"edit-media",
