@@ -39,13 +39,14 @@ export class ErrorPage extends Page {
                                   </p>
                               </div>
 
-                               {/* Action Buttons */}
                                 <div className="error-actions">
                                     <button 
                                         className="error-btn error-btn-primary"
                                         onClick={() => window.location.href = links.home}
                                     >
-                                        <i className="material-icons">home</i>
+                                        <svg className="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                                        </svg>
                                         Go Home
                                     </button>
                                     
@@ -53,7 +54,9 @@ export class ErrorPage extends Page {
                                         className="error-btn error-btn-secondary"
                                         onClick={() => window.location.href = links.latest}
                                     >
-                                        <i className="material-icons">movie</i>
+                                        <svg className="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/>
+                                        </svg>
                                         Browse Films
                                     </button>
                                     
@@ -61,7 +64,9 @@ export class ErrorPage extends Page {
                                         className="error-btn error-btn-secondary"
                                         onClick={this.goBack}
                                     >
-                                        <i className="material-icons">arrow_back</i>
+                                        <svg className="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                                        </svg>
                                         Go Back
                                     </button>
                                 </div>

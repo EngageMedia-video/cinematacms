@@ -10,7 +10,10 @@
 		.error-code {
 				font-size: 8rem;
 				font-weight: bold;
-				color: #4db6ac;
+				background: var(--body-text-color);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				background-clip: text;
 				line-height: 1;
 				margin-bottom: 1rem;
 				
@@ -20,13 +23,14 @@
 		}
 		
 		.error-title {
-				font-size: 2.5rem;
-				color: var(--page-main-text-color);
-				margin-bottom: 1rem;
-				
-				@media (max-width: 768px) {
-						font-size: 2rem;
-				}
+			font-size: 2.5rem;
+			color: var(--body-text-color);
+			margin-bottom: 1rem;
+			font-weight: 300;
+			
+			@media (max-width: 768px) {
+					font-size: 2rem;
+			}
 		}
 		
 		.error-description {
@@ -48,44 +52,58 @@
 		.error-btn {
 			display: inline-flex;
 			align-items: center;
-			gap: 0.5rem;
-			padding: 0.75rem 1.5rem;
+			gap: 0.75rem;
+			padding: 1rem 1.75rem;
 			border: 2px solid;
-			border-radius: 8px;
+			border-radius: 6px;
 			font-size: 1rem;
-			font-weight: 500;
 			text-decoration: none;
 			cursor: pointer;
 			transition: all 0.3s ease;
+			background: none;
+			position: relative;
+			overflow: hidden;
 			
-			.material-icons {
-				font-size: 1.2rem;
+			.btn-icon {
+				width: 20px;
+				height: 20px;
+				transition: transform 0.3s ease;
 			}
-			
+
 			&.error-btn-primary {
-				background-color: #4db6ac;
-				color: white;
-				border-color: #26a69a;
+				background: var(--btn-primary-bg-color);
+				color: var(--btn-color);
+				border-color: var(--btn-border-color);
 				
-				&:hover {
-					background-color: #26a69a;
-					border-color: #1e7873;
-					transform: translateY(-2px);
+				> .btn-icon {
+					color: var(--btn-primary-icon-color);
 				}
 
+				&:hover {
+					background: var(--btn-primary-bg-hover-color);
+				}
 			}
 			
 			&.error-btn-secondary {
-				background-color: var(--page-main-bg-color);
-				color: var(--page-main-text-color);
-				border-color: var(--page-main-border-color);
-				
-				&:hover {
-					background-color: var(--page-main-hover-bg-color);
-					border-color: #252828;
-					transform: translateY(-2px);
-				}
+					color: var(--btn-secondary-color);
+					background-color: transparent;
+					border-color: var(--btn-secondary-border-color);
+					border-width: 0.5px;
+
+					> .btn-icon {
+						color: var(--btn-secondary-icon-color);
+					}
+					
+					&:hover {
+						background-color: var(--btn-secondary-bg-hover-color);
+						color: white;
+
+						>.btn-icon {
+							color: var(--btn-secondary-icon-hover-color);
+						}
+					}
 			}
+
 	}
 	}
 	
@@ -93,35 +111,22 @@
 
 // Dark theme support
 body.dark_theme .error-page-content {
-	.error-header .error-code {
-			color: #80cbc4;
-	}
-	
 	.error-actions .error-btn {
 		&.error-btn-primary {
-			background-color: #26a69a;
+			background-color: var(--btn-primary-bg-color);
+			border: none;
 			
 			&:hover {
-				background-color: #4db6ac;
+				background-color: var(--btn-primary-bg-hover-color);
 			}
 		}
 
 		&.error-btn-secondary {
+			color: var(--btn-secondary-color);
+
 			&:hover {
 				border-color: #FEFDE6
 			}
-		}
-	}
-	
-	.error-search-section .error-search-form .search-input-wrapper .search-input {
-		&:focus {
-				border-color: #80cbc4;
-		}
-	}
-	
-	.error-categories-section .categories-grid .category-card {
-		&:hover {
-				border-color: #80cbc4;
 		}
 	}
 }
