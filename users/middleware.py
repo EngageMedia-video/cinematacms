@@ -1,6 +1,6 @@
 from django.http import HttpResponseRedirect, Http404
 from allauth.mfa.utils import is_mfa_enabled
-from cms.settings_utils import user_requires_mfa, should_enforce_mfa_on_path
+from cms.permissions import user_requires_mfa, should_enforce_mfa_on_path
 
 class AdminMFAMiddleware:
   def __init__(self, get_response):
