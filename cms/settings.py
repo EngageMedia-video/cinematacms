@@ -259,10 +259,6 @@ MFA_RECOVERY_CODE_DIGITS = 12
 MFA_TOTP_TOLERANCE = 120
 MFA_SUPPORTED_TYPES = ["totp", "recovery_codes"]
 MFA_TOTP_ISSUER = "Cinemata"
-# specific configs
-MFA_REQUIRED_ROLES = ['superuser']
-MFA_ENFORCE_ON_PATHS = ['/admin/']
-MFA_EXCLUDE_PATHS = ['/fu/', '/api/', '/manage/', '/accounts/']
 
 # registration won't be open, might also consider to remove links for register
 USERS_CAN_SELF_REGISTER = True
@@ -481,6 +477,11 @@ USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
 
 # allow option to override the default admin url
 DJANGO_ADMIN_URL = "admin/"
+
+# additional MFA-permission configs
+MFA_REQUIRED_ROLES = ['superuser']
+MFA_ENFORCE_ON_PATHS = [f'/{DJANGO_ADMIN_URL}']
+MFA_EXCLUDE_PATHS = ['/fu/', '/api/', '/manage/', '/accounts/']
 
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths()
 from .local_settings import *

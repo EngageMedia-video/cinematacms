@@ -18,4 +18,3 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
 
 # Custom MFA settings
 MFA_REQUIRED_ROLES = ['superuser'] # options: superuser, advanced_user, authenticated, manager, editor
-MFA_ENFORCE_ON_PATHS = ['/admin/']
