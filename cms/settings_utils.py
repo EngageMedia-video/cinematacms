@@ -43,8 +43,7 @@ def get_whisper_cpp_paths():
   
   return (str(whisper_cpp_dir), whisper_cpp_command, whisper_cpp_model)
 
-def user_requires_mfa(request):
-    user = request.user
+def user_requires_mfa(user):
     if not user.is_authenticated:
         return False
     
