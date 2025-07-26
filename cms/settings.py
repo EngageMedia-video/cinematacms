@@ -259,6 +259,10 @@ MFA_RECOVERY_CODE_DIGITS = 12
 MFA_TOTP_TOLERANCE = 120
 MFA_SUPPORTED_TYPES = ["totp", "recovery_codes"]
 MFA_TOTP_ISSUER = "Cinemata"
+# specific configs
+MFA_REQUIRED_ROLES = ['superuser']
+MFA_ENFORCE_ON_PATHS = ['/admin/']
+MFA_EXCLUDE_PATHS = ['/fu/', '/api/', '/manage/', '/accounts/']
 
 # registration won't be open, might also consider to remove links for register
 USERS_CAN_SELF_REGISTER = True
