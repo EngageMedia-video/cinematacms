@@ -44,8 +44,8 @@ function getDeviceTier() {
 
 function getEstimatedBandwidth(deviceTier) {
     const bandwidthMap = {
-        low: 500_000,     // 0.5 Mbps
-        mid: 1_500_000,   // 1.5 Mbps
+        low: 1_000_000,     // 1 Mbps
+        mid: 3_000_000,   // 3 Mbps
         high: null        // No bandwidth limitation
     };
 

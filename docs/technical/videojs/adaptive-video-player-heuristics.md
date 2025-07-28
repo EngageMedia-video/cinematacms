@@ -69,8 +69,8 @@ function getDeviceTier() {
 ```javascript
 function getEstimatedBandwidth(deviceTier) {
     const bandwidthMap = {
-        low: 500_000,     // 0.5 Mbps - Conservative for weak devices
-        mid: 1_500_000,   // 1.5 Mbps - Balanced performance
+        low: 1_000_000,     // 1 Mbps - Conservative for weak devices
+        mid: 3_000_000,   // 3 Mbps - Balanced performance
         high: null        // Unlimited - Let the device breathe
     };
     return bandwidthMap[deviceTier] || bandwidthMap.mid;
