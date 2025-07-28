@@ -121,7 +121,6 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 	render(){
 
 		const displayViews = PageStore.get('config-options').pages.media.displayViews && void 0 !== this.props.views;
-
 		const mediaState = MediaPageStore.get('media-data').state;
 
 		let stateTooltip = '';
@@ -162,10 +161,7 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 
 				<div className="media-actions">
 					<div>
-
-
 						{ UserContext._currentValue.can.likeMedia ? <MediaLikeIcon/> : null }
-						{ UserContext._currentValue.can.dislikeMedia ? <MediaDislikeIcon/> : null }
 						{ UserContext._currentValue.can.shareMedia ? <MediaShareButton isVideo={false} /> : null }
 
 						{ ! UserContext._currentValue.is.anonymous && UserContext._currentValue.can.saveMedia && -1 < PlaylistsContext._currentValue.mediaTypes.indexOf( MediaPageStore.get( 'media-type' ) ) ? <MediaSaveButton/> : null }

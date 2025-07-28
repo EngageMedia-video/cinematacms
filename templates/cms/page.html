@@ -1,16 +1,18 @@
 {% extends "base.html" %}
 {% load static %}
+{% load custom_tags %}
 
 {% block headtitle %}{{page.title}} - {{PORTAL_NAME}}{% endblock headtitle %}
 
 {% block headermeta %}
 
+{% get_social_image_url_for_page page FRONTEND_HOST as social_image %}
 <meta property="og:title" content="{{page.title}} - {{PORTAL_NAME}}">
 <meta property="og:type" content="website">
 <meta property="og:description" content="">
-
-<meta property="og:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
+<meta property="og:image" content="{{social_image}}">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{{social_image}}">
 
 <script type="application/ld+json">
 {
@@ -37,4 +39,5 @@
 	
 	{{page.description|safe}}
 
+</div>
 {% endblock %}
