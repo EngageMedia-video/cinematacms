@@ -148,7 +148,7 @@ The matrix follows a progressive permission model where higher-level roles inher
 
 ## 🛡️ Multi-Factor Authentication (MFA)
 
-All admin users are **required** to enable multi-factor authentication for enhanced security. This requirement can be extended to other user roles based on organizational security policies.
+All admin users and managers are **required** to enable multi-factor authentication for enhanced security. This requirement can be extended to other user roles based on organizational security policies.
 
 ---
 

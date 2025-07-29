@@ -6,6 +6,7 @@ from django.shortcuts import resolve_url
 from django.apps import apps
 from allauth.mfa.utils import is_mfa_enabled
 from utils.security import generate_key, generate_cipher
+from cms.permissions import user_requires_mfa
 
 from .models import BlackListedEmail
 
@@ -40,7 +41,7 @@ class MyAccountAdapter(DefaultAccountAdapter):
         msg.send(fail_silently=True)
 
     def get_login_redirect_url(self, request):
-        if request.user.is_superuser:
+        if user_requires_mfa(request.user):
             mfa_enabled = is_mfa_enabled(request.user)
             if not mfa_enabled:
                 return resolve_url('/accounts/2fa/totp/activate')

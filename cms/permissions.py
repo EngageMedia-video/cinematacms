@@ -53,3 +53,47 @@ def user_allowed_to_upload(request):
         if request.user.advancedUser:
             return True
     return False
+
+def user_requires_mfa(user):
+    if not user.is_authenticated:
+        return False
+    
+    required_roles = getattr(settings, 'MFA_REQUIRED_ROLES', ['superuser'])
+    role_checks = {
+        'superuser': user.is_superuser,
+        'editor': user.is_editor,
+        'manager': user.is_manager,
+        'advanced_user': user.advancedUser,
+        'authenticated': user.is_authenticated
+    }
+
+    for role in required_roles:
+        if role in role_checks and role_checks[role]:
+            return True
+    
+    return False
+
+def should_enforce_mfa_on_path(path):
+    """
+    Check if MFA should be enforced on a given path.
+    
+    Args:
+        path: Request path string
+        
+    Returns:
+        bool: True if MFA should be enforced, False otherwise
+    """
+    enforce_paths = getattr(settings, 'MFA_ENFORCE_ON_PATHS', ['/admin/'])
+    exclude_paths = getattr(settings, 'MFA_EXCLUDE_PATHS', ['/fu/', '/api/', '/manage/', '/accounts/'])
+    
+    # Check if path should be excluded
+    for exclude_path in exclude_paths:
+        if path.startswith(exclude_path):
+            return False
+    
+    # Check if path should be enforced
+    for enforce_path in enforce_paths:
+        if path.startswith(enforce_path):
+            return True
+    
+    return False

@@ -1,5 +1,6 @@
 import csv
 import json
+from cms.permissions import user_requires_mfa
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -145,10 +146,12 @@ def manage_users(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
     
-    if request.user.is_superuser and not is_mfa_enabled(request.user):
+    # MFA check
+    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
         return HttpResponseRedirect('/accounts/2fa/totp/activate')
 
-    if request.user.is_manager or request.user.is_editor:
+    # Hard config -> ensure superuser / manager only have access
+    if not (request.user.is_superuser or request.user.is_manager):
         return HttpResponseRedirect("/")
 
     context = {}
@@ -159,10 +162,12 @@ def manage_media(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    if request.user.is_superuser and not is_mfa_enabled(request.user):
+    # MFA check
+    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
         return HttpResponseRedirect('/accounts/2fa/totp/activate')
 
-    if request.user.is_manager or request.user.is_editor:
+     # Hard config -> ensure superuser / manager / editor only have access
+    if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
         return HttpResponseRedirect("/")
 
     context = {}
@@ -173,10 +178,10 @@ def manage_comments(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    if request.user.is_superuser and not is_mfa_enabled(request.user):
+    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
         return HttpResponseRedirect('/accounts/2fa/totp/activate')
 
-    if request.user.is_manager or request.user.is_editor:
+    if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
         return HttpResponseRedirect("/")
 
     context = {}
