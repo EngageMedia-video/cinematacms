@@ -479,7 +479,7 @@ USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
 DJANGO_ADMIN_URL = "admin/"
 
 # additional MFA-permission configs
-MFA_REQUIRED_ROLES = ['superuser']
+MFA_REQUIRED_ROLES = ['superuser', 'manager']
 MFA_ENFORCE_ON_PATHS = [f'/{DJANGO_ADMIN_URL}']
 MFA_EXCLUDE_PATHS = ['/fu/', '/api/', '/manage/', '/accounts/']
 
