@@ -215,17 +215,21 @@ class SubtitleForm(forms.ModelForm):
     def __init__(self, media_item, *args, **kwargs):
         super(SubtitleForm, self).__init__(*args, **kwargs)
         self.instance.media = media_item
-        self.fields[
-            "subtitle_file"
-        ].help_text = "SubRip (.srt) and WebVTT (.vtt) are supported file formats."
+
         self.fields["subtitle_file"].label = "Subtitle or Closed Caption File"
+        self.fields["subtitle_file"].help_text = "SubRip (.srt) and WebVTT (.vtt) are supported file formats."
 
         self.fields["language"] = forms.ModelChoiceField(
-            queryset=Language.objects.filter().exclude(code__contains="automatic"),
-            # help_text=self.fields["subtitle_file"].help_text,
+            queryset=Language.objects.exclude(code__contains="automatic"),
             required=True,
             label="Language",
         )
+
+    def clean_subtitle_file(self):
+        file = self.cleaned_data.get("subtitle_file")
+        if not file or not file.name.lower().endswith((".srt", ".vtt")):
+            raise forms.ValidationError("Unsupported file format. Please upload a .srt or .vtt subtitle file.")
+        return file
 
     def save(self, *args, **kwargs):
         data = self.cleaned_data
