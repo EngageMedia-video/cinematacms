@@ -1,4 +1,5 @@
 from pathlib import Path
+from django.conf import settings
 
 def get_whisper_cpp_paths():
   """

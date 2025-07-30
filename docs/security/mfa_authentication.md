@@ -27,13 +27,11 @@ As part of Cinemata 2.0's roadmap, security and privacy improvements and open-so
   - Viewing, regenerating, and downloading of recovery codes
 - Sign-in using code (Magic sign-in) – this is in case a user does not wish to log-in using password (**NOTE**: With MFA enabled, the user is still asked to input an authenticator code)
 
-**As of this writing, the MFA layer is exclusively applied to superusers.** You may skip to [suggested improvements](#suggested-improvements) to learn how to implement this for additional users.
-
 ### Methodology
 
 This metholodogy involves two sections, the front-end and back-end implementation. No new, significant libraries were added in the installation process, save for one dependency (`fido2`) required by an existing library (`django-allauth`)
 
-##### Back-end
+#### Back-end
 
 An existing authentication library, `django-allauth` was extensively used to implement MFA. To include it in the application, the following line was inserted in `cms/settings.py`. 
 
@@ -286,8 +284,27 @@ def mfa_success_message(request):
 
 **Rate-limiting**: Currently, the `django-allauth` library groups MFA log-in attempts with regular log-in attempts. That is to say, the rate limit is for attempting to do regular log-in from a specific IP and/or device is the same rate limit for attempting to finish log-in using TOTP/Recovery codes.
 
+##### Implementing for specific users
 
-##### Front-end
+As of July 29, 2025, this feature is now customizable, with the default configuration for MFA being the 'Superuser' role.
+
+To allow additional roles access to MFA, please follow the instructions below.
+
+The allowed roles based on this logic are the following:
+```
+['superuser', 'advanced_user', 'authenticated', 'manager', 'editor']
+```
+
+Under your custom `local_settings.py`, input the following line:
+
+```
+MFA_REQUIRED_ROLES = ['superuser', # ... ]
+```
+
+Where the "..." may refer to any of the listed roles found above.
+
+
+#### Front-end
 
 The front-end implementation of this primarily utilizes the `templates` feature of Django applications. That being: if you have a default template installed in a library, this can be overwritten within your own `templates/` folder as long as it is stored in the same directory pathing as the default template. 
 
