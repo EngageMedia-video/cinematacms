@@ -157,8 +157,14 @@ export function MediaItemVideoPreviewer(props){
 		return null
 	}
 
-	const src = props.url.split('.').slice(0, -1).join('.');
-	const ext = extractImageExtension( props.url );
+	// Parse URL to handle versioned URLs with query parameters
+	const url = props.url;
+	const urlParts = url.split('?');
+	const pathPart = urlParts[0];
+	const queryPart = urlParts.length > 1 ? '?' + urlParts[1] : '';
+
+	const src = pathPart.split('.').slice(0, -1).join('.') + queryPart;
+	const ext = extractImageExtension( pathPart );
 
 	return ( <span className="item-img-preview" data-src={ src } data-ext={ ext }></span> );
 }

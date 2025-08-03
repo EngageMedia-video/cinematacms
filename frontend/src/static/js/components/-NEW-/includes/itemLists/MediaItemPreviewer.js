@@ -131,19 +131,28 @@ export default class MediaItemPreviewer{
         }
 
         /*
+         * Helper function to construct versioned URLs with extensions
+         */
+        function buildVersionedUrl(baseUrl, extension) {
+            const urlParts = baseUrl.split('?');
+            const pathPart = urlParts[0];
+            const queryPart = urlParts.length > 1 ? '?' + urlParts[1] : '';
+            return pathPart + '.' + extension + queryPart;
+        }
+
+        /*
          * Set source (src).
          */
 
         if (this.extensions.anim.length) {
             i = 0;
             while (i < this.extensions.anim.length) {
-                this.extensions.anim[i].
-                elem.setAttribute('srcset', src + '.' + this.extensions.anim[i].type);
+                this.extensions.anim[i].elem.setAttribute('srcset', buildVersionedUrl(src, this.extensions.anim[i].type));
                 i += 1;
             }
         }
         if (this.extensions.fallback.elem) {
-            this.extensions.fallback.elem.setAttribute('src', src + '.' + this.extensions.fallback.type);
+            this.extensions.fallback.elem.setAttribute('src', buildVersionedUrl(src, this.extensions.fallback.type));
         }
 
         /*
@@ -169,11 +178,11 @@ export default class MediaItemPreviewer{
     }
 
     onMediaItemMouseEnter(ins, evt) {
-        
+
         var elem, src;
-        
+
         if (ins.image) {
-        
+
             elem = evt.target.querySelector(CSS_selectors.mediaItemPreviewer);
             src = PageStore.get('config-site').url + '/' + elem.getAttribute( DataAttributes.mediaPreviewSrc ).replace(/^\//g, '');
 
@@ -184,15 +193,15 @@ export default class MediaItemPreviewer{
     }
 
     onMediaItemMouseLeave(ins, evt) {
-        
+
         if (void 0 !== hoverTimeoutID) {
             clearTimeout(hoverTimeoutID);
         }
-        
+
         if (void 0 !== requestAnimationFrameID) {
             cancelAnimationFrame(requestAnimationFrameID);
         }
-        
+
         ins.wrapperItem = void 0;
     }
 }
