@@ -8,7 +8,7 @@
 		margin-bottom: 3rem;
 		
 		.error-code {
-				font-size: 8rem;
+				font-size: 88px;
 				font-weight: bold;
 				background: var(--body-text-color);
 				-webkit-background-clip: text;
@@ -18,18 +18,18 @@
 				margin-bottom: 1rem;
 				
 				@media (max-width: 768px) {
-						font-size: 6rem;
+						font-size: 68px;
 				}
 		}
 		
 		.error-title {
-			font-size: 2.5rem;
+			font-size: 30px;
 			color: var(--body-text-color);
 			margin-bottom: 1rem;
 			font-weight: 300;
 			
 			@media (max-width: 768px) {
-					font-size: 2rem;
+					font-size: 32px;
 			}
 		}
 		
@@ -39,6 +39,10 @@
 			max-width: 600px;
 			margin: 0 auto;
 			line-height: 1.6;
+
+			@media (max-width: 768px) {
+					font-size: 17px;
+			}
 		}
 	}
 
