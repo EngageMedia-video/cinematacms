@@ -15,19 +15,9 @@
 {% endblock topimports %}
 
 {% block innercontent %}
-<body>
-    <!-- This HTML structure matches your frontend-built error.html -->
-    <div id="app-header"></div>
-    <div id="app-sidebar"></div>
-		<div class="page-main">
-				<div class="page-main-inner">
-						<div id="page-error" class="error-page-wrap"></div>
-				</div>
-				<div class="page-sidebar-content-overlay"></div>
-		</div>
-    <div id="app-footer"></div>
-    
-    <!-- Load the frontend-built JavaScript -->
-    <script src="{% static 'js/error.js' %}"></script>
-</body>
+<div id="page-error" class="error-page-wrap"></div>
 {% endblock %}
+
+{% block bottomimports %}
+<script src="{% static 'js/error.js' %}"></script>
+{% endblock bottomimports %}
