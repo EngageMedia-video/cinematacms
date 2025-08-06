@@ -8,7 +8,7 @@
 		margin-bottom: 3rem;
 		
 		.error-code {
-				font-size: 88px;
+				font-size: 60px;
 				font-weight: bold;
 				background: var(--body-text-color);
 				-webkit-background-clip: text;
@@ -17,31 +17,34 @@
 				line-height: 1;
 				margin-bottom: 1rem;
 				
+				// NOTE: update this
 				@media (max-width: 768px) {
-						font-size: 68px;
+						font-size: 32px;
 				}
 		}
 		
 		.error-title {
-			font-size: 30px;
+			font-size: 24px;
 			color: var(--body-text-color);
 			margin-bottom: 1rem;
 			font-weight: 300;
 			
+			// NOTE: update this
 			@media (max-width: 768px) {
-					font-size: 32px;
+					font-size: 21px;
 			}
 		}
 		
 		.error-description {
-			font-size: 1.1rem;
+			font-size: 16px;
 			color: var(--page-main-secondary-text-color);
 			max-width: 600px;
 			margin: 0 auto;
 			line-height: 1.6;
 
+			// NOTE: update this
 			@media (max-width: 768px) {
-					font-size: 17px;
+					font-size: 14px;
 			}
 		}
 	}
@@ -57,10 +60,10 @@
 			display: inline-flex;
 			align-items: center;
 			gap: 0.75rem;
-			padding: 1rem 1.75rem;
+			padding: 12px 16px;
 			border: 2px solid;
 			border-radius: 6px;
-			font-size: 1rem;
+			font-size: 16px;
 			text-decoration: none;
 			cursor: pointer;
 			transition: all 0.3s ease;
@@ -145,8 +148,9 @@ body.dark_theme .error-page-content {
 			align-items: center;
 			
 			.error-btn {
-					width: 100%;
-					max-width: 300px;
+					font-size: 14px;
+					width: 75%;
+					max-width: 200px;
 			}
 		}
 		
