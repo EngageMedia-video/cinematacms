@@ -1,15 +1,26 @@
 body {
 
-    --body-text-color: #111;
-    --body-bg-color: #fafafa;
+	--body-text-color: #111;
+	--body-bg-color: #fafafa;
 
-    --hr-color: #e1e1e1;
+	--hr-color: #e1e1e1;
 
-    --dotted-outline-color: rgba( 0, 0, 0, 0.4 );
+	--dotted-outline-color: rgba( 0, 0, 0, 0.4 );
+
+	--btn-color: white;
+	--btn-primary-icon-color: #7BBBBF;
+	--btn-primary-bg-color: #1A3F61;
+	--btn-primary-bg-hover-color: #026690;
+	--btn-secondary-color: black;
+	--btn-secondary-icon-color: #1B3F61;
+	--btn-secondary-icon-hover-color: #BAD8DD;
+	--btn-secondary-bg-color: hsl(0, 0%, 100%);
+	--btn-secondary-border-color: #BAD8DD;
+	--btn-secondary-bg-hover-color: #4A90A4;
 
     /* ################################################## */
 
-    --input-color: hsl(0, 0%, 7%);	// #111
+  --input-color: hsl(0, 0%, 7%);	// #111
 	--input-bg-color: hsl(0, 0%, 100%);	// #fff
 	--input-border-color: hsl( 0, 0%, 80% );	// #ccc
 
