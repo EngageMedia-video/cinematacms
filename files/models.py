@@ -18,6 +18,7 @@ from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.html import strip_tags
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFit
@@ -782,46 +783,53 @@ class Media(models.Model):
             ]
         return ret
 
-    def get_media_version(self):
+    @cached_property
+    def media_version(self):
         """Get media version based on edit_date timestamp for URL versioning"""
         if self.edit_date:
             return int(self.edit_date.timestamp())
-        return 0
+        # Fallback to add_date if edit_date is not available
+        if self.add_date:
+            return int(self.add_date.timestamp())
+        # Final fallback: use hash of uid to ensure uniqueness
+        return hash(str(self.uid)) & 0x7FFFFFFF  # Ensure positive 32-bit integer
 
     @property
     def original_media_url(self):
         if settings.SHOW_ORIGINAL_MEDIA:
-            version = self.get_media_version()
-            return f"{helpers.url_from_path(self.media_file.path)}?v={version}"
+            base_url = helpers.url_from_path(self.media_file.path)
+            return helpers.build_versioned_url(base_url, self.media_version)
         else:
             return None
 
     @property
     def thumbnail_url(self):
-        version = self.get_media_version()
         if self.uploaded_thumbnail:
-            return f"{helpers.url_from_path(self.uploaded_thumbnail.path)}?v={version}"
+            base_url = helpers.url_from_path(self.uploaded_thumbnail.path)
+            return helpers.build_versioned_url(base_url, self.media_version)
         if self.thumbnail:
-            return f"{helpers.url_from_path(self.thumbnail.path)}?v={version}"
+            base_url = helpers.url_from_path(self.thumbnail.path)
+            return helpers.build_versioned_url(base_url, self.media_version)
         return None
 
     @property
     def poster_url(self):
-        version = self.get_media_version()
         if self.uploaded_poster:
-            return f"{helpers.url_from_path(self.uploaded_poster.path)}?v={version}"
+            base_url = helpers.url_from_path(self.uploaded_poster.path)
+            return helpers.build_versioned_url(base_url, self.media_version)
         if self.poster:
-            return f"{helpers.url_from_path(self.poster.path)}?v={version}"
+            base_url = helpers.url_from_path(self.poster.path)
+            return helpers.build_versioned_url(base_url, self.media_version)
         return None
 
     @property
     def subtitles_info(self):
         ret = []
-        version = self.get_media_version()
         for subtitle in self.subtitles.all():
+            base_url = helpers.url_from_path(subtitle.subtitle_file.path)
             ret.append(
                 {
-                    "src": f"{helpers.url_from_path(subtitle.subtitle_file.path)}?v={version}",
+                    "src": helpers.build_versioned_url(base_url, self.media_version),
                     "srclang": subtitle.language.code,
                     "label": subtitle.language.title,
                 }
@@ -831,20 +839,21 @@ class Media(models.Model):
     @property
     def sprites_url(self):
         if self.sprites:
-            version = self.get_media_version()
-            return f"{helpers.url_from_path(self.sprites.path)}?v={version}"
+            base_url = helpers.url_from_path(self.sprites.path)
+            return helpers.build_versioned_url(base_url, self.media_version)
         return None
 
     @property
     def preview_url(self):
-        version = self.get_media_version()
         if self.preview_file_path:
-            return f"{helpers.url_from_path(self.preview_file_path)}?v={version}"
+            base_url = helpers.url_from_path(self.preview_file_path)
+            return helpers.build_versioned_url(base_url, self.media_version)
         # get preview_file out of the encodings, since some times preview_file_path
         # is empty but there is the gif encoding!
         preview_media = self.encodings.filter(profile__extension="gif").first()
         if preview_media and preview_media.media_file:
-            return f"{helpers.url_from_path(preview_media.media_file.path)}?v={version}"
+            base_url = helpers.url_from_path(preview_media.media_file.path)
+            return helpers.build_versioned_url(base_url, self.media_version)
         return None
 
     @property
@@ -852,26 +861,28 @@ class Media(models.Model):
         res = {}
         if self.hls_file:
             if os.path.exists(self.hls_file):
-                version = self.get_media_version()
                 hls_file = self.hls_file
                 p = os.path.dirname(hls_file)
                 m3u8_obj = m3u8.load(hls_file)
                 if os.path.exists(hls_file):
-                    res["master_file"] = f"{helpers.url_from_path(hls_file)}?v={version}"
+                    base_url = helpers.url_from_path(hls_file)
+                    res["master_file"] = helpers.build_versioned_url(base_url, self.media_version)
                     for iframe_playlist in m3u8_obj.iframe_playlists:
                         uri = os.path.join(p, iframe_playlist.uri)
                         if os.path.exists(uri):
                             resolution = iframe_playlist.iframe_stream_info.resolution[
                                 1
                             ]
-                            res["{}_iframe".format(resolution)] = f"{helpers.url_from_path(uri)}?v={version}"
+                            base_url = helpers.url_from_path(uri)
+                            res["{}_iframe".format(resolution)] = helpers.build_versioned_url(base_url, self.media_version)
                     for playlist in m3u8_obj.playlists:
                         uri = os.path.join(p, playlist.uri)
                         if os.path.exists(uri):
                             resolution = playlist.stream_info.resolution[1]
+                            base_url = helpers.url_from_path(uri)
                             res[
                                 "{}_playlist".format(resolution)
-                            ] = f"{helpers.url_from_path(uri)}?v={version}"
+                            ] = helpers.build_versioned_url(base_url, self.media_version)
         return res
 
     @property
@@ -1229,15 +1240,15 @@ class Encoding(models.Model):
     @property
     def media_encoding_url(self):
         if self.media_file:
-            version = self.media.get_media_version()
-            return f"{helpers.url_from_path(self.media_file.path)}?v={version}"
+            base_url = helpers.url_from_path(self.media_file.path)
+            return helpers.build_versioned_url(base_url, self.media.media_version)
         return None
 
     @property
     def media_chunk_url(self):
         if self.chunk_file_path:
-            version = self.media.get_media_version()
-            return f"{helpers.url_from_path(self.chunk_file_path)}?v={version}"
+            base_url = helpers.url_from_path(self.chunk_file_path)
+            return helpers.build_versioned_url(base_url, self.media.media_version)
         return None
 
     def save(self, *args, **kwargs):
