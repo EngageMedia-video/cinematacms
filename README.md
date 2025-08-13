@@ -15,29 +15,6 @@ Our goal is to make these Cinemata-specific integrations and improvements to Med
   - Ability to upload, edit, and download .SRT files for subtitles or captions
   - Expanded user roles that include a Truster User, who has greater access to site features relating to publishing and the ASR model.
  
-## 📅 **Upcoming Launch Event**
-
-### 🚀 **CinemataCMS 2.0 Launch**
-**Date:** July 31, 2025, 5.00 PM Jakarta/Bangkok 6.00 PM Manila/Kuala Lumpur  
-**Format:** Online Launch Event
-
-Join us for the official launch of CinemataCMS 2.0! This milestone marks our transition from MediaCMS to a community-driven, open-source platform specifically designed for filmmakers advocating for social issues.
-
-**Event Highlights:**
-- 🔒 **Security Audit Results** - Comprehensive security improvements presentation
-- 🛠️ **Technical Roadmap** - Future development plans and community involvement
-- 👥 **Team Presentations** - Meet the developers building CinemataCMS
-- 🌏 **Community Opportunities** - How to contribute and get involved
-
-**🎯 What's New in 2.0:**
-- Enhanced security with Multi-Factor Authentication (MFA)
-- Improved content management workflows
-- Whisper.cpp integration for automatic transcription
-- Better privacy controls for sensitive content
-
-**📝 Register:** [Zoom Event Registration](https://us06web.zoom.us/meeting/register/xlLa9u50QVSrGXO15TCjAw#/registration)  
-**📖 More Info:** [https://engagemedia.org/2025/cinematacms-launch/](https://engagemedia.org/2025/cinematacms-launch/)
-
 ---
 
 ### 💻 **Developer Opportunities**
@@ -90,7 +67,7 @@ Help us empower voices across the Asia-Pacific and foster meaningful discussions
 
 # Cinemata 2.0 Roadmap
 
-## [Milestone 1: January to July 2025](https://github.com/EngageMedia-video/cinematacms/milestone/4)
+## [Completed Milestone 1: January to July 2025](https://github.com/EngageMedia-video/cinematacms/milestone/4)
 
 #### 1. Security and Privacy Improvements
 - Implementation of security audit recommendations
