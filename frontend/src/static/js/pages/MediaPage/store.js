@@ -130,7 +130,7 @@ class MediaPageStore extends EventEmitter{
 
         this.mediaAPIUrl = this.mediacms_config.api.media + '/' + MediaPageStoreData[this.id].mediaId;
         if (p) {
-            this.mediaAPIUrl += '?password=' + p;
+            this.mediaAPIUrl += '?password=' + encodeURIComponent(p);
         }
 
         this.dataResponse = this.dataResponse.bind(this);
