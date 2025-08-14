@@ -75,6 +75,12 @@ export default class VideoViewer extends React.PureComponent {
 
 		this.videoInfo = videoAvailableCodecsAndResolutions(this.props.data.encodings_info, this.props.data.hls_info);
 
+		if (this.props.debug) {
+			console.log('VIDEO DEBUG: encodings_info:', this.props.data.encodings_info);
+			console.log('VIDEO DEBUG: hls_info:', this.props.data.hls_info);
+			console.log('VIDEO DEBUG: videoInfo:', this.videoInfo);
+		}
+
 		const resolutionsKeys = Object.keys(this.videoInfo);
 
 		if (!resolutionsKeys.length) {
@@ -131,6 +137,13 @@ export default class VideoViewer extends React.PureComponent {
 			// console.log( this.videoInfo );
 			// console.log( defaultVideoResolution );
 			// console.log( this.videoSources );
+
+			if (this.props.debug) {
+				console.log('VIDEO DEBUG: supportedFormats:', supportedFormats);
+				console.log('VIDEO DEBUG: videoInfo:', this.videoInfo);
+				console.log('VIDEO DEBUG: defaultVideoResolution:', defaultVideoResolution);
+				console.log('VIDEO DEBUG: videoSources:', this.videoSources);
+			}
 		}
 
 		if (this.videoSources.length) {
@@ -160,7 +173,12 @@ export default class VideoViewer extends React.PureComponent {
 				case 'encodingFailed':
 					break;
 				default:
-					console.warn('VIDEO DEBUG:', "Video files don't exist");
+					if (this.props.debug) {
+						console.warn('VIDEO DEBUG:', "Video files don't exist");
+						console.warn('VIDEO DEBUG: Available encodings_info keys:', Object.keys(this.props.data.encodings_info || {}));
+						console.warn('VIDEO DEBUG: Available hls_info keys:', Object.keys(this.props.data.hls_info || {}));
+						console.warn('VIDEO DEBUG: videoInfo:', this.videoInfo);
+					}
 			}
 		}
 

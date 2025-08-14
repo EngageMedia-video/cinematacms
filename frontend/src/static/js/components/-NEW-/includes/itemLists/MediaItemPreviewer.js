@@ -1,9 +1,9 @@
 import { removeClassname, addClassname } from '../../functions/dom';
 import PageStore from '../../../../pages/_PageStore';
 
-Array.isArray = Array.isArray || function(arg) {
-    'use strict';
-    return Object.prototype.toString.call(arg) === '[object Array]';
+Array.isArray = Array.isArray || function (arg) {
+	'use strict';
+	return Object.prototype.toString.call(arg) === '[object Array]';
 };
 
 const requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
@@ -12,187 +12,203 @@ const cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnim
 var hoverTimeoutID, requestAnimationFrameID;
 
 var CSS_selectors = {
-    mediaItemPreviewer: '.item-img-preview',
+	mediaItemPreviewer: '.item-img-preview',
 };
 
 var DataAttributes = {
-    mediaPreviewSrc: 'data-src'
+	mediaPreviewSrc: 'data-src'
 };
 
-export default class MediaItemPreviewer{
+export default class MediaItemPreviewer {
 
-    constructor(extensions) {
+	constructor(extensions) {
 
-        if (! Array.isArray(extensions)) {
-            return null;
-        }
+		if (!Array.isArray(extensions)) {
+			return null;
+		}
 
-        this.extensions = {};
+		this.extensions = {};
 
-        function onImageLoad(ins, evt) {
+		function onImageLoad(ins, evt) {
 
-            requestAnimationFrameID = requestAnimationFrame(function() {
+			requestAnimationFrameID = requestAnimationFrame(function () {
 
-                if( ins.wrapperItem ){
-                    addClassname(ins.wrapperItem, 'on-hover-preview');
-                    requestAnimationFrameID = void 0;
-                    ins.wrapperItem = void 0;
-                }
+				if (ins.wrapperItem) {
+					addClassname(ins.wrapperItem, 'on-hover-preview');
+					requestAnimationFrameID = void 0;
+					ins.wrapperItem = void 0;
+				}
 
-            });
-        }
+			});
+		}
 
-        const fallback_ext = ['png', 'jpg', 'jpeg']; // @note: Keep extentions order.
-        let i, x;
+		const fallback_ext = ['png', 'jpg', 'jpeg']; // @note: Keep extentions order.
+		let i, x;
 
-        this.element = null;
+		this.element = null;
 
-        if (-1 < extensions.indexOf('webp')) {
-            x = document.createElement('source');
-            x.type = 'image/webp';
-            this.extensions.anim = this.extensions.anim || [];
-            this.extensions.anim.push({ elem: x, type: 'webp' });
-            if (1 === extensions.length) {
-                this.extensions.fallback = { elem: document.createElement('img'), type: 'webp' };
-            }
-        }
+		if (-1 < extensions.indexOf('webp')) {
+			x = document.createElement('source');
+			x.type = 'image/webp';
+			this.extensions.anim = this.extensions.anim || [];
+			this.extensions.anim.push({ elem: x, type: 'webp' });
+			if (1 === extensions.length) {
+				this.extensions.fallback = { elem: document.createElement('img'), type: 'webp' };
+			}
+		}
 
-        if (-1 < extensions.indexOf('gif')) {
-            x = document.createElement('source');
-            x.type = 'image/gif';
-            this.extensions.anim = this.extensions.anim || [];
-            this.extensions.anim.push({ elem: x, type: 'gif' });
-            this.extensions.fallback = { elem: document.createElement('img'), type: 'gif' };
-        }
+		if (-1 < extensions.indexOf('gif')) {
+			x = document.createElement('source');
+			x.type = 'image/gif';
+			this.extensions.anim = this.extensions.anim || [];
+			this.extensions.anim.push({ elem: x, type: 'gif' });
+			this.extensions.fallback = { elem: document.createElement('img'), type: 'gif' };
+		}
 
-        if (-1 < extensions.indexOf('jpg')) {
-            x = document.createElement('source');
-            x.type = 'image/jpg';
-            this.extensions.anim = this.extensions.anim || [];
-            this.extensions.anim.push({ elem: x, type: 'jpg' });
-            this.extensions.fallback = { elem: document.createElement('img'), type: 'jpg' };
-        }
+		if (-1 < extensions.indexOf('jpg')) {
+			x = document.createElement('source');
+			x.type = 'image/jpg';
+			this.extensions.anim = this.extensions.anim || [];
+			this.extensions.anim.push({ elem: x, type: 'jpg' });
+			this.extensions.fallback = { elem: document.createElement('img'), type: 'jpg' };
+		}
 
-        if (-1 < extensions.indexOf('jpeg')) {
-            x = document.createElement('source');
-            x.type = 'image/jpeg';
-            this.extensions.anim = this.extensions.anim || [];
-            this.extensions.anim.push({ elem: x, type: 'jpeg' });
-            this.extensions.fallback = { elem: document.createElement('img'), type: 'jpeg' };
-        }
+		if (-1 < extensions.indexOf('jpeg')) {
+			x = document.createElement('source');
+			x.type = 'image/jpeg';
+			this.extensions.anim = this.extensions.anim || [];
+			this.extensions.anim.push({ elem: x, type: 'jpeg' });
+			this.extensions.fallback = { elem: document.createElement('img'), type: 'jpeg' };
+		}
 
-        if (!this.extensions.fallback.elem) {
-            i = 0;
-            while (i < fallback_extensions.length) {
-                if (-1 < extensions.indexOf(fallback_ext[i])) {
-                    this.extensions.fallback = { elem: document.createElement('img'), type: fallback_ext[i] };
-                    break;
-                }
-                i += 1;
-            }
-        }
+		if (!this.extensions.fallback.elem) {
+			i = 0;
+			while (i < fallback_extensions.length) {
+				if (-1 < extensions.indexOf(fallback_ext[i])) {
+					this.extensions.fallback = { elem: document.createElement('img'), type: fallback_ext[i] };
+					break;
+				}
+				i += 1;
+			}
+		}
 
-        if (this.extensions.anim.length || this.extensions.fallback.elem) {
+		if (this.extensions.anim.length || this.extensions.fallback.elem) {
 
-            this.element = document.createElement('picture');
+			this.element = document.createElement('picture');
 
-            if (this.extensions.anim.length) {
-                i = 0;
-                while (i < this.extensions.anim.length) {
-                    this.element.appendChild(this.extensions.anim[i].elem);
-                    i += 1;
-                }
-            }
+			if (this.extensions.anim.length) {
+				i = 0;
+				while (i < this.extensions.anim.length) {
+					this.element.appendChild(this.extensions.anim[i].elem);
+					i += 1;
+				}
+			}
 
-            if (this.extensions.fallback.elem) {
-                this.element.appendChild(this.extensions.fallback.elem);
-            }
+			if (this.extensions.fallback.elem) {
+				this.element.appendChild(this.extensions.fallback.elem);
+			}
 
-            this.image = this.element.querySelector('img');
-            this.image.addEventListener('load', onImageLoad.bind(null, this));
-        }
-    }
+			this.image = this.element.querySelector('img');
+			this.image.addEventListener('load', onImageLoad.bind(null, this));
+		}
+	}
 
-    elementEvents(el){
-        el.addEventListener('mouseenter', this.onMediaItemMouseEnter.bind(null, this));
-        el.addEventListener('mouseleave', this.onMediaItemMouseLeave.bind(null, this));
-    }
+	elementEvents(el) {
+		el.addEventListener('mouseenter', this.onMediaItemMouseEnter.bind(null, this));
+		el.addEventListener('mouseleave', this.onMediaItemMouseLeave.bind(null, this));
+	}
 
-    newImage(src, width, height, item) {
+	newImage(src, width, height, item) {
 
-        let i;
+		let i;
 
-        if (void 0 !== hoverTimeoutID) {
-            clearTimeout(hoverTimeoutID);
-        }
+		if (void 0 !== hoverTimeoutID) {
+			clearTimeout(hoverTimeoutID);
+		}
 
-        if (void 0 !== requestAnimationFrameID) {
-            cancelAnimationFrame(requestAnimationFrameID);
-        }
+		if (void 0 !== requestAnimationFrameID) {
+			cancelAnimationFrame(requestAnimationFrameID);
+		}
 
-        /*
-         * Set source (src).
-         */
+		/*
+			* Helper function to construct versioned URLs with extensions
+			*/
+		function buildVersionedUrl(baseUrl, extension) {
+			if (!baseUrl) return null;  // Add null check
 
-        if (this.extensions.anim.length) {
-            i = 0;
-            while (i < this.extensions.anim.length) {
-                this.extensions.anim[i].
-                elem.setAttribute('srcset', src + '.' + this.extensions.anim[i].type);
-                i += 1;
-            }
-        }
-        if (this.extensions.fallback.elem) {
-            this.extensions.fallback.elem.setAttribute('src', src + '.' + this.extensions.fallback.type);
-        }
+			try {
+				const urlParts = baseUrl.split('?');
+				const pathPart = urlParts[0];
+				const queryPart = urlParts.length > 1 ? '?' + urlParts[1] : '';
+				return pathPart + '.' + extension + queryPart;
+			} catch (error) {
+				console.warn('URL parsing error:', error);
+				return baseUrl + '.' + extension;  // Fallback
+			}
+		}
 
-        /*
-         * Set dimensions (src).
-         */
+		/*
+			* Set source (src).
+			*/
 
-        if (this.extensions.fallback.elem) {
-            this.extensions.fallback.elem.setAttribute('width', width + 'px');
-            this.extensions.fallback.elem.setAttribute('height', height + 'px');
-        }
+		if (this.extensions.anim.length) {
+			i = 0;
+			while (i < this.extensions.anim.length) {
+				this.extensions.anim[i].elem.setAttribute('srcset', buildVersionedUrl(src, this.extensions.anim[i].type));
+				i += 1;
+			}
+		}
+		if (this.extensions.fallback.elem) {
+			this.extensions.fallback.elem.setAttribute('src', buildVersionedUrl(src, this.extensions.fallback.type));
+		}
 
-        /*
-         * Append previewer.
-         */
+		/*
+			* Set dimensions (src).
+			*/
 
-        item.querySelector(CSS_selectors.mediaItemPreviewer).appendChild(this.element);
+		if (this.extensions.fallback.elem) {
+			this.extensions.fallback.elem.setAttribute('width', width + 'px');
+			this.extensions.fallback.elem.setAttribute('height', height + 'px');
+		}
 
-        /*
-         * Set previewer's container element.
-         */
+		/*
+			* Append previewer.
+			*/
 
-        this.wrapperItem = item;
-    }
+		item.querySelector(CSS_selectors.mediaItemPreviewer).appendChild(this.element);
 
-    onMediaItemMouseEnter(ins, evt) {
-        
-        var elem, src;
-        
-        if (ins.image) {
-        
-            elem = evt.target.querySelector(CSS_selectors.mediaItemPreviewer);
-            src = PageStore.get('config-site').url + '/' + elem.getAttribute( DataAttributes.mediaPreviewSrc ).replace(/^\//g, '');
+		/*
+			* Set previewer's container element.
+			*/
 
-            hoverTimeoutID = setTimeout(function() {
-                ins.newImage(src, 1 + elem.offsetWidth, 1 + elem.offsetHeight, evt.target);
-            }, 100); // @note: Avoid load unnecessary media, when mouse is moving fast over dom items [NOTE: Initial delay value was 250ms ].
-        }
-    }
+		this.wrapperItem = item;
+	}
 
-    onMediaItemMouseLeave(ins, evt) {
-        
-        if (void 0 !== hoverTimeoutID) {
-            clearTimeout(hoverTimeoutID);
-        }
-        
-        if (void 0 !== requestAnimationFrameID) {
-            cancelAnimationFrame(requestAnimationFrameID);
-        }
-        
-        ins.wrapperItem = void 0;
-    }
+	onMediaItemMouseEnter(ins, evt) {
+
+		var elem, src;
+
+		if (ins.image) {
+
+			elem = evt.target.querySelector(CSS_selectors.mediaItemPreviewer);
+			src = PageStore.get('config-site').url + '/' + elem.getAttribute(DataAttributes.mediaPreviewSrc).replace(/^\//g, '');
+
+			hoverTimeoutID = setTimeout(function () {
+				ins.newImage(src, 1 + elem.offsetWidth, 1 + elem.offsetHeight, evt.target);
+			}, 100); // @note: Avoid load unnecessary media, when mouse is moving fast over dom items [NOTE: Initial delay value was 250ms ].
+		}
+	}
+
+	onMediaItemMouseLeave(ins, evt) {
+
+		if (void 0 !== hoverTimeoutID) {
+			clearTimeout(hoverTimeoutID);
+		}
+
+		if (void 0 !== requestAnimationFrameID) {
+			cancelAnimationFrame(requestAnimationFrameID);
+		}
+
+		ins.wrapperItem = void 0;
+	}
 }
