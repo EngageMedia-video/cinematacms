@@ -168,11 +168,25 @@ jobs:
         run: |
           echo "🔍 Validating dependency resolution..."
 
-          # First, try to resolve dependencies without installing
-          if ! uv lock --upgrade-package $(echo "${{ github.event.pull_request.title }}" | grep -oE '[a-zA-Z0-9_-]+' | head -1) 2>&1; then
-            echo "❌ Dependency resolution failed!"
-            echo "The new dependency version creates conflicts that cannot be resolved."
-            exit 1
+          # Check if we have a specific package to upgrade from the previous step
+          CHANGED_DEP="${{ steps.dep-info.outputs.changed_dep }}"
+
+          if [ -n "$CHANGED_DEP" ]; then
+            echo "Testing dependency resolution with specific package: $CHANGED_DEP"
+            # Try to resolve dependencies with the specific package upgrade
+            if ! uv lock --upgrade-package "$CHANGED_DEP" 2>&1; then
+              echo "❌ Dependency resolution failed for package: $CHANGED_DEP"
+              echo "The new dependency version creates conflicts that cannot be resolved."
+              exit 1
+            fi
+          else
+            echo "No specific package identified, testing general dependency resolution"
+            # Just try general dependency resolution
+            if ! uv lock 2>&1; then
+              echo "❌ Dependency resolution failed!"
+              echo "The dependency changes create conflicts that cannot be resolved."
+              exit 1
+            fi
           fi
 
           echo "✅ Dependency resolution successful"
