@@ -1,0 +1,86 @@
+[
+  {
+    "model": "files.license",
+    "pk": 1,
+    "fields": {
+      "title": "CC BY 4.0 - Attribution",
+      "description": "This license lets others distribute, remix, adapt, and build upon your material in any medium or format, so long as attribution is given to the creator.",
+      "allow_commercial": "yes",
+      "allow_modifications": "yes",
+      "url": "https://creativecommons.org/licenses/by/4.0/",
+      "thumbnail_path": "https://licensebuttons.net/l/by/4.0/88x31.png"
+    }
+  },
+  {
+    "model": "files.license",
+    "pk": 2,
+    "fields": {
+      "title": "CC BY-SA 4.0 - Attribution-ShareAlike",
+      "description": "This license lets others remix, adapt, and build upon your material in any medium or format, so long as attribution is given to the creator. If you remix, adapt, or build upon the material, you must license the modified material under identical terms.",
+      "allow_commercial": "yes",
+      "allow_modifications": "sharealike",
+      "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "thumbnail_path": "https://licensebuttons.net/l/by-sa/4.0/88x31.png"
+    }
+  },
+  {
+    "model": "files.license",
+    "pk": 3,
+    "fields": {
+      "title": "CC BY-NC 4.0 - Attribution-NonCommercial",
+      "description": "This license lets others remix, adapt, and build upon your material non-commercially, and although their new works must also acknowledge you and be non-commercial, they don't have to license their derivative works on the same terms.",
+      "allow_commercial": "no",
+      "allow_modifications": "yes",
+      "url": "https://creativecommons.org/licenses/by-nc/4.0/",
+      "thumbnail_path": "https://licensebuttons.net/l/by-nc/4.0/88x31.png"
+    }
+  },
+  {
+    "model": "files.license",
+    "pk": 4,
+    "fields": {
+      "title": "CC BY-NC-SA 4.0 - Attribution-NonCommercial-ShareAlike",
+      "description": "This license lets others remix, adapt, and build upon your material non-commercially, as long as they credit you and license their new creations under the identical terms.",
+      "allow_commercial": "no",
+      "allow_modifications": "sharealike",
+      "url": "https://creativecommons.org/licenses/by-nc-sa/4.0/",
+      "thumbnail_path": "https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png"
+    }
+  },
+  {
+    "model": "files.license",
+    "pk": 5,
+    "fields": {
+      "title": "CC BY-ND 4.0 - Attribution-NoDerivatives",
+      "description": "This license lets others download, share, and use your material in any medium or format in unadapted form only, and so long as they credit you.",
+      "allow_commercial": "yes",
+      "allow_modifications": "no",
+      "url": "https://creativecommons.org/licenses/by-nd/4.0/",
+      "thumbnail_path": "https://licensebuttons.net/l/by-nd/4.0/88x31.png"
+    }
+  },
+  {
+    "model": "files.license",
+    "pk": 6,
+    "fields": {
+      "title": "CC BY-NC-ND 4.0 - Attribution-NonCommercial-NoDerivatives",
+      "description": "This license is the most restrictive of our six main licenses, only allowing others to download, share, and use your material in its original form and for non-commercial purposes only.",
+      "allow_commercial": "no",
+      "allow_modifications": "no",
+      "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
+      "thumbnail_path": "https://licensebuttons.net/l/by-nc-nd/4.0/88x31.png"
+    }
+  },
+  {
+    "model": "files.license",
+    "pk": 7,
+    "fields": {
+      "title": "CC0 1.0 - Public Domain Dedication",
+      "description": "CC0 enables scientists, educators, artists and other creators and owners of copyright- or database-protected content to waive those interests in their works and thereby place them as completely as possible in the public domain.",
+      "allow_commercial": "yes",
+      "allow_modifications": "yes",
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "thumbnail_path": "https://licensebuttons.net/p/zero/1.0/88x31.png"
+    }
+  }
+]
