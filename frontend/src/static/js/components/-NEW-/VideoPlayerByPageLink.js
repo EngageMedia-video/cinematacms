@@ -11,7 +11,7 @@ import PageStore from '../../pages/_PageStore.js';
 
 import { getRequest, postRequest } from '../../functions';
 
-import { formatInnerLink } from '../../functions/formatInnerLink';
+import { formatInnerLink, formatMediaLink } from '../../functions/formatInnerLink';
 
 import { orderedSupportedVideoFormats, videoAvailableCodecsAndResolutions, extractDefaultVideoResolution } from '../MediaViewer/VideoViewer/functions';
 
@@ -116,13 +116,17 @@ export function VideoPlayerByPageLink(props){
 					let defaultVideoResolution = extractDefaultVideoResolution( defaultResolution, videoInfo );
 
 					if( "Auto" === defaultResolution && void 0 !== videoInfo['Auto'] ){
-						videoSources.push( { src: videoInfo['Auto'].url[0] } );
+						const password = (typeof MediaCMS !== 'undefined' && MediaCMS.provided_password) ? MediaCMS.provided_password : null;
+						const srcUrl = formatMediaLink( videoInfo['Auto'].url[0], site.url, password );
+						videoSources.push( { src: srcUrl } );
 					}
 
 					k = 0;
 					while( k < videoInfo[ defaultVideoResolution ].format.length ){
 						if( 'hls' === videoInfo[ defaultVideoResolution ].format[k] ){
-							videoSources.push( { src: videoInfo[ defaultVideoResolution ].url[k] } );
+							const password = (typeof MediaCMS !== 'undefined' && MediaCMS.provided_password) ? MediaCMS.provided_password : null;
+							const srcUrl = formatMediaLink( videoInfo[ defaultVideoResolution ].url[k], site.url, password );
+							videoSources.push( { src: srcUrl } );
 							break;
 						}
 						k += 1;
@@ -138,7 +142,9 @@ export function VideoPlayerByPageLink(props){
 
 								if( !! srcUrl ){	// @note: In some cases, url value is 'null'.
 
-									srcUrl = formatInnerLink( srcUrl, site.url );
+									// Get password for restricted media if available
+									const password = (typeof MediaCMS !== 'undefined' && MediaCMS.provided_password) ? MediaCMS.provided_password : null;
+									srcUrl = formatMediaLink( srcUrl, site.url, password );
 
 									videoSources.push({
 										src: srcUrl,

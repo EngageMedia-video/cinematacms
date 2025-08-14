@@ -13,7 +13,7 @@ from django.contrib.postgres.indexes import BrinIndex, BTreeIndex, GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.files import File
 from django.db import connection, models
-from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete
+from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.urls import reverse
@@ -26,6 +26,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 from . import helpers, lists
 from .methods import is_mediacms_editor, is_mediacms_manager, notify_users, is_media_allowed_type
 from .stop_words import STOP_WORDS
+from .cache_utils import clear_media_permission_cache
 
 logger = logging.getLogger(__name__)
 
@@ -286,6 +287,8 @@ class Media(models.Model):
     __original_media_file = None
     __original_thumbnail_time = None
     __original_uploaded_poster = None
+    __original_state = None
+    __original_password = None
 
     class Meta:
         ordering = ["-add_date"]
@@ -306,6 +309,8 @@ class Media(models.Model):
         self.__original_media_file = self.media_file
         self.__original_thumbnail_time = self.thumbnail_time
         self.__original_uploaded_poster = self.uploaded_poster
+        self.__original_state = self.state
+        self.__original_password = self.password
 
     def save(self, *args, **kwargs):
         if not self.title:
@@ -348,6 +353,12 @@ class Media(models.Model):
             self.state = helpers.get_default_state(user=self.user)
             self.license = License.objects.filter(id=10).first()
         super(Media, self).save(*args, **kwargs)
+
+        # Invalidate permission cache if state or password changed
+        if self.pk and (self.state != self.__original_state or self.password != self.__original_password):
+            self._invalidate_permission_cache()
+            self.__original_state = self.state
+            self.__original_password = self.password
 
         # has to save first for uploaded_poster path to exist
         if (
@@ -434,6 +445,33 @@ class Media(models.Model):
         except:
             pass  # TODO:add log
         return True
+
+    def _invalidate_permission_cache(self):
+        """
+        Invalidate cached permissions when media permissions change.
+
+        This method is called automatically when:
+        - Media state changes (public ↔ private ↔ restricted ↔ unlisted)
+        - Media password changes (for restricted content)
+        - Any other permission-related changes
+
+        The cache invalidation ensures that users see updated permissions
+        immediately after changes, maintaining data consistency.
+
+        Uses the clear_media_permission_cache utility function which:
+        - Clears specific user/media combinations if possible
+        - Falls back to pattern-based clearing for all users
+        - Handles errors gracefully without breaking functionality
+
+        Cache invalidation is controlled by ENABLE_PERMISSION_CACHE setting.
+        """
+        if not getattr(settings, 'ENABLE_PERMISSION_CACHE', True):
+            return
+        try:
+            clear_media_permission_cache(self.uid)
+            logger.debug(f"Invalidated permission cache for media: {self.uid}")
+        except Exception as e:
+            logger.warning(f"Failed to invalidate permission cache for media {self.uid}: {e}")
 
     def media_init(self):
         # new media file uploaded. Check if media type,
@@ -1426,7 +1464,7 @@ class Playlist(models.Model):
 
     class Meta:
         ordering = ["-add_date"]  # This will show newest playlists first
-        
+
 class PlaylistMedia(models.Model):
     media = models.ForeignKey(Media, on_delete=models.CASCADE)
     playlist = models.ForeignKey(Playlist, on_delete=models.CASCADE)
@@ -1466,6 +1504,7 @@ class Comment(MPTTModel):
             if self.media.state == "unlisted":
                 self.media.state = "public"
                 self.media.save(update_fields=["state"])
+                # Cache invalidation will be handled by Media.save() method
 
     def get_absolute_url(self):
         return reverse("get_media") + "?m={0}".format(self.media.friendly_token)
@@ -1901,3 +1940,28 @@ def comment_delete(sender, instance, **kwargs):
             if instance.media.comments.exclude(uid=instance.uid).count() == 0:
                 instance.media.state = "unlisted"
                 instance.media.save(update_fields=["state"])
+                # Cache invalidation will be handled by Media.save() method
+
+
+@receiver(pre_save, sender=Media)
+def media_pre_save(sender, instance, **kwargs):
+    """
+    Track state changes for cache invalidation.
+
+    This signal handler runs before Media.save() and captures the current
+    state and password from the database to compare with new values.
+    This enables automatic cache invalidation when permissions change.
+
+    The captured values are stored as private attributes on the instance
+    and used in the save() method to determine if cache invalidation is needed.
+    """
+    if instance.pk:
+        try:
+            # Get the current state from the database
+            old_instance = Media.objects.get(pk=instance.pk)
+            instance.__original_state = old_instance.state
+            instance.__original_password = old_instance.password
+        except Media.DoesNotExist:
+            # New instance
+            instance.__original_state = None
+            instance.__original_password = None

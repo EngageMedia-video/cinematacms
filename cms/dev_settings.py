@@ -113,18 +113,38 @@ LOGS_DIR = os.path.join(BASE_DIR, "logs")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
     "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            'formatter': 'simple',
+        },
         "file": {
-            "level": "ERROR",
+            "level": "DEBUG",
             "class": "logging.FileHandler",
             "filename": os.path.join(LOGS_DIR, "debug.log"),
+            'formatter': 'verbose',
         },
+    },
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "DEBUG",
     },
     "loggers": {
         "django": {
-            "handlers": ["file"],
-            "level": "ERROR",
-            "propagate": True,
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
         },
     },
 }
@@ -239,6 +259,10 @@ SHOW_ORIGINAL_MEDIA = True
 # Keep in mind that nginx will serve the file unless there's
 # some authentication taking place. Check nginx file and setup a
 # basic http auth user/password if you want to restrict access
+
+# X-Accel-Redirect settings for secure media serving
+# Set to False in development since Django runserver doesn't support X-Accel-Redirect
+USE_X_ACCEL_REDIRECT = False
 
 MAX_MEDIA_PER_PLAYLIST = 70
 FRIENDLY_TOKEN_LEN = 9
