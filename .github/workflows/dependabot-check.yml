@@ -74,10 +74,12 @@ jobs:
           echo "🔍 Analyzing dependency changes..."
 
           # Get the base branch version for comparison
-          git fetch origin ${{ github.base_ref }}
+          BASE_BRANCH="${{ github.base_ref || github.event.repository.default_branch || 'main' }}"
+          echo "Using base branch: $BASE_BRANCH"
+          git fetch origin "$BASE_BRANCH" || git fetch origin
 
           # Extract changed dependencies from pyproject.toml
-          if git diff origin/${{ github.base_ref }} -- pyproject.toml | grep -E "^\+.*=" > /tmp/changed_deps.txt; then
+          if git diff "origin/$BASE_BRANCH" -- pyproject.toml | grep -E "^\+.*=" > /tmp/changed_deps.txt; then
             echo "Changed dependencies:"
             cat /tmp/changed_deps.txt
 
@@ -121,8 +123,21 @@ jobs:
           uv pip list --format=freeze > /tmp/new_deps.txt
 
           # Get base branch dependency tree for comparison
-          git stash push -m "temp stash for comparison"
-          git checkout origin/${{ github.base_ref }}
+          BASE_BRANCH="${{ github.base_ref || github.event.repository.default_branch || 'main' }}"
+          echo "Using base branch: $BASE_BRANCH"
+
+          git stash push -m "temp stash for comparison" || true
+          git fetch origin "$BASE_BRANCH" || git fetch origin
+          git checkout "origin/$BASE_BRANCH" || {
+            echo "Could not checkout base branch for comparison"
+            touch /tmp/old_deps.txt
+            git checkout -
+            git stash pop || true
+            echo "Skipping dependency comparison due to checkout failure"
+            echo "Current dependencies:"
+            head -10 /tmp/new_deps.txt
+            exit 0
+          }
 
           # Install base dependencies
           if uv sync --all-extras >/dev/null 2>&1; then
@@ -153,11 +168,25 @@ jobs:
         run: |
           echo "🔍 Validating dependency resolution..."
 
-          # First, try to resolve dependencies without installing
-          if ! uv lock --upgrade-package $(echo "${{ github.event.pull_request.title }}" | grep -oE '[a-zA-Z0-9_-]+' | head -1) 2>&1; then
-            echo "❌ Dependency resolution failed!"
-            echo "The new dependency version creates conflicts that cannot be resolved."
-            exit 1
+          # Check if we have a specific package to upgrade from the previous step
+          CHANGED_DEP="${{ steps.dep-info.outputs.changed_dep }}"
+
+          if [ -n "$CHANGED_DEP" ]; then
+            echo "Testing dependency resolution with specific package: $CHANGED_DEP"
+            # Try to resolve dependencies with the specific package upgrade
+            if ! uv lock --upgrade-package "$CHANGED_DEP" 2>&1; then
+              echo "❌ Dependency resolution failed for package: $CHANGED_DEP"
+              echo "The new dependency version creates conflicts that cannot be resolved."
+              exit 1
+            fi
+          else
+            echo "No specific package identified, testing general dependency resolution"
+            # Just try general dependency resolution
+            if ! uv lock 2>&1; then
+              echo "❌ Dependency resolution failed!"
+              echo "The dependency changes create conflicts that cannot be resolved."
+              exit 1
+            fi
           fi
 
           echo "✅ Dependency resolution successful"
@@ -216,10 +245,12 @@ jobs:
           echo "🔍 Analyzing frontend dependency changes..."
 
           # Get the base branch version for comparison
-          git fetch origin ${{ github.base_ref }}
+          BASE_BRANCH="${{ github.base_ref || github.event.repository.default_branch || 'main' }}"
+          echo "Using base branch: $BASE_BRANCH"
+          git fetch origin "$BASE_BRANCH" || git fetch origin
 
           # Extract changed dependencies from package.json
-          if git diff origin/${{ github.base_ref }} -- package.json | grep -E "^\+.*:" > /tmp/changed_deps.txt; then
+          if git diff "origin/$BASE_BRANCH" -- package.json | grep -E "^\+.*:" > /tmp/changed_deps.txt; then
             echo "Changed dependencies:"
             cat /tmp/changed_deps.txt
 
@@ -237,6 +268,11 @@ jobs:
         run: |
           echo "🔍 Validating npm dependency resolution..."
 
+          # Create backup of existing lock file if it exists
+          if [ -f package-lock.json ]; then
+            cp package-lock.json package-lock.json.backup
+          fi
+
           # Clean any existing node_modules and lock files to test fresh resolution
           rm -rf node_modules package-lock.json
 
@@ -244,7 +280,16 @@ jobs:
           if ! npm install --dry-run --no-fund --no-audit; then
             echo "❌ npm dependency resolution failed!"
             echo "The new dependency version creates conflicts in the dependency tree."
+            # Restore backup if it exists
+            if [ -f package-lock.json.backup ]; then
+              mv package-lock.json.backup package-lock.json
+            fi
             exit 1
+          fi
+
+          # Restore the original lock file for subsequent steps
+          if [ -f package-lock.json.backup ]; then
+            mv package-lock.json.backup package-lock.json
           fi
 
           echo "✅ npm dependency resolution successful"
@@ -255,6 +300,7 @@ jobs:
           echo "📦 Installing npm dependencies..."
 
           # Install dependencies and validate the process
+          # Use npm ci since we preserved the lock file in the previous step
           if ! npm ci --no-fund --no-audit; then
             echo "❌ npm dependency installation failed!"
             echo "Installation encountered errors despite successful resolution."
@@ -297,8 +343,19 @@ jobs:
           npm ls --json --depth=0 > /tmp/new_npm_deps.json 2>/dev/null || echo '{}' > /tmp/new_npm_deps.json
 
           # Get base branch dependency tree for comparison
+          BASE_BRANCH="${{ github.base_ref || github.event.repository.default_branch || 'main' }}"
+          echo "Using base branch: $BASE_BRANCH"
+
           git stash push -m "temp stash for npm comparison" || true
-          git checkout origin/${{ github.base_ref }}
+          git fetch origin "$BASE_BRANCH" || git fetch origin
+          git checkout "origin/$BASE_BRANCH" || {
+            echo "Could not checkout base branch for comparison"
+            echo '{}' > /tmp/old_npm_deps.json
+            git checkout -
+            git stash pop || true
+            echo "Skipping npm dependency comparison due to checkout failure"
+            exit 0
+          }
 
           # Install base dependencies
           if npm ci --no-fund --no-audit >/dev/null 2>&1; then
