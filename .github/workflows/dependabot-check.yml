@@ -10,6 +10,7 @@ on:
       - 'frontend/package.json'
       - 'frontend/package-lock.json'
       - 'frontend/pnpm-lock.yaml'
+  workflow_dispatch:  # Allow manual triggering
 
 env:
   PYTHON_VERSION: '3.10'
@@ -20,8 +21,8 @@ jobs:
     name: Detect Changed Dependencies
     runs-on: ubuntu-latest
     outputs:
-      python-changed: ${{ steps.changes.outputs.python }}
-      frontend-changed: ${{ steps.changes.outputs.frontend }}
+      python-changed: ${{ steps.changes.outputs.python || github.event_name == 'workflow_dispatch' }}
+      frontend-changed: ${{ steps.changes.outputs.frontend || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,6 +30,7 @@ jobs:
       - name: Detect changes
         uses: dorny/paths-filter@v3
         id: changes
+        if: github.event_name == 'pull_request'
         with:
           filters: |
             python:
