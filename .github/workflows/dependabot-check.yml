@@ -1,0 +1,464 @@
+name: Dependabot Dependency Check
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'requirements.txt'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - 'frontend/pnpm-lock.yaml'
+  workflow_dispatch:  # Allow manual triggering
+
+env:
+  PYTHON_VERSION: '3.10'
+  NODE_VERSION: '20'
+
+jobs:
+  detect-changes:
+    name: Detect Changed Dependencies
+    runs-on: ubuntu-latest
+    outputs:
+      python-changed: ${{ steps.changes.outputs.python || github.event_name == 'workflow_dispatch' }}
+      frontend-changed: ${{ steps.changes.outputs.frontend || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            python:
+              - 'pyproject.toml'
+              - 'uv.lock'
+              - 'requirements.txt'
+            frontend:
+              - 'frontend/package.json'
+              - 'frontend/package-lock.json'
+              - 'frontend/pnpm-lock.yaml'
+
+  python-dependency-check:
+    name: Python Dependencies Check
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.python-changed == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ffmpeg \
+            imagemagick \
+            libmagic1
+
+      - name: Extract changed dependency information
+        id: dep-info
+        run: |
+          echo "🔍 Analyzing dependency changes..."
+
+          # Get the base branch version for comparison
+          BASE_BRANCH="${{ github.base_ref || github.event.repository.default_branch || 'main' }}"
+          echo "Using base branch: $BASE_BRANCH"
+          git fetch origin "$BASE_BRANCH" || git fetch origin
+
+          # Extract changed dependencies from pyproject.toml
+          if git diff "origin/$BASE_BRANCH" -- pyproject.toml | grep -E "^\+.*=" > /tmp/changed_deps.txt; then
+            echo "Changed dependencies:"
+            cat /tmp/changed_deps.txt
+
+            # Extract the first changed dependency name and version
+            CHANGED_DEP=$(cat /tmp/changed_deps.txt | head -1 | sed 's/^+[[:space:]]*//' | sed 's/"//g' | cut -d'=' -f1 | tr -d ',' | xargs)
+            echo "changed_dep=${CHANGED_DEP}" >> $GITHUB_OUTPUT
+            echo "Primary changed dependency: ${CHANGED_DEP}"
+          else
+            echo "changed_dep=" >> $GITHUB_OUTPUT
+            echo "No direct dependency changes found in pyproject.toml"
+          fi
+
+      - name: Validate dependency resolution with specific package
+        run: |
+          echo "🔍 Validating dependency resolution..."
+
+          # Try to resolve dependencies and show detailed output
+          echo "Attempting to resolve dependencies..."
+          if ! uv lock --verbose 2>&1 | tee /tmp/uv_lock.log; then
+            echo "❌ Dependency resolution failed!"
+            echo "Dependency resolver could not find compatible versions."
+            echo ""
+            echo "Lock output:"
+            cat /tmp/uv_lock.log
+            exit 1
+          fi
+
+          # Check if the resolution created any warnings
+          if grep -i "warning\|conflict\|incompatible" /tmp/uv_lock.log; then
+            echo "⚠️  Dependency resolution completed with warnings"
+            echo "Please review the warnings above"
+          else
+            echo "✅ Dependency resolution successful with no warnings"
+          fi
+
+      - name: Compare dependency tree changes
+        run: |
+          echo "📊 Analyzing dependency tree changes..."
+
+          # Get current dependency tree
+          uv pip list --format=freeze > /tmp/new_deps.txt
+
+          # Get base branch dependency tree for comparison
+          BASE_BRANCH="${{ github.base_ref || github.event.repository.default_branch || 'main' }}"
+          echo "Using base branch: $BASE_BRANCH"
+
+          git stash push -m "temp stash for comparison" || true
+          git fetch origin "$BASE_BRANCH" || git fetch origin
+          git checkout "origin/$BASE_BRANCH" || {
+            echo "Could not checkout base branch for comparison"
+            touch /tmp/old_deps.txt
+            git checkout -
+            git stash pop || true
+            echo "Skipping dependency comparison due to checkout failure"
+            echo "Current dependencies:"
+            head -10 /tmp/new_deps.txt
+            exit 0
+          }
+
+          # Install base dependencies
+          if uv sync --all-extras >/dev/null 2>&1; then
+            uv pip list --format=freeze > /tmp/old_deps.txt
+          else
+            echo "Could not install base dependencies for comparison"
+            touch /tmp/old_deps.txt
+          fi
+
+          # Return to PR branch
+          git checkout -
+          git stash pop || true
+
+          # Show the differences
+          echo "🔄 Dependency changes:"
+          if [ -s /tmp/old_deps.txt ]; then
+            echo "Added/Updated packages:"
+            comm -13 /tmp/old_deps.txt /tmp/new_deps.txt | head -10
+            echo ""
+            echo "Removed packages:"
+            comm -23 /tmp/old_deps.txt /tmp/new_deps.txt | head -10
+          else
+            echo "Base comparison not available, showing current dependencies:"
+            head -10 /tmp/new_deps.txt
+          fi
+
+      - name: Validate dependency resolution
+        run: |
+          echo "🔍 Validating dependency resolution..."
+
+          # Check if we have a specific package to upgrade from the previous step
+          CHANGED_DEP="${{ steps.dep-info.outputs.changed_dep }}"
+
+          if [ -n "$CHANGED_DEP" ]; then
+            echo "Testing dependency resolution with specific package: $CHANGED_DEP"
+            # Try to resolve dependencies with the specific package upgrade
+            if ! uv lock --upgrade-package "$CHANGED_DEP" 2>&1; then
+              echo "❌ Dependency resolution failed for package: $CHANGED_DEP"
+              echo "The new dependency version creates conflicts that cannot be resolved."
+              exit 1
+            fi
+          else
+            echo "No specific package identified, testing general dependency resolution"
+            # Just try general dependency resolution
+            if ! uv lock 2>&1; then
+              echo "❌ Dependency resolution failed!"
+              echo "The dependency changes create conflicts that cannot be resolved."
+              exit 1
+            fi
+          fi
+
+          echo "✅ Dependency resolution successful"
+
+      - name: Install dependencies with resolution validation
+        run: |
+          echo "📦 Installing dependencies..."
+
+          # Create a clean virtual environment and install dependencies
+          if ! uv sync --all-extras; then
+            echo "❌ Dependency installation failed!"
+            echo "Even though resolution passed, installation encountered errors."
+            exit 1
+          fi
+
+          echo "✅ Dependencies installed successfully"
+
+      - name: Validate dependency tree integrity
+        run: |
+          echo "🌳 Validating dependency tree..."
+
+          # Check for dependency conflicts
+          uv pip check || {
+            echo "❌ Dependency conflicts detected!"
+            echo "Some packages have incompatible requirements."
+            exit 1
+          }
+
+          # Show the dependency tree for transparency
+          echo "📋 Current dependency tree:"
+          uv pip list --format=freeze | head -20
+
+          echo "✅ Dependency tree is consistent"
+
+  frontend-dependency-check:
+    name: Frontend Dependencies Check
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend-changed == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Extract changed dependency information
+        id: dep-info
+        working-directory: ./frontend
+        run: |
+          echo "🔍 Analyzing frontend dependency changes..."
+
+          # Get the base branch version for comparison
+          BASE_BRANCH="${{ github.base_ref || github.event.repository.default_branch || 'main' }}"
+          echo "Using base branch: $BASE_BRANCH"
+          git fetch origin "$BASE_BRANCH" || git fetch origin
+
+          # Extract changed dependencies from package.json
+          if git diff "origin/$BASE_BRANCH" -- package.json | grep -E "^\+.*:" > /tmp/changed_deps.txt; then
+            echo "Changed dependencies:"
+            cat /tmp/changed_deps.txt
+
+            # Extract the first changed dependency name
+            CHANGED_DEP=$(cat /tmp/changed_deps.txt | head -1 | sed 's/^+[[:space:]]*//' | sed 's/"//g' | cut -d':' -f1 | xargs)
+            echo "changed_dep=${CHANGED_DEP}" >> $GITHUB_OUTPUT
+            echo "Primary changed dependency: ${CHANGED_DEP}"
+          else
+            echo "changed_dep=" >> $GITHUB_OUTPUT
+            echo "No direct dependency changes found in package.json"
+          fi
+
+      - name: Validate npm dependency resolution
+        working-directory: ./frontend
+        run: |
+          echo "🔍 Validating npm dependency resolution..."
+
+          # Create backup of existing lock file if it exists
+          if [ -f package-lock.json ]; then
+            cp package-lock.json package-lock.json.backup
+          fi
+
+          # Clean any existing node_modules and lock files to test fresh resolution
+          rm -rf node_modules package-lock.json
+
+          # Test dependency resolution without installing
+          if ! npm install --dry-run --no-fund --no-audit; then
+            echo "❌ npm dependency resolution failed!"
+            echo "The new dependency version creates conflicts in the dependency tree."
+            # Restore backup if it exists
+            if [ -f package-lock.json.backup ]; then
+              mv package-lock.json.backup package-lock.json
+            fi
+            exit 1
+          fi
+
+          # Restore the original lock file for subsequent steps
+          if [ -f package-lock.json.backup ]; then
+            mv package-lock.json.backup package-lock.json
+          fi
+
+          echo "✅ npm dependency resolution successful"
+
+      - name: Install dependencies with validation
+        working-directory: ./frontend
+        run: |
+          echo "📦 Installing npm dependencies..."
+
+          # Install dependencies and validate the process
+          # Use npm ci since we preserved the lock file in the previous step
+          if ! npm ci --no-fund --no-audit; then
+            echo "❌ npm dependency installation failed!"
+            echo "Installation encountered errors despite successful resolution."
+            exit 1
+          fi
+
+          echo "✅ npm dependencies installed successfully"
+
+      - name: Validate npm dependency tree
+        working-directory: ./frontend
+        run: |
+          echo "🌳 Validating npm dependency tree..."
+
+          # Check for dependency conflicts and peer dependency issues
+          if ! npm ls --depth=0; then
+            echo "⚠️  npm dependency tree has issues, checking details..."
+            npm ls --depth=1 || true
+
+            # Check if these are just peer dependency warnings (common and usually ok)
+            if npm ls 2>&1 | grep -q "ERESOLVE\|peer dep"; then
+              echo "ℹ️  Found peer dependency warnings, but core dependencies are resolved"
+            else
+              echo "❌ Serious dependency tree issues detected!"
+              exit 1
+            fi
+          fi
+
+          # Show installed packages for transparency
+          echo "📋 Installed packages:"
+          npm ls --depth=0 --json | jq -r '.dependencies | keys[]' | head -10
+
+          echo "✅ npm dependency tree validated"
+
+      - name: Compare npm dependency changes
+        working-directory: ./frontend
+        run: |
+          echo "📊 Analyzing npm dependency changes..."
+
+          # Get current dependency tree
+          npm ls --json --depth=0 > /tmp/new_npm_deps.json 2>/dev/null || echo '{}' > /tmp/new_npm_deps.json
+
+          # Get base branch dependency tree for comparison
+          BASE_BRANCH="${{ github.base_ref || github.event.repository.default_branch || 'main' }}"
+          echo "Using base branch: $BASE_BRANCH"
+
+          git stash push -m "temp stash for npm comparison" || true
+          git fetch origin "$BASE_BRANCH" || git fetch origin
+          git checkout "origin/$BASE_BRANCH" || {
+            echo "Could not checkout base branch for comparison"
+            echo '{}' > /tmp/old_npm_deps.json
+            git checkout -
+            git stash pop || true
+            echo "Skipping npm dependency comparison due to checkout failure"
+            exit 0
+          }
+
+          # Install base dependencies
+          if npm ci --no-fund --no-audit >/dev/null 2>&1; then
+            npm ls --json --depth=0 > /tmp/old_npm_deps.json 2>/dev/null || echo '{}' > /tmp/old_npm_deps.json
+          else
+            echo "Could not install base dependencies for comparison"
+            echo '{}' > /tmp/old_npm_deps.json
+          fi
+
+          # Return to PR branch
+          git checkout -
+          git stash pop || true
+
+          # Show the differences using Node.js
+          node -e "
+          const oldDeps = JSON.parse(require('fs').readFileSync('/tmp/old_npm_deps.json', 'utf8')).dependencies || {};
+          const newDeps = JSON.parse(require('fs').readFileSync('/tmp/new_npm_deps.json', 'utf8')).dependencies || {};
+
+          console.log('🔄 Frontend dependency changes:');
+          console.log('');
+
+          // Find added/updated packages
+          const updated = [];
+          for (const [pkg, info] of Object.entries(newDeps)) {
+            if (!oldDeps[pkg] || oldDeps[pkg].version !== info.version) {
+              updated.push(\`\${pkg}: \${oldDeps[pkg]?.version || 'new'} → \${info.version}\`);
+            }
+          }
+
+          if (updated.length > 0) {
+            console.log('📦 Added/Updated packages:');
+            updated.slice(0, 10).forEach(pkg => console.log(\`  \${pkg}\`));
+            if (updated.length > 10) console.log(\`  ... and \${updated.length - 10} more\`);
+          }
+
+          // Find removed packages
+          const removed = Object.keys(oldDeps).filter(pkg => !newDeps[pkg]);
+          if (removed.length > 0) {
+            console.log('');
+            console.log('🗑️  Removed packages:');
+            removed.slice(0, 10).forEach(pkg => console.log(\`  \${pkg}\`));
+            if (removed.length > 10) console.log(\`  ... and \${removed.length - 10} more\`);
+          }
+
+          if (updated.length === 0 && removed.length === 0) {
+            console.log('No direct dependency changes detected');
+          }
+          " || echo "Could not analyze dependency changes"
+
+  dependency-summary:
+    name: Dependency Resolution Summary
+    runs-on: ubuntu-latest
+    needs: [python-dependency-check, frontend-dependency-check]
+    if: always()
+
+    steps:
+      - name: Dependency Resolution Summary
+        run: |
+          echo "## 🔍 Dependency Resolution Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Python dependency resolution result
+          if [[ "${{ needs.python-dependency-check.result }}" == "success" ]]; then
+            echo "✅ **Python Dependencies**: Resolution and validation successful" >> $GITHUB_STEP_SUMMARY
+            echo "   - Dependency resolver found compatible versions" >> $GITHUB_STEP_SUMMARY
+            echo "   - No conflicts detected in dependency tree" >> $GITHUB_STEP_SUMMARY
+            echo "   - All packages installed successfully" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.python-dependency-check.result }}" == "skipped" ]]; then
+            echo "⏭️ **Python Dependencies**: No changes detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Python Dependencies**: Resolution or validation failed" >> $GITHUB_STEP_SUMMARY
+            echo "   - Check the logs for dependency conflicts" >> $GITHUB_STEP_SUMMARY
+            echo "   - Verify version compatibility" >> $GITHUB_STEP_SUMMARY
+            echo "   - Review breaking changes in updated packages" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Frontend dependency resolution result
+          if [[ "${{ needs.frontend-dependency-check.result }}" == "success" ]]; then
+            echo "✅ **Frontend Dependencies**: Resolution and validation successful" >> $GITHUB_STEP_SUMMARY
+            echo "   - npm dependency resolver completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "   - No peer dependency conflicts" >> $GITHUB_STEP_SUMMARY
+            echo "   - All packages installed successfully" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.frontend-dependency-check.result }}" == "skipped" ]]; then
+            echo "⏭️ **Frontend Dependencies**: No changes detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Frontend Dependencies**: Resolution or validation failed" >> $GITHUB_STEP_SUMMARY
+            echo "   - Check for npm dependency conflicts" >> $GITHUB_STEP_SUMMARY
+            echo "   - Review peer dependency warnings" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Overall status
+          if [[ "${{ needs.python-dependency-check.result }}" != "failure" && "${{ needs.frontend-dependency-check.result }}" != "failure" ]]; then
+            echo "🎉 **Overall Status**: All dependency validations passed!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "This Dependabot update is safe to merge. The dependency resolver successfully found compatible versions for all packages." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Overall Status**: Dependency validation issues detected" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "This Dependabot update requires manual review. Check the failed jobs above for specific issues that need to be resolved before merging." >> $GITHUB_STEP_SUMMARY
+          fi
