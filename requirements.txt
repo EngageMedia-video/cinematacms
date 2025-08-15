@@ -32,6 +32,6 @@ whitenoise==6.9.0
 django-cors-headers==4.7.0
 
 # for MFA and local installation purposes
-python-dotenv==1.1.0
+python-dotenv==1.1.1
 fido2==1.2.0
 qrcode==8.2
