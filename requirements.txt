@@ -9,7 +9,7 @@ uwsgi==2.0.29
 django-redis==4.12.1
 celery==4.4.7
 django-crispy-forms==1.9.0
-Pillow==9.5.0
+Pillow==11.3.0
 django-imagekit==5.0.0
 markdown==3.8
 django-filter==25.1
