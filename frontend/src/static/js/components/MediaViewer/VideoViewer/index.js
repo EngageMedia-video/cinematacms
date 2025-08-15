@@ -18,7 +18,7 @@ import { addClassname, removeClassname } from "../../../functions/dom.js";
 
 import { addPageMetadata } from "../../../functions";
 
-import { formatInnerLink } from "../../../functions/formatInnerLink";
+import { formatInnerLink, formatMediaLink } from "../../../functions/formatInnerLink";
 
 import UpNextLoaderView from "../../../classes/UpNextLoaderView";
 import PlayerRecommendedMedia from "../../../classes/PlayerRecommendedMedia";
@@ -95,7 +95,9 @@ export default class VideoViewer extends React.PureComponent {
 			let defaultVideoResolution = extractDefaultVideoResolution(defaultResolution, this.videoInfo);
 
 			if ('Auto' === defaultResolution && void 0 !== this.videoInfo['Auto']) {
-				this.videoSources.push({ src: this.videoInfo['Auto'].url[0] });
+				const password = (typeof MediaCMS !== 'undefined' && MediaCMS.provided_password) ? MediaCMS.provided_password : null;
+				const srcUrl = formatMediaLink(this.videoInfo['Auto'].url[0], this.props.siteUrl, password);
+				this.videoSources.push({ src: srcUrl });
 			}
 
 			const supportedFormats = orderedSupportedVideoFormats();
@@ -105,7 +107,9 @@ export default class VideoViewer extends React.PureComponent {
 			k = 0;
 			while (k < this.videoInfo[defaultVideoResolution].format.length) {
 				if ('hls' === this.videoInfo[defaultVideoResolution].format[k]) {
-					this.videoSources.push({ src: this.videoInfo[defaultVideoResolution].url[k] });
+					const password = (typeof MediaCMS !== 'undefined' && MediaCMS.provided_password) ? MediaCMS.provided_password : null;
+					const srcUrl = formatMediaLink(this.videoInfo[defaultVideoResolution].url[k], this.props.siteUrl, password);
+					this.videoSources.push({ src: srcUrl });
 					break;
 				}
 				k += 1;
@@ -117,7 +121,8 @@ export default class VideoViewer extends React.PureComponent {
 						srcUrl = this.props.data.encodings_info[defaultVideoResolution][k].url;
 
 						if (!!srcUrl) {
-							srcUrl = formatInnerLink(srcUrl, this.props.siteUrl);
+							const password = (typeof MediaCMS !== 'undefined' && MediaCMS.provided_password) ? MediaCMS.provided_password : null;
+							srcUrl = formatMediaLink(srcUrl, this.props.siteUrl, password);
 
 							this.videoSources.push({
 								src: srcUrl /*.replace("http://", "//").replace("https://", "//")*/,
