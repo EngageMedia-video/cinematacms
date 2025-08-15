@@ -32,7 +32,7 @@ dependencies = [
     "rpdb==0.2.0",
     "tqdm==4.67.1",
     "whitenoise==6.9.0",
-    "fido2==1.2.0",
+    "fido2==2.0.0",
     "uwsgi==2.0.29",
     "qrcode==8.2",
     "django-tinymce==4.1.0",
