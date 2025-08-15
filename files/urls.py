@@ -69,7 +69,7 @@ urlpatterns = [
     #        views.MediaSubtitles.as_view()),
     re_path("^api/v1/categories$", views.CategoryList.as_view()),
     re_path("^api/v1/topics$", views.TopicList.as_view()),
-    re_path("^api/v1/languages$", views.MediaLanguageList.as_view()),
+    re_path("^api/v1/languages$", views.MediaLanguageList.as_view(), name='api_get_languages'),
     re_path("^api/v1/countries$", views.MediaCountryList.as_view()),
     re_path("^api/v1/tags$", views.TagList.as_view()),
     re_path("^api/v1/comments$", views.CommentList.as_view()),
