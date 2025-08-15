@@ -24,7 +24,7 @@ dependencies = [
     "flake8==7.2.0",
     "ipython==8.36.0",
     "m3u8==6.0.0",
-    "markdown==3.8",
+    "markdown==3.8.2",
     "pep8==1.7.1",
     "pillow==9.5.0",
     "python-dotenv==1.1.0",
