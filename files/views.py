@@ -1,6 +1,6 @@
 import csv
 import json
-from cms.permissions import user_requires_mfa
+import logging
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -63,9 +63,10 @@ from .models import (
     HomepagePopup,
     IndexPageFeatured,
     License,
-    Media,
-    MediaCountry,
     MediaLanguage,
+    MediaCountry,
+    Media,
+    Language,
     Page,
     Playlist,
     PlaylistMedia,
@@ -95,6 +96,8 @@ from .stop_words import STOP_WORDS
 from .tasks import save_user_action
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
+
+logger = logging.getLogger(__name__)
 
 
 class Lower(Func):
@@ -126,7 +129,7 @@ def countries(request):
 
 def languages(request):
     context = {}
-    languages = [language[1] for language in lists.video_languages]
+    languages = Language.objects.all().order_by('title') 
     context["languages"] = languages
     return render(request, "cms/languages.html", context)
 
@@ -146,12 +149,10 @@ def manage_users(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
     
-    # MFA check
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if request.user.is_superuser and not is_mfa_enabled(request.user):
         return HttpResponseRedirect('/accounts/2fa/totp/activate')
 
-    # Hard config -> ensure superuser / manager only have access
-    if not (request.user.is_superuser or request.user.is_manager):
+    if request.user.is_manager or request.user.is_editor:
         return HttpResponseRedirect("/")
 
     context = {}
@@ -162,12 +163,10 @@ def manage_media(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    # MFA check
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if request.user.is_superuser and not is_mfa_enabled(request.user):
         return HttpResponseRedirect('/accounts/2fa/totp/activate')
 
-     # Hard config -> ensure superuser / manager / editor only have access
-    if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
+    if request.user.is_manager or request.user.is_editor:
         return HttpResponseRedirect("/")
 
     context = {}
@@ -178,10 +177,10 @@ def manage_comments(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if request.user.is_superuser and not is_mfa_enabled(request.user):
         return HttpResponseRedirect('/accounts/2fa/totp/activate')
 
-    if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
+    if request.user.is_manager or request.user.is_editor:
         return HttpResponseRedirect("/")
 
     context = {}
@@ -527,7 +526,7 @@ def add_subtitle(request):
         return HttpResponseRedirect("/")
 
     if request.method == "POST":
-        form = SubtitleForm(media, request.POST, request.FILES)
+        form = SubtitleForm(media_item=media, data=request.POST, files=request.FILES)
         if form.is_valid():
             subtitle = form.save()
             new_subtitle = Subtitle.objects.filter(id=subtitle.id).first()
@@ -535,10 +534,12 @@ def add_subtitle(request):
                 new_subtitle.convert_to_srt()
                 messages.add_message(request, messages.INFO, "Subtitle was added!")
                 return HttpResponseRedirect(subtitle.media.get_absolute_url())
-            except:
+            except Exception as e:
                 new_subtitle.delete()
-                error_msg = "Invalid subtitle format. Use SubRip (.srt) and WebVTT (.vtt) files."
-                form.add_error("subtitle_file", error_msg)
+                logger.exception("Subtitle conversion failed: %s", e)
+                default_msg = "Invalid subtitle format. Use SubRip (.srt) and WebVTT (.vtt) files."
+                form.add_error("subtitle_file", str(e) if str(e) else default_msg)
+                
     else:
         form = SubtitleForm(media_item=media)
     subtitles = media.subtitles.all()
@@ -1631,9 +1632,7 @@ class TopicList(APIView):
 class MediaLanguageList(APIView):
     def get(self, request, format=None):
         languages = (
-            MediaLanguage.objects.exclude(listings_thumbnail=None)
-            .exclude(listings_thumbnail="")
-            .filter()
+            Language.objects.all()
             .order_by("title")
         )
         serializer = MediaLanguageSerializer(
