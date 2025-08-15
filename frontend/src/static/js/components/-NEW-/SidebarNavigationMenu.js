@@ -11,22 +11,22 @@ import { NavigationMenuList } from './NavigationMenuList';
 
 import PageStore from '../../pages/_PageStore.js';
 
-export function SidebarNavigationMenu(){
+export function SidebarNavigationMenu() {
 
-    const links = useContext( LinksContext );
+    const links = useContext(LinksContext);
     // const apiUrl = useContext( ApiUrlContext );
-    const user = useContext( UserContext );
+    const user = useContext(UserContext);
     // const theme = useContext( ThemeContext );
-    const sidebar = useContext( SidebarContext );
+    const sidebar = useContext(SidebarContext);
 
-    const currentUrl = urlParse( window.location.href );
-    const currentHostPath = ( currentUrl.host + currentUrl.pathname ).replace(/\/+$/, '');
+    const currentUrl = urlParse(window.location.href);
+    const currentHostPath = (currentUrl.host + currentUrl.pathname).replace(/\/+$/, '');
 
-    function formatItems(items){
+    function formatItems(items) {
 
-        return items.map( item => {
+        return items.map(item => {
 
-            const url = urlParse( item.link );
+            const url = urlParse(item.link);
             const active = currentHostPath === url.host + url.pathname;
 
             return {
@@ -36,18 +36,18 @@ export function SidebarNavigationMenu(){
                 icon: item.icon || null,
                 iconPos: 'left',
                 text: item.text || item.link || '#',
-                itemAttr:{
+                itemAttr: {
                     className: item.className || '',
                 },
             };
         });
     }
 
-    function MainMenuFirstSection(){
+    function MainMenuFirstSection() {
 
         const items = [];
 
-        if( ! sidebar.hideHomeLink ){
+        if (!sidebar.hideHomeLink) {
             items.push({
                 link: links.home,
                 icon: 'home',
@@ -56,7 +56,7 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        if( PageStore.get('config-enabled').pages.featured && PageStore.get('config-enabled').pages.featured.enabled ){
+        if (PageStore.get('config-enabled').pages.featured && PageStore.get('config-enabled').pages.featured.enabled) {
             items.push({
                 link: links.featured,
                 icon: 'star',
@@ -65,7 +65,7 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        if( PageStore.get('config-enabled').pages.recommended && PageStore.get('config-enabled').pages.recommended.enabled ){
+        if (PageStore.get('config-enabled').pages.recommended && PageStore.get('config-enabled').pages.recommended.enabled) {
             items.push({
                 link: links.recommended,
                 icon: 'done_outline',
@@ -74,7 +74,7 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        if( PageStore.get('config-enabled').pages.latest && PageStore.get('config-enabled').pages.latest.enabled ){
+        if (PageStore.get('config-enabled').pages.latest && PageStore.get('config-enabled').pages.latest.enabled) {
             items.push({
                 link: links.latest,
                 icon: 'new_releases',
@@ -83,7 +83,7 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        if( ! sidebar.hideTagsLink && PageStore.get('config-enabled').taxonomies.tags && PageStore.get('config-enabled').taxonomies.tags.enabled ){
+        if (!sidebar.hideTagsLink && PageStore.get('config-enabled').taxonomies.tags && PageStore.get('config-enabled').taxonomies.tags.enabled) {
             items.push({
                 link: links.archive.tags,
                 icon: 'local_offer',
@@ -92,7 +92,7 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        if( PageStore.get('config-enabled').taxonomies.categories && PageStore.get('config-enabled').taxonomies.categories.enabled ){
+        if (PageStore.get('config-enabled').taxonomies.categories && PageStore.get('config-enabled').taxonomies.categories.enabled) {
             items.push({
                 link: links.archive.categories,
                 icon: 'list_alt',
@@ -101,7 +101,7 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        if( PageStore.get('config-enabled').taxonomies.topics && PageStore.get('config-enabled').taxonomies.topics.enabled ){
+        if (PageStore.get('config-enabled').taxonomies.topics && PageStore.get('config-enabled').taxonomies.topics.enabled) {
             items.push({
                 link: links.archive.topics,
                 icon: 'topic',
@@ -110,7 +110,7 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        if( PageStore.get('config-enabled').taxonomies.languages && PageStore.get('config-enabled').taxonomies.languages.enabled ){
+        if (PageStore.get('config-enabled').taxonomies.languages && PageStore.get('config-enabled').taxonomies.languages.enabled) {
             items.push({
                 link: links.archive.languages,
                 icon: 'language',
@@ -119,7 +119,7 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        if( PageStore.get('config-enabled').taxonomies.countries && PageStore.get('config-enabled').taxonomies.countries.enabled ){
+        if (PageStore.get('config-enabled').taxonomies.countries && PageStore.get('config-enabled').taxonomies.countries.enabled) {
             items.push({
                 link: links.archive.countries,
                 icon: 'public',
@@ -128,7 +128,7 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        if( PageStore.get('config-enabled').pages.members && PageStore.get('config-enabled').pages.members.enabled ){
+        if (PageStore.get('config-enabled').pages.members && PageStore.get('config-enabled').pages.members.enabled) {
             items.push({
                 link: links.members,
                 icon: 'people',
@@ -139,7 +139,7 @@ export function SidebarNavigationMenu(){
 
         const extraItems = PageStore.get('config-contents').sidebar.mainMenuExtra.items;
 
-        extraItems.forEach( navitem => {
+        extraItems.forEach(navitem => {
             items.push({
                 link: navitem.link,
                 icon: navitem.icon,
@@ -148,16 +148,16 @@ export function SidebarNavigationMenu(){
             });
         });
 
-        return items.length ? <NavigationMenuList key='main-first' items={ formatItems( items ) } /> : null;
+        return items.length ? <NavigationMenuList key='main-first' items={formatItems(items)} /> : null;
     }
 
-    function MainMenuSecondSection(){
+    function MainMenuSecondSection() {
 
         const items = [];
 
-        if( ! user.is.anonymous ){
+        if (!user.is.anonymous) {
 
-            if( user.can.addMedia ){
+            if (user.can.addMedia) {
 
                 items.push({
                     link: links.user.addMedia,
@@ -166,7 +166,7 @@ export function SidebarNavigationMenu(){
                     className: "nav-item-upload-media",
                 });
 
-                if( user.pages.home ){
+                if (user.pages.home) {
 
                     items.push({
                         link: user.pages.home,
@@ -177,7 +177,7 @@ export function SidebarNavigationMenu(){
                 }
             }
 
-            if( user.can.saveMedia ){
+            if (user.can.saveMedia) {
 
                 items.push({
                     link: user.pages.playlists,
@@ -188,14 +188,14 @@ export function SidebarNavigationMenu(){
             }
         }
 
-        return items.length ? <NavigationMenuList key='main-second' items={ formatItems( items ) } /> : null;
+        return items.length ? <NavigationMenuList key='main-second' items={formatItems(items)} /> : null;
     }
 
-    function UserMenuSection(){
+    function UserMenuSection() {
 
         const items = [];
 
-        if( PageStore.get('config-enabled').pages.history && PageStore.get('config-enabled').pages.history.enabled ){
+        if (PageStore.get('config-enabled').pages.history && PageStore.get('config-enabled').pages.history.enabled) {
             items.push({
                 link: links.user.history,
                 icon: 'history',
@@ -204,7 +204,7 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        if( user.can.likeMedia && PageStore.get('config-enabled').pages.liked && PageStore.get('config-enabled').pages.liked.enabled ){
+        if (user.can.likeMedia && PageStore.get('config-enabled').pages.liked && PageStore.get('config-enabled').pages.liked.enabled) {
             items.push({
                 link: links.user.liked,
                 icon: 'thumb_up',
@@ -213,17 +213,17 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        return items.length ? <NavigationMenuList key='user' items={ formatItems( items ) } /> : null;
+        return items.length ? <NavigationMenuList key='user' items={formatItems(items)} /> : null;
     }
 
-    function CustomMenuSection(){
+    function CustomMenuSection() {
 
         const items = PageStore.get('config-contents').sidebar.navMenu.items;
 
-        return items.length ? <NavigationMenuList key='custom' items={ formatItems( items ) } /> : null;
+        return items.length ? <NavigationMenuList key='custom' items={formatItems(items)} /> : null;
     }
 
-    function ExtraMenuSection(){
+    function ExtraMenuSection() {
 
         const items = []
 
@@ -241,24 +241,24 @@ export function SidebarNavigationMenu(){
         });
 
 
-        return <NavigationMenuList key='extra' items={ formatItems( items ) } />;
+        return <NavigationMenuList key='extra' items={formatItems(items)} />;
     }
 
 
-    function AdminMenuSection(){
+    function AdminMenuSection() {
 
         const items = [];
 
-        if( user.can.manageMedia ){
+        if (user.can.manageMedia) {
             items.push({
                 link: links.manage.media,
                 icon: 'miscellaneous_services',
-                text: 'Manage media',
+                text: 'Manage videos',
                 className: "nav-item-manage-media",
             });
         }
 
-        if( user.can.manageUsers ){
+        if (user.can.manageUsers) {
             items.push({
                 link: links.manage.users,
                 icon: 'miscellaneous_services',
@@ -267,7 +267,7 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        if( user.can.manageComments ){
+        if (user.can.manageComments) {
             items.push({
                 link: links.manage.comments,
                 icon: 'miscellaneous_services',
@@ -276,8 +276,8 @@ export function SidebarNavigationMenu(){
             });
         }
 
-        return items.length ? <NavigationMenuList key='admin' items={ formatItems( items ) } /> : null;
+        return items.length ? <NavigationMenuList key='admin' items={formatItems(items)} /> : null;
     }
 
-    return ( [ MainMenuFirstSection(), MainMenuSecondSection(), UserMenuSection(), CustomMenuSection(), ExtraMenuSection(), AdminMenuSection() ] );
+    return ([MainMenuFirstSection(), MainMenuSecondSection(), UserMenuSection(), CustomMenuSection(), ExtraMenuSection(), AdminMenuSection()]);
 }

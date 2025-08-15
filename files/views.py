@@ -1,6 +1,5 @@
 import csv
 import json
-from cms.permissions import user_requires_mfa
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -146,12 +145,10 @@ def manage_users(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
     
-    # MFA check
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if request.user.is_superuser and not is_mfa_enabled(request.user):
         return HttpResponseRedirect('/accounts/2fa/totp/activate')
 
-    # Hard config -> ensure superuser / manager only have access
-    if not (request.user.is_superuser or request.user.is_manager):
+    if request.user.is_manager or request.user.is_editor:
         return HttpResponseRedirect("/")
 
     context = {}
@@ -162,12 +159,10 @@ def manage_media(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    # MFA check
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if request.user.is_superuser and not is_mfa_enabled(request.user):
         return HttpResponseRedirect('/accounts/2fa/totp/activate')
 
-     # Hard config -> ensure superuser / manager / editor only have access
-    if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
+    if request.user.is_manager or request.user.is_editor:
         return HttpResponseRedirect("/")
 
     context = {}
@@ -178,10 +173,10 @@ def manage_comments(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if request.user.is_superuser and not is_mfa_enabled(request.user):
         return HttpResponseRedirect('/accounts/2fa/totp/activate')
 
-    if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
+    if request.user.is_manager or request.user.is_editor:
         return HttpResponseRedirect("/")
 
     context = {}
@@ -266,7 +261,7 @@ Sender email: %s\n
                 reply_to=[from_email],
             )
             email.send(fail_silently=True)
-            success_msg = "Message was sent! Thanks for contacting"
+            success_msg = "The message was sent successfully!"
             context["success_msg"] = success_msg
 
         else:
@@ -1276,7 +1271,7 @@ class PlaylistDetail(APIView):
                     ).count()
                     if media_in_playlist >= settings.MAX_MEDIA_PER_PLAYLIST:
                         return Response(
-                            {"detail": "max number of media for a Playlist reached"},
+                            {"detail": "You have reached the maximum number of videos for a playlist"},
                             status=status.HTTP_400_BAD_REQUEST,
                         )
                     else:
@@ -1287,7 +1282,7 @@ class PlaylistDetail(APIView):
                         )
                         obj.save()
                         return Response(
-                            {"detail": "media added to Playlist"},
+                            {"detail": "video added to playlist"},
                             status=status.HTTP_201_CREATED,
                         )
                 elif action == "remove":
@@ -1295,7 +1290,7 @@ class PlaylistDetail(APIView):
                         playlist=playlist, media=media
                     ).delete()
                     return Response(
-                        {"detail": "media removed from Playlist"},
+                        {"detail": "video removed from playlist"},
                         status=status.HTTP_201_CREATED,
                     )
                 elif action == "ordering":
@@ -1307,7 +1302,7 @@ class PlaylistDetail(APIView):
                         )
             else:
                 return Response(
-                    {"detail": "media is not valid or accessible"}, 
+                    {"detail": "The video is not valid or accessible"}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
         return Response(

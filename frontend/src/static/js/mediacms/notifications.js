@@ -1,34 +1,34 @@
 let NOTIFICATIONS = null;
 
-export function init( settings ){
+export function init(settings) {
 
 	NOTIFICATIONS = {
-	    messages:{
-	    	addToLiked: 'Added to liked media',
-	    	removeFromLiked: 'Removed from liked media',
-	    	addToDisliked: 'Added to disliked media',
-	    	removeFromDisliked: 'Removed from disliked media',
-	    },
-    };
+		messages: {
+			addToLiked: 'Added to your liked videos',
+			removeFromLiked: 'Removed from your liked videos',
+			addToDisliked: 'Added to your disliked videos',
+			removeFromDisliked: 'Removed from your disliked videos',
+		},
+	};
 
-    let k, g;
+	let k, g;
 
-    if( void 0 !== settings ){
+	if (void 0 !== settings) {
 
-		for(k in NOTIFICATIONS){
+		for (k in NOTIFICATIONS) {
 
-			if( void 0 !== settings[k] ){
+			if (void 0 !== settings[k]) {
 
-				if( 'messages' === k ){
+				if ('messages' === k) {
 
-					for(g in NOTIFICATIONS[k]){
+					for (g in NOTIFICATIONS[k]) {
 
-						if( 'string' === typeof settings[k][g] ){
+						if ('string' === typeof settings[k][g]) {
 							NOTIFICATIONS[k][g] = settings[k][g];
 						}
 					}
 				}
-			}		
+			}
 		}
 	}
 
@@ -36,6 +36,6 @@ export function init( settings ){
 	// console.log( NOTIFICATIONS.messages );
 }
 
-export function settings(){
+export function settings() {
 	return NOTIFICATIONS;
 }

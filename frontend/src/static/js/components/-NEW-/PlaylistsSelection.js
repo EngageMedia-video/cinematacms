@@ -77,7 +77,7 @@ export function PlaylistsSelection(props) {
 		setDate(new Date());
 		setTimeout(function () {
 			PageActions.addNotification(
-				"Media added to playlist",
+				"Video added to playlist",
 				"playlistMediaAdditionComplete"
 			);
 		}, 100);
@@ -97,7 +97,7 @@ export function PlaylistsSelection(props) {
 		setDate(new Date());
 		setTimeout(function () {
 			PageActions.addNotification(
-				"Media removed from playlist",
+				"Video removed from playlist",
 				"playlistMediaRemovalComplete"
 			);
 		}, 100);
