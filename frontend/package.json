@@ -59,7 +59,7 @@
     "material-design-icons": "^3.0.1",
     "normalize.css": "^8.0.1",
     "react": "^17.0.2",
-    "react-dom": "^17.0.2",
+    "react-dom": "^19.1.1",
     "sortablejs": "^1.15.6",
     "timeago.js": "^4.0.2",
     "url-parse": "^1.5.10"
