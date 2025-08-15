@@ -13,7 +13,7 @@ dependencies = [
     "django-debug-toolbar==4.1.0",
     "django-filter==25.1",
     "django-imagekit==5.0.0",
-    "django-mptt==0.16.0",
+    "django-mptt==0.17.0",
     "django-recaptcha==3.0.0",
     "django-redis==4.12.1",
     "django-silk==5.3.2",
