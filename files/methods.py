@@ -178,7 +178,7 @@ Video %s was added by user %s.
         if settings.USERS_NOTIFICATIONS.get("MEDIA_ADDED", False):
             title = "[{}] - Your video was uploaded successfully".format(settings.PORTAL_NAME)
             msg = """
-our video has been uploaded successfully! It's now being processed and will be available soon.
+Your video has been uploaded successfully! It's now being processed and will be available soon.
 URL: %s
             """ % (
                 media_url
