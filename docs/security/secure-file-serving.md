@@ -207,7 +207,7 @@ class SecureMediaView(View):
         """Check if the user has permission to access the media."""
         user = request.user
 
-        if media.state == 'public' or media.state == 'unlisted':
+        if media.state in ('public', 'unlisted'):
             return True
 
         if media.state == 'restricted':
@@ -512,7 +512,18 @@ curl -I http://your-domain/media/original/thumbnails/user/username/thumb.jpg
 # Should return 200 OK
 ```
 
-### 6.2 Test Private Content
+### 6.2 Test Unlisted Content
+
+```bash
+# Test unlisted media without authentication (should work - direct file access)
+curl -I http://your-domain/media/original/user/username/unlisted-file.mp4
+# Should return 200 OK
+
+# Note: Unlisted media files are accessible to anyone with the direct link
+# However, unlisted media won't appear in public playlists for anonymous users
+```
+
+### 6.3 Test Private Content
 
 ```bash
 # Test private media without authentication (should fail)
@@ -524,7 +535,7 @@ curl -I -H "Authorization: Token your-token" http://your-domain/media/original/u
 # Should return 200 OK
 ```
 
-### 6.3 Test Restricted Content
+### 6.4 Test Restricted Content
 
 ```bash
 # Test restricted media without password (should fail)
@@ -540,7 +551,7 @@ curl -I "http://your-domain/media/original/user/username/restricted-file.mp4?pas
 # Should return 403 Forbidden
 ```
 
-### 6.4 Test Development Mode
+### 6.5 Test Development Mode
 
 ```bash
 # Start Django development server with USE_X_ACCEL_REDIRECT=False
@@ -687,10 +698,20 @@ LOGGING = {
 - Integrates with existing MediaCMS user roles
 
 ### Authorization Logic
-- **Public Media**: Anyone can access
-- **Unlisted Media**: Any authenticated user can access
+
+- **Public Media**: Anyone can access (no authentication required)
+- **Unlisted Media**: Anyone with the direct link can access (no authentication required for file access, but authentication required for playlist visibility)
 - **Restricted Media**: Authenticated users with valid password (or owner/editor/manager)
 - **Private Media**: Only media owner, editors, and managers can access
+
+#### Important Note: File Access vs. Playlist Visibility
+
+There is an intentional distinction between **direct file access** and **playlist visibility** for unlisted media:
+
+- **Direct File Access**: Unlisted media files can be accessed by anyone who knows the direct URL (no authentication required)
+- **Playlist Visibility**: Unlisted media only appears in playlists for authenticated users
+
+This design allows for "link-only" sharing where content creators can share unlisted videos via direct links without requiring recipients to create accounts, while still maintaining privacy in public playlist listings.
 
 ### Conclusion
 
