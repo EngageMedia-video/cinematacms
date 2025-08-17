@@ -33,7 +33,6 @@ server {
 
         # Cache settings for media files
         expires 1y;
-        add_header Cache-Control "public, immutable";
         add_header X-Content-Type-Options nosniff;
     }
 
@@ -48,7 +47,6 @@ server {
 
         # Cache settings for media files
         expires 1y;
-        add_header Cache-Control "public, immutable";
         add_header X-Content-Type-Options nosniff;
     }
 
@@ -97,7 +95,6 @@ server {
 
         # Cache settings for media files
         expires 1y;
-        add_header Cache-Control "public, immutable";
         add_header X-Content-Type-Options nosniff;
     }
 
@@ -112,7 +109,6 @@ server {
 
         # Cache settings for media files
         expires 1y;
-        add_header Cache-Control "public, immutable";
         add_header X-Content-Type-Options nosniff;
     }
 
