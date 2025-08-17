@@ -159,9 +159,6 @@ The `files/cache_utils.py` module provides centralized cache management function
 4. **Testing**: Easier to test cache logic in isolation
 5. **Maintenance**: Single place to update cache logic
 
-## Cache Timeouts
-```
-
 ## Performance Benefits
 
 ### Before Caching
@@ -219,13 +216,13 @@ logger.error(f"Failed to clear permission cache for media {media_uid}: {e}")
 
 ### Settings
 ```python
-# In settings.py - these are set automatically by the caching system
-USE_X_ACCEL_REDIRECT = True  # Production setting
+# In settings.py - these must be configured by the deployer
+USE_X_ACCEL_REDIRECT = True  # Required for production X-Accel-Redirect functionality
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/1",
-        # ... other settings
+        # ... other Redis cache settings
     }
 }
 ```
