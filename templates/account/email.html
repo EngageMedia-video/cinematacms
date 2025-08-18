@@ -14,6 +14,7 @@
 
 		{% if user.emailaddress_set.all %}
 		<p>{% trans 'The following email addresses are associated with your account:' %}</p>
+		<p>{% trans 'The following email addresses are associated with your account:' %}</p>
 
 		<form action="{% url 'account_email' %}" class="email_list" method="post">
 			{% csrf_token %}
@@ -47,7 +48,7 @@
 		</form>
 
 		{% else %}
-		<p><strong>{% trans 'Warning:'%}</strong> {% trans "You currently do not have any email address set up. You should really add an email address so you can receive notifications, reset your password, etc." %}</p>
+		<p><strong>{% trans 'Warning:'%}</strong> {% trans "You currently do not have any email address set up. You should have one so you can receive notifications, reset your password, etc." %}</p>
 		{% endif %}
 
 		<h2>{% trans "Add Email Address" %}</h2>
@@ -55,7 +56,7 @@
 		<form method="post" action="{% url 'account_email' %}" class="add_email">
 			{% csrf_token %}
 			{{ form.as_p }}
-			<button name="action_add" type="submit">{% trans "Add Email" %}</button>
+			<button name="action_add" type="submit">{% trans "Add email" %}</button>
 		</form>
 
 	</div>
@@ -65,6 +66,7 @@
 {% block extra_body %}
 <script type="text/javascript">
 (function() {
+	var message = "{% trans 'Do you really want to remove the selected email address?' %}";
 	var message = "{% trans 'Do you really want to remove the selected email address?' %}";
 	var actions = document.getElementsByName('action_remove');
 	if (actions.length) {
