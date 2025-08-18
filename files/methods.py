@@ -163,9 +163,9 @@ def notify_users(friendly_token=None, action=None, extra=None):
 
     if action == "media_added" and media:
         if settings.ADMINS_NOTIFICATIONS.get("MEDIA_ADDED", False):
-            title = "[{}] - Media was added".format(settings.PORTAL_NAME)
+            title = "[{}] - Video was added".format(settings.PORTAL_NAME)
             msg = """
-Media %s was added by user %s.
+Video %s was added by user %s.
 """ % (
                 media_url,
                 media.user,
@@ -176,9 +176,9 @@ Media %s was added by user %s.
             d["to"] = settings.ADMIN_EMAIL_LIST
             notify_items.append(d)
         if settings.USERS_NOTIFICATIONS.get("MEDIA_ADDED", False):
-            title = "[{}] - Your media was added".format(settings.PORTAL_NAME)
+            title = "[{}] - Your video was uploaded successfully".format(settings.PORTAL_NAME)
             msg = """
-Your media has been added! It will be encoded and will be available soon.
+Your video has been uploaded successfully! It's now being processed and will be available soon.
 URL: %s
             """ % (
                 media_url
@@ -194,7 +194,7 @@ URL: %s
         msg = """
 Dear %s,
 
-The auto-generated transcription of your media has been created. You can now view and review it here: %s.
+The auto-generated transcription of your video has been created. You can now view and review it here: %s.
 
 For questions or concerns about the transcription, please reach out to curators@cinemata.org.
 
@@ -211,7 +211,7 @@ The Cinemata Curatorial Team
             msg = """
 Dear %s,
 
-The auto-generated English translation of your media has been created. You can now view and review it here: %s.
+The auto-generated English translation of your video has been created. You can now view and review it here: %s.
 
 For questions or concerns about the transcription, please reach out to curators@cinemata.org.
 

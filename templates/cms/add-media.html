@@ -134,7 +134,7 @@
 
 			<h1>Sign In</h1>
 
-			Please login or register before you upload a media!
+			Please log in or register before uploading a video.
 
 			{% url 'upload_media' as redirect_url %}
 
@@ -188,7 +188,7 @@
 				maxAutoAttempts: 2,
 			},
 			messages: {
-                    tooManyItemsError: "You have attempted to upload {netItems} files exceeding the limit. Non-Tusted Users like you can only upload one media at a time.",
+                    tooManyItemsError: "You've attempted to upload {netItems} files, which exceeds your limit. Non-trusted users can only upload one video at a time.",
 				},
 			validation: {
 				itemLimit: {{UPLOAD_MAX_FILES_NUMBER}},
