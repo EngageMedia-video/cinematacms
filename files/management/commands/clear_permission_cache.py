@@ -86,9 +86,13 @@ class Command(BaseCommand):
         """Clear cache entries matching a specific pattern."""
         try:
             if hasattr(cache, 'delete_pattern'):
-                count = cache.delete_pattern(pattern)
+                normalized = (
+                    pattern if pattern.startswith(f"{CACHE_KEY_PREFIX}:")
+                    else f"{CACHE_KEY_PREFIX}:{pattern}"
+                )
+                count = cache.delete_pattern(normalized, version=CACHE_VERSION)
                 self.stdout.write(
-                    self.style.SUCCESS(f'Cleared {count} entries for pattern: {pattern}')
+                    self.style.SUCCESS(f'Cleared {count} entries for pattern: {normalized}')
                 )
             else:
                 self.stdout.write(
@@ -98,6 +102,8 @@ class Command(BaseCommand):
                     )
                 )
         except Exception as e:
+            # existing exception handling…
+            raise
             self.stdout.write(
                 self.style.ERROR(f'Error clearing cache with pattern {pattern}: {e}')
             )

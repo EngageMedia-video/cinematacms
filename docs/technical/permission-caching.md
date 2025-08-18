@@ -1,6 +1,6 @@
 # Permission Caching System
 
-This document describes the Redis-based permission caching system implemented for secure media serving in CinemaCMS.
+This document describes the Redis-based permission caching system implemented for secure media serving in CinemataCMS.
 
 ## Overview
 
@@ -349,12 +349,6 @@ DELETE /api/v1/comments/{id}/ # Comment deletions (unlisted workflow)
 - Cache invalidation is transparent
 - No breaking changes to client applications
 
-### Response Headers (Optional Enhancement)
-```http
-# Could be added for debugging
-X-Cache-Status: HIT|MISS
-X-Cache-Key: media_permission:42:a1b2c3d4...
-```
 
 ## Testing
 

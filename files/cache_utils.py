@@ -21,14 +21,17 @@ import logging
 import time
 from typing import Optional, Dict, Any, Union
 from django.core.cache import cache
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
 # Cache configuration constants
-PERMISSION_CACHE_TIMEOUT = 300  # 5 minutes
-RESTRICTED_MEDIA_CACHE_TIMEOUT = 60  # 1 minute for password-protected media
-CACHE_KEY_PREFIX = 'cinemata'
-CACHE_VERSION = 1
+
+# Get cache configuration from Django settings with fallbacks
+PERMISSION_CACHE_TIMEOUT = getattr(settings, 'PERMISSION_CACHE_TIMEOUT', 300)  # Default: 5 minutes
+RESTRICTED_MEDIA_CACHE_TIMEOUT = getattr(settings, 'RESTRICTED_PERMISSION_CACHE_TIMEOUT', 60)  # Default: 1 minute
+CACHE_KEY_PREFIX = getattr(settings, 'PERMISSION_CACHE_KEY_PREFIX', 'cinemata')
+CACHE_VERSION = getattr(settings, 'PERMISSION_CACHE_VERSION', 1)
 
 # Cache key templates for better performance
 PERMISSION_KEY_TEMPLATE = f"{CACHE_KEY_PREFIX}:media_permission:{{user_id}}:{{media_uid}}"
@@ -182,19 +185,33 @@ def clear_media_permission_cache(media_uid: Union[str, Any], user_id: Optional[i
     # Convert UUID to string if necessary
     if hasattr(media_uid, 'hex'):
         media_uid = media_uid.hex
-    else:
-        media_uid = str(media_uid)
-
     try:
         if user_id:
-            # Clear specific user's cache
-            cache_keys = [
-                get_permission_cache_key(user_id, media_uid),
-                get_elevated_access_cache_key(user_id, media_uid),
-            ]
-            cache.delete_many(cache_keys, version=CACHE_VERSION)
-            logger.debug(f"Cleared permission cache for user {user_id}, media {media_uid}")
-            return True
+            # Clear specific user's cache (base + restricted + elevated)
+            if hasattr(cache, 'delete_pattern'):
+                patterns = [
+                    f"{CACHE_KEY_PREFIX}:media_permission:{user_id}:{media_uid}*",
+                    f"{CACHE_KEY_PREFIX}:elevated_access:{user_id}:{media_uid}",
+                ]
+                total_deleted = 0
+                for pattern in patterns:
+                    deleted_count = cache.delete_pattern(pattern, version=CACHE_VERSION)
+                    total_deleted += deleted_count
+                    logger.debug(f"Cleared {deleted_count} cache entries for pattern: {pattern}")
+                logger.info(f"Cleared {total_deleted} cache entries for user {user_id}, media {media_uid}")
+                return True
+            else:
+                # Fallback clears known keys; restricted variants cannot be enumerated
+                cache_keys = [
+                    get_permission_cache_key(user_id, media_uid),
+                    get_elevated_access_cache_key(user_id, media_uid),
+                ]
+                cache.delete_many(cache_keys, version=CACHE_VERSION)
+                logger.warning(
+                    "delete_pattern not available; restricted permission keys may remain for "
+                    f"user {user_id}, media {media_uid}"
+                )
+                return True
         else:
             # For clearing all users' cache for this media, we'd need to use
             # cache.delete_pattern() which requires django-redis

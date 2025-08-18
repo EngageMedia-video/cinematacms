@@ -77,6 +77,13 @@ when serving secure media files. The caching strategy includes:
    - No API changes required
    - Works with all existing endpoints
 
+Password Handling for Restricted Media:
+   - Media passwords are stored as plaintext in the database
+   - Session stores SHA256 hash of the actual password for security
+   - Query parameters contain plaintext passwords
+   - Comparisons are done by hashing query passwords and comparing with expected hash
+   - Cache keys use hashed password material to prevent exposure
+
 Performance Benefits:
    - ~90% reduction in database queries for permission checks
    - Improved response times for secure media requests
@@ -261,13 +268,24 @@ class SecureMediaView(View):
         # For restricted media, include password info in cache key
         additional_data = None
         if media.state == 'restricted':
-            session_password = request.session.get(f'media_password_{media.friendly_token}')
+            session_password_hash = request.session.get(
+                f'media_password_{media.friendly_token}'
+            )
             query_password = request.GET.get('password')
-            # Create a secure hash of the password attempt for cache key (SHA-256 is preferred over MD5)
-            password_attempt = session_password or query_password or 'no_password'
-            password_hash = hashlib.sha256(password_attempt.encode('utf-8')).hexdigest()[:12]
-            additional_data = f"restricted:{password_hash}"
 
+            # Determine what password material to use for cache key
+            if session_password_hash:
+                # Session already contains hash of the correct password
+                attempt_material = session_password_hash
+            elif query_password:
+                # Hash the query password to compare with expected hash
+                attempt_material = hashlib.sha256(query_password.encode('utf-8')).hexdigest()
+            else:
+                attempt_material = 'no_password'
+
+            # Create a shorter hash for cache key (avoid key length issues)
+            password_hash = hashlib.sha256(attempt_material.encode('utf-8')).hexdigest()[:12]
+            additional_data = f"restricted:{password_hash}"
         # Generate cache key
         cache_key = get_permission_cache_key(user_id, media.uid, additional_data)
 
@@ -295,9 +313,23 @@ class SecureMediaView(View):
         user = request.user
 
         if media.state == 'restricted':
-            session_password = request.session.get(f'media_password_{media.friendly_token}')
+            session_password_hash = request.session.get(f'media_password_{media.friendly_token}')
             query_password = request.GET.get('password')
-            if media.password and (media.password == session_password or media.password == query_password):
+
+            # Generate expected hash of the stored password for comparison
+            expected_password_hash = None
+            if media.password:
+                expected_password_hash = hashlib.sha256(media.password.encode('utf-8')).hexdigest()
+
+            # Compare hashes: session stores hash of actual password, query param is plaintext
+            valid_session_password = (session_password_hash and
+                                    expected_password_hash and
+                                    session_password_hash == expected_password_hash)
+            valid_query_password = (query_password and
+                                  media.password and
+                                  query_password == media.password)
+
+            if valid_session_password or valid_query_password:
                 logger.debug("Restricted media access granted: valid password provided")
                 return True
             logger.debug("Restricted media access denied: no valid password provided")

@@ -16,5 +16,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
 
+# CORS - Allow all origins by default (override in local_settings.py for production)
+CORS_ORIGIN_ALLOW_ALL = True  # Allow all origins for CORS
 # Custom MFA settings
 MFA_REQUIRED_ROLES = ['superuser'] # options: superuser, advanced_user, authenticated, manager, editor
