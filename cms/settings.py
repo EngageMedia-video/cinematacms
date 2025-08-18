@@ -11,7 +11,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
 ]
-CORS_ORIGIN_ALLOW_ALL = True  # Allow all origins for CORS
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for CORS
 # Import default headers to extend them
 from corsheaders.defaults import default_headers
 
@@ -28,6 +28,7 @@ CORS_ALLOW_HEADERS = default_headers + (
 CORS_EXPOSE_HEADERS = [
     'Content-Length',
     'Content-Range',
+    'Accept-Ranges',
 ]
 
 
