@@ -14,7 +14,6 @@
 
 		{% if user.emailaddress_set.all %}
 		<p>{% trans 'The following email addresses are associated with your account:' %}</p>
-		<p>{% trans 'The following email addresses are associated with your account:' %}</p>
 
 		<form action="{% url 'account_email' %}" class="email_list" method="post">
 			{% csrf_token %}
@@ -66,7 +65,6 @@
 {% block extra_body %}
 <script type="text/javascript">
 (function() {
-	var message = "{% trans 'Do you really want to remove the selected email address?' %}";
 	var message = "{% trans 'Do you really want to remove the selected email address?' %}";
 	var actions = document.getElementsByName('action_remove');
 	if (actions.length) {
