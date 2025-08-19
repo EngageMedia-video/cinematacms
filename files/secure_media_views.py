@@ -4,7 +4,8 @@ import mimetypes
 import logging
 import hashlib
 from urllib.parse import unquote
-from typing import Optional, Dict, Union, Pattern, Tuple
+from typing import Optional
+import hmac
 
 from django.conf import settings
 from django.http import Http404, HttpResponse, HttpResponseForbidden, FileResponse
@@ -20,9 +21,6 @@ from .cache_utils import (
     get_cached_permission, set_cached_permission,
     PERMISSION_CACHE_TIMEOUT, RESTRICTED_MEDIA_CACHE_TIMEOUT
 )
-import hmac
-import hashlib
-import logging
 
 
 logger = logging.getLogger(__name__)
@@ -111,10 +109,10 @@ class SecureMediaView(View):
     """
 
     # Pre-compiled regex patterns for better performance
-    ORIGINAL_FILE_PATTERN = re.compile(r'original/user/([^/]+)/([a-f0-9]{32})\.(.+)$')
-    ENCODED_FILE_PATTERN = re.compile(r'encoded/(\d+)/([^/]+)/([a-f0-9]{32})\.(.+)$')
-    HLS_FILE_PATTERN = re.compile(r'hls/([a-f0-9]{32})/(.+)$')
-    GENERIC_UID_PATTERN = re.compile(r'([a-f0-9]{32})')
+    ORIGINAL_FILE_PATTERN = re.compile(r'original/user/([^/]+)/([A-Fa-f0-9]{32})\.(.+)$')
+    ENCODED_FILE_PATTERN = re.compile(r'encoded/(\d+)/([^/]+)/([A-Fa-f0-9]{32})\.(.+)$')
+    HLS_FILE_PATTERN = re.compile(r'hls/([A-Fa-f0-9]{32})/(.+)$')
+    GENERIC_UID_PATTERN = re.compile(r'([A-Fa-f0-9]{32})')
 
     # Path traversal protection
     INVALID_PATH_PATTERNS = re.compile(r'\.\.|\x00|[\x01-\x1f\x7f]')
@@ -132,8 +130,8 @@ class SecureMediaView(View):
         '.wav': 'audio/wav',
         '.pdf': 'application/pdf',
         '.vtt': 'text/vtt',
-        '.m3u8': 'application/x-mpegURL',
-        '.ts': 'video/MP2T'
+        '.m3u8': 'application/vnd.apple.mpegurl',
+        '.ts': 'video/mp2t'
     }
 
     @method_decorator(cache_control(max_age=CACHE_CONTROL_MAX_AGE, private=True))
@@ -185,11 +183,8 @@ class SecureMediaView(View):
         if file_path.startswith('/'):
             return False
 
-        # Additional length check
-        if len(file_path) > 500:  # Reasonable path length limit
-            return False
+        return len(file_path) <= 500
 
-        return True
 
     def _get_media_from_path(self, file_path: str) -> Optional[Media]:
         """Extract media object from file path using optimized pattern matching."""
@@ -207,8 +202,13 @@ class SecureMediaView(View):
         # Encoded files pattern
         match = self.ENCODED_FILE_PATTERN.search(file_path)
         if match:
-            profile_id, username, uid_str, _ = match.groups()
+            profile_id_str, username, uid_str, _ = match.groups()
             logger.debug(f"Encoded file pattern matched: profile_id={profile_id}, username={username}, uid={uid_str}")
+            try:
+                profile_id = int(profile_id_str)
+            except ValueError:
+                logger.warning(f"Invalid profile_id in path: {profile_id_str}")
+                return None
             encoding = Encoding.objects.select_related('media', 'media__user').filter(
                 media__uid=uid_str,
                 media__user__username=username,
@@ -395,12 +395,19 @@ class SecureMediaView(View):
         # For HEAD requests, we still set the X-Accel-Redirect header
         # but Nginx will not include the body in the response
         response['X-Accel-Redirect'] = internal_path
-        response['X-Accel-Buffering'] = 'yes'
 
         content_type, security_headers = self._get_content_type_and_headers(file_path)
 
         if content_type:
             response['Content-Type'] = content_type
+        else:
+            response['Content-Type'] = 'application/octet-stream'
+
+
+        if content_type and content_type.startswith('video/'):
+            response['X-Accel-Buffering'] = 'no'
+        else:
+            response['X-Accel-Buffering'] = 'yes'
 
         # Add security headers
         for header, value in security_headers.items():
@@ -441,7 +448,7 @@ class SecureMediaView(View):
                 # For GET requests, return the file content
                 response = FileResponse(open(full_path, 'rb'), content_type=content_type)
 
-            response['Cache-Control'] = 'private, max-age=3600'
+            response['Cache-Control'] = f'private, max-age={CACHE_CONTROL_MAX_AGE}'
             response['Content-Disposition'] = 'inline'
 
             # Add security headers
@@ -451,7 +458,7 @@ class SecureMediaView(View):
             return response
         except IOError as e:
             logger.error(f"Error reading file {full_path}: {e}")
-            raise Http404("File could not be read")
+            raise Http404("File could not be read") from e
 
 
 @require_http_methods(["GET", "HEAD"])

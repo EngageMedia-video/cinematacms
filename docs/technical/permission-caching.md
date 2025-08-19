@@ -16,7 +16,8 @@ The permission caching system improves performance by caching user permission ch
 4. **Management Command**: Manual cache management for administrators
 
 ### File Structure
-```
+
+```text
 files/
 ├── cache_utils.py              # Central cache utilities
 ├── models.py                   # Uses cache_utils for auto-invalidation
@@ -35,36 +36,47 @@ The system implements a two-level caching strategy:
 ## Cache Keys
 
 ### Format
-- **Elevated Access**: `elevated_access:{user_id}:{media_uid}`
-- **Permission Results**: `media_permission:{user_id}:{media_uid}[:{additional_data_hash}]`
+
+Cache keys are constructed with a prefix and version to prevent collisions and allow for graceful upgrades.
+
+- **Prefix**: `cinemata` (configurable via `PERMISSION_CACHE_KEY_PREFIX` in `settings.py`)
+- **Versioning**: Enabled via `django-redis` versioning support (configurable via `PERMISSION_CACHE_VERSION`)
+
+- **Elevated Access**: `{prefix}:elevated_access:{user_id}:{media_uid}`
+- **Permission Results**: `{prefix}:media_permission:{user_id}:{media_uid}[:{data_hash}]`
 - **Anonymous Users**: `user_id` is set to `'anonymous'`
 
 ### Examples
+
 ```
-elevated_access:42:a1b2c3d4e5f6...
-media_permission:42:a1b2c3d4e5f6...
-media_permission:anonymous:a1b2c3d4e5f6...
-media_permission:42:a1b2c3d4e5f6...:restricted:abc123hash
+cinemata:elevated_access:42:a1b2c3d4e5f6...
+cinemata:media_permission:42:a1b2c3d4e5f6...
+cinemata:media_permission:anonymous:a1b2c3d4e5f6...
+cinemata:media_permission:42:a1b2c3d4e5f6...:a9b8c7d6e5f4
 ```
 
 ## Cache Timeouts
 
-| Permission Type | Timeout | Reason |
-|----------------|---------|---------|
-| Standard permissions | 5 minutes (300 seconds) | Balance between performance and freshness |
-| Password-protected restricted media | 1 minute (60 seconds) | Security consideration for password changes |
+Timeouts are configurable in `settings.py`.
+
+| Permission Type | Setting | Default | Reason |
+|-----------------|---------|---------|--------|
+| Standard permissions | `PERMISSION_CACHE_TIMEOUT` | 5 minutes (300s) | Balance between performance and freshness |
+| Password-protected restricted media | `RESTRICTED_PERMISSION_CACHE_TIMEOUT` | 1 minute (60s) | Security for password changes |
 
 ## Automatic Cache Invalidation
 
 Cache is automatically invalidated when media permissions change:
 
 ### Triggers
+
 1. **Media state changes** (public ↔ private ↔ restricted ↔ unlisted)
 2. **Media password changes** (for restricted content)
 3. **Comment workflow changes** (unlisted → public when comments added)
 4. **User permission changes** (when someone becomes editor/manager)
 
 ### Implementation
+
 ```python
 # In Media model save() method
 if self.state != self.__original_state or self.password != self.__original_password:
@@ -79,36 +91,43 @@ def _invalidate_permission_cache(self):
 ## Manual Cache Management
 
 ### Management Command
+
+The `clear_permission_cache` management command provides tools for manual cache invalidation.
+
 ```bash
-# Clear all permission cache
+# Clear all permission cache (requires django-redis)
 python manage.py clear_permission_cache --all
 
-# Clear cache for specific media
+# Clear cache for a specific media UID (all users, requires django-redis)
 python manage.py clear_permission_cache --media-uid a1b2c3d4e5f6...
 
-# Clear cache for specific user/media combination
+# Clear cache for a specific user and media combination
+# Note: --user-id must be used with --media-uid
 python manage.py clear_permission_cache --media-uid a1b2c3d4e5f6... --user-id 42
 
 # Clear cache by pattern (requires django-redis)
+# The prefix "cinemata:" is added automatically if not present
 python manage.py clear_permission_cache --pattern "media_permission:42:*"
 ```
 
 ### Programmatic Cache Clearing
+
 ```python
 # Option 1: Clear cache for specific media
 from files.cache_utils import clear_media_permission_cache
 
-# Clear cache for specific media (all users)
+# Clear cache for specific media (all users, requires django-redis)
 clear_media_permission_cache(media.uid)
 
 # Clear cache for specific user/media combination
+# (fully effective with django-redis, otherwise won't clear restricted media cache)
 clear_media_permission_cache(media.uid, user.id)
 
-# Option 2: Clear all cache for a specific user
+# Option 2: Clear all cache for a specific user (requires django-redis)
 from files.cache_utils import clear_user_permission_cache
 clear_user_permission_cache(user.id)
 
-# Option 3: Clear all permission cache
+# Option 3: Clear all permission cache (requires django-redis)
 from files.cache_utils import invalidate_all_permission_cache
 invalidate_all_permission_cache()
 ```
@@ -116,34 +135,37 @@ invalidate_all_permission_cache()
 ## Cache Utilities Module
 
 ### Overview
+
 The `files/cache_utils.py` module provides centralized cache management functionality that can be safely imported by both `models.py` and `secure_media_views.py` without circular import issues.
 
 ### Key Functions
 
+#### `get_permission_cache_key(...)` / `get_elevated_access_cache_key(...)`
+- Generate standardized, versioned cache keys with a configurable prefix.
+- `get_permission_cache_key` uses a SHA-256 hash for `additional_data` to ensure security and key consistency.
+
+#### `get_cached_permission(...)` / `set_cached_permission(...)`
+- Perform safe, individual cache get/set operations with centralized error handling and logging.
+
+#### `batch_get_cached_permissions(...)` / `batch_set_cached_permissions(...)`
+- Perform efficient bulk get/set operations on multiple cache keys at once, reducing network overhead.
+
 #### `clear_media_permission_cache(media_uid, user_id=None)`
-- Clears permission cache for a specific media
-- Can target specific user or all users
-- Used by models.py for automatic cache invalidation
-
-#### `get_permission_cache_key(user_id, media_uid, additional_data=None)`
-- Generates standardized cache keys
-- Handles password-protected media with hashed additional data
-- Ensures consistent key format across the application
-
-#### `get_cached_permission(cache_key)` / `set_cached_permission(cache_key, result, timeout=None)`
-- Safe cache operations with error handling
-- Respects configuration settings
-- Graceful degradation on cache failures
+- Clears permission cache for a specific media.
+- If `user_id` is specified, it attempts to clear all related entries for that user/media pair. It uses pattern deletion if available (`django-redis`), otherwise it clears only non-restricted keys.
+- If `user_id` is not specified, it requires pattern deletion to clear cache for all users of a media.
 
 #### `clear_user_permission_cache(user_id)`
-- Clears all permission cache entries for a specific user
-- Useful when user roles change (e.g., user becomes editor/manager)
-- Uses pattern-based deletion if available
+- Clears all permission cache entries for a specific user.
+- This function requires pattern-based deletion (`django-redis`) to be effective.
 
 #### `invalidate_all_permission_cache()`
-- Clears all permission-related cache entries
-- Used by management command for bulk operations
-- Returns count of cleared entries
+- Clears all permission-related cache entries across the system.
+- Used by the `--all` flag in the management command.
+- Requires pattern-based deletion and returns the count of cleared entries.
+
+#### `health_check()` / `get_cache_stats()`
+- Provide diagnostics for monitoring cache connectivity, latency, and usage statistics.
 
 ### Benefits of Centralized Cache Utils
 
@@ -209,22 +231,31 @@ logger.error(f"Failed to clear permission cache for media {media_uid}: {e}")
 ## Configuration
 
 ### Settings
+
+The following settings can be configured in your `settings.py`:
+
 ```python
-# In settings.py - these must be configured by the deployer
-USE_X_ACCEL_REDIRECT = True  # Required for production X-Accel-Redirect functionality
+# In settings.py
+
+# Required for production X-Accel-Redirect functionality
+USE_X_ACCEL_REDIRECT = True
+
+# Recommended cache backend for full feature support (e.g., pattern deletion)
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:6379/1",
-        # ... other Redis cache settings
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
     }
 }
-```
 
-### Cache Timeouts (Configurable)
-```python
-# In files/cache_utils.py (import and use these in views)
-from files.cache_utils import PERMISSION_CACHE_TIMEOUT, RESTRICTED_MEDIA_CACHE_TIMEOUT
+# Optional: Customize cache behavior
+PERMISSION_CACHE_TIMEOUT = 300  # Default: 5 minutes
+RESTRICTED_PERMISSION_CACHE_TIMEOUT = 60  # Default: 1 minute
+PERMISSION_CACHE_KEY_PREFIX = 'cinemata' # Default: 'cinemata'
+PERMISSION_CACHE_VERSION = 1 # Default: 1
 ```
 
 ## Monitoring and Debugging
@@ -273,38 +304,13 @@ logging.getLogger('files.secure_media_views').setLevel(logging.DEBUG)
 redis-cli ping
 
 # Check cache contents (be careful in production)
-redis-cli keys "media_permission:*"
-redis-cli keys "elevated_access:*"
+# Replace 'cinemata' if you use a custom prefix
+redis-cli keys "cinemata:media_permission:*"
+redis-cli keys "cinemata:elevated_access:*"
 
 # Clear all cache manually
 python manage.py clear_permission_cache --all
 ```
-
-## Migration and Deployment
-
-### New Architecture Notes
-- **Cache utilities module**: New centralized `files/cache_utils.py` provides all cache functionality
-- **Backward compatibility**: Existing imports from `secure_media_views` continue to work
-- **No circular imports**: Clean separation allows any module to use cache functions safely
-
-### Deployment Steps
-1. Deploy code with caching implementation and new cache utilities
-2. No database migrations required
-3. Redis cache will populate automatically
-4. Monitor performance improvements
-
-### Rollback Plan
-- Caching can be disabled by modifying cache operations to always return None
-- No data loss risk - cache is performance optimization only
-- Original permission logic remains intact
-
-## Future Enhancements
-
-### Potential Improvements
-1. **Cache warming**: Pre-populate cache for popular media
-2. **Metrics collection**: Track cache hit/miss ratios
-3. **Smart expiration**: Variable timeouts based on media popularity
-4. **Distributed caching**: Support for multiple Redis instances
 
 ### Configuration Options
 ```python
@@ -313,49 +319,6 @@ PERMISSION_CACHE_ENABLED = True
 PERMISSION_CACHE_DEFAULT_TIMEOUT = 300
 PERMISSION_CACHE_RESTRICTED_TIMEOUT = 60
 PERMISSION_CACHE_WARM_POPULAR_MEDIA = False
-```
-
-## API Integration
-
-### Automatic Invalidation
-Cache invalidation happens automatically for all API operations:
-
-```python
-# API calls that trigger cache invalidation:
-PUT /api/v1/media/{id}/     # State or password changes
-PATCH /api/v1/media/{id}/   # Partial updates
-POST /api/v1/comments/      # Comment additions (unlisted workflow)
-DELETE /api/v1/comments/{id}/ # Comment deletions (unlisted workflow)
-```
-
-### No API Changes Required
-- Existing API endpoints work unchanged
-- Cache invalidation is transparent
-- No breaking changes to client applications
-
-
-## Testing
-
-### Unit Tests
-```python
-# Test cache functionality
-def test_permission_cache_hit():
-    # Test cache hit scenario
-    pass
-
-def test_permission_cache_invalidation():
-    # Test automatic invalidation
-    pass
-
-def test_cache_failure_graceful_degradation():
-    # Test behavior when Redis is down
-    pass
-```
-
-### Load Testing
-```bash
-# Test performance with caching enabled
-ab -n 1000 -c 10 https://your-domain.com/media/secure/path/to/file.mp4
 ```
 
 ## Conclusion
