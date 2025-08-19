@@ -20,6 +20,10 @@ from .cache_utils import (
     get_cached_permission, set_cached_permission,
     PERMISSION_CACHE_TIMEOUT, RESTRICTED_MEDIA_CACHE_TIMEOUT
 )
+import hmac
+import hashlib
+import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -312,6 +316,11 @@ class SecureMediaView(View):
         """Calculate access permission without caching (original logic)."""
         user = request.user
 
+        # Elevated users bypass further checks for non-public media
+        if user.is_authenticated and self._user_has_elevated_access(user, media):
+            logger.debug(f"Access granted for '{media.state}' media: user has elevated permissions")
+            return True
+
         if media.state == 'restricted':
             session_password_hash = request.session.get(f'media_password_{media.friendly_token}')
             query_password = request.GET.get('password')
@@ -319,29 +328,34 @@ class SecureMediaView(View):
             # Generate expected hash of the stored password for comparison
             expected_password_hash = None
             if media.password:
-                expected_password_hash = hashlib.sha256(media.password.encode('utf-8')).hexdigest()
+                expected_password_hash = hashlib.sha256(
+                    media.password.encode('utf-8')
+                ).hexdigest()
 
-            # Compare hashes: session stores hash of actual password, query param is plaintext
-            valid_session_password = (session_password_hash and
-                                    expected_password_hash and
-                                    session_password_hash == expected_password_hash)
-            valid_query_password = (query_password and
-                                  media.password and
-                                  query_password == media.password)
+            # Compare hashes: session stores a hash; hash the query param as well
+            valid_session_password = (
+                bool(session_password_hash)
+                and bool(expected_password_hash)
+                and hmac.compare_digest(session_password_hash, expected_password_hash)
+            )
+
+            valid_query_password = False
+            if query_password and expected_password_hash:
+                query_hash = hashlib.sha256(
+                    query_password.encode('utf-8')
+                ).hexdigest()
+                valid_query_password = hmac.compare_digest(query_hash, expected_password_hash)
 
             if valid_session_password or valid_query_password:
                 logger.debug("Restricted media access granted: valid password provided")
                 return True
+
             logger.debug("Restricted media access denied: no valid password provided")
             return False
 
         if not user.is_authenticated:
             logger.debug(f"Access denied for '{media.state}' media: user not authenticated")
             return False
-
-        if self._user_has_elevated_access(user, media):
-            logger.debug(f"Access granted for '{media.state}' media: user has elevated permissions")
-            return True
 
         if media.state == 'private':
             logger.debug("Private media access denied: user lacks elevated permissions")

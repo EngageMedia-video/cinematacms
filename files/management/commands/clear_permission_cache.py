@@ -106,12 +106,9 @@ class Command(BaseCommand):
                     )
                 )
         except Exception as e:
-            # existing exception handling…
-            raise
             self.stdout.write(
                 self.style.ERROR(f'Error clearing cache with pattern {pattern}: {e}')
             )
-
     def clear_media_cache(self, media_uid, user_id=None):
         """Clear cache for a specific media and optionally specific user."""
         try:
