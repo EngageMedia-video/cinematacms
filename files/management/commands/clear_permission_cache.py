@@ -30,8 +30,12 @@ The automatic cache invalidation system handles normal operations.
 from django.core.management.base import BaseCommand
 from django.core.cache import cache
 from files.models import Media
-from files.cache_utils import clear_media_permission_cache, invalidate_all_permission_cache
-
+from files.cache_utils import (
+    clear_media_permission_cache,
+    invalidate_all_permission_cache,
+    CACHE_KEY_PREFIX,
+    CACHE_VERSION,
+)
 
 class Command(BaseCommand):
     help = 'Clear permission cache for media files'

@@ -95,7 +95,7 @@ python manage.py clear_permission_cache --pattern "media_permission:42:*"
 
 ### Programmatic Cache Clearing
 ```python
-# Option 1: Import from cache_utils (NEW - preferred)
+# Option 1: Clear cache for specific media
 from files.cache_utils import clear_media_permission_cache
 
 # Clear cache for specific media (all users)
@@ -104,17 +104,11 @@ clear_media_permission_cache(media.uid)
 # Clear cache for specific user/media combination
 clear_media_permission_cache(media.uid, user.id)
 
-# Option 2: Import from secure_media_views (backward compatibility)
-from files.secure_media_views import clear_media_permission_cache
-
-# Same API - this re-exports the cache_utils function
-clear_media_permission_cache(media.uid, user.id)
-
-# Option 3: Clear all cache for a specific user
+# Option 2: Clear all cache for a specific user
 from files.cache_utils import clear_user_permission_cache
 clear_user_permission_cache(user.id)
 
-# Option 4: Clear all permission cache
+# Option 3: Clear all permission cache
 from files.cache_utils import invalidate_all_permission_cache
 invalidate_all_permission_cache()
 ```
