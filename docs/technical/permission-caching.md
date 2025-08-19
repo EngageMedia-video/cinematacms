@@ -294,15 +294,6 @@ python manage.py clear_permission_cache --all
 3. Redis cache will populate automatically
 4. Monitor performance improvements
 
-### Code Migration (Optional)
-```python
-# Old way (still works)
-from files.secure_media_views import clear_media_permission_cache
-
-# New preferred way
-from files.cache_utils import clear_media_permission_cache
-```
-
 ### Rollback Plan
 - Caching can be disabled by modifying cache operations to always return None
 - No data loss risk - cache is performance optimization only
