@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 # Configuration constants
 CACHE_CONTROL_MAX_AGE = 604800  # 1 week
 PUBLIC_MEDIA_PATHS = [
-    '/thumbnails/', 'userlogos/', 'logos/', 'favicons/', 'social-media-icons/',
+    'thumbnails/', 'userlogos/', 'logos/', 'favicons/', 'social-media-icons/',
 ]
 
 # Security headers for different content types
@@ -234,8 +234,7 @@ class SecureMediaView(View):
 
     def _is_public_media_file(self, file_path: str) -> bool:
         """Check if the file is a public asset that bypasses media permissions."""
-        return any(path in file_path for path in PUBLIC_MEDIA_PATHS)
-
+        return any(file_path.startswith(path) for path in PUBLIC_MEDIA_PATHS)
     def _user_has_elevated_access(self, user, media: Media) -> bool:
         """Check if user is owner, editor, or manager with caching. Assumes user is authenticated."""
         if not user.is_authenticated:

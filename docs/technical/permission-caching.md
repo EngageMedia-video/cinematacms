@@ -223,9 +223,8 @@ CACHES = {
 
 ### Cache Timeouts (Configurable)
 ```python
-# In SecureMediaView class
-PERMISSION_CACHE_TIMEOUT = 300  # 5 minutes for standard permissions
-# 60 seconds for password-protected content (hardcoded for security)
+# In files/cache_utils.py (import and use these in views)
+from files.cache_utils import PERMISSION_CACHE_TIMEOUT, RESTRICTED_MEDIA_CACHE_TIMEOUT
 ```
 
 ## Monitoring and Debugging
