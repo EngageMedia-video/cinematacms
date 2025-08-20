@@ -186,6 +186,10 @@ class SecureMediaView(View):
         if file_path.startswith('/'):
             return False
 
+        allowed_prefixes = tuple(['original/', 'encoded/', 'hls/'] + PUBLIC_MEDIA_PATHS)
+        if not file_path.startswith(allowed_prefixes):
+            return False
+
         return len(file_path) <= 500
 
 
@@ -226,13 +230,8 @@ class SecureMediaView(View):
             logger.debug(f"HLS file pattern matched: uid={uid_str}")
             return Media.objects.select_related('user').filter(uid=uid_str).first()
 
-        # Generic UID pattern as a fallback
-        match = self.GENERIC_UID_PATTERN.search(file_path)
-        if match:
-            uid_str = match.group(1)
-            logger.debug(f"Generic UID pattern matched: uid={uid_str}")
-            return Media.objects.select_related('user').filter(uid=uid_str).first()
-
+        # There's no fallback to generic UID matching anymore
+        # We only accept paths that match our specific patterns above
         return None
 
     def _is_public_media_file(self, file_path: str) -> bool:
