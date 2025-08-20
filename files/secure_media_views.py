@@ -203,7 +203,7 @@ class SecureMediaView(View):
         match = self.ENCODED_FILE_PATTERN.search(file_path)
         if match:
             profile_id_str, username, uid_str, _ = match.groups()
-            logger.debug(f"Encoded file pattern matched: profile_id={profile_id}, username={username}, uid={uid_str}")
+            logger.debug(f"Encoded file pattern matched: profile_id={profile_id_str}, username={username}, uid={uid_str}")
             try:
                 profile_id = int(profile_id_str)
             except ValueError:

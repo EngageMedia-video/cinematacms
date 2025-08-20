@@ -312,15 +312,6 @@ redis-cli keys "cinemata:elevated_access:*"
 python manage.py clear_permission_cache --all
 ```
 
-### Configuration Options
-```python
-# Potential future settings
-PERMISSION_CACHE_ENABLED = True
-PERMISSION_CACHE_DEFAULT_TIMEOUT = 300
-PERMISSION_CACHE_RESTRICTED_TIMEOUT = 60
-PERMISSION_CACHE_WARM_POPULAR_MEDIA = False
-```
-
 ## Conclusion
 
 The permission caching system provides significant performance improvements while maintaining security and data consistency. The automatic invalidation ensures cache freshness, while manual tools provide operational flexibility.
