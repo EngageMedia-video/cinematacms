@@ -115,7 +115,7 @@ class SecureMediaView(View):
     GENERIC_UID_PATTERN = re.compile(r'([A-Fa-f0-9]{32})')
 
     # Path traversal protection
-    INVALID_PATH_PATTERNS = re.compile(r'\.\.|\x00|[\x01-\x1f\x7f]')
+    INVALID_PATH_PATTERNS = re.compile(r'\.\.|\\|\x00|[\x01-\x1f\x7f]')
 
     CONTENT_TYPES = {
         '.mp4': 'video/mp4',
@@ -169,7 +169,10 @@ class SecureMediaView(View):
 
         if not self._check_access_permission(request, media):
             logger.warning(f"Access denied for media: {media.friendly_token} (user: {request.user})")
-            return HttpResponseForbidden("Access denied")
+            resp = HttpResponseForbidden("Access denied")
+            # Prevent browsers from caching a forbidden response
+            resp['Cache-Control'] = 'no-store'
+            return resp
 
         return self._serve_file(file_path, head_request)
 
@@ -372,9 +375,9 @@ class SecureMediaView(View):
         """Get content type and appropriate security headers for the file."""
         file_ext = os.path.splitext(file_path)[1].lower()
         content_type = self.CONTENT_TYPES.get(file_ext)
-
+        is_video_like = (content_type and content_type.startswith('video/')) or content_type == 'application/vnd.apple.mpegurl'
         # Choose appropriate security headers based on content type
-        if content_type and content_type.startswith('video/'):
+        if is_video_like:
             headers = VIDEO_SECURITY_HEADERS
         elif content_type and content_type.startswith('image/'):
             headers = IMAGE_SECURITY_HEADERS
@@ -450,7 +453,6 @@ class SecureMediaView(View):
                 # For GET requests, return the file content
                 response = FileResponse(open(full_path, 'rb'), content_type=content_type)
 
-            response['Cache-Control'] = f'private, max-age={CACHE_CONTROL_MAX_AGE}'
             response['Content-Disposition'] = 'inline'
 
             # Add security headers
