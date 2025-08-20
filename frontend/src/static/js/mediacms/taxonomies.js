@@ -4,23 +4,23 @@ export function init( settings ){
 
 	TAXONOMIES = {
 	    tags: {
-	    	enabled: false,
+	    	enabled: true,
 	    	title: 'Tags',
 	    },
 	    categories: {
-	    	enabled: false,
+	    	enabled: true,
 	    	title: 'Categories',
 	    },
 	    topics: {
-	    	enabled: false,
+	    	enabled: true,
 	    	title: 'Topics',
 	    },
 	    languages: {
-	    	enabled: false,
+	    	enabled: true,
 	    	title: 'Languages',
 	    },
 	    countries: {
-	    	enabled: false,
+	    	enabled: true,
 	    	title: 'Countries',
 	    },
     };
