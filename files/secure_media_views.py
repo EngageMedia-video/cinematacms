@@ -236,7 +236,12 @@ class SecureMediaView(View):
 
     def _is_public_media_file(self, file_path: str) -> bool:
         """Check if the file is a public asset that bypasses media permissions."""
-        return any(file_path.startswith(path) for path in PUBLIC_MEDIA_PATHS)
+        # Check for public paths in both direct and original/ subdirectories
+        return any(
+            file_path.startswith(public_path) or
+            file_path.startswith(f'original/{public_path}')
+            for public_path in PUBLIC_MEDIA_PATHS
+        )
     def _user_has_elevated_access(self, user, media: Media) -> bool:
         """Check if user is owner, editor, or manager with caching. Assumes user is authenticated."""
         if not user.is_authenticated:

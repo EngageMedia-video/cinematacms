@@ -117,7 +117,7 @@ server {
 
     location / {
 
-    include /etc/nginx/sites-enabled/uwsgi_params;
-    uwsgi_pass 127.0.0.1:9000;
+        include /etc/nginx/sites-enabled/uwsgi_params;
+        uwsgi_pass 127.0.0.1:9000;
     }
 }
