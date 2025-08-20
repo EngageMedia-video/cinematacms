@@ -3,7 +3,7 @@ import re
 import mimetypes
 import logging
 import hashlib
-from urllib.parse import unquote
+from urllib.parse import unquote, quote
 from typing import Optional
 import hmac
 
@@ -386,9 +386,11 @@ class SecureMediaView(View):
     def _serve_file_via_xaccel(self, file_path: str, head_request: bool = False) -> HttpResponse:
         """Serve file using Nginx's X-Accel-Redirect header."""
         if file_path.startswith('original/'):
-            internal_path = f'/internal/media/original/{file_path[len("original/"):]}'
+            unencoded = f'/internal/media/original/{file_path[len("original/"):]}'
         else:
-            internal_path = f'/internal/media/{file_path}'
+            unencoded = f'/internal/media/{file_path}'
+        # Ensure header value is a valid URI (encode spaces/non-ASCII, keep slashes)
+        internal_path = quote(unencoded, safe="/:")
 
         response = HttpResponse()
 
