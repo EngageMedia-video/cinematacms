@@ -1187,9 +1187,7 @@ class MediaLanguage(models.Model):
         return None
 
     def update_language_media(self):
-        language = {
-            value: key for key, value in dict(lists.video_languages).items()
-        }.get(self.title)
+        language = Language.objects.values("code", "title").get(title=self.title)
         if language:
             self.media_count = Media.objects.filter(
                 state="public", is_reviewed=True, media_language=language

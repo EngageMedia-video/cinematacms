@@ -1633,11 +1633,15 @@ class TopicList(APIView):
 
 
 class MediaLanguageList(APIView):
+    """
+    Enhanced API view that serves languages from database into the 'languages' page.
+    This view retrieves languages that have a non-empty listings_thumbnail and a media_count greater than zero.
+    """
     def get(self, request, format=None):
         languages = (
-            MediaLanguage.objects.exclude(listings_thumbnail=None)
-            .exclude(listings_thumbnail="")
-            .filter()
+            MediaLanguage.objects
+            .exclude(listings_thumbnail=None)
+            .filter(media_count__gt=0)
             .order_by("title")
         )
         serializer = MediaLanguageSerializer(
