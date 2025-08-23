@@ -3,6 +3,7 @@ import logging
 import os
 import random
 import re
+import shutil
 import tempfile
 import time
 import uuid
@@ -1355,23 +1356,68 @@ class Subtitle(models.Model):
     def url(self):
         return self.get_absolute_url()
 
-    def convert_to_srt(self):
+    def convert_to_vtt(self):
+        """
+            Convert uploaded subtitle files to VTT format for web playback.
+            Uses FFmpeg (already available in CinemataCMS) instead of pysubs2.
+            Accepts both SRT and VTT input formats.
+            
+            SAFETY: This method is ONLY called on NEW subtitle uploads, never on existing files.
+            Existing subtitles in Cinemata.org remain completely untouched.
+        """
         input_path = self.subtitle_file.path
+        
+        # Validate file exists
+        if not os.path.exists(input_path):
+            raise Exception("Subtitle file not found")
+        
+        # Check file extension
+        file_lower = input_path.lower()
+
+        if not (file_lower.endswith('.srt') or file_lower.endswith('.vtt')):
+            raise Exception("Invalid subtitle format. Use SubRip (.srt) and WebVTT (.vtt) files.")
+        
+        # If already VTT, no conversion needed
+        if file_lower.endswith('.vtt'):
+            return True
+        
+        logger.info(f"Converting new subtitle upload: {input_path}")
+        # Convert SRT to VTT using FFmpeg (already configured in CinemataCMS)
         with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as tmpdirname:
-            pysub = settings.PYSUBS_COMMAND
-
-            cmd = [pysub, input_path, "--to", "vtt", "-o", tmpdirname]
-            stdout = helpers.run_command(cmd)
-
-            list_of_files = os.listdir(tmpdirname)
-            if list_of_files:
-                subtitles_file = os.path.join(tmpdirname, list_of_files[0])
-                cmd = ["cp", subtitles_file, input_path]
-                stdout = helpers.run_command(cmd)
-            else:
-                raise Exception("Could not convert to srt")
-        return True
-
+            temp_vtt = os.path.join(tmpdirname, "converted.vtt")
+            
+            cmd = [
+                settings.FFMPEG_COMMAND,  # Already configured in CinemataCMS
+                "-i", input_path,
+                "-c:s", "webvtt",
+                temp_vtt
+            ]
+            
+            try:
+                result = helpers.run_command(cmd)
+                
+                if os.path.exists(temp_vtt) and os.path.getsize(temp_vtt) > 0:
+                    # Replace original file with VTT version
+                    shutil.copy2(temp_vtt, input_path)
+                    logger.info(f"Successfully converted subtitle to VTT: {input_path}")
+                    
+                    # Update file extension to .vtt if it was .srt
+                    if file_lower.endswith('.srt'):
+                        new_path = input_path.replace('.srt', '.vtt').replace('.SRT', '.vtt')
+                        if new_path != input_path:
+                            os.rename(input_path, new_path)
+                            # Update the FileField to point to new path
+                            self.subtitle_file.name = self.subtitle_file.name.replace('.srt', '.vtt').replace('.SRT', '.vtt')
+                            self.save(update_fields=['subtitle_file'])
+                            logger.info(f"Renamed subtitle file from .srt to .vtt: {new_path}")
+                else:
+                    raise Exception("FFmpeg conversion failed - no output file created")
+                    
+            except Exception as e:
+                logger.error(f"Subtitle conversion failed for {input_path}: {str(e)}")
+                raise Exception(f"Could not convert SRT file to VTT format: {str(e)}")
+        
+            return True
 
 class RatingCategory(models.Model):
     """Rating Category

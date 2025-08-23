@@ -536,7 +536,7 @@ def add_subtitle(request):
             subtitle = form.save()
             new_subtitle = Subtitle.objects.filter(id=subtitle.id).first()
             try:
-                new_subtitle.convert_to_srt()
+                new_subtitle.convert_to_vtt()
                 messages.add_message(request, messages.INFO, "Subtitle was added!")
                 return HttpResponseRedirect(subtitle.media.get_absolute_url())
             except:
