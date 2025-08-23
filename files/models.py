@@ -1394,7 +1394,10 @@ class Subtitle(models.Model):
             ]
             
             try:
-                result = helpers.run_command(cmd)
+                ret = helpers.run_command(cmd)
+                if ret and ret.get("returncode", 0) != 0:
+                    logger.error(f"FFmpeg failed with code {ret.get('returncode')}: {ret.get('err')}")
+                    raise Exception("FFmpeg conversion failed")
                 
                 if os.path.exists(temp_vtt) and os.path.getsize(temp_vtt) > 0:
                     # Replace original file with VTT version
