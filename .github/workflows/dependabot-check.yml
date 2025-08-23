@@ -315,32 +315,45 @@ jobs:
             exit 1
           fi
 
-          if ! npm ls --depth=0; then
-            echo "⚠️  npm dependency tree has issues, checking details..."
-            npm ls --depth=1 || true
+          # Check dependency tree with proper error handling
+          echo "🔍 Checking dependency tree integrity..."
 
-            OUTPUT="$(npm ls 2>&1 || true)"
-            # Allow peer dependency warnings, but fail on actual resolution errors
-            if echo "$OUTPUT" | grep -q "ERESOLVE"; then
-              echo "❌ Dependency resolution errors detected (ERESOLVE)"
-              exit 1
-            fi
-            if echo "$OUTPUT" | grep -qi "peer dep"; then
-              echo "ℹ️  Found peer dependency warnings, but core dependencies are resolved"
-            fi
+          NPM_LS_OUTPUT=$(npm ls 2>&1 || true)
+          NPM_LS_EXIT_CODE=$?
+
+          echo "npm ls output:"
+          echo "$NPM_LS_OUTPUT"
+
+          # Check for serious dependency issues
+          if echo "$NPM_LS_OUTPUT" | grep -q "ERESOLVE"; then
+            echo "❌ Dependency resolution errors detected (ERESOLVE)"
+            exit 1
           fi
-            # Check if these are just peer dependency warnings (common and usually ok)
-            if npm ls 2>&1 | grep -q "ERESOLVE\|peer dep"; then
+
+          if echo "$NPM_LS_OUTPUT" | grep -q "missing:"; then
+            echo "❌ Missing dependencies detected"
+            exit 1
+          fi
+
+          if echo "$NPM_LS_OUTPUT" | grep -q "invalid:"; then
+            echo "❌ Invalid dependencies detected"
+            exit 1
+          fi
+
+          # Handle peer dependency warnings (usually safe)
+          if [ $NPM_LS_EXIT_CODE -ne 0 ]; then
+            if echo "$NPM_LS_OUTPUT" | grep -qi "peer dep"; then
               echo "ℹ️  Found peer dependency warnings, but core dependencies are resolved"
             else
               echo "❌ Serious dependency tree issues detected!"
+              echo "Check the npm ls output above for details."
               exit 1
             fi
           fi
 
           # Show installed packages for transparency
           echo "📋 Installed packages:"
-          npm ls --depth=0 --json | jq -r '.dependencies | keys[]' | head -10
+          npm ls --depth=0 --json 2>/dev/null | jq -r '.dependencies | keys[]' | head -10 || echo "Could not list packages"
 
           echo "✅ npm dependency tree validated"
 
