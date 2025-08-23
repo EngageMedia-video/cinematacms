@@ -119,8 +119,15 @@ jobs:
         run: |
           echo "📊 Analyzing dependency tree changes..."
 
-          # Get current dependency tree
-          uv pip list --format=freeze > /tmp/new_deps.txt
+          # Ensure dependencies are installed for the PR branch before capturing the tree
+          if ! uv sync --all-extras >/dev/null 2>&1; then
+            echo "Could not install PR branch dependencies before comparison"
+            touch /tmp/new_deps.txt
+          else
+            uv pip list --format=freeze > /tmp/new_deps.txt
+          fi
+          # Sort for stable comm output
+          sort -f /tmp/new_deps.txt -o /tmp/new_deps.txt
 
           # Get base branch dependency tree for comparison
           BASE_BRANCH="${{ github.base_ref || github.event.repository.default_branch || 'main' }}"
@@ -146,6 +153,8 @@ jobs:
             echo "Could not install base dependencies for comparison"
             touch /tmp/old_deps.txt
           fi
+          # Sort for stable comm output
+          [ -s /tmp/old_deps.txt ] && sort -f /tmp/old_deps.txt -o /tmp/old_deps.txt
 
           # Return to PR branch
           git checkout -
@@ -163,7 +172,6 @@ jobs:
             echo "Base comparison not available, showing current dependencies:"
             head -10 /tmp/new_deps.txt
           fi
-
       - name: Validate dependency resolution
         run: |
           echo "🔍 Validating dependency resolution..."
@@ -307,18 +315,20 @@ jobs:
             exit 1
           fi
 
-          echo "✅ npm dependencies installed successfully"
-
-      - name: Validate npm dependency tree
-        working-directory: ./frontend
-        run: |
-          echo "🌳 Validating npm dependency tree..."
-
-          # Check for dependency conflicts and peer dependency issues
           if ! npm ls --depth=0; then
             echo "⚠️  npm dependency tree has issues, checking details..."
             npm ls --depth=1 || true
 
+            OUTPUT="$(npm ls 2>&1 || true)"
+            # Allow peer dependency warnings, but fail on actual resolution errors
+            if echo "$OUTPUT" | grep -q "ERESOLVE"; then
+              echo "❌ Dependency resolution errors detected (ERESOLVE)"
+              exit 1
+            fi
+            if echo "$OUTPUT" | grep -qi "peer dep"; then
+              echo "ℹ️  Found peer dependency warnings, but core dependencies are resolved"
+            fi
+          fi
             # Check if these are just peer dependency warnings (common and usually ok)
             if npm ls 2>&1 | grep -q "ERESOLVE\|peer dep"; then
               echo "ℹ️  Found peer dependency warnings, but core dependencies are resolved"

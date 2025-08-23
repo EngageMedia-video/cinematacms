@@ -19,7 +19,7 @@ import PageStore from "../../../pages/_PageStore.js";
 import * as AudioPlayerActions from "../VideoViewer/actions.js";
 import { extractAudioFileFormat } from "./functions.js";
 
-import { formatInnerLink } from "../../../functions/formatInnerLink";
+import { formatInnerLink, formatMediaLink } from "../../../functions/formatInnerLink";
 
 import UpNextLoaderView from "../../../classes/UpNextLoaderView";
 import PlayerRecommendedMedia from "../../../classes/PlayerRecommendedMedia";
@@ -40,9 +40,11 @@ export default class AudioViewer extends React.PureComponent {
 
 		this.audioStartedPlaying = false;
 
-		let audioURL = formatInnerLink(
+		const password = (typeof MediaCMS !== 'undefined' && MediaCMS.provided_password) ? MediaCMS.provided_password : null;
+		let audioURL = formatMediaLink(
 			mediaData.original_media_url,
-			SiteContext._currentValue.url
+			SiteContext._currentValue.url,
+			password
 		);
 
 		this.videoSources = [
