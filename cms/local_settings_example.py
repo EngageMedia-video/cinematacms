@@ -16,6 +16,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
 
+USE_X_ACCEL_REDIRECT = False
+
 # CORS settings
 # For development only - allows all origins
 CORS_ALLOW_ALL_ORIGINS = True

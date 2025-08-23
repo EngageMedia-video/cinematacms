@@ -14,7 +14,7 @@ from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from django.views import View
 
-from .models import Media, Encoding
+from .models import Media, Encoding, Subtitle
 from .methods import is_mediacms_editor, is_mediacms_manager
 from .cache_utils import (
     get_permission_cache_key, get_elevated_access_cache_key,
@@ -108,12 +108,6 @@ class SecureMediaView(View):
     Implements Redis caching for user permission checks to improve performance.
     """
 
-    # Pre-compiled regex patterns for better performance
-    ORIGINAL_FILE_PATTERN = re.compile(r'original/user/([^/]+)/([A-Fa-f0-9]{32})\.(.+)$')
-    ENCODED_FILE_PATTERN = re.compile(r'encoded/(\d+)/([^/]+)/([A-Fa-f0-9]{32})\.(.+)$')
-    HLS_FILE_PATTERN = re.compile(r'hls/([A-Fa-f0-9]{32})/(.+)$')
-    GENERIC_UID_PATTERN = re.compile(r'([A-Fa-f0-9]{32})')
-
     # Path traversal protection
     INVALID_PATH_PATTERNS = re.compile(r'\.\.|\\|\x00|[\x01-\x1f\x7f]')
 
@@ -159,7 +153,12 @@ class SecureMediaView(View):
             logger.debug(f"Serving public media file: {file_path}")
             return self._serve_file(file_path, head_request)
 
-        # Get media object and check permissions
+        # Check if it's a non-video file that bypasses authorization
+        if self._is_non_video_file(file_path):
+            logger.debug(f"Serving non-video file without authorization check: {file_path}")
+            return self._serve_file(file_path, head_request)
+
+        # Get media object and check permissions (only for video files now)
         media = self._get_media_from_path(file_path)
         if not media:
             logger.warning(f"Media not found for path: {file_path}")
@@ -194,54 +193,149 @@ class SecureMediaView(View):
 
 
     def _get_media_from_path(self, file_path: str) -> Optional[Media]:
-        """Extract media object from file path using optimized pattern matching."""
+        """Extract media object from file path using filename matching."""
 
-        # Try patterns in order of likelihood for better performance
-        # Original files pattern (most common)
-        match = self.ORIGINAL_FILE_PATTERN.search(file_path)
-        if match:
-            username, uid_str, _ = match.groups()
-            logger.debug(f"Original file pattern matched: username={username}, uid={uid_str}")
-            return Media.objects.select_related('user').filter(
-                uid=uid_str, user__username=username
-            ).first()
-
-        # Encoded files pattern
-        match = self.ENCODED_FILE_PATTERN.search(file_path)
-        if match:
-            profile_id_str, username, uid_str, _ = match.groups()
-            logger.debug(f"Encoded file pattern matched: profile_id={profile_id_str}, username={username}, uid={uid_str}")
+        # Handle original files: original/user/{username}/{filename}
+        if file_path.startswith('original/user/'):
+            # Try to find media by matching the end of the media_file path
+            # The media_file field stores the full path including the prefix
             try:
-                profile_id = int(profile_id_str)
-            except ValueError:
-                logger.warning(f"Invalid profile_id in path: {profile_id_str}")
-                return None
-            encoding = Encoding.objects.select_related('media', 'media__user').filter(
-                media__uid=uid_str,
-                media__user__username=username,
-                profile_id=profile_id
-            ).first()
-            return encoding.media if encoding else None
+                # Look for media where the media_file ends with this path portion
+                # Remove 'original/' prefix since media_file already includes the full path
+                search_path = file_path[len('original/'):]
+                logger.debug(f"Searching for media with file path ending: {search_path}")
 
-        # HLS files pattern
-        match = self.HLS_FILE_PATTERN.search(file_path)
-        if match:
-            uid_str, _ = match.groups()
-            logger.debug(f"HLS file pattern matched: uid={uid_str}")
-            return Media.objects.select_related('user').filter(uid=uid_str).first()
+                media = Media.objects.select_related('user').filter(
+                    media_file__endswith=search_path
+                ).first()
 
-        # There's no fallback to generic UID matching anymore
-        # We only accept paths that match our specific patterns above
+                if media:
+                    logger.debug(f"Found media by filename: {media.friendly_token}")
+                    return media
+
+            except Exception as e:
+                logger.warning(f"Error finding media by filename: {e}")
+
+        # Handle subtitle files: original/subtitles/user/{username}/{filename}
+        elif file_path.startswith('original/subtitles/user/'):
+            # Subtitle files are typically text files that don't need media authorization
+            # They should be handled by the _is_non_video_file() check above
+            logger.debug(f"Subtitle file path detected but should be handled as non-video: {file_path}")
+            return None
+
+        # Handle encoded files: encoded/{profile_id}/{username}/{filename}
+        elif file_path.startswith('encoded/'):
+            parts = file_path.split('/')
+            if len(parts) >= 4:
+                profile_id_str = parts[1]
+                username = parts[2]
+                filename = parts[3]
+
+                logger.debug(f"Encoded file: profile_id={profile_id_str}, username={username}, filename={filename}")
+
+                try:
+                    # Look for encoding where the media_file ends with this filename
+                    # and matches the username and profile
+                    filter_kwargs = {
+                        'media__user__username': username,
+                        'media_file__endswith': filename,
+                    }
+
+                    if profile_id_str.isdigit():
+                        filter_kwargs['profile_id'] = int(profile_id_str)
+
+                    encoding = Encoding.objects.select_related('media', 'media__user').filter(**filter_kwargs).first()
+                    return encoding.media if encoding else None
+
+                except Exception as e:
+                    logger.warning(f"Error finding encoded media: {e}")
+
+        # Handle HLS files: hls/{uid_or_folder}/{filename}
+        elif file_path.startswith('hls/'):
+            parts = file_path.split('/')
+            if len(parts) >= 3:
+                folder_name = parts[1]
+                logger.debug(f"HLS file in folder: {folder_name}")
+
+                try:
+                    # For HLS files, we might need to check if the folder name matches a UID
+                    # or try to find media that has HLS files in this directory
+                    if self._is_valid_uid(folder_name):
+                        return Media.objects.select_related('user').filter(uid=folder_name).first()
+                    else:
+                        # Fallback: try to find any media that might have HLS files
+                        # This is less precise but more flexible
+                        return None
+
+                except Exception as e:
+                    logger.warning(f"Error finding HLS media: {e}")
+
         return None
+
+    def _is_valid_uid(self, uid_str: str) -> bool:
+        """Check if a string looks like a valid UID (8-64 hex characters)."""
+        if not uid_str or len(uid_str) < 8 or len(uid_str) > 64:
+            return False
+        try:
+            int(uid_str, 16)  # Try to parse as hex
+            return True
+        except ValueError:
+            return False
 
     def _is_public_media_file(self, file_path: str) -> bool:
         """Check if the file is a public asset that bypasses media permissions."""
         # Check for public paths in both direct and original/ subdirectories
-        return any(
+        public_check = any(
             file_path.startswith(public_path) or
             file_path.startswith(f'original/{public_path}')
             for public_path in PUBLIC_MEDIA_PATHS
         )
+
+        # Also check for subtitle files which should be publicly accessible if they match subtitle patterns
+        # but still require media permission checks
+        return public_check
+
+    def _is_non_video_file(self, file_path: str) -> bool:
+        """Check if the file is not a video file and can bypass authorization."""
+
+        # Subtitle files should always bypass authorization
+        if file_path.startswith('original/subtitles/'):
+            return True
+
+        file_ext = os.path.splitext(file_path)[1].lower()
+
+        # Common video file extensions
+        video_extensions = {
+            '.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm',
+            '.m4v', '.3gp', '.ogv', '.asf', '.rm', '.rmvb', '.vob',
+            '.mpg', '.mpeg', '.mp2', '.mpe', '.mpv', '.m2v', '.m4p',
+            '.f4v', '.ts', '.m3u8'  # Include HLS formats
+        }
+
+        # Check if it's a video file by extension
+        if file_ext in video_extensions:
+            return False  # It's a video file, so don't bypass authorization
+
+        # Also check by content type for additional detection
+        content_type = self.CONTENT_TYPES.get(file_ext)
+        if not content_type:
+            content_type, _ = mimetypes.guess_type(file_path)
+
+        # Consider it a video file if content type starts with 'video/' or is HLS
+        is_video_by_content_type = (
+            (content_type and content_type.startswith('video/')) or
+            content_type == 'application/vnd.apple.mpegurl' or  # .m3u8 files
+            content_type == 'video/mp2t'  # .ts files
+        )
+
+        # Also check if it's in HLS directory (streaming content)
+        is_in_hls_directory = file_path.startswith('hls/')
+
+        # It's a video file if any of the checks match
+        is_video_like = is_video_by_content_type or is_in_hls_directory
+
+        # Return True if it's NOT a video file (so it can bypass authorization)
+        return not is_video_like
     def _user_has_elevated_access(self, user, media: Media) -> bool:
         """Check if user is owner, editor, or manager with caching. Assumes user is authenticated."""
         if not user.is_authenticated:
