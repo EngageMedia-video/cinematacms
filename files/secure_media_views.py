@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # Configuration constants
 CACHE_CONTROL_MAX_AGE = 604800  # 1 week
 PUBLIC_MEDIA_PATHS = [
-    'thumbnails/', 'userlogos/', 'logos/', 'favicons/', 'social-media-icons/',
+    'thumbnails/', 'userlogos/', 'logos/', 'favicons/', 'social-media-icons/','tinymce_media/'
 ]
 
 # Security headers for different content types
