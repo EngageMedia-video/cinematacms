@@ -1197,10 +1197,8 @@ class MediaLanguage(models.Model):
 
     def update_language_media(self):
         language = Language.objects.values("code", "title").get(title=self.title)
-        # print('updating language media:', language)
         if language:
             media_language = language['code']
-            # print('media-language', media_language)
             self.media_count = Media.objects.filter(
                 state="public", is_reviewed=True, media_language=media_language
             ).count()
