@@ -1643,7 +1643,6 @@ class MediaLanguageList(APIView):
     def get(self, request, format=None):
         languages = (
             MediaLanguage.objects
-            .exclude(listings_thumbnail=None)
             .filter(media_count__gt=0)
             .order_by("title")
         )
