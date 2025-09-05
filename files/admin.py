@@ -204,10 +204,10 @@ class TranscriptionRequestAdmin(admin.ModelAdmin):
     def language(self, obj):
         """Get the language of the media"""
         if obj.media and obj.media.media_language:
-            # Get the display name from the choices
-            from . import lists
-            language_dict = dict(lists.video_languages)
-            return language_dict.get(obj.media.media_language, obj.media.media_language)
+            media_language = obj.media.media_language
+            language_dict = Language.objects.exclude(code__in=["automatic-translation", "automatic"]).values("code", "title").get(code=media_language)
+            lang = language_dict.get('code')
+            return lang
         return "Not specified"
     language.short_description = "Language"
     

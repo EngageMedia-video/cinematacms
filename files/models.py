@@ -122,7 +122,16 @@ def topic_thumb_path(instance, filename):
     file_name = "{0}.{1}".format(friendly_token, helpers.get_file_name(filename))
     return settings.MEDIA_UPLOAD_DIR + "topics/{0}".format(file_name)
 
+class Language(models.Model):
+    code = models.CharField(max_length=100, help_text="language code")
+    title = models.CharField(max_length=100, help_text="language code")
 
+    class Meta:
+        ordering = ["title"]
+
+    def __str__(self):
+        return self.title
+    
 class Media(models.Model):
     uid = models.UUIDField(unique=True, default=uuid.uuid4)
     friendly_token = models.CharField(blank=True, max_length=12, db_index=True)
@@ -144,7 +153,7 @@ class Media(models.Model):
         blank=True,
         null=True,
         default="en",
-        choices=lists.video_languages,
+        choices=Language.objects.exclude(code__in=['automatic', 'automatic-translation']).values_list("code", "title"),
         db_index=True,
     )
     media_country = models.CharField(
@@ -809,7 +818,7 @@ class Media(models.Model):
     def media_language_info(self):
         ret = []
         media_language = (
-            dict(lists.video_languages).get(self.media_language, None)
+            Language.objects.get(code=self.media_language).title
             if self.media_language
             else None
         )
@@ -1188,9 +1197,12 @@ class MediaLanguage(models.Model):
 
     def update_language_media(self):
         language = Language.objects.values("code", "title").get(title=self.title)
+        # print('updating language media:', language)
         if language:
+            media_language = language['code']
+            # print('media-language', media_language)
             self.media_count = Media.objects.filter(
-                state="public", is_reviewed=True, media_language=language
+                state="public", is_reviewed=True, media_language=media_language
             ).count()
         self.save(update_fields=["media_count"])
         return True
@@ -1317,17 +1329,6 @@ class Encoding(models.Model):
 
     def get_absolute_url(self):
         return reverse("api_get_encoding", kwargs={"encoding_id": self.id})
-
-
-class Language(models.Model):
-    code = models.CharField(max_length=100, help_text="language code")
-    title = models.CharField(max_length=100, help_text="language code")
-
-    class Meta:
-        ordering = ["title"]
-
-    def __str__(self):
-        return self.title
 
 
 class Subtitle(models.Model):
@@ -1736,11 +1737,12 @@ def media_save(sender, instance, created, **kwargs):
 
     if instance.media_language:
         language = {
-            key: value for key, value in dict(lists.video_languages).items()
+            code: title for code, title in Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list("code", "title")
         }.get(instance.media_language)
+        print('saving-media-language', language)
         if language:
             language = MediaLanguage.objects.filter(title=language).first()
-        if language:
+            print('language-identified', language)
             language.update_language_media()
 
     instance.update_search_vector()
