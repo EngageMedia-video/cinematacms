@@ -58,11 +58,21 @@ class MediaForm(forms.ModelForm):
 
         widgets = {
             "tags": MultipleSelect(),
+            "year_produced": forms.Select(), 
         }
 
     def __init__(self, user, *args, **kwargs):
         self.user = user
         super(MediaForm, self).__init__(*args, **kwargs)
+        current_year = datetime.now().year
+        year_choices = [('', '-- Select Year --')]  # Empty option first
+
+        # Create list of years from current year down to 2000
+        for year in range(current_year, 1999, -1):  # 1999 because range is exclusive
+            year_choices.append((year, str(year)))
+
+        # Apply choices to the dropdown widget
+        self.fields["year_produced"].widget.choices = year_choices
         self.fields["state"].label = "Status"
         self.fields["allow_download"].label = "Allow Download"
         self.fields["reported_times"].label = "Reported Times"
@@ -146,11 +156,12 @@ class MediaForm(forms.ModelForm):
         if year_produced:
             if not isinstance(year_produced, int):
                 raise forms.ValidationError(
-                    "Year produced must be a year between 1900 and now"
+                    "Year produced must be a year between 2000 and now"
                 )
-            if not (1900 <= year_produced and year_produced <= datetime.now().year):
+            current_year = datetime.now().year
+            if not (2000 <= year_produced <= current_year):
                 raise forms.ValidationError(
-                    "Year produced must be a year between 1900 and now"
+                    f"Year produced must be between 2000 and {current_year}"
                 )
         return year_produced
 
