@@ -32,6 +32,7 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 - [💾 Backup & Recovery Procedures](admin-guides/backup_and_recovery_procedures.md)
 - [🔐 Permission System](admin-guides/permission_system.md)
 - [📊 User Roles Permission Matrix](admin-guides/cinematacms-roles-permission-matrix.md)
+- [🗣️ Language Setup and Configuration](admin-guides/languages.md)
 
 ## 🎨 Customization
 
