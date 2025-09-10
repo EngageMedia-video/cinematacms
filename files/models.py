@@ -123,8 +123,8 @@ def topic_thumb_path(instance, filename):
     return settings.MEDIA_UPLOAD_DIR + "topics/{0}".format(file_name)
 
 class Language(models.Model):
-    code = models.CharField(max_length=100, help_text="language code")
-    title = models.CharField(max_length=100, help_text="language code")
+    code = models.CharField(max_length=100, unique=True, help_text="language code")
+    title = models.CharField(max_length=100, help_text="language title")
 
     class Meta:
         ordering = ["title"]
@@ -817,11 +817,14 @@ class Media(models.Model):
     @property
     def media_language_info(self):
         ret = []
-        media_language = (
-            Language.objects.get(code=self.media_language).title
-            if self.media_language
-            else None
-        )
+        media_language = None
+        if self.media_language:
+            media_language = (
+                Language.objects
+                .filter(code=self.media_language)
+                .values_list("title", flat=True)
+                .first()
+            )
         if media_language:
             ret = [
                 {
@@ -1737,10 +1740,8 @@ def media_save(sender, instance, created, **kwargs):
         language = {
             code: title for code, title in Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list("code", "title")
         }.get(instance.media_language)
-        print('saving-media-language', language)
         if language:
             language = MediaLanguage.objects.filter(title=language).first()
-            print('language-identified', language)
             language.update_language_media()
 
     instance.update_search_vector()
