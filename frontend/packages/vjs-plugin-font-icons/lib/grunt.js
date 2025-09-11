@@ -119,10 +119,12 @@ module.exports = function(grunt) {
 
     try {
       // Generate custom codepoints starting from a specific range
+      // Sort icon names alphabetically to match how fantasticon reads them
       const customCodepoints = {};
       let codepointStart = 0xf101; // Start from private use area
-      icons.forEach((icon, index) => {
-        customCodepoints[icon.name] = codepointStart + index;
+      const sortedIconNames = icons.map(icon => icon.name).sort();
+      sortedIconNames.forEach((name, index) => {
+        customCodepoints[name] = codepointStart + index;
       });
 
       await generateFonts({
