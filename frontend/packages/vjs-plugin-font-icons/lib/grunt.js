@@ -64,7 +64,7 @@ module.exports = function(grunt) {
     const { generateFonts } = require('fantasticon');
     let iconConfig = grunt.file.readJSON(path.join(__dirname, '..', 'icons.json'));
 
-    let svgRootDir = iconConfig['root-dir'];
+    let svgRootDir = path.resolve(path.join(__dirname, '..', iconConfig['root-dir']));
     if (grunt.option('exclude-default')) {
       // Exclude default video.js icons
       iconConfig.icons = [];
@@ -104,17 +104,35 @@ module.exports = function(grunt) {
     }
 
     // Copy and rename SVG files to match icon names
+    // Track which source files we've already read to avoid redundant reads
+    const svgCache = {};
+    
     icons.forEach(function(icon) {
       let sourcePath;
       if (icon['root-dir']) {
-        sourcePath = icon['root-dir'] + icon.svg;
+        sourcePath = path.resolve(path.join(__dirname, '..', icon['root-dir'], icon.svg));
       } else {
-        sourcePath = svgRootDir + icon.svg;
+        sourcePath = path.join(svgRootDir, icon.svg);
       }
 
       const destPath = path.join(tempDir, icon.name + '.svg');
-      const svgContent = fs.readFileSync(sourcePath);
-      fs.writeFileSync(destPath, svgContent);
+      
+      // Check if we've already read this source file
+      if (!svgCache[sourcePath]) {
+        // Only read the file if it exists
+        if (fs.existsSync(sourcePath)) {
+          svgCache[sourcePath] = fs.readFileSync(sourcePath);
+        } else {
+          console.warn(`Warning: SVG file not found: ${sourcePath}`);
+          // Use a placeholder or skip
+          return;
+        }
+      }
+      
+      // Write the cached content to the destination
+      if (svgCache[sourcePath]) {
+        fs.writeFileSync(destPath, svgCache[sourcePath]);
+      }
     });
 
     try {
