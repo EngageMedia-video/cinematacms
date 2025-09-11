@@ -96,7 +96,7 @@ module.exports = function(grunt) {
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
-    
+
     // Ensure dist directory exists for HTML preview
     const distDir = path.resolve('dist');
     if (!fs.existsSync(distDir)) {
@@ -106,8 +106,11 @@ module.exports = function(grunt) {
     // Copy and rename SVG files to match icon names
     // Track which source files we've already read to avoid redundant reads
     const svgCache = {};
-    
-    icons.forEach(function(icon) {
+
+    // Sort icons by name to ensure consistent ordering with codepoint generation
+    const sortedIcons = [...icons].sort((a, b) => a.name.localeCompare(b.name));
+
+    sortedIcons.forEach(function(icon) {
       let sourcePath;
       if (icon['root-dir']) {
         sourcePath = path.resolve(path.join(__dirname, '..', icon['root-dir'], icon.svg));
@@ -116,7 +119,7 @@ module.exports = function(grunt) {
       }
 
       const destPath = path.join(tempDir, icon.name + '.svg');
-      
+
       // Check if we've already read this source file
       if (!svgCache[sourcePath]) {
         // Only read the file if it exists
@@ -128,7 +131,7 @@ module.exports = function(grunt) {
           return;
         }
       }
-      
+
       // Write the cached content to the destination
       if (svgCache[sourcePath]) {
         fs.writeFileSync(destPath, svgCache[sourcePath]);
@@ -177,17 +180,17 @@ module.exports = function(grunt) {
         fontHeight: 1000,
         normalize: true
       });
-      
+
       // Post-process the SCSS file to convert decimal codepoints to hexadecimal
       const scssFile = './scss/_icons.scss';
       let scssContent = fs.readFileSync(scssFile, 'utf8');
-      
+
       // Replace decimal codepoints with hexadecimal
       scssContent = scssContent.replace(/(\w+):\s*'(\d+)'/g, (match, name, decimal) => {
         const hex = parseInt(decimal, 10).toString(16);
         return `${name}: '${hex}'`;
       });
-      
+
       fs.writeFileSync(scssFile, scssContent);
 
       // Clean up temporary directory
