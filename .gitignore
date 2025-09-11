@@ -10,6 +10,8 @@ venv/
 .venv/
 .env
 pyvenv.cfg
+.claude/*
+CLAUDE.md
 
 Bento4-SDK-1-6-0-632.x86_64-unknown-linux/
 DB_DUMPS/
