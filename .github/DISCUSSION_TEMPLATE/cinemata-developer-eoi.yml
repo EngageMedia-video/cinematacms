@@ -1,0 +1,74 @@
+title: "Call for Expression of Interest: Cinemata Developers"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        EngageMedia is building a pool of talented Southeast Asia-based developers to contribute to Cinemata 2.0's development through project-based work. Selected developers will work on implementing specific features and improvements from our roadmap.
+
+        Check out the project in [CinemataCMS Github](https://github.com/engagemedia/cinemata).
+
+        **Deadline Update:** This is now an ongoing call, and applications are being accepted on a rolling basis.
+
+        ## 📝 How to Apply
+
+        **Please submit your application through our secure Airtable form:**
+
+        ### 👉 **[APPLY HERE - Developer Expression of Interest Form](https://airtable.com/app4WS5NS7qe0Pc7s/pagHGqVvJ3PbaBHfS/form)**
+
+        The form includes all required fields and ensures your personal information (including salary expectations) remains private.
+
+        ---
+
+        ## Application Requirements
+
+        Please have the following information ready for your application:
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Required Information:
+        - ✅ **Name, Email, Country of Residence**
+        - ✅ **GitHub Profile** (required)
+        - ✅ **CV/Resume** (upload or link)
+        - ✅ **Technical expertise areas**
+        - ✅ **Open-source development experience**
+        - ✅ **Professional hourly rate** (for budgeting)
+        - ✅ **Availability and start date**
+
+        ### Optional But Helpful:
+        - 🔗 **LinkedIn Profile**
+        - 🌐 **Personal Website/Portfolio**
+        - 💡 **Feature suggestions for Cinemata**
+        - ❓ **Questions about the opportunity**
+
+        ---
+
+        ## ⚠️ Privacy Notice
+
+        Your application will be submitted privately through Airtable. **Salary information and personal details will NOT be publicly visible** on GitHub.
+
+        If you have any questions about this opportunity, feel free to comment below or contact us directly through the form.
+
+        ---
+
+        ## About CinemataCMS 2.0
+
+        CinemataCMS is an open-source video platform designed specifically for advocacy filmmakers and social justice organizations in the Asia-Pacific region. Our mission is to provide secure, community-controlled technology that serves advocacy storytelling rather than corporate interests.
+
+        ### Current Tech Stack:
+        - **Backend:** Python/Django
+        - **Frontend:** React
+        - **Infrastructure:** Docker, cloud deployment options
+        - **Security:** MFA, content moderation, privacy controls
+
+        ### Recent Achievements:
+        - ✅ 6,600+ films hosted and protected
+        - ✅ 30+ countries represented
+        - ✅ Zero major security incidents
+        - ✅ 20+ security vulnerabilities fixed in 2024-2025
+
+        ---
+
+        **Ready to join our team of Southeast Asian developers building technology for social change?**
+
+        ### 👉 **[SUBMIT YOUR APPLICATION HERE](https://airtable.com/app4WS5NS7qe0Pc7s/pagHGqVvJ3PbaBHfS/form)**

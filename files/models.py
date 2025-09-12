@@ -3,6 +3,7 @@ import logging
 import os
 import random
 import re
+import shutil
 import tempfile
 import time
 import uuid
@@ -13,7 +14,7 @@ from django.contrib.postgres.indexes import BrinIndex, BTreeIndex, GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.files import File
 from django.db import connection, models
-from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete
+from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.urls import reverse
@@ -27,6 +28,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 from . import helpers, lists
 from .methods import is_mediacms_editor, is_mediacms_manager, notify_users, is_media_allowed_type
 from .stop_words import STOP_WORDS
+from .cache_utils import clear_media_permission_cache
 
 logger = logging.getLogger(__name__)
 
@@ -287,6 +289,8 @@ class Media(models.Model):
     __original_media_file = None
     __original_thumbnail_time = None
     __original_uploaded_poster = None
+    __original_state = None
+    __original_password = None
 
     class Meta:
         ordering = ["-add_date"]
@@ -307,6 +311,8 @@ class Media(models.Model):
         self.__original_media_file = self.media_file
         self.__original_thumbnail_time = self.thumbnail_time
         self.__original_uploaded_poster = self.uploaded_poster
+        self.__original_state = self.state
+        self.__original_password = self.password
 
     def save(self, *args, **kwargs):
         if not self.title:
@@ -349,6 +355,12 @@ class Media(models.Model):
             self.state = helpers.get_default_state(user=self.user)
             self.license = License.objects.filter(id=10).first()
         super(Media, self).save(*args, **kwargs)
+
+        # Invalidate permission cache if state or password changed
+        if self.pk and (self.state != self.__original_state or self.password != self.__original_password):
+            self._invalidate_permission_cache()
+            self.__original_state = self.state
+            self.__original_password = self.password
 
         # has to save first for uploaded_poster path to exist
         if (
@@ -435,6 +447,33 @@ class Media(models.Model):
         except:
             pass  # TODO:add log
         return True
+
+    def _invalidate_permission_cache(self):
+        """
+        Invalidate cached permissions when media permissions change.
+
+        This method is called automatically when:
+        - Media state changes (public ↔ private ↔ restricted ↔ unlisted)
+        - Media password changes (for restricted content)
+        - Any other permission-related changes
+
+        The cache invalidation ensures that users see updated permissions
+        immediately after changes, maintaining data consistency.
+
+        Uses the clear_media_permission_cache utility function which:
+        - Clears specific user/media combinations if possible
+        - Falls back to pattern-based clearing for all users
+        - Handles errors gracefully without breaking functionality
+
+        Cache invalidation is controlled by ENABLE_PERMISSION_CACHE setting.
+        """
+        if not getattr(settings, 'ENABLE_PERMISSION_CACHE', True):
+            return
+        try:
+            clear_media_permission_cache(self.uid)
+            logger.debug(f"Invalidated permission cache for media: {self.uid}")
+        except Exception as e:
+            logger.warning(f"Failed to invalidate permission cache for media {self.uid}: {e}")
 
     def media_init(self):
         # new media file uploaded. Check if media type,
@@ -1317,23 +1356,71 @@ class Subtitle(models.Model):
     def url(self):
         return self.get_absolute_url()
 
-    def convert_to_srt(self):
+    def convert_to_vtt(self):
+        """
+            Convert uploaded subtitle files to VTT format for web playback.
+            Uses FFmpeg (already available in CinemataCMS) instead of pysubs2.
+            Accepts both SRT and VTT input formats.
+            
+            SAFETY: This method is ONLY called on NEW subtitle uploads, never on existing files.
+            Existing subtitles in Cinemata.org remain completely untouched.
+        """
         input_path = self.subtitle_file.path
+        
+        # Validate file exists
+        if not os.path.exists(input_path):
+            raise Exception("Subtitle file not found")
+        
+        # Check file extension
+        file_lower = input_path.lower()
+
+        if not (file_lower.endswith('.srt') or file_lower.endswith('.vtt')):
+            raise Exception("Invalid subtitle format. Use SubRip (.srt) and WebVTT (.vtt) files.")
+        
+        # If already VTT, no conversion needed
+        if file_lower.endswith('.vtt'):
+            return True
+        
+        logger.info(f"Converting new subtitle upload: {input_path}")
+        # Convert SRT to VTT using FFmpeg (already configured in CinemataCMS)
         with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as tmpdirname:
-            pysub = settings.PYSUBS_COMMAND
-
-            cmd = [pysub, input_path, "--to", "vtt", "-o", tmpdirname]
-            stdout = helpers.run_command(cmd)
-
-            list_of_files = os.listdir(tmpdirname)
-            if list_of_files:
-                subtitles_file = os.path.join(tmpdirname, list_of_files[0])
-                cmd = ["cp", subtitles_file, input_path]
-                stdout = helpers.run_command(cmd)
-            else:
-                raise Exception("Could not convert to srt")
-        return True
-
+            temp_vtt = os.path.join(tmpdirname, "converted.vtt")
+            
+            cmd = [
+                settings.FFMPEG_COMMAND,  # Already configured in CinemataCMS
+                "-i", input_path,
+                "-c:s", "webvtt",
+                temp_vtt
+            ]
+            
+            try:
+                ret = helpers.run_command(cmd)
+                if ret and ret.get("returncode", 0) != 0:
+                    logger.error(f"FFmpeg failed with code {ret.get('returncode')}: {ret.get('err')}")
+                    raise Exception("FFmpeg conversion failed")
+                
+                if os.path.exists(temp_vtt) and os.path.getsize(temp_vtt) > 0:
+                    # Replace original file with VTT version
+                    shutil.copy2(temp_vtt, input_path)
+                    logger.info(f"Successfully converted subtitle to VTT: {input_path}")
+                    
+                    # Update file extension to .vtt if it was .srt
+                    if file_lower.endswith('.srt'):
+                        new_path = input_path.replace('.srt', '.vtt').replace('.SRT', '.vtt')
+                        if new_path != input_path:
+                            os.rename(input_path, new_path)
+                            # Update the FileField to point to new path
+                            self.subtitle_file.name = self.subtitle_file.name.replace('.srt', '.vtt').replace('.SRT', '.vtt')
+                            self.save(update_fields=['subtitle_file'])
+                            logger.info(f"Renamed subtitle file from .srt to .vtt: {new_path}")
+                else:
+                    raise Exception("FFmpeg conversion failed - no output file created")
+                    
+            except Exception as e:
+                logger.error(f"Subtitle conversion failed for {input_path}: {str(e)}")
+                raise Exception(f"Could not convert SRT file to VTT format: {str(e)}")
+        
+            return True
 
 class RatingCategory(models.Model):
     """Rating Category
@@ -1490,6 +1577,7 @@ class Comment(MPTTModel):
             if self.media.state == "unlisted":
                 self.media.state = "public"
                 self.media.save(update_fields=["state"])
+                # Cache invalidation will be handled by Media.save() method
 
     def get_absolute_url(self):
         return reverse("get_media") + "?m={0}".format(self.media.friendly_token)
@@ -1925,3 +2013,28 @@ def comment_delete(sender, instance, **kwargs):
             if instance.media.comments.exclude(uid=instance.uid).count() == 0:
                 instance.media.state = "unlisted"
                 instance.media.save(update_fields=["state"])
+                # Cache invalidation will be handled by Media.save() method
+
+
+@receiver(pre_save, sender=Media)
+def media_pre_save(sender, instance, **kwargs):
+    """
+    Track state changes for cache invalidation.
+
+    This signal handler runs before Media.save() and captures the current
+    state and password from the database to compare with new values.
+    This enables automatic cache invalidation when permissions change.
+
+    The captured values are stored as private attributes on the instance
+    and used in the save() method to determine if cache invalidation is needed.
+    """
+    if instance.pk:
+        try:
+            # Get the current state from the database
+            old_instance = Media.objects.get(pk=instance.pk)
+            instance.__original_state = old_instance.state
+            instance.__original_password = old_instance.password
+        except Media.DoesNotExist:
+            # New instance
+            instance.__original_state = None
+            instance.__original_password = None

@@ -119,8 +119,15 @@ jobs:
         run: |
           echo "📊 Analyzing dependency tree changes..."
 
-          # Get current dependency tree
-          uv pip list --format=freeze > /tmp/new_deps.txt
+          # Ensure dependencies are installed for the PR branch before capturing the tree
+          if ! uv sync --all-extras >/dev/null 2>&1; then
+            echo "Could not install PR branch dependencies before comparison"
+            touch /tmp/new_deps.txt
+          else
+            uv pip list --format=freeze > /tmp/new_deps.txt
+          fi
+          # Sort for stable comm output
+          sort -f /tmp/new_deps.txt -o /tmp/new_deps.txt
 
           # Get base branch dependency tree for comparison
           BASE_BRANCH="${{ github.base_ref || github.event.repository.default_branch || 'main' }}"
@@ -146,6 +153,8 @@ jobs:
             echo "Could not install base dependencies for comparison"
             touch /tmp/old_deps.txt
           fi
+          # Sort for stable comm output
+          [ -s /tmp/old_deps.txt ] && sort -f /tmp/old_deps.txt -o /tmp/old_deps.txt
 
           # Return to PR branch
           git checkout -
@@ -163,7 +172,6 @@ jobs:
             echo "Base comparison not available, showing current dependencies:"
             head -10 /tmp/new_deps.txt
           fi
-
       - name: Validate dependency resolution
         run: |
           echo "🔍 Validating dependency resolution..."
@@ -307,30 +315,45 @@ jobs:
             exit 1
           fi
 
-          echo "✅ npm dependencies installed successfully"
+          # Check dependency tree with proper error handling
+          echo "🔍 Checking dependency tree integrity..."
 
-      - name: Validate npm dependency tree
-        working-directory: ./frontend
-        run: |
-          echo "🌳 Validating npm dependency tree..."
+          NPM_LS_OUTPUT=$(npm ls 2>&1 || true)
+          NPM_LS_EXIT_CODE=$?
 
-          # Check for dependency conflicts and peer dependency issues
-          if ! npm ls --depth=0; then
-            echo "⚠️  npm dependency tree has issues, checking details..."
-            npm ls --depth=1 || true
+          echo "npm ls output:"
+          echo "$NPM_LS_OUTPUT"
 
-            # Check if these are just peer dependency warnings (common and usually ok)
-            if npm ls 2>&1 | grep -q "ERESOLVE\|peer dep"; then
+          # Check for serious dependency issues
+          if echo "$NPM_LS_OUTPUT" | grep -q "ERESOLVE"; then
+            echo "❌ Dependency resolution errors detected (ERESOLVE)"
+            exit 1
+          fi
+
+          if echo "$NPM_LS_OUTPUT" | grep -q "missing:"; then
+            echo "❌ Missing dependencies detected"
+            exit 1
+          fi
+
+          if echo "$NPM_LS_OUTPUT" | grep -q "invalid:"; then
+            echo "❌ Invalid dependencies detected"
+            exit 1
+          fi
+
+          # Handle peer dependency warnings (usually safe)
+          if [ $NPM_LS_EXIT_CODE -ne 0 ]; then
+            if echo "$NPM_LS_OUTPUT" | grep -qi "peer dep"; then
               echo "ℹ️  Found peer dependency warnings, but core dependencies are resolved"
             else
               echo "❌ Serious dependency tree issues detected!"
+              echo "Check the npm ls output above for details."
               exit 1
             fi
           fi
 
           # Show installed packages for transparency
           echo "📋 Installed packages:"
-          npm ls --depth=0 --json | jq -r '.dependencies | keys[]' | head -10
+          npm ls --depth=0 --json 2>/dev/null | jq -r '.dependencies | keys[]' | head -10 || echo "Could not list packages"
 
           echo "✅ npm dependency tree validated"
 
