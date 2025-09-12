@@ -145,7 +145,6 @@ def view_page(request, slug):
 def manage_users(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
-    
     # MFA check
     if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
         return HttpResponseRedirect('/accounts/2fa/totp/activate')
@@ -370,6 +369,11 @@ def view_media(request):
         if request.POST.get("password"):
             if media.password == request.POST.get("password"):
                 can_see_restricted_media = True
+                # Store hashed password in session for file access (avoid persisting plaintext)
+                import hashlib
+                request.session[f'media_password_{media.friendly_token}'] = hashlib.sha256(
+                    media.password.encode("utf-8")
+                ).hexdigest()
             else:
                 wrong_password_provided = True
 
@@ -532,7 +536,7 @@ def add_subtitle(request):
             subtitle = form.save()
             new_subtitle = Subtitle.objects.filter(id=subtitle.id).first()
             try:
-                new_subtitle.convert_to_srt()
+                new_subtitle.convert_to_vtt()
                 messages.add_message(request, messages.INFO, "Subtitle was added!")
                 return HttpResponseRedirect(subtitle.media.get_absolute_url())
             except:
@@ -708,7 +712,7 @@ class MediaDetail(APIView):
                     {"detail": "media is private"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
-            
+
             # Handle RESTRICTED media (password-protected, no login required)
             elif media.state == "restricted" and not (
                 self.request.user == media.user or is_mediacms_editor(self.request.user)
@@ -1177,12 +1181,12 @@ class PlaylistDetail(APIView):
         playlist = self.get_playlist(friendly_token)
         if isinstance(playlist, Response):
             return playlist
-        
+
         serializer = PlaylistDetailSerializer(playlist, context={"request": request})
-        
+
         # Import helper functions
         from .helpers import is_advanced_user, can_user_see_video_in_playlist
-        
+
         # Determine which videos to show based on user permissions
         if is_advanced_user(request.user) and playlist.user == request.user:
             # Advanced users viewing their own playlists can see all non-private videos
@@ -1199,22 +1203,22 @@ class PlaylistDetail(APIView):
             playlist_media_queryset = PlaylistMedia.objects.filter(
                 playlist=playlist, media__state="public"
             ).prefetch_related("media__user")
-        
+
         # Filter videos based on what the current viewer can see
         accessible_media = []
         for playlist_media in playlist_media_queryset:
             if can_user_see_video_in_playlist(request.user, playlist_media.media):
                 accessible_media.append(playlist_media.media)
-        
+
         playlist_media_serializer = MediaSerializer(
             accessible_media, many=True, context={"request": request}
         )
-        
+
         ret = serializer.data
         ret["playlist_media"] = playlist_media_serializer.data
         # needed for index page featured
         ret["results"] = playlist_media_serializer.data[:8]
-        
+
         return Response(ret)
 
     def post(self, request, friendly_token, format=None):
@@ -1245,23 +1249,23 @@ class PlaylistDetail(APIView):
         if action in ["add", "remove", "ordering"]:
             # Import helper functions
             from .helpers import is_advanced_user, can_user_see_video_in_playlist
-            
+
             # Determine media query based on user permissions
-            if (is_advanced_user(request.user) and 
+            if (is_advanced_user(request.user) and
                 playlist.user == request.user):
                 # Advanced users can add public, unlisted, and restricted videos
                 media = Media.objects.filter(
-                    friendly_token=media_friendly_token, 
+                    friendly_token=media_friendly_token,
                     media_type="video"
                 ).exclude(state="private").first()
             else:
                 # Regular users can only add public videos (existing behavior)
                 media = Media.objects.filter(
-                    friendly_token=media_friendly_token, 
+                    friendly_token=media_friendly_token,
                     media_type="video",
                     state="public"
                 ).first()
-            
+
             if media:
                 # Additional access check - ensure user can see this video in playlist
                 if not can_user_see_video_in_playlist(request.user, media):
@@ -1269,7 +1273,7 @@ class PlaylistDetail(APIView):
                         {"detail": "insufficient permissions to access this video"},
                         status=status.HTTP_403_FORBIDDEN
                     )
-                
+
                 if action == "add":
                     media_in_playlist = PlaylistMedia.objects.filter(
                         playlist=playlist
@@ -1307,7 +1311,7 @@ class PlaylistDetail(APIView):
                         )
             else:
                 return Response(
-                    {"detail": "media is not valid or accessible"}, 
+                    {"detail": "media is not valid or accessible"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
         return Response(

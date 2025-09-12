@@ -16,5 +16,15 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
 
+USE_X_ACCEL_REDIRECT = False
+
+# CORS settings
+# For development only - allows all origins
+CORS_ALLOW_ALL_ORIGINS = True
+# WARNING: In production, disable CORS_ALLOW_ALL_ORIGINS and instead configure
+# CORS_ALLOWED_ORIGINS with a specific list of allowed origins
+# Example for production:
+# CORS_ALLOW_ALL_ORIGINS = False
+# CORS_ALLOWED_ORIGINS = ['https://example.com', 'https://subdomain.example.com']
 # Custom MFA settings
 MFA_REQUIRED_ROLES = ['superuser'] # options: superuser, advanced_user, authenticated, manager, editor
