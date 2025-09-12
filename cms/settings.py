@@ -61,7 +61,6 @@ INSTALLED_APPS = [
     "files.apps.FilesConfig",
     "users.apps.UsersConfig",
     "actions.apps.ActionsConfig",
-    "debug_toolbar",
     "mptt",
     "crispy_forms",
     "uploader.apps.UploaderConfig",
@@ -80,7 +79,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "users.middleware.AdminMFAMiddleware",
 ]
@@ -236,7 +234,7 @@ CELERY_BEAT_SCHEDULE = {
     # clear expired sessions, every sunday 1.01am. By default Django has 2week expire date
     "clear_sessions": {
         "task": "clear_sessions",
-        "schedule": crontab(hour=1, minute=1, day_of_week=6),
+        "schedule": crontab(hour="1", minute="1", day_of_week="6"),
     },
     "get_list_of_popular_media": {
         "task": "get_list_of_popular_media",
@@ -526,6 +524,13 @@ WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths(
 from .local_settings import *
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
 WHISPER_SIZE = "base"
+
+# Add debug_toolbar to INSTALLED_APPS if DEBUG is True
+if DEBUG:
+    if 'debug_toolbar' not in INSTALLED_APPS:
+        INSTALLED_APPS.append('debug_toolbar')
+    if 'debug_toolbar.middleware.DebugToolbarMiddleware' not in MIDDLEWARE:
+        MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 
 ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
 
