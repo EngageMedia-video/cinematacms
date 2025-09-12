@@ -1175,13 +1175,13 @@ $controlBarAnimationsDuration: 0.1s;
 
 		&.just-paused {
 			span:after {
-				content: "\f117"; /* pause */
+				content: "\f103"; /* pause */
 			}
 		}
 
 		&.started-playing {
 			span:after {
-				content: "\f11b"; /* play */
+				content: "\f101"; /* play */
 			}
 		}
 
@@ -1678,7 +1678,7 @@ $controlBarAnimationsDuration: 0.1s;
 			&.vjs-playing {
 				.vjs-icon-play {
 					&:before {
-						content: "\f117"; /* pause */
+						content: "\f103"; /* pause */
 					}
 				}
 			}
