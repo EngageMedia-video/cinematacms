@@ -10,6 +10,7 @@ TIME_ZONE = "Europe/London"
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
+    "0.0.0.0",
 ]
 CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for CORS
 # Import default headers to extend them
@@ -32,7 +33,7 @@ CORS_EXPOSE_HEADERS = [
 ]
 
 
-INTERNAL_IPS = "127.0.0.1"
+INTERNAL_IPS = ["127.0.0.1", "0.0.0.0"]
 FRONTEND_HOST = "http://cinemata.org"
 SSL_FRONTEND_HOST = FRONTEND_HOST.replace("http", "https")
 
@@ -530,7 +531,27 @@ if DEBUG:
     if 'debug_toolbar' not in INSTALLED_APPS:
         INSTALLED_APPS.append('debug_toolbar')
     if 'debug_toolbar.middleware.DebugToolbarMiddleware' not in MIDDLEWARE:
-        MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+        # Insert after CorsMiddleware but before other middleware
+        MIDDLEWARE.insert(1, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+
+    # Debug toolbar configuration for 6.0.0
+    def show_toolbar(request):
+        """Show toolbar for local development, handling both IP and localhost"""
+        # Always return True in DEBUG mode for simplicity
+        return True
+
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': show_toolbar,
+        'RENDER_PANELS': True,  # Ensure panels are rendered
+        'EXTRA_SIGNALS': [],  # Avoid signal issues
+        'DISABLE_PANELS': set(),  # Enable all panels
+        'IS_RUNNING_TESTS': False,
+    }
+
+    # Ensure toolbar static files are accessible
+    import mimetypes
+    mimetypes.add_type("application/javascript", ".js", True)
+    mimetypes.add_type("text/css", ".css", True)
 
 ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
 
