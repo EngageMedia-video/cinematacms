@@ -1,4 +1,5 @@
 import re
+import logging
 from django import forms
 from django.contrib import admin
 from tinymce.widgets import TinyMCE
@@ -27,6 +28,7 @@ from .models import (
     TranscriptionRequest,
 )
 
+logger = logging.getLogger(__name__)
 
 class CommentAdmin(admin.ModelAdmin):
     search_fields = ["text"]
@@ -204,10 +206,19 @@ class TranscriptionRequestAdmin(admin.ModelAdmin):
     def language(self, obj):
         """Get the language of the media"""
         if obj.media and obj.media.media_language:
-            # Get the display name from the choices
-            from . import lists
-            language_dict = dict(lists.video_languages)
-            return language_dict.get(obj.media.media_language, obj.media.media_language)
+            try:
+                media_language = obj.media.media_language
+                language_row = (
+                    Language.objects
+                    .exclude(code__in=["automatic-translation", "automatic"])
+                    .values("title")
+                    .filter(code=media_language)
+                    .first()
+                )
+                return (language_row and language_row['title']) or (media_language or "Not specified")
+            except Exception as e:
+                logger.info("Transcription Request Language Not Specified")
+                return "Not specified"
         return "Not specified"
     language.short_description = "Language"
     

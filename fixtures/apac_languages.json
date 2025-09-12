@@ -1,0 +1,218 @@
+[
+  {
+    "model": "files.language",
+    "pk": 1,
+    "fields": {
+      "code": "en",
+      "title": "English"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 2,
+    "fields": {
+      "code": "zh",
+      "title": "Chinese (Simplified)"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 3,
+    "fields": {
+      "code": "zh-TW",
+      "title": "Chinese (Traditional)"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 4,
+    "fields": {
+      "code": "ja",
+      "title": "Japanese"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 5,
+    "fields": {
+      "code": "ko",
+      "title": "Korean"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 6,
+    "fields": {
+      "code": "th",
+      "title": "Thai"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 7,
+    "fields": {
+      "code": "vi",
+      "title": "Vietnamese"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 8,
+    "fields": {
+      "code": "id",
+      "title": "Indonesian"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 9,
+    "fields": {
+      "code": "ms",
+      "title": "Malay"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 10,
+    "fields": {
+      "code": "tl",
+      "title": "Filipino"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 11,
+    "fields": {
+      "code": "hi",
+      "title": "Hindi"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 12,
+    "fields": {
+      "code": "ta",
+      "title": "Tamil"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 13,
+    "fields": {
+      "code": "bn",
+      "title": "Bengali"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 14,
+    "fields": {
+      "code": "ur",
+      "title": "Urdu"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 15,
+    "fields": {
+      "code": "pa",
+      "title": "Punjabi"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 16,
+    "fields": {
+      "code": "te",
+      "title": "Telugu"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 17,
+    "fields": {
+      "code": "kn",
+      "title": "Kannada"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 18,
+    "fields": {
+      "code": "ml",
+      "title": "Malayalam"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 19,
+    "fields": {
+      "code": "gu",
+      "title": "Gujarati"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 20,
+    "fields": {
+      "code": "mr",
+      "title": "Marathi"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 21,
+    "fields": {
+      "code": "ne",
+      "title": "Nepali"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 22,
+    "fields": {
+      "code": "si",
+      "title": "Sinhala"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 23,
+    "fields": {
+      "code": "my",
+      "title": "Myanmar (Burmese)"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 24,
+    "fields": {
+      "code": "km",
+      "title": "Khmer"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 25,
+    "fields": {
+      "code": "lo",
+      "title": "Lao"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 26,
+    "fields": {
+      "code": "automatic",
+      "title": "Automatic Detection"
+    }
+  },
+  {
+    "model": "files.language",
+    "pk": 27,
+    "fields": {
+      "code": "automatic-translation",
+      "title": "Auto-detect & Translate to English"
+    }
+  }
+]

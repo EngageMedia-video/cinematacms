@@ -64,6 +64,7 @@ from .models import (
     IndexPageFeatured,
     License,
     Media,
+    Language,
     MediaCountry,
     MediaLanguage,
     Page,
@@ -126,7 +127,7 @@ def countries(request):
 
 def languages(request):
     context = {}
-    languages = [language[1] for language in lists.video_languages]
+    languages = MediaLanguage.objects.order_by('title')
     context["languages"] = languages
     return render(request, "cms/languages.html", context)
 
@@ -1036,7 +1037,9 @@ class MediaSearch(APIView):
 
         if language:
             language = {
-                value: key for key, value in dict(lists.video_languages).items()
+                value: key for key, value in Language.objects.exclude(
+                    code__in=["automatic", "automatic-translation"]
+                ).values_list("code", "title")
             }.get(language)
             media = media.filter(media_language=language)
 
@@ -1633,11 +1636,14 @@ class TopicList(APIView):
 
 
 class MediaLanguageList(APIView):
+    """
+    Enhanced API view that serves languages from database into the 'languages' page.
+    This view retrieves languages that have a non-empty listings_thumbnail and a media_count greater than zero.
+    """
     def get(self, request, format=None):
         languages = (
-            MediaLanguage.objects.exclude(listings_thumbnail=None)
-            .exclude(listings_thumbnail="")
-            .filter()
+            MediaLanguage.objects
+            .filter(media_count__gt=0)
             .order_by("title")
         )
         serializer = MediaLanguageSerializer(
@@ -1645,7 +1651,6 @@ class MediaLanguageList(APIView):
         )
         ret = serializer.data
         return Response(ret)
-
 
 class MediaCountryList(APIView):
     def get(self, request, format=None):

@@ -86,8 +86,10 @@ mkdir pids
 python manage.py makemigrations files users actions
 python manage.py migrate
 python manage.py loaddata files/fixtures/creative_commons_licenses.json
+python manage.py loaddata fixtures/apac_languages.json
 python manage.py loaddata fixtures/encoding_profiles.json
 python manage.py loaddata fixtures/categories.json
+python manage.py load_apac_languages
 python manage.py collectstatic --noinput
 
 ADMIN_PASS=`python -c "import secrets;chars = 'abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(10)))"`
