@@ -33,5 +33,5 @@ django-cors-headers==4.7.0
 
 # for MFA and local installation purposes
 python-dotenv==1.1.0
-fido2==1.2.0
+fido2==2.0.0
 qrcode==8.2
