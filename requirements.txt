@@ -1,5 +1,5 @@
 Django==5.2
-djangorestframework==3.15.2
+djangorestframework==3.16.1
 django-allauth==65.7.0
 
 django-recaptcha==3.0.0
