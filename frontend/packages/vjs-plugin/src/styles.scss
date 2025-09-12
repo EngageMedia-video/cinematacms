@@ -1187,25 +1187,25 @@ $controlBarAnimationsDuration: 0.1s;
 
 		&.volume-high {
 			span:after {
-				content: "\f126"; /* volume-high */
+				content: "\f107"; /* volume-high */
 			}
 		}
 
 		&.volume-mid {
 			span:after {
-				content: "\f128"; /* volume-mid */
+				content: "\f106"; /* volume-mid */
 			}
 		}
 
 		&.volume-low {
 			span:after {
-				content: "\f127"; /* volume-low */
+				content: "\f105"; /* volume-low */
 			}
 		}
 
 		&.volume-mute {
 			span:after {
-				content: "\f129"; /* volume-mute */
+				content: "\f104"; /* volume-mute */
 			}
 		}
 
