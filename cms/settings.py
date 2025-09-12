@@ -11,6 +11,27 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
 ]
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for CORS
+# Import default headers to extend them
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = default_headers + (
+    'x-requested-with',     # Add X-Requested-With
+    'if-modified-since',    # Add If-Modified-Since
+    'cache-control',        # Add Cache-Control
+    'content-type',         # Add Content-Type (important for application/json etc.)
+    'range',                # Add Range
+    'dnt',               # Generally not needed as DNT is safelisted
+    'user-agent',        # Generally not needed as User-Agent is safelisted
+)
+#crucial for exposing response headers to frontend JavaScript
+CORS_EXPOSE_HEADERS = [
+    'Content-Length',
+    'Content-Range',
+    'Accept-Ranges',
+]
+
+
 INTERNAL_IPS = "127.0.0.1"
 FRONTEND_HOST = "http://cinemata.org"
 SSL_FRONTEND_HOST = FRONTEND_HOST.replace("http", "https")
@@ -40,16 +61,17 @@ INSTALLED_APPS = [
     "files.apps.FilesConfig",
     "users.apps.UsersConfig",
     "actions.apps.ActionsConfig",
-    "debug_toolbar",
     "mptt",
     "crispy_forms",
     "uploader.apps.UploaderConfig",
     "djcelery_email",
     "tinymce",
     "captcha",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -57,7 +79,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "users.middleware.AdminMFAMiddleware",
 ]
@@ -213,7 +234,7 @@ CELERY_BEAT_SCHEDULE = {
     # clear expired sessions, every sunday 1.01am. By default Django has 2week expire date
     "clear_sessions": {
         "task": "clear_sessions",
-        "schedule": crontab(hour=1, minute=1, day_of_week=6),
+        "schedule": crontab(hour="1", minute="1", day_of_week="6"),
     },
     "get_list_of_popular_media": {
         "task": "get_list_of_popular_media",
@@ -238,7 +259,7 @@ TIME_TO_ACTION_ANONYMOUS = 10 * 60
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_METHODS = {'username', 'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*']
-ACCOUNT_EMAIL_VERIFICATION = "optional"  # 'mandatory' 'none'
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"  # 'mandatory' 'none'
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_USERNAME_MIN_LENGTH = "4"
 ACCOUNT_ADAPTER = "users.adapter.MyAccountAdapter"
@@ -326,6 +347,22 @@ SHOW_ORIGINAL_MEDIA = True
 # Keep in mind that nginx will serve the file unless there's
 # some authentication taking place. Check nginx file and setup a
 # basic http auth user/password if you want to restrict access
+
+# X-Accel-Redirect settings for secure media serving
+# Set to True when using Nginx with X-Accel-Redirect (production)
+# Set to False when using Django development server
+USE_X_ACCEL_REDIRECT = True
+
+# Permission cache settings
+# Set to True to enable Redis caching for permission checks (recommended)
+ENABLE_PERMISSION_CACHE = True
+# Cache timeout for permission checks (in seconds)
+PERMISSION_CACHE_TIMEOUT = 300  # 5 minutes
+# Cache timeout for restricted media with passwords (in seconds)
+RESTRICTED_PERMISSION_CACHE_TIMEOUT = 60  # 1 minute
+
+PERMISSION_CACHE_KEY_PREFIX = "cinemata_media_permission"
+PERMISSION_CACHE_VERSION = 1
 
 MAX_MEDIA_PER_PLAYLIST = 70
 FRIENDLY_TOKEN_LEN = 9
@@ -487,6 +524,13 @@ WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths(
 from .local_settings import *
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
 WHISPER_SIZE = "base"
+
+# Add debug_toolbar to INSTALLED_APPS if DEBUG is True
+if DEBUG:
+    if 'debug_toolbar' not in INSTALLED_APPS:
+        INSTALLED_APPS.append('debug_toolbar')
+    if 'debug_toolbar.middleware.DebugToolbarMiddleware' not in MIDDLEWARE:
+        MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 
 ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
 

@@ -4,7 +4,7 @@ django-allauth==65.7.0
 
 django-recaptcha==3.0.0
 psycopg2-binary==2.9.10
-uwsgi==2.0.29
+uwsgi==2.0.30
 
 django-redis==4.12.1
 celery==4.4.7
@@ -26,7 +26,7 @@ ipython==8.36.0
 flake8==7.2.0
 pep8==1.7.1
 django-silk==5.3.2
-django-debug-toolbar==4.1.0
+django-debug-toolbar==6.0.0
 django-tinymce==4.1.0
 whitenoise==6.9.0
 django-cors-headers==4.7.0
