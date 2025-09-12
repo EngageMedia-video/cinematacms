@@ -1,6 +1,6 @@
 import { version as VERSION } from "../package.json";
 
-import PluginFontIcons from "@mediacms/vjs-plugin-font-icons/dist/mediacms-vjs-icons.css";
+import PluginFontIcons from "@mediacms/vjs-plugin-font-icons/dist/css/mediacms-vjs-icons.css";
 import PluginStyles from "./styles.scss";
 
 let Plugin = null;

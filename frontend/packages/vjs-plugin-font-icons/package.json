@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "version": "grunt && git add .",
-    "build": "npm run clean:build && grunt --base ./ --gruntfile ./mediacms/Gruntfile.js",
+    "build": "npm run clean:build && grunt --base ./",
     "clean:build": "node ./scripts/rmrf.js ./dist ./build",
     "pack": "npm run build && npm pack"
   },

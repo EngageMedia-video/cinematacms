@@ -1,7 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
-var sass = require('node-sass');
+var sass = require('sass');
 
 let iconsIndex = [];
 
@@ -46,7 +46,7 @@ module.exports = function(grunt) {
             },
       dist: {
         files: {
-          'css/videojs-icons.css': 'scss/videojs-icons.scss'
+            'dist/css/mediacms-vjs-icons.css': 'scss/videojs-icons.scss'
         }
       }
     },
@@ -58,13 +58,13 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.registerTask('generate-font', function() {
+  grunt.registerTask('generate-font', async function() {
     var done = this.async();
 
-    let webfontsGenerator = require('webfonts-generator');
+    const { generateFonts } = require('fantasticon');
     let iconConfig = grunt.file.readJSON(path.join(__dirname, '..', 'icons.json'));
 
-    let svgRootDir = iconConfig['root-dir'];
+    let svgRootDir = path.resolve(path.join(__dirname, '..', iconConfig['root-dir']));
     if (grunt.option('exclude-default')) {
       // Exclude default video.js icons
       iconConfig.icons = [];
@@ -85,46 +85,128 @@ module.exports = function(grunt) {
 
     icons = iconConfig.icons;
 
-    let iconFiles = icons.map(function(icon) {
-      // If root-dir is specified for a specific icon, use that.
+    // Create a temporary directory with renamed SVG files
+    const tempDir = path.join(__dirname, '..', '.temp-icons');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    const outputDir = path.resolve('build/fonts');
+    // Ensure output directory exists
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    // Ensure dist directory exists for HTML preview
+    const distDir = path.resolve('dist');
+    if (!fs.existsSync(distDir)) {
+      fs.mkdirSync(distDir, { recursive: true });
+    }
+
+    // Copy and rename SVG files to match icon names
+    // Track which source files we've already read to avoid redundant reads
+    const svgCache = {};
+
+    // Sort icons by name to ensure consistent ordering with codepoint generation
+    const sortedIcons = [...icons].sort((a, b) => a.name.localeCompare(b.name));
+
+    sortedIcons.forEach(function(icon) {
+      let sourcePath;
       if (icon['root-dir']) {
-        return icon['root-dir'] + icon.svg;
+        sourcePath = path.resolve(path.join(__dirname, '..', icon['root-dir'], icon.svg));
+      } else {
+        sourcePath = path.join(svgRootDir, icon.svg);
       }
 
-      // Otherwise, use the default root-dir.
-      return svgRootDir + icon.svg;
+      const destPath = path.join(tempDir, icon.name + '.svg');
+
+      // Check if we've already read this source file
+      if (!svgCache[sourcePath]) {
+        // Only read the file if it exists
+        if (fs.existsSync(sourcePath)) {
+          svgCache[sourcePath] = fs.readFileSync(sourcePath);
+        } else {
+          console.warn(`Warning: SVG file not found: ${sourcePath}`);
+          // Use a placeholder or skip
+          return;
+        }
+      }
+
+      // Write the cached content to the destination
+      if (svgCache[sourcePath]) {
+        fs.writeFileSync(destPath, svgCache[sourcePath]);
+      }
     });
 
-    webfontsGenerator({
-      files: iconFiles,
-      dest: 'fonts/',
-      fontName: iconConfig['font-name'],
-      cssDest: 'scss/_icons.scss',
-      cssTemplate: './templates/scss.hbs',
-      htmlDest: 'index.html',
-      htmlTemplate: './templates/html.hbs',
-      html: true,
-      rename: function(iconPath) {
-        let fileName = path.basename(iconPath);
+    try {
+      // Generate custom codepoints starting from a specific range
+      // Sort icon names alphabetically to match how fantasticon reads them
+      const customCodepoints = {};
+      let codepointStart = 0xf101; // Start from private use area
+      const sortedIconNames = icons.map(icon => icon.name).sort();
+      sortedIconNames.forEach((name, index) => {
+        customCodepoints[name] = codepointStart + index;
+      });
 
-        let iconName = _.result(_.find(icons, function(icon) {
-          let svgName = path.basename(icon.svg);
+      await generateFonts({
+        inputDir: tempDir,
+        outputDir: './',
+        name: iconConfig['font-name'],
+        fontTypes: ['woff', 'ttf', 'svg'],
+        assetTypes: ['scss', 'html'],
+        templates: {
+          scss: './templates/scss.hbs',
+          html: './templates/html.hbs'
+        },
+        formatOptions: {
+          woff: {
+            // WOFF specific options
+          },
+          ttf: {
+            // TTF specific options
+          },
+          json: {
+            indent: 2
+          }
+        },
+        pathOptions: {
+          woff: path.join(outputDir, iconConfig['font-name'] + '.woff'),
+          ttf: path.join(outputDir, iconConfig['font-name'] + '.ttf'),
+          svg: path.join(outputDir, iconConfig['font-name'] + '.svg'),
+          scss: './scss/_icons.scss',
+          html: './dist/fonts-preview.html'
+        },
+        codepoints: customCodepoints,
+        fontHeight: 1000,
+        normalize: true
+      });
 
-          return svgName === fileName;
-        }), 'name');
+      // Post-process the SCSS file to convert decimal codepoints to hexadecimal
+      const scssFile = './scss/_icons.scss';
+      let scssContent = fs.readFileSync(scssFile, 'utf8');
 
-        return iconName;
-      },
-      types: ['svg', 'woff', 'ttf']
-    }, function(error) {
-      if (error) {
-        console.error(error);
-        done(false);
-      }
+      // Replace decimal codepoints with hexadecimal
+      scssContent = scssContent.replace(/(\w+):\s*'(\d+)'/g, (match, name, decimal) => {
+        const hex = parseInt(decimal, 10).toString(16);
+        return `${name}: '${hex}'`;
+      });
+
+      fs.writeFileSync(scssFile, scssContent);
+
+      // Clean up temporary directory
+      const rimraf = require('rimraf');
+      rimraf.sync(tempDir);
 
       done();
-    });
+    } catch (error) {
+      console.error('Error generating fonts:', error);
 
+      // Clean up temporary directory on error
+      const rimraf = require('rimraf');
+      rimraf.sync(tempDir);
+
+      done(false);
+    }
   });
 
   grunt.registerTask('update-base64', function() {
@@ -137,7 +219,7 @@ module.exports = function(grunt) {
     }
     let fontName = iconConfig['font-name'];
     let fontFiles = {
-      woff: './fonts/' + fontName + '.woff'
+      woff: './build/fonts/' + fontName + '.woff'
     };
 
     let scssContents = fs.readFileSync(iconScssFile).toString();

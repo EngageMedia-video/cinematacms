@@ -324,7 +324,7 @@ $controlBarAnimationsDuration: 0.1s;
 }
 
 .video-js.vjs-mediacms .vjs-subtitles-control .vjs-icon-placeholder:before {
-	content: "\f107";
+	content: "\f10a"; /* closed-caption */
 }
 
 .video-js.vjs-mediacms .vjs-theater-mode-control .vjs-icon-placeholder {
@@ -334,14 +334,14 @@ $controlBarAnimationsDuration: 0.1s;
 }
 
 .video-js.vjs-mediacms .vjs-theater-mode-control .vjs-icon-placeholder:before {
-	content: "\f101";
+	content: "\f10c"; /* default-view */
 }
 
 .video-js.vjs-mediacms
 	.vjs-theater-mode
 	.vjs-theater-mode-control
 	.vjs-icon-placeholder:before {
-	content: "\f102";
+	content: "\f123"; /* theater-view */
 }
 
 .video-js.vjs-mediacms {
@@ -584,7 +584,7 @@ $controlBarAnimationsDuration: 0.1s;
 					cursor: pointer;
 
 					&:before {
-						content: "\f103";
+						content: "\f114"; /* navigate-before */
 						font-family: "MediaCmsVideoJsIcons";
 						font-size: 1.25em;
 						vertical-align: text-bottom;
@@ -620,7 +620,7 @@ $controlBarAnimationsDuration: 0.1s;
 					// position:relative;
 
 					&:after {
-						content: "\f104";
+						content: "\f10d"; /* done */
 						font-family: "MediaCmsVideoJsIcons";
 						font-size: 1.25em;
 						font-weight: normal;
@@ -677,7 +677,7 @@ $controlBarAnimationsDuration: 0.1s;
 						padding-left: 0.75em;
 
 						&:before {
-							content: "\f105";
+							content: "\f10d"; /* done */
 							font-family: "MediaCmsVideoJsIcons";
 							font-size: 1.25em;
 							// vertical-align:text-bottom;
@@ -1175,37 +1175,37 @@ $controlBarAnimationsDuration: 0.1s;
 
 		&.just-paused {
 			span:after {
-				content: "\f103";
+				content: "\f103"; /* pause */
 			}
 		}
 
 		&.started-playing {
 			span:after {
-				content: "\f101";
+				content: "\f101"; /* play */
 			}
 		}
 
 		&.volume-high {
 			span:after {
-				content: "\f107";
+				content: "\f107"; /* volume-high */
 			}
 		}
 
 		&.volume-mid {
 			span:after {
-				content: "\f106";
+				content: "\f106"; /* volume-mid */
 			}
 		}
 
 		&.volume-low {
 			span:after {
-				content: "\f105";
+				content: "\f105"; /* volume-low */
 			}
 		}
 
 		&.volume-mute {
 			span:after {
-				content: "\f104";
+				content: "\f104"; /* volume-mute */
 			}
 		}
 
@@ -1678,7 +1678,7 @@ $controlBarAnimationsDuration: 0.1s;
 			&.vjs-playing {
 				.vjs-icon-play {
 					&:before {
-						content: "\f103";
+						content: "\f103"; /* pause */
 					}
 				}
 			}
