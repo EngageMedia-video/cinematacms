@@ -67,7 +67,7 @@ INSTALLED_APPS = [
     "uploader.apps.UploaderConfig",
     "djcelery_email",
     "tinymce",
-    "captcha",
+    "django_recaptcha",
     "corsheaders",
 ]
 
