@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     "uploader.apps.UploaderConfig",
     "djcelery_email",
     "ckeditor",
-    "captcha",
+    "django_recaptcha",
 ]
 
 MIDDLEWARE = [

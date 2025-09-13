@@ -29,7 +29,7 @@
   "dependencies": {
     "ejs": "^3.1.10",
     "html-minifier-terser": "^7.2.0",
-    "loader-utils": "^2.0.0",
+    "loader-utils": "^3.3.1",
     "terser": "^4.8.1"
   },
   "devDependencies": {
