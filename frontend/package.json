@@ -31,7 +31,7 @@
     "css-minimizer-webpack-plugin": "^7.0.2",
     "css-url-relative-plugin": "^1.1.0",
     "dotenv": "^16.5.0",
-    "dotenv-webpack": "^8.1.0",
+    "dotenv-webpack": "^8.1.1",
     "ejs": "^3.1.10",
     "ejs-compiled-loader": "file:packages/ejs-compiled-loader",
     "html-prettify": "^1.0.7",
