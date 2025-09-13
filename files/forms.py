@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from captcha.fields import ReCaptchaField
-from captcha.widgets import ReCaptchaV2Checkbox
+from django_recaptcha.fields import ReCaptchaField
+from django_recaptcha.widgets import ReCaptchaV2Checkbox
 from django import forms
 from django.conf import settings
 from django.contrib.admin.sites import site
@@ -246,7 +246,6 @@ class ContactForm(forms.Form):
     from_email = forms.EmailField(required=True)
     name = forms.CharField(required=False)
     message = forms.CharField(widget=forms.Textarea, required=True)
-    captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox)
 
     def __init__(self, user, *args, **kwargs):
         super(ContactForm, self).__init__(*args, **kwargs)
@@ -254,6 +253,11 @@ class ContactForm(forms.Form):
         self.fields["from_email"].label = "Your email:"
         self.fields["message"].label = "Please add your message here and submit:"
         self.user = user
+
+        # Only add reCAPTCHA field if keys are configured
+        if getattr(settings, 'RECAPTCHA_PUBLIC_KEY', '') and getattr(settings, 'RECAPTCHA_PRIVATE_KEY', ''):
+            self.fields['captcha'] = ReCaptchaField(widget=ReCaptchaV2Checkbox)
+
         if user.is_authenticated:
             self.fields.pop("name")
             self.fields.pop("from_email")
