@@ -5,44 +5,41 @@ description = "An open-source project wrapper of MediaCMS tailor-fit to showcasi
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "celery==4.4.7",
-    "django-allauth==65.7.0",
+    "celery==5.2.2",
+    "django-allauth==65.8.1",
     "django-celery-email==3.0.0",
     "django-cors-headers==4.7.0",
     "django-crispy-forms==1.9.0",
-    "django-debug-toolbar==4.1.0",
+    "django-debug-toolbar==6.0.0",
     "django-filter==25.1",
     "django-imagekit==5.0.0",
-    "django-mptt==0.16.0",
-    "django-recaptcha==3.0.0",
+    "django-mptt==0.18.0",
+    "django-recaptcha==4.1.0",
     "django-redis==4.12.1",
     "django-silk==5.3.2",
-    "django==5.2",
-    "djangorestframework==3.15.2",
+    "django==5.2.6",
+    "djangorestframework==3.16.1",
     "psycopg2-binary==2.9.10",
     "filetype==1.2.0",
-    "flake8==7.2.0",
+    "flake8==7.3.0",
     "ipython==8.37.0",
     "m3u8==6.0.0",
-    "markdown==3.8",
+    "markdown==3.9",
     "pep8==1.7.1",
-    "pillow==9.5.0",
-    "python-dotenv==1.1.0",
-    "requests==2.32.3",
+    "pillow==11.3.0",
+    "python-dotenv==1.1.1",
+    "requests==2.32.4",
     "rpdb==0.2.0",
     "tqdm==4.67.1",
     "whitenoise==6.9.0",
-    "fido2==1.2.0",
-    "uwsgi==2.0.29",
+    "fido2==2.0.0",
+    "uwsgi==2.0.30",
     "qrcode==8.2",
     "django-tinymce==4.1.0",
 ]
 
 [dependency-groups]
-dev = [
-    "basedpyright>=1.29.2",
-    "ruff>=0.11.13",
-]
+dev = ["basedpyright>=1.29.2", "ruff>=0.11.13"]
 
 [tool.uv.sources]
 django-tinymce = { git = "https://github.com/jazzband/django-tinymce.git", rev = "685236d36af37afbb8e069099879b3489bbe8216" }
