@@ -5,7 +5,7 @@ description = "An open-source project wrapper of MediaCMS tailor-fit to showcasi
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "celery==4.4.7",
+    "celery==5.2.2",
     "django-allauth==65.8.1",
     "django-celery-email==3.0.0",
     "django-cors-headers==4.7.0",
@@ -28,7 +28,7 @@ dependencies = [
     "pep8==1.7.1",
     "pillow==11.3.0",
     "python-dotenv==1.1.1",
-    "requests==2.32.3",
+    "requests==2.32.4",
     "rpdb==0.2.0",
     "tqdm==4.67.1",
     "whitenoise==6.9.0",
