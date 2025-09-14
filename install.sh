@@ -81,6 +81,9 @@ echo "SSL_FRONTEND_HOST = FRONTEND_HOST.replace('http', 'https')" >> cms/local_s
 echo 'SECRET_KEY='\'"$SECRET_KEY"\' >> cms/local_settings.py
 echo "LOCAL_INSTALL = True" >> cms/local_settings.py
 
+# Add the domain to the allowed hosts in cms/local_settings.py
+echo "ALLOWED_HOSTS = ['$FRONTEND_HOST']" >> cms/local_settings.py
+
 mkdir logs
 mkdir pids
 python manage.py makemigrations files users actions
