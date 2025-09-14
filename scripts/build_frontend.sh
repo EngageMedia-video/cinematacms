@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Exit on error
-set -e
+# Exit on error with strict modes
+set -Eeuo pipefail
+trap 'echo -e "${RED}Error at ${BASH_SOURCE[0]}:${LINENO}${NC}"; exit 1' ERR
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
-
 echo -e "${GREEN}Starting frontend build process...${NC}"
 
 # Function to build a package
@@ -25,12 +25,11 @@ build_package() {
         return 1
     fi
 
-    # Always install dependencies to ensure consistency
-    echo "Installing dependencies for ${package_name}..."
-    npm install
-
-    # Run build
-    npm run build
+    # Install dependencies if node_modules doesn't exist
+    if [ ! -d "node_modules" ]; then
+        echo "Installing dependencies for ${package_name}..."
+        if [ -f "package-lock.json" ]; then npm ci; else npm install; fi
+    fi
     echo -e "${GREEN}✓ ${package_name} built successfully${NC}"
 }
 
@@ -63,23 +62,27 @@ cd "${PROJECT_ROOT}/frontend"
 # Always install dependencies to ensure consistency
 echo "Installing frontend dependencies..."
 npm install
-
-# Run the main build
-npm run build
-echo -e "${GREEN}✓ Main frontend built successfully${NC}"
-
-# Return to project root
+# Install dependencies if needed
+if [ ! -d "node_modules" ]; then
+    echo "Installing frontend dependencies..."
+    if [ -f "package-lock.json" ]; then npm ci; else npm install; fi
+fi
 cd "${PROJECT_ROOT}"
 
 # Run Django collectstatic (with error handling)
 echo -e "${YELLOW}Running Django collectstatic...${NC}"
-if python manage.py collectstatic --noinput 2>/dev/null; then
+if python manage.py collectstatic --noinput; then
     echo -e "${GREEN}✅ Frontend build and deployment complete!${NC}"
     echo -e "${GREEN}Static files collected to: ${PROJECT_ROOT}/static_collected/${NC}"
 else
-    echo -e "${YELLOW}⚠️  Warning: collectstatic failed (possibly due to missing Python dependencies)${NC}"
-    echo -e "${GREEN}✅ Frontend build complete!${NC}"
-    echo -e "${GREEN}Frontend files built to: ${PROJECT_ROOT}/frontend/build/production/static/${NC}"
-    echo -e "${YELLOW}To complete static file collection, fix any Python dependencies and run:${NC}"
-    echo -e "${YELLOW}  python manage.py collectstatic --noinput${NC}"
+    echo -e "${RED}collectstatic failed. Aborting (set CONTINUE_ON_COLLECTSTATIC_FAIL=1 to ignore).${NC}"
+    if [ "${CONTINUE_ON_COLLECTSTATIC_FAIL:-0}" = "1" ]; then
+        echo -e "${YELLOW}Continuing despite collectstatic failure...${NC}"
+        echo -e "${GREEN}✅ Frontend build complete!${NC}"
+        echo -e "${GREEN}Frontend files built to: ${PROJECT_ROOT}/frontend/build/production/static/${NC}"
+        echo -e "${YELLOW}To complete static file collection, fix any Python dependencies and run:${NC}"
+        echo -e "${YELLOW}  python manage.py collectstatic --noinput${NC}"
+    else
+        exit 1
+    fi
 fi

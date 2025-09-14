@@ -73,7 +73,7 @@ class Command(BaseCommand):
         # Run collectstatic
         if not skip_collect:
             self.stdout.write(self.style.SUCCESS('Running collectstatic...'))
-            call_command('collectstatic', '--noinput', verbosity=2 if verbose else 1)
+            call_command('collectstatic', interactive=False, verbosity=2 if verbose else 1)
             self.stdout.write(
                 self.style.SUCCESS(f'✓ Static files collected to {settings.STATIC_ROOT}')
             )
@@ -102,16 +102,17 @@ class Command(BaseCommand):
         return True
 
     def run_npm_command(self, working_dir, command, verbose=False):
-        cmd = f'npm {command}'
+        parts = command.split()
+        cmd = ['npm', *parts]
         try:
             result = subprocess.run(
                 cmd,
-                shell=True,
                 cwd=working_dir,
                 capture_output=not verbose,
                 text=True,
                 check=True,
             )
+
             if verbose and result.stdout:
                 self.stdout.write(result.stdout)
             return True
