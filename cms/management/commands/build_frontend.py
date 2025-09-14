@@ -64,6 +64,9 @@ class Command(BaseCommand):
         # Build main frontend application
         if not skip_main:
             self.stdout.write(self.style.SUCCESS('Building main frontend application...'))
+            # Always install dependencies to ensure consistency
+            self.stdout.write('Installing frontend dependencies...')
+            self.run_npm_command(frontend_dir, 'install', verbose)
             self.run_npm_command(frontend_dir, 'run build', verbose)
             self.stdout.write(self.style.SUCCESS('✓ Main frontend built successfully'))
 
@@ -89,10 +92,9 @@ class Command(BaseCommand):
             )
             return False
 
-        # Install dependencies if node_modules doesn't exist
-        if not (package_path / 'node_modules').exists():
-            self.stdout.write(f'Installing dependencies for {package_name}...')
-            self.run_npm_command(package_path, 'install', verbose)
+        # Always install dependencies to ensure consistency
+        self.stdout.write(f'Installing dependencies for {package_name}...')
+        self.run_npm_command(package_path, 'install', verbose)
 
         # Run build
         self.run_npm_command(package_path, 'run build', verbose)

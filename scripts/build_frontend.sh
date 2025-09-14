@@ -25,11 +25,9 @@ build_package() {
         return 1
     fi
 
-    # Install dependencies if node_modules doesn't exist
-    if [ ! -d "node_modules" ]; then
-        echo "Installing dependencies for ${package_name}..."
-        npm install
-    fi
+    # Always install dependencies to ensure consistency
+    echo "Installing dependencies for ${package_name}..."
+    npm install
 
     # Run build
     npm run build
@@ -62,11 +60,9 @@ fi
 echo -e "${YELLOW}Building main frontend application...${NC}"
 cd "${PROJECT_ROOT}/frontend"
 
-# Install dependencies if needed
-if [ ! -d "node_modules" ]; then
-    echo "Installing frontend dependencies..."
-    npm install
-fi
+# Always install dependencies to ensure consistency
+echo "Installing frontend dependencies..."
+npm install
 
 # Run the main build
 npm run build
