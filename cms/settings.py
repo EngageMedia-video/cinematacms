@@ -522,6 +522,8 @@ WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths(
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
 WHISPER_SIZE = "base"
 
+from .local_settings import *
+
 # Add debug_toolbar to INSTALLED_APPS if DEBUG is True
 if DEBUG:
     if 'debug_toolbar' not in INSTALLED_APPS:
@@ -552,3 +554,5 @@ ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
 
 RECAPTCHA_PRIVATE_KEY = ""
 RECAPTCHA_PUBLIC_KEY = ""
+
+
