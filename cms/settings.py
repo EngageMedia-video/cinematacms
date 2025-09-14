@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "actions.apps.ActionsConfig",
     "mptt",
     "crispy_forms",
+    "crispy_bootstrap5",
     "uploader.apps.UploaderConfig",
     "djcelery_email",
     "tinymce",
@@ -555,4 +556,5 @@ ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
 RECAPTCHA_PRIVATE_KEY = ""
 RECAPTCHA_PUBLIC_KEY = ""
 
-
+CRISPY_ALLOWED_TEMPLATE_PACKS = {"bootstrap5"}
+CRISPY_TEMPLATE_PACK = "bootstrap5"
