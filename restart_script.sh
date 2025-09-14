@@ -26,6 +26,10 @@ git pull
 echo "Installing any new requirements..."
 pip install -r requirements.txt
 
+# Build frontend and collect static files
+echo "Building frontend and collecting static files..."
+python manage.py build_frontend
+
 # Apply database migrations
 echo "Applying database migrations..."
 python manage.py makemigrations
