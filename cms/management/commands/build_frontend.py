@@ -112,7 +112,6 @@ class Command(BaseCommand):
                 text=True,
                 check=True,
             )
-
             if verbose and result.stdout:
                 self.stdout.write(result.stdout)
             return True
