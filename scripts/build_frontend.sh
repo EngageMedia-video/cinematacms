@@ -17,7 +17,6 @@ build_package() {
     local package_name=$2
 
     echo -e "${YELLOW}Building ${package_name}...${NC}"
-    cd "$package_path"
 
     # Use pushd to safely change directory
     pushd "$package_path" >/dev/null
@@ -29,13 +28,14 @@ build_package() {
         return 0
     fi
 
-    # Always install dependencies to ensure consistency
+    # Install dependencies
     echo "Installing dependencies for ${package_name}..."
-    npm install
+    if [ -f "package-lock.json" ]; then npm ci; else npm install; fi
 
     # Run build
     npm run build
     echo -e "${GREEN}✓ ${package_name} built successfully${NC}"
+    popd >/dev/null
 }
 
 # Get the script directory (should be in scripts/)
