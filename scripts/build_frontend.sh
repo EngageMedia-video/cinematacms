@@ -19,10 +19,14 @@ build_package() {
     echo -e "${YELLOW}Building ${package_name}...${NC}"
     cd "$package_path"
 
+    # Use pushd to safely change directory
+    pushd "$package_path" >/dev/null
+
     # Check if package.json exists
     if [ ! -f "package.json" ]; then
         echo -e "${RED}Warning: package.json not found in ${package_path}${NC}"
-        return 1
+        popd >/dev/null
+        return 0
     fi
 
     # Always install dependencies to ensure consistency
