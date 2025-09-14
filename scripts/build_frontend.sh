@@ -25,11 +25,12 @@ build_package() {
         return 1
     fi
 
-    # Install dependencies if node_modules doesn't exist
-    if [ ! -d "node_modules" ]; then
-        echo "Installing dependencies for ${package_name}..."
-        if [ -f "package-lock.json" ]; then npm ci; else npm install; fi
-    fi
+    # Always install dependencies to ensure consistency
+    echo "Installing dependencies for ${package_name}..."
+    npm install
+
+    # Run build
+    npm run build
     echo -e "${GREEN}✓ ${package_name} built successfully${NC}"
 }
 
@@ -62,11 +63,12 @@ cd "${PROJECT_ROOT}/frontend"
 # Always install dependencies to ensure consistency
 echo "Installing frontend dependencies..."
 npm install
-# Install dependencies if needed
-if [ ! -d "node_modules" ]; then
-    echo "Installing frontend dependencies..."
-    if [ -f "package-lock.json" ]; then npm ci; else npm install; fi
-fi
+
+# Run the main build
+npm run build
+echo -e "${GREEN}✓ Main frontend built successfully${NC}"
+
+# Return to project root
 cd "${PROJECT_ROOT}"
 
 # Run Django collectstatic (with error handling)
