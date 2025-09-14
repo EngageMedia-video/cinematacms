@@ -131,7 +131,7 @@ class Language(models.Model):
 
     def __str__(self):
         return self.title
-    
+
 class Media(models.Model):
     uid = models.UUIDField(unique=True, default=uuid.uuid4)
     friendly_token = models.CharField(blank=True, max_length=12, db_index=True)
@@ -1361,49 +1361,49 @@ class Subtitle(models.Model):
             Convert uploaded subtitle files to VTT format for web playback.
             Uses FFmpeg (already available in CinemataCMS) instead of pysubs2.
             Accepts both SRT and VTT input formats.
-            
+
             SAFETY: This method is ONLY called on NEW subtitle uploads, never on existing files.
             Existing subtitles in Cinemata.org remain completely untouched.
         """
         input_path = self.subtitle_file.path
-        
+
         # Validate file exists
         if not os.path.exists(input_path):
             raise Exception("Subtitle file not found")
-        
+
         # Check file extension
         file_lower = input_path.lower()
 
         if not (file_lower.endswith('.srt') or file_lower.endswith('.vtt')):
             raise Exception("Invalid subtitle format. Use SubRip (.srt) and WebVTT (.vtt) files.")
-        
+
         # If already VTT, no conversion needed
         if file_lower.endswith('.vtt'):
             return True
-        
+
         logger.info(f"Converting new subtitle upload: {input_path}")
         # Convert SRT to VTT using FFmpeg (already configured in CinemataCMS)
         with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as tmpdirname:
             temp_vtt = os.path.join(tmpdirname, "converted.vtt")
-            
+
             cmd = [
                 settings.FFMPEG_COMMAND,  # Already configured in CinemataCMS
                 "-i", input_path,
                 "-c:s", "webvtt",
                 temp_vtt
             ]
-            
+
             try:
                 ret = helpers.run_command(cmd)
                 if ret and ret.get("returncode", 0) != 0:
                     logger.error(f"FFmpeg failed with code {ret.get('returncode')}: {ret.get('err')}")
                     raise Exception("FFmpeg conversion failed")
-                
+
                 if os.path.exists(temp_vtt) and os.path.getsize(temp_vtt) > 0:
                     # Replace original file with VTT version
                     shutil.copy2(temp_vtt, input_path)
                     logger.info(f"Successfully converted subtitle to VTT: {input_path}")
-                    
+
                     # Update file extension to .vtt if it was .srt
                     if file_lower.endswith('.srt'):
                         new_path = input_path.replace('.srt', '.vtt').replace('.SRT', '.vtt')
@@ -1415,11 +1415,11 @@ class Subtitle(models.Model):
                             logger.info(f"Renamed subtitle file from .srt to .vtt: {new_path}")
                 else:
                     raise Exception("FFmpeg conversion failed - no output file created")
-                    
+
             except Exception as e:
                 logger.error(f"Subtitle conversion failed for {input_path}: {str(e)}")
                 raise Exception(f"Could not convert SRT file to VTT format: {str(e)}")
-        
+
             return True
 
 class RatingCategory(models.Model):
@@ -1737,13 +1737,15 @@ def media_save(sender, instance, created, **kwargs):
             country.update_country_media()
 
     if instance.media_language:
-        language = {
-            code: title for code, title in Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list("code", "title")
-        }.get(instance.media_language)
-        if language:
-            language = MediaLanguage.objects.filter(title=language).first()
-            language.update_language_media()
-
+        language_title = dict(
+            Language.objects
+            .exclude(code__in=["automatic", "automatic-translation"])
+            .values_list("code", "title")
+        ).get(instance.media_language)
+        if language_title:
+            ml = MediaLanguage.objects.filter(title=language_title).first()
+            if ml:
+                ml.update_language_media()
     instance.update_search_vector()
     instance.transcribe_function()
 

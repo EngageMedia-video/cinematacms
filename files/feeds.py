@@ -123,14 +123,15 @@ class SearchRSSFeed(Feed):
             media = media.filter(tags__title=tag)
         elif topic:
             media = media.filter(topics__title__contains=topic)
-        elif language: 
-            language = {
-                title: code for code, title in Language.objects.exclude(
-                    code__in=["automatic", "automatic-translation"]
-                ).values_list("code", "title")
-            }.get(language)
-            media_language = language['code']
-            media = media.filter(media_language=media_language)
+        elif language:
+            code_by_title = dict(
+                Language.objects
+                .exclude(code__in=["automatic", "automatic-translation"])
+                .values_list("title", "code")
+            )
+            language_code = code_by_title.get(language)
+            if language_code:
+                media = media.filter(media_language=language_code)
         elif country:
             country = {
                 value: key for key, value in dict(lists.video_countries).items()

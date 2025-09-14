@@ -60,7 +60,8 @@ class Command(BaseCommand):
             if options['dry_run']:
                 exists = Language.objects.filter(code=lang_data['code']).exists()
                 if exists:
-                    self.stdout.write(f"Would update Language: {lang_data['title']}")
+                    action = "update" if options.get("update") else "skip"
+                    self.stdout.write(f"Would {action} Language: {lang_data['title']}")
                 else:
                     self.stdout.write(f"Would create Language: {lang_data['title']}")
             else:
@@ -68,7 +69,7 @@ class Command(BaseCommand):
                     code=lang_data['code'],
                     defaults={'title': lang_data['title']}
                 )
-                
+
                 if created:
                     created_languages += 1
                     self.stdout.write(
@@ -103,20 +104,16 @@ class Command(BaseCommand):
                             'listings_thumbnail': '',  # Empty string, not null
                         }
                     )
-                    
                     if created:
                         created_media_languages += 1
                         self.stdout.write(
                             self.style.SUCCESS(f'Created MediaLanguage: {lang_data["title"]}')
                         )
                     elif options['update']:
-                        # Only update if explicitly requested
-                        # Note: add_date is auto_now_add, so it won't change
-                        media_language.save()
-                        updated_media_languages += 1
-                        self.stdout.write(
-                            self.style.WARNING(f'Updated MediaLanguage: {lang_data["title"]}')
-                        )
+                        # Nothing to update for MediaLanguage currently; skipping.
+                        self.stdout.write(self.style.WARNING(
+                            f'No updatable fields for MediaLanguage: {lang_data["title"]}; skipped.'
+                        ))
                     else:
                         self.stdout.write(
                             self.style.NOTICE(f'Skipped existing MediaLanguage: {lang_data["title"]}')
