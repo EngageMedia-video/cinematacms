@@ -27,7 +27,7 @@ dependencies = [
     "markdown==3.8",
     "pep8==1.7.1",
     "pillow==9.5.0",
-    "python-dotenv==1.1.0",
+    "python-dotenv==1.1.1",
     "requests==2.32.3",
     "rpdb==0.2.0",
     "tqdm==4.67.1",
