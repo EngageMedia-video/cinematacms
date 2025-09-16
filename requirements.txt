@@ -1,6 +1,6 @@
 Django==5.2.6
 djangorestframework==3.16.1
-django-allauth==65.8.1
+django-allauth==65.11.2
 
 django-recaptcha==4.1.0
 psycopg2-binary==2.9.10
