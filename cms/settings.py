@@ -1,7 +1,7 @@
 import os
-from pathlib import Path
 from celery.schedules import crontab
 from .settings_utils import get_whisper_cpp_paths
+from corsheaders.defaults import default_headers
 
 # PORTAL SETTINGS
 PORTAL_NAME = "EngageMedia Video"  #  this is shown on several places, eg on contact email, or html title
@@ -13,7 +13,6 @@ ALLOWED_HOSTS = [
 ]
 CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for CORS
 # Import default headers to extend them
-from corsheaders.defaults import default_headers
 
 CORS_ALLOW_HEADERS = default_headers + (
     'x-requested-with',     # Add X-Requested-With
@@ -32,7 +31,7 @@ CORS_EXPOSE_HEADERS = [
 ]
 
 
-INTERNAL_IPS = "127.0.0.1"
+INTERNAL_IPS = ["127.0.0.1", "0.0.0.0"]
 FRONTEND_HOST = "http://cinemata.org"
 SSL_FRONTEND_HOST = FRONTEND_HOST.replace("http", "https")
 
@@ -61,13 +60,13 @@ INSTALLED_APPS = [
     "files.apps.FilesConfig",
     "users.apps.UsersConfig",
     "actions.apps.ActionsConfig",
-    "debug_toolbar",
     "mptt",
     "crispy_forms",
+    "crispy_bootstrap5",
     "uploader.apps.UploaderConfig",
     "djcelery_email",
     "tinymce",
-    "captcha",
+    "django_recaptcha",
     "corsheaders",
 ]
 
@@ -80,7 +79,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "users.middleware.AdminMFAMiddleware",
 ]
@@ -236,12 +234,11 @@ CELERY_BEAT_SCHEDULE = {
     # clear expired sessions, every sunday 1.01am. By default Django has 2week expire date
     "clear_sessions": {
         "task": "clear_sessions",
-        "schedule": crontab(hour=1, minute=1, day_of_week=6),
+        # every Sunday 1:01 AM
+        "schedule": crontab(hour="1", minute="1", day_of_week="0"),
     },
-    "get_list_of_popular_media": {
-        "task": "get_list_of_popular_media",
         "schedule": crontab(hour="*/10"),
-    },
+
     "update_listings_thumbnails": {
         "task": "update_listings_thumbnails",
         "schedule": crontab(hour="*/30"),
@@ -524,10 +521,41 @@ MFA_EXCLUDE_PATHS = ['/fu/', '/api/', '/manage/', '/accounts/']
 
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths()
 from .local_settings import *
+
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
 WHISPER_SIZE = "base"
+
+
+# Add debug_toolbar to INSTALLED_APPS if DEBUG is True
+if DEBUG:
+    if 'debug_toolbar' not in INSTALLED_APPS:
+        INSTALLED_APPS.append('debug_toolbar')
+    if 'debug_toolbar.middleware.DebugToolbarMiddleware' not in MIDDLEWARE:
+        # Insert after CorsMiddleware but before other middleware
+        MIDDLEWARE.insert(1, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+
+    # Debug toolbar configuration for 6.0.0
+    def show_toolbar(request):
+        """Show toolbar for local development, handling both IP and localhost"""
+        # Always return True in DEBUG mode for simplicity
+        return True
+
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': show_toolbar,
+        'RENDER_PANELS': True,  # Ensure panels are rendered
+        'EXTRA_SIGNALS': [],  # Avoid signal issues
+
+    }
+
+    # Ensure toolbar static files are accessible
+    import mimetypes
+    mimetypes.add_type("application/javascript", ".js", True)
+    mimetypes.add_type("text/css", ".css", True)
 
 ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
 
 RECAPTCHA_PRIVATE_KEY = ""
 RECAPTCHA_PUBLIC_KEY = ""
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = {"bootstrap5"}
+CRISPY_TEMPLATE_PACK = "bootstrap5"

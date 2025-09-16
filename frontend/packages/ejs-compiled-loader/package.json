@@ -29,12 +29,12 @@
   "dependencies": {
     "ejs": "^3.1.10",
     "html-minifier-terser": "^7.2.0",
-    "loader-utils": "^2.0.0",
-    "terser": "^4.8.1"
+    "loader-utils": "^3.3.1",
+    "terser": "^5.44.0"
   },
   "devDependencies": {
     "assert": "^2.1.0",
-    "webpack": "^5.97.1",
+    "webpack": "^5.101.3",
     "webpack-cli": "^6.0.1"
   }
 }
