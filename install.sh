@@ -103,13 +103,19 @@ fi
 
 # Run the Node.js installation script
 if [ -f "$NODEJS_SCRIPT" ]; then
-    bash "$NODEJS_SCRIPT"
-
-    # Source nvm for the rest of this script
-    export NVM_DIR="/root/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    if bash "$NODEJS_SCRIPT"; then
+        export NVM_DIR="/root/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        hash -r
+    else
+        echo "Error: Node.js installation script failed"; exit 1
+    fi
 else
-    echo "Warning: Could not install Node.js - install script not found"
+    echo "Warning: Could not install Node.js - install script not found"; exit 1
+fi
+    echo "Warning: Could not install Node.js - install script not found"; exit 1
+fi
+    echo "Warning: Could not install Node.js - install script not found"; exit 1
 fi
 
 echo 'Creating python virtualenv on /home/cinemata'
@@ -146,15 +152,17 @@ mkdir logs
 mkdir pids
 python manage.py makemigrations files users actions
 python manage.py migrate
-python manage.py loaddata files/fixtures/creative_commons_licenses.json
-python manage.py loaddata fixtures/apac_languages.json
-python manage.py loaddata fixtures/encoding_profiles.json
-python manage.py loaddata fixtures/categories.json
-python manage.py load_apac_languages
-
 # Build frontend if Node.js is available
 if command -v node &> /dev/null && command -v npm &> /dev/null; then
     echo "Building frontend assets..."
+    if ! python manage.py build_frontend; then
+        echo "Error: Frontend build failed. Aborting installation."; exit 1
+    fi
+else
+    echo "Warning: Node.js/npm not found, skipping frontend build"
+    echo "Running collectstatic only..."
+    python manage.py collectstatic --noinput --verbosity=2
+fi
     python manage.py build_frontend
 else
     echo "Warning: Node.js/npm not found, skipping frontend build"
