@@ -12,7 +12,7 @@ ALLOWED_HOSTS = [
     "localhost",
 ]
 # Import default headers to extend them
-
+CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = default_headers + (
     'x-requested-with',     # Add X-Requested-With
     'if-modified-since',    # Add If-Modified-Since
