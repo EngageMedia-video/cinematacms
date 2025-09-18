@@ -32,7 +32,7 @@ dependencies = [
     "requests==2.32.4",
     "rpdb==0.2.0",
     "tqdm==4.67.1",
-    "whitenoise==6.9.0",
+    "whitenoise==6.11.0",
     "fido2==2.0.0",
     "uwsgi==2.0.30",
     "qrcode==8.2",
