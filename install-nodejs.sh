@@ -4,7 +4,9 @@
 # This script installs Node Version Manager (nvm) and Node.js v20 LTS
 # Designed to be run as root for building frontend static assets
 
-set -e  # Exit on any error
+set -Eeuo pipefail  # safer: exit on error, fail pipelines, and error on unset vars
+umask 022
+trap 'echo "Error on line $LINENO"; exit 1' ERR
 
 echo "Starting Node.js v20 LTS installation..."
 
@@ -18,10 +20,18 @@ fi
 
 # Install nvm for root user
 echo "Installing nvm for root user..."
-export NVM_DIR="/root/.nvm"
-
 # Download and install nvm
-echo "Downloading and installing nvm..."
+echo "Downloading nvm installer..."
+NVM_VERSION="${NVM_VERSION:-v0.40.3}"
+NVM_INSTALL_TMP="${NVM_INSTALL_TMP:-/tmp/nvm-install.sh}"
+curl --fail --location --silent --show-error --max-time 120 \
+  "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" \
+  -o "${NVM_INSTALL_TMP}"
+# Optional integrity check: provide NVM_INSTALL_SHA256 env var to enforce pinning
+if [ -n "${NVM_INSTALL_SHA256:-}" ]; then
+  echo "${NVM_INSTALL_SHA256}  ${NVM_INSTALL_TMP}" | sha256sum -c -
+fi
+bash "${NVM_INSTALL_TMP}"
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 
 # Load nvm for the current session
