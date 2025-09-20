@@ -113,10 +113,6 @@ if [ -f "$NODEJS_SCRIPT" ]; then
 else
     echo "Warning: Could not install Node.js - install script not found"; exit 1
 fi
-    echo "Warning: Could not install Node.js - install script not found"; exit 1
-fi
-    echo "Warning: Could not install Node.js - install script not found"; exit 1
-fi
 
 echo 'Creating python virtualenv on /home/cinemata'
 
@@ -172,7 +168,7 @@ echo "from django.contrib.sites.models import Site; Site.objects.update(name='$F
 chown -R www-data. /home/cinemata/
 cp deploy/celery_long.service /etc/systemd/system/celery_long.service && systemctl enable celery_long && systemctl start celery_long
 cp deploy/celery_short.service /etc/systemd/system/celery_short.service && systemctl enable celery_short && systemctl start celery_short
-cp deploy/celery_beat.service /etc/systemd/system/celery_beat.service && systemctl enable celery_beat &&systemctl start celery_beat
+cp deploy/celery_beat.service /etc/systemd/system/celery_beat.service && systemctl enable celery_beat && systemctl start celery_beat
 cp deploy/mediacms.service /etc/systemd/system/mediacms.service && systemctl enable mediacms.service && systemctl start mediacms.service
 
 cp deploy/celery_whisper.service /etc/systemd/system/celery_whisper.service && systemctl enable celery_whisper.service && systemctl start celery_whisper.service
