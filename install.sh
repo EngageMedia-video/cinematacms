@@ -106,6 +106,9 @@ if [ -f "$NODEJS_SCRIPT" ]; then
     if bash "$NODEJS_SCRIPT"; then
         export NVM_DIR="/root/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        # Ensure Node is on PATH in this shell
+        nvm use --silent default >/dev/null 2>&1 || nvm use --silent 20 >/dev/null 2>&1
+        node -v && npm -v || { echo "Error: node/npm not on PATH after install"; exit 1; }
         hash -r
     else
         echo "Error: Node.js installation script failed"; exit 1
