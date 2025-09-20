@@ -18,7 +18,7 @@ server {
 #    }
 
     location /static {
-        alias /home/cinemata/cinematacms/static ;
+        alias /home/cinemata/cinematacms/static_collected ;
     }
 
     # Internal locations for X-Accel-Redirect - not accessible externally
@@ -80,7 +80,7 @@ server {
     error_log  /var/log/nginx/mediacms.io.error.log  warn;
 
     location /static {
-        alias /home/cinemata/cinematacms/static ;
+        alias /home/cinemata/cinematacms/static_collected ;
     }
 
     # Internal locations for X-Accel-Redirect - not accessible externally
