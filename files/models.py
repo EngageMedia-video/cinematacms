@@ -122,6 +122,14 @@ def topic_thumb_path(instance, filename):
     file_name = "{0}.{1}".format(friendly_token, helpers.get_file_name(filename))
     return settings.MEDIA_UPLOAD_DIR + "topics/{0}".format(file_name)
 
+def get_language_choices():
+    """Get language choices dynamically to avoid database access during model import"""
+    try:
+        return Language.objects.exclude(code__in=['automatic', 'automatic-translation']).values_list("code", "title")
+    except:
+        # Return empty choices if database is not ready (during migrations)
+        return []
+
 class Language(models.Model):
     code = models.CharField(max_length=100, unique=True, help_text="language code")
     title = models.CharField(max_length=100, help_text="language title")
@@ -153,7 +161,6 @@ class Media(models.Model):
         blank=True,
         null=True,
         default="en",
-        choices=Language.objects.exclude(code__in=['automatic', 'automatic-translation']).values_list("code", "title"),
         db_index=True,
     )
     media_country = models.CharField(

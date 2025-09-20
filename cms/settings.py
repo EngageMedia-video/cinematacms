@@ -11,9 +11,8 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
 ]
-CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for CORS
 # Import default headers to extend them
-
+CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = default_headers + (
     'x-requested-with',     # Add X-Requested-With
     'if-modified-since',    # Add If-Modified-Since
@@ -201,7 +200,17 @@ CSRF_COOKIE_AGE = None  # Make CSRF token session-based
 STATIC_URL = "/static/"  #  where js/css files are stored on the filesystem
 MEDIA_ROOT = BASE_DIR + "/media_files/"  #  where uploaded + encoded media are stored
 MEDIA_URL = "/media/"  #  URL where static files are served from the server
-STATIC_ROOT = BASE_DIR + "/static/"
+
+# Collection destination (where collectstatic puts final files)
+STATIC_ROOT = os.path.join(BASE_DIR, "static_collected")
+
+# Source directories (where Django finds files to collect)
+STATICFILES_DIRS = [
+    # Frontend build output has priority (includes css/, js/, images/, etc.)
+    os.path.join(BASE_DIR, "frontend", "build", "production", "static"),
+    # Additional static files directory (admin, lib, etc.)
+    os.path.join(BASE_DIR, "static"),
+]
 
 AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "/"

@@ -51,6 +51,72 @@ su -c "psql -c \"CREATE DATABASE mediacms\"" postgres
 su -c "psql -c \"CREATE USER mediacms WITH ENCRYPTED PASSWORD 'mediacms'\"" postgres
 su -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE mediacms TO mediacms\"" postgres
 
+echo 'Installing Node.js v20 LTS...'
+# Try to find install-nodejs.sh in the cinematacms directory
+# The script may be run from different locations
+if [ -f "/home/cinemata/cinematacms/install-nodejs.sh" ]; then
+    NODEJS_SCRIPT="/home/cinemata/cinematacms/install-nodejs.sh"
+elif [ -f "./install-nodejs.sh" ]; then
+    NODEJS_SCRIPT="./install-nodejs.sh"
+elif [ -f "install-nodejs.sh" ]; then
+    NODEJS_SCRIPT="install-nodejs.sh"
+else
+    # Get the current script directory as fallback
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    NODEJS_SCRIPT="$SCRIPT_DIR/install-nodejs.sh"
+fi
+
+# Check if install-nodejs.sh exists
+if [ ! -f "$NODEJS_SCRIPT" ]; then
+    echo "Warning: install-nodejs.sh not found, attempting to create it..."
+
+    # Create the install-nodejs.sh script inline
+    cat > /tmp/install-nodejs.sh << 'EOF'
+#!/bin/bash
+set -e
+echo "Installing Node.js v20 LTS via nvm..."
+
+# Install for root user
+export NVM_DIR="/root/.nvm"
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+nvm install 20
+nvm use 20
+nvm alias default 20
+
+# Also install for www-data user
+su - www-data -s /bin/bash -c '
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+    nvm install 20
+    nvm use 20
+    nvm alias default 20
+' || true
+
+echo "Node.js installation completed"
+EOF
+    chmod +x /tmp/install-nodejs.sh
+    NODEJS_SCRIPT="/tmp/install-nodejs.sh"
+fi
+
+# Run the Node.js installation script
+if [ -f "$NODEJS_SCRIPT" ]; then
+    if bash "$NODEJS_SCRIPT"; then
+        export NVM_DIR="/root/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        # Ensure Node is on PATH in this shell
+        nvm use --silent default >/dev/null 2>&1 || nvm use --silent 20 >/dev/null 2>&1
+        node -v && npm -v || { echo "Error: node/npm not on PATH after install"; exit 1; }
+        hash -r
+    else
+        echo "Error: Node.js installation script failed"; exit 1
+    fi
+else
+    echo "Warning: Could not install Node.js - install script not found"; exit 1
+fi
+
 echo 'Creating python virtualenv on /home/cinemata'
 
 cd /home/cinemata
@@ -85,12 +151,17 @@ mkdir logs
 mkdir pids
 python manage.py makemigrations files users actions
 python manage.py migrate
-python manage.py loaddata files/fixtures/creative_commons_licenses.json
-python manage.py loaddata fixtures/apac_languages.json
-python manage.py loaddata fixtures/encoding_profiles.json
-python manage.py loaddata fixtures/categories.json
-python manage.py load_apac_languages
-python manage.py collectstatic --noinput
+# Build frontend if Node.js is available
+if command -v node &> /dev/null && command -v npm &> /dev/null; then
+    echo "Building frontend assets..."
+    if ! ./scripts/build_frontend.sh; then
+        echo "Error: Frontend build failed. Aborting installation."; exit 1
+    fi
+else
+    echo "Warning: Node.js/npm not found, skipping frontend build"
+    echo "Running collectstatic only..."
+    python manage.py collectstatic --noinput --verbosity=2
+fi
 
 ADMIN_PASS=`python -c "import secrets;chars = 'abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(10)))"`
 echo "from users.models import User; User.objects.create_superuser('admin', 'admin@example.com', '$ADMIN_PASS')" | python manage.py shell
@@ -100,7 +171,7 @@ echo "from django.contrib.sites.models import Site; Site.objects.update(name='$F
 chown -R www-data. /home/cinemata/
 cp deploy/celery_long.service /etc/systemd/system/celery_long.service && systemctl enable celery_long && systemctl start celery_long
 cp deploy/celery_short.service /etc/systemd/system/celery_short.service && systemctl enable celery_short && systemctl start celery_short
-cp deploy/celery_beat.service /etc/systemd/system/celery_beat.service && systemctl enable celery_beat &&systemctl start celery_beat
+cp deploy/celery_beat.service /etc/systemd/system/celery_beat.service && systemctl enable celery_beat && systemctl start celery_beat
 cp deploy/mediacms.service /etc/systemd/system/mediacms.service && systemctl enable mediacms.service && systemctl start mediacms.service
 
 cp deploy/celery_whisper.service /etc/systemd/system/celery_whisper.service && systemctl enable celery_whisper.service && systemctl start celery_whisper.service
