@@ -21,7 +21,7 @@ The frontend consists of:
 make frontend-build
 
 # Option 2: Use Django management command
-python manage.py build_frontend
+./scripts/build_frontend.sh
 
 # Option 3: Use the build script directly
 ./scripts/build_frontend.sh
@@ -119,19 +119,19 @@ The `build_frontend` command provides fine-grained control:
 
 ```bash
 # Full build (default)
-python manage.py build_frontend
+./scripts/build_frontend.sh
 
 # Skip package builds
-python manage.py build_frontend --skip-packages
+./scripts/build_frontend.sh --skip-packages
 
 # Skip main app build
-python manage.py build_frontend --skip-main
+./scripts/build_frontend.sh --skip-main
 
 # Skip collectstatic
-python manage.py build_frontend --skip-collect
+./scripts/build_frontend.sh --skip-collect
 
 # Verbose output
-python manage.py build_frontend --verbose
+./scripts/build_frontend.sh --verbose
 ```
 
 ## Configuration
@@ -167,7 +167,7 @@ For automated deployments:
 make frontend-build
 
 # Or use Django command
-python manage.py build_frontend
+./scripts/build_frontend.sh
 ```
 
 ## Troubleshooting

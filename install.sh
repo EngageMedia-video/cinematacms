@@ -155,19 +155,13 @@ python manage.py migrate
 # Build frontend if Node.js is available
 if command -v node &> /dev/null && command -v npm &> /dev/null; then
     echo "Building frontend assets..."
-    if ! python manage.py build_frontend; then
+    if ! ./scripts/build_frontend.sh; then
         echo "Error: Frontend build failed. Aborting installation."; exit 1
     fi
 else
     echo "Warning: Node.js/npm not found, skipping frontend build"
     echo "Running collectstatic only..."
     python manage.py collectstatic --noinput --verbosity=2
-fi
-    python manage.py build_frontend
-else
-    echo "Warning: Node.js/npm not found, skipping frontend build"
-    echo "Running collectstatic only..."
-    python manage.py collectstatic --noinput
 fi
 
 ADMIN_PASS=`python -c "import secrets;chars = 'abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(10)))"`
