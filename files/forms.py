@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.admin.sites import site
 
 from .methods import is_mediacms_editor
-from .models import Language, Media, Subtitle
+from .models import Language, Media, Subtitle, get_language_choices
 
 MEDIA_STATES = (
     ("private", "Private"),
@@ -90,6 +90,9 @@ class MediaForm(forms.ModelForm):
         self.fields["category"].required = True
         self.fields["media_language"].required = True
         self.fields["media_country"].required = True
+
+        # Set dynamic language choices
+        self.fields["media_language"].choices = get_language_choices()
 
         self.fields[
             "password"
