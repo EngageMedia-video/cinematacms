@@ -12,21 +12,28 @@ The frontend consists of:
   - `vjs-plugin-font-icons`
   - `media-player`
 
+## Prerequisites
+
+### Node.js Installation
+
+CinemataCMS requires Node.js v20 LTS for building frontend assets. The installation is handled automatically by:
+
+- **New installations**: `install.sh` automatically installs Node.js via `install-nodejs.sh`
+- **Manual installation**: Run `./install-nodejs.sh` as root
+- **Verification**: Run `node -v` and `npm -v` to confirm installation
+
 ## Quick Start for Developers
 
 ### 1. After Making Frontend Changes
 
 ```bash
-# Option 1: Use Makefile (Recommended)
+# Option 1: Use the build script (Recommended)
+./scripts/build_frontend.sh
+
+# Option 2: Use Makefile
 make frontend-build
 
-# Option 2: Use Django management command
-./scripts/build_frontend.sh
-
-# Option 3: Use the build script directly
-./scripts/build_frontend.sh
-
-# Option 4: Quick build (main app only, skips packages)
+# Option 3: Quick build (main app only, skips packages)
 make quick-build
 ```
 
@@ -51,6 +58,77 @@ make frontend-clean && make frontend-build
 ```
 
 ## Understanding the Build Process
+
+### Build Script (`scripts/build_frontend.sh`)
+
+The main build script provides a robust, automated build process with error handling:
+
+- **Features**:
+  - Strict error handling with `set -Eeuo pipefail`
+  - Color-coded output for better readability
+  - Automatic dependency installation (`npm ci` or `npm install`)
+  - Sequential package builds with proper error propagation
+  - Integrated Django `collectstatic` command
+
+- **Build Order**:
+  1. `vjs-plugin-font-icons` package
+  2. `vjs-plugin` package
+  3. `media-player` package
+  4. Main frontend application
+  5. Django static file collection
+
+### Build Process Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant BuildScript as build_frontend.sh
+    participant NPM
+    participant Django
+    participant FS as File System
+
+    User->>BuildScript: Execute ./scripts/build_frontend.sh
+
+    Note over BuildScript: Set error handling & colors
+
+    loop For each package
+        BuildScript->>FS: Check package exists
+        alt Package exists
+            BuildScript->>NPM: npm ci/install (dependencies)
+            NPM-->>BuildScript: Dependencies installed
+            BuildScript->>NPM: npm run build
+            NPM->>FS: Write to package/dist/
+            NPM-->>BuildScript: Build complete ✓
+        else Package missing
+            BuildScript->>User: Warning: Package not found
+        end
+    end
+
+    BuildScript->>NPM: npm install (frontend)
+    NPM-->>BuildScript: Dependencies installed
+
+    BuildScript->>NPM: npm run build (main app)
+    NPM->>FS: Write to frontend/build/production/static/
+    NPM-->>BuildScript: Main build complete ✓
+
+    BuildScript->>Django: python manage.py collectstatic
+    Django->>FS: Read from frontend/build/production/static/
+    Django->>FS: Read from static/
+    Django->>FS: Write to static_collected/
+
+    alt Collectstatic success
+        Django-->>BuildScript: Static files collected ✓
+        BuildScript-->>User: ✅ Build complete!
+    else Collectstatic fails
+        alt CONTINUE_ON_COLLECTSTATIC_FAIL=1
+            Django-->>BuildScript: Warning: collectstatic failed
+            BuildScript-->>User: ⚠️ Build complete (with warnings)
+        else Default behavior
+            Django-->>BuildScript: Error: collectstatic failed
+            BuildScript-->>User: ❌ Build failed!
+        end
+    end
+```
 
 ### Build Flow
 
@@ -113,26 +191,25 @@ cinematacms/
 | `make build-all` | Alias for frontend-build |
 | `make quick-build` | Build main app only (skips packages) |
 
-## Django Management Command
+## Build Script Usage
 
-The `build_frontend` command provides fine-grained control:
+The `build_frontend.sh` script provides automated frontend building:
 
 ```bash
 # Full build (default)
 ./scripts/build_frontend.sh
 
-# Skip package builds
-./scripts/build_frontend.sh --skip-packages
-
-# Skip main app build
-./scripts/build_frontend.sh --skip-main
-
-# Skip collectstatic
-./scripts/build_frontend.sh --skip-collect
-
-# Verbose output
-./scripts/build_frontend.sh --verbose
+# Continue despite collectstatic failures (for CI/CD)
+CONTINUE_ON_COLLECTSTATIC_FAIL=1 ./scripts/build_frontend.sh
 ```
+
+### Error Handling
+
+The script includes robust error handling:
+- Exits immediately on any command failure
+- Provides colored output for success/warning/error messages
+- Shows exact error location (file and line number)
+- Optional continue-on-failure mode for `collectstatic`
 
 ## Configuration
 
@@ -158,16 +235,61 @@ STATICFILES_DIRS = [
 
 **Note**: If you have a `cms/local_settings.py` file, make sure it includes the same `STATICFILES_DIRS` configuration, as it overrides the main settings.
 
+## System Integration
+
+### Installation Script (`install.sh`)
+
+During initial system setup, `install.sh`:
+
+1. **Installs Node.js automatically**:
+   - Detects if `install-nodejs.sh` exists
+   - Falls back to creating it inline if missing
+   - Installs nvm and Node.js v20 LTS for root user
+   - Ensures Node/npm are on PATH for build process
+
+2. **Builds frontend during installation**:
+   - Runs `./scripts/build_frontend.sh` after Node.js setup
+   - Exits installation if frontend build fails
+   - Falls back to `collectstatic` only if Node.js unavailable
+
+### Restart Script (`restart_script.sh`)
+
+The restart script for production deployments:
+
+1. **Pulls latest code**: `git pull`
+2. **Updates dependencies**: `pip install -r requirements.txt`
+3. **Rebuilds frontend**: `./scripts/build_frontend.sh`
+4. **Applies migrations**: Database updates
+5. **Restarts services**: All CinemataCMS services
+
+### Node.js Installation (`install-nodejs.sh`)
+
+Standalone Node.js installer with:
+
+- **Safety features**:
+  - Strict error handling
+  - SHA256 verification support (optional)
+  - Installation verification
+
+- **Installation process**:
+  - Downloads and installs nvm v0.40.3
+  - Installs Node.js v20 LTS
+  - Sets as default version
+  - Verifies successful installation
+
 ## CI/CD Integration
 
 For automated deployments:
 
 ```bash
-# In your CI/CD pipeline
-make frontend-build
+# Ensure Node.js is installed
+./install-nodejs.sh
 
-# Or use Django command
+# Build frontend
 ./scripts/build_frontend.sh
+
+# Or use Makefile
+make frontend-build
 ```
 
 ## Troubleshooting
@@ -180,9 +302,14 @@ make frontend-build
 
 ### Problem: Build fails
 
-1. Check Node.js version: `node --version` (should be 14+)
-2. Clear npm cache: `npm cache clean --force`
-3. Remove node_modules and reinstall:
+1. Check Node.js installation:
+   ```bash
+   node --version  # Should be v20.x.x
+   npm --version   # Should be 10.x.x or higher
+   ```
+2. If Node.js not found, run: `./install-nodejs.sh` as root
+3. Clear npm cache: `npm cache clean --force`
+4. Remove node_modules and reinstall:
    ```bash
    cd frontend
    rm -rf node_modules package-lock.json
@@ -228,12 +355,31 @@ make frontend-build
 
 ## Production Deployment
 
+### Manual Deployment
+
 For production:
 
-1. Build frontend: `make frontend-build`
+1. Build frontend: `./scripts/build_frontend.sh`
 2. Static files are collected in `static_collected/`
 3. Configure web server (nginx/apache) to serve from `STATIC_ROOT`
 4. Use CDN for better performance (optional)
+
+### Automated Deployment
+
+Use the restart script for updates:
+
+```bash
+# As root user
+./restart_script.sh
+```
+
+This will:
+
+- Pull latest changes
+- Update dependencies
+- Rebuild frontend automatically
+- Apply migrations
+- Restart all services
 
 ### Files Collection Summary
 
