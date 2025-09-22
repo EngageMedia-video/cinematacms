@@ -30,7 +30,7 @@ build_package() {
 
     # Install dependencies
     echo "Installing dependencies for ${package_name}..."
-    if [ -f "package-lock.json" ]; then npm ci; else npm install; fi
+    npm install
 
     # Run build
     npm run build
