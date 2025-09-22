@@ -235,6 +235,18 @@ STATICFILES_DIRS = [
 
 **Note**: If you have a `cms/local_settings.py` file, make sure it includes the same `STATICFILES_DIRS` configuration, as it overrides the main settings.
 
+### NGINX Configuration
+
+The NGINX configuration in `deploy/mediacms.io` has been updated to serve static files from the correct location:
+
+```nginx
+location /static/ {
+    alias /home/cinemata/cinematacms/static_collected/;
+}
+```
+
+This ensures that NGINX serves the collected static files (which include both frontend build output and Django static files) from the `static_collected/` directory.
+
 ## System Integration
 
 ### Installation Script (`install.sh`)
