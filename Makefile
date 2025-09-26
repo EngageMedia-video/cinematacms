@@ -7,7 +7,7 @@ COMPOSE_FILE = docker-compose.dev.yml
 
 # Common variables
 APP_DIR := .
-CELERY_BIN := $(shell which celery)
+CELERY_BIN := uv run celery
 CELERY_APP := cms
 CELERYD_LOG_LEVEL := INFO
 CELERYD_PID_DIR := $(APP_DIR)/pids
@@ -94,12 +94,10 @@ dev-server:
 
 ## BEAT Service
 celery-beat-start:
-	$(CELERY_BIN) beat \
-		-A $(CELERY_APP) \
+	$(CELERY_BIN) -A $(CELERY_APP) beat \
 		--pidfile=$(BEAT_PID_FILE) \
 		--logfile=$(BEAT_LOG_FILE) \
-		--loglevel=$(CELERYD_LOG_LEVEL) \
-		--workdir=$(APP_DIR)
+		--loglevel=$(CELERYD_LOG_LEVEL)
 
 celery-beat-stop:
 	@if [ -f $(BEAT_PID_FILE) ]; then \
@@ -117,15 +115,12 @@ LONG_QUEUE := long_tasks
 LONG_OPTS := -Ofair --prefetch-multiplier=1
 
 celery-long-start:
-	$(CELERY_BIN) worker \
-		-A $(CELERY_APP) \
+	$(CELERY_BIN) -A $(CELERY_APP) worker \
 		--pidfile=$(CELERYD_PID_DIR)/long.pid \
 		--logfile=$(CELERYD_LOG_DIR)/long.log \
 		--loglevel=$(CELERYD_LOG_LEVEL) \
 		$(LONG_OPTS) \
-		--workdir=$(APP_DIR) \
-		-Q $(LONG_QUEUE) \
-		-n long@%h
+		-Q $(LONG_QUEUE)
 
 celery-long-stop:
 	@if [ -f $(CELERYD_PID_DIR)/long.pid ]; then \
@@ -140,18 +135,15 @@ celery-long-restart: celery-long-stop celery-long-start
 ## SHORT Tasks Worker
 SHORT_NODES := short1 short2
 SHORT_QUEUE := short_tasks
-SHORT_OPTS := --soft-time-limit=300 -c10
+SHORT_OPTS := --soft-time-limit=300 --concurrency=10
 
 celery-short-start:
-	$(CELERY_BIN) worker \
-		-A $(CELERY_APP) \
+	$(CELERY_BIN) -A $(CELERY_APP) worker \
 		--pidfile=$(CELERYD_PID_DIR)/short.pid \
 		--logfile=$(CELERYD_LOG_DIR)/short.log \
 		--loglevel=$(CELERYD_LOG_LEVEL) \
 		$(SHORT_OPTS) \
-		--workdir=$(APP_DIR) \
-		-Q $(SHORT_QUEUE) \
-		-n short@%h
+		-Q $(SHORT_QUEUE)
 
 celery-short-stop:
 	@if [ -f $(CELERYD_PID_DIR)/short.pid ]; then \
@@ -169,15 +161,12 @@ WHISPER_QUEUE := whisper_tasks
 WHISPER_OPTS := -Ofair --prefetch-multiplier=1
 
 celery-whisper-start:
-	$(CELERY_BIN) worker \
-		-A $(CELERY_APP) \
+	$(CELERY_BIN) -A $(CELERY_APP) worker \
 		--pidfile=$(CELERYD_PID_DIR)/whisper.pid \
 		--logfile=$(CELERYD_LOG_DIR)/whisper.log \
 		--loglevel=$(CELERYD_LOG_LEVEL) \
 		$(WHISPER_OPTS) \
-		--workdir=$(APP_DIR) \
-		-Q $(WHISPER_QUEUE) \
-		-n whisper@%h
+		-Q $(WHISPER_QUEUE)
 
 celery-whisper-stop:
 	@if [ -f $(CELERYD_PID_DIR)/whisper.pid ]; then \

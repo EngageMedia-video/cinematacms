@@ -246,8 +246,6 @@ CELERY_BEAT_SCHEDULE = {
         # every Sunday 1:01 AM
         "schedule": crontab(hour="1", minute="1", day_of_week="0"),
     },
-        "schedule": crontab(hour="*/10"),
-
     "update_listings_thumbnails": {
         "task": "update_listings_thumbnails",
         "schedule": crontab(hour="*/30"),
