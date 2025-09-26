@@ -311,7 +311,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "celery", specifier = "==5.2.2" },
-    { name = "crispy-forms-bootstrap2", specifier = ">=2024.1" },
+    { name = "crispy-forms-bootstrap2", specifier = "==2024.1" },
     { name = "django", specifier = "==5.2.6" },
     { name = "django-allauth", specifier = "==65.8.1" },
     { name = "django-celery-email", specifier = "==3.0.0" },
