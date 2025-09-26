@@ -9,7 +9,7 @@ uwsgi==2.0.30
 django-redis==4.12.1
 celery==5.2.2
 django-crispy-forms>=2.3,<3.0
-crispy-bootstrap5>=2024.10
+crispy-forms-bootstrap2>=2024.1
 Pillow==11.3.0
 django-imagekit==5.0.0
 markdown==3.9
