@@ -1,5 +1,6 @@
 import csv
 import json
+import logging
 from cms.permissions import user_requires_mfa
 from datetime import datetime, timedelta
 
@@ -12,6 +13,7 @@ from django.db.models import Func, Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
+from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import (
@@ -97,6 +99,7 @@ from .tasks import save_user_action
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 
+logger = logging.getLogger(__name__)
 
 class Lower(Func):
     function = "LOWER"
@@ -538,9 +541,14 @@ def add_subtitle(request):
             new_subtitle = Subtitle.objects.filter(id=subtitle.id).first()
             try:
                 new_subtitle.convert_to_vtt()
+                
+                # UPDATE MEDIA VERSION WHEN SUBTITLE ADDED
+                media.edit_date = timezone.now()
+                media.save(update_fields=['edit_date'])
+                
                 messages.add_message(request, messages.INFO, "Subtitle was added!")
                 return HttpResponseRedirect(subtitle.media.get_absolute_url())
-            except:
+            except Exception:
                 new_subtitle.delete()
                 error_msg = "Invalid subtitle format. Use SubRip (.srt) and WebVTT (.vtt) files."
                 form.add_error("subtitle_file", error_msg)
@@ -591,15 +599,49 @@ def edit_subtitle(request):
         if confirm == "true":
             messages.add_message(request, messages.INFO, "Subtitle was deleted")
             redirect_url = subtitle.media.get_absolute_url()
+
+            # Update the edit_date as the associated URL for this media file is affected by the edit_date of subtitles
+            subtitle.media.edit_date = timezone.now()
+            subtitle.media.save(update_fields=['edit_date'])
             subtitle.delete()
+
             return HttpResponseRedirect(redirect_url)
         form = EditSubtitleForm(subtitle, request.POST)
-        subtitle_text = form.data["subtitle"]
-        with open(subtitle.subtitle_file.path, "w") as ff:
-            ff.write(subtitle_text)
 
-        messages.add_message(request, messages.INFO, "Subtitle was edited")
-        return HttpResponseRedirect(subtitle.media.get_absolute_url())
+        if form.is_valid():
+            subtitle_text = form.cleaned_data["subtitle"]
+            try:
+                with open(subtitle.subtitle_file.path, "w", encoding='utf-8') as ff:
+                    ff.write(subtitle_text)
+                
+                # CRITICAL FIX: Update media edit_date to bust cache
+                subtitle.media.edit_date = timezone.now()
+                subtitle.media.save(update_fields=['edit_date'])
+                
+                messages.add_message(request, messages.INFO, "Subtitle was edited")
+                return HttpResponseRedirect(subtitle.media.get_absolute_url())
+            except Exception as e:
+                logger.error(f"Failed to save subtitle edit for {subtitle.subtitle_file.path}: {str(e)}")
+                form.add_error(None, f"Could not save subtitle: {str(e)}")
+        else:
+            # Use cleaned_data if available, fallback to raw data
+            subtitle_text = form.data.get("subtitle", "")
+            if subtitle_text:
+                try:
+                    with open(subtitle.subtitle_file.path, "w", encoding='utf-8') as ff:
+                        ff.write(subtitle_text)
+                    
+                    # Update media version even for invalid forms if text was provided
+                    subtitle.media.edit_date = timezone.now()
+                    subtitle.media.save(update_fields=['edit_date'])
+                    
+                    messages.add_message(request, messages.INFO, "Subtitle was edited")
+                    return HttpResponseRedirect(subtitle.media.get_absolute_url())
+                except Exception as e:
+                    logger.error(f"Failed to save subtitle: {str(e)}")
+                    form.add_error(None, f"Could not save subtitle: {str(e)}")
+            else:
+                form.add_error(None, "No subtitle content provided.")
     return render(request, "cms/edit_subtitle.html", context)
 
 
