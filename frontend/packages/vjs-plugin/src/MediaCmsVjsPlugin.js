@@ -1,4 +1,4 @@
-import { version as VERSION } from "../package.json";
+ import { version as VERSION } from "../package.json";
 
 import PluginFontIcons from "@mediacms/vjs-plugin-font-icons/dist/css/mediacms-vjs-icons.css";
 import PluginStyles from "./styles.scss";
@@ -2784,7 +2784,7 @@ function generatePlugin(/*videojs*/) {
 			this.player.removeClass("vjs-loading-video");
 
 			if ("Auto" === this.state.theSelectedQuality) {
-				if (!!this.player.tech_.hls && null === this.onBandwidthUpdate) {
+				if (!!this.player.tech_.vhs && null === this.onBandwidthUpdate) {
 					this.onBandwidthUpdate = this.onBandwidthUpdateCallback.bind(this);
 					this.player.tech_.on("bandwidthupdate", this.onBandwidthUpdate);
 
@@ -2796,7 +2796,7 @@ function generatePlugin(/*videojs*/) {
 					this.onBandwidthUpdate = null;
 				}
 
-				if (!!this.player.tech_.hls && null === this.onHlsRetryPlaylist) {
+				if (!!this.player.tech_.vhs && null === this.onHlsRetryPlaylist) {
 					// @note: Catch invalid playlists when selected resolution is not "Auto".
 					this.onHlsRetryPlaylist = this.onHlsRetryPlaylistCallback.bind(this);
 					this.player.tech_.on("retryplaylist", this.onHlsRetryPlaylist);
@@ -2825,7 +2825,7 @@ function generatePlugin(/*videojs*/) {
 
 		onBandwidthUpdateCallback(ev) {
 			this.onAutoQualitySelection(
-				this.player.tech_.hls.playlists.media_.attributes.RESOLUTION.height
+				this.player.tech_.vhs.playlists.media_.attributes.RESOLUTION.height
 			);
 		}
 
