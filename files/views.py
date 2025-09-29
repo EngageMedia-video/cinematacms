@@ -624,23 +624,7 @@ def edit_subtitle(request):
                 logger.error(f"Failed to save subtitle edit for {subtitle.subtitle_file.path}: {str(e)}")
                 form.add_error(None, f"Could not save subtitle: {str(e)}")
         else:
-            # Use cleaned_data if available, fallback to raw data
-            subtitle_text = form.data.get("subtitle", "")
-            if subtitle_text:
-                try:
-                    with open(subtitle.subtitle_file.path, "w", encoding='utf-8') as ff:
-                        ff.write(subtitle_text)
-                    
-                    # Update media version even for invalid forms if text was provided
-                    subtitle.media.edit_date = timezone.now()
-                    subtitle.media.save(update_fields=['edit_date'])
-                    
-                    messages.add_message(request, messages.INFO, "Subtitle was edited")
-                    return HttpResponseRedirect(subtitle.media.get_absolute_url())
-                except Exception as e:
-                    logger.error(f"Failed to save subtitle: {str(e)}")
-                    form.add_error(None, f"Could not save subtitle: {str(e)}")
-            else:
+            if not form.dat.get('subtitle'):
                 form.add_error(None, "No subtitle content provided.")
     return render(request, "cms/edit_subtitle.html", context)
 
