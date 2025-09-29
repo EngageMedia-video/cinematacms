@@ -624,7 +624,7 @@ def edit_subtitle(request):
                 logger.error(f"Failed to save subtitle edit for {subtitle.subtitle_file.path}: {str(e)}")
                 form.add_error(None, f"Could not save subtitle: {str(e)}")
         else:
-            if not form.dat.get('subtitle'):
+            if not form.data.get('subtitle'):
                 form.add_error(None, "No subtitle content provided.")
     return render(request, "cms/edit_subtitle.html", context)
 
