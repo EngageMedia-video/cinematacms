@@ -5,6 +5,7 @@ from django.contrib import admin
 from tinymce.widgets import TinyMCE
 
 from users.models import User
+from users.validators import validate_internal_html
 
 from .models import (
     Category,
@@ -175,7 +176,25 @@ class TopMessageAdmin(admin.ModelAdmin):
     list_display = ("text", "add_date", "active")
 
 
+class IndexPageFeaturedAdminForm(forms.ModelForm):
+    text = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'rows': 4,
+            'placeholder': 'HTML links allowed. Use /page-url for internal links only.'
+        }),
+        help_text='HTML formatting allowed. Links must be internal (start with / or #)'
+    )
+
+    def clean_text(self):
+        content = self.cleaned_data['text']
+        return validate_internal_html(content)
+
+    class Meta:
+        model = IndexPageFeatured
+        fields = "__all__"
+
 class IndexPageFeaturedAdmin(admin.ModelAdmin):
+    form = IndexPageFeaturedAdminForm
     list_display = ("title", "url", "api_url", "ordering", "active")
 
 

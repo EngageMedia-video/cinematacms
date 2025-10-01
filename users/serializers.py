@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from files.models import IndexPageFeatured
+from .validators import validate_internal_html
 from .models import User
 
 
@@ -85,3 +87,13 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "location_info",
         )
         extra_kwargs = {"name": {"required": False}}
+
+# files/serializers.py
+class IndexPageFeaturedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IndexPageFeatured
+        fields = ("title", "url", "api_url", "ordering", "active", "text")
+    
+    def validate_text(self, value):
+        """Ensure HTML content is safe and internal-only"""
+        return validate_internal_html(value)

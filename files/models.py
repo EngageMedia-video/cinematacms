@@ -8,6 +8,7 @@ import tempfile
 import time
 import uuid
 
+from django import forms
 import m3u8
 from django.conf import settings
 from django.contrib.postgres.indexes import BrinIndex, BTreeIndex, GinIndex
@@ -24,6 +25,8 @@ from django.utils.html import strip_tags
 from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFit
 from mptt.models import MPTTModel, TreeForeignKey
+
+from users.validators import validate_internal_html
 
 from . import helpers, lists
 from .methods import is_mediacms_editor, is_mediacms_manager, notify_users, is_media_allowed_type
@@ -161,6 +164,7 @@ class Media(models.Model):
         blank=True,
         null=True,
         default="en",
+        # choices=Language.objects.exclude(code__in=['automatic', 'automatic-translation']).values_list("code", "title"),
         db_index=True,
     )
     media_country = models.CharField(
@@ -1667,8 +1671,11 @@ class IndexPageFeatured(models.Model):
     ordering = models.IntegerField(
         default=1, help_text="ordering, 1 comes first, 2 follows etc"
     )
-    text = models.TextField(help_text="text", blank=True, null=True)
-
+    text = models.TextField(
+        blank=True, 
+        help_text="HTML links allowed for internal URLs only",
+        validators=[validate_internal_html]
+    )
     def __str__(self):
         return f"{self.title} - {self.url} - {self.ordering}"
 
@@ -1676,7 +1683,6 @@ class IndexPageFeatured(models.Model):
         ordering = ["ordering"]
         verbose_name = "Index page featured"
         verbose_name_plural = "Index page featured"
-
 
 class TranscriptionRequest(models.Model):
     # helper model to assess whether a Whisper transcription request is already in place
