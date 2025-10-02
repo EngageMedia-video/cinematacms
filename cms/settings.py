@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    'django_recaptcha',
     "rest_framework",
     "rest_framework.authtoken",
     "imagekit",
@@ -61,11 +62,9 @@ INSTALLED_APPS = [
     "actions.apps.ActionsConfig",
     "mptt",
     "crispy_forms",
-    "crispy_forms_bootstrap2",
     "uploader.apps.UploaderConfig",
     "djcelery_email",
     "tinymce",
-    "django_recaptcha",
     "corsheaders",
 ]
 
