@@ -25,9 +25,23 @@ After installation, you will need to add Homebrew to your PATH to ensure Homebre
 Install all the necessary software using Homebrew:
 
 ```zsh
-brew install wget openssl ffmpeg make cmake python docker bento4 uv
+brew install wget openssl ffmpeg make cmake python docker bento4 uv node@20
 ```
 This command also installs Docker. Ensure Docker is started before proceeding. For Mac, installing `docker` via Homebrew typically includes Docker Desktop, which you'll need to run.
+
+Since `node@20` is keg-only and won't be added to your PATH automatically, you need to link it:
+
+```zsh
+brew link --overwrite --force node@20
+```
+
+Alternatively, you can add it to your PATH manually by adding this to your `~/.zshrc` or `~/.bash_profile`:
+
+```zsh
+export PATH="$(brew --prefix node@20)/bin:$PATH"
+```
+
+This command works on both Intel Macs (which use `/usr/local`) and Apple Silicon Macs (which use `/opt/homebrew`).
 
 > [!NOTE]
 > The `uv` package manager is installed via Homebrew in the previous step. It will be used to manage Python dependencies and virtual environments for the Cinemata project. This is a faster alternative to `pip` and provides better dependency resolution.
@@ -155,9 +169,12 @@ SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'http')
 SECRET_KEY=os.getenv('SECRET_KEY')
 LOCAL_INSTALL=True
 DEBUG = True
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
-STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
+ACCOUNT_EMAIL_VERIFICATION = "none"  # 'mandatory' 'none'
+USE_X_ACCEL_REDIRECT = False
+
+CORS_ALLOW_ALL_ORIGINS = True
+# Custom MFA settings
+MFA_REQUIRED_ROLES = ['superuser'] # options: superuser, advanced_user, authenticated, manager, editor
 
 # Explicitly set Redis as broker
 REDIS_LOCATION = "redis://127.0.0.1:6379/1"
@@ -183,7 +200,9 @@ uv run python manage.py makemigrations files users actions
 uv run python manage.py migrate
 uv run python manage.py loaddata fixtures/encoding_profiles.json
 uv run python manage.py loaddata fixtures/categories.json
-uv run python manage.py collectstatic --noinput
+uv run python manage.py load_apac_languages
+
+bash scripts/build_frontend.sh
 ```
 
 9. ### Create an admin user
