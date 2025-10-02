@@ -55,8 +55,26 @@ def validate_internal_html(value):
         if href and not is_internal_url(href):
             raise ValidationError(f'External links not allowed: {href}')
 
+    # Check if it contains tags that are not allowed
+    for tag in soup.find_all():
+        if tag.name not in allowed_tags:
+            raise ValidationError(f'Tag not allowed: {tag.name}. Use only <a>, <strong>, <em>, <p>, and <br>')
+
     # Sanitize tags and attributes
     return sanitize_html(value, allowed_tags, allowed_attrs)
+
+def contains_not_allowed_tags(text, allowed_tags):
+    """
+    Check if text contains tags that are not in the allowed list
+    Returns True if not allowed tags are found, False otherwise
+    """
+    soup = BeautifulSoup(text, 'html.parser')
+
+    for tag in soup.find_all():
+        if tag.name not in allowed_tags:
+            return True
+
+    return False
 
 def is_internal_url(url):
     """Check if URL is internal to the portal"""
