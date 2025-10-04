@@ -20,7 +20,7 @@ Environment=APP_DIR="/home/cinemata/cinematacms"
 Environment=PYTHONPATH="/home/cinemata/cinematacms"
 WorkingDirectory=/home/cinemata/cinematacms
 
-ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} worker --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS} -Q ${CELERY_QUEUE}'
+ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} worker -n whisper@%H --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} --loglevel=${CELERYD_LOG_LEVEL} ${CELERYD_OPTS} -Q ${CELERY_QUEUE}'
 
 ExecStop=/bin/kill -s TERM $MAINPID
 

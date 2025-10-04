@@ -77,7 +77,6 @@ class MediaForm(forms.ModelForm):
         self.fields["topics"].label = "Topic"
 
         self.fields["media_country"].label = "Media Country"
-        self.fields["media_language"].label = "Media Language"
 
         self.fields["add_date"].label = "Publication Date"
         self.fields["uploaded_poster"].label = "Thumbnail Image Upload"
@@ -88,11 +87,15 @@ class MediaForm(forms.ModelForm):
 
         self.fields["year_produced"].required = True
         self.fields["category"].required = True
-        self.fields["media_language"].required = True
         self.fields["media_country"].required = True
 
-        # Set dynamic language choices
-        self.fields["media_language"].choices = get_language_choices()
+        # Set dynamic language choices as dropdown
+        self.fields["media_language"] = forms.ChoiceField(
+             choices=get_language_choices(),
+             required=True,
+             label="Media Language",
+             widget=forms.Select()
+        )
 
         self.fields[
             "password"
