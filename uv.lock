@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -313,7 +313,7 @@ requires-dist = [
     { name = "celery", specifier = "==5.2.2" },
     { name = "crispy-forms-bootstrap2", specifier = "==2024.1" },
     { name = "django", specifier = "==5.2.6" },
-    { name = "django-allauth", specifier = "==65.8.1" },
+    { name = "django-allauth", specifier = "==65.12.0" },
     { name = "django-celery-email", specifier = "==3.0.0" },
     { name = "django-cors-headers", specifier = "==4.7.0" },
     { name = "django-crispy-forms", specifier = ">=2.3,<3.0" },
@@ -492,13 +492,13 @@ wheels = [
 
 [[package]]
 name = "django-allauth"
-version = "65.8.1"
+version = "65.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiref" },
     { name = "django" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/65/3a/b9f572de1decadc668c7d73d0751ff05ff282d3c2cd17d7f74d17afd1fc4/django_allauth-65.8.1.tar.gz", hash = "sha256:38f54708eb06e542af33beeb553e0abb0d7524fded43a5e42c078f20d8e9fc18", size = 1681310, upload-time = "2025-05-21T19:21:41.878Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6f/53/709a7644f8e1f92888c818f5a4cae1c598813ee42bf4e709bf010ba16191/django_allauth-65.12.0.tar.gz", hash = "sha256:a76ec55935354a1455753601a0a814a4ded368242e8969323480a2810b349183", size = 1967199, upload-time = "2025-10-05T09:08:44.476Z" }
 
 [[package]]
 name = "django-appconf"
