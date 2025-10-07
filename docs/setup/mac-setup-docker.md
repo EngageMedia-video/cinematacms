@@ -182,7 +182,7 @@ BROKER_URL = REDIS_LOCATION
 CELERY_RESULT_BACKEND = BROKER_URL
 
 MP4HLS_COMMAND = (
-    "/opt/homebrew/bin/mp4hls"
+    "/opt/homebrew/bin/mp4hls" # IMPORTANT: run which mp4hls to find the path on your system
 )
 ```
 
@@ -195,6 +195,7 @@ Go back to the `/cinematacms` directory and create necessary folders and run the
 cd ..
 mkdir logs
 mkdir pids
+mkdir media_files/hls
 
 uv run python manage.py makemigrations files users actions
 uv run python manage.py migrate

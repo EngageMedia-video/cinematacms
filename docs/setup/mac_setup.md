@@ -198,6 +198,7 @@ Go back to the `/cinematacms` directory and create necessary folders and run the
 cd ..
 mkdir logs
 mkdir pids
+mkdir media_files/hls
 
 python manage.py makemigrations files users actions
 python manage.py migrate
