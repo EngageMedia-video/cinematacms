@@ -193,9 +193,9 @@ Go back to the `/cinematacms` directory and create necessary folders and run the
 
 ```zsh
 cd ..
-mkdir logs
-mkdir pids
-mkdir media_files/hls
+mkdir -p logs
+mkdir -p pids
+mkdir -p media_files/hls
 
 uv run python manage.py makemigrations files users actions
 uv run python manage.py migrate
