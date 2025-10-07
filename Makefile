@@ -1,4 +1,4 @@
-.PHONY: docker-up docker-down docker-restart docker-logs docker-ps docker-clean docker-build docker-shell-db docker-shell-redis sync help dev-server start-celery-beat stop-celery-beat start-celery-long stop-celery-long start-celery-short stop-celery-short start-celery-whisper stop-celery-whisper celery-beat-start celery-beat-stop celery-beat-restart celery-long-start celery-long-stop celery-long-restart celery-short-start celery-short-stop celery-short-restart celery-whisper-start celery-whisper-stop celery-whisper-restart celery-start-all celery-stop-all celery-restart-all celery-status frontend-build frontend-dev frontend-clean build-all
+.PHONY: docker-up docker-down docker-restart docker-logs docker-ps docker-clean docker-build docker-shell-db docker-shell-redis sync help dev-server start-celery-beat stop-celery-beat start-celery-long stop-celery-long start-celery-short stop-celery-short start-celery-whisper stop-celery-whisper celery-beat-start celery-beat-stop celery-beat-restart celery-long-start celery-long-stop celery-long-restart celery-short-start celery-short-stop celery-short-restart celery-whisper-start celery-whisper-stop celery-whisper-restart celery-start-all celery-stop-all celery-restart-all celery-status frontend-build frontend-dev frontend-clean quick-build
 
 # Docker compose file to use
 COMPOSE_FILE = docker-compose.dev.yml
@@ -43,7 +43,7 @@ help:
 	@echo "  make frontend-build  - Build all frontend packages and collect static"
 	@echo "  make frontend-dev    - Start frontend development server"
 	@echo "  make frontend-clean  - Clean frontend build directories"
-	@echo "  make build-all       - Build frontend and collect static files"
+	@echo "  make quick-build     - Quick frontend build (main app only)"
 	@echo ""
 	@echo "Celery Commands:"
 	@echo "  make celery-beat-start    - Start Celery beat scheduler"
@@ -205,9 +205,6 @@ frontend-clean:
 	rm -rf frontend/packages/media-player/dist
 	rm -rf static_collected
 	@echo "Frontend build directories cleaned"
-
-build-all: frontend-build
-	@echo "Complete build finished!"
 
 # Quick development build command
 quick-build:
