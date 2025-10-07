@@ -101,6 +101,9 @@ echo "SSL_FRONTEND_HOST = FRONTEND_HOST.replace('http', 'https')" >> cms/local_s
 echo 'SECRET_KEY='\'"$SECRET_KEY"\' >> cms/local_settings.py
 echo "LOCAL_INSTALL = True" >> cms/local_settings.py
 
+mkdir -p logs
+mkdir -p pids
+
 # Build frontend if Node.js is available
 if command -v node &> /dev/null && command -v npm &> /dev/null; then
     echo "Building frontend assets..."
@@ -113,8 +116,7 @@ else
     python manage.py collectstatic --noinput --verbosity=2
 fi
 
-mkdir -p logs
-mkdir -p pids
+
 python manage.py migrate
 python manage.py loaddata files/fixtures/creative_commons_licenses.json
 python manage.py loaddata fixtures/encoding_profiles.json
