@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 import PropTypes from 'prop-types';
 
@@ -16,7 +16,7 @@ import * as PlaylistPageActions from '../../pages/PlaylistPage/actions.js';
 
 import { putRequest, getCSRFToken } from '../../functions';
 
-function mediaPlaylistPopupPages(proceedRemoval, cancelRemoval){
+function mediaPlaylistPopupPages(proceedRemoval){
 
 	const settingOptionsList = {
 		deleteMedia: {
@@ -24,8 +24,8 @@ function mediaPlaylistPopupPages(proceedRemoval, cancelRemoval){
 			text: "Remove from playlist",
 			icon: "delete",
 			buttonAttr: {
-				className: 'change-page',
-				'data-page-id': 'proceedMediaPlaylistRemoval',
+				className: "delete-media-from-playlist",
+				onClick: proceedRemoval,
 			},
 		}
 	};
@@ -34,17 +34,6 @@ function mediaPlaylistPopupPages(proceedRemoval, cancelRemoval){
 		main: <PopupMain>
 				<NavigationMenuList items={ [ settingOptionsList.deleteMedia ] } />
 			</PopupMain>,
-		proceedMediaPlaylistRemoval: <PopupMain>
-										<div className="popup-message">
-											<span className="popup-message-title">Media playlist removal</span>
-											<span className="popup-message-main">You're willing to remove media from playlist permanently?</span>
-										</div>
-								  		<hr/>
-										<span className="popup-message-bottom">
-											<button className="button-link cancel-playlist-removal" onClick={ cancelRemoval }>CANCEL</button>
-											<button className="button-link proceed-playlist-removal" onClick={ proceedRemoval }>PROCEED</button>
-										</span>
-								  	</PopupMain>,
 	};
 
 	return pages;
@@ -53,10 +42,8 @@ function mediaPlaylistPopupPages(proceedRemoval, cancelRemoval){
 export function MediaPlaylistOptions(props){
 
 	const [ popupContentRef, PopupContent, PopupTrigger ] = usePopup();
-	
-	const [ popupCurrentPage, setPopupCurrentPage ] = useState( 'main' );
 
-	const [ popupPages ] = useState( mediaPlaylistPopupPages(proceedRemoval, cancelRemoval) );
+	const [ popupPages ] = useState( mediaPlaylistPopupPages(proceedRemoval) );
 
 	function mediaPlaylistRemovalCompleted(){
 		popupContentRef.current.tryToHide();
@@ -65,7 +52,7 @@ export function MediaPlaylistOptions(props){
 		setTimeout(function(){	// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
 			PageActions.addNotification( "Media removed from playlist", 'mediaPlaylistRemove');
 			PlaylistPageActions.removedMediaFromPlaylist( props_media_id, props_playlist_id );
-		}, 100);		
+		}, 100);
 		// console.info('Media "' + this.props.media_id + '" removed from playlist "' + this.props.playlist_id + '"');
 	}
 
@@ -95,30 +82,22 @@ export function MediaPlaylistOptions(props){
         );
 	}
 
-	function cancelRemoval(){
-		popupContentRef.current.toggle();
-	}
-
-	function onPopupPageChange(newPage){ setPopupCurrentPage(newPage); }
-	function onPopupHide(){ setPopupCurrentPage('main'); }
-
-	return (<div className={ "item-playlist-options-wrap" + ( "main" === popupCurrentPage ? " item-playlist-options-main" : "") }>
+	return (<div className="item-playlist-options-wrap item-playlist-options-main">
 
 				<PopupTrigger contentRef={ popupContentRef }>
 					<CircleIconButton><MaterialIcon type="more_vert" /></CircleIconButton>
 				</PopupTrigger>
 
-				<PopupContent contentRef={ popupContentRef } hideCallback={ onPopupHide }>
+				<PopupContent contentRef={ popupContentRef }>
 					<NavigationContentApp
-						pageChangeCallback={ onPopupPageChange }
-						initPage={ popupCurrentPage }
+						initPage="main"
 						focusFirstItemOnPageChange={ false }
 						pages={ popupPages }
 						pageChangeSelector={ '.change-page' }
 						pageIdSelectorAttr={ 'data-page-id' }
 					/>
 				</PopupContent>
-					
+
 			</div>);
 }
 

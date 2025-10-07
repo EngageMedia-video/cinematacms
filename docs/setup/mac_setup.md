@@ -25,8 +25,22 @@ After installation, you will need to add Homebrew to your PATH to ensure Homebre
 Install all the necessary software using Homebrew:
 
 ```zsh
-brew install wget postgresql openssl ffmpeg make cmake python pyenv
+brew install wget postgresql openssl ffmpeg make cmake python pyenv node@20
 ```
+
+Since `node@20` is keg-only and won't be added to your PATH automatically, you need to link it:
+
+```zsh
+brew link --overwrite --force node@20
+```
+
+Alternatively, you can add it to your PATH manually by adding this to your `~/.zshrc` or `~/.bash_profile`:
+
+```zsh
+export PATH="$(brew --prefix node@20)/bin:$PATH"
+```
+
+This command works on both Intel Macs (which use `/usr/local`) and Apple Silicon Macs (which use `/opt/homebrew`).
 
 3. ### Set up PostgreSQL
 Start PostgreSQL using Homebrew and enable it to start automatically on succeeding logins:
@@ -158,7 +172,6 @@ The file will open blank. Copy and paste the following content:
 import os
 from dotenv import load_dotenv
 load_dotenv()
-
 BASE_DIR = os.path.abspath('.')
 
 FRONTEND_HOST='http://127.0.0.1:8000'
@@ -167,9 +180,13 @@ SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'https')
 SECRET_KEY=os.getenv('SECRET_KEY')
 LOCAL_INSTALL=True
 DEBUG = True
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
-STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
+ACCOUNT_EMAIL_VERIFICATION = "none"  # 'mandatory' 'none'
+USE_X_ACCEL_REDIRECT = False
+
+CORS_ALLOW_ALL_ORIGINS = True
+# Custom MFA settings
+MFA_REQUIRED_ROLES = ['superuser'] # options: superuser, advanced_user, authenticated, manager, editor
+
 ```
 
 Save and close the file.
@@ -186,7 +203,9 @@ python manage.py makemigrations files users actions
 python manage.py migrate
 python manage.py loaddata fixtures/encoding_profiles.json
 python manage.py loaddata fixtures/categories.json
-python manage.py collectstatic --noinput
+python manage.py load_apac_languages
+
+bash scripts/build_frontend.sh
 ```
 
 9. ### Create an admin user

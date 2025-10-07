@@ -53,53 +53,7 @@ su -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE mediacms TO mediacms\"" postgr
 
 echo 'Installing Node.js v20 LTS...'
 # Try to find install-nodejs.sh in the cinematacms directory
-# The script may be run from different locations
-if [ -f "/home/cinemata/cinematacms/install-nodejs.sh" ]; then
-    NODEJS_SCRIPT="/home/cinemata/cinematacms/install-nodejs.sh"
-elif [ -f "./install-nodejs.sh" ]; then
-    NODEJS_SCRIPT="./install-nodejs.sh"
-elif [ -f "install-nodejs.sh" ]; then
-    NODEJS_SCRIPT="install-nodejs.sh"
-else
-    # Get the current script directory as fallback
-    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    NODEJS_SCRIPT="$SCRIPT_DIR/install-nodejs.sh"
-fi
-
-# Check if install-nodejs.sh exists
-if [ ! -f "$NODEJS_SCRIPT" ]; then
-    echo "Warning: install-nodejs.sh not found, attempting to create it..."
-
-    # Create the install-nodejs.sh script inline
-    cat > /tmp/install-nodejs.sh << 'EOF'
-#!/bin/bash
-set -e
-echo "Installing Node.js v20 LTS via nvm..."
-
-# Install for root user
-export NVM_DIR="/root/.nvm"
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
-nvm install 20
-nvm use 20
-nvm alias default 20
-
-# Also install for www-data user
-su - www-data -s /bin/bash -c '
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-    nvm install 20
-    nvm use 20
-    nvm alias default 20
-' || true
-
-echo "Node.js installation completed"
-EOF
-    chmod +x /tmp/install-nodejs.sh
-    NODEJS_SCRIPT="/tmp/install-nodejs.sh"
-fi
+NODEJS_SCRIPT="/home/cinemata/cinematacms/install-nodejs.sh"
 
 # Run the Node.js installation script
 if [ -f "$NODEJS_SCRIPT" ]; then
@@ -147,10 +101,9 @@ echo "SSL_FRONTEND_HOST = FRONTEND_HOST.replace('http', 'https')" >> cms/local_s
 echo 'SECRET_KEY='\'"$SECRET_KEY"\' >> cms/local_settings.py
 echo "LOCAL_INSTALL = True" >> cms/local_settings.py
 
-mkdir logs
-mkdir pids
-python manage.py makemigrations files users actions
-python manage.py migrate
+mkdir -p logs
+mkdir -p pids
+
 # Build frontend if Node.js is available
 if command -v node &> /dev/null && command -v npm &> /dev/null; then
     echo "Building frontend assets..."
@@ -162,6 +115,13 @@ else
     echo "Running collectstatic only..."
     python manage.py collectstatic --noinput --verbosity=2
 fi
+
+
+python manage.py migrate
+python manage.py loaddata files/fixtures/creative_commons_licenses.json
+python manage.py loaddata fixtures/encoding_profiles.json
+python manage.py loaddata fixtures/categories.json
+python manage.py load_apac_languages
 
 ADMIN_PASS=`python -c "import secrets;chars = 'abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(10)))"`
 echo "from users.models import User; User.objects.create_superuser('admin', 'admin@example.com', '$ADMIN_PASS')" | python manage.py shell
