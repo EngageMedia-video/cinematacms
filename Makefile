@@ -1,4 +1,4 @@
-.PHONY: docker-up docker-down docker-restart docker-logs docker-ps docker-clean docker-build docker-shell-db docker-shell-redis sync help dev-server start-celery-beat stop-celery-beat start-celery-long stop-celery-long start-celery-short stop-celery-short start-celery-whisper stop-celery-whisper celery-beat-start celery-beat-stop celery-beat-restart celery-long-start celery-long-stop celery-long-restart celery-short-start celery-short-stop celery-short-restart celery-whisper-start celery-whisper-stop celery-whisper-restart celery-start-all celery-stop-all celery-restart-all celery-status frontend-build frontend-dev frontend-clean build-all
+.PHONY: docker-up docker-down docker-restart docker-logs docker-ps docker-clean docker-build docker-shell-db docker-shell-redis sync help dev-server start-celery-beat stop-celery-beat start-celery-long stop-celery-long start-celery-short stop-celery-short start-celery-whisper stop-celery-whisper celery-beat-start celery-beat-stop celery-beat-restart celery-long-start celery-long-stop celery-long-restart celery-short-start celery-short-stop celery-short-restart celery-whisper-start celery-whisper-stop celery-whisper-restart celery-start-all celery-stop-all celery-restart-all celery-status frontend-build frontend-dev frontend-clean quick-build
 
 # Docker compose file to use
 COMPOSE_FILE = docker-compose.dev.yml
@@ -43,7 +43,7 @@ help:
 	@echo "  make frontend-build  - Build all frontend packages and collect static"
 	@echo "  make frontend-dev    - Start frontend development server"
 	@echo "  make frontend-clean  - Clean frontend build directories"
-	@echo "  make build-all       - Build frontend and collect static files"
+	@echo "  make quick-build     - Quick frontend build (main app only)"
 	@echo ""
 	@echo "Celery Commands:"
 	@echo "  make celery-beat-start    - Start Celery beat scheduler"
@@ -97,7 +97,8 @@ celery-beat-start:
 	$(CELERY_BIN) -A $(CELERY_APP) beat \
 		--pidfile=$(BEAT_PID_FILE) \
 		--logfile=$(BEAT_LOG_FILE) \
-		--loglevel=$(CELERYD_LOG_LEVEL)
+		--loglevel=$(CELERYD_LOG_LEVEL) \
+		--detach
 
 celery-beat-stop:
 	@if [ -f $(BEAT_PID_FILE) ]; then \
@@ -120,7 +121,8 @@ celery-long-start:
 		--logfile=$(CELERYD_LOG_DIR)/long.log \
 		--loglevel=$(CELERYD_LOG_LEVEL) \
 		$(LONG_OPTS) \
-		-Q $(LONG_QUEUE)
+		-Q $(LONG_QUEUE) \
+		--detach
 
 celery-long-stop:
 	@if [ -f $(CELERYD_PID_DIR)/long.pid ]; then \
@@ -143,7 +145,8 @@ celery-short-start:
 		--logfile=$(CELERYD_LOG_DIR)/short.log \
 		--loglevel=$(CELERYD_LOG_LEVEL) \
 		$(SHORT_OPTS) \
-		-Q $(SHORT_QUEUE)
+		-Q $(SHORT_QUEUE) \
+		--detach
 
 celery-short-stop:
 	@if [ -f $(CELERYD_PID_DIR)/short.pid ]; then \
@@ -166,7 +169,8 @@ celery-whisper-start:
 		--logfile=$(CELERYD_LOG_DIR)/whisper.log \
 		--loglevel=$(CELERYD_LOG_LEVEL) \
 		$(WHISPER_OPTS) \
-		-Q $(WHISPER_QUEUE)
+		-Q $(WHISPER_QUEUE) \
+		--detach
 
 celery-whisper-stop:
 	@if [ -f $(CELERYD_PID_DIR)/whisper.pid ]; then \
@@ -205,9 +209,6 @@ frontend-clean:
 	rm -rf frontend/packages/media-player/dist
 	rm -rf static_collected
 	@echo "Frontend build directories cleaned"
-
-build-all: frontend-build
-	@echo "Complete build finished!"
 
 # Quick development build command
 quick-build:

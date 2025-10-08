@@ -37,9 +37,9 @@ The Cinemata CMS project includes a Makefile with various commands to help with 
 | `make celery-long-start` | Start long tasks worker |
 | `make celery-long-stop` | Stop long tasks worker |
 | `make celery-long-restart` | Restart long tasks worker |
-| `make celery-short-start` | Start short tasks worker |
-| `make celery-short-stop` | Stop short tasks worker |
-| `make celery-short-restart` | Restart short tasks worker |
+| `make celery-short-start` | Start short tasks workers |
+| `make celery-short-stop` | Stop short tasks workers |
+| `make celery-short-restart` | Restart short tasks workers |
 | `make celery-whisper-start` | Start whisper tasks worker |
 | `make celery-whisper-stop` | Stop whisper tasks worker |
 | `make celery-whisper-restart` | Restart whisper tasks worker |
@@ -47,6 +47,15 @@ The Cinemata CMS project includes a Makefile with various commands to help with 
 | `make celery-stop-all` | Stop all Celery services |
 | `make celery-restart-all` | Restart all Celery services |
 | `make celery-status` | Show Celery process status |
+
+### Frontend Commands
+
+| Command | Description |
+|---------|-------------|
+| `make frontend-build` | Build all frontend packages and collect static |
+| `make frontend-dev` | Start frontend development server |
+| `make frontend-clean` | Clean frontend build directories |
+| `make quick-build` | Quick frontend build (main app only) |
 
 ## Using uv for Dependency Management
 
