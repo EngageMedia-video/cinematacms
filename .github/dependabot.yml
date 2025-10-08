@@ -5,16 +5,32 @@
 
 version: 2
 updates:
-  - package-ecosystem: "uv"
-    directory: "/"
-    schedule:
-      interval: "daily"
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
   - package-ecosystem: "npm"
     directory: "/frontend/"
     schedule:
-      interval: "daily"
-  
+      interval: "weekly"
+    groups:
+      frontend-dependencies:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
