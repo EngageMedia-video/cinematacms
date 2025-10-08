@@ -164,7 +164,7 @@ class Media(models.Model):
         blank=True,
         null=True,
         default="en",
-        # choices=Language.objects.exclude(code__in=['automatic', 'automatic-translation']).values_list("code", "title"),
+        choices=Language.objects.exclude(code__in=['automatic', 'automatic-translation']).values_list("code", "title"),
         db_index=True,
     )
     media_country = models.CharField(
