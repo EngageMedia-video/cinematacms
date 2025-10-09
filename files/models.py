@@ -15,7 +15,13 @@ from django.contrib.postgres.indexes import BrinIndex, BTreeIndex, GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.files import File
 from django.db import connection, models
-from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
+from django.db.models.signals import (
+    m2m_changed,
+    post_delete,
+    post_save,
+    pre_delete,
+    pre_save,
+)
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
 from django.urls import reverse
@@ -29,7 +35,12 @@ from mptt.models import MPTTModel, TreeForeignKey
 from users.validators import validate_internal_html
 
 from . import helpers, lists
-from .methods import is_mediacms_editor, is_mediacms_manager, notify_users, is_media_allowed_type
+from .methods import (
+    is_mediacms_editor,
+    is_mediacms_manager,
+    notify_users,
+    is_media_allowed_type,
+)
 from .stop_words import STOP_WORDS
 from .cache_utils import clear_media_permission_cache
 
@@ -125,13 +136,20 @@ def topic_thumb_path(instance, filename):
     file_name = "{0}.{1}".format(friendly_token, helpers.get_file_name(filename))
     return settings.MEDIA_UPLOAD_DIR + "topics/{0}".format(file_name)
 
+
 def get_language_choices():
     """Get language choices dynamically to avoid database access during model import"""
+    from django.db.utils import OperationalError, ProgrammingError
+    from django.core.exceptions import AppRegistryNotReady
+
     try:
-        return Language.objects.exclude(code__in=['automatic', 'automatic-translation']).values_list("code", "title")
-    except:
+        return Language.objects.exclude(
+            code__in=["automatic", "automatic-translation"]
+        ).values_list("code", "title")
+    except (OperationalError, ProgrammingError, AppRegistryNotReady):
         # Return empty choices if database is not ready (during migrations)
         return []
+
 
 class Language(models.Model):
     code = models.CharField(max_length=100, unique=True, help_text="language code")
@@ -142,6 +160,7 @@ class Language(models.Model):
 
     def __str__(self):
         return self.title
+
 
 class Media(models.Model):
     uid = models.UUIDField(unique=True, default=uuid.uuid4)
@@ -160,7 +179,7 @@ class Media(models.Model):
     description = models.TextField("More Information and Credits", blank=True)
     summary = models.TextField("Synopsis", help_text="Maximum 60 words")
     media_language = models.CharField(
-        max_length=5,
+        max_length=35,
         blank=True,
         null=True,
         default="en",
@@ -377,7 +396,10 @@ class Media(models.Model):
         super(Media, self).save(*args, **kwargs)
 
         # Invalidate permission cache if state or password changed
-        if self.pk and (self.state != self.__original_state or self.password != self.__original_password):
+        if self.pk and (
+            self.state != self.__original_state
+            or self.password != self.__original_password
+        ):
             self._invalidate_permission_cache()
             self.__original_state = self.state
             self.__original_password = self.password
@@ -458,9 +480,7 @@ class Media(models.Model):
             UPDATE {db_table} SET search = to_tsvector(
                 '{config}', '{text}'
             ) WHERE {db_table}.id = {id}
-            """.format(
-            db_table=db_table, config="simple", text=text, id=self.id
-        )
+            """.format(db_table=db_table, config="simple", text=text, id=self.id)
         try:
             with connection.cursor() as cursor:
                 cursor.execute(sql_code)
@@ -487,13 +507,15 @@ class Media(models.Model):
 
         Cache invalidation is controlled by ENABLE_PERMISSION_CACHE setting.
         """
-        if not getattr(settings, 'ENABLE_PERMISSION_CACHE', True):
+        if not getattr(settings, "ENABLE_PERMISSION_CACHE", True):
             return
         try:
             clear_media_permission_cache(self.uid)
             logger.debug(f"Invalidated permission cache for media: {self.uid}")
         except Exception as e:
-            logger.warning(f"Failed to invalidate permission cache for media {self.uid}: {e}")
+            logger.warning(
+                f"Failed to invalidate permission cache for media {self.uid}: {e}"
+            )
 
     def media_init(self):
         # new media file uploaded. Check if media type,
@@ -698,7 +720,7 @@ class Media(models.Model):
             from . import tasks
 
             # TODO: check that this will not run many times in a row
-            tasks.create_hls(self.friendly_token)
+            tasks.create_hls.delay(self.friendly_token)
 
         return True
 
@@ -831,8 +853,7 @@ class Media(models.Model):
         media_language = None
         if self.media_language:
             media_language = (
-                Language.objects
-                .filter(code=self.media_language)
+                Language.objects.filter(code=self.media_language)
                 .values_list("title", flat=True)
                 .first()
             )
@@ -928,7 +949,9 @@ class Media(models.Model):
                 m3u8_obj = m3u8.load(hls_file)
                 if os.path.exists(hls_file):
                     base_url = helpers.url_from_path(hls_file)
-                    res["master_file"] = helpers.build_versioned_url(base_url, self.media_version)
+                    res["master_file"] = helpers.build_versioned_url(
+                        base_url, self.media_version
+                    )
                     for iframe_playlist in m3u8_obj.iframe_playlists:
                         uri = os.path.join(p, iframe_playlist.uri)
                         if os.path.exists(uri):
@@ -936,15 +959,21 @@ class Media(models.Model):
                                 1
                             ]
                             base_url = helpers.url_from_path(uri)
-                            res["{}_iframe".format(resolution)] = helpers.build_versioned_url(base_url, self.media_version)
+                            res["{}_iframe".format(resolution)] = (
+                                helpers.build_versioned_url(
+                                    base_url, self.media_version
+                                )
+                            )
                     for playlist in m3u8_obj.playlists:
                         uri = os.path.join(p, playlist.uri)
                         if os.path.exists(uri):
                             resolution = playlist.stream_info.resolution[1]
                             base_url = helpers.url_from_path(uri)
-                            res[
-                                "{}_playlist".format(resolution)
-                            ] = helpers.build_versioned_url(base_url, self.media_version)
+                            res["{}_playlist".format(resolution)] = (
+                                helpers.build_versioned_url(
+                                    base_url, self.media_version
+                                )
+                            )
         return res
 
     @property
@@ -1210,12 +1239,20 @@ class MediaLanguage(models.Model):
         return None
 
     def update_language_media(self):
-        language = Language.objects.values("code", "title").get(title=self.title)
-        if language:
-            media_language = language['code']
+        try:
+            language = Language.objects.values("code", "title").get(title=self.title)
+            media_language = language["code"]
             self.media_count = Media.objects.filter(
                 state="public", is_reviewed=True, media_language=media_language
             ).count()
+        except Language.DoesNotExist:
+            # MediaLanguage exists but corresponding Language doesn't exist
+            # Set count to 0 and log warning
+            self.media_count = 0
+            logger.warning(
+                f"MediaLanguage '{self.title}' has no corresponding Language record. "
+                f"Media count set to 0."
+            )
         self.save(update_fields=["media_count"])
         return True
 
@@ -1252,12 +1289,22 @@ class MediaCountry(models.Model):
             self.media_count = Media.objects.filter(
                 state="public", is_reviewed=True, media_country=country
             ).count()
+        else:
+            # MediaCountry exists but not found in video_countries list
+            # Set count to 0 and log warning
+            self.media_count = 0
+
+            logger.warning(
+                f"MediaCountry '{self.title}' has no corresponding entry in video_countries list. "
+                f"Media count set to 0."
+            )
         self.save(update_fields=["media_count"])
         return True
 
 
 class EncodeProfile(models.Model):
     "Encode Profiles"
+
     name = models.CharField(max_length=90)
     extension = models.CharField(max_length=10, choices=ENCODE_EXTENSIONS)
     resolution = models.IntegerField(choices=ENCODE_RESOLUTIONS, blank=True, null=True)
@@ -1274,6 +1321,7 @@ class EncodeProfile(models.Model):
 
 class Encoding(models.Model):
     "Encoding Media Instances"
+
     logs = models.TextField(blank=True)
     media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name="encodings")
     profile = models.ForeignKey(EncodeProfile, on_delete=models.CASCADE)
@@ -1369,12 +1417,12 @@ class Subtitle(models.Model):
 
     def convert_to_vtt(self):
         """
-            Convert uploaded subtitle files to VTT format for web playback.
-            Uses FFmpeg (already available in CinemataCMS) instead of pysubs2.
-            Accepts both SRT and VTT input formats.
+        Convert uploaded subtitle files to VTT format for web playback.
+        Uses FFmpeg (already available in CinemataCMS) instead of pysubs2.
+        Accepts both SRT and VTT input formats.
 
-            SAFETY: This method is ONLY called on NEW subtitle uploads, never on existing files.
-            Existing subtitles in Cinemata.org remain completely untouched.
+        SAFETY: This method is ONLY called on NEW subtitle uploads, never on existing files.
+        Existing subtitles in Cinemata.org remain completely untouched.
         """
         input_path = self.subtitle_file.path
 
@@ -1385,11 +1433,13 @@ class Subtitle(models.Model):
         # Check file extension
         file_lower = input_path.lower()
 
-        if not (file_lower.endswith('.srt') or file_lower.endswith('.vtt')):
-            raise Exception("Invalid subtitle format. Use SubRip (.srt) and WebVTT (.vtt) files.")
+        if not (file_lower.endswith(".srt") or file_lower.endswith(".vtt")):
+            raise Exception(
+                "Invalid subtitle format. Use SubRip (.srt) and WebVTT (.vtt) files."
+            )
 
         # If already VTT, no conversion needed
-        if file_lower.endswith('.vtt'):
+        if file_lower.endswith(".vtt"):
             return True
 
         logger.info(f"Converting new subtitle upload: {input_path}")
@@ -1399,15 +1449,19 @@ class Subtitle(models.Model):
 
             cmd = [
                 settings.FFMPEG_COMMAND,  # Already configured in CinemataCMS
-                "-i", input_path,
-                "-c:s", "webvtt",
-                temp_vtt
+                "-i",
+                input_path,
+                "-c:s",
+                "webvtt",
+                temp_vtt,
             ]
 
             try:
                 ret = helpers.run_command(cmd)
                 if ret and ret.get("returncode", 0) != 0:
-                    logger.error(f"FFmpeg failed with code {ret.get('returncode')}: {ret.get('err')}")
+                    logger.error(
+                        f"FFmpeg failed with code {ret.get('returncode')}: {ret.get('err')}"
+                    )
                     raise Exception("FFmpeg conversion failed")
 
                 if os.path.exists(temp_vtt) and os.path.getsize(temp_vtt) > 0:
@@ -1416,14 +1470,20 @@ class Subtitle(models.Model):
                     logger.info(f"Successfully converted subtitle to VTT: {input_path}")
 
                     # Update file extension to .vtt if it was .srt
-                    if file_lower.endswith('.srt'):
-                        new_path = input_path.replace('.srt', '.vtt').replace('.SRT', '.vtt')
+                    if file_lower.endswith(".srt"):
+                        new_path = input_path.replace(".srt", ".vtt").replace(
+                            ".SRT", ".vtt"
+                        )
                         if new_path != input_path:
                             os.rename(input_path, new_path)
                             # Update the FileField to point to new path
-                            self.subtitle_file.name = self.subtitle_file.name.replace('.srt', '.vtt').replace('.SRT', '.vtt')
-                            self.save(update_fields=['subtitle_file'])
-                            logger.info(f"Renamed subtitle file from .srt to .vtt: {new_path}")
+                            self.subtitle_file.name = self.subtitle_file.name.replace(
+                                ".srt", ".vtt"
+                            ).replace(".SRT", ".vtt")
+                            self.save(update_fields=["subtitle_file"])
+                            logger.info(
+                                f"Renamed subtitle file from .srt to .vtt: {new_path}"
+                            )
                 else:
                     raise Exception("FFmpeg conversion failed - no output file created")
 
@@ -1432,6 +1492,7 @@ class Subtitle(models.Model):
                 raise Exception(f"Could not convert SRT file to VTT format: {str(e)}")
 
             return True
+
 
 class RatingCategory(models.Model):
     """Rating Category
@@ -1548,6 +1609,7 @@ class Playlist(models.Model):
 
     class Meta:
         ordering = ["-add_date"]  # This will show newest playlists first
+
 
 class PlaylistMedia(models.Model):
     media = models.ForeignKey(Media, on_delete=models.CASCADE)
@@ -1694,19 +1756,24 @@ class TranscriptionRequest(models.Model):
 
 
 class TinyMCEMedia(models.Model):
-    file = models.FileField(upload_to='tinymce_media/')
+    file = models.FileField(upload_to="tinymce_media/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    file_type = models.CharField(max_length=10, choices=(
-        ('image', 'Image'),
-        ('media', 'Media'),
-    ))
+    file_type = models.CharField(
+        max_length=10,
+        choices=(
+            ("image", "Image"),
+            ("media", "Media"),
+        ),
+    )
     original_filename = models.CharField(max_length=255)
-    user = models.ForeignKey("users.User", on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(
+        "users.User", on_delete=models.CASCADE, null=True, blank=True
+    )
 
     class Meta:
-        verbose_name = 'TinyMCE Media'
-        verbose_name_plural = 'TinyMCE Media'
-        ordering = ['-uploaded_at']
+        verbose_name = "TinyMCE Media"
+        verbose_name_plural = "TinyMCE Media"
+        ordering = ["-uploaded_at"]
 
     def __str__(self):
         return f"{self.original_filename} ({self.file_type})"
@@ -1741,19 +1808,17 @@ def media_save(sender, instance, created, **kwargs):
             topic.update_tag_media()
 
     if instance.media_country:
-        country = {
-            key: value for key, value in dict(lists.video_countries).items()
-        }.get(instance.media_country)
+        country = dict(lists.video_countries).get(instance.media_country)
         if country:
-            country = MediaCountry.objects.filter(title=country).first()
-        if country:
-            country.update_country_media()
+            cntry = MediaCountry.objects.filter(title=country).first()
+            if cntry:
+                cntry.update_country_media()
 
     if instance.media_language:
         language_title = dict(
-            Language.objects
-            .exclude(code__in=["automatic", "automatic-translation"])
-            .values_list("code", "title")
+            Language.objects.exclude(
+                code__in=["automatic", "automatic-translation"]
+            ).values_list("code", "title")
         ).get(instance.media_language)
         if language_title:
             ml = MediaLanguage.objects.filter(title=language_title).first()
@@ -1773,6 +1838,10 @@ def media_file_pre_delete(sender, instance, **kwargs):
         for tag in instance.tags.all():
             instance.tags.remove(tag)
             tag.update_tag_media()
+    if instance.topics.all():
+        for topic in instance.topics.all():
+            instance.topics.remove(topic)
+            topic.update_tag_media()
 
 
 @receiver(post_delete, sender=Media)
@@ -1811,6 +1880,22 @@ def media_m2m(sender, instance, **kwargs):
     if instance.tags.all():
         for tag in instance.tags.all():
             tag.update_tag_media()
+
+
+@receiver(m2m_changed, sender=Media.topics.through)
+def media_topics_m2m(sender, instance, action, pk_set, **kwargs):
+    # Update topic media counts when topics are added or removed
+    if action in ["post_add", "post_remove", "post_clear"]:
+        if pk_set:
+            # Update specific topics that were added/removed
+            topics = Topic.objects.filter(pk__in=pk_set)
+            for topic in topics:
+                topic.update_tag_media()
+        elif action == "post_clear":
+            # Update all topics that were associated with this media
+            topics = Topic.objects.filter(media=instance)
+            for topic in topics:
+                topic.update_tag_media()
 
 
 @receiver(post_save, sender=Encoding)

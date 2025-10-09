@@ -98,7 +98,6 @@ celery-beat-start:
 		--pidfile=$(BEAT_PID_FILE) \
 		--logfile=$(BEAT_LOG_FILE) \
 		--loglevel=$(CELERYD_LOG_LEVEL) \
-		--detach
 
 celery-beat-stop:
 	@if [ -f $(BEAT_PID_FILE) ]; then \
@@ -117,12 +116,12 @@ LONG_OPTS := -Ofair --prefetch-multiplier=1
 
 celery-long-start:
 	$(CELERY_BIN) -A $(CELERY_APP) worker \
+		-n long1@%h \
 		--pidfile=$(CELERYD_PID_DIR)/long.pid \
 		--logfile=$(CELERYD_LOG_DIR)/long.log \
 		--loglevel=$(CELERYD_LOG_LEVEL) \
 		$(LONG_OPTS) \
 		-Q $(LONG_QUEUE) \
-		--detach
 
 celery-long-stop:
 	@if [ -f $(CELERYD_PID_DIR)/long.pid ]; then \
@@ -141,12 +140,12 @@ SHORT_OPTS := --soft-time-limit=300 --concurrency=10
 
 celery-short-start:
 	$(CELERY_BIN) -A $(CELERY_APP) worker \
+		-n short1@%h \
 		--pidfile=$(CELERYD_PID_DIR)/short.pid \
 		--logfile=$(CELERYD_LOG_DIR)/short.log \
 		--loglevel=$(CELERYD_LOG_LEVEL) \
 		$(SHORT_OPTS) \
 		-Q $(SHORT_QUEUE) \
-		--detach
 
 celery-short-stop:
 	@if [ -f $(CELERYD_PID_DIR)/short.pid ]; then \
@@ -165,12 +164,12 @@ WHISPER_OPTS := -Ofair --prefetch-multiplier=1
 
 celery-whisper-start:
 	$(CELERY_BIN) -A $(CELERY_APP) worker \
+		-n whisper1@%h \
 		--pidfile=$(CELERYD_PID_DIR)/whisper.pid \
 		--logfile=$(CELERYD_LOG_DIR)/whisper.log \
 		--loglevel=$(CELERYD_LOG_LEVEL) \
 		$(WHISPER_OPTS) \
 		-Q $(WHISPER_QUEUE) \
-		--detach
 
 celery-whisper-stop:
 	@if [ -f $(CELERYD_PID_DIR)/whisper.pid ]; then \
@@ -183,7 +182,36 @@ celery-whisper-stop:
 celery-whisper-restart: celery-whisper-stop celery-whisper-start
 
 ## Combined Commands
-celery-start-all: celery-beat-start celery-long-start celery-short-start celery-whisper-start
+celery-start-all:
+	$(CELERY_BIN) -A $(CELERY_APP) beat \
+		--pidfile=$(BEAT_PID_FILE) \
+		--logfile=$(BEAT_LOG_FILE) \
+		--loglevel=$(CELERYD_LOG_LEVEL) \
+		--detach
+	$(CELERY_BIN) -A $(CELERY_APP) worker \
+		-n long1@%h \
+		--pidfile=$(CELERYD_PID_DIR)/long.pid \
+		--logfile=$(CELERYD_LOG_DIR)/long.log \
+		--loglevel=$(CELERYD_LOG_LEVEL) \
+		$(LONG_OPTS) \
+		-Q $(LONG_QUEUE) \
+		--detach
+	$(CELERY_BIN) -A $(CELERY_APP) worker \
+		-n short1@%h \
+		--pidfile=$(CELERYD_PID_DIR)/short.pid \
+		--logfile=$(CELERYD_LOG_DIR)/short.log \
+		--loglevel=$(CELERYD_LOG_LEVEL) \
+		$(SHORT_OPTS) \
+		-Q $(SHORT_QUEUE) \
+		--detach
+	$(CELERY_BIN) -A $(CELERY_APP) worker \
+		-n whisper1@%h \
+		--pidfile=$(CELERYD_PID_DIR)/whisper.pid \
+		--logfile=$(CELERYD_LOG_DIR)/whisper.log \
+		--loglevel=$(CELERYD_LOG_LEVEL) \
+		$(WHISPER_OPTS) \
+		-Q $(WHISPER_QUEUE) \
+		--detach
 
 celery-stop-all: celery-beat-stop celery-long-stop celery-short-stop celery-whisper-stop
 
