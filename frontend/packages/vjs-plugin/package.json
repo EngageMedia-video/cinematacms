@@ -42,7 +42,7 @@
     "global": "^4.4.0",
     "sass": "^1.92.1",
     "postcss": "^8.5.6",
-    "rollup": "^4.50.1",
+    "rollup": "^4.52.4",
     "rollup-plugin-cleanup": "^3.2.1",
     "rollup-plugin-gzip": "^4.1.1",
     "rollup-plugin-postcss": "^4.0.2",
