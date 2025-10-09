@@ -1676,7 +1676,7 @@ class CategoryList(APIView):
 
 class TopicList(APIView):
     def get(self, request, format=None):
-        topics = Topic.objects.filter().order_by("title")
+        topics = Topic.objects.filter(media_count__gt=0).order_by("title")
         serializer = TopicSerializer(topics, many=True, context={"request": request})
         ret = serializer.data
         return Response(ret)
