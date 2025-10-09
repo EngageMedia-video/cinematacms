@@ -14,7 +14,7 @@ video_topics = (
     ("media", "Media / Technology"),
     ("politics", "Politics"),
     ("education", "Education / Students"),
-    ("biodiversity", "environment and forests"),
+    ("biodiversity", "Environment and Forests"),
     ("climate", "Climate Change"),
     ("conservation", "Forests"),
     ("energy", "Energy"),

@@ -1834,6 +1834,10 @@ def media_file_pre_delete(sender, instance, **kwargs):
         for tag in instance.tags.all():
             instance.tags.remove(tag)
             tag.update_tag_media()
+    if instance.topics.all():
+        for topic in instance.topics.all():
+            instance.topics.remove(topic)
+            topic.update_tag_media()
 
 
 @receiver(post_delete, sender=Media)
@@ -1872,6 +1876,22 @@ def media_m2m(sender, instance, **kwargs):
     if instance.tags.all():
         for tag in instance.tags.all():
             tag.update_tag_media()
+
+
+@receiver(m2m_changed, sender=Media.topics.through)
+def media_topics_m2m(sender, instance, action, pk_set, **kwargs):
+    # Update topic media counts when topics are added or removed
+    if action in ["post_add", "post_remove", "post_clear"]:
+        if pk_set:
+            # Update specific topics that were added/removed
+            topics = Topic.objects.filter(pk__in=pk_set)
+            for topic in topics:
+                topic.update_tag_media()
+        elif action == "post_clear":
+            # Update all topics that were associated with this media
+            topics = Topic.objects.filter(media=instance)
+            for topic in topics:
+                topic.update_tag_media()
 
 
 @receiver(post_save, sender=Encoding)
