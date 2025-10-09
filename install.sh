@@ -122,6 +122,9 @@ python manage.py loaddata files/fixtures/creative_commons_licenses.json
 python manage.py loaddata fixtures/encoding_profiles.json
 python manage.py loaddata fixtures/categories.json
 python manage.py load_apac_languages
+python manage.py populate_media_languages
+python manage.py populate_media_countries
+python manage.py populate_topics
 
 ADMIN_PASS=`python -c "import secrets;chars = 'abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(10)))"`
 echo "from users.models import User; User.objects.create_superuser('admin', 'admin@example.com', '$ADMIN_PASS')" | python manage.py shell

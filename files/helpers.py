@@ -441,7 +441,21 @@ def media_file_info(input_file):
                 input_file,
             ]
             stdout = run_command(cmd).get("out")
-            stream_size = sum([int(l) for l in stdout.split("\n") if l != ""])
+            # Parse packet sizes from ffprobe compact format
+            # Note: compact format adds trailing pipe separator (|) by default
+            # even with nk=1 (no key), so we need to strip it
+            # Example output: "3|" or "1024|"
+            packet_sizes = []
+            for line in stdout.split("\n"):
+                if line:
+                    # Remove trailing pipe separator (compact format default)
+                    line = line.rstrip('|')
+                    try:
+                        packet_sizes.append(int(line))
+                    except ValueError:
+                        # Skip non-numeric lines (empty, headers, errors)
+                        continue
+            stream_size = sum(packet_sizes)
             audio_bitrate = round((stream_size * 8 / 1024.0) / audio_duration, 2)
 
         ret.update(
