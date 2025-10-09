@@ -197,11 +197,14 @@ mkdir -p logs
 mkdir -p pids
 mkdir -p media_files/hls
 
-uv run python manage.py makemigrations files users actions
-uv run python manage.py migrate
-uv run python manage.py loaddata fixtures/encoding_profiles.json
-uv run python manage.py loaddata fixtures/categories.json
-uv run python manage.py load_apac_languages
+uv run manage.py makemigrations files users actions
+uv run manage.py migrate
+uv run manage.py loaddata fixtures/encoding_profiles.json
+uv run manage.py loaddata fixtures/categories.json
+uv run manage.py load_apac_languages
+uv run manage.py populate_media_languages
+uv run manage.py populate_media_countries
+uv run manage.py populate_topics
 
 bash scripts/build_frontend.sh
 ```
@@ -211,7 +214,7 @@ Create an admin user with a random password:
 
 ```zsh
 ADMIN_PASS=$(uv run python -c "import secrets;chars = 'abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(10)))")
-echo "from users.models import User; User.objects.create_superuser('admin', 'admin@example.com', '$ADMIN_PASS')" | uv run python manage.py shell
+echo "from users.models import User; User.objects.create_superuser('admin', 'admin@example.com', '$ADMIN_PASS')" | uv run manage.py shell
 echo "Your admin password is $ADMIN_PASS"
 ```
 

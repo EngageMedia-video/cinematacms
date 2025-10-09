@@ -205,6 +205,9 @@ python manage.py migrate
 python manage.py loaddata fixtures/encoding_profiles.json
 python manage.py loaddata fixtures/categories.json
 python manage.py load_apac_languages
+python manage.py populate_media_languages
+python manage.py populate_media_countries
+python manage.py populate_topics
 
 bash scripts/build_frontend.sh
 ```
