@@ -248,7 +248,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "update_listings_thumbnails": {
         "task": "update_listings_thumbnails",
-        "schedule": crontab(minutes="*/30"),
+        "schedule": crontab(minute="*/30"),
     },
     #     "schedule": timedelta(seconds=5),
     #     "args": (16, 16)
