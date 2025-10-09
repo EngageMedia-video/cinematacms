@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.postgres.search import SearchQuery
 from django.core.mail import EmailMessage, send_mail
-from django.db.models import Func, Q
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -100,10 +100,6 @@ from .tasks import save_user_action
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 
 logger = logging.getLogger(__name__)
-
-
-class Lower(Func):
-    function = "LOWER"
 
 
 def index(request):

@@ -1245,9 +1245,6 @@ class MediaLanguage(models.Model):
             # MediaLanguage exists but corresponding Language doesn't exist
             # Set count to 0 and log warning
             self.media_count = 0
-            import logging
-
-            logger = logging.getLogger(__name__)
             logger.warning(
                 f"MediaLanguage '{self.title}' has no corresponding Language record. "
                 f"Media count set to 0."
@@ -1292,7 +1289,6 @@ class MediaCountry(models.Model):
             # MediaCountry exists but not found in video_countries list
             # Set count to 0 and log warning
             self.media_count = 0
-            import logging
 
             logger = logging.getLogger(__name__)
             logger.warning(
