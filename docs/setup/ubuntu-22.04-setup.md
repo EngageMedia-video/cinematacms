@@ -8,6 +8,6 @@ As root, clone the repository on /home/cinemata and run install.sh:
 # cd /home
 # mkdir cinemata && cd cinemata
 # git clone https://github.com/EngageMedia-video/cinematacms cinematacms && cd cinematacms
-# chmod +x install.sh
+# chmod +x install.sh install-nodejs.sh scripts/build_frontend.sh
 # ./install.sh
 ```

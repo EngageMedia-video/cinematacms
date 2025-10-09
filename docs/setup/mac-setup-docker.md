@@ -197,6 +197,9 @@ mkdir -p logs
 mkdir -p pids
 mkdir -p media_files/hls
 
+# Make scripts executable
+chmod +x scripts/build_frontend.sh
+
 uv run manage.py makemigrations files users actions
 uv run manage.py migrate
 uv run manage.py loaddata fixtures/encoding_profiles.json

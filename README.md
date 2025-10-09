@@ -188,7 +188,7 @@ As root, clone the repository on /home/cinemata and run install.sh:
 # cd /home
 # mkdir cinemata && cd cinemata
 # git clone -b release/cinemata-2.0-beta https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
-# chmod +x install.sh
+# chmod +x install.sh install-nodejs.sh scripts/build_frontend.sh
 # ./install.sh
 ```
 ### For Development (Latest)
@@ -196,7 +196,7 @@ As root, clone the repository on /home/cinemata and run install.sh:
 # cd /home
 # mkdir cinemata && cd cinemata
 # git clone https://github.com/EngageMedia-video/cinematacms cinematacms && cd cinematacms
-# chmod +x install.sh
+# chmod +x install.sh install-nodejs.sh scripts/build_frontend.sh
 # ./install.sh
 ```
 ⚠️ Note: Main branch contains latest development code and may have unstable features.

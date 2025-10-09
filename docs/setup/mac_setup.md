@@ -200,6 +200,9 @@ mkdir -p logs
 mkdir -p pids
 mkdir -p media_files/hls
 
+# Make scripts executable
+chmod +x scripts/build_frontend.sh
+
 python manage.py makemigrations files users actions
 python manage.py migrate
 python manage.py loaddata fixtures/encoding_profiles.json
