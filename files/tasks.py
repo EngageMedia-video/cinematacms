@@ -97,8 +97,9 @@ def chunkize_media(self, friendly_token, profiles, force=True):
     if not chunks:
         # command completely failed to segment file.putting to normal encode
         logger.info(
-            "Failed to break file {0} in chunks."
-            " Putting to normal encode queue".format(friendly_token)
+            "Failed to break file {0} in chunks. Putting to normal encode queue".format(
+                friendly_token
+            )
         )
         for profile in profiles:
             if media.video_height and media.video_height < profile.resolution:
@@ -413,176 +414,234 @@ def encode_media(
 
 @task(name="whisper_transcribe", queue="whisper_tasks")
 def whisper_transcribe(friendly_token, translate=False, notify=True):
-  """
+    """
     Transcribe media using Whisper.cpp
-  """
-  logger.info(f"Starting whisper_transcribe for {friendly_token}, translate={translate}")
-  
-  # in case multiple requests arrive at the same time, avoid having them create
-  # a Request for the same media...
-  time.sleep(random.uniform(0, 20))
+    """
+    logger.info(
+        f"Starting whisper_transcribe for {friendly_token}, translate={translate}"
+    )
 
-  logger.info(f"Whisper command path: {settings.WHISPER_CPP_COMMAND}")
-  logger.info(f"Whisper model path: {settings.WHISPER_CPP_MODEL}")
+    # in case multiple requests arrive at the same time, avoid having them create
+    # a Request for the same media...
+    time.sleep(random.uniform(0, 20))
 
-  if not os.path.exists(settings.WHISPER_CPP_COMMAND):
-    logger.error(f"Whisper command not found at: {settings.WHISPER_CPP_COMMAND}")
-    return False
-  
-  if not os.path.exists(settings.WHISPER_CPP_MODEL):
+    logger.info(f"Whisper command path: {settings.WHISPER_CPP_COMMAND}")
+    logger.info(f"Whisper model path: {settings.WHISPER_CPP_MODEL}")
+
+    if not os.path.exists(settings.WHISPER_CPP_COMMAND):
+        logger.error(f"Whisper command not found at: {settings.WHISPER_CPP_COMMAND}")
+        return False
+
+    if not os.path.exists(settings.WHISPER_CPP_MODEL):
         logger.error(f"Whisper model not found at: {settings.WHISPER_CPP_MODEL}")
         return False
 
-  try:
-    media = Media.objects.get(friendly_token=friendly_token)
-  except:
-    logger.error("failed to get media with friendly_token %s" % friendly_token)
-    return False
-  
-  if not os.path.exists(media.media_file.path):
-    logger.error(f"Media file not found at: {media.media_file.path}")
-    return False
-  
-  if translate:
-    language_code = 'automatic-translation'
-  else:
-    language_code = 'automatic'
-  language = Language.objects.filter(code=language_code).first()
-
-  if not language:
-    logger.error(f"Language '{language_code}' not found in database")
-    return False
-
-  if translate:
-      if TranscriptionRequest.objects.filter(
-          media=media, translate_to_english=True
-      ).exists():
-        logger.info(f"Translation request already exists for {friendly_token}")
-        return False
-  else:
-      if TranscriptionRequest.objects.filter(
-          media=media, translate_to_english=False
-      ).exists():
-        logger.info(f"Transcription request already exists for {friendly_token}")
+    try:
+        media = Media.objects.get(friendly_token=friendly_token)
+    except Media.DoesNotExist as e:
+        logger.error(f"failed to get media with friendly_token {friendly_token}: {e}")
         return False
 
-  TranscriptionRequest.objects.create(media=media, translate_to_english=translate)
-  logger.info(f"Created transcription request for {friendly_token}")
+    if not os.path.exists(media.media_file.path):
+        logger.error(f"Media file not found at: {media.media_file.path}")
+        return False
 
-  with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as tmpdirname:
-      video_file_path = get_file_name(media.media_file.name)
-      video_file_path = ".".join(
-          video_file_path.split(".")[:-1]
-      )  # needed by whisper without the extension
-      subtitle_name = f"{video_file_path}"
-      output_name = f"{tmpdirname}/{subtitle_name}"  # whisper.cpp will add the .vtt
-      output_name_with_vtt_ending = f"{output_name}.vtt"
-      wav_file = f"{tmpdirname}/{subtitle_name}.wav"
-      
-      logger.info(f"Video file path: {video_file_path}")
-      logger.info(f"Output name: {output_name}")
-      logger.info(f"WAV file: {wav_file}")
-      
-      cmd = f"{settings.FFMPEG_COMMAND} -i {media.media_file.path} -ar 16000 -ac 1 -c:a pcm_s16le {wav_file}"
-      logger.info(f"Running ffmpeg command: {cmd}")
-      
-      try:
-        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        logger.info(f"ffmpeg return code: {ret.returncode}")
-        
-        if ret.returncode != 0:
-            stderr = ret.stderr.decode('utf-8')
-            logger.error(f"ffmpeg error: {stderr}")
+    if translate:
+        language_code = "automatic-translation"
+    else:
+        language_code = "automatic"
+    language = Language.objects.filter(code=language_code).first()
+
+    if not language:
+        logger.error(f"Language '{language_code}' not found in database")
+        return False
+
+    if translate:
+        if TranscriptionRequest.objects.filter(
+            media=media, translate_to_english=True
+        ).exists():
+            logger.info(f"Translation request already exists for {friendly_token}")
             return False
-            
-        if not os.path.exists(wav_file):
-            logger.error(f"WAV file not created at: {wav_file}")
+    else:
+        if TranscriptionRequest.objects.filter(
+            media=media, translate_to_english=False
+        ).exists():
+            logger.info(f"Transcription request already exists for {friendly_token}")
             return False
-            
-        logger.info(f"WAV file created successfully: {os.path.getsize(wav_file)} bytes")
-      except Exception as e:
-        logger.error(f"Exception running ffmpeg: {str(e)}")
+
+    # Create transcription request and capture it for cleanup on failure
+    transcription_request = TranscriptionRequest.objects.create(
+        media=media, translate_to_english=translate
+    )
+    logger.info(f"Created transcription request for {friendly_token}")
+
+    try:
+        with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as tmpdirname:
+            video_file_path = get_file_name(media.media_file.name)
+            video_file_path = ".".join(
+                video_file_path.split(".")[:-1]
+            )  # needed by whisper without the extension
+            subtitle_name = f"{video_file_path}"
+            output_name = f"{tmpdirname}/{subtitle_name}"  # whisper.cpp will add the .vtt
+            output_name_with_vtt_ending = f"{output_name}.vtt"
+            wav_file = f"{tmpdirname}/{subtitle_name}.wav"
+
+            logger.info(f"Video file path: {video_file_path}")
+            logger.info(f"Output name: {output_name}")
+            logger.info(f"WAV file: {wav_file}")
+
+            # Build ffmpeg command as list to avoid shell injection and handle spaces
+            ffmpeg_cmd = [
+                settings.FFMPEG_COMMAND,
+                "-i",
+                media.media_file.path,
+                "-ar",
+                "16000",
+                "-ac",
+                "1",
+                "-c:a",
+                "pcm_s16le",
+                wav_file,
+            ]
+            logger.info(f"Running ffmpeg command: {' '.join(ffmpeg_cmd)}")
+
+            try:
+                ret = subprocess.run(
+                    ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False
+                )
+                logger.info(f"ffmpeg return code: {ret.returncode}")
+
+                if ret.returncode != 0:
+                    stderr = ret.stderr.decode("utf-8")
+                    logger.error(f"ffmpeg error: {stderr}")
+                    transcription_request.delete()
+                    return False
+
+                if not os.path.exists(wav_file):
+                    logger.error(f"WAV file not created at: {wav_file}")
+                    transcription_request.delete()
+                    return False
+
+                logger.info(
+                    f"WAV file created successfully: {os.path.getsize(wav_file)} bytes"
+                )
+            except Exception as e:
+                logger.error(f"Exception running ffmpeg: {str(e)}")
+                transcription_request.delete()
+                return False
+
+            # NOTE: any configurations for running the whisper transcription task should be added/removed here!
+            whisper_cmd_conf = [
+                "--entropy-thold",
+                "2.8",
+                "--max-context",
+                "0",
+                "--language",
+                "auto",
+            ]
+
+            # Run whisper.cpp
+            whisper_cmd = [
+                settings.WHISPER_CPP_COMMAND,
+                "-m",
+                settings.WHISPER_CPP_MODEL,
+                *whisper_cmd_conf,
+                "-f",
+                wav_file,
+            ]
+
+            if translate:
+                whisper_cmd.append("--translate")
+
+            whisper_cmd.extend(["--output-vtt", "--output-file", output_name])
+
+            cmd_str = " ".join(whisper_cmd)
+            logger.info(f"Running whisper command: {cmd_str}")
+
+            try:
+                ret = subprocess.run(
+                    whisper_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                logger.info(f"Whisper return code: {ret.returncode}")
+
+                stdout = ret.stdout.decode("utf-8")
+                stderr = ret.stderr.decode("utf-8")
+
+                if stdout:
+                    logger.info(f"Whisper stdout: {stdout}")
+
+                if stderr:
+                    logger.error(f"Whisper stderr: {stderr}")
+
+                if ret.returncode != 0:
+                    logger.error(
+                        f"Whisper command failed with return code {ret.returncode}"
+                    )
+                    transcription_request.delete()
+                    return False
+
+                if not os.path.exists(output_name_with_vtt_ending):
+                    logger.error(
+                        f"Output VTT file not created at: {output_name_with_vtt_ending}"
+                    )
+                    transcription_request.delete()
+                    return False
+
+                logger.info(
+                    f"VTT file created successfully: {os.path.getsize(output_name_with_vtt_ending)} bytes"
+                )
+            except Exception as e:
+                logger.error(f"Exception running whisper: {str(e)}")
+                transcription_request.delete()
+                return False
+
+            # Create the subtitle entry in the database
+            subtitle = None
+            try:
+                subtitle = Subtitle.objects.create(
+                    media=media, user=media.user, language=language
+                )
+
+                with open(output_name_with_vtt_ending, "rb") as f:
+                    subtitle.subtitle_file.save(subtitle_name, File(f))
+
+                logger.info("Subtitle created and saved to database")
+
+                if notify:
+                    extra_info = ""
+                    if translate:
+                        extra_info = "translation"
+                    notify_users(
+                        friendly_token=media.friendly_token,
+                        action="media_auto_transcription",
+                        extra=extra_info,
+                    )
+                    logger.info(f"Notification sent for {friendly_token}")
+
+                # Success! Keep the transcription request
+                return True
+            except Exception as e:
+                logger.error(f"Exception saving subtitle: {str(e)}")
+
+                # Clean up orphaned subtitle if it was created
+                if subtitle is not None:
+                    try:
+                        # Delete the subtitle file from storage if it exists
+                        if subtitle.subtitle_file:
+                            subtitle.subtitle_file.delete(save=False)
+                        # Delete the subtitle database record
+                        subtitle.delete()
+                        logger.info("Cleaned up orphaned subtitle record and file")
+                    except Exception as cleanup_error:
+                        logger.error(f"Error cleaning up subtitle: {str(cleanup_error)}")
+
+                transcription_request.delete()
+                return False
+    except Exception as e:
+        # Catch any unexpected errors in the entire pipeline
+        logger.error(f"Unexpected error in transcription pipeline: {str(e)}")
+        transcription_request.delete()
         return False
-
-      if not os.path.exists(wav_file):
-        logger.info(f"ffmpeg error converting to wav\n: {ret}")
-        return False
-
-      # NOTE: any configurations for running the whisper transcription task should be added/removed here!
-      whisper_cmd_conf = [
-        "--entropy-thold", "2.8",
-        "--max-context", "0", 
-        "--language", "auto"
-      ]
-    
-      # Run whisper.cpp
-      whisper_cmd = [
-          settings.WHISPER_CPP_COMMAND,
-          "-m", settings.WHISPER_CPP_MODEL,
-          *whisper_cmd_conf,
-          "-f", wav_file
-      ]
-      
-      if translate:
-          whisper_cmd.append("--translate")
-          
-      whisper_cmd.extend(["--output-vtt", "--output-file", output_name])
-      
-      cmd_str = " ".join(whisper_cmd)
-      logger.info(f"Running whisper command: {cmd_str}")
-      
-      try:
-          ret = subprocess.run(whisper_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-          logger.info(f"Whisper return code: {ret.returncode}")
-          
-          stdout = ret.stdout.decode('utf-8')
-          stderr = ret.stderr.decode('utf-8')
-          
-          if stdout:
-              logger.info(f"Whisper stdout: {stdout}")
-          
-          if stderr:
-              logger.error(f"Whisper stderr: {stderr}")
-              
-          if ret.returncode != 0:
-              logger.error(f"Whisper command failed with return code {ret.returncode}")
-              return False
-              
-          if not os.path.exists(output_name_with_vtt_ending):
-              logger.error(f"Output VTT file not created at: {output_name_with_vtt_ending}")
-              return False
-              
-          logger.info(f"VTT file created successfully: {os.path.getsize(output_name_with_vtt_ending)} bytes")
-      except Exception as e:
-          logger.error(f"Exception running whisper: {str(e)}")
-          return False
-
-      # Create the subtitle entry in the database
-      try:
-          subtitle = Subtitle.objects.create(
-              media=media, user=media.user, language=language
-          )
-
-          with open(output_name_with_vtt_ending, "rb") as f:
-              subtitle.subtitle_file.save(subtitle_name, File(f))
-          
-          logger.info("Subtitle created and saved to database")
-          
-          if notify:
-              extra_info = ""
-              if translate:
-                  extra_info = "translation"
-              notify_users(
-                  friendly_token=media.friendly_token,
-                  action="media_auto_transcription",
-                  extra=extra_info,
-              )
-              logger.info(f"Notification sent for {friendly_token}")
-
-          return True
-      except Exception as e:
-          logger.error(f"Exception saving subtitle: {str(e)}")
-          return False
 
 
 @task(name="produce_sprite_from_video", queue="long_tasks")
@@ -645,11 +704,12 @@ def produce_sprite_from_video(friendly_token):
 @task(name="create_hls", queue="long_tasks")
 def create_hls(friendly_token):
     if not hasattr(settings, "MP4HLS_COMMAND"):
-        logger.info("Bento4 mp4hls command is missing from configuration")
+        logger.error("Bento4 mp4hls command is missing from configuration")
         return False
 
-    if not os.path.exists(settings.MP4HLS_COMMAND):
-        logger.info("Bento4 mp4hls command is missing")
+    mp4hls_path = settings.MP4HLS_COMMAND
+    if not os.path.exists(mp4hls_path):
+        logger.error(f"Bento4 mp4hls command not found at: {mp4hls_path}")
         return False
 
     try:
@@ -668,16 +728,17 @@ def create_hls(friendly_token):
         if os.path.exists(output_dir):
             existing_output_dir = output_dir
             output_dir = os.path.join(settings.HLS_DIR, p + produce_friendly_token())
-        files = " ".join([f.media_file.path for f in encodings if f.media_file])
-        cmd = "{0} --segment-duration=4 --output-dir={1} {2}".format(
-            settings.MP4HLS_COMMAND, output_dir, files
-        )
-        ret = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+        files = [f.media_file.path for f in encodings if f.media_file]
+        cmd = [
+            settings.MP4HLS_COMMAND,
+            "--segment-duration=4",
+            f"--output-dir={output_dir}",
+            *files,
+        ]
+        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if existing_output_dir:
-            cmd = "cp -rT {0} {1}".format(
-                output_dir, existing_output_dir
-            )  # override content with -T !
-            ret = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+            cmd = ["cp", "-rT", output_dir, existing_output_dir]
+            ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             shutil.rmtree(output_dir)
             output_dir = existing_output_dir
         pp = os.path.join(output_dir, "master.m3u8")
@@ -712,10 +773,10 @@ def check_running_states():
         if (now - encoding.update_date).seconds > settings.RUNNING_STATE_STALE:
             media = encoding.media
             profile = encoding.profile
-            task_id = encoding.task_id
+            # task_id = encoding.task_id
             # terminate task
-            if task_id:
-                revoke(task_id, terminate=True)
+            # if task_id:
+            # revoke(task_id, terminate=True)
             encoding.delete()
             media.encode(profiles=[profile])
             logger.info("X" * 200, profile, encoding.media, encoding)
@@ -938,10 +999,12 @@ def get_list_of_popular_media():
 
 @task(name="update_listings_thumbnails", queue="long_tasks")
 def update_listings_thumbnails():
-    return True
-    # TODO: DRY refactor
-    #
-    from .lists import video_countries, video_languages
+    """
+    Updates thumbnails and media counts for categories, tags, topics, languages, and countries.
+    Runs periodically to keep listings fresh.
+    """
+    from .lists import video_countries
+    from .models import Language
 
     # Categories
     used_media = []
@@ -1000,20 +1063,27 @@ def update_listings_thumbnails():
     # Language
     used_media = []
     saved = 0
-    # TODO: refactor Media to use MediaLanguage instead of lists.video_languages
-    # now has to use the media_language Char value to search for this language,
-    # but update the MediaLanguage model (same for MediaCountry)
-    video_languages_dict = dict((value, key) for (key, value) in video_languages)
+    updated_counts = 0
+    # Get language code mapping from Language model
+    language_code_dict = dict(
+        Language.objects.exclude(
+            code__in=["automatic", "automatic-translation"]
+        ).values_list("title", "code")
+    )
 
-    qs = MediaLanguage.objects.filter().order_by("title")
-    qs = []  # stop this
+    qs = MediaLanguage.objects.filter().order_by("-media_count")
     for object in qs:
-        t = video_languages_dict.get(object.title)
-        if not t:
+        # Update media count
+        object.update_language_media()
+        updated_counts += 1
+
+        # Update thumbnail
+        language_code = language_code_dict.get(object.title)
+        if not language_code:
             continue
         media = (
             Media.objects.exclude(friendly_token__in=used_media)
-            .filter(media_language=t, state="public", is_reviewed=True)
+            .filter(media_language=language_code, state="public", is_reviewed=True)
             .order_by("-views")
             .first()
         )
@@ -1022,21 +1092,31 @@ def update_listings_thumbnails():
             object.save(update_fields=["listings_thumbnail"])
             used_media.append(media.friendly_token)
             saved += 1
-    logger.info("updated {} languages".format(saved))
+    logger.info(
+        "updated {} language thumbnails and {} language counts".format(
+            saved, updated_counts
+        )
+    )
 
     # Country
     used_media = []
     saved = 0
-    # TODO: refactor Media to use MediaCountry instead of lists.video_countries
+    updated_counts = 0
+    # Get country code mapping from lists
     video_countries_dict = dict((value, key) for (key, value) in video_countries)
-    qs = MediaCountry.objects.filter().order_by("title")
+    qs = MediaCountry.objects.filter().order_by("-media_count")
     for object in qs:
-        t = video_countries_dict.get(object.title)
-        if not t:
+        # Update media count
+        object.update_country_media()
+        updated_counts += 1
+
+        # Update thumbnail
+        country_code = video_countries_dict.get(object.title)
+        if not country_code:
             continue
         media = (
             Media.objects.exclude(friendly_token__in=used_media)
-            .filter(media_country=t, state="public", is_reviewed=True)
+            .filter(media_country=country_code, state="public", is_reviewed=True)
             .order_by("-views")
             .first()
         )
@@ -1045,7 +1125,11 @@ def update_listings_thumbnails():
             object.save(update_fields=["listings_thumbnail"])
             used_media.append(media.friendly_token)
             saved += 1
-    logger.info("updated {} countries".format(saved))
+    logger.info(
+        "updated {} country thumbnails and {} country counts".format(
+            saved, updated_counts
+        )
+    )
 
     return True
 
@@ -1100,13 +1184,21 @@ def task_sent_handler(sender=None, headers=None, body=None, **kwargs):
 
 def kill_ffmpeg_process(filepath):
     # this is not ideal, ffmpeg pid could be linked to the Encoding object
-    cmd = "ps aux|grep 'ffmpeg'|grep %s|grep -v grep |awk '{print $2}'" % filepath
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
-    pid = result.stdout.decode("utf-8").strip()
-    if pid:
-        cmd = "kill -9 %s" % pid
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
-    return result
+    try:
+        # Use pgrep to find ffmpeg processes with the filepath
+        result = subprocess.run(
+            ["pgrep", "-f", f"ffmpeg.*{filepath}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        pid = result.stdout.decode("utf-8").strip()
+        if pid:
+            # Kill the process
+            subprocess.run(["kill", "-9", pid], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return result
+    except Exception as e:
+        logger.error(f"Error killing ffmpeg process: {e}")
+    return None
 
 
 @task(name="remove_media_file", base=Task, queue="long_tasks")

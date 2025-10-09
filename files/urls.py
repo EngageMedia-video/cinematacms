@@ -9,8 +9,11 @@ from .feeds import IndexRSSFeed, SearchRSSFeed
 
 urlpatterns = [
     # SECURE MEDIA FILE SERVING
-    re_path(r"^media/(?P<file_path>.+)$", secure_media_views.secure_media_file, name="secure_media"),
-
+    re_path(
+        r"^media/(?P<file_path>.+)$",
+        secure_media_views.secure_media_file,
+        name="secure_media",
+    ),
     # TEMPLATE (NON API) VIEWS
     path("rss/", IndexRSSFeed()),
     path("rss", IndexRSSFeed()),
@@ -138,22 +141,3 @@ urlpatterns = [
 ]
 
 # urlpatterns = format_suffix_patterns(urlpatterns)
-
-
-if settings.DEBUG:
-    # Fixed: removed leading slash and removed all duplicate patterns
-    urlpatterns += [
-        # Note: /media/ requests are now handled by secure_media_views
-        re_path(
-            r"^/api/v1/playlists/(?P<friendly_token>[\w]*)$",
-            views.PlaylistDetail.as_view(),
-        ),
-        re_path(
-            r"^/%2Fapi/v1/playlists/(?P<friendly_token>[\w]*)$",
-            views.PlaylistDetail.as_view(),
-        ),
-        re_path(
-            r"^//%2Fapi/v1/playlists/(?P<friendly_token>[\w]*)$",
-            views.PlaylistDetail.as_view(),
-        ),
-    ]

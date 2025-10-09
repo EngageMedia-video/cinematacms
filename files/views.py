@@ -101,6 +101,7 @@ VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 
 logger = logging.getLogger(__name__)
 
+
 class Lower(Func):
     function = "LOWER"
 
@@ -130,7 +131,7 @@ def countries(request):
 
 def languages(request):
     context = {}
-    languages = MediaLanguage.objects.order_by('title')
+    languages = MediaLanguage.objects.order_by("title")
     context["languages"] = languages
     return render(request, "cms/languages.html", context)
 
@@ -151,7 +152,7 @@ def manage_users(request):
         return HttpResponseRedirect("/")
     # MFA check
     if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
-        return HttpResponseRedirect('/accounts/2fa/totp/activate')
+        return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
     # Hard config -> ensure superuser / manager only have access
     if not (request.user.is_superuser or request.user.is_manager):
@@ -167,10 +168,12 @@ def manage_media(request):
 
     # MFA check
     if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
-        return HttpResponseRedirect('/accounts/2fa/totp/activate')
+        return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
-     # Hard config -> ensure superuser / manager / editor only have access
-    if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
+    # Hard config -> ensure superuser / manager / editor only have access
+    if not (
+        request.user.is_superuser or request.user.is_manager or request.user.is_editor
+    ):
         return HttpResponseRedirect("/")
 
     context = {}
@@ -182,9 +185,11 @@ def manage_comments(request):
         return HttpResponseRedirect("/")
 
     if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
-        return HttpResponseRedirect('/accounts/2fa/totp/activate')
+        return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
-    if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
+    if not (
+        request.user.is_superuser or request.user.is_manager or request.user.is_editor
+    ):
         return HttpResponseRedirect("/")
 
     context = {}
@@ -375,9 +380,10 @@ def view_media(request):
                 can_see_restricted_media = True
                 # Store hashed password in session for file access (avoid persisting plaintext)
                 import hashlib
-                request.session[f'media_password_{media.friendly_token}'] = hashlib.sha256(
-                    media.password.encode("utf-8")
-                ).hexdigest()
+
+                request.session[f"media_password_{media.friendly_token}"] = (
+                    hashlib.sha256(media.password.encode("utf-8")).hexdigest()
+                )
             else:
                 wrong_password_provided = True
 
@@ -541,11 +547,11 @@ def add_subtitle(request):
             new_subtitle = Subtitle.objects.filter(id=subtitle.id).first()
             try:
                 new_subtitle.convert_to_vtt()
-                
+
                 # UPDATE MEDIA VERSION WHEN SUBTITLE ADDED
                 media.edit_date = timezone.now()
-                media.save(update_fields=['edit_date'])
-                
+                media.save(update_fields=["edit_date"])
+
                 messages.add_message(request, messages.INFO, "Subtitle was added!")
                 return HttpResponseRedirect(subtitle.media.get_absolute_url())
             except Exception:
@@ -602,7 +608,7 @@ def edit_subtitle(request):
 
             # Update the edit_date as the associated URL for this media file is affected by the edit_date of subtitles
             subtitle.media.edit_date = timezone.now()
-            subtitle.media.save(update_fields=['edit_date'])
+            subtitle.media.save(update_fields=["edit_date"])
             subtitle.delete()
 
             return HttpResponseRedirect(redirect_url)
@@ -611,20 +617,22 @@ def edit_subtitle(request):
         if form.is_valid():
             subtitle_text = form.cleaned_data["subtitle"]
             try:
-                with open(subtitle.subtitle_file.path, "w", encoding='utf-8') as ff:
+                with open(subtitle.subtitle_file.path, "w", encoding="utf-8") as ff:
                     ff.write(subtitle_text)
-                
+
                 # CRITICAL FIX: Update media edit_date to bust cache
                 subtitle.media.edit_date = timezone.now()
-                subtitle.media.save(update_fields=['edit_date'])
-                
+                subtitle.media.save(update_fields=["edit_date"])
+
                 messages.add_message(request, messages.INFO, "Subtitle was edited")
                 return HttpResponseRedirect(subtitle.media.get_absolute_url())
             except Exception as e:
-                logger.error(f"Failed to save subtitle edit for {subtitle.subtitle_file.path}: {str(e)}")
+                logger.error(
+                    f"Failed to save subtitle edit for {subtitle.subtitle_file.path}: {str(e)}"
+                )
                 form.add_error(None, f"Could not save subtitle: {str(e)}")
         else:
-            if not form.data.get('subtitle'):
+            if not form.data.get("subtitle"):
                 form.add_error(None, "No subtitle content provided.")
     return render(request, "cms/edit_subtitle.html", context)
 
@@ -894,8 +902,14 @@ class MediaActions(APIView):
         # GET: only show reported messages
         media = self.get_object(friendly_token)
 
-        if not (request.user == media.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user)):
-            return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)
+        if not (
+            request.user == media.user
+            or is_mediacms_editor(request.user)
+            or is_mediacms_manager(request.user)
+        ):
+            return Response(
+                {"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         if isinstance(media, Response):
             return media
@@ -1063,7 +1077,8 @@ class MediaSearch(APIView):
 
         if language:
             language = {
-                value: key for key, value in Language.objects.exclude(
+                value: key
+                for key, value in Language.objects.exclude(
                     code__in=["automatic", "automatic-translation"]
                 ).values_list("code", "title")
             }.get(language)
@@ -1219,14 +1234,18 @@ class PlaylistDetail(APIView):
         # Determine which videos to show based on user permissions
         if is_advanced_user(request.user) and playlist.user == request.user:
             # Advanced users viewing their own playlists can see all non-private videos
-            playlist_media_queryset = PlaylistMedia.objects.filter(
-                playlist=playlist
-            ).exclude(media__state="private").prefetch_related("media__user")
+            playlist_media_queryset = (
+                PlaylistMedia.objects.filter(playlist=playlist)
+                .exclude(media__state="private")
+                .prefetch_related("media__user")
+            )
         elif request.user.is_authenticated:
             # Authenticated users can see public, unlisted, and restricted videos
-            playlist_media_queryset = PlaylistMedia.objects.filter(
-                playlist=playlist
-            ).exclude(media__state="private").prefetch_related("media__user")
+            playlist_media_queryset = (
+                PlaylistMedia.objects.filter(playlist=playlist)
+                .exclude(media__state="private")
+                .prefetch_related("media__user")
+            )
         else:
             # Anonymous users see only public videos
             playlist_media_queryset = PlaylistMedia.objects.filter(
@@ -1280,19 +1299,21 @@ class PlaylistDetail(APIView):
             from .helpers import is_advanced_user, can_user_see_video_in_playlist
 
             # Determine media query based on user permissions
-            if (is_advanced_user(request.user) and
-                playlist.user == request.user):
+            if is_advanced_user(request.user) and playlist.user == request.user:
                 # Advanced users can add public, unlisted, and restricted videos
-                media = Media.objects.filter(
-                    friendly_token=media_friendly_token,
-                    media_type="video"
-                ).exclude(state="private").first()
+                media = (
+                    Media.objects.filter(
+                        friendly_token=media_friendly_token, media_type="video"
+                    )
+                    .exclude(state="private")
+                    .first()
+                )
             else:
                 # Regular users can only add public videos (existing behavior)
                 media = Media.objects.filter(
                     friendly_token=media_friendly_token,
                     media_type="video",
-                    state="public"
+                    state="public",
                 ).first()
 
             if media:
@@ -1300,7 +1321,7 @@ class PlaylistDetail(APIView):
                 if not can_user_see_video_in_playlist(request.user, media):
                     return Response(
                         {"detail": "insufficient permissions to access this video"},
-                        status=status.HTTP_403_FORBIDDEN
+                        status=status.HTTP_403_FORBIDDEN,
                     )
 
                 if action == "add":
@@ -1341,7 +1362,7 @@ class PlaylistDetail(APIView):
             else:
                 return Response(
                     {"detail": "media is not valid or accessible"},
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
         return Response(
             {"detail": "invalid or not specified action"},
@@ -1666,24 +1687,21 @@ class MediaLanguageList(APIView):
     Enhanced API view that serves languages from database into the 'languages' page.
     This view retrieves languages that have a non-empty listings_thumbnail and a media_count greater than zero.
     """
+
     def get(self, request, format=None):
-        languages = (
-            MediaLanguage.objects
-            .filter(media_count__gt=0)
-            .order_by("title")
-        )
+        languages = MediaLanguage.objects.filter(media_count__gt=0).order_by("title")
         serializer = MediaLanguageSerializer(
             languages, many=True, context={"request": request}
         )
         ret = serializer.data
         return Response(ret)
 
+
 class MediaCountryList(APIView):
     def get(self, request, format=None):
         countries = (
             MediaCountry.objects.exclude(listings_thumbnail="")
-            .exclude(listings_thumbnail=None)
-            .filter()
+            .filter(media_count__gt=0)
             .order_by("title")
         )
         serializer = MediaCountrySerializer(
