@@ -30,7 +30,7 @@
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^7.0.2",
     "css-url-relative-plugin": "^1.1.0",
-    "dotenv": "^17.2.2",
+    "dotenv": "^17.2.3",
     "dotenv-webpack": "^8.1.1",
     "ejs": "^3.1.10",
     "ejs-compiled-loader": "file:packages/ejs-compiled-loader",
@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@mediacms/media-player": "file:packages/media-player",
-    "axios": "^1.12.1",
+    "axios": "^1.12.2",
     "flux": "^4.0.4",
     "material-design-icons": "^3.0.1",
     "normalize.css": "^8.0.1",
