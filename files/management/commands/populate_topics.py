@@ -16,43 +16,55 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        self.stdout.write(self.style.NOTICE("Starting Topic population..."))
+        self.stdout.write("Starting Topic population...")
 
         created_count = 0
         updated_count = 0
 
         for topic_code, topic_title in lists.video_topics:
             if options["dry_run"]:
-                existing = Topic.objects.filter(title=topic_title).first()
+                existing = Topic.objects.filter(title__iexact=topic_title).first()
                 if existing:
-                    self.stdout.write(
-                        f"Topic already exists: {topic_title} (media count: {existing.media_count})"
-                    )
+                    if existing.title != topic_title:
+                        self.stdout.write(
+                            f"Would update Topic: '{existing.title}' -> '{topic_title}' (media count: {existing.media_count})"
+                        )
+                    else:
+                        self.stdout.write(
+                            f"Topic already exists: {topic_title} (media count: {existing.media_count})"
+                        )
                 else:
                     self.stdout.write(
                         f"Would create Topic: {topic_title}"
                     )
             else:
-                # Create or get the Topic record
-                topic_obj, created = Topic.objects.get_or_create(
-                    title=topic_title
-                )
+                # Look for existing topic with case-insensitive match
+                existing = Topic.objects.filter(title__iexact=topic_title).first()
 
-                # Update the media count
-                topic_obj.update_tag_media()
+                if existing:
+                    # Update to canonical title if different
+                    if existing.title != topic_title:
+                        existing.title = topic_title
+                        existing.save(update_fields=['title'])
 
-                if created:
+                    # Update the media count
+                    existing.update_tag_media()
+
+                    updated_count += 1
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"Updated Topic: {topic_title} (media count: {existing.media_count})"
+                        )
+                    )
+                else:
+                    # Create new topic with canonical title
+                    topic_obj = Topic.objects.create(title=topic_title)
+                    topic_obj.update_tag_media()
+
                     created_count += 1
                     self.stdout.write(
                         self.style.SUCCESS(
                             f"Created Topic: {topic_title} (media count: {topic_obj.media_count})"
-                        )
-                    )
-                else:
-                    updated_count += 1
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f"Updated Topic: {topic_title} (media count: {topic_obj.media_count})"
                         )
                     )
 
@@ -66,6 +78,4 @@ class Command(BaseCommand):
                 )
             )
         else:
-            self.stdout.write(
-                self.style.NOTICE("\nDry run completed - no changes made")
-            )
+            self.stdout.write("\nDry run completed - no changes made")

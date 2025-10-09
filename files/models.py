@@ -136,11 +136,14 @@ def topic_thumb_path(instance, filename):
 
 def get_language_choices():
     """Get language choices dynamically to avoid database access during model import"""
+    from django.db.utils import OperationalError, ProgrammingError
+    from django.core.exceptions import AppRegistryNotReady
+
     try:
         return Language.objects.exclude(
             code__in=["automatic", "automatic-translation"]
         ).values_list("code", "title")
-    except:
+    except (OperationalError, ProgrammingError, AppRegistryNotReady):
         # Return empty choices if database is not ready (during migrations)
         return []
 
@@ -173,7 +176,7 @@ class Media(models.Model):
     description = models.TextField("More Information and Credits", blank=True)
     summary = models.TextField("Synopsis", help_text="Maximum 60 words")
     media_language = models.CharField(
-        max_length=5,
+        max_length=35,
         blank=True,
         null=True,
         default="en",
