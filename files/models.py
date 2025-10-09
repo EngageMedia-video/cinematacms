@@ -1804,13 +1804,11 @@ def media_save(sender, instance, created, **kwargs):
             topic.update_tag_media()
 
     if instance.media_country:
-        country = {
-            key: value for key, value in dict(lists.video_countries).items()
-        }.get(instance.media_country)
+        country = dict(lists.video_countries).get(instance.media_country)
         if country:
             cntry = MediaCountry.objects.filter(title=country).first()
-        if cntry:
-            cntry.update_country_media()
+            if cntry:
+                cntry.update_country_media()
 
     if instance.media_language:
         language_title = dict(
