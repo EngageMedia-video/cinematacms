@@ -1290,7 +1290,6 @@ class MediaCountry(models.Model):
             # Set count to 0 and log warning
             self.media_count = 0
 
-            logger = logging.getLogger(__name__)
             logger.warning(
                 f"MediaCountry '{self.title}' has no corresponding entry in video_countries list. "
                 f"Media count set to 0."
