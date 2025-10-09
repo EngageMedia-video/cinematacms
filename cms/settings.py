@@ -14,19 +14,19 @@ ALLOWED_HOSTS = [
 # Import default headers to extend them
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = default_headers + (
-    'x-requested-with',     # Add X-Requested-With
-    'if-modified-since',    # Add If-Modified-Since
-    'cache-control',        # Add Cache-Control
-    'content-type',         # Add Content-Type (important for application/json etc.)
-    'range',                # Add Range
-    'dnt',               # Generally not needed as DNT is safelisted
-    'user-agent',        # Generally not needed as User-Agent is safelisted
+    "x-requested-with",  # Add X-Requested-With
+    "if-modified-since",  # Add If-Modified-Since
+    "cache-control",  # Add Cache-Control
+    "content-type",  # Add Content-Type (important for application/json etc.)
+    "range",  # Add Range
+    "dnt",  # Generally not needed as DNT is safelisted
+    "user-agent",  # Generally not needed as User-Agent is safelisted
 )
-#crucial for exposing response headers to frontend JavaScript
+# crucial for exposing response headers to frontend JavaScript
 CORS_EXPOSE_HEADERS = [
-    'Content-Length',
-    'Content-Range',
-    'Accept-Ranges',
+    "Content-Length",
+    "Content-Range",
+    "Accept-Ranges",
 ]
 
 
@@ -97,7 +97,7 @@ TEMPLATES = [
                 "django.template.context_processors.media",
                 "django.contrib.messages.context_processors.messages",
                 "files.context_processors.stuff",
-                'cms.context_processors.ui_settings',
+                "cms.context_processors.ui_settings",
             ],
         },
     },
@@ -172,7 +172,7 @@ DATABASES = {
     }
 }
 
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 
 REDIS_LOCATION = "redis://127.0.0.1:6379/1"
@@ -248,7 +248,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "update_listings_thumbnails": {
         "task": "update_listings_thumbnails",
-        "schedule": crontab(hour="*/30"),
+        "schedule": crontab(minute="*/30"),
     },
     #     "schedule": timedelta(seconds=5),
     #     "args": (16, 16)
@@ -263,8 +263,8 @@ TIME_TO_ACTION_ANONYMOUS = 10 * 60
 
 # django-allauth settings
 ACCOUNT_SESSION_REMEMBER = True
-ACCOUNT_LOGIN_METHODS = {'username', 'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*']
+ACCOUNT_LOGIN_METHODS = {"username", "email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*"]
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"  # 'mandatory' 'none'
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_USERNAME_MIN_LENGTH = "4"
@@ -522,9 +522,9 @@ USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
 DJANGO_ADMIN_URL = "admin/"
 
 # additional MFA-permission configs
-MFA_REQUIRED_ROLES = ['superuser', 'manager']
-MFA_ENFORCE_ON_PATHS = [f'/{DJANGO_ADMIN_URL}']
-MFA_EXCLUDE_PATHS = ['/fu/', '/api/', '/manage/', '/accounts/']
+MFA_REQUIRED_ROLES = ["superuser", "manager"]
+MFA_ENFORCE_ON_PATHS = [f"/{DJANGO_ADMIN_URL}"]
+MFA_EXCLUDE_PATHS = ["/fu/", "/api/", "/manage/", "/accounts/"]
 
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths()
 from .local_settings import *
@@ -535,11 +535,11 @@ WHISPER_SIZE = "base"
 
 # Add debug_toolbar to INSTALLED_APPS if DEBUG is True
 if DEBUG:
-    if 'debug_toolbar' not in INSTALLED_APPS:
-        INSTALLED_APPS.append('debug_toolbar')
-    if 'debug_toolbar.middleware.DebugToolbarMiddleware' not in MIDDLEWARE:
+    if "debug_toolbar" not in INSTALLED_APPS:
+        INSTALLED_APPS.append("debug_toolbar")
+    if "debug_toolbar.middleware.DebugToolbarMiddleware" not in MIDDLEWARE:
         # Insert after CorsMiddleware but before other middleware
-        MIDDLEWARE.insert(1, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+        MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
     # Debug toolbar configuration for 6.0.0
     def show_toolbar(request):
@@ -548,18 +548,18 @@ if DEBUG:
         return True
 
     DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': show_toolbar,
-        'RENDER_PANELS': True,  # Ensure panels are rendered
-        'EXTRA_SIGNALS': [],  # Avoid signal issues
-
+        "SHOW_TOOLBAR_CALLBACK": show_toolbar,
+        "RENDER_PANELS": True,  # Ensure panels are rendered
+        "EXTRA_SIGNALS": [],  # Avoid signal issues
     }
 
     # Ensure toolbar static files are accessible
     import mimetypes
+
     mimetypes.add_type("application/javascript", ".js", True)
     mimetypes.add_type("text/css", ".css", True)
 
-ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
+ALLOWED_MEDIA_UPLOAD_TYPES = ["video"]
 
 RECAPTCHA_PRIVATE_KEY = ""
 RECAPTCHA_PUBLIC_KEY = ""
