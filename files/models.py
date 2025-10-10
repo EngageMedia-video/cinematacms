@@ -1120,14 +1120,6 @@ class Category(models.Model):
         return None
 
 
-def save(self, *args, **kwargs):
-    from users.validators import sanitize_html
-
-    if self.text:
-        self.text = sanitize_html(self.text)
-    super().save(*args, **kwargs)
-
-
 class Topic(models.Model):
     add_date = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=100, unique=True, db_index=True)
@@ -1743,6 +1735,13 @@ class IndexPageFeatured(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.url} - {self.ordering}"
+
+    def save(self, *args, **kwargs):
+        from users.validators import sanitize_html
+
+        if self.text:
+            self.text = sanitize_html(self.text)
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["ordering"]
