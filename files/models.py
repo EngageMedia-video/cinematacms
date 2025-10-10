@@ -1119,11 +1119,13 @@ class Category(models.Model):
 
         return None
 
-    def save(self, *args, **kwargs):
-        strip_text_items = ["title", "description"]
-        for item in strip_text_items:
-            setattr(self, item, strip_tags(getattr(self, item, None)))
-        super(Category, self).save(*args, **kwargs)
+
+def save(self, *args, **kwargs):
+    from users.validators import sanitize_html
+
+    if self.text:
+        self.text = sanitize_html(self.text)
+    super().save(*args, **kwargs)
 
 
 class Topic(models.Model):
@@ -1734,10 +1736,11 @@ class IndexPageFeatured(models.Model):
         default=1, help_text="ordering, 1 comes first, 2 follows etc"
     )
     text = models.TextField(
-        blank=True, 
+        blank=True,
         help_text="HTML links allowed for internal URLs only",
-        validators=[validate_internal_html]
+        validators=[validate_internal_html],
     )
+
     def __str__(self):
         return f"{self.title} - {self.url} - {self.ordering}"
 
@@ -1745,6 +1748,7 @@ class IndexPageFeatured(models.Model):
         ordering = ["ordering"]
         verbose_name = "Index page featured"
         verbose_name_plural = "Index page featured"
+
 
 class TranscriptionRequest(models.Model):
     # helper model to assess whether a Whisper transcription request is already in place
