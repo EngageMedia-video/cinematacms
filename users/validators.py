@@ -7,9 +7,6 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from bs4 import BeautifulSoup
-from django.core.exceptions import ValidationError
-from django.conf import settings
-from bs4 import BeautifulSoup
 @deconstructible
 class ASCIIUsernameValidator(validators.RegexValidator):
     regex = r"^[\w]+$"
