@@ -19,8 +19,11 @@ class ASCIIUsernameValidator(validators.RegexValidator):
 
 custom_username_validators = [ASCIIUsernameValidator()]
 
+# Allowed HTML tags and attributes for internal content
+ALLOWED_HTML_TAGS = ['a', 'strong', 'em', 'p', 'br']
+ALLOWED_HTML_ATTRS = {'a': ['href', 'title']}
 
-def sanitize_html(html, allowed_tags, allowed_attrs):
+def sanitize_html(html):
     """
     Sanitize HTML by removing disallowed tags and attributes.
 
@@ -44,11 +47,11 @@ def sanitize_html(html, allowed_tags, allowed_attrs):
 
     # Remove disallowed tags
     for tag in soup.find_all():
-        if tag.name not in allowed_tags:
+        if tag.name not in ALLOWED_HTML_TAGS:
             tag.decompose()
         else:
             # Get allowed attributes for this tag
-            tag_allowed_attrs = allowed_attrs.get(tag.name, [])
+            tag_allowed_attrs = ALLOWED_HTML_ATTRS.get(tag.name, [])
 
             # Check and sanitize all attributes
             for attr in list(tag.attrs.keys()):
@@ -88,9 +91,6 @@ def validate_internal_html(value):
     """
     Validate HTML content allowing only internal links and safe tags
     """
-    allowed_tags = ['a', 'strong', 'em', 'p', 'br']
-    allowed_attrs = {'a': ['href', 'title']}
-
     # Parse HTML
     soup = BeautifulSoup(value, 'html.parser')
 
@@ -102,21 +102,21 @@ def validate_internal_html(value):
 
     # Check if it contains tags that are not allowed
     for tag in soup.find_all():
-        if tag.name not in allowed_tags:
+        if tag.name not in ALLOWED_HTML_TAGS:
             raise ValidationError(f'Tag not allowed: {tag.name}. Use only <a>, <strong>, <em>, <p>, and <br>')
 
-    # Sanitize tags and attributes
-    return sanitize_html(value, allowed_tags, allowed_attrs)
+    # Validation passed - return original value unchanged
+    return value
 
-def contains_not_allowed_tags(text, allowed_tags):
+def contains_not_allowed_tags(text):
     """
-    Check if text contains tags that are not in the allowed list
-    Returns True if not allowed tags are found, False otherwise
+    Check if text contains tags that are not in the allowed list.
+    Returns True if not allowed tags are found, False otherwise.
     """
     soup = BeautifulSoup(text, 'html.parser')
 
     for tag in soup.find_all():
-        if tag.name not in allowed_tags:
+        if tag.name not in ALLOWED_HTML_TAGS:
             return True
 
     return False

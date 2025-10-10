@@ -5,7 +5,7 @@ from django.contrib import admin
 from tinymce.widgets import TinyMCE
 
 from users.models import User
-from users.validators import validate_internal_html
+from users.validators import validate_internal_html, sanitize_html
 
 from .models import (
     Category,
@@ -186,8 +186,18 @@ class IndexPageFeaturedAdminForm(forms.ModelForm):
     )
 
     def clean_text(self):
+        """
+        Validate and sanitize HTML content for admin form.
+
+        1. First validates that only allowed tags and internal links are present
+        2. Then sanitizes by removing dangerous attributes and cleaning the HTML
+        3. Returns the cleaned value that will be persisted to the database
+        """
         content = self.cleaned_data['text']
-        return validate_internal_html(content)
+        # Validate - will raise ValidationError if disallowed content found
+        validate_internal_html(content)
+        # Sanitize and return cleaned value for persistence
+        return sanitize_html(content)
 
     class Meta:
         model = IndexPageFeatured

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from files.models import IndexPageFeatured
-from .validators import validate_internal_html
+from .validators import validate_internal_html, sanitize_html
 from .models import User
 
 
@@ -95,5 +95,7 @@ class IndexPageFeaturedSerializer(serializers.ModelSerializer):
         fields = ("title", "url", "api_url", "ordering", "active", "text")
     
     def validate_text(self, value):
-        """Ensure HTML content is safe and internal-only"""
-        return validate_internal_html(value)
+        # Validate - will raise ValidationError if disallowed content found
+        validate_internal_html(value)
+        # Sanitize and return cleaned value for persistence
+        return sanitize_html(value)
