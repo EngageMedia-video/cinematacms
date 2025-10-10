@@ -19,6 +19,7 @@ django-mptt==0.18.0
 requests==2.32.4
 django-celery-email==3.0.0
 m3u8==6.0.0
+beautifulsoup4==4.12.2
 
 # extra nice utilities!
 rpdb==0.2.0
