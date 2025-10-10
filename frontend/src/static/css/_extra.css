@@ -3288,10 +3288,6 @@ body .user-action-form-wrap>h1:after {
 /**
 Home Page
 */
-/* Styling the even lists */
-body .hw-even-list {
-	background-color: #0c3144
-}
 
 body .hw-recent-videos-section {
 	display: inline;
@@ -3306,14 +3302,45 @@ body .hw-category {
 }
 
 body .hw-category-title {
+	color: #111;
+	margin: 30px 0 0 0;
+}
+
+body.dark_theme .hw-category-title{
 	color: #fff;
 	margin: 30px 0 0 0;
 }
 
 body .hw-category-description {
-	color: #fff;
+	color: #111;
 	padding: 5px 0 30px 0;
 	max-width: 512px;
+}
+/* for links - light mode*/
+body .hw-category-description a {
+color: #1a3f61;
+font-weight: 500;
+}
+
+ body.dark_theme .hw-category-description {
+	color: #fff;
+ }
+
+/* Styling the even lists */
+body.dark_theme .hw-even-list {
+	background-color: #0c3144;
+}
+
+/* link color for odd section */
+body.dark_theme .hw-odd-list a {
+	color: #659ba0;
+	font-weight: 500;
+}
+
+/* link color for even section */
+body.dark_theme .hw-even-list a {
+	color: #bad8dd;
+	font-weight: 500;
 }
 
 /* View all (link to the category) */
