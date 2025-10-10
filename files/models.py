@@ -1731,6 +1731,7 @@ class IndexPageFeatured(models.Model):
         blank=True,
         help_text="HTML links allowed for internal URLs only",
         validators=[validate_internal_html],
+        default="",
     )
 
     def __str__(self):
