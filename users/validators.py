@@ -45,7 +45,7 @@ def sanitize_html(html, allowed_tags, allowed_attrs):
     # Remove disallowed tags
     for tag in soup.find_all():
         if tag.name not in allowed_tags:
-            tag.unwrap()
+            tag.decompose()
         else:
             # Get allowed attributes for this tag
             tag_allowed_attrs = allowed_attrs.get(tag.name, [])
@@ -203,23 +203,3 @@ def is_internal_url(url):
 
     # Must be a relative path or fragment
     return url.startswith('/') or url.startswith('#')
-
-
-def validate_internal_html(value):
-    """
-    Validate HTML content allowing only internal links and safe tags
-    """
-    allowed_tags = ['a', 'strong', 'em', 'p', 'br']
-    allowed_attrs = {'a': ['href', 'title']}
-    
-    # Parse HTML
-    soup = BeautifulSoup(value, 'html.parser')
-    
-    # Check all links are internal
-    for link in soup.find_all('a'):
-        href = link.get('href', '')
-        if href and not is_internal_url(href):
-            raise ValidationError(f'External links not allowed: {href}')
-    
-    # Sanitize tags and attributes
-    return sanitize_html(value, allowed_tags, allowed_attrs)
