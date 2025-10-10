@@ -226,7 +226,3 @@ def validate_internal_html(value):
     
     # Sanitize tags and attributes
     return sanitize_html(value, allowed_tags, allowed_attrs)
-
-def is_internal_url(url):
-    """Check if URL is internal to the portal"""
-    return url.startswith('/') or url.startswith('#')

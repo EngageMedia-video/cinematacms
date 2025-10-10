@@ -37,6 +37,7 @@ dependencies = [
     "uwsgi==2.0.30",
     "qrcode==8.2",
     "django-tinymce==4.1.0",
+    "beautifulsoup4>=4.14.2",
 ]
 
 [dependency-groups]
