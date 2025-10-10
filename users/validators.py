@@ -195,6 +195,9 @@ def is_internal_url(url):
         if not netloc or netloc not in allowed_hosts:
             return False
 
+        # Valid same-domain absolute URL
+        return True
+
     # Reject any netloc for relative URLs (catches protocol-relative)
     if parsed.netloc or parsed_decoded.netloc:
         # Only allowed if it's explicitly http/https and validated above
