@@ -16,6 +16,8 @@ from allauth.mfa.totp.internal.auth import (
 import time
 
 from .models import User
+from .validators import is_internal_url, sanitize_html, validate_internal_html
+from django.core.exceptions import ValidationError
 
 class LoginTestCase(TestCase):
   """Test cases for user authentication"""
@@ -297,10 +299,332 @@ class MFATestCase(TestCase):
     """Test MFA success page after setup"""
     # Login as superuser
     self.client.login(username='superuser', password='superpassword123')
-    
+
     # Visit success page
     success_url = reverse('mfa_success')
     response = self.client.get(success_url)
-    
+
     self.assertEqual(response.status_code, 200)
     self.assertTemplateUsed(response, 'mfa/totp/success.html')
+
+
+class URLValidationTestCase(TestCase):
+    """Comprehensive test cases for is_internal_url security validation"""
+
+    def test_valid_internal_paths(self):
+        """Test that valid internal paths are accepted"""
+        valid_urls = [
+            '/about',
+            '/blog',
+            '/user/profile',
+            '/media/video/123',
+            '/',
+            '/path/to/resource',
+        ]
+        for url in valid_urls:
+            with self.subTest(url=url):
+                self.assertTrue(is_internal_url(url), f"Should accept valid internal path: {url}")
+
+    def test_valid_fragments(self):
+        """Test that fragment-only URLs are accepted"""
+        valid_fragments = [
+            '#section',
+            '#top',
+            '#',
+            '#anchor-point',
+        ]
+        for url in valid_fragments:
+            with self.subTest(url=url):
+                self.assertTrue(is_internal_url(url), f"Should accept valid fragment: {url}")
+
+    def test_reject_protocol_relative_urls(self):
+        """Test that protocol-relative URLs are rejected"""
+        dangerous_urls = [
+            '//evil.com/page',
+            '//attacker.com',
+            '//example.com/malicious',
+            '//localhost/fake',
+        ]
+        for url in dangerous_urls:
+            with self.subTest(url=url):
+                self.assertFalse(is_internal_url(url), f"Should reject protocol-relative URL: {url}")
+
+    def test_reject_javascript_protocol(self):
+        """Test that javascript: protocol is rejected"""
+        dangerous_urls = [
+            'javascript:alert(1)',
+            'javascript:alert("XSS")',
+            'javascript:void(0)',
+            'JavaScript:alert(1)',  # Case variation
+            'JAVASCRIPT:alert(1)',  # Uppercase
+            'JaVaScRiPt:alert(1)',  # Mixed case
+            ' javascript:alert(1)',  # With whitespace
+            '%6A%61%76%61%73%63%72%69%70%74:alert(1)',  # URL encoded
+        ]
+        for url in dangerous_urls:
+            with self.subTest(url=url):
+                self.assertFalse(is_internal_url(url), f"Should reject javascript: URL: {url}")
+
+    def test_reject_data_protocol(self):
+        """Test that data: protocol is rejected"""
+        dangerous_urls = [
+            'data:text/html,<script>alert(1)</script>',
+            'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==',
+            'DATA:text/html,<script>alert(1)</script>',  # Case variation
+            'dAtA:text/html,<script>alert(1)</script>',  # Mixed case
+        ]
+        for url in dangerous_urls:
+            with self.subTest(url=url):
+                self.assertFalse(is_internal_url(url), f"Should reject data: URL: {url}")
+
+    def test_reject_vbscript_protocol(self):
+        """Test that vbscript: protocol is rejected"""
+        dangerous_urls = [
+            'vbscript:msgbox(1)',
+            'VBScript:msgbox(1)',
+            'VBSCRIPT:msgbox(1)',
+        ]
+        for url in dangerous_urls:
+            with self.subTest(url=url):
+                self.assertFalse(is_internal_url(url), f"Should reject vbscript: URL: {url}")
+
+    def test_reject_file_protocol(self):
+        """Test that file: protocol is rejected"""
+        dangerous_urls = [
+            'file:///etc/passwd',
+            'file://C:/Windows/System32',
+            'FILE:///etc/passwd',
+        ]
+        for url in dangerous_urls:
+            with self.subTest(url=url):
+                self.assertFalse(is_internal_url(url), f"Should reject file: URL: {url}")
+
+    def test_reject_blob_and_about_protocols(self):
+        """Test that blob: and about: protocols are rejected"""
+        dangerous_urls = [
+            'blob:https://example.com/uuid',
+            'about:blank',
+            'BLOB:https://example.com/uuid',
+            'ABOUT:blank',
+        ]
+        for url in dangerous_urls:
+            with self.subTest(url=url):
+                self.assertFalse(is_internal_url(url), f"Should reject blob:/about: URL: {url}")
+
+    def test_reject_url_encoded_attacks(self):
+        """Test that URL-encoded attack vectors are rejected"""
+        dangerous_urls = [
+            '%6A%61%76%61%73%63%72%69%70%74:alert(1)',  # javascript: encoded
+            '%2F%2Fevil.com',  # //evil.com encoded
+            'java%09script:alert(1)',  # Tab character
+            'java%0Ascript:alert(1)',  # Newline character
+            'java%0Dscript:alert(1)',  # Carriage return
+        ]
+        for url in dangerous_urls:
+            with self.subTest(url=url):
+                self.assertFalse(is_internal_url(url), f"Should reject URL-encoded attack: {url}")
+
+    def test_reject_mixed_content_attacks(self):
+        """Test that mixed content attacks are rejected"""
+        dangerous_urls = [
+            '/javascript:alert(1)',  # Path with javascript:
+            '/#javascript:alert(1)',  # Fragment with javascript:
+        ]
+        for url in dangerous_urls:
+            with self.subTest(url=url):
+                # These might be rejected depending on implementation
+                # They contain dangerous protocols even if starting with / or #
+                result = is_internal_url(url)
+                # Should be False due to colon check
+                self.assertFalse(result, f"Should reject mixed content attack: {url}")
+
+    def test_reject_empty_and_whitespace(self):
+        """Test that empty and whitespace-only URLs are rejected"""
+        invalid_urls = [
+            '',
+            '   ',
+            '\t',
+            '\n',
+            None,
+        ]
+        for url in invalid_urls:
+            with self.subTest(url=url):
+                self.assertFalse(is_internal_url(url), f"Should reject empty/whitespace URL: {url}")
+
+    def test_reject_external_absolute_urls(self):
+        """Test that external absolute URLs are rejected"""
+        external_urls = [
+            'http://evil.com/page',
+            'https://attacker.com/malicious',
+            'http://example.com',
+            'https://google.com',
+        ]
+        for url in external_urls:
+            with self.subTest(url=url):
+                # These should be rejected unless the domain is in ALLOWED_HOSTS
+                # For testing purposes, we assume they're not in ALLOWED_HOSTS
+                self.assertFalse(is_internal_url(url), f"Should reject external absolute URL: {url}")
+
+
+class HTMLSanitizationTestCase(TestCase):
+    """Comprehensive test cases for sanitize_html XSS protection"""
+
+    def test_allow_safe_html(self):
+        """Test that safe HTML is preserved"""
+        safe_html = '<p>Hello <strong>world</strong></p><a href="/about">About</a>'
+        allowed_tags = ['a', 'strong', 'em', 'p', 'br']
+        allowed_attrs = {'a': ['href', 'title']}
+
+        result = sanitize_html(safe_html, allowed_tags, allowed_attrs)
+        self.assertIn('<strong>world</strong>', result)
+        self.assertIn('href="/about"', result)
+
+    def test_remove_onclick_handler(self):
+        """Test that onclick event handlers are removed"""
+        malicious_html = '<a href="/page" onclick="alert(1)">Click me</a>'
+        allowed_tags = ['a']
+        allowed_attrs = {'a': ['href']}
+
+        result = sanitize_html(malicious_html, allowed_tags, allowed_attrs)
+        self.assertNotIn('onclick', result)
+        self.assertNotIn('alert(1)', result)
+        self.assertIn('href="/page"', result)
+
+    def test_remove_all_event_handlers(self):
+        """Test that all event handlers are removed"""
+        event_handlers = [
+            'onload', 'onerror', 'onmouseover', 'onmouseout',
+            'onfocus', 'onblur', 'onchange', 'onsubmit',
+            'onkeypress', 'onkeydown', 'onkeyup',
+        ]
+        allowed_tags = ['a', 'img', 'input']
+        allowed_attrs = {'a': ['href'], 'img': ['src'], 'input': ['type']}
+
+        for handler in event_handlers:
+            with self.subTest(handler=handler):
+                malicious_html = f'<a href="/page" {handler}="alert(1)">Link</a>'
+                result = sanitize_html(malicious_html, allowed_tags, allowed_attrs)
+                self.assertNotIn(handler, result, f"Should remove {handler}")
+                self.assertNotIn('alert(1)', result)
+
+    def test_remove_style_attribute(self):
+        """Test that style attributes are removed"""
+        malicious_html = '<p style="background: url(javascript:alert(1))">Text</p>'
+        allowed_tags = ['p']
+        allowed_attrs = {'p': []}
+
+        result = sanitize_html(malicious_html, allowed_tags, allowed_attrs)
+        self.assertNotIn('style', result)
+        self.assertNotIn('javascript', result)
+
+    def test_remove_srcset_attribute(self):
+        """Test that srcset attributes are removed"""
+        malicious_html = '<img src="/image.jpg" srcset="//evil.com/track.jpg 2x">'
+        allowed_tags = ['img']
+        allowed_attrs = {'img': ['src']}
+
+        result = sanitize_html(malicious_html, allowed_tags, allowed_attrs)
+        self.assertNotIn('srcset', result)
+        self.assertNotIn('evil.com', result)
+
+    def test_remove_data_attributes(self):
+        """Test that data-* attributes are removed"""
+        malicious_html = '<a href="/page" data-evil="malicious">Link</a>'
+        allowed_tags = ['a']
+        allowed_attrs = {'a': ['href']}
+
+        result = sanitize_html(malicious_html, allowed_tags, allowed_attrs)
+        self.assertNotIn('data-evil', result)
+        self.assertNotIn('data-', result.split('href')[0])  # No data- before href
+
+    def test_remove_formaction_attribute(self):
+        """Test that formaction attributes are removed"""
+        malicious_html = '<button formaction="//evil.com/steal">Submit</button>'
+        allowed_tags = ['button']
+        allowed_attrs = {'button': ['type']}
+
+        result = sanitize_html(malicious_html, allowed_tags, allowed_attrs)
+        self.assertNotIn('formaction', result)
+
+    def test_reject_javascript_in_href(self):
+        """Test that javascript: URLs in href are rejected"""
+        malicious_html = '<a href="javascript:alert(1)">Click</a>'
+        allowed_tags = ['a']
+        allowed_attrs = {'a': ['href']}
+
+        result = sanitize_html(malicious_html, allowed_tags, allowed_attrs)
+        # The tag should be unwrapped (removed but content preserved)
+        self.assertNotIn('href', result)
+        self.assertNotIn('javascript:', result)
+        self.assertIn('Click', result)
+
+    def test_reject_protocol_relative_in_href(self):
+        """Test that protocol-relative URLs in href are rejected"""
+        malicious_html = '<a href="//evil.com/page">External Link</a>'
+        allowed_tags = ['a']
+        allowed_attrs = {'a': ['href']}
+
+        result = sanitize_html(malicious_html, allowed_tags, allowed_attrs)
+        # The tag should be unwrapped
+        self.assertNotIn('//evil.com', result)
+        self.assertIn('External Link', result)
+
+    def test_reject_data_uri_in_href(self):
+        """Test that data: URIs in href are rejected"""
+        malicious_html = '<a href="data:text/html,<script>alert(1)</script>">Click</a>'
+        allowed_tags = ['a']
+        allowed_attrs = {'a': ['href']}
+
+        result = sanitize_html(malicious_html, allowed_tags, allowed_attrs)
+        self.assertNotIn('data:', result)
+        self.assertNotIn('script', result)
+
+    def test_preserve_valid_internal_links(self):
+        """Test that valid internal links are preserved"""
+        safe_html = '<a href="/about">About</a><a href="#top">Top</a>'
+        allowed_tags = ['a']
+        allowed_attrs = {'a': ['href']}
+
+        result = sanitize_html(safe_html, allowed_tags, allowed_attrs)
+        self.assertIn('href="/about"', result)
+        self.assertIn('href="#top"', result)
+        self.assertIn('About', result)
+        self.assertIn('Top', result)
+
+    def test_complex_xss_attack(self):
+        """Test defense against complex XSS attack"""
+        malicious_html = '''
+        <a href="javascript:alert(1)" onclick="alert(2)" style="background:url(javascript:alert(3))">
+            <img src="x" onerror="alert(4)" onload="alert(5)">
+        </a>
+        '''
+        allowed_tags = ['a', 'img']
+        allowed_attrs = {'a': ['href'], 'img': ['src']}
+
+        result = sanitize_html(malicious_html, allowed_tags, allowed_attrs)
+        # Should not contain any javascript or event handlers
+        self.assertNotIn('javascript:', result)
+        self.assertNotIn('onclick', result)
+        self.assertNotIn('onerror', result)
+        self.assertNotIn('onload', result)
+        self.assertNotIn('style', result)
+        self.assertNotIn('alert', result)
+
+    def test_validate_internal_html_function(self):
+        """Test the validate_internal_html wrapper function"""
+        # Valid HTML should pass
+        safe_html = '<p>Safe content with <a href="/internal">internal link</a></p>'
+        result = validate_internal_html(safe_html)
+        self.assertIn('internal link', result)
+
+        # External link should raise ValidationError
+        with self.assertRaises(ValidationError):
+            validate_internal_html('<a href="http://evil.com">External</a>')
+
+        # JavaScript link should raise ValidationError
+        with self.assertRaises(ValidationError):
+            validate_internal_html('<a href="javascript:alert(1)">XSS</a>')
+
+        # Disallowed tag should raise ValidationError
+        with self.assertRaises(ValidationError):
+            validate_internal_html('<script>alert(1)</script>')

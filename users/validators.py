@@ -22,20 +22,65 @@ custom_username_validators = [ASCIIUsernameValidator()]
 
 def sanitize_html(html, allowed_tags, allowed_attrs):
     """
-    Sanitize HTML by removing disallowed tags and attributes
+    Sanitize HTML by removing disallowed tags and attributes.
+
+    Security features:
+    - Removes all event handlers (onclick, onload, onerror, etc.)
+    - Validates and sanitizes href attributes to prevent XSS
+    - Strips dangerous attributes (style, srcset, data-*)
+    - Prevents protocol-relative URLs and javascript: URIs
     """
     soup = BeautifulSoup(html, 'html.parser')
+
+    # Dangerous attribute patterns to always remove
+    dangerous_attr_patterns = [
+        'on',  # Event handlers: onclick, onload, onerror, onmouseover, etc.
+        'style',  # Can contain expression() and other CSS-based attacks
+        'srcset',  # Alternative image sources that could bypass validation
+        'data-',  # Custom data attributes that might be used in XSS
+        'formaction',  # Override form action
+        'form',  # Associate with forms
+    ]
 
     # Remove disallowed tags
     for tag in soup.find_all():
         if tag.name not in allowed_tags:
             tag.unwrap()
         else:
-            # Remove disallowed attributes
+            # Get allowed attributes for this tag
             tag_allowed_attrs = allowed_attrs.get(tag.name, [])
+
+            # Check and sanitize all attributes
             for attr in list(tag.attrs.keys()):
-                if attr not in tag_allowed_attrs:
+                attr_lower = attr.lower()
+
+                # Remove dangerous attributes
+                should_remove = False
+                for dangerous in dangerous_attr_patterns:
+                    if dangerous == 'on' and attr_lower.startswith('on'):
+                        should_remove = True
+                        break
+                    elif dangerous != 'on' and (attr_lower.startswith(dangerous) or attr_lower == dangerous):
+                        should_remove = True
+                        break
+
+                # Remove if dangerous or not in allowed list
+                if should_remove or attr not in tag_allowed_attrs:
                     del tag.attrs[attr]
+                    continue
+
+                # Special validation for href attributes
+                if attr == 'href':
+                    href_value = tag.attrs[attr]
+                    if href_value:
+                        # Normalize and validate the URL
+                        href_normalized = href_value.strip()
+
+                        # Validate using is_internal_url
+                        if not is_internal_url(href_normalized):
+                            # Remove the entire tag if it contains an external/dangerous link
+                            tag.unwrap()
+                            break
 
     return str(soup)
 
