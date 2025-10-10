@@ -7,6 +7,7 @@ from django.apps import apps
 from allauth.mfa.utils import is_mfa_enabled
 from utils.security import generate_key, generate_cipher
 from cms.permissions import user_requires_mfa
+from django.contrib.sites.models import Site
 
 from .models import BlackListedEmail
 
@@ -36,8 +37,18 @@ class MyAccountAdapter(DefaultAccountAdapter):
     def is_open_for_signup(self, request):
         return settings.USERS_CAN_SELF_REGISTER
 
-    def send_mail(self, template_prefix, email, context):
-        msg = self.render_mail(template_prefix, email, context)
+    def send_mail(self, template_prefix: str, email: str, context: dict) -> None:
+        site = Site.objects.get_current()
+        ctx = {
+            "email": email,
+            "current_site": site,
+        }
+        ctx.update(context)
+        
+        msg = self.render_mail(template_prefix, email, ctx)
+        print("Debug: email_message_subject", msg.subject)
+        print("Debug: email_message_body", msg.body)
+        breakpoint()
         msg.send(fail_silently=True)
 
     def get_login_redirect_url(self, request):
