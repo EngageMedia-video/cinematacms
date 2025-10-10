@@ -77,5 +77,81 @@ def contains_not_allowed_tags(text, allowed_tags):
     return False
 
 def is_internal_url(url):
-    """Check if URL is internal to the portal"""
+    """
+    Check if URL is internal to the portal.
+
+    Validates that URLs are safe internal links by:
+    - Rejecting protocol-relative URLs (//evil.com)
+    - Blocking dangerous protocols (javascript:, data:, vbscript:, file:)
+    - Preventing URL encoding bypasses
+    - Ensuring case-insensitive protocol checks
+    - Allowing only relative paths, fragments, or same-domain absolute URLs
+    """
+    from urllib.parse import urlparse, unquote
+
+    if not url:
+        return False
+
+    # Normalize: trim whitespace and decode once to catch encoded attacks
+    url = url.strip()
+    decoded_url = unquote(url)
+
+    # Block protocol-relative URLs (//evil.com/page)
+    if url.startswith('//') or decoded_url.startswith('//'):
+        return False
+
+    # Block dangerous protocols (case-insensitive)
+    dangerous_protocols = ['javascript:', 'data:', 'vbscript:', 'file:', 'blob:', 'about:']
+    url_lower = url.lower()
+    decoded_lower = decoded_url.lower()
+
+    for protocol in dangerous_protocols:
+        if protocol in url_lower or protocol in decoded_lower:
+            return False
+
+    # Defense-in-depth: check for colon before first slash/hash
+    # This catches edge cases like "/javascript:alert(1)" being interpreted as scheme
+    first_slash = decoded_url.find('/')
+    first_hash = decoded_url.find('#')
+    first_colon = decoded_url.find(':')
+
+    if first_colon != -1:
+        # If colon exists, ensure it's after a slash or hash (i.e., in query/fragment)
+        if first_slash == -1 and first_hash == -1:
+            # Colon with no slash/hash = likely a scheme
+            return False
+        if first_slash != -1 and first_colon < first_slash:
+            return False
+        if first_hash != -1 and first_colon < first_hash and (first_slash == -1 or first_colon < first_slash):
+            return False
+
+    # Parse the URL
+    try:
+        parsed = urlparse(url)
+        parsed_decoded = urlparse(decoded_url)
+    except (ValueError, AttributeError):
+        return False
+
+    # Reject if scheme or netloc is present (except for http/https to same domain)
+    if parsed.scheme and parsed.scheme not in ['', 'http', 'https']:
+        return False
+
+    if parsed_decoded.scheme and parsed_decoded.scheme not in ['', 'http', 'https']:
+        return False
+
+    # If scheme is http/https, verify it's the same domain
+    if parsed.scheme in ['http', 'https'] or parsed_decoded.scheme in ['http', 'https']:
+        allowed_hosts = getattr(settings, 'ALLOWED_HOSTS', [])
+        netloc = parsed.netloc or parsed_decoded.netloc
+
+        if not netloc or netloc not in allowed_hosts:
+            return False
+
+    # Reject any netloc for relative URLs (catches protocol-relative)
+    if parsed.netloc or parsed_decoded.netloc:
+        # Only allowed if it's explicitly http/https and validated above
+        if parsed.scheme not in ['http', 'https'] and parsed_decoded.scheme not in ['http', 'https']:
+            return False
+
+    # Must be a relative path or fragment
     return url.startswith('/') or url.startswith('#')
