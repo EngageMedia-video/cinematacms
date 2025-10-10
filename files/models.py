@@ -1731,11 +1731,16 @@ class IndexPageFeatured(models.Model):
         blank=True,
         help_text="HTML links allowed for internal URLs only",
         validators=[validate_internal_html],
-        default="",
+        null=True,
     )
 
     def __str__(self):
         return f"{self.title} - {self.url} - {self.ordering}"
+
+    class Meta:
+        ordering = ["ordering"]
+        verbose_name = "Index page featured"
+        verbose_name_plural = "Index page featured"
 
     def save(self, *args, **kwargs):
         from users.validators import sanitize_html

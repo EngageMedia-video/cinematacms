@@ -6,7 +6,6 @@ from django.utils.translation import gettext_lazy as _
 
 from django.core.exceptions import ValidationError
 from django.conf import settings
-from bs4 import BeautifulSoup
 @deconstructible
 class ASCIIUsernameValidator(validators.RegexValidator):
     regex = r"^[\w]+$"
@@ -33,77 +32,135 @@ def sanitize_html(html):
     - Strips dangerous attributes (style, srcset, data-*)
     - Prevents protocol-relative URLs and javascript: URIs
     """
-    soup = BeautifulSoup(html, 'html.parser')
+    if not html:
+        return html
 
-    # Dangerous attribute patterns to always remove
-    dangerous_attr_patterns = [
-        'on',  # Event handlers: onclick, onload, onerror, onmouseover, etc.
-        'style',  # Can contain expression() and other CSS-based attacks
-        'srcset',  # Alternative image sources that could bypass validation
-        'data-',  # Custom data attributes that might be used in XSS
-        'formaction',  # Override form action
-        'form',  # Associate with forms
-    ]
+    # Step 1: Remove all disallowed tags (keep only allowed ones)
+    # Pattern matches any HTML tag
+    tag_pattern = r'<(/?)(\w+)([^>]*)>'
 
-    # Remove disallowed tags
-    for tag in soup.find_all():
-        if tag.name not in ALLOWED_HTML_TAGS:
-            tag.decompose()
+    def process_tag(match):
+        closing = match.group(1)
+        tag_name = match.group(2).lower()
+        attributes = match.group(3)
+
+        # Remove disallowed tags completely
+        if tag_name not in ALLOWED_HTML_TAGS:
+            return ''
+
+        # For self-closing tags like <br>, return as-is
+        if tag_name == 'br':
+            return f'<{closing}{tag_name}>'
+
+        # For closing tags, return as-is
+        if closing == '/':
+            return f'</{tag_name}>'
+
+        # For opening tags, sanitize attributes
+        allowed_attrs = ALLOWED_HTML_ATTRS.get(tag_name, [])
+
+        if not allowed_attrs:
+            # No attributes allowed for this tag
+            return f'<{tag_name}>'
+
+        # Extract and validate attributes
+        sanitized_attrs = _sanitize_attributes(attributes, allowed_attrs, tag_name)
+
+        if sanitized_attrs is None:
+            # Invalid href detected, remove tag but keep content
+            return ''
+        elif sanitized_attrs:
+            return f'<{tag_name} {sanitized_attrs}>'
         else:
-            # Get allowed attributes for this tag
-            tag_allowed_attrs = ALLOWED_HTML_ATTRS.get(tag.name, [])
+            return f'<{tag_name}>'
 
-            # Check and sanitize all attributes
-            for attr in list(tag.attrs.keys()):
-                attr_lower = attr.lower()
+    result = re.sub(tag_pattern, process_tag, html)
+    return result
 
-                # Remove dangerous attributes
-                should_remove = False
-                for dangerous in dangerous_attr_patterns:
-                    if dangerous == 'on' and attr_lower.startswith('on'):
-                        should_remove = True
-                        break
-                    elif dangerous != 'on' and (attr_lower.startswith(dangerous) or attr_lower == dangerous):
-                        should_remove = True
-                        break
+def _sanitize_attributes(attr_string, allowed_attrs, tag_name):
+    """
+    Extract and sanitize HTML attributes, keeping only allowed ones.
 
-                # Remove if dangerous or not in allowed list
-                if should_remove or attr not in tag_allowed_attrs:
-                    del tag.attrs[attr]
-                    continue
+    Security features:
+    - Removes dangerous event handlers (onclick, onload, etc.)
+    - Removes style, srcset, data-*, formaction, form attributes
+    - Validates href attributes for internal URLs only
 
-                # Special validation for href attributes
-                if attr == 'href':
-                    href_value = tag.attrs[attr]
-                    if href_value:
-                        # Normalize and validate the URL
-                        href_normalized = href_value.strip()
+    Returns:
+    - String of sanitized attributes
+    - None if tag should be removed (invalid href)
+    """
+    if not attr_string or not allowed_attrs:
+        return ''
 
-                        # Validate using is_internal_url
-                        if not is_internal_url(href_normalized):
-                            # Remove the entire tag if it contains an external/dangerous link
-                            tag.unwrap()
-                            break
+    # Pattern to match attributes: name="value" or name='value' or name=value
+    attr_pattern = r'(\w+(?:-\w+)*)(?:\s*=\s*["\']([^"\']*)["\']|\s*=\s*([^\s>]+))?'
 
-    return str(soup)
+    dangerous_prefixes = ['on', 'style', 'srcset', 'data-', 'formaction', 'form']
+
+    sanitized = []
+
+    for match in re.finditer(attr_pattern, attr_string):
+        attr_name = match.group(1).lower()
+        attr_value = match.group(2) or match.group(3) or ''
+
+        # Skip dangerous attributes
+        is_dangerous = False
+        for prefix in dangerous_prefixes:
+            if prefix == 'on' and attr_name.startswith('on'):
+                is_dangerous = True
+                break
+            elif prefix != 'on' and (attr_name.startswith(prefix) or attr_name == prefix):
+                is_dangerous = True
+                break
+
+        if is_dangerous:
+            continue
+
+        # Skip if not in allowed list
+        if attr_name not in allowed_attrs:
+            continue
+
+        # Special validation for href
+        if attr_name == 'href':
+            if attr_value and not is_internal_url(attr_value.strip()):
+                # Return None to signal tag removal
+                return None
+
+        # Add sanitized attribute
+        if attr_value:
+            # Escape quotes in value
+            escaped_value = attr_value.replace('"', '&quot;')
+            sanitized.append(f'{attr_name}="{escaped_value}"')
+        else:
+            sanitized.append(attr_name)
+
+    return ' '.join(sanitized)
 
 def validate_internal_html(value):
     """
     Validate HTML content allowing only internal links and safe tags
     """
-    # Parse HTML
-    soup = BeautifulSoup(value, 'html.parser')
+    if not value:
+        return value
+
+    # Pattern to match all HTML tags
+    tag_pattern = r'<(/?)(\w+)([^>]*)>'
+
+    # Check all tags are allowed
+    for match in re.finditer(tag_pattern, value):
+        tag_name = match.group(2).lower()
+        if tag_name not in ALLOWED_HTML_TAGS:
+            raise ValidationError(f'Tag not allowed: {tag_name}. Use only <a>, <strong>, <em>, <p>, and <br>')
+
+    # Pattern to match href attributes in anchor tags
+    href_pattern = r'<a\s+[^>]*href\s*=\s*["\']([^"\']*)["\'][^>]*>'
 
     # Check all links are internal
-    for link in soup.find_all('a'):
-        href = link.get('href', '')
+    for match in re.finditer(href_pattern, value, re.IGNORECASE):
+        href = match.group(1)
         if href and not is_internal_url(href):
             raise ValidationError(f'External links not allowed: {href}')
-
-    # Check if it contains tags that are not allowed
-    for tag in soup.find_all():
-        if tag.name not in ALLOWED_HTML_TAGS:
-            raise ValidationError(f'Tag not allowed: {tag.name}. Use only <a>, <strong>, <em>, <p>, and <br>')
 
     # Validation passed - return original value unchanged
     return value
@@ -113,10 +170,15 @@ def contains_not_allowed_tags(text):
     Check if text contains tags that are not in the allowed list.
     Returns True if not allowed tags are found, False otherwise.
     """
-    soup = BeautifulSoup(text, 'html.parser')
+    if not text:
+        return False
 
-    for tag in soup.find_all():
-        if tag.name not in ALLOWED_HTML_TAGS:
+    # Pattern to match all HTML tags
+    tag_pattern = r'<(/?)(\w+)([^>]*)>'
+
+    for match in re.finditer(tag_pattern, text):
+        tag_name = match.group(2).lower()
+        if tag_name not in ALLOWED_HTML_TAGS:
             return True
 
     return False
