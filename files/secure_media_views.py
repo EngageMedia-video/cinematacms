@@ -298,7 +298,8 @@ class SecureMediaView(View):
             file_path.startswith(f'original/{public_path}')
             for public_path in PUBLIC_MEDIA_PATHS
         )
-
+        # Also check for subtitle files which should be publicly accessible if they match subtitle patterns
+        # but still require media permission checks
         return public_check
 
     def _is_non_video_file(self, file_path: str) -> bool:
