@@ -4,7 +4,12 @@ function HomepagePopup({ onClick, message }) {
 	let message_obj = {};
 	if (message) {
 		if (typeof message !== "object") {
-			message_obj = JSON.parse(message);
+			try {
+				message_obj = JSON.parse(message);
+			} catch (e) {
+				console.error("Failed to parse homepage popup message JSON:", e);
+				return <></>;
+			}
 		} else {
 			message_obj = message;
 		}
@@ -24,8 +29,9 @@ function HomepagePopup({ onClick, message }) {
 			<div className="homepage-popup-fullscreen">
 				<div className="homepage-popup--container">
 					<div className="homepage-popup--img-container">
-						<a href={message_obj.url}>
+						<a href={message_obj.url} target="_blank" rel="noopener noreferrer">
 							<img
+								// PASTIKAN ANDA MENGGUNAKAN KODE INI
 								src={message_obj.popup_image_url}
 								alt="Cinemata homepage-popup image"
 								className="homepage-popup--image"
