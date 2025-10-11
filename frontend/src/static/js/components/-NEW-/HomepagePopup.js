@@ -31,7 +31,6 @@ function HomepagePopup({ onClick, message }) {
 					<div className="homepage-popup--img-container">
 						<a href={message_obj.url} target="_blank" rel="noopener noreferrer">
 							<img
-								// PASTIKAN ANDA MENGGUNAKAN KODE INI
 								src={message_obj.popup_image_url}
 								alt="Cinemata homepage-popup image"
 								className="homepage-popup--image"
