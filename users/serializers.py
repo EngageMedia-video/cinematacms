@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from files.models import IndexPageFeatured
+from .validators import validate_internal_html, sanitize_html
 from .models import User
 
 
@@ -85,3 +87,15 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "location_info",
         )
         extra_kwargs = {"name": {"required": False}}
+
+# files/serializers.py
+class IndexPageFeaturedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IndexPageFeatured
+        fields = ("title", "url", "api_url", "ordering", "active", "text")
+    
+    def validate_text(self, value):
+        # Validate - will raise ValidationError if disallowed content found
+        validate_internal_html(value)
+        # Sanitize and return cleaned value for persistence
+        return sanitize_html(value)
