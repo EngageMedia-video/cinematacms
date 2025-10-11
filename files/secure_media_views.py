@@ -185,6 +185,9 @@ class SecureMediaView(View):
         if file_path.startswith('/'):
             return False
 
+        if self._is_public_media_file(file_path):
+            return True
+
         allowed_prefixes = tuple(['original/', 'encoded/', 'hls/'] + PUBLIC_MEDIA_PATHS)
         if not file_path.startswith(allowed_prefixes):
             return False
@@ -284,6 +287,11 @@ class SecureMediaView(View):
 
     def _is_public_media_file(self, file_path: str) -> bool:
         """Check if the file is a public asset that bypasses media permissions."""
+  
+        if '/' not in file_path:
+            
+            return True
+
         # Check for public paths in both direct and original/ subdirectories
         public_check = any(
             file_path.startswith(public_path) or
@@ -291,8 +299,6 @@ class SecureMediaView(View):
             for public_path in PUBLIC_MEDIA_PATHS
         )
 
-        # Also check for subtitle files which should be publicly accessible if they match subtitle patterns
-        # but still require media permission checks
         return public_check
 
     def _is_non_video_file(self, file_path: str) -> bool:
