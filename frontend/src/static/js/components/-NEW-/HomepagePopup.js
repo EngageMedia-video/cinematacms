@@ -24,7 +24,7 @@ function HomepagePopup({ onClick, message }) {
 			<div className="homepage-popup-fullscreen">
 				<div className="homepage-popup--container">
 					<div className="homepage-popup--img-container">
-						<a href={message.url}>
+						<a href={message_obj.url}>
 							<img
 								src={message_obj.popup_image_url}
 								alt="Cinemata homepage-popup image"
