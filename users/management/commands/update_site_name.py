@@ -1,62 +1,96 @@
 """
-Management command to update Django Site name from settings.PORTAL_NAME
-This is useful for fixing existing installations where the site name might be empty or incorrect.
+Management command to configure Django Site from settings.
+Creates the site if it doesn't exist, or updates it if it does.
+This ensures the site with SITE_ID exists and has the correct name and domain.
 """
 from django.core.management.base import BaseCommand
 from django.contrib.sites.models import Site
 from django.conf import settings
+import sys
 
 
 class Command(BaseCommand):
-    help = 'Updates the Django Site name from settings.PORTAL_NAME'
+    help = 'Configure Django Site with name from settings.PORTAL_NAME and optionally update domain'
 
     def add_arguments(self, parser):
         parser.add_argument(
+            '--name',
+            type=str,
+            help='Site name to set (defaults to settings.PORTAL_NAME)',
+        )
+        parser.add_argument(
             '--domain',
             type=str,
-            help='Optionally update the domain as well',
+            help='Optionally set/update the domain',
         )
 
     def handle(self, *args, **options):
         try:
-            # Get the site with SITE_ID from settings
-            site = Site.objects.get(pk=settings.SITE_ID)
-            old_name = site.name
-            old_domain = site.domain
+            # Get site name from options or fall back to settings.PORTAL_NAME
+            if options.get('name'):
+                portal_name = options.get('name')
+            else:
+                # Check if PORTAL_NAME exists in settings
+                portal_name = getattr(settings, 'PORTAL_NAME', None)
+                if portal_name is None:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            'PORTAL_NAME not found in settings. Using default "CinemataCMS"'
+                        )
+                    )
+                    portal_name = 'CinemataCMS'
 
-            # Update the site name with PORTAL_NAME from settings
-            portal_name = getattr(settings, 'PORTAL_NAME', 'CinemataCMS')
-            site.name = portal_name
+            site_id = getattr(settings, 'SITE_ID', 1)
 
-            # Optionally update domain if provided
-            if options['domain']:
-                site.domain = options['domain']
+            # Get domain from options
+            domain = options.get('domain')
 
-            site.save()
-
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f'Successfully updated site configuration:\n'
-                    f'  Name: "{old_name}" → "{site.name}"\n'
-                    f'  Domain: {old_domain}' + (f' → {site.domain}' if options['domain'] else ' (unchanged)')
+            # Get or create the site
+            if domain:
+                site, created = Site.objects.get_or_create(
+                    pk=site_id,
+                    defaults={'name': portal_name, 'domain': domain}
                 )
-            )
+            else:
+                # If no domain provided, just get or create with name
+                site, created = Site.objects.get_or_create(
+                    pk=site_id,
+                    defaults={'name': portal_name, 'domain': 'example.com'}
+                )
 
-        except Site.DoesNotExist:
-            self.stdout.write(
-                self.style.ERROR(
-                    f'Site with ID {settings.SITE_ID} does not exist. '
-                    'Please run migrations first:\n'
-                    '  python manage.py migrate sites'
+            if created:
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'Created Django Site with ID {site_id}:\n'
+                        f'  Name: {site.name}\n'
+                        f'  Domain: {site.domain}'
+                    )
                 )
-            )
-        except AttributeError:
-            self.stdout.write(
-                self.style.WARNING(
-                    'PORTAL_NAME not found in settings. Using default "CinemataCMS"'
+            else:
+                # Update existing site
+                old_name = site.name
+                old_domain = site.domain
+
+                site.name = portal_name
+                if domain:
+                    site.domain = domain
+
+                site.save()
+
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'Updated Django Site with ID {site_id}:\n'
+                        f'  Name: "{old_name}" → "{site.name}"\n'
+                        f'  Domain: "{old_domain}"' + (f' → "{site.domain}"' if domain else ' (unchanged)')
+                    )
                 )
-            )
+
+            # Return success
+            return
+
         except Exception as e:
             self.stdout.write(
-                self.style.ERROR(f'Error updating site: {str(e)}')
+                self.style.ERROR(f'Error configuring site: {str(e)}')
             )
+            # Exit with error code to signal failure to the shell
+            sys.exit(1)

@@ -100,6 +100,7 @@ echo "SSL_FRONTEND_HOST = FRONTEND_HOST.replace('http', 'https')" >> cms/local_s
 
 echo 'SECRET_KEY='\'"$SECRET_KEY"\' >> cms/local_settings.py
 echo "LOCAL_INSTALL = True" >> cms/local_settings.py
+echo "SITE_ID = 1" >> cms/local_settings.py
 
 mkdir -p logs
 mkdir -p pids
@@ -129,7 +130,12 @@ python manage.py populate_topics
 ADMIN_PASS=`python -c "import secrets;chars = 'abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(10)))"`
 echo "from users.models import User; User.objects.create_superuser('admin', 'admin@example.com', '$ADMIN_PASS')" | python manage.py shell
 
-echo "from django.contrib.sites.models import Site; Site.objects.update(name='$PORTAL_NAME', domain='$FRONTEND_HOST')" | python manage.py shell
+# Configure Django Site with proper error handling
+echo "Configuring Django Site..."
+if ! python manage.py update_site_name --name "$PORTAL_NAME" --domain "$FRONTEND_HOST"; then
+    echo "Error: Failed to configure Django Site. Aborting installation."
+    exit 1
+fi
 
 chown -R www-data. /home/cinemata/
 cp deploy/celery_long.service /etc/systemd/system/celery_long.service && systemctl enable celery_long && systemctl start celery_long
