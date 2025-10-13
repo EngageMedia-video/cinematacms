@@ -300,14 +300,17 @@ class SecureMediaView(View):
         Check if a media file is considered public based on its path.
         Public files are those in specific allowed directories.
         """
+        # Paths that store files with 'original/' prefix (Media-related assets)
+        ORIGINAL_PREFIX_PATHS = ['thumbnails/', 'userlogos/']
         # Check if the file is in any of the public media directories
         for public_path in PUBLIC_MEDIA_PATHS:
             if file_path.startswith(public_path):
                 return True
-            # Also check for 'original/' subdirectory variants
-            original_path = f"{public_path}original/"
-            if file_path.startswith(original_path):
-                return True
+            # Only check original/ variants for Media-related paths
+            if public_path in ORIGINAL_PREFIX_PATHS:
+                original_path = f"original/{public_path}"
+                if file_path.startswith(original_path):
+                    return True
 
         return False
 
