@@ -177,7 +177,6 @@ class SecureMediaView(View):
         return self._serve_file(file_path, head_request)
         
     def _is_valid_file_path(self, file_path: str) -> bool:
-
         """Enhanced path validation with security checks."""
         # Check for path traversal and invalid characters
         if self.INVALID_PATH_PATTERNS.search(file_path):
@@ -187,14 +186,23 @@ class SecureMediaView(View):
         if file_path.startswith('/'):
             return False
 
-        # Existing validation logic for other allowed paths
-        ALLOWED_PREFIXES = [
+        # Combine allowed video/media prefixes with public media paths for validation
+        allowed_prefixes = [
             'videos/media/', 'videos/encoded/', 'videos/subtitles/', 'other_media/'
         ]
+        
+        # Add public paths and their "original/" variants to the list of allowed paths
+        # to ensure they are not incorrectly blocked.
+        for public_path in PUBLIC_MEDIA_PATHS:
+            allowed_prefixes.append(public_path)
+            # Some public assets like thumbnails can also be in an 'original' directory
+            original_path = f"original/{public_path}"
+            if original_path not in allowed_prefixes:
+                allowed_prefixes.append(original_path)
 
-        for prefix in ALLOWED_PREFIXES:
-            if file_path.startswith(prefix):
-                return True
+        # Check if the file path starts with any of the allowed prefixes
+        if any(file_path.startswith(prefix) for prefix in allowed_prefixes):
+            return True
 
         return False
 
