@@ -175,8 +175,8 @@ class SecureMediaView(View):
             return resp
 
         return self._serve_file(file_path, head_request)
-
-      def _is_valid_file_path(self, file_path: str) -> bool:
+        
+    def _is_valid_file_path(self, file_path: str) -> bool:
 
         """Enhanced path validation with security checks."""
         # Check for path traversal and invalid characters
