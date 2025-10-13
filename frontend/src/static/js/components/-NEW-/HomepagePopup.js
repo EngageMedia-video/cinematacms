@@ -7,7 +7,7 @@ function HomepagePopup({ onClick, message }) {
 			try {
 				message_obj = JSON.parse(message);
 			} catch (e) {
-				console.error("Failed to parse homepage popup message JSON:", e);
+				console.error("Error parsing message JSON:", e);
 				return <></>;
 			}
 		} else {
