@@ -182,12 +182,12 @@ The instructions have been tested on Ubuntu 22.04. Make sure no other services a
 
 As root, clone the repository on /home/cinemata and run install.sh:
 
-### For Beta Users (Stable)
+### For Stable Release (v2.0.3)
 
 ```
 # cd /home
 # mkdir cinemata && cd cinemata
-# git clone -b release/cinemata-2.0-beta https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
+# git clone -b v2.0.3 https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
 # chmod +x install.sh install-nodejs.sh scripts/build_frontend.sh
 # ./install.sh
 ```
@@ -201,7 +201,7 @@ As root, clone the repository on /home/cinemata and run install.sh:
 ```
 ⚠️ Note: Main branch contains latest development code and may have unstable features.
 
-This should take a few minutes with dependencies etc. Make sure you enter a valid domain when asked (eg staging.cinemata.org)
+This should take a few minutes with dependencies, etc. Make sure you enter a valid domain when asked (eg staging.cinemata.org)
 
 **Note**: For setting up the application locally on macOS (Ventura 13.0 and Sequoia 15.2), refer to [this guide](https://github.com/EngageMedia-video/cinematacms/blob/main/docs/setup/mac_setup.md) for more information.
 
