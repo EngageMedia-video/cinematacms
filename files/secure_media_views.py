@@ -177,12 +177,14 @@ class SecureMediaView(View):
         return self._serve_file(file_path, head_request)
 
     def _is_valid_file_path(self, file_path: str) -> bool:
-        """
-        Validate that the file path is within allowed directories.
-        """
-        # First check if it's a public media file
+        """Enhanced path validation with security checks."""
+        # Check for path traversal and invalid characters
         if self._is_public_media_file(file_path):
             return True
+        
+        # Check if path starts with /
+        if file_path.startswith('/'):
+            return False
 
         # Existing validation logic for other allowed paths
         ALLOWED_PREFIXES = [
