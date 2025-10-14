@@ -1749,10 +1749,6 @@ class IndexPageFeatured(models.Model):
             self.text = sanitize_html(self.text)
         super().save(*args, **kwargs)
 
-    class Meta:
-        ordering = ["ordering"]
-        verbose_name = "Index page featured"
-        verbose_name_plural = "Index page featured"
 
 
 class TranscriptionRequest(models.Model):
