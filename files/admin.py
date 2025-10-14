@@ -187,10 +187,10 @@ class IndexPageFeaturedAdminForm(forms.ModelForm):
         widget=forms.Textarea(
             attrs={
                 "rows": 4,
-                "placeholder": "Enter description text. HTML links allowed (use /page-url for internal links only).",
+                "placeholder": "Enter description text. HTML links allowed for both internal and external URLs.",
             }
         ),
-        help_text="HTML formatting allowed. Links must be internal (start with / or #). Example: &lt;a href=&quot;/about&quot;&gt;About Us&lt;/a&gt;",
+        help_text="HTML formatting allowed. Internal links (start with / or #) and external links (start with http:// or https://) are supported. Example: &lt;a href=&quot;/about&quot;&gt;About Us&lt;/a&gt; or &lt;a href=&quot;https://example.com&quot;&gt;External Link&lt;/a&gt;",
     )
 
     class Meta:

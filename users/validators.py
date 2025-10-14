@@ -22,9 +22,9 @@ custom_username_validators = [ASCIIUsernameValidator()]
 
 def validate_internal_html(value):
     """
-    Validate HTML content allowing only internal links.
+    Validate HTML content allowing internal and external links.
     This lightweight validator:
-    - Checks all <a> tags only have internal URLs (starting with / or #)
+    - Checks all <a> tags have valid URLs (internal: /, # or external: http://, https://)
     - Strips dangerous tags like <script>, <iframe>
     - Uses regex - no additional dependencies needed
     Args:
@@ -32,7 +32,7 @@ def validate_internal_html(value):
     Returns:
         str: Sanitized HTML content
     Raises:
-        ValidationError: If external links are found
+        ValidationError: If invalid or potentially dangerous links are found
     """
     if not value:
         return value
@@ -41,12 +41,12 @@ def validate_internal_html(value):
     link_pattern = r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>'
     links = re.findall(link_pattern, value, re.IGNORECASE)
 
-    # Check all links are internal
+    # Check all links are valid (internal or external)
     for href in links:
-        if not is_internal_url(href):
+        if not is_valid_url(href):
             raise ValidationError(
-                f"External links are not allowed. Found: {href}. "
-                f'Only internal links starting with "/" or "#" are permitted.'
+                f"Invalid link found: {href}. "
+                f'Only internal links (starting with "/" or "#") or external links (starting with "http://" or "https://") are permitted.'
             )
 
     # Strip dangerous tags that could execute code
@@ -62,13 +62,18 @@ def validate_internal_html(value):
     return value
 
 
-def is_internal_url(url):
+def is_valid_url(url):
     """
-    Check if URL is internal to the portal.
+    Check if URL is valid (internal or external).
     Args:
         url (str): The URL to check
     Returns:
-        bool: True if URL is internal (starts with / or #)
+        bool: True if URL is internal (starts with / or #) or external (starts with http:// or https://)
     """
     url = url.strip()
-    return url.startswith("/") or url.startswith("#")
+    return (
+        url.startswith("/")
+        or url.startswith("#")
+        or url.startswith("http://")
+        or url.startswith("https://")
+    )
