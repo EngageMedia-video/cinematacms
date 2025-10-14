@@ -6,7 +6,7 @@ export function MediaListHeader(props){
 				<h2 className="hw-category-title">{ props.title }</h2>
 				{ void 0 === props.viewAllLink || null === props.viewAllLink ? null : <a href={ props.viewAllLink } title={ props.viewAllText || props.viewAllLink } className="hw-category-link">{ props.viewAllText || props.viewAllLink }</a> }
 			</div>
-			{ props.desc && <div className="hw-category-description">{props.desc}</div> }
+			{ props.desc && <div className="hw-category-description" dangerouslySetInnerHTML={{ __html: props.desc }}></div> }
 			</>);
 }
 
@@ -21,3 +21,4 @@ MediaListHeader.propTypes = {
 MediaListHeader.defaultProps = {
 	viewAllText: 'VIEW ALL',
 };
+

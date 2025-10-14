@@ -36,8 +36,8 @@ dependencies = [
     "fido2==2.0.0",
     "uwsgi==2.0.30",
     "qrcode==8.2",
-    "django-tinymce==4.1.0",
-]
+    "django-tinymce==4.1.0"
+		]
 
 [dependency-groups]
 dev = ["basedpyright>=1.29.2", "ruff>=0.13.0"]

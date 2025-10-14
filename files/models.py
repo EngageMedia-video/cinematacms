@@ -31,6 +31,8 @@ from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFit
 from mptt.models import MPTTModel, TreeForeignKey
 
+from users.validators import validate_internal_html
+
 from . import helpers, lists
 from .methods import (
     is_mediacms_editor,
@@ -180,6 +182,7 @@ class Media(models.Model):
         blank=True,
         null=True,
         default="en",
+        # choices=Language.objects.exclude(code__in=['automatic', 'automatic-translation']).values_list("code", "title"),
         db_index=True,
     )
     media_country = models.CharField(
@@ -1115,12 +1118,6 @@ class Category(models.Model):
 
         return None
 
-    def save(self, *args, **kwargs):
-        strip_text_items = ["title", "description"]
-        for item in strip_text_items:
-            setattr(self, item, strip_tags(getattr(self, item, None)))
-        super(Category, self).save(*args, **kwargs)
-
 
 class Topic(models.Model):
     add_date = models.DateTimeField(auto_now_add=True)
@@ -1729,7 +1726,12 @@ class IndexPageFeatured(models.Model):
     ordering = models.IntegerField(
         default=1, help_text="ordering, 1 comes first, 2 follows etc"
     )
-    text = models.TextField(help_text="text", blank=True, null=True)
+    text = models.TextField(
+        blank=True,
+        help_text="Description text. HTML links allowed for internal URLs only (e.g., /about, /blog-post)",
+        validators=[validate_internal_html],
+        null=True,
+    )
 
     def __str__(self):
         return f"{self.title} - {self.url} - {self.ordering}"
