@@ -108,7 +108,7 @@ def pre_save_action(media, user, session_key, action, remote_ip):
         elif action == "watch" and user:
             if media.duration:
                 now = datetime.now(query.action_date.tzinfo)
-                if (now - query.action_date).seconds > media.duration:
+                if (now - query.action_date).total_seconds() > media.duration:
                     return True
     else:
         if user:  # first time action
