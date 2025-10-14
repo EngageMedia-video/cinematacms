@@ -7,7 +7,6 @@ import shutil
 import tempfile
 import time
 import uuid
-
 import m3u8
 from django.conf import settings
 from django.contrib.postgres.indexes import BrinIndex, BTreeIndex, GinIndex
@@ -31,6 +30,8 @@ from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFit
 from mptt.models import MPTTModel, TreeForeignKey
 
+from users.validators import validate_internal_html
+
 from . import helpers, lists
 from .methods import (
     is_mediacms_editor,
@@ -42,9 +43,7 @@ from .stop_words import STOP_WORDS
 from .cache_utils import clear_media_permission_cache
 
 logger = logging.getLogger(__name__)
-
 RE_TIMECODE = re.compile(r"(\d+:\d+:\d+.\d+)")
-
 # the final state of a media, and also encoded medias
 MEDIA_ENCODING_STATUS = (
     ("pending", "Pending"),
@@ -52,7 +51,6 @@ MEDIA_ENCODING_STATUS = (
     ("fail", "Fail"),
     ("success", "Success"),
 )
-
 # this is set by default according to the portal workflow
 MEDIA_STATES = (
     ("private", "Private"),
@@ -60,20 +58,17 @@ MEDIA_STATES = (
     ("restricted", "Restricted"),
     ("unlisted", "Unlisted"),
 )
-
 MEDIA_TYPES_SUPPORTED = (
     ("video", "Video"),
     ("image", "Image"),
     ("pdf", "Pdf"),
     ("audio", "Audio"),
 )
-
 ENCODE_EXTENSIONS = (
     ("mp4", "mp4"),
     ("webm", "webm"),
     ("gif", "gif"),
 )
-
 ENCODE_RESOLUTIONS = (
     (2160, "2160"),
     (1440, "1440"),
@@ -83,13 +78,11 @@ ENCODE_RESOLUTIONS = (
     (360, "360"),
     (240, "240"),
 )
-
 CODECS = (
     ("h265", "h265"),
     ("h264", "h264"),
     ("vp9", "vp9"),
 )
-
 ENCODE_EXTENSIONS_KEYS = [extension for extension, name in ENCODE_EXTENSIONS]
 ENCODE_RESOLUTIONS_KEYS = [resolution for resolution, name in ENCODE_RESOLUTIONS]
 
@@ -129,7 +122,6 @@ def category_thumb_path(instance, filename):
 
 def topic_thumb_path(instance, filename):
     friendly_token = helpers.produce_friendly_token()
-
     file_name = "{0}.{1}".format(friendly_token, helpers.get_file_name(filename))
     return settings.MEDIA_UPLOAD_DIR + "topics/{0}".format(file_name)
 
@@ -172,7 +164,6 @@ class Media(models.Model):
     channel = models.ForeignKey(
         "users.Channel", on_delete=models.CASCADE, db_index=True, blank=True, null=True
     )
-
     description = models.TextField("More Information and Credits", blank=True)
     summary = models.TextField("Synopsis", help_text="Maximum 60 words")
     media_language = models.CharField(
@@ -180,6 +171,7 @@ class Media(models.Model):
         blank=True,
         null=True,
         default="en",
+        # choices=Language.objects.exclude(code__in=['automatic', 'automatic-translation']).values_list("code", "title"),
         db_index=True,
     )
     media_country = models.CharField(
@@ -213,7 +205,6 @@ class Media(models.Model):
         blank=True,
         max_length=500,
     )
-
     uploaded_thumbnail = ProcessedImageField(
         upload_to=original_thumbnail_file_path,
         processors=[ResizeToFit(width=344, height=None)],
@@ -232,7 +223,6 @@ class Media(models.Model):
         blank=True,
         max_length=500,
     )
-
     thumbnail_time = models.FloatField(
         blank=True,
         null=True,
@@ -246,7 +236,6 @@ class Media(models.Model):
     likes = models.IntegerField(default=1)
     dislikes = models.IntegerField(default=0)
     reported_times = models.IntegerField(default=0)
-
     state = models.CharField(
         max_length=20,
         choices=MEDIA_STATES,
@@ -270,7 +259,6 @@ class Media(models.Model):
     user_featured = models.BooleanField(
         default=False, db_index=True, help_text="Featured by the user"
     )
-
     media_type = models.CharField(
         max_length=20,
         blank=True,
@@ -278,12 +266,10 @@ class Media(models.Model):
         db_index=True,
         default="video",
     )
-
     media_info = models.TextField(blank=True, help_text="automatically extracted info")
     video_height = models.IntegerField(default=1)
     md5sum = models.CharField(max_length=50, blank=True, null=True)
     size = models.CharField(max_length=20, blank=True, null=True)
-
     # set this here, so we don't perform extra query for it on media listing
     preview_file_path = models.CharField(max_length=501, blank=True)
     password = models.CharField(
@@ -301,7 +287,6 @@ class Media(models.Model):
         blank=True,
         help_text="In case existing URLs of media exist, for use in migrations",
     )
-
     hls_file = models.CharField(max_length=1000, blank=True)
     # keep track if media file has changed
     company = models.CharField(
@@ -320,7 +305,6 @@ class Media(models.Model):
     allow_whisper_transcribe_and_translate = models.BooleanField(
         "Translate to English", default=False
     )
-
     __original_media_file = None
     __original_thumbnail_time = None
     __original_uploaded_poster = None
@@ -358,7 +342,6 @@ class Media(models.Model):
         self.title = self.title[:99]
         if self.thumbnail_time:
             self.thumbnail_time = round(self.thumbnail_time, 1)
-
         if not self.add_date:
             self.add_date = timezone.now()
         if not self.friendly_token:
@@ -367,10 +350,8 @@ class Media(models.Model):
                 if not Media.objects.filter(friendly_token=friendly_token):
                     self.friendly_token = friendly_token
                     break
-
         # TODO: regarding state. Allow a few transitions only
         # taking under consideration settings.PORTAL_WORKFLOW
-
         # media_file path is not set correctly until mode is saved
         # post_save signal will take care of calling a few functions
         # once model is saved
@@ -382,7 +363,6 @@ class Media(models.Model):
                 from . import tasks
 
                 tasks.media_init.apply_async(args=[self.friendly_token], countdown=5)
-
             if self.thumbnail_time != self.__original_thumbnail_time:
                 self.__original_thumbnail_time = self.thumbnail_time
                 self.set_thumbnail(force=True)
@@ -390,7 +370,6 @@ class Media(models.Model):
             self.state = helpers.get_default_state(user=self.user)
             self.license = License.objects.filter(id=10).first()
         super(Media, self).save(*args, **kwargs)
-
         # Invalidate permission cache if state or password changed
         if self.pk and (
             self.state != self.__original_state
@@ -399,7 +378,6 @@ class Media(models.Model):
             self._invalidate_permission_cache()
             self.__original_state = self.state
             self.__original_password = self.password
-
         # has to save first for uploaded_poster path to exist
         if (
             self.uploaded_poster
@@ -420,13 +398,11 @@ class Media(models.Model):
                     media=self, translate_to_english=True
                 ).exists():
                     can_transcribe_and_translate = True
-
             if self.allow_whisper_transcribe:
                 if not TranscriptionRequest.objects.filter(
                     media=self, translate_to_english=False
                 ).exists():
                     can_transcribe = True
-
             from . import tasks
 
             if can_transcribe:
@@ -440,7 +416,6 @@ class Media(models.Model):
         :return:
         """
         db_table = self._meta.db_table
-
         # get the text for current SearchModel instance
         # that we are going to convert to tsvector
         if self.id:
@@ -449,7 +424,6 @@ class Media(models.Model):
         else:
             a_tags = ""
             b_tags = ""
-
         items = [
             self.title,
             self.user.username,
@@ -469,9 +443,7 @@ class Media(models.Model):
         text = " ".join(
             [token for token in text.lower().split(" ") if token not in STOP_WORDS]
         )
-
         text = helpers.clean_query(text)
-
         sql_code = """
             UPDATE {db_table} SET search = to_tsvector(
                 '{config}', '{text}'
@@ -487,20 +459,16 @@ class Media(models.Model):
     def _invalidate_permission_cache(self):
         """
         Invalidate cached permissions when media permissions change.
-
         This method is called automatically when:
         - Media state changes (public ↔ private ↔ restricted ↔ unlisted)
         - Media password changes (for restricted content)
         - Any other permission-related changes
-
         The cache invalidation ensures that users see updated permissions
         immediately after changes, maintaining data consistency.
-
         Uses the clear_media_permission_cache utility function which:
         - Clears specific user/media combinations if possible
         - Falls back to pattern-based clearing for all users
         - Handles errors gracefully without breaking functionality
-
         Cache invalidation is controlled by ENABLE_PERMISSION_CACHE setting.
         """
         if not getattr(settings, "ENABLE_PERMISSION_CACHE", True):
@@ -550,7 +518,6 @@ class Media(models.Model):
                 self.media_type = "audio"
             else:
                 self.media_type = "video"
-
         if self.media_type in ["image", "pdf"]:
             self.encoding_status = "success"
         else:
@@ -568,7 +535,6 @@ class Media(models.Model):
             else:
                 self.media_type = ""
                 self.encoding_status = "fail"
-
             if ret.get("is_video"):
                 self.media_type = "video"
                 self.duration = int(round(float(ret.get("video_duration", 0))))
@@ -577,7 +543,6 @@ class Media(models.Model):
                 self.media_type = "audio"
                 self.duration = int(float(ret.get("audio_info", {}).get("duration", 0)))
                 self.encoding_status = "success"
-
         if save:
             self.save(
                 update_fields=[
@@ -609,13 +574,11 @@ class Media(models.Model):
     def produce_thumbnails_from_video(self):
         if not self.media_type == "video":
             return False
-
         if self.thumbnail_time and 0 <= self.thumbnail_time < self.duration:
             thumbnail_time = self.thumbnail_time
         else:
             thumbnail_time = round(random.uniform(0, self.duration - 0.1), 1)
             self.thumbnail_time = thumbnail_time  # so that it gets saved
-
         tf = helpers.create_temp_file(suffix=".jpg")
         command = [
             settings.FFMPEG_COMMAND,
@@ -631,7 +594,6 @@ class Media(models.Model):
             tf,
         ]
         ret = helpers.run_command(command)
-
         if os.path.exists(tf) and helpers.get_file_type(tf) == "image":
             with open(tf, "rb") as f:
                 myfile = File(f)
@@ -651,7 +613,6 @@ class Media(models.Model):
         if not profiles:
             profiles = EncodeProfile.objects.filter(active=True)
         profiles = list(profiles)
-
         from . import tasks
 
         if self.duration > settings.CHUNKIZE_VIDEO_DURATION and chunkize:
@@ -690,7 +651,6 @@ class Media(models.Model):
                     kwargs={"force": force},
                     priority=priority,
                 )
-
         return True
 
     def post_encode_actions(self, encoding=None, action=None):
@@ -705,7 +665,6 @@ class Media(models.Model):
                 else:
                     self.preview_file_path = encoding.media_file.path
                 self.save(update_fields=["encoding_status", "preview_file_path"])
-
         self.save(update_fields=["encoding_status"])
         if (
             encoding
@@ -717,7 +676,6 @@ class Media(models.Model):
 
             # TODO: check that this will not run many times in a row
             tasks.create_hls.delay(self.friendly_token)
-
         return True
 
     def set_encoding_status(self):
@@ -727,7 +685,6 @@ class Media(models.Model):
             encoding.status
             for encoding in self.encodings.filter(profile__extension="mp4", chunk=False)
         )
-
         if not mp4_statuses:
             # media is just created, profiles were not created yet
             encoding_status = "pending"
@@ -738,7 +695,6 @@ class Media(models.Model):
         else:
             encoding_status = "fail"
         self.encoding_status = encoding_status
-
         return True
 
     @property
@@ -755,7 +711,6 @@ class Media(models.Model):
             enc = self.get_encoding_info(encoding, full=full)
             resolution = encoding.profile.resolution
             ret[resolution][encoding.profile.codec] = enc
-
         # if a file is broken in chunks and they are being
         # encoded, the final encoding file won't appear until
         # they are finished. Thus, produce the info for these
@@ -1102,7 +1057,6 @@ class Category(models.Model):
     def thumbnail_url(self):
         if self.thumbnail:
             return helpers.url_from_path(self.thumbnail.path)
-
         if self.listings_thumbnail:
             return self.listings_thumbnail
         media = (
@@ -1150,10 +1104,8 @@ class Topic(models.Model):
     def thumbnail_url(self):
         if self.thumbnail:
             return helpers.url_from_path(self.thumbnail.path)
-
         if self.listings_thumbnail:
             return self.listings_thumbnail
-
         return None
 
     def update_tag_media(self):
@@ -1206,7 +1158,6 @@ class Tag(models.Model):
         )
         if media:
             return media.thumbnail_url
-
         return None
 
 
@@ -1289,7 +1240,6 @@ class MediaCountry(models.Model):
             # MediaCountry exists but not found in video_countries list
             # Set count to 0 and log warning
             self.media_count = 0
-
             logger.warning(
                 f"MediaCountry '{self.title}' has no corresponding entry in video_countries list. "
                 f"Media count set to 0."
@@ -1369,7 +1319,6 @@ class Encoding(models.Model):
             if stdout:
                 md5sum = stdout.strip().split()[0]
                 self.md5sum = md5sum
-
         super(Encoding, self).save(*args, **kwargs)
 
     def set_progress(self, progress, commit=True):
@@ -1416,33 +1365,26 @@ class Subtitle(models.Model):
         Convert uploaded subtitle files to VTT format for web playback.
         Uses FFmpeg (already available in CinemataCMS) instead of pysubs2.
         Accepts both SRT and VTT input formats.
-
         SAFETY: This method is ONLY called on NEW subtitle uploads, never on existing files.
         Existing subtitles in Cinemata.org remain completely untouched.
         """
         input_path = self.subtitle_file.path
-
         # Validate file exists
         if not os.path.exists(input_path):
             raise Exception("Subtitle file not found")
-
         # Check file extension
         file_lower = input_path.lower()
-
         if not (file_lower.endswith(".srt") or file_lower.endswith(".vtt")):
             raise Exception(
                 "Invalid subtitle format. Use SubRip (.srt) and WebVTT (.vtt) files."
             )
-
         # If already VTT, no conversion needed
         if file_lower.endswith(".vtt"):
             return True
-
         logger.info(f"Converting new subtitle upload: {input_path}")
         # Convert SRT to VTT using FFmpeg (already configured in CinemataCMS)
         with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as tmpdirname:
             temp_vtt = os.path.join(tmpdirname, "converted.vtt")
-
             cmd = [
                 settings.FFMPEG_COMMAND,  # Already configured in CinemataCMS
                 "-i",
@@ -1451,7 +1393,6 @@ class Subtitle(models.Model):
                 "webvtt",
                 temp_vtt,
             ]
-
             try:
                 ret = helpers.run_command(cmd)
                 if ret and ret.get("returncode", 0) != 0:
@@ -1459,12 +1400,10 @@ class Subtitle(models.Model):
                         f"FFmpeg failed with code {ret.get('returncode')}: {ret.get('err')}"
                     )
                     raise Exception("FFmpeg conversion failed")
-
                 if os.path.exists(temp_vtt) and os.path.getsize(temp_vtt) > 0:
                     # Replace original file with VTT version
                     shutil.copy2(temp_vtt, input_path)
                     logger.info(f"Successfully converted subtitle to VTT: {input_path}")
-
                     # Update file extension to .vtt if it was .srt
                     if file_lower.endswith(".srt"):
                         new_path = input_path.replace(".srt", ".vtt").replace(
@@ -1482,11 +1421,9 @@ class Subtitle(models.Model):
                             )
                 else:
                     raise Exception("FFmpeg conversion failed - no output file created")
-
             except Exception as e:
                 logger.error(f"Subtitle conversion failed for {input_path}: {str(e)}")
                 raise Exception(f"Could not convert SRT file to VTT format: {str(e)}")
-
             return True
 
 
@@ -1687,15 +1624,12 @@ class HomepagePopup(models.Model):
     text = models.TextField(
         "Pop-up name", blank=True, help_text="This will not appear on the pop-up"
     )
-
     popup = models.FileField(
         "popup",
         help_text="Only this image will appear on the pop-up. Ideal image size is 900 x 650 pixels",
         max_length=500,
     )
-
     url = models.CharField("URL", max_length=300)
-
     add_date = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
 
@@ -1730,6 +1664,12 @@ class IndexPageFeatured(models.Model):
         default=1, help_text="ordering, 1 comes first, 2 follows etc"
     )
     text = models.TextField(help_text="text", blank=True, null=True)
+    text = models.TextField(
+        blank=True,
+        help_text="Description text. HTML links allowed for internal URLs only (e.g., /about, /blog-post)",
+        validators=[validate_internal_html],
+        null=True,
+    )
 
     def __str__(self):
         return f"{self.title} - {self.url} - {self.ordering}"
@@ -1784,7 +1724,6 @@ def media_save(sender, instance, created, **kwargs):
     # once model is saved
     # SOS: do not put anything here, as if more logic is added,
     # we have to disconnect signal to avoid infinite recursion
-
     if created:
         instance.media_init()
         notify_users(friendly_token=instance.friendly_token, action="media_added")
@@ -1800,14 +1739,12 @@ def media_save(sender, instance, created, **kwargs):
     if instance.topics.all():
         for topic in instance.topics.all():
             topic.update_tag_media()
-
     if instance.media_country:
         country = dict(lists.video_countries).get(instance.media_country)
         if country:
             cntry = MediaCountry.objects.filter(title=country).first()
             if cntry:
                 cntry.update_country_media()
-
     if instance.media_language:
         language_title = dict(
             Language.objects.exclude(
@@ -1905,30 +1842,25 @@ def encoding_file_save(sender, instance, created, **kwargs):
             except:
                 instance.delete()
                 return False
-
             chunks = Encoding.objects.filter(
                 media=instance.media,
                 profile=instance.profile,
                 chunks_info=instance.chunks_info,
                 chunk=True,
             ).order_by("add_date")
-
             complete = True
             # perform validation, make sure everything is there
             for chunk in orig_chunks:
                 if not chunks.filter(chunk_file_path=chunk):
                     complete = False
                     break
-
             for chunk in chunks:
                 if not (chunk.media_file and chunk.media_file.path):
                     complete = False
                     break
-
             if complete:
                 # this should run only once!
                 chunks_paths = [f.media_file.path for f in chunks]
-
                 with tempfile.TemporaryDirectory(
                     dir=settings.TEMP_DIRECTORY
                 ) as temp_dir:
@@ -1957,7 +1889,6 @@ def encoding_file_save(sender, instance, created, **kwargs):
                         tf,
                     ]
                     stdout = helpers.run_command(cmd)
-
                     encoding = Encoding(
                         media=instance.media,
                         profile=instance.profile,
@@ -1970,12 +1901,10 @@ def encoding_file_save(sender, instance, created, **kwargs):
                     )
                     workers = list(set([st.worker for st in chunks]))
                     encoding.worker = json.dumps({"workers": workers})
-
                     start_date = min([st.add_date for st in chunks])
                     end_date = max([st.update_date for st in chunks])
                     encoding.total_run_time = (end_date - start_date).seconds
                     encoding.save()
-
                     with open(tf, "rb") as f:
                         myfile = File(f)
                         output_name = "{0}.{1}".format(
@@ -1983,7 +1912,6 @@ def encoding_file_save(sender, instance, created, **kwargs):
                             instance.profile.extension,
                         )
                         encoding.media_file.save(content=myfile, name=output_name)
-
                     # encoding is saved, deleting chunks
                     # and any other encoding that might exist
                     # first perform one last validation
@@ -2028,7 +1956,6 @@ def encoding_file_save(sender, instance, created, **kwargs):
                             print("deleting chunk: %s" % chunk)
                             helpers.rm_file(chunk)
                     instance.media.post_encode_actions(encoding=instance, action="add")
-
     elif instance.chunk and instance.status == "fail":
         encoding = Encoding(
             media=instance.media, profile=instance.profile, status="fail", progress=100
@@ -2037,7 +1964,6 @@ def encoding_file_save(sender, instance, created, **kwargs):
             media=instance.media, chunks_info=instance.chunks_info, chunk=True
         ).order_by("add_date")
         chunks_paths = [f.media_file.path for f in chunks]
-
         all_logs = "\n".join([st.logs for st in chunks])
         encoding.logs = "{0}\n{1}\n{2}".format(chunks_paths, all_logs)
         workers = list(set([st.worker for st in chunks]))
@@ -2046,7 +1972,6 @@ def encoding_file_save(sender, instance, created, **kwargs):
         end_date = max([st.update_date for st in chunks])
         encoding.total_run_time = (end_date - start_date).seconds
         encoding.save()
-
         who = Encoding.objects.filter(
             media=encoding.media, profile=encoding.profile
         ).exclude(id=encoding.id)
@@ -2060,7 +1985,6 @@ def encoding_file_save(sender, instance, created, **kwargs):
     else:
         if instance.status in ["fail", "success"]:
             instance.media.post_encode_actions(encoding=instance, action="add")
-
         encodings = set(
             [
                 encoding.status
@@ -2083,8 +2007,6 @@ def encoding_file_save(sender, instance, created, **kwargs):
 # for worker in workers:
 #     if worker != 'localhost':
 #          remove_media_file.delay(media_file=instance.media.media_file.path)
-
-
 @receiver(post_delete, sender=Encoding)
 def encoding_file_delete(sender, instance, **kwargs):
     """
@@ -2113,11 +2035,9 @@ def comment_delete(sender, instance, **kwargs):
 def media_pre_save(sender, instance, **kwargs):
     """
     Track state changes for cache invalidation.
-
     This signal handler runs before Media.save() and captures the current
     state and password from the database to compare with new values.
     This enables automatic cache invalidation when permissions change.
-
     The captured values are stored as private attributes on the instance
     and used in the save() method to determine if cache invalidation is needed.
     """
