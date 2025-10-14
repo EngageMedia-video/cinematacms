@@ -5,7 +5,7 @@ from django.contrib import admin
 from tinymce.widgets import TinyMCE
 
 from users.models import User
-from users.validators import validate_internal_html, sanitize_html
+from users.validators import validate_internal_html
 
 from .models import (
     Category,
@@ -190,7 +190,7 @@ class IndexPageFeaturedAdminForm(forms.ModelForm):
                 "placeholder": "Enter description text. HTML links allowed (use /page-url for internal links only).",
             }
         ),
-        help_text='HTML formatting allowed. Links must be internal (start with / or #). Example: <a href="/about">About Us</a>',
+        help_text="HTML formatting allowed. Links must be internal (start with / or #). Example: &lt;a href=&quot;/about&quot;&gt;About Us&lt;/a&gt;",
     )
 
     class Meta:
@@ -201,15 +201,14 @@ class IndexPageFeaturedAdminForm(forms.ModelForm):
         """
         Validate and sanitize HTML content for admin form.
 
-        1. First validates that only allowed tags and internal links are present
-        2. Then sanitizes by removing dangerous attributes and cleaning the HTML
+        1. Validates that only allowed tags and internal links are present
+        2. Sanitizes by removing dangerous tags
         3. Returns the cleaned value that will be persisted to the database
         """
         content = self.cleaned_data["text"]
-        # Validate - will raise ValidationError if disallowed content found
-        validate_internal_html(content)
-        # Sanitize and return cleaned value for persistence
-        return sanitize_html(content)
+        # Validate and sanitize - will raise ValidationError if disallowed content found
+        # Returns the cleaned value for persistence
+        return validate_internal_html(content)
 
 
 class IndexPageFeaturedAdmin(admin.ModelAdmin):
