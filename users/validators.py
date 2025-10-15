@@ -50,9 +50,10 @@ def validate_internal_html(value):
     # Validate each URL in href attributes
     for url in links:
         if not is_valid_url(url):
-            raise ValidationError(
-                f"Invalid or external URL detected: {url}. Only internal links (starting with / or #) are allowed."
-            )
+            if not is_valid_url(url):
+                raise ValidationError(
+                   f"Invalid URL detected: {url}. Only internal links (starting with / or #) or external links (starting with http:// or https://) are allowed."
+                )
 
     # Solution 2: Block dangerous HTML tags with bounded repetition
     dangerous_tags = [
