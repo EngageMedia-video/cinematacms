@@ -188,7 +188,16 @@ class SecureMediaView(View):
 
         # Combine allowed video/media prefixes with public media paths for validation
         allowed_prefixes = [
-            'videos/media/', 'videos/encoded/', 'videos/subtitles/', 'other_media/'
+         # Video-specific paths (with videos/ prefix)
+        'videos/media/', 
+        'videos/encoded/', 
+        'videos/subtitles/', 
+        'other_media/',
+        
+        # Standalone media paths (critical for video processing)
+        'hls/',       # HLS streaming files (REQUIRED for playback)
+        'encoded/',   # Encoded video files (REQUIRED for transcoding)
+        'original/'   # Original media files (REQUIRED for various operations)
         ]
         
         # Add public paths and their "original/" variants to the list of allowed paths
