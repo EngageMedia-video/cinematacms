@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import EmailMessage, send_mail
 from django.db.models import Q
+from django.utils import timezone
 
 from cms import celery_app
 
@@ -107,7 +108,7 @@ def pre_save_action(media, user, session_key, action, remote_ip):
             return False  # has alread done action once
         elif action == "watch" and user:
             if media.duration:
-                now = datetime.now(query.action_date.tzinfo)
+                now = timezone.now()
                 if (now - query.action_date).total_seconds() > media.duration:
                     return True
     else:
@@ -115,21 +116,28 @@ def pre_save_action(media, user, session_key, action, remote_ip):
             return True
 
     if not user:
-        query = (
-            MediaAction.objects.filter(media=media, action=action, remote_ip=remote_ip)
-            .filter(user=None)
-            .order_by("-action_date")
-        )
-        if query:
-            query = query.first()
-            now = datetime.now(query.action_date.tzinfo)
-            if action == "watch":
-                if not (now - query.action_date).seconds > media.duration:
-                    return False
-            if (now - query.action_date).seconds > settings.TIME_TO_ACTION_ANONYMOUS:
-                return True
-        else:
-            return True
+        # For anonymous users with valid sessions, we already checked session-based records above
+        # If no session record exists, this is likely a new user
+        # Apply lightweight rate limiting to prevent spam while allowing legitimate NAT/proxy users
+        
+        if action == "watch":
+            # Check recent views from this IP (helps prevent rapid cookie-clearing spam)
+            recent_cutoff = timezone.now() - timedelta(minutes=1)
+            recent_views = MediaAction.objects.filter(
+                media=media,
+                action="watch",
+                remote_ip=remote_ip,
+                user=None,
+                action_date__gte=recent_cutoff
+            ).count()
+            
+            # Allow up to 3 views per minute from same IP (configurable)
+            max_views_per_minute = getattr(settings, 'MAX_ANONYMOUS_VIEWS_PER_MINUTE', 3)
+            if recent_views >= max_views_per_minute:
+                return False
+        
+        # For other actions or within limits, allow
+        return True
 
     return False
 

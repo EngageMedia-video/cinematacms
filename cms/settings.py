@@ -261,6 +261,10 @@ CELERY_BEAT_SCHEDULE = {
 # per ip address limit, for actions as like/dislike/report
 TIME_TO_ACTION_ANONYMOUS = 10 * 60
 
+# Anonymous user rate limiting to prevent spam while allowing NAT/proxy users
+# Maximum views allowed from same IP per minute (helps prevent cookie-clearing spam)
+MAX_ANONYMOUS_VIEWS_PER_MINUTE = 3
+
 # django-allauth settings
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
