@@ -1663,7 +1663,6 @@ class IndexPageFeatured(models.Model):
     ordering = models.IntegerField(
         default=1, help_text="ordering, 1 comes first, 2 follows etc"
     )
-    text = models.TextField(help_text="text", blank=True, null=True)
     text = models.TextField(
         blank=True,
         help_text="Description text. HTML links allowed for internal URLs only (e.g., /about, /blog-post)",

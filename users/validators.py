@@ -25,6 +25,8 @@ def validate_internal_html(value):
     This lightweight validator:
     - Checks all <a> tags have valid URLs (internal: /, # or external: http://, https://)
     - Strips dangerous tags like <script>, <iframe>
+    - Strips event handler attributes (onclick, onerror, etc.)
+    - Strips dangerous attributes (style, formaction, etc.)
     - Uses regex - no additional dependencies needed
     Args:
         value (str): The HTML content to validate
@@ -57,6 +59,39 @@ def validate_internal_html(value):
         )
         # Remove self-closing tags
         value = re.sub(f"<{tag}[^>]*/?>", "", value, flags=re.IGNORECASE)
+
+    # Strip event handler attributes (onclick, onerror, onload, etc.)
+    event_handlers = [
+        "onclick", "onerror", "onload", "onmouseover", "onmouseout",
+        "onfocus", "onblur", "onchange", "onsubmit", "onkeydown",
+        "onkeyup", "onkeypress", "onmousedown", "onmouseup", "onmousemove",
+        "ondblclick", "oncontextmenu", "oninput", "oninvalid", "onreset",
+        "onsearch", "onselect", "ondrag", "ondrop", "onscroll", "oncopy",
+        "oncut", "onpaste", "onabort", "oncanplay", "oncanplaythrough",
+        "oncuechange", "ondurationchange", "onemptied", "onended", "onloadeddata",
+        "onloadedmetadata", "onloadstart", "onpause", "onplay", "onplaying",
+        "onprogress", "onratechange", "onseeked", "onseeking", "onstalled",
+        "onsuspend", "ontimeupdate", "onvolumechange", "onwaiting",
+    ]
+    for handler in event_handlers:
+        # Remove event handler attributes
+        value = re.sub(
+            rf'\s+{handler}\s*=\s*["\'][^"\']*["\']',
+            "",
+            value,
+            flags=re.IGNORECASE
+        )
+
+    # Strip other dangerous attributes
+    dangerous_attrs = ["style", "formaction", "srcdoc", "data"]
+    for attr in dangerous_attrs:
+        # Remove dangerous attributes from all tags
+        value = re.sub(
+            rf'\s+{attr}\s*=\s*["\'][^"\']*["\']',
+            "",
+            value,
+            flags=re.IGNORECASE
+        )
 
     return value
 
