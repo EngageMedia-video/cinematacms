@@ -50,10 +50,9 @@ def validate_internal_html(value):
     # Validate each URL in href attributes
     for url in links:
         if not is_valid_url(url):
-            if not is_valid_url(url):
-                raise ValidationError(
-                   f"Invalid URL detected: {url}. Only internal links (starting with / or #) or external links (starting with http:// or https://) are allowed."
-                )
+            raise ValidationError(
+                f"Invalid URL detected: {url}. Only internal links (starting with / or #) or external links (starting with http:// or https://) are allowed."
+            )
 
     # Solution 2: Block dangerous HTML tags with bounded repetition
     dangerous_tags = [
@@ -134,14 +133,16 @@ def validate_internal_html(value):
         "onvolumechange",
     ]
     for handler in event_handlers:
-        # Match handler with or without value assignment
-        if re.search(f"{handler}\\s*=", value, re.IGNORECASE):
+        # Match handler with or without value assignment (boolean attributes)
+        # Matches: onclick="..." or onclick='...' or onclick or onclick>
+        if re.search(f"\\b{handler}(\\s*=|\\s|>)", value, re.IGNORECASE):
             raise ValidationError(f"Event handler not allowed: {handler}")
 
     # Block dangerous attributes
     dangerous_attrs = ["style", "formaction", "srcdoc", "data"]
     for attr in dangerous_attrs:
-        if re.search(f"\\b{attr}\\s*=", value, re.IGNORECASE):
+        # Match attribute with or without value (boolean attributes)
+        if re.search(f"\\b{attr}(\\s*=|\\s|>)", value, re.IGNORECASE):
             raise ValidationError(f"Dangerous attribute not allowed: {attr}")
 
     return value
