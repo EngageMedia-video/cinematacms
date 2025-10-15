@@ -23,20 +23,71 @@ def validate_internal_html(value):
     """
     Validate HTML content allowing internal and external links.
     This lightweight validator:
+    - Validates HTML is well-formed (no incomplete tags)
+    - Requires all <a> tags to have href attributes
     - Checks all <a> tags have valid URLs (internal: /, # or external: http://, https://)
-    - Strips dangerous tags like <script>, <iframe>
-    - Strips event handler attributes (onclick, onerror, etc.)
-    - Strips dangerous attributes (style, formaction, etc.)
+    - Blocks dangerous tags (script, iframe, object, embed, form, input, base, link, meta, svg)
+    - Blocks event handler attributes (onclick, onerror, etc.) with or without values
+    - Blocks dangerous attributes (style, formaction, srcdoc, data) with or without values
     - Uses regex - no additional dependencies needed
     Args:
         value (str): The HTML content to validate
     Returns:
-        str: Sanitized HTML content
+        str: The HTML content if valid
     Raises:
-        ValidationError: If invalid or potentially dangerous links are found
+        ValidationError: If invalid or potentially dangerous content is found
     """
     if not value:
         return value
+
+    # Check for malformed/incomplete HTML tags (tags not properly closed with >)
+    # This prevents bypass attempts with incomplete tags like "<a onclick" or "<script"
+    if re.search(r'<\w+[^>]*$', value.strip()):
+        raise ValidationError(
+            "Invalid HTML: Tag is not properly closed. All tags must end with '>'."
+        )
+
+    # Check for <a> tags without href attribute
+    # Find all <a> opening tags and check if they contain href
+    anchor_tags = re.findall(r'<a\s[^>]*>', value, re.IGNORECASE)
+    for tag in anchor_tags:
+        if not re.search(r'\bhref\s*=', tag, re.IGNORECASE):
+            raise ValidationError(
+                "Invalid HTML: <a> tags must have an href attribute."
+            )
+
+    # Check for <a> tags with no attributes at all
+    if re.search(r'<a\s*>', value, re.IGNORECASE):
+        raise ValidationError(
+            "Invalid HTML: <a> tags must have an href attribute."
+        )
+
+    # Check for dangerous tags that could execute code
+    dangerous_tags = [
+        "script",
+        "iframe",
+        "object",
+        "embed",
+        "form",
+        "input",
+        "base",
+        "link",
+        "meta",
+        "svg",
+    ]
+    for tag in dangerous_tags:
+        # Check for opening tags (with or without attributes)
+        if re.search(f"<{tag}[^>]*>", value, re.IGNORECASE):
+            raise ValidationError(
+                f"Dangerous tag detected: <{tag}>. "
+                f"This tag is not allowed for security reasons."
+            )
+        # Check for self-closing tags
+        if re.search(f"<{tag}[^>]*/>", value, re.IGNORECASE):
+            raise ValidationError(
+                f"Dangerous tag detected: <{tag}/>. "
+                f"This tag is not allowed for security reasons."
+            )
 
     # Find all <a> tags with href attributes
     link_pattern = r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>'
@@ -50,48 +101,75 @@ def validate_internal_html(value):
                 f'Only internal links (starting with "/" or "#") or external links (starting with "http://" or "https://") are permitted.'
             )
 
-    # Strip dangerous tags that could execute code
-    dangerous_tags = ["script", "iframe", "object", "embed", "form", "input"]
-    for tag in dangerous_tags:
-        # Remove opening and closing tags with any content
-        value = re.sub(
-            f"<{tag}[^>]*>.*?</{tag}>", "", value, flags=re.IGNORECASE | re.DOTALL
-        )
-        # Remove self-closing tags
-        value = re.sub(f"<{tag}[^>]*/?>", "", value, flags=re.IGNORECASE)
-
-    # Strip event handler attributes (onclick, onerror, onload, etc.)
+    # Block event handler attributes (onclick, onerror, onload, etc.)
     event_handlers = [
-        "onclick", "onerror", "onload", "onmouseover", "onmouseout",
-        "onfocus", "onblur", "onchange", "onsubmit", "onkeydown",
-        "onkeyup", "onkeypress", "onmousedown", "onmouseup", "onmousemove",
-        "ondblclick", "oncontextmenu", "oninput", "oninvalid", "onreset",
-        "onsearch", "onselect", "ondrag", "ondrop", "onscroll", "oncopy",
-        "oncut", "onpaste", "onabort", "oncanplay", "oncanplaythrough",
-        "oncuechange", "ondurationchange", "onemptied", "onended", "onloadeddata",
-        "onloadedmetadata", "onloadstart", "onpause", "onplay", "onplaying",
-        "onprogress", "onratechange", "onseeked", "onseeking", "onstalled",
-        "onsuspend", "ontimeupdate", "onvolumechange", "onwaiting",
+        "onclick",
+        "onerror",
+        "onload",
+        "onmouseover",
+        "onmouseout",
+        "onfocus",
+        "onblur",
+        "onchange",
+        "onsubmit",
+        "onkeydown",
+        "onkeyup",
+        "onkeypress",
+        "onmousedown",
+        "onmouseup",
+        "onmousemove",
+        "ondblclick",
+        "oncontextmenu",
+        "oninput",
+        "oninvalid",
+        "onreset",
+        "onsearch",
+        "onselect",
+        "ondrag",
+        "ondrop",
+        "onscroll",
+        "oncopy",
+        "oncut",
+        "onpaste",
+        "onabort",
+        "oncanplay",
+        "oncanplaythrough",
+        "oncuechange",
+        "ondurationchange",
+        "onemptied",
+        "onended",
+        "onloadeddata",
+        "onloadedmetadata",
+        "onloadstart",
+        "onpause",
+        "onplay",
+        "onplaying",
+        "onprogress",
+        "onratechange",
+        "onseeked",
+        "onseeking",
+        "onstalled",
+        "onsuspend",
+        "ontimeupdate",
+        "onvolumechange",
+        "onwaiting",
     ]
     for handler in event_handlers:
-        # Remove event handler attributes
-        value = re.sub(
-            rf'\s+{handler}\s*=\s*["\'][^"\']*["\']',
-            "",
-            value,
-            flags=re.IGNORECASE
-        )
+        # Block if event handler attribute is found (with or without value)
+        # Matches: onclick="..." or onclick='...' or onclick (boolean attribute)
+        if re.search(rf'\s+{handler}(\s*=|\s|>)', value, flags=re.IGNORECASE):
+            raise ValidationError(
+                f"Event handler attributes are not allowed. Found: {handler}"
+            )
 
-    # Strip other dangerous attributes
+    # Block dangerous attributes
     dangerous_attrs = ["style", "formaction", "srcdoc", "data"]
     for attr in dangerous_attrs:
-        # Remove dangerous attributes from all tags
-        value = re.sub(
-            rf'\s+{attr}\s*=\s*["\'][^"\']*["\']',
-            "",
-            value,
-            flags=re.IGNORECASE
-        )
+        # Block if dangerous attribute is found (with or without value)
+        if re.search(rf'\s+{attr}(\s*=|\s|>)', value, flags=re.IGNORECASE):
+            raise ValidationError(
+                f"Dangerous attributes are not allowed. Found: {attr}"
+            )
 
     return value
 
