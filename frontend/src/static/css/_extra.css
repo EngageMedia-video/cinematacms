@@ -3306,12 +3306,12 @@ body .hw-category {
 }
 
 body .hw-category-title {
-	color: #fff;
+	color: var(--item-title-text-color);
 	margin: 30px 0 0 0;
 }
 
 body .hw-category-description {
-	color: #fff;
+	color: var(--body-text-color);
 	padding: 5px 0 30px 0;
 	max-width: 512px;
 }
