@@ -28,7 +28,8 @@ logger = logging.getLogger(__name__)
 # Configuration constants
 CACHE_CONTROL_MAX_AGE = 604800  # 1 week
 PUBLIC_MEDIA_PATHS = [
-    'thumbnails/', 'userlogos/', 'logos/', 'favicons/', 'social-media-icons/','tinymce_media/'
+    'thumbnails/', 'userlogos/', 'logos/', 'favicons/', 'social-media-icons/',
+    'tinymce_media/', 'homepage-popups/'
 ]
 
 # Security headers for different content types
@@ -174,23 +175,45 @@ class SecureMediaView(View):
             return resp
 
         return self._serve_file(file_path, head_request)
-
+        
     def _is_valid_file_path(self, file_path: str) -> bool:
         """Enhanced path validation with security checks."""
         # Check for path traversal and invalid characters
         if self.INVALID_PATH_PATTERNS.search(file_path):
             return False
-
+        
         # Check if path starts with /
         if file_path.startswith('/'):
             return False
 
-        allowed_prefixes = tuple(['original/', 'encoded/', 'hls/'] + PUBLIC_MEDIA_PATHS)
-        if not file_path.startswith(allowed_prefixes):
-            return False
+        # Combine allowed video/media prefixes with public media paths for validation
+        allowed_prefixes = [
+         # Video-specific paths (with videos/ prefix)
+        'videos/media/', 
+        'videos/encoded/', 
+        'videos/subtitles/', 
+        'other_media/',
+        
+        # Standalone media paths (critical for video processing)
+        'hls/',       # HLS streaming files (REQUIRED for playback)
+        'encoded/',   # Encoded video files (REQUIRED for transcoding)
+        'original/'   # Original media files (REQUIRED for various operations)
+        ]
+        
+        # Add public paths and their "original/" variants to the list of allowed paths
+        # to ensure they are not incorrectly blocked.
+        for public_path in PUBLIC_MEDIA_PATHS:
+            allowed_prefixes.append(public_path)
+            # Some public assets like thumbnails can also be in an 'original' directory
+            original_path = f"original/{public_path}"
+            if original_path not in allowed_prefixes:
+                allowed_prefixes.append(original_path)
 
-        return len(file_path) <= 500
+        # Check if the file path starts with any of the allowed prefixes
+        if any(file_path.startswith(prefix) for prefix in allowed_prefixes):
+            return True
 
+        return False
 
     def _get_media_from_path(self, file_path: str) -> Optional[Media]:
         """Extract media object from file path using filename matching."""
@@ -283,17 +306,23 @@ class SecureMediaView(View):
             return False
 
     def _is_public_media_file(self, file_path: str) -> bool:
-        """Check if the file is a public asset that bypasses media permissions."""
-        # Check for public paths in both direct and original/ subdirectories
-        public_check = any(
-            file_path.startswith(public_path) or
-            file_path.startswith(f'original/{public_path}')
-            for public_path in PUBLIC_MEDIA_PATHS
-        )
+        """
+        Check if a media file is considered public based on its path.
+        Public files are those in specific allowed directories.
+        """
+        # Paths that store files with 'original/' prefix (Media-related assets)
+        ORIGINAL_PREFIX_PATHS = ['thumbnails/', 'userlogos/']
+        # Check if the file is in any of the public media directories
+        for public_path in PUBLIC_MEDIA_PATHS:
+            if file_path.startswith(public_path):
+                return True
+            # Only check original/ variants for Media-related paths
+            if public_path in ORIGINAL_PREFIX_PATHS:
+                original_path = f"original/{public_path}"
+                if file_path.startswith(original_path):
+                    return True
 
-        # Also check for subtitle files which should be publicly accessible if they match subtitle patterns
-        # but still require media permission checks
-        return public_check
+        return False
 
     def _is_non_video_file(self, file_path: str) -> bool:
         """Check if the file is not a video file and can bypass authorization."""
