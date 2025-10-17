@@ -3306,14 +3306,52 @@ body .hw-category {
 }
 
 body .hw-category-title {
-	color: #fff;
+	color: var(--item-title-text-color);
 	margin: 30px 0 0 0;
 }
 
 body .hw-category-description {
+	color: var(--body-text-color);
+	padding: 5px 0 30px 0;
+	max-width: 512px;
+}
+
+body .hw-even-list .hw-category-title {
+	color: #fff;
+	margin: 30px 0 0 0;
+}
+
+body .hw-even-list .hw-category-description {
 	color: #fff;
 	padding: 5px 0 30px 0;
 	max-width: 512px;
+}
+
+/* light mode - link color */
+body .hw-odd-list .hw-category-description a {
+	color: #1a3f61;
+	font-weight: 500;
+	text-decoration: underline;
+}
+/* light mode - but dark bg - link color */
+body .hw-even-list .hw-category-description a {
+	color: #bad8dd;
+	font-weight: 500;
+	text-decoration: underline;
+}
+
+/* dark mode - dark background - link color */
+body.dark_theme .hw-odd-list .hw-category-description a {
+	color: #bad8dd;
+	font-weight: 500;
+	text-decoration: underline;
+}
+
+/* dark mode for even list */
+body.dark_theme .hw-even-list .hw-category-description a {
+	color: #bad8dd;
+	font-weight: 500;
+	text-decoration: underline;
 }
 
 /* View all (link to the category) */
