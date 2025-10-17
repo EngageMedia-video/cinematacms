@@ -261,6 +261,11 @@ CELERY_BEAT_SCHEDULE = {
 # per ip address limit, for actions as like/dislike/report
 TIME_TO_ACTION_ANONYMOUS = 10 * 60
 
+# Anonymous user rate limiting to prevent spam while allowing NAT/proxy users
+# Maximum views allowed from same IP per 5 seconds
+# Allows classrooms/offices (30+ students) while blocking automated spam/bots
+MAX_ANONYMOUS_VIEWS_PER_5SEC = 30
+
 # django-allauth settings
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
@@ -551,6 +556,7 @@ if DEBUG:
         "SHOW_TOOLBAR_CALLBACK": show_toolbar,
         "RENDER_PANELS": True,  # Ensure panels are rendered
         "EXTRA_SIGNALS": [],  # Avoid signal issues
+        "IS_RUNNING_TESTS": False,
     }
 
     # Ensure toolbar static files are accessible

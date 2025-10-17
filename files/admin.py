@@ -5,6 +5,7 @@ from django.contrib import admin
 from tinymce.widgets import TinyMCE
 
 from users.models import User
+from users.validators import validate_internal_html
 
 from .models import (
     Category,
@@ -29,6 +30,7 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
+
 
 class CommentAdmin(admin.ModelAdmin):
     search_fields = ["text"]
@@ -67,12 +69,13 @@ class MediaAdmin(admin.ModelAdmin):
                 # If size is not set, calculate it from the file
                 import os
                 from . import helpers
+
                 file_size = os.path.getsize(obj.media_file.path)
                 return helpers.show_file_size(file_size)
             except (OSError, ValueError):
                 return "N/A"
         return "N/A"
-    
+
     get_file_size.short_description = "File Size"
     get_file_size.admin_order_field = "size"  # Allow sorting by this column
 
@@ -158,14 +161,18 @@ class PageAdminForm(forms.ModelForm):
     description = forms.CharField(widget=TinyMCE())
 
     def clean_description(self):
-        content = self.cleaned_data['description']
+        content = self.cleaned_data["description"]
         # Add sandbox attribute to all iframes
-        content = content.replace('<iframe ', '<iframe sandbox="allow-scripts allow-same-origin allow-presentation" ')
+        content = content.replace(
+            "<iframe ",
+            '<iframe sandbox="allow-scripts allow-same-origin allow-presentation" ',
+        )
         return content
 
     class Meta:
         model = Page
         fields = "__all__"
+
 
 class PageAdmin(admin.ModelAdmin):
     form = PageAdminForm
@@ -175,7 +182,37 @@ class TopMessageAdmin(admin.ModelAdmin):
     list_display = ("text", "add_date", "active")
 
 
+class IndexPageFeaturedAdminForm(forms.ModelForm):
+    text = forms.CharField(
+        widget=forms.Textarea(
+            attrs={
+                "rows": 4,
+                "placeholder": "Enter description text. HTML links allowed for both internal and external URLs.",
+            }
+        ),
+        help_text="HTML formatting allowed. Internal links (start with / or #) and external links (start with http:// or https://) are supported. Example: &lt;a href=&quot;/about&quot;&gt;About Us&lt;/a&gt; or &lt;a href=&quot;https://example.com&quot;&gt;External Link&lt;/a&gt;",
+    )
+
+    class Meta:
+        model = IndexPageFeatured
+        fields = "__all__"
+
+    def clean_text(self):
+        """
+        Validate and sanitize HTML content for admin form.
+
+        1. Validates that only allowed tags and internal links are present
+        2. Sanitizes by removing dangerous tags
+        3. Returns the cleaned value that will be persisted to the database
+        """
+        content = self.cleaned_data["text"]
+        # Validate and sanitize - will raise ValidationError if disallowed content found
+        # Returns the cleaned value for persistence
+        return validate_internal_html(content)
+
+
 class IndexPageFeaturedAdmin(admin.ModelAdmin):
+    form = IndexPageFeaturedAdminForm
     list_display = ("title", "url", "api_url", "ordering", "active")
 
 
@@ -184,91 +221,111 @@ class HomepagePopupAdmin(admin.ModelAdmin):
 
 
 class TranscriptionRequestAdmin(admin.ModelAdmin):
-    list_display = ['media_title', 'add_date', 'language', 'country', 'translate_to_english']
-    search_fields = ['media__title']
-    list_filter = ['translate_to_english', 'add_date']
-    readonly_fields = ['add_date']
-    ordering = ['-add_date']
-    actions = ['delete_selected_requests']
-    
+    list_display = [
+        "media_title",
+        "add_date",
+        "language",
+        "country",
+        "translate_to_english",
+    ]
+    search_fields = ["media__title"]
+    list_filter = ["translate_to_english", "add_date"]
+    readonly_fields = ["add_date"]
+    ordering = ["-add_date"]
+    actions = ["delete_selected_requests"]
+
     def get_actions(self, request):
         """Override to remove the default delete action and keep only our custom one"""
         actions = super().get_actions(request)
         # Remove the default 'delete_selected' action
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
+        if "delete_selected" in actions:
+            del actions["delete_selected"]
         return actions
 
     def media_title(self, obj):
         return obj.media.title if obj.media else "Unknown"
+
     media_title.short_description = "Media Title"
-    
+
     def language(self, obj):
         """Get the language of the media"""
         if obj.media and obj.media.media_language:
             try:
                 media_language = obj.media.media_language
                 language_row = (
-                    Language.objects
-                    .exclude(code__in=["automatic-translation", "automatic"])
+                    Language.objects.exclude(
+                        code__in=["automatic-translation", "automatic"]
+                    )
                     .values("title")
                     .filter(code=media_language)
                     .first()
                 )
-                return (language_row and language_row['title']) or (media_language or "Not specified")
+                return (language_row and language_row["title"]) or (
+                    media_language or "Not specified"
+                )
             except Exception as e:
                 logger.info("Transcription Request Language Not Specified")
                 return "Not specified"
         return "Not specified"
+
     language.short_description = "Language"
-    
+
     def country(self, obj):
         """Get the country of the media"""
         if obj.media and obj.media.media_country:
             # Get the display name from the choices
             from . import lists
+
             country_dict = dict(lists.video_countries)
             return country_dict.get(obj.media.media_country, obj.media.media_country)
         return "Not specified"
+
     country.short_description = "Country"
-    
+
     def delete_selected_requests(self, request, queryset):
         """Allow retranscoding by deleting transcription requests"""
         count = queryset.count()
         media_titles = [req.media.title for req in queryset if req.media]
-        
+
         # Reset the Media model fields to allow retranscoding
         for req in queryset:
             if req.media:
                 req.media.allow_whisper_transcribe = False
                 req.media.allow_whisper_transcribe_and_translate = False
-                req.media.save(update_fields=['allow_whisper_transcribe', 'allow_whisper_transcribe_and_translate'])
+                req.media.save(
+                    update_fields=[
+                        "allow_whisper_transcribe",
+                        "allow_whisper_transcribe_and_translate",
+                    ]
+                )
 
         queryset.delete()
-        
+
         if count == 1:
             self.message_user(
-                request, 
+                request,
                 f"Deleted transcription request for '{media_titles[0]}'. "
-                f"You can now retry transcription from the media interface."
+                f"You can now retry transcription from the media interface.",
             )
         else:
             self.message_user(
-                request, 
+                request,
                 f"Deleted {count} transcription requests. "
-                f"You can now retry transcription for affected media."
+                f"You can now retry transcription for affected media.",
             )
-    
-    delete_selected_requests.short_description = "Delete requests (enable retranscoding)"
+
+    delete_selected_requests.short_description = (
+        "Delete requests (enable retranscoding)"
+    )
 
 
 @admin.register(TinyMCEMedia)
 class TinyMCEMediaAdmin(admin.ModelAdmin):
-    list_display = ['original_filename', 'file_type', 'uploaded_at', 'user']
-    list_filter = ['file_type', 'uploaded_at']
-    search_fields = ['original_filename']
-    readonly_fields = ['uploaded_at']
-    date_hierarchy = 'uploaded_at'
+    list_display = ["original_filename", "file_type", "uploaded_at", "user"]
+    list_filter = ["file_type", "uploaded_at"]
+    search_fields = ["original_filename"]
+    readonly_fields = ["uploaded_at"]
+    date_hierarchy = "uploaded_at"
 
 
 admin.site.register(EncodeProfile, EncodeProfileAdmin)
