@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import EmailMessage, send_mail
 from django.db.models import Q
+from django.utils import timezone
 
 from cms import celery_app
 
@@ -105,30 +106,45 @@ def pre_save_action(media, user, session_key, action, remote_ip):
         query = query.first()
         if action in ["like", "dislike", "report"]:
             return False  # has alread done action once
-        elif action == "watch" and user:
+        elif action == "watch":
+            # Both logged-in and anonymous users can re-watch after video duration
             if media.duration:
-                now = datetime.now(query.action_date.tzinfo)
-                if (now - query.action_date).seconds > media.duration:
+                now = timezone.now()
+                if (now - query.action_date).total_seconds() > media.duration:
                     return True
+            # If no duration or cooldown not passed, fall through to return False
     else:
         if user:  # first time action
             return True
 
     if not user:
-        query = (
-            MediaAction.objects.filter(media=media, action=action, remote_ip=remote_ip)
-            .filter(user=None)
-            .order_by("-action_date")
-        )
-        if query:
-            query = query.first()
-            now = datetime.now(query.action_date.tzinfo)
-            if action == "watch":
-                if not (now - query.action_date).seconds > media.duration:
-                    return False
-            if (now - query.action_date).seconds > settings.TIME_TO_ACTION_ANONYMOUS:
-                return True
-        else:
+        # For anonymous users with valid sessions, we already checked session-based records above
+        # If no session record exists, this is likely a new user
+        # Apply rate limiting to prevent spam while allowing classrooms/offices
+        
+        if action == "watch":
+            now = timezone.now()
+            
+            # Rate limiting: 30 views per 5 seconds from same IP
+            # Allows classrooms/offices (30+ students) while blocking automated spam/bots
+            recent_views = MediaAction.objects.filter(
+                media=media,
+                action="watch",
+                remote_ip=remote_ip,
+                user=None,
+                action_date__gte=now - timedelta(seconds=5)
+            ).count()
+            
+            max_per_5sec = getattr(settings, 'MAX_ANONYMOUS_VIEWS_PER_5SEC', 30)
+            if recent_views >= max_per_5sec:
+                logger.warning(
+                    f"Rate limit: IP {remote_ip} exceeded {max_per_5sec} views/5sec "
+                    f"for media {media.friendly_token}"
+                )
+                return False
+        
+        # Only allow if no previous session record (first-time anonymous user)
+        if not query.exists():
             return True
 
     return False

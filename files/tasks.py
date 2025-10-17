@@ -19,7 +19,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files import File
-from django.db.models import Q
+from django.db.models import F, Q
 
 from actions.models import USER_MEDIA_ACTIONS, MediaAction
 from users.models import User
@@ -934,14 +934,16 @@ def save_user_action(
     ma.save()
 
     if action == "watch":
-        media.views += 1
-        media.save(update_fields=["views"])
+        Media.objects.filter(friendly_token=media.friendly_token).update(views=F('views') + 1)
     elif action == "report":
-        media.reported_times += 1
-
+        Media.objects.filter(friendly_token=media.friendly_token).update(
+            reported_times=F('reported_times') + 1
+        )
+        # Need to refresh to check the threshold
+        media.refresh_from_db()
         if media.reported_times >= settings.REPORTED_TIMES_THRESHOLD:
             media.state = "private"
-        media.save(update_fields=["reported_times", "state"])
+            media.save(update_fields=["state"])
 
         notify_users(
             friendly_token=media.friendly_token,
@@ -949,11 +951,9 @@ def save_user_action(
             extra=extra_info,
         )
     elif action == "like":
-        media.likes += 1
-        media.save(update_fields=["likes"])
+        Media.objects.filter(friendly_token=media.friendly_token).update(likes=F('likes') + 1)
     elif action == "dislike":
-        media.dislikes += 1
-        media.save(update_fields=["dislikes"])
+        Media.objects.filter(friendly_token=media.friendly_token).update(dislikes=F('dislikes') + 1)
 
     return True
 
