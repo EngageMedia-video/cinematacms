@@ -1,7 +1,23 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load static %}
 
-{% block headtitle %}Edit media - {% endblock headtitle %}
+{% block headtitle %}Edit Media - {{PORTAL_NAME}}{% endblock headtitle %}
+
+{% block externallinks %}
+{% if LOAD_FROM_CDN %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" rel="preload" as="script">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js"></script>
+{% else %}
+<link href="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}" rel="preload" as="script">
+<script src="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}"></script>
+{% endif %}
+{% endblock externallinks %}
+
+{% block topimports %}
+<link href="{% static "css/add-media.css" %}" rel="preload" as="style">
+<link href="{% static "css/add-media.css" %}" rel="stylesheet">
+{% endblock topimports %}
 
 {% block innercontent %}
 	<div class="user-action-form-wrap">
@@ -27,8 +43,90 @@
 			 {% for field in form %}
 				 {% if field.name == "media_file" %}
 					<div class="fieldWrapper">
-					{{ field.errors }}
-					{{ field.label_tag }} <div class="current_media_field">{{ field }} </div>
+						<label for="id_media_file">Media Upload</label>
+						<div class="current_media_field" id="current-media-file-info">
+							{% if form.instance.media_file %}
+								<p>Currently: <a href="{{ form.instance.media_file.url }}" target="_blank">{{ form.instance.media_file.name }}</a></p>
+							{% else %}
+								<p>No media file uploaded yet.</p>
+							{% endif %}
+						</div>
+						<div class="media-uploader-section" style="
+							width: 100%;
+							padding: 20px;
+							margin-top: 15px;
+							border: 2px dashed var(--input-border-color, #ccc);
+							background: var(--input-bg-color, #fafafa);
+							border-radius: 4px;
+							box-sizing: border-box;
+							position: relative;
+							z-index: 1;
+						">
+							<p><strong>Upload a new media file (optional):</strong></p>
+
+							<!-- Fine Uploader Template -->
+							<script type="text/template" id="qq-template">
+								<div class="media-uploader-bottom-wrap qq-uploader-selector">
+									<div class="media-uploader-bottom-left-wrap">
+										<div class="media-drag-drop-wrap">
+											<div class="media-drag-drop-inner" qq-drop-area-text="Drop files here">
+												<div class="media-drag-drop-content">
+													<div class="media-drag-drop-content-inner">
+														<span><i class="material-icons">cloud_upload</i></span>
+														<span>Drag and drop file</span>
+														<span>or</span>
+														<span class="browse-files-btn-wrap">
+															<span class="qq-upload-button-selector primaryAction">Browse your files</span>
+														</span>
+														<div class="qq-upload-drop-area-selector media-dropzone" qq-hide-dropzone>
+															<span class="qq-upload-drop-area-text-selector"></span>
+														</div>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="media-uploader-bottom-right-wrap">
+										<ul class="media-upload-items-list qq-upload-list-selector">
+											<li>
+												<div class="media-upload-item-main">
+													<div class="media-upload-item-thumb">
+														<img class="qq-thumbnail-selector" qq-max-size="120" qq-server-scale alt="" />
+														<span class="media-upload-item-spinner qq-upload-spinner-selector"><i class="material-icons">autorenew</i></span>
+														<button type="button" class="qq-upload-retry-selector retry-media-upload-item" aria-label="Retry"><i class="material-icons">refresh</i> Retry</button>
+													</div>
+													<div class="media-upload-item-details">
+														<div class="media-upload-item-name">
+															<span class="media-upload-item-filename qq-upload-file-selector"></span>
+															<input class="media-upload-item-filename-input qq-edit-filename-selector" tab-index="0" type="text" />
+														</div>
+														<div class="media-upload-item-details-bottom">
+															<div class="media-upload-item-progress-bar-container qq-progress-bar-container-selector">
+																<div role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" class="media-upload-item-progress-bar qq-progress-bar-selector"></div>
+															</div>
+															<span class="media-upload-item-upload-size qq-upload-size-selector"></span>
+															<span role="status" class="media-upload-item-status-text qq-upload-status-text-selector"></span>
+														</div>
+														<div class="media-upload-item-top-actions">
+															<span class="filename-edit qq-edit-filename-icon-selector" aria-label="Edit filename">Edit filename <i class="material-icons">create</i></span>
+															<button type="button" class="delete-media-upload-item qq-upload-delete-selector" aria-label="Delete">Delete <i class="material-icons">delete</i></button>
+															<button type="button" class="cancel-media-upload-item qq-upload-cancel-selector" aria-label="Cancel">Cancel <i class="material-icons">cancel</i></button>
+														</div>
+														<div class="media-upload-item-bottom-actions">
+															<button type="button" class="continue-media-upload-item qq-upload-continue-selector" aria-label="Continue"><i class="material-icons">play_circle_outline</i> Continue</button>
+															<button type="button" class="pause-media-upload-item qq-upload-pause-selector" aria-label="Pause"><i class="material-icons">pause_circle_outline</i> Pause</button>
+														</div>
+													</div>
+												</div>
+											</li>
+										</ul>
+									</div>
+								</div>
+							</script>
+
+							<div class="media-uploader" id="media-file-uploader" style="width: 100%;"></div>
+							<div id="upload-status-message" style="margin-top: 10px;"></div>
+						</div>
 					</div>
 
 				{% elif field.name == "allow_whisper_transcribe" %}
@@ -356,12 +454,8 @@
 				let tempList = currentMediaFilePath.split('/');
 				let currentMediaFileName = tempList[tempList.length -1];
 
-				currentMediaFilePath = document.querySelector('.current_media_field a').href;
-				tempList = currentMediaFilePath.split('/media_files/');
-				let currentMediaFileNameURL = `/media/${tempList[tempList.length -1]}`;
-
+				// The href is already correct from Django, just fix the display name
 				document.querySelector('.current_media_field a').innerText = currentMediaFileName;
-				document.querySelector('.current_media_field a').href = currentMediaFileNameURL;
 			}
 
 			let currentUploadedPosterFilePath = document.querySelector('.current_uploaded_poster_field a');
@@ -666,7 +760,704 @@
 
         </script>
 
+		<style>
+			/* Animations for upload progress */
+			@keyframes spin {
+				0% { transform: rotate(0deg); }
+				100% { transform: rotate(360deg); }
+			}
 
+			@keyframes pulse {
+				0% {
+					box-shadow: 0 0 0 0 var(--primary-color-transparent);
+				}
+				70% {
+					box-shadow: 0 0 0 10px transparent;
+				}
+				100% {
+					box-shadow: 0 0 0 0 transparent;
+				}
+			}
+
+			.rotating {
+				animation: spin 2s linear infinite;
+			}
+
+			/* Ensure the media uploader section is interactive */
+			.media-uploader-section {
+				position: relative !important;
+				z-index: 1 !important;
+				overflow: visible !important;
+			}
+
+			/* Style the Fine Uploader component */
+			#media-file-uploader {
+				position: relative;
+				z-index: 10;
+			}
+
+			#media-file-uploader .media-uploader-bottom-wrap {
+				width: 100%;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				position: relative;
+				z-index: 10;
+			}
+
+			#media-file-uploader .media-uploader-bottom-left-wrap {
+				width: 100%;
+				max-width: 600px;
+				margin-bottom: 20px;
+			}
+
+			#media-file-uploader .media-drag-drop-wrap {
+				width: 100%;
+				position: relative;
+				z-index: 10;
+			}
+
+			#media-file-uploader .media-drag-drop-inner {
+				width: 100%;
+				min-height: 200px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				text-align: center;
+				position: relative;
+				z-index: 10;
+			}
+
+			#media-file-uploader .media-drag-drop-content {
+				width: 100%;
+				position: relative;
+				z-index: 10;
+			}
+
+			#media-file-uploader .media-drag-drop-content-inner {
+				padding: 20px;
+			}
+
+			#media-file-uploader .media-drag-drop-content-inner span {
+				display: block;
+				margin: 10px 0;
+			}
+
+			#media-file-uploader .media-uploader-bottom-right-wrap {
+				width: 100%;
+				min-height: 0 !important;
+			}
+
+			/* Hide the upload list container when it has items */
+			#media-file-uploader .media-uploader-bottom-right-wrap:has(li) {
+				display: none !important;
+			}
+
+			/* Make the browse button clickable */
+			#media-file-uploader .qq-upload-button-selector {
+				cursor: pointer !important;
+				pointer-events: auto !important;
+				position: relative;
+				z-index: 100;
+			}
+
+			#media-file-uploader .browse-files-btn-wrap {
+				display: block;
+				margin-top: 10px;
+				position: relative;
+				z-index: 100;
+			}
+
+			/* Ensure the drop zone is interactive */
+			#media-file-uploader .qq-upload-drop-area-selector {
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				z-index: 5;
+			}
+
+			/* Fix for hidden file input */
+			#media-file-uploader input[type="file"] {
+				position: absolute;
+				z-index: -1;
+				opacity: 0;
+			}
+
+			/* Ensure the uploader is visible */
+			#media-file-uploader .qq-uploader {
+				min-height: 200px;
+			}
+
+			/* Upload list styling - hide default Fine Uploader list */
+			#media-file-uploader .qq-upload-list {
+				display: none !important;
+			}
+
+			/* Hide successful upload items from taking space */
+			#media-file-uploader .qq-upload-success {
+				display: none !important;
+			}
+
+			/* Hide all list items to prevent them from taking space */
+			#media-file-uploader .qq-upload-list-selector li {
+				display: none !important;
+			}
+
+			/* Hide filename editing elements */
+			#media-file-uploader .qq-edit-filename-selector,
+			#media-file-uploader .media-upload-item-filename-input {
+				display: none !important;
+			}
+
+			/* Hide edit filename button */
+			#media-file-uploader .qq-edit-filename-icon-selector,
+			#media-file-uploader .filename-edit {
+				display: none !important;
+			}
+
+			/* Ensure the filename span is visible but not editable */
+			#media-file-uploader .media-upload-item-filename {
+				display: inline-block !important;
+			}
+
+			/* Make upload list items more compact */
+			#media-file-uploader .media-upload-items-list {
+				margin: 0;
+				padding: 0;
+			}
+
+			#media-file-uploader .media-upload-items-list li {
+				margin: 0;
+				padding: 10px;
+				background: var(--input-bg-color);
+				border: 1px solid var(--input-border-color);
+				border-radius: 4px;
+			}
+
+			#media-file-uploader .media-upload-item-main {
+				display: flex;
+				align-items: center;
+				gap: 15px;
+			}
+
+			#media-file-uploader .media-upload-item-thumb {
+				flex-shrink: 0;
+				width: 60px;
+				height: 60px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			#media-file-uploader .media-upload-item-thumb img {
+				max-width: 100%;
+				max-height: 100%;
+				object-fit: cover;
+			}
+
+			#media-file-uploader .media-upload-item-details {
+				flex: 1;
+				min-width: 0;
+			}
+
+			#media-file-uploader .media-upload-item-name {
+				margin-bottom: 5px;
+			}
+
+			#media-file-uploader .media-upload-item-top-actions,
+			#media-file-uploader .media-upload-item-bottom-actions {
+				display: flex;
+				gap: 10px;
+				margin-top: 5px;
+			}
+
+			#media-file-uploader .media-upload-item-top-actions button,
+			#media-file-uploader .media-upload-item-bottom-actions button {
+				padding: 4px 8px;
+				font-size: 0.85em;
+			}
+
+			/* Custom upload progress container */
+			.upload-progress-container {
+				padding: 40px;
+				text-align: center;
+				background: var(--input-bg-color);
+				border: 1px solid var(--input-border-color);
+				border-radius: 4px;
+				margin: 20px 0;
+				animation: fadeIn 0.3s ease-in;
+			}
+
+			.upload-progress-icon {
+				margin-bottom: 20px;
+			}
+
+			.upload-progress-icon .material-icons {
+				font-size: 48px;
+				color: var(--primary-color);
+			}
+
+			.upload-progress-title {
+				color: var(--text-color);
+				margin: 10px 0;
+				font-size: 1.5em;
+				font-weight: 500;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				max-width: 100%;
+			}
+
+			.upload-progress-title.success {
+				color: var(--success-color, #4CAF50);
+			}
+
+			.upload-progress-title.error {
+				color: var(--error-color, #f44336);
+			}
+
+			.upload-progress-bar-wrapper {
+				width: 100%;
+				background: var(--input-border-color, #ddd);
+				border-radius: 10px;
+				overflow: hidden;
+				height: 30px;
+				margin: 20px 0;
+			}
+
+			.upload-progress-bar {
+				width: 0%;
+				height: 100%;
+				background: var(--primary-color, #2196F3);
+				transition: width 0.3s ease;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			.upload-progress-text {
+				color: white;
+				font-weight: bold;
+			}
+
+			.upload-progress-message {
+				color: var(--text-color-secondary);
+				margin: 10px 0;
+			}
+
+			.upload-notice-box {
+				padding: 15px;
+				background: var(--body-bg-color);
+				border: 1px solid var(--primary-color);
+				border-left-width: 4px;
+				margin: 20px auto;
+				text-align: left;
+				max-width: 500px;
+			}
+
+			.upload-notice-box p {
+				color: var(--text-color);
+				margin: 5px 0;
+			}
+
+			.success-state .upload-progress-icon .material-icons {
+				color: var(--success-color, #4CAF50);
+			}
+
+			.error-state .upload-progress-icon .material-icons {
+				color: var(--error-color, #f44336);
+			}
+
+			.cancel-state .upload-progress-icon .material-icons {
+				color: var(--warning-color, #ff9800);
+			}
+
+			.success-text {
+				color: var(--success-color, #4CAF50);
+			}
+
+
+			/* Compact success message styles */
+			.upload-progress-container.compact {
+				padding: 20px;
+			}
+
+			.upload-success-compact {
+				display: flex;
+				flex-direction: column;
+				gap: 12px;
+			}
+
+			.success-icon-title {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				font-size: 1.2em;
+				color: var(--success-color, #4CAF50);
+			}
+
+			.success-icon-title .material-icons {
+				font-size: 24px;
+			}
+
+			.success-icon-title .success-title {
+				font-weight: 600;
+			}
+
+			.success-details {
+				display: flex;
+				align-items: center;
+				gap: 15px;
+				padding: 10px 15px;
+				background: var(--body-bg-color);
+				border-radius: 4px;
+				border: 1px solid var(--input-border-color);
+			}
+
+			.success-details .file-name {
+				color: var(--text-color);
+				font-weight: 500;
+				flex: 1;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			.success-details .file-size {
+				color: var(--text-color-secondary);
+				font-size: 0.9em;
+				white-space: nowrap;
+			}
+
+			.success-notice {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				padding: 12px;
+				background: rgba(33, 150, 243, 0.1);
+				border-left: 3px solid var(--primary-color);
+				border-radius: 2px;
+			}
+
+			.success-notice .material-icons {
+				font-size: 20px;
+				color: var(--primary-color);
+				flex-shrink: 0;
+			}
+
+			.success-notice span {
+				color: var(--text-color);
+				font-size: 0.9em;
+				line-height: 1.4;
+			}
+
+			@keyframes fadeIn {
+				from {
+					opacity: 0;
+					transform: translateY(-10px);
+				}
+				to {
+					opacity: 1;
+					transform: translateY(0);
+				}
+			}
+
+			/* Ensure responsive layout */
+			@media (max-width: 768px) {
+				.media-uploader-section {
+					padding: 15px !important;
+				}
+
+				#media-file-uploader .media-uploader-bottom-left-wrap {
+					max-width: 100%;
+				}
+
+				#media-file-uploader .media-drag-drop-inner {
+					min-height: 150px;
+				}
+
+				/* Compact success message on mobile */
+				.upload-progress-container.compact {
+					padding: 15px;
+				}
+
+				.success-icon-title {
+					font-size: 1.1em;
+				}
+
+				.success-details {
+					flex-direction: column;
+					align-items: flex-start;
+					gap: 5px;
+				}
+
+				.success-notice {
+					padding: 10px;
+				}
+
+				.success-notice span {
+					font-size: 0.85em;
+				}
+			}
+		</style>
+
+		<script>
+		// Initialize shared upload state on window object for cross-scope access
+		window._uploadState = {
+			inProgress: false,
+			completed: false,
+			formSubmitButton: null,
+			originalButtonText: '',
+			uploadStatusMessage: null
+		};
+
+		document.addEventListener("DOMContentLoaded", function(event) {
+			// Initialize DOM element references in upload state
+			window._uploadState.formSubmitButton = document.querySelector('.user-action-form-wrap button[type="submit"]');
+			window._uploadState.originalButtonText = window._uploadState.formSubmitButton ? window._uploadState.formSubmitButton.textContent : '';
+			window._uploadState.uploadStatusMessage = document.getElementById('upload-status-message');
+
+			function getCSRFToken() {
+				var i, cookies, cookie, cookieVal = null;
+				if (document.cookie && '' !== document.cookie) {
+					cookies = document.cookie.split(';');
+					i = 0;
+					while(i < cookies.length){
+						cookie = cookies[i].trim();
+						if ('csrftoken=' === cookie.substring(0, 10)) {
+							cookieVal = decodeURIComponent(cookie.substring(10));
+							break;
+						}
+						i += 1;
+					}
+				}
+				return cookieVal;
+			}
+
+			function formatBytes(bytes) {
+				if (bytes === 0) return '0 Bytes';
+				var k = 1024;
+				var sizes = ['Bytes', 'KB', 'MB', 'GB'];
+				var i = Math.floor(Math.log(bytes) / Math.log(k));
+				return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+			}
+
+			function updateFormState() {
+				if (!window._uploadState.formSubmitButton) return;
+
+				if (window._uploadState.inProgress) {
+					window._uploadState.formSubmitButton.disabled = true;
+					window._uploadState.formSubmitButton.textContent = 'Upload in progress...';
+					window._uploadState.formSubmitButton.style.opacity = '0.5';
+					window._uploadState.formSubmitButton.style.cursor = 'not-allowed';
+				} else {
+					window._uploadState.formSubmitButton.disabled = false;
+					window._uploadState.formSubmitButton.textContent = window._uploadState.originalButtonText;
+					window._uploadState.formSubmitButton.style.opacity = '1';
+					window._uploadState.formSubmitButton.style.cursor = 'pointer';
+				}
+			}
+
+			// Initialize Fine Uploader
+			var mediaFileUploader = new qq.FineUploader({
+				debug: true,
+				element: document.getElementById('media-file-uploader'),
+				template: document.getElementById('qq-template'),
+				request: {
+					endpoint: '{% url 'uploader:update' form.instance.friendly_token %}',
+					customHeaders: {
+						'X-CSRFToken': getCSRFToken(),
+					},
+				},
+				retry: {
+					enableAuto: true,
+					maxAutoAttempts: 2,
+				},
+				validation: {
+					itemLimit: 1,
+					sizeLimit: {{UPLOAD_MAX_SIZE}},
+					allowedExtensions: {{ allowed_extensions|safe }},
+					acceptFiles: 'video/*',
+				},
+				chunking: {
+					enabled: true,
+					concurrent: {
+						enabled: true,
+					},
+					success: {
+						endpoint: '{% url 'uploader:update' form.instance.friendly_token %}?done',
+					},
+				},
+				callbacks: {
+					onSubmit: function(id, name) {
+						window._uploadState.inProgress = true;
+						window._uploadState.completed = false;
+						updateFormState();
+
+						// Hide the drag-drop interface and show progress
+						var dragDropArea = document.querySelector('#media-file-uploader .media-drag-drop-wrap');
+						var uploadList = document.querySelector('#media-file-uploader .qq-upload-list');
+
+						if (dragDropArea) {
+							dragDropArea.style.display = 'none';
+						}
+
+						// Create and show progress UI
+						var progressContainer = document.getElementById('upload-progress-container');
+						if (!progressContainer) {
+							progressContainer = document.createElement('div');
+							progressContainer.id = 'upload-progress-container';
+							progressContainer.className = 'upload-progress-container';
+
+							var uploaderDiv = document.getElementById('media-file-uploader');
+							if (uploaderDiv.firstChild) {
+								uploaderDiv.insertBefore(progressContainer, uploaderDiv.firstChild);
+							} else {
+								uploaderDiv.appendChild(progressContainer);
+							}
+						}
+
+						progressContainer.innerHTML =
+							'<div class="upload-progress-icon">' +
+								'<i class="material-icons rotating">autorenew</i>' +
+							'</div>' +
+							'<h3 class="upload-progress-title" title="' + name + '">Uploading: ' + name + '</h3>' +
+							'<div class="upload-progress-bar-wrapper">' +
+								'<div id="upload-progress-bar" class="upload-progress-bar">' +
+									'<span id="upload-progress-text" class="upload-progress-text">0%</span>' +
+								'</div>' +
+							'</div>' +
+							'<p class="upload-progress-message">Please wait while your file is being uploaded...</p>';
+
+						if (uploadList) {
+							uploadList.style.display = 'block';
+						}
+					},
+					onProgress: function(id, name, uploadedBytes, totalBytes) {
+						if (totalBytes > 0) {
+							var percent = Math.round((uploadedBytes / totalBytes) * 100);
+							var progressBar = document.getElementById('upload-progress-bar');
+							var progressText = document.getElementById('upload-progress-text');
+
+							if (progressBar) {
+								progressBar.style.width = percent + '%';
+							}
+							if (progressText) {
+								progressText.textContent = percent + '%';
+							}
+						}
+					},
+					onError: function(id, name, errorReason, xhrOrXdr) {
+						window._uploadState.inProgress = false;
+						updateFormState();
+
+						// Show error in progress container
+						var progressContainer = document.getElementById('upload-progress-container');
+						if (progressContainer) {
+							progressContainer.className = 'upload-progress-container error-state';
+							progressContainer.innerHTML =
+								'<div class="upload-progress-icon">' +
+									'<i class="material-icons">error_outline</i>' +
+								'</div>' +
+								'<h3 class="upload-progress-title error">Upload Failed</h3>' +
+								'<p class="upload-progress-message">' + errorReason + '</p>' +
+								'<button onclick="location.reload()" class="button primaryAction">Try Again</button>';
+						}
+
+						console.warn(qq.format("Error on file number {} - {}.  Reason: {}", id, name, errorReason));
+					},
+					onComplete: function(id, name, response, request) {
+						window._uploadState.inProgress = false;
+						updateFormState();
+
+						if(response.success){
+							window._uploadState.completed = true;
+
+							// Show success message with instruction to save
+							var progressContainer = document.getElementById('upload-progress-container');
+							if (progressContainer) {
+								progressContainer.className = 'upload-progress-container success-state compact';
+
+								// Get file size from uploader if available
+								var fileSize = '';
+								try {
+									var file = mediaFileUploader.getFile(id);
+									if (file && file.size) {
+										fileSize = formatBytes(file.size);
+									}
+								} catch(e) {}
+
+								progressContainer.innerHTML =
+									'<div class="upload-success-compact">' +
+										'<div class="success-icon-title">' +
+											'<i class="material-icons">check_circle</i>' +
+											'<span class="success-title">Upload Complete!</span>' +
+										'</div>' +
+										'<div class="success-details">' +
+											'<span class="file-name">' + name + '</span>' +
+											(fileSize ? '<span class="file-size">' + fileSize + '</span>' : '') +
+										'</div>' +
+										'<div class="success-notice">' +
+											'<i class="material-icons">info</i>' +
+											'<span>File uploaded but not saved. Click "Update Media" below to save and process.</span>' +
+										'</div>' +
+									'</div>';
+							}
+
+							// Update current file info
+							var currentFileInfo = document.getElementById('current-media-file-info');
+							if (currentFileInfo) {
+								currentFileInfo.innerHTML = '<p class="success-text"><strong>New file ready:</strong> ' + name + ' (not saved yet)</p>';
+							}
+						} else {
+							// Show error in progress container
+							var progressContainer = document.getElementById('upload-progress-container');
+							if (progressContainer) {
+								progressContainer.className = 'upload-progress-container error-state';
+								progressContainer.innerHTML =
+									'<div class="upload-progress-icon">' +
+										'<i class="material-icons">error_outline</i>' +
+									'</div>' +
+									'<h3 class="upload-progress-title error">Upload Failed</h3>' +
+									'<p class="upload-progress-message">Please try again.</p>' +
+									'<button onclick="location.reload()" class="button primaryAction">Try Again</button>';
+							}
+						}
+					},
+					onCancel: function(id, name) {
+						window._uploadState.inProgress = false;
+						updateFormState();
+
+						// Show cancelled state
+						var progressContainer = document.getElementById('upload-progress-container');
+						if (progressContainer) {
+							progressContainer.className = 'upload-progress-container cancel-state';
+							progressContainer.innerHTML =
+								'<div class="upload-progress-icon">' +
+									'<i class="material-icons">cancel</i>' +
+								'</div>' +
+								'<h3 class="upload-progress-title">Upload Cancelled</h3>' +
+								'<button onclick="location.reload()" class="button secondaryAction">Start Over</button>';
+						}
+					}
+				}
+			});
+
+			// Prevent form submission while upload is in progress
+			var form = document.querySelector('.post-form');
+			if (form) {
+				form.addEventListener('submit', function(e) {
+					if (window._uploadState.inProgress) {
+						e.preventDefault();
+						alert('Please wait for the file upload to complete before saving.');
+						return false;
+					}
+				});
+			}
+		});
+		</script>
 
 {% endblock innercontent %}
 

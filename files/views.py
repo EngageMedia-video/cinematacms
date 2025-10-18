@@ -1,6 +1,10 @@
 import csv
 import json
 import logging
+import os
+import shutil
+from pathlib import Path
+
 from cms.permissions import user_requires_mfa
 from datetime import datetime, timedelta
 
@@ -9,6 +13,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.postgres.search import SearchQuery
 from django.core.mail import EmailMessage, send_mail
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -42,8 +47,11 @@ from .forms import ContactForm, EditSubtitleForm, MediaForm, SubtitleForm
 from .helpers import (
     clean_friendly_token,
     clean_query,
+    cleanup_temp_upload_files,
     create_temp_file,
+    get_allowed_video_extensions,
     produce_ffmpeg_commands,
+    rm_file,
 )
 from .methods import (
     can_upload_media,
@@ -346,6 +354,10 @@ def upload_media(request):
     can_upload_exp = settings.CANNOT_ADD_MEDIA_MESSAGE
     context["can_upload_exp"] = can_upload_exp
 
+    # Get allowed video extensions from helper function
+    video_extensions = get_allowed_video_extensions()
+    context["allowed_extensions"] = json.dumps(video_extensions)
+
     return render(request, "cms/add-media.html", context)
 
 
@@ -496,7 +508,246 @@ def edit_media(request):
                             tag = Tag.objects.create(title=tag, user=request.user)
                         if tag not in media.tags.all():
                             media.tags.add(tag)
-            messages.add_message(request, messages.INFO, "Media was edited!")
+
+            # Check if a new media file was uploaded via Fine Uploader
+            session_key = f"media_file_updated_{media.friendly_token}"
+            media_update_info = request.session.get(session_key, {})
+
+            if media_update_info.get("updated"):
+                from django.core.files import File
+
+                # Get the temporary file path from session
+                temp_file_path = media_update_info.get("temp_file_path")
+                upload_file_path = media_update_info.get("upload_file_path")
+
+                if not temp_file_path or not os.path.exists(temp_file_path):
+                    logger.error(
+                        f"Temporary uploaded file not found at {temp_file_path} for media {media.friendly_token}"
+                    )
+                    messages.add_message(
+                        request,
+                        messages.ERROR,
+                        "Uploaded file not found. Please try uploading again.",
+                    )
+                    # Clear the session flag
+                    request.session.pop(session_key, None)
+                    return HttpResponseRedirect(media.get_absolute_url())
+
+                # Assign the new media file from temporary path
+                # Note: We need to keep the file open during the save operation
+                temp_file_handle = None
+                try:
+                    try:
+                        temp_file_handle = open(temp_file_path, "rb")
+                        myfile = File(temp_file_handle, name=os.path.basename(temp_file_path))
+                        media.media_file = myfile
+                        # File will be saved in the transaction below
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to assign new media file from {temp_file_path} for media {media.friendly_token}: {e}",
+                            exc_info=True,
+                        )
+                        messages.add_message(
+                            request, messages.ERROR, "Failed to assign new media file"
+                        )
+                        return HttpResponseRedirect(media.get_absolute_url())
+
+                    # Clean up old files and encodings
+                    # Use original_file_path which is the media file when the upload session started
+                    original_file_path = media_update_info.get("original_file_path")
+                    if original_file_path and os.path.exists(original_file_path):
+                        try:
+                            # Resolve MEDIA_ROOT and original_file_path for directory traversal protection
+                            media_root = Path(settings.MEDIA_ROOT).resolve()
+                            original_file_resolved = Path(original_file_path).resolve()
+
+                            # Verify original_file_path is within MEDIA_ROOT
+                            try:
+                                is_safe = original_file_resolved.is_relative_to(media_root)
+                            except AttributeError:
+                                # Fallback for Python < 3.9
+                                try:
+                                    is_safe = os.path.commonpath([media_root, original_file_resolved]) == str(media_root)
+                                except ValueError:
+                                    is_safe = False
+
+                            if is_safe:
+                                rm_file(original_file_path)
+                            else:
+                                logger.error(
+                                    f"Attempted directory traversal: original_file_path {original_file_resolved} is outside MEDIA_ROOT "
+                                    f"for media {media.friendly_token}"
+                                )
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to remove original media file {original_file_path} for media {media.friendly_token}: {e}",
+                                exc_info=True,
+                            )
+
+                    # Delete old encodings and HLS files
+                    from files.models import Encoding
+
+                    old_encodings = Encoding.objects.filter(media=media)
+                    for encoding in old_encodings:
+                        try:
+                            if encoding.media_file and os.path.exists(
+                                encoding.media_file.path
+                            ):
+                                rm_file(encoding.media_file.path)
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to remove encoding file {encoding.media_file.path if encoding.media_file else 'unknown'} "
+                                f"for encoding {encoding.id} of media {media.friendly_token}: {e}",
+                                exc_info=True,
+                            )
+                    old_encodings.delete()
+
+                    # Delete old HLS files if they exist (with directory traversal protection)
+                    if media.hls_file:
+                        # Guard against missing HLS_DIR setting
+                        hls_dir_setting = getattr(settings, 'HLS_DIR', None)
+                        if hls_dir_setting:
+                            try:
+                                # Build the full path relative to MEDIA_ROOT
+                                media_root = Path(settings.MEDIA_ROOT).resolve()
+                                hls_base_dir = Path(hls_dir_setting).resolve()
+                                hls_dir = (media_root / media.hls_file).parent.resolve()
+
+                                # Security checks:
+                                # 1. Ensure HLS_DIR is within MEDIA_ROOT
+                                # 2. Ensure hls_dir is a direct child of HLS_DIR (not deeply nested)
+                                # 3. Prevent directory traversal outside HLS_DIR
+                                try:
+                                    # Check if hls_dir is relative to hls_base_dir (Python 3.9+)
+                                    is_within_hls_dir = hls_dir.is_relative_to(hls_base_dir)
+                                except AttributeError:
+                                    # Fallback for Python < 3.9
+                                    try:
+                                        is_within_hls_dir = hls_base_dir in hls_dir.parents or hls_base_dir == hls_dir
+                                    except ValueError:
+                                        is_within_hls_dir = False
+
+                                # Additional check: ensure it's a direct subdirectory of HLS_DIR
+                                # (i.e., HLS_DIR/{uid}/, not HLS_DIR/../../etc/)
+                                is_direct_child = hls_dir.parent == hls_base_dir
+
+                                if is_within_hls_dir and is_direct_child:
+                                    if hls_dir.exists():
+                                        shutil.rmtree(hls_dir)
+                                else:
+                                    logger.warning(
+                                        f"Attempted directory traversal or invalid HLS path: {hls_dir} "
+                                        f"(expected direct child of {hls_base_dir}) "
+                                        f"for media {media.friendly_token}"
+                                    )
+                            except Exception as e:
+                                logger.error(
+                                    f"Failed to remove HLS directory for media {media.friendly_token} "
+                                    f"(hls_file={media.hls_file}): {e}",
+                                    exc_info=True,
+                                )
+                        else:
+                            logger.warning(
+                                f"HLS_DIR setting not configured, skipping HLS cleanup for media {media.friendly_token}"
+                            )
+
+                    # Delete preview_file_path if it exists (with directory traversal protection)
+                    if media.preview_file_path:
+                        try:
+                            # Resolve MEDIA_ROOT and preview file path
+                            media_root = Path(settings.MEDIA_ROOT).resolve()
+
+                            # Handle both absolute and relative preview paths
+                            preview_path_input = Path(media.preview_file_path)
+                            if preview_path_input.is_absolute():
+                                preview_path = preview_path_input.resolve()
+                            else:
+                                preview_path = (media_root / preview_path_input).resolve()
+
+                            # Ensure the resolved preview path is within MEDIA_ROOT
+                            # Use try-except for is_relative_to compatibility (Python 3.9+)
+                            try:
+                                is_safe = preview_path.is_relative_to(media_root)
+                            except AttributeError:
+                                # Fallback for Python < 3.9: use commonpath check
+                                try:
+                                    is_safe = os.path.commonpath([media_root, preview_path]) == str(media_root)
+                                except ValueError:
+                                    # Different drives on Windows
+                                    is_safe = False
+
+                            if is_safe:
+                                if preview_path.exists():
+                                    preview_path.unlink()
+                            else:
+                                logger.warning(
+                                    f"Attempted directory traversal: Preview file {preview_path} is outside MEDIA_ROOT "
+                                    f"for media {media.friendly_token}"
+                                )
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to remove preview file {media.preview_file_path} for media {media.friendly_token}: {e}",
+                                exc_info=True,
+                            )
+
+                    # Wrap DB updates in transaction.atomic() for consistency
+                    try:
+                        with transaction.atomic():
+                            # Reset encoding-related fields and save the new media_file
+                            media.encoding_status = "pending"
+                            media.hls_file = ""
+                            media.preview_file_path = ""
+                            # Bump edit_date to invalidate caches/CDNs
+                            media.edit_date = timezone.now()
+                            media.save(
+                                update_fields=[
+                                    "media_file",  # Save the new media file
+                                    "encoding_status",
+                                    "hls_file",
+                                    "preview_file_path",
+                                    "edit_date",
+                                ]
+                            )
+
+                            # Now trigger re-encoding
+                            from files import tasks
+
+                            tasks.media_init.apply_async(
+                                args=[media.friendly_token], countdown=5
+                            )
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to update media {media.friendly_token} during re-encode preparation: {e}",
+                            exc_info=True,
+                        )
+                        messages.add_message(
+                            request,
+                            messages.ERROR,
+                            "Failed to prepare media for re-encoding",
+                        )
+                        return HttpResponseRedirect(media.get_absolute_url())
+                finally:
+                    # Always close the temporary file handle on all paths (including early returns)
+                    if temp_file_handle:
+                        try:
+                            temp_file_handle.close()
+                        except Exception as close_error:
+                            logger.warning(
+                                f"Failed to close temporary file handle for media {media.friendly_token}: {close_error}"
+                            )
+
+                    # Always clean up temporary upload files (on success AND error paths)
+                    cleanup_temp_upload_files(temp_file_path, upload_file_path, media.friendly_token, logger)
+
+                    # Always clear the session flag to prevent stale session state
+                    request.session.pop(session_key, None)
+
+                messages.add_message(
+                    request, messages.INFO, "Media was edited and will be re-encoded!"
+                )
+            else:
+                messages.add_message(request, messages.INFO, "Media was edited!")
+
             return HttpResponseRedirect(media.get_absolute_url())
     else:
         form = MediaForm(request.user, instance=media)
@@ -509,6 +760,9 @@ def edit_media(request):
             "allow_commercial": license.allow_commercial,
             "allow_modifications": license.allow_modifications,
         }
+    # Get allowed video extensions from helper function
+    video_extensions = get_allowed_video_extensions()
+
     return render(
         request,
         "cms/edit_media.html",
@@ -516,6 +770,7 @@ def edit_media(request):
             "form": form,
             "licenses": json.dumps(licenses_dict),
             "add_subtitle_url": media.add_subtitle_url,
+            "allowed_extensions": json.dumps(video_extensions),
         },
     )
 
