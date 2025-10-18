@@ -529,6 +529,14 @@ def edit_media(request):
                         messages.ERROR,
                         "Uploaded file not found. Please try uploading again.",
                     )
+                    # Clean up pending upload directory before returning
+                    try:
+                        cleanup_temp_upload_files(temp_file_path, upload_file_path, media.friendly_token, logger)
+                    except Exception as cleanup_error:
+                        # Log cleanup errors but don't raise - we're already in error handling
+                        logger.warning(
+                            f"Failed to clean up pending upload for media {media.friendly_token}: {cleanup_error}"
+                        )
                     # Clear the session flag
                     request.session.pop(session_key, None)
                     return HttpResponseRedirect(media.get_absolute_url())

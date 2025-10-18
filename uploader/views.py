@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.views import generic
 
 from cms.permissions import user_allowed_to_upload
-from files.helpers import rm_file
+from files.helpers import rm_file, cleanup_temp_upload_files
 from files.models import Media
 
 from .fineuploader import ChunkedFineUploader
@@ -54,6 +54,23 @@ class FineUploaderView(generic.FormView):
 
     def form_valid(self, form):
         self.upload = ChunkedFineUploader(form.cleaned_data, self.concurrent)
+
+        # Server-side file extension validation before saving
+        from files.helpers import get_allowed_video_extensions
+        allowed_extensions = get_allowed_video_extensions()
+
+        # Extract file extension from uploaded filename
+        if self.upload.filename:
+            file_ext = os.path.splitext(self.upload.filename)[1].lower().lstrip('.')
+
+            # Validate extension against allowlist
+            if allowed_extensions and file_ext not in allowed_extensions:
+                data = {
+                    "success": False,
+                    "error": f"File type '.{file_ext}' is not allowed. Allowed types: {', '.join(allowed_extensions)}"
+                }
+                return self.make_response(data, status=400)
+
         if self.upload.concurrent and self.chunks_done:
             try:
                 self.upload.combine_chunks()
@@ -137,6 +154,23 @@ class MediaFileUpdateView(generic.FormView):
 
     def form_valid(self, form):
         self.upload = ChunkedFineUploader(form.cleaned_data, self.concurrent)
+
+        # Server-side file extension validation before saving
+        from files.helpers import get_allowed_video_extensions
+        allowed_extensions = get_allowed_video_extensions()
+
+        # Extract file extension from uploaded filename
+        if self.upload.filename:
+            file_ext = os.path.splitext(self.upload.filename)[1].lower().lstrip('.')
+
+            # Validate extension against allowlist
+            if allowed_extensions and file_ext not in allowed_extensions:
+                data = {
+                    "success": False,
+                    "error": f"File type '.{file_ext}' is not allowed. Allowed types: {', '.join(allowed_extensions)}"
+                }
+                return self.make_response(data, status=400)
+
         if self.upload.concurrent and self.chunks_done:
             try:
                 self.upload.combine_chunks()
@@ -177,38 +211,13 @@ class MediaFileUpdateView(generic.FormView):
             old_temp = session_data['temp_file_path']
             old_upload_path = session_data.get('upload_file_path')
 
-            # Clean up old temporary file
-            if old_temp:
-                try:
-                    if os.path.exists(old_temp):
-                        rm_file(old_temp)
-                        logger.info(
-                            f"Cleaned up previous pending upload temp file {old_temp} "
-                            f"for media {self.media.friendly_token}"
-                        )
-                except Exception as e:
-                    logger.error(
-                        f"Failed to remove previous pending upload temp file {old_temp} "
-                        f"for media {self.media.friendly_token}: {e}",
-                        exc_info=True
-                    )
-
-            # Clean up old upload directory
-            if old_upload_path:
-                try:
-                    # Check if directory exists before attempting to remove it
-                    if os.path.exists(old_upload_path) and os.path.isdir(old_upload_path):
-                        shutil.rmtree(old_upload_path)
-                        logger.info(
-                            f"Cleaned up previous pending upload directory {old_upload_path} "
-                            f"for media {self.media.friendly_token}"
-                        )
-                except Exception as e:
-                    logger.error(
-                        f"Failed to remove previous pending upload directory {old_upload_path} "
-                        f"for media {self.media.friendly_token}: {e}",
-                        exc_info=True
-                    )
+            # Use centralized cleanup helper with directory traversal protection
+            cleanup_temp_upload_files(
+                temp_file_path=old_temp,
+                upload_file_path=old_upload_path,
+                media_friendly_token=self.media.friendly_token,
+                logger=logger
+            )
 
         # If this is the first upload for this session, store the original media_file path
         if not session_data.get('original_file_path'):

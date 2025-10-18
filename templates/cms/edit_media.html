@@ -1219,6 +1219,22 @@
 			window._uploadState.originalButtonText = window._uploadState.formSubmitButton ? window._uploadState.formSubmitButton.textContent : '';
 			window._uploadState.uploadStatusMessage = document.getElementById('upload-status-message');
 
+			// HTML escaping utility to prevent XSS attacks
+			function escapeHtml(text) {
+				if (text == null) return '';
+				var map = {
+					'&': '&amp;',
+					'<': '&lt;',
+					'>': '&gt;',
+					'"': '&quot;',
+					"'": '&#039;',
+					'/': '&#x2F;'
+				};
+				return String(text).replace(/[&<>"'\/]/g, function(char) {
+					return map[char];
+				});
+			}
+
 			function getCSRFToken() {
 				var i, cookies, cookie, cookieVal = null;
 				if (document.cookie && '' !== document.cookie) {
@@ -1323,7 +1339,7 @@
 							'<div class="upload-progress-icon">' +
 								'<i class="material-icons rotating">autorenew</i>' +
 							'</div>' +
-							'<h3 class="upload-progress-title" title="' + name + '">Uploading: ' + name + '</h3>' +
+							'<h3 class="upload-progress-title" title="' + escapeHtml(name) + '">Uploading: ' + escapeHtml(name) + '</h3>' +
 							'<div class="upload-progress-bar-wrapper">' +
 								'<div id="upload-progress-bar" class="upload-progress-bar">' +
 									'<span id="upload-progress-text" class="upload-progress-text">0%</span>' +
@@ -1396,7 +1412,7 @@
 											'<span class="success-title">Upload Complete!</span>' +
 										'</div>' +
 										'<div class="success-details">' +
-											'<span class="file-name">' + name + '</span>' +
+											'<span class="file-name">' + escapeHtml(name) + '</span>' +
 											(fileSize ? '<span class="file-size">' + fileSize + '</span>' : '') +
 										'</div>' +
 										'<div class="success-notice">' +
@@ -1409,7 +1425,7 @@
 							// Update current file info
 							var currentFileInfo = document.getElementById('current-media-file-info');
 							if (currentFileInfo) {
-								currentFileInfo.innerHTML = '<p class="success-text"><strong>New file ready:</strong> ' + name + ' (not saved yet)</p>';
+								currentFileInfo.innerHTML = '<p class="success-text"><strong>New file ready:</strong> ' + escapeHtml(name) + ' (not saved yet)</p>';
 							}
 						} else {
 							// Show error in progress container
