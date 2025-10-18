@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "tinymce",
     "django_recaptcha",
     "corsheaders",
+    "maintenance_mode",
 ]
 
 MIDDLEWARE = [
@@ -80,6 +81,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "users.middleware.AdminMFAMiddleware",
+    "maintenance_mode.middleware.MaintenanceModeMiddleware",
 ]
 
 ROOT_URLCONF = "cms.urls"
@@ -537,6 +539,19 @@ MFA_ENFORCE_ON_PATHS = [f"/{DJANGO_ADMIN_URL}"]
 MFA_EXCLUDE_PATHS = ["/fu/", "/api/", "/manage/", "/accounts/"]
 
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths()
+
+# django-maintenance-mode settings
+MAINTENANCE_MODE = None # None/False/True
+MAINTENANCE_MODE_TEMPLATE = '503.html'
+# if True the superuser will not see the maintenance-mode page
+MAINTENANCE_MODE_IGNORE_SUPERUSER = True
+# if True the staff users will not see the maintenance-mode page
+MAINTENANCE_MODE_IGNORE_STAFF = True
+# if True admin site will not be affected by the maintenance-mode page
+MAINTENANCE_MODE_IGNORE_ADMIN_SITE = True
+# the value in seconds of the Retry-After header during maintenance-mode
+MAINTENANCE_MODE_RETRY_AFTER = 3600 # 1 hour
+
 from .local_settings import *
 
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
