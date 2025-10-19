@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -6,9 +6,9 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>We'll be back soon</title>
     <style>
-      :root{
+      :root {
         /* Light mode (default) */
-        --color-bg: #f8ffff;        
+        --color-bg: #f8ffff;
         --color-fg: #000;
         --color-muted: #64748b;
         --color-primary: #ed7c30;
@@ -17,8 +17,8 @@
       }
 
       /* Dark mode */
-      [data-theme="dark"]{
-        --color-bg: #101a24;         
+      [data-theme="dark"] {
+        --color-bg: #101a24;
         --color-fg: #fff;
         --color-muted: #869ea5;
         --color-primary: #ed7c30;
@@ -27,43 +27,56 @@
 
       /* Fonts - Cinemata uses Amulya and Facultad */
       @font-face {
-        font-family: 'Amulya';
-        src: url('/static/lib/Amulya/fonts/Amulya-Variable.woff2') format('woff2'),
-             url('/static/lib/Amulya/fonts/Amulya-Variable.woff') format('woff');
+        font-family: "Amulya";
+        src: url("/static/lib/Amulya/fonts/Amulya-Variable.woff2")
+            format("woff2"),
+          url("/static/lib/Amulya/fonts/Amulya-Variable.woff") format("woff");
         font-weight: 300 700;
         font-display: swap;
         font-style: normal;
       }
 
       @font-face {
-        font-family: 'Facultad';
-        src: url('/static/lib/Facultad/Facultad-Regular.otf') format('opentype');
+        font-family: "Facultad";
+        src: url("/static/lib/Facultad/Facultad-Regular.otf") format("opentype");
         font-weight: normal;
         font-display: swap;
         font-style: normal;
       }
 
       /* Reset + base */
-      *,*::before,*::after{ box-sizing: border-box; }
-      html,body{ height: 100%; }
-      body{
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
         margin: 0;
         background: var(--color-bg);
         color: var(--color-fg);
-        font-family: 'Amulya', Arial, sans-serif;
+        font-family: "Amulya", Arial, sans-serif;
         line-height: 1.6;
       }
 
-      a{ color: var(--color-primary); text-decoration: none; }
-      a:hover{ text-decoration: underline; }
+      a {
+        color: var(--color-primary);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
 
-      .container{
+      .container {
         min-height: 100%;
         display: flex;
         flex-direction: column;
       }
 
-      main{
+      main {
         flex: 1;
         display: flex;
         align-items: center;
@@ -72,11 +85,11 @@
         background: #dfeff4;
       }
 
-      [data-theme="dark"] main{
+      [data-theme="dark"] main {
         background: #0f2230;
       }
 
-      .panel{
+      .panel {
         width: 100%;
         max-width: 720px;
         border: 1px solid rgba(100, 116, 139, 0.2);
@@ -86,20 +99,21 @@
         padding: 24px;
       }
 
-      [data-theme="dark"] .panel{
+      [data-theme="dark"] .panel {
         background: rgba(15, 23, 42, 0.5);
         border-color: rgba(148, 163, 184, 0.2);
       }
 
-      .panel-header{
+      .panel-header {
         display: flex;
         gap: 16px;
         align-items: center;
         margin-bottom: 12px;
       }
 
-      .spinner{
-        width: 32px; height: 32px;
+      .spinner {
+        width: 32px;
+        height: 32px;
         border: 3px solid rgba(237, 124, 48, 0.2);
         border-top-color: var(--color-primary);
         border-radius: 50%;
@@ -107,26 +121,30 @@
         flex: 0 0 32px;
       }
 
-      [data-theme="dark"] .spinner{
+      [data-theme="dark"] .spinner {
         border: 3px solid rgba(237, 124, 48, 0.3);
         border-top-color: var(--color-primary);
       }
-      @keyframes spin{ to{ transform: rotate(360deg); } }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-      h1{
+      h1 {
         margin: 0;
         font-size: 1.5rem;
         line-height: 1.3;
-        font-family: 'Facultad', Arial, sans-serif;
+        font-family: "Facultad", Arial, sans-serif;
       }
 
-      .sub{
+      .sub {
         margin: 6px 0 0 0;
         color: var(--color-muted);
         font-size: 0.95rem;
       }
 
-      .status{
+      .status {
         display: inline-flex;
         align-items: center;
         gap: 8px;
@@ -135,43 +153,45 @@
         color: var(--color-muted);
       }
 
-      .status-dot{
-        width: 8px; height: 8px; border-radius: 999px;
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
         background: var(--color-primary);
         box-shadow: 0 0 0 4px rgba(231, 162, 123, 0.2);
       }
 
-      [data-theme="dark"] .status-dot{
+      [data-theme="dark"] .status-dot {
         box-shadow: 0 0 0 4px rgba(237, 124, 48, 0.25);
       }
 
-      .block{
+      .block {
         margin-top: 20px;
         padding-top: 12px;
         border-top: 1px dashed rgba(100, 116, 139, 0.2);
       }
 
-      [data-theme="dark"] .block{
+      [data-theme="dark"] .block {
         border-top-color: rgba(148, 163, 184, 0.2);
       }
 
-      .countdown{
+      .countdown {
         display: flex;
         align-items: baseline;
         gap: 10px;
       }
-      .time{
+      .time {
         font-variant-numeric: tabular-nums;
         font-size: 2rem;
         font-weight: 700;
         letter-spacing: 0.5px;
       }
-      .time-label{
+      .time-label {
         color: var(--color-muted);
         font-size: 0.9rem;
       }
 
-      .progress{
+      .progress {
         position: relative;
         width: 100%;
         height: 10px;
@@ -181,18 +201,20 @@
         margin-top: 12px;
       }
 
-      [data-theme="dark"] .progress{
+      [data-theme="dark"] .progress {
         background: rgba(148, 163, 184, 0.2);
       }
-      .progress-bar{
+      .progress-bar {
         position: absolute;
-        left: 0; top: 0; bottom: 0;
+        left: 0;
+        top: 0;
+        bottom: 0;
         width: 0%;
         background: var(--color-primary);
         transition: width 0.3s ease;
       }
 
-      .actions{
+      .actions {
         display: flex;
         flex-wrap: wrap;
         gap: 10px 12px;
@@ -200,7 +222,7 @@
         margin-top: 16px;
       }
 
-      .btn{
+      .btn {
         appearance: none;
         border: 1px solid var(--color-primary);
         background: var(--color-primary);
@@ -213,56 +235,57 @@
       }
 
       .btn:hover,
-      .btn:active{
+      .btn:active {
         background: #e7a27b;
         border-color: #e7a27b;
       }
 
-      .btn.secondary{
+      .btn.secondary {
         background: #1a3f61;
         border-color: #1a3f61;
         color: #fff;
       }
 
       .btn.secondary:hover,
-      .btn.secondary:active{
+      .btn.secondary:active {
         background: #e7a27b;
         border-color: #e7a27b;
       }
 
-      [data-theme="dark"] .btn.secondary{
+      [data-theme="dark"] .btn.secondary {
         background: #659ba0;
         border-color: #659ba0;
       }
 
       [data-theme="dark"] .btn.secondary:hover,
-      [data-theme="dark"] .btn.secondary:active{
+      [data-theme="dark"] .btn.secondary:active {
         background: #e7a27b;
         border-color: #e7a27b;
       }
 
-      .btn:focus-visible{
+      .btn:focus-visible {
         outline: 3px solid rgba(237, 124, 48, 0.35);
         outline-offset: 2px;
       }
 
-      [data-theme="dark"] .btn:focus-visible{
+      [data-theme="dark"] .btn:focus-visible {
         outline-color: rgba(237, 124, 48, 0.45);
       }
 
-      .opt{
+      .opt {
         display: inline-flex;
         align-items: center;
         gap: 8px;
         color: var(--color-muted);
         font-size: 0.95rem;
       }
-      .opt input{
-        width: 18px; height: 18px;
+      .opt input {
+        width: 18px;
+        height: 18px;
         accent-color: var(--color-primary);
       }
 
-      footer{
+      footer {
         padding: 20px;
         text-align: center;
         color: var(--color-muted);
@@ -270,12 +293,12 @@
         border-top: 1px solid rgba(100, 116, 139, 0.1);
       }
 
-      [data-theme="dark"] footer{
+      [data-theme="dark"] footer {
         border-top-color: rgba(148, 163, 184, 0.15);
       }
 
       /* Dark mode toggle button */
-      .theme-toggle{
+      .theme-toggle {
         position: fixed;
         top: 20px;
         right: 20px;
@@ -291,67 +314,86 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         transition: all 0.3s ease;
       }
 
-      [data-theme="dark"] .theme-toggle{
+      [data-theme="dark"] .theme-toggle {
         border-color: rgba(148, 163, 184, 0.3);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       }
 
-      .theme-toggle:hover{
+      .theme-toggle:hover {
         transform: scale(1.1);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
 
-      [data-theme="dark"] .theme-toggle:hover{
-        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      [data-theme="dark"] .theme-toggle:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
       }
 
-      .theme-toggle:focus-visible{
+      .theme-toggle:focus-visible {
         outline: 3px solid var(--color-primary);
         outline-offset: 2px;
       }
 
-      .theme-toggle svg{
+      .theme-toggle svg {
         width: 20px;
         height: 20px;
         transition: transform 0.3s ease;
       }
 
-      .theme-toggle:active svg{
+      .theme-toggle:active svg {
         transform: rotate(20deg);
       }
 
       /* Hide sun in dark mode, moon in light mode */
-      [data-theme="dark"] .icon-sun{ display: none; }
+      [data-theme="dark"] .icon-sun {
+        display: none;
+      }
       [data-theme="light"] .icon-moon,
-      :root:not([data-theme]) .icon-moon{ display: none; }
+      :root:not([data-theme]) .icon-moon {
+        display: none;
+      }
 
       /* Responsive tweaks */
-      @media (min-width: 640px){
-        .panel{ padding: 28px; }
-        h1{ font-size: 1.75rem; }
+      @media (min-width: 640px) {
+        .panel {
+          padding: 28px;
+        }
+        h1 {
+          font-size: 1.75rem;
+        }
       }
     </style>
   </head>
   <body>
     <!-- Dark mode toggle -->
-    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode">
-      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="5"/>
-        <line x1="12" y1="1" x2="12" y2="3"/>
-        <line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/>
-        <line x1="21" y1="12" x2="23" y2="12"/>
-        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    <button
+      class="theme-toggle"
+      id="theme-toggle"
+      type="button"
+      aria-label="Toggle dark mode"
+    >
+      <svg
+        class="icon-sun"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="12" cy="12" r="5" />
+        <line x1="12" y1="1" x2="12" y2="3" />
+        <line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" />
+        <line x1="21" y1="12" x2="23" y2="12" />
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
       </svg>
       <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
       </svg>
     </button>
 
@@ -361,20 +403,31 @@
           <div class="panel-header">
             <div class="spinner" aria-hidden="true"></div>
             <div>
-              <h1 id="maint-title">We’ll be back soon</h1>
+              <h1 id="maint-title">We'll be back soon</h1>
               <p class="sub">
-                We’re performing scheduled maintenance to improve reliability and speed.
+                We're performing scheduled maintenance to improve reliability
+                and speed.
               </p>
               <div class="status" role="status" aria-live="polite">
                 <span class="status-dot" aria-hidden="true"></span>
-                <span id="status-text">Systems are temporarily unavailable.</span>
+                <span id="status-text"
+                  >Systems are temporarily unavailable.</span
+                >
               </div>
             </div>
           </div>
 
           <div class="block" aria-labelledby="eta-label">
             <div class="countdown">
-              <div class="time" id="time-remaining" aria-live="polite" aria-atomic="true">{% widthratio MAINTENANCE_MODE_RETRY_AFTER 60 1|stringformat:"02d" %}:00</div>
+              <div
+                class="time"
+                id="time-remaining"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {% widthratio MAINTENANCE_MODE_RETRY_AFTER 60
+                1|stringformat:"02d" %}:00
+              </div>
               <div class="time-label" id="eta-label">minutes remaining</div>
             </div>
             <div class="progress" aria-hidden="true">
@@ -382,7 +435,12 @@
             </div>
 
             <div class="actions">
-              <button class="btn" id="refresh-btn" type="button" aria-label="Refresh the page to check status">
+              <button
+                class="btn"
+                id="refresh-btn"
+                type="button"
+                aria-label="Refresh the page to check status"
+              >
                 Refresh now
               </button>
               <label class="opt" for="auto-refresh">
@@ -399,7 +457,8 @@
       </main>
 
       <footer>
-        Need assistance? Contact support at <a href="mailto:{{ DEFAULT_FROM_EMAIL }}">{{ DEFAULT_FROM_EMAIL }}</a>.
+        Need assistance? Contact support at
+        <a href="mailto:{{ DEFAULT_FROM_EMAIL }}">{{ DEFAULT_FROM_EMAIL }}</a>.
       </footer>
     </div>
 
@@ -477,15 +536,15 @@
       // Dark mode toggle
       const themeToggle = document.getElementById('theme-toggle');
       const html = document.documentElement;
-      
+
       // Check for saved theme preference or default to light mode
       const savedTheme = localStorage.getItem('theme') || 'light';
       html.setAttribute('data-theme', savedTheme);
-      
+
       themeToggle.addEventListener('click', () => {
         const currentTheme = html.getAttribute('data-theme');
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
+
         html.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
       });
