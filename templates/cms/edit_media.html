@@ -1391,7 +1391,7 @@
 									'<i class="material-icons">error_outline</i>' +
 								'</div>' +
 								'<h3 class="upload-progress-title error">Upload Failed</h3>' +
-								'<p class="upload-progress-message">' + errorReason + '</p>' +
+								'<p class="upload-progress-message">' + escapeHtml(errorReason || '') + '</p>' +
 								'<button onclick="location.reload()" class="button primaryAction">Try Again</button>';
 						}
 
