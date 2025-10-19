@@ -374,8 +374,8 @@
 
           <div class="block" aria-labelledby="eta-label">
             <div class="countdown">
-              <div class="time" id="time-remaining" aria-live="polite" aria-atomic="true">{% widthratio MAINTENANCE_MODE_RETRY_AFTER 60 1 %}:00</div>
-              <div class="time-label" id="eta-label">Estimated time remaining</div>
+              <div class="time" id="time-remaining" aria-live="polite" aria-atomic="true">{% widthratio MAINTENANCE_MODE_RETRY_AFTER 60 1|stringformat:"02d" %}:00</div>
+              <div class="time-label" id="eta-label">minutes remaining</div>
             </div>
             <div class="progress" aria-hidden="true">
               <div class="progress-bar" id="progress-bar"></div>

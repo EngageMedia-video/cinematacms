@@ -100,6 +100,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "files.context_processors.stuff",
                 "cms.context_processors.ui_settings",
+                "maintenance_mode.context_processors.maintenance_mode",
             ],
         },
     },
@@ -541,8 +542,8 @@ MFA_EXCLUDE_PATHS = ["/fu/", "/api/", "/manage/", "/accounts/"]
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths()
 
 # django-maintenance-mode settings
-MAINTENANCE_MODE = None # None/False/True
-MAINTENANCE_MODE_TEMPLATE = '503.html'
+MAINTENANCE_MODE = None  # None/False/True
+MAINTENANCE_MODE_TEMPLATE = "503.html"
 # if True the superuser will not see the maintenance-mode page
 MAINTENANCE_MODE_IGNORE_SUPERUSER = True
 # if True the staff users will not see the maintenance-mode page
@@ -550,7 +551,7 @@ MAINTENANCE_MODE_IGNORE_STAFF = True
 # if True admin site will not be affected by the maintenance-mode page
 MAINTENANCE_MODE_IGNORE_ADMIN_SITE = True
 # the value in seconds of the Retry-After header during maintenance-mode
-MAINTENANCE_MODE_RETRY_AFTER = 3600 # 1 hour
+MAINTENANCE_MODE_RETRY_AFTER = 3600  # 1 hour
 
 from .local_settings import *
 
