@@ -3386,6 +3386,11 @@ body .items-list-ver .feat-first-item.hw-most-recent-videos .item:nth-child(2) {
 
 
 /*   Homepage Popup Overlay */
+:root {
+  --header-height: 64px; /* example; adjust to your actual header height */
+  --top-message-height: 0px;
+}
+
 
 .homepage-popup {
     position: fixed;
@@ -3397,19 +3402,22 @@ body .items-list-ver .feat-first-item.hw-most-recent-videos .item:nth-child(2) {
 .homepage-popup-fullscreen {
     z-index: 4;
     position: absolute;
-    top: var(--header-height);
-    left: var(--sidebar-width);
+    top: calc(var(--header-height) + var(--top-message-height));
+    left: 0;
     right: 0;
     bottom: 0;
-    width: calc(100% - var(--sidebar-width));
-    height: calc(100% - var(--header-height));
+    width: 100%;
+    height: calc(100% - (var(--header-height) + var(--top-message-height)));
     background: rgba(17, 26, 36, 0.7);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding-top: 27px;
+    padding-top: 26px;
     box-sizing: border-box;
 }
+
 
 /* ✅ Popup content wrapper */
 .homepage-popup--container {
@@ -3453,13 +3461,13 @@ body .items-list-ver .feat-first-item.hw-most-recent-videos .item:nth-child(2) {
     background: rgba(0, 0, 0, 0.6);
     border: none;
     border-radius: 5%;
-    width: 70px;
-    height: 32px;
+    width: 65px;
+    height: 25px;
     display: flex;
     justify-content: center;
     align-items: center;
     color: #fff;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1;
     z-index: 2;
     cursor: pointer;
@@ -3474,8 +3482,8 @@ body .items-list-ver .feat-first-item.hw-most-recent-videos .item:nth-child(2) {
 
 /* ✅ Button icon sizing */
 .homepage-popup--close-btn--icon {
-    height: 20px;
-    width: 20px;
+    height: 16px;
+    width: 16px;
     color: #fff;
 }
 
