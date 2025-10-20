@@ -1627,7 +1627,7 @@ class HomepagePopup(models.Model):
     popup = models.FileField(
         "popup",
         upload_to="homepage-popups/",
-        help_text="Only this image will appear on the pop-up. Ideal image size is 900 x 650 pixels",
+        help_text="3:4 aspect ratio preferred. WebP under 200 KB recommended (JPEG/PNG accepted). Auto-resized to 540px width.",
         max_length=500,
     )
     url = models.CharField("URL", max_length=300)
