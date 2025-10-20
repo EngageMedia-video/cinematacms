@@ -1246,6 +1246,24 @@
 			uploadStatusMessage: null
 		};
 
+		// Utility function to get CSRF token - must be accessible globally
+		function getCSRFToken() {
+			var i, cookies, cookie, cookieVal = null;
+			if (document.cookie && '' !== document.cookie) {
+				cookies = document.cookie.split(';');
+				i = 0;
+				while(i < cookies.length){
+					cookie = cookies[i].trim();
+					if ('csrftoken=' === cookie.substring(0, 10)) {
+						cookieVal = decodeURIComponent(cookie.substring(10));
+						break;
+					}
+					i += 1;
+				}
+			}
+			return cookieVal;
+		}
+
 		// Function to cancel upload and clean up
 		function cancelUpload() {
 			// Call the cancel endpoint to clean up session and temp files
@@ -1295,23 +1313,6 @@
 				return String(text).replace(/[&<>"'\/]/g, function(char) {
 					return map[char];
 				});
-			}
-
-			function getCSRFToken() {
-				var i, cookies, cookie, cookieVal = null;
-				if (document.cookie && '' !== document.cookie) {
-					cookies = document.cookie.split(';');
-					i = 0;
-					while(i < cookies.length){
-						cookie = cookies[i].trim();
-						if ('csrftoken=' === cookie.substring(0, 10)) {
-							cookieVal = decodeURIComponent(cookie.substring(10));
-							break;
-						}
-						i += 1;
-					}
-				}
-				return cookieVal;
 			}
 
 			function formatBytes(bytes) {
