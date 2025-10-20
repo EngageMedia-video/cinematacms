@@ -37,3 +37,4 @@ django-maintenance-mode==0.22.0
 python-dotenv==1.1.1
 fido2==2.0.0
 qrcode==8.2
+pytz==2022.1
