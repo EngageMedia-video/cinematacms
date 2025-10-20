@@ -769,7 +769,7 @@
 
 			@keyframes pulse {
 				0% {
-					box-shadow: 0 0 0 0 var(--primary-color-transparent);
+					box-shadow: 0 0 0 0 rgba(231, 162, 123, 0.4);
 				}
 				70% {
 					box-shadow: 0 0 0 10px transparent;
@@ -997,10 +997,19 @@
 				padding: 40px;
 				text-align: center;
 				background: var(--input-bg-color);
-				border: 1px solid var(--input-border-color);
+				border: 2px dashed var(--input-border-color);
 				border-radius: 4px;
 				margin: 20px 0;
 				animation: fadeIn 0.3s ease-in;
+			}
+
+			/* Ensure dashed border is visible in dark mode */
+			.dark_theme .upload-progress-container {
+				border-color: rgba(255, 255, 255, 0.2);
+			}
+
+			.dark_theme .media-uploader-section {
+				border-color: rgba(255, 255, 255, 0.2) !important;
 			}
 
 			.upload-progress-icon {
@@ -1009,7 +1018,7 @@
 
 			.upload-progress-icon .material-icons {
 				font-size: 48px;
-				color: var(--primary-color);
+				color: var(--text-color);
 			}
 
 			.upload-progress-title {
@@ -1017,9 +1026,10 @@
 				margin: 10px 0;
 				font-size: 1.5em;
 				font-weight: 500;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
+				font-family: 'Amulya', sans-serif;
+				text-align: left;
+				word-wrap: break-word;
+				white-space: normal;
 				max-width: 100%;
 			}
 
@@ -1043,7 +1053,7 @@
 			.upload-progress-bar {
 				width: 0%;
 				height: 100%;
-				background: var(--primary-color, #2196F3);
+				background: var(--default-brand-color, #e7a27b);
 				transition: width 0.3s ease;
 				display: flex;
 				align-items: center;
@@ -1056,14 +1066,16 @@
 			}
 
 			.upload-progress-message {
-				color: var(--text-color-secondary);
+				color: var(--text-color);
 				margin: 10px 0;
+				text-align: left;
+				font-family: 'Amulya', sans-serif;
 			}
 
 			.upload-notice-box {
 				padding: 15px;
 				background: var(--body-bg-color);
-				border: 1px solid var(--primary-color);
+				border: 1px solid var(--default-theme-color);
 				border-left-width: 4px;
 				margin: 20px auto;
 				text-align: left;
@@ -1088,7 +1100,7 @@
 			}
 
 			.success-text {
-				color: var(--success-color, #4CAF50);
+				color: var(--text-color);
 			}
 
 
@@ -1101,6 +1113,7 @@
 				display: flex;
 				flex-direction: column;
 				gap: 12px;
+				text-align: left;
 			}
 
 			.success-icon-title {
@@ -1108,21 +1121,24 @@
 				align-items: center;
 				gap: 10px;
 				font-size: 1.2em;
-				color: var(--success-color, #4CAF50);
+				color: var(--text-color);
 			}
 
 			.success-icon-title .material-icons {
 				font-size: 24px;
+				color: var(--text-color);
 			}
 
 			.success-icon-title .success-title {
 				font-weight: 600;
+				font-family: 'Amulya', sans-serif;
 			}
 
 			.success-details {
 				display: flex;
-				align-items: center;
-				gap: 15px;
+				flex-direction: column;
+				align-items: flex-start;
+				gap: 5px;
 				padding: 10px 15px;
 				background: var(--body-bg-color);
 				border-radius: 4px;
@@ -1133,30 +1149,32 @@
 				color: var(--text-color);
 				font-weight: 500;
 				flex: 1;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
+				font-family: 'Amulya', sans-serif;
+				word-wrap: break-word;
+				white-space: normal;
 			}
 
 			.success-details .file-size {
-				color: var(--text-color-secondary);
+				color: var(--text-color);
 				font-size: 0.9em;
 				white-space: nowrap;
+				font-family: 'Amulya', sans-serif;
 			}
 
 			.success-notice {
 				display: flex;
-				align-items: center;
+				align-items: flex-start;
 				gap: 8px;
 				padding: 12px;
-				background: rgba(33, 150, 243, 0.1);
-				border-left: 3px solid var(--primary-color);
+				background: var(--body-bg-color);
+				border: 1px solid var(--input-border-color);
 				border-radius: 2px;
+				text-align: left;
 			}
 
 			.success-notice .material-icons {
 				font-size: 20px;
-				color: var(--primary-color);
+				color: var(--text-color);
 				flex-shrink: 0;
 			}
 
@@ -1164,6 +1182,7 @@
 				color: var(--text-color);
 				font-size: 0.9em;
 				line-height: 1.4;
+				font-family: 'Amulya', sans-serif;
 			}
 
 			@keyframes fadeIn {
@@ -1221,10 +1240,40 @@
 		window._uploadState = {
 			inProgress: false,
 			completed: false,
+			currentUploadId: null,
 			formSubmitButton: null,
 			originalButtonText: '',
 			uploadStatusMessage: null
 		};
+
+		// Function to cancel upload and clean up
+		function cancelUpload() {
+			// Call the cancel endpoint to clean up session and temp files
+			fetch('{% url 'uploader:cancel' form.instance.friendly_token %}', {
+				method: 'POST',
+				headers: {
+					'X-CSRFToken': getCSRFToken(),
+					'Content-Type': 'application/json',
+				},
+				credentials: 'same-origin'
+			}).then(function(response) {
+				return response.json();
+			}).then(function(data) {
+				if (data.success) {
+					console.log('Upload cancelled and temporary files cleaned up');
+					// Reload the page after successful cleanup
+					location.reload();
+				} else {
+					console.error('Failed to clean up cancelled upload:', data.error);
+					// Still reload to reset the UI
+					location.reload();
+				}
+			}).catch(function(error) {
+				console.error('Error calling cancel endpoint:', error);
+				// Still reload to reset the UI
+				location.reload();
+			});
+		}
 
 		document.addEventListener("DOMContentLoaded", function(event) {
 			// Initialize DOM element references in upload state
@@ -1323,6 +1372,7 @@
 					onSubmit: function(id, name) {
 						window._uploadState.inProgress = true;
 						window._uploadState.completed = false;
+						window._uploadState.currentUploadId = id;
 						updateFormState();
 
 						// Hide the drag-drop interface and show progress
@@ -1358,7 +1408,20 @@
 									'<span id="upload-progress-text" class="upload-progress-text">0%</span>' +
 								'</div>' +
 							'</div>' +
-							'<p class="upload-progress-message">Uploading your file, please wait</p>';
+							'<p class="upload-progress-message">Uploading your file, please wait</p>' +
+							'<button type="button" id="cancel-upload-btn" class="secondaryAction" style="margin-top: 20px;">Cancel</button>';
+
+						// Add cancel button event listener
+						setTimeout(function() {
+							var cancelBtn = document.getElementById('cancel-upload-btn');
+							if (cancelBtn) {
+								cancelBtn.addEventListener('click', function() {
+									if (window._uploadState.currentUploadId !== null) {
+										mediaFileUploader.cancel(window._uploadState.currentUploadId);
+									}
+								});
+							}
+						}, 100);
 
 						if (uploadList) {
 							uploadList.style.display = 'block';
@@ -1430,7 +1493,10 @@
 										'</div>' +
 										'<div class="success-notice">' +
 											'<i class="material-icons">info</i>' +
-											'<span>File uploaded but not saved. Click "Update Media" below to save and process.</span>' +
+											'<span>File uploaded. Click "Update Media" below to save.</span>' +
+										'</div>' +
+										'<div style="text-align: right; margin-top: 15px;">' +
+											'<button type="button" class="secondaryAction" onclick="cancelUpload()">Cancel</button>' +
 										'</div>' +
 									'</div>';
 							}
@@ -1459,6 +1525,26 @@
 						window._uploadState.inProgress = false;
 						updateFormState();
 
+						// Call the cancel endpoint to clean up session and temp files
+						fetch('{% url 'uploader:cancel' form.instance.friendly_token %}', {
+							method: 'POST',
+							headers: {
+								'X-CSRFToken': getCSRFToken(),
+								'Content-Type': 'application/json',
+							},
+							credentials: 'same-origin'
+						}).then(function(response) {
+							return response.json();
+						}).then(function(data) {
+							if (data.success) {
+								console.log('Upload cancelled and temporary files cleaned up');
+							} else {
+								console.error('Failed to clean up cancelled upload:', data.error);
+							}
+						}).catch(function(error) {
+							console.error('Error calling cancel endpoint:', error);
+						});
+
 						// Show cancelled state
 						var progressContainer = document.getElementById('upload-progress-container');
 						if (progressContainer) {
@@ -1467,8 +1553,10 @@
 								'<div class="upload-progress-icon">' +
 									'<i class="material-icons">cancel</i>' +
 								'</div>' +
-								'<h3 class="upload-progress-title">Upload Cancelled</h3>' +
-								'<button onclick="location.reload()" class="button secondaryAction">Start Over</button>';
+								'<h3 class="upload-progress-title" style="text-align: center;">Upload Cancelled</h3>' +
+								'<div style="text-align: center; margin-top: 15px;">' +
+									'<button onclick="cancelUpload()" class="button secondaryAction">Start Over</button>' +
+								'</div>';
 						}
 					}
 				}

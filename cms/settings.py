@@ -250,11 +250,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "update_listings_thumbnails",
         "schedule": crontab(minute="*/30"),
     },
+    # Clean up orphaned upload files daily at 2:00 AM
+    "cleanup_orphaned_uploads": {
+        "task": "cleanup_orphaned_uploads",
+        "schedule": crontab(hour="2", minute="0"),
+    },
     #     "schedule": timedelta(seconds=5),
     #     "args": (16, 16)
 }
-# TODO: beat, delete chunks from media root
-# chunks_dir after xx days...(also uploads_dir)
 
 
 # protection agains anonymous users
@@ -406,6 +409,8 @@ MAX_CHARS_FOR_COMMENT = 10000  # so that it doesn't end up huge
 # this is for fineuploader - media uploads
 UPLOAD_DIR = "uploads/"
 CHUNKS_DIR = "chunks/"
+# Hours after which orphaned upload files/chunks are considered stale and removed
+ORPHANED_UPLOAD_CLEANUP_HOURS = 24
 # bytes, size of uploaded media
 UPLOAD_MAX_SIZE = 800 * 1024 * 1000 * 5
 

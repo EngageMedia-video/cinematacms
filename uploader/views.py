@@ -249,3 +249,50 @@ class MediaFileUpdateView(generic.FormView):
     def form_invalid(self, form):
         data = {"success": False, "error": "%s" % repr(form.errors)}
         return self.make_response(data, status=400)
+
+
+class MediaFileUploadCancelView(generic.View):
+    """
+    View for cancelling a pending media file upload and cleaning up temporary files.
+    """
+    http_method_names = ("post",)
+
+    def post(self, request, *args, **kwargs):
+        # Get the media object
+        friendly_token = kwargs.get('friendly_token')
+        if not friendly_token:
+            return JsonResponse({"success": False, "error": "Media identifier required"}, status=400)
+
+        try:
+            media = Media.objects.get(friendly_token=friendly_token)
+        except Media.DoesNotExist:
+            return JsonResponse({"success": False, "error": "Media not found"}, status=404)
+
+        # Check if user has permission to update this media
+        from files.methods import is_mediacms_editor, is_mediacms_manager
+        if not (request.user == media.user or
+                is_mediacms_editor(request.user) or
+                is_mediacms_manager(request.user)):
+            return JsonResponse({"success": False, "error": "Permission denied"}, status=403)
+
+        # Get session data for this media
+        session_key = f'media_file_updated_{media.friendly_token}'
+        session_data = request.session.get(session_key, {})
+
+        # Clean up any pending upload files
+        if session_data.get('temp_file_path'):
+            temp_file_path = session_data['temp_file_path']
+            upload_file_path = session_data.get('upload_file_path')
+
+            # Use centralized cleanup helper with directory traversal protection
+            cleanup_temp_upload_files(
+                temp_file_path=temp_file_path,
+                upload_file_path=upload_file_path,
+                media_friendly_token=media.friendly_token,
+                logger=logger
+            )
+
+        # Clear the session data
+        request.session.pop(session_key, None)
+
+        return JsonResponse({"success": True, "message": "Upload cancelled and temporary files cleaned up"})
