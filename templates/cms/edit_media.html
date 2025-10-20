@@ -1260,16 +1260,16 @@
 				return response.json();
 			}).then(function(data) {
 				if (data.success) {
-					console.log('Upload cancelled and temporary files cleaned up');
-					// Reload the page after successful cleanup
+					console.log('Upload cancelled successfully');
+					// Reload the page to reset the upload interface
 					location.reload();
 				} else {
-					console.error('Failed to clean up cancelled upload:', data.error);
+					console.error('Failed to cancel upload:', data.error);
 					// Still reload to reset the UI
 					location.reload();
 				}
 			}).catch(function(error) {
-				console.error('Error calling cancel endpoint:', error);
+				console.error('Error cancelling upload:', error);
 				// Still reload to reset the UI
 				location.reload();
 			});
@@ -1554,8 +1554,9 @@
 									'<i class="material-icons">cancel</i>' +
 								'</div>' +
 								'<h3 class="upload-progress-title" style="text-align: center;">Upload Cancelled</h3>' +
+								'<p class="upload-progress-message" style="text-align: center;">Your upload has been cancelled. You can upload a different file or keep the current media file.</p>' +
 								'<div style="text-align: center; margin-top: 15px;">' +
-									'<button onclick="cancelUpload()" class="button secondaryAction">Start Over</button>' +
+									'<button onclick="cancelUpload()" class="button primaryAction">Upload a Different File</button>' +
 								'</div>';
 						}
 					}
