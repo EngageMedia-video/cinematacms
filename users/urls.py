@@ -24,10 +24,10 @@ urlpatterns = [
     ),
     re_path("^user/(?P<username>[\w@.]*)/edit$", views.edit_user, name="edit_user"),
     re_path(
-        r"^channel/(?P<friendly_token>[\w]*)$", views.view_channel, name="view_channel"
+        r"^channel/(?P<friendly_token>\w+(-\w+)*)$", views.view_channel, name="view_channel"
     ),
     re_path(
-        r"^channel/(?P<friendly_token>[\w]*)/edit$",
+        r"^channel/(?P<friendly_token>\w+(-\w+)*)/edit$",
         views.edit_channel,
         name="edit_channel",
     ),

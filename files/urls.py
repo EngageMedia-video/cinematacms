@@ -44,12 +44,12 @@ urlpatterns = [
     re_path("^scpublisher", views.upload_media, name="upload_media"),
     re_path("^search", views.search, name="search"),
     re_path(
-        r"^playlist/(?P<friendly_token>[\w]*)$",
+        r"^playlist/(?P<friendly_token>[\w]+(-[\w]+)*)$",
         views.view_playlist,
         name="get_playlist",
     ),
     re_path(
-        r"^playlists/(?P<friendly_token>[\w]*)$",
+        r"^playlists/(?P<friendly_token>[\w]+(-[\w]+)*)$",
         views.view_playlist,
         name="get_playlist",
     ),
@@ -57,7 +57,7 @@ urlpatterns = [
     re_path("^api/v1/media$", views.MediaList.as_view()),
     re_path("^api/v1/media/$", views.MediaList.as_view()),
     re_path(
-        r"^api/v1/media/(?P<friendly_token>[\w]*)$",
+        r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)$",
         views.MediaDetail.as_view(),
         name="api_get_media",
     ),
@@ -68,7 +68,7 @@ urlpatterns = [
     ),
     re_path("^api/v1/search$", views.MediaSearch.as_view()),
     re_path(
-        r"^api/v1/media/(?P<friendly_token>[\w]*)/actions$",
+        r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/actions$",
         views.MediaActions.as_view(),
     ),
     #    url(r'^api/v1/media/(?P<friendly_token>[\w]*)/subtitless$',
@@ -80,17 +80,17 @@ urlpatterns = [
     re_path("^api/v1/tags$", views.TagList.as_view()),
     re_path("^api/v1/comments$", views.CommentList.as_view()),
     re_path(
-        r"^api/v1/media/(?P<friendly_token>[\w]*)/comments$",
+        r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/comments$",
         views.CommentDetail.as_view(),
     ),
     re_path(
-        r"^api/v1/media/(?P<friendly_token>[\w]*)/comments/(?P<uid>[\w-]*)$",
+        r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/comments/(?P<uid>[\w]+(-[\w]+)*)$",
         views.CommentDetail.as_view(),
     ),
     re_path("^api/v1/playlists$", views.PlaylistList.as_view()),
     re_path("^api/v1/playlists/$", views.PlaylistList.as_view()),
     re_path(
-        r"^api/v1/playlists/(?P<friendly_token>[\w]*)$",
+        r"^api/v1/playlists/(?P<friendly_token>[\w]+(-[\w]+)*)$",
         views.PlaylistDetail.as_view(),
         name="api_get_playlist",
     ),
