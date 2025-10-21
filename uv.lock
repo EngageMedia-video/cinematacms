@@ -264,6 +264,7 @@ dependencies = [
     { name = "django-debug-toolbar" },
     { name = "django-filter" },
     { name = "django-imagekit" },
+    { name = "django-maintenance-mode" },
     { name = "django-mptt" },
     { name = "django-recaptcha" },
     { name = "django-redis" },
@@ -306,6 +307,7 @@ requires-dist = [
     { name = "django-debug-toolbar", specifier = "==6.0.0" },
     { name = "django-filter", specifier = "==25.2" },
     { name = "django-imagekit", specifier = "==6.0.0" },
+    { name = "django-maintenance-mode", specifier = "==0.22.0" },
     { name = "django-mptt", specifier = "==0.18.0" },
     { name = "django-recaptcha", specifier = "==4.1.0" },
     { name = "django-redis", specifier = "==6.0.0" },
@@ -585,6 +587,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e6/91/c63f136f553ec24fc46ccf20ac7292a8df04815b383975b6f3f7f0060217/django_js_asset-3.1.2.tar.gz", hash = "sha256:1fc7584199ed1941ed7c8e7b87ca5524bb0f2ba941561d2a104e88ee9f07bedd", size = 9471, upload-time = "2025-03-04T15:22:49.789Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a6/cf/b208767db5e56b5189829f753eec6a14ee75d074922dc2bd19220b22a34d/django_js_asset-3.1.2-py3-none-any.whl", hash = "sha256:b5ffe376aebbd73b7af886d675ac9f43ca63b39540190fa8409c9f8e79145f68", size = 5905, upload-time = "2025-03-04T15:22:51.152Z" },
+]
+
+[[package]]
+name = "django-maintenance-mode"
+version = "0.22.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-fsutil" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/36/16/1be35f8c44f7ff05bfc6465eb4bf7ceb2ab0f85970baac6c91742a0d72d0/django_maintenance_mode-0.22.0.tar.gz", hash = "sha256:502f04f845d6996e8add321186b3b9236c3702de7cb0ab14952890af6523b9e5", size = 18385, upload-time = "2025-04-03T13:25:53.658Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f3/dc/4b75fbaecba12cbd682131cf047076a0dc43d61f2456c08f5bf2d3ce0a8c/django_maintenance_mode-0.22.0-py3-none-any.whl", hash = "sha256:a9cf2ba79c9945bd67f98755a6cfd281869d39b3745bbb5d1f571d058657aa85", size = 16659, upload-time = "2025-04-03T13:25:52.109Z" },
 ]
 
 [[package]]
@@ -1127,6 +1141,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f6/b0/4bc07ccd3572a2f9df7e6782f52b0c6c90dcbb803ac4a167702d7d0dfe1e/python_dotenv-1.1.1.tar.gz", hash = "sha256:a8a6399716257f45be6a007360200409fce5cda2661e3dec71d23dc15f6189ab", size = 41978, upload-time = "2025-06-24T04:21:07.341Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5f/ed/539768cf28c661b5b068d66d96a2f155c4971a5d55684a514c1a0e0dec2f/python_dotenv-1.1.1-py3-none-any.whl", hash = "sha256:31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc", size = 20556, upload-time = "2025-06-24T04:21:06.073Z" },
+]
+
+[[package]]
+name = "python-fsutil"
+version = "0.15.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/4a/494de3f8b079f077d687f7b3e32b963f7613eaae2d7b5c1be34d7eafd19a/python_fsutil-0.15.0.tar.gz", hash = "sha256:b51d8ab7ee218314480ea251fff7fef513be4fbccfe72a5af4ff2954f8a4a2c4", size = 29669, upload-time = "2025-02-06T17:47:55.769Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/33/de/fc2c3fa9d1f29c017c8eba2448efe86495b762111cf613a4c6d860158970/python_fsutil-0.15.0-py3-none-any.whl", hash = "sha256:8ae31def522916e35caf67723b8526fe6e5fcc1e160ea2dc23c845567708ca6e", size = 20915, upload-time = "2025-02-06T17:47:53.658Z" },
 ]
 
 [[package]]
