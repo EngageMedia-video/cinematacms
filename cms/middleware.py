@@ -34,20 +34,32 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
             # Get or set the start time atomically
             start_time = self._get_or_set_start_time()
 
-            # Calculate remaining time
+            # Calculate elapsed and remaining time
             elapsed = time.time() - start_time
             remaining = max(0, retry_after - elapsed)
+
+            # Check if maintenance has been extended beyond initial estimate
+            is_extended = elapsed > retry_after
+
+            # Calculate extension time if maintenance is extended
+            extension_time = max(0, elapsed - retry_after) if is_extended else 0
 
             # Add to request for use in templates
             request.maintenance_remaining = int(remaining)
             request.maintenance_start_time = start_time
             request.maintenance_total_duration = retry_after
+            request.maintenance_is_extended = is_extended
+            request.maintenance_extension_time = int(extension_time)
+            request.maintenance_elapsed_time = int(elapsed)
         else:
             # Not in maintenance mode, clean up
             self._clear_timing()
             request.maintenance_remaining = 0
             request.maintenance_start_time = None
             request.maintenance_total_duration = 0
+            request.maintenance_is_extended = False
+            request.maintenance_extension_time = 0
+            request.maintenance_elapsed_time = 0
 
     def _get_or_set_start_time(self):
         """

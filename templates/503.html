@@ -258,6 +258,11 @@
         font-size: 0.9rem;
       }
 
+      /* Extended maintenance styles */
+      .time.extended {
+        color: var(--color-primary);
+      }
+
       .progress {
         position: relative;
         width: 100%;
@@ -479,30 +484,59 @@
 
           <div class="panel-header">
             <div>
-              <h1 id="maint-title">We'll be back soon</h1>
-              <p class="sub">
-                We're performing scheduled maintenance to improve reliability
-                and speed.
-              </p>
+              {% if MAINTENANCE_MODE_IS_EXTENDED %}
+                <h1 id="maint-title">Maintenance is taking longer than expected</h1>
+                <p class="sub">
+                  We apologize for the extended downtime. Our team is working to restore service as quickly as possible.
+                </p>
+              {% else %}
+                <h1 id="maint-title">We'll be back soon</h1>
+                <p class="sub">
+                  We're performing scheduled maintenance to improve reliability
+                  and speed.
+                </p>
+              {% endif %}
             </div>
           </div>
 
           <div class="block block-separator" aria-labelledby="eta-label">
-            <div class="countdown">
-              <div
-                class="time"
-                id="time-remaining"
-                aria-live="polite"
-                aria-atomic="true"
-                data-seconds-remaining="{{ MAINTENANCE_MODE_REMAINING|default:0 }}"
-              >
-                <!-- Will be set by JavaScript -->
+            {% if MAINTENANCE_MODE_IS_EXTENDED %}
+              <!-- Extended maintenance mode UI -->
+              <div class="countdown">
+                <div
+                  class="time extended"
+                  id="time-extended"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  data-extension-time="{{ MAINTENANCE_MODE_EXTENSION_TIME|default:0 }}"
+                >
+                  <!-- Will be set by JavaScript -->
+                </div>
+                <div class="time-label" id="eta-label">over the estimated time</div>
               </div>
-              <div class="time-label" id="eta-label">minutes remaining</div>
-            </div>
-            <div class="progress" aria-hidden="true">
-              <div class="progress-bar" id="progress-bar"></div>
-            </div>
+              <div style="margin-top: 16px; text-align: center;">
+                <p class="sub" style="color: var(--color-primary); margin: 8px 0;">
+                  Please check back in a few minutes
+                </p>
+              </div>
+            {% else %}
+              <!-- Normal countdown mode -->
+              <div class="countdown">
+                <div
+                  class="time"
+                  id="time-remaining"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  data-seconds-remaining="{{ MAINTENANCE_MODE_REMAINING|default:0 }}"
+                >
+                  <!-- Will be set by JavaScript -->
+                </div>
+                <div class="time-label" id="eta-label">minutes remaining</div>
+              </div>
+              <div class="progress" aria-hidden="true">
+                <div class="progress-bar" id="progress-bar"></div>
+              </div>
+            {% endif %}
 
             <div class="actions">
               <button
@@ -529,18 +563,12 @@
     </div>
 
     <script>
-      // Get server-calculated remaining time and total duration
-      const timeEl = document.getElementById('time-remaining');
-      const REMAINING_SECONDS = parseInt(timeEl.dataset.secondsRemaining || '0');
-      const TOTAL_SECONDS = {{ MAINTENANCE_MODE_TOTAL|default:MAINTENANCE_MODE_RETRY_AFTER|default:900 }};
+      // Check if we're in extended maintenance mode
+      const IS_EXTENDED = {{ MAINTENANCE_MODE_IS_EXTENDED|default:'false'|lower }};
 
-      const progressBar = document.getElementById('progress-bar');
       const refreshBtn = document.getElementById('refresh-btn');
       const updateText = document.getElementById('update-text');
-
       const start = Date.now();
-      const remainingMs = REMAINING_SECONDS * 1000; // Convert to milliseconds
-      const deadline = start + remainingMs;
 
       function formatTime(ms){
         const total = Math.max(0, Math.floor(ms/1000));
@@ -549,25 +577,23 @@
         return `${m}:${s}`;
       }
 
-      function updateCountdown(){
-        const now = Date.now();
-        const remaining = Math.max(0, deadline - now);
-        timeEl.textContent = formatTime(remaining);
+      function formatExtendedTime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
 
-        // Calculate progress based on total duration and remaining time
-        const currentRemainingSec = Math.max(0, Math.floor(remaining / 1000));
-        const elapsedFromTotal = TOTAL_SECONDS - currentRemainingSec;
-        const pct = Math.min(100, (elapsedFromTotal / TOTAL_SECONDS) * 100);
-        progressBar.style.width = `${pct}%`;
-
-        // Check if maintenance window ended
-        if (remaining === 0){
-          clearInterval(t);
-          // Optionally auto-refresh when maintenance should be over
-          setTimeout(() => location.reload(), 2000);
+        if (hours > 0) {
+          if (minutes > 0) {
+            return `${hours}h ${minutes}m`;
+          } else {
+            return `${hours} hour${hours !== 1 ? 's' : ''}`;
+          }
+        } else {
+          return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
         }
+      }
 
-        // Update "Last checked"
+      function updateLastChecked() {
+        const now = Date.now();
         const secondsSinceCheck = Math.floor((now - start)/1000);
         if (secondsSinceCheck < 5){
           updateText.textContent = 'Last checked just now.';
@@ -579,10 +605,84 @@
         }
       }
 
-      // Set initial time display
-      timeEl.textContent = formatTime(remainingMs);
+      let t; // Timer variable
 
-      // Buttons
+      if (IS_EXTENDED) {
+        // Extended maintenance mode
+        const extendedTimeEl = document.getElementById('time-extended');
+        const EXTENSION_SECONDS = parseInt(extendedTimeEl?.dataset.extensionTime || '0');
+
+        // Display how long over the estimate we are
+        if (extendedTimeEl) {
+          extendedTimeEl.textContent = formatExtendedTime(EXTENSION_SECONDS);
+        }
+
+        // Only update "Last checked" in extended mode, no countdown
+        t = setInterval(updateLastChecked, 1000);
+
+        // In extended mode, refresh less frequently (every 30 seconds instead of 2)
+        // but only if user hasn't interacted recently
+        let userInteracted = false;
+        document.addEventListener('mousemove', () => { userInteracted = true; });
+        document.addEventListener('keypress', () => { userInteracted = true; });
+
+        // Auto-refresh every 30 seconds if no user interaction
+        setInterval(() => {
+          if (!userInteracted) {
+            location.reload();
+          }
+          userInteracted = false; // Reset for next interval
+        }, 30000);
+
+      } else {
+        // Normal countdown mode
+        const timeEl = document.getElementById('time-remaining');
+        const REMAINING_SECONDS = parseInt(timeEl?.dataset.secondsRemaining || '0');
+        const TOTAL_SECONDS = {{ MAINTENANCE_MODE_TOTAL|default:MAINTENANCE_MODE_RETRY_AFTER|default:900 }};
+
+        const progressBar = document.getElementById('progress-bar');
+        const remainingMs = REMAINING_SECONDS * 1000; // Convert to milliseconds
+        const deadline = start + remainingMs;
+
+        function updateCountdown(){
+          const now = Date.now();
+          const remaining = Math.max(0, deadline - now);
+
+          if (timeEl) {
+            timeEl.textContent = formatTime(remaining);
+          }
+
+          // Calculate progress based on total duration and remaining time
+          const currentRemainingSec = Math.max(0, Math.floor(remaining / 1000));
+          const elapsedFromTotal = TOTAL_SECONDS - currentRemainingSec;
+          const pct = Math.min(100, (elapsedFromTotal / TOTAL_SECONDS) * 100);
+
+          if (progressBar) {
+            progressBar.style.width = `${pct}%`;
+          }
+
+          // When countdown ends, refresh once to check status
+          if (remaining === 0 && !window.hasRefreshed){
+            window.hasRefreshed = true; // Prevent multiple refreshes
+            clearInterval(t);
+            // Single refresh after countdown ends
+            setTimeout(() => location.reload(), 2000);
+          }
+
+          updateLastChecked();
+        }
+
+        // Set initial time display
+        if (timeEl) {
+          timeEl.textContent = formatTime(remainingMs);
+        }
+
+        // Start countdown
+        updateCountdown();
+        t = setInterval(updateCountdown, 1000);
+      }
+
+      // Refresh button works in both modes
       refreshBtn.addEventListener('click', () => {
         location.reload();
       });
