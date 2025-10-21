@@ -89,6 +89,36 @@
         background: #0f2230;
       }
 
+      /* Logo styles - minimal addition */
+      .logo-container {
+        margin-bottom: 20px;
+      }
+
+      .logo {
+        max-width: 150px;
+        height: auto;
+      }
+
+      /* Spinner container for centering */
+      .spinner-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+      }
+
+      /* Hide dark logo in light mode, light logo in dark mode */
+      .logo-dark {
+        display: none;
+      }
+
+      [data-theme="dark"] .logo-light {
+        display: none;
+      }
+
+      [data-theme="dark"] .logo-dark {
+        display: block;
+      }
+
       .panel {
         width: 100%;
         max-width: 720px;
@@ -105,26 +135,57 @@
       }
 
       .panel-header {
-        display: flex;
-        gap: 16px;
-        align-items: center;
         margin-bottom: 12px;
+        text-align: center;
       }
 
       .spinner {
-        width: 32px;
-        height: 32px;
-        border: 3px solid rgba(237, 124, 48, 0.2);
-        border-top-color: var(--color-primary);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        flex: 0 0 32px;
+        position: relative;
+        width: 51px;
+        height: 51px;
+        flex: 0 0 51px;
       }
 
-      [data-theme="dark"] .spinner {
-        border: 3px solid rgba(237, 124, 48, 0.3);
-        border-top-color: var(--color-primary);
+      .spinner-outer {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 51px;
+        height: 51px;
+        border: 5px solid #ed7c31;
+        border-radius: 50%;
+        border-top-color: transparent;
+        border-right-color: transparent;
+        animation: spin 1.2s linear infinite;
       }
+
+      .spinner-inner {
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        width: 42px;
+        height: 42px;
+        border: 5px solid #ed7c31;
+        border-radius: 50%;
+        opacity: 0.3;
+        border-bottom-color: transparent;
+        border-left-color: transparent;
+        animation: spin 0.8s linear infinite reverse;
+      }
+
+      [data-theme="dark"] .spinner-outer {
+        border-color: #ed7c31;
+        border-top-color: transparent;
+        border-right-color: transparent;
+      }
+
+      [data-theme="dark"] .spinner-inner {
+        border-color: #ed7c31;
+        border-bottom-color: transparent;
+        border-left-color: transparent;
+        opacity: 0.4;
+      }
+
       @keyframes spin {
         to {
           transform: rotate(360deg);
@@ -147,6 +208,7 @@
       .status {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
         margin-top: 16px;
         font-size: 0.9rem;
@@ -168,16 +230,21 @@
       .block {
         margin-top: 20px;
         padding-top: 12px;
-        border-top: 1px dashed rgba(100, 116, 139, 0.2);
+        text-align: center;
       }
 
-      [data-theme="dark"] .block {
+      .block-separator {
+        border-top: 1px solid rgba(100, 116, 139, 0.2);
+      }
+
+      [data-theme="dark"] .block-separator {
         border-top-color: rgba(148, 163, 184, 0.2);
       }
 
       .countdown {
         display: flex;
         align-items: baseline;
+        justify-content: center;
         gap: 10px;
       }
       .time {
@@ -196,13 +263,23 @@
         width: 100%;
         height: 10px;
         border-radius: 999px;
-        background: rgba(100, 116, 139, 0.15);
+        background: rgba(
+          32,
+          178,
+          170,
+          0.15
+        ); /* Teal background at 15% opacity */
         overflow: hidden;
         margin-top: 12px;
       }
 
       [data-theme="dark"] .progress {
-        background: rgba(148, 163, 184, 0.2);
+        background: rgba(
+          95,
+          158,
+          160,
+          0.2
+        ); /* Teal/blue background at 20% opacity */
       }
       .progress-bar {
         position: absolute;
@@ -210,66 +287,50 @@
         top: 0;
         bottom: 0;
         width: 0%;
-        background: var(--color-primary);
+        background: #20b2aa; /* Teal color for light mode */
         transition: width 0.3s ease;
+      }
+
+      [data-theme="dark"] .progress-bar {
+        background: #5f9ea0; /* Darker teal/blue for dark mode */
       }
 
       .actions {
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px 12px;
+        justify-content: flex-end;
         align-items: center;
         margin-top: 16px;
       }
 
       .btn {
         appearance: none;
-        border: 1px solid var(--color-primary);
-        background: var(--color-primary);
+        border: none;
+        background: #1a3f61; /* Light mode primary button color */
         color: #fff;
-        border-radius: 10px;
-        padding: 10px 14px;
+        border-radius: 0; /* No rounded corners - flat design */
+        padding: 12px 24px;
         font-weight: 600;
+        font-size: 14px;
         cursor: pointer;
-        transition: background 0.2s ease, border-color 0.2s ease;
+        transition: opacity 0.2s ease;
+        box-shadow: none; /* Flat style */
       }
 
-      .btn:hover,
+      [data-theme="dark"] .btn {
+        background: #ed7c30; /* Dark mode primary button color */
+      }
+
+      .btn:hover {
+        opacity: 0.9;
+      }
+
       .btn:active {
-        background: #e7a27b;
-        border-color: #e7a27b;
-      }
-
-      .btn.secondary {
-        background: #1a3f61;
-        border-color: #1a3f61;
-        color: #fff;
-      }
-
-      .btn.secondary:hover,
-      .btn.secondary:active {
-        background: #e7a27b;
-        border-color: #e7a27b;
-      }
-
-      [data-theme="dark"] .btn.secondary {
-        background: #659ba0;
-        border-color: #659ba0;
-      }
-
-      [data-theme="dark"] .btn.secondary:hover,
-      [data-theme="dark"] .btn.secondary:active {
-        background: #e7a27b;
-        border-color: #e7a27b;
+        opacity: 0.8;
       }
 
       .btn:focus-visible {
-        outline: 3px solid rgba(237, 124, 48, 0.35);
+        outline: 2px solid var(--color-primary);
         outline-offset: 2px;
-      }
-
-      [data-theme="dark"] .btn:focus-visible {
-        outline-color: rgba(237, 124, 48, 0.45);
       }
 
       .opt {
@@ -400,24 +461,41 @@
     <div class="container">
       <main id="content" role="main">
         <section class="panel" aria-labelledby="maint-title">
+          <!-- Logo Section -->
+          <div class="logo-container">
+            <img
+              class="logo logo-light"
+              src="{{FRONTEND_HOST}}/static/images/placeholder-logo-lightbg.svg"
+              alt="{{PORTAL_NAME}}"
+              onerror="this.onerror=null; this.src='{{FRONTEND_HOST}}/static/images/placeholder-logo-lightbg.jpg'"
+            />
+            <img
+              class="logo logo-dark"
+              src="{{FRONTEND_HOST}}/static/images/placeholder-logo-darkbg.svg"
+              alt="{{PORTAL_NAME}}"
+              onerror="this.onerror=null; this.src='{{FRONTEND_HOST}}/static/images/placeholder-logo-darkbg.jpg'"
+            />
+          </div>
+
+          <!-- Spinner below logo -->
+          <div class="spinner-container">
+            <div class="spinner" aria-hidden="true">
+              <div class="spinner-outer"></div>
+              <div class="spinner-inner"></div>
+            </div>
+          </div>
+
           <div class="panel-header">
-            <div class="spinner" aria-hidden="true"></div>
             <div>
               <h1 id="maint-title">We'll be back soon</h1>
               <p class="sub">
                 We're performing scheduled maintenance to improve reliability
                 and speed.
               </p>
-              <div class="status" role="status" aria-live="polite">
-                <span class="status-dot" aria-hidden="true"></span>
-                <span id="status-text"
-                  >Systems are temporarily unavailable.</span
-                >
-              </div>
             </div>
           </div>
 
-          <div class="block" aria-labelledby="eta-label">
+          <div class="block block-separator" aria-labelledby="eta-label">
             <div class="countdown">
               {% widthratio MAINTENANCE_MODE_RETRY_AFTER 60 1 as minutes %}
               <div
@@ -441,12 +519,8 @@
                 type="button"
                 aria-label="Refresh the page to check status"
               >
-                Refresh now
+                Refresh
               </button>
-              <label class="opt" for="auto-refresh">
-                <input type="checkbox" id="auto-refresh" />
-                Auto-refresh when ready
-              </label>
             </div>
           </div>
 
@@ -468,10 +542,8 @@
       const COUNTDOWN_SECONDS = {{ MAINTENANCE_MODE_RETRY_AFTER|default:900 }};
 
       const timeEl = document.getElementById('time-remaining');
-      const statusEl = document.getElementById('status-text');
       const progressBar = document.getElementById('progress-bar');
       const refreshBtn = document.getElementById('refresh-btn');
-      const autoRefresh = document.getElementById('auto-refresh');
       const updateText = document.getElementById('update-text');
 
       const start = Date.now();
@@ -495,13 +567,9 @@
         const pct = (elapsed / durationMs) * 100;
         progressBar.style.width = `${pct}%`;
 
-        // Status + auto-refresh behavior
+        // Check if maintenance window ended
         if (remaining === 0){
-          statusEl.textContent = 'Maintenance window ended. You can try refreshing now.';
-          if (autoRefresh.checked) {
-            // slight delay so assistive tech announces the status change
-            setTimeout(() => location.reload(), 1000);
-          }
+          clearInterval(updateClock);
         }
 
         // Update "Last checked"
@@ -520,18 +588,6 @@
       refreshBtn.addEventListener('click', () => {
         location.reload();
       });
-
-      // Network awareness
-      function updateOnlineStatus(){
-        if (navigator.onLine){
-          statusEl.textContent = 'Systems are temporarily unavailable.';
-        } else {
-          statusEl.textContent = 'You appear to be offline. Please check your connection.';
-        }
-      }
-      window.addEventListener('online', updateOnlineStatus);
-      window.addEventListener('offline', updateOnlineStatus);
-      updateOnlineStatus();
 
       // Dark mode toggle
       const themeToggle = document.getElementById('theme-toggle');
