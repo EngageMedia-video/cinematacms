@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>We'll be back soon</title>
+    <style>
+      :root {
+        /* Light mode (default) */
+        --color-bg: #f8ffff;
+        --color-fg: #000;
+        --color-muted: #64748b;
+        --color-primary: #ed7c30;
+        --color-secondary: #1a3f61;
+        --radius: 6px;
+      }
+
+      /* Dark mode */
+      [data-theme="dark"] {
+        --color-bg: #101a24;
+        --color-fg: #fff;
+        --color-muted: #869ea5;
+        --color-primary: #ed7c30;
+        --color-secondary: #659ba0;
+      }
+
+      /* Fonts - Cinemata uses Amulya and Facultad */
+      @font-face {
+        font-family: "Amulya";
+        src: url("/static/lib/Amulya/fonts/Amulya-Variable.woff2")
+            format("woff2"),
+          url("/static/lib/Amulya/fonts/Amulya-Variable.woff") format("woff");
+        font-weight: 300 700;
+        font-display: swap;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Facultad";
+        src: url("/static/lib/Facultad/Facultad-Regular.otf") format("opentype");
+        font-weight: normal;
+        font-display: swap;
+        font-style: normal;
+      }
+
+      /* Reset + base */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--color-bg);
+        color: var(--color-fg);
+        font-family: "Amulya", Arial, sans-serif;
+        line-height: 1.6;
+      }
+
+      a {
+        color: var(--color-primary);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .container {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      main {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 20px;
+        background: #dfeff4;
+      }
+
+      [data-theme="dark"] main {
+        background: #0f2230;
+      }
+
+      /* Logo styles - minimal addition */
+      .logo-container {
+        margin-bottom: 20px;
+      }
+
+      .logo {
+        max-width: 150px;
+        height: auto;
+      }
+
+      /* Spinner container for centering */
+      .spinner-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+      }
+
+      /* Hide dark logo in light mode, light logo in dark mode */
+      .logo-dark {
+        display: none;
+      }
+
+      [data-theme="dark"] .logo-light {
+        display: none;
+      }
+
+      [data-theme="dark"] .logo-dark {
+        display: block;
+      }
+
+      .panel {
+        width: 100%;
+        max-width: 720px;
+        border: none;
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(10px);
+        padding: 24px;
+      }
+
+      [data-theme="dark"] .panel {
+        background: rgba(11, 49, 68, 0.5);
+      }
+
+      .panel-header {
+        margin-bottom: 12px;
+        text-align: center;
+      }
+
+      .spinner {
+        position: relative;
+        width: 51px;
+        height: 51px;
+        flex: 0 0 51px;
+      }
+
+      .spinner-outer {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 51px;
+        height: 51px;
+        border: 5px solid #ed7c31;
+        border-radius: 50%;
+        border-top-color: transparent;
+        border-right-color: transparent;
+        animation: spin 1.2s linear infinite;
+      }
+
+      .spinner-inner {
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        width: 42px;
+        height: 42px;
+        border: 5px solid #ed7c31;
+        border-radius: 50%;
+        opacity: 0.3;
+        border-bottom-color: transparent;
+        border-left-color: transparent;
+        animation: spin 0.8s linear infinite reverse;
+      }
+
+      [data-theme="dark"] .spinner-outer {
+        border-color: #ed7c31;
+        border-top-color: transparent;
+        border-right-color: transparent;
+      }
+
+      [data-theme="dark"] .spinner-inner {
+        border-color: #ed7c31;
+        border-bottom-color: transparent;
+        border-left-color: transparent;
+        opacity: 0.4;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        line-height: 1.3;
+        font-family: "Facultad", Arial, sans-serif;
+      }
+
+      .sub {
+        margin: 6px 0 0 0;
+        color: var(--color-muted);
+        font-size: 0.95rem;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 16px;
+        font-size: 0.9rem;
+        color: var(--color-muted);
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--color-primary);
+        box-shadow: 0 0 0 4px rgba(231, 162, 123, 0.2);
+      }
+
+      [data-theme="dark"] .status-dot {
+        box-shadow: 0 0 0 4px rgba(237, 124, 48, 0.25);
+      }
+
+      .block {
+        margin-top: 20px;
+        padding-top: 12px;
+        text-align: center;
+      }
+
+      .block-separator {
+        border-top: 1px solid rgba(100, 116, 139, 0.2);
+      }
+
+      [data-theme="dark"] .block-separator {
+        border-top-color: rgba(148, 163, 184, 0.2);
+      }
+
+      .countdown {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+      }
+      .time {
+        font-variant-numeric: tabular-nums;
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+      }
+      .time-label {
+        color: var(--color-muted);
+        font-size: 0.9rem;
+      }
+
+      /* Extended maintenance styles */
+      .time.extended {
+        color: var(--color-primary);
+      }
+
+      .progress {
+        position: relative;
+        width: 100%;
+        height: 23px; /* Increased height to match design */
+        border-radius: 6px; /* Subtle rounded corners */
+        background: rgba(123, 187, 191, 0.2); /* Light teal background */
+        overflow: hidden;
+        margin-top: 16px;
+      }
+
+      [data-theme="dark"] .progress {
+        background: rgba(123, 187, 191, 0.15); /* Slightly transparent for dark mode */
+      }
+
+      .progress-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 0%;
+        background: #102c40; /* Dark blue for light mode */
+        border-radius: 6px; /* Match parent border radius */
+        transition: width 0.3s ease;
+      }
+
+      [data-theme="dark"] .progress-bar {
+        background: #7bbbbf; /* Teal color for dark mode */
+      }
+
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 16px;
+      }
+
+      .btn {
+        appearance: none;
+        border: none;
+        background: #1a3f61; /* Light mode primary button color */
+        color: #fff;
+        border-radius: 0; /* No rounded corners - flat design */
+        padding: 12px 24px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+        box-shadow: none; /* Flat style */
+      }
+
+      [data-theme="dark"] .btn {
+        background: #ed7c30; /* Dark mode primary button color */
+      }
+
+      .btn:hover {
+        opacity: 0.9;
+      }
+
+      .btn:active {
+        opacity: 0.8;
+      }
+
+      .btn:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+      }
+
+      .opt {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--color-muted);
+        font-size: 0.95rem;
+      }
+      .opt input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--color-primary);
+      }
+
+      footer {
+        padding: 20px;
+        text-align: center;
+        color: var(--color-muted);
+        font-size: 0.9rem;
+        border-top: 1px solid rgba(100, 116, 139, 0.1);
+      }
+
+      [data-theme="dark"] footer {
+        border-top-color: rgba(148, 163, 184, 0.15);
+      }
+
+      /* Dark mode toggle button */
+      .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        appearance: none;
+        border: 1px solid rgba(100, 116, 139, 0.2);
+        background: var(--color-bg);
+        color: var(--color-fg);
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      [data-theme="dark"] .theme-toggle {
+        border-color: rgba(148, 163, 184, 0.3);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      .theme-toggle:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      [data-theme="dark"] .theme-toggle:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      }
+
+      .theme-toggle:focus-visible {
+        outline: 3px solid var(--color-primary);
+        outline-offset: 2px;
+      }
+
+      .theme-toggle svg {
+        width: 20px;
+        height: 20px;
+        transition: transform 0.3s ease;
+      }
+
+      .theme-toggle:active svg {
+        transform: rotate(20deg);
+      }
+
+      /* Hide sun in dark mode, moon in light mode */
+      [data-theme="dark"] .icon-sun {
+        display: none;
+      }
+      [data-theme="light"] .icon-moon,
+      :root:not([data-theme]) .icon-moon {
+        display: none;
+      }
+
+      /* Responsive tweaks */
+      @media (min-width: 640px) {
+        .panel {
+          padding: 28px;
+        }
+        h1 {
+          font-size: 1.75rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Dark mode toggle -->
+    <button
+      class="theme-toggle"
+      id="theme-toggle"
+      type="button"
+      aria-label="Toggle dark mode"
+    >
+      <svg
+        class="icon-sun"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="12" cy="12" r="5" />
+        <line x1="12" y1="1" x2="12" y2="3" />
+        <line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" />
+        <line x1="21" y1="12" x2="23" y2="12" />
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+      </svg>
+    </button>
+
+    <div class="container">
+      <main id="content" role="main">
+        <section class="panel" aria-labelledby="maint-title">
+          <!-- Logo Section -->
+          <div class="logo-container">
+            <img
+              class="logo logo-light"
+              src="{{FRONTEND_HOST}}/static/images/placeholder-logo-lightbg.svg"
+              alt="{{PORTAL_NAME}}"
+              onerror="this.onerror=null; this.src='{{FRONTEND_HOST}}/static/images/placeholder-logo-lightbg.jpg'"
+            />
+            <img
+              class="logo logo-dark"
+              src="{{FRONTEND_HOST}}/static/images/placeholder-logo-darkbg.svg"
+              alt="{{PORTAL_NAME}}"
+              onerror="this.onerror=null; this.src='{{FRONTEND_HOST}}/static/images/placeholder-logo-darkbg.jpg'"
+            />
+          </div>
+
+          <!-- Spinner below logo -->
+          <div class="spinner-container">
+            <div class="spinner" aria-hidden="true">
+              <div class="spinner-outer"></div>
+              <div class="spinner-inner"></div>
+            </div>
+          </div>
+
+          <div class="panel-header">
+            <div>
+              {% if MAINTENANCE_MODE_IS_EXTENDED %}
+                <h1 id="maint-title">Maintenance is taking longer than expected</h1>
+                <p class="sub">
+                  We apologize for the extended downtime. Our team is working to restore service as quickly as possible.
+                </p>
+              {% else %}
+                <h1 id="maint-title">We'll be back soon</h1>
+                <p class="sub">
+                  We're performing scheduled maintenance to improve reliability
+                  and speed.
+                </p>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="block block-separator" aria-labelledby="eta-label">
+            {% if MAINTENANCE_MODE_IS_EXTENDED %}
+              <!-- Extended maintenance mode UI -->
+              <div class="countdown">
+                <div
+                  class="time extended"
+                  id="time-extended"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  data-extension-time="{{ MAINTENANCE_MODE_EXTENSION_TIME|default:0 }}"
+                >
+                  <!-- Will be set by JavaScript -->
+                </div>
+                <div class="time-label" id="eta-label">over the estimated time</div>
+              </div>
+              <div style="margin-top: 16px; text-align: center;">
+                <p class="sub" style="color: var(--color-primary); margin: 8px 0;">
+                  Please check back in a few minutes
+                </p>
+              </div>
+            {% else %}
+              <!-- Normal countdown mode -->
+              <div class="countdown">
+                <div
+                  class="time"
+                  id="time-remaining"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  data-seconds-remaining="{{ MAINTENANCE_MODE_REMAINING|default:0 }}"
+                >
+                  <!-- Will be set by JavaScript -->
+                </div>
+                <div class="time-label" id="eta-label">minutes remaining</div>
+              </div>
+              <div class="progress" aria-hidden="true">
+                <div class="progress-bar" id="progress-bar"></div>
+              </div>
+            {% endif %}
+
+            <div class="actions">
+              <button
+                class="btn"
+                id="refresh-btn"
+                type="button"
+                aria-label="Refresh the page to check status"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="block" aria-live="polite">
+            <p class="sub" id="update-text">Last checked just now.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        Need assistance? Contact support at
+        <a href="mailto:{{ DEFAULT_FROM_EMAIL }}">{{ DEFAULT_FROM_EMAIL }}</a>.
+      </footer>
+    </div>
+
+    <script>
+      // Check if we're in extended maintenance mode
+      const IS_EXTENDED = {{ MAINTENANCE_MODE_IS_EXTENDED|default:'false'|lower }};
+
+      const refreshBtn = document.getElementById('refresh-btn');
+      const updateText = document.getElementById('update-text');
+      const start = Date.now();
+
+      function formatTime(ms){
+        const total = Math.max(0, Math.floor(ms/1000));
+        const m = String(Math.floor(total/60)).padStart(2, '0');
+        const s = String(total % 60).padStart(2, '0');
+        return `${m}:${s}`;
+      }
+
+      function formatExtendedTime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+
+        if (hours > 0) {
+          if (minutes > 0) {
+            return `${hours}h ${minutes}m`;
+          } else {
+            return `${hours} hour${hours !== 1 ? 's' : ''}`;
+          }
+        } else {
+          return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        }
+      }
+
+      function updateLastChecked() {
+        const now = Date.now();
+        const secondsSinceCheck = Math.floor((now - start)/1000);
+        if (secondsSinceCheck < 5){
+          updateText.textContent = 'Last checked just now.';
+        } else if (secondsSinceCheck < 60){
+          updateText.textContent = `Last checked ${secondsSinceCheck}s ago.`;
+        } else {
+          const minutes = Math.floor(secondsSinceCheck/60);
+          updateText.textContent = `Last checked ${minutes}m ago.`;
+        }
+      }
+
+      let t; // Timer variable
+
+      if (IS_EXTENDED) {
+        // Extended maintenance mode
+        const extendedTimeEl = document.getElementById('time-extended');
+        const EXTENSION_SECONDS = parseInt(extendedTimeEl?.dataset.extensionTime || '0');
+
+        // Display how long over the estimate we are
+        if (extendedTimeEl) {
+          extendedTimeEl.textContent = formatExtendedTime(EXTENSION_SECONDS);
+        }
+
+        // Only update "Last checked" in extended mode, no countdown
+        t = setInterval(updateLastChecked, 1000);
+
+        // In extended mode, refresh less frequently (every 30 seconds instead of 2)
+        // but only if user hasn't interacted recently
+        let userInteracted = false;
+        document.addEventListener('mousemove', () => { userInteracted = true; });
+        document.addEventListener('keypress', () => { userInteracted = true; });
+
+        // Auto-refresh every 30 seconds if no user interaction
+        setInterval(() => {
+          if (!userInteracted) {
+            location.reload();
+          }
+          userInteracted = false; // Reset for next interval
+        }, 30000);
+
+      } else {
+        // Normal countdown mode
+        const timeEl = document.getElementById('time-remaining');
+        const REMAINING_SECONDS = parseInt(timeEl?.dataset.secondsRemaining || '0');
+        const TOTAL_SECONDS = {{ MAINTENANCE_MODE_TOTAL|default:MAINTENANCE_MODE_RETRY_AFTER|default:900 }};
+
+        const progressBar = document.getElementById('progress-bar');
+        const remainingMs = REMAINING_SECONDS * 1000; // Convert to milliseconds
+        const deadline = start + remainingMs;
+
+        function updateCountdown(){
+          const now = Date.now();
+          const remaining = Math.max(0, deadline - now);
+
+          if (timeEl) {
+            timeEl.textContent = formatTime(remaining);
+          }
+
+          // Calculate progress based on total duration and remaining time
+          const currentRemainingSec = Math.max(0, Math.floor(remaining / 1000));
+          const elapsedFromTotal = TOTAL_SECONDS - currentRemainingSec;
+          const pct = Math.min(100, (elapsedFromTotal / TOTAL_SECONDS) * 100);
+
+          if (progressBar) {
+            progressBar.style.width = `${pct}%`;
+          }
+
+          // When countdown ends, refresh once to check status
+          if (remaining === 0 && !window.hasRefreshed){
+            window.hasRefreshed = true; // Prevent multiple refreshes
+            clearInterval(t);
+            // Single refresh after countdown ends
+            setTimeout(() => location.reload(), 2000);
+          }
+
+          updateLastChecked();
+        }
+
+        // Set initial time display
+        if (timeEl) {
+          timeEl.textContent = formatTime(remainingMs);
+        }
+
+        // Start countdown
+        updateCountdown();
+        t = setInterval(updateCountdown, 1000);
+      }
+
+      // Refresh button works in both modes
+      refreshBtn.addEventListener('click', () => {
+        location.reload();
+      });
+
+      // Dark mode toggle
+      const themeToggle = document.getElementById('theme-toggle');
+      const html = document.documentElement;
+
+      // Function to get theme from MediaCMS localStorage structure
+      function getStoredTheme() {
+        try {
+          // Look for MediaCMS theme storage keys
+          const keys = Object.keys(localStorage);
+          for (const key of keys) {
+            // MediaCMS stores theme as MediaCMS[siteId][theme][mode]
+            if (key.includes('MediaCMS') && key.includes('[theme]') && key.includes('[mode]')) {
+              const stored = localStorage.getItem(key);
+              if (stored) {
+                const parsed = JSON.parse(stored);
+                if (parsed.value && (parsed.value === 'dark' || parsed.value === 'light')) {
+                  // Check if not expired
+                  if (!parsed.expire || new Date().getTime() < parsed.expire) {
+                    return parsed.value;
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error reading MediaCMS theme:', e);
+        }
+
+        // Fallback to simple theme key if exists
+        return localStorage.getItem('theme') || 'light';
+      }
+
+      // Function to save theme in MediaCMS format
+      function saveTheme(theme) {
+        // Save in simple format for maintenance page
+        localStorage.setItem('theme', theme);
+
+        // Also try to save in MediaCMS format if site ID is available
+        try {
+          const keys = Object.keys(localStorage);
+          for (const key of keys) {
+            if (key.includes('MediaCMS') && key.includes('[theme]') && key.includes('[mode]')) {
+              // Update existing MediaCMS theme entry
+              const expire = new Date().getTime() + (24 * 60 * 60 * 1000); // 24 hours
+              localStorage.setItem(key, JSON.stringify({
+                value: theme,
+                expire: expire
+              }));
+              break;
+            }
+          }
+        } catch (e) {
+          console.error('Error saving MediaCMS theme:', e);
+        }
+      }
+
+      // Check for saved theme preference from MediaCMS or default to light mode
+      const savedTheme = getStoredTheme();
+      html.setAttribute('data-theme', savedTheme);
+
+      themeToggle.addEventListener('click', () => {
+        const currentTheme = html.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+        html.setAttribute('data-theme', newTheme);
+        saveTheme(newTheme);
+      });
+    </script>
+  </body>
+</html>
