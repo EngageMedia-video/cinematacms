@@ -489,8 +489,6 @@
 
           <div class="block block-separator" aria-labelledby="eta-label">
             <div class="countdown">
-              {% with minutes=MAINTENANCE_MODE_REMAINING|floatformat:0|default:0 %}
-              {% with display_minutes=minutes|divisibleby:60 %}
               <div
                 class="time"
                 id="time-remaining"
@@ -500,8 +498,6 @@
               >
                 <!-- Will be set by JavaScript -->
               </div>
-              {% endwith %}
-              {% endwith %}
               <div class="time-label" id="eta-label">minutes remaining</div>
             </div>
             <div class="progress" aria-hidden="true">
