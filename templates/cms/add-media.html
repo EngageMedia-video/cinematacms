@@ -193,6 +193,8 @@
 			validation: {
 				itemLimit: {{UPLOAD_MAX_FILES_NUMBER}},
 				sizeLimit: {{UPLOAD_MAX_SIZE}},
+				allowedExtensions: {{ allowed_extensions|safe }},
+				acceptFiles: 'video/*',
 			},
 			chunking: {
 				enabled: true,

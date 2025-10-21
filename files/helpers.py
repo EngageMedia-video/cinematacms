@@ -824,3 +824,109 @@ def can_user_see_video_in_playlist(user, media):
         return user.is_authenticated
 
     return False
+
+
+def get_allowed_video_extensions():
+    """
+    Returns a list of allowed video file extensions based on ALLOWED_MEDIA_UPLOAD_TYPES setting.
+
+    Returns:
+        list: List of allowed video extensions (e.g., ['mp4', 'avi', 'mkv', ...])
+              Empty list if 'video' is not in ALLOWED_MEDIA_UPLOAD_TYPES.
+    """
+    if "video" not in settings.ALLOWED_MEDIA_UPLOAD_TYPES:
+        return []
+
+    return [
+        'mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm',
+        'm4v', '3gp', 'ogv', 'asf', 'rm', 'rmvb', 'vob',
+        'mpg', 'mpeg', 'mp2', 'mpe', 'mpv', 'm2v', 'm4p',
+        'f4v', 'ts'
+    ]
+
+
+def cleanup_temp_upload_files(temp_file_path, upload_file_path, media_friendly_token, logger):
+    """
+    Safely clean up temporary upload files with directory traversal protection.
+
+    Args:
+        temp_file_path (str): Path to the temporary file
+        upload_file_path (str): Path to the upload directory
+        media_friendly_token (str): Media token for logging
+        logger: Logger instance for error reporting
+
+    This function:
+    - Resolves MEDIA_ROOT and validates all paths are within it
+    - Protects against directory traversal attacks
+    - Wraps all removals in try/except with warning logs
+    - Never raises exceptions (always safe to call in finally blocks)
+    """
+    from pathlib import Path
+
+    try:
+        # Resolve MEDIA_ROOT for path containment checks
+        media_root = Path(settings.MEDIA_ROOT).resolve()
+
+        # Clean up temp_file_path with directory traversal protection
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                temp_file_resolved = Path(temp_file_path).resolve()
+
+                # Verify temp_file_path is within MEDIA_ROOT
+                try:
+                    is_safe = temp_file_resolved.is_relative_to(media_root)
+                except AttributeError:
+                    # Fallback for Python < 3.9
+                    try:
+                        is_safe = os.path.commonpath([media_root, temp_file_resolved]) == str(media_root)
+                    except ValueError:
+                        is_safe = False
+
+                if is_safe:
+                    rm_file(temp_file_path)
+                else:
+                    logger.warning(
+                        f"Attempted directory traversal: temp_file_path {temp_file_resolved} is outside MEDIA_ROOT "
+                        f"for media {media_friendly_token}",
+                        exc_info=True
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to remove temp_file_path {temp_file_path} for media {media_friendly_token}: {e}",
+                    exc_info=True
+                )
+
+        # Clean up upload_file_path with directory traversal protection
+        if upload_file_path and os.path.exists(upload_file_path):
+            try:
+                upload_file_resolved = Path(upload_file_path).resolve()
+
+                # Verify upload_file_path is within MEDIA_ROOT
+                try:
+                    is_safe = upload_file_resolved.is_relative_to(media_root)
+                except AttributeError:
+                    # Fallback for Python < 3.9
+                    try:
+                        is_safe = os.path.commonpath([media_root, upload_file_resolved]) == str(media_root)
+                    except ValueError:
+                        is_safe = False
+
+                if is_safe:
+                    shutil.rmtree(upload_file_path)
+                else:
+                    logger.warning(
+                        f"Attempted directory traversal: upload_file_path {upload_file_resolved} is outside MEDIA_ROOT "
+                        f"for media {media_friendly_token}",
+                        exc_info=True
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to remove upload_file_path {upload_file_path} for media {media_friendly_token}: {e}",
+                    exc_info=True
+                )
+    except Exception as e:
+        # Catch-all to ensure this function never raises
+        logger.warning(
+            f"Unexpected error during temp file cleanup for media {media_friendly_token}: {e}",
+            exc_info=True
+        )
