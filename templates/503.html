@@ -13,7 +13,7 @@
         --color-muted: #64748b;
         --color-primary: #ed7c30;
         --color-secondary: #1a3f61;
-        --radius: 12px;
+        --radius: 6px;
       }
 
       /* Dark mode */
@@ -122,7 +122,7 @@
       .panel {
         width: 100%;
         max-width: 720px;
-        border: 1px solid rgba(100, 116, 139, 0.2);
+        border: none;
         border-radius: var(--radius);
         background: rgba(255, 255, 255, 0.5);
         backdrop-filter: blur(10px);
@@ -130,8 +130,7 @@
       }
 
       [data-theme="dark"] .panel {
-        background: rgba(15, 23, 42, 0.5);
-        border-color: rgba(148, 163, 184, 0.2);
+        background: rgba(11, 49, 68, 0.5);
       }
 
       .panel-header {
@@ -243,9 +242,10 @@
 
       .countdown {
         display: flex;
-        align-items: baseline;
+        flex-direction: column;
+        align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 2px;
       }
       .time {
         font-variant-numeric: tabular-nums;
@@ -261,38 +261,30 @@
       .progress {
         position: relative;
         width: 100%;
-        height: 10px;
-        border-radius: 999px;
-        background: rgba(
-          32,
-          178,
-          170,
-          0.15
-        ); /* Teal background at 15% opacity */
+        height: 23px; /* Increased height to match design */
+        border-radius: 6px; /* Subtle rounded corners */
+        background: rgba(123, 187, 191, 0.2); /* Light teal background */
         overflow: hidden;
-        margin-top: 12px;
+        margin-top: 16px;
       }
 
       [data-theme="dark"] .progress {
-        background: rgba(
-          95,
-          158,
-          160,
-          0.2
-        ); /* Teal/blue background at 20% opacity */
+        background: rgba(123, 187, 191, 0.15); /* Slightly transparent for dark mode */
       }
+
       .progress-bar {
         position: absolute;
         left: 0;
         top: 0;
         bottom: 0;
         width: 0%;
-        background: #20b2aa; /* Teal color for light mode */
+        background: #102c40; /* Dark blue for light mode */
+        border-radius: 6px; /* Match parent border radius */
         transition: width 0.3s ease;
       }
 
       [data-theme="dark"] .progress-bar {
-        background: #5f9ea0; /* Darker teal/blue for dark mode */
+        background: #7bbbbf; /* Teal color for dark mode */
       }
 
       .actions {
@@ -497,15 +489,19 @@
 
           <div class="block block-separator" aria-labelledby="eta-label">
             <div class="countdown">
-              {% widthratio MAINTENANCE_MODE_RETRY_AFTER 60 1 as minutes %}
+              {% with minutes=MAINTENANCE_MODE_REMAINING|floatformat:0|default:0 %}
+              {% with display_minutes=minutes|divisibleby:60 %}
               <div
                 class="time"
                 id="time-remaining"
                 aria-live="polite"
                 aria-atomic="true"
+                data-seconds-remaining="{{ MAINTENANCE_MODE_REMAINING|default:0 }}"
               >
-                {{ minutes|stringformat:"02d" }}:00
+                <!-- Will be set by JavaScript -->
               </div>
+              {% endwith %}
+              {% endwith %}
               <div class="time-label" id="eta-label">minutes remaining</div>
             </div>
             <div class="progress" aria-hidden="true">
@@ -537,18 +533,18 @@
     </div>
 
     <script>
-      // Config: countdown in seconds from Django settings (MAINTENANCE_MODE_RETRY_AFTER)
-      // Change in settings.py or local_settings.py to customize
-      const COUNTDOWN_SECONDS = {{ MAINTENANCE_MODE_RETRY_AFTER|default:900 }};
-
+      // Get server-calculated remaining time and total duration
       const timeEl = document.getElementById('time-remaining');
+      const REMAINING_SECONDS = parseInt(timeEl.dataset.secondsRemaining || '0');
+      const TOTAL_SECONDS = {{ MAINTENANCE_MODE_TOTAL|default:MAINTENANCE_MODE_RETRY_AFTER|default:900 }};
+
       const progressBar = document.getElementById('progress-bar');
       const refreshBtn = document.getElementById('refresh-btn');
       const updateText = document.getElementById('update-text');
 
       const start = Date.now();
-      const durationMs = COUNTDOWN_SECONDS * 1000; // Convert seconds to milliseconds
-      const deadline = start + durationMs;
+      const remainingMs = REMAINING_SECONDS * 1000; // Convert to milliseconds
+      const deadline = start + remainingMs;
 
       function formatTime(ms){
         const total = Math.max(0, Math.floor(ms/1000));
@@ -562,14 +558,17 @@
         const remaining = Math.max(0, deadline - now);
         timeEl.textContent = formatTime(remaining);
 
-        // Update progress (0 to 100)
-        const elapsed = Math.min(durationMs, now - start);
-        const pct = (elapsed / durationMs) * 100;
+        // Calculate progress based on total duration and remaining time
+        const currentRemainingSec = Math.max(0, Math.floor(remaining / 1000));
+        const elapsedFromTotal = TOTAL_SECONDS - currentRemainingSec;
+        const pct = Math.min(100, (elapsedFromTotal / TOTAL_SECONDS) * 100);
         progressBar.style.width = `${pct}%`;
 
         // Check if maintenance window ended
         if (remaining === 0){
-          clearInterval(updateClock);
+          clearInterval(t);
+          // Optionally auto-refresh when maintenance should be over
+          setTimeout(() => location.reload(), 2000);
         }
 
         // Update "Last checked"
@@ -584,6 +583,9 @@
         }
       }
 
+      // Set initial time display
+      timeEl.textContent = formatTime(remainingMs);
+
       // Buttons
       refreshBtn.addEventListener('click', () => {
         location.reload();
@@ -593,8 +595,60 @@
       const themeToggle = document.getElementById('theme-toggle');
       const html = document.documentElement;
 
-      // Check for saved theme preference or default to light mode
-      const savedTheme = localStorage.getItem('theme') || 'light';
+      // Function to get theme from MediaCMS localStorage structure
+      function getStoredTheme() {
+        try {
+          // Look for MediaCMS theme storage keys
+          const keys = Object.keys(localStorage);
+          for (const key of keys) {
+            // MediaCMS stores theme as MediaCMS[siteId][theme][mode]
+            if (key.includes('MediaCMS') && key.includes('[theme]') && key.includes('[mode]')) {
+              const stored = localStorage.getItem(key);
+              if (stored) {
+                const parsed = JSON.parse(stored);
+                if (parsed.value && (parsed.value === 'dark' || parsed.value === 'light')) {
+                  // Check if not expired
+                  if (!parsed.expire || new Date().getTime() < parsed.expire) {
+                    return parsed.value;
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error reading MediaCMS theme:', e);
+        }
+
+        // Fallback to simple theme key if exists
+        return localStorage.getItem('theme') || 'light';
+      }
+
+      // Function to save theme in MediaCMS format
+      function saveTheme(theme) {
+        // Save in simple format for maintenance page
+        localStorage.setItem('theme', theme);
+
+        // Also try to save in MediaCMS format if site ID is available
+        try {
+          const keys = Object.keys(localStorage);
+          for (const key of keys) {
+            if (key.includes('MediaCMS') && key.includes('[theme]') && key.includes('[mode]')) {
+              // Update existing MediaCMS theme entry
+              const expire = new Date().getTime() + (24 * 60 * 60 * 1000); // 24 hours
+              localStorage.setItem(key, JSON.stringify({
+                value: theme,
+                expire: expire
+              }));
+              break;
+            }
+          }
+        } catch (e) {
+          console.error('Error saving MediaCMS theme:', e);
+        }
+      }
+
+      // Check for saved theme preference from MediaCMS or default to light mode
+      const savedTheme = getStoredTheme();
       html.setAttribute('data-theme', savedTheme);
 
       themeToggle.addEventListener('click', () => {
@@ -602,7 +656,7 @@
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
         html.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
+        saveTheme(newTheme);
       });
 
       // Start countdown
