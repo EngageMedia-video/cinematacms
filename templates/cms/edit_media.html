@@ -783,6 +783,11 @@
 				animation: spin 2s linear infinite;
 			}
 
+			/* Match button padding to other buttons on the page */
+			.secondaryAction {
+				padding: 1em 2em !important;
+			}
+
 			/* Ensure the media uploader section is interactive */
 			.media-uploader-section {
 				position: relative !important;
@@ -1145,6 +1150,11 @@
 				border: 1px solid var(--input-border-color);
 			}
 
+			/* Ensure border is visible in dark mode */
+			.dark_theme .success-details {
+				border-color: rgba(255, 255, 255, 0.2);
+			}
+
 			.success-details .file-name {
 				color: var(--text-color);
 				font-weight: 500;
@@ -1170,6 +1180,11 @@
 				border: 1px solid var(--input-border-color);
 				border-radius: 2px;
 				text-align: left;
+			}
+
+			/* Ensure border is visible in dark mode */
+			.dark_theme .success-notice {
+				border-color: rgba(255, 255, 255, 0.2);
 			}
 
 			.success-notice .material-icons {
