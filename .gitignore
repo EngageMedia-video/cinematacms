@@ -41,3 +41,4 @@ celerybeat.pid
 # Maintenance mode files
 cms/maintenance_mode_state.txt
 cms/maintenance_timing.json
+cms/maintenance_timing.json.lock

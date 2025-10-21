@@ -73,6 +73,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Serve static files before maintenance mode
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -553,6 +554,16 @@ MAINTENANCE_MODE_IGNORE_STAFF = True
 MAINTENANCE_MODE_IGNORE_ADMIN_SITE = True
 # the value in seconds of the Retry-After header during maintenance-mode
 MAINTENANCE_MODE_RETRY_AFTER = 3600  # 1 hour
+# URLs that should be accessible during maintenance mode
+MAINTENANCE_MODE_IGNORE_URLS = (
+    r'^/static/.*$',  # Allow static files
+    r'^/media/.*$',   # Allow media files if needed
+    r'^/favicon\.ico$',  # Allow favicon
+    r'^/robots\.txt$',  # Allow robots.txt if present
+    r'^/apple-touch-icon.*\.png$',  # Allow Apple touch icons
+    r'^/manifest\.json$',  # Allow web app manifest
+    r'^/browserconfig\.xml$',  # Allow Windows tile config
+)
 
 from .local_settings import *
 
