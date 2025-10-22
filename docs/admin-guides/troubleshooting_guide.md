@@ -245,3 +245,26 @@ This guide helps **authorized users** (including *Site Administrators* and *Medi
 4. **Enable Pre-Moderation**
    - Ensure uploads from untrusted users are not publicly visible by default
    - Configure `CAN_ADD_MEDIA` settings to restrict auto-publishing
+
+---
+
+## 📹 12. Video Encoding Stuck in a Loop
+
+### 🔍 Problem
+- A video, especially 4K content, is stuck in the "encoding" state.
+- The encoding process appears to run indefinitely without completing.
+- Progress tracking does not update.
+
+### ✅ Steps to Resolve
+1.  **Update CinemataCMS**: This issue is caused by a bug in the progress tracking logic that has been fixed in a recent version. Ensure your instance is up to date.
+2.  **Monitor Logs**: The fix includes improved logging. Check the Celery worker logs for messages related to "Processing iteration" or "Encoding iteration limit exceeded" to diagnose if the issue persists.
+3.  **Manual Intervention (if update is not possible)**: If you cannot update immediately, you may need to manually mark the encoding as successful or failed in the Django Admin interface at `/admin/files/encoding/`. This is a temporary workaround.
+
+# 📹 13. 4K Video Encodes Successfully, But 4K Playback Option Is Missing
+
+### 🔍 Problem
+- The video encoding completes without errors, but the player does not offer 4K resolution as a selectable quality.
+
+### ✅ Steps to Resolve
+1.  Verify that 4K (2160p) encoding profiles are enabled and active in the database or Django Admin.
+2.  Refresh the video page after encoding completes to see the new 4K quality option in the player.

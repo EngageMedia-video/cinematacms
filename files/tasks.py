@@ -335,24 +335,57 @@ def encode_media(
                 encoding_command = encoding_backend.encode(ffmpeg_command)
                 duration, n_times = 0, 0
                 output = ""
+                start_time = time.time()
+                last_progress_time = start_time
+                last_duration = -1  # Initialize with a value lower than any possible duration
+                iteration_limit = 50000
+                no_progress_timeout = 1800  # 30 minutes
+
                 while encoding_command:
                     try:
-                        # TODO: understand an eternal loop
-                        # eg h265 with mv4 file issue, and stop with error
                         output = next(encoding_command)
-                        duration = calculate_seconds(output)
-                        if duration:
-                            percent = duration * 100 / media.duration
-                            if n_times % 20 == 0:
-                                encoding.progress = percent
+                        duration_str = calculate_seconds(output)
+                        current_time = time.time()
+                        n_times += 1  # Always increment
+
+                        if duration_str is not None:
+                            try:
+                                new_duration = float(duration_str)
+                                if new_duration > last_duration:
+                                    last_progress_time = current_time  # Reset timeout on progress
+                                    last_duration = new_duration
+
+                                    percent = new_duration * 100 / media.duration
+                                    if n_times % 20 == 0:
+                                        encoding.progress = percent
+                                        try:
+                                            encoding.save(update_fields=["progress", "update_date"])
+                                            logger.info("Saved {0}% (iteration {1})".format(
+                                                round(percent, 2), n_times))
+                                        except:
+                                            pass
+                            except (ValueError, TypeError):
+                                # Could not parse duration, treat as no progress
+                                pass
+                        else:
+                            # Log unparseable output for debugging
+                            if n_times % 100 == 0:
                                 try:
-                                    encoding.save(
-                                        update_fields=["progress", "update_date"]
-                                    )
-                                    logger.info("Saved {0}".format(round(percent, 2)))
+                                    encoding.save(update_fields=["update_date"])
+                                    logger.info("Processing iteration {0}, no duration parsed. Output sample: {1}".format(
+                                        n_times, output[:100] if output else "No output"))
                                 except:
                                     pass
-                            n_times += 1
+
+                        # Safety nets
+                        if n_times > iteration_limit:
+                            logger.error("Encoding iteration limit ({0}) exceeded".format(iteration_limit))
+                            break
+
+                        if time.time() - last_progress_time > no_progress_timeout:
+                            logger.error("No progress for {0} seconds, likely stuck".format(no_progress_timeout))
+                            break
+
                     except StopIteration:
                         break
                     except VideoEncodingError:
