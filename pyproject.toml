@@ -37,6 +37,7 @@ dependencies = [
     "uwsgi==2.0.31",
     "qrcode==8.2",
     "django-tinymce==4.1.0",
+    "django-maintenance-mode==0.22.0",
 ]
 
 [dependency-groups]

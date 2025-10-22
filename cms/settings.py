@@ -67,11 +67,13 @@ INSTALLED_APPS = [
     "tinymce",
     "django_recaptcha",
     "corsheaders",
+    "maintenance_mode",
 ]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Serve static files before maintenance mode
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -80,6 +82,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "users.middleware.AdminMFAMiddleware",
+    "cms.middleware.MaintenanceTimingMiddleware",  # Track maintenance mode timing
+    "maintenance_mode.middleware.MaintenanceModeMiddleware",
 ]
 
 ROOT_URLCONF = "cms.urls"
@@ -98,6 +102,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "files.context_processors.stuff",
                 "cms.context_processors.ui_settings",
+                "maintenance_mode.context_processors.maintenance_mode",
             ],
         },
     },
@@ -250,11 +255,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "update_listings_thumbnails",
         "schedule": crontab(minute="*/30"),
     },
+    # Clean up orphaned upload files daily at 2:00 AM
+    "cleanup_orphaned_uploads": {
+        "task": "cleanup_orphaned_uploads",
+        "schedule": crontab(hour="2", minute="0"),
+    },
     #     "schedule": timedelta(seconds=5),
     #     "args": (16, 16)
 }
-# TODO: beat, delete chunks from media root
-# chunks_dir after xx days...(also uploads_dir)
 
 
 # protection agains anonymous users
@@ -406,6 +414,8 @@ MAX_CHARS_FOR_COMMENT = 10000  # so that it doesn't end up huge
 # this is for fineuploader - media uploads
 UPLOAD_DIR = "uploads/"
 CHUNKS_DIR = "chunks/"
+# Hours after which orphaned upload files/chunks are considered stale and removed
+ORPHANED_UPLOAD_CLEANUP_HOURS = 24
 # bytes, size of uploaded media
 UPLOAD_MAX_SIZE = 800 * 1024 * 1000 * 5
 
@@ -532,6 +542,29 @@ MFA_ENFORCE_ON_PATHS = [f"/{DJANGO_ADMIN_URL}"]
 MFA_EXCLUDE_PATHS = ["/fu/", "/api/", "/manage/", "/accounts/"]
 
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths()
+
+# django-maintenance-mode settings
+MAINTENANCE_MODE = None  # None/False/True
+MAINTENANCE_MODE_TEMPLATE = "503.html"
+# if True the superuser will not see the maintenance-mode page
+MAINTENANCE_MODE_IGNORE_SUPERUSER = True
+# if True the staff users will not see the maintenance-mode page
+MAINTENANCE_MODE_IGNORE_STAFF = True
+# if True admin site will not be affected by the maintenance-mode page
+MAINTENANCE_MODE_IGNORE_ADMIN_SITE = True
+# the value in seconds of the Retry-After header during maintenance-mode
+MAINTENANCE_MODE_RETRY_AFTER = 3600  # 1 hour
+# URLs that should be accessible during maintenance mode
+MAINTENANCE_MODE_IGNORE_URLS = (
+    r'^/static/.*$',  # Allow static files
+    r'^/media/.*$',   # Allow media files if needed
+    r'^/favicon\.ico$',  # Allow favicon
+    r'^/robots\.txt$',  # Allow robots.txt if present
+    r'^/apple-touch-icon.*\.png$',  # Allow Apple touch icons
+    r'^/manifest\.json$',  # Allow web app manifest
+    r'^/browserconfig\.xml$',  # Allow Windows tile config
+)
+
 from .local_settings import *
 
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
