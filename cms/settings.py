@@ -73,7 +73,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # Serve static files before maintenance mode
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -565,10 +564,19 @@ MAINTENANCE_MODE_IGNORE_URLS = (
     r'^/browserconfig\.xml$',  # Allow Windows tile config
 )
 
-from .local_settings import *
 
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
 WHISPER_SIZE = "base"
+
+
+ALLOWED_MEDIA_UPLOAD_TYPES = ["video"]
+
+RECAPTCHA_PRIVATE_KEY = ""
+RECAPTCHA_PUBLIC_KEY = ""
+
+CRISPY_TEMPLATE_PACK = "bootstrap"
+
+from .local_settings import *
 
 
 # Add debug_toolbar to INSTALLED_APPS if DEBUG is True
@@ -598,9 +606,3 @@ if DEBUG:
     mimetypes.add_type("application/javascript", ".js", True)
     mimetypes.add_type("text/css", ".css", True)
 
-ALLOWED_MEDIA_UPLOAD_TYPES = ["video"]
-
-RECAPTCHA_PRIVATE_KEY = ""
-RECAPTCHA_PUBLIC_KEY = ""
-
-CRISPY_TEMPLATE_PACK = "bootstrap"
