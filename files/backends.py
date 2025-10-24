@@ -3,6 +3,7 @@
 import locale
 import logging
 import re
+import time
 from subprocess import PIPE, Popen
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ class FFmpegBackend(object):
     name = "FFmpeg"
 
     def __init__(self):
-        pass
+        self.process = None
 
     def _spawn(self, cmd):
         try:
@@ -43,11 +44,44 @@ class FFmpegBackend(object):
         ret["code"] = process.returncode
         return ret
 
+    def terminate_process(self):
+        """Gracefully terminate the FFmpeg subprocess."""
+        if self.process is None:
+            return
+
+        try:
+            # First try graceful termination
+            if self.process.poll() is None:  # Check if still running
+                logger.info("Terminating FFmpeg process gracefully")
+                self.process.terminate()
+                
+                # Wait up to 5 seconds for graceful shutdown
+                try:
+                    self.process.wait(timeout=5)
+                    logger.info("FFmpeg process terminated gracefully")
+                except:
+                    # Force kill if still alive
+                    logger.warning("FFmpeg process did not terminate gracefully, force killing")
+                    self.process.kill()
+                    self.process.wait(timeout=2)
+                
+                # Close file descriptors
+                if self.process.stdin:
+                    self.process.stdin.close()
+                if self.process.stdout:
+                    self.process.stdout.close()
+                if self.process.stderr:
+                    self.process.stderr.close()
+        except Exception as e:
+            logger.error(f"Error terminating FFmpeg process: {e}")
+        finally:
+            self.process = None
+
     def encode(self, cmd):
-        process = self._spawn(cmd)
+        self.process = self._spawn(cmd)
         buf = output = ""
         while True:
-            out = process.stderr.read(10)
+            out = self.process.stderr.read(10)
 
             if not out:
                 break
@@ -67,7 +101,7 @@ class FFmpegBackend(object):
                 progress = progress[0]
             yield progress
 
-        process_check = self._check_returncode(process)
+        process_check = self._check_returncode(self.process)
         if process_check["code"] != 0:
             raise VideoEncodingError(output[-1000:])  # output could be huge
 

@@ -260,7 +260,7 @@ This guide helps **authorized users** (including *Site Administrators* and *Medi
 2.  **Monitor Logs**: The fix includes improved logging. Check the Celery worker logs for messages related to "Processing iteration" or "Encoding iteration limit exceeded" to diagnose if the issue persists.
 3.  **Manual Intervention (if update is not possible)**: If you cannot update immediately, you may need to manually mark the encoding as successful or failed in the Django Admin interface at `/admin/files/encoding/`. This is a temporary workaround.
 
-# 📹 13. 4K Video Encodes Successfully, But 4K Playback Option Is Missing
+## 📹 13. 4K Video Encodes Successfully, But 4K Playback Option Is Missing
 
 ### 🔍 Problem
 - The video encoding completes without errors, but the player does not offer 4K resolution as a selectable quality.
