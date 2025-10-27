@@ -10,7 +10,6 @@ TIME_ZONE = "Europe/London"
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
-    "dev.cinemata.org",
 ]
 # Import default headers to extend them
 CORS_ORIGIN_ALLOW_ALL = True
@@ -578,12 +577,6 @@ RECAPTCHA_PUBLIC_KEY = ""
 CRISPY_TEMPLATE_PACK = "bootstrap"
 
 from .local_settings import *
-
-# Ensure critical hosts are always in ALLOWED_HOSTS (in case local_settings overrides)
-REQUIRED_HOSTS = ['dev.cinemata.org', '127.0.0.1', 'localhost']
-for host in REQUIRED_HOSTS:
-    if host not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(host)
 
 # Add debug_toolbar to INSTALLED_APPS if DEBUG is True
 if DEBUG:
