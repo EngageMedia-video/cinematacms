@@ -1561,7 +1561,7 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	body .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
 		font-size: 24px;
 		line-height: 30px;
-		max-height: 60px; /* *Limit to 2 lines*/
+		max-height: 60px; /* Limit to 2 lines*/
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
