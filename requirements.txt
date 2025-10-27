@@ -1,6 +1,6 @@
 Django==5.2.7
 djangorestframework==3.16.1
-django-allauth==65.12.0
+django-allauth==65.12.1
 
 django-recaptcha==4.1.0
 psycopg2-binary==2.9.11
@@ -10,7 +10,7 @@ django-redis==6.0.0
 celery==5.5.3
 django-crispy-forms>=2.3,<3.0
 crispy-forms-bootstrap2==2024.1
-Pillow==11.3.0
+Pillow==12.0.0
 django-imagekit==6.0.0
 markdown==3.9
 django-filter==25.2
@@ -34,6 +34,6 @@ django-cors-headers==4.9.0
 django-maintenance-mode==0.22.0
 
 # for MFA and local installation purposes
-python-dotenv==1.1.1
+python-dotenv==1.2.1
 fido2==2.0.0
 qrcode==8.2
