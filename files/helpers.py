@@ -4,6 +4,7 @@ import json
 import math
 import os
 import random
+import re
 import shutil
 import subprocess
 import tempfile
@@ -475,20 +476,26 @@ def media_file_info(input_file):
     return ret
 
 
-def calculate_seconds(duration):
-    # returns seconds, given a ffmpeg extracted string
-    ret = 0
-    if isinstance(duration, str):
-        duration = duration.split(":")
-        if len(duration) != 3:
-            return ret
-    else:
-        return ret
-
-    ret += int(float(duration[2]))
-    ret += int(float(duration[1])) * 60
-    ret += int(float(duration[0])) * 60 * 60
-    return ret
+def calculate_seconds(output_str):
+    # Handle both string and bytes input from FFmpeg
+    if isinstance(output_str, bytes):
+        output_str = output_str.decode('utf-8', errors='ignore')
+    elif not isinstance(output_str, str):
+        return None
+    
+    # Use regex to find time=HH:MM:SS.ms format
+    match = re.search(r"time=(\d{2}):(\d{2}):(\d{2})\.(\d+)", output_str)
+    if match:
+        hours, minutes, seconds, _ = map(int, match.groups())
+        return hours * 3600 + minutes * 60 + seconds
+    
+    # Fallback for formats without milliseconds
+    match = re.search(r"time=(\d{2}):(\d{2}):(\d{2})", output_str)
+    if match:
+        hours, minutes, seconds = map(int, match.groups())
+        return hours * 3600 + minutes * 60 + seconds
+        
+    return None
 
 
 def show_file_size(size):
