@@ -578,16 +578,6 @@ CRISPY_TEMPLATE_PACK = "bootstrap"
 
 from .local_settings import *
 
-
-ALLOWED_MEDIA_UPLOAD_TYPES = ["video"]
-
-RECAPTCHA_PRIVATE_KEY = ""
-RECAPTCHA_PUBLIC_KEY = ""
-
-CRISPY_TEMPLATE_PACK = "bootstrap"
-
-from .local_settings import *
-
 # Add debug_toolbar to INSTALLED_APPS if DEBUG is True
 if DEBUG:
     if "debug_toolbar" not in INSTALLED_APPS:
