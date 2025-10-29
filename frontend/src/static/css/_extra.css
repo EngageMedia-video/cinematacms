@@ -1305,10 +1305,6 @@ body .item-author a:active {
 	/* text-decoration: underline; */
 }
 
-body .item-content h3 span {
-	background-color: var(--body-bg-color);
-}
-
 body.dark_theme .item-content h3 a {
 	color: #fff;
 }
@@ -3314,6 +3310,22 @@ body .hw-category-title {
 }
 
 body .hw-category-description {
+	color: var(--body-text-color);
+	padding: 5px 0 30px 0;
+	max-width: 512px;
+}
+
+/* for video title with dark background */
+body .hw-even-list h3 {
+	color: #fff;
+}
+
+body .hw-even-list .hw-category-title {
+	color: #fff;
+	margin: 30px 0 0 0;
+}
+
+body .hw-even-list .hw-category-description {
 	color: #fff;
 	padding: 5px 0 30px 0;
 	max-width: 512px;
