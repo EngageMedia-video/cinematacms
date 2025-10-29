@@ -1487,7 +1487,6 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	}
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
-		position: absolute; 
 		bottom: 0;
         left: 40px;
         right: 40px;
@@ -1521,21 +1520,26 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
 		font-size: 24px;
 		line-height: 30px;
-		max-height: 60px; /* Limit to 2 lines */
+		max-height: 60px;
 	}
 
+	/* ADD THIS: Explicit margins for symmetric spacing */
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
+		margin: 12px 0 28px; /* 28px top gap (16px h3 + 12px), 28px bottom gap */
+	}
+
+	/* REMOVE position: absolute - let natural flow work */
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
-		position: absolute;
-        bottom: 0;
-        left: 50px;
-        right: 50px;
+		/* position: absolute; DELETE THIS LINE */
+		/* bottom: 0; DELETE THIS LINE */
+		/* Horizontal alignment inherited from parent's padding */
 	}
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
 		max-height: 189px;
 		display: -webkit-box;
-		-webkit-line-clamp: 9; /* Changed to 9 lines, more realistic */
+		-webkit-line-clamp: 9;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -1561,7 +1565,7 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	body .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
 		font-size: 24px;
 		line-height: 30px;
-		max-height: 60px; /* Limit to 2 lines*/
+		max-height: 60px; /* *Limit to 2 lines*/
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
@@ -1569,7 +1573,6 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
-		position: absolute;	
 		bottom: 0;
         left: 40px;
         right: 40px;
@@ -1604,27 +1607,31 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	body .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
 		font-size: 24px;
 		line-height: 30px;
-		max-height: 60px; /* Limit to 2 lines */
+		max-height: 60px;
 	}
 
+	/* ADD THIS: Explicit margins for symmetric spacing */
+	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
+		margin: 12px 0 28px; /* 28px top gap (16px h3 + 12px), 28px bottom gap */
+	}
+
+	/* REMOVE position: absolute - let natural flow work */
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
-		position: absolute;
-        bottom: 0;
-        left: 50px;
-        right: 50px;
+		/* position: absolute; DELETE THIS LINE */
+		/* bottom: 0; DELETE THIS LINE */
+		/* Horizontal alignment inherited from parent's padding */
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
 		max-height: 189px;
 		display: -webkit-box;
-		-webkit-line-clamp: 9; /* Changed to 9 lines */
+		-webkit-line-clamp: 9;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 }
-
 /* 4px 24pxitem-main{
 		width:35%;
 		top:40px;
