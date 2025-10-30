@@ -1394,7 +1394,7 @@ body .items-list-ver .feat-first-item .item:first-child .item-main .item-descrip
 
 body .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 body .items-list-ver .feat-first-item .item:first-child .item-main .item-description > * {
-	max-height: 157.5px; /* Increased from 135px */
+	max-height: 147px; /* Increased from 135px */
     display: -webkit-box;
     -webkit-line-clamp: 7; /* INCREASED: 7 lines for 60-word support */
     -webkit-box-orient: vertical;
@@ -1489,7 +1489,7 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
-		max-height: 157.5px; /* 7 lines now fit perfectly */
+		max-height: 147px;
         -webkit-line-clamp: 7;
         display: -webkit-box;
         -webkit-box-orient: vertical;
@@ -1575,7 +1575,7 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
-		 max-height: 157.5px;
+		 max-height: 147px;
         -webkit-line-clamp: 7;  
         display: -webkit-box;
         -webkit-box-orient: vertical;
