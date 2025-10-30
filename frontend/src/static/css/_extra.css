@@ -1428,6 +1428,7 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main h3
 body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
     color: #bad8dd;
 }
+
 @media (min-width: 600px) {
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main {
@@ -1567,12 +1568,6 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 		margin: 12px 0 28px; /* 28px top gap (16px h3 + 12px), 28px bottom gap */
 	}
 
-	/* REMOVE position: absolute - let natural flow work */
-	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
-		/* position: absolute; */
-		/* bottom: 0; */
-		/* Horizontal alignment inherited from parent's padding */
-	}
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
@@ -1607,13 +1602,6 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
 		margin: 12px 0 28px; /* 28px top gap (16px h3 + 12px), 28px bottom gap */
-	}
-
-	/* REMOVE position: absolute - let natural flow work */
-	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
-		/* position: absolute; */
-		/* bottom: 0; */
-		/* Horizontal alignment inherited from parent's padding */
 	}
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
