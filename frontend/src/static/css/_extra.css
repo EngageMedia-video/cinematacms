@@ -1498,49 +1498,6 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	}
 }
 
-@media (min-width: 1547px) {
-
-	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-player-wrapper {
-		width: 65%;
-		padding-bottom: 36.5%;
-	}
-
-	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main {
-		width: 35%;
-		top: 40px;
-		bottom: 40px;
-		padding: 0 50px;
-	}
-
-	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
-		font-size: 24px;
-		line-height: 30px;
-		max-height: 60px;
-	}
-
-	/* ADD THIS: Explicit margins for symmetric spacing */
-	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
-		margin: 12px 0 28px; /* 28px top gap (16px h3 + 12px), 28px bottom gap */
-	}
-
-	/* REMOVE position: absolute - let natural flow work */
-	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
-		/* position: absolute; */
-		/* bottom: 0; */
-		/* Horizontal alignment inherited from parent's padding */
-	}
-
-	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
-	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
-		max-height: 189px;
-		display: -webkit-box;
-		-webkit-line-clamp: 9;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-}
-
 @media (min-width: 1419px) {
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-player-wrapper {
@@ -1583,6 +1540,49 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
         text-overflow: ellipsis;
     }
 	
+}
+
+@media (min-width: 1547px) {
+
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-player-wrapper {
+		width: 65%;
+		padding-bottom: 36.5%;
+	}
+
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main {
+		width: 35%;
+		top: 40px;
+		bottom: 40px;
+		padding: 0 50px;
+	}
+
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
+		font-size: 24px;
+		line-height: 30px;
+		max-height: 60px;
+	}
+
+	/* ADD THIS: Explicit margins for symmetric spacing */
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
+		margin: 12px 0 28px; /* 28px top gap (16px h3 + 12px), 28px bottom gap */
+	}
+
+	/* REMOVE position: absolute - let natural flow work */
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
+		/* position: absolute; */
+		/* bottom: 0; */
+		/* Horizontal alignment inherited from parent's padding */
+	}
+
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
+		max-height: 189px;
+		display: -webkit-box;
+		-webkit-line-clamp: 9;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
 }
 
 @media (min-width: 1791px) {
