@@ -1525,8 +1525,8 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 
 	/* REMOVE position: absolute - let natural flow work */
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
-		/* position: absolute; DELETE THIS LINE */
-		/* bottom: 0; DELETE THIS LINE */
+		/* position: absolute; */
+		/* bottom: 0; */
 		/* Horizontal alignment inherited from parent's padding */
 	}
 
@@ -1611,8 +1611,8 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 
 	/* REMOVE position: absolute - let natural flow work */
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
-		/* position: absolute; DELETE THIS LINE */
-		/* bottom: 0; DELETE THIS LINE */
+		/* position: absolute; */
+		/* bottom: 0; */
 		/* Horizontal alignment inherited from parent's padding */
 	}
 
