@@ -1543,12 +1543,12 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 
 @media (min-width: 1419px) {
 
-	body .items-list-ver .feat-first-item .item:first-child .item-player-wrapper {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-player-wrapper {
 		width: 60%;
 		padding-bottom: 33.5%;
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main {
 		position: absolute;
         top: 32px;
         bottom: 32px;
@@ -1557,24 +1557,24 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 		padding: 0 40px;
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
 		font-size: 24px;
 		line-height: 30px;
 		max-height: 60px; /* *Limit to 2 lines*/
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
 		margin: 12px 0 0;
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
 		bottom: 0;
         left: 40px;
         right: 40px;
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
 		 max-height: 157.5px;
         -webkit-line-clamp: 7;  
         display: -webkit-box;
@@ -1587,37 +1587,37 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 
 @media (min-width: 1791px) {
 
-	body .items-list-ver .feat-first-item .item:first-child .item-player-wrapper {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-player-wrapper {
 		width: 65%;
 		padding-bottom: 36.5%;
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main {
 		width: 35%;
 		top: 40px;
 		bottom: 40px;
 		padding: 0 50px;
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
 		font-size: 24px;
 		line-height: 30px;
 		max-height: 60px;
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
 		margin: 12px 0 28px; /* 28px top gap (16px h3 + 12px), 28px bottom gap */
 	}
 
 	/* REMOVE position: absolute - let natural flow work */
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
 		/* position: absolute; */
 		/* bottom: 0; */
 		/* Horizontal alignment inherited from parent's padding */
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
 		max-height: 189px;
 		display: -webkit-box;
 		-webkit-line-clamp: 9;
