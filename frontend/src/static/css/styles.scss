@@ -1269,18 +1269,10 @@ input#authenticator_secret {
 
 
 
-
-
 .featured-carousel {
   position: relative;
   width: 100%;
   padding-bottom: 1.5rem;
-
-  // ✅ ensures this section moves with the rest of the app
-  transform: none !important;
-  will-change: auto;
-  z-index: auto;
-  overflow: visible !important;
 
   /* =============================
      🎞 Featured Items Container
@@ -1289,8 +1281,6 @@ input#authenticator_secret {
     display: flex;
     flex-wrap: nowrap;
     align-items: flex-start;
-    position: relative;
-    width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
@@ -1306,54 +1296,36 @@ input#authenticator_secret {
     }
   }
 
-  /* =============================
-     🎥 Featured Video Section
-  ==============================*/
   .hw-featured-video-section {
-    position: relative;
-    display: block;
+	width: 100%;
+	max-width: 100%;
+	flex: 1 1 100%;
+	display: block;
+	margin: 0 auto; // centers if container has side padding
+	box-sizing: border-box;
+
+  // make sure inner video or ListItem fills too
+
+
+  .item-content, 
+  .item-thumb, 
+  .featured-item {
     width: 100%;
     max-width: 100%;
-    flex: 1 1 100%;
-    margin: 0 auto;
-    box-sizing: border-box;
-    border-radius: 6px;
-    overflow: hidden;
-
-
-    // ✅ allow it to clip properly without breaking layout
-    transform: none !important;
-    z-index: 1;
-
-    .item-content,
-    .item-thumb,
-    .featured-item {
-      width: 100%;
-      max-width: 100%;
-      border-radius: inherit;
-      overflow: hidden;
-      position: relative;
-    }
-
-    img,
-    video {
-      display: block;
-      width: 100%;
-      height: auto;
-      object-fit: cover;
-      border-radius: inherit;
-    }
+	border-radius: 6px;
+	
   }
+}
 
-  /* =============================
-     🎬 Featured Item
-  ==============================*/
   .featured-items-list {
     display: flex;
     flex-wrap: nowrap;
     align-items: flex-start;
   }
 
+  /* =============================
+     🎬 Featured Item
+  ==============================*/
   .featured-item {
     flex: 0 0 auto;
     width: 372px !important;
@@ -1372,11 +1344,14 @@ input#authenticator_secret {
 
     @media (max-width: 768px) {
       margin-right: 16px;
+	  
+
 
       &:last-child {
         margin-right: 0;
       }
     }
+
   }
 
   /* =============================
@@ -1386,7 +1361,7 @@ input#authenticator_secret {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 2;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1422,6 +1397,7 @@ input#authenticator_secret {
       visibility: hidden;
     }
 
+    /* ✅ Hide arrows for mobile and tablet (<= 1050px) */
     @media (max-width: 1050px) {
       display: none !important;
     }
@@ -1454,7 +1430,8 @@ input#authenticator_secret {
 }
 
 /* =============================
-   📏 Responsive Adjustments
+   📏 Enforce Consistent Widths
+   Even When Item Content Overrides
 =============================*/
 @media (max-width: 1050px) {
   .featured-carousel .featured-item,
@@ -1463,19 +1440,26 @@ input#authenticator_secret {
     min-width: 372px !important;
     max-width: 372px !important;
     flex-shrink: 0 !important;
-    margin-right: 27px;
+	margin-right: 27px;
   }
 
-  .featured-carousel .hw-featured-video-section,
-  .featured-carousel .hw-featured-video-section .item-content {
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    flex: 1 1 100% !important;
-    margin-right: 0 !important;
-  }
+  /* ✅ Allow full-width featured video section */
+.featured-carousel .hw-featured-video-section,
+.featured-carousel .hw-featured-video-section .item-content {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 1 100% !important;
+  margin-right: 0 !important;
+}
+
 
   .featured-carousel .item-content img {
     width: 100% !important;
   }
 }
+
+
+
+
+
