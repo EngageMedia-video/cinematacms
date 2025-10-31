@@ -88,9 +88,12 @@ export function InlineSliderItemList(props) {
 
       // Take width of the first item as reference
       const itemWidth = itemElements[0].clientWidth;
+        if (!itemWidth) {
+          return;
+        }
 
       // Compute how many items fit in view
-      const totalVisible = Math.floor(itemsListWrapperRef.current.clientWidth / itemWidth);
+      const totalVisible = Math.max(1,Math.floor(itemsListWrapperRef.current.clientWidth / itemWidth));
 
       // Compute total scroll dots
       const count = Math.max(1, Math.ceil(items.length / totalVisible));
