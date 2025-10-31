@@ -1531,8 +1531,8 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
         right: 40px;
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
 		font-size: 14.5px;
 		line-height: 21px;
 		max-height: 147px;
@@ -1553,10 +1553,10 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main {
-		position: absolute;  /* ← ADD THIS */
+		position: absolute;
 		top: 40px;
 		bottom: 40px;
-		right: 0;           /* ← ADD THIS */
+		right: 0;
 		width: 35%;
 		padding: 0 50px;
 	}
@@ -1568,19 +1568,19 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
-		margin: 12px 0 28px;
+		margin: 12px 0 0;  /* ← Changed from 28px to 0 for better spacing */
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
-		bottom: 0;          /* ← ADD THIS ENTIRE RULE */
+		bottom: 0;
 		left: 50px;
 		right: 50px;
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
-		font-size: 14.5px;      
-		line-height: 21px;       
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
+		font-size: 14.5px;
+		line-height: 21px;
 		max-height: 189px;
 		display: -webkit-box;
 		-webkit-line-clamp: 9;
@@ -1613,7 +1613,7 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description {
-		margin: 12px 0 28px;
+		margin: 12px 0 48px;
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
@@ -1622,8 +1622,8 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 		right: 50px;
 	}
 
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
-	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
+	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
 		font-size: 14.5px;   /* ← ADD THIS */
 		line-height: 21px;   /* ← ADD THIS */
 		max-height: 189px;
