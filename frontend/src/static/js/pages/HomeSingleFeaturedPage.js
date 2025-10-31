@@ -26,7 +26,8 @@ export class HomeSingleFeaturedPage extends Page {
       visibleFeatured: false,
       loadedRecommended: false,
       visibleRecommended: false,
-      indexFeaturedList: []
+      indexFeaturedList: [],
+      featuredVideos: [],
     };
 
     this.onLoadLatest = this.onLoadLatest.bind(this);
@@ -34,40 +35,41 @@ export class HomeSingleFeaturedPage extends Page {
     this.onLoadRecommended = this.onLoadRecommended.bind(this);
   }
 
-async componentDidMount() {
-  try {
-    // 🔹 Step 1: Fetch all featured playlists
-    const res = await fetch(this.mediacms_config.api.indexfeatured);
-    const indexFeaturedListData = await res.json();
+  async componentDidMount() {
+    try {
+      // Fetch main featured videos
+      const featuredRes = await fetch(this.mediacms_config.api.featured);
+      const featuredData = await featuredRes.json();
+      const featuredVideos = Array.isArray(featuredData)
+        ? featuredData
+        : featuredData.results || [];
 
-    // 🔹 Step 2: For each playlist, fetch its video items from `api_url`
-    const withVideos = await Promise.all(
-      indexFeaturedListData.map(async (playlist) => {
-        if (!playlist.api_url) return playlist;
+      // Fetch all featured playlists
+      const res = await fetch(this.mediacms_config.api.indexfeatured);
+      const indexFeaturedListData = await res.json();
 
-        try {
-          const videosRes = await fetch(playlist.api_url);
-          const videosData = await videosRes.json();
+      const withVideos = await Promise.all(
+        indexFeaturedListData.map(async (playlist) => {
+          if (!playlist.api_url) return playlist;
+          try {
+            const videosRes = await fetch(playlist.api_url);
+            const videosData = await videosRes.json();
+            const videos = Array.isArray(videosData)
+              ? videosData
+              : videosData.results || [];
+            return { ...playlist, items: videos };
+          } catch (err) {
+            console.error(`Failed to load videos for playlist: ${playlist.title}`, err);
+            return { ...playlist, items: [] };
+          }
+        })
+      );
 
-          // ✅ Handle both array and paginated formats
-          const videos = Array.isArray(videosData)
-            ? videosData
-            : videosData.results || [];
-
-          return { ...playlist, items: videos };
-        } catch (err) {
-          console.error(`❌ Failed to load videos for playlist: ${playlist.title}`, err);
-          return { ...playlist, items: [] };
-        }
-      })
-    );
-
-    this.setState({ indexFeaturedList: withVideos });
-  } catch (err) {
-    console.error('❌ Failed to load featured playlists', err);
+      this.setState({ indexFeaturedList: withVideos, featuredVideos });
+    } catch (err) {
+      console.error('Failed to load featured playlists', err);
+    }
   }
-}
-
 
   onLoadLatest(length) {
     this.setState({ loadedLatest: true, visibleLatest: 0 < length });
@@ -82,38 +84,55 @@ async componentDidMount() {
   }
 
   pageContent() {
+    const { featuredVideos, indexFeaturedList } = this.state;
+    const firstFeatured = featuredVideos[0];
+    const remainingFeatured = featuredVideos.slice(1);
+
     return (
       <ApiUrlConsumer>
         {(apiUrl) => (
           <>
-            {/* 🔸 Top Featured Section (still using LazyLoadItemListAsync) */}
-            <MediaMultiListWrapper className="items-list-ver">
-              {this.state.loadedLatest && !this.state.visibleLatest ? null : (
-                <MediaListRow
-                  className={
-                    'feat-first-item' + (void 0 === this.props.title ? ' no-title' : '')
-                  }
-                >
-                  <LazyLoadItemListAsync
-                    headingText="Featured videos"
+            {/* 🔹 First featured video */}
+
+            {firstFeatured && (
+              <MediaMultiListWrapper className="items-list-ver">
+                <MediaListRow className={'feat-first-item' + (this.props.title ? '' : ' no-title')}>
+                  <InlineSliderItemList
+                    layout="featured"
+                    items={[firstFeatured]}  
                     firstItemViewer={true}
                     firstItemDescr={true}
-                    firstItemRequestUrl={apiUrl.featured}
-                    requestUrl={apiUrl.featured}
-                    itemsCountCallback={this.onLoadLatest}
-                    hideViews={true}
-                    hideAuthor={!PageStore.get('config-media-item').displayAuthor}
-                    hideDate={!PageStore.get('config-media-item').displayPublishDate}
-                    forceDisableInfiniteScroll={true}
-                    pageItems={9999}
-                    maxItems={8}
+                    pageItems={1}
                   />
                 </MediaListRow>
-              )}
-            </MediaMultiListWrapper>
+              </MediaMultiListWrapper>
+            )}
 
-            {/* 🎥 Set of other featured carousels (showcases, festival lineups, etc.) */}
-            {this.state.indexFeaturedList.map((item, index) => (
+            {/* 🔹 Remaining featured videos carousel (horizontal scroll, no grid) */}
+            {remainingFeatured.length > 0 && (
+              <MediaMultiListWrapper className="items-list-ver featured-carousel-wrapper hw-featured-first">
+                <MediaListRow
+                  title="Featured Videos"
+                  viewAllLink="/videos/featured"
+                  viewAllText="View all"
+                  className={this.props.title ? '' : 'no-title'}
+                >
+                  <InlineSliderItemList
+                    layout="featured"
+                    items={remainingFeatured}
+                    pageItems={6}
+                    maxItems={8}
+                    onItemsCount={this.onLoadFeatured}
+                    onItemsLoad={this.onLoadFeatured}
+                    firstItemViewer={false}
+                  />
+                </MediaListRow>
+              </MediaMultiListWrapper>
+            )}
+
+
+            {/* 🔹 Other featured playlists */}
+            {indexFeaturedList.map((item, index) => (
               <MediaMultiListWrapper
                 key={index}
                 className={
@@ -129,27 +148,25 @@ async componentDidMount() {
                     desc={item.text}
                     className={void 0 === this.props.title ? 'no-title' : ''}
                   >
-                    {/* ✅ use InlineSliderItemList to display videos */}
-                   {!item.items?.length ? (
-					<p className="text-center text-gray-500 italic">No videos available</p>
-					) : (
-					<InlineSliderItemList
-						headingText={item.title}
-						layout="featured"
-						items={item.items}
-						pageItems={6}
-						maxItems={8}
-						onItemsCount={this.onLoadFeatured}
-						onItemsLoad={this.onLoadFeatured}
-					/>
-					)}
-
+                    {!item.items?.length ? (
+                      <p className="text-center text-gray-500 italic">No videos available</p>
+                    ) : (
+                      <InlineSliderItemList
+                        headingText={item.title}
+                        layout="featured"
+                        items={item.items}
+                        pageItems={6}
+                        maxItems={8}
+                        onItemsCount={this.onLoadFeatured}
+                        onItemsLoad={this.onLoadFeatured}
+                      />
+                    )}
                   </MediaListRow>
                 )}
               </MediaMultiListWrapper>
             ))}
 
-            {/* 🔹 More recent videos */}
+            {/* 🔹 Recent videos */}
             <MediaMultiListWrapper className="items-list-ver">
               {this.state.loadedLatest && !this.state.visibleLatest ? null : (
                 <MediaListRow
@@ -180,5 +197,5 @@ async componentDidMount() {
 }
 
 HomeSingleFeaturedPage.propTypes = {
-  title: PropTypes.string
+  title: PropTypes.string,
 };

@@ -1267,83 +1267,136 @@ input#authenticator_secret {
 	margin-left: 0;
 }
 
-// ==========================================
-// 🎥 Featured Carousel — Fixed Responsive Layout
-// ==========================================
+
+
+
 
 .featured-carousel {
   position: relative;
   width: 100%;
-  overflow: visible;
-  z-index: 0;
   padding-bottom: 1.5rem;
 
+  // ✅ ensures this section moves with the rest of the app
+  transform: none !important;
+  will-change: auto;
+  z-index: auto;
+  overflow: visible !important;
+
+  /* =============================
+     🎞 Featured Items Container
+  ==============================*/
   .featured-items-wrap {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
     position: relative;
+    width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
-    scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
-    background: transparent;
-    scrollbar-width: none;
-    padding: 0 48px 1.5rem;
-    margin: 0 auto;
+
     &::-webkit-scrollbar {
       display: none;
     }
+
+    @media (max-width: 768px) {
+      margin: 0 -16px;
+      padding: 0 16px;
+    }
   }
 
+  /* =============================
+     🎥 Featured Video Section
+  ==============================*/
+  .hw-featured-video-section {
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+    border-radius: 6px;
+    overflow: hidden;
+
+
+    // ✅ allow it to clip properly without breaking layout
+    transform: none !important;
+    z-index: 1;
+
+    .item-content,
+    .item-thumb,
+    .featured-item {
+      width: 100%;
+      max-width: 100%;
+      border-radius: inherit;
+      overflow: hidden;
+      position: relative;
+    }
+
+    img,
+    video {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      border-radius: inherit;
+    }
+  }
+
+  /* =============================
+     🎬 Featured Item
+  ==============================*/
   .featured-items-list {
     display: flex;
-    flex-direction: row;
-    gap: var(--gap, 16px);
     flex-wrap: nowrap;
-    width: max-content;
-    min-width: 100%;
+    align-items: flex-start;
   }
 
-  .featured-item-thumb {
-    flex: 0 0 var(--item-width, 280px);
+  .featured-item {
+    flex: 0 0 auto;
+    width: 372px !important;
+    min-width: 372px !important;
+    max-width: 372px !important;
+    flex-shrink: 0 !important;
     scroll-snap-align: start;
-    border-radius: 10px;
-    overflow: hidden;
-    background: transparent;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 6px 16px rgba(26, 63, 97, 0.15);
-    }
 
     img {
-      width: 100%;
-      height: 100%;
+      width: 100% !important;
+      height: auto;
       object-fit: cover;
-      display: block;
-      aspect-ratio: 16 / 9;
-      border-radius: 10px;
+      flex-shrink: 0 !important;
+      min-width: 100% !important;
+    }
+
+    @media (max-width: 768px) {
+      margin-right: 16px;
+
+      &:last-child {
+        margin-right: 0;
+      }
     }
   }
 
+  /* =============================
+     🎯 Carousel Arrows
+  ==============================*/
   .featured-carousel-arrow {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 10;
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
+    width: 72px;
+    height: 72px;
     border: none;
-    cursor: pointer;
-    pointer-events: auto;
-
+    border-radius: 50%;
     background-color: #026690;
     color: #fff;
+    cursor: pointer;
     box-shadow: 0 2px 8px rgba(26, 63, 97, 0.15);
     transition: all 0.3s ease;
 
@@ -1353,17 +1406,14 @@ input#authenticator_secret {
       box-shadow: 0 4px 12px rgba(237, 124, 48, 0.3);
     }
 
-   &.left {
-      left: 16px; 
+    &.left {
+      left: -90px;
+      top: 35%;
     }
 
     &.right {
-      right: 16px; 
-    }
-
-    &.at-end {
-      background-color: #ed7c30;
-      box-shadow: 0 4px 12px rgba(237, 124, 48, 0.3);
+      right: -60px;
+      top: 35%;
     }
 
     &.disabled {
@@ -1371,93 +1421,61 @@ input#authenticator_secret {
       pointer-events: none;
       visibility: hidden;
     }
-  }
 
-  // Focus visible
-  .featured-carousel-arrow:focus {
-    outline: 3px solid rgba(237, 124, 48, 0.9);
-    outline-offset: 2px;
-  }
-
-  @media (max-width: 479px) {
-    .featured-items-wrap {
-      --item-width: calc(100vw - 112px);
-      --gap: 16px;
-      padding: 0 56px 1rem;
+    @media (max-width: 1050px) {
+      display: none !important;
     }
   }
 
-  @media (min-width: 480px) and (max-width: 767px) {
-    .featured-items-wrap {
-      --item-width: 280px;
-      --gap: 16px;
-    }
-  }
-
-  @media (min-width: 768px) and (max-width: 1023px) {
-    .featured-items-wrap {
-      --item-width: 340px;
-      --gap: 20px;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .featured-items-wrap {
-      --item-width: 372px;
-      --gap: 27px;
-    }
-  }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-}
-
-/* ==========================================
-   📱 Scroll Progress Dots (Mobile & Tablet)
-   ========================================== */
-.slider-progress-dots {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.slider-progress-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #d5e9ee; /* light mode inactive */
-  transition: background-color 0.3s ease, width 0.3s ease;
-}
-
-.slider-progress-dot.active {
-  background-color: #026690;
-  width: 24px;
-  border-radius: 4px;
-}
-
-/* Hide dots on desktop */
-@media (min-width: 1024px) {
+  /* =============================
+     ⚫ Slider Dots
+  ==============================*/
   .slider-progress-dots {
-    display: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .slider-progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #d5e9ee;
+    transition: background-color 0.3s ease, width 0.3s ease;
+
+    &.active {
+      background-color: #026690;
+      width: 24px;
+      border-radius: 4px;
+    }
   }
 }
 
-/* Dark theme support */
-body.dark_theme .slider-progress-dot {
-  background-color: #182b39;
-}
+/* =============================
+   📏 Responsive Adjustments
+=============================*/
+@media (max-width: 1050px) {
+  .featured-carousel .featured-item,
+  .featured-carousel .item-content {
+    width: 372px !important;
+    min-width: 372px !important;
+    max-width: 372px !important;
+    flex-shrink: 0 !important;
+    margin-right: 27px;
+  }
 
-body.dark_theme .slider-progress-dot.active {
-  background-color: #659ba0;
+  .featured-carousel .hw-featured-video-section,
+  .featured-carousel .hw-featured-video-section .item-content {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+    margin-right: 0 !important;
+  }
+
+  .featured-carousel .item-content img {
+    width: 100% !important;
+  }
 }
