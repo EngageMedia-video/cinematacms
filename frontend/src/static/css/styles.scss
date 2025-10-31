@@ -1267,3 +1267,199 @@ input#authenticator_secret {
 	margin-left: 0;
 }
 
+
+
+.featured-carousel {
+  position: relative;
+  width: 100%;
+  padding-bottom: 1.5rem;
+
+  /* =============================
+     🎞 Featured Items Container
+  ==============================*/
+  .featured-items-wrap {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      margin: 0 -16px;
+      padding: 0 16px;
+    }
+  }
+
+  .hw-featured-video-section {
+	width: 100%;
+	max-width: 100%;
+	flex: 1 1 100%;
+	display: block;
+	margin: 0 auto; // centers if container has side padding
+	box-sizing: border-box;
+
+  // make sure inner video or ListItem fills too
+
+
+  .item-content, 
+  .item-thumb, 
+  .featured-item {
+    width: 100%;
+    max-width: 100%;
+	border-radius: 6px;
+	
+  }
+}
+
+  .featured-items-list {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+  }
+
+  /* =============================
+     🎬 Featured Item
+  ==============================*/
+  .featured-item {
+    flex: 0 0 auto;
+    width: 372px !important;
+    min-width: 372px !important;
+    max-width: 372px !important;
+    flex-shrink: 0 !important;
+    scroll-snap-align: start;
+
+    img {
+      width: 100% !important;
+      height: auto;
+      object-fit: cover;
+      flex-shrink: 0 !important;
+      min-width: 100% !important;
+    }
+
+    @media (max-width: 768px) {
+      margin-right: 16px;
+	  
+
+
+      &:last-child {
+        margin-right: 0;
+      }
+    }
+
+  }
+
+  /* =============================
+     🎯 Carousel Arrows
+  ==============================*/
+  .featured-carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border: none;
+    border-radius: 50%;
+    background-color: #026690;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(26, 63, 97, 0.15);
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: #ed7c30;
+      transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 4px 12px rgba(237, 124, 48, 0.3);
+    }
+
+    &.left {
+      left: -90px;
+      top: 35%;
+    }
+
+    &.right {
+      right: -60px;
+      top: 35%;
+    }
+
+    &.disabled {
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+    }
+
+    /* ✅ Hide arrows for mobile and tablet (<= 1050px) */
+    @media (max-width: 1050px) {
+      display: none !important;
+    }
+  }
+
+  /* =============================
+     ⚫ Slider Dots
+  ==============================*/
+  .slider-progress-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .slider-progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #d5e9ee;
+    transition: background-color 0.3s ease, width 0.3s ease;
+
+    &.active {
+      background-color: #026690;
+      width: 24px;
+      border-radius: 4px;
+    }
+  }
+}
+
+/* =============================
+   📏 Enforce Consistent Widths
+   Even When Item Content Overrides
+=============================*/
+@media (max-width: 1050px) {
+  .featured-carousel .featured-item,
+  .featured-carousel .item-content {
+    width: 372px !important;
+    min-width: 372px !important;
+    max-width: 372px !important;
+    flex-shrink: 0 !important;
+	margin-right: 27px;
+  }
+
+  /* ✅ Allow full-width featured video section */
+.featured-carousel .hw-featured-video-section,
+.featured-carousel .hw-featured-video-section .item-content {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 1 100% !important;
+  margin-right: 0 !important;
+}
+
+
+  .featured-carousel .item-content img {
+    width: 100% !important;
+  }
+}
+
+
+
+
+

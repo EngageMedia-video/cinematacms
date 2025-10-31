@@ -22,6 +22,7 @@ a.item-thumb{
 	background-position: center;
 	background-size: cover;
 	background-color: var(--item-thumb-bg-color);
+	border-radius: 6px;
 }
 
 .item-thumb.no-thumb{
