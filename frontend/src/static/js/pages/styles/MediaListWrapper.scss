@@ -14,7 +14,7 @@
 	width:100%;
 	display:inline-block;
 	clear:both;
-	min-height:136px;	// TODO: Check it.
+	min-height:136px;
 
 	+ .media-list-row{
 		border-width:1px 0 0;
@@ -399,4 +399,16 @@ $item-width: 218px;
 			}
 		}
 	}
+}
+
+
+.media-list-wrapper.full-bleed {
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  max-width: none !important;
+
 }
