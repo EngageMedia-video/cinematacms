@@ -1531,6 +1531,7 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
         right: 40px;
 	}
 
+	/* Description sizing when sidebar is OFF */
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
 		font-size: 14.5px;
@@ -1538,6 +1539,19 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 		max-height: 147px;
 		-webkit-line-clamp: 7;  
 		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* Description sizing when sidebar is ON - 7 lines to fit tighter space */
+	body.visible-sidebar .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
+	body.visible-sidebar .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
+		font-size: 14.5px;
+		line-height: 21px;
+		max-height: 147px;
+		display: -webkit-box;
+		-webkit-line-clamp: 7;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -1635,11 +1649,25 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 		left: 50px;
 		right: 50px;
 	}
-
+	
+	/* Description sizing when sidebar is OFF - 9 lines fits */
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
 		font-size: 14.5px;   /* ← ADD THIS */
 		line-height: 21px;   /* ← ADD THIS */
+		max-height: 189px;
+		display: -webkit-box;
+		-webkit-line-clamp: 9;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* Description sizing when sidebar is ON */
+	body.visible-sidebar .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
+	body.visible-sidebar .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
+		font-size: 14.5px;
+		line-height: 21px;
 		max-height: 189px;
 		display: -webkit-box;
 		-webkit-line-clamp: 9;
