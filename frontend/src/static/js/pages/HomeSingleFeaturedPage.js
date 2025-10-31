@@ -180,34 +180,33 @@ async componentDidMount() {
               <PendingItemsList className="featured-carousel" />
             ) : null}
 
-            {/* 🔹 Recent videos */}
-            <MediaMultiListWrapper className="items-list-ver">
-              {this.state.loadedLatest && !this.state.visibleLatest ? null : (
-                <MediaListRow
-                  className={
-                    'feat-first-item hw-most-recent-videos' +
-                    (void 0 === this.props.title ? ' no-title' : '')
-                  }
-                >
-                  <LazyLoadItemListAsync
-                    headingText="Recent videos"
-                    firstItemViewer={false}
-                    firstItemDescr={false}
-                    requestUrl={apiUrl.media}
-                    itemsCountCallback={this.onLoadLatest}
-                    hideViews={true}
-                    hideAuthor={!PageStore.get('config-media-item').displayAuthor}
-                    hideDate={!PageStore.get('config-media-item').displayPublishDate}
-                    pageItems={20}
-                  />
-                </MediaListRow>
-              )}
-            </MediaMultiListWrapper>
-          </>
-        )}
-      </ApiUrlConsumer>
-    );
-  }
+					{/*More recent videos*/}
+					<MediaMultiListWrapper className="items-list-ver">
+
+						{ this.state.loadedLatest && ! this.state.visibleLatest ? null :
+							<MediaListRow className={ "feat-first-item hw-most-recent-videos" + ( void 0 === this.props.title ? " no-title" : "" ) }>
+
+								<LazyLoadItemListAsync
+									headingText="Recent videos"
+									firstItemViewer={ false }
+									firstItemDescr={ false }
+									requestUrl={ apiUrl.media }
+									itemsCountCallback={ this.onLoadLatest }
+									hideViews={true}
+									hideAuthor={ ! PageStore.get('config-media-item').displayAuthor }
+									hideDate={ ! PageStore.get('config-media-item').displayPublishDate }
+									pageItems={ 20 }
+									maxItems={ 20 }	
+								/>
+
+							</MediaListRow> }
+					</MediaMultiListWrapper>
+
+
+				</>
+				}
+				</ApiUrlConsumer>;
+	}
 }
 
 HomeSingleFeaturedPage.propTypes = {
