@@ -1274,12 +1274,15 @@ input#authenticator_secret {
 .featured-carousel {
 	position: relative;
 	width: 100%;
+	overflow: visible;
 	padding-bottom: 1.5rem;
-	overflow: hidden; 
+
+
+
 
 	&:has(.items-list-wrap-waiting) {
 			min-height: 280px;
-		}
+	}
 
 
 	.items-list-wrap-waiting {
@@ -1307,15 +1310,19 @@ input#authenticator_secret {
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
+	 position: relative;
+    z-index: 1;
+	
 
     &::-webkit-scrollbar {
       display: none;
     }
 
-    @media (max-width: 768px) {
+    @media (min-width: 768px) {
       margin: 0;
-      padding: 0 16px;
     }
+
+	
   }
 
   .hw-featured-video-section {
@@ -1323,8 +1330,17 @@ input#authenticator_secret {
 	max-width: 100%;
 	flex: 1 1 100%;
 	display: block;
-	margin: 0 auto; 
 	box-sizing: border-box;
+	padding-right:27px;
+	
+	@media (max-width: 767px) {
+		padding-right: 0; // reduce padding on mobile
+	}
+
+	@media (max-width: 480px) {
+		padding-right: 0; // further reduce on very small screens
+	}
+	
 
 
 
@@ -1343,6 +1359,8 @@ input#authenticator_secret {
     display: flex;
     flex-wrap: nowrap;
     align-items: flex-start;
+
+
   }
 
   /* =============================
@@ -1366,11 +1384,10 @@ input#authenticator_secret {
 
     @media (max-width: 768px) {
       margin-right: 16px;
-	  
 
 
       &:last-child {
-        margin-right: 0;
+        margin-right: 27px;
       }
     }
 
@@ -1379,63 +1396,48 @@ input#authenticator_secret {
   /* =============================
      🎯 Carousel Arrows
   ==============================*/
-  .featured-carousel-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 72px;
-    height: 72px;
-    border: none;
-    border-radius: 50%;
-    background-color: #026690;
-    color: #fff;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(26, 63, 97, 0.15);
-    transition: all 0.3s ease;
+.featured-carousel-arrow {
+  position: absolute;
+  top: 28%;
+  z-index: 2; // above items
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 61.5px;
+  height: 61.5px;
+  border: none;
+  border-radius: 50%;
+  background-color: #026690;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(26, 63, 97, 0.15);
+  transition: all 0.3s ease;
 
-    &:hover {
-      background-color: #ed7c30;
-      transform: translateY(-50%) scale(1.1);
-      box-shadow: 0 4px 12px rgba(237, 124, 48, 0.3);
-    }
-
-    &.left {
-      left: 10px;
-      top: 35%;
-    }
-
-    &.right {
-      right: 35px;
-      top: 35%;
-    }
-
-    &.disabled {
-      cursor: not-allowed;
-	 
-    }
-
-	 @media (min-width: 1440px) {
-		&.left {
-			left: 10px;
-			top: 35%;
-		}
-
-		&.right {
-			right: 20px;
-			top: 35%;
-		}
-	 }
-
-    /* ✅ Hide arrows for mobile and tablet (<= 1050px) */
-    @media (max-width: 1050px) {
-      display: none !important;
-    }
+  &:hover {
+    background-color: #ed7c30;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 4px 12px rgba(237, 124, 48, 0.3);
   }
 
+  &.left {
+    left: 0;
+    transform: translate(-50%, -50%); // center on left edge
+  }
+
+  &.right {
+    right: calc(27px - 30.75px); // shift left by (half arrow width - item margin)
+    transform: translateY(-50%); // vertical centering
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+  }
+
+  /* hide arrows starting at tablet size */
+  @media (max-width: 1050px) {
+    display: none !important;
+  }
+}
   /* =============================
      ⚫ Slider Dots
   ==============================*/
@@ -1445,6 +1447,7 @@ input#authenticator_secret {
     align-items: center;
     gap: 8px;
     margin-top: 12px;
+
   }
 
   .slider-progress-dot {
@@ -1464,30 +1467,25 @@ input#authenticator_secret {
   
 }
 
-/* =============================
-   📏 Enforce Consistent Widths
-   Even When Item Content Overrides
-=============================*/
+
 @media (max-width: 1050px) {
   .featured-carousel .featured-item,
   .featured-carousel .item-content {
-    width: 372px !important;
-    min-width: 372px !important;
-    max-width: 372px !important;
+    width: 345px !important;
+    min-width: 345px !important;
+    max-width: 345px !important;
     flex-shrink: 0 !important;
-	margin-right: 27px;
+    margin-right: 27px;
   }
 
-  /* ✅ Allow full-width featured video section */
-.featured-carousel .hw-featured-video-section,
-.featured-carousel .hw-featured-video-section .item-content {
-  width: 100% !important;
-  min-width: 100% !important;
-  max-width: 100% !important;
-  flex: 1 1 100% !important;
-  margin-right: 0 !important;
-}
-
+  .featured-carousel .hw-featured-video-section,
+  .featured-carousel .hw-featured-video-section .item-content {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+    margin-right: 27px !important; 
+  }
 
   .featured-carousel .item-content img {
     width: 100% !important;
@@ -1495,6 +1493,51 @@ input#authenticator_secret {
 }
 
 
+@media (max-width: 768px) {
+  .featured-carousel .featured-item,
+  .featured-carousel .item-content {
+    width: 372px !important;
+    min-width: 372px !important;
+    max-width: 372px !important;
+    flex-shrink: 0 !important;
+    margin-right: 27px;
+  }
 
+  .featured-carousel .hw-featured-video-section,
+  .featured-carousel .hw-featured-video-section .item-content {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+    margin-right: 27px !important; 
+  }
 
+  .featured-carousel .item-content img {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 480px){
+  .featured-carousel .featured-item,
+  .featured-carousel .item-content {
+    width: 358px !important;
+    min-width: 358px !important;
+    max-width: 358px !important;
+    flex-shrink: 0 !important;
+	margin-right: 16px !important; 
+  }
+
+  .featured-carousel .hw-featured-video-section,
+  .featured-carousel .hw-featured-video-section .item-content {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+    margin-right: 16px !important; 
+  }
+
+  .featured-carousel .item-content img {
+    width: 100% !important;
+  }
+}
 

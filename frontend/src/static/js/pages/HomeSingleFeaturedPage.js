@@ -96,9 +96,9 @@ export class HomeSingleFeaturedPage extends Page {
           <>
             {/* 🔹 First featured video */}
             {firstFeatured ? (
-              <MediaMultiListWrapper className="items-list-ver">
+              <MediaMultiListWrapper className="items-list-ver ">
                 <MediaListRow
-                  className={'feat-first-item' + (this.props.title ? '' : ' no-title')}
+                  className={'feat-first-item ' + (this.props.title ? '' : ' no-title')}
                 >
                   <InlineSliderItemList
                     layout="featured"
@@ -117,7 +117,7 @@ export class HomeSingleFeaturedPage extends Page {
             {remainingFeatured.length > 0 ? (
               <MediaMultiListWrapper className="items-list-ver featured-carousel-wrapper hw-featured-first">
                 <MediaListRow
-                  title="Featured Videos"
+                  title="Featured by Curators"
                   viewAllLink="/videos/featured"
                   viewAllText="View all"
                   className={this.props.title ? '' : 'no-title'}
