@@ -242,8 +242,17 @@ export function listItemProps( props, item, index ){
 		args.duration = item.duration;
 	}
 
-	if( ( isArchiveItem || isPlaylistItem ) && ! isNaN( item.media_count ) ){
+	if( ( isArchiveItem || isPlaylistItem || isUserItem ) && ! isNaN( item.media_count ) ){
 		args.media_count = parseInt( item.media_count, 10 );
+	}
+
+	// Pass user-specific fields
+	if( isUserItem ){
+		args.username = item.username;
+		args.location = item.location;
+		args.location_country = item.location_country;
+		args.is_trusted = item.is_trusted;
+		args.advancedUser = item.advancedUser;
 	}
 
 	if( isMediaItem ){
@@ -285,6 +294,13 @@ export function ListItem(props){
 
 	switch( props.type ){
 		case 'user':
+			// Pass user-specific props
+			args.username = props.username;
+			args.location = props.location;
+			args.location_country = props.location_country;
+			args.is_trusted = props.is_trusted;
+			args.advancedUser = props.advancedUser;
+			args.media_count = props.media_count;
 			break;
 		case 'playlist':
 			break;

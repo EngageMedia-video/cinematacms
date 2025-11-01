@@ -3,7 +3,7 @@ import PageStore from '../../../../pages/_PageStore.js';
 import { getRequest } from '../../../../functions';
 import { formatInnerLink } from '../../../../functions/formatInnerLink';
 
-export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url, request_url, itemsCountCallback, loadItemsCallback) {
+export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url, request_url, itemsCountCallback, loadItemsCallback, errorCallback) {
 
     const config = {
         maxItems: maxItems || 255,
@@ -20,12 +20,12 @@ export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url,
         pageItems: 0,
         requestResponse: false,
     };
-    
+
     let firstItemUrl = null;
 
     const items = [];
     const responseItems = [];
-    
+
     const callbacks = {
         itemsCount: function() {
             if ('function' === typeof itemsCountCallback) {
@@ -35,6 +35,11 @@ export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url,
         itemsLoad: function() {
             if ('function' === typeof loadItemsCallback) {
                 loadItemsCallback( items );
+            }
+        },
+        error: function(error) {
+            if ('function' === typeof errorCallback) {
+                errorCallback(error);
             }
         },
     };
@@ -74,7 +79,8 @@ export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url,
         function fn(response) {
 
             if (!!!response || !!!response.data) {
-                
+                callbacks.error(new Error('Failed to load first item'));
+                return;
             }
             else{
 
@@ -90,7 +96,12 @@ export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url,
             runRequest(true);
         }
 
-        getRequest( formatInnerLink( first_item_request_url, PageStore.get('config-site').url ), false, fn );
+        function errorFn(error) {
+            waiting.requestResponse = false;
+            callbacks.error(new Error('Failed to load first item'));
+        }
+
+        getRequest( formatInnerLink( first_item_request_url, PageStore.get('config-site').url ), false, fn, errorFn );
     }
 
     function runRequest(initialRequest) {
@@ -102,6 +113,7 @@ export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url,
             waiting.requestResponse = false;
 
             if (!!!response || !!!response.data) {
+                callbacks.error(new Error('Failed to load items'));
                 return;
             }
 
@@ -134,7 +146,12 @@ export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url,
             loadNextItems();
         }
 
-        getRequest(state.nextRequestUrl, false, fn);
+        function errorFn(error) {
+            waiting.requestResponse = false;
+            callbacks.error(new Error('Failed to load items'));
+        }
+
+        getRequest(state.nextRequestUrl, false, fn, errorFn);
 
         state.nextRequestUrl = null;
     }
@@ -156,6 +173,7 @@ export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url,
     function cancelAll(){
         itemsCountCallback = null;
         loadItemsCallback = null;
+        errorCallback = null;
     }
 
     if( void 0 !== first_item_request_url && null !== first_item_request_url ){
