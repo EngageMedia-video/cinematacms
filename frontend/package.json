@@ -10,7 +10,7 @@
     "mediacms-scripts-2": "./cli.js"
   },
   "scripts": {
-    "start": "./cli.js start --config=./config/cinemata.config.js --host=0.0.0.0 --port=8088",
+    "start": "node cli.js start --config=./config/cinemata.config.js --host=0.0.0.0 --port=8088",
     "build": "npm run clean-build && ./cli.js build --config=./config/cinemata.config.js --verbose",
     "clean-build": "node ./scripts/rmrf.js ./build/production/",
     "serve-build": "npx serve ./build/production/"

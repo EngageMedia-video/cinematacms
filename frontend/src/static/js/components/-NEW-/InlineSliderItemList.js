@@ -28,8 +28,6 @@ export function InlineSliderItemList(props) {
   ] = useItemListInlineSlider(props);
 
   const [hasScrolled, setHasScrolled] = useState(false);
-  const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [totalDots, setTotalDots] = useState(1);
 
@@ -64,42 +62,29 @@ export function InlineSliderItemList(props) {
 
     const handleScroll = () => {
       const { scrollLeft, scrollWidth, clientWidth } = container;
-      const buffer = 48;
-      const start = scrollLeft <= buffer / 2;
-      const end = scrollLeft + clientWidth >= scrollWidth - buffer;
-
-      setAtStart(start);
-      setAtEnd(end);
-      if (!start) setHasScrolled(true);
-
       const progress = Math.min(scrollLeft / (scrollWidth - clientWidth), 1);
       setScrollProgress(progress);
+      if (scrollLeft > 0) setHasScrolled(true);
     };
 
     const updateDots = () => {
       if (!itemsListRef.current) return;
-
-      // Get all direct child list items
       const itemElements = Array.from(itemsListRef.current.children).filter(
-        (el) => el.nodeType === 1 // only element nodes
+        (el) => el.nodeType === 1
       );
 
       if (!itemElements.length) return;
 
-      // Take width of the first item as reference
       const itemWidth = itemElements[0].clientWidth;
-        if (!itemWidth) {
-          return;
-        }
+      if (!itemWidth) return;
 
-      // Compute how many items fit in view
-      const totalVisible = Math.max(1,Math.floor(itemsListWrapperRef.current.clientWidth / itemWidth));
-
-      // Compute total scroll dots
+      const totalVisible = Math.max(
+        1,
+        Math.floor(itemsListWrapperRef.current.clientWidth / itemWidth)
+      );
       const count = Math.max(1, Math.ceil(items.length / totalVisible));
       setTotalDots(count);
     };
-
 
     container.addEventListener('scroll', handleScroll);
     window.addEventListener('resize', updateDots);
@@ -112,35 +97,47 @@ export function InlineSliderItemList(props) {
     };
   }, [items]);
 
-const handleNext = () => {
-  const container = itemsListWrapperRef.current;
-  if (!container || !itemsListRef.current) return;
+  const handleNext = () => {
+    const container = itemsListWrapperRef.current;
+    if (!container || !itemsListRef.current) return;
 
-  const firstItem = itemsListRef.current.children[0];
-  if (!firstItem) return;
+    const firstItem = itemsListRef.current.children[0];
+    if (!firstItem) return;
 
-  const itemWidth = firstItem.offsetWidth; // 345px
-  const itemMarginRight = parseInt(getComputedStyle(firstItem).marginRight) || 0; // 27px
-  const scrollAmount = itemWidth + itemMarginRight;
+    const itemWidth = firstItem.offsetWidth;
+    const itemMarginRight = parseInt(getComputedStyle(firstItem).marginRight) || 0;
+    const scrollAmount = itemWidth + itemMarginRight;
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
 
-  setHasScrolled(true);
-  container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-};
+    // ✅ Loop to start if at end
+    if (Math.ceil(container.scrollLeft) >= maxScrollLeft - scrollAmount) {
+      container.scrollTo({ left: 0, behavior: 'smooth' });
+    } else {
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
 
-const handlePrev = () => {
-  const container = itemsListWrapperRef.current;
-  if (!container || !itemsListRef.current) return;
+    setHasScrolled(true);
+  };
 
-  const firstItem = itemsListRef.current.children[0];
-  if (!firstItem) return;
+  const handlePrev = () => {
+    const container = itemsListWrapperRef.current;
+    if (!container || !itemsListRef.current) return;
 
-  const itemWidth = firstItem.offsetWidth;
-  const itemMarginRight = parseInt(getComputedStyle(firstItem).marginRight) || 0;
-  const scrollAmount = itemWidth + itemMarginRight;
+    const firstItem = itemsListRef.current.children[0];
+    if (!firstItem) return;
 
-  container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-};
+    const itemWidth = firstItem.offsetWidth;
+    const itemMarginRight = parseInt(getComputedStyle(firstItem).marginRight) || 0;
+    const scrollAmount = itemWidth + itemMarginRight;
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
 
+    // ✅ Loop to end if at start
+    if (container.scrollLeft <= scrollAmount) {
+      container.scrollTo({ left: maxScrollLeft, behavior: 'smooth' });
+    } else {
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   const activeDot = Math.round(scrollProgress * (totalDots - 1));
   const listOuterClass = `${classname.listOuter} featured-carousel`;
@@ -148,21 +145,18 @@ const handlePrev = () => {
   if (!countedItems) return <PendingItemsList className={listOuterClass} />;
   if (!items.length) return null;
 
-  // 🔹 Hide arrows if only one item or first-item viewer (big featured top)
   const showArrows = !(props.firstItemViewer && items.length === 1) && items.length > 1;
 
   return (
     <div className={listOuterClass}>
-      {/* Left arrow */}
+      {/* Left Arrow */}
       {showArrows && (
         <button
-          className={`featured-carousel-arrow left ${atStart ? 'disabled' : ''} ${
-            !hasScrolled ? 'disabled' : ''
-          }`}
+          className="featured-carousel-arrow left"
           onClick={handlePrev}
           aria-label="Previous"
         >
-          <ArrowLeftIcon/>
+          <ArrowLeftIcon />
         </button>
       )}
 
@@ -173,54 +167,48 @@ const handlePrev = () => {
               return (
                 <section className="hw-featured-video-section" key={index}>
                   {props.headingText && <h1>{props.headingText}</h1>}
-                    <ListItem
-                      {...listItemProps(props, itm, index)}
-                      firstItemDescr={props.firstItemDescr || true}
-                      hideViews={props.hideViews}
-                      hideAuthor={props.hideAuthor}
-                      hideDate={props.hideDate}
-                    />
+                  <ListItem
+                    {...listItemProps(props, itm, index)}
+                    firstItemDescr={props.firstItemDescr || true}
+                    hideViews={props.hideViews}
+                    hideAuthor={props.hideAuthor}
+                    hideDate={props.hideDate}
+                  />
                 </section>
               );
             }
 
             return (
-              <div
-                key={index}
-                className="featured-item"
-              >
+              <div key={index} className="featured-item">
                 <ListItem {...listItemProps(props, itm, index)} />
               </div>
-
-
             );
           })}
         </div>
       </div>
 
-      {/* Right arrow */}
+      {/* Right Arrow */}
       {showArrows && (
         <button
-          className={`featured-carousel-arrow right ${atEnd ? 'disabled' : ''}`}
-          onClick={!atEnd ? handleNext : undefined}
+          className="featured-carousel-arrow right"
+          onClick={handleNext}
           aria-label="Next"
-          disabled={atEnd}
         >
-          <ArrowRightIcon/>
+          <ArrowRightIcon />
         </button>
-
       )}
 
-      {/* Scroll progress dots */}
-
-        {!props.firstItemViewer && totalDots > 1 && (
-          <div className="slider-progress-dots" aria-hidden="true">
-            {Array.from({ length: totalDots }).map((_, i) => (
-              <div key={i} className={`slider-progress-dot ${i === activeDot ? 'active' : ''}`}></div>
-            ))}
-          </div>
-        )}
-
+      {/* Dots */}
+      {!props.firstItemViewer && totalDots > 1 && (
+        <div className="slider-progress-dots" aria-hidden="true">
+          {Array.from({ length: totalDots }).map((_, i) => (
+            <div
+              key={i}
+              className={`slider-progress-dot ${i === activeDot ? 'active' : ''}`}
+            ></div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

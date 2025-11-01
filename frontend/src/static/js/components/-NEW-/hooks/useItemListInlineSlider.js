@@ -20,6 +20,7 @@ export function useItemListInlineSlider(props) {
   const [inlineSlider, setInlineSlider] = useState(null);
   const [resizeDate, setResizeDate] = useState(null);
   const [sidebarVisibilityChangeDate, setSidebarVisibilityChangeDate] = useState(null);
+  const [isLoading, setIsLoading] = useState(true); // 🟢 Loader state
 
   // ---- Helper classnames
   const classname = {
@@ -99,8 +100,23 @@ export function useItemListInlineSlider(props) {
 
   // ---- Effects
   useEffect(() => {
-    addListItems();
-    updateSlider(true);
+    // 🟡 Load items async with loader state
+    const fetchItems = async () => {
+      setIsLoading(true);
+      try {
+        await addListItems();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, []); // only run once at mount
+
+  useEffect(() => {
+    if (items.length > 0) {
+      updateSlider(true);
+    }
   }, [items]);
 
   useEffect(() => {
@@ -127,5 +143,6 @@ export function useItemListInlineSlider(props) {
     sidebarVisibilityChangeListener,
     itemsListWrapperRef,
     itemsListRef,
+    isLoading // 🟢 expose loading state
   ];
 }

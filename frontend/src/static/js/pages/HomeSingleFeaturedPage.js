@@ -8,6 +8,7 @@ import { MediaListRow } from './components/MediaListRow';
 
 import { LazyLoadItemListAsync } from '../components/-NEW-/LazyLoadItemListAsync';
 import { InlineSliderItemList } from '../components/-NEW-/InlineSliderItemList.js';
+import { PendingItemsList } from '../components/-NEW-/PendingItemsList.js';
 
 import { Page } from './_Page';
 import PageStore from './_PageStore';
@@ -59,7 +60,7 @@ export class HomeSingleFeaturedPage extends Page {
               : videosData.results || [];
             return { ...playlist, items: videos };
           } catch (err) {
-            console.error(`Failed to load videos for playlist: ${playlist.title}`, err);
+            console.error(`❌ Failed to load videos for playlist: ${playlist.title}`, err);
             return { ...playlist, items: [] };
           }
         })
@@ -67,7 +68,7 @@ export class HomeSingleFeaturedPage extends Page {
 
       this.setState({ indexFeaturedList: withVideos, featuredVideos });
     } catch (err) {
-      console.error('Failed to load featured playlists', err);
+      console.error('❌ Failed to load featured playlists', err);
     }
   }
 
@@ -76,6 +77,7 @@ export class HomeSingleFeaturedPage extends Page {
   }
 
   onLoadFeatured(length) {
+
     this.setState({ loadedFeatured: true, visibleFeatured: 0 < length });
   }
 
@@ -84,7 +86,7 @@ export class HomeSingleFeaturedPage extends Page {
   }
 
   pageContent() {
-    const { featuredVideos, indexFeaturedList } = this.state;
+    const { featuredVideos, indexFeaturedList, loadedFeatured } = this.state;
     const firstFeatured = featuredVideos[0];
     const remainingFeatured = featuredVideos.slice(1);
 
@@ -93,23 +95,26 @@ export class HomeSingleFeaturedPage extends Page {
         {(apiUrl) => (
           <>
             {/* 🔹 First featured video */}
-
-            {firstFeatured && (
+            {firstFeatured ? (
               <MediaMultiListWrapper className="items-list-ver">
-                <MediaListRow className={'feat-first-item' + (this.props.title ? '' : ' no-title')}>
+                <MediaListRow
+                  className={'feat-first-item' + (this.props.title ? '' : ' no-title')}
+                >
                   <InlineSliderItemList
                     layout="featured"
-                    items={[firstFeatured]}  
+                    items={[firstFeatured]}
                     firstItemViewer={true}
                     firstItemDescr={true}
                     pageItems={1}
                   />
                 </MediaListRow>
               </MediaMultiListWrapper>
+            ) : (
+              <PendingItemsList className="items-list-ver featured-carousel" />
             )}
 
-            {/* 🔹 Remaining featured videos carousel (horizontal scroll, no grid) */}
-            {remainingFeatured.length > 0 && (
+            {/* 🔹 Remaining featured videos carousel */}
+            {remainingFeatured.length > 0 ? (
               <MediaMultiListWrapper className="items-list-ver featured-carousel-wrapper hw-featured-first">
                 <MediaListRow
                   title="Featured Videos"
@@ -128,43 +133,48 @@ export class HomeSingleFeaturedPage extends Page {
                   />
                 </MediaListRow>
               </MediaMultiListWrapper>
-            )}
-
+            ) : !loadedFeatured ? (
+              <PendingItemsList className="featured-carousel" />
+            ) : null}
 
             {/* 🔹 Other featured playlists */}
-            {indexFeaturedList.map((item, index) => (
-              <MediaMultiListWrapper
-                key={index}
-                className={
-                  'items-list-ver featured-carousel-wrapper ' +
-                  (index % 2 === 0 ? 'hw-even-list' : 'hw-odd-list')
-                }
-              >
-                {this.state.loadedFeatured && !this.state.visibleFeatured ? null : (
-                  <MediaListRow
-                    title={item.title}
-                    viewAllLink={item.url}
-                    viewAllText="View all"
-                    desc={item.text}
-                    className={void 0 === this.props.title ? 'no-title' : ''}
-                  >
-                    {!item.items?.length ? (
-                      <p className="text-center text-gray-500 italic">No videos available</p>
-                    ) : (
-                      <InlineSliderItemList
-                        headingText={item.title}
-                        layout="featured"
-                        items={item.items}
-                        pageItems={6}
-                        maxItems={8}
-                        onItemsCount={this.onLoadFeatured}
-                        onItemsLoad={this.onLoadFeatured}
-                      />
-                    )}
-                  </MediaListRow>
-                )}
-              </MediaMultiListWrapper>
-            ))}
+            {indexFeaturedList.length > 0 ? (
+              indexFeaturedList.map((item, index) => (
+                <MediaMultiListWrapper
+                  key={index}
+                  className={
+                    'items-list-ver featured-carousel-wrapper ' +
+                    (index % 2 === 0 ? 'hw-even-list' : 'hw-odd-list')
+                  }
+                >
+                  {this.state.loadedFeatured && !this.state.visibleFeatured ? null : (
+                    <MediaListRow
+                      title={item.title}
+                      viewAllLink={item.url}
+                      viewAllText="View all"
+                      desc={item.text}
+                      className={void 0 === this.props.title ? 'no-title' : ''}
+                    >
+                      {!item.items?.length ? (
+                        <PendingItemsList className="featured-carousel" />
+                      ) : (
+                        <InlineSliderItemList
+                          headingText={item.title}
+                          layout="featured"
+                          items={item.items}
+                          pageItems={6}
+                          maxItems={8}
+                          onItemsCount={this.onLoadFeatured}
+                          onItemsLoad={this.onLoadFeatured}
+                        />
+                      )}
+                    </MediaListRow>
+                  )}
+                </MediaMultiListWrapper>
+              ))
+            ) : (
+              <PendingItemsList className="featured-carousel" />
+            )}
 
             {/* 🔹 Recent videos */}
             <MediaMultiListWrapper className="items-list-ver">
