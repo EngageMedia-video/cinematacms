@@ -120,6 +120,7 @@ export class HomeSingleFeaturedPage extends Page {
 									hideAuthor={ ! PageStore.get('config-media-item').displayAuthor }
 									hideDate={ ! PageStore.get('config-media-item').displayPublishDate }
 									pageItems={ 20 }
+									maxItems={ 20 }	
 								/>
 
 							</MediaListRow> }
