@@ -1269,10 +1269,32 @@ input#authenticator_secret {
 
 
 
+
+
 .featured-carousel {
-  position: relative;
-  width: 100%;
-  padding-bottom: 1.5rem;
+	position: relative;
+	width: 100%;
+	padding-bottom: 1.5rem;
+	overflow: hidden; 
+
+	&:has(.items-list-wrap-waiting) {
+			min-height: 280px;
+		}
+
+
+	.items-list-wrap-waiting {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+		z-index: 1;
+		background: transparent; 
+	}
+
+	
 
   /* =============================
      🎞 Featured Items Container
@@ -1301,10 +1323,10 @@ input#authenticator_secret {
 	max-width: 100%;
 	flex: 1 1 100%;
 	display: block;
-	margin: 0 auto; // centers if container has side padding
+	margin: 0 auto; 
 	box-sizing: border-box;
 
-  // make sure inner video or ListItem fills too
+
 
 
   .item-content, 
@@ -1382,20 +1404,31 @@ input#authenticator_secret {
     }
 
     &.left {
-      left: -90px;
+      left: 10px;
       top: 35%;
     }
 
     &.right {
-      right: -60px;
+      right: 35px;
       top: 35%;
     }
 
     &.disabled {
-      opacity: 0;
-      pointer-events: none;
-      visibility: hidden;
+      cursor: not-allowed;
+	 
     }
+
+	 @media (min-width: 1440px) {
+		&.left {
+			left: 10px;
+			top: 35%;
+		}
+
+		&.right {
+			right: 20px;
+			top: 35%;
+		}
+	 }
 
     /* ✅ Hide arrows for mobile and tablet (<= 1050px) */
     @media (max-width: 1050px) {
@@ -1427,6 +1460,8 @@ input#authenticator_secret {
       border-radius: 4px;
     }
   }
+
+  
 }
 
 /* =============================
