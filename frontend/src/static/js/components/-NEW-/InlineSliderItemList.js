@@ -169,7 +169,7 @@ export function InlineSliderItemList(props) {
                   {props.headingText && <h1>{props.headingText}</h1>}
                   <ListItem
                     {...listItemProps(props, itm, index)}
-                    firstItemDescr={props.firstItemDescr || true}
+                    firstItemDescr={props.firstItemDescr ?? true}
                     hideViews={props.hideViews}
                     hideAuthor={props.hideAuthor}
                     hideDate={props.hideDate}

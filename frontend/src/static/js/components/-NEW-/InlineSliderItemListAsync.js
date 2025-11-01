@@ -19,12 +19,13 @@ export function InlineSliderItemListAsync({
 
     async function fetchData() {
       try {
-        const res = await fetch(requestUrl, { cache: 'no-store' }); // prevent instant cache response
+        const res = await fetch(requestUrl, { cache: 'no-store' });
         const data = await res.json();
         if (!isMounted) return;
 
-        setItems(data.results || []);
-        itemsCountCallback(data.results?.length || 0);
+        const parsedResults = Array.isArray(data) ? data : data.results || [];
+        setItems(parsedResults);
+        itemsCountCallback(parsedResults.length);
       } catch (error) {
         console.error('❌ InlineSliderItemListAsync fetch error:', error);
         itemsCountCallback(0);
