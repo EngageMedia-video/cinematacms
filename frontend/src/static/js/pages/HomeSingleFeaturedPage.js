@@ -25,15 +25,12 @@ export class HomeSingleFeaturedPage extends Page {
       visibleLatest: false,
       loadedFeatured: false,
       visibleFeatured: false,
-      loadedRecommended: false,
-      visibleRecommended: false,
       indexFeaturedList: [],
       featuredVideos: [],
     };
 
     this.onLoadLatest = this.onLoadLatest.bind(this);
     this.onLoadFeatured = this.onLoadFeatured.bind(this);
-    this.onLoadRecommended = this.onLoadRecommended.bind(this);
   }
 
   async componentDidMount() {
@@ -81,9 +78,6 @@ export class HomeSingleFeaturedPage extends Page {
     this.setState({ loadedFeatured: true, visibleFeatured: 0 < length });
   }
 
-  onLoadRecommended(length) {
-    this.setState({ loadedRecommended: true, visibleRecommended: 0 < length });
-  }
 
   pageContent() {
     const { featuredVideos, indexFeaturedList, loadedFeatured } = this.state;
@@ -133,9 +127,9 @@ export class HomeSingleFeaturedPage extends Page {
                   />
                 </MediaListRow>
               </MediaMultiListWrapper>
-            ) : !loadedFeatured ? (
+            ) : featuredVideos.length === 1 ? null : (
               <PendingItemsList className="featured-carousel" />
-            ) : null}
+             )}
 
             {/* 🔹 Other featured playlists */}
             {indexFeaturedList.length > 0 ? (
