@@ -110,7 +110,7 @@ export function InlineSliderItemList(props) {
     const maxScrollLeft = container.scrollWidth - container.clientWidth;
 
     // ✅ Loop to start if at end
-    if (Math.ceil(container.scrollLeft) >= maxScrollLeft - scrollAmount) {
+  if (Math.ceil(container.scrollLeft) >= maxScrollLeft) {
       container.scrollTo({ left: 0, behavior: 'smooth' });
     } else {
       container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
@@ -132,7 +132,7 @@ export function InlineSliderItemList(props) {
     const maxScrollLeft = container.scrollWidth - container.clientWidth;
 
     // ✅ Loop to end if at start
-    if (container.scrollLeft <= scrollAmount) {
+    if (container.scrollLeft <= 0) {
       container.scrollTo({ left: maxScrollLeft, behavior: 'smooth' });
     } else {
       container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
