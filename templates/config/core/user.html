@@ -2,6 +2,7 @@ MediaCMS.user = {
 	name: {% if request.user.is_authenticated %}"{{request.user.username}}"{% else %}null{% endif %},
 	username: {% if request.user.is_authenticated %}"{{request.user.username}}"{% else %}null{% endif %},
 	thumbnail: {% if request.user.is_authenticated %}"{{request.user.thumbnail_url}}"{% else %}null{% endif %},
+	location_country: {% if request.user.is_authenticated %}"{{request.user.location_country}}"{% else %}null{% endif %},
 	is: {
 		admin: {% if IS_MEDIACMS_ADMIN %}true{% else %}false{% endif %},
 		anonymous: {% if request.user.is_authenticated %}false{% else %}true{% endif %},
