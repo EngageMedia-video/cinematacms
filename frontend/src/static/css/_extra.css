@@ -1626,10 +1626,10 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main {
-		position: absolute;  /* ← ADD THIS */
+		position: absolute;  
 		top: 40px;
 		bottom: 40px;
-		right: 0;           /* ← ADD THIS */
+		right: 0;           
 		width: 35%;
 		padding: 0 50px;
 	}
@@ -1645,7 +1645,7 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
-		bottom: 0;          /* ← ADD THIS ENTIRE RULE */
+		bottom: 0;          
 		left: 50px;
 		right: 50px;
 	}
@@ -1653,8 +1653,8 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 	/* Description sizing when sidebar is OFF - 9 lines fits */
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
-		font-size: 14.5px;   /* ← ADD THIS */
-		line-height: 21px;   /* ← ADD THIS */
+		font-size: 14.5px;   
+		line-height: 21px;   
 		max-height: 189px;
 		display: -webkit-box;
 		-webkit-line-clamp: 9;
@@ -1676,7 +1676,6 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main .i
 		text-overflow: ellipsis;
 	}
 }
-
 
 /* 4px 24pxitem-main{
 		width:35%;
