@@ -35,7 +35,7 @@ class User(AbstractUser):
     institution = models.CharField("institution", max_length=250, blank=True)
     title = models.CharField("Title", max_length=250, blank=True)
     advancedUser = models.BooleanField("Trusted User", default=False, db_index=True)
-    media_count = models.IntegerField(default=0)  # save number of videos
+    media_count = models.IntegerField(default=0, db_index=True)  # save number of videos
     notification_on_comments = models.BooleanField(
         "Notify me about comments on my content", default=True
     )
@@ -48,6 +48,7 @@ class User(AbstractUser):
         null=True,
         default="XX",
         choices=video_countries,
+        db_index=True,
     )
     home_page = models.URLField(
         "Home page",

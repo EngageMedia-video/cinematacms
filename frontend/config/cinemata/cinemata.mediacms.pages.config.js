@@ -233,6 +233,14 @@ pages.demo = mediacmsDefaultPages(
 	}
 );
 
+// Register Members page
+pages.members = mediacmsDefaultPages(
+	"members",
+	"Members - Cinemata",
+	"MembersPage",
+	{}
+);
+
 module.exports = {
 	pages,
 };

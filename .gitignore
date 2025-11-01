@@ -31,7 +31,6 @@ static/rest_framework/js/jquery-3.4.1.min.js
 static_collected/*
 actions/migrations/*
 files/migrations/*
-users/migrations/*
 
 pids/
 

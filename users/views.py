@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.mail import EmailMessage
+from django.db.models import Case, Q, Value, When
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -217,17 +218,83 @@ class UserList(APIView):
     def get(self, request, format=None):
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
         paginator = pagination_class()
-        users = (
-            User.objects.filter()
-            .exclude(username="emnews")
-            .order_by("-advancedUser", "-last_published_video_datetime")
-        )
+        
+        # Base queryset: active users with at least one video (combat spam)
+        users = User.objects.filter(
+            is_active=True,
+            media_count__gt=0
+        ).exclude(username="emnews")
+        
+        # Get user's country for same-country sorting
+        user_country = None
+        if request.user.is_authenticated:
+            user_country = request.user.location_country
+        
+        # Filter by location/country
         location = request.GET.get("location", "").strip()
         if location:
-            location = {value: key for key, value in dict(video_countries).items()}.get(
-                location
+            # Normalize input for ISO code checking
+            location_upper = location.upper()
+            countries_dict = dict(video_countries)
+
+            # Check if it's already an ISO country code (2-letter uppercase)
+            if location_upper in countries_dict:
+                # Direct ISO code match (e.g., "PH", "MY")
+                users = users.filter(location_country=location_upper)
+            else:
+                # Try to match display name to country code (case-insensitive)
+                name_to_code = {value.lower(): key for key, value in countries_dict.items()}
+                location_code = name_to_code.get(location.lower())
+
+                if location_code:
+                    # Matched a country display name (e.g., "Philippines" -> "PH")
+                    users = users.filter(location_country=location_code)
+                else:
+                    # Not a country code or name, search in location field (free text)
+                    users = users.filter(location__icontains=location)
+        
+        # Search functionality
+        search = request.GET.get("search", "").strip()
+        if search:
+            users = users.filter(
+                Q(name__icontains=search) |
+                Q(username__icontains=search) |
+                Q(location__icontains=search)
             )
-            users = users.filter(location_country=location)
+        
+        # Apply sorting
+        # sort=smart: Default "Most Active" sort - prioritizes users from the same country,
+        #             then sorts by media count (activity level) and join date.
+        #             This provides personalized results while showing the most engaged members.
+        # sort=country: Same country first, then by join date only (less emphasis on activity)
+        # sort=recent: Newest members first
+        # sort=videos: Members with most videos first
+        sort = request.GET.get("sort", "smart")
+
+        if sort == "smart" and user_country:
+            # Smart sort: same country first, then by media count and join date
+            # Using Django ORM annotations (secure, no SQL injection)
+            users = users.annotate(
+                same_country=Case(
+                    When(location_country=user_country, then=Value(1)),
+                    default=Value(0)
+                )
+            ).order_by("-same_country", "-media_count", "-date_added")
+        elif sort == "country" and user_country:
+            # Same Country First: prioritize same country, then by join date
+            users = users.annotate(
+                same_country=Case(
+                    When(location_country=user_country, then=Value(1)),
+                    default=Value(0)
+                )
+            ).order_by("-same_country", "-date_added")
+        elif sort == "recent":
+            users = users.order_by("-date_added")
+        elif sort == "videos":
+            users = users.order_by("-media_count")
+        else:
+            # Default: prioritize trusted users, then by video count
+            users = users.order_by("-advancedUser", "-media_count", "-date_added")
 
         page = paginator.paginate_queryset(users, request)
 
