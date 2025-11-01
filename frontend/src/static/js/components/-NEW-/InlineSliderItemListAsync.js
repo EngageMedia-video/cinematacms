@@ -32,7 +32,6 @@ export function InlineSliderItemListAsync({
       } finally {
         if (isMounted) {
           requestAnimationFrame(() => {
-            console.log('🌀 Showing loader frame before hiding');
             setLoading(false);
           });
         }
@@ -44,7 +43,7 @@ export function InlineSliderItemListAsync({
   }, [requestUrl]);
 
   if (loading) {
-    console.log('🌀 Rendering PendingItemsList loader');
+
     return (
       <PendingItemsList className={`featured-carousel ${className || ''}`} />
     );
