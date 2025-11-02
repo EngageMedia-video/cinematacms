@@ -9,12 +9,12 @@
   "bin": {
     "mediacms-scripts-2": "./cli.js"
   },
-  "scripts": {
-    "start": "node cli.js start --config=./config/cinemata.config.js --host=0.0.0.0 --port=8088",
-    "build": "npm run clean-build && ./cli.js build --config=./config/cinemata.config.js --verbose",
-    "clean-build": "node ./scripts/rmrf.js ./build/production/",
-    "serve-build": "npx serve ./build/production/"
-  },
+"scripts": {
+  "start": "node cli.js start --config=./config/cinemata.config.js --host=0.0.0.0 --port=8088",
+  "build": "npm run clean-build && node cli.js build --config=./config/cinemata.config.js --verbose",
+  "clean-build": "node ./scripts/rmrf.js ./build/production/",
+  "serve-build": "npx serve ./build/production/"
+},
   "browserslist": [
     "cover 99.5%"
   ],

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { useItemListInlineSlider } from './hooks/useItemListInlineSlider';
@@ -27,20 +27,25 @@ export function InlineSliderItemList(props) {
     itemsListRef,
   ] = useItemListInlineSlider(props);
 
-  const [hasScrolled, setHasScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [totalDots, setTotalDots] = useState(1);
+  const [showArrows, setShowArrows] = useState(false);
 
+  // Separate first item if using firstItemViewer
+  const firstItem = props.firstItemViewer && items.length ? items[0] : null;
+  const carouselItems =
+    props.firstItemViewer && items.length > 1 ? items.slice(1) : props.firstItemViewer ? [] : items;
+
+  // Initialize list handler
   useEffect(() => {
-    setListHandler(
-      new ItemsFeaturedListHandler(
-        props.items,
-        props.pageItems,
-        props.maxItems,
-        onItemsCount,
-        onItemsLoad
-      )
+    const handler = new ItemsFeaturedListHandler(
+      props.items,
+      props.pageItems,
+      props.maxItems,
+      onItemsCount,
+      onItemsLoad
     );
+    setListHandler(handler);
 
     PageStore.on('window_resize', winResizeListener);
     LayoutStore.on('sidebar-visibility-change', sidebarVisibilityChangeListener);
@@ -49,45 +54,37 @@ export function InlineSliderItemList(props) {
       PageStore.removeListener('window_resize', winResizeListener);
       LayoutStore.removeListener('sidebar-visibility-change', sidebarVisibilityChangeListener);
 
-      if (listHandler) {
-        listHandler.cancelAll();
-        setListHandler(null);
-      }
+      handler.cancelAll();
+      setListHandler(null);
     };
-  }, []);
+  }, [props.items]);
 
+  // Carousel scroll & dots
   useEffect(() => {
     const container = itemsListWrapperRef.current;
-    if (!container) return;
+    const list = itemsListRef.current;
+    if (!container || !list || !list.children.length) return;
 
     const handleScroll = () => {
       const { scrollLeft, scrollWidth, clientWidth } = container;
       const progress = Math.min(scrollLeft / (scrollWidth - clientWidth), 1);
       setScrollProgress(progress);
-      if (scrollLeft > 0) setHasScrolled(true);
     };
 
     const updateDots = () => {
-      if (!itemsListRef.current) return;
-      const itemElements = Array.from(itemsListRef.current.children).filter(
-        (el) => el.nodeType === 1
+      const itemElements = Array.from(list.children).filter((el) =>
+        el.classList.contains('featured-item')
       );
-
       if (!itemElements.length) return;
 
-      const itemWidth = itemElements[0].clientWidth;
-      if (!itemWidth) return;
-
-      const totalVisible = Math.max(
-        1,
-        Math.floor(itemsListWrapperRef.current.clientWidth / itemWidth)
-      );
-      const count = Math.max(1, Math.ceil(items.length / totalVisible));
-      setTotalDots(count);
+      const itemWidth = itemElements[0].offsetWidth;
+      const totalVisible = Math.max(1, Math.floor(container.clientWidth / itemWidth));
+      setTotalDots(Math.max(1, Math.ceil(itemElements.length / totalVisible)));
     };
 
     container.addEventListener('scroll', handleScroll);
     window.addEventListener('resize', updateDots);
+
     updateDots();
     handleScroll();
 
@@ -95,118 +92,111 @@ export function InlineSliderItemList(props) {
       container.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', updateDots);
     };
-  }, [items]);
+  }, [carouselItems]);
 
+
+  useEffect(() => {
+    if (itemsListRef.current) {
+      const itemCount = itemsListRef.current.querySelectorAll('.featured-item').length;
+      setShowArrows(itemCount > 3); 
+    }
+  }, [carouselItems]);
+
+  // Navigation
   const handleNext = () => {
     const container = itemsListWrapperRef.current;
-    if (!container || !itemsListRef.current) return;
+    const list = itemsListRef.current;
+    if (!container || !list || !list.children.length) return;
 
-    const firstItem = itemsListRef.current.children[0];
-    if (!firstItem) return;
+    const first = Array.from(list.children).find((el) =>
+      el.classList.contains('featured-item')
+    );
+    if (!first) return;
 
-    const itemWidth = firstItem.offsetWidth;
-    const itemMarginRight = parseInt(getComputedStyle(firstItem).marginRight) || 0;
+    const itemWidth = first.offsetWidth;
+    const itemMarginRight = parseInt(getComputedStyle(first).marginRight) || 0;
     const scrollAmount = itemWidth + itemMarginRight;
     const maxScrollLeft = container.scrollWidth - container.clientWidth;
 
-    // ✅ Loop to start if at end
-  if (Math.ceil(container.scrollLeft) >= maxScrollLeft) {
-      container.scrollTo({ left: 0, behavior: 'smooth' });
-    } else {
-      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-
-    setHasScrolled(true);
+    container.scrollLeft + scrollAmount >= maxScrollLeft
+      ? container.scrollTo({ left: 0, behavior: 'smooth' })
+      : container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
   };
 
   const handlePrev = () => {
     const container = itemsListWrapperRef.current;
-    if (!container || !itemsListRef.current) return;
+    const list = itemsListRef.current;
+    if (!container || !list || !list.children.length) return;
 
-    const firstItem = itemsListRef.current.children[0];
-    if (!firstItem) return;
+    const first = Array.from(list.children).find((el) =>
+      el.classList.contains('featured-item')
+    );
+    if (!first) return;
 
-    const itemWidth = firstItem.offsetWidth;
-    const itemMarginRight = parseInt(getComputedStyle(firstItem).marginRight) || 0;
+    const itemWidth = first.offsetWidth;
+    const itemMarginRight = parseInt(getComputedStyle(first).marginRight) || 0;
     const scrollAmount = itemWidth + itemMarginRight;
     const maxScrollLeft = container.scrollWidth - container.clientWidth;
 
-    // ✅ Loop to end if at start
-    if (container.scrollLeft <= 0) {
-      container.scrollTo({ left: maxScrollLeft, behavior: 'smooth' });
-    } else {
-      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-    }
+    container.scrollLeft <= 0
+      ? container.scrollTo({ left: maxScrollLeft, behavior: 'smooth' })
+      : container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
   };
 
-  const activeDot = Math.round(scrollProgress * (totalDots - 1));
-  const listOuterClass = `${classname.listOuter} featured-carousel`;
-
-  if (!countedItems) return <PendingItemsList className={listOuterClass} />;
+  if (!countedItems) return <PendingItemsList className={classname.listOuter} />;
   if (!items.length) return null;
 
-  const showArrows = !(props.firstItemViewer && items.length === 1) && items.length > 1;
+  const activeDot = Math.round(scrollProgress * (totalDots - 1));
 
   return (
-    <div className={listOuterClass}>
-      {/* Left Arrow */}
-      {showArrows && (
-        <button
-          className="featured-carousel-arrow left"
-          onClick={handlePrev}
-          aria-label="Previous"
-        >
-          <ArrowLeftIcon />
-        </button>
+    <div className={classname.listOuter}>
+      {/* First featured item - OUTSIDE carousel */}
+      {firstItem && (
+        <section className="hw-featured-video-section feat-first-item">
+          {props.headingText && <h1 className="hw-featured-heading">{props.headingText}</h1>}
+          <ListItem
+            {...listItemProps(props, firstItem, 0)}
+            firstItemDescr={props.firstItemDescr ?? true}
+            hideViews={props.hideViews}
+            hideAuthor={props.hideAuthor}
+            hideDate={props.hideDate}
+          />
+        </section>
       )}
 
-      <div ref={itemsListWrapperRef} className="featured-items-wrap">
-        <div ref={itemsListRef} className={`${classname.list} featured-items-list`}>
-          {items.map((itm, index) => {
-            if (props.firstItemViewer && index === 0) {
-              return (
-                <section className="hw-featured-video-section" key={index}>
-                  {props.headingText && <h1>{props.headingText}</h1>}
-                  <ListItem
-                    {...listItemProps(props, itm, index)}
-                    firstItemDescr={props.firstItemDescr ?? true}
-                    hideViews={props.hideViews}
-                    hideAuthor={props.hideAuthor}
-                    hideDate={props.hideDate}
-                  />
-                </section>
-              );
-            }
+      {/* Carousel - ONLY for remaining items */}
+      {carouselItems.length > 0 && (
+        <div className="featured-carousel">
+          {showArrows && (
+            <button className="featured-carousel-arrow left" onClick={handlePrev} aria-label="Previous">
+              <ArrowLeftIcon />
+            </button>
+          )}
 
-            return (
-              <div key={index} className="featured-item">
-                <ListItem {...listItemProps(props, itm, index)} />
-              </div>
-            );
-          })}
-        </div>
-      </div>
+          <div ref={itemsListWrapperRef} className="featured-items-wrap">
+            <div ref={itemsListRef} className={`${classname.list} featured-items-list`}>
+              {carouselItems.map((itm, index) => (
+                <div key={index} className="featured-item">
+                  <ListItem {...listItemProps(props, itm, index)} />
+                </div>
+              ))}
+            </div>
+          </div>
 
-      {/* Right Arrow */}
-      {showArrows && (
-        <button
-          className="featured-carousel-arrow right"
-          onClick={handleNext}
-          aria-label="Next"
-        >
-          <ArrowRightIcon />
-        </button>
-      )}
+          {showArrows && (
+            <button className="featured-carousel-arrow right" onClick={handleNext} aria-label="Next">
+              <ArrowRightIcon />
+            </button>
+          )}
 
-      {/* Dots */}
-      {!props.firstItemViewer && totalDots > 1 && (
-        <div className="slider-progress-dots" aria-hidden="true">
-          {Array.from({ length: totalDots }).map((_, i) => (
-            <div
-              key={i}
-              className={`slider-progress-dot ${i === activeDot ? 'active' : ''}`}
-            ></div>
-          ))}
+          {/* Slider Dots */}
+          {!props.firstItemViewer && totalDots > 1 && (
+            <div className="slider-progress-dots" aria-hidden="true">
+              {Array.from({ length: totalDots }).map((_, i) => (
+                <div key={i} className={`slider-progress-dot ${i === activeDot ? 'active' : ''}`}></div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -218,6 +208,10 @@ InlineSliderItemList.propTypes = {
   layout: PropTypes.oneOf(['default', 'featured']),
   firstItemViewer: PropTypes.bool,
   headingText: PropTypes.string,
+  firstItemDescr: PropTypes.bool,
+  hideViews: PropTypes.bool,
+  hideAuthor: PropTypes.bool,
+  hideDate: PropTypes.bool,
 };
 
 InlineSliderItemList.defaultProps = {

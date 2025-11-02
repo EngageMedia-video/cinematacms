@@ -2,60 +2,45 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { ApiUrlConsumer } from '../contexts/ApiUrlContext';
-
 import { MediaMultiListWrapper } from './components/MediaMultiListWrapper';
 import { MediaListRow } from './components/MediaListRow';
-
 import { LazyLoadItemListAsync } from '../components/-NEW-/LazyLoadItemListAsync';
-import { InlineSliderItemList } from '../components/-NEW-/InlineSliderItemList.js';
-import { PendingItemsList } from '../components/-NEW-/PendingItemsList.js';
-
+import { InlineSliderItemList } from '../components/-NEW-/InlineSliderItemList';
+import { PendingItemsList } from '../components/-NEW-/PendingItemsList';
 import { Page } from './_Page';
 import PageStore from './_PageStore';
-import { config as mediacmsConfig } from '../mediacms/config.js';
+import { config as mediacmsConfig } from '../mediacms/config';
 
 export class HomeSingleFeaturedPage extends Page {
   constructor(props) {
     super(props, 'home');
-
     this.mediacms_config = mediacmsConfig(window.MediaCMS);
 
     this.state = {
-      loadedLatest: false,
-      visibleLatest: false,
-      loadedFeatured: false,
-      visibleFeatured: false,
-      indexFeaturedList: [],
       featuredVideos: [],
+      indexFeaturedList: [],
+      featuredLoaded: false,
+      latestLoaded: false,
     };
+  }
 
-    this.onLoadLatest = this.onLoadLatest.bind(this);
-    this.onLoadFeatured = this.onLoadFeatured.bind(this);
+  async fetchData(url) {
+    const res = await fetch(url);
+    const data = await res.json();
+    return Array.isArray(data) ? data : data.results || [];
   }
 
   async componentDidMount() {
     try {
-      // Fetch main featured videos
-      const featuredRes = await fetch(this.mediacms_config.api.featured);
-      const featuredData = await featuredRes.json();
-      const featuredVideos = Array.isArray(featuredData)
-        ? featuredData
-        : featuredData.results || [];
+      const featuredVideos = await this.fetchData(this.mediacms_config.api.featured);
+      const indexFeaturedListData = await this.fetchData(this.mediacms_config.api.indexfeatured);
 
-      // Fetch all featured playlists
-      const res = await fetch(this.mediacms_config.api.indexfeatured);
-      const indexFeaturedListData = await res.json();
-
-      const withVideos = await Promise.all(
+      const indexFeaturedList = await Promise.all(
         indexFeaturedListData.map(async (playlist) => {
           if (!playlist.api_url) return playlist;
           try {
-            const videosRes = await fetch(playlist.api_url);
-            const videosData = await videosRes.json();
-            const videos = Array.isArray(videosData)
-              ? videosData
-              : videosData.results || [];
-            return { ...playlist, items: videos };
+            const items = await this.fetchData(playlist.api_url);
+            return { ...playlist, items };
           } catch (err) {
             console.error(`❌ Failed to load videos for playlist: ${playlist.title}`, err);
             return { ...playlist, items: [] };
@@ -63,21 +48,15 @@ export class HomeSingleFeaturedPage extends Page {
         })
       );
 
-      this.setState({ indexFeaturedList: withVideos, featuredVideos });
+      this.setState({ indexFeaturedList, featuredVideos, featuredLoaded: true });
     } catch (err) {
       console.error('❌ Failed to load featured playlists', err);
     }
   }
 
-  onLoadLatest(length) {
-    this.setState({ loadedLatest: true, visibleLatest: 0 < length });
-  }
+  onLoadLatest = (length) => this.setState({ latestLoaded: length > 0 });
 
-  onLoadFeatured(length) {
-
-    this.setState({ loadedFeatured: true, visibleFeatured: 0 < length });
-  }
-
+  onLoadFeatured = (length) => this.setState({ featuredLoaded: length > 0 });
 
   pageContent() {
     const { featuredVideos, indexFeaturedList, loadedFeatured } = this.state;
@@ -90,7 +69,7 @@ export class HomeSingleFeaturedPage extends Page {
           <>
             {/* 🔹 First featured video */}
             {firstFeatured ? (
-              <MediaMultiListWrapper className="items-list-ver ">
+              <MediaMultiListWrapper className="items-list-ver featured-carousel-wrapper hw-featured-first">
                 <MediaListRow
                   className={'feat-first-item ' + (this.props.title ? '' : ' no-title')}
                 >
