@@ -1410,6 +1410,7 @@ input#authenticator_secret {
 		cursor: pointer;
 		box-shadow: 0 2px 8px rgba(26, 63, 97, 0.15);
 		transition: all 0.3s ease;
+		transform: translateY(-50%);
 
 		&:hover {
 			background-color: #ed7c30;
@@ -1420,11 +1421,20 @@ input#authenticator_secret {
 		&.left {
 			left: 0;
 			transform: translate(-50%, -50%);
+
+			&:hover {
+				transform: translate(-50%, -50%) scale(1.1);
+			}
+
 		}
 
 		&.right {
 			right: calc(27px - 30.75px);
 			transform: translateY(-50%);
+
+			&:hover {
+				transform: translateY(-50%) scale(1.1);
+			}
 		}
 
 		&.disabled {

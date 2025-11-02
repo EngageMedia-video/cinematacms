@@ -19,8 +19,10 @@ export class HomeSingleFeaturedPage extends Page {
     this.state = {
       featuredVideos: [],
       indexFeaturedList: [],
-      featuredLoaded: false,
-      latestLoaded: false,
+      loadedFeatured: false,
+      visibleFeatured: false,
+      loadedLatest: false,
+      visibleLatest: false,
     };
   }
 
@@ -48,15 +50,24 @@ export class HomeSingleFeaturedPage extends Page {
         })
       );
 
-      this.setState({ indexFeaturedList, featuredVideos, featuredLoaded: true });
+        this.setState({
+          indexFeaturedList,
+          featuredVideos,
+          loadedFeatured: true,
+          visibleFeatured: indexFeaturedList.some(
+          (playlist) => playlist?.items && playlist.items.length > 0
+          ),
+        });    
     } catch (err) {
       console.error('❌ Failed to load featured playlists', err);
     }
   }
 
-  onLoadLatest = (length) => this.setState({ latestLoaded: length > 0 });
+  onLoadLatest = (length) =>
+    this.setState({ loadedLatest: true, visibleLatest: length > 0 });
 
-  onLoadFeatured = (length) => this.setState({ featuredLoaded: length > 0 });
+  onLoadFeatured = (length) =>
+    this.setState({ loadedFeatured: true, visibleFeatured: length > 0 });
 
   pageContent() {
     const { featuredVideos, indexFeaturedList, loadedFeatured } = this.state;
