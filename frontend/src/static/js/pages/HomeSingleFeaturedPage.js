@@ -28,6 +28,9 @@ export class HomeSingleFeaturedPage extends Page {
 
   async fetchData(url) {
     const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} while loading ${url}`);
+    }
     const data = await res.json();
     return Array.isArray(data) ? data : data.results || [];
   }
