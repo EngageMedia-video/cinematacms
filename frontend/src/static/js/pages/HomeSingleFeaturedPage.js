@@ -14,7 +14,10 @@ import { config as mediacmsConfig } from '../mediacms/config';
 export class HomeSingleFeaturedPage extends Page {
   constructor(props) {
     super(props, 'home');
-    this.mediacms_config = mediacmsConfig(window.MediaCMS);
+     if (!window.MediaCMS) {
+      console.warn('MediaCMS config not found on window');
+      }
+      this.mediacms_config = mediacmsConfig(window.MediaCMS || {});
 
     this.state = {
       featuredVideos: [],
@@ -134,7 +137,6 @@ export class HomeSingleFeaturedPage extends Page {
                     (index % 2 === 0 ? 'hw-even-list' : 'hw-odd-list')
                   }
                 >
-                  {this.state.loadedFeatured && !this.state.visibleFeatured ? null : (
                     <MediaListRow
                       title={item.title}
                       viewAllLink={item.url}
@@ -151,12 +153,9 @@ export class HomeSingleFeaturedPage extends Page {
                           items={item.items}
                           pageItems={6}
                           maxItems={8}
-                          onItemsCount={this.onLoadFeatured}
-                          onItemsLoad={this.onLoadFeatured}
                         />
                       )}
                     </MediaListRow>
-                  )}
                 </MediaMultiListWrapper>
               ))
             ) : (
