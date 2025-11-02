@@ -9,7 +9,7 @@
  */
 
 $font-family-serif: "Roboto Slab", "Merriweather Web", "Georgia", "Cambria", "Times New Roman", "Times", serif;
-$font-family-sans-serif: "Roboto", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+$font-family-sans-serif: "Amulya", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
 $font-family-monospace: "Roboto Mono", "Consolas", "Courier", monospace;
 
 $line-height-serif: 1.29;
@@ -89,7 +89,7 @@ $font-size-monospace: 0.83125 * 16px;
 	}
 	
 	.sub-heading,
-	.font-size-x-small,{
+	.font-size-x-small{
 		// font-size: $font-size * 0.8625;
 		font-size: 0.8625em;
 	}
