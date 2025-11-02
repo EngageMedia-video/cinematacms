@@ -85,7 +85,9 @@ export class HomeSingleFeaturedPage extends Page {
         {(apiUrl) => (
           <>
             {/* 🔹 First featured video */}
-            {firstFeatured ? (
+            {!loadedFeatured ? (
+              <PendingItemsList className="items-list-ver featured-carousel" />
+            ) : firstFeatured ? (
               <MediaMultiListWrapper className="items-list-ver featured-carousel-wrapper hw-featured-first">
                 <MediaListRow
                   className={'feat-first-item ' + (this.props.title ? '' : ' no-title')}
@@ -99,9 +101,8 @@ export class HomeSingleFeaturedPage extends Page {
                   />
                 </MediaListRow>
               </MediaMultiListWrapper>
-            ) : (
-              <PendingItemsList className="items-list-ver featured-carousel" />
-            )}
+              ) : 
+             null}
 
             {/* 🔹 Remaining featured videos carousel */}
             {remainingFeatured.length > 0 ? (
@@ -158,9 +159,9 @@ export class HomeSingleFeaturedPage extends Page {
                     </MediaListRow>
                 </MediaMultiListWrapper>
               ))
-            ) : (
+            ) : !loadedFeatured ? (
               <PendingItemsList className="featured-carousel" />
-            )}
+            ) : null}
 
             {/* 🔹 Recent videos */}
             <MediaMultiListWrapper className="items-list-ver">
