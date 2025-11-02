@@ -1280,7 +1280,7 @@ input#authenticator_secret {
 /* ===== HW Featured Video Section (standalone) ===== */
 .hw-featured-video-section {
   position: relative;
-  z-index: -1;
+  z-index: 1;
   width: 100%;
   max-width: 100%;
   display: block;
