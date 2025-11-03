@@ -21,7 +21,7 @@
   "devDependencies": {
     "@babel/core": "^7.28.4",
     "@babel/preset-env": "^7.28.3",
-    "@babel/preset-react": "^7.27.1",
+    "@babel/preset-react": "^7.28.5",
     "autoprefixer": "^10.4.21",
     "babel-loader": "^10.0.0",
     "copy-webpack-plugin": "^13.0.1",
@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "@mediacms/media-player": "file:packages/media-player",
-    "axios": "^1.12.2",
+    "axios": "^1.13.1",
     "flux": "^4.0.4",
     "material-design-icons": "^3.0.1",
     "normalize.css": "^8.0.1",
