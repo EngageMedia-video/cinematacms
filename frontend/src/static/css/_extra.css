@@ -1302,6 +1302,10 @@ body .item-author a:active {
 	/* text-decoration: underline; */
 }
 
+body .item-content h3 span {
+	background-color: var(--body-bg-color);
+}
+
 body.dark_theme .item-content h3 a {
 	color: #fff;
 }
