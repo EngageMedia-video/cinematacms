@@ -25,7 +25,6 @@ export class HomeSingleFeaturedPage extends Page {
       loadedFeatured: false,
       visibleFeatured: false,
       loadedLatest: false,
-      visibleLatest: false,
     };
   }
 
