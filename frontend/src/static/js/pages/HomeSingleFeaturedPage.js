@@ -67,8 +67,6 @@ export class HomeSingleFeaturedPage extends Page {
   
     }
   }
- 
-
   onLoadLatest = (length) =>
     this.setState({ loadedLatest: true, visibleLatest: length > 0 });
 
