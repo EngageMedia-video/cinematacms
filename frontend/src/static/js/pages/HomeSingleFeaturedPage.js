@@ -62,7 +62,8 @@ export class HomeSingleFeaturedPage extends Page {
         });    
     } catch (err) {
       console.error('❌ Failed to load featured playlists', err);
-    }
+    } finally {
+      this.setState({ loadedFeatured: true });
   }
 
   onLoadLatest = (length) =>
