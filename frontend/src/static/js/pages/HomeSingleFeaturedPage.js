@@ -25,6 +25,7 @@ export class HomeSingleFeaturedPage extends Page {
       loadedFeatured: false,
       visibleFeatured: false,
       loadedLatest: false,
+      visibleLatest: false,
     };
   }
 
@@ -64,7 +65,10 @@ export class HomeSingleFeaturedPage extends Page {
       console.error('❌ Failed to load featured playlists', err);
     } finally {
       this.setState({ loadedFeatured: true });
+  
+    }
   }
+ 
 
   onLoadLatest = (length) =>
     this.setState({ loadedLatest: true, visibleLatest: length > 0 });
