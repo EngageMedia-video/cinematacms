@@ -25,7 +25,6 @@ export class HomeSingleFeaturedPage extends Page {
       loadedFeatured: false,
       visibleFeatured: false,
       loadedLatest: false,
-      visibleLatest: false,
     };
   }
 
@@ -60,9 +59,6 @@ export class HomeSingleFeaturedPage extends Page {
           indexFeaturedList,
           featuredVideos,
           loadedFeatured: true,
-          visibleFeatured: indexFeaturedList.some(
-          (playlist) => playlist?.items && playlist.items.length > 0
-          ),
         });    
     } catch (err) {
       console.error('❌ Failed to load featured playlists', err);
@@ -72,8 +68,8 @@ export class HomeSingleFeaturedPage extends Page {
   onLoadLatest = (length) =>
     this.setState({ loadedLatest: true, visibleLatest: length > 0 });
 
-  onLoadFeatured = (length) =>
-    this.setState({ loadedFeatured: true, visibleFeatured: length > 0 });
+  onLoadFeatured = () =>
+    this.setState({ loadedFeatured: true });
 
   pageContent() {
     const { featuredVideos, indexFeaturedList, loadedFeatured } = this.state;
