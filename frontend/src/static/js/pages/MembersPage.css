@@ -1,0 +1,41 @@
+/* Members Page Grid Layout */
+.members-grid-container .items-list-outer {
+    width: 100% !important;
+}
+
+.members-grid-container .items-list-wrap {
+    width: 100% !important;
+}
+
+/* Target items-list inside members-section */
+.members-grid-container .members-section .items-list {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 1.5rem !important;
+    margin-bottom: 2rem !important;
+    width: 100% !important;
+}
+
+/* Also target items-list directly for backward compatibility */
+.members-grid-container .items-list {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 1.5rem !important;
+    margin-bottom: 2rem !important;
+    width: 100% !important;
+}
+
+.members-grid-container .member-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .members-grid-container .items-list,
+    .members-grid-container .members-section .items-list {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+}
