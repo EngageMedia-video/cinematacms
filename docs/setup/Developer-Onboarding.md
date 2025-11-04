@@ -257,14 +257,18 @@ wsl --install -d Ubuntu-22.04
 <summary><strong>macOS</strong></summary>
 
 ```bash
-# Install all development dependencies
-brew install wget openssl ffmpeg make cmake python bento4 uv node@20
+# Install system dependencies (excluding Node.js)
+brew install wget openssl ffmpeg make cmake python bento4 uv
 
-# Link Node.js 20
-brew link --overwrite --force node@20
+# Install nvm (Node Version Manager)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+source ~/.zshrc  # or ~/.bash_profile for bash users
+
+# Install exact Node.js version required
+nvm install 20.19.1 && nvm use 20.19.1 && nvm alias default 20.19.1
 
 # Verify installations
-node --version   # Should be v20.19.1
+node --version   # Must be v20.19.1
 uv --version
 docker --version
 ```
@@ -336,6 +340,10 @@ mkdir -p ~/cinemata && cd ~/cinemata
 # Clone CinemataCMS
 git clone https://github.com/EngageMedia-video/cinematacms cinematacms
 cd cinematacms
+
+# The repository includes .nvmrc files that specify the exact Node.js version
+# If you've already installed nvm, it will automatically use v20.19.1 when you cd into the directory
+# Or you can manually run: nvm use
 
 # Clone Whisper.cpp for ASR
 cd ~/cinemata
