@@ -6,6 +6,7 @@ Welcome to the CinemataCMS development team! This comprehensive guide will help 
 
 ## Table of Contents
 
+- [Glossary](#glossary)
 - [About CinemataCMS](#about-cinematacms)
 - [Prerequisites](#prerequisites)
 - [Installation Steps](#installation-steps)
@@ -17,6 +18,30 @@ Welcome to the CinemataCMS development team! This comprehensive guide will help 
 - [Contributing Guidelines](#contributing-guidelines)
   - [Git Strategy: Rebase for Linear History](#git-strategy-rebase-for-linear-history)
   - [Code Style](#code-style)
+
+---
+
+## Glossary
+
+**ASR** - Automatic Speech Recognition; technology for converting spoken words to text, used for automated subtitling
+
+**Celery** - Distributed task queue for async processing and scheduled jobs in Python applications
+
+**CORS** - Cross-Origin Resource Sharing; security mechanism that allows controlled access to resources from different domains
+
+**FFmpeg** - Open-source multimedia framework for video/audio processing, encoding, and streaming
+
+**FIDO2** - Modern authentication standard used for multi-factor authentication and passwordless login
+
+**HLS** - HTTP Live Streaming; adaptive bitrate streaming protocol for delivering video over HTTP
+
+**MFA** - Multi-Factor Authentication; security measure requiring multiple verification methods to authenticate users
+
+**nvm** - Node Version Manager; tool for managing multiple Node.js versions on a single machine
+
+**TOCTOU** - Time-of-Check-Time-of-Use; race condition security vulnerability that occurs when a system's state changes between checking and using a resource
+
+**WSL2** - Windows Subsystem for Linux 2; compatibility layer for running Linux environments directly on Windows
 
 ---
 
@@ -93,10 +118,10 @@ make frontend-dev            # React (optional): http://localhost:8088
 ```
 
 **Access Points:**
-- **Main App:** http://127.0.0.1:8000
-- **Admin Panel:** http://127.0.0.1:8000/admin
-- **Frontend Dev (REST API pages only):** http://localhost:8088
-- **API:** http://127.0.0.1:8000/api/v1
+- **Main App:** [http://127.0.0.1:8000](http://127.0.0.1:8000)
+- **Admin Panel:** [http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin)
+- **Frontend Dev (REST API pages only):** [http://localhost:8088](http://localhost:8088)
+- **API:** [http://127.0.0.1:8000/api/v1](http://127.0.0.1:8000/api/v1)
 
 **Important:** Frontend dev server (8088) only works for REST API pages. Django template pages (upload, edit) require port 8000.
 
@@ -128,7 +153,7 @@ These versions are tested and confirmed working:
 | Dependency | Version | Notes |
 |------------|---------|-------|
 | **Python** | 3.10+ | 3.10 recommended |
-| **Node.js** | 20.19.1 | **Exactly 20.19.1 required** |
+| **Node.js** | 20.19.1 | **Exactly 20.19.1 required** — webpack build incompatible with other versions |
 | **PostgreSQL** | 14+ | Via Docker (14-alpine) |
 | **Redis** | 7+ | Via Docker (alpine) |
 | **FFmpeg** | 4.4+ | For video processing |
@@ -527,13 +552,13 @@ bash scripts/build_frontend.sh
 
 **All operating systems use the same commands:**
 
-**Option 1: Interactive (recommended)**
+#### Option 1: Interactive (recommended)
 
 ```bash
 uv run manage.py createsuperuser
 ```
 
-**Option 2: Auto-generated password**
+#### Option 2: Auto-generated password
 
 ```bash
 ADMIN_PASS=$(python3 -c "import secrets;chars='abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(12)))")
@@ -560,8 +585,8 @@ make dev-server
 ```
 
 **Access the application:**
-- URL: **http://127.0.0.1:8000**
-- Admin: **http://127.0.0.1:8000/admin**
+- URL: **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
+- Admin: **[http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin)**
 - Username: `admin`
 - Password: (from Step 7)
 
@@ -623,7 +648,7 @@ After completing the installation, verify everything is working correctly:
 
 ### ✅ Verification Checklist
 
-**1. Check Docker Services**
+#### 1. Check Docker Services
 
 ```bash
 # Verify Docker containers are running
@@ -633,7 +658,7 @@ make docker-ps
 # STATUS column should show 'Up'
 ```
 
-**2. Verify Django Server**
+#### 2. Verify Django Server
 
 ```bash
 # Server should be running from Step 8
@@ -646,7 +671,7 @@ make docker-ps
 ✅ **Expected:** Homepage loads without errors
 ❌ **If fails:** Check [Troubleshooting](#troubleshooting) section
 
-**3. Test Admin Login**
+#### 3. Test Admin Login
 
 ```bash
 # Access: http://127.0.0.1:8000/admin
@@ -656,7 +681,7 @@ make docker-ps
 ✅ **Expected:** Admin dashboard loads
 ❌ **If fails:** Verify superuser creation in Step 7
 
-**4. Verify Celery Workers** (Optional but recommended)
+#### 4. Verify Celery Workers (Optional but recommended)
 
 ```bash
 # Check worker status
@@ -669,7 +694,7 @@ make celery-status
 # - celery_whisper: Running
 ```
 
-**5. Test File Upload**
+#### 5. Test File Upload
 
 ```bash
 # 1. Login to admin panel: http://127.0.0.1:8000/admin
@@ -680,7 +705,7 @@ make celery-status
 ✅ **Expected:** Upload succeeds, file appears in media list
 ❌ **If fails:** Check Celery workers are running
 
-**6. Check Database Connection**
+#### 6. Check Database Connection
 
 ```bash
 # Test database connectivity
@@ -694,7 +719,7 @@ make docker-shell-db
 
 ✅ **Expected:** Tables are listed (users_user, files_media, etc.)
 
-**7. Verify Frontend Dev Server** (If running)
+#### 7. Verify Frontend Dev Server (If running)
 
 ```bash
 # Access: http://localhost:8088
@@ -876,7 +901,7 @@ uv run manage.py test --keepdb --parallel
 
 ### Backend Structure
 
-```
+```text
 cinematacms/
 ├── cms/                    # Django project settings
 │   ├── settings.py         # Main configuration
@@ -895,7 +920,7 @@ cinematacms/
 
 ### Frontend Structure
 
-```
+```text
 frontend/
 ├── src/
 │   ├── static/
@@ -949,7 +974,7 @@ frontend/
 
 #### Media Upload Flow
 
-```
+```text
 1. Frontend: templates/cms/add-media (Django template)
 2. Backend: uploader/views.py → validate_file()
 3. Processing: files/tasks.py → encode_media()
@@ -964,7 +989,7 @@ frontend/
 
 #### Video Encoding Pipeline
 
-```
+```text
 1. Upload complete → Signal triggers
 2. files/tasks.py → encode_media() task queued
 3. Celery long_tasks worker picks up task
@@ -981,7 +1006,7 @@ frontend/
 
 #### User Authentication & MFA
 
-```
+```text
 1. Login: users/views.py → authenticate()
 2. MFA check: users/models.py → User.mfa_required()
 3. FIDO2 validation: django-allauth integration
@@ -996,12 +1021,12 @@ frontend/
 #### Frontend Page Rendering
 
 **Django Template Pages:**
-```
+```text
 templates/cms/<page>.html → Django renders → Served directly
 ```
 
 **React SPA Pages:**
-```
+```text
 1. Django serves shell: templates/root.html
 2. webpack bundles loaded
 3. React router: frontend/src/static/js/
@@ -1137,10 +1162,10 @@ MediaAction → User (foreign key)
 - JSDoc comments in JavaScript files
 
 **External resources:**
-- Django docs: https://docs.djangoproject.com/
-- React docs: https://react.dev/
-- Celery docs: https://docs.celeryq.dev/
-- Video.js docs: https://docs.videojs.com/
+- Django docs: [https://docs.djangoproject.com/](https://docs.djangoproject.com/)
+- React docs: [https://react.dev/](https://react.dev/)
+- Celery docs: [https://docs.celeryq.dev/](https://docs.celeryq.dev/)
+- Video.js docs: [https://docs.videojs.com/](https://docs.videojs.com/)
 
 ---
 
@@ -1217,7 +1242,7 @@ Copy the configuration above and adjust if your Django server runs on a differen
 
 ### Project Structure
 
-```
+```text
 frontend/
 ├── src/static/js/
 │   ├── pages/              # Full page components
@@ -1532,7 +1557,7 @@ uv run manage.py test files.tests.test_models.MediaTestCase
 
 ### VS Code (Recommended)
 
-**1. Install VS Code Extensions**
+#### 1. Install VS Code Extensions
 
 Essential extensions for CinemataCMS development:
 
@@ -1554,7 +1579,7 @@ code --install-extension bradlc.vscode-tailwindcss
 - **Prettier** (esbenp.prettier-vscode) - Code formatting
 - **Tailwind CSS** (bradlc.vscode-tailwindcss) - CSS IntelliSense
 
-**2. Configure VS Code Settings**
+#### 2. Configure VS Code Settings
 
 Create `.vscode/settings.json` in the project root:
 
@@ -1602,7 +1627,7 @@ Create `.vscode/settings.json` in the project root:
 }
 ```
 
-**3. Set Up Python Interpreter**
+#### 3. Set Up Python Interpreter
 
 ```bash
 # Open command palette (Cmd/Ctrl + Shift + P)
@@ -1612,7 +1637,7 @@ Create `.vscode/settings.json` in the project root:
 
 Or click on the Python version in the bottom-left status bar.
 
-**4. Debugging Configuration**
+#### 4. Debugging Configuration
 
 Create `.vscode/launch.json`:
 
@@ -1662,16 +1687,16 @@ Create `.vscode/launch.json`:
 }
 ```
 
-**5. Using Debugger**
+#### 5. Using Debugger
 
 - Set breakpoints by clicking left of line numbers
 - Press `F5` or go to Run → Start Debugging
 - Select "Django: runserver" configuration
 - Use Debug Console to inspect variables
 
-**6. Useful VS Code Shortcuts**
+#### 6. Useful VS Code Shortcuts
 
-```
+```text
 Cmd/Ctrl + P          - Quick file open
 Cmd/Ctrl + Shift + P  - Command palette
 Cmd/Ctrl + B          - Toggle sidebar
@@ -1684,14 +1709,14 @@ Cmd/Ctrl + Click      - Go to definition
 
 ### PyCharm/IntelliJ IDEA
 
-**1. Configure Python Interpreter**
+#### 1. Configure Python Interpreter
 
 - File → Settings → Project → Python Interpreter
 - Click gear icon → Add
 - Select "Existing environment"
 - Choose `.venv/bin/python`
 
-**2. Configure Django Support**
+#### 2. Configure Django Support
 
 - File → Settings → Languages & Frameworks → Django
 - Enable Django support
@@ -1699,7 +1724,7 @@ Cmd/Ctrl + Click      - Go to definition
 - Settings: `cms/settings.py`
 - Manage script: `manage.py`
 
-**3. Run Configurations**
+#### 3. Run Configurations
 
 Create a Django Server run configuration:
 - Run → Edit Configurations → + → Django Server
@@ -1708,7 +1733,7 @@ Create a Django Server run configuration:
 - Python interpreter: Project venv
 - Environment variables: `DJANGO_SETTINGS_MODULE=cms.settings`
 
-**4. Debugging**
+#### 4. Debugging
 
 - Set breakpoints with `Cmd/Ctrl + F8`
 - Run in debug mode with `Shift + F9`
@@ -1716,13 +1741,13 @@ Create a Django Server run configuration:
 
 ### General IDE Tips
 
-**File Watchers:**
+#### File Watchers
 
 Set up automatic code formatting on save:
 - Python: Use `black` for formatting
 - JavaScript: Use `prettier`
 
-**Git Integration:**
+#### Git Integration
 
 All modern IDEs have built-in Git support:
 - View changes in sidebar
@@ -1730,7 +1755,7 @@ All modern IDEs have built-in Git support:
 - Resolve merge conflicts visually
 - View git history and blame
 
-**Database Tools:**
+#### Database Tools
 
 Most IDEs can connect to PostgreSQL:
 - Host: `localhost`
@@ -1741,7 +1766,7 @@ Most IDEs can connect to PostgreSQL:
 
 Use this to browse tables, run queries, and inspect data.
 
-**Terminal Integration:**
+#### Terminal Integration
 
 Use the built-in terminal for:
 ```bash
@@ -1924,7 +1949,7 @@ taskkill /PID <PID> /F
 
 ### Python Version Errors
 
-**Error: Python 3.10+ required**
+#### Error: Python 3.10+ required
 
 ```bash
 # Check current version
@@ -1944,7 +1969,7 @@ sudo apt install python3.10 python3.10-venv
 
 ### Node.js Version Errors
 
-**Error: Node.js v20.19.1 required or webpack build fails**
+#### Error: Node.js v20.19.1 required or webpack build fails
 
 ```bash
 # Check current version
@@ -1966,7 +1991,7 @@ npm install
 
 ### Database Migration Errors
 
-**Error: "relation already exists" or migration conflicts**
+#### Error: "relation already exists" or migration conflicts
 
 ```bash
 # Option 1: Reset migrations (⚠️ Development only!)
@@ -2183,7 +2208,7 @@ git remote -v
 
 **Always keep your fork's main branch in sync with the upstream repository.**
 
-**Option A: Using GitHub (Easiest)**
+##### Option A: Using GitHub (Easiest)
 
 1. Go to your fork on GitHub: `https://github.com/YOUR_USERNAME/cinematacms`
 2. You'll see a message: "This branch is X commits behind EngageMedia-video:main"
@@ -2195,7 +2220,7 @@ git remote -v
    git pull origin main
    ```
 
-**Option B: Using Command Line (with Rebase)**
+##### Option B: Using Command Line (with Rebase)
 
 ```bash
 # Switch to main branch
@@ -2315,7 +2340,7 @@ git push origin feature/your-feature-name
 
 #### 10. Respond to Review Feedback
 
-**Option A: Add new commits (if requested):**
+##### Option A: Add new commits (if requested)
 
 ```bash
 # Make requested changes
@@ -2324,7 +2349,7 @@ git commit -m "refactor: address review comments"
 git push origin feature/your-feature-name
 ```
 
-**Option B: Amend existing commits (for minor fixes):**
+##### Option B: Amend existing commits (for minor fixes)
 
 ```bash
 # Make changes
@@ -2337,7 +2362,7 @@ git commit --amend --no-edit
 git push origin feature/your-feature-name --force-with-lease
 ```
 
-**Option C: Interactive rebase to clean up commits:**
+##### Option C: Interactive rebase to clean up commits
 
 ```bash
 # Rebase and squash commits interactively
