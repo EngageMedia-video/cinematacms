@@ -153,7 +153,7 @@ These versions are tested and confirmed working:
 | Dependency | Version | Notes |
 |------------|---------|-------|
 | **Python** | 3.10+ | 3.10 recommended |
-| **Node.js** | 20.19.1 | **Exactly 20.19.1 required** — webpack build incompatible with other versions |
+| **Node.js** | 20.x | **v20.19.1 recommended** — any Node.js 20.x version should work |
 | **PostgreSQL** | 14+ | Via Docker (14-alpine) |
 | **Redis** | 7+ | Via Docker (alpine) |
 | **FFmpeg** | 4.4+ | For video processing |
@@ -161,7 +161,7 @@ These versions are tested and confirmed working:
 | **uv** | Latest | Python package manager |
 | **npm** | 10+ | Comes with Node.js |
 
-> **⚠️ Important:** Node.js v20.19.1 is required for the frontend build. Other versions may cause build failures.
+> **⚠️ Important:** Node.js v20.x is required for the frontend build. Version 20.19.1 is tested and recommended.
 
 ---
 
@@ -264,11 +264,11 @@ brew install wget openssl ffmpeg make cmake python bento4 uv
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 source ~/.zshrc  # or ~/.bash_profile for bash users
 
-# Install exact Node.js version required
+# Install the recommended Node.js version (any 20.x works, but 20.19.1 is tested)
 nvm install 20.19.1 && nvm use 20.19.1 && nvm alias default 20.19.1
 
 # Verify installations
-node --version   # Must be v20.19.1
+node --version   # Should output v20.19.1 (recommended, any v20.x works)
 uv --version
 docker --version
 ```
@@ -341,9 +341,10 @@ mkdir -p ~/cinemata && cd ~/cinemata
 git clone https://github.com/EngageMedia-video/cinematacms cinematacms
 cd cinematacms
 
-# The repository includes .nvmrc files that specify the exact Node.js version
-# If you've already installed nvm, it will automatically use v20.19.1 when you cd into the directory
-# Or you can manually run: nvm use
+# The repository includes .nvmrc files specifying Node.js v20 (any 20.x version)
+# nvm will automatically switch to Node 20.x when you cd into the directory
+# Run 'nvm use' manually if auto-switching doesn't work
+# Note: v20.19.1 is the tested/recommended version from the install steps above
 
 # Clone Whisper.cpp for ASR
 cd ~/cinemata
