@@ -67,10 +67,17 @@ touch .env  # Add SECRET_KEY
 
 # 4. Install & build
 uv sync
-bash scripts/build_frontend.sh
+make frontend-build
 
 # 5. Database setup
+uv run manage.py makemigrations files users actions
 uv run manage.py migrate
+uv run manage.py loaddata fixtures/encoding_profiles.json
+uv run manage.py loaddata fixtures/categories.json
+uv run manage.py load_apac_languages
+uv run manage.py populate_media_languages
+uv run manage.py populate_media_countries
+uv run manage.py populate_topics
 uv run manage.py createsuperuser
 
 # 6. Start services
