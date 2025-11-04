@@ -65,6 +65,12 @@ make docker-up
 touch .env  # Add SECRET_KEY
 # Create cms/local_settings.py and frontend/.env
 
+# Create required directories
+mkdir -p logs pids media_files/hls
+
+# Make scripts executable
+chmod +x scripts/build_frontend.sh
+
 # 4. Install & build
 uv sync
 make frontend-build
