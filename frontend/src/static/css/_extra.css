@@ -1,5 +1,3 @@
-@import url('../fonts/amulya.css');  /* adjust path if needed */
-
 
 body {
 
@@ -1303,6 +1301,10 @@ body .item-author a:active {
 body .item-author a:hover,
 body .item-author a:active {
 	/* text-decoration: underline; */
+}
+
+body .item-content h3 span {
+	background-color: var(--body-bg-color);
 }
 
 body.dark_theme .item-content h3 a {
@@ -3320,16 +3322,9 @@ body .hw-category {
 /* Force font for description and all its children */
 .hw-category-description,
 .hw-category-description * {
-    font-family: 'Amulya-Regular', Arial, sans-serif ;
-	font-size: 14px;
-}
-
-
-.hw-category-description,
-.hw-category-description * {
-    font-family: 'Amulya-Regular', Arial, sans-serif;
-}
-
+     font-family: 'Amulya', Arial, sans-serif;
+ 	font-size: 14px;
+ }
 .hw-even-list .hw-category-title,
 .hw-even-list .hw-category-description {
   color: white;

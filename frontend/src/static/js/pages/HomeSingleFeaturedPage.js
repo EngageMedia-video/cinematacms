@@ -10,7 +10,7 @@ import { PendingItemsList } from '../components/-NEW-/PendingItemsList';
 import { Page } from './_Page';
 import PageStore from './_PageStore';
 import { config as mediacmsConfig } from '../mediacms/config';
-import '../static/fonts/amulya.css';  
+
 
 export class HomeSingleFeaturedPage extends Page {
   constructor(props) {

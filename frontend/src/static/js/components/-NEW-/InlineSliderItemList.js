@@ -197,11 +197,12 @@ export function InlineSliderItemList(props) {
             </div>
           </div>
 
-          {showArrows && (
-            <button className="featured-carousel-arrow right" onClick={handleNext} aria-label="Next">
-              <ArrowRightIcon />
-            </button>
-          )}
+        {showArrows && !props.firstItemViewer && totalDots > 1 && (
+          <button className="featured-carousel-arrow right" onClick={handleNext} aria-label="Next">
+            <ArrowRightIcon />
+          </button>
+        )}
+
 
           {/* Slider Dots */}
           {!props.firstItemViewer && totalDots > 1 && (
