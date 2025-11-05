@@ -30,6 +30,7 @@ export function InlineSliderItemList(props) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [totalDots, setTotalDots] = useState(1);
   const [showArrows, setShowArrows] = useState(false);
+  const [isAtStart, setIsAtStart] = useState(true);
 
   // Separate first item if using firstItemViewer
   const firstItem = props.firstItemViewer && items.length ? items[0] : null;
@@ -69,6 +70,7 @@ export function InlineSliderItemList(props) {
       const { scrollLeft, scrollWidth, clientWidth } = container;
       const progress = Math.min(scrollLeft / (scrollWidth - clientWidth), 1);
       setScrollProgress(progress);
+      setIsAtStart(scrollLeft <= 0);
     };
 
     const updateDots = () => {
@@ -104,44 +106,51 @@ export function InlineSliderItemList(props) {
 
   // Navigation
   const handleNext = () => {
-    const container = itemsListWrapperRef.current;
+    const wrapper = itemsListWrapperRef.current;
     const list = itemsListRef.current;
-    if (!container || !list || !list.children.length) return;
+    if (!wrapper || !list) return;
 
-    const first = Array.from(list.children).find((el) =>
-      el.classList.contains('featured-item')
-    );
-    if (!first) return;
+    const itemElements = list.querySelectorAll('.featured-item');
+    if (!itemElements.length) return;
 
-    const itemWidth = first.offsetWidth;
-    const itemMarginRight = parseInt(getComputedStyle(first).marginRight) || 0;
-    const scrollAmount = itemWidth + itemMarginRight;
-    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const lastItem = itemElements[itemElements.length - 1];
+    const lastItemRect = lastItem.getBoundingClientRect();
 
-    container.scrollLeft + scrollAmount >= maxScrollLeft
-      ? container.scrollTo({ left: 0, behavior: 'smooth' })
-      : container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    const scrollAmount = wrapper.clientWidth;
+
+
+    if (Math.abs(lastItemRect.right - wrapperRect.right) <= 1) {
+      wrapper.scrollTo({ left: 0, behavior: 'smooth' }); 
+    } else {
+      wrapper.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
   };
 
   const handlePrev = () => {
-    const container = itemsListWrapperRef.current;
+    const wrapper = itemsListWrapperRef.current;
     const list = itemsListRef.current;
-    if (!container || !list || !list.children.length) return;
+    if (!wrapper || !list) return;
 
-    const first = Array.from(list.children).find((el) =>
-      el.classList.contains('featured-item')
-    );
-    if (!first) return;
+    const itemElements = list.querySelectorAll('.featured-item');
+    if (!itemElements.length) return;
 
-    const itemWidth = first.offsetWidth;
-    const itemMarginRight = parseInt(getComputedStyle(first).marginRight) || 0;
-    const scrollAmount = itemWidth + itemMarginRight;
-    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const firstItem = itemElements[0];
+    const firstItemRect = firstItem.getBoundingClientRect();
 
-    container.scrollLeft <= 0
-      ? container.scrollTo({ left: maxScrollLeft, behavior: 'smooth' })
-      : container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    const scrollAmount = wrapper.clientWidth;
+
+    // Loop back to end if first item's left touches wrapper's left
+    if (Math.abs(firstItemRect.left - wrapperRect.left) <= 1) {
+      const lastItem = itemElements[itemElements.length - 1];
+      const maxScrollLeft = lastItem.offsetLeft + lastItem.offsetWidth - wrapper.clientWidth;
+      wrapper.scrollTo({ left: maxScrollLeft, behavior: 'smooth' });
+    } else {
+      wrapper.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    }
   };
+
 
   if (!countedItems) return <PendingItemsList className={classname.listOuter} />;
   if (!items.length) return null;
@@ -167,11 +176,16 @@ export function InlineSliderItemList(props) {
       {/* Carousel - ONLY for remaining items */}
       {carouselItems.length > 0 && (
         <div className="featured-carousel">
-          {showArrows && (
-            <button className="featured-carousel-arrow left" onClick={handlePrev} aria-label="Previous">
+          {showArrows && !isAtStart && (
+            <button
+              className="featured-carousel-arrow left"
+              onClick={handlePrev}
+              aria-label="Previous"
+            >
               <ArrowLeftIcon />
             </button>
           )}
+
 
           <div ref={itemsListWrapperRef} className="featured-items-wrap">
             <div ref={itemsListRef} className={`${classname.list} featured-items-list`}>

@@ -68,6 +68,7 @@ export class HomeSingleFeaturedPage extends Page {
   
     }
   }
+ 
 
   onLoadLatest = (length) =>
     this.setState({ loadedLatest: true, visibleLatest: length > 0 });
@@ -162,7 +163,6 @@ export class HomeSingleFeaturedPage extends Page {
             ) : !loadedFeatured ? (
               <PendingItemsList className="featured-carousel" />
             ) : null}
-
 
             {/* 🔹 Recent videos */}
             <MediaMultiListWrapper className="items-list-ver">
