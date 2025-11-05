@@ -38,37 +38,53 @@ export class HomeSingleFeaturedPage extends Page {
     return Array.isArray(data) ? data : data.results || [];
   }
 
-  async componentDidMount() {
-    try {
-      const featuredVideos = await this.fetchData(this.mediacms_config.api.featured);
-      const indexFeaturedListData = await this.fetchData(this.mediacms_config.api.indexfeatured);
+async componentDidMount() {
+  try {
+    const featuredVideos = await this.fetchData(this.mediacms_config.api.featured);
+    const indexFeaturedListData = await this.fetchData(this.mediacms_config.api.indexfeatured);
 
-      const indexFeaturedList = await Promise.all(
-        indexFeaturedListData.map(async (playlist) => {
-          if (!playlist.api_url) return playlist;
-          try {
-            const items = await this.fetchData(playlist.api_url);
-            return { ...playlist, items };
-          } catch (err) {
-            console.error(`❌ Failed to load videos for playlist: ${playlist.title}`, err);
-            return { ...playlist, items: [] };
-          }
-        })
-      );
+    const indexFeaturedList = await Promise.all(
+      indexFeaturedListData.map(async (playlist) => {
+        if (!playlist.api_url) return playlist;
+        try {
+          const items = await this.fetchData(playlist.api_url);
+          return { ...playlist, items };
+        } catch (err) {
+          console.error(`❌ Failed to load videos for playlist: ${playlist.title}`, err);
+          return { ...playlist, items: [] };
+        }
+      })
+    );
 
-        this.setState({
-          indexFeaturedList,
-          featuredVideos,
-          loadedFeatured: true,
-        });    
-    } catch (err) {
-      console.error('❌ Failed to load featured playlists', err);
-    } finally {
-      this.setState({ loadedFeatured: true });
-  
-    }
+    // ✅ Duplicate playlists for display purposes
+    const basePlaylist = indexFeaturedList[0] || { title: "Untitled", items: [] };
+    const baseItems = basePlaylist.items || [];
+
+    // Duplicate items as needed
+    const duplicateItems = (count) =>
+      Array(count)
+        .fill(null)
+        .map((_, i) => baseItems[i % baseItems.length]) // repeat if not enough
+        .map((item, i) => ({ ...item, id: `${item.id || i}-${count}` })); // unique IDs
+
+    const replicatedPlaylists = [
+      { ...basePlaylist, title: "Playlist 1 (6 Videos)", items: duplicateItems(6) },
+      { ...basePlaylist, title: "Playlist 2 (4 Videos)", items: duplicateItems(4) },
+      { ...basePlaylist, title: "Playlist 3 (3 Videos)", items: duplicateItems(3) },
+      { ...basePlaylist, title: "Playlist 4 (2 Videos)", items: duplicateItems(2) },
+    ];
+
+    this.setState({
+      indexFeaturedList: replicatedPlaylists,
+      featuredVideos,
+      loadedFeatured: true,
+    });
+  } catch (err) {
+    console.error("❌ Failed to load featured playlists", err);
+  } finally {
+    this.setState({ loadedFeatured: true });
   }
- 
+} 
 
   onLoadLatest = (length) =>
     this.setState({ loadedLatest: true, visibleLatest: length > 0 });
@@ -143,7 +159,7 @@ export class HomeSingleFeaturedPage extends Page {
                       title={item.title}
                       viewAllLink={item.url}
                       viewAllText="View all"
-                      desc={item.text}
+                      desc={`${item.text} Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`}
                       className={void 0 === this.props.title ? 'no-title' : ''}
                     >
                       {!item.items?.length ? (
