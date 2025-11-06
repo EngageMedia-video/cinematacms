@@ -208,8 +208,10 @@ class MediaForm(forms.ModelForm):
         and validation for the 'restricted' media state.
         """
         cleaned_data = super().clean()
-
+        
         # --- Year Validation Logic ---
+        current_year = datetime.now().year
+
         # Check if year_produced exists and is not empty
         if 'year_produced' in self.cleaned_data and self.cleaned_data.get('year_produced'):
             year_produced = self.cleaned_data.get('year_produced')
@@ -217,9 +219,9 @@ class MediaForm(forms.ModelForm):
             if year_produced == 'other':
                 year_produced_custom = self.cleaned_data.get('year_produced_custom')
                 if not year_produced_custom:
-                    self.add_error('year_produced_custom', 'Please specify a year.')
+                    if not self.has_error('year_produced_custom'):
+                        self.add_error('year_produced_custom', 'Please specify a year.')
                 else:
-                    current_year = datetime.now().year
                     if not (1900 <= year_produced_custom <= current_year):
                         self.add_error('year_produced_custom', f'Please enter a year between 1900 and {current_year}.')
                     else:
@@ -227,22 +229,17 @@ class MediaForm(forms.ModelForm):
             elif year_produced:
                 try:
                     year_int = int(year_produced)
-                    current_year = datetime.now().year
                     if not (2000 <= year_int <= current_year):
-                        # FIX 1: The f-string has been removed
                         self.add_error('year_produced',
-                                      'Please select a valid year.') 
+                                      'Please select a valid year.')
                     else:
                         cleaned_data['year_produced'] = year_int
                 except (ValueError, TypeError):
                     self.add_error('year_produced', 'Please select a valid year.')
-        
         else:
-            # This case is triggered if the user provides no selection (empty string/None)
-            # `has_error` prevents adding a duplicate error if one already exists
             if not self.has_error('year_produced'):
                 self.add_error('year_produced', 'Please select a year.')
-
+                
         # --- Validation for 'Restricted' media state ---
         state = cleaned_data.get("state", False)
         password = cleaned_data.get("password", False)
