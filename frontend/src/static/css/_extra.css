@@ -1,4 +1,3 @@
-
 body {
 
 	/* --default-logo-height: 48px !important; */
@@ -3316,7 +3315,7 @@ body .hw-category {
 
 .hw-category-description {
   padding: 5px 0 30px 0;
-  max-width: 512px;
+  max-width: 715px;
 }
 
 /* Force font for description and all its children */
