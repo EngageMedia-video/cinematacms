@@ -131,9 +131,6 @@ class MediaForm(forms.ModelForm):
         self.fields["media_file"].label = "Media Upload"
         self.fields["media_file"].required = False  # Made optional for separate upload via Fine Uploader
 
-        self.fields["year_produced"].label = "Year Produced"
-
-        self.fields["year_produced"].required = True
         self.fields["category"].required = True
         self.fields["media_country"].required = True
 
@@ -218,7 +215,7 @@ class MediaForm(forms.ModelForm):
             
             if year_produced == 'other':
                 year_produced_custom = self.cleaned_data.get('year_produced_custom')
-                if not year_produced_custom:
+                if year_produced_custom is None:
                     if not self.has_error('year_produced_custom'):
                         self.add_error('year_produced_custom', 'Please specify a year.')
                 else:
