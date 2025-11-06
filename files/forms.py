@@ -222,7 +222,7 @@ class MediaForm(forms.ModelForm):
                 current_year = datetime.now().year
                 if not (1900 <= year_custom <= current_year):
                     self.add_error('year_produced_custom',
-                                  'Year must be between 1900 and {current_year}.')
+                                  f'Year must be between 1900 and {current_year}.')
                 else:
                     # Use the custom year as the final value
                     cleaned_data['year_produced'] = year_custom
@@ -235,7 +235,7 @@ class MediaForm(forms.ModelForm):
                 # Assuming the dropdown years start from 2000
                 if not (2000 <= year_int <= current_year):
                     self.add_error('year_produced',
-                                  f'Please select a valid year.')
+                                  'Please select a valid year.')
                 else:
                     cleaned_data['year_produced'] = year_int
             except (ValueError, TypeError):
