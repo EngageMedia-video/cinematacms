@@ -209,37 +209,39 @@ class MediaForm(forms.ModelForm):
         """
         cleaned_data = super().clean()
 
-        # --- Validation for "Year Produced" ---
-        year_produced = cleaned_data.get('year_produced')
-        year_custom = cleaned_data.get('year_produced_custom')
-
-        if year_produced == 'other':
-            # User selected "Other", validate the custom input
-            if not year_custom:
-                self.add_error('year_produced_custom', 'Please specify the year when selecting "Other".')
-            else:
-                # Validate the custom year's range
-                current_year = datetime.now().year
-                if not (1900 <= year_custom <= current_year):
-                    self.add_error('year_produced_custom',
-                                  f'Year must be between 1900 and {current_year}.')
+        # --- Year Validation Logic ---
+        # Check if year_produced exists and is not empty
+        if 'year_produced' in self.cleaned_data and self.cleaned_data.get('year_produced'):
+            year_produced = self.cleaned_data.get('year_produced')
+            
+            if year_produced == 'other':
+                year_produced_custom = self.cleaned_data.get('year_produced_custom')
+                if not year_produced_custom:
+                    self.add_error('year_produced_custom', 'Please specify a year.')
                 else:
-                    # Use the custom year as the final value
-                    cleaned_data['year_produced'] = year_custom
-
-        elif year_produced:
-            # User selected from the dropdown, validate that it is a valid year
-            try:
-                year_int = int(year_produced)
-                current_year = datetime.now().year
-                # Assuming the dropdown years start from 2000
-                if not (2000 <= year_int <= current_year):
-                    self.add_error('year_produced',
-                                  'Please select a valid year.')
-                else:
-                    cleaned_data['year_produced'] = year_int
-            except (ValueError, TypeError):
-                self.add_error('year_produced', 'Please select a valid year.')
+                    current_year = datetime.now().year
+                    if not (1900 <= year_produced_custom <= current_year):
+                        self.add_error('year_produced_custom', f'Please enter a year between 1900 and {current_year}.')
+                    else:
+                        cleaned_data['year_produced'] = year_produced_custom
+            elif year_produced:
+                try:
+                    year_int = int(year_produced)
+                    current_year = datetime.now().year
+                    if not (2000 <= year_int <= current_year):
+                        # FIX 1: The f-string has been removed
+                        self.add_error('year_produced',
+                                      'Please select a valid year.') 
+                    else:
+                        cleaned_data['year_produced'] = year_int
+                except (ValueError, TypeError):
+                    self.add_error('year_produced', 'Please select a valid year.')
+        
+        else:
+            # This case is triggered if the user provides no selection (empty string/None)
+            # `has_error` prevents adding a duplicate error if one already exists
+            if not self.has_error('year_produced'):
+                self.add_error('year_produced', 'Please select a year.')
 
         # --- Validation for 'Restricted' media state ---
         state = cleaned_data.get("state", False)
