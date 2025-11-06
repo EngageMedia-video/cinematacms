@@ -43,7 +43,6 @@ class MediaForm(forms.ModelForm):
             'class': 'year-custom-input',
             'placeholder': 'Enter year (e.g. 1995)',
             'min': '1900',
-            'max': '2030',
             'style': 'display: none;'
             })
     )
@@ -88,6 +87,7 @@ class MediaForm(forms.ModelForm):
         # Update Year Choices Generation
         # Generate year choices with "other" option
         current_year = datetime.now().year
+        self.fields["year_produced_custom"].widget.attrs["max"] = str(current_year)
         year_choices = [('', '-- Select Year --')]
 
         # Add years from current down to 2000
@@ -222,7 +222,7 @@ class MediaForm(forms.ModelForm):
                 current_year = datetime.now().year
                 if not (1900 <= year_custom <= current_year):
                     self.add_error('year_produced_custom',
-                                  f'Year must be between 1900 and {current_year}.')
+                                  'Year must be between 1900 and {current_year}.')
                 else:
                     # Use the custom year as the final value
                     cleaned_data['year_produced'] = year_custom
