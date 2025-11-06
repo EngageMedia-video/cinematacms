@@ -9,12 +9,12 @@
   "bin": {
     "mediacms-scripts-2": "./cli.js"
   },
-"scripts": {
-  "start": "node cli.js start --config=./config/cinemata.config.js --host=0.0.0.0 --port=8088",
-  "build": "npm run clean-build && node cli.js build --config=./config/cinemata.config.js --verbose",
-  "clean-build": "node ./scripts/rmrf.js ./build/production/",
-  "serve-build": "npx serve ./build/production/"
-},
+  "scripts": {
+    "start": "node cli.js start --config=./config/cinemata.config.js --host=0.0.0.0 --port=8088",
+    "build": "npm run clean-build && node cli.js build --config=./config/cinemata.config.js --verbose",
+    "clean-build": "node ./scripts/rmrf.js ./build/production/",
+    "serve-build": "npx serve ./build/production/"
+  },
   "browserslist": [
     "cover 99.5%"
   ],
@@ -55,6 +55,7 @@
   "dependencies": {
     "@mediacms/media-player": "file:packages/media-player",
     "axios": "^1.12.2",
+    "events": "^3.3.0",
     "flux": "^4.0.4",
     "material-design-icons": "^3.0.1",
     "normalize.css": "^8.0.1",
