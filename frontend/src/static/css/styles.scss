@@ -1422,6 +1422,7 @@ input#authenticator_secret {
 			left: 0;
 			transform: translate(-50%, -50%);
 			padding-right: 6px;
+			overflow: visible;
 
 			&:hover {
 				transform: translate(-50%, -50%) scale(1.1);
@@ -1433,6 +1434,7 @@ input#authenticator_secret {
 			right: calc(27px - 30.75px);
 			transform: translateY(-50%);
 			padding-left: 6px;
+			overflow: visible;
 
 			&:hover {
 				transform: translateY(-50%) scale(1.1);
