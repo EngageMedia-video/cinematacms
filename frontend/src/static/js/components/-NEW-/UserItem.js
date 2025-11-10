@@ -10,12 +10,16 @@ export function UserItem(props){
 
 	const type = 'user';
 
-	const [ titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper ] = useItem({...props, type});
+	// The title should already be set from ListItem (which gets it from listItemProps)
+	const modifiedProps = { ...props, type };
+	const [ titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper ] = useItem(modifiedProps);
 
 	// Extract additional member data
 	const location = props.location || '';
 	const mediaCount = props.media_count || 0;
 	const isTrusted = props.is_trusted || props.advancedUser || false;
+	const isEditor = props.is_editor || false;
+	const isManager = props.is_manager || false;
 	const locationCountry = props.location_country || '';
 
 	// Check if same country as current user (client-side only to avoid hydration mismatch)
@@ -71,12 +75,17 @@ export function UserItem(props){
 	}
 
 	function badgesComponent(){
-		if (!isTrusted && !isSameCountry) return null;
-		
+		if (!isTrusted && !isSameCountry && !isEditor && !isManager) return null;
+
+		// Track badge index for dynamic positioning
+		let orangeBadgeIndex = 0;
+
 		return (
 			<React.Fragment>
 				{isSameCountry && <div className="badge local">Local</div>}
-				{isTrusted && <div className="badge trusted">Trusted</div>}
+				{isTrusted && <div className="badge orange-badge" style={{ top: `${1 + (orangeBadgeIndex++ * 1.7)}rem` }}>Trusted</div>}
+				{isEditor && <div className="badge orange-badge" style={{ top: `${1 + (orangeBadgeIndex++ * 1.7)}rem` }}>Editor</div>}
+				{isManager && <div className="badge orange-badge" style={{ top: `${1 + (orangeBadgeIndex++ * 1.7)}rem` }}>Manager</div>}
 			</React.Fragment>
 		);
 	}
@@ -129,12 +138,12 @@ export function UserItem(props){
 
 				.badge {
 					position: absolute;
-					top: 1rem;
 					color: white;
 					padding: 0.25rem 0.75rem;
 					border-radius: 12px;
 					font-size: 0.75rem;
 					font-weight: 600;
+					top: 1rem;
 				}
 
 				.badge.local {
@@ -142,7 +151,7 @@ export function UserItem(props){
 					background: #10b981;
 				}
 
-				.badge.trusted {
+				.badge.orange-badge {
 					left: 1rem;
 					background: #f59e0b;
 				}
