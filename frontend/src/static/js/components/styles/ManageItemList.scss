@@ -250,6 +250,7 @@
 					float:left;
 					font-size:14px;
 					color:var(--popup-msg-main-text-color);
+					border-radius: 8px;
 
 					&.proceed-profile-removal{
 						float:right;
@@ -466,6 +467,7 @@
 						float:left;
 						font-size:14px;
 						color:var(--popup-msg-main-text-color);
+					border-radius: 8px;
 
 						&.proceed-profile-removal{
 							float:right;
@@ -660,6 +662,7 @@
 			color:var(--popup-msg-main-text-color);
 			border:0;
 			background: none;
+			border-radius: 8px;
 
 			&.proceed-profile-removal{
 				float:right;
