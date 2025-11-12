@@ -26,7 +26,27 @@ class MediaForm(forms.ModelForm):
     )
     no_license = forms.BooleanField(required=False, label="All Rights Reserved")
     custom_license = forms.CharField(required=False, label="Just a placeholder")
+    
+    # Add New Field Declarations to MediaForm
+    # Override year_produced to handle dropdown + custom input
+    year_produced = forms.CharField(
+        required=True,
+        label="Year Produced",
+        widget=forms.Select()
+    )
 
+    # Add hidden field for custom year input
+    year_produced_custom = forms.IntegerField(
+        required=False,
+        label="Specify Year",
+        widget=forms.NumberInput(attrs={
+            'class': 'year-custom-input',
+            'placeholder': 'Enter year (e.g. 1995)',
+            'min': '1900',
+            'style': 'display: none;'
+            })
+    )
+    
     class Meta:
         model = Media
         fields = [
@@ -34,6 +54,7 @@ class MediaForm(forms.ModelForm):
             "summary",
             "description",
             "year_produced",
+            "year_produced_custom",
             "media_file",
             "uploaded_poster",
             "allow_whisper_transcribe_and_translate",
@@ -63,6 +84,32 @@ class MediaForm(forms.ModelForm):
     def __init__(self, user, *args, **kwargs):
         self.user = user
         super(MediaForm, self).__init__(*args, **kwargs)
+        # Update Year Choices Generation
+        # Generate year choices with "other" option
+        current_year = datetime.now().year
+        self.fields["year_produced_custom"].widget.attrs["max"] = str(current_year)
+        year_choices = [('', '-- Select Year --')]
+
+        # Add years from current down to 2000
+        for year in range(current_year, 1999, -1):
+            year_choices.append((str(year), str(year)))
+
+        # Add "Other" option at the end
+        year_choices.append(('other', 'Other (specify year)'))
+
+        # Apply choices to the dropdown
+        self.fields["year_produced"].widget.choices = year_choices
+
+        # Set initial values if editing existing media
+        if self.instance and self.instance.year_produced:
+            instance_year = str(self.instance.year_produced)
+            available_years = [choice[0] for choice in year_choices if choice[0] not in ('', 'other')]
+            if instance_year in available_years:
+                self.fields["year_produced"].initial = instance_year
+            else:
+                self.fields["year_produced"].initial = 'other'
+                self.fields["year_produced_custom"].initial = self.instance.year_produced
+                
         self.fields["state"].label = "Status"
         self.fields["allow_download"].label = "Allow Download"
         self.fields["reported_times"].label = "Reported Times"
@@ -84,9 +131,6 @@ class MediaForm(forms.ModelForm):
         self.fields["media_file"].label = "Media Upload"
         self.fields["media_file"].required = False  # Made optional for separate upload via Fine Uploader
 
-        self.fields["year_produced"].label = "Year Produced"
-
-        self.fields["year_produced"].required = True
         self.fields["category"].required = True
         self.fields["media_country"].required = True
 
@@ -148,19 +192,6 @@ class MediaForm(forms.ModelForm):
             raise forms.ValidationError("Synopsis should have 60 words maximum")
         return summary
 
-    def clean_year_produced(self):
-        year_produced = self.cleaned_data.get("year_produced", "")
-        if year_produced:
-            if not isinstance(year_produced, int):
-                raise forms.ValidationError(
-                    "Year produced must be a year between 1900 and now"
-                )
-            if not (1900 <= year_produced and year_produced <= datetime.now().year):
-                raise forms.ValidationError(
-                    "Year produced must be a year between 1900 and now"
-                )
-        return year_produced
-
     def clean_uploaded_poster(self):
         image = self.cleaned_data.get("uploaded_poster", False)
         if image:
@@ -169,16 +200,58 @@ class MediaForm(forms.ModelForm):
             return image
 
     def clean(self):
+        """
+        Custom validation to handle the dropdown + custom year input,
+        and validation for the 'restricted' media state.
+        """
         cleaned_data = super().clean()
+        
+        # --- Year Validation Logic ---
+        current_year = datetime.now().year
+
+        # Check if year_produced exists and is not empty
+        if 'year_produced' in self.cleaned_data and self.cleaned_data.get('year_produced'):
+            year_produced = self.cleaned_data.get('year_produced')
+            
+            if year_produced == 'other':
+                year_produced_custom = self.cleaned_data.get('year_produced_custom')
+                if year_produced_custom is None:
+                    if not self.has_error('year_produced_custom'):
+                        self.add_error('year_produced_custom', 'Please specify a year.')
+                else:
+                    if not (1900 <= year_produced_custom <= current_year):
+                        self.add_error('year_produced_custom', f'Please enter a year between 1900 and {current_year}.')
+                    else:
+                        cleaned_data['year_produced'] = year_produced_custom
+            elif year_produced:
+                try:
+                    year_int = int(year_produced)
+                    if not (2000 <= year_int <= current_year):
+                        self.add_error('year_produced',
+                                      'Please select a valid year.')
+                    else:
+                        cleaned_data['year_produced'] = year_int
+                except (ValueError, TypeError):
+                    self.add_error('year_produced', 'Please select a valid year.')
+        else:
+            if not self.has_error('year_produced'):
+                self.add_error('year_produced', 'Please select a year.')
+                
+        # --- Validation for 'Restricted' media state ---
         state = cleaned_data.get("state", False)
         password = cleaned_data.get("password", False)
         featured = cleaned_data.get("featured", False)
+
         if state == "restricted" and not password:
             error = "Password has to be set when state is Restricted"
             self.add_error("password", error)
+
         if state == "restricted" and featured:
             error = "This video cannot be featured as it is Restricted."
             self.add_error("featured", error)
+
+        # Always return the full cleaned_data dictionary
+        return cleaned_data
 
     def save(self, *args, **kwargs):
         data = self.cleaned_data

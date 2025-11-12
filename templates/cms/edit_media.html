@@ -1592,6 +1592,42 @@
 			}
 		});
 		</script>
+		<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const yearSelect = document.querySelector('#id_year_produced');
+			const customInput = document.querySelector('#id_year_produced_custom');
+			const customWrapper = customInput ? customInput.closest('.fieldWrapper') : null;
+			
+			function toggleCustomYear() {
+				if (!yearSelect || !customInput || !customWrapper) return;
+				
+				if (yearSelect.value === 'other') {
+					customWrapper.style.display = 'block';
+					customInput.style.display = 'block';
+					customInput.required = true;
+					customInput.focus();
+				} else {
+					customWrapper.style.display = 'none';
+					customInput.style.display = 'none';
+					customInput.required = false;
+					customInput.value = '';
+				}
+			}
+			
+			if (yearSelect) {
+				yearSelect.addEventListener('change', toggleCustomYear);
+				toggleCustomYear(); // Initialize on page load
+			}
+			
+			// Add styling to custom input
+			if (customInput) {
+				customInput.style.marginTop = '10px';
+				customInput.style.padding = '8px';
+				customInput.style.border = '2px solid #007cba';
+				customInput.style.borderRadius = '4px';
+			}
+		});
+		</script>
 
 {% endblock innercontent %}
 
