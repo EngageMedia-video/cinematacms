@@ -107,7 +107,12 @@ export function listItemProps( props, item, index ){
 
 	let type, taxonomyType, title, date, description, meta_description;
 
-	title = void 0 !== item.username && 'string' === typeof item.username ? item.username : ( void 0 !== item.title && 'string' === typeof item.title ? item.title : null );
+	// For user items, use name field if available, otherwise username
+	if (void 0 !== item.username && 'string' === typeof item.username) {
+		title = (void 0 !== item.name && 'string' === typeof item.name && item.name.trim()) ? item.name : item.username;
+	} else {
+		title = void 0 !== item.title && 'string' === typeof item.title ? item.title : null;
+	}
 
 	date = void 0 !== item.date_added && 'string' === typeof item.date_added ? item.date_added : ( void 0 !== item.add_date && 'string' === typeof item.add_date ? item.add_date : null );
 
@@ -242,8 +247,20 @@ export function listItemProps( props, item, index ){
 		args.duration = item.duration;
 	}
 
-	if( ( isArchiveItem || isPlaylistItem ) && ! isNaN( item.media_count ) ){
+	if( ( isArchiveItem || isPlaylistItem || isUserItem ) && ! isNaN( item.media_count ) ){
 		args.media_count = parseInt( item.media_count, 10 );
+	}
+
+	// Pass user-specific fields
+	if( isUserItem ){
+		args.username = item.username;
+		args.name = item.name;
+		args.location = item.location;
+		args.location_country = item.location_country;
+		args.is_trusted = item.is_trusted;
+		args.advancedUser = item.advancedUser;
+		args.is_editor = item.is_editor;
+		args.is_manager = item.is_manager;
 	}
 
 	if( isMediaItem ){
@@ -285,6 +302,16 @@ export function ListItem(props){
 
 	switch( props.type ){
 		case 'user':
+			// Pass user-specific props
+			args.username = props.username;
+			args.name = props.name;
+			args.location = props.location;
+			args.location_country = props.location_country;
+			args.is_trusted = props.is_trusted;
+			args.advancedUser = props.advancedUser;
+			args.media_count = props.media_count;
+			args.is_editor = props.is_editor;
+			args.is_manager = props.is_manager;
 			break;
 		case 'playlist':
 			break;
