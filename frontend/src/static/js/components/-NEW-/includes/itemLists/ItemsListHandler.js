@@ -98,7 +98,10 @@ export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url,
 
         function errorFn(error) {
             waiting.requestResponse = false;
-            callbacks.error(new Error('Failed to load first item'));
+            // Preserve original error for debugging
+            const wrappedError = new Error('Failed to load first item: ' + (error.message || error));
+            wrappedError.originalError = error;
+            callbacks.error(wrappedError);
         }
 
         getRequest( formatInnerLink( first_item_request_url, PageStore.get('config-site').url ), false, fn, errorFn );
@@ -148,7 +151,10 @@ export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url,
 
         function errorFn(error) {
             waiting.requestResponse = false;
-            callbacks.error(new Error('Failed to load items'));
+            // Preserve original error for debugging
+            const wrappedError = new Error('Failed to load items: ' + (error.message || error));
+            wrappedError.originalError = error;
+            callbacks.error(wrappedError);
         }
 
         getRequest(state.nextRequestUrl, false, fn, errorFn);
