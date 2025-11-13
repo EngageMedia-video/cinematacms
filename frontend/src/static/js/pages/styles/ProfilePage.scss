@@ -298,7 +298,7 @@
 		line-height: inherit;
 
 		padding: 6px 12px;
-		border-radius: 1px;
+		border-radius: 8px;
 
 		background-color: var(--brand-color, var(--default-brand-color));
 
@@ -887,7 +887,7 @@
 		// font-weight: 500;
 		color: #fff;
 		border: 0;
-		border-radius: 1px;
+		border-radius: 8px;
 		background-color: var(--default-theme-color);
 	}
 }
@@ -1060,7 +1060,7 @@ $side-empty-space: 40px;
 	color: #fff;
 	border-style: solid;
 	border-width: 1px;
-	border-radius: 1px;
+	border-radius: 8px;
 	border-color: var(--default-brand-color);
 	background-color: var(--default-brand-color);
 
