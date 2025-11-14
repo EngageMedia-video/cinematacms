@@ -41,6 +41,22 @@ from .methods import (
 )
 from .stop_words import STOP_WORDS
 from .cache_utils import clear_media_permission_cache
+from .query_cache import (
+    invalidate_media_cache,
+    invalidate_playlist_cache,
+    invalidate_media_list_cache,
+)
+# Import at module level to avoid circular import
+# Note: This will be imported lazily when needed
+_invalidate_media_path_cache = None
+
+def get_invalidate_media_path_cache():
+    """Lazy import to avoid circular dependency."""
+    global _invalidate_media_path_cache
+    if _invalidate_media_path_cache is None:
+        from .secure_media_views import invalidate_media_path_cache
+        _invalidate_media_path_cache = invalidate_media_path_cache
+    return _invalidate_media_path_cache
 
 logger = logging.getLogger(__name__)
 RE_TIMECODE = re.compile(r"(\d+:\d+:\d+.\d+)")
@@ -178,7 +194,7 @@ class Media(models.Model):
         max_length=5,
         blank=True,
         null=True,
-        default="en",
+        default=None,
         choices=lists.video_countries,
         db_index=True,
     )
@@ -188,6 +204,12 @@ class Media(models.Model):
     edit_date = models.DateTimeField(auto_now=True)
     media_file = models.FileField(
         "media file", upload_to=original_media_file_path, max_length=500
+    )
+    filename = models.CharField(
+        max_length=255,
+        blank=True,
+        db_index=True,
+        help_text="Extracted filename from media_file for faster lookups"
     )
     thumbnail = ProcessedImageField(
         upload_to=original_thumbnail_file_path,
@@ -320,6 +342,15 @@ class Media(models.Model):
             models.Index(fields=["state", "encoding_status", "is_reviewed", "user"]),
             models.Index(fields=["views", "likes"]),
             GinIndex(fields=["search"]),
+            # Query optimization indexes for API endpoints
+            models.Index(
+                fields=["state", "encoding_status", "is_reviewed", "-add_date"],
+                name="idx_media_state_enc_rev_date"
+            ),
+            models.Index(
+                fields=["featured", "state", "-add_date"],
+                name="idx_media_featured_state_date"
+            ),
         ]
 
     def __str__(self):
@@ -336,6 +367,11 @@ class Media(models.Model):
     def save(self, *args, **kwargs):
         if not self.title:
             self.title = self.media_file.path.split("/")[-1]
+
+        # Auto-populate filename from media_file for faster lookups
+        if self.media_file:
+            self.filename = os.path.basename(self.media_file.name)
+
         strip_text_items = ["title", "summary", "description"]
         for item in strip_text_items:
             setattr(self, item, strip_tags(getattr(self, item, None)))
@@ -663,7 +699,8 @@ class Media(models.Model):
                 if action == "delete":
                     self.preview_file_path = ""
                 else:
-                    self.preview_file_path = encoding.media_file.path
+                    # Use .name to store relative path from MEDIA_ROOT
+                    self.preview_file_path = encoding.media_file.name
                 self.save(update_fields=["encoding_status", "preview_file_path"])
         self.save(update_fields=["encoding_status"])
         if (
@@ -831,7 +868,8 @@ class Media(models.Model):
     @property
     def original_media_url(self):
         if settings.SHOW_ORIGINAL_MEDIA:
-            base_url = helpers.url_from_path(self.media_file.path)
+            # Use .name to get relative path from MEDIA_ROOT
+            base_url = helpers.url_from_path(self.media_file.name)
             return helpers.build_versioned_url(base_url, self.media_version)
         else:
             return None
@@ -839,20 +877,24 @@ class Media(models.Model):
     @property
     def thumbnail_url(self):
         if self.uploaded_thumbnail:
-            base_url = helpers.url_from_path(self.uploaded_thumbnail.path)
+            # Use .name to get relative path from MEDIA_ROOT
+            base_url = helpers.url_from_path(self.uploaded_thumbnail.name)
             return helpers.build_versioned_url(base_url, self.media_version)
         if self.thumbnail:
-            base_url = helpers.url_from_path(self.thumbnail.path)
+            # Use .name to get relative path from MEDIA_ROOT
+            base_url = helpers.url_from_path(self.thumbnail.name)
             return helpers.build_versioned_url(base_url, self.media_version)
         return None
 
     @property
     def poster_url(self):
         if self.uploaded_poster:
-            base_url = helpers.url_from_path(self.uploaded_poster.path)
+            # Use .name to get relative path from MEDIA_ROOT
+            base_url = helpers.url_from_path(self.uploaded_poster.name)
             return helpers.build_versioned_url(base_url, self.media_version)
         if self.poster:
-            base_url = helpers.url_from_path(self.poster.path)
+            # Use .name to get relative path from MEDIA_ROOT
+            base_url = helpers.url_from_path(self.poster.name)
             return helpers.build_versioned_url(base_url, self.media_version)
         return None
 
@@ -860,7 +902,8 @@ class Media(models.Model):
     def subtitles_info(self):
         ret = []
         for subtitle in self.subtitles.all():
-            base_url = helpers.url_from_path(subtitle.subtitle_file.path)
+            # Use .name to get relative path from MEDIA_ROOT
+            base_url = helpers.url_from_path(subtitle.subtitle_file.name)
             ret.append(
                 {
                     "src": helpers.build_versioned_url(base_url, self.media_version),
@@ -873,7 +916,8 @@ class Media(models.Model):
     @property
     def sprites_url(self):
         if self.sprites:
-            base_url = helpers.url_from_path(self.sprites.path)
+            # Use .name to get relative path from MEDIA_ROOT
+            base_url = helpers.url_from_path(self.sprites.name)
             return helpers.build_versioned_url(base_url, self.media_version)
         return None
 
@@ -886,7 +930,8 @@ class Media(models.Model):
         # is empty but there is the gif encoding!
         preview_media = self.encodings.filter(profile__extension="gif").first()
         if preview_media and preview_media.media_file:
-            base_url = helpers.url_from_path(preview_media.media_file.path)
+            # Use .name instead of .path to get relative path from MEDIA_ROOT
+            base_url = helpers.url_from_path(preview_media.media_file.name)
             return helpers.build_versioned_url(base_url, self.media_version)
         return None
 
@@ -939,7 +984,8 @@ class Media(models.Model):
         return self.user.get_absolute_url()
 
     def author_thumbnail(self):
-        return helpers.url_from_path(self.user.logo.path)
+        # Use .name to get relative path from MEDIA_ROOT
+        return helpers.url_from_path(self.user.logo.name)
 
     def get_absolute_url(self, api=False, edit=False):
         if edit:
@@ -1056,7 +1102,8 @@ class Category(models.Model):
     @property
     def thumbnail_url(self):
         if self.thumbnail:
-            return helpers.url_from_path(self.thumbnail.path)
+            # Use .name to get relative path from MEDIA_ROOT
+            return helpers.url_from_path(self.thumbnail.name)
         if self.listings_thumbnail:
             return self.listings_thumbnail
         media = (
@@ -1103,7 +1150,8 @@ class Topic(models.Model):
     @property
     def thumbnail_url(self):
         if self.thumbnail:
-            return helpers.url_from_path(self.thumbnail.path)
+            # Use .name to get relative path from MEDIA_ROOT
+            return helpers.url_from_path(self.thumbnail.name)
         if self.listings_thumbnail:
             return self.listings_thumbnail
         return None
@@ -1277,6 +1325,12 @@ class Encoding(models.Model):
     media_file = models.FileField(
         "encoding file", upload_to=encoding_media_file_path, blank=True, max_length=500
     )
+    filename = models.CharField(
+        max_length=255,
+        blank=True,
+        db_index=True,
+        help_text="Extracted filename from media_file for faster lookups"
+    )
     progress = models.PositiveSmallIntegerField(default=0)
     add_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
@@ -1295,7 +1349,8 @@ class Encoding(models.Model):
     @property
     def media_encoding_url(self):
         if self.media_file:
-            base_url = helpers.url_from_path(self.media_file.path)
+            # Use .name to get relative path from MEDIA_ROOT
+            base_url = helpers.url_from_path(self.media_file.name)
             return helpers.build_versioned_url(base_url, self.media.media_version)
         return None
 
@@ -1307,7 +1362,10 @@ class Encoding(models.Model):
         return None
 
     def save(self, *args, **kwargs):
+        # Auto-populate filename from media_file for faster lookups
         if self.media_file:
+            self.filename = os.path.basename(self.media_file.name)
+
             cmd = ["stat", "-c", "%s", self.media_file.path]
             stdout = helpers.run_command(cmd).get("out")
             if stdout:
@@ -1506,7 +1564,8 @@ class Playlist(models.Model):
 
     def user_thumbnail_url(self):
         if self.user.logo:
-            return helpers.url_from_path(self.user.logo.path)
+            # Use .name to get relative path from MEDIA_ROOT
+            return helpers.url_from_path(self.user.logo.name)
         return None
 
     def set_ordering(self, media, ordering):
@@ -1552,6 +1611,10 @@ class PlaylistMedia(models.Model):
 
     class Meta:
         ordering = ["ordering", "-action_date"]
+        indexes = [
+            # Optimize playlist media queries with ordering
+            models.Index(fields=["playlist", "ordering"], name="idx_playlistmedia_pl_order"),
+        ]
 
 
 class Comment(MPTTModel):
@@ -1565,6 +1628,12 @@ class Comment(MPTTModel):
     media = models.ForeignKey(
         Media, on_delete=models.CASCADE, db_index=True, related_name="comments"
     )
+
+    class Meta:
+        indexes = [
+            # Optimize comment queries for pagination by media and date
+            models.Index(fields=["media", "-add_date"], name="idx_comment_media_date"),
+        ]
 
     class MPTTMeta:
         order_insertion_by = ["add_date"]
@@ -1644,7 +1713,8 @@ class HomepagePopup(models.Model):
 
     @property
     def popup_image_url(self):
-        return helpers.url_from_path(self.popup.path)
+        # Use .name to get relative path from MEDIA_ROOT
+        return helpers.url_from_path(self.popup.name)
 
 
 class IndexPageFeatured(models.Model):
@@ -1727,6 +1797,15 @@ def media_save(sender, instance, created, **kwargs):
     if created:
         instance.media_init()
         notify_users(friendly_token=instance.friendly_token, action="media_added")
+
+    # Invalidate query cache
+    invalidate_media_cache(instance.friendly_token)
+    invalidate_media_list_cache()  # New media affects listings
+
+    # Invalidate media path cache (for secure file serving)
+    invalidate_func = get_invalidate_media_path_cache()
+    invalidate_func(instance.id)
+
     instance.user.update_user_media()
     if instance.category.all():
         # this won't catch when a category
@@ -1761,6 +1840,14 @@ def media_save(sender, instance, created, **kwargs):
 
 @receiver(pre_delete, sender=Media)
 def media_file_pre_delete(sender, instance, **kwargs):
+    # Invalidate cache before deletion
+    invalidate_media_cache(instance.friendly_token)
+    invalidate_media_list_cache()
+
+    # Invalidate media path cache (for secure file serving)
+    invalidate_func = get_invalidate_media_path_cache()
+    invalidate_func(instance.id)
+
     if instance.category.all():
         for category in instance.category.all():
             instance.category.remove(category)
@@ -2029,6 +2116,30 @@ def comment_delete(sender, instance, **kwargs):
                 instance.media.state = "unlisted"
                 instance.media.save(update_fields=["state"])
                 # Cache invalidation will be handled by Media.save() method
+
+
+@receiver(post_save, sender=Playlist)
+def playlist_save(sender, instance, created, **kwargs):
+    """Invalidate playlist cache when playlist is saved."""
+    invalidate_playlist_cache(instance.friendly_token)
+
+
+@receiver(pre_delete, sender=Playlist)
+def playlist_pre_delete(sender, instance, **kwargs):
+    """Invalidate playlist cache when playlist is deleted."""
+    invalidate_playlist_cache(instance.friendly_token)
+
+
+@receiver(post_save, sender=PlaylistMedia)
+def playlist_media_save(sender, instance, created, **kwargs):
+    """Invalidate playlist cache when media is added/removed from playlist."""
+    invalidate_playlist_cache(instance.playlist.friendly_token)
+
+
+@receiver(pre_delete, sender=PlaylistMedia)
+def playlist_media_delete(sender, instance, **kwargs):
+    """Invalidate playlist cache when media is removed from playlist."""
+    invalidate_playlist_cache(instance.playlist.friendly_token)
 
 
 @receiver(pre_save, sender=Media)

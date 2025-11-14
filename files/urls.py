@@ -109,9 +109,9 @@ urlpatterns = [
     re_path("^api/v1/tasks$", views.TasksList.as_view()),
     re_path("^api/v1/tasks/$", views.TasksList.as_view()),
     re_path("^api/v1/tasks/(?P<friendly_token>[\w|\W]*)$", views.TaskDetail.as_view()),
-    re_path("^api/v1/topmessage/$", views.TopMessageList.as_view()),
-    re_path("^api/v1/indexfeatured/$", views.IndexPageFeaturedList.as_view()),
-    re_path("^api/v1/homepagepopup/$", views.HomepagePopupList.as_view()),
+    re_path("^api/v1/topmessage$", views.TopMessageList.as_view()),
+    re_path("^api/v1/indexfeatured$", views.IndexPageFeaturedList.as_view()),
+    re_path("^api/v1/homepagepopup$", views.HomepagePopupList.as_view()),
     ################################
     # These are URLs related with the migration of plumi (plumi.org) systems...
     re_path(

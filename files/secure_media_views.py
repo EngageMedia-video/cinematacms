@@ -13,6 +13,7 @@ from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.core.cache import cache
 
 from .models import Media, Encoding, Subtitle
 from .methods import is_mediacms_editor, is_mediacms_manager
@@ -27,6 +28,10 @@ logger = logging.getLogger(__name__)
 
 # Configuration constants
 CACHE_CONTROL_MAX_AGE = 604800  # 1 week
+MEDIA_PATH_CACHE_TIMEOUT = 300  # 5 minutes for file path → Media ID mapping
+MEDIA_PATH_CACHE_PREFIX = 'cinemata:media_path'
+MEDIA_PATH_REVERSE_PREFIX = 'cinemata:media_path:reverse'  # Reverse mapping: media_id → set of cache keys
+
 PUBLIC_MEDIA_PATHS = [
     'thumbnails/', 'userlogos/', 'logos/', 'favicons/', 'social-media-icons/',
     'tinymce_media/', 'homepage-popups/'
@@ -100,6 +105,135 @@ Security Considerations:
 """
 
 
+def get_media_path_cache_key(file_path: str) -> str:
+    """
+    Generate cache key for file path → Media ID mapping.
+    Uses full SHA-256 hash for strong collision resistance.
+
+    Cache key format: cinemata:media_path:{sha256_hexdigest}
+    SHA-256 provides 256 bits of entropy (vs 64 bits from truncated MD5),
+    making collisions astronomically unlikely even at massive scale.
+    """
+    path_hash = hashlib.sha256(file_path.encode('utf-8')).hexdigest()
+    return f"{MEDIA_PATH_CACHE_PREFIX}:{path_hash}"
+
+
+def get_reverse_mapping_key(media_id: int) -> str:
+    """
+    Generate reverse mapping key for Media ID → set of cache keys.
+    Used for cache invalidation when media is deleted or permissions change.
+    """
+    return f"{MEDIA_PATH_REVERSE_PREFIX}:{media_id}"
+
+
+def get_cached_media_id(file_path: str) -> Optional[int]:
+    """Get cached Media ID for a file path."""
+    try:
+        cache_key = get_media_path_cache_key(file_path)
+        media_id = cache.get(cache_key)
+        if media_id:
+            logger.debug(f"Cache HIT for media path: {file_path}")
+            return media_id
+        logger.debug(f"Cache MISS for media path: {file_path}")
+        return None
+    except Exception as e:
+        logger.warning(f"Failed to get cached media ID for {file_path}: {e}")
+        return None
+
+
+def set_cached_media_id(file_path: str, media_id: int) -> bool:
+    """
+    Cache Media ID for a file path and maintain reverse mapping for invalidation.
+
+    This function:
+    1. Caches the file_path → media_id mapping
+    2. Adds the cache key to a reverse mapping set for the media_id
+
+    The reverse mapping allows efficient invalidation of all cached paths
+    when a media object is deleted or its permissions change.
+    """
+    try:
+        cache_key = get_media_path_cache_key(file_path)
+        reverse_key = get_reverse_mapping_key(media_id)
+
+        # Store the forward mapping: file_path → media_id
+        cache.set(cache_key, media_id, MEDIA_PATH_CACHE_TIMEOUT)
+
+        # Add to reverse mapping set: media_id → {cache_key1, cache_key2, ...}
+        # Use a Redis set to track all cache keys for this media
+        # Note: django-redis supports Redis SET operations
+        try:
+            # Try using Redis SET operations (sadd)
+            cache.sadd(reverse_key, cache_key)
+            # Set expiration on the reverse mapping set
+            cache.expire(reverse_key, MEDIA_PATH_CACHE_TIMEOUT)
+        except AttributeError:
+            # Fallback: If sadd is not available, use a simple list in cache
+            # This is less efficient but works with any cache backend
+            existing_keys = cache.get(reverse_key, set())
+            if not isinstance(existing_keys, set):
+                existing_keys = set()
+            existing_keys.add(cache_key)
+            cache.set(reverse_key, existing_keys, MEDIA_PATH_CACHE_TIMEOUT)
+
+        logger.debug(f"Cached media ID {media_id} for path: {file_path}")
+        return True
+    except Exception as e:
+        logger.warning(f"Failed to cache media ID for {file_path}: {e}")
+        return False
+
+
+def invalidate_media_path_cache(media_id: int) -> int:
+    """
+    Invalidate all cached file paths for a media object.
+
+    This function uses the reverse mapping to efficiently delete all cache entries
+    associated with a specific media ID. This is critical for security and consistency:
+
+    - When media permissions change, unauthorized users lose cached access
+    - When media is deleted, stale cache entries are removed
+    - When media file paths change, old paths are invalidated
+
+    Returns the number of cache keys deleted.
+    """
+    try:
+        reverse_key = get_reverse_mapping_key(media_id)
+
+        # Get all cache keys for this media from the reverse mapping
+        cache_keys = None
+        try:
+            # Try Redis SET operations first (smembers)
+            cache_keys = cache.smembers(reverse_key)
+        except AttributeError:
+            # Fallback for non-Redis backends
+            cache_keys = cache.get(reverse_key, set())
+            if not isinstance(cache_keys, set):
+                cache_keys = set()
+
+        if cache_keys:
+            # Delete all forward mapping cache keys
+            deleted_count = 0
+            for cache_key in cache_keys:
+                try:
+                    cache.delete(cache_key)
+                    deleted_count += 1
+                except Exception as e:
+                    logger.warning(f"Failed to delete cache key {cache_key}: {e}")
+
+            # Delete the reverse mapping itself
+            cache.delete(reverse_key)
+
+            logger.info(f"Invalidated {deleted_count} cache entries for media {media_id}")
+            return deleted_count
+        else:
+            logger.debug(f"No cached paths found for media {media_id}")
+            return 0
+
+    except Exception as e:
+        logger.error(f"Failed to invalidate media path cache for media {media_id}: {e}")
+        return 0
+
+
 class SecureMediaView(View):
     """
     Securely serves media files, handling authentication and authorization
@@ -160,7 +294,7 @@ class SecureMediaView(View):
             return self._serve_file(file_path, head_request)
 
         # Get media object and check permissions (only for video files now)
-        media = self._get_media_from_path(file_path)
+        media = self._get_media_from_path_cached(file_path)
         if not media:
             logger.warning(f"Media not found for path: {file_path}")
             raise Http404("Media not found")
@@ -215,26 +349,71 @@ class SecureMediaView(View):
 
         return False
 
+    def _get_media_from_path_cached(self, file_path: str) -> Optional[Media]:
+        """
+        Get media from file path with caching.
+        This wrapper reduces database queries by caching Media ID lookups.
+        """
+        # Try cache first
+        cached_media_id = get_cached_media_id(file_path)
+        if cached_media_id:
+            try:
+                media = Media.objects.select_related('user').get(id=cached_media_id)
+                return media
+            except Media.DoesNotExist:
+                # Stale cache - media was deleted
+                logger.debug(f"Stale cache entry for path {file_path}, media {cached_media_id} not found")
+                # Don't need to explicitly delete - will expire naturally
+                pass
+
+        # Cache miss - do expensive lookup
+        media = self._get_media_from_path(file_path)
+
+        # Cache the result if found
+        if media:
+            set_cached_media_id(file_path, media.id)
+
+        return media
+
     def _get_media_from_path(self, file_path: str) -> Optional[Media]:
         """Extract media object from file path using filename matching."""
 
         # Handle original files: original/user/{username}/{filename}
         if file_path.startswith('original/user/'):
-            # Try to find media by matching the end of the media_file path
-            # The media_file field stores the full path including the prefix
+            # Extract filename and username from path
             try:
-                # Look for media where the media_file ends with this path portion
-                # Remove 'original/' prefix since media_file already includes the full path
-                search_path = file_path[len('original/'):]
-                logger.debug(f"Searching for media with file path ending: {search_path}")
+                parts = file_path.split('/')
+                if len(parts) >= 4:
+                    username = parts[2]
+                    filename = parts[3]
+                    logger.debug(f"Searching for media: username={username}, filename={filename}")
 
-                media = Media.objects.select_related('user').filter(
-                    media_file__endswith=search_path
-                ).first()
+                    # Query by filename field (much faster with index)
+                    media = Media.objects.select_related('user').filter(
+                        user__username=username,
+                        filename=filename
+                    ).first()
 
-                if media:
-                    logger.debug(f"Found media by filename: {media.friendly_token}")
-                    return media
+                    if media:
+                        logger.debug(f"Found media by filename: {media.friendly_token}")
+                        return media
+
+                    # Fallback: if not found, try querying by media_file path
+                    # This handles edge cases where filename field wasn't populated
+                    logger.debug("Filename lookup failed, attempting fallback by media_file path")
+                    media = Media.objects.select_related('user').filter(
+                        user__username=username,
+                        media_file__endswith=filename
+                    ).first()
+
+                    if media:
+                        logger.info(f"Found media by fallback path lookup: {media.friendly_token}")
+                        # Backfill the filename field for future queries
+                        if not media.filename:
+                            media.filename = filename
+                            media.save(update_fields=['filename'])
+                            logger.info(f"Backfilled filename for media {media.friendly_token}")
+                        return media
 
             except Exception as e:
                 logger.warning(f"Error finding media by filename: {e}")
@@ -257,18 +436,43 @@ class SecureMediaView(View):
                 logger.debug(f"Encoded file: profile_id={profile_id_str}, username={username}, filename={filename}")
 
                 try:
-                    # Look for encoding where the media_file ends with this filename
-                    # and matches the username and profile
+                    # Query by filename field (much faster with index)
                     filter_kwargs = {
                         'media__user__username': username,
-                        'media_file__endswith': filename,
+                        'filename': filename,
                     }
 
                     if profile_id_str.isdigit():
                         filter_kwargs['profile_id'] = int(profile_id_str)
 
                     encoding = Encoding.objects.select_related('media', 'media__user').filter(**filter_kwargs).first()
-                    return encoding.media if encoding else None
+
+                    if encoding:
+                        return encoding.media
+
+                    # Fallback: if not found, try querying by media_file path
+                    # This handles edge cases where filename field wasn't populated
+                    logger.debug("Encoding filename lookup failed, attempting fallback by media_file path")
+                    fallback_kwargs = {
+                        'media__user__username': username,
+                        'media_file__endswith': filename,
+                    }
+
+                    if profile_id_str.isdigit():
+                        fallback_kwargs['profile_id'] = int(profile_id_str)
+
+                    encoding = Encoding.objects.select_related('media', 'media__user').filter(**fallback_kwargs).first()
+
+                    if encoding:
+                        logger.info(f"Found encoding by fallback path lookup for media: {encoding.media.friendly_token}")
+                        # Backfill the filename field for future queries
+                        if not encoding.filename:
+                            encoding.filename = filename
+                            encoding.save(update_fields=['filename'])
+                            logger.info(f"Backfilled filename for encoding {encoding.id}")
+                        return encoding.media
+
+                    return None
 
                 except Exception as e:
                     logger.warning(f"Error finding encoded media: {e}")
