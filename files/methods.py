@@ -477,6 +477,8 @@ def notify_user_on_role_update(user, upgraded_roles):
             # Create the detailed block
             role_details_block += f"{role_info['display_name']}\n"
             role_details_block += f"{role_info['capability']}\n\n"
+        else:
+            logger.warning(f"Unrecognized role '{role_name}' in notification for user {user.username}.")
 
     # If the roles list is unexpectedly empty
     if not role_summary_list:
@@ -532,6 +534,10 @@ The {portal_name} Team
     )
     # Follow existing email patterns (fail_silently=True)
     email.send(fail_silently=True)
+    logger.info(
+        f"Role update notification sent to {user.username} ({user.email}) "
+        f"for roles: {', '.join(upgraded_roles)}"
+    )
     return True
 
 def is_mediacms_editor(user):
