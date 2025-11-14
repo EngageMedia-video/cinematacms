@@ -6,6 +6,7 @@
 	.items-list{
 		width:100%;
 		display:inline-block;
+
 	}
 
 	&.no-title{
@@ -43,6 +44,7 @@ $side-empty-space: 40px;
 	.items-list-ver.media-list-wrapper .media-list-row .item{
 		display:inline-block;
 		max-width: var( --item-width, var(--default-item-width) );
+		
 	}
 
 	.items-list-ver.media-list-wrapper .media-list-row .item-content{

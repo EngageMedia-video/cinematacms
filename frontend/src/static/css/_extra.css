@@ -1302,6 +1302,10 @@ body .item-author a:active {
 	/* text-decoration: underline; */
 }
 
+body .item-content h3 span {
+	background-color: var(--body-bg-color);
+}
+
 body.dark_theme .item-content h3 a {
 	color: #fff;
 }
@@ -3301,54 +3305,73 @@ body .hw-category {
 	margin-bottom: 20px;
 }
 
+
+/* Common layout styles */
+.hw-category-title {
+	margin: 30px 0 0 0;
+}
+
+.hw-category-title-h2 { 
+	font-family: 'Facultad', Arial, sans-serif !important; 
+}
+
+.hw-category-description {
+	padding: 5px 0 30px 0;
+	max-width: 715px;  
+}
+
+.hw-category-description,
+.hw-category-description * {
+	font-family: 'Amulya', Arial, sans-serif;
+	font-size: 14px;
+}
+
+
+
 body .hw-category-title {
 	color: var(--item-title-text-color);
-	margin: 30px 0 0 0;
 }
 
 body .hw-category-description {
 	color: var(--body-text-color);
-	padding: 5px 0 30px 0;
-	max-width: 512px;
 }
 
-/* for video title with dark background */
-body .hw-even-list h3 {
-	color: #fff;
-}
 
-body .hw-even-list .hw-category-title {
-	color: #fff;
-	margin: 30px 0 0 0;
-}
-
+body .hw-even-list .hw-category-title,
 body .hw-even-list .hw-category-description {
 	color: #fff;
-	padding: 5px 0 30px 0;
-	max-width: 512px;
 }
 
-/* light mode - link color */
+
+body.dark_theme .hw-odd-list .hw-category-title,
+body.dark_theme .hw-odd-list .hw-category-description {
+	color: #fff;
+}
+
+
+
+/* Light mode - odd lists (light background) */
 body .hw-odd-list .hw-category-description a {
 	color: #1a3f61;
 	font-weight: 500;
 	text-decoration: underline;
 }
-/* light mode - but dark bg - link color */
+
+/* Light mode - even lists (dark background) */
 body .hw-even-list .hw-category-description a {
 	color: #bad8dd;
 	font-weight: 500;
 	text-decoration: underline;
 }
 
-/* dark mode - dark background - link color */
+/* Dark mode - odd lists */
 body.dark_theme .hw-odd-list .hw-category-description a {
 	color: #bad8dd;
 	font-weight: 500;
 	text-decoration: underline;
 }
 
-/* dark mode for even list */
+/* Dark mode - even lists */
 body.dark_theme .hw-even-list .hw-category-description a {
 	color: #bad8dd;
 	font-weight: 500;
