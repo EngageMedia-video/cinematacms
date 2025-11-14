@@ -1444,7 +1444,7 @@ body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
 	}
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
-		font-size: 22px;
+		font-size: 20px;
 		line-height: 28px;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
@@ -1459,12 +1459,12 @@ body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
-		max-height: 158px;
-		display: -webkit-box;
-		-webkit-line-clamp: 7;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		max-height: none;
+		display: block;
+		-webkit-line-clamp: none;
+		-webkit-box-orient: unset;
+		overflow: visible;
+		text-overflow: unset;
 	}
 }
 
@@ -1495,7 +1495,7 @@ body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
 	}
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
-		font-size: 22px;
+		font-size: 20px;
 		line-height: 28px;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
@@ -1506,12 +1506,12 @@ body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
 
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body:not(.visible-sidebar) .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
-		max-height: 293px;
-		display: -webkit-box;
-		-webkit-line-clamp: 13;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		max-height: none;
+		display: block;
+		-webkit-line-clamp: none;
+		-webkit-box-orient: unset;
+		overflow: visible;
+		text-overflow: unset;
 	}
 }
 
@@ -1544,7 +1544,7 @@ body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
-		font-size: 22px;
+		font-size: 20px;
 		line-height: 28px;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
@@ -1559,12 +1559,12 @@ body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
-		max-height: 158px;
-		display: -webkit-box;
-		-webkit-line-clamp: 7;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		max-height: none;
+		display: block;
+		-webkit-line-clamp: none;
+		-webkit-box-orient: unset;
+		overflow: visible;
+		text-overflow: unset;
 	}
 }
 
@@ -1595,7 +1595,7 @@ body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
 	}
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
-		font-size: 22px;
+		font-size: 20px;
 		line-height: 28px;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
@@ -1610,12 +1610,12 @@ body .items-list-ver .feat-first-item .item:first-child .item-main .item-meta {
 
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description,
 	body .items-list-ver .feat-first-item .item:first-child .item-main .item-description>* {
-		max-height: 270px;
-		display: -webkit-box;
-		-webkit-line-clamp: 12;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		max-height: none;
+		display: block;
+		-webkit-line-clamp: none;
+		-webkit-box-orient: unset;
+		overflow: visible;
+		text-overflow: unset;
 	}
 }
 
