@@ -475,7 +475,7 @@ def notify_user_on_role_update(user, upgraded_roles):
         if role_info:
             role_summary_list.append(role_info['display_name'])
             # Create the detailed block
-            role_details_block += f"**{role_info['display_name']}**\n"
+            role_details_block += f"{role_info['display_name']}\n"
             role_details_block += f"{role_info['capability']}\n\n"
 
     # If the roles list is unexpectedly empty
