@@ -459,6 +459,17 @@ def notify_user_on_role_update(user, upgraded_roles):
     
     Follows existing email patterns (EmailMessage, fail_silently=True).
     """
+    # Validate inputs
+    if not user:
+        logger.error("Role update notification failed: user is None.")
+        return False
+    
+    if not upgraded_roles or not isinstance(upgraded_roles, (list, tuple)):
+        logger.error(
+            f"Role update notification failed for user {user.username}: invalid upgraded_roles parameter."
+        )
+        return False
+    
     if not user.email:
         # Graceful failure: No email address (as per acceptance criteria)
         logger.error(
