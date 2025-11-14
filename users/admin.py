@@ -147,7 +147,6 @@ class CustomAuthenticatorAdmin(admin.ModelAdmin):
 
         elif obj.type == obj.Type.RECOVERY_CODES:
             # For recovery codes, show count and usage status
-            used_mask = obj.data.get("used_mask", 0)
             seed = obj.data.get("seed", None)
             unused_count = len(obj.wrap().get_unused_codes())
             total_count = 0
