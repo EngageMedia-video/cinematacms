@@ -3342,6 +3342,16 @@ body .hw-category {
 	margin-bottom: 20px;
 }
 
+.hw-category-title-h2 {
+	font-family: 'Facultad', Arial, sans-serif !important;
+}
+
+.hw-category-description,
+.hw-category-description * {
+	font-family: 'Amulya', Arial, sans-serif;
+	font-size: 14px;
+}
+
 body .hw-category-title {
 	color: var(--item-title-text-color);
 	margin: 30px 0 0 0;
@@ -3350,7 +3360,7 @@ body .hw-category-title {
 body .hw-category-description {
 	color: var(--body-text-color);
 	padding: 5px 0 30px 0;
-	max-width: 512px;
+	max-width: 715px;
 }
 
 /* for video title with dark background */
@@ -3366,7 +3376,7 @@ body .hw-even-list .hw-category-title {
 body .hw-even-list .hw-category-description {
 	color: #fff;
 	padding: 5px 0 30px 0;
-	max-width: 512px;
+	max-width: 715px;
 }
 
 /* light mode - link color */
