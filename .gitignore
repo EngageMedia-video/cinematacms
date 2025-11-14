@@ -3,6 +3,7 @@ logs/
 cms/local_settings.py
 media_files
 *.pyc
+__pycache__/
 cms/local_settings.py
 .idea/
 .DS_Store

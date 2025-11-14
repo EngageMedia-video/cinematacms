@@ -96,19 +96,42 @@ VIDEO_PROFILES = {"h264": "main", "h265": "main"}
 
 
 def get_portal_workflow():
-    return settings.PORTAL_WORKFLOW
+    """
+    Get the portal workflow setting and ensure it's a valid state.
+
+    If PORTAL_WORKFLOW is set to 'private_verified' (legacy value),
+    return 'private' instead to maintain compatibility with MEDIA_STATES choices.
+    """
+    workflow = settings.PORTAL_WORKFLOW
+
+    # Map legacy 'private_verified' to 'private'
+    if workflow == 'private_verified':
+        return 'private'
+
+    return workflow
 
 
 def get_default_state(user=None):
-    # possible states given the portal workflow setting
+    """
+    Get the default state for a media object based on portal workflow and user.
+
+    Legacy 'private_verified' workflow is mapped to 'private' for regular users
+    and 'unlisted' for advanced users to maintain backward compatibility.
+    """
+    # Possible states given the portal workflow setting
     state = "private"
+
     if settings.PORTAL_WORKFLOW == "public":
         state = "public"
-    if settings.PORTAL_WORKFLOW == "unlisted":
+    elif settings.PORTAL_WORKFLOW == "unlisted":
         state = "unlisted"
-    if settings.PORTAL_WORKFLOW == "private_verified":
-        if user and user.advancedUser:
+    elif settings.PORTAL_WORKFLOW == "private_verified":
+        # Legacy workflow: advanced users get 'unlisted', others get 'private'
+        if is_advanced_user(user):
             state = "unlisted"
+        else:
+            state = "private"
+
     return state
 
 

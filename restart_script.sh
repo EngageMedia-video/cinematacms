@@ -28,7 +28,7 @@ pip install -r requirements.txt
 
 # Build frontend and collect static files
 echo "Building frontend and collecting static files..."
-if ! ./scripts/build_frontend.sh; then
+if ! make quick-build; then
   echo "Frontend build failed. Aborting restart."
   exit 1
 fi

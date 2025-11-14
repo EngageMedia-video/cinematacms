@@ -53,6 +53,16 @@ from .helpers import (
     produce_ffmpeg_commands,
     rm_file,
 )
+from .query_cache import (
+    get_media_detail_cache_key,
+    get_playlist_detail_cache_key,
+    get_media_list_cache_key,
+    get_cached_result,
+    set_cached_result,
+    MEDIA_DETAIL_TIMEOUT,
+    PLAYLIST_DETAIL_TIMEOUT,
+    MEDIA_LIST_TIMEOUT,
+)
 from .methods import (
     can_upload_media,
     get_user_or_session,
@@ -934,7 +944,25 @@ class MediaList(APIView):
         show_param = params.get("show", "")
         offset_param = params.get("offset", "")
 
+        # Try cache for standard queries (no author, no offset, no recommended)
         author_param = params.get("author", "").strip()
+        page_param = params.get("page", "1")
+
+        if not author_param and not offset_param and show_param != "recommended":
+            try:
+                page_num = int(page_param)
+                user_id = request.user.id if request.user.is_authenticated else None
+                cache_key = get_media_list_cache_key(
+                    show=show_param or 'latest',
+                    page=page_num,
+                    user_id=user_id
+                )
+                cached_result = get_cached_result(cache_key)
+                if cached_result is not None:
+                    return Response(cached_result)
+            except (ValueError, TypeError):
+                pass  # Invalid page number, skip cache
+
         if author_param:
             user_queryset = User.objects.all()
             user = get_object_or_404(user_queryset, username=author_param)
@@ -963,11 +991,27 @@ class MediaList(APIView):
         if offset_param:
             media = media[int(offset_param) :]
         if show_param != "recommended":
-            media = media.prefetch_related("user")
+            media = (
+                media
+                .select_related("user")
+                .prefetch_related(
+                    "category",
+                    "topics",
+                )
+            )
         page = paginator.paginate_queryset(media, request)
 
         serializer = MediaSerializer(page, many=True, context={"request": request})
-        return paginator.get_paginated_response(serializer.data)
+        response_data = paginator.get_paginated_response(serializer.data)
+
+        # Cache the response for standard queries
+        if not author_param and not offset_param and show_param != "recommended":
+            try:
+                set_cached_result(cache_key, response_data.data, MEDIA_LIST_TIMEOUT)
+            except NameError:
+                pass  # cache_key not defined (shouldn't happen, but safe fallback)
+
+        return response_data
 
     def post(self, request, format=None):
         # Add new media
@@ -988,11 +1032,18 @@ class MediaDetail(APIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser, FileUploadParser)
 
     def get_object(self, friendly_token, password=None):
-        friendly_tone = clean_friendly_token(friendly_token)
+        friendly_token = clean_friendly_token(friendly_token)
         try:
             media = (
-                Media.objects.select_related("user")
-                .prefetch_related("encodings__profile")
+                Media.objects
+                .select_related("user", "license")
+                .prefetch_related(
+                    "category",
+                    "topics",
+                    "tags",
+                    "subtitles__language",
+                    "encodings__profile",
+                )
                 .get(friendly_token=friendly_token)
             )
             # this need be explicitly called, and will call
@@ -1025,15 +1076,35 @@ class MediaDetail(APIView):
             return Response(
                 {"detail": "bad permissions"}, status=status.HTTP_401_UNAUTHORIZED
             )
-        except:
+        except Media.DoesNotExist:
             return Response(
                 {"detail": "media file does not exist"},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            # Log the actual error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error retrieving media {friendly_token}: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "error retrieving media"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
     def get(self, request, friendly_token, format=None):
         # Get media details
         password = request.GET.get("password") or request.POST.get("password")
+
+        # Try cache for public media only (not private/restricted)
+        user_id = request.user.id if request.user.is_authenticated else None
+        cache_key = get_media_detail_cache_key(friendly_token, user_id)
+
+        # Skip cache for password-protected requests
+        if not password:
+            cached_result = get_cached_result(cache_key)
+            if cached_result is not None:
+                return Response(cached_result)
+
         media = self.get_object(friendly_token, password=password)
         if isinstance(media, Response):
             return media
@@ -1049,6 +1120,11 @@ class MediaDetail(APIView):
             related_media = related_media_serializer.data
         ret = serializer.data
         ret["related_media"] = related_media
+
+        # Cache public/unlisted media only
+        if media.state in ["public", "unlisted"] and not password:
+            set_cached_result(cache_key, ret, MEDIA_DETAIL_TIMEOUT)
+
         return Response(ret)
 
     def post(self, request, friendly_token, format=None):
@@ -1151,10 +1227,19 @@ class MediaActions(APIView):
             return Response(
                 {"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST
             )
-        except:
+        except Media.DoesNotExist:
             return Response(
                 {"detail": "media file does not exist"},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            # Log the actual error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error retrieving media {friendly_token}: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "error retrieving media"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
     def get(self, request, friendly_token, format=None):
@@ -1389,7 +1474,14 @@ class MediaSearch(APIView):
             media = media.values("title")[:40]
             return Response(media, status=status.HTTP_200_OK)
         else:
-            media = media.prefetch_related("user")
+            media = (
+                media
+                .select_related("user")
+                .prefetch_related(
+                    "category",
+                    "topics",
+                )
+            )
             if category or tag:
                 pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
             else:
@@ -1481,6 +1573,13 @@ class PlaylistDetail(APIView):
             )
 
     def get(self, request, friendly_token, format=None):
+        # Try cache first
+        user_id = request.user.id if request.user.is_authenticated else None
+        cache_key = get_playlist_detail_cache_key(friendly_token, user_id)
+        cached_result = get_cached_result(cache_key)
+        if cached_result is not None:
+            return Response(cached_result)
+
         playlist = self.get_playlist(friendly_token)
         if isinstance(playlist, Response):
             return playlist
@@ -1496,20 +1595,47 @@ class PlaylistDetail(APIView):
             playlist_media_queryset = (
                 PlaylistMedia.objects.filter(playlist=playlist)
                 .exclude(media__state="private")
-                .prefetch_related("media__user")
+                .select_related(
+                    "media__user",
+                    "media__license"
+                )
+                .prefetch_related(
+                    "media__category",
+                    "media__topics",
+                    "media__tags",
+                )
             )
         elif request.user.is_authenticated:
             # Authenticated users can see public, unlisted, and restricted videos
             playlist_media_queryset = (
                 PlaylistMedia.objects.filter(playlist=playlist)
                 .exclude(media__state="private")
-                .prefetch_related("media__user")
+                .select_related(
+                    "media__user",
+                    "media__license"
+                )
+                .prefetch_related(
+                    "media__category",
+                    "media__topics",
+                    "media__tags",
+                )
             )
         else:
             # Anonymous users see only public videos
-            playlist_media_queryset = PlaylistMedia.objects.filter(
-                playlist=playlist, media__state="public"
-            ).prefetch_related("media__user")
+            playlist_media_queryset = (
+                PlaylistMedia.objects.filter(
+                    playlist=playlist, media__state="public"
+                )
+                .select_related(
+                    "media__user",
+                    "media__license"
+                )
+                .prefetch_related(
+                    "media__category",
+                    "media__topics",
+                    "media__tags",
+                )
+            )
 
         # Filter videos based on what the current viewer can see
         accessible_media = []
@@ -1525,6 +1651,9 @@ class PlaylistDetail(APIView):
         ret["playlist_media"] = playlist_media_serializer.data
         # needed for index page featured
         ret["results"] = playlist_media_serializer.data[:8]
+
+        # Cache the result
+        set_cached_result(cache_key, ret, PLAYLIST_DETAIL_TIMEOUT)
 
         return Response(ret)
 
@@ -1827,10 +1956,19 @@ class CommentDetail(APIView):
             return Response(
                 {"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST
             )
-        except:
+        except Media.DoesNotExist:
             return Response(
                 {"detail": "media file does not exist"},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            # Log the actual error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error retrieving media {friendly_token}: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "error retrieving media"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
     def get(self, request, friendly_token):
@@ -1838,7 +1976,7 @@ class CommentDetail(APIView):
         media = self.get_object(friendly_token)
         if isinstance(media, Response):
             return media
-        comments = media.comments.filter().prefetch_related("user")
+        comments = media.comments.select_related("user").all()
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
         paginator = pagination_class()
         page = paginator.paginate_queryset(comments, request)
