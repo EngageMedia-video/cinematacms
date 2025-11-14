@@ -1,63 +1,78 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
+import { PendingItemsList } from '../PendingItemsList';
+import { ListItem } from '../ListItem';
 
-import { useItemListInlineSlider } from './hooks/useItemListInlineSlider';
+export function InlineSliderItemListAsync({
+  requestUrl,
+  itemsCountCallback,
+  hideViews,
+  hideAuthor,
+  hideDate,
+  className
+}) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-import PageStore from '../../pages/_PageStore.js';
-import LayoutStore from '../../stores/LayoutStore.js';
+  useEffect(() => {
+    let isMounted = true;
 
-import { PendingItemsList } from './PendingItemsList';
-import { ListItem, listItemProps } from './ListItem';
+    async function fetchData() {
+      try {
+        const res = await fetch(requestUrl, { cache: 'no-store' });
+        const data = await res.json();
+        if (!isMounted) return;
 
-import { ItemListAsync } from './ItemListAsync';
+        const parsedResults = Array.isArray(data) ? data : data.results || [];
+        setItems(parsedResults);
+        itemsCountCallback(parsedResults.length);
+      } catch (error) {
+        console.error('❌ InlineSliderItemListAsync fetch error:', error);
+        itemsCountCallback(0);
+      } finally {
+        if (isMounted) {
+          requestAnimationFrame(() => {
+            setLoading(false);
+          });
+        }
+      }
+    }
 
-import { ItemsListHandler } from "./includes/itemLists/ItemsListHandler";
+    fetchData();
+    return () => (isMounted = false);
+  }, [requestUrl]);
 
-export function InlineSliderItemListAsync(props){
+  if (loading) {
 
-    const [ items, countedItems, listHandler, classname, setListHandler, onItemsCount, onItemsLoad, winResizeListener, sidebarVisibilityChangeListener, itemsListWrapperRef, itemsListRef, renderBeforeListWrap, renderAfterListWrap ] = useItemListInlineSlider(props);
+    return (
+      <PendingItemsList className={`featured-carousel ${className || ''}`} />
+    );
+  }
 
-    useEffect(() => {
+  if (!items.length) return null;
 
-    	setListHandler( new ItemsListHandler( props.pageItems, props.maxItems, props.firstItemRequestUrl, props.requestUrl, onItemsCount, onItemsLoad ) );
-
-    	PageStore.on('window_resize', winResizeListener);
-        LayoutStore.on('sidebar-visibility-change', sidebarVisibilityChangeListener);
-
-        return () => {
-
-        	PageStore.removeListener('window_resize', winResizeListener);
-        	LayoutStore.removeListener('sidebar-visibility-change', sidebarVisibilityChangeListener);
-
-            if( listHandler ){
-                listHandler.cancelAll();
-                setListHandler(null);
-            }
-        };
-    }, []);
-    return ( ! countedItems ?
-            <PendingItemsList className={ classname.listOuter } /> :
-            ( ! items.length ? null : <div className={ classname.listOuter }>
-
-                { renderBeforeListWrap() }
-
-                <div ref={ itemsListWrapperRef } className="items-list-wrap">
-                    <div ref={ itemsListRef } className={ classname.list }>
-                        { items.map( ( itm, index ) => <ListItem key={ index } { ...listItemProps( props, itm, index ) } /> ) }
-                    </div>
-                </div>
-
-                { renderAfterListWrap() }
-
-            </div> )
-           );
+  return (
+    <div className={`featured-carousel ${className || ''}`}>
+      <div className="featured-items-wrap">
+        {items.map((item) => (
+          <ListItem
+            key={item.id}
+            item={item}
+            hideViews={hideViews}
+            hideAuthor={hideAuthor}
+            hideDate={hideDate}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 InlineSliderItemListAsync.propTypes = {
-    ...ItemListAsync.propTypes,
-};
-
-InlineSliderItemListAsync.defaultProps = {
-    ...ItemListAsync.defaultProps,
-    pageItems: 12,
+  requestUrl: PropTypes.string.isRequired,
+  itemsCountCallback: PropTypes.func.isRequired,
+  hideViews: PropTypes.bool,
+  hideAuthor: PropTypes.bool,
+  hideDate: PropTypes.bool,
+  className: PropTypes.string
 };
