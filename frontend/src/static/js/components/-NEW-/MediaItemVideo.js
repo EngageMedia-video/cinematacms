@@ -74,8 +74,8 @@ export function MediaItemVideo(props){
 
 					<UnderThumbWrapper title={ props.title } link={ props.link }>
 						{ titleComponent() }
-						{ metaComponents() }
 						{ descriptionComponent() }
+						{ metaComponents() }
 					</UnderThumbWrapper>
 				</div>
 
