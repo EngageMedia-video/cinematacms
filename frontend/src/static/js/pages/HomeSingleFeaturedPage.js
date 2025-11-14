@@ -61,15 +61,15 @@ export class HomeSingleFeaturedPage extends Page {
           indexFeaturedList,
           featuredVideos,
           loadedFeatured: true,
-        });    
+        });
     } catch (err) {
       console.error('❌ Failed to load featured playlists', err);
     } finally {
       this.setState({ loadedFeatured: true });
-  
+
     }
   }
- 
+
 
   onLoadLatest = (length) =>
     this.setState({ loadedLatest: true, visibleLatest: length > 0 });
@@ -103,7 +103,7 @@ export class HomeSingleFeaturedPage extends Page {
                   />
                 </MediaListRow>
               </MediaMultiListWrapper>
-              ) : 
+              ) :
              null}
 
             {/* 🔹 Remaining featured videos carousel */}
@@ -183,7 +183,8 @@ export class HomeSingleFeaturedPage extends Page {
                     hideViews={true}
                     hideAuthor={!PageStore.get('config-media-item').displayAuthor}
                     hideDate={!PageStore.get('config-media-item').displayPublishDate}
-                    pageItems={20}
+																				pageItems={20}
+												 							maxItems={20}
                   />
                 </MediaListRow>
               )}
