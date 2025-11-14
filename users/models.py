@@ -66,7 +66,8 @@ class User(AbstractUser):
     )
     last_published_video_datetime = models.DateTimeField(
         "datetime of the last video that was published",
-        default="2008-1-1",
+        # gunakan function timezone.now sebagai default, bukan string
+        default=timezone.now,
         db_index=True,
     )
 
@@ -274,3 +275,4 @@ class BlackListedEmail(models.Model):
 
     def __str__(self):
         return self.email
+
