@@ -111,7 +111,7 @@ export class HomeSingleFeaturedPage extends Page {
               <MediaMultiListWrapper className="items-list-ver featured-carousel-wrapper hw-featured-first">
                 <MediaListRow
                   title="Featured by Curators"
-                  viewAllLink="/videos/featured"
+                  viewAllLink={this.mediacms_config.url.featured}
                   viewAllText="View all"
                   className={this.props.title ? '' : 'no-title'}
                 >
