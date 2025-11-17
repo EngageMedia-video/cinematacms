@@ -3343,15 +3343,39 @@ body .hw-even-list .hw-category-description {
 }
 
 
-/* Dark theme overrides */
-.hw-odd-list.dark .hw-category-title,
-.hw-odd-list.dark .hw-category-description {
-  color: white;
+body.dark_theme .hw-odd-list .hw-category-title,
+body.dark_theme .hw-odd-list .hw-category-description {
+	color: #fff;
 }
 
-.hw-even-list.dark .hw-category-title,
-.hw-even-list.dark .hw-category-description {
-  color: black;
+
+
+/* Light mode - odd lists (light background) */
+body .hw-odd-list .hw-category-description a {
+	color: #1a3f61;
+	font-weight: 500;
+	text-decoration: underline;
+}
+
+/* Light mode - even lists (dark background) */
+body .hw-even-list .hw-category-description a {
+	color: #bad8dd;
+	font-weight: 500;
+	text-decoration: underline;
+}
+
+/* Dark mode - odd lists */
+body.dark_theme .hw-odd-list .hw-category-description a {
+	color: #bad8dd;
+	font-weight: 500;
+	text-decoration: underline;
+}
+
+/* Dark mode - even lists */
+body.dark_theme .hw-even-list .hw-category-description a {
+	color: #bad8dd;
+	font-weight: 500;
+	text-decoration: underline;
 }
 
 /* View all (link to the category) */
