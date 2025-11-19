@@ -141,50 +141,62 @@ class Command(BaseCommand):
         batch_count = 0
         missing_files = 0
 
-        while True:
-            # Get a batch of records
-            # Query each time because records are updated and removed from queryset
-            encoding_batch = list(
-                Encoding.objects.filter(
-                    size='',
-                    media_file__isnull=False,
-                ).exclude(media_file='')[:batch_size]
-            )
+        # Use iterator to stream through all records once
+        encoding_queryset = Encoding.objects.filter(
+            size='',
+            media_file__isnull=False,
+        ).exclude(media_file='').iterator(chunk_size=batch_size)
 
-            if not encoding_batch:
-                break  # No more records to process
+        encodings_to_update = []
 
-            batch_count += 1
-
-            # Calculate and update sizes
-            encodings_to_update = []
-            for encoding in encoding_batch:
-                if encoding.media_file:
-                    try:
-                        if os.path.exists(encoding.media_file.path):
-                            file_size = os.path.getsize(encoding.media_file.path)
-                            encoding.size = helpers.show_file_size(file_size)
-                            encodings_to_update.append(encoding)
-                        else:
-                            missing_files += 1
-                            self.stdout.write(
-                                self.style.WARNING(
-                                    f'  Warning: File not found for encoding ID {encoding.id}: {encoding.media_file.path}'
-                                )
-                            )
-                    except (OSError, ValueError) as e:
+        for encoding in encoding_queryset:
+            if encoding.media_file:
+                try:
+                    if os.path.exists(encoding.media_file.path):
+                        file_size = os.path.getsize(encoding.media_file.path)
+                        encoding.size = helpers.show_file_size(file_size)
+                        encodings_to_update.append(encoding)
+                    else:
+                        missing_files += 1
                         self.stdout.write(
-                            self.style.ERROR(f'  Error processing encoding ID {encoding.id}: {e}')
+                            self.style.WARNING(
+                                f'  Warning: File not found for encoding ID {encoding.id}: {encoding.media_file.path}'
+                            )
                         )
+                except (OSError, ValueError) as e:
+                    self.stdout.write(
+                        self.style.ERROR(f'  Error processing encoding ID {encoding.id}: {e}')
+                    )
 
-            # Bulk update
-            if encodings_to_update:
+            # Bulk update when batch is full
+            if len(encodings_to_update) >= batch_size:
+                batch_count += 1
                 with transaction.atomic():
                     Encoding.objects.bulk_update(
                         encodings_to_update,
                         ['size'],
                         batch_size=batch_size
                     )
+
+                updated_count += len(encodings_to_update)
+
+                # Progress update
+                self.stdout.write(
+                    f'  Batch {batch_count}: Updated {len(encodings_to_update)} records '
+                    f'(Total: {updated_count}/{total})'
+                )
+
+                encodings_to_update = []
+
+        # Flush remaining batch
+        if encodings_to_update:
+            batch_count += 1
+            with transaction.atomic():
+                Encoding.objects.bulk_update(
+                    encodings_to_update,
+                    ['size'],
+                    batch_size=batch_size
+                )
 
             updated_count += len(encodings_to_update)
 
