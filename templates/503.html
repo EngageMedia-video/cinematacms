@@ -304,7 +304,7 @@
         border: none;
         background: #1a3f61; /* Light mode primary button color */
         color: #fff;
-        border-radius: 0; /* No rounded corners - flat design */
+        border-radius: 8px;
         padding: 12px 24px;
         font-weight: 600;
         font-size: 14px;
@@ -459,19 +459,8 @@
       <main id="content" role="main">
         <section class="panel" aria-labelledby="maint-title">
           <!-- Logo Section -->
-          <div class="logo-container">
-            <img
-              class="logo logo-light"
-              src="{{FRONTEND_HOST}}/static/images/placeholder-logo-lightbg.svg"
-              alt="{{PORTAL_NAME}}"
-              onerror="this.onerror=null; this.src='{{FRONTEND_HOST}}/static/images/placeholder-logo-lightbg.jpg'"
-            />
-            <img
-              class="logo logo-dark"
-              src="{{FRONTEND_HOST}}/static/images/placeholder-logo-darkbg.svg"
-              alt="{{PORTAL_NAME}}"
-              onerror="this.onerror=null; this.src='{{FRONTEND_HOST}}/static/images/placeholder-logo-darkbg.jpg'"
-            />
+          <div class="logo-container" id="logo-container">
+            <!-- Logo will be dynamically inserted based on MediaCMS.site.logo configuration -->
           </div>
 
           <!-- Spinner below logo -->
@@ -563,6 +552,50 @@
     </div>
 
     <script>
+      // Initialize MediaCMS object before including site configuration
+      var MediaCMS = MediaCMS || {};
+
+      // Include site configuration from site.html
+      {% include 'config/installation/site.html' %}
+
+      // Populate logos based on MediaCMS.site.logo configuration
+      (function() {
+        const logoContainer = document.getElementById('logo-container');
+
+        if (MediaCMS && MediaCMS.site && MediaCMS.site.logo &&
+            MediaCMS.site.logo.maintenanceLightMode &&
+            MediaCMS.site.logo.maintenanceDarkMode) {
+          const lightLogo = document.createElement('img');
+          lightLogo.className = 'logo logo-light';
+          lightLogo.src = MediaCMS.site.logo.maintenanceLightMode.svg;
+          lightLogo.alt = MediaCMS.site.title || '{{PORTAL_NAME}}';
+          lightLogo.onerror = function() {
+            this.onerror = null;
+            this.src = MediaCMS.site.logo.maintenanceLightMode.img;
+            // Warn if both SVG and fallback image fail
+            this.addEventListener('error', function() {
+              console.warn('Light mode logo image failed to load');
+            }, { once: true });
+          };
+
+          const darkLogo = document.createElement('img');
+          darkLogo.className = 'logo logo-dark';
+          darkLogo.src = MediaCMS.site.logo.maintenanceDarkMode.svg;
+          darkLogo.alt = MediaCMS.site.title || '{{PORTAL_NAME}}';
+          darkLogo.onerror = function() {
+            this.onerror = null;
+            this.src = MediaCMS.site.logo.maintenanceDarkMode.img;
+            // Warn if both SVG and fallback image fail
+            this.addEventListener('error', function() {
+              console.warn('Dark mode logo image failed to load');
+            }, { once: true });
+          };
+
+          logoContainer.appendChild(lightLogo);
+          logoContainer.appendChild(darkLogo);
+        }
+      })();
+
       // Check if we're in extended maintenance mode
       const IS_EXTENDED = {{ MAINTENANCE_MODE_IS_EXTENDED|default:'false'|lower }};
 

@@ -293,8 +293,8 @@ class SecureMediaView(View):
             logger.debug(f"Serving non-video file without authorization check: {file_path}")
             return self._serve_file(file_path, head_request)
 
-        # Get media object and check permissions (only for video files now)
-        media = self._get_media_from_path_cached(file_path)
+        # Get media object and actual file path (handles ownership transfers)
+        media, actual_file_path = self._get_media_from_path_cached(file_path)
         if not media:
             logger.warning(f"Media not found for path: {file_path}")
             raise Http404("Media not found")
@@ -308,7 +308,11 @@ class SecureMediaView(View):
             resp['Cache-Control'] = 'no-store'
             return resp
 
-        return self._serve_file(file_path, head_request)
+        # Use actual file path from database if provided (ownership transfer case),
+        # otherwise use the URL path
+        serving_path = actual_file_path if actual_file_path else file_path
+
+        return self._serve_file(serving_path, head_request)
         
     def _is_valid_file_path(self, file_path: str) -> bool:
         """Enhanced path validation with security checks."""
@@ -349,17 +353,24 @@ class SecureMediaView(View):
 
         return False
 
-    def _get_media_from_path_cached(self, file_path: str) -> Optional[Media]:
+    def _get_media_from_path_cached(self, file_path: str) -> tuple[Optional[Media], Optional[str]]:
         """
         Get media from file path with caching.
         This wrapper reduces database queries by caching Media ID lookups.
+
+        Returns:
+            Tuple of (Media object, actual_file_path)
+            - On cache hit: (Media, None) - use original file_path
+            - On cache miss: delegates to _get_media_from_path which may return actual path override
         """
         # Try cache first
         cached_media_id = get_cached_media_id(file_path)
         if cached_media_id:
             try:
                 media = Media.objects.select_related('user').get(id=cached_media_id)
-                return media
+                # Cache hit - assume URL path is correct (it was when cached)
+                # If ownership transfer happened after caching, cache will be invalidated eventually
+                return (media, None)
             except Media.DoesNotExist:
                 # Stale cache - media was deleted
                 logger.debug(f"Stale cache entry for path {file_path}, media {cached_media_id} not found")
@@ -367,16 +378,24 @@ class SecureMediaView(View):
                 pass
 
         # Cache miss - do expensive lookup
-        media = self._get_media_from_path(file_path)
+        media, actual_file_path = self._get_media_from_path(file_path)
 
         # Cache the result if found
         if media:
             set_cached_media_id(file_path, media.id)
 
-        return media
+        return (media, actual_file_path)
 
-    def _get_media_from_path(self, file_path: str) -> Optional[Media]:
-        """Extract media object from file path using filename matching."""
+    def _get_media_from_path(self, file_path: str) -> tuple[Optional[Media], Optional[str]]:
+        """
+        Extract media object from file path using filename matching.
+
+        Returns:
+            Tuple of (Media object, actual_file_path)
+            - Media object: The found media, or None if not found
+            - actual_file_path: The actual file path from database (for encoded files with username mismatch),
+                               or None to use the original file_path
+        """
 
         # Handle original files: original/user/{username}/{filename}
         if file_path.startswith('original/user/'):
@@ -396,7 +415,7 @@ class SecureMediaView(View):
 
                     if media:
                         logger.debug(f"Found media by filename: {media.friendly_token}")
-                        return media
+                        return (media, None)
 
                     # Fallback: if not found, try querying by media_file path
                     # This handles edge cases where filename field wasn't populated
@@ -413,7 +432,26 @@ class SecureMediaView(View):
                             media.filename = filename
                             media.save(update_fields=['filename'])
                             logger.info(f"Backfilled filename for media {media.friendly_token}")
-                        return media
+                        return (media, None)
+
+                    # Third fallback: handle ownership transfers
+                    # If username in URL doesn't match current owner (e.g., video was transferred),
+                    # look up by filename only
+                    logger.debug("Username lookup failed, attempting lookup ignoring username (handles ownership transfers)")
+                    media = Media.objects.select_related('user').filter(
+                        filename=filename
+                    ).first()
+
+                    if media:
+                        logger.info(f"Found media via ownership transfer fallback (original owner in path: '{username}', current owner: '{media.user.username}')")
+                        logger.info(f"Media: {media.friendly_token}")
+                        # Return actual file path from database to avoid username mismatch
+                        actual_path = media.media_file.name if media.media_file else None
+                        if not actual_path:
+                            logger.error(f"Media {media.friendly_token} has no media_file set!")
+                            return (None, None)
+                        logger.info(f"Using actual file path from database: {actual_path}")
+                        return (media, actual_path)
 
             except Exception as e:
                 logger.warning(f"Error finding media by filename: {e}")
@@ -423,7 +461,7 @@ class SecureMediaView(View):
             # Subtitle files are typically text files that don't need media authorization
             # They should be handled by the _is_non_video_file() check above
             logger.debug(f"Subtitle file path detected but should be handled as non-video: {file_path}")
-            return None
+            return (None, None)
 
         # Handle encoded files: encoded/{profile_id}/{username}/{filename}
         elif file_path.startswith('encoded/'):
@@ -448,7 +486,8 @@ class SecureMediaView(View):
                     encoding = Encoding.objects.select_related('media', 'media__user').filter(**filter_kwargs).first()
 
                     if encoding:
-                        return encoding.media
+                        # Username matches - no path override needed
+                        return (encoding.media, None)
 
                     # Fallback: if not found, try querying by media_file path
                     # This handles edge cases where filename field wasn't populated
@@ -470,9 +509,34 @@ class SecureMediaView(View):
                             encoding.filename = filename
                             encoding.save(update_fields=['filename'])
                             logger.info(f"Backfilled filename for encoding {encoding.id}")
-                        return encoding.media
+                        # Username matches - no path override needed
+                        return (encoding.media, None)
 
-                    return None
+                    # Second fallback: handle ownership transfers
+                    # If username in URL doesn't match current owner (e.g., video was transferred),
+                    # look up by filename and profile only
+                    logger.debug("Username lookup failed, attempting lookup ignoring username (handles ownership transfers)")
+                    ownership_transfer_kwargs = {
+                        'filename': filename,
+                    }
+
+                    if profile_id_str.isdigit():
+                        ownership_transfer_kwargs['profile_id'] = int(profile_id_str)
+
+                    encoding = Encoding.objects.select_related('media', 'media__user').filter(**ownership_transfer_kwargs).first()
+
+                    if encoding:
+                        logger.info(f"Found encoding via ownership transfer fallback (original owner in path: '{username}', current owner: '{encoding.media.user.username}')")
+                        logger.info(f"Media: {encoding.media.friendly_token}")
+                        # Return actual file path from database to avoid username mismatch
+                        actual_path = encoding.media_file.name if encoding.media_file else None
+                        if not actual_path:
+                            logger.error(f"Encoding {encoding.id} has no media_file set!")
+                            return (None, None)
+                        logger.info(f"Using actual file path from database: {actual_path}")
+                        return (encoding.media, actual_path)
+
+                    return (None, None)
 
                 except Exception as e:
                     logger.warning(f"Error finding encoded media: {e}")
@@ -488,16 +552,17 @@ class SecureMediaView(View):
                     # For HLS files, we might need to check if the folder name matches a UID
                     # or try to find media that has HLS files in this directory
                     if self._is_valid_uid(folder_name):
-                        return Media.objects.select_related('user').filter(uid=folder_name).first()
+                        media = Media.objects.select_related('user').filter(uid=folder_name).first()
+                        return (media, None)
                     else:
                         # Fallback: try to find any media that might have HLS files
                         # This is less precise but more flexible
-                        return None
+                        return (None, None)
 
                 except Exception as e:
                     logger.warning(f"Error finding HLS media: {e}")
 
-        return None
+        return (None, None)
 
     def _is_valid_uid(self, uid_str: str) -> bool:
         """Check if a string looks like a valid UID (8-64 hex characters)."""
