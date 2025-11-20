@@ -66,9 +66,7 @@ class User(AbstractUser):
     )
     last_published_video_datetime = models.DateTimeField(
         "datetime of the last video that was published",
-        null=True,
-        blank=True,
-        default=None,
+        default="2008-1-1",
         db_index=True,
     )
 
