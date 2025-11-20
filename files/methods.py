@@ -440,15 +440,15 @@ View it on %s
 ROLE_MAP = {
     'advancedUser': {
         'display_name': 'Trusted User',
-        'capability': 'You can now upload or publish content (videos/articles) that will bypass the standard review process, allowing for faster publication.'
+        'capability': 'You can now upload and publish videos, and enjoy all platform features without content review.'
     },
     'is_editor': {
         'display_name': 'Editor',
-        'capability': 'You now have the rights to edit, verify, and publish content submitted by other users on the platform.'
+        'capability': 'You can now moderate, edit, and publish content submitted by other users on the platform.'
     },
     'is_manager': {
         'display_name': 'Manager',
-        'capability': 'You now have managerial access rights, which include Editor capabilities, as well as the ability to manage several aspects of platform configuration and/or other user roles (excluding superusers).'
+        'capability': 'You can now manage site content, user accounts, and comments to help oversee platform operations.'
     },
 }
 
