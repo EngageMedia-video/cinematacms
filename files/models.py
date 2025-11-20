@@ -1366,11 +1366,13 @@ class Encoding(models.Model):
         if self.media_file:
             self.filename = os.path.basename(self.media_file.name)
 
-            cmd = ["stat", "-c", "%s", self.media_file.path]
-            stdout = helpers.run_command(cmd).get("out")
-            if stdout:
-                size = int(stdout.strip())
-                self.size = helpers.show_file_size(size)
+            # Use cross-platform method to get file size
+            try:
+                if os.path.exists(self.media_file.path):
+                    size = os.path.getsize(self.media_file.path)
+                    self.size = helpers.show_file_size(size)
+            except (OSError, ValueError) as e:
+                logger.warning(f"Failed to get size for encoding {self.id}: {e}")
         if self.chunk_file_path and not self.md5sum:
             cmd = ["md5sum", self.chunk_file_path]
             stdout = helpers.run_command(cmd).get("out")

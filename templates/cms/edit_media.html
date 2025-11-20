@@ -420,18 +420,21 @@
 			// add eventlistener on document.querySelector('#div_id_state select')
 			// when value is 'restricted', show div with id div_id_password. Otherwise hide it
 			function show_password_field() {
-				if (document.querySelector('#div_id_password') !== null) {
+				var passwordField = document.querySelector('#div_id_password');
+				var stateSelect = document.querySelector('#div_id_state select');
 
-
-					if (document.querySelector('#div_id_state select').value === 'restricted') {
-						document.querySelector('#div_id_password').style.display = 'block';
+				if (passwordField !== null && stateSelect !== null) {
+					if (stateSelect.value === 'restricted') {
+						passwordField.style.display = 'block';
 					} else {
-						document.querySelector('#div_id_password').style.display = 'none';
+						passwordField.style.display = 'none';
 					}
 				}
 			}
 
-			document.querySelector('#div_id_state select').addEventListener('change', show_password_field);
+			if (document.querySelector('#div_id_state select') !== null) {
+				document.querySelector('#div_id_state select').addEventListener('change', show_password_field);
+			}
 
 			// set correct text
 			document.querySelector('label[for="id_uploaded_poster"]').innerHTML = 'Thumbnail Image Upload';
