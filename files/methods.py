@@ -511,7 +511,7 @@ def notify_user_on_role_update(user, upgraded_roles):
     msg = f"""
 Hello {user_name},
 
-We are pleased to inform you that your account privileges on {portal_name} have been updated by a superuser. You now have access to new capabilities!
+We are pleased to inform you that your account privileges on {portal_name} have been updated. You now have access to new capabilities!
 
 The following role(s) have been granted to your account:
 
@@ -522,14 +522,13 @@ The following role(s) have been granted to your account:
 
 ---
 
-We encourage you to log in and explore your new capabilities and features.
+We encourage you to log in and explore your new features. For guidance on using your new capabilities, visit our Help page:
 
-Explore the platform here:
-{platform_link}
+{platform_link}/help
 
-If you have any questions regarding your new privileges or the platform, please do not hesitate to contact our support team.
+If you have any questions about your new privileges or the platform, please contact our support team.
 
-Thank you for your valuable contribution to the platform.
+Thank you for your valuable contributions to {portal_name}.
 
 Best regards,
 
