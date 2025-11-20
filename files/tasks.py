@@ -1339,7 +1339,18 @@ def cleanup_orphaned_uploads():
 
 
 @task(name="subscribe_user", queue="short_tasks")
-def subscribe_user(email, name):
+def subscribe_user(email, name, country=None):
+    """
+    Subscribe user to Cinemata newsletter via PHPList
+    
+    Args:
+        email: User's email address
+        name: User's name/username
+        country: User's country code (optional, for tracking)
+    
+    Returns:
+        bool: True if subscription successful, False otherwise
+    """
     form_data = {
         "email": email,
         "emailconfirm": email,
@@ -1351,6 +1362,31 @@ def subscribe_user(email, name):
         "listname[1]": "Cinemata Newsletter",
         "subscribe": "Subscribe to the Cinemata newsletter",
     }
-    #    response = requests.post("https://phplist.engagemedia.org/lists/?p=subscribe", data=form_data)
-    #   print(response.status_code)
-    return True
+    
+    # Add country if provided
+    if country:
+        form_data["attribute4"] = country
+    
+    try:
+        response = requests.post(
+            "https://phplist.engagemedia.org/lists/?p=subscribe",
+            data=form_data,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            logger.info(f"Newsletter subscription successful for {email} (Country: {country})")
+            return True
+        else:
+            logger.warning(
+                f"Newsletter subscription failed for {email}. "
+                f"Status: {response.status_code}, Response: {response.text[:200]}"
+            )
+            return False
+            
+    except requests.exceptions.Timeout:
+        logger.exception("Newsletter subscription timeout for %s", email)
+        return False
+    except requests.exceptions.RequestException:
+        logger.exception("Newsletter subscription error for %s", email)
+        return False
