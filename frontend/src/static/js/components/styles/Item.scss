@@ -679,7 +679,7 @@ a.item-edit-link{
 	display: flex;
 	align-items: center;
 	gap: 4px;
-	z-index: 10;
+	z-index: 1;
 	pointer-events: none;
 	color: #fff;
 
@@ -703,7 +703,7 @@ a.item-edit-link{
 	}
 
 	&.badge-restricted {
-		background: rgba(126, 87, 194, 0.9);
+		background: rgba(2, 102, 144, 0.9);
 		color: #fff;
 	}
 }
