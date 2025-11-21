@@ -18,7 +18,7 @@ export function MediaItem(props){
 	const [ titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper, editMediaComponent, metaComponents ] = useMediaItem({...props, type });
 
 	function thumbnailComponent(){
-		return <MediaItemThumbnailLink src={ thumbnailUrl } title={ props.title } link={ props.link } />;
+		return <MediaItemThumbnailLink src={ thumbnailUrl } title={ props.title } link={ props.link } state={ props.state } />;
 	}
 
 	const containerClassname = itemClassname( 'item ' + type + '-item', props.class_name.trim(), props.playlistOrder === props.playlistActiveItem );

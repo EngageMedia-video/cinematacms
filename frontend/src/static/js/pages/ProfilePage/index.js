@@ -175,6 +175,8 @@ export class ProfilePage extends Page {
 		const authorData = ProfilePageStore.get('author-data');
 
 		const isMediaAuthor = authorData && authorData.username === UserContext._currentValue.username;
+		const isManagerOrAdmin = UserContext._currentValue.is.manager || UserContext._currentValue.is.admin;
+		const canEditMedia = isMediaAuthor || isManagerOrAdmin;
 
 		return [ this.state.author ? <ProfilePagesHeader key="ProfilePagesHeader" author={ this.state.author } onQueryChange={ this.changeRequestQuery } /> : null,
 				 this.state.author ?
@@ -187,7 +189,7 @@ export class ProfilePage extends Page {
 								itemsCountCallback={ this.state.requestUrl ? this.getCountFunc : null }
 								hideViews={ ! PageStore.get('config-media-item').displayViews }
 								hideDate={ ! PageStore.get('config-media-item').displayPublishDate }
-								canEdit={ isMediaAuthor } />
+								canEdit={ canEditMedia } />
 							{ isMediaAuthor && 0 === this.state.channelMediaCount && ! this.state.query ? <EmptyChannelMedia name={this.state.author.name} /> : null }
 						</MediaListWrapper>
 					</ProfilePagesContent>

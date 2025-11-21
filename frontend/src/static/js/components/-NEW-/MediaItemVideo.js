@@ -6,7 +6,7 @@ import { MediaItem } from './MediaItem';
 
 import { PositiveIntegerOrZero } from '../../functions/propTypeFilters';;
 
-import { MediaItemVideoPlayer, MediaItemDuration, MediaItemVideoPreviewer, MediaItemPlaylistIndex, itemClassname } from './includes/items';
+import { MediaItemVideoPlayer, MediaItemDuration, MediaItemVideoPreviewer, MediaItemPlaylistIndex, MediaItemStateBadge, itemClassname } from './includes/items';
 
 import { useMediaItem } from './hooks/useMediaItem';
 
@@ -48,6 +48,7 @@ export function MediaItemVideo(props){
 		return <a {...attr}>
 					{ props.inPlaylistView ? null : <MediaItemDuration ariaLabel={ duration } time={ durationISO8601 } text={ durationStr } /> }
 					{ props.inPlaylistView || props.inPlaylistPage ? null : <MediaItemVideoPreviewer url={ props.preview_thumbnail } /> }
+					<MediaItemStateBadge state={props.state} />
 				</a>;
 	}
 
