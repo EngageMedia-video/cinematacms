@@ -374,6 +374,10 @@ a.user-menu-top-link{
 		float:left;
 		max-width: 100%;
 		max-height: var( --logo-height, var(--default-logo-height) );
+		/* Prevent layout shift by reserving space */
+		aspect-ratio: auto;
+		height: var( --logo-height, var(--default-logo-height) );
+		width: auto;
 	}
 }
 
