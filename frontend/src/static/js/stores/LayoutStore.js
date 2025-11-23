@@ -57,6 +57,10 @@ class LayoutStore extends EventEmitter{
 
         super();
 
+        // Increase max listeners to accommodate multiple carousel components on a page
+        // Each InlineSliderItemList component legitimately needs to listen to sidebar-visibility-change
+        this.setMaxListeners(50);
+
         const config = mediaCmsConfig( window.MediaCMS );
 
         // Keep cache data "fresh" for one day.

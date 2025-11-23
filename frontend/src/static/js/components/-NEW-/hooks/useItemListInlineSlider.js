@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useItemList } from './useItemList';
 import ItemsInlineSlider from "../includes/itemLists/ItemsInlineSlider";
 import { addClassname, removeClassname } from '../functions/dom';
@@ -32,14 +32,14 @@ export function useItemListInlineSlider(props) {
   let sliderRecalTimeout = null;
   let pendingChangeSlide = true;
 
-  // ---- Event listeners
-  function winResizeListener() {
+  // ---- Event listeners (memoized to prevent recreating on every render)
+  const winResizeListener = useCallback(() => {
     setResizeDate(new Date());
-  }
+  }, []);
 
-  function sidebarVisibilityChangeListener() {
+  const sidebarVisibilityChangeListener = useCallback(() => {
     setSidebarVisibilityChangeDate(new Date());
-  }
+  }, []);
 
   // ---- Slider initialization
   function initSlider() {
