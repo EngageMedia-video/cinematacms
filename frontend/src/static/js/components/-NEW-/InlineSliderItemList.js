@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import { useItemListInlineSlider } from './hooks/useItemListInlineSlider';
-import PageStore from '../../pages/_PageStore.js';
-import LayoutStore from '../../stores/LayoutStore.js';
 
 import { PendingItemsList } from './PendingItemsList';
 import { ListItem, listItemProps } from './ListItem';
@@ -21,8 +19,6 @@ export function InlineSliderItemList(props) {
         setListHandler,
         onItemsCount,
         onItemsLoad,
-        winResizeListener,
-        sidebarVisibilityChangeListener,
         itemsListWrapperRef,
         itemsListRef,
     ] = useItemListInlineSlider(props);
@@ -32,10 +28,14 @@ export function InlineSliderItemList(props) {
     const [showArrows, setShowArrows] = useState(false);
     const [isAtStart, setIsAtStart] = useState(true);
 
-    // Separate first item if using firstItemViewer
-    const firstItem = props.firstItemViewer && items.length ? items[0] : null;
-    const carouselItems =
-        props.firstItemViewer && items.length > 1 ? items.slice(1) : props.firstItemViewer ? [] : items;
+    // Memoize to prevent creating new array references on every render
+    const firstItem = useMemo(() => {
+        return props.firstItemViewer && items.length ? items[0] : null;
+    }, [props.firstItemViewer, items]);
+
+    const carouselItems = useMemo(() => {
+        return props.firstItemViewer && items.length > 1 ? items.slice(1) : props.firstItemViewer ? [] : items;
+    }, [props.firstItemViewer, items]);
 
     // Initialize list handler
     useEffect(() => {
@@ -53,18 +53,6 @@ export function InlineSliderItemList(props) {
             setListHandler(null);
         };
     }, [props.items]);
-
-    // Setup event listeners (only once on mount)
-    useEffect(() => {
-        PageStore.on('window_resize', winResizeListener);
-        LayoutStore.on('sidebar-visibility-change', sidebarVisibilityChangeListener);
-
-        return () => {
-            PageStore.removeListener('window_resize', winResizeListener);
-            LayoutStore.removeListener('sidebar-visibility-change', sidebarVisibilityChangeListener);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Only run once on mount - listener functions are stable due to useCallback
 
     // Carousel scroll & dots
     useEffect(() => {

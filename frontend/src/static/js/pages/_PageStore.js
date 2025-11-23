@@ -149,8 +149,8 @@ class PageStore extends EventEmitter {
 
         super();
 
-        // Increase max listeners to accommodate multiple carousel components on a page
-        // Each InlineSliderItemList component legitimately needs to listen to window_resize
+        // Temporary: Keep max listeners until all components migrate to LayoutContext
+        // Currently 13 components still use PageStore.on('window_resize')
         this.setMaxListeners(50);
 
         mediacms_config = mediaCmsConfig(window.MediaCMS);
