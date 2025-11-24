@@ -834,10 +834,12 @@ export default class VideoViewer extends React.PureComponent {
 VideoViewer.defaultProps = {
 	inEmbed: !0,
 	siteUrl: PropTypes.string.isRequired,
+	currentIndex: 0,
 };
 
 VideoViewer.propTypes = {
 	inEmbed: PropTypes.bool,
+	currentIndex: PropTypes.number
 };
 
 function findGetParameter(parameterName) {
