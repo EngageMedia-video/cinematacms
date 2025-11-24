@@ -81,16 +81,16 @@ The matrix follows a progressive permission model where higher-level roles inher
 | Review and approve submitted content | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
 | Handle reported content | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
 | Set content visibility status | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Access moderation logs | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Access moderation logs | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 
 ### 🎨 Site Management
 
 | Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
 |:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
 | Manage homepage featured content | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Create/edit site pages (About, Contact, etc.) | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Manage categories, tags, and topics | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| View site analytics | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Create/edit site pages (About, Contact, etc.) | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Manage categories, tags, and topics | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| View site analytics | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 | Configure encoding profiles | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 | Manage site settings and configuration | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 
@@ -102,9 +102,9 @@ The matrix follows a progressive permission model where higher-level roles inher
 | Edit own profile | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | View user profiles | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Edit other users' profiles | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Promote users to higher roles | ✗ | ✗ | ✗ | ✗ | Manager+ only | ✓ |
+| Promote users to higher roles | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 | Suspend/deactivate users | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Delete user accounts | ✗ | Own only | Own only | ✗ | ✗ | ✓ |
+| Delete user accounts | ✗ | Own only | Own only | ✗ | ✓ | ✓ |
 
 ### ⚙️ System Administration
 
