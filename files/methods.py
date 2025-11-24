@@ -536,18 +536,24 @@ The {portal_name} Team
 """
 
     # 4. Send the email
-    email = EmailMessage(
+    email_message = EmailMessage(
         subject,
         msg,
         settings.DEFAULT_FROM_EMAIL,
         [user.email],
     )
     # Follow existing email patterns (fail_silently=True)
-    email.send(fail_silently=True)
-    logger.info(
-        f"Role update notification sent to {user.username} ({user.email}) "
-        f"for roles: {', '.join(upgraded_roles)}"
-    )
+    sent_count = email_message.send(fail_silently=True)
+    if sent_count:
+        logger.info(
+            f"Role update notification sent to {user.username} ({user.email}) "
+            f"for roles: {', '.join(upgraded_roles)}"
+        )
+    else:
+        logger.warning(
+            f"Role update notification failed to send to {user.username} ({user.email}) "
+            f"for roles: {', '.join(upgraded_roles)}"
+        )
     return True
 
 def is_mediacms_editor(user):
