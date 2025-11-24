@@ -549,12 +549,13 @@ The {portal_name} Team
             f"Role update notification sent to {user.username} ({user.email}) "
             f"for roles: {', '.join(upgraded_roles)}"
         )
+        return True 
     else:
         logger.warning(
             f"Role update notification failed to send to {user.username} ({user.email}) "
             f"for roles: {', '.join(upgraded_roles)}"
         )
-    return True
+        return False
 
 def is_mediacms_editor(user):
     # helper function
