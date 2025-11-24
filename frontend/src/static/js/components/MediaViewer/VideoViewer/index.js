@@ -611,7 +611,8 @@ export default class VideoViewer extends React.PureComponent {
 
 			if (nextMedia) {
 				// NORMAL CASE → Has next video
-				const nextUrl = `${nextMedia.url}${playlistId ? `&pl=${playlistId}` : ''}`;
+				const separator = nextMedia.url.includes('?') ? '&' : '?';
+				const nextUrl = `${nextMedia.url}${playlistId ? `${separator}pl=${playlistId}` : ''}`;
 				this.showTransitionCard(nextUrl);
 			} else {
 
