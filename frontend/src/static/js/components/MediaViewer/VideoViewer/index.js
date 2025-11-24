@@ -462,6 +462,12 @@ export default class VideoViewer extends React.PureComponent {
 		if (this.recommendedMedia) {
 			this.recommendedMedia.initWrappers(this.playerElem.parentNode);
 
+			const playlistId = MediaPageStore.get('playlist-id');
+			if (playlistId) {
+				this.recommendedMedia.html().style.display = 'none';
+				this.recommendedMedia.html().style.opacity = '0';
+			}
+
 			if (this.props.inEmbed) {
 				this.playerInstance.player.one('pause', this.recommendedMedia.init);
 				this.initRecommendedMedia();
@@ -834,12 +840,10 @@ export default class VideoViewer extends React.PureComponent {
 VideoViewer.defaultProps = {
 	inEmbed: !0,
 	siteUrl: PropTypes.string.isRequired,
-	currentIndex: 0,
 };
 
 VideoViewer.propTypes = {
 	inEmbed: PropTypes.bool,
-	currentIndex: PropTypes.number
 };
 
 function findGetParameter(parameterName) {
