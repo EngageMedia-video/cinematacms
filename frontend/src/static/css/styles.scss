@@ -1590,7 +1590,7 @@ input#authenticator_secret {
 }
 
 /* Spinner + Titles + Metadata (unchanged from yours) */
-.spinner-container {
+.playlist-spinner-container {
     position: relative;
     width: 66px;
     height: 66px;
@@ -1600,7 +1600,7 @@ input#authenticator_secret {
     align-items: center;
 }
 
-.spinner-outer {
+.playlist-spinner-outer {
     position: absolute;
     width: 66px;
     height: 66px;
@@ -1609,7 +1609,7 @@ input#authenticator_secret {
     animation: spin 2s linear infinite;
 }
 
-.spinner-inner {
+.playlist-spinner-inner {
     position: absolute;
     width: 54px;
     height: 54px;
@@ -1696,7 +1696,7 @@ input#authenticator_secret {
     animation: fadeIn 0.3s ease;
 }
 
-.fullscreen-continue-prompt .spinner-container {
+.fullscreen-continue-prompt .playlist-spinner-container {
     margin-bottom: 60px;
 }
 
@@ -1735,7 +1735,7 @@ input#authenticator_secret {
 @media (max-width: 768px) {
     .film-title, .prompt-title { font-size: 32px; }
     .metadata-row, .prompt-subtitle { font-size: 20px; }
-    .spinner-container { width: 50px; height: 50px; }
-    .spinner-outer { width: 50px; height: 50px; }
-    .spinner-inner { width: 40px; height: 40px; }
+    .playlist-spinner-container { width: 50px; height: 50px; }
+    .playlist-spinner-outer { width: 50px; height: 50px; }
+    .playlist-spinner-inner { width: 40px; height: 40px; }
 }

@@ -511,9 +511,9 @@ export default class VideoViewer extends React.PureComponent {
 		const prompt = document.createElement('div');
 		prompt.className = 'fullscreen-continue-prompt';
 		prompt.innerHTML = `
-			<div class="spinner-container">
-				<div class="spinner-outer"></div>
-				<div class="spinner-inner"></div>
+			<div class="playlist-spinner-container">
+				<div class="playlist-spinner-outer"></div>
+				<div class="playlist-spinner-inner"></div>
 			</div>
 			<h2 class="prompt-title">Continue in Fullscreen</h2>
 			<p class="prompt-subtitle">Click anywhere to resume</p>
@@ -608,12 +608,6 @@ export default class VideoViewer extends React.PureComponent {
 
 			let nextMedia = MediaPageStore.get('playlist-next-media');
 
-			// ⛔ In playlist mode, DO NOT fallback to related_media
-			if (!nextMedia && !isPlaylist) {
-				nextMedia = this.props.data.related_media.length 
-					? this.props.data.related_media[0] 
-					: null;
-			}
 
 			if (nextMedia) {
 				// NORMAL CASE → Has next video
@@ -622,9 +616,7 @@ export default class VideoViewer extends React.PureComponent {
 			} else {
 
 				const playlistUrl = `/playlists/${playlistId}`;
-				const isFullscreen = document.fullscreenElement 
-					|| document.webkitFullscreenElement 
-					|| document.mozFullScreenElement;
+
 
 				const finalUrl = playlistUrl; // no fs=1
 				this.navigateWithFullscreenRestore(finalUrl, true);
@@ -690,9 +682,9 @@ export default class VideoViewer extends React.PureComponent {
 		card.className = 'playlist-transition-card';
 		card.innerHTML = `
 			<div class="card-content">
-				<div class="spinner-container">
-					<div class="spinner-outer"></div>
-					<div class="spinner-inner"></div>
+				<div class="playlist-spinner-container">
+					<div class="playlist-spinner-outer"></div>
+					<div class="playlist-spinner-inner"></div>
 				</div>
 				<h1 class="film-title">${videoData.title}</h1>
 				<div class="metadata-row">
