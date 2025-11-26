@@ -8,6 +8,7 @@ export function useItemList( props, itemsListRef ){
 
     const previousItemsLengthRef = useRef(0);
     const itemsListInstanceRef = useRef(null);
+    const lastNotifiedItemsLengthRef = useRef(0);
 
     const [ items, setItems ] = useState([]);
 
@@ -51,11 +52,14 @@ export function useItemList( props, itemsListRef ){
         }
     }, [items, itemsListRef]);
 
+    // Notify parent when items have loaded, but guard against infinite loops
+    // by only calling when items.length actually changes
     useEffect(() => {
-        if (void 0 !== props.itemsLoadCallback) {
+        if (void 0 !== props.itemsLoadCallback && items.length !== lastNotifiedItemsLengthRef.current) {
+            lastNotifiedItemsLengthRef.current = items.length;
             props.itemsLoadCallback();
         }
-    }, [items, props.itemsLoadCallback]);
+    }, [items.length, props.itemsLoadCallback]);
 
     return [ items, countedItems, listHandler, setListHandler, onItemsLoad, onItemsCount, addListItems ];
 }
