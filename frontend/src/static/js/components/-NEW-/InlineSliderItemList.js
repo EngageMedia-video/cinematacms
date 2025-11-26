@@ -6,7 +6,7 @@ import { useItemListInlineSlider } from './hooks/useItemListInlineSlider';
 import { PendingItemsList } from './PendingItemsList';
 import { ListItem, listItemProps } from './ListItem';
 import { ItemList } from './ItemList';
-import { ItemsFeaturedListHandler } from './includes/itemLists/ItemsFeaturedListHandler.js';
+import { ItemsStaticListHandler } from './includes/itemLists/ItemsStaticListHandler.js';
 import ArrowRightIcon from './RightCarouselArrow.js';
 import ArrowLeftIcon from '../LeftCarouselArrow.js';
 
@@ -39,7 +39,7 @@ export function InlineSliderItemList(props) {
 
     // Initialize list handler
     useEffect(() => {
-        const handler = new ItemsFeaturedListHandler(
+        const handler = new ItemsStaticListHandler(
             props.items,
             props.pageItems,
             props.maxItems,
@@ -54,11 +54,26 @@ export function InlineSliderItemList(props) {
         };
     }, [props.items]);
 
-    // Carousel scroll & dots
-    useEffect(() => {
+    // Update dots calculation function (called on mount and when items change)
+    const updateDotsCallback = React.useCallback(() => {
         const container = itemsListWrapperRef.current;
         const list = itemsListRef.current;
         if (!container || !list || !list.children.length) return;
+
+        const itemElements = Array.from(list.children).filter((el) =>
+            el.classList.contains('featured-item')
+        );
+        if (!itemElements.length) return;
+
+        const itemWidth = itemElements[0].offsetWidth;
+        const totalVisible = Math.max(1, Math.floor(container.clientWidth / itemWidth));
+        setTotalDots(Math.max(1, Math.ceil(itemElements.length / totalVisible)));
+    }, [carouselItems]);
+
+    // Carousel scroll handler
+    useEffect(() => {
+        const container = itemsListWrapperRef.current;
+        if (!container) return;
 
         const handleScroll = () => {
             const { scrollLeft, scrollWidth, clientWidth } = container;
@@ -67,28 +82,18 @@ export function InlineSliderItemList(props) {
             setIsAtStart(scrollLeft <= 0);
         };
 
-        const updateDots = () => {
-            const itemElements = Array.from(list.children).filter((el) =>
-                el.classList.contains('featured-item')
-            );
-            if (!itemElements.length) return;
-
-            const itemWidth = itemElements[0].offsetWidth;
-            const totalVisible = Math.max(1, Math.floor(container.clientWidth / itemWidth));
-            setTotalDots(Math.max(1, Math.ceil(itemElements.length / totalVisible)));
-        };
-
         container.addEventListener('scroll', handleScroll);
-        window.addEventListener('resize', updateDots);
-
-        updateDots();
-        handleScroll();
+        handleScroll(); // Initial call
 
         return () => {
             container.removeEventListener('scroll', handleScroll);
-            window.removeEventListener('resize', updateDots);
         };
     }, [carouselItems]);
+
+    // Update dots on mount and when items change
+    useEffect(() => {
+        updateDotsCallback();
+    }, [updateDotsCallback]);
 
 
     useEffect(() => {
