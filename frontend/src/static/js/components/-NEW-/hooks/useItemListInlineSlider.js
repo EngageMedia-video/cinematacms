@@ -121,6 +121,10 @@ export function useItemListInlineSlider(props) {
     fetchItems();
   }, []); // only run once at mount
 
+  // Note: Both effects below depend on updateSlider which changes when inlineSlider/items/listHandler change.
+  // This may cause redundant updateSlider calls, but updateSlider is idempotent and guards against
+  // unnecessary work internally. A single combined effect could reduce calls but would require
+  // tracking more state to determine the trigger reason.
   useEffect(() => {
     if (items.length > 0) {
       updateSlider(true);

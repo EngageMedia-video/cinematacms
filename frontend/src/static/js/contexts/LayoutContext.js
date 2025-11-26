@@ -98,7 +98,8 @@ export function useWindowResize(callback) {
   const { subscribeToResize } = context;
   const callbackRef = useRef(callback);
 
-  // Keep ref updated with latest callback
+  // Runs every render intentionally to keep callback ref current
+  // (empty dependency array omitted on purpose)
   useEffect(() => {
     callbackRef.current = callback;
   });
@@ -127,7 +128,8 @@ export function useSidebarVisibility(callback) {
   const { subscribeToSidebar } = context;
   const callbackRef = useRef(callback);
 
-  // Keep ref updated with latest callback
+  // Runs every render intentionally to keep callback ref current
+  // (empty dependency array omitted on purpose)
   useEffect(() => {
     callbackRef.current = callback;
   });

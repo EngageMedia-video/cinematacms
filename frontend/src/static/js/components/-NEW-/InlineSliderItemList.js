@@ -78,7 +78,9 @@ export function InlineSliderItemList(props) {
 
         const handleScroll = () => {
             const { scrollLeft, scrollWidth, clientWidth } = container;
-            const progress = Math.min(scrollLeft / (scrollWidth - clientWidth), 1);
+            const maxScroll = scrollWidth - clientWidth;
+            // Guard against division by zero when content fits without scrolling
+            const progress = maxScroll > 0 ? Math.min(scrollLeft / maxScroll, 1) : 0;
             setScrollProgress(progress);
             setIsAtStart(scrollLeft <= 0);
         };

@@ -79,7 +79,7 @@ function uniqid() {
     return crypto.randomUUID();
 }
 
-function Notifications(initialNotifications) {
+function Notifications(initialNotifications = []) {
 
     let stack = [];
 
@@ -115,7 +115,9 @@ function Notifications(initialNotifications) {
         return stack.length;
     }
 
-    initialNotifications.forEach(push);
+    if (Array.isArray(initialNotifications)) {
+        initialNotifications.forEach(push);
+    }
 
     return {
         size,

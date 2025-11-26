@@ -27,10 +27,14 @@ export function InlineSliderItemListAsync({
         const parsedResults = Array.isArray(data) ? data : data.results || [];
         const limitedResults = parsedResults.slice(0, maxItems);
         setItems(limitedResults);
-        itemsCountCallback(limitedResults.length);
+        if (typeof itemsCountCallback === 'function') {
+          itemsCountCallback(limitedResults.length);
+        }
       } catch (error) {
         console.error('❌ InlineSliderItemListAsync fetch error:', error);
-        itemsCountCallback(0);
+        if (typeof itemsCountCallback === 'function') {
+          itemsCountCallback(0);
+        }
       } finally {
         if (isMounted) {
           requestAnimationFrame(() => {
