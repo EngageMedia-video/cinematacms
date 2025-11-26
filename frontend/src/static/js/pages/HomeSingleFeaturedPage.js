@@ -38,7 +38,7 @@ export class HomeSingleFeaturedPage extends Page {
       throw new Error(`HTTP ${res.status} while loading ${url}`);
     }
     const data = await res.json();
-    return Array.isArray(data) ? data : data.results || [];
+    return Array.isArray(data) ? data : data.playlist_media || data.results || [];
   }
 
   async componentDidMount() {
