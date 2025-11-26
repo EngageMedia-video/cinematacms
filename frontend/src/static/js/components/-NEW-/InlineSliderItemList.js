@@ -24,8 +24,8 @@ export function InlineSliderItemList(props) {
         // isLoading intentionally unused - loading state handled by PendingItemsList
     ] = useItemListInlineSlider(props);
 
-    const [scrollProgress, setScrollProgress] = useState(0);
     const [totalDots, setTotalDots] = useState(1);
+    const [activeDot, setActiveDot] = useState(0);
     const [showArrows, setShowArrows] = useState(false);
     const [isAtStart, setIsAtStart] = useState(true);
 
@@ -74,15 +74,36 @@ export function InlineSliderItemList(props) {
     // Carousel scroll handler
     useEffect(() => {
         const container = itemsListWrapperRef.current;
-        if (!container) return;
+        const list = itemsListRef.current;
+        if (!container || !list) return;
 
         const handleScroll = () => {
-            const { scrollLeft, scrollWidth, clientWidth } = container;
-            const maxScroll = scrollWidth - clientWidth;
-            // Guard against division by zero when content fits without scrolling
-            const progress = maxScroll > 0 ? Math.min(scrollLeft / maxScroll, 1) : 0;
-            setScrollProgress(progress);
+            const { scrollLeft, clientWidth, scrollWidth } = container;
             setIsAtStart(scrollLeft <= 0);
+
+            // Calculate active dot based on which page of items is visible
+            const itemElements = Array.from(list.children).filter((el) =>
+                el.classList.contains('featured-item')
+            );
+            if (itemElements.length) {
+                const itemWidth = itemElements[0].offsetWidth;
+                const visibleCount = Math.max(1, Math.floor(clientWidth / itemWidth));
+                const currentTotalDots = Math.max(1, Math.ceil(itemElements.length / visibleCount));
+
+                // Calculate max scroll position
+                const maxScrollLeft = scrollWidth - clientWidth;
+
+                // If we're at or near the end, show last dot
+                // Use a threshold to account for rounding errors
+                if (maxScrollLeft > 0 && scrollLeft >= maxScrollLeft - 1) {
+                    setActiveDot(currentTotalDots - 1);
+                } else {
+                    // Calculate which "page" we're on based on scroll position
+                    const scrollPerPage = visibleCount * itemWidth;
+                    const currentPage = scrollPerPage > 0 ? Math.round(scrollLeft / scrollPerPage) : 0;
+                    setActiveDot(Math.min(currentPage, currentTotalDots - 1));
+                }
+            }
         };
 
         container.addEventListener('scroll', handleScroll);
@@ -91,7 +112,7 @@ export function InlineSliderItemList(props) {
         return () => {
             container.removeEventListener('scroll', handleScroll);
         };
-    }, [carouselItems]);
+    }, [carouselItems, itemsListWrapperRef, itemsListRef]);
 
     // Update dots on mount and when items change
     useEffect(() => {
@@ -116,13 +137,15 @@ export function InlineSliderItemList(props) {
         const itemElements = list.querySelectorAll('.featured-item');
         if (!itemElements.length) return;
 
+        const itemWidth = itemElements[0].offsetWidth;
+        const visibleCount = Math.max(1, Math.floor(wrapper.clientWidth / itemWidth));
+        const scrollAmount = visibleCount * itemWidth;
+
         const wrapperRect = wrapper.getBoundingClientRect();
         const lastItem = itemElements[itemElements.length - 1];
         const lastItemRect = lastItem.getBoundingClientRect();
 
-        const scrollAmount = wrapper.clientWidth;
-
-
+        // Loop back to start if last item is fully visible
         if (Math.abs(lastItemRect.right - wrapperRect.right) <= 1) {
             wrapper.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
@@ -138,11 +161,13 @@ export function InlineSliderItemList(props) {
         const itemElements = list.querySelectorAll('.featured-item');
         if (!itemElements.length) return;
 
-        const wrapperRect = wrapper.getBoundingClientRect();
-        const firstItem = itemElements[0];
-        const firstItemRect = firstItem.getBoundingClientRect();
+        const itemWidth = itemElements[0].offsetWidth;
+        const visibleCount = Math.max(1, Math.floor(wrapper.clientWidth / itemWidth));
+        const scrollAmount = visibleCount * itemWidth;
 
-        const scrollAmount = wrapper.clientWidth;
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const firstItemEl = itemElements[0];
+        const firstItemRect = firstItemEl.getBoundingClientRect();
 
         // Loop back to end if first item's left touches wrapper's left
         if (Math.abs(firstItemRect.left - wrapperRect.left) <= 1) {
@@ -157,8 +182,6 @@ export function InlineSliderItemList(props) {
 
     if (!countedItems) return <PendingItemsList className={classname.listOuter} />;
     if (!items.length) return null;
-
-    const activeDot = Math.round(scrollProgress * (totalDots - 1));
 
     return (
         <div className={classname.listOuter}>
