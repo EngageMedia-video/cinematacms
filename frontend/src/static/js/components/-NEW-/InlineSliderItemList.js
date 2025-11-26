@@ -53,7 +53,7 @@ export function InlineSliderItemList(props) {
             handler.cancelAll();
             setListHandler(null);
         };
-    }, [props.items]);
+    }, [props.items, props.pageItems, props.maxItems, onItemsCount, onItemsLoad, setListHandler]);
 
     // Update dots calculation function (called on mount and when items change)
     const updateDotsCallback = React.useCallback(() => {
@@ -69,7 +69,7 @@ export function InlineSliderItemList(props) {
         const itemWidth = itemElements[0].offsetWidth;
         const totalVisible = Math.max(1, Math.floor(container.clientWidth / itemWidth));
         setTotalDots(Math.max(1, Math.ceil(itemElements.length / totalVisible)));
-    }, [carouselItems]);
+    }, [carouselItems.length, itemsListWrapperRef, itemsListRef]);
 
     // Carousel scroll handler
     useEffect(() => {
@@ -97,12 +97,13 @@ export function InlineSliderItemList(props) {
     }, [updateDotsCallback]);
 
 
+    // Show navigation arrows only when items exceed the visible threshold
     useEffect(() => {
         if (itemsListRef.current) {
             const itemCount = itemsListRef.current.querySelectorAll('.featured-item').length;
-            setShowArrows(itemCount > 3);
+            setShowArrows(itemCount > props.arrowThreshold);
         }
-    }, [carouselItems]);
+    }, [carouselItems, props.arrowThreshold]);
 
     // Navigation
     const handleNext = () => {
@@ -227,6 +228,7 @@ InlineSliderItemList.propTypes = {
     hideViews: PropTypes.bool,
     hideAuthor: PropTypes.bool,
     hideDate: PropTypes.bool,
+    arrowThreshold: PropTypes.number,
 };
 
 InlineSliderItemList.defaultProps = {
@@ -234,4 +236,5 @@ InlineSliderItemList.defaultProps = {
     pageItems: 6,
     layout: 'featured',
     firstItemViewer: false,
+    arrowThreshold: 3,
 };

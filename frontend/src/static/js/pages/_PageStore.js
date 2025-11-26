@@ -73,14 +73,11 @@ function BrowserEvents() {
 }
 
 /*
- *
- * @link: https://gist.github.com/gordonbrander/2230317
+ * Generate a unique identifier
  */
 function uniqid() {
-    let a = new Uint32Array(3);
-    window.crypto.getRandomValues(a);
-    return (performance.now().toString(36) + Array.from(a).map(A => A.toString(36)).join("")).replace(/./g, "" + Math.random() + Intl.DateTimeFormat().resolvedOptions().timeZone + Date.now());
-};
+    return crypto.randomUUID();
+}
 
 function Notifications(initialNotifications) {
 

@@ -95,11 +95,23 @@ export function useWindowResize(callback) {
     throw new Error('useWindowResize must be used within LayoutProvider');
   }
 
+  const { subscribeToResize } = context;
+  const callbackRef = useRef(callback);
+
+  // Keep ref updated with latest callback
   useEffect(() => {
-    if (callback && typeof callback === 'function') {
-      return context.subscribeToResize(callback);
-    }
-  }, [callback, context]);
+    callbackRef.current = callback;
+  });
+
+  useEffect(() => {
+    // Stable wrapper that always calls the latest callback
+    const stableCallback = (size) => {
+      if (callbackRef.current && typeof callbackRef.current === 'function') {
+        callbackRef.current(size);
+      }
+    };
+    return subscribeToResize(stableCallback);
+  }, [subscribeToResize]);
 }
 
 /**
@@ -112,11 +124,23 @@ export function useSidebarVisibility(callback) {
     throw new Error('useSidebarVisibility must be used within LayoutProvider');
   }
 
+  const { subscribeToSidebar } = context;
+  const callbackRef = useRef(callback);
+
+  // Keep ref updated with latest callback
   useEffect(() => {
-    if (callback && typeof callback === 'function') {
-      return context.subscribeToSidebar(callback);
-    }
-  }, [callback, context]);
+    callbackRef.current = callback;
+  });
+
+  useEffect(() => {
+    // Stable wrapper that always calls the latest callback
+    const stableCallback = (visible) => {
+      if (callbackRef.current && typeof callbackRef.current === 'function') {
+        callbackRef.current(visible);
+      }
+    };
+    return subscribeToSidebar(stableCallback);
+  }, [subscribeToSidebar]);
 }
 
 /**
