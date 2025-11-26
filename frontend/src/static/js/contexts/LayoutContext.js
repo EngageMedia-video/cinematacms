@@ -27,8 +27,9 @@ export function LayoutProvider({ children }) {
         };
         setWindowSize(newSize);
 
-        // Notify all subscribers
-        resizeSubscribersRef.current.forEach(callback => callback(newSize));
+        // Notify all subscribers (snapshot to prevent mutation during iteration)
+        const subscribers = resizeSubscribersRef.current.slice();
+        subscribers.forEach(callback => callback(newSize));
       }, 200);
     };
 
@@ -45,8 +46,9 @@ export function LayoutProvider({ children }) {
       const visible = LayoutStore.get('visible-sidebar');
       setSidebarVisible(visible);
 
-      // Notify all subscribers
-      sidebarSubscribersRef.current.forEach(callback => callback(visible));
+      // Notify all subscribers (snapshot to prevent mutation during iteration)
+      const subscribers = sidebarSubscribersRef.current.slice();
+      subscribers.forEach(callback => callback(visible));
     };
 
     LayoutStore.on('sidebar-visibility-change', handleSidebarChange);

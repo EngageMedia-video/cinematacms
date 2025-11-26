@@ -82,16 +82,29 @@ export function useItemListInlineSlider(props) {
   const onSidebarVisibilityChange = useCallback(() => {
     clearTimeout(sliderRecalTimeoutRef.current);
     sliderRecalTimeoutRef.current = setTimeout(() => {
-      sliderRecalTimeoutRef.current = setTimeout(() => {
-        sliderRecalTimeoutRef.current = null;
-        updateSlider();
-      }, 50);
+      sliderRecalTimeoutRef.current = null;
+      updateSlider();
     }, 150);
   }, [updateSlider]);
 
   // ---- Subscribe to layout context events
   useWindowResize(onWinResize);
   useSidebarVisibility(onSidebarVisibilityChange);
+
+  // ---- Cleanup timeout refs on unmount
+  useEffect(() => {
+    return () => {
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+        resizeTimeoutRef.current = null;
+      }
+      if (sliderRecalTimeoutRef.current) {
+        clearTimeout(sliderRecalTimeoutRef.current);
+        sliderRecalTimeoutRef.current = null;
+      }
+      pendingChangeSlideRef.current = true;
+    };
+  }, []);
 
   // ---- Effects
   useEffect(() => {

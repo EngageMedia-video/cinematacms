@@ -32,15 +32,15 @@ function BrowserEvents() {
     };
 
     function onDocumentVisibilityChange() {
-        callbacks.document.visibility.map(fn => fn());
+        callbacks.document.visibility.forEach(fn => fn());
     }
 
     function onWindowResize() {
-        callbacks.window.resize.map(fn => fn());
+        callbacks.window.resize.forEach(fn => fn());
     }
 
     function onWindowScroll() {
-        callbacks.window.scroll.map(fn => fn());
+        callbacks.window.scroll.forEach(fn => fn());
     }
 
     function windowEvents(resizeCallback, scrollCallback) {
@@ -118,7 +118,7 @@ function Notifications(initialNotifications) {
         return stack.length;
     }
 
-    initialNotifications.map(push);
+    initialNotifications.forEach(push);
 
     return {
         size,
@@ -149,8 +149,8 @@ class PageStore extends EventEmitter {
 
         super();
 
-        // Temporary: Keep max listeners until all components migrate to LayoutContext
-        // Currently 13 components still use PageStore.on('window_resize')
+        // TODO: Remove setMaxListeners once all 13 components migrate to LayoutContext
+        // Components still using PageStore.on('window_resize') should migrate to useWindowResize hook
         this.setMaxListeners(50);
 
         mediacms_config = mediaCmsConfig(window.MediaCMS);
@@ -184,6 +184,7 @@ class PageStore extends EventEmitter {
 
         // Custom listeners for window resize to avoid EventEmitter MaxListenersExceededWarning
         this.resizeListeners = [];
+        this.resizeTimeout = null;
     }
 
     addWindowResizeListener(callback) {

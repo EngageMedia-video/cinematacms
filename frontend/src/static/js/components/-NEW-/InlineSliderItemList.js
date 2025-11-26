@@ -21,6 +21,7 @@ export function InlineSliderItemList(props) {
         onItemsLoad,
         itemsListWrapperRef,
         itemsListRef,
+        // isLoading intentionally unused - loading state handled by PendingItemsList
     ] = useItemListInlineSlider(props);
 
     const [scrollProgress, setScrollProgress] = useState(0);
@@ -189,7 +190,7 @@ export function InlineSliderItemList(props) {
                     <div ref={itemsListWrapperRef} className="featured-items-wrap">
                         <div ref={itemsListRef} className={`${classname.list} featured-items-list`}>
                             {carouselItems.map((itm, index) => (
-                                <div key={index} className="featured-item">
+                                <div key={itm.uid || itm.id || index} className="featured-item">
                                     <ListItem {...listItemProps(props, itm, index)} />
                                 </div>
                             ))}
