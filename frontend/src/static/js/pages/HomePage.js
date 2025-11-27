@@ -57,8 +57,8 @@ export class HomePage extends Page {
 									{ this.props.featured_hero_player ?
 										<ItemListAsync
 											firstItemViewer={ true }
-											pageItems={ 30 }
-											maxItems={ 30 }
+											pageItems={ 20 }
+											maxItems={ 20 }
 											className="feat-first-item"
 											requestUrl={ apiUrl.featured }
 											itemsCountCallback={ this.onLoadFeatured }
@@ -86,7 +86,8 @@ export class HomePage extends Page {
 							{ this.state.loadedLatest && ! this.state.visibleLatest ? null :
 								<MediaListRow title={ this.props.latest_title } style={ ! this.state.visibleLatest ? { display: 'none' } : null } viewAllLink={ this.props.latest_view_all_link ? links.latest : null }>
 									<ItemListAsync
-										pageItems={ 30 }
+										pageItems={ 20 }
+										maxItems={ 20 }
 										requestUrl={ apiUrl.media }
 										itemsCountCallback={ this.onLoadLatest }
 										hideViews={ ! PageStore.get('config-media-item').displayViews }

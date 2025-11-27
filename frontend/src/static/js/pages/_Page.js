@@ -7,6 +7,7 @@ import { VisitorPopup } from "../components/-NEW-/VisitorPopup.jsx";
 
 import PageMain from "../components/-NEW-/PageMain";
 import { Notifications } from "../components/-NEW-/Notifications";
+import { LayoutProvider } from "../contexts/LayoutContext";
 
 export class Page extends React.PureComponent {
 	constructor(props, pageId) {
@@ -19,10 +20,10 @@ export class Page extends React.PureComponent {
 
 	render() {
 		return (
-			<>
+			<LayoutProvider>
 				<PageMain>{this.pageContent()}</PageMain>
 				<Notifications />
-			</>
+			</LayoutProvider>
 		);
 	}
 }
