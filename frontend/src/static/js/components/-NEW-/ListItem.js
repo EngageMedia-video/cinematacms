@@ -202,6 +202,7 @@ export function listItemProps( props, item, index ){
 		hasMediaViewer: 0 === index && 'video' === item.media_type && !! props.firstItemViewer,
 		hasMediaViewerDescr: false,
 		countries: item.media_country_info || [],
+		state: item.state || null,
 	};
 
 	args.hasMediaViewerDescr = args.hasMediaViewer && !! props.firstItemDescr;
@@ -361,6 +362,8 @@ export function ListItem(props){
 		args.hideViews = props.hide.views;
 		args.hideAuthor = props.hide.author;
 		args.hideCategories = props.hide.categories;
+
+		args.state = props.state;
 	}
 
 	if( props.playlistPage.current || props.playlistPlayback.current ){

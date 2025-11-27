@@ -5,6 +5,7 @@ MediaCMS.user = {
 	location_country: {% if request.user.is_authenticated %}"{{request.user.location_country}}"{% else %}null{% endif %},
 	is: {
 		admin: {% if IS_MEDIACMS_ADMIN %}true{% else %}false{% endif %},
+		manager: {% if IS_MEDIACMS_MANAGER %}true{% else %}false{% endif %},
 		anonymous: {% if request.user.is_authenticated %}false{% else %}true{% endif %},
 	},
 	can: {

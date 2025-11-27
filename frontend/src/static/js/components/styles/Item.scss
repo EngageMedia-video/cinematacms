@@ -667,3 +667,44 @@ a.item-edit-link{
 		}
 	}
 }
+
+// State badges for non-public videos (private, unlisted, restricted)
+.item-state-badge {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	font-weight: 500;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	z-index: 1;
+	pointer-events: none;
+	color: #fff;
+
+	.material-icons {
+		font-size: 14px;
+		line-height: 1;
+	}
+
+	.badge-label {
+		line-height: 1;
+	}
+
+	&.badge-private {
+		background: rgba(0, 0, 0, 0.85);
+		color: #fff;
+	}
+
+	&.badge-unlisted {
+		background: rgba(237, 124, 48, 0.9);
+		color: #fff;
+	}
+
+	&.badge-restricted {
+		background: rgba(2, 102, 144, 0.9);
+		color: #fff;
+	}
+}

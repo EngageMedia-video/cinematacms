@@ -972,9 +972,13 @@ class MediaList(APIView):
         else:
             pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
             if author_param:
-                if self.request.user == user:  # SHOW ALL VIDEOS
+                from .helpers import can_view_all_user_media
+                
+                if can_view_all_user_media(self.request.user, user):
+                    # Owners, managers, and superusers see ALL videos (including private, unlisted, restricted)
                     basic_query = Q(user=user)
                 else:
+                    # Everyone else sees only public, reviewed videos
                     basic_query = Q(state="public", is_reviewed=True, user=user)
             else:
                 basic_query = Q(

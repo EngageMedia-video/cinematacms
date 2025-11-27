@@ -31,18 +31,24 @@ export class ProfileMediaPage extends ProfilePage {
 					<ApiUrlConsumer>
 					{ apiUrl => 
 						<UserConsumer>
-						{ user => 
-							<ProfilePagesContent key="ProfilePagesContent">
-								<MediaListWrapper title={ this.props.title } className="items-list-ver">
-									<LazyLoadItemListAsync
-										requestUrl={ apiUrl.media + '?author=' + this.state.author.id }
-										hideAuthor={ true }
-										hideViews={ ! PageStore.get('config-media-item').displayViews }
-										hideDate={ ! PageStore.get('config-media-item').displayPublishDate }
-										canEdit={ ProfilePageStore.get('author-data').username === user.username } />
-								</MediaListWrapper>
-							</ProfilePagesContent>
-						}
+						{ user => {
+							const isMediaAuthor = ProfilePageStore.get('author-data').username === user.username;
+							const isManagerOrAdmin = user.is.manager || user.is.admin;
+							const canEditMedia = isMediaAuthor || isManagerOrAdmin;
+							
+							return (
+								<ProfilePagesContent key="ProfilePagesContent">
+									<MediaListWrapper title={ this.props.title } className="items-list-ver">
+										<LazyLoadItemListAsync
+											requestUrl={ apiUrl.media + '?author=' + this.state.author.id }
+											hideAuthor={ true }
+											hideViews={ ! PageStore.get('config-media-item').displayViews }
+											hideDate={ ! PageStore.get('config-media-item').displayPublishDate }
+											canEdit={ canEditMedia } />
+									</MediaListWrapper>
+								</ProfilePagesContent>
+							);
+						}}
 						</UserConsumer>
 					}
 					</ApiUrlConsumer>

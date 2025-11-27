@@ -49,6 +49,30 @@ export function MediaItemEditLink(props) {
 	return (void 0 === props.link ? null : <a href={props.link} title="Edit media" className="item-edit-link">EDIT MEDIA</a>);
 }
 
+export function MediaItemStateBadge(props) {
+	if (!props.state || props.state === 'public') {
+		return null;
+	}
+
+	const badgeConfig = {
+		private: { icon: 'lock', label: 'Private', className: 'badge-private' },
+		unlisted: { icon: 'link', label: 'Unlisted', className: 'badge-unlisted' },
+		restricted: { icon: 'vpn_key', label: 'Restricted', className: 'badge-restricted' }
+	};
+
+	const config = badgeConfig[props.state];
+	if (!config) {
+		return null;
+	}
+
+	return (
+		<span className={`item-state-badge ${config.className}`} title={config.label}>
+			<i className="material-icons">{config.icon}</i>
+			<span className="badge-label">{config.label}</span>
+		</span>
+	);
+}
+
 export function MediaItemThumbnailLink(props) {
 
 	const attr = {
@@ -63,6 +87,7 @@ export function MediaItemThumbnailLink(props) {
 
 	return (<a {...attr}>
 		{!props.src ? null : <div key="item-type-icon" className="item-type-icon"><div></div></div>}
+		<MediaItemStateBadge state={props.state} />
 	</a>);
 }
 

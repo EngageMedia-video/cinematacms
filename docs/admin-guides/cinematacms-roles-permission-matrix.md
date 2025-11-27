@@ -79,6 +79,7 @@ The matrix follows a progressive permission model where higher-level roles inher
 |:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
 | Access content review dashboard | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
 | Review and approve submitted content | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| View Publication Status of Users' Video Contents | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
 | Handle reported content | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
 | Set content visibility status | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
 | Access moderation logs | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
