@@ -960,3 +960,42 @@ def cleanup_temp_upload_files(temp_file_path, upload_file_path, media_friendly_t
             f"Unexpected error during temp file cleanup for media {media_friendly_token}: {e}",
             exc_info=True
         )
+
+
+def can_view_all_user_media(requesting_user, profile_user):
+    """
+    Check if requesting_user can view ALL media (including private, unlisted, and restricted) 
+    from profile_user's profile page.
+    
+    Returns True if:
+    - Requesting user is the profile owner
+    - Requesting user is a Manager
+    - Requesting user is a Superuser
+    
+    Returns False otherwise (including for Editors)
+    
+    Args:
+        requesting_user: User making the request
+        profile_user: User whose profile is being viewed
+        
+    Returns:
+        bool: True if user can view all media, False otherwise
+    """
+    from .methods import is_mediacms_manager
+    
+    if not requesting_user.is_authenticated:
+        return False
+    
+    # Owner can always see their own content
+    if requesting_user == profile_user:
+        return True
+    
+    # Superusers can see all content
+    if requesting_user.is_superuser:
+        return True
+    
+    # Managers can see all content (but NOT editors)
+    if is_mediacms_manager(requesting_user):
+        return True
+    
+    return False
