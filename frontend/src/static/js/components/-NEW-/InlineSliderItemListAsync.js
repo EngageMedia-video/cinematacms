@@ -9,7 +9,8 @@ export function InlineSliderItemListAsync({
   hideViews,
   hideAuthor,
   hideDate,
-  className
+  className,
+  maxItems = 20
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,11 +25,16 @@ export function InlineSliderItemListAsync({
         if (!isMounted) return;
 
         const parsedResults = Array.isArray(data) ? data : data.results || [];
-        setItems(parsedResults);
-        itemsCountCallback(parsedResults.length);
+        const limitedResults = parsedResults.slice(0, maxItems);
+        setItems(limitedResults);
+        if (typeof itemsCountCallback === 'function') {
+          itemsCountCallback(limitedResults.length);
+        }
       } catch (error) {
         console.error('❌ InlineSliderItemListAsync fetch error:', error);
-        itemsCountCallback(0);
+        if (typeof itemsCountCallback === 'function') {
+          itemsCountCallback(0);
+        }
       } finally {
         if (isMounted) {
           requestAnimationFrame(() => {
@@ -74,5 +80,6 @@ InlineSliderItemListAsync.propTypes = {
   hideViews: PropTypes.bool,
   hideAuthor: PropTypes.bool,
   hideDate: PropTypes.bool,
-  className: PropTypes.string
+  className: PropTypes.string,
+  maxItems: PropTypes.number
 };

@@ -19,7 +19,7 @@ const MediaCMSModels = MediaCMSLib.core.entities;*/
 /* ################################################## */
 /* ################################################## */
 
-function BrowserEvents(){
+function BrowserEvents() {
 
     const callbacks = {
         document: {
@@ -31,32 +31,32 @@ function BrowserEvents(){
         },
     };
 
-    function onDocumentVisibilityChange(){
-        callbacks.document.visibility.map( fn => fn() );
+    function onDocumentVisibilityChange() {
+        callbacks.document.visibility.forEach(fn => fn());
     }
 
-    function onWindowResize(){
-        callbacks.window.resize.map( fn => fn() );
+    function onWindowResize() {
+        callbacks.window.resize.forEach(fn => fn());
     }
 
-    function onWindowScroll(){
-        callbacks.window.scroll.map( fn => fn() );
+    function onWindowScroll() {
+        callbacks.window.scroll.forEach(fn => fn());
     }
 
-    function windowEvents( resizeCallback, scrollCallback ){
+    function windowEvents(resizeCallback, scrollCallback) {
 
-        if( 'function' === typeof resizeCallback ){
+        if ('function' === typeof resizeCallback) {
             callbacks.window.resize.push(resizeCallback);
         }
 
-        if( 'function' === typeof scrollCallback ){
+        if ('function' === typeof scrollCallback) {
             callbacks.window.scroll.push(scrollCallback);
         }
     }
 
-    function documentEvents( visibilityChangeCallback ){
+    function documentEvents(visibilityChangeCallback) {
 
-        if( 'function' === typeof visibilityChangeCallback ){
+        if ('function' === typeof visibilityChangeCallback) {
             callbacks.document.visibility.push(visibilityChangeCallback);
         }
     }
@@ -73,22 +73,19 @@ function BrowserEvents(){
 }
 
 /*
- * 
- * @link: https://gist.github.com/gordonbrander/2230317
+ * Generate a unique identifier
  */
 function uniqid() {
-    let a = new Uint32Array(3);
-    window.crypto.getRandomValues(a);
-    return (performance.now().toString(36)+Array.from(a).map(A => A.toString(36)).join("")).replace(/./g,""+Math.random()+Intl.DateTimeFormat().resolvedOptions().timeZone+Date.now());
-};
+    return crypto.randomUUID();
+}
 
-function Notifications( initialNotifications ){
+function Notifications(initialNotifications = []) {
 
     let stack = [];
 
-    function push( msg ){
-        if( 'string' === typeof msg ){
-            stack.push( [ uniqid(), msg ] );
+    function push(msg) {
+        if ('string' === typeof msg) {
+            stack.push([uniqid(), msg]);
         }
     }
 
@@ -106,19 +103,21 @@ function Notifications( initialNotifications ){
         return stack.shift();
     }*/
 
-    function messages(){
+    function messages() {
         return [...stack];
     }
 
-    function clear(){
+    function clear() {
         stack = [];
     }
 
-    function size(){
+    function size() {
         return stack.length;
     }
 
-    initialNotifications.map(push);
+    if (Array.isArray(initialNotifications)) {
+        initialNotifications.forEach(push);
+    }
 
     return {
         size,
@@ -143,15 +142,19 @@ const mediacms_member_page_link = k => mediacms_config.member.pages[k] || '#';
 
 const mediacms_api_endpoint_url = k => mediacms_config.api[k] || null;
 
-class PageStore extends EventEmitter{
+class PageStore extends EventEmitter {
 
-    constructor( page ) {
+    constructor(page) {
 
         super();
 
-        mediacms_config = mediaCmsConfig( window.MediaCMS );
+        // TODO: Remove setMaxListeners once all 13 components migrate to LayoutContext
+        // Components still using PageStore.on('window_resize') should migrate to useWindowResize hook
+        this.setMaxListeners(50);
 
-        browserCache = new BrowserCache( mediacms_config.site.id, 86400 );  // Keep cache data "fresh" for one day.
+        mediacms_config = mediaCmsConfig(window.MediaCMS);
+
+        browserCache = new BrowserCache(mediacms_config.site.id, 86400);  // Keep cache data "fresh" for one day.
 
         page_config = {
             mediaAutoPlay: browserCache.get('media-auto-play'),
@@ -165,7 +168,7 @@ class PageStore extends EventEmitter{
         /*this._SITE = new MediaCMSModels.Site( mediacms_config.site.id, mediacms_config.site.title, mediacms_config.site.url, mediacms_config.site.api );
         this._PAGE = null;
         this._USER = new MediaCMSModels.User( mediacms_config.member.username, mediacms_config.member.name, mediacms_config.member.thumbnail );
-        
+
         this._USER.setRoles({ ...mediacms_config.member.is });
         this._USER.setAbilities({ ...mediacms_config.member.can });*/
 
@@ -173,25 +176,45 @@ class PageStore extends EventEmitter{
         /* ################################################## */
 
         this.browserEvents = BrowserEvents();
-        this.browserEvents.doc( this.onDocumentVisibilityChange.bind(this) );
-        this.browserEvents.win( this.onWindowResize.bind(this), this.onWindowScroll.bind(this) );
+        this.browserEvents.doc(this.onDocumentVisibilityChange.bind(this));
+        this.browserEvents.win(this.onWindowResize.bind(this), this.onWindowScroll.bind(this));
 
-        this.notifications = Notifications( void 0 !== window.MediaCMS && void 0 !== window.MediaCMS.notifications ? window.MediaCMS.notifications : [] );
+        this.notifications = Notifications(void 0 !== window.MediaCMS && void 0 !== window.MediaCMS.notifications ? window.MediaCMS.notifications : []);
+
+        // Custom listeners for window resize to avoid EventEmitter MaxListenersExceededWarning
+        this.resizeListeners = [];
+        this.resizeTimeout = null;
     }
 
-    onDocumentVisibilityChange(){
-        this.emit( 'document_visibility_change' );
+    addWindowResizeListener(callback) {
+        if ('function' === typeof callback) {
+            this.resizeListeners.push(callback);
+        }
     }
 
-    onWindowScroll(){
-        this.emit( 'window_scroll' );
+    removeWindowResizeListener(callback) {
+        this.resizeListeners = this.resizeListeners.filter(cb => cb !== callback);
     }
 
-    onWindowResize(){
-        this.emit( 'window_resize' );
+    onDocumentVisibilityChange() {
+        this.emit('document_visibility_change');
     }
 
-    initPage(page){
+    onWindowScroll() {
+        this.emit('window_scroll');
+    }
+
+    onWindowResize() {
+        if (this.resizeTimeout) {
+            clearTimeout(this.resizeTimeout);
+        }
+        this.resizeTimeout = setTimeout(() => {
+            this.emit('window_resize');
+            this.resizeListeners.forEach(cb => cb());
+        }, 200);
+    }
+
+    initPage(page) {
 
         page_config.currentPage = page;
 
@@ -213,11 +236,11 @@ class PageStore extends EventEmitter{
         /* ################################################## */
     }
 
-    get(type){
-        
+    get(type) {
+
         let r;
 
-        switch(type){
+        switch (type) {
             case 'browser-cache':
                 r = browserCache;
                 break;
@@ -240,7 +263,7 @@ class PageStore extends EventEmitter{
                 r = mediacms_config.site;
                 break;
             case 'api-playlists':
-                r = mediacms_api_endpoint_url( type.split('-')[1] );
+                r = mediacms_api_endpoint_url(type.split('-')[1]);
                 break;
             case 'window-inner-width':
                 r = window.innerWidth;
@@ -260,22 +283,22 @@ class PageStore extends EventEmitter{
     }
 
     actions_handler(action) {
-        switch(action.type) {
+        switch (action.type) {
             case 'INIT_PAGE':
                 this.initPage(action.page);
-                this.emit( 'page_init' );
+                this.emit('page_init');
                 break;
             case 'TOGGLE_AUTO_PLAY':
-                page_config.mediaAutoPlay  = ! page_config.mediaAutoPlay;
+                page_config.mediaAutoPlay = !page_config.mediaAutoPlay;
                 browserCache.set('media-auto-play', page_config.mediaAutoPlay);
-                this.emit( 'switched_media_auto_play' );
+                this.emit('switched_media_auto_play');
                 break;
             case 'ADD_NOTIFICATION':
-                this.notifications.push( action.notification );
-                this.emit( 'added_notification' );
+                this.notifications.push(action.notification);
+                this.emit('added_notification');
                 break;
         }
     }
 }
 
-export default exportStore( new PageStore, 'actions_handler' );
+export default exportStore(new PageStore, 'actions_handler');

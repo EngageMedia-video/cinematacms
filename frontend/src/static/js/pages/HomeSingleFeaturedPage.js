@@ -28,6 +28,8 @@ export class HomeSingleFeaturedPage extends Page {
       loadedLatest: false,
       visibleLatest: false,
     };
+
+    this._isMounted = false;
   }
 
   async fetchData(url) {
@@ -36,38 +38,68 @@ export class HomeSingleFeaturedPage extends Page {
       throw new Error(`HTTP ${res.status} while loading ${url}`);
     }
     const data = await res.json();
-    return Array.isArray(data) ? data : data.results || [];
+    return Array.isArray(data) ? data : data.playlist_media || data.results || [];
   }
 
   async componentDidMount() {
+    this._isMounted = true;
+    const MAX_ITEMS = 20;
     try {
-      const featuredVideos = await this.fetchData(this.mediacms_config.api.featured);
+      // Load featured videos immediately (limited to 20)
+      const allFeaturedVideos = await this.fetchData(this.mediacms_config.api.featured);
+      const featuredVideos = allFeaturedVideos.slice(0, MAX_ITEMS);
+      if (this._isMounted) {
+        this.setState({ featuredVideos, loadedFeatured: true });
+      }
+
+      // Load playlist metadata
       const indexFeaturedListData = await this.fetchData(this.mediacms_config.api.indexfeatured);
 
-      const indexFeaturedList = await Promise.all(
-        indexFeaturedListData.map(async (playlist) => {
-          if (!playlist.api_url) return playlist;
-          try {
-            const items = await this.fetchData(playlist.api_url);
-            return { ...playlist, items };
-          } catch (err) {
-            console.error(`❌ Failed to load videos for playlist: ${playlist.title}`, err);
-            return { ...playlist, items: [] };
-          }
-        })
-      );
+      // Initialize playlists with loading state
+      const initialPlaylists = indexFeaturedListData.map(playlist => ({
+        ...playlist,
+        items: null, // null = loading, [] = loaded empty, [...] = loaded with data
+        loading: true,
+      }));
+      if (this._isMounted) {
+        this.setState({ indexFeaturedList: initialPlaylists });
+      }
 
-        this.setState({
-          indexFeaturedList,
-          featuredVideos,
-          loadedFeatured: true,
-        });
+      // Load each playlist's items concurrently and update state as they complete (limited to 20)
+      indexFeaturedListData.forEach(async (playlist, index) => {
+        if (!playlist.api_url) {
+          this.updatePlaylist(index, { ...playlist, items: [], loading: false });
+          return;
+        }
+
+        try {
+          const allItems = await this.fetchData(playlist.api_url);
+          const items = allItems.slice(0, MAX_ITEMS);
+          this.updatePlaylist(index, { ...playlist, items, loading: false });
+        } catch (err) {
+          console.error(`❌ Failed to load videos for playlist: ${playlist.title}`, err);
+          this.updatePlaylist(index, { ...playlist, items: [], loading: false });
+        }
+      });
     } catch (err) {
       console.error('❌ Failed to load featured playlists', err);
-    } finally {
-      this.setState({ loadedFeatured: true });
-
+      if (this._isMounted) {
+        this.setState({ loadedFeatured: true });
+      }
     }
+  }
+
+  componentWillUnmount() {
+    this._isMounted = false;
+  }
+
+  updatePlaylist(index, updatedPlaylist) {
+    if (!this._isMounted) return;
+    this.setState(prevState => {
+      const indexFeaturedList = [...prevState.indexFeaturedList];
+      indexFeaturedList[index] = updatedPlaylist;
+      return { indexFeaturedList };
+    });
   }
 
 
@@ -118,8 +150,8 @@ export class HomeSingleFeaturedPage extends Page {
                   <InlineSliderItemList
                     layout="featured"
                     items={remainingFeatured}
-                    pageItems={6}
-                    maxItems={8}
+                    pageItems={Math.min(remainingFeatured.length, 20)}
+                    maxItems={Math.min(remainingFeatured.length, 20)}
                     onItemsCount={this.onLoadFeatured}
                     onItemsLoad={this.onLoadFeatured}
                     firstItemViewer={false}
@@ -147,17 +179,17 @@ export class HomeSingleFeaturedPage extends Page {
                       desc={item.text}
                       className={void 0 === this.props.title ? 'no-title' : ''}
                     >
-                      {!item.items?.length ? (
+                      {item.items === null || item.loading ? (
                         <PendingItemsList className="featured-carousel" />
-                      ) : (
+                      ) : item.items?.length > 0 ? (
                         <InlineSliderItemList
                           headingText={item.title}
                           layout="featured"
                           items={item.items}
-                          pageItems={6}
-                          maxItems={8}
+                          pageItems={Math.min(item.items.length, 20)}
+                          maxItems={Math.min(item.items.length, 20)}
                         />
-                      )}
+                      ) : null}
                     </MediaListRow>
                 </MediaMultiListWrapper>
               ))
@@ -183,8 +215,8 @@ export class HomeSingleFeaturedPage extends Page {
                     hideViews={true}
                     hideAuthor={!PageStore.get('config-media-item').displayAuthor}
                     hideDate={!PageStore.get('config-media-item').displayPublishDate}
-																				pageItems={20}
-												 							maxItems={20}
+                    pageItems={20}
+                    maxItems={20}
                   />
                 </MediaListRow>
               )}
