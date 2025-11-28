@@ -1660,29 +1660,10 @@ video.show-video {
 
 /* Hide video under transition card */
 .hidden-video {
-  opacity: 0 !important;  /* force opacity change */
-  transition: opacity 0.3s ease-in-out;
+	opacity: 0 !important;  /* force opacity change */
+	transition: opacity 0.3s ease-in-out;
 }
 
-
-/* Metadata row */
-.metadata-row {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    font-family: 'Amulya', sans-serif;
-    font-size: 30px;
-    font-weight: 500;
-    color: #FFFFFF;
-}
-
-.metadata-separator {
-    width: 8px;
-    height: 8px;
-    background: #FFFFFF;
-    border-radius: 50%;
-    opacity: 0.8;
-}
 
 /* Click-to-continue overlay */
 .fullscreen-continue-prompt {
