@@ -1553,9 +1553,14 @@ input#authenticator_secret {
 
 
 
-
-
 /* Make the video player a proper containing element */
+.video-js video,
+video.vjs-tech,
+video.show-video {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
 
 
 /* REAL transition card overlay */
