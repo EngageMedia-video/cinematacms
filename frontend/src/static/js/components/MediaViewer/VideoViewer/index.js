@@ -517,9 +517,11 @@ export default class VideoViewer extends React.PureComponent {
 		const prompt = document.createElement('div');
 		prompt.className = 'fullscreen-continue-prompt';
 		prompt.innerHTML = `
-			<div class="playlist-spinner-container">
-				<div class="playlist-spinner-outer"></div>
-				<div class="playlist-spinner-inner"></div>
+			<div class="ripple-spinner">
+				<div class="circle circle-1"></div>
+				<div class="circle circle-2"></div>
+				<div class="circle circle-3"></div>
+				<div class="circle circle-4"></div>
 			</div>
 			<h2 class="prompt-title">Continue in Fullscreen</h2>
 			<p class="prompt-subtitle">Click anywhere to resume</p>
@@ -693,9 +695,11 @@ export default class VideoViewer extends React.PureComponent {
 		card.className = 'playlist-transition-card';
 		card.innerHTML = `
 			<div class="card-content">
-				<div class="playlist-spinner-container">
-					<div class="playlist-spinner-outer"></div>
-					<div class="playlist-spinner-inner"></div>
+				<div class="ripple-spinner">
+					<div class="circle circle-1"></div>
+					<div class="circle circle-2"></div>
+					<div class="circle circle-3"></div>
+					<div class="circle circle-4"></div>
 				</div>
 				<h1 class="film-title">${videoData.title}</h1>
 				<div class="metadata-row">

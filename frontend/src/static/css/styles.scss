@@ -1595,37 +1595,62 @@ video.show-video {
 }
 
 /* Spinner + Titles + Metadata (unchanged from yours) */
-.playlist-spinner-container {
+/* Cinemata Outward Ripple Spinner */
+.ripple-spinner {
     position: relative;
     width: 66px;
     height: 66px;
     margin-bottom: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
-.playlist-spinner-outer {
+.ripple-spinner .circle {
     position: absolute;
+    border: 5px solid #ED7C31;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: ripple-outward 2s ease-out infinite;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+}
+
+.ripple-spinner .circle-1 {
     width: 66px;
     height: 66px;
-    border: 5px solid #ED7C31;
-    border-radius: 50%;
-    animation: spin 2s linear infinite;
+    animation-delay: 1.5s;
 }
 
-.playlist-spinner-inner {
-    position: absolute;
-    width: 54px;
-    height: 54px;
-    border: 5px solid #ED7C31;
-    border-radius: 50%;
-    opacity: 0.3;
+.ripple-spinner .circle-2 {
+    width: 50px;
+    height: 50px;
+    animation-delay: 1s;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.ripple-spinner .circle-3 {
+    width: 34px;
+    height: 34px;
+    animation-delay: 0.5s;
+}
+
+.ripple-spinner .circle-4 {
+    width: 18px;
+    height: 18px;
+    animation-delay: 0s;
+}
+
+@keyframes ripple-outward {
+    0% {
+        transform: translate(-50%, -50%) scale(0.3);
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
+    }
 }
 
 .film-title {
@@ -1682,7 +1707,7 @@ video.show-video {
     animation: fadeIn 0.3s ease;
 }
 
-.fullscreen-continue-prompt .playlist-spinner-container {
+.fullscreen-continue-prompt .ripple-spinner {
     margin-bottom: 60px;
 }
 
@@ -1721,7 +1746,32 @@ video.show-video {
 @media (max-width: 768px) {
     .film-title, .prompt-title { font-size: 32px; }
     .metadata-row, .prompt-subtitle { font-size: 20px; }
-    .playlist-spinner-container { width: 50px; height: 50px; }
-    .playlist-spinner-outer { width: 50px; height: 50px; }
-    .playlist-spinner-inner { width: 40px; height: 40px; }
+	.ripple-spinner {
+			width: 50px;
+			height: 50px;
+		}
+
+	.ripple-spinner .circle-1 {
+		width: 50px;
+		height: 50px;
+		border-width: 4px;
+	}
+
+	.ripple-spinner .circle-2 {
+		width: 38px;
+		height: 38px;
+		border-width: 4px;
+	}
+
+	.ripple-spinner .circle-3 {
+		width: 26px;
+		height: 26px;
+		border-width: 3px;
+	}
+
+	.ripple-spinner .circle-4 {
+		width: 14px;
+		height: 14px;
+		border-width: 3px;
+	}
 }
