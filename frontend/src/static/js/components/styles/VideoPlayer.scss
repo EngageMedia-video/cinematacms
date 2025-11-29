@@ -1153,4 +1153,51 @@ button.share-video-btn{
             }
         }
     }
+
+    /* ================================================== */
+/* MOBILE FIX - Must be at the end to override Video.js defaults */
+/* ================================================== */
+
+@media (max-width: 820px) {
+    /* Override Video.js's aspect-ratio padding */
+    .video-js.vjs-mediacms,
+    .video-js {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    
+    .player-container {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    
+    /* Force video to be visible and properly sized */
+    .video-js video,
+    .video-js .vjs-tech {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 100% !important;
+        height: 100% !important;
+        position: relative !important;
+        top: 0 !important;
+        left: 0 !important;
+    }
+    
+    /* Ensure containers have proper height */
+    .player-container,
+    .player-container-inner,
+    .video-player {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 300px !important;
+    }
+    
+    .video-js {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 16/9 !important;
+    }
+}
+
 }

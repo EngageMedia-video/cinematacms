@@ -810,76 +810,55 @@ class MediaPageStore extends EventEmitter{
             case 'playlist-id':
                 r = this.pagePlaylistId;
                 break;
-            case 'playlist-next-media-url':
+            case 'playlist-next-media':
+                if (!this.pagePlaylistData) break;
 
-                if( ! this.pagePlaylistData ){
-                    break;
-                }
-
-                activeItem = 0;
-                i = 0;
-                while( i < this.pagePlaylistData.playlist_media.length ){
-
-                    if( MediaPageStoreData[this.id].mediaId === this.pagePlaylistData.playlist_media[i].friendly_token ){
-                        activeItem = i + 1;
-                        break;
+                    let activeItem = 0;
+                    for (let i = 0; i < this.pagePlaylistData.playlist_media.length; i++) {
+                        if (MediaPageStoreData[this.id].mediaId === this.pagePlaylistData.playlist_media[i].friendly_token) {
+                            activeItem = i + 1;
+                            break;
+                        }
                     }
 
-                    i += 1;
-                }
-
-                if( activeItem === this.pagePlaylistData.playlist_media.length ){
-
-                    browserCache = PageStore.get('browser-cache');
-
-                    if( true === browserCache.get('loopPlaylist[' + this.pagePlaylistId + ']') ){
-                        activeItem = 0;
+                    if (activeItem === this.pagePlaylistData.playlist_media.length) {
+                        const browserCache = PageStore.get('browser-cache');
+                        if (true === browserCache.get(`loopPlaylist[${this.pagePlaylistId}]`)) {
+                            activeItem = 0;
+                        }
                     }
-                }
 
-                // console.log('ACTIVE (next)', activeItem);
-
-                if( void 0 !== this.pagePlaylistData.playlist_media[activeItem] ){
-                    r = this.pagePlaylistData.playlist_media[activeItem].url + '&pl=' + this.pagePlaylistId;
-                }
-
-                break;
-            case 'playlist-previous-media-url':
-
-                if( ! this.pagePlaylistData ){
+                    if (this.pagePlaylistData.playlist_media[activeItem] !== undefined) {
+                        r = this.pagePlaylistData.playlist_media[activeItem];
+                    }
                     break;
-                }
+
+                
+            case 'playlist-previous-media':
+
+                if (!this.pagePlaylistData) break;
 
                 activeItem = 0;
-                i = 0;
-                while( i < this.pagePlaylistData.playlist_media.length ){
-
-                    if( MediaPageStoreData[this.id].mediaId === this.pagePlaylistData.playlist_media[i].friendly_token ){
+                for (let i = 0; i < this.pagePlaylistData.playlist_media.length; i++) {
+                    if (MediaPageStoreData[this.id].mediaId === this.pagePlaylistData.playlist_media[i].friendly_token) {
                         activeItem = i;
                         break;
                     }
-
-                    i += 1;
                 }
 
-                if( 0 === activeItem ){
-
+                if (activeItem === 0) {
                     activeItem = this.pagePlaylistData.playlist_media.length;
-
-                    browserCache = PageStore.get('browser-cache');
-
-                    if( true === browserCache.get('loopPlaylist[' + this.pagePlaylistId + ']') ){
-                        activeItem = activeItem - 1;
+                    const browserCache = PageStore.get('browser-cache');
+                    if (true === browserCache.get(`loopPlaylist[${this.pagePlaylistId}]`)) {
+                        activeItem -= 1;
                     }
-                }
-                else{
-                    activeItem = activeItem - 1;
-                }
-
-                if( void 0 !== this.pagePlaylistData.playlist_media[activeItem] ){
-                    r = this.pagePlaylistData.playlist_media[activeItem].url + '&pl=' + this.pagePlaylistId;
+                } else {
+                    activeItem -= 1;
                 }
 
+                if (this.pagePlaylistData.playlist_media[activeItem] !== undefined) {
+                    r = this.pagePlaylistData.playlist_media[activeItem];
+                }
                 break;
         }
         return r;
