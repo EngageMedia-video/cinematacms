@@ -1,4 +1,5 @@
 {% load static %}
+{% load webpack_manifest %}
 		<link rel="apple-touch-icon" sizes="180x180" href="{% static "favicons/apple-touch-icon.png" %}">
 		<link rel="icon" type="image/png" sizes="32x32" href="{% static "favicons/favicon-32x32.png" %}">
 		<link rel="icon" type="image/png" sizes="16x16" href="{% static "favicons/favicon-16x16.png" %}">
@@ -26,10 +27,10 @@
 		<link href="{% static "lib/Facultad/Facultad-Regular.css" %}" rel="preload" as="style">
 		<link href="{% static "lib/Facultad/Facultad-Regular.css" %}" rel="stylesheet">
 
-		<link href="{% static "css/_commons.css" %}" rel="preload" as="style">
-		<link href="{% static "css/_commons.css" %}" rel="stylesheet">
+		<link href="{% hashed_static "css/_commons.css" %}" rel="preload" as="style">
+		<link href="{% hashed_static "css/_commons.css" %}" rel="stylesheet">
 
-		<link href="{% static "css/_extra.css" %}" rel="preload" as="style">
-		<link href="{% static "css/_extra.css" %}" rel="stylesheet">
+		<link href="{% hashed_static "css/_extra.css" %}" rel="preload" as="style">
+		<link href="{% hashed_static "css/_extra.css" %}" rel="stylesheet">
 
-		<link href="{% static "js/_commons.js" %}" rel="preload" as="script">
+		<link href="{% hashed_static "js/_commons.js" %}" rel="preload" as="script">

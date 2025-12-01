@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 {% block headermeta %}{% endblock headermeta %}
 
 {% block content %}
@@ -7,5 +8,5 @@
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/search.js" %}"></script>
+<script src="{% hashed_static "js/search.js" %}"></script>
 {% endblock bottomimports %}

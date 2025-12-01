@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headermeta %}
 
@@ -59,6 +60,6 @@
 {% block content %}<div id="page-home"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/index.js" %}"></script>
+<script src="{% hashed_static "js/index.js" %}"></script>
 {% endblock bottomimports %}
 

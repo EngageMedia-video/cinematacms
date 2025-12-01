@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}Edit Media - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -15,8 +16,8 @@
 {% endblock externallinks %}
 
 {% block topimports %}
-<link href="{% static "css/add-media.css" %}" rel="preload" as="style">
-<link href="{% static "css/add-media.css" %}" rel="stylesheet">
+<link href="{% hashed_static "css/add-media.css" %}" rel="preload" as="style">
+<link href="{% hashed_static "css/add-media.css" %}" rel="stylesheet">
 {% endblock topimports %}
 
 {% block innercontent %}

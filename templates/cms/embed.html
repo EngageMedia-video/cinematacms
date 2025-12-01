@@ -1,11 +1,12 @@
 {% extends "root.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headermeta %}{% endblock headermeta %}
 
 {% block topimports %}
-<link href="{% static "css/embed.css" %}" rel="preload" as="style">
-<link href="{% static "css/embed.css" %}" rel="stylesheet">
+<link href="{% hashed_static "css/embed.css" %}" rel="preload" as="style">
+<link href="{% hashed_static "css/embed.css" %}" rel="stylesheet">
 {%endblock topimports %}
 
 {% block content %}
@@ -13,5 +14,5 @@
 {% endblock content %}
 
 {% block bottomimports %}
-<script src="{% static "js/embed.js" %}"></script>
+<script src="{% hashed_static "js/embed.js" %}"></script>
 {% endblock bottomimports %}

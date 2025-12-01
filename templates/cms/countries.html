@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}Countries - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -42,5 +43,5 @@
 {% block content %}<div id="page-countries"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/countries.js" %}"></script>
+<script src="{% hashed_static "js/countries.js" %}"></script>
 {% endblock bottomimports %}

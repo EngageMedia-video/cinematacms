@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}{% if user.name %}{{user.name}} - {% endif %}Playlists - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -14,8 +15,8 @@
 {% endblock headermeta %}
 
 {% block topimports %}
-<link href="{% static "css/profile-playlists.css" %}" rel="preload" as="style">
-<link href="{% static "css/profile-playlists.css" %}" rel="stylesheet">
+<link href="{% hashed_static "css/profile-playlists.css" %}" rel="preload" as="style">
+<link href="{% hashed_static "css/profile-playlists.css" %}" rel="stylesheet">
 {%endblock topimports %}
 
 {% block innercontent %}
@@ -29,5 +30,5 @@ No such user
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/profile-playlists.js" %}"></script>
+<script src="{% hashed_static "js/profile-playlists.js" %}"></script>
 {% endblock bottomimports %}
