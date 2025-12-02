@@ -63,6 +63,58 @@ ERRORS_LIST = [
 ]
 
 
+def mask_email(email):
+    """
+    Mask an email address for safe logging (PII protection).
+
+    Returns a deterministic masked representation that allows correlation
+    without exposing the full email address.
+
+    Examples:
+        "user@example.com" -> "us***@ex***.com"
+        "ab@test.org" -> "ab***@te***.org"
+        "invalid" -> "inv***@***.***"
+
+    Args:
+        email: Email address to mask
+
+    Returns:
+        str: Masked email representation
+    """
+    if not email or not isinstance(email, str):
+        return "***@***.***"
+
+    try:
+        if "@" not in email:
+            # Invalid email format - show first 3 chars only
+            prefix = email[:3] if len(email) >= 3 else email
+            return f"{prefix}***@***.***"
+
+        local, domain = email.rsplit("@", 1)
+
+        # Mask local part: show first 2 chars
+        if len(local) >= 2:
+            masked_local = local[:2] + "***"
+        else:
+            masked_local = local + "***"
+
+        # Mask domain: show first 2 chars of domain name + TLD
+        if "." in domain:
+            domain_name, tld = domain.rsplit(".", 1)
+            if len(domain_name) >= 2:
+                masked_domain = domain_name[:2] + "***." + tld
+            else:
+                masked_domain = domain_name + "***." + tld
+        else:
+            masked_domain = domain[:2] + "***" if len(domain) >= 2 else domain + "***"
+
+        return f"{masked_local}@{masked_domain}"
+
+    except Exception:
+        # Fallback for any unexpected format
+        return "***@***.***"
+
+
 @task(name="chunkize_media", bind=True, queue="short_tasks", soft_time_limit=60 * 30)
 def chunkize_media(self, friendly_token, profiles, force=True):
     profiles = [EncodeProfile.objects.get(id=profile) for profile in profiles]
@@ -1339,18 +1391,72 @@ def cleanup_orphaned_uploads():
 
 
 @task(name="subscribe_user", queue="short_tasks")
-def subscribe_user(email, name):
-    form_data = {
+def subscribe_user(email, name, country=None):
+    """
+    Subscribe user to Cinemata newsletter via WordPress Newsletter Plugin API
+
+    Args:
+        email: User's email address
+        name: User's name/username
+        country: User's country code (optional, for tracking)
+
+    Returns:
+        bool: True if subscription successful, False otherwise
+    """
+    api_url = getattr(settings, 'NEWSLETTER_API_URL', None)
+
+    if not api_url:
+        logger.warning(
+            "Newsletter subscription skipped for %s: NEWSLETTER_API_URL not configured",
+            mask_email(email)
+        )
+        return False
+
+    # Build subscriber data for WordPress Newsletter Plugin /subscribe endpoint
+    subscriber_data = {
         "email": email,
-        "emailconfirm": email,
-        "htmlemail": "1",
-        "attribute1": name,
-        "attribute2": name,
-        "attribute3": 243,
-        "list[1]": "signup",
-        "listname[1]": "Cinemata Newsletter",
-        "subscribe": "Subscribe to the Cinemata newsletter",
+        "name": name,
+        "lists": getattr(settings, 'NEWSLETTER_LIST_IDS', [2]),
+        "attribute004": country if country else "",
     }
-    #    response = requests.post("https://phplist.engagemedia.org/lists/?p=subscribe", data=form_data)
-    #   print(response.status_code)
-    return True
+
+    headers = {
+        "Content-Type": "application/json",
+    }
+
+    try:
+        response = requests.post(
+            api_url,
+            json=subscriber_data,
+            headers=headers,
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            try:
+                response_data = response.json()
+            except (json.JSONDecodeError, ValueError):
+                logger.error(
+                    f"Newsletter subscription for {mask_email(email)}: failed to parse JSON response. "
+                    f"Response content: {response.text[:200]}"
+                )
+                return False
+            # Check if this was a new subscription or existing
+            if response_data.get("_new"):
+                logger.info(f"Newsletter subscription successful for {mask_email(email)} (Country: {country})")
+            else:
+                logger.info(f"Newsletter subscriber already exists: {mask_email(email)}")
+            return True
+        else:
+            logger.warning(
+                f"Newsletter subscription failed for {mask_email(email)}. "
+                f"Status: {response.status_code}, Response: {response.text[:200]}"
+            )
+            return False
+
+    except requests.exceptions.Timeout:
+        logger.exception("Newsletter subscription timeout for %s", mask_email(email))
+        return False
+    except requests.exceptions.RequestException:
+        logger.exception("Newsletter subscription error for %s", mask_email(email))
+        return False
