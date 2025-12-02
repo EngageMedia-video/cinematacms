@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from cms import celery_app
 
+
 from . import models
 from .helpers import mask_ip
 
@@ -435,6 +436,126 @@ View it on %s
         email.send(fail_silently=True)
     return True
 
+# Define role mappings for display name and capability description
+ROLE_MAP = {
+    'advancedUser': {
+        'display_name': 'Trusted User',
+        'capability': 'You can now upload and publish videos, and enjoy all platform features without content review.'
+    },
+    'is_editor': {
+        'display_name': 'Editor',
+        'capability': 'You can now moderate, edit, and publish content submitted by other users on the platform.'
+    },
+    'is_manager': {
+        'display_name': 'Manager',
+        'capability': 'You can now manage site content, user accounts, and comments to help oversee platform operations.'
+    },
+}
+
+def notify_user_on_role_update(user, upgraded_roles):
+    """
+    Send email notification when a user's role is updated to a privileged role.
+    upgraded_roles is a list of internal role field names (e.g., ['is_editor', 'advancedUser']).
+    
+    Follows existing email patterns (EmailMessage, fail_silently=True).
+    """
+    # Validate inputs
+    if not user:
+        logger.error("Role update notification failed: user is None.")
+        return False
+    
+    if not upgraded_roles or not isinstance(upgraded_roles, (list, tuple)):
+        logger.error(
+            f"Role update notification failed for user {user.username}: invalid upgraded_roles parameter."
+        )
+        return False
+    
+    if not user.email:
+        # Graceful failure: No email address (as per acceptance criteria)
+        logger.error(
+            f"Role update notification skipped for user {user.username}: no email address."
+        )
+        return False
+
+    # 1. Prepare dynamic content
+    role_summary_list = []
+    role_details_block = ""
+
+    for role_name in upgraded_roles:
+        role_info = ROLE_MAP.get(role_name)
+        if role_info:
+            role_summary_list.append(role_info['display_name'])
+            # Create the detailed block
+            role_details_block += f"{role_info['display_name']}\n"
+            role_details_block += f"{role_info['capability']}\n\n"
+        else:
+            logger.warning(f"Unrecognized role '{role_name}' in notification for user {user.username}.")
+
+    # If the roles list is unexpectedly empty
+    if not role_summary_list:
+        return False
+
+    # 2. Prepare email context / variables
+    user_name = user.get_full_name() or user.username
+    portal_name = settings.PORTAL_NAME
+    platform_link = settings.SSL_FRONTEND_HOST
+    
+    # 3. Construct the email body
+    granted_roles_summary = "\n".join([f"- {name}" for name in role_summary_list])
+    role_details_block = role_details_block.strip()
+    
+    # Clear subject line indicating privilege update (Acceptance Criteria)
+    subject = f"[{portal_name}] - Your account privileges have been updated"
+    
+    # Friendly message explaining new capabilities (Acceptance Criteria)
+    msg = f"""
+Hello {user_name},
+
+We are pleased to inform you that your account privileges on {portal_name} have been updated. You now have access to new capabilities!
+
+The following role(s) have been granted to your account:
+
+{granted_roles_summary}
+---
+
+{role_details_block}
+
+---
+
+We encourage you to log in and explore your new features. For guidance on using your new capabilities, visit our Help page:
+
+{platform_link}/help
+
+If you have any questions about your new privileges or the platform, please contact our support team.
+
+Thank you for your valuable contributions to {portal_name}.
+
+Best regards,
+
+The {portal_name} Team
+"""
+
+    # 4. Send the email
+    email_message = EmailMessage(
+        subject,
+        msg,
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email],
+    )
+    # Follow existing email patterns (fail_silently=True)
+    sent_count = email_message.send(fail_silently=True)
+    if sent_count:
+        logger.info(
+            f"Role update notification sent to {user.username} ({user.email}) "
+            f"for roles: {', '.join(upgraded_roles)}"
+        )
+        return True 
+    else:
+        logger.warning(
+            f"Role update notification failed to send to {user.username} ({user.email}) "
+            f"for roles: {', '.join(upgraded_roles)}"
+        )
+        return False
 
 def is_mediacms_editor(user):
     # helper function
