@@ -84,11 +84,18 @@ STORAGES = {
 <link href="{% hashed_static 'css/media.css' %}" rel="stylesheet">
 ```
 
-### Option 2: Separate Tags
+### Option 2: Separate Tags (Two-Step)
+
+Django template tags cannot be nested. If you need to use `static_hashed` and `static` separately, use the `with` tag:
+
 ```django
 {% load static webpack_manifest %}
-<script src="{% static static_hashed 'js/index.js' %}"></script>
+{% with hashed_path=static_hashed:'js/index.js' %}
+<script src="{% static hashed_path %}"></script>
+{% endwith %}
 ```
+
+**Note:** Option 1 (`hashed_static`) is preferred as it combines both steps into one tag.
 
 ## Build Process
 
@@ -199,10 +206,116 @@ You might wonder: "Why not just add `?v=12345` to files?" Here's why content has
 ## Performance Benefits
 
 With this system:
+
 - **Unchanged files**: Keep same hash, stay cached indefinitely
 - **Changed files**: Get new hash, downloaded immediately
 - **Far-future caching**: Set `Cache-Control: max-age=31536000, immutable` on hashed assets
 - **Zero manual cache clearing**: Users automatically get latest files
+
+## Configuring Far-Future Cache Headers
+
+To maximize performance benefits, configure your deployment to serve hashed assets with far-future cache headers.
+
+**Recommended header for hashed assets:**
+```
+Cache-Control: public, max-age=31536000, immutable
+```
+
+### Web Servers
+
+#### Nginx
+
+Add to your server or location block:
+
+```nginx
+# Match hashed static files (e.g., index-a1b2c3d4.js)
+location ~* -[a-f0-9]{8}\.(js|css)$ {
+    expires 1y;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+}
+
+# Non-hashed assets: shorter cache with revalidation
+location /static/ {
+    expires 1d;
+    add_header Cache-Control "public, max-age=86400, must-revalidate";
+}
+```
+
+#### Apache
+
+Add to your `.htaccess` or virtual host config:
+
+```apache
+<FilesMatch "-[a-f0-9]{8}\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+```
+
+### Application Middleware
+
+#### Django with WhiteNoise
+
+In `settings.py`:
+
+```python
+WHITENOISE_MAX_AGE = 31536000  # 1 year for hashed files
+WHITENOISE_IMMUTABLE_FILE_TEST = lambda path, url: bool(
+    re.match(r".*-[a-f0-9]{8}\.(js|css)$", url)
+)
+```
+
+#### Express.js (Node)
+
+```javascript
+app.use('/static', express.static('static', {
+    maxAge: '1y',
+    immutable: true,
+    setHeaders: (res, path) => {
+        if (/-[a-f0-9]{8}\.(js|css)$/.test(path)) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+    }
+}));
+```
+
+### Object Storage & CDNs
+
+#### AWS S3 + CloudFront
+
+Set metadata when uploading hashed files:
+
+```bash
+aws s3 cp ./static/ s3://bucket/static/ \
+    --recursive \
+    --cache-control "public, max-age=31536000, immutable" \
+    --exclude "*" \
+    --include "*-[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9].js" \
+    --include "*-[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9].css"
+```
+
+Or configure CloudFront behavior policies to add headers based on path patterns.
+
+#### Other CDNs (Cloudflare, Fastly, etc.)
+
+Configure cache rules or edge rules to match hashed file patterns and set appropriate TTLs.
+
+### Important Notes
+
+1. **Hashed vs Non-Hashed Assets**:
+   - Hashed files (`index-a1b2c3d4.js`): Safe for far-future caching (1 year)
+   - Non-hashed files (`favicon.ico`, `robots.txt`): Use shorter cache with revalidation
+
+2. **Verification**:
+   Test headers in staging before production:
+
+   ```bash
+   curl -I https://example.com/static/js/index-a1b2c3d4.js | grep -i cache
+   ```
+
+   Or check the Network tab in browser DevTools.
+
+3. **CDN Cache Invalidation**:
+   With content hashing, you rarely need to invalidate CDN caches since new deployments create new filenames. If needed, invalidate specific paths rather than purging everything.
 
 ## Alternative: Simple Query Parameter Versioning
 

@@ -1,22 +1,34 @@
 """
 Django template tags for integrating webpack content-hashed assets.
 
-Provides a template tag that reads the webpack-generated manifest.json
-and returns the content-hashed filename for a given asset.
+Provides template tags that read the webpack-generated manifest.json
+and return content-hashed filenames for static assets.
 
-Usage in templates:
+Two tags are available:
+
+1. hashed_static (recommended) - Returns the full static URL:
     {% load webpack_manifest %}
-    <script src="{% static_hashed 'js/index.js' %}"></script>
+    <script src="{% hashed_static 'js/index.js' %}"></script>
+    <!-- Output: /static/js/index-75dac8d2.js -->
 
-This will look up 'js/index.js' in the manifest and return something like
-'js/index-75dac8d2.js', which Django's {% static %} tag then serves.
+2. static_hashed - Returns only the hashed path (must combine with {% static %}):
+    {% load static webpack_manifest %}
+    {% with hashed_path=static_hashed:'js/index.js' %}
+    <script src="{% static hashed_path %}"></script>
+    {% endwith %}
+    <!-- Output: /static/js/index-75dac8d2.js -->
+
+Use `hashed_static` for convenience. Use `static_hashed` only if you need
+the raw hashed path for other processing.
 """
 import json
+import logging
 import os
 from django import template
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
 
+logger = logging.getLogger(__name__)
 register = template.Library()
 
 # Cache the manifest in memory to avoid reading the file on every request
@@ -45,16 +57,37 @@ def _load_manifest():
             manifest_path = candidate
 
     # If not found, try the source static dirs (development)
+    # STATICFILES_DIRS entries can be strings or (prefix, path) tuples
     if not manifest_path and hasattr(settings, 'STATICFILES_DIRS'):
         for static_dir in settings.STATICFILES_DIRS:
-            candidate = os.path.join(static_dir, 'manifest.json')
+            # Handle both string paths and (prefix, path) tuples
+            if isinstance(static_dir, (list, tuple)) and len(static_dir) == 2:
+                dir_path = static_dir[1]
+            else:
+                dir_path = static_dir
+            candidate = os.path.join(dir_path, 'manifest.json')
             if os.path.exists(candidate):
                 manifest_path = candidate
                 break
 
     if manifest_path and os.path.exists(manifest_path):
-        with open(manifest_path, 'r') as f:
-            _manifest_cache = json.load(f)
+        try:
+            with open(manifest_path, 'r', encoding='utf-8') as f:
+                _manifest_cache = json.load(f)
+                return _manifest_cache
+        except OSError as e:
+            logger.error(
+                "Failed to read webpack manifest file '%s': %s",
+                manifest_path, e
+            )
+            _manifest_cache = {}
+            return _manifest_cache
+        except json.JSONDecodeError as e:
+            logger.error(
+                "Failed to parse webpack manifest JSON '%s': %s",
+                manifest_path, e
+            )
+            _manifest_cache = {}
             return _manifest_cache
 
     # Return empty dict if manifest not found (will fall back to original names)
@@ -65,7 +98,10 @@ def _load_manifest():
 @register.simple_tag
 def static_hashed(path):
     """
-    Template tag to get the content-hashed version of a static file.
+    Template tag to get the content-hashed path of a static file.
+
+    Returns only the hashed path (e.g., 'js/index-75dac8d2.js'), NOT a full URL.
+    Use with Django's {% static %} tag or {% with %} to get a complete URL.
 
     Args:
         path: The original path relative to STATIC_URL (e.g., 'js/index.js')
@@ -73,11 +109,13 @@ def static_hashed(path):
     Returns:
         The hashed path if found in manifest, otherwise the original path.
 
-    Example:
-        {% load webpack_manifest %}
-        <script src="{% static static_hashed 'js/index.js' %}"></script>
+    Example (using {% with %} since template tags cannot be nested):
+        {% load static webpack_manifest %}
+        {% with hashed_path=static_hashed:'js/index.js' %}
+        <script src="{% static hashed_path %}"></script>
+        {% endwith %}
 
-    Or use the combined tag:
+    Recommended: Use {% hashed_static %} instead for convenience:
         <script src="{% hashed_static 'js/index.js' %}"></script>
     """
     manifest = _load_manifest()

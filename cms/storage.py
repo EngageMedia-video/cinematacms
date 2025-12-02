@@ -26,12 +26,12 @@ class WebpackHashedFilesStorage(StaticFilesStorage):
     generating HTML with correct paths.
     """
 
-    def post_process(self, *args, **kwargs):
+    def post_process(self, paths, dry_run=False, **options):
         """
         Skip post-processing entirely since Webpack handles hashing.
 
         Yields each file as-is without any processing.
         """
         # Simply yield all files without processing
-        for name in args[0].keys():
+        for name in paths.keys():
             yield name, name, False
