@@ -445,6 +445,7 @@ export default class VideoViewer extends React.PureComponent {
 		}
 	}
 
+	
 	onPlayerInit(instance, elem) {
 		this.playerElem = elem;
 		this.playerInstance = instance;
@@ -455,11 +456,17 @@ export default class VideoViewer extends React.PureComponent {
 		}
 
 		if (!this.props.inEmbed) {
-			this.playerElem.parentNode.focus(); // Focus on player.
+			this.playerElem.parentNode.focus();
 		}
 
-		if (null !== this.recommendedMedia) {
+		if (this.recommendedMedia) {
 			this.recommendedMedia.initWrappers(this.playerElem.parentNode);
+
+			const playlistId = MediaPageStore.get('playlist-id');
+			if (playlistId) {
+				this.recommendedMedia.html().style.display = 'none';
+				this.recommendedMedia.html().style.opacity = '0';
+			}
 
 			if (this.props.inEmbed) {
 				this.playerInstance.player.one('pause', this.recommendedMedia.init);
@@ -467,7 +474,114 @@ export default class VideoViewer extends React.PureComponent {
 			}
 		}
 
+		// Bind ended event
 		this.playerInstance.player.one('ended', this.onVideoEnd);
+		// Restore fullscreen if URL param fs=1
+		this.checkAndRestoreFullscreen();
+	}
+
+
+	checkAndRestoreFullscreen() {
+		const urlParams = new URLSearchParams(window.location.search);
+		const shouldRestore = urlParams.get('fs') === '1';
+
+		// 🚫 Do NOT restore fullscreen or show prompt on first video
+		if (shouldRestore && this.props.currentIndex === 0) {
+			// Clean the URL anyway
+			urlParams.delete('fs');
+			const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+			window.history.replaceState({}, document.title, cleanUrl);
+			return;
+		}
+
+		if (shouldRestore) {
+			// Remove fs from URL
+			urlParams.delete('fs');
+			const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+			window.history.replaceState({}, document.title, cleanUrl);
+
+			// Wait for player to fully load
+			this.playerInstance.player.ready(() => {
+				setTimeout(() => this.showFullscreenContinuePrompt(), 200);
+			});
+		}
+	}
+
+
+	showFullscreenContinuePrompt() {
+
+		// Pause video until user clicks
+		this.playerInstance.player.pause();
+		
+		// Create prompt overlay
+		const prompt = document.createElement('div');
+		prompt.className = 'fullscreen-continue-prompt';
+		prompt.innerHTML = `
+			<div class="ripple-spinner">
+				<div class="circle circle-1"></div>
+				<div class="circle circle-2"></div>
+				<div class="circle circle-3"></div>
+				<div class="circle circle-4"></div>
+			</div>
+			<h2 class="prompt-title">Continue in Fullscreen</h2>
+			<p class="prompt-subtitle">Click anywhere to resume</p>
+		`;
+		
+		document.body.appendChild(prompt);
+		
+		// Click handler - THIS IS THE USER GESTURE that allows fullscreen
+		const clickHandler = () => {
+			prompt.remove();
+			
+			this.requestFullscreen()
+				.then(() => {
+					this.playerInstance.player.play();
+				})
+				.catch((error) => {
+					console.warn('Fullscreen request failed:', error);
+					// Graceful fallback - just play video in windowed mode
+					this.playerInstance.player.play();
+				});
+			document.removeEventListener('keydown', keyHandler);
+		};
+		
+		prompt.addEventListener('click', clickHandler);
+		// Also allow spacebar or Enter key
+		const keyHandler = (e) => {
+			const isSpace = e.key === ' ' || e.key === 'Space' || e.code === 'Space';
+			const isEnter = e.key === 'Enter';
+
+			if (isSpace || isEnter) {
+				e.preventDefault();
+				clickHandler();
+			}
+		};
+
+		document.addEventListener('keydown', keyHandler);
+	}
+
+
+	requestFullscreen() {
+		const element = this.playerInstance.player.el();
+
+		const fn =
+			element.requestFullscreen ||
+			element.webkitRequestFullscreen ||
+			element.mozRequestFullScreen ||
+			element.msRequestFullscreen;
+
+		if (!fn) {
+			return Promise.reject(new Error('Fullscreen API not supported'));
+		}
+
+		try {
+			const result = fn.call(element);
+			return result && typeof result.then === 'function'
+				? result
+				: Promise.resolve();
+		} catch (error) {
+			return Promise.reject(error);
+		}
 	}
 
 	onVideoRestart() {
@@ -482,57 +596,171 @@ export default class VideoViewer extends React.PureComponent {
 		}
 	}
 
-	onVideoEnd() {
-		if (null !== this.recommendedMedia) {
-			if (!this.props.inEmbed) {
-				this.initRecommendedMedia();
+
+	onVideoEnd = () => {
+
+		const playlistId = MediaPageStore.get('playlist-id');
+		const isPlaylist = !!playlistId;
+
+		if (isPlaylist) {
+			  if (this.upNextLoaderView) {
+				try { this.upNextLoaderView.hideTimerView(); } catch (_) {}
+				try { this.playerInstance.player.off('ended', this.upNextLoaderView.startTimer); } catch (_) {}
+				try { this.playerInstance.player.off('timeupdate', this.upNextLoaderView.updateTimer); } catch (_) {}
 			}
 
+			// 🚫 Disable RecommendedMedia too
+			if (this.recommendedMedia) {
+				try { this.recommendedMedia.updateDisplayType('hidden'); } catch (_) {}
+				try { this.playerInstance.player.off('pause', this.recommendedMedia.init); } catch (_) {}
+				try { this.playerInstance.player.off('playing', this.onVideoRestart); } catch (_) {}
+			}
+
+			this.recommendedMedia = null;
+
+			let nextMedia = MediaPageStore.get('playlist-next-media');
+
+
+			if (nextMedia) {
+				// NORMAL CASE → Has next video
+				const separator = nextMedia.url.includes('?') ? '&' : '?';
+				const nextUrl = `${nextMedia.url}${playlistId ? `${separator}pl=${playlistId}` : ''}`;
+				this.showTransitionCard(nextUrl);
+			} else {
+
+				const playlistUrl = `/playlists/${playlistId}`;
+
+
+				const finalUrl = playlistUrl; // no fs=1
+				this.navigateWithFullscreenRestore(finalUrl, true);
+
+			}
+			return;
+		}
+
+
+		// -------------------------------
+		// Non-playlist mode → RecommendedMedia
+		// -------------------------------
+		const hasRecommended = this.recommendedMedia && !this.props.inEmbed;
+		if (hasRecommended) {
+			this.initRecommendedMedia();
 			this.recommendedMedia.updateDisplayType('full');
 			this.playerInstance.player.one('playing', this.onVideoRestart);
 		}
 
-		const playlistId = this.props.inEmbed ? null : MediaPageStore.get('playlist-id');
+		if (this.upNextLoaderView) {
+			this.upNextLoaderView.showTimerView(true);
+		}
+	};
 
-		if (playlistId) {
-			const moreMediaEl = document.querySelector('.video-player .more-media');
-			const actionsAnimEl = document.querySelector('.video-player .vjs-actions-anim');
+	
 
-			this.upNextLoaderView.cancelTimer();
+	showTransitionCard(nextMediaUrl) {
 
-			const nextMediaUrl = MediaPageStore.get('playlist-next-media-url');
-
-			if (nextMediaUrl) {
-				if (moreMediaEl) {
-					moreMediaEl.style.display = 'none';
-				}
-
-				if (actionsAnimEl) {
-					actionsAnimEl.style.display = "none";
-				}
-
-				window.location.href = nextMediaUrl;
-			}
-
-			this.upNextLoaderView.hideTimerView();
-
+		const nextVideoData = this.getNextVideoMetadata();
+		if (!nextVideoData) {
+			console.warn('⚠ No next video metadata found, aborting transition card.');
 			return;
 		}
 
-		if (this.upNextLoaderView) {
-			if (PageStore.get('media-auto-play')) {
-				this.upNextLoaderView.startTimer();
-				this.playerInstance.player.one(
-					'play',
-					function () {
-						this.upNextLoaderView.cancelTimer();
-					}.bind(this)
-				);
-			} else {
-				this.upNextLoaderView.cancelTimer();
+		const card = this.createTransitionCard(nextVideoData);
+		const playerEl = this.playerInstance.player.el();
+		playerEl.appendChild(card);
+
+		setTimeout(() => {
+			card.classList.add('active');
+		}, 100);
+
+		// Hide video via CSS class (CSP-safe)
+		const videoEl = playerEl.querySelector('video');
+		if (videoEl) {
+			videoEl.classList.add('hidden-video');
+		} else {
+			console.warn('⚠ No video element found to hide.');
+		}
+
+		// Navigate to next video after 3s
+		setTimeout(() => {
+			this.navigateWithFullscreenRestore(nextMediaUrl);
+		}, 3000);
+	}
+
+
+	// --------------------------------------------
+	// createTransitionCard
+	// --------------------------------------------
+	createTransitionCard(videoData) {
+		const card = document.createElement('div');
+		card.className = 'playlist-transition-card';
+		card.innerHTML = `
+			<div class="card-content">
+				<div class="ripple-spinner">
+					<div class="circle circle-1"></div>
+					<div class="circle circle-2"></div>
+					<div class="circle circle-3"></div>
+					<div class="circle circle-4"></div>
+				</div>
+				<h1 class="film-title">${videoData.title}</h1>
+				<div class="metadata-row">
+					<span class="metadata-item">${videoData.country || 'Unknown'}</span>
+					<div class="metadata-separator"></div>
+					<span class="metadata-item">${videoData.year || new Date().getFullYear()}</span>
+					<div class="metadata-separator"></div>
+					<span class="metadata-item">${this.formatDuration(videoData.duration)}</span>
+				</div>
+			</div>
+		`;
+		return card;
+	}
+
+	// --------------------------------------------
+	// navigateWithFullscreenRestore
+	// --------------------------------------------
+	navigateWithFullscreenRestore(nextMediaUrl, isLast = false) {
+		// Only add fs=1 if NOT the last media
+		if (!isLast) {
+			const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+			if (isFullscreen) {
+				const separator = nextMediaUrl.includes('?') ? '&' : '?';
+				nextMediaUrl += `${separator}fs=1`;
 			}
 		}
+
+		window.location.href = nextMediaUrl;
 	}
+
+	// Get next video metadata from playlist
+	getNextVideoMetadata() {
+		const nextMedia = MediaPageStore.get('playlist-next-media') 
+			|| (this.props.data.related_media.length ? this.props.data.related_media[0] : null);
+
+		if (!nextMedia) return null;
+
+		return {
+			title: nextMedia.title || 'Next Video',
+			country: nextMedia.media_country_info?.[0]?.title || 'Unknown',
+			year: nextMedia.year_produced || new Date().getFullYear(),
+			duration: nextMedia.duration || 0,
+			src: nextMedia.url
+		};
+	}
+
+
+	// Format duration from seconds to HH:MM:SS
+	formatDuration(seconds) {
+		const hrs = Math.floor(seconds / 3600);
+		const mins = Math.floor((seconds % 3600) / 60);
+		const secs = Math.floor(seconds % 60);
+		
+		const pad = (num) => String(num).padStart(2, '0');
+		
+		if (hrs > 0) {
+			return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+		}
+		return `${pad(mins)}:${pad(secs)}`;
+	}
+
 
 	onUpdateMediaAutoPlay() {
 		if (this.upNextLoaderView) {
@@ -676,13 +904,13 @@ const observer = new MutationObserver((mutations, me) => {
 	if (playerContainer) {
 		const video = playerContainer.querySelector('video');
 		if (video) {
-			video.style.opacity = "1";
-			video.style.visibility = "visible";
+			video.classList.add('show-video'); // ✅ CSP-safe
 			handleCanvas(video);
 			me.disconnect();
 		}
 	}
 });
+
 
 observer.observe(document, {
 	childList: true,
