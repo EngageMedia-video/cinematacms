@@ -321,18 +321,24 @@ Configure cache rules or edge rules to match hashed file patterns and set approp
 
 If content hashing feels too complex, here's a simpler alternative using query parameters:
 
-```django
-{# Create a simple template tag in files/templatetags/simple_versioning.py #}
+Create a simple template tag in `files/templatetags/simple_versioning.py`:
+
+```python
 import time
 from django import template
+
 register = template.Library()
+
 
 @register.simple_tag
 def versioned_static(path):
     from django.templatetags.static import static
     return f"{static(path)}?v={int(time.time())}"
+```
 
-{# Use in templates #}
+Use in templates:
+
+```django
 {% load simple_versioning %}
 <script src="{% versioned_static 'js/index.js' %}"></script>
 ```

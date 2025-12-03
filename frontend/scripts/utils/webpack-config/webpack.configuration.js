@@ -17,6 +17,15 @@ const MyHtmlBeautifyWebpackPlugin = require("./MyHtmlBeautifyWebpackPlugin.js");
 const { WebpackManifestPlugin } = require("webpack-manifest-plugin");
 
 /**
+ * Escapes all regex special characters in a string.
+ * @param {string} string - The string to escape
+ * @returns {string} The escaped string safe for use in RegExp
+ */
+function escapeRegExp(string) {
+	return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
  * Custom plugin to inject copied assets (like _extra.css) into manifest.json
  * CopyPlugin's [contenthash] files aren't tracked by WebpackManifestPlugin,
  * so we need to manually add them after the build.
@@ -60,7 +69,7 @@ class InjectCopiedAssetsToManifestPlugin {
 
 						// Find _extra-[hash].css and add to manifest
 						assets.forEach((assetName) => {
-							const pattern = new RegExp(`^${assetName.replace(".", "\\.")}-([a-f0-9]{8})\\.css$`);
+							const pattern = new RegExp(`^${escapeRegExp(assetName)}-([a-f0-9]{8})\\.css$`);
 							const hashedFile = files.find((f) => pattern.test(f));
 
 							if (hashedFile) {
