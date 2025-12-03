@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}{% if user.name %}{{user.name}} - {% endif %}{{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -14,8 +15,8 @@
 {% endblock headermeta %}
 
 {% block topimports %}
-<link href="{% static "css/profile-home.css" %}" rel="preload" as="style">
-<link href="{% static "css/profile-home.css" %}" rel="stylesheet">
+<link href="{% hashed_static "css/profile-home.css" %}" rel="preload" as="style">
+<link href="{% hashed_static "css/profile-home.css" %}" rel="stylesheet">
 
 <!-- Admin user media: bottom corners only (fixes EDIT MEDIA button overlay) -->
 {% if USE_ROUNDED_CORNERS %}
@@ -50,5 +51,5 @@ No such user
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/profile-home.js" %}"></script>
+<script src="{% hashed_static "js/profile-home.js" %}"></script>
 {% endblock bottomimports %}

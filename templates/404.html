@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}404 - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -11,7 +12,7 @@
 {% endblock headermeta %}
 
 {% block topimports %}
-<link rel="stylesheet" href="{% static "css/error.css" %}">
+<link rel="stylesheet" href="{% hashed_static "css/error.css" %}">
 {% endblock topimports %}
 
 {% block innercontent %}
@@ -19,5 +20,5 @@
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% static 'js/error.js' %}"></script>
+<script src="{% hashed_static 'js/error.js' %}"></script>
 {% endblock bottomimports %}

@@ -216,6 +216,19 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
+# Static files storage without post-processing
+# Webpack handles content hashing (adds [contenthash] to filenames), so Django
+# doesn't need to reprocess files. This avoids issues with missing fonts and
+# complex CSS URL rewriting during collectstatic.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "cms.storage.WebpackHashedFilesStorage",
+    },
+}
+
 AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "/"
 

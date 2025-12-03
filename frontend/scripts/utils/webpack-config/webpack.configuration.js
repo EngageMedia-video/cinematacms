@@ -1,4 +1,6 @@
 const path = require("path");
+const crypto = require("crypto");
+const fs = require("fs");
 
 // Webpack plugins.
 const { LimitChunkCountPlugin } = require("webpack").optimize;
@@ -12,6 +14,84 @@ const CopyPlugin = require("copy-webpack-plugin");
 const Dotenv = require("dotenv-webpack");
 
 const MyHtmlBeautifyWebpackPlugin = require("./MyHtmlBeautifyWebpackPlugin.js");
+const { WebpackManifestPlugin } = require("webpack-manifest-plugin");
+
+/**
+ * Escapes all regex special characters in a string.
+ * @param {string} string - The string to escape
+ * @returns {string} The escaped string safe for use in RegExp
+ */
+function escapeRegExp(string) {
+	return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Custom plugin to inject copied assets (like _extra.css) into manifest.json
+ * CopyPlugin's [contenthash] files aren't tracked by WebpackManifestPlugin,
+ * so we need to manually add them after the build.
+ */
+class InjectCopiedAssetsToManifestPlugin {
+	constructor(options) {
+		this.options = options || {};
+	}
+
+	apply(compiler) {
+		compiler.hooks.afterEmit.tapAsync(
+			"InjectCopiedAssetsToManifestPlugin",
+			(compilation, callback) => {
+				const { buildDir, cssDir = "css", assets = [] } = this.options;
+				const manifestPath = path.join(buildDir, "static/manifest.json");
+
+				// Read current manifest
+				fs.readFile(manifestPath, "utf8", (err, data) => {
+					if (err) {
+						console.warn("Warning: Could not read manifest.json for asset injection");
+						callback();
+						return;
+					}
+
+					let manifest;
+					try {
+						manifest = JSON.parse(data);
+					} catch (parseErr) {
+						console.warn("Warning: Could not parse manifest.json");
+						callback();
+						return;
+					}
+
+					// Scan for hashed files from CopyPlugin
+					const cssPath = path.join(buildDir, "static", cssDir);
+					fs.readdir(cssPath, (readErr, files) => {
+						if (readErr) {
+							callback();
+							return;
+						}
+
+						// Find _extra-[hash].css and add to manifest
+						assets.forEach((assetName) => {
+							const pattern = new RegExp(`^${escapeRegExp(assetName)}-([a-f0-9]{8})\\.css$`);
+							const hashedFile = files.find((f) => pattern.test(f));
+
+							if (hashedFile) {
+								const originalKey = `${cssDir}/${assetName}.css`;
+								const hashedValue = `${cssDir}/${hashedFile}`;
+								manifest[originalKey] = hashedValue;
+							}
+						});
+
+						// Write updated manifest
+						fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), (writeErr) => {
+							if (writeErr) {
+								console.warn("Warning: Could not update manifest.json");
+							}
+							callback();
+						});
+					});
+				});
+			}
+		);
+	}
+}
 
 const webpackConfiguration = (env, pages, config) => {
 	const srcDir = config.src;
@@ -35,7 +115,10 @@ const webpackConfiguration = (env, pages, config) => {
 	const output = (chunkhash, hash) => {
 		let filename = "[name].js";
 
-		if (chunkhash) {
+		// Use contenthash for production builds for cache busting
+		if ("production" === env) {
+			filename = "[name]-[contenthash:8].js";
+		} else if (chunkhash) {
 			if ("" === chunkhash.trim()) {
 				throw Error("Invalid chunkhash argument value: " + chunkhash);
 			}
@@ -69,7 +152,10 @@ const webpackConfiguration = (env, pages, config) => {
 					patterns: [
 						{
 							from: path.resolve(srcDir, "static/css/_extra.css"),
-							to: path.resolve(buildDir, "static/css/_extra.css"),
+							// Use contenthash for production builds
+							to: "production" === env
+								? path.resolve(buildDir, "static/css/_extra-[contenthash:8].css")
+								: path.resolve(buildDir, "static/css/_extra.css"),
 						},
 						{
 							from: path.resolve(srcDir, "static/favicons"),
@@ -123,7 +209,7 @@ const webpackConfiguration = (env, pages, config) => {
 
 		ret.push(
 			new MiniCssExtractPlugin({
-				filename: cssbuild + "[name].css",
+				filename: cssbuild + ("production" === env ? "[name]-[contenthash:8].css" : "[name].css"),
 				ignoreOrder: true,
 			})
 		);
@@ -138,6 +224,42 @@ const webpackConfiguration = (env, pages, config) => {
 						minimizerOptions: {
 							preset: ["default", { discardComments: { removeAll: true } }],
 						},
+					})
+				);
+				// Generate manifest.json for Django template integration
+				// Uses official webpack-manifest-plugin (3.5M+ weekly downloads)
+				ret.push(
+					new WebpackManifestPlugin({
+						fileName: "static/manifest.json",
+						publicPath: "",
+						filter: (file) => {
+							// Only include JS and CSS files
+							return file.name.match(/\.(js|css)$/);
+						},
+						map: (file) => {
+							// Clean up the hashed filename path: remove leading ./static/
+							const cleanPath = file.path.replace(/^\.\/static\//, "");
+
+							// Extract original path by removing the content hash
+							// Format: js/name-[hash].ext -> js/name.ext
+							const originalPath = cleanPath.replace(/-[a-f0-9]{8}\./, ".");
+
+							return {
+								...file,
+								name: originalPath, // Key: original path (e.g., "js/index.js")
+								path: cleanPath,    // Value: hashed path (e.g., "js/index-75dac8d2.js")
+							};
+						},
+					})
+				);
+
+				// Inject copied assets (like _extra.css) into manifest.json
+				// CopyPlugin's [contenthash] files aren't tracked by WebpackManifestPlugin
+				ret.push(
+					new InjectCopiedAssetsToManifestPlugin({
+						buildDir: buildDir,
+						cssDir: "css",
+						assets: ["_extra"], // Base names without extension
 					})
 				);
 			}

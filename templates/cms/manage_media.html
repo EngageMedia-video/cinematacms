@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}Manage media - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -14,5 +15,5 @@
 {% block content %}<div id="page-manage-media"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/manage-media.js" %}"></script>
+<script src="{% hashed_static "js/manage-media.js" %}"></script>
 {% endblock bottomimports %}

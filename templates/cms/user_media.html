@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}{% if user.name %}{{user.name}} - {% endif %}Media - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -14,8 +15,8 @@
 {% endblock headermeta %}
 
 {% block topimports %}
-<link href="{% static "css/profile-media.css" %}" rel="preload" as="style">
-<link href="{% static "css/profile-media.css" %}" rel="stylesheet">
+<link href="{% hashed_static "css/profile-media.css" %}" rel="preload" as="style">
+<link href="{% hashed_static "css/profile-media.css" %}" rel="stylesheet">
 {%endblock topimports %}
 
 {% block innercontent %}
@@ -29,5 +30,5 @@ No such user
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/profile-media.js" %}"></script>
+<script src="{% hashed_static "js/profile-media.js" %}"></script>
 {% endblock bottomimports %}
