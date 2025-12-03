@@ -1,3 +1,4 @@
 {% load static %}
+{% load webpack_manifest %}
 
-		<script src="{% static "js/_commons.js" %}"></script>
+		<script src="{% hashed_static "js/_commons.js" %}"></script>

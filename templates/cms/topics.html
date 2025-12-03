@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}Topics - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -42,5 +43,5 @@
 {% block content %}<div id="page-topics"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/topics.js" %}"></script>
+<script src="{% hashed_static "js/topics.js" %}"></script>
 {% endblock bottomimports %}

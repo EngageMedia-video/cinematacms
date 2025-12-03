@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}Manage users - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -22,5 +23,5 @@
 <div id="page-manage-users"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/manage-users.js" %}"></script>
+<script src="{% hashed_static "js/manage-users.js" %}"></script>
 {% endblock bottomimports %}

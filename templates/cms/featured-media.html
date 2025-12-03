@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}Staff picks - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -44,5 +44,5 @@
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/featured.js" %}"></script>
+<script src="{% hashed_static "js/featured.js" %}"></script>
 {% endblock bottomimports %}

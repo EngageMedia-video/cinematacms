@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}Languages - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -42,5 +43,5 @@
 {% block content %}<div id="page-languages"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/languages.js" %}"></script>
+<script src="{% hashed_static "js/languages.js" %}"></script>
 {% endblock bottomimports %}

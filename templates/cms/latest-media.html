@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}Recent uploads - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -44,5 +45,5 @@
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/latest.js" %}"></script>
+<script src="{% hashed_static "js/latest.js" %}"></script>
 {% endblock bottomimports %}

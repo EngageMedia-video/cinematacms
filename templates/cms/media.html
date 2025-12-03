@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}{{media_object.title}} - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -121,8 +122,8 @@
 {% endblock headermeta %}
 
 {% block topimports %}
-<link href="{% static "css/media.css" %}" rel="preload" as="style">
-<link href="{% static "css/media.css" %}" rel="stylesheet">
+<link href="{% hashed_static "css/media.css" %}" rel="preload" as="style">
+<link href="{% hashed_static "css/media.css" %}" rel="stylesheet">
 {%endblock topimports %}
 
 {% block content %}
@@ -151,6 +152,7 @@
 
                             <input type="password" name="password" placeholder="Password" required>
                             <input type="submit" value="Submit">
+                        </form>
                     </p>
                 </div>
         {% endif %}
@@ -177,5 +179,5 @@
 
 
 {% block bottomimports %}
-<script src="{% static "js/media.js" %}"></script>
+<script src="{% hashed_static "js/media.js" %}"></script>
 {% endblock bottomimports %}

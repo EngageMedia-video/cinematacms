@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}{% if user.name %}{{user.name}} - {% endif %}{{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -24,5 +25,5 @@ No such user
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/profile-home.js" %}"></script>
+<script src="{% hashed_static "js/profile-home.js" %}"></script>
 {% endblock bottomimports %}

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load webpack_manifest %}
 
 {% block headtitle %}Manage comments - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -14,5 +15,5 @@
 {% block content %}<div id="page-manage-comments"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% static "js/manage-comments.js" %}"></script>
+<script src="{% hashed_static "js/manage-comments.js" %}"></script>
 {% endblock bottomimports %}

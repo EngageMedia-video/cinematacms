@@ -50,6 +50,7 @@
     "webpack": "^5.101.3",
     "webpack-dev-server": "^5.2.2",
     "webpack-format-messages": "^3.0.1",
+    "webpack-manifest-plugin": "^6.0.1",
     "webpack-virtual-modules": "^0.6.2"
   },
   "dependencies": {
