@@ -1418,6 +1418,7 @@ def subscribe_user(email, name, country=None):
         "name": name,
         "lists": getattr(settings, 'NEWSLETTER_LIST_IDS', [2]),
         "attribute004": country if country else "",
+        "send_emails": True,  # Trigger confirmation email
     }
 
     headers = {
