@@ -25,16 +25,16 @@ video_topics = (
     ("civillib", "Civil Liberties"),
 )
 
+# Reorganized country list - Asia-Pacific first, then rest alphabetically
 video_countries = (
-    ("AQ", "Antarctica"),
+    # Asia-Pacific Region (Primary)
     ("AU", "Australia"),
     ("BD", "Bangladesh"),
     ("BT", "Bhutan"),
-    ("BU", "Bougainville"),
     ("BN", "Brunei Darussalam"),
+    ("BU", "Bougainville"),
     ("KH", "Cambodia"),
     ("CN", "China"),
-    ("EG", "Egypt"),
     ("FJ", "Fiji"),
     ("PF", "French Polynesia"),
     ("GU", "Guam"),
@@ -42,10 +42,10 @@ video_countries = (
     ("HK", "Hong Kong"),
     ("IN", "India"),
     ("ID", "Indonesia"),
-    ("XX", "International"),
     ("JP", "Japan"),
     ("KI", "Kiribati"),
     ("KP", "Korea, Democratic People's Republic Of"),
+    ("KR", "South Korea"),
     ("LA", "Laos"),
     ("MY", "Malaysia"),
     ("MV", "Maldives"),
@@ -77,8 +77,15 @@ video_countries = (
     ("VU", "Vanuatu"),
     ("VN", "Viet Nam"),
     ("WP", "West Papua"),
-    ("KR", "South Korea"),
+    
+    # Other Countries (Alphabetically)
+    ("AQ", "Antarctica"),
+    ("EG", "Egypt"),
+    ("XX", "International"),
 )
+
+# Add this constant for validation
+UNUSUAL_COUNTRIES = ["AQ"]  # Countries that should trigger confirmation
 license_options = (
     ("Yes", "Yes"),
     ("No", "No"),
