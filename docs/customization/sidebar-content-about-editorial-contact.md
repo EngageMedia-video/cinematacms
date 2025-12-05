@@ -1,4 +1,4 @@
-# CinemataCMS Sidebar Content Guide
+# Adding content in About, Editorial Policy and Contact
 
 This guide explains how to add content to the sidebar menu items in CinemataCMS, specifically for the "About", "Editorial Policy", and other pages accessible from the sidebar navigation.
 
