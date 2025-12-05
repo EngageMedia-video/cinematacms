@@ -1,7 +1,9 @@
 from django.conf import settings
+import json
 
 from .methods import can_upload_media, is_mediacms_editor, is_mediacms_manager
 from .models import HomepagePopup, TopMessage
+from .lists import UNUSUAL_COUNTRIES
 
 # NOTE: context_processors.py can be considered as a dumping ground of sorts for 
 # multiple variables that, as declared, are then instantiated to be referenced
@@ -65,4 +67,5 @@ def stuff(request):
     if request.user.is_superuser:
         ret["DJANGO_ADMIN_URL"] = settings.DJANGO_ADMIN_URL
     ret["MFA_REQ_DATE"] = 'April 21, 2025'
+    ret["UNUSUAL_COUNTRIES_JSON"] = json.dumps(UNUSUAL_COUNTRIES)
     return ret

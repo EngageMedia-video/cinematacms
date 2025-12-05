@@ -589,6 +589,12 @@ RECAPTCHA_PUBLIC_KEY = ""
 
 CRISPY_TEMPLATE_PACK = "bootstrap"
 
+# WordPress Newsletter Plugin API Configuration
+# Public subscribe endpoint (no API key required)
+NEWSLETTER_API_URL = "https://mailer.cinemata.org/wp-json/newsletter/v1/subscribe"
+# Newsletter list ID(s) to subscribe users to (Cinemata Newsletter = list 2)
+NEWSLETTER_LIST_IDS = [2]
+
 from .local_settings import *
 
 # Add debug_toolbar to INSTALLED_APPS if DEBUG is True
