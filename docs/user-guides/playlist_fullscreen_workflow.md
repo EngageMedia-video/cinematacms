@@ -11,8 +11,9 @@ Once inside the playlist:
 - Select any video from the list to start playback in playlist mode.
 
 ## 3. Video Playback
-- The selected video begins playing automatically.
-- Playlist mode is activated.
+- From the step above, playlist mode activates.
+- If the Auto-play is set to On in the browser, the selected video begins playing automatically.
+- Click the fullscreen icon on the video player.
 
 ## 4. Transition to the Next Video
 At the end of a video:
