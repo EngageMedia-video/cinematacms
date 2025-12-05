@@ -2818,6 +2818,10 @@ function generatePlugin(/*videojs*/) {
 				}
 
 				this.isChangingResolution = false;
+
+				// Re-apply subtitles after resolution change.
+				// Text tracks are destroyed and recreated on src() change.
+				this.changeVideoSubtitle();
 			}
 
 			this.updateVideoElementPosition();
@@ -2879,7 +2883,11 @@ function generatePlugin(/*videojs*/) {
 			// console.log( this.player.textTracks() );
 			// console.log( this.player.remoteTextTracks() );
 
-			this.changeVideoSubtitle();
+			// Wait for data to load before applying subtitles.
+			// This ensures text tracks are fully initialized (fixes Safari).
+			this.player.one("loadeddata", () => {
+				this.changeVideoSubtitle();
+			});
 
 			this.progressBarLine = this.player.el_.querySelector(
 				".video-js .vjs-progress-holder .vjs-play-progress"
@@ -2931,10 +2939,16 @@ function generatePlugin(/*videojs*/) {
 				// console.log( tracks[i].kind, tracks[i].language, tracks[i].label );
 
 				if ("subtitles" === tracks[i].kind) {
-					tracks[i].mode =
-						this.state.theSelectedSubtitleOption === tracks[i].language
-							? "showing"
-							: "hidden";
+					const shouldShow =
+						this.state.theSelectedSubtitleOption === tracks[i].language;
+
+					if (shouldShow) {
+						// Toggle pattern forces track renderer to refresh (fixes Safari).
+						tracks[i].mode = "disabled";
+						tracks[i].mode = "showing";
+					} else {
+						tracks[i].mode = "hidden";
+					}
 					// console.log( tracks[i].mode );
 				}
 			}
