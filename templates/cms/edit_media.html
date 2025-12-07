@@ -200,15 +200,15 @@
 
 																			<p>
 																				<span><strong>Allow commercial uses of your work?</strong> (<a href="https://creativecommons.org/characteristic/nc?lang=en_US" target="_blank" onclick="window.open('https://creativecommons.org/characteristic/nc?lang=en_US', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;">more info</a>)</span>
-																				<label><input type="radio" name="field_commercial" value="Yes"/>Yes</label>
-																				<label><input type="radio" name="field_commercial" value="No"/>No</label>
+																				<label><input type="radio" name="field_commercial" value="yes"/>Yes</label>
+																				<label><input type="radio" name="field_commercial" value="no"/>No</label>
 																			</p>
 
 																			<p>
 																				<span><strong>Allow modifications of your work?</strong> (<a href="https://creativecommons.org/characteristic/nd?lang=en_US" target="_blank" onclick="window.open('https://creativecommons.org/characteristic/nd?lang=en_US', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;">more info</a>)</span>
-																				<label><input type="radio" name="field_derivatives" value="Yes"/>Yes</label>
-																				<label><input type="radio" name="field_derivatives" value="Partially"/>Yes, as long as others share alike (<a href="https://creativecommons.org/characteristic/sa?lang=en_US" target="_blank" onclick="window.open('https://creativecommons.org/characteristic/sa?lang=en_US', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;">more info</a>)</label>
-																				<label><input type="radio" name="field_derivatives" value="No"/>No</label>
+																				<label><input type="radio" name="field_derivatives" value="yes"/>Yes</label>
+																				<label><input type="radio" name="field_derivatives" value="sharealike"/>Yes, as long as others share alike (<a href="https://creativecommons.org/characteristic/sa?lang=en_US" target="_blank" onclick="window.open('https://creativecommons.org/characteristic/sa?lang=en_US', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;">more info</a>)</label>
+																				<label><input type="radio" name="field_derivatives" value="no"/>No</label>
 																			</p>
 																		</div>
 
@@ -229,9 +229,22 @@
 													</div>
 
 												</div>
+
+											<div id="div_id_no_license" class="control-group">
+												<div class="controls">
+													<label for="id_no_license" class="checkbox">
+														<input type="checkbox" name="no_license" class="checkboxinput" id="id_no_license" {% if form.no_license.value %}checked{% endif %} />
+													All Rights Reserved
+													</label>
+												</div>
 											</div>
 
+										</div>
+
                                         </div>
+
+				{% elif field.name == "no_license" %}
+					{# Skip no_license here - it's rendered inside the custom_license section above #}
 
 				    {% else %}
                                         <div class="fieldWrapper">
@@ -476,17 +489,28 @@
 				document.querySelector('.current_uploaded_poster_field a').innerText = currentUploadedPosterFileName;
 				document.querySelector('.current_uploaded_poster_field a').href = currentUploadedPosterFileNameURL;
 
-				document.querySelector('#uploaded_poster-clear_id').remove();
-				document.getElementsByClassName('current_uploaded_poster_field')[0].querySelector('label').remove();
+				var clearIdElement = document.querySelector('#uploaded_poster-clear_id');
+				if (clearIdElement) clearIdElement.remove();
+
+				var posterFieldWrapper = document.getElementsByClassName('current_uploaded_poster_field')[0];
+				if (posterFieldWrapper) {
+					var labelElement = posterFieldWrapper.querySelector('label');
+					if (labelElement) labelElement.remove();
+				}
 
 			}
 
 
 
-			// remove some fields
-			document.querySelector('#hint_id_allow_download').remove();
-			document.querySelector('#hint_id_enable_comments').remove();
-			document.querySelector('#hint_id_year_produced').remove();
+			// remove some fields (with null checks to avoid errors)
+			var hintAllowDownload = document.querySelector('#hint_id_allow_download');
+			if (hintAllowDownload) hintAllowDownload.remove();
+
+			var hintEnableComments = document.querySelector('#hint_id_enable_comments');
+			if (hintEnableComments) hintEnableComments.remove();
+
+			var hintYearProduced = document.querySelector('#hint_id_year_produced');
+			if (hintYearProduced) hintYearProduced.remove();
 
 
 			// increase titles
@@ -583,7 +607,9 @@
 
 					if( ! isLicenseDisabled && ! found ){
 						isLicenseDisabled = true;
-						elem.license_disable_check.checked = true;
+						if( null !== elem.license_disable_check ){
+							elem.license_disable_check.checked = true;
+						}
 					}
 
 					if( isLicenseDisabled ){
@@ -662,11 +688,13 @@
 
 								if( selectedFields.commercial === licenses[k].allow_commercial && selectedFields.derivatives === licenses[k].allow_modifications ){
 
-									elem.selected_license_title.innerHTML = licenses[k].title;
+									elem.selected_license_title.textContent = licenses[k].title;
 									elem.license_value_field.setAttribute('value', k);
 
 									isLicenseDisabled = false;
-									elem.license_disable_check.checked = false;
+									if( null !== elem.license_disable_check ){
+										elem.license_disable_check.checked = false;
+									}
 								}
 							}
 						}
@@ -1601,10 +1629,10 @@
 			const yearSelect = document.querySelector('#id_year_produced');
 			const customInput = document.querySelector('#id_year_produced_custom');
 			const customWrapper = customInput ? customInput.closest('.fieldWrapper') : null;
-			
+
 			function toggleCustomYear() {
 				if (!yearSelect || !customInput || !customWrapper) return;
-				
+
 				if (yearSelect.value === 'other') {
 					customWrapper.style.display = 'block';
 					customInput.style.display = 'block';
@@ -1617,12 +1645,12 @@
 					customInput.value = '';
 				}
 			}
-			
+
 			if (yearSelect) {
 				yearSelect.addEventListener('change', toggleCustomYear);
 				toggleCustomYear(); // Initialize on page load
 			}
-			
+
 			// Add styling to custom input
 			if (customInput) {
 				customInput.style.marginTop = '10px';
