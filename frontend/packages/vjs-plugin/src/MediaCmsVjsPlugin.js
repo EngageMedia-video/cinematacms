@@ -2,6 +2,7 @@
 
 import PluginFontIcons from "@mediacms/vjs-plugin-font-icons/dist/css/mediacms-vjs-icons.css";
 import PluginStyles from "./styles.scss";
+import { isIOSDevice } from "./utils/deviceDetection.js";
 
 let Plugin = null;
 
@@ -2821,6 +2822,8 @@ function generatePlugin(/*videojs*/) {
 
 				// Re-apply subtitles after resolution change.
 				// Text tracks are destroyed and recreated on src() change.
+				// Note: This runs inside onVideoDataLoad (the loadeddata handler),
+				// so tracks are ready at this point.
 				this.changeVideoSubtitle();
 			}
 
@@ -2861,9 +2864,8 @@ function generatePlugin(/*videojs*/) {
 					subtitleLanguages.push(tracks[i].language);
 				}
 
-				// Detect iOS for native track handling.
-				const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-					(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+				// Check if running on iOS for native track handling.
+				const isIOS = isIOSDevice();
 
 				i = 1; // Exclude 'off' language option.
 				while (i < this.subtitles.languages.length) {
@@ -2874,6 +2876,7 @@ function generatePlugin(/*videojs*/) {
 
 						// For iOS native tracks, set default attribute on the selected subtitle.
 						// This is required for iOS fullscreen to show subtitles.
+						// See: https://github.com/videojs/video.js/issues/8061
 						const isDefaultTrack = isIOS &&
 							this.state.theSelectedSubtitleOption === this.subtitles.languages[i].srclang;
 
@@ -2894,7 +2897,7 @@ function generatePlugin(/*videojs*/) {
 			// console.log( this.player.remoteTextTracks() );
 
 			// Wait for data to load before applying subtitles.
-			// With nativeTextTracks: false, emulated tracks work reliably.
+			// This ensures text tracks are ready before mode changes.
 			this.player.one("loadeddata", () => {
 				this.changeVideoSubtitle();
 			});
@@ -2946,7 +2949,6 @@ function generatePlugin(/*videojs*/) {
 			const tracks = this.player.textTracks();
 
 			// Set track modes: 'showing' for selected, 'hidden' for others, 'disabled' when off.
-			// With nativeTextTracks: false, emulated tracks handle mode changes reliably.
 			for (let i = 0; i < tracks.length; i++) {
 				if ("subtitles" === tracks[i].kind) {
 					if ("off" === this.state.theSelectedSubtitleOption) {
