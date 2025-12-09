@@ -2861,6 +2861,10 @@ function generatePlugin(/*videojs*/) {
 					subtitleLanguages.push(tracks[i].language);
 				}
 
+				// Detect iOS for native track handling.
+				const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+					(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 				i = 1; // Exclude 'off' language option.
 				while (i < this.subtitles.languages.length) {
 					if (
@@ -2868,11 +2872,17 @@ function generatePlugin(/*videojs*/) {
 					) {
 						// console.log('-A-');
 
+						// For iOS native tracks, set default attribute on the selected subtitle.
+						// This is required for iOS fullscreen to show subtitles.
+						const isDefaultTrack = isIOS &&
+							this.state.theSelectedSubtitleOption === this.subtitles.languages[i].srclang;
+
 						this.player.addRemoteTextTrack({
 							kind: "subtitles",
 							label: this.subtitles.languages[i].label,
 							language: this.subtitles.languages[i].srclang,
 							src: this.subtitles.languages[i].src,
+							default: isDefaultTrack,
 						});
 					}
 
@@ -2884,7 +2894,7 @@ function generatePlugin(/*videojs*/) {
 			// console.log( this.player.remoteTextTracks() );
 
 			// Wait for data to load before applying subtitles.
-			// This ensures text tracks are fully initialized (fixes Safari).
+			// With nativeTextTracks: false, emulated tracks work reliably.
 			this.player.one("loadeddata", () => {
 				this.changeVideoSubtitle();
 			});
@@ -2935,21 +2945,17 @@ function generatePlugin(/*videojs*/) {
 
 			const tracks = this.player.textTracks();
 
+			// Set track modes: 'showing' for selected, 'hidden' for others, 'disabled' when off.
+			// With nativeTextTracks: false, emulated tracks handle mode changes reliably.
 			for (let i = 0; i < tracks.length; i++) {
-				// console.log( tracks[i].kind, tracks[i].language, tracks[i].label );
-
 				if ("subtitles" === tracks[i].kind) {
-					const shouldShow =
-						this.state.theSelectedSubtitleOption === tracks[i].language;
-
-					if (shouldShow) {
-						// Toggle pattern forces track renderer to refresh (fixes Safari).
+					if ("off" === this.state.theSelectedSubtitleOption) {
 						tracks[i].mode = "disabled";
-						tracks[i].mode = "showing";
 					} else {
-						tracks[i].mode = "hidden";
+						const shouldShow =
+							this.state.theSelectedSubtitleOption === tracks[i].language;
+						tracks[i].mode = shouldShow ? "showing" : "hidden";
 					}
-					// console.log( tracks[i].mode );
 				}
 			}
 		}

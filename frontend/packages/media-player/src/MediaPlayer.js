@@ -325,6 +325,18 @@ function constructVideojsOptions(opt, vjopt) {
 		vjopt.html5.vhs = opt.vhsOptions;
 	}
 
+	// Text track handling differs by platform:
+	// - iOS Safari: Must use native tracks for fullscreen subtitle support.
+	//   iOS fullscreen uses native video player, cannot overlay emulated tracks.
+	//   See: https://github.com/videojs/video.js/issues/8061
+	// - Desktop Safari & other browsers: Use emulated tracks for reliable
+	//   programmatic control. Native tracks have issues with addRemoteTextTrack().
+	//   See: https://github.com/videojs/video.js/issues/8936
+	vjopt.html5 = vjopt.html5 || {};
+	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+		(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+	vjopt.html5.nativeTextTracks = isIOS;
+
 	// console.log( vjopt );
 	// console.log( opt );
 
