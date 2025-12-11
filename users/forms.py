@@ -101,6 +101,7 @@ class UserForm(forms.ModelForm):
             "social_media_links",
             "logo",
             "notification_on_comments",
+            "disable_activity_logging",
             "is_featured",
             "advancedUser",
             "is_manager",
