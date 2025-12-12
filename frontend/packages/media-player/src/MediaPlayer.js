@@ -13,6 +13,23 @@ function isBoolean(v) {
 	return "boolean" === typeof v || v instanceof Boolean;
 }
 
+/**
+ * Detects if the current device is running iOS (iPhone, iPad, iPod).
+ * Includes iPadOS 13+ detection which reports as 'MacIntel' with touch support.
+ * Note: navigator.platform is deprecated but still necessary for iPadOS detection.
+ * @returns {boolean} True if iOS, false otherwise (including SSR environments)
+ */
+function isIOSDevice() {
+	if (typeof navigator === 'undefined') {
+		return false;
+	}
+	const userAgent = navigator.userAgent || '';
+	const platform = navigator.platform || '';
+	const maxTouchPoints = navigator.maxTouchPoints || 0;
+	return /iPad|iPhone|iPod/.test(userAgent) ||
+		(platform === 'MacIntel' && maxTouchPoints > 1);
+}
+
 function ifBooleanElse(bol, els) {
 	return isBoolean(bol) ? bol : els;
 }
@@ -324,6 +341,16 @@ function constructVideojsOptions(opt, vjopt) {
 		vjopt.html5 = vjopt.html5 || {};
 		vjopt.html5.vhs = opt.vhsOptions;
 	}
+
+	// Text track handling differs by platform:
+	// - iOS Safari: Must use native tracks for fullscreen subtitle support.
+	//   iOS fullscreen uses native video player, cannot overlay emulated tracks.
+	//   See: https://github.com/videojs/video.js/issues/8061
+	// - Desktop Safari & other browsers: Use emulated tracks for reliable
+	//   programmatic control. Native tracks have issues with addRemoteTextTrack().
+	//   See: https://github.com/videojs/video.js/issues/8936
+	vjopt.html5 = vjopt.html5 || {};
+	vjopt.html5.nativeTextTracks = isIOSDevice();
 
 	// console.log( vjopt );
 	// console.log( opt );

@@ -2,6 +2,7 @@
 
 import PluginFontIcons from "@mediacms/vjs-plugin-font-icons/dist/css/mediacms-vjs-icons.css";
 import PluginStyles from "./styles.scss";
+import { isIOSDevice } from "./utils/deviceDetection.js";
 
 let Plugin = null;
 
@@ -2818,6 +2819,12 @@ function generatePlugin(/*videojs*/) {
 				}
 
 				this.isChangingResolution = false;
+
+				// Re-apply subtitles after resolution change.
+				// Text tracks are destroyed and recreated on src() change.
+				// Note: This runs inside onVideoDataLoad (the loadeddata handler),
+				// so tracks are ready at this point.
+				this.changeVideoSubtitle();
 			}
 
 			this.updateVideoElementPosition();
@@ -2857,6 +2864,9 @@ function generatePlugin(/*videojs*/) {
 					subtitleLanguages.push(tracks[i].language);
 				}
 
+				// Check if running on iOS for native track handling.
+				const isIOS = isIOSDevice();
+
 				i = 1; // Exclude 'off' language option.
 				while (i < this.subtitles.languages.length) {
 					if (
@@ -2864,11 +2874,18 @@ function generatePlugin(/*videojs*/) {
 					) {
 						// console.log('-A-');
 
+						// For iOS native tracks, set default attribute on the selected subtitle.
+						// This is required for iOS fullscreen to show subtitles.
+						// See: https://github.com/videojs/video.js/issues/8061
+						const isDefaultTrack = isIOS &&
+							this.state.theSelectedSubtitleOption === this.subtitles.languages[i].srclang;
+
 						this.player.addRemoteTextTrack({
 							kind: "subtitles",
 							label: this.subtitles.languages[i].label,
 							language: this.subtitles.languages[i].srclang,
 							src: this.subtitles.languages[i].src,
+							default: isDefaultTrack,
 						});
 					}
 
@@ -2879,7 +2896,11 @@ function generatePlugin(/*videojs*/) {
 			// console.log( this.player.textTracks() );
 			// console.log( this.player.remoteTextTracks() );
 
-			this.changeVideoSubtitle();
+			// Wait for data to load before applying subtitles.
+			// This ensures text tracks are ready before mode changes.
+			this.player.one("loadeddata", () => {
+				this.changeVideoSubtitle();
+			});
 
 			this.progressBarLine = this.player.el_.querySelector(
 				".video-js .vjs-progress-holder .vjs-play-progress"
@@ -2927,15 +2948,16 @@ function generatePlugin(/*videojs*/) {
 
 			const tracks = this.player.textTracks();
 
+			// Set track modes: 'showing' for selected, 'hidden' for others, 'disabled' when off.
 			for (let i = 0; i < tracks.length; i++) {
-				// console.log( tracks[i].kind, tracks[i].language, tracks[i].label );
-
 				if ("subtitles" === tracks[i].kind) {
-					tracks[i].mode =
-						this.state.theSelectedSubtitleOption === tracks[i].language
-							? "showing"
-							: "hidden";
-					// console.log( tracks[i].mode );
+					if ("off" === this.state.theSelectedSubtitleOption) {
+						tracks[i].mode = "disabled";
+					} else {
+						const shouldShow =
+							this.state.theSelectedSubtitleOption === tracks[i].language;
+						tracks[i].mode = shouldShow ? "showing" : "hidden";
+					}
 				}
 			}
 		}
