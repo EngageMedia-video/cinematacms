@@ -39,6 +39,11 @@ class User(AbstractUser):
     notification_on_comments = models.BooleanField(
         "Notify me about comments on my content", default=True
     )
+    disable_activity_logging = models.BooleanField(
+        "Disable Activity Logging",
+        default=False,
+        help_text="Views, likes, and watch history will not be recorded.",
+    )
 
     location = models.CharField("Location", max_length=250, blank=True)
     location_country = models.CharField(
