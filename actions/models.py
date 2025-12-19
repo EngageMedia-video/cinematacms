@@ -32,7 +32,7 @@ class MediaAction(models.Model):
         Media, on_delete=models.CASCADE, related_name="mediaactions"
     )
     action_date = models.DateTimeField(auto_now_add=True)
-    remote_ip = models.CharField(max_length=40, blank=True, null=True)
+    remote_ip = models.CharField(max_length=64, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         super(MediaAction, self).save(*args, **kwargs)

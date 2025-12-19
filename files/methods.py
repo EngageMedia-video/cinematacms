@@ -92,6 +92,10 @@ def get_user_or_session(request):
 
 
 def pre_save_action(media, user, session_key, action, remote_ip):
+    # Check if user has opted out of activity logging
+    if user and getattr(user, "disable_activity_logging", False):
+        return False
+
     # PERFORM THRESHOLD CHECKS
     from actions.models import MediaAction
 

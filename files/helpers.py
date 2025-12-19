@@ -230,7 +230,12 @@ def clean_friendly_token(token):
 
 
 def mask_ip(ip_address):
-    return hashlib.md5(ip_address.encode("utf-8")).hexdigest()
+    """Mask IP address using SHA256 with server secret as salt.
+
+    This prevents rainbow table attacks by incorporating a server-side secret.
+    """
+    salted = f"{ip_address}{settings.SECRET_KEY}"
+    return hashlib.sha256(salted.encode("utf-8")).hexdigest()
 
 
 def run_command(cmd, cwd=None):
