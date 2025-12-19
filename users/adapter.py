@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 from django.shortcuts import resolve_url
 from django.apps import apps
+from django.utils.http import url_has_allowed_host_and_scheme
 from allauth.mfa.utils import is_mfa_enabled
 from utils.security import generate_key, generate_cipher
 from cms.permissions import user_requires_mfa
@@ -41,7 +42,18 @@ class MyAccountAdapter(DefaultAccountAdapter):
             mfa_enabled = is_mfa_enabled(request.user)
             if not mfa_enabled:
                 return resolve_url("/accounts/2fa/totp/activate")
-            return resolve_url("/")
+            return self._get_safe_redirect_url(request)
+        return self._get_safe_redirect_url(request)
+
+    def _get_safe_redirect_url(self, request):
+        """Get redirect URL from next param, validating it's same-origin only."""
+        next_url = request.GET.get("next") or request.POST.get("next")
+        if next_url and url_has_allowed_host_and_scheme(
+            url=next_url,
+            allowed_hosts={request.get_host()},
+            require_https=request.is_secure(),
+        ):
+            return next_url
         return resolve_url("/")
 
     @property
