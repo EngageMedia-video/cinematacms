@@ -154,15 +154,26 @@ function optionsItems(mediaData, allowDownload, downloadLink, mediaReported){
 				},
 			});
 		}
+		else if( user.is.anonymous ){
+			// Anonymous users: redirect to sign-in page
+			const currentPath = window.location.href.replace(site.url, '').replace(/^\//g, '');
+			const loginUrl = LinksContext._currentValue.signin + '?next=/' + currentPath;
+			items.push({
+				itemType: "link",
+				link: loginUrl,
+				text: "Report",
+				icon: "flag",
+			});
+		}
 		else{
+			// Authenticated users: open report form
 			items.push({
 				itemType: "open-subpage",
 				text: "Report",
 				icon: "flag",
 				buttonAttr: {
 					className: 'change-page' + ( mediaReportedTimes ? ' loggedin-media-reported' : '' ),
-					// 'data-page-id': ! UserContext._currentValue.is.anonymous ? 'loggedInReportMedia' : 'reportMediaSignIn',
-					'data-page-id': 'loggedInReportMedia',	// @note: Disabled 'is logged in' condition and enabled report form even for not registered users. It could be set by an option managed by admin.
+					'data-page-id': 'loggedInReportMedia',
 				},
 			});
 		}

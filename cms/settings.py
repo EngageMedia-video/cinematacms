@@ -358,7 +358,7 @@ FFMPEG_COMMAND = "ffmpeg"  # this is the path
 FFPROBE_COMMAND = "ffprobe"  # this is the path
 MP4HLS = "mp4hls"
 
-ALLOW_ANONYMOUS_ACTIONS = ["report", "like", "dislike", "watch"]  # need be a list
+ALLOW_ANONYMOUS_ACTIONS = ["watch"]  # need be a list - only watching allowed for anonymous users
 MASK_IPS_FOR_ACTIONS = True
 # how many seconds a process in running state without reporting progress is
 # considered as stale...unfortunately v9 seems to not include time

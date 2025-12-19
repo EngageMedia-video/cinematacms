@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 import TextsContext from '../../contexts/TextsContext';
+import LinksContext from '../../contexts/LinksContext';
+import UserContext from '../../contexts/UserContext';
+import SiteContext from '../../contexts/SiteContext';
 
 import * as PageActions from '../../pages/_PageActions.js';
 
@@ -41,6 +44,15 @@ export function MediaDislikeIcon(props){
 	function toggleDislike(ev){
 		ev.preventDefault();
 		ev.stopPropagation();
+
+		// Redirect anonymous users to sign-in page
+		if (UserContext._currentValue.is.anonymous) {
+			const currentPath = window.location.href.replace(SiteContext._currentValue.url, '').replace(/^\//g, '');
+			const loginUrl = LinksContext._currentValue.signin + '?next=/' + currentPath;
+			window.location.href = loginUrl;
+			return;
+		}
+
 		MediaPageActions[ dislikedMedia ? 'undislikeMedia' : 'dislikeMedia' ]();
 	}
 
