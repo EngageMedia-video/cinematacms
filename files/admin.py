@@ -7,11 +7,14 @@ from tinymce.widgets import TinyMCE
 from users.models import User
 from users.validators import validate_internal_html
 
+from django.utils import timezone
+
 from .models import (
     Category,
     Comment,
     EncodeProfile,
     Encoding,
+    FeaturedVideo,
     HomepagePopup,
     IndexPageFeatured,
     Language,
@@ -346,3 +349,68 @@ admin.site.register(IndexPageFeatured, IndexPageFeaturedAdmin)
 admin.site.register(MediaLanguage, MediaLanguageAdmin)
 admin.site.register(HomepagePopup, HomepagePopupAdmin)
 admin.site.register(TranscriptionRequest, TranscriptionRequestAdmin)
+
+
+@admin.register(FeaturedVideo)
+class FeaturedVideoAdmin(admin.ModelAdmin):
+    list_display = [
+        "media",
+        "start_date",
+        "end_date",
+        "is_active",
+        "source",
+        "status_display",
+    ]
+    list_filter = ["is_active", "source"]
+    search_fields = ["media__title"]
+    autocomplete_fields = ["media"]
+    readonly_fields = ["add_date", "source", "created_by"]
+    date_hierarchy = "start_date"
+
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": ("media", "is_active"),
+            },
+        ),
+        (
+            "Schedule",
+            {
+                "fields": ("start_date", "end_date"),
+                "description": (
+                    "⏰ All times are in UTC. "
+                    "Check https://time.is/UTC for current UTC time. "
+                    "Plan your schedule accordingly."
+                ),
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": ("source", "created_by", "add_date"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    def status_display(self, obj):
+        now = timezone.now()
+        if not obj.is_active:
+            return "⏸️ Disabled"
+        if obj.start_date > now:
+            return "⏳ Scheduled"
+        if obj.end_date and obj.end_date < now:
+            return "✅ Completed"
+        return "🔴 Live"
+
+    status_display.short_description = "Status"
+
+    def save_model(self, request, obj, form, change):
+        """Validate and set metadata before saving."""
+        obj.full_clean()
+
+        if not change:  # New object
+            obj.created_by = request.user
+            obj.source = "admin"
+        super().save_model(request, obj, form, change)
