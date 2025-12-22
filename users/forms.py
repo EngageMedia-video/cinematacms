@@ -103,8 +103,8 @@ class UserForm(forms.ModelForm):
             "notification_on_comments",
             "is_featured",
             "advancedUser",
-            "is_manager",
             "is_editor",
+            "is_manager",
             "allow_contact",
         )
 
