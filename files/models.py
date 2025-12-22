@@ -13,6 +13,7 @@ from django.contrib.postgres.indexes import BrinIndex, BTreeIndex, GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.files import File
 from django.db import connection, models
+from django.db.models import Q
 from django.db.models.signals import (
     m2m_changed,
     post_delete,
@@ -2164,3 +2165,109 @@ def media_pre_save(sender, instance, **kwargs):
             # New instance
             instance.__original_state = None
             instance.__original_password = None
+
+
+class FeaturedVideo(models.Model):
+    """
+    Tracks featured video scheduling and history.
+
+    Priority logic (highest to lowest):
+    1. Active scheduled entry (start_date <= now, end_date null or >= now)
+    2. Most recent expired scheduled entry (fallback)
+    3. Media.featured=True (legacy fallback)
+    """
+
+    media = models.ForeignKey(
+        Media,
+        on_delete=models.CASCADE,
+        related_name="featured_schedules",
+    )
+    start_date = models.DateTimeField(
+        help_text="When this video becomes featured. All times are in UTC."
+    )
+    end_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Leave empty for no end date (stays featured until replaced).",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Uncheck to disable without deleting.",
+    )
+
+    # Audit fields
+    created_by = models.ForeignKey(
+        "users.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    add_date = models.DateTimeField(auto_now_add=True)
+
+    # Track source of the entry
+    SOURCE_CHOICES = [
+        ("admin", "Django Admin"),
+        ("frontend", "Edit Media Page"),
+        ("api", "API"),
+    ]
+    source = models.CharField(
+        max_length=20,
+        choices=SOURCE_CHOICES,
+        default="admin",
+    )
+
+    class Meta:
+        ordering = ["-start_date"]
+        verbose_name = "Featured Video Schedule"
+        verbose_name_plural = "Featured Video Schedules"
+
+    def __str__(self):
+        return f"{self.media.title} ({self.start_date.strftime('%Y-%m-%d')})"
+
+    def clean(self):
+        """Validate that end_date is after start_date."""
+        from django.core.exceptions import ValidationError
+
+        super().clean()
+
+        if self.end_date and self.start_date and self.end_date <= self.start_date:
+            raise ValidationError({
+                "end_date": "End date must be after the start date."
+            })
+
+
+@receiver(pre_save, sender=Media)
+def track_featured_change(sender, instance, **kwargs):
+    """Track when featured field is about to change."""
+    if instance.pk:
+        try:
+            old = Media.objects.get(pk=instance.pk)
+            instance._featured_changed = old.featured != instance.featured
+            instance._featured_new_value = instance.featured
+        except Media.DoesNotExist:
+            instance._featured_changed = False
+    else:
+        instance._featured_changed = False
+
+
+@receiver(post_save, sender=Media)
+def record_featured_from_frontend(sender, instance, created, **kwargs):
+    """Create FeaturedVideo entry when featured is set to True via frontend."""
+    if getattr(instance, "_featured_changed", False) and instance._featured_new_value:
+        now = timezone.now()
+
+        # Check if there's already an active schedule for this media
+        active_schedule_exists = FeaturedVideo.objects.filter(
+            media=instance,
+            is_active=True,
+            start_date__lte=now,
+        ).filter(Q(end_date__isnull=True) | Q(end_date__gte=now)).exists()
+
+        if not active_schedule_exists:
+            FeaturedVideo.objects.create(
+                media=instance,
+                start_date=now,
+                end_date=None,
+                source="frontend",
+                created_by=getattr(instance, "_current_user", None),
+            )

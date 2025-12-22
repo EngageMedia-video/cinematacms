@@ -13,8 +13,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.postgres.search import SearchQuery
 from django.core.mail import EmailMessage, send_mail
-from django.db import transaction
-from django.db.models import Q
+from django.db import models, transaction
+from django.db.models import Case, Q, Value, When
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -65,6 +65,7 @@ from .query_cache import (
 )
 from .methods import (
     can_upload_media,
+    get_current_featured_media,
     get_user_or_session,
     is_media_allowed_type,
     is_mediacms_editor,
@@ -505,6 +506,8 @@ def edit_media(request):
     if request.method == "POST":
         form = MediaForm(request.user, request.POST, request.FILES, instance=media)
         if form.is_valid():
+            # Set current user for FeaturedVideo signal tracking
+            media._current_user = request.user
             media = form.save()
             for tag in media.tags.all():
                 media.tags.remove(tag)
@@ -988,7 +991,28 @@ class MediaList(APIView):
             if show_param == "latest":
                 media = Media.objects.filter(basic_query).order_by("-add_date")
             elif show_param == "featured":
-                media = Media.objects.filter(basic_query, featured=True)
+                # Get the scheduled featured video (if any) to show as hero
+                scheduled_featured = get_current_featured_media()
+
+                if scheduled_featured:
+                    # Get all other featured videos
+                    other_featured_ids = list(
+                        Media.objects.filter(basic_query, featured=True)
+                        .exclude(pk=scheduled_featured.pk)
+                        .values_list("pk", flat=True)
+                    )
+                    # Combine: scheduled first, then others
+                    all_ids = [scheduled_featured.pk] + other_featured_ids
+
+                    # Use Case/When with Value to maintain order
+                    preserved_order = Case(
+                        *[When(pk=pk, then=Value(pos)) for pos, pk in enumerate(all_ids)],
+                        output_field=models.IntegerField(),
+                    )
+                    media = Media.objects.filter(pk__in=all_ids).order_by(preserved_order)
+                else:
+                    # No scheduled video, return all featured videos (original behavior)
+                    media = Media.objects.filter(basic_query, featured=True)
             else:
                 media = Media.objects.filter(basic_query).order_by("-add_date")
         paginator = pagination_class()
@@ -1340,6 +1364,7 @@ class MediaActions(APIView):
 
         action = request.data.get("type")
         if action == "feature":
+            media._current_user = request.user
             media.featured = True
             media.save(update_fields=["featured"])
             return Response(
