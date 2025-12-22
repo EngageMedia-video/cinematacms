@@ -604,3 +604,61 @@ def can_upload_media(user):
 
 def is_media_allowed_type(media):
     return media.media_type in settings.ALLOWED_MEDIA_UPLOAD_TYPES
+
+
+def get_current_featured_media():
+    """
+    Returns the single Media object that should be featured right now.
+
+    Priority:
+    1. FeaturedVideo with active schedule (newest start_date wins if overlapping)
+    2. FeaturedVideo most recently scheduled (fallback)
+    3. Media with featured=True, ordered by -add_date (legacy fallback)
+
+    Returns None if no featured media exists.
+    """
+    from .models import FeaturedVideo, Media
+
+    now = timezone.now()
+
+    # Priority 1: Active scheduled entry
+    active = (
+        FeaturedVideo.objects.filter(
+            is_active=True,
+            start_date__lte=now,
+        )
+        .filter(Q(end_date__isnull=True) | Q(end_date__gte=now))
+        .select_related("media")
+        .first()
+    )
+
+    if (
+        active
+        and active.media.state == "public"
+        and active.media.is_reviewed
+        and active.media.encoding_status == "success"
+    ):
+        return active.media
+
+    # Priority 2: Most recent scheduled entry (even if expired, but must have started)
+    recent = (
+        FeaturedVideo.objects.filter(is_active=True, start_date__lte=now)
+        .select_related("media")
+        .first()
+    )
+
+    if (
+        recent
+        and recent.media.state == "public"
+        and recent.media.is_reviewed
+        and recent.media.encoding_status == "success"
+    ):
+        return recent.media
+
+    # Priority 3: Legacy boolean field
+    return Media.objects.filter(
+        featured=True,
+        state="public",
+        is_reviewed=True,
+        encoding_status="success",
+    ).order_by("-add_date").first()
