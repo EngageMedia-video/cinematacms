@@ -3,3 +3,33 @@
 
 @include form_controls();
 // @include buttons;
+
+/* ============================================================================
+ * USER PROFILE EDIT PAGE - HELPER TEXT STYLING
+ * ============================================================================ */
+
+.user-action-form-inner {
+
+    // Style helper text to be visually distinct from labels
+    .help-block,
+    .helptext {
+        display: block;
+        margin-top: 0.35em;
+        margin-bottom: 0;
+        font-size: 0.875em;      // 87.5% of parent
+        font-weight: 300;         // Lighter than normal (400)
+        line-height: 1.4;
+        font-style: normal;
+        opacity: 1.0;
+        color: inherit;           // Use theme colors
+        margin-left: 0;
+        padding-left: 0;
+        clear: both;
+        width: 100%;
+    }
+
+    // Keep labels bold for visual hierarchy
+    label {
+        font-weight: 500;
+    }
+}

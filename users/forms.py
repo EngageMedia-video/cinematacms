@@ -104,8 +104,8 @@ class UserForm(forms.ModelForm):
             "disable_activity_logging",
             "is_featured",
             "advancedUser",
-            "is_manager",
             "is_editor",
+            "is_manager",
             "allow_contact",
         )
 
