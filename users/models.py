@@ -23,7 +23,7 @@ class User(AbstractUser):
         format="JPEG",
         options={"quality": 95},
         blank=True,
-        help_text="<br />For best results, use a centre-aligned photo with a 16:9 aspect ratio.",
+        help_text="<br />For best results, use a centre-aligned photo with a 1:1 aspect ratio.",
     )
     description = models.TextField("Biography", blank=True)
 
@@ -34,7 +34,12 @@ class User(AbstractUser):
     # CC related
     institution = models.CharField("institution", max_length=250, blank=True)
     title = models.CharField("Title", max_length=250, blank=True)
-    advancedUser = models.BooleanField("Trusted User", default=False, db_index=True)
+    advancedUser = models.BooleanField(
+        "Trusted User",
+        default=False,
+        db_index=True,
+        help_text="Can add unlisted and restricted videos to playlists",
+    )
     media_count = models.IntegerField(default=0, db_index=True)  # save number of videos
     notification_on_comments = models.BooleanField(
         "Notify me about comments on my content", default=True
@@ -56,18 +61,30 @@ class User(AbstractUser):
         db_index=True,
     )
     home_page = models.URLField(
-        "Home page",
+        "Website",
         max_length=250,
         blank=True,
-        help_text="The URL for your external home page, if you have one.",
+        help_text="Link to your website, blog, or online portfolio",
     )
     social_media_links = models.TextField(
         "Social Media links", blank=True, help_text="Comma separated list of URLs"
     )
-    is_editor = models.BooleanField("MediaCMS Editor", default=False, db_index=True)
-    is_manager = models.BooleanField("MediaCMS Manager", default=False, db_index=True)
+    is_editor = models.BooleanField(
+        "MediaCMS Editor",
+        default=False,
+        db_index=True,
+        help_text="Can edit and manage all media content on the platform",
+    )
+    is_manager = models.BooleanField(
+        "MediaCMS Manager",
+        default=False,
+        db_index=True,
+        help_text="Full administrative access including users and settings",
+    )
     allow_contact = models.BooleanField(
-        "Whether allow contact will be shown on profile page", default=True
+        "Contact Form",
+        default=True,
+        help_text="Display contact form on your public profile",
     )
     last_published_video_datetime = models.DateTimeField(
         "datetime of the last video that was published",
