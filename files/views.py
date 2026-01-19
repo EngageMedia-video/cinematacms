@@ -995,10 +995,11 @@ class MediaList(APIView):
                 scheduled_featured = get_current_featured_media()
 
                 if scheduled_featured:
-                    # Get all other featured videos
+                    # Get all other featured videos, ordered by featured date (newest first)
                     other_featured_ids = list(
                         Media.objects.filter(basic_query, featured=True)
                         .exclude(pk=scheduled_featured.pk)
+                        .order_by('-featured_date')
                         .values_list("pk", flat=True)
                     )
                     # Combine: scheduled first, then others

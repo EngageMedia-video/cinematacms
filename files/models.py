@@ -277,7 +277,13 @@ class Media(models.Model):
     featured = models.BooleanField(
         default=False,
         db_index=True,
-        help_text="Videos to be featured on the homepage should have the publishing state set to 'Public' and the most recent publishing date.",
+        help_text="Videos to be featured on the homepage. Unchecking this removes the video from featured listings while preserving the featured_date for historical records.",
+    )
+    featured_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Date when this video was featured (auto-set by scheduling system)",
     )
     user_featured = models.BooleanField(
         default=False, db_index=True, help_text="Featured by the user"
@@ -2192,7 +2198,7 @@ class FeaturedVideo(models.Model):
     )
     is_active = models.BooleanField(
         default=True,
-        help_text="Uncheck to disable without deleting.",
+        help_text="Uncheck to disable this schedule without deleting it. To remove a video from featured listings, uncheck 'Featured' on the Media page.",
     )
 
     # Audit fields
@@ -2271,3 +2277,16 @@ def record_featured_from_frontend(sender, instance, created, **kwargs):
                 source="frontend",
                 created_by=getattr(instance, "_current_user", None),
             )
+
+
+@receiver(post_save, sender=FeaturedVideo)
+def sync_media_featured_fields(sender, instance, created, **kwargs):
+    """
+    Automatically set Media.featured=True and featured_date when FeaturedVideo is created/updated.
+    This ensures scheduled videos appear in Featured listings with proper ordering.
+    """
+    if instance.is_active:
+        Media.objects.filter(pk=instance.media.pk).update(
+            featured=True,
+            featured_date=instance.start_date
+        )
