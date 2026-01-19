@@ -292,7 +292,7 @@ To allow additional roles access to MFA, please follow the instructions below.
 
 The allowed roles based on this logic are the following:
 ```
-['superuser', 'advanced_user', 'authenticated', 'manager', 'editor']
+['superuser', 'advanced_user', 'authenticated', 'manager', 'editor', 'curator']
 ```
 
 Under your custom `local_settings.py`, input the following line:

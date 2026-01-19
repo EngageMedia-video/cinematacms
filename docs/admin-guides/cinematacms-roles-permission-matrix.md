@@ -22,110 +22,110 @@ The matrix follows a progressive permission model where higher-level roles inher
 
 ### 👀 Video Access & Viewing
 
-| Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
-|:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
-| View public videos | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Access password-protected videos | With password | With password | With password | With password | With password | ✓ |
-| Download videos (if enabled) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Permission | Public Visitor | Registered User | Trusted User | Curator | Editor | Manager | Admin |
+|:-----------|:---------------|:----------------|:-------------|:-------|:-------|:--------|:------|
+| View public videos | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Access password-protected videos | With password | With password | With password | With password | With password | With password | ✓ |
+| Download videos (if enabled) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ### 📤 Video Upload & Management
 
-| Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
-|:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
-| Upload videos | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Set video privacy settings | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
-| Password-protect videos | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
-| Edit own video metadata | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Edit others' video metadata | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Delete own videos | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Delete others' videos | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Bulk upload (drag & drop multiple files) | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
-| Auto-transcription via Whisper | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
-| Feature videos on the front page | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Transfer video ownership | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Permission | Public Visitor | Registered User | Trusted User | Curator | Editor | Manager | Admin |
+|:-----------|:---------------|:----------------|:-------------|:-------|:-------|:--------|:------|
+| Upload videos | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Set video privacy settings | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Password-protect videos | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Edit own video metadata | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ |
+| Edit others' video metadata | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Delete own videos | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ |
+| Delete others' videos | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Bulk upload (drag & drop multiple files) | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Auto-transcription via Whisper | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Feature videos on the front page | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Transfer video ownership | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 
 ### 📝 Subtitle Management
 
-| Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
-|:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
-| View subtitles | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Upload subtitles to own videos | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Upload subtitles to others' videos | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Edit own subtitles | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Edit others' subtitles | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Delete subtitles | ✗ | Own only | Own only | ✓ | ✓ | ✓ |
+| Permission | Public Visitor | Registered User | Trusted User | Curator | Editor | Manager | Admin |
+|:-----------|:---------------|:----------------|:-------------|:-------|:-------|:--------|:------|
+| View subtitles | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Upload subtitles to own videos | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Upload subtitles to others' videos | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Edit own subtitles | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Edit others' subtitles | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Delete subtitles | ✗ | Own only | Own only | ✗ | ✓ | ✓ | ✓ |
 
 ### 💬 Community Interaction
 
-| Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
-|:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
-| View comments | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Post comments | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Edit own comments | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Delete own comments | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Delete others' comments | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Moderate comments (edit others') | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Like/dislike videos | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Rate videos (advanced rating system) | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Report content | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Create playlists | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Share videos | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Permission | Public Visitor | Registered User | Trusted User | Curator | Editor | Manager | Admin |
+|:-----------|:---------------|:----------------|:-------------|:-------|:-------|:--------|:------|
+| View comments | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Post comments | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Edit own comments | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Delete own comments | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Delete others' comments | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Moderate comments (edit others') | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Like/dislike videos | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Rate videos (advanced rating system) | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Report content | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Create playlists | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Share videos | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 
 ## 🛡️ Editorial & Administrative Permissions
 
 ### 🔍 Content Review & Moderation
 
-| Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
-|:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
-| Access content review dashboard | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Review and approve submitted content | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| View Publication Status of Users' Video Contents | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Handle reported content | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Set content visibility status | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Access moderation logs | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Permission | Public Visitor | Registered User | Trusted User | Curator | Editor | Manager | Admin |
+|:-----------|:---------------|:----------------|:-------------|:-------|:-------|:--------|:------|
+| Access content review dashboard | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Review and approve submitted content | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| View Publication Status of Users' Video Contents | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Handle reported content | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Set content visibility status | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Access moderation logs | ✗ | ✗ | ✗ | ✗ |✗ | ✗ | ✓ |
 
 ### 🎨 Site Management
 
-| Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
-|:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
-| Manage homepage featured content | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Create/edit site pages (About, Contact, etc.) | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| Manage categories, tags, and topics | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| View site analytics | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| Configure encoding profiles | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| Manage site settings and configuration | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Permission | Public Visitor | Registered User | Trusted User | Curator | Editor | Manager | Admin |
+|:-----------|:---------------|:----------------|:-------------|:-------|:-------|:--------|:------|
+| Manage homepage featured content | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Create/edit site pages (About, Contact, etc.) | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Manage categories, tags, and topics | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| View site analytics | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Configure encoding profiles | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Manage site settings and configuration | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 
 ### 👥 User Management
 
-| Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
-|:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
-| Create user accounts | Self-register only | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Edit own profile | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| View user profiles | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Edit other users' profiles | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Promote users to higher roles | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| Suspend/deactivate users | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
-| Delete user accounts | ✗ | Own only | Own only | ✗ | ✓ | ✓ |
+| Permission | Public Visitor | Registered User | Trusted User | Curator | Editor | Manager | Admin |
+|:-----------|:---------------|:----------------|:-------------|:-------|:-------|:--------|:------|
+| Create user accounts | Self-register only | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Edit own profile | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| View user profiles | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Edit other users' profiles | ✗ | ✗ | ✗ |✗ | ✗ | ✓ | ✓ |
+| Promote users to higher roles | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Suspend/deactivate users | ✗ | ✗ | ✗| ✗ | ✗ | ✓ | ✓ |
+| Delete user accounts | ✗ | Own only | Own only | Own only | ✗ | ✓ | ✓ |
 
 ### ⚙️ System Administration
 
-| Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
-|:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
-| Access Django admin panel | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| Manage encoding tasks and queues | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| View system logs and diagnostics | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| Configure API access and tokens | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
-| Manage database and file storage | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Permission | Public Visitor | Registered User | Trusted User | Curator | Editor | Manager | Admin |
+|:-----------|:---------------|:----------------|:-------------|:-------|:-------|:--------|:------|
+| Access Django admin panel | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Manage encoding tasks and queues | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| View system logs and diagnostics | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Configure API access and tokens | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Manage database and file storage | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
 
 ## 🔌 API Access Permissions
 
-| Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
-|:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
-| Read-only API access (public content) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Personal API token for authenticated requests | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Upload via API | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ |
-| Bulk operations via API | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Administrative API endpoints | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
+| Permission | Public Visitor | Registered User | Trusted User | Curator | Editor | Manager | Admin |
+|:-----------|:---------------|:----------------|:-------------|:-------|:-------|:--------|:------|
+| Read-only API access (public content) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Personal API token for authenticated requests | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Upload via API | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Bulk operations via API | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Administrative API endpoints | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ |
 
 ## 📊 Upload Limits & Restrictions
 
@@ -134,6 +134,7 @@ The matrix follows a progressive permission model where higher-level roles inher
 | Public Visitor | N/A | N/A | N/A | No upload privileges |
 | Registered User | No specified quota* | Single file upload | ~3.9 GB per file | Must upload one video at a time |
 | Trusted User | No specified quota* | Bulk upload (up to 100 files) | ~3.9 GB per file | - |
+| Curator | No specified quota* | Bulk upload (up to 100 files) | ~3.9 GB per file | - |
 | Editor | No specified quota* | Bulk upload (up to 100 files) | ~3.9 GB per file | - |
 | Manager | No specified quota* | Bulk upload (up to 100 files) | ~3.9 GB per file | - |
 | Admin | Unlimited | Bulk upload (up to 100 files) | ~3.9 GB per file | Can override all restrictions |
