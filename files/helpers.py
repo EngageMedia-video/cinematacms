@@ -837,6 +837,18 @@ def is_advanced_user(user):
 
     return False
 
+def is_curator(user):
+    """
+    Check if user has curator privileges.
+    Returns True if user is authenticated and has is_curator=True.
+    """
+    if not user.is_authenticated:
+        return False
+    try:
+        return user.is_curator
+    except AttributeError:
+        return False
+
 
 def can_user_see_video_in_playlist(user, media):
     """
