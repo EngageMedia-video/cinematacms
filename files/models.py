@@ -2270,6 +2270,10 @@ def record_featured_from_frontend(sender, instance, created, **kwargs):
         ).filter(Q(end_date__isnull=True) | Q(end_date__gte=now)).exists()
 
         if not active_schedule_exists:
+            # Set featured_date directly on the instance so Django Admin displays it immediately
+            instance.featured_date = now
+            Media.objects.filter(pk=instance.pk).update(featured_date=now)
+
             FeaturedVideo.objects.create(
                 media=instance,
                 start_date=now,
@@ -2290,3 +2294,4 @@ def sync_media_featured_fields(sender, instance, created, **kwargs):
             featured=True,
             featured_date=instance.start_date
         )
+        invalidate_media_list_cache()
