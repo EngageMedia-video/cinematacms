@@ -16,7 +16,7 @@ from django.views import View
 from django.core.cache import cache
 
 from .models import Media, Encoding, Subtitle
-from .methods import is_mediacms_editor, is_mediacms_manager
+from .methods import is_mediacms_editor, is_mediacms_manager, is_curator
 from .cache_utils import (
     get_permission_cache_key, get_elevated_access_cache_key,
     get_cached_permission, set_cached_permission,
@@ -651,7 +651,8 @@ class SecureMediaView(View):
         # Calculate the result
         result = (user == media.user or
                   is_mediacms_editor(user) or
-                  is_mediacms_manager(user))
+                  is_mediacms_manager(user) or
+                  is_curator(user))
 
         # Cache the result
         set_cached_permission(cache_key, result)
