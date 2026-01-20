@@ -813,19 +813,19 @@ def clean_query(query):
 def is_advanced_user(user):
     """
     Check if user has advanced playlist privileges.
-    Advanced users: Trusted Users, Editors, Managers, Superusers
+    Advanced users: Trusted Users, Curators, Editors, Managers, Superusers
     """
     if not user.is_authenticated:
         return False
 
-    from .methods import is_mediacms_editor, is_mediacms_manager
+    from .methods import is_mediacms_editor, is_mediacms_manager, is_curator
 
     # Check if user is superuser
     if user.is_superuser:
         return True
 
-    # Check if user is editor or manager
-    if is_mediacms_editor(user) or is_mediacms_manager(user):
+    # Check if user is editor or manager or curator
+    if is_mediacms_editor(user) or is_mediacms_manager(user) or is_curator(user):
         return True
 
     # Check if user is trusted user (advancedUser attribute)
@@ -836,18 +836,6 @@ def is_advanced_user(user):
         pass
 
     return False
-
-def is_curator(user):
-    """
-    Check if user has curator privileges.
-    Returns True if user is authenticated and has is_curator=True.
-    """
-    if not user.is_authenticated:
-        return False
-    try:
-        return user.is_curator
-    except AttributeError:
-        return False
 
 
 def can_user_see_video_in_playlist(user, media):
