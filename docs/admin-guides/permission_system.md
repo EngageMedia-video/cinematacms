@@ -24,6 +24,7 @@ CinemataCMS includes several built-in roles with predefined permissions. These c
 | **Administrator** | Full platform control. Intended for system-level access and configuration. | `*` (all permissions) |
 | **Manager**       | Oversees content and user coordination. | `read:*`, `edit:*`, `manage:users` |
 | **Editor**        | Responsible for curating and moderating content. | `read:*`, `edit:*`, `publish:*`, `delete:content` |
+| **Curator** | Curates through near-complete access to site content. | `read:*`, `manage:playlists` |
 | **Contributor**   | Authenticated users who can create and edit their own drafts. | `read:*`, `create:content`, `edit:own` |
 | **Viewer**        | Read-only access to platform interfaces and data. | `read:*` |
 

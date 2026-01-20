@@ -58,7 +58,7 @@ Follow these steps after uploading your video:
 - ✅ Can add **Public** videos to playlists
 - ❌ Cannot add Unlisted or Restricted videos
 
-#### ⭐ Trusted Users, Editors, Managers, Superusers
+#### ⭐ Trusted Users, Curators, Editors, Managers, Superusers
 - ✅ Can add **Public** videos to any of their playlists
 - ✅ Can add **Unlisted** videos to their own playlists  
 - ✅ Can add **Restricted** videos to their own playlists
