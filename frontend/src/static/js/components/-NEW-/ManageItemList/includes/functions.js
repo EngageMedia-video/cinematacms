@@ -62,6 +62,10 @@ function ListManageUserItem(props){
 		roles.push('Manager');
 	}
 
+	if ( void 0 !== itemData.is_curator && itemData.is_curator ) {
+		roles.push('Curator');
+	}
+
 	const args = {
 		...itemProps,
 		thumbnail_url: itemData.thumbnail_url,
