@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 
 from cms.permissions import IsUserOrManager
 from files.lists import video_countries
-from files.methods import is_mediacms_editor, is_mediacms_manager
+from files.methods import is_mediacms_editor, is_mediacms_manager, is_curator
 
 from .forms import ChannelForm, UserForm
 from .models import Channel, User
@@ -48,7 +48,7 @@ def view_user(request, username):
     )
     context["CAN_DELETE"] = True if is_mediacms_manager(request.user) else False
     context["SHOW_CONTACT_FORM"] = (
-        True if (user.allow_contact or is_mediacms_editor(request.user)) else False
+        True if (user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)) else False
     )
 
     return render(request, "cms/user.html", context)
@@ -68,7 +68,7 @@ def view_user_media(request, username):
     )
     context["CAN_DELETE"] = True if is_mediacms_manager(request.user) else False
     context["SHOW_CONTACT_FORM"] = (
-        True if (user.allow_contact or is_mediacms_editor(request.user)) else False
+        True if (user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)) else False
     )
 
     return render(request, "cms/user_media.html", context)
@@ -88,7 +88,7 @@ def view_user_playlists(request, username):
     )
     context["CAN_DELETE"] = True if is_mediacms_manager(request.user) else False
     context["SHOW_CONTACT_FORM"] = (
-        True if (user.allow_contact or is_mediacms_editor(request.user)) else False
+        True if (user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)) else False
     )
 
     return render(request, "cms/user_playlists.html", context)
@@ -108,7 +108,7 @@ def view_user_about(request, username):
     )
     context["CAN_DELETE"] = True if is_mediacms_manager(request.user) else False
     context["SHOW_CONTACT_FORM"] = (
-        True if (user.allow_contact or is_mediacms_editor(request.user)) else False
+        True if (user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)) else False
     )
 
     return render(request, "cms/user_about.html", context)
