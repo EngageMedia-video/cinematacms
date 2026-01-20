@@ -586,6 +586,14 @@ def is_mediacms_manager(user):
         pass
     return manager
 
+def is_curator(user):
+    curator = False
+    try:
+        if user.is_curator:
+            curator = True
+    except:
+        pass
+    return curator
 
 def can_upload_media(user):
     try:

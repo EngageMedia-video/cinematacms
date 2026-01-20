@@ -978,7 +978,7 @@ class MediaList(APIView):
                 from .helpers import can_view_all_user_media
                 
                 if can_view_all_user_media(self.request.user, user):
-                    # Owners, managers, and superusers see ALL videos (including private, unlisted, restricted)
+                    # Owners, managers, curators, and superusers see ALL videos (including private, unlisted, restricted)
                     basic_query = Q(user=user)
                 else:
                     # Everyone else sees only public, reviewed videos
