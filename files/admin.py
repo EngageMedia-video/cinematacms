@@ -57,6 +57,7 @@ class MediaAdmin(admin.ModelAdmin):
         "is_reviewed",
         "encoding_status",
         "featured",
+        "featured_date",
         "get_comments_count",
     ]
     list_filter = ["state", "is_reviewed", "encoding_status", "featured", "category"]
