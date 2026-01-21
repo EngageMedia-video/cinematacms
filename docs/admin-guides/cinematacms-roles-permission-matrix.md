@@ -53,7 +53,7 @@ The matrix follows a progressive permission model where higher-level roles inher
 | Upload subtitles to others' videos | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
 | Edit own subtitles | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Edit others' subtitles | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Delete subtitles | ✗ | Own only | Own only | ✗ | ✓ | ✓ | ✓ |
+| Delete subtitles | ✗ | Own only | Own only | Own only | ✓ | ✓ | ✓ |
 
 ### 💬 Community Interaction
 
