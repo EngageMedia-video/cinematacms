@@ -182,12 +182,12 @@ The instructions have been tested on Ubuntu 22.04. Make sure no other services a
 
 As root, clone the repository on /home/cinemata and run install.sh:
 
-### For Stable Release (v2.1.1)
+### For Stable Release (v2.1.2)
 
 ```
 # cd /home
 # mkdir cinemata && cd cinemata
-# git clone -b v2.1.1 https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
+# git clone -b v2.1.2 https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
 # chmod +x install.sh install-nodejs.sh scripts/build_frontend.sh
 # ./install.sh
 ```
