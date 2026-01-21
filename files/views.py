@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.postgres.search import SearchQuery
 from django.core.mail import EmailMessage, send_mail
 from django.db import models, transaction
-from django.db.models import Case, Q, Value, When
+from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -81,6 +81,7 @@ from .models import (
     EncodeProfile,
     Encoding,
     ExistingURL,
+    FeaturedVideo,
     HomepagePopup,
     IndexPageFeatured,
     License,
@@ -994,11 +995,24 @@ class MediaList(APIView):
                 # Get the scheduled featured video (if any) to show as hero
                 scheduled_featured = get_current_featured_media()
 
+                # Subquery to identify videos with future-scheduled FeaturedVideo entries
+                # These should not appear in listings until their start_date arrives
+                now = timezone.now()
+                has_future_schedule = FeaturedVideo.objects.filter(
+                    media=OuterRef('pk'),
+                    is_active=True,
+                    start_date__gt=now
+                )
+
                 if scheduled_featured:
-                    # Get all other featured videos
+                    # Get all other featured videos, ordered by featured date (newest first)
+                    # Use F() with nulls_last to ensure NULL featured_dates sort after dated ones
+                    # Exclude videos that have a future-scheduled FeaturedVideo entry
                     other_featured_ids = list(
                         Media.objects.filter(basic_query, featured=True)
                         .exclude(pk=scheduled_featured.pk)
+                        .exclude(Exists(has_future_schedule))
+                        .order_by(F('featured_date').desc(nulls_last=True), '-add_date')
                         .values_list("pk", flat=True)
                     )
                     # Combine: scheduled first, then others
@@ -1011,8 +1025,9 @@ class MediaList(APIView):
                     )
                     media = Media.objects.filter(pk__in=all_ids).order_by(preserved_order)
                 else:
-                    # No scheduled video, return all featured videos (original behavior)
-                    media = Media.objects.filter(basic_query, featured=True)
+                    # No scheduled video, return all featured videos ordered by featured_date
+                    # Exclude videos that have a future-scheduled FeaturedVideo entry
+                    media = Media.objects.filter(basic_query, featured=True).exclude(Exists(has_future_schedule)).order_by(F('featured_date').desc(nulls_last=True), '-add_date')
             else:
                 media = Media.objects.filter(basic_query).order_by("-add_date")
         paginator = pagination_class()

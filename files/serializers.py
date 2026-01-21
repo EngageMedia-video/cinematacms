@@ -60,7 +60,8 @@ class MediaSerializer(serializers.ModelSerializer):
             "reported_times",
             "size",
             "is_reviewed",
-            "featured"
+            "featured",
+            "featured_date",
         )
         fields = (
             "friendly_token",
@@ -88,6 +89,7 @@ class MediaSerializer(serializers.ModelSerializer):
             "dislikes",
             "reported_times",
             "featured",
+            "featured_date",
             "user_featured",
             "size",
             "media_country_info",
