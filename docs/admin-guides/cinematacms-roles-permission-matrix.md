@@ -35,9 +35,9 @@ The matrix follows a progressive permission model where higher-level roles inher
 | Upload videos | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Set video privacy settings | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Password-protect videos | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Edit own video metadata | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ |
+| Edit own video metadata | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Edit others' video metadata | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Delete own videos | ✗ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ |
+| Delete own videos | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Delete others' videos | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
 | Bulk upload (drag & drop multiple files) | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Auto-transcription via Whisper | ✗ | ✗ | ✓ | ✓ | ✓ | ✓ | ✓ |
