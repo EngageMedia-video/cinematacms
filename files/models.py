@@ -358,6 +358,13 @@ class Media(models.Model):
                 fields=["featured", "state", "-add_date"],
                 name="idx_media_featured_state_date"
             ),
+            # Thumbnail field indexes for SecureMediaView lookups (P2-003)
+            # These improve exact path match queries from O(n) table scans to O(log n)
+            models.Index(fields=["thumbnail"], name="idx_media_thumbnail"),
+            models.Index(fields=["poster"], name="idx_media_poster"),
+            models.Index(fields=["uploaded_thumbnail"], name="idx_media_uploaded_thumb"),
+            models.Index(fields=["uploaded_poster"], name="idx_media_uploaded_poster"),
+            models.Index(fields=["sprites"], name="idx_media_sprites"),
         ]
 
     def __str__(self):

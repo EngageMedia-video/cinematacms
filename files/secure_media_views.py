@@ -8,6 +8,7 @@ from typing import Optional
 import hmac
 
 from django.conf import settings
+from django.db.models import Q
 from django.http import Http404, HttpResponse, HttpResponseForbidden, FileResponse
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_http_methods
@@ -32,9 +33,14 @@ MEDIA_PATH_CACHE_TIMEOUT = 300  # 5 minutes for file path → Media ID mapping
 MEDIA_PATH_CACHE_PREFIX = 'cinemata:media_path'
 MEDIA_PATH_REVERSE_PREFIX = 'cinemata:media_path:reverse'  # Reverse mapping: media_id → set of cache keys
 
+# Paths that are always public (no authorization needed)
+# Note: User-specific media thumbnails (original/thumbnails/user/) are NOT public
+# and require authorization for private/restricted media
 PUBLIC_MEDIA_PATHS = [
-    'thumbnails/', 'userlogos/', 'logos/', 'favicons/', 'social-media-icons/',
-    'tinymce_media/', 'homepage-popups/'
+    'userlogos/', 'logos/', 'favicons/', 'social-media-icons/',
+    'tinymce_media/', 'homepage-popups/',
+    # Category and topic thumbnails are truly public
+    'original/categories/', 'original/topics/',
 ]
 
 # Security headers for different content types
@@ -353,6 +359,53 @@ class SecureMediaView(View):
 
         return False
 
+    def _verify_media_owns_thumbnail_path(self, media: Media, file_path: str) -> bool:
+        """
+        Verify that a media object actually owns the given thumbnail file path.
+
+        This is a security check to prevent authorization based on wrong media
+        when using __endswith queries or stale cache entries. It ensures the
+        exact requested path matches one of the media's actual thumbnail fields.
+
+        Args:
+            media: The Media object to verify
+            file_path: The requested file path (e.g., 'original/thumbnails/user/alice/thumb.jpg')
+
+        Returns:
+            True if the media owns this exact path, False otherwise
+        """
+        # Get all thumbnail-related paths from the media object
+        thumbnail_paths = []
+
+        if media.thumbnail:
+            thumbnail_paths.append(media.thumbnail.name if hasattr(media.thumbnail, 'name') else str(media.thumbnail))
+        if media.poster:
+            thumbnail_paths.append(media.poster.name if hasattr(media.poster, 'name') else str(media.poster))
+        if media.uploaded_thumbnail:
+            thumbnail_paths.append(media.uploaded_thumbnail.name if hasattr(media.uploaded_thumbnail, 'name') else str(media.uploaded_thumbnail))
+        if media.uploaded_poster:
+            thumbnail_paths.append(media.uploaded_poster.name if hasattr(media.uploaded_poster, 'name') else str(media.uploaded_poster))
+        if media.sprites:
+            thumbnail_paths.append(media.sprites.name if hasattr(media.sprites, 'name') else str(media.sprites))
+
+        # Check if the requested path exactly matches any of the media's thumbnail paths
+        if file_path in thumbnail_paths:
+            return True
+
+        # Also check for encoded GIF paths
+        if file_path.startswith('encoded/') and file_path.lower().endswith('.gif'):
+            # For encoded GIFs, verify via the Encoding model
+            # The path format is: encoded/{profile_id}/{username}/{filename}
+            from .models import Encoding
+            # Check if any encoding for this media has this exact path
+            # Use media_file (the actual DB field) instead of media_encoding_url (computed property)
+            return Encoding.objects.filter(
+                media=media,
+                media_file=file_path
+            ).exists()
+
+        return False
+
     def _get_media_from_path_cached(self, file_path: str) -> tuple[Optional[Media], Optional[str]]:
         """
         Get media from file path with caching.
@@ -368,9 +421,26 @@ class SecureMediaView(View):
         if cached_media_id:
             try:
                 media = Media.objects.select_related('user').get(id=cached_media_id)
-                # Cache hit - assume URL path is correct (it was when cached)
-                # If ownership transfer happened after caching, cache will be invalidated eventually
-                return (media, None)
+
+                # SECURITY: Verify the cached media still owns this exact path
+                # This prevents stale cache entries from authorizing access after
+                # ownership transfers or permission changes (P1-002 fix)
+                if file_path.startswith('original/thumbnails/user/') or (
+                    file_path.startswith('encoded/') and file_path.lower().endswith('.gif')
+                ):
+                    if not self._verify_media_owns_thumbnail_path(media, file_path):
+                        logger.warning(
+                            f"Stale cache: media {media.friendly_token} no longer owns path {file_path}"
+                        )
+                        # Invalidate stale media path cache entry (file_path → media_id mapping)
+                        cache.delete(get_media_path_cache_key(file_path))
+                        # Fall through to fresh lookup
+                    else:
+                        return (media, None)
+                else:
+                    # For non-thumbnail paths, use existing behavior
+                    return (media, None)
+
             except Media.DoesNotExist:
                 # Stale cache - media was deleted
                 logger.debug(f"Stale cache entry for path {file_path}, media {cached_media_id} not found")
@@ -456,11 +526,152 @@ class SecureMediaView(View):
             except Exception as e:
                 logger.warning(f"Error finding media by filename: {e}")
 
+        # Handle thumbnail files: original/thumbnails/user/{username}/{filename}
+        # These include: thumbnail, poster, uploaded_thumbnail, uploaded_poster, sprites
+        elif file_path.startswith('original/thumbnails/user/'):
+            try:
+                parts = file_path.split('/')
+                if len(parts) >= 5:
+                    username = parts[3]
+                    filename = parts[4]
+                    logger.debug(f"Searching for media thumbnail: username={username}, filename={filename}")
+
+                    # Search across all thumbnail-related fields
+                    # The filename could be in thumbnail, poster, uploaded_thumbnail,
+                    # uploaded_poster, or sprites field
+                    thumbnail_path = f"original/thumbnails/user/{username}/{filename}"
+                    media = Media.objects.select_related('user').filter(
+                        Q(user__username=username) & (
+                            Q(thumbnail=thumbnail_path) |
+                            Q(poster=thumbnail_path) |
+                            Q(uploaded_thumbnail=thumbnail_path) |
+                            Q(uploaded_poster=thumbnail_path) |
+                            Q(sprites=thumbnail_path)
+                        )
+                    ).order_by('id').first()
+
+                    if media:
+                        logger.debug(f"Found media by thumbnail path: {media.friendly_token}")
+                        return (media, None)
+
+                    # Fallback: search by filename ending (P2-005 optimization)
+                    # This consolidates the username-scoped and ownership-transfer queries
+                    # into a single database query, reducing worst case from 3 queries to 2.
+                    # NOTE: __endswith cannot use standard B-tree indexes. If performance
+                    # becomes an issue at scale, consider adding indexed filename fields.
+                    logger.debug("Exact path match failed, attempting __endswith lookup")
+                    matches = Media.objects.select_related('user').filter(
+                        Q(thumbnail__endswith=filename) |
+                        Q(poster__endswith=filename) |
+                        Q(uploaded_thumbnail__endswith=filename) |
+                        Q(uploaded_poster__endswith=filename) |
+                        Q(sprites__endswith=filename)
+                    ).order_by('id')
+
+                    # Check for multiple matches (filename collision warning)
+                    match_count = matches.count()
+                    if match_count > 1:
+                        matched_tokens = [m.friendly_token for m in matches[:5]]
+                        logger.warning(
+                            f"Thumbnail filename collision detected: {match_count} media items "
+                            f"match filename '{filename}'. Matched tokens: {matched_tokens}."
+                        )
+
+                    # SECURITY: Find a media that actually owns this exact path (P1-001 fix)
+                    # Prioritize matches with correct username, then fall back to any verified match
+                    # This handles both normal lookups and ownership transfers in one pass
+                    verified_match = None
+                    ownership_transfer_match = None
+
+                    for media in matches[:10]:  # Limit to prevent DoS
+                        if self._verify_media_owns_thumbnail_path(media, file_path):
+                            if media.user.username == username:
+                                # Best match: correct username and verified path
+                                verified_match = media
+                                break
+                            elif ownership_transfer_match is None:
+                                # Ownership transfer: different username but verified path
+                                ownership_transfer_match = media
+
+                    if verified_match:
+                        logger.debug(f"Found media by thumbnail filename: {verified_match.friendly_token}")
+                        return (verified_match, None)
+
+                    if ownership_transfer_match:
+                        logger.info(
+                            f"Found media thumbnail via ownership transfer: "
+                            f"{ownership_transfer_match.friendly_token} (verified owner of path)"
+                        )
+                        return (ownership_transfer_match, None)
+
+                    # If no verified match found, log and fail closed
+                    if match_count > 0:
+                        logger.warning(
+                            f"No media verified to own path {file_path} despite {match_count} "
+                            f"__endswith matches. Failing closed (404)."
+                        )
+
+            except Exception as e:
+                logger.warning(f"Error finding media by thumbnail path: {e}")
+
         # Handle subtitle files: original/subtitles/user/{username}/{filename}
+        # Subtitles contain transcripts of video content and must be protected (P2-004 fix)
         elif file_path.startswith('original/subtitles/user/'):
-            # Subtitle files are typically text files that don't need media authorization
-            # They should be handled by the _is_non_video_file() check above
-            logger.debug(f"Subtitle file path detected but should be handled as non-video: {file_path}")
+            try:
+                parts = file_path.split('/')
+                if len(parts) >= 5:
+                    username = parts[3]
+                    filename = parts[4]
+                    logger.debug(f"Searching for subtitle: username={username}, filename={filename}")
+
+                    # Look up the parent media via the Subtitle model
+                    subtitle = Subtitle.objects.select_related('media', 'media__user').filter(
+                        media__user__username=username,
+                        subtitle_file=file_path
+                    ).first()
+
+                    if subtitle:
+                        logger.debug(f"Found subtitle's parent media: {subtitle.media.friendly_token}")
+                        return (subtitle.media, None)
+
+                    # Fallback: search by filename ending (handles path variations)
+                    subtitle = Subtitle.objects.select_related('media', 'media__user').filter(
+                        media__user__username=username,
+                        subtitle_file__endswith=filename
+                    ).first()
+
+                    if subtitle:
+                        # Verify the subtitle actually owns this path
+                        if subtitle.subtitle_file and subtitle.subtitle_file.name == file_path:
+                            logger.debug(f"Found subtitle by filename: {subtitle.media.friendly_token}")
+                            return (subtitle.media, None)
+                        else:
+                            logger.warning(
+                                f"Subtitle match via __endswith but path mismatch: "
+                                f"requested={file_path}, actual={subtitle.subtitle_file.name if subtitle.subtitle_file else 'None'}"
+                            )
+
+                    # Ownership transfer fallback: search without username
+                    logger.debug("Username lookup failed, attempting lookup ignoring username")
+                    subtitle = Subtitle.objects.select_related('media', 'media__user').filter(
+                        subtitle_file__endswith=filename
+                    ).order_by('-id').first()
+
+                    if subtitle:
+                        # Verify the subtitle actually owns this path
+                        if subtitle.subtitle_file and subtitle.subtitle_file.name == file_path:
+                            logger.info(f"Found subtitle via ownership transfer fallback: {subtitle.media.friendly_token}")
+                            return (subtitle.media, None)
+                        else:
+                            logger.warning(
+                                f"Subtitle ownership transfer match but path mismatch: "
+                                f"requested={file_path}, actual={subtitle.subtitle_file.name if subtitle.subtitle_file else 'None'}"
+                            )
+
+            except Exception as e:
+                logger.warning(f"Error finding media by subtitle path: {e}")
+
+            # No subtitle found - fail closed
             return (None, None)
 
         # Handle encoded files: encoded/{profile_id}/{username}/{filename}
@@ -578,27 +789,56 @@ class SecureMediaView(View):
         """
         Check if a media file is considered public based on its path.
         Public files are those in specific allowed directories.
+
+        Note: Media-associated files (thumbnails, preview GIFs) are NOT public
+        and require authorization checks for private/restricted media.
         """
-        # Paths that store files with 'original/' prefix (Media-related assets)
-        ORIGINAL_PREFIX_PATHS = ['thumbnails/', 'userlogos/']
         # Check if the file is in any of the public media directories
         for public_path in PUBLIC_MEDIA_PATHS:
             if file_path.startswith(public_path):
                 return True
-            # Only check original/ variants for Media-related paths
-            if public_path in ORIGINAL_PREFIX_PATHS:
-                original_path = f"original/{public_path}"
-                if file_path.startswith(original_path):
-                    return True
+
+        # User logos with original/ prefix are public
+        if file_path.startswith('original/userlogos/'):
+            return True
+
+        return False
+
+    def _is_media_associated_file(self, file_path: str) -> bool:
+        """
+        Check if the file is associated with a specific Media object and requires
+        authorization checks (thumbnails, preview GIFs, subtitles, etc.).
+
+        These files should NOT bypass authorization because they belong to media items
+        that may be private or restricted.
+        """
+        # Media thumbnails: original/thumbnails/user/{username}/{filename}
+        if file_path.startswith('original/thumbnails/user/'):
+            return True
+
+        # Preview GIFs in encoded directory: encoded/{profile_id}/{username}/{filename}.gif
+        if file_path.startswith('encoded/') and file_path.lower().endswith('.gif'):
+            return True
+
+        # Subtitle files: original/subtitles/user/{username}/{filename}
+        # Subtitles contain transcripts of video content and must be protected
+        if file_path.startswith('original/subtitles/user/'):
+            return True
 
         return False
 
     def _is_non_video_file(self, file_path: str) -> bool:
-        """Check if the file is not a video file and can bypass authorization."""
+        """
+        Check if the file is not a video file and can bypass authorization.
 
-        # Subtitle files should always bypass authorization
-        if file_path.startswith('original/subtitles/'):
-            return True
+        IMPORTANT: Media-associated files (thumbnails, preview GIFs, subtitles)
+        are NOT bypassed even though they're not video files. They require
+        authorization checks because they contain or reveal media content.
+        """
+        # Media-associated files (thumbnails, preview GIFs, subtitles) require authorization
+        # even though they're not video files
+        if self._is_media_associated_file(file_path):
+            return False
 
         file_ext = os.path.splitext(file_path)[1].lower()
 
