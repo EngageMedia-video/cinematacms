@@ -81,6 +81,12 @@ class User(AbstractUser):
         db_index=True,
         help_text="Full administrative access including users and settings",
     )
+    is_curator = models.BooleanField(
+        "Curator",
+        default=False,
+        db_index=True,
+        help_text="Designates whether this user can view restricted videos and contact filmmakers for curatorial programs."
+    )
     allow_contact = models.BooleanField(
         "Contact Form",
         default=True,

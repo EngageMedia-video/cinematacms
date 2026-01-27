@@ -28,6 +28,7 @@ CinemataCMS uses **named roles** to manage user capabilities across the system. 
 | **Administrator** | Full control over platform configuration, user management, and content.     |
 | **Manager**       | Oversees content workflows and user coordination.                          |
 | **Editor**        | Edits, moderates, and curates content.                                     |
+| **Curator** | Curates through near-complete access to site content. |
 | **Contributor**   | Can create and manage their own content.                                   |
 | **Viewer**        | Read-only access to published content.                                     |
 

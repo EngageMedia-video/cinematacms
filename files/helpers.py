@@ -813,19 +813,19 @@ def clean_query(query):
 def is_advanced_user(user):
     """
     Check if user has advanced playlist privileges.
-    Advanced users: Trusted Users, Editors, Managers, Superusers
+    Advanced users: Trusted Users, Curators, Editors, Managers, Superusers
     """
     if not user.is_authenticated:
         return False
 
-    from .methods import is_mediacms_editor, is_mediacms_manager
+    from .methods import is_mediacms_editor, is_mediacms_manager, is_curator
 
     # Check if user is superuser
     if user.is_superuser:
         return True
 
-    # Check if user is editor or manager
-    if is_mediacms_editor(user) or is_mediacms_manager(user):
+    # Check if user is editor or manager or curator
+    if is_mediacms_editor(user) or is_mediacms_manager(user) or is_curator(user):
         return True
 
     # Check if user is trusted user (advancedUser attribute)
@@ -976,6 +976,7 @@ def can_view_all_user_media(requesting_user, profile_user):
     - Requesting user is the profile owner
     - Requesting user is a Manager
     - Requesting user is a Superuser
+    - Requesting user is a Curator
     
     Returns False otherwise (including for Editors)
     
@@ -986,7 +987,7 @@ def can_view_all_user_media(requesting_user, profile_user):
     Returns:
         bool: True if user can view all media, False otherwise
     """
-    from .methods import is_mediacms_manager
+    from .methods import is_mediacms_manager, is_curator
     
     if not requesting_user.is_authenticated:
         return False
@@ -1001,6 +1002,10 @@ def can_view_all_user_media(requesting_user, profile_user):
     
     # Managers can see all content (but NOT editors)
     if is_mediacms_manager(requesting_user):
+        return True
+    
+    # Curators can see all content
+    if is_curator(requesting_user):
         return True
     
     return False

@@ -40,7 +40,7 @@ This document outlines the complete workflow for uploading, managing, and publis
 - **Subtitles File (.srt or .vtt)** *(optional)*
 - **License Type** (e.g., CC BY-NC, All Rights Reserved)
 - **Allow Embedding:** Yes/No
-- **Visibility:** Private (Regular Users) & Private / Public / Unlisted / Restricted with Password (Trusted Users, Editors, Managers and Administrators)
+- **Visibility:** Private (Regular Users) & Private / Public / Unlisted / Restricted with Password (Trusted Users, Curators, Editors, Managers and Administrators)
 
 ### Upload Process
 - Drag-and-drop or select from file system (Trusted Users can upload to 10 files)

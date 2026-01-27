@@ -39,7 +39,7 @@ CinemataCMS has specific needs for media access control:
 
 - **User Privacy**: Protect private user uploads
 - **Password Protection**: Allow content creators to password-protect their media
-- **Role-Based Access**: Different permissions for editors, managers, and regular users
+- **Role-Based Access**: Different permissions for curators, editors, managers, and regular users
 
 ## Security Features
 
@@ -124,7 +124,7 @@ User Request → Django (Authentication/Authorization) → X-Accel-Redirect → 
 ### Permission Hierarchy
 
 1. **Owner**: Full access to their own media regardless of visibility
-2. **Editors/Managers**: Access to all media in the system
+2. **Curators/Editors/Managers**: Access to all media in the system
 3. **Authenticated Users**: Access based on media visibility and password requirements
 4. **Anonymous Users**: Access only to public and unlisted media
 
