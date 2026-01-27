@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0006_merge_20260119_1250'),
+        ('users', '0007_update_user_field_help_texts'),
     ]
 
     operations = [
