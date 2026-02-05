@@ -39,10 +39,11 @@ class UserAdmin(admin.ModelAdmin):
         "is_superuser",
         "is_editor",
         "is_manager",
+        "is_curator",
         "has_mfa_enabled",
         "mfa_created_at"
     ]
-    list_filter = ["is_superuser", "is_editor", "is_manager"]
+    list_filter = ["is_superuser", "is_editor", "is_manager", "is_curator"]
     ordering = ("-date_added",)
 
     def has_mfa_enabled(self, obj):
@@ -69,7 +70,7 @@ class UserAdmin(admin.ModelAdmin):
     # ROLE UPDATE NOTIFICATION (ADDED)
     def save_model(self, request, obj, form, change):
         """
-        Detects when a superuser upgrades user roles (advancedUser, is_editor, is_manager)
+        Detects when a superuser upgrades user roles (advancedUser, is_editor, is_manager, is_curator)
         and sends an email notification.
         """
 
@@ -79,7 +80,7 @@ class UserAdmin(admin.ModelAdmin):
 
         # Only superusers trigger notifications AND only on existing users (change=True)
         if change and request.user.is_superuser:
-            ROLE_FIELDS = ["advancedUser", "is_editor", "is_manager"]
+            ROLE_FIELDS = ["advancedUser", "is_editor", "is_manager", "is_curator"]
 
             # Fetch old user data
             old_obj = User.objects.filter(pk=obj.pk).first()

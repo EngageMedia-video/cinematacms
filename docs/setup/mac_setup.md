@@ -185,7 +185,7 @@ USE_X_ACCEL_REDIRECT = False
 
 CORS_ALLOW_ALL_ORIGINS = True
 # Custom MFA settings
-MFA_REQUIRED_ROLES = ['superuser'] # options: superuser, advanced_user, authenticated, manager, editor
+MFA_REQUIRED_ROLES = ['superuser'] # options: superuser, advanced_user, authenticated, manager, editor, curator
 
 ```
 

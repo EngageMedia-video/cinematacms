@@ -30,7 +30,7 @@ files/
 
 The system implements a two-level caching strategy:
 
-1. **Elevated Access Caching**: Caches whether a user has owner/editor/manager permissions
+1. **Elevated Access Caching**: Caches whether a user has owner/curator/editor/manager permissions
 2. **Permission Result Caching**: Caches the final permission decision for specific media access
 
 ## Cache Keys
@@ -180,7 +180,7 @@ The `files/cache_utils.py` module provides centralized cache management function
 ### Before Caching
 - Every media request requires database queries for:
   - User authentication status
-  - User role verification (editor/manager)
+  - User role verification (curator/editor/manager)
   - Media ownership check
   - Media state verification
 

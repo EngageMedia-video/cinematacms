@@ -210,6 +210,7 @@ Update playlist metadata or add/remove videos.
 |-----------|----------------|------------------|-------------------|-----------------|
 | **Regular User** | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | **Trusted User** | ✅ Yes | ✅ Yes (own playlist) | ✅ Yes (own playlist) | ❌ No |
+| **Curator** | ✅ Yes | ✅ Yes (own playlist) | ✅ Yes (own playlist) | ❌ No |
 | **Editor/Manager** | ✅ Yes | ✅ Yes (own playlist) | ✅ Yes (own playlist) | ❌ No |
 | **Superuser** | ✅ Yes | ✅ Yes (own playlist) | ✅ Yes (own playlist) | ❌ No |
 
@@ -284,6 +285,7 @@ The Enhanced Playlist Access feature maintains strict security principles:
 
 - **Regular User**: Standard authenticated user
 - **Trusted User**: User with `advancedUser` attribute enabled
+- **Curator**: User with view privileges (`is_curator`)
 - **Editor**: User with editor privileges (`is_editor`)
 - **Manager**: User with manager privileges (`is_manager`) 
 - **Superuser**: User with superuser privileges (`is_superuser`)
