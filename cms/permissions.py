@@ -63,6 +63,7 @@ def user_requires_mfa(user):
         'superuser': user.is_superuser,
         'editor': user.is_editor,
         'manager': user.is_manager,
+        'curator': user.is_curator,
         'advanced_user': user.advancedUser,
         'authenticated': user.is_authenticated
     }

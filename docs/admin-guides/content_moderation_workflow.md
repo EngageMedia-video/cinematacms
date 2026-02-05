@@ -83,13 +83,13 @@ This setting activates moderation workflows.
 
 ### Who can Review
 
-| Permission | Public Visitor | Registered User | Trusted User | Editor | Manager | Admin |
-|:-----------|:---------------|:----------------|:-------------|:-------|:--------|:------|
-| Access content review dashboard | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Review and approve submitted content | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Handle reported content | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Set content visibility status | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
-| Access moderation logs | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Permission | Public Visitor | Registered User | Trusted User | Curator | Editor | Manager | Admin |
+|:-----------|:---------------|:----------------|:-------------|:-------|:-------|:--------|:------|
+| Access content review dashboard | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Review and approve submitted content | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Handle reported content | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Set content visibility status | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
+| Access moderation logs | ✗ | ✗ | ✗ | ✗ | ✓ | ✓ | ✓ |
 
 > See: [Cinemata User Roles Permission Matrix](https://github.com/EngageMedia-video/cinematacms/blob/main/docs/cinematacms-roles-permission-matrix.md))
 

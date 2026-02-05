@@ -70,6 +70,7 @@ from .methods import (
     is_media_allowed_type,
     is_mediacms_editor,
     is_mediacms_manager,
+    is_curator,
     list_tasks,
     notify_user_on_comment,
     show_recommended_media,
@@ -979,7 +980,7 @@ class MediaList(APIView):
                 from .helpers import can_view_all_user_media
                 
                 if can_view_all_user_media(self.request.user, user):
-                    # Owners, managers, and superusers see ALL videos (including private, unlisted, restricted)
+                    # Owners, managers, curators, and superusers see ALL videos (including private, unlisted, restricted)
                     basic_query = Q(user=user)
                 else:
                     # Everyone else sees only public, reviewed videos
@@ -1094,7 +1095,7 @@ class MediaDetail(APIView):
             self.check_object_permissions(self.request, media)
             # Handle PRIVATE media first (only owner/editor can access)
             if media.state == "private" and not (
-                self.request.user == media.user or is_mediacms_editor(self.request.user)
+                self.request.user == media.user or is_mediacms_editor(self.request.user) or is_curator(self.request.user)
             ):
                 return Response(
                     {"detail": "media is private"},

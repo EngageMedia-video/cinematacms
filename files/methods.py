@@ -454,6 +454,10 @@ ROLE_MAP = {
         'display_name': 'Manager',
         'capability': 'You can now manage site content, user accounts, and comments to help oversee platform operations.'
     },
+    'is_curator': {
+        'display_name': 'Curator',
+        'capability': 'You can now view all videos regardless of publication status and contact filmmakers for curatorial programs.'
+    }
 }
 
 def notify_user_on_role_update(user, upgraded_roles):
@@ -582,6 +586,14 @@ def is_mediacms_manager(user):
         pass
     return manager
 
+def is_curator(user):
+    curator = False
+    try:
+        if user.is_curator:
+            curator = True
+    except:
+        pass
+    return curator
 
 def can_upload_media(user):
     try:

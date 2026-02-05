@@ -1,7 +1,7 @@
 from django.conf import settings
 import json
 
-from .methods import can_upload_media, is_mediacms_editor, is_mediacms_manager
+from .methods import can_upload_media, is_mediacms_editor, is_mediacms_manager, is_curator
 from .models import HomepagePopup, TopMessage
 from .lists import UNUSUAL_COUNTRIES
 
@@ -40,6 +40,7 @@ def stuff(request):
     ret["IS_MEDIACMS_ADMIN"] = request.user.is_superuser
     ret["IS_MEDIACMS_EDITOR"] = is_mediacms_editor(request.user)
     ret["IS_MEDIACMS_MANAGER"] = is_mediacms_manager(request.user)
+    ret["IS_CURATOR"] = is_curator(request.user)
     ret["ALLOW_RATINGS"] = settings.ALLOW_RATINGS
     ret[
         "ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY"

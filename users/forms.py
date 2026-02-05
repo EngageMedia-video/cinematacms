@@ -106,6 +106,7 @@ class UserForm(forms.ModelForm):
             "advancedUser",
             "is_editor",
             "is_manager",
+            "is_curator",
             "allow_contact",
         )
 
@@ -129,6 +130,7 @@ class UserForm(forms.ModelForm):
             self.fields.pop("advancedUser")
             self.fields.pop("is_manager")
             self.fields.pop("is_editor")
+            self.fields.pop("is_curator")
 
 
 class ChannelForm(forms.ModelForm):
