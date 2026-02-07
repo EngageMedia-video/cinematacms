@@ -392,7 +392,6 @@ DEBUG = False
 
 
 CELERY_TASK_ALWAYS_EAGER = True
-CELERY_ALWAYS_EAGER = True
 
 # STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 DEBUG = True
