@@ -39,7 +39,7 @@
     "install": "^0.13.0",
     "lodash.merge": "^4.6.2",
     "mini-css-extract-plugin": "^2.9.4",
-    "postcss-custom-properties": "^14.0.6",
+    "postcss-custom-properties": "^15.0.0",
     "postcss-loader": "^8.2.0",
     "progress-bar-webpack-plugin": "^2.1.0",
     "prop-types": "^15.8.1",

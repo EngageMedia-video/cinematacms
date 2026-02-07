@@ -178,8 +178,8 @@ MFA_REQUIRED_ROLES = ['superuser'] # options: superuser, advanced_user, authenti
 
 # Explicitly set Redis as broker
 REDIS_LOCATION = "redis://127.0.0.1:6379/1"
-BROKER_URL = REDIS_LOCATION
-CELERY_RESULT_BACKEND = BROKER_URL
+CELERY_BROKER_URL = REDIS_LOCATION
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
 MP4HLS_COMMAND = (
     "/opt/homebrew/bin/mp4hls" # IMPORTANT: run which mp4hls to find the path on your system
