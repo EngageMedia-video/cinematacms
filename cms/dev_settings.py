@@ -5,7 +5,7 @@ PORTAL_NAME = "EngageMedia Video"  #  this is shown on several places, eg on con
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Europe/London"
 ALLOWED_HOSTS = ["*"]
-INTERNAL_IPS = "127.0.0.1"
+INTERNAL_IPS = ["127.0.0.1"]
 FRONTEND_HOST = "http://localhost:8000"
 SSL_FRONTEND_HOST = FRONTEND_HOST.replace("http", "https")
 
@@ -186,16 +186,14 @@ TIME_TO_ACTION_ANONYMOUS = 10 * 60
 
 # django-allauth settings
 ACCOUNT_SESSION_REMEMBER = True
-ACCOUNT_AUTHENTICATION_METHOD = "username_email"
-ACCOUNT_EMAIL_REQUIRED = True  #  new users need to specify email
+ACCOUNT_LOGIN_METHODS = {"username", "email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*"]
 ACCOUNT_EMAIL_VERIFICATION = "optional"  # 'mandatory' 'none'
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_USERNAME_MIN_LENGTH = "4"
 ACCOUNT_ADAPTER = "users.adapter.MyAccountAdapter"
 ACCOUNT_SIGNUP_FORM_CLASS = "users.forms.SignupForm"
 ACCOUNT_USERNAME_VALIDATORS = "users.validators.custom_username_validators"
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
-ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_LOGIN_ON_PASSWORD_RESET = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
 # registration won't be open, might also consider to remove links for register
