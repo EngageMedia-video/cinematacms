@@ -94,10 +94,12 @@ class User(AbstractUser):
     )
     last_published_video_datetime = models.DateTimeField(
         "datetime of the last video that was published",
-        default="2008-1-1",
+        default=timezone.now,
+        null=True,
+        blank=True,
         db_index=True,
     )
-
+    
     class Meta:
         ordering = ["-date_added", "name"]
         indexes = [models.Index(fields=["-date_added", "name"])]
