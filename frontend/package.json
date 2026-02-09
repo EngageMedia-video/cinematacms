@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@mediacms/media-player": "file:packages/media-player",
-    "axios": "^1.12.2",
+    "axios": "^1.13.5",
     "events": "^3.3.0",
     "flux": "^4.0.4",
     "material-design-icons": "^3.0.1",
