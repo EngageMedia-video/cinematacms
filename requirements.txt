@@ -45,7 +45,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   tqdm
 crispy-forms-bootstrap2==2024.1
     # via cinemata
-cryptography==44.0.3
+cryptography==46.0.5
     # via fido2
 decorator==5.2.1
     # via ipython
