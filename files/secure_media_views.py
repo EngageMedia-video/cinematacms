@@ -252,6 +252,24 @@ class SecureMediaView(View):
     # Path traversal protection
     INVALID_PATH_PATTERNS = re.compile(r'\.\.|\\|\x00|[\x01-\x1f\x7f]')
 
+    @staticmethod
+    def _normalize_to_relative(path: str) -> str:
+        """Normalize a database path to a relative path by stripping the MEDIA_ROOT prefix.
+
+        The database may store absolute paths (e.g., /home/.../media_files/original/...)
+        instead of relative paths (e.g., original/...). This method handles both formats
+        so that path comparisons work regardless of how the path was stored.
+        """
+        if not path:
+            return path
+        media_root = settings.MEDIA_ROOT
+        # Ensure consistent trailing slash for prefix matching
+        if not media_root.endswith('/'):
+            media_root = media_root + '/'
+        if path.startswith(media_root):
+            return path[len(media_root):]
+        return path
+
     CONTENT_TYPES = {
         '.mp4': 'video/mp4',
         '.webm': 'video/webm',
@@ -374,7 +392,7 @@ class SecureMediaView(View):
         Returns:
             True if the media owns this exact path, False otherwise
         """
-        # Get all thumbnail-related paths from the media object
+        # Get all thumbnail-related paths from the media object, normalized to relative paths
         thumbnail_paths = []
 
         if media.thumbnail:
@@ -388,8 +406,12 @@ class SecureMediaView(View):
         if media.sprites:
             thumbnail_paths.append(media.sprites.name if hasattr(media.sprites, 'name') else str(media.sprites))
 
-        # Check if the requested path exactly matches any of the media's thumbnail paths
-        if file_path in thumbnail_paths:
+        # Normalize all paths to relative for comparison (handles absolute paths in DB)
+        normalized_file_path = self._normalize_to_relative(file_path)
+        normalized_thumbnail_paths = [self._normalize_to_relative(p) for p in thumbnail_paths]
+
+        # Check if the requested path matches any of the media's thumbnail paths
+        if normalized_file_path in normalized_thumbnail_paths:
             return True
 
         # Also check for encoded GIF paths
@@ -399,9 +421,11 @@ class SecureMediaView(View):
             from .models import Encoding
             # Check if any encoding for this media has this exact path
             # Use media_file (the actual DB field) instead of media_encoding_url (computed property)
+            # Query both relative and absolute variants for legacy DB compatibility
+            absolute_file_path = os.path.join(settings.MEDIA_ROOT, file_path)
             return Encoding.objects.filter(
                 media=media,
-                media_file=file_path
+                media_file__in=[file_path, absolute_file_path]
             ).exists()
 
         return False
@@ -453,6 +477,10 @@ class SecureMediaView(View):
         # Cache the result if found
         if media:
             set_cached_media_id(file_path, media.id)
+            # Normalize actual_file_path in case the DB stores absolute paths,
+            # since _serve_file expects relative paths for X-Accel-Redirect
+            if actual_file_path:
+                actual_file_path = self._normalize_to_relative(actual_file_path)
 
         return (media, actual_file_path)
 
@@ -538,15 +566,18 @@ class SecureMediaView(View):
 
                     # Search across all thumbnail-related fields
                     # The filename could be in thumbnail, poster, uploaded_thumbnail,
-                    # uploaded_poster, or sprites field
+                    # uploaded_poster, or sprites field.
+                    # Query both relative and absolute path variants since the DB may
+                    # store either format (legacy data uses absolute paths).
                     thumbnail_path = f"original/thumbnails/user/{username}/{filename}"
+                    absolute_thumbnail_path = os.path.join(settings.MEDIA_ROOT, thumbnail_path)
                     media = Media.objects.select_related('user').filter(
                         Q(user__username=username) & (
-                            Q(thumbnail=thumbnail_path) |
-                            Q(poster=thumbnail_path) |
-                            Q(uploaded_thumbnail=thumbnail_path) |
-                            Q(uploaded_poster=thumbnail_path) |
-                            Q(sprites=thumbnail_path)
+                            Q(thumbnail__in=[thumbnail_path, absolute_thumbnail_path]) |
+                            Q(poster__in=[thumbnail_path, absolute_thumbnail_path]) |
+                            Q(uploaded_thumbnail__in=[thumbnail_path, absolute_thumbnail_path]) |
+                            Q(uploaded_poster__in=[thumbnail_path, absolute_thumbnail_path]) |
+                            Q(sprites__in=[thumbnail_path, absolute_thumbnail_path])
                         )
                     ).order_by('id').first()
 
@@ -624,10 +655,13 @@ class SecureMediaView(View):
                     filename = parts[4]
                     logger.debug(f"Searching for subtitle: username={username}, filename={filename}")
 
-                    # Look up the parent media via the Subtitle model
+                    # Look up the parent media via the Subtitle model.
+                    # Query both relative and absolute path variants since the DB may
+                    # store either format (legacy data uses absolute paths).
+                    absolute_subtitle_path = os.path.join(settings.MEDIA_ROOT, file_path)
                     subtitle = Subtitle.objects.select_related('media', 'media__user').filter(
                         media__user__username=username,
-                        subtitle_file=file_path
+                        subtitle_file__in=[file_path, absolute_subtitle_path]
                     ).first()
 
                     if subtitle:
@@ -641,8 +675,12 @@ class SecureMediaView(View):
                     ).first()
 
                     if subtitle:
-                        # Verify the subtitle actually owns this path
-                        if subtitle.subtitle_file and subtitle.subtitle_file.name == file_path:
+                        # Verify the subtitle actually owns this path (normalize for absolute vs relative)
+                        normalized_file_path = self._normalize_to_relative(file_path)
+                        normalized_db_path = self._normalize_to_relative(
+                            subtitle.subtitle_file.name if subtitle.subtitle_file else ''
+                        )
+                        if subtitle.subtitle_file and normalized_db_path == normalized_file_path:
                             logger.debug(f"Found subtitle by filename: {subtitle.media.friendly_token}")
                             return (subtitle.media, None)
                         else:
@@ -658,8 +696,12 @@ class SecureMediaView(View):
                     ).order_by('-id').first()
 
                     if subtitle:
-                        # Verify the subtitle actually owns this path
-                        if subtitle.subtitle_file and subtitle.subtitle_file.name == file_path:
+                        # Verify the subtitle actually owns this path (normalize for absolute vs relative)
+                        normalized_file_path = self._normalize_to_relative(file_path)
+                        normalized_db_path = self._normalize_to_relative(
+                            subtitle.subtitle_file.name if subtitle.subtitle_file else ''
+                        )
+                        if subtitle.subtitle_file and normalized_db_path == normalized_file_path:
                             logger.info(f"Found subtitle via ownership transfer fallback: {subtitle.media.friendly_token}")
                             return (subtitle.media, None)
                         else:
