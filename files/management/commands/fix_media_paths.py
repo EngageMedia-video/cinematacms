@@ -18,7 +18,7 @@ import os
 from django.conf import settings
 from django.db.models import F, Value
 from django.db.models.functions import Replace
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from files.models import Encoding, Media, Subtitle
 
@@ -73,7 +73,7 @@ class Command(BaseCommand):
         """Return MEDIA_ROOT as a string with a trailing slash."""
         media_root = getattr(settings, 'MEDIA_ROOT', '')
         if not media_root:
-            return '/home/cinemata/cinematacms/media_files/'
+            raise CommandError('MEDIA_ROOT is not configured. Set MEDIA_ROOT in your Django settings.')
         media_root = os.fspath(media_root) if hasattr(media_root, '__fspath__') else str(media_root)
         if not media_root.endswith('/'):
             media_root += '/'
