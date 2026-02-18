@@ -276,6 +276,69 @@ class SecureMediaViewVerifyPathTests(SimpleTestCase):
         self.assertTrue(result, "Should verify when uploaded_poster matches")
 
 
+class SecureMediaViewNormalizePathTests(SimpleTestCase):
+    """Tests for _normalize_to_relative (absolute path normalization fix)."""
+
+    def setUp(self):
+        self.view = SecureMediaView()
+
+    @patch('files.secure_media_views.settings')
+    def test_normalize_strips_media_root_prefix(self, mock_settings):
+        """Absolute paths with MEDIA_ROOT prefix should be normalized to relative."""
+        mock_settings.MEDIA_ROOT = '/home/cinemata/cinematacms/media_files/'
+        path = '/home/cinemata/cinematacms/media_files/original/thumbnails/user/alice/thumb.jpg'
+        result = self.view._normalize_to_relative(path)
+        self.assertEqual(result, 'original/thumbnails/user/alice/thumb.jpg')
+
+    @patch('files.secure_media_views.settings')
+    def test_normalize_preserves_relative_paths(self, mock_settings):
+        """Relative paths should be returned unchanged."""
+        mock_settings.MEDIA_ROOT = '/home/cinemata/cinematacms/media_files/'
+        path = 'original/thumbnails/user/alice/thumb.jpg'
+        result = self.view._normalize_to_relative(path)
+        self.assertEqual(result, 'original/thumbnails/user/alice/thumb.jpg')
+
+    @patch('files.secure_media_views.settings')
+    def test_normalize_handles_media_root_without_trailing_slash(self, mock_settings):
+        """Should work even if MEDIA_ROOT doesn't end with /."""
+        mock_settings.MEDIA_ROOT = '/home/cinemata/cinematacms/media_files'
+        path = '/home/cinemata/cinematacms/media_files/original/thumbnails/user/alice/thumb.jpg'
+        result = self.view._normalize_to_relative(path)
+        self.assertEqual(result, 'original/thumbnails/user/alice/thumb.jpg')
+
+    @patch('files.secure_media_views.settings')
+    def test_normalize_handles_empty_path(self, mock_settings):
+        """Empty paths should be returned as-is."""
+        mock_settings.MEDIA_ROOT = '/home/cinemata/cinematacms/media_files/'
+        self.assertEqual(self.view._normalize_to_relative(''), '')
+        self.assertIsNone(self.view._normalize_to_relative(None))
+
+    @patch('files.secure_media_views.settings')
+    def test_normalize_ignores_different_absolute_prefix(self, mock_settings):
+        """Absolute paths with a different prefix should be returned unchanged."""
+        mock_settings.MEDIA_ROOT = '/home/cinemata/cinematacms/media_files/'
+        path = '/home/other/media_files/original/thumbnails/user/alice/thumb.jpg'
+        result = self.view._normalize_to_relative(path)
+        self.assertEqual(result, path)
+
+    @patch('files.secure_media_views.settings')
+    def test_verify_media_owns_absolute_thumbnail_path(self, mock_settings):
+        """Verification should succeed when DB stores absolute paths but request uses relative."""
+        mock_settings.MEDIA_ROOT = '/home/cinemata/cinematacms/media_files/'
+        mock_media = MagicMock()
+        mock_media.uploaded_thumbnail.name = '/home/cinemata/cinematacms/media_files/original/thumbnails/user/emnews/Dagami_Daytoy_Yn9w2nl.jpg'
+        mock_media.thumbnail = None
+        mock_media.poster = None
+        mock_media.uploaded_poster = None
+        mock_media.sprites = None
+
+        result = self.view._verify_media_owns_thumbnail_path(
+            mock_media,
+            'original/thumbnails/user/emnews/Dagami_Daytoy_Yn9w2nl.jpg'
+        )
+        self.assertTrue(result, "Should verify when DB has absolute path and request has relative path")
+
+
 class SecureMediaViewGetMediaFromPathTests(TestCase):
     """Tests for _get_media_from_path with thumbnail paths.
 
