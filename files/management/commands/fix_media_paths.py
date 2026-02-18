@@ -152,7 +152,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS('  All fields clean — no absolute paths remain.'))
 
         # Summary
-        self.stdout.write(self.style.SUCCESS(f'\n=== Summary ==='))
+        self.stdout.write(self.style.SUCCESS('\n=== Summary ==='))
         action = 'would be fixed' if dry_run else 'fixed'
         self.stdout.write(f'Total rows {action}: {total_fixed}')
 

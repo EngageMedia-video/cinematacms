@@ -253,7 +253,7 @@ class SecureMediaView(View):
     INVALID_PATH_PATTERNS = re.compile(r'\.\.|\\|\x00|[\x01-\x1f\x7f]')
 
     @staticmethod
-    def _normalize_to_relative(path: str) -> str:
+    def _normalize_to_relative(path: Optional[str]) -> Optional[str]:
         """Normalize a database path to a relative path by stripping the MEDIA_ROOT prefix.
 
         The database may store absolute paths (e.g., /home/.../media_files/original/...)
