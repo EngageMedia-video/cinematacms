@@ -108,6 +108,9 @@ export default class AudioViewer extends React.PureComponent {
 	}
 
 	componentWillUnmount() {
+		window.removeEventListener("focus", this.initPlayerInstance);
+		document.removeEventListener("visibilitychange", this.initPlayerInstance);
+
 		if (this.initPlayerTimeout) {
 			clearTimeout(this.initPlayerTimeout);
 			this.initPlayerTimeout = null;
