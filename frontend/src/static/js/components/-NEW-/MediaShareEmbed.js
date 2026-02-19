@@ -117,9 +117,7 @@ export function MediaShareEmbed(props){
 	}
 
 	function onCompleteCopyMediaLink(){
-		setTimeout(function(){
-			PageActions.addNotification("Embed media code copied to clipboard", 'clipboardEmbedMediaCodeCopy');
-		}, 100);
+		PageActions.addNotification("Embed media code copied to clipboard", 'clipboardEmbedMediaCodeCopy');
 	}
 
     useEffect(() => {

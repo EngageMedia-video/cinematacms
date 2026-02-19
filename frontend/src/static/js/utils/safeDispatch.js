@@ -8,8 +8,17 @@ export function safeDispatch(action) {
 	if (!draining) {
 		draining = true;
 		setTimeout(() => {
-			while (queue.length) Dispatcher.dispatch(queue.shift());
-			draining = false;
+			try {
+				while (queue.length) {
+					try {
+						Dispatcher.dispatch(queue.shift());
+					} catch (e) {
+						console.error('[safeDispatch] Action dispatch failed:', e);
+					}
+				}
+			} finally {
+				draining = false;
+			}
 		}, 0);
 	}
 }

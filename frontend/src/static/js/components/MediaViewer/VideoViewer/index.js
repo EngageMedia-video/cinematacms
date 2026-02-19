@@ -58,6 +58,10 @@ export default class VideoViewer extends React.PureComponent {
 			displayPlayer: false,
 		};
 
+		this.playerContainerRef = React.createRef();
+		this.playerContainerInnerRef = React.createRef();
+		this.videoPlayerWrapperRef = React.createRef();
+
 		this.videoSources = [];
 
 		filterVideoEncoding(this.props.data.encoding_status);
@@ -798,15 +802,15 @@ export default class VideoViewer extends React.PureComponent {
 				key={(this.props.inEmbed ? 'embed-' : '') + 'player-container'}
 				className={'player-container' + (this.videoSources.length ? '' : ' player-container-error')}
 				style={this.props.containerStyles}
-				ref="playerContainer"
+				ref={this.playerContainerRef}
 			>
-				<div className="player-container-inner" ref="playerContainerInner" style={this.props.containerStyles}>
+				<div className="player-container-inner" ref={this.playerContainerInnerRef} style={this.props.containerStyles}>
 					{this.state.displayPlayer && null !== MediaPageStore.get('media-load-error-type') ? (
 						<VideoPlayerError errorMessage={MediaPageStore.get('media-load-error-message')} />
 					) : null}
 
 					{this.state.displayPlayer && null == MediaPageStore.get('media-load-error-type') ? (
-						<div className="video-player" ref="videoPlayerWrapper" key="videoPlayerWrapper">
+						<div className="video-player" ref={this.videoPlayerWrapperRef} key="videoPlayerWrapper">
 							<SiteConsumer>
 								{(site) => (
 									<VideoPlayer

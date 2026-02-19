@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { logErrorAndReturnError, logWarningAndReturnError } from "../functions/errors";
+import { logErrorAndReturnError } from "../functions/errors";
 
 function componentRenderer(){
 	const roots = new Map();
@@ -13,10 +13,10 @@ function componentRenderer(){
 				return logErrorAndReturnError(["Invalid component's reference to render", AppComp]);
 			}
 			id = id || ( AppComp ? AppComp.name + "_" + new Date().valueOf() : null ) ;
-			if( id && !roots.has(id) ){
-				roots.set(id, createRoot(wrapEl));
-			}
-			if( roots.has(id) ){
+			if( id ){
+				if( !roots.has(id) ){
+					roots.set(id, createRoot(wrapEl));
+				}
 				roots.get(id).render(<AppComp {...props} />);
 			}
 			return null;

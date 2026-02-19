@@ -20,8 +20,6 @@ import stylesheet from "../styles/PlaylistsSelection.scss";
 function PlaylistsSingleSelection(props) {
 	props = { isChecked: false, title: "", ...props };
 	function onChange(ev) {
-		ev.persist();
-
 		if (props.isChecked) {
 			MediaPageActions.removeMediaFromPlaylist(
 				props.playlistId,

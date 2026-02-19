@@ -127,7 +127,6 @@ export default class AudioViewer extends React.PureComponent {
 			}
 			videojs(this.audioElemRef.current).dispose();
 			this.AudioPlayerData.instance = null;
-			delete this.AudioPlayerData.instance;
 		}
 	}
 
