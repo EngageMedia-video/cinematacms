@@ -6,6 +6,7 @@ import { MaterialIcon } from '../MaterialIcon.js';
 import { useManagementTableHeader } from './hooks/useManagementTableHeader';
 
 export function ManageUsersItemHeader(props){
+	props = { has_roles: false, has_verified: false, has_trusted: false, ...props };
 
 	const [ sort, order, isSelected, sortByColumn, checkAll ] = useManagementTableHeader({...props, type: 'users'});
 
@@ -34,8 +35,3 @@ ManageUsersItemHeader.propTypes = {
 	has_trusted: PropTypes.bool,
 };
 
-ManageUsersItemHeader.defaultProps = {
-	has_roles: false,
-	has_verified: false,
-	has_trusted: false,
-};

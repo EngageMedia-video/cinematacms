@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 export function MediaListHeader(props){
+	props = { viewAllText: 'VIEW ALL', ...props };
 	return (<><div className={ ( void 0 === props.className || null === props.className ? '' : props.className + ' ' ) + 'hw-category' } style={ props.style }>
 				{props.title && (
 					props.title === "Featured by Curators" ? (
@@ -21,7 +22,4 @@ MediaListHeader.propTypes = {
 	title: PropTypes.string.isRequired,
 	viewAllLink: PropTypes.string,
 	viewAllText: PropTypes.string,
-};
-MediaListHeader.defaultProps = {
-	viewAllText: 'VIEW ALL',
 };

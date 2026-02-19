@@ -16,6 +16,7 @@ import PageStore from '../../pages/_PageStore.js';
 import MediaDurationInfo from '../../classes/MediaDurationInfo';
 
 export function MediaItemVideo(props){
+	props = { ...MediaItemVideo.defaults, ...props };
 
 	const type = props.type;
 
@@ -95,8 +96,8 @@ MediaItemVideo.propTypes = {
 	playlist_id: PropTypes.string,
 };
 
-MediaItemVideo.defaultProps = {
-	...MediaItem.defaultProps,
+MediaItemVideo.defaults = {
+	...MediaItem.defaults,
 	type: 'video',
 	duration: 0,
 	hidePlaylistOptions: true,

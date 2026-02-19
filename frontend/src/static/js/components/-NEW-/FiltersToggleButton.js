@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { MaterialIcon } from './MaterialIcon';
 
 export function FiltersToggleButton( props ){
+	props = { active: false, ...props };
 
 	const [ isActive, setIsActive ] = useState( props.active );
 
@@ -29,6 +30,3 @@ FiltersToggleButton.propTypes = {
 	active: PropTypes.bool,
 };
 
-FiltersToggleButton.defaultProps = {
-	active: false,
-};

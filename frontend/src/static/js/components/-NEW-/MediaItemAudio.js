@@ -16,6 +16,7 @@ import PageStore from '../../pages/_PageStore.js';
 import MediaDurationInfo from '../../classes/MediaDurationInfo';
 
 export function MediaItemAudio(props){
+	props = { ...MediaItemAudio.defaults, ...props };
 
 	const type = props.type;
 
@@ -92,8 +93,8 @@ MediaItemAudio.propTypes = {
 	playlist_id: PropTypes.string,
 };
 
-MediaItemAudio.defaultProps = {
-	...MediaItem.defaultProps,
+MediaItemAudio.defaults = {
+	...MediaItem.defaults,
 	type: 'audio',
 	duration: 0,
 	hidePlaylistOptions: true,

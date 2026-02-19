@@ -13,6 +13,7 @@ import { ItemsStaticListHandler } from "./includes/itemLists/ItemsStaticListHand
 import { PositiveIntegerOrZero } from '../../functions/propTypeFilters';
 
 export function ItemList(props){
+    props = { ...ItemList.defaults, ...props };
 
     const [ countedItems, items, listHandler, setListHandler, classname, itemsListWrapperRef, itemsListRef, onItemsCount, onItemsLoad, renderBeforeListWrap, renderAfterListWrap ] = useItemListSync(props);
 
@@ -74,7 +75,7 @@ ItemList.propTypes = {
     canEdit: PropTypes.bool,
 };
 
-ItemList.defaultProps = {
+ItemList.defaults = {
     hideCategories: ! PageStore.get('config-media-item').displayCategories,
     hideDate: false,
     hideViews: false,

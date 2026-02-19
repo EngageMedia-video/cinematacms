@@ -12,6 +12,7 @@ import { MediaItemThumbnailLink, itemClassname } from './includes/items';
 import PageStore from '../../pages/_PageStore.js';
 
 export function MediaItem(props){
+	props = { ...MediaItem.defaults, ...props };
 
 	const type = props.type;
 
@@ -59,8 +60,8 @@ MediaItem.propTypes = {
 	categories: PropTypes.array,
 };
 
-MediaItem.defaultProps = {
-	...Item.defaultProps,
+MediaItem.defaults = {
+	...Item.defaults,
 	class_name: '',
 	views: 0,
 	hideViews: false,

@@ -10,6 +10,7 @@ import { useItem } from './hooks/useItem';
 import { TaxonomyItemMediaCount, itemClassname } from './includes/items';
 
 export function TaxonomyItem(props){
+	props = { ...TaxonomyItem.defaults, ...props };
 
 	const type = props.type;
 
@@ -58,8 +59,8 @@ TaxonomyItem.propTypes = {
 	media_count: PositiveIntegerOrZero,
 };
 
-TaxonomyItem.defaultProps = {
-	...Item.defaultProps,
+TaxonomyItem.defaults = {
+	...Item.defaults,
 	class_name: '',
 	media_count: 0,
 };

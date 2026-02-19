@@ -41,6 +41,7 @@ const filters = {
 };
 
 export function SearchResultsFilters(props){
+	props = { hidden: false, ...props };
 
 	const [ isHidden, setIsHidden ] = useState( props.hidden );
 
@@ -143,6 +144,3 @@ SearchResultsFilters.propTypes = {
 	hidden: PropTypes.bool,
 };
 
-SearchResultsFilters.defaultProps = {
-	hidden: false,
-};

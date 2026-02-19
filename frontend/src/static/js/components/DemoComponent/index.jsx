@@ -6,7 +6,7 @@ import './styles.scss';
  * DemoComponent - A simple counter component with increment and decrement functions
  * This demonstrates a functional component with hooks and state management
  */
-export const DemoComponent = ({ initialValue, title, onCountChange }) => {
+export const DemoComponent = ({ initialValue = 0, title = 'Demo Counter', onCountChange }) => {
   // State for the counter
   const [count, setCount] = useState(initialValue);
 
@@ -75,12 +75,6 @@ DemoComponent.propTypes = {
   initialValue: PropTypes.number,
   title: PropTypes.string.isRequired,
   onCountChange: PropTypes.func,
-};
-
-// Default props
-DemoComponent.defaultProps = {
-  initialValue: 0,
-  title: 'Demo Counter',
 };
 
 // Export as default for easier imports

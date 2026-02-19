@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
 export function NavigationContentApp(props){
+	props = { focusFirstItemOnPageChange: true, ...props };
 
 	const containerRef = useRef(null);
 
@@ -109,6 +110,3 @@ NavigationContentApp.propTypes = {
 	pageChangeCallback: PropTypes.func,
 };
 
-NavigationContentApp.defaultProps = {
-	focusFirstItemOnPageChange: true,
-};
