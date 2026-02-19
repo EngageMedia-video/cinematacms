@@ -36,9 +36,9 @@ export function EmbedPage(){
 		setFailedMediaLoad(true);
 	}
 
-	PageActions.initPage('embed');
-
     useEffect(() => {
+
+    	PageActions.initPage('embed');
 
     	MediaPageStore.on('loaded_video_data', onLoadedVideoData);
     	/*MediaPageStore.on('loaded_audio_data', onLoadedAudioData);

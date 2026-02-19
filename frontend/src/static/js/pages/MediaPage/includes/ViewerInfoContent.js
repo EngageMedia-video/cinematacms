@@ -119,16 +119,11 @@ export default function ViewerInfoContent(props) {
 
 	function onMediaDelete(mediaId) {
 
-		// TODO: Re-check this...
-		setTimeout(function () {	// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
+		PageActions.addNotification("Media removed. Redirecting...", 'mediaDelete');
 
-			PageActions.addNotification("Media removed. Redirecting...", 'mediaDelete');
-
-			setTimeout(function () {
-				window.location.href = SiteContext._currentValue.url + '/' + MediaPageStore.get('media-data').author_profile.replace(/^\//g, '');
-			}, 2000);
-
-		}, 100);
+		setTimeout(function () {
+			window.location.href = SiteContext._currentValue.url + '/' + MediaPageStore.get('media-data').author_profile.replace(/^\//g, '');
+		}, 2000);
 
 		if (void 0 !== mediaId) {
 			console.info("Removed media '" + mediaId + '"');
@@ -137,10 +132,7 @@ export default function ViewerInfoContent(props) {
 
 	function onMediaDeleteFail(mediaId) {
 
-		// TODO: Re-check this...
-		setTimeout(function () {	// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-			PageActions.addNotification("Media removal failed", 'mediaDeleteFail');
-		}, 100);
+		PageActions.addNotification("Media removal failed", 'mediaDeleteFail');
 
 		if (void 0 !== mediaId) {
 			console.info('Media "' + mediaId + '"' + " removal failed");

@@ -467,6 +467,7 @@ function EditProfileButton(props) {
 }
 
 export default function ProfilePagesHeader(props) {
+	props = { type: "home", ...props };
 	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
 
 	const profilePageHeaderRef = useRef(null);
@@ -520,17 +521,13 @@ export default function ProfilePagesHeader(props) {
 	}
 
 	function onProfileDelete(username) {
-		// TODO: Re-check this...
+		PageActions.addNotification(
+			"Profile removed. Redirecting...",
+			"profileDelete"
+		);
 		setTimeout(function () {
-			// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-			PageActions.addNotification(
-				"Profile removed. Redirecting...",
-				"profileDelete"
-			);
-			setTimeout(function () {
-				window.location.href = SiteContext._currentValue.url;
-			}, 2000);
-		}, 100);
+			window.location.href = SiteContext._currentValue.url;
+		}, 2000);
 
 		if (void 0 !== username) {
 			console.info("Removed user's profile '" + username + '"');
@@ -538,11 +535,7 @@ export default function ProfilePagesHeader(props) {
 	}
 
 	function onProfileDeleteFail(username) {
-		// TODO: Re-check this...
-		setTimeout(function () {
-			// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-			PageActions.addNotification("Profile removal failed", "profileDeleteFail");
-		}, 100);
+		PageActions.addNotification("Profile removal failed", "profileDeleteFail");
 
 		if (void 0 !== username) {
 			console.info('Profile "' + username + '"' + " removal failed");
@@ -689,6 +682,3 @@ ProfilePagesHeader.propTypes = {
 	onQueryChange: PropTypes.func,
 };
 
-ProfilePagesHeader.defaultProps = {
-	type: "home",
-};

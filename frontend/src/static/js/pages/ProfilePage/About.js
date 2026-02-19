@@ -68,13 +68,8 @@ class ChannelContactForm extends React.PureComponent {
 			subject: '',
 			body: '',
 			isSending: false,
-		}, function(){
-
-			// console.log( response );
-
-			setTimeout((function(){	// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-				PageActions.addNotification( "Your message was successfully submitted to " + this.props.author.name, 'messageSubmitSucceed');
-			}).bind(this), 100);
+		}, () => {
+			PageActions.addNotification( "Your message was successfully submitted to " + this.props.author.name, 'messageSubmitSucceed');
 		});
 	}
 
@@ -86,9 +81,7 @@ class ChannelContactForm extends React.PureComponent {
 
 			console.log( response );
 
-			setTimeout((function(){	// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-				PageActions.addNotification( "Your message failed to submit. Please try again", 'messageSubmitFailed');
-			}).bind(this), 100);
+			PageActions.addNotification( "Your message failed to submit. Please try again", 'messageSubmitFailed');
 		});
 	}
 
