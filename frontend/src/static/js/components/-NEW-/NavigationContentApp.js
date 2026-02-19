@@ -28,13 +28,15 @@ export function NavigationContentApp(props){
 
 				if( pageId ){
 
-					changePageElementsRef.current[i] = {
+					const entry = {
 						id: pageId,
 						elem: elems[i],
 					};
 
-					changePageElementsRef.current[i].listener = ( index => event => changePageListener(index, event) )(i);
-					changePageElementsRef.current[i].elem.addEventListener('click', changePageElementsRef.current[i].listener);
+					const entryIndex = changePageElementsRef.current.length;
+					entry.listener = ( index => event => changePageListener(index, event) )(entryIndex);
+					entry.elem.addEventListener('click', entry.listener);
+					changePageElementsRef.current.push(entry);
 				}
 
 				i += 1;

@@ -63,7 +63,7 @@ export function MediaItemVideo(props){
 		return props.hidePlaylistOptions ? null : <MediaPlaylistOptions key="options" media_id={ mediaId } playlist_id={ props.playlist_id } />;
 	}
 
-	const containerClassname = itemClassname( 'item ' + type + '-item', props.class_name.trim(), props.playlistOrder === props.playlistActiveItem );
+	const containerClassname = itemClassname( 'item ' + type + '-item', (props.class_name ?? '').trim(), props.playlistOrder === props.playlistActiveItem );
 
 	return (<div className={ containerClassname }>
 

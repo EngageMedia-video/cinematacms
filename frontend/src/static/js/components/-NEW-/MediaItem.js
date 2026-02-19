@@ -22,7 +22,7 @@ export function MediaItem(props){
 		return <MediaItemThumbnailLink src={ thumbnailUrl } title={ props.title } link={ props.link } state={ props.state } />;
 	}
 
-	const containerClassname = itemClassname( 'item ' + type + '-item', props.class_name.trim(), props.playlistOrder === props.playlistActiveItem );
+	const containerClassname = itemClassname( 'item ' + type + '-item', (props.class_name ?? '').trim(), props.playlistOrder === props.playlistActiveItem );
 
 	return (<div className={ containerClassname }>
 

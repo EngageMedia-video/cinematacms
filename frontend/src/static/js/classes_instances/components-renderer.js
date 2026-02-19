@@ -20,6 +20,12 @@ function componentRenderer(){
 				roots.get(id).render(<AppComp {...props} />);
 			}
 			return null;
+		},
+		destroy: function(id){
+			if( id && roots.has(id) ){
+				roots.get(id).unmount();
+				roots.delete(id);
+			}
 		}
 	};
 };

@@ -52,7 +52,6 @@ ItemListAsync.propTypes = {
 
 ItemListAsync.defaults = {
     ...ItemList.defaults,
-    requestUrl: null,
     firstItemRequestUrl: null,
     pageItems: 24,
 };

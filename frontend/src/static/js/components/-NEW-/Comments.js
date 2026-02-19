@@ -230,7 +230,7 @@ function CommentActions(props) {
 }
 
 function Comment(props) {
-	props = { author_name: '', author_link: '#', publish_date: 0, likes: 0, dislikes: 0, ...props };
+	props = { author_name: '', author_link: '#', publish_date: null, likes: 0, dislikes: 0, ...props };
 
 	const commentTextRef = useRef(null);
 	const commentTextInnerRef = useRef(null);
@@ -280,7 +280,7 @@ function Comment(props) {
 								{props.author_name}
 							</a>
 						</div>
-						<div className="comment-date">{replaceString(format(new Date(props.publish_date)))}</div>
+						<div className="comment-date">{props.publish_date != null ? replaceString(format(new Date(props.publish_date))) : ''}</div>
 					</div>
 					<div ref={commentTextRef} className={'comment-text' + (viewMoreContent ? ' show-all' : '')}>
 						<div
