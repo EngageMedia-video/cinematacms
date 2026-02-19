@@ -1,16 +1,9 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { logErrorAndReturnError, logWarningAndReturnError } from "../functions/errors";
 
 function componentRenderer(){
-	var instances = {}, wrapperElems = {};
-	function element(wrapEl, id){
-		if( id && void 0 === wrapperElems[id] ){ wrapperElems[id] = wrapEl; }
-		return wrapperElems[id];
-	}
-	function render(wrapEl, AppComp, props){
-		return wrapEl && AppComp ? ReactDOM.render( <AppComp {...props} />, wrapEl ) : null;
-	}
+	const roots = new Map();
 	return {
 		display: function(wrapEl, AppComp, props, id){
 			if(! wrapEl ){
@@ -20,10 +13,13 @@ function componentRenderer(){
 				return logErrorAndReturnError(["Invalid component's reference to render", AppComp]);
 			}
 			id = id || ( AppComp ? AppComp.name + "_" + new Date().valueOf() : null ) ;
-			if( id && void 0 === instances[id] ){
-				instances[id] = element(wrapEl, id) ? render( element(wrapEl, id), AppComp, props ) : null;
+			if( id && !roots.has(id) ){
+				roots.set(id, createRoot(wrapEl));
 			}
-			return instances[id];
+			if( roots.has(id) ){
+				roots.get(id).render(<AppComp {...props} />);
+			}
+			return null;
 		}
 	};
 };
