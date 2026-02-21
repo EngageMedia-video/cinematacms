@@ -276,7 +276,7 @@ Refer to the [Makefile and uv Usage Guide](./makefile-and-uv.md) for more Celery
 ## Frontend Development
 
 This guide has covered the backend setup for Cinemata.
-If you also plan to work on the frontend, which uses Node.js, React, and webpack, please refer to the dedicated frontend development guide for setup and build instructions:
+If you also plan to work on the frontend, which uses Node.js, React 19, and Vite, please refer to the dedicated frontend development guide for setup and build instructions:
 
 [Frontend Development Guide](./frontend-development.md)
 

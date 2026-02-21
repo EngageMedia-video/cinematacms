@@ -354,8 +354,8 @@ Estimated: 5-10 minutes
 - [x] `npm ls` clean (no orphaned or missing dependencies)
 - [x] `manage.py check` passes
 - [x] `postcss-custom-properties` removed from dependencies
-- [ ] Post-migration metrics recorded and compared to baseline
-- [ ] ADR written (`docs/technical/adr-001-webpack-to-vite.md`)
+- [x] Post-migration metrics recorded and compared to baseline
+- [x] ADR written (`docs/technical/adr-001-webpack-to-vite.md`)
 - [x] `frontend/.env` added to `.gitignore`
 
 ## Risk Analysis (M2-specific)

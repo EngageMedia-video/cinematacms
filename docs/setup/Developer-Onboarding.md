@@ -51,7 +51,7 @@ CinemataCMS is a Django-based video content management system built on MediaCMS,
 
 **Technology Stack:**
 - **Backend:** Django (Python 3.10+), PostgreSQL (Docker), Redis (Docker)
-- **Frontend:** React, webpack, SCSS
+- **Frontend:** React 19, Vite, SCSS
 - **Task Processing:** Celery (beat, long, short, whisper queues)
 - **Media Processing:** FFmpeg, WhisperCPP (ASR/transcription)
 - **Package Management:** uv (Python), npm (JavaScript)
@@ -114,16 +114,15 @@ uv run manage.py createsuperuser
 # 6. Start services
 make dev-server              # Django: http://127.0.0.1:8000
 make celery-start-all        # Background workers
-make frontend-dev            # React (optional): http://localhost:8088
+make frontend-dev            # Vite HMR (optional): browse via http://127.0.0.1:8000
 ```
 
 **Access Points:**
 - **Main App:** [http://127.0.0.1:8000](http://127.0.0.1:8000)
 - **Admin Panel:** [http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin)
-- **Frontend Dev (REST API pages only):** [http://localhost:8088](http://localhost:8088)
 - **API:** [http://127.0.0.1:8000/api/v1](http://127.0.0.1:8000/api/v1)
 
-**Important:** Frontend dev server (8088) only works for REST API pages. Django template pages (upload, edit) require port 8000.
+**Note:** When `make frontend-dev` is running, Vite serves assets with hot module replacement (HMR) on port 5173. You still browse the app on port 8000 — Django injects the HMR client automatically.
 
 ---
 
@@ -530,23 +529,10 @@ uv run manage.py populate_media_languages
 uv run manage.py populate_media_countries
 uv run manage.py populate_topics
 
-# Configure frontend environment
+# Configure frontend environment (enables Vite HMR via Django)
 cat > frontend/.env << 'EOF'
-# MediaCMS Environment Variables
-WEBPACK_SERVE=false
-
-# Site Configuration
-MEDIACMS_ID=cinematacms-frontend
-MEDIACMS_TITLE=Cinemata
-MEDIACMS_URL=http://127.0.0.1:8000
-MEDIACMS_API=http://127.0.0.1:8000/api/v1
-
-# User Configuration (optional for dev)
-MEDIACMS_USER_NAME=
-MEDIACMS_USER_USERNAME=
-MEDIACMS_USER_THUMB=
-MEDIACMS_USER_IS_ADMIN=false
-MEDIACMS_USER_IS_ANONYMOUS=true
+# Vite environment variables (must be prefixed with VITE_ to be exposed)
+# No variables are currently required. Add VITE_-prefixed vars here if needed.
 EOF
 
 # Build frontend
@@ -631,23 +617,21 @@ make celery-status
 
 ---
 
-### Step 10: Start Frontend Dev Server (Optional)
+### Step 10: Start Vite Dev Server (Optional)
 
-For frontend development with hot-reload:
+For frontend development with hot module replacement (HMR):
 
 ```bash
-# In a new terminal
-make frontend-dev
+# In a new terminal — enable VITE_DEV_MODE in your environment first
+VITE_DEV_MODE=True make frontend-dev
 
 # Or directly:
-# cd frontend && npm start
+# cd frontend && npm run dev
 ```
 
-Access at **http://localhost:8088**
+Browse the app at **http://127.0.0.1:8000** as usual. Vite's HMR server runs on port 5173 in the background — Django automatically injects the HMR client when `VITE_DEV_MODE=True` is set. CSS and JS changes reflect instantly without a full page reload.
 
-> **⚠️ Important:** The frontend dev server (port 8088) only works for **REST API-based pages** (media viewing, profiles, search). Django template-based pages (upload, edit media, admin) must be accessed via the **Django server** (port 8000).
->
-> See [Frontend Development Workflow](#frontend-development-workflow) for detailed information about the hybrid architecture and when to use each server.
+> **Note:** Unlike the old Webpack dev server, you do NOT browse port 5173 directly. All pages are served by Django on port 8000. Vite only handles hot-reloading assets.
 
 ---
 
@@ -827,14 +811,13 @@ uv run manage.py shell
 **Development Server (with Hot Reload):**
 
 ```bash
-# Start frontend dev server
-make frontend-dev
+# Start Vite dev server for HMR
+VITE_DEV_MODE=True make frontend-dev
 
-# Or directly
-cd frontend && npm start
+# Or directly:
+cd frontend && npm run dev
 
-# Access at http://localhost:8088
-# Sitemap at http://localhost:8088/sitemap.html
+# Browse at http://127.0.0.1:8000 (Django injects HMR client automatically)
 ```
 
 **Building for Production:**
@@ -852,7 +835,6 @@ make quick-build
 
 # Clean build artifacts
 make frontend-clean
-# Or: cd frontend && npm run clean-build
 ```
 
 **Frontend Package Development:**
@@ -876,10 +858,9 @@ npm run build
 
 **Available NPM Scripts:**
 
-- `npm run start` - Development server with hot reload
-- `npm run build` - Production build
-- `npm run clean-build` - Clean and rebuild
-- `npm run serve-build` - Serve built files locally
+- `npm run dev` - Vite development server with HMR
+- `npm run build` - Vite production build
+- `npm run preview` - Preview production build locally
 
 **Creating New Components:**
 
@@ -932,21 +913,22 @@ cinematacms/
 ```text
 frontend/
 ├── src/
+│   ├── entries/               # Vite entry points (one per page)
 │   ├── static/
 │   │   ├── js/
-│   │   │   ├── pages/          # Page components
-│   │   │   ├── components/     # Reusable components
-│   │   │   ├── contexts/       # React contexts
-│   │   │   └── stores/         # Flux stores
+│   │   │   ├── pages/         # Page components
+│   │   │   ├── components/    # Reusable components
+│   │   │   ├── contexts/      # React contexts
+│   │   │   └── stores/        # Flux stores
 │   │   └── css/
-│   │       ├── config/         # Theme definitions
-│   │       └── includes/       # SCSS partials
-│   └── config/                 # Frontend config
-├── packages/                   # Build before main app
+│   │       ├── config/        # Theme definitions
+│   │       └── includes/      # SCSS partials
+├── packages/                  # Build before main app
 │   ├── media-player/
 │   ├── vjs-plugin/
 │   └── vjs-plugin-font-icons/
-└── build/production/static/    # Build output
+├── vite.config.js             # Vite build configuration
+└── build/production/static/   # Build output
 ```
 
 ### Key Patterns
@@ -1037,8 +1019,8 @@ templates/cms/<page>.html → Django renders → Served directly
 **React SPA Pages:**
 ```text
 1. Django serves shell: templates/root.html
-2. webpack bundles loaded
-3. React router: frontend/src/static/js/
+2. Vite bundles loaded (via django-vite template tags)
+3. React components: frontend/src/static/js/
 4. API calls: http://127.0.0.1:8000/api/v1
 ```
 
@@ -1182,93 +1164,59 @@ MediaAction → User (foreign key)
 
 ### Technology Stack
 
-- **React 17** - UI library
+- **React 19** - UI library
 - **Flux** - State management pattern
 - **SCSS/Sass** - Styling with CSS preprocessor
-- **webpack** - Module bundler
+- **Vite** - Build tool and dev server
+- **django-vite** - Django integration for Vite assets
 - **Video.js** - Custom media player foundation
 - **Node.js v20.19.1** - Build environment
 
-### ⚠️ Important Limitations
+### Development Architecture
 
-CinemataCMS uses a **hybrid architecture** with both Django templates and React SPA:
-
-- **Django Template Pages**: Some features are server-side rendered via Django templates (e.g., upload pages, admin interfaces, certain management views)
-- **REST API Pages**: React SPA pages that consume the REST API
+CinemataCMS uses Django templates that load React components via Vite-bundled entry points. All pages are served by Django on port 8000.
 
 **Development Server Usage:**
 
-| Feature Type | Server to Use | URL | Hot Reload |
-|-------------|---------------|-----|-----------|
-| **REST API pages** (media viewing, profiles, search) | Frontend Dev Server | `http://localhost:8088` | ✅ Yes |
-| **Django template pages** (upload, edit media, admin) | Django Server | `http://127.0.0.1:8000` | ❌ No |
-| **Production build testing** | Django Server | `http://127.0.0.1:8000` | ❌ No |
+| Mode | Command | URL | Hot Reload |
+|------|---------|-----|-----------|
+| **With HMR** (recommended) | `VITE_DEV_MODE=True make dev-server` + `make frontend-dev` | `http://127.0.0.1:8000` | ✅ Yes |
+| **Production build** | `make frontend-build` then `make dev-server` | `http://127.0.0.1:8000` | ❌ No |
 
 **When developing:**
-- Use `npm start` (port 8088) for **React component/page development** with hot reload
-- Use Django server (port 8000) for **Django template-based features** or full integration testing
-- Always test final changes on the Django server before committing
+- Run both `make dev-server` (Django) and `make frontend-dev` (Vite) for HMR
+- Set `VITE_DEV_MODE=True` in your environment so Django injects the Vite HMR client
+- Browse on port 8000 — Vite's port 5173 is only used for asset serving, not direct browsing
 
 ### Frontend Environment Configuration
 
-The frontend has its own `.env` file for development configuration:
+Vite only exposes environment variables prefixed with `VITE_` to frontend code. The `frontend/.env` file is optional — no variables are currently required for development.
 
-**File:** `frontend/.env`
-
-```bash
-# MediaCMS Environment Variables
-WEBPACK_SERVE=false
-
-# Site Configuration
-MEDIACMS_ID=cinematacms-frontend
-MEDIACMS_TITLE=Cinemata
-MEDIACMS_URL=http://127.0.0.1:8000
-MEDIACMS_API=http://127.0.0.1:8000/api/v1
-
-# User Configuration (optional for dev)
-MEDIACMS_USER_NAME=
-MEDIACMS_USER_USERNAME=
-MEDIACMS_USER_THUMB=
-MEDIACMS_USER_IS_ADMIN=false
-MEDIACMS_USER_IS_ANONYMOUS=true
-```
-
-**Configuration Notes:**
-
-- `MEDIACMS_URL` and `MEDIACMS_API` must point to your running Django server (port 8000)
-- The frontend dev server (port 8088) proxies API requests to the Django server
-- User configuration is typically empty in development (uses actual login state)
-- `WEBPACK_SERVE=false` - Set to `true` only when running `npm start`
-
-**To create the `.env` file:**
-
-```bash
-cd frontend
-touch .env
-```
-
-Copy the configuration above and adjust if your Django server runs on a different port.
+**Django-side configuration** (in `cms/local_settings.py` or environment):
+- Set `VITE_DEV_MODE=True` to enable HMR during development
+- This tells `django-vite` to load assets from the Vite dev server instead of the production manifest
 
 ### Project Structure
 
 ```text
 frontend/
-├── src/static/js/
-│   ├── pages/              # Full page components
-│   ├── components/         # Reusable UI components
-│   │   └── -NEW-/         # Modern components (use these patterns)
-│   ├── contexts/           # React Context providers
-│   ├── stores/             # Flux stores
-│   └── actions/            # Flux actions
-├── src/static/css/
-│   ├── config/             # Theme variables (light/dark)
-│   └── includes/           # SCSS partials and mixins
+├── src/
+│   ├── entries/            # Vite entry points (one per page)
+│   ├── static/js/
+│   │   ├── pages/          # Full page components
+│   │   ├── components/     # Reusable UI components
+│   │   │   └── -NEW-/     # Modern components (use these patterns)
+│   │   ├── contexts/       # React Context providers
+│   │   ├── stores/         # Flux stores
+│   │   └── actions/        # Flux actions
+│   └── static/css/
+│       ├── config/         # Theme variables (light/dark)
+│       └── includes/       # SCSS partials and mixins
 ├── packages/               # Independent packages
 │   ├── media-player/       # Custom Video.js player
 │   ├── vjs-plugin/         # Video.js plugins
 │   └── vjs-plugin-font-icons/
-└── config/                 # Build configuration
-    └── cinemata.config.js  # Main webpack config
+└── vite.config.js          # Vite build configuration
 ```
 
 ### Development Workflow
@@ -1276,14 +1224,16 @@ frontend/
 **1. Start Development Server:**
 
 ```bash
-cd frontend
-npm start
+# Terminal 1: Django
+VITE_DEV_MODE=True make dev-server
 
-# Access at http://localhost:8088
-# Sitemap: http://localhost:8088/sitemap.html
+# Terminal 2: Vite HMR
+make frontend-dev
+
+# Browse at http://127.0.0.1:8000
 ```
 
-Changes will hot-reload automatically.
+CSS and JS changes will hot-reload automatically via Vite HMR.
 
 **2. Creating a New Component:**
 
@@ -1349,20 +1299,18 @@ const MyPage = ({ pageTitle = 'My Page' }) => {
 export default MyPage;
 ```
 
-**4. Register Page:**
+**4. Register Page as Vite Entry:**
 
-Edit `frontend/config/cinemata/cinemata.mediacms.pages.config.js`:
+Create an entry file in `frontend/src/entries/my-page.js`:
 
 ```javascript
-const { mediacmsDefaultPages } = require("../__default/mediacms.pages.config.js");
+import { renderPage } from '../static/js/_helpers';
+import MyPage from '../static/js/pages/MyPage';
 
-pages['my-page'] = mediacmsDefaultPages(
-  'my-page',        // Page ID
-  'My Page',        // Page title
-  'MyPage',         // Component name
-  { /* config */ }
-);
+renderPage('page-my-page', MyPage);
 ```
+
+Add the entry to `frontend/vite.config.js` under `build.rollupOptions.input` and create a Django template that loads it via `{% vite_asset 'src/entries/my-page.js' %}`.
 
 **5. Styling Components:**
 
@@ -1390,10 +1338,8 @@ Import in main stylesheet or component.
 make frontend-build
 
 # Or manually:
-cd frontend
-npm run build
-cd ..
-uv run manage.py collectstatic --noinput
+cd frontend && npm run build
+cd .. && uv run manage.py collectstatic --noinput
 ```
 
 **7. Working with Packages:**
@@ -1978,7 +1924,7 @@ sudo apt install python3.10 python3.10-venv
 
 ### Node.js Version Errors
 
-#### Error: Node.js v20.19.1 required or webpack build fails
+#### Error: Node.js v20.19.1 required or Vite build fails
 
 ```bash
 # Check current version
@@ -2145,22 +2091,21 @@ pip install -r requirements.txt
 
 ### Frontend Dev Server Issues
 
-**Port 8088 works but pages show errors:**
+**HMR not working or assets not loading:**
 
 ```bash
-# Check .env file exists in frontend/
-cat frontend/.env
+# Verify Vite dev server is running
+# Should see output from: make frontend-dev
 
-# Should have:
-# MEDIACMS_URL=http://127.0.0.1:8000
-# MEDIACMS_API=http://127.0.0.1:8000/api/v1
+# Verify VITE_DEV_MODE is set for Django
+# In your environment or local_settings.py:
+# VITE_DEV_MODE=True
 
 # Ensure Django server is running on port 8000
-# Frontend dev server proxies API requests to Django
+# Vite HMR client connects via Django's injected script tag
 
-# Check browser console for CORS errors
-# Should have in cms/local_settings.py:
-# CORS_ALLOW_ALL_ORIGINS = True
+# Check browser console for connection errors to port 5173
+# CORS should be handled by Vite's server config
 ```
 
 ### Still Having Issues?
