@@ -11,7 +11,7 @@ export default defineConfig({
       name: 'treat-js-as-jsx',
       enforce: 'pre',
       async transform(code, id) {
-        if (!id.match(/src\/.*\.js$/)) return null;
+        if (!id.match(/src\/.*\.js$/) || id.includes('node_modules')) return null;
         return transformWithEsbuild(code, id, {
           loader: 'jsx',
           jsx: 'automatic',
@@ -20,6 +20,9 @@ export default defineConfig({
     },
     react({
       include: /\.(js|jsx)$/,
+      babel: {
+        plugins: ['styled-jsx/babel'],
+      },
     }),
   ],
 

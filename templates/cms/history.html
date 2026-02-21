@@ -7,12 +7,9 @@
 {% block headermeta %}{% endblock headermeta %}
 
 {% block topimports %}
-{%endblock topimports %}
+{% vite_asset 'src/entries/history.js' %}
+{% endblock topimports %}
 
 {% block content %}
 {% if user %}<div id="page-history"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-{% vite_asset 'src/entries/history.js' %}
-{% endblock bottomimports %}

@@ -251,7 +251,7 @@ LOGIN_REDIRECT_URL = "/"
 # production if DEBUG=True reaches it. Requires explicit opt-in.
 DJANGO_VITE = {
     "default": {
-        "dev_mode": os.getenv("VITE_DEV_MODE", "False") == "True",
+        "dev_mode": os.getenv("VITE_DEV_MODE", "").lower() in ("1", "true", "yes"),
         # Point directly at the build output — Django's collectstatic ignores
         # dot-directories by default ('.*' in StaticFilesConfig.ignore_patterns),
         # so .vite/manifest.json never gets copied to static_collected/.

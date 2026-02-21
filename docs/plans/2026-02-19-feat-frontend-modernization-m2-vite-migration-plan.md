@@ -88,8 +88,7 @@ Django-Vite integration:
      DJANGO_VITE = {
          "default": {
              "dev_mode": os.getenv("VITE_DEV_MODE", "False") == "True",  # NOT tied to DEBUG!
-             "manifest_path": os.path.join(BASE_DIR, "static_collected", ".vite", "manifest.json"),
-             "static_url": STATIC_URL,
+             "manifest_path": os.path.join(BASE_DIR, "frontend", "build", "production", "static", ".vite", "manifest.json"),
          },
      }
      ```
@@ -121,7 +120,7 @@ Django-Vite integration:
 **Branch**: `feat/vite-templates`
 **Effort**: ~4 hours — **riskiest step**
 
-1. **Update `templates/root.html`**: Add `{% load django_vite %}` and `{% vite_hmr_client %}` to `<head>`. Preserve Matomo analytics script (lines 92-106) and Video.js loading (lines 80-84).
+1. **Update `templates/root.html`**: Add `{% load django_vite %}`, `{% vite_react_refresh %}`, and `{% vite_hmr_client %}` (in that order) to `<head>`. The `{% vite_react_refresh %}` tag injects the React Fast Refresh preamble required for HMR with React components. Preserve Matomo analytics script (lines 92-106) and Video.js loading (lines 80-84).
 
    > **From frontend races review:** The inline `<script>` in `config/index.html` (which sets `window.MediaCMS`) must remain a synchronous classic script. It must NOT become a module. ES modules are deferred; the inline config script must execute before any module code. This is preserved by the current template ordering.
 
@@ -172,7 +171,7 @@ Django-Vite integration:
 - [ ] Every `{% vite_asset %}` path matches an actual entry file in `frontend/src/entries/`
 - [ ] `head-links.html`: webpack_manifest removed, _commons removed, _extra.css switched
 - [ ] `body-scripts.html`: webpack_manifest removed, _commons.js removed
-- [ ] `root.html` has `{% vite_hmr_client %}` in `<head>`
+- [ ] `root.html` has `{% vite_react_refresh %}` and `{% vite_hmr_client %}` in `<head>` (in that order)
 - [ ] Production build produces 27+ manifest entries
 - [ ] `collectstatic` succeeds, `.vite/manifest.json` in `static_collected/`
 - [ ] All 20 page types tested in local production mode (DEBUG=False, VITE_DEV_MODE=False)
@@ -225,7 +224,7 @@ Estimated: 5-10 minutes
    - `frontend/packages/ejs-compiled-loader/` — Webpack-specific custom loader (dead code after migration)
 
 2. **Delete Django-side Webpack code**:
-   - `files/templatetags/webpack_manifest.py` — replaced by django-vite (delete in same PR as template removal was completed)
+   - `files/templatetags/webpack_manifest.py` — replaced by django-vite (safe to delete now; templates were already switched to django-vite in PR 2B)
    - `cms/storage.py` — `WebpackHashedFilesStorage` no longer needed
    - In `cms/settings.py`: change `STORAGES.staticfiles.BACKEND` to `django.contrib.staticfiles.storage.StaticFilesStorage`
 
@@ -340,23 +339,24 @@ Estimated: 5-10 minutes
 ## Acceptance Criteria (M2-specific)
 
 - [x] Vite production build succeeds with 27+ entries in `.vite/manifest.json`
+- [x] `{% vite_react_refresh %}` and `{% vite_hmr_client %}` present in `root.html` (in that order)
 - [x] `{% vite_hmr_client %}` renders HMR client in dev, nothing in production
 - [x] `_extra.css` loads correctly via `{% static %}` with query-string cache-busting
-- [x] All 30+ page types load without console errors in both dev and production
+- [ ] All 30+ page types load without console errors in both dev and production -- needs full verification
 - [x] Dark/light theme toggle works on all pages
-- [x] Zero Webpack references remaining in codebase (grep verification)
-- [x] CSS custom properties preserved at runtime (PostCSS plugin removed entirely)
+- [ ] Zero Webpack references remaining in codebase (grep verification) -- PR 2C
+- [ ] CSS custom properties preserved at runtime (PostCSS plugin removed entirely) -- PR 2C
 - [x] No source maps in production build
 - [x] `VITE_DEV_MODE` env var controls dev mode (not `DEBUG`)
 - [x] Dev server cold start < 500ms (baseline: 15-30s)
 - [x] HMR latency < 500ms (baseline: 2-5s)
 - [x] `npm audit` does not introduce new vulnerabilities vs baseline
-- [x] `npm ls` clean (no orphaned or missing dependencies)
+- [ ] `npm ls` clean (no orphaned or missing dependencies) -- PR 2C
 - [x] `manage.py check` passes
-- [x] `postcss-custom-properties` removed from dependencies
-- [x] Post-migration metrics recorded and compared to baseline
-- [x] ADR written (`docs/technical/adr-001-webpack-to-vite.md`)
-- [x] `frontend/.env` added to `.gitignore`
+- [ ] `postcss-custom-properties` removed from dependencies -- PR 2C
+- [ ] Post-migration metrics recorded and compared to baseline -- PR 2C
+- [ ] ADR written (`docs/technical/adr-001-webpack-to-vite.md`) -- PR 2C
+- [ ] `frontend/.env` added to `.gitignore` -- PR 2C
 
 ## Risk Analysis (M2-specific)
 
@@ -395,22 +395,21 @@ Estimated: 5-10 minutes
 After PR 2C is stable, add cache headers to distinguish hashed vs non-hashed assets:
 
 ```nginx
+# Block Vite manifest from public access (must be before /static/)
+location /static/.vite/ {
+    return 404;
+}
+
+# Hashed assets (Vite output) — cache aggressively
+location /static/assets/ {
+    alias /home/cinemata/cinematacms/static_collected/assets/;
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+
+# Non-hashed assets — moderate cache
 location /static/ {
     alias /home/cinemata/cinematacms/static_collected/;
-
-    # Hashed assets (Vite output) — cache aggressively
-    location ~* /static/assets/ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # Block Vite manifest from public access
-    location /static/.vite/ {
-        deny all;
-        return 404;
-    }
-
-    # Non-hashed assets — moderate cache
     expires 7d;
     add_header Cache-Control "public";
 }

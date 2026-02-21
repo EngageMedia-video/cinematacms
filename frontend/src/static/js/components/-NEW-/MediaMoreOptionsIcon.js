@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-import PropTypes from 'prop-types';
-
 import { usePopup } from './hooks/usePopup';
 
 import LinksContext from '../../contexts/LinksContext';
@@ -341,7 +339,4 @@ export function MediaMoreOptionsIcon(props){
 			</div>);
 }
 
-MediaMoreOptionsIcon.propTypes = {
-	allowDownload: PropTypes.bool.isRequired,
-};
 

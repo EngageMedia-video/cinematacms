@@ -164,22 +164,21 @@ static_collected/                      # Django's collected static files
 ### NGINX Configuration
 
 ```nginx
+# Block Vite manifest from public access
+location ^~ /static/.vite/ {
+    return 404;
+}
+
+# Hashed assets — immutable cache
+location ~* ^/static/assets/ {
+    alias /home/cinemata/cinematacms/static_collected/assets/;
+    expires 1y;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+}
+
+# All other static files (admin, lib, _extra.css) — moderate cache
 location /static/ {
     alias /home/cinemata/cinematacms/static_collected/;
-
-    # Vite hashed assets — immutable, cache for 1 year
-    location ~* /static/assets/ {
-        expires 1y;
-        add_header Cache-Control "public, max-age=31536000, immutable";
-    }
-
-    # Block Vite manifest from public access
-    location /static/.vite/ {
-        deny all;
-        return 404;
-    }
-
-    # Non-hashed assets (admin, lib, _extra.css) — moderate cache
     expires 7d;
     add_header Cache-Control "public, max-age=604800, must-revalidate";
 }

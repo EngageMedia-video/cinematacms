@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
-
 import * as PageActions from '../../pages/_PageActions.js';
 
 import MediaPageStore from '../../pages/MediaPage/store.js';
@@ -151,9 +149,3 @@ export function PlaylistCreationForm(props){
 
 			</div>);
 }
-
-PlaylistCreationForm.propTypes = {
-	id: PropTypes.string,
-	onCancel: PropTypes.func.isRequired,
-	onPlaylistSave: PropTypes.func.isRequired,
-};

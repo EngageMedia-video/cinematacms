@@ -5,12 +5,9 @@
 {% block headtitle %}{% if user.name %}{{user.name}} - {% endif %}Liked media - {{PORTAL_NAME}}{% endblock headtitle %}
 
 {% block topimports %}
-{%endblock topimports %}
+{% vite_asset 'src/entries/liked.js' %}
+{% endblock topimports %}
 
 {% block content %}
 {% if user %}<div id="page-liked"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-{% vite_asset 'src/entries/liked.js' %}
-{% endblock bottomimports %}

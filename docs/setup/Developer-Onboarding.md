@@ -619,19 +619,24 @@ make celery-status
 
 ### Step 10: Start Vite Dev Server (Optional)
 
-For frontend development with hot module replacement (HMR):
+For frontend development with hot module replacement (HMR), you need **two terminals**:
 
 ```bash
-# In a new terminal — enable VITE_DEV_MODE in your environment first
-VITE_DEV_MODE=True make frontend-dev
+# Terminal 1 — Restart Django with VITE_DEV_MODE so it injects the HMR client
+VITE_DEV_MODE=True make dev-server
+```
+
+```bash
+# Terminal 2 — Start the Vite HMR server
+make frontend-dev
 
 # Or directly:
 # cd frontend && npm run dev
 ```
 
-Browse the app at **http://127.0.0.1:8000** as usual. Vite's HMR server runs on port 5173 in the background — Django automatically injects the HMR client when `VITE_DEV_MODE=True` is set. CSS and JS changes reflect instantly without a full page reload.
+Browse the app at **http://127.0.0.1:8000** as usual. Vite's HMR server runs on port 5173 in the background -- Django automatically injects the HMR client when `VITE_DEV_MODE=True` is set. CSS and JS changes reflect instantly without a full page reload.
 
-> **Note:** Unlike the old Webpack dev server, you do NOT browse port 5173 directly. All pages are served by Django on port 8000. Vite only handles hot-reloading assets.
+> **Note:** `VITE_DEV_MODE` is a Django setting, not a Vite setting. It must be set on the **Django process** (Terminal 1) so that templates emit the HMR `<script>` tag. The Vite server (Terminal 2) does not need the variable. Unlike the old Webpack dev server, you do NOT browse port 5173 directly. All pages are served by Django on port 8000. Vite only handles hot-reloading assets.
 
 ---
 

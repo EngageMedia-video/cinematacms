@@ -266,22 +266,21 @@ Set `VITE_DEV_MODE=True` in your environment to enable HMR:
 ### NGINX Configuration (Production)
 
 ```nginx
+# Block Vite manifest from public access
+location ^~ /static/.vite/ {
+    return 404;
+}
+
+# Hashed assets — immutable cache
+location ~* ^/static/assets/ {
+    alias /home/cinemata/cinematacms/static_collected/assets/;
+    expires 1y;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+}
+
+# All other static files — moderate cache
 location /static/ {
     alias /home/cinemata/cinematacms/static_collected/;
-
-    # Vite hashed assets — cache aggressively
-    location ~* /static/assets/ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # Block Vite manifest from public access
-    location /static/.vite/ {
-        deny all;
-        return 404;
-    }
-
-    # Non-hashed assets — moderate cache
     expires 7d;
     add_header Cache-Control "public";
 }

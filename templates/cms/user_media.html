@@ -15,7 +15,8 @@
 {% endblock headermeta %}
 
 {% block topimports %}
-{%endblock topimports %}
+{% vite_asset 'src/entries/profile-media.js' %}
+{% endblock topimports %}
 
 {% block innercontent %}
 {% if user %}{% else %}
@@ -26,7 +27,3 @@ No such user
 {% block content %}
 {% if user %}<div id="page-profile-media"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-{% vite_asset 'src/entries/profile-media.js' %}
-{% endblock bottomimports %}

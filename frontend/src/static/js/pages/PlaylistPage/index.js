@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useContext } from 'react';
 import ReactDOM from 'react-dom';
 
 import Sortable from "sortablejs";
@@ -181,6 +181,7 @@ function PlaylistOptions(props){
 
 function PlaylistEdit(props){
 
+	const userContext = useContext(UserContext);
 	const [ popupContentRef, PopupContent, PopupTrigger ] = usePopup();
 
 	function onPlaylistSave(){
@@ -204,7 +205,7 @@ function PlaylistEdit(props){
 	function playlistRemovalCompleted( playlistId ){
 		PageActions.addNotification( "Playlist removed. Redirecting...", 'playlistDelete');
 		setTimeout(function(){
-			window.location.href = UserContext._currentValue.pages.playlists;
+			window.location.href = userContext.pages.playlists;
 		}, 2000);
 	}
 

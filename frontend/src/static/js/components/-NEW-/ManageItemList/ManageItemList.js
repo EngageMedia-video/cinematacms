@@ -576,12 +576,16 @@ export function ManageItemList(props){
 
 	function removeMediaResponse(response){
 		if( response && 204 === response.status ){
-            props.onRowsDelete( false );
+            if( 'function' === typeof props.onRowsDelete ){
+                props.onRowsDelete( false );
+            }
         }
 	}
 
 	function removeMediaFail(){
-		props.onRowsDeleteFail( false );
+		if( 'function' === typeof props.onRowsDeleteFail ){
+            props.onRowsDeleteFail( false );
+        }
 	}
 
 	useEffect(()=>{
