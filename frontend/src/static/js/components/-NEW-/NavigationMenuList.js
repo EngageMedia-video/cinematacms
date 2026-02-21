@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { MaterialIcon } from './MaterialIcon';
 
 
-import stylesheet from "../styles/NavigationMenuList.scss";
+import "../styles/NavigationMenuList.scss";
 
 // TODO: Recheck components.
 

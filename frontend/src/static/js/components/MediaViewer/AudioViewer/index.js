@@ -7,7 +7,7 @@ import SiteContext from "../../../contexts/SiteContext";
 import "@mediacms/media-player/dist/mediacms-media-player.js";
 // The MediaPlayer is exposed as a global variable
 const MediaPlayer = window.MediaPlayer;
-import MediaPlayerStyles from "@mediacms/media-player/dist/mediacms-media-player.css";
+import "@mediacms/media-player/dist/mediacms-media-player.css";
 
 import MediaPageStore from "../../../pages/MediaPage/store.js";
 
@@ -25,7 +25,7 @@ import PlayerRecommendedMedia from "../../../classes/PlayerRecommendedMedia";
 
 import MediaDurationInfo from "../../../classes/MediaDurationInfo";
 
-import stylesheet_viewer from "../../styles/VideoViewer.scss";
+import "../../styles/VideoViewer.scss";
 
 const _MediaDurationInfo = new MediaDurationInfo();
 

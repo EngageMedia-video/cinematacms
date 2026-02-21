@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom';
 import { Page } from '../_Page';
 import PageStore from '../_PageStore';
 
-import _MediaPage from './_MediaPage';
 import MediaPageStore from './store.js';
 import * as MediaPageActions from './actions.js';
 import ViewerInfoVideo from './includes/ViewerInfoVideo';

@@ -28,7 +28,7 @@ import { PlaylistCreationForm } from '../../components/-NEW-/PlaylistCreationFor
 
 import { NavigationContentApp } from '../../components/-NEW-/NavigationContentApp';
 
-import stylesheet from "../styles/PlaylistPage.scss";
+import "../styles/PlaylistPage.scss";
 
 function PlayAllLink(props){
 	return ( ! props.media || ! props.media.length ? <span>{ props.children }</span> : <a href={ props.media[0].url + '&pl=' + props.id } title="">{ props.children }</a> );

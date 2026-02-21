@@ -17,7 +17,7 @@ import { ManageItemsListHandler } from "./includes/ManageItemsListHandler";
 
 const urlParse = require('url-parse');
 
-import manage_stylesheet from "../../styles/ManageItemList.scss";
+import "../../styles/ManageItemList.scss";
 
 function useManageItemList( props, itemsListRef ){
 

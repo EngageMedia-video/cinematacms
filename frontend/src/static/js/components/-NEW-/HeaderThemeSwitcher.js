@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 
 import { useThemeSwitcher } from './hooks/useThemeSwitcher';
 
-import stylesheet from "../styles/ThemeSwitchOption.scss";
+import "../styles/ThemeSwitchOption.scss";
 
 export function HeaderThemeSwitcher(){
     

@@ -15,7 +15,7 @@ import { PlaylistCreationForm } from "./PlaylistCreationForm";
 
 import { addClassname, removeClassname } from "./functions/dom";
 
-import stylesheet from "../styles/PlaylistsSelection.scss";
+import "../styles/PlaylistsSelection.scss";
 
 function PlaylistsSingleSelection(props) {
 	props = { isChecked: false, title: "", ...props };

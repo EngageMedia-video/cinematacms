@@ -27,7 +27,7 @@ import { UserThumbnail } from './UserThumbnail';
 
 import { PopupMain } from './Popup';
 
-import stylesheet from "../styles/Comments.scss";
+import "../styles/Comments.scss";
 import { replaceString } from '../../utils/string-replacement.js';
 const commentsText = {
 	single: 'comment',

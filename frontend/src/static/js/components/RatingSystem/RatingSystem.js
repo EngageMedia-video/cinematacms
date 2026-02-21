@@ -15,7 +15,7 @@ import * as RatingSystemActions from './actions.js';
 import { SpinnerLoader } from '../-NEW-/SpinnerLoader.js';
 import { CircleIconButton } from '../-NEW-/CircleIconButton.js';
 
-import RatingCategoryStyles from '../styles/RatingSystem.scss';
+import '../styles/RatingSystem.scss';
 
 export class RatingCategory extends React.PureComponent {
 

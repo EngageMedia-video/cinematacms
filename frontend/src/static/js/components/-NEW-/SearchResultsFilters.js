@@ -5,7 +5,7 @@ import { FilterOptions } from './FilterOptions';
 
 import PageStore from '../../pages/_PageStore.js';
 
-import styles from '../styles/ManageItemList-filters.scss';
+import '../styles/ManageItemList-filters.scss';
 
 const filters = {
 	media_type: [

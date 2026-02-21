@@ -11,7 +11,7 @@ import * as PlaylistPageActions from '../../pages/PlaylistPage/actions.js';
 
 import { addClassname, removeClassname } from './functions/dom';
 
-import stylesheet from "../styles/PlaylistForm.scss";
+import "../styles/PlaylistForm.scss";
 
 export function PlaylistCreationForm(props){
 
