@@ -340,17 +340,17 @@ Estimated: 5-10 minutes
 ## Acceptance Criteria (M2-specific)
 
 - [x] Vite production build succeeds with 27+ entries in `.vite/manifest.json`
-- [ ] `{% vite_hmr_client %}` renders HMR client in dev, nothing in production
+- [x] `{% vite_hmr_client %}` renders HMR client in dev, nothing in production
 - [ ] `_extra.css` loads correctly via `{% static %}` with query-string cache-busting
-- [ ] All 30+ page types load without console errors in both dev and production
-- [ ] Dark/light theme toggle works on all pages
+- [x] All 30+ page types load without console errors in both dev and production
+- [x] Dark/light theme toggle works on all pages
 - [x] Zero Webpack references remaining in codebase (grep verification)
-- [ ] CSS custom properties preserved at runtime (PostCSS plugin removed entirely)
+- [x] CSS custom properties preserved at runtime (PostCSS plugin removed entirely)
 - [x] No source maps in production build
-- [ ] `VITE_DEV_MODE` env var controls dev mode (not `DEBUG`)
-- [ ] Dev server cold start < 500ms (baseline: 15-30s)
-- [ ] HMR latency < 500ms (baseline: 2-5s)
-- [ ] `npm audit` does not introduce new vulnerabilities vs baseline
+- [x] `VITE_DEV_MODE` env var controls dev mode (not `DEBUG`)
+- [x] Dev server cold start < 500ms (baseline: 15-30s)
+- [x] HMR latency < 500ms (baseline: 2-5s)
+- [x] `npm audit` does not introduce new vulnerabilities vs baseline
 - [x] `npm ls` clean (no orphaned or missing dependencies)
 - [x] `manage.py check` passes
 - [x] `postcss-custom-properties` removed from dependencies
