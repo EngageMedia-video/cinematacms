@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Recent uploads - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -45,5 +45,5 @@
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/latest.js" %}"></script>
+{% vite_asset 'src/entries/latest.js' %}
 {% endblock bottomimports %}

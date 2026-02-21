@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Manage media - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -15,5 +15,5 @@
 {% block content %}<div id="page-manage-media"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/manage-media.js" %}"></script>
+{% vite_asset 'src/entries/manage-media.js' %}
 {% endblock bottomimports %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}{% if user.name %}{{user.name}} - {% endif %}{{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -15,9 +15,6 @@
 {% endblock headermeta %}
 
 {% block topimports %}
-<link href="{% hashed_static "css/profile-home.css" %}" rel="preload" as="style">
-<link href="{% hashed_static "css/profile-home.css" %}" rel="stylesheet">
-
 <!-- Admin user media: bottom corners only (fixes EDIT MEDIA button overlay) -->
 {% if USE_ROUNDED_CORNERS %}
 <style>
@@ -51,5 +48,5 @@ No such user
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/profile-home.js" %}"></script>
+{% vite_asset 'src/entries/profile-home.js' %}
 {% endblock bottomimports %}

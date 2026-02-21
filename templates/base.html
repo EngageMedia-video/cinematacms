@@ -1,6 +1,6 @@
 {% extends "root.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block beforecontent %}
 {% include "components/header.html" %}
@@ -20,4 +20,4 @@
 {% include "components/footer.html" %}
 {% endblock %}
 
-{% block bottomimports %}<script src="{% hashed_static "js/base.js" %}"></script>{% endblock bottomimports %}
+{% block bottomimports %}{% vite_asset 'src/entries/base.js' %}{% endblock bottomimports %}

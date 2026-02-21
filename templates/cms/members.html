@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Members - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -41,11 +41,10 @@
 {% endblock headermeta %}
 
 {% block topimports %}
-<link rel="stylesheet" href="{% hashed_static "css/members.css" %}">
 {% endblock topimports %}
 
 {% block content %}<div id="page-members"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/members.js" %}"></script>
+{% vite_asset 'src/entries/members.js' %}
 {% endblock bottomimports %}

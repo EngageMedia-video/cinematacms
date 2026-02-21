@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headermeta %}
 
@@ -60,6 +60,6 @@
 {% block content %}<div id="page-home"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/index.js" %}"></script>
+{% vite_asset 'src/entries/index.js' %}
 {% endblock bottomimports %}
 

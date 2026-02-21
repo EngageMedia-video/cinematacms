@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Topics - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -43,5 +43,5 @@
 {% block content %}<div id="page-topics"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/topics.js" %}"></script>
+{% vite_asset 'src/entries/topics.js' %}
 {% endblock bottomimports %}

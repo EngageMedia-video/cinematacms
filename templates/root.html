@@ -1,4 +1,5 @@
 {% load static %}
+{% load django_vite %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,6 +19,9 @@
         {% block externallinks %}{% endblock externallinks %}
 
         {% include "common/head-links.html" %}
+
+        {% vite_react_refresh %}
+        {% vite_hmr_client %}
 
         {% block topimports %}{%endblock topimports %}
 

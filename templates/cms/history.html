@@ -1,14 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}{% if user.name %}{{user.name}} - {% endif %}History - {{PORTAL_NAME}}{% endblock headtitle %}
 
 {% block headermeta %}{% endblock headermeta %}
 
 {% block topimports %}
-<link href="{% hashed_static "css/history.css" %}" rel="preload" as="style">
-<link href="{% hashed_static "css/history.css" %}" rel="stylesheet">
 {%endblock topimports %}
 
 {% block content %}
@@ -16,5 +14,5 @@
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/history.js" %}"></script>
+{% vite_asset 'src/entries/history.js' %}
 {% endblock bottomimports %}

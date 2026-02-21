@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Staff picks - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -44,5 +44,5 @@
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/featured.js" %}"></script>
+{% vite_asset 'src/entries/featured.js' %}
 {% endblock bottomimports %}

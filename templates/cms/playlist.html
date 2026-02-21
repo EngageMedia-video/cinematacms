@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Playlist - {{PORTAL_NAME}}{% endblock headtitle %}
 
 {% block topimports %}
-<link href="{% hashed_static "css/playlist.css" %}" rel="preload" as="style">
-<link href="{% hashed_static "css/playlist.css" %}" rel="stylesheet">
 {%endblock topimports %}
 
 {% block content %}
@@ -14,5 +12,5 @@
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/playlist.js" %}"></script>
+{% vite_asset 'src/entries/playlist.js' %}
 {% endblock bottomimports %}

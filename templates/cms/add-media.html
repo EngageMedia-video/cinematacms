@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Add new media - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -17,8 +17,6 @@
 {% endblock externallinks %}
 
 {% block topimports %}
-<link href="{% hashed_static "css/add-media.css" %}" rel="preload" as="style">
-<link href="{% hashed_static "css/add-media.css" %}" rel="stylesheet">
 {%endblock topimports %}
 
 {% block innercontent %}
@@ -156,7 +154,7 @@
 {% endblock innercontent %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/add-media.js" %}"></script>
+{% vite_asset 'src/entries/add-media.js' %}
 <script>
 	document.addEventListener("DOMContentLoaded", function(event) {
 		function getCSRFToken() {

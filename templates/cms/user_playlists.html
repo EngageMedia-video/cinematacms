@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}{% if user.name %}{{user.name}} - {% endif %}Playlists - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -15,8 +15,6 @@
 {% endblock headermeta %}
 
 {% block topimports %}
-<link href="{% hashed_static "css/profile-playlists.css" %}" rel="preload" as="style">
-<link href="{% hashed_static "css/profile-playlists.css" %}" rel="stylesheet">
 {%endblock topimports %}
 
 {% block innercontent %}
@@ -30,5 +28,5 @@ No such user
 {% endblock %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/profile-playlists.js" %}"></script>
+{% vite_asset 'src/entries/profile-playlists.js' %}
 {% endblock bottomimports %}

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Edit Media - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -16,8 +16,6 @@
 {% endblock externallinks %}
 
 {% block topimports %}
-<link href="{% hashed_static "css/add-media.css" %}" rel="preload" as="style">
-<link href="{% hashed_static "css/add-media.css" %}" rel="stylesheet">
 {% endblock topimports %}
 
 {% block innercontent %}
@@ -1663,3 +1661,6 @@
 
 {% endblock innercontent %}
 
+{% block bottomimports %}
+{% vite_asset 'src/entries/add-media.js' %}
+{% endblock bottomimports %}

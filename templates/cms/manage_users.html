@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Manage users - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -23,5 +23,5 @@
 <div id="page-manage-users"></div>{% endblock %}
 
 {% block bottomimports %}
-<script src="{% hashed_static "js/manage-users.js" %}"></script>
+{% vite_asset 'src/entries/manage-users.js' %}
 {% endblock bottomimports %}
