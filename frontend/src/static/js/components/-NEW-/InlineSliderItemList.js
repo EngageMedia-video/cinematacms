@@ -11,6 +11,8 @@ import ArrowRightIcon from './RightCarouselArrow.js';
 import ArrowLeftIcon from '../LeftCarouselArrow.js';
 
 export function InlineSliderItemList(props) {
+    props = { ...InlineSliderItemList.defaults, ...props };
+
     const [
         items,
         countedItems,
@@ -256,8 +258,8 @@ InlineSliderItemList.propTypes = {
     arrowThreshold: PropTypes.number,
 };
 
-InlineSliderItemList.defaultProps = {
-    ...ItemList.defaultProps,
+InlineSliderItemList.defaults = {
+    ...ItemList.defaults,
     pageItems: 6,
     layout: 'featured',
     firstItemViewer: false,

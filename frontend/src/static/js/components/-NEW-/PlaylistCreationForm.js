@@ -85,34 +85,27 @@ export function PlaylistCreationForm(props){
 
 	function playlistCreationCompleted( new_playlist_data ){
 
-		// TODO: Re-check this.
+		PageActions.addNotification( "Playlist created", 'playlistCreationCompleted');
 
-		setTimeout(function(){	// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
+		const plistData = {
+			playlist_id: (function(_url_){
+				if (!_url_) return null;
+				const parts = _url_.split("/").filter(Boolean);
+				return parts.length ? parts[parts.length - 1] : null;
+			})( new_playlist_data.url ),
+			add_date: new_playlist_data.add_date,
+			description: new_playlist_data.description,
+			title: new_playlist_data.title,
+			media_list: [],
+		};
 
-			PageActions.addNotification( "Playlist created", 'playlistCreationCompleted');
-
-			const plistData = {
-				playlist_id: (function(_url_){
-                    let ret = _url_.split("/");
-                    return 1 <  ret.length ? ret[ ret.length - 1 ] : null;
-                })( new_playlist_data.url ),
-				add_date: new_playlist_data.add_date,
-				description: new_playlist_data.description,
-				title: new_playlist_data.title,
-				media_list: [],
-			};
-
-			props.onPlaylistSave( plistData );
-
-		}, 100);
+		if( 'function' === typeof props.onPlaylistSave ){
+			setTimeout(() => props.onPlaylistSave(plistData), 0);
+		}
 	}
 
 	function playlistCreationFailed(){
-		// TODO: Re-check this.
-		setTimeout(function(){	// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-			PageActions.addNotification( "Playlist creation failed", 'playlistCreationFailed');
-			// this.props.onCancel();
-		}, 100);
+		PageActions.addNotification( "Playlist creation failed", 'playlistCreationFailed');
 	}
 
 	function onCancelPlaylistCreation(){

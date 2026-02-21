@@ -18,9 +18,8 @@ import { addClassname, removeClassname } from "./functions/dom";
 import stylesheet from "../styles/PlaylistsSelection.scss";
 
 function PlaylistsSingleSelection(props) {
+	props = { isChecked: false, title: "", ...props };
 	function onChange(ev) {
-		ev.persist();
-
 		if (props.isChecked) {
 			MediaPageActions.removeMediaFromPlaylist(
 				props.playlistId,
@@ -47,11 +46,6 @@ PlaylistsSingleSelection.propTypes = {
 	playlistId: PropTypes.string,
 	isChecked: PropTypes.bool,
 	title: PropTypes.string,
-};
-
-PlaylistsSingleSelection.defaultProps = {
-	isChecked: false,
-	title: "",
 };
 
 export function PlaylistsSelection(props) {

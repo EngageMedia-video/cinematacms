@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from "react";
-import ReactDOM from "react-dom";
 import PropTypes from "prop-types";
 
 import { usePopup } from "../../../components/-NEW-/hooks/usePopup";
@@ -22,6 +21,8 @@ import { PopupMain } from "../../../components/-NEW-/Popup";
 class ProfileSearchBar extends React.PureComponent {
 	constructor(props) {
 		super(props);
+
+		this.searchInputRef = React.createRef();
 
 		this.state = {
 			visibleForm: false,
@@ -153,7 +154,7 @@ class ProfileSearchBar extends React.PureComponent {
 	}
 
 	onFormSubmit(ev) {
-		if ("" === this.refs.SearchInput.value.trim()) {
+		if ("" === this.searchInputRef.current.value.trim()) {
 			ev.preventDefault();
 			ev.stopPropagation();
 		}
@@ -193,7 +194,7 @@ class ProfileSearchBar extends React.PureComponent {
 				<span>
 					<input
 						autoFocus={true}
-						ref="SearchInput"
+						ref={this.searchInputRef}
 						type="text"
 						name="aq"
 						placeholder="Search"
@@ -235,6 +236,9 @@ InlineTab.propTypes = {
 class NavMenuInlineTabs extends React.PureComponent {
 	constructor(props) {
 		super(props);
+
+		this.tabsNavRef = React.createRef();
+		this.itemsListWrapRef = React.createRef();
 
 		this.state = {
 			displayNext: false,
@@ -318,7 +322,7 @@ class NavMenuInlineTabs extends React.PureComponent {
 	updateSlider(afterItemsUpdate) {
 		if (!this.inlineSlider) {
 			this.inlineSlider = new ItemsInlineSlider(
-				this.refs.itemsListWrap,
+				this.itemsListWrapRef.current,
 				".profile-nav ul li"
 			);
 		}
@@ -354,13 +358,13 @@ class NavMenuInlineTabs extends React.PureComponent {
 
 		return (
 			<nav
-				ref="tabsNav"
+				ref={this.tabsNavRef}
 				className="profile-nav items-list-outer list-inline list-slider"
 			>
 				<div className="profile-nav-inner items-list-outer">
 					{this.state.displayPrev ? this.previousBtn : null}
 
-					<ul className="items-list-wrap" ref="itemsListWrap">
+					<ul className="items-list-wrap" ref={this.itemsListWrapRef}>
 						<InlineTab
 							id="about"
 							isActive={"about" === this.props.type}
@@ -463,6 +467,7 @@ function EditProfileButton(props) {
 }
 
 export default function ProfilePagesHeader(props) {
+	props = { type: "home", ...props };
 	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
 
 	const profilePageHeaderRef = useRef(null);
@@ -497,7 +502,7 @@ export default function ProfilePagesHeader(props) {
 		positions.profileNavTop =
 			positions.profileHeaderTop +
 			profilePageHeaderRef.current.offsetHeight -
-			profileNavRef.current.refs.tabsNav.offsetHeight;
+			profileNavRef.current.tabsNavRef.current.offsetHeight;
 	}
 
 	function updateFixedNavPosition() {
@@ -516,17 +521,13 @@ export default function ProfilePagesHeader(props) {
 	}
 
 	function onProfileDelete(username) {
-		// TODO: Re-check this...
+		PageActions.addNotification(
+			"Profile removed. Redirecting...",
+			"profileDelete"
+		);
 		setTimeout(function () {
-			// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-			PageActions.addNotification(
-				"Profile removed. Redirecting...",
-				"profileDelete"
-			);
-			setTimeout(function () {
-				window.location.href = SiteContext._currentValue.url;
-			}, 2000);
-		}, 100);
+			window.location.href = SiteContext._currentValue.url;
+		}, 2000);
 
 		if (void 0 !== username) {
 			console.info("Removed user's profile '" + username + '"');
@@ -534,11 +535,7 @@ export default function ProfilePagesHeader(props) {
 	}
 
 	function onProfileDeleteFail(username) {
-		// TODO: Re-check this...
-		setTimeout(function () {
-			// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-			PageActions.addNotification("Profile removal failed", "profileDeleteFail");
-		}, 100);
+		PageActions.addNotification("Profile removal failed", "profileDeleteFail");
 
 		if (void 0 !== username) {
 			console.info('Profile "' + username + '"' + " removal failed");
@@ -685,6 +682,3 @@ ProfilePagesHeader.propTypes = {
 	onQueryChange: PropTypes.func,
 };
 
-ProfilePagesHeader.defaultProps = {
-	type: "home",
-};

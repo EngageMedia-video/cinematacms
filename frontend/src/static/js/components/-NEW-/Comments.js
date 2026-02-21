@@ -39,6 +39,8 @@ const commentsText = {
 };
 
 function CommentForm(props) {
+	props = { comment_type: 'new', ...props };
+
 	const textareaRef = useRef(null);
 
 	const [value, setValue] = useState('');
@@ -116,7 +118,7 @@ function CommentForm(props) {
 			MediaPageStore.removeListener('comment_submit', onCommentSubmit);
 			MediaPageStore.removeListener('comment_submit_fail', onCommentSubmitFail);
 		};
-	});
+	}, []);
 
 	return !MEMBER.is.anonymous ? (
 		<div className="comments-form">
@@ -175,9 +177,6 @@ CommentForm.propTypes = {
 	reply_comment_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
-CommentForm.defaultProps = {
-	comment_type: 'new',
-};
 
 const ENABLED_COMMENTS_READ_MORE = false;
 
@@ -231,6 +230,8 @@ function CommentActions(props) {
 }
 
 function Comment(props) {
+	props = { author_name: '', author_link: '#', publish_date: null, likes: 0, dislikes: 0, ...props };
+
 	const commentTextRef = useRef(null);
 	const commentTextInnerRef = useRef(null);
 
@@ -279,7 +280,7 @@ function Comment(props) {
 								{props.author_name}
 							</a>
 						</div>
-						<div className="comment-date">{replaceString(format(new Date(props.publish_date)))}</div>
+						<div className="comment-date">{props.publish_date != null ? replaceString(format(new Date(props.publish_date))) : ''}</div>
 					</div>
 					<div ref={commentTextRef} className={'comment-text' + (viewMoreContent ? ' show-all' : '')}>
 						<div
@@ -312,13 +313,6 @@ Comment.propTypes = {
 	dislikes: PropTypes.number,
 };
 
-Comment.defaultProps = {
-	author_name: '',
-	author_link: '#',
-	publish_date: 0,
-	likes: 0,
-	dislikes: 0,
-};
 
 function displayCommentsRelatedAlert() {
 	// TODO: Improve this and move it into Media Page code.
@@ -464,30 +458,20 @@ export default function CommentsList(props) {
 
 	function onCommentSubmit(commentId) {
 		onCommentsLoad();
-		// FIXME: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-		setTimeout(() => PageActions.addNotification(commentsText.ucfirstSingle + ' added', 'commentSubmit'), 100);
+		PageActions.addNotification(commentsText.ucfirstSingle + ' added', 'commentSubmit');
 	}
 
 	function onCommentSubmitFail() {
-		// FIXME: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-		setTimeout(
-			() => PageActions.addNotification(commentsText.ucfirstSingle + ' submission failed', 'commentSubmitFail'),
-			100,
-		);
+		PageActions.addNotification(commentsText.ucfirstSingle + ' submission failed', 'commentSubmitFail');
 	}
 
 	function onCommentDelete(commentId) {
 		onCommentsLoad();
-		// FIXME: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-		setTimeout(() => PageActions.addNotification(commentsText.ucfirstSingle + ' removed', 'commentDelete'), 100);
+		PageActions.addNotification(commentsText.ucfirstSingle + ' removed', 'commentDelete');
 	}
 
 	function onCommentDeleteFail(commentId) {
-		// FIXME: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-		setTimeout(
-			() => PageActions.addNotification(commentsText.ucfirstSingle + ' removal failed', 'commentDeleteFail'),
-			100,
-		);
+		PageActions.addNotification(commentsText.ucfirstSingle + ' removal failed', 'commentDeleteFail');
 	}
 
 	useEffect(() => {

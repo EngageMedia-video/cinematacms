@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { ItemList } from './ItemList';
 
 export function PlaylistPageMedia(props){
+	props = { hidePlaylistOptions: true, ...props };
 
 	return ( <ItemList
 				items={ props.media }
@@ -28,6 +29,3 @@ PlaylistPageMedia.propTypes = {
 	hidePlaylistOptions: PropTypes.bool,
 };
 
-PlaylistPageMedia.defaultProps = {
-	hidePlaylistOptions: true,
-};

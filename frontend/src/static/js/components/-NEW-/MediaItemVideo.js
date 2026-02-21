@@ -16,6 +16,7 @@ import PageStore from '../../pages/_PageStore.js';
 import MediaDurationInfo from '../../classes/MediaDurationInfo';
 
 export function MediaItemVideo(props){
+	props = { ...MediaItemVideo.defaults, ...props };
 
 	const type = props.type;
 
@@ -62,7 +63,7 @@ export function MediaItemVideo(props){
 		return props.hidePlaylistOptions ? null : <MediaPlaylistOptions key="options" media_id={ mediaId } playlist_id={ props.playlist_id } />;
 	}
 
-	const containerClassname = itemClassname( 'item ' + type + '-item', props.class_name.trim(), props.playlistOrder === props.playlistActiveItem );
+	const containerClassname = itemClassname( 'item ' + type + '-item', (props.class_name ?? '').trim(), props.playlistOrder === props.playlistActiveItem );
 
 	return (<div className={ containerClassname }>
 
@@ -95,8 +96,8 @@ MediaItemVideo.propTypes = {
 	playlist_id: PropTypes.string,
 };
 
-MediaItemVideo.defaultProps = {
-	...MediaItem.defaultProps,
+MediaItemVideo.defaults = {
+	...MediaItem.defaults,
 	type: 'video',
 	duration: 0,
 	hidePlaylistOptions: true,

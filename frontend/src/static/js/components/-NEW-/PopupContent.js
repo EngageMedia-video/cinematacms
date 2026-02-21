@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState, useImperativeHandle, useCallback } from 'react';
-import { findDOMNode } from 'react-dom';
 
 import { default as Popup } from './Popup';
 
@@ -12,16 +11,14 @@ export function PopupContent(props){
 	const [ isVisible, setVisibility ] = useState(false);
 
 	const onClickOutside = useCallback((ev) => {
-		
+
 		if( hasClassname( ev.target, 'popup-fullscreen-overlay' ) ){
 			// console.log('ON CLICK OUTSIDE #1');
 			hide();
 			return;
 		}
 
-		const domElem = findDOMNode( wrapperRef.current );
-
-		if( -1 === ev.path.indexOf( domElem ) ){
+		if( wrapperRef.current && !wrapperRef.current.contains(ev.target) ){
 			// console.log('ON CLICK OUTSIDE #2');
 			hide();
 		}

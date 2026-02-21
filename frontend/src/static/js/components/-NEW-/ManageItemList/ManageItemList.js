@@ -416,6 +416,7 @@ function paginationButtonsList( maxPagin, pagesNumber ){
 }
 
 export function ManageItemList(props){
+	props = { maxItems: 99999, pageItems: 24, requestUrl: null, ...props };
 
 	const [
 		countedItems,
@@ -656,23 +657,6 @@ export function ManageItemList(props){
            );
 }
 
-ManageItemList.defaultProps = {
-    itemsCountCallback: PropTypes.func,
-    maxItems: PropTypes.number.isRequired,
-    pageItems: PropTypes.number.isRequired,
-    requestUrl: PropTypes.string.isRequired,
-    onPageChange: PropTypes.func,
-    onRowsDelete: PropTypes.func,
-    onRowsDeleteFail: PropTypes.func,
-    pageItems: 24,
-};
-
-ManageItemList.defaultProps = {
-    maxItems: 99999,
-    // pageItems: 48,
-    pageItems: 24,
-    requestUrl: null,
-};
 
 // export class AsyncManageItemListSync extends React.PureComponent {
 

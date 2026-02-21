@@ -252,6 +252,7 @@ function getPopupPages( mediaData, allowDownload, downloadLink, mediaReported, s
 const defaultContainerClassname = 'more-options active-options';
 
 export function MediaMoreOptionsIcon(props){
+	props = { allowDownload: false, ...props };
 
 	const user = UserContext._currentValue;
 	const site = SiteContext._currentValue;
@@ -275,12 +276,9 @@ export function MediaMoreOptionsIcon(props){
 
 	function onCompleteMediaReport(){
 		popupContentRef.current.tryToHide();
-		// TODO: Re-check this.
-		setTimeout(function(){	// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-			PageActions.addNotification( "Media Reported", 'reportedMedia' );
-			setReported(true);
-			MediaPageStore.removeListener( "reported_media", onCompleteMediaReport );
-		}, 100);
+		PageActions.addNotification( "Media Reported", 'reportedMedia' );
+		setReported(true);
+		MediaPageStore.removeListener( "reported_media", onCompleteMediaReport );
 	}
 
 	useEffect( () => {
@@ -347,6 +345,3 @@ MediaMoreOptionsIcon.propTypes = {
 	allowDownload: PropTypes.bool.isRequired,
 };
 
-MediaMoreOptionsIcon.defaultProps = {
-	allowDownload: false,
-};

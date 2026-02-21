@@ -41,6 +41,7 @@ const filters = {
 };
 
 export function ManageMediaFilters(props){
+	props = { hidden: false, ...props };
 
 	const [ isHidden, setIsHidden ] = useState( props.hidden );
 
@@ -156,6 +157,3 @@ ManageMediaFilters.propTypes = {
 	hidden: PropTypes.bool,
 };
 
-ManageMediaFilters.defaultProps = {
-	hidden: false,
-};

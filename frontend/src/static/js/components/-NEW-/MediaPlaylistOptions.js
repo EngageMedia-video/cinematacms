@@ -47,21 +47,13 @@ export function MediaPlaylistOptions(props){
 
 	function mediaPlaylistRemovalCompleted(){
 		popupContentRef.current.tryToHide();
-		const props_media_id = props.media_id;
-		const props_playlist_id = props.playlist_id;
-		setTimeout(function(){	// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-			PageActions.addNotification( "Media removed from playlist", 'mediaPlaylistRemove');
-			PlaylistPageActions.removedMediaFromPlaylist( props_media_id, props_playlist_id );
-		}, 100);
-		// console.info('Media "' + this.props.media_id + '" removed from playlist "' + this.props.playlist_id + '"');
+		PageActions.addNotification( "Media removed from playlist", 'mediaPlaylistRemove');
+		PlaylistPageActions.removedMediaFromPlaylist( props.media_id, props.playlist_id );
 	}
 
 	function mediaPlaylistRemovalFailed(){
 		popupContentRef.current.tryToHide();
-		setTimeout(function(){	// @note: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-			PageActions.addNotification( "Media removal from playlist failed", 'mediaPlaylistRemoveFail');
-		}, 100);
-		// console.info('Media "' + this.props.media_id + '" removal from playlist "' + this.props.playlist_id + '" failed');
+		PageActions.addNotification( "Media removal from playlist failed", 'mediaPlaylistRemoveFail');
 	}
 
 	function proceedRemoval(){

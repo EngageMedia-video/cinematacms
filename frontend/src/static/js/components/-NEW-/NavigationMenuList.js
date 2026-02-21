@@ -8,6 +8,7 @@ import stylesheet from "../styles/NavigationMenuList.scss";
 // TODO: Recheck components.
 
 function NavigationMenuListItem(props){
+	props = { itemType: 'link', iconPos: 'left', active: false, ...props };
 
 	let children = [];
 
@@ -71,13 +72,8 @@ NavigationMenuListItem.propTypes = {
 	linkAttr: PropTypes.object,
 };
 
-NavigationMenuListItem.defaultProps = {
-	itemType: 'link',
-	iconPos: 'left',
-	active: !1
-};
-
 export function NavigationMenuList(props){
+	props = { removeVerticalPadding: false, ...props };
 	const menuItems = props.items.map( ( item, index ) => <NavigationMenuListItem key={ index } { ...item } /> );
 	return( menuItems.length ? <div className={ "nav-menu" + ( props.removeVerticalPadding ? ' pv0' : '' ) }><nav><ul>{ menuItems }</ul></nav></div> : null );
 }
@@ -87,6 +83,3 @@ NavigationMenuList.propTypes = {
 	items: PropTypes.arrayOf( PropTypes.shape( NavigationMenuListItem.propTypes ) ).isRequired,
 };
 
-NavigationMenuList.defaultProps = {
-	removeVerticalPadding: false,
-};

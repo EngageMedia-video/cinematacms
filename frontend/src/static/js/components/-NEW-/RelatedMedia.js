@@ -7,6 +7,7 @@ import MediaPageStore from '../../pages/MediaPage/store.js';
 import { ItemList } from './ItemList';
 
 export function RelatedMedia(props){
+	props = { hideFirst: true, ...props };
 
 	const [ items, setItems ] = useState( updateMediaItems() );
 	const [ mediaType, setMediaType ] = useState( null );
@@ -43,6 +44,3 @@ RelatedMedia.propTypes = {
 	hideFirst: PropTypes.bool,
 };
 
-RelatedMedia.defaultProps = {
-	hideFirst: true,
-};
