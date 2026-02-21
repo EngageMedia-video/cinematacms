@@ -84,7 +84,7 @@ jobs:
             cat /tmp/changed_deps.txt
 
             # Extract the first changed dependency name and version
-            CHANGED_DEP=$(cat /tmp/changed_deps.txt | head -1 | sed 's/^+[[:space:]]*//' | sed 's/"//g' | cut -d'=' -f1 | tr -d ',' | xargs)
+            CHANGED_DEP=$(cat /tmp/changed_deps.txt | head -1 | sed 's/^+[[:space:]]*//' | sed 's/"//g' | sed 's/[><=~!].*//' | tr -d ',' | xargs)
             echo "changed_dep=${CHANGED_DEP}" >> $GITHUB_OUTPUT
             echo "Primary changed dependency: ${CHANGED_DEP}"
           else
