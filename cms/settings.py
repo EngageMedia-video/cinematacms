@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "django_vite",
     "django.contrib.staticfiles",
     "django.contrib.sites",
     "rest_framework",
@@ -231,6 +232,18 @@ STORAGES = {
 
 AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "/"
+
+# Django-Vite integration
+# dev_mode uses a dedicated env var (NOT tied to DEBUG) to avoid breaking
+# production if DEBUG=True reaches it. Requires explicit opt-in.
+DJANGO_VITE = {
+    "default": {
+        "dev_mode": os.getenv("VITE_DEV_MODE", "False") == "True",
+        "manifest_path": os.path.join(
+            BASE_DIR, "static_collected", ".vite", "manifest.json"
+        ),
+    },
+}
 
 
 # CELERY STUFF

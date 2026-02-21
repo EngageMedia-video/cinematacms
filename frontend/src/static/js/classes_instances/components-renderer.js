@@ -31,3 +31,7 @@ function componentRenderer(){
 };
 
 export default componentRenderer();
+
+if (import.meta.hot) {
+	import.meta.hot.decline();
+}
