@@ -239,8 +239,11 @@ LOGIN_REDIRECT_URL = "/"
 DJANGO_VITE = {
     "default": {
         "dev_mode": os.getenv("VITE_DEV_MODE", "False") == "True",
+        # Point directly at the build output — Django's collectstatic ignores
+        # dot-directories by default ('.*' in StaticFilesConfig.ignore_patterns),
+        # so .vite/manifest.json never gets copied to static_collected/.
         "manifest_path": os.path.join(
-            BASE_DIR, "static_collected", ".vite", "manifest.json"
+            BASE_DIR, "frontend", "build", "production", "static", ".vite", "manifest.json"
         ),
     },
 }

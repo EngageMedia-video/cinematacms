@@ -128,9 +128,7 @@ frontend/
 │           └── media-DlFZhN3M.css
 
 static_collected/                      # Django's collected static files
-├── .vite/
-│   └── manifest.json                  # Copied from frontend build
-├── assets/
+├── assets/                            # Copied from frontend build
 │   ├── index-D_w1zyLc.js
 │   └── _helpers-xk_PGhMb.css
 ├── css/
@@ -147,7 +145,7 @@ static_collected/                      # Django's collected static files
 
 **Solution**:
 1. Run the build: `make frontend-build`
-2. Verify manifest exists: `ls static_collected/.vite/manifest.json`
+2. Verify manifest exists: `ls frontend/build/production/static/.vite/manifest.json`
 3. Check DJANGO_VITE manifest_path in settings matches actual location
 
 ### Issue: Changes not appearing after deployment

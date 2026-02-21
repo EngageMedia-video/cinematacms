@@ -203,7 +203,6 @@ cinematacms/
 │   └── ...
 ├── static_collected/                # Final collected static files (git-ignored)
 │   ├── assets/                     # Vite assets (from frontend build)
-│   ├── .vite/manifest.json         # Vite manifest
 │   ├── admin/                      # Django admin files
 │   ├── lib/                        # Libraries
 │   └── css/_extra.css              # Site-specific CSS
@@ -252,7 +251,7 @@ STORAGES = {
 DJANGO_VITE = {
     "default": {
         "dev_mode": os.getenv("VITE_DEV_MODE", "False") == "True",
-        "manifest_path": os.path.join(BASE_DIR, "static_collected", ".vite", "manifest.json"),
+        "manifest_path": os.path.join(BASE_DIR, "frontend", "build", "production", "static", ".vite", "manifest.json"),
     },
 }
 ```
