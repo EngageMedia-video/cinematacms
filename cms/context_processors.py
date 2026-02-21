@@ -19,4 +19,5 @@ def ui_settings(request):
         'MAINTENANCE_MODE_EXTENSION_TIME': maintenance_extension_time,  # Seconds beyond initial estimate
         'MAINTENANCE_MODE_ELAPSED_TIME': maintenance_elapsed_time,  # Total seconds since start
         'DEFAULT_FROM_EMAIL': getattr(settings, 'DEFAULT_FROM_EMAIL', 'support@example.com'),
+        'EXTRA_CSS_VERSION': getattr(settings, 'EXTRA_CSS_VERSION', '1'),
     }

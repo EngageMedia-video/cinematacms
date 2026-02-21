@@ -83,9 +83,9 @@ We use plain `StaticFilesStorage` (not `ManifestStaticFilesStorage`) because:
 {# Load a page entry (includes all JS + CSS dependencies): #}
 {% vite_asset 'src/entries/media.js' %}
 
-{# For non-Vite static files (e.g., _extra.css): #}
+{# For non-Vite static files (e.g., _extra.css) with query-string cache-busting: #}
 {% load static %}
-<link href="{% static 'css/_extra.css' %}" rel="stylesheet">
+<link href="{% static 'css/_extra.css' %}?v={{ EXTRA_CSS_VERSION }}" rel="stylesheet">
 ```
 
 ## Build Process

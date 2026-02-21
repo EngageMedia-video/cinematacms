@@ -230,6 +230,10 @@ STORAGES = {
     },
 }
 
+# Cache-busting version for non-hashed static files (e.g. _extra.css).
+# Bump this when updating files not processed by Vite's content hashing.
+EXTRA_CSS_VERSION = "1"
+
 AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "/"
 
