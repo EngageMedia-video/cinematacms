@@ -218,15 +218,15 @@ STATICFILES_DIRS = [
 ]
 
 # Static files storage without post-processing
-# Webpack handles content hashing (adds [contenthash] to filenames), so Django
-# doesn't need to reprocess files. This avoids issues with missing fonts and
-# complex CSS URL rewriting during collectstatic.
+# Vite handles content hashing (adds [hash] to filenames), so Django doesn't
+# need ManifestStaticFilesStorage (which would double-hash Vite's output and
+# break font URL rewriting in CSS files). Plain StaticFilesStorage is correct.
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "cms.storage.WebpackHashedFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
