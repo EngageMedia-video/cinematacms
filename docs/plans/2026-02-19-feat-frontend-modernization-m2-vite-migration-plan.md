@@ -1,7 +1,7 @@
 ---
 title: "M2: Vite Migration"
 type: feat
-status: active
+status: completed
 date: 2026-02-19
 parent: 2026-02-19-feat-frontend-modernization-react19-vite-modern-track-plan.md
 milestone: M2
@@ -341,7 +341,7 @@ Estimated: 5-10 minutes
 
 - [x] Vite production build succeeds with 27+ entries in `.vite/manifest.json`
 - [x] `{% vite_hmr_client %}` renders HMR client in dev, nothing in production
-- [ ] `_extra.css` loads correctly via `{% static %}` with query-string cache-busting
+- [x] `_extra.css` loads correctly via `{% static %}` with query-string cache-busting
 - [x] All 30+ page types load without console errors in both dev and production
 - [x] Dark/light theme toggle works on all pages
 - [x] Zero Webpack references remaining in codebase (grep verification)
