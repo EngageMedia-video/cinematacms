@@ -13,18 +13,13 @@
 		<meta name="application-name" content="Cinemata">
 
 		{% if LOAD_FROM_CDN %}
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="preload" as="style">
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		{% else %}
-		<link href="{% static "lib/material-icons/material-icons.css" %}" rel="preload" as="style">
 		<link href="{% static "lib/material-icons/material-icons.css" %}" rel="stylesheet">
 		{% endif %}
 
-		<link href="{% static "lib/Amulya/amulya.css" %}" rel="preload" as="style">
 		<link href="{% static "lib/Amulya/amulya.css" %}" rel="stylesheet">
 
-		<link href="{% static "lib/Facultad/Facultad-Regular.css" %}" rel="preload" as="style">
 		<link href="{% static "lib/Facultad/Facultad-Regular.css" %}" rel="stylesheet">
 
-		<link href="{% static "css/_extra.css" %}?v={{ EXTRA_CSS_VERSION }}" rel="preload" as="style">
 		<link href="{% static "css/_extra.css" %}?v={{ EXTRA_CSS_VERSION }}" rel="stylesheet">

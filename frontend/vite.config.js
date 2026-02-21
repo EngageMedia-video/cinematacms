@@ -51,8 +51,8 @@ export default defineConfig({
   build: {
     outDir: 'build/production/static',
     manifest: true,
-    sourcemap: false,
     rollupOptions: {
+      external: ['video.js'],
       input: {
         'base': 'src/entries/base.js',
         'index': 'src/entries/index.js',
@@ -80,20 +80,10 @@ export default defineConfig({
         'liked': 'src/entries/liked.js',
         'add-media': 'src/entries/add-media.js',
         'error': 'src/entries/error.js',
-        'demo': 'src/entries/demo.js',
       },
       output: {
-        manualChunks: {
-          vendor: [
-            'react',
-            'react-dom',
-            'axios',
-            'flux',
-            'events',
-            'sortablejs',
-            'timeago.js',
-            'url-parse',
-          ],
+        globals: {
+          'video.js': 'videojs',
         },
       },
     },

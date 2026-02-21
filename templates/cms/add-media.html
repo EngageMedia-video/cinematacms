@@ -8,8 +8,8 @@
 
 {% block externallinks %}
 {% if LOAD_FROM_CDN %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" rel="preload" as="script">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" rel="preload" as="script" integrity="sha384-s4tTAUzowK9zROQxp/mYIe9Ah2IqXf8pSUWZAk4o2C/Ri/wSbqiEE1+F6AQIQaAz" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" integrity="sha384-s4tTAUzowK9zROQxp/mYIe9Ah2IqXf8pSUWZAk4o2C/Ri/wSbqiEE1+F6AQIQaAz" crossorigin="anonymous"></script>
 {% else %}
 <link href="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}" rel="preload" as="script">
 <script src="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}"></script>

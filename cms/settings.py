@@ -12,7 +12,9 @@ ALLOWED_HOSTS = [
     "localhost",
 ]
 # Import default headers to extend them
-CORS_ORIGIN_ALLOW_ALL = True
+# In production, override with explicit CORS_ALLOWED_ORIGINS list.
+# CORS_ORIGIN_ALLOW_ALL = True is kept for local development only.
+CORS_ORIGIN_ALLOW_ALL = os.getenv("CORS_ALLOW_ALL", "True") == "True"
 CORS_ALLOW_HEADERS = default_headers + (
     "x-requested-with",  # Add X-Requested-With
     "if-modified-since",  # Add If-Modified-Since
@@ -231,8 +233,15 @@ STORAGES = {
 }
 
 # Cache-busting version for non-hashed static files (e.g. _extra.css).
-# Bump this when updating files not processed by Vite's content hashing.
-EXTRA_CSS_VERSION = "1"
+# Computed from file content hash — no manual bumping needed.
+import hashlib as _hashlib
+_extra_css_path = os.path.join(BASE_DIR, "static", "css", "_extra.css")
+try:
+    EXTRA_CSS_VERSION = _hashlib.md5(
+        open(_extra_css_path, "rb").read()
+    ).hexdigest()[:8]
+except FileNotFoundError:
+    EXTRA_CSS_VERSION = "1"
 
 AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "/"
@@ -474,7 +483,10 @@ CAN_SHARE_MEDIA = True  # whether the share media appears
 ALLOW_RATINGS = False
 ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY = False
 
-X_FRAME_OPTIONS = "ALLOWALL"
+# SAMEORIGIN by default; embed view uses @xframe_options_exempt decorator.
+X_FRAME_OPTIONS = "SAMEORIGIN"
+# TODO: Configure Content-Security-Policy via django-csp middleware.
+# See todos/006-pending-p2-no-csp-configured.md for implementation details.
 EMAIL_BACKEND = "djcelery_email.backends.CeleryEmailBackend"
 CELERY_EMAIL_TASK_CONFIG = {
     "queue": "short_tasks",

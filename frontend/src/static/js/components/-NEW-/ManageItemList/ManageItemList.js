@@ -11,11 +11,11 @@ import getCSRFToken from '../../../functions/getCSRFToken';
 import deleteRequest from '../../../functions/deleteRequest';
 import { PositiveInteger } from '../../../functions/propTypeFilters';
 
+import urlParse from 'url-parse';
+
 import { renderManageItems } from './includes/functions';
 import initManageItemsList from './includes/initManageItemsList';
 import { ManageItemsListHandler } from "./includes/ManageItemsListHandler";
-
-const urlParse = require('url-parse');
 
 import "../../styles/ManageItemList.scss";
 

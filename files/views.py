@@ -17,6 +17,7 @@ from django.db import models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.views.decorators.clickjacking import xframe_options_exempt
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from rest_framework import permissions, status
@@ -464,6 +465,7 @@ def view_old_media(request, user, video):
     return render(request, "cms/media.html", context)
 
 
+@xframe_options_exempt
 def embed_old_media(request, user, video):
     url = "/Members/{0}/videos/{1}".format(user, video)
     media = (
@@ -911,6 +913,7 @@ def edit_subtitle(request):
     return render(request, "cms/edit_subtitle.html", context)
 
 
+@xframe_options_exempt
 def embed_media(request):
     friendly_token = request.GET.get("m", "").strip()
     if not friendly_token:

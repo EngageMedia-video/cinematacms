@@ -131,11 +131,11 @@
 
         {% if can_see_restricted_media %}
             <div id="page-media"></div>
+            {{ media_object.password|json_script:"media-password" }}
             <script>
-                // setting the password for the media so that store.js can retrieve it and
-                // send it
-                let password = "{{media_object.password}}"
-                MediaCMS.provided_password = password
+                MediaCMS.provided_password = JSON.parse(
+                    document.getElementById('media-password').textContent
+                );
             </script>
         {% else %}
             <div class="user-action-form-wrap">

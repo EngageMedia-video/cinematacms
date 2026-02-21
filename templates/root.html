@@ -20,8 +20,10 @@
 
         {% include "common/head-links.html" %}
 
+        {% if VITE_DEV_MODE %}
         {% vite_react_refresh %}
         {% vite_hmr_client %}
+        {% endif %}
 
         {% block topimports %}{%endblock topimports %}
 
@@ -52,20 +54,6 @@
             }
         </style>
         {% endif %}
-        
-        <!-- Rounded corners conditional override -->
-        {% if not USE_ROUNDED_CORNERS %}
-        <style>
-            .item-thumb,
-            a.item-thumb,
-            .item.video-item,
-            .item-content,
-            .video-js,
-            .video-player {
-                border-radius: 0 !important;
-            }
-        </style>
-        {% endif %}
     {% endblock head %}
 </head>
 
@@ -80,10 +68,12 @@
 
     {% block aftercontent %}{% endblock %}
 
-    {# Video.js loading #}
+    {# Video.js CSS & JS loading #}
     {% if LOAD_FROM_CDN %}
-    <script src="https://vjs.zencdn.net/7.20.2/video.min.js"></script>
+    <link href="https://vjs.zencdn.net/7.20.2/video-js.min.css" rel="stylesheet" integrity="sha384-m/+gruJNOZgxOA44GgPxiXxSBPKfJTu36EVTc8fYIVPKd6V8pBhUoCHx/Zl71xQL" crossorigin="anonymous">
+    <script src="https://vjs.zencdn.net/7.20.2/video.min.js" integrity="sha384-bvO7eGWph8VhsDHnTORUdWRBA1eMIDM+6dzezVZTlHafSfIguxaRh3lCnUmPNHG7" crossorigin="anonymous"></script>
     {% else %}
+    <link href="{% static "lib/video-js/7.20.2/video-js.min.css" %}" rel="stylesheet">
     <script src="{% static "lib/video-js/7.20.2/video.min.js" %}"></script>
     {% endif %}
 

@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 
 def ui_settings(request):
@@ -20,4 +22,5 @@ def ui_settings(request):
         'MAINTENANCE_MODE_ELAPSED_TIME': maintenance_elapsed_time,  # Total seconds since start
         'DEFAULT_FROM_EMAIL': getattr(settings, 'DEFAULT_FROM_EMAIL', 'support@example.com'),
         'EXTRA_CSS_VERSION': getattr(settings, 'EXTRA_CSS_VERSION', '1'),
+        'VITE_DEV_MODE': os.getenv("VITE_DEV_MODE", "False") == "True",
     }
