@@ -44,6 +44,35 @@ dependencies = [
 
 [dependency-groups]
 dev = ["basedpyright>=1.29.2", "ruff>=0.13.0"]
+e2e = [
+    "playwright>=1.40.0",
+    "pytest>=8.0.0",
+    "pytest-playwright>=0.4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["e2e"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "smoke: Critical path smoke tests (Phase 1)",
+    "auth: Authentication tests",
+    "theme: Theme switching tests",
+    "search: Search functionality tests",
+    "media: Media viewing tests",
+    "comments: Comment system tests",
+    "api: API endpoint tests",
+    "playlists: Playlist tests",
+    "profiles: User profile tests",
+    "permissions: Permission and role tests",
+    "upload: File upload tests",
+    "management: Admin management tests",
+    "embed: Embed player tests",
+    "rss: RSS feed tests",
+    "contact: Contact form tests",
+]
+addopts = "--tb=short"
 
 [tool.uv.sources]
 django-tinymce = { git = "https://github.com/jazzband/django-tinymce.git", rev = "685236d36af37afbb8e069099879b3489bbe8216" }
