@@ -2,12 +2,12 @@ import React, { useContext } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
-import { usePage, PageLayout } from '../../pages/page';
-import ApiUrlContext from '../../contexts/ApiUrlContext';
-import SiteContext from '../../contexts/SiteContext';
+import { usePage, PageLayout } from '../../static/js/pages/page';
+import ApiUrlContext from '../../static/js/contexts/ApiUrlContext';
+import SiteContext from '../../static/js/contexts/SiteContext';
 import useDemoStore from './useDemoStore';
 
-import '../../../css/tailwind.css';
+import '../../static/css/tailwind.css';
 
 function formatDuration(seconds) {
 	if (!seconds) return null;

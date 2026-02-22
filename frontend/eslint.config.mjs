@@ -28,7 +28,7 @@ export default [
 
 	// Modern track: ERROR on legacy imports
 	{
-		files: ['src/static/js/features/**/*.{js,jsx}'],
+		files: ['src/features/**/*.{js,jsx}'],
 		rules: {
 			'no-restricted-imports': [
 				'error',
