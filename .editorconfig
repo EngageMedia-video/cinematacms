@@ -1,0 +1,42 @@
+# editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Python — PEP 8: 4 spaces, 79/120 char lines
+[*.py]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# Django templates
+[*.html]
+indent_style = tab
+indent_size = 4
+
+# CSS / SCSS
+[*.{css,scss}]
+indent_style = tab
+indent_size = 4
+
+# Config files — 2 spaces is standard for JSON/YAML/TOML
+[*.{json,yml,yaml,toml}]
+indent_style = space
+indent_size = 2
+
+# Markdown — preserve trailing whitespace (line breaks)
+[*.md]
+trim_trailing_whitespace = false
+
+# Makefiles require tabs
+[Makefile]
+indent_style = tab
+
+# Shell scripts
+[*.sh]
+indent_style = space
+indent_size = 4

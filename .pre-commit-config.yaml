@@ -1,0 +1,55 @@
+# See https://pre-commit.com for more information
+# Install: uv run pre-commit install
+# Run all: uv run pre-commit run --all-files
+repos:
+  # ── General ────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: debug-statements
+      - id: detect-private-key
+
+  # ── Python (Ruff — lint + format) ──────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.13.0
+    hooks:
+      # Linter — runs before formatter so auto-fixes (e.g. unused imports) are formatted
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      # Formatter — replaces Black
+      - id: ruff-format
+
+  # ── Django ─────────────────────────────────────────────
+  - repo: https://github.com/adamchainz/django-upgrade
+    rev: "1.25.0"
+    hooks:
+      - id: django-upgrade
+        args: [--target-version, "5.2"]
+
+  # ── Frontend (Prettier) ────────────────────────────────
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [javascript, jsx, css, scss, json, yaml]
+        additional_dependencies:
+          - prettier@3.5.3
+        args: [--config, frontend/.prettierrc]
+        # Only run on frontend files
+        files: ^frontend/
+        exclude: |
+          (?x)^(
+            frontend/build/|
+            frontend/node_modules/|
+            frontend/packages/media-player/dist/|
+            frontend/packages/ejs-compiled-loader/
+          )

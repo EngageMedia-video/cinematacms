@@ -43,7 +43,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["basedpyright>=1.29.2", "ruff>=0.13.0"]
+dev = ["basedpyright>=1.29.2", "ruff>=0.13.0", "pre-commit>=4.0.0"]
 e2e = [
     "playwright>=1.40.0",
     "pytest>=8.0.0",
@@ -73,6 +73,60 @@ markers = [
     "contact: Contact form tests",
 ]
 addopts = "--tb=short"
+
+# ── Ruff (linter + formatter) ──────────────────────────────
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "B",   # flake8-bugbear (common gotchas)
+    "UP",  # pyupgrade (modernize syntax for target Python)
+    "DJ",  # flake8-django
+    "S",   # flake8-bandit (security)
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+]
+ignore = [
+    # ── Existing codebase patterns (fix incrementally) ──
+    "E501",  # line-too-long — let the formatter handle it; legacy lines stay
+    "E722",  # bare-except — 36 occurrences, fix gradually
+    "E741",  # ambiguous-variable-name — legacy code
+    "DJ001", # null-on-string-field — prevalent in existing models
+    "DJ012", # model-ordering — would require rewriting every model
+    "UP008", # super-call-with-parameters — legacy pattern, low risk
+    "UP031", # printf-string-formatting — legacy code uses %-formatting
+    "SIM102",# collapsible-if — stylistic, fix gradually
+    "S101",  # assert — used in Django tests
+    "S110",  # try-except-pass — used in media processing
+    "S308",  # mark_safe — required for Django template rendering
+    "S603",  # subprocess-without-shell-equals-true — media encoding
+    "S607",  # start-process-with-partial-path — media tools
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Settings files have star imports, long lines, and runtime logic
+"cms/settings.py" = ["F401", "F403", "E402", "S105"]
+"cms/local_settings.py" = ["F401", "F403", "E402", "S105"]
+# Migration files are auto-generated
+"*/migrations/*.py" = ["E501", "E402"]
+# Tests can use assert and magic values
+"**/tests/**" = ["S101", "S106"]
+"tests/**" = ["S101", "S106"]
+"e2e/**" = ["S101", "S106"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["cms", "files", "users", "uploader", "actions"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
 
 [tool.uv.sources]
 django-tinymce = { git = "https://github.com/jazzband/django-tinymce.git", rev = "685236d36af37afbb8e069099879b3489bbe8216" }
