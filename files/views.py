@@ -15,7 +15,7 @@ from django.contrib.postgres.search import SearchQuery
 from django.core.mail import EmailMessage
 from django.db import models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
@@ -163,6 +163,8 @@ def view_page(request, slug):
 
 @login_required
 def modern_demo_page(request):
+    if not settings.DEBUG:
+        raise Http404
     if not request.user.is_staff:
         return HttpResponseRedirect("/")
     if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):

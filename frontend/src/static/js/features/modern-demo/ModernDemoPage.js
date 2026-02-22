@@ -9,6 +9,25 @@ import useDemoStore from './useDemoStore';
 
 import '../../../css/tailwind.css';
 
+function formatDuration(seconds) {
+	if (!seconds) return null;
+	const m = Math.floor(seconds / 60);
+	const s = seconds % 60;
+	return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function timeAgo(dateString) {
+	if (!dateString) return '';
+	const diff = Date.now() - new Date(dateString).getTime();
+	const days = Math.floor(diff / 86400000);
+	if (days < 1) return 'today';
+	if (days < 30) return `${days} day${days > 1 ? 's' : ''} ago`;
+	const months = Math.floor(days / 30);
+	if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
+	const years = Math.floor(months / 12);
+	return `${years} year${years > 1 ? 's' : ''} ago`;
+}
+
 function MediaGrid({ items }) {
 	const viewMode = useDemoStore((s) => s.viewMode);
 
@@ -16,36 +35,93 @@ function MediaGrid({ items }) {
 		return <p className="text-content-body py-8 text-center">No media found.</p>;
 	}
 
-	const containerClass =
-		viewMode === 'grid' ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-3';
+	if (viewMode === 'list') {
+		return (
+			<div className="flex flex-col gap-4">
+				{items.map((item) => {
+					const duration = formatDuration(item.duration);
+					const country = item.media_country_info?.[0]?.title;
+					return (
+						<a key={item.friendly_token} href={item.url} className="flex no-underline text-inherit gap-4">
+							<div className="relative w-44 shrink-0">
+								{item.thumbnail_url && (
+									<img
+										src={item.thumbnail_url}
+										alt={item.title}
+										className="aspect-video w-full rounded-md object-cover"
+										loading="lazy"
+										decoding="async"
+									/>
+								)}
+								{duration && (
+									<span className="absolute right-1 bottom-1 rounded-sm bg-black/80 px-1 py-0.5 text-[11px] font-medium tracking-wide text-white">
+										{duration}
+									</span>
+								)}
+							</div>
+							<div className="min-w-0 py-0.5">
+								<h3 className="line-clamp-2 text-sm font-medium leading-[18px] text-content-body">
+									{item.title}
+								</h3>
+								<p className="mt-1 text-[13px] leading-[18px] text-brand-primary">{item.user}</p>
+								<p className="mt-0.5 text-[13px] leading-[18px] text-content-body/60">
+									{country && <>{country} &middot; </>}
+									{item.views} view{item.views !== 1 ? 's' : ''}
+									{item.add_date && <> &middot; {timeAgo(item.add_date)}</>}
+								</p>
+							</div>
+						</a>
+					);
+				})}
+			</div>
+		);
+	}
 
 	return (
-		<div className={containerClass}>
-			{items.map((item) => (
-				<a
-					key={item.friendly_token}
-					href={item.url}
-					className="block no-underline text-inherit overflow-hidden rounded border border-border-input bg-surface-body transition-shadow hover:shadow-md"
-				>
-					{item.thumbnail_url && (
-						<img
-							src={item.thumbnail_url}
-							alt={item.title}
-							className="aspect-video w-full object-cover"
-							loading="lazy"
-							decoding="async"
-							width={320}
-							height={180}
-						/>
-					)}
-					<div className="p-3">
-						<h3 className="truncate text-sm font-medium text-content-body">{item.title}</h3>
-						<p className="mt-1 text-xs text-content-body/60">
-							{item.author_name} &middot; {item.views} views
+		<div className="grid grid-cols-2 gap-x-4 gap-y-6 lg:grid-cols-3 xl:grid-cols-4">
+			{items.map((item) => {
+				const duration = formatDuration(item.duration);
+				const country = item.media_country_info?.[0]?.title;
+
+				return (
+					<a key={item.friendly_token} href={item.url} className="block no-underline text-inherit">
+						{/* Thumbnail */}
+						<div className="relative overflow-hidden rounded-md">
+							{item.thumbnail_url ? (
+								<img
+									src={item.thumbnail_url}
+									alt={item.title}
+									className="aspect-video w-full object-cover"
+									loading="lazy"
+									decoding="async"
+								/>
+							) : (
+								<div className="aspect-video w-full bg-surface-sidebar" />
+							)}
+							{duration && (
+								<span className="absolute right-1 bottom-1 rounded-sm bg-black/80 px-1 py-0.5 text-[11px] font-medium tracking-wide text-white">
+									{duration}
+								</span>
+							)}
+						</div>
+
+						{/* Title — 2-line clamp like legacy */}
+						<h3 className="mt-3 mb-2 line-clamp-2 text-sm font-medium leading-[18px] text-content-body">
+							{item.title}
+						</h3>
+
+						{/* Author */}
+						<p className="text-[13px] leading-[18px] text-brand-primary">{item.user}</p>
+
+						{/* Meta: country · views · date */}
+						<p className="text-[13px] leading-[18px] text-content-body/60">
+							{country && <>{country} &middot; </>}
+							{item.views} view{item.views !== 1 ? 's' : ''}
+							{item.add_date && <> &middot; {timeAgo(item.add_date)}</>}
 						</p>
-					</div>
-				</a>
-			))}
+					</a>
+				);
+			})}
 		</div>
 	);
 }
