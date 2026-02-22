@@ -30,6 +30,12 @@ export default defineConfig({
 
   server: {
     origin: 'http://localhost:5173',
+    // Tell the HMR client to connect to the Vite dev server directly,
+    // not to the Django host the page was loaded from.
+    hmr: {
+      host: 'localhost',
+      port: 5173,
+    },
   },
 
   // Handle JSX in .js files during dependency pre-bundling (dev server).
