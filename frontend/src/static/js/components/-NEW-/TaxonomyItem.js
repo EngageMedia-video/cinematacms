@@ -18,7 +18,6 @@ export function TaxonomyItem(props){
 
 	function thumbnailComponent(){
 		const attr = {
-			key: 'item-thumb',
 			href: props.link,
 			title: props.title,
 			tabIndex: '-1',
@@ -26,7 +25,7 @@ export function TaxonomyItem(props){
 			className: 'item-thumb' + ( ! thumbnailUrl ? ' no-thumb' : '' ),
 			style: ! thumbnailUrl ? null : { backgroundImage: 'url(\'' + thumbnailUrl + '\')' },
 		};
-		return <a {...attr}></a>;
+		return <a key="item-thumb" {...attr}></a>;
 	}
 
 	function metaComponents(){

@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import stylesheet from "../styles/SpinnerLoader.scss";
+import "../styles/SpinnerLoader.scss";
 
 export function SpinnerLoader(props){
 	props = { size: 'medium', ...props };

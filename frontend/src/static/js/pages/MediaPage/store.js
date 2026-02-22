@@ -1,7 +1,7 @@
 import React from 'react';
 import EventEmitter from 'events';
 import { exportStore, getRequest, postRequest, putRequest, deleteRequest, getCSRFToken } from '../../functions';
-import { default as axios, get as axiosGet } from 'axios';
+import axios from 'axios';
 
 import { config as mediacmsConfig } from '../../mediacms/config.js';
 

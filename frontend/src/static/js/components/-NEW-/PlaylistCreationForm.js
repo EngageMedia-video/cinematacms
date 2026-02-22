@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
-
 import * as PageActions from '../../pages/_PageActions.js';
 
 import MediaPageStore from '../../pages/MediaPage/store.js';
@@ -11,7 +9,7 @@ import * as PlaylistPageActions from '../../pages/PlaylistPage/actions.js';
 
 import { addClassname, removeClassname } from './functions/dom';
 
-import stylesheet from "../styles/PlaylistForm.scss";
+import "../styles/PlaylistForm.scss";
 
 export function PlaylistCreationForm(props){
 
@@ -151,9 +149,3 @@ export function PlaylistCreationForm(props){
 
 			</div>);
 }
-
-PlaylistCreationForm.propTypes = {
-	id: PropTypes.string,
-	onCancel: PropTypes.func.isRequired,
-	onPlaylistSave: PropTypes.func.isRequired,
-};

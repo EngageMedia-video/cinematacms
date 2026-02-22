@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import stylesheet from '../styles/CircleIconButton.scss';
+import '../styles/CircleIconButton.scss';
 
 export function CircleIconButton(props){
 	props = { type: 'button', buttonShadow: false, ...props };

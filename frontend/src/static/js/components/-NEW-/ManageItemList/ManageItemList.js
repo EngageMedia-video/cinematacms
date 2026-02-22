@@ -11,13 +11,13 @@ import getCSRFToken from '../../../functions/getCSRFToken';
 import deleteRequest from '../../../functions/deleteRequest';
 import { PositiveInteger } from '../../../functions/propTypeFilters';
 
+import urlParse from 'url-parse';
+
 import { renderManageItems } from './includes/functions';
 import initManageItemsList from './includes/initManageItemsList';
 import { ManageItemsListHandler } from "./includes/ManageItemsListHandler";
 
-const urlParse = require('url-parse');
-
-import manage_stylesheet from "../../styles/ManageItemList.scss";
+import "../../styles/ManageItemList.scss";
 
 function useManageItemList( props, itemsListRef ){
 
@@ -576,12 +576,16 @@ export function ManageItemList(props){
 
 	function removeMediaResponse(response){
 		if( response && 204 === response.status ){
-            props.onRowsDelete( false );
+            if( 'function' === typeof props.onRowsDelete ){
+                props.onRowsDelete( false );
+            }
         }
 	}
 
 	function removeMediaFail(){
-		props.onRowsDeleteFail( false );
+		if( 'function' === typeof props.onRowsDeleteFail ){
+            props.onRowsDeleteFail( false );
+        }
 	}
 
 	useEffect(()=>{

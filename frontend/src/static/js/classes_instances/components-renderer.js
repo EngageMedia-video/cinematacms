@@ -14,16 +14,21 @@ function componentRenderer(){
 			}
 			id = id || ( AppComp ? AppComp.name + "_" + new Date().valueOf() : null ) ;
 			if( id ){
-				if( !roots.has(id) ){
-					roots.set(id, createRoot(wrapEl));
+				const existing = roots.get(id);
+				if( existing && existing.container !== wrapEl ){
+					existing.root.unmount();
+					roots.delete(id);
 				}
-				roots.get(id).render(<AppComp {...props} />);
+				if( !roots.has(id) ){
+					roots.set(id, { root: createRoot(wrapEl), container: wrapEl });
+				}
+				roots.get(id).root.render(<AppComp {...props} />);
 			}
-			return null;
+			return id;
 		},
 		destroy: function(id){
 			if( id && roots.has(id) ){
-				roots.get(id).unmount();
+				roots.get(id).root.unmount();
 				roots.delete(id);
 			}
 		}
@@ -31,3 +36,7 @@ function componentRenderer(){
 };
 
 export default componentRenderer();
+
+if (import.meta.hot) {
+	import.meta.hot.decline();
+}

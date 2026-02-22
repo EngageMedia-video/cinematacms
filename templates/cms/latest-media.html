@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Recent uploads - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -40,10 +40,8 @@
 
 {% endblock headermeta %}
 
+{% block topimports %}{% vite_asset 'src/entries/latest.js' %}{% endblock topimports %}
+
 {% block content %}
 {% if user %}<div id="page-latest"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-<script src="{% hashed_static "js/latest.js" %}"></script>
-{% endblock bottomimports %}

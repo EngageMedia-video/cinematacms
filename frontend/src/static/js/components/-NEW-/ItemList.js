@@ -76,7 +76,7 @@ ItemList.propTypes = {
 };
 
 ItemList.defaults = {
-    hideCategories: ! PageStore.get('config-media-item').displayCategories,
+    hideCategories: !PageStore.get('config-media-item')?.displayCategories,
     hideDate: false,
     hideViews: false,
     hideAuthor: false,

@@ -1,5 +1,4 @@
 {% load static %}
-{% load webpack_manifest %}
 		<link rel="apple-touch-icon" sizes="180x180" href="{% static "favicons/apple-touch-icon.png" %}">
 		<link rel="icon" type="image/png" sizes="32x32" href="{% static "favicons/favicon-32x32.png" %}">
 		<link rel="icon" type="image/png" sizes="16x16" href="{% static "favicons/favicon-16x16.png" %}">
@@ -14,23 +13,13 @@
 		<meta name="application-name" content="Cinemata">
 
 		{% if LOAD_FROM_CDN %}
-		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="preload" as="style">
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		{% else %}
-		<link href="{% static "lib/material-icons/material-icons.css" %}" rel="preload" as="style">
 		<link href="{% static "lib/material-icons/material-icons.css" %}" rel="stylesheet">
 		{% endif %}
 
-		<link href="{% static "lib/Amulya/amulya.css" %}" rel="preload" as="style">
 		<link href="{% static "lib/Amulya/amulya.css" %}" rel="stylesheet">
 
-		<link href="{% static "lib/Facultad/Facultad-Regular.css" %}" rel="preload" as="style">
 		<link href="{% static "lib/Facultad/Facultad-Regular.css" %}" rel="stylesheet">
 
-		<link href="{% hashed_static "css/_commons.css" %}" rel="preload" as="style">
-		<link href="{% hashed_static "css/_commons.css" %}" rel="stylesheet">
-
-		<link href="{% hashed_static "css/_extra.css" %}" rel="preload" as="style">
-		<link href="{% hashed_static "css/_extra.css" %}" rel="stylesheet">
-
-		<link href="{% hashed_static "js/_commons.js" %}" rel="preload" as="script">
+		<link href="{% static "css/_extra.css" %}?v={{ EXTRA_CSS_VERSION }}" rel="stylesheet">

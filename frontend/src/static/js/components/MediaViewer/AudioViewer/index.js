@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
+import videojs from "video.js";
 
 import SiteContext from "../../../contexts/SiteContext";
 
@@ -7,7 +8,7 @@ import SiteContext from "../../../contexts/SiteContext";
 import "@mediacms/media-player/dist/mediacms-media-player.js";
 // The MediaPlayer is exposed as a global variable
 const MediaPlayer = window.MediaPlayer;
-import MediaPlayerStyles from "@mediacms/media-player/dist/mediacms-media-player.css";
+import "@mediacms/media-player/dist/mediacms-media-player.css";
 
 import MediaPageStore from "../../../pages/MediaPage/store.js";
 
@@ -25,7 +26,7 @@ import PlayerRecommendedMedia from "../../../classes/PlayerRecommendedMedia";
 
 import MediaDurationInfo from "../../../classes/MediaDurationInfo";
 
-import stylesheet_viewer from "../../styles/VideoViewer.scss";
+import "../../styles/VideoViewer.scss";
 
 const _MediaDurationInfo = new MediaDurationInfo();
 
@@ -65,10 +66,11 @@ export default class AudioViewer extends React.PureComponent {
 		this.updatePlayerVolume = this.updatePlayerVolume.bind(this);
 		this.onAudioEnd = this.onAudioEnd.bind(this);
 		this.onAudioRestart = this.onAudioRestart.bind(this);
+		this.onUpdateMediaAutoPlayBound = this.onUpdateMediaAutoPlay.bind(this);
 
 		PageStore.on(
 			"switched_media_auto_play",
-			this.onUpdateMediaAutoPlay.bind(this)
+			this.onUpdateMediaAutoPlayBound
 		);
 
 		this.wrapperClick = this.wrapperClick.bind(this);
@@ -110,6 +112,8 @@ export default class AudioViewer extends React.PureComponent {
 	componentWillUnmount() {
 		window.removeEventListener("focus", this.initPlayerInstance);
 		document.removeEventListener("visibilitychange", this.initPlayerInstance);
+
+		PageStore.removeListener("switched_media_auto_play", this.onUpdateMediaAutoPlayBound);
 
 		if (this.initPlayerTimeout) {
 			clearTimeout(this.initPlayerTimeout);

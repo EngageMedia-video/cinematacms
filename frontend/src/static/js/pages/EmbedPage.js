@@ -9,7 +9,7 @@ import { SiteConsumer } from '../contexts/SiteContext';
 import MediaPageStore from './MediaPage/store.js';
 import * as MediaPageActions from './MediaPage/actions.js';
 
-import stylesheet from "./styles/EmbedPage.scss";
+import "./styles/EmbedPage.scss";
 
 // TODO: Recheck component.
 

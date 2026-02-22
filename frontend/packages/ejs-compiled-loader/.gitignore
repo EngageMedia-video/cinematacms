@@ -1,6 +1,0 @@
-node_modules
-
-#ide
-.idea
-/*.iml
-test/bundle.js

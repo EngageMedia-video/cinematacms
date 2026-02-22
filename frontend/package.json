@@ -5,53 +5,21 @@
   "author": "styiannis",
   "license": "MIT",
   "keywords": [],
-  "main": "index.js",
-  "bin": {
-    "mediacms-scripts-2": "./cli.js"
-  },
   "scripts": {
-    "start": "node cli.js start --config=./config/cinemata.config.js --host=0.0.0.0 --port=8088",
-    "build": "npm run clean-build && node cli.js build --config=./config/cinemata.config.js --verbose",
-    "clean-build": "node ./scripts/rmrf.js ./build/production/",
-    "serve-build": "npx serve ./build/production/"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
-  "browserslist": [
-    "cover 99.5%"
-  ],
   "devDependencies": {
-    "@babel/core": "^7.28.4",
-    "@babel/preset-env": "^7.28.3",
-    "@babel/preset-react": "^7.27.1",
+    "@vitejs/plugin-react": "^5.1.4",
     "autoprefixer": "^10.4.21",
-    "babel-loader": "^10.0.0",
-    "copy-webpack-plugin": "^13.0.1",
     "core-js": "^3.45.1",
-    "cross-spawn": "^7.0.6",
-    "css-loader": "^7.1.2",
-    "css-minimizer-webpack-plugin": "^7.0.2",
-    "css-url-relative-plugin": "^1.1.0",
     "dotenv": "^17.2.3",
-    "dotenv-webpack": "^8.1.1",
-    "ejs": "^3.1.10",
-    "ejs-compiled-loader": "file:packages/ejs-compiled-loader",
-    "html-prettify": "^1.0.7",
-    "html-webpack-plugin": "^5.6.4",
-    "install": "^0.13.0",
-    "lodash.merge": "^4.6.2",
-    "mini-css-extract-plugin": "^2.9.4",
-    "postcss-custom-properties": "^15.0.0",
-    "postcss-loader": "^8.2.0",
-    "progress-bar-webpack-plugin": "^2.1.0",
     "prop-types": "^15.8.1",
-    "rimraf": "^6.0.1",
     "rollup-plugin-visualizer": "^6.0.3",
     "sass": "^1.92.1",
-    "sass-loader": "^16.0.5",
-    "webpack": "^5.101.3",
-    "webpack-dev-server": "^5.2.2",
-    "webpack-format-messages": "^3.0.1",
-    "webpack-manifest-plugin": "^6.0.1",
-    "webpack-virtual-modules": "^0.6.2"
+    "styled-jsx": "^5.1.7",
+    "vite": "^7.3.1"
   },
   "overrides": {
     "flux": {

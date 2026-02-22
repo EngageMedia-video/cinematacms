@@ -27,7 +27,7 @@ import { UserThumbnail } from './UserThumbnail';
 
 import { PopupMain } from './Popup';
 
-import stylesheet from "../styles/Comments.scss";
+import "../styles/Comments.scss";
 import { replaceString } from '../../utils/string-replacement.js';
 const commentsText = {
 	single: 'comment',
@@ -76,7 +76,7 @@ function CommentForm(props) {
 		setTextareaLineHeight(contentLineHeight);
 
 		textareaRef.current.style.height =
-			Math.max(20, textareaLineHeight * Math.ceil(contentHeight / contentLineHeight)) + 'px';
+			Math.max(20, contentLineHeight * Math.ceil(contentHeight / contentLineHeight)) + 'px';
 	}
 
 	function onCommentSubmitFail() {

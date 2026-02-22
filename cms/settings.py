@@ -12,7 +12,9 @@ ALLOWED_HOSTS = [
     "localhost",
 ]
 # Import default headers to extend them
-CORS_ORIGIN_ALLOW_ALL = True
+# In production, override with explicit CORS_ALLOWED_ORIGINS list.
+# CORS_ORIGIN_ALLOW_ALL = True is kept for local development only.
+CORS_ORIGIN_ALLOW_ALL = os.getenv("CORS_ALLOW_ALL", "True") == "True"
 CORS_ALLOW_HEADERS = default_headers + (
     "x-requested-with",  # Add X-Requested-With
     "if-modified-since",  # Add If-Modified-Since
@@ -51,6 +53,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "django_vite",
     "django.contrib.staticfiles",
     "django.contrib.sites",
     "rest_framework",
@@ -217,20 +220,46 @@ STATICFILES_DIRS = [
 ]
 
 # Static files storage without post-processing
-# Webpack handles content hashing (adds [contenthash] to filenames), so Django
-# doesn't need to reprocess files. This avoids issues with missing fonts and
-# complex CSS URL rewriting during collectstatic.
+# Vite handles content hashing (adds [hash] to filenames), so Django doesn't
+# need ManifestStaticFilesStorage (which would double-hash Vite's output and
+# break font URL rewriting in CSS files). Plain StaticFilesStorage is correct.
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "cms.storage.WebpackHashedFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
+# Cache-busting version for non-hashed static files (e.g. _extra.css).
+# Computed from file content hash — no manual bumping needed.
+import hashlib as _hashlib
+_extra_css_path = os.path.join(BASE_DIR, "static", "css", "_extra.css")
+try:
+    EXTRA_CSS_VERSION = _hashlib.md5(
+        open(_extra_css_path, "rb").read()
+    ).hexdigest()[:8]
+except FileNotFoundError:
+    EXTRA_CSS_VERSION = "1"
+
 AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "/"
+
+# Django-Vite integration
+# dev_mode uses a dedicated env var (NOT tied to DEBUG) to avoid breaking
+# production if DEBUG=True reaches it. Requires explicit opt-in.
+DJANGO_VITE = {
+    "default": {
+        "dev_mode": os.getenv("VITE_DEV_MODE", "").lower() in ("1", "true", "yes"),
+        # Point directly at the build output — Django's collectstatic ignores
+        # dot-directories by default ('.*' in StaticFilesConfig.ignore_patterns),
+        # so .vite/manifest.json never gets copied to static_collected/.
+        "manifest_path": os.path.join(
+            BASE_DIR, "frontend", "build", "production", "static", ".vite", "manifest.json"
+        ),
+    },
+}
 
 
 # CELERY STUFF
@@ -454,7 +483,10 @@ CAN_SHARE_MEDIA = True  # whether the share media appears
 ALLOW_RATINGS = False
 ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY = False
 
-X_FRAME_OPTIONS = "ALLOWALL"
+# SAMEORIGIN by default; embed view uses @xframe_options_exempt decorator.
+X_FRAME_OPTIONS = "SAMEORIGIN"
+# TODO: Configure Content-Security-Policy via django-csp middleware.
+# See todos/006-pending-p2-no-csp-configured.md for implementation details.
 EMAIL_BACKEND = "djcelery_email.backends.CeleryEmailBackend"
 CELERY_EMAIL_TASK_CONFIG = {
     "queue": "short_tasks",

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import stylesheet from "../styles/PageFooter.scss";
+import "../styles/PageFooter.scss";
 
 export default function PageFooter(){
 

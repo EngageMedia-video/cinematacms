@@ -33,7 +33,6 @@ export function MediaItemAudio(props){
 	function thumbnailComponent(){
 
 		const attr = {
-			key: 'item-thumb',
 			href: props.link,
 			title: props.title,
 			tabIndex: '-1',
@@ -42,7 +41,7 @@ export function MediaItemAudio(props){
 			style: ! thumbnailUrl ? null : { backgroundImage: 'url(\'' + thumbnailUrl + '\')' },
 		};
 
-		return <a {...attr}>
+		return <a key="item-thumb" {...attr}>
 					{ props.inPlaylistView ? null : <MediaItemDuration ariaLabel={ duration } time={ durationISO8601 } text={ durationStr } /> }
 					<MediaItemStateBadge state={props.state} />
 				</a>;

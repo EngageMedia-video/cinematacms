@@ -122,7 +122,9 @@ export default function ViewerInfoContent(props) {
 		PageActions.addNotification("Media removed. Redirecting...", 'mediaDelete');
 
 		setTimeout(function () {
-			window.location.href = SiteContext._currentValue.url + '/' + MediaPageStore.get('media-data').author_profile.replace(/^\//g, '');
+			const mediaData = MediaPageStore.get('media-data');
+			const authorProfile = mediaData?.author_profile ?? '';
+			window.location.href = SiteContext._currentValue.url + '/' + authorProfile.replace(/^\//g, '');
 		}, 2000);
 
 		if (void 0 !== mediaId) {

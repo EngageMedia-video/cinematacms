@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}404 - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -11,14 +11,9 @@
 <title>Page Not Found - {{ PORTAL_NAME }}</title>
 {% endblock headermeta %}
 
-{% block topimports %}
-<link rel="stylesheet" href="{% hashed_static "css/error.css" %}">
-{% endblock topimports %}
+{% block topimports %}{% vite_asset 'src/entries/error.js' %}{% endblock topimports %}
 
 {% block innercontent %}
 <div id="page-error" class="error-page-wrap"></div>
 {% endblock %}
 
-{% block bottomimports %}
-<script src="{% hashed_static 'js/error.js' %}"></script>
-{% endblock bottomimports %}

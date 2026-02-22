@@ -1,5 +1,4 @@
 import Dispatcher from '../classes_instances/dispatcher.js';
-import { safeDispatch } from '../utils/safeDispatch.js';
 
 export function initPage(page) {
     Dispatcher.dispatch({
@@ -15,9 +14,9 @@ export function toggleMediaAutoPlay(){
 };
 
 export function addNotification(notification, notificationId) {
-    safeDispatch({
+    setTimeout(() => Dispatcher.dispatch({
         type: 'ADD_NOTIFICATION',
         notification,
         notificationId,
-    });
+    }), 0);
 };

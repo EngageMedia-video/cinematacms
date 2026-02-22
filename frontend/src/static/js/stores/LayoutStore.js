@@ -122,3 +122,7 @@ class LayoutStore extends EventEmitter{
 }
 
 export default exportStore( new LayoutStore, 'actions_handler' );
+
+if (import.meta.hot) {
+	import.meta.hot.decline();
+}
