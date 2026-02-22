@@ -25,7 +25,7 @@ function MediaGrid({ items }) {
 				<a
 					key={item.friendly_token}
 					href={item.url}
-					className="block overflow-hidden rounded border border-border-input bg-surface-body transition-shadow hover:shadow-md"
+					className="block no-underline text-inherit overflow-hidden rounded border border-border-input bg-surface-body transition-shadow hover:shadow-md"
 				>
 					{item.thumbnail_url && (
 						<img
@@ -74,7 +74,7 @@ function DemoContent() {
 	const filteredItems = (data || []).filter((item) => item.title?.toLowerCase().includes(searchQuery.toLowerCase()));
 
 	return (
-		<div className="mx-auto max-w-5xl px-4 py-6">
+		<div data-modern-track className="mx-auto max-w-5xl px-4 py-6">
 			<h1 className="mb-2 text-2xl font-bold text-content-body">Modern Track Demo</h1>
 			<p className="mb-6 text-sm text-content-body/60">
 				This page demonstrates the modern track architecture: TanStack Query for server state, Zustand for
@@ -95,14 +95,14 @@ function DemoContent() {
 					<button
 						onClick={() => setViewMode('grid')}
 						aria-pressed={viewMode === 'grid'}
-						className={`px-3 py-1.5 text-xs ${viewMode === 'grid' ? 'bg-brand-primary text-white' : 'text-content-body'}`}
+						className={`border-0 px-3 py-1.5 text-xs ${viewMode === 'grid' ? 'bg-brand-primary text-white' : 'bg-transparent text-content-body'}`}
 					>
 						Grid
 					</button>
 					<button
 						onClick={() => setViewMode('list')}
 						aria-pressed={viewMode === 'list'}
-						className={`px-3 py-1.5 text-xs ${viewMode === 'list' ? 'bg-brand-primary text-white' : 'text-content-body'}`}
+						className={`border-0 px-3 py-1.5 text-xs ${viewMode === 'list' ? 'bg-brand-primary text-white' : 'bg-transparent text-content-body'}`}
 					>
 						List
 					</button>

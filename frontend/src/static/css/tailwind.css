@@ -50,3 +50,25 @@
 	/* Borders */
 	--color-border-input: var(--input-border-color);
 }
+
+/*
+ * Cascade-layer bridge for legacy coexistence.
+ *
+ * Problem: Legacy styles.scss is *unlayered*, so it outranks everything
+ * inside @layer utilities regardless of specificity.  This means Tailwind
+ * utilities on <a>, <input>, <button>, and heading elements are silently
+ * overridden by the global legacy selectors (e.g. `a { text-decoration: underline }`).
+ *
+ * Fix: `all: revert-layer` tells the browser "ignore every unlayered
+ * declaration for these elements and fall through to the next cascade
+ * layer", which is @layer utilities — exactly where Tailwind lives.
+ *
+ * :where() keeps specificity at (1,0,0) so only the #id contributes,
+ * making it easy for component-level overrides to win if needed.
+ *
+ * Scoped to [data-modern-track] so this only fires inside modern-track
+ * containers, leaving the rest of the page untouched.
+ */
+[data-modern-track] :where(a, input, button, select, textarea, h1, h2, h3, h4, h5, h6, p, pre, img) {
+	all: revert-layer;
+}
