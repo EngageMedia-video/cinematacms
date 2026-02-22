@@ -1229,11 +1229,11 @@ class MediaActions(APIView):
         # GET: only show reported messages
         media = self.get_object(friendly_token)
 
-        if not (request.user == media.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user)):
-            return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)
-
         if isinstance(media, Response):
             return media
+
+        if not (request.user == media.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user)):
+            return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)
 
         ret = {}
         reported = MediaAction.objects.filter(media=media, action="report")
