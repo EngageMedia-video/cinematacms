@@ -112,14 +112,26 @@ class User(AbstractUser):
         return True
 
     def thumbnail_url(self):
+        import os
+
         if self.logo:
-            return helpers.url_from_path(self.logo.path)
+            try:
+                if os.path.isfile(self.logo.path):
+                    return helpers.url_from_path(self.logo.path)
+            except (ValueError, FileNotFoundError):
+                pass
         return None
 
     def banner_thumbnail_url(self):
+        import os
+
         c = self.channels.filter().order_by("add_date").first()
-        if c:
-            return helpers.url_from_path(c.banner_logo.path)
+        if c and c.banner_logo:
+            try:
+                if os.path.isfile(c.banner_logo.path):
+                    return helpers.url_from_path(c.banner_logo.path)
+            except (ValueError, FileNotFoundError):
+                pass
         return None
 
     @property
