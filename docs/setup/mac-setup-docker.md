@@ -275,10 +275,25 @@ Refer to the [Makefile and uv Usage Guide](./makefile-and-uv.md) for more Celery
 
 ## Frontend Development
 
-This guide has covered the backend setup for Cinemata.
-If you also plan to work on the frontend, which uses Node.js, React 19, and Vite, please refer to the dedicated frontend development guide for setup and build instructions:
+The frontend uses React 19 and Vite. For HMR (Hot Module Replacement) during development, you need two terminals:
 
-[Frontend Development Guide](./frontend-development.md)
+**Terminal 1 — Django dev server** (serves HTML, API, and proxies to Vite in dev mode):
+```zsh
+VITE_DEV_MODE=true make dev-server
+```
+
+**Terminal 2 — Vite HMR server** (serves JS/CSS with instant hot reload on port 5173):
+```zsh
+cd frontend && npm run dev
+```
+
+Open http://127.0.0.1:8000 in your browser. Django serves the pages and Vite injects the HMR client for instant updates when you edit frontend files.
+
+**Production build** (outputs hashed assets to `static/`):
+```zsh
+make frontend-build
+# or: bash scripts/build_frontend.sh
+```
 
 ## Troubleshooting
 (This section is intentionally left blank for now, as Docker setup simplifies many common issues. If you encounter Docker-specific problems, refer to Docker documentation or community forums.)
