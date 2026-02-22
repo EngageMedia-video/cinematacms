@@ -1,7 +1,7 @@
 ---
 title: "M3: Modern Track Foundation"
 type: feat
-status: active
+status: completed
 date: 2026-02-19
 parent: 2026-02-19-feat-frontend-modernization-react19-vite-modern-track-plan.md
 milestone: M3
@@ -181,16 +181,16 @@ Source documents:
 
 ## Acceptance Criteria (M3-specific)
 
-- [ ] `/modern-demo` page renders, fetches API data, and supports theme toggle
-- [ ] `/modern-demo` URL route placed above catch-all pattern in `files/urls.py`
-- [ ] Existing `/demo` page unchanged
-- [ ] Dark/light theme toggle works on both legacy and modern-track pages
-- [ ] `QueryClientProvider` scoped inside `ModernDemoPage.js` (not shared)
-- [ ] Modern-track components use `useContext()` (not `_currentValue`)
+- [x] `/modern-demo` page renders, fetches API data, and supports theme toggle
+- [x] `/modern-demo` URL route placed above catch-all pattern in `files/urls.py`
+- [x] Existing `/demo` page unchanged
+- [x] Dark/light theme toggle works on both legacy and modern-track pages
+- [x] `QueryClientProvider` scoped inside `ModernDemoPage.js` (not shared)
+- [x] Modern-track components use `useContext()` (not `_currentValue`)
 - [x] ESLint rules enforce track boundary (no-restricted-imports)
 - [x] Tailwind generates correct utilities referencing existing CSS custom properties
-- [ ] `CONTRIBUTING.md` updated with dual-track docs
-- [ ] PR template created with modern-track checklist
+- [x] `CONTRIBUTING.md` updated with dual-track docs
+- [x] PR template created with modern-track checklist
 - [x] Vite build passes with no new warnings
 
 ## Risk Analysis (M3-specific)

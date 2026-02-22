@@ -1,16 +1,12 @@
-from django.conf import settings
-from django.conf.urls import include
-from django.conf.urls.static import static
-from django.urls import path, re_path
-from django.views.static import serve
+from django.urls import include, path, re_path
 
-from . import management_views, views, tinymce_handlers, secure_media_views
+from . import management_views, secure_media_views, tinymce_handlers, views
 from .feeds import IndexRSSFeed, SearchRSSFeed
 
 urlpatterns = [
     # SECURE MEDIA FILE SERVING
-    re_path(
-        r"^media/(?P<file_path>.+)$",
+    path(
+        "media/<path:file_path>",
         secure_media_views.secure_media_file,
         name="secure_media",
     ),
@@ -18,25 +14,25 @@ urlpatterns = [
     path("rss/", IndexRSSFeed()),
     path("rss", IndexRSSFeed()),
     re_path("^rss/search", SearchRSSFeed()),
-    re_path("^$", views.index),
-    re_path("^latest$", views.latest_media),
-    re_path("^featured$", views.featured_media),
-    re_path("^recommended$", views.recommended_media),
-    re_path("^popular$", views.recommended_media),
-    re_path("^p/(?P<slug>[\w-]*)$", views.view_page, name="get_page"),
-    re_path("^tos$", views.tos, name="terms_of_service"),
-    re_path("^creative-commons$", views.creative_commons, name="creative_commons"),
-    re_path("^categories$", views.categories, name="categories"),
+    path("", views.index),
+    path("latest", views.latest_media),
+    path("featured", views.featured_media),
+    path("recommended", views.recommended_media),
+    path("popular", views.recommended_media),
+    re_path(r"^p/(?P<slug>[\w-]*)$", views.view_page, name="get_page"),
+    path("tos", views.tos, name="terms_of_service"),
+    path("creative-commons", views.creative_commons, name="creative_commons"),
+    path("categories", views.categories, name="categories"),
     re_path("^members", views.members, name="members"),
     re_path("^tags", views.tags, name="tags"),
-    re_path("^contact$", views.contact, name="contact"),
-    re_path("^countries$", views.countries, name="countries"),
-    re_path("^languages$", views.languages, name="languages"),
-    re_path("^topics$", views.topics, name="topics"),
-    re_path("^history$", views.history, name="history"),
-    re_path("^liked$", views.liked_media, name="liked_media"),
+    path("contact", views.contact, name="contact"),
+    path("countries", views.countries, name="countries"),
+    path("languages", views.languages, name="languages"),
+    path("topics", views.topics, name="topics"),
+    path("history", views.history, name="history"),
+    path("liked", views.liked_media, name="liked_media"),
     re_path("^view", views.view_media, name="get_media"),
-    re_path("^edit$", views.edit_media, name="edit_media"),
+    path("edit", views.edit_media, name="edit_media"),
     re_path("^add_subtitle", views.add_subtitle, name="add_subtitle"),
     re_path("^edit_subtitle", views.edit_subtitle, name="edit_subtitle"),
     re_path("^embed", views.embed_media, name="get_embed"),
@@ -54,8 +50,8 @@ urlpatterns = [
         name="get_playlist",
     ),
     # API VIEWS
-    re_path("^api/v1/media$", views.MediaList.as_view()),
-    re_path("^api/v1/media/$", views.MediaList.as_view()),
+    path("api/v1/media", views.MediaList.as_view()),
+    path("api/v1/media/", views.MediaList.as_view()),
     re_path(
         r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)$",
         views.MediaDetail.as_view(),
@@ -66,19 +62,19 @@ urlpatterns = [
         views.EncodingDetail.as_view(),
         name="api_get_encoding",
     ),
-    re_path("^api/v1/search$", views.MediaSearch.as_view()),
+    path("api/v1/search", views.MediaSearch.as_view()),
     re_path(
         r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/actions$",
         views.MediaActions.as_view(),
     ),
     #    url(r'^api/v1/media/(?P<friendly_token>[\w]*)/subtitless$',
     #        views.MediaSubtitles.as_view()),
-    re_path("^api/v1/categories$", views.CategoryList.as_view()),
-    re_path("^api/v1/topics$", views.TopicList.as_view()),
-    re_path("^api/v1/languages$", views.MediaLanguageList.as_view()),
-    re_path("^api/v1/countries$", views.MediaCountryList.as_view()),
-    re_path("^api/v1/tags$", views.TagList.as_view()),
-    re_path("^api/v1/comments$", views.CommentList.as_view()),
+    path("api/v1/categories", views.CategoryList.as_view()),
+    path("api/v1/topics", views.TopicList.as_view()),
+    path("api/v1/languages", views.MediaLanguageList.as_view()),
+    path("api/v1/countries", views.MediaCountryList.as_view()),
+    path("api/v1/tags", views.TagList.as_view()),
+    path("api/v1/comments", views.CommentList.as_view()),
     re_path(
         r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/comments$",
         views.CommentDetail.as_view(),
@@ -87,31 +83,31 @@ urlpatterns = [
         r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/comments/(?P<uid>[\w]+(-[\w]+)*)$",
         views.CommentDetail.as_view(),
     ),
-    re_path("^api/v1/playlists$", views.PlaylistList.as_view()),
-    re_path("^api/v1/playlists/$", views.PlaylistList.as_view()),
+    path("api/v1/playlists", views.PlaylistList.as_view()),
+    path("api/v1/playlists/", views.PlaylistList.as_view()),
     re_path(
         r"^api/v1/playlists/(?P<friendly_token>[\w]+(-[\w]+)*)$",
         views.PlaylistDetail.as_view(),
         name="api_get_playlist",
     ),
-    re_path("^api/v1/user/action/(?P<action>[\w]*)$", views.UserActions.as_view()),
-    re_path("^fu/", include(("uploader.urls", "uploader"), namespace="uploader")),
+    re_path(r"^api/v1/user/action/(?P<action>[\w]*)$", views.UserActions.as_view()),
+    path("fu/", include(("uploader.urls", "uploader"), namespace="uploader")),
     # TODO: https://site.com/channel/UCwobzUc3z-0PrFpoRxNszXQ channel
     # ADMIN VIEWS
-    re_path("^api/v1/manage_media$", management_views.MediaList.as_view()),
-    re_path("^api/v1/manage_comments$", management_views.CommentList.as_view()),
-    re_path("^api/v1/manage_users$", management_views.UserList.as_view()),
-    re_path("^manage/users$", views.manage_users, name="manage_users"),
-    re_path("^manage/media$", views.manage_media, name="manage_media"),
-    re_path("^manage/comments$", views.manage_comments, name="manage_comments"),
-    re_path("^manage/users/export$", views.export_users, name="export_users"),
-    re_path("^api/v1/encode_profiles/$", views.EncodeProfileList.as_view()),
-    re_path("^api/v1/tasks$", views.TasksList.as_view()),
-    re_path("^api/v1/tasks/$", views.TasksList.as_view()),
-    re_path("^api/v1/tasks/(?P<friendly_token>[\w|\W]*)$", views.TaskDetail.as_view()),
-    re_path("^api/v1/topmessage$", views.TopMessageList.as_view()),
-    re_path("^api/v1/indexfeatured$", views.IndexPageFeaturedList.as_view()),
-    re_path("^api/v1/homepagepopup$", views.HomepagePopupList.as_view()),
+    path("api/v1/manage_media", management_views.MediaList.as_view()),
+    path("api/v1/manage_comments", management_views.CommentList.as_view()),
+    path("api/v1/manage_users", management_views.UserList.as_view()),
+    path("manage/users", views.manage_users, name="manage_users"),
+    path("manage/media", views.manage_media, name="manage_media"),
+    path("manage/comments", views.manage_comments, name="manage_comments"),
+    path("manage/users/export", views.export_users, name="export_users"),
+    path("api/v1/encode_profiles/", views.EncodeProfileList.as_view()),
+    path("api/v1/tasks", views.TasksList.as_view()),
+    path("api/v1/tasks/", views.TasksList.as_view()),
+    re_path(r"^api/v1/tasks/(?P<friendly_token>[\w|\W]*)$", views.TaskDetail.as_view()),
+    path("api/v1/topmessage", views.TopMessageList.as_view()),
+    path("api/v1/indexfeatured", views.IndexPageFeaturedList.as_view()),
+    path("api/v1/homepagepopup", views.HomepagePopupList.as_view()),
     ################################
     # These are URLs related with the migration of plumi (plumi.org) systems...
     re_path(
@@ -135,7 +131,9 @@ urlpatterns = [
         name="embed_old_media",
     ),
     ################################
-    re_path("^(?P<slug>[\w.-]*)$", views.view_page, name="get_page"),
+    # Modern track demo page (staff-only)
+    path("modern-demo", views.modern_demo_page, name="modern_demo"),
+    re_path(r"^(?P<slug>[\w.-]*)$", views.view_page, name="get_page"),
     # TinyMCE upload handlers
     path("tinymce/upload/", tinymce_handlers.upload_image, name="tinymce_upload_image"),
 ]

@@ -91,6 +91,7 @@ export default defineConfig({
 				liked: 'src/entries/liked.js',
 				'add-media': 'src/entries/add-media.js',
 				error: 'src/entries/error.js',
+				'modern-demo': 'src/entries/modern-demo.js',
 			},
 			output: {
 				globals: {
