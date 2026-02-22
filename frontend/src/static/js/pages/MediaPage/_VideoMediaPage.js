@@ -12,6 +12,8 @@ import ViewerSidebar from './includes/ViewerSidebar';
 
 import VideoViewerStore from '../../components/MediaViewer/VideoViewer/store.js';   // @note: Is usable only in case of video media, but is included in every media page code.
 
+import "../styles/MediaPage.scss";
+
 const wideLayoutBreakpoint = 1216;
 
 export class _VideoMediaPage extends Page {
