@@ -1,0 +1,51 @@
+/*
+ * Tailwind CSS v4 — Modern Track Only
+ *
+ * This file configures Tailwind for the "modern track" (features/ directory).
+ * It bridges existing CSS custom properties (defined in config/_light_theme.scss
+ * and config/_dark_theme.scss) into Tailwind utility classes.
+ *
+ * Import this file in modern-track entry points only.
+ * Do NOT import in legacy components or shared entries like base.js.
+ */
+
+/* Individual imports — preflight omitted to avoid stomping normalize.css */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/*
+ * @theme inline ensures Tailwind emits var(--btn-primary-bg-color) directly
+ * in generated utilities, so dark/light theme toggling (via body.dark_theme /
+ * body.light_theme class) works automatically.
+ *
+ * Without "inline", Tailwind would emit an intermediate variable that resolves
+ * at the wrong scope.
+ *
+ * Naming follows semantic tiers from the plan:
+ *   brand-*   → action colors (buttons, links)
+ *   surface-* → background surfaces
+ *   content-* → text/foreground colors
+ *   border-*  → border colors
+ */
+@theme inline {
+	/* Brand / Action */
+	--color-brand-primary: var(--btn-primary-bg-color);
+	--color-brand-primary-hover: var(--btn-primary-bg-hover-color);
+	--color-brand-secondary: var(--btn-secondary-bg-color);
+	--color-brand-secondary-hover: var(--btn-secondary-bg-hover-color);
+
+	/* Surfaces */
+	--color-surface-body: var(--body-bg-color);
+	--color-surface-sidebar: var(--sidebar-bg-color);
+	--color-surface-header: var(--header-bg-color);
+	--color-surface-input: var(--input-bg-color);
+	--color-surface-popup: var(--popup-bg-color);
+
+	/* Content / Text */
+	--color-content-body: var(--body-text-color);
+	--color-content-input: var(--input-color);
+
+	/* Borders */
+	--color-border-input: var(--input-border-color);
+}
