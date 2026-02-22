@@ -39,10 +39,8 @@
 
 {% endblock headermeta %}
 
+{% block topimports %}{% vite_asset 'src/entries/featured.js' %}{% endblock topimports %}
+
 {% block content %}
 {% if user %}<div id="page-featured"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-{% vite_asset 'src/entries/featured.js' %}
-{% endblock bottomimports %}

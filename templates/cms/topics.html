@@ -40,8 +40,6 @@
 
 {% endblock headermeta %}
 
-{% block content %}<div id="page-topics"></div>{% endblock %}
+{% block topimports %}{% vite_asset 'src/entries/topics.js' %}{% endblock topimports %}
 
-{% block bottomimports %}
-{% vite_asset 'src/entries/topics.js' %}
-{% endblock bottomimports %}
+{% block content %}<div id="page-topics"></div>{% endblock %}

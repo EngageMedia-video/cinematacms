@@ -121,8 +121,7 @@
 
 {% endblock headermeta %}
 
-{% block topimports %}
-{%endblock topimports %}
+{% block topimports %}{% vite_asset 'src/entries/media.js' %}{%endblock topimports %}
 
 {% block content %}
 
@@ -176,6 +175,3 @@
 
 
 
-{% block bottomimports %}
-{% vite_asset 'src/entries/media.js' %}
-{% endblock bottomimports %}

@@ -40,10 +40,8 @@
 
 {% endblock headermeta %}
 
+{% block topimports %}{% vite_asset 'src/entries/latest.js' %}{% endblock topimports %}
+
 {% block content %}
 {% if user %}<div id="page-latest"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-{% vite_asset 'src/entries/latest.js' %}
-{% endblock bottomimports %}

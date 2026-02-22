@@ -40,10 +40,8 @@
 
 {% endblock headermeta %}
 
+{% block topimports %}{% vite_asset 'src/entries/recommended.js' %}{% endblock topimports %}
+
 {% block content %}
 {% if user %}<div id="page-recommended"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-{% vite_asset 'src/entries/recommended.js' %}
-{% endblock bottomimports %}

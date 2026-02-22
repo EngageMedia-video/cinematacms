@@ -12,6 +12,8 @@
 
 {% endblock headermeta %}
 
+{% block topimports %}{% vite_asset 'src/entries/manage-users.js' %}{% endblock topimports %}
+
 {% block content %}
 
 <div class="export-csv media-list-wrapper">
@@ -21,7 +23,3 @@
 </div>
 
 <div id="page-manage-users"></div>{% endblock %}
-
-{% block bottomimports %}
-{% vite_asset 'src/entries/manage-users.js' %}
-{% endblock bottomimports %}

@@ -3,10 +3,8 @@
 {% load django_vite %}
 {% block headermeta %}{% endblock headermeta %}
 
+{% block topimports %}{% vite_asset 'src/entries/search.js' %}{% endblock topimports %}
+
 {% block content %}
 {% if user %}<div id="page-search"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-{% vite_asset 'src/entries/search.js' %}
-{% endblock bottomimports %}

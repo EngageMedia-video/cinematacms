@@ -57,9 +57,7 @@
 
 {% endblock headermeta %}
 
-{% block content %}<div id="page-home"></div>{% endblock %}
+{% block topimports %}{% vite_asset 'src/entries/index.js' %}{% endblock topimports %}
 
-{% block bottomimports %}
-{% vite_asset 'src/entries/index.js' %}
-{% endblock bottomimports %}
+{% block content %}<div id="page-home"></div>{% endblock %}
 

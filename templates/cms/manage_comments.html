@@ -12,8 +12,6 @@
 
 {% endblock headermeta %}
 
-{% block content %}<div id="page-manage-comments"></div>{% endblock %}
+{% block topimports %}{% vite_asset 'src/entries/manage-comments.js' %}{% endblock topimports %}
 
-{% block bottomimports %}
-{% vite_asset 'src/entries/manage-comments.js' %}
-{% endblock bottomimports %}
+{% block content %}<div id="page-manage-comments"></div>{% endblock %}

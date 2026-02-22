@@ -1,7 +1,6 @@
 import React from 'react';
 import EventEmitter from 'events';
-import timeago from 'timeago.js';
-import { default as axios, get as axiosGet } from 'axios';
+import axios from 'axios';
 import { publishedOnDate, exportStore, getRequest, postRequest, deleteRequest, getCSRFToken } from '../../functions';
 
 import { config as mediacmsConfig } from '../../mediacms/config.js';

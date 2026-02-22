@@ -40,8 +40,6 @@
 
 {% endblock headermeta %}
 
-{% block content %}<div id="page-languages"></div>{% endblock %}
+{% block topimports %}{% vite_asset 'src/entries/languages.js' %}{% endblock topimports %}
 
-{% block bottomimports %}
-{% vite_asset 'src/entries/languages.js' %}
-{% endblock bottomimports %}
+{% block content %}<div id="page-languages"></div>{% endblock %}

@@ -16,8 +16,7 @@
 {% endif %}
 {% endblock externallinks %}
 
-{% block topimports %}
-{%endblock topimports %}
+{% block topimports %}{% vite_asset 'src/entries/add-media.js' %}{%endblock topimports %}
 
 {% block innercontent %}
 {% if request.user.is_authenticated %}
@@ -154,7 +153,6 @@
 {% endblock innercontent %}
 
 {% block bottomimports %}
-{% vite_asset 'src/entries/add-media.js' %}
 <script>
 	document.addEventListener("DOMContentLoaded", function(event) {
 		function getCSRFToken() {

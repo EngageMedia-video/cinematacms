@@ -14,7 +14,7 @@
 
 {% endblock headermeta %}
 
-{% block topimports %}
+{% block topimports %}{% vite_asset 'src/entries/profile-home.js' %}
 <!-- Admin user media: bottom corners only (fixes EDIT MEDIA button overlay) -->
 {% if USE_ROUNDED_CORNERS %}
 <style>
@@ -47,6 +47,3 @@ No such user
 {% if user %}<div id="page-profile-home"></div>{% endif %}
 {% endblock %}
 
-{% block bottomimports %}
-{% vite_asset 'src/entries/profile-home.js' %}
-{% endblock bottomimports %}

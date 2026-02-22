@@ -14,6 +14,8 @@
 
 {% endblock headermeta %}
 
+{% block topimports %}{% vite_asset 'src/entries/profile-home.js' %}{% endblock topimports %}
+
 {% block innercontent %}
 {% if user %}{% else %}
 No such user
@@ -23,7 +25,3 @@ No such user
 {% block content %}
 {% if user %}<div id="page-profile-home"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-{% vite_asset 'src/entries/profile-home.js' %}
-{% endblock bottomimports %}

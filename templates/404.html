@@ -11,13 +11,9 @@
 <title>Page Not Found - {{ PORTAL_NAME }}</title>
 {% endblock headermeta %}
 
-{% block topimports %}
-{% endblock topimports %}
+{% block topimports %}{% vite_asset 'src/entries/error.js' %}{% endblock topimports %}
 
 {% block innercontent %}
 <div id="page-error" class="error-page-wrap"></div>
 {% endblock %}
 
-{% block bottomimports %}
-{% vite_asset 'src/entries/error.js' %}
-{% endblock bottomimports %}

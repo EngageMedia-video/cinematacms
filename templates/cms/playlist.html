@@ -4,13 +4,9 @@
 
 {% block headtitle %}Playlist - {{PORTAL_NAME}}{% endblock headtitle %}
 
-{% block topimports %}
-{%endblock topimports %}
+{% block topimports %}{% vite_asset 'src/entries/playlist.js' %}{%endblock topimports %}
 
 {% block content %}
 {% if user %}<div id="page-playlist"></div>{% endif %}
 {% endblock %}
 
-{% block bottomimports %}
-{% vite_asset 'src/entries/playlist.js' %}
-{% endblock bottomimports %}

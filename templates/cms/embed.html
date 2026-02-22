@@ -4,13 +4,9 @@
 
 {% block headermeta %}{% endblock headermeta %}
 
-{% block topimports %}
-{%endblock topimports %}
+{% block topimports %}{% vite_asset 'src/entries/embed.js' %}{%endblock topimports %}
 
 {% block content %}
 <div id="page-embed"></div>
 {% endblock content %}
 
-{% block bottomimports %}
-{% vite_asset 'src/entries/embed.js' %}
-{% endblock bottomimports %}
