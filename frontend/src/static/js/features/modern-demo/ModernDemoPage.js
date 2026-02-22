@@ -9,16 +9,6 @@ import useDemoStore from './useDemoStore';
 
 import '../../../css/tailwind.css';
 
-// Scoped QueryClient — must NOT leak into shared components.
-const queryClient = new QueryClient({
-	defaultOptions: {
-		queries: {
-			staleTime: 30000,
-			refetchOnWindowFocus: false,
-		},
-	},
-});
-
 function MediaGrid({ items }) {
 	const viewMode = useDemoStore((s) => s.viewMode);
 
@@ -33,7 +23,7 @@ function MediaGrid({ items }) {
 		<div className={containerClass}>
 			{items.map((item) => (
 				<a
-					key={item.url}
+					key={item.friendly_token}
 					href={item.url}
 					className="block overflow-hidden rounded border border-border-input bg-surface-body transition-shadow hover:shadow-md"
 				>
@@ -43,6 +33,9 @@ function MediaGrid({ items }) {
 							alt={item.title}
 							className="aspect-video w-full object-cover"
 							loading="lazy"
+							decoding="async"
+							width={320}
+							height={180}
 						/>
 					)}
 					<div className="p-3">
@@ -66,7 +59,11 @@ function DemoContent() {
 	const setViewMode = useDemoStore((s) => s.setViewMode);
 	const setSearchQuery = useDemoStore((s) => s.setSearchQuery);
 
-	const { data, isLoading, isError } = useQuery({
+	// NOTE: This demo fetches only page 1 (~50 items) and filters client-side.
+	// For production features, pass the search query as a server-side parameter:
+	//   queryKey: ['media', { q: debouncedQuery }]
+	//   queryFn: () => axios.get(apiUrl.search, { params: { q: debouncedQuery } })
+	const { data, isLoading, isError, error } = useQuery({
 		queryKey: ['demo-media'],
 		queryFn: async () => {
 			const res = await axios.get(apiUrl.media);
@@ -91,17 +88,20 @@ function DemoContent() {
 					value={searchQuery}
 					onChange={(e) => setSearchQuery(e.target.value)}
 					placeholder="Filter by title..."
+					aria-label="Filter media by title"
 					className="rounded border border-border-input bg-surface-input px-3 py-1.5 text-sm text-content-input outline-none"
 				/>
-				<div className="flex rounded border border-border-input">
+				<div className="flex rounded border border-border-input" role="group" aria-label="View mode">
 					<button
 						onClick={() => setViewMode('grid')}
+						aria-pressed={viewMode === 'grid'}
 						className={`px-3 py-1.5 text-xs ${viewMode === 'grid' ? 'bg-brand-primary text-white' : 'text-content-body'}`}
 					>
 						Grid
 					</button>
 					<button
 						onClick={() => setViewMode('list')}
+						aria-pressed={viewMode === 'list'}
 						className={`px-3 py-1.5 text-xs ${viewMode === 'list' ? 'bg-brand-primary text-white' : 'text-content-body'}`}
 					>
 						List
@@ -111,7 +111,11 @@ function DemoContent() {
 
 			{/* Media content */}
 			{isLoading && <p className="py-8 text-center text-content-body/60">Loading media...</p>}
-			{isError && <p className="py-8 text-center text-red-600">Failed to load media. Is the API running?</p>}
+			{isError && !data && (
+				<p className="py-8 text-center text-content-error" role="alert">
+					Failed to load media: {error?.message || 'Is the API running?'}
+				</p>
+			)}
 			{data && <MediaGrid items={filteredItems} />}
 
 			{/* Comparison panel */}
@@ -162,13 +166,43 @@ const mode = useDemoStore(s => s.viewMode);`}
 	);
 }
 
+class DemoErrorBoundary extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = { hasError: false };
+	}
+	static getDerivedStateFromError() {
+		return { hasError: true };
+	}
+	render() {
+		if (this.state.hasError) {
+			return <p className="py-8 text-center text-content-body">Something went wrong loading this page.</p>;
+		}
+		return this.props.children;
+	}
+}
+
 export default function ModernDemoPage() {
+	const [queryClient] = React.useState(
+		() =>
+			new QueryClient({
+				defaultOptions: {
+					queries: {
+						staleTime: 30_000,
+						refetchOnWindowFocus: false,
+					},
+				},
+			})
+	);
+
 	usePage('modern-demo');
 
 	return (
 		<QueryClientProvider client={queryClient}>
 			<PageLayout>
-				<DemoContent />
+				<DemoErrorBoundary>
+					<DemoContent />
+				</DemoErrorBoundary>
 			</PageLayout>
 		</QueryClientProvider>
 	);

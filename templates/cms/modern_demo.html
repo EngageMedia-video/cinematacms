@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% load static %}
 {% load django_vite %}
 
+{% block headtitle %}Modern Demo - {{PORTAL_NAME}}{% endblock headtitle %}
 {% block topimports %}{% vite_asset 'src/entries/modern-demo.js' %}{% endblock topimports %}
 
 {% block content %}<div id="page-modern-demo"></div>{% endblock %}

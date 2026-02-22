@@ -22,6 +22,8 @@ Bug fixes and minor changes to existing features should follow legacy patterns.
 - **Context access**: `useContext(SomeContext)` (proper React subscriptions)
 - **Layout**: Use `PageLayout` from `pages/page.js` (wraps with sidebar, notifications)
 
+> **Note:** `PageLayout` is shared infrastructure that bridges both tracks. It internally uses legacy patterns (`LayoutStore`) for sidebar management. This is intentional and will be modernized in a future milestone.
+
 All new features must use modern track patterns.
 
 ## Naming Conventions

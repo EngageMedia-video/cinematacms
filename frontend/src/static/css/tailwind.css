@@ -45,6 +45,7 @@
 	/* Content / Text */
 	--color-content-body: var(--body-text-color);
 	--color-content-input: var(--input-color);
+	--color-content-error: var(--error-text-color, #dc2626);
 
 	/* Borders */
 	--color-border-input: var(--input-border-color);

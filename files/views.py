@@ -165,7 +165,9 @@ def view_page(request, slug):
 def modern_demo_page(request):
     if not request.user.is_staff:
         return HttpResponseRedirect("/")
-    return render(request, "cms/modern_demo.html", {})
+    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+        return HttpResponseRedirect("/accounts/2fa/totp/activate")
+    return render(request, "cms/modern_demo.html")
 
 
 def manage_users(request):

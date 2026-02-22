@@ -41,10 +41,17 @@ export default [
 					],
 					patterns: [
 						{
-							group: ['**/stores/LayoutStore', '**/stores/ThemeStore', '**/_PageStore'],
+							group: ['**/stores/*'],
 							message: 'Modern track must use Zustand stores (useFooStore.js), not legacy Flux stores.',
 						},
 					],
+				},
+			],
+			'no-restricted-syntax': [
+				'error',
+				{
+					selector: 'MemberExpression[property.name="_currentValue"]',
+					message: 'Use useContext() instead of ._currentValue in modern track code.',
 				},
 			],
 		},
