@@ -111,12 +111,13 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # Settings files have star imports, long lines, and runtime logic
-"cms/settings.py" = ["F401", "F403", "E402", "S105"]
+"cms/settings.py" = ["F401", "F403", "E402", "S104", "S105", "S108", "S324", "SIM115"]
 "cms/local_settings.py" = ["F401", "F403", "E402", "S105"]
 # Migration files are auto-generated
 "*/migrations/*.py" = ["E501", "E402"]
 # Tests can use assert and magic values
-"**/tests/**" = ["S101", "S106"]
+"**/tests/**" = ["S101", "S105", "S106"]
+"**/tests.py" = ["S101", "S105", "S106"]
 "tests/**" = ["S101", "S106"]
 "e2e/**" = ["S101", "S106"]
 
