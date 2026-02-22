@@ -1,0 +1,17 @@
+{
+  "recommendations": [
+    // Python
+    "ms-python.python",
+    "charliermarsh.ruff",
+
+    // JavaScript / React
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+
+    // Django
+    "batisteo.vscode-django",
+
+    // Editor
+    "editorconfig.editorconfig"
+  ]
+}

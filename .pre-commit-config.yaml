@@ -11,6 +11,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-json
+        exclude: ^\.vscode/  # VS Code uses JSONC (JSON with Comments)
       - id: check-toml
       - id: check-merge-conflict
       - id: check-added-large-files
