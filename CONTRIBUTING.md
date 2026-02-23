@@ -45,7 +45,7 @@ All new features must use modern track patterns.
 1. Create a directory under `src/features/<feature-name>/`
 2. Create a Zustand store if client state is needed (`useFooStore.js`)
 3. Use `useQuery`/`useMutation` for API calls (wrap in a scoped `QueryClientProvider`)
-4. Style with Tailwind utilities — import `../../static/css/tailwind.css`
+4. Style with Tailwind utilities — import `../../static/css/tailwind.css`. Use semantic tokens like `text-brand-theme`, `bg-surface-body`, `text-content-success`. Per-deployment customizations (`_extra.css`) flow through automatically via CSS vars.
 5. Create an entry file in `src/entries/<feature-name>.js`
 6. Add the entry to `rollupOptions.input` in `vite.config.js`
 7. Create a Django template extending `base.html`

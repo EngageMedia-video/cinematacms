@@ -83,9 +83,7 @@ We use plain `StaticFilesStorage` (not `ManifestStaticFilesStorage`) because:
 {# Load a page entry (includes all JS + CSS dependencies): #}
 {% vite_asset 'src/entries/media.js' %}
 
-{# For non-Vite static files (e.g., _extra.css) with query-string cache-busting: #}
-{% load static %}
-<link href="{% static 'css/_extra.css' %}?v={{ EXTRA_CSS_VERSION }}" rel="stylesheet">
+{# _extra.css is now part of the Vite build pipeline — no separate link needed #}
 ```
 
 ## Build Process
@@ -131,8 +129,6 @@ static_collected/                      # Django's collected static files
 ├── assets/                            # Copied from frontend build
 │   ├── index-D_w1zyLc.js
 │   └── _helpers-xk_PGhMb.css
-├── css/
-│   └── _extra.css                     # Non-Vite CSS (site customizations)
 ├── admin/                             # Django admin files
 └── lib/                               # Third-party libraries
 ```
@@ -176,7 +172,7 @@ location ~* ^/static/assets/ {
     add_header Cache-Control "public, max-age=31536000, immutable";
 }
 
-# All other static files (admin, lib, _extra.css) — moderate cache
+# All other static files (admin, lib) — moderate cache
 location /static/ {
     alias /home/cinemata/cinematacms/static_collected/;
     expires 7d;

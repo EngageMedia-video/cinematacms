@@ -233,16 +233,6 @@ STORAGES = {
     },
 }
 
-# Cache-busting version for non-hashed static files (e.g. _extra.css).
-# Computed from file content hash — no manual bumping needed.
-import hashlib as _hashlib
-
-_extra_css_path = os.path.join(BASE_DIR, "static", "css", "_extra.css")
-try:
-    EXTRA_CSS_VERSION = _hashlib.md5(open(_extra_css_path, "rb").read()).hexdigest()[:8]
-except FileNotFoundError:
-    EXTRA_CSS_VERSION = "1"
-
 AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "/"
 

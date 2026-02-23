@@ -194,6 +194,35 @@ function DemoContent() {
 			)}
 			{data && <MediaGrid items={filteredItems} />}
 
+			{/* Token Showcase — validates the Tailwind bridge */}
+			<div className="mt-10 rounded border border-border-input p-4">
+				<h2 className="mb-4 font-heading text-lg font-semibold text-content-body">Token Showcase</h2>
+				<div className="grid gap-4 md:grid-cols-2">
+					<div>
+						<h3 className="mb-2 text-sm font-medium text-content-body">Brand & Theme Colors</h3>
+						<div className="flex flex-wrap gap-2">
+							<span className="rounded bg-brand-theme px-3 py-1 text-xs text-white">brand-theme</span>
+							<span className="rounded bg-brand-accent px-3 py-1 text-xs text-white">brand-accent</span>
+							<span className="rounded bg-brand-primary px-3 py-1 text-xs text-white">brand-primary</span>
+						</div>
+						<p className="mt-2 text-sm">
+							<a href="#" className="text-content-link underline">
+								content-link
+							</a>
+						</p>
+					</div>
+					<div>
+						<h3 className="mb-2 text-sm font-medium text-content-body">Status Colors</h3>
+						<div className="flex flex-wrap gap-2">
+							<span className="text-sm text-content-success">Success</span>
+							<span className="text-sm text-content-warning">Warning</span>
+							<span className="text-sm text-content-danger">Danger</span>
+							<span className="text-sm text-content-error">Error</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
 			{/* Comparison panel */}
 			<div className="mt-10 rounded border border-border-input p-4">
 				<h2 className="mb-4 text-lg font-semibold text-content-body">Architecture Comparison</h2>

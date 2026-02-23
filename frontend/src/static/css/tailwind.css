@@ -41,6 +41,10 @@
  *   {component}-* → component-specific colors
  */
 @theme inline {
+	/* ── Brand / Theme ───────────────────────────────────── */
+	--color-brand-theme: var(--default-theme-color);
+	--color-brand-accent: var(--default-brand-color);
+
 	/* ── Brand / Action ───────────────────────────────────── */
 	--color-brand-primary: var(--btn-primary-bg-color);
 	--color-brand-primary-hover: var(--btn-primary-bg-hover-color);
@@ -60,12 +64,17 @@
 	--color-surface-sidebar: var(--sidebar-bg-color);
 	--color-surface-header: var(--header-bg-color);
 	--color-surface-input: var(--input-bg-color);
+	--color-surface-input-disabled: var(--input-disabled-bg-color);
 	--color-surface-popup: var(--popup-bg-color);
 
 	/* ── Content / Text ───────────────────────────────────── */
 	--color-content-body: var(--body-text-color);
 	--color-content-input: var(--input-color);
 	--color-content-error: var(--error-text-color, #dc2626);
+	--color-content-link: var(--links-color);
+	--color-content-success: var(--success-color);
+	--color-content-warning: var(--warning-color);
+	--color-content-danger: var(--danger-color);
 
 	/* ── Borders ──────────────────────────────────────────── */
 	--color-border-input: var(--input-border-color);
@@ -328,11 +337,24 @@
 	--color-user-form-otp-text: var(--user-action-form-inner-otp-input-text-color);
 	--color-user-form-recovery-text: var(--user-action-form-inner-recovery-code-input-text-color);
 
-	/* ── Layout Dimensions (from SCSS variables) ──────────── */
-	--spacing-header-height: 3.5rem;
-	--spacing-sidebar-width: 15rem;
+	/* ── Typography ───────────────────────────────────────── */
+	--font-sans: 'Amulya', 'Arial', sans-serif;
+	--font-heading: 'Facultad', 'Arial', sans-serif;
+
+	/* ── Layout Dimensions ────────────────────────────────── */
+	/* These read live CSS vars so _extra.css overrides flow through. */
+	--spacing-header-height: var(--header-height);
+	--spacing-sidebar-width: var(--sidebar-width);
 	--spacing-sidebar-nav-px: 1.5rem;
 	--spacing-header-px: 1rem;
+	--spacing-logo-height: var(--default-logo-height);
+	--spacing-item-width: var(--default-item-width);
+	/*
+	 * Not bridged:
+	 *   --default-max-row-items  → count, not a visual token
+	 *   --item-title-font-size, --item-title-line-height, etc.
+	 *     → item-card-specific; bridge when a modern-track card is built
+	 */
 }
 
 /*
