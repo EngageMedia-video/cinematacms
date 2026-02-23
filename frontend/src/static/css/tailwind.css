@@ -1,0 +1,358 @@
+/*
+ * Tailwind CSS v4 — Modern Track Only
+ *
+ * This file configures Tailwind for the "modern track" (features/ directory).
+ * It bridges ALL existing CSS custom properties (defined in config/_light_theme.scss
+ * and config/_dark_theme.scss) into Tailwind utility classes.
+ *
+ * Import this file in modern-track entry points only.
+ * Do NOT import in legacy components or shared entries like base.js.
+ *
+ * Usage examples:
+ *   bg-surface-body          → var(--body-bg-color)
+ *   text-content-body        → var(--body-text-color)
+ *   bg-brand-primary         → var(--btn-primary-bg-color)
+ *   border-border-input      → var(--input-border-color)
+ *   text-comment-author      → var(--comment-author-text-color)
+ *
+ * Tailwind v4 generates utilities on-demand, so declaring all variables
+ * here does NOT increase bundle size — only classes actually used in
+ * components end up in the output CSS.
+ */
+
+/* Individual imports — preflight omitted to avoid stomping normalize.css */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/*
+ * @theme inline ensures Tailwind emits var(--btn-primary-bg-color) directly
+ * in generated utilities, so dark/light theme toggling (via body.dark_theme /
+ * body.light_theme class) works automatically.
+ *
+ * Without "inline", Tailwind would emit an intermediate variable that resolves
+ * at the wrong scope.
+ *
+ * Naming follows semantic tiers:
+ *   brand-*     → action colors (primary/secondary buttons, links)
+ *   surface-*   → background surfaces
+ *   content-*   → text/foreground colors
+ *   border-*    → border colors
+ *   {component}-* → component-specific colors
+ */
+@theme inline {
+	/* ── Brand / Action ───────────────────────────────────── */
+	--color-brand-primary: var(--btn-primary-bg-color);
+	--color-brand-primary-hover: var(--btn-primary-bg-hover-color);
+	--color-brand-primary-icon: var(--btn-primary-icon-color);
+	--color-brand-secondary: var(--btn-secondary-bg-color);
+	--color-brand-secondary-hover: var(--btn-secondary-bg-hover-color);
+	--color-brand-secondary-border: var(--btn-secondary-border-color);
+
+	/* ── Button Text / Icons ──────────────────────────────── */
+	--color-btn-text: var(--btn-color);
+	--color-btn-secondary-text: var(--btn-secondary-color);
+	--color-btn-secondary-icon: var(--btn-secondary-icon-color);
+	--color-btn-secondary-icon-hover: var(--btn-secondary-icon-hover-color);
+
+	/* ── Surfaces (backgrounds) ───────────────────────────── */
+	--color-surface-body: var(--body-bg-color);
+	--color-surface-sidebar: var(--sidebar-bg-color);
+	--color-surface-header: var(--header-bg-color);
+	--color-surface-input: var(--input-bg-color);
+	--color-surface-popup: var(--popup-bg-color);
+
+	/* ── Content / Text ───────────────────────────────────── */
+	--color-content-body: var(--body-text-color);
+	--color-content-input: var(--input-color);
+	--color-content-error: var(--error-text-color, #dc2626);
+
+	/* ── Borders ──────────────────────────────────────────── */
+	--color-border-input: var(--input-border-color);
+	--color-border-hr: var(--hr-color);
+	--color-border-dotted-outline: var(--dotted-outline-color);
+
+	/* ── Header ───────────────────────────────────────────── */
+	--color-header-btn: var(--header-circle-button-color);
+	--color-header-popup-text: var(--header-popup-menu-color);
+	--color-header-popup-icon: var(--header-popup-menu-icon-color);
+
+	/* ── Sidebar ──────────────────────────────────────────── */
+	--color-sidebar-nav-border: var(--sidebar-nav-border-color);
+	--color-sidebar-nav-text: var(--sidebar-nav-item-text-color);
+	--color-sidebar-nav-icon: var(--sidebar-nav-item-icon-color);
+	--color-sidebar-bottom-link: var(--sidebar-bottom-link-color);
+
+	/* ── Spinner / Loader ─────────────────────────────────── */
+	--color-spinner: var(--spinner-loader-color);
+
+	/* ── Nav Menu ─────────────────────────────────────────── */
+	--color-nav-active-bg: var(--nav-menu-active-item-bg-color);
+	--color-nav-hover-bg: var(--nav-menu-item-hover-bg-color);
+	--color-nav-popup-hover-bg: var(--in-popup-nav-menu-item-hover-bg-color);
+
+	/* ── Search Field ─────────────────────────────────────── */
+	--color-search-input-text: var(--search-field-input-text-color);
+	--color-search-input-bg: var(--search-field-input-bg-color);
+	--color-search-input-border: var(--search-field-input-border-color);
+	--color-search-submit-text: var(--search-field-submit-text-color);
+	--color-search-submit-bg: var(--search-field-submit-bg-color);
+	--color-search-submit-border: var(--search-field-submit-border-color);
+	--color-search-submit-hover-bg: var(--search-field-submit-hover-bg-color);
+	--color-search-submit-hover-border: var(--search-field-submit-hover-border-color);
+
+	/* ── Search Results ───────────────────────────────────── */
+	--color-search-result-title: var(--search-results-item-content-link-title-text-color);
+
+	/* ── User Thumbnail ───────────────────────────────────── */
+	--color-user-thumb-bg: var(--logged-in-user-thumb-bg-color);
+
+	/* ── Popup / Modal ────────────────────────────────────── */
+	--color-popup-hr: var(--popup-hr-bg-color);
+	--color-popup-top-text: var(--popup-top-text-color);
+	--color-popup-top-bg: var(--popup-top-bg-color);
+	--color-popup-msg-title: var(--popup-msg-title-text-color);
+	--color-popup-msg-body: var(--popup-msg-main-text-color);
+
+	/* ── Comments ─────────────────────────────────────────── */
+	--color-comment-textarea-border: var(--comments-textarea-wrapper-border-color);
+	--color-comment-textarea-after-bg: var(--comments-textarea-wrapper-after-bg-color);
+	--color-comment-textarea-text: var(--comments-textarea-text-color);
+	--color-comment-textarea-placeholder: var(--comments-textarea-text-placeholder-color);
+	--color-comment-list-border: var(--comments-list-inner-border-color);
+	--color-comment-author: var(--comment-author-text-color);
+	--color-comment-date: var(--comment-date-text-color);
+	--color-comment-date-hover: var(--comment-date-hover-text-color);
+	--color-comment-text: var(--comment-text-color);
+	--color-comment-action-icon: var(--comment-actions-material-icon-text-color);
+	--color-comment-likes: var(--comment-actions-likes-num-text-color);
+	--color-comment-reply: var(--comment-actions-reply-button-text-color);
+	--color-comment-reply-hover: var(--comment-actions-reply-button-hover-text-color);
+	--color-comment-cancel: var(--comment-actions-cancel-removal-button-text-color);
+	--color-comment-cancel-hover: var(--comment-actions-cancel-removal-button-hover-text-color);
+
+	/* ── Media Items / Cards ──────────────────────────────── */
+	--color-item-bg: var(--item-bg-color);
+	--color-item-title: var(--item-title-text-color);
+	--color-item-thumb-bg: var(--item-thumb-bg-color);
+	--color-item-meta: var(--item-meta-text-color);
+	--color-item-meta-link: var(--item-meta-link-text-color);
+	--color-item-meta-link-hover: var(--item-meta-link-hover-text-color);
+	--color-item-profile-title-bg: var(--profile-page-item-content-title-bg-color);
+	--color-item-playlist-link: var(--playlist-item-main-view-full-link-text-color);
+	--color-item-playlist-link-hover: var(--playlist-item-main-view-full-link-hover-text-color);
+
+	/* ── Item Lists ───────────────────────────────────────── */
+	--color-item-list-load-more: var(--item-list-load-more-text-color);
+	--color-item-list-load-more-hover: var(--item-list-load-more-hover-text-color);
+
+	/* ── Media Lists ──────────────────────────────────────── */
+	--color-media-list-border: var(--media-list-row-border-color);
+	--color-media-list-header-link: var(--media-list-header-title-link-text-color);
+
+	/* ── Playlist Form ────────────────────────────────────── */
+	--color-pl-form-title-focus: var(--playlist-form-title-focused-bg-color);
+	--color-pl-form-privacy-border: var(--playlist-privacy-border-color);
+	--color-pl-form-cancel: var(--playlist-form-cancel-button-text-color);
+	--color-pl-form-cancel-hover: var(--playlist-form-cancel-button-hover-text-color);
+	--color-pl-form-field-text: var(--playlist-form-field-text-color);
+	--color-pl-form-field-border: var(--playlist-form-field-border-color);
+
+	/* ── Playlist Save Popup ──────────────────────────────── */
+	--color-pl-save-text: var(--playlist-save-popup-text-color);
+	--color-pl-save-border: var(--playlist-save-popup-border-color);
+	--color-pl-save-create-icon: var(--playlist-save-popup-create-icon-text-color);
+	--color-pl-save-create-focus-bg: var(--playlist-save-popup-create-focus-bg-color);
+
+	/* ── Playlist View ────────────────────────────────────── */
+	--color-pl-view-header-bg: var(--playlist-view-header-bg-color);
+	--color-pl-view-toggle: var(--playlist-view-header-toggle-text-color);
+	--color-pl-view-toggle-bg: var(--playlist-view-header-toggle-bg-color);
+	--color-pl-view-title-link: var(--playlist-view-title-link-text-color);
+	--color-pl-view-meta: var(--playlist-view-meta-text-color);
+	--color-pl-view-meta-link: var(--playlist-view-meta-link-color);
+	--color-pl-view-meta-link-hover: var(--playlist-view-meta-link-hover-text-color);
+	--color-pl-view-status: var(--playlist-view-status-text-color);
+	--color-pl-view-status-bg: var(--playlist-view-status-bg-color);
+	--color-pl-view-status-icon: var(--playlist-view-status-icon-text-color);
+	--color-pl-view-actions-bg: var(--playlist-view-actions-bg-color);
+	--color-pl-view-media-bg: var(--playlist-view-media-bg-color);
+	--color-pl-view-order: var(--playlist-view-media-order-number-color);
+	--color-pl-view-item-title: var(--playlist-view-item-title-text-color);
+	--color-pl-view-item-author: var(--playlist-view-item-author-text-color);
+	--color-pl-view-item-author-bg: var(--playlist-view-item-author-bg-color);
+
+	/* ── Profile Page ─────────────────────────────────────── */
+	--color-profile-bg: var(--profile-page-bg-color);
+	--color-profile-header-bg: var(--profile-page-header-bg-color);
+	--color-profile-videos-count: var(--profile-page-info-videos-number-text-color);
+	--color-profile-nav-link: var(--profile-page-nav-link-text-color);
+	--color-profile-nav-link-hover: var(--profile-page-nav-link-hover-text-color);
+	--color-profile-nav-link-active: var(--profile-page-nav-link-active-text-color);
+	--color-profile-nav-active-bar: var(--profile-page-nav-link-active-after-bg-color);
+
+	/* ── Add Media / Upload Page ──────────────────────────── */
+	--color-upload-dialog-bg: var(--add-media-page-tmplt-dialog-bg-color);
+	--color-upload-uploader-bg: var(--add-media-page-tmplt-uploader-bg-color);
+	--color-upload-dropzone-bg: var(--add-media-page-tmplt-dropzone-bg-color);
+	--color-upload-drag-text: var(--add-media-page-tmplt-drag-drop-inner-text-color);
+	--color-upload-spinner: var(--add-media-page-tmplt-upload-item-spiner-text-color);
+	--color-upload-actions: var(--add-media-page-tmplt-upload-item-actions-text-color);
+	--color-upload-btn-text: var(--add-media-page-qq-gallery-upload-button-text-color);
+	--color-upload-btn-icon: var(--add-media-page-qq-gallery-upload-button-icon-text-color);
+	--color-upload-btn-hover-text: var(--add-media-page-qq-gallery-upload-button-hover-text-color);
+	--color-upload-btn-hover-icon: var(--add-media-page-qq-gallery-upload-button-hover-icon-text-color);
+	--color-upload-btn-focus: var(--add-media-page-qq-gallery-upload-button-focus-text-color);
+	--color-upload-page: var(--add-media-page-color);
+
+	/* ── Playlist Page ────────────────────────────────────── */
+	--color-pl-page-bg: var(--playlist-page-bg-color);
+	--color-pl-page-details: var(--playlist-page-details-text-color);
+	--color-pl-page-thumb-bg: var(--playlist-page-thumb-bg-color);
+	--color-pl-page-title-link: var(--playlist-page-title-link-text-color);
+	--color-pl-page-action-icon: var(--playlist-page-actions-circle-icon-text-color);
+	--color-pl-page-action-icon-bg: var(--playlist-page-actions-circle-icon-bg-color);
+	--color-pl-page-action-btn: var(--playlist-page-actions-nav-item-button-text-color);
+	--color-pl-page-cancel: var(--playlist-page-actions-popup-message-bottom-cancel-button-text-color);
+	--color-pl-page-cancel-hover: var(--playlist-page-actions-popup-message-bottom-cancel-button-hover-text-color);
+	--color-pl-page-cancel-icon-hover: var(
+		--playlist-page-actions-popup-message-bottom-cancel-button-icon-hover-text-color
+	);
+	--color-pl-page-status: var(--playlist-page-status-text-color);
+	--color-pl-page-status-bg: var(--playlist-page-status-bg-color);
+	--color-pl-page-status-icon: var(--playlist-page-status-icon-text-color);
+	--color-pl-page-author-border: var(--playlist-page-author-border-top-color);
+	--color-pl-page-author-name: var(--playlist-page-author-name-link-color);
+	--color-pl-page-edit-icon: var(--playlist-page-author-edit-playlist-icon-button-text-color);
+	--color-pl-page-edit-icon-bg: var(--playlist-page-author-edit-playlist-icon-button-bg-color);
+	--color-pl-page-edit-icon-active: var(--playlist-page-author-edit-playlist-icon-button-active-text-color);
+	--color-pl-page-edit-form-text: var(--playlist-page-author-edit-playlist-form-wrap-text-color);
+	--color-pl-page-edit-form-bg: var(--playlist-page-author-edit-playlist-form-wrap-bg-color);
+	--color-pl-page-edit-form-border: var(--playlist-page-author-edit-playlist-form-wrap-border-color);
+	--color-pl-page-edit-form-icon-hover: var(
+		--playlist-page-author-edit-playlist-form-wrap-title-circle-icon-hover-text-color
+	);
+	--color-pl-page-edit-author-thumb: var(--playlist-page-author-edit-playlist-author-thumb-text-color);
+	--color-pl-page-edit-author-thumb-bg: var(--playlist-page-author-edit-playlist-author-thumb-bg-color);
+	--color-pl-page-details-bg: var(--playlist-page-details-bg-color);
+	--color-pl-page-video-list-bg: var(--playlist-page-video-list-bg-color);
+	--color-pl-page-video-item-title-bg: var(--playlist-page-video-list-item-title-bg-color);
+	--color-pl-page-video-item-hover-bg: var(--playlist-page-video-list-item-hover-bg-color);
+	--color-pl-page-video-item-title-hover-bg: var(--playlist-page-video-list-item-title-hover-bg-color);
+	--color-pl-page-video-item-after-bg: var(--playlist-page-video-list-item-after-bg-color);
+	--color-pl-page-video-order: var(--playlist-page-video-list-item-order-text-color);
+	--color-pl-page-video-options-hover: var(--playlist-page-video-list-item-options-icon-hover-color);
+	--color-pl-page-video-cancel: var(--playlist-page-video-list-item-options-popup-cancel-removal-button-text-color);
+	--color-pl-page-video-cancel-hover: var(
+		--playlist-page-video-list-item-options-popup-cancel-removal-button-hover-text-color
+	);
+	--color-pl-page-video-cancel-icon-hover: var(
+		--playlist-page-video-list-item-options-popup-cancel-removal-button-hover-icon-text-color
+	);
+
+	/* ── Media Author Actions (popup cancel buttons) ──────── */
+	--color-media-author-cancel: var(--media-author-actions-popup-bottom-cancel-removal-button-text-color);
+	--color-media-author-cancel-hover: var(--media-author-actions-popup-bottom-cancel-removal-button-hover-text-color);
+	--color-media-author-cancel-icon-hover: var(
+		--media-author-actions-popup-bottom-cancel-removal-button-hover-icon-text-color
+	);
+
+	/* ── Profile Banner (popup cancel buttons) ────────────── */
+	--color-profile-banner-cancel: var(--profile-banner-wrap-popup-bottom-cancel-removal-button-text-color);
+	--color-profile-banner-cancel-hover: var(--profile-banner-wrap-popup-bottom-cancel-removal-button-hover-text-color);
+	--color-profile-banner-cancel-icon-hover: var(
+		--profile-banner-wrap-popup-bottom-cancel-removal-button-hover-icon-text-color
+	);
+
+	/* ── Media Title / Banner ─────────────────────────────── */
+	--color-media-title-border: var(--media-title-banner-border-color);
+	--color-media-labels: var(--media-title-labels-area-text-color);
+	--color-media-labels-bg: var(--media-title-labels-area-bg-color);
+	--color-media-views: var(--media-title-views-text-color);
+
+	/* ── Media Actions ────────────────────────────────────── */
+	--color-media-action-focus-bg: var(--media-actions-not-popup-circle-icon-focus-bg-color);
+	--color-media-action-active-bg: var(--media-actions-not-popup-circle-icon-active-bg-color);
+	--color-media-like-border: var(--media-actions-like-before-border-color);
+	--color-media-share-title: var(--media-actions-share-title-text-color);
+	--color-media-share-nav-btn: var(--media-actions-share-options-nav-button-text-color);
+	--color-media-share-link: var(--media-actions-share-options-link-text-color);
+	--color-media-share-copy-border: var(--media-actions-share-copy-field-border-color);
+	--color-media-share-copy-bg: var(--media-actions-share-copy-field-bg-color);
+	--color-media-share-copy-text: var(--media-actions-share-copy-field-input-text-color);
+	--color-media-more-popup-bg: var(--media-actions-more-options-popup-bg-color);
+	--color-media-more-popup-link: var(--media-actions-more-options-popup-nav-link-text-color);
+	--color-media-share-fullscreen-bg: var(--media-actions-share-fullscreen-popup-main-bg-color);
+
+	/* ── Report Form ──────────────────────────────────────── */
+	--color-report-title: var(--report-form-title-text-color);
+	--color-report-label: var(--report-form-field-label-text-color);
+	--color-report-input-text: var(--report-form-field-input-text-color);
+	--color-report-input-border: var(--report-form-field-input-border-color);
+	--color-report-input-bg: var(--report-form-field-input-bg-color);
+	--color-report-help: var(--report-form-help-text-color);
+
+	/* ── Form Actions ─────────────────────────────────────── */
+	--color-form-actions-border: var(--form-actions-bottom-border-top-color);
+
+	/* ── Media Author Banner ──────────────────────────────── */
+	--color-media-author-name: var(--media-author-banner-name-text-color);
+	--color-media-author-date: var(--media-author-banner-date-text-color);
+
+	/* ── Media Content ────────────────────────────────────── */
+	--color-media-content-border: var(--media-content-banner-border-color);
+
+	/* ── Share / Embed ────────────────────────────────────── */
+	--color-embed-border: var(--share-embed-inner-on-right-border-color);
+	--color-embed-title: var(--share-embed-inner-on-right-ttl-text-color);
+	--color-embed-icon: var(--share-embed-inner-on-right-icon-text-color);
+	--color-embed-textarea-text: var(--share-embed-inner-textarea-text-color);
+	--color-embed-textarea-border: var(--share-embed-inner-textarea-border-color);
+	--color-embed-textarea-bg: var(--share-embed-inner-textarea-bg-color);
+	--color-embed-wrap-icon: var(--share-embed-inner-embed-wrap-iconn-text-color);
+
+	/* ── Media Status ─────────────────────────────────────── */
+	--color-media-status: var(--media-status-info-item-text-color);
+
+	/* ── Viewer Sidebar ───────────────────────────────────── */
+	--color-viewer-autoplay-border: var(--viewer-sidebar-auto-play-border-bottom-color);
+	--color-viewer-autoplay-label: var(--viewer-sidebar-auto-play-next-label-text-color);
+	--color-viewer-autoplay-option: var(--viewer-sidebar-auto-play-option-text-color);
+
+	/* ── User Action Forms (login, MFA, etc.) ─────────────── */
+	--color-user-form-bg: var(--user-action-form-inner-bg-color);
+	--color-user-form-title-border: var(--user-action-form-inner-title-border-bottom-color);
+	--color-user-form-input-border: var(--user-action-form-inner-input-border-color);
+	--color-user-form-input-text: var(--user-action-form-inner-input-text-color);
+	--color-user-form-input-bg: var(--user-action-form-inner-input-bg-color);
+	--color-user-form-otp-text: var(--user-action-form-inner-otp-input-text-color);
+	--color-user-form-recovery-text: var(--user-action-form-inner-recovery-code-input-text-color);
+
+	/* ── Layout Dimensions (from SCSS variables) ──────────── */
+	--spacing-header-height: 3.5rem;
+	--spacing-sidebar-width: 15rem;
+	--spacing-sidebar-nav-px: 1.5rem;
+	--spacing-header-px: 1rem;
+}
+
+/*
+ * Cascade-layer bridge for legacy coexistence.
+ *
+ * Problem: Legacy styles.scss is *unlayered*, so it outranks everything
+ * inside @layer utilities regardless of specificity.  This means Tailwind
+ * utilities on <a>, <input>, <button>, and heading elements are silently
+ * overridden by the global legacy selectors (e.g. `a { text-decoration: underline }`).
+ *
+ * Fix: `all: revert-layer` tells the browser "ignore every unlayered
+ * declaration for these elements and fall through to the next cascade
+ * layer", which is @layer utilities — exactly where Tailwind lives.
+ *
+ * :where() keeps specificity at (1,0,0) so only the #id contributes,
+ * making it easy for component-level overrides to win if needed.
+ *
+ * Scoped to [data-modern-track] so this only fires inside modern-track
+ * containers, leaving the rest of the page untouched.
+ */
+[data-modern-track] :where(a, input, button, select, textarea, h1, h2, h3, h4, h5, h6, p, pre, img) {
+	all: revert-layer;
+}

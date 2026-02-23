@@ -1,7 +1,9 @@
 import os
+
 from celery.schedules import crontab
-from .settings_utils import get_whisper_cpp_paths
 from corsheaders.defaults import default_headers
+
+from .settings_utils import get_whisper_cpp_paths
 
 # PORTAL SETTINGS
 PORTAL_NAME = "EngageMedia Video"  #  this is shown on several places, eg on contact email, or html title
@@ -196,7 +198,6 @@ CACHES = {
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 USE_I18N = True
-USE_L10N = True
 USE_TZ = True
 SITE_ID = 1
 
@@ -235,11 +236,10 @@ STORAGES = {
 # Cache-busting version for non-hashed static files (e.g. _extra.css).
 # Computed from file content hash — no manual bumping needed.
 import hashlib as _hashlib
+
 _extra_css_path = os.path.join(BASE_DIR, "static", "css", "_extra.css")
 try:
-    EXTRA_CSS_VERSION = _hashlib.md5(
-        open(_extra_css_path, "rb").read()
-    ).hexdigest()[:8]
+    EXTRA_CSS_VERSION = _hashlib.md5(open(_extra_css_path, "rb").read()).hexdigest()[:8]
 except FileNotFoundError:
     EXTRA_CSS_VERSION = "1"
 
@@ -255,9 +255,7 @@ DJANGO_VITE = {
         # Point directly at the build output — Django's collectstatic ignores
         # dot-directories by default ('.*' in StaticFilesConfig.ignore_patterns),
         # so .vite/manifest.json never gets copied to static_collected/.
-        "manifest_path": os.path.join(
-            BASE_DIR, "frontend", "build", "production", "static", ".vite", "manifest.json"
-        ),
+        "manifest_path": os.path.join(BASE_DIR, "frontend", "build", "production", "static", ".vite", "manifest.json"),
     },
 }
 
@@ -506,9 +504,7 @@ CANNOT_ADD_MEDIA_MESSAGE = ""
 UNLISTED_WORKFLOW_MAKE_PUBLIC_UPON_COMMENTARY_ADD = False
 UNLISTED_WORKFLOW_MAKE_PRIVATE_UPON_COMMENTARY_DELETE = False
 
-MP4HLS_COMMAND = (
-    "/home/cinemata/cinematacms/Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4hls"
-)
+MP4HLS_COMMAND = "/home/cinemata/cinematacms/Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4hls"
 
 
 DEBUG = False
@@ -550,9 +546,7 @@ TINYMCE_DEFAULT_CONFIG = {
     "formats": {  # customize h2 to always have emphasis-large class
         "h2": {"block": "h2", "classes": "emphasis-large"},
     },
-    "font_family_formats": (
-        "Amulya='Amulya',sans-serif;Facultad='Facultad',sans-serif;"
-    ),
+    "font_family_formats": ("Amulya='Amulya',sans-serif;Facultad='Facultad',sans-serif;"),
     "font_css": "/static/lib/Amulya/amulya.css,/static/lib/Facultad/Facultad-Regular.css",
     "font_size_formats": "16px 18px 24px 32px",
     "images_upload_url": "/tinymce/upload/",
@@ -599,13 +593,13 @@ MAINTENANCE_MODE_IGNORE_ADMIN_SITE = True
 MAINTENANCE_MODE_RETRY_AFTER = 3600  # 1 hour
 # URLs that should be accessible during maintenance mode
 MAINTENANCE_MODE_IGNORE_URLS = (
-    r'^/static/.*$',  # Allow static files
-    r'^/media/.*$',   # Allow media files if needed
-    r'^/favicon\.ico$',  # Allow favicon
-    r'^/robots\.txt$',  # Allow robots.txt if present
-    r'^/apple-touch-icon.*\.png$',  # Allow Apple touch icons
-    r'^/manifest\.json$',  # Allow web app manifest
-    r'^/browserconfig\.xml$',  # Allow Windows tile config
+    r"^/static/.*$",  # Allow static files
+    r"^/media/.*$",  # Allow media files if needed
+    r"^/favicon\.ico$",  # Allow favicon
+    r"^/robots\.txt$",  # Allow robots.txt if present
+    r"^/apple-touch-icon.*\.png$",  # Allow Apple touch icons
+    r"^/manifest\.json$",  # Allow web app manifest
+    r"^/browserconfig\.xml$",  # Allow Windows tile config
 )
 
 
@@ -639,8 +633,9 @@ if DEBUG:
     # Debug toolbar configuration for 6.0.0
     def show_toolbar(request):
         """Show toolbar for local development, handling both IP and localhost"""
-        # Always return True in DEBUG mode for simplicity
-        return True
+        from django.conf import settings
+
+        return settings.DEBUG
 
     DEBUG_TOOLBAR_CONFIG = {
         "SHOW_TOOLBAR_CALLBACK": show_toolbar,
@@ -654,4 +649,3 @@ if DEBUG:
 
     mimetypes.add_type("application/javascript", ".js", True)
     mimetypes.add_type("text/css", ".css", True)
-

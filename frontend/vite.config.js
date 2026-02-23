@@ -1,5 +1,6 @@
 import { defineConfig, transformWithEsbuild } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
 	plugins: [
@@ -24,6 +25,7 @@ export default defineConfig({
 				plugins: ['styled-jsx/babel'],
 			},
 		}),
+		tailwindcss(),
 	],
 
 	base: '/static/',
@@ -89,10 +91,19 @@ export default defineConfig({
 				liked: 'src/entries/liked.js',
 				'add-media': 'src/entries/add-media.js',
 				error: 'src/entries/error.js',
+				'modern-demo': 'src/entries/modern-demo.js',
 			},
 			output: {
 				globals: {
 					'video.js': 'videojs',
+				},
+				// Isolate modern-track libraries into a dedicated chunk.
+				// If a legacy component accidentally imports these, the separate
+				// chunk will appear in the build output, making the leak visible.
+				// Without this, Rollup might merge them into a shared chunk
+				// that gets loaded by every page (~15KB gzipped).
+				manualChunks: {
+					'modern-track-vendor': ['@tanstack/react-query', 'zustand'],
 				},
 			},
 		},

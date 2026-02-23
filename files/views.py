@@ -1,25 +1,25 @@
+import contextlib
 import csv
 import json
 import logging
 import os
 import shutil
+from datetime import datetime, timedelta
 from pathlib import Path
 
-from cms.permissions import user_requires_mfa
-from datetime import datetime, timedelta
-
+from allauth.mfa.utils import is_mfa_enabled
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.postgres.search import SearchQuery
-from django.core.mail import EmailMessage, send_mail
+from django.core.mail import EmailMessage
 from django.db import models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
-from django.views.decorators.clickjacking import xframe_options_exempt
 from django.template.defaultfilters import slugify
 from django.utils import timezone
+from django.views.decorators.clickjacking import xframe_options_exempt
 from rest_framework import permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import (
@@ -37,11 +37,9 @@ from cms.custom_pagination import FastPaginationWithoutCount
 from cms.permissions import (
     IsAuthorizedToAdd,
     IsUserOrEditor,
-    IsUserOrManager,
-    user_allowed_to_upload,
+    user_requires_mfa,
 )
 from users.models import User
-from allauth.mfa.utils import is_mfa_enabled
 
 from . import lists
 from .forms import ContactForm, EditSubtitleForm, MediaForm, SubtitleForm
@@ -49,29 +47,18 @@ from .helpers import (
     clean_friendly_token,
     clean_query,
     cleanup_temp_upload_files,
-    create_temp_file,
     get_allowed_video_extensions,
     produce_ffmpeg_commands,
     rm_file,
-)
-from .query_cache import (
-    get_media_detail_cache_key,
-    get_playlist_detail_cache_key,
-    get_media_list_cache_key,
-    get_cached_result,
-    set_cached_result,
-    MEDIA_DETAIL_TIMEOUT,
-    PLAYLIST_DETAIL_TIMEOUT,
-    MEDIA_LIST_TIMEOUT,
 )
 from .methods import (
     can_upload_media,
     get_current_featured_media,
     get_user_or_session,
+    is_curator,
     is_media_allowed_type,
     is_mediacms_editor,
     is_mediacms_manager,
-    is_curator,
     list_tasks,
     notify_user_on_comment,
     show_recommended_media,
@@ -82,13 +69,12 @@ from .models import (
     Comment,
     EncodeProfile,
     Encoding,
-    ExistingURL,
     FeaturedVideo,
     HomepagePopup,
     IndexPageFeatured,
+    Language,
     License,
     Media,
-    Language,
     MediaCountry,
     MediaLanguage,
     Page,
@@ -98,6 +84,16 @@ from .models import (
     Tag,
     Topic,
     TopMessage,
+)
+from .query_cache import (
+    MEDIA_DETAIL_TIMEOUT,
+    MEDIA_LIST_TIMEOUT,
+    PLAYLIST_DETAIL_TIMEOUT,
+    get_cached_result,
+    get_media_detail_cache_key,
+    get_media_list_cache_key,
+    get_playlist_detail_cache_key,
+    set_cached_result,
 )
 from .serializers import (
     CategorySerializer,
@@ -165,6 +161,17 @@ def view_page(request, slug):
     return render(request, "cms/page.html", context)
 
 
+@login_required
+def modern_demo_page(request):
+    if not settings.DEBUG:
+        raise Http404
+    if not request.user.is_staff:
+        return HttpResponseRedirect("/")
+    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+        return HttpResponseRedirect("/accounts/2fa/totp/activate")
+    return render(request, "cms/modern_demo.html")
+
+
 def manage_users(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
@@ -189,9 +196,7 @@ def manage_media(request):
         return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
     # Hard config -> ensure superuser / manager / editor only have access
-    if not (
-        request.user.is_superuser or request.user.is_manager or request.user.is_editor
-    ):
+    if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
         return HttpResponseRedirect("/")
 
     context = {}
@@ -205,9 +210,7 @@ def manage_comments(request):
     if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
         return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
-    if not (
-        request.user.is_superuser or request.user.is_manager or request.user.is_editor
-    ):
+    if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
         return HttpResponseRedirect("/")
 
     context = {}
@@ -218,9 +221,7 @@ def export_users(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    if not (
-        request.user.is_superuser or request.user.is_manager or request.user.is_editor
-    ):
+    if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
         return HttpResponseRedirect("/")
 
     response = HttpResponse(content_type="text/csv")
@@ -272,7 +273,7 @@ def contact(request):
                 name = request.POST.get("name")
             message = request.POST.get("message")
 
-            title = "[{}] - Contact form message received".format(settings.PORTAL_NAME)
+            title = f"[{settings.PORTAL_NAME}] - Contact form message received"
 
             msg = """
 You have received a message through the contact form\n
@@ -387,9 +388,7 @@ def view_media(request):
         return render(request, "cms/media.html", context)
         # return HttpResponseRedirect('/')
     user_or_session = get_user_or_session(request)
-    save_user_action.delay(
-        user_or_session, friendly_token=friendly_token, action="watch"
-    )
+    save_user_action.delay(user_or_session, friendly_token=friendly_token, action="watch")
     context = {}
     context["media"] = friendly_token
     context["media_object"] = media
@@ -403,9 +402,9 @@ def view_media(request):
                 # Store hashed password in session for file access (avoid persisting plaintext)
                 import hashlib
 
-                request.session[f"media_password_{media.friendly_token}"] = (
-                    hashlib.sha256(media.password.encode("utf-8")).hexdigest()
-                )
+                request.session[f"media_password_{media.friendly_token}"] = hashlib.sha256(
+                    media.password.encode("utf-8")
+                ).hexdigest()
             else:
                 wrong_password_provided = True
 
@@ -414,11 +413,7 @@ def view_media(request):
     context["CAN_DELETE_COMMENTS"] = False
 
     if request.user.is_authenticated:
-        if (
-            (media.user.id == request.user.id)
-            or is_mediacms_editor(request.user)
-            or is_mediacms_manager(request.user)
-        ):
+        if (media.user.id == request.user.id) or is_mediacms_editor(request.user) or is_mediacms_manager(request.user):
             context["CAN_DELETE_MEDIA"] = True
             context["CAN_EDIT_MEDIA"] = True
             context["CAN_DELETE_COMMENTS"] = True
@@ -435,16 +430,14 @@ def view_media(request):
 
 
 def view_old_media(request, user, video):
-    url = "/Members/{0}/videos/{1}".format(user, video)
+    url = f"/Members/{user}/videos/{video}"
     media = Media.objects.filter(existing_urls__url__in=[url]).first()
     if media:
         friendly_token = media.friendly_token
     else:
         return HttpResponseRedirect("/")
     user_or_session = get_user_or_session(request)
-    save_user_action.delay(
-        user_or_session, friendly_token=friendly_token, action="watch"
-    )
+    save_user_action.delay(user_or_session, friendly_token=friendly_token, action="watch")
     context = {}
     context["media"] = friendly_token
     context["media_object"] = media
@@ -454,11 +447,7 @@ def view_old_media(request, user, video):
     context["CAN_DELETE_COMMENTS"] = False
 
     if request.user.is_authenticated:
-        if (
-            (media.user.id == request.user.id)
-            or is_mediacms_editor(request.user)
-            or is_mediacms_manager(request.user)
-        ):
+        if (media.user.id == request.user.id) or is_mediacms_editor(request.user) or is_mediacms_manager(request.user):
             context["CAN_DELETE_MEDIA"] = True
             context["CAN_EDIT_MEDIA"] = True
             context["CAN_DELETE_COMMENTS"] = True
@@ -467,17 +456,13 @@ def view_old_media(request, user, video):
 
 @xframe_options_exempt
 def embed_old_media(request, user, video):
-    url = "/Members/{0}/videos/{1}".format(user, video)
-    media = (
-        Media.objects.values("friendly_token")
-        .filter(existing_urls__url__in=[url])
-        .first()
-    )
+    url = f"/Members/{user}/videos/{video}"
+    media = Media.objects.values("friendly_token").filter(existing_urls__url__in=[url]).first()
     if media:
         friendly_token = media["friendly_token"]
     else:
         return HttpResponseRedirect("/")
-    user_or_session = get_user_or_session(request)
+    get_user_or_session(request)
     # save_user_action.delay(
     #     user_or_session, friendly_token=friendly_token, action='watch')
     context = {}
@@ -497,11 +482,7 @@ def edit_media(request):
     if not media:
         return HttpResponseRedirect("/")
 
-    if not (
-        request.user == media.user
-        or is_mediacms_editor(request.user)
-        or is_mediacms_manager(request.user)
-    ):
+    if not (request.user == media.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user)):
         return HttpResponseRedirect("/")
     # redirect to media page if invalid type
     if not is_media_allowed_type(media):
@@ -563,7 +544,7 @@ def edit_media(request):
                 temp_file_handle = None
                 try:
                     try:
-                        temp_file_handle = open(temp_file_path, "rb")
+                        temp_file_handle = open(temp_file_path, "rb")  # noqa: SIM115
                         myfile = File(temp_file_handle, name=os.path.basename(temp_file_path))
                         media.media_file = myfile
                         # File will be saved in the transaction below
@@ -572,9 +553,7 @@ def edit_media(request):
                             f"Failed to assign new media file from {temp_file_path} for media {media.friendly_token}: {e}",
                             exc_info=True,
                         )
-                        messages.add_message(
-                            request, messages.ERROR, "Failed to assign new media file"
-                        )
+                        messages.add_message(request, messages.ERROR, "Failed to assign new media file")
                         return HttpResponseRedirect(media.get_absolute_url())
 
                     # Clean up old files and encodings
@@ -592,7 +571,9 @@ def edit_media(request):
                             except AttributeError:
                                 # Fallback for Python < 3.9
                                 try:
-                                    is_safe = os.path.commonpath([media_root, original_file_resolved]) == str(media_root)
+                                    is_safe = os.path.commonpath([media_root, original_file_resolved]) == str(
+                                        media_root
+                                    )
                                 except ValueError:
                                     is_safe = False
 
@@ -615,9 +596,7 @@ def edit_media(request):
                     old_encodings = Encoding.objects.filter(media=media)
                     for encoding in old_encodings:
                         try:
-                            if encoding.media_file and os.path.exists(
-                                encoding.media_file.path
-                            ):
+                            if encoding.media_file and os.path.exists(encoding.media_file.path):
                                 rm_file(encoding.media_file.path)
                         except Exception as e:
                             logger.error(
@@ -630,7 +609,7 @@ def edit_media(request):
                     # Delete old HLS files if they exist (with directory traversal protection)
                     if media.hls_file:
                         # Guard against missing HLS_DIR setting
-                        hls_dir_setting = getattr(settings, 'HLS_DIR', None)
+                        hls_dir_setting = getattr(settings, "HLS_DIR", None)
                         if hls_dir_setting:
                             try:
                                 # Build the full path relative to MEDIA_ROOT
@@ -737,9 +716,7 @@ def edit_media(request):
                             # Now trigger re-encoding
                             from files import tasks
 
-                            tasks.media_init.apply_async(
-                                args=[media.friendly_token], countdown=5
-                            )
+                            tasks.media_init.apply_async(args=[media.friendly_token], countdown=5)
                     except Exception as e:
                         logger.error(
                             f"Failed to update media {media.friendly_token} during re-encode preparation: {e}",
@@ -767,9 +744,7 @@ def edit_media(request):
                     # Always clear the session flag to prevent stale session state
                     request.session.pop(session_key, None)
 
-                messages.add_message(
-                    request, messages.INFO, "Media was edited and will be re-encoded!"
-                )
+                messages.add_message(request, messages.INFO, "Media was edited and will be re-encoded!")
             else:
                 messages.add_message(request, messages.INFO, "Media was edited!")
 
@@ -809,11 +784,7 @@ def add_subtitle(request):
     if not media:
         return HttpResponseRedirect("/")
 
-    if not (
-        request.user == media.user
-        or is_mediacms_editor(request.user)
-        or is_mediacms_manager(request.user)
-    ):
+    if not (request.user == media.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user)):
         return HttpResponseRedirect("/")
 
     if request.method == "POST":
@@ -852,11 +823,7 @@ def edit_subtitle(request):
     if not subtitle:
         return HttpResponseRedirect("/")
 
-    if not (
-        request.user == subtitle.user
-        or is_mediacms_editor(request.user)
-        or is_mediacms_manager(request.user)
-    ):
+    if not (request.user == subtitle.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user)):
         return HttpResponseRedirect("/")
 
     context = {"subtitle": subtitle, "action": action}
@@ -903,9 +870,7 @@ def edit_subtitle(request):
                 messages.add_message(request, messages.INFO, "Subtitle was edited")
                 return HttpResponseRedirect(subtitle.media.get_absolute_url())
             except Exception as e:
-                logger.error(
-                    f"Failed to save subtitle edit for {subtitle.subtitle_file.path}: {str(e)}"
-                )
+                logger.error(f"Failed to save subtitle edit for {subtitle.subtitle_file.path}: {str(e)}")
                 form.add_error(None, f"Could not save subtitle: {str(e)}")
         else:
             if not form.data.get("subtitle"):
@@ -921,7 +886,7 @@ def embed_media(request):
     media = Media.objects.values("title").filter(friendly_token=friendly_token).first()
     if not media:
         return HttpResponseRedirect("/")
-    user_or_session = get_user_or_session(request)
+    get_user_or_session(request)
     # save_user_action.delay(
     #     user_or_session, friendly_token=friendly_token, action='watch')
     context = {}
@@ -960,11 +925,7 @@ class MediaList(APIView):
             try:
                 page_num = int(page_param)
                 user_id = request.user.id if request.user.is_authenticated else None
-                cache_key = get_media_list_cache_key(
-                    show=show_param or 'latest',
-                    page=page_num,
-                    user_id=user_id
-                )
+                cache_key = get_media_list_cache_key(show=show_param or "latest", page=page_num, user_id=user_id)
                 cached_result = get_cached_result(cache_key)
                 if cached_result is not None:
                     return Response(cached_result)
@@ -981,7 +942,7 @@ class MediaList(APIView):
             pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
             if author_param:
                 from .helpers import can_view_all_user_media
-                
+
                 if can_view_all_user_media(self.request.user, user):
                     # Owners, managers, curators, and superusers see ALL videos (including private, unlisted, restricted)
                     basic_query = Q(user=user)
@@ -989,9 +950,7 @@ class MediaList(APIView):
                     # Everyone else sees only public, reviewed videos
                     basic_query = Q(state="public", is_reviewed=True, user=user)
             else:
-                basic_query = Q(
-                    state="public", encoding_status="success", is_reviewed=True
-                )
+                basic_query = Q(state="public", encoding_status="success", is_reviewed=True)
 
             if show_param == "latest":
                 media = Media.objects.filter(basic_query).order_by("-add_date")
@@ -1003,9 +962,7 @@ class MediaList(APIView):
                 # These should not appear in listings until their start_date arrives
                 now = timezone.now()
                 has_future_schedule = FeaturedVideo.objects.filter(
-                    media=OuterRef('pk'),
-                    is_active=True,
-                    start_date__gt=now
+                    media=OuterRef("pk"), is_active=True, start_date__gt=now
                 )
 
                 if scheduled_featured:
@@ -1016,7 +973,7 @@ class MediaList(APIView):
                         Media.objects.filter(basic_query, featured=True)
                         .exclude(pk=scheduled_featured.pk)
                         .exclude(Exists(has_future_schedule))
-                        .order_by(F('featured_date').desc(nulls_last=True), '-add_date')
+                        .order_by(F("featured_date").desc(nulls_last=True), "-add_date")
                         .values_list("pk", flat=True)
                     )
                     # Combine: scheduled first, then others
@@ -1031,20 +988,20 @@ class MediaList(APIView):
                 else:
                     # No scheduled video, return all featured videos ordered by featured_date
                     # Exclude videos that have a future-scheduled FeaturedVideo entry
-                    media = Media.objects.filter(basic_query, featured=True).exclude(Exists(has_future_schedule)).order_by(F('featured_date').desc(nulls_last=True), '-add_date')
+                    media = (
+                        Media.objects.filter(basic_query, featured=True)
+                        .exclude(Exists(has_future_schedule))
+                        .order_by(F("featured_date").desc(nulls_last=True), "-add_date")
+                    )
             else:
                 media = Media.objects.filter(basic_query).order_by("-add_date")
         paginator = pagination_class()
         if offset_param:
             media = media[int(offset_param) :]
         if show_param != "recommended":
-            media = (
-                media
-                .select_related("user")
-                .prefetch_related(
-                    "category",
-                    "topics",
-                )
+            media = media.select_related("user").prefetch_related(
+                "category",
+                "topics",
             )
         page = paginator.paginate_queryset(media, request)
 
@@ -1053,7 +1010,7 @@ class MediaList(APIView):
 
         # Cache the response for standard queries
         if not author_param and not offset_param and show_param != "recommended":
-            try:
+            try:  # noqa: SIM105
                 set_cached_result(cache_key, response_data.data, MEDIA_LIST_TIMEOUT)
             except NameError:
                 pass  # cache_key not defined (shouldn't happen, but safe fallback)
@@ -1082,8 +1039,7 @@ class MediaDetail(APIView):
         friendly_token = clean_friendly_token(friendly_token)
         try:
             media = (
-                Media.objects
-                .select_related("user", "license")
+                Media.objects.select_related("user", "license")
                 .prefetch_related(
                     "category",
                     "topics",
@@ -1098,7 +1054,9 @@ class MediaDetail(APIView):
             self.check_object_permissions(self.request, media)
             # Handle PRIVATE media first (only owner/editor can access)
             if media.state == "private" and not (
-                self.request.user == media.user or is_mediacms_editor(self.request.user) or is_curator(self.request.user)
+                self.request.user == media.user
+                or is_mediacms_editor(self.request.user)
+                or is_curator(self.request.user)
             ):
                 return Response(
                     {"detail": "media is private"},
@@ -1109,20 +1067,14 @@ class MediaDetail(APIView):
             elif media.state == "restricted" and not (
                 self.request.user == media.user or is_mediacms_editor(self.request.user)
             ):
-                if (
-                    (not password)
-                    or (not media.password)
-                    or (password != media.password)
-                ):
+                if (not password) or (not media.password) or (password != media.password):
                     return Response(
                         {"detail": "media is restricted"},
                         status=status.HTTP_401_UNAUTHORIZED,
                     )
             return media
         except PermissionDenied:
-            return Response(
-                {"detail": "bad permissions"}, status=status.HTTP_401_UNAUTHORIZED
-            )
+            return Response({"detail": "bad permissions"}, status=status.HTTP_401_UNAUTHORIZED)
         except Media.DoesNotExist:
             return Response(
                 {"detail": "media file does not exist"},
@@ -1131,6 +1083,7 @@ class MediaDetail(APIView):
         except Exception as e:
             # Log the actual error for debugging
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error retrieving media {friendly_token}: {str(e)}", exc_info=True)
             return Response(
@@ -1161,9 +1114,7 @@ class MediaDetail(APIView):
             related_media = []
         else:
             related_media = show_related_media(media, request=request, limit=100)
-            related_media_serializer = MediaSerializer(
-                related_media, many=True, context={"request": request}
-            )
+            related_media_serializer = MediaSerializer(related_media, many=True, context={"request": request})
             related_media = related_media_serializer.data
         ret = serializer.data
         ret["related_media"] = related_media
@@ -1182,9 +1133,7 @@ class MediaDetail(APIView):
             return media
 
         if not (is_mediacms_editor(request.user) or is_mediacms_manager(request.user)):
-            return Response(
-                {"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)
 
         action = request.data.get("type")
         profiles_list = request.data.get("encoding_profiles")
@@ -1204,24 +1153,18 @@ class MediaDetail(APIView):
                         valid_profiles.append(p)
                     except ValueError:
                         return Response(
-                            {
-                                "detail": "encoding_profiles must be int or list of ints of valid encode profiles"
-                            },
+                            {"detail": "encoding_profiles must be int or list of ints of valid encode profiles"},
                             status=status.HTTP_400_BAD_REQUEST,
                         )
             media.encode(profiles=valid_profiles)
-            return Response(
-                {"detail": "media will be encoded"}, status=status.HTTP_201_CREATED
-            )
+            return Response({"detail": "media will be encoded"}, status=status.HTTP_201_CREATED)
         elif action == "review":
-            if result == True:
+            if result:
                 media.is_reviewed = True
-            elif result == False:
+            elif not result:
                 media.is_reviewed = False
             media.save(update_fields=["is_reviewed"])
-            return Response(
-                {"detail": "media reviewed set"}, status=status.HTTP_201_CREATED
-            )
+            return Response({"detail": "media reviewed set"}, status=status.HTTP_201_CREATED)
         return Response(
             {"detail": "not valid action or no action specified"},
             status=status.HTTP_400_BAD_REQUEST,
@@ -1233,9 +1176,7 @@ class MediaDetail(APIView):
         if isinstance(media, Response):
             return media
 
-        serializer = MediaSerializer(
-            media, data=request.data, context={"request": request}
-        )
+        serializer = MediaSerializer(media, data=request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1266,14 +1207,10 @@ class MediaActions(APIView):
                 .get(friendly_token=friendly_token)
             )
             if media.state == "private" and self.request.user != media.user:
-                return Response(
-                    {"detail": "media is private"}, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"detail": "media is private"}, status=status.HTTP_400_BAD_REQUEST)
             return media
         except PermissionDenied:
-            return Response(
-                {"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST)
         except Media.DoesNotExist:
             return Response(
                 {"detail": "media file does not exist"},
@@ -1282,6 +1219,7 @@ class MediaActions(APIView):
         except Exception as e:
             # Log the actual error for debugging
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error retrieving media {friendly_token}: {str(e)}", exc_info=True)
             return Response(
@@ -1293,17 +1231,11 @@ class MediaActions(APIView):
         # GET: only show reported messages
         media = self.get_object(friendly_token)
 
-        if not (
-            request.user == media.user
-            or is_mediacms_editor(request.user)
-            or is_mediacms_manager(request.user)
-        ):
-            return Response(
-                {"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
         if isinstance(media, Response):
             return media
+
+        if not (request.user == media.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user)):
+            return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)
 
         ret = {}
         reported = MediaAction.objects.filter(media=media, action="report")
@@ -1337,13 +1269,9 @@ class MediaActions(APIView):
                 extra_info=extra,
             )
 
-            return Response(
-                {"detail": "action received"}, status=status.HTTP_201_CREATED
-            )
+            return Response({"detail": "action received"}, status=status.HTTP_201_CREATED)
         else:
-            return Response(
-                {"detail": "no action specified"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "no action specified"}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, friendly_token, format=None):
         media = self.get_object(friendly_token)
@@ -1351,9 +1279,7 @@ class MediaActions(APIView):
             return media
 
         if not request.user.is_superuser:
-            return Response(
-                {"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)
 
         action = request.data.get("type")
         if action:
@@ -1366,9 +1292,7 @@ class MediaActions(APIView):
                     status=status.HTTP_201_CREATED,
                 )
         else:
-            return Response(
-                {"detail": "no action specified"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "no action specified"}, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, friendly_token, format=None):
         # Admin actions
@@ -1377,24 +1301,18 @@ class MediaActions(APIView):
             return media
 
         if not request.user.is_superuser:
-            return Response(
-                {"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)
 
         action = request.data.get("type")
         if action == "feature":
             media._current_user = request.user
             media.featured = True
             media.save(update_fields=["featured"])
-            return Response(
-                {"detail": "media featured"}, status=status.HTTP_201_CREATED
-            )
+            return Response({"detail": "media featured"}, status=status.HTTP_201_CREATED)
         elif action == "unfeature":
             media.featured = False
             media.save(update_fields=["featured"])
-            return Response(
-                {"detail": "media unfeatured"}, status=status.HTTP_201_CREATED
-            )
+            return Response({"detail": "media unfeatured"}, status=status.HTTP_201_CREATED)
         return Response(
             {"detail": "not valid action or no action specified"},
             status=status.HTTP_400_BAD_REQUEST,
@@ -1406,7 +1324,7 @@ class MediaSearch(APIView):
 
     def get(self, request, format=None):
         params = self.request.query_params
-        show_param = params.get("show", "")
+        params.get("show", "")
         query = params.get("q", "").strip().lower()
         category = params.get("c", "").strip()
         tag = params.get("t", "").strip()
@@ -1417,8 +1335,8 @@ class MediaSearch(APIView):
         ordering = params.get("ordering", "").strip()
         sort_by = params.get("sort_by", "").strip()
         media_type = params.get("media_type", "").strip()
-        add_date = params.get("add_date", "").strip()
-        edit_date = params.get("edit_date", "").strip()
+        params.get("add_date", "").strip()
+        params.get("edit_date", "").strip()
 
         author = params.get("author", "").strip()
 
@@ -1428,10 +1346,7 @@ class MediaSearch(APIView):
         sort_by_options = ["title", "add_date", "edit_date", "views", "likes"]
         if sort_by not in sort_by_options:
             sort_by = "add_date"
-        if ordering == "asc":
-            ordering = ""
-        else:
-            ordering = "-"
+        ordering = "" if ordering == "asc" else "-"
 
         if media_type not in ["video", "image", "audio", "pdf"]:
             media_type = None
@@ -1444,11 +1359,7 @@ class MediaSearch(APIView):
 
         if query:
             query = clean_query(query)
-            q_parts = [
-                q_part.rstrip("y")
-                for q_part in query.split()
-                if q_part not in STOP_WORDS
-            ]
+            q_parts = [q_part.rstrip("y") for q_part in query.split() if q_part not in STOP_WORDS]
             if q_parts:
                 query = SearchQuery(q_parts[0] + ":*", search_type="raw")
                 for part in q_parts[1:]:
@@ -1470,16 +1381,14 @@ class MediaSearch(APIView):
         if language:
             language = {
                 value: key
-                for key, value in Language.objects.exclude(
-                    code__in=["automatic", "automatic-translation"]
-                ).values_list("code", "title")
+                for key, value in Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list(
+                    "code", "title"
+                )
             }.get(language)
             media = media.filter(media_language=language)
 
         if country:
-            country = {
-                value: key for key, value in dict(lists.video_countries).items()
-            }.get(country)
+            country = {value: key for key, value in dict(lists.video_countries).items()}.get(country)
             media = media.filter(media_country=country)
 
         if media_type:
@@ -1522,13 +1431,9 @@ class MediaSearch(APIView):
             media = media.values("title")[:40]
             return Response(media, status=status.HTTP_200_OK)
         else:
-            media = (
-                media
-                .select_related("user")
-                .prefetch_related(
-                    "category",
-                    "topics",
-                )
+            media = media.select_related("user").prefetch_related(
+                "category",
+                "topics",
             )
             if category or tag:
                 pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
@@ -1537,18 +1442,14 @@ class MediaSearch(APIView):
                 pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
             paginator = pagination_class()
             page = paginator.paginate_queryset(media, request)
-            serializer = MediaSearchSerializer(
-                page, many=True, context={"request": request}
-            )
+            serializer = MediaSearchSerializer(page, many=True, context={"request": request})
             return paginator.get_paginated_response(serializer.data)
 
 
 class EncodeProfileList(APIView):
     def get(self, request, format=None):
         profiles = EncodeProfile.objects.all()
-        serializer = EncodeProfileSerializer(
-            profiles, many=True, context={"request": request}
-        )
+        serializer = EncodeProfileSerializer(profiles, many=True, context={"request": request})
         return Response(serializer.data)
 
 
@@ -1611,9 +1512,7 @@ class PlaylistDetail(APIView):
             self.check_object_permissions(self.request, playlist)
             return playlist
         except PermissionDenied:
-            return Response(
-                {"detail": "not enough permissions"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "not enough permissions"}, status=status.HTTP_400_BAD_REQUEST)
         except:
             return Response(
                 {"detail": "Playlist does not exist"},
@@ -1635,7 +1534,7 @@ class PlaylistDetail(APIView):
         serializer = PlaylistDetailSerializer(playlist, context={"request": request})
 
         # Import helper functions
-        from .helpers import is_advanced_user, can_user_see_video_in_playlist
+        from .helpers import can_user_see_video_in_playlist, is_advanced_user
 
         # Determine which videos to show based on user permissions
         if is_advanced_user(request.user) and playlist.user == request.user:
@@ -1643,10 +1542,7 @@ class PlaylistDetail(APIView):
             playlist_media_queryset = (
                 PlaylistMedia.objects.filter(playlist=playlist)
                 .exclude(media__state="private")
-                .select_related(
-                    "media__user",
-                    "media__license"
-                )
+                .select_related("media__user", "media__license")
                 .prefetch_related(
                     "media__category",
                     "media__topics",
@@ -1658,10 +1554,7 @@ class PlaylistDetail(APIView):
             playlist_media_queryset = (
                 PlaylistMedia.objects.filter(playlist=playlist)
                 .exclude(media__state="private")
-                .select_related(
-                    "media__user",
-                    "media__license"
-                )
+                .select_related("media__user", "media__license")
                 .prefetch_related(
                     "media__category",
                     "media__topics",
@@ -1671,13 +1564,8 @@ class PlaylistDetail(APIView):
         else:
             # Anonymous users see only public videos
             playlist_media_queryset = (
-                PlaylistMedia.objects.filter(
-                    playlist=playlist, media__state="public"
-                )
-                .select_related(
-                    "media__user",
-                    "media__license"
-                )
+                PlaylistMedia.objects.filter(playlist=playlist, media__state="public")
+                .select_related("media__user", "media__license")
                 .prefetch_related(
                     "media__category",
                     "media__topics",
@@ -1691,9 +1579,7 @@ class PlaylistDetail(APIView):
             if can_user_see_video_in_playlist(request.user, playlist_media.media):
                 accessible_media.append(playlist_media.media)
 
-        playlist_media_serializer = MediaSerializer(
-            accessible_media, many=True, context={"request": request}
-        )
+        playlist_media_serializer = MediaSerializer(accessible_media, many=True, context={"request": request})
 
         ret = serializer.data
         ret["playlist_media"] = playlist_media_serializer.data
@@ -1709,9 +1595,7 @@ class PlaylistDetail(APIView):
         playlist = self.get_playlist(friendly_token)
         if isinstance(playlist, Response):
             return playlist
-        serializer = PlaylistDetailSerializer(
-            playlist, data=request.data, context={"request": request}
-        )
+        serializer = PlaylistDetailSerializer(playlist, data=request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1725,22 +1609,18 @@ class PlaylistDetail(APIView):
         media_friendly_token = request.data.get("media_friendly_token")
         ordering = 0
         if request.data.get("ordering"):
-            try:
+            with contextlib.suppress(ValueError):
                 ordering = int(request.data.get("ordering"))
-            except ValueError:
-                pass
 
         if action in ["add", "remove", "ordering"]:
             # Import helper functions
-            from .helpers import is_advanced_user, can_user_see_video_in_playlist
+            from .helpers import can_user_see_video_in_playlist, is_advanced_user
 
             # Determine media query based on user permissions
             if is_advanced_user(request.user) and playlist.user == request.user:
                 # Advanced users can add public, unlisted, and restricted videos
                 media = (
-                    Media.objects.filter(
-                        friendly_token=media_friendly_token, media_type="video"
-                    )
+                    Media.objects.filter(friendly_token=media_friendly_token, media_type="video")
                     .exclude(state="private")
                     .first()
                 )
@@ -1761,9 +1641,7 @@ class PlaylistDetail(APIView):
                     )
 
                 if action == "add":
-                    media_in_playlist = PlaylistMedia.objects.filter(
-                        playlist=playlist
-                    ).count()
+                    media_in_playlist = PlaylistMedia.objects.filter(playlist=playlist).count()
                     if media_in_playlist >= settings.MAX_MEDIA_PER_PLAYLIST:
                         return Response(
                             {"detail": "max number of media for a Playlist reached"},
@@ -1781,9 +1659,7 @@ class PlaylistDetail(APIView):
                             status=status.HTTP_201_CREATED,
                         )
                 elif action == "remove":
-                    PlaylistMedia.objects.filter(
-                        playlist=playlist, media=media
-                    ).delete()
+                    PlaylistMedia.objects.filter(playlist=playlist, media=media).delete()
                     return Response(
                         {"detail": "media removed from Playlist"},
                         status=status.HTTP_201_CREATED,
@@ -1851,7 +1727,7 @@ class EncodingDetail(APIView):
                     chunk_file_path=chunk_file_path,
                 ).count()
                 > 1
-                and force == False
+                and not force
             ):
                 Encoding.objects.filter(id=encoding_id).delete()
                 return Response({"status": "fail"}, status=status.HTTP_400_BAD_REQUEST)
@@ -1871,15 +1747,11 @@ class EncodingDetail(APIView):
             if chunk:
                 original_media_path = chunk_file_path
                 original_media_md5sum = encoding.md5sum
-                original_media_url = (
-                    settings.SSL_FRONTEND_HOST + encoding.media_chunk_url
-                )
+                original_media_url = settings.SSL_FRONTEND_HOST + encoding.media_chunk_url
             else:
                 original_media_path = media.media_file.path
                 original_media_md5sum = media.md5sum
-                original_media_url = (
-                    settings.SSL_FRONTEND_HOST + media.original_media_url
-                )
+                original_media_url = settings.SSL_FRONTEND_HOST + media.original_media_url
 
             ret["original_media_url"] = original_media_url
             ret["original_media_path"] = original_media_path
@@ -1991,19 +1863,13 @@ class CommentDetail(APIView):
 
     def get_object(self, friendly_token):
         try:
-            media = Media.objects.select_related("user").get(
-                friendly_token=friendly_token
-            )
+            media = Media.objects.select_related("user").get(friendly_token=friendly_token)
             self.check_object_permissions(self.request, media)
             if media.state == "private" and self.request.user != media.user:
-                return Response(
-                    {"detail": "media is private"}, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"detail": "media is private"}, status=status.HTTP_400_BAD_REQUEST)
             return media
         except PermissionDenied:
-            return Response(
-                {"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST)
         except Media.DoesNotExist:
             return Response(
                 {"detail": "media file does not exist"},
@@ -2012,6 +1878,7 @@ class CommentDetail(APIView):
         except Exception as e:
             # Log the actual error for debugging
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error(f"Error retrieving media {friendly_token}: {str(e)}", exc_info=True)
             return Response(
@@ -2053,9 +1920,7 @@ class CommentDetail(APIView):
             ):
                 comment.delete()
             else:
-                return Response(
-                    {"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def post(self, request, friendly_token):
@@ -2087,9 +1952,7 @@ class UserActions(APIView):
             if request.user.is_authenticated:
                 media = (
                     Media.objects.select_related("user")
-                    .filter(
-                        mediaactions__user=request.user, mediaactions__action=action
-                    )
+                    .filter(mediaactions__user=request.user, mediaactions__action=action)
                     .order_by("-mediaactions__action_date")
                 )
             elif request.session.session_key:
@@ -2112,9 +1975,7 @@ class UserActions(APIView):
 class CategoryList(APIView):
     def get(self, request, format=None):
         categories = Category.objects.filter().order_by("title")
-        serializer = CategorySerializer(
-            categories, many=True, context={"request": request}
-        )
+        serializer = CategorySerializer(categories, many=True, context={"request": request})
         ret = serializer.data
         return Response(ret)
 
@@ -2135,23 +1996,15 @@ class MediaLanguageList(APIView):
 
     def get(self, request, format=None):
         languages = MediaLanguage.objects.filter(media_count__gt=0).order_by("title")
-        serializer = MediaLanguageSerializer(
-            languages, many=True, context={"request": request}
-        )
+        serializer = MediaLanguageSerializer(languages, many=True, context={"request": request})
         ret = serializer.data
         return Response(ret)
 
 
 class MediaCountryList(APIView):
     def get(self, request, format=None):
-        countries = (
-            MediaCountry.objects.exclude(listings_thumbnail="")
-            .filter(media_count__gt=0)
-            .order_by("title")
-        )
-        serializer = MediaCountrySerializer(
-            countries, many=True, context={"request": request}
-        )
+        countries = MediaCountry.objects.exclude(listings_thumbnail="").filter(media_count__gt=0).order_by("title")
+        serializer = MediaCountrySerializer(countries, many=True, context={"request": request})
         ret = serializer.data
         return Response(ret)
 
@@ -2173,9 +2026,7 @@ class TagList(APIView):
 
 class TopMessageList(APIView):
     def get(self, request, format=None):
-        top_message = (
-            TopMessage.objects.filter(active=True).order_by("-add_date").first()
-        )
+        top_message = TopMessage.objects.filter(active=True).order_by("-add_date").first()
         serializer = TopMessageSerializer(top_message, context={"request": request})
         return Response(serializer.data)
 
@@ -2193,10 +2044,6 @@ class HomepagePopupList(APIView):
 
 class IndexPageFeaturedList(APIView):
     def get(self, request, format=None):
-        indexfeatured = IndexPageFeatured.objects.filter(active=True).order_by(
-            "ordering"
-        )
-        serializer = IndexPageFeaturedSerializer(
-            indexfeatured, many=True, context={"request": request}
-        )
+        indexfeatured = IndexPageFeatured.objects.filter(active=True).order_by("ordering")
+        serializer = IndexPageFeaturedSerializer(indexfeatured, many=True, context={"request": request})
         return Response(serializer.data)
