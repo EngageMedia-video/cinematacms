@@ -161,14 +161,9 @@ def view_page(request, slug):
     return render(request, "cms/page.html", context)
 
 
-@login_required
 def modern_demo_page(request):
     if not settings.DEBUG:
         raise Http404
-    if not request.user.is_staff:
-        return HttpResponseRedirect("/")
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
-        return HttpResponseRedirect("/accounts/2fa/totp/activate")
     return render(request, "cms/modern_demo.html")
 
 

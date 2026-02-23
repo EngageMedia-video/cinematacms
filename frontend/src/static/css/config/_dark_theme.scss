@@ -10,10 +10,10 @@ body.dark_theme {
 	--btn-primary-icon-color: white;
 	--btn-primary-bg-color: #ed7c30;
 	--btn-primary-bg-hover-color: #c16732;
-	--btn-secondary-color: #f8ffff;
+	--btn-secondary-color: rgba(255, 255, 255, 0.88);
 	--btn-secondary-icon-color: white;
 	--btn-secondary-icon-hover-color: rgb(243, 243, 243);
-	--btn-secondary-bg-color: hsl(0, 0%, 100%);
+	--btn-secondary-bg-color: transparent;
 	--btn-secondary-border-color: #bad8dd;
 	--btn-secondary-bg-hover-color: #1a3f61;
 
@@ -379,4 +379,16 @@ body.dark_theme {
 	--user-action-form-inner-recovery-code-input-text-color: #ffffff;
 
 	/* ################################################## */
+
+	/* ── Site Palette (formalising _extra.css hardcodes) ── */
+	--site-meta-color: #bad8dd;
+	--site-heading-link-color: #7bbbbf;
+	--site-emphasis-color: #7bbbbf;
+	--site-content-box-bg-color: #0b3145;
+	--site-accent-color: #ed7c30;
+	--site-accent-secondary-color: #e7a27b;
+	--site-search-field-bg-color: #102c40;
+	--site-form-btn-bg-color: #7bbbbf;
+	--site-featured-bg-color: #0b3144;
+	--site-player-accent-color: #026690;
 }

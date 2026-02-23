@@ -355,6 +355,21 @@
 	 *   --item-title-font-size, --item-title-line-height, etc.
 	 *     → item-card-specific; bridge when a modern-track card is built
 	 */
+
+	/* ── Site Palette (formalised from _extra.css) ───────── */
+	/* These bridge the recurring hardcoded colors from       */
+	/* _extra.css into theme-aware CSS variables defined in   */
+	/* _light_theme.scss and _dark_theme.scss.                */
+	--color-site-meta: var(--site-meta-color);
+	--color-site-heading: var(--site-heading-link-color);
+	--color-site-emphasis: var(--site-emphasis-color);
+	--color-site-box-bg: var(--site-content-box-bg-color);
+	--color-site-accent: var(--site-accent-color);
+	--color-site-accent-alt: var(--site-accent-secondary-color);
+	--color-site-search-bg: var(--site-search-field-bg-color);
+	--color-site-form-btn: var(--site-form-btn-bg-color);
+	--color-site-featured-bg: var(--site-featured-bg-color);
+	--color-site-player-accent: var(--site-player-accent-color);
 }
 
 /*
