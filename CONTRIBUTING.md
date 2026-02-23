@@ -80,6 +80,103 @@ ESLint enforces the boundary between tracks:
 
 Run `npm run lint` to check modern track files.
 
+## Styling with Tailwind CSS
+
+### How It Works
+
+Modern-track components use **Tailwind CSS v4** with semantic design tokens that bridge the existing SCSS theme system:
+
+```
+_light_theme.scss / _dark_theme.scss
+  ↓  define CSS custom properties (e.g. --btn-primary-bg-color)
+tailwind.css  @theme inline
+  ↓  maps them to Tailwind tokens (e.g. --color-brand-primary)
+Tailwind utility classes
+  ↓  used in JSX (e.g. bg-brand-primary)
+```
+
+- **Dark/light auto-switch** — tokens read CSS vars that change when the body class toggles between `body.dark_theme` and `body.light_theme`. No extra work needed.
+- **`_extra.css` overrides** — per-deployment customizations flow through automatically because CSS vars resolve at runtime.
+- **`@theme inline`** — this keyword tells Tailwind v4 to emit `var(--btn-primary-bg-color)` directly in generated utilities, so theme switching works. Without it, Tailwind would create an intermediate variable that resolves at the wrong scope.
+
+### Token Naming Pattern
+
+Tokens follow `{group}-{variant}` naming. The Tailwind utility prefix comes from usage:
+
+| Tailwind Class | Token | CSS Variable | Use For |
+|---|---|---|---|
+| `bg-brand-primary` | `brand-primary` | `--btn-primary-bg-color` | Primary button/action backgrounds |
+| `bg-brand-primary-hover` | `brand-primary-hover` | `--btn-primary-bg-hover-color` | Primary button hover state |
+| `text-btn-text` | `btn-text` | `--btn-color` | Text on primary buttons |
+| `bg-surface-body` | `surface-body` | `--body-bg-color` | Page background |
+| `bg-surface-popup` | `surface-popup` | `--popup-bg-color` | Modal/popup backgrounds |
+| `text-content-body` | `content-body` | `--body-text-color` | Main body text |
+| `text-content-link` | `content-link` | `--links-color` | Hyperlinks |
+| `text-content-error` | `content-error` | `--error-text-color` | Error messages |
+| `text-content-success` | `content-success` | `--success-color` | Success indicators |
+| `border-border-input` | `border-input` | `--input-border-color` | Form input borders |
+
+### Finding Tokens
+
+1. **Live reference** — visit `/modern-demo/` (available when `DEBUG=True`). It shows all 220+ tokens with live color swatches, usage recipes, and a dark-mode toggle.
+2. **Canonical source** — `frontend/src/static/css/tailwind.css` defines every token in the `@theme inline` block.
+3. **Reading the bridge** — each line maps a Tailwind token to a CSS var:
+   ```css
+   --color-brand-primary: var(--btn-primary-bg-color);
+   ```
+   This means `bg-brand-primary` gives you the primary button color. The `--color-` prefix is how Tailwind v4 registers color tokens; you drop it when writing classes.
+
+### Common Patterns
+
+**Primary & secondary buttons:**
+```jsx
+<button className="bg-brand-primary text-btn-text px-4 py-2 rounded hover:bg-brand-primary-hover">
+  Save
+</button>
+<button className="bg-brand-secondary text-btn-secondary-text px-4 py-2 rounded border border-brand-secondary-border hover:bg-brand-secondary-hover">
+  Cancel
+</button>
+```
+
+**Card / surface with text:**
+```jsx
+<div className="bg-surface-body text-content-body p-4 rounded border border-border-input">
+  <h3 className="font-heading text-lg">Title</h3>
+  <p className="text-item-meta text-sm">Subtitle or metadata</p>
+</div>
+```
+
+**Status badge:**
+```jsx
+<span className="text-content-success text-sm font-medium">Published</span>
+<span className="text-content-warning text-sm font-medium">Pending</span>
+<span className="text-content-danger text-sm font-medium">Rejected</span>
+```
+
+**Form input:**
+```jsx
+<input
+  className="bg-surface-input text-content-input border border-border-input rounded px-3 py-2 placeholder:text-content-body/50"
+  placeholder="Enter value..."
+/>
+```
+
+### What NOT to Do
+
+- **Don't hardcode hex colors** — use tokens. `bg-brand-primary` not `bg-[#ED7C30]`.
+- **Don't construct dynamic class names** — `` `bg-${color}` `` breaks Tailwind v4's static analysis. Use complete class strings.
+- **Don't create new SCSS files** — modern-track features use Tailwind only.
+- **Don't import `tailwind.css` in legacy components** — it is scoped to the modern track. Legacy components use SCSS.
+
+### Demo Page Reference
+
+| | |
+|---|---|
+| **URL** | `/modern-demo/` (requires `DEBUG=True`) |
+| **What it shows** | All 220+ tokens, live color swatches, copy-paste usage recipes, architecture comparison |
+| **How to use it** | Browse tokens, copy class names, toggle dark mode to see theme switches |
+| **Source** | `frontend/src/features/modern-demo/ModernDemoPage.js` |
+
 ## Pull Request Guidelines
 
 When submitting a PR:
