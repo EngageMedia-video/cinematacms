@@ -84,7 +84,7 @@ bash ./models/download-ggml-model.sh large-v3
 make
 cd ../cinematacms
 
-SECRET_KEY=`python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`
+SECRET_KEY=`python3 -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`
 
 # remove http or https prefix
 FRONTEND_HOST=`echo "$FRONTEND_HOST" | sed -r 's/http:\/\///g'`
@@ -114,25 +114,25 @@ if command -v node &> /dev/null && command -v npm &> /dev/null; then
 else
     echo "Warning: Node.js/npm not found, skipping frontend build"
     echo "Running collectstatic only..."
-    python manage.py collectstatic --noinput --verbosity=2
+    python3 manage.py collectstatic --noinput --verbosity=2
 fi
 
 
-python manage.py migrate
-python manage.py loaddata files/fixtures/creative_commons_licenses.json
-python manage.py loaddata fixtures/encoding_profiles.json
-python manage.py loaddata fixtures/categories.json
-python manage.py load_apac_languages
-python manage.py populate_media_languages
-python manage.py populate_media_countries
-python manage.py populate_topics
+python3 manage.py migrate
+python3 manage.py loaddata files/fixtures/creative_commons_licenses.json
+python3 manage.py loaddata fixtures/encoding_profiles.json
+python3 manage.py loaddata fixtures/categories.json
+python3 manage.py load_apac_languages
+python3 manage.py populate_media_languages
+python3 manage.py populate_media_countries
+python3 manage.py populate_topics
 
-ADMIN_PASS=`python -c "import secrets;chars = 'abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(10)))"`
-echo "from users.models import User; User.objects.create_superuser('admin', 'admin@example.com', '$ADMIN_PASS')" | python manage.py shell
+ADMIN_PASS=`python3 -c "import secrets;chars = 'abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(10)))"`
+echo "from users.models import User; User.objects.create_superuser('admin', 'admin@example.com', '$ADMIN_PASS')" | python3 manage.py shell
 
 # Configure Django Site with proper error handling
 echo "Configuring Django Site..."
-if ! python manage.py update_site_name --name "$PORTAL_NAME" --domain "$FRONTEND_HOST"; then
+if ! python3 manage.py update_site_name --name "$PORTAL_NAME" --domain "$FRONTEND_HOST"; then
     echo "Error: Failed to configure Django Site. Aborting installation."
     exit 1
 fi
