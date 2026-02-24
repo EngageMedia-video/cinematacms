@@ -16,6 +16,7 @@ CinemataCMS used Webpack 5 with a custom build system (~760 LOC of configuration
 - Custom Django storage backend (`WebpackHashedFilesStorage`)
 
 Pain points:
+
 - **Build time**: ~14s production builds
 - **Dev server startup**: 15-30s cold start
 - **HMR latency**: 2-5s for CSS/JS changes
@@ -31,6 +32,7 @@ Migrate to **Vite** with **django-vite** for Django integration. The migration w
 3. **PR 2C**: Remove Webpack entirely (point of no return)
 
 Key choices:
+
 - **`StaticFilesStorage`** instead of `ManifestStaticFilesStorage` — avoids double-hashing Vite's already-hashed output and breaking font URL rewriting
 - **Remove `postcss-custom-properties`** entirely — IE 11 fallback unnecessary; all modern browsers support CSS custom properties natively
 - **`VITE_DEV_MODE` env var** instead of tying to `DEBUG` — prevents accidental Vite dev mode in production
@@ -70,6 +72,5 @@ Key choices:
 
 ## References
 
-- [Migration Plan](../plans/2026-02-19-feat-frontend-modernization-m2-vite-migration-plan.md)
 - [Baseline Metrics](frontend-modernization/baseline-metrics.md)
 - [Post-Migration Metrics](frontend-modernization/post-migration-metrics.md)
