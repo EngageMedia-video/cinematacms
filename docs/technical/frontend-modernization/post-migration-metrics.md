@@ -1,9 +1,10 @@
 # Frontend Post-Migration Metrics (Vite)
 
-**Date**: 2026-02-21
-**Branch**: `feat/vite-migration` at PR #432
-**React**: 19.0.0
+**Date**: 2026-02-24
+**Branch**: `feature/frontend-modernization` at PR #438
+**React**: 19.2.4
 **Build system**: Vite 7.3.1
+**Tailwind CSS**: 4.2.1
 
 ---
 
@@ -11,95 +12,89 @@
 
 | Run | Wall clock |
 |-----|-----------|
-| 1   | 2.57s     |
-| 2   | 2.76s     |
+| 1   | 2.52s     |
+| 2   | 2.67s     |
 
 **Comparison**: ~14s (Webpack) → ~2.6s (Vite) = **5.4x faster**
 
 ## Output File Counts
 
-| Type | Webpack | Vite | Change |
-|------|---------|------|--------|
-| JS files | 27 | 50 | +23 (code splitting) |
-| CSS files | 14 (incl. `_extra.css`) | 20 | +6 (code splitting) |
+| Type | Webpack | Vite (initial) | Vite (current) | Notes |
+|------|---------|----------------|----------------|-------|
+| JS files | 27 | 50 | 49 | Code splitting |
+| CSS files | 14 (incl. `_extra.css`) | 20 | 19 | `_extra.css` now inside Vite build |
 
 Vite's Rollup-based code splitting produces more granular chunks. This increases HTTP request count per page (4-8 JS files vs 2 under Webpack) but is mitigated by HTTP/2 multiplexing and `<link rel="modulepreload">`.
 
 ## Total Bundle Sizes
 
-| Metric | Webpack | Vite | Change |
-|--------|---------|------|--------|
-| JS raw | 1,462,812 B (1,428.5 kB) | 1,392,435 B (1,359.8 kB) | -4.8% |
-| JS gzip | ~429,678 B (419.6 kB) | 413,818 B (404.1 kB) | -3.7% |
-| CSS raw | 551,532 B (538.6 kB)¹ | 535,357 B (522.8 kB) | -2.9% |
-| CSS gzip | ~87,945 B (85.9 kB)¹ | 94,259 B (92.0 kB) | +7.2% |
+| Metric | Webpack | Vite (current) | Change |
+|--------|---------|----------------|--------|
+| JS raw | 1,462,812 B (1,428.5 kB) | 799,649 B (780.9 kB) | **-45.3%** |
+| CSS raw | 551,532 B (538.6 kB)¹ | 678,756 B (662.8 kB)² | +23.1% |
 
-¹ Webpack CSS totals included `_extra.css` (70,189 B raw / 9,660 B gzip) which is not part of the Vite build. Excluding `_extra.css`, the apples-to-apples comparison is:
+¹ Webpack CSS totals included `_extra.css` (70,189 B raw).
+² Vite CSS now includes `_extra.css` inside the build pipeline plus Tailwind CSS utilities for the modern demo page (~16 kB).
 
-| Metric | Webpack (excl. _extra) | Vite | Change |
-|--------|----------------------|------|--------|
-| CSS raw | 481,343 B (470.1 kB) | 535,357 B (522.8 kB) | +11.2% |
-| CSS gzip | ~78,285 B (76.4 kB) | 94,259 B (92.0 kB) | +20.4% |
+**JS size drop explained**: video.js was marked as external (eliminating ~615 kB of double-loaded code). The `MediaDurationInfo` shared chunk dropped from 700 kB to 68 kB.
 
-The CSS size increase is expected:
-- **postcss-custom-properties removed**: Webpack's `preserve: false` replaced `var(--x)` with static values and removed the `var()` calls. Vite preserves native CSS custom properties (which are necessary for runtime theme switching).
-- **Code splitting overhead**: More CSS files = more per-chunk boilerplate.
-- **Different minifier**: Vite uses esbuild for CSS minification vs Webpack's cssnano. The functional CSS is identical.
+**CSS size increase explained**:
+- **`_extra.css` migrated into Vite** — previously served as a separate `{% static %}` file, now imported by `styles.scss` and merged into the chunk graph. This adds ~70 kB to the Vite total but eliminates a separate HTTP request.
+- **Tailwind CSS utilities** — the modern demo page's `tailwind.css` generates on-demand utility classes (~16 kB CSS chunk).
+- **postcss-custom-properties removed** — Webpack's `preserve: false` replaced `var(--x)` with static values. Vite preserves native CSS custom properties (necessary for runtime theme switching).
 
 ## Per-Entry JS Bundle Sizes
 
 | Entry/Chunk | Raw (kB) | Gzip (kB) |
 |-------------|----------|-----------|
-| MediaDurationInfo (shared) | 700.30 | 199.45 |
-| _helpers (shared) | 234.43 | 71.93 |
-| vendor (React, axios, flux) | 101.00 | 36.34 |
-| ViewerInfoVideo (shared) | 67.11 | 17.21 |
-| ItemList (shared) | 37.65 | 10.71 |
-| index (React entry) | 32.00 | 8.98 |
-| ManageItemList (shared) | 27.82 | 6.18 |
-| actions (shared) | 16.65 | 3.93 |
-| index (layout) | 14.86 | 4.31 |
-| members | 13.40 | 3.57 |
-| search | 11.97 | 3.20 |
-| media | 11.97 | 3.32 |
-| index (home) | 11.85 | 3.82 |
-| playlist | 9.26 | 2.95 |
-| PlaylistCreationForm (shared) | 7.46 | 2.58 |
-| demo | 6.97 | 2.65 |
-| manage-media | 6.05 | 1.88 |
-| profile-about | 5.57 | 1.89 |
-| manage-users | 4.03 | 1.53 |
-| ItemListAsync (shared) | 3.48 | 1.51 |
+| _helpers (shared) | 289.01 | 92.22 |
+| media | 78.76 | 19.86 |
+| MediaDurationInfo (shared) | 68.11 | 16.38 |
+| playlist | 46.31 | 15.63 |
+| modern-demo | 44.52 | 10.05 |
+| modern-track-vendor (Zustand, TanStack Query) | 42.17 | 13.21 |
+| ItemList (shared) | 38.71 | 11.30 |
+| index (React entry) | 32.05 | 9.01 |
+| ManageItemList (shared) | 27.91 | 6.20 |
+| actions (shared) | 16.69 | 3.96 |
+| index (layout) | 14.87 | 4.32 |
+| members | 13.43 | 3.59 |
+| search | 12.01 | 3.22 |
+| index (home) | 11.89 | 3.84 |
+| PlaylistCreationForm (shared) | 7.39 | 2.55 |
+| manage-media | 6.06 | 1.90 |
+| profile-about | 5.61 | 1.91 |
+| manage-users | 4.04 | 1.55 |
+| ItemListAsync (shared) | 3.52 | 1.54 |
 | ItemsInlineSlider (shared) | 2.97 | 0.61 |
-| history | 2.68 | 1.03 |
-| liked | 2.67 | 1.04 |
-| manage-comments | 2.42 | 0.96 |
-| _Page (shared) | 1.93 | 0.81 |
-| error | 1.77 | 0.73 |
-| 24 smaller chunks (< 1.6 kB each) | 21.53 | 11.00 |
+| history | 2.71 | 1.05 |
+| liked | 2.70 | 1.06 |
+| manage-comments | 2.44 | 0.98 |
+| _Page (shared) | 1.98 | 0.85 |
+| error | 1.79 | 0.75 |
+| 24 smaller chunks (< 1.7 kB each) | 21.93 | 11.41 |
 
 ## Per-Entry CSS Bundle Sizes
 
 | Entry/Chunk | Raw (kB) | Gzip (kB) |
 |-------------|----------|-----------|
-| MediaDurationInfo (shared) | 132.69 | 29.50 |
-| _helpers (shared) | 101.30 | 15.41 |
-| media | 60.09 | 11.26 |
-| ItemList (shared) | 43.14 | 6.53 |
-| ManageItemList (shared) | 41.33 | 5.54 |
-| MediaListWrapper (shared) | 34.74 | 4.38 |
-| FiltersToggleButton (shared) | 27.53 | 3.94 |
-| ViewerInfoVideo (shared) | 23.03 | 3.98 |
-| playlist | 17.25 | 2.56 |
-| index (layout) | 16.95 | 2.65 |
-| add-media | 9.95 | 2.18 |
-| error | 4.00 | 0.86 |
-| PlaylistCreationForm (shared) | 3.45 | 0.78 |
-| demo | 1.85 | 0.61 |
-| PendingItemsList (shared) | 1.75 | 0.44 |
-| Notifications (shared) | 1.66 | 0.57 |
-| _Page (shared) | 1.19 | 0.40 |
-| members | 0.72 | 0.27 |
+| _helpers (shared) | 260.28 | 48.75 |
+| MediaDurationInfo (shared) | 125.75 | 28.89 |
+| media | 80.44 | 14.35 |
+| ItemList (shared) | 42.00 | 6.46 |
+| ManageItemList (shared) | 41.74 | 5.63 |
+| MediaListWrapper (shared) | 32.56 | 4.42 |
+| FiltersToggleButton (shared) | 28.27 | 4.07 |
+| playlist | 17.11 | 2.54 |
+| modern-demo (Tailwind utilities) | 16.24 | 3.41 |
+| index (layout) | 14.89 | 2.53 |
+| add-media | 9.36 | 2.08 |
+| error | 3.19 | 0.75 |
+| PlaylistCreationForm (shared) | 3.14 | 0.76 |
+| Notifications (shared) | 1.26 | 0.50 |
+| PendingItemsList (shared) | 0.88 | 0.38 |
+| _Page (shared) | 0.82 | 0.36 |
+| members | 0.64 | 0.26 |
 | embed | 0.14 | 0.12 |
 | index (home) | 0.05 | 0.07 |
 
@@ -115,7 +110,7 @@ All vulnerabilities remain in dev/build dependencies, not shipped to production.
 
 ## npm Package Count
 
-~1,551 packages in dependency tree (down from ~1,926 baseline, ~375 packages removed)
+~1,745 packages in dependency tree (up from ~1,551 initial Vite migration due to Tailwind CSS, TanStack Query, Zustand, and ESLint additions; still down from ~1,926 Webpack baseline)
 
 ## Configuration Complexity
 
@@ -135,8 +130,27 @@ All vulnerabilities remain in dev/build dependencies, not shipped to production.
 | Dev browsing | Two servers (8088 + 8000) | Single server (8000) |
 | Dev server protocol | Bundled JS | Native ES modules |
 
+## `_extra.css` Migration
+
+`_extra.css` is now part of the Vite build pipeline:
+- **Before**: Served via `{% static 'css/_extra.css' %}` with query-string cache busting (`?v={{ EXTRA_CSS_VERSION }}`)
+- **After**: Located at `frontend/src/static/css/_extra.css`, imported by `styles.scss` after `config/index.scss`
+- **Benefit**: Content-hashed filename for automatic cache busting, no separate HTTP request, CSS custom property overrides flow through the theme system correctly
+- **Dead code removed**: `EXTRA_CSS_VERSION` context processor and setting
+
+## Modern Track Additions
+
+The following are new outputs from the modern track (Milestone 3+), not present in the initial Vite migration:
+
+| Entry/Chunk | JS (kB) | CSS (kB) | Purpose |
+|-------------|---------|----------|---------|
+| modern-demo | 44.52 | 16.24 | Token reference page (DEBUG only) |
+| modern-track-vendor | 42.17 | — | Zustand, TanStack Query, React Query |
+
+These are only loaded on modern-track pages and do not affect legacy page bundle sizes. Tailwind CSS v4 generates utilities on-demand, so only classes actually used in components appear in the output CSS.
+
 ## Notes
 
-- `_extra.css` continues to be served as a non-hashed static file via `{% static %}`, outside the Vite build.
 - Sub-packages (`media-player`, `vjs-plugin`, `vjs-plugin-font-icons`) retain their own build tools. Only the main frontend app was migrated.
-- The `MediaDurationInfo` chunk (700.30 kB) is flagged by Vite's chunk size warning. It contains the `@mediacms/media-player` bundle including Video.js. This is a candidate for future optimization (lazy loading or dynamic import).
+- The `_helpers` shared chunk (289 kB JS / 260 kB CSS) is the largest chunk. It contains shared React components and the full SCSS stylesheet. This is a candidate for future optimization (component-level code splitting).
+- video.js is loaded from CDN with SRI hash, not bundled by Vite (marked as external).
