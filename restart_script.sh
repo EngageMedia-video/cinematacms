@@ -34,8 +34,8 @@ if ! make quick-build; then
 fi
 # Apply database migrations
 echo "Applying database migrations..."
-python3 manage.py makemigrations
-python3 manage.py migrate
+python manage.py makemigrations
+python manage.py migrate
 
 # Update ownership
 echo "Updating ownership..."

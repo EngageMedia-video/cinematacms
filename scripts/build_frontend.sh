@@ -77,7 +77,7 @@ cd "${PROJECT_ROOT}"
 
 # Run Django collectstatic (with error handling)
 echo -e "${YELLOW}Running Django collectstatic...${NC}"
-if python3 manage.py collectstatic --noinput; then
+if python manage.py collectstatic --noinput; then
     echo -e "${GREEN}✅ Frontend build and deployment complete!${NC}"
     echo -e "${GREEN}Static files collected to: ${PROJECT_ROOT}/static_collected/${NC}"
 else
