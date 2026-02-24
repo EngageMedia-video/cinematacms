@@ -1007,12 +1007,17 @@ class SecureMediaView(View):
                 attempt_material = session_password_hash
             elif query_password:
                 # Hash the query password to compare with expected hash
-                attempt_material = hashlib.sha256(query_password.encode("utf-8")).hexdigest()
+                attempt_material = hashlib.pbkdf2_hmac(
+                    "sha256",
+                    query_password.encode("utf-8"),
+                    media.friendly_token.encode("utf-8"),
+                    iterations=600_000,
+                ).hex()
             else:
                 attempt_material = "no_password"
 
             # Create a shorter hash for cache key (avoid key length issues)
-            password_hash = hashlib.sha256(attempt_material.encode("utf-8")).hexdigest()[:12]
+            password_hash = hashlib.blake2b(attempt_material.encode("utf-8"), digest_size=6).hexdigest()
             additional_data = f"restricted:{password_hash}"
         # Generate cache key
         cache_key = get_permission_cache_key(user_id, media.uid, additional_data)
@@ -1049,10 +1054,15 @@ class SecureMediaView(View):
             session_password_hash = request.session.get(f"media_password_{media.friendly_token}")
             query_password = request.GET.get("password")
 
-            # Generate expected hash of the stored password for comparison
+            # Generate expected hash of the stored password for comparison using PBKDF2
             expected_password_hash = None
             if media.password:
-                expected_password_hash = hashlib.sha256(media.password.encode("utf-8")).hexdigest()
+                expected_password_hash = hashlib.pbkdf2_hmac(
+                    "sha256",
+                    media.password.encode("utf-8"),
+                    media.friendly_token.encode("utf-8"),
+                    iterations=600_000,
+                ).hex()
 
             # Compare hashes: session stores a hash; hash the query param as well
             valid_session_password = (
@@ -1063,7 +1073,12 @@ class SecureMediaView(View):
 
             valid_query_password = False
             if query_password and expected_password_hash:
-                query_hash = hashlib.sha256(query_password.encode("utf-8")).hexdigest()
+                query_hash = hashlib.pbkdf2_hmac(
+                    "sha256",
+                    query_password.encode("utf-8"),
+                    media.friendly_token.encode("utf-8"),
+                    iterations=600_000,
+                ).hex()
                 valid_query_password = hmac.compare_digest(query_hash, expected_password_hash)
 
             if valid_session_password or valid_query_password:
@@ -1146,13 +1161,20 @@ class SecureMediaView(View):
         full_path = os.path.join(settings.MEDIA_ROOT, file_path)
         logger.debug(f"Attempting to serve file directly: {full_path}")
 
-        if not os.path.exists(full_path) or not os.path.isfile(full_path):
-            logger.warning(f"File not found at: {full_path}")
+        # Resolve symlinks and verify the path stays within MEDIA_ROOT
+        resolved_path = os.path.realpath(full_path)
+        media_root = os.path.realpath(settings.MEDIA_ROOT)
+        if not resolved_path.startswith(media_root + os.sep) and resolved_path != media_root:
+            logger.warning(f"Path traversal attempt blocked: {file_path} resolved to {resolved_path}")
+            raise Http404("Invalid file path")
+
+        if not os.path.exists(resolved_path) or not os.path.isfile(resolved_path):
+            logger.warning(f"File not found at: {resolved_path}")
             raise Http404("File not found")
 
         content_type, security_headers = self._get_content_type_and_headers(file_path)
         if not content_type:
-            content_type, _ = mimetypes.guess_type(full_path)
+            content_type, _ = mimetypes.guess_type(resolved_path)
             content_type = content_type or "application/octet-stream"
 
         logger.debug(f"Serving file with content-type: {content_type}")
@@ -1163,14 +1185,14 @@ class SecureMediaView(View):
                 response = HttpResponse(content_type=content_type)
                 # Set Content-Length header for HEAD requests
                 try:
-                    file_size = os.path.getsize(full_path)
+                    file_size = os.path.getsize(resolved_path)
                     response["Content-Length"] = str(file_size)
                 except OSError:
                     # If we can't get file size, don't set Content-Length
                     pass
             else:
                 # For GET requests, return the file content
-                response = FileResponse(open(full_path, "rb"), content_type=content_type)
+                response = FileResponse(open(resolved_path, "rb"), content_type=content_type)
 
             response["Content-Disposition"] = "inline"
 
@@ -1180,7 +1202,7 @@ class SecureMediaView(View):
 
             return response
         except OSError as e:
-            logger.error(f"Error reading file {full_path}: {e}")
+            logger.error(f"Error reading file {resolved_path}: {e}")
             raise Http404("File could not be read") from e
 
 

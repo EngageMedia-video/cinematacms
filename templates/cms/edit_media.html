@@ -450,16 +450,23 @@
 			}
 
 			// set correct text
-			document.querySelector('label[for="id_uploaded_poster"]').innerHTML = 'Thumbnail Image Upload';
+			document.querySelector('label[for="id_uploaded_poster"]').textContent = 'Thumbnail Image Upload';
 
 			if (document.querySelector('label[for="id_media_file"]') !== null) {
-				document.querySelector('label[for="id_media_file"]').innerHTML = 'Media Upload';
+				document.querySelector('label[for="id_media_file"]').textContent = 'Media Upload';
 			}
 
 
 			// change text to classes that start with current_
 			Array.from(document.querySelectorAll("[class^=current_]")).forEach(function(el) {
-				el.outerHTML = (el.outerHTML.replace('Currently:', 'Current File'));
+				// Walk text nodes to avoid reinterpreting DOM text as HTML
+				var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+				var node;
+				while (node = walker.nextNode()) {
+					if (node.nodeValue.indexOf('Currently:') !== -1) {
+						node.nodeValue = node.nodeValue.replace('Currently:', 'Current File');
+					}
+				}
 			});
 
 			// fix href
@@ -593,7 +600,7 @@
 								found = true;
 
 								if( ! isLicenseDisabled ){
-									elem.selected_license_title.innerHTML = licenses[k].title;
+									elem.selected_license_title.textContent = licenses[k].title;
 								}
 
 								selectedFields.commercial = licenses[k].allow_commercial;
@@ -612,7 +619,7 @@
 					}
 
 					if( isLicenseDisabled ){
-						elem.selected_license_title.innerHTML = "-";
+						elem.selected_license_title.textContent = "-";
 					}
 
 				}).bind(this);
@@ -620,7 +627,7 @@
 				var update_license_fields = (function(){
 
 					if( null === selectedFields.commercial || null === selectedFields.derivatives ){
-						elem.selected_license_title.innerHTML = '';
+						elem.selected_license_title.textContent = '';
 						return;
 					}
 
@@ -713,10 +720,10 @@
 					isLicenseDisabled = elem.license_disable_check.checked;
 
 					if( isLicenseDisabled ){
-						elem.selected_license_title.innerHTML = '-';
+						elem.selected_license_title.textContent = '-';
 					}
 					else if( null === selectedFields.commercial || null === selectedFields.derivatives ){
-						elem.selected_license_title.innerHTML = '';
+						elem.selected_license_title.textContent = '';
 						return;
 					}
 					else{
@@ -724,7 +731,7 @@
 						for(k in licenses){
 							if( licenses.hasOwnProperty(k) ){
 								if( selectedFields.commercial === licenses[k].allow_commercial && selectedFields.derivatives === licenses[k].allow_modifications ){
-									elem.selected_license_title.innerHTML = licenses[k].title;
+									elem.selected_license_title.textContent = licenses[k].title;
 								}
 							}
 						}
@@ -1661,4 +1668,3 @@
 		</script>
 
 {% endblock innercontent %}
-

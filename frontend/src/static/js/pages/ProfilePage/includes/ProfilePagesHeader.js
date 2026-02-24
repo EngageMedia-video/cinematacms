@@ -1,22 +1,22 @@
-import React, { useRef, useState, useEffect } from "react";
-import PropTypes from "prop-types";
+import React, { useRef, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
-import { usePopup } from "../../../components/-NEW-/hooks/usePopup";
+import { usePopup } from '../../../components/-NEW-/hooks/usePopup';
 
-import LinksContext from "../../../contexts/LinksContext";
-import UserContext from "../../../contexts/UserContext";
-import SiteContext from "../../../contexts/SiteContext";
+import LinksContext from '../../../contexts/LinksContext';
+import UserContext from '../../../contexts/UserContext';
+import SiteContext from '../../../contexts/SiteContext';
 
-import { CircleIconButton } from "../../../components/-NEW-/CircleIconButton";
-import ItemsInlineSlider from "../../../components/-NEW-/includes/itemLists/ItemsInlineSlider";
+import { CircleIconButton } from '../../../components/-NEW-/CircleIconButton';
+import ItemsInlineSlider from '../../../components/-NEW-/includes/itemLists/ItemsInlineSlider';
 
-import PageStore from "../../_PageStore";
-import * as PageActions from "../../_PageActions";
+import PageStore from '../../_PageStore';
+import * as PageActions from '../../_PageActions';
 
-import ProfilePageStore from "../store.js";
-import * as ProfilePageActions from "../actions.js";
+import ProfilePageStore from '../store.js';
+import * as ProfilePageActions from '../actions.js';
 
-import { PopupMain } from "../../../components/-NEW-/Popup";
+import { PopupMain } from '../../../components/-NEW-/Popup';
 
 class ProfileSearchBar extends React.PureComponent {
 	constructor(props) {
@@ -26,7 +26,7 @@ class ProfileSearchBar extends React.PureComponent {
 
 		this.state = {
 			visibleForm: false,
-			queryVal: ProfilePageStore.get("author-query") || "",
+			queryVal: ProfilePageStore.get('author-query') || '',
 		};
 
 		// this.state.visibleForm = true;
@@ -53,7 +53,7 @@ class ProfileSearchBar extends React.PureComponent {
 				queryVal: value,
 			},
 			function () {
-				if ("function" === typeof this.props.onQueryChange) {
+				if ('function' === typeof this.props.onQueryChange) {
 					this.props.onQueryChange(this.state.queryVal);
 				}
 			}
@@ -65,7 +65,7 @@ class ProfileSearchBar extends React.PureComponent {
 
 		this.setState(
 			{
-				queryVal: ev.target.value || "",
+				queryVal: ev.target.value || '',
 			},
 			function () {
 				if (this.updateTimeout) {
@@ -81,7 +81,7 @@ class ProfileSearchBar extends React.PureComponent {
 				return;
 			}*/
 
-				if ("function" === typeof this.props.onQueryChange) {
+				if ('function' === typeof this.props.onQueryChange) {
 					this.props.onQueryChange(this.state.queryVal);
 				}
 
@@ -133,7 +133,7 @@ class ProfileSearchBar extends React.PureComponent {
 				visibleForm: true,
 			},
 			function () {
-				if ("function" === typeof this.props.toggleSearchField) {
+				if ('function' === typeof this.props.toggleSearchField) {
 					this.props.toggleSearchField();
 				}
 			}
@@ -146,7 +146,7 @@ class ProfileSearchBar extends React.PureComponent {
 				visibleForm: false,
 			},
 			function () {
-				if ("function" === typeof this.props.toggleSearchField) {
+				if ('function' === typeof this.props.toggleSearchField) {
 					this.props.toggleSearchField();
 				}
 			}
@@ -154,7 +154,7 @@ class ProfileSearchBar extends React.PureComponent {
 	}
 
 	onFormSubmit(ev) {
-		if ("" === this.searchInputRef.current.value.trim()) {
+		if ('' === this.searchInputRef.current.value.trim()) {
 			ev.preventDefault();
 			ev.stopPropagation();
 		}
@@ -181,11 +181,7 @@ class ProfileSearchBar extends React.PureComponent {
 		}*/
 
 		return (
-			<form
-				method="get"
-				action={LinksContext._currentValue.profile.home}
-				onSubmit={this.onFormSubmit}
-			>
+			<form method="get" action={LinksContext._currentValue.profile.home} onSubmit={this.onFormSubmit}>
 				<span>
 					<CircleIconButton buttonShadow={false}>
 						<i className="material-icons">search</i>
@@ -218,7 +214,7 @@ ProfileSearchBar.defaultProps = {};
 
 function InlineTab(props) {
 	return (
-		<li className={props.isActive ? "active" : null}>
+		<li className={props.isActive ? 'active' : null}>
 			<a href={props.link} title={props.label}>
 				{props.label}
 			</a>
@@ -254,12 +250,12 @@ class NavMenuInlineTabs extends React.PureComponent {
 
 		this.onToggleSearchField = this.onToggleSearchField.bind(this);
 
-		PageStore.on("window_resize", this.updateSlider);
+		PageStore.on('window_resize', this.updateSlider);
 
 		this.sliderRecalTimeout = null;
 
 		PageStore.on(
-			"changed_page_sidebar_visibility",
+			'changed_page_sidebar_visibility',
 			function () {
 				clearTimeout(this.sliderRecalTimeout);
 
@@ -299,8 +295,7 @@ class NavMenuInlineTabs extends React.PureComponent {
 
 		this.userIsAuthor =
 			!UserContext._currentValue.is.anonymous &&
-			ProfilePageStore.get("author-data").username ===
-				UserContext._currentValue.username;
+			ProfilePageStore.get('author-data').username === UserContext._currentValue.username;
 	}
 
 	componentDidMount() {
@@ -321,14 +316,11 @@ class NavMenuInlineTabs extends React.PureComponent {
 
 	updateSlider(afterItemsUpdate) {
 		if (!this.inlineSlider) {
-			this.inlineSlider = new ItemsInlineSlider(
-				this.itemsListWrapRef.current,
-				".profile-nav ul li"
-			);
+			this.inlineSlider = new ItemsInlineSlider(this.itemsListWrapRef.current, '.profile-nav ul li');
 		}
 
 		this.inlineSlider.updateDataState(
-			document.querySelectorAll(".profile-nav ul li").length,
+			document.querySelectorAll('.profile-nav ul li').length,
 			true,
 			!afterItemsUpdate
 		);
@@ -357,50 +349,45 @@ class NavMenuInlineTabs extends React.PureComponent {
 		// console.log( UserContext._currentValue.can );
 
 		return (
-			<nav
-				ref={this.tabsNavRef}
-				className="profile-nav items-list-outer list-inline list-slider"
-			>
+			<nav ref={this.tabsNavRef} className="profile-nav items-list-outer list-inline list-slider">
 				<div className="profile-nav-inner items-list-outer">
 					{this.state.displayPrev ? this.previousBtn : null}
 
 					<ul className="items-list-wrap" ref={this.itemsListWrapRef}>
 						<InlineTab
 							id="about"
-							isActive={"about" === this.props.type}
-							label={"About" + (this.userIsAuthor ? " Me" : "")}
+							isActive={'about' === this.props.type}
+							label={'About' + (this.userIsAuthor ? ' Me' : '')}
 							link={LinksContext._currentValue.profile.about}
 						/>
 						<InlineTab
 							id="home"
-							isActive={"home" === this.props.type}
-							label={(this.userIsAuthor ? "My " : "") + "Media"}
+							isActive={'home' === this.props.type}
+							label={(this.userIsAuthor ? 'My ' : '') + 'Media'}
 							link={LinksContext._currentValue.profile.home}
 						/>
 
 						{UserContext._currentValue.can.saveMedia ? (
 							<InlineTab
 								id="playlists"
-								isActive={"playlists" === this.props.type}
-								label={(this.userIsAuthor ? "My " : "") + "Playlists"}
+								isActive={'playlists' === this.props.type}
+								label={(this.userIsAuthor ? 'My ' : '') + 'Playlists'}
 								link={LinksContext._currentValue.profile.playlists}
 							/>
 						) : null}
-						{PageStore.get("config-options").pages.profile.includeHistory &&
-						this.userIsAuthor ? (
+						{PageStore.get('config-options').pages.profile.includeHistory && this.userIsAuthor ? (
 							<InlineTab
 								id="history"
-								isActive={"history" === this.props.type}
-								label={PageStore.get("config-enabled").pages.history.title}
+								isActive={'history' === this.props.type}
+								label={PageStore.get('config-enabled').pages.history.title}
 								link={LinksContext._currentValue.user.history}
 							/>
 						) : null}
-						{PageStore.get("config-options").pages.profile.includeLikedMedia &&
-						this.userIsAuthor ? (
+						{PageStore.get('config-options').pages.profile.includeLikedMedia && this.userIsAuthor ? (
 							<InlineTab
 								id="liked"
-								isActive={"liked" === this.props.type}
-								label={PageStore.get("config-enabled").pages.liked.title}
+								isActive={'liked' === this.props.type}
+								label={PageStore.get('config-enabled').pages.liked.title}
 								link={LinksContext._currentValue.user.liked}
 							/>
 						) : null}
@@ -442,9 +429,18 @@ NavMenuInlineTabs.propTypes = {
 
 /*NavMenuInlineTabs.defaultProps = { type: 'home', };*/
 
+function sanitizeHref(url) {
+	if (!url || typeof url !== 'string') return '#';
+	// Only allow relative paths and http(s) protocols
+	if (url.startsWith('/') || url.startsWith('https://') || url.startsWith('http://')) {
+		return url;
+	}
+	return '#';
+}
+
 function AddBannerButton(props) {
 	return (
-		<a href={props.link} className="edit-channel" title="Add banner">
+		<a href={sanitizeHref(props.link)} className="edit-channel" title="Add banner">
 			ADD BANNER
 		</a>
 	);
@@ -452,7 +448,7 @@ function AddBannerButton(props) {
 
 function EditBannerButton(props) {
 	return (
-		<a href={props.link} className="edit-channel" title="Edit banner">
+		<a href={sanitizeHref(props.link)} className="edit-channel" title="Edit banner">
 			EDIT BANNER
 		</a>
 	);
@@ -460,42 +456,36 @@ function EditBannerButton(props) {
 
 function EditProfileButton(props) {
 	return (
-		<a href={props.link} className="edit-profile" title="Edit profile">
+		<a href={sanitizeHref(props.link)} className="edit-profile" title="Edit profile">
 			EDIT PROFILE
 		</a>
 	);
 }
 
 export default function ProfilePagesHeader(props) {
-	props = { type: "home", ...props };
+	props = { type: 'home', ...props };
 	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
 
 	const profilePageHeaderRef = useRef(null);
 	const profileNavRef = useRef(null);
 
 	const [fixedNav, setFixedNav] = useState(false);
-	const [isOpenRemoveProfilePopup, setIsOpenRemoveProfilePopup] =
-		useState(false);
+	const [isOpenRemoveProfilePopup, setIsOpenRemoveProfilePopup] = useState(false);
 
 	const positions = {
 		profileNavTop: 0,
 	};
 
-	const userIsAdmin =
-		!UserContext._currentValue.is.anonymous && UserContext._currentValue.is.admin;
+	const userIsAdmin = !UserContext._currentValue.is.anonymous && UserContext._currentValue.is.admin;
 	const userIsAuthor =
 		!UserContext._currentValue.is.anonymous &&
-		ProfilePageStore.get("author-data").username ===
-			UserContext._currentValue.username;
+		ProfilePageStore.get('author-data').username === UserContext._currentValue.username;
 	const userCanEditProfile =
-		userIsAuthor ||
-		(!UserContext._currentValue.is.anonymous &&
-			UserContext._currentValue.can.editProfile);
+		userIsAuthor || (!UserContext._currentValue.is.anonymous && UserContext._currentValue.can.editProfile);
 	const userCanDeleteProfile =
 		userIsAdmin ||
 		userIsAuthor ||
-		(!UserContext._currentValue.is.anonymous &&
-			UserContext._currentValue.can.deleteProfile);
+		(!UserContext._currentValue.is.anonymous && UserContext._currentValue.can.deleteProfile);
 
 	function updateProfileNavTopPosition() {
 		positions.profileHeaderTop = profilePageHeaderRef.current.offsetTop;
@@ -506,9 +496,7 @@ export default function ProfilePagesHeader(props) {
 	}
 
 	function updateFixedNavPosition() {
-		setFixedNav(
-			positions.profileHeaderTop + window.scrollY > positions.profileNavTop
-		);
+		setFixedNav(positions.profileHeaderTop + window.scrollY > positions.profileNavTop);
 	}
 
 	function cancelProfileRemoval() {
@@ -521,10 +509,7 @@ export default function ProfilePagesHeader(props) {
 	}
 
 	function onProfileDelete(username) {
-		PageActions.addNotification(
-			"Profile removed. Redirecting...",
-			"profileDelete"
-		);
+		PageActions.addNotification('Profile removed. Redirecting...', 'profileDelete');
 		setTimeout(function () {
 			window.location.href = SiteContext._currentValue.url;
 		}, 2000);
@@ -535,10 +520,10 @@ export default function ProfilePagesHeader(props) {
 	}
 
 	function onProfileDeleteFail(username) {
-		PageActions.addNotification("Profile removal failed", "profileDeleteFail");
+		PageActions.addNotification('Profile removal failed', 'profileDeleteFail');
 
 		if (void 0 !== username) {
-			console.info('Profile "' + username + '"' + " removal failed");
+			console.info('Profile "' + username + '"' + ' removal failed');
 		}
 	}
 
@@ -553,45 +538,42 @@ export default function ProfilePagesHeader(props) {
 
 	useEffect(() => {
 		if (userCanDeleteProfile) {
-			ProfilePageStore.on("profile_delete", onProfileDelete);
-			ProfilePageStore.on("profile_delete_fail", onProfileDeleteFail);
+			ProfilePageStore.on('profile_delete', onProfileDelete);
+			ProfilePageStore.on('profile_delete_fail', onProfileDeleteFail);
 		}
 
-		PageStore.on("resize", onWindowResize);
-		PageStore.on("changed_page_sidebar_visibility", onWindowResize);
-		PageStore.on("window_scroll", onWindowScroll);
+		PageStore.on('resize', onWindowResize);
+		PageStore.on('changed_page_sidebar_visibility', onWindowResize);
+		PageStore.on('window_scroll', onWindowScroll);
 
 		updateProfileNavTopPosition();
 		updateFixedNavPosition();
 
 		return () => {
 			if (userCanDeleteProfile) {
-				ProfilePageStore.removeListener("profile_delete", onProfileDelete);
-				ProfilePageStore.removeListener("profile_delete_fail", onProfileDeleteFail);
+				ProfilePageStore.removeListener('profile_delete', onProfileDelete);
+				ProfilePageStore.removeListener('profile_delete_fail', onProfileDeleteFail);
 			}
 
-			PageStore.removeListener("resize", onWindowResize);
-			PageStore.removeListener("changed_page_sidebar_visibility", onWindowResize);
-			PageStore.removeListener("window_scroll", onWindowScroll);
+			PageStore.removeListener('resize', onWindowResize);
+			PageStore.removeListener('changed_page_sidebar_visibility', onWindowResize);
+			PageStore.removeListener('window_scroll', onWindowScroll);
 		};
 	}, []);
 
 	return (
-		<div
-			ref={profilePageHeaderRef}
-			className={"profile-page-header" + (fixedNav ? " fixed-nav" : "")}
-		>
+		<div ref={profilePageHeaderRef} className={'profile-page-header' + (fixedNav ? ' fixed-nav' : '')}>
 			<span className="profile-banner-wrap">
 				{props.author.banner_thumbnail_url ? (
 					<span
 						className="profile-banner"
 						style={{
 							backgroundImage:
-								"url(" +
+								'url(' +
 								SiteContext._currentValue.url +
-								"/" +
-								props.author.banner_thumbnail_url.replace(/^\//g, "") +
-								")",
+								'/' +
+								props.author.banner_thumbnail_url.replace(/^\//g, '') +
+								')',
 						}}
 					></span>
 				) : null}
@@ -634,13 +616,9 @@ export default function ProfilePagesHeader(props) {
 
 				{userCanEditProfile ? (
 					props.author.banner_thumbnail_url ? (
-						<EditBannerButton
-							link={ProfilePageStore.get("author-data").default_channel_edit_url}
-						/>
+						<EditBannerButton link={ProfilePageStore.get('author-data').default_channel_edit_url} />
 					) : (
-						<AddBannerButton
-							link={ProfilePageStore.get("author-data").default_channel_edit_url}
-						/>
+						<AddBannerButton link={ProfilePageStore.get('author-data').default_channel_edit_url} />
 					)
 				) : null}
 			</span>
@@ -650,27 +628,19 @@ export default function ProfilePagesHeader(props) {
 					<div className="profile-info">
 						<div className="profile-info-inner">
 							<div>
-								{props.author.thumbnail_url ? (
-									<img src={props.author.thumbnail_url} alt="" />
-								) : null}
+								{props.author.thumbnail_url ? <img src={props.author.thumbnail_url} alt="" /> : null}
 							</div>
 							<div>
 								{props.author.name ? <h1>{props.author.name}</h1> : null}
 								{userCanEditProfile ? (
-									<EditProfileButton
-										link={ProfilePageStore.get("author-data").edit_url}
-									/>
+									<EditProfileButton link={ProfilePageStore.get('author-data').edit_url} />
 								) : null}
 							</div>
 						</div>
 					</div>
 				) : null}
 
-				<NavMenuInlineTabs
-					ref={profileNavRef}
-					type={props.type}
-					onQueryChange={props.onQueryChange}
-				/>
+				<NavMenuInlineTabs ref={profileNavRef} type={props.type} onQueryChange={props.onQueryChange} />
 			</div>
 		</div>
 	);
@@ -681,4 +651,3 @@ ProfilePagesHeader.propTypes = {
 	type: PropTypes.string.isRequired,
 	onQueryChange: PropTypes.func,
 };
-

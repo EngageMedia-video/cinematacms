@@ -397,9 +397,12 @@ def view_media(request):
                 # Store hashed password in session for file access (avoid persisting plaintext)
                 import hashlib
 
-                request.session[f"media_password_{media.friendly_token}"] = hashlib.sha256(
-                    media.password.encode("utf-8")
-                ).hexdigest()
+                request.session[f"media_password_{media.friendly_token}"] = hashlib.pbkdf2_hmac(
+                    "sha256",
+                    media.password.encode("utf-8"),
+                    media.friendly_token.encode("utf-8"),
+                    iterations=600_000,
+                ).hex()
             else:
                 wrong_password_provided = True
 
