@@ -105,8 +105,8 @@ def get_portal_workflow():
     workflow = settings.PORTAL_WORKFLOW
 
     # Map legacy 'private_verified' to 'private'
-    if workflow == 'private_verified':
-        return 'private'
+    if workflow == "private_verified":
+        return "private"
 
     return workflow
 
@@ -127,10 +127,7 @@ def get_default_state(user=None):
         state = "unlisted"
     elif settings.PORTAL_WORKFLOW == "private_verified":
         # Legacy workflow: advanced users get 'unlisted', others get 'private'
-        if is_advanced_user(user):
-            state = "unlisted"
-        else:
-            state = "private"
+        state = "unlisted" if is_advanced_user(user) else "private"
 
     return state
 
@@ -190,9 +187,7 @@ def rm_dir(directory):
 
 def url_from_path(filename):
     # TODO: find a way to preserver http - https ...
-    return "{0}{1}".format(
-        settings.MEDIA_URL, filename.replace(settings.MEDIA_ROOT, "")
-    )
+    return f"{settings.MEDIA_URL}{filename.replace(settings.MEDIA_ROOT, '')}"
 
 
 def build_versioned_url(base_url, version):
@@ -200,7 +195,7 @@ def build_versioned_url(base_url, version):
     if not base_url:
         return None
 
-    separator = '&' if '?' in base_url else '?'
+    separator = "&" if "?" in base_url else "?"
     return f"{base_url}{separator}v={version}"
 
 
@@ -246,9 +241,7 @@ def run_command(cmd, cwd=None):
         cmd = cmd.split()
     ret = {}
     if cwd:
-        process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd
-        )
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
     else:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
@@ -301,20 +294,14 @@ def media_file_info(input_file):
     cmd = ["stat", "-c", "%s", input_file]
 
     stdout = run_command(cmd).get("out")
-    if stdout:
-        file_size = int(stdout.strip())
-    else:
-        file_size = 800000
-        # ret['fail'] = True
-        # return ret
-        # MAC os issue...
+    file_size = int(stdout.strip()) if stdout else 800000
+    # ret['fail'] = True
+    # return ret
+    # MAC os issue...
 
     cmd = ["md5sum", input_file]
     stdout = run_command(cmd).get("out")
-    if stdout:
-        md5sum = stdout.split()[0]
-    else:
-        md5sum = ""
+    md5sum = stdout.split()[0] if stdout else ""
 
     cmd = [
         settings.FFPROBE_COMMAND,
@@ -360,18 +347,16 @@ def media_file_info(input_file):
         ret["audio_info"] = audio_info
         return ret
 
-    if "duration" in video_info.keys():
+    if "duration" in video_info:
         video_duration = float(video_info["duration"])
-    elif "tags" in video_info.keys() and "DURATION" in video_info["tags"]:
+    elif "tags" in video_info and "DURATION" in video_info["tags"]:
         duration_str = video_info["tags"]["DURATION"]
         try:
             hms, msec = duration_str.split(".")
         except ValueError:
             hms, msec = duration_str.split(",")
 
-        total_dur = sum(
-            int(x) * 60**i for i, x in enumerate(reversed(hms.split(":")))
-        )
+        total_dur = sum(int(x) * 60**i for i, x in enumerate(reversed(hms.split(":"))))
         video_duration = total_dur + float("0." + msec)
     else:
         # fallback to format, eg for webm
@@ -392,7 +377,7 @@ def media_file_info(input_file):
             ret["fail"] = True
             return ret
 
-    if "bit_rate" in video_info.keys():
+    if "bit_rate" in video_info:
         video_bitrate = round(float(video_info["bit_rate"]) / 1024.0, 2)
     else:
         cmd = [
@@ -426,17 +411,15 @@ def media_file_info(input_file):
 
     if has_audio:
         audio_duration = 1
-        if "duration" in audio_info.keys():
+        if "duration" in audio_info:
             audio_duration = float(audio_info["duration"])
-        elif "tags" in audio_info.keys() and "DURATION" in audio_info["tags"]:
+        elif "tags" in audio_info and "DURATION" in audio_info["tags"]:
             duration_str = audio_info["tags"]["DURATION"]
             try:
                 hms, msec = duration_str.split(".")
             except ValueError:
                 hms, msec = duration_str.split(",")
-            total_dur = sum(
-                int(x) * 60**i for i, x in enumerate(reversed(hms.split(":")))
-            )
+            total_dur = sum(int(x) * 60**i for i, x in enumerate(reversed(hms.split(":"))))
             audio_duration = total_dur + float("0." + msec)
         else:
             # fallback to format, eg for webm
@@ -453,7 +436,7 @@ def media_file_info(input_file):
             format_info = json.loads(stdout)["format"]
             audio_duration = float(format_info["duration"])
 
-        if "bit_rate" in audio_info.keys():
+        if "bit_rate" in audio_info:
             audio_bitrate = round(float(audio_info["bit_rate"]) / 1024.0, 2)
         else:
             # fall back to calculating from accumulated frame duration
@@ -478,7 +461,7 @@ def media_file_info(input_file):
             for line in stdout.split("\n"):
                 if line:
                     # Remove trailing pipe separator (compact format default)
-                    line = line.rstrip('|')
+                    line = line.rstrip("|")
                     try:
                         packet_sizes.append(int(line))
                     except ValueError:
@@ -507,22 +490,22 @@ def media_file_info(input_file):
 def calculate_seconds(output_str):
     # Handle both string and bytes input from FFmpeg
     if isinstance(output_str, bytes):
-        output_str = output_str.decode('utf-8', errors='ignore')
+        output_str = output_str.decode("utf-8", errors="ignore")
     elif not isinstance(output_str, str):
         return None
-    
+
     # Use regex to find time=HH:MM:SS.ms format
     match = re.search(r"time=(\d{2}):(\d{2}):(\d{2})\.(\d+)", output_str)
     if match:
         hours, minutes, seconds, _ = map(int, match.groups())
         return hours * 3600 + minutes * 60 + seconds
-    
+
     # Fallback for formats without milliseconds
     match = re.search(r"time=(\d{2}):(\d{2}):(\d{2})", output_str)
     if match:
         hours, minutes, seconds = map(int, match.groups())
         return hours * 3600 + minutes * 60 + seconds
-        
+
     return None
 
 
@@ -530,7 +513,7 @@ def show_file_size(size):
     if size:
         size = size / 1000000
         size = round(size, 1)
-        size = "{0}MB".format(str(size))
+        size = f"{str(size)}MB"
     return size
 
 
@@ -616,10 +599,7 @@ def get_base_ffmpeg_command(
 
     # preset settings
     if encoder == "libvpx-vp9":
-        if pass_number == 1:
-            speed = 4
-        else:
-            speed = VP9_SPEED
+        speed = 4 if pass_number == 1 else VP9_SPEED
     elif encoder in ["libx264"]:
         preset = X26x_PRESET
     elif encoder in ["libx265"]:
@@ -718,9 +698,7 @@ def get_base_ffmpeg_command(
     return cmd
 
 
-def produce_ffmpeg_commands(
-    media_file, media_info, resolution, codec, output_filename, pass_file, chunk=False
-):
+def produce_ffmpeg_commands(media_file, media_info, resolution, codec, output_filename, pass_file, chunk=False):
     try:
         media_info = json.loads(media_info)
     except:
@@ -728,13 +706,10 @@ def produce_ffmpeg_commands(
 
     if codec == "h264":
         encoder = "libx264"
-        ext = "mp4"
     elif codec in ["h265", "hevc"]:
         encoder = "libx265"
-        ext = "mp4"
     elif codec == "vp9":
         encoder = "libvpx-vp9"
-        ext = "webm"
     else:
         return False
 
@@ -757,14 +732,9 @@ def produce_ffmpeg_commands(
     #    else:
 
     # adjust the target frame rate if the input is fractional
-    target_fps = (
-        src_framerate if isinstance(src_framerate, int) else math.ceil(src_framerate)
-    )
+    target_fps = src_framerate if isinstance(src_framerate, int) else math.ceil(src_framerate)
 
-    if media_info.get("video_duration") > CRF_ENCODING_NUM_SECONDS:
-        enc_type = "crf"
-    else:
-        enc_type = "twopass"
+    enc_type = "crf" if media_info.get("video_duration") > CRF_ENCODING_NUM_SECONDS else "twopass"
 
     if enc_type == "twopass":
         passes = [1, 2]
@@ -818,7 +788,7 @@ def is_advanced_user(user):
     if not user.is_authenticated:
         return False
 
-    from .methods import is_mediacms_editor, is_mediacms_manager, is_curator
+    from .methods import is_curator, is_mediacms_editor, is_mediacms_manager
 
     # Check if user is superuser
     if user.is_superuser:
@@ -830,7 +800,7 @@ def is_advanced_user(user):
 
     # Check if user is trusted user (advancedUser attribute)
     try:
-        if hasattr(user, 'advancedUser') and user.advancedUser:
+        if hasattr(user, "advancedUser") and user.advancedUser:
             return True
     except:
         pass
@@ -873,10 +843,29 @@ def get_allowed_video_extensions():
         return []
 
     return [
-        'mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm',
-        'm4v', '3gp', 'ogv', 'asf', 'rm', 'rmvb', 'vob',
-        'mpg', 'mpeg', 'mp2', 'mpe', 'mpv', 'm2v', 'm4p',
-        'f4v', 'ts'
+        "mp4",
+        "avi",
+        "mkv",
+        "mov",
+        "wmv",
+        "flv",
+        "webm",
+        "m4v",
+        "3gp",
+        "ogv",
+        "asf",
+        "rm",
+        "rmvb",
+        "vob",
+        "mpg",
+        "mpeg",
+        "mp2",
+        "mpe",
+        "mpv",
+        "m2v",
+        "m4p",
+        "f4v",
+        "ts",
     ]
 
 
@@ -923,12 +912,12 @@ def cleanup_temp_upload_files(temp_file_path, upload_file_path, media_friendly_t
                     logger.warning(
                         f"Attempted directory traversal: temp_file_path {temp_file_resolved} is outside MEDIA_ROOT "
                         f"for media {media_friendly_token}",
-                        exc_info=True
+                        exc_info=True,
                     )
             except Exception as e:
                 logger.warning(
                     f"Failed to remove temp_file_path {temp_file_path} for media {media_friendly_token}: {e}",
-                    exc_info=True
+                    exc_info=True,
                 )
 
         # Clean up upload_file_path with directory traversal protection
@@ -952,60 +941,56 @@ def cleanup_temp_upload_files(temp_file_path, upload_file_path, media_friendly_t
                     logger.warning(
                         f"Attempted directory traversal: upload_file_path {upload_file_resolved} is outside MEDIA_ROOT "
                         f"for media {media_friendly_token}",
-                        exc_info=True
+                        exc_info=True,
                     )
             except Exception as e:
                 logger.warning(
                     f"Failed to remove upload_file_path {upload_file_path} for media {media_friendly_token}: {e}",
-                    exc_info=True
+                    exc_info=True,
                 )
     except Exception as e:
         # Catch-all to ensure this function never raises
         logger.warning(
-            f"Unexpected error during temp file cleanup for media {media_friendly_token}: {e}",
-            exc_info=True
+            f"Unexpected error during temp file cleanup for media {media_friendly_token}: {e}", exc_info=True
         )
 
 
 def can_view_all_user_media(requesting_user, profile_user):
     """
-    Check if requesting_user can view ALL media (including private, unlisted, and restricted) 
+    Check if requesting_user can view ALL media (including private, unlisted, and restricted)
     from profile_user's profile page.
-    
+
     Returns True if:
     - Requesting user is the profile owner
     - Requesting user is a Manager
     - Requesting user is a Superuser
     - Requesting user is a Curator
-    
+
     Returns False otherwise (including for Editors)
-    
+
     Args:
         requesting_user: User making the request
         profile_user: User whose profile is being viewed
-        
+
     Returns:
         bool: True if user can view all media, False otherwise
     """
-    from .methods import is_mediacms_manager, is_curator
-    
+    from .methods import is_curator, is_mediacms_manager
+
     if not requesting_user.is_authenticated:
         return False
-    
+
     # Owner can always see their own content
     if requesting_user == profile_user:
         return True
-    
+
     # Superusers can see all content
     if requesting_user.is_superuser:
         return True
-    
+
     # Managers can see all content (but NOT editors)
     if is_mediacms_manager(requesting_user):
         return True
-    
+
     # Curators can see all content
-    if is_curator(requesting_user):
-        return True
-    
-    return False
+    return bool(is_curator(requesting_user))

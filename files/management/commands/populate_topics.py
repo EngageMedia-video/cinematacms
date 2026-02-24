@@ -1,7 +1,8 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from files.models import Topic
+
 from files import lists
+from files.models import Topic
 
 
 class Command(BaseCommand):
@@ -21,7 +22,7 @@ class Command(BaseCommand):
         created_count = 0
         updated_count = 0
 
-        for topic_code, topic_title in lists.video_topics:
+        for _topic_code, topic_title in lists.video_topics:
             if options["dry_run"]:
                 existing = Topic.objects.filter(title__iexact=topic_title).first()
                 if existing:
@@ -30,13 +31,9 @@ class Command(BaseCommand):
                             f"Would update Topic: '{existing.title}' -> '{topic_title}' (media count: {existing.media_count})"
                         )
                     else:
-                        self.stdout.write(
-                            f"Topic already exists: {topic_title} (media count: {existing.media_count})"
-                        )
+                        self.stdout.write(f"Topic already exists: {topic_title} (media count: {existing.media_count})")
                 else:
-                    self.stdout.write(
-                        f"Would create Topic: {topic_title}"
-                    )
+                    self.stdout.write(f"Would create Topic: {topic_title}")
             else:
                 # Look for existing topic with case-insensitive match
                 existing = Topic.objects.filter(title__iexact=topic_title).first()
@@ -45,16 +42,14 @@ class Command(BaseCommand):
                     # Update to canonical title if different
                     if existing.title != topic_title:
                         existing.title = topic_title
-                        existing.save(update_fields=['title'])
+                        existing.save(update_fields=["title"])
 
                     # Update the media count
                     existing.update_tag_media()
 
                     updated_count += 1
                     self.stdout.write(
-                        self.style.SUCCESS(
-                            f"Updated Topic: {topic_title} (media count: {existing.media_count})"
-                        )
+                        self.style.SUCCESS(f"Updated Topic: {topic_title} (media count: {existing.media_count})")
                     )
                 else:
                     # Create new topic with canonical title
@@ -63,9 +58,7 @@ class Command(BaseCommand):
 
                     created_count += 1
                     self.stdout.write(
-                        self.style.SUCCESS(
-                            f"Created Topic: {topic_title} (media count: {topic_obj.media_count})"
-                        )
+                        self.style.SUCCESS(f"Created Topic: {topic_title} (media count: {topic_obj.media_count})")
                     )
 
         if not options["dry_run"]:

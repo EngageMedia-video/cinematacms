@@ -5,45 +5,75 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('users', '0006_merge_20260117_0907'),
+        ("users", "0006_merge_20260117_0907"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user',
-            name='advancedUser',
-            field=models.BooleanField(db_index=True, default=False, help_text='Can add unlisted and restricted videos to playlists', verbose_name='Trusted User'),
+            model_name="user",
+            name="advancedUser",
+            field=models.BooleanField(
+                db_index=True,
+                default=False,
+                help_text="Can add unlisted and restricted videos to playlists",
+                verbose_name="Trusted User",
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='allow_contact',
-            field=models.BooleanField(default=True, help_text='Display contact form on your public profile', verbose_name='Contact Form'),
+            model_name="user",
+            name="allow_contact",
+            field=models.BooleanField(
+                default=True, help_text="Display contact form on your public profile", verbose_name="Contact Form"
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='disable_activity_logging',
-            field=models.BooleanField(default=False, help_text='Views, likes, and watch history will not be recorded.', verbose_name='Disable Activity Logging'),
+            model_name="user",
+            name="disable_activity_logging",
+            field=models.BooleanField(
+                default=False,
+                help_text="Views, likes, and watch history will not be recorded.",
+                verbose_name="Disable Activity Logging",
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='home_page',
-            field=models.URLField(blank=True, help_text='Link to your website, blog, or online portfolio', max_length=250, verbose_name='Website'),
+            model_name="user",
+            name="home_page",
+            field=models.URLField(
+                blank=True,
+                help_text="Link to your website, blog, or online portfolio",
+                max_length=250,
+                verbose_name="Website",
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='is_editor',
-            field=models.BooleanField(db_index=True, default=False, help_text='Can edit and manage all media content on the platform', verbose_name='MediaCMS Editor'),
+            model_name="user",
+            name="is_editor",
+            field=models.BooleanField(
+                db_index=True,
+                default=False,
+                help_text="Can edit and manage all media content on the platform",
+                verbose_name="MediaCMS Editor",
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='is_manager',
-            field=models.BooleanField(db_index=True, default=False, help_text='Full administrative access including users and settings', verbose_name='MediaCMS Manager'),
+            model_name="user",
+            name="is_manager",
+            field=models.BooleanField(
+                db_index=True,
+                default=False,
+                help_text="Full administrative access including users and settings",
+                verbose_name="MediaCMS Manager",
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='logo',
-            field=imagekit.models.fields.ProcessedImageField(blank=True, default='userlogos/user.jpg', help_text='<br />For best results, use a centre-aligned photo with a 1:1 aspect ratio.', upload_to='userlogos/%Y/%m/%d'),
+            model_name="user",
+            name="logo",
+            field=imagekit.models.fields.ProcessedImageField(
+                blank=True,
+                default="userlogos/user.jpg",
+                help_text="<br />For best results, use a centre-aligned photo with a 1:1 aspect ratio.",
+                upload_to="userlogos/%Y/%m/%d",
+            ),
         ),
     ]

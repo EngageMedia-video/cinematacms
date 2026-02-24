@@ -93,18 +93,12 @@ def mask_email(email):
         local, domain = email.rsplit("@", 1)
 
         # Mask local part: show first 2 chars
-        if len(local) >= 2:
-            masked_local = local[:2] + "***"
-        else:
-            masked_local = local + "***"
+        masked_local = local[:2] + "***" if len(local) >= 2 else local + "***"
 
         # Mask domain: show first 2 chars of domain name + TLD
         if "." in domain:
             domain_name, tld = domain.rsplit(".", 1)
-            if len(domain_name) >= 2:
-                masked_domain = domain_name[:2] + "***." + tld
-            else:
-                masked_domain = domain_name + "***." + tld
+            masked_domain = domain_name[:2] + "***." + tld if len(domain_name) >= 2 else domain_name + "***." + tld
         else:
             masked_domain = domain[:2] + "***" if len(domain) >= 2 else domain + "***"
 
@@ -122,8 +116,8 @@ def chunkize_media(self, friendly_token, profiles, force=True):
     cwd = os.path.dirname(os.path.realpath(media.media_file.path))
     file_name = media.media_file.path.split("/")[-1]
     random_prefix = produce_friendly_token()
-    file_format = "{0}_{1}".format(random_prefix, file_name)
-    chunks_file_name = "%02d_{0}".format(file_format)
+    file_format = f"{random_prefix}_{file_name}"
+    chunks_file_name = f"%02d_{file_format}"
     chunks_file_name += ".mkv"  # EXPERIMENT # WERNER Speaking!!!
     cmd = [
         settings.FFMPEG_COMMAND,
@@ -141,28 +135,22 @@ def chunkize_media(self, friendly_token, profiles, force=True):
     chunks = []
     ret = run_command(cmd, cwd=cwd)
     # means ffmpeg resulted in running without fail - output is on stderr
-    if "out" in ret.keys():
+    if "out" in ret:
         for line in ret.get("error").split("\n"):
             ch = re.findall(r"Opening \'([\W\w]+)\' for writing", line)
             if ch:
                 chunks.append(ch[0])
     if not chunks:
         # command completely failed to segment file.putting to normal encode
-        logger.info(
-            "Failed to break file {0} in chunks. Putting to normal encode queue".format(
-                friendly_token
-            )
-        )
+        logger.info(f"Failed to break file {friendly_token} in chunks. Putting to normal encode queue")
         for profile in profiles:
             if media.video_height and media.video_height < profile.resolution:
-                if not profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
+                if profile.resolution not in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
                     continue
             encoding = Encoding(media=media, profile=profile)
             encoding.save()
             enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
-            encode_media.delay(
-                friendly_token, profile.id, encoding.id, enc_url, force=force
-            )
+            encode_media.delay(friendly_token, profile.id, encoding.id, enc_url, force=force)
         return False
 
     chunks = [os.path.join(cwd, ch) for ch in chunks]
@@ -177,7 +165,7 @@ def chunkize_media(self, friendly_token, profiles, force=True):
 
     for profile in profiles:
         if media.video_height and media.video_height < profile.resolution:
-            if not profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
+            if profile.resolution not in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
                 continue
         to_profiles.append(profile)
 
@@ -192,21 +180,14 @@ def chunkize_media(self, friendly_token, profiles, force=True):
             )
             encoding.save()
             enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
-            if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
-                priority = 0
-            else:
-                priority = 9
+            priority = 0 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 9
             encode_media.apply_async(
                 args=[friendly_token, profile.id, encoding.id, enc_url],
                 kwargs={"force": force, "chunk": True, "chunk_file_path": chunk},
                 priority=priority,
             )
 
-    logger.info(
-        "got {0} chunks and will encode to {1} profiles".format(
-            len(chunks), to_profiles
-        )
-    )
+    logger.info(f"got {len(chunks)} chunks and will encode to {to_profiles} profiles")
     return True
 
 
@@ -243,16 +224,9 @@ def encode_media(
     chunk=False,
     chunk_file_path="",
 ):
-    logger.info(
-        "Encode Media started, friendly token {0}, profile id {1}, force {2}".format(
-            friendly_token, profile_id, force
-        )
-    )
+    logger.info(f"Encode Media started, friendly token {friendly_token}, profile id {profile_id}, force {force}")
     # TODO: if called as function, not as task, what is the value for this?
-    if self.request.id:
-        task_id = self.request.id
-    else:
-        task_id = None
+    task_id = self.request.id or None
     try:
         media = Media.objects.get(friendly_token=friendly_token)
         profile = EncodeProfile.objects.get(id=profile_id)
@@ -266,11 +240,8 @@ def encode_media(
         # it will always run since chunk_file_path is always different
         # thus find a better way for this check
         if (
-            Encoding.objects.filter(
-                media=media, profile=profile, chunk_file_path=chunk_file_path
-            ).count()
-            > 1
-            and force == False
+            Encoding.objects.filter(media=media, profile=profile, chunk_file_path=chunk_file_path).count() > 1
+            and not force
         ):
             Encoding.objects.filter(id=encoding_id).delete()
             return False
@@ -293,19 +264,14 @@ def encode_media(
                     chunk_file_path=chunk_file_path,
                 )
     else:
-        if (
-            Encoding.objects.filter(media=media, profile=profile).count() > 1
-            and force is False
-        ):
+        if Encoding.objects.filter(media=media, profile=profile).count() > 1 and force is False:
             Encoding.objects.filter(id=encoding_id).delete()
             return False
         else:
             try:
                 encoding = Encoding.objects.get(id=encoding_id)
                 encoding.status = "running"
-                Encoding.objects.filter(media=media, profile=profile).exclude(
-                    id=encoding_id
-                ).delete()
+                Encoding.objects.filter(media=media, profile=profile).exclude(id=encoding_id).delete()
             except:
                 encoding = Encoding(media=media, profile=profile, status="running")
 
@@ -344,10 +310,7 @@ def encode_media(
                 return True
         else:
             return False
-    if chunk:
-        original_media_path = chunk_file_path
-    else:
-        original_media_path = media.media_file.path
+    original_media_path = chunk_file_path if chunk else media.media_file.path
 
     if not media.duration:
         encoding.status = "fail"
@@ -355,8 +318,8 @@ def encode_media(
         return False
 
     with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as temp_dir:
-        tf = create_temp_file(suffix=".{0}".format(profile.extension), dir=temp_dir)
-        tfpass = create_temp_file(suffix=".{0}".format(profile.extension), dir=temp_dir)
+        tf = create_temp_file(suffix=f".{profile.extension}", dir=temp_dir)
+        tfpass = create_temp_file(suffix=f".{profile.extension}", dir=temp_dir)
         ffmpeg_commands = produce_ffmpeg_commands(
             original_media_path,
             media.media_info,
@@ -385,7 +348,7 @@ def encode_media(
             encoding_backend = FFmpegBackend()
             try:
                 encoding_command = encoding_backend.encode(ffmpeg_command)
-                duration, n_times = 0, 0
+                _duration, n_times = 0, 0
                 output = ""
                 start_time = time.time()
                 last_progress_time = start_time
@@ -412,8 +375,7 @@ def encode_media(
                                         encoding.progress = percent
                                         try:
                                             encoding.save(update_fields=["progress", "update_date"])
-                                            logger.info("Saved {0}% (iteration {1})".format(
-                                                round(percent, 2), n_times))
+                                            logger.info(f"Saved {round(percent, 2)}% (iteration {n_times})")
                                         except:
                                             pass
                             except (ValueError, TypeError):
@@ -424,19 +386,22 @@ def encode_media(
                             if n_times % 100 == 0:
                                 try:
                                     encoding.save(update_fields=["update_date"])
-                                    logger.info("Processing iteration {0}, no duration parsed. Output sample: {1}".format(
-                                        n_times, output[:100] if output else "No output"))
+                                    logger.info(
+                                        "Processing iteration {}, no duration parsed. Output sample: {}".format(
+                                            n_times, output[:100] if output else "No output"
+                                        )
+                                    )
                                 except:
                                     pass
 
                         # Safety nets
                         if n_times > iteration_limit:
-                            logger.error("Encoding iteration limit ({0}) exceeded".format(iteration_limit))
+                            logger.error(f"Encoding iteration limit ({iteration_limit}) exceeded")
                             encoding_backend.terminate_process()
                             break
 
                         if time.time() - last_progress_time > no_progress_timeout:
-                            logger.error("No progress for {0} seconds, likely stuck".format(no_progress_timeout))
+                            logger.error(f"No progress for {no_progress_timeout} seconds, likely stuck")
                             encoding_backend.terminate_process()
                             break
 
@@ -479,18 +444,12 @@ def encode_media(
 
                 with open(tf, "rb") as f:
                     myfile = File(f)
-                    output_name = "{0}.{1}".format(
-                        get_file_name(original_media_path), profile.extension
-                    )
+                    output_name = f"{get_file_name(original_media_path)}.{profile.extension}"
                     encoding.media_file.save(content=myfile, name=output_name)
-                encoding.total_run_time = (
-                    encoding.update_date - encoding.add_date
-                ).seconds
+                encoding.total_run_time = (encoding.update_date - encoding.add_date).seconds
 
         try:
-            encoding.save(
-                update_fields=["status", "logs", "progress", "total_run_time"]
-            )
+            encoding.save(update_fields=["status", "logs", "progress", "total_run_time"])
         # this will raise a django.db.utils.DatabaseError error when task is revoked,
         # since we delete the encoding at that stage
         except:
@@ -504,9 +463,7 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
     """
     Transcribe media using Whisper.cpp
     """
-    logger.info(
-        f"Starting whisper_transcribe for {friendly_token}, translate={translate}"
-    )
+    logger.info(f"Starting whisper_transcribe for {friendly_token}, translate={translate}")
 
     # in case multiple requests arrive at the same time, avoid having them create
     # a Request for the same media...
@@ -533,10 +490,7 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
         logger.error(f"Media file not found at: {media.media_file.path}")
         return False
 
-    if translate:
-        language_code = "automatic-translation"
-    else:
-        language_code = "automatic"
+    language_code = "automatic-translation" if translate else "automatic"
     language = Language.objects.filter(code=language_code).first()
 
     if not language:
@@ -544,30 +498,22 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
         return False
 
     if translate:
-        if TranscriptionRequest.objects.filter(
-            media=media, translate_to_english=True
-        ).exists():
+        if TranscriptionRequest.objects.filter(media=media, translate_to_english=True).exists():
             logger.info(f"Translation request already exists for {friendly_token}")
             return False
     else:
-        if TranscriptionRequest.objects.filter(
-            media=media, translate_to_english=False
-        ).exists():
+        if TranscriptionRequest.objects.filter(media=media, translate_to_english=False).exists():
             logger.info(f"Transcription request already exists for {friendly_token}")
             return False
 
     # Create transcription request and capture it for cleanup on failure
-    transcription_request = TranscriptionRequest.objects.create(
-        media=media, translate_to_english=translate
-    )
+    transcription_request = TranscriptionRequest.objects.create(media=media, translate_to_english=translate)
     logger.info(f"Created transcription request for {friendly_token}")
 
     try:
         with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as tmpdirname:
             video_file_path = get_file_name(media.media_file.name)
-            video_file_path = ".".join(
-                video_file_path.split(".")[:-1]
-            )  # needed by whisper without the extension
+            video_file_path = ".".join(video_file_path.split(".")[:-1])  # needed by whisper without the extension
             subtitle_name = f"{video_file_path}"
             output_name = f"{tmpdirname}/{subtitle_name}"  # whisper.cpp will add the .vtt
             output_name_with_vtt_ending = f"{output_name}.vtt"
@@ -593,9 +539,7 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
             logger.info(f"Running ffmpeg command: {' '.join(ffmpeg_cmd)}")
 
             try:
-                ret = subprocess.run(
-                    ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False
-                )
+                ret = subprocess.run(ffmpeg_cmd, capture_output=True, shell=False)
                 logger.info(f"ffmpeg return code: {ret.returncode}")
 
                 if ret.returncode != 0:
@@ -609,9 +553,7 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
                     transcription_request.delete()
                     return False
 
-                logger.info(
-                    f"WAV file created successfully: {os.path.getsize(wav_file)} bytes"
-                )
+                logger.info(f"WAV file created successfully: {os.path.getsize(wav_file)} bytes")
             except Exception as e:
                 logger.error(f"Exception running ffmpeg: {str(e)}")
                 transcription_request.delete()
@@ -646,9 +588,7 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
             logger.info(f"Running whisper command: {cmd_str}")
 
             try:
-                ret = subprocess.run(
-                    whisper_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
+                ret = subprocess.run(whisper_cmd, capture_output=True)
                 logger.info(f"Whisper return code: {ret.returncode}")
 
                 stdout = ret.stdout.decode("utf-8")
@@ -661,22 +601,16 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
                     logger.error(f"Whisper stderr: {stderr}")
 
                 if ret.returncode != 0:
-                    logger.error(
-                        f"Whisper command failed with return code {ret.returncode}"
-                    )
+                    logger.error(f"Whisper command failed with return code {ret.returncode}")
                     transcription_request.delete()
                     return False
 
                 if not os.path.exists(output_name_with_vtt_ending):
-                    logger.error(
-                        f"Output VTT file not created at: {output_name_with_vtt_ending}"
-                    )
+                    logger.error(f"Output VTT file not created at: {output_name_with_vtt_ending}")
                     transcription_request.delete()
                     return False
 
-                logger.info(
-                    f"VTT file created successfully: {os.path.getsize(output_name_with_vtt_ending)} bytes"
-                )
+                logger.info(f"VTT file created successfully: {os.path.getsize(output_name_with_vtt_ending)} bytes")
             except Exception as e:
                 logger.error(f"Exception running whisper: {str(e)}")
                 transcription_request.delete()
@@ -685,9 +619,7 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
             # Create the subtitle entry in the database
             subtitle = None
             try:
-                subtitle = Subtitle.objects.create(
-                    media=media, user=media.user, language=language
-                )
+                subtitle = Subtitle.objects.create(media=media, user=media.user, language=language)
 
                 with open(output_name_with_vtt_ending, "rb") as f:
                     subtitle.subtitle_file.save(subtitle_name, File(f))
@@ -758,14 +690,8 @@ def produce_sprite_from_video(friendly_token):
                 tmpdir_image_files,
             ]
             run_command(ffmpeg_cmd)
-            image_files = [
-                f
-                for f in os.listdir(tmpdirname)
-                if f.startswith("img") and f.endswith(".jpg")
-            ]
-            image_files = sorted(
-                image_files, key=lambda x: int(re.search(r"\d+", x).group())
-            )
+            image_files = [f for f in os.listdir(tmpdirname) if f.startswith("img") and f.endswith(".jpg")]
+            image_files = sorted(image_files, key=lambda x: int(re.search(r"\d+", x).group()))
             image_files = [os.path.join(tmpdirname, f) for f in image_files]
             cmd_convert = [
                 "convert",
@@ -807,9 +733,7 @@ def create_hls(friendly_token):
 
     p = media.uid.hex
     output_dir = os.path.join(settings.HLS_DIR, p)
-    encodings = media.encodings.filter(
-        profile__extension="mp4", status="success", chunk=False, profile__codec="h264"
-    )
+    encodings = media.encodings.filter(profile__extension="mp4", status="success", chunk=False, profile__codec="h264")
     if encodings:
         existing_output_dir = None
         if os.path.exists(output_dir):
@@ -822,10 +746,10 @@ def create_hls(friendly_token):
             f"--output-dir={output_dir}",
             *files,
         ]
-        ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(cmd, capture_output=True)
         if existing_output_dir:
             cmd = ["cp", "-rT", output_dir, existing_output_dir]
-            ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(cmd, capture_output=True)
             shutil.rmtree(output_dir)
             output_dir = existing_output_dir
         pp = os.path.join(output_dir, "master.m3u8")
@@ -853,7 +777,7 @@ def media_init(friendly_token):
 def check_running_states():
     encodings = Encoding.objects.filter(status="running")
 
-    logger.info("got {0} encodings that are in state running".format(encodings.count()))
+    logger.info(f"got {encodings.count()} encodings that are in state running")
     changed = 0
     for encoding in encodings:
         now = datetime.now(encoding.update_date.tzinfo)
@@ -870,7 +794,7 @@ def check_running_states():
             # TODO: allign with new code + chunksize...
             changed += 1
     if changed:
-        logger.info("changed from running to pending on {0} items".format(changed))
+        logger.info(f"changed from running to pending on {changed} items")
     return True
 
 
@@ -878,12 +802,10 @@ def check_running_states():
 def check_media_states():
     # check encoding status of not success media
     media = Media.objects.filter(
-        Q(encoding_status="running")
-        | Q(encoding_status="fail")
-        | Q(encoding_status="pending")
+        Q(encoding_status="running") | Q(encoding_status="fail") | Q(encoding_status="pending")
     )
 
-    logger.info("got {0} media that are not in state success".format(media.count()))
+    logger.info(f"got {media.count()} media that are not in state success")
 
     changed = 0
     for m in media:
@@ -891,7 +813,7 @@ def check_media_states():
         m.save(update_fields=["encoding_status"])
         changed += 1
     if changed:
-        logger.info("changed encoding status to {0} media items".format(changed))
+        logger.info(f"changed encoding status to {changed} media items")
     return True
 
 
@@ -925,11 +847,7 @@ def check_pending_states():
             media.encode(profiles=[profile], force=False)
             changed += 1
     if changed:
-        logger.info(
-            "set to the encode queue {0} encodings that were on pending state".format(
-                changed
-            )
-        )
+        logger.info(f"set to the encode queue {changed} encodings that were on pending state")
     return True
 
 
@@ -951,7 +869,7 @@ def check_missing_profiles():
             # if they appear on the meanwhile (eg on a big queue)
             changed += 1
     if changed:
-        logger.info("set to the encode queue {0} profiles".format(changed))
+        logger.info(f"set to the encode queue {changed} profiles")
     return True
 
 
@@ -970,9 +888,7 @@ def clear_sessions():
 
 
 @task(name="save_user_action", queue="short_tasks")
-def save_user_action(
-    user_or_session, friendly_token=None, action="watch", extra_info=None
-):
+def save_user_action(user_or_session, friendly_token=None, action="watch", extra_info=None):
     if action not in VALID_USER_ACTIONS:
         return False
 
@@ -1007,9 +923,7 @@ def save_user_action(
         if user:
             MediaAction.objects.filter(user=user, media=media, action="watch").delete()
         else:
-            MediaAction.objects.filter(
-                session_key=session_key, media=media, action="watch"
-            ).delete()
+            MediaAction.objects.filter(session_key=session_key, media=media, action="watch").delete()
     ma = MediaAction(
         user=user,
         session_key=session_key,
@@ -1021,11 +935,9 @@ def save_user_action(
     ma.save()
 
     if action == "watch":
-        Media.objects.filter(friendly_token=media.friendly_token).update(views=F('views') + 1)
+        Media.objects.filter(friendly_token=media.friendly_token).update(views=F("views") + 1)
     elif action == "report":
-        Media.objects.filter(friendly_token=media.friendly_token).update(
-            reported_times=F('reported_times') + 1
-        )
+        Media.objects.filter(friendly_token=media.friendly_token).update(reported_times=F("reported_times") + 1)
         # Need to refresh to check the threshold
         media.refresh_from_db()
         if media.reported_times >= settings.REPORTED_TIMES_THRESHOLD:
@@ -1038,9 +950,9 @@ def save_user_action(
             extra=extra_info,
         )
     elif action == "like":
-        Media.objects.filter(friendly_token=media.friendly_token).update(likes=F('likes') + 1)
+        Media.objects.filter(friendly_token=media.friendly_token).update(likes=F("likes") + 1)
     elif action == "dislike":
-        Media.objects.filter(friendly_token=media.friendly_token).update(dislikes=F('dislikes') + 1)
+        Media.objects.filter(friendly_token=media.friendly_token).update(dislikes=F("dislikes") + 1)
 
     return True
 
@@ -1061,14 +973,10 @@ def get_list_of_popular_media():
 
     for media in media_x:
         ft = media["friendly_token"]
-        num = MediaAction.objects.filter(
-            action_date__gte=period_x, action="watch", media__friendly_token=ft
-        ).count()
+        num = MediaAction.objects.filter(action_date__gte=period_x, action="watch", media__friendly_token=ft).count()
         if num:
             valid_media_x[ft] = num
-        num = MediaAction.objects.filter(
-            action_date__gte=period_y, action="like", media__friendly_token=ft
-        ).count()
+        num = MediaAction.objects.filter(action_date__gte=period_y, action="like", media__friendly_token=ft).count()
         if num:
             valid_media_y[ft] = num
 
@@ -1109,7 +1017,7 @@ def update_listings_thumbnails():
             object.save(update_fields=["listings_thumbnail"])
             used_media.append(media.friendly_token)
             saved += 1
-    logger.info("updated {} categories".format(saved))
+    logger.info(f"updated {saved} categories")
 
     # Tags
     used_media = []
@@ -1127,7 +1035,7 @@ def update_listings_thumbnails():
             object.save(update_fields=["listings_thumbnail"])
             used_media.append(media.friendly_token)
             saved += 1
-    logger.info("updated {} tags".format(saved))
+    logger.info(f"updated {saved} tags")
 
     # Topics
     used_media = []
@@ -1145,7 +1053,7 @@ def update_listings_thumbnails():
             object.save(update_fields=["listings_thumbnail"])
             used_media.append(media.friendly_token)
             saved += 1
-    logger.info("updated {} topics".format(saved))
+    logger.info(f"updated {saved} topics")
 
     # Language
     used_media = []
@@ -1153,9 +1061,7 @@ def update_listings_thumbnails():
     updated_counts = 0
     # Get language code mapping from Language model
     language_code_dict = dict(
-        Language.objects.exclude(
-            code__in=["automatic", "automatic-translation"]
-        ).values_list("title", "code")
+        Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list("title", "code")
     )
 
     qs = MediaLanguage.objects.filter().order_by("-media_count")
@@ -1179,18 +1085,14 @@ def update_listings_thumbnails():
             object.save(update_fields=["listings_thumbnail"])
             used_media.append(media.friendly_token)
             saved += 1
-    logger.info(
-        "updated {} language thumbnails and {} language counts".format(
-            saved, updated_counts
-        )
-    )
+    logger.info(f"updated {saved} language thumbnails and {updated_counts} language counts")
 
     # Country
     used_media = []
     saved = 0
     updated_counts = 0
     # Get country code mapping from lists
-    video_countries_dict = dict((value, key) for (key, value) in video_countries)
+    video_countries_dict = {value: key for (key, value) in video_countries}
     qs = MediaCountry.objects.filter().order_by("-media_count")
     for object in qs:
         # Update media count
@@ -1212,11 +1114,7 @@ def update_listings_thumbnails():
             object.save(update_fields=["listings_thumbnail"])
             used_media.append(media.friendly_token)
             saved += 1
-    logger.info(
-        "updated {} country thumbnails and {} country counts".format(
-            saved, updated_counts
-        )
-    )
+    logger.info(f"updated {saved} country thumbnails and {updated_counts} country counts")
 
     return True
 
@@ -1275,13 +1173,12 @@ def kill_ffmpeg_process(filepath):
         # Use pgrep to find ffmpeg processes with the filepath
         result = subprocess.run(
             ["pgrep", "-f", f"ffmpeg.*{filepath}"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
         )
         pid = result.stdout.decode("utf-8").strip()
         if pid:
             # Kill the process
-            subprocess.run(["kill", "-9", pid], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(["kill", "-9", pid], capture_output=True)
             return result
     except Exception as e:
         logger.error(f"Error killing ffmpeg process: {e}")
@@ -1317,7 +1214,7 @@ def cleanup_orphaned_uploads():
     logger = get_task_logger(__name__)
 
     # Configurable: How old (in hours) before considering files orphaned
-    cleanup_age_hours = getattr(settings, 'ORPHANED_UPLOAD_CLEANUP_HOURS', 24)
+    cleanup_age_hours = getattr(settings, "ORPHANED_UPLOAD_CLEANUP_HOURS", 24)
     cleanup_age_seconds = cleanup_age_hours * 3600
     current_time = time.time()
 
@@ -1379,11 +1276,7 @@ def cleanup_orphaned_uploads():
             logger.error(error_msg)
             errors.append(error_msg)
 
-    result = {
-        'chunks_cleaned': chunks_cleaned,
-        'uploads_cleaned': uploads_cleaned,
-        'errors': errors
-    }
+    result = {"chunks_cleaned": chunks_cleaned, "uploads_cleaned": uploads_cleaned, "errors": errors}
 
     logger.info(f"Cleanup completed: {chunks_cleaned} chunk dirs, {uploads_cleaned} upload dirs removed")
 
@@ -1403,20 +1296,17 @@ def subscribe_user(email, name, country=None):
     Returns:
         bool: True if subscription successful, False otherwise
     """
-    api_url = getattr(settings, 'NEWSLETTER_API_URL', None)
+    api_url = getattr(settings, "NEWSLETTER_API_URL", None)
 
     if not api_url:
-        logger.warning(
-            "Newsletter subscription skipped for %s: NEWSLETTER_API_URL not configured",
-            mask_email(email)
-        )
+        logger.warning("Newsletter subscription skipped for %s: NEWSLETTER_API_URL not configured", mask_email(email))
         return False
 
     # Build subscriber data for WordPress Newsletter Plugin /subscribe endpoint
     subscriber_data = {
         "email": email,
         "name": name,
-        "lists": getattr(settings, 'NEWSLETTER_LIST_IDS', [2]),
+        "lists": getattr(settings, "NEWSLETTER_LIST_IDS", [2]),
         "attribute004": country if country else "",
         "send_emails": True,  # Trigger confirmation email
     }
@@ -1426,12 +1316,7 @@ def subscribe_user(email, name, country=None):
     }
 
     try:
-        response = requests.post(
-            api_url,
-            json=subscriber_data,
-            headers=headers,
-            timeout=10
-        )
+        response = requests.post(api_url, json=subscriber_data, headers=headers, timeout=10)
 
         if response.status_code == 200:
             try:

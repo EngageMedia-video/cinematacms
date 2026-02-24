@@ -1,15 +1,13 @@
-from django.contrib import admin
-from django.http import HttpResponseRedirect
-from django.urls import path, re_path
-from django.urls import include
 from django.conf import settings
+from django.contrib import admin
+from django.urls import include, path
 
 urlpatterns = [
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
-    re_path(r"^", include("files.urls")),
-    re_path(r"^", include("users.urls")),
-    re_path(r"^accounts/", include("allauth.urls")),
-    re_path(r"^api-auth/", include("rest_framework.urls")),
+    path("", include("files.urls")),
+    path("", include("users.urls")),
+    path("accounts/", include("allauth.urls")),
+    path("api-auth/", include("rest_framework.urls")),
     path("tinymce/", include("tinymce.urls")),
 ]
 
@@ -24,5 +22,5 @@ if settings.DEBUG:
 
     # Serve static files in development
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    if hasattr(settings, 'MEDIA_URL') and hasattr(settings, 'MEDIA_ROOT'):
+    if hasattr(settings, "MEDIA_URL") and hasattr(settings, "MEDIA_ROOT"):
         urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -30,9 +30,7 @@ class MediaSerializer(serializers.ModelSerializer):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
 
     def get_api_url(self, obj):
-        return self.context["request"].build_absolute_uri(
-            obj.get_absolute_url(api=True)
-        )
+        return self.context["request"].build_absolute_uri(obj.get_absolute_url(api=True))
 
     def get_thumbnail_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.thumbnail_url)

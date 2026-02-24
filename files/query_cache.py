@@ -18,19 +18,20 @@ Cache Invalidation:
 """
 
 import hashlib
-import logging
-from typing import Optional, Dict, Any, List
-from django.core.cache import cache
-from django.conf import settings
-from django.core.serializers.json import DjangoJSONEncoder
 import json
+import logging
+from typing import Any
+
+from django.conf import settings
+from django.core.cache import cache
+from django.core.serializers.json import DjangoJSONEncoder
 
 logger = logging.getLogger(__name__)
 
 # Cache configuration
-QUERY_CACHE_VERSION = getattr(settings, 'QUERY_CACHE_VERSION', 1)
-CACHE_KEY_PREFIX = 'cinemata:query'
-CACHE_VERSION_PREFIX = 'cinemata:cache_version'
+QUERY_CACHE_VERSION = getattr(settings, "QUERY_CACHE_VERSION", 1)
+CACHE_KEY_PREFIX = "cinemata:query"
+CACHE_VERSION_PREFIX = "cinemata:cache_version"
 
 # Cache timeouts (in seconds)
 MEDIA_DETAIL_TIMEOUT = 300  # 5 minutes
@@ -145,12 +146,12 @@ def _generate_cache_key(*args, **kwargs) -> str:
         key_parts.extend([f"{k}={v}" for k, v in sorted_kwargs])
 
     key_string = ":".join(key_parts)
-    key_hash = hashlib.md5(key_string.encode('utf-8')).hexdigest()[:16]
+    key_hash = hashlib.md5(key_string.encode("utf-8")).hexdigest()[:16]
 
     return f"{CACHE_KEY_PREFIX}:{key_hash}"
 
 
-def get_media_detail_cache_key(friendly_token: str, user_id: Optional[int] = None) -> str:
+def get_media_detail_cache_key(friendly_token: str, user_id: int | None = None) -> str:
     """
     Generate cache key for media detail endpoint with versioning.
 
@@ -164,12 +165,12 @@ def get_media_detail_cache_key(friendly_token: str, user_id: Optional[int] = Non
     Returns:
         str: Cache key with version token
     """
-    user_part = user_id if user_id else 'anon'
-    version = _get_cache_version('media', friendly_token)
+    user_part = user_id if user_id else "anon"
+    version = _get_cache_version("media", friendly_token)
     return f"{CACHE_KEY_PREFIX}:media_detail:{friendly_token}:{user_part}:v{version}"
 
 
-def get_playlist_detail_cache_key(friendly_token: str, user_id: Optional[int] = None) -> str:
+def get_playlist_detail_cache_key(friendly_token: str, user_id: int | None = None) -> str:
     """
     Generate cache key for playlist detail endpoint with versioning.
 
@@ -180,17 +181,13 @@ def get_playlist_detail_cache_key(friendly_token: str, user_id: Optional[int] = 
     Returns:
         str: Cache key with version token
     """
-    user_part = user_id if user_id else 'anon'
-    version = _get_cache_version('playlist', friendly_token)
+    user_part = user_id if user_id else "anon"
+    version = _get_cache_version("playlist", friendly_token)
     return f"{CACHE_KEY_PREFIX}:playlist_detail:{friendly_token}:{user_part}:v{version}"
 
 
 def get_media_list_cache_key(
-    show: str = 'latest',
-    category: Optional[str] = None,
-    tag: Optional[str] = None,
-    page: int = 1,
-    user_id: Optional[int] = None
+    show: str = "latest", category: str | None = None, tag: str | None = None, page: int = 1, user_id: int | None = None
 ) -> str:
     """
     Generate cache key for media list endpoint with versioning.
@@ -206,21 +203,21 @@ def get_media_list_cache_key(
         str: Cache key with version token
     """
     # Use a global media_list version for all list queries
-    version = _get_cache_version('media_list', 'all')
+    version = _get_cache_version("media_list", "all")
     parts = [
         CACHE_KEY_PREFIX,
-        'media_list',
+        "media_list",
         show,
-        category or 'all',
-        tag or 'all',
+        category or "all",
+        tag or "all",
         str(page),
-        str(user_id) if user_id else 'anon',
-        f"v{version}"
+        str(user_id) if user_id else "anon",
+        f"v{version}",
     ]
     return ":".join(parts)
 
 
-def get_media_search_cache_key(query_params: Dict[str, Any], page: int = 1) -> str:
+def get_media_search_cache_key(query_params: dict[str, Any], page: int = 1) -> str:
     """
     Generate cache key for media search endpoint with versioning.
 
@@ -234,10 +231,10 @@ def get_media_search_cache_key(query_params: Dict[str, Any], page: int = 1) -> s
     # Create stable hash of query params
     sorted_params = sorted(query_params.items())
     params_str = json.dumps(sorted_params, cls=DjangoJSONEncoder)
-    params_hash = hashlib.md5(params_str.encode('utf-8')).hexdigest()[:16]
+    params_hash = hashlib.md5(params_str.encode("utf-8")).hexdigest()[:16]
 
     # Use same version as media_list (search results affected by media changes)
-    version = _get_cache_version('media_list', 'all')
+    version = _get_cache_version("media_list", "all")
     return f"{CACHE_KEY_PREFIX}:media_search:{params_hash}:p{page}:v{version}"
 
 
@@ -253,12 +250,12 @@ def get_related_media_cache_key(friendly_token: str, limit: int = 100) -> str:
         str: Cache key with version token
     """
     # Related media depends both on this specific media and the overall media list
-    media_version = _get_cache_version('media', friendly_token)
-    list_version = _get_cache_version('media_list', 'all')
+    media_version = _get_cache_version("media", friendly_token)
+    list_version = _get_cache_version("media_list", "all")
     return f"{CACHE_KEY_PREFIX}:related_media:{friendly_token}:{limit}:v{media_version}_{list_version}"
 
 
-def get_cached_result(cache_key: str) -> Optional[Any]:
+def get_cached_result(cache_key: str) -> Any | None:
     """
     Get cached query result with error handling.
 
@@ -321,11 +318,11 @@ def invalidate_media_cache(friendly_token: str) -> int:
     try:
         # Bump version for this specific media
         # This invalidates: media_detail, related_media for this media
-        _bump_cache_version('media', friendly_token)
+        _bump_cache_version("media", friendly_token)
 
         # Also bump the global media_list version
         # This invalidates: related_media for ALL media (since relationships changed)
-        _bump_cache_version('media_list', 'all')
+        _bump_cache_version("media_list", "all")
 
         logger.info(f"Invalidated cache for media {friendly_token} via version bump")
         return 1  # Indicate success
@@ -347,7 +344,7 @@ def invalidate_playlist_cache(friendly_token: str) -> int:
     """
     try:
         # Bump version for this specific playlist
-        _bump_cache_version('playlist', friendly_token)
+        _bump_cache_version("playlist", friendly_token)
 
         logger.info(f"Invalidated cache for playlist {friendly_token} via version bump")
         return 1
@@ -370,7 +367,7 @@ def invalidate_media_list_cache() -> int:
     try:
         # Bump the global media_list version
         # This invalidates ALL media_list, media_search, and related_media caches
-        _bump_cache_version('media_list', 'all')
+        _bump_cache_version("media_list", "all")
 
         logger.info("Invalidated media list/search cache via version bump")
         return 1
@@ -380,7 +377,7 @@ def invalidate_media_list_cache() -> int:
         return 0
 
 
-def invalidate_category_cache(category_title: Optional[str] = None) -> int:
+def invalidate_category_cache(category_title: str | None = None) -> int:
     """
     Invalidate category-related cache entries using version bumping.
 
@@ -394,7 +391,7 @@ def invalidate_category_cache(category_title: Optional[str] = None) -> int:
     try:
         # Bump the global media_list version
         # Category changes affect media lists and searches
-        _bump_cache_version('media_list', 'all')
+        _bump_cache_version("media_list", "all")
 
         logger.info(f"Invalidated cache for category {category_title} via version bump")
         return 1
@@ -416,7 +413,7 @@ def invalidate_all_query_cache() -> int:
     """
     try:
         # Bump the global media_list version (affects lists, searches, related)
-        _bump_cache_version('media_list', 'all')
+        _bump_cache_version("media_list", "all")
 
         # Note: Individual media and playlist versions are NOT bumped here
         # because there could be thousands of them. They'll naturally expire.

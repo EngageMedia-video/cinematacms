@@ -1,9 +1,12 @@
 """
 Custom middleware for CinemataCMS
 """
+
+import contextlib
 import json
 import os
 import time
+
 from django.conf import settings
 from django.core.cache import cache
 from django.utils.deprecation import MiddlewareMixin
@@ -18,18 +21,18 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
     Falls back to file storage if cache is unavailable.
     """
 
-    CACHE_KEY = 'maintenance_mode_start_time'
+    CACHE_KEY = "maintenance_mode_start_time"
     CACHE_TIMEOUT = 86400  # 24 hours (longer than any reasonable maintenance)
-    TIMING_FILE = os.path.join(settings.BASE_DIR, 'cms', 'maintenance_timing.json')
+    TIMING_FILE = os.path.join(settings.BASE_DIR, "cms", "maintenance_timing.json")
 
     def process_request(self, request):
         """Process the request to add maintenance timing info."""
         # Check if maintenance mode is enabled
-        maintenance_mode = getattr(settings, 'MAINTENANCE_MODE', False)
+        maintenance_mode = getattr(settings, "MAINTENANCE_MODE", False)
 
         if maintenance_mode:
             # Get the retry after duration in seconds
-            retry_after = getattr(settings, 'MAINTENANCE_MODE_RETRY_AFTER', 3600)
+            retry_after = getattr(settings, "MAINTENANCE_MODE_RETRY_AFTER", 3600)
 
             # Get or set the start time atomically
             start_time = self._get_or_set_start_time()
@@ -94,7 +97,7 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
         Fallback method using file storage with basic locking.
         Uses a lock file to prevent concurrent writes.
         """
-        lock_file = self.TIMING_FILE + '.lock'
+        lock_file = self.TIMING_FILE + ".lock"
         max_wait = 5  # Maximum seconds to wait for lock
         wait_interval = 0.01  # 10ms between checks
 
@@ -104,29 +107,27 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
         while os.path.exists(lock_file):
             if time.time() - start_wait > max_wait:
                 # Lock held too long, break it
-                try:
+                with contextlib.suppress(OSError):
                     os.remove(lock_file)
-                except OSError:
-                    pass
                 break
             time.sleep(wait_interval)
 
         try:
             # Create lock file
-            with open(lock_file, 'w') as f:
+            with open(lock_file, "w") as f:
                 f.write(str(os.getpid()))
 
             # Re-check if timing file exists now that we have the lock
             if os.path.exists(self.TIMING_FILE):
                 try:
-                    with open(self.TIMING_FILE, 'r') as f:
+                    with open(self.TIMING_FILE) as f:
                         data = json.load(f)
-                        start_time = data.get('start_time')
+                        start_time = data.get("start_time")
                         if start_time is not None:
                             # Also populate cache for next time
                             cache.set(self.CACHE_KEY, start_time, self.CACHE_TIMEOUT)
                             return start_time
-                except (json.JSONDecodeError, IOError):
+                except (OSError, json.JSONDecodeError):
                     pass
 
             # Still no valid time, create it
@@ -140,18 +141,16 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
 
         finally:
             # Always clean up lock file
-            try:
+            with contextlib.suppress(OSError):
                 os.remove(lock_file)
-            except OSError:
-                pass
 
     def _save_to_file(self, start_time):
         """Save the start time to file as backup."""
         try:
             os.makedirs(os.path.dirname(self.TIMING_FILE), exist_ok=True)
-            with open(self.TIMING_FILE, 'w') as f:
-                json.dump({'start_time': start_time}, f)
-        except IOError:
+            with open(self.TIMING_FILE, "w") as f:
+                json.dump({"start_time": start_time}, f)
+        except OSError:
             pass  # Fail silently if we can't write the file
 
     def _clear_timing(self):
@@ -161,15 +160,11 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
 
         # Clear file
         if os.path.exists(self.TIMING_FILE):
-            try:
+            with contextlib.suppress(OSError):
                 os.remove(self.TIMING_FILE)
-            except OSError:
-                pass
 
         # Clean up any stale lock file
-        lock_file = self.TIMING_FILE + '.lock'
+        lock_file = self.TIMING_FILE + ".lock"
         if os.path.exists(lock_file):
-            try:
+            with contextlib.suppress(OSError):
                 os.remove(lock_file)
-            except OSError:
-                pass

@@ -98,15 +98,28 @@ ignore = [
     "E722",  # bare-except — 36 occurrences, fix gradually
     "E741",  # ambiguous-variable-name — legacy code
     "DJ001", # null-on-string-field — prevalent in existing models
+    "DJ007", # django-all-with-model-form — admin forms use __all__
+    "DJ008", # django-model-without-dunder-str — legacy models
     "DJ012", # model-ordering — would require rewriting every model
     "UP008", # super-call-with-parameters — legacy pattern, low risk
     "UP031", # printf-string-formatting — legacy code uses %-formatting
+    "B904",  # raise-without-from-inside-except — legacy exception patterns
     "SIM102",# collapsible-if — stylistic, fix gradually
+    "SIM105",# suppressible-exception — try-except-pass is clearer in some contexts
+    "SIM113",# enumerate-for-loop — batch counters don't map to enumerate cleanly
+    "SIM115",# open-file-with-context-handler — tempfile patterns need delete=False
+    "SIM117",# multiple-with-statements — deeply nested mocks in tests
     "S101",  # assert — used in Django tests
+    "S105",  # hardcoded-password-string — dev settings only
+    "S108",  # hardcoded-temp-file — /tmp is intentional in dev settings
     "S110",  # try-except-pass — used in media processing
+    "S112",  # try-except-continue — used in ffmpeg output parsing
     "S308",  # mark_safe — required for Django template rendering
+    "S311",  # suspicious-non-cryptographic-random — used for non-security randomisation
+    "S324",  # hashlib-insecure-hash-function — md5 used for cache keys, not security
     "S603",  # subprocess-without-shell-equals-true — media encoding
     "S607",  # start-process-with-partial-path — media tools
+    "S608",  # hardcoded-sql-expression — raw SQL in management commands
 ]
 
 [tool.ruff.lint.per-file-ignores]

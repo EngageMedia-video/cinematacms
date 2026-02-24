@@ -21,7 +21,7 @@ repos:
 
   # ── Python (Ruff — lint + format) ──────────────────────
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.0
+    rev: v0.15.2
     hooks:
       # Linter — runs before formatter so auto-fixes (e.g. unused imports) are formatted
       - id: ruff

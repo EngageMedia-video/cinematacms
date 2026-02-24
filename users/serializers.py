@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from .models import User
 from files.lists import video_countries
+
+from .models import User
 
 # Pre-build country dict once at module level to avoid rebuilding on every serialization
 VIDEO_COUNTRIES_DICT = dict(video_countries)
@@ -11,16 +12,14 @@ class UserSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     api_url = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
-    is_trusted = serializers.BooleanField(source='advancedUser', read_only=True)
+    is_trusted = serializers.BooleanField(source="advancedUser", read_only=True)
     location = serializers.SerializerMethodField()
 
     def get_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
 
     def get_api_url(self, obj):
-        return self.context["request"].build_absolute_uri(
-            obj.get_absolute_url(api=True)
-        )
+        return self.context["request"].build_absolute_uri(obj.get_absolute_url(api=True))
 
     def get_thumbnail_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.thumbnail_url())
@@ -32,9 +31,9 @@ class UserSerializer(serializers.ModelSerializer):
 
         # Otherwise, return country name from country code
         if obj.location_country:
-            return VIDEO_COUNTRIES_DICT.get(obj.location_country, '')
+            return VIDEO_COUNTRIES_DICT.get(obj.location_country, "")
 
-        return ''
+        return ""
 
     class Meta:
         model = User
@@ -77,9 +76,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
 
     def get_api_url(self, obj):
-        return self.context["request"].build_absolute_uri(
-            obj.get_absolute_url(api=True)
-        )
+        return self.context["request"].build_absolute_uri(obj.get_absolute_url(api=True))
 
     def get_thumbnail_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.thumbnail_url())

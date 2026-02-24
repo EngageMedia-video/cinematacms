@@ -1,30 +1,29 @@
+import logging
+
+from allauth.mfa.base.forms import AuthenticateForm
+from allauth.mfa.totp.forms import ActivateTOTPForm
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from allauth.mfa.base.forms import AuthenticateForm, ReauthenticateForm
-from allauth.mfa.totp.forms import ActivateTOTPForm
-
-from allauth.account import app_settings
-from .models import Channel, User
-from files.lists import video_countries
-from files.tasks import subscribe_user
-import logging
 from kombu.exceptions import OperationalError
 
+from files.lists import video_countries
+from files.tasks import subscribe_user
+
+from .models import Channel, User
+
 logger = logging.getLogger(__name__)
+
 
 class CustomAuthenticateForm(AuthenticateForm):
     """This form is fetched for standard authentication,
     and represents both TOTP authenticator code and recovery codes."""
-    
+
     code = forms.CharField(
         widget=forms.TextInput(
-            attrs={
-                "placeholder": _(""), 
-                "class": "otp-hidden-input",
-                "inputmode": "numeric"
-            },
+            attrs={"placeholder": _(""), "class": "otp-hidden-input", "inputmode": "numeric"},
         )
     )
+
 
 class CustomActivateTOTPForm(ActivateTOTPForm):
     """This form is fetched when the user is
@@ -34,17 +33,19 @@ class CustomActivateTOTPForm(ActivateTOTPForm):
         max_length=6,
         widget=forms.TextInput(
             attrs={
-                "placeholder": _(""), 
+                "placeholder": _(""),
                 "autocomplete": "one-time-code",
                 "class": "otp-hidden-input",
                 "inputmode": "numeric",
-                "pattern": "[0-9]{6}"
+                "pattern": "[0-9]{6}",
             },
         ),
     )
 
+
 class CustomReauthenticateTOTPForm(CustomAuthenticateForm):
     pass
+
 
 class Date_Input(forms.DateInput):
     input_type = "date"
@@ -53,39 +54,31 @@ class Date_Input(forms.DateInput):
 class MultipleSelect(forms.CheckboxSelectMultiple):
     input_type = "checkbox"
 
+
 class SignupForm(forms.Form):
     name = forms.CharField(max_length=100, label="Name")
     location_country = forms.ChoiceField(
-        required=True,
-        choices=[('', '-- Select your country --')] + list(video_countries),
-        label='Country/Region'
+        required=True, choices=[("", "-- Select your country --")] + list(video_countries), label="Country/Region"
     )
 
     def signup(self, request, user):
         user.name = self.cleaned_data["name"]
         user.location_country = self.cleaned_data.get("location_country")
         user.save()
-        
+
         # Handle newsletter subscription
         if self.data.get("subscribe"):
             try:
                 # Get country from form
                 country = self.cleaned_data.get("location_country")
-                
+
                 # Trigger async task to subscribe user
-                subscribe_user.delay(
-                    email=user.email,
-                    name=user.name,
-                    country=country
-                )
+                subscribe_user.delay(email=user.email, name=user.name, country=country)
                 logger.info(f"Newsletter subscription task queued for {user.email}")
             except (ImportError, AttributeError, OperationalError):
                 # Don't fail signup if newsletter subscription fails
                 logger.exception(
-                    "Failed to queue newsletter subscription for %s (country=%s)",
-                    user.email,
-                    country,
-                    exc_info=True
+                    "Failed to queue newsletter subscription for %s (country=%s)", user.email, country, exc_info=True
                 )
 
 

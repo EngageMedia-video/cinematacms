@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
+
 from files.models import Language, Media, MediaLanguage
 
 
@@ -28,9 +29,7 @@ class Command(BaseCommand):
 
         # Get language titles
         language_dict = dict(
-            Language.objects.exclude(
-                code__in=["automatic", "automatic-translation"]
-            ).values_list("code", "title")
+            Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list("code", "title")
         )
 
         created_count = 0
@@ -40,11 +39,7 @@ class Command(BaseCommand):
             language_title = language_dict.get(language_code)
 
             if not language_title:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f'Language code "{language_code}" not found in Language model'
-                    )
-                )
+                self.stdout.write(self.style.WARNING(f'Language code "{language_code}" not found in Language model'))
                 continue
 
             if options["dry_run"]:
@@ -60,14 +55,10 @@ class Command(BaseCommand):
                     media_count = Media.objects.filter(
                         state="public", is_reviewed=True, media_language=language_code
                     ).count()
-                    self.stdout.write(
-                        f"Would create MediaLanguage: {language_title} (media count: {media_count})"
-                    )
+                    self.stdout.write(f"Would create MediaLanguage: {language_title} (media count: {media_count})")
             else:
                 # Create or get the MediaLanguage record
-                language_obj, created = MediaLanguage.objects.get_or_create(
-                    title=language_title
-                )
+                language_obj, created = MediaLanguage.objects.get_or_create(title=language_title)
 
                 # Update the media count
                 language_obj.update_language_media()
@@ -97,6 +88,4 @@ class Command(BaseCommand):
                 )
             )
         else:
-            self.stdout.write(
-                self.style.NOTICE("\nDry run completed - no changes made")
-            )
+            self.stdout.write(self.style.NOTICE("\nDry run completed - no changes made"))

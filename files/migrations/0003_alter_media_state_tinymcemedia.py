@@ -6,32 +6,46 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('files', '0002_initial'),
+        ("files", "0002_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='media',
-            name='state',
-            field=models.CharField(choices=[('private', 'Private'), ('public', 'Public'), ('restricted', 'Restricted'), ('unlisted', 'Unlisted')], db_index=True, default='private_verified', max_length=20),
+            model_name="media",
+            name="state",
+            field=models.CharField(
+                choices=[
+                    ("private", "Private"),
+                    ("public", "Public"),
+                    ("restricted", "Restricted"),
+                    ("unlisted", "Unlisted"),
+                ],
+                db_index=True,
+                default="private_verified",
+                max_length=20,
+            ),
         ),
         migrations.CreateModel(
-            name='TinyMCEMedia',
+            name="TinyMCEMedia",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('file', models.FileField(upload_to='tinymce_media/')),
-                ('uploaded_at', models.DateTimeField(auto_now_add=True)),
-                ('file_type', models.CharField(choices=[('image', 'Image'), ('media', 'Media')], max_length=10)),
-                ('original_filename', models.CharField(max_length=255)),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("file", models.FileField(upload_to="tinymce_media/")),
+                ("uploaded_at", models.DateTimeField(auto_now_add=True)),
+                ("file_type", models.CharField(choices=[("image", "Image"), ("media", "Media")], max_length=10)),
+                ("original_filename", models.CharField(max_length=255)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'TinyMCE Media',
-                'verbose_name_plural': 'TinyMCE Media',
-                'ordering': ['-uploaded_at'],
+                "verbose_name": "TinyMCE Media",
+                "verbose_name_plural": "TinyMCE Media",
+                "ordering": ["-uploaded_at"],
             },
         ),
     ]

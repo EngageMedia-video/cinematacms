@@ -19,19 +19,20 @@ Cache Key Patterns:
 import hashlib
 import logging
 import time
-from typing import Optional, Dict, Any, Union
-from django.core.cache import cache
+from typing import Any
+
 from django.conf import settings
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
 # Cache configuration constants
 
 # Get cache configuration from Django settings with fallbacks
-PERMISSION_CACHE_TIMEOUT = getattr(settings, 'PERMISSION_CACHE_TIMEOUT', 300)  # Default: 5 minutes
-RESTRICTED_MEDIA_CACHE_TIMEOUT = getattr(settings, 'RESTRICTED_PERMISSION_CACHE_TIMEOUT', 60)  # Default: 1 minute
-CACHE_KEY_PREFIX = getattr(settings, 'PERMISSION_CACHE_KEY_PREFIX', 'cinemata')
-CACHE_VERSION = getattr(settings, 'PERMISSION_CACHE_VERSION', 1)
+PERMISSION_CACHE_TIMEOUT = getattr(settings, "PERMISSION_CACHE_TIMEOUT", 300)  # Default: 5 minutes
+RESTRICTED_MEDIA_CACHE_TIMEOUT = getattr(settings, "RESTRICTED_PERMISSION_CACHE_TIMEOUT", 60)  # Default: 1 minute
+CACHE_KEY_PREFIX = getattr(settings, "PERMISSION_CACHE_KEY_PREFIX", "cinemata")
+CACHE_VERSION = getattr(settings, "PERMISSION_CACHE_VERSION", 1)
 
 # Cache key templates for better performance
 PERMISSION_KEY_TEMPLATE = f"{CACHE_KEY_PREFIX}:media_permission:{{user_id}}:{{media_uid}}"
@@ -39,7 +40,7 @@ ELEVATED_ACCESS_KEY_TEMPLATE = f"{CACHE_KEY_PREFIX}:elevated_access:{{user_id}}:
 RESTRICTED_KEY_TEMPLATE = f"{CACHE_KEY_PREFIX}:media_permission:{{user_id}}:{{media_uid}}:{{data_hash}}"
 
 
-def get_permission_cache_key(user_id: Union[int, str], media_uid: str, additional_data: Optional[str] = None) -> str:
+def get_permission_cache_key(user_id: int | str, media_uid: str, additional_data: str | None = None) -> str:
     """
     Generate a cache key for user permission checks.
 
@@ -53,12 +54,8 @@ def get_permission_cache_key(user_id: Union[int, str], media_uid: str, additiona
     """
     if additional_data:
         # Use SHA-256 for better security and consistency, truncated for cache efficiency
-        data_hash = hashlib.sha256(additional_data.encode('utf-8')).hexdigest()[:12]
-        return RESTRICTED_KEY_TEMPLATE.format(
-            user_id=user_id,
-            media_uid=media_uid,
-            data_hash=data_hash
-        )
+        data_hash = hashlib.sha256(additional_data.encode("utf-8")).hexdigest()[:12]
+        return RESTRICTED_KEY_TEMPLATE.format(user_id=user_id, media_uid=media_uid, data_hash=data_hash)
 
     return PERMISSION_KEY_TEMPLATE.format(user_id=user_id, media_uid=media_uid)
 
@@ -77,7 +74,7 @@ def get_elevated_access_cache_key(user_id: int, media_uid: str) -> str:
     return ELEVATED_ACCESS_KEY_TEMPLATE.format(user_id=user_id, media_uid=media_uid)
 
 
-def get_cached_permission(cache_key: str) -> Optional[bool]:
+def get_cached_permission(cache_key: str) -> bool | None:
     """
     Get cached permission result with enhanced error handling.
 
@@ -97,7 +94,7 @@ def get_cached_permission(cache_key: str) -> Optional[bool]:
         return None
 
 
-def set_cached_permission(cache_key: str, permission_result: bool, timeout: Optional[int] = None) -> bool:
+def set_cached_permission(cache_key: str, permission_result: bool, timeout: int | None = None) -> bool:
     """
     Set cached permission result with enhanced error handling.
 
@@ -121,7 +118,7 @@ def set_cached_permission(cache_key: str, permission_result: bool, timeout: Opti
         return False
 
 
-def batch_get_cached_permissions(cache_keys: list) -> Dict[str, Optional[bool]]:
+def batch_get_cached_permissions(cache_keys: list) -> dict[str, bool | None]:
     """
     Get multiple cached permission results in a single operation.
 
@@ -140,7 +137,7 @@ def batch_get_cached_permissions(cache_keys: list) -> Dict[str, Optional[bool]]:
         return {}
 
 
-def batch_set_cached_permissions(cache_data: Dict[str, bool], timeout: Optional[int] = None) -> bool:
+def batch_set_cached_permissions(cache_data: dict[str, bool], timeout: int | None = None) -> bool:
     """
     Set multiple cached permission results in a single operation.
 
@@ -163,7 +160,7 @@ def batch_set_cached_permissions(cache_data: Dict[str, bool], timeout: Optional[
         return False
 
 
-def clear_media_permission_cache(media_uid: Union[str, Any], user_id: Optional[int] = None) -> bool:
+def clear_media_permission_cache(media_uid: str | Any, user_id: int | None = None) -> bool:
     """
     Clear permission cache for a specific media.
     This can be called from models.py or other modules when media permissions change.
@@ -183,12 +180,12 @@ def clear_media_permission_cache(media_uid: Union[str, Any], user_id: Optional[i
         clear_media_permission_cache(media.uid)
     """
     # Convert UUID to string if necessary
-    if hasattr(media_uid, 'hex'):
+    if hasattr(media_uid, "hex"):
         media_uid = media_uid.hex
     try:
         if user_id:
             # Clear specific user's cache (base + restricted + elevated)
-            if hasattr(cache, 'delete_pattern'):
+            if hasattr(cache, "delete_pattern"):
                 patterns = [
                     f"{CACHE_KEY_PREFIX}:media_permission:{user_id}:{media_uid}*",
                     f"{CACHE_KEY_PREFIX}:elevated_access:{user_id}:{media_uid}",
@@ -218,7 +215,7 @@ def clear_media_permission_cache(media_uid: Union[str, Any], user_id: Optional[i
             # This is a more expensive operation and should be used sparingly
             try:
                 # Try to use delete_pattern if available (django-redis)
-                if hasattr(cache, 'delete_pattern'):
+                if hasattr(cache, "delete_pattern"):
                     patterns = [
                         f"{CACHE_KEY_PREFIX}:media_permission:*:{media_uid}*",
                         f"{CACHE_KEY_PREFIX}:elevated_access:*:{media_uid}",
@@ -253,7 +250,7 @@ def clear_user_permission_cache(user_id: int) -> bool:
         bool: True if cache was cleared successfully, False otherwise
     """
     try:
-        if hasattr(cache, 'delete_pattern'):
+        if hasattr(cache, "delete_pattern"):
             patterns = [
                 f"{CACHE_KEY_PREFIX}:media_permission:{user_id}:*",
                 f"{CACHE_KEY_PREFIX}:elevated_access:{user_id}:*",
@@ -283,12 +280,12 @@ def invalidate_all_permission_cache() -> int:
     """
     try:
         patterns = [
-            f'{CACHE_KEY_PREFIX}:media_permission:*',
-            f'{CACHE_KEY_PREFIX}:elevated_access:*',
+            f"{CACHE_KEY_PREFIX}:media_permission:*",
+            f"{CACHE_KEY_PREFIX}:elevated_access:*",
         ]
 
         total_cleared = 0
-        if hasattr(cache, 'delete_pattern'):
+        if hasattr(cache, "delete_pattern"):
             for pattern in patterns:
                 count = cache.delete_pattern(pattern, version=CACHE_VERSION)
                 total_cleared += count
@@ -297,8 +294,7 @@ def invalidate_all_permission_cache() -> int:
             return total_cleared
         else:
             logger.warning(
-                'Pattern-based cache deletion not available. '
-                'django-redis backend required for this feature.'
+                "Pattern-based cache deletion not available. django-redis backend required for this feature."
             )
             return 0
     except Exception as e:
@@ -306,7 +302,7 @@ def invalidate_all_permission_cache() -> int:
         return 0
 
 
-def get_cache_stats() -> Dict[str, Any]:
+def get_cache_stats() -> dict[str, Any]:
     """
     Get statistics about permission cache usage (if available).
 
@@ -314,7 +310,7 @@ def get_cache_stats() -> Dict[str, Any]:
         dict: Cache statistics or empty dict if not available
     """
     try:
-        if hasattr(cache, 'get_stats'):
+        if hasattr(cache, "get_stats"):
             return cache.get_stats()
         else:
             return {"message": "Cache statistics not available"}
@@ -323,7 +319,7 @@ def get_cache_stats() -> Dict[str, Any]:
         return {"error": str(e)}
 
 
-def health_check() -> Dict[str, Any]:
+def health_check() -> dict[str, Any]:
     """
     Perform a health check on the cache system.
 
@@ -347,23 +343,14 @@ def health_check() -> Dict[str, Any]:
         latency = (time.time() - start_time) * 1000  # Convert to milliseconds
 
         if retrieved_value == test_value:
-            return {
-                "status": "healthy",
-                "latency_ms": round(latency, 2),
-                "timestamp": time.time()
-            }
+            return {"status": "healthy", "latency_ms": round(latency, 2), "timestamp": time.time()}
         else:
             return {
                 "status": "unhealthy",
                 "error": "Cache value mismatch",
                 "latency_ms": round(latency, 2),
-                "timestamp": time.time()
+                "timestamp": time.time(),
             }
     except Exception as e:
         latency = (time.time() - start_time) * 1000
-        return {
-            "status": "unhealthy",
-            "error": str(e),
-            "latency_ms": round(latency, 2),
-            "timestamp": time.time()
-        }
+        return {"status": "unhealthy", "error": str(e), "latency_ms": round(latency, 2), "timestamp": time.time()}
