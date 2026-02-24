@@ -51,6 +51,7 @@ from .models import (
     Topic,
     TranscriptionRequest,
 )
+from .query_cache import invalidate_media_cache
 
 logger = get_task_logger(__name__)
 
@@ -953,6 +954,11 @@ def save_user_action(user_or_session, friendly_token=None, action="watch", extra
         Media.objects.filter(friendly_token=media.friendly_token).update(likes=F("likes") + 1)
     elif action == "dislike":
         Media.objects.filter(friendly_token=media.friendly_token).update(dislikes=F("dislikes") + 1)
+
+    # QuerySet.update() bypasses Django signals, so the post_save cache
+    # invalidation handler never fires.  Invalidate explicitly so the next
+    # API request returns fresh counters.
+    invalidate_media_cache(media.friendly_token)
 
     return True
 

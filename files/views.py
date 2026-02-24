@@ -61,6 +61,7 @@ from .methods import (
     is_mediacms_manager,
     list_tasks,
     notify_user_on_comment,
+    pre_save_action,
     show_recommended_media,
     show_related_media,
 )
@@ -93,6 +94,7 @@ from .query_cache import (
     get_media_detail_cache_key,
     get_media_list_cache_key,
     get_playlist_detail_cache_key,
+    invalidate_media_cache,
     set_cached_result,
 )
 from .serializers import (
@@ -1259,6 +1261,11 @@ class MediaActions(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         if action:
+            if action in ("like", "dislike"):
+                # Handle like/dislike synchronously so the response reflects
+                # the actual outcome and the cache is invalidated immediately.
+                return self._handle_like_dislike(request, media, action)
+
             user_or_session = get_user_or_session(request)
             save_user_action.delay(
                 user_or_session,
@@ -1270,6 +1277,50 @@ class MediaActions(APIView):
             return Response({"detail": "action received"}, status=status.HTTP_201_CREATED)
         else:
             return Response({"detail": "no action specified"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def _handle_like_dislike(self, request, media, action):
+        """Process like/dislike inline and return the updated count."""
+        from actions.models import MediaAction
+
+        user = request.user if request.user.is_authenticated else None
+        session_key = None
+        if not user:
+            if not request.session.session_key:
+                request.session.save()
+            session_key = request.session.session_key
+
+        if not user and not session_key:
+            return Response({"detail": "action not allowed"}, status=status.HTTP_400_BAD_REQUEST)
+
+        remote_ip = request.META.get("REMOTE_ADDR")
+        if not pre_save_action(media=media, user=user, session_key=session_key, action=action, remote_ip=remote_ip):
+            # Already performed this action — return current count without error
+            media.refresh_from_db()
+            return Response(
+                {"detail": "action already performed", "likes": media.likes, "dislikes": media.dislikes},
+                status=status.HTTP_200_OK,
+            )
+
+        MediaAction.objects.create(
+            user=user,
+            session_key=session_key,
+            media=media,
+            action=action,
+            remote_ip=remote_ip,
+        )
+
+        if action == "like":
+            Media.objects.filter(pk=media.pk).update(likes=F("likes") + 1)
+        else:
+            Media.objects.filter(pk=media.pk).update(dislikes=F("dislikes") + 1)
+
+        invalidate_media_cache(media.friendly_token)
+
+        media.refresh_from_db()
+        return Response(
+            {"detail": "action received", "likes": media.likes, "dislikes": media.dislikes},
+            status=status.HTTP_201_CREATED,
+        )
 
     def delete(self, request, friendly_token, format=None):
         media = self.get_object(friendly_token)

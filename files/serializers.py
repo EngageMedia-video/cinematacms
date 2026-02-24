@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from actions.models import MediaAction
+
 from .models import (
     Category,
     Comment,
@@ -98,9 +100,23 @@ class MediaSerializer(serializers.ModelSerializer):
 class SingleMediaSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
     url = serializers.SerializerMethodField()
+    user_has_liked = serializers.SerializerMethodField()
+    user_has_disliked = serializers.SerializerMethodField()
 
     def get_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
+
+    def get_user_has_liked(self, obj):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return MediaAction.objects.filter(media=obj, user=request.user, action="like").exists()
+        return False
+
+    def get_user_has_disliked(self, obj):
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return MediaAction.objects.filter(media=obj, user=request.user, action="dislike").exists()
+        return False
 
     class Meta:
         model = Media
@@ -168,6 +184,8 @@ class SingleMediaSerializer(serializers.ModelSerializer):
             "ratings_info",
             "allow_download",
             "year_produced",
+            "user_has_liked",
+            "user_has_disliked",
         )
 
 
