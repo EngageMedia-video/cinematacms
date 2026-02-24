@@ -20,6 +20,12 @@
 
         {% include "common/head-links.html" %}
 
+        {# Import map — must appear before any <script type="module"> so the browser #}
+        {# can resolve the bare "video.js" specifier used in Vite's externalized chunks. #}
+        <script type="importmap">
+        { "imports": { "video.js": "{% static 'lib/videojs-esm-shim.js' %}" } }
+        </script>
+
         {% if VITE_DEV_MODE %}
         {% vite_react_refresh %}
         {% vite_hmr_client %}
