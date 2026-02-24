@@ -43,11 +43,11 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["basedpyright>=1.29.2", "ruff>=0.13.0", "pre-commit>=4.0.0"]
+dev = ["basedpyright>=1.38.1", "ruff>=0.15.2", "pre-commit>=4.5.1"]
 e2e = [
-    "playwright>=1.40.0",
-    "pytest>=8.0.0",
-    "pytest-playwright>=0.4.0",
+    "playwright>=1.58.0",
+    "pytest>=9.0.2",
+    "pytest-playwright>=0.7.2",
 ]
 
 [tool.pytest.ini_options]
