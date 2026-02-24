@@ -1158,23 +1158,27 @@ class SecureMediaView(View):
 
     def _serve_file_direct_django(self, file_path: str, head_request: bool = False) -> HttpResponse:
         """Serve file directly through Django (for development)."""
-        full_path = os.path.join(settings.MEDIA_ROOT, file_path)
-        logger.debug(f"Attempting to serve file directly: {full_path}")
+        # Normalize the path to resolve any '..' or '.' components (no filesystem access).
+        # _is_valid_file_path already blocks '..' patterns, but normpath provides defense-in-depth.
+        safe_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, file_path))
+        media_root = os.path.normpath(settings.MEDIA_ROOT)
+        if not media_root.endswith(os.sep):
+            media_root = media_root + os.sep
 
-        # Resolve symlinks and verify the path stays within MEDIA_ROOT
-        resolved_path = os.path.realpath(full_path)
-        media_root = os.path.realpath(settings.MEDIA_ROOT)
-        if not resolved_path.startswith(media_root + os.sep) and resolved_path != media_root:
-            logger.warning(f"Path traversal attempt blocked: {file_path} resolved to {resolved_path}")
+        # Verify the normalized path stays within MEDIA_ROOT
+        if not safe_path.startswith(media_root):
+            logger.warning(f"Path traversal attempt blocked: {file_path}")
             raise Http404("Invalid file path")
 
-        if not os.path.exists(resolved_path) or not os.path.isfile(resolved_path):
-            logger.warning(f"File not found at: {resolved_path}")
+        logger.debug(f"Attempting to serve file directly: {safe_path}")
+
+        if not os.path.isfile(safe_path):
+            logger.warning(f"File not found at: {safe_path}")
             raise Http404("File not found")
 
         content_type, security_headers = self._get_content_type_and_headers(file_path)
         if not content_type:
-            content_type, _ = mimetypes.guess_type(resolved_path)
+            content_type, _ = mimetypes.guess_type(safe_path)
             content_type = content_type or "application/octet-stream"
 
         logger.debug(f"Serving file with content-type: {content_type}")
@@ -1185,14 +1189,14 @@ class SecureMediaView(View):
                 response = HttpResponse(content_type=content_type)
                 # Set Content-Length header for HEAD requests
                 try:
-                    file_size = os.path.getsize(resolved_path)
+                    file_size = os.path.getsize(safe_path)
                     response["Content-Length"] = str(file_size)
                 except OSError:
                     # If we can't get file size, don't set Content-Length
                     pass
             else:
                 # For GET requests, return the file content
-                response = FileResponse(open(resolved_path, "rb"), content_type=content_type)
+                response = FileResponse(open(safe_path, "rb"), content_type=content_type)
 
             response["Content-Disposition"] = "inline"
 
@@ -1202,7 +1206,7 @@ class SecureMediaView(View):
 
             return response
         except OSError as e:
-            logger.error(f"Error reading file {resolved_path}: {e}")
+            logger.error(f"Error reading file {safe_path}: {e}")
             raise Http404("File could not be read") from e
 
 
