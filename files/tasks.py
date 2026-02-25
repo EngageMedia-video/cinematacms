@@ -1450,3 +1450,66 @@ def subscribe_user(email, name, country=None):
     except requests.exceptions.RequestException:
         logger.exception("Newsletter subscription error for %s", mask_email(email))
         return False
+
+
+@task(name="dispatch_deferred_encodings", queue="short_tasks")
+def dispatch_deferred_encodings():
+    """Dispatch encoding tasks that were deferred by rate limiting.
+
+    Picks up Encoding rows with status='pending' and task_dispatched=False,
+    checks global and per-user limits, and dispatches if capacity is available.
+    """
+    from .models import Encoding
+
+    active_statuses = ["pending", "running"]
+    deferred = (
+        Encoding.objects.filter(status="pending", task_dispatched=False)
+        .select_related("media", "media__user", "profile")
+        .order_by("add_date")
+    )
+
+    if not deferred.exists():
+        return
+
+    dispatched_count = 0
+    for encoding in deferred:
+        # Only count dispatched encodings (not deferred ones waiting in queue)
+        active = Encoding.objects.filter(
+            status__in=active_statuses, task_dispatched=True,
+        )
+
+        # Re-check global limit
+        global_count = active.count()
+        if global_count >= settings.MAX_ENCODING_QUEUE_DEPTH:
+            logger.info(
+                "Drain task stopping: global queue depth %d reached limit %d",
+                global_count, settings.MAX_ENCODING_QUEUE_DEPTH,
+            )
+            break
+
+        # Re-check per-user limit
+        user_count = active.filter(media__user=encoding.media.user).count()
+        if user_count >= settings.MAX_USER_CONCURRENT_ENCODES:
+            logger.debug(
+                "Drain task skipping encoding %d: user %s at limit (%d/%d)",
+                encoding.id, encoding.media.user, user_count, settings.MAX_USER_CONCURRENT_ENCODES,
+            )
+            continue
+
+        # Dispatch
+        enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
+        if encoding.profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
+            priority = 9
+        else:
+            priority = 0
+        encode_media.apply_async(
+            args=[encoding.media.friendly_token, encoding.profile.id, encoding.id, enc_url],
+            kwargs={"force": True},
+            priority=priority,
+        )
+        encoding.task_dispatched = True
+        encoding.save(update_fields=["task_dispatched"])
+        dispatched_count += 1
+
+    if dispatched_count:
+        logger.info("Drain task dispatched %d deferred encodings", dispatched_count)
