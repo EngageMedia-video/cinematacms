@@ -1685,6 +1685,47 @@ def media_save(sender, instance, created, **kwargs):
     instance.transcribe_function()
 
 
+def _revoke_encoding_tasks(media_instance):
+    """Revoke all pending/running Celery encoding tasks for a media instance.
+
+    Must be called BEFORE the Media is deleted, since CASCADE will
+    remove the Encoding records (and their task_ids) from the database.
+
+    Also kills ffmpeg subprocesses directly, because CASCADE may delete
+    Encoding records before the revoke signal reaches the worker, leaving
+    the task_revoked_handler unable to find the temp_file for cleanup.
+    """
+    from cms import celery_app
+    from .tasks import kill_ffmpeg_process
+
+    encodings = list(
+        media_instance.encodings.filter(
+            status__in=["pending", "running"],
+            task_id__gt="",
+        ).values_list("task_id", "temp_file")
+    )
+    if not encodings:
+        return
+
+    for task_id, temp_file in encodings:
+        try:
+            celery_app.control.revoke(task_id, terminate=True)
+            logger.info(
+                f"Revoked encoding task {task_id} for media "
+                f"{media_instance.friendly_token}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to revoke encoding task {task_id} for media "
+                f"{media_instance.friendly_token}: {e}"
+            )
+
+        # Kill ffmpeg subprocess directly — don't rely on task_revoked_handler
+        # since CASCADE may delete the Encoding before the signal fires
+        if temp_file:
+            kill_ffmpeg_process(temp_file)
+
+
 @receiver(pre_delete, sender=Media)
 def media_file_pre_delete(sender, instance, **kwargs):
     # Invalidate cache before deletion
@@ -1694,6 +1735,9 @@ def media_file_pre_delete(sender, instance, **kwargs):
     # Invalidate media path cache (for secure file serving)
     invalidate_func = get_invalidate_media_path_cache()
     invalidate_func(instance.id)
+
+    # Revoke any active encoding tasks before CASCADE deletes Encoding records
+    _revoke_encoding_tasks(instance)
 
     if instance.category.all():
         for category in instance.category.all():

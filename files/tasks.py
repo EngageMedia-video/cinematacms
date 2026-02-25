@@ -12,9 +12,7 @@ import requests
 from celery import Task
 from celery import shared_task as task
 from celery.exceptions import SoftTimeLimitExceeded
-from celery.signals import task_revoked
-
-# from celery.task.control import revoke
+from celery.signals import task_revoked, worker_shutting_down
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.cache import cache
@@ -62,6 +60,22 @@ ERRORS_LIST = [
     "Invalid data found when processing input",
     "Unable to find a suitable output format for",
 ]
+
+
+def _check_media_exists(media_id, encoding_id, context=""):
+    """Check if a media object still exists in the database.
+
+    Returns True if media exists, False if it was deleted.
+    When media is gone, logs a warning and deletes the orphaned encoding.
+    """
+    if not Media.objects.filter(pk=media_id).exists():
+        logger.warning(
+            f"Media {media_id} deleted during encoding {encoding_id}. "
+            f"Context: {context}"
+        )
+        Encoding.objects.filter(id=encoding_id).delete()
+        return False
+    return True
 
 
 def mask_email(email):
@@ -203,8 +217,8 @@ class EncodingTask(Task):
                 kill_ffmpeg_process(self.encoding.temp_file)
                 if hasattr(self.encoding, "media"):
                     self.encoding.media.post_encode_actions()
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Error in EncodingTask.on_failure for task {task_id}: {e}")
         return False
 
 
@@ -231,7 +245,7 @@ def encode_media(
     try:
         media = Media.objects.get(friendly_token=friendly_token)
         profile = EncodeProfile.objects.get(id=profile_id)
-    except:
+    except Exception:
         Encoding.objects.filter(id=encoding_id).delete()
         return False
 
@@ -256,7 +270,7 @@ def encode_media(
                     chunk=True,
                     chunk_file_path=chunk_file_path,
                 ).exclude(id=encoding_id).delete()
-            except:
+            except Exception:
                 encoding = Encoding(
                     media=media,
                     profile=profile,
@@ -272,8 +286,10 @@ def encode_media(
             try:
                 encoding = Encoding.objects.get(id=encoding_id)
                 encoding.status = "running"
-                Encoding.objects.filter(media=media, profile=profile).exclude(id=encoding_id).delete()
-            except:
+                Encoding.objects.filter(media=media, profile=profile).exclude(
+                    id=encoding_id
+                ).delete()
+            except Exception:
                 encoding = Encoding(media=media, profile=profile, status="running")
 
     if task_id:
@@ -373,27 +389,31 @@ def encode_media(
 
                                     percent = new_duration * 100 / media.duration
                                     if n_times % 20 == 0:
+                                        if not _check_media_exists(media.pk, encoding.id, "progress_save"):
+                                            encoding_backend.terminate_process()
+                                            return False
                                         encoding.progress = percent
                                         try:
                                             encoding.save(update_fields=["progress", "update_date"])
-                                            logger.info(f"Saved {round(percent, 2)}% (iteration {n_times})")
-                                        except:
-                                            pass
+                                            logger.info("Saved {0}% (iteration {1})".format(
+                                                round(percent, 2), n_times))
+                                        except Exception as e:
+                                            logger.warning(f"Failed to save encoding progress: {e}")
                             except (ValueError, TypeError):
                                 # Could not parse duration, treat as no progress
                                 pass
                         else:
                             # Log unparseable output for debugging
                             if n_times % 100 == 0:
+                                if not _check_media_exists(media.pk, encoding.id, "heartbeat_save"):
+                                    encoding_backend.terminate_process()
+                                    return False
                                 try:
                                     encoding.save(update_fields=["update_date"])
-                                    logger.info(
-                                        "Processing iteration {}, no duration parsed. Output sample: {}".format(
-                                            n_times, output[:100] if output else "No output"
-                                        )
-                                    )
-                                except:
-                                    pass
+                                    logger.info("Processing iteration {0}, no duration parsed. Output sample: {1}".format(
+                                        n_times, output[:100] if output else "No output"))
+                                except Exception as e:
+                                    logger.warning(f"Failed to save encoding heartbeat: {e}")
 
                         # Safety nets
                         if n_times > iteration_limit:
@@ -435,6 +455,10 @@ def encode_media(
         encoding.logs = output
         encoding.progress = 100
 
+        # Check media still exists before final save
+        if not _check_media_exists(media.pk, encoding.id, "final_save"):
+            return False
+
         success = False
         encoding.status = "fail"
         if os.path.exists(tf) and os.path.getsize(tf) != 0:
@@ -450,11 +474,14 @@ def encode_media(
                 encoding.total_run_time = (encoding.update_date - encoding.add_date).seconds
 
         try:
-            encoding.save(update_fields=["status", "logs", "progress", "total_run_time"])
-        # this will raise a django.db.utils.DatabaseError error when task is revoked,
-        # since we delete the encoding at that stage
-        except:
-            pass
+            encoding.save(
+                update_fields=["status", "logs", "progress", "total_run_time"]
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to save final encoding state for encoding {encoding.id}: {e}. "
+                "Media may have been deleted."
+            )
 
         return success
 
@@ -1150,45 +1177,116 @@ def beat_test(x, y):
 
 
 @task_revoked.connect
-def task_sent_handler(sender=None, headers=None, body=None, **kwargs):
-    # For encode_media tasks that are revoked,
-    # ffmpeg command won't be stopped, since
-    # it got started by a subprocess.
-    # Need to stop that process
-    # Also, removing the Encoding object,
-    # since the task that would prepare it was killed
-    # Maybe add a killed state for Encoding objects
-    try:
-        uid = kwargs["request"].task_id
-        if uid:
-            encoding = Encoding.objects.get(task_id=uid)
-            encoding.delete()
-            logger.info("deleted the Encoding object")
-            if encoding.temp_file:
-                kill_ffmpeg_process(encoding.temp_file)
+def task_revoked_handler(sender=None, request=None, **kwargs):
+    """Handle revoked encoding tasks.
 
-    except:
-        pass
+    When an encode_media task is revoked, kill its ffmpeg subprocess
+    and delete the Encoding object. The temp_file must be read
+    BEFORE deleting the Encoding record.
+    """
+    try:
+        if not request:
+            return True
+        uid = request.id
+        if not uid:
+            return True
+
+        try:
+            encoding = Encoding.objects.get(task_id=uid)
+        except Encoding.DoesNotExist:
+            logger.info(f"No Encoding found for revoked task {uid}")
+            return True
+
+        # Read temp_file BEFORE deleting the encoding
+        temp_file = encoding.temp_file
+        encoding.delete()
+        logger.info(f"Deleted Encoding object for revoked task {uid}")
+
+        if temp_file:
+            kill_ffmpeg_process(temp_file)
+
+    except Exception as e:
+        logger.error(f"Error handling revoked task: {e}")
 
     return True
 
 
+@worker_shutting_down.connect
+def worker_shutdown_handler(sender=None, **kwargs):
+    """Kill all ffmpeg processes when the worker shuts down.
+
+    Fires once in the main process (not per-fork), preventing orphan
+    ffmpeg processes from accumulating on worker restart or deploy.
+    """
+    logger.info("Worker shutting down, cleaning up ffmpeg processes")
+    kill_all_ffmpeg_processes()
+
+
 def kill_ffmpeg_process(filepath):
-    # this is not ideal, ffmpeg pid could be linked to the Encoding object
+    """Kill all ffmpeg processes matching the given filepath.
+
+    pgrep can return multiple PIDs (one per line), so we split
+    and kill each individually.
+    """
+    if not filepath:
+        return None
     try:
-        # Use pgrep to find ffmpeg processes with the filepath
         result = subprocess.run(
             ["pgrep", "-f", f"ffmpeg.*{filepath}"],
             capture_output=True,
         )
-        pid = result.stdout.decode("utf-8").strip()
-        if pid:
-            # Kill the process
-            subprocess.run(["kill", "-9", pid], capture_output=True)
-            return result
+        output = result.stdout.decode("utf-8").strip()
+        if not output:
+            return None
+        pids = output.split("\n")
+        for pid in pids:
+            pid = pid.strip()
+            if pid:
+                try:
+                    subprocess.run(
+                        ["kill", "-9", pid],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
+                    logger.info(f"Killed ffmpeg process {pid} for {filepath}")
+                except Exception as e:
+                    logger.error(f"Error killing ffmpeg process {pid}: {e}")
+        return result
     except Exception as e:
-        logger.error(f"Error killing ffmpeg process: {e}")
+        logger.error(f"Error finding ffmpeg processes for {filepath}: {e}")
     return None
+
+
+def kill_all_ffmpeg_processes():
+    """Kill ALL ffmpeg processes on this worker.
+
+    Used during worker shutdown to ensure no orphan ffmpeg processes remain.
+    """
+    try:
+        result = subprocess.run(
+            ["pgrep", "-f", "ffmpeg"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        output = result.stdout.decode("utf-8").strip()
+        if not output:
+            logger.info("No ffmpeg processes found during cleanup")
+            return
+        pids = output.split("\n")
+        for pid in pids:
+            pid = pid.strip()
+            if pid:
+                try:
+                    subprocess.run(
+                        ["kill", "-9", pid],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                    )
+                    logger.info(f"Worker shutdown: killed ffmpeg process {pid}")
+                except Exception as e:
+                    logger.error(f"Worker shutdown: error killing ffmpeg process {pid}: {e}")
+    except Exception as e:
+        logger.error(f"Error during ffmpeg cleanup on worker shutdown: {e}")
 
 
 @task(name="remove_media_file", base=Task, queue="long_tasks")
