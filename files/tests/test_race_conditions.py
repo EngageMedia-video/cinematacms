@@ -347,4 +347,116 @@ class TimezoneTest(TestCase):
             print(f"❌ TypeError raised: {e}")
             self.fail(f"❌ FAILED: Timezone comparison raised TypeError: {e}")
 
-        print("✅ SUCCESS: Timezone-aware datetime comparison works correctly!")
+        print(f"✅ SUCCESS: Timezone-aware datetime comparison works correctly!")
+
+
+class PreSaveActionVariableShadowingTest(TestCase):
+    """
+    Regression test for variable shadowing bug in pre_save_action.
+
+    The `query` variable was reassigned from a QuerySet to a MediaAction instance
+    via `query.first()`, causing AttributeError when `query.exists()` was called
+    later for anonymous users.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.media_owner, _ = User.objects.get_or_create(
+            username='media_owner_shadow',
+            defaults={
+                'email': 'owner_shadow@example.com',
+                'password': 'testpass123'
+            }
+        )
+        cls.test_media = create_test_media(
+            user=cls.media_owner,
+            title='Variable Shadowing Test Video'
+        )
+
+    def test_anonymous_user_with_existing_watch_no_attribute_error(self):
+        """
+        Regression: anonymous user who already watched should not raise
+        AttributeError on query.exists() due to variable shadowing.
+        """
+        media = self.test_media
+        session = SessionStore()
+        session.create()
+        session_key = session.session_key
+        ip = '10.0.0.1'
+
+        # Record an initial watch action for this anonymous user
+        MediaAction.objects.create(
+            media=media,
+            user=None,
+            session_key=session_key,
+            action='watch',
+            action_date=timezone.now(),
+            remote_ip=ip
+        )
+
+        # This should NOT raise AttributeError
+        # Before the fix, `query` was reassigned to a MediaAction instance,
+        # and then `query.exists()` was called on it.
+        try:
+            result = pre_save_action(
+                media=media,
+                user=None,
+                session_key=session_key,
+                action='watch',
+                remote_ip=ip
+            )
+            self.assertIsNotNone(result)
+        except AttributeError as e:
+            self.fail(
+                f"AttributeError raised due to variable shadowing bug: {e}"
+            )
+
+    def test_logged_in_user_with_existing_action_no_attribute_error(self):
+        """
+        Ensure logged-in users with existing actions also don't hit the bug.
+        """
+        media = self.test_media
+        user, _ = User.objects.get_or_create(
+            username='testuser_shadow',
+            defaults={
+                'email': 'shadow@example.com',
+                'password': 'testpass123'
+            }
+        )
+
+        # Record an initial like action
+        MediaAction.objects.create(
+            media=media,
+            user=user,
+            action='like',
+            action_date=timezone.now(),
+            remote_ip='10.0.0.2'
+        )
+
+        # Should return False (already liked) without any error
+        result = pre_save_action(
+            media=media,
+            user=user,
+            session_key=None,
+            action='like',
+            remote_ip='10.0.0.2'
+        )
+        self.assertFalse(result)
+
+    def test_anonymous_first_time_watch_allowed(self):
+        """
+        Ensure first-time anonymous watch is still allowed after the fix.
+        """
+        media = self.test_media
+        session = SessionStore()
+        session.create()
+
+        result = pre_save_action(
+            media=media,
+            user=None,
+            session_key=session.session_key,
+            action='watch',
+            remote_ip='10.0.0.3'
+        )
+        self.assertTrue(result)
