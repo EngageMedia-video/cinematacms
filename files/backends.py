@@ -3,7 +3,6 @@
 import locale
 import logging
 import re
-import time
 from subprocess import PIPE, Popen
 
 logger = logging.getLogger(__name__)
@@ -19,7 +18,7 @@ RE_TIMECODE = re.compile(r"time=(\d+:\d+:\d+.\d+)")
 console_encoding = locale.getdefaultlocale()[1] or "UTF-8"
 
 
-class FFmpegBackend(object):
+class FFmpegBackend:
     name = "FFmpeg"
 
     def __init__(self):
@@ -54,7 +53,7 @@ class FFmpegBackend(object):
             if self.process.poll() is None:  # Check if still running
                 logger.info("Terminating FFmpeg process gracefully")
                 self.process.terminate()
-                
+
                 # Wait up to 5 seconds for graceful shutdown
                 try:
                     self.process.wait(timeout=5)
@@ -64,7 +63,7 @@ class FFmpegBackend(object):
                     logger.warning("FFmpeg process did not terminate gracefully, force killing")
                     self.process.kill()
                     self.process.wait(timeout=2)
-                
+
                 # Close file descriptors
                 if self.process.stdin:
                     self.process.stdin.close()

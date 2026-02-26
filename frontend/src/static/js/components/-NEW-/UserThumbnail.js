@@ -9,9 +9,10 @@ import { MaterialIcon } from './MaterialIcon';
 import PageStore from '../../pages/_PageStore.js';
 import * as PageActions from '../../pages/_PageActions.js';
 
-import stylesheet from "../styles/UserThumbnail.scss";
+import "../styles/UserThumbnail.scss";
 
 export function UserThumbnail(props){
+	props = { isButton: false, size: 'medium', ...props };
 
     const user = useContext( UserContext );
 
@@ -48,7 +49,3 @@ UserThumbnail.propTypes = {
 	onClick: PropTypes.func,
 };
 
-UserThumbnail.defaultProps = {
-	isButton: false,
-	size: 'medium'
-};

@@ -13,6 +13,7 @@ import { ItemList } from './ItemList';
 import { ItemsStaticListHandler } from "./includes/itemLists/ItemsStaticListHandler";
 
 export function LazyLoadItemList(props){
+    props = { ...LazyLoadItemList.defaults, ...props };
 
     const [ items, countedItems, listHandler, setListHandler, classname, onItemsCount, onItemsLoad, onWindowScroll, onDocumentVisibilityChange, itemsListWrapperRef, itemsListRef, renderBeforeListWrap, renderAfterListWrap ] = useItemListLazyLoad(props);
 
@@ -58,7 +59,7 @@ LazyLoadItemList.propTypes = {
     ...ItemList.propTypes,
 };
 
-LazyLoadItemList.defaultProps = {
-    ...ItemList.defaultProps,
+LazyLoadItemList.defaults = {
+    ...ItemList.defaults,
     pageItems: 2,
 };

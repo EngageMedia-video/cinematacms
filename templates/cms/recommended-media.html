@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Popular - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -40,10 +40,8 @@
 
 {% endblock headermeta %}
 
+{% block topimports %}{% vite_asset 'src/entries/recommended.js' %}{% endblock topimports %}
+
 {% block content %}
 {% if user %}<div id="page-recommended"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-<script src="{% hashed_static "js/recommended.js" %}"></script>
-{% endblock bottomimports %}

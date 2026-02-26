@@ -1,13 +1,13 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.core.mail import EmailMessage, send_mail
+from django.core.mail import EmailMessage
 from django.db import models
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
-from imagekit.models import ImageSpecField, ProcessedImageField
+from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFill, ResizeToFit
 
 import files.helpers as helpers
@@ -41,9 +41,7 @@ class User(AbstractUser):
         help_text="Can add unlisted and restricted videos to playlists",
     )
     media_count = models.IntegerField(default=0, db_index=True)  # save number of videos
-    notification_on_comments = models.BooleanField(
-        "Notify me about comments on my content", default=True
-    )
+    notification_on_comments = models.BooleanField("Notify me about comments on my content", default=True)
     disable_activity_logging = models.BooleanField(
         "Disable Activity Logging",
         default=False,
@@ -66,9 +64,7 @@ class User(AbstractUser):
         blank=True,
         help_text="Link to your website, blog, or online portfolio",
     )
-    social_media_links = models.TextField(
-        "Social Media links", blank=True, help_text="Comma separated list of URLs"
-    )
+    social_media_links = models.TextField("Social Media links", blank=True, help_text="Comma separated list of URLs")
     is_editor = models.BooleanField(
         "MediaCMS Editor",
         default=False,
@@ -85,7 +81,7 @@ class User(AbstractUser):
         "Curator",
         default=False,
         db_index=True,
-        help_text="Designates whether this user can view restricted videos and contact filmmakers for curatorial programs."
+        help_text="Designates whether this user can view restricted videos and contact filmmakers for curatorial programs.",
     )
     allow_contact = models.BooleanField(
         "Contact Form",
@@ -112,14 +108,26 @@ class User(AbstractUser):
         return True
 
     def thumbnail_url(self):
+        import os
+
         if self.logo:
-            return helpers.url_from_path(self.logo.path)
+            try:
+                if os.path.isfile(self.logo.path):
+                    return helpers.url_from_path(self.logo.path)
+            except (ValueError, FileNotFoundError):
+                pass
         return None
 
     def banner_thumbnail_url(self):
+        import os
+
         c = self.channels.filter().order_by("add_date").first()
-        if c:
-            return helpers.url_from_path(c.banner_logo.path)
+        if c and c.banner_logo:
+            try:
+                if os.path.isfile(c.banner_logo.path):
+                    return helpers.url_from_path(c.banner_logo.path)
+            except (ValueError, FileNotFoundError):
+                pass
         return None
 
     @property
@@ -170,22 +178,18 @@ class User(AbstractUser):
             c["url"] = media.get_absolute_url()
             results.append(c)
         ret["results"] = results
-        ret["user_media"] = "/api/v1/media?author={0}".format(self.username)
+        ret["user_media"] = f"/api/v1/media?author={self.username}"
         return ret
 
     @property
     def location_info(self):
         ret = []
-        location = (
-            dict(video_countries).get(self.location_country, None)
-            if self.location_country
-            else None
-        )
+        location = dict(video_countries).get(self.location_country, None) if self.location_country else None
         if location:
             ret = [
                 {
                     "title": location,
-                    "url": reverse("members") + "?location={0}".format(location),
+                    "url": reverse("members") + f"?location={location}",
                 }
             ]
         return ret
@@ -200,9 +204,7 @@ class User(AbstractUser):
 class Channel(models.Model):
     title = models.CharField(max_length=90, db_index=True)
     description = models.TextField(blank=True, help_text="description")
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, db_index=True, related_name="channels"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, db_index=True, related_name="channels")
     add_date = models.DateTimeField(auto_now_add=True, db_index=True)
     subscribers = models.ManyToManyField(User, related_name="subscriptions", blank=True)
     friendly_token = models.CharField(blank=True, max_length=12)
@@ -229,17 +231,13 @@ class Channel(models.Model):
         super(Channel, self).save(*args, **kwargs)
 
     def __str__(self):
-        return "{0} -{1}".format(self.user.username, self.title)
+        return f"{self.user.username} -{self.title}"
 
     def get_absolute_url(self, edit=False):
         if edit:
-            return reverse(
-                "edit_channel", kwargs={"friendly_token": self.friendly_token}
-            )
+            return reverse("edit_channel", kwargs={"friendly_token": self.friendly_token})
         else:
-            return reverse(
-                "view_channel", kwargs={"friendly_token": self.friendly_token}
-            )
+            return reverse("view_channel", kwargs={"friendly_token": self.friendly_token})
 
     @property
     def edit_url(self):
@@ -252,7 +250,7 @@ def post_user_create(sender, instance, created, **kwargs):
         new = Channel.objects.create(title="default", user=instance)
         new.save()
         if settings.ADMINS_NOTIFICATIONS.get("NEW_USER", False):
-            title = "[{}] - New user just registered".format(settings.PORTAL_NAME)
+            title = f"[{settings.PORTAL_NAME}] - New user just registered"
             msg = """
 User has just registered with email %s\n
 Visit user profile page at %s
@@ -260,9 +258,7 @@ Visit user profile page at %s
                 instance.email,
                 settings.SSL_FRONTEND_HOST + instance.get_absolute_url(),
             )
-            email = EmailMessage(
-                title, msg, settings.DEFAULT_FROM_EMAIL, settings.ADMIN_EMAIL_LIST
-            )
+            email = EmailMessage(title, msg, settings.DEFAULT_FROM_EMAIL, settings.ADMIN_EMAIL_LIST)
             email.send(fail_silently=True)
 
 
@@ -270,14 +266,10 @@ NOTIFICATION_METHODS = (("email", "Email"),)
 
 
 class Notification(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, db_index=True, related_name="notifications"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, db_index=True, related_name="notifications")
     action = models.CharField(max_length=30, blank=True)
     notify = models.BooleanField(default=False)
-    method = models.CharField(
-        max_length=20, choices=NOTIFICATION_METHODS, default="email"
-    )
+    method = models.CharField(max_length=20, choices=NOTIFICATION_METHODS, default="email")
 
     def save(self, *args, **kwargs):
         super(Notification, self).save(*args, **kwargs)
@@ -302,4 +294,3 @@ class BlackListedEmail(models.Model):
 
     def __str__(self):
         return self.email
-

@@ -5,7 +5,7 @@ import { FilterOptions } from './FilterOptions';
 
 import PageStore from '../../pages/_PageStore.js';
 
-import styles from '../styles/ManageItemList-filters.scss';
+import '../styles/ManageItemList-filters.scss';
 
 const filters = {
 	role: [
@@ -16,6 +16,7 @@ const filters = {
 };
 
 export function ManageUsersFilters (props){
+	props = { hidden: false, ...props };
 
 	const [ isHidden, setIsHidden ] = useState( props.hidden );
 
@@ -75,6 +76,3 @@ ManageUsersFilters.propTypes = {
 	hidden: PropTypes.bool,
 };
 
-ManageUsersFilters.defaultProps = {
-	hidden: false,
-};

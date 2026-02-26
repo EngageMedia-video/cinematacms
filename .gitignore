@@ -40,3 +40,6 @@ celerybeat.pid
 cms/maintenance_mode_state.txt
 cms/maintenance_timing.json
 cms/maintenance_timing.json.lock
+
+# Frontend environment files
+frontend/.env

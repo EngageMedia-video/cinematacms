@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('users', '0005_add_disable_activity_logging'),
-        ('users', '0004_alter_user_location_country'),
+        ("users", "0005_add_disable_activity_logging"),
+        ("users", "0004_alter_user_location_country"),
     ]
 
-    operations = [
-    ]
+    operations = []

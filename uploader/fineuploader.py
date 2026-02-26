@@ -1,6 +1,6 @@
+import os
 import re
 import shutil
-import os
 import uuid
 from io import StringIO
 from os.path import join
@@ -23,7 +23,7 @@ def is_valid_uuid_format(uuid_string):
     return bool(pattern.match(uuid_string))
 
 
-class BaseFineUploader(object):
+class BaseFineUploader:
     def __init__(self, data, *args, **kwargs):
         self.data = data
         self.filename = data.get("qqfilename")

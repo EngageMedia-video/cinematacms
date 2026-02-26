@@ -3,6 +3,7 @@
 # that were created before the filename field was added in migration 0007.
 
 import os
+
 from django.db import migrations
 
 
@@ -13,10 +14,10 @@ def backfill_media_filenames(apps, schema_editor):
     """
     from django.db import transaction
 
-    Media = apps.get_model('files', 'Media')
+    Media = apps.get_model("files", "Media")
 
     # Find all Media records with empty filename field
-    media_records = Media.objects.filter(filename='')
+    media_records = Media.objects.filter(filename="")
 
     if not media_records.exists():
         print("No Media records need filename backfill.")
@@ -38,7 +39,7 @@ def backfill_media_filenames(apps, schema_editor):
             # Bulk update when batch is full
             if len(batch) >= batch_size:
                 with transaction.atomic():
-                    Media.objects.bulk_update(batch, ['filename'], batch_size=batch_size)
+                    Media.objects.bulk_update(batch, ["filename"], batch_size=batch_size)
                 updated_count += len(batch)
                 print(f"  Updated {updated_count} Media records...")
                 batch = []
@@ -46,7 +47,7 @@ def backfill_media_filenames(apps, schema_editor):
     # Update remaining records
     if batch:
         with transaction.atomic():
-            Media.objects.bulk_update(batch, ['filename'], batch_size=batch_size)
+            Media.objects.bulk_update(batch, ["filename"], batch_size=batch_size)
         updated_count += len(batch)
 
     print(f"Successfully backfilled filename for {updated_count} Media records.")
@@ -59,10 +60,10 @@ def backfill_encoding_filenames(apps, schema_editor):
     """
     from django.db import transaction
 
-    Encoding = apps.get_model('files', 'Encoding')
+    Encoding = apps.get_model("files", "Encoding")
 
     # Find all Encoding records with empty filename field
-    encoding_records = Encoding.objects.filter(filename='')
+    encoding_records = Encoding.objects.filter(filename="")
 
     if not encoding_records.exists():
         print("No Encoding records need filename backfill.")
@@ -84,7 +85,7 @@ def backfill_encoding_filenames(apps, schema_editor):
             # Bulk update when batch is full
             if len(batch) >= batch_size:
                 with transaction.atomic():
-                    Encoding.objects.bulk_update(batch, ['filename'], batch_size=batch_size)
+                    Encoding.objects.bulk_update(batch, ["filename"], batch_size=batch_size)
                 updated_count += len(batch)
                 print(f"  Updated {updated_count} Encoding records...")
                 batch = []
@@ -92,16 +93,15 @@ def backfill_encoding_filenames(apps, schema_editor):
     # Update remaining records
     if batch:
         with transaction.atomic():
-            Encoding.objects.bulk_update(batch, ['filename'], batch_size=batch_size)
+            Encoding.objects.bulk_update(batch, ["filename"], batch_size=batch_size)
         updated_count += len(batch)
 
     print(f"Successfully backfilled filename for {updated_count} Encoding records.")
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('files', '0008_fix_invalid_state_and_country'),
+        ("files", "0008_fix_invalid_state_and_country"),
     ]
 
     operations = [

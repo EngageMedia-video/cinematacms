@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("files", "0011_alter_media_media_country"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -27,9 +26,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "start_date",
-                    models.DateTimeField(
-                        help_text="When this video becomes featured. All times are in UTC."
-                    ),
+                    models.DateTimeField(help_text="When this video becomes featured. All times are in UTC."),
                 ),
                 (
                     "end_date",

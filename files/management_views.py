@@ -1,4 +1,4 @@
-from rest_framework import permissions, status
+from rest_framework import status
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
@@ -25,8 +25,8 @@ class MediaList(APIView):
         encoding_status = params.get("encoding_status", "").strip()
         media_type = params.get("media_type", "").strip()
 
-        add_date = params.get("add_date", "").strip()
-        edit_date = params.get("edit_date", "").strip()
+        params.get("add_date", "").strip()
+        params.get("edit_date", "").strip()
         featured = params.get("featured", "").strip()
         is_reviewed = params.get("is_reviewed", "").strip()
 
@@ -40,10 +40,7 @@ class MediaList(APIView):
         ]
         if sort_by not in sort_by_options:
             sort_by = "add_date"
-        if ordering == "asc":
-            ordering = ""
-        else:
-            ordering = "-"
+        ordering = "" if ordering == "asc" else "-"
 
         if media_type not in ["video", "image", "audio", "pdf"]:
             media_type = None
@@ -110,10 +107,7 @@ class CommentList(APIView):
         sort_by_options = ["text", "add_date"]
         if sort_by not in sort_by_options:
             sort_by = "add_date"
-        if ordering == "asc":
-            ordering = ""
-        else:
-            ordering = "-"
+        ordering = "" if ordering == "asc" else "-"
 
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
 
@@ -148,10 +142,7 @@ class UserList(APIView):
         sort_by_options = ["date_added", "name"]
         if sort_by not in sort_by_options:
             sort_by = "date_added"
-        if ordering == "asc":
-            ordering = ""
-        else:
-            ordering = "-"
+        ordering = "" if ordering == "asc" else "-"
 
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
 
@@ -171,9 +162,7 @@ class UserList(APIView):
 
     def delete(self, request, format=None):
         if not is_mediacms_manager(request.user):
-            return Response(
-                {"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST)
 
         tokens = request.GET.get("tokens")
         if tokens:

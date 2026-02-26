@@ -39,10 +39,108 @@ dependencies = [
     "qrcode==8.2",
     "django-tinymce==4.1.0",
     "django-maintenance-mode==0.22.0",
+    "django-vite>=3.1.0",
 ]
 
 [dependency-groups]
-dev = ["basedpyright>=1.29.2", "ruff>=0.13.0"]
+dev = ["basedpyright>=1.38.1", "ruff>=0.15.2", "pre-commit>=4.5.1"]
+e2e = [
+    "playwright>=1.58.0",
+    "pytest>=9.0.2",
+    "pytest-playwright>=0.7.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["e2e"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "smoke: Critical path smoke tests (Phase 1)",
+    "auth: Authentication tests",
+    "theme: Theme switching tests",
+    "search: Search functionality tests",
+    "media: Media viewing tests",
+    "comments: Comment system tests",
+    "api: API endpoint tests",
+    "playlists: Playlist tests",
+    "profiles: User profile tests",
+    "permissions: Permission and role tests",
+    "upload: File upload tests",
+    "management: Admin management tests",
+    "embed: Embed player tests",
+    "rss: RSS feed tests",
+    "contact: Contact form tests",
+]
+addopts = "--tb=short"
+
+# ── Ruff (linter + formatter) ──────────────────────────────
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "B",   # flake8-bugbear (common gotchas)
+    "UP",  # pyupgrade (modernize syntax for target Python)
+    "DJ",  # flake8-django
+    "S",   # flake8-bandit (security)
+    "SIM", # flake8-simplify
+    "C4",  # flake8-comprehensions
+]
+ignore = [
+    # ── Existing codebase patterns (fix incrementally) ──
+    "E501",  # line-too-long — let the formatter handle it; legacy lines stay
+    "E722",  # bare-except — 36 occurrences, fix gradually
+    "E741",  # ambiguous-variable-name — legacy code
+    "DJ001", # null-on-string-field — prevalent in existing models
+    "DJ007", # django-all-with-model-form — admin forms use __all__
+    "DJ008", # django-model-without-dunder-str — legacy models
+    "DJ012", # model-ordering — would require rewriting every model
+    "UP008", # super-call-with-parameters — legacy pattern, low risk
+    "UP031", # printf-string-formatting — legacy code uses %-formatting
+    "B904",  # raise-without-from-inside-except — legacy exception patterns
+    "SIM102",# collapsible-if — stylistic, fix gradually
+    "SIM105",# suppressible-exception — try-except-pass is clearer in some contexts
+    "SIM113",# enumerate-for-loop — batch counters don't map to enumerate cleanly
+    "SIM115",# open-file-with-context-handler — tempfile patterns need delete=False
+    "SIM117",# multiple-with-statements — deeply nested mocks in tests
+    "S101",  # assert — used in Django tests
+    "S105",  # hardcoded-password-string — dev settings only
+    "S108",  # hardcoded-temp-file — /tmp is intentional in dev settings
+    "S110",  # try-except-pass — used in media processing
+    "S112",  # try-except-continue — used in ffmpeg output parsing
+    "S308",  # mark_safe — required for Django template rendering
+    "S311",  # suspicious-non-cryptographic-random — used for non-security randomisation
+    "S324",  # hashlib-insecure-hash-function — md5 used for cache keys, not security
+    "S603",  # subprocess-without-shell-equals-true — media encoding
+    "S607",  # start-process-with-partial-path — media tools
+    "S608",  # hardcoded-sql-expression — raw SQL in management commands
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Settings files have star imports, long lines, and runtime logic
+"cms/settings.py" = ["F401", "F403", "E402", "S104", "S105", "S108", "S324", "SIM115"]
+"cms/local_settings.py" = ["F401", "F403", "E402", "S105"]
+# Migration files are auto-generated
+"*/migrations/*.py" = ["E501", "E402"]
+# Tests can use assert and magic values
+"**/tests/**" = ["S101", "S105", "S106"]
+"**/tests.py" = ["S101", "S105", "S106"]
+"tests/**" = ["S101", "S106"]
+"e2e/**" = ["S101", "S106"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["cms", "files", "users", "uploader", "actions"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
 
 [tool.uv.sources]
 django-tinymce = { git = "https://github.com/jazzband/django-tinymce.git", rev = "685236d36af37afbb8e069099879b3489bbe8216" }

@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('users', '0002_alter_user_location_country'),
+        ("users", "0002_alter_user_location_country"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user',
-            name='media_count',
+            model_name="user",
+            name="media_count",
             field=models.IntegerField(db_index=True, default=0),
         ),
     ]

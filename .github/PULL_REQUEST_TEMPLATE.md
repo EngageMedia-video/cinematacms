@@ -30,3 +30,8 @@ Fixes #(issue)
 - [ ] I have updated the documentation accordingly.
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
+
+## Modern Track Checklist (for new features):
+- [ ] I have not imported `flux` in a new component
+- [ ] If adding a new feature, I used Modern Track patterns
+- [ ] New features do not create new SCSS files (use Tailwind instead)

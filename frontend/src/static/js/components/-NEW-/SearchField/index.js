@@ -17,7 +17,7 @@ import { PopupMain } from '../Popup';
 
 import LayoutStore from '../../../stores/LayoutStore.js';
 
-import stylesheet from "../../styles/SearchField.scss";
+import "../../styles/SearchField.scss";
 
 function indexesOf(source, find, caseSensitive) {
 	let i, result = [];

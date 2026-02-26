@@ -1,0 +1,6 @@
+build/
+node_modules/
+packages/media-player/dist/
+packages/ejs-compiled-loader/
+*.min.js
+*.min.css

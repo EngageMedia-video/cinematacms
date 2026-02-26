@@ -18,7 +18,7 @@ Item.propTypes = {
 	editLink: PropTypes.string,
 };
 
-Item.defaultProps = {
+Item.defaults = {
 	title: "",
 	link: "#",
 	singleLinkContent: false,

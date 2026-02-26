@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Countries - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -40,8 +40,6 @@
 
 {% endblock headermeta %}
 
-{% block content %}<div id="page-countries"></div>{% endblock %}
+{% block topimports %}{% vite_asset 'src/entries/countries.js' %}{% endblock topimports %}
 
-{% block bottomimports %}
-<script src="{% hashed_static "js/countries.js" %}"></script>
-{% endblock bottomimports %}
+{% block content %}<div id="page-countries"></div>{% endblock %}

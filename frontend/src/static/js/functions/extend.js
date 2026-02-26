@@ -13,4 +13,4 @@ function extend(out) {
     return out;
 }
 
-module.exports = extend;
+export default extend;

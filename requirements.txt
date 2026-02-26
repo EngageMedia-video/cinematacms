@@ -64,6 +64,7 @@ django==5.2.11
     #   django-redis
     #   django-silk
     #   django-tinymce
+    #   django-vite
     #   djangorestframework
 django-allauth==65.14.0
     # via cinemata
@@ -98,6 +99,8 @@ django-redis==6.0.0
 django-silk==5.4.3
     # via cinemata
 django-tinymce @ git+https://github.com/jazzband/django-tinymce.git@685236d36af37afbb8e069099879b3489bbe8216
+    # via cinemata
+django-vite==3.1.0
     # via cinemata
 djangorestframework==3.16.1
     # via cinemata

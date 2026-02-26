@@ -10,6 +10,7 @@ import { ItemList } from './ItemList';
 import { ItemsListHandler } from "./includes/itemLists/ItemsListHandler";
 
 export function ItemListAsync(props){
+    props = { ...ItemListAsync.defaults, ...props };
 
     const [ countedItems, items, listHandler, setListHandler, classname, itemsListWrapperRef, itemsListRef, onItemsCount, onItemsLoad, renderBeforeListWrap, renderAfterListWrap ] = useItemListSync(props);
 
@@ -49,9 +50,8 @@ ItemListAsync.propTypes = {
     firstItemRequestUrl: PropTypes.string,
 };
 
-ItemListAsync.defaultProps = {
-    ...ItemList.defaultProps,
-    requestUrl: null,
+ItemListAsync.defaults = {
+    ...ItemList.defaults,
     firstItemRequestUrl: null,
     pageItems: 24,
 };

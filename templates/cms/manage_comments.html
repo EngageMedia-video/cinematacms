@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}Manage comments - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -12,8 +12,6 @@
 
 {% endblock headermeta %}
 
-{% block content %}<div id="page-manage-comments"></div>{% endblock %}
+{% block topimports %}{% vite_asset 'src/entries/manage-comments.js' %}{% endblock topimports %}
 
-{% block bottomimports %}
-<script src="{% hashed_static "js/manage-comments.js" %}"></script>
-{% endblock bottomimports %}
+{% block content %}<div id="page-manage-comments"></div>{% endblock %}

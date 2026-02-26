@@ -1,9 +1,10 @@
 import unittest
 from unittest.mock import Mock, patch
+
 from files.helpers import calculate_seconds
 
+
 class TestEncodingProgressTracking(unittest.TestCase):
-    
     def test_calculate_seconds_with_4k_output(self):
         """Test duration parsing with various FFmpeg output formats"""
         # Test cases for different output patterns
@@ -13,7 +14,7 @@ class TestEncodingProgressTracking(unittest.TestCase):
             ("[h264 @ 0x...] time=00:01:30.000 bitrate=2000kb/s", 90.0),
             ("size=   45000kB time=00:01:30 bitrate=2000kbits/s speed=1.5x", 90.0),
         ]
-        
+
         for output, expected in test_cases:
             with self.subTest(output=output):
                 result = calculate_seconds(output)
@@ -28,7 +29,7 @@ class TestEncodingProgressTracking(unittest.TestCase):
             (b"time=00:02:15.50 bitrate=2000kbits/s", 135.0),
             (b"time=00:00:45 speed=1.5x", 45.0),
         ]
-        
+
         for output, expected in test_cases:
             with self.subTest(output=output):
                 result = calculate_seconds(output)
@@ -45,7 +46,7 @@ class TestEncodingProgressTracking(unittest.TestCase):
             "no time info here",
             b"no time info here",
         ]
-        
+
         for invalid_input in invalid_cases:
             with self.subTest(input=invalid_input):
                 result = calculate_seconds(invalid_input)
@@ -53,24 +54,23 @@ class TestEncodingProgressTracking(unittest.TestCase):
 
     def test_encoding_loop_safety_net(self):
         """Test that encoding loop doesn't run infinitely"""
-        with patch('files.tasks.FFmpegBackend') as mock_backend:
+        with patch("files.tasks.FFmpegBackend") as mock_backend:
             # Mock backend that returns unparseable output
             mock_encoding_command = Mock()
             mock_encoding_command.__iter__ = Mock(return_value=iter(["unparseable"] * 100))
             mock_backend.return_value.encode.return_value = mock_encoding_command
-            
-            with patch('files.tasks.calculate_seconds', return_value=None):
+
+            with patch("files.tasks.calculate_seconds", return_value=None):
                 # This test is primarily to ensure the loop exits.
                 # The actual functionality is tested by the integration test.
                 # A simple call to a mocked function within the loop will suffice.
-                with patch('files.tasks.logger.info') as mock_logger:
-                    from files.tasks import encode_media
+                with patch("files.tasks.logger.info"):
                     # We need to mock the media and profile objects
                     media = Mock()
                     media.duration = 100
-                    profile = Mock()
-                    encoding = Mock()
-                    
+                    Mock()
+                    Mock()
+
                     # A simplified call to a conceptual "run_encoding_loop" function
                     # This is illustrative. The actual implementation will depend on the refactoring of encode_media
                     # For now, we assume the loop is part of the main function and we can't test it in isolation
@@ -80,11 +80,11 @@ class TestEncodingProgressTracking(unittest.TestCase):
     def test_progress_updates_without_duration(self):
         """Test that progress tracking continues even when duration parsing fails"""
         # Mock scenario where calculate_seconds returns None
-        with patch('files.tasks.calculate_seconds', return_value=None):
-            with patch('files.tasks.Encoding.objects.get') as mock_get:
-                with patch('files.tasks.Media.objects.get') as mock_media_get:
-                    with patch('files.tasks.EncodeProfile.objects.get') as mock_profile_get:
-                        with patch('files.tasks.FFmpegBackend') as mock_backend:
+        with patch("files.tasks.calculate_seconds", return_value=None):
+            with patch("files.tasks.Encoding.objects.get"):
+                with patch("files.tasks.Media.objects.get"):
+                    with patch("files.tasks.EncodeProfile.objects.get"):
+                        with patch("files.tasks.FFmpegBackend"):
                             # This test is to ensure n_times increments.
                             # We can't easily test this without refactoring encode_media.
                             # The integration test will cover the behavior.

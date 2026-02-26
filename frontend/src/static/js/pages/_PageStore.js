@@ -302,3 +302,7 @@ class PageStore extends EventEmitter {
 }
 
 export default exportStore(new PageStore, 'actions_handler');
+
+if (import.meta.hot) {
+	import.meta.hot.decline();
+}

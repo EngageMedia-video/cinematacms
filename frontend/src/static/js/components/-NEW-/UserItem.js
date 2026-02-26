@@ -7,6 +7,7 @@ import { useItem } from './hooks/useItem';
 import { UserItemMemberSince, UserItemThumbnailLink } from './includes/items';
 
 export function UserItem(props){
+	props = { ...UserItem.defaults, ...props };
 
 	const type = 'user';
 
@@ -300,6 +301,6 @@ UserItem.propTypes = {
 	...Item.propTypes,
 };
 
-UserItem.defaultProps = {
-	...Item.defaultProps,
+UserItem.defaults = {
+	...Item.defaults,
 };

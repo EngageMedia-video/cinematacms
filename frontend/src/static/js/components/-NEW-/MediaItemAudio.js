@@ -16,6 +16,7 @@ import PageStore from '../../pages/_PageStore.js';
 import MediaDurationInfo from '../../classes/MediaDurationInfo';
 
 export function MediaItemAudio(props){
+	props = { ...MediaItemAudio.defaults, ...props };
 
 	const type = props.type;
 
@@ -32,7 +33,6 @@ export function MediaItemAudio(props){
 	function thumbnailComponent(){
 
 		const attr = {
-			key: 'item-thumb',
 			href: props.link,
 			title: props.title,
 			tabIndex: '-1',
@@ -41,7 +41,7 @@ export function MediaItemAudio(props){
 			style: ! thumbnailUrl ? null : { backgroundImage: 'url(\'' + thumbnailUrl + '\')' },
 		};
 
-		return <a {...attr}>
+		return <a key="item-thumb" {...attr}>
 					{ props.inPlaylistView ? null : <MediaItemDuration ariaLabel={ duration } time={ durationISO8601 } text={ durationStr } /> }
 					<MediaItemStateBadge state={props.state} />
 				</a>;
@@ -57,7 +57,7 @@ export function MediaItemAudio(props){
 		return props.hidePlaylistOptions ? null : <MediaPlaylistOptions key="options" media_id={ mediaId } playlist_id={ props.playlist_id } />;
 	}
 
-	const containerClassname = itemClassname( 'item ' + type + '-item', props.class_name.trim(), props.playlistOrder === props.playlistActiveItem );
+	const containerClassname = itemClassname( 'item ' + type + '-item', (props.class_name ?? '').trim(), props.playlistOrder === props.playlistActiveItem );
 
 	return (<div className={ containerClassname }>
 
@@ -92,8 +92,8 @@ MediaItemAudio.propTypes = {
 	playlist_id: PropTypes.string,
 };
 
-MediaItemAudio.defaultProps = {
-	...MediaItem.defaultProps,
+MediaItemAudio.defaults = {
+	...MediaItem.defaults,
 	type: 'audio',
 	duration: 0,
 	hidePlaylistOptions: true,

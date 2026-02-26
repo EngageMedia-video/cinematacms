@@ -13,6 +13,8 @@ import { ItemListAsync } from './ItemListAsync';
 import { ItemsListHandler } from "./includes/itemLists/ItemsListHandler";
 
 export function LazyLoadItemListSplit(props){
+    props = { ...LazyLoadItemListSplit.defaults, ...props };
+
     const [ items, countedItems, listHandler, setListHandler, classname, onItemsCount, onItemsLoad, onWindowScroll, onDocumentVisibilityChange, itemsListWrapperRef, itemsListRef, renderBeforeListWrap, renderAfterListWrap ] = useItemListLazyLoad(props);
 
     const [sameCountryItems, setSameCountryItems] = useState([]);
@@ -303,7 +305,7 @@ LazyLoadItemListSplit.propTypes = {
     ...ItemListAsync.propTypes,
 };
 
-LazyLoadItemListSplit.defaultProps = {
-    ...ItemListAsync.defaultProps,
+LazyLoadItemListSplit.defaults = {
+    ...ItemListAsync.defaults,
     pageItems: 2,
 };

@@ -5,32 +5,31 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('files', '0013_add_featured_date_field'),
-        ('users', '0007_update_user_field_help_texts'),
+        ("files", "0013_add_featured_date_field"),
+        ("users", "0007_update_user_field_help_texts"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='media',
-            index=models.Index(fields=['thumbnail'], name='idx_media_thumbnail'),
+            model_name="media",
+            index=models.Index(fields=["thumbnail"], name="idx_media_thumbnail"),
         ),
         migrations.AddIndex(
-            model_name='media',
-            index=models.Index(fields=['poster'], name='idx_media_poster'),
+            model_name="media",
+            index=models.Index(fields=["poster"], name="idx_media_poster"),
         ),
         migrations.AddIndex(
-            model_name='media',
-            index=models.Index(fields=['uploaded_thumbnail'], name='idx_media_uploaded_thumb'),
+            model_name="media",
+            index=models.Index(fields=["uploaded_thumbnail"], name="idx_media_uploaded_thumb"),
         ),
         migrations.AddIndex(
-            model_name='media',
-            index=models.Index(fields=['uploaded_poster'], name='idx_media_uploaded_poster'),
+            model_name="media",
+            index=models.Index(fields=["uploaded_poster"], name="idx_media_uploaded_poster"),
         ),
         migrations.AddIndex(
-            model_name='media',
-            index=models.Index(fields=['sprites'], name='idx_media_sprites'),
+            model_name="media",
+            index=models.Index(fields=["sprites"], name="idx_media_sprites"),
         ),
     ]

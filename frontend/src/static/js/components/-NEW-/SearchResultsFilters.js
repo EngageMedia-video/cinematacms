@@ -5,7 +5,7 @@ import { FilterOptions } from './FilterOptions';
 
 import PageStore from '../../pages/_PageStore.js';
 
-import styles from '../styles/ManageItemList-filters.scss';
+import '../styles/ManageItemList-filters.scss';
 
 const filters = {
 	media_type: [
@@ -41,6 +41,7 @@ const filters = {
 };
 
 export function SearchResultsFilters(props){
+	props = { hidden: false, ...props };
 
 	const [ isHidden, setIsHidden ] = useState( props.hidden );
 
@@ -143,6 +144,3 @@ SearchResultsFilters.propTypes = {
 	hidden: PropTypes.bool,
 };
 
-SearchResultsFilters.defaultProps = {
-	hidden: false,
-};

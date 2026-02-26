@@ -227,7 +227,7 @@ frontend-build:
 
 frontend-dev:
 	@echo "Starting frontend development server..."
-	cd frontend && npm start
+	cd frontend && npm run dev
 
 frontend-clean:
 	@echo "Cleaning frontend build directories..."

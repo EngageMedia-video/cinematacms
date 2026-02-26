@@ -11,7 +11,7 @@ import PageStore from '../../pages/_PageStore.js';
 import LayoutStore from '../../stores/LayoutStore.js';
 import * as LayoutActions from '../../actions/LayoutActions.js';
 
-import stylesheet from "../styles/PageSidebar.scss";
+import "../styles/PageSidebar.scss";
 
 export function PageSidebar(){
 

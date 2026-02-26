@@ -11,7 +11,7 @@ import ViewerError from './includes/ViewerError';
 import ViewerInfo from './includes/ViewerInfo';
 import ViewerSidebar from './includes/ViewerSidebar';
 
-import stylesheet from "../styles/MediaPage.scss";
+import "../styles/MediaPage.scss";
 
 const wideLayoutBreakpoint = 1216;
 

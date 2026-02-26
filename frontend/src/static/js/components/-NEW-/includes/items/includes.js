@@ -76,7 +76,6 @@ export function MediaItemStateBadge(props) {
 export function MediaItemThumbnailLink(props) {
 
 	const attr = {
-		key: 'item-thumb',
 		href: props.link,
 		title: props.title,
 		tabIndex: '-1',
@@ -85,7 +84,7 @@ export function MediaItemThumbnailLink(props) {
 		style: !props.src ? null : { backgroundImage: 'url(\'' + props.src + '\')' },
 	};
 
-	return (<a {...attr}>
+	return (<a key="item-thumb" {...attr}>
 		{!props.src ? null : <div key="item-type-icon" className="item-type-icon"><div></div></div>}
 		<MediaItemStateBadge state={props.state} />
 	</a>);
@@ -94,7 +93,6 @@ export function MediaItemThumbnailLink(props) {
 export function UserItemThumbnailLink(props) {
 
 	const attr = {
-		key: 'item-thumb',
 		href: props.link,
 		title: props.title,
 		tabIndex: '-1',
@@ -103,7 +101,7 @@ export function UserItemThumbnailLink(props) {
 		style: !props.src ? null : { backgroundImage: 'url(\'' + props.src + '\')' },
 	};
 
-	return (<a {...attr}></a>);
+	return (<a key="item-thumb" {...attr}></a>);
 }
 
 export function MediaItemCategories(props) {

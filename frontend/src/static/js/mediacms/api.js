@@ -1,4 +1,4 @@
-const urlParse = require("url-parse");
+import urlParse from 'url-parse';
 
 let BASE_URL = null;
 let ENDPOINTS = null;

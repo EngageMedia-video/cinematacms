@@ -26,7 +26,7 @@ import { LazyLoadItemListAsync } from '../../components/-NEW-/LazyLoadItemListAs
 import { LinksConsumer } from '../../contexts/LinksContext';
 // import { UserConsumer } from '../../contexts/UserContext';
 
-import stylesheet from "../styles/ProfilePage.scss";
+import "../styles/ProfilePage.scss";
 
 function EmptyChannelMedia(props){
 

@@ -1,13 +1,12 @@
-import re
 import logging
+
 from django import forms
 from django.contrib import admin
+from django.utils import timezone
 from tinymce.widgets import TinyMCE
 
 from users.models import User
 from users.validators import validate_internal_html
-
-from django.utils import timezone
 
 from .models import (
     Category,
@@ -26,15 +25,16 @@ from .models import (
     RatingCategory,
     Subtitle,
     Tag,
+    TinyMCEMedia,
     Topic,
     TopMessage,
-    TinyMCEMedia,
     TranscriptionRequest,
 )
 
 logger = logging.getLogger(__name__)
 
 
+@admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     search_fields = ["text"]
     list_display = ["text", "add_date", "user", "media"]
@@ -42,6 +42,7 @@ class CommentAdmin(admin.ModelAdmin):
     readonly_fields = ("user", "media", "parent")
 
 
+@admin.register(Media)
 class MediaAdmin(admin.ModelAdmin):
     search_fields = ["title"]
     list_display = [
@@ -64,6 +65,10 @@ class MediaAdmin(admin.ModelAdmin):
     ordering = ("-add_date",)
     readonly_fields = ("tags", "category", "channel")
 
+    @admin.display(
+        description="File Size",
+        ordering="size",
+    )
     def get_file_size(self, obj):
         """Display the file size of the media"""
         if obj.size:
@@ -72,6 +77,7 @@ class MediaAdmin(admin.ModelAdmin):
             try:
                 # If size is not set, calculate it from the file
                 import os
+
                 from . import helpers
 
                 file_size = os.path.getsize(obj.media_file.path)
@@ -80,13 +86,9 @@ class MediaAdmin(admin.ModelAdmin):
                 return "N/A"
         return "N/A"
 
-    get_file_size.short_description = "File Size"
-    get_file_size.admin_order_field = "size"  # Allow sorting by this column
-
+    @admin.display(description="Comments count")
     def get_comments_count(self, obj):
         return obj.comments.count()
-
-    get_comments_count.short_description = "Comments count"
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(MediaAdmin, self).get_form(request, obj, **kwargs)
@@ -94,10 +96,12 @@ class MediaAdmin(admin.ModelAdmin):
         return form
 
 
+@admin.register(Encoding)
 class EncodingAdmin(admin.ModelAdmin):
     pass
 
 
+@admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     search_fields = ["title"]
     list_display = ["title", "user", "add_date", "is_global", "media_count"]
@@ -106,12 +110,14 @@ class CategoryAdmin(admin.ModelAdmin):
     readonly_fields = ("user", "media_count")
 
 
+@admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     search_fields = ["title"]
     list_display = ["title", "user", "media_count"]
     readonly_fields = ("user", "media_count")
 
 
+@admin.register(EncodeProfile)
 class EncodeProfileAdmin(admin.ModelAdmin):
     list_display = ("name", "extension", "resolution", "codec", "description", "active")
     list_filter = ["extension", "resolution", "codec", "active"]
@@ -120,20 +126,24 @@ class EncodeProfileAdmin(admin.ModelAdmin):
     fields = ("name", "extension", "resolution", "codec", "description", "active")
 
 
+@admin.register(Language)
 class LanguageAdmin(admin.ModelAdmin):
     pass
 
 
+@admin.register(Subtitle)
 class SubtitleAdmin(admin.ModelAdmin):
     list_filter = ["language"]
 
 
+@admin.register(RatingCategory)
 class RatingCategoryAdmin(admin.ModelAdmin):
     search_fields = ["title"]
     list_display = ["title", "enabled", "category"]
     list_filter = ["category"]
 
 
+@admin.register(Rating)
 class RatingAdmin(admin.ModelAdmin):
     search_fields = ["user"]
     list_display = ["user", "rating_category", "media"]
@@ -143,6 +153,7 @@ class RatingAdmin(admin.ModelAdmin):
 #    readonly_fields = ('score', 'media')
 
 
+@admin.register(License)
 class LicenseAdmin(admin.ModelAdmin):
     list_display = [
         "title",
@@ -153,10 +164,12 @@ class LicenseAdmin(admin.ModelAdmin):
     ]
 
 
+@admin.register(Topic)
 class TopicAdmin(admin.ModelAdmin):
     pass
 
 
+@admin.register(MediaLanguage)
 class MediaLanguageAdmin(admin.ModelAdmin):
     pass
 
@@ -178,10 +191,12 @@ class PageAdminForm(forms.ModelForm):
         fields = "__all__"
 
 
+@admin.register(Page)
 class PageAdmin(admin.ModelAdmin):
     form = PageAdminForm
 
 
+@admin.register(TopMessage)
 class TopMessageAdmin(admin.ModelAdmin):
     list_display = ("text", "add_date", "active")
 
@@ -215,15 +230,18 @@ class IndexPageFeaturedAdminForm(forms.ModelForm):
         return validate_internal_html(content)
 
 
+@admin.register(IndexPageFeatured)
 class IndexPageFeaturedAdmin(admin.ModelAdmin):
     form = IndexPageFeaturedAdminForm
     list_display = ("title", "url", "api_url", "ordering", "active")
 
 
+@admin.register(HomepagePopup)
 class HomepagePopupAdmin(admin.ModelAdmin):
     list_display = ("text", "url", "popup", "add_date", "active")
 
 
+@admin.register(TranscriptionRequest)
 class TranscriptionRequestAdmin(admin.ModelAdmin):
     list_display = [
         "media_title",
@@ -246,34 +264,29 @@ class TranscriptionRequestAdmin(admin.ModelAdmin):
             del actions["delete_selected"]
         return actions
 
+    @admin.display(description="Media Title")
     def media_title(self, obj):
         return obj.media.title if obj.media else "Unknown"
 
-    media_title.short_description = "Media Title"
-
+    @admin.display(description="Language")
     def language(self, obj):
         """Get the language of the media"""
         if obj.media and obj.media.media_language:
             try:
                 media_language = obj.media.media_language
                 language_row = (
-                    Language.objects.exclude(
-                        code__in=["automatic-translation", "automatic"]
-                    )
+                    Language.objects.exclude(code__in=["automatic-translation", "automatic"])
                     .values("title")
                     .filter(code=media_language)
                     .first()
                 )
-                return (language_row and language_row["title"]) or (
-                    media_language or "Not specified"
-                )
-            except Exception as e:
+                return (language_row and language_row["title"]) or (media_language or "Not specified")
+            except Exception:
                 logger.info("Transcription Request Language Not Specified")
                 return "Not specified"
         return "Not specified"
 
-    language.short_description = "Language"
-
+    @admin.display(description="Country")
     def country(self, obj):
         """Get the country of the media"""
         if obj.media and obj.media.media_country:
@@ -284,8 +297,7 @@ class TranscriptionRequestAdmin(admin.ModelAdmin):
             return country_dict.get(obj.media.media_country, obj.media.media_country)
         return "Not specified"
 
-    country.short_description = "Country"
-
+    @admin.action(description="Delete requests (enable retranscoding)")
     def delete_selected_requests(self, request, queryset):
         """Allow retranscoding by deleting transcription requests"""
         count = queryset.count()
@@ -314,13 +326,8 @@ class TranscriptionRequestAdmin(admin.ModelAdmin):
         else:
             self.message_user(
                 request,
-                f"Deleted {count} transcription requests. "
-                f"You can now retry transcription for affected media.",
+                f"Deleted {count} transcription requests. You can now retry transcription for affected media.",
             )
-
-    delete_selected_requests.short_description = (
-        "Delete requests (enable retranscoding)"
-    )
 
 
 @admin.register(TinyMCEMedia)
@@ -330,26 +337,6 @@ class TinyMCEMediaAdmin(admin.ModelAdmin):
     search_fields = ["original_filename"]
     readonly_fields = ["uploaded_at"]
     date_hierarchy = "uploaded_at"
-
-
-admin.site.register(EncodeProfile, EncodeProfileAdmin)
-admin.site.register(Comment, CommentAdmin)
-admin.site.register(Media, MediaAdmin)
-admin.site.register(Encoding, EncodingAdmin)
-admin.site.register(Category, CategoryAdmin)
-admin.site.register(Tag, TagAdmin)
-admin.site.register(Subtitle, SubtitleAdmin)
-admin.site.register(Language, LanguageAdmin)
-admin.site.register(RatingCategory, RatingCategoryAdmin)
-admin.site.register(Rating, RatingAdmin)
-admin.site.register(License, LicenseAdmin)
-admin.site.register(Topic, TopicAdmin)
-admin.site.register(Page, PageAdmin)
-admin.site.register(TopMessage, TopMessageAdmin)
-admin.site.register(IndexPageFeatured, IndexPageFeaturedAdmin)
-admin.site.register(MediaLanguage, MediaLanguageAdmin)
-admin.site.register(HomepagePopup, HomepagePopupAdmin)
-admin.site.register(TranscriptionRequest, TranscriptionRequestAdmin)
 
 
 @admin.register(FeaturedVideo)
@@ -395,6 +382,7 @@ class FeaturedVideoAdmin(admin.ModelAdmin):
         ),
     )
 
+    @admin.display(description="Status")
     def status_display(self, obj):
         now = timezone.now()
         if not obj.is_active:
@@ -404,8 +392,6 @@ class FeaturedVideoAdmin(admin.ModelAdmin):
         if obj.end_date and obj.end_date < now:
             return "✅ Completed"
         return "🔴 Live"
-
-    status_display.short_description = "Status"
 
     def save_model(self, request, obj, form, change):
         """Validate and set metadata before saving."""

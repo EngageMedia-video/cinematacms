@@ -1,13 +1,13 @@
 from allauth.account.adapter import DefaultAccountAdapter
+from allauth.mfa.utils import is_mfa_enabled
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.urls import reverse
 from django.shortcuts import resolve_url
-from django.apps import apps
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
-from allauth.mfa.utils import is_mfa_enabled
-from utils.security import generate_key, generate_cipher
+
 from cms.permissions import user_requires_mfa
+from utils.security import generate_cipher, generate_key
 
 from .models import BlackListedEmail
 
@@ -29,9 +29,7 @@ class MyAccountAdapter(DefaultAccountAdapter):
         if email.split("@")[1] in settings.RESTRICTED_DOMAINS_FOR_USER_REGISTRATION:
             raise ValidationError("Domain is restricted from registering")
         if BlackListedEmail.objects.filter(email=email.strip()).exists():
-            raise ValidationError(
-                "This email is banned, please check TOS and do not abuse cinemata.org"
-            )
+            raise ValidationError("This email is banned, please check TOS and do not abuse cinemata.org")
         return email
 
     def is_open_for_signup(self, request):

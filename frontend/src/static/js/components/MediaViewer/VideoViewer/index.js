@@ -798,15 +798,14 @@ export default class VideoViewer extends React.PureComponent {
 				key={(this.props.inEmbed ? 'embed-' : '') + 'player-container'}
 				className={'player-container' + (this.videoSources.length ? '' : ' player-container-error')}
 				style={this.props.containerStyles}
-				ref="playerContainer"
 			>
-				<div className="player-container-inner" ref="playerContainerInner" style={this.props.containerStyles}>
+				<div className="player-container-inner" style={this.props.containerStyles}>
 					{this.state.displayPlayer && null !== MediaPageStore.get('media-load-error-type') ? (
 						<VideoPlayerError errorMessage={MediaPageStore.get('media-load-error-message')} />
 					) : null}
 
 					{this.state.displayPlayer && null == MediaPageStore.get('media-load-error-type') ? (
-						<div className="video-player" ref="videoPlayerWrapper" key="videoPlayerWrapper">
+						<div className="video-player" key="videoPlayerWrapper">
 							<SiteConsumer>
 								{(site) => (
 									<VideoPlayer
@@ -847,11 +846,11 @@ export default class VideoViewer extends React.PureComponent {
 
 VideoViewer.defaultProps = {
 	inEmbed: !0,
-	siteUrl: PropTypes.string.isRequired,
 };
 
 VideoViewer.propTypes = {
 	inEmbed: PropTypes.bool,
+	siteUrl: PropTypes.string.isRequired,
 };
 
 function findGetParameter(parameterName) {

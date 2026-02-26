@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import PageStore from '../../pages/_PageStore.js';
 
-import stylesheet from "../styles/Notifications.scss";
+import "../styles/Notifications.scss";
 
 let visibleNotifications = [];	// TODO: Recheck this!
 

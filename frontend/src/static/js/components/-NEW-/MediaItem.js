@@ -12,6 +12,7 @@ import { MediaItemThumbnailLink, itemClassname } from './includes/items';
 import PageStore from '../../pages/_PageStore.js';
 
 export function MediaItem(props){
+	props = { ...MediaItem.defaults, ...props };
 
 	const type = props.type;
 
@@ -21,7 +22,7 @@ export function MediaItem(props){
 		return <MediaItemThumbnailLink src={ thumbnailUrl } title={ props.title } link={ props.link } state={ props.state } />;
 	}
 
-	const containerClassname = itemClassname( 'item ' + type + '-item', props.class_name.trim(), props.playlistOrder === props.playlistActiveItem );
+	const containerClassname = itemClassname( 'item ' + type + '-item', (props.class_name ?? '').trim(), props.playlistOrder === props.playlistActiveItem );
 
 	return (<div className={ containerClassname }>
 
@@ -59,8 +60,8 @@ MediaItem.propTypes = {
 	categories: PropTypes.array,
 };
 
-MediaItem.defaultProps = {
-	...Item.defaultProps,
+MediaItem.defaults = {
+	...Item.defaults,
 	class_name: '',
 	views: 0,
 	hideViews: false,

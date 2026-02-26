@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 {% block headermeta %}{% endblock headermeta %}
+
+{% block topimports %}{% vite_asset 'src/entries/search.js' %}{% endblock topimports %}
 
 {% block content %}
 {% if user %}<div id="page-search"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-<script src="{% hashed_static "js/search.js" %}"></script>
-{% endblock bottomimports %}

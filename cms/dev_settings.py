@@ -113,27 +113,27 @@ LOGS_DIR = os.path.join(BASE_DIR, "logs")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
         },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
         },
     },
     "handlers": {
         "console": {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
-            'formatter': 'simple',
+            "formatter": "simple",
         },
         "file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
             "filename": os.path.join(LOGS_DIR, "debug.log"),
-            'formatter': 'verbose',
+            "formatter": "verbose",
         },
     },
     "root": {
@@ -167,7 +167,6 @@ CACHES = {
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 USE_I18N = True
-USE_L10N = True
 USE_TZ = True
 SITE_ID = 1
 
@@ -336,9 +335,7 @@ CANNOT_ADD_MEDIA_MESSAGE = ""
 UNLISTED_WORKFLOW_MAKE_PUBLIC_UPON_COMMENTARY_ADD = False
 UNLISTED_WORKFLOW_MAKE_PRIVATE_UPON_COMMENTARY_DELETE = False
 
-MP4HLS_COMMAND = (
-    "/home/cinemata/cinematacms/Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4hls"
-)
+MP4HLS_COMMAND = "/home/cinemata/cinematacms/Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4hls"
 
 
 DEFAULT_FROM_EMAIL = "info@mediacms.io"
@@ -404,7 +401,7 @@ WHISPER_CPP_COMMAND = "/home/cinemata/whisper.cpp/build/bin/main"
 WHISPER_CPP_MODEL = "/home/cinemata/whisper.cpp/models/ggml-large-v3.bin"
 
 DJANGO_ADMIN_URL = "adminx/"
-ALLOWED_MEDIA_UPLOAD_TYPES = ['video']
+ALLOWED_MEDIA_UPLOAD_TYPES = ["video"]
 
-RECAPTCHA_PRIVATE_KEY = ''
-RECAPTCHA_PUBLIC_KEY = ''
+RECAPTCHA_PRIVATE_KEY = ""
+RECAPTCHA_PUBLIC_KEY = ""

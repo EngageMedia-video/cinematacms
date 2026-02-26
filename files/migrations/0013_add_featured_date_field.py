@@ -4,30 +4,41 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('files', '0012_featuredvideo'),
+        ("files", "0012_featuredvideo"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='media',
-            name='featured_date',
-            field=models.DateTimeField(blank=True, db_index=True, help_text='Date when this video was featured (auto-set by scheduling system)', null=True),
+            model_name="media",
+            name="featured_date",
+            field=models.DateTimeField(
+                blank=True,
+                db_index=True,
+                help_text="Date when this video was featured (auto-set by scheduling system)",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='featuredvideo',
-            name='id',
-            field=models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
+            model_name="featuredvideo",
+            name="id",
+            field=models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID"),
         ),
         migrations.AlterField(
-            model_name='featuredvideo',
-            name='is_active',
-            field=models.BooleanField(default=True, help_text="Uncheck to disable this schedule without deleting it. To remove a video from featured listings, uncheck 'Featured' on the Media page."),
+            model_name="featuredvideo",
+            name="is_active",
+            field=models.BooleanField(
+                default=True,
+                help_text="Uncheck to disable this schedule without deleting it. To remove a video from featured listings, uncheck 'Featured' on the Media page.",
+            ),
         ),
         migrations.AlterField(
-            model_name='media',
-            name='featured',
-            field=models.BooleanField(db_index=True, default=False, help_text='Videos to be featured on the homepage. Unchecking this removes the video from featured listings while preserving the featured_date for historical records.'),
+            model_name="media",
+            name="featured",
+            field=models.BooleanField(
+                db_index=True,
+                default=False,
+                help_text="Videos to be featured on the homepage. Unchecking this removes the video from featured listings while preserving the featured_date for historical records.",
+            ),
         ),
     ]

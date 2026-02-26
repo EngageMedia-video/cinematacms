@@ -143,6 +143,7 @@ function ManageItemCommentActions(props){
 }
 
 export function ManageUsersItem(props){
+	props = { has_roles: false, has_verified: false, has_trusted: false, ...props };
 
 	const actionsContainerRef = useRef(null);
 	
@@ -203,8 +204,3 @@ ManageUsersItem.propTypes = {
 	is_trusted: PropTypes.bool,
 };
 
-ManageUsersItem.defaultProps = {
-	has_roles: false,
-	has_verified: false,
-	has_trusted: false,
-};

@@ -13,6 +13,8 @@ import { ItemListAsync } from './ItemListAsync';
 import { ItemsListHandler } from "./includes/itemLists/ItemsListHandler";
 import { MediaListWrapper } from '../../pages/components/MediaListWrapper';
 export function LazyLoadItemListAsync(props){
+    props = { ...LazyLoadItemListAsync.defaults, ...props };
+
     const [ items, countedItems, listHandler, setListHandler, classname, onItemsCount, onItemsLoad, onWindowScroll, onDocumentVisibilityChange, itemsListWrapperRef, itemsListRef, renderBeforeListWrap, renderAfterListWrap ] = useItemListLazyLoad(props);
 
     useEffect(() => {
@@ -84,7 +86,7 @@ LazyLoadItemListAsync.propTypes = {
     ...ItemListAsync.propTypes,
 };
 
-LazyLoadItemListAsync.defaultProps = {
-    ...ItemListAsync.defaultProps,
+LazyLoadItemListAsync.defaults = {
+    ...ItemListAsync.defaults,
     pageItems: 2,
 };

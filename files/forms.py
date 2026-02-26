@@ -1,10 +1,9 @@
 from datetime import datetime
 
-from django_recaptcha.fields import ReCaptchaField
-from django_recaptcha.widgets import ReCaptchaV2Checkbox
 from django import forms
 from django.conf import settings
-from django.contrib.admin.sites import site
+from django_recaptcha.fields import ReCaptchaField
+from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
 from .methods import is_mediacms_editor
 from .models import Language, Media, Subtitle, get_language_choices
@@ -21,32 +20,28 @@ class MultipleSelect(forms.CheckboxSelectMultiple):
 
 
 class MediaForm(forms.ModelForm):
-    new_tags = forms.CharField(
-        label="Tags", help_text="Use a comma to separate multiple tags.", required=False
-    )
+    new_tags = forms.CharField(label="Tags", help_text="Use a comma to separate multiple tags.", required=False)
     no_license = forms.BooleanField(required=False, label="All Rights Reserved")
     custom_license = forms.CharField(required=False, label="Just a placeholder")
-    
+
     # Add New Field Declarations to MediaForm
     # Override year_produced to handle dropdown + custom input
-    year_produced = forms.CharField(
-        required=True,
-        label="Year Produced",
-        widget=forms.Select()
-    )
+    year_produced = forms.CharField(required=True, label="Year Produced", widget=forms.Select())
 
     # Add hidden field for custom year input
     year_produced_custom = forms.IntegerField(
         required=False,
         label="Specify Year",
-        widget=forms.NumberInput(attrs={
-            'class': 'year-custom-input',
-            'placeholder': 'Enter year (e.g. 1995)',
-            'min': '1900',
-            'style': 'display: none;'
-            })
+        widget=forms.NumberInput(
+            attrs={
+                "class": "year-custom-input",
+                "placeholder": "Enter year (e.g. 1995)",
+                "min": "1900",
+                "style": "display: none;",
+            }
+        ),
     )
-    
+
     class Meta:
         model = Media
         fields = [
@@ -88,14 +83,14 @@ class MediaForm(forms.ModelForm):
         # Generate year choices with "other" option
         current_year = datetime.now().year
         self.fields["year_produced_custom"].widget.attrs["max"] = str(current_year)
-        year_choices = [('', '-- Select Year --')]
+        year_choices = [("", "-- Select Year --")]
 
         # Add years from current down to 2000
         for year in range(current_year, 1999, -1):
             year_choices.append((str(year), str(year)))
 
         # Add "Other" option at the end
-        year_choices.append(('other', 'Other (specify year)'))
+        year_choices.append(("other", "Other (specify year)"))
 
         # Apply choices to the dropdown
         self.fields["year_produced"].widget.choices = year_choices
@@ -103,24 +98,20 @@ class MediaForm(forms.ModelForm):
         # Set initial values if editing existing media
         if self.instance and self.instance.year_produced:
             instance_year = str(self.instance.year_produced)
-            available_years = [choice[0] for choice in year_choices if choice[0] not in ('', 'other')]
+            available_years = [choice[0] for choice in year_choices if choice[0] not in ("", "other")]
             if instance_year in available_years:
                 self.fields["year_produced"].initial = instance_year
             else:
-                self.fields["year_produced"].initial = 'other'
+                self.fields["year_produced"].initial = "other"
                 self.fields["year_produced_custom"].initial = self.instance.year_produced
-                
+
         self.fields["state"].label = "Status"
         self.fields["allow_download"].label = "Allow Download"
         self.fields["reported_times"].label = "Reported Times"
         self.fields["enable_comments"].label = "Enable Comments"
         self.fields["new_tags"].label = "Tags"
-        self.fields[
-            "category"
-        ].help_text = "Hold the Shift or Command key to select multiple categories."
-        self.fields[
-            "topics"
-        ].help_text = "Hold the Shift or Command key to select multiple topics."
+        self.fields["category"].help_text = "Hold the Shift or Command key to select multiple categories."
+        self.fields["topics"].help_text = "Hold the Shift or Command key to select multiple topics."
         self.fields["topics"].label = "Topic"
 
         self.fields["media_country"].label = "Media Country"
@@ -136,15 +127,14 @@ class MediaForm(forms.ModelForm):
 
         # Set dynamic language choices as dropdown
         self.fields["media_language"] = forms.ChoiceField(
-             choices=get_language_choices(),
-             required=True,
-             label="Media Language",
-             widget=forms.Select()
+            choices=get_language_choices(), required=True, label="Media Language", widget=forms.Select()
         )
 
         self.fields[
             "password"
-        ].help_text = "Set a password to protect Restricted Media. Limited to Trusted Users. Contact Cinemata to become one."
+        ].help_text = (
+            "Set a password to protect Restricted Media. Limited to Trusted Users. Contact Cinemata to become one."
+        )
 
         if self.instance.media_type != "video":
             self.fields.pop("thumbnail_time", None)
@@ -166,9 +156,7 @@ class MediaForm(forms.ModelForm):
                     label=self.fields["state"].label,
                 )
 
-        self.fields["new_tags"].initial = ", ".join(
-            [tag.title for tag in self.instance.tags.all()]
-        )
+        self.fields["new_tags"].initial = ", ".join([tag.title for tag in self.instance.tags.all()])
         if not self.instance.license:
             self.fields["no_license"].initial = True
         else:
@@ -205,38 +193,37 @@ class MediaForm(forms.ModelForm):
         and validation for the 'restricted' media state.
         """
         cleaned_data = super().clean()
-        
+
         # --- Year Validation Logic ---
         current_year = datetime.now().year
 
         # Check if year_produced exists and is not empty
-        if 'year_produced' in self.cleaned_data and self.cleaned_data.get('year_produced'):
-            year_produced = self.cleaned_data.get('year_produced')
-            
-            if year_produced == 'other':
-                year_produced_custom = self.cleaned_data.get('year_produced_custom')
+        if "year_produced" in self.cleaned_data and self.cleaned_data.get("year_produced"):
+            year_produced = self.cleaned_data.get("year_produced")
+
+            if year_produced == "other":
+                year_produced_custom = self.cleaned_data.get("year_produced_custom")
                 if year_produced_custom is None:
-                    if not self.has_error('year_produced_custom'):
-                        self.add_error('year_produced_custom', 'Please specify a year.')
+                    if not self.has_error("year_produced_custom"):
+                        self.add_error("year_produced_custom", "Please specify a year.")
                 else:
                     if not (1900 <= year_produced_custom <= current_year):
-                        self.add_error('year_produced_custom', f'Please enter a year between 1900 and {current_year}.')
+                        self.add_error("year_produced_custom", f"Please enter a year between 1900 and {current_year}.")
                     else:
-                        cleaned_data['year_produced'] = year_produced_custom
+                        cleaned_data["year_produced"] = year_produced_custom
             elif year_produced:
                 try:
                     year_int = int(year_produced)
                     if not (2000 <= year_int <= current_year):
-                        self.add_error('year_produced',
-                                      'Please select a valid year.')
+                        self.add_error("year_produced", "Please select a valid year.")
                     else:
-                        cleaned_data['year_produced'] = year_int
+                        cleaned_data["year_produced"] = year_int
                 except (ValueError, TypeError):
-                    self.add_error('year_produced', 'Please select a valid year.')
+                    self.add_error("year_produced", "Please select a valid year.")
         else:
-            if not self.has_error('year_produced'):
-                self.add_error('year_produced', 'Please select a year.')
-                
+            if not self.has_error("year_produced"):
+                self.add_error("year_produced", "Please select a year.")
+
         # --- Validation for 'Restricted' media state ---
         state = cleaned_data.get("state", False)
         password = cleaned_data.get("password", False)
@@ -275,9 +262,7 @@ class MediaForm(forms.ModelForm):
                     else:
                         self.instance.state = "private"
 
-        if data.get("custom_license", "") and data.get("custom_license", "") not in [
-            "None"
-        ]:
+        if data.get("custom_license", "") and data.get("custom_license", "") not in ["None"]:
             self.instance.license_id = data.get("custom_license")
             self.instance.save()
         if data.get("no_license"):
@@ -295,9 +280,7 @@ class SubtitleForm(forms.ModelForm):
     def __init__(self, media_item, *args, **kwargs):
         super(SubtitleForm, self).__init__(*args, **kwargs)
         self.instance.media = media_item
-        self.fields[
-            "subtitle_file"
-        ].help_text = "SubRip (.srt) and WebVTT (.vtt) are supported file formats."
+        self.fields["subtitle_file"].help_text = "SubRip (.srt) and WebVTT (.vtt) are supported file formats."
         self.fields["subtitle_file"].label = "Subtitle or Closed Caption File"
 
         self.fields["language"] = forms.ModelChoiceField(
@@ -308,7 +291,6 @@ class SubtitleForm(forms.ModelForm):
         )
 
     def save(self, *args, **kwargs):
-        data = self.cleaned_data
         self.instance.user = self.instance.media.user
         media = super(SubtitleForm, self).save(*args, **kwargs)
         return media
@@ -335,8 +317,8 @@ class ContactForm(forms.Form):
         self.user = user
 
         # Only add reCAPTCHA field if keys are configured
-        if getattr(settings, 'RECAPTCHA_PUBLIC_KEY', '') and getattr(settings, 'RECAPTCHA_PRIVATE_KEY', ''):
-            self.fields['captcha'] = ReCaptchaField(widget=ReCaptchaV2Checkbox)
+        if getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") and getattr(settings, "RECAPTCHA_PRIVATE_KEY", ""):
+            self.fields["captcha"] = ReCaptchaField(widget=ReCaptchaV2Checkbox)
 
         if user.is_authenticated:
             self.fields.pop("name")

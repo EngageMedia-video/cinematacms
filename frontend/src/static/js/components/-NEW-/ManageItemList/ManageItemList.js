@@ -11,13 +11,13 @@ import getCSRFToken from '../../../functions/getCSRFToken';
 import deleteRequest from '../../../functions/deleteRequest';
 import { PositiveInteger } from '../../../functions/propTypeFilters';
 
+import urlParse from 'url-parse';
+
 import { renderManageItems } from './includes/functions';
 import initManageItemsList from './includes/initManageItemsList';
 import { ManageItemsListHandler } from "./includes/ManageItemsListHandler";
 
-const urlParse = require('url-parse');
-
-import manage_stylesheet from "../../styles/ManageItemList.scss";
+import "../../styles/ManageItemList.scss";
 
 function useManageItemList( props, itemsListRef ){
 
@@ -416,6 +416,7 @@ function paginationButtonsList( maxPagin, pagesNumber ){
 }
 
 export function ManageItemList(props){
+	props = { maxItems: 99999, pageItems: 24, requestUrl: null, ...props };
 
 	const [
 		countedItems,
@@ -575,12 +576,16 @@ export function ManageItemList(props){
 
 	function removeMediaResponse(response){
 		if( response && 204 === response.status ){
-            props.onRowsDelete( false );
+            if( 'function' === typeof props.onRowsDelete ){
+                props.onRowsDelete( false );
+            }
         }
 	}
 
 	function removeMediaFail(){
-		props.onRowsDeleteFail( false );
+		if( 'function' === typeof props.onRowsDeleteFail ){
+            props.onRowsDeleteFail( false );
+        }
 	}
 
 	useEffect(()=>{
@@ -656,23 +661,6 @@ export function ManageItemList(props){
            );
 }
 
-ManageItemList.defaultProps = {
-    itemsCountCallback: PropTypes.func,
-    maxItems: PropTypes.number.isRequired,
-    pageItems: PropTypes.number.isRequired,
-    requestUrl: PropTypes.string.isRequired,
-    onPageChange: PropTypes.func,
-    onRowsDelete: PropTypes.func,
-    onRowsDeleteFail: PropTypes.func,
-    pageItems: 24,
-};
-
-ManageItemList.defaultProps = {
-    maxItems: 99999,
-    // pageItems: 48,
-    pageItems: 24,
-    requestUrl: null,
-};
 
 // export class AsyncManageItemListSync extends React.PureComponent {
 

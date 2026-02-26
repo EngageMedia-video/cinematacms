@@ -1,9 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import stylesheet from "../styles/SpinnerLoader.scss";
+import "../styles/SpinnerLoader.scss";
 
 export function SpinnerLoader(props){
+	props = { size: 'medium', ...props };
 
 	let classname = 'spinner-loader';
 	
@@ -28,6 +29,3 @@ SpinnerLoader.propTypes = {
 	size: PropTypes.oneOf( ['tiny', 'x-small', 'small', 'medium', 'large', 'x-large'] ),
 };
 
-SpinnerLoader.defaultProps = {
-	size: 'medium'
-};
