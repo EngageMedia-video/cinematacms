@@ -431,9 +431,16 @@ NavMenuInlineTabs.propTypes = {
 
 function sanitizeHref(url) {
 	if (!url || typeof url !== 'string') return '#';
-	// Only allow relative paths and http(s) protocols
-	if (url.startsWith('/') || url.startsWith('https://') || url.startsWith('http://')) {
-		return url;
+	// Only allow relative paths - these are internal app links
+	try {
+		// Decode to catch encoded bypasses like %2F%2F
+		const decoded = decodeURIComponent(url);
+		// Must start with / and not with // (protocol-relative URL)
+		if (decoded.startsWith('/') && !decoded.startsWith('//')) {
+			return url;
+		}
+	} catch (e) {
+		// decodeURIComponent can throw on malformed input
 	}
 	return '#';
 }
