@@ -1,18 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}{% if user.name %}{{user.name}} - {% endif %}Liked media - {{PORTAL_NAME}}{% endblock headtitle %}
 
 {% block topimports %}
-<link href="{% hashed_static "css/liked.css" %}" rel="preload" as="style">
-<link href="{% hashed_static "css/liked.css" %}" rel="stylesheet">
-{%endblock topimports %}
+{% vite_asset 'src/entries/liked.js' %}
+{% endblock topimports %}
 
 {% block content %}
 {% if user %}<div id="page-liked"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-<script src="{% hashed_static "js/liked.js" %}"></script>
-{% endblock bottomimports %}

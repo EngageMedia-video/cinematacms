@@ -1,21 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
 import { MaterialIcon } from './MaterialIcon';
 
-export function FiltersToggleButton( props ){
+export function FiltersToggleButton({ active = false, onClick }){
 
-	const [ isActive, setIsActive ] = useState( props.active );
-
-	function onClick(){
-		setIsActive( ! isActive );
-		if( void 0 !== props.onClick ){
-			props.onClick();
+	function handleClick(){
+		if( 'function' === typeof onClick ){
+			onClick();
 		}
 	}
 
 	return (<div className="mi-filters-toggle">
-				<button className={ isActive ? 'active' : '' } aria-label="Filter" onClick={ onClick }>
+				<button className={ active ? 'active' : '' } aria-label="Filter" onClick={ handleClick }>
 					<MaterialIcon type="filter_list" />
 					<span className="filter-button-label">
 						<span className="filter-button-label-text">FILTERS</span>
@@ -29,6 +26,3 @@ FiltersToggleButton.propTypes = {
 	active: PropTypes.bool,
 };
 
-FiltersToggleButton.defaultProps = {
-	active: false,
-};

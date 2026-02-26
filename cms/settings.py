@@ -1,7 +1,9 @@
 import os
+
 from celery.schedules import crontab
-from .settings_utils import get_whisper_cpp_paths
 from corsheaders.defaults import default_headers
+
+from .settings_utils import get_whisper_cpp_paths
 
 # PORTAL SETTINGS
 PORTAL_NAME = "EngageMedia Video"  #  this is shown on several places, eg on contact email, or html title
@@ -12,7 +14,9 @@ ALLOWED_HOSTS = [
     "localhost",
 ]
 # Import default headers to extend them
-CORS_ORIGIN_ALLOW_ALL = True
+# In production, override with explicit CORS_ALLOWED_ORIGINS list.
+# CORS_ORIGIN_ALLOW_ALL = True is kept for local development only.
+CORS_ORIGIN_ALLOW_ALL = os.getenv("CORS_ALLOW_ALL", "True") == "True"
 CORS_ALLOW_HEADERS = default_headers + (
     "x-requested-with",  # Add X-Requested-With
     "if-modified-since",  # Add If-Modified-Since
@@ -51,6 +55,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "django_vite",
     "django.contrib.staticfiles",
     "django.contrib.sites",
     "rest_framework",
@@ -193,7 +198,6 @@ CACHES = {
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 USE_I18N = True
-USE_L10N = True
 USE_TZ = True
 SITE_ID = 1
 
@@ -217,20 +221,33 @@ STATICFILES_DIRS = [
 ]
 
 # Static files storage without post-processing
-# Webpack handles content hashing (adds [contenthash] to filenames), so Django
-# doesn't need to reprocess files. This avoids issues with missing fonts and
-# complex CSS URL rewriting during collectstatic.
+# Vite handles content hashing (adds [hash] to filenames), so Django doesn't
+# need ManifestStaticFilesStorage (which would double-hash Vite's output and
+# break font URL rewriting in CSS files). Plain StaticFilesStorage is correct.
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "cms.storage.WebpackHashedFilesStorage",
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
 AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "/"
+
+# Django-Vite integration
+# dev_mode uses a dedicated env var (NOT tied to DEBUG) to avoid breaking
+# production if DEBUG=True reaches it. Requires explicit opt-in.
+DJANGO_VITE = {
+    "default": {
+        "dev_mode": os.getenv("VITE_DEV_MODE", "").lower() in ("1", "true", "yes"),
+        # Point directly at the build output — Django's collectstatic ignores
+        # dot-directories by default ('.*' in StaticFilesConfig.ignore_patterns),
+        # so .vite/manifest.json never gets copied to static_collected/.
+        "manifest_path": os.path.join(BASE_DIR, "frontend", "build", "production", "static", ".vite", "manifest.json"),
+    },
+}
 
 
 # CELERY STUFF
@@ -454,7 +471,10 @@ CAN_SHARE_MEDIA = True  # whether the share media appears
 ALLOW_RATINGS = False
 ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY = False
 
-X_FRAME_OPTIONS = "ALLOWALL"
+# SAMEORIGIN by default; embed view uses @xframe_options_exempt decorator.
+X_FRAME_OPTIONS = "SAMEORIGIN"
+# TODO: Configure Content-Security-Policy via django-csp middleware.
+# See todos/006-pending-p2-no-csp-configured.md for implementation details.
 EMAIL_BACKEND = "djcelery_email.backends.CeleryEmailBackend"
 CELERY_EMAIL_TASK_CONFIG = {
     "queue": "short_tasks",
@@ -474,9 +494,7 @@ CANNOT_ADD_MEDIA_MESSAGE = ""
 UNLISTED_WORKFLOW_MAKE_PUBLIC_UPON_COMMENTARY_ADD = False
 UNLISTED_WORKFLOW_MAKE_PRIVATE_UPON_COMMENTARY_DELETE = False
 
-MP4HLS_COMMAND = (
-    "/home/cinemata/cinematacms/Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4hls"
-)
+MP4HLS_COMMAND = "/home/cinemata/cinematacms/Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4hls"
 
 
 DEBUG = False
@@ -518,9 +536,7 @@ TINYMCE_DEFAULT_CONFIG = {
     "formats": {  # customize h2 to always have emphasis-large class
         "h2": {"block": "h2", "classes": "emphasis-large"},
     },
-    "font_family_formats": (
-        "Amulya='Amulya',sans-serif;Facultad='Facultad',sans-serif;"
-    ),
+    "font_family_formats": ("Amulya='Amulya',sans-serif;Facultad='Facultad',sans-serif;"),
     "font_css": "/static/lib/Amulya/amulya.css,/static/lib/Facultad/Facultad-Regular.css",
     "font_size_formats": "16px 18px 24px 32px",
     "images_upload_url": "/tinymce/upload/",
@@ -567,13 +583,13 @@ MAINTENANCE_MODE_IGNORE_ADMIN_SITE = True
 MAINTENANCE_MODE_RETRY_AFTER = 3600  # 1 hour
 # URLs that should be accessible during maintenance mode
 MAINTENANCE_MODE_IGNORE_URLS = (
-    r'^/static/.*$',  # Allow static files
-    r'^/media/.*$',   # Allow media files if needed
-    r'^/favicon\.ico$',  # Allow favicon
-    r'^/robots\.txt$',  # Allow robots.txt if present
-    r'^/apple-touch-icon.*\.png$',  # Allow Apple touch icons
-    r'^/manifest\.json$',  # Allow web app manifest
-    r'^/browserconfig\.xml$',  # Allow Windows tile config
+    r"^/static/.*$",  # Allow static files
+    r"^/media/.*$",  # Allow media files if needed
+    r"^/favicon\.ico$",  # Allow favicon
+    r"^/robots\.txt$",  # Allow robots.txt if present
+    r"^/apple-touch-icon.*\.png$",  # Allow Apple touch icons
+    r"^/manifest\.json$",  # Allow web app manifest
+    r"^/browserconfig\.xml$",  # Allow Windows tile config
 )
 
 
@@ -607,8 +623,9 @@ if DEBUG:
     # Debug toolbar configuration for 6.0.0
     def show_toolbar(request):
         """Show toolbar for local development, handling both IP and localhost"""
-        # Always return True in DEBUG mode for simplicity
-        return True
+        from django.conf import settings
+
+        return settings.DEBUG
 
     DEBUG_TOOLBAR_CONFIG = {
         "SHOW_TOOLBAR_CALLBACK": show_toolbar,
@@ -622,4 +639,3 @@ if DEBUG:
 
     mimetypes.add_type("application/javascript", ".js", True)
     mimetypes.add_type("text/css", ".css", True)
-

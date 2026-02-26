@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect, useContext } from 'react';
 import PropTypes from 'prop-types';
 
 import LinksContext from '../../contexts/LinksContext';
+import SiteContext from '../../contexts/SiteContext';
 
 import PageStore from '../../pages/_PageStore.js';
 import * as PageActions from '../../pages/_PageActions.js';
@@ -23,6 +24,7 @@ export function MediaShareEmbed(props){
 	const embedVideoDimensions = PageStore.get('config-options').embedded.video.dimensions;
 
     const links = useContext( LinksContext );
+    const site = useContext( SiteContext );
 
 	const aspectRatioValueRef = useRef(null);
 	const onRightRef = useRef(null);
@@ -117,9 +119,7 @@ export function MediaShareEmbed(props){
 	}
 
 	function onCompleteCopyMediaLink(){
-		setTimeout(function(){
-			PageActions.addNotification("Embed media code copied to clipboard", 'clipboardEmbedMediaCodeCopy');
-		}, 100);
+		PageActions.addNotification("Embed media code copied to clipboard", 'clipboardEmbedMediaCodeCopy');
 	}
 
     useEffect(() => {
@@ -143,7 +143,7 @@ export function MediaShareEmbed(props){
 
 					<div className="on-left">
 						<div className='media-embed-wrap'>
-							<VideoViewer data={ MediaPageStore.get( 'media-data' ) } inEmbed={ true } />
+							<VideoViewer data={ MediaPageStore.get( 'media-data' ) } siteUrl={ site.url } inEmbed={ true } />
 						</div>
 					</div>
 

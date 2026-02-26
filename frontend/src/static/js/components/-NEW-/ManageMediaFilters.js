@@ -5,7 +5,7 @@ import { FilterOptions } from './FilterOptions';
 
 import PageStore from '../../pages/_PageStore.js';
 
-import styles from '../styles/ManageItemList-filters.scss';
+import '../styles/ManageItemList-filters.scss';
 
 const filters = {
 	state:[
@@ -41,6 +41,7 @@ const filters = {
 };
 
 export function ManageMediaFilters(props){
+	props = { hidden: false, ...props };
 
 	const [ isHidden, setIsHidden ] = useState( props.hidden );
 
@@ -156,6 +157,3 @@ ManageMediaFilters.propTypes = {
 	hidden: PropTypes.bool,
 };
 
-ManageMediaFilters.defaultProps = {
-	hidden: false,
-};

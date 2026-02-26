@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom';
 import { Page } from '../_Page';
 import PageStore from '../_PageStore';
 
-import _MediaPage from './_MediaPage';
 import MediaPageStore from './store.js';
 import * as MediaPageActions from './actions.js';
 import ViewerInfoVideo from './includes/ViewerInfoVideo';
@@ -12,6 +11,8 @@ import ViewerError from './includes/ViewerError';
 import ViewerSidebar from './includes/ViewerSidebar';
 
 import VideoViewerStore from '../../components/MediaViewer/VideoViewer/store.js';   // @note: Is usable only in case of video media, but is included in every media page code.
+
+import "../styles/MediaPage.scss";
 
 const wideLayoutBreakpoint = 1216;
 

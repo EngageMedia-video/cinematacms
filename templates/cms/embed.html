@@ -1,18 +1,12 @@
 {% extends "root.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headermeta %}{% endblock headermeta %}
 
-{% block topimports %}
-<link href="{% hashed_static "css/embed.css" %}" rel="preload" as="style">
-<link href="{% hashed_static "css/embed.css" %}" rel="stylesheet">
-{%endblock topimports %}
+{% block topimports %}{% vite_asset 'src/entries/embed.js' %}{%endblock topimports %}
 
 {% block content %}
 <div id="page-embed"></div>
 {% endblock content %}
 
-{% block bottomimports %}
-<script src="{% hashed_static "js/embed.js" %}"></script>
-{% endblock bottomimports %}

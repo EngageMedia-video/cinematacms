@@ -220,10 +220,7 @@ export function MediaShareOptions(props){
 	}
 
 	function onCompleteCopyMediaLink(){
-		// TODO: Re-check this.
-		setTimeout(function(){	// @note: Without delay throws conflict error [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
-			PageActions.addNotification("Link copied to clipboard", 'clipboardLinkCopy');
-		}, 100);
+		PageActions.addNotification("Link copied to clipboard", 'clipboardLinkCopy');
 	}
 
 	function updateSlider(){

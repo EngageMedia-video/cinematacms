@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 import initItemsList from '../includes/itemLists/initItemsList';
 
-import stylesheet from "../../styles/ItemList.scss";
+import "../../styles/ItemList.scss";
 
 export function useItemList( props, itemsListRef ){
 

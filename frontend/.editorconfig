@@ -1,18 +1,27 @@
 # editorconfig.org
+# This overrides the root .editorconfig for frontend files
 root = true
 
 [*]
 charset = utf-8
-indent_style = tab
-indent_size = 1
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[package.json]
+# JS/JSX/TS — tabs at 4-wide (matches existing codebase style)
+[*.{js,jsx,ts,tsx}]
+indent_style = tab
+indent_size = 4
+
+# Stylesheets
+[*.{css,scss}]
+indent_style = tab
+indent_size = 4
+
+# Config files — 2 spaces
+[*.{json,yml,yaml}]
 indent_style = space
 indent_size = 2
 
 [*.md]
-insert_final_newline = true
 trim_trailing_whitespace = false

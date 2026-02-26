@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}{{media_object.title}} - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -121,10 +121,7 @@
 
 {% endblock headermeta %}
 
-{% block topimports %}
-<link href="{% hashed_static "css/media.css" %}" rel="preload" as="style">
-<link href="{% hashed_static "css/media.css" %}" rel="stylesheet">
-{%endblock topimports %}
+{% block topimports %}{% vite_asset 'src/entries/media.js' %}{%endblock topimports %}
 
 {% block content %}
 
@@ -133,11 +130,11 @@
 
         {% if can_see_restricted_media %}
             <div id="page-media"></div>
+            {{ media_object.password|json_script:"media-password" }}
             <script>
-                // setting the password for the media so that store.js can retrieve it and
-                // send it
-                let password = "{{media_object.password}}"
-                MediaCMS.provided_password = password
+                MediaCMS.provided_password = JSON.parse(
+                    document.getElementById('media-password').textContent
+                );
             </script>
         {% else %}
             <div class="user-action-form-wrap">
@@ -178,6 +175,3 @@
 
 
 
-{% block bottomimports %}
-<script src="{% hashed_static "js/media.js" %}"></script>
-{% endblock bottomimports %}

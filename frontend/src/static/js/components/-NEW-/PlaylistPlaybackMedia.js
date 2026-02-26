@@ -6,6 +6,7 @@ import { PositiveIntegerOrZero } from '../../functions/propTypeFilters';
 import { ItemList } from './ItemList';
 
 export function PlaylistPlaybackMedia(props){
+	props = { playlistActiveItem: 1, ...props };
 
 	return ( <ItemList
 				className={ 'items-list-hor' }
@@ -27,6 +28,3 @@ PlaylistPlaybackMedia.propTypes = {
 	playlistActiveItem: PositiveIntegerOrZero,
 };
 
-PlaylistPlaybackMedia.defaultProps = {
-	playlistActiveItem: 1,
-};

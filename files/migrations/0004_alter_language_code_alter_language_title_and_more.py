@@ -4,25 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('files', '0003_alter_media_state_tinymcemedia'),
+        ("files", "0003_alter_media_state_tinymcemedia"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='language',
-            name='code',
-            field=models.CharField(help_text='language code', max_length=100, unique=True),
+            model_name="language",
+            name="code",
+            field=models.CharField(help_text="language code", max_length=100, unique=True),
         ),
         migrations.AlterField(
-            model_name='language',
-            name='title',
-            field=models.CharField(help_text='language title', max_length=100),
+            model_name="language",
+            name="title",
+            field=models.CharField(help_text="language title", max_length=100),
         ),
         migrations.AlterField(
-            model_name='media',
-            name='media_language',
-            field=models.CharField(blank=True, db_index=True, default='en', max_length=5, null=True),
+            model_name="media",
+            name="media_language",
+            field=models.CharField(blank=True, db_index=True, default="en", max_length=5, null=True),
         ),
     ]

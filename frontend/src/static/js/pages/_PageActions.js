@@ -14,9 +14,9 @@ export function toggleMediaAutoPlay(){
 };
 
 export function addNotification(notification, notificationId) {
-    Dispatcher.dispatch({
+    setTimeout(() => Dispatcher.dispatch({
         type: 'ADD_NOTIFICATION',
         notification,
         notificationId,
-    });
+    }), 0);
 };

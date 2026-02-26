@@ -80,6 +80,7 @@ VideoPlayerError.propTypes = {
 };
 
 export function VideoPlayer(props) {
+    props = { errorMessage: null, cornerLayers: {}, ...props };
     const videoElemRef = useRef(null);
 
     let player = null;
@@ -374,7 +375,3 @@ VideoPlayer.propTypes = {
     enableLowInitialPlaylist: PropTypes.bool, // Note: Always forced to true for anti-buffering
 };
 
-VideoPlayer.defaultProps = {
-    errorMessage: null,
-    cornerLayers: {},
-};

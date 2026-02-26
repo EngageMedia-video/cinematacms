@@ -1,5 +1,5 @@
-from django.test import TestCase
 from django.core.exceptions import ValidationError
+from django.test import TestCase
 
 from users.validators import validate_internal_html
 
@@ -34,7 +34,7 @@ class TestIndexPageFeaturedValidation(TestCase):
     def test_dangerous_tags_blocked(self):
         """Test that dangerous HTML tags are blocked"""
         dangerous_tags = [
-            '<script>alert(1)</script>',
+            "<script>alert(1)</script>",
             '<iframe src="evil.com"></iframe>',
             '<object data="evil.swf"></object>',
             '<embed src="evil.swf">',
@@ -66,10 +66,10 @@ class TestIndexPageFeaturedValidation(TestCase):
 
     def test_edge_case_urls(self):
         """Test edge cases in URL handling"""
-        # Empty href - passes (not captured by regex, relatively harmless)
+        # Empty href - blocked (empty href is not a valid internal link)
         content = '<a href="">Empty</a>'
-        result = validate_internal_html(content)
-        self.assertIn("<a", result)
+        with self.assertRaises(ValidationError):
+            validate_internal_html(content)
 
         # Whitespace-only href - should be blocked
         content = '<a href="   ">Whitespace</a>'
@@ -89,15 +89,15 @@ class TestIndexPageFeaturedValidation(TestCase):
 
     def test_extremely_long_input(self):
         """Test that extremely long inputs are handled gracefully"""
-        # Very long safe content
-        long_text = "A" * 10000
+        # Very long safe content (must fit within MAX_LENGTH of 10000 chars including tags)
+        long_text = "A" * 9950
         content = f'<a href="/test">{long_text}</a>'
         result = validate_internal_html(content)
         self.assertIn('href="/test"', result)
         self.assertIn(long_text, result)
 
-        # Very long URL (potential ReDoS)
-        long_url = "/" + "a" * 5000
+        # Very long URL (potential ReDoS) — kept under the 2000-char href regex limit
+        long_url = "/" + "a" * 1990
         content = f'<a href="{long_url}">Link</a>'
         result = validate_internal_html(content)
         self.assertIn('href="/', result)
@@ -149,7 +149,7 @@ class TestIndexPageFeaturedValidation(TestCase):
             '<a href="/test"     onclick="alert(1)">Link</a>',
             # Boolean attribute without value
             '<a href="/test" onclick>Link</a>',
-            '<button onclick>Click</button>',
+            "<button onclick>Click</button>",
             # Boolean dangerous attributes
             '<a href="/test" style>Link</a>',
         ]
@@ -160,8 +160,8 @@ class TestIndexPageFeaturedValidation(TestCase):
     def test_malformed_html_blocked(self):
         """Test that malformed/incomplete HTML is blocked"""
         test_cases = [
-            '<a onclick',  # Incomplete tag
-            '<script',  # Incomplete dangerous tag
+            "<a onclick",  # Incomplete tag
+            "<script",  # Incomplete dangerous tag
             '<div onclick="alert(1)"',  # Incomplete tag with attribute
             '<iframe src="evil.com"',  # Incomplete iframe
         ]
@@ -172,7 +172,7 @@ class TestIndexPageFeaturedValidation(TestCase):
     def test_anchor_without_href_blocked(self):
         """Test that <a> tags without href are blocked"""
         test_cases = [
-            '<a>Link</a>',  # No attributes
+            "<a>Link</a>",  # No attributes
             '<a class="test">Link</a>',  # Has class but no href
             '<a onclick="alert(1)">Link</a>',  # Has onclick but no href
             '<a id="link" class="test">Link</a>',  # Multiple attributes but no href
@@ -189,7 +189,7 @@ class TestIndexPageFeaturedValidation(TestCase):
         ]
         for content in valid_cases:
             result = validate_internal_html(content)
-            self.assertIn('href', result)
+            self.assertIn("href", result)
 
     def test_unicode_and_special_characters(self):
         """Test handling of unicode and special characters in URLs"""

@@ -77,7 +77,6 @@ video_countries = (
     ("VU", "Vanuatu"),
     ("VN", "Viet Nam"),
     ("WP", "West Papua"),
-    
     # Other Countries (Alphabetically)
     ("AQ", "Antarctica"),
     ("EG", "Egypt"),

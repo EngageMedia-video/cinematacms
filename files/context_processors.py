@@ -1,15 +1,17 @@
-from django.conf import settings
 import json
 
-from .methods import can_upload_media, is_mediacms_editor, is_mediacms_manager, is_curator
-from .models import HomepagePopup, TopMessage
-from .lists import UNUSUAL_COUNTRIES
+from django.conf import settings
 
-# NOTE: context_processors.py can be considered as a dumping ground of sorts for 
+from .lists import UNUSUAL_COUNTRIES
+from .methods import can_upload_media, is_curator, is_mediacms_editor, is_mediacms_manager
+from .models import HomepagePopup, TopMessage
+
+# NOTE: context_processors.py can be considered as a dumping ground of sorts for
 # multiple variables that, as declared, are then instantiated to be referenced
 # as one of multiple contexts in the settings.py's context_processors attribute.
 # for frontend developers, think of this is a way to globally declare variables
 # that can be used in the templates
+
 
 def stuff(request):
     ret = {}
@@ -34,27 +36,20 @@ def stuff(request):
         ret["UPLOAD_MAX_FILES_NUMBER"] = 1
 
     ret["PRE_UPLOAD_MEDIA_MESSAGE"] = settings.PRE_UPLOAD_MEDIA_MESSAGE
-    ret[
-        "POST_UPLOAD_AUTHOR_MESSAGE_UNLISTED_NO_COMMENTARY"
-    ] = settings.POST_UPLOAD_AUTHOR_MESSAGE_UNLISTED_NO_COMMENTARY
+    ret["POST_UPLOAD_AUTHOR_MESSAGE_UNLISTED_NO_COMMENTARY"] = (
+        settings.POST_UPLOAD_AUTHOR_MESSAGE_UNLISTED_NO_COMMENTARY
+    )
     ret["IS_MEDIACMS_ADMIN"] = request.user.is_superuser
     ret["IS_MEDIACMS_EDITOR"] = is_mediacms_editor(request.user)
     ret["IS_MEDIACMS_MANAGER"] = is_mediacms_manager(request.user)
     ret["IS_CURATOR"] = is_curator(request.user)
     ret["ALLOW_RATINGS"] = settings.ALLOW_RATINGS
-    ret[
-        "ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY"
-    ] = settings.ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY
-    ret[
-        "VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE"
-    ] = settings.VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE
+    ret["ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY"] = settings.ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY
+    ret["VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE"] = settings.VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE
     ret["RSS_URL"] = "/rss"
 
     top_message = TopMessage.objects.filter(active=True).order_by("-add_date").first()
-    if top_message:
-        top_message = top_message.text
-    else:
-        top_message = ""
+    top_message = top_message.text if top_message else ""
     ret["TOP_MESSAGE"] = top_message
 
     popup = HomepagePopup.objects.filter().order_by("-id").first()
@@ -67,6 +62,6 @@ def stuff(request):
     ret["POPUP_URL"] = popup_url
     if request.user.is_superuser:
         ret["DJANGO_ADMIN_URL"] = settings.DJANGO_ADMIN_URL
-    ret["MFA_REQ_DATE"] = 'April 21, 2025'
+    ret["MFA_REQ_DATE"] = "April 21, 2025"
     ret["UNUSUAL_COUNTRIES_JSON"] = json.dumps(UNUSUAL_COUNTRIES)
     return ret

@@ -9,7 +9,7 @@ import { SiteConsumer } from '../contexts/SiteContext';
 import MediaPageStore from './MediaPage/store.js';
 import * as MediaPageActions from './MediaPage/actions.js';
 
-import stylesheet from "./styles/EmbedPage.scss";
+import "./styles/EmbedPage.scss";
 
 // TODO: Recheck component.
 
@@ -36,9 +36,9 @@ export function EmbedPage(){
 		setFailedMediaLoad(true);
 	}
 
-	PageActions.initPage('embed');
-
     useEffect(() => {
+
+    	PageActions.initPage('embed');
 
     	MediaPageStore.on('loaded_video_data', onLoadedVideoData);
     	/*MediaPageStore.on('loaded_audio_data', onLoadedAudioData);

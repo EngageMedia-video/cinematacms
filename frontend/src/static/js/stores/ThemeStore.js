@@ -102,3 +102,7 @@ class ThemeStore extends EventEmitter{
 }
 
 export default exportStore( new ThemeStore, 'actions_handler' );
+
+if (import.meta.hot) {
+	import.meta.hot.decline();
+}

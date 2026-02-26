@@ -16,7 +16,7 @@ import { CircleIconButton } from '../../../../components/-NEW-/CircleIconButton'
 
 import { PositiveIntegerOrZero } from '../../../../functions/propTypeFilters';
 
-import stylesheet from "../../../../components/styles/PlaylistView.scss";
+import "../../../../components/styles/PlaylistView.scss";
 
 export default class PlaylistView extends React.PureComponent {
 

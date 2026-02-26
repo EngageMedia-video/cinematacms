@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% load webpack_manifest %}
+{% load django_vite %}
 
 {% block headtitle %}{% if user.name %}{{user.name}} - {% endif %}Media - {{PORTAL_NAME}}{% endblock headtitle %}
 
@@ -15,9 +15,8 @@
 {% endblock headermeta %}
 
 {% block topimports %}
-<link href="{% hashed_static "css/profile-media.css" %}" rel="preload" as="style">
-<link href="{% hashed_static "css/profile-media.css" %}" rel="stylesheet">
-{%endblock topimports %}
+{% vite_asset 'src/entries/profile-media.js' %}
+{% endblock topimports %}
 
 {% block innercontent %}
 {% if user %}{% else %}
@@ -28,7 +27,3 @@ No such user
 {% block content %}
 {% if user %}<div id="page-profile-media"></div>{% endif %}
 {% endblock %}
-
-{% block bottomimports %}
-<script src="{% hashed_static "js/profile-media.js" %}"></script>
-{% endblock bottomimports %}

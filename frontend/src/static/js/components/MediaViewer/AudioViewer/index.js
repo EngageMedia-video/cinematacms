@@ -1,6 +1,6 @@
 import React from "react";
-import ReactDOM from "react-dom";
 import PropTypes from "prop-types";
+import videojs from "video.js";
 
 import SiteContext from "../../../contexts/SiteContext";
 
@@ -8,7 +8,7 @@ import SiteContext from "../../../contexts/SiteContext";
 import "@mediacms/media-player/dist/mediacms-media-player.js";
 // The MediaPlayer is exposed as a global variable
 const MediaPlayer = window.MediaPlayer;
-import MediaPlayerStyles from "@mediacms/media-player/dist/mediacms-media-player.css";
+import "@mediacms/media-player/dist/mediacms-media-player.css";
 
 import MediaPageStore from "../../../pages/MediaPage/store.js";
 
@@ -26,7 +26,7 @@ import PlayerRecommendedMedia from "../../../classes/PlayerRecommendedMedia";
 
 import MediaDurationInfo from "../../../classes/MediaDurationInfo";
 
-import stylesheet_viewer from "../../styles/VideoViewer.scss";
+import "../../styles/VideoViewer.scss";
 
 const _MediaDurationInfo = new MediaDurationInfo();
 
@@ -36,7 +36,11 @@ export default class AudioViewer extends React.PureComponent {
 
 		let mediaData = MediaPageStore.get("media-data");
 
+		this.audioElemRef = React.createRef();
+		this.videoPlayerWrapRef = React.createRef();
+
 		this.AudioPlayerData = {};
+		this.initPlayerTimeout = null;
 
 		this.audioStartedPlaying = false;
 
@@ -62,10 +66,11 @@ export default class AudioViewer extends React.PureComponent {
 		this.updatePlayerVolume = this.updatePlayerVolume.bind(this);
 		this.onAudioEnd = this.onAudioEnd.bind(this);
 		this.onAudioRestart = this.onAudioRestart.bind(this);
+		this.onUpdateMediaAutoPlayBound = this.onUpdateMediaAutoPlay.bind(this);
 
 		PageStore.on(
 			"switched_media_auto_play",
-			this.onUpdateMediaAutoPlay.bind(this)
+			this.onUpdateMediaAutoPlayBound
 		);
 
 		this.wrapperClick = this.wrapperClick.bind(this);
@@ -85,7 +90,7 @@ export default class AudioViewer extends React.PureComponent {
 		this.recommendedMedia = MediaPageStore.get("media-data").related_media.length
 			? new PlayerRecommendedMedia(
 					MediaPageStore.get("media-data").related_media,
-					this.refs.AudioElem.parentNode,
+					this.audioElemRef.current.parentNode,
 					this.props.inEmbed
 			  )
 			: null;
@@ -105,32 +110,42 @@ export default class AudioViewer extends React.PureComponent {
 	}
 
 	componentWillUnmount() {
-		if (this.recommendedMedia) {
-			this.AudioPlayerData.instance.player.off(
-				"fullscreenchange",
-				this.recommendedMedia.onResize
-			);
-			PageStore.removeListener("window_resize", this.recommendedMedia.onResize);
-			AudioPlayerStore.removeListener(
-				"changed_viewer_mode",
-				this.recommendedMedia.onResize
-			);
-			this.recommendedMedia.destroy();
+		window.removeEventListener("focus", this.initPlayerInstance);
+		document.removeEventListener("visibilitychange", this.initPlayerInstance);
+
+		PageStore.removeListener("switched_media_auto_play", this.onUpdateMediaAutoPlayBound);
+
+		if (this.initPlayerTimeout) {
+			clearTimeout(this.initPlayerTimeout);
+			this.initPlayerTimeout = null;
 		}
-		videojs(this.refs.AudioElem).dispose();
-		this.AudioPlayerData.instance = null;
-		delete this.AudioPlayerData.instance;
+		if (this.AudioPlayerData.instance) {
+			if (this.recommendedMedia) {
+				this.AudioPlayerData.instance.player.off(
+					"fullscreenchange",
+					this.recommendedMedia.onResize
+				);
+				PageStore.removeListener("window_resize", this.recommendedMedia.onResize);
+				AudioPlayerStore.removeListener(
+					"changed_viewer_mode",
+					this.recommendedMedia.onResize
+				);
+				this.recommendedMedia.destroy();
+			}
+			videojs(this.audioElemRef.current).dispose();
+			this.AudioPlayerData.instance = null;
+		}
 	}
 
 	initPlayerInstance() {
 		window.removeEventListener("focus", this.initPlayerInstance);
 		document.removeEventListener("visibilitychange", this.initPlayerInstance);
 
-		this.refs.AudioElem.focus(); // Focus on player before instance init.
+		this.audioElemRef.current.focus(); // Focus on player before instance init.
 
 		this.initPlayerInstance = null;
 
-		setTimeout(
+		this.initPlayerTimeout = setTimeout(
 			function () {
 				if (!this.AudioPlayerData.instance) {
 					let titleLink = this.props.inEmbed ? document.createElement("a") : null;
@@ -164,7 +179,7 @@ export default class AudioViewer extends React.PureComponent {
 					}
 
 					this.AudioPlayerData.instance = new MediaPlayer(
-						this.refs.AudioElem,
+						this.audioElemRef.current,
 						{
 							sources: this.videoSources,
 							poster: this.videoPoster,
@@ -202,7 +217,7 @@ export default class AudioViewer extends React.PureComponent {
 						this.onUpdateMediaAutoPlay();
 					}
 
-					this.refs.AudioElem.parentNode.focus(); // Focus on player.
+					this.audioElemRef.current.parentNode.focus(); // Focus on player.
 
 					this.AudioPlayerData.instance.player.one(
 						"play",
@@ -240,8 +255,8 @@ export default class AudioViewer extends React.PureComponent {
 	}
 
 	initialDocumentFocus() {
-		if (this.refs.AudioElem.parentNode) {
-			this.refs.AudioElem.parentNode.focus();
+		if (this.audioElemRef.current.parentNode) {
+			this.audioElemRef.current.parentNode.focus();
 			setTimeout(
 				function () {
 					this.AudioPlayerData.instance.player.play();
@@ -363,7 +378,7 @@ export default class AudioViewer extends React.PureComponent {
 	}
 
 	wrapperClick(ev) {
-		if (ev.target.parentNode === this.refs.videoPlayerWrap) {
+		if (ev.target.parentNode === this.videoPlayerWrapRef.current) {
 			if (!this.AudioPlayerData.instance.player.ended()) {
 				if (
 					!this.AudioPlayerData.instance.player.hasStarted_ ||
@@ -383,12 +398,12 @@ export default class AudioViewer extends React.PureComponent {
 				<div className="player-container-inner">
 					<div
 						className="video-player"
-						ref="videoPlayerWrap"
+						ref={this.videoPlayerWrapRef}
 						onClick={this.wrapperClick}
 					>
 						<audio
 							tabIndex="1"
-							ref="AudioElem"
+							ref={this.audioElemRef}
 							className="video-js vjs-mediacms native-dimensions"
 						></audio>
 					</div>

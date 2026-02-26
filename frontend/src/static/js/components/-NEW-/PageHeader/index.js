@@ -16,12 +16,12 @@ import { addClassname } from '../functions/dom';
 
 // @note: Include in Header component the global styles so that they'll be included into every page.
 
-import stylesheet_common from "../../../../css/styles.scss";
+import "../../../../css/styles.scss";
 
-import stylesheet_header from "../../styles/PageHeader.scss";
+import "../../styles/PageHeader.scss";
 
 // @note: Include also Main component's styles so that they'll be included into every page.
-import stylesheet_main from "../../styles/PageMain.scss";
+import "../../styles/PageMain.scss";
 
 function Alerts(){
 

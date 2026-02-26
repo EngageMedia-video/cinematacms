@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils.feedgenerator import Rss201rev2Feed
 
 from . import helpers, lists
-from .models import Category, Media, Language
+from .models import Language, Media
 from .stop_words import STOP_WORDS
 
 
@@ -27,7 +27,7 @@ class MediaRSSFeed(Rss201rev2Feed):
             handler.addQuickElement("media:description", item["description"])
 
         if "content_url" in item:
-            content = dict(url=item["content_url"])
+            content = {"url": item["content_url"]}
             if "content_width" in item:
                 content["width"] = str(item["content_width"])
             if "content_height" in item:
@@ -35,7 +35,7 @@ class MediaRSSFeed(Rss201rev2Feed):
             handler.addQuickElement("media:content", "", content)
 
         if "thumbnail_url" in item:
-            thumbnail = dict(url=item["thumbnail_url"])
+            thumbnail = {"url": item["thumbnail_url"]}
             if "thumbnail_width" in item:
                 thumbnail["width"] = str(item["thumbnail_width"])
             if "thumbnail_height" in item:
@@ -85,7 +85,7 @@ class IndexRSSFeed(Feed):
         return item.edit_date
 
     def item_link(self, item):
-        return reverse("get_media") + "?m={0}".format(item.friendly_token)
+        return reverse("get_media") + f"?m={item.friendly_token}"
 
     def item_extra_kwargs(self, item):
         item = {
@@ -104,7 +104,7 @@ class SearchRSSFeed(Feed):
     description = "Latest Media RSS feed"
 
     def link(self, obj):
-        return f"/rss/search"
+        return "/rss/search"
 
     def get_object(self, request):
         category = request.GET.get("c", "")
@@ -125,25 +125,17 @@ class SearchRSSFeed(Feed):
             media = media.filter(topics__title__contains=topic)
         elif language:
             code_by_title = dict(
-                Language.objects
-                .exclude(code__in=["automatic", "automatic-translation"])
-                .values_list("title", "code")
+                Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list("title", "code")
             )
             language_code = code_by_title.get(language)
             if language_code:
                 media = media.filter(media_language=language_code)
         elif country:
-            country = {
-                value: key for key, value in dict(lists.video_countries).items()
-            }.get(country)
+            country = {value: key for key, value in dict(lists.video_countries).items()}.get(country)
             media = media.filter(media_country=country)
         elif query:
             query = helpers.clean_query(query)
-            q_parts = [
-                q_part.strip("y")
-                for q_part in query.split()
-                if q_part not in STOP_WORDS
-            ]
+            q_parts = [q_part.strip("y") for q_part in query.split() if q_part not in STOP_WORDS]
             if q_parts:
                 query = SearchQuery(q_parts[0] + ":*", search_type="raw")
                 for part in q_parts[1:]:
@@ -176,7 +168,7 @@ class SearchRSSFeed(Feed):
         return item.edit_date
 
     def item_link(self, item):
-        return reverse("get_media") + "?m={0}".format(item.friendly_token)
+        return reverse("get_media") + f"?m={item.friendly_token}"
 
     def item_extra_kwargs(self, item):
         item = {

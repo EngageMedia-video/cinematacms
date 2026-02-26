@@ -1,41 +1,42 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import { findDOMNode } from 'react-dom';
-
 import PropTypes from 'prop-types';
 
 export function NavigationContentApp(props){
+	props = { focusFirstItemOnPageChange: true, ...props };
 
 	const containerRef = useRef(null);
 
 	const [ currentPage, setCurrentPage ] = useState( null );
 
-	let changePageElements = [];
+	const changePageElementsRef = useRef([]);
 
 	function initEvents(){
 
-		let domElem = findDOMNode( containerRef.current );
+		let domElem = containerRef.current;
 		let elems = domElem.querySelectorAll( props.pageChangeSelector );
 
 		let i, pageId;
 
 		if( elems.length ){
-			
+
 			i = 0;
 			while(i<elems.length){
-				
+
 				pageId = elems[i].getAttribute( props.pageIdSelectorAttr );
 				pageId = pageId ? pageId.trim() : pageId;
-				
+
 				if( pageId ){
-					
-					changePageElements[i] = {
+
+					const entry = {
 						id: pageId,
 						elem: elems[i],
 					};
 
-					changePageElements[i].listener = ( index => event => changePageListener(index, event) )(i);
-					changePageElements[i].elem.addEventListener('click', changePageElements[i].listener);
+					const entryIndex = changePageElementsRef.current.length;
+					entry.listener = ( index => event => changePageListener(index, event) )(entryIndex);
+					entry.elem.addEventListener('click', entry.listener);
+					changePageElementsRef.current.push(entry);
 				}
 
 				i += 1;
@@ -49,17 +50,17 @@ export function NavigationContentApp(props){
 
 	function clearEvents(){
 		let i = 0;
-		while(i<changePageElements.length){
-			changePageElements[i].elem.removeEventListener('click', changePageElements[i].listener);
+		while(i<changePageElementsRef.current.length){
+			changePageElementsRef.current[i].elem.removeEventListener('click', changePageElementsRef.current[i].listener);
 			i += 1;
 		}
-		changePageElements = [];
+		changePageElementsRef.current = [];
 	}
 
 	function changePageListener(index, event){
 		event.preventDefault();
 		event.stopPropagation();
-		changePage( changePageElements[index].id );
+		changePage( changePageElementsRef.current[index].id );
 	}
 
 	function changePage(newPage){
@@ -83,9 +84,9 @@ export function NavigationContentApp(props){
 	}, [props.initPage]);
 
 	useEffect(()=>{
-		
+
 		clearEvents();
-		
+
 		if( currentPage ){
 
 			initEvents();
@@ -94,6 +95,8 @@ export function NavigationContentApp(props){
 				props.pageChangeCallback(currentPage);
 			}
 		}
+
+		return () => { clearEvents(); };
 
 	}, [currentPage]);
 	
@@ -109,6 +112,3 @@ NavigationContentApp.propTypes = {
 	pageChangeCallback: PropTypes.func,
 };
 
-NavigationContentApp.defaultProps = {
-	focusFirstItemOnPageChange: true,
-};

@@ -5,12 +5,11 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.cache import cache
-from django.core.mail import EmailMessage, send_mail
+from django.core.mail import EmailMessage
 from django.db.models import Q
 from django.utils import timezone
 
 from cms import celery_app
-
 
 from . import models
 from .helpers import mask_ip
@@ -48,27 +47,17 @@ def list_tasks():
                     friendly_token = task_args.split()[0]
                     profile_id = task_args.split()[1]
 
-                    media = models.Media.objects.filter(
-                        friendly_token=friendly_token
-                    ).first()
+                    media = models.Media.objects.filter(friendly_token=friendly_token).first()
                     if media:
-                        profile = models.EncodeProfile.objects.filter(
-                            id=profile_id
-                        ).first()
+                        profile = models.EncodeProfile.objects.filter(id=profile_id).first()
                         if profile:
-                            media_profile_pairs.append(
-                                (media.friendly_token, profile.id)
-                            )
+                            media_profile_pairs.append((media.friendly_token, profile.id))
                             task_dict["info"] = {}
                             task_dict["info"]["profile name"] = profile.name
                             task_dict["info"]["media title"] = media.title
-                            encoding = models.Encoding.objects.filter(
-                                task_id=task.get("id")
-                            ).first()
+                            encoding = models.Encoding.objects.filter(task_id=task.get("id")).first()
                             if encoding:
-                                task_dict["info"][
-                                    "encoding progress"
-                                ] = encoding.progress
+                                task_dict["info"]["encoding progress"] = encoding.progress
 
                 ret[state]["tasks"].append(task_dict)
     ret["task_ids"] = task_ids
@@ -102,9 +91,7 @@ def pre_save_action(media, user, session_key, action, remote_ip):
     if user:
         query = MediaAction.objects.filter(media=media, action=action, user=user)
     else:
-        query = MediaAction.objects.filter(
-            media=media, action=action, session_key=session_key
-        )
+        query = MediaAction.objects.filter(media=media, action=action, session_key=session_key)
     query = query.order_by("-action_date")
 
     if query:
@@ -126,28 +113,23 @@ def pre_save_action(media, user, session_key, action, remote_ip):
         # For anonymous users with valid sessions, we already checked session-based records above
         # If no session record exists, this is likely a new user
         # Apply rate limiting to prevent spam while allowing classrooms/offices
-        
+
         if action == "watch":
             now = timezone.now()
-            
+
             # Rate limiting: 30 views per 5 seconds from same IP
             # Allows classrooms/offices (30+ students) while blocking automated spam/bots
             recent_views = MediaAction.objects.filter(
-                media=media,
-                action="watch",
-                remote_ip=remote_ip,
-                user=None,
-                action_date__gte=now - timedelta(seconds=5)
+                media=media, action="watch", remote_ip=remote_ip, user=None, action_date__gte=now - timedelta(seconds=5)
             ).count()
-            
-            max_per_5sec = getattr(settings, 'MAX_ANONYMOUS_VIEWS_PER_5SEC', 30)
+
+            max_per_5sec = getattr(settings, "MAX_ANONYMOUS_VIEWS_PER_5SEC", 30)
             if recent_views >= max_per_5sec:
                 logger.warning(
-                    f"Rate limit: IP {remote_ip} exceeded {max_per_5sec} views/5sec "
-                    f"for media {media.friendly_token}"
+                    f"Rate limit: IP {remote_ip} exceeded {max_per_5sec} views/5sec for media {media.friendly_token}"
                 )
                 return False
-        
+
         # Only allow if no previous session record (first-time anonymous user)
         if not query.exists():
             return True
@@ -166,7 +148,7 @@ def notify_users(friendly_token=None, action=None, extra=None):
 
     if action == "media_reported" and media:
         if settings.ADMINS_NOTIFICATIONS.get("MEDIA_REPORTED", False):
-            title = "[{}] - Media was reported".format(settings.PORTAL_NAME)
+            title = f"[{settings.PORTAL_NAME}] - Media was reported"
             msg = """
             Media %s was reported.
             Reason: %s\n
@@ -184,7 +166,7 @@ def notify_users(friendly_token=None, action=None, extra=None):
 
     if action == "media_added" and media:
         if settings.ADMINS_NOTIFICATIONS.get("MEDIA_ADDED", False):
-            title = "[{}] - Video was added".format(settings.PORTAL_NAME)
+            title = f"[{settings.PORTAL_NAME}] - Video was added"
             msg = """
 Video %s was added by user %s.
 """ % (
@@ -197,13 +179,11 @@ Video %s was added by user %s.
             d["to"] = settings.ADMIN_EMAIL_LIST
             notify_items.append(d)
         if settings.USERS_NOTIFICATIONS.get("MEDIA_ADDED", False):
-            title = "[{}] - Your video was uploaded successfully".format(settings.PORTAL_NAME)
+            title = f"[{settings.PORTAL_NAME}] - Your video was uploaded successfully"
             msg = """
 Your video has been uploaded successfully! It's now being processed and will be available soon.
 URL: %s
-            """ % (
-                media_url
-            )
+            """ % (media_url)
             d = {}
             d["title"] = title
             d["msg"] = msg
@@ -251,9 +231,7 @@ The Cinemata Curatorial Team
         notify_items.append(d)
 
     for item in notify_items:
-        email = EmailMessage(
-            item["title"], item["msg"], settings.DEFAULT_FROM_EMAIL, item["to"]
-        )
+        email = EmailMessage(item["title"], item["msg"], settings.DEFAULT_FROM_EMAIL, item["to"])
         email.send(fail_silently=True)
         return True
 
@@ -264,15 +242,11 @@ def show_recommended_media(request, limit=100):
     # produced by task get_list_of_popular_media
     if pmi:
         media = list(
-            models.Media.objects.filter(friendly_token__in=pmi)
-            .filter(basic_query)
-            .prefetch_related("user")[:limit]
+            models.Media.objects.filter(friendly_token__in=pmi).filter(basic_query).prefetch_related("user")[:limit]
         )
     else:
         media = list(
-            models.Media.objects.filter(basic_query)
-            .order_by("-views", "-likes")
-            .prefetch_related("user")[:limit]
+            models.Media.objects.filter(basic_query).order_by("-views", "-likes").prefetch_related("user")[:limit]
         )
     random.shuffle(media)
     return media
@@ -296,14 +270,8 @@ def show_related_media_content(media, request, limit):
     # Aim is to always show enough (limit) videos
     # and include author videos in any case
 
-    q_author = Q(
-        state="public", is_reviewed=True, encoding_status="success", user=media.user
-    )
-    m = list(
-        models.Media.objects.filter(q_author)
-        .order_by()
-        .prefetch_related("user")[:limit]
-    )
+    q_author = Q(state="public", is_reviewed=True, encoding_status="success", user=media.user)
+    m = list(models.Media.objects.filter(q_author).order_by().prefetch_related("user")[:limit])
 
     # order by random criteria so that it doesn't bring the same results
     # attention: only fields that are indexed make sense here! also need
@@ -357,28 +325,12 @@ def show_related_media_content(media, request, limit):
 
 
 def show_related_media_author(media, request, limit):
-    q_author = Q(
-        state="public", is_reviewed=True, encoding_status="success", user=media.user
-    )
-    m = list(
-        models.Media.objects.filter(q_author)
-        .order_by()
-        .prefetch_related("user")[:limit]
-    )
+    q_author = Q(state="public", is_reviewed=True, encoding_status="success", user=media.user)
+    m = list(models.Media.objects.filter(q_author).order_by().prefetch_related("user")[:limit])
 
     # order by random criteria so that it doesn't bring the same results
     # attention: only fields that are indexed make sense here! also need
     # find a way for indexes with more than 1 field
-    order_criteria = [
-        "-views",
-        "views",
-        "add_date",
-        "-add_date",
-        "featured",
-        "-featured",
-        "user_featured",
-        "-user_featured",
-    ]
 
     m = list(set(m[:limit]))  # remove duplicates
 
@@ -426,7 +378,7 @@ def notify_user_on_comment(friendly_token):
     media_url = settings.SSL_FRONTEND_HOST + media.get_absolute_url()
 
     if user.notification_on_comments:
-        title = "[{}] - A comment was added".format(settings.PORTAL_NAME)
+        title = f"[{settings.PORTAL_NAME}] - A comment was added"
         msg = """
 A comment has been added to your media %s .
 View it on %s
@@ -434,55 +386,51 @@ View it on %s
             media.title,
             media_url,
         )
-        email = EmailMessage(
-            title, msg, settings.DEFAULT_FROM_EMAIL, [media.user.email]
-        )
+        email = EmailMessage(title, msg, settings.DEFAULT_FROM_EMAIL, [media.user.email])
         email.send(fail_silently=True)
     return True
 
+
 # Define role mappings for display name and capability description
 ROLE_MAP = {
-    'advancedUser': {
-        'display_name': 'Trusted User',
-        'capability': 'You can now upload and publish videos, and enjoy all platform features without content review.'
+    "advancedUser": {
+        "display_name": "Trusted User",
+        "capability": "You can now upload and publish videos, and enjoy all platform features without content review.",
     },
-    'is_editor': {
-        'display_name': 'Editor',
-        'capability': 'You can now moderate, edit, and publish content submitted by other users on the platform.'
+    "is_editor": {
+        "display_name": "Editor",
+        "capability": "You can now moderate, edit, and publish content submitted by other users on the platform.",
     },
-    'is_manager': {
-        'display_name': 'Manager',
-        'capability': 'You can now manage site content, user accounts, and comments to help oversee platform operations.'
+    "is_manager": {
+        "display_name": "Manager",
+        "capability": "You can now manage site content, user accounts, and comments to help oversee platform operations.",
     },
-    'is_curator': {
-        'display_name': 'Curator',
-        'capability': 'You can now view all videos regardless of publication status and contact filmmakers for curatorial programs.'
-    }
+    "is_curator": {
+        "display_name": "Curator",
+        "capability": "You can now view all videos regardless of publication status and contact filmmakers for curatorial programs.",
+    },
 }
+
 
 def notify_user_on_role_update(user, upgraded_roles):
     """
     Send email notification when a user's role is updated to a privileged role.
     upgraded_roles is a list of internal role field names (e.g., ['is_editor', 'advancedUser']).
-    
+
     Follows existing email patterns (EmailMessage, fail_silently=True).
     """
     # Validate inputs
     if not user:
         logger.error("Role update notification failed: user is None.")
         return False
-    
+
     if not upgraded_roles or not isinstance(upgraded_roles, (list, tuple)):
-        logger.error(
-            f"Role update notification failed for user {user.username}: invalid upgraded_roles parameter."
-        )
+        logger.error(f"Role update notification failed for user {user.username}: invalid upgraded_roles parameter.")
         return False
-    
+
     if not user.email:
         # Graceful failure: No email address (as per acceptance criteria)
-        logger.error(
-            f"Role update notification skipped for user {user.username}: no email address."
-        )
+        logger.error(f"Role update notification skipped for user {user.username}: no email address.")
         return False
 
     # 1. Prepare dynamic content
@@ -492,7 +440,7 @@ def notify_user_on_role_update(user, upgraded_roles):
     for role_name in upgraded_roles:
         role_info = ROLE_MAP.get(role_name)
         if role_info:
-            role_summary_list.append(role_info['display_name'])
+            role_summary_list.append(role_info["display_name"])
             # Create the detailed block
             role_details_block += f"{role_info['display_name']}\n"
             role_details_block += f"{role_info['capability']}\n\n"
@@ -507,14 +455,14 @@ def notify_user_on_role_update(user, upgraded_roles):
     user_name = user.get_full_name() or user.username
     portal_name = settings.PORTAL_NAME
     platform_link = settings.SSL_FRONTEND_HOST
-    
+
     # 3. Construct the email body
     granted_roles_summary = "\n".join([f"- {name}" for name in role_summary_list])
     role_details_block = role_details_block.strip()
-    
+
     # Clear subject line indicating privilege update (Acceptance Criteria)
     subject = f"[{portal_name}] - Your account privileges have been updated"
-    
+
     # Friendly message explaining new capabilities (Acceptance Criteria)
     msg = f"""
 Hello {user_name},
@@ -554,16 +502,16 @@ The {portal_name} Team
     sent_count = email_message.send(fail_silently=True)
     if sent_count:
         logger.info(
-            f"Role update notification sent to {user.username} ({user.email}) "
-            f"for roles: {', '.join(upgraded_roles)}"
+            f"Role update notification sent to {user.username} ({user.email}) for roles: {', '.join(upgraded_roles)}"
         )
-        return True 
+        return True
     else:
         logger.warning(
             f"Role update notification failed to send to {user.username} ({user.email}) "
             f"for roles: {', '.join(upgraded_roles)}"
         )
         return False
+
 
 def is_mediacms_editor(user):
     # helper function
@@ -586,6 +534,7 @@ def is_mediacms_manager(user):
         pass
     return manager
 
+
 def is_curator(user):
     curator = False
     try:
@@ -594,6 +543,7 @@ def is_curator(user):
     except:
         pass
     return curator
+
 
 def can_upload_media(user):
     try:
@@ -613,6 +563,7 @@ def can_upload_media(user):
         pass
 
     return False
+
 
 def is_media_allowed_type(media):
     return media.media_type in settings.ALLOWED_MEDIA_UPLOAD_TYPES
@@ -653,11 +604,7 @@ def get_current_featured_media():
         return active.media
 
     # Priority 2: Most recent scheduled entry (even if expired, but must have started)
-    recent = (
-        FeaturedVideo.objects.filter(is_active=True, start_date__lte=now)
-        .select_related("media")
-        .first()
-    )
+    recent = FeaturedVideo.objects.filter(is_active=True, start_date__lte=now).select_related("media").first()
 
     if (
         recent
@@ -668,9 +615,13 @@ def get_current_featured_media():
         return recent.media
 
     # Priority 3: Legacy boolean field
-    return Media.objects.filter(
-        featured=True,
-        state="public",
-        is_reviewed=True,
-        encoding_status="success",
-    ).order_by("-add_date").first()
+    return (
+        Media.objects.filter(
+            featured=True,
+            state="public",
+            is_reviewed=True,
+            encoding_status="success",
+        )
+        .order_by("-add_date")
+        .first()
+    )

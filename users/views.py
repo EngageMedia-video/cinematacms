@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 
 from cms.permissions import IsUserOrManager
 from files.lists import video_countries
-from files.methods import is_mediacms_editor, is_mediacms_manager, is_curator
+from files.methods import is_curator, is_mediacms_editor, is_mediacms_manager
 
 from .forms import ChannelForm, UserForm
 from .models import Channel, User
@@ -41,14 +41,10 @@ def view_user(request, username):
     if not user:
         return HttpResponseRedirect("/members")
     context["user"] = user
-    context["CAN_EDIT"] = (
-        True
-        if ((user and user == request.user) or is_mediacms_manager(request.user))
-        else False
-    )
-    context["CAN_DELETE"] = True if is_mediacms_manager(request.user) else False
-    context["SHOW_CONTACT_FORM"] = (
-        True if (user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)) else False
+    context["CAN_EDIT"] = bool(user and user == request.user or is_mediacms_manager(request.user))
+    context["CAN_DELETE"] = bool(is_mediacms_manager(request.user))
+    context["SHOW_CONTACT_FORM"] = bool(
+        user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)
     )
 
     return render(request, "cms/user.html", context)
@@ -61,14 +57,10 @@ def view_user_media(request, username):
         return HttpResponseRedirect("/members")
 
     context["user"] = user
-    context["CAN_EDIT"] = (
-        True
-        if ((user and user == request.user) or is_mediacms_manager(request.user))
-        else False
-    )
-    context["CAN_DELETE"] = True if is_mediacms_manager(request.user) else False
-    context["SHOW_CONTACT_FORM"] = (
-        True if (user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)) else False
+    context["CAN_EDIT"] = bool(user and user == request.user or is_mediacms_manager(request.user))
+    context["CAN_DELETE"] = bool(is_mediacms_manager(request.user))
+    context["SHOW_CONTACT_FORM"] = bool(
+        user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)
     )
 
     return render(request, "cms/user_media.html", context)
@@ -81,14 +73,10 @@ def view_user_playlists(request, username):
         return HttpResponseRedirect("/members")
 
     context["user"] = user
-    context["CAN_EDIT"] = (
-        True
-        if ((user and user == request.user) or is_mediacms_manager(request.user))
-        else False
-    )
-    context["CAN_DELETE"] = True if is_mediacms_manager(request.user) else False
-    context["SHOW_CONTACT_FORM"] = (
-        True if (user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)) else False
+    context["CAN_EDIT"] = bool(user and user == request.user or is_mediacms_manager(request.user))
+    context["CAN_DELETE"] = bool(is_mediacms_manager(request.user))
+    context["SHOW_CONTACT_FORM"] = bool(
+        user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)
     )
 
     return render(request, "cms/user_playlists.html", context)
@@ -101,14 +89,10 @@ def view_user_about(request, username):
         return HttpResponseRedirect("/members")
 
     context["user"] = user
-    context["CAN_EDIT"] = (
-        True
-        if ((user and user == request.user) or is_mediacms_manager(request.user))
-        else False
-    )
-    context["CAN_DELETE"] = True if is_mediacms_manager(request.user) else False
-    context["SHOW_CONTACT_FORM"] = (
-        True if (user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)) else False
+    context["CAN_EDIT"] = bool(user and user == request.user or is_mediacms_manager(request.user))
+    context["CAN_DELETE"] = bool(is_mediacms_manager(request.user))
+    context["SHOW_CONTACT_FORM"] = bool(
+        user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)
     )
 
     return render(request, "cms/user_about.html", context)
@@ -130,6 +114,7 @@ def edit_user(request, username):
         form = UserForm(request.user, instance=user)
     return render(request, "cms/user_edit.html", {"form": form})
 
+
 @login_required
 def mfa_success_message(request):
     user = get_user(request.user)
@@ -137,19 +122,13 @@ def mfa_success_message(request):
         return HttpResponseRedirect("/")
     return render(request, "mfa/totp/success.html")
 
+
 def view_channel(request, friendly_token):
     context = {}
     channel = Channel.objects.filter(friendly_token=friendly_token).first()
-    if not channel:
-        user = None
-    else:
-        user = channel.user
+    user = None if not channel else channel.user
     context["user"] = user
-    context["CAN_EDIT"] = (
-        True
-        if ((user and user == request.user) or request.user.is_superuser)
-        else False
-    )
+    context["CAN_EDIT"] = bool(user and user == request.user or request.user.is_superuser)
 
     return render(request, "cms/channel.html", context)
 
@@ -157,9 +136,7 @@ def view_channel(request, friendly_token):
 @login_required
 def edit_channel(request, friendly_token):
     channel = Channel.objects.filter(friendly_token=friendly_token).first()
-    if not (
-        channel and request.user.is_authenticated and (request.user == channel.user)
-    ):
+    if not (channel and request.user.is_authenticated and (request.user == channel.user)):
         return HttpResponseRedirect("/")
 
     if request.method == "POST":
@@ -218,18 +195,15 @@ class UserList(APIView):
     def get(self, request, format=None):
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
         paginator = pagination_class()
-        
+
         # Base queryset: active users with at least one video (combat spam)
-        users = User.objects.filter(
-            is_active=True,
-            media_count__gt=0
-        ).exclude(username="emnews")
-        
+        users = User.objects.filter(is_active=True, media_count__gt=0).exclude(username="emnews")
+
         # Get user's country for same-country sorting
         user_country = None
         if request.user.is_authenticated:
             user_country = request.user.location_country
-        
+
         # Filter by location/country
         location = request.GET.get("location", "").strip()
         if location:
@@ -252,16 +226,14 @@ class UserList(APIView):
                 else:
                     # Not a country code or name, search in location field (free text)
                     users = users.filter(location__icontains=location)
-        
+
         # Search functionality
         search = request.GET.get("search", "").strip()
         if search:
             users = users.filter(
-                Q(name__icontains=search) |
-                Q(username__icontains=search) |
-                Q(location__icontains=search)
+                Q(name__icontains=search) | Q(username__icontains=search) | Q(location__icontains=search)
             )
-        
+
         # Apply sorting
         # sort=smart: Default "Most Active" sort - prioritizes users from the same country,
         #             then sorts by media count (activity level) and join date.
@@ -275,18 +247,12 @@ class UserList(APIView):
             # Smart sort: same country first, then by media count and join date
             # Using Django ORM annotations (secure, no SQL injection)
             users = users.annotate(
-                same_country=Case(
-                    When(location_country=user_country, then=Value(1)),
-                    default=Value(0)
-                )
+                same_country=Case(When(location_country=user_country, then=Value(1)), default=Value(0))
             ).order_by("-same_country", "-media_count", "-date_added")
         elif sort == "country" and user_country:
             # Same Country First: prioritize same country, then by join date
             users = users.annotate(
-                same_country=Case(
-                    When(location_country=user_country, then=Value(1)),
-                    default=Value(0)
-                )
+                same_country=Case(When(location_country=user_country, then=Value(1)), default=Value(0))
             ).order_by("-same_country", "-date_added")
         elif sort == "recent":
             users = users.order_by("-date_added")
@@ -316,13 +282,9 @@ class UserDetail(APIView):
             self.check_object_permissions(self.request, user)
             return user
         except PermissionDenied:
-            return Response(
-                {"detail": "not enough permissions"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "not enough permissions"}, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
-            return Response(
-                {"detail": "user does not exist"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request, username, format=None):
         # Get user details
@@ -339,9 +301,7 @@ class UserDetail(APIView):
         if isinstance(user, Response):
             return user
 
-        serializer = UserDetailSerializer(
-            user, data=request.data, context={"request": request}
-        )
+        serializer = UserDetailSerializer(user, data=request.data, context={"request": request})
         if serializer.is_valid():
             logo = request.data.get("logo")
             if logo:
@@ -359,9 +319,7 @@ class UserDetail(APIView):
             return user
 
         if not request.user.is_superuser:
-            return Response(
-                {"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)
 
         action = request.data.get("action")
         if action == "feature":

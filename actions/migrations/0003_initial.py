@@ -6,26 +6,31 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('actions', '0002_initial'),
+        ("actions", "0002_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='mediaaction',
-            name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='useractions', to=settings.AUTH_USER_MODEL),
+            model_name="mediaaction",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="useractions",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddIndex(
-            model_name='mediaaction',
-            index=models.Index(fields=['user', 'action', '-action_date'], name='actions_med_user_id_940054_idx'),
+            model_name="mediaaction",
+            index=models.Index(fields=["user", "action", "-action_date"], name="actions_med_user_id_940054_idx"),
         ),
         migrations.AddIndex(
-            model_name='mediaaction',
-            index=models.Index(fields=['session_key', 'action'], name='actions_med_session_fac55a_idx'),
+            model_name="mediaaction",
+            index=models.Index(fields=["session_key", "action"], name="actions_med_session_fac55a_idx"),
         ),
     ]

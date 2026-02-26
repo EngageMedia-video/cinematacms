@@ -10,6 +10,7 @@ import { useItem } from './hooks/useItem';
 import { PlaylistItemMetaDate } from './includes/items';
 
 export function PlaylistItem(props){
+	props = { ...PlaylistItem.defaults, ...props };
 
 	const type = 'playlist';
 
@@ -67,7 +68,7 @@ PlaylistItem.propTypes = {
 	media_count: PositiveIntegerOrZero,
 };
 
-PlaylistItem.defaultProps = {
-	...Item.defaultProps,
+PlaylistItem.defaults = {
+	...Item.defaults,
 	media_count: 0,
 };

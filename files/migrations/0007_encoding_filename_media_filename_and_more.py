@@ -5,44 +5,57 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('files', '0006_alter_homepagepopup_popup_and_more'),
-        ('users', '0002_alter_user_location_country'),
+        ("files", "0006_alter_homepagepopup_popup_and_more"),
+        ("users", "0002_alter_user_location_country"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='encoding',
-            name='filename',
-            field=models.CharField(blank=True, db_index=True, help_text='Extracted filename from media_file for faster lookups', max_length=255, default=''),
+            model_name="encoding",
+            name="filename",
+            field=models.CharField(
+                blank=True,
+                db_index=True,
+                help_text="Extracted filename from media_file for faster lookups",
+                max_length=255,
+                default="",
+            ),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='media',
-            name='filename',
-            field=models.CharField(blank=True, db_index=True, help_text='Extracted filename from media_file for faster lookups', max_length=255, default=''),
+            model_name="media",
+            name="filename",
+            field=models.CharField(
+                blank=True,
+                db_index=True,
+                help_text="Extracted filename from media_file for faster lookups",
+                max_length=255,
+                default="",
+            ),
             preserve_default=False,
         ),
         migrations.AddIndex(
-            model_name='comment',
-            index=models.Index(fields=['media', '-add_date'], name='idx_comment_media_date'),
+            model_name="comment",
+            index=models.Index(fields=["media", "-add_date"], name="idx_comment_media_date"),
         ),
         migrations.AddIndex(
-            model_name='comment',
-            index=models.Index(fields=['tree_id', 'lft'], name='files_comment_tree_id_lft_idx'),
+            model_name="comment",
+            index=models.Index(fields=["tree_id", "lft"], name="files_comment_tree_id_lft_idx"),
         ),
         migrations.AddIndex(
-            model_name='media',
-            index=models.Index(fields=['state', 'encoding_status', 'is_reviewed', '-add_date'], name='idx_media_state_enc_rev_date'),
+            model_name="media",
+            index=models.Index(
+                fields=["state", "encoding_status", "is_reviewed", "-add_date"], name="idx_media_state_enc_rev_date"
+            ),
         ),
         migrations.AddIndex(
-            model_name='media',
-            index=models.Index(fields=['featured', 'state', '-add_date'], name='idx_media_featured_state_date'),
+            model_name="media",
+            index=models.Index(fields=["featured", "state", "-add_date"], name="idx_media_featured_state_date"),
         ),
         migrations.AddIndex(
-            model_name='playlistmedia',
-            index=models.Index(fields=['playlist', 'ordering'], name='idx_playlistmedia_pl_order'),
+            model_name="playlistmedia",
+            index=models.Index(fields=["playlist", "ordering"], name="idx_playlistmedia_pl_order"),
         ),
     ]

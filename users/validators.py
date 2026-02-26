@@ -1,18 +1,15 @@
 import re
+
 from django.core import validators
+from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
-
-from django.core.exceptions import ValidationError
 
 
 @deconstructible
 class ASCIIUsernameValidator(validators.RegexValidator):
     regex = r"^[\w]+$"
-    message = _(
-        "Enter a valid username. This value may contain only "
-        "English letters and numbers"
-    )
+    message = _("Enter a valid username. This value may contain only English letters and numbers")
     flags = re.ASCII
 
 
@@ -29,23 +26,15 @@ def validate_internal_html(value):
 
     MAX_LENGTH = 10000  # 10KB limit - adjust as needed
     if len(value) > MAX_LENGTH:
-        raise ValidationError(
-            f"Content too large. Maximum {MAX_LENGTH} characters allowed."
-        )
+        raise ValidationError(f"Content too large. Maximum {MAX_LENGTH} characters allowed.")
 
     if re.search(r"<\w+(?:\s+[^>]{0,500})?$", value.strip()):
-        raise ValidationError(
-            "Incomplete HTML tag detected. Please ensure all tags are properly closed."
-        )
-    link_pattern = (
-        r'<a\s+(?:[^>]{0,500})?href=["\']([^"\']{1,2000})["\'](?:[^>]{0,500})?>'
-    )
+        raise ValidationError("Incomplete HTML tag detected. Please ensure all tags are properly closed.")
+    link_pattern = r'<a\s+(?:[^>]{0,500})?href=["\']([^"\']{1,2000})["\'](?:[^>]{0,500})?>'
     links = re.findall(link_pattern, value, re.IGNORECASE)
 
     if not links and "<a" in value.lower():
-        raise ValidationError(
-            "All <a> tags must have an href attribute with proper quotes."
-        )
+        raise ValidationError("All <a> tags must have an href attribute with proper quotes.")
 
     # Validate each URL in href attributes
     for url in links:
@@ -157,9 +146,4 @@ def is_valid_url(url):
         bool: True if URL is internal (starts with / or #) or external (starts with http:// or https://)
     """
     url = url.strip()
-    return (
-        url.startswith("/")
-        or url.startswith("#")
-        or url.startswith("http://")
-        or url.startswith("https://")
-    )
+    return url.startswith("/") or url.startswith("#") or url.startswith("http://") or url.startswith("https://")

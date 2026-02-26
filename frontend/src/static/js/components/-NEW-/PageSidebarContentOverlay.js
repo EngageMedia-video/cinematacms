@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 
 import * as LayoutActions from '../../actions/LayoutActions.js';
 
-import stylesheet_overlay from "../styles/PageSidebarContentOverlay.scss";
+import "../styles/PageSidebarContentOverlay.scss";
 
 export function PageSidebarContentOverlay(){
 
