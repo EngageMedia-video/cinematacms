@@ -488,10 +488,12 @@
 				tempList = currentUploadedPosterFilePath.split('/');
 				let currentUploadedPosterFileName = tempList[tempList.length -1];
 
-				// fix href
+				// fix href — sanitize DOM-derived URL to prevent XSS via DOM text reinterpretation
 				currentUploadedPosterFilePath = document.querySelector('.current_uploaded_poster_field a').href;
 				tempList = currentUploadedPosterFilePath.split('/media_files/');
-				let currentUploadedPosterFileNameURL = `/media/${tempList[tempList.length -1]}`;
+				let posterPath = tempList[tempList.length -1];
+				// Encode the DOM-derived path segment to neutralize any injected characters
+				let currentUploadedPosterFileNameURL = `/media/${encodeURI(posterPath)}`;
 				document.querySelector('.current_uploaded_poster_field a').innerText = currentUploadedPosterFileName;
 				document.querySelector('.current_uploaded_poster_field a').href = currentUploadedPosterFileNameURL;
 

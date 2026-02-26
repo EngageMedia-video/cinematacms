@@ -431,18 +431,18 @@ NavMenuInlineTabs.propTypes = {
 
 function sanitizeHref(url) {
 	if (!url || typeof url !== 'string') return '#';
-	// Only allow relative paths - these are internal app links
 	try {
-		// Decode to catch encoded bypasses like %2F%2F
-		const decoded = decodeURIComponent(url);
-		// Must start with / and not with // (protocol-relative URL)
-		if (decoded.startsWith('/') && !decoded.startsWith('//')) {
-			return url;
-		}
+		// Parse against current origin so relative paths resolve correctly
+		const parsed = new URL(url, window.location.origin);
+		// Block javascript:, data:, vbscript: and other dangerous protocols
+		if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '#';
+		// Only allow same-origin URLs (blocks external redirects)
+		if (parsed.origin !== window.location.origin) return '#';
+		// Return reconstructed path — NOT the original input — to break taint chain
+		return parsed.pathname + parsed.search + parsed.hash;
 	} catch (e) {
-		// decodeURIComponent can throw on malformed input
+		return '#';
 	}
-	return '#';
 }
 
 function AddBannerButton(props) {
