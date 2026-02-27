@@ -347,7 +347,7 @@ class TimezoneTest(TestCase):
             print(f"❌ TypeError raised: {e}")
             self.fail(f"❌ FAILED: Timezone comparison raised TypeError: {e}")
 
-        print(f"✅ SUCCESS: Timezone-aware datetime comparison works correctly!")
+        print("✅ SUCCESS: Timezone-aware datetime comparison works correctly!")
 
 
 class PreSaveActionVariableShadowingTest(TestCase):

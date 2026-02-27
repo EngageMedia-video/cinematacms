@@ -431,6 +431,7 @@ MINIMUM_RESOLUTIONS_TO_ENCODE = [240, 360]
 # Encoding rate limiting
 MAX_ENCODING_QUEUE_DEPTH = 50  # max pending+running encodings globally
 MAX_USER_CONCURRENT_ENCODES = 5  # max pending+running encodings per user
+ENCODING_DRAIN_LOCK_TIMEOUT = 120  # seconds before drain lock auto-expires
 
 # NOTIFICATIONS
 USERS_NOTIFICATIONS = {

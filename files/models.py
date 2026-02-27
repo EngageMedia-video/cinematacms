@@ -619,7 +619,7 @@ class Media(models.Model):
             return True
         return False
 
-    def _dispatch_encoding(self, encoding, profile, force, priority=0):
+    def _dispatch_encoding(self, encoding, profile, force, priority=0, **extra_kwargs):
         """Dispatch an encoding task to Celery, or defer it if rate limited."""
         from . import tasks
 
@@ -629,14 +629,27 @@ class Media(models.Model):
             return False
 
         enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
-        tasks.encode_media.apply_async(
-            args=[self.friendly_token, profile.id, encoding.id, enc_url],
-            kwargs={"force": force},
-            priority=priority,
-        )
+        task_kwargs = {"force": force}
+        task_kwargs.update(extra_kwargs)
+        try:
+            tasks.encode_media.apply_async(
+                args=[self.friendly_token, profile.id, encoding.id, enc_url],
+                kwargs=task_kwargs,
+                priority=priority,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to dispatch encoding task for %s (encoding %d)",
+                self.friendly_token, encoding.id,
+            )
+            encoding.task_dispatched = False
+            encoding.save(update_fields=["task_dispatched"])
+            return False
         return True
 
-    def encode(self, profiles=[], force=True, chunkize=True):
+    def encode(self, profiles=None, force=True, chunkize=True):
+        if profiles is None:
+            profiles = []
         if not profiles:
             profiles = EncodeProfile.objects.filter(active=True)
         profiles = list(profiles)

@@ -559,6 +559,8 @@ def get_base_ffmpeg_command(
     base_cmd = [
         settings.FFMPEG_COMMAND,
         "-y",
+        "-threads",
+        "1",
         "-i",
         input_file,
         "-c:v",

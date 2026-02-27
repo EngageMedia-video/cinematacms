@@ -14,6 +14,7 @@ from celery import shared_task as task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.signals import task_revoked, worker_shutting_down
 from celery.utils.log import get_task_logger
+import django.db
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files import File
@@ -137,6 +138,8 @@ def chunkize_media(self, friendly_token, profiles, force=True):
     cmd = [
         settings.FFMPEG_COMMAND,
         "-y",
+        "-threads",
+        "1",
         "-i",
         media.media_file.path,
         "-c",
@@ -164,8 +167,8 @@ def chunkize_media(self, friendly_token, profiles, force=True):
                     continue
             encoding = Encoding(media=media, profile=profile)
             encoding.save()
-            enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
-            encode_media.delay(friendly_token, profile.id, encoding.id, enc_url, force=force)
+            priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
+            media._dispatch_encoding(encoding, profile, force, priority=priority)
         return False
 
     chunks = [os.path.join(cwd, ch) for ch in chunks]
@@ -194,12 +197,10 @@ def chunkize_media(self, friendly_token, profiles, force=True):
                 md5sum=chunks_dict[chunk],
             )
             encoding.save()
-            enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
-            priority = 0 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 9
-            encode_media.apply_async(
-                args=[friendly_token, profile.id, encoding.id, enc_url],
-                kwargs={"force": force, "chunk": True, "chunk_file_path": chunk},
-                priority=priority,
+            priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
+            media._dispatch_encoding(
+                encoding, profile, force, priority=priority,
+                chunk=True, chunk_file_path=chunk,
             )
 
     logger.info(f"got {len(chunks)} chunks and will encode to {to_profiles} profiles")
@@ -245,7 +246,7 @@ def encode_media(
     try:
         media = Media.objects.get(friendly_token=friendly_token)
         profile = EncodeProfile.objects.get(id=profile_id)
-    except Exception:
+    except (Media.DoesNotExist, EncodeProfile.DoesNotExist):
         Encoding.objects.filter(id=encoding_id).delete()
         return False
 
@@ -304,6 +305,8 @@ def encode_media(
         command = [
             settings.FFMPEG_COMMAND,
             "-y",
+            "-threads",
+            "1",
             "-ss",
             "3",
             "-i",
@@ -477,7 +480,7 @@ def encode_media(
             encoding.save(
                 update_fields=["status", "logs", "progress", "total_run_time"]
             )
-        except Exception as e:
+        except (Encoding.DoesNotExist, django.db.DatabaseError) as e:
             logger.warning(
                 f"Failed to save final encoding state for encoding {encoding.id}: {e}. "
                 "Media may have been deleted."
@@ -554,6 +557,8 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
             # Build ffmpeg command as list to avoid shell injection and handle spaces
             ffmpeg_cmd = [
                 settings.FFMPEG_COMMAND,
+                "-threads",
+                "1",
                 "-i",
                 media.media_file.path,
                 "-ar",
@@ -709,6 +714,8 @@ def produce_sprite_from_video(friendly_token):
             fps = getattr(settings, "SPRITE_NUM_SECS", 10)
             ffmpeg_cmd = [
                 settings.FFMPEG_COMMAND,
+                "-threads",
+                "1",
                 "-i",
                 media.media_file.path,
                 "-f",
@@ -1232,8 +1239,9 @@ def kill_ffmpeg_process(filepath):
         return None
     try:
         result = subprocess.run(
-            ["pgrep", "-f", f"ffmpeg.*{filepath}"],
-            capture_output=True,
+            ["pgrep", "-f", f"ffmpeg.*{re.escape(filepath)}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
         output = result.stdout.decode("utf-8").strip()
         if not output:
@@ -1458,7 +1466,23 @@ def dispatch_deferred_encodings():
 
     Picks up Encoding rows with status='pending' and task_dispatched=False,
     checks global and per-user limits, and dispatches if capacity is available.
+
+    Uses a singleton cache lock so only one worker executes the drain at a time.
     """
+    lock_key = "dispatch_deferred_encodings_lock"
+    lock_timeout = getattr(settings, "ENCODING_DRAIN_LOCK_TIMEOUT", 120)
+
+    if not cache.add(lock_key, "locked", lock_timeout):
+        logger.debug("Drain task skipped: another worker holds the lock")
+        return
+
+    try:
+        _dispatch_deferred_encodings_inner()
+    finally:
+        cache.delete(lock_key)
+
+
+def _dispatch_deferred_encodings_inner():
     from .models import Encoding
 
     active_statuses = ["pending", "running"]
@@ -1496,19 +1520,33 @@ def dispatch_deferred_encodings():
             )
             continue
 
-        # Dispatch
+        # Atomically claim the row before dispatching to prevent duplicate dispatch
+        claimed = Encoding.objects.filter(id=encoding.id, task_dispatched=False).update(task_dispatched=True)
+        if not claimed:
+            continue
+
         enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
         if encoding.profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
             priority = 9
         else:
             priority = 0
-        encode_media.apply_async(
-            args=[encoding.media.friendly_token, encoding.profile.id, encoding.id, enc_url],
-            kwargs={"force": True},
-            priority=priority,
-        )
-        encoding.task_dispatched = True
-        encoding.save(update_fields=["task_dispatched"])
+        task_kwargs = {"force": True}
+        if encoding.chunk and encoding.chunk_file_path:
+            task_kwargs["chunk"] = True
+            task_kwargs["chunk_file_path"] = encoding.chunk_file_path
+        try:
+            encode_media.apply_async(
+                args=[encoding.media.friendly_token, encoding.profile.id, encoding.id, enc_url],
+                kwargs=task_kwargs,
+                priority=priority,
+            )
+        except Exception:
+            logger.exception(
+                "Drain task failed to dispatch encoding %d for %s, rolling back claim",
+                encoding.id, encoding.media.friendly_token,
+            )
+            Encoding.objects.filter(id=encoding.id).update(task_dispatched=False)
+            continue
         dispatched_count += 1
 
     if dispatched_count:
