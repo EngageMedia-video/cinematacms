@@ -63,11 +63,11 @@ ERRORS_LIST = [
 ]
 
 
-def _check_media_exists(media_id, encoding_id, context=""):
-    """Check if a media object still exists in the database.
+def _check_media_exists_or_cleanup(media_id, encoding_id, context=""):
+    """Check if a media object still exists; if not, delete the orphaned encoding.
 
     Returns True if media exists, False if it was deleted.
-    When media is gone, logs a warning and deletes the orphaned encoding.
+    When media is gone, logs a warning and deletes the orphaned Encoding row.
     """
     if not Media.objects.filter(pk=media_id).exists():
         logger.warning(
@@ -165,7 +165,7 @@ def chunkize_media(self, friendly_token, profiles, force=True):
             if media.video_height and media.video_height < profile.resolution:
                 if profile.resolution not in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
                     continue
-            encoding = Encoding(media=media, profile=profile)
+            encoding = Encoding(media=media, profile=profile, task_dispatched=False)
             encoding.save()
             priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
             media._dispatch_encoding(encoding, profile, force, priority=priority)
@@ -195,6 +195,7 @@ def chunkize_media(self, friendly_token, profiles, force=True):
                 chunk=True,
                 chunks_info=json.dumps(chunks_dict),
                 md5sum=chunks_dict[chunk],
+                task_dispatched=False,
             )
             encoding.save()
             priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
@@ -271,7 +272,7 @@ def encode_media(
                     chunk=True,
                     chunk_file_path=chunk_file_path,
                 ).exclude(id=encoding_id).delete()
-            except Exception:
+            except Encoding.DoesNotExist:
                 encoding = Encoding(
                     media=media,
                     profile=profile,
@@ -290,7 +291,7 @@ def encode_media(
                 Encoding.objects.filter(media=media, profile=profile).exclude(
                     id=encoding_id
                 ).delete()
-            except Exception:
+            except Encoding.DoesNotExist:
                 encoding = Encoding(media=media, profile=profile, status="running")
 
     if task_id:
@@ -392,7 +393,7 @@ def encode_media(
 
                                     percent = new_duration * 100 / media.duration
                                     if n_times % 20 == 0:
-                                        if not _check_media_exists(media.pk, encoding.id, "progress_save"):
+                                        if not _check_media_exists_or_cleanup(media.pk, encoding.id, "progress_save"):
                                             encoding_backend.terminate_process()
                                             return False
                                         encoding.progress = percent
@@ -408,7 +409,7 @@ def encode_media(
                         else:
                             # Log unparseable output for debugging
                             if n_times % 100 == 0:
-                                if not _check_media_exists(media.pk, encoding.id, "heartbeat_save"):
+                                if not _check_media_exists_or_cleanup(media.pk, encoding.id, "heartbeat_save"):
                                     encoding_backend.terminate_process()
                                     return False
                                 try:
@@ -459,7 +460,7 @@ def encode_media(
         encoding.progress = 100
 
         # Check media still exists before final save
-        if not _check_media_exists(media.pk, encoding.id, "final_save"):
+        if not _check_media_exists_or_cleanup(media.pk, encoding.id, "final_save"):
             return False
 
         success = False
@@ -1229,9 +1230,48 @@ def worker_shutdown_handler(sender=None, **kwargs):
     kill_all_ffmpeg_processes()
 
 
+def _graceful_kill(pid, label=""):
+    """Send SIGTERM first, then SIGKILL if the process doesn't exit.
+
+    Gives ffmpeg up to 3 seconds to flush output and clean up temp files
+    before escalating to SIGKILL.
+    """
+    import signal
+
+    pid_int = int(pid)
+    try:
+        os.kill(pid_int, signal.SIGTERM)
+    except ProcessLookupError:
+        return  # already gone
+    except Exception as e:
+        logger.error(f"Error sending SIGTERM to {pid} {label}: {e}")
+        return
+
+    # Wait up to 3 seconds for graceful exit
+    for _ in range(6):
+        time.sleep(0.5)
+        try:
+            os.kill(pid_int, 0)  # check if still alive
+        except ProcessLookupError:
+            logger.info(f"ffmpeg process {pid} exited after SIGTERM {label}")
+            return
+        except Exception:
+            return  # permissions error or similar, stop polling
+
+    # Still alive — escalate to SIGKILL
+    try:
+        os.kill(pid_int, signal.SIGKILL)
+        logger.info(f"Sent SIGKILL to ffmpeg process {pid} {label}")
+    except ProcessLookupError:
+        pass  # exited between check and kill
+    except Exception as e:
+        logger.error(f"Error sending SIGKILL to {pid} {label}: {e}")
+
+
 def kill_ffmpeg_process(filepath):
     """Kill all ffmpeg processes matching the given filepath.
 
+    Sends SIGTERM first, then SIGKILL after a short timeout.
     pgrep can return multiple PIDs (one per line), so we split
     and kill each individually.
     """
@@ -1250,15 +1290,7 @@ def kill_ffmpeg_process(filepath):
         for pid in pids:
             pid = pid.strip()
             if pid:
-                try:
-                    subprocess.run(
-                        ["kill", "-9", pid],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                    )
-                    logger.info(f"Killed ffmpeg process {pid} for {filepath}")
-                except Exception as e:
-                    logger.error(f"Error killing ffmpeg process {pid}: {e}")
+                _graceful_kill(pid, label=f"for {filepath}")
         return result
     except Exception as e:
         logger.error(f"Error finding ffmpeg processes for {filepath}: {e}")
@@ -1269,6 +1301,7 @@ def kill_all_ffmpeg_processes():
     """Kill ALL ffmpeg processes on this worker.
 
     Used during worker shutdown to ensure no orphan ffmpeg processes remain.
+    Sends SIGTERM first, then SIGKILL after a short timeout.
     """
     try:
         result = subprocess.run(
@@ -1284,15 +1317,7 @@ def kill_all_ffmpeg_processes():
         for pid in pids:
             pid = pid.strip()
             if pid:
-                try:
-                    subprocess.run(
-                        ["kill", "-9", pid],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                    )
-                    logger.info(f"Worker shutdown: killed ffmpeg process {pid}")
-                except Exception as e:
-                    logger.error(f"Worker shutdown: error killing ffmpeg process {pid}: {e}")
+                _graceful_kill(pid, label="(worker shutdown)")
     except Exception as e:
         logger.error(f"Error during ffmpeg cleanup on worker shutdown: {e}")
 

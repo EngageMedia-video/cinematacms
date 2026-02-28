@@ -620,12 +620,26 @@ class Media(models.Model):
         return False
 
     def _dispatch_encoding(self, encoding, profile, force, priority=0, **extra_kwargs):
-        """Dispatch an encoding task to Celery, or defer it if rate limited."""
+        """Dispatch an encoding task to Celery, or defer it if rate limited.
+
+        Uses an atomic claim pattern to prevent TOCTOU races: the encoding
+        row is claimed via UPDATE ... WHERE task_dispatched=False before
+        dispatching to Celery, so concurrent uploads cannot both pass the
+        rate-limit check and dispatch.
+        """
         from . import tasks
 
         if self._is_encoding_rate_limited():
             encoding.task_dispatched = False
             encoding.save(update_fields=["task_dispatched"])
+            return False
+
+        # Atomically claim the row before dispatching
+        claimed = Encoding.objects.filter(
+            id=encoding.id, task_dispatched=False,
+        ).update(task_dispatched=True)
+        if not claimed:
+            # Already claimed by another concurrent dispatch
             return False
 
         enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
@@ -642,8 +656,7 @@ class Media(models.Model):
                 "Failed to dispatch encoding task for %s (encoding %d)",
                 self.friendly_token, encoding.id,
             )
-            encoding.task_dispatched = False
-            encoding.save(update_fields=["task_dispatched"])
+            Encoding.objects.filter(id=encoding.id).update(task_dispatched=False)
             return False
         return True
 
@@ -659,7 +672,7 @@ class Media(models.Model):
             for profile in profiles:
                 if profile.extension == "gif":
                     profiles.remove(profile)
-                    encoding = Encoding(media=self, profile=profile)
+                    encoding = Encoding(media=self, profile=profile, task_dispatched=False)
                     encoding.save()
                     self._dispatch_encoding(encoding, profile, force, priority=0)
             profiles = [p.id for p in profiles]
@@ -670,7 +683,7 @@ class Media(models.Model):
                     if self.video_height and self.video_height < profile.resolution:
                         if profile.resolution not in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
                             continue
-                encoding = Encoding(media=self, profile=profile)
+                encoding = Encoding(media=self, profile=profile, task_dispatched=False)
                 encoding.save()
                 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
                     priority = 9
@@ -1270,6 +1283,14 @@ class Encoding(models.Model):
         db_index=True,
         help_text="Whether the Celery task has been dispatched. False when deferred by rate limiting.",
     )
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["status", "task_dispatched", "add_date"],
+                name="encoding_drain_idx",
+            ),
+        ]
 
     @property
     def media_encoding_url(self):
