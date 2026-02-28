@@ -144,7 +144,7 @@ pexpect==4.9.0 ; sys_platform != 'emscripten' and sys_platform != 'win32'
     # via ipython
 pilkit==3.0
     # via django-imagekit
-pillow==12.1.0
+pillow==12.1.1
     # via
     #   cinemata
     #   pilkit
