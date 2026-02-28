@@ -1,52 +1,33 @@
 {
-  "name": "@mediacms/vjs-plugin",
-  "version": "0.1.1",
-  "description": "",
-  "author": "styiannis",
-  "license": "Apache-2.0",
-  "type": "module",
-  "keywords": [
-    "mediacms",
-    "videojs",
-    "videojs-plugin"
-  ],
-  "main": "./dist/mediacms-vjs-plugin.js",
-  "module": "./src/",
-  "browser": "./dist/mediacms-vjs-plugin.js",
-  "files": [
-    "dist"
-  ],
-  "browserslist": [
-    "defaults"
-  ],
-  "scripts": {
-    "start": "npx rollup -w -c config/rollup.config.js",
-    "build": "npm run clean:build && npx rollup -c ./config/rollup.config.build.js",
-    "clean:build": "node ./scripts/rmrf.cjs ./dist",
-    "pack": "npm run build && npm pack"
-  },
-  "peerDependencies": {
-    "video.js": "^7.20.2"
-  },
-  "dependencies": {
-    "@mediacms/vjs-plugin-font-icons": "file:../vjs-plugin-font-icons"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.28.4",
-    "@babel/preset-env": "^7.28.3",
-    "@rollup/plugin-babel": "^6.0.4",
-    "@rollup/plugin-commonjs": "^28.0.6",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^16.0.1",
-    "core-js": "^3.45.1",
-    "global": "^4.4.0",
-    "sass": "^1.92.1",
-    "postcss": "^8.5.6",
-    "rollup": "^4.50.1",
-    "rollup-plugin-cleanup": "^3.2.1",
-    "rollup-plugin-gzip": "^4.1.1",
-    "rollup-plugin-postcss": "^4.0.2",
-    "rollup-plugin-visualizer": "^6.0.3",
-    "rimraf": "^6.0.1"
-  }
+	"name": "@mediacms/vjs-plugin",
+	"version": "0.1.1",
+	"description": "",
+	"author": "styiannis",
+	"license": "Apache-2.0",
+	"type": "module",
+	"keywords": [
+		"mediacms",
+		"videojs",
+		"videojs-plugin"
+	],
+	"main": "./dist/mediacms-vjs-plugin.js",
+	"module": "./src/",
+	"browser": "./dist/mediacms-vjs-plugin.js",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "vite build",
+		"pack": "npm run build && npm pack"
+	},
+	"peerDependencies": {
+		"video.js": "^7.20.2"
+	},
+	"dependencies": {
+		"@mediacms/vjs-plugin-font-icons": "file:../vjs-plugin-font-icons"
+	},
+	"devDependencies": {
+		"sass": "^1.97.3",
+		"vite": "^7.3.1"
+	}
 }
