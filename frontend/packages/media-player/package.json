@@ -11,7 +11,6 @@
 		"videojs"
 	],
 	"main": "./dist/mediacms-media-player.js",
-	"module": "./src/",
 	"browser": "./dist/mediacms-media-player.js",
 	"files": [
 		"dist"

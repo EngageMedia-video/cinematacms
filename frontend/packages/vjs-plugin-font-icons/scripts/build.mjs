@@ -66,12 +66,12 @@ for (const icon of sortedIcons) {
 	const destPath = path.join(tempDir, icon.name + '.svg');
 
 	if (!svgCache[sourcePath]) {
-		if (fs.existsSync(sourcePath)) {
-			svgCache[sourcePath] = fs.readFileSync(sourcePath);
-		} else {
-			console.warn(`Warning: SVG file not found: ${sourcePath}`);
-			continue;
+		if (!fs.existsSync(sourcePath)) {
+			cleanDir(tempDir);
+			console.error(`Missing required SVG file: ${sourcePath}`);
+			process.exit(1);
 		}
+		svgCache[sourcePath] = fs.readFileSync(sourcePath);
 	}
 
 	fs.writeFileSync(destPath, svgCache[sourcePath]);
@@ -138,7 +138,12 @@ const base64Woff = woffContent.toString('base64');
 scssContent = fs.readFileSync(scssFile, 'utf8');
 
 const woffRegex = new RegExp(`(url.*font-woff.*base64,)([^\\s]+)(\\).*)`);
-scssContent = scssContent.replace(woffRegex, `$1${base64Woff}$3`);
+const replacedScss = scssContent.replace(woffRegex, `$1${base64Woff}$3`);
+if (replacedScss === scssContent) {
+	cleanDir(tempDir);
+	throw new Error('Failed to embed WOFF in scss/_icons.scss (expected pattern not found).');
+}
+scssContent = replacedScss;
 
 fs.writeFileSync(scssFile, scssContent);
 console.log('✓ Base64 woff embedded in _icons.scss');

@@ -11,7 +11,6 @@
 		"videojs-plugin"
 	],
 	"main": "./dist/mediacms-vjs-plugin.js",
-	"module": "./src/",
 	"browser": "./dist/mediacms-vjs-plugin.js",
 	"files": [
 		"dist"
