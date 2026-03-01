@@ -14,7 +14,7 @@
 	"devDependencies": {
 		"@tailwindcss/vite": "^4.2.1",
 		"@vitejs/plugin-react": "^5.1.4",
-		"autoprefixer": "^10.4.24",
+		"autoprefixer": "^10.4.27",
 		"core-js": "^3.48.0",
 		"dotenv": "^17.3.1",
 		"eslint": "^10.0.2",
@@ -33,7 +33,7 @@
 	"dependencies": {
 		"@mediacms/media-player": "file:packages/media-player",
 		"@tanstack/react-query": "^5.90.21",
-		"axios": "^1.13.5",
+		"axios": "^1.13.6",
 		"dompurify": "^3.3.1",
 		"events": "^3.3.0",
 		"flux": "4.0.4",

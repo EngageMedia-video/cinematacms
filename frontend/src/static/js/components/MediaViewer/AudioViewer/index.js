@@ -1,32 +1,32 @@
-import React from "react";
-import PropTypes from "prop-types";
-import videojs from "video.js";
+import React from 'react';
+import PropTypes from 'prop-types';
+import videojs from 'video.js';
 
-import SiteContext from "../../../contexts/SiteContext";
+import SiteContext from '../../../contexts/SiteContext';
 
 // Import the script for side effects only
-import "@mediacms/media-player/dist/mediacms-media-player.js";
+import '@mediacms/media-player/dist/mediacms-media-player.js';
 // The MediaPlayer is exposed as a global variable
 const MediaPlayer = window.MediaPlayer;
-import "@mediacms/media-player/dist/mediacms-media-player.css";
+import '@mediacms/media-player/dist/mediacms-media-player.css';
 
-import MediaPageStore from "../../../pages/MediaPage/store.js";
+import MediaPageStore from '../../../pages/MediaPage/store.js';
 
-import AudioPlayerStore from "../VideoViewer/store.js";
+import AudioPlayerStore from '../VideoViewer/store.js';
 
-import PageStore from "../../../pages/_PageStore.js";
+import PageStore from '../../../pages/_PageStore.js';
 
-import * as AudioPlayerActions from "../VideoViewer/actions.js";
-import { extractAudioFileFormat } from "./functions.js";
+import * as AudioPlayerActions from '../VideoViewer/actions.js';
+import { extractAudioFileFormat } from './functions.js';
 
-import { formatInnerLink, formatMediaLink } from "../../../functions/formatInnerLink";
+import { formatInnerLink, formatMediaLink } from '../../../functions/formatInnerLink';
 
-import UpNextLoaderView from "../../../classes/UpNextLoaderView";
-import PlayerRecommendedMedia from "../../../classes/PlayerRecommendedMedia";
+import UpNextLoaderView from '../../../classes/UpNextLoaderView';
+import PlayerRecommendedMedia from '../../../classes/PlayerRecommendedMedia';
 
-import MediaDurationInfo from "../../../classes/MediaDurationInfo";
+import MediaDurationInfo from '../../../classes/MediaDurationInfo';
 
-import "../../styles/VideoViewer.scss";
+import '../../styles/VideoViewer.scss';
 
 const _MediaDurationInfo = new MediaDurationInfo();
 
@@ -34,7 +34,7 @@ export default class AudioViewer extends React.PureComponent {
 	constructor(props) {
 		super(props);
 
-		let mediaData = MediaPageStore.get("media-data");
+		let mediaData = MediaPageStore.get('media-data');
 
 		this.audioElemRef = React.createRef();
 		this.videoPlayerWrapRef = React.createRef();
@@ -44,76 +44,64 @@ export default class AudioViewer extends React.PureComponent {
 
 		this.audioStartedPlaying = false;
 
-		const password = (typeof MediaCMS !== 'undefined' && MediaCMS.provided_password) ? MediaCMS.provided_password : null;
-		let audioURL = formatMediaLink(
-			mediaData.original_media_url,
-			SiteContext._currentValue.url,
-			password
-		);
+		const password =
+			typeof MediaCMS !== 'undefined' && MediaCMS.provided_password ? MediaCMS.provided_password : null;
+		let audioURL = formatMediaLink(mediaData.original_media_url, SiteContext._currentValue.url, password);
 
-		this.videoSources = [
-			{ src: audioURL, type: extractAudioFileFormat(audioURL) },
-		];
+		this.videoSources = [{ src: audioURL, type: extractAudioFileFormat(audioURL) }];
 
 		this.videoPoster = mediaData.poster_url;
-		this.videoPoster = this.videoPoster
-			? this.videoPoster
-			: mediaData.thumbnail_url;
-		this.videoPoster = this.videoPoster
-			? formatInnerLink(this.videoPoster, SiteContext._currentValue.url)
-			: "";
+		this.videoPoster = this.videoPoster ? this.videoPoster : mediaData.thumbnail_url;
+		this.videoPoster = this.videoPoster ? formatInnerLink(this.videoPoster, SiteContext._currentValue.url) : '';
 
 		this.updatePlayerVolume = this.updatePlayerVolume.bind(this);
 		this.onAudioEnd = this.onAudioEnd.bind(this);
 		this.onAudioRestart = this.onAudioRestart.bind(this);
 		this.onUpdateMediaAutoPlayBound = this.onUpdateMediaAutoPlay.bind(this);
 
-		PageStore.on(
-			"switched_media_auto_play",
-			this.onUpdateMediaAutoPlayBound
-		);
+		PageStore.on('switched_media_auto_play', this.onUpdateMediaAutoPlayBound);
 
 		this.wrapperClick = this.wrapperClick.bind(this);
 
 		const _MediaDurationInfo = new MediaDurationInfo();
 
-		_MediaDurationInfo.update(MediaPageStore.get("media-data").duration);
+		_MediaDurationInfo.update(MediaPageStore.get('media-data').duration);
 
 		this.durationISO8601 = _MediaDurationInfo.ISO8601();
 	}
 
 	componentDidMount() {
 		if (!this.videoSources.length) {
-			console.warn("Audio DEBUG:", "Audio file doesn't exist");
+			console.warn('Audio DEBUG:', "Audio file doesn't exist");
 		}
 
-		this.recommendedMedia = MediaPageStore.get("media-data").related_media.length
+		this.recommendedMedia = MediaPageStore.get('media-data').related_media.length
 			? new PlayerRecommendedMedia(
-					MediaPageStore.get("media-data").related_media,
+					MediaPageStore.get('media-data').related_media,
 					this.audioElemRef.current.parentNode,
 					this.props.inEmbed
-			  )
+				)
 			: null;
 
 		this.upNextLoaderView =
-			!this.props.inEmbed && MediaPageStore.get("media-data").related_media.length
-				? new UpNextLoaderView(MediaPageStore.get("media-data").related_media[0])
+			!this.props.inEmbed && MediaPageStore.get('media-data').related_media.length
+				? new UpNextLoaderView(MediaPageStore.get('media-data').related_media[0])
 				: null;
 
-		if (document.hasFocus() || "visible" === document.visibilityState) {
+		if (document.hasFocus() || 'visible' === document.visibilityState) {
 			this.initPlayerInstance();
 		} else {
 			this.initPlayerInstance = this.initPlayerInstance.bind(this);
-			window.addEventListener("focus", this.initPlayerInstance);
-			document.addEventListener("visibilitychange", this.initPlayerInstance);
+			window.addEventListener('focus', this.initPlayerInstance);
+			document.addEventListener('visibilitychange', this.initPlayerInstance);
 		}
 	}
 
 	componentWillUnmount() {
-		window.removeEventListener("focus", this.initPlayerInstance);
-		document.removeEventListener("visibilitychange", this.initPlayerInstance);
+		window.removeEventListener('focus', this.initPlayerInstance);
+		document.removeEventListener('visibilitychange', this.initPlayerInstance);
 
-		PageStore.removeListener("switched_media_auto_play", this.onUpdateMediaAutoPlayBound);
+		PageStore.removeListener('switched_media_auto_play', this.onUpdateMediaAutoPlayBound);
 
 		if (this.initPlayerTimeout) {
 			clearTimeout(this.initPlayerTimeout);
@@ -121,15 +109,9 @@ export default class AudioViewer extends React.PureComponent {
 		}
 		if (this.AudioPlayerData.instance) {
 			if (this.recommendedMedia) {
-				this.AudioPlayerData.instance.player.off(
-					"fullscreenchange",
-					this.recommendedMedia.onResize
-				);
-				PageStore.removeListener("window_resize", this.recommendedMedia.onResize);
-				AudioPlayerStore.removeListener(
-					"changed_viewer_mode",
-					this.recommendedMedia.onResize
-				);
+				this.AudioPlayerData.instance.player.off('fullscreenchange', this.recommendedMedia.onResize);
+				PageStore.removeListener('window_resize', this.recommendedMedia.onResize);
+				AudioPlayerStore.removeListener('changed_viewer_mode', this.recommendedMedia.onResize);
 				this.recommendedMedia.destroy();
 			}
 			videojs(this.audioElemRef.current).dispose();
@@ -138,8 +120,8 @@ export default class AudioViewer extends React.PureComponent {
 	}
 
 	initPlayerInstance() {
-		window.removeEventListener("focus", this.initPlayerInstance);
-		document.removeEventListener("visibilitychange", this.initPlayerInstance);
+		window.removeEventListener('focus', this.initPlayerInstance);
+		document.removeEventListener('visibilitychange', this.initPlayerInstance);
 
 		this.audioElemRef.current.focus(); // Focus on player before instance init.
 
@@ -148,34 +130,28 @@ export default class AudioViewer extends React.PureComponent {
 		this.initPlayerTimeout = setTimeout(
 			function () {
 				if (!this.AudioPlayerData.instance) {
-					let titleLink = this.props.inEmbed ? document.createElement("a") : null;
-					let userThumbLink = this.props.inEmbed
-						? document.createElement("a")
-						: null;
+					let titleLink = this.props.inEmbed ? document.createElement('a') : null;
+					let userThumbLink = this.props.inEmbed ? document.createElement('a') : null;
 
 					if (titleLink) {
-						titleLink.setAttribute("class", "title-link");
-						titleLink.setAttribute("href", MediaPageStore.get("media-data").url);
-						titleLink.setAttribute("title", MediaPageStore.get("media-data").title);
-						titleLink.setAttribute("target", "_blank");
-						titleLink.innerHTML = MediaPageStore.get("media-data").title;
+						titleLink.setAttribute('class', 'title-link');
+						titleLink.setAttribute('href', MediaPageStore.get('media-data').url);
+						titleLink.setAttribute('title', MediaPageStore.get('media-data').title);
+						titleLink.setAttribute('target', '_blank');
+						titleLink.setAttribute('rel', 'noopener noreferrer');
+						titleLink.textContent = MediaPageStore.get('media-data').title;
 					}
 
 					if (userThumbLink) {
-						userThumbLink.setAttribute("class", "user-thumb-link");
-						userThumbLink.setAttribute(
-							"href",
-							MediaPageStore.get("media-data").author_profile
-						);
-						userThumbLink.setAttribute(
-							"title",
-							MediaPageStore.get("media-data").author_name
-						);
-						userThumbLink.setAttribute("target", "_blank");
-						userThumbLink.innerHTML =
-							'<img src="' +
-							MediaPageStore.get("media-author-thumbnail-url") +
-							'" alt="" />';
+						userThumbLink.setAttribute('class', 'user-thumb-link');
+						userThumbLink.setAttribute('href', MediaPageStore.get('media-data').author_profile);
+						userThumbLink.setAttribute('title', MediaPageStore.get('media-data').author_name);
+						userThumbLink.setAttribute('target', '_blank');
+						userThumbLink.setAttribute('rel', 'noopener noreferrer');
+						const img = document.createElement('img');
+						img.setAttribute('src', MediaPageStore.get('media-author-thumbnail-url'));
+						img.setAttribute('alt', '');
+						userThumbLink.appendChild(img);
 					}
 
 					this.AudioPlayerData.instance = new MediaPlayer(
@@ -188,9 +164,7 @@ export default class AudioViewer extends React.PureComponent {
 							controlBar: {
 								fullscreen: false,
 								theaterMode: false,
-								next:
-									!this.props.inEmbed &&
-									0 < MediaPageStore.get("media-data").related_media.length,
+								next: !this.props.inEmbed && 0 < MediaPageStore.get('media-data').related_media.length,
 							},
 							cornerLayers: {
 								topLeft: titleLink,
@@ -200,8 +174,8 @@ export default class AudioViewer extends React.PureComponent {
 							},
 						},
 						{
-							volume: AudioPlayerStore.get("player-volume"),
-							soundMuted: AudioPlayerStore.get("player-sound-muted"),
+							volume: AudioPlayerStore.get('player-volume'),
+							soundMuted: AudioPlayerStore.get('player-sound-muted'),
 						},
 						null,
 						null,
@@ -211,43 +185,30 @@ export default class AudioViewer extends React.PureComponent {
 					);
 
 					if (this.upNextLoaderView) {
-						this.upNextLoaderView.setVideoJsPlayerElem(
-							this.AudioPlayerData.instance.player.el_
-						);
+						this.upNextLoaderView.setVideoJsPlayerElem(this.AudioPlayerData.instance.player.el_);
 						this.onUpdateMediaAutoPlay();
 					}
 
 					this.audioElemRef.current.parentNode.focus(); // Focus on player.
 
 					this.AudioPlayerData.instance.player.one(
-						"play",
+						'play',
 						function () {
 							this.audioStartedPlaying = true;
 						}.bind(this)
 					);
 
 					if (this.recommendedMedia) {
-						this.recommendedMedia.initWrappers(
-							this.AudioPlayerData.instance.player.el_
-						);
+						this.recommendedMedia.initWrappers(this.AudioPlayerData.instance.player.el_);
 
-						this.AudioPlayerData.instance.player.one(
-							"pause",
-							this.recommendedMedia.init
-						);
-						this.AudioPlayerData.instance.player.on(
-							"fullscreenchange",
-							this.recommendedMedia.onResize
-						);
+						this.AudioPlayerData.instance.player.one('pause', this.recommendedMedia.init);
+						this.AudioPlayerData.instance.player.on('fullscreenchange', this.recommendedMedia.onResize);
 
-						PageStore.on("window_resize", this.recommendedMedia.onResize);
-						AudioPlayerStore.on(
-							"changed_viewer_mode",
-							this.recommendedMedia.onResize
-						);
+						PageStore.on('window_resize', this.recommendedMedia.onResize);
+						AudioPlayerStore.on('changed_viewer_mode', this.recommendedMedia.onResize);
 					}
 
-					this.AudioPlayerData.instance.player.one("ended", this.onAudioEnd);
+					this.AudioPlayerData.instance.player.one('ended', this.onAudioEnd);
 				}
 			}.bind(this),
 			50
@@ -264,7 +225,7 @@ export default class AudioViewer extends React.PureComponent {
 				50
 			);
 		}
-		window.removeEventListener("focus", this.initialDocumentFocus);
+		window.removeEventListener('focus', this.initialDocumentFocus);
 		this.initialDocumentFocus = null;
 	}
 
@@ -274,16 +235,14 @@ export default class AudioViewer extends React.PureComponent {
 
 	onClickNextButton() {
 		if (!this.props.inEmbed) {
-			window.location.href = MediaPageStore.get("media-data").related_media[0].url;
+			window.location.href = MediaPageStore.get('media-data').related_media[0].url;
 		}
 	}
 
 	onUpdateMediaAutoPlay() {
 		if (this.upNextLoaderView) {
-			if (PageStore.get("media-auto-play")) {
-				this.upNextLoaderView.showTimerView(
-					this.AudioPlayerData.instance.isEnded()
-				);
+			if (PageStore.get('media-auto-play')) {
+				this.upNextLoaderView.showTimerView(this.AudioPlayerData.instance.isEnded());
 			} else {
 				this.upNextLoaderView.hideTimerView();
 			}
@@ -296,56 +255,53 @@ export default class AudioViewer extends React.PureComponent {
 
 	onAudioRestart() {
 		if (this.recommendedMedia) {
-			this.recommendedMedia.updateDisplayType("inline");
-			this.AudioPlayerData.instance.player.one(
-				"pause",
-				this.recommendedMedia.init
-			);
-			this.AudioPlayerData.instance.player.one("ended", this.onAudioEnd);
+			this.recommendedMedia.updateDisplayType('inline');
+			this.AudioPlayerData.instance.player.one('pause', this.recommendedMedia.init);
+			this.AudioPlayerData.instance.player.one('ended', this.onAudioEnd);
 		}
 	}
 
 	onAudioEnd() {
 		if (this.recommendedMedia) {
-			this.recommendedMedia.updateDisplayType("full");
-			this.AudioPlayerData.instance.player.one("playing", this.onAudioRestart);
+			this.recommendedMedia.updateDisplayType('full');
+			this.AudioPlayerData.instance.player.one('playing', this.onAudioRestart);
 		}
 
-		const playlistId = this.props.inEmbed
-			? null
-			: MediaPageStore.get("playlist-id");
+		const playlistId = this.props.inEmbed ? null : MediaPageStore.get('playlist-id');
 
 		if (playlistId) {
-			const moreMediaEl = document.querySelector(".video-player .more-media");
-			const actionsAnimEl = document.querySelector(
-				".video-player .vjs-actions-anim"
-			);
-			this.upNextLoaderView.cancelTimer();
+			const moreMediaEl = document.querySelector('.video-player .more-media');
+			const actionsAnimEl = document.querySelector('.video-player .vjs-actions-anim');
+			if (this.upNextLoaderView) {
+				this.upNextLoaderView.cancelTimer();
+			}
 
-			const nextMediaUrl = MediaPageStore.get("playlist-next-media-url");
+			const nextMediaUrl = MediaPageStore.get('playlist-next-media-url');
 
 			if (nextMediaUrl) {
 				if (moreMediaEl) {
-					moreMediaEl.style.display = "none";
+					moreMediaEl.style.display = 'none';
 				}
 
 				if (actionsAnimEl) {
-					actionsAnimEl.style.display = "none";
+					actionsAnimEl.style.display = 'none';
 				}
 
 				window.location.href = nextMediaUrl;
 			}
 
-			this.upNextLoaderView.hideTimerView();
+			if (this.upNextLoaderView) {
+				this.upNextLoaderView.hideTimerView();
+			}
 
 			return;
 		}
 
 		if (this.upNextLoaderView) {
-			if (PageStore.get("media-auto-play")) {
+			if (PageStore.get('media-auto-play')) {
 				this.upNextLoaderView.startTimer();
 				this.AudioPlayerData.instance.player.one(
-					"play",
+					'play',
 					function () {
 						this.upNextLoaderView.cancelTimer();
 					}.bind(this)
@@ -358,10 +314,8 @@ export default class AudioViewer extends React.PureComponent {
 
 	onUpdateMediaAutoPlay() {
 		if (this.upNextLoaderView) {
-			if (PageStore.get("media-auto-play")) {
-				this.upNextLoaderView.showTimerView(
-					this.AudioPlayerData.instance.isEnded()
-				);
+			if (PageStore.get('media-auto-play')) {
+				this.upNextLoaderView.showTimerView(this.AudioPlayerData.instance.isEnded());
 			} else {
 				this.upNextLoaderView.hideTimerView();
 			}
@@ -369,10 +323,10 @@ export default class AudioViewer extends React.PureComponent {
 	}
 
 	updatePlayerVolume(playerVolume, playerSoundMuted) {
-		if (AudioPlayerStore.get("player-volume") !== playerVolume) {
+		if (AudioPlayerStore.get('player-volume') !== playerVolume) {
 			AudioPlayerActions.set_player_volume(playerVolume);
 		}
-		if (AudioPlayerStore.get("player-sound-muted") !== playerSoundMuted) {
+		if (AudioPlayerStore.get('player-sound-muted') !== playerSoundMuted) {
 			AudioPlayerActions.set_player_sound_muted(playerSoundMuted);
 		}
 	}
@@ -396,11 +350,7 @@ export default class AudioViewer extends React.PureComponent {
 		return (
 			<div className="player-container audio-player-container">
 				<div className="player-container-inner">
-					<div
-						className="video-player"
-						ref={this.videoPlayerWrapRef}
-						onClick={this.wrapperClick}
-					>
+					<div className="video-player" ref={this.videoPlayerWrapRef} onClick={this.wrapperClick}>
 						<audio
 							tabIndex="1"
 							ref={this.audioElemRef}
