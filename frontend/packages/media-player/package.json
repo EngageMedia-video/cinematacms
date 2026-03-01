@@ -1,56 +1,31 @@
 {
-  "name": "@mediacms/media-player",
-  "version": "0.1.0",
-  "description": "",
-  "author": "styiannis",
-  "license": "MIT",
-  "type": "module",
-  "keywords": [
-    "mediacms",
-    "media player",
-    "videojs"
-  ],
-  "main": "./dist/mediacms-media-player.js",
-  "module": "./src/",
-  "browser": "./dist/mediacms-media-player.js",
-  "files": [
-    "dist"
-  ],
-  "browserslist": [
-    "defaults"
-  ],
-  "scripts": {
-    "start": "npx rollup -w -c config/rollup.config.js",
-    "build": "npx rollup -c config/rollup.config.build.js",
-    "clean:build": "node ./scripts/rmrf.js ./dist",
-    "pack": "npm run build && npm pack"
-  },
-  "peerDependencies": {
-    "video.js": "^7.20.2"
-  },
-  "dependencies": {
-    "@mediacms/vjs-plugin": "file:../vjs-plugin"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.28.4",
-    "@babel/preset-env": "^7.28.3",
-    "@rollup/plugin-babel": "^6.0.4",
-    "@rollup/plugin-commonjs": "^28.0.6",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^16.0.1",
-    "ajv": "^8.17.1",
-    "core-js": "^3.45.1",
-    "css-loader": "^7.1.2",
-    "global": "^4.4.0",
-    "json-loader": "^0.5.7",
-    "postcss": "^8.5.6",
-    "rollup": "^4.50.1",
-    "rollup-plugin-cleanup": "^3.2.1",
-    "rollup-plugin-gzip": "^4.1.1",
-    "rollup-plugin-postcss": "^4.0.2",
-    "rollup-plugin-visualizer": "^6.0.3",
-    "sass": "^1.92.1",
-    "sass-loader": "^16.0.5",
-    "style-loader": "^4.0.0"
-  }
+	"name": "@mediacms/media-player",
+	"version": "0.1.0",
+	"description": "",
+	"author": "styiannis",
+	"license": "MIT",
+	"private": true,
+	"keywords": [
+		"mediacms",
+		"media player",
+		"videojs"
+	],
+	"main": "./dist/mediacms-media-player.js",
+	"browser": "./dist/mediacms-media-player.js",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "vite build",
+		"pack": "npm run build && npm pack"
+	},
+	"peerDependencies": {
+		"video.js": "^7.20.2"
+	},
+	"dependencies": {
+		"@mediacms/vjs-plugin": "file:../vjs-plugin"
+	},
+	"devDependencies": {
+		"vite": "^7.3.1"
+	}
 }
