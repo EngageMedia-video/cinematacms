@@ -138,7 +138,8 @@ export default class AudioViewer extends React.PureComponent {
 						titleLink.setAttribute('href', MediaPageStore.get('media-data').url);
 						titleLink.setAttribute('title', MediaPageStore.get('media-data').title);
 						titleLink.setAttribute('target', '_blank');
-						titleLink.innerHTML = MediaPageStore.get('media-data').title;
+						titleLink.setAttribute('rel', 'noopener noreferrer');
+						titleLink.textContent = MediaPageStore.get('media-data').title;
 					}
 
 					if (userThumbLink) {
@@ -146,8 +147,11 @@ export default class AudioViewer extends React.PureComponent {
 						userThumbLink.setAttribute('href', MediaPageStore.get('media-data').author_profile);
 						userThumbLink.setAttribute('title', MediaPageStore.get('media-data').author_name);
 						userThumbLink.setAttribute('target', '_blank');
-						userThumbLink.innerHTML =
-							'<img src="' + MediaPageStore.get('media-author-thumbnail-url') + '" alt="" />';
+						userThumbLink.setAttribute('rel', 'noopener noreferrer');
+						const img = document.createElement('img');
+						img.setAttribute('src', MediaPageStore.get('media-author-thumbnail-url'));
+						img.setAttribute('alt', '');
+						userThumbLink.appendChild(img);
 					}
 
 					this.AudioPlayerData.instance = new MediaPlayer(
@@ -268,7 +272,9 @@ export default class AudioViewer extends React.PureComponent {
 		if (playlistId) {
 			const moreMediaEl = document.querySelector('.video-player .more-media');
 			const actionsAnimEl = document.querySelector('.video-player .vjs-actions-anim');
-			this.upNextLoaderView.cancelTimer();
+			if (this.upNextLoaderView) {
+				this.upNextLoaderView.cancelTimer();
+			}
 
 			const nextMediaUrl = MediaPageStore.get('playlist-next-media-url');
 
@@ -284,7 +290,9 @@ export default class AudioViewer extends React.PureComponent {
 				window.location.href = nextMediaUrl;
 			}
 
-			this.upNextLoaderView.hideTimerView();
+			if (this.upNextLoaderView) {
+				this.upNextLoaderView.hideTimerView();
+			}
 
 			return;
 		}

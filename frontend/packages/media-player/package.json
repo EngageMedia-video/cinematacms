@@ -4,6 +4,7 @@
 	"description": "",
 	"author": "styiannis",
 	"license": "MIT",
+	"private": true,
 	"keywords": [
 		"mediacms",
 		"media player",
