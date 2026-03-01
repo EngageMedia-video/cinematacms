@@ -5,7 +5,7 @@ export default defineConfig({
 	build: {
 		lib: {
 			entry: resolve(__dirname, 'src/index.js'),
-			name: '@mediacms/vjs-plugin',
+			name: 'MediaCmsVjsPlugin',
 			formats: ['umd'],
 			fileName: () => 'mediacms-vjs-plugin.js',
 		},

@@ -5,7 +5,7 @@ export default defineConfig({
 	build: {
 		lib: {
 			entry: resolve(__dirname, 'src/index.js'),
-			name: '@mediacms/media-player',
+			name: 'MediaPlayer',
 			formats: ['umd'],
 			fileName: () => 'mediacms-media-player.js',
 		},

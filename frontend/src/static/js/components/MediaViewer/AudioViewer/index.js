@@ -7,7 +7,7 @@ import SiteContext from '../../../contexts/SiteContext';
 // Import the script for side effects only
 import '@mediacms/media-player/dist/mediacms-media-player.js';
 // The MediaPlayer is exposed as a global variable
-const MediaPlayer = window['@mediacms/media-player'];
+const MediaPlayer = window.MediaPlayer;
 import '@mediacms/media-player/dist/mediacms-media-player.css';
 
 import MediaPageStore from '../../../pages/MediaPage/store.js';
