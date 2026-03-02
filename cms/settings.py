@@ -1,5 +1,5 @@
 import os
-
+from datetime import timedelta
 from celery.schedules import crontab
 from corsheaders.defaults import default_headers
 
@@ -288,6 +288,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "cleanup_orphaned_uploads",
         "schedule": crontab(hour="2", minute="0"),
     },
+    # Dispatch deferred encoding tasks when queue capacity is available
+    "dispatch_deferred_encodings": {
+        "task": "dispatch_deferred_encodings",
+        "schedule": timedelta(seconds=60),
+    },
     #     "schedule": timedelta(seconds=5),
     #     "args": (16, 16)
 }
@@ -422,6 +427,11 @@ VIDEO_CHUNKS_DURATION = 60 * 4
 
 # always get these two, even if upscaling
 MINIMUM_RESOLUTIONS_TO_ENCODE = [240, 360]
+
+# Encoding rate limiting
+MAX_ENCODING_QUEUE_DEPTH = 50  # max pending+running encodings globally
+MAX_USER_CONCURRENT_ENCODES = 5  # max pending+running encodings per user
+ENCODING_DRAIN_LOCK_TIMEOUT = 120  # seconds before drain lock auto-expires
 
 # NOTIFICATIONS
 USERS_NOTIFICATIONS = {
