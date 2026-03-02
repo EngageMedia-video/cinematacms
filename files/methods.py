@@ -95,14 +95,14 @@ def pre_save_action(media, user, session_key, action, remote_ip):
     query = query.order_by("-action_date")
 
     if query:
-        query = query.first()
+        action_instance = query.first()
         if action in ["like", "dislike", "report"]:
             return False  # has alread done action once
         elif action == "watch":
             # Both logged-in and anonymous users can re-watch after video duration
             if media.duration:
                 now = timezone.now()
-                if (now - query.action_date).total_seconds() > media.duration:
+                if (now - action_instance.action_date).total_seconds() > media.duration:
                     return True
             # If no duration or cooldown not passed, fall through to return False
     else:

@@ -594,6 +594,72 @@ class Media(models.Model):
         tasks.produce_sprite_from_video.delay(self.friendly_token)
         return True
 
+    def _is_encoding_rate_limited(self):
+        """Check if encoding queue limits have been reached.
+
+        Only counts dispatched encodings (task_dispatched=True) since
+        deferred encodings aren't consuming worker/system resources.
+        """
+        active = Encoding.objects.filter(
+            status__in=["pending", "running"], task_dispatched=True,
+        )
+        global_count = active.count()
+        if global_count >= settings.MAX_ENCODING_QUEUE_DEPTH:
+            logger.warning(
+                "Encoding queue depth %d reached global limit %d, deferring encode for %s",
+                global_count, settings.MAX_ENCODING_QUEUE_DEPTH, self.friendly_token,
+            )
+            return True
+        user_count = active.filter(media__user=self.user).count()
+        if user_count >= settings.MAX_USER_CONCURRENT_ENCODES:
+            logger.warning(
+                "User %s has %d active encodes (limit %d), deferring encode for %s",
+                self.user, user_count, settings.MAX_USER_CONCURRENT_ENCODES, self.friendly_token,
+            )
+            return True
+        return False
+
+    def _dispatch_encoding(self, encoding, profile, force, priority=0, **extra_kwargs):
+        """Dispatch an encoding task to Celery, or defer it if rate limited.
+
+        Uses an atomic claim pattern to prevent TOCTOU races: the encoding
+        row is claimed via UPDATE ... WHERE task_dispatched=False before
+        dispatching to Celery, so concurrent uploads cannot both pass the
+        rate-limit check and dispatch.
+        """
+        from . import tasks
+
+        if self._is_encoding_rate_limited():
+            encoding.task_dispatched = False
+            encoding.save(update_fields=["task_dispatched"])
+            return False
+
+        # Atomically claim the row before dispatching
+        claimed = Encoding.objects.filter(
+            id=encoding.id, task_dispatched=False,
+        ).update(task_dispatched=True)
+        if not claimed:
+            # Already claimed by another concurrent dispatch
+            return False
+
+        enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
+        task_kwargs = {"force": force}
+        task_kwargs.update(extra_kwargs)
+        try:
+            tasks.encode_media.apply_async(
+                args=[self.friendly_token, profile.id, encoding.id, enc_url],
+                kwargs=task_kwargs,
+                priority=priority,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to dispatch encoding task for %s (encoding %d)",
+                self.friendly_token, encoding.id,
+            )
+            Encoding.objects.filter(id=encoding.id).update(task_dispatched=False)
+            return False
+        return True
+
     def encode(self, profiles=None, force=True, chunkize=True):
         if profiles is None:
             profiles = []
@@ -606,14 +672,9 @@ class Media(models.Model):
             for profile in profiles:
                 if profile.extension == "gif":
                     profiles.remove(profile)
-                    encoding = Encoding(media=self, profile=profile)
+                    encoding = Encoding(media=self, profile=profile, task_dispatched=False)
                     encoding.save()
-                    enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
-                    tasks.encode_media.apply_async(
-                        args=[self.friendly_token, profile.id, encoding.id, enc_url],
-                        kwargs={"force": force},
-                        priority=0,
-                    )
+                    self._dispatch_encoding(encoding, profile, force, priority=0)
             profiles = [p.id for p in profiles]
             tasks.chunkize_media.delay(self.friendly_token, profiles, force=force)
         else:
@@ -622,16 +683,13 @@ class Media(models.Model):
                     if self.video_height and self.video_height < profile.resolution:
                         if profile.resolution not in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
                             continue
-                encoding = Encoding(media=self, profile=profile)
+                encoding = Encoding(media=self, profile=profile, task_dispatched=False)
                 encoding.save()
-                enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
-                # priority!
-                priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
-                tasks.encode_media.apply_async(
-                    args=[self.friendly_token, profile.id, encoding.id, enc_url],
-                    kwargs={"force": force},
-                    priority=priority,
-                )
+                if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
+                    priority = 9
+                else:
+                    priority = 0
+                self._dispatch_encoding(encoding, profile, force, priority=priority)
         return True
 
     def post_encode_actions(self, encoding=None, action=None):
@@ -1220,6 +1278,19 @@ class Encoding(models.Model):
     chunk_file_path = models.CharField(max_length=400, blank=True)
     chunks_info = models.TextField(blank=True)
     md5sum = models.CharField(max_length=50, blank=True, null=True)
+    task_dispatched = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text="Whether the Celery task has been dispatched. False when deferred by rate limiting.",
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["status", "task_dispatched", "add_date"],
+                name="encoding_drain_idx",
+            ),
+        ]
 
     @property
     def media_encoding_url(self):
@@ -1685,6 +1756,47 @@ def media_save(sender, instance, created, **kwargs):
     instance.transcribe_function()
 
 
+def _revoke_encoding_tasks(media_instance):
+    """Revoke all pending/running Celery encoding tasks for a media instance.
+
+    Must be called BEFORE the Media is deleted, since CASCADE will
+    remove the Encoding records (and their task_ids) from the database.
+
+    Also kills ffmpeg subprocesses directly, because CASCADE may delete
+    Encoding records before the revoke signal reaches the worker, leaving
+    the task_revoked_handler unable to find the temp_file for cleanup.
+    """
+    from cms import celery_app
+    from .tasks import kill_ffmpeg_process
+
+    encodings = list(
+        media_instance.encodings.filter(
+            status__in=["pending", "running"],
+            task_id__gt="",
+        ).values_list("task_id", "temp_file")
+    )
+    if not encodings:
+        return
+
+    for task_id, temp_file in encodings:
+        try:
+            celery_app.control.revoke(task_id, terminate=True)
+            logger.info(
+                f"Revoked encoding task {task_id} for media "
+                f"{media_instance.friendly_token}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to revoke encoding task {task_id} for media "
+                f"{media_instance.friendly_token}: {e}"
+            )
+
+        # Kill ffmpeg subprocess directly — don't rely on task_revoked_handler
+        # since CASCADE may delete the Encoding before the signal fires
+        if temp_file:
+            kill_ffmpeg_process(temp_file)
+
+
 @receiver(pre_delete, sender=Media)
 def media_file_pre_delete(sender, instance, **kwargs):
     # Invalidate cache before deletion
@@ -1694,6 +1806,9 @@ def media_file_pre_delete(sender, instance, **kwargs):
     # Invalidate media path cache (for secure file serving)
     invalidate_func = get_invalidate_media_path_cache()
     invalidate_func(instance.id)
+
+    # Revoke any active encoding tasks before CASCADE deletes Encoding records
+    _revoke_encoding_tasks(instance)
 
     if instance.category.all():
         for category in instance.category.all():
