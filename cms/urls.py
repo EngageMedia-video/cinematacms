@@ -1,8 +1,11 @@
+import os
+
 from django.conf import settings
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import include, path
-from prometheus_client import generate_latest
+from prometheus_client import CollectorRegistry, generate_latest
+from prometheus_client import multiprocess as prom_multiprocess
 
 
 def metrics_view(request):
@@ -12,7 +15,17 @@ def metrics_view(request):
         from django.http import HttpResponseForbidden
 
         return HttpResponseForbidden()
-    return HttpResponse(generate_latest(), content_type="text/plain; version=0.0.4; charset=utf-8")
+
+    # Use multiprocess registry when PROMETHEUS_MULTIPROC_DIR is set (production),
+    # fall back to default in-process registry (dev with CELERY_TASK_ALWAYS_EAGER)
+    if os.environ.get("PROMETHEUS_MULTIPROC_DIR"):
+        registry = CollectorRegistry()
+        prom_multiprocess.MultiProcessCollector(registry)
+        data = generate_latest(registry)
+    else:
+        data = generate_latest()
+
+    return HttpResponse(data, content_type="text/plain; version=0.0.4; charset=utf-8")
 
 
 urlpatterns = [
