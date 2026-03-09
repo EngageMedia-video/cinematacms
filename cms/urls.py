@@ -6,6 +6,12 @@ from prometheus_client import generate_latest
 
 
 def metrics_view(request):
+    # Allow localhost (Prometheus scraper) or authenticated staff
+    remote_ip = request.META.get("REMOTE_ADDR", "")
+    if remote_ip not in ("127.0.0.1", "::1") and not (hasattr(request, "user") and request.user.is_staff):
+        from django.http import HttpResponseForbidden
+
+        return HttpResponseForbidden()
     return HttpResponse(generate_latest(), content_type="text/plain; version=0.0.4; charset=utf-8")
 
 
