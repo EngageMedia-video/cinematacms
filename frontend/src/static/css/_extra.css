@@ -3537,15 +3537,14 @@ body .items-list-ver .feat-first-item.hw-most-recent-videos .item:nth-child(2) {
 	}
 }
 
-/* When the top bar is displayed, give margin to logo navbar. */
-.top-message-body .page-header,
-.top-message-body #app-sidebar,
-.top-message-body .page-sidebar-inner {
-	margin-top: 43px;
+/* When the top bar is displayed, offset header and sidebar below it. */
+.top-message-body .page-header {
+	top: var(--top-message-height, 43px);
 }
 
-.top-message-body {
-	--top-message-height: 43px;
+.top-message-body #app-sidebar,
+.top-message-body .page-sidebar-inner {
+	margin-top: var(--top-message-height, 43px);
 }
 
 .top-message--text {

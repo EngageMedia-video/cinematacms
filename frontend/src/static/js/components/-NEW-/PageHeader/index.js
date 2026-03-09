@@ -187,12 +187,23 @@ export function PageHeader(props){
 	}, []);
 
 	useEffect(() => {
+		const updateHeight = () => {
+			const el = document.querySelector('.top-message');
+			if (el) {
+				document.body.style.setProperty('--top-message-height', el.offsetHeight + 'px');
+			}
+		};
+
 		if (topMessageHasBeenDisplayed === "false") {
 			document.body.classList.add("top-message-body");
+			requestAnimationFrame(updateHeight);
+			window.addEventListener('resize', updateHeight);
 		} else {
 			document.body.classList.remove("top-message-body");
+			document.body.style.setProperty('--top-message-height', '0px');
 		}
 
+		return () => window.removeEventListener('resize', updateHeight);
 	}, [topMessageHasBeenDisplayed, topMessageText]);
 
 	return (
