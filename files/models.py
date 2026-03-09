@@ -5,6 +5,7 @@ import random
 import re
 import shutil
 import tempfile
+import time
 import uuid
 
 import m3u8
@@ -650,6 +651,7 @@ class Media(models.Model):
                 args=[self.friendly_token, profile.id, encoding.id, enc_url],
                 kwargs=task_kwargs,
                 priority=priority,
+                headers={"enqueued_at": time.time()},
             )
         except Exception:
             logger.exception(

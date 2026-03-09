@@ -1,8 +1,16 @@
 from django.conf import settings
 from django.contrib import admin
+from django.http import HttpResponse
 from django.urls import include, path
+from prometheus_client import generate_latest
+
+
+def metrics_view(request):
+    return HttpResponse(generate_latest(), content_type="text/plain; version=0.0.4; charset=utf-8")
+
 
 urlpatterns = [
+    path("metrics", metrics_view),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
     path("", include("files.urls")),
     path("", include("users.urls")),
