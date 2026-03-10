@@ -374,6 +374,10 @@ class Media(models.Model):
             self.state = helpers.get_default_state(user=self.user)
             self.license = License.objects.filter(id=10).first()
         super(Media, self).save(*args, **kwargs)
+        # Notify user when video is published (state changed to public)
+        if self.pk and self.__original_state and self.__original_state != "public" and self.state == "public":
+            from .methods import notify_users
+            notify_users(friendly_token=self.friendly_token, action="media_published")
         # Invalidate permission cache if state or password changed
         if self.pk and (self.state != self.__original_state or self.password != self.__original_password):
             self._invalidate_permission_cache()

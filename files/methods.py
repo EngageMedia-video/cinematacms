@@ -190,6 +190,36 @@ URL: %s
             d["to"] = [media.user.email]
             notify_items.append(d)
 
+    if action == "media_published" and media:
+        if settings.USERS_NOTIFICATIONS.get("MEDIA_PUBLISHED", False):
+            title = f"[{settings.PORTAL_NAME}] - Your video is now public"
+            msg = """
+Dear %s,
+
+Good news! Your video has been reviewed and is now publicly available on %s.
+
+Video title: %s
+URL: %s
+
+Your video is now visible on our homepage, search results, and can be shared with anyone. Thank you for contributing to our community!
+
+Want to publish videos directly without review? Apply for Trusted User status to unlock self-publishing and all platform features. Contact us at curators@cinemata.org to learn more or if you have any questions.
+
+Best regards,
+The %s Team
+            """ % (
+                media.user.username,
+                settings.PORTAL_NAME,
+                media.title,
+                media_url,
+                settings.PORTAL_NAME,
+            )
+            d = {}
+            d["title"] = title
+            d["msg"] = msg
+            d["to"] = [media.user.email]
+            notify_items.append(d)
+
     if action == "media_auto_transcription" and media:
         title = f"[{settings.PORTAL_NAME}] - Auto-generated Transcription Completed"
         msg = """
