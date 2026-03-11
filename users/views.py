@@ -4,6 +4,7 @@ from django.core.mail import EmailMessage
 from django.db.models import Case, Q, Value, When
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view
@@ -160,30 +161,52 @@ def contact_user(request, username):
         )
     user = User.objects.filter(username=username).first()
     if user and (user.allow_contact or is_mediacms_editor(request.user)):
-        form_subject = request.data.get("subject")
-        from_email = request.user.email
-        subject = f"[{settings.PORTAL_NAME}] - Message from {from_email}"
-        body = request.data.get("body")
-        body = """
-You have received a message through the contact form\n
-Sender name: %s
-Sender email: %s\n
-\n %s
-\n %s
-""" % (
-            request.user.name,
-            from_email,
-            form_subject,
-            body,
+        sender = request.user
+        recipient = user
+        sender_display_name = sender.name or sender.username
+        recipient_display_name = recipient.name or recipient.username
+        form_subject = request.data.get("subject", "")
+        form_body = request.data.get("body", "")
+
+        if not form_subject or not form_body:
+            return Response(
+                {"detail": "Subject and body are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Email to recipient
+        recipient_email = EmailMessage(
+            subject=f"[{settings.PORTAL_NAME}] Message from {sender.username}: {form_subject}",
+            body=(
+                f"You have received a message from {sender_display_name} ({sender.email}) on {settings.PORTAL_NAME}.\n\n"
+                f"Subject: {form_subject}\n\n"
+                f"---\n{form_body}\n---\n\n"
+                f"Reply to this email to reach {sender_display_name} directly.\n\n"
+                f"--\nThis message was sent via {settings.PORTAL_NAME}\n"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[recipient.email],
+            reply_to=[sender.email],
         )
-        email = EmailMessage(
-            subject,
-            body,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            reply_to=[from_email],
+        recipient_email.send(fail_silently=True)
+
+        # Copy to sender
+        timestamp = timezone.now().strftime("%B %d, %Y at %I:%M %p")
+        sender_copy = EmailMessage(
+            subject=f"[{settings.PORTAL_NAME}] Copy of your message to {recipient_display_name}",
+            body=(
+                f"This is a copy of the message you sent on {settings.PORTAL_NAME}.\n\n"
+                f"To: {recipient_display_name}\n"
+                f"Date: {timestamp}\n"
+                f"Subject: {form_subject}\n\n"
+                f"---\n{form_body}\n---\n\n"
+                f"This is a confirmation copy for your records.\n\n"
+                f"--\nThis message was sent via {settings.PORTAL_NAME}\n"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[sender.email],
         )
-        email.send(fail_silently=True)
+        sender_copy.send(fail_silently=True)
 
     return Response(status=status.HTTP_204_NO_CONTENT)
 
