@@ -1,0 +1,76 @@
+{
+  "dashboard": {
+    "title": "Cinemata - Encoding Queue Wait Time",
+    "uid": "encoding-queue-wait",
+    "panels": [
+      {
+        "title": "Encoding Queue Wait Time (p50 / p95 / p99)",
+        "type": "timeseries",
+        "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum by (le)(rate(cinemata_encoding_queue_wait_seconds_bucket[5m])))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum by (le)(rate(cinemata_encoding_queue_wait_seconds_bucket[5m])))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum by (le)(rate(cinemata_encoding_queue_wait_seconds_bucket[5m])))",
+            "legendFormat": "p99"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 30 },
+                { "color": "red", "value": 60 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "title": "Tasks Processed (rate)",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+        "targets": [
+          {
+            "expr": "rate(cinemata_encoding_queue_wait_seconds_count[5m])",
+            "legendFormat": "tasks/sec"
+          }
+        ]
+      },
+      {
+        "title": "Average Queue Wait Time",
+        "type": "stat",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+        "targets": [
+          {
+            "expr": "rate(cinemata_encoding_queue_wait_seconds_sum[5m]) / rate(cinemata_encoding_queue_wait_seconds_count[5m])",
+            "legendFormat": "avg wait"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "thresholds": {
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 30 },
+                { "color": "red", "value": 60 }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "time": { "from": "now-6h", "to": "now" },
+    "refresh": "30s"
+  },
+  "overwrite": true
+}

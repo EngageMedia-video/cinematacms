@@ -242,6 +242,23 @@ def encode_media(
     chunk_file_path="",
 ):
     logger.info(f"Encode Media started, friendly token {friendly_token}, profile id {profile_id}, force {force}")
+
+    # Track queue wait time for monitoring
+    enqueued_at = (self.request.headers or {}).get("enqueued_at")
+    if enqueued_at:
+        from .metrics import ENCODING_QUEUE_WAIT_SECONDS
+
+        queue_wait = time.time() - enqueued_at
+        try:
+            ENCODING_QUEUE_WAIT_SECONDS.observe(queue_wait)
+        except Exception:
+            logger.warning("Failed to record queue wait metric (metrics dir may have been recycled)")
+        if queue_wait > settings.MAX_QUEUE_WAIT_SECONDS:
+            logger.warning(
+                "Task for %s (profile %s) waited %.1fs in queue (threshold: %ds)",
+                friendly_token, profile_id, queue_wait, settings.MAX_QUEUE_WAIT_SECONDS,
+            )
+
     # TODO: if called as function, not as task, what is the value for this?
     task_id = self.request.id or None
     try:
@@ -1564,6 +1581,7 @@ def _dispatch_deferred_encodings_inner():
                 args=[encoding.media.friendly_token, encoding.profile.id, encoding.id, enc_url],
                 kwargs=task_kwargs,
                 priority=priority,
+                headers={"enqueued_at": time.time()},
             )
         except Exception:
             logger.exception(

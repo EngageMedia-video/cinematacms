@@ -1,8 +1,42 @@
+import os
+
 from django.conf import settings
 from django.contrib import admin
+from django.http import HttpResponse
 from django.urls import include, path
+from prometheus_client import CollectorRegistry, generate_latest
+from prometheus_client import multiprocess as prom_multiprocess
+
+
+def metrics_view(request):
+    # Primary access control: nginx should restrict /metrics to localhost.
+    # This Django check is defense-in-depth using the real client IP
+    # (X-Forwarded-For set by nginx) rather than REMOTE_ADDR which is
+    # always 127.0.0.1 behind a reverse proxy.
+    client_ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
+    if not client_ip:
+        client_ip = request.META.get("REMOTE_ADDR", "")
+    is_localhost = client_ip in ("127.0.0.1", "::1")
+    is_staff = hasattr(request, "user") and request.user.is_staff
+    if not is_localhost and not is_staff:
+        from django.http import HttpResponseForbidden
+
+        return HttpResponseForbidden()
+
+    # Use multiprocess registry when PROMETHEUS_MULTIPROC_DIR is set (production),
+    # fall back to default in-process registry (dev with CELERY_TASK_ALWAYS_EAGER)
+    if os.environ.get("PROMETHEUS_MULTIPROC_DIR"):
+        registry = CollectorRegistry()
+        prom_multiprocess.MultiProcessCollector(registry)
+        data = generate_latest(registry)
+    else:
+        data = generate_latest()
+
+    return HttpResponse(data, content_type="text/plain; version=0.0.4; charset=utf-8")
+
 
 urlpatterns = [
+    path("metrics", metrics_view),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
     path("", include("files.urls")),
     path("", include("users.urls")),

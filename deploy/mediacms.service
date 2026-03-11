@@ -2,6 +2,8 @@
 Description=uwsgi cinemata
 
 [Service]
+Environment=PROMETHEUS_MULTIPROC_DIR="/tmp/prometheus_multiproc"
+ExecStartPre=/bin/bash -c "mkdir -p /tmp/prometheus_multiproc && chown www-data:www-data /tmp/prometheus_multiproc"
 ExecStart=/home/cinemata/bin/uwsgi --ini /home/cinemata/cinematacms/uwsgi.ini
 ExecStop=/usr/bin/killall -9 uwsgi
 RestartSec=3

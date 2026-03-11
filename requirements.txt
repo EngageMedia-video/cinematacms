@@ -148,6 +148,8 @@ pillow==12.1.1
     # via
     #   cinemata
     #   pilkit
+prometheus-client==0.24.1
+    # via cinemata
 prompt-toolkit==3.0.52
     # via
     #   click-repl
