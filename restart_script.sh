@@ -41,6 +41,10 @@ python manage.py migrate
 echo "Updating ownership..."
 chown -R www-data. /home/cinemata/
 
+# Reload systemd unit files in case service definitions changed
+echo "Reloading systemd daemon..."
+systemctl daemon-reload
+
 # Restart services
 echo "Restarting services..."
 systemctl restart celery_long
