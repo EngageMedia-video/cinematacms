@@ -9,9 +9,16 @@ from prometheus_client import multiprocess as prom_multiprocess
 
 
 def metrics_view(request):
-    # Allow localhost (Prometheus scraper) or authenticated staff
-    remote_ip = request.META.get("REMOTE_ADDR", "")
-    if remote_ip not in ("127.0.0.1", "::1") and not (hasattr(request, "user") and request.user.is_staff):
+    # Primary access control: nginx should restrict /metrics to localhost.
+    # This Django check is defense-in-depth using the real client IP
+    # (X-Forwarded-For set by nginx) rather than REMOTE_ADDR which is
+    # always 127.0.0.1 behind a reverse proxy.
+    client_ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
+    if not client_ip:
+        client_ip = request.META.get("REMOTE_ADDR", "")
+    is_localhost = client_ip in ("127.0.0.1", "::1")
+    is_staff = hasattr(request, "user") and request.user.is_staff
+    if not is_localhost and not is_staff:
         from django.http import HttpResponseForbidden
 
         return HttpResponseForbidden()

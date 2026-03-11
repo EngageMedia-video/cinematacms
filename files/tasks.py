@@ -249,7 +249,10 @@ def encode_media(
         from .metrics import ENCODING_QUEUE_WAIT_SECONDS
 
         queue_wait = time.time() - enqueued_at
-        ENCODING_QUEUE_WAIT_SECONDS.observe(queue_wait)
+        try:
+            ENCODING_QUEUE_WAIT_SECONDS.observe(queue_wait)
+        except Exception:
+            logger.warning("Failed to record queue wait metric (metrics dir may have been recycled)")
         if queue_wait > settings.MAX_QUEUE_WAIT_SECONDS:
             logger.warning(
                 "Task for %s (profile %s) waited %.1fs in queue (threshold: %ds)",
