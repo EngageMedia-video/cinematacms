@@ -46,7 +46,6 @@ This makes CinemataCMS one of the few open-source video platforms with both a th
 Built on [MediaCMS](https://github.com/mediacms-io/mediacms), with Cinemata-specific additions:
 
 - **OTF-audited security** — MFA, X-Accel-Redirect media protection, session hardening
-- **HLS video encryption** — AES-128 encrypted stream segments; Cloudflare-cacheable with Django-gated key delivery *(in progress)*
 - **AI transcription** — [Whisper.cpp](https://github.com/ggml-org/whisper.cpp) integration for English translation and subtitle generation
 - **SRT subtitle management** — Upload, edit, and download subtitle/caption files
 - **Granular media privacy** — Public, private, and password-protected content with enforced file-level access controls
@@ -55,6 +54,7 @@ Built on [MediaCMS](https://github.com/mediacms-io/mediacms), with Cinemata-spec
 - **Notification system** *(active development)* — Bell icon, in-app and email notifications
 - **Timeline-based video commenting** *(active development)* — Comment at specific timestamps, rendered as Video.js markers
 - **@Mention system** *(active development)* — User mentions in comments with autocomplete and notification triggers
+- - **HLS video encryption** — AES-128 encrypted stream segments; Cloudflare-cacheable with Django-gated key delivery *(active development*
 - **User following and subscriptions** *(active development)*
 - **Privacy-by-design** — No third-party tracker dependencies; self-hosted static assets; activity logging opt-out
 
@@ -62,7 +62,7 @@ Built on [MediaCMS](https://github.com/mediacms-io/mediacms), with Cinemata-spec
 
 ## ⚡ Modern Developer Experience
 
-CinemataCMS has undergone a complete frontend modernization — merged into `main` in 
+CinemataCMS has undergone a complete frontend modernisation — merged into `main` in 
 February 2026 — making it substantially easier to work on than most Django-based 
 video platforms of comparable age.
 
