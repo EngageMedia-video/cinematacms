@@ -51,7 +51,7 @@ Built on [MediaCMS](https://github.com/mediacms-io/mediacms), with Cinemata-spec
 - **SRT subtitle management** — Upload, edit, and download subtitle/caption files
 - **Granular media privacy** — Public, private, and password-protected content with enforced file-level access controls
 - **Expanded user roles** — Trusted User role with elevated publishing and ASR access; Curator role
-- **Featured video and playlist scheduling** — Editorial control over homepage curation
+- **Featured video scheduling** — Editorial control over homepage curation
 - **Notification system** *(active development)* — Bell icon, in-app and email notifications
 - **Timeline-based video commenting** *(active development)* — Comment at specific timestamps, rendered as Video.js markers
 - **@Mention system** *(active development)* — User mentions in comments with autocomplete and notification triggers
