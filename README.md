@@ -60,6 +60,37 @@ Built on [MediaCMS](https://github.com/mediacms-io/mediacms), with Cinemata-spec
 
 ---
 
+## ⚡ Modern Developer Experience
+
+CinemataCMS has undergone a complete frontend modernization — merged into `main` in 
+February 2026 — making it substantially easier to work on than most Django-based 
+video platforms of comparable age.
+
+**What changed:**
+
+- **React 17 → React 19** — The entire codebase runs on current React. All 
+  `ReactDOM.render` calls migrated to `createRoot`; breaking change fixes applied 
+  throughout ([#430](https://github.com/EngageMedia-video/cinematacms/pull/430))
+- **Webpack → Vite** — ~760 lines of Webpack config replaced with ~80 lines of Vite 
+  config. Dev server cold start drops from 15–30 seconds to under 2 seconds. HMR 
+  from 2–5 seconds to under 500ms. Webpack has been entirely removed from the 
+  codebase ([#432](https://github.com/EngageMedia-video/cinematacms/pull/432))
+- **django-vite integration** — Asset loading via `{% vite_asset %}` across all 27 
+  page entry points; content-hashed production builds with manifest; HMR in 
+  development mode via WebSocket
+- **Dual-track architecture** — A clear, documented boundary between legacy code 
+  (leave it alone) and new code (use modern patterns):
+  - **Legacy track**: existing Flux-based components; stable, untouched
+  - **Modern track**: new features use React hooks, TanStack Query (server state), 
+    Zustand (client state), and Tailwind CSS v4
+- **`/modern-demo` page** — A live, staff-accessible demonstration of the modern 
+  track architecture showing TanStack Query + Zustand + Tailwind v4 working together 
+  ([#434](https://github.com/EngageMedia-video/cinematacms/pull/434))
+- **Contributor docs** — `CONTRIBUTING.md` documents the dual-track architecture, 
+  naming conventions (`components/-NEW-/`), dev workflow, and track boundary rules
+
+---
+
 ## 💻 Developer Opportunities
 
 We're building a vibrant developer community. **Paid opportunities** are available for developers based in Southeast Asia — part of our commitment to growing regional open-source capacity.
