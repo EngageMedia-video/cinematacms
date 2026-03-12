@@ -15,7 +15,7 @@ CinemataCMS has undergone a comprehensive security audit by the [Open Technology
 - **Session management hardening** and API access controls
 - **Frontend dependency security updates**
 
-This makes CinemataCMS one of the few open-source video platforms with documented, third-party security review — particularly relevant for human rights organisations, activist archives, and civil society groups operating in high-risk or censorship-sensitive contexts.
+This makes CinemataCMS one of the few open-source video platforms with documented, third-party security review — particularly relevant for human rights organisations, activist archives, and civil society groups operating in high-risk or censorship-sensitive contexts. Read the full report [here](https://www.opentech.fund/security-safety-audits/cinemata/).
 
 ---
 
