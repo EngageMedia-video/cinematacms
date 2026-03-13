@@ -9,123 +9,128 @@ import { PlaylistItem } from './PlaylistItem';
 import { TaxonomyItem } from './TaxonomyItem';
 import { MediaItem as ImageItem } from './MediaItem';
 import { MediaItem as PdfItem } from './MediaItem';
-import { MediaItem as AttachmentItem  } from './MediaItem';
+import { MediaItem as AttachmentItem } from './MediaItem';
 import { MediaItemAudio as AudioItem } from './MediaItemAudio';
 import { MediaItemVideo as VideoItem } from './MediaItemVideo';
 
-function extractPlaylistId(){
+function extractPlaylistId() {
+	let playlistId = null;
 
-    let playlistId = null;
+	const getParamsString = window.location.search;
 
-    const getParamsString = window.location.search;
+	if ('' !== getParamsString) {
+		let tmp = getParamsString.split('?');
 
-    if( '' !== getParamsString ){
+		if (2 === tmp.length) {
+			tmp = tmp[1].split('&');
 
-        let tmp = getParamsString.split('?');
+			let x;
 
-        if( 2 === tmp.length ){
+			let i = 0;
+			while (i < tmp.length) {
+				x = tmp[i].split('=');
 
-            tmp = tmp[1].split('&');
+				if ('pl' === x[0]) {
+					if (2 === x.length) {
+						playlistId = x[1];
+					}
 
-            let x;
+					break;
+				}
 
-            let i = 0;
-            while(i < tmp.length){
+				i += 1;
+			}
+		}
+	}
 
-                x = tmp[i].split('=');
-
-                if( 'pl' === x[0] ){
-
-                    if( 2 === x.length ){
-                        playlistId = x[1];
-                    }
-
-                    break;
-                }
-
-                i += 1;
-            }
-        }
-    }
-
-    return playlistId;
+	return playlistId;
 }
 
-function itemPageLink( props, item ){
-
-	if( props.inCategoriesList ){
-		return LinksContext._currentValue.search.category + item.title.replace( " ", "%20" );
+function itemPageLink(props, item) {
+	if (props.inCategoriesList) {
+		return LinksContext._currentValue.search.category + item.title.replace(' ', '%20');
 	}
 
-	if( props.inTagsList ){
-		return LinksContext._currentValue.search.tag + item.title.replace( " ", "%20" );
+	if (props.inTagsList) {
+		return LinksContext._currentValue.search.tag + item.title.replace(' ', '%20');
 	}
 
-	if( props.inTopicsList ){
-		return LinksContext._currentValue.search.topic + item.title.replace( " ", "%20" );
+	if (props.inTopicsList) {
+		return LinksContext._currentValue.search.topic + item.title.replace(' ', '%20');
 	}
 
-	if( props.inLanguagesList ){
-		return LinksContext._currentValue.search.language + item.title.replace( " ", "%20" );
+	if (props.inLanguagesList) {
+		return LinksContext._currentValue.search.language + item.title.replace(' ', '%20');
 	}
 
-	if( props.inCountriesList ){
-		return LinksContext._currentValue.search.country + item.title.replace( " ", "%20" );
+	if (props.inCountriesList) {
+		return LinksContext._currentValue.search.country + item.title.replace(' ', '%20');
 	}
 
 	const playlistId = extractPlaylistId();
 
-	if( props.inPlaylistView && playlistId ){
+	if (props.inPlaylistView && playlistId) {
 		return item.url + '&pl=' + playlistId;
 	}
 
-	if( void 0 !== props.playlistId && null !== props.playlistId ){
+	if (void 0 !== props.playlistId && null !== props.playlistId) {
 		return item.url + '&pl=' + props.playlistId;
 	}
 
 	return item.url;
 }
 
-export function listItemProps( props, item, index ){
-	const isArchiveItem = props.inCategoriesList || props.inTagsList || props.inTopicsList || props.inLanguagesList || props.inCountriesList;
-	const isUserItem = ! isArchiveItem && void 0 !== item.username;
-	const isPlaylistItem = ! isArchiveItem && ! isUserItem && ( "playlist" === item.media_type || ( void 0 !== item.url && -1 < item.url.indexOf('playlists') ) );	// TODO: Re-check this.
-	const isMediaItem = ! isArchiveItem && ! isUserItem && ! isPlaylistItem;
-	const isSearchItem = 'search-results' === PageStore.get('current-page');	// TODO: Re-check this.
+export function listItemProps(props, item, index) {
+	const isArchiveItem =
+		props.inCategoriesList ||
+		props.inTagsList ||
+		props.inTopicsList ||
+		props.inLanguagesList ||
+		props.inCountriesList;
+	const isUserItem = !isArchiveItem && void 0 !== item.username;
+	const isPlaylistItem =
+		!isArchiveItem &&
+		!isUserItem &&
+		('playlist' === item.media_type || (void 0 !== item.url && -1 < item.url.indexOf('playlists'))); // TODO: Re-check this.
+	const isMediaItem = !isArchiveItem && !isUserItem && !isPlaylistItem;
+	const isSearchItem = 'search-results' === PageStore.get('current-page'); // TODO: Re-check this.
 
 	const url = {
-		view: itemPageLink( props, item ),
+		view: itemPageLink(props, item),
 		edit: props.canEdit ? item.url.replace('view?m=', 'edit?m=') : null,
 	};
 
 	const taxonomies = {
-		categories: Array.isArray( item.categories_info ) && item.categories_info.length ? item.categories_info : null,
+		categories: Array.isArray(item.categories_info) && item.categories_info.length ? item.categories_info : null,
 	};
 
-	const thumbnail = item.thumbnail_url || "";
-	const previewThumbnail = item.preview_url || "";
+	const thumbnail = item.thumbnail_url || '';
+	const previewThumbnail = item.preview_url || '';
 
 	let type, taxonomyType, title, date, description, meta_description;
 
 	// For user items, use name field if available, otherwise username
 	if (void 0 !== item.username && 'string' === typeof item.username) {
-		title = (void 0 !== item.name && 'string' === typeof item.name && item.name.trim()) ? item.name : item.username;
+		title = void 0 !== item.name && 'string' === typeof item.name && item.name.trim() ? item.name : item.username;
 	} else {
 		title = void 0 !== item.title && 'string' === typeof item.title ? item.title : null;
 	}
 
-	date = void 0 !== item.date_added && 'string' === typeof item.date_added ? item.date_added : ( void 0 !== item.add_date && 'string' === typeof item.add_date ? item.add_date : null );
+	date =
+		void 0 !== item.date_added && 'string' === typeof item.date_added
+			? item.date_added
+			: void 0 !== item.add_date && 'string' === typeof item.add_date
+				? item.add_date
+				: null;
 
 	// description = props.preferSummary && 'string' === typeof props.summary ? props.summary.trim() : ( 'string' === typeof item.description ? item.description.trim() : null );
 	// description = null === description ? description : description.replace(/(<([^>]+)>)/ig,"");
 
-	if( isUserItem ){
+	if (isUserItem) {
 		type = 'user';
-	}
-	else if( isPlaylistItem ){
+	} else if (isPlaylistItem) {
 		type = 'playlist';
-	}
-	else if( isMediaItem ){
+	} else if (isMediaItem) {
 		type = item.media_type;
 	}
 
@@ -148,32 +153,27 @@ export function listItemProps( props, item, index ){
 		hideOrderNumber: props.hidePlaylistOrderNumber || false,
 	};
 
-	if( isArchiveItem ){
-
-		if( props.inCategoriesList ){
+	if (isArchiveItem) {
+		if (props.inCategoriesList) {
 			taxonomyPage.type = 'categories';
-		}
-		else if( props.inTagsList ){
+		} else if (props.inTagsList) {
 			taxonomyPage.type = 'tags';
-		}
-		else if( props.inTopicsList ){
+		} else if (props.inTopicsList) {
 			taxonomyPage.type = 'topics';
-		}
-		else if( props.inLanguagesList ){
+		} else if (props.inLanguagesList) {
 			taxonomyPage.type = 'languages';
-		}
-		else if( props.inCountriesList ){
+		} else if (props.inCountriesList) {
 			taxonomyPage.type = 'countries';
 		}
 
-		if( null !== taxonomyPage.type ){
+		if (null !== taxonomyPage.type) {
 			taxonomyPage.current = true;
 		}
 	}
 
 	const author = {
 		name: item.author_name || item.user,
-		url: item.author_profile ? item.author_profile.replace( " ", "%20" ) : null,
+		url: item.author_profile ? item.author_profile.replace(' ', '%20') : null,
 	};
 
 	const stats = {
@@ -199,61 +199,61 @@ export function listItemProps( props, item, index ){
 		playlistPlayback,
 		canEdit: null !== url.edit,
 		singleLinkContent: props.singleLinkContent || false,
-		hasMediaViewer: 0 === index && 'video' === item.media_type && !! props.firstItemViewer,
+		hasMediaViewer: 0 === index && 'video' === item.media_type && !!props.firstItemViewer,
 		hasMediaViewerDescr: false,
 		countries: item.media_country_info || [],
 		state: item.state || null,
 	};
 
-	args.hasMediaViewerDescr = args.hasMediaViewer && !! props.firstItemDescr;
+	args.hasMediaViewerDescr = args.hasMediaViewer && !!props.firstItemDescr;
 
-	if( ! args.hasMediaViewerDescr ){
-
-		description = props.preferSummary && 'string' === typeof props.summary ? props.summary.trim() : ( 'string' === typeof item.description ? item.description.trim() : null );
-		description = null === description ? description : description.replace(/(<([^>]+)>)/ig,"");
-
-		if( isSearchItem || props.inCategoriesList || 'user' === type ){
-			args.description = description;
+	if (!args.hasMediaViewerDescr) {
+		if (isSearchItem) {
+			description = 'string' === typeof item.summary ? item.summary.trim() : null;
+		} else {
+			description = 'string' === typeof item.description ? item.description.trim() : null;
 		}
-		else{
+		description = null === description ? description : description.replace(/(<([^>]+)>)/gi, '');
+
+		if (isSearchItem || props.inCategoriesList || 'user' === type) {
+			args.description = description;
+		} else {
 			args.meta_description = description;
 		}
-	}
-	else{
-
-		if( !! props.firstItemViewer ){
-			description = 'string' === typeof props.summary ? props.summary.trim() : null ;
-		}
-		else{
+	} else {
+		if (!!props.firstItemViewer) {
+			description = 'string' === typeof props.summary ? props.summary.trim() : null;
+		} else {
 			description = 'string' === typeof item.description ? item.description.trim() : null;
 		}
 
-		description = null === description ? description : description.replace(/(<([^>]+)>)/ig,"");
+		description = null === description ? description : description.replace(/(<([^>]+)>)/gi, '');
 
 		args.description = description;
 
 		// TODO: Continue here...
-		if( props.summary ){
+		if (props.summary) {
 			meta_description = props.summary.trim();
-			meta_description = null === meta_description ? meta_description : meta_description.replace(/(<([^>]+)>)/ig,"");
+			meta_description =
+				null === meta_description ? meta_description : meta_description.replace(/(<([^>]+)>)/gi, '');
 			args.meta_description = meta_description;
 		}
 	}
 
-	if( 'video' === type ){
+	if ('video' === type) {
 		args.previewThumbnail = previewThumbnail;
 	}
 
-	if( 'video' === type || 'audio' === type ){
+	if ('video' === type || 'audio' === type) {
 		args.duration = item.duration;
 	}
 
-	if( ( isArchiveItem || isPlaylistItem || isUserItem ) && ! isNaN( item.media_count ) ){
-		args.media_count = parseInt( item.media_count, 10 );
+	if ((isArchiveItem || isPlaylistItem || isUserItem) && !isNaN(item.media_count)) {
+		args.media_count = parseInt(item.media_count, 10);
 	}
 
 	// Pass user-specific fields
-	if( isUserItem ){
+	if (isUserItem) {
 		args.username = item.username;
 		args.name = item.name;
 		args.location = item.location;
@@ -264,14 +264,13 @@ export function listItemProps( props, item, index ){
 		args.is_manager = item.is_manager;
 	}
 
-	if( isMediaItem ){
-
-		hide.date = index === 0 ? true : (props.hideDate || false);
-		hide.views = index === 0 ? false : (props.hideViews || false);
+	if (isMediaItem) {
+		hide.date = index === 0 ? true : props.hideDate || false;
+		hide.views = index === 0 ? false : props.hideViews || false;
 		hide.author = props.hideAuthor || false;
 		hide.categories = props.hideCategories || false;
 
-		if( hide.categories ){
+		if (hide.categories) {
 			taxonomies.categories = null;
 		}
 	}
@@ -285,8 +284,7 @@ export function listItemProps( props, item, index ){
 	return args;
 }
 
-export function ListItem(props){
-
+export function ListItem(props) {
 	let isMediaItem = false;
 
 	const args = {
@@ -301,7 +299,7 @@ export function ListItem(props){
 		countries: props.countries,
 	};
 
-	switch( props.type ){
+	switch (props.type) {
 		case 'user':
 			// Pass user-specific props
 			args.username = props.username;
@@ -333,26 +331,25 @@ export function ListItem(props){
 			break;
 	}
 
-	if( void 0 !== props.description ){
+	if (void 0 !== props.description) {
 		args.description = props.description;
 	}
 
-	if( void 0 !== props.meta_description ){
+	if (void 0 !== props.meta_description) {
 		args.meta_description = props.meta_description;
 	}
 
-	if( ( props.taxonomyPage.current || 'playlist' === props.type ) && ! isNaN( props.media_count ) ){
+	if ((props.taxonomyPage.current || 'playlist' === props.type) && !isNaN(props.media_count)) {
 		args.media_count = props.media_count;
 	}
 
-	if( null !== props.taxonomies.categories ){
+	if (null !== props.taxonomies.categories) {
 		args.categories = props.taxonomies.categories;
 	}
 
 	args.hideAllMeta = props.hide.allMeta;
 
-	if( isMediaItem ){
-
+	if (isMediaItem) {
 		args.views = props.stats.views;
 
 		args.author_name = props.author.name;
@@ -366,45 +363,42 @@ export function ListItem(props){
 		args.state = props.state;
 	}
 
-	if( props.playlistPage.current || props.playlistPlayback.current ){
-
+	if (props.playlistPage.current || props.playlistPlayback.current) {
 		args.playlistOrder = props.order;
 
-		if( props.playlistPlayback.current ){
+		if (props.playlistPlayback.current) {
 			args.playlist_id = props.playlistPlayback.id;
 			args.playlistActiveItem = props.playlistPlayback.activeItem;
 			args.hidePlaylistOrderNumber = props.playlistPlayback.hideOrderNumber;
-		}
-		else{
+		} else {
 			args.playlist_id = props.playlistPage.id;
 			args.hidePlaylistOptions = props.playlistPage.hideOptions;
 			args.hidePlaylistOrderNumber = props.playlistPage.hideOrderNumber;
 		}
 	}
 
-	if( props.canEdit ){
+	if (props.canEdit) {
 		args.editLink = props.url.edit;
 	}
 
 	// console.log( args );
 
-	if( props.taxonomyPage.current ){
-
-		switch( props.taxonomyPage.type ){
+	if (props.taxonomyPage.current) {
+		switch (props.taxonomyPage.type) {
 			case 'categories':
-				return <TaxonomyItem {...args} type='category' />;
+				return <TaxonomyItem {...args} type="category" />;
 			case 'tags':
-				return <TaxonomyItem {...args} type='tag' />;
+				return <TaxonomyItem {...args} type="tag" />;
 			case 'topics':
-				return <TaxonomyItem {...args} type='topic' />;
+				return <TaxonomyItem {...args} type="topic" />;
 			case 'languages':
-				return <TaxonomyItem {...args} type='language' />;
+				return <TaxonomyItem {...args} type="language" />;
 			case 'countries':
-				return <TaxonomyItem {...args} type='country' />;
+				return <TaxonomyItem {...args} type="country" />;
 		}
 	}
 
-	switch( props.type ){
+	switch (props.type) {
 		case 'user':
 			return <UserItem {...args} />;
 		case 'playlist':
@@ -414,10 +408,10 @@ export function ListItem(props){
 		case 'audio':
 			return <AudioItem {...args} />;
 		case 'image':
-			return <ImageItem {...args} type='image' />;
+			return <ImageItem {...args} type="image" />;
 		case 'pdf':
-			return <PdfItem {...args} type='pdf' />;
+			return <PdfItem {...args} type="pdf" />;
 	}
 
-	return <AttachmentItem {...args} type='attachment' />;
+	return <AttachmentItem {...args} type="attachment" />;
 }
