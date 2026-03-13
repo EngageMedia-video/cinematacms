@@ -203,7 +203,7 @@ URL: %s
 
 Your video is now visible on our homepage, search results, and can be shared with anyone. Thank you for contributing to our community!
 
-Want to publish videos directly without review? Apply for Trusted User status to unlock self-publishing and all platform features. Contact us at curators@cinemata.org to learn more or if you have any questions.
+Want to publish videos directly without review? Apply for Trusted User status to unlock self-publishing and all platform features. Contact us at %s to learn more or if you have any questions.
 
 Best regards,
 The %s Team
@@ -212,6 +212,7 @@ The %s Team
                 settings.PORTAL_NAME,
                 media.title,
                 media_url,
+                settings.CURATOR_CONTACT_EMAIL,
                 settings.PORTAL_NAME,
             )
             d = {}
@@ -227,14 +228,16 @@ Dear %s,
 
 The auto-generated transcription of your video has been created. You can now view and review it here: %s.
 
-For questions or concerns about the transcription, please reach out to curators@cinemata.org.
+For questions or concerns about the transcription, please reach out to %s.
 
 Best,
-The Cinemata Curatorial Team
+The %s Team
 
         """ % (
             media.user.username,
             media_url,
+            settings.CURATOR_CONTACT_EMAIL,
+            settings.PORTAL_NAME,
         )
         if extra == "translation":
             title = f"[{settings.PORTAL_NAME}] - Auto-generated English Translation Completed"
@@ -244,14 +247,16 @@ Dear %s,
 
 The auto-generated English translation of your video has been created. You can now view and review it here: %s.
 
-For questions or concerns about the transcription, please reach out to curators@cinemata.org.
+For questions or concerns about the transcription, please reach out to %s.
 
 Best,
-The Cinemata Curatorial Team
+The %s Team
 
         """ % (
                 media.user.username,
                 media_url,
+                settings.CURATOR_CONTACT_EMAIL,
+                settings.PORTAL_NAME,
             )
 
         d = {}
