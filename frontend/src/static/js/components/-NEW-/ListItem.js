@@ -222,7 +222,13 @@ export function listItemProps(props, item, index) {
 		}
 	} else {
 		if (!!props.firstItemViewer) {
-			description = 'string' === typeof props.summary ? props.summary.trim() : null;
+			description = isSearchItem
+				? 'string' === typeof item.summary
+					? item.summary.trim()
+					: null
+				: 'string' === typeof props.summary
+					? props.summary.trim()
+					: null;
 		} else {
 			description = 'string' === typeof item.description ? item.description.trim() : null;
 		}
@@ -231,8 +237,10 @@ export function listItemProps(props, item, index) {
 
 		args.description = description;
 
-		// TODO: Continue here...
-		if (props.summary) {
+		if (isSearchItem) {
+			meta_description = description;
+			args.meta_description = meta_description;
+		} else if (props.summary) {
 			meta_description = props.summary.trim();
 			meta_description =
 				null === meta_description ? meta_description : meta_description.replace(/(<([^>]+)>)/gi, '');
