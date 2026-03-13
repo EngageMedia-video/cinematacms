@@ -48,23 +48,23 @@ function extractPlaylistId() {
 
 function itemPageLink(props, item) {
 	if (props.inCategoriesList) {
-		return LinksContext._currentValue.search.category + item.title.replace(' ', '%20');
+		return LinksContext._currentValue.search.category + encodeURIComponent(item.title);
 	}
 
 	if (props.inTagsList) {
-		return LinksContext._currentValue.search.tag + item.title.replace(' ', '%20');
+		return LinksContext._currentValue.search.tag + encodeURIComponent(item.title);
 	}
 
 	if (props.inTopicsList) {
-		return LinksContext._currentValue.search.topic + item.title.replace(' ', '%20');
+		return LinksContext._currentValue.search.topic + encodeURIComponent(item.title);
 	}
 
 	if (props.inLanguagesList) {
-		return LinksContext._currentValue.search.language + item.title.replace(' ', '%20');
+		return LinksContext._currentValue.search.language + encodeURIComponent(item.title);
 	}
 
 	if (props.inCountriesList) {
-		return LinksContext._currentValue.search.country + item.title.replace(' ', '%20');
+		return LinksContext._currentValue.search.country + encodeURIComponent(item.title);
 	}
 
 	const playlistId = extractPlaylistId();
@@ -173,7 +173,7 @@ export function listItemProps(props, item, index) {
 
 	const author = {
 		name: item.author_name || item.user,
-		url: item.author_profile ? item.author_profile.replace(' ', '%20') : null,
+		url: item.author_profile ? item.author_profile.replaceAll(' ', '%20') : null,
 	};
 
 	const stats = {
