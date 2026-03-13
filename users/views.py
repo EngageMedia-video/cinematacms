@@ -165,8 +165,8 @@ def contact_user(request, username):
         recipient = user
         sender_display_name = sender.name or sender.username
         recipient_display_name = recipient.name or recipient.username
-        form_subject = request.data.get("subject", "")
-        form_body = request.data.get("body", "")
+        form_subject = request.data.get("subject", "").strip()
+        form_body = request.data.get("body", "").strip()
 
         if not form_subject or not form_body:
             return Response(
