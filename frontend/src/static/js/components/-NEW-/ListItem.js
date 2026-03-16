@@ -123,9 +123,6 @@ export function listItemProps(props, item, index) {
 				? item.add_date
 				: null;
 
-	// description = props.preferSummary && 'string' === typeof props.summary ? props.summary.trim() : ( 'string' === typeof item.description ? item.description.trim() : null );
-	// description = null === description ? description : description.replace(/(<([^>]+)>)/ig,"");
-
 	if (isUserItem) {
 		type = 'user';
 	} else if (isPlaylistItem) {
@@ -173,7 +170,12 @@ export function listItemProps(props, item, index) {
 
 	const author = {
 		name: item.author_name || item.user,
-		url: item.author_profile ? item.author_profile.replaceAll(' ', '%20') : null,
+		url: item.author_profile
+			? item.author_profile
+					.split('/')
+					.map((s) => encodeURIComponent(s))
+					.join('/')
+			: null,
 	};
 
 	const stats = {
@@ -221,6 +223,9 @@ export function listItemProps(props, item, index) {
 			args.meta_description = description;
 		}
 	} else {
+		// Note: hasMediaViewerDescr is currently unreachable for search items
+		// (SearchPage doesn't pass firstItemViewer/firstItemDescr).
+		// The isSearchItem branches below are kept for defensive completeness.
 		if (!!props.firstItemViewer) {
 			description = isSearchItem
 				? 'string' === typeof item.summary
