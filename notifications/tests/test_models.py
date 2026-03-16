@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.test import TestCase
 from django.utils import timezone
 
@@ -173,6 +171,19 @@ class NotificationModelTest(TestCase):
         )
         self.assertEqual(notification.action_url, "")
 
+    def test_actor_deletion_preserves_notification(self):
+        """Deleting actor sets actor to NULL but keeps the notification."""
+        notification = Notification.objects.create(
+            recipient=self.recipient,
+            actor=self.actor,
+            notification_type=NotificationType.LIKE,
+            message="actor_user liked your media",
+        )
+        self.actor.delete()
+        notification.refresh_from_db()
+        self.assertIsNone(notification.actor)
+        self.assertEqual(notification.message, "actor_user liked your media")
+
 
 class NotificationPreferenceModelTest(TestCase):
     """Test NotificationPreference model defaults and get_channel_for_type."""
@@ -252,6 +263,14 @@ class NotificationPreferenceModelTest(TestCase):
         pref = NotificationPreference.objects.create(user=self.user)
         self.assertEqual(
             pref.get_channel_for_type(NotificationType.SYSTEM_ANNOUNCEMENT),
+            NotificationChannel.IN_APP,
+        )
+
+    def test_media_report_always_in_app(self):
+        """media_report is admin-facing — always returns in_app, non-configurable."""
+        pref = NotificationPreference.objects.create(user=self.user)
+        self.assertEqual(
+            pref.get_channel_for_type(NotificationType.MEDIA_REPORT),
             NotificationChannel.IN_APP,
         )
 

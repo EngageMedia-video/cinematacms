@@ -29,7 +29,7 @@ class Notification(models.Model):
     )
     actor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="triggered_notifications",
         null=True,
         blank=True,
@@ -135,6 +135,12 @@ class NotificationPreference(models.Model):
     def get_channel_for_type(self, notification_type):
         # system_announcement is always delivered (non-disableable)
         if notification_type == NotificationType.SYSTEM_ANNOUNCEMENT:
+            return NotificationChannel.IN_APP
+
+        # media_report is admin-facing (delivered to staff via existing
+        # notify_users flow in files/tasks.py). Always in-app here;
+        # moderation queue may replace this in a future milestone.
+        if notification_type == NotificationType.MEDIA_REPORT:
             return NotificationChannel.IN_APP
 
         channel_map = {

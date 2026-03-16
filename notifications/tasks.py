@@ -1,1 +1,57 @@
-"""Celery tasks for notification delivery — implemented in Issue #459"""
+import logging
+
+from celery import shared_task
+from django.conf import settings
+from django.core.mail import send_mail
+
+logger = logging.getLogger(__name__)
+
+
+@shared_task(name="send_notification_email", queue="short_tasks")
+def send_notification_email(notification_id):
+    from .models import Notification
+
+    try:
+        notification = Notification.objects.select_related("recipient", "actor").get(id=notification_id)
+    except Notification.DoesNotExist:
+        logger.warning("Notification %s not found for email delivery", notification_id)
+        return
+
+    site_url = getattr(settings, "SSL_FRONTEND_HOST", "")
+    portal_name = getattr(settings, "PORTAL_NAME", "CinemataCMS")
+    action_link = f"{site_url}{notification.action_url}" if notification.action_url else ""
+    prefs_link = f"{site_url}/user/{notification.recipient.username}/settings"
+
+    body = f"Hi {notification.recipient.username},\n\n{notification.message}."
+    if action_link:
+        body += f"\n\nView it here: {action_link}"
+    body += f"\n\n---\nUpdate your notification preferences: {prefs_link}\n"
+
+    try:
+        send_mail(
+            subject=f"[{portal_name}] {notification.message}",
+            message=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[notification.recipient.email],
+            fail_silently=False,
+        )
+    except Exception:
+        logger.exception("Failed to send notification email %s", notification_id)
+
+
+@shared_task(name="notify_followers_new_media", queue="short_tasks")
+def notify_followers_new_media(actor_id, media_id):
+    from django.contrib.auth import get_user_model
+    from files.models import Media
+
+    from .services import NotificationService
+
+    User = get_user_model()
+    try:
+        actor = User.objects.get(id=actor_id)
+        media = Media.objects.get(id=media_id)
+    except (User.DoesNotExist, Media.DoesNotExist):
+        logger.warning("notify_followers_new_media: actor=%s or media=%s not found", actor_id, media_id)
+        return
+
+    NotificationService.on_new_media(actor=actor, media=media)
