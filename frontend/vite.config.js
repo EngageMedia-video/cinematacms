@@ -62,6 +62,9 @@ export default defineConfig({
 	build: {
 		outDir: 'build/production/static',
 		manifest: true,
+		commonjsOptions: {
+			include: [/packages\/media-player/, /node_modules/],
+		},
 		rollupOptions: {
 			external: ['video.js'],
 			input: {
