@@ -195,7 +195,11 @@ function buildItemsElements(itemsData, items, wrapper, inEmbed, hideViews) {
 
 	while (i < itemsData.length) {
 		const durationInfo = getMediaDurationInfo();
-		durationInfo.update(itemsData[i].duration);
+		const seconds =
+			Number.isFinite(itemsData[i].duration) && itemsData[i].duration >= 0
+				? Math.floor(itemsData[i].duration)
+				: 0;
+		durationInfo.update(seconds);
 
 		items[i] = document.createElement('div');
 
@@ -208,7 +212,7 @@ function buildItemsElements(itemsData, items, wrapper, inEmbed, hideViews) {
 			'" title="' +
 			itemsData[i].title +
 			'"' +
-			(inEmbed ? 'target="_blank"' : '') +
+			(inEmbed ? ' target="_blank" rel="noopener noreferrer"' : '') +
 			'>' +
 			itemThumb(itemsData[i].thumbnail_url, durationInfo.toString()) +
 			itemContent(
