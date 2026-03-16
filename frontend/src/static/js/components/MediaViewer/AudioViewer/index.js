@@ -4,10 +4,7 @@ import videojs from 'video.js';
 
 import SiteContext from '../../../contexts/SiteContext';
 
-// Import the script for side effects only
-import '@mediacms/media-player/dist/mediacms-media-player.js';
-// The MediaPlayer is exposed as a global variable
-const MediaPlayer = window.MediaPlayer;
+import MediaPlayerClass from '@mediacms/media-player';
 import '@mediacms/media-player/dist/mediacms-media-player.css';
 
 import MediaPageStore from '../../../pages/MediaPage/store.js';
@@ -27,8 +24,6 @@ import PlayerRecommendedMedia from '../../../classes/PlayerRecommendedMedia';
 import MediaDurationInfo from '../../../classes/MediaDurationInfo';
 
 import '../../styles/VideoViewer.scss';
-
-const _MediaDurationInfo = new MediaDurationInfo();
 
 export default class AudioViewer extends React.PureComponent {
 	constructor(props) {
@@ -154,7 +149,7 @@ export default class AudioViewer extends React.PureComponent {
 						userThumbLink.appendChild(img);
 					}
 
-					this.AudioPlayerData.instance = new MediaPlayer(
+					this.AudioPlayerData.instance = new MediaPlayerClass(
 						this.audioElemRef.current,
 						{
 							sources: this.videoSources,

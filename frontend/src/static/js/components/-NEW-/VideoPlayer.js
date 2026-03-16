@@ -3,10 +3,8 @@ import PropTypes from 'prop-types';
 import urlParse from 'url-parse';
 import videojs from 'video.js';
 
-// Import the CSS only
 import '@mediacms/media-player/dist/mediacms-media-player.css';
-// Import the JS file for side effects (it will define a global)
-import '@mediacms/media-player/dist/mediacms-media-player.js';
+import MediaPlayerClass from '@mediacms/media-player';
 
 import '../styles/VideoPlayer.scss';
 
@@ -211,9 +209,6 @@ export function VideoPlayer(props) {
 				subtitles.on = true;
 			}
 		}
-
-		// Get MediaPlayer from the global object
-		const MediaPlayerClass = window.MediaPlayer;
 
 		// Enhanced player options with VHS bandwidth hinting and anti-buffering configuration
 		const playerOptions = {

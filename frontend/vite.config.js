@@ -62,6 +62,12 @@ export default defineConfig({
 	build: {
 		outDir: 'build/production/static',
 		manifest: true,
+		// Include workspace packages in CJS→ESM conversion.
+		// Vite resolves symlinks to real paths (packages/media-player/),
+		// which don't match the default /node_modules/ pattern.
+		commonjsOptions: {
+			include: [/packages\/media-player/, /node_modules/],
+		},
 		rollupOptions: {
 			external: ['video.js'],
 			input: {
