@@ -26,8 +26,6 @@ import MediaDurationInfo from '../../../classes/MediaDurationInfo';
 
 import '../../styles/VideoViewer.scss';
 
-const _MediaDurationInfo = new MediaDurationInfo();
-
 export default class AudioViewer extends React.PureComponent {
 	constructor(props) {
 		super(props);
