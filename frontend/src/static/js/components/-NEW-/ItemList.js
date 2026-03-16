@@ -30,15 +30,18 @@ export function ItemList(props) {
 	] = useItemListSync(props);
 
 	useEffect(() => {
-		setListHandler(
-			new ItemsStaticListHandler(props.items, props.pageItems, props.maxItems, onItemsCount, onItemsLoad)
+		const handler = new ItemsStaticListHandler(
+			props.items,
+			props.pageItems,
+			props.maxItems,
+			onItemsCount,
+			onItemsLoad
 		);
+		setListHandler(handler);
 
 		return () => {
-			if (listHandler) {
-				listHandler.cancelAll();
-				setListHandler(null);
-			}
+			handler.cancelAll();
+			setListHandler(null);
 		};
 	}, []);
 	return !countedItems ? (
@@ -102,8 +105,7 @@ ItemList.defaults = {
 	playlistId: void 0,
 	/* ################################################## */
 	maxItems: 99999,
-	pageItems: 48,
-	pageItems: 24, // TODO: Is this override ok?
+	pageItems: 24,
 	horizontalItemsOrientation: false,
 	singleLinkContent: false,
 	inTagsList: false,
