@@ -6,8 +6,6 @@ import SiteContext from '../../../contexts/SiteContext';
 
 // Import the script for side effects only
 import '@mediacms/media-player/dist/mediacms-media-player.js';
-// The MediaPlayer is exposed as a global variable
-const MediaPlayer = window.MediaPlayer;
 import '@mediacms/media-player/dist/mediacms-media-player.css';
 
 import MediaPageStore from '../../../pages/MediaPage/store.js';
@@ -154,7 +152,14 @@ export default class AudioViewer extends React.PureComponent {
 						userThumbLink.appendChild(img);
 					}
 
-					this.AudioPlayerData.instance = new MediaPlayer(
+					const MediaPlayerClass = window.MediaPlayer;
+					if (!MediaPlayerClass) {
+						console.error(
+							'MediaPlayer global is not available. The media-player script may not have loaded.'
+						);
+						return;
+					}
+					this.AudioPlayerData.instance = new MediaPlayerClass(
 						this.audioElemRef.current,
 						{
 							sources: this.videoSources,

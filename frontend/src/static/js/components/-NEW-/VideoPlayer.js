@@ -215,6 +215,11 @@ export function VideoPlayer(props) {
 		// Get MediaPlayer from the global object
 		const MediaPlayerClass = window.MediaPlayer;
 
+		if (!MediaPlayerClass) {
+			console.error('MediaPlayer global is not available. The media-player script may not have loaded.');
+			return;
+		}
+
 		// Enhanced player options with VHS bandwidth hinting and anti-buffering configuration
 		const playerOptions = {
 			enabledTouchControls: true,
