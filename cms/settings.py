@@ -434,11 +434,14 @@ MAX_USER_CONCURRENT_ENCODES = 5  # max pending+running encodings per user
 ENCODING_DRAIN_LOCK_TIMEOUT = 120  # seconds before drain lock auto-expires
 MAX_QUEUE_WAIT_SECONDS = 60  # warn when a task waited longer than this in queue
 
+CURATOR_CONTACT_EMAIL = "curators@cinemata.org"
+
 # NOTIFICATIONS
 USERS_NOTIFICATIONS = {
     "MEDIA_ADDED": True,
     "MEDIA_ENCODED": False,
     "MEDIA_REPORTED": False,
+    "MEDIA_PUBLISHED": True,
 }
 
 ADMINS_NOTIFICATIONS = {
