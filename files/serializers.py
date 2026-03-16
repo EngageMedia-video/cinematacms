@@ -205,7 +205,6 @@ class MediaSearchSerializer(serializers.ModelSerializer):
             "thumbnail_url",
             "add_date",
             "views",
-            "description",
             "friendly_token",
             "duration",
             "url",
