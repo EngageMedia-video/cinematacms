@@ -19,10 +19,25 @@ def send_notification_email(notification_id):
 
     site_url = getattr(settings, "SSL_FRONTEND_HOST", "")
     portal_name = getattr(settings, "PORTAL_NAME", "CinemataCMS")
-    action_link = f"{site_url}{notification.action_url}" if notification.action_url else ""
-    prefs_link = f"{site_url}/user/{notification.recipient.username}/settings"
 
-    body = f"Hi {notification.recipient.username},\n\n{notification.message}."
+    # Re-check deliverability at send time (preferences may have changed since enqueue)
+    recipient = notification.recipient
+    if not recipient.email:
+        logger.info("Skipping notification email %s: recipient has no email", notification_id)
+        return
+
+    from .models import NotificationChannel
+    from .services import NotificationService
+
+    channel = NotificationService._get_channel(recipient, notification.notification_type)
+    if channel != NotificationChannel.EMAIL:
+        logger.info("Skipping notification email %s: preference changed to %s", notification_id, channel)
+        return
+
+    action_link = f"{site_url}{notification.action_url}" if notification.action_url else ""
+    prefs_link = f"{site_url}/user/{recipient.username}/settings"
+
+    body = f"Hi {recipient.username},\n\n{notification.message}."
     if action_link:
         body += f"\n\nView it here: {action_link}"
     body += f"\n\n---\nUpdate your notification preferences: {prefs_link}\n"
@@ -32,7 +47,7 @@ def send_notification_email(notification_id):
             subject=f"[{portal_name}] {notification.message}",
             message=body,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[notification.recipient.email],
+            recipient_list=[recipient.email],
             fail_silently=False,
         )
     except Exception:

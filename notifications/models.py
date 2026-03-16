@@ -67,12 +67,13 @@ class Notification(models.Model):
         return f"[{self.notification_type}] {self.message} → {self.recipient.username}"
 
     def mark_as_read(self):
-        if not self.is_read:
-            from django.utils import timezone
+        from django.utils import timezone
 
-            self.is_read = True
-            self.read_at = timezone.now()
-            self.save(update_fields=["is_read", "read_at"])
+        updated = Notification.objects.filter(pk=self.pk, is_read=False).update(
+            is_read=True, read_at=timezone.now()
+        )
+        if updated:
+            self.refresh_from_db()
 
 
 class NotificationPreference(models.Model):

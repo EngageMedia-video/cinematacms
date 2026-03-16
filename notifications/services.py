@@ -50,7 +50,7 @@ class NotificationService:
         ).exists()
 
     @classmethod
-    def _passes_content_filter(cls, recipient, media):
+    def _passes_content_filter(cls, recipient, media, media_topic_slugs=None, media_category_slugs=None):
         """For new_media only. Returns True if media matches user's filters."""
         prefs = cls._get_preferences(recipient)
 
@@ -58,13 +58,13 @@ class NotificationService:
             return True
 
         if prefs.filter_topics:
-            media_topics = set(media.topics.values_list("slug", flat=True))
-            if not media_topics.intersection(set(prefs.filter_topics)):
+            topics = media_topic_slugs if media_topic_slugs is not None else set(media.topics.values_list("slug", flat=True))
+            if not topics.intersection(set(prefs.filter_topics)):
                 return False
 
         if prefs.filter_categories:
-            media_categories = set(media.category.values_list("slug", flat=True))
-            if not media_categories.intersection(set(prefs.filter_categories)):
+            categories = media_category_slugs if media_category_slugs is not None else set(media.category.values_list("slug", flat=True))
+            if not categories.intersection(set(prefs.filter_categories)):
                 return False
 
         return True
@@ -226,13 +226,17 @@ class NotificationService:
         )
         followers = User.objects.filter(id__in=follower_ids, is_active=True).exclude(id=actor.id)
 
+        # Precompute media slugs once to avoid N queries in the loop
+        topic_slugs = set(media.topics.values_list("slug", flat=True))
+        category_slugs = set(media.category.values_list("slug", flat=True))
+
         notifications = []
         email_indices = []
         for follower in followers:
             channel = cls._get_channel(follower, NotificationType.NEW_MEDIA)
             if channel == NotificationChannel.NONE:
                 continue
-            if not cls._passes_content_filter(follower, media):
+            if not cls._passes_content_filter(follower, media, topic_slugs, category_slugs):
                 continue
 
             notifications.append(
@@ -279,16 +283,22 @@ class NotificationService:
     @classmethod
     def broadcast(cls, message, action_url="", metadata=None):
         """System announcement to all active users. Non-disableable."""
-        active_users = User.objects.filter(is_active=True).iterator(chunk_size=500)
-        notifications = [
-            Notification(
-                recipient=user,
-                actor=None,
-                notification_type=NotificationType.SYSTEM_ANNOUNCEMENT,
-                message=message,
-                action_url=action_url,
-                metadata=metadata or {},
+        created = []
+        chunk = []
+        for user in User.objects.filter(is_active=True).iterator(chunk_size=500):
+            chunk.append(
+                Notification(
+                    recipient=user,
+                    actor=None,
+                    notification_type=NotificationType.SYSTEM_ANNOUNCEMENT,
+                    message=message,
+                    action_url=action_url,
+                    metadata=metadata or {},
+                )
             )
-            for user in active_users
-        ]
-        return Notification.objects.bulk_create(notifications, batch_size=100)
+            if len(chunk) >= 500:
+                created.extend(Notification.objects.bulk_create(chunk, batch_size=100))
+                chunk = []
+        if chunk:
+            created.extend(Notification.objects.bulk_create(chunk, batch_size=100))
+        return created
