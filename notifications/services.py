@@ -230,9 +230,23 @@ class NotificationService:
         topic_slugs = set(media.topics.values_list("slug", flat=True))
         category_slugs = set(media.category.values_list("slug", flat=True))
 
+        # Dedupe: skip followers already notified within the 5-minute window
+        action_url = f"/view/{media.friendly_token}"
+        cutoff = timezone.now() - timedelta(minutes=5)
+        recent_recipient_ids = set(
+            Notification.objects.filter(
+                notification_type=NotificationType.NEW_MEDIA,
+                actor=actor,
+                action_url=action_url,
+                created_at__gte=cutoff,
+            ).values_list("recipient_id", flat=True)
+        )
+
         notifications = []
         email_indices = []
         for follower in followers:
+            if follower.id in recent_recipient_ids:
+                continue
             channel = cls._get_channel(follower, NotificationType.NEW_MEDIA)
             if channel == NotificationChannel.NONE:
                 continue
@@ -245,7 +259,7 @@ class NotificationService:
                     actor=actor,
                     notification_type=NotificationType.NEW_MEDIA,
                     message=f"{actor.username} uploaded '{media.title}'",
-                    action_url=f"/view/{media.friendly_token}",
+                    action_url=action_url,
                     metadata={
                         "media_id": media.id,
                         "friendly_token": media.friendly_token,

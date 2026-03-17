@@ -7,7 +7,7 @@ from django.core.mail import send_mail
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name="send_notification_email", queue="short_tasks")
+@shared_task(name="send_notification_email", queue="short_tasks", autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60})
 def send_notification_email(notification_id):
     from .models import Notification
 
@@ -52,6 +52,7 @@ def send_notification_email(notification_id):
         )
     except Exception:
         logger.exception("Failed to send notification email %s", notification_id)
+        raise
 
 
 @shared_task(name="notify_followers_new_media", queue="short_tasks")
