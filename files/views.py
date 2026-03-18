@@ -60,7 +60,6 @@ from .methods import (
     is_mediacms_editor,
     is_mediacms_manager,
     list_tasks,
-    notify_user_on_comment,
     pre_save_action,
     show_recommended_media,
     show_related_media,
@@ -2009,10 +2008,8 @@ class CommentDetail(APIView):
         serializer = CommentSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             comment = serializer.save(user=request.user, media=media)
-            if request.user != media.user:
-                notify_user_on_comment(friendly_token=media.friendly_token)
 
-            # In-app notification
+            # Notification dispatch
             try:
                 from notifications.services import NotificationService
 
