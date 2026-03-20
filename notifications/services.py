@@ -50,9 +50,10 @@ class NotificationService:
         ).exists()
 
     @classmethod
-    def _passes_content_filter(cls, recipient, media, media_topic_slugs=None, media_category_slugs=None):
+    def _passes_content_filter(cls, recipient, media, media_topic_slugs=None, media_category_slugs=None, prefs=None):
         """For new_media only. Returns True if media matches user's filters."""
-        prefs = cls._get_preferences(recipient)
+        if prefs is None:
+            prefs = cls._get_preferences(recipient)
 
         if not prefs.filter_topics and not prefs.filter_categories:
             return True
@@ -85,14 +86,15 @@ class NotificationService:
         if actor and cls._is_duplicate(recipient, actor, notification_type, action_url):
             return None
 
-        # 4. Channel preference check
-        channel = cls._get_channel(recipient, notification_type)
+        # 4. Channel preference check — fetch prefs once, reuse for content filter
+        prefs = cls._get_preferences(recipient)
+        channel = prefs.get_channel_for_type(notification_type)
         if channel == NotificationChannel.NONE:
             return None
 
         # 5. Content filter (new_media only)
         if notification_type == NotificationType.NEW_MEDIA and media:
-            if not cls._passes_content_filter(recipient, media):
+            if not cls._passes_content_filter(recipient, media, prefs=prefs):
                 return None
 
         # 6. Create notification record
@@ -224,7 +226,13 @@ class NotificationService:
             .values_list("subscribers", flat=True)
             .distinct()
         )
-        followers = User.objects.filter(id__in=follower_ids, is_active=True).exclude(id=actor.id)
+        followers = list(User.objects.filter(id__in=follower_ids, is_active=True).exclude(id=actor.id))
+
+        # Prefetch all preferences in one query to avoid 2 DB hits per follower
+        prefs_map = {
+            p.user_id: p
+            for p in NotificationPreference.objects.filter(user_id__in=[f.id for f in followers])
+        }
 
         # Precompute media slugs once to avoid N queries in the loop
         topic_slugs = set(media.topics.values_list("slug", flat=True))
@@ -247,10 +255,11 @@ class NotificationService:
         for follower in followers:
             if follower.id in recent_recipient_ids:
                 continue
-            channel = cls._get_channel(follower, NotificationType.NEW_MEDIA)
+            prefs = prefs_map.get(follower.id) or cls._get_preferences(follower)
+            channel = prefs.get_channel_for_type(NotificationType.NEW_MEDIA)
             if channel == NotificationChannel.NONE:
                 continue
-            if not cls._passes_content_filter(follower, media, topic_slugs, category_slugs):
+            if not cls._passes_content_filter(follower, media, topic_slugs, category_slugs, prefs=prefs):
                 continue
 
             notifications.append(
@@ -296,7 +305,11 @@ class NotificationService:
 
     @classmethod
     def broadcast(cls, message, action_url="", metadata=None):
-        """System announcement to all active users. Non-disableable."""
+        """System announcement to all active users. Non-disableable.
+
+        Note: this is synchronous and may take a while on large user bases.
+        Call from a management command or Celery task — never from a request/response cycle.
+        """
         created = []
         chunk = []
         for user in User.objects.filter(is_active=True).iterator(chunk_size=500):

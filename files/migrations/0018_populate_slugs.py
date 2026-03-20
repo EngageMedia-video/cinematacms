@@ -5,29 +5,20 @@ from django.template.defaultfilters import slugify
 
 
 def populate_slugs(apps, schema_editor):
-    Category = apps.get_model("files", "Category")
-    for obj in Category.objects.filter(slug__isnull=True):
-        base = (slugify(obj.title) or f"category-{obj.pk}")[:100]
-        slug = base
-        n = 1
-        while Category.objects.filter(slug=slug).exclude(pk=obj.pk).exists():
-            suffix = f"-{n}"
-            slug = f"{base[:100 - len(suffix)]}{suffix}"
-            n += 1
-        obj.slug = slug
-        obj.save(update_fields=["slug"])
+    def _fill_slugs(model, prefix):
+        for obj in model.objects.filter(slug__isnull=True):
+            base = (slugify(obj.title) or f"{prefix}-{obj.pk}")[:100]
+            slug = base
+            n = 1
+            while model.objects.filter(slug=slug).exclude(pk=obj.pk).exists():
+                suffix = f"-{n}"
+                slug = f"{base[:100 - len(suffix)]}{suffix}"
+                n += 1
+            obj.slug = slug
+            obj.save(update_fields=["slug"])
 
-    Topic = apps.get_model("files", "Topic")
-    for obj in Topic.objects.filter(slug__isnull=True):
-        base = (slugify(obj.title) or f"topic-{obj.pk}")[:100]
-        slug = base
-        n = 1
-        while Topic.objects.filter(slug=slug).exclude(pk=obj.pk).exists():
-            suffix = f"-{n}"
-            slug = f"{base[:100 - len(suffix)]}{suffix}"
-            n += 1
-        obj.slug = slug
-        obj.save(update_fields=["slug"])
+    _fill_slugs(apps.get_model("files", "Category"), "category")
+    _fill_slugs(apps.get_model("files", "Topic"), "topic")
 
 
 class Migration(migrations.Migration):

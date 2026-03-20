@@ -4,10 +4,12 @@ from celery import shared_task
 from django.conf import settings
 from django.core.mail import send_mail
 
+from smtplib import SMTPException
+
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name="send_notification_email", queue="short_tasks", autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60})
+@shared_task(name="send_notification_email", queue="short_tasks", autoretry_for=(SMTPException, ConnectionError, OSError), retry_kwargs={"max_retries": 3, "countdown": 60})
 def send_notification_email(notification_id):
     from .models import Notification
 
