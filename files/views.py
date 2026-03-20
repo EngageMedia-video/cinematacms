@@ -60,7 +60,6 @@ from .methods import (
     is_mediacms_editor,
     is_mediacms_manager,
     list_tasks,
-    notify_user_on_comment,
     pre_save_action,
     show_recommended_media,
     show_related_media,
@@ -1311,6 +1310,15 @@ class MediaActions(APIView):
 
         if action == "like":
             Media.objects.filter(pk=media.pk).update(likes=F("likes") + 1)
+
+            # In-app notification — only for authenticated users
+            if user:
+                try:
+                    from notifications.services import NotificationService
+
+                    NotificationService.on_like(actor=user, media=media)
+                except Exception:
+                    logger.exception("Notification failed for like on %s", media.friendly_token)
         else:
             Media.objects.filter(pk=media.pk).update(dislikes=F("dislikes") + 1)
 
@@ -1703,6 +1711,20 @@ class PlaylistDetail(APIView):
                             ordering=media_in_playlist + 1,
                         )
                         obj.save()
+
+                        # In-app notification
+                        if created:
+                            try:
+                                from notifications.services import NotificationService
+
+                                NotificationService.on_added_to_playlist(
+                                    actor=request.user, media=media, playlist=playlist
+                                )
+                            except Exception:
+                                logger.exception(
+                                    "Notification failed for playlist add %s", playlist.pk
+                                )
+
                         return Response(
                             {"detail": "media added to Playlist"},
                             status=status.HTTP_201_CREATED,
@@ -1985,9 +2007,34 @@ class CommentDetail(APIView):
 
         serializer = CommentSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
-            serializer.save(user=request.user, media=media)
-            if request.user != media.user:
-                notify_user_on_comment(friendly_token=media.friendly_token)
+            comment = serializer.save(user=request.user, media=media)
+
+            # Notification dispatch
+            try:
+                from notifications.services import NotificationService
+
+                # TODO: When @mention parsing is built (Tribute.js),
+                # parse mentioned_users from comment.text and call:
+                # mentioned = NotificationService.on_mention(
+                #     actor=request.user, media=media, comment=comment,
+                #     mentioned_users=parsed_users,
+                # )
+                # Then pass mentioned_users=mentioned to on_comment for overlap prevention.
+
+                if comment.parent is not None:
+                    NotificationService.on_reply(
+                        actor=request.user,
+                        media=media,
+                        comment=comment,
+                        parent_comment=comment.parent,
+                    )
+                else:
+                    NotificationService.on_comment(
+                        actor=request.user, media=media, comment=comment
+                    )
+            except Exception:
+                logger.exception("Notification failed for comment %s", comment.pk)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

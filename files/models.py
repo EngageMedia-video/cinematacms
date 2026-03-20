@@ -130,6 +130,18 @@ def category_thumb_path(instance, filename):
     return settings.MEDIA_UPLOAD_DIR + f"categories/{file_name}"
 
 
+def _generate_unique_slug(model_class, title, pk, prefix):
+    """Generate a unique slug for a model instance, appending -N suffixes on collision."""
+    base = (slugify(title) or f"{prefix}-{pk or 'new'}")[:100]
+    slug = base
+    n = 1
+    while model_class.objects.filter(slug=slug).exclude(pk=pk).exists():
+        suffix = f"-{n}"
+        slug = f"{base[:100 - len(suffix)]}{suffix}"
+        n += 1
+    return slug
+
+
 def topic_thumb_path(instance, filename):
     friendly_token = helpers.produce_friendly_token()
     file_name = f"{friendly_token}.{helpers.get_file_name(filename)}"
@@ -1033,6 +1045,7 @@ class Category(models.Model):
     uid = models.UUIDField(unique=True, default=uuid.uuid4)
     add_date = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=100, unique=True, db_index=True)
+    slug = models.SlugField(max_length=100, unique=True, blank=True)
     description = models.TextField(blank=True)
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, blank=True, null=True)
     is_global = models.BooleanField(default=False)
@@ -1082,12 +1095,15 @@ class Category(models.Model):
         strip_text_items = ["title", "description"]
         for item in strip_text_items:
             setattr(self, item, strip_tags(getattr(self, item, None)))
+        if not self.slug:
+            self.slug = _generate_unique_slug(Category, self.title, self.pk, "category")
         super(Category, self).save(*args, **kwargs)
 
 
 class Topic(models.Model):
     add_date = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=100, unique=True, db_index=True)
+    slug = models.SlugField(max_length=100, unique=True, blank=True)
     listings_thumbnail = models.CharField(
         max_length=400, blank=True, null=True, help_text="Thumbnail to show on listings"
     )
@@ -1117,6 +1133,11 @@ class Topic(models.Model):
         if self.listings_thumbnail:
             return self.listings_thumbnail
         return None
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = _generate_unique_slug(Topic, self.title, self.pk, "topic")
+        super().save(*args, **kwargs)
 
     def update_tag_media(self):
         self.media_count = Media.objects.filter(state="public", is_reviewed=True, topics=self).count()
@@ -1723,6 +1744,9 @@ def media_save(sender, instance, created, **kwargs):
     if created:
         instance.media_init()
         notify_users(friendly_token=instance.friendly_token, action="media_added")
+        # TODO: When subscription system exists, notify followers:
+        # from notifications.tasks import notify_followers_new_media
+        # notify_followers_new_media.delay(instance.user_id, instance.id)
 
     # Invalidate query cache
     invalidate_media_cache(instance.friendly_token)

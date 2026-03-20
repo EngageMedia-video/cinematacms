@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "files.apps.FilesConfig",
     "users.apps.UsersConfig",
     "actions.apps.ActionsConfig",
+    "notifications.apps.NotificationsConfig",
     "mptt",
     "crispy_forms",
     "crispy_forms_bootstrap2",

@@ -38,6 +38,7 @@ def metrics_view(request):
 urlpatterns = [
     path("metrics", metrics_view),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
+    path("", include("notifications.urls")),
     path("", include("files.urls")),
     path("", include("users.urls")),
     path("accounts/", include("allauth.urls")),
