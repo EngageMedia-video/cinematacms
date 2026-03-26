@@ -178,7 +178,7 @@ qrcode==8.2
     # via cinemata
 redis==7.2.1
     # via django-redis
-requests==2.32.5
+requests==2.33.0
     # via cinemata
 rpdb==0.2.0
     # via cinemata
