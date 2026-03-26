@@ -128,6 +128,46 @@ class NotificationListTest(TestCase):
         self.assertEqual(resp.status_code, 400)
         self.assertIn("is_read", resp.json()["detail"])
 
+    def test_empty_notification_list_returns_correct_format(self):
+        """Edge case: empty list returns proper paginated envelope."""
+        resp = self.client.get("/api/v1/notifications/")
+        data = resp.json()
+        self.assertEqual(data["count"], 0)
+        self.assertIsNone(data["next"])
+        self.assertIsNone(data["previous"])
+        self.assertEqual(data["results"], [])
+
+    def test_list_ordered_newest_first(self):
+        """Notifications returned newest first."""
+        n1 = _create_notification(self.user, self.actor, message="first")
+        n2 = _create_notification(
+            self.user, self.actor, message="second",
+            notification_type=NotificationType.LIKE,
+        )
+        resp = self.client.get("/api/v1/notifications/")
+        results = resp.json()["results"]
+        self.assertEqual(results[0]["id"], n2.id)
+        self.assertEqual(results[1]["id"], n1.id)
+
+    def test_combined_type_and_is_read_filter(self):
+        """Both ?type= and ?is_read= filters apply simultaneously."""
+        _create_notification(
+            self.user, self.actor, NotificationType.COMMENT,
+            is_read=False, message="unread comment",
+        )
+        _create_notification(
+            self.user, self.actor, NotificationType.COMMENT,
+            is_read=True, message="read comment",
+        )
+        _create_notification(
+            self.user, self.actor, NotificationType.LIKE,
+            is_read=False, message="unread like",
+        )
+        resp = self.client.get("/api/v1/notifications/?type=comment&is_read=false")
+        data = resp.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["message"], "unread comment")
+
 
 class UnreadCountTest(TestCase):
     """AC #4: Unread count endpoint."""
@@ -197,6 +237,25 @@ class MarkAsReadTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.json()["is_read"])
         self.assertIsNone(resp.json()["read_at"])
+
+    def test_mark_as_read_already_read_preserves_original_read_at(self):
+        """Marking already-read notification doesn't overwrite original read_at."""
+        n = _create_notification(self.user, self.actor)
+        # First mark
+        self.client.patch(
+            f"/api/v1/notifications/{n.id}/read/",
+            content_type="application/json",
+        )
+        n.refresh_from_db()
+        original_read_at = n.read_at
+        self.assertIsNotNone(original_read_at)
+        # Second mark (idempotent)
+        self.client.patch(
+            f"/api/v1/notifications/{n.id}/read/",
+            content_type="application/json",
+        )
+        n.refresh_from_db()
+        self.assertEqual(n.read_at, original_read_at)
 
 
 class MarkAllAsReadTest(TestCase):

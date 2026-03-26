@@ -325,3 +325,35 @@ class NotificationPreferenceModelTest(TestCase):
         pref2, created2 = NotificationPreference.objects.get_or_create(user=self.user)
         self.assertFalse(created2)
         self.assertEqual(pref.id, pref2.id)
+
+
+class NotificationEdgeCaseTest(TestCase):
+    """Edge cases from Issue 6 (#462) scope."""
+
+    def setUp(self):
+        self.recipient = _create_user("edge_recipient")
+        self.actor = _create_user("edge_actor")
+
+    def test_notification_cascade_on_recipient_deletion(self):
+        """Deleting recipient cascades and removes their notifications."""
+        n = Notification.objects.create(
+            recipient=self.recipient,
+            actor=self.actor,
+            notification_type=NotificationType.COMMENT,
+            message="test",
+        )
+        self.assertTrue(Notification.objects.filter(id=n.id).exists())
+        self.recipient.delete()
+        self.assertFalse(Notification.objects.filter(id=n.id).exists())
+
+    def test_mark_as_read_sets_timezone_aware_read_at(self):
+        """read_at should be timezone-aware datetime."""
+        notification = Notification.objects.create(
+            recipient=self.recipient,
+            actor=self.actor,
+            notification_type=NotificationType.LIKE,
+            message="test",
+        )
+        notification.mark_as_read()
+        notification.refresh_from_db()
+        self.assertIsNotNone(notification.read_at.tzinfo)

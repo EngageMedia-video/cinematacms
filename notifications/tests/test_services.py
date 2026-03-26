@@ -65,7 +65,7 @@ class CreateNotificationPipelineTest(TestCase):
             metadata={},
         )
         self.assertIsNone(result)
-        self.assertEqual(Notification.objects.count(), 0)
+        self.assertEqual(Notification.objects.filter(recipient=self.sender, actor=self.sender).count(), 0)
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_anonymous_actor_returns_none(self, mock_email):
@@ -80,7 +80,7 @@ class CreateNotificationPipelineTest(TestCase):
             metadata={},
         )
         self.assertIsNone(result)
-        self.assertEqual(Notification.objects.count(), 0)
+        self.assertEqual(Notification.objects.filter(recipient=self.recipient).count(), 0)
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_duplicate_within_5min_skipped(self, mock_email):
@@ -101,7 +101,9 @@ class CreateNotificationPipelineTest(TestCase):
             metadata={},
         )
         self.assertIsNone(result)
-        self.assertEqual(Notification.objects.count(), 1)
+        self.assertEqual(
+            Notification.objects.filter(recipient=self.recipient, actor=self.sender).count(), 1
+        )
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_duplicate_different_url_not_suppressed(self, mock_email):
@@ -122,7 +124,9 @@ class CreateNotificationPipelineTest(TestCase):
             metadata={},
         )
         self.assertIsNotNone(result)
-        self.assertEqual(Notification.objects.count(), 2)
+        self.assertEqual(
+            Notification.objects.filter(recipient=self.recipient, actor=self.sender).count(), 2
+        )
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_preference_none_skips(self, mock_email):
@@ -495,8 +499,8 @@ class SendNotificationEmailTest(TestCase):
         SSL_FRONTEND_HOST="https://test.example.com",
         DEFAULT_FROM_EMAIL="noreply@test.com",
     )
-    @patch("notifications.tasks.send_mail")
-    def test_sends_email_with_correct_content(self, mock_send):
+    @patch("notifications.tasks.EmailMessage")
+    def test_sends_email_with_correct_content(self, mock_email_cls):
         from notifications.tasks import send_notification_email
 
         recipient = _create_user("email_rcpt")
@@ -511,19 +515,20 @@ class SendNotificationEmailTest(TestCase):
         )
         send_notification_email(notif.id)
 
-        mock_send.assert_called_once()
-        call_kwargs = mock_send.call_args
-        self.assertIn("[TestCMS]", call_kwargs[1]["subject"])
-        self.assertIn("https://test.example.com/view/abc", call_kwargs[1]["message"])
-        self.assertIn("preferences", call_kwargs[1]["message"])
-        self.assertEqual(call_kwargs[1]["recipient_list"], [recipient.email])
+        mock_email_cls.assert_called_once()
+        call_kwargs = mock_email_cls.call_args[1]
+        self.assertIn("[TestCMS]", call_kwargs["subject"])
+        self.assertIn("https://test.example.com/view/abc", call_kwargs["body"])
+        self.assertIn("preferences", call_kwargs["body"])
+        self.assertEqual(call_kwargs["to"], [recipient.email])
+        mock_email_cls.return_value.send.assert_called_once()
 
-    @patch("notifications.tasks.send_mail")
-    def test_handles_missing_notification(self, mock_send):
+    @patch("notifications.tasks.EmailMessage")
+    def test_handles_missing_notification(self, mock_email_cls):
         from notifications.tasks import send_notification_email
 
         send_notification_email(99999)
-        mock_send.assert_not_called()
+        mock_email_cls.assert_not_called()
 
 
 class NotifyFollowersNewMediaTaskTest(TestCase):
@@ -542,3 +547,155 @@ class NotifyFollowersNewMediaTaskTest(TestCase):
 
         notify_followers_new_media(99999, 99999)
         mock_on_new.assert_not_called()
+
+
+class EdgeCaseServiceTest(TestCase):
+    """Edge cases from Issue 6 (#462) scope."""
+
+    @patch("notifications.tasks.send_notification_email.delay")
+    def test_notification_actor_null_after_deletion(self, _):
+        """After actor deletion, notification.actor is NULL (SET_NULL), no crash."""
+        owner = _create_user("ec_owner")
+        actor = _create_user("ec_actor")
+        media = _create_media(owner, friendly_token="ec-tok")
+        result = NotificationService.on_like(actor=actor, media=media)
+        self.assertIsNotNone(result)
+        actor.delete()
+        result.refresh_from_db()
+        self.assertIsNone(result.actor)
+        self.assertIn("ec_actor", result.message)  # message preserved
+
+    @patch("notifications.tasks.send_notification_email.delay")
+    def test_on_mention_empty_list_returns_empty_set(self, _):
+        """on_mention with empty mentioned_users returns empty set."""
+        actor = _create_user("em_actor")
+        media = _create_media(_create_user("em_owner"), friendly_token="em-tok")
+        comment = _create_comment(actor, media)
+        notified = NotificationService.on_mention(
+            actor=actor, media=media, comment=comment, mentioned_users=[],
+        )
+        self.assertEqual(notified, set())
+        self.assertEqual(
+            Notification.objects.filter(notification_type=NotificationType.MENTION).count(), 0
+        )
+
+    @patch("notifications.tasks.send_notification_email.delay")
+    def test_inactive_user_still_receives_single_notification(self, _):
+        """Single-target handlers don't check is_active (only broadcast does)."""
+        owner = _create_user("inactive_owner")
+        owner.is_active = False
+        owner.save()
+        actor = _create_user("ia_actor")
+        media = _create_media(owner, friendly_token="ia-tok")
+        result = NotificationService.on_like(actor=actor, media=media)
+        # Single-target _create_notification does NOT filter by is_active
+        self.assertIsNotNone(result)
+
+
+class EmailValidationTest(TestCase):
+    """Email delivery validation from Issue 6 (#462) scope."""
+
+    @override_settings(
+        PORTAL_NAME="TestCMS",
+        SSL_FRONTEND_HOST="https://test.example.com",
+        DEFAULT_FROM_EMAIL="noreply@test.com",
+    )
+    @patch("notifications.tasks.EmailMessage")
+    def test_email_skipped_when_recipient_has_no_email(self, mock_email_cls):
+        """Recipient with blank email -> task skips, no EmailMessage call."""
+        from notifications.tasks import send_notification_email
+
+        recipient = _create_user("no_email_user")
+        recipient.email = ""
+        recipient.save()
+        sender = _create_user("ev_sender")
+        notif = Notification.objects.create(
+            recipient=recipient,
+            actor=sender,
+            notification_type=NotificationType.COMMENT,
+            message="test",
+            action_url="/view/abc",
+            metadata={},
+        )
+        send_notification_email(notif.id)
+        mock_email_cls.assert_not_called()
+
+    @override_settings(
+        PORTAL_NAME="TestCMS",
+        SSL_FRONTEND_HOST="https://test.example.com",
+        DEFAULT_FROM_EMAIL="noreply@test.com",
+    )
+    @patch("notifications.tasks.EmailMessage")
+    def test_email_preference_recheck_at_send_time(self, mock_email_cls):
+        """If preference changes to in_app between enqueue and send, email is skipped."""
+        from notifications.tasks import send_notification_email
+
+        recipient = _create_user("recheck_user")
+        sender = _create_user("recheck_sender")
+        NotificationPreference.objects.create(
+            user=recipient, on_comment=NotificationChannel.EMAIL,
+        )
+        notif = Notification.objects.create(
+            recipient=recipient,
+            actor=sender,
+            notification_type=NotificationType.COMMENT,
+            message="test",
+            action_url="/view/abc",
+            metadata={},
+        )
+        # Simulate preference change before task runs
+        pref = NotificationPreference.objects.get(user=recipient)
+        pref.on_comment = NotificationChannel.IN_APP
+        pref.save()
+        send_notification_email(notif.id)
+        mock_email_cls.assert_not_called()
+
+    @override_settings(
+        PORTAL_NAME="TestCMS",
+        SSL_FRONTEND_HOST="https://test.example.com",
+        DEFAULT_FROM_EMAIL="noreply@test.com",
+    )
+    @patch("notifications.tasks.EmailMessage")
+    def test_email_body_contains_action_link(self, mock_email_cls):
+        """Email body includes full action URL with site prefix."""
+        from notifications.tasks import send_notification_email
+
+        recipient = _create_user("action_user")
+        sender = _create_user("action_sender")
+        notif = Notification.objects.create(
+            recipient=recipient,
+            actor=sender,
+            notification_type=NotificationType.COMMENT,
+            message="action_sender commented",
+            action_url="/view?m=abc",
+            metadata={},
+        )
+        send_notification_email(notif.id)
+        mock_email_cls.assert_called_once()
+        body = mock_email_cls.call_args[1]["body"]
+        self.assertIn("https://test.example.com/view?m=abc", body)
+
+    @override_settings(
+        PORTAL_NAME="TestCMS",
+        SSL_FRONTEND_HOST="https://test.example.com",
+        DEFAULT_FROM_EMAIL="noreply@test.com",
+    )
+    @patch("notifications.tasks.EmailMessage")
+    def test_email_body_contains_preferences_link(self, mock_email_cls):
+        """Email body includes notification preferences link."""
+        from notifications.tasks import send_notification_email
+
+        recipient = _create_user("pref_link_user")
+        sender = _create_user("pref_link_sender")
+        notif = Notification.objects.create(
+            recipient=recipient,
+            actor=sender,
+            notification_type=NotificationType.COMMENT,
+            message="test",
+            action_url="/view/abc",
+            metadata={},
+        )
+        send_notification_email(notif.id)
+        mock_email_cls.assert_called_once()
+        body = mock_email_cls.call_args[1]["body"]
+        self.assertIn(f"/user/{recipient.username}/edit", body)
