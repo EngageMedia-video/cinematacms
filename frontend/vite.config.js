@@ -98,6 +98,7 @@ export default defineConfig({
 				'add-media': 'src/entries/add-media.js',
 				error: 'src/entries/error.js',
 				'modern-demo': 'src/entries/modern-demo.js',
+				notifications: 'src/entries/notifications.js',
 			},
 			output: {
 				globals: {

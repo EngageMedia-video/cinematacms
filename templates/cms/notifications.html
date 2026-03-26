@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load static %}
+{% load django_vite %}
+
+{% block headtitle %}Notifications - {{PORTAL_NAME}}{% endblock headtitle %}
+
+{% block topimports %}
+{% vite_asset 'src/entries/notifications.js' %}
+{% endblock topimports %}
+
+{% block content %}
+<div id="page-notifications"></div>
+{% endblock %}

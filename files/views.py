@@ -325,6 +325,12 @@ def history(request):
     return render(request, "cms/history.html", context)
 
 
+@login_required
+def notifications_page(request):
+    context = {}
+    return render(request, "cms/notifications.html", context)
+
+
 def liked_media(request):
     context = {}
     return render(request, "cms/liked_media.html", context)
