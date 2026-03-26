@@ -37,7 +37,7 @@ def send_notification_email(notification_id):
         return
 
     action_link = f"{site_url}{notification.action_url}" if notification.action_url else ""
-    prefs_link = f"{site_url}/user/{recipient.username}/edit"
+    prefs_link = f"{site_url}/user/{recipient.username}/settings"
 
     body = f"Hi {recipient.username},\n\n{notification.message}."
     if action_link:

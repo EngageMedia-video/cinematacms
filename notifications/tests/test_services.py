@@ -698,4 +698,4 @@ class EmailValidationTest(TestCase):
         send_notification_email(notif.id)
         mock_email_cls.assert_called_once()
         body = mock_email_cls.call_args[1]["body"]
-        self.assertIn(f"/user/{recipient.username}/edit", body)
+        self.assertIn(f"/user/{recipient.username}/settings", body)
