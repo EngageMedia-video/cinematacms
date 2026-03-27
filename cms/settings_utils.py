@@ -61,7 +61,7 @@ def get_whisper_cpp_paths(model_name="base"):
     whisper_cpp_model_path = whisper_cpp_dir / "models" / f"ggml-{model_name}.bin"
 
     # If the requested model file doesn't exist and it's not the default, fall back to base
-    if not whisper_cpp_model_path.exists() and model_name != "base":
+    if not whisper_cpp_model_path.is_file() and model_name != "base":
         logger.warning(
             "Whisper model file not found at '%s'. Falling back to 'base'.",
             whisper_cpp_model_path,
@@ -69,7 +69,7 @@ def get_whisper_cpp_paths(model_name="base"):
         model_name = "base"
         whisper_cpp_model_path = whisper_cpp_dir / "models" / "ggml-base.bin"
 
-    if not whisper_cpp_model_path.exists():
+    if not whisper_cpp_model_path.is_file():
         logger.error(
             "Whisper base model file not found at '%s'. Transcription will fail.",
             whisper_cpp_model_path,
