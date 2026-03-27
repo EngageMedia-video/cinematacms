@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("files", "0016_add_encoding_drain_composite_index"),
+        ("files", "0020_populate_slugs"),
     ]
 
     operations = [

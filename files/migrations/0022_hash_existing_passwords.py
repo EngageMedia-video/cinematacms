@@ -25,7 +25,7 @@ def hash_passwords(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("files", "0017_widen_password_field"),
+        ("files", "0021_widen_password_field"),
     ]
 
     operations = [

@@ -411,28 +411,16 @@ def view_media(request):
     context["media"] = friendly_token
     context["media_object"] = media
 
-    can_see_restricted_media = False
-    wrong_password_provided = False
-    if media.state == "restricted":
-        if request.POST.get("password"):
-            if media.password == request.POST.get("password"):
-                can_see_restricted_media = True
-                # Store hashed password in session for file access (avoid persisting plaintext)
-                import hashlib
-
-                request.session[f"media_password_{media.friendly_token}"] = hashlib.pbkdf2_hmac(
-                    "sha256",
-                    media.password.encode("utf-8"),
-                    media.friendly_token.encode("utf-8"),
-                    iterations=600_000,
-                ).hex()
-            else:
-                wrong_password_provided = True
-
     context["CAN_DELETE_MEDIA"] = False
     context["CAN_EDIT_MEDIA"] = False
     context["CAN_DELETE_COMMENTS"] = False
 
+    can_see_restricted_media = False
+    wrong_password_provided = False
+    rate_limited = False
+    media_access_token = None
+
+    # Owner/editor bypass FIRST — unaffected by Redis outages
     if request.user.is_authenticated:
         if (media.user.id == request.user.id) or is_mediacms_editor(request.user) or is_mediacms_manager(request.user):
             context["CAN_DELETE_MEDIA"] = True
@@ -440,10 +428,56 @@ def view_media(request):
             context["CAN_DELETE_COMMENTS"] = True
             can_see_restricted_media = True
 
+    if media.state == "restricted" and not can_see_restricted_media:
+        from django.contrib.auth.hashers import check_password
+
+        from files.token_utils import (
+            check_rate_limit,
+            generate_token,
+            record_failed_attempt,
+            reset_rate_limit,
+            validate_token,
+        )
+
+        media_uid = media.uid.hex if hasattr(media.uid, "hex") else str(media.uid)
+        ip = request.META.get("REMOTE_ADDR", "")
+
+        # Check session token on GET (avoid re-prompting)
+        session_token = request.session.get(f"media_token_{media.friendly_token}")
+        if session_token and validate_token(session_token, media_uid):
+            can_see_restricted_media = True
+            media_access_token = session_token
+        elif session_token:
+            # Stale session token — clean up
+            del request.session[f"media_token_{media.friendly_token}"]
+
+        # Handle password POST
+        if not can_see_restricted_media and request.POST.get("password"):
+            if not check_rate_limit(ip, media.friendly_token):
+                rate_limited = True
+            else:
+                submitted_password = request.POST.get("password")
+                if check_password(submitted_password, media.password):
+                    can_see_restricted_media = True
+                    token = generate_token(media_uid)
+                    request.session[f"media_token_{media.friendly_token}"] = token
+                    media_access_token = token
+                    reset_rate_limit(ip, media.friendly_token)
+                else:
+                    wrong_password_provided = True
+                    record_failed_attempt(ip, media.friendly_token)
+
     context["can_see_restricted_media"] = can_see_restricted_media
     context["wrong_password_provided"] = wrong_password_provided
+    context["rate_limited"] = rate_limited
+    context["media_access_token"] = media_access_token
     context["is_media_allowed_type"] = is_media_allowed_type(media)
-    return render(request, "cms/media.html", context)
+
+    response = render(request, "cms/media.html", context)
+    # Prevent token leakage via Referrer header
+    if media.state == "restricted":
+        response["Referrer-Policy"] = "no-referrer"
+    return response
 
 
 #########################
@@ -904,15 +938,30 @@ def embed_media(request):
     friendly_token = request.GET.get("m", "").strip()
     if not friendly_token:
         return HttpResponseRedirect("/")
-    media = Media.objects.values("title").filter(friendly_token=friendly_token).first()
+    media = Media.objects.filter(friendly_token=friendly_token).first()
     if not media:
         return HttpResponseRedirect("/")
     get_user_or_session(request)
-    # save_user_action.delay(
-    #     user_or_session, friendly_token=friendly_token, action='watch')
+
     context = {}
     context["media"] = friendly_token
-    return render(request, "cms/embed.html", context)
+    context["media_access_token"] = None
+
+    # Validate token for restricted media
+    if media.state == "restricted":
+        from files.token_utils import validate_token
+
+        token = request.GET.get("token")
+        media_uid = media.uid.hex if hasattr(media.uid, "hex") else str(media.uid)
+        if token and validate_token(token, media_uid):
+            context["media_access_token"] = token
+        else:
+            return HttpResponse("Unauthorized", status=401)
+
+    response = render(request, "cms/embed.html", context)
+    if media.state == "restricted":
+        response["Referrer-Policy"] = "no-referrer"
+    return response
 
 
 def view_playlist(request, friendly_token):
@@ -1056,7 +1105,7 @@ class MediaDetail(APIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsUserOrEditor)
     parser_classes = (JSONParser, MultiPartParser, FormParser, FileUploadParser)
 
-    def get_object(self, friendly_token, password=None):
+    def get_object(self, friendly_token, token=None):
         friendly_token = clean_friendly_token(friendly_token)
         try:
             media = (
@@ -1084,11 +1133,14 @@ class MediaDetail(APIView):
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
-            # Handle RESTRICTED media (password-protected, no login required)
+            # Handle RESTRICTED media — owner/editor bypass FIRST
             elif media.state == "restricted" and not (
                 self.request.user == media.user or is_mediacms_editor(self.request.user)
             ):
-                if (not password) or (not media.password) or (password != media.password):
+                from files.token_utils import validate_token
+
+                media_uid = media.uid.hex if hasattr(media.uid, "hex") else str(media.uid)
+                if not token or not validate_token(token, media_uid):
                     return Response(
                         {"detail": "media is restricted"},
                         status=status.HTTP_401_UNAUTHORIZED,
@@ -1102,7 +1154,6 @@ class MediaDetail(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         except Exception as e:
-            # Log the actual error for debugging
             import logging
 
             logger = logging.getLogger(__name__)
@@ -1114,19 +1165,19 @@ class MediaDetail(APIView):
 
     def get(self, request, friendly_token, format=None):
         # Get media details
-        password = request.GET.get("password") or request.POST.get("password")
+        token = request.GET.get("token")
 
         # Try cache for public media only (not private/restricted)
         user_id = request.user.id if request.user.is_authenticated else None
         cache_key = get_media_detail_cache_key(friendly_token, user_id)
 
-        # Skip cache for password-protected requests
-        if not password:
+        # Skip cache for token-protected requests
+        if not token:
             cached_result = get_cached_result(cache_key)
             if cached_result is not None:
                 return Response(cached_result)
 
-        media = self.get_object(friendly_token, password=password)
+        media = self.get_object(friendly_token, token=token)
         if isinstance(media, Response):
             return media
 
@@ -1141,7 +1192,7 @@ class MediaDetail(APIView):
         ret["related_media"] = related_media
 
         # Cache public/unlisted media only
-        if media.state in ["public", "unlisted"] and not password:
+        if media.state in ["public", "unlisted"] and not token:
             set_cached_result(cache_key, ret, MEDIA_DETAIL_TIMEOUT)
 
         return Response(ret)
