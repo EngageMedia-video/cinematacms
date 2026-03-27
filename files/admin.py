@@ -42,8 +42,59 @@ class CommentAdmin(admin.ModelAdmin):
     readonly_fields = ("user", "media", "parent")
 
 
+class MediaPasswordWidget(forms.Widget):
+    """Widget that shows 'Password set' instead of the hash, with a change field."""
+
+    template_name = "admin/media_password_widget.html"
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        context["has_password"] = bool(value)
+        return context
+
+    def render(self, name, value, attrs=None, renderer=None):
+        has_password = bool(value)
+        status = "<strong>Password set</strong>" if has_password else "<em>No password</em>"
+        input_html = (
+            f"<p>{status}</p>"
+            f"<p><label>New password (leave blank to keep current):</label><br>"
+            f'<input type="text" name="{name}" value="" '
+            f'style="width: 300px;" autocomplete="off" placeholder="Enter new password"></p>'
+        )
+        return input_html
+
+    def value_from_datadict(self, data, files, name):
+        return data.get(name, "")
+
+
+class MediaAdminForm(forms.ModelForm):
+    class Meta:
+        model = Media
+        fields = "__all__"
+        widgets = {
+            "password": MediaPasswordWidget(),
+        }
+
+    def clean_password(self):
+        new_password = self.cleaned_data.get("password", "")
+        if new_password:
+            return new_password
+        # No change — return existing hash
+        if self.instance and self.instance.pk:
+            return self.instance.password
+        return ""
+
+    def save(self, commit=True):
+        new_password = self.cleaned_data.get("password", "")
+        # Only re-hash if the value is plaintext (not the existing hash)
+        if new_password and new_password != self.instance.password:
+            self.instance.set_password(new_password)
+        return super().save(commit=commit)
+
+
 @admin.register(Media)
 class MediaAdmin(admin.ModelAdmin):
+    form = MediaAdminForm
     search_fields = ["title"]
     list_display = [
         "title",
