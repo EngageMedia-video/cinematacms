@@ -238,6 +238,10 @@ class MediaForm(forms.ModelForm):
         if state == "restricted" and not password:
             error = "Password has to be set when state is Restricted"
             self.add_error("password", error)
+        elif state == "restricted" and password:
+            min_length = getattr(settings, "MEDIA_PASSWORD_MIN_LENGTH", 8)
+            if len(password) < min_length:
+                self.add_error("password", f"Password must be at least {min_length} characters.")
 
         if state == "restricted" and featured:
             error = "This video cannot be featured as it is Restricted."
@@ -274,6 +278,12 @@ class MediaForm(forms.ModelForm):
         if data.get("no_license"):
             self.instance.license = None
             self.instance.save()
+
+        # Hash password via set_password() if changed
+        password = data.get("password")
+        if password and password != self.instance.password:
+            self.instance.set_password(password)
+
         media = super(MediaForm, self).save(*args, **kwargs)
         return media
 
