@@ -57,6 +57,11 @@ function ManageUploadItemActions(props) {
 		} else {
 			positionState.updating = true;
 
+			if (!props.containerRef.current) {
+				positionState.updating = false;
+				return;
+			}
+
 			const popupElem = props.containerRef.current.querySelector('.popup');
 
 			if (popupElem) {
@@ -90,6 +95,11 @@ function ManageUploadItemActions(props) {
 			PageStore.removeListener('window_scroll', onWindowResize);
 			PageStore.removeListener('window_resize', onWindowResize);
 		}
+
+		return () => {
+			PageStore.removeListener('window_scroll', onWindowResize);
+			PageStore.removeListener('window_resize', onWindowResize);
+		};
 	}, [isOpenPopup]);
 
 	return (
