@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static %}
+{% load django_vite %}
+
+{% block headtitle %}Manage uploads - {{PORTAL_NAME}}{% endblock headtitle %}
+
+{% block headermeta %}
+
+<meta property="og:title" content="Manage uploads - {{PORTAL_NAME}}">
+<meta property="og:type" content="website">
+<meta property="og:description" content="">
+
+{% endblock headermeta %}
+
+{% block topimports %}{% vite_asset 'src/entries/manage-uploads.js' %}{% endblock topimports %}
+
+{% block content %}<div id="page-manage-uploads"></div>{% endblock %}

@@ -3,7 +3,7 @@ import json
 from django.conf import settings
 
 from .lists import UNUSUAL_COUNTRIES
-from .methods import can_upload_media, is_curator, is_mediacms_editor, is_mediacms_manager
+from .methods import can_manage_uploads, can_upload_media, is_curator, is_mediacms_editor, is_mediacms_manager
 from .models import HomepagePopup, TopMessage
 
 # NOTE: context_processors.py can be considered as a dumping ground of sorts for
@@ -43,6 +43,7 @@ def stuff(request):
     ret["IS_MEDIACMS_EDITOR"] = is_mediacms_editor(request.user)
     ret["IS_MEDIACMS_MANAGER"] = is_mediacms_manager(request.user)
     ret["IS_CURATOR"] = is_curator(request.user)
+    ret["CAN_MANAGE_UPLOADS"] = can_manage_uploads(request.user)
     ret["ALLOW_RATINGS"] = settings.ALLOW_RATINGS
     ret["ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY"] = settings.ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY
     ret["VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE"] = settings.VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE

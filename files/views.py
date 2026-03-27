@@ -52,6 +52,7 @@ from .helpers import (
     rm_file,
 )
 from .methods import (
+    can_manage_uploads,
     can_upload_media,
     get_current_featured_media,
     get_user_or_session,
@@ -212,6 +213,20 @@ def manage_comments(request):
 
     context = {}
     return render(request, "cms/manage_comments.html", context)
+
+
+def manage_uploads(request):
+    if request.user.is_anonymous:
+        return HttpResponseRedirect("/")
+
+    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+        return HttpResponseRedirect("/accounts/2fa/totp/activate")
+
+    if not can_manage_uploads(request.user):
+        return HttpResponseRedirect("/")
+
+    context = {}
+    return render(request, "cms/manage_uploads.html", context)
 
 
 def export_users(request):

@@ -1,0 +1,168 @@
+@import '../../../css/includes/_variables.scss';
+@import '../../../css/includes/_variables_dimensions.scss';
+@import '../../../css/config/index.scss';
+
+#page-manage-uploads {
+
+	.media-list-wrapper {
+		padding: 0 16px;
+
+		@media (min-width: 710px) {
+			padding: 0 24px;
+		}
+
+		max-width: calc(48px + calc(var(--default-item-width) * var(--default-max-row-items)));
+	}
+
+	.manage-items-list {
+		overflow: auto;
+	}
+
+	.items-list-outer {
+		position: relative;
+		display: block;
+	}
+
+	.items-list-wrap {
+		position: relative;
+		display: inline-block;
+		width: 100%;
+		min-height: 0;
+	}
+
+	.manage-upload-item {
+
+		> * {
+			width: (100/8) * 1%;
+			text-align: center;
+		}
+
+		.mi-title {
+			padding-left: 16px;
+			padding-right: 16px;
+			text-align: inherit;
+			font-weight: 500;
+		}
+
+		.mi-type,
+		.mi-encoding,
+		.mi-state {
+			text-transform: capitalize;
+		}
+
+		.mi-checkbox {
+			min-width: 48px;
+			width: 48px;
+		}
+
+		.mi-title {
+			min-width: 240px;
+			width: 100%;
+		}
+
+		.mi-added {
+			min-width: 120px;
+		}
+
+		.mi-encoding {
+			min-width: 120px;
+		}
+
+		.mi-state,
+		.mi-type {
+			min-width: 88px;
+		}
+
+		.mi-views,
+		.mi-likes {
+			min-width: 72px;
+		}
+	}
+}
+
+.manage-uploads-bulk-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 0;
+	flex-wrap: wrap;
+
+	.bulk-selected-count {
+		font-weight: 500;
+		margin-right: 8px;
+	}
+
+	.bulk-action-btn {
+		padding: 6px 12px;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+		background: #fff;
+		cursor: pointer;
+		font-size: 13px;
+		transition: background-color 0.15s;
+
+		&:hover {
+			background: #f0f0f0;
+		}
+
+		&.bulk-action-delete {
+			color: #d32f2f;
+			border-color: #d32f2f;
+
+			&:hover {
+				background: #fce4ec;
+			}
+		}
+	}
+
+	.dark_theme & {
+
+		.bulk-action-btn {
+			background: #333;
+			border-color: #555;
+			color: #ddd;
+
+			&:hover {
+				background: #444;
+			}
+
+			&.bulk-action-delete {
+				color: #ef5350;
+				border-color: #ef5350;
+
+				&:hover {
+					background: #4a1a1a;
+				}
+			}
+		}
+	}
+}
+
+.mi-filter-search {
+
+	.mi-search-input {
+		padding: 6px 12px;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+		font-size: 14px;
+		width: 200px;
+		outline: none;
+
+		&:focus {
+			border-color: var(--default-theme-color);
+		}
+	}
+
+	.dark_theme & {
+
+		.mi-search-input {
+			background: #333;
+			border-color: #555;
+			color: #ddd;
+
+			&:focus {
+				border-color: var(--default-theme-color);
+			}
+		}
+	}
+}
