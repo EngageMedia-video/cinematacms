@@ -418,6 +418,17 @@ RESTRICTED_PERMISSION_CACHE_TIMEOUT = 60  # 1 minute
 PERMISSION_CACHE_KEY_PREFIX = "cinemata_media_permission"
 PERMISSION_CACHE_VERSION = 1
 
+# Restricted media access tokens
+MEDIA_TOKEN_KEY_PREFIX = "cinemata_media_token"
+RESTRICTED_MEDIA_TOKEN_TTL = 14400  # 4 hours
+
+# Password brute-force protection
+PASSWORD_BRUTE_FORCE_MAX_ATTEMPTS = 5
+PASSWORD_BRUTE_FORCE_WINDOW = 900  # 15 minutes
+
+# Media password validation
+MEDIA_PASSWORD_MIN_LENGTH = 8
+
 MAX_MEDIA_PER_PLAYLIST = 70
 FRIENDLY_TOKEN_LEN = 9
 
