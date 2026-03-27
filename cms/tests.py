@@ -1,10 +1,11 @@
-# TODO: insert test for checking if the whisper.cpp directory exists
 import logging
 import os
 from pathlib import Path
 
 from django.conf import settings
 from django.test import TestCase
+
+from .settings_utils import VALID_WHISPER_MODELS, get_whisper_cpp_paths
 
 
 class WhisperCPPDirectoryTestCase(TestCase):
@@ -41,6 +42,49 @@ class WhisperCPPDirectoryTestCase(TestCase):
             )
         else:
             self.fail(f"WHISPER_CPP_MODEL does not exist: {model_path}")
+
+
+class WhisperModelConfigTestCase(TestCase):
+    """Tests for configurable Whisper model selection."""
+
+    def test_whisper_model_setting_is_valid(self):
+        """WHISPER_MODEL setting should be one of the valid model names."""
+        self.assertIn(
+            settings.WHISPER_MODEL,
+            VALID_WHISPER_MODELS,
+            f"WHISPER_MODEL '{settings.WHISPER_MODEL}' is not a valid model. "
+            f"Valid options: {', '.join(VALID_WHISPER_MODELS)}",
+        )
+
+    def test_get_whisper_cpp_paths_default(self):
+        """Calling with no args should default to 'base'."""
+        _, _, model_path, resolved_name = get_whisper_cpp_paths()
+        self.assertEqual(resolved_name, "base")
+        self.assertTrue(model_path.endswith("ggml-base.bin"))
+
+    def test_get_whisper_cpp_paths_with_valid_model(self):
+        """Calling with a valid model name should construct the correct path."""
+        for model in VALID_WHISPER_MODELS:
+            with self.subTest(model=model):
+                _, _, model_path, resolved_name = get_whisper_cpp_paths(model)
+                # If the model file exists, resolved_name should match the requested model.
+                # If it doesn't exist and isn't 'base', the function falls back to 'base'.
+                if resolved_name == model:
+                    self.assertTrue(model_path.endswith(f"ggml-{model}.bin"))
+                else:
+                    self.assertEqual(resolved_name, "base")
+                    self.assertTrue(model_path.endswith("ggml-base.bin"))
+
+    def test_get_whisper_cpp_paths_with_invalid_model(self):
+        """Calling with an invalid model name should fall back to 'base'."""
+        _, _, model_path, resolved_name = get_whisper_cpp_paths("nonexistent")
+        self.assertEqual(resolved_name, "base")
+        self.assertTrue(model_path.endswith("ggml-base.bin"))
+
+    def test_get_whisper_cpp_paths_rejects_path_traversal(self):
+        """Path traversal attempts should be rejected by validation."""
+        _, _, _, resolved_name = get_whisper_cpp_paths("../../etc/passwd")
+        self.assertEqual(resolved_name, "base")
 
 
 class WhisperCPPIntegrationTestCase(TestCase):

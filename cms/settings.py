@@ -582,7 +582,10 @@ MFA_REQUIRED_ROLES = ["superuser", "manager", "curator"]
 MFA_ENFORCE_ON_PATHS = [f"/{DJANGO_ADMIN_URL}"]
 MFA_EXCLUDE_PATHS = ["/fu/", "/api/", "/manage/", "/accounts/"]
 
-WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL = get_whisper_cpp_paths()
+# Whisper ASR model selection. See VALID_WHISPER_MODELS in settings_utils.py for accepted values.
+# Can be set via WHISPER_MODEL_SIZE environment variable for container deployments.
+_whisper_model_requested = os.getenv("WHISPER_MODEL_SIZE", "base")
+WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL, WHISPER_MODEL = get_whisper_cpp_paths(_whisper_model_requested)
 
 # django-maintenance-mode settings
 MAINTENANCE_MODE = None  # None/False/True
@@ -608,7 +611,6 @@ MAINTENANCE_MODE_IGNORE_URLS = (
 
 
 ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""))
-WHISPER_SIZE = "base"
 
 
 ALLOWED_MEDIA_UPLOAD_TYPES = ["video"]
