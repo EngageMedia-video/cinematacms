@@ -120,7 +120,7 @@ class MyUploadsList(APIView):
             encoding_status = None
 
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
-        qs = Media.objects.filter(user=request.user)
+        qs = Media.objects.select_related("user").filter(user=request.user)
         if state:
             qs = qs.filter(state=state)
         if encoding_status:
@@ -149,13 +149,16 @@ class MyUploadsList(APIView):
                 {"detail": "tokens must contain at least one value"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        qs = Media.objects.filter(friendly_token__in=tokens, user=request.user)
-        if qs.count() != len(tokens):
-            return Response(
-                {"detail": "one or more tokens not found or not owned by you"},
-                status=status.HTTP_400_BAD_REQUEST,
+        with transaction.atomic():
+            qs = Media.objects.select_for_update().filter(
+                friendly_token__in=tokens, user=request.user
             )
-        qs.delete()
+            if qs.count() != len(tokens):
+                return Response(
+                    {"detail": "one or more tokens not found or not owned by you"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            qs.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
