@@ -247,11 +247,11 @@ class MyUploadsBulkDeleteTests(TestCase):
         self.assertFalse(Media.objects.filter(friendly_token=token).exists())
 
     def test_cannot_delete_other_users_media(self):
-        """User cannot delete another user's media."""
+        """User cannot delete another user's media — returns 400."""
         self.client.login(username="usera", password="testpass123")
         token_b = self.media_b.friendly_token
         response = self.client.delete(f"/api/v1/my_uploads?tokens={token_b}")
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 400)
         # User B's media should still exist
         self.assertTrue(Media.objects.filter(friendly_token=token_b).exists())
 
