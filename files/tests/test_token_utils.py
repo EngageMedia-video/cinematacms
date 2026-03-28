@@ -36,7 +36,7 @@ class TokenGenerationTest(TestCase):
         self.assertIsNotNone(redis.get(access_key))
         ttl = redis.ttl(access_key)
         self.assertGreater(ttl, 0)
-        self.assertLessEqual(ttl, token_utils.TOKEN_TTL)
+        self.assertLessEqual(ttl, token_utils._get_token_ttl())
 
         # Media set contains the access key
         members = redis.smembers(media_set_key)
@@ -122,25 +122,25 @@ class RateLimitTest(TestCase):
         self.assertTrue(token_utils.check_rate_limit("1.2.3.4", "ft123"))
 
     def test_blocked_at_max_attempts(self):
-        for _ in range(token_utils.BRUTE_FORCE_MAX_ATTEMPTS):
+        for _ in range(token_utils._get_brute_force_max_attempts()):
             token_utils.record_failed_attempt("1.2.3.4", "ft123")
 
         self.assertFalse(token_utils.check_rate_limit("1.2.3.4", "ft123"))
 
     def test_different_ip_not_affected(self):
-        for _ in range(token_utils.BRUTE_FORCE_MAX_ATTEMPTS):
+        for _ in range(token_utils._get_brute_force_max_attempts()):
             token_utils.record_failed_attempt("1.2.3.4", "ft123")
 
         self.assertTrue(token_utils.check_rate_limit("5.6.7.8", "ft123"))
 
     def test_different_media_not_affected(self):
-        for _ in range(token_utils.BRUTE_FORCE_MAX_ATTEMPTS):
+        for _ in range(token_utils._get_brute_force_max_attempts()):
             token_utils.record_failed_attempt("1.2.3.4", "ft123")
 
         self.assertTrue(token_utils.check_rate_limit("1.2.3.4", "ft999"))
 
     def test_reset_clears_counter(self):
-        for _ in range(token_utils.BRUTE_FORCE_MAX_ATTEMPTS):
+        for _ in range(token_utils._get_brute_force_max_attempts()):
             token_utils.record_failed_attempt("1.2.3.4", "ft123")
 
         token_utils.reset_rate_limit("1.2.3.4", "ft123")
@@ -154,16 +154,10 @@ class RateLimitTest(TestCase):
 
     @override_settings(PASSWORD_BRUTE_FORCE_MAX_ATTEMPTS=2)
     def test_respects_configurable_max_attempts(self):
-        # Reload module-level setting
-        original = token_utils.BRUTE_FORCE_MAX_ATTEMPTS
-        token_utils.BRUTE_FORCE_MAX_ATTEMPTS = 2
-        try:
-            token_utils.record_failed_attempt("1.2.3.4", "ft123")
-            self.assertTrue(token_utils.check_rate_limit("1.2.3.4", "ft123"))
-            token_utils.record_failed_attempt("1.2.3.4", "ft123")
-            self.assertFalse(token_utils.check_rate_limit("1.2.3.4", "ft123"))
-        finally:
-            token_utils.BRUTE_FORCE_MAX_ATTEMPTS = original
+        token_utils.record_failed_attempt("1.2.3.4", "ft123")
+        self.assertTrue(token_utils.check_rate_limit("1.2.3.4", "ft123"))
+        token_utils.record_failed_attempt("1.2.3.4", "ft123")
+        self.assertFalse(token_utils.check_rate_limit("1.2.3.4", "ft123"))
 
 
 class ManifestRewriteTest(SimpleTestCase):

@@ -3,37 +3,13 @@ Tests for restricted media views — password entry, token issuance,
 rate limiting, embed auth, and manifest rewriting.
 """
 
-from unittest.mock import patch
-
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
-from files.models import Media
-from files.token_utils import generate_token
+from files.tests.helpers import create_test_media
+from files.token_utils import _get_brute_force_max_attempts, generate_token
 
 User = get_user_model()
-
-
-def create_test_media(user, **kwargs):
-    """Create test media. State is set via update() to bypass save() override."""
-    state = kwargs.pop("state", "public")
-    defaults = {
-        "media_type": "video",
-        "duration": 120,
-        "views": 0,
-        "likes": 0,
-        "dislikes": 0,
-        "reported_times": 0,
-        "encoding_status": "success",
-        "is_reviewed": True,
-    }
-    defaults.update(kwargs)
-    with patch.object(Media, "media_init", return_value=None):
-        media = Media.objects.create(title="Test", user=user, **defaults)
-    # Set state after creation to avoid save() overriding it with get_default_state()
-    Media.objects.filter(pk=media.pk).update(state=state)
-    media.refresh_from_db()
-    return media
 
 
 class ViewMediaPasswordTest(TestCase):
@@ -112,14 +88,14 @@ class ViewMediaRateLimitTest(TestCase):
         self.url = f"/view?m={self.media.friendly_token}"
 
     def test_rate_limit_after_max_attempts(self):
-        for _ in range(5):
+        for _ in range(_get_brute_force_max_attempts()):
             self.client.post(self.url, {"password": "wrong"})
 
         resp = self.client.post(self.url, {"password": "wrong"})
         self.assertContains(resp, "Too many failed attempts")
 
     def test_correct_password_rejected_during_lockout(self):
-        for _ in range(5):
+        for _ in range(_get_brute_force_max_attempts()):
             self.client.post(self.url, {"password": "wrong"})
 
         resp = self.client.post(self.url, {"password": "correct"})

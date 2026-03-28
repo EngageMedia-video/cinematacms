@@ -3,35 +3,13 @@ Integration tests for the full restricted media flow.
 Tests span multiple units: token issuance → API → file serving → invalidation.
 """
 
-from unittest.mock import patch
-
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
-from files.models import Media
+from files.tests.helpers import create_test_media
 from files.token_utils import generate_token, validate_token
 
 User = get_user_model()
-
-
-def create_test_media(user, **kwargs):
-    state = kwargs.pop("state", "public")
-    defaults = {
-        "media_type": "video",
-        "duration": 120,
-        "views": 0,
-        "likes": 0,
-        "dislikes": 0,
-        "reported_times": 0,
-        "encoding_status": "success",
-        "is_reviewed": True,
-    }
-    defaults.update(kwargs)
-    with patch.object(Media, "media_init", return_value=None):
-        media = Media.objects.create(title="Test", user=user, **defaults)
-    Media.objects.filter(pk=media.pk).update(state=state)
-    media.refresh_from_db()
-    return media
 
 
 class FullPasswordToTokenFlowTest(TestCase):

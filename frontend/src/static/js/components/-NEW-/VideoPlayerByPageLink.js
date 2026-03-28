@@ -118,23 +118,23 @@ export function VideoPlayerByPageLink(props) {
 						let defaultVideoResolution = extractDefaultVideoResolution(defaultResolution, videoInfo);
 
 						if ('Auto' === defaultResolution && void 0 !== videoInfo['Auto']) {
-							const password =
+							const accessToken =
 								typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
-							const srcUrl = formatMediaLink(videoInfo['Auto'].url[0], site.url, password);
+							const srcUrl = formatMediaLink(videoInfo['Auto'].url[0], site.url, accessToken);
 							videoSources.push({ src: srcUrl });
 						}
 
 						k = 0;
 						while (k < videoInfo[defaultVideoResolution].format.length) {
 							if ('hls' === videoInfo[defaultVideoResolution].format[k]) {
-								const password =
+								const accessToken =
 									typeof MediaCMS !== 'undefined' && MediaCMS.access_token
 										? MediaCMS.access_token
 										: null;
 								const srcUrl = formatMediaLink(
 									videoInfo[defaultVideoResolution].url[k],
 									site.url,
-									password
+									accessToken
 								);
 								videoSources.push({ src: srcUrl });
 								break;
@@ -150,12 +150,12 @@ export function VideoPlayerByPageLink(props) {
 									if (!!srcUrl) {
 										// @note: In some cases, url value is 'null'.
 
-										// Get password for restricted media if available
-										const password =
+										// Get access token for restricted media if available
+										const accessToken =
 											typeof MediaCMS !== 'undefined' && MediaCMS.access_token
 												? MediaCMS.access_token
 												: null;
-										srcUrl = formatMediaLink(srcUrl, site.url, password);
+										srcUrl = formatMediaLink(srcUrl, site.url, accessToken);
 
 										videoSources.push({
 											src: srcUrl,

@@ -137,6 +137,11 @@ class MediaForm(forms.ModelForm):
         ].help_text = (
             "Set a password to protect Restricted Media. Limited to Trusted Users. Contact Cinemata to become one."
         )
+        self.fields["password"].widget = forms.PasswordInput(attrs={"render_value": False})
+        # Never display the stored hash in the form; show an empty field instead.
+        self.fields["password"].initial = ""
+        if self.instance and self.instance.pk:
+            self.initial["password"] = ""
 
         if self.instance.media_type != "video":
             self.fields.pop("thumbnail_time", None)
@@ -235,9 +240,14 @@ class MediaForm(forms.ModelForm):
         password = cleaned_data.get("password", False)
         featured = cleaned_data.get("featured", False)
 
+        # If editing an existing restricted media and the password field was left
+        # blank, keep the existing hashed password (don't require re-entry).
         if state == "restricted" and not password:
-            error = "Password has to be set when state is Restricted"
-            self.add_error("password", error)
+            if self.instance and self.instance.pk and self.instance.password:
+                cleaned_data["password"] = self.instance.password
+            else:
+                error = "Password has to be set when state is Restricted"
+                self.add_error("password", error)
         elif state == "restricted" and password:
             min_length = getattr(settings, "MEDIA_PASSWORD_MIN_LENGTH", 8)
             if len(password) < min_length:
@@ -279,10 +289,9 @@ class MediaForm(forms.ModelForm):
             self.instance.license = None
             self.instance.save()
 
-        # Hash password via set_password() if changed
-        password = data.get("password")
-        if password and password != self.instance.password:
-            self.instance.set_password(password)
+        # Password hashing is handled by Media.save() via its identify_hasher
+        # defense-in-depth guard, which detects plaintext passwords and hashes
+        # them automatically before persisting.
 
         media = super(MediaForm, self).save(*args, **kwargs)
         return media

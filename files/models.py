@@ -527,6 +527,11 @@ class Media(models.Model):
             pass  # TODO:add log
         return True
 
+    @property
+    def uid_hex(self):
+        """Return the uid as a hex string, for use with token utilities."""
+        return self.uid.hex
+
     def _invalidate_permission_cache(self):
         """
         Invalidate cached permissions and access tokens when media permissions change.
@@ -544,8 +549,7 @@ class Media(models.Model):
         try:
             from files.token_utils import invalidate_media_tokens
 
-            media_uid = self.uid.hex if hasattr(self.uid, "hex") else str(self.uid)
-            invalidate_media_tokens(media_uid)
+            invalidate_media_tokens(self.uid_hex)
         except Exception as e:
             logger.warning(f"Failed to invalidate tokens for media {self.uid}: {e}")
 

@@ -439,7 +439,7 @@ def view_media(request):
             validate_token,
         )
 
-        media_uid = media.uid.hex if hasattr(media.uid, "hex") else str(media.uid)
+        media_uid = media.uid_hex
         ip = request.META.get("REMOTE_ADDR", "")
 
         # Check session token on GET (avoid re-prompting)
@@ -449,7 +449,7 @@ def view_media(request):
             media_access_token = session_token
         elif session_token:
             # Stale session token — clean up
-            del request.session[f"media_token_{media.friendly_token}"]
+            request.session.pop(f"media_token_{media.friendly_token}", None)
 
         # Handle password POST
         if not can_see_restricted_media and request.POST.get("password"):
@@ -459,9 +459,15 @@ def view_media(request):
                 submitted_password = request.POST.get("password")
                 if check_password(submitted_password, media.password):
                     can_see_restricted_media = True
-                    token = generate_token(media_uid)
-                    request.session[f"media_token_{media.friendly_token}"] = token
-                    media_access_token = token
+                    try:
+                        token = generate_token(media_uid)
+                        request.session[f"media_token_{media.friendly_token}"] = token
+                        media_access_token = token
+                    except Exception:
+                        logger.warning(
+                            "Failed to generate token for media %s — granting degraded access",
+                            media.friendly_token,
+                        )
                     reset_rate_limit(ip, media.friendly_token)
                 else:
                     wrong_password_provided = True
@@ -952,7 +958,7 @@ def embed_media(request):
         from files.token_utils import validate_token
 
         token = request.GET.get("token")
-        media_uid = media.uid.hex if hasattr(media.uid, "hex") else str(media.uid)
+        media_uid = media.uid_hex
         if token and validate_token(token, media_uid):
             context["media_access_token"] = token
         else:
@@ -1133,13 +1139,15 @@ class MediaDetail(APIView):
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
-            # Handle RESTRICTED media — owner/editor bypass FIRST
+            # Handle RESTRICTED media — owner/editor/manager bypass FIRST
             elif media.state == "restricted" and not (
-                self.request.user == media.user or is_mediacms_editor(self.request.user)
+                self.request.user == media.user
+                or is_mediacms_editor(self.request.user)
+                or is_mediacms_manager(self.request.user)
             ):
                 from files.token_utils import validate_token
 
-                media_uid = media.uid.hex if hasattr(media.uid, "hex") else str(media.uid)
+                media_uid = media.uid_hex
                 if not token or not validate_token(token, media_uid):
                     return Response(
                         {"detail": "media is restricted"},

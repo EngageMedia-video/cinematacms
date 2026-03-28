@@ -21,9 +21,19 @@ logger = logging.getLogger("files.security")
 
 # Settings with defaults
 TOKEN_KEY_PREFIX = getattr(settings, "MEDIA_TOKEN_KEY_PREFIX", "cinemata_media_token")
-TOKEN_TTL = getattr(settings, "RESTRICTED_MEDIA_TOKEN_TTL", 14400)  # 4 hours
-BRUTE_FORCE_MAX_ATTEMPTS = getattr(settings, "PASSWORD_BRUTE_FORCE_MAX_ATTEMPTS", 5)
-BRUTE_FORCE_WINDOW = getattr(settings, "PASSWORD_BRUTE_FORCE_WINDOW", 900)  # 15 minutes
+
+
+def _get_token_ttl():
+    return getattr(settings, "RESTRICTED_MEDIA_TOKEN_TTL", 14400)  # 4 hours
+
+
+def _get_brute_force_max_attempts():
+    return getattr(settings, "PASSWORD_BRUTE_FORCE_MAX_ATTEMPTS", 5)
+
+
+def _get_brute_force_window():
+    return getattr(settings, "PASSWORD_BRUTE_FORCE_WINDOW", 900)  # 15 minutes
+
 
 # Redis key templates
 ACCESS_KEY_TEMPLATE = f"{TOKEN_KEY_PREFIX}:access:{{token}}"
@@ -57,9 +67,10 @@ def generate_token(media_id: str) -> str:
 
     redis = _get_redis()
     pipe = redis.pipeline()
-    pipe.setex(access_key, TOKEN_TTL, data)
+    ttl = _get_token_ttl()
+    pipe.setex(access_key, ttl, data)
     pipe.sadd(media_set_key, access_key)
-    pipe.expire(media_set_key, TOKEN_TTL)
+    pipe.expire(media_set_key, ttl)
     pipe.execute()
 
     return token
@@ -134,7 +145,7 @@ def check_rate_limit(ip: str, friendly_token: str) -> bool:
     try:
         redis = _get_redis()
         attempts = redis.get(key)
-        return not (attempts is not None and int(attempts) >= BRUTE_FORCE_MAX_ATTEMPTS)
+        return not (attempts is not None and int(attempts) >= _get_brute_force_max_attempts())
     except Exception:
         logger.error("Redis unavailable during rate limit check — allowing request")
         return True
@@ -148,11 +159,11 @@ def record_failed_attempt(ip: str, friendly_token: str) -> int:
         redis = _get_redis()
         pipe = redis.pipeline()
         pipe.incr(key)
-        pipe.expire(key, BRUTE_FORCE_WINDOW)
+        pipe.expire(key, _get_brute_force_window())
         results = pipe.execute()
         count = results[0]
 
-        if count >= BRUTE_FORCE_MAX_ATTEMPTS:
+        if count >= _get_brute_force_max_attempts():
             logger.warning(
                 "Rate limit triggered: ip=%s media=%s attempts=%d",
                 ip,
@@ -174,7 +185,7 @@ def reset_rate_limit(ip: str, friendly_token: str) -> None:
         redis = _get_redis()
         redis.delete(key)
     except Exception:
-        pass
+        logger.warning("Failed to reset rate limit", exc_info=True)
 
 
 # --- HLS manifest rewriting ---

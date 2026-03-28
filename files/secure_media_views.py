@@ -432,7 +432,8 @@ class SecureMediaView(View):
 
         # Server-side manifest rewriting for restricted HLS content
         if media.state == "restricted" and serving_path.endswith(".m3u8"):
-            return self._serve_rewritten_manifest(request, serving_path)
+            token = request.GET.get("token") or request.session.get(f"media_token_{media.friendly_token}")
+            return self._serve_rewritten_manifest(request, serving_path, token=token)
 
         response = self._serve_file(serving_path, head_request)
 
@@ -1070,25 +1071,29 @@ class SecureMediaView(View):
         """Delegate to module-level function."""
         return check_media_access_permission(request, media)
 
-    def _serve_rewritten_manifest(self, request, file_path: str) -> HttpResponse:
+    def _serve_rewritten_manifest(self, request, file_path: str, *, token: str | None = None) -> HttpResponse:
         """Read an .m3u8 manifest, inject ?token= into all URIs, return directly.
 
         This replaces X-Accel-Redirect for restricted HLS manifests so that
         Safari/iOS native HLS, Chrome 141+, and future mobile apps all
         receive authenticated segment URLs in the manifest itself.
+
+        Args:
+            request: The HTTP request.
+            file_path: Relative path to the .m3u8 manifest file.
+            token: The pre-validated access token passed by the caller.
+                   Callers must resolve the token from the query string or
+                   session before invoking this method.
         """
         from files.token_utils import rewrite_m3u8
 
-        token = request.GET.get("token") or request.session.get(
-            f"media_token_{file_path.split('/')[1] if '/' in file_path else ''}"
-        )
         if not token:
-            # Try to extract friendly_token from the path and check session
-            # The token should already be validated by _check_access_permission
-            token = ""
+            logger.warning("_serve_rewritten_manifest called without a valid token; manifest will lack token injection")
 
         safe_path = os.path.normpath(os.path.join(settings.MEDIA_ROOT, file_path))
         media_root = os.path.normpath(settings.MEDIA_ROOT)
+        if not media_root.endswith(os.sep):
+            media_root = media_root + os.sep
         if not safe_path.startswith(media_root):
             raise Http404("Invalid file path")
 

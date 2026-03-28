@@ -97,9 +97,9 @@ export default class VideoViewer extends React.PureComponent {
 			let defaultVideoResolution = extractDefaultVideoResolution(defaultResolution, this.videoInfo);
 
 			if ('Auto' === defaultResolution && void 0 !== this.videoInfo['Auto']) {
-				const password =
+				const accessToken =
 					typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
-				const srcUrl = formatMediaLink(this.videoInfo['Auto'].url[0], this.props.siteUrl, password);
+				const srcUrl = formatMediaLink(this.videoInfo['Auto'].url[0], this.props.siteUrl, accessToken);
 				this.videoSources.push({ src: srcUrl });
 			}
 
@@ -110,12 +110,12 @@ export default class VideoViewer extends React.PureComponent {
 			k = 0;
 			while (k < this.videoInfo[defaultVideoResolution].format.length) {
 				if ('hls' === this.videoInfo[defaultVideoResolution].format[k]) {
-					const password =
+					const accessToken =
 						typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
 					const srcUrl = formatMediaLink(
 						this.videoInfo[defaultVideoResolution].url[k],
 						this.props.siteUrl,
-						password
+						accessToken
 					);
 					this.videoSources.push({ src: srcUrl });
 					break;
@@ -129,9 +129,9 @@ export default class VideoViewer extends React.PureComponent {
 						srcUrl = this.props.data.encodings_info[defaultVideoResolution][k].url;
 
 						if (!!srcUrl) {
-							const password =
+							const accessToken =
 								typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
-							srcUrl = formatMediaLink(srcUrl, this.props.siteUrl, password);
+							srcUrl = formatMediaLink(srcUrl, this.props.siteUrl, accessToken);
 
 							this.videoSources.push({
 								src: srcUrl /*.replace("http://", "//").replace("https://", "//")*/,

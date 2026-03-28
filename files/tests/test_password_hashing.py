@@ -9,27 +9,9 @@ from django.contrib.auth.hashers import check_password, identify_hasher, make_pa
 from django.test import TestCase
 
 from files.models import Media
+from files.tests.helpers import create_test_media
 
 User = get_user_model()
-
-
-def create_test_media(user, **kwargs):
-    """Create test media without triggering file processing."""
-    defaults = {
-        "state": "public",
-        "media_type": "video",
-        "duration": 120,
-        "views": 0,
-        "likes": 0,
-        "dislikes": 0,
-        "reported_times": 0,
-        "encoding_status": "success",
-        "is_reviewed": True,
-    }
-    defaults.update(kwargs)
-    with patch.object(Media, "media_init", return_value=None):
-        media = Media.objects.create(title="Test", user=user, **defaults)
-    return media
 
 
 class SetPasswordTest(TestCase):

@@ -2,35 +2,13 @@
 Tests for MediaForm password validation.
 """
 
-from unittest.mock import patch
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 
 from files.forms import MediaForm
-from files.models import Media
+from files.tests.helpers import create_test_media
 
 User = get_user_model()
-
-
-def create_test_media(user, **kwargs):
-    state = kwargs.pop("state", "public")
-    defaults = {
-        "media_type": "video",
-        "duration": 120,
-        "views": 0,
-        "likes": 0,
-        "dislikes": 0,
-        "reported_times": 0,
-        "encoding_status": "success",
-        "is_reviewed": True,
-    }
-    defaults.update(kwargs)
-    with patch.object(Media, "media_init", return_value=None):
-        media = Media.objects.create(title="Test", user=user, **defaults)
-    Media.objects.filter(pk=media.pk).update(state=state)
-    media.refresh_from_db()
-    return media
 
 
 class MediaFormPasswordValidationTest(TestCase):
@@ -76,9 +54,20 @@ class MediaFormPasswordValidationTest(TestCase):
         if not form.is_valid():
             self.assertNotIn("password", form.errors)
 
-    def test_empty_password_with_restricted_state_rejected(self):
+    def test_empty_password_with_restricted_state_preserves_existing(self):
+        """Leaving password blank on an existing restricted media keeps the old hash."""
         data = self._get_form_data(password="")
         form = MediaForm(self.user, data=data, instance=self.media)
+        # Password field should NOT raise an error because the instance already
+        # has a hashed password that will be preserved.
+        if not form.is_valid():
+            self.assertNotIn("password", form.errors)
+
+    def test_empty_password_with_restricted_state_rejected_when_no_existing(self):
+        """Setting restricted state without a password on new media is rejected."""
+        media_no_pw = create_test_media(self.user, state="public")
+        data = self._get_form_data(password="")
+        form = MediaForm(self.user, data=data, instance=media_no_pw)
         self.assertFalse(form.is_valid())
         self.assertIn("password", form.errors)
 
