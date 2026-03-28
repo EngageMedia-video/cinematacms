@@ -97,6 +97,27 @@ class MediaSerializer(serializers.ModelSerializer):
         )
 
 
+class ManageUploadSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    def get_url(self, obj):
+        return self.context["request"].build_absolute_uri(obj.get_absolute_url())
+
+    class Meta:
+        model = Media
+        fields = (
+            "friendly_token",
+            "title",
+            "url",
+            "add_date",
+            "media_type",
+            "encoding_status",
+            "state",
+            "views",
+            "likes",
+        )
+
+
 class SingleMediaSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
     url = serializers.SerializerMethodField()

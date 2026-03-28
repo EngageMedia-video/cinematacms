@@ -11,7 +11,7 @@ from users.serializers import UserSerializer
 from .methods import is_mediacms_manager
 from .models import Comment, Media
 from .permissions import IsManageUploadsUser, IsMediacmsEditor
-from .serializers import CommentSerializer, MediaSerializer
+from .serializers import CommentSerializer, ManageUploadSerializer, MediaSerializer
 
 
 class MediaList(APIView):
@@ -133,7 +133,7 @@ class MyUploadsList(APIView):
         paginator = pagination_class()
         page = paginator.paginate_queryset(media, request)
 
-        serializer = MediaSerializer(page, many=True, context={"request": request})
+        serializer = ManageUploadSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
     def delete(self, request, format=None):
