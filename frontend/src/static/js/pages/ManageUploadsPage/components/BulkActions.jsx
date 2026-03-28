@@ -1,33 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
-export function UploadsBulkActions(props) {
-	const [selectedItemsSize, setSelectedItemsSize] = useState(props.selectedItemsSize);
+export function UploadsBulkActions({ selectedItemsSize, onBulkStateChange }) {
+	if (!selectedItemsSize) {
+		return null;
+	}
 
 	function onClickMakePrivate() {
-		if ('function' === typeof props.onBulkStateChange) {
-			props.onBulkStateChange('private');
+		if ('function' === typeof onBulkStateChange) {
+			onBulkStateChange('private');
 		}
 	}
 
 	function onClickMakePublic() {
-		if ('function' === typeof props.onBulkStateChange) {
-			props.onBulkStateChange('public');
+		if ('function' === typeof onBulkStateChange) {
+			onBulkStateChange('public');
 		}
 	}
 
 	function onClickMakeUnlisted() {
-		if ('function' === typeof props.onBulkStateChange) {
-			props.onBulkStateChange('unlisted');
+		if ('function' === typeof onBulkStateChange) {
+			onBulkStateChange('unlisted');
 		}
-	}
-
-	useEffect(() => {
-		setSelectedItemsSize(props.selectedItemsSize);
-	}, [props.selectedItemsSize]);
-
-	if (!selectedItemsSize) {
-		return null;
 	}
 
 	return (

@@ -7,20 +7,20 @@ import { formatManagementTableDate } from '../../../functions/formatManagementTa
 import PageStore from '../../../pages/_PageStore.js';
 
 function ManageItemTitle(props) {
-	if (void 0 !== props.title && void 0 !== props.url) {
+	if (props.title && props.url) {
 		return (<a href={props.url} title={props.title}>{props.title}</a>);
 	}
-	if (void 0 !== props.title) {
+	if (props.title) {
 		return (props.title);
 	}
-	if (void 0 !== props.url) {
+	if (props.url) {
 		return (props.url);
 	}
 	return (<i className="non-available">N/A</i>);
 }
 
 function ManageItemDate(props) {
-	if (void 0 !== props.date) {
+	if (props.date) {
 		return (formatManagementTableDate(new Date(Date.parse(props.date))));
 	}
 	return (<i className="non-available">N/A</i>);
@@ -105,13 +105,13 @@ function ManageUploadItemActions(props) {
 	return (
 		<div ref={props.containerRef} className="actions">
 			<PopupTrigger contentRef={popupContentRef}>
-				<button title={'Delete' + (void 0 !== props.title ? ' "' + props.title + '"' : '')}>Delete</button>
+				<button title={'Delete' + (props.title ? ' "' + props.title + '"' : '')}>Delete</button>
 			</PopupTrigger>
 			<PopupContent contentRef={popupContentRef} showCallback={onPopupShow} hideCallback={onPopupHide}>
 				<PopupMain>
 					<div className="popup-message">
 						<span className="popup-message-title">Media removal</span>
-						<span className="popup-message-main">{"You're willing to remove media" + (void 0 !== props.title ? ' "' + props.title + '"' : '')}?</span>
+						<span className="popup-message-main">{"You're willing to remove media" + (props.title ? ' "' + props.title + '"' : '')}?</span>
 					</div>
 					<hr />
 					<span className="popup-message-bottom">
@@ -158,11 +158,11 @@ export function ManageUploadItem(props) {
 				{props.hideDeleteAction ? null : <ManageUploadItemActions containerRef={actionsContainerRef} title={props.title} onProceed={onClickProceed} />}
 			</div>
 			<div className="mi-added"><ManageItemDate date={props.add_date} /></div>
-			<div className="mi-type">{void 0 === props.media_type ? <i className="non-available">N/A</i> : props.media_type}</div>
-			<div className="mi-encoding">{void 0 === props.encoding_status ? <i className="non-available">N/A</i> : props.encoding_status}</div>
-			<div className="mi-state">{void 0 === props.state ? <i className="non-available">N/A</i> : props.state}</div>
-			<div className="mi-views">{void 0 === props.views ? <i className="non-available">N/A</i> : props.views}</div>
-			<div className="mi-likes">{void 0 === props.likes ? <i className="non-available">N/A</i> : props.likes}</div>
+			<div className="mi-type">{props.media_type !== undefined ? props.media_type : <i className="non-available">N/A</i>}</div>
+			<div className="mi-encoding">{props.encoding_status !== undefined ? props.encoding_status : <i className="non-available">N/A</i>}</div>
+			<div className="mi-state">{props.state !== undefined ? props.state : <i className="non-available">N/A</i>}</div>
+			<div className="mi-views">{props.views !== undefined ? props.views : <i className="non-available">N/A</i>}</div>
+			<div className="mi-likes">{props.likes !== undefined ? props.likes : <i className="non-available">N/A</i>}</div>
 		</div>
 	);
 }

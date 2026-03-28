@@ -575,7 +575,7 @@ def can_manage_uploads(user):
     Trusted Users (advancedUser), Editors, Managers, and Superusers."""
     try:
         return bool(user.is_superuser or user.is_manager or user.is_editor or user.advancedUser)
-    except Exception:
+    except AttributeError:
         return False
 
 

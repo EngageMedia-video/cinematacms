@@ -94,45 +94,24 @@
 
 	.bulk-action-btn {
 		padding: 6px 12px;
-		border: 1px solid #ddd;
+		border: 1px solid var(--input-border-color);
 		border-radius: 4px;
-		background: #fff;
+		background: var(--input-bg-color);
+		color: var(--body-text-color);
 		cursor: pointer;
 		font-size: 13px;
 		transition: background-color 0.15s;
 
 		&:hover {
-			background: #f0f0f0;
+			background: var(--nav-menu-item-hover-bg-color);
 		}
 
 		&.bulk-action-delete {
-			color: #d32f2f;
-			border-color: #d32f2f;
+			color: var(--danger-color);
+			border-color: var(--danger-color);
 
 			&:hover {
-				background: #fce4ec;
-			}
-		}
-	}
-
-	.dark_theme & {
-
-		.bulk-action-btn {
-			background: #333;
-			border-color: #555;
-			color: #ddd;
-
-			&:hover {
-				background: #444;
-			}
-
-			&.bulk-action-delete {
-				color: #ef5350;
-				border-color: #ef5350;
-
-				&:hover {
-					background: #4a1a1a;
-				}
+				opacity: 0.85;
 			}
 		}
 	}
@@ -142,27 +121,16 @@
 
 	.mi-search-input {
 		padding: 6px 12px;
-		border: 1px solid #ddd;
+		border: 1px solid var(--input-border-color);
 		border-radius: 4px;
+		background: var(--input-bg-color);
+		color: var(--input-color);
 		font-size: 14px;
 		width: 200px;
 		outline: none;
 
 		&:focus {
 			border-color: var(--default-theme-color);
-		}
-	}
-
-	.dark_theme & {
-
-		.mi-search-input {
-			background: #333;
-			border-color: #555;
-			color: #ddd;
-
-			&:focus {
-				border-color: var(--default-theme-color);
-			}
 		}
 	}
 }

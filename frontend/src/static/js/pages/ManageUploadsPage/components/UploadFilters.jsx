@@ -22,10 +22,9 @@ const filters = {
 	],
 };
 
-export function UploadFilters(props) {
-	props = { hidden: false, ...props };
+export function UploadFilters({ hidden = false, onFiltersUpdate }) {
 
-	const [isHidden, setIsHidden] = useState(props.hidden);
+	const [isHidden, setIsHidden] = useState(hidden);
 
 	const [state, setState] = useState('all');
 	const [encodingStatus, setEncodingStatus] = useState('all');
@@ -51,12 +50,12 @@ export function UploadFilters(props) {
 		switch (ev.currentTarget.getAttribute('filter')) {
 			case 'state':
 				args.state = ev.currentTarget.getAttribute('value');
-				props.onFiltersUpdate(args);
+				onFiltersUpdate(args);
 				setState(args.state);
 				break;
 			case 'encoding_status':
 				args.encoding_status = ev.currentTarget.getAttribute('value');
-				props.onFiltersUpdate(args);
+				onFiltersUpdate(args);
 				setEncodingStatus(args.encoding_status);
 				break;
 		}
@@ -77,14 +76,14 @@ export function UploadFilters(props) {
 				encoding_status: encodingStatus,
 				search: encodeURIComponent(val),
 			};
-			props.onFiltersUpdate(args);
+			onFiltersUpdate(args);
 		}, 300);
 	}
 
 	useEffect(() => {
-		setIsHidden(props.hidden);
+		setIsHidden(hidden);
 		onWindowResize();
-	}, [props.hidden]);
+	}, [hidden]);
 
 	useEffect(() => {
 		PageStore.on('window_resize', onWindowResize);

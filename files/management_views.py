@@ -138,9 +138,18 @@ class MyUploadsList(APIView):
 
     def delete(self, request, format=None):
         tokens = request.GET.get("tokens")
-        if tokens:
-            tokens = [t.strip() for t in tokens.split(",") if t.strip()]
-            Media.objects.filter(friendly_token__in=tokens, user=request.user).delete()
+        if not tokens:
+            return Response(
+                {"detail": "tokens query parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        tokens = [t.strip() for t in tokens.split(",") if t.strip()]
+        if not tokens:
+            return Response(
+                {"detail": "tokens must contain at least one value"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        Media.objects.filter(friendly_token__in=tokens, user=request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
