@@ -32,18 +32,18 @@ function NotificationPageContent() {
             </div>
 
             <div className="flex gap-3 mb-4">
-                <button
-                    onClick={() => { setShowUnreadOnly(false); setPage(1); }}
-                    className={`border cursor-pointer text-sm px-4 py-1.5 rounded-md transition-all ${!showUnreadOnly ? 'bg-brand-primary/15 text-brand-primary border-brand-primary ring-1 ring-brand-primary/30 shadow-sm font-medium' : 'bg-transparent text-content-body border-border-input hover:bg-surface-popup'}`}
-                >
-                    All
-                </button>
-                <button
-                    onClick={() => { setShowUnreadOnly(true); setPage(1); }}
-                    className={`border cursor-pointer text-sm px-4 py-1.5 rounded-md transition-all ${showUnreadOnly ? 'bg-brand-primary/15 text-brand-primary border-brand-primary ring-1 ring-brand-primary/30 shadow-sm font-medium' : 'bg-transparent text-content-body border-border-input hover:bg-surface-popup'}`}
-                >
-                    Unread
-                </button>
+                {[
+                    { label: 'All', active: !showUnreadOnly, onClick: () => { setShowUnreadOnly(false); setPage(1); } },
+                    { label: 'Unread', active: showUnreadOnly, onClick: () => { setShowUnreadOnly(true); setPage(1); } },
+                ].map(({ label, active, onClick }) => (
+                    <button
+                        key={label}
+                        onClick={onClick}
+                        className={`border cursor-pointer text-sm px-4 py-1.5 rounded-md transition-all ${active ? 'bg-brand-primary/15 text-brand-primary border-brand-primary ring-1 ring-brand-primary/30 shadow-sm font-medium' : 'bg-transparent text-content-body border-border-input hover:bg-surface-popup'}`}
+                    >
+                        {label}
+                    </button>
+                ))}
             </div>
 
             <div className="bg-surface-popup rounded border border-border-input divide-y divide-border-input/40">

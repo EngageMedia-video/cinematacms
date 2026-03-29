@@ -26,7 +26,7 @@ export function NotificationItem({ notification }) {
         }
         // Guard: only navigate to relative internal URLs to prevent open redirect
         const url = notification.action_url;
-        if (url && url.startsWith('/')) {
+        if (url && url.startsWith('/') && !url.startsWith('//')) {
             window.location.href = url;
         }
     }
@@ -36,7 +36,12 @@ export function NotificationItem({ notification }) {
             role="button"
             tabIndex={0}
             onClick={handleClick}
-            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleClick()}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleClick();
+                }
+            }}
             className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer hover:bg-surface-popup/50 ${
                 !notification.is_read ? 'bg-brand-theme/5' : ''
             }`}
