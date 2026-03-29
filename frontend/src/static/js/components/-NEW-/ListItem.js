@@ -170,12 +170,7 @@ export function listItemProps(props, item, index) {
 
 	const author = {
 		name: item.author_name || item.user,
-		url: item.author_profile
-			? item.author_profile
-					.split('/')
-					.map((s) => encodeURIComponent(s))
-					.join('/')
-			: null,
+		url: item.author_profile || null,
 	};
 
 	const stats = {
