@@ -3,7 +3,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-VALID_WHISPER_MODELS = ("tiny", "base", "small", "medium", "large-v3")
+VALID_WHISPER_MODELS = ("tiny", "base", "small", "medium", "large", "large-v1", "large-v2", "large-v3")
 
 
 def get_whisper_cpp_paths(model_name="base"):
@@ -11,7 +11,7 @@ def get_whisper_cpp_paths(model_name="base"):
     Dynamically determine whisper.cpp paths relative to cinematacms directory.
 
     Args:
-        model_name: Whisper model to use. Valid values: tiny, base, small, medium, large-v3.
+        model_name: Whisper model to use. Valid values: tiny, base, small, medium, large, large-v1, large-v2, large-v3.
                     Falls back to 'base' if invalid or model file not found.
 
     Returns:

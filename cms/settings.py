@@ -584,7 +584,7 @@ MFA_EXCLUDE_PATHS = ["/fu/", "/api/", "/manage/", "/accounts/"]
 
 # Whisper ASR model selection. See VALID_WHISPER_MODELS in settings_utils.py for accepted values.
 # Can be set via WHISPER_MODEL_SIZE environment variable for container deployments.
-_whisper_model_requested = os.getenv("WHISPER_MODEL_SIZE", "base")
+_whisper_model_requested = os.getenv("WHISPER_MODEL_SIZE", "base").strip()
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL, WHISPER_MODEL = get_whisper_cpp_paths(_whisper_model_requested)
 
 # django-maintenance-mode settings
