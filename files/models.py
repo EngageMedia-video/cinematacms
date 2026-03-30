@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.files import File
+from django.core.validators import RegexValidator
 from django.db import connection, models
 from django.db.models import Q
 from django.db.models.signals import (
@@ -286,7 +287,12 @@ class Media(models.Model):
     )
     hls_file = models.CharField(max_length=1000, blank=True)
     is_encrypted = models.BooleanField(default=False, help_text="Enable AES-128 encryption for HLS streaming")
-    encryption_key = models.CharField(max_length=64, blank=True, help_text="Hex-encoded AES-128 encryption key")
+    encryption_key = models.CharField(
+        max_length=32,
+        blank=True,
+        validators=[RegexValidator(regex=r"^(?:[0-9A-Fa-f]{32})?$", message="Must be blank or exactly 32 hex characters")],
+        help_text="Hex-encoded AES-128 encryption key",
+    )
     offline_access = models.CharField(
         max_length=20,
         choices=[("stream_only", "Stream Only"), ("offline", "Offline")],
@@ -409,12 +415,28 @@ class Media(models.Model):
                 self.uploaded_thumbnail.save(content=myfile, name=thumbnail_name)
 
     def ensure_encryption_key(self):
-        """Generate an AES-128 key if one doesn't exist. Returns hex string."""
-        if not self.encryption_key:
-            import secrets
+        """Generate an AES-128 key if one doesn't exist. Returns hex string.
+
+        Uses select_for_update to prevent concurrent workers from generating
+        different keys for the same media.
+        """
+        if self.encryption_key:
+            return self.encryption_key
+
+        import secrets
+
+        from django.db import transaction
+
+        with transaction.atomic():
+            locked = self.__class__.objects.select_for_update().get(pk=self.pk)
+            if locked.encryption_key:
+                self.encryption_key = locked.encryption_key
+                return self.encryption_key
 
             self.encryption_key = secrets.token_hex(16)
-            self.save(update_fields=["encryption_key"])
+            locked.encryption_key = self.encryption_key
+            locked.save(update_fields=["encryption_key"])
+
         return self.encryption_key
 
     def transcribe_function(self):

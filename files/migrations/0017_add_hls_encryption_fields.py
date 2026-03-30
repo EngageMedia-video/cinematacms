@@ -1,3 +1,4 @@
+import django.core.validators
 from django.db import migrations, models
 
 
@@ -16,7 +17,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="media",
             name="encryption_key",
-            field=models.CharField(blank=True, help_text="Hex-encoded AES-128 encryption key", max_length=64),
+            field=models.CharField(
+                blank=True,
+                help_text="Hex-encoded AES-128 encryption key",
+                max_length=32,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Must be blank or exactly 32 hex characters",
+                        regex="^(?:[0-9A-Fa-f]{32})?$",
+                    )
+                ],
+            ),
         ),
         migrations.AddField(
             model_name="media",

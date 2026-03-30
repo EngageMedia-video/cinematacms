@@ -2134,8 +2134,11 @@ class MediaKeyView(APIView):
         except ValueError:
             raise Http404
 
+        if len(key_bytes) != 16:
+            raise Http404
+
         response = HttpResponse(key_bytes, content_type="application/octet-stream")
-        response["Content-Length"] = 16
+        response["Content-Length"] = len(key_bytes)
         response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response["Pragma"] = "no-cache"
         response["Access-Control-Allow-Credentials"] = "true"
