@@ -298,6 +298,7 @@ class Media(models.Model):
         choices=[("stream_only", "Stream Only"), ("offline", "Offline")],
         default="stream_only",
         blank=True,
+        help_text="Controls whether offline playback is allowed",
     )
     # keep track if media file has changed
     company = models.CharField("Production Company", max_length=300, blank=True, null=True)
