@@ -28,6 +28,121 @@ from .models import Encoding, Media, Subtitle
 
 logger = logging.getLogger(__name__)
 
+
+# --- Standalone permission functions (used by SecureMediaView and MediaKeyView) ---
+
+
+def user_has_elevated_access(user, media: Media) -> bool:
+    """Check if user is owner, editor, or manager with caching. Assumes user is authenticated."""
+    if not user.is_authenticated:
+        return False
+
+    cache_key = get_elevated_access_cache_key(user.id, media.uid)
+
+    cached_result = get_cached_permission(cache_key)
+    if cached_result is not None:
+        return cached_result
+
+    result = user == media.user or is_mediacms_editor(user) or is_mediacms_manager(user) or is_curator(user)
+
+    set_cached_permission(cache_key, result)
+    return result
+
+
+def _calculate_access_permission(request, media: Media) -> bool:
+    """Calculate access permission without caching."""
+    user = request.user
+
+    if user.is_authenticated and user_has_elevated_access(user, media):
+        return True
+
+    if media.state == "restricted":
+        session_password_hash = request.session.get(f"media_password_{media.friendly_token}")
+        query_password = request.GET.get("password")
+
+        expected_password_hash = None
+        if media.password:
+            expected_password_hash = hashlib.pbkdf2_hmac(
+                "sha256",
+                media.password.encode("utf-8"),
+                media.friendly_token.encode("utf-8"),
+                iterations=600_000,
+            ).hex()
+
+        valid_session_password = (
+            bool(session_password_hash)
+            and bool(expected_password_hash)
+            and hmac.compare_digest(session_password_hash, expected_password_hash)
+        )
+
+        valid_query_password = False
+        if query_password and expected_password_hash:
+            query_hash = hashlib.pbkdf2_hmac(
+                "sha256",
+                query_password.encode("utf-8"),
+                media.friendly_token.encode("utf-8"),
+                iterations=600_000,
+            ).hex()
+            valid_query_password = hmac.compare_digest(query_hash, expected_password_hash)
+
+        if valid_session_password or valid_query_password:
+            return True
+
+        return False
+
+    if not user.is_authenticated:
+        return False
+
+    if media.state == "private":
+        return False
+
+    return False
+
+
+def check_media_access_permission(request, media: Media) -> bool:
+    """Check if the user has permission to access the media, with caching."""
+    user = request.user
+    user_id = user.id if user.is_authenticated else "anonymous"
+
+    if media.state in ("public", "unlisted"):
+        return True
+
+    additional_data = None
+    if media.state == "restricted":
+        session_password_hash = request.session.get(f"media_password_{media.friendly_token}")
+        query_password = request.GET.get("password")
+
+        if session_password_hash:
+            attempt_material = session_password_hash
+        elif query_password:
+            attempt_material = hashlib.pbkdf2_hmac(
+                "sha256",
+                query_password.encode("utf-8"),
+                media.friendly_token.encode("utf-8"),
+                iterations=600_000,
+            ).hex()
+        else:
+            attempt_material = "no_password"
+
+        password_hash = hashlib.blake2b(attempt_material.encode("utf-8"), digest_size=6).hexdigest()
+        additional_data = f"restricted:{password_hash}"
+
+    cache_key = get_permission_cache_key(user_id, media.uid, additional_data)
+
+    cached_result = get_cached_permission(cache_key)
+    if cached_result is not None:
+        return cached_result
+
+    result = _calculate_access_permission(request, media)
+
+    cache_timeout = PERMISSION_CACHE_TIMEOUT
+    if media.state == "restricted" and additional_data:
+        cache_timeout = RESTRICTED_MEDIA_CACHE_TIMEOUT
+
+    set_cached_permission(cache_key, result, cache_timeout)
+    return result
+
+
 # Configuration constants
 CACHE_CONTROL_MAX_AGE = 604800  # 1 week
 MEDIA_PATH_CACHE_TIMEOUT = 300  # 5 minutes for file path → Media ID mapping
@@ -965,138 +1080,12 @@ class SecureMediaView(View):
         return not is_video_like
 
     def _user_has_elevated_access(self, user, media: Media) -> bool:
-        """Check if user is owner, editor, or manager with caching. Assumes user is authenticated."""
-        if not user.is_authenticated:
-            return False
-
-        # Generate cache key for elevated access check
-        cache_key = get_elevated_access_cache_key(user.id, media.uid)
-
-        # Try to get from cache first
-        cached_result = get_cached_permission(cache_key)
-        if cached_result is not None:
-            logger.debug(f"Using cached elevated access result for user {user.id}, media {media.uid}")
-            return cached_result
-
-        # Calculate the result
-        result = user == media.user or is_mediacms_editor(user) or is_mediacms_manager(user) or is_curator(user)
-
-        # Cache the result
-        set_cached_permission(cache_key, result)
-
-        return result
+        """Delegate to module-level function."""
+        return user_has_elevated_access(user, media)
 
     def _check_access_permission(self, request, media: Media) -> bool:
-        """Check if the user has permission to access the media with caching."""
-        user = request.user
-        user_id = user.id if user.is_authenticated else "anonymous"
-
-        # For public and unlisted media, no need to cache (always accessible)
-        if media.state in ("public", "unlisted"):
-            return True
-
-        # For restricted media, include password info in cache key
-        additional_data = None
-        if media.state == "restricted":
-            session_password_hash = request.session.get(f"media_password_{media.friendly_token}")
-            query_password = request.GET.get("password")
-
-            # Determine what password material to use for cache key
-            if session_password_hash:
-                # Session already contains hash of the correct password
-                attempt_material = session_password_hash
-            elif query_password:
-                # Hash the query password to compare with expected hash
-                attempt_material = hashlib.pbkdf2_hmac(
-                    "sha256",
-                    query_password.encode("utf-8"),
-                    media.friendly_token.encode("utf-8"),
-                    iterations=600_000,
-                ).hex()
-            else:
-                attempt_material = "no_password"
-
-            # Create a shorter hash for cache key (avoid key length issues)
-            password_hash = hashlib.blake2b(attempt_material.encode("utf-8"), digest_size=6).hexdigest()
-            additional_data = f"restricted:{password_hash}"
-        # Generate cache key
-        cache_key = get_permission_cache_key(user_id, media.uid, additional_data)
-
-        # Try to get from cache first
-        cached_result = get_cached_permission(cache_key)
-        if cached_result is not None:
-            logger.debug(f"Using cached permission result for user {user_id}, media {media.uid}")
-            return cached_result
-
-        # Calculate permission (original logic)
-        result = self._calculate_access_permission(request, media)
-
-        # Cache the result (but with shorter timeout for restricted media with passwords)
-        cache_timeout = PERMISSION_CACHE_TIMEOUT
-        if media.state == "restricted" and additional_data:
-            # Shorter cache for password-based access
-            cache_timeout = RESTRICTED_MEDIA_CACHE_TIMEOUT
-
-        set_cached_permission(cache_key, result, cache_timeout)
-
-        return result
-
-    def _calculate_access_permission(self, request, media: Media) -> bool:
-        """Calculate access permission without caching (original logic)."""
-        user = request.user
-
-        # Elevated users bypass further checks for non-public media
-        if user.is_authenticated and self._user_has_elevated_access(user, media):
-            logger.debug(f"Access granted for '{media.state}' media: user has elevated permissions")
-            return True
-
-        if media.state == "restricted":
-            session_password_hash = request.session.get(f"media_password_{media.friendly_token}")
-            query_password = request.GET.get("password")
-
-            # Generate expected hash of the stored password for comparison using PBKDF2
-            expected_password_hash = None
-            if media.password:
-                expected_password_hash = hashlib.pbkdf2_hmac(
-                    "sha256",
-                    media.password.encode("utf-8"),
-                    media.friendly_token.encode("utf-8"),
-                    iterations=600_000,
-                ).hex()
-
-            # Compare hashes: session stores a hash; hash the query param as well
-            valid_session_password = (
-                bool(session_password_hash)
-                and bool(expected_password_hash)
-                and hmac.compare_digest(session_password_hash, expected_password_hash)
-            )
-
-            valid_query_password = False
-            if query_password and expected_password_hash:
-                query_hash = hashlib.pbkdf2_hmac(
-                    "sha256",
-                    query_password.encode("utf-8"),
-                    media.friendly_token.encode("utf-8"),
-                    iterations=600_000,
-                ).hex()
-                valid_query_password = hmac.compare_digest(query_hash, expected_password_hash)
-
-            if valid_session_password or valid_query_password:
-                logger.debug("Restricted media access granted: valid password provided")
-                return True
-
-            logger.debug("Restricted media access denied: no valid password provided")
-            return False
-
-        if not user.is_authenticated:
-            logger.debug(f"Access denied for '{media.state}' media: user not authenticated")
-            return False
-
-        if media.state == "private":
-            logger.debug("Private media access denied: user lacks elevated permissions")
-            return False
-
-        return False
+        """Delegate to module-level function."""
+        return check_media_access_permission(request, media)
 
     def _serve_file(self, file_path: str, head_request: bool = False) -> HttpResponse:
         """Serve file using X-Accel-Redirect (production) or Django (development)."""

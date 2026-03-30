@@ -78,6 +78,7 @@ const defaults = {
 			enableLowInitialPlaylist: true, // Conservative default due to unreliable device detection
 			limitRenditionByPlayerDimensions: true,
 			useDevicePixelRatio: true,
+			withCredentials: true, // Send session cookies with HLS key requests (AES-128 encryption)
 		},
 	},
 };

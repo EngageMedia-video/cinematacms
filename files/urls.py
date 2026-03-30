@@ -91,6 +91,11 @@ urlpatterns = [
         name="api_get_playlist",
     ),
     re_path(r"^api/v1/user/action/(?P<action>[\w]*)$", views.UserActions.as_view()),
+    re_path(
+        r"^api/v1/keys/(?P<friendly_token>[\w]+(-[\w]+)*)/?$",
+        views.MediaKeyView.as_view(),
+        name="api_get_media_key",
+    ),
     path("fu/", include(("uploader.urls", "uploader"), namespace="uploader")),
     # TODO: https://site.com/channel/UCwobzUc3z-0PrFpoRxNszXQ channel
     # ADMIN VIEWS

@@ -201,6 +201,7 @@ class SingleMediaSerializer(serializers.ModelSerializer):
             "license_info",
             "tags_info",
             "hls_info",
+            "is_encrypted",
             "subtitles_info",
             "ratings_info",
             "allow_download",

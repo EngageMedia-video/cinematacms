@@ -70,6 +70,7 @@ class MediaForm(forms.ModelForm):
             "state",
             "password",
             "allow_download",
+            "is_encrypted",
         ]
 
         widgets = {
@@ -107,6 +108,7 @@ class MediaForm(forms.ModelForm):
 
         self.fields["state"].label = "Status"
         self.fields["allow_download"].label = "Allow Download"
+        self.fields["is_encrypted"].label = "Enable HLS Encryption"
         self.fields["reported_times"].label = "Reported Times"
         self.fields["enable_comments"].label = "Enable Comments"
         self.fields["new_tags"].label = "Tags"
@@ -144,10 +146,14 @@ class MediaForm(forms.ModelForm):
             self.fields.pop("is_reviewed")
             self.fields.pop("add_date")
 
+        if self.instance.media_type != "video":
+            self.fields.pop("is_encrypted", None)
+
         if not is_mediacms_editor(user):
             if not user.advancedUser:
                 self.fields.pop("media_file")
                 self.fields.pop("password")
+                self.fields.pop("is_encrypted", None)
                 self.fields["state"]
                 self.fields["state"] = forms.ChoiceField(
                     choices=MEDIA_STATES,
