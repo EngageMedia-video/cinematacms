@@ -186,10 +186,19 @@ class ManifestRewriteTest(SimpleTestCase):
         result = token_utils.rewrite_m3u8(content, "t1")
         self.assertIn('URI="init.mp4?token=t1"', result)
 
-    def test_ext_x_key_uri(self):
+    def test_ext_x_key_uri_absolute_not_rewritten(self):
+        """Absolute URIs must NOT be rewritten to avoid leaking tokens to third-party hosts."""
         content = '#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="https://example.com/key"\n#EXTINF:4.0,\nseg.ts'
         result = token_utils.rewrite_m3u8(content, "t2")
-        self.assertIn('URI="https://example.com/key?token=t2"', result)
+        # Absolute URI must remain unchanged — no token appended
+        self.assertIn('URI="https://example.com/key"', result)
+        self.assertNotIn("token=t2", result.split("\n")[1])
+
+    def test_ext_x_key_uri_relative(self):
+        """Relative key URIs should still get the token."""
+        content = '#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="keys/segment.key"\n#EXTINF:4.0,\nseg.ts'
+        result = token_utils.rewrite_m3u8(content, "t2")
+        self.assertIn('URI="keys/segment.key?token=t2"', result)
 
     def test_iframe_stream_uri(self):
         content = '#EXTM3U\n#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=100000,URI="media-1/iframes.m3u8"'

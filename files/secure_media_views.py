@@ -430,10 +430,12 @@ class SecureMediaView(View):
         # otherwise use the URL path
         serving_path = actual_file_path if actual_file_path else file_path
 
-        # Server-side manifest rewriting for restricted HLS content
+        # Server-side manifest rewriting for restricted HLS content.
+        # Use the validated token so that an invalid query-string token
+        # can never be injected into rewritten manifest URIs.
         if media.state == "restricted" and serving_path.endswith(".m3u8"):
-            token = request.GET.get("token") or request.session.get(f"media_token_{media.friendly_token}")
-            return self._serve_rewritten_manifest(request, serving_path, token=token)
+            valid_token = self._get_valid_restricted_token(request, media)
+            return self._serve_rewritten_manifest(request, serving_path, token=valid_token)
 
         response = self._serve_file(serving_path, head_request)
 
@@ -1066,6 +1068,31 @@ class SecureMediaView(View):
     def _user_has_elevated_access(self, user, media: Media) -> bool:
         """Delegate to module-level function."""
         return user_has_elevated_access(user, media)
+
+    def _get_valid_restricted_token(self, request, media: Media) -> str | None:
+        """Resolve the first valid restricted-media token from the request.
+
+        Checks the query-string ``?token=`` first, then falls back to the
+        session token.  Returns the validated token string, or ``None`` if
+        neither candidate is valid.
+
+        This single source of truth prevents an attacker-controlled invalid
+        query token from polluting the permission cache or leaking into
+        rewritten HLS manifests.
+        """
+        from files.token_utils import validate_token
+
+        media_uid = media.uid_hex
+
+        query_token = request.GET.get("token")
+        if query_token and validate_token(query_token, media_uid):
+            return query_token
+
+        session_token = request.session.get(f"media_token_{media.friendly_token}")
+        if session_token and validate_token(session_token, media_uid):
+            return session_token
+
+        return None
 
     def _check_access_permission(self, request, media: Media) -> bool:
         """Delegate to module-level function."""

@@ -537,13 +537,12 @@ class Media(models.Model):
         Invalidate cached permissions and access tokens when media permissions change.
         Called automatically when media state or password changes.
         """
-        if not getattr(settings, "ENABLE_PERMISSION_CACHE", True):
-            return
-        try:
-            clear_media_permission_cache(self.uid)
-            logger.debug(f"Invalidated permission cache for media: {self.uid}")
-        except Exception as e:
-            logger.warning(f"Failed to invalidate permission cache for media {self.uid}: {e}")
+        if getattr(settings, "ENABLE_PERMISSION_CACHE", True):
+            try:
+                clear_media_permission_cache(self.uid)
+                logger.debug(f"Invalidated permission cache for media: {self.uid}")
+            except Exception as e:
+                logger.warning(f"Failed to invalidate permission cache for media {self.uid}: {e}")
 
         # Invalidate all active access tokens for this media
         try:

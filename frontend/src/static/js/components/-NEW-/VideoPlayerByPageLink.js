@@ -49,6 +49,7 @@ export function VideoPlayerByPageLink(props) {
 
 	let data = null;
 	let videoId = null;
+	let restrictedToken = null;
 
 	let urlParams = (function () {
 		let ret = new UrlParse(props.pageLink).query;
@@ -68,6 +69,9 @@ export function VideoPlayerByPageLink(props) {
 			if ('m' === urlParams[i]) {
 				// @note: "m" is paramater name for media's id/token.
 				videoId = urlParams[i + 1];
+			} else if ('token' === urlParams[i]) {
+				// @note: "token" is the restricted-media access token.
+				restrictedToken = urlParams[i + 1];
 			}
 			i += 2;
 		}
@@ -75,6 +79,9 @@ export function VideoPlayerByPageLink(props) {
 
 	if (null !== videoId) {
 		apiRequestUrl = apiUrl.media + '/' + videoId;
+		if (null !== restrictedToken) {
+			apiRequestUrl += '?token=' + encodeURIComponent(restrictedToken);
+		}
 	}
 
 	useEffect(() => {
@@ -119,7 +126,9 @@ export function VideoPlayerByPageLink(props) {
 
 						if ('Auto' === defaultResolution && void 0 !== videoInfo['Auto']) {
 							const accessToken =
-								typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
+								typeof MediaCMS !== 'undefined' && MediaCMS.access_token
+									? MediaCMS.access_token
+									: restrictedToken;
 							const srcUrl = formatMediaLink(videoInfo['Auto'].url[0], site.url, accessToken);
 							videoSources.push({ src: srcUrl });
 						}
@@ -130,7 +139,7 @@ export function VideoPlayerByPageLink(props) {
 								const accessToken =
 									typeof MediaCMS !== 'undefined' && MediaCMS.access_token
 										? MediaCMS.access_token
-										: null;
+										: restrictedToken;
 								const srcUrl = formatMediaLink(
 									videoInfo[defaultVideoResolution].url[k],
 									site.url,
@@ -154,7 +163,7 @@ export function VideoPlayerByPageLink(props) {
 										const accessToken =
 											typeof MediaCMS !== 'undefined' && MediaCMS.access_token
 												? MediaCMS.access_token
-												: null;
+												: restrictedToken;
 										srcUrl = formatMediaLink(srcUrl, site.url, accessToken);
 
 										videoSources.push({

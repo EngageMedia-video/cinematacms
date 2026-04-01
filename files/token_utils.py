@@ -14,6 +14,7 @@ import logging
 import re
 import secrets
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 
 from django.conf import settings
 
@@ -105,8 +106,23 @@ def validate_token(token: str, expected_media_id: str) -> bool:
     return hmac.compare_digest(str(stored_media_id), str(expected_media_id))
 
 
+_INVALIDATE_LUA = """
+local keys = redis.call('SMEMBERS', KEYS[1])
+local count = 0
+for _, key in ipairs(keys) do
+    count = count + redis.call('DEL', key)
+end
+redis.call('DEL', KEYS[1])
+return count
+"""
+
+
 def invalidate_media_tokens(media_id: str) -> int:
-    """Invalidate all active tokens for a media item. Atomic via Redis pipeline.
+    """Invalidate all active tokens for a media item atomically via Lua script.
+
+    Uses a Redis Lua script to ensure no race condition between reading the
+    token set and deleting the keys — a concurrent generate_token() cannot
+    slip a new key in between.
 
     Returns the number of tokens invalidated.
     """
@@ -114,18 +130,11 @@ def invalidate_media_tokens(media_id: str) -> int:
 
     try:
         redis = _get_redis()
-        token_keys = redis.smembers(media_set_key)
-        if not token_keys:
-            return 0
+        count = redis.eval(_INVALIDATE_LUA, 1, media_set_key)
+        count = int(count)
 
-        pipe = redis.pipeline()
-        for key in token_keys:
-            pipe.delete(key)
-        pipe.delete(media_set_key)
-        pipe.execute()
-
-        count = len(token_keys)
-        logger.info("Invalidated %d token(s) for media %s", count, media_id)
+        if count:
+            logger.info("Invalidated %d token(s) for media %s", count, media_id)
         return count
     except Exception:
         logger.error("Failed to invalidate tokens for media %s", media_id, exc_info=True)
@@ -192,7 +201,14 @@ def reset_rate_limit(ip: str, friendly_token: str) -> None:
 
 
 def _append_token_to_uri(uri: str, token: str) -> str:
-    """Append ?token= (or &token=) to a URI."""
+    """Append ?token= (or &token=) to a URI.
+
+    Skips absolute URIs (those with a scheme or netloc) to avoid leaking
+    the bearer token to third-party hosts referenced in HLS manifests.
+    """
+    parts = urlsplit(uri)
+    if parts.scheme or parts.netloc:
+        return uri
     separator = "&" if "?" in uri else "?"
     return f"{uri}{separator}token={token}"
 

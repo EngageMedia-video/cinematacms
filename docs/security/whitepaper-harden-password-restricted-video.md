@@ -3,7 +3,6 @@
 **Document type:** Technical Whitepaper
 **Date:** March 27, 2026
 **Status:** Draft
-**Related plan:** [Implementation Plan](../plans/2026-03-26-001-feat-harden-password-restricted-video-plan.md)
 
 ---
 

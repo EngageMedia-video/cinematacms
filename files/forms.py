@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django import forms
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
@@ -252,6 +253,11 @@ class MediaForm(forms.ModelForm):
             min_length = getattr(settings, "MEDIA_PASSWORD_MIN_LENGTH", 8)
             if len(password) < min_length:
                 self.add_error("password", f"Password must be at least {min_length} characters.")
+            else:
+                # Hash the plaintext password at the form level so it is never
+                # stored verbatim.  This closes the identify_hasher prefix-spoofing
+                # gap (e.g. a user submitting "pbkdf2_sha256$..." as a raw value).
+                cleaned_data["password"] = make_password(password)
 
         if state == "restricted" and featured:
             error = "This video cannot be featured as it is Restricted."
@@ -289,9 +295,9 @@ class MediaForm(forms.ModelForm):
             self.instance.license = None
             self.instance.save()
 
-        # Password hashing is handled by Media.save() via its identify_hasher
-        # defense-in-depth guard, which detects plaintext passwords and hashes
-        # them automatically before persisting.
+        # Password is hashed in clean() via make_password() before it reaches
+        # the model.  Media.save() retains an identify_hasher guard as
+        # defense-in-depth only.
 
         media = super(MediaForm, self).save(*args, **kwargs)
         return media
