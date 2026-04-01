@@ -31,7 +31,10 @@ function NotificationPageContent() {
                 </button>
             </div>
 
-            <div className="flex gap-3 mb-4">
+            {/* Inline styles on buttons are required because global _buttons.scss
+                overrides Tailwind @layer utilities for background-color, color,
+                padding, border-radius, and font properties on all button elements. */}
+            <div className="inline-flex gap-1 rounded-full p-1 mb-6 bg-surface-popup border border-border-input" style={{ boxShadow: '0 1px 2px rgba(0,0,0,.08)' }}>
                 {[
                     { label: 'All', active: !showUnreadOnly, onClick: () => { setShowUnreadOnly(false); setPage(1); } },
                     { label: 'Unread', active: showUnreadOnly, onClick: () => { setShowUnreadOnly(true); setPage(1); } },
@@ -39,7 +42,17 @@ function NotificationPageContent() {
                     <button
                         key={label}
                         onClick={onClick}
-                        className={`border cursor-pointer text-sm px-4 py-1.5 rounded-md transition-all ${active ? 'bg-brand-primary/15 text-brand-primary border-brand-primary ring-1 ring-brand-primary/30 shadow-sm font-medium' : 'bg-transparent text-content-body border-border-input hover:bg-surface-popup'}`}
+                        className="cursor-pointer transition-all"
+                        style={{
+                            padding: '5px 16px',
+                            borderRadius: '9999px',
+                            border: 'none',
+                            fontSize: '13px',
+                            fontWeight: 500,
+                            ...(active
+                                ? { backgroundColor: 'var(--btn-primary-bg-color)', color: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }
+                                : { backgroundColor: 'transparent', color: 'var(--body-text-color)', opacity: 0.55 }),
+                        }}
                     >
                         {label}
                     </button>
