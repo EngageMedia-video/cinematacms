@@ -6,8 +6,8 @@ export default defineConfig({
 		lib: {
 			entry: resolve(__dirname, 'src/index.js'),
 			name: 'MediaCmsVjsPlugin',
-			formats: ['umd'],
-			fileName: () => 'mediacms-vjs-plugin.js',
+			formats: ['es', 'umd'],
+			fileName: (format) => (format === 'es' ? 'mediacms-vjs-plugin.mjs' : 'mediacms-vjs-plugin.js'),
 		},
 		outDir: 'dist',
 		emptyOutDir: true,

@@ -11,7 +11,15 @@
 		"videojs-plugin"
 	],
 	"main": "./dist/mediacms-vjs-plugin.js",
-	"browser": "./dist/mediacms-vjs-plugin.js",
+	"module": "./dist/mediacms-vjs-plugin.mjs",
+	"exports": {
+		".": {
+			"import": "./dist/mediacms-vjs-plugin.mjs",
+			"require": "./dist/mediacms-vjs-plugin.js",
+			"default": "./dist/mediacms-vjs-plugin.mjs"
+		},
+		"./dist/*": "./dist/*"
+	},
 	"files": [
 		"dist"
 	],

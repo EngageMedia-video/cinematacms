@@ -6,8 +6,8 @@ export default defineConfig({
 		lib: {
 			entry: resolve(__dirname, 'src/index.js'),
 			name: 'MediaPlayer',
-			formats: ['umd'],
-			fileName: () => 'mediacms-media-player.js',
+			formats: ['es', 'umd'],
+			fileName: (format) => (format === 'es' ? 'mediacms-media-player.mjs' : 'mediacms-media-player.js'),
 		},
 		outDir: 'dist',
 		emptyOutDir: true,
