@@ -306,7 +306,7 @@ FILE_STORAGE = "django.core.files.storage.DefaultStorage"
 RELATED_MEDIA_STRATEGY = "content"
 
 # These are passed on every request
-LOAD_FROM_CDN = True  # if set to False will not fetch external content
+LOAD_FROM_CDN = False  # if set to True will fetch external content from CDNs
 LOGIN_ALLOWED = True  # whether the login button appears
 REGISTER_ALLOWED = True  # whether the register button appears
 UPLOAD_MEDIA_ALLOWED = True  # whether the upload media button appears
