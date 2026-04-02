@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import status
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
@@ -9,8 +10,8 @@ from users.serializers import UserSerializer
 
 from .methods import is_mediacms_manager
 from .models import Comment, Media
-from .permissions import IsMediacmsEditor
-from .serializers import CommentSerializer, MediaSerializer
+from .permissions import IsManageUploadsUser, IsMediacmsEditor
+from .serializers import CommentSerializer, ManageUploadSerializer, MediaSerializer
 
 
 class MediaList(APIView):
@@ -93,6 +94,109 @@ class MediaList(APIView):
             tokens = tokens.split(",")
             Media.objects.filter(friendly_token__in=tokens).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MyUploadsList(APIView):
+    permission_classes = (IsManageUploadsUser,)
+    parser_classes = (JSONParser,)
+
+    def get(self, request, format=None):
+        params = self.request.query_params
+        ordering = params.get("ordering", "").strip()
+        sort_by = params.get("sort_by", "").strip()
+        state = params.get("state", "").strip()
+        encoding_status = params.get("encoding_status", "").strip()
+        search = params.get("search", "").strip()
+
+        sort_by_options = ["title", "add_date", "edit_date", "views", "likes"]
+        if sort_by not in sort_by_options:
+            sort_by = "add_date"
+        ordering = "" if ordering == "asc" else "-"
+
+        if state not in ["private", "public", "unlisted"]:
+            state = None
+
+        if encoding_status not in ["pending", "running", "fail", "success"]:
+            encoding_status = None
+
+        pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+        qs = Media.objects.select_related("user").filter(user=request.user)
+        if state:
+            qs = qs.filter(state=state)
+        if encoding_status:
+            qs = qs.filter(encoding_status=encoding_status)
+        if search:
+            qs = qs.filter(title__icontains=search)
+
+        media = qs.order_by(f"{ordering}{sort_by}")
+
+        paginator = pagination_class()
+        page = paginator.paginate_queryset(media, request)
+
+        serializer = ManageUploadSerializer(page, many=True, context={"request": request})
+        return paginator.get_paginated_response(serializer.data)
+
+    def delete(self, request, format=None):
+        tokens = request.GET.get("tokens")
+        if not tokens:
+            return Response(
+                {"detail": "tokens query parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        tokens = list(set(t.strip() for t in tokens.split(",") if t.strip()))
+        if not tokens:
+            return Response(
+                {"detail": "tokens must contain at least one value"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        with transaction.atomic():
+            qs = Media.objects.select_for_update().filter(
+                friendly_token__in=tokens, user=request.user
+            )
+            if qs.count() != len(tokens):
+                return Response(
+                    {"detail": "one or more tokens not found or not owned by you"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            qs.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MyUploadsBulkState(APIView):
+    permission_classes = (IsManageUploadsUser,)
+    parser_classes = (JSONParser,)
+
+    def post(self, request, format=None):
+        tokens = request.data.get("tokens", [])
+        new_state = request.data.get("state", "").strip()
+
+        if not tokens or not isinstance(tokens, list):
+            return Response(
+                {"detail": "tokens must be a non-empty list"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Deduplicate tokens to avoid count mismatch on repeated values
+        tokens = list(set(tokens))
+
+        if new_state not in ["private", "public", "unlisted"]:
+            return Response(
+                {"detail": "state must be private, public, or unlisted"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            qs = Media.objects.select_for_update().filter(
+                friendly_token__in=tokens, user=request.user
+            )
+            if qs.count() != len(tokens):
+                return Response(
+                    {"detail": "one or more tokens not found or not owned by you"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            updated = qs.update(state=new_state)
+        return Response({"updated": updated}, status=status.HTTP_200_OK)
 
 
 class CommentList(APIView):

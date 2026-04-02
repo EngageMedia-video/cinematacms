@@ -4,10 +4,12 @@ import ReactDOM from 'react-dom';
 import { ManageMediaItem } from '../../ManageItem/ManageMediaItem';
 import { ManageUsersItem } from '../../ManageItem/ManageUsersItem';
 import { ManageCommentsItem } from '../../ManageItem/ManageCommentsItem';
+import { ManageUploadItem } from '../../ManageItem/ManageUploadItem';
 
 import { ManageMediaItemHeader } from '../../ManageItem/ManageMediaItemHeader';
 import { ManageUsersItemHeader } from '../../ManageItem/ManageUsersItemHeader';
 import { ManageCommentsItemHeader } from '../../ManageItem/ManageCommentsItemHeader';
+import { ManageUploadItemHeader } from '../../ManageItem/ManageUploadItemHeader';
 
 function useManageItem(props){
 
@@ -85,6 +87,26 @@ function ListManageUserItem(props){
 	return( <ManageUsersItem {...args} /> );
 }
 
+function ListManageUploadItem(props){
+
+	const [ itemData, itemProps ] = useManageItem(props);
+
+	const args = {
+		...itemProps,
+		title: itemData.title,
+		url: itemData.url.replace( " ", "%20" ),
+		add_date: itemData.add_date,
+		media_type: itemData.media_type,
+		encoding_status: itemData.encoding_status,
+		state: itemData.state,
+		views: itemData.views,
+		likes: itemData.likes,
+		token: itemData.friendly_token,
+	};
+
+	return( <ManageUploadItem {...args} /> );
+}
+
 function ListManageCommentItem(props){
 
 	const [ itemData, itemProps ] = useManageItem(props);
@@ -125,6 +147,10 @@ function ListManageItem(props){
 		return <ListManageCommentItem {...args} selectedRow={ -1 < props.selectedItems.indexOf(props.item.uid) } />
 	}
 
+	if( 'my-uploads' === props.type ){
+		return <ListManageUploadItem {...args} selectedRow={ -1 < props.selectedItems.indexOf(props.item.friendly_token) } />
+	}
+
 	return null;
 }
 
@@ -151,6 +177,10 @@ function ListManageItemHeader(props){
 
 	if( 'comments' === props.type ){
 		return <ManageCommentsItemHeader {...args} />
+	}
+
+	if( 'my-uploads' === props.type ){
+		return <ManageUploadItemHeader {...args} />
 	}
 
 	return null;

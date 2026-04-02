@@ -570,6 +570,15 @@ def is_mediacms_manager(user):
     return manager
 
 
+def can_manage_uploads(user):
+    """Check if user can access Manage Uploads page.
+    Trusted Users (advancedUser), Editors, Managers, and Superusers."""
+    try:
+        return bool(user.is_superuser or user.is_manager or user.is_editor or user.advancedUser)
+    except AttributeError:
+        return False
+
+
 def is_curator(user):
     curator = False
     try:

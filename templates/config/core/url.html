@@ -30,6 +30,7 @@ MediaCMS.url = {
     {% if IS_MEDIACMS_ADMIN or IS_MEDIACMS_MANAGER or IS_MEDIACMS_EDITOR %}manageMedia: "{{FRONTEND_HOST}}/manage/media",{% endif %}
     {% if IS_MEDIACMS_ADMIN or IS_MEDIACMS_MANAGER %}manageUsers: "{{FRONTEND_HOST}}/manage/users",{% endif %}
     {% if IS_MEDIACMS_ADMIN or IS_MEDIACMS_MANAGER or IS_MEDIACMS_EDITOR %}manageComments: "{{FRONTEND_HOST}}/manage/comments",{% endif %}
+    {% if CAN_MANAGE_UPLOADS %}manageUploads: "{{FRONTEND_HOST}}/manage/uploads",{% endif %}
     {% else %}
     signin: "{{FRONTEND_HOST}}/accounts/login/",
     register: "{{FRONTEND_HOST}}/accounts/signup/",

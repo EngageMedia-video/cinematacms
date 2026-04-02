@@ -100,6 +100,10 @@ urlpatterns = [
     path("manage/users", views.manage_users, name="manage_users"),
     path("manage/media", views.manage_media, name="manage_media"),
     path("manage/comments", views.manage_comments, name="manage_comments"),
+    # USER MANAGE UPLOADS
+    path("api/v1/my_uploads", management_views.MyUploadsList.as_view()),
+    path("api/v1/my_uploads/bulk_state", management_views.MyUploadsBulkState.as_view()),
+    path("manage/uploads", views.manage_uploads, name="manage_uploads"),
     path("manage/users/export", views.export_users, name="export_users"),
     path("api/v1/encode_profiles/", views.EncodeProfileList.as_view()),
     path("api/v1/tasks", views.TasksList.as_view()),

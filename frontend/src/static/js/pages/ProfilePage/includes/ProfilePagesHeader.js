@@ -367,6 +367,15 @@ class NavMenuInlineTabs extends React.PureComponent {
 							link={LinksContext._currentValue.profile.home}
 						/>
 
+						{this.userIsAuthor && UserContext._currentValue.can.manageUploads && LinksContext._currentValue.manage?.uploads ? (
+							<InlineTab
+								id="manage-uploads"
+								isActive={false}
+								label="Manage Uploads"
+								link={LinksContext._currentValue.manage.uploads}
+							/>
+						) : null}
+
 						{UserContext._currentValue.can.saveMedia ? (
 							<InlineTab
 								id="playlists"

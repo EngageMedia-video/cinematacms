@@ -21,6 +21,7 @@ MediaCMS.user = {
 		manageMedia: {% if IS_MEDIACMS_ADMIN or IS_MEDIACMS_MANAGER or IS_MEDIACMS_EDITOR %}true{% else %}false{% endif %},
 		manageUsers: {% if IS_MEDIACMS_ADMIN or IS_MEDIACMS_MANAGER %}true{% else %}false{% endif %},
 		manageComments: {% if IS_MEDIACMS_ADMIN or IS_MEDIACMS_MANAGER or IS_MEDIACMS_EDITOR %}true{% else %}false{% endif %},
+		manageUploads: {% if CAN_MANAGE_UPLOADS %}true{% else %}false{% endif %},
 		contactUser: {% if SHOW_CONTACT_FORM or IS_MEDIACMS_ADMIN or IS_MEDIACMS_MANAGER or IS_MEDIACMS_EDITOR %}true{% else %}false{% endif %},
 	}{% if request.user.is_authenticated %},
 	pages: {

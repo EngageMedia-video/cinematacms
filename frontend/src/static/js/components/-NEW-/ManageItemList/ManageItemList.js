@@ -462,7 +462,7 @@ export function ManageItemList(props){
 
                 let entry;
 
-                if( 'media' === tableType ){
+                if( 'media' === tableType || 'my-uploads' === tableType ){
 
                     for(entry of items){
                         newSelected.push( entry.friendly_token );
@@ -589,8 +589,10 @@ export function ManageItemList(props){
 	}
 
 	useEffect(()=>{
-		// console.log('ITEMS:', items);
-	}, [items]);
+		if( 'function' === typeof props.onSelectionChange ){
+			props.onSelectionChange(selectedItems);
+		}
+	}, [selectedItems]);
 
 	useEffect(()=>{
 		if( parsedRequestUrl ){
