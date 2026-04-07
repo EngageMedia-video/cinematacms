@@ -575,7 +575,17 @@
 						position:relative;
 						display:block;
 						white-space:nowrap;
-						overflow:hidden;
+
+						// Allow horizontal touch scrolling on mobile so users can
+						// reach off-screen share targets. ItemsInlineSlider already
+						// drives wrapperDom.scrollLeft programmatically for the
+						// arrow buttons and reads it back to stay in sync with
+						// touch swipes, so the two input modes cooperate correctly
+						// once the container is actually scrollable.
+						// overflow-y:hidden prevents a stray vertical scrollbar
+						// when child baselines descend below the line-box.
+						overflow-x:auto;
+						overflow-y:hidden;
 						-webkit-overflow-scrolling:touch;
 						scroll-behavior:smooth;
 					}
