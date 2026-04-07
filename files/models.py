@@ -1537,6 +1537,24 @@ class Playlist(models.Model):
             return pm.media.thumbnail_url
         return None
 
+    @cached_property
+    def composite_thumbnail_url(self):
+        """Return URL for composite thumbnail, generating it on first access.
+
+        Cached per-instance via @cached_property so that templates referencing
+        this property multiple times (og:image, twitter:image) don't repeat
+        the disk stat or regeneration work.
+        """
+        if not self.friendly_token:
+            return self.thumbnail_url
+        relative_path = f"composite_thumbnails/{self.friendly_token}.jpg"
+        full_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+        if not os.path.exists(full_path):
+            result = helpers.generate_composite_thumbnail(self)
+            if result is None:
+                return self.thumbnail_url
+        return helpers.url_from_path(relative_path)
+
     class Meta:
         ordering = ["-add_date"]  # This will show newest playlists first
 
@@ -2063,28 +2081,44 @@ def comment_delete(sender, instance, **kwargs):
                 # Cache invalidation will be handled by Media.save() method
 
 
+def delete_composite_thumbnail(friendly_token):
+    """Delete cached composite thumbnail so it regenerates on next access."""
+    path = os.path.join(settings.MEDIA_ROOT, "composite_thumbnails", f"{friendly_token}.jpg")
+    if os.path.exists(path):
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
 @receiver(post_save, sender=Playlist)
 def playlist_save(sender, instance, created, **kwargs):
     """Invalidate playlist cache when playlist is saved."""
     invalidate_playlist_cache(instance.friendly_token)
+    # Note: composite thumbnail is intentionally NOT deleted here. Title and
+    # description edits don't change the visible thumbnails, so regenerating
+    # would just add latency to the next page load.
 
 
 @receiver(pre_delete, sender=Playlist)
 def playlist_pre_delete(sender, instance, **kwargs):
     """Invalidate playlist cache when playlist is deleted."""
     invalidate_playlist_cache(instance.friendly_token)
+    delete_composite_thumbnail(instance.friendly_token)
 
 
 @receiver(post_save, sender=PlaylistMedia)
 def playlist_media_save(sender, instance, created, **kwargs):
     """Invalidate playlist cache when media is added/removed from playlist."""
     invalidate_playlist_cache(instance.playlist.friendly_token)
+    delete_composite_thumbnail(instance.playlist.friendly_token)
 
 
 @receiver(pre_delete, sender=PlaylistMedia)
 def playlist_media_delete(sender, instance, **kwargs):
     """Invalidate playlist cache when media is removed from playlist."""
     invalidate_playlist_cache(instance.playlist.friendly_token)
+    delete_composite_thumbnail(instance.playlist.friendly_token)
 
 
 @receiver(pre_save, sender=Media)

@@ -47,6 +47,8 @@ PUBLIC_MEDIA_PATHS = [
     # Category and topic thumbnails are truly public
     "original/categories/",
     "original/topics/",
+    # Composite thumbnails for playlist social sharing
+    "composite_thumbnails/",
 ]
 
 # Security headers for different content types

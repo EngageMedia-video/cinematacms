@@ -28,6 +28,8 @@ import { PlaylistCreationForm } from '../../components/-NEW-/PlaylistCreationFor
 
 import { NavigationContentApp } from '../../components/-NEW-/NavigationContentApp';
 
+import { PlaylistShareButton } from '../../components/-NEW-/PlaylistShareButton';
+
 import "../styles/PlaylistPage.scss";
 
 function PlayAllLink(props){
@@ -79,15 +81,17 @@ function PlaylistMeta(props){
 
 function PlaylistActions(props){
 
-	/*function onSaveClick(){
-		PlaylistPageActions.toggleSave();
-	}*/
+	const showShare = UserContext._currentValue.can.shareMedia;
+	const showOptions = props.loggedinUserPlaylist;
 
-	return  ( props.loggedinUserPlaylist ? <div className="playlist-actions">
-				{ /*props.loggedinUserPlaylist ? null : <CircleIconButton className="add-to-playlist" onClick={ onSaveClick } title={ props.savedPlaylist ? "Remove" : "Save playlist" }><i className="material-icons">{ this.props.savedPlaylist ? 'playlist_add_check' : 'playlist_add' }</i></CircleIconButton>*/ }
-				{/*<CircleIconButton type="link" href="#" title="Shuffle play"><i className="material-icons">shuffle</i></CircleIconButton>*/}
-				{ props.loggedinUserPlaylist ? <PlaylistOptions /> : null }
-			</div> : null );
+	if( ! showShare && ! showOptions ){
+		return null;
+	}
+
+	return  ( <div className="playlist-actions">
+				{ showShare ? <PlaylistShareButton url={ props.playlistUrl } title={ props.title || '' } thumbnailUrl={ props.compositeThumbnailUrl } /> : null }
+				{ showOptions ? <PlaylistOptions /> : null }
+			</div> );
 }
 
 function PlaylistAuthor(props){
@@ -508,8 +512,6 @@ export class PlaylistPage extends Page {
 							<div>{ PlaylistPageStore.get('visibility') }</div>
 						</div>*/}
 
-					<PlaylistActions loggedinUserPlaylist={ this.state.loggedinUserPlaylist } savedPlaylist={ this.state.savedPlaylist }  />
-
 					{ this.state.description ? <div className="playlist-description">{ this.state.description }</div> : null }
 
 					<PlaylistAuthor
@@ -517,6 +519,8 @@ export class PlaylistPage extends Page {
 						link={ PlaylistPageStore.get('author-link') }
 						thumb={ PlaylistPageStore.get('author-thumb') }
 						loggedinUserPlaylist={ this.state.loggedinUserPlaylist } />
+
+					<PlaylistActions loggedinUserPlaylist={ this.state.loggedinUserPlaylist } savedPlaylist={ this.state.savedPlaylist } title={ this.state.title } playlistUrl={ PlaylistPageStore.get('playlist-url') } compositeThumbnailUrl={ PlaylistPageStore.get('composite-thumbnail-url') } />
 
 				</div>,
 

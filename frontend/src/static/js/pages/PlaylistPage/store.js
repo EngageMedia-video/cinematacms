@@ -151,6 +151,20 @@ class PlaylistPageStore extends EventEmitter{
                 }
                 this.data.publishDateLabel = this.data.publishDateLabel || 'Created on ' + publishedOnDate( new Date( PlaylistPageStoreData[this.id].data.add_date ), 3 );
                 return this.data.publishDateLabel;
+            case 'playlist-url':
+                if( PlaylistPageStoreData[this.id].playlistId ){
+                    const base = this.mediacms_config.site.url.replace(/\/$/, '');
+                    return base + '/playlist/' + PlaylistPageStoreData[this.id].playlistId;
+                }
+                return null;
+            case 'composite-thumbnail-url':
+                if( PlaylistPageStoreData[this.id].data && PlaylistPageStoreData[this.id].data.composite_thumbnail_url ){
+                    const siteBase = this.mediacms_config.site.url.replace(/\/$/, '');
+                    const path = PlaylistPageStoreData[this.id].data.composite_thumbnail_url;
+                    // API returns a relative path like /media/composite_thumbnails/...
+                    return path.startsWith('http') ? path : siteBase + path;
+                }
+                return null;
         }
         return null;
     }
