@@ -25,7 +25,7 @@ function BellIcon() {
             </button>
             {count > 0 && (
                 <span
-                    className="absolute top-1.5 right-1.5 min-w-[16px] h-4 bg-brand-theme text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 pointer-events-none"
+                    className="absolute right-1.5 min-w-[16px] h-4 bg-brand-theme text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 pointer-events-none"
                     aria-hidden="true"
                 >
                     {count > 99 ? '99+' : count}
