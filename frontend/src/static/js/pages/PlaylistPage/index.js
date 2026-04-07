@@ -81,7 +81,8 @@ function PlaylistMeta(props){
 
 function PlaylistActions(props){
 
-	const showShare = UserContext._currentValue.can.shareMedia;
+	const user = useContext(UserContext);
+	const showShare = !!( user && user.can && user.can.shareMedia );
 	const showOptions = props.loggedinUserPlaylist;
 
 	if( ! showShare && ! showOptions ){

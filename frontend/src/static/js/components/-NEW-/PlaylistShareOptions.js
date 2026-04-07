@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useContext, useMemo } from 'react';
 
 import LayoutStore from '../../stores/LayoutStore.js';
 
@@ -11,11 +11,7 @@ import { CircleIconButton } from './CircleIconButton';
 
 import ShareOptionsContext from '../../contexts/ShareOptionsContext';
 
-function shareOptionsList(url, title){
-
-	const socialMedia = ShareOptionsContext._currentValue;
-	const encodedUrl = encodeURIComponent(url);
-	const encodedTitle = encodeURIComponent(title);
+function shareOptionsList(socialMedia, encodedUrl, encodedTitle){
 
 	const ret = {};
 
@@ -99,9 +95,9 @@ function shareOptionsList(url, title){
 	return ret;
 }
 
-function ShareOptions(url, title){
+function ShareOptions(socialMedia, encodedUrl, encodedTitle){
 
-	const shareOptions = shareOptionsList(url, title);
+	const shareOptions = shareOptionsList(socialMedia, encodedUrl, encodedTitle);
 
 	const compList = [];
 
@@ -111,7 +107,7 @@ function ShareOptions(url, title){
 
 			if( k === 'whatsapp' ){
 				compList.push( <div key={ "share-" + k } className={ "sh-option share-" + k }>
-									<a href={ shareOptions[k].shareUrl } title="" target="_blank" data-action='share/whatsapp/share'>
+									<a href={ shareOptions[k].shareUrl } title="" target="_blank" rel="noopener noreferrer" data-action='share/whatsapp/share'>
 										<span></span>
 										<span>{ shareOptions[k].title }</span>
 									</a>
@@ -127,7 +123,7 @@ function ShareOptions(url, title){
 			}
 			else{
 				compList.push( <div key={ "share-" + k } className={ "sh-option share-" + k }>
-									<a href={ shareOptions[k].shareUrl } title="" target="_blank">
+									<a href={ shareOptions[k].shareUrl } title="" target="_blank" rel="noopener noreferrer">
 										<span></span>
 										<span>{ shareOptions[k].title }</span>
 									</a>
@@ -163,18 +159,72 @@ export function PlaylistShareOptions(props){
 	const [ sliderButtonsVisible, setSliderButtonsVisible ] = useState({ prev: false, next: false });
 
 	const [ dimensions, setDimensions ] = useState( updateDimensions() );
-	const [ shareOptions ] = useState( ShareOptions(props.url, props.title) );
+
+	// Read the share platform list from context instead of the private
+	// `_currentValue` internal. The app doesn't currently mount a Provider
+	// (the default-value path is the only path), but going through useContext
+	// keeps us off private React APIs and lets a future Provider work as
+	// expected without touching this component.
+	const socialMedia = useContext(ShareOptionsContext);
+
+	// Derive share options reactively from props + context so URL/title/
+	// platform-list changes propagate to the UI. useMemo also avoids rebuilding
+	// the option list on every unrelated re-render (slider state, resize).
+	const shareOptions = useMemo(() => {
+		const encodedUrl = encodeURIComponent(props.url || '');
+		const encodedTitle = encodeURIComponent(props.title || '');
+		return ShareOptions(socialMedia, encodedUrl, encodedTitle);
+	}, [props.url, props.title, socialMedia]);
 
 	function onWindowResize(){
 		setDimensions(updateDimensions());
 	}
 
 	function onClickCopyLink(){
-		const input = containerRef.current.querySelector('.copy-field input');
-		if( input ){
-			navigator.clipboard.writeText(input.value).then(function(){
-				PageActions.addNotification("Link copied to clipboard", 'clipboardLinkCopy');
+		const input = containerRef.current && containerRef.current.querySelector('.copy-field input');
+		if( ! input ){ return; }
+
+		function notifySuccess(){
+			PageActions.addNotification("Link copied to clipboard", 'clipboardLinkCopy');
+		}
+
+		function notifyFailure(err){
+			const detail = err && err.message ? ': ' + err.message : '';
+			PageActions.addNotification("Couldn't copy link, please copy manually" + detail, 'clipboardLinkCopy');
+		}
+
+		// Fallback path for insecure origins / older browsers where the async
+		// Clipboard API isn't available. Selects the input so the user can
+		// manually copy if execCommand also fails.
+		function copyViaExecCommand(){
+			try {
+				input.focus();
+				input.select();
+				input.setSelectionRange(0, input.value.length);
+				const ok = document.execCommand && document.execCommand('copy');
+				if( ok ){
+					notifySuccess();
+				} else {
+					notifyFailure(new Error('execCommand copy returned false'));
+				}
+			} catch(err) {
+				notifyFailure(err);
+			}
+		}
+
+		if( navigator.clipboard && typeof navigator.clipboard.writeText === 'function' ){
+			navigator.clipboard.writeText(input.value).then(notifySuccess).catch(function(err){
+				// Some browsers reject writeText even on secure origins (e.g.,
+				// document not focused, permissions policy). Try the legacy
+				// path before giving up and surfacing the error.
+				copyViaExecCommand();
+				if( err ){
+					// eslint-disable-next-line no-console
+					console.warn('clipboard.writeText failed, falling back to execCommand:', err);
+				}
 			});
+		} else {
+			copyViaExecCommand();
 		}
 	}
 

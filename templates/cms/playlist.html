@@ -16,28 +16,30 @@
 <meta property="og:description" content="{{ playlist.description|striptags|truncatewords:30 }}">
 <meta property="og:type" content="website">
 
-{% if playlist.composite_thumbnail_url %}
+{% if playlist.has_composite_thumbnail %}
 <meta property="og:image" content="{{FRONTEND_HOST}}{{ playlist.composite_thumbnail_url }}">
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="720">
+<meta name="twitter:image" content="{{FRONTEND_HOST}}{{ playlist.composite_thumbnail_url }}">
+{% elif playlist.thumbnail_url %}
+<meta property="og:image" content="{{FRONTEND_HOST}}{{ playlist.thumbnail_url }}">
+<meta name="twitter:image" content="{{FRONTEND_HOST}}{{ playlist.thumbnail_url }}">
 {% else %}
 <meta property="og:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
+<meta name="twitter:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
 {% endif %}
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ playlist.title }}">
 <meta name="twitter:description" content="{{ playlist.description|striptags|truncatewords:30 }}">
-{% if playlist.composite_thumbnail_url %}
-<meta name="twitter:image" content="{{FRONTEND_HOST}}{{ playlist.composite_thumbnail_url }}">
-{% endif %}
 
 <script type="application/ld+json">
 {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "name": "{{ playlist.title }}",
-    "url": "{{FRONTEND_HOST}}{{ playlist.get_absolute_url }}",
-    "description": "{{ playlist.description|striptags|truncatewords:30 }}",
+    "name": "{{ playlist.title|escapejs }}",
+    "url": "{{ FRONTEND_HOST|escapejs }}{{ playlist.get_absolute_url|escapejs }}",
+    "description": "{{ playlist.description|striptags|truncatewords:30|escapejs }}",
     "numberOfItems": {{ playlist.media_count }}
 }
 </script>
@@ -47,6 +49,8 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Playlist - {{PORTAL_NAME}}">
+<meta name="twitter:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
 {% endif %}
 
 {% endblock headermeta %}

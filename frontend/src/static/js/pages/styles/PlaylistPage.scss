@@ -475,6 +475,7 @@
 
 		position:relative;
 		margin-top:12px;
+
 		// Flex row: SHARE aligned left, three-dot menu pushed to the right
 		// to visually land below the EDIT button (which is right-aligned
 		// on the author row above).
@@ -585,6 +586,7 @@
 						top:50%;
 						transform:translateY(-50%);
 						z-index:+2;
+
 						// Icons are ~60px + label ~18px = ~86px tall;
 						// nudge up slightly so the arrow sits on the icon row,
 						// not on the label below.
@@ -607,10 +609,24 @@
 							margin:1px 0;
 							display:block;
 							text-decoration:none;
-							outline:0;
 							border:0;
 							background:none;
 							color: var(--body-text-color);
+							border-radius:6px;
+
+							// Suppress the default focus ring for mouse clicks (where
+							// :focus fires without :focus-visible) but restore a visible
+							// ring for keyboard navigation via :focus-visible below.
+							// WCAG 2.4.7 (Focus Visible) requires keyboard users to see
+							// which share option currently has focus.
+							&:focus{
+								outline:0;
+							}
+
+							&:focus-visible{
+								outline:2px solid var(--body-text-color);
+								outline-offset:2px;
+							}
 
 							> *:first-child{
 								display:block;
@@ -718,7 +734,7 @@
 						width:100%;
 						height:42px;
 						padding:1px 0 1px 16px;
-						font-family:Arial;
+						font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
 						font-size:14px;
 						line-height:normal;
 						border:0;

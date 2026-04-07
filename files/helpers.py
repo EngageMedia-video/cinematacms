@@ -1048,26 +1048,43 @@ def generate_composite_thumbnail(playlist):
     rows, cols = layout
     tiles_needed = rows * cols
 
-    playlist_media = list(
-        playlist.playlistmedia_set.select_related("media")[:tiles_needed]
-    )
-
-    if not playlist_media:
-        return None
-
     canvas_width = 1280
     canvas_height = 720
 
-    # Collect available thumbnail paths in playlist order
+    # Walk the full playlist in order and collect the first `tiles_needed`
+    # source images that actually exist on disk. Items whose media is missing
+    # an image are skipped so later items with valid images can fill their
+    # slots instead.
+    #
+    # Only include public media. The composite is served as the Open Graph
+    # image for the public playlist URL (see `PUBLIC_MEDIA_PATHS` in
+    # files/secure_media_views.py) and is fetched by unauthenticated social
+    # media crawlers, so it must not leak posters from private, unlisted, or
+    # restricted videos. This matches the anonymous-viewer filter used by
+    # PlaylistDetail.get() in files/views.py (`media__state="public"`).
+    #
+    # Prefer posters (width=1280/720) over thumbnails (width=344) so composite
+    # tiles render at full quality instead of being upscaled from the small
+    # thumbnail crop.
+    public_playlist_media = (
+        playlist.playlistmedia_set.filter(media__state="public")
+        .select_related("media")
+    )
     thumb_paths = []
-    for pm in playlist_media:
+    for pm in public_playlist_media.iterator():
         media = pm.media
-        # Prefer uploaded_thumbnail, fall back to thumbnail
-        field = media.uploaded_thumbnail or media.thumbnail
+        field = (
+            media.uploaded_poster
+            or media.poster
+            or media.uploaded_thumbnail
+            or media.thumbnail
+        )
         if field and field.name:
             full_path = os.path.join(settings.MEDIA_ROOT, field.name)
             if os.path.exists(full_path):
                 thumb_paths.append(full_path)
+                if len(thumb_paths) >= tiles_needed:
+                    break
 
     # If too many thumbnails are missing to fill the grid, bail out so the
     # caller can fall back to the single-video thumbnail. This avoids

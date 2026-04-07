@@ -1539,21 +1539,50 @@ class Playlist(models.Model):
 
     @cached_property
     def composite_thumbnail_url(self):
-        """Return URL for composite thumbnail, generating it on first access.
+        """Return the best-available share image URL for this playlist.
+
+        Prefers a real 1280x720 composite grid (when the playlist has >=4
+        public videos), falling back to the first media's thumbnail. This is
+        the "best effort" property consumed by the frontend share modal and
+        API serializers that just need *some* image to show.
+
+        Callers that need to distinguish a real composite from a fallback
+        (e.g., the playlist.html template, which only wants to emit
+        og:image:width/height=1280/720 when the real composite is in use)
+        should check `has_composite_thumbnail` first.
 
         Cached per-instance via @cached_property so that templates referencing
         this property multiple times (og:image, twitter:image) don't repeat
         the disk stat or regeneration work.
         """
+        if self.has_composite_thumbnail:
+            relative_path = f"composite_thumbnails/{self.friendly_token}.jpg"
+            return helpers.url_from_path(relative_path)
+        return self.thumbnail_url
+
+    @cached_property
+    def has_composite_thumbnail(self):
+        """Return True iff a real composite JPEG exists on disk for this
+        playlist, triggering generation on first access.
+
+        Separate from `composite_thumbnail_url` so the template can decide
+        whether to emit og:image:width/height=1280/720 — those dimensions
+        must only be declared when the actual 1280x720 composite is served,
+        not when we've fallen back to a single media thumbnail which is
+        much smaller.
+
+        Cached per-instance so the disk stat + generation runs at most once
+        per request, even though the template checks this property alongside
+        composite_thumbnail_url.
+        """
         if not self.friendly_token:
-            return self.thumbnail_url
+            return False
         relative_path = f"composite_thumbnails/{self.friendly_token}.jpg"
         full_path = os.path.join(settings.MEDIA_ROOT, relative_path)
-        if not os.path.exists(full_path):
-            result = helpers.generate_composite_thumbnail(self)
-            if result is None:
-                return self.thumbnail_url
-        return helpers.url_from_path(relative_path)
+        if os.path.exists(full_path):
+            return True
+        result = helpers.generate_composite_thumbnail(self)
+        return result is not None
 
     class Meta:
         ordering = ["-add_date"]  # This will show newest playlists first
@@ -2119,6 +2148,30 @@ def playlist_media_delete(sender, instance, **kwargs):
     """Invalidate playlist cache when media is removed from playlist."""
     invalidate_playlist_cache(instance.playlist.friendly_token)
     delete_composite_thumbnail(instance.playlist.friendly_token)
+
+
+@receiver(post_save, sender=Media)
+def invalidate_playlist_composites_on_state_change(sender, instance, created, **kwargs):
+    """Invalidate composite thumbnails of playlists that contain this media
+    when its visibility state changes.
+
+    The composite is filtered to `state="public"` media only (see
+    `generate_composite_thumbnail` in files/helpers.py), so when a media
+    transitions into or out of the public state, every playlist that contains
+    it needs its cached composite deleted so the next access regenerates with
+    the updated visibility.
+    """
+    if created:
+        return
+    original_state = getattr(instance, "_Media__original_state", None)
+    if original_state is None or original_state == instance.state:
+        return
+    if original_state != "public" and instance.state != "public":
+        return
+    friendly_tokens = Playlist.objects.filter(media=instance).values_list("friendly_token", flat=True)
+    for friendly_token in friendly_tokens:
+        delete_composite_thumbnail(friendly_token)
+        invalidate_playlist_cache(friendly_token)
 
 
 @receiver(pre_save, sender=Media)
