@@ -138,7 +138,7 @@ class NotificationService:
             actor=actor,
             notification_type=NotificationType.COMMENT,
             message=f"{actor.username} commented on '{media.title}'",
-            action_url=f"/view/{media.friendly_token}",
+            action_url=f"/view?m={media.friendly_token}",
             metadata={
                 "media_id": media.id,
                 "friendly_token": media.friendly_token,
@@ -156,7 +156,7 @@ class NotificationService:
             actor=actor,
             notification_type=NotificationType.REPLY,
             message=f"{actor.username} replied to your comment on '{media.title}'",
-            action_url=f"/view/{media.friendly_token}",
+            action_url=f"/view?m={media.friendly_token}",
             metadata={
                 "media_id": media.id,
                 "friendly_token": media.friendly_token,
@@ -172,7 +172,7 @@ class NotificationService:
             actor=actor,
             notification_type=NotificationType.LIKE,
             message=f"{actor.username} liked '{media.title}'",
-            action_url=f"/view/{media.friendly_token}",
+            action_url=f"/view?m={media.friendly_token}",
             metadata={
                 "media_id": media.id,
                 "friendly_token": media.friendly_token,
@@ -201,7 +201,7 @@ class NotificationService:
                 actor=actor,
                 notification_type=NotificationType.MENTION,
                 message=f"{actor.username} mentioned you in a comment on '{media.title}'",
-                action_url=f"/view/{media.friendly_token}",
+                action_url=f"/view?m={media.friendly_token}",
                 metadata={
                     "media_id": media.id,
                     "friendly_token": media.friendly_token,
@@ -239,7 +239,7 @@ class NotificationService:
         category_slugs = set(media.category.values_list("slug", flat=True))
 
         # Dedupe: skip followers already notified within the 5-minute window
-        action_url = f"/view/{media.friendly_token}"
+        action_url = f"/view?m={media.friendly_token}"
         cutoff = timezone.now() - timedelta(minutes=5)
         recent_recipient_ids = set(
             Notification.objects.filter(
@@ -294,7 +294,7 @@ class NotificationService:
             actor=actor,
             notification_type=NotificationType.ADDED_TO_PLAYLIST,
             message=f"{actor.username} added '{media.title}' to playlist '{playlist.title}'",
-            action_url=f"/view/{media.friendly_token}",
+            action_url=f"/view?m={media.friendly_token}",
             metadata={
                 "media_id": media.id,
                 "friendly_token": media.friendly_token,

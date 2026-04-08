@@ -2,7 +2,7 @@ import logging
 
 from celery import shared_task
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 
 from smtplib import SMTPException
 
@@ -45,13 +45,13 @@ def send_notification_email(notification_id):
     body += f"\n\n---\nUpdate your notification preferences: {prefs_link}\n"
 
     try:
-        send_mail(
+        email = EmailMessage(
             subject=f"[{portal_name}] {notification.message}",
-            message=body,
+            body=body,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[recipient.email],
-            fail_silently=False,
+            to=[recipient.email],
         )
+        email.send(fail_silently=False)
     except Exception:
         logger.exception("Failed to send notification email %s", notification_id)
         raise

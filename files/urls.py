@@ -31,6 +31,7 @@ urlpatterns = [
     path("topics", views.topics, name="topics"),
     path("history", views.history, name="history"),
     path("liked", views.liked_media, name="liked_media"),
+    path("notifications/", views.notifications_page, name="notifications"),
     re_path("^view", views.view_media, name="get_media"),
     path("edit", views.edit_media, name="edit_media"),
     re_path("^add_subtitle", views.add_subtitle, name="add_subtitle"),
