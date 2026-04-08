@@ -1,8 +1,8 @@
-import MediaCmsVjsPlugin from '@mediacms/vjs-plugin/dist/mediacms-vjs-plugin.js';
-import MediaCmsVjsPluginStyles from '@mediacms/vjs-plugin/dist/mediacms-vjs-plugin.css';
+import MediaCmsVjsPlugin from '@mediacms/vjs-plugin';
+import '@mediacms/vjs-plugin/dist/mediacms-vjs-plugin.css';
 
 function isString(v) {
-	return "string" === typeof v || v instanceof String;
+	return 'string' === typeof v || v instanceof String;
 }
 
 function isArray(v) {
@@ -10,7 +10,7 @@ function isArray(v) {
 }
 
 function isBoolean(v) {
-	return "boolean" === typeof v || v instanceof Boolean;
+	return 'boolean' === typeof v || v instanceof Boolean;
 }
 
 /**
@@ -26,8 +26,7 @@ function isIOSDevice() {
 	const userAgent = navigator.userAgent || '';
 	const platform = navigator.platform || '';
 	const maxTouchPoints = navigator.maxTouchPoints || 0;
-	return /iPad|iPhone|iPod/.test(userAgent) ||
-		(platform === 'MacIntel' && maxTouchPoints > 1);
+	return /iPad|iPhone|iPod/.test(userAgent) || (platform === 'MacIntel' && maxTouchPoints > 1);
 }
 
 function ifBooleanElse(bol, els) {
@@ -55,7 +54,7 @@ const defaults = {
 			next: !1,
 			previous: !1,
 			volume: !0,
-			pictureInPicture: !0,   // @link: https://docs.videojs.com/control-bar_picture-in-picture-toggle.js.html
+			pictureInPicture: !0, // @link: https://docs.videojs.com/control-bar_picture-in-picture-toggle.js.html
 			fullscreen: !0,
 			theaterMode: !0,
 			time: !0,
@@ -78,18 +77,17 @@ const defaults = {
 			useBandwidthFromLocalStorage: false,
 			enableLowInitialPlaylist: true, // Conservative default due to unreliable device detection
 			limitRenditionByPlayerDimensions: true,
-			useDevicePixelRatio: true
-		}
-	}
+			useDevicePixelRatio: true,
+		},
+	},
 };
 
 /**
-	* Filter plugin options values.
-	* @param  {Object} opt Options object.
-	* @return {Object}     Filtered/Validated options object.
-	*/
+ * Filter plugin options values.
+ * @param  {Object} opt Options object.
+ * @return {Object}     Filtered/Validated options object.
+ */
 function filterPlayerOptions(domPlayer, opt) {
-
 	let k, x, j, i;
 
 	opt.sources = isArray(opt.sources) && opt.sources.length ? opt.sources : [];
@@ -97,21 +95,29 @@ function filterPlayerOptions(domPlayer, opt) {
 	opt.controls = ifBooleanElse(opt.controls, defaults.options.controls);
 
 	if (opt.subtitles && opt.subtitles instanceof Object) {
-		opt.subtitles.default = void 0 !== opt.subtitles.default ? opt.subtitles.default : defaults.options.subtitles.default;
-		opt.subtitles.languages = isArray(opt.subtitles.languages) ? opt.subtitles.languages : defaults.options.subtitles.languages;
+		opt.subtitles.default =
+			void 0 !== opt.subtitles.default ? opt.subtitles.default : defaults.options.subtitles.default;
+		opt.subtitles.languages = isArray(opt.subtitles.languages)
+			? opt.subtitles.languages
+			: defaults.options.subtitles.languages;
 		opt.subtitles.on = ifBooleanElse(opt.subtitles.on, defaults.options.subtitles.on);
-	}
-	else {
+	} else {
 		opt.subtitles.default = defaults.options.subtitles;
 	}
 
-	opt.autoplay = 'any' === opt.autoplay || 'play' === opt.autoplay || 'muted' === opt.autoplay ? opt.autoplay : ifBooleanElse(opt.autoplay, defaults.options.autoplay);
+	opt.autoplay =
+		'any' === opt.autoplay || 'play' === opt.autoplay || 'muted' === opt.autoplay
+			? opt.autoplay
+			: ifBooleanElse(opt.autoplay, defaults.options.autoplay);
 
 	// console.log(opt.autoplay);
 
 	opt.bigPlayButton = ifBooleanElse(opt.bigPlayButton, defaults.options.bigPlayButton);
 	opt.poster = isString(opt.poster) && '' !== opt.poster.trim() ? opt.poster : defaults.options.poster;
-	opt.preload = isString(opt.preload) && -1 < ['auto', 'metadata', 'none'].indexOf(opt.preload.trim()) ? opt.preload : defaults.options.preload;
+	opt.preload =
+		isString(opt.preload) && -1 < ['auto', 'metadata', 'none'].indexOf(opt.preload.trim())
+			? opt.preload
+			: defaults.options.preload;
 
 	// Control bar options.
 	if (opt.controlBar && opt.controlBar instanceof Object && Object.keys(opt.controlBar).length) {
@@ -127,7 +133,8 @@ function filterPlayerOptions(domPlayer, opt) {
 		for (k in opt.cornerLayers) {
 			if (opt.cornerLayers.hasOwnProperty(k)) {
 				if ('string' === typeof opt.cornerLayers[k]) {
-					opt.cornerLayers[k] = '' !== opt.cornerLayers[k] ? opt.cornerLayers[k] : defaults.options.cornerLayers[k];
+					opt.cornerLayers[k] =
+						'' !== opt.cornerLayers[k] ? opt.cornerLayers[k] : defaults.options.cornerLayers[k];
 				} else if (Node.prototype.isPrototypeOf(opt.cornerLayers[k]) || !isNaN(opt.cornerLayers[k])) {
 					opt.cornerLayers[k] = opt.cornerLayers[k];
 				} else {
@@ -165,11 +172,9 @@ function filterPlayerOptions(domPlayer, opt) {
 
 	i = 0;
 	while (i < sources_el.length) {
-
 		if (void 0 !== sources_el[i].attributes.src) {
-
 			obj = {
-				src: sources_el[i].src
+				src: sources_el[i].src,
 			};
 
 			if (void 0 !== sources_el[i].attributes.type) {
@@ -202,21 +207,17 @@ function filterPlayerOptions(domPlayer, opt) {
 	const languages = {};
 
 	function addSubtitle(track) {
-
 		track.src = void 0 !== track.src && null !== track.src ? track.src.toString().trim() : '';
 		track.srclang = void 0 !== track.srclang && null !== track.srclang ? track.srclang.toString().trim() : '';
 
 		if (track.src.length && track.srclang.length) {
-
-			track.label = void 0 !== track.label && null !== track.label ? track.label.toString().trim() : track.srclang;
+			track.label =
+				void 0 !== track.label && null !== track.label ? track.label.toString().trim() : track.srclang;
 
 			if (void 0 !== languages[track.srclang]) {
-
 				languages[track.srclang].src = track.src;
 				languages[track.srclang].label = track.label;
-			}
-			else {
-
+			} else {
 				subtitles_options.languages.push({
 					label: track.label,
 					src: track.src,
@@ -227,7 +228,6 @@ function filterPlayerOptions(domPlayer, opt) {
 			}
 
 			if (void 0 !== track.default && null !== track.default) {
-
 				track.default = track.default.toString().trim();
 
 				if (!track.default.length || '1' === track.default || 'true' === track.default) {
@@ -239,7 +239,6 @@ function filterPlayerOptions(domPlayer, opt) {
 
 	i = 0;
 	while (i < subs_el.length) {
-
 		addSubtitle({
 			src: subs_el[i].getAttribute('src'),
 			srclang: subs_el[i].getAttribute('srclang'),
@@ -251,11 +250,9 @@ function filterPlayerOptions(domPlayer, opt) {
 	}
 
 	if (opt.subtitles.languages.length) {
-
 		i = 0;
 
 		while (i < opt.subtitles.languages.length) {
-
 			addSubtitle({
 				src: opt.subtitles.languages[i].src,
 				srclang: opt.subtitles.languages[i].srclang,
@@ -281,13 +278,12 @@ function filterPlayerOptions(domPlayer, opt) {
 }
 
 /**
-	* Construct VideoJs options by player options.
-	* @param  {Object} opt   Plugin options.
-	* @param  {Object} vjopt Initial VideoJs object.
-	* @return {Object}       Final VideoJs object.
-	*/
+ * Construct VideoJs options by player options.
+ * @param  {Object} opt   Plugin options.
+ * @param  {Object} vjopt Initial VideoJs object.
+ * @return {Object}       Final VideoJs object.
+ */
 function constructVideojsOptions(opt, vjopt) {
-
 	// {
 	//     /*autoplay: false,
 	//     controls: true,
@@ -359,14 +355,22 @@ function constructVideojsOptions(opt, vjopt) {
 }
 
 /**
-	* A wrapper/container class of MediaCMS VideoJs player.
-	* @param {DOM Node} domPlayer                 The video element in html.
-	* @param {Object} pluginOptions             Plugin (genral player's) options.
-	* @param {Object} pluginState               Plugin initial state values.
-	* @param {Function} pluginStateUpdateCallback The function will be called on plugin's state values update.
-	*/
-export function MediaPlayer(domPlayer, pluginOptions, pluginState, videoResolutions, videoPlaybackSpeeds, pluginStateUpdateCallback, onNextButtonClick, onPrevButtonClick) {
-
+ * A wrapper/container class of MediaCMS VideoJs player.
+ * @param {DOM Node} domPlayer                 The video element in html.
+ * @param {Object} pluginOptions             Plugin (genral player's) options.
+ * @param {Object} pluginState               Plugin initial state values.
+ * @param {Function} pluginStateUpdateCallback The function will be called on plugin's state values update.
+ */
+export function MediaPlayer(
+	domPlayer,
+	pluginOptions,
+	pluginState,
+	videoResolutions,
+	videoPlaybackSpeeds,
+	pluginStateUpdateCallback,
+	onNextButtonClick,
+	onPrevButtonClick
+) {
 	if (!Node.prototype.isPrototypeOf(domPlayer)) {
 		console.error('Invalid player DOM element', domPlayer); // TODO: Validate that element is <video> or <audio>.
 		return null;
@@ -377,7 +381,7 @@ export function MediaPlayer(domPlayer, pluginOptions, pluginState, videoResoluti
 		let i = 0;
 		while (i < urls.length) {
 			if (!!urls[i]) {
-				ret.push(urls[i]);    // @todo: Validate url file extension.
+				ret.push(urls[i]); // @todo: Validate url file extension.
 			}
 			i += 1;
 		}
@@ -396,18 +400,20 @@ export function MediaPlayer(domPlayer, pluginOptions, pluginState, videoResoluti
 		return ret;
 	}
 
-	let k, i,
+	let k,
+		i,
 		pluginVideoResolutions = {},
 		pluginVideoPlaybackSpeeds = {};
 
 	if (!!videoResolutions) {
-
 		for (k in videoResolutions) {
-
 			if (videoResolutions.hasOwnProperty(k)) {
-
-				if (isArray(videoResolutions[k].url) && videoResolutions[k].url.length && isArray(videoResolutions[k].format) && videoResolutions[k].format.length) {
-
+				if (
+					isArray(videoResolutions[k].url) &&
+					videoResolutions[k].url.length &&
+					isArray(videoResolutions[k].format) &&
+					videoResolutions[k].format.length
+				) {
 					pluginVideoResolutions[k] = {
 						title: k,
 						src: sourcesSrcs(videoResolutions[k].url),
@@ -419,10 +425,8 @@ export function MediaPlayer(domPlayer, pluginOptions, pluginState, videoResoluti
 	}
 
 	if (!!videoPlaybackSpeeds) {
-
-		k = 0
+		k = 0;
 		while (k < videoPlaybackSpeeds.length) {
-
 			pluginVideoPlaybackSpeeds[k] = {
 				title: 1 === videoPlaybackSpeeds[k] ? 'Normal' : videoPlaybackSpeeds[k],
 				speed: videoPlaybackSpeeds[k].toString(),
@@ -432,8 +436,8 @@ export function MediaPlayer(domPlayer, pluginOptions, pluginState, videoResoluti
 		}
 	}
 	/*
-		* Filter options value.
-		*/
+	 * Filter options value.
+	 */
 
 	// console.log( '####################' );
 	// console.log( domPlayer );
@@ -452,8 +456,8 @@ export function MediaPlayer(domPlayer, pluginOptions, pluginState, videoResoluti
 	// console.log( '####################' );
 
 	/*
-		* Filter state value.
-		*/
+	 * Filter state value.
+	 */
 
 	// console.log( '####################' );
 	// console.log( pluginState );
@@ -468,28 +472,36 @@ export function MediaPlayer(domPlayer, pluginOptions, pluginState, videoResoluti
 	// console.log( pluginState );
 	// console.log( '####################' );
 
-
 	/*
-		* Initialize videojs player.
-		*/
+	 * Initialize videojs player.
+	 */
 
 	const passOptions = constructVideojsOptions(pluginOptions, {
 		controlBar: {
-			children: []
-		}
+			children: [],
+		},
 	});
 
 	this.player = videojs(domPlayer, passOptions);
 
 	/*
-		* Call plugin.
-		*/
+	 * Call plugin.
+	 */
 
-	this.player.mediaCmsVjsPlugin(domPlayer, pluginOptions, pluginState, pluginVideoResolutions, pluginVideoPlaybackSpeeds, pluginStateUpdateCallback, onNextButtonClick, onPrevButtonClick);
+	this.player.mediaCmsVjsPlugin(
+		domPlayer,
+		pluginOptions,
+		pluginState,
+		pluginVideoResolutions,
+		pluginVideoPlaybackSpeeds,
+		pluginStateUpdateCallback,
+		onNextButtonClick,
+		onPrevButtonClick
+	);
 
 	/*
-		* Public methods.
-		*/
+	 * Public methods.
+	 */
 
 	this.isEnded = this.player.mediaCmsVjsPlugin().isEnded;
 	this.isFullscreen = this.player.mediaCmsVjsPlugin().isFullscreen;
