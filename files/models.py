@@ -293,13 +293,6 @@ class Media(models.Model):
         validators=[RegexValidator(regex=r"^(?:[0-9A-Fa-f]{32})?$", message="Must be blank or exactly 32 hex characters")],
         help_text="Hex-encoded AES-128 encryption key",
     )
-    offline_access = models.CharField(
-        max_length=20,
-        choices=[("stream_only", "Stream Only"), ("offline", "Offline")],
-        default="stream_only",
-        blank=True,
-        help_text="Controls whether offline playback is allowed",
-    )
     # keep track if media file has changed
     company = models.CharField("Production Company", max_length=300, blank=True, null=True)
     website = models.CharField("Website", max_length=300, blank=True, null=True)

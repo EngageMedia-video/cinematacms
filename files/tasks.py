@@ -19,6 +19,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.files import File
 from django.db.models import F, Q
+from django.urls import reverse
 
 from actions.models import USER_MEDIA_ACTIONS, MediaAction
 from users.models import User
@@ -796,7 +797,9 @@ def create_hls(friendly_token):
         encryption_flags = []
         if media.is_encrypted:
             key_hex = media.ensure_encryption_key()
-            key_uri = f"{settings.SSL_FRONTEND_HOST}/api/v1/keys/{media.friendly_token}/"
+            # Root-relative URI so the key resolves against whatever origin
+            # served the playlist (works in dev, prod, and copied artifacts).
+            key_uri = reverse("api_get_media_key", kwargs={"friendly_token": media.friendly_token})
             encryption_flags = [
                 f"--encryption-key={key_hex}",
                 f"--encryption-key-uri={key_uri}",

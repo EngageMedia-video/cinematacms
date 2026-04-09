@@ -29,15 +29,4 @@ class Migration(migrations.Migration):
                 ],
             ),
         ),
-        migrations.AddField(
-            model_name="media",
-            name="offline_access",
-            field=models.CharField(
-                blank=True,
-                choices=[("stream_only", "Stream Only"), ("offline", "Offline")],
-                default="stream_only",
-                help_text="Controls whether offline playback is allowed",
-                max_length=20,
-            ),
-        ),
     ]
