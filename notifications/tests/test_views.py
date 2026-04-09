@@ -70,13 +70,13 @@ class NotificationListTest(TestCase):
 
     def test_pagination_params(self):
         """AC #10: page and page_size params work, max 100."""
-        for i in range(25):
+        for i in range(150):
             _create_notification(self.user, self.actor, message=f"notif {i}")
         # Default page_size=20
         resp = self.client.get("/api/v1/notifications/")
         data = resp.json()
         self.assertEqual(len(data["results"]), 20)
-        self.assertEqual(data["count"], 25)
+        self.assertEqual(data["count"], 150)
         self.assertIsNotNone(data["next"])
         # Custom page_size
         resp = self.client.get("/api/v1/notifications/?page_size=5&page=2")
@@ -85,7 +85,7 @@ class NotificationListTest(TestCase):
         # page_size capped at 100
         resp = self.client.get("/api/v1/notifications/?page_size=200")
         data = resp.json()
-        self.assertEqual(len(data["results"]), 25)  # only 25 exist, but cap is 100
+        self.assertEqual(len(data["results"]), 100)
 
     def test_serializer_json_format(self):
         """AC #12: Response JSON has correct structure."""

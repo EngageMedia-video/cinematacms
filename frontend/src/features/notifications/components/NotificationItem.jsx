@@ -18,14 +18,18 @@ function renderMessage(notification) {
 }
 
 export function NotificationItem({ notification }) {
-    const { mutate: markAsRead } = useMarkAsRead();
+    const { mutateAsync: markAsRead } = useMarkAsRead();
 
-    function handleClick() {
+    async function handleClick() {
+        const url = notification.action_url;
         if (!notification.is_read) {
-            markAsRead(notification.id);
+            try {
+                await markAsRead(notification.id);
+            } catch {
+                // Navigate regardless of mark-read failure
+            }
         }
         // Guard: only navigate to relative internal URLs to prevent open redirect
-        const url = notification.action_url;
         if (url && url.startsWith('/') && !url.startsWith('//')) {
             window.location.href = url;
         }

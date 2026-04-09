@@ -30,7 +30,16 @@ class NotificationService:
 
     @classmethod
     def _get_preferences(cls, user):
-        prefs, _ = NotificationPreference.objects.get_or_create(user=user)
+        prefs, _ = NotificationPreference.objects.get_or_create(
+            user=user,
+            defaults={
+                "on_comment": (
+                    NotificationChannel.EMAIL
+                    if getattr(user, "notification_on_comments", True)
+                    else NotificationChannel.NONE
+                ),
+            },
+        )
         return prefs
 
     @classmethod
@@ -107,11 +116,14 @@ class NotificationService:
             metadata=metadata,
         )
 
-        # 7. Route to email if needed
+        # 7. Route to email if needed (deferred until transaction commits)
         if channel == NotificationChannel.EMAIL:
+            from django.db import transaction as db_transaction
+
             from .tasks import send_notification_email
 
-            send_notification_email.delay(notification.id)
+            notification_id = notification.id
+            db_transaction.on_commit(lambda: send_notification_email.delay(notification_id))
 
         return notification
 
@@ -121,14 +133,11 @@ class NotificationService:
 
     @classmethod
     def on_comment(cls, actor, media, comment, mentioned_users=None):
-        """Notification for a new comment on media.
+        """Notify media owner about comment activity (top-level or reply).
 
-        Skips if comment is a reply (has parent) — that's handled by on_reply.
-        Skips if recipient was already mentioned (overlap prevention).
+        Skips if recipient was already notified (overlap prevention via
+        mentioned_users — which may include reply recipients or mentioned users).
         """
-        if comment.parent is not None:
-            return None
-
         recipient = media.user
         if mentioned_users and recipient in mentioned_users:
             return None
@@ -280,10 +289,13 @@ class NotificationService:
 
         created = Notification.objects.bulk_create(notifications, batch_size=100)
 
+        from django.db import transaction as db_transaction
+
         from .tasks import send_notification_email
 
         for idx in email_indices:
-            send_notification_email.delay(created[idx].id)
+            notification_id = created[idx].id
+            db_transaction.on_commit(lambda nid=notification_id: send_notification_email.delay(nid))
 
         return created
 

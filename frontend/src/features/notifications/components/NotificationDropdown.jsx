@@ -42,6 +42,7 @@ export function NotificationDropdown() {
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-border-input/20">
                 <span className="text-base font-bold text-content-body">Notifications</span>
                 <button
+                    type="button"
                     onClick={() => markAllAsRead()}
                     disabled={isPending}
                     className="text-xs text-content-body/60 hover:text-content-body border-0 bg-transparent p-0 cursor-pointer transition-colors disabled:opacity-50"

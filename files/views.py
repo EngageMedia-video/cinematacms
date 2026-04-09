@@ -2025,18 +2025,27 @@ class CommentDetail(APIView):
                 #     actor=request.user, media=media, comment=comment,
                 #     mentioned_users=parsed_users,
                 # )
-                # Then pass mentioned_users=mentioned to on_comment for overlap prevention.
+                # Then merge mentioned into notified below for overlap prevention.
 
+                notified = set()
                 if comment.parent is not None:
-                    NotificationService.on_reply(
+                    if NotificationService.on_reply(
                         actor=request.user,
                         media=media,
                         comment=comment,
                         parent_comment=comment.parent,
-                    )
-                else:
+                    ):
+                        notified.add(comment.parent.user)
+
+                # Always notify media owner about comment activity (including
+                # replies), unless they were already notified as the reply
+                # recipient above.
+                if media.user not in notified:
                     NotificationService.on_comment(
-                        actor=request.user, media=media, comment=comment
+                        actor=request.user,
+                        media=media,
+                        comment=comment,
+                        mentioned_users=notified,
                     )
             except Exception:
                 logger.exception("Notification failed for comment %s", comment.pk)

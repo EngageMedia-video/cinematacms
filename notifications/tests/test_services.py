@@ -148,14 +148,15 @@ class CreateNotificationPipelineTest(TestCase):
         NotificationPreference.objects.create(
             user=self.recipient, on_comment=NotificationChannel.EMAIL
         )
-        result = NotificationService._create_notification(
-            recipient=self.recipient,
-            actor=self.sender,
-            notification_type=NotificationType.COMMENT,
-            message="test",
-            action_url="/test",
-            metadata={},
-        )
+        with self.captureOnCommitCallbacks(execute=True):
+            result = NotificationService._create_notification(
+                recipient=self.recipient,
+                actor=self.sender,
+                notification_type=NotificationType.COMMENT,
+                message="test",
+                action_url="/test",
+                metadata={},
+            )
         self.assertIsNotNone(result)
         mock_email.assert_called_once_with(result.id)
 
@@ -259,13 +260,16 @@ class OnCommentTest(TestCase):
         self.assertIn("commenter", result.message)
 
     @patch("notifications.tasks.send_notification_email.delay")
-    def test_skips_when_comment_has_parent(self, _):
-        parent = _create_comment(self.owner, self.media, text="parent")
+    def test_reply_still_notifies_media_owner(self, _):
+        """on_comment notifies media owner even for replies (replies are
+        activity on their content)."""
+        parent = _create_comment(self.commenter, self.media, text="parent")
         reply = _create_comment(self.commenter, self.media, text="reply", parent=parent)
         result = NotificationService.on_comment(
             actor=self.commenter, media=self.media, comment=reply
         )
-        self.assertIsNone(result)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.recipient, self.owner)
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_overlap_skips_when_mentioned(self, _):

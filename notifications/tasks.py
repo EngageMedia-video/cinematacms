@@ -2,7 +2,7 @@ import logging
 
 from celery import shared_task
 from django.conf import settings
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, get_connection
 
 from smtplib import SMTPException
 
@@ -45,11 +45,14 @@ def send_notification_email(notification_id):
     body += f"\n\n---\nUpdate your notification preferences: {prefs_link}\n"
 
     try:
+        real_backend = getattr(settings, "CELERY_EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+        connection = get_connection(backend=real_backend)
         email = EmailMessage(
             subject=f"[{portal_name}] {notification.message}",
             body=body,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[recipient.email],
+            connection=connection,
         )
         email.send(fail_silently=False)
     except Exception:

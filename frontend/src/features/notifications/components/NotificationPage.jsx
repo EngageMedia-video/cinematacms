@@ -23,6 +23,7 @@ function NotificationPageContent() {
             <div className="flex items-center justify-between mb-4">
                 <h1 className="text-xl font-semibold text-content-body">Notifications</h1>
                 <button
+                    type="button"
                     onClick={() => markAllAsRead()}
                     disabled={isPending}
                     className="border-0 bg-transparent p-0 cursor-pointer text-sm text-content-link hover:underline disabled:opacity-50"
@@ -41,7 +42,9 @@ function NotificationPageContent() {
                 ].map(({ label, active, onClick }) => (
                     <button
                         key={label}
+                        type="button"
                         onClick={onClick}
+                        aria-pressed={active}
                         className="cursor-pointer transition-all"
                         style={{
                             padding: '5px 16px',
@@ -74,6 +77,7 @@ function NotificationPageContent() {
             {(data?.previous || data?.next) && (
                 <div className="flex justify-between mt-4">
                     <button
+                        type="button"
                         onClick={() => setPage((p) => p - 1)}
                         disabled={!data?.previous}
                         className="border-0 bg-transparent p-0 cursor-pointer text-sm text-content-link hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
@@ -81,6 +85,7 @@ function NotificationPageContent() {
                         ← Previous
                     </button>
                     <button
+                        type="button"
                         onClick={() => setPage((p) => p + 1)}
                         disabled={!data?.next}
                         className="border-0 bg-transparent p-0 cursor-pointer text-sm text-content-link hover:underline disabled:opacity-40 disabled:cursor-not-allowed"

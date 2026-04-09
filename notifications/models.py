@@ -69,11 +69,10 @@ class Notification(models.Model):
     def mark_as_read(self):
         from django.utils import timezone
 
-        updated = Notification.objects.filter(pk=self.pk, is_read=False).update(
+        Notification.objects.filter(pk=self.pk, is_read=False).update(
             is_read=True, read_at=timezone.now()
         )
-        if updated:
-            self.refresh_from_db()
+        self.refresh_from_db()
 
 
 class NotificationPreference(models.Model):
