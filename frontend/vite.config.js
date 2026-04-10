@@ -1,6 +1,7 @@
 import { defineConfig, transformWithEsbuild } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
 	plugins: [
@@ -26,6 +27,14 @@ export default defineConfig({
 			},
 		}),
 		tailwindcss(),
+		viteStaticCopy({
+			targets: [
+				{
+					src: 'src/static/images',
+					dest: '.',
+				},
+			],
+		}),
 	],
 
 	base: '/static/',
