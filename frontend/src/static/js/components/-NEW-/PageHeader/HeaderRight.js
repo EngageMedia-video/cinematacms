@@ -21,6 +21,7 @@ import { HeaderThemeSwitcher } from '../HeaderThemeSwitcher';
 import { NavigationMenuList } from '../NavigationMenuList';
 import { NavigationContentApp } from '../NavigationContentApp';
 import { CircleIconButton } from '../CircleIconButton';
+import { NotificationBell } from '../../../../../features/notifications';
 
 function headerPopupPages(user, popupNavItems, hasHeaderThemeSwitcher){
 
@@ -113,6 +114,8 @@ export function HeaderRight(props){
 									</div>
 
 									<UploadMediaButton user={ user } links={ links } />
+
+									{ !user.is.anonymous && <NotificationBell /> }
 
 									<div className={ ( user.is.anonymous ? 'user-options' : 'user-thumb' ) + ( ! user.is.anonymous || header.hasThemeSwitcher ? '' : ' visible-only-in-extra-small' ) }>
 

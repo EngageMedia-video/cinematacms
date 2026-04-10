@@ -207,6 +207,8 @@ class Channel(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, db_index=True, related_name="channels")
     add_date = models.DateTimeField(auto_now_add=True, db_index=True)
     subscribers = models.ManyToManyField(User, related_name="subscriptions", blank=True)
+    # TODO: When subscribe API is built, call:
+    # NotificationService.on_follow(actor=subscriber, followed_user=channel.user)
     friendly_token = models.CharField(blank=True, max_length=12)
     banner_logo = ProcessedImageField(
         upload_to="userlogos/%Y/%m/%d",

@@ -403,6 +403,9 @@ def update_user_ratings(user, media, user_ratings):
     return user_ratings
 
 
+# DEPRECATED: notify_user_on_comment() is no longer called.
+# Comment email notifications are now handled by NotificationService.on_comment()
+# in notifications/services.py. Remove this function in a future cleanup.
 def notify_user_on_comment(friendly_token):
     media = None
     media = models.Media.objects.filter(friendly_token=friendly_token).first()
