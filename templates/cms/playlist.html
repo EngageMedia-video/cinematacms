@@ -21,9 +21,9 @@
 <meta property="og:image:width" content="1280">
 <meta property="og:image:height" content="720">
 <meta name="twitter:image" content="{{FRONTEND_HOST}}{{ playlist.composite_thumbnail_url }}">
-{% elif playlist.thumbnail_url %}
-<meta property="og:image" content="{{FRONTEND_HOST}}{{ playlist.thumbnail_url }}">
-<meta name="twitter:image" content="{{FRONTEND_HOST}}{{ playlist.thumbnail_url }}">
+{% elif playlist.public_thumbnail_url %}
+<meta property="og:image" content="{{FRONTEND_HOST}}{{ playlist.public_thumbnail_url }}">
+<meta name="twitter:image" content="{{FRONTEND_HOST}}{{ playlist.public_thumbnail_url }}">
 {% else %}
 <meta property="og:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
 <meta name="twitter:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">

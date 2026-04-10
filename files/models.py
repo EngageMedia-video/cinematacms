@@ -1537,19 +1537,38 @@ class Playlist(models.Model):
             return pm.media.thumbnail_url
         return None
 
+    @property
+    def public_thumbnail_url(self):
+        """Return the thumbnail URL of the first public media in the playlist.
+
+        Unlike ``thumbnail_url`` (which returns the first media regardless of
+        state), this property filters to ``state="public"`` so it is safe to
+        expose to anonymous viewers — e.g., as the OG image fallback when no
+        composite grid is available.
+        """
+        pm = self.playlistmedia_set.filter(media__state="public").first()
+        if pm:
+            return pm.media.thumbnail_url
+        return None
+
     @cached_property
     def composite_thumbnail_url(self):
         """Return the best-available share image URL for this playlist.
 
         Prefers a real 1280x720 composite grid (when the playlist has >=4
-        public videos), falling back to the first media's thumbnail. This is
-        the "best effort" property consumed by the frontend share modal and
-        API serializers that just need *some* image to show.
+        public videos), falling back to the first *public* media's thumbnail.
+        This is the "best effort" property consumed by the frontend share
+        modal and API serializers that just need *some* image to show.
 
         Callers that need to distinguish a real composite from a fallback
         (e.g., the playlist.html template, which only wants to emit
         og:image:width/height=1280/720 when the real composite is in use)
         should check `has_composite_thumbnail` first.
+
+        The composite URL includes a ``?v=<mtime>`` cache-buster so that
+        browsers and social media crawlers fetch the new version after a
+        playlist membership change triggers regeneration. This mirrors the
+        ``build_versioned_url()`` pattern used by ``Media.thumbnail_url``.
 
         Cached per-instance via @cached_property so that templates referencing
         this property multiple times (og:image, twitter:image) don't repeat
@@ -1557,8 +1576,14 @@ class Playlist(models.Model):
         """
         if self.has_composite_thumbnail:
             relative_path = f"composite_thumbnails/{self.friendly_token}.jpg"
-            return helpers.url_from_path(relative_path)
-        return self.thumbnail_url
+            base_url = helpers.url_from_path(relative_path)
+            full_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+            try:
+                version = int(os.path.getmtime(full_path))
+            except OSError:
+                version = 0
+            return helpers.build_versioned_url(base_url, version)
+        return self.public_thumbnail_url
 
     @cached_property
     def has_composite_thumbnail(self):

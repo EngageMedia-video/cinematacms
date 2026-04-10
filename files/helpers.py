@@ -1041,20 +1041,12 @@ def generate_composite_thumbnail(playlist):
     if not playlist.friendly_token:
         return None
 
-    layout = _composite_grid_layout(playlist.media_count)
-    if layout is None:
-        return None
-
-    rows, cols = layout
-    tiles_needed = rows * cols
-
     canvas_width = 1280
     canvas_height = 720
 
-    # Walk the full playlist in order and collect the first `tiles_needed`
-    # source images that actually exist on disk. Items whose media is missing
-    # an image are skipped so later items with valid images can fill their
-    # slots instead.
+    # Walk the full playlist in order and collect all public media thumbnails
+    # that actually exist on disk. Items whose media is missing an image or
+    # is non-public are skipped.
     #
     # Only include public media. The composite is served as the Open Graph
     # image for the public playlist URL (see `PUBLIC_MEDIA_PATHS` in
@@ -1066,6 +1058,13 @@ def generate_composite_thumbnail(playlist):
     # Prefer posters (width=1280/720) over thumbnails (width=344) so composite
     # tiles render at full quality instead of being upscaled from the small
     # thumbnail crop.
+    #
+    # We collect up to 12 paths (the maximum grid needs 3×4 = 12 tiles),
+    # then pick the grid layout from the number of usable thumbnails we
+    # actually found — NOT from playlist.media_count, which includes
+    # non-public items and would over-estimate the grid for mixed-visibility
+    # playlists.
+    max_tiles = 12  # 3×4 is the largest grid
     public_playlist_media = (
         playlist.playlistmedia_set.filter(media__state="public")
         .select_related("media")
@@ -1083,14 +1082,16 @@ def generate_composite_thumbnail(playlist):
             full_path = os.path.join(settings.MEDIA_ROOT, field.name)
             if os.path.exists(full_path):
                 thumb_paths.append(full_path)
-                if len(thumb_paths) >= tiles_needed:
+                if len(thumb_paths) >= max_tiles:
                     break
 
-    # If too many thumbnails are missing to fill the grid, bail out so the
-    # caller can fall back to the single-video thumbnail. This avoids
-    # rendering a composite that's mostly empty cells.
-    if len(thumb_paths) < tiles_needed:
+    # Pick the grid layout from how many usable public thumbnails we found.
+    layout = _composite_grid_layout(len(thumb_paths))
+    if layout is None:
         return None
+
+    rows, cols = layout
+    tiles_needed = rows * cols
 
     canvas = Image.new("RGB", (canvas_width, canvas_height), (26, 26, 26))
     cell_w = canvas_width // cols
