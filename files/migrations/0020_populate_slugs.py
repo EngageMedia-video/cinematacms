@@ -12,7 +12,7 @@ def populate_slugs(apps, schema_editor):
             n = 1
             while model.objects.filter(slug=slug).exclude(pk=obj.pk).exists():
                 suffix = f"-{n}"
-                slug = f"{base[:100 - len(suffix)]}{suffix}"
+                slug = f"{base[: 100 - len(suffix)]}{suffix}"
                 n += 1
             obj.slug = slug
             obj.save(update_fields=["slug"])
@@ -22,9 +22,8 @@ def populate_slugs(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("files", "0017_category_topic_slug"),
+        ("files", "0019_category_topic_slug"),
     ]
 
     operations = [

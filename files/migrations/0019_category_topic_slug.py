@@ -1,12 +1,11 @@
-"""Add nullable slug fields to Category and Topic — backfilled in 0018."""
+"""Add nullable slug fields to Category and Topic — backfilled in 0020."""
 
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("files", "0016_add_encoding_drain_composite_index"),
+        ("files", "0018_add_hls_encryption_fields"),
     ]
 
     operations = [
