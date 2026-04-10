@@ -163,6 +163,24 @@
 					</div>
 
 
+				{% elif field.name == "is_encrypted" %}
+					<div class="fieldWrapper">
+						<div class="transcribe_section_title" style="margin-top: 1.5em; font-size: 120%; font-weight: bold;">
+							HLS Encryption
+						</div>
+						<div id="div_id_is_encrypted" class="control-group">
+							<div class="controls">
+								<label for="id_is_encrypted" class="checkbox">
+									{{ field }}
+									<span class="normal_label" style="font-weight: normal !important;">{{ field.label }}</span>
+								</label>
+							</div>
+						</div>
+						<div class="transcribe_section_title" style="margin-top: 0.5em; font-size: 100%;">
+							When enabled, HLS streams are encrypted with AES-128. Only authorized viewers can decrypt and play the video. Enabling this on an already-encoded video will re-generate the HLS stream.
+						</div>
+					</div>
+
 				{% elif field.name == "uploaded_poster" %}
 					<div class="fieldWrapper">
 						{{ field.errors }}

@@ -242,6 +242,8 @@ export function VideoPlayer(props) {
 				useNetworkInformationApi: deviceTier === 'high',
 				maxPlaylistRetries: 2,
 				playlistExclusionDuration: 60,
+				// Send session cookies with HLS key requests (AES-128 encryption)
+				withCredentials: true,
 			},
 		};
 

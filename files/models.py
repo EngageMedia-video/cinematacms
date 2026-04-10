@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.files import File
+from django.core.validators import RegexValidator
 from django.db import connection, models
 from django.db.models import Q
 from django.db.models.signals import (
@@ -297,6 +298,13 @@ class Media(models.Model):
         help_text="In case existing URLs of media exist, for use in migrations",
     )
     hls_file = models.CharField(max_length=1000, blank=True)
+    is_encrypted = models.BooleanField(default=False, help_text="Enable AES-128 encryption for HLS streaming")
+    encryption_key = models.CharField(
+        max_length=32,
+        blank=True,
+        validators=[RegexValidator(regex=r"^(?:[0-9A-Fa-f]{32})?$", message="Must be blank or exactly 32 hex characters")],
+        help_text="Hex-encoded AES-128 encryption key",
+    )
     # keep track if media file has changed
     company = models.CharField("Production Company", max_length=300, blank=True, null=True)
     website = models.CharField("Website", max_length=300, blank=True, null=True)
@@ -309,6 +317,7 @@ class Media(models.Model):
     __original_uploaded_poster = None
     __original_state = None
     __original_password = None
+    __original_is_encrypted = None
 
     class Meta:
         ordering = ["-add_date"]
@@ -343,6 +352,7 @@ class Media(models.Model):
         self.__original_uploaded_poster = self.uploaded_poster
         self.__original_state = self.state
         self.__original_password = self.password
+        self.__original_is_encrypted = self.is_encrypted
 
     def save(self, *args, **kwargs):
         if not self.title:
@@ -395,6 +405,13 @@ class Media(models.Model):
             self._invalidate_permission_cache()
             self.__original_state = self.state
             self.__original_password = self.password
+        # Re-generate HLS if encryption was toggled (guard against None on first save)
+        if self.pk and self.__original_is_encrypted is not None and self.is_encrypted != self.__original_is_encrypted:
+            self.__original_is_encrypted = self.is_encrypted
+            if self.encodings.filter(profile__extension="mp4", status="success", chunk=False, profile__codec="h264").exists():
+                from . import tasks
+
+                tasks.create_hls.delay(self.friendly_token)
         # has to save first for uploaded_poster path to exist
         if self.uploaded_poster and self.uploaded_poster != self.__original_uploaded_poster:
             with open(self.uploaded_poster.path, "rb") as f:
@@ -402,6 +419,31 @@ class Media(models.Model):
                 myfile = File(f)
                 thumbnail_name = helpers.get_file_name(self.uploaded_poster.path)
                 self.uploaded_thumbnail.save(content=myfile, name=thumbnail_name)
+
+    def ensure_encryption_key(self):
+        """Generate an AES-128 key if one doesn't exist. Returns hex string.
+
+        Uses select_for_update to prevent concurrent workers from generating
+        different keys for the same media.
+        """
+        if self.encryption_key:
+            return self.encryption_key
+
+        import secrets
+
+        from django.db import transaction
+
+        with transaction.atomic():
+            locked = self.__class__.objects.select_for_update().get(pk=self.pk)
+            if locked.encryption_key:
+                self.encryption_key = locked.encryption_key
+                return self.encryption_key
+
+            self.encryption_key = secrets.token_hex(16)
+            locked.encryption_key = self.encryption_key
+            locked.save(update_fields=["encryption_key"])
+
+        return self.encryption_key
 
     def transcribe_function(self):
         can_transcribe = False

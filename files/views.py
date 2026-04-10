@@ -86,6 +86,7 @@ from .models import (
     Topic,
     TopMessage,
 )
+from .secure_media_views import check_media_access_permission
 from .query_cache import (
     MEDIA_DETAIL_TIMEOUT,
     MEDIA_LIST_TIMEOUT,
@@ -2173,3 +2174,33 @@ class IndexPageFeaturedList(APIView):
         indexfeatured = IndexPageFeatured.objects.filter(active=True).order_by("ordering")
         serializer = IndexPageFeaturedSerializer(indexfeatured, many=True, context={"request": request})
         return Response(serializer.data)
+
+
+class MediaKeyView(APIView):
+    """Serve AES-128 decryption key for encrypted HLS streams."""
+
+    def get(self, request, friendly_token):
+        try:
+            media = Media.objects.select_related("user").get(friendly_token=friendly_token)
+        except Media.DoesNotExist:
+            raise Http404
+
+        if not media.is_encrypted or not media.encryption_key:
+            raise Http404
+
+        if not check_media_access_permission(request, media):
+            return HttpResponse(status=403)
+
+        try:
+            key_bytes = bytes.fromhex(media.encryption_key)
+        except ValueError:
+            raise Http404
+
+        if len(key_bytes) != 16:
+            raise Http404
+
+        response = HttpResponse(key_bytes, content_type="application/octet-stream")
+        response["Content-Length"] = len(key_bytes)
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response["Pragma"] = "no-cache"
+        return response
