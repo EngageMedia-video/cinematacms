@@ -3,6 +3,7 @@
 	var MediaCMS = {
 		{% if media %}mediaId: "{{media}}", {% endif %}
 		{% if user %}profileId: "{{user.username}}", {% endif %}
+		{% if playlist %}playlistId: "{{playlist.friendly_token}}", {% endif %}
 	};
 
 	{% include "config/core/api.html" %}

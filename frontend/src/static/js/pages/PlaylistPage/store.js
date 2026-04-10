@@ -151,6 +151,31 @@ class PlaylistPageStore extends EventEmitter{
                 }
                 this.data.publishDateLabel = this.data.publishDateLabel || 'Created on ' + publishedOnDate( new Date( PlaylistPageStoreData[this.id].data.add_date ), 3 );
                 return this.data.publishDateLabel;
+            case 'playlist-url':
+                if( PlaylistPageStoreData[this.id].playlistId ){
+                    const base = this.mediacms_config.site.url.replace(/\/$/, '');
+                    return base + '/playlist/' + PlaylistPageStoreData[this.id].playlistId;
+                }
+                return null;
+            case 'composite-thumbnail-url':
+                // Prefer the composite thumbnail, fall back to the first media's
+                // thumbnail when the backend couldn't build a composite (e.g.,
+                // empty playlist, fewer than 4 public videos, generation failure).
+                // Both values arrive from the API as relative paths like
+                // "/media/composite_thumbnails/..." or "/media/original/thumbnails/...",
+                // so the same siteBase + startsWith('http') normalization applies.
+                if( PlaylistPageStoreData[this.id].data ){
+                    const siteBase = this.mediacms_config.site.url.replace(/\/$/, '');
+                    const compositePath = PlaylistPageStoreData[this.id].data.composite_thumbnail_url;
+                    if( compositePath ){
+                        return compositePath.startsWith('http') ? compositePath : siteBase + compositePath;
+                    }
+                    const fallbackPath = PlaylistPageStoreData[this.id].data.thumbnail_url;
+                    if( fallbackPath ){
+                        return fallbackPath.startsWith('http') ? fallbackPath : siteBase + fallbackPath;
+                    }
+                }
+                return null;
         }
         return null;
     }

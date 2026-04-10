@@ -314,6 +314,7 @@ class PlaylistDetailSerializer(serializers.ModelSerializer):
             "media_count",
             "url",
             "thumbnail_url",
+            "composite_thumbnail_url",
         )
 
 

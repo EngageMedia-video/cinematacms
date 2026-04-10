@@ -1,6 +1,7 @@
 # Kudos to Werner Robitza, AVEQ GmbH
 import hashlib
 import json
+import logging
 import math
 import os
 import random
@@ -12,6 +13,8 @@ from fractions import Fraction
 
 import filetype
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
@@ -996,3 +999,153 @@ def can_view_all_user_media(requesting_user, profile_user):
 
     # Curators can see all content
     return bool(is_curator(requesting_user))
+
+
+def _composite_grid_layout(video_count):
+    """Pick a grid layout (rows, cols) for a given playlist size.
+
+    Returns None if the playlist has fewer than 4 videos — callers should
+    fall back to the single-video thumbnail in that case.
+    """
+    if video_count >= 12:
+        return (3, 4)  # 12 tiles
+    if video_count >= 8:
+        return (2, 4)  # 8 tiles
+    if video_count >= 6:
+        return (2, 3)  # 6 tiles
+    if video_count >= 4:
+        return (2, 2)  # 4 tiles
+    return None
+
+
+def generate_composite_thumbnail(playlist):
+    """Generate a composite thumbnail from playlist video thumbnails.
+
+    Creates a 1280x720 JPEG (16:9) grid image from the first N media
+    thumbnails in the playlist. Grid size depends on playlist length:
+        4-5 videos  -> 2x2 grid (4 tiles)
+        6-7 videos  -> 2x3 grid (6 tiles)
+        8-11 videos -> 2x4 grid (8 tiles)
+        12+ videos  -> 3x4 grid (12 tiles)
+        <4 videos   -> None (caller falls back to single-video thumbnail)
+
+    Saved to composite_thumbnails/{friendly_token}.jpg under MEDIA_ROOT
+    using an atomic temp-file + rename to prevent partial reads under
+    concurrent generation.
+
+    Returns the relative path from MEDIA_ROOT, or None on failure or
+    when the playlist has fewer than 4 videos.
+    """
+    from PIL import Image, UnidentifiedImageError
+
+    if not playlist.friendly_token:
+        return None
+
+    canvas_width = 1280
+    canvas_height = 720
+
+    # Walk the full playlist in order and collect all public media thumbnails
+    # that actually exist on disk. Items whose media is missing an image or
+    # is non-public are skipped.
+    #
+    # Only include public media. The composite is served as the Open Graph
+    # image for the public playlist URL (see `PUBLIC_MEDIA_PATHS` in
+    # files/secure_media_views.py) and is fetched by unauthenticated social
+    # media crawlers, so it must not leak posters from private, unlisted, or
+    # restricted videos. This matches the anonymous-viewer filter used by
+    # PlaylistDetail.get() in files/views.py (`media__state="public"`).
+    #
+    # Prefer posters (width=1280/720) over thumbnails (width=344) so composite
+    # tiles render at full quality instead of being upscaled from the small
+    # thumbnail crop.
+    #
+    # We collect up to 12 paths (the maximum grid needs 3×4 = 12 tiles),
+    # then pick the grid layout from the number of usable thumbnails we
+    # actually found — NOT from playlist.media_count, which includes
+    # non-public items and would over-estimate the grid for mixed-visibility
+    # playlists.
+    max_tiles = 12  # 3×4 is the largest grid
+    public_playlist_media = (
+        playlist.playlistmedia_set.filter(media__state="public")
+        .select_related("media")
+    )
+    thumb_paths = []
+    for pm in public_playlist_media.iterator():
+        media = pm.media
+        field = (
+            media.uploaded_poster
+            or media.poster
+            or media.uploaded_thumbnail
+            or media.thumbnail
+        )
+        if field and field.name:
+            full_path = os.path.join(settings.MEDIA_ROOT, field.name)
+            if os.path.exists(full_path):
+                thumb_paths.append(full_path)
+                if len(thumb_paths) >= max_tiles:
+                    break
+
+    # Pick the grid layout from how many usable public thumbnails we found.
+    layout = _composite_grid_layout(len(thumb_paths))
+    if layout is None:
+        return None
+
+    rows, cols = layout
+    tiles_needed = rows * cols
+
+    canvas = Image.new("RGB", (canvas_width, canvas_height), (26, 26, 26))
+    cell_w = canvas_width // cols
+    cell_h = canvas_height // rows
+
+    try:
+        for idx, path in enumerate(thumb_paths[:tiles_needed]):
+            row = idx // cols
+            col = idx % cols
+            img = Image.open(path)
+            img = _crop_to_fill(img, cell_w, cell_h)
+            canvas.paste(img, (col * cell_w, row * cell_h))
+
+        output_dir = os.path.join(settings.MEDIA_ROOT, "composite_thumbnails")
+        os.makedirs(output_dir, exist_ok=True)
+        relative_path = f"composite_thumbnails/{playlist.friendly_token}.jpg"
+        full_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+
+        # Atomic write: save to a temp file in the same directory,
+        # then os.replace() to swap into place. This prevents crawlers
+        # from reading a partially-written JPEG under concurrent generation.
+        fd, tmp_path = tempfile.mkstemp(suffix=".jpg", dir=output_dir)
+        try:
+            os.close(fd)
+            canvas.save(tmp_path, "JPEG", quality=85)
+            os.replace(tmp_path, full_path)
+        except Exception:
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass
+            raise
+
+        return relative_path
+    except (OSError, UnidentifiedImageError, ValueError) as e:
+        logger.warning(
+            "Composite thumbnail generation failed for playlist %s: %s",
+            playlist.friendly_token,
+            e,
+        )
+        return None
+
+
+def _crop_to_fill(img, target_w, target_h):
+    """Resize and center-crop an image to exactly fill target dimensions."""
+    from PIL import Image
+
+    src_w, src_h = img.size
+    scale = max(target_w / src_w, target_h / src_h)
+    new_w = int(src_w * scale)
+    new_h = int(src_h * scale)
+    img = img.resize((new_w, new_h), Image.LANCZOS)
+
+    left = (new_w - target_w) // 2
+    top = (new_h - target_h) // 2
+    return img.crop((left, top, left + target_w, top + target_h))

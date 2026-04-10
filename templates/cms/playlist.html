@@ -2,11 +2,61 @@
 {% load static %}
 {% load django_vite %}
 
-{% block headtitle %}Playlist - {{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}{% if playlist %}{{ playlist.title }} - {% endif %}{{PORTAL_NAME}}{% endblock headtitle %}
+
+{% block headermeta %}
+
+{% if playlist %}
+<link rel="canonical" href="{{FRONTEND_HOST}}{{ playlist.get_absolute_url }}">
+
+<meta name="description" content="{{ playlist.description|striptags|truncatewords:30 }}">
+
+<meta property="og:title" content="{{ playlist.title }}">
+<meta property="og:url" content="{{FRONTEND_HOST}}{{ playlist.get_absolute_url }}">
+<meta property="og:description" content="{{ playlist.description|striptags|truncatewords:30 }}">
+<meta property="og:type" content="website">
+
+{% if playlist.has_composite_thumbnail %}
+<meta property="og:image" content="{{FRONTEND_HOST}}{{ playlist.composite_thumbnail_url }}">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="720">
+<meta name="twitter:image" content="{{FRONTEND_HOST}}{{ playlist.composite_thumbnail_url }}">
+{% elif playlist.public_thumbnail_url %}
+<meta property="og:image" content="{{FRONTEND_HOST}}{{ playlist.public_thumbnail_url }}">
+<meta name="twitter:image" content="{{FRONTEND_HOST}}{{ playlist.public_thumbnail_url }}">
+{% else %}
+<meta property="og:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
+<meta name="twitter:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
+{% endif %}
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ playlist.title }}">
+<meta name="twitter:description" content="{{ playlist.description|striptags|truncatewords:30 }}">
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "{{ playlist.title|escapejs }}",
+    "url": "{{ FRONTEND_HOST|escapejs }}{{ playlist.get_absolute_url|escapejs }}",
+    "description": "{{ playlist.description|striptags|truncatewords:30|escapejs }}",
+    "numberOfItems": {{ playlist.media_count }}
+}
+</script>
+
+{% else %}
+<meta property="og:title" content="Playlist - {{PORTAL_NAME}}">
+<meta property="og:type" content="website">
+<meta property="og:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Playlist - {{PORTAL_NAME}}">
+<meta name="twitter:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
+{% endif %}
+
+{% endblock headermeta %}
 
 {% block topimports %}{% vite_asset 'src/entries/playlist.js' %}{%endblock topimports %}
 
 {% block content %}
 {% if user %}<div id="page-playlist"></div>{% endif %}
 {% endblock %}
-
