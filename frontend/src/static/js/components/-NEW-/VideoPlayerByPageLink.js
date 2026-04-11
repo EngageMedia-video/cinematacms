@@ -212,8 +212,7 @@ export function VideoPlayerByPageLink(props) {
 					);
 
 					if (featuredItemDescrContent) {
-						// featuredItemDescrContent.innerHTML = data.summary + '<br/><br/>' + data.description;
-						featuredItemDescrContent.innerHTML = data.summary;
+						featuredItemDescrContent.textContent = data.summary;
 					}
 
 					setLoading(false);

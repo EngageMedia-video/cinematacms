@@ -156,8 +156,8 @@ def check_rate_limit(ip: str, friendly_token: str) -> bool:
         attempts = redis.get(key)
         return not (attempts is not None and int(attempts) >= _get_brute_force_max_attempts())
     except Exception:
-        logger.error("Redis unavailable during rate limit check — allowing request")
-        return True
+        logger.error("Redis unavailable during rate limit check — failing closed")
+        return False
 
 
 def record_failed_attempt(ip: str, friendly_token: str) -> int:

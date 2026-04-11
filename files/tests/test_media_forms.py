@@ -2,9 +2,11 @@
 Tests for MediaForm password validation.
 """
 
+from django.contrib.auth.hashers import check_password
 from django.test import TestCase, override_settings
 
 from files.forms import MediaForm
+from files.models import Category
 from files.tests.helpers import create_test_media, create_test_user
 
 
@@ -16,19 +18,23 @@ class MediaFormPasswordValidationTest(TestCase):
         self.media = create_test_media(self.user, state="restricted")
         self.media.set_password("original1234")
         self.media.save()
+        # Ensure a category exists for valid form submissions
+        self.category = Category.objects.first() or Category.objects.create(
+            title="Test Category", user=self.user, is_global=True
+        )
 
     def _get_form_data(self, **overrides):
-        """Return minimal valid form data for editing."""
+        """Return a fully valid form payload."""
         data = {
             "title": "Test",
             "state": "restricted",
             "password": "validpass123",
-            "summary": "test",
-            "description": "test",
+            "summary": "test summary",
+            "description": "test description",
             "media_language": "en",
-            "media_country": "",
-            "category": "",
-            "topics": "",
+            "media_country": "AU",
+            "category": [self.category.id],
+            "topics": [],
             "new_tags": "",
             "year_produced": "2025",
             "enable_comments": True,
@@ -47,17 +53,29 @@ class MediaFormPasswordValidationTest(TestCase):
     def test_password_at_minimum_length_accepted(self):
         data = self._get_form_data(password="12345678")
         form = MediaForm(self.user, data=data, instance=self.media)
-        # May have other validation errors (category etc.), but password should be fine
-        if not form.is_valid():
-            self.assertNotIn("password", form.errors)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+
+    def test_password_hashed_on_save(self):
+        """Valid form save actually hashes the password."""
+        data = self._get_form_data(password="newpassword99")
+        form = MediaForm(self.user, data=data, instance=self.media)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        form.save()
+        self.media.refresh_from_db()
+        self.assertTrue(check_password("newpassword99", self.media.password))
 
     def test_empty_password_with_restricted_state_preserves_existing(self):
         """Leaving password blank on an existing restricted media keeps the old hash."""
+        old_hash = self.media.password
         data = self._get_form_data(password="")
         form = MediaForm(self.user, data=data, instance=self.media)
-        # Password field should NOT raise an error because the instance already
-        # has a hashed password that will be preserved.
-        if not form.is_valid():
+        # The form should be valid -- existing hash is preserved
+        if form.is_valid():
+            form.save()
+            self.media.refresh_from_db()
+            self.assertEqual(self.media.password, old_hash)
+        else:
+            # If form is invalid, password should not be the reason
             self.assertNotIn("password", form.errors)
 
     def test_empty_password_with_restricted_state_rejected_when_no_existing(self):
