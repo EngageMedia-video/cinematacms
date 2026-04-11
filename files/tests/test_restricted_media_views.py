@@ -64,13 +64,12 @@ class ViewMediaPasswordTest(TestCase):
 
     def test_referrer_policy_set_on_restricted_media(self):
         resp = self.client.get(self.url)
-        self.assertEqual(resp["Referrer-Policy"], "no-referrer")
+        self.assertEqual(resp["Referrer-Policy"], "same-origin")
 
-    def test_public_media_does_not_get_no_referrer(self):
-        public_media = create_test_media(self.user, state="public")
-        resp = self.client.get(f"/view?m={public_media.friendly_token}")
-        # Public media should NOT have the restrictive no-referrer policy
-        self.assertNotEqual(resp.get("Referrer-Policy"), "no-referrer")
+    def test_referrer_policy_present_on_restricted_response(self):
+        """Restricted media responses must have Referrer-Policy set."""
+        resp = self.client.get(self.url)
+        self.assertIn("Referrer-Policy", resp)
 
 
 class ViewMediaRateLimitTest(TestCase):
@@ -174,7 +173,7 @@ class EmbedMediaTest(TestCase):
     def test_embed_referrer_policy_on_restricted(self):
         token = generate_token(self.media_uid)
         resp = self.client.get(f"/embed?m={self.media.friendly_token}&token={token}")
-        self.assertEqual(resp["Referrer-Policy"], "no-referrer")
+        self.assertEqual(resp["Referrer-Policy"], "same-origin")
 
 
 class PublicMediaRegressionTest(TestCase):

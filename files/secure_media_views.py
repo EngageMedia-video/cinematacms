@@ -68,10 +68,7 @@ def _calculate_access_permission(request, media: Media) -> bool:
 
         # Check session token as fallback
         session_token = request.session.get(f"media_token_{media.friendly_token}")
-        if session_token and validate_token(session_token, media_uid):
-            return True
-
-        return False
+        return bool(session_token and validate_token(session_token, media_uid))
 
     if not user.is_authenticated:
         return False
@@ -441,7 +438,7 @@ class SecureMediaView(View):
 
         # Add Referrer-Policy for restricted media
         if media.state == "restricted":
-            response["Referrer-Policy"] = "no-referrer"
+            response["Referrer-Policy"] = "same-origin"
 
         return response
 
@@ -1135,7 +1132,7 @@ class SecureMediaView(View):
 
         response = HttpResponse(content, content_type="application/vnd.apple.mpegurl")
         response["Cache-Control"] = "no-store"
-        response["Referrer-Policy"] = "no-referrer"
+        response["Referrer-Policy"] = "same-origin"
         return response
 
     def _serve_file(self, file_path: str, head_request: bool = False) -> HttpResponse:

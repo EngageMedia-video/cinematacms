@@ -86,7 +86,6 @@ from .models import (
     Topic,
     TopMessage,
 )
-from .secure_media_views import check_media_access_permission
 from .query_cache import (
     MEDIA_DETAIL_TIMEOUT,
     MEDIA_LIST_TIMEOUT,
@@ -98,6 +97,7 @@ from .query_cache import (
     invalidate_media_cache,
     set_cached_result,
 )
+from .secure_media_views import check_media_access_permission
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -480,9 +480,10 @@ def view_media(request):
     context["is_media_allowed_type"] = is_media_allowed_type(media)
 
     response = render(request, "cms/media.html", context)
-    # Prevent token leakage via Referrer header
+    # Prevent token leakage to third-party sites via Referrer header.
+    # Use same-origin (not no-referrer) to preserve Referer for Django CSRF on POST.
     if media.state == "restricted":
-        response["Referrer-Policy"] = "no-referrer"
+        response["Referrer-Policy"] = "same-origin"
     return response
 
 
@@ -966,7 +967,7 @@ def embed_media(request):
 
     response = render(request, "cms/embed.html", context)
     if media.state == "restricted":
-        response["Referrer-Policy"] = "no-referrer"
+        response["Referrer-Policy"] = "same-origin"
     return response
 
 
@@ -1802,9 +1803,7 @@ class PlaylistDetail(APIView):
                                     actor=request.user, media=media, playlist=playlist
                                 )
                             except Exception:
-                                logger.exception(
-                                    "Notification failed for playlist add %s", playlist.pk
-                                )
+                                logger.exception("Notification failed for playlist add %s", playlist.pk)
 
                         return Response(
                             {"detail": "media added to Playlist"},
