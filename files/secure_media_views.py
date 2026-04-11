@@ -432,7 +432,7 @@ class SecureMediaView(View):
         # can never be injected into rewritten manifest URIs.
         if media.state == "restricted" and serving_path.endswith(".m3u8"):
             valid_token = self._get_valid_restricted_token(request, media)
-            return self._serve_rewritten_manifest(request, serving_path, token=valid_token)
+            return self._serve_rewritten_manifest(request, serving_path, token=valid_token, head_request=head_request)
 
         response = self._serve_file(serving_path, head_request)
 
@@ -1095,19 +1095,14 @@ class SecureMediaView(View):
         """Delegate to module-level function."""
         return check_media_access_permission(request, media)
 
-    def _serve_rewritten_manifest(self, request, file_path: str, *, token: str | None = None) -> HttpResponse:
+    def _serve_rewritten_manifest(
+        self, request, file_path: str, *, token: str | None = None, head_request: bool = False
+    ) -> HttpResponse:
         """Read an .m3u8 manifest, inject ?token= into all URIs, return directly.
 
         This replaces X-Accel-Redirect for restricted HLS manifests so that
         Safari/iOS native HLS, Chrome 141+, and future mobile apps all
         receive authenticated segment URLs in the manifest itself.
-
-        Args:
-            request: The HTTP request.
-            file_path: Relative path to the .m3u8 manifest file.
-            token: The pre-validated access token passed by the caller.
-                   Callers must resolve the token from the query string or
-                   session before invoking this method.
         """
         from files.token_utils import rewrite_m3u8
 
@@ -1130,7 +1125,11 @@ class SecureMediaView(View):
         if token:
             content = rewrite_m3u8(content, token)
 
-        response = HttpResponse(content, content_type="application/vnd.apple.mpegurl")
+        if head_request:
+            response = HttpResponse(content_type="application/vnd.apple.mpegurl")
+            response["Content-Length"] = len(content.encode("utf-8"))
+        else:
+            response = HttpResponse(content, content_type="application/vnd.apple.mpegurl")
         response["Cache-Control"] = "no-store"
         response["Referrer-Policy"] = "same-origin"
         return response

@@ -458,16 +458,17 @@ def view_media(request):
             else:
                 submitted_password = request.POST.get("password")
                 if check_password(submitted_password, media.password):
-                    can_see_restricted_media = True
                     try:
                         token = generate_token(media_uid)
                         request.session[f"media_token_{media.friendly_token}"] = token
                         media_access_token = token
+                        can_see_restricted_media = True
                     except Exception:
                         logger.warning(
-                            "Failed to generate token for media %s — granting degraded access",
+                            "Failed to generate token for media %s",
                             media.friendly_token,
                         )
+                        wrong_password_provided = True
                     reset_rate_limit(ip, media.friendly_token)
                 else:
                     wrong_password_provided = True
@@ -480,10 +481,9 @@ def view_media(request):
     context["is_media_allowed_type"] = is_media_allowed_type(media)
 
     response = render(request, "cms/media.html", context)
-    # Prevent token leakage to third-party sites via Referrer header.
-    # Use same-origin (not no-referrer) to preserve Referer for Django CSRF on POST.
     if media.state == "restricted":
         response["Referrer-Policy"] = "same-origin"
+        response["Cache-Control"] = "no-store"
     return response
 
 
@@ -968,6 +968,7 @@ def embed_media(request):
     response = render(request, "cms/embed.html", context)
     if media.state == "restricted":
         response["Referrer-Policy"] = "same-origin"
+        response["Cache-Control"] = "no-store"
     return response
 
 
