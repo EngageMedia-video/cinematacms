@@ -18,8 +18,8 @@
 		"pack": "npm run build && npm pack"
 	},
 	"devDependencies": {
-		"fantasticon": "^3.0.0",
+		"fantasticon": "^4.0.0",
 		"material-design-icons": "^3.0.1",
-		"sass": "^1.97.3"
+		"sass": "^1.99.0"
 	}
 }

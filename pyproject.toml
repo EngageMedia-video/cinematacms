@@ -40,14 +40,14 @@ dependencies = [
     "django-tinymce==4.1.0",
     "django-maintenance-mode==0.22.0",
     "django-vite>=3.1.0",
-    "prometheus-client>=0.21.0",
+    "prometheus-client>=0.25.0",
 ]
 
 [dependency-groups]
-dev = ["basedpyright>=1.38.2", "ruff>=0.15.4", "pre-commit>=4.5.1"]
+dev = ["basedpyright>=1.39.0", "ruff>=0.15.10", "pre-commit>=4.5.1"]
 e2e = [
     "playwright>=1.58.0",
-    "pytest>=9.0.2",
+    "pytest>=9.0.3",
     "pytest-playwright>=0.7.2",
 ]
 
