@@ -405,7 +405,7 @@ SHOW_ORIGINAL_MEDIA = True
 # X-Accel-Redirect settings for secure media serving
 # Set to True when using Nginx with X-Accel-Redirect (production)
 # Set to False when using Django development server
-USE_X_ACCEL_REDIRECT = True
+USE_X_ACCEL_REDIRECT = os.getenv("USE_X_ACCEL_REDIRECT", "True").lower() not in ("false", "0", "no")
 
 # Permission cache settings
 # Set to True to enable Redis caching for permission checks (recommended)
