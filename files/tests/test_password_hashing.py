@@ -4,19 +4,16 @@ Tests for media password hashing — set_password(), save() guard, and data migr
 
 from unittest.mock import patch
 
-from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password, identify_hasher, make_password
 from django.test import TestCase
 
 from files.models import Media
-from files.tests.helpers import create_test_media
-
-User = get_user_model()
+from files.tests.helpers import create_test_media, create_test_user
 
 
 class SetPasswordTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="testuser", password="testpass1234567890")
+        self.user = create_test_user()
 
     def test_set_password_hashes_plaintext(self):
         media = create_test_media(self.user)
@@ -48,7 +45,7 @@ class SaveGuardTest(TestCase):
     """Test the identify_hasher guard in save()."""
 
     def setUp(self):
-        self.user = User.objects.create_user(username="testuser2", password="testpass1234567890")
+        self.user = create_test_user()
 
     def test_plaintext_password_hashed_on_save(self):
         """Plaintext passwords set via direct assignment are hashed by save() guard."""
@@ -107,7 +104,7 @@ class DataMigrationTest(TestCase):
     """Test the data migration function directly."""
 
     def setUp(self):
-        self.user = User.objects.create_user(username="miguser", password="testpass1234567890")
+        self.user = create_test_user()
 
     def test_migration_hashes_plaintext(self):
         """Simulate what the migration does: hash all non-empty plaintext passwords."""

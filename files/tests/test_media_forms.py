@@ -2,18 +2,15 @@
 Tests for MediaForm password validation.
 """
 
-from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 
 from files.forms import MediaForm
-from files.tests.helpers import create_test_media
-
-User = get_user_model()
+from files.tests.helpers import create_test_media, create_test_user
 
 
 class MediaFormPasswordValidationTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="formuser", password="testpass1234567890")
+        self.user = create_test_user()
         self.user.advancedUser = True
         self.user.save()
         self.media = create_test_media(self.user, state="restricted")

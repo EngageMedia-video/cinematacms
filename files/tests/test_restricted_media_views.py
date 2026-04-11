@@ -3,13 +3,10 @@ Tests for restricted media views — password entry, token issuance,
 rate limiting, embed auth, and manifest rewriting.
 """
 
-from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
-from files.tests.helpers import create_test_media
+from files.tests.helpers import create_test_media, create_test_user
 from files.token_utils import _get_brute_force_max_attempts, generate_token
-
-User = get_user_model()
 
 
 class ViewMediaPasswordTest(TestCase):
@@ -17,7 +14,7 @@ class ViewMediaPasswordTest(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username="creator", password="testpass1234567890")
+        self.user = create_test_user()
         self.media = create_test_media(self.user, state="restricted")
         self.media.set_password("secretpass")
         self.media.save()
@@ -59,7 +56,7 @@ class ViewMediaPasswordTest(TestCase):
         self.assertContains(resp, 'type="password"')
 
     def test_owner_bypasses_password(self):
-        self.client.login(username="creator", password="testpass1234567890")
+        self.client.login(username=self.user.username, password="testpass1234567890")
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
         # Owner can see media without password
@@ -81,7 +78,7 @@ class ViewMediaRateLimitTest(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username="creator2", password="testpass1234567890")
+        self.user = create_test_user()
         self.media = create_test_media(self.user, state="restricted")
         self.media.set_password("correct")
         self.media.save()
@@ -108,7 +105,7 @@ class MediaDetailAPITest(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username="apiuser", password="testpass1234567890")
+        self.user = create_test_user()
         self.media = create_test_media(self.user, state="restricted")
         self.media.set_password("apipass")
         self.media.save()
@@ -133,7 +130,7 @@ class MediaDetailAPITest(TestCase):
         self.assertEqual(resp.status_code, 401)
 
     def test_api_owner_bypasses_token(self):
-        self.client.login(username="apiuser", password="testpass1234567890")
+        self.client.login(username=self.user.username, password="testpass1234567890")
         resp = self.client.get(f"/api/v1/media/{self.media.friendly_token}")
         self.assertEqual(resp.status_code, 200)
 
@@ -149,7 +146,7 @@ class EmbedMediaTest(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username="embeduser", password="testpass1234567890")
+        self.user = create_test_user()
         self.media = create_test_media(self.user, state="restricted")
         self.media.set_password("embedpass")
         self.media.save()
@@ -185,7 +182,7 @@ class PublicMediaRegressionTest(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username="pubuser", password="testpass1234567890")
+        self.user = create_test_user()
 
     def test_public_media_accessible_without_token(self):
         media = create_test_media(self.user, state="public")

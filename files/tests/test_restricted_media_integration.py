@@ -3,13 +3,10 @@ Integration tests for the full restricted media flow.
 Tests span multiple units: token issuance → API → file serving → invalidation.
 """
 
-from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
-from files.tests.helpers import create_test_media
+from files.tests.helpers import create_test_media, create_test_user
 from files.token_utils import generate_token, validate_token
-
-User = get_user_model()
 
 
 class FullPasswordToTokenFlowTest(TestCase):
@@ -17,7 +14,7 @@ class FullPasswordToTokenFlowTest(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username="integ_user", password="testpass1234567890")
+        self.user = create_test_user()
         self.media = create_test_media(self.user, state="restricted")
         self.media.set_password("integrationpass")
         self.media.save()
@@ -56,7 +53,7 @@ class TokenScopingTest(TestCase):
     """Test that tokens are scoped to specific media."""
 
     def setUp(self):
-        self.user = User.objects.create_user(username="scope_user", password="testpass1234567890")
+        self.user = create_test_user()
         self.media_a = create_test_media(self.user, state="restricted")
         self.media_a.set_password("pass_a")
         self.media_a.save()
@@ -78,7 +75,7 @@ class PasswordChangeInvalidationTest(TestCase):
     """Test that changing a password invalidates all tokens."""
 
     def setUp(self):
-        self.user = User.objects.create_user(username="invalidation_user", password="testpass1234567890")
+        self.user = create_test_user()
         self.media = create_test_media(self.user, state="restricted")
         self.media.set_password("original")
         self.media.save()
@@ -113,7 +110,7 @@ class ConcurrentAccessTest(TestCase):
     """Test multiple users with different tokens for same media."""
 
     def setUp(self):
-        self.user = User.objects.create_user(username="concurrent_user", password="testpass1234567890")
+        self.user = create_test_user()
         self.media = create_test_media(self.user, state="restricted")
         self.media.set_password("shared")
         self.media.save()
@@ -133,7 +130,7 @@ class EmbedFlowTest(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username="embed_integ", password="testpass1234567890")
+        self.user = create_test_user()
         self.media = create_test_media(self.user, state="restricted")
         self.media.set_password("embedpass")
         self.media.save()
