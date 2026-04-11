@@ -516,16 +516,14 @@
 			}
 
 			> button{
+				display:flex;
+				align-items:center;
 				font-size:13px;
 				font-weight:500;
 				border:0;
 				background:none;
 				cursor:pointer;
 				padding:0;
-
-				> *{
-					display:inline-block;
-				}
 			}
 
 			.popup-fullscreen .popup-main > .playlist-share-options{
