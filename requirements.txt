@@ -23,9 +23,9 @@ certifi==2026.2.25
     # via requests
 cffi==2.0.0 ; platform_python_implementation != 'PyPy'
     # via cryptography
-charset-normalizer==3.4.4
+charset-normalizer==3.4.7
     # via requests
-click==8.3.1
+click==8.3.2
     # via
     #   celery
     #   click-didyoumean
@@ -45,11 +45,11 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   tqdm
 crispy-forms-bootstrap2==2024.1
     # via cinemata
-cryptography==46.0.5
+cryptography==46.0.7
     # via fido2
 decorator==5.2.1
     # via ipython
-django==5.2.11
+django==5.2.13
     # via
     #   cinemata
     #   django-allauth
@@ -76,7 +76,7 @@ django-celery-email==3.0.0
     # via cinemata
 django-cors-headers==4.9.0
     # via cinemata
-django-crispy-forms==2.5
+django-crispy-forms==2.6
     # via
     #   cinemata
     #   crispy-forms-bootstrap2
@@ -148,7 +148,7 @@ pillow==12.1.1
     # via
     #   cinemata
     #   pilkit
-prometheus-client==0.24.1
+prometheus-client==0.25.0
     # via cinemata
 prompt-toolkit==3.0.52
     # via
@@ -166,19 +166,19 @@ pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementatio
     # via cffi
 pyflakes==3.4.0
     # via flake8
-pygments==2.19.2
+pygments==2.20.0
     # via ipython
 python-dateutil==2.9.0.post0
     # via celery
 python-dotenv==1.2.1
     # via cinemata
-python-fsutil==0.16.0
+python-fsutil==0.16.1
     # via django-maintenance-mode
 qrcode==8.2
     # via cinemata
-redis==7.2.1
+redis==7.4.0
     # via django-redis
-requests==2.32.5
+requests==2.33.0
     # via cinemata
 rpdb==0.2.0
     # via cinemata
@@ -203,7 +203,7 @@ typing-extensions==4.15.0 ; python_full_version < '3.12'
     #   cryptography
     #   exceptiongroup
     #   ipython
-tzdata==2025.3
+tzdata==2026.1
     # via
     #   django
     #   kombu
