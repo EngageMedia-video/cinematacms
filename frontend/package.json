@@ -13,10 +13,10 @@
 	},
 	"devDependencies": {
 		"@tailwindcss/vite": "^4.2.2",
-		"@vitejs/plugin-react": "^5.2.0",
+		"@vitejs/plugin-react": "^6.0.1",
 		"autoprefixer": "^10.4.27",
 		"core-js": "^3.49.0",
-		"dotenv": "^17.4.1",
+		"dotenv": "^17.4.2",
 		"eslint": "^10.2.0",
 		"prop-types": "^15.8.1",
 		"rollup-plugin-visualizer": "^7.0.1",
@@ -24,7 +24,7 @@
 		"styled-jsx": "^5.1.7",
 		"tailwindcss": "^4.2.1",
 		"vite": "^7.3.2",
-		"vite-plugin-static-copy": "^3.4.0"
+		"vite-plugin-static-copy": "^4.0.1"
 	},
 	"overrides": {
 		"flux": {
