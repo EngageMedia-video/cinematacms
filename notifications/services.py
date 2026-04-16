@@ -43,6 +43,10 @@ class NotificationService:
         return prefs
 
     @classmethod
+    def get_or_create_preferences(cls, user):
+        return cls._get_preferences(user)
+
+    @classmethod
     def _get_channel(cls, recipient, notification_type):
         prefs = cls._get_preferences(recipient)
         return prefs.get_channel_for_type(notification_type)

@@ -1,6 +1,11 @@
 from django.test import TestCase
 
-from notifications.models import Notification, NotificationType
+from notifications.models import (
+    Notification,
+    NotificationChannel,
+    NotificationPreference,
+    NotificationType,
+)
 
 
 def _create_user(username, email=None):
@@ -288,6 +293,8 @@ class AuthenticationTest(TestCase):
         endpoints = [
             ("get", "/api/v1/notifications/"),
             ("get", "/api/v1/notifications/unread-count/"),
+            ("get", "/api/v1/notifications/preferences/"),
+            ("patch", "/api/v1/notifications/preferences/"),
             ("patch", "/api/v1/notifications/1/read/"),
             ("patch", "/api/v1/notifications/mark-all-read/"),
         ]
@@ -297,3 +304,101 @@ class AuthenticationTest(TestCase):
                 resp.status_code, 403,
                 f"{method.upper()} {url} should return 403 for unauthenticated user",
             )
+
+
+class NotificationPreferenceDetailTest(TestCase):
+    """Issue #506: /user/<username>/settings preferences endpoint."""
+
+    PREF_FIELDS = [
+        "on_comment",
+        "on_reply",
+        "on_like",
+        "on_follow",
+        "on_mention",
+        "on_new_media_from_following",
+        "on_added_to_playlist",
+    ]
+
+    def setUp(self):
+        self.user = _create_user("viewer")
+        self.other = _create_user("other")
+        self.client.login(username="viewer", password="testpass123")
+
+    def test_get_lazy_creates_preference_with_defaults(self):
+        """First GET creates a NotificationPreference row with model defaults."""
+        self.assertFalse(
+            NotificationPreference.objects.filter(user=self.user).exists()
+        )
+        resp = self.client.get("/api/v1/notifications/preferences/")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(set(data.keys()), set(self.PREF_FIELDS))
+        self.assertEqual(data["on_like"], NotificationChannel.IN_APP)
+        self.assertEqual(data["on_new_media_from_following"], NotificationChannel.IN_APP)
+        self.assertEqual(data["on_added_to_playlist"], NotificationChannel.IN_APP)
+        self.assertEqual(data["on_comment"], NotificationChannel.EMAIL)
+        self.assertEqual(data["on_reply"], NotificationChannel.EMAIL)
+        self.assertEqual(data["on_follow"], NotificationChannel.EMAIL)
+        self.assertEqual(data["on_mention"], NotificationChannel.EMAIL)
+        self.assertTrue(
+            NotificationPreference.objects.filter(user=self.user).exists()
+        )
+
+    def test_patch_updates_single_field_and_persists(self):
+        resp = self.client.patch(
+            "/api/v1/notifications/preferences/",
+            data={"on_like": NotificationChannel.NONE},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()["on_like"], NotificationChannel.NONE)
+        prefs = NotificationPreference.objects.get(user=self.user)
+        self.assertEqual(prefs.on_like, NotificationChannel.NONE)
+        # Other fields retain defaults
+        self.assertEqual(prefs.on_comment, NotificationChannel.EMAIL)
+
+    def test_patch_updates_multiple_fields(self):
+        resp = self.client.patch(
+            "/api/v1/notifications/preferences/",
+            data={
+                "on_comment": NotificationChannel.IN_APP,
+                "on_follow": NotificationChannel.NONE,
+            },
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        prefs = NotificationPreference.objects.get(user=self.user)
+        self.assertEqual(prefs.on_comment, NotificationChannel.IN_APP)
+        self.assertEqual(prefs.on_follow, NotificationChannel.NONE)
+
+    def test_patch_invalid_channel_returns_400(self):
+        resp = self.client.patch(
+            "/api/v1/notifications/preferences/",
+            data={"on_like": "broadcast"},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("on_like", resp.json())
+
+    def test_patch_does_not_touch_other_users_preferences(self):
+        # Seed another user's prefs with a distinctive value
+        NotificationPreference.objects.create(
+            user=self.other, on_like=NotificationChannel.EMAIL
+        )
+        resp = self.client.patch(
+            "/api/v1/notifications/preferences/",
+            data={"on_like": NotificationChannel.NONE},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        other_prefs = NotificationPreference.objects.get(user=self.other)
+        self.assertEqual(other_prefs.on_like, NotificationChannel.EMAIL)
+
+    def test_get_does_not_leak_filter_or_timestamp_fields(self):
+        resp = self.client.get("/api/v1/notifications/preferences/")
+        data = resp.json()
+        self.assertNotIn("filter_topics", data)
+        self.assertNotIn("filter_categories", data)
+        self.assertNotIn("user", data)
+        self.assertNotIn("created_at", data)
+        self.assertNotIn("updated_at", data)

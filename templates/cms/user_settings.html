@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load static %}
+{% load django_vite %}
+
+{% block headtitle %}Notification settings - {{PORTAL_NAME}}{% endblock headtitle %}
+
+{% block topimports %}
+{% vite_asset 'src/entries/user-settings.js' %}
+{% endblock topimports %}
+
+{% block content %}
+<div id="page-user-settings"></div>
+{% endblock %}

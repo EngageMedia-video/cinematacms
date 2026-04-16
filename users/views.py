@@ -117,6 +117,17 @@ def edit_user(request, username):
 
 
 @login_required
+def view_user_settings(request, username):
+    # Notification preferences are personal — no manager bypass. The API at
+    # /api/v1/notifications/preferences/ is scoped to request.user, so letting
+    # a manager load another user's URL would show the manager their own prefs.
+    user = get_user(username=username)
+    if not user or user != request.user:
+        return HttpResponseRedirect("/")
+    return render(request, "cms/user_settings.html", {"user": user})
+
+
+@login_required
 def mfa_success_message(request):
     user = get_user(request.user)
     if not user or (user != request.user and not is_mediacms_manager(request.user)):
