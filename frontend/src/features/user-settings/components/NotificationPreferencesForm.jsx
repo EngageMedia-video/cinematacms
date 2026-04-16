@@ -60,8 +60,11 @@ export function NotificationPreferencesForm() {
     const [draft, setDraft] = useState(null);
 
     useEffect(() => {
-        if (data) setDraft(data);
-    }, [data]);
+        // Seed the draft only on initial load. Background refetches and
+        // post-save cache updates must not overwrite unsaved edits — use
+        // the Reset button to pull the latest server state if needed.
+        if (data && draft === null) setDraft(data);
+    }, [data, draft]);
 
     if (isLoading) {
         return (

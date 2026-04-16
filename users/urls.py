@@ -24,7 +24,7 @@ urlpatterns = [
     ),
     re_path(r"^user/(?P<username>[\w@.]*)/edit$", views.edit_user, name="edit_user"),
     re_path(
-        r"^user/(?P<username>[\w@._-]*)/settings$",
+        r"^user/(?P<username>[\w@._-]+)/settings$",
         views.view_user_settings,
         name="user_settings",
     ),
