@@ -370,6 +370,66 @@
 	--color-site-form-btn: var(--site-form-btn-bg-color);
 	--color-site-featured-bg: var(--site-featured-bg-color);
 	--color-site-player-accent: var(--site-player-accent-color);
+
+	/* ── Kumquat typography — font families ──────────────────────────────────
+	 * Generates: font-kq-display, font-kq-body
+	 * Only resolve on body[data-ui-variant="revamp"] via CSS custom properties.
+	 */
+	--font-kq-display: var(--kq-font-family-display);
+	--font-kq-body: var(--kq-font-family-body);
+
+	/* ── Kumquat typography — font sizes ─────────────────────────────────────
+	 * Generates: text-kq-title-64, text-kq-h1, text-kq-body-16, etc.
+	 */
+	--text-kq-title-64: var(--kq-font-size-title-64);
+	--text-kq-title-56: var(--kq-font-size-title-56);
+	--text-kq-h1: var(--kq-font-size-h1);
+	--text-kq-h2: var(--kq-font-size-h2);
+	--text-kq-h3: var(--kq-font-size-h3);
+	--text-kq-h4: var(--kq-font-size-h4);
+	--text-kq-h5: var(--kq-font-size-h5);
+	--text-kq-h6: var(--kq-font-size-h6);
+	--text-kq-body-18: var(--kq-font-size-body-18);
+	--text-kq-body-16: var(--kq-font-size-body-16);
+	--text-kq-body-14: var(--kq-font-size-body-14);
+	--text-kq-body-12: var(--kq-font-size-body-12);
+	--text-kq-caption-10: var(--kq-font-size-caption-10);
+
+	/* ── Kumquat typography — line heights ───────────────────────────────────
+	 * Generates: leading-kq-h1, leading-kq-body-16, etc.
+	 */
+	--leading-kq-title-64: var(--kq-line-height-title-64);
+	--leading-kq-title-56: var(--kq-line-height-title-56);
+	--leading-kq-h1: var(--kq-line-height-h1);
+	--leading-kq-h2: var(--kq-line-height-h2);
+	--leading-kq-h3: var(--kq-line-height-h3);
+	--leading-kq-h4: var(--kq-line-height-h4);
+	--leading-kq-h5: var(--kq-line-height-h5);
+	--leading-kq-h6: var(--kq-line-height-h6);
+	--leading-kq-body-18: var(--kq-line-height-body-18);
+	--leading-kq-body-16: var(--kq-line-height-body-16);
+	--leading-kq-body-14: var(--kq-line-height-body-14);
+	--leading-kq-body-12: var(--kq-line-height-body-12);
+	--leading-kq-caption-10: var(--kq-line-height-caption-10);
+
+	/* ── Kumquat typography — letter spacing ─────────────────────────────────
+	 * Generates: tracking-kq-h1, tracking-kq-title-64, etc.
+	 */
+	--tracking-kq-title-64: var(--kq-letter-spacing-title-64);
+	--tracking-kq-title-56: var(--kq-letter-spacing-title-56);
+	--tracking-kq-h1: var(--kq-letter-spacing-h1);
+	--tracking-kq-h2: var(--kq-letter-spacing-h2);
+	--tracking-kq-h3: var(--kq-letter-spacing-h3);
+	--tracking-kq-h4: var(--kq-letter-spacing-h4);
+	--tracking-kq-h5: var(--kq-letter-spacing-h5);
+	--tracking-kq-h6: var(--kq-letter-spacing-h6);
+
+	/* ── Kumquat typography — font weights ───────────────────────────────────
+	 * Generates: font-weight-kq-regular, font-weight-kq-medium, font-weight-kq-bold
+	 */
+	--font-weight-kq-regular: var(--kq-font-weight-regular);
+	--font-weight-kq-medium: var(--kq-font-weight-medium);
+	--font-weight-kq-bold: var(--kq-font-weight-bold);
 }
 
 /*

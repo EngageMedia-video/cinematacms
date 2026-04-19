@@ -391,3 +391,70 @@ body {
 	--site-featured-bg-color: #dfeff4;
 	--site-player-accent-color: #026690;
 }
+
+/* ── Kumquat design system — typography tokens ───────────────────────────────
+ * Scoped to revamp pages only. Legacy pages are unaffected.
+ * Note: Figma class "title-72" has font-size 64px — vars use the actual size.
+ * Note: "caption-10-semibold" has font-weight 700 — mapped to --kq-font-weight-bold.
+ */
+body[data-ui-variant="revamp"] {
+	/* Font families */
+	--kq-font-family-display: "Barlow Semi Condensed", sans-serif;
+	--kq-font-family-body: "Inter", sans-serif;
+
+	/* Font weights */
+	--kq-font-weight-regular: 400;
+	--kq-font-weight-medium: 500;
+	--kq-font-weight-bold: 700;
+
+	/* Display / Title scale */
+	--kq-font-size-title-64: 64px;
+	--kq-line-height-title-64: 76px;
+	--kq-letter-spacing-title-64: -0.8px;
+
+	--kq-font-size-title-56: 56px;
+	--kq-line-height-title-56: 68px;
+	--kq-letter-spacing-title-56: -0.6px;
+
+	/* Heading scale */
+	--kq-font-size-h1: 56px;
+	--kq-line-height-h1: 68px;
+	--kq-letter-spacing-h1: -0.5px;
+
+	--kq-font-size-h2: 48px;
+	--kq-line-height-h2: 58px;
+	--kq-letter-spacing-h2: -0.4px;
+
+	--kq-font-size-h3: 40px;
+	--kq-line-height-h3: 48px;
+	--kq-letter-spacing-h3: -0.3px;
+
+	--kq-font-size-h4: 32px;
+	--kq-line-height-h4: 38px;
+	--kq-letter-spacing-h4: -0.2px;
+
+	--kq-font-size-h5: 24px;
+	--kq-line-height-h5: 30px;
+	--kq-letter-spacing-h5: -0.15px;
+
+	--kq-font-size-h6: 20px;
+	--kq-line-height-h6: 24px;
+	--kq-letter-spacing-h6: 0px;
+
+	/* Body scale */
+	--kq-font-size-body-18: 18px;
+	--kq-line-height-body-18: 28px;
+
+	--kq-font-size-body-16: 16px;
+	--kq-line-height-body-16: 24px;
+
+	--kq-font-size-body-14: 14px;
+	--kq-line-height-body-14: 20px;
+
+	--kq-font-size-body-12: 12px;
+	--kq-line-height-body-12: 16px;
+
+	/* Caption */
+	--kq-font-size-caption-10: 10px;
+	--kq-line-height-caption-10: 10px;
+}
