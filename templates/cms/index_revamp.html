@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+{% load django_vite %}
+
+{% block headermeta %}
+
+<meta name="description" content="Cinemata is a platform for social and environmental films about the Asia-Pacific. The open-source video website highlights essential yet underheard stories, increasing filmmakers' reach, engagement, and impact.">
+
+<!-- Google / Search Engine Tags -->
+<meta itemprop="name" content="{{PORTAL_NAME}}">
+<meta itemprop="description" content="Cinemata is a platform for social and environmental films about the Asia-Pacific. The open-source video website highlights essential yet underheard stories, increasing filmmakers' reach, engagement, and impact.">
+<meta itemprop="image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
+
+<!-- Facebook Meta Tags -->
+<meta property="og:url" content="{{FRONTEND_HOST}}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{PORTAL_NAME}}">
+<meta property="og:description" content="Cinemata is a platform for social and environmental films about the Asia-Pacific. The open-source video website highlights essential yet underheard stories, increasing filmmakers' reach, engagement, and impact.">
+<meta property="og:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
+
+<!-- Twitter Meta Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{PORTAL_NAME}}">
+<meta name="twitter:description" content="Cinemata is a platform for social and environmental films about the Asia-Pacific. The open-source video website highlights essential yet underheard stories, increasing filmmakers' reach, engagement, and impact.">
+<meta name="twitter:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
+
+{% endblock headermeta %}
+
+{% block topimports %}{% vite_asset 'src/entries/index-revamp.js' %}{% endblock topimports %}
+
+{% block content %}<div id="page-home-revamp"></div>{% endblock %}

@@ -109,6 +109,7 @@ export default defineConfig({
 				error: 'src/entries/error.js',
 				'modern-demo': 'src/entries/modern-demo.js',
 				notifications: 'src/entries/notifications.js',
+				'index-revamp': 'src/entries/index-revamp.js',
 			},
 			output: {
 				globals: {

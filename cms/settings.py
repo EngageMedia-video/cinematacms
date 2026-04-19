@@ -576,6 +576,13 @@ VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
 # Video UI/UX settings
 USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
 
+# UI variant gate — incremental revamp rollout
+# UI_VARIANT_DEFAULT: fallback variant for non-migrated pages (must stay "legacy")
+# UI_VARIANT_REVAMP_PAGES: list of page keys served with the revamp template for all users
+# Override in local_settings.py for per-environment control
+UI_VARIANT_DEFAULT = "legacy"
+UI_VARIANT_REVAMP_PAGES = []  # e.g. ["home"] to enable the revamp home page
+
 # allow option to override the default admin url
 DJANGO_ADMIN_URL = "admin/"
 

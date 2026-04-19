@@ -18,6 +18,13 @@
 
         {% block externallinks %}{% endblock externallinks %}
 
+        {% if UI_VARIANT == "revamp" %}
+        {# Kumquat design system fonts — Barlow Semi Condensed (display) and Inter (body) #}
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+        {% endif %}
+
         {% include "common/head-links.html" %}
 
         {# Import map — must appear before any <script type="module"> so the browser #}
@@ -63,7 +70,7 @@
     {% endblock head %}
 </head>
 
-<body>
+<body data-ui-variant="{{ UI_VARIANT }}">
 
     {% block beforecontent %}{% endblock %}
 

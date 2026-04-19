@@ -2,6 +2,8 @@ import os
 
 from django.conf import settings
 
+from cms.ui_variant import _SAFE_VARIANTS
+
 
 def ui_settings(request):
     """Add UI settings to template context"""
@@ -24,4 +26,9 @@ def ui_settings(request):
         "MAINTENANCE_MODE_ELAPSED_TIME": maintenance_elapsed_time,  # Total seconds since start
         "DEFAULT_FROM_EMAIL": getattr(settings, "DEFAULT_FROM_EMAIL", "support@example.com"),
         "VITE_DEV_MODE": os.getenv("VITE_DEV_MODE", "").lower() in ("1", "true", "yes"),
+        # Precedence: set by resolve_template on this request > settings.UI_VARIANT_DEFAULT > 'legacy'
+        # Clamped to _SAFE_VARIANTS so any operator misconfiguration cannot reach the JS bootstrap.
+        "UI_VARIANT": (
+            lambda v: v if v in _SAFE_VARIANTS else "legacy"
+        )(getattr(request, "ui_variant", getattr(settings, "UI_VARIANT_DEFAULT", "legacy"))),
     }
