@@ -69,30 +69,27 @@ class ResolveTemplateTests(TestCase):
 
     def test_missing_setting_degrades_to_legacy(self):
         """UI_VARIANT_REVAMP_PAGES absent from settings → no AttributeError, returns legacy."""
-        from django.test import override_settings as _os
-
-        with _os(UI_VARIANT_REVAMP_PAGES=None):
-            # Simulate missing by patching directly
-            pass
-        # Use override_settings to delete the key entirely
+        import cms.ui_variant as uv
         from unittest import mock
 
-        with mock.patch("cms.ui_variant.settings") as mock_settings:
-            del mock_settings.UI_VARIANT_REVAMP_PAGES
-            mock_settings.configure_mock(**{"UI_VARIANT_REVAMP_PAGES": AttributeError})
-            # Use getattr directly to confirm the helper won't blow up
-            import cms.ui_variant as uv
+        original = uv.settings
+        try:
+            # MagicMock(spec=[]) has no attributes, so getattr returns the default
+            uv.settings = mock.MagicMock(spec=[])
+            request = self._make_request()
+            result = resolve_template(request, "home", "cms/index.html", "cms/index_revamp.html")
+            self.assertEqual(result, "cms/index.html")
+            self.assertEqual(request.ui_variant, "legacy")
+        finally:
+            uv.settings = original
 
-            original = uv.settings
-            try:
-                mock_obj = mock.MagicMock(spec=[])  # no attributes
-                uv.settings = mock_obj
-                request = self._make_request()
-                result = resolve_template(request, "home", "cms/index.html", "cms/index_revamp.html")
-                self.assertEqual(result, "cms/index.html")
-                self.assertEqual(request.ui_variant, "legacy")
-            finally:
-                uv.settings = original
+    @override_settings(UI_VARIANT_REVAMP_PAGES=None)
+    def test_none_allowlist_degrades_to_legacy(self):
+        """UI_VARIANT_REVAMP_PAGES=None (explicit None) → no TypeError, returns legacy."""
+        request = self._make_request()
+        result = resolve_template(request, "home", "cms/index.html", "cms/index_revamp.html")
+        self.assertEqual(result, "cms/index.html")
+        self.assertEqual(request.ui_variant, "legacy")
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=["home"])
     def test_staff_plus_allowlisted_returns_revamp(self):
@@ -156,8 +153,9 @@ class UIVariantViewIntegrationTests(TestCase):
 
     def test_bootstrap_contains_mediaCMS_ui_variant(self):
         response = self.client.get("/")
-        self.assertIn(b"ui:", response.content)
-        self.assertIn(b"variant:", response.content)
+        # Assert the specific MediaCMS.ui bootstrap structure is present
+        self.assertIn(b'ui: { variant:', response.content)
+        self.assertIn(b'"legacy"', response.content)
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=[])
     def test_staff_preview_param_returns_revamp(self):
