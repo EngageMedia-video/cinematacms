@@ -108,6 +108,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "files.context_processors.stuff",
                 "cms.context_processors.ui_settings",
+                "cms.ui_variant.ui_variant_context_processor",
                 "maintenance_mode.context_processors.maintenance_mode",
             ],
         },
@@ -575,6 +576,11 @@ VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
 
 # Video UI/UX settings
 USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
+
+# UI variant gate
+UI_VARIANT_DEFAULT = "legacy"
+UI_VARIANT_ALLOWED = ["legacy", "revamp"]
+UI_VARIANT_REVAMP_PAGES = []  # Add page keys here as they are migrated, e.g. ["home"]
 
 # allow option to override the default admin url
 DJANGO_ADMIN_URL = "admin/"
