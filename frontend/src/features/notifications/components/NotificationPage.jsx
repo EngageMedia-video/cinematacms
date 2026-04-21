@@ -187,7 +187,7 @@ function NotificationPageContent() {
                                 fontWeight: 500,
                                 ...(active
                                     ? { backgroundColor: 'var(--btn-primary-bg-color)', color: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }
-                                    : { backgroundColor: 'transparent', color: 'var(--body-text-color)', opacity: 0.55 }),
+                                    : { backgroundColor: 'transparent', color: 'var(--body-text-color)', opacity: 0.60 }),
                             }}
                         >
                             {label}
