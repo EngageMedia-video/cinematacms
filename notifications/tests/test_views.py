@@ -372,6 +372,8 @@ class NotificationPreferenceDetailTest(TestCase):
         self.assertEqual(prefs.on_follow, NotificationChannel.NONE)
 
     def test_patch_invalid_channel_returns_400(self):
+        # Lazy-create the requester's row so we can assert no partial persistence.
+        self.client.get("/api/v1/notifications/preferences/")
         resp = self.client.patch(
             "/api/v1/notifications/preferences/",
             data={"on_like": "broadcast"},
@@ -379,6 +381,9 @@ class NotificationPreferenceDetailTest(TestCase):
         )
         self.assertEqual(resp.status_code, 400)
         self.assertIn("on_like", resp.json())
+        # A failed PATCH must not partially persist; on_like stays at its default.
+        prefs = NotificationPreference.objects.get(user=self.user)
+        self.assertEqual(prefs.on_like, NotificationChannel.IN_APP)
 
     def test_patch_does_not_touch_other_users_preferences(self):
         # Seed another user's prefs with a distinctive value
@@ -391,6 +396,10 @@ class NotificationPreferenceDetailTest(TestCase):
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, 200)
+        # Requester's own prefs must have been updated…
+        user_prefs = NotificationPreference.objects.get(user=self.user)
+        self.assertEqual(user_prefs.on_like, NotificationChannel.NONE)
+        # …while the other user's row is untouched.
         other_prefs = NotificationPreference.objects.get(user=self.other)
         self.assertEqual(other_prefs.on_like, NotificationChannel.EMAIL)
 
