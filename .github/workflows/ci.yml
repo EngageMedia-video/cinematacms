@@ -31,6 +31,16 @@ jobs:
             frontend/packages/vjs-plugin/package-lock.json
             frontend/packages/media-player/package-lock.json
 
+      # Install frontend deps first: this populates frontend/node_modules
+      # (including `autoprefixer`, required by frontend/postcss.config.js which
+      # the workspace packages' vite builds pick up via upward config search)
+      # and installs the three workspace packages as symlinks back into
+      # frontend/packages/*, so their dist/ becomes visible to the final
+      # frontend build once they're built below.
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --no-fund --no-audit
+
       - name: Build workspace package — vjs-plugin-font-icons
         working-directory: frontend/packages/vjs-plugin-font-icons
         run: |
@@ -48,10 +58,6 @@ jobs:
         run: |
           npm ci --no-fund --no-audit
           npm run build
-
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm ci --no-fund --no-audit
 
       - name: Lint frontend
         working-directory: frontend
