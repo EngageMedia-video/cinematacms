@@ -307,7 +307,7 @@ class AuthenticationTest(TestCase):
 
 
 class NotificationPreferenceDetailTest(TestCase):
-    """Issue #506: /user/<username>/settings preferences endpoint."""
+    """Issue #506: /api/v1/notifications/preferences/ endpoint."""
 
     PREF_FIELDS = [
         "on_comment",

@@ -118,13 +118,11 @@ def edit_user(request, username):
 
 @login_required
 def view_user_settings(request, username):
-    # Notification preferences are personal — no manager bypass. The API at
-    # /api/v1/notifications/preferences/ is scoped to request.user, so letting
-    # a manager load another user's URL would show the manager their own prefs.
-    user = get_user(username=username)
-    if not user or user != request.user:
-        return HttpResponseRedirect("/")
-    return render(request, "cms/user_settings.html", {"user": user})
+    # Settings UI now lives as the "Preferences" tab on the notifications page.
+    # This route is kept alive so the footer link in previously-sent notification
+    # emails (prefs_link in notifications/tasks.py) still lands users in the
+    # right place.
+    return HttpResponseRedirect("/notifications/#preferences")
 
 
 @login_required
