@@ -170,7 +170,7 @@ pygments==2.20.0
     # via ipython
 python-dateutil==2.9.0.post0
     # via celery
-python-dotenv==1.2.1
+python-dotenv==1.2.2
     # via cinemata
 python-fsutil==0.16.1
     # via django-maintenance-mode
