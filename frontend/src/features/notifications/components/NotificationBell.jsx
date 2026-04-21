@@ -2,7 +2,7 @@ import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useUnreadCount } from '../hooks/useUnreadCount';
 import { NotificationDropdown } from './NotificationDropdown';
-import useNotificationStore from '../stores/useNotificationStore';
+import useNotificationStore from '../useNotificationStore';
 import notificationQueryClient from '../queryClient';
 
 function BellIcon() {
