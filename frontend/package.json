@@ -9,7 +9,7 @@
 		"dev": "vite",
 		"build": "vite build",
 		"preview": "vite preview",
-		"lint": "eslint src/static/js/features/"
+		"lint": "eslint src/features/"
 	},
 	"devDependencies": {
 		"@tailwindcss/vite": "^4.2.2",
