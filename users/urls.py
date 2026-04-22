@@ -25,7 +25,7 @@ urlpatterns = [
     re_path(r"^user/(?P<username>[\w@.]*)/edit$", views.edit_user, name="edit_user"),
     re_path(
         r"^user/(?P<username>[\w@._-]+)/settings$",
-        views.view_user_settings,
+        views.legacy_settings_redirect,
         name="user_settings",
     ),
     re_path(r"^channel/(?P<friendly_token>\w+(-\w+)*)$", views.view_channel, name="view_channel"),

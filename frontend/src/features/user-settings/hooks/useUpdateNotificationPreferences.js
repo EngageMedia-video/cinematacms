@@ -20,7 +20,9 @@ export function useUpdateNotificationPreferences() {
                 let detail = 'Server error';
                 try {
                     const body = await r.json();
-                    detail = body.detail ?? Object.values(body).flat().join(', ') ?? detail;
+                    // `||` not `??`: empty strings must fall through to the
+                    // default so we never render `Failed to update (400): `.
+                    detail = body.detail || Object.values(body).flat().join(', ') || detail;
                 } catch {
                     // Non-JSON response — leave the generic message in place.
                 }

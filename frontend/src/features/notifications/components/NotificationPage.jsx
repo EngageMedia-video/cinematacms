@@ -99,7 +99,10 @@ function NotificationPageContent() {
         setActiveTab(tab);
         const nextHash = tab === TAB_ALL ? '' : `#${tab}`;
         const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
-        window.history.replaceState(null, '', nextUrl);
+        // pushState so the browser Back button steps through tabs as users
+        // expect. The mount-time normalization above uses replaceState instead,
+        // to avoid polluting history with a redundant entry on page load.
+        window.history.pushState(null, '', nextUrl);
     }
 
     function focusTab(tab) {
