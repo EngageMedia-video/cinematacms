@@ -13,16 +13,12 @@
 		<meta name="application-name" content="Cinemata">
 
 		{% if LOAD_FROM_CDN %}
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link
-			href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;700&family=Inter:wght@400;500;700&display=swap"
-			rel="stylesheet"
-		>
 		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		{% else %}
 		<link href="{% static "lib/material-icons/material-icons.css" %}" rel="stylesheet">
 		{% endif %}
 
+		<link href="{% static "lib/Inter/inter.css" %}" rel="stylesheet">
+		<link href="{% static "lib/BarlowSemiCondensed/barlow-semi-condensed.css" %}" rel="stylesheet">
 		<link href="{% static "lib/Amulya/amulya.css" %}" rel="stylesheet">
 		<link href="{% static "lib/Facultad/Facultad-Regular.css" %}" rel="stylesheet">
