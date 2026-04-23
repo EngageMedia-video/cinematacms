@@ -309,7 +309,7 @@ class AuthenticationTest(TestCase):
 class NotificationPreferenceDetailTest(TestCase):
     """Issue #506: /api/v1/notifications/preferences/ endpoint."""
 
-    PREF_FIELDS = [
+    PREF_FIELDS = (
         "on_comment",
         "on_reply",
         "on_like",
@@ -317,7 +317,7 @@ class NotificationPreferenceDetailTest(TestCase):
         "on_mention",
         "on_new_media_from_following",
         "on_added_to_playlist",
-    ]
+    )
 
     def setUp(self):
         self.user = _create_user("viewer")
@@ -374,16 +374,24 @@ class NotificationPreferenceDetailTest(TestCase):
     def test_patch_invalid_channel_returns_400(self):
         # Lazy-create the requester's row so we can assert no partial persistence.
         self.client.get("/api/v1/notifications/preferences/")
+        # Mixed payload: one invalid field + one otherwise-valid change. The
+        # whole PATCH must fail atomically — the valid side must NOT leak
+        # through when any field fails validation.
         resp = self.client.patch(
             "/api/v1/notifications/preferences/",
-            data={"on_like": "broadcast"},
+            data={
+                "on_like": "broadcast",
+                "on_comment": NotificationChannel.NONE,
+            },
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, 400)
         self.assertIn("on_like", resp.json())
-        # A failed PATCH must not partially persist; on_like stays at its default.
+        # Neither field persisted: on_like stays at its default (IN_APP) and
+        # on_comment stays at its default (EMAIL), proving PATCH is atomic.
         prefs = NotificationPreference.objects.get(user=self.user)
         self.assertEqual(prefs.on_like, NotificationChannel.IN_APP)
+        self.assertEqual(prefs.on_comment, NotificationChannel.EMAIL)
 
     def test_patch_does_not_touch_other_users_preferences(self):
         # Seed another user's prefs with a distinctive value

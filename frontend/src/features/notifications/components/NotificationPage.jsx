@@ -96,6 +96,10 @@ function NotificationPageContent() {
     }, []);
 
     function selectTab(tab) {
+        // Clicking the already-active tab is a no-op: no state update and
+        // crucially no pushState, which would otherwise litter history with
+        // duplicate entries and make the Back button "go back" to the same tab.
+        if (tab === activeTab) return;
         setActiveTab(tab);
         const nextHash = tab === TAB_ALL ? '' : `#${tab}`;
         const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
