@@ -29,7 +29,7 @@ class NotificationService:
     # ------------------------------------------------------------------
 
     @classmethod
-    def _get_preferences(cls, user):
+    def get_or_create_preferences(cls, user):
         prefs, _ = NotificationPreference.objects.get_or_create(
             user=user,
             defaults={
@@ -43,12 +43,8 @@ class NotificationService:
         return prefs
 
     @classmethod
-    def get_or_create_preferences(cls, user):
-        return cls._get_preferences(user)
-
-    @classmethod
     def _get_channel(cls, recipient, notification_type):
-        prefs = cls._get_preferences(recipient)
+        prefs = cls.get_or_create_preferences(recipient)
         return prefs.get_channel_for_type(notification_type)
 
     @classmethod
@@ -66,7 +62,7 @@ class NotificationService:
     def _passes_content_filter(cls, recipient, media, media_topic_slugs=None, media_category_slugs=None, prefs=None):
         """For new_media only. Returns True if media matches user's filters."""
         if prefs is None:
-            prefs = cls._get_preferences(recipient)
+            prefs = cls.get_or_create_preferences(recipient)
 
         if not prefs.filter_topics and not prefs.filter_categories:
             return True
@@ -100,7 +96,7 @@ class NotificationService:
             return None
 
         # 4. Channel preference check — fetch prefs once, reuse for content filter
-        prefs = cls._get_preferences(recipient)
+        prefs = cls.get_or_create_preferences(recipient)
         channel = prefs.get_channel_for_type(notification_type)
         if channel == NotificationChannel.NONE:
             return None
@@ -268,7 +264,7 @@ class NotificationService:
         for follower in followers:
             if follower.id in recent_recipient_ids:
                 continue
-            prefs = prefs_map.get(follower.id) or cls._get_preferences(follower)
+            prefs = prefs_map.get(follower.id) or cls.get_or_create_preferences(follower)
             channel = prefs.get_channel_for_type(NotificationType.NEW_MEDIA)
             if channel == NotificationChannel.NONE:
                 continue
