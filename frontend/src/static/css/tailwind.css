@@ -351,6 +351,59 @@
 	--spacing-header-px: 1rem;
 	--spacing-logo-height: var(--default-logo-height);
 	--spacing-item-width: var(--default-item-width);
+
+	/* ── Design System Space Tokens ─────────────────────── */
+	--spacing-space-zero: var(--space-zero);
+	--spacing-space-px: var(--space-px);
+	--spacing-space-xxs: var(--space-xxs);
+	--spacing-space-xs2: var(--space-xs2);
+	--spacing-space-xs: var(--space-xs);
+	--spacing-space-sm: var(--space-sm);
+	--spacing-space-base: var(--space-base);
+	--spacing-space-md: var(--space-md);
+	--spacing-space-lg: var(--space-lg);
+	--spacing-space-xl: var(--space-xl);
+	--spacing-space-xl2: var(--space-xl2);
+	--spacing-space-xl3: var(--space-xl3);
+	--spacing-space-xl4: var(--space-xl4);
+	--spacing-space-xl5: var(--space-xl5);
+	--spacing-space-xl6: var(--space-xl6);
+
+	/* ── Design System Size Tokens ──────────────────────── */
+	--spacing-size-0: var(--size-0);
+	--spacing-size-2: var(--size-2);
+	--spacing-size-4: var(--size-4);
+	--spacing-size-6: var(--size-6);
+	--spacing-size-8: var(--size-8);
+	--spacing-size-10: var(--size-10);
+	--spacing-size-12: var(--size-12);
+	--spacing-size-14: var(--size-14);
+	--spacing-size-16: var(--size-16);
+	--spacing-size-20: var(--size-20);
+	--spacing-size-24: var(--size-24);
+	--spacing-size-28: var(--size-28);
+	--spacing-size-32: var(--size-32);
+	--spacing-size-36: var(--size-36);
+	--spacing-size-40: var(--size-40);
+	--spacing-size-44: var(--size-44);
+	--spacing-size-48: var(--size-48);
+	--spacing-size-56: var(--size-56);
+	--spacing-size-64: var(--size-64);
+	--spacing-size-80: var(--size-80);
+	--spacing-size-96: var(--size-96);
+
+	/* ── Design System Radius Tokens ────────────────────── */
+	--radius-ds-0: var(--radius-0);
+	--radius-ds-2: var(--radius-2);
+	--radius-ds-4: var(--radius-4);
+	--radius-ds-6: var(--radius-6);
+	--radius-ds-8: var(--radius-8);
+	--radius-ds-12: var(--radius-12);
+	--radius-ds-16: var(--radius-16);
+	--radius-ds-24: var(--radius-24);
+	--radius-ds-32: var(--radius-32);
+	--radius-ds-48: var(--radius-48);
+	--radius-ds-full: var(--radius-full);
 	/*
 	 * Not bridged:
 	 *   --default-max-row-items  → count, not a visual token
