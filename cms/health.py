@@ -13,21 +13,25 @@ logger = logging.getLogger(__name__)
 
 
 def _client_is_privileged(request) -> bool:
-    # REMOTE_ADDR is set by the TCP socket and cannot be spoofed by the client.
-    # X-Forwarded-For is intentionally NOT trusted here because /health/ready is
-    # public + unauthenticated, and typical nginx setups preserve the client-
-    # supplied XFF value before appending the real peer address — letting an
-    # attacker send "X-Forwarded-For: 127.0.0.1" to escalate into the detailed
-    # response branch. Operators who want non-localhost privileged access should
-    # log in as staff.
+    # Two gates for the detailed branch:
+    #   1. Direct-localhost request (operator shell on the host running uwsgi).
+    #      REMOTE_ADDR is localhost AND no X-Forwarded-For header is present.
+    #      Behind nginx, REMOTE_ADDR is always 127.0.0.1, so requiring XFF to be
+    #      absent is what distinguishes a direct curl on the box from proxied
+    #      external traffic (nginx adds XFF via $proxy_add_x_forwarded_for).
+    #      XFF is never *trusted* — we only check whether it exists — so this
+    #      cannot be bypassed by spoofing a header value.
+    #   2. Authenticated staff session (the supported way to get detail from
+    #      behind the proxy).
     remote_addr = request.META.get("REMOTE_ADDR", "")
-    is_localhost = remote_addr in ("127.0.0.1", "::1")
+    has_xff = bool(request.META.get("HTTP_X_FORWARDED_FOR", "").strip())
+    is_direct_localhost = remote_addr in ("127.0.0.1", "::1") and not has_xff
     is_staff = (
         hasattr(request, "user")
         and request.user.is_authenticated
         and request.user.is_staff
     )
-    return is_localhost or is_staff
+    return is_direct_localhost or is_staff
 
 
 def _safe_detail(exc: BaseException) -> str:

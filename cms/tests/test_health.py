@@ -1,9 +1,23 @@
 import json
+import secrets
+from contextlib import ExitStack
 from unittest.mock import patch
 
 from django.test import Client, TestCase, override_settings
 
 from users.models import User
+
+
+def _all_checks_healthy() -> ExitStack:
+    """Return a context manager that patches all four check helpers to (True, "ok").
+
+    Using this keeps tests hermetic: they don't depend on a running Postgres,
+    Redis, writable MEDIA_ROOT, or a built Vite manifest.
+    """
+    stack = ExitStack()
+    for name in ("_check_db", "_check_cache", "_check_filesystem", "_check_static_manifest"):
+        stack.enter_context(patch(f"cms.health.{name}", return_value=(True, "ok")))
+    return stack
 
 
 class HealthLiveTests(TestCase):
@@ -25,8 +39,6 @@ class HealthReadyTests(TestCase):
         self.client = Client()
 
     def _override_vite(self, dev_mode=False, manifest_path=None):
-        # Helper: build a DJANGO_VITE override that disables dev_mode by default so
-        # the static manifest check runs the same branch as production.
         if manifest_path is None:
             from django.conf import settings as s
             manifest_path = s.DJANGO_VITE["default"]["manifest_path"]
@@ -35,7 +47,8 @@ class HealthReadyTests(TestCase):
         )
 
     def test_ready_all_healthy_returns_200(self):
-        response = self.client.get("/health/ready")
+        with _all_checks_healthy():
+            response = self.client.get("/health/ready")
         self.assertEqual(response.status_code, 200)
         body = json.loads(response.content)
         self.assertEqual(body["status"], "ok")
@@ -50,7 +63,7 @@ class HealthReadyTests(TestCase):
         self.assertEqual(response.status_code, 503)
         body = json.loads(response.content)
         self.assertEqual(body["status"], "fail")
-        # Privileged (localhost) client sees detail dict
+        # Privileged (direct-localhost, no XFF) client sees detail dict.
         self.assertFalse(body["checks"]["database"]["ok"])
 
     def test_ready_cache_failure_returns_503(self):
@@ -76,7 +89,12 @@ class HealthReadyTests(TestCase):
         self.assertEqual(body["checks"]["cache"]["detail"], "unhealthy")
 
     def test_ready_static_manifest_missing_returns_503(self):
-        with self._override_vite(dev_mode=False, manifest_path="/nonexistent/manifest.json"):
+        # Force only the manifest to fail; mock the rest so the test is hermetic.
+        with ExitStack() as stack:
+            stack.enter_context(patch("cms.health._check_db", return_value=(True, "ok")))
+            stack.enter_context(patch("cms.health._check_cache", return_value=(True, "ok")))
+            stack.enter_context(patch("cms.health._check_filesystem", return_value=(True, "ok")))
+            stack.enter_context(self._override_vite(dev_mode=False, manifest_path="/nonexistent/manifest.json"))
             response = self.client.get("/health/ready")
         self.assertEqual(response.status_code, 503)
         body = json.loads(response.content)
@@ -86,7 +104,12 @@ class HealthReadyTests(TestCase):
 
     def test_ready_static_manifest_short_circuits_in_dev_mode(self):
         # In Vite dev_mode the manifest file is legitimately absent; must not fail.
-        with self._override_vite(dev_mode=True, manifest_path="/nonexistent/manifest.json"):
+        # Mock the non-manifest checks so the dev_mode branch is what's under test.
+        with ExitStack() as stack:
+            stack.enter_context(patch("cms.health._check_db", return_value=(True, "ok")))
+            stack.enter_context(patch("cms.health._check_cache", return_value=(True, "ok")))
+            stack.enter_context(patch("cms.health._check_filesystem", return_value=(True, "ok")))
+            stack.enter_context(self._override_vite(dev_mode=True, manifest_path="/nonexistent/manifest.json"))
             response = self.client.get("/health/ready")
         self.assertEqual(response.status_code, 200)
         body = json.loads(response.content)
@@ -110,15 +133,30 @@ class HealthReadyTests(TestCase):
             response = public_client.get("/health/ready", HTTP_X_FORWARDED_FOR="127.0.0.1")
         self.assertEqual(response.status_code, 503)
         body = json.loads(response.content)
-        # Compact shape (string), not dict — proves we did NOT take the privileged branch.
         self.assertEqual(body["checks"]["database"], "fail")
         self.assertNotIn("sensitive internal error detail", response.content.decode())
 
+    def test_ready_proxied_localhost_is_not_privileged(self):
+        # Regression: traffic traversing nginx will have REMOTE_ADDR=127.0.0.1 AND
+        # an XFF header. Must NOT get the detailed branch.
+        with patch("cms.health._check_db", return_value=(False, "LeakyError details")):
+            response = self.client.get(
+                "/health/ready",
+                REMOTE_ADDR="127.0.0.1",
+                HTTP_X_FORWARDED_FOR="203.0.113.5",
+            )
+        self.assertEqual(response.status_code, 503)
+        body = json.loads(response.content)
+        # Compact (string) shape proves the privileged branch was NOT taken.
+        self.assertEqual(body["checks"]["database"], "fail")
+        self.assertNotIn("LeakyError details", response.content.decode())
+
     def test_ready_privileged_response_includes_detail(self):
+        test_password = secrets.token_urlsafe(16)
         staff = User.objects.create_user(
             username="staffhealth",
             email="staffhealth@example.com",
-            password="testpass123",
+            password=test_password,
         )
         staff.is_staff = True
         staff.save()
@@ -126,7 +164,7 @@ class HealthReadyTests(TestCase):
         # Use a non-localhost REMOTE_ADDR to prove it's the staff login, not IP,
         # that unlocks the detailed branch.
         self.client = Client(REMOTE_ADDR="203.0.113.5")
-        self.client.login(username="staffhealth", password="testpass123")
+        self.client.login(username="staffhealth", password=test_password)
 
         with patch("cms.health._check_db", return_value=(False, "OperationalError")):
             response = self.client.get("/health/ready")
