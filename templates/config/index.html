@@ -1,7 +1,7 @@
 <script type="text/javascript">
-	
+
 	var MediaCMS = {
-		ui: { variant: "{{ UI_VARIANT }}" },
+		ui: { variant: "{{ UI_VARIANT|escapejs }}" },
 		{% if media %}mediaId: "{{media}}", {% endif %}
 		{% if user %}profileId: "{{user.username}}", {% endif %}
 		{% if playlist %}playlistId: "{{playlist.friendly_token}}", {% endif %}
@@ -17,5 +17,4 @@
 	{% include "config/installation/site.html" %}
 
 	window.MediaCMS = MediaCMS;
-	
 </script>

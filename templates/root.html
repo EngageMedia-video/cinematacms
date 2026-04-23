@@ -63,7 +63,7 @@
     {% endblock head %}
 </head>
 
-<body data-ui-variant="{{ UI_VARIANT }}">
+<body data-ui-variant="{{ UI_VARIANT|escape }}">
 
     {% block beforecontent %}{% endblock %}
 
