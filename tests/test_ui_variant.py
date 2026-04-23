@@ -62,6 +62,15 @@ class ResolveTemplateTests(TestCase):
         self.assertEqual(result, "cms/index.html")
         self.assertEqual(request.ui_variant, "legacy")
 
+    @override_settings(UI_VARIANT_ALLOWED=["legacy", "revamp"], UI_VARIANT_DEFAULT="revmp")
+    def test_invalid_default_variant_logs_warning_and_falls_back(self):
+        request = self._make_request()
+        with self.assertLogs("cms.ui_variant", level="WARNING") as logs:
+            result = resolve_template(request, "home")
+        self.assertEqual(result, "cms/index.html")
+        self.assertEqual(request.ui_variant, "legacy")
+        self.assertIn("UI_VARIANT_DEFAULT='revmp' not in UI_VARIANT_ALLOWED", logs.output[0])
+
     def test_context_processor_exposes_variant(self):
         request = self._make_request()
         request.ui_variant = "revamp"

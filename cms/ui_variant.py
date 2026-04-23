@@ -1,4 +1,9 @@
+import logging
+
 from django.conf import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 UI_VARIANT_PAGES = {
@@ -16,6 +21,12 @@ def resolve_template(request, page_key):
     allowed_variants = set(getattr(settings, "UI_VARIANT_ALLOWED", ["legacy", "revamp"]) or ["legacy"])
     default_variant = getattr(settings, "UI_VARIANT_DEFAULT", "legacy")
     if default_variant not in allowed_variants:
+        logger.warning(
+            "UI_VARIANT_DEFAULT=%r not in UI_VARIANT_ALLOWED=%r; falling back to 'legacy'",
+            default_variant,
+            sorted(allowed_variants),
+        )
+
         default_variant = "legacy"
 
     revamp_pages = getattr(settings, "UI_VARIANT_REVAMP_PAGES", []) or []
