@@ -126,7 +126,7 @@ logger = logging.getLogger(__name__)
 
 def index(request):
     context = {}
-    template = resolve_template(request, "home", "cms/index.html", "cms/index_revamp.html")
+    template = resolve_template(request, "home")
     return render(request, template, context)
 
 

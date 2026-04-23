@@ -23,42 +23,42 @@ class ResolveTemplateTests(TestCase):
     @override_settings(UI_VARIANT_REVAMP_PAGES=[])
     def test_legacy_default(self):
         request = self._make_request()
-        result = resolve_template(request, "home", "cms/index.html", "cms/index_revamp.html")
+        result = resolve_template(request, "home")
         self.assertEqual(result, "cms/index.html")
         self.assertEqual(request.ui_variant, "legacy")
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=["home"])
     def test_revamp_when_allowlisted(self):
         request = self._make_request()
-        result = resolve_template(request, "home", "cms/index.html", "cms/index_revamp.html")
+        result = resolve_template(request, "home")
         self.assertEqual(result, "cms/index_revamp.html")
         self.assertEqual(request.ui_variant, "revamp")
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=["home"])
     def test_revamp_when_allowlisted_logged_in(self):
         request = self._make_request(is_staff=False)
-        result = resolve_template(request, "home", "cms/index.html", "cms/index_revamp.html")
+        result = resolve_template(request, "home")
         self.assertEqual(result, "cms/index_revamp.html")
         self.assertEqual(request.ui_variant, "revamp")
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=[])
     def test_staff_preview_query_param(self):
         request = self._make_request(query_string="ui=revamp", is_staff=True)
-        result = resolve_template(request, "home", "cms/index.html", "cms/index_revamp.html")
+        result = resolve_template(request, "home")
         self.assertEqual(result, "cms/index_revamp.html")
         self.assertEqual(request.ui_variant, "revamp")
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=[])
     def test_non_staff_preview_ignored(self):
         request = self._make_request(query_string="ui=revamp", is_staff=False)
-        result = resolve_template(request, "home", "cms/index.html", "cms/index_revamp.html")
+        result = resolve_template(request, "home")
         self.assertEqual(result, "cms/index.html")
         self.assertEqual(request.ui_variant, "legacy")
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=[])
     def test_invalid_variant_ignored(self):
         request = self._make_request(query_string="ui=garbage", is_staff=True)
-        result = resolve_template(request, "home", "cms/index.html", "cms/index_revamp.html")
+        result = resolve_template(request, "home")
         self.assertEqual(result, "cms/index.html")
         self.assertEqual(request.ui_variant, "legacy")
 
@@ -73,9 +73,14 @@ class ResolveTemplateTests(TestCase):
 
     def test_no_user_attribute_on_request_returns_legacy(self):
         request = self.factory.get("/?ui=revamp")
-        result = resolve_template(request, "home", "cms/index.html", "cms/index_revamp.html")
+        result = resolve_template(request, "home")
         self.assertEqual(result, "cms/index.html")
         self.assertEqual(request.ui_variant, "legacy")
+
+    def test_unknown_page_key_raises(self):
+        request = self._make_request()
+        with self.assertRaisesMessage(KeyError, "Unknown UI variant page: missing"):
+            resolve_template(request, "missing")
 
 
 class UIVariantViewTests(TestCase):

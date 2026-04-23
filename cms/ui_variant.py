@@ -1,8 +1,18 @@
 from django.conf import settings
 
 
-def resolve_template(request, page_key, legacy_template, revamp_template):
+UI_VARIANT_PAGES = {
+    "home": ("cms/index.html", "cms/index_revamp.html"),
+}
+
+
+def resolve_template(request, page_key):
     """Resolve template for a page and expose resolved variant on request."""
+    try:
+        legacy_template, revamp_template = UI_VARIANT_PAGES[page_key]
+    except KeyError as exc:
+        raise KeyError(f"Unknown UI variant page: {page_key}") from exc
+
     allowed_variants = set(getattr(settings, "UI_VARIANT_ALLOWED", ["legacy", "revamp"]) or ["legacy"])
     default_variant = getattr(settings, "UI_VARIANT_DEFAULT", "legacy")
     if default_variant not in allowed_variants:
