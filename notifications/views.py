@@ -4,7 +4,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Notification, NotificationType
-from .serializers import NotificationPagination, NotificationSerializer
+from .serializers import (
+    NotificationPagination,
+    NotificationPreferenceSerializer,
+    NotificationSerializer,
+)
+from .services import NotificationService
 
 
 class NotificationList(APIView):
@@ -76,3 +81,22 @@ class MarkAllAsRead(APIView):
             recipient=request.user, is_read=False
         ).update(is_read=True, read_at=timezone.now())
         return Response({"marked_count": count})
+
+
+class NotificationPreferenceDetail(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        prefs = NotificationService.get_or_create_preferences(request.user)
+        serializer = NotificationPreferenceSerializer(prefs)
+        return Response(serializer.data)
+
+    def patch(self, request):
+        prefs = NotificationService.get_or_create_preferences(request.user)
+        serializer = NotificationPreferenceSerializer(
+            prefs, data=request.data, partial=True
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data)

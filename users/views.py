@@ -117,6 +117,19 @@ def edit_user(request, username):
 
 
 @login_required
+def legacy_settings_redirect(request, username):
+    # Back-compat only: the settings UI now lives as the "Preferences" tab on
+    # `/notifications/`. This route is kept alive so the footer link in
+    # already-sent notification emails (prefs_link in notifications/tasks.py)
+    # still lands users in the right place.
+    #
+    # The `username` path parameter is captured for URL-pattern matching only
+    # and is intentionally ignored — the redirect target is self-scoped, so a
+    # caller requesting another user's URL lands on their own preferences.
+    return HttpResponseRedirect("/notifications/#preferences")
+
+
+@login_required
 def mfa_success_message(request):
     user = get_user(request.user)
     if not user or (user != request.user and not is_mediacms_manager(request.user)):

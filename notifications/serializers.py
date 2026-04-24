@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.pagination import PageNumberPagination
 
-from .models import Notification
+from .models import Notification, NotificationPreference
 
 
 class NotificationActorSerializer(serializers.Serializer):
@@ -47,3 +47,17 @@ class NotificationPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = "page_size"
     max_page_size = 100
+
+
+class NotificationPreferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationPreference
+        fields = [
+            "on_comment",
+            "on_reply",
+            "on_like",
+            "on_follow",
+            "on_mention",
+            "on_new_media_from_following",
+            "on_added_to_playlist",
+        ]
