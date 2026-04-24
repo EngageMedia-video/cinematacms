@@ -138,7 +138,7 @@ def _generate_unique_slug(model_class, title, pk, prefix):
     n = 1
     while model_class.objects.filter(slug=slug).exclude(pk=pk).exists():
         suffix = f"-{n}"
-        slug = f"{base[:100 - len(suffix)]}{suffix}"
+        slug = f"{base[: 100 - len(suffix)]}{suffix}"
         n += 1
     return slug
 
@@ -302,7 +302,9 @@ class Media(models.Model):
     encryption_key = models.CharField(
         max_length=32,
         blank=True,
-        validators=[RegexValidator(regex=r"^(?:[0-9A-Fa-f]{32})?$", message="Must be blank or exactly 32 hex characters")],
+        validators=[
+            RegexValidator(regex=r"^(?:[0-9A-Fa-f]{32})?$", message="Must be blank or exactly 32 hex characters")
+        ],
         help_text="Hex-encoded AES-128 encryption key",
     )
     # keep track if media file has changed
@@ -406,12 +408,9 @@ class Media(models.Model):
             self.license = License.objects.filter(id=10).first()
         # Defense-in-depth: hash plaintext passwords that bypassed set_password()
         if self.password:
-            from django.contrib.auth.hashers import identify_hasher
+            from files.password_utils import is_valid_password_hash
 
-            try:
-                identify_hasher(self.password)
-            except ValueError:
-                # Password is plaintext — hash it
+            if not is_valid_password_hash(self.password):
                 from django.contrib.auth.hashers import make_password
 
                 self.password = make_password(self.password)
@@ -429,7 +428,9 @@ class Media(models.Model):
         # Re-generate HLS if encryption was toggled (guard against None on first save)
         if self.pk and self.__original_is_encrypted is not None and self.is_encrypted != self.__original_is_encrypted:
             self.__original_is_encrypted = self.is_encrypted
-            if self.encodings.filter(profile__extension="mp4", status="success", chunk=False, profile__codec="h264").exists():
+            if self.encodings.filter(
+                profile__extension="mp4", status="success", chunk=False, profile__codec="h264"
+            ).exists():
                 from . import tasks
 
                 tasks.create_hls.delay(self.friendly_token)

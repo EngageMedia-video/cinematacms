@@ -42,7 +42,7 @@ class SetPasswordTest(TestCase):
 
 
 class SaveGuardTest(TestCase):
-    """Test the identify_hasher guard in save()."""
+    """Test the structural password-hash guard in save()."""
 
     def setUp(self):
         self.user = create_test_user()
@@ -65,6 +65,18 @@ class SaveGuardTest(TestCase):
         media.refresh_from_db()
         # Should still be the same hash
         self.assertEqual(media.password, hashed)
+
+    def test_malformed_hasher_prefix_is_rehashed_on_save(self):
+        """A malformed hash-looking string is treated as raw password input."""
+        media = create_test_media(self.user)
+        raw_password = "pbkdf2_sha256$attacker_supplied"
+        media.password = raw_password
+        media.save()
+        media.refresh_from_db()
+
+        self.assertNotEqual(media.password, raw_password)
+        self.assertTrue(check_password(raw_password, media.password))
+        self.assertFalse(check_password("attacker_supplied", media.password))
 
     def test_editing_non_password_fields_preserves_hash(self):
         """Saving non-password changes doesn't corrupt the hash."""

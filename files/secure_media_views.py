@@ -70,12 +70,6 @@ def _calculate_access_permission(request, media: Media) -> bool:
         session_token = request.session.get(f"media_token_{media.friendly_token}")
         return bool(session_token and validate_token(session_token, media_uid))
 
-    if not user.is_authenticated:
-        return False
-
-    if media.state == "private":
-        return False
-
     return False
 
 

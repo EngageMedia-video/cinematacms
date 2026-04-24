@@ -142,7 +142,7 @@ Key aspects of the implementation:
 
 - **Field widening.** The database column is widened from 100 to 256 characters to accommodate the longer hash strings.
 - **Data migration.** A one-time migration hashes all existing plaintext passwords in the database. This operation is irreversible by design.
-- **Double-hash protection.** The model's `save()` method uses Django's `identify_hasher()` to detect whether a value is already hashed before applying `make_password()`. This prevents accidental double-hashing when saving a record that has not had its password changed.
+- **Double-hash protection.** The model's `save()` method verifies that a value is a structurally valid Django password hash before applying `make_password()`. This prevents accidental double-hashing when saving a record that has not had its password changed, while still treating malformed hash-looking strings as plaintext input.
 - **Single entry point.** A `set_password()` method is added to the Media model, following the same pattern as Django's `User.set_password()`. All code paths that set a password must go through this method.
 
 Verification at login time uses Django's `check_password()`, which handles salt extraction and hash comparison internally.
@@ -444,12 +444,14 @@ This pull request adds password quality enforcement on top of PR #1:
 
 - **Database migration.** The data migration that hashes existing passwords is irreversible. It should be tested against a copy of the production database before running in production, and scheduled during a maintenance window.
 - **Active session disruption.** Viewers currently watching restricted videos will have their sessions interrupted when the new code deploys. The old session-based password keys are gracefully ignored by the new code, but viewers will need to re-enter the password to obtain a token. Deploying during a low-traffic period is recommended.
+- **Trusted proxy configuration.** Password brute-force protection is keyed by client IP. If production nginx sits behind a load balancer, CDN, or another reverse proxy, configure `TRUSTED_PROXIES` so Django derives the client IP from `X-Forwarded-For` only when the immediate peer is trusted.
+- **Token log handling.** Access tokens can appear in query strings for HLS, API, and embed requests. Keep the accepted residual risk in mind when configuring nginx access logs and log shipping; scrub query parameters for token-bearing paths or disable access logging where practical.
 
 ## 9. Risk Considerations
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| Data migration corrupts passwords | Low | High | Test on DB copy first. The `identify_hasher()` guard prevents double-hashing. |
+| Data migration corrupts passwords | Low | High | Test on DB copy first. The password-hash guard prevents double-hashing. |
 | Redis outage blocks restricted media | Low | Medium | Redis is already critical infrastructure (cache + sessions). Owner/editor bypass is unaffected. Fail-closed is the correct behavior for a security system. |
 | Token expiration during long playback | Medium | Low | Custom error message tells the viewer to refresh and re-enter the password. |
 | Embed URLs expire after 4 hours | Medium | Low | Documented limitation. Future work could add in-iframe password forms. |

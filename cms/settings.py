@@ -425,6 +425,7 @@ RESTRICTED_MEDIA_TOKEN_TTL = 14400  # 4 hours
 # Password brute-force protection
 PASSWORD_BRUTE_FORCE_MAX_ATTEMPTS = 5
 PASSWORD_BRUTE_FORCE_WINDOW = 900  # 15 minutes
+TRUSTED_PROXIES = [proxy.strip() for proxy in os.getenv("TRUSTED_PROXIES", "127.0.0.1,::1").split(",") if proxy.strip()]
 
 # Media password validation
 MEDIA_PASSWORD_MIN_LENGTH = 8

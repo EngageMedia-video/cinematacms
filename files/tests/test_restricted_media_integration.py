@@ -3,8 +3,11 @@ Integration tests for the full restricted media flow.
 Tests span multiple units: token issuance → API → file serving → invalidation.
 """
 
-from django.test import Client, TestCase
+from django.contrib.auth.models import AnonymousUser
+from django.core.cache import cache
+from django.test import Client, RequestFactory, TestCase
 
+from files.secure_media_views import check_media_access_permission
 from files.tests.helpers import create_test_media, create_test_user
 from files.token_utils import generate_token, validate_token
 
@@ -104,6 +107,23 @@ class PasswordChangeInvalidationTest(TestCase):
         # New token works
         new_token = generate_token(self.media_uid)
         self.assertTrue(validate_token(new_token, self.media_uid))
+
+    def test_password_change_clears_cached_token_permission(self):
+        if not hasattr(cache, "delete_pattern"):
+            self.skipTest("Cache backend does not support pattern deletion")
+
+        token = generate_token(self.media_uid)
+        request = RequestFactory().get(f"/media?token={token}")
+        request.user = AnonymousUser()
+        request.session = {}
+
+        self.assertTrue(check_media_access_permission(request, self.media))
+
+        self.media.set_password("changed")
+        self.media.save()
+
+        self.assertFalse(validate_token(token, self.media_uid))
+        self.assertFalse(check_media_access_permission(request, self.media))
 
 
 class ConcurrentAccessTest(TestCase):

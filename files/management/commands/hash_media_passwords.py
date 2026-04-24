@@ -15,15 +15,16 @@ Usage:
     python manage.py hash_media_passwords --batch-size 1000
 
 Notes:
-    - Idempotent: already-hashed passwords are skipped (uses identify_hasher)
+    - Idempotent: structurally valid Django password hashes are skipped
     - Take a full database backup before running in production
     - The operation is irreversible -- hashing destroys the plaintext
 """
 
-from django.contrib.auth.hashers import identify_hasher, make_password
+from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 
 from files.models import Media
+from files.password_utils import is_valid_password_hash
 
 
 class Command(BaseCommand):
@@ -61,12 +62,9 @@ class Command(BaseCommand):
         skipped = 0
 
         for media in queryset.iterator(chunk_size=batch_size):
-            try:
-                identify_hasher(media.password)
+            if is_valid_password_hash(media.password):
                 skipped += 1
                 continue
-            except ValueError:
-                pass
 
             if dry_run:
                 self.stdout.write(f"  Would hash: {media.friendly_token} ({media.title[:50]})")

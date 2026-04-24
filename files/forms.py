@@ -255,8 +255,8 @@ class MediaForm(forms.ModelForm):
                 self.add_error("password", f"Password must be at least {min_length} characters.")
             else:
                 # Hash the plaintext password at the form level so it is never
-                # stored verbatim.  This closes the identify_hasher prefix-spoofing
-                # gap (e.g. a user submitting "pbkdf2_sha256$..." as a raw value).
+                # stored verbatim. This also avoids treating hash-looking user
+                # input (e.g. "pbkdf2_sha256$...") as an already-hashed value.
                 cleaned_data["password"] = make_password(password)
 
         if state == "restricted" and featured:
@@ -296,7 +296,7 @@ class MediaForm(forms.ModelForm):
             self.instance.save()
 
         # Password is hashed in clean() via make_password() before it reaches
-        # the model.  Media.save() retains an identify_hasher guard as
+        # the model. Media.save() retains a structural hash guard as
         # defense-in-depth only.
 
         media = super(MediaForm, self).save(*args, **kwargs)

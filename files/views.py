@@ -39,6 +39,7 @@ from cms.permissions import (
     IsUserOrEditor,
     user_requires_mfa,
 )
+from cms.request_utils import get_client_ip
 from users.models import User
 
 from . import lists
@@ -440,7 +441,7 @@ def view_media(request):
         )
 
         media_uid = media.uid_hex
-        ip = request.META.get("REMOTE_ADDR", "")
+        ip = get_client_ip(request)
 
         # Check session token on GET (avoid re-prompting)
         session_token = request.session.get(f"media_token_{media.friendly_token}")
@@ -963,7 +964,9 @@ def embed_media(request):
         if token and validate_token(token, media_uid):
             context["media_access_token"] = token
         else:
-            return HttpResponse("Unauthorized", status=401)
+            response = HttpResponse("Unauthorized", status=401)
+            response["Cache-Control"] = "no-store"
+            return response
 
     response = render(request, "cms/embed.html", context)
     if media.state == "restricted":

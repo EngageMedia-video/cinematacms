@@ -3,7 +3,7 @@ Tests for restricted media views — password entry, token issuance,
 rate limiting, embed auth, and manifest rewriting.
 """
 
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 
 from files.tests.helpers import create_test_media, create_test_user
 from files.token_utils import _get_brute_force_max_attempts, generate_token
@@ -98,6 +98,36 @@ class ViewMediaRateLimitTest(TestCase):
         # Rate limited — correct password doesn't get checked
         self.assertTrue(resp.context.get("rate_limited"))
 
+    @override_settings(PASSWORD_BRUTE_FORCE_MAX_ATTEMPTS=2, TRUSTED_PROXIES=("127.0.0.1",))
+    def test_rate_limit_uses_forwarded_for_from_trusted_proxy(self):
+        for _ in range(2):
+            self.client.post(
+                self.url, {"password": "wrong"}, REMOTE_ADDR="127.0.0.1", headers={"x-forwarded-for": "203.0.113.10"}
+            )
+
+        resp = self.client.post(
+            self.url, {"password": "correct"}, REMOTE_ADDR="127.0.0.1", headers={"x-forwarded-for": "203.0.113.11"}
+        )
+
+        self.assertFalse(resp.context.get("rate_limited"))
+        self.assertTrue(resp.context["can_see_restricted_media"])
+
+    @override_settings(PASSWORD_BRUTE_FORCE_MAX_ATTEMPTS=2, TRUSTED_PROXIES=("127.0.0.1",))
+    def test_rate_limit_ignores_forwarded_for_from_untrusted_peer(self):
+        for index in range(2):
+            self.client.post(
+                self.url,
+                {"password": "wrong"},
+                REMOTE_ADDR="198.51.100.20",
+                headers={"x-forwarded-for": f"203.0.113.{index}"},
+            )
+
+        resp = self.client.post(
+            self.url, {"password": "correct"}, REMOTE_ADDR="198.51.100.20", headers={"x-forwarded-for": "203.0.113.99"}
+        )
+
+        self.assertTrue(resp.context.get("rate_limited"))
+
 
 class MediaDetailAPITest(TestCase):
     """Test the REST API token-based access."""
@@ -160,6 +190,7 @@ class EmbedMediaTest(TestCase):
     def test_embed_without_token_returns_401(self):
         resp = self.client.get(f"/embed?m={self.media.friendly_token}")
         self.assertEqual(resp.status_code, 401)
+        self.assertEqual(resp["Cache-Control"], "no-store")
 
     def test_embed_with_invalid_token_returns_401(self):
         resp = self.client.get(f"/embed?m={self.media.friendly_token}&token=invalid")
