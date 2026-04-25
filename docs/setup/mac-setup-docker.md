@@ -25,20 +25,20 @@ After installation, you will need to add Homebrew to your PATH to ensure Homebre
 Install all the necessary software using Homebrew:
 
 ```zsh
-brew install wget openssl ffmpeg make cmake python docker bento4 uv node@20
+brew install wget openssl ffmpeg make cmake python docker bento4 uv node@22
 ```
 This command also installs Docker. Ensure Docker is started before proceeding. For Mac, installing `docker` via Homebrew typically includes Docker Desktop, which you'll need to run.
 
-Since `node@20` is keg-only and won't be added to your PATH automatically, you need to link it:
+Since `node@22` is keg-only and won't be added to your PATH automatically, you need to link it:
 
 ```zsh
-brew link --overwrite --force node@20
+brew link --overwrite --force node@22
 ```
 
 Alternatively, you can add it to your PATH manually by adding this to your `~/.zshrc` or `~/.bash_profile`:
 
 ```zsh
-export PATH="$(brew --prefix node@20)/bin:$PATH"
+export PATH="$(brew --prefix node@22)/bin:$PATH"
 ```
 
 This command works on both Intel Macs (which use `/usr/local`) and Apple Silicon Macs (which use `/opt/homebrew`).
