@@ -578,7 +578,7 @@ VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
 USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
 
 # UI variant gate
-UI_VARIANT_DEFAULT = "legacy"
+UI_VARIANT_DEFAULT = "revamp"
 UI_VARIANT_ALLOWED = ["legacy", "revamp"]
 UI_VARIANT_REVAMP_PAGES = []  # Add page keys here as they are migrated, e.g. ["home"]
 

@@ -1,3 +1,6 @@
+from copy import deepcopy
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory, TestCase, override_settings
@@ -5,6 +8,8 @@ from django.test import RequestFactory, TestCase, override_settings
 from cms.ui_variant import resolve_template, ui_variant_context_processor
 
 User = get_user_model()
+HERMETIC_DJANGO_VITE = deepcopy(settings.DJANGO_VITE)
+HERMETIC_DJANGO_VITE["default"]["dev_mode"] = True
 
 
 class ResolveTemplateTests(TestCase):
@@ -62,6 +67,13 @@ class ResolveTemplateTests(TestCase):
         self.assertEqual(result, "cms/index.html")
         self.assertEqual(request.ui_variant, "legacy")
 
+    @override_settings(UI_VARIANT_DEFAULT="revamp", UI_VARIANT_REVAMP_PAGES=[])
+    def test_default_revamp_does_not_bypass_allowlist(self):
+        request = self._make_request()
+        result = resolve_template(request, "home")
+        self.assertEqual(result, "cms/index.html")
+        self.assertEqual(request.ui_variant, "legacy")
+
     @override_settings(UI_VARIANT_ALLOWED=["legacy", "revamp"], UI_VARIANT_DEFAULT="revmp")
     def test_invalid_default_variant_logs_warning_and_falls_back(self):
         request = self._make_request()
@@ -76,6 +88,7 @@ class ResolveTemplateTests(TestCase):
         request.ui_variant = "revamp"
         self.assertEqual(ui_variant_context_processor(request), {"UI_VARIANT": "revamp"})
 
+    @override_settings(UI_VARIANT_DEFAULT="revamp")
     def test_context_processor_defaults_to_legacy(self):
         request = self._make_request()
         self.assertEqual(ui_variant_context_processor(request), {"UI_VARIANT": "legacy"})
@@ -92,6 +105,7 @@ class ResolveTemplateTests(TestCase):
             resolve_template(request, "missing")
 
 
+@override_settings(DJANGO_VITE=HERMETIC_DJANGO_VITE)
 class UIVariantViewTests(TestCase):
     def setUp(self):
         self.staff_user = User.objects.create_user(
