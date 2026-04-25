@@ -8,6 +8,9 @@ from django.test import Client, TestCase, override_settings
 from users.models import User
 
 
+_CHECK_NAMES = ("_check_db", "_check_cache", "_check_filesystem", "_check_static_manifest")
+
+
 def _all_checks_healthy() -> ExitStack:
     """Return a context manager that patches all four check helpers to (True, "ok").
 
@@ -15,7 +18,22 @@ def _all_checks_healthy() -> ExitStack:
     Redis, writable MEDIA_ROOT, or a built Vite manifest.
     """
     stack = ExitStack()
-    for name in ("_check_db", "_check_cache", "_check_filesystem", "_check_static_manifest"):
+    for name in _CHECK_NAMES:
+        stack.enter_context(patch(f"cms.health.{name}", return_value=(True, "ok")))
+    return stack
+
+
+def _all_checks_healthy_except(*skip: str) -> ExitStack:
+    """Patch every check helper to healthy *except* the named ones.
+
+    Use when a test wants the real implementation of one check to run (e.g. to
+    exercise its redaction path) while still keeping the other checks
+    deterministic.
+    """
+    stack = ExitStack()
+    for name in _CHECK_NAMES:
+        if name in skip:
+            continue
         stack.enter_context(patch(f"cms.health.{name}", return_value=(True, "ok")))
     return stack
 
@@ -58,7 +76,9 @@ class HealthReadyTests(TestCase):
         self.assertIn("static_manifest", body["checks"])
 
     def test_ready_db_failure_returns_503(self):
-        with patch("cms.health._check_db", return_value=(False, "OperationalError")):
+        # Baseline-healthy + override only the check under test, so the test
+        # cannot fail because of an unrelated dependency in CI / local dev.
+        with _all_checks_healthy(), patch("cms.health._check_db", return_value=(False, "OperationalError")):
             response = self.client.get("/health/ready")
         self.assertEqual(response.status_code, 503)
         body = json.loads(response.content)
@@ -67,9 +87,9 @@ class HealthReadyTests(TestCase):
         self.assertFalse(body["checks"]["database"]["ok"])
 
     def test_ready_cache_failure_returns_503(self):
-        with patch(
-            "cms.health.cache_health_check",
-            return_value={"status": "unhealthy", "error": "redis down", "latency_ms": 0, "timestamp": 0},
+        with _all_checks_healthy(), patch(
+            "cms.health._check_cache",
+            return_value=(False, "unhealthy"),
         ):
             response = self.client.get("/health/ready")
         self.assertEqual(response.status_code, 503)
@@ -79,7 +99,9 @@ class HealthReadyTests(TestCase):
 
     def test_ready_cache_failure_detail_is_redacted(self):
         # Privileged response must not echo the raw cache error string back.
-        with patch(
+        # Use the real _check_cache so we exercise the redaction path; baseline
+        # the rest so this test can't fail for unrelated reasons.
+        with _all_checks_healthy_except("_check_cache"), patch(
             "cms.health.cache_health_check",
             return_value={"status": "unhealthy", "error": "leaky internal redis trace", "latency_ms": 0, "timestamp": 0},
         ):
@@ -118,7 +140,9 @@ class HealthReadyTests(TestCase):
     def test_ready_public_response_has_no_detail(self):
         # Non-localhost REMOTE_ADDR must get compact response with no exception info.
         public_client = Client(REMOTE_ADDR="203.0.113.5")
-        with patch("cms.health._check_db", return_value=(False, "sensitive internal error detail")):
+        with _all_checks_healthy(), patch(
+            "cms.health._check_db", return_value=(False, "sensitive internal error detail")
+        ):
             response = public_client.get("/health/ready")
         self.assertEqual(response.status_code, 503)
         body = json.loads(response.content)
@@ -129,7 +153,9 @@ class HealthReadyTests(TestCase):
         # Regression: a client-supplied X-Forwarded-For header must NOT unlock the
         # detailed response branch. REMOTE_ADDR is what counts.
         public_client = Client(REMOTE_ADDR="203.0.113.5")
-        with patch("cms.health._check_db", return_value=(False, "sensitive internal error detail")):
+        with _all_checks_healthy(), patch(
+            "cms.health._check_db", return_value=(False, "sensitive internal error detail")
+        ):
             response = public_client.get("/health/ready", HTTP_X_FORWARDED_FOR="127.0.0.1")
         self.assertEqual(response.status_code, 503)
         body = json.loads(response.content)
@@ -139,7 +165,9 @@ class HealthReadyTests(TestCase):
     def test_ready_proxied_localhost_is_not_privileged(self):
         # Regression: traffic traversing nginx will have REMOTE_ADDR=127.0.0.1 AND
         # an XFF header. Must NOT get the detailed branch.
-        with patch("cms.health._check_db", return_value=(False, "LeakyError details")):
+        with _all_checks_healthy(), patch(
+            "cms.health._check_db", return_value=(False, "LeakyError details")
+        ):
             response = self.client.get(
                 "/health/ready",
                 REMOTE_ADDR="127.0.0.1",
@@ -166,7 +194,9 @@ class HealthReadyTests(TestCase):
         self.client = Client(REMOTE_ADDR="203.0.113.5")
         self.client.login(username="staffhealth", password=test_password)
 
-        with patch("cms.health._check_db", return_value=(False, "OperationalError")):
+        with _all_checks_healthy(), patch(
+            "cms.health._check_db", return_value=(False, "OperationalError")
+        ):
             response = self.client.get("/health/ready")
         self.assertEqual(response.status_code, 503)
         body = json.loads(response.content)

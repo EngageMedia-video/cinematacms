@@ -23,6 +23,13 @@ def _client_is_privileged(request) -> bool:
     #      cannot be bypassed by spoofing a header value.
     #   2. Authenticated staff session (the supported way to get detail from
     #      behind the proxy).
+    #
+    # Note: this is intentionally stricter than `metrics_view` in `cms/urls.py`,
+    # which trusts the leftmost XFF entry as the client IP. /health/ready is
+    # public and unauthenticated, so we don't trust XFF at all here. When
+    # `cms.request_utils.get_client_ip()` lands (PR #503), revisit whether to
+    # share a helper while preserving this no-XFF-trust posture for the public
+    # health path.
     remote_addr = request.META.get("REMOTE_ADDR", "")
     has_xff = bool(request.META.get("HTTP_X_FORWARDED_FOR", "").strip())
     is_direct_localhost = remote_addr in ("127.0.0.1", "::1") and not has_xff
@@ -85,7 +92,7 @@ def _check_static_manifest() -> tuple[bool, str]:
             # Vite dev server serves assets; no build manifest is expected.
             return True, "ok (dev_mode)"
         path = cfg["manifest_path"]
-    except (AttributeError, KeyError, TypeError) as e:
+    except (AttributeError, KeyError, TypeError):
         logger.warning("health: DJANGO_VITE config missing", exc_info=True)
         return False, "not_configured"
     if os.path.exists(path):
@@ -96,7 +103,12 @@ def _check_static_manifest() -> tuple[bool, str]:
 
 @require_GET
 def live(request):
-    return JsonResponse({"status": "ok"}, status=200)
+    # Cache-Control: no-store on both probes — if a CDN, corporate proxy, or a
+    # mis-enabled nginx proxy_cache ever sat in front, a stale 200 could mask a
+    # dead process and defeat the point of the probe.
+    response = JsonResponse({"status": "ok"}, status=200)
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 @require_GET
@@ -121,4 +133,6 @@ def ready(request):
             "checks": {name: ("ok" if ok else "fail") for name, (ok, _) in checks.items()},
         }
 
-    return JsonResponse(body, status=200 if all_ok else 503)
+    response = JsonResponse(body, status=200 if all_ok else 503)
+    response["Cache-Control"] = "no-store"
+    return response
