@@ -51,7 +51,7 @@ su -c "psql -c \"CREATE DATABASE mediacms\"" postgres
 su -c "psql -c \"CREATE USER mediacms WITH ENCRYPTED PASSWORD 'mediacms'\"" postgres
 su -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE mediacms TO mediacms\"" postgres
 
-echo 'Installing Node.js v20 LTS...'
+echo 'Installing Node.js v22 LTS...'
 # Try to find install-nodejs.sh in the cinematacms directory
 NODEJS_SCRIPT="/home/cinemata/cinematacms/install-nodejs.sh"
 
@@ -61,7 +61,7 @@ if [ -f "$NODEJS_SCRIPT" ]; then
         export NVM_DIR="/root/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         # Ensure Node is on PATH in this shell
-        nvm use --silent default >/dev/null 2>&1 || nvm use --silent 20 >/dev/null 2>&1
+        nvm use --silent default >/dev/null 2>&1 || nvm use --silent 22 >/dev/null 2>&1
         node -v && npm -v || { echo "Error: node/npm not on PATH after install"; exit 1; }
         hash -r
     else

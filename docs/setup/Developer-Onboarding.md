@@ -152,7 +152,7 @@ These versions are tested and confirmed working:
 | Dependency | Version | Notes |
 |------------|---------|-------|
 | **Python** | 3.10+ | 3.10 recommended |
-| **Node.js** | 20.x | **v20.19.1 recommended** — any Node.js 20.x version should work |
+| **Node.js** | 22.x | **v22.22.2 recommended** — any Node.js 22.x version should work |
 | **PostgreSQL** | 14+ | Via Docker (14-alpine) |
 | **Redis** | 7+ | Via Docker (alpine) |
 | **FFmpeg** | 4.4+ | For video processing |
@@ -160,7 +160,7 @@ These versions are tested and confirmed working:
 | **uv** | Latest | Python package manager |
 | **npm** | 10+ | Comes with Node.js |
 
-> **⚠️ Important:** Node.js v20.x is required for the frontend build. Version 20.19.1 is tested and recommended.
+> **⚠️ Important:** Node.js v22.x is required for the frontend build. Version 22.22.2 is tested and recommended.
 
 ---
 
@@ -263,11 +263,11 @@ brew install wget openssl ffmpeg make cmake python bento4 uv
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 source ~/.zshrc  # or ~/.bash_profile for bash users
 
-# Install the recommended Node.js version (any 20.x works, but 20.19.1 is tested)
-nvm install 20.19.1 && nvm use 20.19.1 && nvm alias default 20.19.1
+# Install the recommended Node.js version (any 22.x works, but 22.22.2 is tested)
+nvm install 22.22.2 && nvm use 22.22.2 && nvm alias default 22.22.2
 
 # Verify installations
-node --version   # Should output v20.19.1 (recommended, any v20.x works)
+node --version   # Should output v22.22.2 (recommended, any v22.x works)
 uv --version
 docker --version
 ```
@@ -285,7 +285,7 @@ sudo apt install -y libpq-dev libssl-dev libffi-dev ffmpeg cmake
 # Install Node.js via nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 source ~/.bashrc
-nvm install 20.19.1 && nvm use 20.19.1 && nvm alias default 20.19.1
+nvm install 22.22.2 && nvm use 22.22.2 && nvm alias default 22.22.2
 
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -312,7 +312,7 @@ sudo apt install -y git wget curl build-essential libpq-dev libssl-dev libffi-de
 # Install Node.js via nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 source ~/.bashrc
-nvm install 20.19.1 && nvm use 20.19.1 && nvm alias default 20.19.1
+nvm install 22.22.2 && nvm use 22.22.2 && nvm alias default 22.22.2
 
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -340,10 +340,10 @@ mkdir -p ~/cinemata && cd ~/cinemata
 git clone https://github.com/EngageMedia-video/cinematacms cinematacms
 cd cinematacms
 
-# The repository includes .nvmrc files specifying Node.js v20 (any 20.x version)
-# nvm will automatically switch to Node 20.x when you cd into the directory
+# The repository includes .nvmrc files specifying Node.js v22 (any 22.x version)
+# nvm will automatically switch to Node 22.x when you cd into the directory
 # Run 'nvm use' manually if auto-switching doesn't work
-# Note: v20.19.1 is the tested/recommended version from the install steps above
+# Note: v22.22.2 is the tested/recommended version from the install steps above
 
 # Clone Whisper.cpp for ASR
 cd ~/cinemata
@@ -725,7 +725,7 @@ make docker-shell-db
 ```
 
 ✅ **Expected:** Hot reload works, page loads
-❌ **If fails:** Check Node.js version (must be 20.19.1)
+❌ **If fails:** Check Node.js version (must be 22.22.2)
 
 ### Quick Health Check Script
 
@@ -1175,7 +1175,7 @@ MediaAction → User (foreign key)
 - **Vite** - Build tool and dev server
 - **django-vite** - Django integration for Vite assets
 - **Video.js** - Custom media player foundation
-- **Node.js v20.19.1** - Build environment
+- **Node.js v22.22.2** - Build environment
 
 ### Development Architecture
 
@@ -1840,10 +1840,10 @@ cd frontend && npm install
 make frontend-build
 
 # Check Node version
-node --version  # Should be v20.19.1
+node --version  # Should be v22.22.2
 
 # Reinstall Node if needed
-nvm install 20.19.1 && nvm use 20.19.1
+nvm install 22.22.2 && nvm use 22.22.2
 ```
 
 ### Celery Workers Not Processing
@@ -1929,19 +1929,19 @@ sudo apt install python3.10 python3.10-venv
 
 ### Node.js Version Errors
 
-#### Error: Node.js v20.19.1 required or Vite build fails
+#### Error: Node.js v22.22.2 required or Vite build fails
 
 ```bash
 # Check current version
 node --version
 
 # Install correct version with nvm
-nvm install 20.19.1
-nvm use 20.19.1
-nvm alias default 20.19.1
+nvm install 22.22.2
+nvm use 22.22.2
+nvm alias default 22.22.2
 
 # Verify
-node --version  # Should output v20.19.1
+node --version  # Should output v22.22.2
 
 # Reinstall frontend dependencies
 cd frontend
