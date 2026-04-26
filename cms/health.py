@@ -7,6 +7,7 @@ from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
+from cms.request_utils import get_client_ip
 from files.cache_utils import health_check as cache_health_check
 
 logger = logging.getLogger(__name__)
@@ -14,31 +15,24 @@ logger = logging.getLogger(__name__)
 
 def _client_is_privileged(request) -> bool:
     # Two gates for the detailed branch:
-    #   1. Direct-localhost request (operator shell on the host running uwsgi).
-    #      REMOTE_ADDR is localhost AND no X-Forwarded-For header is present.
-    #      Behind nginx, REMOTE_ADDR is always 127.0.0.1, so requiring XFF to be
-    #      absent is what distinguishes a direct curl on the box from proxied
-    #      external traffic (nginx adds XFF via $proxy_add_x_forwarded_for).
-    #      XFF is never *trusted* — we only check whether it exists — so this
-    #      cannot be bypassed by spoofing a header value.
+    #   1. Real client IP is loopback. `get_client_ip()` only honors the
+    #      X-Forwarded-For header when REMOTE_ADDR is in TRUSTED_PROXIES, so a
+    #      crafted `X-Forwarded-For: 127.0.0.1` from an external client cannot
+    #      escalate (their REMOTE_ADDR isn't in the trusted set).
     #   2. Authenticated staff session (the supported way to get detail from
-    #      behind the proxy).
+    #      behind the proxy without being on the box).
     #
-    # Note: this is intentionally stricter than `metrics_view` in `cms/urls.py`,
-    # which trusts the leftmost XFF entry as the client IP. /health/ready is
-    # public and unauthenticated, so we don't trust XFF at all here. When
-    # `cms.request_utils.get_client_ip()` lands (PR #503), revisit whether to
-    # share a helper while preserving this no-XFF-trust posture for the public
-    # health path.
-    remote_addr = request.META.get("REMOTE_ADDR", "")
-    has_xff = bool(request.META.get("HTTP_X_FORWARDED_FOR", "").strip())
-    is_direct_localhost = remote_addr in ("127.0.0.1", "::1") and not has_xff
+    # This intentionally matches the privilege rule used by `metrics_view` in
+    # `cms/urls.py` so that the two endpoints have the same definition of
+    # "trusted caller" — see PR #503 for the helper.
+    client_ip = get_client_ip(request)
+    is_localhost = client_ip in ("127.0.0.1", "::1")
     is_staff = (
         hasattr(request, "user")
         and request.user.is_authenticated
         and request.user.is_staff
     )
-    return is_direct_localhost or is_staff
+    return is_localhost or is_staff
 
 
 def _safe_detail(exc: BaseException) -> str:

@@ -150,8 +150,10 @@ class HealthReadyTests(TestCase):
         self.assertNotIn("sensitive internal error detail", response.content.decode())
 
     def test_ready_xff_spoof_cannot_escalate_to_privileged(self):
-        # Regression: a client-supplied X-Forwarded-For header must NOT unlock the
-        # detailed response branch. REMOTE_ADDR is what counts.
+        # Regression: an external client setting `X-Forwarded-For: 127.0.0.1`
+        # must NOT unlock the detailed branch. `get_client_ip()` only honors
+        # XFF when REMOTE_ADDR is itself a trusted proxy, so the crafted header
+        # is ignored and the real (external) REMOTE_ADDR wins.
         public_client = Client(REMOTE_ADDR="203.0.113.5")
         with _all_checks_healthy(), patch(
             "cms.health._check_db", return_value=(False, "sensitive internal error detail")
@@ -163,8 +165,10 @@ class HealthReadyTests(TestCase):
         self.assertNotIn("sensitive internal error detail", response.content.decode())
 
     def test_ready_proxied_localhost_is_not_privileged(self):
-        # Regression: traffic traversing nginx will have REMOTE_ADDR=127.0.0.1 AND
-        # an XFF header. Must NOT get the detailed branch.
+        # Regression: traffic traversing nginx has REMOTE_ADDR=127.0.0.1 (the
+        # proxy) and a real external client IP in XFF. Because nginx is a
+        # trusted proxy, `get_client_ip()` resolves to the XFF entry, so the
+        # external client does NOT get the detailed branch.
         with _all_checks_healthy(), patch(
             "cms.health._check_db", return_value=(False, "LeakyError details")
         ):
