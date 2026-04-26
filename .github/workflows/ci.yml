@@ -102,6 +102,12 @@ jobs:
       - name: Materialize CI local_settings
         run: cp cms/local_settings_example.py cms/local_settings.py
 
+      # LOGGING in cms/settings.py uses a FileHandler at logs/debug.log;
+      # the directory is gitignored, so a fresh checkout has no logs/ and
+      # django.setup() raises before makemigrations runs.
+      - name: Create logs directory for Django FileHandler
+        run: mkdir -p logs
+
       - name: Check for missing migrations
         env:
           SECRET_KEY: ci-not-a-real-secret-key-do-not-use-in-prod
