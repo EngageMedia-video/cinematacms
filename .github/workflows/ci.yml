@@ -111,4 +111,4 @@ jobs:
       - name: Check for missing migrations
         env:
           SECRET_KEY: ci-not-a-real-secret-key-do-not-use-in-prod
-        run: uv run python manage.py makemigrations --check --dry-run
+        run: uv run python manage.py makemigrations --check
