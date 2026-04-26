@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  frontend-build:
+    name: Frontend Lint & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            frontend/packages/vjs-plugin-font-icons/package-lock.json
+            frontend/packages/vjs-plugin/package-lock.json
+            frontend/packages/media-player/package-lock.json
+
+      # Install frontend deps first: this populates frontend/node_modules
+      # (including `autoprefixer`, required by frontend/postcss.config.js which
+      # the workspace packages' vite builds pick up via upward config search)
+      # and installs the three workspace packages as symlinks back into
+      # frontend/packages/*, so their dist/ becomes visible to the final
+      # frontend build once they're built below.
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --no-fund --no-audit
+
+      - name: Build workspace package — vjs-plugin-font-icons
+        working-directory: frontend/packages/vjs-plugin-font-icons
+        run: |
+          npm ci --no-fund --no-audit
+          npm run build
+
+      - name: Build workspace package — vjs-plugin
+        working-directory: frontend/packages/vjs-plugin
+        run: |
+          npm ci --no-fund --no-audit
+          npm run build
+
+      - name: Build workspace package — media-player
+        working-directory: frontend/packages/media-player
+        run: |
+          npm ci --no-fund --no-audit
+          npm run build
+
+      - name: Lint frontend (modern track)
+        working-directory: frontend
+        run: npm run lint:modern
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build

@@ -6,7 +6,7 @@ This document provides instructions for setting up and working with the Cinemata
 
 ## Prerequisites
 
-- Node.js version **20.19.1** (as specified in `.nvmrc`)
+- Node.js version **22.22.2** (as specified in `.nvmrc`)
 - npm or pnpm (the project uses pnpm workspace as indicated by `pnpm-workspace.yaml`)
 
 ## Project Structure

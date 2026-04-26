@@ -2,7 +2,7 @@
 
 ## **Requirements**
 
-- nodejs version **20.19.1**
+- nodejs version **22.22.2**
 
 ---
 
