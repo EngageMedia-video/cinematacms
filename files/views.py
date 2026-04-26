@@ -34,6 +34,7 @@ from rest_framework.views import APIView
 
 from actions.models import USER_MEDIA_ACTIONS, MediaAction
 from cms.custom_pagination import FastPaginationWithoutCount
+from cms.ui_variant import resolve_template
 from cms.permissions import (
     IsAuthorizedToAdd,
     IsUserOrEditor,
@@ -125,9 +126,9 @@ logger = logging.getLogger(__name__)
 
 
 def index(request):
-    # Index view
     context = {}
-    return render(request, "cms/index.html", context)
+    template = resolve_template(request, "home")
+    return render(request, template, context)
 
 
 def tos(request):

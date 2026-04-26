@@ -340,6 +340,8 @@
 	/* ── Typography ───────────────────────────────────────── */
 	--font-sans: 'Amulya', 'Arial', sans-serif;
 	--font-heading: 'Facultad', 'Arial', sans-serif;
+	--font-inter: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+	--font-barlow: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
 
 	/* ── Layout Dimensions ────────────────────────────────── */
 	/* These read live CSS vars so _extra.css overrides flow through. */
@@ -349,6 +351,59 @@
 	--spacing-header-px: 1rem;
 	--spacing-logo-height: var(--default-logo-height);
 	--spacing-item-width: var(--default-item-width);
+
+	/* ── Design System Space Tokens ─────────────────────── */
+	--spacing-space-zero: var(--space-zero);
+	--spacing-space-px: var(--space-px);
+	--spacing-space-xxs: var(--space-xxs);
+	--spacing-space-xs2: var(--space-xs2);
+	--spacing-space-xs: var(--space-xs);
+	--spacing-space-sm: var(--space-sm);
+	--spacing-space-base: var(--space-base);
+	--spacing-space-md: var(--space-md);
+	--spacing-space-lg: var(--space-lg);
+	--spacing-space-xl: var(--space-xl);
+	--spacing-space-xl2: var(--space-xl2);
+	--spacing-space-xl3: var(--space-xl3);
+	--spacing-space-xl4: var(--space-xl4);
+	--spacing-space-xl5: var(--space-xl5);
+	--spacing-space-xl6: var(--space-xl6);
+
+	/* ── Design System Size Tokens ──────────────────────── */
+	--spacing-size-0: var(--size-0);
+	--spacing-size-2: var(--size-2);
+	--spacing-size-4: var(--size-4);
+	--spacing-size-6: var(--size-6);
+	--spacing-size-8: var(--size-8);
+	--spacing-size-10: var(--size-10);
+	--spacing-size-12: var(--size-12);
+	--spacing-size-14: var(--size-14);
+	--spacing-size-16: var(--size-16);
+	--spacing-size-20: var(--size-20);
+	--spacing-size-24: var(--size-24);
+	--spacing-size-28: var(--size-28);
+	--spacing-size-32: var(--size-32);
+	--spacing-size-36: var(--size-36);
+	--spacing-size-40: var(--size-40);
+	--spacing-size-44: var(--size-44);
+	--spacing-size-48: var(--size-48);
+	--spacing-size-56: var(--size-56);
+	--spacing-size-64: var(--size-64);
+	--spacing-size-80: var(--size-80);
+	--spacing-size-96: var(--size-96);
+
+	/* ── Design System Radius Tokens ────────────────────── */
+	--radius-ds-0: var(--radius-0);
+	--radius-ds-2: var(--radius-2);
+	--radius-ds-4: var(--radius-4);
+	--radius-ds-6: var(--radius-6);
+	--radius-ds-8: var(--radius-8);
+	--radius-ds-12: var(--radius-12);
+	--radius-ds-16: var(--radius-16);
+	--radius-ds-24: var(--radius-24);
+	--radius-ds-32: var(--radius-32);
+	--radius-ds-48: var(--radius-48);
+	--radius-ds-full: var(--radius-full);
 	/*
 	 * Not bridged:
 	 *   --default-max-row-items  → count, not a visual token
@@ -370,6 +425,108 @@
 	--color-site-form-btn: var(--site-form-btn-bg-color);
 	--color-site-featured-bg: var(--site-featured-bg-color);
 	--color-site-player-accent: var(--site-player-accent-color);
+
+	/* ── Cinemata Revamp Palette ─────────────────────────── */
+	--color-cinemata-white: var(--cinemata-white);
+	--color-cinemata-black: var(--cinemata-black);
+	--color-cinemata-transparent: var(--cinemata-transparent);
+
+	--color-cinemata-red-50: var(--cinemata-red-50);
+	--color-cinemata-red-100: var(--cinemata-red-100);
+	--color-cinemata-red-200: var(--cinemata-red-200);
+	--color-cinemata-red-300: var(--cinemata-red-300);
+	--color-cinemata-red-400: var(--cinemata-red-400);
+	--color-cinemata-red-500: var(--cinemata-red-500);
+	--color-cinemata-red-600: var(--cinemata-red-600);
+	--color-cinemata-red-700p: var(--cinemata-red-700p);
+	--color-cinemata-red-800: var(--cinemata-red-800);
+	--color-cinemata-red-900: var(--cinemata-red-900);
+	--color-cinemata-red-950: var(--cinemata-red-950);
+
+	--color-cinemata-green-50: var(--cinemata-green-50);
+	--color-cinemata-green-100: var(--cinemata-green-100);
+	--color-cinemata-green-200: var(--cinemata-green-200);
+	--color-cinemata-green-300: var(--cinemata-green-300);
+	--color-cinemata-green-400: var(--cinemata-green-400);
+	--color-cinemata-green-500: var(--cinemata-green-500);
+	--color-cinemata-green-600: var(--cinemata-green-600);
+	--color-cinemata-green-700p: var(--cinemata-green-700p);
+	--color-cinemata-green-800: var(--cinemata-green-800);
+	--color-cinemata-green-900: var(--cinemata-green-900);
+	--color-cinemata-green-950: var(--cinemata-green-950);
+
+	--color-cinemata-neutral-50: var(--cinemata-neutral-50);
+	--color-cinemata-neutral-100: var(--cinemata-neutral-100);
+	--color-cinemata-neutral-200: var(--cinemata-neutral-200);
+	--color-cinemata-neutral-300: var(--cinemata-neutral-300);
+	--color-cinemata-neutral-400: var(--cinemata-neutral-400);
+	--color-cinemata-neutral-500: var(--cinemata-neutral-500);
+	--color-cinemata-neutral-600: var(--cinemata-neutral-600);
+	--color-cinemata-neutral-700: var(--cinemata-neutral-700);
+	--color-cinemata-neutral-800: var(--cinemata-neutral-800);
+	--color-cinemata-neutral-900: var(--cinemata-neutral-900);
+	--color-cinemata-neutral-950: var(--cinemata-neutral-950);
+
+	--color-cinemata-coral-reef-light-50: var(--cinemata-coral-reef-light-50);
+	--color-cinemata-coral-reef-100: var(--cinemata-coral-reef-100);
+	--color-cinemata-coral-reef-200: var(--cinemata-coral-reef-200);
+	--color-cinemata-coral-reef-300: var(--cinemata-coral-reef-300);
+	--color-cinemata-coral-reef-400p: var(--cinemata-coral-reef-400p);
+	--color-cinemata-coral-reef-500: var(--cinemata-coral-reef-500);
+	--color-cinemata-coral-reef-600: var(--cinemata-coral-reef-600);
+	--color-cinemata-coral-reef-700: var(--cinemata-coral-reef-700);
+	--color-cinemata-coral-reef-800: var(--cinemata-coral-reef-800);
+	--color-cinemata-coral-reef-900: var(--cinemata-coral-reef-900);
+	--color-cinemata-coral-reef-950: var(--cinemata-coral-reef-950);
+
+	--color-cinemata-strait-blue-50: var(--cinemata-strait-blue-50);
+	--color-cinemata-strait-blue-100: var(--cinemata-strait-blue-100);
+	--color-cinemata-strait-blue-200: var(--cinemata-strait-blue-200);
+	--color-cinemata-strait-blue-300: var(--cinemata-strait-blue-300);
+	--color-cinemata-strait-blue-400: var(--cinemata-strait-blue-400);
+	--color-cinemata-strait-blue-500: var(--cinemata-strait-blue-500);
+	--color-cinemata-strait-blue-600p: var(--cinemata-strait-blue-600p);
+	--color-cinemata-strait-blue-700: var(--cinemata-strait-blue-700);
+	--color-cinemata-strait-blue-800: var(--cinemata-strait-blue-800);
+	--color-cinemata-strait-blue-900: var(--cinemata-strait-blue-900);
+	--color-cinemata-strait-blue-950: var(--cinemata-strait-blue-950);
+
+	--color-cinemata-pacific-deep-50: var(--cinemata-pacific-deep-50);
+	--color-cinemata-pacific-deep-100: var(--cinemata-pacific-deep-100);
+	--color-cinemata-pacific-deep-200: var(--cinemata-pacific-deep-200);
+	--color-cinemata-pacific-deep-300: var(--cinemata-pacific-deep-300);
+	--color-cinemata-pacific-deep-400: var(--cinemata-pacific-deep-400);
+	--color-cinemata-pacific-deep-500: var(--cinemata-pacific-deep-500);
+	--color-cinemata-pacific-deep-600p: var(--cinemata-pacific-deep-600p);
+	--color-cinemata-pacific-deep-700: var(--cinemata-pacific-deep-700);
+	--color-cinemata-pacific-deep-800: var(--cinemata-pacific-deep-800);
+	--color-cinemata-pacific-deep-900: var(--cinemata-pacific-deep-900);
+	--color-cinemata-pacific-deep-950: var(--cinemata-pacific-deep-950);
+
+	--color-cinemata-sunset-horizon-100: var(--cinemata-sunset-horizon-100);
+	--color-cinemata-sunset-horizon-200: var(--cinemata-sunset-horizon-200);
+	--color-cinemata-sunset-horizon-300: var(--cinemata-sunset-horizon-300);
+	--color-cinemata-sunset-horizon-400p: var(--cinemata-sunset-horizon-400p);
+	--color-cinemata-sunset-horizon-500: var(--cinemata-sunset-horizon-500);
+	--color-cinemata-sunset-horizon-600: var(--cinemata-sunset-horizon-600);
+	--color-cinemata-sunset-horizon-700: var(--cinemata-sunset-horizon-700);
+	--color-cinemata-sunset-horizon-800: var(--cinemata-sunset-horizon-800);
+	--color-cinemata-sunset-horizon-900: var(--cinemata-sunset-horizon-900);
+	--color-cinemata-sunset-horizon-950: var(--cinemata-sunset-horizon-950);
+
+	--color-cinemata-sandy-shore-50: var(--cinemata-sandy-shore-50);
+
+	--color-cinemata-amber-50: var(--cinemata-amber-50);
+	--color-cinemata-amber-100: var(--cinemata-amber-100);
+	--color-cinemata-amber-200: var(--cinemata-amber-200);
+	--color-cinemata-amber-300: var(--cinemata-amber-300);
+	--color-cinemata-amber-400: var(--cinemata-amber-400);
+	--color-cinemata-amber-500: var(--cinemata-amber-500);
+	--color-cinemata-amber-600p: var(--cinemata-amber-600p);
+	--color-cinemata-amber-700: var(--cinemata-amber-700);
+	--color-cinemata-amber-800: var(--cinemata-amber-800);
+	--color-cinemata-amber-900: var(--cinemata-amber-900);
+	--color-cinemata-amber-950: var(--cinemata-amber-950);
 }
 
 /*

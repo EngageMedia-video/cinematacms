@@ -139,7 +139,7 @@ button {
 
 		max-width: 480px;
 		margin-inline: auto;
-		background-color: #ed7c30;
+		background-color: var(--site-accent-color);
 		padding: 2em;
 		position: relative;
 
@@ -1383,15 +1383,15 @@ input#authenticator_secret {
 		height: 61.5px;
 		border: none;
 		border-radius: 50%;
-		background-color: #026690;
-		color: #fff;
+		background-color: var(--cinemata-strait-blue-500);
+		color: var(--cinemata-white);
 		cursor: pointer;
 		box-shadow: 0 2px 8px rgba(26, 63, 97, 0.15);
 		transition: all 0.3s ease;
 		transform: translateY(-50%);
 
 		&:hover {
-			background-color: #ed7c30;
+			background-color: var(--cinemata-sunset-horizon-300);
 			transform: translateY(-50%) scale(1.1);
 			box-shadow: 0 4px 12px rgba(237, 124, 48, 0.3);
 		}
@@ -1442,13 +1442,13 @@ input#authenticator_secret {
 		width: 8px;
 		height: 8px;
 		border-radius: 50%;
-		background-color: #d5e9ee;
+		background-color: var(--sidebar-nav-border-color);
 		transition:
 			background-color 0.3s ease,
 			width 0.3s ease;
 
 		&.active {
-			background-color: #026690;
+			background-color: var(--cinemata-strait-blue-500);
 			width: 24px;
 			border-radius: 4px;
 		}
