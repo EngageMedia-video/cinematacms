@@ -70,3 +70,39 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: npm run build
+
+  backend-migrations:
+    name: Backend — Migrations Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.10
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg imagemagick libmagic1
+
+      - name: Install Python dependencies
+        run: uv sync --all-extras
+
+      # cms/settings.py ends with `from .local_settings import *`, and
+      # cms/local_settings.py is gitignored. Copy the committed example so
+      # settings.py imports cleanly in CI; SECRET_KEY comes from env below.
+      - name: Materialize CI local_settings
+        run: cp cms/local_settings_example.py cms/local_settings.py
+
+      - name: Check for missing migrations
+        env:
+          SECRET_KEY: ci-not-a-real-secret-key-do-not-use-in-prod
+        run: uv run python manage.py makemigrations --check --dry-run
