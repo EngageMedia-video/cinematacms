@@ -120,17 +120,15 @@ class MediaPageStore extends EventEmitter {
 			return false;
 		}
 
-		// let p = new URLSearchParams(window.location.search).get('password');
-		let p = null;
-		// provided_password is set on media.html Django template.
-		// the password is sent as POST parameter so cannot use URLSearchParams here
-		if (MediaCMS.provided_password) {
-			p = MediaCMS.provided_password;
+		// access_token is set on media.html/embed.html Django template
+		let token = null;
+		if (MediaCMS.access_token) {
+			token = MediaCMS.access_token;
 		}
 
 		this.mediaAPIUrl = this.mediacms_config.api.media + '/' + MediaPageStoreData[this.id].mediaId;
-		if (p) {
-			this.mediaAPIUrl += '?password=' + encodeURIComponent(p);
+		if (token) {
+			this.mediaAPIUrl += '?token=' + encodeURIComponent(token);
 		}
 
 		this.dataResponse = this.dataResponse.bind(this);

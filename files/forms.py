@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django import forms
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
@@ -137,6 +138,11 @@ class MediaForm(forms.ModelForm):
         ].help_text = (
             "Set a password to protect Restricted Media. Limited to Trusted Users. Contact Cinemata to become one."
         )
+        self.fields["password"].widget = forms.PasswordInput(attrs={"render_value": False})
+        # Never display the stored hash in the form; show an empty field instead.
+        self.fields["password"].initial = ""
+        if self.instance and self.instance.pk:
+            self.initial["password"] = ""
 
         if self.instance.media_type != "video":
             self.fields.pop("thumbnail_time", None)
@@ -235,9 +241,23 @@ class MediaForm(forms.ModelForm):
         password = cleaned_data.get("password", False)
         featured = cleaned_data.get("featured", False)
 
+        # If editing an existing restricted media and the password field was left
+        # blank, keep the existing hashed password (don't require re-entry).
         if state == "restricted" and not password:
-            error = "Password has to be set when state is Restricted"
-            self.add_error("password", error)
+            if self.instance and self.instance.pk and self.instance.password:
+                cleaned_data["password"] = self.instance.password
+            else:
+                error = "Password has to be set when state is Restricted"
+                self.add_error("password", error)
+        elif state == "restricted" and password:
+            min_length = getattr(settings, "MEDIA_PASSWORD_MIN_LENGTH", 8)
+            if len(password) < min_length:
+                self.add_error("password", f"Password must be at least {min_length} characters.")
+            else:
+                # Hash the plaintext password at the form level so it is never
+                # stored verbatim. This also avoids treating hash-looking user
+                # input (e.g. "pbkdf2_sha256$...") as an already-hashed value.
+                cleaned_data["password"] = make_password(password)
 
         if state == "restricted" and featured:
             error = "This video cannot be featured as it is Restricted."
@@ -274,6 +294,11 @@ class MediaForm(forms.ModelForm):
         if data.get("no_license"):
             self.instance.license = None
             self.instance.save()
+
+        # Password is hashed in clean() via make_password() before it reaches
+        # the model. Media.save() retains a structural hash guard as
+        # defense-in-depth only.
+
         media = super(MediaForm, self).save(*args, **kwargs)
         return media
 

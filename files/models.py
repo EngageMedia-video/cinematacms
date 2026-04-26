@@ -138,7 +138,7 @@ def _generate_unique_slug(model_class, title, pk, prefix):
     n = 1
     while model_class.objects.filter(slug=slug).exclude(pk=pk).exists():
         suffix = f"-{n}"
-        slug = f"{base[:100 - len(suffix)]}{suffix}"
+        slug = f"{base[: 100 - len(suffix)]}{suffix}"
         n += 1
     return slug
 
@@ -288,7 +288,7 @@ class Media(models.Model):
     size = models.CharField(max_length=20, blank=True, null=True)
     # set this here, so we don't perform extra query for it on media listing
     preview_file_path = models.CharField(max_length=501, blank=True)
-    password = models.CharField(max_length=100, blank=True, help_text="when video is in restricted state")
+    password = models.CharField(max_length=256, blank=True, help_text="when video is in restricted state")
     enable_comments = models.BooleanField(default=True, help_text="Whether comments will be allowed for this media")
     search = SearchVectorField(null=True)
     license = models.ForeignKey("License", on_delete=models.SET_NULL, db_index=True, blank=True, null=True)
@@ -302,7 +302,9 @@ class Media(models.Model):
     encryption_key = models.CharField(
         max_length=32,
         blank=True,
-        validators=[RegexValidator(regex=r"^(?:[0-9A-Fa-f]{32})?$", message="Must be blank or exactly 32 hex characters")],
+        validators=[
+            RegexValidator(regex=r"^(?:[0-9A-Fa-f]{32})?$", message="Must be blank or exactly 32 hex characters")
+        ],
         help_text="Hex-encoded AES-128 encryption key",
     )
     # keep track if media file has changed
@@ -354,6 +356,15 @@ class Media(models.Model):
         self.__original_password = self.password
         self.__original_is_encrypted = self.is_encrypted
 
+    def set_password(self, raw_password):
+        """Hash and set the media password. Single entry point for password changes."""
+        from django.contrib.auth.hashers import make_password
+
+        if raw_password:
+            self.password = make_password(raw_password)
+        else:
+            self.password = ""
+
     def save(self, *args, **kwargs):
         if not self.title:
             self.title = self.media_file.path.split("/")[-1]
@@ -395,10 +406,19 @@ class Media(models.Model):
         else:
             self.state = helpers.get_default_state(user=self.user)
             self.license = License.objects.filter(id=10).first()
+        # Defense-in-depth: hash plaintext passwords that bypassed set_password()
+        if self.password:
+            from files.password_utils import is_valid_password_hash
+
+            if not is_valid_password_hash(self.password):
+                from django.contrib.auth.hashers import make_password
+
+                self.password = make_password(self.password)
         super(Media, self).save(*args, **kwargs)
         # Notify user when video is published (state changed to public)
         if self.pk and self.__original_state and self.__original_state != "public" and self.state == "public":
             from .methods import notify_users
+
             notify_users(friendly_token=self.friendly_token, action="media_published")
         # Invalidate permission cache if state or password changed
         if self.pk and (self.state != self.__original_state or self.password != self.__original_password):
@@ -408,7 +428,9 @@ class Media(models.Model):
         # Re-generate HLS if encryption was toggled (guard against None on first save)
         if self.pk and self.__original_is_encrypted is not None and self.is_encrypted != self.__original_is_encrypted:
             self.__original_is_encrypted = self.is_encrypted
-            if self.encodings.filter(profile__extension="mp4", status="success", chunk=False, profile__codec="h264").exists():
+            if self.encodings.filter(
+                profile__extension="mp4", status="success", chunk=False, profile__codec="h264"
+            ).exists():
                 from . import tasks
 
                 tasks.create_hls.delay(self.friendly_token)
@@ -506,28 +528,30 @@ class Media(models.Model):
             pass  # TODO:add log
         return True
 
+    @property
+    def uid_hex(self):
+        """Return the uid as a hex string, for use with token utilities."""
+        return self.uid.hex
+
     def _invalidate_permission_cache(self):
         """
-        Invalidate cached permissions when media permissions change.
-        This method is called automatically when:
-        - Media state changes (public ↔ private ↔ restricted ↔ unlisted)
-        - Media password changes (for restricted content)
-        - Any other permission-related changes
-        The cache invalidation ensures that users see updated permissions
-        immediately after changes, maintaining data consistency.
-        Uses the clear_media_permission_cache utility function which:
-        - Clears specific user/media combinations if possible
-        - Falls back to pattern-based clearing for all users
-        - Handles errors gracefully without breaking functionality
-        Cache invalidation is controlled by ENABLE_PERMISSION_CACHE setting.
+        Invalidate cached permissions and access tokens when media permissions change.
+        Called automatically when media state or password changes.
         """
-        if not getattr(settings, "ENABLE_PERMISSION_CACHE", True):
-            return
+        if getattr(settings, "ENABLE_PERMISSION_CACHE", True):
+            try:
+                clear_media_permission_cache(self.uid)
+                logger.debug(f"Invalidated permission cache for media: {self.uid}")
+            except Exception as e:
+                logger.warning(f"Failed to invalidate permission cache for media {self.uid}: {e}")
+
+        # Invalidate all active access tokens for this media
         try:
-            clear_media_permission_cache(self.uid)
-            logger.debug(f"Invalidated permission cache for media: {self.uid}")
+            from files.token_utils import invalidate_media_tokens
+
+            invalidate_media_tokens(self.uid_hex)
         except Exception as e:
-            logger.warning(f"Failed to invalidate permission cache for media {self.uid}: {e}")
+            logger.warning(f"Failed to invalidate tokens for media {self.uid}: {e}")
 
     def media_init(self):
         # new media file uploaded. Check if media type,
@@ -660,20 +684,26 @@ class Media(models.Model):
         deferred encodings aren't consuming worker/system resources.
         """
         active = Encoding.objects.filter(
-            status__in=["pending", "running"], task_dispatched=True,
+            status__in=["pending", "running"],
+            task_dispatched=True,
         )
         global_count = active.count()
         if global_count >= settings.MAX_ENCODING_QUEUE_DEPTH:
             logger.warning(
                 "Encoding queue depth %d reached global limit %d, deferring encode for %s",
-                global_count, settings.MAX_ENCODING_QUEUE_DEPTH, self.friendly_token,
+                global_count,
+                settings.MAX_ENCODING_QUEUE_DEPTH,
+                self.friendly_token,
             )
             return True
         user_count = active.filter(media__user=self.user).count()
         if user_count >= settings.MAX_USER_CONCURRENT_ENCODES:
             logger.warning(
                 "User %s has %d active encodes (limit %d), deferring encode for %s",
-                self.user, user_count, settings.MAX_USER_CONCURRENT_ENCODES, self.friendly_token,
+                self.user,
+                user_count,
+                settings.MAX_USER_CONCURRENT_ENCODES,
+                self.friendly_token,
             )
             return True
         return False
@@ -695,7 +725,8 @@ class Media(models.Model):
 
         # Atomically claim the row before dispatching
         claimed = Encoding.objects.filter(
-            id=encoding.id, task_dispatched=False,
+            id=encoding.id,
+            task_dispatched=False,
         ).update(task_dispatched=True)
         if not claimed:
             # Already claimed by another concurrent dispatch
@@ -714,7 +745,8 @@ class Media(models.Model):
         except Exception:
             logger.exception(
                 "Failed to dispatch encoding task for %s (encoding %d)",
-                self.friendly_token, encoding.id,
+                self.friendly_token,
+                encoding.id,
             )
             Encoding.objects.filter(id=encoding.id).update(task_dispatched=False)
             return False
@@ -745,10 +777,7 @@ class Media(models.Model):
                             continue
                 encoding = Encoding(media=self, profile=profile, task_dispatched=False)
                 encoding.save()
-                if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
-                    priority = 9
-                else:
-                    priority = 0
+                priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
                 self._dispatch_encoding(encoding, profile, force, priority=priority)
         return True
 
@@ -1911,6 +1940,7 @@ def _revoke_encoding_tasks(media_instance):
     the task_revoked_handler unable to find the temp_file for cleanup.
     """
     from cms import celery_app
+
     from .tasks import kill_ffmpeg_process
 
     encodings = list(
@@ -1925,15 +1955,9 @@ def _revoke_encoding_tasks(media_instance):
     for task_id, temp_file in encodings:
         try:
             celery_app.control.revoke(task_id, terminate=True)
-            logger.info(
-                f"Revoked encoding task {task_id} for media "
-                f"{media_instance.friendly_token}"
-            )
+            logger.info(f"Revoked encoding task {task_id} for media {media_instance.friendly_token}")
         except Exception as e:
-            logger.error(
-                f"Failed to revoke encoding task {task_id} for media "
-                f"{media_instance.friendly_token}: {e}"
-            )
+            logger.error(f"Failed to revoke encoding task {task_id} for media {media_instance.friendly_token}: {e}")
 
         # Kill ffmpeg subprocess directly — don't rely on task_revoked_handler
         # since CASCADE may delete the Encoding before the signal fires

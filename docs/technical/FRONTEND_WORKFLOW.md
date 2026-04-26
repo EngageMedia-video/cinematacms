@@ -16,7 +16,7 @@ The frontend consists of:
 
 ### Node.js Installation
 
-CinemataCMS requires Node.js v20 LTS for building frontend assets.
+CinemataCMS requires Node.js v22 LTS for building frontend assets.
 
 - **Verification**: Run `node -v` and `npm -v` to confirm installation
 - See [Developer Onboarding](../setup/Developer-Onboarding.md) for installation instructions
@@ -296,7 +296,7 @@ location /static/ {
 
 ### Problem: Build fails
 
-1. Check Node.js installation: `node --version` (should be v20.x)
+1. Check Node.js installation: `node --version` (should be v22.x)
 2. Clear npm cache: `npm cache clean --force`
 3. Remove node_modules and reinstall:
    ```bash

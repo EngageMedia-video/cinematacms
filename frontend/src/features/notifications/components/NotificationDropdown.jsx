@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { NotificationItem } from './NotificationItem';
 import { useNotifications } from '../hooks/useNotifications';
 import { useMarkAllAsRead } from '../hooks/useMarkAllAsRead';
-import useNotificationStore from '../stores/useNotificationStore';
+import useNotificationStore from '../useNotificationStore';
 
 export function NotificationDropdown() {
     const { data, isLoading } = useNotifications({ pageSize: 10 });

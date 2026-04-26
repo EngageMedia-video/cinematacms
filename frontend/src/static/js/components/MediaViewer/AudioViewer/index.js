@@ -39,9 +39,8 @@ export default class AudioViewer extends React.PureComponent {
 
 		this.audioStartedPlaying = false;
 
-		const password =
-			typeof MediaCMS !== 'undefined' && MediaCMS.provided_password ? MediaCMS.provided_password : null;
-		let audioURL = formatMediaLink(mediaData.original_media_url, SiteContext._currentValue.url, password);
+		const token = typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
+		let audioURL = formatMediaLink(mediaData.original_media_url, SiteContext._currentValue.url, token);
 
 		this.videoSources = [{ src: audioURL, type: extractAudioFileFormat(audioURL) }];
 

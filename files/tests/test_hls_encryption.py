@@ -81,7 +81,7 @@ class MediaKeyViewTests(TestCase):
     def test_returns_404_when_encryption_key_malformed(self):
         media = create_test_media(self.owner, state="public")
         # Bypass the model validator with a direct UPDATE
-        Media.objects.filter(pk=media.pk).update(is_encrypted=True, encryption_key="not-hex-zzzzzzzzzzzzzzzzzzzzzzzzzzz")
+        Media.objects.filter(pk=media.pk).update(is_encrypted=True, encryption_key="z" * 32)
         response = self.client.get(self._key_url(media.friendly_token))
         self.assertEqual(response.status_code, 404)
 

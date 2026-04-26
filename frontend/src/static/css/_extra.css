@@ -3568,7 +3568,7 @@ body .video-js.vjs-mediacms .vjs-big-play-button {
 	margin: 0 !important;
 	font-size: 50px !important;
 	border-radius: 50% !important;
-	background-color: #026690 !important;
+	background-color: var(--site-player-accent-color) !important;
 	position: absolute !important;
 }
 
@@ -3583,12 +3583,12 @@ body .video-js.vjs-mediacms .vjs-big-play-button {
 		margin: 0 !important;
 		font-size: 33px !important;
 		border-radius: 50% !important;
-		background-color: #026690 !important;
+		background-color: var(--site-player-accent-color) !important;
 		position: absolute !important;
 	}
 }
 
 body .video-js.vjs-mediacms .vjs-big-play-button:hover {
-	background-color: #ed7c30 !important;
+	background-color: var(--site-accent-color) !important;
 	transform: scale(1.1) !important;
 }

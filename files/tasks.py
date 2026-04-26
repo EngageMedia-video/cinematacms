@@ -8,13 +8,13 @@ import tempfile
 import time
 from datetime import datetime, timedelta
 
+import django.db
 import requests
 from celery import Task
 from celery import shared_task as task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.signals import task_revoked, worker_shutting_down
 from celery.utils.log import get_task_logger
-import django.db
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files import File
@@ -71,10 +71,7 @@ def _check_media_exists_or_cleanup(media_id, encoding_id, context=""):
     When media is gone, logs a warning and deletes the orphaned Encoding row.
     """
     if not Media.objects.filter(pk=media_id).exists():
-        logger.warning(
-            f"Media {media_id} deleted during encoding {encoding_id}. "
-            f"Context: {context}"
-        )
+        logger.warning(f"Media {media_id} deleted during encoding {encoding_id}. Context: {context}")
         Encoding.objects.filter(id=encoding_id).delete()
         return False
     return True
@@ -201,8 +198,12 @@ def chunkize_media(self, friendly_token, profiles, force=True):
             encoding.save()
             priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
             media._dispatch_encoding(
-                encoding, profile, force, priority=priority,
-                chunk=True, chunk_file_path=chunk,
+                encoding,
+                profile,
+                force,
+                priority=priority,
+                chunk=True,
+                chunk_file_path=chunk,
             )
 
     logger.info(f"got {len(chunks)} chunks and will encode to {to_profiles} profiles")
@@ -257,7 +258,10 @@ def encode_media(
         if queue_wait > settings.MAX_QUEUE_WAIT_SECONDS:
             logger.warning(
                 "Task for %s (profile %s) waited %.1fs in queue (threshold: %ds)",
-                friendly_token, profile_id, queue_wait, settings.MAX_QUEUE_WAIT_SECONDS,
+                friendly_token,
+                profile_id,
+                queue_wait,
+                settings.MAX_QUEUE_WAIT_SECONDS,
             )
 
     # TODO: if called as function, not as task, what is the value for this?
@@ -306,9 +310,7 @@ def encode_media(
             try:
                 encoding = Encoding.objects.get(id=encoding_id)
                 encoding.status = "running"
-                Encoding.objects.filter(media=media, profile=profile).exclude(
-                    id=encoding_id
-                ).delete()
+                Encoding.objects.filter(media=media, profile=profile).exclude(id=encoding_id).delete()
             except Encoding.DoesNotExist:
                 encoding = Encoding(media=media, profile=profile, status="running")
 
@@ -417,8 +419,7 @@ def encode_media(
                                         encoding.progress = percent
                                         try:
                                             encoding.save(update_fields=["progress", "update_date"])
-                                            logger.info("Saved {0}% (iteration {1})".format(
-                                                round(percent, 2), n_times))
+                                            logger.info(f"Saved {round(percent, 2)}% (iteration {n_times})")
                                         except Exception as e:
                                             logger.warning(f"Failed to save encoding progress: {e}")
                             except (ValueError, TypeError):
@@ -432,8 +433,11 @@ def encode_media(
                                     return False
                                 try:
                                     encoding.save(update_fields=["update_date"])
-                                    logger.info("Processing iteration {0}, no duration parsed. Output sample: {1}".format(
-                                        n_times, output[:100] if output else "No output"))
+                                    logger.info(
+                                        "Processing iteration {}, no duration parsed. Output sample: {}".format(
+                                            n_times, output[:100] if output else "No output"
+                                        )
+                                    )
                                 except Exception as e:
                                     logger.warning(f"Failed to save encoding heartbeat: {e}")
 
@@ -496,13 +500,10 @@ def encode_media(
                 encoding.total_run_time = (encoding.update_date - encoding.add_date).seconds
 
         try:
-            encoding.save(
-                update_fields=["status", "logs", "progress", "total_run_time"]
-            )
+            encoding.save(update_fields=["status", "logs", "progress", "total_run_time"])
         except (Encoding.DoesNotExist, django.db.DatabaseError) as e:
             logger.warning(
-                f"Failed to save final encoding state for encoding {encoding.id}: {e}. "
-                "Media may have been deleted."
+                f"Failed to save final encoding state for encoding {encoding.id}: {e}. Media may have been deleted."
             )
 
         return success
@@ -814,9 +815,10 @@ def create_hls(friendly_token):
         ]
         subprocess.run(cmd, capture_output=True)
         if existing_output_dir:
-            cmd = ["cp", "-rT", output_dir, existing_output_dir]
-            subprocess.run(cmd, capture_output=True)
-            shutil.rmtree(output_dir)
+            # Replace old HLS output with new. Use shutil instead of
+            # `cp -rT` which is GNU-only and fails silently on macOS.
+            shutil.rmtree(existing_output_dir)
+            shutil.move(output_dir, existing_output_dir)
             output_dir = existing_output_dir
         pp = os.path.join(output_dir, "master.m3u8")
         if os.path.exists(pp):
@@ -1310,8 +1312,7 @@ def kill_ffmpeg_process(filepath):
     try:
         result = subprocess.run(
             ["pgrep", "-f", f"ffmpeg.*{re.escape(filepath)}"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
         )
         output = result.stdout.decode("utf-8").strip()
         if not output:
@@ -1336,8 +1337,7 @@ def kill_all_ffmpeg_processes():
     try:
         result = subprocess.run(
             ["pgrep", "-f", "ffmpeg"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
         )
         output = result.stdout.decode("utf-8").strip()
         if not output:
@@ -1554,7 +1554,8 @@ def _dispatch_deferred_encodings_inner():
     for encoding in deferred:
         # Only count dispatched encodings (not deferred ones waiting in queue)
         active = Encoding.objects.filter(
-            status__in=active_statuses, task_dispatched=True,
+            status__in=active_statuses,
+            task_dispatched=True,
         )
 
         # Re-check global limit
@@ -1562,7 +1563,8 @@ def _dispatch_deferred_encodings_inner():
         if global_count >= settings.MAX_ENCODING_QUEUE_DEPTH:
             logger.info(
                 "Drain task stopping: global queue depth %d reached limit %d",
-                global_count, settings.MAX_ENCODING_QUEUE_DEPTH,
+                global_count,
+                settings.MAX_ENCODING_QUEUE_DEPTH,
             )
             break
 
@@ -1571,7 +1573,10 @@ def _dispatch_deferred_encodings_inner():
         if user_count >= settings.MAX_USER_CONCURRENT_ENCODES:
             logger.debug(
                 "Drain task skipping encoding %d: user %s at limit (%d/%d)",
-                encoding.id, encoding.media.user, user_count, settings.MAX_USER_CONCURRENT_ENCODES,
+                encoding.id,
+                encoding.media.user,
+                user_count,
+                settings.MAX_USER_CONCURRENT_ENCODES,
             )
             continue
 
@@ -1581,10 +1586,7 @@ def _dispatch_deferred_encodings_inner():
             continue
 
         enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
-        if encoding.profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
-            priority = 9
-        else:
-            priority = 0
+        priority = 9 if encoding.profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
         task_kwargs = {"force": True}
         if encoding.chunk and encoding.chunk_file_path:
             task_kwargs["chunk"] = True
@@ -1599,7 +1601,8 @@ def _dispatch_deferred_encodings_inner():
         except Exception:
             logger.exception(
                 "Drain task failed to dispatch encoding %d for %s, rolling back claim",
-                encoding.id, encoding.media.friendly_token,
+                encoding.id,
+                encoding.media.friendly_token,
             )
             Encoding.objects.filter(id=encoding.id).update(task_dispatched=False)
             continue

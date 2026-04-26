@@ -130,12 +130,14 @@
 
         {% if can_see_restricted_media %}
             <div id="page-media"></div>
-            {{ media_object.password|json_script:"media-password" }}
+            {% if media_access_token %}
+            {{ media_access_token|json_script:"media-access-token" }}
             <script>
-                MediaCMS.provided_password = JSON.parse(
-                    document.getElementById('media-password').textContent
+                MediaCMS.access_token = JSON.parse(
+                    document.getElementById('media-access-token').textContent
                 );
             </script>
+            {% endif %}
         {% else %}
             <div class="user-action-form-wrap">
                 <div class="user-action-form-inner">
@@ -143,7 +145,9 @@
                     <p>
                         <form action="{{media_object.get_absolute_url}}" method="POST">
                             {% csrf_token %}
-                            {% if wrong_password_provided %}
+                            {% if rate_limited %}
+                                <ul class="errorlist nonfield" style="list-style: none"><li>Too many failed attempts. Please try again later.</li></ul>
+                            {% elif wrong_password_provided %}
                                 <ul class="errorlist nonfield" style="list-style: none"><li>The password is incorrect. Please try again.</li></ul>
                             {% endif %}
 
@@ -172,6 +176,3 @@
 
 
 {% endblock content %}
-
-
-

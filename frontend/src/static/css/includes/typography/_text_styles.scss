@@ -1,0 +1,162 @@
+$text-style-font-family-display: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+$text-style-font-family-body: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+
+@mixin app-text-style($font-size, $font-family, $font-weight, $letter-spacing, $line-height) {
+	font-size: $font-size;
+	font-family: $font-family;
+	font-weight: $font-weight;
+	letter-spacing: $letter-spacing;
+	line-height: $line-height;
+}
+
+/* Title */
+.title-title-72-regular {
+	@include app-text-style(64px, $text-style-font-family-display, 400, -0.8px, 76px);
+}
+
+.title-title-72-medium {
+	@include app-text-style(64px, $text-style-font-family-display, 500, -0.8px, 76px);
+}
+
+.title-title-72-bold {
+	@include app-text-style(64px, $text-style-font-family-display, 700, -0.8px, 76px);
+}
+
+.title-title-56-regular {
+	@include app-text-style(56px, $text-style-font-family-display, 400, -0.6px, 68px);
+}
+
+.title-title-56-medium {
+	@include app-text-style(56px, $text-style-font-family-display, 500, -0.6px, 68px);
+}
+
+.title-title-56-bold {
+	@include app-text-style(56px, $text-style-font-family-display, 700, -0.6px, 68px);
+}
+
+/* Headings */
+.heading-h1-56-regular {
+	@include app-text-style(56px, $text-style-font-family-display, 400, -0.5px, 68px);
+}
+
+.heading-h1-56-medium {
+	@include app-text-style(56px, $text-style-font-family-display, 500, -0.5px, 68px);
+}
+
+.heading-h1-56-bold {
+	@include app-text-style(56px, $text-style-font-family-display, 700, -0.5px, 68px);
+}
+
+.heading-h2-48-regular {
+	@include app-text-style(48px, $text-style-font-family-display, 400, -0.4px, 58px);
+}
+
+.heading-h2-48-medium {
+	@include app-text-style(48px, $text-style-font-family-display, 500, -0.4px, 58px);
+}
+
+.heading-h2-48-bold {
+	@include app-text-style(48px, $text-style-font-family-display, 700, -0.4px, 58px);
+}
+
+.heading-h3-40-regular {
+	@include app-text-style(40px, $text-style-font-family-display, 400, -0.3px, 48px);
+}
+
+.heading-h3-40-medium {
+	@include app-text-style(40px, $text-style-font-family-display, 500, -0.3px, 48px);
+}
+
+.heading-h3-40-bold {
+	@include app-text-style(40px, $text-style-font-family-display, 700, -0.3px, 48px);
+}
+
+.heading-h4-32-regular {
+	@include app-text-style(32px, $text-style-font-family-display, 400, -0.2px, 38px);
+}
+
+.heading-h4-32-medium {
+	@include app-text-style(32px, $text-style-font-family-display, 500, -0.2px, 38px);
+}
+
+.heading-h4-32-bold {
+	@include app-text-style(32px, $text-style-font-family-display, 700, -0.2px, 38px);
+}
+
+.heading-h5-24-regular {
+	@include app-text-style(24px, $text-style-font-family-display, 400, -0.15px, 30px);
+}
+
+.heading-h5-24-medium {
+	@include app-text-style(24px, $text-style-font-family-display, 500, -0.15px, 30px);
+}
+
+.heading-h5-24-bold {
+	@include app-text-style(24px, $text-style-font-family-display, 700, -0.15px, 30px);
+}
+
+.heading-h6-20-regular {
+	@include app-text-style(20px, $text-style-font-family-display, 400, 0, 24px);
+}
+
+.heading-h6-20-medium {
+	@include app-text-style(20px, $text-style-font-family-display, 500, 0, 24px);
+}
+
+.heading-h6-20-bold {
+	@include app-text-style(20px, $text-style-font-family-display, 700, 0, 24px);
+}
+
+/* Body */
+.body-body-18-regular {
+	@include app-text-style(18px, $text-style-font-family-body, 400, 0, 28px);
+}
+
+.body-body-18-medium {
+	@include app-text-style(18px, $text-style-font-family-body, 500, 0, 28px);
+}
+
+.body-body-18-bold {
+	@include app-text-style(18px, $text-style-font-family-body, 700, 0, 28px);
+}
+
+.body-body-16-regular {
+	@include app-text-style(16px, $text-style-font-family-body, 400, 0, 24px);
+}
+
+.body-body-16-medium {
+	@include app-text-style(16px, $text-style-font-family-body, 500, 0, 24px);
+}
+
+.body-body-16-bold {
+	@include app-text-style(16px, $text-style-font-family-body, 700, 0, 24px);
+}
+
+.body-body-14-regular {
+	@include app-text-style(14px, $text-style-font-family-body, 400, 0, 20px);
+}
+
+.body-body-14-bold {
+	@include app-text-style(14px, $text-style-font-family-body, 700, 0, 20px);
+}
+
+.body-body-12-regular {
+	@include app-text-style(12px, $text-style-font-family-body, 400, 0, 16px);
+}
+
+.body-body-12-medium {
+	@include app-text-style(12px, $text-style-font-family-body, 500, 0, 16px);
+}
+
+.body-body-12-bold {
+	@include app-text-style(12px, $text-style-font-family-body, 700, 0, 16px);
+}
+
+/* Captions */
+.caption-caption-10-regular {
+	@include app-text-style(10px, $text-style-font-family-body, 400, 0, 10px);
+}
+
+.caption-caption-10-semibold {
+	@include app-text-style(10px, $text-style-font-family-body, 700, 0, 10px);
+}
