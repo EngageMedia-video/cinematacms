@@ -1,29 +1,28 @@
 import urlParse from 'url-parse';
 
-export function formatInnerLink( url, baseUrl ){
+export function formatInnerLink(url, baseUrl) {
+	let link = urlParse(url, {});
 
-	let link = urlParse( url, {} );
-
-	if( '' === link.origin || 'null' === link.origin || ! link.origin ){
-		const safeUrl = (url == null) ? '' : url;
-		link = urlParse( baseUrl + '/' + safeUrl.replace(/^\/+/, ''), {} );
+	if ('' === link.origin || 'null' === link.origin || !link.origin) {
+		const safeUrl = url == null ? '' : url;
+		link = urlParse(baseUrl + '/' + safeUrl.replace(/^\/+/, ''), {});
 	}
 
 	return link.toString();
 }
 
-export function formatMediaLink( url, baseUrl, password = null ){
-	let link = urlParse( url, {} );
+export function formatMediaLink(url, baseUrl, token = null) {
+	let link = urlParse(url, {});
 
-	if( '' === link.origin || 'null' === link.origin || ! link.origin ){
-		const safeUrl = (url == null) ? '' : url;
-		link = urlParse( baseUrl + '/' + safeUrl.replace(/^\/+/, ''), {} );
+	if ('' === link.origin || 'null' === link.origin || !link.origin) {
+		const safeUrl = url == null ? '' : url;
+		link = urlParse(baseUrl + '/' + safeUrl.replace(/^\/+/, ''), {});
 	}
 
-	// Add password parameter for restricted media
-	if( password && password.trim() !== '' ){
+	// Add token parameter for restricted media
+	if (token && token.trim() !== '') {
 		const searchParams = new URLSearchParams(link.query);
-		searchParams.set('password', password);
+		searchParams.set('token', token);
 		link.set('query', searchParams.toString());
 	}
 

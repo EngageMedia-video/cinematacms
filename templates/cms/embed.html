@@ -8,5 +8,12 @@
 
 {% block content %}
 <div id="page-embed"></div>
+{% if media_access_token %}
+{{ media_access_token|json_script:"media-access-token" }}
+<script>
+    MediaCMS.access_token = JSON.parse(
+        document.getElementById('media-access-token').textContent
+    );
+</script>
+{% endif %}
 {% endblock content %}
-

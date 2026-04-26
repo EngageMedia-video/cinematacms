@@ -7,15 +7,13 @@ from django.urls import include, path
 from prometheus_client import CollectorRegistry, generate_latest
 from prometheus_client import multiprocess as prom_multiprocess
 
+from cms.request_utils import get_client_ip
+
 
 def metrics_view(request):
     # Primary access control: nginx should restrict /metrics to localhost.
-    # This Django check is defense-in-depth using the real client IP
-    # (X-Forwarded-For set by nginx) rather than REMOTE_ADDR which is
-    # always 127.0.0.1 behind a reverse proxy.
-    client_ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
-    if not client_ip:
-        client_ip = request.META.get("REMOTE_ADDR", "")
+    # This Django check is defense-in-depth using the real client IP.
+    client_ip = get_client_ip(request)
     is_localhost = client_ip in ("127.0.0.1", "::1")
     is_staff = hasattr(request, "user") and request.user.is_staff
     if not is_localhost and not is_staff:

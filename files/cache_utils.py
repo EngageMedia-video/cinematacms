@@ -40,6 +40,12 @@ ELEVATED_ACCESS_KEY_TEMPLATE = f"{CACHE_KEY_PREFIX}:elevated_access:{{user_id}}:
 RESTRICTED_KEY_TEMPLATE = f"{CACHE_KEY_PREFIX}:media_permission:{{user_id}}:{{media_uid}}:{{data_hash}}"
 
 
+def _normalize_media_uid(media_uid: str | Any) -> str:
+    if hasattr(media_uid, "hex"):
+        return media_uid.hex
+    return str(media_uid)
+
+
 def get_permission_cache_key(user_id: int | str, media_uid: str, additional_data: str | None = None) -> str:
     """
     Generate a cache key for user permission checks.
@@ -52,6 +58,8 @@ def get_permission_cache_key(user_id: int | str, media_uid: str, additional_data
     Returns:
         str: Cache key for the permission check
     """
+    media_uid = _normalize_media_uid(media_uid)
+
     if additional_data:
         # Use SHA-256 for better security and consistency, truncated for cache efficiency
         data_hash = hashlib.sha256(additional_data.encode("utf-8")).hexdigest()[:12]
@@ -71,6 +79,7 @@ def get_elevated_access_cache_key(user_id: int, media_uid: str) -> str:
     Returns:
         str: Cache key for the elevated access check
     """
+    media_uid = _normalize_media_uid(media_uid)
     return ELEVATED_ACCESS_KEY_TEMPLATE.format(user_id=user_id, media_uid=media_uid)
 
 
@@ -179,9 +188,7 @@ def clear_media_permission_cache(media_uid: str | Any, user_id: int | None = Non
         # Clear cache for all users for a specific media
         clear_media_permission_cache(media.uid)
     """
-    # Convert UUID to string if necessary
-    if hasattr(media_uid, "hex"):
-        media_uid = media_uid.hex
+    media_uid = _normalize_media_uid(media_uid)
     try:
         if user_id:
             # Clear specific user's cache (base + restricted + elevated)

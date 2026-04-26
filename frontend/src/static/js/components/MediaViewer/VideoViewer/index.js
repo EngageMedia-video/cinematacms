@@ -1,43 +1,45 @@
-import React from "react";
+import React from 'react';
 
-import PropTypes from "prop-types";
+import PropTypes from 'prop-types';
 
-import PageStore from "../../../pages/_PageStore.js";
+import PageStore from '../../../pages/_PageStore.js';
 
-import MediaPageStore from "../../../pages/MediaPage/store.js";
+import MediaPageStore from '../../../pages/MediaPage/store.js';
 
-import VideoPlayerStore from "./store.js";
-import * as VideoPlayerActions from "./actions.js";
+import VideoPlayerStore from './store.js';
+import * as VideoPlayerActions from './actions.js';
 
 import {
 	orderedSupportedVideoFormats,
 	videoAvailableCodecsAndResolutions,
 	extractDefaultVideoResolution,
-} from "./functions";
-import { addClassname, removeClassname } from "../../../functions/dom.js";
+} from './functions';
+import { addClassname, removeClassname } from '../../../functions/dom.js';
 
-import { addPageMetadata } from "../../../functions";
+import { addPageMetadata } from '../../../functions';
 
-import { formatInnerLink, formatMediaLink } from "../../../functions/formatInnerLink";
+import { formatInnerLink, formatMediaLink } from '../../../functions/formatInnerLink';
 
-import UpNextLoaderView from "../../../classes/UpNextLoaderView";
-import PlayerRecommendedMedia from "../../../classes/PlayerRecommendedMedia";
+import UpNextLoaderView from '../../../classes/UpNextLoaderView';
+import PlayerRecommendedMedia from '../../../classes/PlayerRecommendedMedia';
 
-import MediaDurationInfo from "../../../classes/MediaDurationInfo";
-import BrowserCache from "../../../classes/BrowserCache.js";
+import MediaDurationInfo from '../../../classes/MediaDurationInfo';
+import BrowserCache from '../../../classes/BrowserCache.js';
 
-import SiteContext, { SiteConsumer } from "../../../contexts/SiteContext";
+import SiteContext, { SiteConsumer } from '../../../contexts/SiteContext';
 
-import { VideoPlayer, VideoPlayerError } from "../../-NEW-/VideoPlayer.js";
+import { VideoPlayer, VideoPlayerError } from '../../-NEW-/VideoPlayer.js';
 
-import "../../styles/VideoViewer.scss";
-
+import '../../styles/VideoViewer.scss';
 
 function filterVideoEncoding(encoding_status) {
 	switch (encoding_status) {
 		case 'running':
 			MediaPageStore.set('media-load-error-type', 'encodingRunning');
-			MediaPageStore.set('media-load-error-message', 'Media encoding is currently running. Try again in few minutes.');
+			MediaPageStore.set(
+				'media-load-error-message',
+				'Media encoding is currently running. Try again in few minutes.'
+			);
 			break;
 		case 'pending':
 			MediaPageStore.set('media-load-error-type', 'encodingPending');
@@ -95,8 +97,9 @@ export default class VideoViewer extends React.PureComponent {
 			let defaultVideoResolution = extractDefaultVideoResolution(defaultResolution, this.videoInfo);
 
 			if ('Auto' === defaultResolution && void 0 !== this.videoInfo['Auto']) {
-				const password = (typeof MediaCMS !== 'undefined' && MediaCMS.provided_password) ? MediaCMS.provided_password : null;
-				const srcUrl = formatMediaLink(this.videoInfo['Auto'].url[0], this.props.siteUrl, password);
+				const accessToken =
+					typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
+				const srcUrl = formatMediaLink(this.videoInfo['Auto'].url[0], this.props.siteUrl, accessToken);
 				this.videoSources.push({ src: srcUrl });
 			}
 
@@ -107,8 +110,13 @@ export default class VideoViewer extends React.PureComponent {
 			k = 0;
 			while (k < this.videoInfo[defaultVideoResolution].format.length) {
 				if ('hls' === this.videoInfo[defaultVideoResolution].format[k]) {
-					const password = (typeof MediaCMS !== 'undefined' && MediaCMS.provided_password) ? MediaCMS.provided_password : null;
-					const srcUrl = formatMediaLink(this.videoInfo[defaultVideoResolution].url[k], this.props.siteUrl, password);
+					const accessToken =
+						typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
+					const srcUrl = formatMediaLink(
+						this.videoInfo[defaultVideoResolution].url[k],
+						this.props.siteUrl,
+						accessToken
+					);
 					this.videoSources.push({ src: srcUrl });
 					break;
 				}
@@ -121,8 +129,9 @@ export default class VideoViewer extends React.PureComponent {
 						srcUrl = this.props.data.encodings_info[defaultVideoResolution][k].url;
 
 						if (!!srcUrl) {
-							const password = (typeof MediaCMS !== 'undefined' && MediaCMS.provided_password) ? MediaCMS.provided_password : null;
-							srcUrl = formatMediaLink(srcUrl, this.props.siteUrl, password);
+							const accessToken =
+								typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
+							srcUrl = formatMediaLink(srcUrl, this.props.siteUrl, accessToken);
 
 							this.videoSources.push({
 								src: srcUrl /*.replace("http://", "//").replace("https://", "//")*/,
@@ -160,10 +169,7 @@ export default class VideoViewer extends React.PureComponent {
 				return;
 			}
 			addPageMetadata({
-				videoUrl: formatInnerLink(
-					this.videoSources[this.videoSources.length - 1].src,
-					this.props.siteUrl
-				),
+				videoUrl: formatInnerLink(this.videoSources[this.videoSources.length - 1].src, this.props.siteUrl),
 				videoDuration: this.props.data.duration,
 			});
 		} else {
@@ -175,8 +181,14 @@ export default class VideoViewer extends React.PureComponent {
 				default:
 					if (this.props.debug) {
 						console.warn('VIDEO DEBUG:', "Video files don't exist");
-						console.warn('VIDEO DEBUG: Available encodings_info keys:', Object.keys(this.props.data.encodings_info || {}));
-						console.warn('VIDEO DEBUG: Available hls_info keys:', Object.keys(this.props.data.hls_info || {}));
+						console.warn(
+							'VIDEO DEBUG: Available encodings_info keys:',
+							Object.keys(this.props.data.encodings_info || {})
+						);
+						console.warn(
+							'VIDEO DEBUG: Available hls_info keys:',
+							Object.keys(this.props.data.hls_info || {})
+						);
 						console.warn('VIDEO DEBUG: videoInfo:', this.videoInfo);
 					}
 			}
@@ -210,10 +222,10 @@ export default class VideoViewer extends React.PureComponent {
 		if (this.videoSources.length) {
 			this.recommendedMedia = this.props.data.related_media.length
 				? new PlayerRecommendedMedia(
-					this.props.data.related_media,
-					this.props.inEmbed,
-					!PageStore.get('config-media-item').displayViews
-				)
+						this.props.data.related_media,
+						this.props.inEmbed,
+						!PageStore.get('config-media-item').displayViews
+					)
 				: null;
 
 			this.upNextLoaderView =
@@ -240,14 +252,17 @@ export default class VideoViewer extends React.PureComponent {
 
 				if (userThumbLink) {
 					userThumbLink.setAttribute('class', 'user-thumb-link');
-					userThumbLink.setAttribute('href', formatInnerLink(this.props.data.author_profile, this.props.siteUrl));
+					userThumbLink.setAttribute(
+						'href',
+						formatInnerLink(this.props.data.author_profile, this.props.siteUrl)
+					);
 					userThumbLink.setAttribute('title', this.props.data.author_name);
 					userThumbLink.setAttribute('target', '_blank');
 					userThumbLink.setAttribute(
 						'style',
 						'background-image:url(' +
-						formatInnerLink(MediaPageStore.get('media-author-thumbnail-url'), this.props.siteUrl) +
-						')'
+							formatInnerLink(MediaPageStore.get('media-author-thumbnail-url'), this.props.siteUrl) +
+							')'
 					);
 				}
 
@@ -341,13 +356,19 @@ export default class VideoViewer extends React.PureComponent {
 						const shareInner = document.querySelector('.share-options-inner');
 						if (shareBtn) {
 							shareBtn.addEventListener('click', function (ev) {
-								addClassname(document.querySelector('.video-js.vjs-mediacms'), 'vjs-visible-share-options');
+								addClassname(
+									document.querySelector('.video-js.vjs-mediacms'),
+									'vjs-visible-share-options'
+								);
 							});
 						}
 						if (shareWrap) {
 							shareWrap.addEventListener('click', function (ev) {
 								if (ev.target === shareInner || ev.target === shareWrap) {
-									removeClassname(document.querySelector('.video-js.vjs-mediacms'), 'vjs-visible-share-options');
+									removeClassname(
+										document.querySelector('.video-js.vjs-mediacms'),
+										'vjs-visible-share-options'
+									);
 								}
 							});
 						}
@@ -445,7 +466,6 @@ export default class VideoViewer extends React.PureComponent {
 		}
 	}
 
-	
 	onPlayerInit(instance, elem) {
 		this.playerElem = elem;
 		this.playerInstance = instance;
@@ -480,7 +500,6 @@ export default class VideoViewer extends React.PureComponent {
 		this.checkAndRestoreFullscreen();
 	}
 
-
 	checkAndRestoreFullscreen() {
 		const urlParams = new URLSearchParams(window.location.search);
 		const shouldRestore = urlParams.get('fs') === '1';
@@ -507,12 +526,10 @@ export default class VideoViewer extends React.PureComponent {
 		}
 	}
 
-
 	showFullscreenContinuePrompt() {
-
 		// Pause video until user clicks
 		this.playerInstance.player.pause();
-		
+
 		// Create prompt overlay
 		const prompt = document.createElement('div');
 		prompt.className = 'fullscreen-continue-prompt';
@@ -526,13 +543,13 @@ export default class VideoViewer extends React.PureComponent {
 			<h2 class="prompt-title">Continue in Fullscreen</h2>
 			<p class="prompt-subtitle">Click anywhere to resume</p>
 		`;
-		
+
 		document.body.appendChild(prompt);
-		
+
 		// Click handler - THIS IS THE USER GESTURE that allows fullscreen
 		const clickHandler = () => {
 			prompt.remove();
-			
+
 			this.requestFullscreen()
 				.then(() => {
 					this.playerInstance.player.play();
@@ -544,7 +561,7 @@ export default class VideoViewer extends React.PureComponent {
 				});
 			document.removeEventListener('keydown', keyHandler);
 		};
-		
+
 		prompt.addEventListener('click', clickHandler);
 		// Also allow spacebar or Enter key
 		const keyHandler = (e) => {
@@ -559,7 +576,6 @@ export default class VideoViewer extends React.PureComponent {
 
 		document.addEventListener('keydown', keyHandler);
 	}
-
 
 	requestFullscreen() {
 		const element = this.playerInstance.player.el();
@@ -576,9 +592,7 @@ export default class VideoViewer extends React.PureComponent {
 
 		try {
 			const result = fn.call(element);
-			return result && typeof result.then === 'function'
-				? result
-				: Promise.resolve();
+			return result && typeof result.then === 'function' ? result : Promise.resolve();
 		} catch (error) {
 			return Promise.reject(error);
 		}
@@ -596,30 +610,39 @@ export default class VideoViewer extends React.PureComponent {
 		}
 	}
 
-
 	onVideoEnd = () => {
-
 		const playlistId = MediaPageStore.get('playlist-id');
 		const isPlaylist = !!playlistId;
 
 		if (isPlaylist) {
-			  if (this.upNextLoaderView) {
-				try { this.upNextLoaderView.hideTimerView(); } catch (_) {}
-				try { this.playerInstance.player.off('ended', this.upNextLoaderView.startTimer); } catch (_) {}
-				try { this.playerInstance.player.off('timeupdate', this.upNextLoaderView.updateTimer); } catch (_) {}
+			if (this.upNextLoaderView) {
+				try {
+					this.upNextLoaderView.hideTimerView();
+				} catch (_) {}
+				try {
+					this.playerInstance.player.off('ended', this.upNextLoaderView.startTimer);
+				} catch (_) {}
+				try {
+					this.playerInstance.player.off('timeupdate', this.upNextLoaderView.updateTimer);
+				} catch (_) {}
 			}
 
 			// 🚫 Disable RecommendedMedia too
 			if (this.recommendedMedia) {
-				try { this.recommendedMedia.updateDisplayType('hidden'); } catch (_) {}
-				try { this.playerInstance.player.off('pause', this.recommendedMedia.init); } catch (_) {}
-				try { this.playerInstance.player.off('playing', this.onVideoRestart); } catch (_) {}
+				try {
+					this.recommendedMedia.updateDisplayType('hidden');
+				} catch (_) {}
+				try {
+					this.playerInstance.player.off('pause', this.recommendedMedia.init);
+				} catch (_) {}
+				try {
+					this.playerInstance.player.off('playing', this.onVideoRestart);
+				} catch (_) {}
 			}
 
 			this.recommendedMedia = null;
 
 			let nextMedia = MediaPageStore.get('playlist-next-media');
-
 
 			if (nextMedia) {
 				// NORMAL CASE → Has next video
@@ -627,17 +650,13 @@ export default class VideoViewer extends React.PureComponent {
 				const nextUrl = `${nextMedia.url}${playlistId ? `${separator}pl=${playlistId}` : ''}`;
 				this.showTransitionCard(nextUrl);
 			} else {
-
 				const playlistUrl = `/playlists/${playlistId}`;
-
 
 				const finalUrl = playlistUrl; // no fs=1
 				this.navigateWithFullscreenRestore(finalUrl, true);
-
 			}
 			return;
 		}
-
 
 		// -------------------------------
 		// Non-playlist mode → RecommendedMedia
@@ -654,10 +673,7 @@ export default class VideoViewer extends React.PureComponent {
 		}
 	};
 
-	
-
 	showTransitionCard(nextMediaUrl) {
-
 		const nextVideoData = this.getNextVideoMetadata();
 		if (!nextVideoData) {
 			console.warn('⚠ No next video metadata found, aborting transition card.');
@@ -685,7 +701,6 @@ export default class VideoViewer extends React.PureComponent {
 			this.navigateWithFullscreenRestore(nextMediaUrl);
 		}, 3000);
 	}
-
 
 	// --------------------------------------------
 	// createTransitionCard
@@ -720,7 +735,8 @@ export default class VideoViewer extends React.PureComponent {
 	navigateWithFullscreenRestore(nextMediaUrl, isLast = false) {
 		// Only add fs=1 if NOT the last media
 		if (!isLast) {
-			const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+			const isFullscreen =
+				document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
 			if (isFullscreen) {
 				const separator = nextMediaUrl.includes('?') ? '&' : '?';
 				nextMediaUrl += `${separator}fs=1`;
@@ -732,8 +748,9 @@ export default class VideoViewer extends React.PureComponent {
 
 	// Get next video metadata from playlist
 	getNextVideoMetadata() {
-		const nextMedia = MediaPageStore.get('playlist-next-media') 
-			|| (this.props.data.related_media.length ? this.props.data.related_media[0] : null);
+		const nextMedia =
+			MediaPageStore.get('playlist-next-media') ||
+			(this.props.data.related_media.length ? this.props.data.related_media[0] : null);
 
 		if (!nextMedia) return null;
 
@@ -742,25 +759,23 @@ export default class VideoViewer extends React.PureComponent {
 			country: nextMedia.media_country_info?.[0]?.title || 'Unknown',
 			year: nextMedia.year_produced || new Date().getFullYear(),
 			duration: nextMedia.duration || 0,
-			src: nextMedia.url
+			src: nextMedia.url,
 		};
 	}
-
 
 	// Format duration from seconds to HH:MM:SS
 	formatDuration(seconds) {
 		const hrs = Math.floor(seconds / 3600);
 		const mins = Math.floor((seconds % 3600) / 60);
 		const secs = Math.floor(seconds % 60);
-		
+
 		const pad = (num) => String(num).padStart(2, '0');
-		
+
 		if (hrs > 0) {
 			return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
 		}
 		return `${pad(mins)}:${pad(secs)}`;
 	}
-
 
 	onUpdateMediaAutoPlay() {
 		if (this.upNextLoaderView) {
@@ -783,14 +798,16 @@ export default class VideoViewer extends React.PureComponent {
 			previousLink = MediaPageStore.get('playlist-previous-media-url');
 		} else {
 			nextLink =
-				this.props.data.related_media.length && !this.props.inEmbed ? this.props.data.related_media[0].url : null;
+				this.props.data.related_media.length && !this.props.inEmbed
+					? this.props.data.related_media[0].url
+					: null;
 		}
 
 		const previewSprite = !!this.props.data.sprites_url
 			? {
-				url: this.props.siteUrl + '/' + this.props.data.sprites_url.replace(/^\//g, ''),
-				frame: { width: 160, height: 90, seconds: 10 },
-			}
+					url: this.props.siteUrl + '/' + this.props.data.sprites_url.replace(/^\//g, ''),
+					frame: { width: 160, height: 90, seconds: 10 },
+				}
 			: null;
 
 		return (
@@ -866,7 +883,8 @@ function findGetParameter(parameterName) {
 	return result;
 }
 
-function handleCanvas(videoElem) { // Make sure it's a video element
+function handleCanvas(videoElem) {
+	// Make sure it's a video element
 
 	if (!videoElem || !videoElem.tagName || videoElem.tagName.toLowerCase() !== 'video') {
 		console.error('Invalid video element:', videoElem);
@@ -909,7 +927,6 @@ const observer = new MutationObserver((mutations, me) => {
 		}
 	}
 });
-
 
 observer.observe(document, {
 	childList: true,
