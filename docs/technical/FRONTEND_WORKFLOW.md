@@ -67,9 +67,33 @@ make frontend-clean && make frontend-build
 Vite is configured with:
 - **27 entry points** — one per Django template/page type
 - **JSX-in-.js plugin** — handles legacy `.js` files containing JSX
+- **SVGR support** — imports `*.svg?react` as React components for the modern icon pipeline
 - **SCSS support** — built-in via the `sass` package
 - **Code splitting** — `manualChunks` for vendor libraries (React, axios, flux, etc.)
 - **Content hashing** — production filenames include content hashes (e.g., `index-EGWbBqaA.css`)
+
+### Modern SVG Workflow
+
+Modern-track SVG icons are bundled through Vite instead of copied from `src/static/images`.
+
+- Semantic icons live in `frontend/src/features/shared/icons/`
+- Use the shared runtime in `frontend/src/features/shared/components/Icon.jsx`
+- Shared semantic icons are auto-registered from filenames at build time
+- Import raw SVG components with `?react` only for decorative one-off components or special cases
+- The optimization rules live in `frontend/svgo.config.mjs`
+
+For the full workflow, see `docs/technical/frontend-modernization/svg-icon-system.md`.
+
+### Frontend Component Tests
+
+The main frontend workspace now supports component tests with Vitest.
+
+```bash
+cd frontend
+npm run test:run
+```
+
+Use this for shared modern-track components such as the SVG icon system. Legacy package subprojects still keep their own build/test setups.
 
 ### Entry Points
 
