@@ -5,12 +5,25 @@ import tempfile
 from django.conf import settings
 from django.db import connection
 from django.http import JsonResponse
+from django.utils.crypto import constant_time_compare
 from django.views.decorators.http import require_GET
 
 from cms.request_utils import get_client_ip
 from files.cache_utils import health_check as cache_health_check
 
 logger = logging.getLogger(__name__)
+
+
+def _has_valid_health_token(request) -> bool:
+    # Compare against `settings.HEALTH_READY_TOKEN` in constant time so the
+    # endpoint cannot leak the configured token via response-time differences.
+    expected = getattr(settings, "HEALTH_READY_TOKEN", "") or ""
+    if not expected:
+        return False  # gate disabled — caller cannot present a valid token
+    provided = request.META.get("HTTP_X_HEALTHCHECK_TOKEN", "")
+    if not provided:
+        return False
+    return constant_time_compare(provided, expected)
 
 
 def _client_is_privileged(request) -> bool:
@@ -107,7 +120,24 @@ def live(request):
 
 @require_GET
 def ready(request):
-    privileged = _client_is_privileged(request)
+    # Gate: when HEALTH_READY_TOKEN is configured, anonymous external callers
+    # must present a matching X-Healthcheck-Token header — otherwise we reject
+    # *before* running the four expensive checks below, which closes a small
+    # unauthenticated DoS surface. Direct-localhost and authenticated staff
+    # still bypass the gate (operator convenience). Token bearers are also
+    # treated as privileged for response shaping since they hold the secret.
+    has_token = _has_valid_health_token(request)
+    is_privileged_caller = _client_is_privileged(request)
+    if (
+        getattr(settings, "HEALTH_READY_TOKEN", "")
+        and not has_token
+        and not is_privileged_caller
+    ):
+        response = JsonResponse({"status": "unauthorized"}, status=401)
+        response["Cache-Control"] = "no-store"
+        return response
+
+    privileged = is_privileged_caller or has_token
     checks = {
         "database": _check_db(),
         "cache": _check_cache(),

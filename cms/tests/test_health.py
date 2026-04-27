@@ -208,6 +208,100 @@ class HealthReadyTests(TestCase):
         self.assertEqual(body["checks"]["database"]["detail"], "OperationalError")
 
 
+class HealthReadyTokenGateTests(TestCase):
+    """Verify the HEALTH_READY_TOKEN shared-secret gate on /health/ready."""
+
+    TOKEN = "s3cret-token-value-do-not-use-in-prod"
+
+    def setUp(self):
+        # Default: external (non-localhost) client. Each test that needs a
+        # different origin overrides this.
+        self.client = Client(REMOTE_ADDR="203.0.113.5")
+
+    def test_gate_disabled_when_token_unset_returns_normally(self):
+        # No HEALTH_READY_TOKEN → existing behavior (200, compact response).
+        with _all_checks_healthy():
+            response = self.client.get("/health/ready")
+        self.assertEqual(response.status_code, 200)
+
+    def test_gate_rejects_external_without_token(self):
+        with override_settings(HEALTH_READY_TOKEN=self.TOKEN), _all_checks_healthy():
+            response = self.client.get("/health/ready")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response["Cache-Control"], "no-store")
+
+    def test_gate_rejects_wrong_token(self):
+        with override_settings(HEALTH_READY_TOKEN=self.TOKEN), _all_checks_healthy():
+            response = self.client.get(
+                "/health/ready", HTTP_X_HEALTHCHECK_TOKEN="wrong-token"
+            )
+        self.assertEqual(response.status_code, 401)
+
+    def test_gate_skips_checks_when_rejected(self):
+        # When the gate rejects a caller, the four expensive checks must NOT run.
+        # Otherwise the "DoS surface" the gate is supposed to close is still open.
+        with (
+            override_settings(HEALTH_READY_TOKEN=self.TOKEN),
+            patch("cms.health._check_db") as mock_db,
+            patch("cms.health._check_cache") as mock_cache,
+            patch("cms.health._check_filesystem") as mock_fs,
+            patch("cms.health._check_static_manifest") as mock_manifest,
+        ):
+            response = self.client.get("/health/ready")
+        self.assertEqual(response.status_code, 401)
+        mock_db.assert_not_called()
+        mock_cache.assert_not_called()
+        mock_fs.assert_not_called()
+        mock_manifest.assert_not_called()
+
+    def test_gate_accepts_valid_token_and_returns_privileged_shape(self):
+        with override_settings(HEALTH_READY_TOKEN=self.TOKEN), _all_checks_healthy():
+            response = self.client.get(
+                "/health/ready", HTTP_X_HEALTHCHECK_TOKEN=self.TOKEN
+            )
+        self.assertEqual(response.status_code, 200)
+        body = json.loads(response.content)
+        # Token bearers see the detailed (dict-per-check) shape.
+        self.assertEqual(body["checks"]["database"], {"ok": True, "detail": "ok"})
+
+    def test_gate_bypassed_by_staff_session(self):
+        # Staff with valid session but no token must still pass the gate.
+        test_password = secrets.token_urlsafe(16)
+        staff = User.objects.create_user(
+            username="staffgate",
+            email="staffgate@example.com",
+            password=test_password,
+        )
+        staff.is_staff = True
+        staff.save()
+        self.client.login(username="staffgate", password=test_password)
+
+        with override_settings(HEALTH_READY_TOKEN=self.TOKEN), _all_checks_healthy():
+            response = self.client.get("/health/ready")
+        self.assertEqual(response.status_code, 200)
+        body = json.loads(response.content)
+        # Staff still get the privileged shape.
+        self.assertEqual(body["checks"]["database"], {"ok": True, "detail": "ok"})
+
+    def test_gate_bypassed_by_direct_localhost(self):
+        # Default Client (REMOTE_ADDR=127.0.0.1, no XFF) is "direct localhost"
+        # under cms.request_utils.get_client_ip — operator on the box, no token
+        # required.
+        local_client = Client()  # REMOTE_ADDR defaults to 127.0.0.1
+        with override_settings(HEALTH_READY_TOKEN=self.TOKEN), _all_checks_healthy():
+            response = local_client.get("/health/ready")
+        self.assertEqual(response.status_code, 200)
+
+    def test_gate_uses_constant_time_compare(self):
+        # Sanity: an empty header must not be treated as matching an empty/unset
+        # token. (Both branches in the helper return False for that case.)
+        with override_settings(HEALTH_READY_TOKEN=self.TOKEN), _all_checks_healthy():
+            response = self.client.get(
+                "/health/ready", HTTP_X_HEALTHCHECK_TOKEN=""
+            )
+        self.assertEqual(response.status_code, 401)
+
+
 class HealthCheckRedactionTests(TestCase):
     """Unit tests asserting that the check helpers themselves redact exception text."""
 
