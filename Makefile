@@ -1,4 +1,4 @@
-.PHONY: docker-up docker-down docker-restart docker-logs docker-ps docker-clean docker-build docker-shell-db docker-shell-redis sync help dev-server start-celery-beat stop-celery-beat start-celery-long stop-celery-long start-celery-short stop-celery-short start-celery-whisper stop-celery-whisper celery-beat-start celery-beat-stop celery-beat-restart celery-long-start celery-long-stop celery-long-restart celery-short-start celery-short-stop celery-short-restart celery-whisper-start celery-whisper-stop celery-whisper-restart celery-start-all celery-stop-all celery-restart-all celery-status frontend-build frontend-dev frontend-clean quick-build
+.PHONY: docker-up docker-down docker-restart docker-logs docker-ps docker-clean docker-build docker-shell-db docker-shell-redis sync help dev-server start-celery-beat stop-celery-beat start-celery-long stop-celery-long start-celery-short stop-celery-short start-celery-whisper stop-celery-whisper celery-beat-start celery-beat-stop celery-beat-restart celery-long-start celery-long-stop celery-long-restart celery-short-start celery-short-stop celery-short-restart celery-whisper-start celery-whisper-stop celery-whisper-restart celery-start-all celery-stop-all celery-restart-all celery-status frontend-build frontend-dev frontend-clean quick-build test lint test-ci
 
 # Docker compose file to use
 COMPOSE_FILE = docker-compose.dev.yml
@@ -44,6 +44,11 @@ help:
 	@echo "  make frontend-dev    - Start frontend development server"
 	@echo "  make frontend-clean  - Clean frontend build directories"
 	@echo "  make quick-build     - Quick frontend build (main app only)"
+	@echo ""
+	@echo "Quality & Tests:"
+	@echo "  make test            - Run Django test suite (verbose)"
+	@echo "  make lint            - Run pre-commit on all files"
+	@echo "  make test-ci         - Run tests with --keepdb --parallel (CI mode)"
 	@echo ""
 	@echo "Celery Commands:"
 	@echo "  make celery-beat-start    - Start Celery beat scheduler"
@@ -244,3 +249,16 @@ quick-build:
 	cd frontend && npm run build
 	python manage.py collectstatic --noinput
 	@echo "Quick build complete!"
+
+## Quality & Tests
+test:
+	@echo "Running Django test suite..."
+	uv run python manage.py test --verbosity=2
+
+lint:
+	@echo "Running pre-commit on all files..."
+	uv run pre-commit run --all-files --show-diff-on-failure
+
+test-ci:
+	@echo "Running tests with --keepdb --parallel..."
+	uv run python manage.py test --keepdb --parallel --verbosity=2
