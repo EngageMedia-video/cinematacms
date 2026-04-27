@@ -9,7 +9,8 @@
 		"dev": "vite",
 		"build": "vite build",
 		"preview": "vite preview",
-		"lint:modern": "eslint src/features/"
+		"lint:modern": "eslint src/features/",
+		"lint:legacy": "eslint src/static/js/pages/ src/static/js/components/"
 	},
 	"devDependencies": {
 		"@tailwindcss/vite": "^4.2.2",
@@ -18,6 +19,7 @@
 		"core-js": "^3.49.0",
 		"dotenv": "^17.4.1",
 		"eslint": "^10.2.0",
+		"globals": "^17.5.0",
 		"prop-types": "^15.8.1",
 		"rollup-plugin-visualizer": "^7.0.1",
 		"sass": "^1.99.0",

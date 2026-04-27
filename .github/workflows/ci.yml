@@ -67,6 +67,10 @@ jobs:
         working-directory: frontend
         run: npm run lint:modern
 
+      - name: Lint frontend (legacy track)
+        working-directory: frontend
+        run: npm run lint:legacy
+
       - name: Build frontend
         working-directory: frontend
         run: npm run build

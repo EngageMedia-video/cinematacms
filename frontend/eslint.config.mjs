@@ -4,11 +4,12 @@
  * This config enforces the dual-track architecture boundary:
  *
  * - Modern track (features/**): Must NOT import legacy Flux stores or dispatcher.
- * - Legacy track (pages/**, components/**): Should NOT import modern-track libs.
- *
- * This is intentionally minimal — no recommended config or React plugin.
- * It exists solely to enforce the track boundary via no-restricted-imports.
+ * - Legacy track (pages/**, components/**): Should NOT import modern-track libs,
+ *   plus a small set of warn-only sanity rules to catch new regressions without
+ *   forcing a cleanup of existing code.
  */
+
+import globals from 'globals';
 
 export default [
 	// Ignore build artifacts and node_modules
@@ -57,9 +58,17 @@ export default [
 		},
 	},
 
-	// Legacy track: WARN on modern imports
+	// Legacy track: WARN on modern imports + a few warn-only safety rules.
+	// All rules here are intentionally warn-only — they catch new regressions
+	// without forcing cleanup of existing legacy code.
 	{
 		files: ['src/static/js/pages/**/*.{js,jsx}', 'src/static/js/components/**/*.{js,jsx}'],
+		languageOptions: {
+			globals: {
+				...globals.browser,
+				...globals.node,
+			},
+		},
 		rules: {
 			'no-restricted-imports': [
 				'warn',
@@ -78,6 +87,16 @@ export default [
 					],
 				},
 			],
+			'no-undef': 'warn',
+			'no-unused-vars': [
+				'warn',
+				{
+					argsIgnorePattern: '^_',
+					caughtErrorsIgnorePattern: '^_',
+					varsIgnorePattern: '^_',
+				},
+			],
+			'no-debugger': 'warn',
 		},
 	},
 ];

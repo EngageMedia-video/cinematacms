@@ -92,7 +92,6 @@ export function LazyLoadItemListSplit(props) {
 			handler.cancelAll();
 			setListHandler(null);
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	// Clear error when data successfully loads
