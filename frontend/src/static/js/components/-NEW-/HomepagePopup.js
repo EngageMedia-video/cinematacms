@@ -1,13 +1,13 @@
-import React from "react";
+import React from 'react';
 
 function HomepagePopup({ onClick, message }) {
 	let message_obj = {};
 	if (message) {
-		if (typeof message !== "object") {
+		if (typeof message !== 'object') {
 			try {
 				message_obj = JSON.parse(message);
 			} catch (e) {
-				console.error("Error parsing message JSON:", e);
+				console.error('Error parsing message JSON:', e);
 				return <></>;
 			}
 		} else {
@@ -46,8 +46,8 @@ function HomepagePopup({ onClick, message }) {
 								xmlns="http://www.w3.org/2000/svg"
 							>
 								<path
-									strokeLinecap={"round"}
-									strokeLinejoin={"round"}
+									strokeLinecap={'round'}
+									strokeLinejoin={'round'}
 									strokeWidth={2}
 									d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
 								></path>

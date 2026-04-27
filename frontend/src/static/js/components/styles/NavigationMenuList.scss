@@ -1,170 +1,147 @@
 @import '../../../css/includes/_variables_dimensions.scss';
 
-.nav-menu{
+.nav-menu {
+	padding: 12px 0;
 
-	padding:12px 0;
-
-	&.pv0{
-		padding-top:0;
-		padding-bottom:0;
+	&.pv0 {
+		padding-top: 0;
+		padding-bottom: 0;
 	}
 
-	nav{
-
+	nav {
 	}
 
-	ul{
-		padding:0;
-		margin:0;
-		list-style:none;
+	ul {
+		padding: 0;
+		margin: 0;
+		list-style: none;
 	}
 
-	li{
-
-		> *{
-			width:100%;
-			display:block;
+	li {
+		> * {
+			width: 100%;
+			display: block;
 			padding: $sidebar-nav-padding;
-			outline:0;
-			border:0;
-			background:none;
+			outline: 0;
+			border: 0;
+			background: none;
 
-			> *{
-				display:inline-block;
-				vertical-align:middle;
+			> * {
+				display: inline-block;
+				vertical-align: middle;
 			}
 		}
 
-		&.link-item{
-
-			&.active{
-
+		&.link-item {
+			&.active {
 			}
 		}
 
 		a,
-		button{
-
+		button {
 			&:hover,
-			&:focus{
-				
+			&:focus {
 				.popup & {
-
 				}
-				
 			}
 		}
 
 		&.label-item {
+			button {
+				font-weight: 500;
+				cursor: default;
 
-			button{
-
-				font-weight:500;
-				cursor:default;
-			
 				&:hover,
-				&:focus{
-					background-color: transparent;					
+				&:focus {
+					background-color: transparent;
 				}
 			}
 		}
 
 		.reported-label {
-			padding:0 1rem;
+			padding: 0 1rem;
 			line-height: 48px;
 			font-size: 13px;
-			color:initial;
+			color: initial;
 			color: red;
 
-			&:before{
-				content:'\e153';
-				display:inline-block;
-				vertical-align:middle;
-				width:1rem;
-				padding:0;
-				margin:0 1.5rem 0 0;
+			&:before {
+				content: '\e153';
+				display: inline-block;
+				vertical-align: middle;
+				width: 1rem;
+				padding: 0;
+				margin: 0 1.5rem 0 0;
 				font-family: 'Material Icons';
-				font-size:24px;
+				font-size: 24px;
 			}
 		}
 	}
 
 	a,
-	button{
-		color:inherit;
+	button {
+		color: inherit;
 	}
 
-	.menu-item-icon{
-		
-		margin-right:24px;
+	.menu-item-icon {
+		margin-right: 24px;
 
-		color:#888;
+		color: #888;
 
-		.material-icons{
-			margin-bottom:2px;
+		.material-icons {
+			margin-bottom: 2px;
 		}
 	}
 
-	.menu-item-icon-right{
-		float:right;
-		margin-left:24px;
+	.menu-item-icon-right {
+		float: right;
+		margin-left: 24px;
 	}
 }
 
-.nav-menu{
-
-	li{
-
-		&.link-item{
-
-			&.active{
+.nav-menu {
+	li {
+		&.link-item {
+			&.active {
 				background-color: var(--nav-menu-active-item-bg-color);
 			}
 		}
 
 		a,
-		button{
-
+		button {
 			&:hover,
-			&:focus{
-				
-				background-color: var( --nav-menu-item-hover-bg-color );
+			&:focus {
+				background-color: var(--nav-menu-item-hover-bg-color);
 
 				.popup & {
-					background-color: var( --in-popup-nav-menu-item-hover-bg-color );
+					background-color: var(--in-popup-nav-menu-item-hover-bg-color);
 				}
-				
 			}
 		}
 	}
 }
 
-.nav-menu{
+.nav-menu {
+	li {
+		> * {
+			text-align: initial;
+			text-decoration: none;
 
-	li{
-
-		> *{
-
-			text-align:initial;
-			text-decoration:none;
-
-			> *{
-				line-height:40px;
+			> * {
+				line-height: 40px;
 			}
 		}
 
-		&.link-item{
-
-			&.active{
-				font-weight:500;
+		&.link-item {
+			&.active {
+				font-weight: 500;
 			}
 		}
 	}
 
-	.menu-item-icon{
-
-		.material-icons{
-			font-size:1.715em;
+	.menu-item-icon {
+		.material-icons {
+			font-size: 1.715em;
 		}
 	}
 }

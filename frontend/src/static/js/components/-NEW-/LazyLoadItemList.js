@@ -10,56 +10,71 @@ import { ListItem, listItemProps } from './ListItem';
 
 import { ItemList } from './ItemList';
 
-import { ItemsStaticListHandler } from "./includes/itemLists/ItemsStaticListHandler";
+import { ItemsStaticListHandler } from './includes/itemLists/ItemsStaticListHandler';
 
-export function LazyLoadItemList(props){
-    props = { ...LazyLoadItemList.defaults, ...props };
+export function LazyLoadItemList(props) {
+	props = { ...LazyLoadItemList.defaults, ...props };
 
-    const [ items, countedItems, listHandler, setListHandler, classname, onItemsCount, onItemsLoad, onWindowScroll, onDocumentVisibilityChange, itemsListWrapperRef, itemsListRef, renderBeforeListWrap, renderAfterListWrap ] = useItemListLazyLoad(props);
+	const [
+		items,
+		countedItems,
+		listHandler,
+		setListHandler,
+		classname,
+		onItemsCount,
+		onItemsLoad,
+		onWindowScroll,
+		onDocumentVisibilityChange,
+		itemsListWrapperRef,
+		itemsListRef,
+		renderBeforeListWrap,
+		renderAfterListWrap,
+	] = useItemListLazyLoad(props);
 
-    useEffect(() => {
+	useEffect(() => {
+		setListHandler(
+			new ItemsStaticListHandler(props.items, props.pageItems, props.maxItems, onItemsCount, onItemsLoad)
+		);
 
-        setListHandler( new ItemsStaticListHandler(props.items, props.pageItems, props.maxItems, onItemsCount, onItemsLoad) );
+		PageStore.on('window_scroll', onWindowScroll);
+		PageStore.on('document_visibility_change', onDocumentVisibilityChange);
 
-    	PageStore.on( 'window_scroll', onWindowScroll );
-        PageStore.on( 'document_visibility_change', onDocumentVisibilityChange );
+		onWindowScroll();
 
-        onWindowScroll();
+		return () => {
+			PageStore.removeListener('window_scroll', onWindowScroll);
+			PageStore.removeListener('document_visibility_change', onDocumentVisibilityChange);
 
-        return () => {
+			if (listHandler) {
+				listHandler.cancelAll();
+				setListHandler(null);
+			}
+		};
+	}, []);
+	return !countedItems ? (
+		<PendingItemsList className={classname.listOuter} />
+	) : !items.length ? null : (
+		<div className={classname.listOuter}>
+			{renderBeforeListWrap()}
 
-	    	PageStore.removeListener( 'window_scroll', onWindowScroll );
-	        PageStore.removeListener( 'document_visibility_change', onDocumentVisibilityChange );
+			<div ref={itemsListWrapperRef} className="items-list-wrap">
+				<div ref={itemsListRef} className={classname.list}>
+					{items.map((itm, index) => (
+						<ListItem key={index} {...listItemProps(props, itm, index)} />
+					))}
+				</div>
+			</div>
 
-            if( listHandler ){
-                listHandler.cancelAll();
-                setListHandler(null);
-            }
-        };
-    }, []);
-    return ( ! countedItems ?
-            <PendingItemsList className={ classname.listOuter } /> :
-            ( ! items.length ? null : <div className={ classname.listOuter }>
-
-                { renderBeforeListWrap() }
-
-                <div ref={ itemsListWrapperRef } className="items-list-wrap">
-                    <div ref={ itemsListRef } className={ classname.list }>
-                        { items.map( ( itm, index ) => <ListItem key={ index } { ...listItemProps( props, itm, index ) } /> ) }
-                    </div>
-                </div>
-
-                { renderAfterListWrap() }
-
-            </div> )
-           );
+			{renderAfterListWrap()}
+		</div>
+	);
 }
 
 LazyLoadItemList.propTypes = {
-    ...ItemList.propTypes,
+	...ItemList.propTypes,
 };
 
 LazyLoadItemList.defaults = {
-    ...ItemList.defaults,
-    pageItems: 2,
+	...ItemList.defaults,
+	pageItems: 2,
 };

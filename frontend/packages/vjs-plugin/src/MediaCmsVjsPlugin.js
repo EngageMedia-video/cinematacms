@@ -1,72 +1,53 @@
- import { version as VERSION } from "../package.json";
+import { version as VERSION } from '../package.json';
 
-import PluginFontIcons from "@mediacms/vjs-plugin-font-icons/dist/css/mediacms-vjs-icons.css";
-import PluginStyles from "./styles.scss";
-import { isIOSDevice } from "./utils/deviceDetection.js";
+import PluginFontIcons from '@mediacms/vjs-plugin-font-icons/dist/css/mediacms-vjs-icons.css';
+import PluginStyles from './styles.scss';
+import { isIOSDevice } from './utils/deviceDetection.js';
 
 let Plugin = null;
 
 function generatePlugin(/*videojs*/) {
-	const videojsComponent = videojs.getComponent("Component");
-	const videojsClickableComponent = videojs.getComponent("ClickableComponent");
-	const videojsComponentButton = videojs.getComponent("Button");
+	const videojsComponent = videojs.getComponent('Component');
+	const videojsClickableComponent = videojs.getComponent('ClickableComponent');
+	const videojsComponentButton = videojs.getComponent('Button');
 
 	const __MediaCMSComponent__ = videojs.extend(videojsComponent, {
 		constructor() {
 			videojsComponent.apply(this, arguments);
-			this.setAttribute("class", this.buildCSSClass());
+			this.setAttribute('class', this.buildCSSClass());
 		},
 		buildCSSClass() {
-			return "";
+			return '';
 		},
 	});
 
-	const __MediaCMSButtonClickableComponent__ = videojs.extend(
-		videojsClickableComponent,
-		{
-			buildCSSClass() {
-				return "";
-			},
-		}
-	);
+	const __MediaCMSButtonClickableComponent__ = videojs.extend(videojsClickableComponent, {
+		buildCSSClass() {
+			return '';
+		},
+	});
 
-	const __SettingsPanelComponent__ =
-		composeAndExtendCustomComp("vjs-settings-panel");
-	const __SettingsPanelInnerComponent__ = composeAndExtendCustomComp(
-		"vjs-settings-panel-inner"
-	);
-	const __SettingsPanelTitleComponent__ = composeAndExtendCustomComp(
-		"vjs-setting-panel-title"
-	);
-	const __SettingsMenuComponent__ =
-		composeAndExtendCustomComp("vjs-settings-menu");
+	const __SettingsPanelComponent__ = composeAndExtendCustomComp('vjs-settings-panel');
+	const __SettingsPanelInnerComponent__ = composeAndExtendCustomComp('vjs-settings-panel-inner');
+	const __SettingsPanelTitleComponent__ = composeAndExtendCustomComp('vjs-setting-panel-title');
+	const __SettingsMenuComponent__ = composeAndExtendCustomComp('vjs-settings-menu');
 	const __SettingsMenuItemComponent__ = videojsComposeAndExtendCustomComp(
 		__MediaCMSButtonClickableComponent__,
-		"vjs-settings-menu-item"
+		'vjs-settings-menu-item'
 	);
-	const __SettingsMenuItemLabelComponent__ = composeAndExtendCustomComp(
-		"vjs-setting-menu-item-label"
-	);
-	const __SettingsMenuItemContentComponent__ = composeAndExtendCustomComp(
-		"vjs-setting-menu-item-content"
-	);
+	const __SettingsMenuItemLabelComponent__ = composeAndExtendCustomComp('vjs-setting-menu-item-label');
+	const __SettingsMenuItemContentComponent__ = composeAndExtendCustomComp('vjs-setting-menu-item-content');
 
-	function composeCustomCompMethods(
-		ret,
-		extnd,
-		innerHtml,
-		extraCSSClass,
-		htmlAttr
-	) {
+	function composeCustomCompMethods(ret, extnd, innerHtml, extraCSSClass, htmlAttr) {
 		var innerHtmlIsHTMLElement = !!innerHtml && innerHtml.nodeType === 1;
 
 		if (!innerHtmlIsHTMLElement) {
 			switch (typeof innerHtml) {
-				case "string":
+				case 'string':
 					innerHtml = innerHtml.trim();
-					innerHtml = "" === innerHtml ? null : innerHtml;
+					innerHtml = '' === innerHtml ? null : innerHtml;
 					break;
-				case "number":
+				case 'number':
 					innerHtml = innerHtml.toString();
 					break;
 				default:
@@ -75,9 +56,9 @@ function generatePlugin(/*videojs*/) {
 		}
 
 		switch (typeof extraCSSClass) {
-			case "string":
+			case 'string':
 				extraCSSClass = extraCSSClass.trim();
-				extraCSSClass = "" === extraCSSClass ? null : extraCSSClass;
+				extraCSSClass = '' === extraCSSClass ? null : extraCSSClass;
 				break;
 			default:
 				extraCSSClass = null;
@@ -113,7 +94,7 @@ function generatePlugin(/*videojs*/) {
 
 		if (extraCSSClass) {
 			ret.buildCSSClass = function () {
-				return extraCSSClass + " " + extnd.prototype.buildCSSClass.call(this);
+				return extraCSSClass + ' ' + extnd.prototype.buildCSSClass.call(this);
 			};
 		}
 	}
@@ -129,12 +110,7 @@ function generatePlugin(/*videojs*/) {
 		};
 	}
 
-	function videojsComposeAndExtendCustomComp(
-		extnd,
-		extraCSSClass,
-		innerHtml,
-		htmlAttr
-	) {
+	function videojsComposeAndExtendCustomComp(extnd, extraCSSClass, innerHtml, htmlAttr) {
 		const ret = {};
 		composeCustomCompMethods(ret, extnd, innerHtml, extraCSSClass, htmlAttr);
 		return videosjsExtendCustomComp(extnd, ret);
@@ -147,12 +123,7 @@ function generatePlugin(/*videojs*/) {
 	}
 
 	function composeAndExtendCustomComp(extraCSSClass, innerHtml, htmlAttr) {
-		return videojsComposeAndExtendCustomComp(
-			__MediaCMSComponent__,
-			extraCSSClass,
-			innerHtml,
-			htmlAttr
-		);
+		return videojsComposeAndExtendCustomComp(__MediaCMSComponent__, extraCSSClass, innerHtml, htmlAttr);
 	}
 
 	/* ################################################## */
@@ -189,13 +160,7 @@ function generatePlugin(/*videojs*/) {
 				appendedComponents = {};
 			let i, j, prnt, customCompKey, customCompName;
 			if (parent.children) {
-				childrenGen(
-					"controlBar",
-					parent.children,
-					componentsToAppend,
-					parentsConnections,
-					0
-				);
+				childrenGen('controlBar', parent.children, componentsToAppend, parentsConnections, 0);
 
 				/*console.log( componentsToAppend );
                 console.log( parentsConnections );*/
@@ -206,14 +171,10 @@ function generatePlugin(/*videojs*/) {
 					while (j < componentsToAppend[i].length) {
 						prnt =
 							0 === i
-								? pluginInstanceRef.player.getChild(
-										parentsConnections[componentsToAppend[i][j]]
-								  )
+								? pluginInstanceRef.player.getChild(parentsConnections[componentsToAppend[i][j]])
 								: appendedComponents[parentsConnections[componentsToAppend[i][j]]];
 						prnt.addChild(componentsToAppend[i][j], {});
-						appendedComponents[componentsToAppend[i][j]] = prnt.getChild(
-							componentsToAppend[i][j]
-						);
+						appendedComponents[componentsToAppend[i][j]] = prnt.getChild(componentsToAppend[i][j]);
 						j++;
 					}
 					i++;
@@ -228,18 +189,9 @@ function generatePlugin(/*videojs*/) {
 		if (options.enabledTouchControls) {
 			let TouchControls, TouchControlsInner, TouchPrevious, TouchPlay, TouchNext;
 
-			const previousButton = composeCustomComp(
-				videojsComponentButton,
-				"vjs-icon-previous-item"
-			);
-			const playButton = composeCustomComp(
-				videojsComponentButton,
-				"vjs-icon-play"
-			);
-			const nextButton = composeCustomComp(
-				videojsComponentButton,
-				"vjs-icon-next-item"
-			);
+			const previousButton = composeCustomComp(videojsComponentButton, 'vjs-icon-previous-item');
+			const playButton = composeCustomComp(videojsComponentButton, 'vjs-icon-play');
+			const nextButton = composeCustomComp(videojsComponentButton, 'vjs-icon-next-item');
 
 			playButton.methods.handleClick = function (ev) {
 				if (this.player_.paused()) {
@@ -257,129 +209,118 @@ function generatePlugin(/*videojs*/) {
 
 			if (options.controlBar.next) {
 				nextButton.methods.handleClick = function (ev) {
-					this.player_.trigger("clicked_next_button");
+					this.player_.trigger('clicked_next_button');
 				};
 			}
 			if (options.controlBar.previous) {
 				previousButton.methods.handleClick = function (ev) {
-					this.player_.trigger("clicked_previous_button");
+					this.player_.trigger('clicked_previous_button');
 				};
 			}
 
 			videojs.registerComponent(
-				"TouchControls",
+				'TouchControls',
 				videojs.extend(
 					__MediaCMSComponent__,
-					composeCustomComp(__MediaCMSComponent__, "vjs-touch-controls").methods
+					composeCustomComp(__MediaCMSComponent__, 'vjs-touch-controls').methods
 				)
 			);
 			videojs.registerComponent(
-				"TouchControlsInner",
-				videojs.extend(
-					__MediaCMSComponent__,
-					composeCustomComp(__MediaCMSComponent__).methods
-				)
+				'TouchControlsInner',
+				videojs.extend(__MediaCMSComponent__, composeCustomComp(__MediaCMSComponent__).methods)
 			);
 
 			videojs.registerComponent(
-				"TouchPreviousButton",
+				'TouchPreviousButton',
 				videojs.extend(previousButton.extend, previousButton.methods)
 			);
-			videojs.registerComponent(
-				"TouchPlayButton",
-				videojs.extend(playButton.extend, playButton.methods)
-			);
-			videojs.registerComponent(
-				"TouchNextButton",
-				videojs.extend(nextButton.extend, nextButton.methods)
-			);
+			videojs.registerComponent('TouchPlayButton', videojs.extend(playButton.extend, playButton.methods));
+			videojs.registerComponent('TouchNextButton', videojs.extend(nextButton.extend, nextButton.methods));
 
 			videojs.registerComponent(
-				"TouchPlay",
+				'TouchPlay',
 				videojs.extend(
 					__MediaCMSComponent__,
-					composeCustomComp(__MediaCMSComponent__, "vjs-touch-play-button").methods
+					composeCustomComp(__MediaCMSComponent__, 'vjs-touch-play-button').methods
 				)
 			);
 
 			if (options.controlBar.next || options.controlBar.previous) {
 				videojs.registerComponent(
-					"TouchPrevious",
+					'TouchPrevious',
 					videojs.extend(
 						__MediaCMSComponent__,
 						composeCustomComp(
 							__MediaCMSComponent__,
-							"vjs-touch-previous-button" +
-								(!options.controlBar.previous ? " vjs-touch-disabled-button" : "")
+							'vjs-touch-previous-button' +
+								(!options.controlBar.previous ? ' vjs-touch-disabled-button' : '')
 						).methods
 					)
 				);
 				videojs.registerComponent(
-					"TouchNext",
+					'TouchNext',
 					videojs.extend(
 						__MediaCMSComponent__,
 						composeCustomComp(
 							__MediaCMSComponent__,
-							"vjs-touch-next-button" +
-								(!options.controlBar.next ? " vjs-touch-disabled-button" : "")
+							'vjs-touch-next-button' + (!options.controlBar.next ? ' vjs-touch-disabled-button' : '')
 						).methods
 					)
 				);
 			} else {
 				videojs.registerComponent(
-					"TouchPrevious",
+					'TouchPrevious',
 					videojs.extend(
 						__MediaCMSComponent__,
 						composeCustomComp(
 							__MediaCMSComponent__,
-							"vjs-touch-previous-button" +
-								(!options.controlBar.previous ? " vjs-touch-hidden-button" : "")
+							'vjs-touch-previous-button' +
+								(!options.controlBar.previous ? ' vjs-touch-hidden-button' : '')
 						).methods
 					)
 				);
 				videojs.registerComponent(
-					"TouchNext",
+					'TouchNext',
 					videojs.extend(
 						__MediaCMSComponent__,
 						composeCustomComp(
 							__MediaCMSComponent__,
-							"vjs-touch-next-button" +
-								(!options.controlBar.next ? " vjs-touch-hidden-button" : "")
+							'vjs-touch-next-button' + (!options.controlBar.next ? ' vjs-touch-hidden-button' : '')
 						).methods
 					)
 				);
 			}
 
-			pluginInstanceRef.player.addChild("TouchControls");
+			pluginInstanceRef.player.addChild('TouchControls');
 
-			TouchControls = pluginInstanceRef.player.getChild("TouchControls");
+			TouchControls = pluginInstanceRef.player.getChild('TouchControls');
 
-			TouchControls.addChild("TouchControlsInner");
+			TouchControls.addChild('TouchControlsInner');
 
-			TouchControlsInner = TouchControls.getChild("TouchControlsInner");
+			TouchControlsInner = TouchControls.getChild('TouchControlsInner');
 
-			TouchControlsInner.addChild("TouchPrevious");
-			TouchControlsInner.addChild("TouchPlay");
-			TouchControlsInner.addChild("TouchNext");
+			TouchControlsInner.addChild('TouchPrevious');
+			TouchControlsInner.addChild('TouchPlay');
+			TouchControlsInner.addChild('TouchNext');
 
-			TouchPrevious = TouchControlsInner.getChild("TouchPrevious");
-			TouchPlay = TouchControlsInner.getChild("TouchPlay");
-			TouchNext = TouchControlsInner.getChild("TouchNext");
+			TouchPrevious = TouchControlsInner.getChild('TouchPrevious');
+			TouchPlay = TouchControlsInner.getChild('TouchPlay');
+			TouchNext = TouchControlsInner.getChild('TouchNext');
 
-			TouchPrevious.addChild("TouchPreviousButton");
-			TouchPlay.addChild("TouchPlayButton");
-			TouchNext.addChild("TouchNextButton");
+			TouchPrevious.addChild('TouchPreviousButton');
+			TouchPlay.addChild('TouchPlayButton');
+			TouchNext.addChild('TouchNextButton');
 		}
 	}
 
 	function generateCornerLayersComponents(pluginInstanceRef, options) {
 		const layers = {};
-		const compPrefix = "CornerLayer_";
+		const compPrefix = 'CornerLayer_';
 		let k;
 
 		if (options.cornerLayers.topLeft) {
 			layers.topLeft = {
-				className: "vjs-corner-layer vjs-corner-top-left",
+				className: 'vjs-corner-layer vjs-corner-top-left',
 				parent: pluginInstanceRef.player,
 				content: options.cornerLayers.topLeft,
 			};
@@ -387,7 +328,7 @@ function generatePlugin(/*videojs*/) {
 
 		if (options.cornerLayers.topRight) {
 			layers.topRight = {
-				className: "vjs-corner-layer vjs-corner-top-right",
+				className: 'vjs-corner-layer vjs-corner-top-right',
 				parent: pluginInstanceRef.player,
 				content: options.cornerLayers.topRight,
 			};
@@ -395,7 +336,7 @@ function generatePlugin(/*videojs*/) {
 
 		if (options.cornerLayers.bottomLeft) {
 			layers.bottomLeft = {
-				className: "vjs-corner-layer vjs-corner-bottom-left",
+				className: 'vjs-corner-layer vjs-corner-bottom-left',
 				parent: pluginInstanceRef.player,
 				content: options.cornerLayers.bottomLeft,
 			};
@@ -403,7 +344,7 @@ function generatePlugin(/*videojs*/) {
 
 		if (options.cornerLayers.bottomRight) {
 			layers.bottomRight = {
-				className: "vjs-corner-layer vjs-corner-bottom-right",
+				className: 'vjs-corner-layer vjs-corner-bottom-right',
 				parent: pluginInstanceRef.player,
 				content: options.cornerLayers.bottomRight,
 			};
@@ -416,11 +357,7 @@ function generatePlugin(/*videojs*/) {
 						compPrefix + k,
 						videojs.extend(
 							__MediaCMSComponent__,
-							composeCustomComp(
-								__MediaCMSComponent__,
-								layers[k].className,
-								layers[k].content
-							).methods
+							composeCustomComp(__MediaCMSComponent__, layers[k].className, layers[k].content).methods
 						)
 					);
 
@@ -432,29 +369,25 @@ function generatePlugin(/*videojs*/) {
 
 	function generateActionsAnimationsComponents(pluginInstanceRef) {
 		videojs.registerComponent(
-			"ActionsAnimations",
+			'ActionsAnimations',
 			videojs.extend(
 				__MediaCMSComponent__,
-				composeCustomComp(
-					__MediaCMSComponent__,
-					"vjs-actions-anim",
-					"<span></span>"
-				).methods
+				composeCustomComp(__MediaCMSComponent__, 'vjs-actions-anim', '<span></span>').methods
 			)
 		);
-		pluginInstanceRef.player.addChild("ActionsAnimations");
+		pluginInstanceRef.player.addChild('ActionsAnimations');
 	}
 
 	function generateLoadingSpinnerComponent(pluginInstanceRef) {
-		pluginInstanceRef.player.removeChild("LoadingSpinner");
+		pluginInstanceRef.player.removeChild('LoadingSpinner');
 
 		videojs.registerComponent(
-			"LoadingSpinner",
+			'LoadingSpinner',
 			videojs.extend(
 				__MediaCMSComponent__,
 				composeCustomComp(
 					__MediaCMSComponent__,
-					"vjs-loading-spinner",
+					'vjs-loading-spinner',
 					'<div class="spinner">\
                         <div class="spinner-container">\
                             <div class="spinner-rotator">\
@@ -467,27 +400,27 @@ function generatePlugin(/*videojs*/) {
 			)
 		);
 
-		pluginInstanceRef.player.addChild("LoadingSpinner");
+		pluginInstanceRef.player.addChild('LoadingSpinner');
 	}
 
 	function initComponents(pluginInstanceRef, which, struct, args) {
 		let k, i;
 		let tmp;
 		switch (which) {
-			case "bottomBackground":
+			case 'bottomBackground':
 				struct.bottomBackground = null;
 				videojs.registerComponent(
-					"BottomBackground",
+					'BottomBackground',
 					videojs.extend(
 						__MediaCMSComponent__,
-						composeCustomComp(__MediaCMSComponent__, "vjs-bottom-bg").methods
+						composeCustomComp(__MediaCMSComponent__, 'vjs-bottom-bg').methods
 					)
 				);
 				break;
-			case "progressControl":
+			case 'progressControl':
 				struct.progressControl = null;
 				break;
-			case "__subtitles":
+			case '__subtitles':
 				struct.subtitlesPanel = {
 					children: {
 						subtitlesPanelInner: {
@@ -499,12 +432,12 @@ function generatePlugin(/*videojs*/) {
 					},
 				};
 
-				tmp = composeCustomComp(__SettingsPanelComponent__, "vjs-subtitles-panel");
+				tmp = composeCustomComp(__SettingsPanelComponent__, 'vjs-subtitles-panel');
 
 				tmp.methods.constructor = function () {
 					videojsComponent.apply(this, arguments);
 
-					this.setAttribute("class", this.buildCSSClass());
+					this.setAttribute('class', this.buildCSSClass());
 
 					const that = this;
 
@@ -512,53 +445,39 @@ function generatePlugin(/*videojs*/) {
 						if (that.el_.contains(ev.relatedTarget)) {
 							return;
 						}
-						that.player_.trigger("focusoutSubtitlesPanel");
+						that.player_.trigger('focusoutSubtitlesPanel');
 					}
 
-					pluginInstanceRef.on(
-						this.player_,
-						["updatedSubtitlesPanelsVisibility"],
-						function () {
-							videojs.dom[
-								this.state.isOpenSubtitlesOptions ? "addClass" : "removeClass"
-							](that.el_, "vjs-visible-panel");
-						}
-					);
+					pluginInstanceRef.on(this.player_, ['updatedSubtitlesPanelsVisibility'], function () {
+						videojs.dom[this.state.isOpenSubtitlesOptions ? 'addClass' : 'removeClass'](
+							that.el_,
+							'vjs-visible-panel'
+						);
+					});
 
-					pluginInstanceRef.on(
-						this.player_,
-						["openedSubtitlesPanel"],
-						function (ev, openedFromKeyboard) {
-							that.el_.setAttribute("tabindex", "-1");
-							that.el_.addEventListener("focusout", onFocusout);
-							if (!!openedFromKeyboard) {
-								that.el_.querySelector(".vjs-settings-menu-item").focus();
-							} else {
-								that.el_.focus();
-							}
+					pluginInstanceRef.on(this.player_, ['openedSubtitlesPanel'], function (ev, openedFromKeyboard) {
+						that.el_.setAttribute('tabindex', '-1');
+						that.el_.addEventListener('focusout', onFocusout);
+						if (!!openedFromKeyboard) {
+							that.el_.querySelector('.vjs-settings-menu-item').focus();
+						} else {
+							that.el_.focus();
 						}
-					);
+					});
 
-					pluginInstanceRef.on(
-						this.player_,
-						["closedSubtitlesPanel"],
-						function (ev, closedFromKeyboard) {
-							that.el_.removeAttribute("tabindex");
-							that.el_.removeEventListener("focusout", onFocusout);
-							if (!!closedFromKeyboard) {
-								that.el_.querySelector(".vjs-settings-menu-item").focus();
-							}
+					pluginInstanceRef.on(this.player_, ['closedSubtitlesPanel'], function (ev, closedFromKeyboard) {
+						that.el_.removeAttribute('tabindex');
+						that.el_.removeEventListener('focusout', onFocusout);
+						if (!!closedFromKeyboard) {
+							that.el_.querySelector('.vjs-settings-menu-item').focus();
 						}
-					);
+					});
 				};
 
-				videojs.registerComponent(
-					"SubtitlesPanel",
-					videojs.extend(tmp.extend, tmp.methods)
-				);
+				videojs.registerComponent('SubtitlesPanel', videojs.extend(tmp.extend, tmp.methods));
 
 				videojs.registerComponent(
-					"SubtitlesPanelInner",
+					'SubtitlesPanelInner',
 					videojs.extend(
 						__SettingsPanelInnerComponent__,
 						composeCustomComp(__SettingsPanelInnerComponent__).methods
@@ -566,21 +485,14 @@ function generatePlugin(/*videojs*/) {
 				);
 
 				videojs.registerComponent(
-					"SubtitlesMenu",
-					videojs.extend(
-						__SettingsMenuComponent__,
-						composeCustomComp(__SettingsMenuComponent__).methods
-					)
+					'SubtitlesMenu',
+					videojs.extend(__SettingsMenuComponent__, composeCustomComp(__SettingsMenuComponent__).methods)
 				);
 				videojs.registerComponent(
-					"SubtitlesMenuTitle",
+					'SubtitlesMenuTitle',
 					videojs.extend(
 						__SettingsPanelTitleComponent__,
-						composeCustomComp(
-							__SettingsPanelTitleComponent__,
-							null,
-							"<span>Subtitles</span>"
-						).methods
+						composeCustomComp(__SettingsPanelTitleComponent__, null, '<span>Subtitles</span>').methods
 					)
 				);
 
@@ -589,19 +501,17 @@ function generatePlugin(/*videojs*/) {
 					k = args.options.subtitles.languages[i];
 
 					struct.subtitlesPanel.children.subtitlesPanelInner.children.subtitlesMenu.children[
-						"subtitleOption_" + k.srclang
+						'subtitleOption_' + k.srclang
 					] = {
 						children: {
-							["subtitleOption_" + k.srclang + "_content"]: null,
+							['subtitleOption_' + k.srclang + '_content']: null,
 						},
 					};
 
 					(function (key, title) {
 						tmp = composeCustomComp(
 							__SettingsMenuItemComponent__,
-							key === pluginInstanceRef.state.theSelectedSubtitleOption
-								? "vjs-selected-menu-item"
-								: null,
+							key === pluginInstanceRef.state.theSelectedSubtitleOption ? 'vjs-selected-menu-item' : null,
 							null
 						);
 
@@ -612,41 +522,27 @@ function generatePlugin(/*videojs*/) {
 
 							const that = this;
 
-							this.setAttribute("data-opt", key);
+							this.setAttribute('data-opt', key);
 
-							pluginInstanceRef.on(
-								this.player_,
-								["updatedSelectedSubtitleOption"],
-								function () {
-									if (that.subtitleKey === this.state.theSelectedSubtitleOption) {
-										videojs.dom.addClass(that.el_, "vjs-selected-menu-item");
-									} else {
-										videojs.dom.removeClass(that.el_, "vjs-selected-menu-item");
-									}
+							pluginInstanceRef.on(this.player_, ['updatedSelectedSubtitleOption'], function () {
+								if (that.subtitleKey === this.state.theSelectedSubtitleOption) {
+									videojs.dom.addClass(that.el_, 'vjs-selected-menu-item');
+								} else {
+									videojs.dom.removeClass(that.el_, 'vjs-selected-menu-item');
 								}
-							);
+							});
 						};
 
 						tmp.methods.handleClick = function () {
-							this.player_.trigger(
-								"selectedSubtitleOption",
-								this.el_.getAttribute("data-opt")
-							);
+							this.player_.trigger('selectedSubtitleOption', this.el_.getAttribute('data-opt'));
 						};
 
-						videojs.registerComponent(
-							"SubtitleOption_" + key,
-							videojs.extend(tmp.extend, tmp.methods)
-						);
+						videojs.registerComponent('SubtitleOption_' + key, videojs.extend(tmp.extend, tmp.methods));
 
-						tmp = composeCustomComp(
-							__SettingsMenuItemContentComponent__,
-							null,
-							title
-						);
+						tmp = composeCustomComp(__SettingsMenuItemContentComponent__, null, title);
 
 						videojs.registerComponent(
-							"SubtitleOption_" + key + "_content",
+							'SubtitleOption_' + key + '_content',
 							videojs.extend(tmp.extend, tmp.methods)
 						);
 					})(k.srclang, k.label);
@@ -655,7 +551,7 @@ function generatePlugin(/*videojs*/) {
 				}
 
 				break;
-			case "__settings":
+			case '__settings':
 				struct.settingsPanel = {
 					children: {
 						settingsPanelInner: {
@@ -666,12 +562,12 @@ function generatePlugin(/*videojs*/) {
 					},
 				};
 
-				tmp = composeCustomComp(__SettingsPanelComponent__, "vjs-settings-root");
+				tmp = composeCustomComp(__SettingsPanelComponent__, 'vjs-settings-root');
 
 				tmp.methods.constructor = function () {
 					videojsComponent.apply(this, arguments);
 
-					this.setAttribute("class", this.buildCSSClass());
+					this.setAttribute('class', this.buildCSSClass());
 
 					const that = this;
 
@@ -679,53 +575,39 @@ function generatePlugin(/*videojs*/) {
 						if (that.el_.contains(ev.relatedTarget)) {
 							return;
 						}
-						that.player_.trigger("focusoutSettingsPanel");
+						that.player_.trigger('focusoutSettingsPanel');
 					}
 
-					pluginInstanceRef.on(
-						this.player_,
-						["updatedSettingsPanelsVisibility"],
-						function () {
-							videojs.dom[
-								this.state.isOpenSettingsOptions ? "addClass" : "removeClass"
-							](that.el_, "vjs-visible-panel");
-						}
-					);
+					pluginInstanceRef.on(this.player_, ['updatedSettingsPanelsVisibility'], function () {
+						videojs.dom[this.state.isOpenSettingsOptions ? 'addClass' : 'removeClass'](
+							that.el_,
+							'vjs-visible-panel'
+						);
+					});
 
-					pluginInstanceRef.on(
-						this.player_,
-						["openedSettingsPanel"],
-						function (ev, openedFromKeyboard) {
-							that.el_.setAttribute("tabindex", "-1");
-							that.el_.addEventListener("focusout", onFocusout);
-							if (!!openedFromKeyboard) {
-								that.el_.querySelector(".vjs-settings-menu-item").focus();
-							} else {
-								that.el_.focus();
-							}
+					pluginInstanceRef.on(this.player_, ['openedSettingsPanel'], function (ev, openedFromKeyboard) {
+						that.el_.setAttribute('tabindex', '-1');
+						that.el_.addEventListener('focusout', onFocusout);
+						if (!!openedFromKeyboard) {
+							that.el_.querySelector('.vjs-settings-menu-item').focus();
+						} else {
+							that.el_.focus();
 						}
-					);
+					});
 
-					pluginInstanceRef.on(
-						this.player_,
-						["closedSettingsPanel"],
-						function (ev, closedFromKeyboard) {
-							that.el_.removeAttribute("tabindex");
-							that.el_.removeEventListener("focusout", onFocusout);
-							if (!!closedFromKeyboard) {
-								that.el_.querySelector(".vjs-settings-menu-item").focus();
-							}
+					pluginInstanceRef.on(this.player_, ['closedSettingsPanel'], function (ev, closedFromKeyboard) {
+						that.el_.removeAttribute('tabindex');
+						that.el_.removeEventListener('focusout', onFocusout);
+						if (!!closedFromKeyboard) {
+							that.el_.querySelector('.vjs-settings-menu-item').focus();
 						}
-					);
+					});
 				};
 
-				videojs.registerComponent(
-					"SettingsPanel",
-					videojs.extend(tmp.extend, tmp.methods)
-				);
+				videojs.registerComponent('SettingsPanel', videojs.extend(tmp.extend, tmp.methods));
 
 				videojs.registerComponent(
-					"SettingsPanelInner",
+					'SettingsPanelInner',
 					videojs.extend(
 						__SettingsPanelInnerComponent__,
 						composeCustomComp(__SettingsPanelInnerComponent__).methods
@@ -733,11 +615,8 @@ function generatePlugin(/*videojs*/) {
 				);
 
 				videojs.registerComponent(
-					"SettingsMenu",
-					videojs.extend(
-						__SettingsMenuComponent__,
-						composeCustomComp(__SettingsMenuComponent__).methods
-					)
+					'SettingsMenu',
+					videojs.extend(__SettingsMenuComponent__, composeCustomComp(__SettingsMenuComponent__).methods)
 				);
 
 				if (args.enabledPlaybackSpeedPanel) {
@@ -749,58 +628,34 @@ function generatePlugin(/*videojs*/) {
 							},
 						};
 
-					tmp = composeCustomComp(
-						__SettingsMenuItemComponent__,
-						"vjs-selected-speed"
-					);
+					tmp = composeCustomComp(__SettingsMenuItemComponent__, 'vjs-selected-speed');
 
 					tmp.methods.handleClick = function (ev) {
-						this.player_.trigger(
-							"openPlaybackSpeedOptions",
-							!ev.screenX && !ev.screenY
-						);
+						this.player_.trigger('openPlaybackSpeedOptions', !ev.screenX && !ev.screenY);
 					};
 
+					videojs.registerComponent('SelectedPlaybackSpeed', videojs.extend(tmp.extend, tmp.methods));
 					videojs.registerComponent(
-						"SelectedPlaybackSpeed",
-						videojs.extend(tmp.extend, tmp.methods)
-					);
-					videojs.registerComponent(
-						"SelectedPlaybackSpeedLabel",
+						'SelectedPlaybackSpeedLabel',
 						videojs.extend(
 							__SettingsMenuItemLabelComponent__,
-							composeCustomComp(
-								__SettingsMenuItemLabelComponent__,
-								null,
-								"Playback speed"
-							).methods
+							composeCustomComp(__SettingsMenuItemLabelComponent__, null, 'Playback speed').methods
 						)
 					);
 
-					tmp = composeCustomComp(
-						__SettingsMenuItemContentComponent__,
-						null,
-						args.selectedPlaybackSpeed
-					);
+					tmp = composeCustomComp(__SettingsMenuItemContentComponent__, null, args.selectedPlaybackSpeed);
 
 					tmp.methods.constructor = function () {
 						videojsComponent.apply(this, arguments);
 						const that = this;
 						that.el_.innerHTML = pluginInstanceRef.selectedPlaybackSpeedTitle();
-						this.setAttribute("class", this.buildCSSClass());
-						pluginInstanceRef.on(
-							this.player_,
-							["updatedSelectedPlaybackSpeed"],
-							function () {
-								that.el_.innerHTML = this.selectedPlaybackSpeedTitle();
-							}
-						);
+						this.setAttribute('class', this.buildCSSClass());
+						pluginInstanceRef.on(this.player_, ['updatedSelectedPlaybackSpeed'], function () {
+							that.el_.innerHTML = this.selectedPlaybackSpeedTitle();
+						});
 					};
 
-					videojs.registerComponent(
-						"SelectedPlaybackSpeedContent",
-						videojs.extend(tmp.extend, tmp.methods)
-					);
+					videojs.registerComponent('SelectedPlaybackSpeedContent', videojs.extend(tmp.extend, tmp.methods));
 				}
 
 				if (args.enabledResolutionsPanel) {
@@ -812,56 +667,38 @@ function generatePlugin(/*videojs*/) {
 							},
 						};
 
-					tmp = composeCustomComp(
-						__SettingsMenuItemComponent__,
-						"vjs-selected-quality"
-					);
+					tmp = composeCustomComp(__SettingsMenuItemComponent__, 'vjs-selected-quality');
 
 					tmp.methods.handleClick = function (ev) {
-						this.player_.trigger("openQualityOptions", !ev.screenX && !ev.screenY);
+						this.player_.trigger('openQualityOptions', !ev.screenX && !ev.screenY);
 					};
 
+					videojs.registerComponent('SelectedResolution', videojs.extend(tmp.extend, tmp.methods));
 					videojs.registerComponent(
-						"SelectedResolution",
-						videojs.extend(tmp.extend, tmp.methods)
-					);
-					videojs.registerComponent(
-						"SelectedResolutionLabel",
+						'SelectedResolutionLabel',
 						videojs.extend(
 							__SettingsMenuItemLabelComponent__,
-							composeCustomComp(__SettingsMenuItemLabelComponent__, null, "Quality")
-								.methods
+							composeCustomComp(__SettingsMenuItemLabelComponent__, null, 'Quality').methods
 						)
 					);
 
-					tmp = composeCustomComp(
-						__SettingsMenuItemContentComponent__,
-						null,
-						args.selectedResolution
-					);
+					tmp = composeCustomComp(__SettingsMenuItemContentComponent__, null, args.selectedResolution);
 
 					tmp.methods.constructor = function () {
 						videojsComponent.apply(this, arguments);
 						const that = this;
 						that.el_.innerHTML = args.selectedResolution;
-						this.setAttribute("class", this.buildCSSClass());
-						pluginInstanceRef.on(
-							this.player_,
-							["updatedSelectedQuality"],
-							function () {
-								that.el_.innerHTML = this.selectedQualityTitle();
-							}
-						);
+						this.setAttribute('class', this.buildCSSClass());
+						pluginInstanceRef.on(this.player_, ['updatedSelectedQuality'], function () {
+							that.el_.innerHTML = this.selectedQualityTitle();
+						});
 					};
 
-					videojs.registerComponent(
-						"SelectedResolutionContent",
-						videojs.extend(tmp.extend, tmp.methods)
-					);
+					videojs.registerComponent('SelectedResolutionContent', videojs.extend(tmp.extend, tmp.methods));
 				}
 
 				break;
-			case "__resolution":
+			case '__resolution':
 				struct.resolutionsPanel = {
 					children: {
 						resolutionsPanelInner: {
@@ -877,15 +714,12 @@ function generatePlugin(/*videojs*/) {
 					},
 				};
 
-				tmp = composeCustomComp(
-					__SettingsPanelComponent__,
-					"vjs-resolutions-panel"
-				);
+				tmp = composeCustomComp(__SettingsPanelComponent__, 'vjs-resolutions-panel');
 
 				tmp.methods.constructor = function () {
 					videojsComponent.apply(this, arguments);
 
-					this.setAttribute("class", this.buildCSSClass());
+					this.setAttribute('class', this.buildCSSClass());
 
 					const that = this;
 
@@ -893,55 +727,39 @@ function generatePlugin(/*videojs*/) {
 						if (that.el_.contains(ev.relatedTarget)) {
 							return;
 						}
-						that.player_.trigger("focusoutResolutionsPanel");
+						that.player_.trigger('focusoutResolutionsPanel');
 					}
 
-					pluginInstanceRef.on(
-						this.player_,
-						["updatedSettingsPanelsVisibility"],
-						function () {
-							videojs.dom[
-								this.state.isOpenQualityOptions ? "addClass" : "removeClass"
-							](that.el_, "vjs-visible-panel");
-						}
-					);
+					pluginInstanceRef.on(this.player_, ['updatedSettingsPanelsVisibility'], function () {
+						videojs.dom[this.state.isOpenQualityOptions ? 'addClass' : 'removeClass'](
+							that.el_,
+							'vjs-visible-panel'
+						);
+					});
 
-					pluginInstanceRef.on(
-						this.player_,
-						["openedQualities"],
-						function (ev, openedFromKeyboard) {
-							that.el_.setAttribute("tabindex", "-1");
-							that.el_.addEventListener("focusout", onFocusout);
-							if (!!openedFromKeyboard) {
-								that.el_
-									.querySelector('.vjs-setting-panel-title > *[role="button"]')
-									.focus();
-							} else {
-								that.el_.focus();
-							}
+					pluginInstanceRef.on(this.player_, ['openedQualities'], function (ev, openedFromKeyboard) {
+						that.el_.setAttribute('tabindex', '-1');
+						that.el_.addEventListener('focusout', onFocusout);
+						if (!!openedFromKeyboard) {
+							that.el_.querySelector('.vjs-setting-panel-title > *[role="button"]').focus();
+						} else {
+							that.el_.focus();
 						}
-					);
+					});
 
-					pluginInstanceRef.on(
-						this.player_,
-						["closedQualities"],
-						function (ev, closedFromKeyboard) {
-							that.el_.removeAttribute("tabindex");
-							that.el_.removeEventListener("focusout", onFocusout);
-							if (!!closedFromKeyboard) {
-								that.el_.querySelector(".vjs-settings-menu-item").focus();
-							}
+					pluginInstanceRef.on(this.player_, ['closedQualities'], function (ev, closedFromKeyboard) {
+						that.el_.removeAttribute('tabindex');
+						that.el_.removeEventListener('focusout', onFocusout);
+						if (!!closedFromKeyboard) {
+							that.el_.querySelector('.vjs-settings-menu-item').focus();
 						}
-					);
+					});
 				};
 
-				videojs.registerComponent(
-					"ResolutionsPanel",
-					videojs.extend(tmp.extend, tmp.methods)
-				);
+				videojs.registerComponent('ResolutionsPanel', videojs.extend(tmp.extend, tmp.methods));
 
 				videojs.registerComponent(
-					"ResolutionsPanelInner",
+					'ResolutionsPanelInner',
 					videojs.extend(
 						__SettingsPanelInnerComponent__,
 						composeCustomComp(__SettingsPanelInnerComponent__).methods
@@ -949,35 +767,24 @@ function generatePlugin(/*videojs*/) {
 				);
 
 				videojs.registerComponent(
-					"ResolutionsMenu",
-					videojs.extend(
-						__SettingsMenuComponent__,
-						composeCustomComp(__SettingsMenuComponent__).methods
-					)
+					'ResolutionsMenu',
+					videojs.extend(__SettingsMenuComponent__, composeCustomComp(__SettingsMenuComponent__).methods)
 				);
 
 				videojs.registerComponent(
-					"ResolutionsMenuTitle",
+					'ResolutionsMenuTitle',
 					videojs.extend(
 						__SettingsPanelTitleComponent__,
-						composeCustomComp(__SettingsPanelTitleComponent__, "vjs-settings-back")
-							.methods
+						composeCustomComp(__SettingsPanelTitleComponent__, 'vjs-settings-back').methods
 					)
 				);
 
-				tmp = composeCustomComp(
-					__MediaCMSButtonClickableComponent__,
-					null,
-					"Quality"
-				);
+				tmp = composeCustomComp(__MediaCMSButtonClickableComponent__, null, 'Quality');
 				tmp.methods.handleClick = function (ev) {
-					this.player_.trigger("closeQualityOptions", !ev.screenX && !ev.screenY);
+					this.player_.trigger('closeQualityOptions', !ev.screenX && !ev.screenY);
 				};
 
-				videojs.registerComponent(
-					"ResolutionsMenuBackButton",
-					videojs.extend(tmp.extend, tmp.methods)
-				);
+				videojs.registerComponent('ResolutionsMenuBackButton', videojs.extend(tmp.extend, tmp.methods));
 
 				const resolutionKeys = (function () {
 					let i;
@@ -1018,10 +825,10 @@ function generatePlugin(/*videojs*/) {
 					k = resolutionKeys[i];
 
 					struct.resolutionsPanel.children.resolutionsPanelInner.children.resolutionsMenu.children[
-						"resolutionOption_" + k
+						'resolutionOption_' + k
 					] = {
 						children: {
-							["resolutionOption_" + k + "_content"]: null,
+							['resolutionOption_' + k + '_content']: null,
 						},
 					};
 
@@ -1029,7 +836,7 @@ function generatePlugin(/*videojs*/) {
 						tmp = composeCustomComp(
 							__SettingsMenuItemComponent__,
 							key.toString() === pluginInstanceRef.state.theSelectedQuality.toString()
-								? "vjs-selected-menu-item"
+								? 'vjs-selected-menu-item'
 								: null,
 							null /*, { 'data-opt': key }*/
 						);
@@ -1038,39 +845,23 @@ function generatePlugin(/*videojs*/) {
 							__SettingsMenuItemComponent__.apply(this, arguments);
 							const that = this;
 							this.qualityKey = key;
-							this.setAttribute("data-opt", key);
-							pluginInstanceRef.on(
-								this.player_,
-								["updatedSelectedQuality"],
-								function () {
-									videojs.dom[
-										that.qualityKey === this.state.theSelectedQuality
-											? "addClass"
-											: "removeClass"
-									](that.el_, "vjs-selected-menu-item");
-								}
-							);
+							this.setAttribute('data-opt', key);
+							pluginInstanceRef.on(this.player_, ['updatedSelectedQuality'], function () {
+								videojs.dom[
+									that.qualityKey === this.state.theSelectedQuality ? 'addClass' : 'removeClass'
+								](that.el_, 'vjs-selected-menu-item');
+							});
 						};
 
 						tmp.methods.handleClick = function () {
-							this.player_.trigger(
-								"selectedQuality",
-								this.el_.getAttribute("data-opt")
-							);
+							this.player_.trigger('selectedQuality', this.el_.getAttribute('data-opt'));
 						};
 
-						videojs.registerComponent(
-							"ResolutionOption_" + key,
-							videojs.extend(tmp.extend, tmp.methods)
-						);
+						videojs.registerComponent('ResolutionOption_' + key, videojs.extend(tmp.extend, tmp.methods));
 
-						tmp = composeCustomComp(
-							__SettingsMenuItemContentComponent__,
-							null,
-							title
-						);
+						tmp = composeCustomComp(__SettingsMenuItemContentComponent__, null, title);
 						videojs.registerComponent(
-							"ResolutionOption_" + key + "_content",
+							'ResolutionOption_' + key + '_content',
 							videojs.extend(tmp.extend, tmp.methods)
 						);
 					})(k, args.resolutions[k].title || k);
@@ -1079,7 +870,7 @@ function generatePlugin(/*videojs*/) {
 				}
 
 				break;
-			case "__playbackSpeed":
+			case '__playbackSpeed':
 				struct.playbackSpeedsPanel = {
 					children: {
 						playbackSpeedsPanelInner: {
@@ -1095,15 +886,12 @@ function generatePlugin(/*videojs*/) {
 					},
 				};
 
-				tmp = composeCustomComp(
-					__SettingsPanelComponent__,
-					"vjs-playback-speed-panel"
-				);
+				tmp = composeCustomComp(__SettingsPanelComponent__, 'vjs-playback-speed-panel');
 
 				tmp.methods.constructor = function () {
 					videojsComponent.apply(this, arguments);
 
-					this.setAttribute("class", this.buildCSSClass());
+					this.setAttribute('class', this.buildCSSClass());
 
 					const that = this;
 
@@ -1111,55 +899,39 @@ function generatePlugin(/*videojs*/) {
 						if (that.el_.contains(ev.relatedTarget)) {
 							return;
 						}
-						that.player_.trigger("focusoutPlaybackSpeedsPanel");
+						that.player_.trigger('focusoutPlaybackSpeedsPanel');
 					}
 
-					pluginInstanceRef.on(
-						this.player_,
-						["updatedSettingsPanelsVisibility"],
-						function () {
-							videojs.dom[
-								this.state.isOpenPlaybackSpeedOptions ? "addClass" : "removeClass"
-							](that.el_, "vjs-visible-panel");
-						}
-					);
+					pluginInstanceRef.on(this.player_, ['updatedSettingsPanelsVisibility'], function () {
+						videojs.dom[this.state.isOpenPlaybackSpeedOptions ? 'addClass' : 'removeClass'](
+							that.el_,
+							'vjs-visible-panel'
+						);
+					});
 
-					pluginInstanceRef.on(
-						this.player_,
-						["openedPlaybackSpeeds"],
-						function (ev, openedFromKeyboard) {
-							that.el_.setAttribute("tabindex", "-1");
-							that.el_.addEventListener("focusout", onFocusout);
-							if (!!openedFromKeyboard) {
-								that.el_
-									.querySelector('.vjs-setting-panel-title > *[role="button"]')
-									.focus();
-							} else {
-								that.el_.focus();
-							}
+					pluginInstanceRef.on(this.player_, ['openedPlaybackSpeeds'], function (ev, openedFromKeyboard) {
+						that.el_.setAttribute('tabindex', '-1');
+						that.el_.addEventListener('focusout', onFocusout);
+						if (!!openedFromKeyboard) {
+							that.el_.querySelector('.vjs-setting-panel-title > *[role="button"]').focus();
+						} else {
+							that.el_.focus();
 						}
-					);
+					});
 
-					pluginInstanceRef.on(
-						this.player_,
-						["closedPlaybackSpeeds"],
-						function (ev, closedFromKeyboard) {
-							that.el_.removeAttribute("tabindex");
-							that.el_.removeEventListener("focusout", onFocusout);
-							if (!!closedFromKeyboard) {
-								that.el_.querySelector(".vjs-settings-menu-item").focus();
-							}
+					pluginInstanceRef.on(this.player_, ['closedPlaybackSpeeds'], function (ev, closedFromKeyboard) {
+						that.el_.removeAttribute('tabindex');
+						that.el_.removeEventListener('focusout', onFocusout);
+						if (!!closedFromKeyboard) {
+							that.el_.querySelector('.vjs-settings-menu-item').focus();
 						}
-					);
+					});
 				};
 
-				videojs.registerComponent(
-					"PlaybackSpeedsPanel",
-					videojs.extend(tmp.extend, tmp.methods)
-				);
+				videojs.registerComponent('PlaybackSpeedsPanel', videojs.extend(tmp.extend, tmp.methods));
 
 				videojs.registerComponent(
-					"PlaybackSpeedsPanelInner",
+					'PlaybackSpeedsPanelInner',
 					videojs.extend(
 						__SettingsPanelInnerComponent__,
 						composeCustomComp(__SettingsPanelInnerComponent__).methods
@@ -1167,56 +939,40 @@ function generatePlugin(/*videojs*/) {
 				);
 
 				videojs.registerComponent(
-					"PlaybackSpeedsMenu",
-					videojs.extend(
-						__SettingsMenuComponent__,
-						composeCustomComp(__SettingsMenuComponent__).methods
-					)
+					'PlaybackSpeedsMenu',
+					videojs.extend(__SettingsMenuComponent__, composeCustomComp(__SettingsMenuComponent__).methods)
 				);
 
 				videojs.registerComponent(
-					"PlaybackSpeedsMenuTitle",
+					'PlaybackSpeedsMenuTitle',
 					videojs.extend(
 						__SettingsPanelTitleComponent__,
-						composeCustomComp(__SettingsPanelTitleComponent__, "vjs-settings-back")
-							.methods
+						composeCustomComp(__SettingsPanelTitleComponent__, 'vjs-settings-back').methods
 					)
 				);
 
-				tmp = composeCustomComp(
-					__MediaCMSButtonClickableComponent__,
-					null,
-					"Playback speed"
-				);
+				tmp = composeCustomComp(__MediaCMSButtonClickableComponent__, null, 'Playback speed');
 				tmp.methods.handleClick = function (ev) {
-					this.player_.trigger(
-						"closePlaybackSpeedOptions",
-						!ev.screenX && !ev.screenY
-					);
+					this.player_.trigger('closePlaybackSpeedOptions', !ev.screenX && !ev.screenY);
 				};
 
-				videojs.registerComponent(
-					"PlaybackSpeedsMenuBackButton",
-					videojs.extend(tmp.extend, tmp.methods)
-				);
+				videojs.registerComponent('PlaybackSpeedsMenuBackButton', videojs.extend(tmp.extend, tmp.methods));
 
 				for (k in args.playbackSpeeds) {
 					if (args.playbackSpeeds.hasOwnProperty(k)) {
 						struct.playbackSpeedsPanel.children.playbackSpeedsPanelInner.children.playbackSpeedsMenu.children[
-							"playbackSpeedOption_" + args.playbackSpeeds[k].speed
+							'playbackSpeedOption_' + args.playbackSpeeds[k].speed
 						] = {
 							children: {
-								["playbackSpeedOption_" + args.playbackSpeeds[k].speed + "_content"]:
-									null,
+								['playbackSpeedOption_' + args.playbackSpeeds[k].speed + '_content']: null,
 							},
 						};
 
 						(function (key, title) {
 							tmp = composeCustomComp(
 								__SettingsMenuItemComponent__,
-								key.toString() ===
-									pluginInstanceRef.state.theSelectedPlaybackSpeed.toString()
-									? "vjs-selected-menu-item"
+								key.toString() === pluginInstanceRef.state.theSelectedPlaybackSpeed.toString()
+									? 'vjs-selected-menu-item'
 									: null,
 								null /*, { 'data-opt': key }*/
 							);
@@ -1225,39 +981,28 @@ function generatePlugin(/*videojs*/) {
 								__SettingsMenuItemComponent__.apply(this, arguments);
 								const that = this;
 								this.playbackSpeedKey = key;
-								this.setAttribute("data-opt", key);
-								pluginInstanceRef.on(
-									this.player_,
-									["updatedSelectedPlaybackSpeed"],
-									function () {
-										videojs.dom[
-											that.playbackSpeedKey === this.state.theSelectedPlaybackSpeed
-												? "addClass"
-												: "removeClass"
-										](that.el_, "vjs-selected-menu-item");
-									}
-								);
+								this.setAttribute('data-opt', key);
+								pluginInstanceRef.on(this.player_, ['updatedSelectedPlaybackSpeed'], function () {
+									videojs.dom[
+										that.playbackSpeedKey === this.state.theSelectedPlaybackSpeed
+											? 'addClass'
+											: 'removeClass'
+									](that.el_, 'vjs-selected-menu-item');
+								});
 							};
 
 							tmp.methods.handleClick = function () {
-								this.player_.trigger(
-									"selectedPlaybackSpeed",
-									this.el_.getAttribute("data-opt")
-								);
+								this.player_.trigger('selectedPlaybackSpeed', this.el_.getAttribute('data-opt'));
 							};
 
 							videojs.registerComponent(
-								"PlaybackSpeedOption_" + key,
+								'PlaybackSpeedOption_' + key,
 								videojs.extend(tmp.extend, tmp.methods)
 							);
 
-							tmp = composeCustomComp(
-								__SettingsMenuItemContentComponent__,
-								null,
-								title
-							);
+							tmp = composeCustomComp(__SettingsMenuItemContentComponent__, null, title);
 							videojs.registerComponent(
-								"PlaybackSpeedOption_" + key + "_content",
+								'PlaybackSpeedOption_' + key + '_content',
 								videojs.extend(tmp.extend, tmp.methods)
 							);
 						})(args.playbackSpeeds[k].speed, args.playbackSpeeds[k].title || k);
@@ -1265,20 +1010,17 @@ function generatePlugin(/*videojs*/) {
 				}
 
 				break;
-			case "__leftControls":
+			case '__leftControls':
 				struct.leftControls = { children: {} };
 
 				if (args.options.controlBar.previous) {
-					tmp = composeCustomComp(videojsComponentButton, "vjs-previous-button");
+					tmp = composeCustomComp(videojsComponentButton, 'vjs-previous-button');
 
 					tmp.methods.handleClick = function (ev) {
-						this.player_.trigger("clicked_previous_button");
+						this.player_.trigger('clicked_previous_button');
 					};
 
-					videojs.registerComponent(
-						"PreviousButton",
-						videojs.extend(tmp.extend, tmp.methods)
-					);
+					videojs.registerComponent('PreviousButton', videojs.extend(tmp.extend, tmp.methods));
 
 					struct.leftControls.children.previousButton = null;
 				}
@@ -1288,16 +1030,13 @@ function generatePlugin(/*videojs*/) {
 				}
 
 				if (args.options.controlBar.next) {
-					tmp = composeCustomComp(videojsComponentButton, "vjs-next-button");
+					tmp = composeCustomComp(videojsComponentButton, 'vjs-next-button');
 
 					tmp.methods.handleClick = function (ev) {
-						this.player_.trigger("clicked_next_button");
+						this.player_.trigger('clicked_next_button');
 					};
 
-					videojs.registerComponent(
-						"NextButton",
-						videojs.extend(tmp.extend, tmp.methods)
-					);
+					videojs.registerComponent('NextButton', videojs.extend(tmp.extend, tmp.methods));
 
 					struct.leftControls.children.nextButton = null;
 				}
@@ -1327,15 +1066,15 @@ function generatePlugin(/*videojs*/) {
 				/*console.log( struct.leftControls.children );*/
 
 				videojs.registerComponent(
-					"LeftControls",
+					'LeftControls',
 					videojs.extend(
 						__MediaCMSComponent__,
-						composeCustomComp(__MediaCMSComponent__, "vjs-left-controls").methods
+						composeCustomComp(__MediaCMSComponent__, 'vjs-left-controls').methods
 					)
 				);
 
 				break;
-			case "__rightControls":
+			case '__rightControls':
 				struct.rightControls = { children: {} };
 
 				if (args.options.subtitles) {
@@ -1359,75 +1098,56 @@ function generatePlugin(/*videojs*/) {
 				}
 
 				videojs.registerComponent(
-					"RightControls",
+					'RightControls',
 					videojs.extend(
 						__MediaCMSComponent__,
-						composeCustomComp(__MediaCMSComponent__, "vjs-right-controls").methods
+						composeCustomComp(__MediaCMSComponent__, 'vjs-right-controls').methods
 					)
 				);
 
 				if (args.options.subtitles) {
-					tmp = composeCustomComp(videojsComponentButton, "vjs-subtitles-control");
+					tmp = composeCustomComp(videojsComponentButton, 'vjs-subtitles-control');
 
 					tmp.methods.handleClick = function (ev) {
 						this.player_.trigger(
 							pluginInstanceRef.state.isOpenSubtitlesOptions
-								? "closeSubtitlesPanel"
-								: "openSubtitlesPanel",
+								? 'closeSubtitlesPanel'
+								: 'openSubtitlesPanel',
 							!ev.screenX && !ev.screenY
 						);
 					};
 
-					videojs.registerComponent(
-						"SubtitlesToggle",
-						videojs.extend(tmp.extend, tmp.methods)
-					);
+					videojs.registerComponent('SubtitlesToggle', videojs.extend(tmp.extend, tmp.methods));
 				}
 
 				if (args.enabledSettingsPanel) {
-					tmp = composeCustomComp(
-						videojsComponentButton,
-						"vjs-settings-control vjs-icon-cog"
-					);
+					tmp = composeCustomComp(videojsComponentButton, 'vjs-settings-control vjs-icon-cog');
 
 					tmp.methods.handleClick = function (ev) {
 						this.player_.trigger(
-							pluginInstanceRef.state.isOpenSettingsOptions
-								? "closeSettingsPanel"
-								: "openSettingsPanel",
+							pluginInstanceRef.state.isOpenSettingsOptions ? 'closeSettingsPanel' : 'openSettingsPanel',
 							!ev.screenX && !ev.screenY
 						);
 					};
 
-					videojs.registerComponent(
-						"SettingsToggle",
-						videojs.extend(tmp.extend, tmp.methods)
-					);
+					videojs.registerComponent('SettingsToggle', videojs.extend(tmp.extend, tmp.methods));
 				}
 
 				if (args.options.controlBar.theaterMode) {
-					tmp = composeCustomComp(
-						videojsComponentButton,
-						"vjs-theater-mode-control"
-					);
+					tmp = composeCustomComp(videojsComponentButton, 'vjs-theater-mode-control');
 
 					tmp.methods.handleClick = function () {
-						this.player_.trigger("theatermodechange");
+						this.player_.trigger('theatermodechange');
 						this.updateControlText();
 					};
 
 					tmp.methods.updateControlText = function () {
 						this.controlText(
-							this.player_.localize(
-								pluginInstanceRef.isTheaterMode() ? "Default mode" : "Theater mode"
-							)
+							this.player_.localize(pluginInstanceRef.isTheaterMode() ? 'Default mode' : 'Theater mode')
 						);
 					};
 
-					videojs.registerComponent(
-						"TheaterModeToggle",
-						videojs.extend(tmp.extend, tmp.methods)
-					);
+					videojs.registerComponent('TheaterModeToggle', videojs.extend(tmp.extend, tmp.methods));
 				}
 				break;
 		}
@@ -1445,60 +1165,51 @@ function generatePlugin(/*videojs*/) {
 			void 0 !== options.playbackSpeeds.options &&
 			!!Object.keys(options.playbackSpeeds.options).length;
 
-		const enabledSettingsPanel =
-			enabledResolutionsPanel || enabledPlaybackSpeedPanel; // @note: At the moment the only setting option is video resolution.
+		const enabledSettingsPanel = enabledResolutionsPanel || enabledPlaybackSpeedPanel; // @note: At the moment the only setting option is video resolution.
 
 		if (options.controlBar.bottomBackground) {
-			initComponents(pluginInstanceRef, "bottomBackground", struct);
+			initComponents(pluginInstanceRef, 'bottomBackground', struct);
 		}
 
 		if (options.controlBar.progress) {
-			initComponents(pluginInstanceRef, "progressControl", struct);
+			initComponents(pluginInstanceRef, 'progressControl', struct);
 		}
 
 		if (enabledResolutionsPanel) {
-			initComponents(pluginInstanceRef, "__resolution", struct, {
+			initComponents(pluginInstanceRef, '__resolution', struct, {
 				resolutions: options.resolutions.options,
 			});
 		}
 
 		if (enabledPlaybackSpeedPanel) {
-			initComponents(pluginInstanceRef, "__playbackSpeed", struct, {
+			initComponents(pluginInstanceRef, '__playbackSpeed', struct, {
 				playbackSpeeds: options.playbackSpeeds.options,
 			});
 		}
 
 		if (options.subtitles) {
-			initComponents(pluginInstanceRef, "__subtitles", struct, {
+			initComponents(pluginInstanceRef, '__subtitles', struct, {
 				options: options,
 			});
 		}
 
 		if (enabledSettingsPanel) {
 			if (enabledResolutionsPanel && enabledPlaybackSpeedPanel) {
-				initComponents(pluginInstanceRef, "__settings", struct, {
+				initComponents(pluginInstanceRef, '__settings', struct, {
 					enabledResolutionsPanel: enabledResolutionsPanel,
-					selectedResolution: enabledResolutionsPanel
-						? options.resolutions.default
-						: null,
+					selectedResolution: enabledResolutionsPanel ? options.resolutions.default : null,
 					enabledPlaybackSpeedPanel: enabledPlaybackSpeedPanel,
-					selectedPlaybackSpeed: enabledPlaybackSpeedPanel
-						? options.playbackSpeeds.default
-						: null,
+					selectedPlaybackSpeed: enabledPlaybackSpeedPanel ? options.playbackSpeeds.default : null,
 				});
 			} else if (enabledResolutionsPanel) {
-				initComponents(pluginInstanceRef, "__settings", struct, {
+				initComponents(pluginInstanceRef, '__settings', struct, {
 					enabledResolutionsPanel: enabledResolutionsPanel,
-					selectedResolution: enabledResolutionsPanel
-						? options.resolutions.default
-						: null,
+					selectedResolution: enabledResolutionsPanel ? options.resolutions.default : null,
 				});
 			} else if (enabledPlaybackSpeedPanel) {
-				initComponents(pluginInstanceRef, "__settings", struct, {
+				initComponents(pluginInstanceRef, '__settings', struct, {
 					enabledPlaybackSpeedPanel: enabledPlaybackSpeedPanel,
-					selectedPlaybackSpeed: enabledPlaybackSpeedPanel
-						? options.playbackSpeeds.default
-						: null,
+					selectedPlaybackSpeed: enabledPlaybackSpeedPanel ? options.playbackSpeeds.default : null,
 				});
 			}
 		}
@@ -1510,7 +1221,7 @@ function generatePlugin(/*videojs*/) {
 			options.controlBar.volume ||
 			options.controlBar.time
 		) {
-			initComponents(pluginInstanceRef, "__leftControls", struct, {
+			initComponents(pluginInstanceRef, '__leftControls', struct, {
 				options: options,
 			});
 		}
@@ -1522,7 +1233,7 @@ function generatePlugin(/*videojs*/) {
 			options.controlBar.fullscreen ||
 			options.controlBar.pictureInPictureToggle
 		) {
-			initComponents(pluginInstanceRef, "__rightControls", struct, {
+			initComponents(pluginInstanceRef, '__rightControls', struct, {
 				options: options,
 				enabledSettingsPanel: enabledSettingsPanel,
 			});
@@ -1537,7 +1248,7 @@ function generatePlugin(/*videojs*/) {
 		if (isDefined(options) && isDefined(options.controlBar)) {
 			generateControlBarComponents(pluginInstncRef)(
 				controlBarComponentsStructs(pluginInstncRef, options),
-				player.getChild("controlBar")
+				player.getChild('controlBar')
 			);
 		}
 	}
@@ -1565,8 +1276,8 @@ function generatePlugin(/*videojs*/) {
 			el.classList.remove(cls);
 		} else {
 			el.className = el.className.replace(
-				new RegExp("(^|\\b)" + cls.split(" ").join("|") + "(\\b|$)", "gi"),
-				" "
+				new RegExp('(^|\\b)' + cls.split(' ').join('|') + '(\\b|$)', 'gi'),
+				' '
 			);
 		}
 	}
@@ -1575,7 +1286,7 @@ function generatePlugin(/*videojs*/) {
 		if (el.classList) {
 			el.classList.add(cls);
 		} else {
-			el.className += " " + cls;
+			el.className += ' ' + cls;
 		}
 	}
 
@@ -1654,11 +1365,11 @@ function generatePlugin(/*videojs*/) {
 	}
 
 	function isBoolean(v) {
-		return "boolean" === typeof v || v instanceof Boolean;
+		return 'boolean' === typeof v || v instanceof Boolean;
 	}
 
 	function isString(v) {
-		return "string" === typeof v || v instanceof String;
+		return 'string' === typeof v || v instanceof String;
 	}
 
 	function isDefined(v) {
@@ -1670,9 +1381,7 @@ function generatePlugin(/*videojs*/) {
 	}
 
 	function isArray(v) {
-		return !Array.isArray
-			? "[object Array]" === Object.prototype.toString.call(v)
-			: Array.isArray(v);
+		return !Array.isArray ? '[object Array]' === Object.prototype.toString.call(v) : Array.isArray(v);
 	}
 
 	function ifBooleanElse(bol, els) {
@@ -1680,7 +1389,7 @@ function generatePlugin(/*videojs*/) {
 	}
 
 	function applyCssTransform(elem, val) {
-		val = val.replace(/ /g, ""); // Remove all blank characters, otherwise doesn't work in IE.
+		val = val.replace(/ /g, ''); // Remove all blank characters, otherwise doesn't work in IE.
 		elem.style.transform = val;
 		elem.style.msTransform = val;
 		elem.style.MozTransform = val;
@@ -1693,15 +1402,15 @@ function generatePlugin(/*videojs*/) {
 			v,
 			b = document.body || document.documentElement,
 			s = b.style,
-			p = "transition";
-		if ("string" === typeof s[p]) {
+			p = 'transition';
+		if ('string' === typeof s[p]) {
 			return true;
 		}
-		v = ["Moz", "webkit", "Webkit", "Khtml", "O", "ms"];
+		v = ['Moz', 'webkit', 'Webkit', 'Khtml', 'O', 'ms'];
 		p = p.charAt(0).toUpperCase() + p.substr(1);
 		i = 0;
 		while (i < v.length) {
-			if ("string" === typeof s[v[i] + p]) {
+			if ('string' === typeof s[v[i] + p]) {
 				return true;
 			}
 			i += 1;
@@ -1711,24 +1420,18 @@ function generatePlugin(/*videojs*/) {
 
 	function browserSupports(type) {
 		switch (type) {
-			case "csstransforms":
+			case 'csstransforms':
 				return browserSupports_csstransforms();
 		}
 		return null;
 	}
 
-	function extractSupportedAndUsedVideoFormat(
-		defaultSource,
-		defaultResolution,
-		availabeResolutions
-	) {
+	function extractSupportedAndUsedVideoFormat(defaultSource, defaultResolution, availabeResolutions) {
 		if (defaultResolution && availabeResolutions) {
 			const x = availabeResolutions[defaultResolution];
 			let i = 0;
 			while (i < x.src.length) {
-				if (
-					defaultSource === x.src[i] /*|| -1 < defaultSource.indexOf( x.src[i] )*/
-				) {
+				if (defaultSource === x.src[i] /*|| -1 < defaultSource.indexOf( x.src[i] )*/) {
 					// console.log( "C", { defaultResolution: defaultResolution, format: x.format[i], order: i } );
 
 					return {
@@ -1761,10 +1464,7 @@ function generatePlugin(/*videojs*/) {
 
 						defaultResolution = k;
 
-						j =
-							void 0 === availabeResolutions[k].format[j]
-								? availabeResolutions[k].format.length - 1
-								: j;
+						j = void 0 === availabeResolutions[k].format[j] ? availabeResolutions[k].format.length - 1 : j;
 
 						// console.log( "A", { defaultResolution: k, format: availabeResolutions[k].format[j], order: j }, defaultSource );
 
@@ -1790,65 +1490,29 @@ function generatePlugin(/*videojs*/) {
 	}
 
 	function initElementsFocus(player) {
-		var controlBar = player.getChild("controlBar");
+		var controlBar = player.getChild('controlBar');
 
-		var progressControl =
-			void 0 === controlBar ? controlBar : controlBar.getChild("progressControl");
-		var leftControls =
-			void 0 === controlBar ? controlBar : controlBar.getChild("leftControls");
-		var rightControls =
-			void 0 === controlBar ? controlBar : controlBar.getChild("rightControls");
+		var progressControl = void 0 === controlBar ? controlBar : controlBar.getChild('progressControl');
+		var leftControls = void 0 === controlBar ? controlBar : controlBar.getChild('leftControls');
+		var rightControls = void 0 === controlBar ? controlBar : controlBar.getChild('rightControls');
 
-		var volumePanel =
-			void 0 === leftControls
-				? leftControls
-				: leftControls.getChild("volumePanel");
-		var volumeControl =
-			void 0 === volumePanel ? volumePanel : volumePanel.getChild("volumeControl");
+		var volumePanel = void 0 === leftControls ? leftControls : leftControls.getChild('volumePanel');
+		var volumeControl = void 0 === volumePanel ? volumePanel : volumePanel.getChild('volumeControl');
 
 		var elems = {
-			playToggle:
-				void 0 === leftControls
-					? leftControls
-					: leftControls.getChild("playToggle"),
-			previousButton:
-				void 0 === leftControls
-					? leftControls
-					: leftControls.getChild("previousButton"),
-			nextButton:
-				void 0 === leftControls
-					? leftControls
-					: leftControls.getChild("nextButton"),
-			muteToggle:
-				void 0 === volumePanel ? volumePanel : volumePanel.getChild("muteToggle"),
+			playToggle: void 0 === leftControls ? leftControls : leftControls.getChild('playToggle'),
+			previousButton: void 0 === leftControls ? leftControls : leftControls.getChild('previousButton'),
+			nextButton: void 0 === leftControls ? leftControls : leftControls.getChild('nextButton'),
+			muteToggle: void 0 === volumePanel ? volumePanel : volumePanel.getChild('muteToggle'),
 			volumeBar:
-				void 0 === volumePanel
-					? volumePanel
-					: volumePanel.getChild("volumeControl").getChild("volumeBar"),
-			subtitlesToggle:
-				void 0 === rightControls
-					? rightControls
-					: rightControls.getChild("subtitlesToggle"),
-			settingsToggle:
-				void 0 === rightControls
-					? rightControls
-					: rightControls.getChild("settingsToggle"),
-			fullscreenToggle:
-				void 0 === rightControls
-					? rightControls
-					: rightControls.getChild("fullscreenToggle"),
-			theaterModeToggle:
-				void 0 === rightControls
-					? rightControls
-					: rightControls.getChild("theaterModeToggle"),
+				void 0 === volumePanel ? volumePanel : volumePanel.getChild('volumeControl').getChild('volumeBar'),
+			subtitlesToggle: void 0 === rightControls ? rightControls : rightControls.getChild('subtitlesToggle'),
+			settingsToggle: void 0 === rightControls ? rightControls : rightControls.getChild('settingsToggle'),
+			fullscreenToggle: void 0 === rightControls ? rightControls : rightControls.getChild('fullscreenToggle'),
+			theaterModeToggle: void 0 === rightControls ? rightControls : rightControls.getChild('theaterModeToggle'),
 			pictureInPictureToggle:
-				void 0 === rightControls
-					? rightControls
-					: rightControls.getChild("PictureInPictureToggle"),
-			seekBar:
-				void 0 === progressControl
-					? progressControl
-					: progressControl.getChild("seekBar"),
+				void 0 === rightControls ? rightControls : rightControls.getChild('PictureInPictureToggle'),
+			seekBar: void 0 === progressControl ? progressControl : progressControl.getChild('seekBar'),
 		};
 
 		if (void 0 !== elems.playToggle) {
@@ -1900,26 +1564,26 @@ function generatePlugin(/*videojs*/) {
 		function onFocus(ev) {
 			if (!isMouseDown) {
 				isKeyboardFocus = true;
-				ev.target.setAttribute("key-focus", "");
+				ev.target.setAttribute('key-focus', '');
 			}
 		}
 
 		function onBlur(ev) {
 			if (isKeyboardFocus) {
 				isKeyboardFocus = false;
-				ev.target.removeAttribute("key-focus");
+				ev.target.removeAttribute('key-focus');
 			}
 		}
 
 		var isMouseDown = false;
 		var isKeyboardFocus = false;
 
-		elem.addEventListener("blur", onBlur);
-		elem.addEventListener("focus", onFocus);
-		elem.addEventListener("mouseup", function () {
+		elem.addEventListener('blur', onBlur);
+		elem.addEventListener('focus', onFocus);
+		elem.addEventListener('mouseup', function () {
 			isMouseDown = false;
 		});
-		elem.addEventListener("mousedown", function () {
+		elem.addEventListener('mousedown', function () {
 			isMouseDown = true;
 		});
 	}
@@ -1927,11 +1591,7 @@ function generatePlugin(/*videojs*/) {
 	/* ################################################## */
 
 	function videoPreviewThumb(player, options) {
-		player
-			.getChild("ControlBar")
-			.getChild("ProgressControl")
-			.getChild("SeekBar")
-			.removeChild("MouseTimeDisplay");
+		player.getChild('ControlBar').getChild('ProgressControl').getChild('SeekBar').removeChild('MouseTimeDisplay');
 
 		var halfThumbWidth = -1;
 
@@ -1950,10 +1610,7 @@ function generatePlugin(/*videojs*/) {
 				obj = args[i];
 				for (prop in obj) {
 					if (obj.hasOwnProperty(prop)) {
-						target[prop] =
-							"object" === typeof obj[prop]
-								? extend(target[prop], obj[prop])
-								: obj[prop];
+						target[prop] = 'object' === typeof obj[prop] ? extend(target[prop], obj[prop]) : obj[prop];
 					}
 				}
 			}
@@ -1961,67 +1618,44 @@ function generatePlugin(/*videojs*/) {
 		}
 
 		function getAllComputedStyles(el) {
-			return window.getComputedStyle
-				? window.getComputedStyle(el)
-				: el.currentStyle;
+			return window.getComputedStyle ? window.getComputedStyle(el) : el.currentStyle;
 		}
 
 		function getComputedStyle(el, pseudo) {
 			return function (prop) {
-				return window.getComputedStyle
-					? window.getComputedStyle(el, pseudo)[prop]
-					: el.currentStyle[prop];
+				return window.getComputedStyle ? window.getComputedStyle(el, pseudo)[prop] : el.currentStyle[prop];
 			};
 		}
 
 		function offsetParent(el) {
-			return "HTML" !== el.nodeName &&
-				"static" === getComputedStyle(el)("position")
+			return 'HTML' !== el.nodeName && 'static' === getComputedStyle(el)('position')
 				? offsetParent(el.offsetParent)
 				: el;
 		}
 
 		function updateDimensions() {
 			if (isFullscreen) {
-				halfThumbWidth =
-					(innerBorderWidth.left +
-						innerBorderWidth.right +
-						1.5 * settings.frame.width) /
-					2;
+				halfThumbWidth = (innerBorderWidth.left + innerBorderWidth.right + 1.5 * settings.frame.width) / 2;
 				spriteDom.inner.style.height =
-					innerBorderWidth.top +
-					innerBorderWidth.bottom +
-					1.5 * settings.frame.height +
-					"px";
+					innerBorderWidth.top + innerBorderWidth.bottom + 1.5 * settings.frame.height + 'px';
 				spriteDom.inner.style.width =
-					innerBorderWidth.left +
-					innerBorderWidth.right +
-					1.5 * settings.frame.width +
-					"px";
+					innerBorderWidth.left + innerBorderWidth.right + 1.5 * settings.frame.width + 'px';
 			} else {
-				halfThumbWidth =
-					(innerBorderWidth.left + innerBorderWidth.right + settings.frame.width) /
-					2;
+				halfThumbWidth = (innerBorderWidth.left + innerBorderWidth.right + settings.frame.width) / 2;
 				spriteDom.inner.style.height =
-					innerBorderWidth.top +
-					innerBorderWidth.bottom +
-					settings.frame.height +
-					"px";
+					innerBorderWidth.top + innerBorderWidth.bottom + settings.frame.height + 'px';
 				spriteDom.inner.style.width =
-					innerBorderWidth.left +
-					innerBorderWidth.right +
-					settings.frame.width +
-					"px";
+					innerBorderWidth.left + innerBorderWidth.right + settings.frame.width + 'px';
 			}
-			spriteDom.inner.style.left = -1 * halfThumbWidth + "px";
+			spriteDom.inner.style.left = -1 * halfThumbWidth + 'px';
 		}
 
 		var spriteDom = {
-			wrap: document.createElement("div"),
-			inner: document.createElement("div"),
-			img: document.createElement("img"),
-			timeDisplay: document.createElement("div"),
-			timeDisplayInner: document.createElement("div"),
+			wrap: document.createElement('div'),
+			inner: document.createElement('div'),
+			img: document.createElement('img'),
+			timeDisplay: document.createElement('div'),
+			timeDisplayInner: document.createElement('div'),
 		};
 
 		var innerBorderWidth = {
@@ -2050,34 +1684,34 @@ function generatePlugin(/*videojs*/) {
 		/*settings.frame.height = 192 / ( settings.frame.width / settings.frame.height );
         settings.frame.width = 192;*/
 
-		spriteDom.wrap.className = "vjs-preview-thumb";
-		spriteDom.inner.className = "vjs-preview-thumb-inner";
-		spriteDom.inner.style.backgroundImage = "url(" + settings.url + ")";
-		spriteDom.timeDisplay.className = "vjs-preview-thumb-time-display";
-		spriteDom.timeDisplayInner.innerHTML = "0:00";
+		spriteDom.wrap.className = 'vjs-preview-thumb';
+		spriteDom.inner.className = 'vjs-preview-thumb-inner';
+		spriteDom.inner.style.backgroundImage = 'url(' + settings.url + ')';
+		spriteDom.timeDisplay.className = 'vjs-preview-thumb-time-display';
+		spriteDom.timeDisplayInner.innerHTML = '0:00';
 
 		var spriteHeight = 0;
 
-		player.on("durationchange", function (e) {
+		player.on('durationchange', function (e) {
 			duration = player.duration();
 		}); // when the container is MP4.
-		player.on("loadedmetadata", function (e) {
+		player.on('loadedmetadata', function (e) {
 			duration = player.duration();
 		}); // when the container is HLS.
 
-		player.on("fullscreenchange", function (e) {
+		player.on('fullscreenchange', function (e) {
 			setTimeout(function () {
 				isFullscreen = player.isFullscreen();
 				updateDimensions();
 			}, 100);
 		});
 
-		player.one("playing", function (e) {
+		player.one('playing', function (e) {
 			// @note: Listener bind once.
 
 			updateDimensions();
 
-			player.addClass("vjs-enabled-preview-thumb"); // @note: Enable preview functionality.
+			player.addClass('vjs-enabled-preview-thumb'); // @note: Enable preview functionality.
 
 			spriteDom.img.onload = function () {
 				var innerStyles = getAllComputedStyles(spriteDom.inner);
@@ -2102,39 +1736,24 @@ function generatePlugin(/*videojs*/) {
 		function moveListener(event) {
 			progressControlElem = progressControlElem || progressControl.el();
 
-			var progressControlClientRect =
-				offsetParent(progressControlElem).getBoundingClientRect();
+			var progressControlClientRect = offsetParent(progressControlElem).getBoundingClientRect();
 
-			var pageXOffset = window.pageXOffset
-				? window.pageXOffset
-				: document.documentElement.scrollLeft;
-			var pageX = event.changedTouches
-				? event.changedTouches[0].pageX
-				: event.pageX;
+			var pageXOffset = window.pageXOffset ? window.pageXOffset : document.documentElement.scrollLeft;
+			var pageX = event.changedTouches ? event.changedTouches[0].pageX : event.pageX;
 
 			var left =
-				(pageX ||
-					event.clientX +
-						document.body.scrollLeft +
-						document.documentElement.scrollLeft) -
+				(pageX || event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft) -
 				(progressControlClientRect.left + pageXOffset);
-			var right =
-				(progressControlClientRect.width || progressControlClientRect.right) +
-				pageXOffset;
+			var right = (progressControlClientRect.width || progressControlClientRect.right) + pageXOffset;
 
 			var mouseTime = !spriteHeight
 				? 0
 				: Math.min(
 						(spriteHeight / settings.frame.height) * settings.frame.seconds - 1,
-						Math.floor(
-							((left - progressControlElem.offsetLeft) / progressControl.width()) *
-								duration
-						)
-				  );
+						Math.floor(((left - progressControlElem.offsetLeft) / progressControl.width()) * duration)
+					);
 
-			spriteDom.timeDisplayInner.innerHTML = videojs.formatTime(
-				duration * (left / right)
-			);
+			spriteDom.timeDisplayInner.innerHTML = videojs.formatTime(duration * (left / right));
 
 			if (left < halfThumbWidth) {
 				left = halfThumbWidth;
@@ -2142,18 +1761,15 @@ function generatePlugin(/*videojs*/) {
 				left = right - halfThumbWidth;
 			}
 
-			spriteDom.wrap.style.transform =
-				"translate(" + Math.min(right - halfThumbWidth, left) + "px, 0px)";
+			spriteDom.wrap.style.transform = 'translate(' + Math.min(right - halfThumbWidth, left) + 'px, 0px)';
 
 			spriteDom.inner.style.backgroundPositionY =
-				(isFullscreen ? -1.5 : -1) *
-					settings.frame.height *
-					Math.floor(mouseTime / settings.frame.seconds) +
-				"px";
+				(isFullscreen ? -1.5 : -1) * settings.frame.height * Math.floor(mouseTime / settings.frame.seconds) +
+				'px';
 		}
 
-		progressControl.on("mouseover", moveListener);
-		progressControl.on("mousemove", moveListener);
+		progressControl.on('mouseover', moveListener);
+		progressControl.on('mousemove', moveListener);
 
 		spriteDom.timeDisplay.appendChild(spriteDom.timeDisplayInner);
 		spriteDom.inner.appendChild(spriteDom.timeDisplay);
@@ -2164,7 +1780,7 @@ function generatePlugin(/*videojs*/) {
 
 	/* ################################################## */
 
-	const VideojsPluginClass = videojs.getPlugin("plugin");
+	const VideojsPluginClass = videojs.getPlugin('plugin');
 
 	class MediaCmsVjsPlugin extends VideojsPluginClass {
 		/**
@@ -2190,13 +1806,11 @@ function generatePlugin(/*videojs*/) {
 			super(player, options);
 
 			if (!options.sources.length) {
-				console.warn("Missing media source");
+				console.warn('Missing media source');
 				return;
 			}
 
-			options.enabledTouchControls = !!videojs.TOUCH_ENABLED
-				? true
-				: options.enabledTouchControls;
+			options.enabledTouchControls = !!videojs.TOUCH_ENABLED ? true : options.enabledTouchControls;
 
 			/**
 			 * Filter input state values.
@@ -2224,9 +1838,7 @@ function generatePlugin(/*videojs*/) {
 				if (Object.keys(resolutions).length) {
 					let resolutionKeys = Object.keys(resolutions);
 					ret.theSelectedQuality =
-						!st ||
-						void 0 === st.theSelectedQuality ||
-						void 0 === resolutions[st.theSelectedQuality]
+						!st || void 0 === st.theSelectedQuality || void 0 === resolutions[st.theSelectedQuality]
 							? resolutionKeys[Math.floor(resolutionKeys.length / 2)]
 							: st.theSelectedQuality;
 				}
@@ -2245,7 +1857,7 @@ function generatePlugin(/*videojs*/) {
 						}
 					}
 				} else {
-					ret.theSelectedPlaybackSpeed = "1";
+					ret.theSelectedPlaybackSpeed = '1';
 				}
 
 				return ret;
@@ -2303,16 +1915,10 @@ function generatePlugin(/*videojs*/) {
 
 			// Set state values update callback function.
 
-			this.stateUpdateCallback =
-				stateUpdateCallback instanceof Function ? stateUpdateCallback : null;
-			this.nextButtonClickCallback =
-				nextButtonClickCallback instanceof Function
-					? nextButtonClickCallback
-					: null;
+			this.stateUpdateCallback = stateUpdateCallback instanceof Function ? stateUpdateCallback : null;
+			this.nextButtonClickCallback = nextButtonClickCallback instanceof Function ? nextButtonClickCallback : null;
 			this.previousButtonClickCallback =
-				previousButtonClickCallback instanceof Function
-					? previousButtonClickCallback
-					: null;
+				previousButtonClickCallback instanceof Function ? previousButtonClickCallback : null;
 
 			// Set video resolutions info.
 
@@ -2351,10 +1957,7 @@ function generatePlugin(/*videojs*/) {
 
 			// Set video subtitles info.
 
-			if (
-				void 0 !== state.theSelectedSubtitleOption &&
-				null !== state.theSelectedSubtitleOption
-			) {
+			if (void 0 !== state.theSelectedSubtitleOption && null !== state.theSelectedSubtitleOption) {
 				this.state.theSelectedSubtitleOption = state.theSelectedSubtitleOption;
 			}
 
@@ -2367,8 +1970,8 @@ function generatePlugin(/*videojs*/) {
 				options.subtitles = null;
 			} else {
 				options.subtitles.languages.unshift({
-					label: "Off",
-					srclang: "off",
+					label: 'Off',
+					srclang: 'off',
 					src: null,
 				});
 			}
@@ -2399,16 +2002,16 @@ function generatePlugin(/*videojs*/) {
 
 			// Initial...
 
-			this.csstransforms = browserSupports("csstransforms");
+			this.csstransforms = browserSupports('csstransforms');
 
-			player.addClass("vjs-loading-video");
+			player.addClass('vjs-loading-video');
 
 			if (this.videoNativeDimensions) {
-				player.addClass("vjs-native-dimensions");
+				player.addClass('vjs-native-dimensions');
 			}
 
 			if (options.enabledTouchControls) {
-				player.addClass("vjs-enabled-touch-controls");
+				player.addClass('vjs-enabled-touch-controls');
 			}
 
 			this.progressBarLine = null;
@@ -2425,72 +2028,60 @@ function generatePlugin(/*videojs*/) {
 
 			this.onError = this.onError.bind(this);
 
-			this.on(player, ["error"], this.onError);
+			this.on(player, ['error'], this.onError);
 
-			this.on(player, ["dispose"], this.onDispose); // @todo: Make improvements based on 'dispose' result.
+			this.on(player, ['dispose'], this.onDispose); // @todo: Make improvements based on 'dispose' result.
 
-			this.on(player, ["ended"], this.onEnded);
-			this.on(player, ["volumechange"], this.onVolumeChange);
-			this.on(player, ["playing", "pause"], this.onPlayToggle);
+			this.on(player, ['ended'], this.onEnded);
+			this.on(player, ['volumechange'], this.onVolumeChange);
+			this.on(player, ['playing', 'pause'], this.onPlayToggle);
 
-			this.on(player, ["timeupdate"], this.onTimeUpdateChange);
+			this.on(player, ['timeupdate'], this.onTimeUpdateChange);
 
-			this.on(player, ["fullscreenchange"], this.onFullscreenChange);
+			this.on(player, ['fullscreenchange'], this.onFullscreenChange);
 
-			this.on(player, ["theatermodechange"], this.onTheaterModeChange);
+			this.on(player, ['theatermodechange'], this.onTheaterModeChange);
 
-			this.on(player, ["openSettingsPanel"], this.openSettingsOptions);
-			this.on(player, ["closeSettingsPanel"], this.closeSettingsOptions);
+			this.on(player, ['openSettingsPanel'], this.openSettingsOptions);
+			this.on(player, ['closeSettingsPanel'], this.closeSettingsOptions);
 
-			this.on(player, ["openSubtitlesPanel"], this.openSubtitlesOptions);
-			this.on(player, ["closeSubtitlesPanel"], this.closeSubtitlesOptions);
+			this.on(player, ['openSubtitlesPanel'], this.openSubtitlesOptions);
+			this.on(player, ['closeSubtitlesPanel'], this.closeSubtitlesOptions);
 
-			this.on(player, ["openQualityOptions"], this.openQualityOptions);
-			this.on(player, ["closeQualityOptions"], this.closeQualityOptions);
+			this.on(player, ['openQualityOptions'], this.openQualityOptions);
+			this.on(player, ['closeQualityOptions'], this.closeQualityOptions);
 
-			this.on(player, ["openPlaybackSpeedOptions"], this.openPlaybackSpeedOptions);
-			this.on(
-				player,
-				["closePlaybackSpeedOptions"],
-				this.closePlaybackSpeedOptions
-			);
+			this.on(player, ['openPlaybackSpeedOptions'], this.openPlaybackSpeedOptions);
+			this.on(player, ['closePlaybackSpeedOptions'], this.closePlaybackSpeedOptions);
 
-			this.on(player, ["selectedQuality"], this.onQualitySelection);
-			this.on(player, ["selectedSubtitleOption"], this.onSubtitleOptionSelection);
-			this.on(player, ["selectedPlaybackSpeed"], this.onPlaybackSpeedSelection);
+			this.on(player, ['selectedQuality'], this.onQualitySelection);
+			this.on(player, ['selectedSubtitleOption'], this.onSubtitleOptionSelection);
+			this.on(player, ['selectedPlaybackSpeed'], this.onPlaybackSpeedSelection);
 
-			this.on(player, ["focusoutSettingsPanel"], this.onFocusOutSettingsPanel);
-			this.on(player, ["focusoutSubtitlesPanel"], this.onFocusOutSubtitlesPanel);
-			this.on(
-				player,
-				["focusoutResolutionsPanel"],
-				this.onFocusOutResolutionsPanel
-			);
-			this.on(
-				player,
-				["focusoutPlaybackSpeedsPanel"],
-				this.onFocusOutPlaybackSpeedsPanel
-			);
+			this.on(player, ['focusoutSettingsPanel'], this.onFocusOutSettingsPanel);
+			this.on(player, ['focusoutSubtitlesPanel'], this.onFocusOutSubtitlesPanel);
+			this.on(player, ['focusoutResolutionsPanel'], this.onFocusOutResolutionsPanel);
+			this.on(player, ['focusoutPlaybackSpeedsPanel'], this.onFocusOutPlaybackSpeedsPanel);
 
-			this.on(player, ["moveforward"], this.onMoveForward);
-			this.on(player, ["movebackward"], this.onMoveBackward);
+			this.on(player, ['moveforward'], this.onMoveForward);
+			this.on(player, ['movebackward'], this.onMoveBackward);
 
-			this.on(player, ["userinactive"], this.onUserInactive);
+			this.on(player, ['userinactive'], this.onUserInactive);
 
-			this.on(player, ["seeked"], this.onSeeked);
-			this.on(player, ["seeking"], this.onSeeking);
+			this.on(player, ['seeked'], this.onSeeked);
+			this.on(player, ['seeking'], this.onSeeking);
 
-			this.on("statechanged", this.onStateChange);
+			this.on('statechanged', this.onStateChange);
 
 			this.hasPrevious = !!options.controlBar.previous;
 			this.hasNext = !!options.controlBar.next;
 
 			if (this.hasPrevious /*&& 'function' === typeof onPrevButtonClick*/) {
-				this.on(player, ["clicked_previous_button"], this.onPreviousButtonClick);
+				this.on(player, ['clicked_previous_button'], this.onPreviousButtonClick);
 			}
 
 			if (this.hasNext /*&& 'function' === typeof onNextButtonClick*/) {
-				this.on(player, ["clicked_next_button"], this.onNextButtonClick);
+				this.on(player, ['clicked_next_button'], this.onNextButtonClick);
 			}
 
 			this.onPlayerReady = this.onPlayerReady.bind(this);
@@ -2502,7 +2093,7 @@ function generatePlugin(/*videojs*/) {
 
 		onPreviousButtonClick() {
 			if (this.hasPrevious) {
-				this.actionAnimation("play_previous");
+				this.actionAnimation('play_previous');
 
 				if (this.previousButtonClickCallback) {
 					this.previousButtonClickCallback();
@@ -2512,7 +2103,7 @@ function generatePlugin(/*videojs*/) {
 
 		onNextButtonClick() {
 			if (this.hasNext) {
-				this.actionAnimation("play_next");
+				this.actionAnimation('play_next');
 
 				if (this.nextButtonClickCallback) {
 					this.nextButtonClickCallback();
@@ -2525,8 +2116,7 @@ function generatePlugin(/*videojs*/) {
 				return;
 			}
 
-			this.actionAnimElem =
-				this.actionAnimElem || this.player.el_.querySelector(".vjs-actions-anim");
+			this.actionAnimElem = this.actionAnimElem || this.player.el_.querySelector('.vjs-actions-anim');
 
 			if (!this.actionAnimElem) {
 				return;
@@ -2535,40 +2125,40 @@ function generatePlugin(/*videojs*/) {
 			let cls;
 
 			switch (action) {
-				case "play":
+				case 'play':
 					if (
 						void 0 !== this.previousActionAnim &&
-						"forward" !== this.previousActionAnim &&
-						"backward" !== this.previousActionAnim
+						'forward' !== this.previousActionAnim &&
+						'backward' !== this.previousActionAnim
 					) {
-						cls = "started-playing";
+						cls = 'started-playing';
 					}
 					break;
-				case "pause":
-					cls = "just-paused";
+				case 'pause':
+					cls = 'just-paused';
 					break;
-				case "backward":
-					cls = "moving-backward";
+				case 'backward':
+					cls = 'moving-backward';
 					break;
-				case "forward":
-					cls = "moving-forward";
+				case 'forward':
+					cls = 'moving-forward';
 					break;
-				case "volume":
+				case 'volume':
 					if (this.player.muted() || 0.001 >= this.player.volume()) {
-						cls = "volume-mute";
+						cls = 'volume-mute';
 					} else if (0.33 >= this.player.volume()) {
-						cls = "volume-low";
+						cls = 'volume-low';
 					} else if (0.69 >= this.player.volume()) {
-						cls = "volume-mid";
+						cls = 'volume-mid';
 					} else {
-						cls = "volume-high";
+						cls = 'volume-high';
 					}
 					break;
-				case "play_previous":
-					cls = "play_previous";
+				case 'play_previous':
+					cls = 'play_previous';
 					break;
-				case "play_next":
-					cls = "play_next";
+				case 'play_next':
+					cls = 'play_next';
 					break;
 			}
 
@@ -2577,22 +2167,22 @@ function generatePlugin(/*videojs*/) {
 			}
 
 			if (this.actionAnimationTimeout) {
-				this.actionAnimElem.setAttribute("class", "vjs-actions-anim");
+				this.actionAnimElem.setAttribute('class', 'vjs-actions-anim');
 			}
 
 			setTimeout(
 				function () {
 					this.previousActionAnim = action;
 
-					cls += " active-anim";
+					cls += ' active-anim';
 
 					clearTimeout(this.actionAnimationTimeout);
 
-					this.actionAnimElem.setAttribute("class", "vjs-actions-anim " + cls);
+					this.actionAnimElem.setAttribute('class', 'vjs-actions-anim ' + cls);
 
 					this.actionAnimationTimeout = setTimeout(
 						function (ins) {
-							ins.actionAnimElem.setAttribute("class", "vjs-actions-anim");
+							ins.actionAnimElem.setAttribute('class', 'vjs-actions-anim');
 							ins.actionAnimationTimeout = null;
 							ins.previousActionAnim = null;
 						},
@@ -2605,11 +2195,11 @@ function generatePlugin(/*videojs*/) {
 		}
 
 		onMoveForward() {
-			this.actionAnimation("forward");
+			this.actionAnimation('forward');
 		}
 
 		onMoveBackward() {
-			this.actionAnimation("backward");
+			this.actionAnimation('backward');
 		}
 
 		onKeyDown(e) {
@@ -2623,14 +2213,12 @@ function generatePlugin(/*videojs*/) {
 
 			switch (key) {
 				case 32: // Play/Pause [Space].
-					this.player[this.player.paused() ? "play" : "pause"]();
+					this.player[this.player.paused() ? 'play' : 'pause']();
 					found = true;
 					break;
 				case 37: // Move backward [Arrow Left].
-					this.player.currentTime(
-						this.player.currentTime() - 5 * this.state.theSelectedPlaybackSpeed
-					);
-					this.player.trigger("movebackward");
+					this.player.currentTime(this.player.currentTime() - 5 * this.state.theSelectedPlaybackSpeed);
+					this.player.trigger('movebackward');
 					found = true;
 					break;
 				case 38: // Volume Up [Arrow Up].
@@ -2642,10 +2230,8 @@ function generatePlugin(/*videojs*/) {
 					found = true;
 					break;
 				case 39: // Move forward [Arrow Right].
-					this.player.currentTime(
-						this.player.currentTime() + 5 * this.state.theSelectedPlaybackSpeed
-					);
-					this.player.trigger("moveforward");
+					this.player.currentTime(this.player.currentTime() + 5 * this.state.theSelectedPlaybackSpeed);
+					this.player.trigger('moveforward');
 					found = true;
 					break;
 				case 40: // Volume Down [Arrow Down].
@@ -2680,19 +2266,17 @@ function generatePlugin(/*videojs*/) {
 				}
 			} else if ((48 <= key && 57 >= key) || (96 <= key && 105 >= key)) {
 				// Numbers from 0 to 9.
-				this.player.currentTime(
-					0.1 * (57 < key ? key - 96 : key - 48) * this.player.duration()
-				);
+				this.player.currentTime(0.1 * (57 < key ? key - 96 : key - 48) * this.player.duration());
 
 				this.player.trigger({
-					type: "timeupdate",
+					type: 'timeupdate',
 					target: this,
 					manuallyTriggered: true,
 				});
 			} else {
 				switch (key) {
 					case 75: // Play/Pause [k].
-						this.player[this.player.paused() ? "play" : "pause"]();
+						this.player[this.player.paused() ? 'play' : 'pause']();
 						found = true;
 						break;
 					case 70: // Enter - exit fullscreen mode [f].
@@ -2715,7 +2299,7 @@ function generatePlugin(/*videojs*/) {
 								this.player.exitFullscreen();
 							}
 
-							this.player.trigger("theatermodechange");
+							this.player.trigger('theatermodechange');
 						}
 						break;
 				}
@@ -2733,7 +2317,7 @@ function generatePlugin(/*videojs*/) {
 				this.state.isOpenPlaybackSpeedOptions ||
 				this.state.isOpenSettingsOptions
 			) {
-				this.player.trigger("closeSettingsPanel");
+				this.player.trigger('closeSettingsPanel');
 			}
 		}
 
@@ -2756,15 +2340,14 @@ function generatePlugin(/*videojs*/) {
 
 			if (!!this.progressBarLine) {
 				this.progressBarLine.style.width =
-					((100 * this.player.currentTime()) / this.player.duration()).toFixed(2) +
-					"%";
+					((100 * this.player.currentTime()) / this.player.duration()).toFixed(2) + '%';
 			}
 		}
 
 		initDomEvents() {
 			this.onWindowResize = this.onWindowResize.bind(this);
 
-			window.addEventListener("resize", this.onWindowResize);
+			window.addEventListener('resize', this.onWindowResize);
 
 			this.videoHtmlElem.onloadeddata = this.onVideoDataLoad.bind(this);
 
@@ -2782,32 +2365,32 @@ function generatePlugin(/*videojs*/) {
 				videoPreviewThumb(this.player, this.videoPreviewThumb);
 			}
 
-			this.player.removeClass("vjs-loading-video");
+			this.player.removeClass('vjs-loading-video');
 
-			if ("Auto" === this.state.theSelectedQuality) {
+			if ('Auto' === this.state.theSelectedQuality) {
 				if (!!this.player.tech_.vhs && null === this.onBandwidthUpdate) {
 					this.onBandwidthUpdate = this.onBandwidthUpdateCallback.bind(this);
-					this.player.tech_.on("bandwidthupdate", this.onBandwidthUpdate);
+					this.player.tech_.on('bandwidthupdate', this.onBandwidthUpdate);
 
 					this.onBandwidthUpdateCallback();
 				}
 			} else {
 				if (null !== this.onBandwidthUpdate) {
-					this.player.tech_.off("bandwidthupdate", this.onBandwidthUpdate);
+					this.player.tech_.off('bandwidthupdate', this.onBandwidthUpdate);
 					this.onBandwidthUpdate = null;
 				}
 
 				if (!!this.player.tech_.vhs && null === this.onHlsRetryPlaylist) {
 					// @note: Catch invalid playlists when selected resolution is not "Auto".
 					this.onHlsRetryPlaylist = this.onHlsRetryPlaylistCallback.bind(this);
-					this.player.tech_.on("retryplaylist", this.onHlsRetryPlaylist);
+					this.player.tech_.on('retryplaylist', this.onHlsRetryPlaylist);
 				}
 			}
 
 			if (this.isChangingResolution) {
 				if (this.hadStartedOnResolutionChange) {
 					this.player.hasStarted(true);
-					this.player.removeClass("vjs-changing-resolution");
+					this.player.removeClass('vjs-changing-resolution');
 					this.hadStartedOnResolutionChange = false;
 				}
 
@@ -2831,18 +2414,13 @@ function generatePlugin(/*videojs*/) {
 		}
 
 		onBandwidthUpdateCallback(ev) {
-			this.onAutoQualitySelection(
-				this.player.tech_.vhs.playlists.media_.attributes.RESOLUTION.height
-			);
+			this.onAutoQualitySelection(this.player.tech_.vhs.playlists.media_.attributes.RESOLUTION.height);
 		}
 
 		onHlsRetryPlaylistCallback(ev) {
-			if (
-				"Auto" !== this.state.theSelectedQuality &&
-				void 0 !== this.videoResolutions["Auto"]
-			) {
+			if ('Auto' !== this.state.theSelectedQuality && void 0 !== this.videoResolutions['Auto']) {
 				this.setState({
-					theSelectedQuality: "Auto",
+					theSelectedQuality: 'Auto',
 				});
 			}
 		}
@@ -2869,19 +2447,17 @@ function generatePlugin(/*videojs*/) {
 
 				i = 1; // Exclude 'off' language option.
 				while (i < this.subtitles.languages.length) {
-					if (
-						-1 === subtitleLanguages.indexOf(this.subtitles.languages[i].srclang)
-					) {
+					if (-1 === subtitleLanguages.indexOf(this.subtitles.languages[i].srclang)) {
 						// console.log('-A-');
 
 						// For iOS native tracks, set default attribute on the selected subtitle.
 						// This is required for iOS fullscreen to show subtitles.
 						// See: https://github.com/videojs/video.js/issues/8061
-						const isDefaultTrack = isIOS &&
-							this.state.theSelectedSubtitleOption === this.subtitles.languages[i].srclang;
+						const isDefaultTrack =
+							isIOS && this.state.theSelectedSubtitleOption === this.subtitles.languages[i].srclang;
 
 						this.player.addRemoteTextTrack({
-							kind: "subtitles",
+							kind: 'subtitles',
 							label: this.subtitles.languages[i].label,
 							language: this.subtitles.languages[i].srclang,
 							src: this.subtitles.languages[i].src,
@@ -2898,13 +2474,11 @@ function generatePlugin(/*videojs*/) {
 
 			// Wait for data to load before applying subtitles.
 			// This ensures text tracks are ready before mode changes.
-			this.player.one("loadeddata", () => {
+			this.player.one('loadeddata', () => {
 				this.changeVideoSubtitle();
 			});
 
-			this.progressBarLine = this.player.el_.querySelector(
-				".video-js .vjs-progress-holder .vjs-play-progress"
-			);
+			this.progressBarLine = this.player.el_.querySelector('.video-js .vjs-progress-holder .vjs-play-progress');
 
 			// Initialize events.
 
@@ -2918,7 +2492,7 @@ function generatePlugin(/*videojs*/) {
 
 			// Apply classname in DOM elements.
 
-			this.player.addClass("vjs-mediacms-plugin");
+			this.player.addClass('vjs-mediacms-plugin');
 
 			this.updateTheaterModeClassname();
 
@@ -2938,25 +2512,24 @@ function generatePlugin(/*videojs*/) {
 			// console.log( this.player.textTrackDisplay );
 			// console.log( this.player.textTrackSettings );
 
-			if ("off" !== this.state.theSelectedSubtitleOption) {
-				this.player.removeClass("vjs-subtitles-off");
-				this.player.addClass("vjs-subtitles-on");
+			if ('off' !== this.state.theSelectedSubtitleOption) {
+				this.player.removeClass('vjs-subtitles-off');
+				this.player.addClass('vjs-subtitles-on');
 			} else {
-				this.player.removeClass("vjs-subtitles-on");
-				this.player.addClass("vjs-subtitles-off");
+				this.player.removeClass('vjs-subtitles-on');
+				this.player.addClass('vjs-subtitles-off');
 			}
 
 			const tracks = this.player.textTracks();
 
 			// Set track modes: 'showing' for selected, 'hidden' for others, 'disabled' when off.
 			for (let i = 0; i < tracks.length; i++) {
-				if ("subtitles" === tracks[i].kind) {
-					if ("off" === this.state.theSelectedSubtitleOption) {
-						tracks[i].mode = "disabled";
+				if ('subtitles' === tracks[i].kind) {
+					if ('off' === this.state.theSelectedSubtitleOption) {
+						tracks[i].mode = 'disabled';
 					} else {
-						const shouldShow =
-							this.state.theSelectedSubtitleOption === tracks[i].language;
-						tracks[i].mode = shouldShow ? "showing" : "hidden";
+						const shouldShow = this.state.theSelectedSubtitleOption === tracks[i].language;
+						tracks[i].mode = shouldShow ? 'showing' : 'hidden';
 					}
 				}
 			}
@@ -2973,7 +2546,7 @@ function generatePlugin(/*videojs*/) {
 			this.hadStartedOnResolutionChange = this.player.hasStarted();
 
 			if (this.hadStartedOnResolutionChange) {
-				this.player.addClass("vjs-changing-resolution");
+				this.player.addClass('vjs-changing-resolution');
 			}
 
 			/*if( this.wasPlayingOnResolutionChange ){
@@ -2989,7 +2562,7 @@ function generatePlugin(/*videojs*/) {
 			}
 
 			this.player.src(sources); // @note: Load all sources (with provided order).
-			this.player.techCall_("reset");
+			this.player.techCall_('reset');
 			this.player.currentTime(currentTime);
 			this.player.duration(duration);
 			this.player.playbackRate(this.state.theSelectedPlaybackSpeed);
@@ -3040,19 +2613,19 @@ function generatePlugin(/*videojs*/) {
 
 			if (d.changes.theSelectedSubtitleOption) {
 				this.changeVideoSubtitle();
-				this.player.trigger("updatedSelectedSubtitleOption");
+				this.player.trigger('updatedSelectedSubtitleOption');
 				this.onPublicStateUpdate();
 			}
 
 			if (d.changes.theSelectedQuality) {
 				this.changeVideoResolution();
-				this.player.trigger("updatedSelectedQuality");
+				this.player.trigger('updatedSelectedQuality');
 				this.onPublicStateUpdate();
 			}
 
 			if (d.changes.theSelectedPlaybackSpeed) {
 				this.changePlaybackSpeed();
-				this.player.trigger("updatedSelectedPlaybackSpeed");
+				this.player.trigger('updatedSelectedPlaybackSpeed');
 				this.onPublicStateUpdate();
 			}
 
@@ -3063,95 +2636,71 @@ function generatePlugin(/*videojs*/) {
 				d.changes.isOpenPlaybackSpeedOptions ||
 				d.changes.theSelectedPlaybackSpeed
 			) {
-				this.player.trigger("updatedSettingsPanelsVisibility");
+				this.player.trigger('updatedSettingsPanelsVisibility');
 			}
 
 			if (d.changes.isOpenSubtitlesOptions) {
-				this.player.trigger("updatedSubtitlesPanelsVisibility");
+				this.player.trigger('updatedSubtitlesPanelsVisibility');
 			}
 
 			if (d.changes.openSettings) {
 				if (this.state.openSettings) {
-					this.player.trigger(
-						"openedSettingsPanel",
-						this.state.openSettingsFromKeyboard
-					);
+					this.player.trigger('openedSettingsPanel', this.state.openSettingsFromKeyboard);
 				}
 			}
 
 			if (d.changes.closeSettings) {
 				if (this.state.closeSettings) {
-					this.player.trigger(
-						"closedSettingsPanel",
-						this.state.closeSettingsFromKeyboard
-					);
+					this.player.trigger('closedSettingsPanel', this.state.closeSettingsFromKeyboard);
 				}
 			}
 
 			if (d.changes.openSubtitles) {
 				if (this.state.openSubtitles) {
-					this.player.trigger(
-						"openedSubtitlesPanel",
-						this.state.openSubtitlesFromKeyboard
-					);
+					this.player.trigger('openedSubtitlesPanel', this.state.openSubtitlesFromKeyboard);
 				}
 			}
 
 			if (d.changes.closeSubtitles) {
 				if (this.state.closeSubtitles) {
-					this.player.trigger(
-						"closedSubtitlesPanel",
-						this.state.closeSubtitlesFromKeyboard
-					);
+					this.player.trigger('closedSubtitlesPanel', this.state.closeSubtitlesFromKeyboard);
 				}
 			}
 
 			if (d.changes.openQualities) {
 				if (this.state.openQualities) {
-					this.player.trigger(
-						"openedQualities",
-						this.state.openQualitiesFromKeyboard
-					);
+					this.player.trigger('openedQualities', this.state.openQualitiesFromKeyboard);
 				}
 			}
 
 			if (d.changes.closeQualities) {
 				if (this.state.closeQualities) {
-					this.player.trigger(
-						"closedQualities",
-						this.state.closeQualitiesFromKeyboard
-					);
+					this.player.trigger('closedQualities', this.state.closeQualitiesFromKeyboard);
 				}
 			}
 
 			if (d.changes.openPlaybackSpeeds) {
 				if (this.state.openPlaybackSpeeds) {
-					this.player.trigger(
-						"openedPlaybackSpeeds",
-						this.state.openPlaybackSpeedsFromKeyboard
-					);
+					this.player.trigger('openedPlaybackSpeeds', this.state.openPlaybackSpeedsFromKeyboard);
 				}
 			}
 
 			if (d.changes.closePlaybackSpeeds) {
 				if (this.state.closePlaybackSpeeds) {
-					this.player.trigger(
-						"closedPlaybackSpeeds",
-						this.state.closePlaybackSpeedsFromKeyboard
-					);
+					this.player.trigger('closedPlaybackSpeeds', this.state.closePlaybackSpeedsFromKeyboard);
 				}
 			}
 		}
 
 		onDispose() {
-			window.removeEventListener("resize", this.onWindowResize);
+			window.removeEventListener('resize', this.onWindowResize);
 		}
 
 		onError(e) {
 			if (!this.player.paused()) {
 				this.player.pause();
 			}
-			this.player.techCall_("reset");
+			this.player.techCall_('reset');
 		}
 
 		/**
@@ -3173,7 +2722,7 @@ function generatePlugin(/*videojs*/) {
 				volume: this.player.volume(),
 				soundMuted: this.player.muted(),
 			});
-			this.actionAnimation("volume");
+			this.actionAnimation('volume');
 		}
 
 		/**
@@ -3181,10 +2730,10 @@ function generatePlugin(/*videojs*/) {
 		 *
 		 */
 		onPlayToggle(ev) {
-			const playing = "playing" === ev.type;
+			const playing = 'playing' === ev.type;
 
 			if (!this.seeking && 1 > Math.abs(this.updateTimeDiff)) {
-				this.actionAnimation(!playing ? "pause" : "play");
+				this.actionAnimation(!playing ? 'pause' : 'play');
 			}
 
 			this.setState({
@@ -3203,10 +2752,10 @@ function generatePlugin(/*videojs*/) {
 		 *
 		 */
 		onFullscreenChange() {
-			this.player.addClass("vjs-fullscreen-change");
+			this.player.addClass('vjs-fullscreen-change');
 			setTimeout(
 				function (plr) {
-					plr.removeClass("vjs-fullscreen-change");
+					plr.removeClass('vjs-fullscreen-change');
 				},
 				100,
 				this.player
@@ -3341,7 +2890,7 @@ function generatePlugin(/*videojs*/) {
 					theSelectedAutoQuality: newAutoQuality,
 				});
 
-				this.player.trigger("updatedSelectedQuality");
+				this.player.trigger('updatedSelectedQuality');
 			}
 		}
 
@@ -3378,10 +2927,7 @@ function generatePlugin(/*videojs*/) {
 				return;
 			}
 
-			if (
-				!this.state.isOpenQualityOptions &&
-				!this.state.isOpenPlaybackSpeedOptions
-			) {
+			if (!this.state.isOpenQualityOptions && !this.state.isOpenPlaybackSpeedOptions) {
 				this.player.focus();
 			}
 
@@ -3401,10 +2947,7 @@ function generatePlugin(/*videojs*/) {
 			} else if (!this.state.isOpenPlaybackSpeedOptions) {
 				this.timeoutSettingsPanelFocusout = setTimeout(
 					function (ins) {
-						if (
-							ins.state.isOpenSettingsOptions &&
-							!ins.state.isOpenPlaybackSpeedOptions
-						) {
+						if (ins.state.isOpenSettingsOptions && !ins.state.isOpenPlaybackSpeedOptions) {
 							ins.setState({
 								isOpenSettingsOptions: !1,
 							});
@@ -3422,10 +2965,7 @@ function generatePlugin(/*videojs*/) {
 				return;
 			}
 
-			if (
-				!this.state.isOpenSettingsOptions &&
-				!this.state.isOpenPlaybackSpeedOptions
-			) {
+			if (!this.state.isOpenSettingsOptions && !this.state.isOpenPlaybackSpeedOptions) {
 				this.player.focus();
 			}
 
@@ -3457,10 +2997,7 @@ function generatePlugin(/*videojs*/) {
 			if (!this.state.isOpenSettingsOptions) {
 				this.timeoutPlaybackSpeedsPanelFocusout = setTimeout(
 					function (ins) {
-						if (
-							ins.state.isOpenPlaybackSpeedOptions &&
-							!ins.state.isOpenSettingsOptions
-						) {
+						if (ins.state.isOpenPlaybackSpeedOptions && !ins.state.isOpenSettingsOptions) {
 							ins.setState({
 								isOpenPlaybackSpeedOptions: !1,
 							});
@@ -3496,20 +3033,16 @@ function generatePlugin(/*videojs*/) {
 
 		updateVideoPlayerRatios() {
 			this.setState({
-				videoRatio:
-					this.videoHtmlElem.offsetWidth / this.videoHtmlElem.offsetHeight,
+				videoRatio: this.videoHtmlElem.offsetWidth / this.videoHtmlElem.offsetHeight,
 				playerRatio: this.player.el_.offsetWidth / this.player.el_.offsetHeight,
 			});
 
-			var settingsPanelInner = document.querySelectorAll(
-				".vjs-settings-panel-inner"
-			);
+			var settingsPanelInner = document.querySelectorAll('.vjs-settings-panel-inner');
 
 			if (settingsPanelInner.length) {
 				var i = 0;
 				while (i < settingsPanelInner.length) {
-					settingsPanelInner[i].style.maxHeight =
-						this.videoHtmlElem.offsetHeight - 120 + "px";
+					settingsPanelInner[i].style.maxHeight = this.videoHtmlElem.offsetHeight - 120 + 'px';
 					i += 1;
 				}
 			}
@@ -3520,9 +3053,7 @@ function generatePlugin(/*videojs*/) {
 		 *
 		 */
 		updateTheaterModeClassname() {
-			this.player[this.state.theaterMode ? "addClass" : "removeClass"](
-				"vjs-theater-mode"
-			);
+			this.player[this.state.theaterMode ? 'addClass' : 'removeClass']('vjs-theater-mode');
 		}
 
 		updateVideoElementPosition() {
@@ -3544,15 +3075,15 @@ function generatePlugin(/*videojs*/) {
 					if (this.csstransforms) {
 						applyCssTransform(
 							this.videoHtmlElem,
-							"translate(" +
-								(newval.l > 0 ? newval.l : "0") +
-								"px," +
-								(newval.t > 0 ? newval.t : "0") +
-								"px)"
+							'translate(' +
+								(newval.l > 0 ? newval.l : '0') +
+								'px,' +
+								(newval.t > 0 ? newval.t : '0') +
+								'px)'
 						);
 					} else {
-						this.videoHtmlElem.style.top = newval.t > 0 ? newval.t + "px" : "";
-						this.videoHtmlElem.style.left = newval.l > 0 ? newval.l + "px" : "";
+						this.videoHtmlElem.style.top = newval.t > 0 ? newval.t + 'px' : '';
+						this.videoHtmlElem.style.left = newval.l > 0 ? newval.l + 'px' : '';
 					}
 				} else {
 				}
@@ -3589,12 +3120,9 @@ function generatePlugin(/*videojs*/) {
 		selectedQualityTitle() {
 			return (
 				this.state.theSelectedQuality +
-				("Auto" === this.state.theSelectedQuality &&
-				null !== this.state.theSelectedAutoQuality
-					? "&nbsp;<span class='auto-resolution-title'>" +
-					  this.state.theSelectedAutoQuality +
-					  "</span>"
-					: "")
+				('Auto' === this.state.theSelectedQuality && null !== this.state.theSelectedAutoQuality
+					? "&nbsp;<span class='auto-resolution-title'>" + this.state.theSelectedAutoQuality + '</span>'
+					: '')
 			);
 		}
 
@@ -3607,7 +3135,7 @@ function generatePlugin(/*videojs*/) {
 					}
 				}
 			}
-			return "n/a";
+			return 'n/a';
 		}
 	}
 
@@ -3623,7 +3151,7 @@ function generatePlugin(/*videojs*/) {
 		isOpenSubtitlesOptions: !1,
 		isOpenQualityOptions: !1,
 		theSelectedQuality: null,
-		theSelectedSubtitleOption: "off",
+		theSelectedSubtitleOption: 'off',
 		theSelectedAutoQuality: null,
 		theSelectedPlaybackSpeed: null,
 		openSettings: !1,
@@ -3642,13 +3170,11 @@ function generatePlugin(/*videojs*/) {
 
 	MediaCmsVjsPlugin.VERSION = VERSION;
 
-
 	if (typeof videojs.registerPlugin === 'function') {
 		videojs.registerPlugin('mediaCmsVjsPlugin', MediaCmsVjsPlugin);
 	} else {
 		videojs.plugin('mediaCmsVjsPlugin', MediaCmsVjsPlugin);
 	}
-
 
 	return MediaCmsVjsPlugin;
 }

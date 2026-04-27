@@ -1,7 +1,7 @@
-import React from "react";
-import PropTypes from "prop-types";
+import React from 'react';
+import PropTypes from 'prop-types';
 
-import { PositiveIntegerOrZero } from "../../functions/propTypeFilters";
+import { PositiveIntegerOrZero } from '../../functions/propTypeFilters';
 
 export function Item(props) {}
 
@@ -19,11 +19,11 @@ Item.propTypes = {
 };
 
 Item.defaults = {
-	title: "",
-	link: "#",
+	title: '',
+	link: '#',
 	singleLinkContent: false,
-	description: "",
-	meta_description: "",
-	thumbnail: "",
+	description: '',
+	meta_description: '',
+	thumbnail: '',
 	publish_date: 0,
 };

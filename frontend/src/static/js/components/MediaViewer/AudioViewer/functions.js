@@ -1,30 +1,30 @@
 export function extractAudioFileFormat(filename) {
 	let ret = null;
-	let ext = filename.split(".");
+	let ext = filename.split('.');
 	if (ext.length) {
 		ext = ext[ext.length - 1];
 		switch (ext) {
-			case "webm":
-				ret = "audio/webm";
+			case 'webm':
+				ret = 'audio/webm';
 				break;
-			case "flac":
-				ret = "audio/flac";
+			case 'flac':
+				ret = 'audio/flac';
 				break;
-			case "wave":
-				ret = "audio/wave";
+			case 'wave':
+				ret = 'audio/wave';
 				break;
-			case "wav":
-				ret = "audio/wav";
+			case 'wav':
+				ret = 'audio/wav';
 				break;
-			case "ogg":
-				ret = "audio/ogg";
+			case 'ogg':
+				ret = 'audio/ogg';
 				break;
-			case "ogg":
-				ret = "audio/ogg";
+			case 'ogg':
+				ret = 'audio/ogg';
 				break;
-			case "mp3":
-			case "mpeg":
-				ret = "audio/mpeg";
+			case 'mp3':
+			case 'mpeg':
+				ret = 'audio/mpeg';
 				break;
 		}
 	}

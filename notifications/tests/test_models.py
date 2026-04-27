@@ -1,5 +1,4 @@
 from django.test import TestCase
-from django.utils import timezone
 
 from notifications.models import (
     Notification,
@@ -147,9 +146,7 @@ class NotificationModelTest(TestCase):
             notification_type=NotificationType.COMMENT,
             message="second",
         )
-        notifications = list(
-            Notification.objects.filter(recipient=self.recipient)
-        )
+        notifications = list(Notification.objects.filter(recipient=self.recipient))
         self.assertEqual(notifications[0].id, n2.id)
         self.assertEqual(notifications[1].id, n1.id)
 

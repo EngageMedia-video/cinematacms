@@ -5,7 +5,7 @@
     {% element p %}
         {% blocktranslate %}Enter an authenticator code:{% endblocktranslate %}
     {% endelement %}
-        
+
     <form name="code" method="POST" action="{% url 'mfa_reauthenticate' %}">
       {% csrf_token %}
 
@@ -33,10 +33,10 @@
     // OTP-specific
     const originalInput = document.querySelector('.otp-hidden-input');
     const otpDigits = document.querySelectorAll('.otp-digit');
-    
+
     // Focus the first input on page load
     otpDigits[0].focus();
-    
+
     // Update the original input value when OTP digits change
     function updateOriginalInput() {
       let combinedValue = '';
@@ -45,22 +45,22 @@
       });
       originalInput.value = Number(combinedValue);
     }
-    
+
     // Add event listeners to each OTP digit input
     otpDigits.forEach((digit, index) => {
       // Handle input
       digit.addEventListener('input', function(e) {
         // Allow only numbers
         this.value = this.value.replace(/[^0-9]/g, '');
-        
+
         // Move to next input if a digit was entered
         if (this.value && index < otpDigits.length - 1) {
           otpDigits[index + 1].focus();
         }
-        
+
         updateOriginalInput();
       });
-      
+
       // Handle backspace and arrow keys
       digit.addEventListener('keydown', function(e) {
         if (e.key === 'Backspace' && !this.value && index > 0) {
@@ -74,32 +74,32 @@
           otpDigits[index + 1].focus();
         }
       });
-      
+
       // Select all text on focus
       digit.addEventListener('focus', function() {
         this.select();
       });
     });
-    
+
     // Handle paste events (paste into first input)
     otpDigits[0].addEventListener('paste', function(e) {
       e.preventDefault();
-      
+
       // Get pasted data
       let pastedData = (e.clipboardData || window.clipboardData).getData('text');
-      
+
       // Remove non-numeric characters
       pastedData = pastedData.replace(/[^0-9]/g, '');
-      
+
       // Fill the inputs with pasted data
       for (let i = 0; i < Math.min(pastedData.length, otpDigits.length); i++) {
         otpDigits[i].value = pastedData[i];
       }
-      
+
       // Focus the next empty input or the last one
       const nextEmptyIndex = Math.min(pastedData.length, otpDigits.length - 1);
       otpDigits[nextEmptyIndex].focus();
-      
+
       updateOriginalInput();
     });
   })

@@ -1,85 +1,99 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { format } from 'timeago.js'
+import { format } from 'timeago.js';
 
 import { MediaItem } from './MediaItem';
 
-import { PositiveIntegerOrZero } from '../../functions/propTypeFilters';;
+import { PositiveIntegerOrZero } from '../../functions/propTypeFilters';
 
 import { MediaItemDuration, MediaItemPlaylistIndex, MediaItemStateBadge, itemClassname } from './includes/items';
 
 import { useMediaItem } from './hooks/useMediaItem';
 
-import { MediaPlaylistOptions } from './MediaPlaylistOptions'
+import { MediaPlaylistOptions } from './MediaPlaylistOptions';
 
 import PageStore from '../../pages/_PageStore.js';
 import MediaDurationInfo from '../../classes/MediaDurationInfo';
 
-export function MediaItemAudio(props){
+export function MediaItemAudio(props) {
 	props = { ...MediaItemAudio.defaults, ...props };
 
 	const type = props.type;
 
-	const [ titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper, editMediaComponent, metaComponents ] = useMediaItem({...props, type });
+	const [titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper, editMediaComponent, metaComponents] =
+		useMediaItem({ ...props, type });
 
 	const _MediaDurationInfo = new MediaDurationInfo();
 
-	_MediaDurationInfo.update( props.duration );
+	_MediaDurationInfo.update(props.duration);
 
 	const duration = _MediaDurationInfo.ariaLabel();
 	const durationStr = _MediaDurationInfo.toString();
 	const durationISO8601 = _MediaDurationInfo.ISO8601();
 
-	function thumbnailComponent(){
-
+	function thumbnailComponent() {
 		const attr = {
 			href: props.link,
 			title: props.title,
 			tabIndex: '-1',
 			'aria-hidden': true,
-			className: 'item-thumb' + ( ! thumbnailUrl ? ' no-thumb' : '' ),
-			style: ! thumbnailUrl ? null : { backgroundImage: 'url(\'' + thumbnailUrl + '\')' },
+			className: 'item-thumb' + (!thumbnailUrl ? ' no-thumb' : ''),
+			style: !thumbnailUrl ? null : { backgroundImage: "url('" + thumbnailUrl + "')" },
 		};
 
-		return <a key="item-thumb" {...attr}>
-					{ props.inPlaylistView ? null : <MediaItemDuration ariaLabel={ duration } time={ durationISO8601 } text={ durationStr } /> }
-					<MediaItemStateBadge state={props.state} />
-				</a>;
+		return (
+			<a key="item-thumb" {...attr}>
+				{props.inPlaylistView ? null : (
+					<MediaItemDuration ariaLabel={duration} time={durationISO8601} text={durationStr} />
+				)}
+				<MediaItemStateBadge state={props.state} />
+			</a>
+		);
 	}
 
-	function playlistOrderNumberComponent(){
-		return props.hidePlaylistOrderNumber ? null : <MediaItemPlaylistIndex index={ props.playlistOrder } inPlayback={ props.inPlaylistView } activeIndex={ props.playlistActiveItem } />;
+	function playlistOrderNumberComponent() {
+		return props.hidePlaylistOrderNumber ? null : (
+			<MediaItemPlaylistIndex
+				index={props.playlistOrder}
+				inPlayback={props.inPlaylistView}
+				activeIndex={props.playlistActiveItem}
+			/>
+		);
 	}
 
-	function playlistOptionsComponent(){
-		let mediaId = props.link.split("=")[1];
+	function playlistOptionsComponent() {
+		let mediaId = props.link.split('=')[1];
 		mediaId = mediaId.split('&')[0];
-		return props.hidePlaylistOptions ? null : <MediaPlaylistOptions key="options" media_id={ mediaId } playlist_id={ props.playlist_id } />;
+		return props.hidePlaylistOptions ? null : (
+			<MediaPlaylistOptions key="options" media_id={mediaId} playlist_id={props.playlist_id} />
+		);
 	}
 
-	const containerClassname = itemClassname( 'item ' + type + '-item', (props.class_name ?? '').trim(), props.playlistOrder === props.playlistActiveItem );
+	const containerClassname = itemClassname(
+		'item ' + type + '-item',
+		(props.class_name ?? '').trim(),
+		props.playlistOrder === props.playlistActiveItem
+	);
 
-	return (<div className={ containerClassname }>
+	return (
+		<div className={containerClassname}>
+			{playlistOrderNumberComponent()}
 
-				{ playlistOrderNumberComponent() }
+			<div className="item-content">
+				{editMediaComponent()}
 
-				<div className="item-content">
+				{thumbnailComponent()}
 
-					{ editMediaComponent() }
+				<UnderThumbWrapper title={props.title} link={props.link}>
+					{titleComponent()}
+					{metaComponents()}
+					{descriptionComponent()}
+				</UnderThumbWrapper>
 
-					{ thumbnailComponent() }
-
-					<UnderThumbWrapper title={ props.title } link={ props.link }>
-						{ titleComponent() }
-						{ metaComponents() }
-						{ descriptionComponent() }
-					</UnderThumbWrapper>
-
-				{ playlistOptionsComponent() }
-
-				</div>
-
-			</div>);
+				{playlistOptionsComponent()}
+			</div>
+		</div>
+	);
 }
 
 MediaItemAudio.propTypes = {

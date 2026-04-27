@@ -209,9 +209,9 @@ TinyMCE's appearance can be customized through:
    ```python
    uv run manage.py collectstatic --noinput
    ```
-   
+
 ### Getting Help
 
 - [django-tinymce Documentation](https://django-tinymce.readthedocs.io/)
 - [TinyMCE Documentation](https://www.tiny.cloud/docs/)
-- [GitHub Issues](https://github.com/jazzband/django-tinymce/issues) 
+- [GitHub Issues](https://github.com/jazzband/django-tinymce/issues)

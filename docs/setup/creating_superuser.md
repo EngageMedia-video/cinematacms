@@ -15,7 +15,7 @@ python3 manage.py createsuperuser
 ```
 Follow on screen prompts to add user.
 
-Restart service- 
+Restart service-
 ```zsh
 sudo systemctl restart mediacms
 ```
@@ -31,7 +31,7 @@ python3 manage.py shell
 
 Run this-
 ```zsh
-from django.contrib.auth import get_user_model 
+from django.contrib.auth import get_user_model
 
 User = get_user_model()  # Get the correct user model
 user = User.objects.get(username="existing_username")
@@ -47,7 +47,7 @@ print("User updated successfully!")
 Run- exit() to quite from shell.
 
 
-Restart service- 
+Restart service-
 ```zsh
 sudo systemctl restart mediacms
 ```

@@ -8,22 +8,26 @@ import PageStore from '../../../pages/_PageStore.js';
 
 function ManageItemTitle(props) {
 	if (props.title && props.url) {
-		return (<a href={props.url} title={props.title}>{props.title}</a>);
+		return (
+			<a href={props.url} title={props.title}>
+				{props.title}
+			</a>
+		);
 	}
 	if (props.title) {
-		return (props.title);
+		return props.title;
 	}
 	if (props.url) {
-		return (props.url);
+		return props.url;
 	}
-	return (<i className="non-available">N/A</i>);
+	return <i className="non-available">N/A</i>;
 }
 
 function ManageItemDate(props) {
 	if (props.date) {
-		return (formatManagementTableDate(new Date(Date.parse(props.date))));
+		return formatManagementTableDate(new Date(Date.parse(props.date)));
 	}
-	return (<i className="non-available">N/A</i>);
+	return <i className="non-available">N/A</i>;
 }
 
 function ManageUploadItemActions(props) {
@@ -69,10 +73,13 @@ function ManageUploadItemActions(props) {
 				popupElem.style.position = 'fixed';
 				popupElem.style.left = containerClientRect.x + 'px';
 
-				if (document.body.offsetHeight < 32 + popupElem.offsetHeight + window.scrollY + containerClientRect.top) {
-					popupElem.style.top = (containerClientRect.y - popupElem.offsetHeight) + 'px';
+				if (
+					document.body.offsetHeight <
+					32 + popupElem.offsetHeight + window.scrollY + containerClientRect.top
+				) {
+					popupElem.style.top = containerClientRect.y - popupElem.offsetHeight + 'px';
 				} else {
-					popupElem.style.top = (containerClientRect.y + containerClientRect.height) + 'px';
+					popupElem.style.top = containerClientRect.y + containerClientRect.height + 'px';
 				}
 			}
 
@@ -111,12 +118,18 @@ function ManageUploadItemActions(props) {
 				<PopupMain>
 					<div className="popup-message">
 						<span className="popup-message-title">Media removal</span>
-						<span className="popup-message-main">{"You're willing to remove media" + (props.title ? ' "' + props.title + '"' : '')}?</span>
+						<span className="popup-message-main">
+							{"You're willing to remove media" + (props.title ? ' "' + props.title + '"' : '')}?
+						</span>
 					</div>
 					<hr />
 					<span className="popup-message-bottom">
-						<button className="button-link cancel-profile-removal" onClick={onCancel}>CANCEL</button>
-						<button className="button-link proceed-profile-removal" onClick={onProceed}>PROCEED</button>
+						<button className="button-link cancel-profile-removal" onClick={onCancel}>
+							CANCEL
+						</button>
+						<button className="button-link proceed-profile-removal" onClick={onProceed}>
+							PROCEED
+						</button>
 					</span>
 				</PopupMain>
 			</PopupContent>
@@ -155,14 +168,32 @@ export function ManageUploadItem(props) {
 			</div>
 			<div className="mi-title">
 				<ManageItemTitle title={props.title} url={props.url} />
-				{props.hideDeleteAction ? null : <ManageUploadItemActions containerRef={actionsContainerRef} title={props.title} onProceed={onClickProceed} />}
+				{props.hideDeleteAction ? null : (
+					<ManageUploadItemActions
+						containerRef={actionsContainerRef}
+						title={props.title}
+						onProceed={onClickProceed}
+					/>
+				)}
 			</div>
-			<div className="mi-added"><ManageItemDate date={props.add_date} /></div>
-			<div className="mi-type">{props.media_type !== undefined ? props.media_type : <i className="non-available">N/A</i>}</div>
-			<div className="mi-encoding">{props.encoding_status !== undefined ? props.encoding_status : <i className="non-available">N/A</i>}</div>
-			<div className="mi-state">{props.state !== undefined ? props.state : <i className="non-available">N/A</i>}</div>
-			<div className="mi-views">{props.views !== undefined ? props.views : <i className="non-available">N/A</i>}</div>
-			<div className="mi-likes">{props.likes !== undefined ? props.likes : <i className="non-available">N/A</i>}</div>
+			<div className="mi-added">
+				<ManageItemDate date={props.add_date} />
+			</div>
+			<div className="mi-type">
+				{props.media_type !== undefined ? props.media_type : <i className="non-available">N/A</i>}
+			</div>
+			<div className="mi-encoding">
+				{props.encoding_status !== undefined ? props.encoding_status : <i className="non-available">N/A</i>}
+			</div>
+			<div className="mi-state">
+				{props.state !== undefined ? props.state : <i className="non-available">N/A</i>}
+			</div>
+			<div className="mi-views">
+				{props.views !== undefined ? props.views : <i className="non-available">N/A</i>}
+			</div>
+			<div className="mi-likes">
+				{props.likes !== undefined ? props.likes : <i className="non-available">N/A</i>}
+			</div>
 		</div>
 	);
 }

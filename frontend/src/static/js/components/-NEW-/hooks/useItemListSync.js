@@ -4,41 +4,58 @@ import { useItemList } from './useItemList';
 
 import initItemsList from '../includes/itemLists/initItemsList';
 
-export function useItemListSync( props ){
+export function useItemListSync(props) {
+	const itemsListRef = useRef(null);
+	const itemsListWrapperRef = useRef(null);
 
-    const itemsListRef = useRef(null);
-    const itemsListWrapperRef = useRef(null);
+	const [items, countedItems, listHandler, setListHandler, onItemsLoad, onItemsCount, addListItems] = useItemList(
+		props,
+		itemsListRef
+	);
 
-    const [ items, countedItems, listHandler, setListHandler, onItemsLoad, onItemsCount, addListItems ] = useItemList( props, itemsListRef );
+	let classname = {
+		list: 'items-list',
+		listOuter: 'items-list-outer' + ('string' === typeof props.className ? ' ' + props.className.trim() : ''),
+	};
 
-    let classname = {
-        list: 'items-list',
-        listOuter: 'items-list-outer' + ('string' === typeof props.className ? ' ' + props.className.trim() : '' )
-    };
+	function onClickLoadMore() {
+		listHandler.loadItems();
+	}
 
-    function onClickLoadMore(){
-        listHandler.loadItems();
-    }
+	function afterItemsLoad() {}
 
-    function afterItemsLoad(){}
+	function renderBeforeListWrap() {
+		return null;
+	}
 
-    function renderBeforeListWrap() {
-        return null;
-    }
+	function renderAfterListWrap() {
+		if (!listHandler) {
+			return null;
+		}
 
-    function renderAfterListWrap() {
-        
-        if( ! listHandler ){
-            return null;
-        }
+		return 1 > listHandler.totalPages() || listHandler.loadedAllItems() ? null : (
+			<button className="load-more" onClick={onClickLoadMore}>
+				SHOW MORE
+			</button>
+		);
+	}
 
-        return 1 > listHandler.totalPages() || listHandler.loadedAllItems() ? null : <button className="load-more" onClick={ onClickLoadMore }>SHOW MORE</button>;
-    }
+	useEffect(() => {
+		addListItems();
+		afterItemsLoad();
+	}, [items]);
 
-    useEffect(() => {
-        addListItems();
-        afterItemsLoad();
-    }, [items]);
-
-    return [ countedItems, items, listHandler, setListHandler, classname, itemsListWrapperRef, itemsListRef, onItemsCount, onItemsLoad, renderBeforeListWrap, renderAfterListWrap ];
+	return [
+		countedItems,
+		items,
+		listHandler,
+		setListHandler,
+		classname,
+		itemsListWrapperRef,
+		itemsListRef,
+		onItemsCount,
+		onItemsLoad,
+		renderBeforeListWrap,
+		renderAfterListWrap,
+	];
 }

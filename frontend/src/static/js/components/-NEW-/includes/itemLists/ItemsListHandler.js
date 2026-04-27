@@ -3,196 +3,194 @@ import PageStore from '../../../../pages/_PageStore.js';
 import { getRequest } from '../../../../functions';
 import { formatInnerLink } from '../../../../functions/formatInnerLink';
 
-export function ItemsListHandler(itemsPerPage, maxItems, first_item_request_url, request_url, itemsCountCallback, loadItemsCallback, errorCallback) {
+export function ItemsListHandler(
+	itemsPerPage,
+	maxItems,
+	first_item_request_url,
+	request_url,
+	itemsCountCallback,
+	loadItemsCallback,
+	errorCallback
+) {
+	const config = {
+		maxItems: maxItems || 255,
+		pageItems: itemsPerPage ? Math.min(maxItems, itemsPerPage) : 1,
+	};
 
-    const config = {
-        maxItems: maxItems || 255,
-        pageItems: itemsPerPage ? Math.min(maxItems, itemsPerPage) : 1,
-    };
+	const state = {
+		totalItems: 0,
+		totalPages: 0,
+		nextRequestUrl: formatInnerLink(request_url, PageStore.get('config-site').url),
+	};
 
-    const state = {
-        totalItems: 0,
-        totalPages: 0,
-        nextRequestUrl: formatInnerLink( request_url, PageStore.get('config-site').url ),
-    };
+	const waiting = {
+		pageItems: 0,
+		requestResponse: false,
+	};
 
-    const waiting = {
-        pageItems: 0,
-        requestResponse: false,
-    };
+	let firstItemUrl = null;
 
-    let firstItemUrl = null;
+	const items = [];
+	const responseItems = [];
 
-    const items = [];
-    const responseItems = [];
+	const callbacks = {
+		itemsCount: function () {
+			if ('function' === typeof itemsCountCallback) {
+				itemsCountCallback(state.totalItems);
+			}
+		},
+		itemsLoad: function () {
+			if ('function' === typeof loadItemsCallback) {
+				loadItemsCallback(items);
+			}
+		},
+		error: function (error) {
+			if ('function' === typeof errorCallback) {
+				errorCallback(error);
+			}
+		},
+	};
 
-    const callbacks = {
-        itemsCount: function() {
-            if ('function' === typeof itemsCountCallback) {
-                itemsCountCallback(state.totalItems);
-            }
-        },
-        itemsLoad: function() {
-            if ('function' === typeof loadItemsCallback) {
-                loadItemsCallback( items );
-            }
-        },
-        error: function(error) {
-            if ('function' === typeof errorCallback) {
-                errorCallback(error);
-            }
-        },
-    };
+	function loadNextItems(itemsLength) {
+		let itemsToLoad, needExtraRequest;
 
-    function loadNextItems(itemsLength) {
+		itemsLength = !isNaN(itemsLength) ? itemsLength : config.pageItems;
 
-        let itemsToLoad, needExtraRequest;
+		if (waiting.pageItems && waiting.pageItems <= responseItems.length) {
+			itemsToLoad = waiting.pageItems;
+			needExtraRequest = false;
+			waiting.pageItems = 0;
+		} else {
+			itemsToLoad = Math.min(itemsLength, responseItems.length);
+			needExtraRequest = itemsLength > responseItems.length && !!state.nextRequestUrl;
+			waiting.pageItems = needExtraRequest ? itemsLength - responseItems.length : 0;
+		}
 
-        itemsLength = !isNaN(itemsLength) ? itemsLength : config.pageItems;
+		if (itemsToLoad) {
+			let i = 0;
+			while (i < itemsToLoad) {
+				items.push(responseItems.shift());
+				i += 1;
+			}
+			callbacks.itemsLoad();
+		}
 
-        if (waiting.pageItems && waiting.pageItems <= responseItems.length) {
-            itemsToLoad = waiting.pageItems;
-            needExtraRequest = false;
-            waiting.pageItems = 0;
-        } else {
-            itemsToLoad = Math.min(itemsLength, responseItems.length);
-            needExtraRequest = itemsLength > responseItems.length && !!state.nextRequestUrl;
-            waiting.pageItems = needExtraRequest ? itemsLength - responseItems.length : 0;
-        }
+		if (needExtraRequest) {
+			runRequest();
+		}
+	}
 
-        if (itemsToLoad) {
-            let i = 0;
-            while (i < itemsToLoad) {
-                items.push( responseItems.shift() );
-                i += 1;
-            }
-            callbacks.itemsLoad();
-        }
+	function runFirstItemRequest() {
+		function fn(response) {
+			if (!!!response || !!!response.data) {
+				callbacks.error(new Error('Failed to load first item'));
+				return;
+			} else {
+				let data = response.data;
+				let results = void 0 !== data.results ? data.results : data; // @note: Check => The structure of response data in the case of categories differs from the others.
 
-        if (needExtraRequest) {
-            runRequest();
-        }
-    }
+				if (results.length) {
+					firstItemUrl = results[0].url;
+					items.push(results[0]);
+				}
+			}
 
-    function runFirstItemRequest() {
+			runRequest(true);
+		}
 
-        function fn(response) {
+		function errorFn(error) {
+			waiting.requestResponse = false;
+			// Preserve original error for debugging
+			const wrappedError = new Error('Failed to load first item: ' + (error.message || error));
+			wrappedError.originalError = error;
+			callbacks.error(wrappedError);
+		}
 
-            if (!!!response || !!!response.data) {
-                callbacks.error(new Error('Failed to load first item'));
-                return;
-            }
-            else{
+		getRequest(formatInnerLink(first_item_request_url, PageStore.get('config-site').url), false, fn, errorFn);
+	}
 
-                let data = response.data;
-                let results = void 0 !== data.results ? data.results : data; // @note: Check => The structure of response data in the case of categories differs from the others.
+	function runRequest(initialRequest) {
+		waiting.requestResponse = true;
 
-                if( results.length ){
-                    firstItemUrl = results[0].url;
-                    items.push( results[0] );
-                }
-            }
+		function fn(response) {
+			waiting.requestResponse = false;
 
-            runRequest(true);
-        }
+			if (!!!response || !!!response.data) {
+				callbacks.error(new Error('Failed to load items'));
+				return;
+			}
 
-        function errorFn(error) {
-            waiting.requestResponse = false;
-            // Preserve original error for debugging
-            const wrappedError = new Error('Failed to load first item: ' + (error.message || error));
-            wrappedError.originalError = error;
-            callbacks.error(wrappedError);
-        }
+			let data = response.data;
+			let results = void 0 !== data.results ? data.results : data; // @note: Check => The structure of response data in the case of categories differs from the others.
 
-        getRequest( formatInnerLink( first_item_request_url, PageStore.get('config-site').url ), false, fn, errorFn );
-    }
+			// console.log( firstItemUrl );
 
-    function runRequest(initialRequest) {
+			let i = 0;
+			while (i < results.length && config.maxItems > responseItems.length) {
+				if (null === firstItemUrl || firstItemUrl !== results[i].url) {
+					responseItems.push(results[i]);
+				}
+				i += 1;
+			}
 
-        waiting.requestResponse = true;
+			state.nextRequestUrl = !!data.next && config.maxItems > responseItems.length ? data.next : null;
 
-        function fn(response) {
+			if (initialRequest) {
+				// In some cases, (total) 'count' field is missing, but probably doesn't need (eg. in recommended media).
+				state.totalItems = !!data.count ? data.count : responseItems.length;
+				state.totalItems = Math.min(config.maxItems, state.totalItems);
 
-            waiting.requestResponse = false;
+				state.totalPages = Math.ceil(state.totalItems / config.pageItems);
 
-            if (!!!response || !!!response.data) {
-                callbacks.error(new Error('Failed to load items'));
-                return;
-            }
+				callbacks.itemsCount();
+			}
 
-            let data = response.data;
-            let results = void 0 !== data.results ? data.results : data; // @note: Check => The structure of response data in the case of categories differs from the others.
+			loadNextItems();
+		}
 
-            // console.log( firstItemUrl );
+		function errorFn(error) {
+			waiting.requestResponse = false;
+			// Preserve original error for debugging
+			const wrappedError = new Error('Failed to load items: ' + (error.message || error));
+			wrappedError.originalError = error;
+			callbacks.error(wrappedError);
+		}
 
-            let i = 0;
-            while (i < results.length && config.maxItems > responseItems.length) {
-                if( null === firstItemUrl || firstItemUrl !== results[i].url ){
-                    responseItems.push(results[i]);
-                }
-                i += 1;
-            }
+		getRequest(state.nextRequestUrl, false, fn, errorFn);
 
-            state.nextRequestUrl = !!data.next && config.maxItems > responseItems.length ? data.next : null;
+		state.nextRequestUrl = null;
+	}
 
-            if (initialRequest) {
+	function loadItems(itemsLength) {
+		if (!waiting.requestResponse && items.length < state.totalItems) {
+			loadNextItems(itemsLength);
+		}
+	}
 
-                // In some cases, (total) 'count' field is missing, but probably doesn't need (eg. in recommended media).
-                state.totalItems = !!data.count ? data.count : responseItems.length;
-                state.totalItems = Math.min(config.maxItems, state.totalItems);
+	function totalPages() {
+		return state.totalPages;
+	}
 
-                state.totalPages = Math.ceil(state.totalItems / config.pageItems);
+	function loadedAllItems() {
+		return items.length === state.totalItems;
+	}
 
-                callbacks.itemsCount();
-            }
+	function cancelAll() {
+		itemsCountCallback = null;
+		loadItemsCallback = null;
+		errorCallback = null;
+	}
 
-            loadNextItems();
-        }
+	if (void 0 !== first_item_request_url && null !== first_item_request_url) {
+		runFirstItemRequest();
+	} else {
+		runRequest(true);
+	}
 
-        function errorFn(error) {
-            waiting.requestResponse = false;
-            // Preserve original error for debugging
-            const wrappedError = new Error('Failed to load items: ' + (error.message || error));
-            wrappedError.originalError = error;
-            callbacks.error(wrappedError);
-        }
-
-        getRequest(state.nextRequestUrl, false, fn, errorFn);
-
-        state.nextRequestUrl = null;
-    }
-
-    function loadItems(itemsLength) {
-        if (!waiting.requestResponse && items.length < state.totalItems) {
-            loadNextItems(itemsLength);
-        }
-    }
-
-    function totalPages() {
-        return state.totalPages;
-    }
-
-    function loadedAllItems() {
-        return items.length === state.totalItems;
-    }
-
-    function cancelAll(){
-        itemsCountCallback = null;
-        loadItemsCallback = null;
-        errorCallback = null;
-    }
-
-    if( void 0 !== first_item_request_url && null !== first_item_request_url ){
-        runFirstItemRequest();
-    }
-    else{
-        runRequest(true);
-    }
-
-    return {
-        loadItems,
-        totalPages,
-        loadedAllItems,
-        cancelAll,
-    };
+	return {
+		loadItems,
+		totalPages,
+		loadedAllItems,
+		cancelAll,
+	};
 }

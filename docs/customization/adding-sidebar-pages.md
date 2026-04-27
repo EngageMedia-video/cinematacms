@@ -204,21 +204,21 @@ Create a new page with:
 
 <div class="post-content">
     <p>We're excited to share the latest updates to our platform, designed to make content creation and discovery even better for our community.</p>
-    
+
     <h2>What's New</h2>
-    
+
     <h3>Enhanced Video Player</h3>
     <p>Our video player now includes improved accessibility features, better mobile responsiveness, and support for additional subtitle formats.</p>
-    
+
     <h3>Advanced Search</h3>
     <p>Finding content is now easier with improved search filters, including date ranges, content types, and creator-specific searches.</p>
-    
+
     <h3>Community Features</h3>
     <p>New tools for creators to engage with their audience, including enhanced comment moderation and community guidelines.</p>
-    
+
     <h2>Coming Soon</h2>
     <p>We're working on additional features based on community feedback, including improved playlist management and enhanced mobile upload capabilities.</p>
-    
+
     <p>Thank you for being part of our community and helping us build a platform that serves independent media creators worldwide.</p>
 </div>
 
@@ -228,7 +228,7 @@ Create a new page with:
         <li><a href="/blog/community-spotlight">Community Spotlight: Grassroots Filmmakers</a></li>
         <li><a href="/blog/category/platform-updates">All Platform Updates</a></li>
     </ul>
-    
+
     <p><a href="/blog">View all blog posts</a></p>
 </div>
 ```
@@ -255,16 +255,16 @@ Create a new page with:
 
 <div class="voice-content">
     <p>As someone who has worked in independent media for over ten years, I've witnessed firsthand how platforms like ours are transforming the way stories are told and shared.</p>
-    
+
     <h2>The Power of Community-Driven Platforms</h2>
     <p>Unlike mainstream platforms driven by algorithms and advertising revenue, community-focused platforms prioritize meaningful content and authentic storytelling. This shift has profound implications for both creators and audiences.</p>
-    
+
     <h2>Challenges and Opportunities</h2>
     <p>Independent media faces unique challenges: limited budgets, smaller audiences, and the need to balance sustainability with mission-driven content. However, these constraints often lead to more creative and impactful storytelling.</p>
-    
+
     <h2>The Role of Curation</h2>
     <p>Curation isn't just about organizing content—it's about creating pathways for discovery and building bridges between diverse communities and perspectives.</p>
-    
+
     <h2>Looking Forward</h2>
     <p>The future of independent media lies in platforms that understand the importance of community, context, and genuine engagement over viral metrics and advertising revenue.</p>
 </div>
@@ -274,7 +274,7 @@ Create a new page with:
     <ul>
         <li><a href="/voices/community-engagement-strategies">Building Authentic Community Engagement</a></li>
     </ul>
-    
+
     <p><a href="/voices">Read more curator voices</a></p>
 </div>
 ```

@@ -12,7 +12,7 @@ This documents all media-related endpoints. All endpoints prefixed with `/api/v1
 * 200 OK: Successful request
 * 400 Bad Request: Invalid parameters
 **Response:** Returns an object containing media entries.
-  
+
 **Example Response:**
 
 ```
@@ -282,7 +282,7 @@ Returns the updated media object with the latest metadata.
 ## 🔹`DELETE /api/v1/media/{friendly_token}`
 **Description:** Delete a media item.
 **Authentication:** ✅ Required
-**Path Parameters:** 
+**Path Parameters:**
 * friendly_token (string, required): The friendly token of the media item.
 **Status Codes**:
 * 204 No Content: Deletion successful

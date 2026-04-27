@@ -33,7 +33,7 @@ This metholodogy involves two sections, the front-end and back-end implementatio
 
 #### Back-end
 
-An existing authentication library, `django-allauth` was extensively used to implement MFA. To include it in the application, the following line was inserted in `cms/settings.py`. 
+An existing authentication library, `django-allauth` was extensively used to implement MFA. To include it in the application, the following line was inserted in `cms/settings.py`.
 
 ```Python
 INSTALLED_APPS = [
@@ -99,14 +99,14 @@ class CustomAuthenticatorAdmin(admin.ModelAdmin):
   list_filter = ('type', 'created_at', 'last_used_at')
   readonly_fields = ('type', 'user', 'data_masked', 'created_at', 'last_used_at')
   exclude = ('data',)  # Hide the raw data field
-  
+
   def get_fields(self, request, obj=None):
       """Ensure 'data' field is not directly editable"""
       fields = super().get_fields(request, obj)
       if 'data' in fields:
           fields.remove('data')
       return fields
-  
+
   def auth_description(self, obj):
       """Display a meaningful name for the authenticator without revealing secrets"""
       if obj.type == obj.Type.WEBAUTHN:
@@ -118,9 +118,9 @@ class CustomAuthenticatorAdmin(admin.ModelAdmin):
           unused_count = len(obj.wrap().get_unused_codes())
           return f"Recovery Codes ({unused_count} remaining)"
       return obj.get_type_display()
-  
+
   auth_description.short_description = "Authentication Method"
-  
+
   def data_masked(self, obj):
       """Display a masked version of the data"""
       if obj.type == obj.Type.WEBAUTHN:
@@ -128,32 +128,32 @@ class CustomAuthenticatorAdmin(admin.ModelAdmin):
           name = obj.wrap().name
           has_credential = "credential" in obj.data
           return f"Name: {name}, Has credential data: {'Yes' if has_credential else 'No'}"
-          
+
       elif obj.type == obj.Type.TOTP:
           # For TOTP, just indicate secret exists but don't show it
           has_secret = "secret" in obj.data
           return f"TOTP secret: {'[ENCRYPTED]' if has_secret else 'None'}"
-          
+
       elif obj.type == obj.Type.RECOVERY_CODES:
           # For recovery codes, show count and usage status
           used_mask = obj.data.get("used_mask", 0)
           seed = obj.data.get("seed", None)
           unused_count = len(obj.wrap().get_unused_codes())
           total_count = 0
-          
+
           # Try to determine total recovery code count
           from allauth.mfa import app_settings as mfa_settings
           total_count = mfa_settings.RECOVERY_CODE_COUNT
-          
+
           return (
               f"Unused codes: {unused_count}/{total_count}\n"
               f"Seed: {'[ENCRYPTED]' if seed else 'None'}"
           )
-      
+
       # Generic fallback
       data_keys = list(obj.data.keys())
       return f"Keys: {', '.join(data_keys)}"
-  
+
   data_masked.short_description = "Protected Data"
 ```
 
@@ -177,7 +177,7 @@ MFA_SUPPORTED_TYPES = ["totp", "recovery_codes"]
 MFA_TOTP_ISSUER = "Cinemata"
 ```
 
-These are specific configurations that follow the [Django-allauth MFA documentation](https://docs.allauth.org/en/dev/mfa/configuration.html), which explain each line in further detail. 
+These are specific configurations that follow the [Django-allauth MFA documentation](https://docs.allauth.org/en/dev/mfa/configuration.html), which explain each line in further detail.
 
 The forms that are linked in the `MFA_FORMS` variable can be seen below via `users/forms.py`:
 
@@ -185,11 +185,11 @@ The forms that are linked in the `MFA_FORMS` variable can be seen below via `use
 class CustomAuthenticateForm(AuthenticateForm):
     """This form is fetched for standard authentication,
     and represents both TOTP authenticator code and recovery codes."""
-    
+
     code = forms.CharField(
         widget=forms.TextInput(
             attrs={
-                "placeholder": _(""), 
+                "placeholder": _(""),
                 "class": "otp-hidden-input",
                 "inputmode": "numeric"
             },
@@ -204,7 +204,7 @@ class CustomActivateTOTPForm(ActivateTOTPForm):
         max_length=6,
         widget=forms.TextInput(
             attrs={
-                "placeholder": _(""), 
+                "placeholder": _(""),
                 "autocomplete": "one-time-code",
                 "class": "otp-hidden-input",
                 "inputmode": "numeric",
@@ -217,7 +217,7 @@ class CustomReauthenticateTOTPForm(CustomAuthenticateForm):
     pass
 ```
 
-These forms are associated with input fields that are found in the corresponding templates that are associated with each view generated when entering specific endpoints. 
+These forms are associated with input fields that are found in the corresponding templates that are associated with each view generated when entering specific endpoints.
 
 The `django-allauth` comes with `adapter` classes which serve as utility functions to aid its internal functionality. The account adapter class has specific utility functions that were overriden for this purpose. The adapter's custom configurations are found in `users/adapter.py`.
 
@@ -229,7 +229,7 @@ class MyAccountAdapter(DefaultAccountAdapter):
     def encrypt(self, text: str):
         encrypted_bytes = self.cipher_suite.encrypt(text.encode('utf-8'))
         return encrypted_bytes.decode('utf-8')
-    
+
     def decrypt(self, encrypted_text: str):
         decrypted_bytes = self.cipher_suite.decrypt(encrypted_text.encode('utf-8'))
         return decrypted_bytes.decode('utf-8')
@@ -247,7 +247,7 @@ class MyAccountAdapter(DefaultAccountAdapter):
     @property
     def key(self):
         return generate_key()
-    
+
     @property
     def cipher_suite(self):
         return generate_cipher(self.key)
@@ -306,7 +306,7 @@ Where the "..." may refer to any of the listed roles found above.
 
 #### Front-end
 
-The front-end implementation of this primarily utilizes the `templates` feature of Django applications. That being: if you have a default template installed in a library, this can be overwritten within your own `templates/` folder as long as it is stored in the same directory pathing as the default template. 
+The front-end implementation of this primarily utilizes the `templates` feature of Django applications. That being: if you have a default template installed in a library, this can be overwritten within your own `templates/` folder as long as it is stored in the same directory pathing as the default template.
 
 The design and layout of these custom templates follows the wireframes shown in [this issue](https://github.com/EngageMedia-video/cinemata/issues/65).
 
@@ -330,7 +330,7 @@ The following `templates` were created to override default templates associated 
 > [!NOTE]
 > While these are the custom (overriding) templates, there are also custom parent templates that were made to also override default parent templates.
 
-These custom templates utilize their own CSS classes, which have been coded in using the `frontend/` folder's `css/` directory. For this implementation, implementation was done strictly through the `_extra.css` (for new classes) and `styles.scss` (any dark-mode inclusions). 
+These custom templates utilize their own CSS classes, which have been coded in using the `frontend/` folder's `css/` directory. For this implementation, implementation was done strictly through the `_extra.css` (for new classes) and `styles.scss` (any dark-mode inclusions).
 
 As for the JS-related functionality, any template file that utilizes TOTP / Recovery Code input has an inserted script tag in the template file which ensures that the frontend behavior follows best UI/UX practices. This can be refactored to be implemented within a separate React component, but wasn't implemented due to developer time purposes.
 
@@ -342,7 +342,7 @@ As for the JS-related functionality, any template file that utilizes TOTP / Reco
 
 - Creation of additional users which may also utilize MFA
 
-Given that Django's User model structure, it is important to consider that this improvement will also require a brief look into rewriting the database 
+Given that Django's User model structure, it is important to consider that this improvement will also require a brief look into rewriting the database
 
 - Send recovery code to MFA-verified user (in case the user does not have access to either authenticator app or their recovery codes)
 

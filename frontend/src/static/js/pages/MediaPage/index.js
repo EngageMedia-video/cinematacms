@@ -15,12 +15,14 @@ import { _VideoMediaPage } from './_VideoMediaPage';
 import MediaPageStore from './store.js';
 
 export class MediaPage extends _VideoMediaPage {
-
-	viewerContainerContent( mediaData ){
-
-		switch( MediaPageStore.get( 'media-type' ) ){
+	viewerContainerContent(mediaData) {
+		switch (MediaPageStore.get('media-type')) {
 			case 'video':
-				return <SiteConsumer>{ site => <VideoViewer data={ mediaData } siteUrl={ site.url } inEmbed={!1} /> }</SiteConsumer>;
+				return (
+					<SiteConsumer>
+						{(site) => <VideoViewer data={mediaData} siteUrl={site.url} inEmbed={!1} />}
+					</SiteConsumer>
+				);
 			case 'audio':
 				return <AudioViewer />;
 			case 'image':

@@ -15,407 +15,423 @@ import urlParse from 'url-parse';
 
 import { renderManageItems } from './includes/functions';
 import initManageItemsList from './includes/initManageItemsList';
-import { ManageItemsListHandler } from "./includes/ManageItemsListHandler";
+import { ManageItemsListHandler } from './includes/ManageItemsListHandler';
 
-import "../../styles/ManageItemList.scss";
+import '../../styles/ManageItemList.scss';
 
-function useManageItemList( props, itemsListRef ){
+function useManageItemList(props, itemsListRef) {
+	let previousItemsLength = 0;
 
-    let previousItemsLength = 0;
+	let itemsListInstance = null;
 
-    let itemsListInstance = null;
+	const [items, setItems] = useState([]);
 
-    const [ items, setItems ] = useState([]);
+	const [countedItems, setCountedItems] = useState(false);
+	const [listHandler, setListHandler] = useState(null);
 
-    const [ countedItems, setCountedItems ] = useState(false);
-    const [ listHandler, setListHandler ] = useState(null);
+	function onItemsLoad(itemsArray) {
+		setItems([...itemsArray]);
+	}
 
-    function onItemsLoad(itemsArray){
-        setItems([...itemsArray]);
-    }
+	function onItemsCount(totalItems) {
+		setCountedItems(true);
+		if (void 0 !== props.itemsCountCallback) {
+			props.itemsCountCallback(totalItems);
+		}
+	}
 
-    function onItemsCount(totalItems){
-        setCountedItems(true);
-        if (void 0 !== props.itemsCountCallback) {
-            props.itemsCountCallback(totalItems);
-        }
-    }
+	function addListItems() {
+		if (previousItemsLength < items.length) {
+			if (null === itemsListInstance) {
+				itemsListInstance = initManageItemsList([itemsListRef.current])[0];
+			}
 
-    function addListItems(){
+			// TODO: Should get item elements from children components.
+			const itemsElem = itemsListRef.current.querySelectorAll('.item');
 
-        if ( previousItemsLength < items.length) {
+			if (!itemsElem || !itemsElem.length) {
+				return;
+			}
 
-            if (null === itemsListInstance) {
-                itemsListInstance = initManageItemsList([itemsListRef.current])[0];
-            }
+			let i = previousItemsLength;
 
-            // TODO: Should get item elements from children components.
-            const itemsElem = itemsListRef.current.querySelectorAll('.item');
+			while (i < items.length) {
+				itemsListInstance.appendItems(itemsElem[i]);
+				i += 1;
+			}
 
-            if( ! itemsElem || ! itemsElem.length ){
-                return;
-            }
+			previousItemsLength = items.length;
+		}
+	}
 
-            let i = previousItemsLength;
+	useEffect(() => {
+		if (void 0 !== props.itemsLoadCallback) {
+			props.itemsLoadCallback();
+		}
+	}, [items]);
 
-            while (i < items.length) {
-                itemsListInstance.appendItems(itemsElem[i]);
-                i += 1;
-            }
-
-            previousItemsLength = items.length;
-        }
-    }
-
-    useEffect(() => {
-        if (void 0 !== props.itemsLoadCallback) {
-            props.itemsLoadCallback();
-        }
-    }, [items]);
-
-    return [ items, countedItems, listHandler, setListHandler, onItemsLoad, onItemsCount, addListItems ];
+	return [items, countedItems, listHandler, setListHandler, onItemsLoad, onItemsCount, addListItems];
 }
 
-function useManageItemListSync( props ){
+function useManageItemListSync(props) {
+	const itemsListRef = useRef(null);
+	const itemsListWrapperRef = useRef(null);
 
-    const itemsListRef = useRef(null);
-    const itemsListWrapperRef = useRef(null);
+	const [items, countedItems, listHandler, setListHandler, onItemsLoad, onItemsCount, addListItems] =
+		useManageItemList({ ...props, itemsCountCallback }, itemsListRef);
 
-    const [ items, countedItems, listHandler, setListHandler, onItemsLoad, onItemsCount, addListItems ] = useManageItemList( {...props, itemsCountCallback}, itemsListRef );
+	const [totalItems, setTotalItems] = useState(null);
 
-    const [ totalItems, setTotalItems ] = useState(null);
+	let classname = {
+		list: 'manage-items-list',
+		listOuter: 'items-list-outer' + ('string' === typeof props.className ? ' ' + props.className.trim() : ''),
+	};
 
-    let classname = {
-        list: 'manage-items-list',
-        listOuter: 'items-list-outer' + ('string' === typeof props.className ? ' ' + props.className.trim() : '' )
-    };
+	function onClickLoadMore() {
+		listHandler.loadItems();
+	}
 
-    function onClickLoadMore(){
-        listHandler.loadItems();
-    }
+	function itemsCountCallback(itemsSumm) {
+		setTotalItems(itemsSumm);
+	}
 
-    function itemsCountCallback(itemsSumm){
-    	setTotalItems(itemsSumm);
-    }
+	function afterItemsLoad() {}
 
-    function afterItemsLoad(){}
+	function renderBeforeListWrap() {
+		return null;
+	}
 
-    function renderBeforeListWrap() {
-        return null;
-    }
+	function renderAfterListWrap() {
+		if (!listHandler) {
+			return null;
+		}
 
-    function renderAfterListWrap() {
+		return 1 > listHandler.totalPages() || listHandler.loadedAllItems() ? null : (
+			<button className="load-more" onClick={onClickLoadMore}>
+				SHOW MORE
+			</button>
+		);
+	}
 
-        if( ! listHandler ){
-            return null;
-        }
+	useEffect(() => {
+		addListItems();
+		afterItemsLoad();
+	}, [items]);
 
-        return 1 > listHandler.totalPages() || listHandler.loadedAllItems() ? null : <button className="load-more" onClick={ onClickLoadMore }>SHOW MORE</button>;
-    }
-
-    useEffect(() => {
-        addListItems();
-        afterItemsLoad();
-    }, [items]);
-
-    return [ countedItems, totalItems, items, listHandler, setListHandler, classname, itemsListWrapperRef, itemsListRef, onItemsCount, onItemsLoad, renderBeforeListWrap, renderAfterListWrap ];
+	return [
+		countedItems,
+		totalItems,
+		items,
+		listHandler,
+		setListHandler,
+		classname,
+		itemsListWrapperRef,
+		itemsListRef,
+		onItemsCount,
+		onItemsLoad,
+		renderBeforeListWrap,
+		renderAfterListWrap,
+	];
 }
 
-function pageUrlQuery( baseQuery, pageNumber ){
+function pageUrlQuery(baseQuery, pageNumber) {
+	let queryParams = [];
+	let pos = 0;
 
-    let queryParams = [];
-    let pos = 0;
+	if ('' !== baseQuery) {
+		queryParams = baseQuery.split('?')[1].split('&');
 
-    if( '' !== baseQuery ){
+		let param;
 
-        queryParams = baseQuery.split('?')[1].split('&');
+		let i = 0;
 
-        let param;
+		while (i < queryParams.length) {
+			param = queryParams[i].split('=');
 
-        let i = 0;
+			if ('page' === param[0]) {
+				pos = i;
+				break;
+			}
 
-        while( i < queryParams.length ){
+			i += 1;
+		}
+	}
 
-            param = queryParams[i].split('=');
+	queryParams[pos] = 'page=' + pageNumber;
 
-            if( 'page' === param[0] ){
-                pos = i;
-                break;
-            }
-
-            i += 1;
-        }
-    }
-
-    queryParams[pos] = 'page=' + pageNumber;
-
-    return '?' + queryParams.join('&');
+	return '?' + queryParams.join('&');
 }
 
-function pageUrl( parsedUrl, query ){
-    return parsedUrl.set('query', query).href;
+function pageUrl(parsedUrl, query) {
+	return parsedUrl.set('query', query).href;
 }
 
-function BulkActions(props){
+function BulkActions(props) {
+	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
 
-    const [ popupContentRef, PopupContent, PopupTrigger ] = usePopup();
+	const [selectedBulkAction, setSelectedBulkAction] = useState('');
+	const [selectedItemsSize, setSelectedItemsSize] = useState(props.selectedItemsSize);
 
-    const [ selectedBulkAction, setSelectedBulkAction ] = useState('');
-    const [ selectedItemsSize, setSelectedItemsSize ] = useState(props.selectedItemsSize);
+	function onBulkActionSelect(ev) {
+		setSelectedBulkAction(ev.currentTarget.value);
+	}
 
-    function onBulkActionSelect(ev){
-        setSelectedBulkAction(ev.currentTarget.value);
-    }
+	function onClickProceed() {
+		if ('function' === typeof props.onProceedRemoval) {
+			props.onProceedRemoval();
+		}
 
-    function onClickProceed(){
+		popupContentRef.current.tryToHide();
+	}
 
-        if( 'function' === typeof props.onProceedRemoval ){
-            props.onProceedRemoval();
-        }
+	function onClickCancel() {
+		popupContentRef.current.tryToHide();
+	}
 
-        popupContentRef.current.tryToHide();
-    }
+	useEffect(() => {
+		setSelectedItemsSize(props.selectedItemsSize);
+	}, [props.selectedItemsSize]);
 
-    function onClickCancel(){
-        popupContentRef.current.tryToHide();
-    }
+	return (
+		<div className="manage-items-bulk-action">
+			<select value={selectedBulkAction} onChange={onBulkActionSelect}>
+				<option value="">Bulk actions</option>
+				<option value="delete">Delete selected</option>
+			</select>
 
-    useEffect(()=>{
-        setSelectedItemsSize(props.selectedItemsSize);
-    }, [props.selectedItemsSize]);
+			{!selectedItemsSize ? null : (
+				<PopupTrigger contentRef={popupContentRef}>
+					<button>Apply</button>
+				</PopupTrigger>
+			)}
 
-    return  (<div className="manage-items-bulk-action">
-
-                <select value={ selectedBulkAction } onChange={ onBulkActionSelect } >
-                    <option value="" >Bulk actions</option>
-                    <option value="delete">Delete selected</option>
-                </select>
-
-                { ! selectedItemsSize ? null : <PopupTrigger contentRef={ popupContentRef }>
-                    <button>Apply</button>
-                </PopupTrigger> }
-
-                <PopupContent contentRef={ popupContentRef }>
-                    <PopupMain>
-                        <div className="popup-message">
-                            <span className="popup-message-title">Bulk removal</span>
-                            <span className="popup-message-main">You're willing to remove selected items permanently?</span>
-                        </div>
-                          <hr/>
-                        <span className="popup-message-bottom">
-                            <button className="button-link cancel-profile-removal" onClick={ onClickCancel }>CANCEL</button>
-                            <button className="button-link proceed-profile-removal" onClick={ onClickProceed }>PROCEED</button>
-                        </span>
-                    </PopupMain>
-                </PopupContent>
-
-            </div>);
+			<PopupContent contentRef={popupContentRef}>
+				<PopupMain>
+					<div className="popup-message">
+						<span className="popup-message-title">Bulk removal</span>
+						<span className="popup-message-main">You're willing to remove selected items permanently?</span>
+					</div>
+					<hr />
+					<span className="popup-message-bottom">
+						<button className="button-link cancel-profile-removal" onClick={onClickCancel}>
+							CANCEL
+						</button>
+						<button className="button-link proceed-profile-removal" onClick={onClickProceed}>
+							PROCEED
+						</button>
+					</span>
+				</PopupMain>
+			</PopupContent>
+		</div>
+	);
 }
 
-function ManageItemsOptions(props){
-    return ( <div className={props.className}>
-                <BulkActions selectedItemsSize={props.items.length} onProceedRemoval={props.onProceedRemoval} />
-                { 1 === props.pagesSize ? null :
-                    <div className="manage-items-pagination">
-                        <PaginationButtons totalItems={props.totalItems} pageItems={props.pageItems} onPageButtonClick={props.onPageButtonClick} query={props.query} />
-                    </div>
-                }
-            </div>);
+function ManageItemsOptions(props) {
+	return (
+		<div className={props.className}>
+			<BulkActions selectedItemsSize={props.items.length} onProceedRemoval={props.onProceedRemoval} />
+			{1 === props.pagesSize ? null : (
+				<div className="manage-items-pagination">
+					<PaginationButtons
+						totalItems={props.totalItems}
+						pageItems={props.pageItems}
+						onPageButtonClick={props.onPageButtonClick}
+						query={props.query}
+					/>
+				</div>
+			)}
+		</div>
+	);
 }
 
-function PaginationButtons(props){
+function PaginationButtons(props) {
+	const buttons = [];
 
-    const buttons = [];
+	let i;
 
-    let i;
+	let maxPagin = 11;
 
-    let maxPagin = 11;
+	const newPagesNumber = {
+		last: Math.ceil(props.totalItems / props.pageItems),
+		current: 1,
+	};
 
-    const newPagesNumber = {
-    	last: Math.ceil( props.totalItems / props.pageItems ),
-    	current: 1,
-    };
+	if ('' !== props.query) {
+		const queryParams = props.query.split('?')[1].split('&');
 
-    if( '' !== props.query ){
+		let param;
 
-        const queryParams = props.query.split('?')[1].split('&');
+		let i = 0;
+		while (i < queryParams.length) {
+			param = queryParams[i].split('=');
+			if ('page' === param[0]) {
+				newPagesNumber.current = parseInt(param[1], 10);
+				break;
+			}
+			i += 1;
+		}
+	}
 
-        let param;
+	const paginButtonsData = paginationButtonsList(maxPagin, newPagesNumber);
 
-        let i = 0;
-        while( i < queryParams.length ){
-            param = queryParams[i].split('=');
-            if( 'page' === param[0] ){
-                newPagesNumber.current = parseInt( param[1], 10);
-                break;
-            }
-            i += 1;
-        }
-    }
+	i = 0;
+	while (i < paginButtonsData.length) {
+		if ('button' === paginButtonsData[i].type) {
+			buttons.push(
+				<button
+					key={i + '[button]'}
+					onClick={props.onPageButtonClick}
+					page={paginButtonsData[i].number}
+					className={newPagesNumber.current === paginButtonsData[i].number ? 'active' : ''}
+				>
+					{paginButtonsData[i].number}
+				</button>
+			);
+		} else if ('dots' === paginButtonsData[i].type) {
+			buttons.push(
+				<span key={i + '[dots]'} className="pagination-dots">
+					...
+				</span>
+			);
+		}
 
-    const paginButtonsData = paginationButtonsList( maxPagin, newPagesNumber );
+		i += 1;
+	}
 
-    i = 0;
-    while( i < paginButtonsData.length ){
-
-        if( 'button' === paginButtonsData[i].type ){
-            buttons.push(
-                <button key={ i +'[button]' } onClick={ props.onPageButtonClick } page={ paginButtonsData[i].number } className={ newPagesNumber.current === paginButtonsData[i].number ? 'active' : '' }>
-                    { paginButtonsData[i].number }
-                </button> );
-        }
-        else if( 'dots' === paginButtonsData[i].type ){
-            buttons.push( <span key={ i +'[dots]' } className="pagination-dots">...</span> );
-        }
-
-        i += 1;
-    }
-
-    return buttons;
+	return buttons;
 }
 
-function paginationButtonsList( maxPagin, pagesNumber ){
+function paginationButtonsList(maxPagin, pagesNumber) {
+	if (3 > maxPagin) {
+		maxPagin = 3;
+	}
 
-    if( 3 > maxPagin ){
-        maxPagin = 3;
-    }
+	let i;
 
-    let i;
+	let maxCurr;
+	let maxEdge = 1;
 
-    let maxCurr;
-    let maxEdge = 1;
+	if (maxPagin >= pagesNumber.last) {
+		maxPagin = pagesNumber.last;
+		maxCurr = pagesNumber.last;
+		maxEdge = 0;
+	} else {
+		if (5 < maxPagin) {
+			if (7 >= maxPagin) {
+				maxEdge = 2;
+			} else {
+				maxEdge = Math.floor(maxPagin / 4);
+			}
+		}
 
-    if( maxPagin >= pagesNumber.last ){
-        maxPagin = pagesNumber.last;
-        maxCurr = pagesNumber.last;
-        maxEdge = 0;
-    }
-    else {
+		maxCurr = maxPagin - 2 * maxEdge;
+	}
 
-        if( 5 < maxPagin ){
+	const currentArr = [];
+	const firstArr = [];
+	const lastArr = [];
 
-            if( 7 >= maxPagin ){
-                maxEdge = 2;
-            }
-            else{
-                maxEdge = Math.floor( maxPagin / 4 );
-            }
-        }
+	if (pagesNumber.current <= maxCurr + maxEdge - pagesNumber.current) {
+		i = 1;
 
-        maxCurr = maxPagin - ( 2 * maxEdge );
-    }
+		while (i <= maxCurr + maxEdge) {
+			currentArr.push(i);
+			i += 1;
+		}
 
-    const currentArr = [];
-    const firstArr = [];
-    const lastArr = [];
+		i = pagesNumber.last - maxPagin + currentArr.length + 1;
 
-    if( pagesNumber.current <= maxCurr + maxEdge - pagesNumber.current ){
+		while (i <= pagesNumber.last) {
+			lastArr.push(i);
+			i += 1;
+		}
+	} else if (pagesNumber.current > pagesNumber.last - (maxCurr + maxEdge - 1)) {
+		i = pagesNumber.last - (maxCurr + maxEdge - 1);
 
-        i = 1;
+		while (i <= pagesNumber.last) {
+			currentArr.push(i);
+			i += 1;
+		}
 
-        while( i <= maxCurr + maxEdge ){
-            currentArr.push(i);
-            i += 1;
-        }
+		i = 1;
+		while (i <= maxPagin - currentArr.length) {
+			firstArr.push(i);
+			i += 1;
+		}
+	} else {
+		currentArr.push(pagesNumber.current);
 
-        i = pagesNumber.last - maxPagin + currentArr.length + 1;
+		i = 1;
+		while (maxCurr > currentArr.length) {
+			currentArr.push(pagesNumber.current + i);
 
-        while( i <= pagesNumber.last ){
-            lastArr.push(i);
-            i += 1;
-        }
-    }
-    else if( pagesNumber.current > pagesNumber.last - ( maxCurr + maxEdge - 1 ) ){
+			if (maxCurr === currentArr.length) {
+				break;
+			}
 
-        i = pagesNumber.last - ( maxCurr + maxEdge - 1 );
+			currentArr.unshift(pagesNumber.current - i);
 
-        while( i <= pagesNumber.last ){
-            currentArr.push(i);
-            i += 1;
-        }
+			i += 1;
+		}
 
-        i = 1;
-        while( i <= maxPagin - currentArr.length ){
-            firstArr.push(i);
-            i += 1;
-        }
-    }
-    else{
+		i = 1;
+		while (i <= maxEdge) {
+			firstArr.push(i);
+			i += 1;
+		}
 
-        currentArr.push( pagesNumber.current );
+		i = pagesNumber.last - (maxPagin - (firstArr.length + currentArr.length) - 1);
+		while (i <= pagesNumber.last) {
+			lastArr.push(i);
+			i += 1;
+		}
+	}
 
-        i = 1;
-        while( maxCurr > currentArr.length ){
+	const ret = [];
 
-            currentArr.push( pagesNumber.current + i );
+	i = 0;
+	while (i < firstArr.length) {
+		ret.push({
+			type: 'button',
+			number: firstArr[i],
+		});
+		i += 1;
+	}
 
-            if( ( maxCurr === currentArr.length ) ){
-                break;
-            }
+	if (firstArr.length && currentArr.length && firstArr[firstArr.length - 1] + 1 < currentArr[0]) {
+		ret.push({
+			type: 'dots',
+		});
+	}
 
-            currentArr.unshift( pagesNumber.current - i );
+	i = 0;
+	while (i < currentArr.length) {
+		ret.push({
+			type: 'button',
+			number: currentArr[i],
+		});
+		i += 1;
+	}
 
-            i += 1;
-        }
+	if (currentArr.length && lastArr.length && currentArr[currentArr.length - 1] + 1 < lastArr[0]) {
+		ret.push({
+			type: 'dots',
+		});
+	}
 
-        i = 1;
-        while( i <= maxEdge){
-            firstArr.push(i);
-            i += 1;
-        }
+	i = 0;
+	while (i < lastArr.length) {
+		ret.push({
+			type: 'button',
+			number: lastArr[i],
+		});
+		i += 1;
+	}
 
-        i = pagesNumber.last - ( maxPagin - ( firstArr.length + currentArr.length ) - 1 );
-        while( i <= pagesNumber.last){
-            lastArr.push(i);
-            i += 1;
-        }
-    }
-
-    const ret = [];
-
-    i = 0;
-    while( i < firstArr.length ){
-        ret.push({
-            type: 'button',
-            number: firstArr[i]
-        });
-        i += 1;
-    }
-
-    if( firstArr.length && currentArr.length && ( firstArr[firstArr.length - 1] + 1 ) < currentArr[0] ){
-        ret.push({
-            type: 'dots'
-        });
-    }
-
-    i = 0;
-    while( i < currentArr.length ){
-        ret.push({
-            type: 'button',
-            number: currentArr[i]
-        });
-        i += 1;
-    }
-
-    if( currentArr.length && lastArr.length && ( currentArr[currentArr.length - 1] + 1 ) < lastArr[0] ){
-        ret.push({
-            type: 'dots'
-        });
-    }
-
-    i = 0;
-    while( i < lastArr.length ){
-        ret.push({
-            type: 'button',
-            number: lastArr[i]
-        });
-        i += 1;
-    }
-
-    return ret;
+	return ret;
 }
 
-export function ManageItemList(props){
+export function ManageItemList(props) {
 	props = { maxItems: 99999, pageItems: 24, requestUrl: null, ...props };
 
 	const [
@@ -430,239 +446,226 @@ export function ManageItemList(props){
 		onItemsCount,
 		onItemsLoad,
 		renderBeforeListWrap,
-		renderAfterListWrap
+		renderAfterListWrap,
 	] = useManageItemListSync(props);
 
-	const [ selectedItems, setSelectedItems ] = useState([]);
-	const [ selectedAllItems, setSelectedAllItems ] = useState(false);
+	const [selectedItems, setSelectedItems] = useState([]);
+	const [selectedAllItems, setSelectedAllItems] = useState(false);
 
-	const [ parsedRequestUrl, setParsedRequestUrl ] = useState(null);
-	const [ parsedRequestUrlQuery, setParsedRequestUrlQuery ] = useState(null);
+	const [parsedRequestUrl, setParsedRequestUrl] = useState(null);
+	const [parsedRequestUrlQuery, setParsedRequestUrlQuery] = useState(null);
 
-    function onPageButtonClick(ev) {
+	function onPageButtonClick(ev) {
+		const clickedPageUrl = pageUrl(
+			parsedRequestUrl,
+			pageUrlQuery(parsedRequestUrlQuery, ev.currentTarget.getAttribute('page'))
+		);
 
-        const clickedPageUrl = pageUrl( parsedRequestUrl, pageUrlQuery( parsedRequestUrlQuery, ev.currentTarget.getAttribute('page') ) );
+		if ('function' === typeof props.onPageChange) {
+			props.onPageChange(clickedPageUrl, ev.currentTarget.getAttribute('page'));
+		}
+	}
 
-        if( 'function' === typeof props.onPageChange ){
-            props.onPageChange( clickedPageUrl, ev.currentTarget.getAttribute('page') );
-        }
-    }
+	function onBulkItemsRemoval() {
+		deleteSelectedItems();
+	}
 
-    function onBulkItemsRemoval(){
-        deleteSelectedItems();
-    }
+	function onAllRowsCheck(selectedAllRows, tableType) {
+		const newSelected = [];
 
-	function onAllRowsCheck( selectedAllRows, tableType ){
+		if (selectedAllRows) {
+			if (items.length !== selectedItems.length) {
+				let entry;
 
-        const newSelected = [];
+				if ('media' === tableType || 'my-uploads' === tableType) {
+					for (entry of items) {
+						newSelected.push(entry.friendly_token);
+					}
+				} else if ('users' === tableType) {
+					for (entry of items) {
+						newSelected.push(entry.username);
+					}
+				} else if ('comments' === tableType) {
+					for (entry of items) {
+						newSelected.push(entry.uid);
+					}
+				}
+			}
+		}
 
-        if( selectedAllRows ){
+		setSelectedItems(newSelected);
+		setSelectedAllItems(newSelected.length === items.length);
+	}
 
-            if( items.length !== selectedItems.length ){
-
-                let entry;
-
-                if( 'media' === tableType || 'my-uploads' === tableType ){
-
-                    for(entry of items){
-                        newSelected.push( entry.friendly_token );
-                    }
-                }
-                else if( 'users' === tableType ){
-
-                    for(entry of items){
-                        newSelected.push( entry.username );
-                    }
-                }
-                else if( 'comments' === tableType ){
-
-                    for(entry of items){
-                        newSelected.push( entry.uid );
-                    }
-                }
-            }
-        }
-
-        setSelectedItems(newSelected);
-        setSelectedAllItems(newSelected.length === items.length);
-    }
-
-	function onRowCheck( token, isSelected ){
-
-		if( void 0 !== token ){
-
+	function onRowCheck(token, isSelected) {
+		if (void 0 !== token) {
 			let newSelected;
 
-            if( -1 === selectedItems.indexOf( token ) ){
+			if (-1 === selectedItems.indexOf(token)) {
+				if (isSelected) {
+					newSelected = [...selectedItems, token];
 
-                if( isSelected ){
+					setSelectedItems(newSelected);
+					setSelectedAllItems(newSelected.length === items.length);
+				}
+			} else {
+				if (!isSelected) {
+					newSelected = [];
 
-                    newSelected = [ ...selectedItems, token ];
+					let entry;
+					for (entry of selectedItems) {
+						if (token !== entry) {
+							newSelected.push(entry);
+						}
+					}
 
-                    setSelectedItems(newSelected);
-                    setSelectedAllItems(newSelected.length === items.length);
-                }
-            }
-            else{
-
-                if( ! isSelected ){
-
-                    newSelected = [];
-
-                    let entry;
-                    for(entry of selectedItems){
-                        if( token !== entry ){
-                            newSelected.push( entry );
-                        }
-                    }
-
-                    setSelectedItems(newSelected);
-                    setSelectedAllItems(newSelected.length === items.length);
-                }
-            }
-        }
+					setSelectedItems(newSelected);
+					setSelectedAllItems(newSelected.length === items.length);
+				}
+			}
+		}
 	}
 
-    function removeBulkMediaResponse( response ){
+	function removeBulkMediaResponse(response) {
+		if (response && 204 === response.status) {
+			setSelectedItems([]);
+			setSelectedAllItems(false);
 
-        if( response && 204 === response.status ){
+			if ('function' === typeof props.onRowsDelete) {
+				props.onRowsDelete(true);
+			}
+		}
+	}
 
-        	setSelectedItems([]);
-        	setSelectedAllItems(false);
+	function removeBulkMediaFail() {
+		if ('function' === typeof props.onRowsDeleteFail) {
+			props.onRowsDeleteFail(true);
+		}
+	}
 
-        	if( 'function' === typeof props.onRowsDelete ){
-        		props.onRowsDelete( true );
-        	}
-        }
-    }
-
-    function removeBulkMediaFail(){
-    	if( 'function' === typeof props.onRowsDeleteFail ){
-	        props.onRowsDeleteFail( true );
-	    }
-    }
-
-	function deleteItem( token, isManageComments ){
+	function deleteItem(token, isManageComments) {
 		/*console.log("DELETE ITEM:", token, isManageComments, props.manageType);
         console.log( props.requestUrl.split('?')[0] );*/
-        deleteRequest(
-            props.requestUrl.split('?')[0] + ( 'comments' === props.manageType ? '?comment_ids=' : '?tokens=' ) + token,
-            {
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                },
-                tokens: token,
-            },
-            false,
-            removeMediaResponse,
-            removeMediaFail
-        );
+		deleteRequest(
+			props.requestUrl.split('?')[0] + ('comments' === props.manageType ? '?comment_ids=' : '?tokens=') + token,
+			{
+				headers: {
+					'X-CSRFToken': getCSRFToken(),
+				},
+				tokens: token,
+			},
+			false,
+			removeMediaResponse,
+			removeMediaFail
+		);
 	}
 
-    function deleteSelectedItems(){
-
-        deleteRequest(
-            props.requestUrl.split('?')[0] + ( 'comments' === props.manageType ? '?comment_ids=' : '?tokens=' ) + selectedItems.join(','),
-            {
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                },
-            },
-            false,
-            removeBulkMediaResponse,
-            removeBulkMediaFail
-        );
-    }
-
-	function removeMediaResponse(response){
-		if( response && 204 === response.status ){
-            if( 'function' === typeof props.onRowsDelete ){
-                props.onRowsDelete( false );
-            }
-        }
+	function deleteSelectedItems() {
+		deleteRequest(
+			props.requestUrl.split('?')[0] +
+				('comments' === props.manageType ? '?comment_ids=' : '?tokens=') +
+				selectedItems.join(','),
+			{
+				headers: {
+					'X-CSRFToken': getCSRFToken(),
+				},
+			},
+			false,
+			removeBulkMediaResponse,
+			removeBulkMediaFail
+		);
 	}
 
-	function removeMediaFail(){
-		if( 'function' === typeof props.onRowsDeleteFail ){
-            props.onRowsDeleteFail( false );
-        }
+	function removeMediaResponse(response) {
+		if (response && 204 === response.status) {
+			if ('function' === typeof props.onRowsDelete) {
+				props.onRowsDelete(false);
+			}
+		}
 	}
 
-	useEffect(()=>{
-		if( 'function' === typeof props.onSelectionChange ){
+	function removeMediaFail() {
+		if ('function' === typeof props.onRowsDeleteFail) {
+			props.onRowsDeleteFail(false);
+		}
+	}
+
+	useEffect(() => {
+		if ('function' === typeof props.onSelectionChange) {
 			props.onSelectionChange(selectedItems);
 		}
 	}, [selectedItems]);
 
-	useEffect(()=>{
-		if( parsedRequestUrl ){
+	useEffect(() => {
+		if (parsedRequestUrl) {
 			setParsedRequestUrlQuery(parsedRequestUrl.query);
 		}
 	}, [parsedRequestUrl]);
 
-	useEffect(()=>{
+	useEffect(() => {
 		// console.log( props.requestUrl );
 		setParsedRequestUrl(urlParse(props.requestUrl));
-    }, [props.requestUrl]);
+	}, [props.requestUrl]);
 
-    useEffect(() => {
+	useEffect(() => {
+		setListHandler(
+			new ManageItemsListHandler(props.pageItems, props.maxItems, props.requestUrl, onItemsCount, onItemsLoad)
+		);
 
-    	setListHandler( new ManageItemsListHandler(props.pageItems, props.maxItems, props.requestUrl, onItemsCount, onItemsLoad) );
+		return () => {
+			if (listHandler) {
+				listHandler.cancelAll();
+				setListHandler(null);
+			}
+		};
+	}, []);
 
-        return () => {
-            if( listHandler ){
-                listHandler.cancelAll();
-                setListHandler(null);
-            }
-        };
-    }, []);
+	return !countedItems ? (
+		<PendingItemsList className={classname.listOuter} />
+	) : !items.length ? null : (
+		<div className={classname.listOuter}>
+			{/*renderBeforeListWrap()*/}
 
-    return ( ! countedItems ?
-            <PendingItemsList className={ classname.listOuter } /> :
-            ( ! items.length ? null : <div className={ classname.listOuter }>
+			<ManageItemsOptions
+				totalItems={totalItems}
+				pageItems={props.pageItems}
+				onPageButtonClick={onPageButtonClick}
+				query={parsedRequestUrlQuery || ''}
+				className="manage-items-options"
+				items={selectedItems}
+				pagesSize={listHandler.totalPages()}
+				onProceedRemoval={onBulkItemsRemoval}
+			/>
 
-                { /*renderBeforeListWrap()*/ }
+			<div ref={itemsListWrapperRef} className="items-list-wrap">
+				<div ref={itemsListRef} className={classname.list}>
+					{renderManageItems(items, {
+						...props,
+						onAllRowsCheck: onAllRowsCheck,
+						onRowCheck: onRowCheck,
+						selectedItems: selectedItems,
+						selectedAllItems: selectedAllItems,
+						onDelete: deleteItem,
+					})}
+					{/*items.map( ( itm, index ) => <ListItem key={ index } { ...listItemProps( props, itm, index ) } /> )*/}
+				</div>
+			</div>
 
-                <ManageItemsOptions
-                	totalItems={totalItems}
-                	pageItems={props.pageItems}
-                	onPageButtonClick={onPageButtonClick}
-                	query={parsedRequestUrlQuery || ''}
-                	className='manage-items-options'
-                	items={ selectedItems }
-                	pagesSize={ listHandler.totalPages() }
-                	onProceedRemoval={ onBulkItemsRemoval } />
+			<ManageItemsOptions
+				totalItems={totalItems}
+				pageItems={props.pageItems}
+				onPageButtonClick={onPageButtonClick}
+				query={parsedRequestUrlQuery || ''}
+				className="manage-items-options popup-on-top"
+				items={selectedItems}
+				pagesSize={listHandler.totalPages()}
+				onProceedRemoval={onBulkItemsRemoval}
+			/>
 
-                <div ref={ itemsListWrapperRef } className="items-list-wrap">
-                    <div ref={ itemsListRef } className={ classname.list }>
-                    {renderManageItems( items, {
-			            ...props,
-			            onAllRowsCheck: onAllRowsCheck,
-			            onRowCheck: onRowCheck,
-			            selectedItems: selectedItems,
-			            selectedAllItems: selectedAllItems,
-			            onDelete: deleteItem,
-			        })}
-                    { /*items.map( ( itm, index ) => <ListItem key={ index } { ...listItemProps( props, itm, index ) } /> )*/ }
-                    </div>
-                </div>
-
-                <ManageItemsOptions
-                	totalItems={totalItems}
-                	pageItems={props.pageItems}
-                	onPageButtonClick={onPageButtonClick}
-                	query={parsedRequestUrlQuery || ''}
-                	className='manage-items-options popup-on-top'
-                	items={ selectedItems }
-                	pagesSize={ listHandler.totalPages() }
-                	onProceedRemoval={ onBulkItemsRemoval } />
-
-                { /*renderAfterListWrap() */}
-
-            </div> )
-           );
+			{/*renderAfterListWrap() */}
+		</div>
+	);
 }
-
 
 // export class AsyncManageItemListSync extends React.PureComponent {
 

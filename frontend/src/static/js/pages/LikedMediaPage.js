@@ -14,8 +14,7 @@ import { ProfileLikedPage } from './ProfilePage/Liked';
 import { addClassname } from '../functions/dom.js';
 
 export class AnonymousLikedMediaPage extends Page {
-
-	constructor(props){
+	constructor(props) {
 		super(props, 'liked-media');
 
 		this.state = {
@@ -25,32 +24,40 @@ export class AnonymousLikedMediaPage extends Page {
 		this.getCountFunc = this.getCountFunc.bind(this);
 	}
 
-	getCountFunc(resultsCount){
+	getCountFunc(resultsCount) {
 		this.setState({
 			resultsCount: resultsCount,
 		});
 	}
 
-	pageContent(){
-
-		return <ApiUrlConsumer>
-				{ apiUrl =>
+	pageContent() {
+		return (
+			<ApiUrlConsumer>
+				{(apiUrl) => (
 					<UserConsumer>
-					{ user =>
-						<MediaListWrapper title={ this.props.title + ( null !== this.state.resultsCount ? ' (' + this.state.resultsCount + ')' : '' ) } className="search-results-wrap items-list-hor">
-							<LazyLoadItemListAsync 
-								singleLinkContent={ false }
-								horizontalItemsOrientation={true}
-								itemsCountCallback={ this.getCountFunc }
-								requestUrl={ apiUrl.user.liked }
-								hideViews={ ! PageStore.get('config-media-item').displayViews }
-								hideAuthor={ ! PageStore.get('config-media-item').displayAuthor }
-								hideDate={ ! PageStore.get('config-media-item').displayPublishDate } />
-						</MediaListWrapper>
-					}
+						{(user) => (
+							<MediaListWrapper
+								title={
+									this.props.title +
+									(null !== this.state.resultsCount ? ' (' + this.state.resultsCount + ')' : '')
+								}
+								className="search-results-wrap items-list-hor"
+							>
+								<LazyLoadItemListAsync
+									singleLinkContent={false}
+									horizontalItemsOrientation={true}
+									itemsCountCallback={this.getCountFunc}
+									requestUrl={apiUrl.user.liked}
+									hideViews={!PageStore.get('config-media-item').displayViews}
+									hideAuthor={!PageStore.get('config-media-item').displayAuthor}
+									hideDate={!PageStore.get('config-media-item').displayPublishDate}
+								/>
+							</MediaListWrapper>
+						)}
 					</UserConsumer>
-				}
-				</ApiUrlConsumer>;
+				)}
+			</ApiUrlConsumer>
+		);
 	}
 }
 
@@ -63,19 +70,20 @@ AnonymousLikedMediaPage.defaultProps = {
 };
 
 export class LikedMediaPage extends React.PureComponent {
-
-	constructor(props){
+	constructor(props) {
 		super(props);
 	}
 
-	render(){
-
-		if( UserContext._currentValue.is.anonymous || ! PageStore.get('config-options').pages.profile.includeLikedMedia ){
+	render() {
+		if (
+			UserContext._currentValue.is.anonymous ||
+			!PageStore.get('config-options').pages.profile.includeLikedMedia
+		) {
 			return <AnonymousLikedMediaPage />;
 		}
 
-		addClassname( document.getElementById('page-liked'), 'profile-page-liked' );
-		
+		addClassname(document.getElementById('page-liked'), 'profile-page-liked');
+
 		window.MediaCMS.profileId = UserContext._currentValue.username;
 
 		return <ProfileLikedPage />;

@@ -22,7 +22,7 @@ def _create_user(username, email=None):
     )
 
 
-def _create_media(user, title="Test Video", friendly_token="abc-def-123"):
+def _create_media(user, title="Test Video", friendly_token="abc-def-123"):  # noqa: S107
     """Create a minimal Media object for testing.
 
     Patches media_init to prevent file processing errors (same pattern
@@ -101,9 +101,7 @@ class CreateNotificationPipelineTest(TestCase):
             metadata={},
         )
         self.assertIsNone(result)
-        self.assertEqual(
-            Notification.objects.filter(recipient=self.recipient, actor=self.sender).count(), 1
-        )
+        self.assertEqual(Notification.objects.filter(recipient=self.recipient, actor=self.sender).count(), 1)
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_duplicate_different_url_not_suppressed(self, mock_email):
@@ -124,15 +122,11 @@ class CreateNotificationPipelineTest(TestCase):
             metadata={},
         )
         self.assertIsNotNone(result)
-        self.assertEqual(
-            Notification.objects.filter(recipient=self.recipient, actor=self.sender).count(), 2
-        )
+        self.assertEqual(Notification.objects.filter(recipient=self.recipient, actor=self.sender).count(), 2)
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_preference_none_skips(self, mock_email):
-        NotificationPreference.objects.create(
-            user=self.recipient, on_like=NotificationChannel.NONE
-        )
+        NotificationPreference.objects.create(user=self.recipient, on_like=NotificationChannel.NONE)
         result = NotificationService._create_notification(
             recipient=self.recipient,
             actor=self.sender,
@@ -145,9 +139,7 @@ class CreateNotificationPipelineTest(TestCase):
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_preference_email_queues_task(self, mock_email):
-        NotificationPreference.objects.create(
-            user=self.recipient, on_comment=NotificationChannel.EMAIL
-        )
+        NotificationPreference.objects.create(user=self.recipient, on_comment=NotificationChannel.EMAIL)
         with self.captureOnCommitCallbacks(execute=True):
             result = NotificationService._create_notification(
                 recipient=self.recipient,
@@ -162,9 +154,7 @@ class CreateNotificationPipelineTest(TestCase):
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_preference_in_app_no_email(self, mock_email):
-        NotificationPreference.objects.create(
-            user=self.recipient, on_like=NotificationChannel.IN_APP
-        )
+        NotificationPreference.objects.create(user=self.recipient, on_like=NotificationChannel.IN_APP)
         result = NotificationService._create_notification(
             recipient=self.recipient,
             actor=self.sender,
@@ -200,27 +190,19 @@ class ContentFilterTest(TestCase):
         self.assertTrue(NotificationService._passes_content_filter(self.user, self.media))
 
     def test_topic_match_passes(self):
-        NotificationPreference.objects.create(
-            user=self.user, filter_topics=[self.topic_climate.slug]
-        )
+        NotificationPreference.objects.create(user=self.user, filter_topics=[self.topic_climate.slug])
         self.assertTrue(NotificationService._passes_content_filter(self.user, self.media))
 
     def test_topic_mismatch_fails(self):
-        NotificationPreference.objects.create(
-            user=self.user, filter_topics=[self.topic_rights.slug]
-        )
+        NotificationPreference.objects.create(user=self.user, filter_topics=[self.topic_rights.slug])
         self.assertFalse(NotificationService._passes_content_filter(self.user, self.media))
 
     def test_category_match_passes(self):
-        NotificationPreference.objects.create(
-            user=self.user, filter_categories=[self.cat_doc.slug]
-        )
+        NotificationPreference.objects.create(user=self.user, filter_categories=[self.cat_doc.slug])
         self.assertTrue(NotificationService._passes_content_filter(self.user, self.media))
 
     def test_category_mismatch_fails(self):
-        NotificationPreference.objects.create(
-            user=self.user, filter_categories=[self.cat_short.slug]
-        )
+        NotificationPreference.objects.create(user=self.user, filter_categories=[self.cat_short.slug])
         self.assertFalse(NotificationService._passes_content_filter(self.user, self.media))
 
     def test_both_filters_and_logic(self):
@@ -251,9 +233,7 @@ class OnCommentTest(TestCase):
     @patch("notifications.tasks.send_notification_email.delay")
     def test_creates_notification_for_media_owner(self, _):
         comment = _create_comment(self.commenter, self.media)
-        result = NotificationService.on_comment(
-            actor=self.commenter, media=self.media, comment=comment
-        )
+        result = NotificationService.on_comment(actor=self.commenter, media=self.media, comment=comment)
         self.assertIsNotNone(result)
         self.assertEqual(result.recipient, self.owner)
         self.assertEqual(result.notification_type, NotificationType.COMMENT)
@@ -265,9 +245,7 @@ class OnCommentTest(TestCase):
         activity on their content)."""
         parent = _create_comment(self.commenter, self.media, text="parent")
         reply = _create_comment(self.commenter, self.media, text="reply", parent=parent)
-        result = NotificationService.on_comment(
-            actor=self.commenter, media=self.media, comment=reply
-        )
+        result = NotificationService.on_comment(actor=self.commenter, media=self.media, comment=reply)
         self.assertIsNotNone(result)
         self.assertEqual(result.recipient, self.owner)
 
@@ -381,9 +359,7 @@ class OnMentionTest(TestCase):
         media = _create_media(_create_user("m_owner"), friendly_token="smnt-tok")
         comment = _create_comment(actor, media)
 
-        notified = NotificationService.on_mention(
-            actor=actor, media=media, comment=comment, mentioned_users=[actor]
-        )
+        notified = NotificationService.on_mention(actor=actor, media=media, comment=comment, mentioned_users=[actor])
         self.assertEqual(notified, set())
 
 
@@ -426,9 +402,7 @@ class OnNewMediaTest(TestCase):
         channel.subscribers.add(follower)
 
         # Follower only wants "human-rights" topics
-        NotificationPreference.objects.create(
-            user=follower, filter_topics=["human-rights"]
-        )
+        NotificationPreference.objects.create(user=follower, filter_topics=["human-rights"])
 
         # Media is tagged "climate-justice" — doesn't match
         topic, _ = Topic.objects.get_or_create(title="Climate Justice CF")
@@ -449,9 +423,7 @@ class OnAddedToPlaylistTest(TestCase):
         media = _create_media(owner, friendly_token="pl-tok")
         playlist = Playlist.objects.create(title="Best Docs", user=curator)
 
-        result = NotificationService.on_added_to_playlist(
-            actor=curator, media=media, playlist=playlist
-        )
+        result = NotificationService.on_added_to_playlist(actor=curator, media=media, playlist=playlist)
         self.assertIsNotNone(result)
         self.assertEqual(result.recipient, owner)
         self.assertEqual(result.notification_type, NotificationType.ADDED_TO_PLAYLIST)
@@ -464,9 +436,7 @@ class OnAddedToPlaylistTest(TestCase):
         media = _create_media(owner, friendly_token="spl-tok")
         playlist = Playlist.objects.create(title="My Playlist", user=owner)
 
-        result = NotificationService.on_added_to_playlist(
-            actor=owner, media=media, playlist=playlist
-        )
+        result = NotificationService.on_added_to_playlist(actor=owner, media=media, playlist=playlist)
         self.assertIsNone(result)
 
 
@@ -484,15 +454,11 @@ class BroadcastTest(TestCase):
         self.assertIn(user_b, recipients)
         self.assertNotIn(inactive, recipients)
         self.assertTrue(all(n.actor is None for n in created))
-        self.assertTrue(
-            all(n.notification_type == NotificationType.SYSTEM_ANNOUNCEMENT for n in created)
-        )
+        self.assertTrue(all(n.notification_type == NotificationType.SYSTEM_ANNOUNCEMENT for n in created))
 
     def test_broadcast_message_and_url(self):
         _create_user("bc_user")
-        created = NotificationService.broadcast(
-            "Downtime at 2am", action_url="/announcements/1"
-        )
+        created = NotificationService.broadcast("Downtime at 2am", action_url="/announcements/1")
         self.assertEqual(created[0].message, "Downtime at 2am")
         self.assertEqual(created[0].action_url, "/announcements/1")
 
@@ -576,12 +542,13 @@ class EdgeCaseServiceTest(TestCase):
         media = _create_media(_create_user("em_owner"), friendly_token="em-tok")
         comment = _create_comment(actor, media)
         notified = NotificationService.on_mention(
-            actor=actor, media=media, comment=comment, mentioned_users=[],
+            actor=actor,
+            media=media,
+            comment=comment,
+            mentioned_users=[],
         )
         self.assertEqual(notified, set())
-        self.assertEqual(
-            Notification.objects.filter(notification_type=NotificationType.MENTION).count(), 0
-        )
+        self.assertEqual(Notification.objects.filter(notification_type=NotificationType.MENTION).count(), 0)
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_inactive_user_still_receives_single_notification(self, _):
@@ -637,7 +604,8 @@ class EmailValidationTest(TestCase):
         recipient = _create_user("recheck_user")
         sender = _create_user("recheck_sender")
         NotificationPreference.objects.create(
-            user=recipient, on_comment=NotificationChannel.EMAIL,
+            user=recipient,
+            on_comment=NotificationChannel.EMAIL,
         )
         notif = Notification.objects.create(
             recipient=recipient,

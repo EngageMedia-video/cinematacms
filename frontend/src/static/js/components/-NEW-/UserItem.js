@@ -6,14 +6,14 @@ import { useItem } from './hooks/useItem';
 
 import { UserItemMemberSince, UserItemThumbnailLink } from './includes/items';
 
-export function UserItem(props){
+export function UserItem(props) {
 	props = { ...UserItem.defaults, ...props };
 
 	const type = 'user';
 
 	// The title should already be set from ListItem (which gets it from listItemProps)
 	const modifiedProps = { ...props, type };
-	const [ titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper ] = useItem(modifiedProps);
+	const [titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper] = useItem(modifiedProps);
 
 	// Extract additional member data
 	const location = props.location || '';
@@ -38,15 +38,24 @@ export function UserItem(props){
 		}
 	}, [locationCountry]);
 
-	function metaComponents(){
+	function metaComponents() {
 		if (props.hideAllMeta) return null;
-		
+
 		return (
 			<div className="member-info-meta">
 				<p className="username">@{props.username || 'member'}</p>
 				{location && (
 					<div className="location">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
 							<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
 							<circle cx="12" cy="10" r="3"></circle>
 						</svg>
@@ -55,14 +64,34 @@ export function UserItem(props){
 				)}
 				<div className="stats">
 					<div className="stat">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
 							<polygon points="23 7 16 12 23 17 23 7"></polygon>
 							<rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
 						</svg>
-						<span>{mediaCount} {mediaCount === 1 ? 'video' : 'videos'}</span>
+						<span>
+							{mediaCount} {mediaCount === 1 ? 'video' : 'videos'}
+						</span>
 					</div>
 					<div className="stat">
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
 							<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
 							<line x1="16" y1="2" x2="16" y2="6"></line>
 							<line x1="8" y1="2" x2="8" y2="6"></line>
@@ -75,7 +104,7 @@ export function UserItem(props){
 		);
 	}
 
-	function badgesComponent(){
+	function badgesComponent() {
 		if (!isTrusted && !isSameCountry && !isEditor && !isManager) return null;
 
 		// Track badge index for dynamic positioning
@@ -84,14 +113,26 @@ export function UserItem(props){
 		return (
 			<React.Fragment>
 				{isSameCountry && <div className="badge local">Local</div>}
-				{isTrusted && <div className="badge orange-badge" style={{ top: `${1 + (orangeBadgeIndex++ * 1.7)}rem` }}>Trusted</div>}
-				{isEditor && <div className="badge orange-badge" style={{ top: `${1 + (orangeBadgeIndex++ * 1.7)}rem` }}>Editor</div>}
-				{isManager && <div className="badge orange-badge" style={{ top: `${1 + (orangeBadgeIndex++ * 1.7)}rem` }}>Manager</div>}
+				{isTrusted && (
+					<div className="badge orange-badge" style={{ top: `${1 + orangeBadgeIndex++ * 1.7}rem` }}>
+						Trusted
+					</div>
+				)}
+				{isEditor && (
+					<div className="badge orange-badge" style={{ top: `${1 + orangeBadgeIndex++ * 1.7}rem` }}>
+						Editor
+					</div>
+				)}
+				{isManager && (
+					<div className="badge orange-badge" style={{ top: `${1 + orangeBadgeIndex++ * 1.7}rem` }}>
+						Manager
+					</div>
+				)}
 			</React.Fragment>
 		);
 	}
 
-	function avatarComponent(){
+	function avatarComponent() {
 		return (
 			<div className="avatar">
 				{thumbnailUrl ? (
@@ -107,7 +148,7 @@ export function UserItem(props){
 		<div className={`member-card${isSameCountry ? ' same-country' : ''}`}>
 			{badgesComponent()}
 			{avatarComponent()}
-			
+
 			<div className="member-info">
 				{titleComponent()}
 				{metaComponents()}
@@ -115,7 +156,7 @@ export function UserItem(props){
 					View Profile
 				</a>
 			</div>
-			
+
 			<style jsx>{`
 				.member-card {
 					background: var(--popup-bg-color, white);

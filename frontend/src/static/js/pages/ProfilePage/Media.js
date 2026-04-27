@@ -19,41 +19,43 @@ import { LazyLoadItemListAsync } from '../../components/-NEW-/LazyLoadItemListAs
 import ProfilePageStore from './store.js';
 
 export class ProfileMediaPage extends ProfilePage {
-
-	constructor(props){
+	constructor(props) {
 		super(props, 'author-media');
 	}
 
-	pageContent(){
-
-		return [ this.state.author ? <ProfilePagesHeader key="ProfilePagesHeader" author={ this.state.author } type="videos" /> : null,
-				 this.state.author ?
-					<ApiUrlConsumer>
-					{ apiUrl => 
+	pageContent() {
+		return [
+			this.state.author ? (
+				<ProfilePagesHeader key="ProfilePagesHeader" author={this.state.author} type="videos" />
+			) : null,
+			this.state.author ? (
+				<ApiUrlConsumer>
+					{(apiUrl) => (
 						<UserConsumer>
-						{ user => {
-							const isMediaAuthor = ProfilePageStore.get('author-data').username === user.username;
-							const isManagerOrAdmin = user.is.manager || user.is.admin;
-							const canEditMedia = isMediaAuthor || isManagerOrAdmin;
-							
-							return (
-								<ProfilePagesContent key="ProfilePagesContent">
-									<MediaListWrapper title={ this.props.title } className="items-list-ver">
-										<LazyLoadItemListAsync
-											requestUrl={ apiUrl.media + '?author=' + this.state.author.id }
-											hideAuthor={ true }
-											hideViews={ ! PageStore.get('config-media-item').displayViews }
-											hideDate={ ! PageStore.get('config-media-item').displayPublishDate }
-											canEdit={ canEditMedia } />
-									</MediaListWrapper>
-								</ProfilePagesContent>
-							);
-						}}
+							{(user) => {
+								const isMediaAuthor = ProfilePageStore.get('author-data').username === user.username;
+								const isManagerOrAdmin = user.is.manager || user.is.admin;
+								const canEditMedia = isMediaAuthor || isManagerOrAdmin;
+
+								return (
+									<ProfilePagesContent key="ProfilePagesContent">
+										<MediaListWrapper title={this.props.title} className="items-list-ver">
+											<LazyLoadItemListAsync
+												requestUrl={apiUrl.media + '?author=' + this.state.author.id}
+												hideAuthor={true}
+												hideViews={!PageStore.get('config-media-item').displayViews}
+												hideDate={!PageStore.get('config-media-item').displayPublishDate}
+												canEdit={canEditMedia}
+											/>
+										</MediaListWrapper>
+									</ProfilePagesContent>
+								);
+							}}
 						</UserConsumer>
-					}
-					</ApiUrlConsumer>
-				: null
-			];
+					)}
+				</ApiUrlConsumer>
+			) : null,
+		];
 	}
 }
 

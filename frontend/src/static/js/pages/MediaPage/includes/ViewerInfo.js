@@ -3,17 +3,15 @@ import ReactDOM from 'react-dom';
 
 import MediaPageStore from '../store.js';
 
-import ViewerInfoContent from "./ViewerInfoContent";
-import ViewerInfoTitleBanner from "./ViewerInfoTitleBanner";
+import ViewerInfoContent from './ViewerInfoContent';
+import ViewerInfoTitleBanner from './ViewerInfoTitleBanner';
 
 export default class ViewerInfo extends React.PureComponent {
-
-	constructor(props){
-
+	constructor(props) {
 		super(props);
 
 		this.state = {
-			videoLoaded: false
+			videoLoaded: false,
 		};
 
 		this.onVideoLoad = this.onVideoLoad.bind(this);
@@ -21,26 +19,23 @@ export default class ViewerInfo extends React.PureComponent {
 		MediaPageStore.on('loaded_media_data', this.onVideoLoad);
 	}
 
-	onVideoLoad(){
+	onVideoLoad() {
 		this.setState({
-			videoLoaded: true
+			videoLoaded: true,
 		});
 	}
 
-	render(){
-
+	render() {
 		let views, categories, title, author, published, description, yearProduced;
 		let allowDownload = false;
 
-		if( this.state.videoLoaded ){
-
+		if (this.state.videoLoaded) {
 			allowDownload = MediaPageStore.get('media-data').allow_download;
 
-			if( void 0 === allowDownload ){
+			if (void 0 === allowDownload) {
 				allowDownload = true;
-			}
-			else{
-				allowDownload = !! allowDownload;
+			} else {
+				allowDownload = !!allowDownload;
 			}
 
 			views = MediaPageStore.get('media-data').views;
@@ -58,11 +53,23 @@ export default class ViewerInfo extends React.PureComponent {
 			yearProduced = MediaPageStore.get('media-data').year_produced;
 		}
 
-		return ! this.state.videoLoaded ? null : <div className="viewer-info">
-					<div className="viewer-info-inner">
-						<ViewerInfoTitleBanner title={ title } views={ views } categories={ categories } allowDownload={ allowDownload } />
-						<ViewerInfoContent author={ author } published={ published } description={ description } yearProduced={yearProduced} />
-					</div>
-				</div>;
+		return !this.state.videoLoaded ? null : (
+			<div className="viewer-info">
+				<div className="viewer-info-inner">
+					<ViewerInfoTitleBanner
+						title={title}
+						views={views}
+						categories={categories}
+						allowDownload={allowDownload}
+					/>
+					<ViewerInfoContent
+						author={author}
+						published={published}
+						description={description}
+						yearProduced={yearProduced}
+					/>
+				</div>
+			</div>
+		);
 	}
 }

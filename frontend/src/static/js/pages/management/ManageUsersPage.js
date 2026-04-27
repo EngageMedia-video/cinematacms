@@ -13,15 +13,13 @@ import { ManageUsersFilters } from '../../components/-NEW-/ManageUsersFilters';
 import { FiltersToggleButton } from '../../components/-NEW-/FiltersToggleButton';
 import { ManageItemList } from '../../components/-NEW-/ManageItemList/ManageItemList';
 
-function genReqUrl( url, filters, sort, page ){
-	const ret = url + '?' + filters + ( '' === filters ? '' : '&' ) + sort + ( '' === sort ? '' : '&' ) +  'page=' + page;
+function genReqUrl(url, filters, sort, page) {
+	const ret = url + '?' + filters + ('' === filters ? '' : '&') + sort + ('' === sort ? '' : '&') + 'page=' + page;
 	return ret;
 }
 
 export class ManageUsersPage extends Page {
-
-	constructor(props){
-
+	constructor(props) {
 		super(props, 'manage-users');
 
 		this.state = {
@@ -45,45 +43,53 @@ export class ManageUsersPage extends Page {
 		this.onItemsRemovalFail = this.onItemsRemovalFail.bind(this);
 	}
 
-    onTablePageChange( newPageUrl, updatedPage ){
+	onTablePageChange(newPageUrl, updatedPage) {
 		this.setState({
 			currentPage: updatedPage,
-			requestUrl: genReqUrl( ApiUrlContext._currentValue.manage.users, this.state.filterArgs, this.state.sortingArgs, updatedPage ),
+			requestUrl: genReqUrl(
+				ApiUrlContext._currentValue.manage.users,
+				this.state.filterArgs,
+				this.state.sortingArgs,
+				updatedPage
+			),
 		});
-    }
+	}
 
-    onToggleFiltersClick(){
+	onToggleFiltersClick() {
 		this.setState({
-			hiddenFilters: ! this.state.hiddenFilters,
-		});    	
-    }
+			hiddenFilters: !this.state.hiddenFilters,
+		});
+	}
 
-	getCountFunc(resultsCount){
+	getCountFunc(resultsCount) {
 		this.setState({
 			resultsCount: resultsCount,
 		});
 	}
 
-	onFiltersUpdate( updatedArgs ){
-
+	onFiltersUpdate(updatedArgs) {
 		// console.log( "==>", updatedArgs );
 
 		const newArgs = [];
-		
-		for(let arg in updatedArgs){
 
-			if(null !== updatedArgs[arg] && 'all' !== updatedArgs[arg]){
-				newArgs.push( arg + '=' + updatedArgs[arg] );
+		for (let arg in updatedArgs) {
+			if (null !== updatedArgs[arg] && 'all' !== updatedArgs[arg]) {
+				newArgs.push(arg + '=' + updatedArgs[arg]);
 			}
 		}
 
 		// console.log( ApiUrlContext._currentValue.manage.users + ( newArgs.length ? '?' + newArgs.join('&') : '' ) );
 
 		/*if( 1 === this.state.currentPage ){*/
-			this.setState({
-				filterArgs: newArgs.join('&'),
-				requestUrl: genReqUrl( ApiUrlContext._currentValue.manage.users, newArgs.join('&'), this.state.sortingArgs, this.state.currentPage ),
-			});
+		this.setState({
+			filterArgs: newArgs.join('&'),
+			requestUrl: genReqUrl(
+				ApiUrlContext._currentValue.manage.users,
+				newArgs.join('&'),
+				this.state.sortingArgs,
+				this.state.currentPage
+			),
+		});
 		/*}
 		else{
 			this.setState({
@@ -93,59 +99,71 @@ export class ManageUsersPage extends Page {
 		}*/
 	}
 
-	onColumnSortClick( sort, order ){
+	onColumnSortClick(sort, order) {
 		const newArgs = 'sort_by=' + sort + '&ordering=' + order;
 		this.setState({
 			sortBy: sort,
 			ordering: order,
 			sortingArgs: newArgs,
-			requestUrl: genReqUrl( ApiUrlContext._currentValue.manage.users, this.state.filterArgs, newArgs, this.state.currentPage ),
+			requestUrl: genReqUrl(
+				ApiUrlContext._currentValue.manage.users,
+				this.state.filterArgs,
+				newArgs,
+				this.state.currentPage
+			),
 		});
 	}
 
-	onItemsRemoval( multipleItems ){
-		this.setState({
-			resultsCount: null,
-			refresh: this.state.refresh + 1,
-			requestUrl: ApiUrlContext._currentValue.manage.users,
-		}, function(){
-			if( multipleItems ){
-				PageActions.addNotification( "The users deleted successfully.", 'usersRemovalSucceed');
+	onItemsRemoval(multipleItems) {
+		this.setState(
+			{
+				resultsCount: null,
+				refresh: this.state.refresh + 1,
+				requestUrl: ApiUrlContext._currentValue.manage.users,
+			},
+			function () {
+				if (multipleItems) {
+					PageActions.addNotification('The users deleted successfully.', 'usersRemovalSucceed');
+				} else {
+					PageActions.addNotification('The user deleted successfully.', 'userRemovalSucceed');
+				}
 			}
-			else{
-				PageActions.addNotification( "The user deleted successfully.", 'userRemovalSucceed');
-			}
-		});
+		);
 	}
 
-	onItemsRemovalFail( multipleItems ){
-
-		if( multipleItems ){
-			PageActions.addNotification( "The users removal failed. Please try again.", 'usersRemovalFailed');
-		}
-		else{
-			PageActions.addNotification( "The user removal failed. Please try again.", 'userRemovalFailed');
+	onItemsRemovalFail(multipleItems) {
+		if (multipleItems) {
+			PageActions.addNotification('The users removal failed. Please try again.', 'usersRemovalFailed');
+		} else {
+			PageActions.addNotification('The user removal failed. Please try again.', 'userRemovalFailed');
 		}
 	}
 
-	pageContent(){
-
-		return 	[<MediaListWrapper key="2" title={ this.props.title + ( null === this.state.resultsCount ? '' : ' (' + this.state.resultsCount + ')' ) }>
-					<FiltersToggleButton onClick={ this.onToggleFiltersClick } />
-					<ManageUsersFilters hidden={ this.state.hiddenFilters } onFiltersUpdate={ this.onFiltersUpdate } />
-					<ManageItemList
-						pageItems={ 50 }
-						manageType={ 'users' }
-						key={ this.state.requestUrl + '[' + this.state.refresh + ']' }
-						itemsCountCallback={ this.getCountFunc }
-						requestUrl={ this.state.requestUrl }
-						onPageChange={ this.onTablePageChange }
-						sortBy={ this.state.sortBy }
-						ordering={ this.state.ordering }
-						onRowsDelete={ this.onItemsRemoval }
-						onRowsDeleteFail={ this.onItemsRemovalFail }
-						onClickColumnSort={ this.onColumnSortClick } />
-				</MediaListWrapper>];
+	pageContent() {
+		return [
+			<MediaListWrapper
+				key="2"
+				title={
+					this.props.title + (null === this.state.resultsCount ? '' : ' (' + this.state.resultsCount + ')')
+				}
+			>
+				<FiltersToggleButton onClick={this.onToggleFiltersClick} />
+				<ManageUsersFilters hidden={this.state.hiddenFilters} onFiltersUpdate={this.onFiltersUpdate} />
+				<ManageItemList
+					pageItems={50}
+					manageType={'users'}
+					key={this.state.requestUrl + '[' + this.state.refresh + ']'}
+					itemsCountCallback={this.getCountFunc}
+					requestUrl={this.state.requestUrl}
+					onPageChange={this.onTablePageChange}
+					sortBy={this.state.sortBy}
+					ordering={this.state.ordering}
+					onRowsDelete={this.onItemsRemoval}
+					onRowsDeleteFail={this.onItemsRemovalFail}
+					onClickColumnSort={this.onColumnSortClick}
+				/>
+			</MediaListWrapper>,
+		];
 	}
 }
 

@@ -1,89 +1,86 @@
 import { getRequest } from '../../../../functions';
 
 export function ItemsStaticListHandler(itemsArray, itemsPerPage, maxItems, itemsCountCallback, loadItemsCallback) {
+	const config = {
+		maxItems: maxItems || 255,
+		pageItems: itemsPerPage ? Math.min(maxItems, itemsPerPage) : 1,
+	};
 
-    const config = {
-        maxItems: maxItems || 255,
-        pageItems: itemsPerPage ? Math.min(maxItems, itemsPerPage) : 1,
-    };
+	const state = {
+		totalItems: 0,
+		totalPages: 0,
+	};
 
-    const state = {
-        totalItems: 0,
-        totalPages: 0,
-    };
+	let results = itemsArray;
 
-    let results = itemsArray;
+	const items = [];
+	const responseItems = [];
 
-    const items = [];
-    const responseItems = [];
+	const callbacks = {
+		itemsCount: function () {
+			if ('function' === typeof itemsCountCallback) {
+				itemsCountCallback(state.totalItems);
+			}
+		},
+		itemsLoad: function () {
+			if ('function' === typeof loadItemsCallback) {
+				loadItemsCallback(items);
+			}
+		},
+	};
 
-    const callbacks = {
-        itemsCount: function() {
-            if ('function' === typeof itemsCountCallback) {
-                itemsCountCallback(state.totalItems);
-            }
-        },
-        itemsLoad: function() {
-            if ('function' === typeof loadItemsCallback) {
-                loadItemsCallback( items );
-            }
-        },
-    };
+	function loadNextItems(itemsLength) {
+		itemsLength = !isNaN(itemsLength) ? itemsLength : config.pageItems;
 
-    function loadNextItems(itemsLength) {
+		let itemsToLoad = Math.min(itemsLength, responseItems.length);
 
-        itemsLength = !isNaN(itemsLength) ? itemsLength : config.pageItems;
+		if (itemsToLoad) {
+			let i = 0;
+			while (i < itemsToLoad) {
+				items.push(responseItems.shift());
+				i += 1;
+			}
 
-        let itemsToLoad = Math.min(itemsLength, responseItems.length);
+			callbacks.itemsLoad();
+		}
+	}
 
-        if (itemsToLoad) {
+	function loadItems(itemsLength) {
+		if (items.length < state.totalItems) {
+			loadNextItems(itemsLength);
+		}
+	}
 
-            let i = 0;
-            while (i < itemsToLoad) {
-                items.push(responseItems.shift());
-                i += 1;
-            }
+	function totalPages() {
+		return state.totalPages;
+	}
 
-            callbacks.itemsLoad();
-        }
-    }
+	function loadedAllItems() {
+		return items.length === state.totalItems;
+	}
 
-    function loadItems(itemsLength) {
-        if (items.length < state.totalItems) {
-            loadNextItems(itemsLength);
-        }
-    }
+	function cancelAll() {
+		itemsCountCallback = null;
+		loadItemsCallback = null;
+	}
 
-    function totalPages() {
-        return state.totalPages;
-    }
+	let i = 0;
+	while (i < results.length && config.maxItems > responseItems.length) {
+		responseItems.push(results[i]);
+		i += 1;
+	}
 
-    function loadedAllItems() {
-        return items.length === state.totalItems;
-    }
+	state.totalItems = Math.min(config.maxItems, results.length);
+	state.totalPages = Math.ceil(state.totalItems / config.pageItems);
 
-    function cancelAll(){
-        itemsCountCallback = null;
-        loadItemsCallback = null;
-    }
+	callbacks.itemsCount();
 
-    let i = 0;
-    while (i < results.length && config.maxItems > responseItems.length) {
-        responseItems.push(results[i]);
-        i += 1;
-    }
+	loadNextItems();
 
-    state.totalItems = Math.min(config.maxItems, results.length);
-    state.totalPages = Math.ceil(state.totalItems / config.pageItems);
-
-    callbacks.itemsCount();
-
-    loadNextItems();
-
-    return {
-        loadItems,
-        totalPages,
-        loadedAllItems,
-        cancelAll,
-    };
+	return {
+		loadItems,
+		totalPages,
+		loadedAllItems,
+		cancelAll,
+	};
 }

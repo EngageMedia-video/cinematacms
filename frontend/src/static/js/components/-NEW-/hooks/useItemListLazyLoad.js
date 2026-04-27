@@ -6,67 +6,80 @@ import initItemsList from '../includes/itemLists/initItemsList';
 
 import PageStore from '../../../pages/_PageStore.js';
 
-export function useItemListLazyLoad( props ){
+export function useItemListLazyLoad(props) {
+	const itemsListRef = useRef(null);
+	const itemsListWrapperRef = useRef(null);
 
-    const itemsListRef = useRef(null);
-    const itemsListWrapperRef = useRef(null);
+	const [items, countedItems, listHandler, setListHandler, onItemsLoad, onItemsCount, addListItems] = useItemList(
+		props,
+		itemsListRef
+	);
 
-    const [ items, countedItems, listHandler, setListHandler, onItemsLoad, onItemsCount, addListItems ] = useItemList( props, itemsListRef );
+	const [topScroll, setTopScroll] = useState(window.scrollY + 2 * window.outerHeight);
 
-    const [ topScroll, setTopScroll ] = useState( window.scrollY + ( 2 * window.outerHeight ) );
+	let classname = {
+		list: 'items-list',
+		listOuter: 'items-list-outer' + ('string' === typeof props.className ? ' ' + props.className.trim() : ''),
+	};
 
-    let classname = {
-        list: 'items-list',
-        listOuter: 'items-list-outer' + ('string' === typeof props.className ? ' ' + props.className.trim() : ''),
-    };
+	function afterItemsLoad() {
+		if (null === itemsListRef.current) {
+			return;
+		}
 
-    function afterItemsLoad(){
+		onWindowScroll();
 
-        if( null === itemsListRef.current ){
-            return;
-        }
+		if (listHandler.loadedAllItems()) {
+			PageStore.removeListener('window_scroll', onWindowScroll);
+		}
+	}
 
-        onWindowScroll();
+	function renderBeforeListWrap() {
+		return null;
+	}
 
-        if( listHandler.loadedAllItems() ){
-            PageStore.removeListener( 'window_scroll', onWindowScroll );
-        }
-    }
+	function renderAfterListWrap() {
+		return null;
+	}
 
-    function renderBeforeListWrap() {
-        return null;
-    }
+	function onWindowScroll() {
+		setTopScroll(window.scrollY + 2 * window.outerHeight);
+	}
 
-    function renderAfterListWrap() {
-        return null;
-    }
+	function onDocumentVisibilityChange() {
+		if (!document.hidden) {
+			setTimeout(onWindowScroll, 10); // @note: The delay fixes the problem that occurs when the list loads within a non-focused browser's tab.
+		}
+	}
 
-    function onWindowScroll(){
-        setTopScroll( window.scrollY + ( 2 * window.outerHeight ) );
-    }
+	useEffect(() => {
+		addListItems();
+		afterItemsLoad();
+	}, [items]);
 
-    function onDocumentVisibilityChange(){
-        if( ! document.hidden ){
-            setTimeout( onWindowScroll, 10 );  // @note: The delay fixes the problem that occurs when the list loads within a non-focused browser's tab.
-        }
-    }
+	useEffect(() => {
+		if (null === itemsListRef.current || null === listHandler) {
+			return;
+		}
 
-    useEffect(() => {
-        addListItems();
-        afterItemsLoad();
-    }, [items]);
+		if (topScroll >= itemsListRef.current.offsetTop + itemsListRef.current.offsetHeight) {
+			listHandler.loadItems();
+		}
+	}, [items, topScroll]);
 
-    useEffect(() => {
-
-        if( null === itemsListRef.current || null === listHandler ){
-            return;
-        }
-
-        if( topScroll >= itemsListRef.current.offsetTop + itemsListRef.current.offsetHeight ){
-            listHandler.loadItems();
-        }
-
-    }, [items, topScroll]);
-
-    return [ items, countedItems, listHandler, setListHandler, classname, onItemsCount, onItemsLoad, onWindowScroll, onDocumentVisibilityChange, itemsListWrapperRef, itemsListRef, renderBeforeListWrap, renderAfterListWrap ];
+	return [
+		items,
+		countedItems,
+		listHandler,
+		setListHandler,
+		classname,
+		onItemsCount,
+		onItemsLoad,
+		onWindowScroll,
+		onDocumentVisibilityChange,
+		itemsListWrapperRef,
+		itemsListRef,
+		renderBeforeListWrap,
+		renderAfterListWrap,
+	];
 }

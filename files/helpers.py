@@ -1065,19 +1065,11 @@ def generate_composite_thumbnail(playlist):
     # non-public items and would over-estimate the grid for mixed-visibility
     # playlists.
     max_tiles = 12  # 3×4 is the largest grid
-    public_playlist_media = (
-        playlist.playlistmedia_set.filter(media__state="public")
-        .select_related("media")
-    )
+    public_playlist_media = playlist.playlistmedia_set.filter(media__state="public").select_related("media")
     thumb_paths = []
     for pm in public_playlist_media.iterator():
         media = pm.media
-        field = (
-            media.uploaded_poster
-            or media.poster
-            or media.uploaded_thumbnail
-            or media.thumbnail
-        )
+        field = media.uploaded_poster or media.poster or media.uploaded_thumbnail or media.thumbnail
         if field and field.name:
             full_path = os.path.join(settings.MEDIA_ROOT, field.name)
             if os.path.exists(full_path):

@@ -7,15 +7,21 @@ import { MediaListWrapper } from '../components/MediaListWrapper';
 import { LazyLoadItemListAsync } from '../../components/-NEW-/LazyLoadItemListAsync';
 
 export class TopicsPageAlt extends TopicsPage {
-
-	pageContent(){
-		return <ApiUrlConsumer>
-				{ apiUrl =>
-					<MediaListWrapper title={ this.props.title } className="items-list-ver hover-overlay-title">
-						<LazyLoadItemListAsync singleLinkContent={ true } inTopicsList={ true } requestUrl={ apiUrl.archive.topics } hideAllMeta={false} />
+	pageContent() {
+		return (
+			<ApiUrlConsumer>
+				{(apiUrl) => (
+					<MediaListWrapper title={this.props.title} className="items-list-ver hover-overlay-title">
+						<LazyLoadItemListAsync
+							singleLinkContent={true}
+							inTopicsList={true}
+							requestUrl={apiUrl.archive.topics}
+							hideAllMeta={false}
+						/>
 					</MediaListWrapper>
-				}
-				</ApiUrlConsumer>;
+				)}
+			</ApiUrlConsumer>
+		);
 	}
 }
 
@@ -26,4 +32,3 @@ TopicsPageAlt.propTypes = {
 TopicsPageAlt.defaultProps = {
 	title: 'Topics',
 };
-

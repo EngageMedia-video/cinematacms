@@ -7,116 +7,114 @@ import { config as mediacmsConfig } from '../../../mediacms/config.js';
 import PageStore from '../../../pages/_PageStore.js';
 
 function getUrlVars() {
-    var vars = {};
-    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
-        vars[key] = value;
-    });
-    return vars;
+	var vars = {};
+	var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function (m, key, value) {
+		vars[key] = value;
+	});
+	return vars;
 }
 
 const SearchFieldStoreData = {};
 
-class SearchFieldStore extends EventEmitter{
+class SearchFieldStore extends EventEmitter {
+	constructor() {
+		super();
 
-    constructor() {
+		this.mediacms_config = mediacmsConfig(window.MediaCMS);
 
-        super();
+		const urlvars = getUrlVars();
+		const query = urlvars['q'];
+		const categories = urlvars['c'];
+		const tags = urlvars['t'];
+		const topics = urlvars['topic'];
+		const countries = urlvars['country'];
+		const languages = urlvars['language'];
 
-        this.mediacms_config = mediacmsConfig( window.MediaCMS );
+		SearchFieldStoreData[
+			Object.defineProperty(this, 'id', {
+				value: 'SearchFieldStoreData_' + Object.keys(SearchFieldStoreData).length,
+			}).id
+		] = {
+			searchQuery: query ? decodeURIComponent(query).replace(/\+/g, ' ') : '',
+			categoriesQuery: categories ? decodeURIComponent(categories).replace(/\+/g, ' ') : '',
+			tagsQuery: tags ? decodeURIComponent(tags).replace(/\+/g, ' ') : '',
+			topicsQuery: topics ? decodeURIComponent(topics).replace(/\+/g, ' ') : '',
+			countriesQuery: countries ? decodeURIComponent(countries).replace(/\+/g, ' ') : '',
+			languagesQuery: languages ? decodeURIComponent(languages).replace(/\+/g, ' ') : '',
+			predictions: [],
+		};
+		this.dataResponse = this.dataResponse.bind(this);
+	}
 
-        const urlvars = getUrlVars();
-        const query = urlvars['q'];
-        const categories = urlvars['c'];
-        const tags = urlvars['t'];
-        const topics = urlvars['topic'];
-        const countries = urlvars['country'];
-        const languages = urlvars['language'];
+	dataResponse(response) {
+		if (response && response.data) {
+			let i = 0;
 
-        SearchFieldStoreData[ Object.defineProperty( this, 'id', { value: 'SearchFieldStoreData_' + Object.keys(SearchFieldStoreData).length }).id ] = {
-            searchQuery: query ? decodeURIComponent( query ).replace(/\+/g, ' ') : '',
-            categoriesQuery: categories ? decodeURIComponent( categories ).replace(/\+/g, ' ') : '',
-            tagsQuery: tags ? decodeURIComponent( tags ).replace(/\+/g, ' ') : '',
-            topicsQuery: topics ? decodeURIComponent( topics ).replace(/\+/g, ' ') : '',
-            countriesQuery: countries ? decodeURIComponent( countries ).replace(/\+/g, ' ') : '',
-            languagesQuery: languages ? decodeURIComponent( languages ).replace(/\+/g, ' ') : '',
-            predictions: []
-        };
-        this.dataResponse = this.dataResponse.bind(this);
-    }
+			SearchFieldStoreData[this.id].predictions = [];
 
-    dataResponse(response){
+			while (i < response.data.length) {
+				SearchFieldStoreData[this.id].predictions[i] = response.data[i].title;
+				i += 1;
+			}
 
-        if( response && response.data ){
+			this.emit(
+				'load_predictions',
+				SearchFieldStoreData[this.id].requestedQuery,
+				SearchFieldStoreData[this.id].predictions
+			);
 
-            let i = 0;
+			if (SearchFieldStoreData[this.id].pendingRequested) {
+				SearchFieldStoreData[this.id].requestedQuery = SearchFieldStoreData[this.id].pendingRequested.query;
 
-            SearchFieldStoreData[this.id].predictions = [];
+				getRequest(SearchFieldStoreData[this.id].pendingRequested.url, !1, this.dataResponse);
 
-            while(i<response.data.length){
-                SearchFieldStoreData[this.id].predictions[i] = response.data[i].title;
-                i+=1;
-            }
+				SearchFieldStoreData[this.id].pendingRequested = null;
+			} else {
+				SearchFieldStoreData[this.id].requestedQuery = null;
+			}
+		} else {
+			// @todo: ......
+		}
+	}
 
-            this.emit('load_predictions' , SearchFieldStoreData[this.id].requestedQuery, SearchFieldStoreData[this.id].predictions );
+	get(type) {
+		switch (type) {
+			case 'search-query':
+				return SearchFieldStoreData[this.id].searchQuery;
+			case 'search-categories':
+				return SearchFieldStoreData[this.id].categoriesQuery;
+			case 'search-tags':
+				return SearchFieldStoreData[this.id].tagsQuery;
+			case 'search-topics':
+				return SearchFieldStoreData[this.id].topicsQuery;
+			case 'search-countries':
+				return SearchFieldStoreData[this.id].countriesQuery;
+			case 'search-languages':
+				return SearchFieldStoreData[this.id].languagesQuery;
+		}
+		return null;
+	}
 
-            if( SearchFieldStoreData[this.id].pendingRequested ){
+	actions_handler(action) {
+		switch (action.type) {
+			case 'REQUEST_PREDICTIONS':
+				let q = action.query;
+				let u = this.mediacms_config.api.search.titles + q;
 
-                SearchFieldStoreData[this.id].requestedQuery = SearchFieldStoreData[this.id].pendingRequested.query;
+				if (SearchFieldStoreData[this.id].requestedQuery) {
+					if (SearchFieldStoreData[this.id].requestedQuery.q !== q) {
+						SearchFieldStoreData[this.id].pendingRequested = { query: q, url: u };
+					}
 
-                getRequest( SearchFieldStoreData[this.id].pendingRequested.url, !1, this.dataResponse );
+					return;
+				}
 
-                SearchFieldStoreData[this.id].pendingRequested = null;
-            }
-            else{
-                SearchFieldStoreData[this.id].requestedQuery = null;
-            }
-        }
-        else{
-            // @todo: ......
-        }
-    }
+				SearchFieldStoreData[this.id].requestedQuery = q;
 
-    get(type){
-        switch(type){
-            case 'search-query':
-                return SearchFieldStoreData[ this.id ].searchQuery;
-            case 'search-categories':
-                return SearchFieldStoreData[ this.id ].categoriesQuery;
-            case 'search-tags':
-                return SearchFieldStoreData[ this.id ].tagsQuery;
-                case 'search-topics':
-                return SearchFieldStoreData[ this.id ].topicsQuery;
-            case 'search-countries':
-                return SearchFieldStoreData[ this.id ].countriesQuery;
-            case 'search-languages':
-                return SearchFieldStoreData[ this.id ].languagesQuery;
-        }
-        return null;
-    }
-
-    actions_handler(action) {
-        switch(action.type) {
-            case 'REQUEST_PREDICTIONS':
-
-                let q = action.query;
-                let u = this.mediacms_config.api.search.titles + q;
-
-                if( SearchFieldStoreData[this.id].requestedQuery ){
-
-                    if( SearchFieldStoreData[this.id].requestedQuery.q !== q ){
-                        SearchFieldStoreData[this.id].pendingRequested = { query: q, url: u };
-                    }
-
-                    return;
-                }
-
-
-                SearchFieldStoreData[this.id].requestedQuery = q;
-
-                getRequest( u, !1, this.dataResponse );
-                break;
-        }
-    }
+				getRequest(u, !1, this.dataResponse);
+				break;
+		}
+	}
 }
 
-export default exportStore( new SearchFieldStore, 'actions_handler' );
+export default exportStore(new SearchFieldStore(), 'actions_handler');

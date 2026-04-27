@@ -27,7 +27,7 @@ import { UserThumbnail } from './UserThumbnail';
 
 import { PopupMain } from './Popup';
 
-import "../styles/Comments.scss";
+import '../styles/Comments.scss';
 import { replaceString } from '../../utils/string-replacement.js';
 const commentsText = {
 	single: 'comment',
@@ -52,8 +52,8 @@ function CommentForm(props) {
 		!MEMBER.is.anonymous
 			? null
 			: LinksContext._currentValue.signin +
-			'?next=/' +
-			window.location.href.replace(SiteContext._currentValue.url, '').replace(/^\//g, ''),
+					'?next=/' +
+					window.location.href.replace(SiteContext._currentValue.url, '').replace(/^\//g, '')
 	);
 
 	function onFocus() {
@@ -69,7 +69,9 @@ function CommentForm(props) {
 
 		const contentHeight = textareaRef.current.scrollHeight;
 		const contentLineHeight =
-			0 < textareaLineHeight ? textareaLineHeight : parseFloat(window.getComputedStyle(textareaRef.current).lineHeight);
+			0 < textareaLineHeight
+				? textareaLineHeight
+				: parseFloat(window.getComputedStyle(textareaRef.current).lineHeight);
 
 		setValue('');
 		setMadeChanges(false);
@@ -88,7 +90,9 @@ function CommentForm(props) {
 
 		const contentHeight = textareaRef.current.scrollHeight;
 		const contentLineHeight =
-			0 < textareaLineHeight ? textareaLineHeight : parseFloat(window.getComputedStyle(textareaRef.current).lineHeight);
+			0 < textareaLineHeight
+				? textareaLineHeight
+				: parseFloat(window.getComputedStyle(textareaRef.current).lineHeight);
 
 		setValue(textareaRef.current.value);
 		setMadeChanges(true);
@@ -126,7 +130,6 @@ function CommentForm(props) {
 				<UserThumbnail />
 				<div className="form">
 					<div className={'form-textarea-wrap' + (textareaFocused ? ' focused' : '')}>
-
 						<textarea
 							ref={textareaRef}
 							className="form-textarea"
@@ -137,7 +140,6 @@ function CommentForm(props) {
 							onFocus={onFocus}
 							onBlur={onBlur}
 						></textarea>
-
 					</div>
 					<div className="form-buttons">
 						<button className={'' === value.trim() ? 'disabled' : ''} onClick={submitComment}>
@@ -177,7 +179,6 @@ CommentForm.propTypes = {
 	reply_comment_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
 
-
 const ENABLED_COMMENTS_READ_MORE = false;
 
 function CommentActions(props) {
@@ -210,7 +211,9 @@ function CommentActions(props) {
 						<PopupMain>
 							<div className="popup-message">
 								<span className="popup-message-title">{commentsText.ucfirstSingle} removal</span>
-								<span className="popup-message-main">You're willing to remove {commentsText.single} permanently?</span>
+								<span className="popup-message-main">
+									You're willing to remove {commentsText.single} permanently?
+								</span>
 							</div>
 							<hr />
 							<span className="popup-message-bottom">
@@ -241,7 +244,8 @@ function Comment(props) {
 	function onWindowResize() {
 		if (!commentTextRef.current || !commentTextInnerRef.current) return;
 
-		const newval = enabledViewMoreContent || commentTextInnerRef.current.offsetHeight > commentTextRef.current.offsetHeight;
+		const newval =
+			enabledViewMoreContent || commentTextInnerRef.current.offsetHeight > commentTextRef.current.offsetHeight;
 		setEnabledViewMoreContent(newval);
 		setViewMoreContent(newval || false);
 	}
@@ -280,7 +284,9 @@ function Comment(props) {
 								{props.author_name}
 							</a>
 						</div>
-						<div className="comment-date">{props.publish_date != null ? replaceString(format(new Date(props.publish_date))) : ''}</div>
+						<div className="comment-date">
+							{props.publish_date != null ? replaceString(format(new Date(props.publish_date))) : ''}
+						</div>
 					</div>
 					<div ref={commentTextRef} className={'comment-text' + (viewMoreContent ? ' show-all' : '')}>
 						<div
@@ -313,7 +319,6 @@ Comment.propTypes = {
 	dislikes: PropTypes.number,
 };
 
-
 function displayCommentsRelatedAlert() {
 	// TODO: Improve this and move it into Media Page code.
 
@@ -343,15 +348,19 @@ function displayCommentsRelatedAlert() {
 					pageMainEl.appendChild(missingCommentariesUnlistedMsgElem);
 				}
 
-				missingCommentariesUnlistedMsgElem.querySelector('button.close').addEventListener('click', function (ev) {
-					missingCommentariesUnlistedMsgElem.setAttribute('class', 'alert info alert-dismissible hiding');
-					setTimeout(function () {
-						missingCommentariesUnlistedMsgElem.parentNode.removeChild(missingCommentariesUnlistedMsgElem);
-					}, 400);
-					ev.preventDefault();
-					ev.stopPropagation();
-					return false;
-				});
+				missingCommentariesUnlistedMsgElem
+					.querySelector('button.close')
+					.addEventListener('click', function (ev) {
+						missingCommentariesUnlistedMsgElem.setAttribute('class', 'alert info alert-dismissible hiding');
+						setTimeout(function () {
+							missingCommentariesUnlistedMsgElem.parentNode.removeChild(
+								missingCommentariesUnlistedMsgElem
+							);
+						}, 400);
+						ev.preventDefault();
+						ev.stopPropagation();
+						return false;
+					});
 			}
 		}
 	} else if (noCommentDiv && 0 < comm.length) {
@@ -366,8 +375,7 @@ const CommentsListHeader = ({ commentsLength }) => {
 				<span className="disabled-comments-msg">{commentsText.disabledCommentsMsg}</span>
 			)}
 
-			{MEMBER.can.readComment &&
-				(MediaPageStore.get('media-data').enable_comments || MEMBER.can.editMedia) ? (
+			{MEMBER.can.readComment && (MediaPageStore.get('media-data').enable_comments || MEMBER.can.editMedia) ? (
 				<h2>
 					{commentsLength
 						? 1 < commentsLength
@@ -385,14 +393,11 @@ const CommentsListHeader = ({ commentsLength }) => {
 export default function CommentsList(props) {
 	const [mediaId, setMediaId] = useState(MediaPageStore.get('media-id'));
 
-	const [comments, setComments] = useState(
-		MEMBER.can.readComment ? MediaPageStore.get('media-comments') : [],
-	);
+	const [comments, setComments] = useState(MEMBER.can.readComment ? MediaPageStore.get('media-comments') : []);
 
 	const [displayComments, setDisplayComments] = useState(false);
 
 	function onCommentsLoad() {
-
 		const retrievedComments = [...MediaPageStore.get('media-comments')];
 
 		retrievedComments.forEach((comment) => {
@@ -448,7 +453,13 @@ export default function CommentsList(props) {
 
 			searchParameters.set('t', s);
 			const wrapped =
-				'<a href="' + MediaPageStore.get('media-url').split('?')[0] + '?' + searchParameters + '">' + match + '</a>';
+				'<a href="' +
+				MediaPageStore.get('media-url').split('?')[0] +
+				'?' +
+				searchParameters +
+				'">' +
+				match +
+				'</a>';
 			return wrapped;
 		}
 
@@ -477,8 +488,8 @@ export default function CommentsList(props) {
 	useEffect(() => {
 		setDisplayComments(
 			comments.length &&
-			MEMBER.can.readComment &&
-			(MediaPageStore.get('media-data').enable_comments || MEMBER.can.editMedia),
+				MEMBER.can.readComment &&
+				(MediaPageStore.get('media-data').enable_comments || MEMBER.can.editMedia)
 		);
 	}, [comments]);
 
@@ -507,21 +518,25 @@ export default function CommentsList(props) {
 
 				{displayComments
 					? comments.map((c) => {
-						return (
-							<Comment
-								key={c.uid}
-								comment_id={c.uid}
-								media_id={mediaId}
-								text={c.text}
-								author_name={c.author_name}
-								author_link={c.author_profile}
-								author_thumb={(SiteContext._currentValue?.url || '') + '/' + c.author_thumbnail_url.replace(/^\//g, '')}
-								publish_date={c.add_date}
-								likes={0}
-								dislikes={0}
-							/>
-						);
-					})
+							return (
+								<Comment
+									key={c.uid}
+									comment_id={c.uid}
+									media_id={mediaId}
+									text={c.text}
+									author_name={c.author_name}
+									author_link={c.author_profile}
+									author_thumb={
+										(SiteContext._currentValue?.url || '') +
+										'/' +
+										c.author_thumbnail_url.replace(/^\//g, '')
+									}
+									publish_date={c.add_date}
+									likes={0}
+									dislikes={0}
+								/>
+							);
+						})
 					: null}
 			</div>
 		</div>

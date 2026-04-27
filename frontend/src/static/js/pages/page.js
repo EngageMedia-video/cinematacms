@@ -9,9 +9,9 @@ import * as PageActions from './_PageActions';
  * @param {string} pageId - The unique ID for the page
  */
 export const usePage = (pageId) => {
-  useEffect(() => {
-    PageActions.initPage(pageId);
-  }, [pageId]);
+	useEffect(() => {
+		PageActions.initPage(pageId);
+	}, [pageId]);
 };
 
 /**
@@ -21,13 +21,13 @@ export const usePage = (pageId) => {
  * @param {React.ReactNode} props.children - The page content
  */
 export const PageLayout = ({ children }) => (
-  <>
-    <PageMain>{children}</PageMain>
-    <Notifications />
-  </>
+	<>
+		<PageMain>{children}</PageMain>
+		<Notifications />
+	</>
 );
 
 export default {
-  usePage,
-  PageLayout
+	usePage,
+	PageLayout,
 };

@@ -9,23 +9,25 @@ import { MediaListWrapper } from './components/MediaListWrapper';
 import { LazyLoadItemListAsync } from '../components/-NEW-/LazyLoadItemListAsync';
 
 export class FeaturedMediaPage extends Page {
-
-	constructor(props){
+	constructor(props) {
 		super(props, 'featured-media');
 	}
 
-	pageContent(){
-		return <ApiUrlConsumer>
-				{ apiUrl =>
-					<MediaListWrapper title={ this.props.title } className="items-list-ver">
+	pageContent() {
+		return (
+			<ApiUrlConsumer>
+				{(apiUrl) => (
+					<MediaListWrapper title={this.props.title} className="items-list-ver">
 						<LazyLoadItemListAsync
-							requestUrl={ apiUrl.featured }
-							hideViews={ ! PageStore.get('config-media-item').displayViews }
-							hideAuthor={ ! PageStore.get('config-media-item').displayAuthor }
-							hideDate={ ! PageStore.get('config-media-item').displayPublishDate } />
+							requestUrl={apiUrl.featured}
+							hideViews={!PageStore.get('config-media-item').displayViews}
+							hideAuthor={!PageStore.get('config-media-item').displayAuthor}
+							hideDate={!PageStore.get('config-media-item').displayPublishDate}
+						/>
 					</MediaListWrapper>
-				}
-				</ApiUrlConsumer>;
+				)}
+			</ApiUrlConsumer>
+		);
 	}
 }
 
@@ -36,4 +38,3 @@ FeaturedMediaPage.propTypes = {
 FeaturedMediaPage.defaultProps = {
 	title: PageStore.get('config-enabled').pages.featured.title,
 };
-

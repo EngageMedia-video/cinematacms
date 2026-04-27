@@ -1,7 +1,6 @@
-import React from "react";
+import React from 'react';
 
 function TopMessage({ onClick, message }) {
-
 	return (
 		<div className="top-message" role="alert" style={{ zIndex: 1000 }}>
 			<button
@@ -27,10 +26,7 @@ function TopMessage({ onClick, message }) {
 				</svg>
 			</button>
 
-			<div
-				className="top-message--text"
-				dangerouslySetInnerHTML={{ __html: message }}
-			/>
+			<div className="top-message--text" dangerouslySetInnerHTML={{ __html: message }} />
 		</div>
 	);
 }

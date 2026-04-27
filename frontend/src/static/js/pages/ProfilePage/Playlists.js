@@ -17,8 +17,7 @@ import { MediaListWrapper } from '../components/MediaListWrapper';
 import { LazyLoadItemListAsync } from '../../components/-NEW-/LazyLoadItemListAsync';
 
 export class ProfilePlaylistsPage extends ProfilePage {
-
-	constructor(props){
+	constructor(props) {
 		super(props, 'author-playlists');
 
 		this.state = {
@@ -29,31 +28,39 @@ export class ProfilePlaylistsPage extends ProfilePage {
 
 		this.getPlaylistsCountFunc = this.getPlaylistsCountFunc.bind(this);
 	}
-		
-	getPlaylistsCountFunc(resultsCount){
+
+	getPlaylistsCountFunc(resultsCount) {
 		this.setState({
 			loadedPlaylists: true,
 			playlistsCount: resultsCount,
 		});
 	}
 
-	pageContent(){
-
-		return [ this.state.author ? <ProfilePagesHeader key="ProfilePagesHeader" author={ this.state.author } type="playlists" /> : null,
-				 this.state.author ?
-				 	<ProfilePagesContent key="ProfilePagesContent">
-						<ApiUrlConsumer>
-						{ apiUrl => 
-							<MediaListWrapper title={ -1 < this.state.playlistsCount ? 'Created playlists' : void 0} className="profile-playlists-content items-list-ver">
+	pageContent() {
+		return [
+			this.state.author ? (
+				<ProfilePagesHeader key="ProfilePagesHeader" author={this.state.author} type="playlists" />
+			) : null,
+			this.state.author ? (
+				<ProfilePagesContent key="ProfilePagesContent">
+					<ApiUrlConsumer>
+						{(apiUrl) => (
+							<MediaListWrapper
+								title={-1 < this.state.playlistsCount ? 'Created playlists' : void 0}
+								className="profile-playlists-content items-list-ver"
+							>
 								<LazyLoadItemListAsync
-									requestUrl={ apiUrl.user.playlists + this.state.author.username }
-									itemsCountCallback={ this.getPlaylistsCountFunc }
-									hideViews={ ! PageStore.get('config-media-item').displayViews }
-									hideAuthor={ ! PageStore.get('config-media-item').displayAuthor }
-									hideDate={ ! PageStore.get('config-media-item').displayPublishDate } />
+									requestUrl={apiUrl.user.playlists + this.state.author.username}
+									itemsCountCallback={this.getPlaylistsCountFunc}
+									hideViews={!PageStore.get('config-media-item').displayViews}
+									hideAuthor={!PageStore.get('config-media-item').displayAuthor}
+									hideDate={!PageStore.get('config-media-item').displayPublishDate}
+								/>
 							</MediaListWrapper>
-						}
-						</ApiUrlConsumer>
-					</ProfilePagesContent> : null ];
+						)}
+					</ApiUrlConsumer>
+				</ProfilePagesContent>
+			) : null,
+		];
 	}
 }

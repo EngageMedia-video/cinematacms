@@ -16,9 +16,7 @@ class NotificationList(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        queryset = Notification.objects.filter(
-            recipient=request.user
-        ).select_related("actor")
+        queryset = Notification.objects.filter(recipient=request.user).select_related("actor")
 
         notification_type = request.query_params.get("type")
         if notification_type:
@@ -48,9 +46,7 @@ class UnreadCount(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        count = Notification.objects.filter(
-            recipient=request.user, is_read=False
-        ).count()
+        count = Notification.objects.filter(recipient=request.user, is_read=False).count()
         return Response({"unread_count": count})
 
 
@@ -59,27 +55,27 @@ class MarkAsRead(APIView):
 
     def patch(self, request, notification_id):
         try:
-            notification = Notification.objects.get(
-                id=notification_id, recipient=request.user
-            )
+            notification = Notification.objects.get(id=notification_id, recipient=request.user)
         except Notification.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         notification.mark_as_read()
-        return Response({
-            "id": notification.id,
-            "is_read": notification.is_read,
-            "read_at": notification.read_at,
-        })
+        return Response(
+            {
+                "id": notification.id,
+                "is_read": notification.is_read,
+                "read_at": notification.read_at,
+            }
+        )
 
 
 class MarkAllAsRead(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def patch(self, request):
-        count = Notification.objects.filter(
-            recipient=request.user, is_read=False
-        ).update(is_read=True, read_at=timezone.now())
+        count = Notification.objects.filter(recipient=request.user, is_read=False).update(
+            is_read=True, read_at=timezone.now()
+        )
         return Response({"marked_count": count})
 
 
@@ -93,9 +89,7 @@ class NotificationPreferenceDetail(APIView):
 
     def patch(self, request):
         prefs = NotificationService.get_or_create_preferences(request.user)
-        serializer = NotificationPreferenceSerializer(
-            prefs, data=request.data, partial=True
-        )
+        serializer = NotificationPreferenceSerializer(prefs, data=request.data, partial=True)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()

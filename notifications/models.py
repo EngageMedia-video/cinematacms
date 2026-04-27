@@ -36,7 +36,7 @@ class Notification(models.Model):
     )
     notification_type = models.CharField(
         max_length=20,
-        choices=NotificationType.choices,
+        choices=NotificationType,
         db_index=True,
     )
     message = models.CharField(max_length=500)
@@ -69,9 +69,7 @@ class Notification(models.Model):
     def mark_as_read(self):
         from django.utils import timezone
 
-        Notification.objects.filter(pk=self.pk, is_read=False).update(
-            is_read=True, read_at=timezone.now()
-        )
+        Notification.objects.filter(pk=self.pk, is_read=False).update(is_read=True, read_at=timezone.now())
         self.refresh_from_db()
 
 
@@ -83,37 +81,37 @@ class NotificationPreference(models.Model):
     )
     on_comment = models.CharField(
         max_length=10,
-        choices=NotificationChannel.choices,
+        choices=NotificationChannel,
         default=NotificationChannel.EMAIL,
     )
     on_reply = models.CharField(
         max_length=10,
-        choices=NotificationChannel.choices,
+        choices=NotificationChannel,
         default=NotificationChannel.EMAIL,
     )
     on_like = models.CharField(
         max_length=10,
-        choices=NotificationChannel.choices,
+        choices=NotificationChannel,
         default=NotificationChannel.IN_APP,
     )
     on_follow = models.CharField(
         max_length=10,
-        choices=NotificationChannel.choices,
+        choices=NotificationChannel,
         default=NotificationChannel.EMAIL,
     )
     on_mention = models.CharField(
         max_length=10,
-        choices=NotificationChannel.choices,
+        choices=NotificationChannel,
         default=NotificationChannel.EMAIL,
     )
     on_new_media_from_following = models.CharField(
         max_length=10,
-        choices=NotificationChannel.choices,
+        choices=NotificationChannel,
         default=NotificationChannel.IN_APP,
     )
     on_added_to_playlist = models.CharField(
         max_length=10,
-        choices=NotificationChannel.choices,
+        choices=NotificationChannel,
         default=NotificationChannel.IN_APP,
     )
     filter_topics = models.JSONField(

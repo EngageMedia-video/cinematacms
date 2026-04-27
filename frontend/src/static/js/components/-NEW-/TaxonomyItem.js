@@ -9,46 +9,46 @@ import { useItem } from './hooks/useItem';
 
 import { TaxonomyItemMediaCount, itemClassname } from './includes/items';
 
-export function TaxonomyItem(props){
+export function TaxonomyItem(props) {
 	props = { ...TaxonomyItem.defaults, ...props };
 
 	const type = props.type;
 
-	const [ titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper ] = useItem({...props, type });
+	const [titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper] = useItem({ ...props, type });
 
-	function thumbnailComponent(){
+	function thumbnailComponent() {
 		const attr = {
 			href: props.link,
 			title: props.title,
 			tabIndex: '-1',
 			'aria-hidden': true,
-			className: 'item-thumb' + ( ! thumbnailUrl ? ' no-thumb' : '' ),
-			style: ! thumbnailUrl ? null : { backgroundImage: 'url(\'' + thumbnailUrl + '\')' },
+			className: 'item-thumb' + (!thumbnailUrl ? ' no-thumb' : ''),
+			style: !thumbnailUrl ? null : { backgroundImage: "url('" + thumbnailUrl + "')" },
 		};
 		return <a key="item-thumb" {...attr}></a>;
 	}
 
-	function metaComponents(){
-		return props.hideAllMeta ? null : <span className="item-meta">{ <TaxonomyItemMediaCount count={ props.media_count } /> }</span>;
+	function metaComponents() {
+		return props.hideAllMeta ? null : (
+			<span className="item-meta">{<TaxonomyItemMediaCount count={props.media_count} />}</span>
+		);
 	}
 
-	const containerClassname = itemClassname( 'item ' + type + '-item', props.class_name.trim(), false );
+	const containerClassname = itemClassname('item ' + type + '-item', props.class_name.trim(), false);
 
-	return (<div className={ containerClassname }>
+	return (
+		<div className={containerClassname}>
+			<div className="item-content">
+				{thumbnailComponent()}
 
-				<div className="item-content">
-
-					{ thumbnailComponent() }
-
-					<UnderThumbWrapper title={ props.title } link={ props.link }>
-						{ titleComponent() }
-						{ metaComponents() }
-						{ descriptionComponent() }
-					</UnderThumbWrapper>
-
-				</div>
-
-			</div>);
+				<UnderThumbWrapper title={props.title} link={props.link}>
+					{titleComponent()}
+					{metaComponents()}
+					{descriptionComponent()}
+				</UnderThumbWrapper>
+			</div>
+		</div>
+	);
 }
 
 TaxonomyItem.propTypes = {

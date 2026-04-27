@@ -1,25 +1,24 @@
-.page-main-wrap{
-
+.page-main-wrap {
 	padding-top: var(--header-height);
 	// padding-bottom: 16px;
 	// overflow:hidden;
 	// min-height:100vh;
 	will-change: padding-left;
 
-	@media ( min-width: 768px ){
-		.visible-sidebar &{
+	@media (min-width: 768px) {
+		.visible-sidebar & {
 			padding-left: var(--sidebar-width);
-			opacity:1;
+			opacity: 1;
 		}
 	}
 
-	.visible-sidebar #page-media &{
+	.visible-sidebar #page-media & {
 		padding-left: 0;
 	}
 
 	.visible-sidebar & {
-
-		#page-media{	// @note: This need only because of the differences ( of element with class="page-main-wrap" ) between dev environment and online app.
+		#page-media {
+			// @note: This need only because of the differences ( of element with class="page-main-wrap" ) between dev environment and online app.
 			padding-left: 0;
 		}
 	}
@@ -30,15 +29,15 @@
 
 	// transition-duration:0.2s;
 
-	body.sliding-sidebar &{
+	body.sliding-sidebar & {
 		transition-property: padding-left;
-		transition-duration:0.2s;
+		transition-duration: 0.2s;
 		// transition-timing-function:linear;
 	}
-	
-	body.visible-sidebar &{
+
+	body.visible-sidebar & {
 		// transition-property: padding-left;
-		
+
 		// transition-timing-function:linear;
 	}
 }
@@ -48,21 +47,20 @@
 #page-profile-playlists,
 #page-profile-about,
 #page-liked.profile-page-liked,
-#page-history.profile-page-history{
-
+#page-history.profile-page-history {
 	// .page-main-wrap{
-		// min-height:calc(100vh - 56px);s
-		// min-height:100vh;
+	// min-height:calc(100vh - 56px);s
+	// min-height:100vh;
 
-		.page-main{
-			min-height:calc(100vh - var(--header-height));
-		}
+	.page-main {
+		min-height: calc(100vh - var(--header-height));
+	}
 	// }
 }
 
-.page-main{
-	position:relative;
-	width:100%;
+.page-main {
+	position: relative;
+	width: 100%;
 	padding-bottom: 16px;
 
 	/*padding-left:1em;
@@ -70,8 +68,8 @@
 	padding-bottom:1.5em;*/
 }
 
-.page-main-inner{
-	display:block;
+.page-main-inner {
+	display: block;
 	margin: 1em 1em 0 1em;
 }
 
@@ -80,9 +78,8 @@
 #page-profile-playlists,
 #page-profile-about,
 #page-liked.profile-page-liked,
-#page-history.profile-page-history{
-
-	.page-main-wrap{
+#page-history.profile-page-history {
+	.page-main-wrap {
 		background-color: var(--body-bg-color);
 	}
 }

@@ -302,10 +302,12 @@ class MyUploadsBulkStateTests(TestCase):
         self.client.login(username="usera", password="testpass123")
         response = self.client.post(
             "/api/v1/my_uploads/bulk_state",
-            data=json.dumps({
-                "tokens": [self.media_a1.friendly_token, self.media_a2.friendly_token],
-                "state": "private",
-            }),
+            data=json.dumps(
+                {
+                    "tokens": [self.media_a1.friendly_token, self.media_a2.friendly_token],
+                    "state": "private",
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 200)
@@ -322,10 +324,12 @@ class MyUploadsBulkStateTests(TestCase):
         self.client.login(username="usera", password="testpass123")
         response = self.client.post(
             "/api/v1/my_uploads/bulk_state",
-            data=json.dumps({
-                "tokens": [self.media_b.friendly_token],
-                "state": "private",
-            }),
+            data=json.dumps(
+                {
+                    "tokens": [self.media_b.friendly_token],
+                    "state": "private",
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
@@ -339,10 +343,12 @@ class MyUploadsBulkStateTests(TestCase):
         self.client.login(username="usera", password="testpass123")
         response = self.client.post(
             "/api/v1/my_uploads/bulk_state",
-            data=json.dumps({
-                "tokens": [self.media_a1.friendly_token, self.media_b.friendly_token],
-                "state": "private",
-            }),
+            data=json.dumps(
+                {
+                    "tokens": [self.media_a1.friendly_token, self.media_b.friendly_token],
+                    "state": "private",
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
@@ -358,10 +364,12 @@ class MyUploadsBulkStateTests(TestCase):
         self.client.login(username="usera", password="testpass123")
         response = self.client.post(
             "/api/v1/my_uploads/bulk_state",
-            data=json.dumps({
-                "tokens": [self.media_a1.friendly_token],
-                "state": "restricted",
-            }),
+            data=json.dumps(
+                {
+                    "tokens": [self.media_a1.friendly_token],
+                    "state": "restricted",
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)
@@ -371,10 +379,12 @@ class MyUploadsBulkStateTests(TestCase):
         self.client.login(username="usera", password="testpass123")
         response = self.client.post(
             "/api/v1/my_uploads/bulk_state",
-            data=json.dumps({
-                "tokens": [],
-                "state": "private",
-            }),
+            data=json.dumps(
+                {
+                    "tokens": [],
+                    "state": "private",
+                }
+            ),
             content_type="application/json",
         )
         self.assertEqual(response.status_code, 400)

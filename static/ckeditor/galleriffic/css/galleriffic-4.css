@@ -2,7 +2,7 @@ div.content {
 	/* The display of content is enabled using jQuery so that the slideshow content won't display unless javascript is enabled. */
 	display: none;
 	float: right;
-	width: 550px; 
+	width: 550px;
 }
 div.content a, div.navigation a {
 	text-decoration: none;
@@ -66,7 +66,7 @@ div.download {
 	float: right;
 }
 div.caption-container {
-	
+
 }
 span.image-caption {
 	display: block;

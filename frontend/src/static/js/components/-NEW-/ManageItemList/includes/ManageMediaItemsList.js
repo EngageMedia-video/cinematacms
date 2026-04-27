@@ -3,37 +3,38 @@ import { hasClassname } from '../../functions/dom';
 
 const _ManageMediaItemsListData = {};
 
-export default class MediaItemsList{
+export default class MediaItemsList {
+	constructor(listContainer, initialItems) {
+		if (!Node.prototype.isPrototypeOf(listContainer)) {
+			return null;
+		}
 
-    constructor(listContainer, initialItems){
+		_ManageMediaItemsListData[
+			Object.defineProperty(this, 'id', {
+				value: 'ManageMediaItemsList_' + Object.keys(_ManageMediaItemsListData).length,
+			}).id
+		] = {};
 
-        if (!Node.prototype.isPrototypeOf(listContainer)) {
-            return null;
-        }
+		this.items = [];
+		this.container = listContainer;
 
-        _ManageMediaItemsListData[ Object.defineProperty( this, 'id', { value: 'ManageMediaItemsList_' + Object.keys(_ManageMediaItemsListData).length }).id ] = {};
+		this.appendItems(initialItems);
+	}
 
-        this.items = [];
-        this.container = listContainer;
+	dataObject() {
+		return _ManageMediaItemsListData;
+	}
 
-        this.appendItems( initialItems );
-    }
-
-    dataObject(){
-        return _ManageMediaItemsListData;
-    }
-
-    appendItems(items){
-        var i;
-        if (NodeList.prototype.isPrototypeOf(items) ) {
-            i = 0;
-            while (i < items.length) {
-                this.items.push(new ManageMediaItem(items[i]));
-                i += 1;
-            }
-        }
-        else if (Node.prototype.isPrototypeOf(items) ) {
-            this.items.push(new ManageMediaItem(items));
-        }
-    };
+	appendItems(items) {
+		var i;
+		if (NodeList.prototype.isPrototypeOf(items)) {
+			i = 0;
+			while (i < items.length) {
+				this.items.push(new ManageMediaItem(items[i]));
+				i += 1;
+			}
+		} else if (Node.prototype.isPrototypeOf(items)) {
+			this.items.push(new ManageMediaItem(items));
+		}
+	}
 }

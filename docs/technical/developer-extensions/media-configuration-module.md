@@ -20,13 +20,13 @@ The [MEDIA](../../frontend/src/static/js/mediacms/media.js) module is responsibl
 MEDIA = {
   item: {
     size: 'small',               // 'small' | 'medium' | 'large'
-    displayAuthor: true,         
-    displayViews: true,         
-    displayPublishDate: true,    
-    displayCategories: false,   
+    displayAuthor: true,  
+    displayViews: true,  
+    displayPublishDate: true,  
+    displayCategories: false,  
   },
   share: {
-    options: [],    
+    options: [],  
   }
 }
 

@@ -1,34 +1,33 @@
-.circle-icon-button{
-	--txt-color: rgba(17,17,17,0.4);
+.circle-icon-button {
+	--txt-color: rgba(17, 17, 17, 0.4);
 	--bg-color: #fff;
 
-	--bg-focus-color: rgba(0, 0, 0, .07);
-	--bg-active-color: rgba(0, 0, 0, .11);
+	--bg-focus-color: rgba(0, 0, 0, 0.07);
+	--bg-active-color: rgba(0, 0, 0, 0.11);
 }
 
-body.dark_theme .circle-icon-button{
-	--txt-color: rgba(255,255,255,0.5);
+body.dark_theme .circle-icon-button {
+	--txt-color: rgba(255, 255, 255, 0.5);
 	--bg-color: #272727;
 
-	--bg-focus-color: rgba(255, 255, 255, .14);
-	--bg-active-color: rgba(255, 255, 255, .34);
+	--bg-focus-color: rgba(255, 255, 255, 0.14);
+	--bg-active-color: rgba(255, 255, 255, 0.34);
 }
 
-.circle-icon-button{
+.circle-icon-button {
 	color: var(--txt-color);
 	background-color: var(--bg-color);
 }
 
 a.circle-icon-button,
-button.circle-icon-button{
-
-	&:focus{
+button.circle-icon-button {
+	&:focus {
 		> * {
 			background-color: var(--bg-focus-color);
 		}
 	}
 
-	&:active{
+	&:active {
 		> * {
 			background-color: var(--bg-active-color);
 		}
@@ -36,65 +35,63 @@ button.circle-icon-button{
 }
 
 .video-player .more-media {
-
 	// In video player "More videos" section, use dark theme properties.
 
 	a.circle-icon-button,
-	button.circle-icon-button{
-
-		&:focus{
+	button.circle-icon-button {
+		&:focus {
 			> * {
-				background-color: rgba(0, 0, 0, .07);
+				background-color: rgba(0, 0, 0, 0.07);
 			}
 		}
 
-		&:active{
+		&:active {
 			> * {
-				background-color: rgba(0, 0, 0, .11);
+				background-color: rgba(0, 0, 0, 0.11);
 			}
 		}
 	}
-
 }
 
-.circle-icon-button{
+.circle-icon-button {
+	display: block;
+	padding: 0;
 
-	display:block;
-	padding:0;
+	width: 40px;
+	height: 40px;
 
-	width:40px;
-	height:40px;
-
-	text-overflow:ellipsis;
-	white-space:nowrap;
-	text-align:center;
-	text-decoration:none;
-	-webkit-tap-highlight-color: rgba(#000,0);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-align: center;
+	text-decoration: none;
+	-webkit-tap-highlight-color: rgba(#000, 0);
 	-webkit-tap-highlight-color: transparent;
 
-	outline-width:0;
-	border-width:0;
+	outline-width: 0;
+	border-width: 0;
 
 	border-radius: 50%;
 
 	> * {
-		display:table;
-		width:100%;
-		height:100%;
+		display: table;
+		width: 100%;
+		height: 100%;
 		border-radius: 50%;
-		
+
 		> * {
-			display:table-cell;
-			vertical-align:middle;
+			display: table-cell;
+			vertical-align: middle;
 			border-radius: 50%;
 		}
 	}
 
-	&.button-shadow{
-		box-shadow: 0 4px 4px rgba(#000, 0.3), 0 0 4px rgba(#000, 0.2);
+	&.button-shadow {
+		box-shadow:
+			0 4px 4px rgba(#000, 0.3),
+			0 0 4px rgba(#000, 0.2);
 	}
 
-	i{
-		overflow:hidden;
+	i {
+		overflow: hidden;
 	}
 }

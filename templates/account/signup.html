@@ -22,12 +22,12 @@
 		<p style="margin-top: 20px;">
 			<input type="checkbox" name="subscribe" id="id_subscribe">
 			<label for="id_subscribe" style="display: inline; font-weight: normal;">
-				Subscribe to the <a href="https://mailer.cinemata.org/" target="_blank" rel="noopener noreferrer">Cinemata newsletter</a> 
-				for updates on social justice films from the Asia-Pacific region. 
+				Subscribe to the <a href="https://mailer.cinemata.org/" target="_blank" rel="noopener noreferrer">Cinemata newsletter</a>
+				for updates on social justice films from the Asia-Pacific region.
 				Read our <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">privacy policy</a>.
 			</label>
 		</p>
-		
+
 		<button type="submit">Sign Up &raquo;</button>
 	</form>
     </div>
@@ -43,13 +43,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const unusualCountries = {{ UNUSUAL_COUNTRIES_JSON|safe }};
             const selectedValue = this.value;
             const selectedText = this.options[this.selectedIndex].text;
-            
+
             if (unusualCountries.includes(selectedValue)) {
                 const confirmed = confirm(
                     'Are you sure you are located in ' + selectedText + '?\n\n' +
                     'Please select your actual location for accurate newsletter delivery and content recommendations.'
                 );
-                
+
                 if (!confirmed) {
                     this.value = '';
                 }
@@ -59,4 +59,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock innercontent %}
-

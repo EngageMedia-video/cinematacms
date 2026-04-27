@@ -1,26 +1,21 @@
 let PLAYLISTS = null;
 
-export function init( plists ){
-
+export function init(plists) {
 	PLAYLISTS = {
 		mediaTypes: [],
 	};
 
-	if( void 0 !== plists ){
-		
-		if( void 0 !== plists.mediaTypes ){
-
-			if( plists.mediaTypes.length ){
-
+	if (void 0 !== plists) {
+		if (void 0 !== plists.mediaTypes) {
+			if (plists.mediaTypes.length) {
 				PLAYLISTS.mediaTypes = [];
 
 				let i = 0;
-				while( i < plists.mediaTypes.length ){
-
-					switch(plists.mediaTypes[i]){
+				while (i < plists.mediaTypes.length) {
+					switch (plists.mediaTypes[i]) {
 						case 'audio':
 						case 'video':
-							PLAYLISTS.mediaTypes.push( plists.mediaTypes[i] );
+							PLAYLISTS.mediaTypes.push(plists.mediaTypes[i]);
 							break;
 					}
 
@@ -30,11 +25,11 @@ export function init( plists ){
 		}
 	}
 
-	if( ! PLAYLISTS.mediaTypes.length ){
+	if (!PLAYLISTS.mediaTypes.length) {
 		PLAYLISTS.mediaTypes = ['audio', 'video'];
 	}
 }
 
-export function settings(){
+export function settings() {
 	return PLAYLISTS;
 }

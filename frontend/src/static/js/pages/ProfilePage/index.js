@@ -26,25 +26,28 @@ import { LazyLoadItemListAsync } from '../../components/-NEW-/LazyLoadItemListAs
 import { LinksConsumer } from '../../contexts/LinksContext';
 // import { UserConsumer } from '../../contexts/UserContext';
 
-import "../styles/ProfilePage.scss";
+import '../styles/ProfilePage.scss';
 
-function EmptyChannelMedia(props){
-
-	return <LinksConsumer>
-		{ links =>
-			<div className='empty-channel-media'>
-				<div className="welcome-title">Welcome {props.name}</div>
-				<div className="start-uploading">Start uploading media and sharing your work. Media that you upload will show up here.</div>
-				<a href={ links.user.addMedia } title='Upload media' className='button-link'><i className="material-icons" data-icon="video_call"></i>UPLOAD MEDIA</a>
-			</div>
-		}
-	</LinksConsumer>;
+function EmptyChannelMedia(props) {
+	return (
+		<LinksConsumer>
+			{(links) => (
+				<div className="empty-channel-media">
+					<div className="welcome-title">Welcome {props.name}</div>
+					<div className="start-uploading">
+						Start uploading media and sharing your work. Media that you upload will show up here.
+					</div>
+					<a href={links.user.addMedia} title="Upload media" className="button-link">
+						<i className="material-icons" data-icon="video_call"></i>UPLOAD MEDIA
+					</a>
+				</div>
+			)}
+		</LinksConsumer>
+	);
 }
 
 export class ProfilePage extends Page {
-
-	constructor(props, pageSlug){
-
+	constructor(props, pageSlug) {
 		super(props, 'string' === typeof pageSlug ? pageSlug : 'author-home');
 
 		this.profilePageSlug = 'string' === typeof pageSlug ? pageSlug : 'author-home';
@@ -55,7 +58,7 @@ export class ProfilePage extends Page {
 			uploadsPreviewItemsCount: 0,
 			title: this.props.title,
 			query: ProfilePageStore.get('author-query'),
-			requestUrl:null,
+			requestUrl: null,
 		};
 
 		this.authorDataLoad = this.authorDataLoad.bind(this);
@@ -63,25 +66,22 @@ export class ProfilePage extends Page {
 		this.getCountFunc = this.getCountFunc.bind(this);
 		this.changeRequestQuery = this.changeRequestQuery.bind(this);
 
-		ProfilePageStore.on('load-author-data', this.authorDataLoad );
+		ProfilePageStore.on('load-author-data', this.authorDataLoad);
 	}
 
-	componentDidMount(){
+	componentDidMount() {
 		ProfilePageActions.load_author_data();
 	}
 
-	authorDataLoad(){
-
+	authorDataLoad() {
 		const author = ProfilePageStore.get('author-data');
 
 		let requestUrl = this.state.requestUrl;
 
-		if( author ){
-
-			if(this.state.query){
+		if (author) {
+			if (this.state.query) {
 				requestUrl = ApiUrlContext._currentValue.search.query + this.state.query + '&author=' + author.id;
-			}
-			else{
+			} else {
 				requestUrl = ApiUrlContext._currentValue.media + '?author=' + author.id;
 			}
 		}
@@ -92,58 +92,53 @@ export class ProfilePage extends Page {
 		});
 	}
 
-	onAuthorPreviewItemsCountCallback( totalAuthorPreviewItems ){
+	onAuthorPreviewItemsCountCallback(totalAuthorPreviewItems) {
 		this.setState({
 			uploadsPreviewItemsCount: totalAuthorPreviewItems,
 		});
 	}
 
-	getCountFunc( count ){
+	getCountFunc(count) {
+		this.setState(
+			{
+				channelMediaCount: count,
+			},
+			() => {
+				if (this.state.query) {
+					let title = '';
 
-		this.setState( {
-			channelMediaCount: count
-		}, () =>{
+					if (!count) {
+						title = 'No results for "' + this.state.query + '"';
+					} else if (1 === count) {
+						title = '1 result for "' + this.state.query + '"';
+					} else {
+						title = count + ' results for "' + this.state.query + '"';
+					}
 
-			if( this.state.query ){
-
-				let title = '';
-
-				if( ! count ){
-					title = 'No results for "' + this.state.query + '"';
+					this.setState({
+						title: title,
+					});
 				}
-				else if( 1 === count ){
-					title = '1 result for "' + this.state.query + '"';
-				}
-				else{
-					title = count + ' results for "' + this.state.query + '"';
-				}
-
-				this.setState({
-					title: title,
-				});
 			}
-
-		});
+		);
 	}
 
-	changeRequestQuery( newQuery ){
-
-		if( ! this.state.author ){
+	changeRequestQuery(newQuery) {
+		if (!this.state.author) {
 			return;
 		}
 
 		let requestUrl;
 
-		if(newQuery){
+		if (newQuery) {
 			requestUrl = ApiUrlContext._currentValue.search.query + newQuery + '&author=' + this.state.author.id;
-		}
-		else{
+		} else {
 			requestUrl = ApiUrlContext._currentValue.media + '?author=' + this.state.author.id;
 		}
 
 		let title = this.state.title;
 
-		if( '' === newQuery ){
+		if ('' === newQuery) {
 			title = this.props.title;
 		}
 
@@ -171,30 +166,43 @@ export class ProfilePage extends Page {
 			];
 	}*/
 
-	pageContent(){
+	pageContent() {
 		const authorData = ProfilePageStore.get('author-data');
 
 		const isMediaAuthor = authorData && authorData.username === UserContext._currentValue.username;
 		const isManagerOrAdmin = UserContext._currentValue.is.manager || UserContext._currentValue.is.admin;
 		const canEditMedia = isMediaAuthor || isManagerOrAdmin;
 
-		return [ this.state.author ? <ProfilePagesHeader key="ProfilePagesHeader" author={ this.state.author } onQueryChange={ this.changeRequestQuery } /> : null,
-				 this.state.author ?
-					<ProfilePagesContent key="ProfilePagesContent">
-						<MediaListWrapper title={ ! isMediaAuthor || 0 < this.state.channelMediaCount ? this.state.title : null } className="items-list-ver">
-							<LazyLoadItemListAsync
-								key={ this.state.requestUrl }
-								requestUrl={ this.state.requestUrl }
-								hideAuthor={ true }
-								itemsCountCallback={ this.state.requestUrl ? this.getCountFunc : null }
-								hideViews={ ! PageStore.get('config-media-item').displayViews }
-								hideDate={ ! PageStore.get('config-media-item').displayPublishDate }
-								canEdit={ canEditMedia } />
-							{ isMediaAuthor && 0 === this.state.channelMediaCount && ! this.state.query ? <EmptyChannelMedia name={this.state.author.name} /> : null }
-						</MediaListWrapper>
-					</ProfilePagesContent>
-				: null
-			];
+		return [
+			this.state.author ? (
+				<ProfilePagesHeader
+					key="ProfilePagesHeader"
+					author={this.state.author}
+					onQueryChange={this.changeRequestQuery}
+				/>
+			) : null,
+			this.state.author ? (
+				<ProfilePagesContent key="ProfilePagesContent">
+					<MediaListWrapper
+						title={!isMediaAuthor || 0 < this.state.channelMediaCount ? this.state.title : null}
+						className="items-list-ver"
+					>
+						<LazyLoadItemListAsync
+							key={this.state.requestUrl}
+							requestUrl={this.state.requestUrl}
+							hideAuthor={true}
+							itemsCountCallback={this.state.requestUrl ? this.getCountFunc : null}
+							hideViews={!PageStore.get('config-media-item').displayViews}
+							hideDate={!PageStore.get('config-media-item').displayPublishDate}
+							canEdit={canEditMedia}
+						/>
+						{isMediaAuthor && 0 === this.state.channelMediaCount && !this.state.query ? (
+							<EmptyChannelMedia name={this.state.author.name} />
+						) : null}
+					</MediaListWrapper>
+				</ProfilePagesContent>
+			) : null,
+		];
 	}
 }
 

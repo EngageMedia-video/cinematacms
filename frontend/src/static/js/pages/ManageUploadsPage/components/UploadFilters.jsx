@@ -23,7 +23,6 @@ const filters = {
 };
 
 export function UploadFilters({ hidden = false, onFiltersUpdate }) {
-
 	const [isHidden, setIsHidden] = useState(hidden);
 
 	const [state, setState] = useState('all');
@@ -36,7 +35,7 @@ export function UploadFilters({ hidden = false, onFiltersUpdate }) {
 
 	function onWindowResize() {
 		if (!isHidden) {
-			containerRef.current.style.height = (24 + innerContainerRef.current.offsetHeight) + 'px';
+			containerRef.current.style.height = 24 + innerContainerRef.current.offsetHeight + 'px';
 		}
 	}
 
@@ -96,9 +95,8 @@ export function UploadFilters({ hidden = false, onFiltersUpdate }) {
 	}, []);
 
 	return (
-		<div ref={containerRef} className={"mi-filters-row" + (isHidden ? ' hidden' : '')}>
+		<div ref={containerRef} className={'mi-filters-row' + (isHidden ? ' hidden' : '')}>
 			<div ref={innerContainerRef} className="mi-filters-row-inner">
-
 				<div className="mi-filter mi-filter-search">
 					<div className="mi-filter-title">SEARCH</div>
 					<div className="mi-filter-options">
@@ -115,17 +113,26 @@ export function UploadFilters({ hidden = false, onFiltersUpdate }) {
 				<div className="mi-filter">
 					<div className="mi-filter-title">STATE</div>
 					<div className="mi-filter-options">
-						<FilterOptions id={'state'} options={filters.state} selected={state} onSelect={onFilterSelect} />
+						<FilterOptions
+							id={'state'}
+							options={filters.state}
+							selected={state}
+							onSelect={onFilterSelect}
+						/>
 					</div>
 				</div>
 
 				<div className="mi-filter">
 					<div className="mi-filter-title">ENCODING STATUS</div>
 					<div className="mi-filter-options">
-						<FilterOptions id={'encoding_status'} options={filters.encoding_status} selected={encodingStatus} onSelect={onFilterSelect} />
+						<FilterOptions
+							id={'encoding_status'}
+							options={filters.encoding_status}
+							selected={encodingStatus}
+							onSelect={onFilterSelect}
+						/>
 					</div>
 				</div>
-
 			</div>
 		</div>
 	);

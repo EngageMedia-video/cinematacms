@@ -3,7 +3,6 @@
 @import '../../../css/config/index.scss';
 
 #page-manage-uploads {
-
 	.media-list-wrapper {
 		padding: 0 16px;
 
@@ -31,7 +30,6 @@
 	}
 
 	.manage-upload-item {
-
 		> * {
 			width: (100/8) * 1%;
 			text-align: center;
@@ -118,7 +116,6 @@
 }
 
 .mi-filter-search {
-
 	.mi-search-input {
 		padding: 6px 12px;
 		border: 1px solid var(--input-border-color);

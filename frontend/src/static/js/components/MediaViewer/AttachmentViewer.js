@@ -1,15 +1,16 @@
 import React from 'react';
 
-export default function AttachmentPlayer(){
-	
-	return (<div className="player-container viewer-attachment-container">
-				<div className="player-container-inner">
+export default function AttachmentPlayer() {
+	return (
+		<div className="player-container viewer-attachment-container">
+			<div className="player-container-inner">
+				<span>
 					<span>
-						<span>
-							{/*<i className="material-icons">attachment</i>*/}
-							<i className="material-icons">insert_drive_file</i>
-						</span>
+						{/*<i className="material-icons">attachment</i>*/}
+						<i className="material-icons">insert_drive_file</i>
 					</span>
-				</div>
-			</div>);
+				</span>
+			</div>
+		</div>
+	);
 }

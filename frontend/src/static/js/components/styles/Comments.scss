@@ -1,11 +1,8 @@
 @import '../../../css/includes/_variables.scss';
 
 .comments-form-inner {
-
 	.form {
-
 		.form-textarea-wrap {
-
 			border-color: var(--comments-textarea-wrapper-border-color);
 
 			&:after {
@@ -14,7 +11,6 @@
 		}
 
 		.form-textarea {
-
 			color: var(--comments-textarea-text-color);
 
 			&:placeholder {
@@ -29,7 +25,6 @@
 }
 
 .comment-author {
-
 	color: var(--comment-author-text-color);
 
 	a {
@@ -38,7 +33,6 @@
 }
 
 .comment-date {
-
 	color: var(--comment-date-text-color);
 	text-decoration-color: var(--comment-date-text-color);
 
@@ -58,7 +52,6 @@
 }
 
 .comment-actions {
-
 	button {
 		&:focus {
 			box-shadow: none;
@@ -70,7 +63,6 @@
 	}
 
 	.material-icons {
-
 		&:hover,
 		&:focus {
 			color: var(--comment-actions-material-icon-text-color);
@@ -83,9 +75,7 @@
 	}
 
 	.reply-comment {
-
-		>button {
-
+		> button {
 			color: var(--comment-actions-reply-button-text-color);
 
 			background: none;
@@ -102,18 +92,13 @@
 	}
 
 	.remove-comment {
-
 		.popup-message-bottom {
-
 			button {
-
 				&.cancel-comment-removal {
-
 					color: var(--comment-actions-cancel-removal-button-text-color);
 
 					&:hover,
 					&:focus {
-
 						color: var(--comment-actions-cancel-removal-button-hover-text-color);
 
 						.material-icons {
@@ -126,16 +111,12 @@
 	}
 }
 
-
-
-
 .comments-form {
 	position: relative;
 	margin: 0 0 1.5rem;
 }
 
 .comments-form-inner {
-
 	min-height: 40px;
 
 	.thumbnail {
@@ -159,7 +140,7 @@
 			border-width: 0 0 1px;
 
 			&:after {
-				content: " ";
+				content: ' ';
 				display: block;
 				visibility: hidden;
 				opacity: 0;
@@ -172,7 +153,6 @@
 			}
 
 			&.focused {
-
 				&:after {
 					visibility: visible;
 					opacity: 1;
@@ -181,7 +161,6 @@
 		}
 
 		.form-textarea {
-
 			position: relative;
 			resize: none;
 			display: block;
@@ -219,12 +198,11 @@
 		}
 
 		a.form-textarea-wrap {
-
 			&:focus {
 				outline: 1px dotted rgba(#0a0a0a, 0.5);
 			}
 
-			text-decoration:none;
+			text-decoration: none;
 
 			.form-textarea {
 				// cursor:pointer;
@@ -263,7 +241,6 @@
 }
 
 .comments-list-inner {
-
 	border-bottom-width: 1px;
 	border-bottom-style: solid;
 
@@ -273,12 +250,12 @@
 	padding-left: 16px;
 	padding-right: 16px;
 
-	@media screen and (min-width:640px) {
+	@media screen and (min-width: 640px) {
 		padding-left: 0;
 		padding-right: 0;
 	}
 
-	@media screen and (min-width:1008px) {
+	@media screen and (min-width: 1008px) {
 		padding-top: 24px;
 		// margin-bottom:1rem;
 		margin-bottom: 0;
@@ -303,17 +280,17 @@
 	}
 }
 
-.ratings-container+.comments-list .comments-list-inner {
+.ratings-container + .comments-list .comments-list-inner {
 	// background-color: yellow;
 	margin-top: -16px;
 	border-top-width: 0;
 }
 
-.comment-replies {}
+.comment-replies {
+}
 
 .comment-replies-inner {
 	display: inline-block;
-
 }
 
 .comment {
@@ -328,7 +305,6 @@
 }
 
 .comment-author-thumb {
-
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -371,21 +347,19 @@
 }
 
 .comment-author {
-
 	display: inline-block;
 
 	a {
 		text-decoration: none;
 	}
 
-	font-size:13px;
-	font-weight:500;
-	line-height:18px;
-	margin:0 4px 2px 0;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 18px;
+	margin: 0 4px 2px 0;
 }
 
 .comment-date {
-
 	display: inline-block;
 
 	font-size: 13px;
@@ -397,7 +371,6 @@
 }
 
 .comment-text {
-
 	font-size: 14px;
 	line-height: 20px;
 	overflow-wrap: break-word;
@@ -408,12 +381,12 @@
 	// max-height:( 4 * 20px ) + 20px + 8px;	// (Lines * line-height) + line-height + paragraph-margin-top.
 	max-height: (5 * 20px);
 
-	@media screen and (min-width:1008px) {
+	@media screen and (min-width: 1008px) {
 		// max-height:( 3 * 20px ) + 20px + 8px;	// (Lines * line-height) + line-height + paragraph-margin-top.
 		max-height: (4 * 20px);
 	}
 
-	@media screen and (min-width:1216px) {
+	@media screen and (min-width: 1216px) {
 		// max-height:( 2 * 20px ) + 20px + 8px;	// (Lines * line-height) + line-height + paragraph-margin-top.
 		max-height: (3 * 20px);
 	}
@@ -445,11 +418,11 @@
 		display: none;
 	}
 
-	.comment-text-inner {}
+	.comment-text-inner {
+	}
 }
 
 .comment-actions {
-
 	position: relative;
 	display: inline-block;
 	width: 100%;
@@ -472,7 +445,7 @@
 	.comment-action {
 		display: inline-block;
 
-		~* {
+		~ * {
 			margin-left: 8px;
 		}
 	}
@@ -485,8 +458,7 @@
 
 	.reply-comment,
 	.remove-comment {
-
-		>button {
+		> button {
 			padding: 8px 16px;
 			font-size: 13px;
 			font-weight: 500;
@@ -498,17 +470,17 @@
 	}
 
 	.reply-comment {
-		>button {}
+		> button {
+		}
 	}
 
 	.remove-comment {
-
 		position: relative;
 		width: auto;
 		// float:right;
 		margin-top: 0.5rem;
 
-		>button {
+		> button {
 			color: #fff;
 		}
 
@@ -519,7 +491,6 @@
 			margin-bottom: 8px;
 
 			.popup-message-bottom {
-
 				button {
 					position: relative;
 					width: auto;
@@ -545,4 +516,5 @@
 	}
 }
 
-.comment-replies {}
+.comment-replies {
+}

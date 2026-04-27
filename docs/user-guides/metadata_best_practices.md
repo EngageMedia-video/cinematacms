@@ -19,7 +19,7 @@ Metadata provides essential information about your content. It helps:
 | Field           | Description                                                                 |
 |----------------|-----------------------------------------------------------------------------|
 | **Title**       | Use a clear, concise, and descriptive title. Avoid generic names.           |
-| **Description** | Write a compelling summary (under 60 words) of what the video is about. Often using film logline format is more compelling 
+| **Description** | Write a compelling summary (under 60 words) of what the video is about. Often using film logline format is more compelling
 | **More Information and Credits** | Use this to provide additional context about the video and/or include the cast and crew involved in the production
 | **Tags**        | Add relevant keywords (e.g., "climate change", "indigenous rights").        |
 | **Language**    | Specify the spoken and/or subtitle language(s) in the video.                |
@@ -34,7 +34,7 @@ Metadata provides essential information about your content. It helps:
 ## ✅ Best Practices
 
 ### 1. **Use Consistent Formatting**
-- Remove filename extensions like .mp4, .mov, etc. 
+- Remove filename extensions like .mp4, .mov, etc.
 - Capitalize titles correctly: `The Future of Forests`, not `the future of forests`
 - Separate tags with commas
 - Use standard country names and ISO language codes when possible
