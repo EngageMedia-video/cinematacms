@@ -70,3 +70,39 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: npm run build
+
+  pre-commit:
+    name: Pre-commit (lint & format)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.10
+        run: uv python install 3.10
+
+      - name: Setup Node.js (for Prettier hook)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache pre-commit hook environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit-${{ runner.os }}-
+
+      - name: Install Python dependencies
+        run: uv sync --all-extras
+
+      - name: Run pre-commit (make lint)
+        run: make lint
