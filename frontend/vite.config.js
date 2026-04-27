@@ -1,7 +1,9 @@
 import { defineConfig, transformWithEsbuild } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import svgr from 'vite-plugin-svgr';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import svgoConfig from './svgo.config.mjs';
 
 export default defineConfig({
 	plugins: [
@@ -24,6 +26,15 @@ export default defineConfig({
 			include: /\.(js|jsx)$/,
 			babel: {
 				plugins: ['styled-jsx/babel'],
+			},
+		}),
+		svgr({
+			include: '**/*.svg?react',
+			svgrOptions: {
+				plugins: ['@svgr/plugin-svgo', '@svgr/plugin-jsx'],
+				ref: true,
+				titleProp: true,
+				svgoConfig,
 			},
 		}),
 		tailwindcss(),

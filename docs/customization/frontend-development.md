@@ -134,6 +134,23 @@ The project configuration is defined in `config/cinemata.config.js`, which refer
 - `npm run build` - Build the project for production
 - `npm run clean-build` - Clean the build directory
 - `npm run serve-build` - Serve the built files locally
+- `npm run test:run` - Run frontend component tests with Vitest
+
+## Modern SVG Icons
+
+Modern-track SVG icons should use the shared Vite/SVGR pipeline instead of adding new static icon variants.
+
+- Shared icons live in `frontend/src/features/shared/icons/`
+- Icons in that folder are auto-registered during Vite dev/build
+- Consume them through `frontend/src/features/shared/components/Icon.jsx`
+- Keep legacy `MaterialIcon` and `frontend/src/static/images/icons/` usage unchanged unless you are intentionally migrating an older surface
+
+Filename convention:
+
+- `your-icon.svg` -> `yourIcon`
+- `notification-bell.svg` -> `notificationBell`
+
+See `docs/technical/frontend-modernization/svg-icon-system.md` for the full workflow and export rules.
 
 ## Creating New Components and Pages
 
