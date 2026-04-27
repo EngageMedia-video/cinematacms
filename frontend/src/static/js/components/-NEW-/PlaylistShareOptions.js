@@ -237,16 +237,19 @@ export function PlaylistShareOptions(props) {
 			}
 		}
 
-		if( navigator.clipboard && typeof navigator.clipboard.writeText === 'function' ){
-			navigator.clipboard.writeText(input.value).then(notifySuccess).catch(function(err){
-				// Some browsers reject writeText even on secure origins (e.g.,
-				// document not focused, permissions policy). Try the legacy
-				// path before giving up and surfacing the error.
-				copyViaExecCommand();
-				if( err ){
-					console.warn('clipboard.writeText failed, falling back to execCommand:', err);
-				}
-			});
+		if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+			navigator.clipboard
+				.writeText(input.value)
+				.then(notifySuccess)
+				.catch(function (err) {
+					// Some browsers reject writeText even on secure origins (e.g.,
+					// document not focused, permissions policy). Try the legacy
+					// path before giving up and surfacing the error.
+					copyViaExecCommand();
+					if (err) {
+						console.warn('clipboard.writeText failed, falling back to execCommand:', err);
+					}
+				});
 		} else {
 			copyViaExecCommand();
 		}

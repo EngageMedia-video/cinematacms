@@ -89,10 +89,10 @@ export function LazyLoadItemListSplit(props) {
 				PageStore.removeListener('document_visibility_change', onDocumentVisibilityChange);
 			}
 
-            handler.cancelAll();
-            setListHandler(null);
-        };
-    }, []);
+			handler.cancelAll();
+			setListHandler(null);
+		};
+	}, []);
 
 	// Clear error when data successfully loads
 	useEffect(() => {
