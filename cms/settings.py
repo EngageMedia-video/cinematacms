@@ -428,6 +428,15 @@ PASSWORD_BRUTE_FORCE_MAX_ATTEMPTS = 5
 PASSWORD_BRUTE_FORCE_WINDOW = 900  # 15 minutes
 TRUSTED_PROXIES = [proxy.strip() for proxy in os.getenv("TRUSTED_PROXIES", "127.0.0.1,::1").split(",") if proxy.strip()]
 
+# Shared secret required to access /health/ready from anonymous callers.
+# When empty, the endpoint is open to anyone who already passes the existing
+# privilege rule (direct-localhost or authenticated staff). When set, anonymous
+# external callers must present `X-Healthcheck-Token` matching this value or
+# they're rejected with 401 *before* the expensive checks run, which prevents
+# a small unauthenticated DoS surface. Set this in production and store the
+# same value in the deploy verifier's secrets (e.g. GitHub Actions).
+HEALTH_READY_TOKEN = os.getenv("HEALTH_READY_TOKEN", "")
+
 # Media password validation
 MEDIA_PASSWORD_MIN_LENGTH = 8
 

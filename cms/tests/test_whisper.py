@@ -5,7 +5,7 @@ from pathlib import Path
 from django.conf import settings
 from django.test import TestCase
 
-from .settings_utils import VALID_WHISPER_MODELS, get_whisper_cpp_paths
+from cms.settings_utils import VALID_WHISPER_MODELS, get_whisper_cpp_paths
 
 
 class WhisperCPPDirectoryTestCase(TestCase):

@@ -7,6 +7,7 @@ from django.urls import include, path
 from prometheus_client import CollectorRegistry, generate_latest
 from prometheus_client import multiprocess as prom_multiprocess
 
+from cms.health import live as health_live, ready as health_ready
 from cms.request_utils import get_client_ip
 
 
@@ -35,6 +36,8 @@ def metrics_view(request):
 
 urlpatterns = [
     path("metrics", metrics_view),
+    path("health/live", health_live),
+    path("health/ready", health_ready),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
     path("", include("notifications.urls")),
     path("", include("files.urls")),
