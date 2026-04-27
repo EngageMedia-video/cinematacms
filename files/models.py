@@ -342,6 +342,11 @@ class Media(models.Model):
             models.Index(fields=["uploaded_thumbnail"], name="idx_media_uploaded_thumb"),
             models.Index(fields=["uploaded_poster"], name="idx_media_uploaded_poster"),
             models.Index(fields=["sprites"], name="idx_media_sprites"),
+            # Support MyUploadsList: filter user, optional state/encoding_status, order -add_date.
+            # Created by migration 0017_add_my_uploads_indexes; declared here so the model
+            # matches the DB and makemigrations --check stays green.
+            models.Index(fields=["user", "state", "add_date"], name="media_user_state_date_idx"),
+            models.Index(fields=["user", "encoding_status"], name="media_user_encoding_idx"),
         ]
 
     def __str__(self):
