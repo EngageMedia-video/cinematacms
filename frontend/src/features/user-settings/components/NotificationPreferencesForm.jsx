@@ -138,6 +138,11 @@ export function NotificationPreferencesForm() {
 		if (isSuccess || isSaveError) reset();
 	}
 
+	// Global _buttons.scss forces `cursor: pointer` on `button` and
+	// `cursor: default` on `button:disabled`, which beats Tailwind's
+	// `disabled:cursor-not-allowed` utility. Inline styles win.
+	const disabledActionStyle = { cursor: !isDirty || isPending ? 'not-allowed' : 'pointer' };
+
 	function renderControl(row) {
 		if (row.status === 'coming_soon') return <StatusPill>Coming soon</StatusPill>;
 		if (row.status === 'always_on') return <StatusPill tone="accent">Always on</StatusPill>;
@@ -199,18 +204,19 @@ export function NotificationPreferencesForm() {
 					type="button"
 					onClick={handleReset}
 					disabled={!isDirty || isPending}
-					className="border-0 bg-transparent p-0 cursor-pointer text-sm text-content-link hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+					className="border-0 bg-transparent p-0 text-sm text-content-link hover:underline disabled:opacity-40"
+					style={disabledActionStyle}
 				>
 					Reset
 				</button>
 				{/* Inline styles on the save button are required because global
                     _buttons.scss overrides Tailwind @layer utilities for
-                    background-color, color, padding, border-radius and font on
-                    all button elements (see NotificationPage.jsx). */}
+                    background-color, color, padding, border-radius, font, and
+                    cursor on all button elements (see NotificationPage.jsx). */}
 				<button
 					type="submit"
 					disabled={!isDirty || isPending}
-					className="cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+					className="transition-all disabled:opacity-40"
 					style={{
 						padding: '6px 18px',
 						borderRadius: '9999px',
@@ -220,6 +226,7 @@ export function NotificationPreferencesForm() {
 						backgroundColor: 'var(--btn-primary-bg-color)',
 						color: '#fff',
 						boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+						...disabledActionStyle,
 					}}
 				>
 					{isPending ? 'Saving…' : 'Save changes'}
