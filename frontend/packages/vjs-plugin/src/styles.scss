@@ -1,12 +1,7 @@
-@use "sass:color";
-@use "sass:math";
+@use 'sass:color';
+@use 'sass:math';
 
-@mixin multiline_texts_excerpt(
-	$font-size: 1em,
-	$line-height: 1.15,
-	$lines-to-show: 2,
-	$bg-color: transparent
-) {
+@mixin multiline_texts_excerpt($font-size: 1em, $line-height: 1.15, $lines-to-show: 2, $bg-color: transparent) {
 	line-height: $line-height;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -324,7 +319,7 @@ $controlBarAnimationsDuration: 0.1s;
 }
 
 .video-js.vjs-mediacms .vjs-subtitles-control .vjs-icon-placeholder:before {
-	content: "\f10a"; /* closed-caption */
+	content: '\f10a'; /* closed-caption */
 }
 
 .video-js.vjs-mediacms .vjs-theater-mode-control .vjs-icon-placeholder {
@@ -334,14 +329,11 @@ $controlBarAnimationsDuration: 0.1s;
 }
 
 .video-js.vjs-mediacms .vjs-theater-mode-control .vjs-icon-placeholder:before {
-	content: "\f10c"; /* default-view */
+	content: '\f10c'; /* default-view */
 }
 
-.video-js.vjs-mediacms
-	.vjs-theater-mode
-	.vjs-theater-mode-control
-	.vjs-icon-placeholder:before {
-	content: "\f123"; /* theater-view */
+.video-js.vjs-mediacms .vjs-theater-mode .vjs-theater-mode-control .vjs-icon-placeholder:before {
+	content: '\f123'; /* theater-view */
 }
 
 .video-js.vjs-mediacms {
@@ -400,13 +392,13 @@ $controlBarAnimationsDuration: 0.1s;
 			}
 
 			&:before {
-				content: "";
+				content: '';
 				border-radius: 50%;
 				border: 4px solid #fff;
 			}
 
 			&:after {
-				content: "!";
+				content: '!';
 			}
 
 			.vjs-modal-dialog-content {
@@ -458,7 +450,7 @@ $controlBarAnimationsDuration: 0.1s;
 	&.vjs-subtitles-on {
 		.vjs-subtitles-control {
 			.vjs-icon-placeholder:after {
-				content: "";
+				content: '';
 				display: block;
 				position: absolute;
 				width: 45%;
@@ -490,8 +482,8 @@ $controlBarAnimationsDuration: 0.1s;
 			fill: #fff;
 			background-color: rgb(8, 8, 8) !important;
 			background-color: rgba(8, 8, 8, 0.75) !important;
-			font-family: Roboto, "Arial Unicode Ms", Arial, Helvetica, Verdana,
-				"PT Sans Caption", sans-serif !important;
+			font-family:
+				Roboto, 'Arial Unicode Ms', Arial, Helvetica, Verdana, 'PT Sans Caption', sans-serif !important;
 		}
 	}
 
@@ -501,7 +493,7 @@ $controlBarAnimationsDuration: 0.1s;
 	}
 
 	.vjs-settings-panel {
-		.vjs-setting-panel-title > [role="button"] {
+		.vjs-setting-panel-title > [role='button'] {
 			position: relative;
 
 			&:focus {
@@ -572,7 +564,7 @@ $controlBarAnimationsDuration: 0.1s;
 				font-size: 118%;
 				font-weight: 500;
 
-				&[role="button"] {
+				&[role='button'] {
 					padding: 0.5em 1em 0.5em 0;
 					margin-left: 0.75em;
 					margin-bottom: 0.25em 0.25em 0.5em;
@@ -584,8 +576,8 @@ $controlBarAnimationsDuration: 0.1s;
 					cursor: pointer;
 
 					&:before {
-						content: "\f114"; /* navigate-before */
-						font-family: "MediaCmsVideoJsIcons";
+						content: '\f114'; /* navigate-before */
+						font-family: 'MediaCmsVideoJsIcons';
 						font-size: 1.25em;
 						vertical-align: text-bottom;
 						padding-right: 0.5em;
@@ -620,8 +612,8 @@ $controlBarAnimationsDuration: 0.1s;
 					// position:relative;
 
 					&:after {
-						content: "\f10d"; /* done */
-						font-family: "MediaCmsVideoJsIcons";
+						content: '\f10d'; /* done */
+						font-family: 'MediaCmsVideoJsIcons';
 						font-size: 1.25em;
 						font-weight: normal;
 						vertical-align: text-bottom;
@@ -677,8 +669,8 @@ $controlBarAnimationsDuration: 0.1s;
 						padding-left: 0.75em;
 
 						&:before {
-							content: "\f10d"; /* done */
-							font-family: "MediaCmsVideoJsIcons";
+							content: '\f10d'; /* done */
+							font-family: 'MediaCmsVideoJsIcons';
 							font-size: 1.25em;
 							// vertical-align:text-bottom;
 							line-height: 0.75;
@@ -712,7 +704,7 @@ $controlBarAnimationsDuration: 0.1s;
 	.vjs-button.vjs-next-button {
 		.vjs-icon-placeholder {
 			&:before {
-				content: "\f11f";
+				content: '\f11f';
 			}
 		}
 	}
@@ -720,7 +712,7 @@ $controlBarAnimationsDuration: 0.1s;
 	.vjs-button.vjs-previous-button {
 		.vjs-icon-placeholder {
 			&:before {
-				content: "\f120";
+				content: '\f120';
 			}
 		}
 	}
@@ -763,29 +755,17 @@ $controlBarAnimationsDuration: 0.1s;
 		display: block;
 		pointer-events: none;
 		background: rgba(#000, 0.1);
-		background: -moz-linear-gradient(
-			top,
-			rgba(#000, 0) 0%,
-			rgba(#000, 0.55) 100%
-		);
+		background: -moz-linear-gradient(top, rgba(#000, 0) 0%, rgba(#000, 0.55) 100%);
 		background: -webkit-gradient(
 			left top,
 			left bottom,
 			color-stop(0%, rgba(#000, 0)),
 			color-stop(100%, rgba(#000, 0.55))
 		);
-		background: -webkit-linear-gradient(
-			top,
-			rgba(#000, 0) 0%,
-			rgba(#000, 0.55) 100%
-		);
+		background: -webkit-linear-gradient(top, rgba(#000, 0) 0%, rgba(#000, 0.55) 100%);
 		background: -o-linear-gradient(top, rgba(#000, 0) 0%, rgba(#000, 0.55) 100%);
 		background: -ms-linear-gradient(top, rgba(#000, 0) 0%, rgba(#000, 0.55) 100%);
-		background: linear-gradient(
-			to bottom,
-			rgba(#000, 0) 0%,
-			rgba(#000, 0.55) 100%
-		);
+		background: linear-gradient(to bottom, rgba(#000, 0) 0%, rgba(#000, 0.55) 100%);
 	}
 
 	.vjs-control-bar {
@@ -804,7 +784,7 @@ $controlBarAnimationsDuration: 0.1s;
 			&[key-focus] {
 				&:focus {
 					&:after {
-						content: "";
+						content: '';
 						position: absolute;
 						top: 0;
 						left: 0;
@@ -959,7 +939,7 @@ $controlBarAnimationsDuration: 0.1s;
 			&[key-focus] {
 				&:focus {
 					&:after {
-						content: "";
+						content: '';
 						position: absolute;
 						top: -3px;
 						left: -3px;
@@ -1094,7 +1074,7 @@ $controlBarAnimationsDuration: 0.1s;
 			&[key-focus] {
 				&:focus {
 					&:after {
-						content: "";
+						content: '';
 						position: absolute;
 						top: -1em;
 						left: -0.5em;
@@ -1109,8 +1089,8 @@ $controlBarAnimationsDuration: 0.1s;
 		}
 
 		.vjs-volume-bar.vjs-slider-horizontal {
-			margin: (0.5 * ($control-bar-height - $volume-horizontal-slider-height))
-				0.45em (0.5 * ($control-bar-height - $volume-horizontal-slider-height)) 0;
+			margin: (0.5 * ($control-bar-height - $volume-horizontal-slider-height)) 0.45em
+				(0.5 * ($control-bar-height - $volume-horizontal-slider-height)) 0;
 		}
 
 		.vjs-volume-bar.vjs-slider-horizontal,
@@ -1165,7 +1145,7 @@ $controlBarAnimationsDuration: 0.1s;
 			display: block;
 
 			&:after {
-				content: "";
+				content: '';
 				font-family: VideoJS;
 				font-weight: normal;
 				font-style: normal;
@@ -1175,44 +1155,44 @@ $controlBarAnimationsDuration: 0.1s;
 
 		&.just-paused {
 			span:after {
-				content: "\f103"; /* pause */
+				content: '\f103'; /* pause */
 			}
 		}
 
 		&.started-playing {
 			span:after {
-				content: "\f101"; /* play */
+				content: '\f101'; /* play */
 			}
 		}
 
 		&.volume-high {
 			span:after {
-				content: "\f107"; /* volume-high */
+				content: '\f107'; /* volume-high */
 			}
 		}
 
 		&.volume-mid {
 			span:after {
-				content: "\f106"; /* volume-mid */
+				content: '\f106'; /* volume-mid */
 			}
 		}
 
 		&.volume-low {
 			span:after {
-				content: "\f105"; /* volume-low */
+				content: '\f105'; /* volume-low */
 			}
 		}
 
 		&.volume-mute {
 			span:after {
-				content: "\f104"; /* volume-mute */
+				content: '\f104'; /* volume-mute */
 			}
 		}
 
 		&.moving-backward {
 			span {
 				&:after {
-					content: "\f116";
+					content: '\f116';
 				}
 			}
 		}
@@ -1222,7 +1202,7 @@ $controlBarAnimationsDuration: 0.1s;
 				transform: scale(-1, 1);
 
 				&:after {
-					content: "\f116";
+					content: '\f116';
 				}
 			}
 		}
@@ -1230,7 +1210,7 @@ $controlBarAnimationsDuration: 0.1s;
 		&.moving-backward,
 		&.moving-forward {
 			&:before {
-				content: "5";
+				content: '5';
 				position: absolute;
 				top: 2px;
 				left: 0;
@@ -1246,7 +1226,7 @@ $controlBarAnimationsDuration: 0.1s;
 		&.play_previous {
 			span {
 				&:after {
-					content: "\f120";
+					content: '\f120';
 				}
 			}
 		}
@@ -1254,7 +1234,7 @@ $controlBarAnimationsDuration: 0.1s;
 		&.play_next {
 			span {
 				&:after {
-					content: "\f11f";
+					content: '\f11f';
 				}
 			}
 		}
@@ -1440,22 +1420,8 @@ $controlBarAnimationsDuration: 0.1s;
 
 		.vjs-volume-panel {
 			.vjs-volume-bar.vjs-slider-horizontal {
-				margin: (
-						0.5 *
-							(
-								$control-bar-fullscreen-height -
-									$volume-horizontal-slider-fullscreen-height
-							)
-					)
-					0.45em
-					(
-						0.5 *
-							(
-								$control-bar-fullscreen-height -
-									$volume-horizontal-slider-fullscreen-height
-							)
-					)
-					0;
+				margin: (0.5 * ($control-bar-fullscreen-height - $volume-horizontal-slider-fullscreen-height)) 0.45em
+					(0.5 * ($control-bar-fullscreen-height - $volume-horizontal-slider-fullscreen-height)) 0;
 			}
 
 			.vjs-volume-bar.vjs-slider-horizontal,
@@ -1678,7 +1644,7 @@ $controlBarAnimationsDuration: 0.1s;
 			&.vjs-playing {
 				.vjs-icon-play {
 					&:before {
-						content: "\f103"; /* pause */
+						content: '\f103'; /* pause */
 					}
 				}
 			}
@@ -1690,7 +1656,7 @@ $controlBarAnimationsDuration: 0.1s;
 
 				.vjs-icon-play {
 					&:before {
-						content: "\f116";
+						content: '\f116';
 					}
 				}
 			}
@@ -1963,7 +1929,9 @@ $controlBarAnimationsDuration: 0.1s;
 				.vjs-preview-thumb {
 					opacity: 0;
 					visibility: hidden;
-					transition: visibility 1s linear, opacity 1s linear;
+					transition:
+						visibility 1s linear,
+						opacity 1s linear;
 				}
 			}
 		}
@@ -1993,7 +1961,6 @@ $controlBarAnimationsDuration: 0.1s;
 		border: 0;
 		border-radius: 0;
 		opacity: 1;
-
 
 		-webkit-animation-delay: 0.44s;
 		animation-delay: 0.44s;
@@ -2031,10 +1998,8 @@ $controlBarAnimationsDuration: 0.1s;
 			position: absolute;
 			width: 100%;
 			height: 100%;
-			-webkit-animation: spinner-ease-spin 5332ms cubic-bezier(0.4, 0, 0.2, 1)
-				infinite both;
-			animation: spinner-ease-spin 5332ms cubic-bezier(0.4, 0, 0.2, 1) infinite
-				both;
+			-webkit-animation: spinner-ease-spin 5332ms cubic-bezier(0.4, 0, 0.2, 1) infinite both;
+			animation: spinner-ease-spin 5332ms cubic-bezier(0.4, 0, 0.2, 1) infinite both;
 		}
 
 		.spinner-left,
@@ -2064,10 +2029,8 @@ $controlBarAnimationsDuration: 0.1s;
 				left: 0;
 				right: -100%;
 				border-right-color: transparent;
-				-webkit-animation: spinner-left-spin 1333ms cubic-bezier(0.4, 0, 0.2, 1)
-					infinite both;
-				animation: spinner-left-spin 1333ms cubic-bezier(0.4, 0, 0.2, 1) infinite
-					both;
+				-webkit-animation: spinner-left-spin 1333ms cubic-bezier(0.4, 0, 0.2, 1) infinite both;
+				animation: spinner-left-spin 1333ms cubic-bezier(0.4, 0, 0.2, 1) infinite both;
 			}
 		}
 
@@ -2079,10 +2042,8 @@ $controlBarAnimationsDuration: 0.1s;
 				left: -100%;
 				right: 0;
 				border-left-color: transparent;
-				-webkit-animation: spinner-right-spin 1333ms cubic-bezier(0.4, 0, 0.2, 1)
-					infinite both;
-				animation: spinner-right-spin 1333ms cubic-bezier(0.4, 0, 0.2, 1 1) infinite
-					both;
+				-webkit-animation: spinner-right-spin 1333ms cubic-bezier(0.4, 0, 0.2, 1) infinite both;
+				animation: spinner-right-spin 1333ms cubic-bezier(0.4, 0, 0.2, 1 1) infinite both;
 			}
 		}
 	}
@@ -2091,8 +2052,7 @@ $controlBarAnimationsDuration: 0.1s;
 		.vjs-loading-spinner {
 			width: $fullscreen-spinner-container-width;
 			height: $fullscreen-spinner-container-width;
-			margin: (-0.5 * $fullscreen-spinner-container-width) 0 0
-				(-0.5 * $fullscreen-spinner-container-width);
+			margin: (-0.5 * $fullscreen-spinner-container-width) 0 0 (-0.5 * $fullscreen-spinner-container-width);
 
 			.spinner {
 				margin-left: (-0.5 * $fullscreen-spinner-container-width);

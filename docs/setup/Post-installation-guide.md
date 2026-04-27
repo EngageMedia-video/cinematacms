@@ -31,7 +31,7 @@ For a video to appear publicly:
 1. Ensure the state is set to public
 2. Ensure the video is reviewed (is_reviewed = true)
 These settings are required even for featured videos.
-   
+
 ## Troubleshooting
 
 ### No Videos Appear After Upload
@@ -59,4 +59,3 @@ Check the encoding status:
  3. At least one video marked as featured, reviewed, and public
  4. No critical errors in encoding logs
  5. Homepage loads correctly with featured content visible
-

@@ -20,7 +20,6 @@ import './styles/DemoPage.scss';
 
 const wideLayoutBreakpoint = 1216;
 
-
 // // Setup mock MediaCMS for the demo page
 // if (typeof window.MediaCMS === 'undefined') {
 // 	window.MediaCMS = {
@@ -71,71 +70,73 @@ const wideLayoutBreakpoint = 1216;
 // Actual comments data
 const actualComments = [
 	{
-		add_date: "2024-12-22T11:55:56.797092-05:00",
-		text: "0:05 testing if I can timestamp in comments",
+		add_date: '2024-12-22T11:55:56.797092-05:00',
+		text: '0:05 testing if I can timestamp in comments',
 		parent: null,
-		author_thumbnail_url: "/media/userlogos/2024/12/22/IMG_7818.jpeg",
-		author_profile: "/user/dripps/",
-		author_name: "Zachary Dripps",
-		media_url: "/view?m=kHd7EKAVH",
-		uid: "2b9b34ac-cd37-441d-999a-1917599ee851"
+		author_thumbnail_url: '/media/userlogos/2024/12/22/IMG_7818.jpeg',
+		author_profile: '/user/dripps/',
+		author_name: 'Zachary Dripps',
+		media_url: '/view?m=kHd7EKAVH',
+		uid: '2b9b34ac-cd37-441d-999a-1917599ee851',
 	},
 	{
-		add_date: "2025-03-02T12:49:20.928722-05:00",
-		text: "1111",
+		add_date: '2025-03-02T12:49:20.928722-05:00',
+		text: '1111',
 		parent: null,
-		author_thumbnail_url: "/media/userlogos/user.jpg",
-		author_profile: "/user/habiburnatore/",
-		author_name: "afiya",
-		media_url: "/view?m=kHd7EKAVH",
-		uid: "d29ec05c-9126-4d1b-b68e-800c7e5ce9cd"
-	}
+		author_thumbnail_url: '/media/userlogos/user.jpg',
+		author_profile: '/user/habiburnatore/',
+		author_name: 'afiya',
+		media_url: '/view?m=kHd7EKAVH',
+		uid: 'd29ec05c-9126-4d1b-b68e-800c7e5ce9cd',
+	},
 ];
 
 // Actual media data
 const actualMediaData = {
-	url: "https://stage.cinemata.org/view?m=1rCGGuMR4",
-	user: "admin",
-	title: "4ec2c228d8b240579792587d1626e184.KaDodoy_1080_H264.mp4",
-	description: "",
-	summary: "KaDodoy",
-	add_date: "2025-05-02T19:31:30+01:00",
-	edit_date: "2025-05-13T09:41:48.638740+01:00",
-	media_type: "video",
-	state: "public",
+	url: 'https://stage.cinemata.org/view?m=1rCGGuMR4',
+	user: 'admin',
+	title: '4ec2c228d8b240579792587d1626e184.KaDodoy_1080_H264.mp4',
+	description: '',
+	summary: 'KaDodoy',
+	add_date: '2025-05-02T19:31:30+01:00',
+	edit_date: '2025-05-13T09:41:48.638740+01:00',
+	media_type: 'video',
+	state: 'public',
 	duration: 301,
-	thumbnail_url: "/media/original/thumbnails/user/admin/a1b0bb647d5e4146bfa4ed51e224edb9_64dWHtD.4ec2c228d8b240579792587d1626e184.KaDodoy_1080_H264.mp4.jpg",
-	poster_url: "/media/original/thumbnails/user/admin/a1b0bb647d5e4146bfa4ed51e224edb9_PTdgsHA.4ec2c228d8b240579792587d1626e184.KaDodoy_1080_H264.mp4.jpg",
-	author_name: "CinemataCMS",
-	author_profile: "/user/admin/",
-	author_thumbnail: "/media/userlogos/user.jpg",
+	thumbnail_url:
+		'/media/original/thumbnails/user/admin/a1b0bb647d5e4146bfa4ed51e224edb9_64dWHtD.4ec2c228d8b240579792587d1626e184.KaDodoy_1080_H264.mp4.jpg',
+	poster_url:
+		'/media/original/thumbnails/user/admin/a1b0bb647d5e4146bfa4ed51e224edb9_PTdgsHA.4ec2c228d8b240579792587d1626e184.KaDodoy_1080_H264.mp4.jpg',
+	author_name: 'CinemataCMS',
+	author_profile: '/user/admin/',
+	author_thumbnail: '/media/userlogos/user.jpg',
 	views: 9,
 	likes: 1,
 	dislikes: 0,
 	enable_comments: true,
 	categories_info: [
 		{
-			title: "Art",
-			url: "/search?c=Art"
-		}
+			title: 'Art',
+			url: '/search?c=Art',
+		},
 	],
 	media_country_info: [
 		{
-			title: "International",
-			url: "/search?country=International"
-		}
+			title: 'International',
+			url: '/search?country=International',
+		},
 	],
 	media_language_info: [
 		{
-			title: "English",
-			url: "/search?language=English"
-		}
-	]
+			title: 'English',
+			url: '/search?language=English',
+		},
+	],
 };
 
 /**
-	* DemoPage component using hook pattern, adapted to be similar to _VideoMediaPage
-	*/
+ * DemoPage component using hook pattern, adapted to be similar to _VideoMediaPage
+ */
 export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
 	// Initialize the page
 	usePage('demo');
@@ -149,17 +150,17 @@ export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
 					_currentValue: {
 						signin: '/signin',
 						profile: {
-							media: ['/user/admin/']
-						}
-					}
+							media: ['/user/admin/'],
+						},
+					},
 				};
 			}
 
 			if (typeof window.SiteContext === 'undefined') {
 				window.SiteContext = {
 					_currentValue: {
-						url: 'https://stage.cinemata.org'
-					}
+						url: 'https://stage.cinemata.org',
+					},
 				};
 			}
 
@@ -201,8 +202,8 @@ export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
 	const [isVideoMedia, setIsVideoMedia] = useState(false);
 	const [theaterMode, setTheaterMode] = useState(false);
 	const [pagePlaylistLoaded, setPagePlaylistLoaded] = useState(false);
-	const [pagePlaylistData, setPagePlaylistData] = useState(
-		() => typeof MediaPageStore !== 'undefined' ? MediaPageStore.get('playlist-data') : null
+	const [pagePlaylistData, setPagePlaylistData] = useState(() =>
+		typeof MediaPageStore !== 'undefined' ? MediaPageStore.get('playlist-data') : null
 	);
 	const [currentMediaData, setCurrentMediaData] = useState(null);
 
@@ -252,7 +253,11 @@ export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
 	// useEffect for componentDidMount and componentWillUnmount equivalent
 	useEffect(() => {
 		// Ensure stores are available before proceeding
-		if (typeof MediaPageActions !== 'undefined' && typeof PageStore !== 'undefined' && typeof MediaPageStore !== 'undefined') {
+		if (
+			typeof MediaPageActions !== 'undefined' &&
+			typeof PageStore !== 'undefined' &&
+			typeof MediaPageStore !== 'undefined'
+		) {
 			const demoMediaId = '1rCGGuMR4'; // Extracted from previous hardcoded mediaData
 
 			// Ensure window.MediaCMS object exists
@@ -293,7 +298,6 @@ export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
 		};
 	}, [handleWindowResize, handleMediaLoad, handleMediaLoadError, handlePagePlaylistLoad, handleViewerModeChange]);
 
-
 	const viewerClassname = `cf viewer-section${theaterMode ? ' theater-mode' : ' viewer-wide'}`;
 	const viewerNestedClassname = `viewer-section-nested${theaterMode ? ' viewer-section' : ''}`;
 
@@ -311,32 +315,28 @@ export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
 				<p>Loading media information...</p>
 			</div>
 		);
-	}
-	else {
+	} else {
 		pageSpecificContent = (
 			<div className={viewerClassname}>
 				<div className="viewer-container">
 					{mediaLoaded && currentMediaData ? (
 						<SiteConsumer>
-							{site => (
-								<VideoViewer
-									data={currentMediaData}
-									siteUrl={site.url}
-									inEmbed={false}
-								/>
-							)}
+							{(site) => <VideoViewer data={currentMediaData} siteUrl={site.url} inEmbed={false} />}
 						</SiteConsumer>
 					) : (
 						<p>Loading player...</p>
 					)}
 				</div>
 				<div className={viewerNestedClassname}>
-					{(!wideLayout || (isVideoMedia && theaterMode)) ? (
+					{!wideLayout || (isVideoMedia && theaterMode) ? (
 						<>
 							{mediaLoaded && <ViewerInfoVideo />}
 							{pagePlaylistLoaded && currentMediaData && typeof MediaPageStore !== 'undefined' && (
 								<>
-									<ViewerSidebar mediaId={MediaPageStore.get('media-id')} playlistData={pagePlaylistData} />
+									<ViewerSidebar
+										mediaId={MediaPageStore.get('media-id')}
+										playlistData={pagePlaylistData}
+									/>
 									<div className="comments-section">
 										<CommentsList />
 									</div>
@@ -347,7 +347,10 @@ export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
 						<>
 							{pagePlaylistLoaded && currentMediaData && typeof MediaPageStore !== 'undefined' && (
 								<>
-									<ViewerSidebar mediaId={MediaPageStore.get('media-id')} playlistData={pagePlaylistData} />
+									<ViewerSidebar
+										mediaId={MediaPageStore.get('media-id')}
+										playlistData={pagePlaylistData}
+									/>
 									<div className="comments-section">
 										<CommentsList />
 									</div>
@@ -361,13 +364,14 @@ export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
 		);
 	}
 
-
 	const content = (
 		<div className="demo-page">
 			<h1 className="demo-page__title">{pageTitle}</h1>
 
 			<div className="demo-page__warning">
-				<p>This is a demo page showcasing a video viewer component, adapted with VideoMediaPage functionality.</p>
+				<p>
+					This is a demo page showcasing a video viewer component, adapted with VideoMediaPage functionality.
+				</p>
 			</div>
 
 			{/* Always visible comments section */}
@@ -382,15 +386,11 @@ export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
 		</div>
 	);
 
-	return (
-		<PageLayout>
-			{content}
-		</PageLayout>
-	);
+	return <PageLayout>{content}</PageLayout>;
 };
 
 DemoPage.propTypes = {
-	pageTitle: PropTypes.string
+	pageTitle: PropTypes.string,
 };
 
 export default DemoPage;

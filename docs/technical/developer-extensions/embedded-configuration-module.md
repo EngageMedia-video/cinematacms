@@ -21,9 +21,9 @@ EMBEDDED = {
   video: {
     dimensions: {
       width: 560,
-      widthUnit: 'px',   
+      widthUnit: 'px',  
       height: 315,
-      heightUnit: 'px', 
+      heightUnit: 'px',
     },
   }
 }

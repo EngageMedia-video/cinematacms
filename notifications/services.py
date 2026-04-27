@@ -1,7 +1,6 @@
 import logging
 from datetime import timedelta
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
@@ -68,21 +67,25 @@ class NotificationService:
             return True
 
         if prefs.filter_topics:
-            topics = media_topic_slugs if media_topic_slugs is not None else set(media.topics.values_list("slug", flat=True))
+            topics = (
+                media_topic_slugs if media_topic_slugs is not None else set(media.topics.values_list("slug", flat=True))
+            )
             if not topics.intersection(set(prefs.filter_topics)):
                 return False
 
         if prefs.filter_categories:
-            categories = media_category_slugs if media_category_slugs is not None else set(media.category.values_list("slug", flat=True))
+            categories = (
+                media_category_slugs
+                if media_category_slugs is not None
+                else set(media.category.values_list("slug", flat=True))
+            )
             if not categories.intersection(set(prefs.filter_categories)):
                 return False
 
         return True
 
     @classmethod
-    def _create_notification(
-        cls, recipient, actor, notification_type, message, action_url, metadata, media=None
-    ):
+    def _create_notification(cls, recipient, actor, notification_type, message, action_url, metadata, media=None):
         # 1. Self-notification guard
         if actor and recipient == actor:
             return None
@@ -230,18 +233,11 @@ class NotificationService:
         """
         from users.models import Channel
 
-        follower_ids = (
-            Channel.objects.filter(user=actor)
-            .values_list("subscribers", flat=True)
-            .distinct()
-        )
+        follower_ids = Channel.objects.filter(user=actor).values_list("subscribers", flat=True).distinct()
         followers = list(User.objects.filter(id__in=follower_ids, is_active=True).exclude(id=actor.id))
 
         # Prefetch all preferences in one query to avoid 2 DB hits per follower
-        prefs_map = {
-            p.user_id: p
-            for p in NotificationPreference.objects.filter(user_id__in=[f.id for f in followers])
-        }
+        prefs_map = {p.user_id: p for p in NotificationPreference.objects.filter(user_id__in=[f.id for f in followers])}
 
         # Precompute media slugs once to avoid N queries in the loop
         topic_slugs = set(media.topics.values_list("slug", flat=True))

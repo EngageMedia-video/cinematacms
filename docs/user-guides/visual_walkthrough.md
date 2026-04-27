@@ -72,4 +72,3 @@ Go to the **Categories** section to see a list or table of all videos categories
 Use the search bar to find videos by title.
 
 ![Search bar](./search-bar.PNG)
-

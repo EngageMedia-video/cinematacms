@@ -4,11 +4,11 @@ let BASE_URL = null;
 let ENDPOINTS = null;
 
 function endpointsIter(ret, endpoints) {
-	const baseUrl = BASE_URL.toString().replace(/\/+$/, "");
+	const baseUrl = BASE_URL.toString().replace(/\/+$/, '');
 
 	for (let k in endpoints) {
-		if ("string" === typeof endpoints[k]) {
-			ret[k] = baseUrl + "/" + endpoints[k].replace(/^\//g, "");
+		if ('string' === typeof endpoints[k]) {
+			ret[k] = baseUrl + '/' + endpoints[k].replace(/^\//g, '');
 		} else {
 			endpointsIter(ret[k], endpoints[k]);
 		}
@@ -27,17 +27,17 @@ export function init(base_url, endpoints) {
 
 	ENDPOINTS = formatEndpoints({
 		media: endpoints.media,
-		featured: endpoints.media + "?show=featured",
-		recommended: endpoints.media + "?show=recommended",
+		featured: endpoints.media + '?show=featured',
+		recommended: endpoints.media + '?show=recommended',
 		playlists: endpoints.playlists,
 		users: endpoints.members,
-		topmessage: "topmessage",
-		homepagepopup: "homepagepopup",
-		indexfeatured: "indexfeatured",
+		topmessage: 'topmessage',
+		homepagepopup: 'homepagepopup',
+		indexfeatured: 'indexfeatured',
 		user: {
 			liked: endpoints.liked,
 			history: endpoints.history,
-			playlists: endpoints.playlists + "?author=",
+			playlists: endpoints.playlists + '?author=',
 		},
 		archive: {
 			tags: endpoints.tags,
@@ -53,13 +53,13 @@ export function init(base_url, endpoints) {
 			myUploads: endpoints.my_uploads,
 		},
 		search: {
-			query: endpoints.search + "?q=",
-			titles: endpoints.search + "?show=titles&q=",
-			tag: endpoints.search + "?t=",
-			category: endpoints.search + "?c=",
-			topic: endpoints.search + "?topic=",
-			country: endpoints.search + "?country=",
-			language: endpoints.search + "?language=",
+			query: endpoints.search + '?q=',
+			titles: endpoints.search + '?show=titles&q=',
+			tag: endpoints.search + '?t=',
+			category: endpoints.search + '?c=',
+			topic: endpoints.search + '?topic=',
+			country: endpoints.search + '?country=',
+			language: endpoints.search + '?language=',
 		},
 	});
 }

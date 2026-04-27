@@ -1,3 +1,3 @@
-import { toBe, toBeTrue } from "./functions";
+import { toBe, toBeTrue } from './functions';
 
-toBeTrue( "", true );
+toBeTrue('', true);

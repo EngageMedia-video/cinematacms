@@ -73,7 +73,7 @@ init({
   }
 });
 
-console.log(settings().latest.enabled); 
+console.log(settings().latest.enabled);
 console.log(settings().latest.title);  
 console.log(settings().history.enabled);
 

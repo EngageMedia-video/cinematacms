@@ -1,7 +1,6 @@
 let SIDEBAR = null;
 
-export function init( settings ){
-
+export function init(settings) {
 	// TODO: Continue here
 
 	SIDEBAR = {
@@ -9,18 +8,17 @@ export function init( settings ){
 		hideTagsLink: false,
 	};
 
-	if( void 0 !== settings ){
-
-		if( 'boolean' === typeof settings.hideHomeLink ){
+	if (void 0 !== settings) {
+		if ('boolean' === typeof settings.hideHomeLink) {
 			SIDEBAR.hideHomeLink = settings.hideHomeLink;
 		}
 
-		if( 'boolean' === typeof settings.hideTagsLink ){
+		if ('boolean' === typeof settings.hideTagsLink) {
 			SIDEBAR.hideTagsLink = settings.hideTagsLink;
 		}
 	}
 }
 
-export function settings(){
+export function settings() {
 	return SIDEBAR;
 }

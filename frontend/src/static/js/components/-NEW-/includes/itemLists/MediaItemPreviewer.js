@@ -1,12 +1,18 @@
 import { removeClassname, addClassname } from '../../functions/dom';
 import PageStore from '../../../../pages/_PageStore';
 
-Array.isArray = Array.isArray || function (arg) {
-	'use strict';
-	return Object.prototype.toString.call(arg) === '[object Array]';
-};
+Array.isArray =
+	Array.isArray ||
+	function (arg) {
+		'use strict';
+		return Object.prototype.toString.call(arg) === '[object Array]';
+	};
 
-const requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+const requestAnimationFrame =
+	window.requestAnimationFrame ||
+	window.mozRequestAnimationFrame ||
+	window.webkitRequestAnimationFrame ||
+	window.msRequestAnimationFrame;
 const cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame;
 
 var hoverTimeoutID, requestAnimationFrameID;
@@ -16,13 +22,11 @@ var CSS_selectors = {
 };
 
 var DataAttributes = {
-	mediaPreviewSrc: 'data-src'
+	mediaPreviewSrc: 'data-src',
 };
 
 export default class MediaItemPreviewer {
-
 	constructor(extensions) {
-
 		if (!Array.isArray(extensions)) {
 			return null;
 		}
@@ -30,15 +34,12 @@ export default class MediaItemPreviewer {
 		this.extensions = {};
 
 		function onImageLoad(ins, evt) {
-
 			requestAnimationFrameID = requestAnimationFrame(function () {
-
 				if (ins.wrapperItem) {
 					addClassname(ins.wrapperItem, 'on-hover-preview');
 					requestAnimationFrameID = void 0;
 					ins.wrapperItem = void 0;
 				}
-
 			});
 		}
 
@@ -93,7 +94,6 @@ export default class MediaItemPreviewer {
 		}
 
 		if (this.extensions.anim.length || this.extensions.fallback.elem) {
-
 			this.element = document.createElement('picture');
 
 			if (this.extensions.anim.length) {
@@ -119,7 +119,6 @@ export default class MediaItemPreviewer {
 	}
 
 	newImage(src, width, height, item) {
-
 		let i;
 
 		if (void 0 !== hoverTimeoutID) {
@@ -131,10 +130,10 @@ export default class MediaItemPreviewer {
 		}
 
 		/*
-			* Helper function to construct versioned URLs with extensions
-			*/
+		 * Helper function to construct versioned URLs with extensions
+		 */
 		function buildVersionedUrl(baseUrl, extension) {
-			if (!baseUrl) return null;  // Add null check
+			if (!baseUrl) return null; // Add null check
 
 			try {
 				const urlParts = baseUrl.split('?');
@@ -143,18 +142,21 @@ export default class MediaItemPreviewer {
 				return pathPart + '.' + extension + queryPart;
 			} catch (error) {
 				console.warn('URL parsing error:', error);
-				return baseUrl + '.' + extension;  // Fallback
+				return baseUrl + '.' + extension; // Fallback
 			}
 		}
 
 		/*
-			* Set source (src).
-			*/
+		 * Set source (src).
+		 */
 
 		if (this.extensions.anim.length) {
 			i = 0;
 			while (i < this.extensions.anim.length) {
-				this.extensions.anim[i].elem.setAttribute('srcset', buildVersionedUrl(src, this.extensions.anim[i].type));
+				this.extensions.anim[i].elem.setAttribute(
+					'srcset',
+					buildVersionedUrl(src, this.extensions.anim[i].type)
+				);
 				i += 1;
 			}
 		}
@@ -163,8 +165,8 @@ export default class MediaItemPreviewer {
 		}
 
 		/*
-			* Set dimensions (src).
-			*/
+		 * Set dimensions (src).
+		 */
 
 		if (this.extensions.fallback.elem) {
 			this.extensions.fallback.elem.setAttribute('width', width + 'px');
@@ -172,26 +174,27 @@ export default class MediaItemPreviewer {
 		}
 
 		/*
-			* Append previewer.
-			*/
+		 * Append previewer.
+		 */
 
 		item.querySelector(CSS_selectors.mediaItemPreviewer).appendChild(this.element);
 
 		/*
-			* Set previewer's container element.
-			*/
+		 * Set previewer's container element.
+		 */
 
 		this.wrapperItem = item;
 	}
 
 	onMediaItemMouseEnter(ins, evt) {
-
 		var elem, src;
 
 		if (ins.image) {
-
 			elem = evt.target.querySelector(CSS_selectors.mediaItemPreviewer);
-			src = PageStore.get('config-site').url + '/' + elem.getAttribute(DataAttributes.mediaPreviewSrc).replace(/^\//g, '');
+			src =
+				PageStore.get('config-site').url +
+				'/' +
+				elem.getAttribute(DataAttributes.mediaPreviewSrc).replace(/^\//g, '');
 
 			hoverTimeoutID = setTimeout(function () {
 				ins.newImage(src, 1 + elem.offsetWidth, 1 + elem.offsetHeight, evt.target);
@@ -200,7 +203,6 @@ export default class MediaItemPreviewer {
 	}
 
 	onMediaItemMouseLeave(ins, evt) {
-
 		if (void 0 !== hoverTimeoutID) {
 			clearTimeout(hoverTimeoutID);
 		}

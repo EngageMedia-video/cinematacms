@@ -4,13 +4,11 @@ import { _MediaPage } from './_MediaPage';
 import AudioViewer from '../../components/MediaViewer/AudioViewer';
 
 export class MediaPageAudio extends _MediaPage {
+	viewerContainerContent() {
+		return <AudioViewer />;
+	}
 
-    viewerContainerContent() {
-
-        return <AudioViewer/>;
-    }
-
-    mediaType(){
-    	return 'audio';
-    }
+	mediaType() {
+		return 'audio';
+	}
 }

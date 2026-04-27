@@ -16,12 +16,10 @@ import { CircleIconButton } from '../../../../components/-NEW-/CircleIconButton'
 
 import { PositiveIntegerOrZero } from '../../../../functions/propTypeFilters';
 
-import "../../../../components/styles/PlaylistView.scss";
+import '../../../../components/styles/PlaylistView.scss';
 
 export default class PlaylistView extends React.PureComponent {
-
-	constructor(props){
-		
+	constructor(props) {
 		super(props);
 
 		this.state = {
@@ -51,104 +49,129 @@ export default class PlaylistView extends React.PureComponent {
 		PlaylistViewStore.on('saved-updated', this.onPlaylistSaveUpdate);
 	}
 
-	onHeaderClick(ev){
-		this.setState({ expanded: ! this.state.expanded });
+	onHeaderClick(ev) {
+		this.setState({ expanded: !this.state.expanded });
 	}
 
-	onLoopClick(){
+	onLoopClick() {
 		PlaylistViewActions.toggleLoop();
 	}
 
-	onShuffleClick(){
+	onShuffleClick() {
 		PlaylistViewActions.toggleShuffle();
 	}
 
-	onSaveClick(){
+	onSaveClick() {
 		PlaylistViewActions.toggleSave();
 	}
 
-	onShuffleUpdate(){
-		this.setState({
-			shuffle: PlaylistViewStore.get('enabled-shuffle'),
-		}, () => {
-			if( this.state.shuffle ){
-				PageActions.addNotification('Playlist shuffle is on', 'shuffle-on');
+	onShuffleUpdate() {
+		this.setState(
+			{
+				shuffle: PlaylistViewStore.get('enabled-shuffle'),
+			},
+			() => {
+				if (this.state.shuffle) {
+					PageActions.addNotification('Playlist shuffle is on', 'shuffle-on');
+				} else {
+					PageActions.addNotification('Playlist shuffle is off', 'shuffle-off');
+				}
 			}
-			else{
-				PageActions.addNotification('Playlist shuffle is off', 'shuffle-off');
-			}
-		});
+		);
 	}
 
-	onLoopRepeatUpdate(){
-		this.setState({
-			loopRepeat: PlaylistViewStore.get('enabled-loop'),
-		}, () => {
-			if( this.state.loopRepeat ){
-				PageActions.addNotification('Playlist loop is on', 'loop-on');
+	onLoopRepeatUpdate() {
+		this.setState(
+			{
+				loopRepeat: PlaylistViewStore.get('enabled-loop'),
+			},
+			() => {
+				if (this.state.loopRepeat) {
+					PageActions.addNotification('Playlist loop is on', 'loop-on');
+				} else {
+					PageActions.addNotification('Playlist loop is off', 'loop-off');
+				}
 			}
-			else{
-				PageActions.addNotification('Playlist loop is off', 'loop-off');
-			}
-		});
+		);
 	}
 
-	onPlaylistSaveUpdate(){
-		this.setState({
-			savedPlaylist: PlaylistViewStore.get('saved-playlist'),
-		}, () => {
-			if( this.state.savedPlaylist ){
-				PageActions.addNotification('Added to playlists library', 'added-to-playlists-lib');
+	onPlaylistSaveUpdate() {
+		this.setState(
+			{
+				savedPlaylist: PlaylistViewStore.get('saved-playlist'),
+			},
+			() => {
+				if (this.state.savedPlaylist) {
+					PageActions.addNotification('Added to playlists library', 'added-to-playlists-lib');
+				} else {
+					PageActions.addNotification('Removed from playlists library', 'removed-from-playlists-lib');
+				}
 			}
-			else{
-				PageActions.addNotification('Removed from playlists library', 'removed-from-playlists-lib');
-			}
-		});
+		);
 	}
 
-	render(){
-		return <div className="playlist-view-wrap">
-				
-				<div className={ "playlist-view" + ( ! this.state.expanded ? "" : " playlist-expanded-view" ) }>
-					
+	render() {
+		return (
+			<div className="playlist-view-wrap">
+				<div className={'playlist-view' + (!this.state.expanded ? '' : ' playlist-expanded-view')}>
 					<div className="playlist-header">
-						
 						<div className="playlist-title">
-							<a href={ this.state.link } title={ this.state.title }>{ this.state.title }</a>
+							<a href={this.state.link} title={this.state.title}>
+								{this.state.title}
+							</a>
 						</div>
 
 						<div className="playlist-meta">
-							{ 
-								/*'public' === PlaylistViewStore.get('visibility') ? null :
+							{/*'public' === PlaylistViewStore.get('visibility') ? null :
 								<div className="playlist-status">
 									<span>{ PlaylistViewStore.get('visibility-icon') }</span>
 									<div>{ PlaylistViewStore.get('visibility') }</div>
-								</div>*/
-							}
-							<span><a href={ this.state.authorLink } title={ this.state.authorName }>{ this.state.authorName }</a></span>
+								</div>*/}
+							<span>
+								<a href={this.state.authorLink} title={this.state.authorName}>
+									{this.state.authorName}
+								</a>
+							</span>
 							&nbsp;&nbsp;-&nbsp;&nbsp;
-							<span className="counter">{ this.state.activeItem } / { this.state.totalMedia }</span>
+							<span className="counter">
+								{this.state.activeItem} / {this.state.totalMedia}
+							</span>
 						</div>
 
-						<CircleIconButton className="toggle-playlist-view" onClick={ this.onHeaderClick }>
-							{ this.state.expanded ? <i className="material-icons">keyboard_arrow_up</i> : <i className="material-icons">keyboard_arrow_down</i> }
+						<CircleIconButton className="toggle-playlist-view" onClick={this.onHeaderClick}>
+							{this.state.expanded ? (
+								<i className="material-icons">keyboard_arrow_up</i>
+							) : (
+								<i className="material-icons">keyboard_arrow_down</i>
+							)}
 						</CircleIconButton>
-
 					</div>
 
-					{ ! this.state.expanded ? null : <div className="playlist-actions">
-						<CircleIconButton className={ this.state.loopRepeat ? 'active' : '' } onClick={ this.onLoopClick } title="Loop playlist"><i className="material-icons">repeat</i></CircleIconButton>
-						{ /*<CircleIconButton className={ this.state.shuffle ? 'active' : '' } onClick={ this.onShuffleClick } title="Shuffle playlist"><i className="material-icons">shuffle</i></CircleIconButton>*/ }
-						{ /*PlaylistViewStore.get('logged-in-user-playlist') ? null : <CircleIconButton className={ 'add-to-playlist' + ( this.state.savedPlaylist ? ' active' : '' ) } onClick={ this.onSaveClick } title={ this.state.savedPlaylist ? "Remove" : "Save playlist" }><i className="material-icons">{ this.state.savedPlaylist ? 'playlist_add_check' : 'playlist_add' }</i></CircleIconButton>*/ }
-					</div> }
+					{!this.state.expanded ? null : (
+						<div className="playlist-actions">
+							<CircleIconButton
+								className={this.state.loopRepeat ? 'active' : ''}
+								onClick={this.onLoopClick}
+								title="Loop playlist"
+							>
+								<i className="material-icons">repeat</i>
+							</CircleIconButton>
+							{/*<CircleIconButton className={ this.state.shuffle ? 'active' : '' } onClick={ this.onShuffleClick } title="Shuffle playlist"><i className="material-icons">shuffle</i></CircleIconButton>*/}
+							{/*PlaylistViewStore.get('logged-in-user-playlist') ? null : <CircleIconButton className={ 'add-to-playlist' + ( this.state.savedPlaylist ? ' active' : '' ) } onClick={ this.onSaveClick } title={ this.state.savedPlaylist ? "Remove" : "Save playlist" }><i className="material-icons">{ this.state.savedPlaylist ? 'playlist_add_check' : 'playlist_add' }</i></CircleIconButton>*/}
+						</div>
+					)}
 
-					{ ! this.state.expanded || ! this.state.items.length ? null : <div className="playlist-media">
-						<PlaylistPlaybackMedia items={ this.state.items } playlistActiveItem={ this.state.activeItem } />
-					</div> }
-
+					{!this.state.expanded || !this.state.items.length ? null : (
+						<div className="playlist-media">
+							<PlaylistPlaybackMedia
+								items={this.state.items}
+								playlistActiveItem={this.state.activeItem}
+							/>
+						</div>
+					)}
 				</div>
-
-			</div>;
+			</div>
+		);
 	}
 }
 

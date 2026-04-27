@@ -105,14 +105,14 @@ Returns full details of the playlist including list of media items based on user
     },
     {
       "title": "Unlisted Video",
-      "state": "unlisted", 
+      "state": "unlisted",
       "friendly_token": "def456",
       "thumbnail_url": "/media/thumbnails/unlisted.jpg"
     },
     {
       "title": "Restricted Video",
       "state": "restricted",
-      "friendly_token": "ghi789", 
+      "friendly_token": "ghi789",
       "thumbnail_url": "/media/thumbnails/restricted.jpg"
     }
   ],
@@ -133,7 +133,7 @@ Returns full details of the playlist including list of media items based on user
 
 ---
 
-## 🔹 `POST /api/v1/playlists` 
+## 🔹 `POST /api/v1/playlists`
 
 **Description:**  
 Create a new playlist.
@@ -154,7 +154,7 @@ Create a new playlist.
 - `403 Forbidden`: The user does not have permission to create playlists.
 - `500 Internal Server Error`: Something went wrong on the server.
 
-**Response:** 
+**Response:**
 Returns the newly created playlist object.
 
 **Example Request:**
@@ -287,7 +287,7 @@ The Enhanced Playlist Access feature maintains strict security principles:
 - **Trusted User**: User with `advancedUser` attribute enabled
 - **Curator**: User with view privileges (`is_curator`)
 - **Editor**: User with editor privileges (`is_editor`)
-- **Manager**: User with manager privileges (`is_manager`) 
+- **Manager**: User with manager privileges (`is_manager`)
 - **Superuser**: User with superuser privileges (`is_superuser`)
 
 ### Privacy States

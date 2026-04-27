@@ -18,8 +18,7 @@ import { LazyLoadItemListAsync } from '../../components/-NEW-/LazyLoadItemListAs
 import ProfilePageStore from './store.js';
 
 export class ProfileHistoryPage extends ProfilePage {
-
-	constructor(props){
+	constructor(props) {
 		super(props, 'author-history');
 
 		this.state = {
@@ -29,33 +28,42 @@ export class ProfileHistoryPage extends ProfilePage {
 		this.getCountFunc = this.getCountFunc.bind(this);
 	}
 
-	getCountFunc(resultsCount){
+	getCountFunc(resultsCount) {
 		this.setState({
-			resultsCount: resultsCount
+			resultsCount: resultsCount,
 		});
 	}
 
-	pageContent(){
-
-		return [ this.state.author ? <ProfilePagesHeader key="ProfilePagesHeader" author={ this.state.author } type="history" /> : null,
-				 this.state.author ?
-				 	<ProfilePagesContent key="ProfilePagesContent">
-						<ApiUrlConsumer>
-						{ apiUrl => 
-							<MediaListWrapper title={ this.props.title + ( null !== this.state.resultsCount ? ' (' + this.state.resultsCount + ')' : '' ) } className="items-list-ver">
+	pageContent() {
+		return [
+			this.state.author ? (
+				<ProfilePagesHeader key="ProfilePagesHeader" author={this.state.author} type="history" />
+			) : null,
+			this.state.author ? (
+				<ProfilePagesContent key="ProfilePagesContent">
+					<ApiUrlConsumer>
+						{(apiUrl) => (
+							<MediaListWrapper
+								title={
+									this.props.title +
+									(null !== this.state.resultsCount ? ' (' + this.state.resultsCount + ')' : '')
+								}
+								className="items-list-ver"
+							>
 								<LazyLoadItemListAsync
-									itemsCountCallback={ this.getCountFunc }
-									requestUrl={ apiUrl.user.history }
-									hideAuthor={ ! PageStore.get('config-media-item').displayAuthor }
-									hideViews={ ! PageStore.get('config-media-item').displayViews }
-									hideDate={ ! PageStore.get('config-media-item').displayPublishDate }
-									canEdit={ false } />
+									itemsCountCallback={this.getCountFunc}
+									requestUrl={apiUrl.user.history}
+									hideAuthor={!PageStore.get('config-media-item').displayAuthor}
+									hideViews={!PageStore.get('config-media-item').displayViews}
+									hideDate={!PageStore.get('config-media-item').displayPublishDate}
+									canEdit={false}
+								/>
 							</MediaListWrapper>
-						}
-						</ApiUrlConsumer>
-					</ProfilePagesContent>
-				: null
-			];
+						)}
+					</ApiUrlConsumer>
+				</ProfilePagesContent>
+			) : null,
+		];
 	}
 }
 
@@ -64,5 +72,5 @@ ProfilePage.propTypes = {
 };
 
 ProfilePage.defaultProps = {
-	title: 'My history',	// TODO: Continue here...
+	title: 'My history', // TODO: Continue here...
 };

@@ -11,8 +11,7 @@ import { ManageUsersItemHeader } from '../../ManageItem/ManageUsersItemHeader';
 import { ManageCommentsItemHeader } from '../../ManageItem/ManageCommentsItemHeader';
 import { ManageUploadItemHeader } from '../../ManageItem/ManageUploadItemHeader';
 
-function useManageItem(props){
-
+function useManageItem(props) {
 	const itemData = props.item;
 
 	const itemProps = {
@@ -23,18 +22,17 @@ function useManageItem(props){
 		hideDeleteAction: props.hideDeleteAction,
 	};
 
-	return [ itemData, itemProps ];
+	return [itemData, itemProps];
 }
 
-function ListManageMediaItem(props){
-
-	const [ itemData, itemProps ] = useManageItem(props);
+function ListManageMediaItem(props) {
+	const [itemData, itemProps] = useManageItem(props);
 
 	const args = {
 		...itemProps,
 		thumbnail_url: itemData.thumbnail_url,
 		title: itemData.title,
-		url: itemData.url.replace( " ", "%20" ),
+		url: itemData.url.replace(' ', '%20'),
 		author_name: itemData.author_name,
 		author_url: itemData.author_profile,
 		add_date: itemData.add_date,
@@ -47,24 +45,23 @@ function ListManageMediaItem(props){
 		token: itemData.friendly_token,
 	};
 
-	return( <ManageMediaItem {...args} /> );
+	return <ManageMediaItem {...args} />;
 }
 
-function ListManageUserItem(props){
-
-	const [ itemData, itemProps ] = useManageItem(props);
+function ListManageUserItem(props) {
+	const [itemData, itemProps] = useManageItem(props);
 
 	const roles = [];
 
-	if( void 0 !== itemData.is_editor && itemData.is_editor ){
+	if (void 0 !== itemData.is_editor && itemData.is_editor) {
 		roles.push('Editor');
 	}
 
-	if( void 0 !== itemData.is_manager && itemData.is_manager ){
+	if (void 0 !== itemData.is_manager && itemData.is_manager) {
 		roles.push('Manager');
 	}
 
-	if ( void 0 !== itemData.is_curator && itemData.is_curator ) {
+	if (void 0 !== itemData.is_curator && itemData.is_curator) {
 		roles.push('Curator');
 	}
 
@@ -72,7 +69,7 @@ function ListManageUserItem(props){
 		...itemProps,
 		thumbnail_url: itemData.thumbnail_url,
 		name: itemData.name,
-		url: itemData.url.replace( " ", "%20" ),
+		url: itemData.url.replace(' ', '%20'),
 		username: itemData.username,
 		add_date: itemData.date_added,
 		is_featured: itemData.is_featured,
@@ -84,17 +81,16 @@ function ListManageUserItem(props){
 		has_trusted: void 0 !== itemData.advancedUser,
 	};
 
-	return( <ManageUsersItem {...args} /> );
+	return <ManageUsersItem {...args} />;
 }
 
-function ListManageUploadItem(props){
-
-	const [ itemData, itemProps ] = useManageItem(props);
+function ListManageUploadItem(props) {
+	const [itemData, itemProps] = useManageItem(props);
 
 	const args = {
 		...itemProps,
 		title: itemData.title,
-		url: itemData.url.replace( " ", "%20" ),
+		url: itemData.url.replace(' ', '%20'),
 		add_date: itemData.add_date,
 		media_type: itemData.media_type,
 		encoding_status: itemData.encoding_status,
@@ -104,16 +100,15 @@ function ListManageUploadItem(props){
 		token: itemData.friendly_token,
 	};
 
-	return( <ManageUploadItem {...args} /> );
+	return <ManageUploadItem {...args} />;
 }
 
-function ListManageCommentItem(props){
-
-	const [ itemData, itemProps ] = useManageItem(props);
+function ListManageCommentItem(props) {
+	const [itemData, itemProps] = useManageItem(props);
 
 	const args = {
 		...itemProps,
-		media_url: void 0 !== itemData.media_url ? itemData.media_url.replace( " ", "%20" ) : void 0,
+		media_url: void 0 !== itemData.media_url ? itemData.media_url.replace(' ', '%20') : void 0,
 		author_name: itemData.author_name,
 		author_url: itemData.author_profile,
 		author_thumbnail_url: itemData.author_thumbnail_url,
@@ -122,11 +117,10 @@ function ListManageCommentItem(props){
 		uid: itemData.uid,
 	};
 
-	return( <ManageCommentsItem {...args} /> );
+	return <ManageCommentsItem {...args} />;
 }
 
-function ListManageItem(props){
-
+function ListManageItem(props) {
 	const args = {
 		item: props.item,
 		order: props.order,
@@ -135,27 +129,30 @@ function ListManageItem(props){
 		onProceedRemoval: props.onProceedRemoval,
 	};
 
-	if( 'media' === props.type ){
-		return <ListManageMediaItem {...args} selectedRow={ -1 < props.selectedItems.indexOf(props.item.friendly_token) } />
+	if ('media' === props.type) {
+		return (
+			<ListManageMediaItem {...args} selectedRow={-1 < props.selectedItems.indexOf(props.item.friendly_token)} />
+		);
 	}
 
-	if( 'users' === props.type ){
-		return <ListManageUserItem {...args} selectedRow={ -1 < props.selectedItems.indexOf(props.item.username) } />
+	if ('users' === props.type) {
+		return <ListManageUserItem {...args} selectedRow={-1 < props.selectedItems.indexOf(props.item.username)} />;
 	}
 
-	if( 'comments' === props.type ){
-		return <ListManageCommentItem {...args} selectedRow={ -1 < props.selectedItems.indexOf(props.item.uid) } />
+	if ('comments' === props.type) {
+		return <ListManageCommentItem {...args} selectedRow={-1 < props.selectedItems.indexOf(props.item.uid)} />;
 	}
 
-	if( 'my-uploads' === props.type ){
-		return <ListManageUploadItem {...args} selectedRow={ -1 < props.selectedItems.indexOf(props.item.friendly_token) } />
+	if ('my-uploads' === props.type) {
+		return (
+			<ListManageUploadItem {...args} selectedRow={-1 < props.selectedItems.indexOf(props.item.friendly_token)} />
+		);
 	}
 
 	return null;
 }
 
-function ListManageItemHeader(props){
-
+function ListManageItemHeader(props) {
 	const args = {
 		sort: props.sort,
 		order: props.order,
@@ -164,51 +161,51 @@ function ListManageItemHeader(props){
 		onClickColumnSort: props.onClickColumnSort,
 	};
 
-	if( 'media' === props.type ){
-		return <ManageMediaItemHeader {...args} />
+	if ('media' === props.type) {
+		return <ManageMediaItemHeader {...args} />;
 	}
 
-	if( 'users' === props.type ){
-		args.has_roles = props.items.length && ( void 0 !== props.items[0].is_editor || void 0 !== props.items[0].is_manager );
+	if ('users' === props.type) {
+		args.has_roles =
+			props.items.length && (void 0 !== props.items[0].is_editor || void 0 !== props.items[0].is_manager);
 		args.has_verified = props.items.length && void 0 !== props.items[0].email_is_verified;
 		args.has_trusted = props.items.length && void 0 !== props.items[0].advancedUser;
 		return <ManageUsersItemHeader {...args} />;
 	}
 
-	if( 'comments' === props.type ){
-		return <ManageCommentsItemHeader {...args} />
+	if ('comments' === props.type) {
+		return <ManageCommentsItemHeader {...args} />;
 	}
 
-	if( 'my-uploads' === props.type ){
-		return <ManageUploadItemHeader {...args} />
+	if ('my-uploads' === props.type) {
+		return <ManageUploadItemHeader {...args} />;
 	}
 
 	return null;
 }
 
-export function renderManageItems( items, props ){
-	return [ 
+export function renderManageItems(items, props) {
+	return [
 		<ListManageItemHeader
-			key={ 0 }
+			key={0}
 			type={props.manageType}
-			items={ items }
-			sort={ props.sortBy }
-			order={ props.ordering }
-			selected={ props.selectedAllItems }
-			onCheckAllRows={ props.onAllRowsCheck }
-			onClickColumnSort={ props.onClickColumnSort } 
+			items={items}
+			sort={props.sortBy}
+			order={props.ordering}
+			selected={props.selectedAllItems}
+			onCheckAllRows={props.onAllRowsCheck}
+			onClickColumnSort={props.onClickColumnSort}
 		/>,
-		...items.map(
-			(item, index) => 
+		...items.map((item, index) => (
 			<ListManageItem
-				key={ index + 1 }
-				order={ index + 1 }
-				item={ item }
+				key={index + 1}
+				order={index + 1}
+				item={item}
 				type={props.manageType}
-				onCheckRow={ props.onRowCheck }
-				onProceedRemoval={ props.onDelete }
-				selectedItems={ props.selectedItems }
-			/> 
-		)
+				onCheckRow={props.onRowCheck}
+				onProceedRemoval={props.onDelete}
+				selectedItems={props.selectedItems}
+			/>
+		)),
 	];
 }

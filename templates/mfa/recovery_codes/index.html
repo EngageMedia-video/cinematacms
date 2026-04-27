@@ -14,7 +14,7 @@
       <h1>Backup Codes</h1>
     {% endif %}
 
-    <p>If you lose access to your authenticator app, you can use these 
+    <p>If you lose access to your authenticator app, you can use these
       backup codes to sign in. Each code can only be used once.
     </p>
     {% element p %}
@@ -37,17 +37,17 @@
         </a>
       {% endif %}
 
-      
+
       {% url 'mfa_generate_recovery_codes' as generate_url %}
       <a href="{% url 'mfa_generate_recovery_codes' %}">
         {% translate "Generate new codes" %}
       </a>
     </div>
 
-    
+
     {% if "accounts/2fa/totp/activate/" in request.META.HTTP_REFERER %}
       <hr style="margin-bottom:0;" />
-      <form method="GET" action="/accounts/2fa/totp/success" 
+      <form method="GET" action="/accounts/2fa/totp/success"
       style="display:flex;flex-direction: row-reverse;margin-top:0;">
         <button class="primaryAction">
           Complete Setup
@@ -64,7 +64,7 @@
   }
 
   .recovery-code-div {
-    display: flex; 
+    display: flex;
     justify-content: center;
     margin-block: 1.25em;
   }

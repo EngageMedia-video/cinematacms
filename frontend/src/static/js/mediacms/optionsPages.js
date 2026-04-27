@@ -5,13 +5,13 @@ export function init(home, search, media, profile, VALID_PAGES) {
 		home: {
 			sections: {
 				latest: {
-					title: "",
+					title: '',
 				},
 				featured: {
-					title: "",
+					title: '',
 				},
 				recommended: {
-					title: "",
+					title: '',
 				},
 			},
 		},
@@ -37,21 +37,20 @@ export function init(home, search, media, profile, VALID_PAGES) {
 	if (void 0 !== home) {
 		if (void 0 !== home.sections) {
 			if (void 0 !== home.sections.latest) {
-				if ("string" === typeof home.sections.latest.title) {
+				if ('string' === typeof home.sections.latest.title) {
 					PAGES.home.sections.latest.title = home.sections.latest.title.trim();
 				}
 			}
 
 			if (void 0 !== home.sections.featured) {
-				if ("string" === typeof home.sections.featured.title) {
+				if ('string' === typeof home.sections.featured.title) {
 					PAGES.home.sections.featured.title = home.sections.featured.title.trim();
 				}
 			}
 
 			if (void 0 !== home.sections.recommended) {
-				if ("string" === typeof home.sections.recommended.title) {
-					PAGES.home.sections.recommended.title =
-						home.sections.recommended.title.trim();
+				if ('string' === typeof home.sections.recommended.title) {
+					PAGES.home.sections.recommended.title = home.sections.recommended.title.trim();
 				}
 			}
 		}
@@ -67,21 +66,17 @@ export function init(home, search, media, profile, VALID_PAGES) {
 		}
 	}
 
-	if ("" === PAGES.home.sections.latest.title) {
-		PAGES.home.sections.latest.title =
-			void 0 !== VALID_PAGES.latest ? VALID_PAGES.latest.title : "Latest";
+	if ('' === PAGES.home.sections.latest.title) {
+		PAGES.home.sections.latest.title = void 0 !== VALID_PAGES.latest ? VALID_PAGES.latest.title : 'Latest';
 	}
 
-	if ("" === PAGES.home.sections.featured.title) {
-		PAGES.home.sections.featured.title =
-			void 0 !== VALID_PAGES.featured ? VALID_PAGES.featured.title : "Featured";
+	if ('' === PAGES.home.sections.featured.title) {
+		PAGES.home.sections.featured.title = void 0 !== VALID_PAGES.featured ? VALID_PAGES.featured.title : 'Featured';
 	}
 
-	if ("" === PAGES.home.sections.recommended.title) {
+	if ('' === PAGES.home.sections.recommended.title) {
 		PAGES.home.sections.recommended.title =
-			void 0 !== VALID_PAGES.recommended
-				? VALID_PAGES.recommended.title
-				: "Recommended";
+			void 0 !== VALID_PAGES.recommended ? VALID_PAGES.recommended.title : 'Recommended';
 	}
 
 	if (void 0 !== media) {

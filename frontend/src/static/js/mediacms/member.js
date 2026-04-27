@@ -1,7 +1,6 @@
 let MEMBER = null;
 
-export function init( user, features ){
-
+export function init(user, features) {
 	MEMBER = {
 		name: null,
 		username: null,
@@ -43,17 +42,15 @@ export function init( user, features ){
 		},
 	};
 
-	if( void 0 !== user ){
-
+	if (void 0 !== user) {
 		MEMBER.is.anonymous = true === user.is.anonymous ? true : false;
-		
-		if( ! MEMBER.is.anonymous ){
 
+		if (!MEMBER.is.anonymous) {
 			MEMBER.is.admin = true === user.is.admin;
 
 			MEMBER.name = 'string' === typeof user.name ? user.name.trim() : '';
 			MEMBER.name = '' === MEMBER.name ? null : MEMBER.name;
-			
+
 			MEMBER.username = 'string' === typeof user.username ? user.username.trim() : '';
 			MEMBER.username = '' === MEMBER.username ? null : MEMBER.username;
 
@@ -61,7 +58,7 @@ export function init( user, features ){
 			MEMBER.thumbnail = '' === MEMBER.thumbnail ? null : MEMBER.thumbnail;
 
 			MEMBER.can.changePassword = false === user.can.changePassword ? false : MEMBER.can.changePassword;
-			
+
 			MEMBER.can.deleteProfile = true === user.can.deleteProfile;
 			MEMBER.can.addComment = true === user.can.addComment;
 			MEMBER.can.deleteComment = true === user.can.deleteComment;
@@ -75,24 +72,23 @@ export function init( user, features ){
 
 			MEMBER.can.contactUser = true === user.can.contactUser;
 
-			if( void 0 !== user.pages ){
-
-				if( 'string' === typeof user.pages.home ){
+			if (void 0 !== user.pages) {
+				if ('string' === typeof user.pages.home) {
 					MEMBER.pages.home = user.pages.home.trim();
 					MEMBER.pages.home = '' === MEMBER.pages.home ? null : MEMBER.pages.home;
 				}
 
-				if( 'string' === typeof user.pages.about ){
+				if ('string' === typeof user.pages.about) {
 					MEMBER.pages.about = user.pages.about.trim();
 					MEMBER.pages.about = '' === MEMBER.pages.about ? null : MEMBER.pages.about;
 				}
 
-				if( 'string' === typeof user.pages.media ){
+				if ('string' === typeof user.pages.media) {
 					MEMBER.pages.media = user.pages.media.trim();
 					MEMBER.pages.media = '' === MEMBER.pages.media ? null : MEMBER.pages.media;
 				}
 
-				if( 'string' === typeof user.pages.playlists ){
+				if ('string' === typeof user.pages.playlists) {
 					MEMBER.pages.playlists = user.pages.playlists.trim();
 					MEMBER.pages.playlists = '' === MEMBER.pages.playlists ? null : MEMBER.pages.playlists;
 				}
@@ -104,12 +100,9 @@ export function init( user, features ){
 		MEMBER.can.readComment = false === user.can.readComment ? false : true;
 	}
 
-	if( void 0 !== features ){
-
-		if( void 0 !== features.media ){
-
-			if( void 0 !== features.media.actions ){
-
+	if (void 0 !== features) {
+		if (void 0 !== features.media) {
+			if (void 0 !== features.media.actions) {
 				const mediaActions = features.media.actions;
 
 				MEMBER.can.addComment = MEMBER.can.addComment && true === mediaActions.comment;
@@ -124,19 +117,18 @@ export function init( user, features ){
 			}
 		}
 
-		if( void 0 !== features.headerBar ){
-
-			if( true === features.headerBar.hideLogin ){
+		if (void 0 !== features.headerBar) {
+			if (true === features.headerBar.hideLogin) {
 				MEMBER.can.login = false;
 			}
 
-			if( true === features.headerBar.hideRegister ){
+			if (true === features.headerBar.hideRegister) {
 				MEMBER.can.register = false;
 			}
 		}
 	}
 }
 
-export function settings(){
+export function settings() {
 	return MEMBER;
 }

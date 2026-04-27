@@ -5,62 +5,70 @@ import PageStore from '../../pages/_PageStore.js';
 
 import LayoutStore from '../../stores/LayoutStore.js';
 
-export function ReportForm(props){
-
+export function ReportForm(props) {
 	const formActionsBottomRef = useRef(null);
 	const reportMessageTextRef = useRef(null);
 
-	const [ maxFormContentHeight, setMaxFormContentHeight ] = useState( null );
+	const [maxFormContentHeight, setMaxFormContentHeight] = useState(null);
 
-	function onWindowResize(){
-		setMaxFormContentHeight( LayoutStore.get('container-height') - ( 56 + ( 2 * 24 ) + formActionsBottomRef.current.offsetHeight ) );
+	function onWindowResize() {
+		setMaxFormContentHeight(
+			LayoutStore.get('container-height') - (56 + 2 * 24 + formActionsBottomRef.current.offsetHeight)
+		);
 	}
 
-	function cancelReportForm(ev){
+	function cancelReportForm(ev) {
 		// ev.stopPropagation();
 		ev.preventDefault();
-		if( void 0 !== props.cancelReportForm ){
+		if (void 0 !== props.cancelReportForm) {
 			props.cancelReportForm();
 		}
 	}
 
-	function submitReportForm(ev){
+	function submitReportForm(ev) {
 		const descr = reportMessageTextRef.current.value.trim();
 		// ev.stopPropagation();
-		if( '' !== descr ){
+		if ('' !== descr) {
 			ev.preventDefault();
-			if( void 0 !== props.submitReportForm ){
-				props.submitReportForm( descr );
+			if (void 0 !== props.submitReportForm) {
+				props.submitReportForm(descr);
 			}
 		}
 	}
 
-    useEffect(() => {
-        onWindowResize();
-		PageStore.on( 'window_resize', onWindowResize );
-        return () => {
-            PageStore.removeListener( 'window_resize', onWindowResize );
-        };
-    }, []);
+	useEffect(() => {
+		onWindowResize();
+		PageStore.on('window_resize', onWindowResize);
+		return () => {
+			PageStore.removeListener('window_resize', onWindowResize);
+		};
+	}, []);
 
-	return (<form>
-				<div className="report-form" style={ null !== maxFormContentHeight ? { 'maxHeight' : maxFormContentHeight + 'px' } : null }>
-					<div className="form-title">Report media</div>
-					<div className="form-field">
-						<span className="label">URL</span>
-						<input type="text" readOnly value={ props.mediaUrl } />
-					</div>
-					<div className="form-field">
-						<span className="label">Description</span>
-						<textarea ref={ reportMessageTextRef } required></textarea>
-					</div>
-					<div className="form-field form-help-text">Reported media is reviewed</div>
+	return (
+		<form>
+			<div
+				className="report-form"
+				style={null !== maxFormContentHeight ? { maxHeight: maxFormContentHeight + 'px' } : null}
+			>
+				<div className="form-title">Report media</div>
+				<div className="form-field">
+					<span className="label">URL</span>
+					<input type="text" readOnly value={props.mediaUrl} />
 				</div>
-				<div ref={ formActionsBottomRef } className="form-actions-bottom">
-					<button className="cancel" onClick={ cancelReportForm }>CANCEL</button>
-					<button onClick={ submitReportForm }>SUBMIT</button>
+				<div className="form-field">
+					<span className="label">Description</span>
+					<textarea ref={reportMessageTextRef} required></textarea>
 				</div>
-			</form>);
+				<div className="form-field form-help-text">Reported media is reviewed</div>
+			</div>
+			<div ref={formActionsBottomRef} className="form-actions-bottom">
+				<button className="cancel" onClick={cancelReportForm}>
+					CANCEL
+				</button>
+				<button onClick={submitReportForm}>SUBMIT</button>
+			</div>
+		</form>
+	);
 }
 
 ReportForm.propTypes = {

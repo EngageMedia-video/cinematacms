@@ -23,12 +23,12 @@
     {% url 'account_confirm_login_code' as login_url %}
     <form method="POST" action="{{ login_url }}">
       {% csrf_token %}
-      <input 
-        required="" 
-        name="code" 
-        placeholder="Code" 
-        id="id_code" 
-        autocomplete="one-time-code" 
+      <input
+        required=""
+        name="code"
+        placeholder="Code"
+        id="id_code"
+        autocomplete="one-time-code"
         type="text"
       >
       <button type="submit" class="primaryAction">

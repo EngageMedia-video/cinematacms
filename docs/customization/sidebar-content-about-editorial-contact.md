@@ -164,7 +164,7 @@ The Description field uses TinyMCE, which provides rich text formatting. You can
         <li>Is properly licensed (see our <a href="/creative-commons">Creative Commons</a> guide)</li>
         <li>Has good quality audio and video</li>
     </ul>
-    
+
     <h3>Upload Steps</h3>
     <ol>
         <li>Click "Upload" in the navigation menu</li>
@@ -182,22 +182,22 @@ The Description field uses TinyMCE, which provides rich text formatting. You can
         <h3>What file formats are supported?</h3>
         <p>Cinemata supports most common video formats including MP4, MOV, AVI, and WebM.</p>
     </div>
-    
+
     <div class="faq-item">
         <h3>What is the maximum file size?</h3>
         <p>Regular users can upload files up to 500MB. Trusted Users can upload up to 5GB per file.</p>
     </div>
-    
+
     <div class="faq-item">
         <h3>How do I become a Trusted User?</h3>
         <p>After contributing quality content regularly, you can apply through the Contact page.</p>
     </div>
-    
+
     <div class="faq-item">
         <h3>How can I add subtitles to my videos?</h3>
         <p>After uploading, go to your video page and click "Add Subtitle" to upload SRT or VTT files.</p>
     </div>
-    
+
     <div class="faq-item">
         <h3>Can I edit my video after uploading?</h3>
         <p>You cannot edit the video file itself, but you can update all metadata, thumbnails, and subtitles.</p>

@@ -11,16 +11,16 @@
 
 // $theme-color: #009933;
 
-$theme-color: var( --theme-color, var(--default-theme-color) );
+$theme-color: var(--theme-color, var(--default-theme-color));
 
 // $theme-color: #a5002c;	// CC brand color.
 // $theme-color: #4f6368;
 
 // $theme-color: #e01e1e;	// EM red brand color.
 
-$color-error-red: rgba( red, 0.8 );
+$color-error-red: rgba(red, 0.8);
 
-$message-default-color: rgba( #111, 0.9 );
+$message-default-color: rgba(#111, 0.9);
 
 $message-default-bg-color: #e6e6e6;
 $message-info-bg-color: #e6e6fa;

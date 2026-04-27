@@ -20,6 +20,27 @@
  *
 */
 
+/**
+* This is a variable font
+* You can controll variable axes as shown below:
+* font-variation-settings: 'wght' 300.0;
+*
+* available axes:
+
+* 'wght' (range from 300.0 to 700.0)
+
+*/
+
+@font-face {
+	font-family: 'Amulya-Variable';
+	src:
+		url('./fonts/Amulya-Variable.woff2') format('woff2'),
+		url('./fonts/Amulya-Variable.woff') format('woff'),
+		url('./fonts/Amulya-Variable.ttf') format('truetype');
+	font-weight: 300 700;
+	font-display: swap;
+	font-style: normal;
+}
 
 /**
 * This is a variable font
@@ -33,122 +54,100 @@
 */
 
 @font-face {
-  font-family: 'Amulya-Variable';
-  src: url('./fonts/Amulya-Variable.woff2') format('woff2'),
-       url('./fonts/Amulya-Variable.woff') format('woff'),
-       url('./fonts/Amulya-Variable.ttf') format('truetype');
-       font-weight: 300 700;
-       font-display: swap;
-       font-style: normal;
+	font-family: 'Amulya';
+	src:
+		url('./fonts/Amulya-VariableItalic.woff2') format('woff2'),
+		url('./fonts/Amulya-VariableItalic.woff') format('woff'),
+		url('./fonts/Amulya-VariableItalic.ttf') format('truetype');
+	font-weight: 300 700;
+	font-display: swap;
+	font-style: italic;
 }
-
-
-/**
-* This is a variable font
-* You can controll variable axes as shown below:
-* font-variation-settings: 'wght' 300.0;
-*
-* available axes:
-
-* 'wght' (range from 300.0 to 700.0)
-
-*/
 
 @font-face {
-  font-family: 'Amulya';
-  src: url('./fonts/Amulya-VariableItalic.woff2') format('woff2'),
-       url('./fonts/Amulya-VariableItalic.woff') format('woff'),
-       url('./fonts/Amulya-VariableItalic.ttf') format('truetype');
-       font-weight: 300 700;
-       font-display: swap;
-       font-style: italic;
+	font-family: 'Amulya';
+	src:
+		url('./fonts/Amulya-Light.woff2') format('woff2'),
+		url('./fonts/Amulya-Light.woff') format('woff'),
+		url('./fonts/Amulya-Light.ttf') format('truetype');
+	font-weight: 300;
+	font-display: swap;
+	font-style: normal;
 }
-
 
 @font-face {
-  font-family: 'Amulya';
-  src: url('./fonts/Amulya-Light.woff2') format('woff2'),
-       url('./fonts/Amulya-Light.woff') format('woff'),
-       url('./fonts/Amulya-Light.ttf') format('truetype');
-       font-weight: 300;
-       font-display: swap;
-       font-style: normal;
+	font-family: 'Amulya';
+	src:
+		url('./fonts/Amulya-LightItalic.woff2') format('woff2'),
+		url('./fonts/Amulya-LightItalic.woff') format('woff'),
+		url('./fonts/Amulya-LightItalic.ttf') format('truetype');
+	font-weight: 300;
+	font-display: swap;
+	font-style: italic;
 }
-
 
 @font-face {
-  font-family: 'Amulya';
-  src: url('./fonts/Amulya-LightItalic.woff2') format('woff2'),
-       url('./fonts/Amulya-LightItalic.woff') format('woff'),
-       url('./fonts/Amulya-LightItalic.ttf') format('truetype');
-       font-weight: 300;
-       font-display: swap;
-       font-style: italic;
+	font-family: 'Amulya';
+	src:
+		url('./fonts/Amulya-Regular.woff2') format('woff2'),
+		url('./fonts/Amulya-Regular.woff') format('woff'),
+		url('./fonts/Amulya-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-display: swap;
+	font-style: normal;
 }
-
 
 @font-face {
-  font-family: 'Amulya';
-  src: url('./fonts/Amulya-Regular.woff2') format('woff2'),
-       url('./fonts/Amulya-Regular.woff') format('woff'),
-       url('./fonts/Amulya-Regular.ttf') format('truetype');
-       font-weight: 400;
-       font-display: swap;
-       font-style: normal;
+	font-family: 'Amulya';
+	src:
+		url('./fonts/Amulya-Italic.woff2') format('woff2'),
+		url('./fonts/Amulya-Italic.woff') format('woff'),
+		url('./fonts/Amulya-Italic.ttf') format('truetype');
+	font-weight: 400;
+	font-display: swap;
+	font-style: italic;
 }
-
 
 @font-face {
-  font-family: 'Amulya';
-  src: url('./fonts/Amulya-Italic.woff2') format('woff2'),
-       url('./fonts/Amulya-Italic.woff') format('woff'),
-       url('./fonts/Amulya-Italic.ttf') format('truetype');
-       font-weight: 400;
-       font-display: swap;
-       font-style: italic;
+	font-family: 'Amulya';
+	src:
+		url('./fonts/Amulya-Medium.woff2') format('woff2'),
+		url('./fonts/Amulya-Medium.woff') format('woff'),
+		url('./fonts/Amulya-Medium.ttf') format('truetype');
+	font-weight: 500;
+	font-display: swap;
+	font-style: normal;
 }
-
 
 @font-face {
-  font-family: 'Amulya';
-  src: url('./fonts/Amulya-Medium.woff2') format('woff2'),
-       url('./fonts/Amulya-Medium.woff') format('woff'),
-       url('./fonts/Amulya-Medium.ttf') format('truetype');
-       font-weight: 500;
-       font-display: swap;
-       font-style: normal;
+	font-family: 'Amulya';
+	src:
+		url('./fonts/Amulya-MediumItalic.woff2') format('woff2'),
+		url('./fonts/Amulya-MediumItalic.woff') format('woff'),
+		url('./fonts/Amulya-MediumItalic.ttf') format('truetype');
+	font-weight: 500;
+	font-display: swap;
+	font-style: italic;
 }
-
 
 @font-face {
-  font-family: 'Amulya';
-  src: url('./fonts/Amulya-MediumItalic.woff2') format('woff2'),
-       url('./fonts/Amulya-MediumItalic.woff') format('woff'),
-       url('./fonts/Amulya-MediumItalic.ttf') format('truetype');
-       font-weight: 500;
-       font-display: swap;
-       font-style: italic;
+	font-family: 'Amulya';
+	src:
+		url('./fonts/Amulya-Bold.woff2') format('woff2'),
+		url('./fonts/Amulya-Bold.woff') format('woff'),
+		url('./fonts/Amulya-Bold.ttf') format('truetype');
+	font-weight: 700;
+	font-display: swap;
+	font-style: normal;
 }
-
 
 @font-face {
-  font-family: 'Amulya';
-  src: url('./fonts/Amulya-Bold.woff2') format('woff2'),
-       url('./fonts/Amulya-Bold.woff') format('woff'),
-       url('./fonts/Amulya-Bold.ttf') format('truetype');
-       font-weight: 700;
-       font-display: swap;
-       font-style: normal;
+	font-family: 'Amulya';
+	src:
+		url('./fonts/Amulya-BoldItalic.woff2') format('woff2'),
+		url('./fonts/Amulya-BoldItalic.woff') format('woff'),
+		url('./fonts/Amulya-BoldItalic.ttf') format('truetype');
+	font-weight: 700;
+	font-display: swap;
+	font-style: italic;
 }
-
-
-@font-face {
-  font-family: 'Amulya';
-  src: url('./fonts/Amulya-BoldItalic.woff2') format('woff2'),
-       url('./fonts/Amulya-BoldItalic.woff') format('woff'),
-       url('./fonts/Amulya-BoldItalic.ttf') format('truetype');
-       font-weight: 700;
-       font-display: swap;
-       font-style: italic;
-}
-

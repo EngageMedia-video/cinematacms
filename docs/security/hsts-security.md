@@ -17,7 +17,7 @@ Before enabling these settings, ensure:
 >Warning: enabling this only in production site as it requires a valid ssl certificate and without that your site might not behave properly.
 ---
 
-## `cms/settings.py` Configuration 
+## `cms/settings.py` Configuration
 
 ```python
 # HSTS Settings
@@ -137,4 +137,3 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
 ## Contributions
 
 Feel free to open a pull request to improve this guide or contribute examples for other web servers.
-

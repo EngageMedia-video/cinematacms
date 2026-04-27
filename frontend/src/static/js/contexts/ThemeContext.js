@@ -2,13 +2,13 @@ import React from 'react';
 
 import { config as mediacmsConfig } from '../mediacms/config.js';
 
-const config = mediacmsConfig( window.MediaCMS );
+const config = mediacmsConfig(window.MediaCMS);
 
 const theme = {
-	switch: config.theme.switch
+	switch: config.theme.switch,
 };
 
-const ThemeContext = React.createContext( theme );
+const ThemeContext = React.createContext(theme);
 
 export const ThemeProvider = ThemeContext.Provider;
 export const ThemeConsumer = ThemeContext.Consumer;

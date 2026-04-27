@@ -8,7 +8,7 @@ The default logo placeholder is a simple image with the text "Your Logo Here". Y
 
 ### Logo Specifications
 - **Recommended dimensions**: 240px × 60px
-- **File formats needed**: 
+- **File formats needed**:
   - JPG (for fallback)
   - SVG (for better scaling)
 - **Locations**: Create both light and dark theme versions

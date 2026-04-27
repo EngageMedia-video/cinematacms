@@ -1,43 +1,40 @@
 @import '../../../css/includes/_variables.scss';
 @import '../../../css/includes/_variables_dimensions.scss';
 
-.theme-switch{
+.theme-switch {
+	position: relative;
+	display: table;
+	width: 100%;
 
-	position:relative;
-	display:table;
-	width:100%;
-
-	@if $_use_rem_unit{
-		padding:0 1.5rem;
-		margin:0.75rem 0;
-	}
-	@else {
-		padding:0 24px;
-		margin:12px 0;
+	@if $_use_rem_unit {
+		padding: 0 1.5rem;
+		margin: 0.75rem 0;
+	} @else {
+		padding: 0 24px;
+		margin: 12px 0;
 	}
 
-	&:focus{
-		outline: var( --dotted-outline );
+	&:focus {
+		outline: var(--dotted-outline);
 		// background-color: var(--in-popup-nav-menu-item-hover-bg-color);
 	}
-	
-	> * {
-		display:table-cell;
-		vertical-align:middle;
-		line-height:40px;
-		cursor:pointer;
 
-		&:last-child{
-			text-align:right;
+	> * {
+		display: table-cell;
+		vertical-align: middle;
+		line-height: 40px;
+		cursor: pointer;
+
+		&:last-child {
+			text-align: right;
 		}
 	}
 
-	.checkbox-label.right-selectbox{
+	.checkbox-label.right-selectbox {
+		margin: 0;
 
-		margin:0;
-
-		.selectbox{
-			margin:0;
+		.selectbox {
+			margin: 0;
 		}
 	}
 }

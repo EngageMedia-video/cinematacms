@@ -23,7 +23,6 @@ function genReqUrl(url, filters, sort, page) {
 }
 
 export class ManageUploadsPage extends Page {
-
 	constructor(props) {
 		super(props, 'manage-uploads');
 
@@ -55,7 +54,12 @@ export class ManageUploadsPage extends Page {
 	onTablePageChange(newPageUrl, updatedPage) {
 		this.setState({
 			currentPage: updatedPage,
-			requestUrl: genReqUrl(ApiUrlContext._currentValue.manage.myUploads, this.state.filterArgs, this.state.sortingArgs, updatedPage),
+			requestUrl: genReqUrl(
+				ApiUrlContext._currentValue.manage.myUploads,
+				this.state.filterArgs,
+				this.state.sortingArgs,
+				updatedPage
+			),
 		});
 	}
 
@@ -83,7 +87,12 @@ export class ManageUploadsPage extends Page {
 		this.setState({
 			filterArgs: newArgs.join('&'),
 			currentPage: 1,
-			requestUrl: genReqUrl(ApiUrlContext._currentValue.manage.myUploads, newArgs.join('&'), this.state.sortingArgs, 1),
+			requestUrl: genReqUrl(
+				ApiUrlContext._currentValue.manage.myUploads,
+				newArgs.join('&'),
+				this.state.sortingArgs,
+				1
+			),
 		});
 	}
 
@@ -93,23 +102,31 @@ export class ManageUploadsPage extends Page {
 			sortBy: sort,
 			ordering: order,
 			sortingArgs: newArgs,
-			requestUrl: genReqUrl(ApiUrlContext._currentValue.manage.myUploads, this.state.filterArgs, newArgs, this.state.currentPage),
+			requestUrl: genReqUrl(
+				ApiUrlContext._currentValue.manage.myUploads,
+				this.state.filterArgs,
+				newArgs,
+				this.state.currentPage
+			),
 		});
 	}
 
 	onItemsRemoval() {
-		this.setState({
-			resultsCount: null,
-			selectedTokens: [],
-			refresh: this.state.refresh + 1,
-			requestUrl: ApiUrlContext._currentValue.manage.myUploads,
-		}, function () {
-			PageActions.addNotification("The media deleted successfully.", 'mediaRemovalSucceed');
-		});
+		this.setState(
+			{
+				resultsCount: null,
+				selectedTokens: [],
+				refresh: this.state.refresh + 1,
+				requestUrl: ApiUrlContext._currentValue.manage.myUploads,
+			},
+			function () {
+				PageActions.addNotification('The media deleted successfully.', 'mediaRemovalSucceed');
+			}
+		);
 	}
 
 	onItemsRemovalFail() {
-		PageActions.addNotification("The media removal failed. Please try again.", 'mediaRemovalFailed');
+		PageActions.addNotification('The media removal failed. Please try again.', 'mediaRemovalFailed');
 	}
 
 	onSelectionChange(selectedItems) {
@@ -142,28 +159,42 @@ export class ManageUploadsPage extends Page {
 			false,
 			function (response) {
 				if (response && response.data && response.data.updated) {
-					self.setState({
-						resultsCount: null,
-						selectedTokens: [],
-						refresh: self.state.refresh + 1,
-						requestUrl: ApiUrlContext._currentValue.manage.myUploads,
-					}, function () {
-						PageActions.addNotification(
-							response.data.updated + ' item' + (response.data.updated > 1 ? 's' : '') + ' changed to ' + newState + '.',
-							'bulkStateChangeSucceed'
-						);
-					});
+					self.setState(
+						{
+							resultsCount: null,
+							selectedTokens: [],
+							refresh: self.state.refresh + 1,
+							requestUrl: ApiUrlContext._currentValue.manage.myUploads,
+						},
+						function () {
+							PageActions.addNotification(
+								response.data.updated +
+									' item' +
+									(response.data.updated > 1 ? 's' : '') +
+									' changed to ' +
+									newState +
+									'.',
+								'bulkStateChangeSucceed'
+							);
+						}
+					);
 				}
 			},
 			function () {
-				PageActions.addNotification("State change failed. Please try again.", 'bulkStateChangeFailed');
+				PageActions.addNotification('State change failed. Please try again.', 'bulkStateChangeFailed');
 			}
 		);
 	}
 
 	pageContent() {
 		return (
-			<MediaListWrapper title={this.state.pageTitle + (null === this.state.resultsCount ? '' : ' (' + this.state.resultsCount + ')')} className="">
+			<MediaListWrapper
+				title={
+					this.state.pageTitle +
+					(null === this.state.resultsCount ? '' : ' (' + this.state.resultsCount + ')')
+				}
+				className=""
+			>
 				<UploadsBulkActions
 					selectedItemsSize={this.state.selectedTokens.length}
 					onBulkStateChange={this.onBulkStateChange}

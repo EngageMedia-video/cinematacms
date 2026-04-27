@@ -21,10 +21,10 @@
 
 		function fadeTo(element, opacity) {
 			var $target = $(element);
-			
+
 			if (config.exemptionSelector)
-				$target = $target.not(config.exemptionSelector);	
-			
+				$target = $target.not(config.exemptionSelector);
+
 			$target.fadeTo(config.fadeSpeed, opacity);
 		}
 

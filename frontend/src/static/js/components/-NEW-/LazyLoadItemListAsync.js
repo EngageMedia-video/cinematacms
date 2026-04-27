@@ -10,83 +10,101 @@ import { ListItem, listItemProps } from './ListItem';
 
 import { ItemListAsync } from './ItemListAsync';
 
-import { ItemsListHandler } from "./includes/itemLists/ItemsListHandler";
+import { ItemsListHandler } from './includes/itemLists/ItemsListHandler';
 import { MediaListWrapper } from '../../pages/components/MediaListWrapper';
-export function LazyLoadItemListAsync(props){
-    props = { ...LazyLoadItemListAsync.defaults, ...props };
+export function LazyLoadItemListAsync(props) {
+	props = { ...LazyLoadItemListAsync.defaults, ...props };
 
-    const [ items, countedItems, listHandler, setListHandler, classname, onItemsCount, onItemsLoad, onWindowScroll, onDocumentVisibilityChange, itemsListWrapperRef, itemsListRef, renderBeforeListWrap, renderAfterListWrap ] = useItemListLazyLoad(props);
+	const [
+		items,
+		countedItems,
+		listHandler,
+		setListHandler,
+		classname,
+		onItemsCount,
+		onItemsLoad,
+		onWindowScroll,
+		onDocumentVisibilityChange,
+		itemsListWrapperRef,
+		itemsListRef,
+		renderBeforeListWrap,
+		renderAfterListWrap,
+	] = useItemListLazyLoad(props);
 
-    useEffect(() => {
+	useEffect(() => {
+		setListHandler(
+			new ItemsListHandler(
+				props.pageItems,
+				props.maxItems,
+				props.firstItemRequestUrl,
+				props.requestUrl,
+				onItemsCount,
+				onItemsLoad
+			)
+		);
 
-    	setListHandler( new ItemsListHandler( props.pageItems, props.maxItems, props.firstItemRequestUrl, props.requestUrl, onItemsCount, onItemsLoad ) );
+		if (!props.forceDisableInfiniteScroll) {
+			PageStore.on('window_scroll', onWindowScroll);
+			PageStore.on('document_visibility_change', onDocumentVisibilityChange);
 
-        if (!props.forceDisableInfiniteScroll) {
-            PageStore.on( 'window_scroll', onWindowScroll );
-            PageStore.on( 'document_visibility_change', onDocumentVisibilityChange );
+			onWindowScroll();
+		}
 
-            onWindowScroll();
-        }
+		return () => {
+			if (!props.forceDisableInfiniteScroll) {
+				PageStore.removeListener('window_scroll', onWindowScroll);
+				PageStore.removeListener('document_visibility_change', onDocumentVisibilityChange);
+			}
 
-        return () => {
+			if (listHandler) {
+				listHandler.cancelAll();
+				setListHandler(null);
+			}
+		};
+	}, []);
 
-            if (!props.forceDisableInfiniteScroll)
-            {
-                PageStore.removeListener( 'window_scroll', onWindowScroll );
-                PageStore.removeListener( 'document_visibility_change', onDocumentVisibilityChange );
-            }
+	return !countedItems ? (
+		<PendingItemsList className={classname.listOuter} />
+	) : !items.length ? null : (
+		<div className={classname.listOuter}>
+			{renderBeforeListWrap()}
 
-            if( listHandler ){
-                listHandler.cancelAll();
-                setListHandler(null);
-            }
-        };
-    }, []);
+			<div ref={itemsListWrapperRef} className="items-list-wrap">
+				<div ref={itemsListRef} className={classname.list}>
+					{items.map((itm, index) => {
+						if (props.headingText === 'Recent videos' && index === 0) {
+							return (
+								<section className="hw-recent-videos-section" key={index}>
+									<h1>{props.headingText}</h1>
+									<ListItem key={index} {...listItemProps(props, itm, index)} />
+								</section>
+							);
+						}
 
-    return ( ! countedItems ?
-            <PendingItemsList className={ classname.listOuter } /> :
-            ( ! items.length ? null : <div className={ classname.listOuter }>
+						if (props.firstItemViewer && index === 1) {
+							return (
+								<section className="hw-recent-videos-section" key={index}>
+									<h1>{props.headingText}</h1>
+									<ListItem key={index} {...listItemProps(props, itm, index)} />
+								</section>
+							);
+						}
 
-                { renderBeforeListWrap() }
+						return <ListItem key={index} {...listItemProps(props, itm, index)} />;
+					})}
+				</div>
+			</div>
 
-                <div ref={ itemsListWrapperRef } className="items-list-wrap">
-                    <div ref={ itemsListRef } className={ classname.list }>
-
-                        { items.map( ( itm, index ) => {
-                            
-                            if(props.headingText === 'Recent videos' && index === 0) {
-                                return (
-                                    <section className="hw-recent-videos-section" key={index}>
-                                        <h1>{props.headingText}</h1>
-                                        <ListItem key={ index } { ...listItemProps( props, itm, index ) } />
-                                    </section>)
-                            }
-
-                            if(props.firstItemViewer && index === 1) {
-                                return (
-                                    <section className="hw-recent-videos-section" key={index}>
-                                        <h1>{props.headingText}</h1>
-                                        <ListItem key={ index } { ...listItemProps( props, itm, index ) } />
-                                    </section>)
-                            }
-
-                            return <ListItem key={ index } { ...listItemProps( props, itm, index ) } />
-
-                        } ) }
-                    </div>
-                </div>
-
-                { renderAfterListWrap() }
-
-            </div> )
-           );
+			{renderAfterListWrap()}
+		</div>
+	);
 }
 
 LazyLoadItemListAsync.propTypes = {
-    ...ItemListAsync.propTypes,
+	...ItemListAsync.propTypes,
 };
 
 LazyLoadItemListAsync.defaults = {
-    ...ItemListAsync.defaults,
-    pageItems: 2,
+	...ItemListAsync.defaults,
+	pageItems: 2,
 };

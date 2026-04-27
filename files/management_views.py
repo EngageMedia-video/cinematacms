@@ -143,16 +143,14 @@ class MyUploadsList(APIView):
                 {"detail": "tokens query parameter is required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        tokens = list(set(t.strip() for t in tokens.split(",") if t.strip()))
+        tokens = list({t.strip() for t in tokens.split(",") if t.strip()})
         if not tokens:
             return Response(
                 {"detail": "tokens must contain at least one value"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         with transaction.atomic():
-            qs = Media.objects.select_for_update().filter(
-                friendly_token__in=tokens, user=request.user
-            )
+            qs = Media.objects.select_for_update().filter(friendly_token__in=tokens, user=request.user)
             if qs.count() != len(tokens):
                 return Response(
                     {"detail": "one or more tokens not found or not owned by you"},
@@ -186,9 +184,7 @@ class MyUploadsBulkState(APIView):
             )
 
         with transaction.atomic():
-            qs = Media.objects.select_for_update().filter(
-                friendly_token__in=tokens, user=request.user
-            )
+            qs = Media.objects.select_for_update().filter(friendly_token__in=tokens, user=request.user)
             if qs.count() != len(tokens):
                 return Response(
                     {"detail": "one or more tokens not found or not owned by you"},

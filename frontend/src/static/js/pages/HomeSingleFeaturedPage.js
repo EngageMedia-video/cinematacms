@@ -11,7 +11,6 @@ import { Page } from './_Page';
 import PageStore from './_PageStore';
 import { config as mediacmsConfig } from '../mediacms/config';
 
-
 export class HomeSingleFeaturedPage extends Page {
 	constructor(props) {
 		super(props, 'home');
@@ -56,7 +55,7 @@ export class HomeSingleFeaturedPage extends Page {
 			const indexFeaturedListData = await this.fetchData(this.mediacms_config.api.indexfeatured);
 
 			// Initialize playlists with loading state
-			const initialPlaylists = indexFeaturedListData.map(playlist => ({
+			const initialPlaylists = indexFeaturedListData.map((playlist) => ({
 				...playlist,
 				items: null, // null = loading, [] = loaded empty, [...] = loaded with data
 				loading: true,
@@ -95,19 +94,16 @@ export class HomeSingleFeaturedPage extends Page {
 
 	updatePlaylist(index, updatedPlaylist) {
 		if (!this._isMounted) return;
-		this.setState(prevState => {
+		this.setState((prevState) => {
 			const indexFeaturedList = [...prevState.indexFeaturedList];
 			indexFeaturedList[index] = updatedPlaylist;
 			return { indexFeaturedList };
 		});
 	}
 
+	onLoadLatest = (length) => this.setState({ loadedLatest: true, visibleLatest: length > 0 });
 
-	onLoadLatest = (length) =>
-		this.setState({ loadedLatest: true, visibleLatest: length > 0 });
-
-	onLoadFeatured = () =>
-		this.setState({ loadedFeatured: true });
+	onLoadFeatured = () => this.setState({ loadedFeatured: true });
 
 	pageContent() {
 		const { featuredVideos, indexFeaturedList, loadedFeatured } = this.state;
@@ -123,9 +119,7 @@ export class HomeSingleFeaturedPage extends Page {
 							<PendingItemsList className="items-list-ver featured-carousel" />
 						) : firstFeatured ? (
 							<MediaMultiListWrapper className="items-list-ver featured-carousel-wrapper hw-featured-first">
-								<MediaListRow
-									className={'feat-first-item ' + (this.props.title ? '' : ' no-title')}
-								>
+								<MediaListRow className={'feat-first-item ' + (this.props.title ? '' : ' no-title')}>
 									<InlineSliderItemList
 										layout="featured"
 										items={[firstFeatured]}
@@ -135,8 +129,7 @@ export class HomeSingleFeaturedPage extends Page {
 									/>
 								</MediaListRow>
 							</MediaMultiListWrapper>
-						) :
-							null}
+						) : null}
 
 						{/* 🔹 Remaining featured videos carousel */}
 						{remainingFeatured.length > 0 ? (

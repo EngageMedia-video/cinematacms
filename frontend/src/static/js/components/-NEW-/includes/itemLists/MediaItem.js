@@ -3,55 +3,51 @@ import MediaItemPreviewer from './MediaItemPreviewer';
 let mediaPreviewerInstance = null;
 
 var CSS_selectors = {
-    mediaItemPreviewer: '.item-img-preview',
+	mediaItemPreviewer: '.item-img-preview',
 };
 
 var DataAttributes = {
-    mediaPreviewSrc: 'data-src',
-    mediaPreviewExt: 'data-ext'
+	mediaPreviewSrc: 'data-src',
+	mediaPreviewExt: 'data-ext',
 };
 
-export default class MediaItem{
+export default class MediaItem {
+	constructor(item) {
+		if (!Node.prototype.isPrototypeOf(item)) {
+			return null;
+		}
 
-    constructor(item){
+		this.element = item;
 
-        if (!Node.prototype.isPrototypeOf(item)) {
-            return null;
-        }
+		this.previewer = {
+			element: item.querySelector(CSS_selectors.mediaItemPreviewer),
+		};
 
-        this.element = item;
+		let tmp;
 
-        this.previewer = {
-            element: item.querySelector(CSS_selectors.mediaItemPreviewer)
-        };
+		if (this.previewer.element) {
+			tmp = this.previewer.element.getAttribute(DataAttributes.mediaPreviewSrc);
 
-        let tmp;
+			if (tmp) {
+				this.previewer.src = tmp.trim();
+			}
+		}
 
-        if (this.previewer.element) {
-            
-            tmp = this.previewer.element.getAttribute(DataAttributes.mediaPreviewSrc);
-            
-            if( tmp ){
-                this.previewer.src = tmp.trim();
-            }
-        }
-        
-        if (this.previewer.src) {
-            
-            tmp = this.previewer.element.getAttribute(DataAttributes.mediaPreviewExt);
+		if (this.previewer.src) {
+			tmp = this.previewer.element.getAttribute(DataAttributes.mediaPreviewExt);
 
-            if( tmp ){
-                this.previewer.extensions = tmp.trim().split(',');
-            }
-        }
+			if (tmp) {
+				this.previewer.extensions = tmp.trim().split(',');
+			}
+		}
 
-        if (this.previewer.extensions) {
-            mediaPreviewerInstance = mediaPreviewerInstance || new MediaItemPreviewer(this.previewer.extensions);
-            mediaPreviewerInstance.elementEvents( this.element );
-        }
-    }
+		if (this.previewer.extensions) {
+			mediaPreviewerInstance = mediaPreviewerInstance || new MediaItemPreviewer(this.previewer.extensions);
+			mediaPreviewerInstance.elementEvents(this.element);
+		}
+	}
 
-    element(){
-        return this.element;
-    }
+	element() {
+		return this.element;
+	}
 }

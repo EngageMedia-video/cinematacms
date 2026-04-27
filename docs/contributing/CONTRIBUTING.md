@@ -45,7 +45,7 @@ This project and everyone participating in it is governed by the [Cinemata Code 
 
 ## Setting Up Development Environment
 
-Refer to our [installation documentation](docs/index.md) for detailed setup instructions. 
+Refer to our [installation documentation](docs/index.md) for detailed setup instructions.
 
 ## Pull Request Process
 

@@ -32,4 +32,3 @@ font-family: 'Amulya-MediumItalic';
 font-family: 'Amulya-Bold';
 font-family: 'Amulya-BoldItalic';
 ```
-

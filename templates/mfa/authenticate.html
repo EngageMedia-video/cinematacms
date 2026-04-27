@@ -9,7 +9,7 @@
   <div class="user-action-form-inner">
 
     <h1>Two-Factor Authentication</h1>
-    
+
     {% if form.errors %}
       <div class="alert error">
         {% for field, errors in form.errors.items %}
@@ -17,7 +17,7 @@
         {% endfor %}
       </div>
     {% endif %}
-    
+
     <p id="otp-instruction" style="font-weight: 500">Enter the 6-digit code from your authenticator app to continue.</p>
     <p id="recovery-instruction" style="font-weight: 500; display: none;">Enter your 12-digit recovery code to continue.</p>
 
@@ -42,9 +42,9 @@
 
         <!-- Recovery code input -->
         <div id="recovery-input-container">
-            <input type="text" id="recovery-code" 
-              placeholder="Enter 12-digit recovery code" 
-              pattern="[0-9]{12}" 
+            <input type="text" id="recovery-code"
+              placeholder="Enter 12-digit recovery code"
+              pattern="[0-9]{12}"
               inputmode="numeric"
             >
         </div>
@@ -86,14 +86,14 @@
     const otpInstruction = document.getElementById('otp-instruction');
     const recoveryInstruction = document.getElementById('recovery-instruction');
     const toggleButton = document.getElementById('toggle-recovery-mode');
-    
+
     let isRecoveryMode = false;
-    
+
     // Toggle between OTP and recovery code inputs
     toggleButton.addEventListener('click', function(e) {
       e.preventDefault();
       isRecoveryMode = !isRecoveryMode;
-      
+
       if (isRecoveryMode) {
         // Switch to recovery mode
         otpContainer.style.display = 'none';
@@ -111,24 +111,24 @@
         otpDigits[0].focus();
         this.textContent = 'Use a backup code';
       }
-      
+
       // Clear both input types when switching
       otpDigits.forEach(digit => { digit.value = ''; });
       recoveryCode.value = '';
-      
+
       // Clear the original input
       if (originalInput) {
         originalInput.value = '';
       }
     });
-    
+
     // Focus the first input on page load
     otpDigits[0].focus();
-    
+
     // Update the original input value when OTP digits change
     function updateOriginalInput() {
       if (!originalInput) return;
-      
+
       if (isRecoveryMode) {
         // Use recovery code value
         originalInput.value = recoveryCode.value;
@@ -141,29 +141,29 @@
         originalInput.value = combinedValue;
       }
     }
-    
+
     // Add event listeners for recovery code input
     recoveryCode.addEventListener('input', function() {
       // Allow only numbers and limit to 12 digits
       this.value = this.value.replace(/[^0-9]/g, '').substring(0, 12);
       updateOriginalInput();
     });
-    
+
     // Add event listeners to each OTP digit input
     otpDigits.forEach((digit, index) => {
       // Handle input
       digit.addEventListener('input', function(e) {
         // Allow only numbers
         this.value = this.value.replace(/[^0-9]/g, '');
-        
+
         // Move to next input if a digit was entered
         if (this.value && index < otpDigits.length - 1) {
           otpDigits[index + 1].focus();
         }
-        
+
         updateOriginalInput();
       });
-      
+
       // Handle backspace and arrow keys
       digit.addEventListener('keydown', function(e) {
         if (e.key === 'Backspace' && !this.value && index > 0) {
@@ -177,35 +177,35 @@
           otpDigits[index + 1].focus();
         }
       });
-      
+
       // Select all text on focus
       digit.addEventListener('focus', function() {
         this.select();
       });
     });
-    
+
     // Handle paste events for OTP
     otpDigits[0].addEventListener('paste', function(e) {
       e.preventDefault();
-      
+
       // Get pasted data
       let pastedData = (e.clipboardData || window.clipboardData).getData('text');
-      
+
       // Remove non-numeric characters
       pastedData = pastedData.replace(/[^0-9]/g, '');
-      
+
       // Fill the inputs with pasted data
       for (let i = 0; i < Math.min(pastedData.length, otpDigits.length); i++) {
         otpDigits[i].value = pastedData[i];
       }
-      
+
       // Focus the next empty input or the last one
       const nextEmptyIndex = Math.min(pastedData.length, otpDigits.length - 1);
       otpDigits[nextEmptyIndex].focus();
-      
+
       updateOriginalInput();
     });
-    
+
     // Handle paste events for recovery code
     recoveryCode.addEventListener('paste', function(e) {
       // Allow default paste behavior for the single input field

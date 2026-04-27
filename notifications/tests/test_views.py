@@ -19,9 +19,15 @@ def _create_user(username, email=None):
     )
 
 
-def _create_notification(recipient, actor=None, notification_type=NotificationType.COMMENT,
-                         message="test notification", action_url="/view/abc",
-                         is_read=False, metadata=None):
+def _create_notification(
+    recipient,
+    actor=None,
+    notification_type=NotificationType.COMMENT,
+    message="test notification",
+    action_url="/view/abc",
+    is_read=False,
+    metadata=None,
+):
     return Notification.objects.create(
         recipient=recipient,
         actor=actor,
@@ -66,8 +72,7 @@ class NotificationListTest(TestCase):
     def test_list_filter_by_is_read(self):
         """AC #3: ?is_read=false filters correctly."""
         _create_notification(self.user, self.actor, is_read=False)
-        _create_notification(self.user, self.actor, NotificationType.LIKE,
-                             message="liked", is_read=True)
+        _create_notification(self.user, self.actor, NotificationType.LIKE, message="liked", is_read=True)
         resp = self.client.get("/api/v1/notifications/?is_read=false")
         data = resp.json()
         self.assertEqual(data["count"], 1)
@@ -94,16 +99,26 @@ class NotificationListTest(TestCase):
 
     def test_serializer_json_format(self):
         """AC #12: Response JSON has correct structure."""
-        n = _create_notification(
-            self.user, self.actor,
+        _create_notification(
+            self.user,
+            self.actor,
             message="filmmaker commented on 'Doc'",
             action_url="/view/abc-def",
             metadata={"media_id": 42, "comment_id": 1},
         )
         resp = self.client.get("/api/v1/notifications/")
         item = resp.json()["results"][0]
-        expected_keys = {"id", "notification_type", "message", "action_url",
-                         "is_read", "actor", "metadata", "created_at", "read_at"}
+        expected_keys = {
+            "id",
+            "notification_type",
+            "message",
+            "action_url",
+            "is_read",
+            "actor",
+            "metadata",
+            "created_at",
+            "read_at",
+        }
         self.assertEqual(set(item.keys()), expected_keys)
         actor_keys = {"username", "name", "thumbnail_url", "url"}
         self.assertEqual(set(item["actor"].keys()), actor_keys)
@@ -113,7 +128,8 @@ class NotificationListTest(TestCase):
     def test_list_actor_null_for_system_announcement(self):
         """AC #13: System announcement has actor: null."""
         _create_notification(
-            self.user, actor=None,
+            self.user,
+            actor=None,
             notification_type=NotificationType.SYSTEM_ANNOUNCEMENT,
             message="System maintenance",
         )
@@ -146,7 +162,9 @@ class NotificationListTest(TestCase):
         """Notifications returned newest first."""
         n1 = _create_notification(self.user, self.actor, message="first")
         n2 = _create_notification(
-            self.user, self.actor, message="second",
+            self.user,
+            self.actor,
+            message="second",
             notification_type=NotificationType.LIKE,
         )
         resp = self.client.get("/api/v1/notifications/")
@@ -157,16 +175,25 @@ class NotificationListTest(TestCase):
     def test_combined_type_and_is_read_filter(self):
         """Both ?type= and ?is_read= filters apply simultaneously."""
         _create_notification(
-            self.user, self.actor, NotificationType.COMMENT,
-            is_read=False, message="unread comment",
+            self.user,
+            self.actor,
+            NotificationType.COMMENT,
+            is_read=False,
+            message="unread comment",
         )
         _create_notification(
-            self.user, self.actor, NotificationType.COMMENT,
-            is_read=True, message="read comment",
+            self.user,
+            self.actor,
+            NotificationType.COMMENT,
+            is_read=True,
+            message="read comment",
         )
         _create_notification(
-            self.user, self.actor, NotificationType.LIKE,
-            is_read=False, message="unread like",
+            self.user,
+            self.actor,
+            NotificationType.LIKE,
+            is_read=False,
+            message="unread like",
         )
         resp = self.client.get("/api/v1/notifications/?type=comment&is_read=false")
         data = resp.json()
@@ -184,10 +211,8 @@ class UnreadCountTest(TestCase):
 
     def test_unread_count_returns_correct_count(self):
         _create_notification(self.user, self.actor, is_read=False)
-        _create_notification(self.user, self.actor, NotificationType.LIKE,
-                             message="liked", is_read=False)
-        _create_notification(self.user, self.actor, NotificationType.FOLLOW,
-                             message="followed", is_read=True)
+        _create_notification(self.user, self.actor, NotificationType.LIKE, message="liked", is_read=False)
+        _create_notification(self.user, self.actor, NotificationType.FOLLOW, message="followed", is_read=True)
         resp = self.client.get("/api/v1/notifications/unread-count/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["unread_count"], 2)
@@ -281,9 +306,7 @@ class MarkAllAsReadTest(TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["marked_count"], 3)
-        self.assertEqual(
-            Notification.objects.filter(recipient=self.user, is_read=False).count(), 0
-        )
+        self.assertEqual(Notification.objects.filter(recipient=self.user, is_read=False).count(), 0)
 
 
 class AuthenticationTest(TestCase):
@@ -301,7 +324,8 @@ class AuthenticationTest(TestCase):
         for method, url in endpoints:
             resp = getattr(self.client, method)(url, content_type="application/json")
             self.assertEqual(
-                resp.status_code, 403,
+                resp.status_code,
+                403,
                 f"{method.upper()} {url} should return 403 for unauthenticated user",
             )
 
@@ -326,9 +350,7 @@ class NotificationPreferenceDetailTest(TestCase):
 
     def test_get_lazy_creates_preference_with_defaults(self):
         """First GET creates a NotificationPreference row with model defaults."""
-        self.assertFalse(
-            NotificationPreference.objects.filter(user=self.user).exists()
-        )
+        self.assertFalse(NotificationPreference.objects.filter(user=self.user).exists())
         resp = self.client.get("/api/v1/notifications/preferences/")
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
@@ -340,9 +362,7 @@ class NotificationPreferenceDetailTest(TestCase):
         self.assertEqual(data["on_reply"], NotificationChannel.EMAIL)
         self.assertEqual(data["on_follow"], NotificationChannel.EMAIL)
         self.assertEqual(data["on_mention"], NotificationChannel.EMAIL)
-        self.assertTrue(
-            NotificationPreference.objects.filter(user=self.user).exists()
-        )
+        self.assertTrue(NotificationPreference.objects.filter(user=self.user).exists())
 
     def test_patch_updates_single_field_and_persists(self):
         resp = self.client.patch(
@@ -395,9 +415,7 @@ class NotificationPreferenceDetailTest(TestCase):
 
     def test_patch_does_not_touch_other_users_preferences(self):
         # Seed another user's prefs with a distinctive value
-        NotificationPreference.objects.create(
-            user=self.other, on_like=NotificationChannel.EMAIL
-        )
+        NotificationPreference.objects.create(user=self.other, on_like=NotificationChannel.EMAIL)
         resp = self.client.patch(
             "/api/v1/notifications/preferences/",
             data={"on_like": NotificationChannel.NONE},

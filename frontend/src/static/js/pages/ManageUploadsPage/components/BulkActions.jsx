@@ -27,9 +27,15 @@ export function UploadsBulkActions({ selectedItemsSize, onBulkStateChange }) {
 	return (
 		<div className="manage-uploads-bulk-actions">
 			<span className="bulk-selected-count">{selectedItemsSize} selected</span>
-			<button className="bulk-action-btn bulk-action-private" onClick={onClickMakePrivate}>Make Private</button>
-			<button className="bulk-action-btn bulk-action-public" onClick={onClickMakePublic}>Make Public</button>
-			<button className="bulk-action-btn bulk-action-unlisted" onClick={onClickMakeUnlisted}>Make Unlisted</button>
+			<button className="bulk-action-btn bulk-action-private" onClick={onClickMakePrivate}>
+				Make Private
+			</button>
+			<button className="bulk-action-btn bulk-action-public" onClick={onClickMakePublic}>
+				Make Public
+			</button>
+			<button className="bulk-action-btn bulk-action-unlisted" onClick={onClickMakeUnlisted}>
+				Make Unlisted
+			</button>
 		</div>
 	);
 }
