@@ -219,7 +219,6 @@ export function PlaylistShareOptions(props){
 				// path before giving up and surfacing the error.
 				copyViaExecCommand();
 				if( err ){
-					// eslint-disable-next-line no-console
 					console.warn('clipboard.writeText failed, falling back to execCommand:', err);
 				}
 			});
