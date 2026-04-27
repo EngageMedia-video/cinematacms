@@ -11,15 +11,13 @@ import { MediaListWrapper } from '../components/MediaListWrapper';
 
 import { ManageItemList } from '../../components/-NEW-/ManageItemList/ManageItemList';
 
-function genReqUrl( url, sort, page ){
-	const ret = url + '?' + sort + ( '' === sort ? '' : '&' ) +  'page=' + page;
+function genReqUrl(url, sort, page) {
+	const ret = url + '?' + sort + ('' === sort ? '' : '&') + 'page=' + page;
 	return ret;
 }
 
 export class ManageCommentsPage extends Page {
-
-	constructor(props){
-
+	constructor(props) {
 		super(props, 'manage-comments');
 
 		this.state = {
@@ -39,70 +37,77 @@ export class ManageCommentsPage extends Page {
 		this.onItemsRemovalFail = this.onItemsRemovalFail.bind(this);
 	}
 
-    onTablePageChange( newPageUrl, updatedPage ){
+	onTablePageChange(newPageUrl, updatedPage) {
 		this.setState({
 			currentPage: updatedPage,
-			requestUrl: genReqUrl( ApiUrlContext._currentValue.manage.comments, this.state.sortingArgs, updatedPage ),
+			requestUrl: genReqUrl(ApiUrlContext._currentValue.manage.comments, this.state.sortingArgs, updatedPage),
 		});
-    }
+	}
 
-	getCountFunc(resultsCount){
+	getCountFunc(resultsCount) {
 		this.setState({
 			resultsCount: resultsCount,
 		});
 	}
 
-	onColumnSortClick( sort, order ){
+	onColumnSortClick(sort, order) {
 		const newArgs = 'sort_by=' + sort + '&ordering=' + order;
 		this.setState({
 			sortBy: sort,
 			ordering: order,
 			sortingArgs: newArgs,
-			requestUrl: genReqUrl( ApiUrlContext._currentValue.manage.comments, newArgs, this.state.currentPage ),
+			requestUrl: genReqUrl(ApiUrlContext._currentValue.manage.comments, newArgs, this.state.currentPage),
 		});
 	}
 
-	onItemsRemoval( multipleItems ){
-		this.setState({
-			resultsCount: null,
-			refresh: this.state.refresh + 1,
-			requestUrl: ApiUrlContext._currentValue.manage.comments,
-		}, function(){
-			if( multipleItems ){
-				PageActions.addNotification( "The comments deleted successfully.", 'commentsRemovalSucceed');
+	onItemsRemoval(multipleItems) {
+		this.setState(
+			{
+				resultsCount: null,
+				refresh: this.state.refresh + 1,
+				requestUrl: ApiUrlContext._currentValue.manage.comments,
+			},
+			function () {
+				if (multipleItems) {
+					PageActions.addNotification('The comments deleted successfully.', 'commentsRemovalSucceed');
+				} else {
+					PageActions.addNotification('The comment deleted successfully.', 'commentRemovalSucceed');
+				}
 			}
-			else{
-				PageActions.addNotification( "The comment deleted successfully.", 'commentRemovalSucceed');
-			}
-		});
+		);
 	}
 
-	onItemsRemovalFail( multipleItems ){
-
-		if( multipleItems ){
-			PageActions.addNotification( "The comments removal failed. Please try again.", 'commentsRemovalFailed');
-		}
-		else{
-			PageActions.addNotification( "The comment removal failed. Please try again.", 'commentRemovalFailed');
+	onItemsRemovalFail(multipleItems) {
+		if (multipleItems) {
+			PageActions.addNotification('The comments removal failed. Please try again.', 'commentsRemovalFailed');
+		} else {
+			PageActions.addNotification('The comment removal failed. Please try again.', 'commentRemovalFailed');
 		}
 	}
 
-	pageContent(){
-
-		return <MediaListWrapper title={ this.props.title + ( null === this.state.resultsCount ? '' : ' (' + this.state.resultsCount + ')' ) } className="search-results-wrap items-list-hor">
-					<ManageItemList 
-						pageItems={ 50 }
-						manageType={ 'comments' }
-						key={ this.state.requestUrl + '[' + this.state.refresh + ']' }
-						itemsCountCallback={ this.getCountFunc }
-						requestUrl={ this.state.requestUrl }
-						onPageChange={ this.onTablePageChange }
-						sortBy={ this.state.sortBy }
-						ordering={ this.state.ordering }
-						onRowsDelete={ this.onItemsRemoval }
-						onRowsDeleteFail={ this.onItemsRemovalFail }
-						onClickColumnSort={ this.onColumnSortClick } />
-				</MediaListWrapper>;
+	pageContent() {
+		return (
+			<MediaListWrapper
+				title={
+					this.props.title + (null === this.state.resultsCount ? '' : ' (' + this.state.resultsCount + ')')
+				}
+				className="search-results-wrap items-list-hor"
+			>
+				<ManageItemList
+					pageItems={50}
+					manageType={'comments'}
+					key={this.state.requestUrl + '[' + this.state.refresh + ']'}
+					itemsCountCallback={this.getCountFunc}
+					requestUrl={this.state.requestUrl}
+					onPageChange={this.onTablePageChange}
+					sortBy={this.state.sortBy}
+					ordering={this.state.ordering}
+					onRowsDelete={this.onItemsRemoval}
+					onRowsDeleteFail={this.onItemsRemovalFail}
+					onClickColumnSort={this.onColumnSortClick}
+				/>
+			</MediaListWrapper>
+		);
 	}
 }
 

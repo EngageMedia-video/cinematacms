@@ -1,12 +1,20 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import "../styles/MediaListWrapper.scss";
+import '../styles/MediaListWrapper.scss';
 
-export function MediaMultiListWrapper(props){
-	return (<div className={ ( void 0 === props.className || null === props.className ? '' : props.className + ' ' ) + 'media-list-wrapper full-bleed' } style={ props.style }>
-				{ props.children || null }
-			</div>);
+export function MediaMultiListWrapper(props) {
+	return (
+		<div
+			className={
+				(void 0 === props.className || null === props.className ? '' : props.className + ' ') +
+				'media-list-wrapper full-bleed'
+			}
+			style={props.style}
+		>
+			{props.children || null}
+		</div>
+	);
 }
 
 MediaMultiListWrapper.propTypes = {

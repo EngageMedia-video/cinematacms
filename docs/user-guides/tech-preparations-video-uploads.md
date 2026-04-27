@@ -9,7 +9,7 @@ To ensure your video uploads to CinemataCMS are processed smoothly, optimise ser
 ## 📁 File Format and Container
 
 - **Preferred Container**: `.mp4`
-- **Alternative Supported Formats**: `.mov`, `.webm`, `.mkv`, `.avi` 
+- **Alternative Supported Formats**: `.mov`, `.webm`, `.mkv`, `.avi`
 
 ---
 

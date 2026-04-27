@@ -1,21 +1,21 @@
-import React from "react";
-import PropTypes from "prop-types";
+import React from 'react';
+import PropTypes from 'prop-types';
 
-import { ApiUrlConsumer } from "../contexts/ApiUrlContext";
-import UserContext, { UserConsumer } from "../contexts/UserContext";
+import { ApiUrlConsumer } from '../contexts/ApiUrlContext';
+import UserContext, { UserConsumer } from '../contexts/UserContext';
 
-import { Page } from "./_Page";
-import PageStore from "./_PageStore";
-import { MediaListWrapper } from "./components/MediaListWrapper";
-import { LazyLoadItemListAsync } from "../components/-NEW-/LazyLoadItemListAsync";
+import { Page } from './_Page';
+import PageStore from './_PageStore';
+import { MediaListWrapper } from './components/MediaListWrapper';
+import { LazyLoadItemListAsync } from '../components/-NEW-/LazyLoadItemListAsync';
 
-import { ProfileHistoryPage } from "./ProfilePage/History";
+import { ProfileHistoryPage } from './ProfilePage/History';
 
-import { addClassname } from "../functions/dom.js";
+import { addClassname } from '../functions/dom.js';
 
 export class AnonymousHistoryPage extends Page {
 	constructor(props) {
-		super(props, "history-media");
+		super(props, 'history-media');
 
 		this.state = {
 			resultsCount: null,
@@ -39,9 +39,7 @@ export class AnonymousHistoryPage extends Page {
 							<MediaListWrapper
 								title={
 									this.props.title +
-									(null !== this.state.resultsCount
-										? " (" + this.state.resultsCount + ")"
-										: "")
+									(null !== this.state.resultsCount ? ' (' + this.state.resultsCount + ')' : '')
 								}
 								className="search-results-wrap items-list-hor"
 							>
@@ -50,9 +48,9 @@ export class AnonymousHistoryPage extends Page {
 									horizontalItemsOrientation={true}
 									itemsCountCallback={this.getCountFunc}
 									requestUrl={apiUrl.user.history}
-									hideViews={!PageStore.get("config-media-item").displayViews}
-									hideAuthor={!PageStore.get("config-media-item").displayAuthor}
-									hideDate={!PageStore.get("config-media-item").displayPublishDate}
+									hideViews={!PageStore.get('config-media-item').displayViews}
+									hideAuthor={!PageStore.get('config-media-item').displayAuthor}
+									hideDate={!PageStore.get('config-media-item').displayPublishDate}
 								/>
 							</MediaListWrapper>
 						)}
@@ -68,7 +66,7 @@ AnonymousHistoryPage.propTypes = {
 };
 
 AnonymousHistoryPage.defaultProps = {
-	title: PageStore.get("config-enabled").pages.history.title,
+	title: PageStore.get('config-enabled').pages.history.title,
 };
 
 export class HistoryPage extends React.PureComponent {
@@ -77,14 +75,11 @@ export class HistoryPage extends React.PureComponent {
 	}
 
 	render() {
-		if (
-			UserContext._currentValue.is.anonymous ||
-			!PageStore.get("config-options").pages.profile.includeHistory
-		) {
+		if (UserContext._currentValue.is.anonymous || !PageStore.get('config-options').pages.profile.includeHistory) {
 			return <AnonymousHistoryPage />;
 		}
 
-		addClassname(document.getElementById("page-history"), "profile-page-history");
+		addClassname(document.getElementById('page-history'), 'profile-page-history');
 
 		window.MediaCMS.profileId = UserContext._currentValue.username;
 

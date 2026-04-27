@@ -1,2 +1,1 @@
 # @mediacms/vjs-plugin
-

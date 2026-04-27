@@ -16,81 +16,83 @@ import * as PlaylistPageActions from '../../pages/PlaylistPage/actions.js';
 
 import { putRequest, getCSRFToken } from '../../functions';
 
-function mediaPlaylistPopupPages(proceedRemoval){
-
+function mediaPlaylistPopupPages(proceedRemoval) {
 	const settingOptionsList = {
 		deleteMedia: {
-			itemType: "open-subpage",
-			text: "Remove from playlist",
-			icon: "delete",
+			itemType: 'open-subpage',
+			text: 'Remove from playlist',
+			icon: 'delete',
 			buttonAttr: {
-				className: "delete-media-from-playlist",
+				className: 'delete-media-from-playlist',
 				onClick: proceedRemoval,
 			},
-		}
+		},
 	};
 
 	const pages = {
-		main: <PopupMain>
-				<NavigationMenuList items={ [ settingOptionsList.deleteMedia ] } />
-			</PopupMain>,
+		main: (
+			<PopupMain>
+				<NavigationMenuList items={[settingOptionsList.deleteMedia]} />
+			</PopupMain>
+		),
 	};
 
 	return pages;
 }
 
-export function MediaPlaylistOptions(props){
+export function MediaPlaylistOptions(props) {
+	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
 
-	const [ popupContentRef, PopupContent, PopupTrigger ] = usePopup();
+	const [popupPages] = useState(mediaPlaylistPopupPages(proceedRemoval));
 
-	const [ popupPages ] = useState( mediaPlaylistPopupPages(proceedRemoval) );
-
-	function mediaPlaylistRemovalCompleted(){
+	function mediaPlaylistRemovalCompleted() {
 		popupContentRef.current.tryToHide();
-		PageActions.addNotification( "Media removed from playlist", 'mediaPlaylistRemove');
-		PlaylistPageActions.removedMediaFromPlaylist( props.media_id, props.playlist_id );
+		PageActions.addNotification('Media removed from playlist', 'mediaPlaylistRemove');
+		PlaylistPageActions.removedMediaFromPlaylist(props.media_id, props.playlist_id);
 	}
 
-	function mediaPlaylistRemovalFailed(){
+	function mediaPlaylistRemovalFailed() {
 		popupContentRef.current.tryToHide();
-		PageActions.addNotification( "Media removal from playlist failed", 'mediaPlaylistRemoveFail');
+		PageActions.addNotification('Media removal from playlist failed', 'mediaPlaylistRemoveFail');
 	}
 
-	function proceedRemoval(){
-        putRequest(
-            PageStore.get('api-playlists') + '/' + props.playlist_id,
-            {
-                type: 'remove',
-                media_friendly_token: props.media_id,
-            },
-            {
-                headers: {
-                    'X-CSRFToken': getCSRFToken(),
-                }
-            },
-            false,
-            mediaPlaylistRemovalCompleted,
-            mediaPlaylistRemovalFailed
-        );
+	function proceedRemoval() {
+		putRequest(
+			PageStore.get('api-playlists') + '/' + props.playlist_id,
+			{
+				type: 'remove',
+				media_friendly_token: props.media_id,
+			},
+			{
+				headers: {
+					'X-CSRFToken': getCSRFToken(),
+				},
+			},
+			false,
+			mediaPlaylistRemovalCompleted,
+			mediaPlaylistRemovalFailed
+		);
 	}
 
-	return (<div className="item-playlist-options-wrap item-playlist-options-main">
+	return (
+		<div className="item-playlist-options-wrap item-playlist-options-main">
+			<PopupTrigger contentRef={popupContentRef}>
+				<CircleIconButton>
+					<MaterialIcon type="more_vert" />
+				</CircleIconButton>
+			</PopupTrigger>
 
-				<PopupTrigger contentRef={ popupContentRef }>
-					<CircleIconButton><MaterialIcon type="more_vert" /></CircleIconButton>
-				</PopupTrigger>
-
-				<PopupContent contentRef={ popupContentRef }>
-					<NavigationContentApp
-						initPage="main"
-						focusFirstItemOnPageChange={ false }
-						pages={ popupPages }
-						pageChangeSelector={ '.change-page' }
-						pageIdSelectorAttr={ 'data-page-id' }
-					/>
-				</PopupContent>
-
-			</div>);
+			<PopupContent contentRef={popupContentRef}>
+				<NavigationContentApp
+					initPage="main"
+					focusFirstItemOnPageChange={false}
+					pages={popupPages}
+					pageChangeSelector={'.change-page'}
+					pageIdSelectorAttr={'data-page-id'}
+				/>
+			</PopupContent>
+		</div>
+	);
 }
 
 MediaPlaylistOptions.propTypes = {};

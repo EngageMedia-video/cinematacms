@@ -1,5 +1,5 @@
-@import "../../../css/includes/_variables.scss";
-@import "../../../css/includes/_variables_dimensions.scss";
+@import '../../../css/includes/_variables.scss';
+@import '../../../css/includes/_variables_dimensions.scss';
 
 .visible-sidebar .page-main-wrap {
 	padding-left: 0;
@@ -9,20 +9,14 @@
 	.popup-message-bottom {
 		button {
 			&.cancel-comment-removal {
-				color: var(
-					--media-author-actions-popup-bottom-cancel-removal-button-text-color
-				);
+				color: var(--media-author-actions-popup-bottom-cancel-removal-button-text-color);
 
 				&:hover,
 				&:focus {
-					color: var(
-						--media-author-actions-popup-bottom-cancel-removal-button-hover-text-color
-					);
+					color: var(--media-author-actions-popup-bottom-cancel-removal-button-hover-text-color);
 
 					.material-icons {
-						color: var(
-							--media-author-actions-popup-bottom-cancel-removal-button-hover-icon-text-color
-						);
+						color: var(--media-author-actions-popup-bottom-cancel-removal-button-hover-icon-text-color);
 					}
 				}
 			}
@@ -34,20 +28,14 @@
 	.popup-message-bottom {
 		button {
 			&.cancel-profile-removal {
-				color: var(
-					--profile-banner-wrap-popup-bottom-cancel-removal-button-text-color
-				);
+				color: var(--profile-banner-wrap-popup-bottom-cancel-removal-button-text-color);
 
 				&:hover,
 				&:focus {
-					color: var(
-						--profile-banner-wrap-popup-bottom-cancel-removal-button-hover-text-color
-					);
+					color: var(--profile-banner-wrap-popup-bottom-cancel-removal-button-hover-text-color);
 
 					.material-icons {
-						color: var(
-							--profile-banner-wrap-popup-bottom-cancel-removal-button-hover-icon-text-color
-						);
+						color: var(--profile-banner-wrap-popup-bottom-cancel-removal-button-hover-icon-text-color);
 					}
 				}
 			}
@@ -84,17 +72,13 @@
 					.circle-icon-button {
 						&:focus {
 							> * {
-								background-color: var(
-									--media-actions-not-popup-circle-icon-focus-bg-color
-								);
+								background-color: var(--media-actions-not-popup-circle-icon-focus-bg-color);
 							}
 						}
 
 						&:active {
 							> * {
-								background-color: var(
-									--media-actions-not-popup-circle-icon-active-bg-color
-								);
+								background-color: var(--media-actions-not-popup-circle-icon-active-bg-color);
 							}
 						}
 					}
@@ -134,7 +118,7 @@
 							background-color: var(--media-actions-share-copy-field-bg-color);
 						}
 
-						input[type="text"] {
+						input[type='text'] {
 							color: var(--media-actions-share-copy-field-input-text-color);
 						}
 					}
@@ -175,9 +159,7 @@
 					.popup-fullscreen {
 						.popup-main {
 							> div {
-								background-color: var(
-									--media-actions-share-fullscreen-popup-main-bg-color
-								);
+								background-color: var(--media-actions-share-fullscreen-popup-main-bg-color);
 							}
 						}
 					}
@@ -197,7 +179,7 @@
 			color: var(--report-form-field-label-text-color);
 		}
 
-		input[type="text"],
+		input[type='text'],
 		textarea {
 			color: var(--report-form-field-input-text-color);
 			border-color: var(--report-form-field-input-border-color);
@@ -512,7 +494,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 			// padding-top:160px + 56;
 
 			&:before {
-				content: "\E3A1";
+				content: '\E3A1';
 				position: absolute;
 				top: 50%;
 				left: 50%;
@@ -523,7 +505,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 
 				line-height: 1;
 				padding: 0;
-				font-family: "Material Icons";
+				font-family: 'Material Icons';
 				text-decoration: none;
 				color: #888;
 			}
@@ -896,7 +878,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 				&.like,
 				&.dislike {
 					&:before {
-						content: "";
+						content: '';
 						position: absolute;
 						bottom: 0;
 						left: -4px;
@@ -1017,7 +999,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							button {
 								> *:first-child {
 									background-color: rgb(59, 89, 152);
-									background-image: url("../../../images/social-media-icons/fb-logo.png");
+									background-image: url('../../../images/social-media-icons/fb-logo.png');
 								}
 							}
 						}
@@ -1027,7 +1009,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							button {
 								> *:first-child {
 									background-color: rgb(29, 161, 242);
-									background-image: url("../../../images/social-media-icons/twitter-logo.png");
+									background-image: url('../../../images/social-media-icons/twitter-logo.png');
 								}
 							}
 						}
@@ -1037,7 +1019,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							button {
 								> *:first-child {
 									background-color: rgb(255, 69, 0);
-									background-image: url("../../../images/social-media-icons/reddit-logo.png");
+									background-image: url('../../../images/social-media-icons/reddit-logo.png');
 								}
 							}
 						}
@@ -1047,7 +1029,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							button {
 								> *:first-child {
 									background-color: rgb(53, 70, 92);
-									background-image: url("../../../images/social-media-icons/tumblr-logo.png");
+									background-image: url('../../../images/social-media-icons/tumblr-logo.png');
 								}
 							}
 						}
@@ -1057,7 +1039,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							button {
 								> *:first-child {
 									background-color: rgb(189, 8, 28);
-									background-image: url("../../../images/social-media-icons/pinterest-logo.png");
+									background-image: url('../../../images/social-media-icons/pinterest-logo.png');
 								}
 							}
 						}
@@ -1067,7 +1049,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							button {
 								> *:first-child {
 									background-color: rgb(70, 128, 194);
-									background-image: url("../../../images/social-media-icons/vk-logo.png");
+									background-image: url('../../../images/social-media-icons/vk-logo.png');
 								}
 							}
 						}
@@ -1077,7 +1059,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							button {
 								> *:first-child {
 									background-color: rgb(0, 119, 181);
-									background-image: url("../../../images/social-media-icons/linkedin-logo.png");
+									background-image: url('../../../images/social-media-icons/linkedin-logo.png');
 								}
 							}
 						}
@@ -1087,7 +1069,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							button {
 								> *:first-child {
 									background-color: rgb(255, 130, 38);
-									background-image: url("../../../images/social-media-icons/mix-logo.png");
+									background-image: url('../../../images/social-media-icons/mix-logo.png');
 								}
 							}
 						}
@@ -1106,7 +1088,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							button {
 								> *:first-child {
 									background-color: rgb(37, 211, 102);
-									background-image: url("../../../images/social-media-icons/whatsapp-logo.png");
+									background-image: url('../../../images/social-media-icons/whatsapp-logo.png');
 								}
 							}
 						}
@@ -1117,7 +1099,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 								> *:first-child {
 									background-color: rgb(0, 136, 204);
 									background-position: 11px;
-									background-image: url("../../../images/social-media-icons/telegram-logo.png");
+									background-image: url('../../../images/social-media-icons/telegram-logo.png');
 								}
 							}
 						}
@@ -1137,7 +1119,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							border-radius: 2px;
 						}
 
-						input[type="text"] {
+						input[type='text'] {
 							width: 100%;
 							height: 42px;
 							padding: 1px 0 1px 16px;
@@ -1197,13 +1179,17 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 									width: 220px;
 								}
 
-								box-shadow: 0 16px 24px 2px rgba(#000, 0.14),
-									0 6px 30px 5px rgba(#000, 0.12), 0 8px 10px -5px rgba(#000, 0.4);
+								box-shadow:
+									0 16px 24px 2px rgba(#000, 0.14),
+									0 6px 30px 5px rgba(#000, 0.12),
+									0 8px 10px -5px rgba(#000, 0.4);
 
 								&.main-options,
 								&.video-download-options {
 									width: 240px;
-									box-shadow: 0 2px 2px 0 rgba(#000, 0.14), 0 1px 5px 0 rgba(#000, 0.12),
+									box-shadow:
+										0 2px 2px 0 rgba(#000, 0.14),
+										0 1px 5px 0 rgba(#000, 0.12),
 										0 3px 1px -2px rgba(#000, 0.2);
 								}
 							}
@@ -1262,8 +1248,10 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 								padding: 24px;
 								text-align: initial;
 
-								box-shadow: rgba(#000, 0.14) 0px 16px 24px 2px,
-									rgba(#000, 0.12) 0px 6px 30px 5px, rgba(#000, 0.4) 0px 8px 10px;
+								box-shadow:
+									rgba(#000, 0.14) 0px 16px 24px 2px,
+									rgba(#000, 0.12) 0px 6px 30px 5px,
+									rgba(#000, 0.4) 0px 8px 10px;
 							}
 						}
 					}
@@ -1301,13 +1289,17 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 									width: 220px;
 								}
 
-								box-shadow: 0 16px 24px 2px rgba(#000, 0.14),
-									0 6px 30px 5px rgba(#000, 0.12), 0 8px 10px -5px rgba(#000, 0.4);
+								box-shadow:
+									0 16px 24px 2px rgba(#000, 0.14),
+									0 6px 30px 5px rgba(#000, 0.12),
+									0 8px 10px -5px rgba(#000, 0.4);
 
 								&.main-options,
 								&.video-download-options {
 									width: 240px;
-									box-shadow: 0 2px 2px 0 rgba(#000, 0.14), 0 1px 5px 0 rgba(#000, 0.12),
+									box-shadow:
+										0 2px 2px 0 rgba(#000, 0.14),
+										0 1px 5px 0 rgba(#000, 0.12),
 										0 3px 1px -2px rgba(#000, 0.2);
 
 									.popup-main {
@@ -1417,7 +1409,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 			font-weight: 500;
 		}
 
-		input[type="text"],
+		input[type='text'],
 		textarea {
 			min-width: 100%;
 			width: 100%;
@@ -1444,7 +1436,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 			// pointer-events: none;
 		}
 
-		input[type="text"] {
+		input[type='text'] {
 			font-size: 14px;
 		}
 
@@ -1758,7 +1750,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 
 		&:after {
 			// @note: Same properties as in page header.
-			content: "";
+			content: '';
 			position: absolute;
 			bottom: -5px;
 			right: 0;
@@ -1817,7 +1809,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 			// max-height:60%;
 			padding: 16px;
 			cursor: text;
-			font-family: "Roboto Mono", monospace;
+			font-family: 'Roboto Mono', monospace;
 			// font-family:"Roboto Mono", "Consolas", "Courier", monospace;
 			font-size: 14px;
 			line-height: 1.714285714;
@@ -1867,7 +1859,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 					// border:1px solid yellow;
 
 					input {
-						&[type="checkbox"] {
+						&[type='checkbox'] {
 							margin-left: 0;
 						}
 					}
@@ -1889,7 +1881,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 					}
 
 					input {
-						&[type="checkbox"] {
+						&[type='checkbox'] {
 							margin-left: 0;
 						}
 					}
@@ -2047,8 +2039,8 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 			}
 
 			.item-date:before {
-				content: "•";
-				content: "\2022";
+				content: '•';
+				content: '\2022';
 				margin: 0 4px;
 			}
 
@@ -2112,14 +2104,14 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 		margin-right: 4px;
 
 		&:after {
-			content: ",";
+			content: ',';
 		}
 
 		&:last-child {
 			margin-right: 0;
 
 			&:after {
-				content: "";
+				content: '';
 			}
 		}
 	}

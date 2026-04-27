@@ -91,7 +91,7 @@ var jush = {
 		}
 		return new RegExp(re.join('|'), 'gi');
 	},
-	
+
 	highlight_states: function (states, text, in_php, escape) {
 		var php = /<\?(?!xml)(?:php)?|<script\s+language\s*=\s*(?:"php"|'php'|php)\s*>/i; // asp_tags=0, short_open_tag=1
 		var num = /(?:\b[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?/;
@@ -108,7 +108,7 @@ var jush = {
 			att_quo: { php: php, 2: /"/ },
 			att_apo: { php: php, 2: /'/ },
 			att_val: { php: php, 2: /(?=>|\s)|$/ },
-			
+
 			css: { php: php, quo: /"/, apo: /'/, com: /\/\*/, css_at: /(@)([^;\s{]+)/, css_pro: /\{/, 2: /(<)(\/style)(>)/i },
 			css_at: { php: php, quo: /"/, apo: /'/, com: /\/\*/, css_at2: /\{/, 1: /;/ },
 			css_at2: { php: php, quo: /"/, apo: /'/, com: /\/\*/, css_at: /@/, css_pro: /\{/, 2: /}/ },
@@ -122,12 +122,12 @@ var jush = {
 			one: { 1: /\n/ },
 			clr: { 1: /(?=[^a-fA-F0-9])|$/ },
 			num: { 1: /()/ },
-			
+
 			js: { php: php, quo: /"/, apo: /'/, js_one: /\/\//, com: /\/\*/, js_reg: /\//, num: num, js_write: /(\b)(write(?:ln)?)(\()/, 2: /(<)(\/script)(>)/i },
 			js_write: { php: php, quo: /"/, apo: /'/, js_one: /\/\//, com: /\/\*/, js_reg: /\//, num: num, js_write: /\(/, 1: /\)/, 3: /(<)(\/script)(>)/i },
 			js_one: { php: php, 1: /\n/, 2: /(<)(\/script)(>)/i },
 			js_reg: { php: php, esc: /\\/, 1: /\/[a-z]*/i }, //! highlight regexp
-			
+
 			php: { php_quo: /"/, php_apo: /'/, php_bac: /`/, php_one: /\/\/|#/, php_com: /\/\*/, php_eot: /<<<[ \t]*/, php_new: /(\b)(new)\b/i, php_sql: new RegExp('(\\b)(' + this.sql_function + ')(\\s*\\()', 'i'), php_sqlite: new RegExp('(\\b)(' + this.sqlite_function + ')(\\s*\\()', 'i'), php_pgsql: new RegExp('(\\b)(' + this.pgsql_function + ')(\\s*\\()', 'i'), php_echo: /(\b)(echo|print)\b/i, php_halt: /(\b)(__halt_compiler)(\s*\(\s*\))/i, php_var: /\$/, num: num, php_phpini: /(\b)(ini_get|ini_set)(\s*\()/i, 1: /\?>|<\/script>/i }, //! matches ::echo
 			php_quo_var: { php_quo: /"/, php_apo: /'/, php_bac: /`/, php_one: /\/\/|#/, php_com: /\/\*/, php_eot: /<<<[ \t]*/, php_new: /(\b)(new)\b/i, php_sql: new RegExp('(\\b)(' + this.sql_function + ')(\\s*\\()', 'i'), php_sqlite: new RegExp('(\\b)(' + this.sqlite_function + ')(\\s*\\()', 'i'), php_pgsql: new RegExp('(\\b)(' + this.pgsql_function + ')(\\s*\\()', 'i'), 1: /}/ },
 			php_echo: { php_quo: /"/, php_apo: /'/, php_bac: /`/, php_one: /\/\/|#/, php_com: /\/\*/, php_eot: /<<<[ \t]*/, php_new: /(\b)(new)\b/i, php_sql: new RegExp('(\\b)(' + this.sql_function + ')(\\s*\\()', 'i'), php_sqlite: new RegExp('(\\b)(' + this.sqlite_function + ')(\\s*\\()', 'i'), php_pgsql: new RegExp('(\\b)(' + this.pgsql_function + ')(\\s*\\()', 'i'), php_echo: /\(/, php_var: /\$/, num: num, php_phpini: /(\b)(ini_get|ini_set)(\s*\()/i, 1: /\)|;/, 2: /\?>|<\/script>/i },
@@ -147,9 +147,9 @@ var jush = {
 			php_halt: { php_halt_one: /\/\/|#/, php_com: /\/\*/, php_halt2: /;|\?>\n?/ },
 			php_halt_one: { 1: /\n/, php_halt2: /\?>\n?/ },
 			php_halt2: { 3: /$/ },
-			
+
 			phpini: { 0: /$/ },
-			
+
 			py: { one: /#/, py_rlapo: /u?r'''/i, py_rlquo: /u?r"""/i, py_rapo: /u?r'/i, py_rquo: /u?r"/i, py_lapo: /u?'''/i, py_lquo: /u?"""/i, apo: /u?'/i, quo: /u?"/i, num: num },
 			py_rlapo: { 1: /'''/ },
 			py_rlquo: { 1: /"""/ },
@@ -157,7 +157,7 @@ var jush = {
 			py_rquo: { 1: /"/ },
 			py_lapo: { esc: /\\/, 1: /'''/ },
 			py_lquo: { esc: /\\/, 1: /"""/ },
-			
+
 			sql: { sql_apo: /'/, sql_quo: /"/, bac: /`/, one: /-- |#|--(?=\n|$)/, com: /\/\*/, sql_var: /\B@/, num: num },
 			sqlite: { sqlite_apo: /'/, sqlite_quo: /"/, bra: /\[/, one: /--/, com: /\/\*/, sql_var: /[:@$]/, num: num },
 			pgsql: { sql_apo: /'/, sqlite_quo: /"/, sql_eot: /\$/, one: /--/, com_nest: /\/\*/, num: num }, // standard_conforming_strings=off
@@ -171,7 +171,7 @@ var jush = {
 			com_nest: { com_nest: /\/\*/, 1: /\*\// },
 			bac: { 1: /`/ },
 			bra: { 1: /]/ },
-			
+
 			cnf: { quo: /"/, one: /#/, cnf_php: /(\b)(PHPIniDir)([ \t]+)/i, cnf_phpini: /(\b)(php_value|php_flag|php_admin_value|php_admin_flag)([ \t]+)/i },
 			cnf_php: { 1: /()/ },
 			cnf_phpini: { cnf_phpini_val: /[ \t]/ },
@@ -197,7 +197,7 @@ var jush = {
 					//~ console.log(states + ' (' + key + '): ' + text.substring(start).replace(/\n/g, '\\n'));
 					var division = match.index + (key == 'php_halt2' ? match[0].length : 0);
 					var s = text.substring(start, division);
-					
+
 					// highlight children
 					var prev_state = states[states.length - 2];
 					if ((state == 'att_quo' || state == 'att_apo' || state == 'att_val') && (prev_state == 'att_js' || prev_state == 'att_css' || /^\s*javascript:/i.test(s))) { // javascript: - easy but without own state //! should be checked only in %URI;
@@ -245,7 +245,7 @@ var jush = {
 					child_states = s_states[1];
 					s = this.keywords_links(state, s);
 					ret.push(s);
-					
+
 					s = text.substring(division, match.index + match[0].length);
 					s = (m.length < 3 ? (s ? '<span class="jush-op">' + this.htmlspecialchars(escape ? escape(s) : s) + '</span>' : '') : (m[1] ? '<span class="jush-op">' + this.htmlspecialchars(escape ? escape(m[1]) : m[1]) + '</span>' : '') + this.htmlspecialchars(escape ? escape(m[2]) : m[2]) + (m[3] ? '<span class="jush-op">' + this.htmlspecialchars(escape ? escape(m[3]) : m[3]) + '</span>' : ''));
 					if (isNaN(+key)) {
@@ -330,37 +330,37 @@ var jush = {
 	htmlspecialchars: function (string) {
 		return string.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 	},
-	
+
 	htmlspecialchars_quo: function (string) {
 		return jush.htmlspecialchars(string).replace(/"/g, '&quot;'); // jush - this.htmlspecialchars_quo is passed as reference
 	},
-	
+
 	htmlspecialchars_apo: function (string) {
 		return jush.htmlspecialchars(string).replace(/'/g, '&#39;');
 	},
-	
+
 	htmlspecialchars_quo_apo: function (string) {
 		return jush.htmlspecialchars_quo(string).replace(/'/g, '&#39;');
 	},
-	
+
 	html_entity_decode: function (string) {
 		return string.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#(?:([0-9]+)|x([0-9a-f]+));/gi, function (str, p1, p2) { //! named entities
 			return String.fromCharCode(p1 ? p1 : parseInt(p2, 16));
 		}).replace(/&amp;/g, '&');
 	},
-	
+
 	addslashes: function (string) {
 		return string.replace(/\\/g, '\\$&');
 	},
-	
+
 	addslashes_apo: function (string) {
 		return string.replace(/[\\']/g, '\\$&');
 	},
-	
+
 	addslashes_quo: function (string) {
 		return string.replace(/[\\"]/g, '\\$&');
 	},
-	
+
 	stripslashes: function (string) {
 		return string.replace(/\\([\\"'])/g, '$1');
 	}
@@ -386,7 +386,7 @@ jush.urls = {
 	php_halt: 'http://www.php.net/$key.halt-compiler',
 	cnf_php: 'http://www.php.net/$key',
 	cnf_phpini: 'http://www.php.net/configuration.changes#$key',
-	
+
 	// [0] is base, other elements correspond to () in jush.links2, $key stands for text of selected element, $1 stands for found string
 	php: [ 'http://www.php.net/$key',
 		'function.$1', 'control-structures.alternative-syntax', 'control-structures.$1', 'control-structures.do.while', 'control-structures.foreach', 'control-structures.switch', 'language.functions#functions.user-defined', 'language.oop', 'language.constants.predefined', 'language.exceptions', 'language.oop5.$1', 'language.oop5.basic#language.oop5.basic.$1', 'language.oop5.cloning', 'language.oop5.constants', 'language.oop5.interfaces', 'language.oop5.visibility', 'language.operators.logical', 'language.variables.scope#language.variables.scope.$1', 'language.namespaces',

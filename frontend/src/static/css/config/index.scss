@@ -2,7 +2,6 @@
 @import './_dark_theme.scss';
 
 body {
-
 	--default-logo-height: 18px;
 
 	/* Design system scale tokens */
@@ -58,7 +57,7 @@ body {
 
 	--default-theme-color: #009933;
 	// --default-theme-color: #008ede;
-	
+
 	--default-brand-color: #009933;
 	// --default-brand-color: #087e04;
 
@@ -69,7 +68,7 @@ body {
 	--input-disabled-bg-color: hsla(0, 0%, 0%, 0.05);
 
 	--dotted-outline: 1px dotted var(--dotted-outline-color);
-	
+
 	--header-height: 56px;
 
 	--sidebar-width: 240px;
@@ -85,16 +84,15 @@ body {
 	--large-item-title-font-size: 16px;
 	--large-item-title-line-height: 22px;
 
-	--links-color: var( --default-theme-color );
+	--links-color: var(--default-theme-color);
 }
 
-body{
-
+body {
 	--default-item-width: 218px;
 	--default-max-item-width: 344px;
 
 	--default-max-row-items: 6;
-	
+
 	--default-item-margin-right-width: 4px;
 	--default-item-margin-bottom-width: 24px;
 

@@ -128,7 +128,7 @@ For each video:
 
 ---
 
-## 🛠️ 11. Backend & Technical Stack 
+## 🛠️ 11. Backend & Technical Stack
 
 - **Storage:** AWS S3 / Cloudinary / DigitalOcean Spaces
 - **Encoding:** FFmpeg, AWS MediaConvert

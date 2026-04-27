@@ -41,7 +41,7 @@ div.slideshow a.advance-link {
 div.loader,
 div.slideshow a.advance-link,
 div.caption-container {
-	height: 502px; /* This should be set to be at least the height of the largest image in the slideshow with padding */	
+	height: 502px; /* This should be set to be at least the height of the largest image in the slideshow with padding */
 }
 
 div.slideshow-container {

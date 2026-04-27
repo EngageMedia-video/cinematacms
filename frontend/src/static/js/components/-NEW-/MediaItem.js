@@ -11,36 +11,39 @@ import { MediaItemThumbnailLink, itemClassname } from './includes/items';
 
 import PageStore from '../../pages/_PageStore.js';
 
-export function MediaItem(props){
+export function MediaItem(props) {
 	props = { ...MediaItem.defaults, ...props };
 
 	const type = props.type;
 
-	const [ titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper, editMediaComponent, metaComponents ] = useMediaItem({...props, type });
+	const [titleComponent, descriptionComponent, thumbnailUrl, UnderThumbWrapper, editMediaComponent, metaComponents] =
+		useMediaItem({ ...props, type });
 
-	function thumbnailComponent(){
-		return <MediaItemThumbnailLink src={ thumbnailUrl } title={ props.title } link={ props.link } state={ props.state } />;
+	function thumbnailComponent() {
+		return <MediaItemThumbnailLink src={thumbnailUrl} title={props.title} link={props.link} state={props.state} />;
 	}
 
-	const containerClassname = itemClassname( 'item ' + type + '-item', (props.class_name ?? '').trim(), props.playlistOrder === props.playlistActiveItem );
+	const containerClassname = itemClassname(
+		'item ' + type + '-item',
+		(props.class_name ?? '').trim(),
+		props.playlistOrder === props.playlistActiveItem
+	);
 
-	return (<div className={ containerClassname }>
+	return (
+		<div className={containerClassname}>
+			<div className="item-content">
+				{editMediaComponent()}
 
-				<div className="item-content">
+				{thumbnailComponent()}
 
-					{ editMediaComponent() }
-
-					{ thumbnailComponent() }
-
-					<UnderThumbWrapper title={ props.title } link={ props.link }>
-						{ titleComponent() }
-						{ metaComponents() }
-						{ descriptionComponent() }
-					</UnderThumbWrapper>
-
-				</div>
-
-			</div>);
+				<UnderThumbWrapper title={props.title} link={props.link}>
+					{titleComponent()}
+					{metaComponents()}
+					{descriptionComponent()}
+				</UnderThumbWrapper>
+			</div>
+		</div>
+	);
 }
 
 MediaItem.propTypes = {

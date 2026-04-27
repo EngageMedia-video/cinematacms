@@ -7,19 +7,25 @@ import { MediaListWrapper } from '../components/MediaListWrapper';
 import { LazyLoadItemListAsync } from '../../components/-NEW-/LazyLoadItemListAsync';
 
 export class TopicsPage extends Page {
-
-	constructor(props){
+	constructor(props) {
 		super(props, 'topics-archive');
 	}
 
-	pageContent(){
-		return <ApiUrlConsumer>
-				{ apiUrl =>
-					<MediaListWrapper title={ this.props.title } className="items-list-ver">
-						<LazyLoadItemListAsync singleLinkContent={ true } inTopicsList={ true } requestUrl={ apiUrl.archive.topics } hideAllMeta={true} />
+	pageContent() {
+		return (
+			<ApiUrlConsumer>
+				{(apiUrl) => (
+					<MediaListWrapper title={this.props.title} className="items-list-ver">
+						<LazyLoadItemListAsync
+							singleLinkContent={true}
+							inTopicsList={true}
+							requestUrl={apiUrl.archive.topics}
+							hideAllMeta={true}
+						/>
 					</MediaListWrapper>
-				}
-				</ApiUrlConsumer>;
+				)}
+			</ApiUrlConsumer>
+		);
 	}
 }
 

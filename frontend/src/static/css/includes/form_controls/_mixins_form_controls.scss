@@ -5,14 +5,14 @@
 // @param {String} $replace ('') - New value
 // @return {String} - Updated string
 @function str-replace($string, $search, $replace: '') {
+	$index: str-index($string, $search);
 
-    $index: str-index($string, $search);
+	@if $index {
+		@return str-slice($string, 1, $index - 1) + $replace +
+			str-replace(str-slice($string, $index + str-length($search)), $search, $replace);
+	}
 
-    @if $index {
-        @return str-slice($string, 1, $index - 1)+$replace+str-replace(str-slice($string, $index + str-length($search)), $search, $replace);
-    }
-
-    @return $string;
+	@return $string;
 }
 
 $encoding-reference: (
@@ -20,7 +20,7 @@ $encoding-reference: (
 	('<', '%3C'),
 	('>', '%3E'),
 	//('"','%22'),  // Replace " with ' because that's shorter than %22 and normally working
-	('"', '\''),
+	('"', "'"),
 	('#', '%23'),
 	('&', '%26') // Here are a few more characters you could encode
 	//(' ','%20'),
@@ -178,82 +178,81 @@ $encoding-reference: (
 	//('ü','%C3%BC'),
 	//('ý','%C3%BD'),
 	//('þ','%C3%BE'),
-	//('ÿ','%C3%BF')
+	 //('ÿ','%C3%BF')
 );
 
 // @link: https://codepen.io/kevinweber/pen/dXWoRw
 @function svg-encode($svg) {
+	@each $char, $encoded in $encoding-reference {
+		$svg: str-replace($svg, $char, $encoded);
+	}
 
-    @each $char, $encoded in $encoding-reference {
-        $svg: str-replace($svg, $char, $encoded);
-    }
-
-    @return 'data:image/svg+xml,' + $svg;
+	@return 'data:image/svg+xml,' + $svg;
 }
 
 @mixin svg-background-image($svg) {
-    background-image: url( svg-encode($svg) ), linear-gradient( transparent, transparent );
+	background-image: url(svg-encode($svg)), linear-gradient(transparent, transparent);
 }
 
 @mixin range-focus {
-    background-color: var(--body-bg-color);
-    background-color: var( --theme-color, var(--default-theme-color) );
-    // -webkit-box-shadow: 0 0 0 1px var( --theme-color, var(--default-theme-color) );
-    // box-shadow: 0 0 0 1px var( --theme-color, var(--default-theme-color) );
+	background-color: var(--body-bg-color);
+	background-color: var(--theme-color, var(--default-theme-color));
+	// -webkit-box-shadow: 0 0 0 1px var( --theme-color, var(--default-theme-color) );
+	// box-shadow: 0 0 0 1px var( --theme-color, var(--default-theme-color) );
 }
 
 @mixin range-track {
-    width: 100%;
-    height: 16px;
-    cursor: pointer;
-    border-radius: 9999em;
-    border: 1px solid var(--input-border-color);
-    background: var(--input-bg-color);
-    // background-color: var(--input-disabled-bg-color);
+	width: 100%;
+	height: 16px;
+	cursor: pointer;
+	border-radius: 9999em;
+	border: 1px solid var(--input-border-color);
+	background: var(--input-bg-color);
+	// background-color: var(--input-disabled-bg-color);
 }
 
 @mixin range-thumb {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    -webkit-appearance: none;
-    border: none;
-    border-radius: 999em;
-    // box-shadow: 0 0 0 1px var(--input-border-color);	
-    
-    // background: var(--input-disabled-bg-color);
-    // background: var(--input-bg-color);
-    // background: var( --theme-color, var(--default-theme-color) );
-    background-color: var(--input-border-color);
+	width: 20px;
+	height: 20px;
+	cursor: pointer;
+	-webkit-appearance: none;
+	border: none;
+	border-radius: 999em;
+	// box-shadow: 0 0 0 1px var(--input-border-color);
+
+	// background: var(--input-disabled-bg-color);
+	// background: var(--input-bg-color);
+	// background: var( --theme-color, var(--default-theme-color) );
+	background-color: var(--input-border-color);
 }
 
 @mixin range-ms-fill {
-    border-radius: 999em;
-    border: 1px solid var(--input-border-color);
-    // background-color: var(--input-disabled-bg-color);
-    background: var(--input-bg-color);
+	border-radius: 999em;
+	border: 1px solid var(--input-border-color);
+	// background-color: var(--input-disabled-bg-color);
+	background: var(--input-bg-color);
 }
 
 // @links: https://www.w3schools.com/howto/howto_css_custom_checkbox.asp
 
 @mixin form_controls() {
-
-	:root{
+	:root {
 		--checkbox-width: 1.143em;
 		--checkbox-height: 1.143em;
 	}
 
-    form {}
+	form {
+	}
 
-    button,
-    input,
-    select,
-    textarea {
-        overflow: visible;
-    }
+	button,
+	input,
+	select,
+	textarea {
+		overflow: visible;
+	}
 
-    // button,
-    input[type="text"],
+	// button,
+	input[type="text"],
     input[type="email"],
     input[type="number"],
     input[type="password"],
@@ -266,325 +265,325 @@ $encoding-reference: (
     input[type="checkbox"],
     select,
     textarea {
-        appearance: none;
-    }
+		appearance: none;
+	}
 
-    button,
-    input,
-    select,
-    textarea {
+	button,
+	input,
+	select,
+	textarea {
+		&:focus {
+			outline: 0;
+		}
+	}
 
-        &:focus {
-            outline: 0;
-        }
-    }
+	input[type='text'],
+	input[type='email'],
+	input[type='number'],
+	input[type='password'],
+	input[type='file'],
+	input[type='reset'],
+	input[type='radio'],
+	input[type='checkbox'],
+	select,
+	textarea {
+		&:focus {
+			box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.25);
+		}
+	}
 
-    input[type="text"],
-    input[type="email"],
-    input[type="number"],
-    input[type="password"],
-    input[type="file"],
-    input[type="reset"],
-    input[type="radio"],
-    input[type="checkbox"],
-    select,
-    textarea {
+	input[type='text'],
+	input[type='email'],
+	input[type='number'],
+	input[type='password'],
+	input[type='file'],
+	input[type='reset'],
+	select,
+	textarea {
+		&:focus {
+			border-color: var(--theme-color, var(--default-theme-color));
+		}
+	}
 
-        &:focus {
-            box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.25);
-        }
-    }
+	input,
+	select,
+	textarea {
+		padding: 0.57142875em;
+		line-height: 1.3;
+		color: var(--input-color);
+		border-radius: 1px;
+		border-width: 1px;
+		border-style: solid;
+		border-color: var(--input-border-color);
+		background-color: var(--input-bg-color);
 
-    input[type="text"],
-    input[type="email"],
-    input[type="number"],
-    input[type="password"],
-    input[type="file"],
-    input[type="reset"],
-    select,
-    textarea {
+		&:disabled {
+			cursor: not-allowed;
+			background-color: var(--input-disabled-bg-color);
+		}
 
-        &:focus {
-            border-color: var( --theme-color, var(--default-theme-color) );
-        }
-    }
+		&.input-success {
+			border-color: var(--success-color);
+		}
 
-    input,
-    select,
-    textarea {
+		&.input-warning {
+			border-color: var(--warning-color);
+		}
 
-        padding: 0.57142875em;
-        line-height: 1.3;
-        color:var(--input-color);
-        border-radius: 1px;
-        border-width: 1px;
-        border-style: solid;
-        border-color:  var(--input-border-color);
-        background-color: var(--input-bg-color);
+		&.input-error {
+			border-color: var(--danger-color);
+		}
+	}
 
-        &:disabled {
-            cursor: not-allowed;
-            background-color: var(--input-disabled-bg-color);
-        }
+	label {
+		display: inline-block;
+		line-height: 1.1;
+		margin-bottom: 0.5em;
+	}
 
-        &.input-success {
-            border-color: var(--success-color);
-        }
+	select {
+		padding-right: 32px;
+		background-size: 24px;
+		background-repeat: no-repeat;
+		background-position: right 4px center;
 
-        &.input-warning {
-            border-color: var(--warning-color);
-        }
+		@include svg-background-image(
+			'<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="rgba(0,0,0,0.897)"><path d="M14 22l10-10 10 10z" /><path d="M14 26l10 10 10-10z" /></svg>'
+		);
 
-        &.input-error {
-            border-color: var(--danger-color);
-        }
-    }
+		.dark_theme & {
+			@include svg-background-image(
+				'<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="rgba(255,255,255,0.88)"><path d="M14 22l10-10 10 10z" /><path d="M14 26l10 10 10-10z" /></svg>'
+			);
+		}
 
-    label {
-        display: inline-block;
-        line-height: 1.1;
-        margin-bottom: 0.5em;
-    }
+		&[multiple] {
+			padding: 0;
+			overflow: auto;
+			background-image: none;
 
-    select {
+			option {
+				padding: 0.7143em 0.57142875em;
+				margin: 1px;
+			}
+		}
+	}
 
-        padding-right: 32px;
-        background-size: 24px;
-        background-repeat: no-repeat;
-        background-position: right 4px center;
-        
-        @include svg-background-image('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="rgba(0,0,0,0.897)"><path d="M14 22l10-10 10 10z" /><path d="M14 26l10 10 10-10z" /></svg>');
+	textarea {
+		min-height: 2.75rem;
+		height: 160px;
 
-        .dark_theme & {
-            @include svg-background-image('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="rgba(255,255,255,0.88)"><path d="M14 22l10-10 10 10z" /><path d="M14 26l10 10 10-10z" /></svg>');
-        }
+		min-width: 0.5 * 18.75rem;
+		// width:18.75rem;
+		max-width: 100%;
+	}
 
-        &[multiple]{
+	input[type='file'] {
+		// width:18.75rem;
+		max-width: 100%;
+	}
 
-            padding:0;
-            overflow:auto;
-            background-image:none;
+	input[type='range'] {
+		display: block;
+		max-width: none;
+		min-height: 40px;
+		padding: 1em 1px;
+		// margin-top: 0;
+		// margin-bottom: 1em;
+		border: none;
+		border-radius: 0;
+		background: none;
 
-            option{
-                padding:0.7143em 0.57142875em;
-                margin: 1px;
-            }
-        }
-    }
+		&:focus {
+			&::-webkit-slider-thumb {
+				@include range-focus;
+			}
 
-    textarea {
-        min-height: 2.75rem;
-        height: 160px;
+			&::-moz-range-thumb {
+				@include range-focus;
+			}
 
-        min-width: 0.5 * 18.75rem;
-        // width:18.75rem;
-        max-width: 100%;
-    }
+			&::-ms-thumb {
+				@include range-focus;
+			}
+		}
 
-    input[type="file"] {
-        // width:18.75rem;
-        max-width: 100%;
-    }
+		&::-webkit-slider-runnable-track {
+			@include range-track;
+		}
 
-    input[type="range"] {
+		&::-moz-range-track {
+			@include range-track;
+		}
 
-        display: block;
-        max-width: none;        
-        min-height:40px;
-        padding: 1em 1px;
-        // margin-top: 0;
-        // margin-bottom: 1em;
-        border: none;
-        border-radius: 0;
-        background: none;
+		&::-ms-track {
+			@include range-track;
+		}
 
-        &:focus {
+		&::-webkit-slider-thumb {
+			@include range-thumb;
+			appearance: none;
+			margin-top: -0.19rem;
+		}
 
-            &::-webkit-slider-thumb {
-                @include range-focus;
-            }
+		&::-moz-range-thumb {
+			@include range-thumb;
+		}
 
-            &::-moz-range-thumb {
-                @include range-focus;
-            }
+		&::-ms-thumb {
+			@include range-thumb;
+		}
 
-            &::-ms-thumb {
-                @include range-focus;
-            }
-        }
+		&::-ms-fill-lower {
+			@include range-ms-fill;
+		}
 
-        &::-webkit-slider-runnable-track {
-            @include range-track;
-        }
+		&::-ms-fill-upper {
+			@include range-ms-fill;
+		}
+	}
 
-        &::-moz-range-track {
-            @include range-track;
-        }
+	input[type='radio'],
+	input[type='checkbox'],
+	*.radio-label .selectbox,
+	*.checkbox-label .selectbox {
+		width: var(--checkbox-width);
+		height: var(--checkbox-height);
+		vertical-align: middle;
+	}
 
-        &::-ms-track {
-            @include range-track;
-        }
+	input[type='radio'],
+	input[type='checkbox'] {
+		margin: 0 0.75em;
 
-        &::-webkit-slider-thumb {
-            @include range-thumb;
-            appearance: none;
-            margin-top: -.19rem;
-        }
+		&:focus {
+			border-color: var(--input-border-color);
+			box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.25);
+		}
 
-        &::-moz-range-thumb {
-            @include range-thumb;
-        }
+		&:active {
+			opacity: 0.85;
+		}
 
-        &::-ms-thumb {
-            @include range-thumb;
-        }
+		&:checked {
+			background-size: 20px auto;
+			background-repeat: no-repeat;
+			background-size: cover;
+			background-position: center center;
+			background-color: var(--theme-color, var(--default-theme-color));
+			border-color: var(--theme-color, var(--default-theme-color));
+		}
 
-        &::-ms-fill-lower {
-            @include range-ms-fill;
-        }
+		&:disabled {
+			border-color: var(--input-border-color);
+			background-color: var(--input-disabled-bg-color);
+		}
 
-        &::-ms-fill-upper {
-            @include range-ms-fill;
-        }
-    }
-
-    input[type="radio"],
-    input[type="checkbox"],
-    *.radio-label .selectbox,
-    *.checkbox-label .selectbox {
-        width: var(--checkbox-width);
-        height: var(--checkbox-height);
-        vertical-align: middle;
-    }
-
-    input[type="radio"],
-    input[type="checkbox"] {
-
-        margin:0 0.75em;
-
-        &:focus{
-            border-color: var(--input-border-color);
-            box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.25);
-        }
-
-        &:active{
-            opacity: 0.85;
-        }
-
-        &:checked {
-            background-size: 20px auto;
-            background-repeat: no-repeat;
-            background-size: cover;
-            background-position: center center;
-            background-color: var( --theme-color, var(--default-theme-color) );
-            border-color: var( --theme-color, var(--default-theme-color) );
-        }
-
-        &:disabled {
-            border-color: var(--input-border-color);
-            background-color: var(--input-disabled-bg-color);
-        }
-
-        &:checked:disabled {
-            background-color: var(--input-border-color);
-        }
-    }
-
-    *.radio-label,
-    *.checkbox-label {
-
-        .selectbox {
-            background-color: var(--input-bg-color);
-            border: 1px solid var(--input-border-color);
-        }
-
-        input[type="radio"],
-        input[type="checkbox"] {
-
-            &:focus ~ .selectbox {
-                border-color: var(--input-border-color);
-                box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.25);
-            }
-
-            &:active ~ .selectbox {
-                opacity: 0.85;
-            }
-
-            &:checked ~ .selectbox {
-                background-size: 20px auto;
-                background-repeat: no-repeat;
-                background-size: cover;
-                background-position: center center;
-                background-color: var( --theme-color, var(--default-theme-color) );
-                border-color: var( --theme-color, var(--default-theme-color) );
-            }
-
-            &:disabled ~ .selectbox {
-                border-color: var(--input-border-color);
-                background-color: var(--input-disabled-bg-color);
-            }
-
-            &:checked:disabled ~ .selectbox {
-                background-color: var(--input-border-color);
-            }
-        }
-    }
-
-    input[type="radio"],
-    input[type="radio"] ~ .selectbox {
-        border-radius: 99em;
-    }
-
-    input[type="radio"]:checked,
-    input[type="radio"]:checked ~ .selectbox {
-        @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18px" height="18px" fill="white"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10S2 17.52 2 12zm10 6c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6z"/></svg>' );
-        // @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="white"><path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 36c-8.84 0-16-7.16-16-16S15.16 8 24 8s16 7.16 16 16-7.16 16-16 16z"/></svg>' );
-        // @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="white"><path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4z"/></svg>' );
-    }
-
-    input[type="radio"]:checked:disabled,
-    input[type="radio"]:checked:disabled ~ .selectbox {
-        @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18px" height="18px" fill="rgba(255,255,255,0.65)"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10S2 17.52 2 12zm10 6c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6z"/></svg>' );
-        // @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="rgba(255,255,255,0.65)"><path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 36c-8.84 0-16-7.16-16-16S15.16 8 24 8s16 7.16 16 16-7.16 16-16 16z"/></svg>' );
-        // @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="rgba(255,255,255,0.65)"><path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4z"/></svg>' );
-    }
-
-    input[type="checkbox"]:checked,
-    input[type="checkbox"]:checked ~ .selectbox {
-        @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="white"><path d="M18 32.34L9.66 24l-2.83 2.83L18 38l24-24-2.83-2.83z"/></svg>' );
-    }
-
-    input[type="checkbox"]:checked:disabled,
-    input[type="checkbox"]:checked:disabled ~ .selectbox {
-        @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="rgba(255,255,255,0.65)"><path d="M18 32.34L9.66 24l-2.83 2.83L18 38l24-24-2.83-2.83z"/></svg>' );
-    }
+		&:checked:disabled {
+			background-color: var(--input-border-color);
+		}
+	}
 
 	*.radio-label,
 	*.checkbox-label {
+		.selectbox {
+			background-color: var(--input-bg-color);
+			border: 1px solid var(--input-border-color);
+		}
 
-		position:relative;
+		input[type='radio'],
+		input[type='checkbox'] {
+			&:focus ~ .selectbox {
+				border-color: var(--input-border-color);
+				box-shadow: 0px 0px 2px 0px rgba(0, 0, 0, 0.25);
+			}
+
+			&:active ~ .selectbox {
+				opacity: 0.85;
+			}
+
+			&:checked ~ .selectbox {
+				background-size: 20px auto;
+				background-repeat: no-repeat;
+				background-size: cover;
+				background-position: center center;
+				background-color: var(--theme-color, var(--default-theme-color));
+				border-color: var(--theme-color, var(--default-theme-color));
+			}
+
+			&:disabled ~ .selectbox {
+				border-color: var(--input-border-color);
+				background-color: var(--input-disabled-bg-color);
+			}
+
+			&:checked:disabled ~ .selectbox {
+				background-color: var(--input-border-color);
+			}
+		}
+	}
+
+	input[type='radio'],
+	input[type='radio'] ~ .selectbox {
+		border-radius: 99em;
+	}
+
+	input[type='radio']:checked,
+	input[type='radio']:checked ~ .selectbox {
+		@include svg-background-image(
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18px" height="18px" fill="white"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10S2 17.52 2 12zm10 6c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6z"/></svg>'
+		);
+		// @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="white"><path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 36c-8.84 0-16-7.16-16-16S15.16 8 24 8s16 7.16 16 16-7.16 16-16 16z"/></svg>' );
+		// @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="white"><path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4z"/></svg>' );
+	}
+
+	input[type='radio']:checked:disabled,
+	input[type='radio']:checked:disabled ~ .selectbox {
+		@include svg-background-image(
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18px" height="18px" fill="rgba(255,255,255,0.65)"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M2 12C2 6.48 6.48 2 12 2s10 4.48 10 10-4.48 10-10 10S2 17.52 2 12zm10 6c3.31 0 6-2.69 6-6s-2.69-6-6-6-6 2.69-6 6 2.69 6 6 6z"/></svg>'
+		);
+		// @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="rgba(255,255,255,0.65)"><path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 36c-8.84 0-16-7.16-16-16S15.16 8 24 8s16 7.16 16 16-7.16 16-16 16z"/></svg>' );
+		// @include svg-background-image( '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="rgba(255,255,255,0.65)"><path d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4z"/></svg>' );
+	}
+
+	input[type='checkbox']:checked,
+	input[type='checkbox']:checked ~ .selectbox {
+		@include svg-background-image(
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="white"><path d="M18 32.34L9.66 24l-2.83 2.83L18 38l24-24-2.83-2.83z"/></svg>'
+		);
+	}
+
+	input[type='checkbox']:checked:disabled,
+	input[type='checkbox']:checked:disabled ~ .selectbox {
+		@include svg-background-image(
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="rgba(255,255,255,0.65)"><path d="M18 32.34L9.66 24l-2.83 2.83L18 38l24-24-2.83-2.83z"/></svg>'
+		);
+	}
+
+	*.radio-label,
+	*.checkbox-label {
+		position: relative;
 		line-height: 1.143;
 		margin-right: 1em;
 		cursor: pointer;
 
-        .selectbox {
-            display: inline-block;
-            margin-right: .75em;
-        }
+		.selectbox {
+			display: inline-block;
+			margin-right: 0.75em;
+		}
 
-        &.right-selectbox .selectbox {
-            margin-right:0;
-            margin-left:0.75em;
-        }
+		&.right-selectbox .selectbox {
+			margin-right: 0;
+			margin-left: 0.75em;
+		}
 
-		input[type="radio"],
-    	input[type="checkbox"] {
-    		position: absolute;
-    		left: -999em;
-    	}
+		input[type='radio'],
+		input[type='checkbox'] {
+			position: absolute;
+			left: -999em;
+		}
 	}
 
-    /*input[type="email"],
+	/*input[type="email"],
     input[type="password"],
     input[name="username"] {
         padding-right: 2em;
@@ -606,68 +605,64 @@ $encoding-reference: (
         @include svg-background-image('<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="#909090"><path d="M24 24c4.42 0 8-3.59 8-8 0-4.42-3.58-8-8-8s-8 3.58-8 8c0 4.41 3.58 8 8 8zm0 4c-5.33 0-16 2.67-16 8v4h32v-4c0-5.33-10.67-8-16-8z"/></svg>');
     }*/
 
-    label,
-    .input-message {
+	label,
+	.input-message {
+		+ input:not([type='radio']):not([type='checkbox']),
+		+ select,
+		+ textarea,
+		+ button {
+			display: block;
+			margin-bottom: 1em;
+		}
+	}
 
-        + input:not([type="radio"]):not([type="checkbox"]),
-        + select,
-        + textarea,
-        + button {
-            display: block;
-            margin-bottom: 1em;
-        }
-    }
+	.input-message {
+		display: inline-block;
+		line-height: 1.1;
+		margin-bottom: 0.5em;
 
-    .input-message {
+		&.success-message {
+			color: var(--success-color);
+		}
 
-        display: inline-block;
-        line-height: 1.1;
-        margin-bottom: 0.5em;
+		&.warning-message {
+			color: var(--warning-color);
+		}
 
-        &.success-message {
-            color: var(--success-color);
-        }
+		&.error-message {
+			color: var(--danger-color);
+		}
+	}
 
-        &.warning-message {
-            color: var(--warning-color);
-        }
-
-        &.error-message {
-            color: var(--danger-color);
-        }
-    }
-
-    label + .input-message {
-        display: block;
-    }
+	label + .input-message {
+		display: block;
+	}
 }
 
-.num-value-unit{
+.num-value-unit {
+	.label {
+		display: block;
+		padding: 0 0 4px;
+	}
 
-    .label{
-        display:block;
-        padding:0 0 4px;
-    }
+	.value-input,
+	.value-unit {
+		position: relative;
+		float: left;
+		width: auto;
 
-    .value-input,
-    .value-unit{ 
-        position:relative;
-        float:left;
-        width:auto; 
+		&:focus,
+		&:active {
+			z-index: +1;
+		}
+	}
 
-        &:focus,
-        &:active{
-            z-index: +1;
-        }       
-    }
+	.value-input {
+		margin-right: -1px;
+		border-top-right-radius: 0px;
+		border-bottom-right-radius: 0px;
+	}
 
-    .value-input{
-        margin-right:-1px;
-        border-top-right-radius:0px;
-        border-bottom-right-radius:0px;
-    }
-
-    .value-unit{
-
-    }
+	.value-unit {
+	}
 }

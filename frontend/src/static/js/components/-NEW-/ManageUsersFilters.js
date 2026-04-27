@@ -15,64 +15,60 @@ const filters = {
 	],
 };
 
-export function ManageUsersFilters (props){
+export function ManageUsersFilters(props) {
 	props = { hidden: false, ...props };
 
-	const [ isHidden, setIsHidden ] = useState( props.hidden );
+	const [isHidden, setIsHidden] = useState(props.hidden);
 
-	const [ role, setFilterRole ] = useState( 'all' );
+	const [role, setFilterRole] = useState('all');
 
 	const containerRef = useRef(null);
 	const innerContainerRef = useRef(null);
 
-	function onWindowResize(){
-		if( ! isHidden ){
-			containerRef.current.style.height = ( 24 + innerContainerRef.current.offsetHeight ) + 'px';
+	function onWindowResize() {
+		if (!isHidden) {
+			containerRef.current.style.height = 24 + innerContainerRef.current.offsetHeight + 'px';
 		}
 	}
 
-	function onFilterSelect(ev){
-
+	function onFilterSelect(ev) {
 		const args = {
-		    role: role,
+			role: role,
 		};
 
-		switch( ev.currentTarget.getAttribute('filter') ){
+		switch (ev.currentTarget.getAttribute('filter')) {
 			case 'role':
 				args.role = ev.currentTarget.getAttribute('value');
-				props.onFiltersUpdate( args );
-				setFilterRole( args.role );
+				props.onFiltersUpdate(args);
+				setFilterRole(args.role);
 				break;
 		}
 	}
 
-    useEffect(() => {
-    	setIsHidden( props.hidden );
-    	onWindowResize();
-	}, [ props.hidden ]);
-	
-    useEffect(() => {
-    	PageStore.on( 'window_resize', onWindowResize );
-        return () => PageStore.removeListener( 'window_resize', onWindowResize );
-    }, []);
+	useEffect(() => {
+		setIsHidden(props.hidden);
+		onWindowResize();
+	}, [props.hidden]);
 
-	return ( <div ref={ containerRef } className={ "mi-filters-row" + ( isHidden ? ' hidden' : '' ) }>
-					
-				<div ref={ innerContainerRef } className="mi-filters-row-inner">
+	useEffect(() => {
+		PageStore.on('window_resize', onWindowResize);
+		return () => PageStore.removeListener('window_resize', onWindowResize);
+	}, []);
 
-					<div className="mi-filter">
-						<div className="mi-filter-title">ROLE</div>
-						<div className="mi-filter-options">
-							<FilterOptions id={ 'role' } options={ filters.role } selected={ role } onSelect={ onFilterSelect } />
-						</div>
+	return (
+		<div ref={containerRef} className={'mi-filters-row' + (isHidden ? ' hidden' : '')}>
+			<div ref={innerContainerRef} className="mi-filters-row-inner">
+				<div className="mi-filter">
+					<div className="mi-filter-title">ROLE</div>
+					<div className="mi-filter-options">
+						<FilterOptions id={'role'} options={filters.role} selected={role} onSelect={onFilterSelect} />
 					</div>
-
 				</div>
-
-			</div>);
+			</div>
+		</div>
+	);
 }
 
 ManageUsersFilters.propTypes = {
 	hidden: PropTypes.bool,
 };
-

@@ -5,23 +5,53 @@ import { MaterialIcon } from '../MaterialIcon.js';
 
 import { useManagementTableHeader } from './hooks/useManagementTableHeader';
 
-export function ManageUsersItemHeader(props){
+export function ManageUsersItemHeader(props) {
 	props = { has_roles: false, has_verified: false, has_trusted: false, ...props };
 
-	const [ sort, order, isSelected, sortByColumn, checkAll ] = useManagementTableHeader({...props, type: 'users'});
+	const [sort, order, isSelected, sortByColumn, checkAll] = useManagementTableHeader({ ...props, type: 'users' });
 
-	return ( <div className="item manage-item manage-item-header manage-users-item">
-				<div className="mi-checkbox">
-					<input type="checkbox" checked={ isSelected } onChange={ checkAll } />
+	return (
+		<div className="item manage-item manage-item-header manage-users-item">
+			<div className="mi-checkbox">
+				<input type="checkbox" checked={isSelected} onChange={checkAll} />
+			</div>
+			<div
+				id="name"
+				onClick={sortByColumn}
+				className={'mi-name mi-col-sort' + ('name' === sort ? ('asc' === order ? ' asc' : ' desc') : '')}
+			>
+				Name
+				<div className="mi-col-sort-icons">
+					<span>
+						<MaterialIcon type="arrow_drop_up" />
+					</span>
+					<span>
+						<MaterialIcon type="arrow_drop_down" />
+					</span>
 				</div>
-				<div id="name" onClick={ sortByColumn } className={ 'mi-name mi-col-sort' + ( 'name' === sort ? ( 'asc' === order ? ' asc' : ' desc' ): '' ) }>Name<div className="mi-col-sort-icons"><span><MaterialIcon type="arrow_drop_up" /></span><span><MaterialIcon type="arrow_drop_down" /></span></div></div>
-				<div className="mi-username">Username</div>
-				<div id="add_date" onClick={ sortByColumn } className={ 'mi-added mi-col-sort' + ( 'add_date' === sort ? ( 'asc' === order ? ' asc' : ' desc' ): '' ) }>Date added<div className="mi-col-sort-icons"><span><MaterialIcon type="arrow_drop_up" /></span><span><MaterialIcon type="arrow_drop_down" /></span></div></div>
-				{ props.has_roles ? <div className="mi-role">Role</div> : null }
-				{ props.has_verified ? <div className="mi-verified">Verified</div> : null }
-				{ props.has_trusted ? <div className="mi-trusted">Trusted</div> : null }
-				<div className="mi-featured">Featured</div>
-			  </div> );
+			</div>
+			<div className="mi-username">Username</div>
+			<div
+				id="add_date"
+				onClick={sortByColumn}
+				className={'mi-added mi-col-sort' + ('add_date' === sort ? ('asc' === order ? ' asc' : ' desc') : '')}
+			>
+				Date added
+				<div className="mi-col-sort-icons">
+					<span>
+						<MaterialIcon type="arrow_drop_up" />
+					</span>
+					<span>
+						<MaterialIcon type="arrow_drop_down" />
+					</span>
+				</div>
+			</div>
+			{props.has_roles ? <div className="mi-role">Role</div> : null}
+			{props.has_verified ? <div className="mi-verified">Verified</div> : null}
+			{props.has_trusted ? <div className="mi-trusted">Trusted</div> : null}
+			<div className="mi-featured">Featured</div>
+		</div>
+	);
 }
 
 ManageUsersItemHeader.propTypes = {
@@ -34,4 +64,3 @@ ManageUsersItemHeader.propTypes = {
 	has_verified: PropTypes.bool,
 	has_trusted: PropTypes.bool,
 };
-

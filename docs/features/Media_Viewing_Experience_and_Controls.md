@@ -30,6 +30,3 @@
 
 ### Download and Share
 -  Options to download the video and share the video link on social media or via direct URL.
-
-
-

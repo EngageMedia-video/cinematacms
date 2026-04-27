@@ -8,152 +8,173 @@ import PageStore from '../../pages/_PageStore.js';
 import '../styles/ManageItemList-filters.scss';
 
 const filters = {
-	state:[
+	state: [
 		{ id: 'all', title: 'All' },
 		{ id: 'public', title: 'Public' },
 		{ id: 'private', title: 'Private' },
 		{ id: 'unlisted', title: 'Unlisted' },
 	],
-	media_type:[
+	media_type: [
 		{ id: 'all', title: 'All' },
 		{ id: 'video', title: 'Video' },
 		{ id: 'audio', title: 'Audio' },
 		{ id: 'image', title: 'Image' },
 		{ id: 'pdf', title: 'Pdf' },
 	],
-	encoding_status:[
+	encoding_status: [
 		{ id: 'all', title: 'All' },
 		{ id: 'success', title: 'Success' },
 		{ id: 'running', title: 'Running' },
 		{ id: 'pending', title: 'Pending' },
 		{ id: 'fail', title: 'Fail' },
 	],
-	reviewed:[
+	reviewed: [
 		{ id: 'all', title: 'All' },
 		{ id: 'true', title: 'Yes' },
 		{ id: 'false', title: 'No' },
 	],
-	featured:[
+	featured: [
 		{ id: 'all', title: 'All' },
 		{ id: 'true', title: 'Yes' },
 		{ id: 'false', title: 'No' },
 	],
 };
 
-export function ManageMediaFilters(props){
+export function ManageMediaFilters(props) {
 	props = { hidden: false, ...props };
 
-	const [ isHidden, setIsHidden ] = useState( props.hidden );
+	const [isHidden, setIsHidden] = useState(props.hidden);
 
-	const [ state, setState ] = useState( 'all' );
-	const [ mediaType, setMediaType ] = useState( 'all' );
-	const [ encodingStatus, setEncodingStatus ] = useState( 'all' );
-	const [ isFeatured, setIsFeatured ] = useState( 'all' );
-	const [ isReviewed, setIsReviewed ] = useState( 'all' );
+	const [state, setState] = useState('all');
+	const [mediaType, setMediaType] = useState('all');
+	const [encodingStatus, setEncodingStatus] = useState('all');
+	const [isFeatured, setIsFeatured] = useState('all');
+	const [isReviewed, setIsReviewed] = useState('all');
 
 	const containerRef = useRef(null);
 	const innerContainerRef = useRef(null);
 
-	function onWindowResize(){
-		if( ! isHidden ){
-			containerRef.current.style.height = ( 24 + innerContainerRef.current.offsetHeight ) + 'px';
+	function onWindowResize() {
+		if (!isHidden) {
+			containerRef.current.style.height = 24 + innerContainerRef.current.offsetHeight + 'px';
 		}
 	}
 
-	function onFilterSelect(ev){
-
+	function onFilterSelect(ev) {
 		const args = {
 			state: state,
-		    media_type: mediaType,
-		    encoding_status: encodingStatus,
-		    featured: isFeatured,
-		    is_reviewed: isReviewed,
+			media_type: mediaType,
+			encoding_status: encodingStatus,
+			featured: isFeatured,
+			is_reviewed: isReviewed,
 		};
 
-		switch( ev.currentTarget.getAttribute('filter') ){
+		switch (ev.currentTarget.getAttribute('filter')) {
 			case 'state':
 				args.state = ev.currentTarget.getAttribute('value');
-				props.onFiltersUpdate( args );
-				setState( args.state );
+				props.onFiltersUpdate(args);
+				setState(args.state);
 				break;
 			case 'media_type':
 				args.media_type = ev.currentTarget.getAttribute('value');
-				props.onFiltersUpdate( args );
-				setMediaType( args.media_type );
+				props.onFiltersUpdate(args);
+				setMediaType(args.media_type);
 				break;
 			case 'encoding_status':
 				args.encoding_status = ev.currentTarget.getAttribute('value');
-				props.onFiltersUpdate( args );
-				setEncodingStatus( args.encoding_status );
+				props.onFiltersUpdate(args);
+				setEncodingStatus(args.encoding_status);
 				break;
 			case 'featured':
 				args.featured = ev.currentTarget.getAttribute('value');
-				props.onFiltersUpdate( args );
-				setIsFeatured( args.featured );
+				props.onFiltersUpdate(args);
+				setIsFeatured(args.featured);
 				break;
 			case 'reviewed':
 				args.is_reviewed = ev.currentTarget.getAttribute('value');
-				props.onFiltersUpdate( args );
-				setIsReviewed( args.is_reviewed );				
+				props.onFiltersUpdate(args);
+				setIsReviewed(args.is_reviewed);
 				break;
 		}
 	}
 
-    useEffect(() => {
-    	setIsHidden( props.hidden );
-    	onWindowResize();
-	}, [ props.hidden ]);
-	
-    useEffect(() => {
-    	PageStore.on( 'window_resize', onWindowResize );
-        return () => PageStore.removeListener( 'window_resize', onWindowResize );
-    }, []);
+	useEffect(() => {
+		setIsHidden(props.hidden);
+		onWindowResize();
+	}, [props.hidden]);
 
-	return ( <div ref={ containerRef } className={ "mi-filters-row" + ( isHidden ? ' hidden' : '' ) }>
-				
-				<div ref={ innerContainerRef } className="mi-filters-row-inner">
-					
-					<div className="mi-filter">
-						<div className="mi-filter-title">STATE</div>
-						<div className="mi-filter-options">
-							<FilterOptions id={ 'state' } options={ filters.state } selected={ state } onSelect={ onFilterSelect } />
-						</div>
+	useEffect(() => {
+		PageStore.on('window_resize', onWindowResize);
+		return () => PageStore.removeListener('window_resize', onWindowResize);
+	}, []);
+
+	return (
+		<div ref={containerRef} className={'mi-filters-row' + (isHidden ? ' hidden' : '')}>
+			<div ref={innerContainerRef} className="mi-filters-row-inner">
+				<div className="mi-filter">
+					<div className="mi-filter-title">STATE</div>
+					<div className="mi-filter-options">
+						<FilterOptions
+							id={'state'}
+							options={filters.state}
+							selected={state}
+							onSelect={onFilterSelect}
+						/>
 					</div>
-
-					<div className="mi-filter">
-						<div className="mi-filter-title">MEDIA TYPE</div>
-						<div className="mi-filter-options">
-							<FilterOptions id={ 'media_type' } options={ filters.media_type } selected={ mediaType } onSelect={ onFilterSelect } />
-						</div>
-					</div>
-
-					<div className="mi-filter">
-						<div className="mi-filter-title">ENCODING STATUS</div>
-						<div className="mi-filter-options">
-							<FilterOptions id={ 'encoding_status' } options={ filters.encoding_status } selected={ encodingStatus } onSelect={ onFilterSelect } />
-						</div>
-					</div>
-
-					<div className="mi-filter">
-						<div className="mi-filter-title">REVIEWED</div>
-						<div className="mi-filter-options">
-							<FilterOptions id={ 'reviewed' } options={ filters.reviewed } selected={ isReviewed } onSelect={ onFilterSelect } />
-						</div>
-					</div>
-
-					<div className="mi-filter">
-						<div className="mi-filter-title">FEATURED</div>
-						<div className="mi-filter-options">
-							<FilterOptions id={ 'featured' } options={ filters.featured } selected={ isFeatured } onSelect={ onFilterSelect } />
-						</div>
-					</div>
-
 				</div>
 
-			</div> );
+				<div className="mi-filter">
+					<div className="mi-filter-title">MEDIA TYPE</div>
+					<div className="mi-filter-options">
+						<FilterOptions
+							id={'media_type'}
+							options={filters.media_type}
+							selected={mediaType}
+							onSelect={onFilterSelect}
+						/>
+					</div>
+				</div>
+
+				<div className="mi-filter">
+					<div className="mi-filter-title">ENCODING STATUS</div>
+					<div className="mi-filter-options">
+						<FilterOptions
+							id={'encoding_status'}
+							options={filters.encoding_status}
+							selected={encodingStatus}
+							onSelect={onFilterSelect}
+						/>
+					</div>
+				</div>
+
+				<div className="mi-filter">
+					<div className="mi-filter-title">REVIEWED</div>
+					<div className="mi-filter-options">
+						<FilterOptions
+							id={'reviewed'}
+							options={filters.reviewed}
+							selected={isReviewed}
+							onSelect={onFilterSelect}
+						/>
+					</div>
+				</div>
+
+				<div className="mi-filter">
+					<div className="mi-filter-title">FEATURED</div>
+					<div className="mi-filter-options">
+						<FilterOptions
+							id={'featured'}
+							options={filters.featured}
+							selected={isFeatured}
+							onSelect={onFilterSelect}
+						/>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 ManageMediaFilters.propTypes = {
 	hidden: PropTypes.bool,
 };
-

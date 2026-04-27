@@ -18,6 +18,7 @@ repos:
         args: [--maxkb=1000]
       - id: debug-statements
       - id: detect-private-key
+        exclude: ^deploy/mediacms\.io_privkey\.pem$
 
   # ── Python (Ruff — lint + format) ──────────────────────
   - repo: https://github.com/astral-sh/ruff-pre-commit

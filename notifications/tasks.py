@@ -1,15 +1,19 @@
 import logging
+from smtplib import SMTPException
 
 from celery import shared_task
 from django.conf import settings
 from django.core.mail import EmailMessage, get_connection
 
-from smtplib import SMTPException
-
 logger = logging.getLogger(__name__)
 
 
-@shared_task(name="send_notification_email", queue="short_tasks", autoretry_for=(SMTPException, ConnectionError, OSError), retry_kwargs={"max_retries": 3, "countdown": 60})
+@shared_task(
+    name="send_notification_email",
+    queue="short_tasks",
+    autoretry_for=(SMTPException, ConnectionError, OSError),
+    retry_kwargs={"max_retries": 3, "countdown": 60},
+)
 def send_notification_email(notification_id):
     from .models import Notification
 
@@ -63,6 +67,7 @@ def send_notification_email(notification_id):
 @shared_task(name="notify_followers_new_media", queue="short_tasks")
 def notify_followers_new_media(actor_id, media_id):
     from django.contrib.auth import get_user_model
+
     from files.models import Media
 
     from .services import NotificationService

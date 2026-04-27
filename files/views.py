@@ -34,13 +34,13 @@ from rest_framework.views import APIView
 
 from actions.models import USER_MEDIA_ACTIONS, MediaAction
 from cms.custom_pagination import FastPaginationWithoutCount
-from cms.ui_variant import resolve_template
 from cms.permissions import (
     IsAuthorizedToAdd,
     IsUserOrEditor,
     user_requires_mfa,
 )
 from cms.request_utils import get_client_ip
+from cms.ui_variant import resolve_template
 from users.models import User
 
 from . import lists

@@ -17,20 +17,19 @@ import { PopupMain } from '../Popup';
 
 import LayoutStore from '../../../stores/LayoutStore.js';
 
-import "../../styles/SearchField.scss";
+import '../../styles/SearchField.scss';
 
 function indexesOf(source, find, caseSensitive) {
-	let i, result = [];
-	caseSensitive = !! caseSensitive;
+	let i,
+		result = [];
+	caseSensitive = !!caseSensitive;
 	for (i = 0; i < source.length; ++i) {
-
-		if( caseSensitive ){
-			if ( source.substring(i, i + find.length) === find ) {
+		if (caseSensitive) {
+			if (source.substring(i, i + find.length) === find) {
 				result.push(i);
 			}
-		}
-		else{
-			if ( source.substring(i, i + find.length).toLowerCase() === find.toLowerCase() ) {
+		} else {
+			if (source.substring(i, i + find.length).toLowerCase() === find.toLowerCase()) {
 				result.push(i);
 			}
 		}
@@ -38,214 +37,223 @@ function indexesOf(source, find, caseSensitive) {
 	return result;
 }
 
-function SearchPredictionItemList(props){
+function SearchPredictionItemList(props) {
+	const maxHeightValue = () => LayoutStore.get('container-height') - 1.75 * 56;
+	const onWindowResize = () => setMaxHeight(maxHeightValue());
 
-	const maxHeightValue = () => LayoutStore.get('container-height') - ( 1.75 * 56 );
-	const onWindowResize = () => setMaxHeight( maxHeightValue() );
-
-	const [ maxHeight, setMaxHeight ] = useState( maxHeightValue() );
+	const [maxHeight, setMaxHeight] = useState(maxHeightValue());
 
 	useEffect(() => {
-		PageStore.on( 'window_resize', onWindowResize );
-		return () => PageStore.removeListener( 'window_resize', onWindowResize );
+		PageStore.on('window_resize', onWindowResize);
+		return () => PageStore.removeListener('window_resize', onWindowResize);
 	});
 
-	return ( <div className="search-predictions-list" style={ { maxHeight: maxHeight + 'px' } }>{ props.children || null }</div> );
+	return (
+		<div className="search-predictions-list" style={{ maxHeight: maxHeight + 'px' }}>
+			{props.children || null}
+		</div>
+	);
 }
 
-function SearchPredictionItem(props){
-
+function SearchPredictionItem(props) {
 	const containerRef = useRef(null);
 
-	function onKeydown(ev){
-
+	function onKeydown(ev) {
 		let item;
 
-		switch( ev.keyCode || ev.charCode ){
-        	case 13: 	// Enter/Select.
-        		onClick();
-        		break;
-            case 38:    // Arrow Up.
-            	item = props.itemsDomArray( props.previousIndex );
-            	break;
-            case 40:    // Arrow Down.
-            	item = props.itemsDomArray( props.nextIndex );
-            	break;
-        }
+		switch (ev.keyCode || ev.charCode) {
+			case 13: // Enter/Select.
+				onClick();
+				break;
+			case 38: // Arrow Up.
+				item = props.itemsDomArray(props.previousIndex);
+				break;
+			case 40: // Arrow Down.
+				item = props.itemsDomArray(props.nextIndex);
+				break;
+		}
 
-        if( void 0 !== item ){
-        	item.focus();
-            ev.preventDefault();
-            ev.stopPropagation();
-        }
+		if (void 0 !== item) {
+			item.focus();
+			ev.preventDefault();
+			ev.stopPropagation();
+		}
 	}
 
-	function onFocus(ev){
+	function onFocus(ev) {
 		ev.target.onkeydown = onKeydown;
 	}
 
-	function onBlur(ev){
+	function onBlur(ev) {
 		ev.target.onkeydown = null;
 	}
 
-	function onClick(){
-		if( props.onSelect instanceof Function ){
-			props.onSelect( props.value );
+	function onClick() {
+		if (props.onSelect instanceof Function) {
+			props.onSelect(props.value);
 		}
 	}
 
 	useEffect(() => {
-		props.onPredictionItemLoad( props.index, containerRef.current);
+		props.onPredictionItemLoad(props.index, containerRef.current);
 	});
 
-	return ( <div ref={ containerRef } tabIndex="0" className="search-predictions-item" onFocus={ onFocus } onBlur={ onBlur } onClick={ onClick }>
-					<span dangerouslySetInnerHTML={{ __html: props.children || '' }} />
-			</div> );
+	return (
+		<div
+			ref={containerRef}
+			tabIndex="0"
+			className="search-predictions-item"
+			onFocus={onFocus}
+			onBlur={onBlur}
+			onClick={onClick}
+		>
+			<span dangerouslySetInnerHTML={{ __html: props.children || '' }} />
+		</div>
+	);
 }
 
-export function SearchField(props){
-
+export function SearchField(props) {
 	const searchInputRef = useRef(null);
 	const formRef = useRef(null);
 
-	const [ popupContentRef, PopupContent, PopupTrigger ] = usePopup();
+	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
 
-	const [ itemsDomRef, setItemsDomRef ] = useState([]);
+	const [itemsDomRef, setItemsDomRef] = useState([]);
 
-	const [ predictionItems, setPredictionItems ] = useState([]);
-	const [ queryVal, setQueryVal ] = useState(SearchFieldStore.get('search-query'));
-	const [ mobileSearchField, setMobileSearchField ] = useState(LayoutStore.get('visible-mobile-search'));
+	const [predictionItems, setPredictionItems] = useState([]);
+	const [queryVal, setQueryVal] = useState(SearchFieldStore.get('search-query'));
+	const [mobileSearchField, setMobileSearchField] = useState(LayoutStore.get('visible-mobile-search'));
 
-	function getItemsArr(index){
-		return -1 === index ? searchInputRef.current : itemsDomRef[ index ];
+	function getItemsArr(index) {
+		return -1 === index ? searchInputRef.current : itemsDomRef[index];
 	}
 
-	function onInputFocus(){
-		if( predictionItems.length ){
+	function onInputFocus() {
+		if (predictionItems.length) {
 			searchInputRef.current.onkeydown = searchInputRef.current.onkeydown || onKeydown;
 		}
 	}
 
-	function onInputBlur(){
+	function onInputBlur() {
 		searchInputRef.current.onkeydown = null;
 	}
 
-	function onKeydown(e){
-			
+	function onKeydown(e) {
 		const key = e.keyCode || e.charCode;
 
 		let found = false;
-        
-        switch( key ){
-            case 38:    // Up Arrow.
-            	found = getItemsArr(predictionItems.length-1);
-            	break;
-            case 40:    // Down Arrow.
-            	found = getItemsArr(0);
-            	break;
-        }
 
-        if( found ){
-        	found.focus();
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    }
-		
-	function onQueryChange(ev){
+		switch (key) {
+			case 38: // Up Arrow.
+				found = getItemsArr(predictionItems.length - 1);
+				break;
+			case 40: // Down Arrow.
+				found = getItemsArr(0);
+				break;
+		}
 
-		let val = ev.target.value;
-		
-		val = 'string' !== typeof val ? val.toString() : val;
-		
-		setQueryVal( val );
-
-		if( '' !== val.trim() ){
-			SearchFieldActions.requestPredictions( val.trim() );
+		if (found) {
+			found.focus();
+			e.preventDefault();
+			e.stopPropagation();
 		}
 	}
-	
-	function onChangedMobileSearchFieldVisibility(){
-		setMobileSearchField( LayoutStore.get('visible-mobile-search') );
+
+	function onQueryChange(ev) {
+		let val = ev.target.value;
+
+		val = 'string' !== typeof val ? val.toString() : val;
+
+		setQueryVal(val);
+
+		if ('' !== val.trim()) {
+			SearchFieldActions.requestPredictions(val.trim());
+		}
 	}
 
-	function onPredictionSelect(val){
+	function onChangedMobileSearchFieldVisibility() {
+		setMobileSearchField(LayoutStore.get('visible-mobile-search'));
+	}
 
+	function onPredictionSelect(val) {
 		setPredictionItems([]);
 		setQueryVal(val);
 
-		setTimeout( function(){
+		setTimeout(function () {
 			formRef.current.submit();
-		}, 50 );
+		}, 50);
 	}
 
-	function onPredictionItemLoad( index, domItem ){
+	function onPredictionItemLoad(index, domItem) {
 		const items = itemsDomRef;
 		items[index] = domItem;
 		setItemsDomRef(items);
 	}
 
-	function onLoadPredictions( val, arr ){
-
+	function onLoadPredictions(val, arr) {
 		let i, j, useItems, itemTxt, pos;
 		let prevItem, nextItem;
 
 		let items = [];
 
-		if ( val ) {
-			
+		if (val) {
 			useItems = [];
 
-			i=0;
-			while(i < arr.length) {
-				
+			i = 0;
+			while (i < arr.length) {
 				itemTxt = arr[i];
-				pos = indexesOf( arr[i], val, false );
-				
+				pos = indexesOf(arr[i], val, false);
+
 				// @note: Removed to allow to display results that not include the query string (eg. found by tag name)
 				/*if( ! pos.length ){
 					i+=1;
 					continue;
 				}*/
 
-				if( pos.length ){
-
+				if (pos.length) {
 					j = pos.length - 1;
-					while(j >= 0){
-						itemTxt = itemTxt.substring( 0, pos[j] ) + "<b>" + itemTxt.substring( pos[j], pos[j] + val.length ) + "</b>" + itemTxt.substring( pos[j] + val.length );
+					while (j >= 0) {
+						itemTxt =
+							itemTxt.substring(0, pos[j]) +
+							'<b>' +
+							itemTxt.substring(pos[j], pos[j] + val.length) +
+							'</b>' +
+							itemTxt.substring(pos[j] + val.length);
 						j--;
 					}
 				}
 
-				useItems.push( [ arr[i], itemTxt ] );
-				i+=1;
+				useItems.push([arr[i], itemTxt]);
+				i += 1;
 			}
 
 			i = 0;
-			while( i < useItems.length ){
-
-				if( 0 === i ){
+			while (i < useItems.length) {
+				if (0 === i) {
 					prevItem = -1;
 					nextItem = i + 1;
-				}
-				else if( i === useItems.length - 1 ){
+				} else if (i === useItems.length - 1) {
 					prevItem = i - 1;
 					nextItem = -1;
-				}
-				else{
+				} else {
 					prevItem = i - 1;
 					nextItem = i + 1;
 				}
 
-				items.push( <SearchPredictionItem
-								key = { i }
-								index = { i }
-								onPredictionItemLoad = { onPredictionItemLoad }
-								value = { useItems[i][0] }
-								onSelect = { onPredictionSelect }
-								itemsDomArray = { getItemsArr }
-								nextIndex = { nextItem }
-								previousIndex = { prevItem }>{ useItems[i][1] }</SearchPredictionItem> );
+				items.push(
+					<SearchPredictionItem
+						key={i}
+						index={i}
+						onPredictionItemLoad={onPredictionItemLoad}
+						value={useItems[i][0]}
+						onSelect={onPredictionSelect}
+						itemsDomArray={getItemsArr}
+						nextIndex={nextItem}
+						previousIndex={prevItem}
+					>
+						{useItems[i][1]}
+					</SearchPredictionItem>
+				);
 				i += 1;
 			}
 		}
@@ -253,65 +261,79 @@ export function SearchField(props){
 		setPredictionItems(items);
 	}
 
-	function onFormSubmit(ev){
-		if( "" === searchInputRef.current.value.trim() ){
+	function onFormSubmit(ev) {
+		if ('' === searchInputRef.current.value.trim()) {
 			ev.preventDefault();
 			ev.stopPropagation();
 		}
 	}
 
-	function onPopupHide(){
+	function onPopupHide() {
 		setPredictionItems([]);
 	}
 
-	useEffect(()=>{
-
-		if( mobileSearchField ){
+	useEffect(() => {
+		if (mobileSearchField) {
 			searchInputRef.current.focus();
 		}
 	}, [mobileSearchField]);
 
-	useEffect(()=>{
-
-		if(predictionItems.length){
+	useEffect(() => {
+		if (predictionItems.length) {
 			searchInputRef.current.onkeydown = searchInputRef.current.onkeydown || onKeydown;
 			popupContentRef.current.tryToShow();
-		}
-		else{
+		} else {
 			searchInputRef.current.onkeydown = null;
 			popupContentRef.current.tryToHide();
 		}
 	}, [predictionItems]);
 
-	useEffect(()=>{
-		
-		SearchFieldStore.on( 'load_predictions', onLoadPredictions );
-		LayoutStore.on( 'mobile-search-visibility-change', onChangedMobileSearchFieldVisibility );
+	useEffect(() => {
+		SearchFieldStore.on('load_predictions', onLoadPredictions);
+		LayoutStore.on('mobile-search-visibility-change', onChangedMobileSearchFieldVisibility);
 
 		return () => {
-			SearchFieldStore.removeListener( 'load_predictions', onLoadPredictions );
-			LayoutStore.removeListener( 'mobile-search-visibility-change', onChangedMobileSearchFieldVisibility );
+			SearchFieldStore.removeListener('load_predictions', onLoadPredictions);
+			LayoutStore.removeListener('mobile-search-visibility-change', onChangedMobileSearchFieldVisibility);
 		};
 	}, []);
 
-	return (<div className="search-field-wrap">
-				<div>
-					<form ref={formRef} method="get" action={LinksContext._currentValue.search.base} autoComplete="off" onSubmit={onFormSubmit}>
-						<div>
-							<div className="text-field-wrap">
-								
-								<input ref={searchInputRef} type="text" placeholder="Search" aria-label="Search" name="q" value={queryVal} onChange={onQueryChange} onFocus={onInputFocus} onBlur={onInputBlur} />
+	return (
+		<div className="search-field-wrap">
+			<div>
+				<form
+					ref={formRef}
+					method="get"
+					action={LinksContext._currentValue.search.base}
+					autoComplete="off"
+					onSubmit={onFormSubmit}
+				>
+					<div>
+						<div className="text-field-wrap">
+							<input
+								ref={searchInputRef}
+								type="text"
+								placeholder="Search"
+								aria-label="Search"
+								name="q"
+								value={queryVal}
+								onChange={onQueryChange}
+								onFocus={onInputFocus}
+								onBlur={onInputBlur}
+							/>
 
-								<PopupContent contentRef={ popupContentRef } hideCallback={ onPopupHide }>
-									<PopupMain>
-										<SearchPredictionItemList>{ predictionItems }</SearchPredictionItemList>
-									</PopupMain>
-								</PopupContent>
-
-							</div>
-							<button type="submit" aria-label="Search"><MaterialIcon type="search" /></button>
+							<PopupContent contentRef={popupContentRef} hideCallback={onPopupHide}>
+								<PopupMain>
+									<SearchPredictionItemList>{predictionItems}</SearchPredictionItemList>
+								</PopupMain>
+							</PopupContent>
 						</div>
-					</form>
-				</div>
-			</div>);
+						<button type="submit" aria-label="Search">
+							<MaterialIcon type="search" />
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
 }

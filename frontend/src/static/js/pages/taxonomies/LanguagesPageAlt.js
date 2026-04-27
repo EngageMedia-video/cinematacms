@@ -5,14 +5,20 @@ import { MediaListWrapper } from '../components/MediaListWrapper';
 import { LazyLoadItemListAsync } from '../../components/-NEW-/LazyLoadItemListAsync';
 
 export class LanguagesPageAlt extends LanguagesPage {
-	
-	pageContent(){
-		return <ApiUrlConsumer>
-				{ apiUrl =>
-					<MediaListWrapper title={ this.props.title } className="items-list-ver hover-overlay-title">
-						<LazyLoadItemListAsync singleLinkContent={ true } inLanguagesList={ true } requestUrl={ apiUrl.archive.languages } hideAllMeta={false} />
+	pageContent() {
+		return (
+			<ApiUrlConsumer>
+				{(apiUrl) => (
+					<MediaListWrapper title={this.props.title} className="items-list-ver hover-overlay-title">
+						<LazyLoadItemListAsync
+							singleLinkContent={true}
+							inLanguagesList={true}
+							requestUrl={apiUrl.archive.languages}
+							hideAllMeta={false}
+						/>
 					</MediaListWrapper>
-				}
-				</ApiUrlConsumer>;
+				)}
+			</ApiUrlConsumer>
+		);
 	}
 }

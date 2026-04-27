@@ -89,7 +89,7 @@ AXES_META_PRECEDENCE_ORDER = [
 # Apply to sensitive paths
 AXES_SENSITIVE_PATHS = [
     '/admin/login/',
-    '/accounts/login/', 
+    '/accounts/login/',
     '/accounts/signup/',
     '/accounts/password/reset/',
     '/api/auth/token/',  # If you have a token endpoint

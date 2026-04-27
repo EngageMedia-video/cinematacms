@@ -15,7 +15,7 @@ Before deleting transcription requests, remove any existing subtitles:
 
 **Option A - Via Edit Media Interface:**
 1. Go to Edit Media page for your video
-2. Click "Edit Subtitle" 
+2. Click "Edit Subtitle"
 3. Delete existing subtitle files
 4. Look for "Auto-detect & Translate to English" subtitles and delete them
 

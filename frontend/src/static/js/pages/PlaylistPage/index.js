@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useContext } from 'react';
 import ReactDOM from 'react-dom';
 
-import Sortable from "sortablejs";
+import Sortable from 'sortablejs';
 
 import { usePopup } from '../../components/-NEW-/hooks/usePopup';
 
@@ -30,232 +30,286 @@ import { NavigationContentApp } from '../../components/-NEW-/NavigationContentAp
 
 import { PlaylistShareButton } from '../../components/-NEW-/PlaylistShareButton';
 
-import "../styles/PlaylistPage.scss";
+import '../styles/PlaylistPage.scss';
 
-function PlayAllLink(props){
-	return ( ! props.media || ! props.media.length ? <span>{ props.children }</span> : <a href={ props.media[0].url + '&pl=' + props.id } title="">{ props.children }</a> );
+function PlayAllLink(props) {
+	return !props.media || !props.media.length ? (
+		<span>{props.children}</span>
+	) : (
+		<a href={props.media[0].url + '&pl=' + props.id} title="">
+			{props.children}
+		</a>
+	);
 }
 
-function PlaylistThumb(props){
+function PlaylistThumb(props) {
+	const [thumb, setThumb] = useState(null);
 
-	const [ thumb, setThumb ] = useState( null );
-
-	useEffect( () => {
-		if( ! props.thumb || 'string' !== typeof props.thumb ){
+	useEffect(() => {
+		if (!props.thumb || 'string' !== typeof props.thumb) {
 			setThumb(null);
-		}
-		else{
+		} else {
 			const tb = props.thumb.trim();
-			setThumb( '' !== tb ? tb : null );
+			setThumb('' !== tb ? tb : null);
 		}
-	}, [props.thumb] );
+	}, [props.thumb]);
 
-	return ( <div className={ "playlist-thumb" + ( thumb ? '' : ' no-thumb'  ) } style={ { backgroundImage: 'url("' + thumb + '")' } }>
-				<PlayAllLink id={ props.id } media={ props.media }>
-					<span>
-						{ thumb ? <img src={ thumb } alt="" /> : null }
-						<span className="play-all">
+	return (
+		<div
+			className={'playlist-thumb' + (thumb ? '' : ' no-thumb')}
+			style={{ backgroundImage: 'url("' + thumb + '")' }}
+		>
+			<PlayAllLink id={props.id} media={props.media}>
+				<span>
+					{thumb ? <img src={thumb} alt="" /> : null}
+					<span className="play-all">
+						<span>
 							<span>
-								<span>
-									<i className="material-icons">play_arrow</i>
-									<span className="play-all-label">PLAY ALL</span>
-								</span>
+								<i className="material-icons">play_arrow</i>
+								<span className="play-all-label">PLAY ALL</span>
 							</span>
 						</span>
 					</span>
-				</PlayAllLink>
-			 </div> );
+				</span>
+			</PlayAllLink>
+		</div>
+	);
 }
 
-function PlaylistTitle(props){
-	return (<div className="playlist-title"><h1>{ props.title }</h1></div>);
+function PlaylistTitle(props) {
+	return (
+		<div className="playlist-title">
+			<h1>{props.title}</h1>
+		</div>
+	);
 }
 
-function PlaylistMeta(props){
-	return (<div className="playlist-meta">
-				<div className="playlist-videos-number">{ props.totalItems } media</div>
-				{/*<div className="playlist-views">{ props.viewsCount } { 1 < formatNumber( props.viewsCount ) ? 'views' : 'view' }</div>*/}
-				{ ! props.dateLabel ? null : <div className="playlist-last-update">{ props.dateLabel }</div> }
-			</div>);
+function PlaylistMeta(props) {
+	return (
+		<div className="playlist-meta">
+			<div className="playlist-videos-number">{props.totalItems} media</div>
+			{/*<div className="playlist-views">{ props.viewsCount } { 1 < formatNumber( props.viewsCount ) ? 'views' : 'view' }</div>*/}
+			{!props.dateLabel ? null : <div className="playlist-last-update">{props.dateLabel}</div>}
+		</div>
+	);
 }
 
-function PlaylistActions(props){
-
+function PlaylistActions(props) {
 	const user = useContext(UserContext);
-	const showShare = !!( user && user.can && user.can.shareMedia );
+	const showShare = !!(user && user.can && user.can.shareMedia);
 	const showOptions = props.loggedinUserPlaylist;
 
-	if( ! showShare && ! showOptions ){
+	if (!showShare && !showOptions) {
 		return null;
 	}
 
-	return  ( <div className="playlist-actions">
-				{ showShare ? <PlaylistShareButton url={ props.playlistUrl } title={ props.title || '' } thumbnailUrl={ props.compositeThumbnailUrl } /> : null }
-				{ showOptions ? <PlaylistOptions /> : null }
-			</div> );
+	return (
+		<div className="playlist-actions">
+			{showShare ? (
+				<PlaylistShareButton
+					url={props.playlistUrl}
+					title={props.title || ''}
+					thumbnailUrl={props.compositeThumbnailUrl}
+				/>
+			) : null}
+			{showOptions ? <PlaylistOptions /> : null}
+		</div>
+	);
 }
 
-function PlaylistAuthor(props){
-
-	return <div className="playlist-author">
-				<div>
-					<div className="playlist-author-thumb">
-						<a href={ props.link } title={ props.name }>
-							{ props.thumb ? <span style={ { backgroundImage: "url(" + props.thumb + ")" } }><img src={ props.thumb } alt="" /></span> : <span><MaterialIcon type="person" /></span> }
-						</a>
-					</div>
-					<div className="playlist-author-name">
-						<a href={ props.link } title={ props.name }>{ props.name }</a>
-					</div>
-					{ props.loggedinUserPlaylist ? <PlaylistEdit /> : null }
+function PlaylistAuthor(props) {
+	return (
+		<div className="playlist-author">
+			<div>
+				<div className="playlist-author-thumb">
+					<a href={props.link} title={props.name}>
+						{props.thumb ? (
+							<span style={{ backgroundImage: 'url(' + props.thumb + ')' }}>
+								<img src={props.thumb} alt="" />
+							</span>
+						) : (
+							<span>
+								<MaterialIcon type="person" />
+							</span>
+						)}
+					</a>
 				</div>
-			</div>;
+				<div className="playlist-author-name">
+					<a href={props.link} title={props.name}>
+						{props.name}
+					</a>
+				</div>
+				{props.loggedinUserPlaylist ? <PlaylistEdit /> : null}
+			</div>
+		</div>
+	);
 }
 
-function playlistOptionsList(){
-
+function playlistOptionsList() {
 	const items = {
 		deleteMedia: {
-			itemType: "open-subpage",
-			text: "Delete",
-			icon: "delete",
+			itemType: 'open-subpage',
+			text: 'Delete',
+			icon: 'delete',
 			buttonAttr: {
 				className: 'change-page',
 				'data-page-id': 'proceedPlaylistRemovalPopup',
 			},
-		}
+		},
 	};
 
 	return items;
 }
 
-function playlistOptionsPopupPages(proceedPlaylistRemoval, cancelPlaylistRemoval){
-
+function playlistOptionsPopupPages(proceedPlaylistRemoval, cancelPlaylistRemoval) {
 	const optionsList = playlistOptionsList();
 
 	return {
-			main: <PopupMain>
-					<NavigationMenuList items={ [ optionsList.deleteMedia ] } />
-				</PopupMain>,
-			proceedPlaylistRemovalPopup: <PopupMain>
-											<div className="popup-message">
-												<span className="popup-message-title">Playlist removal</span>
-												<span className="popup-message-main">You're willing to remove playlist permanently?</span>
-											</div>
-									  		<hr/>
-											<span className="popup-message-bottom">
-												<button className="button-link cancel-playlist-removal" onClick={ cancelPlaylistRemoval }>CANCEL</button>
-												<button className="button-link proceed-playlist-removal" onClick={ proceedPlaylistRemoval }>PROCEED</button>
-											</span>
-									  	</PopupMain>,
-		};
+		main: (
+			<PopupMain>
+				<NavigationMenuList items={[optionsList.deleteMedia]} />
+			</PopupMain>
+		),
+		proceedPlaylistRemovalPopup: (
+			<PopupMain>
+				<div className="popup-message">
+					<span className="popup-message-title">Playlist removal</span>
+					<span className="popup-message-main">You're willing to remove playlist permanently?</span>
+				</div>
+				<hr />
+				<span className="popup-message-bottom">
+					<button className="button-link cancel-playlist-removal" onClick={cancelPlaylistRemoval}>
+						CANCEL
+					</button>
+					<button className="button-link proceed-playlist-removal" onClick={proceedPlaylistRemoval}>
+						PROCEED
+					</button>
+				</span>
+			</PopupMain>
+		),
+	};
 }
 
-function PlaylistOptions(props){
+function PlaylistOptions(props) {
+	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
 
-	const [ popupContentRef, PopupContent, PopupTrigger ] = usePopup();
+	const [popupCurrentPage, setPopupCurrentPage] = useState('main');
 
-	const [ popupCurrentPage, setPopupCurrentPage ] = useState( 'main' );
-
-	function proceedPlaylistRemoval(){
+	function proceedPlaylistRemoval() {
 		PlaylistPageActions.removePlaylist();
 		popupContentRef.current.toggle();
 	}
 
-	function cancelPlaylistRemoval(){
+	function cancelPlaylistRemoval() {
 		popupContentRef.current.toggle();
 	}
 
-	return (<div className={ "playlist-options-wrap" + ( "main" === popupCurrentPage ? " playlist-options-main" : "") }>
-				<PopupTrigger contentRef={ popupContentRef }>
-					<CircleIconButton><MaterialIcon type="more_horiz" /></CircleIconButton>
-				</PopupTrigger>
+	return (
+		<div className={'playlist-options-wrap' + ('main' === popupCurrentPage ? ' playlist-options-main' : '')}>
+			<PopupTrigger contentRef={popupContentRef}>
+				<CircleIconButton>
+					<MaterialIcon type="more_horiz" />
+				</CircleIconButton>
+			</PopupTrigger>
 
-				<PopupContent contentRef={ popupContentRef }>
-					<NavigationContentApp
-						pageChangeCallback={ setPopupCurrentPage }
-						initPage="main"
-						focusFirstItemOnPageChange={ false }
-						pages={ playlistOptionsPopupPages(proceedPlaylistRemoval, cancelPlaylistRemoval) }
-						pageChangeSelector={ '.change-page' }
-						pageIdSelectorAttr={ 'data-page-id' }
-					/>
-				</PopupContent>
-			</div>);
+			<PopupContent contentRef={popupContentRef}>
+				<NavigationContentApp
+					pageChangeCallback={setPopupCurrentPage}
+					initPage="main"
+					focusFirstItemOnPageChange={false}
+					pages={playlistOptionsPopupPages(proceedPlaylistRemoval, cancelPlaylistRemoval)}
+					pageChangeSelector={'.change-page'}
+					pageIdSelectorAttr={'data-page-id'}
+				/>
+			</PopupContent>
+		</div>
+	);
 }
 
-function PlaylistEdit(props){
-
+function PlaylistEdit(props) {
 	const userContext = useContext(UserContext);
-	const [ popupContentRef, PopupContent, PopupTrigger ] = usePopup();
+	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
 
-	function onPlaylistSave(){
+	function onPlaylistSave() {
 		// Empty for now...
 	}
 
-	function onClickExit(){
+	function onClickExit() {
 		popupContentRef.current.toggle();
 	}
 
-	function playlistUpdateCompleted( new_playlist_data ){
-		PageActions.addNotification( "Playlist updated", 'playlistUpdateCompleted');
+	function playlistUpdateCompleted(new_playlist_data) {
+		PageActions.addNotification('Playlist updated', 'playlistUpdateCompleted');
 		onClickExit();
 	}
 
-	function playlistUpdateFailed(){
-		PageActions.addNotification( "Playlist update failed", 'playlistUpdateFailed');
+	function playlistUpdateFailed() {
+		PageActions.addNotification('Playlist update failed', 'playlistUpdateFailed');
 		onClickExit();
 	}
 
-	function playlistRemovalCompleted( playlistId ){
-		PageActions.addNotification( "Playlist removed. Redirecting...", 'playlistDelete');
-		setTimeout(function(){
+	function playlistRemovalCompleted(playlistId) {
+		PageActions.addNotification('Playlist removed. Redirecting...', 'playlistDelete');
+		setTimeout(function () {
 			window.location.href = userContext.pages.playlists;
 		}, 2000);
 	}
 
-	function playlistRemovalFailed(playlistId){
-		PageActions.addNotification( "Playlist removal failed", 'playlistDeleteFail');
+	function playlistRemovalFailed(playlistId) {
+		PageActions.addNotification('Playlist removal failed', 'playlistDeleteFail');
 	}
 
-	useEffect( () => {
-		PlaylistPageStore.on( "playlist_update_completed", playlistUpdateCompleted );
-		PlaylistPageStore.on( "playlist_update_failed", playlistUpdateFailed );
-		PlaylistPageStore.on( "playlist_removal_completed", playlistRemovalCompleted );
-		PlaylistPageStore.on( "playlist_removal_failed", playlistRemovalFailed );
+	useEffect(() => {
+		PlaylistPageStore.on('playlist_update_completed', playlistUpdateCompleted);
+		PlaylistPageStore.on('playlist_update_failed', playlistUpdateFailed);
+		PlaylistPageStore.on('playlist_removal_completed', playlistRemovalCompleted);
+		PlaylistPageStore.on('playlist_removal_failed', playlistRemovalFailed);
 		return () => {
-			PlaylistPageStore.removeListener( "playlist_update_completed", playlistUpdateCompleted );
-			PlaylistPageStore.removeListener( "playlist_update_failed", playlistUpdateFailed );
-			PlaylistPageStore.removeListener( "playlist_removal_completed", playlistRemovalCompleted );
-			PlaylistPageStore.removeListener( "playlist_removal_failed", playlistRemovalFailed );
+			PlaylistPageStore.removeListener('playlist_update_completed', playlistUpdateCompleted);
+			PlaylistPageStore.removeListener('playlist_update_failed', playlistUpdateFailed);
+			PlaylistPageStore.removeListener('playlist_removal_completed', playlistRemovalCompleted);
+			PlaylistPageStore.removeListener('playlist_removal_failed', playlistRemovalFailed);
 		};
 	}, []);
 
-	return (<div className="edit-playlist">
-				<PopupTrigger contentRef={ popupContentRef }>
-					<CircleIconButton><MaterialIcon type="edit" /><span>EDIT</span></CircleIconButton>
-				</PopupTrigger>
+	return (
+		<div className="edit-playlist">
+			<PopupTrigger contentRef={popupContentRef}>
+				<CircleIconButton>
+					<MaterialIcon type="edit" />
+					<span>EDIT</span>
+				</CircleIconButton>
+			</PopupTrigger>
 
-				<PopupContent contentRef={ popupContentRef }>
-					<div className="popup-fullscreen">
-						<PopupMain>
-							<span className="popup-fullscreen-overlay"></span>
-							<div className="edit-playlist-form-wrap">
-								<div className="edit-playlist-popup-title">Edit playlist<CircleIconButton type="button" onClick={ onClickExit }><MaterialIcon type="close" /></CircleIconButton></div>
-								{/*<PlaylistCreationForm id={ PlaylistPageStore.get('playlistId') } title={ this.state.title } description={ this.state.description } onCancel={ onClickExit } onPlaylistSave={ onPlaylistSave } />*/}
-								<PlaylistCreationForm date={ (new Date).getTime() } id={ PlaylistPageStore.get('playlistId') } onCancel={ onClickExit } onPlaylistSave={ onPlaylistSave } />
+			<PopupContent contentRef={popupContentRef}>
+				<div className="popup-fullscreen">
+					<PopupMain>
+						<span className="popup-fullscreen-overlay"></span>
+						<div className="edit-playlist-form-wrap">
+							<div className="edit-playlist-popup-title">
+								Edit playlist
+								<CircleIconButton type="button" onClick={onClickExit}>
+									<MaterialIcon type="close" />
+								</CircleIconButton>
 							</div>
-						</PopupMain>
-					</div>
-				</PopupContent>
-			</div>);
+							{/*<PlaylistCreationForm id={ PlaylistPageStore.get('playlistId') } title={ this.state.title } description={ this.state.description } onCancel={ onClickExit } onPlaylistSave={ onPlaylistSave } />*/}
+							<PlaylistCreationForm
+								date={new Date().getTime()}
+								id={PlaylistPageStore.get('playlistId')}
+								onCancel={onClickExit}
+								onPlaylistSave={onPlaylistSave}
+							/>
+						</div>
+					</PopupMain>
+				</div>
+			</PopupContent>
+		</div>
+	);
 }
 
 export class PlaylistMediaList extends React.PureComponent {
-
-	constructor( props ){
-
-		super( props );
+	constructor(props) {
+		super(props);
 
 		this.state = {
 			media: props.media,
@@ -264,24 +318,24 @@ export class PlaylistMediaList extends React.PureComponent {
 		this.onItemsLoad = this.onItemsLoad.bind(this);
 	}
 
-	onItemsLoad(){
-		if( ! this.props.loggedinUserPlaylist ){
+	onItemsLoad() {
+		if (!this.props.loggedinUserPlaylist) {
 			return;
 		}
 
 		const container = this.containerRef.current.querySelector('.items-list');
 
-		if( ! container ){
+		if (!container) {
 			return;
 		}
 
 		const playlistId = this.props.id;
 
-		function onPutMediaOrderingSuccess(response){
+		function onPutMediaOrderingSuccess(response) {
 			// TODO: Continue here...
 		}
 
-		function onPutMediaOrderingFail(response){
+		function onPutMediaOrderingFail(response) {
 			// TODO: Continue here...
 		}
 
@@ -293,42 +347,43 @@ export class PlaylistMediaList extends React.PureComponent {
 		// 	});
 		// }).bind(this);
 
-		const getMediaArray = (function(index){
-			return this.state.media[ index ];
-		}).bind(this);
+		const getMediaArray = function (index) {
+			return this.state.media[index];
+		}.bind(this);
 
-		const updateMediaData = (function( newMediaOrder ){
-
+		const updateMediaData = function (newMediaOrder) {
 			// console.log( media );
 
 			const newMediadata = [];
 			let i = 0;
-			while( i < newMediaOrder.length ){
-				newMediadata.push( this.state.media[ newMediaOrder[i] ] );
+			while (i < newMediaOrder.length) {
+				newMediadata.push(this.state.media[newMediaOrder[i]]);
 				i += 1;
 			}
-			
+
 			// console.log( newMediaOrder );
 			// console.log( newMediadata );
 
-			this.setState({
-				media: newMediadata,
-			}, () => {
-				PlaylistPageActions.reorderedMediaInPlaylist( this.state.media );
-			});
+			this.setState(
+				{
+					media: newMediadata,
+				},
+				() => {
+					PlaylistPageActions.reorderedMediaInPlaylist(this.state.media);
+				}
+			);
 
 			// setMedia( newMediadata );
 			// PlaylistPageActions.reorderedMediaInPlaylist( newMediadata );
-		}).bind(this);
+		}.bind(this);
 
 		/*const dragCallback = 'function' === typeof props.onDragComplete ? props.onDragComplete : null;*/
 
-		const sortable = Sortable.create(container,{
-			onStart: function(evt){
+		const sortable = Sortable.create(container, {
+			onStart: function (evt) {
 				container.classList.add('on-dragging');
 			},
-			onEnd: function(evt){
-
+			onEnd: function (evt) {
 				// console.log( 'PRE', media );
 
 				// console.log( this );
@@ -340,38 +395,36 @@ export class PlaylistMediaList extends React.PureComponent {
 				const itemsOrderNumElems = container.querySelectorAll('.item-order-number div div');
 				let oldOrdering, newOrdering, friendly_token;
 				let i = 0;
-				while( i < itemsOrderNumElems.length ){
-
+				while (i < itemsOrderNumElems.length) {
 					// oldOrdering = parseInt( itemsOrderNumElems[i].innerHTML, 10 );
-					oldOrdering = parseInt( itemsOrderNumElems[i].getAttribute('data-order'), 10 );
+					oldOrdering = parseInt(itemsOrderNumElems[i].getAttribute('data-order'), 10);
 					newOrdering = i + 1;
 
 					// console.log( oldOrdering - 1, media[ oldOrdering - 1 ] );
 
-					if( newOrdering !== oldOrdering ){
-
-						friendly_token = getMediaArray( oldOrdering - 1 ).friendly_token;
+					if (newOrdering !== oldOrdering) {
+						friendly_token = getMediaArray(oldOrdering - 1).friendly_token;
 						// friendly_token = itemsOrderNumElems[i].getAttribute('data-id');
 
 						putRequest(
-			                ApiUrlContext._currentValue.playlists + '/' + playlistId,
-			                {
-			                    type: 'ordering',
-			                    ordering: newOrdering,
-			                    media_friendly_token: friendly_token,
-			                },
-			                {
-			                    headers: {
-			                        'X-CSRFToken': getCSRFToken(),
-			                    }
-			                },
-			                false,
-			                onPutMediaOrderingSuccess,
-			                onPutMediaOrderingFail
-			            );
+							ApiUrlContext._currentValue.playlists + '/' + playlistId,
+							{
+								type: 'ordering',
+								ordering: newOrdering,
+								media_friendly_token: friendly_token,
+							},
+							{
+								headers: {
+									'X-CSRFToken': getCSRFToken(),
+								},
+							},
+							false,
+							onPutMediaOrderingSuccess,
+							onPutMediaOrderingFail
+						);
 					}
 
-					newMediaOrder.push( oldOrdering - 1 );
+					newMediaOrder.push(oldOrdering - 1);
 
 					// newMediadata[i] = getMediaArray(oldOrdering - 1);
 
@@ -383,7 +436,7 @@ export class PlaylistMediaList extends React.PureComponent {
 
 				container.classList.remove('on-dragging');
 
-				updateMediaData( newMediaOrder );
+				updateMediaData(newMediaOrder);
 
 				// console.log( newMediadata );
 				// console.log( 'POST', newMediadata );
@@ -399,30 +452,35 @@ export class PlaylistMediaList extends React.PureComponent {
 			},
 		});
 	}
-	
-	render(){
-		return <div ref={ this.containerRef } className={ "playlist-videos-list" + ( this.props.loggedinUserPlaylist ? " draggable" : "" ) }>
-					{ this.state.media.length ? 
-						<PlaylistPageMedia
-							itemsLoadCallback={ this.onItemsLoad }
-							playlistId={ this.props.id }
-							media={ this.state.media }
-							hidePlaylistOptions={ ! this.props.loggedinUserPlaylist } /> : null }
-				</div>;
+
+	render() {
+		return (
+			<div
+				ref={this.containerRef}
+				className={'playlist-videos-list' + (this.props.loggedinUserPlaylist ? ' draggable' : '')}
+			>
+				{this.state.media.length ? (
+					<PlaylistPageMedia
+						itemsLoadCallback={this.onItemsLoad}
+						playlistId={this.props.id}
+						media={this.state.media}
+						hidePlaylistOptions={!this.props.loggedinUserPlaylist}
+					/>
+				) : null}
+			</div>
+		);
 	}
 }
 
 export class PlaylistPage extends Page {
-
-	constructor(props){
-
+	constructor(props) {
 		super(props, 'playlist-page');
 
 		this.state = {
 			thumb: PlaylistPageStore.get('thumb'),
 			media: PlaylistPageStore.get('playlist-media'),
 			savedPlaylist: PlaylistPageStore.get('saved-playlist'),
-			loggedinUserPlaylist: PlaylistPageStore.get( 'logged-in-user-playlist' ),
+			loggedinUserPlaylist: PlaylistPageStore.get('logged-in-user-playlist'),
 			title: PlaylistPageStore.get('title'),
 			description: PlaylistPageStore.get('description'),
 		};
@@ -440,10 +498,10 @@ export class PlaylistPage extends Page {
 		PlaylistPageStore.on('reordered_media_in_playlist', this.onMediaReorderedInPlaylist);
 
 		this.onCompletePlaylistUpdate = this.onCompletePlaylistUpdate.bind(this);
-		PlaylistPageStore.on( "playlist_update_completed", this.onCompletePlaylistUpdate );
+		PlaylistPageStore.on('playlist_update_completed', this.onCompletePlaylistUpdate);
 	}
 
-	onCompletePlaylistUpdate(){
+	onCompletePlaylistUpdate() {
 		this.setState({
 			thumb: PlaylistPageStore.get('thumb'),
 			title: PlaylistPageStore.get('title'),
@@ -451,18 +509,18 @@ export class PlaylistPage extends Page {
 		});
 	}
 
-	onLoadPlaylistData(){
+	onLoadPlaylistData() {
 		this.setState({
 			thumb: PlaylistPageStore.get('thumb'),
 			title: PlaylistPageStore.get('title'),
 			description: PlaylistPageStore.get('description'),
 			media: PlaylistPageStore.get('playlist-media'),
 			savedPlaylist: PlaylistPageStore.get('saved-playlist'),
-			loggedinUserPlaylist: PlaylistPageStore.get( 'logged-in-user-playlist' ),
+			loggedinUserPlaylist: PlaylistPageStore.get('logged-in-user-playlist'),
 		});
 	}
 
-	componentDidMount(){
+	componentDidMount() {
 		PlaylistPageActions.loadPlaylistData();
 	}
 
@@ -479,57 +537,67 @@ export class PlaylistPage extends Page {
 		});
 	}*/
 
-	onMediaRemovedFromPlaylist(){
+	onMediaRemovedFromPlaylist() {
 		this.setState({
 			media: PlaylistPageStore.get('playlist-media'),
 			thumb: PlaylistPageStore.get('thumb'),
 		});
 	}
 
-	onMediaReorderedInPlaylist(){
+	onMediaReorderedInPlaylist() {
 		this.setState({
 			media: PlaylistPageStore.get('playlist-media'),
 			thumb: PlaylistPageStore.get('thumb'),
 		});
 	}
 
-	pageContent(){
-
+	pageContent() {
 		const playlistId = PlaylistPageStore.get('playlistId');
 
-		if( ! playlistId ){
+		if (!playlistId) {
 			return null;
 		}
 
-		return [<div key="playlistDetails" className="playlist-details">
+		return [
+			<div key="playlistDetails" className="playlist-details">
+				<PlaylistThumb id={playlistId} thumb={this.state.thumb} media={this.state.media} />
+				<PlaylistTitle title={this.state.title} />
+				<PlaylistMeta
+					totalItems={PlaylistPageStore.get('total-items')}
+					dateLabel={PlaylistPageStore.get('date-label')}
+					viewsCount={PlaylistPageStore.get('views-count')}
+				/>
 
-					<PlaylistThumb id={ playlistId } thumb={ this.state.thumb } media={ this.state.media } />
-					<PlaylistTitle title={ this.state.title } />
-					<PlaylistMeta totalItems={ PlaylistPageStore.get('total-items') } dateLabel={ PlaylistPageStore.get('date-label') } viewsCount={ PlaylistPageStore.get('views-count') } />
-
-					{/*'public' === PlaylistPageStore.get('visibility') ? null :
+				{/*'public' === PlaylistPageStore.get('visibility') ? null :
 						<div className="playlist-status">
 							<span>{ PlaylistPageStore.get('visibility-icon') }</span>
 							<div>{ PlaylistPageStore.get('visibility') }</div>
 						</div>*/}
 
-					{ this.state.description ? <div className="playlist-description">{ this.state.description }</div> : null }
+				{this.state.description ? <div className="playlist-description">{this.state.description}</div> : null}
 
-					<PlaylistAuthor
-						name={ PlaylistPageStore.get('author-name') }
-						link={ PlaylistPageStore.get('author-link') }
-						thumb={ PlaylistPageStore.get('author-thumb') }
-						loggedinUserPlaylist={ this.state.loggedinUserPlaylist } />
+				<PlaylistAuthor
+					name={PlaylistPageStore.get('author-name')}
+					link={PlaylistPageStore.get('author-link')}
+					thumb={PlaylistPageStore.get('author-thumb')}
+					loggedinUserPlaylist={this.state.loggedinUserPlaylist}
+				/>
 
-					<PlaylistActions loggedinUserPlaylist={ this.state.loggedinUserPlaylist } savedPlaylist={ this.state.savedPlaylist } title={ this.state.title } playlistUrl={ PlaylistPageStore.get('playlist-url') } compositeThumbnailUrl={ PlaylistPageStore.get('composite-thumbnail-url') } />
+				<PlaylistActions
+					loggedinUserPlaylist={this.state.loggedinUserPlaylist}
+					savedPlaylist={this.state.savedPlaylist}
+					title={this.state.title}
+					playlistUrl={PlaylistPageStore.get('playlist-url')}
+					compositeThumbnailUrl={PlaylistPageStore.get('composite-thumbnail-url')}
+				/>
+			</div>,
 
-				</div>,
-
-				<PlaylistMediaList 
-					key={ "playlistMediaList_" + this.state.media.length }
-					id={ playlistId }
-					media={ this.state.media }
-					loggedinUserPlaylist={ this.state.loggedinUserPlaylist } />
-			];
+			<PlaylistMediaList
+				key={'playlistMediaList_' + this.state.media.length}
+				id={playlistId}
+				media={this.state.media}
+				loggedinUserPlaylist={this.state.loggedinUserPlaylist}
+			/>,
+		];
 	}
 }

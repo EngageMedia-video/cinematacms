@@ -4,85 +4,82 @@ import LayoutStore from '../stores/LayoutStore';
 const LayoutContext = createContext(null);
 
 export function LayoutProvider({ children }) {
-  const [windowSize, setWindowSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
-  const [sidebarVisible, setSidebarVisible] = useState(
-    LayoutStore.get('visible-sidebar')
-  );
-  const resizeSubscribersRef = useRef([]);
-  const sidebarSubscribersRef = useRef([]);
+	const [windowSize, setWindowSize] = useState({
+		width: window.innerWidth,
+		height: window.innerHeight,
+	});
+	const [sidebarVisible, setSidebarVisible] = useState(LayoutStore.get('visible-sidebar'));
+	const resizeSubscribersRef = useRef([]);
+	const sidebarSubscribersRef = useRef([]);
 
-  // Debounced resize handler
-  useEffect(() => {
-    let timeoutId;
+	// Debounced resize handler
+	useEffect(() => {
+		let timeoutId;
 
-    const handleResize = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        const newSize = {
-          width: window.innerWidth,
-          height: window.innerHeight,
-        };
-        setWindowSize(newSize);
+		const handleResize = () => {
+			clearTimeout(timeoutId);
+			timeoutId = setTimeout(() => {
+				const newSize = {
+					width: window.innerWidth,
+					height: window.innerHeight,
+				};
+				setWindowSize(newSize);
 
-        // Notify all subscribers (snapshot to prevent mutation during iteration)
-        const subscribers = resizeSubscribersRef.current.slice();
-        subscribers.forEach(callback => callback(newSize));
-      }, 200);
-    };
+				// Notify all subscribers (snapshot to prevent mutation during iteration)
+				const subscribers = resizeSubscribersRef.current.slice();
+				subscribers.forEach((callback) => callback(newSize));
+			}, 200);
+		};
 
-    window.addEventListener('resize', handleResize);
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []); // Empty deps - only run once
+		window.addEventListener('resize', handleResize);
+		return () => {
+			clearTimeout(timeoutId);
+			window.removeEventListener('resize', handleResize);
+		};
+	}, []); // Empty deps - only run once
 
-  // Sidebar visibility listener
-  useEffect(() => {
-    const handleSidebarChange = () => {
-      const visible = LayoutStore.get('visible-sidebar');
-      setSidebarVisible(visible);
+	// Sidebar visibility listener
+	useEffect(() => {
+		const handleSidebarChange = () => {
+			const visible = LayoutStore.get('visible-sidebar');
+			setSidebarVisible(visible);
 
-      // Notify all subscribers (snapshot to prevent mutation during iteration)
-      const subscribers = sidebarSubscribersRef.current.slice();
-      subscribers.forEach(callback => callback(visible));
-    };
+			// Notify all subscribers (snapshot to prevent mutation during iteration)
+			const subscribers = sidebarSubscribersRef.current.slice();
+			subscribers.forEach((callback) => callback(visible));
+		};
 
-    LayoutStore.on('sidebar-visibility-change', handleSidebarChange);
-    return () => {
-      LayoutStore.removeListener('sidebar-visibility-change', handleSidebarChange);
-    };
-  }, []); // Empty deps - only run once
+		LayoutStore.on('sidebar-visibility-change', handleSidebarChange);
+		return () => {
+			LayoutStore.removeListener('sidebar-visibility-change', handleSidebarChange);
+		};
+	}, []); // Empty deps - only run once
 
-  const subscribeToResize = useCallback((callback) => {
-    resizeSubscribersRef.current.push(callback);
-    return () => {
-      resizeSubscribersRef.current = resizeSubscribersRef.current.filter(cb => cb !== callback);
-    };
-  }, []);
+	const subscribeToResize = useCallback((callback) => {
+		resizeSubscribersRef.current.push(callback);
+		return () => {
+			resizeSubscribersRef.current = resizeSubscribersRef.current.filter((cb) => cb !== callback);
+		};
+	}, []);
 
-  const subscribeToSidebar = useCallback((callback) => {
-    sidebarSubscribersRef.current.push(callback);
-    return () => {
-      sidebarSubscribersRef.current = sidebarSubscribersRef.current.filter(cb => cb !== callback);
-    };
-  }, []);
+	const subscribeToSidebar = useCallback((callback) => {
+		sidebarSubscribersRef.current.push(callback);
+		return () => {
+			sidebarSubscribersRef.current = sidebarSubscribersRef.current.filter((cb) => cb !== callback);
+		};
+	}, []);
 
-  const value = React.useMemo(() => ({
-    windowSize,
-    sidebarVisible,
-    subscribeToResize,
-    subscribeToSidebar,
-  }), [windowSize, sidebarVisible, subscribeToResize, subscribeToSidebar]);
+	const value = React.useMemo(
+		() => ({
+			windowSize,
+			sidebarVisible,
+			subscribeToResize,
+			subscribeToSidebar,
+		}),
+		[windowSize, sidebarVisible, subscribeToResize, subscribeToSidebar]
+	);
 
-  return (
-    <LayoutContext.Provider value={value}>
-      {children}
-    </LayoutContext.Provider>
-  );
+	return <LayoutContext.Provider value={value}>{children}</LayoutContext.Provider>;
 }
 
 /**
@@ -90,29 +87,29 @@ export function LayoutProvider({ children }) {
  * @param {Function} callback - Function to call on window resize
  */
 export function useWindowResize(callback) {
-  const context = useContext(LayoutContext);
-  if (!context) {
-    throw new Error('useWindowResize must be used within LayoutProvider');
-  }
+	const context = useContext(LayoutContext);
+	if (!context) {
+		throw new Error('useWindowResize must be used within LayoutProvider');
+	}
 
-  const { subscribeToResize } = context;
-  const callbackRef = useRef(callback);
+	const { subscribeToResize } = context;
+	const callbackRef = useRef(callback);
 
-  // Runs every render intentionally to keep callback ref current
-  // (empty dependency array omitted on purpose)
-  useEffect(() => {
-    callbackRef.current = callback;
-  });
+	// Runs every render intentionally to keep callback ref current
+	// (empty dependency array omitted on purpose)
+	useEffect(() => {
+		callbackRef.current = callback;
+	});
 
-  useEffect(() => {
-    // Stable wrapper that always calls the latest callback
-    const stableCallback = (size) => {
-      if (callbackRef.current && typeof callbackRef.current === 'function') {
-        callbackRef.current(size);
-      }
-    };
-    return subscribeToResize(stableCallback);
-  }, [subscribeToResize]);
+	useEffect(() => {
+		// Stable wrapper that always calls the latest callback
+		const stableCallback = (size) => {
+			if (callbackRef.current && typeof callbackRef.current === 'function') {
+				callbackRef.current(size);
+			}
+		};
+		return subscribeToResize(stableCallback);
+	}, [subscribeToResize]);
 }
 
 /**
@@ -120,29 +117,29 @@ export function useWindowResize(callback) {
  * @param {Function} callback - Function to call on sidebar visibility change
  */
 export function useSidebarVisibility(callback) {
-  const context = useContext(LayoutContext);
-  if (!context) {
-    throw new Error('useSidebarVisibility must be used within LayoutProvider');
-  }
+	const context = useContext(LayoutContext);
+	if (!context) {
+		throw new Error('useSidebarVisibility must be used within LayoutProvider');
+	}
 
-  const { subscribeToSidebar } = context;
-  const callbackRef = useRef(callback);
+	const { subscribeToSidebar } = context;
+	const callbackRef = useRef(callback);
 
-  // Runs every render intentionally to keep callback ref current
-  // (empty dependency array omitted on purpose)
-  useEffect(() => {
-    callbackRef.current = callback;
-  });
+	// Runs every render intentionally to keep callback ref current
+	// (empty dependency array omitted on purpose)
+	useEffect(() => {
+		callbackRef.current = callback;
+	});
 
-  useEffect(() => {
-    // Stable wrapper that always calls the latest callback
-    const stableCallback = (visible) => {
-      if (callbackRef.current && typeof callbackRef.current === 'function') {
-        callbackRef.current(visible);
-      }
-    };
-    return subscribeToSidebar(stableCallback);
-  }, [subscribeToSidebar]);
+	useEffect(() => {
+		// Stable wrapper that always calls the latest callback
+		const stableCallback = (visible) => {
+			if (callbackRef.current && typeof callbackRef.current === 'function') {
+				callbackRef.current(visible);
+			}
+		};
+		return subscribeToSidebar(stableCallback);
+	}, [subscribeToSidebar]);
 }
 
 /**
@@ -150,12 +147,12 @@ export function useSidebarVisibility(callback) {
  * @returns {Object} Current window size and sidebar visibility
  */
 export function useLayoutState() {
-  const context = useContext(LayoutContext);
-  if (!context) {
-    throw new Error('useLayoutState must be used within LayoutProvider');
-  }
-  return {
-    windowSize: context.windowSize,
-    sidebarVisible: context.sidebarVisible,
-  };
+	const context = useContext(LayoutContext);
+	if (!context) {
+		throw new Error('useLayoutState must be used within LayoutProvider');
+	}
+	return {
+		windowSize: context.windowSize,
+		sidebarVisible: context.sidebarVisible,
+	};
 }

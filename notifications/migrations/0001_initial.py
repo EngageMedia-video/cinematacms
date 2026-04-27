@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -15,40 +14,147 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='NotificationPreference',
+            name="NotificationPreference",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('on_comment', models.CharField(choices=[('in_app', 'In-App Only'), ('email', 'In-App + Email'), ('none', 'Disabled')], default='email', max_length=10)),
-                ('on_reply', models.CharField(choices=[('in_app', 'In-App Only'), ('email', 'In-App + Email'), ('none', 'Disabled')], default='email', max_length=10)),
-                ('on_like', models.CharField(choices=[('in_app', 'In-App Only'), ('email', 'In-App + Email'), ('none', 'Disabled')], default='in_app', max_length=10)),
-                ('on_follow', models.CharField(choices=[('in_app', 'In-App Only'), ('email', 'In-App + Email'), ('none', 'Disabled')], default='email', max_length=10)),
-                ('on_mention', models.CharField(choices=[('in_app', 'In-App Only'), ('email', 'In-App + Email'), ('none', 'Disabled')], default='email', max_length=10)),
-                ('on_new_media_from_following', models.CharField(choices=[('in_app', 'In-App Only'), ('email', 'In-App + Email'), ('none', 'Disabled')], default='in_app', max_length=10)),
-                ('on_added_to_playlist', models.CharField(choices=[('in_app', 'In-App Only'), ('email', 'In-App + Email'), ('none', 'Disabled')], default='in_app', max_length=10)),
-                ('filter_topics', models.JSONField(blank=True, default=list, help_text='Topic slugs to filter new_media notifications. Empty = all.')),
-                ('filter_categories', models.JSONField(blank=True, default=list, help_text='Category slugs to filter new_media notifications. Empty = all.')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='notification_preferences', to=settings.AUTH_USER_MODEL)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "on_comment",
+                    models.CharField(
+                        choices=[("in_app", "In-App Only"), ("email", "In-App + Email"), ("none", "Disabled")],
+                        default="email",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "on_reply",
+                    models.CharField(
+                        choices=[("in_app", "In-App Only"), ("email", "In-App + Email"), ("none", "Disabled")],
+                        default="email",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "on_like",
+                    models.CharField(
+                        choices=[("in_app", "In-App Only"), ("email", "In-App + Email"), ("none", "Disabled")],
+                        default="in_app",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "on_follow",
+                    models.CharField(
+                        choices=[("in_app", "In-App Only"), ("email", "In-App + Email"), ("none", "Disabled")],
+                        default="email",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "on_mention",
+                    models.CharField(
+                        choices=[("in_app", "In-App Only"), ("email", "In-App + Email"), ("none", "Disabled")],
+                        default="email",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "on_new_media_from_following",
+                    models.CharField(
+                        choices=[("in_app", "In-App Only"), ("email", "In-App + Email"), ("none", "Disabled")],
+                        default="in_app",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "on_added_to_playlist",
+                    models.CharField(
+                        choices=[("in_app", "In-App Only"), ("email", "In-App + Email"), ("none", "Disabled")],
+                        default="in_app",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "filter_topics",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Topic slugs to filter new_media notifications. Empty = all.",
+                    ),
+                ),
+                (
+                    "filter_categories",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Category slugs to filter new_media notifications. Empty = all.",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="notification_preferences",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Notification',
+            name="Notification",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('notification_type', models.CharField(choices=[('comment', 'New comment on your media'), ('reply', 'Reply to your comment'), ('like', 'Someone liked your media'), ('follow', 'Someone followed you'), ('mention', 'You were mentioned in a comment'), ('new_media', 'New upload from someone you follow'), ('added_to_playlist', 'Your media was added to a playlist'), ('media_report', 'Media was reported'), ('system_announcement', 'System announcement')], db_index=True, max_length=20)),
-                ('message', models.CharField(max_length=500)),
-                ('action_url', models.CharField(blank=True, max_length=500)),
-                ('is_read', models.BooleanField(db_index=True, default=False)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('read_at', models.DateTimeField(blank=True, null=True)),
-                ('actor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='triggered_notifications', to=settings.AUTH_USER_MODEL)),
-                ('recipient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='received_notifications', to=settings.AUTH_USER_MODEL)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "notification_type",
+                    models.CharField(
+                        choices=[
+                            ("comment", "New comment on your media"),
+                            ("reply", "Reply to your comment"),
+                            ("like", "Someone liked your media"),
+                            ("follow", "Someone followed you"),
+                            ("mention", "You were mentioned in a comment"),
+                            ("new_media", "New upload from someone you follow"),
+                            ("added_to_playlist", "Your media was added to a playlist"),
+                            ("media_report", "Media was reported"),
+                            ("system_announcement", "System announcement"),
+                        ],
+                        db_index=True,
+                        max_length=20,
+                    ),
+                ),
+                ("message", models.CharField(max_length=500)),
+                ("action_url", models.CharField(blank=True, max_length=500)),
+                ("is_read", models.BooleanField(db_index=True, default=False)),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("read_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "actor",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="triggered_notifications",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "recipient",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="received_notifications",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
-                'indexes': [models.Index(fields=['recipient', '-created_at'], name='notif_recipient_created'), models.Index(fields=['recipient', 'is_read'], name='notif_recipient_read'), models.Index(fields=['recipient', 'actor', 'notification_type'], name='notif_dedup_check')],
+                "ordering": ["-created_at"],
+                "indexes": [
+                    models.Index(fields=["recipient", "-created_at"], name="notif_recipient_created"),
+                    models.Index(fields=["recipient", "is_read"], name="notif_recipient_read"),
+                    models.Index(fields=["recipient", "actor", "notification_type"], name="notif_dedup_check"),
+                ],
             },
         ),
     ]

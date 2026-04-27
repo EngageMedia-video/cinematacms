@@ -3,27 +3,23 @@ import ReactDOM from 'react-dom';
 
 import MediaPageStore from '../store.js';
 
-import ViewerInfoContent from "./ViewerInfoContent";
-import ViewerInfoVideoTitleBanner from "./ViewerInfoVideoTitleBanner";
+import ViewerInfoContent from './ViewerInfoContent';
+import ViewerInfoVideoTitleBanner from './ViewerInfoVideoTitleBanner';
 
-import ViewerInfo from "./ViewerInfo";
+import ViewerInfo from './ViewerInfo';
 
 export default class ViewerInfoVideo extends ViewerInfo {
-
-	render(){
-
+	render() {
 		let views, categories, title, author, published, description, yearProduced;
 		let allowDownload = false;
 
-		if( this.state.videoLoaded ){
-
+		if (this.state.videoLoaded) {
 			allowDownload = MediaPageStore.get('media-data').allow_download;
 
-			if( void 0 === allowDownload ){
+			if (void 0 === allowDownload) {
 				allowDownload = true;
-			}
-			else{
-				allowDownload = !! allowDownload;
+			} else {
+				allowDownload = !!allowDownload;
 			}
 
 			views = MediaPageStore.get('media-data').views;
@@ -41,11 +37,24 @@ export default class ViewerInfoVideo extends ViewerInfo {
 			yearProduced = MediaPageStore.get('media-data').year_produced;
 		}
 
-		return ! this.state.videoLoaded ? null : <div className="viewer-info">
-			<div className="viewer-info-inner">
-				<ViewerInfoVideoTitleBanner title={ title } published={ published } views={ views } categories={ categories } allowDownload={ allowDownload } />
-				<ViewerInfoContent author={ author } published={ published } description={ description } yearProduced={yearProduced} />
+		return !this.state.videoLoaded ? null : (
+			<div className="viewer-info">
+				<div className="viewer-info-inner">
+					<ViewerInfoVideoTitleBanner
+						title={title}
+						published={published}
+						views={views}
+						categories={categories}
+						allowDownload={allowDownload}
+					/>
+					<ViewerInfoContent
+						author={author}
+						published={published}
+						description={description}
+						yearProduced={yearProduced}
+					/>
+				</div>
 			</div>
-		</div>;
+		);
 	}
 }

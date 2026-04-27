@@ -4,13 +4,11 @@ import { _MediaPage } from './_MediaPage';
 import ImageViewer from '../../components/MediaViewer/ImageViewer';
 
 export class MediaPageImage extends _MediaPage {
+	viewerContainerContent() {
+		return <ImageViewer />;
+	}
 
-    viewerContainerContent() {
-
-        return <ImageViewer/>;
-    }
-
-    mediaType(){
-    	return 'image';
-    }
+	mediaType() {
+		return 'image';
+	}
 }

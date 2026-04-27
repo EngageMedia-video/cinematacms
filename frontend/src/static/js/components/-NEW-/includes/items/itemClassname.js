@@ -1,12 +1,11 @@
-export function itemClassname( defaultClassname, inheritedClassname, isActiveInPlaylistPlayback ){
-
+export function itemClassname(defaultClassname, inheritedClassname, isActiveInPlaylistPlayback) {
 	let classname = defaultClassname;
 
-	if( '' !== inheritedClassname ){
+	if ('' !== inheritedClassname) {
 		classname += ' ' + inheritedClassname;
 	}
 
-	if( isActiveInPlaylistPlayback ){
+	if (isActiveInPlaylistPlayback) {
 		classname += ' pl-active-item';
 	}
 

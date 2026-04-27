@@ -2,70 +2,71 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 import initItemsList from '../includes/itemLists/initItemsList';
 
-import "../../styles/ItemList.scss";
+import '../../styles/ItemList.scss';
 
-export function useItemList( props, itemsListRef ){
+export function useItemList(props, itemsListRef) {
+	const previousItemsLengthRef = useRef(0);
+	const itemsListInstanceRef = useRef(null);
+	const lastNotifiedItemsLengthRef = useRef(0);
+	const itemsLoadCallbackRef = useRef(props.itemsLoadCallback);
 
-    const previousItemsLengthRef = useRef(0);
-    const itemsListInstanceRef = useRef(null);
-    const lastNotifiedItemsLengthRef = useRef(0);
-    const itemsLoadCallbackRef = useRef(props.itemsLoadCallback);
+	const [items, setItems] = useState([]);
 
-    const [ items, setItems ] = useState([]);
+	const [countedItems, setCountedItems] = useState(false);
+	const [listHandler, setListHandler] = useState(null);
 
-    const [ countedItems, setCountedItems ] = useState(false);
-    const [ listHandler, setListHandler ] = useState(null);
+	// Memoize callbacks to prevent infinite re-render loops
+	const onItemsLoad = useCallback((itemsArray) => {
+		setItems([...itemsArray]);
+	}, []);
 
-    // Memoize callbacks to prevent infinite re-render loops
-    const onItemsLoad = useCallback((itemsArray) => {
-        setItems([...itemsArray]);
-    }, []);
+	const onItemsCount = useCallback(
+		(totalItems) => {
+			setCountedItems(true);
+			if (void 0 !== props.itemsCountCallback) {
+				props.itemsCountCallback(totalItems);
+			}
+		},
+		[props.itemsCountCallback]
+	);
 
-    const onItemsCount = useCallback((totalItems) => {
-        setCountedItems(true);
-        if (void 0 !== props.itemsCountCallback) {
-            props.itemsCountCallback(totalItems);
-        }
-    }, [props.itemsCountCallback]);
+	const addListItems = useCallback(() => {
+		if (previousItemsLengthRef.current < items.length) {
+			if (null === itemsListInstanceRef.current) {
+				itemsListInstanceRef.current = initItemsList([itemsListRef.current])[0];
+			}
 
-    const addListItems = useCallback(() => {
-        if (previousItemsLengthRef.current < items.length) {
+			// TODO: Should get item elements from children components.
+			const itemsElem = itemsListRef.current.querySelectorAll('.item');
 
-            if (null === itemsListInstanceRef.current) {
-                itemsListInstanceRef.current = initItemsList([itemsListRef.current])[0];
-            }
+			if (!itemsElem || !itemsElem.length) {
+				return;
+			}
 
-            // TODO: Should get item elements from children components.
-            const itemsElem = itemsListRef.current.querySelectorAll('.item');
+			let i = previousItemsLengthRef.current;
 
-            if( ! itemsElem || ! itemsElem.length ){
-                return;
-            }
+			while (i < items.length) {
+				itemsListInstanceRef.current.appendItems(itemsElem[i]);
+				i += 1;
+			}
 
-            let i = previousItemsLengthRef.current;
+			previousItemsLengthRef.current = items.length;
+		}
+	}, [items, itemsListRef]);
 
-            while (i < items.length) {
-                itemsListInstanceRef.current.appendItems(itemsElem[i]);
-                i += 1;
-            }
+	// Keep callback ref updated when prop changes
+	useEffect(() => {
+		itemsLoadCallbackRef.current = props.itemsLoadCallback;
+	}, [props.itemsLoadCallback]);
 
-            previousItemsLengthRef.current = items.length;
-        }
-    }, [items, itemsListRef]);
+	// Notify parent when items have loaded, driven only by items.length
+	// Uses ref to always call the latest callback without re-running on callback identity changes
+	useEffect(() => {
+		if (void 0 !== itemsLoadCallbackRef.current && items.length !== lastNotifiedItemsLengthRef.current) {
+			lastNotifiedItemsLengthRef.current = items.length;
+			itemsLoadCallbackRef.current();
+		}
+	}, [items.length]);
 
-    // Keep callback ref updated when prop changes
-    useEffect(() => {
-        itemsLoadCallbackRef.current = props.itemsLoadCallback;
-    }, [props.itemsLoadCallback]);
-
-    // Notify parent when items have loaded, driven only by items.length
-    // Uses ref to always call the latest callback without re-running on callback identity changes
-    useEffect(() => {
-        if (void 0 !== itemsLoadCallbackRef.current && items.length !== lastNotifiedItemsLengthRef.current) {
-            lastNotifiedItemsLengthRef.current = items.length;
-            itemsLoadCallbackRef.current();
-        }
-    }, [items.length]);
-
-    return [ items, countedItems, listHandler, setListHandler, onItemsLoad, onItemsCount, addListItems ];
+	return [items, countedItems, listHandler, setListHandler, onItemsLoad, onItemsCount, addListItems];
 }

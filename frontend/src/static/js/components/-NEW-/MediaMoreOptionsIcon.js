@@ -23,8 +23,7 @@ import { NavigationContentApp } from './NavigationContentApp';
 
 import { formatInnerLink } from '../../functions/formatInnerLink';
 
-function downloadOptions(mediaData, allowDownload){
-
+function downloadOptions(mediaData, allowDownload) {
 	const user = UserContext._currentValue;
 	const site = SiteContext._currentValue;
 
@@ -34,23 +33,17 @@ function downloadOptions(mediaData, allowDownload){
 
 	let k, g;
 
-	for(k in encodingsInfo){
-
-		if( encodingsInfo.hasOwnProperty(k) ){
-
-			if( Object.keys( encodingsInfo[k] ).length ){
-
-				for(g in encodingsInfo[k]){
-
-					if( encodingsInfo[k].hasOwnProperty(g) ){
-
-						if( 'success' === encodingsInfo[k][g].status && 100 === encodingsInfo[k][g].progress ){
-
-							options[ encodingsInfo[k][g].title ] = {
+	for (k in encodingsInfo) {
+		if (encodingsInfo.hasOwnProperty(k)) {
+			if (Object.keys(encodingsInfo[k]).length) {
+				for (g in encodingsInfo[k]) {
+					if (encodingsInfo[k].hasOwnProperty(g)) {
+						if ('success' === encodingsInfo[k][g].status && 100 === encodingsInfo[k][g].progress) {
+							options[encodingsInfo[k][g].title] = {
 								// icon: "arrow_downward",
 								// iconPos: 'right',
 								text: k + ' - ' + g.toUpperCase() + ' (' + encodingsInfo[k][g].size + ')',
-								link: formatInnerLink( encodingsInfo[k][g].url, site.url ),
+								link: formatInnerLink(encodingsInfo[k][g].url, site.url),
 								linkAttr: {
 									target: '_blank',
 									download: mediaData.title + '_' + k + '_' + g.toUpperCase(),
@@ -67,18 +60,17 @@ function downloadOptions(mediaData, allowDownload){
 		// icon: "arrow_downward",
 		// iconPos: 'right',
 		text: 'Original file (' + mediaData.size + ')',
-		link: formatInnerLink( mediaData.original_media_url, site.url ),
+		link: formatInnerLink(mediaData.original_media_url, site.url),
 		linkAttr: {
 			target: '_blank',
 			download: mediaData.title,
 		},
 	};
 
-	return Object.values( options );
+	return Object.values(options);
 }
 
-function optionsItems(mediaData, allowDownload, downloadLink, mediaReported){
-
+function optionsItems(mediaData, allowDownload, downloadLink, mediaReported) {
 	const items = [];
 
 	const user = UserContext._currentValue;
@@ -88,35 +80,30 @@ function optionsItems(mediaData, allowDownload, downloadLink, mediaReported){
 	const mediaIsVideo = 'video' === mediaType;
 	const mediaReportedTimes = mediaData.reported_times;
 
-	if( allowDownload && user.can.downloadMedia ){
-
-		if( ! mediaIsVideo ){
-
-			if( downloadLink ){
-
+	if (allowDownload && user.can.downloadMedia) {
+		if (!mediaIsVideo) {
+			if (downloadLink) {
 				items.push({
-					itemType: "link",
+					itemType: 'link',
 					link: downloadLink,
-					text: "Download",
-					icon: "arrow_downward",
-					itemAttr:{
-			 			className: 'visible-only-in-small'
+					text: 'Download',
+					icon: 'arrow_downward',
+					itemAttr: {
+						className: 'visible-only-in-small',
 					},
 					linkAttr: {
-						target: "_blank",
-						download: mediaData.title
+						target: '_blank',
+						download: mediaData.title,
 					},
 				});
 			}
-		}
-		else{
-
+		} else {
 			items.push({
-				itemType: "open-subpage",
-				text: "Download",
-				icon: "arrow_downward",
-				itemAttr:{
-					className: 'visible-only-in-small'
+				itemType: 'open-subpage',
+				text: 'Download',
+				icon: 'arrow_downward',
+				itemAttr: {
+					className: 'visible-only-in-small',
 				},
 				buttonAttr: {
 					className: 'change-page',
@@ -126,11 +113,11 @@ function optionsItems(mediaData, allowDownload, downloadLink, mediaReported){
 		}
 	}
 
-	if( mediaIsVideo && user.can.editMedia ){
+	if (mediaIsVideo && user.can.editMedia) {
 		items.push({
-			itemType: "open-subpage",
-			text: "Status info",
-			icon: "info",
+			itemType: 'open-subpage',
+			text: 'Status info',
+			icon: 'info',
 			buttonAttr: {
 				className: 'change-page',
 				'data-page-id': 'mediaStatusInfo',
@@ -138,39 +125,36 @@ function optionsItems(mediaData, allowDownload, downloadLink, mediaReported){
 		});
 	}
 
-	if( user.can.reportMedia ){
-
+	if (user.can.reportMedia) {
 		/*{ 0 < MediaPageStore.get('media-data').reported_times ? <li className="reports">Reports: <span>{ MediaPageStore.get('media-data').reported_times }</span></li> : null }*/
 
-		if( mediaReported ){
+		if (mediaReported) {
 			items.push({
-				itemType: "div",
-				text: "Reported",
-				icon: "flag",
+				itemType: 'div',
+				text: 'Reported',
+				icon: 'flag',
 				divAttr: {
 					className: 'reported-label loggedin-media-reported',
 				},
 			});
-		}
-		else if( user.is.anonymous ){
+		} else if (user.is.anonymous) {
 			// Anonymous users: redirect to sign-in page
 			const currentPath = window.location.href.replace(site.url, '').replace(/^\//g, '');
 			const loginUrl = LinksContext._currentValue.signin + '?next=/' + currentPath;
 			items.push({
-				itemType: "link",
+				itemType: 'link',
 				link: loginUrl,
-				text: "Report",
-				icon: "flag",
+				text: 'Report',
+				icon: 'flag',
 			});
-		}
-		else{
+		} else {
 			// Authenticated users: open report form
 			items.push({
-				itemType: "open-subpage",
-				text: "Report",
-				icon: "flag",
+				itemType: 'open-subpage',
+				text: 'Report',
+				icon: 'flag',
 				buttonAttr: {
-					className: 'change-page' + ( mediaReportedTimes ? ' loggedin-media-reported' : '' ),
+					className: 'change-page' + (mediaReportedTimes ? ' loggedin-media-reported' : ''),
 					'data-page-id': 'loggedInReportMedia',
 				},
 			});
@@ -180,8 +164,7 @@ function optionsItems(mediaData, allowDownload, downloadLink, mediaReported){
 	return items;
 }
 
-function getPopupPages( mediaData, allowDownload, downloadLink, mediaReported, submitReportForm, cancelReportForm ){
-
+function getPopupPages(mediaData, allowDownload, downloadLink, mediaReported, submitReportForm, cancelReportForm) {
 	const user = UserContext._currentValue;
 
 	const mediaUrl = mediaData.url;
@@ -197,34 +180,64 @@ function getPopupPages( mediaData, allowDownload, downloadLink, mediaReported, s
 
 	const pages = {};
 
-	if( navItems.length ){
-		pages.main = <div className="main-options"><PopupMain><NavigationMenuList items={ navItems } /></PopupMain></div>;
+	if (navItems.length) {
+		pages.main = (
+			<div className="main-options">
+				<PopupMain>
+					<NavigationMenuList items={navItems} />
+				</PopupMain>
+			</div>
+		);
 	}
 
-	if( user.can.reportMedia ){
-		pages.loggedInReportMedia = mediaReported ? null : <div className="popup-fullscreen">
-										<PopupMain>
-											<span className="popup-fullscreen-overlay"></span>
-											<div><ReportForm mediaUrl={ mediaUrl } submitReportForm={ submitReportForm } cancelReportForm={ cancelReportForm } /></div>
-									  	</PopupMain>
-								  	</div>;
+	if (user.can.reportMedia) {
+		pages.loggedInReportMedia = mediaReported ? null : (
+			<div className="popup-fullscreen">
+				<PopupMain>
+					<span className="popup-fullscreen-overlay"></span>
+					<div>
+						<ReportForm
+							mediaUrl={mediaUrl}
+							submitReportForm={submitReportForm}
+							cancelReportForm={cancelReportForm}
+						/>
+					</div>
+				</PopupMain>
+			</div>
+		);
 	}
 
-	if( user.can.editMedia ){
-		pages.mediaStatusInfo = <div className="main-options">
-									<PopupMain>
-										<ul className="media-status-info">
-											<li>Media type: <span>{ mediaType }</span></li>
-											<li>State: <span>{ mediaState }</span></li>
-											<li>Review state: <span>{ mediaIsReviewed ? 'Is reviewed' : 'Pending review' }</span></li>
-											{ mediaIsVideo ? <li>Encoding Status: <span>{ mediaEncodingStatus }</span></li> : null }
-											{ mediaReportedTimes ? <li className="reports">Reports: <span>{ mediaReportedTimes }</span></li> : null }
-										</ul>
-								  	</PopupMain>
-							  	</div>;
-  	}
+	if (user.can.editMedia) {
+		pages.mediaStatusInfo = (
+			<div className="main-options">
+				<PopupMain>
+					<ul className="media-status-info">
+						<li>
+							Media type: <span>{mediaType}</span>
+						</li>
+						<li>
+							State: <span>{mediaState}</span>
+						</li>
+						<li>
+							Review state: <span>{mediaIsReviewed ? 'Is reviewed' : 'Pending review'}</span>
+						</li>
+						{mediaIsVideo ? (
+							<li>
+								Encoding Status: <span>{mediaEncodingStatus}</span>
+							</li>
+						) : null}
+						{mediaReportedTimes ? (
+							<li className="reports">
+								Reports: <span>{mediaReportedTimes}</span>
+							</li>
+						) : null}
+					</ul>
+				</PopupMain>
+			</div>
+		);
+	}
 
-  	/*if( user.is.anonymous ){
+	/*if( user.is.anonymous ){
 
 	  	moreOptionsPages.reportMediaSignIn = <div><PopupMain>
 										  		<div className="popup-message">
@@ -238,10 +251,14 @@ function getPopupPages( mediaData, allowDownload, downloadLink, mediaReported, s
 											</PopupMain></div>;
 	}*/
 
-	if( allowDownload && user.can.downloadMedia && mediaIsVideo ){
-		pages.videoDownloadOptions = <div className="video-download-options">
-										<PopupMain><NavigationMenuList items={ downloadOptions(mediaData, allowDownload) } /></PopupMain>
-									</div>;
+	if (allowDownload && user.can.downloadMedia && mediaIsVideo) {
+		pages.videoDownloadOptions = (
+			<div className="video-download-options">
+				<PopupMain>
+					<NavigationMenuList items={downloadOptions(mediaData, allowDownload)} />
+				</PopupMain>
+			</div>
+		);
 	}
 
 	return pages;
@@ -249,17 +266,17 @@ function getPopupPages( mediaData, allowDownload, downloadLink, mediaReported, s
 
 const defaultContainerClassname = 'more-options active-options';
 
-export function MediaMoreOptionsIcon(props){
+export function MediaMoreOptionsIcon(props) {
 	props = { allowDownload: false, ...props };
 
 	const user = UserContext._currentValue;
 	const site = SiteContext._currentValue;
 
-	const downloadLink = formatInnerLink( MediaPageStore.get( 'media-original-url' ), site.url );
+	const downloadLink = formatInnerLink(MediaPageStore.get('media-original-url'), site.url);
 	const mediaData = MediaPageStore.get('media-data');
 	const mediaIsVideo = 'video' === mediaData.media_type;
 
-	const [ popupContentRef, PopupContent, PopupTrigger ] = usePopup();
+	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
 
 	const [visible, setVisible] = useState(false);
 	const [reported, setReported] = useState(false);
@@ -267,76 +284,109 @@ export function MediaMoreOptionsIcon(props){
 	const [popupCurrentPage, setPopupCurrentPage] = useState('main');
 	const [containerClassname, setContainerClassname] = useState(defaultContainerClassname);
 
-	function submitReportForm( reportDescription ){ MediaPageActions.reportMedia( reportDescription ); }
-	function cancelReportFormSubmission(){ popupContentRef.current.toggle(); }
-	function onPopupPageChange(newPage){ setPopupCurrentPage(newPage); }
-	function onPopupHide(){ setPopupCurrentPage('main'); }
-
-	function onCompleteMediaReport(){
-		popupContentRef.current.tryToHide();
-		PageActions.addNotification( "Media Reported", 'reportedMedia' );
-		setReported(true);
-		MediaPageStore.removeListener( "reported_media", onCompleteMediaReport );
+	function submitReportForm(reportDescription) {
+		MediaPageActions.reportMedia(reportDescription);
+	}
+	function cancelReportFormSubmission() {
+		popupContentRef.current.toggle();
+	}
+	function onPopupPageChange(newPage) {
+		setPopupCurrentPage(newPage);
+	}
+	function onPopupHide() {
+		setPopupCurrentPage('main');
 	}
 
-	useEffect( () => {
-		if( ! reported ){
-			if( visible ){
-				MediaPageStore.on( "reported_media", onCompleteMediaReport );
-			}
-			else{
-				MediaPageStore.removeListener( "reported_media", onCompleteMediaReport );
+	function onCompleteMediaReport() {
+		popupContentRef.current.tryToHide();
+		PageActions.addNotification('Media Reported', 'reportedMedia');
+		setReported(true);
+		MediaPageStore.removeListener('reported_media', onCompleteMediaReport);
+	}
+
+	useEffect(() => {
+		if (!reported) {
+			if (visible) {
+				MediaPageStore.on('reported_media', onCompleteMediaReport);
+			} else {
+				MediaPageStore.removeListener('reported_media', onCompleteMediaReport);
 			}
 		}
 	}, [visible]);
 
-	useEffect( () => {
-		setVisible( Object.keys( popupPages ).length && props.allowDownload && user.can.downloadMedia );
+	useEffect(() => {
+		setVisible(Object.keys(popupPages).length && props.allowDownload && user.can.downloadMedia);
 	}, [popupPages]);
 
-	useEffect( () => {
+	useEffect(() => {
 		let classname = defaultContainerClassname;
-		if( props.allowDownload && user.can.downloadMedia && 'videoDownloadOptions' === popupCurrentPage ){
+		if (props.allowDownload && user.can.downloadMedia && 'videoDownloadOptions' === popupCurrentPage) {
 			classname += ' video-downloads';
 		}
-		if( 1 === Object.keys( popupPages ).length && props.allowDownload && user.can.downloadMedia && ( mediaIsVideo || downloadLink ) ){
+		if (
+			1 === Object.keys(popupPages).length &&
+			props.allowDownload &&
+			user.can.downloadMedia &&
+			(mediaIsVideo || downloadLink)
+		) {
 			classname += ' visible-only-in-small';
 		}
-		setContainerClassname( classname );
+		setContainerClassname(classname);
 	}, [popupCurrentPage]);
 
-	useEffect( () => {
-		setPopupPages( getPopupPages( mediaData, props.allowDownload, downloadLink, reported, submitReportForm, cancelReportFormSubmission ) );
+	useEffect(() => {
+		setPopupPages(
+			getPopupPages(
+				mediaData,
+				props.allowDownload,
+				downloadLink,
+				reported,
+				submitReportForm,
+				cancelReportFormSubmission
+			)
+		);
 	}, [reported]);
 
-	useEffect( () => {
-		setPopupPages( getPopupPages( mediaData, props.allowDownload, downloadLink, reported, submitReportForm, cancelReportFormSubmission ) );
-	    return () => {
-	    	if( visible && ! reported ){
-	    		MediaPageStore.removeListener( "reported_media", onCompleteMediaReport );
-	    	}
-	    }
+	useEffect(() => {
+		setPopupPages(
+			getPopupPages(
+				mediaData,
+				props.allowDownload,
+				downloadLink,
+				reported,
+				submitReportForm,
+				cancelReportFormSubmission
+			)
+		);
+		return () => {
+			if (visible && !reported) {
+				MediaPageStore.removeListener('reported_media', onCompleteMediaReport);
+			}
+		};
 	}, []);
 
-	return 	(! visible ? null : <div className={ containerClassname }>
+	return !visible ? null : (
+		<div className={containerClassname}>
+			<PopupTrigger contentRef={popupContentRef}>
+				<span>
+					<CircleIconButton type="button">
+						<MaterialIcon type="more_horiz" />
+					</CircleIconButton>
+				</span>
+			</PopupTrigger>
 
-				<PopupTrigger contentRef={ popupContentRef }>
-					<span><CircleIconButton type="button"><MaterialIcon type="more_horiz" /></CircleIconButton></span>
-				</PopupTrigger>
-
-				<div className={ "nav-page-" + popupCurrentPage }>
-					<PopupContent contentRef={ popupContentRef } hideCallback={ onPopupHide }>
-						<NavigationContentApp
-							pageChangeCallback={ onPopupPageChange }
-							initPage={ popupCurrentPage }
-							focusFirstItemOnPageChange={ false }
-							pages={ popupPages }
-							pageChangeSelector={ '.change-page' }
-							pageIdSelectorAttr={ 'data-page-id' } />
-					</PopupContent>
-				</div>
-
-			</div>);
+			<div className={'nav-page-' + popupCurrentPage}>
+				<PopupContent contentRef={popupContentRef} hideCallback={onPopupHide}>
+					<NavigationContentApp
+						pageChangeCallback={onPopupPageChange}
+						initPage={popupCurrentPage}
+						focusFirstItemOnPageChange={false}
+						pages={popupPages}
+						pageChangeSelector={'.change-page'}
+						pageIdSelectorAttr={'data-page-id'}
+					/>
+				</PopupContent>
+			</div>
+		</div>
+	);
 }
-
-

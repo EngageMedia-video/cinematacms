@@ -18,23 +18,29 @@ import { MediaShareButton } from '../../../components/-NEW-/MediaShareButton';
 
 import { MediaMoreOptionsIcon } from '../../../components/-NEW-/MediaMoreOptionsIcon';
 
-import {formatNumber, publishedOnDate} from '../../../functions';
+import { formatNumber, publishedOnDate } from '../../../functions';
 
-import ViewerInfoTitleBanner from "./ViewerInfoTitleBanner";
+import ViewerInfoTitleBanner from './ViewerInfoTitleBanner';
 
 import MediaDurationInfo from '../../../classes/MediaDurationInfo';
 
-function CountriesField({ countries }){
-
+function CountriesField({ countries }) {
 	let i;
 	let sep;
 	let ret = [];
 
-	if( countries.length ){
+	if (countries.length) {
 		i = 0;
 		sep = 1 < countries.length ? ', ' : '';
-		while( i < countries.length ){
-			ret[i] = <span key={i}><a href={ countries[i].url } className="media-country" title={ countries[i].title }>{ countries[i].title }</a>{ i < ( countries.length - 1 ) ? sep : '' }</span>;
+		while (i < countries.length) {
+			ret[i] = (
+				<span key={i}>
+					<a href={countries[i].url} className="media-country" title={countries[i].title}>
+						{countries[i].title}
+					</a>
+					{i < countries.length - 1 ? sep : ''}
+				</span>
+			);
 			i += 1;
 		}
 	}
@@ -42,19 +48,21 @@ function CountriesField({ countries }){
 	return ret;
 }
 
-function MediaMetaField(props){
-	return (<div className="media-content-languages">
-		<div className="media-content-field">
-			<div className="media-content-field-label"><h4>{ props.title }</h4></div>
-			<div className="media-content-field-content">{ props.value }</div>
+function MediaMetaField(props) {
+	return (
+		<div className="media-content-languages">
+			<div className="media-content-field">
+				<div className="media-content-field-label">
+					<h4>{props.title}</h4>
+				</div>
+				<div className="media-content-field-content">{props.value}</div>
+			</div>
 		</div>
-	</div>);
+	);
 }
 
 export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
-
-	render(){
-
+	render() {
 		const displayViews = PageStore.get('config-options').pages.media.displayViews && void 0 !== this.props.views;
 
 		const mediaState = MediaPageStore.get('media-data').state;
@@ -63,7 +71,7 @@ export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
 
 		let stateTooltip = '';
 
-		switch( mediaState ){
+		switch (mediaState) {
 			case 'private':
 				stateTooltip = 'The site admins have to make its access public';
 				break;
@@ -72,46 +80,79 @@ export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
 				break;
 		}
 
-		return <div className="media-title-banner">
+		return (
+			<div className="media-title-banner">
+				{displayViews && PageStore.get('config-options').pages.media.categoriesWithTitle
+					? this.mediaCategories(true)
+					: null}
 
-			{ displayViews && PageStore.get('config-options').pages.media.categoriesWithTitle ? this.mediaCategories( true ) : null }
+				{void 0 !== this.props.title ? <h1>{this.props.title}</h1> : null}
 
-			{ void 0 !== this.props.title ? <h1>{ this.props.title }</h1> : null }
-
-			{ 'public' !== mediaState ?
-				<div className="media-labels-area">
-					<div className="media-labels-area-inner">
-						<span className="media-label-state"><span>{ mediaState }</span></span>
-						<span className="helper-icon" data-tooltip={ stateTooltip }><i className="material-icons">help_outline</i></span>
+				{'public' !== mediaState ? (
+					<div className="media-labels-area">
+						<div className="media-labels-area-inner">
+							<span className="media-label-state">
+								<span>{mediaState}</span>
+							</span>
+							<span className="helper-icon" data-tooltip={stateTooltip}>
+								<i className="material-icons">help_outline</i>
+							</span>
+						</div>
 					</div>
-				</div> : null }
+				) : null}
 
-			<div className={ "media-views-actions" + ( this.state.likedMedia ? ' liked-media' : '' ) + ( this.state.dislikedMedia ? ' disliked-media' : '' ) }>
+				<div
+					className={
+						'media-views-actions' +
+						(this.state.likedMedia ? ' liked-media' : '') +
+						(this.state.dislikedMedia ? ' disliked-media' : '')
+					}
+				>
+					{!displayViews && PageStore.get('config-options').pages.media.categoriesWithTitle
+						? this.mediaCategories()
+						: null}
 
-				{ ! displayViews && PageStore.get('config-options').pages.media.categoriesWithTitle ? this.mediaCategories() : null }
+					<div>
+						{
+							<span className="author-banner-date">
+								Published on {publishedOnDate(new Date(this.props.published))}
+							</span>
+						}
+						{countries.length > 0 && (
+							<>
+								<span className="dot-divider">·</span> <CountriesField countries={countries} />
+							</>
+						)}
+					</div>
 
-				<div>
-					{ <span className="author-banner-date">Published on { publishedOnDate( new Date( this.props.published ) ) }</span> }
-					{ countries.length > 0 && <><span className="dot-divider">·</span> <CountriesField countries={countries} /></> }
-				</div>
+					<div className="media-actions">
+						<div className="media-actions-container">
+							{displayViews ? (
+								<div className="media-views">
+									{formatNumber(this.props.views, true)} {1 >= this.props.views ? 'view' : 'views'}
+								</div>
+							) : null}
+							{UserContext._currentValue.can.likeMedia ? <MediaLikeIcon /> : null}
+							{UserContext._currentValue.can.shareMedia ? <MediaShareButton isVideo={true} /> : null}
 
-				<div className="media-actions">
-					<div className="media-actions-container">
+							{!UserContext._currentValue.is.anonymous &&
+							UserContext._currentValue.can.saveMedia &&
+							-1 < PlaylistsContext._currentValue.mediaTypes.indexOf(MediaPageStore.get('media-type')) ? (
+								<MediaSaveButton />
+							) : null}
 
-						{ displayViews ? <div className="media-views">{ formatNumber( this.props.views, true ) } { 1 >= this.props.views ? 'view' : 'views' }</div> : null }
-						{ UserContext._currentValue.can.likeMedia ? <MediaLikeIcon/> : null }
-						{ UserContext._currentValue.can.shareMedia ? <MediaShareButton isVideo={true} /> : null }
+							{!this.props.allowDownload || !UserContext._currentValue.can.downloadMedia ? null : !this
+									.downloadLink ? (
+								<VideoMediaDownloadLink />
+							) : (
+								<OtherMediaDownloadLink link={this.downloadLink} title={this.props.title} />
+							)}
 
-						{ ! UserContext._currentValue.is.anonymous && UserContext._currentValue.can.saveMedia && -1 < PlaylistsContext._currentValue.mediaTypes.indexOf( MediaPageStore.get( 'media-type' ) ) ? <MediaSaveButton/> : null }
-
-						{ ! this.props.allowDownload || ! UserContext._currentValue.can.downloadMedia ? null : ( ! this.downloadLink ? <VideoMediaDownloadLink /> : <OtherMediaDownloadLink link={ this.downloadLink } title={ this.props.title } /> ) }
-
-						<MediaMoreOptionsIcon allowDownload={ this.props.allowDownload } />
-
+							<MediaMoreOptionsIcon allowDownload={this.props.allowDownload} />
+						</div>
 					</div>
 				</div>
 			</div>
-
-		</div>;
+		);
 	}
 }

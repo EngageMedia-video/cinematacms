@@ -42,14 +42,18 @@ export function HomePage() {
 									Primary action
 								</p>
 								<p className="heading-h5-24-bold mt-2">Strait Blue 500</p>
-								<p className="body-body-14-regular mt-1 text-cinemata-neutral-600">Buttons, player accents, active UI.</p>
+								<p className="body-body-14-regular mt-1 text-cinemata-neutral-600">
+									Buttons, player accents, active UI.
+								</p>
 							</div>
 							<div className="rounded-3xl bg-cinemata-coral-reef-300 p-5 text-cinemata-pacific-deep-900">
 								<p className="caption-caption-10-semibold uppercase tracking-[0.18em] text-cinemata-pacific-deep-700">
 									Support surface
 								</p>
 								<p className="heading-h5-24-bold mt-2">Coral Reef 300</p>
-								<p className="body-body-14-regular mt-1 text-cinemata-pacific-deep-700">Soft emphasis and ambient fills.</p>
+								<p className="body-body-14-regular mt-1 text-cinemata-pacific-deep-700">
+									Soft emphasis and ambient fills.
+								</p>
 							</div>
 						</div>
 					</div>
@@ -79,7 +83,8 @@ export function HomePage() {
 								Stories that move across borders
 							</p>
 							<p className="body-body-16-regular mt-4 text-cinemata-neutral-600">
-								Using <code className="rounded bg-cinemata-white px-1 py-0.5">.title-title-56-bold</code>
+								Using{' '}
+								<code className="rounded bg-cinemata-white px-1 py-0.5">.title-title-56-bold</code>
 							</p>
 						</div>
 
@@ -91,7 +96,8 @@ export function HomePage() {
 								Curated films, campaigns, and community knowledge
 							</p>
 							<p className="body-body-16-regular mt-4 text-cinemata-pacific-deep-500">
-								Using <code className="rounded bg-cinemata-white px-1 py-0.5">.heading-h3-40-medium</code>
+								Using{' '}
+								<code className="rounded bg-cinemata-white px-1 py-0.5">.heading-h3-40-medium</code>
 							</p>
 						</div>
 
@@ -100,8 +106,8 @@ export function HomePage() {
 								Body 18
 							</p>
 							<p className="body-body-18-medium mt-3 text-cinemata-pacific-deep-700">
-								The redesigned UI pairs Barlow Semi Condensed for titles with Inter for readable long-form
-								copy and product messaging.
+								The redesigned UI pairs Barlow Semi Condensed for titles with Inter for readable
+								long-form copy and product messaging.
 							</p>
 						</div>
 
@@ -129,19 +135,22 @@ export function HomePage() {
 						</p>
 						<h2 className="heading-h6-20-bold mt-3 text-cinemata-pacific-deep-700">Legacy stays intact</h2>
 						<p className="body-body-14-regular mt-3 text-cinemata-neutral-600">
-							The palette is exposed through shared CSS variables and modern-track Tailwind tokens, so pages
-							not on the revamp allowlist keep their current UI.
+							The palette is exposed through shared CSS variables and modern-track Tailwind tokens, so
+							pages not on the revamp allowlist keep their current UI.
 						</p>
 					</div>
 					<div className="rounded-[28px] border border-cinemata-neutral-200 bg-cinemata-coral-reef-light-50 p-6 shadow-[0_12px_40px_rgba(0,73,53,0.08)]">
 						<p className="caption-caption-10-semibold uppercase tracking-[0.18em] text-cinemata-coral-reef-700">
 							Revamp tokens
 						</p>
-						<h2 className="heading-h6-20-bold mt-3 text-cinemata-pacific-deep-700">Tailwind-ready colors</h2>
+						<h2 className="heading-h6-20-bold mt-3 text-cinemata-pacific-deep-700">
+							Tailwind-ready colors
+						</h2>
 						<p className="body-body-14-regular mt-3 text-cinemata-pacific-deep-500">
-							Use utilities like <code className="rounded bg-cinemata-white px-1 py-0.5">bg-cinemata-strait-blue-500</code>{' '}
-							or <code className="rounded bg-cinemata-white px-1 py-0.5">text-cinemata-neutral-600</code> in
-							feature components.
+							Use utilities like{' '}
+							<code className="rounded bg-cinemata-white px-1 py-0.5">bg-cinemata-strait-blue-500</code>{' '}
+							or <code className="rounded bg-cinemata-white px-1 py-0.5">text-cinemata-neutral-600</code>{' '}
+							in feature components.
 						</p>
 					</div>
 					<div className="rounded-[28px] border border-cinemata-neutral-200 bg-cinemata-sandy-shore-50 p-6 shadow-[0_12px_40px_rgba(131,62,11,0.08)]">
@@ -150,8 +159,8 @@ export function HomePage() {
 						</p>
 						<h2 className="heading-h6-20-bold mt-3 text-cinemata-pacific-deep-700">One product feel</h2>
 						<p className="body-body-14-regular mt-3 text-cinemata-neutral-600">
-							Accent orange, deep blue, coral reef, amber, neutrals, success, and error scales are now ready
-							for incremental rollout across revamp pages.
+							Accent orange, deep blue, coral reef, amber, neutrals, success, and error scales are now
+							ready for incremental rollout across revamp pages.
 						</p>
 					</div>
 				</section>

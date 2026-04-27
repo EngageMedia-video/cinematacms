@@ -146,7 +146,7 @@ class UIVariantViewTests(TestCase):
 
     def test_bootstrap_contains_mediaCMS_ui_variant(self):
         response = self.client.get("/")
-        self.assertIn(b'ui: { variant:', response.content)
+        self.assertIn(b"ui: { variant:", response.content)
         self.assertIn(b'"legacy"', response.content)
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=[])

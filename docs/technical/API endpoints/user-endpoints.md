@@ -116,7 +116,7 @@ Send a contact message to a user.
 **Status Codes**  
 - `200 OK` on success  
 - `400 Bad Request` on validation error
-- `204 No Content` 
+- `204 No Content`
 
 
 ```json

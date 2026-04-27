@@ -1,17 +1,17 @@
-import * as api from "./api.js";
-import * as media from "./media.js";
-import * as site from "./site.js";
-import * as theme from "./theme.js";
-import * as url from "./url.js";
-import * as member from "./member.js";
-import * as contents from "./contents.js";
-import * as pages from "./pages.js";
-import * as sidebar from "./sidebar.js";
-import * as taxonomies from "./taxonomies.js";
-import * as optionsPages from "./optionsPages.js";
-import * as optionsEmbedded from "./optionsEmbedded.js";
-import * as playlists from "./playlists.js";
-import * as notifications from "./notifications.js";
+import * as api from './api.js';
+import * as media from './media.js';
+import * as site from './site.js';
+import * as theme from './theme.js';
+import * as url from './url.js';
+import * as member from './member.js';
+import * as contents from './contents.js';
+import * as pages from './pages.js';
+import * as sidebar from './sidebar.js';
+import * as taxonomies from './taxonomies.js';
+import * as optionsPages from './optionsPages.js';
+import * as optionsEmbedded from './optionsEmbedded.js';
+import * as playlists from './playlists.js';
+import * as notifications from './notifications.js';
 
 let DATA = null;
 
@@ -22,35 +22,29 @@ export function config(glbl) {
 
 	pages.init({ ...glbl.site.pages, ...glbl.site.userPages });
 
-	optionsPages.init(
-		glbl.pages.home,
-		glbl.pages.search,
-		glbl.pages.media,
-		glbl.pages.profile,
-		pages.settings()
-	);
+	optionsPages.init(glbl.pages.home, glbl.pages.search, glbl.pages.media, glbl.pages.profile, pages.settings());
 
 	url.init({
 		home: glbl.url.home,
-		admin: !glbl.user.is.anonymous && glbl.user.is.admin ? glbl.url.admin : "",
+		admin: !glbl.user.is.anonymous && glbl.user.is.admin ? glbl.url.admin : '',
 		error404: glbl.url.error404,
-		embed: glbl.site.url.replace(/\/+$/, "") + "/embed?m=",
+		embed: glbl.site.url.replace(/\/+$/, '') + '/embed?m=',
 		latest: glbl.url.latestMedia,
 		featured: glbl.url.featuredMedia,
 		recommended: glbl.url.recommendedMedia,
 		signin: glbl.url.signin,
-		signout: !glbl.user.is.anonymous ? glbl.url.signout : "",
+		signout: !glbl.user.is.anonymous ? glbl.url.signout : '',
 		register: glbl.url.register,
-		changePassword: !glbl.user.is.anonymous ? glbl.url.changePassword : "",
+		changePassword: !glbl.user.is.anonymous ? glbl.url.changePassword : '',
 		members: glbl.url.members,
 		search: {
 			base: glbl.url.search,
-			query: glbl.url.search + "?q=",
-			tag: glbl.url.search + "?t=",
-			category: glbl.url.search + "?c=",
-			topic: glbl.url.search + "?topic=",
-			country: glbl.url.search + "?country=",
-			language: glbl.url.search + "?language=",
+			query: glbl.url.search + '?q=',
+			tag: glbl.url.search + '?t=',
+			category: glbl.url.search + '?c=',
+			topic: glbl.url.search + '?topic=',
+			country: glbl.url.search + '?country=',
+			language: glbl.url.search + '?language=',
 		},
 		profile: !!glbl.site.devEnv
 			? {
@@ -58,19 +52,13 @@ export function config(glbl) {
 					media: glbl.user.pages.media,
 					about: glbl.user.pages.about,
 					playlists: glbl.user.pages.playlists,
-			  }
+				}
 			: {
-					home: glbl.site.url.replace(/\/$/, "") + "/user/" + glbl.profileId,
-					media:
-						glbl.site.url.replace(/\/$/, "") + "/user/" + glbl.profileId + "/media",
-					about:
-						glbl.site.url.replace(/\/$/, "") + "/user/" + glbl.profileId + "/about",
-					playlists:
-						glbl.site.url.replace(/\/$/, "") +
-						"/user/" +
-						glbl.profileId +
-						"/playlists",
-			  },
+					home: glbl.site.url.replace(/\/$/, '') + '/user/' + glbl.profileId,
+					media: glbl.site.url.replace(/\/$/, '') + '/user/' + glbl.profileId + '/media',
+					about: glbl.site.url.replace(/\/$/, '') + '/user/' + glbl.profileId + '/about',
+					playlists: glbl.site.url.replace(/\/$/, '') + '/user/' + glbl.profileId + '/playlists',
+				},
 		user: {
 			liked: glbl.url.likedMedia,
 			history: glbl.url.history,
@@ -86,10 +74,10 @@ export function config(glbl) {
 			languages: glbl.url.languages,
 		},
 		manage: {
-			media: !glbl.user.is.anonymous ? glbl.url.manageMedia : "",
-			users: !glbl.user.is.anonymous ? glbl.url.manageUsers : "",
-			comments: !glbl.user.is.anonymous ? glbl.url.manageComments : "",
-			uploads: !glbl.user.is.anonymous ? glbl.url.manageUploads : "",
+			media: !glbl.user.is.anonymous ? glbl.url.manageMedia : '',
+			users: !glbl.user.is.anonymous ? glbl.url.manageUsers : '',
+			comments: !glbl.user.is.anonymous ? glbl.url.manageComments : '',
+			uploads: !glbl.user.is.anonymous ? glbl.url.manageUploads : '',
 		},
 	});
 

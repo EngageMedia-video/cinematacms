@@ -38,4 +38,3 @@ The **Automatic Transcription** feature in CinemataCMS enables users to generate
 - **Improved Discoverability**: Enables keyword-based search across video transcripts.
 
 > Note: Accuracy depends on the quality of the audio and clarity of speech in the video.
-

@@ -1,6 +1,6 @@
-import React from "react";
+import React from 'react';
 
-export const Logo = ({ src, loading = "lazy", title, alt, href = "#" }) => {
+export const Logo = ({ src, loading = 'lazy', title, alt, href = '#' }) => {
 	return src ? (
 		<div className="logo">
 			<a href={href} title={title}>

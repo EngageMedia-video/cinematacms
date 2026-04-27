@@ -7,51 +7,72 @@ import { PendingItemsList } from './PendingItemsList';
 import { ListItem, listItemProps } from './ListItem';
 import { ItemList } from './ItemList';
 
-import { ItemsListHandler } from "./includes/itemLists/ItemsListHandler";
+import { ItemsListHandler } from './includes/itemLists/ItemsListHandler';
 
-export function ItemListAsync(props){
-    props = { ...ItemListAsync.defaults, ...props };
+export function ItemListAsync(props) {
+	props = { ...ItemListAsync.defaults, ...props };
 
-    const [ countedItems, items, listHandler, setListHandler, classname, itemsListWrapperRef, itemsListRef, onItemsCount, onItemsLoad, renderBeforeListWrap, renderAfterListWrap ] = useItemListSync(props);
+	const [
+		countedItems,
+		items,
+		listHandler,
+		setListHandler,
+		classname,
+		itemsListWrapperRef,
+		itemsListRef,
+		onItemsCount,
+		onItemsLoad,
+		renderBeforeListWrap,
+		renderAfterListWrap,
+	] = useItemListSync(props);
 
-    useEffect(() => {
+	useEffect(() => {
+		setListHandler(
+			new ItemsListHandler(
+				props.pageItems,
+				props.maxItems,
+				props.firstItemRequestUrl,
+				props.requestUrl,
+				onItemsCount,
+				onItemsLoad
+			)
+		);
 
-    	setListHandler( new ItemsListHandler( props.pageItems, props.maxItems, props.firstItemRequestUrl, props.requestUrl, onItemsCount, onItemsLoad ) );
+		return () => {
+			if (listHandler) {
+				listHandler.cancelAll();
+				setListHandler(null);
+			}
+		};
+	}, []);
+	return !countedItems ? (
+		<PendingItemsList className={classname.listOuter} />
+	) : !items.length ? null : (
+		<div className={classname.listOuter}>
+			{renderBeforeListWrap()}
 
-        return () => {
-            if( listHandler ){
-                listHandler.cancelAll();
-                setListHandler(null);
-            }
-        };
-    }, []);
-    return ( ! countedItems ?
-            <PendingItemsList className={ classname.listOuter } /> :
-            ( ! items.length ? null : <div className={ classname.listOuter }>
+			<div ref={itemsListWrapperRef} className="items-list-wrap">
+				<div ref={itemsListRef} className={classname.list}>
+					{items.map((itm, index) => (
+						<ListItem key={index} {...listItemProps(props, itm, index)} />
+					))}
+				</div>
+			</div>
 
-                { renderBeforeListWrap() }
-
-                <div ref={ itemsListWrapperRef } className="items-list-wrap">
-                    <div ref={ itemsListRef } className={ classname.list }>
-                    { items.map( ( itm, index ) => <ListItem key={ index } { ...listItemProps( props, itm, index ) } /> ) }
-                    </div>
-                </div>
-
-                { renderAfterListWrap() }
-
-            </div> )
-           );
+			{renderAfterListWrap()}
+		</div>
+	);
 }
 
 ItemListAsync.propTypes = {
-    ...ItemList.propTypes,
-    items: PropTypes.array,   // Reset 'isRequired' feature.
-    requestUrl: PropTypes.string.isRequired,
-    firstItemRequestUrl: PropTypes.string,
+	...ItemList.propTypes,
+	items: PropTypes.array, // Reset 'isRequired' feature.
+	requestUrl: PropTypes.string.isRequired,
+	firstItemRequestUrl: PropTypes.string,
 };
 
 ItemListAsync.defaults = {
-    ...ItemList.defaults,
-    firstItemRequestUrl: null,
-    pageItems: 24,
+	...ItemList.defaults,
+	firstItemRequestUrl: null,
+	pageItems: 24,
 };
