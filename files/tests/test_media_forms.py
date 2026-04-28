@@ -6,7 +6,7 @@ from django.contrib.auth.hashers import check_password
 from django.test import TestCase, override_settings
 
 from files.forms import MediaForm
-from files.models import Category
+from files.models import Category, Language
 from files.tests.helpers import create_test_media, create_test_user
 
 
@@ -22,6 +22,7 @@ class MediaFormPasswordValidationTest(TestCase):
         self.category = Category.objects.first() or Category.objects.create(
             title="Test Category", user=self.user, is_global=True
         )
+        Language.objects.get_or_create(code="en", defaults={"title": "English"})
 
     def _get_form_data(self, **overrides):
         """Return a fully valid form payload."""

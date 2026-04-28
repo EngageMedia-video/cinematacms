@@ -3,11 +3,12 @@ import os
 from pathlib import Path
 
 from django.conf import settings
-from django.test import TestCase
+from django.test import TestCase, tag
 
 from cms.settings_utils import VALID_WHISPER_MODELS, get_whisper_cpp_paths
 
 
+@tag("requires-whisper")
 class WhisperCPPDirectoryTestCase(TestCase):
     logger = logging.getLogger(__name__)
 

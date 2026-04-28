@@ -101,6 +101,10 @@ class RaceConditionTest(TransactionTestCase):
                 )
             except Exception as e:
                 errors.append(str(e))
+            finally:
+                from django.db import connection as thread_conn
+
+                thread_conn.close()
 
         # Launch concurrent threads (each with different user)
         print(f"\n🚀 Launching {num_threads} concurrent view increments from {num_threads} different users...")
