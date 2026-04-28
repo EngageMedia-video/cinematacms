@@ -16,6 +16,7 @@ concurrency:
 jobs:
   deploy-dev:
     name: Deploy to Dev VPS
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -100,6 +101,7 @@ jobs:
 
       - name: Notify Slack on success
         if: success() && env.SLACK_WEBHOOK_URL != ''
+        continue-on-error: true
         run: |
           curl -sfS -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
@@ -116,6 +118,7 @@ jobs:
 
       - name: Notify Slack on failure
         if: failure() && env.SLACK_WEBHOOK_URL != ''
+        continue-on-error: true
         run: |
           curl -sfS -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
