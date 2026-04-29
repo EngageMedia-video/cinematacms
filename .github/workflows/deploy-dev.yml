@@ -20,7 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
       - name: Checkout code
@@ -99,36 +100,26 @@ jobs:
               description: 'Deployment failed',
             });
 
-      - name: Notify Slack on success
-        if: success() && env.SLACK_WEBHOOK_URL != ''
+      - name: Notify Telegram on success
+        if: success() && env.TELEGRAM_BOT_TOKEN != ''
         continue-on-error: true
         run: |
-          curl -sfS -X POST "$SLACK_WEBHOOK_URL" \
+          curl -sfS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -H 'Content-Type: application/json' \
             -d "{
-              \"text\": \"✅ Dev deploy succeeded\",
-              \"blocks\": [{
-                \"type\": \"section\",
-                \"text\": {
-                  \"type\": \"mrkdwn\",
-                  \"text\": \"✅ *Dev deploy succeeded*\nCommit: \`${GITHUB_SHA::7}\`\nAuthor: ${{ github.actor }}\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
-                }
-              }]
+              \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
+              \"parse_mode\": \"HTML\",
+              \"text\": \"✅ <b>Dev deploy succeeded</b>\nCommit: <code>${GITHUB_SHA::7}</code>\nAuthor: ${{ github.actor }}\nRun: <a href=\\\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\\\">View workflow</a>\"
             }"
 
-      - name: Notify Slack on failure
-        if: failure() && env.SLACK_WEBHOOK_URL != ''
+      - name: Notify Telegram on failure
+        if: failure() && env.TELEGRAM_BOT_TOKEN != ''
         continue-on-error: true
         run: |
-          curl -sfS -X POST "$SLACK_WEBHOOK_URL" \
+          curl -sfS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -H 'Content-Type: application/json' \
             -d "{
-              \"text\": \"❌ Dev deploy failed\",
-              \"blocks\": [{
-                \"type\": \"section\",
-                \"text\": {
-                  \"type\": \"mrkdwn\",
-                  \"text\": \"❌ *Dev deploy failed*\nCommit: \`${GITHUB_SHA::7}\`\nAuthor: ${{ github.actor }}\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
-                }
-              }]
+              \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
+              \"parse_mode\": \"HTML\",
+              \"text\": \"❌ <b>Dev deploy failed</b>\nCommit: <code>${GITHUB_SHA::7}</code>\nAuthor: ${{ github.actor }}\nRun: <a href=\\\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\\\">View workflow</a>\"
             }"
