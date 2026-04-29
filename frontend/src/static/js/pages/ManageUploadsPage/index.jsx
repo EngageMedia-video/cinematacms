@@ -31,7 +31,7 @@ export class ManageUploadsPage extends Page {
 			currentPage: 1,
 			requestUrl: ApiUrlContext._currentValue.manage.myUploads,
 			pageTitle: props.title,
-			hiddenFilters: true,
+			hiddenFilters: false,
 			filterArgs: '',
 			sortingArgs: '',
 			sortBy: 'add_date',

@@ -46,7 +46,7 @@ class MediaList(APIView):
         if media_type not in ["video", "image", "audio", "pdf"]:
             media_type = None
 
-        if state not in ["private", "public", "unlisted"]:
+        if state not in ["private", "public", "restricted", "unlisted"]:
             state = None
 
         if encoding_status not in ["pending", "running", "fail", "success"]:
@@ -113,7 +113,7 @@ class MyUploadsList(APIView):
             sort_by = "add_date"
         ordering = "" if ordering == "asc" else "-"
 
-        if state not in ["private", "public", "unlisted"]:
+        if state not in ["private", "public", "restricted", "unlisted"]:
             state = None
 
         if encoding_status not in ["pending", "running", "fail", "success"]:

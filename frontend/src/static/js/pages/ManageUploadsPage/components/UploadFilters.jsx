@@ -11,6 +11,7 @@ const filters = {
 		{ id: 'all', title: 'All' },
 		{ id: 'public', title: 'Public' },
 		{ id: 'private', title: 'Private' },
+		{ id: 'restricted', title: 'Restricted' },
 		{ id: 'unlisted', title: 'Unlisted' },
 	],
 	encoding_status: [
