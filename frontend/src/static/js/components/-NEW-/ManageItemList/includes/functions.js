@@ -36,7 +36,6 @@ function ListManageMediaItem(props) {
 		author_name: itemData.author_name,
 		author_url: itemData.author_profile,
 		add_date: itemData.add_date,
-		media_type: itemData.media_type,
 		encoding_status: itemData.encoding_status,
 		state: itemData.state,
 		is_reviewed: itemData.is_reviewed,

@@ -27,7 +27,7 @@ export class ManageMediaPage extends Page {
 			currentPage: 1,
 			requestUrl: ApiUrlContext._currentValue.manage.media,
 			pageTitle: props.title,
-			hiddenFilters: true,
+			hiddenFilters: false,
 			filterArgs: '',
 			sortingArgs: '',
 			sortBy: 'add_date',

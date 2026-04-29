@@ -217,9 +217,6 @@ export function ManageMediaItem(props) {
 			<div className="mi-author">
 				<ManageItemMediaAuthor name={props.author_name} url={props.author_url} />
 			</div>
-			<div className="mi-type">
-				{void 0 === props.media_type ? <i className="non-available">N/A</i> : props.media_type}
-			</div>
 			<div className="mi-encoding">
 				{void 0 === props.encoding_status ? <i className="non-available">N/A</i> : props.encoding_status}
 			</div>

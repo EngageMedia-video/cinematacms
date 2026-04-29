@@ -50,9 +50,11 @@ export function ManageMediaFilters(props) {
 	const [encodingStatus, setEncodingStatus] = useState('all');
 	const [isFeatured, setIsFeatured] = useState('all');
 	const [isReviewed, setIsReviewed] = useState('all');
+	const [searchValue, setSearchValue] = useState('');
 
 	const containerRef = useRef(null);
 	const innerContainerRef = useRef(null);
+	const searchTimeoutRef = useRef(null);
 
 	function onWindowResize() {
 		if (!isHidden) {
@@ -67,6 +69,7 @@ export function ManageMediaFilters(props) {
 			encoding_status: encodingStatus,
 			featured: isFeatured,
 			is_reviewed: isReviewed,
+			search: encodeURIComponent(searchValue),
 		};
 
 		switch (ev.currentTarget.getAttribute('filter')) {
@@ -103,14 +106,54 @@ export function ManageMediaFilters(props) {
 		onWindowResize();
 	}, [props.hidden]);
 
+	function onSearchChange(ev) {
+		const val = ev.target.value;
+		setSearchValue(val);
+
+		if (searchTimeoutRef.current) {
+			clearTimeout(searchTimeoutRef.current);
+		}
+
+		searchTimeoutRef.current = setTimeout(function () {
+			searchTimeoutRef.current = null;
+			const args = {
+				state: state,
+				media_type: mediaType,
+				encoding_status: encodingStatus,
+				featured: isFeatured,
+				is_reviewed: isReviewed,
+				search: encodeURIComponent(val),
+			};
+			props.onFiltersUpdate(args);
+		}, 300);
+	}
+
 	useEffect(() => {
 		PageStore.on('window_resize', onWindowResize);
-		return () => PageStore.removeListener('window_resize', onWindowResize);
+		return () => {
+			PageStore.removeListener('window_resize', onWindowResize);
+			if (searchTimeoutRef.current) {
+				clearTimeout(searchTimeoutRef.current);
+			}
+		};
 	}, []);
 
 	return (
 		<div ref={containerRef} className={'mi-filters-row' + (isHidden ? ' hidden' : '')}>
 			<div ref={innerContainerRef} className="mi-filters-row-inner">
+				<div className="mi-filter mi-filter-search">
+					<div className="mi-filter-title">SEARCH</div>
+					<div className="mi-filter-options">
+						<input
+							type="text"
+							placeholder="Search by title..."
+							value={searchValue}
+							onChange={onSearchChange}
+							className="mi-search-input"
+						/>
+					</div>
+				</div>
+
 				<div className="mi-filter">
 					<div className="mi-filter-title">STATE</div>
 					<div className="mi-filter-options">

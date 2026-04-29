@@ -27,6 +27,7 @@ class MediaList(APIView):
         state = params.get("state", "").strip()
         encoding_status = params.get("encoding_status", "").strip()
         media_type = params.get("media_type", "").strip()
+        search = params.get("search", "").strip()
 
         params.get("add_date", "").strip()
         params.get("edit_date", "").strip()
@@ -80,6 +81,8 @@ class MediaList(APIView):
             qs = qs.filter(featured=featured)
         if is_reviewed != "all":
             qs = qs.filter(is_reviewed=is_reviewed)
+        if search:
+            qs = qs.filter(title__icontains=search)
 
         media = qs.order_by(f"{ordering}{sort_by}")
 
