@@ -166,6 +166,13 @@ export function ManageUploadItem(props) {
 			<div className="mi-checkbox">
 				<input type="checkbox" checked={selected} onChange={onRowCheck} />
 			</div>
+			<div className="mi-thumb">
+				{props.thumbnail_url ? (
+					<img src={props.thumbnail_url} alt="" />
+				) : (
+					<span className="mi-thumb-placeholder" />
+				)}
+			</div>
 			<div className="mi-title">
 				<ManageItemTitle title={props.title} url={props.url} />
 				{props.hideDeleteAction ? null : (
@@ -199,6 +206,7 @@ export function ManageUploadItem(props) {
 }
 
 ManageUploadItem.propTypes = {
+	thumbnail_url: PropTypes.string,
 	token: PropTypes.string,
 	title: PropTypes.string,
 	url: PropTypes.string,

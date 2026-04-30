@@ -281,6 +281,32 @@
 			width: 48px;
 		}
 
+		.mi-thumb {
+			min-width: 120px;
+			width: 120px;
+			padding: 8px 12px;
+
+			img {
+				display: block;
+				width: 120px;
+				height: 68px;
+				object-fit: cover;
+				border-radius: 2px;
+			}
+
+			.mi-thumb-placeholder {
+				display: block;
+				width: 120px;
+				height: 68px;
+				background-color: #e0e0e0;
+				border-radius: 2px;
+
+				.dark_theme & {
+					background-color: #333;
+				}
+			}
+		}
+
 		.mi-title {
 			min-width: 240px;
 			width: 100%;

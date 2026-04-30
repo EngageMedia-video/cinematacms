@@ -89,6 +89,7 @@ function ListManageUploadItem(props) {
 
 	const args = {
 		...itemProps,
+		thumbnail_url: itemData.thumbnail_url,
 		title: itemData.title,
 		url: itemData.url.replace(' ', '%20'),
 		add_date: itemData.add_date,

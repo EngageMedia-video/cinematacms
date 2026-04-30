@@ -15,6 +15,7 @@ export function ManageUploadItemHeader(props) {
 			<div className="mi-checkbox">
 				<input type="checkbox" checked={isSelected} onChange={checkAll} />
 			</div>
+			<div className="mi-thumb"></div>
 			<div
 				id="title"
 				onClick={sortByColumn}

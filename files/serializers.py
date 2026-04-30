@@ -99,9 +99,13 @@ class MediaSerializer(serializers.ModelSerializer):
 
 class ManageUploadSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
 
     def get_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
+
+    def get_thumbnail_url(self, obj):
+        return self.context["request"].build_absolute_uri(obj.thumbnail_url)
 
     class Meta:
         model = Media
@@ -109,6 +113,7 @@ class ManageUploadSerializer(serializers.ModelSerializer):
             "friendly_token",
             "title",
             "url",
+            "thumbnail_url",
             "add_date",
             "media_type",
             "encoding_status",

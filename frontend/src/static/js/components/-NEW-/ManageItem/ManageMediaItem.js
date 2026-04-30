@@ -194,6 +194,13 @@ export function ManageMediaItem(props) {
 			<div className="mi-checkbox">
 				<input type="checkbox" checked={selected} onChange={onRowCheck} />
 			</div>
+			<div className="mi-thumb">
+				{props.thumbnail_url ? (
+					<img src={props.thumbnail_url} alt="" />
+				) : (
+					<span className="mi-thumb-placeholder" />
+				)}
+			</div>
 			<div className="mi-title">
 				<ManageItemTitle title={props.title} url={props.url} />
 				{props.hideDeleteAction ? null : (
