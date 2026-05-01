@@ -655,9 +655,9 @@ NEWSLETTER_API_URL = "https://mailer.cinemata.org/wp-json/newsletter/v1/subscrib
 # Newsletter list ID(s) to subscribe users to (Cinemata Newsletter = list 2)
 NEWSLETTER_LIST_IDS = [2]
 
-from .local_settings import *
-
 import sys
+
+from .local_settings import *
 
 _is_testing = "test" in sys.argv or "pytest" in sys.modules
 
