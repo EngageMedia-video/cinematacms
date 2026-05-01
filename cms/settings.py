@@ -657,8 +657,15 @@ NEWSLETTER_LIST_IDS = [2]
 
 from .local_settings import *
 
-# Add debug_toolbar to INSTALLED_APPS if DEBUG is True
-if DEBUG:
+import sys
+
+_is_testing = "test" in sys.argv or "pytest" in sys.modules
+
+# Add debug_toolbar for local dev only — not during test runs.
+# Django's test runner sets DEBUG=False at runtime, but MIDDLEWARE is already
+# populated at import time, so the toolbar middleware would crash with
+# KeyError: 'djdt' because the URL patterns are guarded by `if settings.DEBUG`.
+if DEBUG and not _is_testing:
     if "debug_toolbar" not in INSTALLED_APPS:
         INSTALLED_APPS.append("debug_toolbar")
     if "debug_toolbar.middleware.DebugToolbarMiddleware" not in MIDDLEWARE:
