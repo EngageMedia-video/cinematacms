@@ -107,7 +107,7 @@ export default function addPageMetadata(metadata, replaceExisted) {
 	const pageHtmlHeadEl = document.querySelector('head');
 
 	function setHtmlTitleMeta(value) {
-		const el = pageHtmlHeadEl.querySelector('title');
+		let el = pageHtmlHeadEl.querySelector('title');
 		let content = null;
 
 		if (null !== el) {
@@ -130,7 +130,7 @@ export default function addPageMetadata(metadata, replaceExisted) {
 			return;
 		}
 
-		const el = pageHtmlHeadEl.querySelector('link[rel="' + rel + '"]');
+		let el = pageHtmlHeadEl.querySelector('link[rel="' + rel + '"]');
 
 		if (null !== el) {
 			if (!replaceExisted) {

@@ -4,7 +4,7 @@ This document describes how TinyMCE is configured in Cinemata CMS and how to man
 
 ## Current Configuration
 
-Cinemata CMS uses `django-tinymce` version 4.1.0, which is currently installed from a specific Git commit to ensure stability. **Note: This should be upgraded to use the PyPI version once it's stable.**
+Cinemata CMS uses `django-tinymce` version 5.0.0, currently resolved from the upstream release commit to keep installs reproducible.
 
 The configuration is defined in `cms/settings.py` under the `TINYMCE_DEFAULT_CONFIG` setting.
 
@@ -114,7 +114,7 @@ Files uploaded through TinyMCE are stored in the `TinyMCEMedia` model, which pro
 
 ## Upgrading django-tinymce
 
-**Important**: The current installation uses a specific Git commit. The goal is to upgrade to the PyPI version once it's stable. When upgrading, follow these steps:
+**Important**: The current installation uses a specific Git commit. When upgrading or switching to the PyPI release, follow these steps:
 
 1. **Check PyPI Version**
    - Visit [django-tinymce on PyPI](https://pypi.org/project/django-tinymce/)
@@ -126,12 +126,12 @@ Files uploaded through TinyMCE are stored in the `TinyMCEMedia` model, which pro
    ```toml
    # Remove this section
    [tool.uv.sources]
-   django-tinymce = { git = "https://github.com/jazzband/django-tinymce.git", rev = "685236d36af37afbb8e069099879b3489bbe8216" }
+   django-tinymce = { git = "https://github.com/jazzband/django-tinymce.git", rev = "6b413f4e9bdedb9268c8ef25886fdfc994780097" }
    ```
    In `requirements.txt`, remove this section:
    ```
    ...
-   django-tinymce @ git+https://github.com/jazzband/django-tinymce.git@685236d36af37afbb8e069099879b3489bbe8216
+   django-tinymce @ git+https://github.com/jazzband/django-tinymce.git@6b413f4e9bdedb9268c8ef25886fdfc994780097
    ...
    ```
    - Add the PyPI version:

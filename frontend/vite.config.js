@@ -5,6 +5,8 @@ import svgr from 'vite-plugin-svgr';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import svgoConfig from './svgo.config.mjs';
 
+const modernTrackVendorPackages = ['/node_modules/@tanstack/', '/node_modules/zustand/'];
+
 export default defineConfig({
 	plugins: [
 		// This codebase uses .js files for JSX (legacy Webpack convention).
@@ -78,6 +80,9 @@ export default defineConfig({
 	},
 
 	css: {
+		lightningcss: {
+			errorRecovery: true,
+		},
 		preprocessorOptions: {
 			scss: {
 				api: 'modern-compiler',
@@ -139,8 +144,10 @@ export default defineConfig({
 				// chunk will appear in the build output, making the leak visible.
 				// Without this, Rollup might merge them into a shared chunk
 				// that gets loaded by every page (~15KB gzipped).
-				manualChunks: {
-					'modern-track-vendor': ['@tanstack/react-query', 'zustand'],
+				manualChunks(id) {
+					if (modernTrackVendorPackages.some((packagePath) => id.includes(packagePath))) {
+						return 'modern-track-vendor';
+					}
 				},
 			},
 		},

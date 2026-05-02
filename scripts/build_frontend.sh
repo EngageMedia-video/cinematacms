@@ -42,6 +42,23 @@ build_package() {
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# Prefer an explicitly configured interpreter, then the active venv, then uv.
+PYTHON_CMD=()
+if [ -n "${PYTHON:-}" ]; then
+    PYTHON_CMD=("$PYTHON")
+elif command -v python >/dev/null 2>&1; then
+    PYTHON_CMD=("python")
+elif command -v uv >/dev/null 2>&1; then
+    PYTHON_CMD=("uv" "run" "python")
+elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_CMD=("python3")
+else
+    echo -e "${RED}No Python interpreter found. Set PYTHON=/path/to/python and retry.${NC}"
+    exit 1
+fi
+
+PYTHON_DISPLAY="${PYTHON_CMD[*]}"
+
 # Build frontend packages
 echo -e "${YELLOW}Building frontend packages...${NC}"
 
@@ -77,7 +94,7 @@ cd "${PROJECT_ROOT}"
 
 # Run Django collectstatic (with error handling)
 echo -e "${YELLOW}Running Django collectstatic...${NC}"
-if python manage.py collectstatic --noinput; then
+if "${PYTHON_CMD[@]}" manage.py collectstatic --noinput; then
     echo -e "${GREEN}✅ Frontend build and deployment complete!${NC}"
     echo -e "${GREEN}Static files collected to: ${PROJECT_ROOT}/static_collected/${NC}"
 else
@@ -87,7 +104,7 @@ else
         echo -e "${GREEN}✅ Frontend build complete!${NC}"
         echo -e "${GREEN}Frontend files built to: ${PROJECT_ROOT}/frontend/build/production/static/${NC}"
         echo -e "${YELLOW}To complete static file collection, fix any Python dependencies and run:${NC}"
-        echo -e "${YELLOW}  python manage.py collectstatic --noinput${NC}"
+        echo -e "${YELLOW}  ${PYTHON_DISPLAY} manage.py collectstatic --noinput${NC}"
     else
         exit 1
     fi
