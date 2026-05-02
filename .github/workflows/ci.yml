@@ -215,3 +215,119 @@ jobs:
 
       - name: Run tests
         run: uv run python manage.py test --noinput --verbosity=2 --exclude-tag=requires-whisper
+
+  deploy-dev:
+    name: Deploy to Dev VPS
+    needs:
+      - frontend-build
+      - backend-migrations
+      - pre-commit
+      - backend-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      deployments: write
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
+    env:
+      DEPLOY_SHA: ${{ github.sha }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+    steps:
+      - name: Create GitHub Deployment
+        id: deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: process.env.DEPLOY_SHA,
+              environment: 'dev',
+              auto_merge: false,
+              required_contexts: [],
+              description: `Deploy ${process.env.DEPLOY_SHA.substring(0, 7)} to dev`,
+            });
+            return deployment.data.id;
+
+      - name: Set deployment in-progress
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: 'in_progress',
+              description: 'Deployment started',
+            });
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_DEV_SSH_KEY }}
+
+      - name: Pin known hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_DEV_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        run: |
+          ssh ${{ secrets.DEPLOY_DEV_USER }}@${{ secrets.DEPLOY_DEV_HOST }} \
+            'sudo /home/cinemata/cinematacms/restart_script.sh'
+
+      - name: Set deployment success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: 'success',
+              description: 'Deployment completed successfully',
+            });
+
+      - name: Set deployment failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: ${{ steps.deployment.outputs.result }},
+              state: 'failure',
+              description: 'Deployment failed',
+            });
+
+      - name: Notify Telegram on success
+        if: success() && env.TELEGRAM_BOT_TOKEN != ''
+        continue-on-error: true
+        run: |
+          curl -sfS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
+              \"parse_mode\": \"HTML\",
+              \"text\": \"✅ <b>Dev deploy succeeded</b>\nCommit: <code>${DEPLOY_SHA::7}</code>\nAuthor: ${{ github.actor }}\nRun: <a href=\\\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\\\">View workflow</a>\"
+            }"
+
+      - name: Notify Telegram on failure
+        if: failure() && env.TELEGRAM_BOT_TOKEN != ''
+        continue-on-error: true
+        run: |
+          curl -sfS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
+              \"parse_mode\": \"HTML\",
+              \"text\": \"❌ <b>Dev deploy failed</b>\nCommit: <code>${DEPLOY_SHA::7}</code>\nAuthor: ${{ github.actor }}\nRun: <a href=\\\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\\\">View workflow</a>\"
+            }"

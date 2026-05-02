@@ -9,6 +9,8 @@ on:
       - 'requirements.txt'
       - 'frontend/package.json'
       - 'frontend/package-lock.json'
+      - 'frontend/packages/*/package.json'
+      - 'frontend/packages/*/package-lock.json'
       - 'frontend/pnpm-lock.yaml'
   workflow_dispatch:  # Allow manual triggering
 
@@ -40,6 +42,8 @@ jobs:
             frontend:
               - 'frontend/package.json'
               - 'frontend/package-lock.json'
+              - 'frontend/packages/*/package.json'
+              - 'frontend/packages/*/package-lock.json'
               - 'frontend/pnpm-lock.yaml'
 
   python-dependency-check:
@@ -244,11 +248,14 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            frontend/packages/vjs-plugin-font-icons/package-lock.json
+            frontend/packages/vjs-plugin/package-lock.json
+            frontend/packages/media-player/package-lock.json
 
       - name: Extract changed dependency information
         id: dep-info
-        working-directory: ./frontend
         run: |
           echo "🔍 Analyzing frontend dependency changes..."
 
@@ -257,8 +264,11 @@ jobs:
           echo "Using base branch: $BASE_BRANCH"
           git fetch origin "$BASE_BRANCH" || git fetch origin
 
-          # Extract changed dependencies from package.json
-          if git diff "origin/$BASE_BRANCH" -- package.json | grep -E "^\+.*:" > /tmp/changed_deps.txt; then
+          # Extract changed dependencies from all frontend package manifests.
+          if git diff "origin/$BASE_BRANCH" -- \
+            frontend/package.json \
+            frontend/packages/*/package.json \
+            | grep -E "^\+.*:" > /tmp/changed_deps.txt; then
             echo "Changed dependencies:"
             cat /tmp/changed_deps.txt
 
@@ -272,88 +282,75 @@ jobs:
           fi
 
       - name: Validate npm dependency resolution
-        working-directory: ./frontend
         run: |
           echo "🔍 Validating npm dependency resolution..."
 
-          # Create backup of existing lock file if it exists
-          if [ -f package-lock.json ]; then
-            cp package-lock.json package-lock.json.backup
-          fi
+          package_dirs=(
+            frontend
+            frontend/packages/vjs-plugin-font-icons
+            frontend/packages/vjs-plugin
+            frontend/packages/media-player
+          )
 
-          # Clean any existing node_modules and lock files to test fresh resolution
-          rm -rf node_modules package-lock.json
+          for package_dir in "${package_dirs[@]}"; do
+            echo "Checking dependency resolution in ${package_dir}"
+            pushd "${package_dir}" >/dev/null
 
-          # Test dependency resolution without installing
-          if ! npm install --dry-run --no-fund --no-audit; then
-            echo "❌ npm dependency resolution failed!"
-            echo "The new dependency version creates conflicts in the dependency tree."
-            # Restore backup if it exists
+            if [ -f package-lock.json ]; then
+              cp package-lock.json package-lock.json.backup
+            fi
+
+            rm -rf node_modules package-lock.json
+
+            if ! npm install --dry-run --no-fund --no-audit; then
+              echo "❌ npm dependency resolution failed in ${package_dir}"
+              if [ -f package-lock.json.backup ]; then
+                mv package-lock.json.backup package-lock.json
+              fi
+              popd >/dev/null
+              exit 1
+            fi
+
             if [ -f package-lock.json.backup ]; then
               mv package-lock.json.backup package-lock.json
             fi
-            exit 1
-          fi
 
-          # Restore the original lock file for subsequent steps
-          if [ -f package-lock.json.backup ]; then
-            mv package-lock.json.backup package-lock.json
-          fi
+            popd >/dev/null
+          done
 
           echo "✅ npm dependency resolution successful"
 
       - name: Install dependencies with validation
-        working-directory: ./frontend
         run: |
           echo "📦 Installing npm dependencies..."
 
-          # Install dependencies and validate the process
-          # Use npm ci since we preserved the lock file in the previous step
-          if ! npm ci --no-fund --no-audit; then
-            echo "❌ npm dependency installation failed!"
-            echo "Installation encountered errors despite successful resolution."
-            exit 1
-          fi
+          package_dirs=(
+            frontend/packages/vjs-plugin-font-icons
+            frontend/packages/vjs-plugin
+            frontend/packages/media-player
+            frontend
+          )
 
-          # Check dependency tree with proper error handling
-          echo "🔍 Checking dependency tree integrity..."
+          for package_dir in "${package_dirs[@]}"; do
+            echo "Installing and validating ${package_dir}"
+            pushd "${package_dir}" >/dev/null
 
-          NPM_LS_OUTPUT=$(npm ls 2>&1 || true)
-          NPM_LS_EXIT_CODE=$?
-
-          echo "npm ls output:"
-          echo "$NPM_LS_OUTPUT"
-
-          # Check for serious dependency issues
-          if echo "$NPM_LS_OUTPUT" | grep -q "ERESOLVE"; then
-            echo "❌ Dependency resolution errors detected (ERESOLVE)"
-            exit 1
-          fi
-
-          if echo "$NPM_LS_OUTPUT" | grep -q "missing:"; then
-            echo "❌ Missing dependencies detected"
-            exit 1
-          fi
-
-          if echo "$NPM_LS_OUTPUT" | grep -q "invalid:"; then
-            echo "❌ Invalid dependencies detected"
-            exit 1
-          fi
-
-          # Handle peer dependency warnings (usually safe)
-          if [ $NPM_LS_EXIT_CODE -ne 0 ]; then
-            if echo "$NPM_LS_OUTPUT" | grep -qi "peer dep"; then
-              echo "ℹ️  Found peer dependency warnings, but core dependencies are resolved"
-            else
-              echo "❌ Serious dependency tree issues detected!"
-              echo "Check the npm ls output above for details."
+            if ! npm ci --no-fund --no-audit; then
+              echo "❌ npm dependency installation failed in ${package_dir}"
               exit 1
             fi
-          fi
 
-          # Show installed packages for transparency
-          echo "📋 Installed packages:"
-          npm ls --depth=0 --json 2>/dev/null | jq -r '.dependencies | keys[]' | head -10 || echo "Could not list packages"
+            echo "🔍 Checking dependency tree integrity in ${package_dir}"
+            if ! npm ls --depth=0; then
+              echo "❌ Serious dependency tree issues detected in ${package_dir}"
+              exit 1
+            fi
+
+            echo "🔍 Auditing ${package_dir}"
+            npm audit --audit-level=moderate
+
+            popd >/dev/null
+          done
 
           echo "✅ npm dependency tree validated"
 
