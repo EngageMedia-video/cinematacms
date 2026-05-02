@@ -195,6 +195,21 @@ class MyUploadsOwnershipTests(TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["friendly_token"], self.media_a2.friendly_token)
 
+    def test_filter_by_state_restricted(self):
+        """Filtering by state=restricted returns only restricted media (#508)."""
+        restricted_media = create_test_media(
+            user=self.user_a,
+            title="User A Restricted Video",
+            media_type="video",
+            state="restricted",
+        )
+        self.client.login(username="usera", password="testpass123")
+        response = self.client.get("/api/v1/my_uploads?state=restricted")
+        data = response.json()
+        results = data.get("results", [])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["friendly_token"], restricted_media.friendly_token)
+
     def test_search_by_title(self):
         """Searching by title returns matching items."""
         self.client.login(username="usera", password="testpass123")
