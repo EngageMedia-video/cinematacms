@@ -122,7 +122,7 @@ idna==3.13
     # via requests
 ipython==8.39.0
     # via cinemata
-jedi==0.19.2
+jedi==0.20.0
     # via ipython
 kombu==5.6.2
     # via celery
@@ -136,7 +136,7 @@ mccabe==0.7.0
     # via flake8
 packaging==26.2
     # via kombu
-parso==0.8.6
+parso==0.8.7
     # via jedi
 pep8==1.7.1
     # via cinemata
