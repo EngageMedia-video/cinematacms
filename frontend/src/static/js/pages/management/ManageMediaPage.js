@@ -85,11 +85,12 @@ export class ManageMediaPage extends Page {
 		/*if( 1 === this.state.currentPage ){*/
 		this.setState({
 			filterArgs: newArgs.join('&'),
+			currentPage: 1,
 			requestUrl: genReqUrl(
 				ApiUrlContext._currentValue.manage.media,
 				newArgs.join('&'),
 				this.state.sortingArgs,
-				this.state.currentPage
+				1
 			),
 		});
 		/*}
