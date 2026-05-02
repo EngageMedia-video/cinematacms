@@ -1,7 +1,9 @@
 name: Deploy to Dev
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -16,10 +18,16 @@ concurrency:
 jobs:
   deploy-dev:
     name: Deploy to Dev VPS
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main') ||
+      (github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
@@ -27,6 +35,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: ${{ env.DEPLOY_SHA }}
           sparse-checkout: .
           sparse-checkout-cone-mode: false
 
@@ -38,11 +47,11 @@ jobs:
             const deployment = await github.rest.repos.createDeployment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: context.sha,
+              ref: process.env.DEPLOY_SHA,
               environment: 'dev',
               auto_merge: false,
               required_contexts: [],
-              description: `Deploy ${context.sha.substring(0, 7)} to dev`,
+              description: `Deploy ${process.env.DEPLOY_SHA.substring(0, 7)} to dev`,
             });
             return deployment.data.id;
 
@@ -109,7 +118,7 @@ jobs:
             -d "{
               \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
               \"parse_mode\": \"HTML\",
-              \"text\": \"✅ <b>Dev deploy succeeded</b>\nCommit: <code>${GITHUB_SHA::7}</code>\nAuthor: ${{ github.actor }}\nRun: <a href=\\\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\\\">View workflow</a>\"
+              \"text\": \"✅ <b>Dev deploy succeeded</b>\nCommit: <code>${DEPLOY_SHA::7}</code>\nAuthor: ${{ github.actor }}\nRun: <a href=\\\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\\\">View workflow</a>\"
             }"
 
       - name: Notify Telegram on failure
@@ -121,5 +130,5 @@ jobs:
             -d "{
               \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
               \"parse_mode\": \"HTML\",
-              \"text\": \"❌ <b>Dev deploy failed</b>\nCommit: <code>${GITHUB_SHA::7}</code>\nAuthor: ${{ github.actor }}\nRun: <a href=\\\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\\\">View workflow</a>\"
+              \"text\": \"❌ <b>Dev deploy failed</b>\nCommit: <code>${DEPLOY_SHA::7}</code>\nAuthor: ${{ github.actor }}\nRun: <a href=\\\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\\\">View workflow</a>\"
             }"
