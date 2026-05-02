@@ -90,9 +90,7 @@ class ManageMediaSearchTests(TestCase):
             state="private",
         )
         self.client.login(username="editoruser", password="testpass123")
-        response = self.client.get(
-            "/api/v1/manage_media?search=Featured&state=private"
-        )
+        response = self.client.get("/api/v1/manage_media?search=Featured&state=private")
         self.assertEqual(response.status_code, 200)
         results = response.json().get("results", [])
         self.assertEqual(len(results), 1)
