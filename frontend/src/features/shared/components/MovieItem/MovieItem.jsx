@@ -5,6 +5,24 @@ function joinClasses(...classes) {
 	return classes.filter(Boolean).join(' ');
 }
 
+function MovieItemContainer({ children, className = '', link = '', title = '' }) {
+	if (link) {
+		return (
+			<article className={className}>
+				<a
+					href={link}
+					className="block h-full w-full cursor-pointer text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200"
+					aria-label={title ? `Open ${title}` : 'Open movie details'}
+				>
+					{children}
+				</a>
+			</article>
+		);
+	}
+
+	return <article className={className}>{children}</article>;
+}
+
 function MovieMetadata({ items = [] }) {
 	const validItems = items.filter(Boolean);
 
@@ -95,12 +113,17 @@ export function HorizontalMovieItem({
 	duration = '',
 	imageAlt = 'Movie artwork',
 	imageSrc,
+	link = '',
 	metadata = [],
 	subtitle = '',
 	title = 'Movie Title',
 }) {
 	return (
-		<article className={joinClasses('flex w-full items-start gap-4', className)}>
+		<MovieItemContainer
+			className={joinClasses('flex w-full items-start gap-4', className)}
+			link={link}
+			title={title}
+		>
 			<MoviePoster
 				imageAlt={imageAlt}
 				imageSrc={imageSrc}
@@ -113,7 +136,7 @@ export function HorizontalMovieItem({
 			<div className="flex min-w-0 flex-1 flex-col gap-3">
 				<MovieCopy title={title} subtitle={subtitle} metadata={metadata} orientation="horizontal" />
 			</div>
-		</article>
+		</MovieItemContainer>
 	);
 }
 
@@ -126,12 +149,17 @@ export function VerticalMovieItem({
 	iconName = '',
 	imageAlt = 'Movie artwork',
 	imageSrc,
+	link = '',
 	metadata = [],
 	subtitle = '',
 	title = 'Movie Title',
 }) {
 	return (
-		<article className={joinClasses('flex w-full min-w-0 flex-col gap-3', className)}>
+		<MovieItemContainer
+			className={joinClasses('flex w-full min-w-0 flex-col gap-4', className)}
+			link={link}
+			title={title}
+		>
 			<MoviePoster
 				imageAlt={imageAlt}
 				imageSrc={imageSrc}
@@ -141,11 +169,11 @@ export function VerticalMovieItem({
 				iconName={iconName}
 				iconLabel={iconLabel}
 				showTopRightIcon
-				className="aspect-video w-full"
+				className="aspect-video w-full mb-4"
 			/>
 
 			<MovieCopy title={title} subtitle={subtitle} metadata={metadata} orientation="vertical" />
-		</article>
+		</MovieItemContainer>
 	);
 }
 

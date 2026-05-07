@@ -48,7 +48,7 @@ const sampleArgs = {
 	subtitle: 'Drama',
 	metadata: ['2026', 'PG-13', '4K'],
 	badge: 'Premiere',
-	badgeColor: '#026690',
+	badgeColor: 'pacific-deep-700',
 	duration: '2h 3m',
 };
 
@@ -144,8 +144,8 @@ const meta = {
 			description: 'Optional badge label shown at the lower-left corner of the poster.',
 		},
 		badgeColor: {
-			control: 'color',
-			description: 'Background color passed through to the shared badge component.',
+			control: 'text',
+			description: 'Background color passed through to the shared badge component. Accepts hex, CSS vars, or token names like `pacific-deep-950`.',
 		},
 		duration: {
 			control: 'text',
@@ -170,6 +170,10 @@ const meta = {
 		className: {
 			control: 'text',
 			description: 'Optional extra classes on the outer movie item wrapper.',
+		},
+		link: {
+			control: 'text',
+			description: 'Optional href for making the entire card redirect to the detail page.',
 		},
 	},
 	render: (args) => (

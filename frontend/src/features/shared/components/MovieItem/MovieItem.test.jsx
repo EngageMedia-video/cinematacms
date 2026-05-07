@@ -77,4 +77,21 @@ describe('MovieItem', () => {
 
 		expect(screen.getByRole('article')).toBeInTheDocument();
 	});
+
+	it('renders as a link when a detail URL is provided', () => {
+		render(
+			<MovieItem
+				orientation="vertical"
+				imageSrc={samplePoster}
+				imageAlt="Clickable poster"
+				title="Cinema Paradiso"
+				metadata={['1988']}
+				link="/media/cinema-paradiso/"
+			/>
+		);
+
+		const movieLink = screen.getByRole('link', { name: 'Open Cinema Paradiso' });
+
+		expect(movieLink).toHaveAttribute('href', '/media/cinema-paradiso/');
+	});
 });
