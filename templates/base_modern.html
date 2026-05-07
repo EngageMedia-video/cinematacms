@@ -8,10 +8,9 @@
 
 {% block aftercontent %}
 {% include "components/footer.html" %}
-{% endblock %}w
+{% endblock %}
 
 {% block topimports %}
 <link rel="stylesheet" href="{% vite_asset_url 'src/static/css/tailwind.css' %}">
 {% block modernpageimports %}{% vite_asset 'src/entries/base.js' %}{% endblock modernpageimports %}
 {% endblock topimports %}
-
