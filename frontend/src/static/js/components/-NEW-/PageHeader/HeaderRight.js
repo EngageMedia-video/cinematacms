@@ -22,6 +22,7 @@ import { NavigationMenuList } from '../NavigationMenuList';
 import { NavigationContentApp } from '../NavigationContentApp';
 import { CircleIconButton } from '../CircleIconButton';
 import { NotificationBell } from '../../../../../features/notifications';
+import { Button } from '../../../../../features/shared/components/Button/Button.jsx';
 
 function headerPopupPages(user, popupNavItems, hasHeaderThemeSwitcher) {
 	const pages = {

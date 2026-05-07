@@ -1,0 +1,118 @@
+.app-layout,
+body[data-ui-variant='revamp'],
+body[data-ui-variant='revamp'] .page-main-wrap {
+	background-color: var(--cinemata-pacific-deep-50);
+}
+
+body.dark_theme[data-ui-variant='revamp'],
+body.dark_theme[data-ui-variant='revamp'] .page-main-wrap,
+body.dark_theme .app-layout {
+	background-color: var(--cinemata-pacific-deep-950);
+}
+
+.app-layout {
+	position: relative;
+	min-height: calc(100vh - var(--header-height));
+	isolation: isolate;
+
+	.page-main {
+		position: relative;
+		z-index: 1;
+		padding-bottom: 0;
+	}
+
+	.page-main-inner {
+		position: relative;
+		z-index: 1;
+		margin: 0;
+	}
+}
+
+.app-layout__ripple-anchor {
+	pointer-events: none;
+	position: fixed;
+	top: 0;
+	left: 50%;
+	z-index: 0;
+	width: min(100%, 80rem);
+	height: 0;
+	padding-inline: 1rem;
+	box-sizing: border-box;
+	transform: translateX(-50%);
+}
+
+.app-layout__content {
+	min-height: calc(100vh - var(--header-height));
+}
+
+.app-layout__slot {
+	position: relative;
+	z-index: 1;
+}
+
+.app-layout__ripple {
+	pointer-events: none;
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 100%;
+	height: 0;
+	z-index: 0;
+	overflow: visible;
+}
+
+.app-layout__ripple-wave {
+	position: absolute;
+	display: block;
+	background-image: url('../../../static/images/ripple_white.svg');
+	background-repeat: no-repeat;
+	background-size: contain;
+	opacity: 0.32;
+	filter: drop-shadow(0 18px 28px rgba(0, 12, 32, 0.22));
+}
+
+.app-layout__ripple-wave--primary {
+	top: calc(-1 * var(--header-height) - 1rem);
+	right: -7rem;
+	width: min(34rem, 42vw);
+	height: min(34rem, 42vw);
+}
+
+.app-layout__ripple-wave--secondary {
+	top: calc(-0.35 * var(--header-height));
+	right: 5rem;
+	width: min(18rem, 22vw);
+	height: min(18rem, 22vw);
+	opacity: 0.16;
+}
+
+@media (max-width: 767px) {
+	.app-layout__ripple-anchor {
+		padding-inline: 1rem;
+	}
+
+	.app-layout__content {
+		min-height: calc(100vh - var(--header-height));
+	}
+
+	.app-layout__ripple-wave--primary {
+		top: calc(-1 * var(--header-height) + 0.5rem);
+		right: -4.75rem;
+		width: 13.5rem;
+		height: 13.5rem;
+	}
+
+	.app-layout__ripple-wave--secondary {
+		top: calc(-0.2 * var(--header-height));
+		right: 1.5rem;
+		width: 8.5rem;
+		height: 8.5rem;
+		opacity: 0.12;
+	}
+}
+
+@media (min-width: 768px) {
+	.app-layout__ripple-anchor {
+		padding-inline: 1.5rem;
+	}
+}

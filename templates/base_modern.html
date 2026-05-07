@@ -1,0 +1,17 @@
+{% extends "root.html" %}
+{% load static %}
+{% load django_vite %}
+
+{% block content %}
+<div id="app-root"></div>
+{% endblock %}
+
+{% block aftercontent %}
+{% include "components/footer.html" %}
+{% endblock %}w
+
+{% block topimports %}
+<link rel="stylesheet" href="{% vite_asset_url 'src/static/css/tailwind.css' %}">
+{% block modernpageimports %}{% vite_asset 'src/entries/base.js' %}{% endblock modernpageimports %}
+{% endblock topimports %}
+

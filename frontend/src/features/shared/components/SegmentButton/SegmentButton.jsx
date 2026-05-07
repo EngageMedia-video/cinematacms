@@ -66,7 +66,7 @@ export function SegmentButton({
 			aria-label={ariaLabel}
 			className={joinClasses(
 				isFillLayout ? 'flex w-full max-w-full' : 'inline-flex max-w-full',
-				'overflow-hidden rounded-[4px]',
+				'overflow-hidden rounded-radius-4',
 				className
 			)}
 			data-segment-button
@@ -82,7 +82,7 @@ export function SegmentButton({
 						aria-pressed={selected}
 						onClick={() => handleToggle(option.value)}
 						className={joinClasses(
-							'body-body-12-medium inline-flex min-w-0 items-center justify-center gap-1 border-0 px-4 py-2 text-cinemata-neutral-50 transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+							'body-body-12-medium inline-flex min-w-0 items-center cursor-pointer justify-center gap-1 border-0 px-4 py-2 text-cinemata-neutral-50 transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 first:rounded-l-(--radius-8) last:rounded-r-(--radius-8) only:rounded-(--radius-8)',
 							isFillLayout ? 'flex-1' : 'shrink-0',
 							selected ? 'bg-cinemata-sunset-horizon-500' : 'bg-cinemata-pacific-deep-800'
 						)}

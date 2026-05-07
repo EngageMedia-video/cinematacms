@@ -1,15 +1,42 @@
-import { Button } from '../../shared/components/Button';
-import '../../../static/css/tailwind.css';
-import { Icon } from '../../shared/components/Icon';
+import { MediaDropzone } from '../../shared/components/MediaDropzone';
+import { SegmentButton } from '../../shared/components/SegmentButton/SegmentButton';
+import { TabContent, TabView } from '../../shared/components/TabView/TabView';
 
 export function HomePage() {
 	return (
-		<div
-			data-modern-track
-			className="min-h-screen bg-linear-to-b from-cinemata-sandy-shore-50 via-cinemata-coral-reef-light-50 to-cinemata-white text-content-body"
-		>
-			<main className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 md:px-6 md:py-14">
-				<section className="overflow-hidden rounded-[32px] bg-cinemata-pacific-deep-700 text-cinemata-white shadow-[0_24px_80px_rgba(1,28,52,0.24)]">
+		<div data-modern-track className="min-h-screen text-content-body">
+			<main className="w-full p-6">
+				<TabView tabMode="wrap">
+					<TabContent title="Single Upload">
+						<div className="flex flex-col">
+							<MediaDropzone onFilesSelected={() => {}} />
+							<p className="body-body-18-medium">Test</p>
+							<SegmentButton
+								aria-label="Theme mode"
+								defaultValue="dark"
+								layout="wrap"
+								onValueChange={() => {}}
+								options={[
+									{
+										iconName: 'moon',
+										label: 'Dark',
+										value: 'dark',
+									},
+									{
+										iconName: 'sun',
+										label: 'Light',
+										value: 'light',
+									},
+								]}
+							/>
+						</div>
+					</TabContent>
+					<TabContent title="Bulk Upload">
+						<p>Test</p>
+						<p>Test</p>
+					</TabContent>
+				</TabView>
+				{/* <section className="overflow-hidden rounded-[32px] bg-cinemata-pacific-deep-700 text-cinemata-white shadow-[0_24px_80px_rgba(1,28,52,0.24)]">
 					<div className="grid gap-8 px-6 py-8 md:grid-cols-[minmax(0,1fr)_320px] md:px-10 md:py-10">
 						<div className="max-w-3xl">
 							<span className="caption-caption-10-semibold inline-flex rounded-full bg-cinemata-coral-reef-300 px-3 py-1 uppercase tracking-[0.18em] text-cinemata-pacific-deep-900">
@@ -64,9 +91,9 @@ export function HomePage() {
 							</div>
 						</div>
 					</div>
-				</section>
+				</section> */}
 
-				<section className="rounded-[32px] border border-cinemata-neutral-200 bg-cinemata-white p-6 shadow-[0_12px_40px_rgba(17,24,39,0.06)] md:p-8">
+				{/* <section className="rounded-[32px] border border-cinemata-neutral-200 bg-cinemata-white p-6 shadow-[0_12px_40px_rgba(17,24,39,0.06)] md:p-8">
 					<div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
 						<div>
 							<p className="caption-caption-10-semibold uppercase tracking-[0.18em] text-cinemata-strait-blue-500">
@@ -133,9 +160,9 @@ export function HomePage() {
 							</div>
 						</div>
 					</div>
-				</section>
+				</section> */}
 
-				<section className="grid gap-4 md:grid-cols-3">
+				{/* <section className="grid gap-4 md:grid-cols-3">
 					<div className="rounded-[28px] border border-cinemata-neutral-200 bg-cinemata-white p-6 shadow-[0_12px_40px_rgba(17,24,39,0.06)]">
 						<p className="caption-caption-10-semibold uppercase tracking-[0.18em] text-cinemata-pacific-deep-500">
 							Migration safe
@@ -170,7 +197,7 @@ export function HomePage() {
 							ready for incremental rollout across revamp pages.
 						</p>
 					</div>
-				</section>
+				</section> */}
 			</main>
 		</div>
 	);

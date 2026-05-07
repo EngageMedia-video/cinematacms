@@ -12,9 +12,13 @@ describe('SegmentButton', () => {
 	it('renders the segmented container with icon-and-label options', () => {
 		render(<SegmentButton options={OPTIONS} defaultValue="dark" aria-label="Theme mode" />);
 
+		const group = screen.getByRole('group', { name: 'Theme mode' });
 		const darkButton = screen.getByRole('button', { name: 'Dark' });
 		const lightButton = screen.getByRole('button', { name: 'Light' });
 
+		expect(group.className).toContain('rounded-radius-4');
+		expect(darkButton.className).toContain('first:rounded-l-(--radius-8)');
+		expect(lightButton.className).toContain('last:rounded-r-(--radius-8)');
 		expect(darkButton).toHaveAttribute('aria-pressed', 'true');
 		expect(lightButton).toHaveAttribute('aria-pressed', 'false');
 	});

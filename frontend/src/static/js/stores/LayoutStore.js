@@ -53,7 +53,11 @@ class LayoutStore extends EventEmitter {
 
 		this.state = {
 			enabledSidebar:
-				document.getElementById('app-sidebar') || document.querySelector('.page-sidebar') ? true : false,
+				document.getElementById('app-sidebar') ||
+				document.querySelector('.page-sidebar') ||
+				(document.body?.dataset.uiVariant === 'revamp' && document.getElementById('app-root'))
+					? true
+					: false,
 			visibleSidebar: this.cache.get('visible-sidebar'),
 			visibleMobileSearch: false,
 		};
