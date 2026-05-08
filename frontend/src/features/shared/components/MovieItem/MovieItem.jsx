@@ -5,13 +5,16 @@ function joinClasses(...classes) {
 	return classes.filter(Boolean).join(' ');
 }
 
-function MovieItemContainer({ children, className = '', link = '', title = '' }) {
+function MovieItemContainer({ children, contentClassName = '', shellClassName = '', link = '', title = '' }) {
 	if (link) {
 		return (
-			<article className={className}>
+			<article className={shellClassName}>
 				<a
 					href={link}
-					className="block h-full w-full cursor-pointer text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200"
+					className={joinClasses(
+						'h-full w-full cursor-pointer text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200',
+						contentClassName
+					)}
 					aria-label={title ? `Open ${title}` : 'Open movie details'}
 				>
 					{children}
@@ -20,7 +23,7 @@ function MovieItemContainer({ children, className = '', link = '', title = '' })
 		);
 	}
 
-	return <article className={className}>{children}</article>;
+	return <article className={joinClasses(shellClassName, contentClassName)}>{children}</article>;
 }
 
 function MovieMetadata({ items = [] }) {
@@ -120,7 +123,8 @@ export function HorizontalMovieItem({
 }) {
 	return (
 		<MovieItemContainer
-			className={joinClasses('flex w-full items-start gap-4', className)}
+			shellClassName={joinClasses('w-full', className)}
+			contentClassName="flex h-full w-full items-start gap-4"
 			link={link}
 			title={title}
 		>
@@ -156,7 +160,8 @@ export function VerticalMovieItem({
 }) {
 	return (
 		<MovieItemContainer
-			className={joinClasses('flex w-full min-w-0 flex-col gap-4', className)}
+			shellClassName={joinClasses('w-full min-w-0', className)}
+			contentClassName="flex h-full w-full min-w-0 flex-col gap-4"
 			link={link}
 			title={title}
 		>

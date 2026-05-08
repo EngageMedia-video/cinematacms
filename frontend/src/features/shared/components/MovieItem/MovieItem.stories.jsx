@@ -145,7 +145,8 @@ const meta = {
 		},
 		badgeColor: {
 			control: 'text',
-			description: 'Background color passed through to the shared badge component. Accepts hex, CSS vars, or token names like `pacific-deep-950`.',
+			description:
+				'Background color passed through to the shared badge component. Accepts hex, CSS vars, or token names like `pacific-deep-950`.',
 		},
 		duration: {
 			control: 'text',
