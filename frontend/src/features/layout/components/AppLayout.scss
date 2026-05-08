@@ -76,9 +76,9 @@ body.dark_theme .app-layout {
 	}
 
 	.app-layout__ripple-image {
-		top: calc(-1 * var(--header-height) + 100rem);
+		top: 0;
 		right: -2em;
-		width: 30em;
-		height: 30em;
+		width: 20em;
+		height: 20em;
 	}
 }
