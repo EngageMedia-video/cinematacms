@@ -125,9 +125,66 @@ VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 logger = logging.getLogger(__name__)
 
 
+def _get_home_initial_data(request):
+    """
+    Fetch featured and recommended payloads for SSR hydration.
+
+    Uses the same cache keys as MediaList so no additional DB hits when warm.
+    Returns (featured_list, recommended_list) as serialized data ready for json_script.
+    """
+    HOME_INITIAL_LIMIT = 20
+    user_id = request.user.id if request.user.is_authenticated else None
+
+    # --- Featured ---
+    featured_cache_key = get_media_list_cache_key(show="featured", page=1, user_id=user_id)
+    cached_featured = get_cached_result(featured_cache_key)
+    if cached_featured is not None:
+        # Cached result is the full paginated response dict; extract results list.
+        home_initial_featured = (cached_featured.get("results") or [])[:HOME_INITIAL_LIMIT]
+    else:
+        scheduled_featured = get_current_featured_media()
+        basic_query = Q(state="public", encoding_status="success", is_reviewed=True)
+        now = timezone.now()
+        has_future_schedule = FeaturedVideo.objects.filter(media=OuterRef("pk"), is_active=True, start_date__gt=now)
+        if scheduled_featured:
+            other_ids = list(
+                Media.objects.filter(basic_query, featured=True)
+                .exclude(pk=scheduled_featured.pk)
+                .exclude(Exists(has_future_schedule))
+                .order_by(F("featured_date").desc(nulls_last=True), "-add_date")
+                .values_list("pk", flat=True)[:HOME_INITIAL_LIMIT]
+            )
+            all_ids = [scheduled_featured.pk] + other_ids
+            preserved = Case(
+                *[When(pk=pk, then=Value(pos)) for pos, pk in enumerate(all_ids)],
+                output_field=models.IntegerField(),
+            )
+            qs = Media.objects.filter(pk__in=all_ids).order_by(preserved)
+        else:
+            qs = (
+                Media.objects.filter(basic_query, featured=True)
+                .exclude(Exists(has_future_schedule))
+                .order_by(F("featured_date").desc(nulls_last=True), "-add_date")[:HOME_INITIAL_LIMIT]
+            )
+        qs = qs.select_related("user").prefetch_related("category", "topics")
+        home_initial_featured = MediaSerializer(qs, many=True, context={"request": request}).data
+
+    # --- Recommended ---
+    recommended_media = show_recommended_media(request, limit=HOME_INITIAL_LIMIT)
+    home_initial_recommended = MediaSerializer(
+        list(recommended_media)[:HOME_INITIAL_LIMIT], many=True, context={"request": request}
+    ).data
+
+    return home_initial_featured, home_initial_recommended
+
+
 def index(request):
-    context = {}
     template = resolve_template(request, "home")
+    context = {}
+    if getattr(request, "ui_variant", None) == "revamp":
+        featured, recommended = _get_home_initial_data(request)
+        context["home_initial_featured"] = list(featured)
+        context["home_initial_recommended"] = list(recommended)
     return render(request, template, context)
 
 
