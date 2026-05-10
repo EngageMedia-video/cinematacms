@@ -66,7 +66,7 @@ export function SegmentButton({
 			aria-label={ariaLabel}
 			className={joinClasses(
 				isFillLayout ? 'flex w-full max-w-full' : 'inline-flex max-w-full',
-				'overflow-hidden rounded-radius-4',
+				'overflow-hidden rounded-ds-4',
 				className
 			)}
 			data-segment-button
