@@ -5,7 +5,7 @@ import { PageSidebar } from './components/-NEW-/PageSidebar';
 import { AppLayout } from '../../features/layout';
 
 function shouldUseModernShell() {
-	return document.body?.dataset.uiVariant === 'revamp' && null !== document.getElementById('app-root');
+	return document.body?.dataset.uiVariant === 'revamp' && document.getElementById('app-root') !== null;
 }
 
 export function renderPage(idSelector, PageComponent) {
