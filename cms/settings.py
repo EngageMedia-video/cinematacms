@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "django_recaptcha",
     "corsheaders",
     "maintenance_mode",
+    "waffle",
 ]
 
 MIDDLEWARE = [
@@ -90,6 +91,7 @@ MIDDLEWARE = [
     "users.middleware.AdminMFAMiddleware",
     "cms.middleware.MaintenanceTimingMiddleware",  # Track maintenance mode timing
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
+    "waffle.middleware.WaffleMiddleware",
 ]
 
 ROOT_URLCONF = "cms.urls"
@@ -592,7 +594,8 @@ TINYMCE_DEFAULT_CONFIG = {
 }
 
 # settings that are related with UX/appearance
-# whether a featured item appears enlarged with player on index page
+# DEPRECATED: Migrated to waffle switch "video_player_featured_video_on_index_page".
+# This setting is no longer read. Remove after confirming waffle switch works in production.
 VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
 
 # Video UI/UX settings
@@ -602,6 +605,9 @@ USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
 UI_VARIANT_DEFAULT = "revamp"
 UI_VARIANT_ALLOWED = ["legacy", "revamp"]
 UI_VARIANT_REVAMP_PAGES = []  # Add page keys here as they are migrated, e.g. ["home"]
+
+# django-waffle feature flag settings
+WAFFLE_CREATE_MISSING_SWITCHES = True
 
 # allow option to override the default admin url
 DJANGO_ADMIN_URL = "admin/"

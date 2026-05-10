@@ -378,7 +378,8 @@ CKEDITOR_CONFIGS = {
 }
 
 # settings that are related with UX/appearance
-# whether a featured item appears enlarged with player on index page
+# DEPRECATED: Migrated to waffle switch "video_player_featured_video_on_index_page".
+# This setting is no longer read. Remove after confirming waffle switch works in production.
 VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
 
 CELERY_BEAT_SCHEDULE = {}
