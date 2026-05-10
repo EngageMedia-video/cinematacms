@@ -1,10 +1,7 @@
-import React, { useRef } from 'react';
-
 import { usePopup } from '../hooks/usePopup';
 
 import { HeaderConsumer } from '../../../contexts/HeaderContext';
 import { UserConsumer } from '../../../contexts/UserContext';
-import { ThemeConsumer } from '../../../contexts/ThemeContext';
 import { LinksConsumer } from '../../../contexts/LinksContext';
 
 import PageStore from '../../../pages/_PageStore.js';
@@ -22,7 +19,6 @@ import { NavigationMenuList } from '../NavigationMenuList';
 import { NavigationContentApp } from '../NavigationContentApp';
 import { CircleIconButton } from '../CircleIconButton';
 import { NotificationBell } from '../../../../../features/notifications';
-import { Button } from '../../../../../features/shared/components/Button/Button.jsx';
 
 function headerPopupPages(user, popupNavItems, hasHeaderThemeSwitcher) {
 	const pages = {
