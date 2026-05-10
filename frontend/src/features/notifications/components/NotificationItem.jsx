@@ -1,7 +1,6 @@
 import React from 'react';
 import { format } from 'timeago.js';
 import { useMarkAsRead } from '../hooks/useMarkAsRead';
-import '../../../static/css/tailwind.css';
 
 function renderMessage(notification) {
 	const actorName = notification.actor?.username;

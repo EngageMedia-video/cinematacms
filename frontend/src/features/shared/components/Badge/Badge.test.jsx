@@ -23,4 +23,12 @@ describe('Badge', () => {
 		expect(badge).toHaveTextContent('Now Showing');
 		expect(badge).toHaveStyle({ letterSpacing: '0.12em' });
 	});
+
+	it('resolves design token names into CSS variables', () => {
+		render(<Badge color="pacific-deep-950">Featured</Badge>);
+
+		const badge = screen.getByText('Featured');
+
+		expect(badge.style.backgroundColor).toBe('var(--cinemata-pacific-deep-950)');
+	});
 });

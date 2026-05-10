@@ -105,6 +105,7 @@ export default defineConfig({
 			external: ['video.js'],
 			input: {
 				base: 'src/entries/base.js',
+				tailwinds: 'src/static/css/tailwind.css',
 				index: 'src/entries/index.js',
 				search: 'src/entries/search.js',
 				latest: 'src/entries/latest.js',

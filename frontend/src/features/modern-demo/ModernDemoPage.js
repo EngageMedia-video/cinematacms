@@ -7,8 +7,6 @@ import ApiUrlContext from '../../static/js/contexts/ApiUrlContext';
 import SiteContext from '../../static/js/contexts/SiteContext';
 import useDemoStore from './useDemoStore';
 
-import '../../static/css/tailwind.css';
-
 // ─── Token Reference Data ────────────────────────────────────────────────────
 // Each entry: [tailwindToken, cssVariable, purpose]
 // Tailwind class = <utility>-<tailwindToken>, e.g. bg-brand-primary, text-content-body

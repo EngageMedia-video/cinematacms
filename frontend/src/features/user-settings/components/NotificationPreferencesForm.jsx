@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
 import { useUpdateNotificationPreferences } from '../hooks/useUpdateNotificationPreferences';
-import '../../../static/css/tailwind.css';
 
 // Status drives the row's control slot: `active` shows an editable dropdown,
 // `coming_soon` shows a read-only badge, `always_on` shows a static label.

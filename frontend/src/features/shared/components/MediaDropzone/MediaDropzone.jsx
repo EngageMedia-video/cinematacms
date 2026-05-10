@@ -118,11 +118,20 @@ export function MediaDropzone({
 				}}
 			/>
 
-			<div
-				aria-hidden="true"
-				data-dropzone-border
-				className="pointer-events-none absolute inset-0 rounded-[16px] border-2 border-dashed border-cinemata-strait-blue-300"
-			/>
+			<svg aria-hidden="true" data-dropzone-border className="pointer-events-none absolute inset-0 h-full w-full">
+				<rect
+					x="0.5"
+					y="0.5"
+					width="calc(100% - 1px)"
+					height="calc(100% - 1px)"
+					rx="16"
+					ry="16"
+					fill="none"
+					className="stroke-cinemata-strait-blue-300"
+					strokeWidth="1"
+					strokeDasharray="8 8"
+				/>
+			</svg>
 
 			<div className="relative z-10 flex flex-col items-center gap-4 text-center">
 				{iconName ? (

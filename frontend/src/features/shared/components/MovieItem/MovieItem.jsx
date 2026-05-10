@@ -5,6 +5,27 @@ function joinClasses(...classes) {
 	return classes.filter(Boolean).join(' ');
 }
 
+function MovieItemContainer({ children, contentClassName = '', shellClassName = '', link = '', title = '' }) {
+	if (link) {
+		return (
+			<article className={shellClassName}>
+				<a
+					href={link}
+					className={joinClasses(
+						'h-full w-full cursor-pointer text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200',
+						contentClassName
+					)}
+					aria-label={title ? `Open ${title}` : 'Open movie details'}
+				>
+					{children}
+				</a>
+			</article>
+		);
+	}
+
+	return <article className={joinClasses(shellClassName, contentClassName)}>{children}</article>;
+}
+
 function MovieMetadata({ items = [] }) {
 	const validItems = items.filter(Boolean);
 
@@ -95,12 +116,18 @@ export function HorizontalMovieItem({
 	duration = '',
 	imageAlt = 'Movie artwork',
 	imageSrc,
+	link = '',
 	metadata = [],
 	subtitle = '',
 	title = 'Movie Title',
 }) {
 	return (
-		<article className={joinClasses('flex w-full items-start gap-4', className)}>
+		<MovieItemContainer
+			shellClassName={joinClasses('w-full', className)}
+			contentClassName="flex h-full w-full items-start gap-4"
+			link={link}
+			title={title}
+		>
 			<MoviePoster
 				imageAlt={imageAlt}
 				imageSrc={imageSrc}
@@ -113,7 +140,7 @@ export function HorizontalMovieItem({
 			<div className="flex min-w-0 flex-1 flex-col gap-3">
 				<MovieCopy title={title} subtitle={subtitle} metadata={metadata} orientation="horizontal" />
 			</div>
-		</article>
+		</MovieItemContainer>
 	);
 }
 
@@ -126,12 +153,18 @@ export function VerticalMovieItem({
 	iconName = '',
 	imageAlt = 'Movie artwork',
 	imageSrc,
+	link = '',
 	metadata = [],
 	subtitle = '',
 	title = 'Movie Title',
 }) {
 	return (
-		<article className={joinClasses('flex w-full min-w-0 flex-col gap-3', className)}>
+		<MovieItemContainer
+			shellClassName={joinClasses('w-full min-w-0', className)}
+			contentClassName="flex h-full w-full min-w-0 flex-col gap-4"
+			link={link}
+			title={title}
+		>
 			<MoviePoster
 				imageAlt={imageAlt}
 				imageSrc={imageSrc}
@@ -145,7 +178,7 @@ export function VerticalMovieItem({
 			/>
 
 			<MovieCopy title={title} subtitle={subtitle} metadata={metadata} orientation="vertical" />
-		</article>
+		</MovieItemContainer>
 	);
 }
 

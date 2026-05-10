@@ -65,6 +65,7 @@ make frontend-clean && make frontend-build
 **File**: `frontend/vite.config.js`
 
 Vite is configured with:
+
 - **27 entry points** — one per Django template/page type
 - **JSX-in-.js plugin** — handles legacy `.js` files containing JSX
 - **SVGR support** — imports `*.svg?react` as React components for the modern icon pipeline
@@ -116,11 +117,27 @@ src/entries/
 Each entry imports the page component and calls `renderPage()`:
 
 ```javascript
-import { renderPage } from '../static/js/_helpers';
-import HomePage from '../static/js/pages/HomePage';
+import { renderPage } from "../static/js/_helpers";
+import HomePage from "../static/js/pages/HomePage";
 
-renderPage('page-home', HomePage);
+renderPage("page-home", HomePage);
 ```
+
+### Revamp-Gated Shell Path
+
+Legacy pages still use `templates/base.html`, which keeps Django-owned header/sidebar slots and lets `renderPage()` mount into `#app-header`, `#app-sidebar`, and the page-specific `#page-*` node.
+
+Revamp-gated pages can use `templates/base_modern.html` instead. That template exposes a single `#app-root`, and `renderPage()` detects `data-ui-variant="revamp"` before mounting the React-owned app shell from `frontend/src/features/layout/`.
+
+Current rollout contract:
+
+- `templates/cms/index.html` stays on the legacy shell
+- `templates/cms/index_revamp.html` uses `base_modern.html`
+- the helper only activates the modern shell when both conditions are true:
+  - `<body data-ui-variant="revamp">`
+  - `#app-root` exists in the template
+
+This keeps the migration reversible and prevents legacy pages from accidentally booting into the new shell.
 
 ### Django Integration (django-vite)
 
@@ -138,6 +155,7 @@ Django templates use `django-vite` template tags to load Vite assets:
 ```
 
 `{% vite_asset %}` automatically:
+
 - Injects the JS `<script type="module">` tag
 - Injects all CSS `<link>` tags from the chunk dependency graph
 - Adds `<link rel="modulepreload">` for JS dependencies
@@ -238,12 +256,12 @@ cinematacms/
 
 ## Makefile Commands
 
-| Command | Description |
-|---------|-------------|
+| Command               | Description                                    |
+| --------------------- | ---------------------------------------------- |
 | `make frontend-build` | Build all frontend packages and collect static |
-| `make frontend-dev` | Start Vite development server (HMR) |
-| `make frontend-clean` | Clean all build directories |
-| `make quick-build` | Build main app only (skips packages) |
+| `make frontend-dev`   | Start Vite development server (HMR)            |
+| `make frontend-clean` | Clean all build directories                    |
+| `make quick-build`    | Build main app only (skips packages)           |
 
 ## Configuration
 
@@ -283,6 +301,7 @@ DJANGO_VITE = {
 ### Dev Mode
 
 Set `VITE_DEV_MODE=True` in your environment to enable HMR:
+
 - Django serves pages on port 8000
 - `{% vite_hmr_client %}` injects a script that connects to Vite on port 5173
 - Asset changes reflect instantly without page reload

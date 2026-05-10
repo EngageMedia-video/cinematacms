@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_modern.html" %}
 {% load static %}
 {% load django_vite %}
 
@@ -26,6 +26,4 @@
 
 {% endblock headermeta %}
 
-{% block topimports %}{% vite_asset 'src/entries/index-revamp.js' %}{% endblock topimports %}
-
-{% block content %}<div id="page-home"></div>{% endblock %}
+{% block modernpageimports %}{% vite_asset 'src/entries/index-revamp.js' %}{% endblock modernpageimports %}

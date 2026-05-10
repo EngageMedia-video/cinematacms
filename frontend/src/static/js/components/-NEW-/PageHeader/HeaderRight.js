@@ -1,10 +1,7 @@
-import React, { useRef } from 'react';
-
 import { usePopup } from '../hooks/usePopup';
 
 import { HeaderConsumer } from '../../../contexts/HeaderContext';
 import { UserConsumer } from '../../../contexts/UserContext';
-import { ThemeConsumer } from '../../../contexts/ThemeContext';
 import { LinksConsumer } from '../../../contexts/LinksContext';
 
 import PageStore from '../../../pages/_PageStore.js';
