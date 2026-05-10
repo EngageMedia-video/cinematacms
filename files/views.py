@@ -139,7 +139,7 @@ def _get_home_initial_data(request):
     featured_cache_key = get_media_list_cache_key(show="featured", page=1, user_id=user_id)
     cached_featured = get_cached_result(featured_cache_key)
     if cached_featured is not None:
-        # Cached result is the full paginated response dict; extract results list.
+        # Same cache key as MediaList; that response is a paginated envelope, so extract the results list.
         home_initial_featured = (cached_featured.get("results") or [])[:HOME_INITIAL_LIMIT]
     else:
         scheduled_featured = get_current_featured_media()
@@ -171,9 +171,7 @@ def _get_home_initial_data(request):
 
     # --- Recommended ---
     recommended_media = show_recommended_media(request, limit=HOME_INITIAL_LIMIT)
-    home_initial_recommended = MediaSerializer(
-        list(recommended_media)[:HOME_INITIAL_LIMIT], many=True, context={"request": request}
-    ).data
+    home_initial_recommended = MediaSerializer(list(recommended_media), many=True, context={"request": request}).data
 
     return home_initial_featured, home_initial_recommended
 

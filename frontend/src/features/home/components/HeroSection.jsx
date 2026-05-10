@@ -1,6 +1,7 @@
 import { createContext, use, lazy, Suspense } from 'react';
 import { preload } from 'react-dom';
 import { useFeaturedMedia } from '../hooks/useFeaturedMedia';
+import { normalizeMediaList } from '../utils/mediaList';
 import { ExpandableText } from './ExpandableText';
 
 const HeroVideoPlayer = lazy(() => import('./HeroVideoPlayer'));
@@ -87,7 +88,7 @@ function Card() {
 export function HeroSection({ children }) {
 	const { data, isLoading } = useFeaturedMedia();
 
-	const items = data?.results ?? (Array.isArray(data) ? data : []);
+	const items = normalizeMediaList(data);
 	const media = items[0] ?? null;
 
 	if (!isLoading && !media) {

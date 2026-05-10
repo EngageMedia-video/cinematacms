@@ -4,6 +4,7 @@ import { HeroSection } from './HeroSection';
 import { SectionRow } from './SectionRow';
 import { useRecommendedMedia } from '../hooks/useRecommendedMedia';
 import { useCategoryMedia } from '../hooks/useCategoryMedia';
+import { normalizeMediaList } from '../utils/mediaList';
 
 // Provisional category list — declared at module scope, never inside the render function.
 // These categories display as empty rows today (useCategoryMedia returns []).
@@ -16,7 +17,7 @@ const PROVISIONAL_CATEGORIES = [
 
 function FeaturedByCuratorsRow() {
 	const { data, isLoading, isError } = useRecommendedMedia();
-	const items = data?.results ?? (Array.isArray(data) ? data : []);
+	const items = normalizeMediaList(data);
 
 	return (
 		<SectionRow items={items} isLoading={isLoading} isError={isError}>
@@ -29,7 +30,7 @@ function FeaturedByCuratorsRow() {
 
 function CategorySectionRow({ category }) {
 	const { data, isLoading, isError } = useCategoryMedia(category.id);
-	const items = Array.isArray(data) ? data : (data?.results ?? []);
+	const items = normalizeMediaList(data);
 
 	return (
 		<SectionRow items={items} isLoading={isLoading} isError={isError}>

@@ -14,7 +14,6 @@ function SectionRowHeader({ badgeLabel, badgeColor = '#026690', viewAllHref }) {
 			{viewAllHref ? (
 				<a
 					href={viewAllHref}
-					rel="noopener noreferrer"
 					className="caption-caption-10-regular text-cinemata-strait-blue-200 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200 uppercase tracking-wide"
 				>
 					VIEW ALL

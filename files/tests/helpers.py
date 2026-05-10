@@ -1,7 +1,7 @@
 """Shared test helpers for the files app."""
 
 import uuid
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 
@@ -40,3 +40,13 @@ def create_test_media(user, **kwargs):
     Media.objects.filter(pk=media.pk).update(state=state)
     media.refresh_from_db()
     return media
+
+
+def make_vite_loader_mock():
+    """Return a mock DjangoViteAssetLoader that emits no-op asset tags."""
+    mock_instance = MagicMock()
+    mock_instance.generate_vite_asset.return_value = ""
+    mock_instance.generate_vite_asset_url.return_value = "/static/fake.js"
+    mock_instance.generate_vite_legacy_polyfills.return_value = ""
+    mock_instance.generate_vite_react_hmr.return_value = ""
+    return mock_instance

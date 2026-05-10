@@ -1,4 +1,5 @@
-import { createContext, use, useState, useCallback, Children } from 'react';
+import { createContext, use, useState, useCallback } from 'react';
+import { formatDuration } from '../../shared/utils/formatDuration';
 import { VerticalMovieItem } from '../../shared/components/MovieItem/MovieItem';
 
 const CarouselContext = createContext(null);
@@ -140,17 +141,6 @@ export function Carousel({
 	const value = { items, visibleCount, pageCount, currentPage: safePage, goPrev, goNext, goToPage, atStart, atEnd };
 
 	return <CarouselContext value={value}>{children ?? <DefaultCarouselBody />}</CarouselContext>;
-}
-
-function formatDuration(seconds) {
-	if (!seconds) return '';
-	const h = Math.floor(seconds / 3600);
-	const m = Math.floor((seconds % 3600) / 60);
-	const s = seconds % 60;
-	if (h > 0) {
-		return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-	}
-	return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 Carousel.Track = CarouselTrack;

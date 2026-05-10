@@ -7,21 +7,12 @@ introduces raw script interpolation must cause these tests to fail.
 """
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 
 from files.models import Media
-from files.tests.helpers import create_test_media, create_test_user
-
-
-def _make_vite_loader_mock():
-    mock_instance = MagicMock()
-    mock_instance.generate_vite_asset.return_value = ""
-    mock_instance.generate_vite_asset_url.return_value = "/static/fake.js"
-    mock_instance.generate_vite_legacy_polyfills.return_value = ""
-    mock_instance.generate_vite_react_hmr.return_value = ""
-    return mock_instance
+from files.tests.helpers import create_test_media, create_test_user, make_vite_loader_mock
 
 
 @override_settings(
@@ -40,7 +31,7 @@ class IndexRevampSecurityTest(TestCase):
         super().setUp()
         self._vite_patcher = patch(
             "django_vite.core.asset_loader.DjangoViteAssetLoader.instance",
-            return_value=_make_vite_loader_mock(),
+            return_value=make_vite_loader_mock(),
         )
         self._vite_patcher.start()
 
@@ -104,8 +95,8 @@ class IndexRevampSecurityTest(TestCase):
         finally:
             media.delete()
 
-    def test_authenticated_user_does_not_see_non_public_media(self):
-        """Private/non-reviewed media must not appear in the injected payload."""
+    def test_private_media_not_in_featured_payload(self):
+        """Private media must not appear in the injected featured payload."""
         private_media = create_test_media(self.user, state="private")
         private_media.refresh_from_db()
         try:

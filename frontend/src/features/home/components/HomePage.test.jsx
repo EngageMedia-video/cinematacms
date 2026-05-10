@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import homeQueryClient from '../queryClient';
+import homeQueryClient, { HOME_QUERY_KEYS } from '../queryClient';
 import { HomePage } from './HomePage';
 
 // Mock the lazy-loaded video player to prevent videojs import in tests
@@ -56,13 +56,13 @@ describe('HomePage', () => {
 	});
 
 	it('renders HeroSection synchronously from seeded cache data', () => {
-		homeQueryClient.setQueryData(['home', 'featured'], [FEATURED_MEDIA]);
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_MEDIA]);
 		render(<HomePage />);
 		expect(screen.getByRole('heading', { level: 2, name: 'Featured Film' })).toBeInTheDocument();
 	});
 
 	it('FeaturedByCuratorsRow renders when recommended data is seeded', async () => {
-		homeQueryClient.setQueryData(['home', 'recommended'], [RECOMMENDED_MEDIA]);
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, [RECOMMENDED_MEDIA]);
 		render(<HomePage />);
 		expect(await screen.findByText('Recommended Film')).toBeInTheDocument();
 		expect(screen.getByText('FEATURED BY CURATORS')).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe('HomePage', () => {
 	});
 
 	it('uses h2 for section headings (under the h1)', () => {
-		homeQueryClient.setQueryData(['home', 'featured'], [FEATURED_MEDIA]);
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_MEDIA]);
 		render(<HomePage />);
 		const h1 = screen.getByRole('heading', { level: 1 });
 		const h2 = screen.getByRole('heading', { level: 2 });

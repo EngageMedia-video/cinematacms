@@ -7,21 +7,11 @@ JSON shape and XSS-safe escaping.
 """
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 
-from files.tests.helpers import create_test_media, create_test_user
-
-
-def _make_vite_loader_mock():
-    """Return a mock DjangoViteAssetLoader that returns no-op asset tags."""
-    mock_instance = MagicMock()
-    mock_instance.generate_vite_asset.return_value = ""
-    mock_instance.generate_vite_asset_url.return_value = "/static/fake.js"
-    mock_instance.generate_vite_legacy_polyfills.return_value = ""
-    mock_instance.generate_vite_react_hmr.return_value = ""
-    return mock_instance
+from files.tests.helpers import create_test_media, create_test_user, make_vite_loader_mock
 
 
 @override_settings(
@@ -41,7 +31,7 @@ class IndexRevampInitialDataTest(TestCase):
         super().setUp()
         self._vite_patcher = patch(
             "django_vite.core.asset_loader.DjangoViteAssetLoader.instance",
-            return_value=_make_vite_loader_mock(),
+            return_value=make_vite_loader_mock(),
         )
         self._vite_patcher.start()
 

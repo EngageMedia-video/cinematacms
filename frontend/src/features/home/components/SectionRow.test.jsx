@@ -70,14 +70,13 @@ describe('SectionRow', () => {
 		expect(screen.queryByText('READ MORE')).toBeNull();
 	});
 
-	it('VIEW ALL link carries rel="noopener noreferrer"', () => {
+	it('VIEW ALL link points to the correct href', () => {
 		render(
 			<SectionRow items={ITEMS}>
 				<SectionRow.Header badgeLabel="FILM" viewAllHref="/search?c=Film" />
 			</SectionRow>
 		);
 		const link = screen.getByRole('link', { name: 'VIEW ALL' });
-		expect(link).toHaveAttribute('rel', 'noopener noreferrer');
 		expect(link).toHaveAttribute('href', '/search?c=Film');
 	});
 });

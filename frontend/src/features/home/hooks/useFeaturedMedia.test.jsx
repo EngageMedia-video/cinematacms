@@ -1,6 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { HOME_QUERY_KEYS } from '../queryClient';
 import { useFeaturedMedia } from './useFeaturedMedia';
 import { useCategoryMedia } from './useCategoryMedia';
 import { readInitialDataFromDom } from '../initialData';
@@ -68,7 +69,7 @@ describe('useFeaturedMedia', () => {
 
 	it('returns seeded data without firing a network request when cache is pre-populated', async () => {
 		const seeded = [{ id: 99, title: 'Seeded' }];
-		client.setQueryData(['home', 'featured'], seeded);
+		client.setQueryData(HOME_QUERY_KEYS.featured, seeded);
 
 		const fetchSpy = vi.spyOn(globalThis, 'fetch');
 		const { result } = renderHook(() => useFeaturedMedia(), { wrapper: makeWrapper(client) });

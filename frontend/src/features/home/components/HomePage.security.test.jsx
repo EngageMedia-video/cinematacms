@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import homeQueryClient from '../queryClient';
+import homeQueryClient, { HOME_QUERY_KEYS } from '../queryClient';
 import { HomePage } from './HomePage';
 
 vi.mock('./HeroVideoPlayer', () => ({
@@ -24,7 +24,7 @@ const FEATURED_WITH_XSS = {
 
 beforeEach(() => {
 	homeQueryClient.clear();
-	homeQueryClient.setQueryData(['home', 'featured'], [FEATURED_WITH_XSS]);
+	homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_WITH_XSS]);
 });
 
 afterEach(() => {
@@ -61,13 +61,13 @@ describe('HomePage security — plain-text description rendering', () => {
 
 describe('HomePage accessibility baseline', () => {
 	it('has exactly one h1 element', () => {
-		homeQueryClient.setQueryData(['home', 'featured'], [FEATURED_WITH_XSS]);
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_WITH_XSS]);
 		render(<HomePage />);
 		expect(document.querySelectorAll('h1')).toHaveLength(1);
 	});
 
 	it('hero title renders as h2 (under the page h1)', () => {
-		homeQueryClient.setQueryData(['home', 'featured'], [FEATURED_WITH_XSS]);
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_WITH_XSS]);
 		render(<HomePage />);
 		expect(screen.getByRole('heading', { level: 2 })).toBeInTheDocument();
 	});
