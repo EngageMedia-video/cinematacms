@@ -174,7 +174,7 @@ export function VerticalMovieItem({
 				iconName={iconName}
 				iconLabel={iconLabel}
 				showTopRightIcon
-				className="aspect-video w-full mb-4"
+				className="aspect-video w-full"
 			/>
 
 			<MovieCopy title={title} subtitle={subtitle} metadata={metadata} orientation="vertical" />
