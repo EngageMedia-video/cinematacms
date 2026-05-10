@@ -72,6 +72,7 @@ from .methods import (
 from .models import (
     Category,
     Comment,
+    ContentSensitivity,
     EncodeProfile,
     Encoding,
     FeaturedVideo,
@@ -105,6 +106,7 @@ from .secure_media_views import check_media_access_permission
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
+    ContentSensitivitySerializer,
     EncodeProfileSerializer,
     HeroPlaybackSerializer,
     HomepagePopupSerializer,
@@ -1275,6 +1277,7 @@ class MediaDetail(APIView):
                     "category",
                     "topics",
                     "tags",
+                    "content_sensitivity",
                     "subtitles__language",
                     "encodings__profile",
                 )
@@ -2325,6 +2328,13 @@ class TopicList(APIView):
         serializer = TopicSerializer(topics, many=True, context={"request": request})
         ret = serializer.data
         return Response(ret)
+
+
+class ContentSensitivityList(APIView):
+    def get(self, request, format=None):
+        sensitivities = ContentSensitivity.objects.all().order_by("title")
+        serializer = ContentSensitivitySerializer(sensitivities, many=True, context={"request": request})
+        return Response(serializer.data)
 
 
 class MediaLanguageList(APIView):

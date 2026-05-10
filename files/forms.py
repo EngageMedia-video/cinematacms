@@ -61,6 +61,7 @@ class MediaForm(forms.ModelForm):
             "media_country",
             "category",
             "topics",
+            "content_sensitivity",
             "new_tags",
             "custom_license",
             "no_license",
@@ -76,6 +77,7 @@ class MediaForm(forms.ModelForm):
 
         widgets = {
             "tags": MultipleSelect(),
+            "content_sensitivity": forms.CheckboxSelectMultiple(),
         }
 
     def __init__(self, user, *args, **kwargs):
@@ -116,6 +118,9 @@ class MediaForm(forms.ModelForm):
         self.fields["category"].help_text = "Hold the Shift or Command key to select multiple categories."
         self.fields["topics"].help_text = "Hold the Shift or Command key to select multiple topics."
         self.fields["topics"].label = "Topic"
+        self.fields["content_sensitivity"].help_text = "Select all that apply."
+        self.fields["content_sensitivity"].label = "Content Sensitivity"
+        self.fields["content_sensitivity"].required = False
 
         self.fields["media_country"].label = "Media Country"
 
