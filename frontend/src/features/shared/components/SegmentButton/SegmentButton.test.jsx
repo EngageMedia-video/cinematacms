@@ -16,7 +16,7 @@ describe('SegmentButton', () => {
 		const darkButton = screen.getByRole('button', { name: 'Dark' });
 		const lightButton = screen.getByRole('button', { name: 'Light' });
 
-		expect(group.className).toContain('rounded-radius-4');
+		expect(group.className).toContain('rounded-ds-4');
 		expect(darkButton.className).toContain('first:rounded-l-(--radius-8)');
 		expect(lightButton.className).toContain('last:rounded-r-(--radius-8)');
 		expect(darkButton).toHaveAttribute('aria-pressed', 'true');
