@@ -10,9 +10,15 @@ import { normalizeMediaList } from '../utils/mediaList';
 // These categories display as empty rows today (useCategoryMedia returns []).
 // The deferred category-source work replaces useCategoryMedia bodies without touching this list.
 const PROVISIONAL_CATEGORIES = [
-	{ id: 'gender-sexuality', label: 'GENDER & SEXUALITY', color: '#A855F7', viewAllHref: '/search?c=Gender' },
-	{ id: 'film', label: 'FILM', color: '#3B82F6', viewAllHref: '/search?c=Film' },
-	{ id: 'webinar', label: 'WEBINAR', color: '#10B981', viewAllHref: '/search?c=Webinar' },
+	{
+		id: 'gender-sexuality',
+		label: 'GENDER & SEXUALITY',
+		color: '#A855F7',
+		viewAllHref: '/search?c=Gender',
+		searchTerm: 'Gender',
+	},
+	{ id: 'film', label: 'FILM', color: '#3B82F6', viewAllHref: '/search?c=Film', searchTerm: 'Film' },
+	{ id: 'webinar', label: 'WEBINAR', color: '#10B981', viewAllHref: '/search?c=Webinar', searchTerm: 'Webinar' },
 ];
 
 function FeaturedByCuratorsRow() {
@@ -29,7 +35,7 @@ function FeaturedByCuratorsRow() {
 }
 
 function CategorySectionRow({ category }) {
-	const { data, isLoading, isError } = useCategoryMedia(category.id);
+	const { data, isLoading, isError } = useCategoryMedia(category.searchTerm);
 	const items = normalizeMediaList(data);
 
 	return (

@@ -170,8 +170,16 @@ def _get_home_initial_data(request):
         home_initial_featured = MediaSerializer(qs, many=True, context={"request": request}).data
 
     # --- Recommended ---
-    recommended_media = show_recommended_media(request, limit=HOME_INITIAL_LIMIT)
-    home_initial_recommended = MediaSerializer(list(recommended_media), many=True, context={"request": request}).data
+    recommended_cache_key = get_media_list_cache_key(show="recommended_home", page=1, user_id=user_id)
+    cached_recommended = get_cached_result(recommended_cache_key)
+    if cached_recommended is not None:
+        home_initial_recommended = cached_recommended
+    else:
+        recommended_media = show_recommended_media(request, limit=HOME_INITIAL_LIMIT)
+        home_initial_recommended = list(
+            MediaSerializer(list(recommended_media), many=True, context={"request": request}).data
+        )
+        set_cached_result(recommended_cache_key, home_initial_recommended, MEDIA_LIST_TIMEOUT)
 
     return home_initial_featured, home_initial_recommended
 

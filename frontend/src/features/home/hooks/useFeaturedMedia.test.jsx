@@ -103,11 +103,49 @@ describe('useFeaturedMedia', () => {
 // ── useCategoryMedia ────────────────────────────────────────────────────────
 
 describe('useCategoryMedia', () => {
-	it('returns { data: [], isLoading: false, isError: false } synchronously with no network call', () => {
-		const fetchSpy = vi.spyOn(globalThis, 'fetch');
-		const result = useCategoryMedia('any-id');
+	let client;
 
-		expect(result).toEqual({ data: [], isLoading: false, isError: false });
+	beforeEach(() => {
+		client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 120_000 } } });
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+		client.clear();
+	});
+
+	it('fetches /api/v1/search?c=<searchTerm> and returns the envelope', async () => {
+		const payload = { count: 1, results: [{ id: 1, title: 'Gender Film' }] };
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => payload });
+
+		const { result } = renderHook(() => useCategoryMedia('Gender'), { wrapper: makeWrapper(client) });
+
+		await waitFor(() => expect(result.current.isSuccess).toBe(true));
+		expect(result.current.data).toEqual(payload);
+		expect(globalThis.fetch).toHaveBeenCalledWith('/api/v1/search?c=Gender');
+	});
+
+	it('encodes special characters in the search term', async () => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => ({ results: [] }) });
+
+		const { result } = renderHook(() => useCategoryMedia('Gender & Sexuality'), { wrapper: makeWrapper(client) });
+
+		await waitFor(() => expect(result.current.isSuccess).toBe(true));
+		expect(globalThis.fetch).toHaveBeenCalledWith('/api/v1/search?c=Gender%20%26%20Sexuality');
+	});
+
+	it('surfaces isError: true when the response is non-2xx', async () => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: false, status: 500 });
+
+		const { result } = renderHook(() => useCategoryMedia('Film'), { wrapper: makeWrapper(client) });
+
+		await waitFor(() => expect(result.current.isError).toBe(true));
+	});
+
+	it('does not fire a fetch when searchTerm is empty', () => {
+		const fetchSpy = vi.spyOn(globalThis, 'fetch');
+		renderHook(() => useCategoryMedia(''), { wrapper: makeWrapper(client) });
+
 		expect(fetchSpy).not.toHaveBeenCalled();
 	});
 });
