@@ -1,5 +1,6 @@
 import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
+import '../../../static/css/tailwind.css';
 import { useUnreadCount } from '../hooks/useUnreadCount';
 import { NotificationDropdown } from './NotificationDropdown';
 import useNotificationStore from '../useNotificationStore';
