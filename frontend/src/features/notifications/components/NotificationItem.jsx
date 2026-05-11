@@ -49,7 +49,7 @@ export function NotificationItem({ notification }) {
 				!notification.is_read ? 'bg-brand-theme/5' : ''
 			}`}
 		>
-			<span className="w-10 h-10 rounded-full bg-surface-popup flex items-center justify-center flex-shrink-0 overflow-hidden">
+			<span className="w-10 h-10 rounded-full bg-surface-popup flex items-center justify-center shrink-0 overflow-hidden">
 				{notification.actor?.thumbnail_url ? (
 					<img src={notification.actor.thumbnail_url} alt="" className="w-full h-full object-cover" />
 				) : (
@@ -61,7 +61,7 @@ export function NotificationItem({ notification }) {
 				<p className="text-xs text-content-body/50 mt-0.5">{format(notification.created_at)}</p>
 			</div>
 			{!notification.is_read && (
-				<span className="w-2 h-2 rounded-full bg-brand-theme flex-shrink-0" aria-hidden="true" />
+				<span className="w-2 h-2 rounded-full bg-brand-theme shrink-0" aria-hidden="true" />
 			)}
 		</div>
 	);
