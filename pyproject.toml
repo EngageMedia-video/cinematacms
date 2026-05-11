@@ -18,7 +18,7 @@ dependencies = [
     "django-recaptcha==4.1.0",
     "django-redis==6.0.0",
     "django-silk==5.5.0",
-    "django==5.2.13",
+    "django==5.2.14",
     "djangorestframework==3.17.1",
     "psycopg2-binary==2.9.12",
     "filetype==1.2.0",
@@ -29,8 +29,8 @@ dependencies = [
     "pep8==1.7.1",
     "pillow==12.2.0",
     "python-dotenv==1.2.2",
-    "requests==2.33.1",
-    "urllib3>=2.6.3",
+    "requests==2.34.0",
+    "urllib3>=2.7.0",
     "rpdb==0.2.0",
     "tqdm==4.67.3",
     "whitenoise==6.12.0",
@@ -44,7 +44,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["basedpyright>=1.39.3", "ruff>=0.15.12", "pre-commit>=4.6.0"]
+dev = ["basedpyright>=1.39.4", "ruff>=0.15.12", "pre-commit>=4.6.0"]
 e2e = [
     "playwright>=1.59.0",
     "pytest>=9.0.3",
