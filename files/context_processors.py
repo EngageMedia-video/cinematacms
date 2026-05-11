@@ -47,7 +47,14 @@ def stuff(request):
     ret["CAN_MANAGE_UPLOADS"] = can_manage_uploads(request.user)
     ret["ALLOW_RATINGS"] = settings.ALLOW_RATINGS
     ret["ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY"] = settings.ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY
-    ret["VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE"] = waffle.switch_is_active("video_player_featured_video_on_index_page")
+    try:
+        ret["VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE"] = waffle.switch_is_active(
+            "video_player_featured_video_on_index_page"
+        )
+    except Exception:
+        ret["VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE"] = getattr(
+            settings, "VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE", False
+        )
     ret["RSS_URL"] = "/rss"
 
     top_message = TopMessage.objects.filter(active=True).order_by("-add_date").first()
