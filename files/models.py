@@ -86,6 +86,20 @@ MEDIA_TYPES_SUPPORTED = (
     ("pdf", "Pdf"),
     ("audio", "Audio"),
 )
+MEDIA_CONTENT_TYPES = (
+    ("", ""),
+    ("documentary", "Documentary"),
+    ("film", "Film"),
+    ("short_film", "Short Film"),
+    ("experimental", "Experimental"),
+    ("webinar", "Webinar"),
+    ("music_video", "Music Video"),
+    ("art", "Art"),
+    ("tv", "TV"),
+    ("animation", "Animation"),
+    ("lecture", "Lecture"),
+    ("other", "Other"),
+)
 ENCODE_EXTENSIONS = (
     ("mp4", "mp4"),
     ("webm", "webm"),
@@ -283,6 +297,13 @@ class Media(models.Model):
         choices=MEDIA_TYPES_SUPPORTED,
         db_index=True,
         default="video",
+    )
+    media_content_type = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=MEDIA_CONTENT_TYPES,
+        db_index=True,
+        default="film",
     )
     media_info = models.TextField(blank=True, help_text="automatically extracted info")
     video_height = models.IntegerField(default=1)
@@ -920,6 +941,12 @@ class Media(models.Model):
                 }
             ]
         return ret
+
+    @property
+    def media_content_type_info(self):
+        if self.media_content_type:
+            return {"value": self.media_content_type, "title": self.get_media_content_type_display()}
+        return None
 
     @property
     def media_language_info(self):

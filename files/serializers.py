@@ -99,6 +99,7 @@ class MediaSerializer(serializers.ModelSerializer):
             "user_featured",
             "size",
             "media_country_info",
+            "media_content_type_info",
             "year_produced",
         )
 
@@ -286,6 +287,7 @@ class SingleMediaSerializer(serializers.ModelSerializer):
             "ratings_info",
             "allow_download",
             "year_produced",
+            "media_content_type_info",
             "user_has_liked",
             "user_has_disliked",
         )
@@ -313,6 +315,7 @@ class MediaSearchSerializer(serializers.ModelSerializer):
             "media_type",
             "preview_url",
             "media_country_info",
+            "media_content_type_info",
         )
 
 

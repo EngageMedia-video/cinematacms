@@ -200,6 +200,7 @@ export function listItemProps(props, item, index) {
 		hasMediaViewerDescr: false,
 		countries: item.media_country_info || [],
 		state: item.state || null,
+		contentType: item.media_content_type_info || null,
 	};
 
 	args.hasMediaViewerDescr = args.hasMediaViewer && !!props.firstItemDescr;

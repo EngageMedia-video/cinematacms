@@ -683,3 +683,25 @@ a.item-edit-link {
 		color: #fff;
 	}
 }
+
+.item-content-type-badge {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	padding: 2px 6px;
+	margin: 4px;
+	border-radius: 2px;
+	font-size: 11px;
+	font-weight: 500;
+	display: inline-block;
+	z-index: 1;
+	pointer-events: none;
+	color: #fff;
+	background-color: rgba(0, 0, 0, 0.75);
+
+	.badge-label {
+		line-height: 1;
+		text-transform: uppercase;
+		letter-spacing: 0.3px;
+	}
+}

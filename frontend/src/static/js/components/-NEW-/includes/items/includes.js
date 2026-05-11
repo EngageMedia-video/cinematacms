@@ -103,6 +103,18 @@ export function MediaItemStateBadge(props) {
 	);
 }
 
+export function MediaContentTypeBadge(props) {
+	if (!props.contentType || !props.contentType.title) {
+		return null;
+	}
+
+	return (
+		<span className="item-content-type-badge" title={props.contentType.title}>
+			<span className="badge-label">{props.contentType.title}</span>
+		</span>
+	);
+}
+
 export function MediaItemThumbnailLink(props) {
 	const attr = {
 		href: props.link,
@@ -120,6 +132,7 @@ export function MediaItemThumbnailLink(props) {
 					<div></div>
 				</div>
 			)}
+			<MediaContentTypeBadge contentType={props.contentType} />
 			<MediaItemStateBadge state={props.state} />
 		</a>
 	);

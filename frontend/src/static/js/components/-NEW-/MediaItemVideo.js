@@ -11,6 +11,7 @@ import {
 	MediaItemDuration,
 	MediaItemVideoPreviewer,
 	MediaItemPlaylistIndex,
+	MediaContentTypeBadge,
 	MediaItemStateBadge,
 	itemClassname,
 } from './includes/items';
@@ -60,6 +61,7 @@ export function MediaItemVideo(props) {
 				{props.inPlaylistView || props.inPlaylistPage ? null : (
 					<MediaItemVideoPreviewer url={props.preview_thumbnail} />
 				)}
+				<MediaContentTypeBadge contentType={props.contentType} />
 				<MediaItemStateBadge state={props.state} />
 			</a>
 		);
