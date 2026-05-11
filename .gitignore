@@ -47,3 +47,7 @@ frontend/.env
 # Storybook generated artifacts
 frontend/storybook-static/
 frontend/debug-storybook.log
+
+# Local planning and brainstorming documents
+docs/plans/
+docs/brainstorm/
