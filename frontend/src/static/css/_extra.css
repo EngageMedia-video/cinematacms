@@ -3542,6 +3542,10 @@ body .items-list-ver .feat-first-item.hw-most-recent-videos .item:nth-child(2) {
 	top: var(--top-message-height, 43px);
 }
 
+.top-message-body .page-main-wrap {
+	padding-top: calc(var(--header-height) + var(--top-message-height, 43px));
+}
+
 .top-message-body #app-sidebar,
 .top-message-body .page-sidebar-inner {
 	margin-top: var(--top-message-height, 43px);
