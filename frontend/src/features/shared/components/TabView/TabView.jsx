@@ -101,7 +101,7 @@ function TabViewList({ items, className = '', triggerClassName = '' }) {
 				role="tablist"
 				aria-label={ariaLabel}
 				className={joinClasses(
-					'flex overflow-hidden rounded-sm bg-cinemata-pacific-deep-800 p-0',
+					'flex overflow-hidden rounded-sm bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800 p-0',
 					tabMode === 'wrap' ? 'w-max min-w-0' : 'min-w-full',
 					className
 				)}
@@ -168,9 +168,9 @@ function TabViewTrigger({ children, value, disabled = false, className = '' }) {
 				}
 			}}
 			className={joinClasses(
-				'body-body-14-bold cursor-pointer whitespace-nowrap border-0 px-4 py-4 text-cinemata-white uppercase tracking-[0.02em] transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
-				tabMode === 'wrap' ? 'min-w-0 flex-none' : 'min-w-[160px] flex-1',
-				isSelected ? 'bg-cinemata-strait-blue-800' : 'bg-transparent',
+			'body-body-14-bold cursor-pointer whitespace-nowrap border-0 px-4 py-4 text-cinemata-neutral-900 dark:text-cinemata-white uppercase tracking-[0.02em] transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+			tabMode === 'wrap' ? 'min-w-0 flex-none' : 'min-w-[160px] flex-1',
+			isSelected ? 'bg-cinemata-strait-blue-200 dark:bg-cinemata-strait-blue-800' : 'bg-transparent',
 				className
 			)}
 		>

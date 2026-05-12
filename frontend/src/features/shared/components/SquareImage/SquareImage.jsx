@@ -30,7 +30,7 @@ export function SquareImage({
 		<span
 			{...props}
 			className={joinClasses(
-				'relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-cinemata-pacific-deep-800',
+				'relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800',
 				className
 			)}
 			style={{
@@ -56,7 +56,7 @@ export function SquareImage({
 			) : null}
 
 			{loading ? (
-				<span aria-hidden="true" className="absolute inset-0 bg-cinemata-pacific-deep-800 opacity-80" />
+				<span aria-hidden="true" className="absolute inset-0 bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800 opacity-80" />
 			) : null}
 
 			{showCenteredIcon ? (
@@ -65,7 +65,7 @@ export function SquareImage({
 						name={centeredIconName}
 						decorative
 						size={21}
-						className={joinClasses('text-cinemata-neutral-50', loading ? 'animate-spin' : '')}
+						className={joinClasses('text-cinemata-neutral-600 dark:text-cinemata-neutral-50', loading ? 'animate-spin' : '')}
 					/>
 				</span>
 			) : null}

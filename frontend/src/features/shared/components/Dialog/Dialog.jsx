@@ -233,7 +233,10 @@ export function DialogContent({
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
 			<div
 				aria-hidden="true"
-				className={joinClasses('absolute inset-0 bg-cinemata-pacific-deep-950 opacity-80', overlayClassName)}
+				className={joinClasses(
+					'absolute inset-0 bg-cinemata-black/40 dark:bg-cinemata-pacific-deep-950 dark:opacity-80',
+					overlayClassName
+				)}
 				onClick={() => {
 					if (closeOnOverlayClick) {
 						setOpen(false);
@@ -249,10 +252,7 @@ export function DialogContent({
 				aria-label={ariaLabel}
 				tabIndex={-1}
 				data-state="open"
-				className={joinClasses(
-					'relative z-10 w-full max-w-[480px] rounded-[8px] bg-cinemata-pacific-deep-800 p-6 text-cinemata-strait-blue-50 outline-none',
-					className
-				)}
+				className={joinClasses('relative z-10 outline-none', className)}
 			>
 				{children}
 			</div>

@@ -41,18 +41,18 @@ export function RadioButton({
 
 			<span
 				className={joinClasses(
-					'inline-flex shrink-0 items-center justify-center rounded-full bg-cinemata-pacific-deep-900 transition-colors duration-200 peer-checked:bg-cinemata-sunset-horizon-400p'
+					'inline-flex shrink-0 items-center justify-center rounded-full bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-900 transition-colors duration-200 peer-checked:bg-cinemata-sunset-horizon-400p'
 				)}
 				style={{ width: 18, height: 18, padding: 3 }}
 				aria-hidden="true"
 			>
 				<span
-					className="block rounded-full bg-cinemata-pacific-deep-900 transition-transform duration-200"
+					className="block rounded-full bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-900 transition-transform duration-200"
 					style={{ width: 8, height: 8 }}
 				/>
 			</span>
 
-			{children && <span className="body-body-16-regular text-cinemata-strait-blue-50">{children}</span>}
+			{children && <span className="body-body-16-regular text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">{children}</span>}
 		</label>
 	);
 }

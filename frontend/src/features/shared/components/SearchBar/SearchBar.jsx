@@ -29,7 +29,7 @@ export function SearchBar({
 				placeholder={placeholder}
 				aria-label={ariaLabel}
 				className={joinClasses(
-					'body-body-14-regular block w-full rounded-[8px] border border-transparent bg-cinemata-pacific-deep-800 px-[22px] py-[15px] pr-[58px] text-cinemata-strait-blue-50 outline-none transition-colors duration-200 placeholder:text-cinemata-pacific-deep-300 focus:border-cinemata-sunset-horizon-400p focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70',
+					'body-body-14-regular block w-full rounded-[8px] border border-cinemata-neutral-300 bg-cinemata-white px-[22px] py-[15px] pr-[58px] text-cinemata-neutral-900 outline-none transition-colors duration-200 placeholder:text-cinemata-neutral-400 focus:border-cinemata-sunset-horizon-400p focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70 dark:border-transparent dark:bg-cinemata-pacific-deep-800 dark:text-cinemata-strait-blue-50 dark:placeholder:text-cinemata-pacific-deep-300',
 					'[&::-webkit-search-cancel-button]:appearance-none'
 				)}
 			/>

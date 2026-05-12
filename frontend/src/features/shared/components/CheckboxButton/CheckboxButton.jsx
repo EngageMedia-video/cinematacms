@@ -42,7 +42,7 @@ export function CheckboxButton({
 
 			<span
 				className={joinClasses(
-					'inline-flex shrink-0 items-center justify-center bg-cinemata-pacific-deep-900 transition-colors duration-200 peer-checked:bg-cinemata-sunset-horizon-400p peer-focus-visible:ring-2 peer-focus-visible:ring-cinemata-sunset-horizon-400p peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-cinemata-pacific-deep-900'
+					'inline-flex shrink-0 items-center justify-center bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-900 transition-colors duration-200 peer-checked:bg-cinemata-sunset-horizon-400p peer-focus-visible:ring-2 peer-focus-visible:ring-cinemata-sunset-horizon-400p peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-cinemata-white dark:peer-focus-visible:ring-offset-cinemata-pacific-deep-900'
 				)}
 				style={{ width: 18, height: 18 }}
 				aria-hidden="true"
@@ -53,12 +53,12 @@ export function CheckboxButton({
 					size={14}
 					className={joinClasses(
 						'transition-opacity duration-200',
-						checked ? 'text-cinemata-pacific-deep-900 opacity-100' : 'opacity-0'
+						checked ? 'text-cinemata-white dark:text-cinemata-pacific-deep-900 opacity-100' : 'opacity-0'
 					)}
 				/>
 			</span>
 
-			{children && <span className="body-body-16-regular text-cinemata-strait-blue-50">{children}</span>}
+			{children && <span className="body-body-16-regular text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">{children}</span>}
 		</label>
 	);
 }

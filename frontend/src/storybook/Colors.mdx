@@ -1,0 +1,104 @@
+import { Meta, Title, Subtitle, Heading } from '@storybook/addon-docs/blocks';
+
+<Meta title="Introduction/Colors" />
+
+<Title>Color Mapping</Title>
+<Subtitle>Light and dark mode color assignments for cinemata-* tokens</Subtitle>
+
+This document maps which `cinemata-*` color to use for each UI role in light and dark mode, based on actual component usage across the design system.
+
+<Heading>Text</Heading>
+
+- **Primary text** — light: `text-cinemata-neutral-900` / dark: `dark:text-cinemata-white` or `dark:text-cinemata-strait-blue-50`
+- **Secondary / muted text** — light: `text-cinemata-neutral-500` or `text-cinemata-neutral-600` / dark: `dark:text-cinemata-pacific-deep-300` or `dark:text-cinemata-neutral-500`
+- **Placeholder text** — light: `text-cinemata-neutral-400` / dark: `dark:text-cinemata-pacific-deep-300`
+- **Text on colored bg** — `text-cinemata-white` (same in both)
+- **Badge text** — `text-cinemata-neutral-50` (same in both)
+- **Text on dark surface** — `text-cinemata-neutral-950 dark:text-cinemata-neutral-50`
+- **Subtitle / accent text** — light: `text-cinemata-sunset-horizon-600` / dark: `dark:text-cinemata-sunset-horizon-200`
+- **Helper text** — light: `text-cinemata-sunset-horizon-600` / dark: `dark:text-cinemata-sunset-horizon-400p`
+- **Error text** — `text-cinemata-red-500` (same in both)
+- **Link / emphasis text** — `text-cinemata-strait-blue-600p` (same in both)
+- **Label text** — light: `text-cinemata-neutral-900` / dark: `dark:text-cinemata-strait-blue-50`
+- **Label (active / filled)** — light: `text-cinemata-pacific-deep-400` / dark: `dark:text-cinemata-pacific-deep-300`
+- **Label (disabled)** — `text-cinemata-pacific-deep-400` (same in both)
+
+<Heading>Backgrounds</Heading>
+
+- **Input / form field surface** — light: `bg-cinemata-neutral-50` / dark: `dark:bg-cinemata-pacific-deep-900`
+- **Input hover** — light: `bg-cinemata-pacific-deep-50` / dark: `dark:bg-cinemata-pacific-deep-800`
+- **Disabled input** — light: `bg-cinemata-pacific-deep-50` / dark: `dark:bg-cinemata-pacific-deep-900`
+- **Card / container** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-pacific-deep-800`
+- **Page / story wrapper** — light: `bg-cinemata-neutral-100` / dark: `dark:bg-cinemata-pacific-deep-950`
+- **Tooltip** — light: `bg-cinemata-white` / dark: `dark:bg-cinemata-pacific-deep-900`
+- **Dropzone** — light: `bg-cinemata-neutral-100` / dark: `dark:bg-cinemata-pacific-deep-800`
+- **Dialog overlay** — light: `bg-cinemata-black/40` / dark: `dark:bg-cinemata-pacific-deep-950 dark:opacity-80`
+- **Dialog content** — light: `bg-cinemata-white` / dark: `dark:bg-cinemata-pacific-deep-800`
+- **Primary button** — `bg-cinemata-strait-blue-600p`, hover: `bg-cinemata-strait-blue-800` (same in both)
+- **Secondary button** — `bg-cinemata-sunset-horizon-500`, hover: `bg-cinemata-sunset-horizon-700` (same in both)
+- **Special button** — light: `bg-cinemata-pacific-deep-600p` / dark: `dark:bg-cinemata-pacific-deep-950`
+- **Segment selected** — `bg-cinemata-sunset-horizon-500` (same in both)
+- **Segment default** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-pacific-deep-800`
+- **Tab bar** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-pacific-deep-800`
+- **Tab selected** — light: `bg-cinemata-strait-blue-200` / dark: `dark:bg-cinemata-strait-blue-800`
+- **Badge** — inline `backgroundColor` from the `color` prop (same in both)
+- **Dot separator** — light: `bg-cinemata-neutral-500` / dark: `dark:bg-cinemata-pacific-deep-400`
+- **Progress track** — light: `bg-cinemata-coral-reef-100` / dark: `dark:bg-cinemata-coral-reef-900`
+- **Progress indicator** — `bg-cinemata-coral-reef-400p` (same in both)
+- **Checkbox / radio unchecked** — light: `bg-cinemata-neutral-300` / dark: `dark:bg-cinemata-pacific-deep-900`
+- **Checkbox / radio checked** — `bg-cinemata-sunset-horizon-400p` (same in both)
+- **Avatar fallback** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-neutral-50`
+- **Avatar badge (comment)** — `bg-cinemata-strait-blue-900` (same in both)
+- **Avatar badge (favorite)** — `bg-cinemata-sunset-horizon-800` (same in both)
+- **Avatar badge (like)** — `bg-cinemata-red-950` (same in both)
+- **Search input** — light: `bg-cinemata-white` / dark: `dark:bg-cinemata-pacific-deep-800`
+- **Image placeholder** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-pacific-deep-800`
+
+<Heading>Borders</Heading>
+
+- **Default input border** — `border-cinemata-pacific-deep-500` (same in both)
+- **Active / focused border** — light: `border-cinemata-coral-reef-400p` / dark: `dark:border-cinemata-sunset-horizon-400p`
+- **Error border** — `border-cinemata-red-500` (same in both)
+- **Disabled border** — light: `border-cinemata-coral-reef-400p` / dark: `dark:border-cinemata-red-500`
+- **Tooltip border** — light: `border-cinemata-neutral-300` / dark: `dark:border-cinemata-pacific-deep-800`
+- **Search input border** — light: `border-cinemata-neutral-300` / dark: `dark:border-transparent`
+- **Outline button border** — `border-cinemata-strait-blue-600p` (same in both)
+- **Focus ring** — light: `ring-cinemata-strait-blue-600p` / dark: `dark:ring-cinemata-strait-blue-200`
+- **Avatar badge border** — light: `border-cinemata-white` / dark: `dark:border-cinemata-pacific-deep-900`
+- **Confirmation dialog border** — light: `border-cinemata-neutral-300` / dark: `dark:border-cinemata-strait-blue-300`
+
+<Heading>Decorative elements</Heading>
+
+- **Stepper line** — light: `bg-cinemata-neutral-300` / dark: `dark:bg-cinemata-pacific-deep-600p`
+- **Stepper dot** — light: `bg-cinemata-neutral-400` / dark: `dark:bg-cinemata-strait-blue-200`
+- **Stepper icon bg** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-pacific-deep-800`
+- **Stepper icon color** — light: `text-cinemata-strait-blue-600p` / dark: `dark:text-cinemata-strait-blue-200`
+- **Dropzone dashed border** — light: `stroke-cinemata-neutral-400` / dark: `dark:stroke-cinemata-strait-blue-300`
+- **Confirmation dialog gradient** — light: `from-cinemata-white to-cinemata-neutral-50` / dark: `dark:from-cinemata-pacific-deep-900 dark:to-cinemata-pacific-deep-950`
+
+<Heading>Which scale is for what</Heading>
+
+- **neutral** — Primary surfaces and text in light mode (50–200 for backgrounds, 500–900 for text)
+- **pacific-deep** — Primary surfaces and text in dark mode (800–950 for backgrounds, 50–300 for text)
+- **strait-blue** — Links, emphasis, primary buttons, focus rings, light text in dark mode (50 for text, 600p for actions)
+- **sunset-horizon** — Secondary actions, accents, alert text, active borders (400p–600 for light text, 200–400p for dark text)
+- **coral-reef** — Active/focused borders in light mode, progress bars
+- **red** — Errors and destructive actions
+- **green** — Success states
+- **amber** — Warnings
+- **white / black** — Absolute values for text on colored backgrounds, dialog overlays
+
+<Heading>Pattern summary</Heading>
+
+- All components now define **light mode as default** with `dark:` overrides for dark mode
+- Light mode uses `neutral` and `white` scales for surfaces, `neutral-900` for text
+- Dark mode uses `pacific-deep` scale for surfaces, `strait-blue-50` or `white` for text
+- Buttons keep the same brand colors in both themes — only text/icon variants adapt
+- Badge and avatar badge icons use dark-surface colors in both themes to keep icon/text visible against their colored backgrounds
+- `DialogContent` is unstyled — consumers pass background, padding, and sizing via `className`
+
+<Heading>Source files</Heading>
+
+- `src/static/css/config/_light_theme.scss` — All `--cinemata-*` values on `body` (light mode)
+- `src/static/css/config/_dark_theme.scss` — Overrides on `body.dark_theme` (dark mode)
+- `src/static/css/tailwind.css` — `@theme inline` bridge that makes `bg-cinemata-*` / `text-cinemata-*` utilities available

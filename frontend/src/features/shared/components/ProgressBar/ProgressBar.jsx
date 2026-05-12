@@ -43,7 +43,7 @@ export function ProgressBar({
 		>
 			<div
 				className={joinClasses(
-					'h-2 w-full overflow-hidden rounded-full bg-cinemata-coral-reef-900',
+					'h-2 w-full overflow-hidden rounded-full bg-cinemata-coral-reef-100 dark:bg-cinemata-coral-reef-900',
 					trackClassName
 				)}
 			>
