@@ -58,7 +58,11 @@ export function CheckboxButton({
 				/>
 			</span>
 
-			{children && <span className="body-body-16-regular text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">{children}</span>}
+			{children && (
+				<span className="body-body-16-regular text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
+					{children}
+				</span>
+			)}
 		</label>
 	);
 }

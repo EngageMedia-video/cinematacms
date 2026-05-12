@@ -168,9 +168,9 @@ function TabViewTrigger({ children, value, disabled = false, className = '' }) {
 				}
 			}}
 			className={joinClasses(
-			'body-body-14-bold cursor-pointer whitespace-nowrap border-0 px-4 py-4 text-cinemata-white uppercase tracking-[0.02em] transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
-			tabMode === 'wrap' ? 'min-w-0 flex-none' : 'min-w-[160px] flex-1',
-			isSelected ? 'bg-cinemata-strait-blue-800' : 'bg-transparent',
+				'body-body-14-bold cursor-pointer whitespace-nowrap border-0 px-4 py-4 text-cinemata-white uppercase tracking-[0.02em] transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+				tabMode === 'wrap' ? 'min-w-0 flex-none' : 'min-w-[160px] flex-1',
+				isSelected ? 'bg-cinemata-strait-blue-800' : 'bg-transparent',
 				className
 			)}
 		>

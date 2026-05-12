@@ -56,10 +56,14 @@ function MovieCopy({ title, subtitle, metadata, orientation = 'vertical' }) {
 			className={joinClasses('flex min-w-0 flex-col', orientation === 'horizontal' ? 'gap-3' : 'gap-2')}
 			data-movie-copy
 		>
-			<p className="body-body-16-medium m-0 p-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50 line-clamp-3">{title}</p>
+			<p className="body-body-16-medium m-0 p-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50 line-clamp-3">
+				{title}
+			</p>
 
 			{subtitle ? (
-				<p className="body-body-14-regular m-0 p-0 text-cinemata-sunset-horizon-600 dark:text-cinemata-sunset-horizon-200">{subtitle}</p>
+				<p className="body-body-14-regular m-0 p-0 text-cinemata-sunset-horizon-600 dark:text-cinemata-sunset-horizon-200">
+					{subtitle}
+				</p>
 			) : null}
 
 			<MovieMetadata items={metadata} />
@@ -79,7 +83,12 @@ function MoviePoster({
 	showTopRightIcon = false,
 }) {
 	return (
-		<div className={joinClasses('relative overflow-hidden rounded-[6px] bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800', className)}>
+		<div
+			className={joinClasses(
+				'relative overflow-hidden rounded-[6px] bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800',
+				className
+			)}
+		>
 			<img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
 
 			{badge ? (

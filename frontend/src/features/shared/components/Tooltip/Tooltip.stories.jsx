@@ -144,8 +144,10 @@ export const RichContent = {
 		trigger: 'click',
 		content: (
 			<div className="flex max-w-[220px] flex-col gap-1">
-			<p className="body-body-14-bold text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">Tooltip Title</p>
-			<p className="body-body-14-regular text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-300">
+				<p className="body-body-14-bold text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
+					Tooltip Title
+				</p>
+				<p className="body-body-14-regular text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-300">
 					Add any custom content here while keeping the same shared tooltip surface.
 				</p>
 			</div>

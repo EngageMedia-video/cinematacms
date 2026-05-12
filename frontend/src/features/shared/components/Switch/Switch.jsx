@@ -37,7 +37,11 @@ export function Switch({
 				className
 			)}
 		>
-			{children && <span className="body-body-16-regular text-cinemata-neutral-700 dark:text-cinemata-neutral-500">{children}</span>}
+			{children && (
+				<span className="body-body-16-regular text-cinemata-neutral-700 dark:text-cinemata-neutral-500">
+					{children}
+				</span>
+			)}
 
 			<input
 				type="checkbox"

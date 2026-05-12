@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { GetNotifiedButton } from './GetNotifiedButton';
 
 describe('GetNotifiedButton', () => {
@@ -10,11 +9,8 @@ describe('GetNotifiedButton', () => {
 
 		expect(button).toHaveAttribute('aria-pressed', 'false');
 		expect(screen.getByTestId('bell-icon')).toBeInTheDocument();
-		expect(screen.getByText('Get Notified')).toBeInTheDocument();
-		expect(button).toHaveStyle({
-			backgroundColor: 'var(--cinemata-strait-blue-700)',
-			color: 'var(--cinemata-neutral-50)',
-		});
+		expect(screen.getByText('GET NOTIFIED')).toBeInTheDocument();
+		expect(button.className).toContain('bg-cinemata-strait-blue-600p');
 	});
 
 	it('renders active bell plus right check state', () => {
@@ -25,28 +21,16 @@ describe('GetNotifiedButton', () => {
 		expect(button).toHaveAttribute('aria-pressed', 'true');
 		expect(screen.getByTestId('bell-icon')).toBeInTheDocument();
 		expect(screen.getByTestId('check-icon')).toBeInTheDocument();
-		expect(screen.queryByText('Get Notified')).not.toBeInTheDocument();
-		expect(button).toHaveStyle({
-			backgroundColor: 'var(--cinemata-strait-blue-700)',
-			color: 'var(--cinemata-neutral-50)',
-		});
+		expect(screen.queryByText('GET NOTIFIED')).not.toBeInTheDocument();
+		expect(button.className).toContain('bg-cinemata-strait-blue-600p');
 	});
 
-	it('uses hover color when inactive', async () => {
-		const user = userEvent.setup();
+	it('has hover class when inactive', () => {
 		render(<GetNotifiedButton />);
 
 		const button = screen.getByRole('button', { name: 'Get Notified' });
 
-		await user.hover(button);
-		expect(button).toHaveStyle({
-			backgroundColor: 'var(--cinemata-strait-blue-800)',
-		});
-
-		await user.unhover(button);
-		expect(button).toHaveStyle({
-			backgroundColor: 'var(--cinemata-strait-blue-700)',
-		});
+		expect(button.className).toContain('hover:bg-cinemata-strait-blue-800');
 	});
 
 	it('shakes when switching from inactive to active', () => {

@@ -3,7 +3,11 @@ import { expect, userEvent, within } from 'storybook/test';
 import { TabContent, TabView } from './TabView';
 
 function TabViewFrame({ children }) {
-	return <div className="w-full min-w-[320px] max-w-[720px] bg-cinemata-neutral-100 p-6 dark:bg-cinemata-pacific-deep-950">{children}</div>;
+	return (
+		<div className="w-full min-w-[320px] max-w-[720px] bg-cinemata-neutral-100 p-6 dark:bg-cinemata-pacific-deep-950">
+			{children}
+		</div>
+	);
 }
 
 const meta = {

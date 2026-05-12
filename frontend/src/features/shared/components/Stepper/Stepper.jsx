@@ -17,7 +17,9 @@ export function Stepper({
 				<div className="inline-flex p-2 shrink-0 items-center justify-center rounded-full bg-cinemata-neutral-200 text-cinemata-strait-blue-600p dark:bg-cinemata-pacific-deep-800 dark:text-cinemata-strait-blue-200">
 					<Icon name={iconName} decorative data-stepper-icon />
 				</div>
-				<p className="body-body-14-regular m-0 p-0 text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-300 mt-1">{label}</p>
+				<p className="body-body-14-regular m-0 p-0 text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-300 mt-1">
+					{label}
+				</p>
 			</div>
 
 			<div>
@@ -39,15 +41,23 @@ export function Stepper({
 								/>
 							) : (
 								<div className="w-[6px]">
-								<span className="w-px flex-1 bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-600p" data-stepper-dot />
-							</div>
+									<span
+										className="w-px flex-1 bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-600p"
+										data-stepper-dot
+									/>
+								</div>
 							)}
 
-							<span className="w-px flex-1 bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-600p" data-stepper-line />
+							<span
+								className="w-px flex-1 bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-600p"
+								data-stepper-line
+							/>
 						</div>
 
 						<div className="min-w-0 flex-1 flex flex-col mb-6 gap-2">
-							<p className="body-body-16-regular p-0 m-0 text-cinemata-neutral-900 dark:text-cinemata-pacific-deep-50">{item.title}</p>
+							<p className="body-body-16-regular p-0 m-0 text-cinemata-neutral-900 dark:text-cinemata-pacific-deep-50">
+								{item.title}
+							</p>
 
 							<div className="flex flex-wrap items-center gap-3">
 								{item.date ? (

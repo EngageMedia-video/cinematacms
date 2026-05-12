@@ -59,7 +59,9 @@ export const Default = {
 					className="w-full max-w-[480px] rounded-[8px] bg-cinemata-white p-6 dark:bg-cinemata-pacific-deep-800"
 				>
 					<div className="space-y-2">
-						<h2 className="heading-h4 text-cinemata-neutral-900 dark:text-cinemata-white">Upload confirmation</h2>
+						<h2 className="heading-h4 text-cinemata-neutral-900 dark:text-cinemata-white">
+							Upload confirmation
+						</h2>
 						<p className="body-body-16-regular text-cinemata-neutral-600 dark:text-cinemata-strait-blue-50">
 							Your media is ready to be reviewed before publishing.
 						</p>
@@ -88,7 +90,9 @@ export const OpenPreview = {
 				className="w-full max-w-[480px] rounded-[8px] bg-cinemata-white p-6 dark:bg-cinemata-pacific-deep-800"
 			>
 				<div className="space-y-2">
-					<h2 className="heading-h4 text-cinemata-neutral-900 dark:text-cinemata-white">Invite collaborators</h2>
+					<h2 className="heading-h4 text-cinemata-neutral-900 dark:text-cinemata-white">
+						Invite collaborators
+					</h2>
 					<p className="body-body-16-regular text-cinemata-neutral-600 dark:text-cinemata-strait-blue-50">
 						Share this workspace with the editorial team to continue the review together.
 					</p>
@@ -121,7 +125,9 @@ export const Controlled = {
 						className="w-full max-w-[480px] rounded-[8px] bg-cinemata-white p-6 dark:bg-cinemata-pacific-deep-800"
 					>
 						<div className="space-y-2">
-							<h2 className="heading-h4 text-cinemata-neutral-900 dark:text-cinemata-white">Review details</h2>
+							<h2 className="heading-h4 text-cinemata-neutral-900 dark:text-cinemata-white">
+								Review details
+							</h2>
 							<p className="body-body-16-regular text-cinemata-neutral-600 dark:text-cinemata-strait-blue-50">
 								This example is controlled by external component state.
 							</p>

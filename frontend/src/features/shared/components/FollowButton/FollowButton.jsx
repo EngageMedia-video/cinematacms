@@ -31,8 +31,7 @@ export function FollowButton({
 			aria-label={props['aria-label'] ?? label}
 			aria-pressed={followed}
 			onMouseEnter={onMouseEnter}
-			onMous
-			eLeave={onMouseLeave}
+			onMouseLeave={onMouseLeave}
 			{...props}
 		>
 			{label}

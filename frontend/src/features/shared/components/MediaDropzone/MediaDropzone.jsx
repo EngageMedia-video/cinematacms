@@ -146,7 +146,9 @@ export function MediaDropzone({
 					</div>
 				) : null}
 
-				<p className="body-body-16-regular m-0 p-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">{label}</p>
+				<p className="body-body-16-regular m-0 p-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
+					{label}
+				</p>
 
 				<Button
 					type="button"

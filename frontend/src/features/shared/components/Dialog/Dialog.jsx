@@ -233,6 +233,7 @@ export function DialogContent({
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
 			<div
 				aria-hidden="true"
+				data-dialog-overlay
 				className={joinClasses(
 					'absolute inset-0 bg-cinemata-black/40 dark:bg-cinemata-pacific-deep-950 dark:opacity-80',
 					overlayClassName
