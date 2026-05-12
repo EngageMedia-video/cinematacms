@@ -20,10 +20,11 @@ class ViewMediaPasswordTest(TestCase):
         self.media.save()
         self.url = f"/view?m={self.media.friendly_token}"
 
-    def test_restricted_media_shows_password_form(self):
+    def test_restricted_media_shows_locked_page(self):
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, 'type="password"')
+        self.assertContains(resp, "page-media")
+        self.assertContains(resp, "media_restricted")
         self.assertNotContains(resp, "media-access-token")
 
     def test_correct_password_issues_token(self):
@@ -32,10 +33,10 @@ class ViewMediaPasswordTest(TestCase):
         self.assertContains(resp, "media-access-token")
         self.assertNotContains(resp, "media-password")
 
-    def test_wrong_password_shows_error(self):
+    def test_wrong_password_sets_context_flag(self):
         resp = self.client.post(self.url, {"password": "wrongpass"})
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "incorrect")
+        self.assertTrue(resp.context.get("wrong_password_provided"))
 
     def test_session_token_grants_access_on_get(self):
         # First authenticate
@@ -45,7 +46,7 @@ class ViewMediaPasswordTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "media-access-token")
 
-    def test_expired_session_token_shows_form(self):
+    def test_expired_session_token_shows_locked_page(self):
         # Set a fake stale session token
         session = self.client.session
         session[f"media_token_{self.media.friendly_token}"] = "expired-fake-token"
@@ -53,7 +54,7 @@ class ViewMediaPasswordTest(TestCase):
 
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, 'type="password"')
+        self.assertContains(resp, "media_restricted")
 
     def test_owner_bypasses_password(self):
         self.client.login(username=self.user.username, password="testpass1234567890")
@@ -88,7 +89,7 @@ class ViewMediaRateLimitTest(TestCase):
             self.client.post(self.url, {"password": "wrong"})
 
         resp = self.client.post(self.url, {"password": "wrong"})
-        self.assertContains(resp, "Too many failed attempts")
+        self.assertTrue(resp.context.get("rate_limited"))
 
     def test_correct_password_rejected_during_lockout(self):
         for _ in range(_get_brute_force_max_attempts()):

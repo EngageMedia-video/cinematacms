@@ -126,6 +126,11 @@ class MediaPageStore extends EventEmitter {
 			token = MediaCMS.access_token;
 		}
 
+		if (MediaCMS.media_restricted && !token) {
+			this.emit('media_needs_password');
+			return;
+		}
+
 		this.mediaAPIUrl = this.mediacms_config.api.media + '/' + MediaPageStoreData[this.id].mediaId;
 		if (token) {
 			this.mediaAPIUrl += '?token=' + encodeURIComponent(token);

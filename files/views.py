@@ -1463,6 +1463,69 @@ class MediaActions(APIView):
         )
 
 
+class MediaPasswordView(APIView):
+    """Validate password for restricted media and issue an access token."""
+
+    permission_classes = (permissions.AllowAny,)
+    parser_classes = (JSONParser,)
+
+    def post(self, request, friendly_token):
+        from django.contrib.auth.hashers import check_password
+
+        from files.token_utils import (
+            check_rate_limit,
+            generate_token,
+            record_failed_attempt,
+            reset_rate_limit,
+        )
+
+        friendly_token = clean_friendly_token(friendly_token)
+        try:
+            media = Media.objects.get(friendly_token=friendly_token)
+        except Media.DoesNotExist:
+            return Response({"detail": "media not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if media.state != "restricted":
+            return Response({"detail": "media is not restricted"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request.user.is_authenticated:
+            if request.user == media.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user):
+                token = generate_token(media.uid_hex)
+                request.session[f"media_token_{media.friendly_token}"] = token
+                return Response({"token": token}, status=status.HTTP_200_OK)
+
+        ip = get_client_ip(request)
+
+        if not check_rate_limit(ip, media.friendly_token):
+            return Response(
+                {"detail": "Too many failed attempts. Please try again later."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        password = request.data.get("password", "")
+        if not password:
+            return Response({"detail": "Password is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if check_password(password, media.password):
+            try:
+                token = generate_token(media.uid_hex)
+                request.session[f"media_token_{media.friendly_token}"] = token
+                reset_rate_limit(ip, media.friendly_token)
+                return Response({"token": token}, status=status.HTTP_200_OK)
+            except Exception:
+                logger.warning("Failed to generate token for media %s", media.friendly_token)
+                return Response(
+                    {"detail": "Server error generating token."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+        else:
+            record_failed_attempt(ip, media.friendly_token)
+            return Response(
+                {"detail": "The password is incorrect."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+
 class MediaSearch(APIView):
     parser_classes = (JSONParser,)
 

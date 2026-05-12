@@ -68,6 +68,11 @@ urlpatterns = [
         r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/actions$",
         views.MediaActions.as_view(),
     ),
+    re_path(
+        r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/password$",
+        views.MediaPasswordView.as_view(),
+        name="api_media_password",
+    ),
     #    url(r'^api/v1/media/(?P<friendly_token>[\w]*)/subtitless$',
     #        views.MediaSubtitles.as_view()),
     path("api/v1/categories", views.CategoryList.as_view()),

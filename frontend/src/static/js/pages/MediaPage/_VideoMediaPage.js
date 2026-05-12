@@ -9,6 +9,7 @@ import * as MediaPageActions from './actions.js';
 import ViewerInfoVideo from './includes/ViewerInfoVideo';
 import ViewerError from './includes/ViewerError';
 import ViewerSidebar from './includes/ViewerSidebar';
+import { PasswordDialog } from '../../../../features/shared/components/PasswordDialog';
 
 import VideoViewerStore from '../../components/MediaViewer/VideoViewer/store.js'; // @note: Is usable only in case of video media, but is included in every media page code.
 
@@ -28,16 +29,21 @@ export class _VideoMediaPage extends Page {
 			theaterMode: false, // @note: Is usable only in case of video media, but is included in every media page code.
 			pagePlaylistLoaded: false,
 			pagePlaylistData: MediaPageStore.get('playlist-data'),
+			needsPassword: false,
+			passwordDialogOpen: false,
 		};
 
 		this.onWindowResize = this.onWindowResize.bind(this);
 		this.onMediaLoad = this.onMediaLoad.bind(this);
 		this.onMediaLoadError = this.onMediaLoadError.bind(this);
 		this.onPagePlaylistLoad = this.onPagePlaylistLoad.bind(this);
+		this.onNeedsPassword = this.onNeedsPassword.bind(this);
+		this.onPasswordSuccess = this.onPasswordSuccess.bind(this);
 
 		MediaPageStore.on('loaded_media_data', this.onMediaLoad);
 		MediaPageStore.on('loaded_media_error', this.onMediaLoadError);
 		MediaPageStore.on('loaded_page_playlist_data', this.onPagePlaylistLoad);
+		MediaPageStore.on('media_needs_password', this.onNeedsPassword);
 	}
 
 	componentDidMount() {
@@ -87,12 +93,42 @@ export class _VideoMediaPage extends Page {
 		this.setState({ mediaLoadFailed: true });
 	}
 
-	pageContent() {
-		// console.log( "!!!", MediaPageStore.get('playlist-data') );
-		// console.log( "!!!", this.state.pagePlaylistData );
+	onNeedsPassword() {
+		this.setState({ needsPassword: true, passwordDialogOpen: true });
+	}
 
+	onPasswordSuccess(token) {
+		MediaCMS.access_token = token;
+		MediaCMS.media_restricted = false;
+		this.setState({ needsPassword: false, passwordDialogOpen: false });
+		MediaPageActions.loadMediaData();
+	}
+
+	pageContent() {
 		const viewerClassname = 'cf viewer-section' + (this.state.theaterMode ? ' theater-mode' : ' viewer-wide');
 		const viewerNestedClassname = 'viewer-section-nested' + (this.state.theaterMode ? ' viewer-section' : '');
+
+		if (this.state.needsPassword) {
+			return (
+				<div className={viewerClassname}>
+					<div className="viewer-container" key="viewer-container">
+						<div className="restricted-media-placeholder">
+							<i className="material-icons">lock</i>
+							<h2>This film is password protected</h2>
+							<p>Enter the password to watch this film.</p>
+							<button onClick={() => this.setState({ passwordDialogOpen: true })}>Enter Password</button>
+						</div>
+					</div>
+					<PasswordDialog
+						open={this.state.passwordDialogOpen}
+						onOpenChange={(open) => this.setState({ passwordDialogOpen: open })}
+						friendlyToken={MediaCMS.media_friendly_token || MediaCMS.mediaId}
+						onSuccess={this.onPasswordSuccess}
+						onClose={() => this.setState({ passwordDialogOpen: false })}
+					/>
+				</div>
+			);
+		}
 
 		return this.state.mediaLoadFailed ? (
 			<div className={viewerClassname}>
