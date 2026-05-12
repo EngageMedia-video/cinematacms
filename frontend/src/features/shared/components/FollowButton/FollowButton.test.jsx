@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { FollowButton } from './FollowButton';
 
 describe('FollowButton', () => {
@@ -10,10 +9,8 @@ describe('FollowButton', () => {
 
 		expect(button).toHaveAttribute('aria-pressed', 'false');
 		expect(screen.getByTestId('follow-icon')).toBeInTheDocument();
-		expect(button).toHaveStyle({
-			backgroundColor: 'var(--cinemata-sunset-horizon-500)',
-			color: 'var(--cinemata-neutral-50)',
-		});
+		expect(button.className).toContain('bg-cinemata-sunset-horizon-500');
+		expect(button.className).toContain('text-cinemata-white');
 	});
 
 	it('switches to followed treatment', () => {
@@ -22,25 +19,16 @@ describe('FollowButton', () => {
 		const button = screen.getByRole('button', { name: 'Following' });
 
 		expect(button).toHaveAttribute('aria-pressed', 'true');
-		expect(button.style.backgroundColor).toBe('transparent');
-		expect(button.style.borderColor).toBe('var(--cinemata-sunset-horizon-500)');
-		expect(button.style.color).toBe('var(--cinemata-sunset-horizon-500)');
+		expect(button.className).toContain('border-cinemata-sunset-horizon-500');
+		expect(button.className).toContain('text-cinemata-sunset-horizon-500');
+		expect(button.className).toContain('bg-transparent');
 	});
 
-	it('uses hover color when unfollowed', async () => {
-		const user = userEvent.setup();
+	it('has hover class when unfollowed', () => {
 		render(<FollowButton personName="Alexandra" />);
 
 		const button = screen.getByRole('button', { name: 'Follow Alexandra' });
 
-		await user.hover(button);
-		expect(button).toHaveStyle({
-			backgroundColor: 'var(--cinemata-sunset-horizon-700)',
-		});
-
-		await user.unhover(button);
-		expect(button).toHaveStyle({
-			backgroundColor: 'var(--cinemata-sunset-horizon-500)',
-		});
+		expect(button.className).toContain('hover:bg-cinemata-sunset-horizon-700');
 	});
 });

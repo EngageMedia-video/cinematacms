@@ -12,7 +12,7 @@ function MovieItemContainer({ children, contentClassName = '', shellClassName = 
 				<a
 					href={link}
 					className={joinClasses(
-						'h-full w-full cursor-pointer text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200',
+						'h-full w-full cursor-pointer text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-600p dark:focus-visible:ring-cinemata-strait-blue-200',
 						contentClassName
 					)}
 					aria-label={title ? `Open ${title}` : 'Open movie details'}
@@ -34,13 +34,13 @@ function MovieMetadata({ items = [] }) {
 	}
 
 	return (
-		<div className="body-body-12-regular flex flex-wrap items-center text-cinemata-pacific-deep-400">
+		<div className="body-body-12-regular flex flex-wrap items-center text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-400">
 			{validItems.map((item, index) => (
 				<span key={`${item}-${index}`} className="inline-flex items-center">
 					{index > 0 ? (
 						<span
 							aria-hidden="true"
-							className="mx-2 h-[4px] w-[4px] rounded-full bg-cinemata-pacific-deep-400"
+							className="mx-2 h-[4px] w-[4px] rounded-full bg-cinemata-neutral-500 dark:bg-cinemata-pacific-deep-400"
 						/>
 					) : null}
 					<span>{item}</span>
@@ -56,10 +56,14 @@ function MovieCopy({ title, subtitle, metadata, orientation = 'vertical' }) {
 			className={joinClasses('flex min-w-0 flex-col', orientation === 'horizontal' ? 'gap-3' : 'gap-2')}
 			data-movie-copy
 		>
-			<p className="body-body-16-medium m-0 p-0 text-cinemata-strait-blue-50 line-clamp-3">{title}</p>
+			<p className="body-body-16-medium m-0 p-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50 line-clamp-3">
+				{title}
+			</p>
 
 			{subtitle ? (
-				<p className="body-body-14-regular m-0 p-0 text-cinemata-sunset-horizon-200">{subtitle}</p>
+				<p className="body-body-14-regular m-0 p-0 text-cinemata-sunset-horizon-600 dark:text-cinemata-sunset-horizon-200">
+					{subtitle}
+				</p>
 			) : null}
 
 			<MovieMetadata items={metadata} />
@@ -79,7 +83,12 @@ function MoviePoster({
 	showTopRightIcon = false,
 }) {
 	return (
-		<div className={joinClasses('relative overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-800', className)}>
+		<div
+			className={joinClasses(
+				'relative overflow-hidden rounded-[6px] bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800',
+				className
+			)}
+		>
 			<img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
 
 			{badge ? (
@@ -90,7 +99,7 @@ function MoviePoster({
 
 			{duration ? (
 				<span
-					className="caption-caption-10-regular absolute right-3 bottom-3 inline-flex rounded-[2px] bg-[#111111]/90 p-1 text-cinemata-strait-blue-50"
+					className="caption-caption-10-regular absolute right-3 bottom-3 inline-flex rounded-[2px] bg-[#111111]/90 p-1 text-cinemata-white dark:text-cinemata-strait-blue-50"
 					data-movie-item-duration
 				>
 					{duration}
@@ -99,7 +108,7 @@ function MoviePoster({
 
 			{showTopRightIcon && iconName ? (
 				<span
-					className="absolute top-3 right-3 inline-flex rounded-[2px] bg-cinemata-sunset-horizon-400p px-2 py-1 text-cinemata-pacific-deep-900"
+					className="absolute top-3 right-3 inline-flex rounded-[2px] bg-cinemata-sunset-horizon-400p px-2 py-1 text-cinemata-white dark:text-cinemata-pacific-deep-900"
 					data-movie-item-icon-chip
 				>
 					<Icon name={iconName} size={16} decorative={iconLabel ? false : true} label={iconLabel} />

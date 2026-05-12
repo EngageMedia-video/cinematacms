@@ -283,7 +283,7 @@ export function Dropdown({
 					<span
 						aria-hidden="true"
 						className={joinClasses(
-							'inline-flex h-6 w-6 shrink-0 items-center justify-center self-center text-cinemata-strait-blue-50 transition-transform duration-200',
+							'inline-flex h-6 w-6 shrink-0 items-center justify-center self-center text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50 transition-transform duration-200',
 							open ? 'rotate-180' : ''
 						)}
 					>

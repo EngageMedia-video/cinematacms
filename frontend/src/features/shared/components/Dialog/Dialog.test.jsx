@@ -26,7 +26,7 @@ describe('Dialog', () => {
 		const dialog = screen.getByRole('dialog', { name: 'Upload dialog' });
 
 		expect(dialog).toBeVisible();
-		expect(document.body.querySelector('.bg-cinemata-pacific-deep-950')).not.toBeNull();
+		expect(document.body.querySelector('[data-dialog-overlay]')).not.toBeNull();
 	});
 
 	it('closes when the overlay is clicked', async () => {
@@ -38,7 +38,7 @@ describe('Dialog', () => {
 			</Dialog>
 		);
 
-		const overlay = document.body.querySelector('.bg-cinemata-pacific-deep-950');
+		const overlay = document.body.querySelector('[data-dialog-overlay]');
 		expect(screen.getByRole('dialog', { name: 'Upload dialog' })).toBeVisible();
 
 		await user.click(overlay);
@@ -63,7 +63,7 @@ describe('Dialog', () => {
 
 		render(<ControlledDialog />);
 
-		const overlay = document.body.querySelector('.bg-cinemata-pacific-deep-950');
+		const overlay = document.body.querySelector('[data-dialog-overlay]');
 		await user.click(overlay);
 
 		expect(handleOpenChange).toHaveBeenCalledWith(false);
