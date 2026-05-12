@@ -65,7 +65,7 @@ describe('HomePage', () => {
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, [RECOMMENDED_MEDIA]);
 		render(<HomePage />);
 		expect(await screen.findByText('Recommended Film')).toBeInTheDocument();
-		expect(screen.getByText('FEATURED BY CURATORS')).toBeInTheDocument();
+		expect(screen.getByRole('heading', { level: 2, name: 'Featured by Curators' })).toBeInTheDocument();
 	});
 
 	it('CategorySectionRow instances render null because useCategoryMedia returns []', () => {

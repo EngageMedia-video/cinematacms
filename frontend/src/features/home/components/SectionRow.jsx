@@ -5,6 +5,8 @@ import { Carousel } from './Carousel';
 
 const SectionRowContext = createContext(null);
 
+const CARD_SECTION_CLASS = 'rounded-xl bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800 p-6';
+
 const SKELETON_ITEMS = Array.from({ length: 4 }, (_, i) => i);
 
 function SectionRowHeader({ badgeLabel, badgeColor = '#026690', viewAllHref }) {
@@ -20,6 +22,14 @@ function SectionRowHeader({ badgeLabel, badgeColor = '#026690', viewAllHref }) {
 				</a>
 			) : null}
 		</div>
+	);
+}
+
+function SectionRowTitle({ children }) {
+	return (
+		<h2 className="heading-h6-20-medium m-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
+			{children}
+		</h2>
 	);
 }
 
@@ -39,40 +49,43 @@ function SkeletonGrid() {
 		<div className="grid gap-4 grid-cols-4">
 			{SKELETON_ITEMS.map((i) => (
 				<div key={i} className="flex flex-col gap-2">
-					<div className="aspect-video rounded-[6px] bg-cinemata-pacific-deep-800 animate-pulse" />
-					<div className="h-4 rounded bg-cinemata-pacific-deep-800 animate-pulse w-3/4" />
-					<div className="h-3 rounded bg-cinemata-pacific-deep-800 animate-pulse w-1/2" />
+					<div className="aspect-video rounded-[6px] bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-700 animate-pulse" />
+					<div className="h-4 rounded bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-700 animate-pulse w-3/4" />
+					<div className="h-3 rounded bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-700 animate-pulse w-1/2" />
 				</div>
 			))}
 		</div>
 	);
 }
 
-export function SectionRow({ items = [], isLoading = false, isError = false, children }) {
+export function SectionRow({ items = [], isLoading = false, isError = false, variant = 'default', children }) {
 	const isEmpty = !isLoading && items.length === 0;
 
 	if (isError || isEmpty) {
 		return null;
 	}
 
+	const sectionClass = variant === 'card' ? `${CARD_SECTION_CLASS} flex flex-col gap-4` : 'flex flex-col gap-4';
+
 	if (isLoading) {
 		return (
-			<section className="flex flex-col gap-4">
-				<div className="h-5 rounded bg-cinemata-pacific-deep-800 animate-pulse w-32" />
+			<section className={sectionClass}>
+				<div className="h-5 rounded bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-700 animate-pulse w-32" />
 				<SkeletonGrid />
 			</section>
 		);
 	}
 
-	const value = { items };
+	const value = { items, variant };
 
 	return (
 		<SectionRowContext value={value}>
-			<section className="flex flex-col gap-4">{children}</section>
+			<section className={sectionClass}>{children}</section>
 		</SectionRowContext>
 	);
 }
 
 SectionRow.Header = SectionRowHeader;
+SectionRow.Title = SectionRowTitle;
 SectionRow.Description = SectionRowDescription;
 SectionRow.Carousel = SectionRowCarousel;

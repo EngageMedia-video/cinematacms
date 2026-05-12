@@ -79,4 +79,26 @@ describe('SectionRow', () => {
 		const link = screen.getByRole('link', { name: 'VIEW ALL' });
 		expect(link).toHaveAttribute('href', '/search?c=Film');
 	});
+
+	it('renders Title text when SectionRow.Title is provided', () => {
+		render(
+			<SectionRow items={ITEMS}>
+				<SectionRow.Title>Featured by Curators</SectionRow.Title>
+			</SectionRow>
+		);
+		expect(screen.getByRole('heading', { name: 'Featured by Curators' })).toBeInTheDocument();
+	});
+
+	it('Title and Description can both render alongside Header', () => {
+		render(
+			<SectionRow items={ITEMS}>
+				<SectionRow.Header badgeLabel="INDIGENOUS" />
+				<SectionRow.Title>Featured by Curators</SectionRow.Title>
+				<SectionRow.Description text="Stories from indigenous communities." />
+			</SectionRow>
+		);
+		expect(screen.getByText('INDIGENOUS')).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: 'Featured by Curators' })).toBeInTheDocument();
+		expect(screen.getByText('Stories from indigenous communities.')).toBeInTheDocument();
+	});
 });

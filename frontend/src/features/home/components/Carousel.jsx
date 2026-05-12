@@ -70,10 +70,10 @@ function CarouselDots() {
 					onClick={() => goToPage(i)}
 					aria-label={`Go to page ${i + 1}`}
 					aria-current={i === currentPage ? 'true' : undefined}
-					className={`h-2 w-2 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200 ${
+					className={`h-2 rounded-full transition-[width,background-color] focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200 ${
 						i === currentPage
-							? 'bg-cinemata-strait-blue-50'
-							: 'bg-cinemata-pacific-deep-600 hover:bg-cinemata-pacific-deep-400'
+							? 'w-4 bg-cinemata-pacific-deep-700 dark:bg-cinemata-strait-blue-50'
+							: 'w-2 bg-cinemata-neutral-400 hover:bg-cinemata-neutral-500 dark:bg-cinemata-pacific-deep-400 dark:hover:bg-cinemata-pacific-deep-300'
 					}`}
 				/>
 			))}

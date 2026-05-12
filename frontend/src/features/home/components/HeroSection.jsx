@@ -14,7 +14,7 @@ const CARD_AREA = 'w-full lg:w-1/3 flex flex-col gap-4 min-w-0';
 
 function HeroPosterFallback({ src }) {
 	return (
-		<div className="relative w-full aspect-video rounded-[6px] overflow-hidden bg-cinemata-pacific-deep-800">
+		<div className="relative w-full aspect-video rounded-[6px] overflow-hidden bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800">
 			{src ? <img src={src} alt="Video poster" className="w-full h-full object-cover" loading="eager" /> : null}
 		</div>
 	);
@@ -62,25 +62,35 @@ function Card() {
 
 	return (
 		<div className={CARD_AREA}>
-			<h2 className="heading-h4-32-medium m-0 text-cinemata-strait-blue-50">{media.title}</h2>
+			<div className="flex h-full flex-col justify-between gap-4 rounded-xl bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800 p-6">
+				<div className="flex min-w-0 flex-col gap-3">
+					<h2 className="heading-h6-20-medium m-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
+						{media.title}
+					</h2>
 
-			{metaItems.length > 0 ? (
-				<p className="body-body-14-regular text-cinemata-pacific-deep-400 m-0">{metaItems.join(' · ')}</p>
-			) : null}
+					{media.description ? (
+						<ExpandableText
+							text={media.description}
+							clampLines={6}
+							className="body-body-14-regular text-cinemata-neutral-700 dark:text-cinemata-strait-blue-100"
+						/>
+					) : null}
+				</div>
 
-			{media.views !== undefined ? (
-				<p className="body-body-12-regular text-cinemata-pacific-deep-400 m-0">
-					{media.views.toLocaleString()} views
-				</p>
-			) : null}
+				<div className="flex min-w-0 flex-col gap-1">
+					{metaItems.length > 0 ? (
+						<p className="body-body-14-regular m-0 text-cinemata-neutral-600 dark:text-cinemata-sunset-horizon-200">
+							{metaItems.join(' · ')}
+						</p>
+					) : null}
 
-			{media.description ? (
-				<ExpandableText
-					text={media.description}
-					clampLines={6}
-					className="text-cinemata-strait-blue-100 body-body-14-regular"
-				/>
-			) : null}
+					{media.views !== undefined ? (
+						<p className="body-body-12-regular m-0 text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-400">
+							{media.views.toLocaleString()} views
+						</p>
+					) : null}
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -99,11 +109,11 @@ export function HeroSection({ children }) {
 		return (
 			<div className={HERO_LAYOUT} aria-busy="true">
 				<div
-					className={`${PLAYER_AREA} aspect-video rounded-[6px] bg-cinemata-pacific-deep-800 animate-pulse`}
+					className={`${PLAYER_AREA} aspect-video rounded-[6px] bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800 animate-pulse`}
 				/>
 				<div className={`${CARD_AREA} gap-3`}>
-					<div className="h-8 rounded bg-cinemata-pacific-deep-800 animate-pulse w-3/4" />
-					<div className="h-4 rounded bg-cinemata-pacific-deep-800 animate-pulse w-1/2" />
+					<div className="h-8 rounded bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-700 animate-pulse w-3/4" />
+					<div className="h-4 rounded bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-700 animate-pulse w-1/2" />
 				</div>
 			</div>
 		);
