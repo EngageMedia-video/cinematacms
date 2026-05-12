@@ -90,7 +90,7 @@ export function MediaDropzone({
 	return (
 		<div
 			className={joinClasses(
-				'relative w-full rounded-[16px] bg-cinemata-pacific-deep-800 px-6 py-[60px] transition-transform duration-200',
+				'relative w-full rounded-[16px] bg-cinemata-neutral-100 dark:bg-cinemata-pacific-deep-800 px-6 py-[60px] transition-transform duration-200',
 				isDragging ? 'scale-[1.01]' : '',
 				isDropAnimating ? 'scale-[0.995]' : '',
 				disabled ? 'opacity-60' : '',
@@ -127,7 +127,7 @@ export function MediaDropzone({
 					rx="16"
 					ry="16"
 					fill="none"
-					className="stroke-cinemata-strait-blue-300"
+					className="stroke-cinemata-neutral-400 dark:stroke-cinemata-strait-blue-300"
 					strokeWidth="1"
 					strokeDasharray="8 8"
 				/>
@@ -137,7 +137,7 @@ export function MediaDropzone({
 				{iconName ? (
 					<div
 						className={joinClasses(
-							'text-cinemata-strait-blue-50 transition-transform duration-200',
+							'text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50 transition-transform duration-200',
 							isDragging ? '-translate-y-1 scale-105' : '',
 							isDropAnimating ? 'translate-y-0 scale-95' : ''
 						)}
@@ -146,7 +146,9 @@ export function MediaDropzone({
 					</div>
 				) : null}
 
-				<p className="body-body-16-regular m-0 p-0 text-cinemata-strait-blue-50">{label}</p>
+				<p className="body-body-16-regular m-0 p-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
+					{label}
+				</p>
 
 				<Button
 					type="button"

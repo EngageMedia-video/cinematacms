@@ -92,7 +92,7 @@ const meta = {
 		},
 	},
 	render: (args) => (
-		<div className="w-[600px] bg-cinemata-pacific-deep-950">
+		<div className="w-[600px] bg-cinemata-neutral-100 dark:bg-cinemata-pacific-deep-950">
 			<MediaDropzone {...args} />
 		</div>
 	),
@@ -121,7 +121,7 @@ export const WithSelectionState = {
 		const [selectedNames, setSelectedNames] = useState([]);
 
 		return (
-			<div className="w-full min-w-[320px] max-w-[1060px] bg-cinemata-pacific-deep-950 p-4 sm:p-8">
+			<div className="w-full min-w-[320px] max-w-[1060px] bg-cinemata-neutral-100 p-4 dark:bg-cinemata-pacific-deep-950 sm:p-8">
 				<MediaDropzone
 					{...args}
 					onFilesSelected={(files) => {

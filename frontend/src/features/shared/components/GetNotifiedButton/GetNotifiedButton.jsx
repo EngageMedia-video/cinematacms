@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Icon } from '../Icon';
 import { Button } from '../Button';
 
+function joinClasses(...classes) {
+	return classes.filter(Boolean).join(' ');
+}
+
 export function GetNotifiedButton({ notified = false, className = '', onMouseEnter, onMouseLeave, ...props }) {
-	const [hovered, setHovered] = useState(false);
 	const bellIconRef = useRef(null);
 	const previousNotifiedRef = useRef(notified);
 
@@ -27,31 +30,14 @@ export function GetNotifiedButton({ notified = false, className = '', onMouseEnt
 		previousNotifiedRef.current = notified;
 	}, [notified]);
 
-	const style = useMemo(() => {
-		return {
-			backgroundColor: hovered ? 'var(--cinemata-strait-blue-800)' : 'var(--cinemata-strait-blue-700)',
-			borderColor: 'transparent',
-			borderStyle: 'solid',
-			borderWidth: '1px',
-			color: 'var(--cinemata-neutral-50)',
-		};
-	}, [hovered]);
-
 	return (
 		<Button
-			variant="text"
-			className={className}
+			variant="primary"
+			className={joinClasses(className)}
 			aria-label={props['aria-label'] ?? 'Get Notified'}
 			aria-pressed={notified}
-			style={style}
-			onMouseEnter={(event) => {
-				setHovered(true);
-				onMouseEnter?.(event);
-			}}
-			onMouseLeave={(event) => {
-				setHovered(false);
-				onMouseLeave?.(event);
-			}}
+			onMouseEnter={onMouseEnter}
+			onMouseLeave={onMouseLeave}
 			{...props}
 		>
 			<span className="inline-flex items-center justify-center gap-(--space-xs) leading-none">
@@ -72,7 +58,7 @@ export function GetNotifiedButton({ notified = false, className = '', onMouseEnt
 						<Icon name="check" decorative data-testid="check-icon" size="sm" />
 					</span>
 				) : (
-					<span>Get Notified</span>
+					<span className="body-body-14-bold">GET NOTIFIED</span>
 				)}
 			</span>
 		</Button>

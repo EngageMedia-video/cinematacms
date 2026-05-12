@@ -102,7 +102,7 @@ export function Tooltip({
 					id={tooltipId}
 					role="tooltip"
 					className={joinClasses(
-						'body-body-14-regular absolute z-20 w-[250px] rounded-[8px] border border-cinemata-pacific-deep-800 bg-cinemata-pacific-deep-900 px-3 py-1.5 leading-[1.2] text-cinemata-strait-blue-50',
+						'body-body-14-regular absolute z-20 w-[250px] rounded-[8px] border border-cinemata-neutral-300 bg-cinemata-white px-3 py-1.5 leading-[1.2] text-cinemata-neutral-900 dark:border-cinemata-pacific-deep-800 dark:bg-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50',
 						PLACEMENT_CLASSES[resolvedPlacement],
 						contentClassName
 					)}
