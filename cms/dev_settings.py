@@ -305,17 +305,16 @@ FILE_STORAGE = "django.core.files.storage.DefaultStorage"
 # valid options: content, author
 RELATED_MEDIA_STRATEGY = "content"
 
-# These are passed on every request
-LOAD_FROM_CDN = False  # if set to True will fetch external content from CDNs
-LOGIN_ALLOWED = True  # whether the login button appears
-REGISTER_ALLOWED = True  # whether the register button appears
-UPLOAD_MEDIA_ALLOWED = True  # whether the upload media button appears
-CAN_LIKE_MEDIA = True  # whether the like media appears
-CAN_DISLIKE_MEDIA = True  # whether the dislike media appears
-CAN_REPORT_MEDIA = True  # whether the report media appears
-CAN_SHARE_MEDIA = True  # whether the share media appears
-
-# experimental functionality for user ratings
+# DEPRECATED: These flags are migrated to waffle switches (managed via Django admin).
+# These settings are no longer read. Remove after confirming waffle switches work in production.
+LOAD_FROM_CDN = False
+LOGIN_ALLOWED = True
+REGISTER_ALLOWED = True
+UPLOAD_MEDIA_ALLOWED = True
+CAN_LIKE_MEDIA = True
+CAN_DISLIKE_MEDIA = True
+CAN_REPORT_MEDIA = True
+CAN_SHARE_MEDIA = True
 ALLOW_RATINGS = False
 ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY = False
 

@@ -9,6 +9,7 @@ import time
 import uuid
 
 import m3u8
+import waffle
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
@@ -1071,7 +1072,11 @@ class Media(models.Model):
     def ratings_info(self):
         # to be used if user ratings are allowed
         ret = []
-        if not settings.ALLOW_RATINGS:
+        try:
+            ratings_enabled = waffle.switch_is_active("allow_ratings")
+        except Exception:
+            ratings_enabled = getattr(settings, "ALLOW_RATINGS", False)
+        if not ratings_enabled:
             return []
         for category in self.category.all():
             ratings = RatingCategory.objects.filter(category=category, enabled=True)
