@@ -3,6 +3,7 @@ import DOMPurify from 'dompurify';
 import { Badge } from '../../shared/components/Badge';
 import { ExpandableText } from './ExpandableText';
 import { Carousel } from './Carousel';
+import { CAROUSEL_GRID_TEMPLATE_COLUMNS } from './carouselLayout';
 import { MediaTile } from './MediaTile';
 
 const SectionRowContext = createContext(null);
@@ -15,6 +16,10 @@ const VIEW_ALL_LINK_CLASS =
 	'caption-caption-10-regular whitespace-nowrap uppercase tracking-wide text-cinemata-sunset-horizon-400p no-underline hover:text-cinemata-sunset-horizon-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p dark:text-cinemata-sunset-horizon-200 dark:hover:text-cinemata-sunset-horizon-100';
 
 const SKELETON_ITEMS = Array.from({ length: 4 }, (_, i) => i);
+const GRID_CLASS = 'grid gap-x-4 gap-y-8';
+const DYNAMIC_GRID_STYLE = {
+	gridTemplateColumns: CAROUSEL_GRID_TEMPLATE_COLUMNS,
+};
 
 function SectionRowHeader({ badgeLabel, badgeColor = '#026690', viewAllHref }) {
 	return (
@@ -79,10 +84,7 @@ function SectionRowGrid() {
 	const { items } = use(SectionRowContext);
 
 	return (
-		<div
-			className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5"
-			data-section-row-grid
-		>
+		<div className={GRID_CLASS} style={DYNAMIC_GRID_STYLE} data-section-row-grid>
 			{items.map((item) => (
 				<MediaTile key={item.friendly_token ?? item.id ?? item.url} item={item} />
 			))}
@@ -92,7 +94,7 @@ function SectionRowGrid() {
 
 function SkeletonGrid() {
 	return (
-		<div className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+		<div className={GRID_CLASS} style={DYNAMIC_GRID_STYLE}>
 			{SKELETON_ITEMS.map((i) => (
 				<div key={i} className="flex flex-col gap-2">
 					<div className="aspect-video rounded-[6px] bg-cinemata-pacific-deep-100 dark:bg-cinemata-pacific-deep-700 animate-pulse" />

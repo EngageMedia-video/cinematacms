@@ -77,7 +77,7 @@ function RecentVideosRow() {
 function HomePageContent() {
 	return (
 		<div data-modern-track className={HOME_TRACK_CLASS}>
-			<div className="space-y-4">
+			<div className="space-y-8">
 				<Text as="h1" variant="h4" className="text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50">
 					Most Popular
 				</Text>

@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { SectionRow } from './SectionRow';
+import { CAROUSEL_GRID_TEMPLATE_COLUMNS } from './carouselLayout';
 
 function makeItems(count = 5) {
 	return Array.from({ length: count }, (_, i) => ({
@@ -103,6 +104,11 @@ describe('SectionRow', () => {
 		const grid = container.querySelector('[data-section-row-grid]');
 		expect(grid).not.toBeNull();
 		expect(grid).toHaveClass('grid');
+		expect(grid).not.toHaveClass('lg:grid-cols-4');
+		expect(grid).not.toHaveClass('xl:grid-cols-5');
+		expect(grid).toHaveStyle({
+			gridTemplateColumns: CAROUSEL_GRID_TEMPLATE_COLUMNS,
+		});
 		expect(screen.queryByRole('group', { name: 'Page navigation' })).toBeNull();
 	});
 

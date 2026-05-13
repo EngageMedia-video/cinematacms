@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Carousel } from './Carousel';
@@ -15,6 +15,7 @@ function makeItems(count) {
 }
 
 const originalMatchMedia = window.matchMedia;
+const originalResizeObserver = window.ResizeObserver;
 
 function mockViewportWidth(width) {
 	Object.defineProperty(window, 'matchMedia', {
@@ -37,11 +38,36 @@ function mockViewportWidth(width) {
 	});
 }
 
+function mockCarouselContainerWidth(width) {
+	class ResizeObserverMock {
+		constructor(callback) {
+			this.callback = callback;
+		}
+
+		observe(target) {
+			this.callback([{ target, contentRect: { width } }]);
+		}
+
+		disconnect() {}
+	}
+
+	Object.defineProperty(window, 'ResizeObserver', {
+		configurable: true,
+		writable: true,
+		value: ResizeObserverMock,
+	});
+}
+
 afterEach(() => {
 	Object.defineProperty(window, 'matchMedia', {
 		configurable: true,
 		writable: true,
 		value: originalMatchMedia,
+	});
+	Object.defineProperty(window, 'ResizeObserver', {
+		configurable: true,
+		writable: true,
+		value: originalResizeObserver,
 	});
 	vi.restoreAllMocks();
 });
@@ -143,6 +169,18 @@ describe('Carousel — default shape', () => {
 		expect(screen.getByRole('button', { name: 'Go to page 2' })).toBeInTheDocument();
 	});
 
+	it('uses the carousel container width over the viewport when deciding visible items', async () => {
+		mockViewportWidth(1280);
+		mockCarouselContainerWidth(820);
+		render(<Carousel items={makeItems(8)} />);
+
+		const firstItemShell = screen.getByRole('link', { name: 'Open Item 0' }).closest('article').parentElement;
+
+		await waitFor(() => expect(screen.getByRole('button', { name: 'Go to page 3' })).toBeInTheDocument());
+		expect(screen.queryByRole('button', { name: 'Go to page 4' })).toBeNull();
+		expect(firstItemShell).toHaveStyle({ width: 'calc(33.333333333333336% - 0.6666666666666666rem)' });
+	});
+
 	it('swipes left to the next page on touch devices', () => {
 		const { container } = render(<Carousel items={makeItems(4)} visibleCount={1} />);
 		const track = container.querySelector('[data-carousel-track]');
@@ -161,6 +199,31 @@ describe('Carousel — default shape', () => {
 		fireEvent.pointerUp(track, { pointerId: 1, pointerType: 'touch', clientX: 320, clientY: 128 });
 
 		expect(screen.getByRole('button', { name: 'Go to page 1' })).toHaveAttribute('aria-current', 'true');
+	});
+
+	it('swipes back from a partial last page when only two items remain', () => {
+		const { container } = render(<Carousel items={makeItems(6)} visibleCount={4} defaultPage={1} />);
+		const track = container.querySelector('[data-carousel-track]');
+
+		expect(screen.queryByRole('button', { name: 'Next page' })).toBeNull();
+		expect(screen.getByRole('button', { name: 'Go to page 2' })).toHaveAttribute('aria-current', 'true');
+
+		fireEvent.pointerDown(track, { pointerId: 1, pointerType: 'touch', clientX: 180, clientY: 120 });
+		fireEvent.pointerUp(track, { pointerId: 1, pointerType: 'touch', clientX: 320, clientY: 128 });
+
+		expect(screen.getByRole('button', { name: 'Go to page 1' })).toHaveAttribute('aria-current', 'true');
+	});
+
+	it('syncs dots from native horizontal scrolling', () => {
+		const { container } = render(<Carousel items={makeItems(6)} visibleCount={4} />);
+		const track = container.querySelector('[data-carousel-track]');
+
+		Object.defineProperty(track, 'clientWidth', { configurable: true, value: 800 });
+		Object.defineProperty(track, 'scrollWidth', { configurable: true, value: 1200 });
+		Object.defineProperty(track, 'scrollLeft', { configurable: true, value: 400 });
+		fireEvent.scroll(track);
+
+		expect(screen.getByRole('button', { name: 'Go to page 2' })).toHaveAttribute('aria-current', 'true');
 	});
 
 	it('keeps vertical drags from changing carousel pages', () => {

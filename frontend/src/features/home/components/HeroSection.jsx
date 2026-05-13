@@ -1,7 +1,10 @@
-import { createContext, use, lazy, Suspense } from 'react';
+import { createContext, use, lazy, Suspense, useLayoutEffect, useRef, useState } from 'react';
 import { preload } from 'react-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useFeaturedMedia } from '../hooks/useFeaturedMedia';
 import { normalizeMediaList } from '../utils/mediaList';
+import { HOME_QUERY_KEYS } from '../queryClient';
+import { cn } from '../../shared/utils/classNames';
 import { formatDuration } from '../../shared/utils/formatDuration';
 import { HeroMediaCard, HeroMediaCardSkeleton } from './HeroMediaCard';
 import HeroPlayButtonIcon from '../assets/hero-play-button.svg?react';
@@ -10,12 +13,16 @@ const HeroVideoPlayer = lazy(() => import('./HeroVideoPlayer'));
 
 const HeroContext = createContext(null);
 
-const HERO_LAYOUT = 'flex w-full flex-col gap-6 lg:flex-row lg:items-start lg:gap-[26px]';
-const PLAYER_AREA = 'w-full min-w-0 flex-1';
-const PLAYER_FRAME =
-	'relative aspect-video w-full overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-50 lg:aspect-auto lg:h-[480px]';
+const HERO_DESKTOP_MIN_WIDTH = 1175;
+const HERO_LAYOUT = 'flex w-full flex-col gap-6';
+const HERO_LAYOUT_DESKTOP = 'flex-row items-start gap-[26px]';
+const PLAYER_AREA = 'w-full min-w-0';
+const PLAYER_AREA_DESKTOP = 'flex-1';
+const PLAYER_FRAME = 'relative aspect-video w-full overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-50';
+const PLAYER_FRAME_DESKTOP = 'h-[480px] aspect-auto';
 const PLAYER_CLASS = 'relative h-full w-full overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-50';
-const CARD_AREA = 'w-full min-w-0 lg:h-[480px] lg:w-[466px] lg:shrink-0';
+const CARD_AREA = 'w-full min-w-0';
+const CARD_AREA_DESKTOP = 'h-[480px] w-[466px] shrink-0';
 const VIDEO_FORMAT_ORDER = ['hls', 'h265', 'vp9', 'h264', 'vp8', 'mp4', 'theora'];
 const VIDEO_FORMAT_EXTENSIONS = {
 	hls: ['m3u8'],
@@ -26,6 +33,105 @@ const VIDEO_FORMAT_EXTENSIONS = {
 	mp4: ['mp4'],
 	theora: ['ogg'],
 };
+
+function getMediaTokenFromUrl(url) {
+	if (!url) return '';
+
+	try {
+		const baseUrl = globalThis.location?.origin ?? 'http://localhost';
+		const parsedUrl = new URL(url, baseUrl);
+		return parsedUrl.searchParams.get('m') || '';
+	} catch {
+		return url.match(/[?&]m=([^&]+)/)?.[1] ?? '';
+	}
+}
+
+function getHeroDetailUrl(media) {
+	if (!media) return '';
+
+	if (media.api_url) {
+		return media.api_url;
+	}
+
+	const token = getMediaTokenFromUrl(media.url || media.link);
+	if (token) {
+		return `/api/v1/media/${encodeURIComponent(token)}`;
+	}
+
+	const fallbackToken = media.friendly_token || media.uid || media.id;
+	return fallbackToken ? `/api/v1/media/${encodeURIComponent(fallbackToken)}` : '';
+}
+
+function hasEncodingUrl(encodingsInfo) {
+	return Object.values(encodingsInfo ?? {}).some((encodings) => {
+		if (!encodings || 'object' !== typeof encodings) return false;
+		if (encodings.url) return true;
+
+		return Object.values(encodings).some((encoding) => encoding?.url);
+	});
+}
+
+function hasPlaybackPayload(media) {
+	if (!media) return false;
+
+	const playbackMedia = media.hero_playback ?? media;
+	return Boolean(
+		Object.values(playbackMedia.hls_info ?? {}).some(Boolean) || hasEncodingUrl(playbackMedia.encodings_info)
+	);
+}
+
+function useHeroMediaDetail(media) {
+	const detailUrl = getHeroDetailUrl(media);
+
+	return useQuery({
+		queryKey: HOME_QUERY_KEYS.heroDetail(detailUrl),
+		queryFn: async () => {
+			const response = await fetch(detailUrl);
+			if (!response.ok) throw new Error(`Failed to fetch hero media detail: ${response.status}`);
+			return response.json();
+		},
+		enabled: Boolean(media && detailUrl && !hasPlaybackPayload(media)),
+	});
+}
+
+function mergeHeroDetail(media, detail) {
+	if (!media || !detail) {
+		return media;
+	}
+
+	return {
+		...media,
+		...detail,
+		hero_playback: detail.hero_playback ?? detail,
+	};
+}
+
+function useHeroDesktopLayout() {
+	const rootRef = useRef(null);
+	const [isDesktopLayout, setIsDesktopLayout] = useState(false);
+
+	useLayoutEffect(() => {
+		const root = rootRef.current;
+		if (!root) return undefined;
+
+		const updateLayout = () => {
+			setIsDesktopLayout(root.getBoundingClientRect().width >= HERO_DESKTOP_MIN_WIDTH);
+		};
+
+		updateLayout();
+
+		if ('undefined' !== typeof ResizeObserver) {
+			const resizeObserver = new ResizeObserver(updateLayout);
+			resizeObserver.observe(root);
+			return () => resizeObserver.disconnect();
+		}
+
+		window.addEventListener('resize', updateLayout);
+		return () => window.removeEventListener('resize', updateLayout);
+	}, []);
+
+	return { rootRef, isDesktopLayout };
+}
 
 function getHeroDuration(media) {
 	const rawDuration = media.duration_in_seconds ?? media.duration;
@@ -153,9 +259,15 @@ function getHeroPlayback(media) {
 }
 
 function PlayAffordance() {
+	const ctx = use(HeroContext);
+	const isDesktopLayout = ctx?.isDesktopLayout ?? false;
+
 	return (
 		<div
-			className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex size-[72px] -translate-x-1/2 -translate-y-1/2 items-center justify-center lg:size-[130px]"
+			className={cn(
+				'pointer-events-none absolute left-1/2 top-1/2 z-10 flex size-[72px] -translate-x-1/2 -translate-y-1/2 items-center justify-center',
+				isDesktopLayout ? 'size-[130px]' : ''
+			)}
 			aria-hidden="true"
 		>
 			<HeroPlayButtonIcon className="size-[81.25%] text-cinemata-strait-blue-400" focusable="false" />
@@ -187,8 +299,8 @@ function HeroPosterFallback({ src }) {
 function Player() {
 	const ctx = use(HeroContext);
 	if (!ctx) return null;
-	const { media } = ctx;
-	const playableMedia = media.hero_playback ?? null;
+	const { media, isDesktopLayout } = ctx;
+	const playableMedia = media.hero_playback ?? media;
 	const duration = getHeroDuration(playableMedia ?? media);
 	const poster = playableMedia?.poster_url || media.thumbnail_url;
 	const playback = getHeroPlayback(playableMedia);
@@ -202,8 +314,8 @@ function Player() {
 		: [];
 
 	return (
-		<div className={PLAYER_AREA}>
-			<div className={PLAYER_FRAME}>
+		<div className={cn(PLAYER_AREA, isDesktopLayout ? PLAYER_AREA_DESKTOP : '')}>
+			<div className={cn(PLAYER_FRAME, isDesktopLayout ? PLAYER_FRAME_DESKTOP : '')}>
 				{playback.sources.length ? (
 					<Suspense fallback={<HeroPosterFallback src={poster} />}>
 						<HeroVideoPlayer
@@ -229,16 +341,19 @@ function Player() {
 function Card() {
 	const ctx = use(HeroContext);
 	if (!ctx) return null;
-	const { media } = ctx;
+	const { media, isDesktopLayout } = ctx;
 
-	return <HeroMediaCard media={media} className={CARD_AREA} />;
+	return <HeroMediaCard media={media} className={cn(CARD_AREA, isDesktopLayout ? CARD_AREA_DESKTOP : '')} />;
 }
 
 export function HeroSection({ children }) {
 	const { data, isLoading } = useFeaturedMedia();
+	const { rootRef, isDesktopLayout } = useHeroDesktopLayout();
 
 	const items = normalizeMediaList(data);
-	const media = items[0] ?? null;
+	const listMedia = items[0] ?? null;
+	const { data: detailData } = useHeroMediaDetail(listMedia);
+	const media = mergeHeroDetail(listMedia, detailData);
 
 	if (!isLoading && !media) {
 		return null;
@@ -246,12 +361,23 @@ export function HeroSection({ children }) {
 
 	if (isLoading && !media) {
 		return (
-			<section className={HERO_LAYOUT} aria-busy="true" aria-label="Featured media">
+			<div ref={rootRef} className="w-full">
 				<div
-					className={`${PLAYER_AREA} aspect-video rounded-[6px] bg-cinemata-pacific-deep-100 animate-pulse lg:aspect-auto lg:h-[480px]`}
-				/>
-				<HeroMediaCardSkeleton className={CARD_AREA} />
-			</section>
+					className={cn(HERO_LAYOUT, isDesktopLayout ? HERO_LAYOUT_DESKTOP : '')}
+					aria-busy="true"
+					aria-label="Featured media"
+					role="region"
+				>
+					<div
+						className={cn(
+							PLAYER_AREA,
+							'aspect-video rounded-[6px] bg-cinemata-pacific-deep-100 animate-pulse',
+							isDesktopLayout ? `${PLAYER_AREA_DESKTOP} ${PLAYER_FRAME_DESKTOP}` : ''
+						)}
+					/>
+					<HeroMediaCardSkeleton className={cn(CARD_AREA, isDesktopLayout ? CARD_AREA_DESKTOP : '')} />
+				</div>
+			</div>
 		);
 	}
 
@@ -259,13 +385,18 @@ export function HeroSection({ children }) {
 		preload(media.thumbnail_url, { as: 'image' });
 	}
 
-	const value = { media };
+	const value = { media, isDesktopLayout };
 
 	return (
 		<HeroContext value={value}>
-			<section className={HERO_LAYOUT} aria-label="Featured media">
-				{children}
-			</section>
+			<div ref={rootRef} className="w-full">
+				<section
+					className={cn(HERO_LAYOUT, isDesktopLayout ? HERO_LAYOUT_DESKTOP : '')}
+					aria-label="Featured media"
+				>
+					{children}
+				</section>
+			</div>
 		</HeroContext>
 	);
 }

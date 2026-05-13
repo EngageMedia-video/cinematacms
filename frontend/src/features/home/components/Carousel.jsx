@@ -1,6 +1,12 @@
 import { createContext, use, useState, useCallback, useEffect, useRef } from 'react';
 import { Icon } from '../../shared/components/Icon';
 import { MediaTile } from './MediaTile';
+import {
+	CAROUSEL_GAP_PX,
+	CAROUSEL_MAX_VISIBLE_COUNT,
+	CAROUSEL_MIN_ITEM_WIDTH_PX,
+	CAROUSEL_RESPONSIVE_VISIBLE_COUNT_QUERIES,
+} from './carouselLayout';
 
 const CarouselContext = createContext(null);
 
@@ -8,14 +14,11 @@ function clamp(value, min, max) {
 	return Math.min(Math.max(value, min), max);
 }
 
-const DEFAULT_VISIBLE_COUNT = 4;
-const RESPONSIVE_VISIBLE_COUNT_QUERIES = [
-	{ query: '(max-width: 639px)', visibleCount: 1 },
-	{ query: '(max-width: 1023px)', visibleCount: 2 },
-];
+const DEFAULT_VISIBLE_COUNT = CAROUSEL_MAX_VISIBLE_COUNT;
+const MIN_ITEM_WIDTH_PX = CAROUSEL_MIN_ITEM_WIDTH_PX;
+const GAP_PX = CAROUSEL_GAP_PX;
+const RESPONSIVE_VISIBLE_COUNT_QUERIES = CAROUSEL_RESPONSIVE_VISIBLE_COUNT_QUERIES;
 
-// Must match gap-4 (1rem). Used in CSS calc expressions below.
-const GAP_REM = 1;
 const SWIPE_THRESHOLD_PX = 48;
 
 function getResponsiveVisibleCount() {
@@ -27,7 +30,50 @@ function getResponsiveVisibleCount() {
 	return match?.visibleCount ?? DEFAULT_VISIBLE_COUNT;
 }
 
-function useCarouselVisibleCount(visibleCount) {
+function getVisibleCountForWidth(width) {
+	if (!width || width <= 0) {
+		return getResponsiveVisibleCount();
+	}
+
+	const count = Math.floor((width + GAP_PX) / (MIN_ITEM_WIDTH_PX + GAP_PX));
+	return clamp(count, 1, DEFAULT_VISIBLE_COUNT);
+}
+
+function installViewportFallbackVisibleCount(visibleCount, setResponsiveVisibleCount) {
+	if (visibleCount !== undefined) {
+		setResponsiveVisibleCount(visibleCount);
+		return undefined;
+	}
+
+	if ('undefined' === typeof window || !window.matchMedia) {
+		setResponsiveVisibleCount(DEFAULT_VISIBLE_COUNT);
+		return undefined;
+	}
+
+	const mediaQueries = RESPONSIVE_VISIBLE_COUNT_QUERIES.map(({ query }) => window.matchMedia(query));
+	const updateVisibleCount = () => setResponsiveVisibleCount(getResponsiveVisibleCount());
+
+	updateVisibleCount();
+	mediaQueries.forEach((mediaQuery) => {
+		if (mediaQuery.addEventListener) {
+			mediaQuery.addEventListener('change', updateVisibleCount);
+		} else {
+			mediaQuery.addListener(updateVisibleCount);
+		}
+	});
+
+	return () => {
+		mediaQueries.forEach((mediaQuery) => {
+			if (mediaQuery.removeEventListener) {
+				mediaQuery.removeEventListener('change', updateVisibleCount);
+			} else {
+				mediaQuery.removeListener(updateVisibleCount);
+			}
+		});
+	};
+}
+
+function useCarouselVisibleCount(visibleCount, rootRef) {
 	const [responsiveVisibleCount, setResponsiveVisibleCount] = useState(
 		() => visibleCount ?? getResponsiveVisibleCount()
 	);
@@ -38,33 +84,24 @@ function useCarouselVisibleCount(visibleCount) {
 			return undefined;
 		}
 
-		if ('undefined' === typeof window || !window.matchMedia) {
-			setResponsiveVisibleCount(DEFAULT_VISIBLE_COUNT);
-			return undefined;
+		const root = rootRef.current;
+		if (root && 'undefined' !== typeof ResizeObserver) {
+			const updateVisibleCount = (width) => {
+				setResponsiveVisibleCount(getVisibleCountForWidth(width));
+			};
+			const resizeObserver = new ResizeObserver((entries) => {
+				const width = entries[0]?.contentRect?.width ?? root.getBoundingClientRect().width;
+				updateVisibleCount(width);
+			});
+
+			updateVisibleCount(root.getBoundingClientRect().width || root.clientWidth);
+			resizeObserver.observe(root);
+
+			return () => resizeObserver.disconnect();
 		}
 
-		const mediaQueries = RESPONSIVE_VISIBLE_COUNT_QUERIES.map(({ query }) => window.matchMedia(query));
-		const updateVisibleCount = () => setResponsiveVisibleCount(getResponsiveVisibleCount());
-
-		updateVisibleCount();
-		mediaQueries.forEach((mediaQuery) => {
-			if (mediaQuery.addEventListener) {
-				mediaQuery.addEventListener('change', updateVisibleCount);
-			} else {
-				mediaQuery.addListener(updateVisibleCount);
-			}
-		});
-
-		return () => {
-			mediaQueries.forEach((mediaQuery) => {
-				if (mediaQuery.removeEventListener) {
-					mediaQuery.removeEventListener('change', updateVisibleCount);
-				} else {
-					mediaQuery.removeListener(updateVisibleCount);
-				}
-			});
-		};
-	}, [visibleCount]);
+		return installViewportFallbackVisibleCount(visibleCount, setResponsiveVisibleCount);
+	}, [visibleCount, rootRef]);
 
 	return responsiveVisibleCount;
 }
@@ -78,22 +115,58 @@ function releasePointerCapture(target, pointerId) {
 }
 
 function CarouselTrack() {
-	const { items, visibleCount, currentPage, goPrev, goNext, atStart, atEnd } = use(CarouselContext);
+	const { items, visibleCount, pageCount, currentPage, goPrev, goNext, goToPage, atStart, atEnd } =
+		use(CarouselContext);
+	const trackRef = useRef(null);
 	const swipeStartRef = useRef(null);
 	const didSwipeRef = useRef(false);
 
 	// N items + N-1 gaps = container.
 	const itemWidth = `calc(${100 / visibleCount}% - ${(visibleCount - 1) / visibleCount}rem)`;
 
-	// Translation per page = N × item width + N gaps = container + one gap.
-	const translateX = `calc(-${currentPage} * (100% + ${GAP_REM}rem))`;
+	const getPageScrollLeft = useCallback((page) => {
+		const track = trackRef.current;
+		if (!track) return 0;
+
+		const maxScrollLeft = Math.max(0, track.scrollWidth - track.clientWidth);
+		const pageWidth = track.clientWidth + GAP_PX;
+		return Math.min(page * pageWidth, maxScrollLeft);
+	}, []);
+
+	useEffect(() => {
+		const track = trackRef.current;
+		if (!track) return;
+
+		const nextScrollLeft = getPageScrollLeft(currentPage);
+		if (Math.abs(track.scrollLeft - nextScrollLeft) <= 1) return;
+
+		track.scrollTo({ left: nextScrollLeft, behavior: 'smooth' });
+	}, [currentPage, getPageScrollLeft, items.length, visibleCount]);
+
+	const handleScroll = useCallback(
+		(event) => {
+			const track = event.currentTarget;
+			const maxScrollLeft = Math.max(0, track.scrollWidth - track.clientWidth);
+			const pageWidth = track.clientWidth + GAP_PX;
+			const page =
+				maxScrollLeft > 0 && track.scrollLeft >= maxScrollLeft - 1
+					? pageCount - 1
+					: Math.round(track.scrollLeft / pageWidth);
+			const nextPage = clamp(page, 0, pageCount - 1);
+
+			if (nextPage !== currentPage) {
+				goToPage(nextPage);
+			}
+		},
+		[currentPage, goToPage, pageCount]
+	);
 
 	const handlePointerDown = useCallback((event) => {
 		if (event.pointerType === 'mouse' && event.button !== 0) {
 			return;
 		}
 
-		swipeStartRef.current = { x: event.clientX, y: event.clientY };
+		swipeStartRef.current = { x: event.clientX, y: event.clientY, scrollLeft: event.currentTarget.scrollLeft };
 		event.currentTarget.setPointerCapture?.(event.pointerId);
 	}, []);
 
@@ -116,6 +189,10 @@ function CarouselTrack() {
 			}
 
 			didSwipeRef.current = true;
+
+			if (Math.abs(event.currentTarget.scrollLeft - start.scrollLeft) > 2) {
+				return;
+			}
 
 			if (deltaX < 0 && !atEnd) {
 				goNext();
@@ -143,21 +220,21 @@ function CarouselTrack() {
 
 	return (
 		<div
-			className="touch-pan-y overflow-hidden"
+			ref={trackRef}
+			className="snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 			data-carousel-track
+			onScroll={handleScroll}
 			onPointerDown={handlePointerDown}
 			onPointerUp={handlePointerUp}
 			onPointerCancel={handlePointerCancel}
 			onClickCapture={handleClickCapture}
+			style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
 		>
-			<div
-				className="flex gap-4 transition-transform duration-300 ease-in-out"
-				style={{ transform: `translateX(${translateX})` }}
-			>
+			<div className="flex gap-4">
 				{items.map((item) => (
 					<div
 						key={item.friendly_token ?? item.id ?? item.url}
-						style={{ flexShrink: 0, flexGrow: 0, width: itemWidth }}
+						style={{ flexShrink: 0, flexGrow: 0, scrollSnapAlign: 'start', width: itemWidth }}
 					>
 						<MediaTile item={item} />
 					</div>
@@ -271,8 +348,9 @@ export function Carousel({
 	defaultPage = 0,
 	children,
 }) {
+	const rootRef = useRef(null);
 	const [internalPage, setInternalPage] = useState(defaultPage);
-	const resolvedVisibleCount = useCarouselVisibleCount(visibleCount);
+	const resolvedVisibleCount = useCarouselVisibleCount(visibleCount, rootRef);
 	const safeVisibleCount = Math.max(1, resolvedVisibleCount);
 
 	const isControlled = controlledPage !== undefined;
@@ -281,6 +359,12 @@ export function Carousel({
 	const safePage = clamp(currentPage, 0, pageCount - 1);
 	const atStart = safePage === 0;
 	const atEnd = safePage >= pageCount - 1;
+
+	useEffect(() => {
+		if (!isControlled) {
+			setInternalPage((page) => clamp(page, 0, pageCount - 1));
+		}
+	}, [isControlled, pageCount]);
 
 	const goPrev = useCallback(() => {
 		if (isControlled) {
@@ -322,7 +406,11 @@ export function Carousel({
 		atEnd,
 	};
 
-	return <CarouselContext value={value}>{children ?? <DefaultCarouselBody />}</CarouselContext>;
+	return (
+		<div ref={rootRef} data-carousel>
+			<CarouselContext value={value}>{children ?? <DefaultCarouselBody />}</CarouselContext>
+		</div>
+	);
 }
 
 Carousel.Track = CarouselTrack;

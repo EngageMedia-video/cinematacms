@@ -9,12 +9,16 @@ Modern-track home page: hero section + Featured by Curators row + admin-configur
    - `#home-initial-data-recommended` — `/api/v1/media?show=recommended` payload
 
 2. `src/entries/index-revamp.js` reads both blocks via `readInitialDataFromDom()` and seeds
-   `homeQueryClient` before first render. The hero and curators row paint with no network request.
+   `homeQueryClient` before first render. The hero and curators row paint from seeded list data.
 
 3. `useFeaturedMedia` and `useRecommendedMedia` hooks observe keys `['home','featured']` and
    `['home','recommended']`. On `staleTime` expiry or focus, they refetch from the API.
 
-4. `useRecentMedia()` fetches `/api/v1/media?show=latest` for the Recent videos grid. This mirrors the legacy
+4. `HeroSection.Player` uses list playback data when present. When the featured list item has no playback payload,
+   it fetches the legacy media detail endpoint derived from `url`, `friendly_token`, `uid`, or `id` before mounting
+   the player.
+
+5. `useRecentMedia()` fetches `/api/v1/media?show=latest` for the Recent videos grid. This mirrors the legacy
    homepage/latest feed while keeping initial hero rendering focused on server-injected featured data.
 
 ## Homepage playlist rows

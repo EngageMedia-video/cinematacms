@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { HeroSection } from './HeroSection';
@@ -42,6 +42,8 @@ const SAMPLE_MEDIA = {
 	},
 };
 
+const originalResizeObserver = window.ResizeObserver;
+
 function makeClient(seededData) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 60_000 } } });
 	if (seededData !== undefined) {
@@ -60,7 +62,39 @@ function renderHero(seededData, children) {
 }
 
 describe('HeroSection', () => {
-	afterEach(() => vi.restoreAllMocks());
+	afterEach(() => {
+		Object.defineProperty(window, 'ResizeObserver', {
+			configurable: true,
+			writable: true,
+			value: originalResizeObserver,
+		});
+		vi.restoreAllMocks();
+	});
+
+	function mockHeroWidth(width) {
+		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+			bottom: 0,
+			height: 0,
+			left: 0,
+			right: width,
+			top: 0,
+			width,
+			x: 0,
+			y: 0,
+			toJSON: () => ({}),
+		});
+
+		class ResizeObserverMock {
+			observe() {}
+			disconnect() {}
+		}
+
+		Object.defineProperty(window, 'ResizeObserver', {
+			configurable: true,
+			writable: true,
+			value: ResizeObserverMock,
+		});
+	}
 
 	it('renders null when featured data resolves to an empty array', () => {
 		const { container } = renderHero([]);
@@ -100,8 +134,31 @@ describe('HeroSection', () => {
 	it('renders the Figma-aligned hero region shell', () => {
 		renderHero([SAMPLE_MEDIA]);
 		const region = screen.getByRole('region', { name: 'Featured media' });
-		expect(region.className).toContain('lg:gap-[26px]');
-		expect(region.className).not.toContain('lg:pr-[27px]');
+		expect(region).toHaveClass('flex');
+		expect(region).toHaveClass('flex-col');
+		expect(region.className).not.toContain('lg:flex-row');
+	});
+
+	it('keeps the player visible and card constrained when the hero container reaches desktop width', async () => {
+		mockHeroWidth(1400);
+
+		renderHero(
+			[SAMPLE_MEDIA],
+			<>
+				<HeroSection.Player />
+				<HeroSection.Card />
+			</>
+		);
+
+		const region = screen.getByRole('region', { name: 'Featured media' });
+		await waitFor(() => expect(region).toHaveClass('flex-row'));
+
+		const player = await screen.findByTestId('hero-video-player');
+		expect(player.parentElement).toHaveClass('h-[480px]');
+		expect(player.parentElement).toHaveClass('aspect-auto');
+		expect(player.parentElement.parentElement).toHaveClass('flex-1');
+		expect(screen.getByRole('article').parentElement).toHaveClass('w-[466px]');
+		expect(screen.getByRole('article').parentElement).toHaveClass('h-[480px]');
 	});
 
 	it('uses the light mode Figma color mapping for the metadata card', () => {
@@ -131,6 +188,42 @@ describe('HeroSection', () => {
 			'https://example.com/thumb.jpg'
 		);
 		expect(screen.getByText('11:16')).toBeInTheDocument();
+	});
+
+	it('fetches legacy media detail for hero playback when the featured list has no playback payload', async () => {
+		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+			ok: true,
+			json: async () => ({
+				...SAMPLE_MEDIA,
+				title: 'Detail Featured Video',
+				hero_playback: undefined,
+				poster_url: 'https://example.com/detail-poster.jpg',
+				hls_info: {},
+				encodings_info: {
+					720: {
+						h264: {
+							url: '/media/detail-720.mp4',
+							status: 'success',
+						},
+					},
+				},
+				subtitles_info: [],
+			}),
+		});
+
+		renderHero(
+			[{ ...SAMPLE_MEDIA, hero_playback: undefined, url: '/view?m=legacy-token' }],
+			<>
+				<HeroSection.Player />
+				<HeroSection.Card />
+			</>
+		);
+
+		const player = await screen.findByTestId('hero-video-player');
+		expect(fetchSpy).toHaveBeenCalledWith('/api/v1/media/legacy-token');
+		expect(player).toHaveAttribute('data-poster', 'https://example.com/detail-poster.jpg');
+		expect(JSON.parse(player.dataset.sources)).toEqual([{ src: '/media/detail-720.mp4', type: 'video/mp4' }]);
+		expect(screen.getByRole('heading', { level: 2, name: 'Detail Featured Video' })).toBeInTheDocument();
 	});
 
 	it('renders the hero player from hero_playback without calling fetch', async () => {
