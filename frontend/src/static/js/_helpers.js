@@ -1,8 +1,8 @@
 import ComponentRenderer from './classes_instances/components-renderer';
 
-import { PageHeader } from './components/-NEW-/PageHeader';
 import { PageSidebar } from './components/-NEW-/PageSidebar';
 import { AppLayout } from '../../features/layout';
+import { LegacyTopbarMount } from '../../features/layout/topbar/LegacyTopbarMount';
 
 function shouldUseModernShell() {
 	return document.body?.dataset.uiVariant === 'revamp' && document.getElementById('app-root') !== null;
@@ -20,7 +20,7 @@ export function renderPage(idSelector, PageComponent) {
 		return;
 	}
 
-	ComponentRenderer.display(document.getElementById('app-header'), PageHeader, {}, 'app-header');
+	ComponentRenderer.display(document.getElementById('app-header'), LegacyTopbarMount, {}, 'app-header');
 	ComponentRenderer.display(document.getElementById('app-sidebar'), PageSidebar, {}, 'app-sidebar');
 
 	if (idSelector !== undefined && PageComponent !== undefined) {

@@ -1,0 +1,46 @@
+// !important fights _extra.css which also pins --header-height with !important.
+html body {
+	--header-height: 90px !important;
+}
+
+@media (max-width: 767px) {
+	html body {
+		--header-height: 128px !important;
+	}
+}
+
+header[data-topbar] {
+	button {
+		border: 0;
+		outline: 0;
+		box-shadow: none;
+		font: inherit;
+		letter-spacing: inherit;
+	}
+
+	button:not(:disabled) {
+		cursor: pointer;
+	}
+
+	// Restore focus ring removed by the button reset above (WCAG 2.4.7).
+	button:focus-visible,
+	a:focus-visible,
+	input:focus-visible {
+		outline: 2px solid #ed7c30;
+		outline-offset: 2px;
+		border-radius: 4px;
+	}
+
+	input[type='search'],
+	input[type='text'] {
+		border: 0;
+		outline: 0;
+		box-shadow: none;
+		font: inherit;
+		letter-spacing: inherit;
+	}
+
+	a {
+		text-decoration: none;
+	}
+}
