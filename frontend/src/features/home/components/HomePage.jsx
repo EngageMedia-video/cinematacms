@@ -3,74 +3,16 @@ import homeQueryClient from '../queryClient';
 import { HeroSection } from './HeroSection';
 import { SectionRow } from './SectionRow';
 import { useRecommendedMedia } from '../hooks/useRecommendedMedia';
-import { useCategoryMedia } from '../hooks/useCategoryMedia';
+import { useRecentMedia } from '../hooks/useRecentMedia';
+import { useIndexFeaturedPlaylists } from '../hooks/useIndexFeaturedPlaylists';
+import { usePlaylistMedia } from '../hooks/usePlaylistMedia';
 import { normalizeMediaList } from '../utils/mediaList';
 import { Text } from '../../shared/components/Text';
 
-// Provisional category list — declared at module scope, never inside the render function.
-// playlistId is null until an admin assigns a playlist to each category.
-// Rows with no playlistId render nothing (useCategoryMedia is disabled when playlistId is falsy).
-const PROVISIONAL_CATEGORIES = [
-	{
-		id: 'gender-sexuality',
-		label: 'GENDER & SEXUALITY',
-		color: '#A855F7',
-		viewAllHref: '/search?c=Gender',
-		playlistId: null,
-		description:
-			'Stories exploring identity, expression, and lived experiences across the gender and sexuality spectrum. Highlighting voices, struggles, and perspectives often marginalized or overlooked.',
-	},
-	{
-		id: 'film',
-		label: 'FILM',
-		color: '#3B82F6',
-		viewAllHref: '/search?c=Film',
-		playlistId: null,
-		description:
-			'Narrative or experimental moving-image works that tell stories through cinematic expression. Spanning fiction, hybrid, and artistic formats across cultures and perspectives.',
-	},
-	{
-		id: 'webinar',
-		label: 'WEBINAR',
-		color: '#10B981',
-		viewAllHref: '/search?c=Webinar',
-		playlistId: null,
-		description:
-			'Recorded or live sessions featuring discussions, talks, or educational content. Designed for learning, dialogue, and knowledge sharing across communities.',
-	},
-	{
-		id: 'documentary',
-		label: 'DOCUMENTARY',
-		color: '#ED7C30',
-		viewAllHref: '/search?c=Documentary',
-		playlistId: null,
-		description:
-			'Non-fiction films grounded in real events, people, and lived experiences. Focused on truth-telling, social issues, and amplifying underrepresented voices.',
-	},
-	{
-		id: 'animal-rights',
-		label: 'ANIMAL RIGHTS',
-		color: '#F6A474',
-		viewAllHref: '/search?c=Animal+Rights',
-		playlistId: null,
-		description:
-			'Content addressing the ethical treatment, protection, and rights of animals. Exploring activism, environmental impact, and human-animal relationships.',
-	},
-	{
-		id: 'indigenous',
-		label: 'INDIGENOUS',
-		color: '#00876A',
-		viewAllHref: '/search?c=Indigenous',
-		playlistId: null,
-		heading: 'Featured by Curators',
-		description:
-			'Voices, stories, and cultural expressions from indigenous communities around the world. Centering land rights, tradition, resistance, and sovereignty.',
-	},
-];
-
-// Card-variant indices match the Figma rhythm: alternating bands plus the final
-// Indigenous row, which the design treats as a featured callout with a card surface.
-const CARD_INDICES = new Set([0, 2, 4, 5]);
+const HOME_PLAYLIST_ITEM_LIMIT = 20;
+const HOME_RECENT_ITEM_LIMIT = 20;
+const PLAYLIST_LOADING_ROWS = ['playlist-loading-row-1', 'playlist-loading-row-2'];
+const HOME_TRACK_CLASS = 'mx-auto min-h-screen w-full max-w-[1680px] space-y-10';
 
 function FeaturedByCuratorsRow() {
 	const { data, isLoading, isError } = useRecommendedMedia();
@@ -85,29 +27,58 @@ function FeaturedByCuratorsRow() {
 	);
 }
 
-function CategorySectionRow({ category, variant }) {
-	const { data, isLoading, isError } = useCategoryMedia(category.playlistId);
-	const items = normalizeMediaList(data);
+function HomepagePlaylistRow({ playlist, variant }) {
+	const { data, isLoading, isError } = usePlaylistMedia(playlist.api_url);
+	const items = normalizeMediaList(data).slice(0, HOME_PLAYLIST_ITEM_LIMIT);
 
 	return (
 		<SectionRow items={items} isLoading={isLoading} isError={isError} variant={variant}>
-			<SectionRow.Header
-				badgeLabel={category.label}
-				badgeColor={category.color}
-				viewAllHref={category.viewAllHref}
-			/>
-			{category.heading ? <SectionRow.Title>{category.heading}</SectionRow.Title> : null}
-			{category.description ? <SectionRow.Description text={category.description} /> : null}
+			<SectionRow.Title viewAllHref={playlist.url}>{playlist.title}</SectionRow.Title>
+			{playlist.text ? <SectionRow.HtmlDescription html={playlist.text} /> : null}
 			<SectionRow.Carousel />
+		</SectionRow>
+	);
+}
+
+function HomepagePlaylistRows() {
+	const { data, isLoading, isError } = useIndexFeaturedPlaylists();
+
+	if (isLoading) {
+		return PLAYLIST_LOADING_ROWS.map((key, index) => (
+			<SectionRow key={key} items={[]} isLoading variant={index % 2 === 0 ? 'card' : 'default'} />
+		));
+	}
+
+	if (isError || !Array.isArray(data) || data.length === 0) {
+		return null;
+	}
+
+	return data.map((playlist, index) => (
+		<HomepagePlaylistRow
+			key={playlist.api_url ?? playlist.url ?? `${playlist.title}-${playlist.ordering ?? index}`}
+			playlist={playlist}
+			variant={index % 2 === 0 ? 'card' : 'default'}
+		/>
+	));
+}
+
+function RecentVideosRow() {
+	const { data, isLoading, isError } = useRecentMedia();
+	const items = normalizeMediaList(data).slice(0, HOME_RECENT_ITEM_LIMIT);
+
+	return (
+		<SectionRow items={items} isLoading={isLoading} isError={isError}>
+			<SectionRow.Title viewAllHref="/latest">Recent videos</SectionRow.Title>
+			<SectionRow.Grid />
 		</SectionRow>
 	);
 }
 
 function HomePageContent() {
 	return (
-		<div data-modern-track className="min-h-screen w-full space-y-10">
-			<div className="space-y-8">
-				<Text as="h1" variant="h4">
+		<div data-modern-track className={HOME_TRACK_CLASS}>
+			<div className="space-y-4">
+				<Text as="h1" variant="h4" className="text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50">
 					Most Popular
 				</Text>
 
@@ -119,13 +90,9 @@ function HomePageContent() {
 
 			<FeaturedByCuratorsRow />
 
-			{PROVISIONAL_CATEGORIES.map((category, index) => (
-				<CategorySectionRow
-					key={category.id}
-					category={category}
-					variant={CARD_INDICES.has(index) ? 'card' : 'default'}
-				/>
-			))}
+			<HomepagePlaylistRows />
+
+			<RecentVideosRow />
 		</div>
 	);
 }

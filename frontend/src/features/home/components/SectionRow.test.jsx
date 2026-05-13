@@ -39,6 +39,28 @@ describe('SectionRow', () => {
 		expect(container.querySelector('.animate-pulse')).not.toBeNull();
 	});
 
+	it('card variant paints a background layer without changing content alignment', () => {
+		const { container } = render(
+			<SectionRow items={ITEMS} variant="card">
+				<SectionRow.Title>Featured Playlist</SectionRow.Title>
+			</SectionRow>
+		);
+		const section = container.querySelector('section');
+		const background = section.querySelector('[aria-hidden="true"]');
+
+		expect(section).toHaveClass('relative');
+		expect(section).toHaveClass('py-4');
+		expect(section).not.toHaveClass('px-4');
+		expect(section).not.toHaveClass('sm:px-6');
+		expect(section).not.toHaveClass('lg:px-8');
+		expect(background).toHaveClass('bg-cinemata-neutral-50');
+		expect(background).toHaveClass('-left-4');
+		expect(background).toHaveClass('-right-4');
+		expect(background).toHaveClass('sm:rounded-[8px]');
+		expect(background).toHaveClass('lg:-left-8');
+		expect(background).toHaveClass('lg:-right-8');
+	});
+
 	it('renders badge with the supplied label when Header is present', () => {
 		render(
 			<SectionRow items={ITEMS}>
@@ -70,6 +92,20 @@ describe('SectionRow', () => {
 		expect(screen.queryByText('READ MORE')).toBeNull();
 	});
 
+	it('renders a grid body for non-carousel rows', () => {
+		const { container } = render(
+			<SectionRow items={ITEMS}>
+				<SectionRow.Title>Recent videos</SectionRow.Title>
+				<SectionRow.Grid />
+			</SectionRow>
+		);
+
+		const grid = container.querySelector('[data-section-row-grid]');
+		expect(grid).not.toBeNull();
+		expect(grid).toHaveClass('grid');
+		expect(screen.queryByRole('group', { name: 'Page navigation' })).toBeNull();
+	});
+
 	it('VIEW ALL link points to the correct href', () => {
 		render(
 			<SectionRow items={ITEMS}>
@@ -95,9 +131,12 @@ describe('SectionRow', () => {
 				<SectionRow.Title viewAllHref="/recommended">Featured by Curators</SectionRow.Title>
 			</SectionRow>
 		);
-		expect(screen.getByRole('heading', { name: 'Featured by Curators' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: 'Featured by Curators' })).toHaveClass(
+			'text-cinemata-pacific-deep-700'
+		);
 		const link = screen.getByRole('link', { name: 'VIEW ALL' });
 		expect(link).toHaveAttribute('href', '/recommended');
+		expect(link).toHaveClass('text-cinemata-sunset-horizon-400p');
 	});
 
 	it('Title and Description can both render alongside Header', () => {
@@ -111,5 +150,36 @@ describe('SectionRow', () => {
 		expect(screen.getByText('INDIGENOUS')).toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: 'Featured by Curators' })).toBeInTheDocument();
 		expect(screen.getByText('Stories from indigenous communities.')).toBeInTheDocument();
+	});
+
+	it('HtmlDescription renders admin-provided line breaks and links', () => {
+		const { container } = render(
+			<SectionRow items={ITEMS}>
+				<SectionRow.HtmlDescription html={'First line<br><br>Curated by <a href="#">someone</a>'} />
+			</SectionRow>
+		);
+
+		const description = container.querySelector('section > div');
+		expect(container.querySelectorAll('br')).toHaveLength(2);
+		expect(description).toHaveClass('space-y-2');
+		expect(description).toHaveClass('[&_p]:m-0');
+		expect(description).toHaveClass('[&_br+br]:hidden');
+		expect(description).toHaveClass('[&_a]:text-cinemata-sunset-horizon-400p');
+		expect(screen.getByRole('link', { name: 'someone' })).toHaveAttribute('href', '#');
+	});
+
+	it('HtmlDescription sanitizes dangerous attributes before rendering', () => {
+		const { container } = render(
+			<SectionRow items={ITEMS}>
+				<SectionRow.HtmlDescription
+					html={'<img src="x" onerror="alert(1)"><a href="javascript:alert(1)">bad</a>'}
+				/>
+			</SectionRow>
+		);
+
+		expect(container.querySelector('img')).not.toHaveAttribute('onerror');
+		const anchor = container.querySelector('a');
+		expect(anchor).toHaveTextContent('bad');
+		expect(anchor).not.toHaveAttribute('href');
 	});
 });

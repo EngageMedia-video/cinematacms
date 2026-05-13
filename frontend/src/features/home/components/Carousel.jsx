@@ -1,7 +1,6 @@
-import { createContext, use, useState, useCallback } from 'react';
-import { formatDuration } from '../../shared/utils/formatDuration';
-import { VerticalMovieItem } from '../../shared/components/MovieItem/MovieItem';
+import { createContext, use, useState, useCallback, useEffect, useRef } from 'react';
 import { Icon } from '../../shared/components/Icon';
+import { MediaTile } from './MediaTile';
 
 const CarouselContext = createContext(null);
 
@@ -10,18 +9,78 @@ function clamp(value, min, max) {
 }
 
 const DEFAULT_VISIBLE_COUNT = 4;
-
-function resolveStateIcon(state) {
-	if (!state) return '';
-	if (state === 'private' || state === 'unlisted') return 'eyeSlash';
-	return 'eye';
-}
+const RESPONSIVE_VISIBLE_COUNT_QUERIES = [
+	{ query: '(max-width: 639px)', visibleCount: 1 },
+	{ query: '(max-width: 1023px)', visibleCount: 2 },
+];
 
 // Must match gap-4 (1rem). Used in CSS calc expressions below.
 const GAP_REM = 1;
+const SWIPE_THRESHOLD_PX = 48;
+
+function getResponsiveVisibleCount() {
+	if ('undefined' === typeof window || !window.matchMedia) {
+		return DEFAULT_VISIBLE_COUNT;
+	}
+
+	const match = RESPONSIVE_VISIBLE_COUNT_QUERIES.find(({ query }) => window.matchMedia(query).matches);
+	return match?.visibleCount ?? DEFAULT_VISIBLE_COUNT;
+}
+
+function useCarouselVisibleCount(visibleCount) {
+	const [responsiveVisibleCount, setResponsiveVisibleCount] = useState(
+		() => visibleCount ?? getResponsiveVisibleCount()
+	);
+
+	useEffect(() => {
+		if (visibleCount !== undefined) {
+			setResponsiveVisibleCount(visibleCount);
+			return undefined;
+		}
+
+		if ('undefined' === typeof window || !window.matchMedia) {
+			setResponsiveVisibleCount(DEFAULT_VISIBLE_COUNT);
+			return undefined;
+		}
+
+		const mediaQueries = RESPONSIVE_VISIBLE_COUNT_QUERIES.map(({ query }) => window.matchMedia(query));
+		const updateVisibleCount = () => setResponsiveVisibleCount(getResponsiveVisibleCount());
+
+		updateVisibleCount();
+		mediaQueries.forEach((mediaQuery) => {
+			if (mediaQuery.addEventListener) {
+				mediaQuery.addEventListener('change', updateVisibleCount);
+			} else {
+				mediaQuery.addListener(updateVisibleCount);
+			}
+		});
+
+		return () => {
+			mediaQueries.forEach((mediaQuery) => {
+				if (mediaQuery.removeEventListener) {
+					mediaQuery.removeEventListener('change', updateVisibleCount);
+				} else {
+					mediaQuery.removeListener(updateVisibleCount);
+				}
+			});
+		};
+	}, [visibleCount]);
+
+	return responsiveVisibleCount;
+}
+
+function releasePointerCapture(target, pointerId) {
+	try {
+		target.releasePointerCapture?.(pointerId);
+	} catch {
+		// Ignore stale pointer capture releases from cancelled gestures.
+	}
+}
 
 function CarouselTrack() {
-	const { items, visibleCount, currentPage } = use(CarouselContext);
+	const { items, visibleCount, currentPage, goPrev, goNext, atStart, atEnd } = use(CarouselContext);
+	const swipeStartRef = useRef(null);
+	const didSwipeRef = useRef(false);
 
 	// N items + N-1 gaps = container.
 	const itemWidth = `calc(${100 / visibleCount}% - ${(visibleCount - 1) / visibleCount}rem)`;
@@ -29,8 +88,68 @@ function CarouselTrack() {
 	// Translation per page = N × item width + N gaps = container + one gap.
 	const translateX = `calc(-${currentPage} * (100% + ${GAP_REM}rem))`;
 
+	const handlePointerDown = useCallback((event) => {
+		if (event.pointerType === 'mouse' && event.button !== 0) {
+			return;
+		}
+
+		swipeStartRef.current = { x: event.clientX, y: event.clientY };
+		event.currentTarget.setPointerCapture?.(event.pointerId);
+	}, []);
+
+	const handlePointerUp = useCallback(
+		(event) => {
+			const start = swipeStartRef.current;
+			swipeStartRef.current = null;
+			releasePointerCapture(event.currentTarget, event.pointerId);
+
+			if (!start) {
+				return;
+			}
+
+			const deltaX = event.clientX - start.x;
+			const deltaY = event.clientY - start.y;
+			const isHorizontalSwipe = Math.abs(deltaX) >= SWIPE_THRESHOLD_PX && Math.abs(deltaX) > Math.abs(deltaY);
+
+			if (!isHorizontalSwipe) {
+				return;
+			}
+
+			didSwipeRef.current = true;
+
+			if (deltaX < 0 && !atEnd) {
+				goNext();
+			} else if (deltaX > 0 && !atStart) {
+				goPrev();
+			}
+		},
+		[atEnd, atStart, goNext, goPrev]
+	);
+
+	const handlePointerCancel = useCallback((event) => {
+		swipeStartRef.current = null;
+		releasePointerCapture(event.currentTarget, event.pointerId);
+	}, []);
+
+	const handleClickCapture = useCallback((event) => {
+		if (!didSwipeRef.current) {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+		didSwipeRef.current = false;
+	}, []);
+
 	return (
-		<div className="overflow-hidden">
+		<div
+			className="touch-pan-y overflow-hidden"
+			data-carousel-track
+			onPointerDown={handlePointerDown}
+			onPointerUp={handlePointerUp}
+			onPointerCancel={handlePointerCancel}
+			onClickCapture={handleClickCapture}
+		>
 			<div
 				className="flex gap-4 transition-transform duration-300 ease-in-out"
 				style={{ transform: `translateX(${translateX})` }}
@@ -40,18 +159,7 @@ function CarouselTrack() {
 						key={item.friendly_token ?? item.id ?? item.url}
 						style={{ flexShrink: 0, flexGrow: 0, width: itemWidth }}
 					>
-						<VerticalMovieItem
-							title={item.title}
-							imageSrc={item.thumbnail_url}
-							link={item.url}
-							duration={item.duration_in_seconds ? formatDuration(item.duration_in_seconds) : ''}
-							subtitle={item.author_name}
-							iconName={resolveStateIcon(item.state)}
-							metadata={[
-								item.media_country || null,
-								item.views != null ? `${Number(item.views).toLocaleString()} views` : null,
-							]}
-						/>
+						<MediaTile item={item} />
 					</div>
 				))}
 			</div>
@@ -89,7 +197,7 @@ function CarouselArrows() {
 function CarouselOverlayArrows() {
 	const { atStart, atEnd, goPrev, goNext } = use(CarouselContext);
 	const btnClass =
-		'pointer-events-auto absolute top-1/2 z-10 flex size-[70px] -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-cinemata-strait-blue-700 transition-colors hover:text-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200 focus-visible:ring-offset-2 focus-visible:ring-offset-cinemata-pacific-deep-50 dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-400 dark:focus-visible:ring-offset-cinemata-pacific-deep-950';
+		'pointer-events-auto absolute top-1/2 z-10 hidden size-[70px] -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-cinemata-strait-blue-700 transition-colors hover:text-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200 focus-visible:ring-offset-2 focus-visible:ring-offset-cinemata-pacific-deep-50 md:flex dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-400 dark:focus-visible:ring-offset-cinemata-pacific-deep-950';
 
 	return (
 		<>
@@ -119,8 +227,8 @@ export function CarouselIndicator({ count, activeIndex, onSelect }) {
 					aria-current={i === activeIndex ? 'true' : undefined}
 					className={`rounded-full p-0 border-0 focus:outline-none ${
 						i === activeIndex
-							? 'h-2 w-6 bg-cinemata-pacific-deep-800 dark:bg-white transition-[width,background-color] duration-300'
-							: 'size-2 min-w-0 bg-cinemata-pacific-deep-800/30 hover:bg-cinemata-pacific-deep-800/50 dark:bg-white/30 dark:hover:bg-white/50'
+							? 'h-2 w-6 bg-cinemata-strait-blue-800 dark:bg-white transition-[width,background-color] duration-300'
+							: 'size-2 min-w-0 bg-cinemata-pacific-deep-400/30 hover:bg-cinemata-pacific-deep-400/50 dark:bg-white/30 dark:hover:bg-white/50'
 					}`}
 				/>
 			))}
@@ -157,17 +265,19 @@ function DefaultCarouselBody() {
 
 export function Carousel({
 	items = [],
-	visibleCount = DEFAULT_VISIBLE_COUNT,
+	visibleCount,
 	currentPage: controlledPage,
 	onPageChange,
 	defaultPage = 0,
 	children,
 }) {
 	const [internalPage, setInternalPage] = useState(defaultPage);
+	const resolvedVisibleCount = useCarouselVisibleCount(visibleCount);
+	const safeVisibleCount = Math.max(1, resolvedVisibleCount);
 
 	const isControlled = controlledPage !== undefined;
 	const currentPage = isControlled ? controlledPage : internalPage;
-	const pageCount = Math.max(1, Math.ceil(items.length / visibleCount));
+	const pageCount = Math.max(1, Math.ceil(items.length / safeVisibleCount));
 	const safePage = clamp(currentPage, 0, pageCount - 1);
 	const atStart = safePage === 0;
 	const atEnd = safePage >= pageCount - 1;
@@ -200,7 +310,17 @@ export function Carousel({
 		[isControlled, onPageChange, pageCount]
 	);
 
-	const value = { items, visibleCount, pageCount, currentPage: safePage, goPrev, goNext, goToPage, atStart, atEnd };
+	const value = {
+		items,
+		visibleCount: safeVisibleCount,
+		pageCount,
+		currentPage: safePage,
+		goPrev,
+		goNext,
+		goToPage,
+		atStart,
+		atEnd,
+	};
 
 	return <CarouselContext value={value}>{children ?? <DefaultCarouselBody />}</CarouselContext>;
 }

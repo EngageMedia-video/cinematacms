@@ -25,6 +25,9 @@ const FEATURED_WITH_XSS = {
 beforeEach(() => {
 	homeQueryClient.clear();
 	homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_WITH_XSS]);
+	homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, []);
+	homeQueryClient.setQueryData(HOME_QUERY_KEYS.recent, []);
+	homeQueryClient.setQueryData(HOME_QUERY_KEYS.indexFeatured, []);
 });
 
 afterEach(() => {

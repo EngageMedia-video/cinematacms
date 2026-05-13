@@ -4,7 +4,7 @@
  * These tests fail if:
  * - forwardRef is introduced into any home component
  * - MediaPlayer is imported eagerly (not behind React.lazy)
- * - PROVISIONAL_CATEGORIES is defined inside the HomePage render function
+ * - homepage playlist constants are defined inside the HomePage render function
  * - SectionRow or Carousel gain boolean-mode props (show*, hide*, is*Mode, as*)
  */
 import { describe, it, expect } from 'vitest';
@@ -42,24 +42,22 @@ describe('Architecture contract — lazy MediaPlayer', () => {
 	});
 });
 
-describe('Architecture contract — module-scope PROVISIONAL_CATEGORIES', () => {
-	it('PROVISIONAL_CATEGORIES is declared at module scope in HomePage.jsx', () => {
+describe('Architecture contract — module-scope homepage playlist constants', () => {
+	it('HOME_PLAYLIST_ITEM_LIMIT is declared at module scope in HomePage.jsx', () => {
 		const { src } = findSource('HomePage') ?? {};
 		expect(src).toBeDefined();
-		// The constant must appear as a top-level declaration (starts at line start, not inside a function body)
-		expect(src).toMatch(/^const PROVISIONAL_CATEGORIES/m);
+		// The constant must appear as a top-level declaration (starts at line start, not inside a function body).
+		expect(src).toMatch(/^const HOME_PLAYLIST_ITEM_LIMIT/m);
 	});
 
-	it('PROVISIONAL_CATEGORIES is not declared inside the HomePage function body', () => {
+	it('HOME_PLAYLIST_ITEM_LIMIT is not declared inside the HomePage function body', () => {
 		const { src } = findSource('HomePage') ?? {};
 		expect(src).toBeDefined();
-		// Verify the function body does not contain PROVISIONAL_CATEGORIES = [
-		// by checking that the declaration line is NOT indented (module-level)
+		// Verify the declaration line is NOT indented (module-level).
 		const lines = src.split('\n');
-		const declLine = lines.find((l) => l.includes('PROVISIONAL_CATEGORIES') && l.includes('=') && l.includes('['));
+		const declLine = lines.find((l) => l.includes('HOME_PLAYLIST_ITEM_LIMIT') && l.includes('='));
 		expect(declLine).toBeDefined();
-		// Module-level declarations are not indented with tabs or multiple spaces
-		expect(declLine).toMatch(/^const PROVISIONAL_CATEGORIES/);
+		expect(declLine).toMatch(/^const HOME_PLAYLIST_ITEM_LIMIT/);
 	});
 });
 

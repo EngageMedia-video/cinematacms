@@ -9,7 +9,9 @@ const homeQueryClient = new QueryClient({
 export const HOME_QUERY_KEYS = {
 	featured: ['home', 'featured'],
 	recommended: ['home', 'recommended'],
-	category: (playlistId) => ['home', 'category', playlistId],
+	recent: ['home', 'recent'],
+	indexFeatured: ['home', 'index-featured'],
+	playlistMedia: (apiUrl) => ['home', 'playlist-media', apiUrl],
 };
 
 export default homeQueryClient;

@@ -31,14 +31,16 @@ function MovieMetadata({ items = [] }) {
 	}
 
 	return (
-		<div className="body-body-12-regular flex flex-wrap items-center text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-400">
+		<div className="body-body-12-regular flex max-h-[42px] items-start gap-1 overflow-hidden pr-1 whitespace-nowrap text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-400">
 			{validItems.map((item, index) => (
 				<span key={`${item}-${index}`} className="inline-flex items-center">
 					{index > 0 ? (
 						<span
 							aria-hidden="true"
-							className="mx-2 h-[4px] w-[4px] rounded-full bg-cinemata-neutral-500 dark:bg-cinemata-pacific-deep-400"
-						/>
+							className="mr-1 text-[12px] font-bold leading-[18px] text-cinemata-pacific-deep-400"
+						>
+							·
+						</span>
 					) : null}
 					<span>{item}</span>
 				</span>
@@ -48,14 +50,21 @@ function MovieMetadata({ items = [] }) {
 }
 
 function MovieCopy({ title, subtitle, metadata, orientation = 'vertical' }) {
+	const isHorizontal = orientation === 'horizontal';
+
 	return (
-		<div className={cn('flex min-w-0 flex-col', orientation === 'horizontal' ? 'gap-3' : 'gap-2')} data-movie-copy>
-			<p className="body-body-16-medium m-0 p-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50 line-clamp-3">
+		<div className={cn('flex min-w-0 flex-col', isHorizontal ? 'gap-3' : 'gap-2')} data-movie-copy>
+			<p
+				className={cn(
+					'm-0 p-0 line-clamp-3',
+					'[font-family:Inter,Arial,sans-serif] text-[16px] font-medium leading-[22px] tracking-[-0.18px] text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50'
+				)}
+			>
 				{title}
 			</p>
 
 			{subtitle ? (
-				<p className="body-body-14-regular m-0 p-0 text-cinemata-sunset-horizon-600 dark:text-cinemata-sunset-horizon-200">
+				<p className="body-body-12-regular m-0 p-0 text-cinemata-sunset-horizon-400p dark:text-cinemata-sunset-horizon-200">
 					{subtitle}
 				</p>
 			) : null}
@@ -79,7 +88,7 @@ function MoviePoster({
 	return (
 		<div
 			className={cn(
-				'relative overflow-hidden rounded-[6px] bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800',
+				'relative overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-100 dark:bg-cinemata-pacific-deep-800',
 				className
 			)}
 		>
@@ -93,7 +102,7 @@ function MoviePoster({
 
 			{duration ? (
 				<span
-					className="caption-caption-10-regular absolute right-3 bottom-3 inline-flex rounded-[2px] bg-[#111111]/90 p-1 text-cinemata-white dark:text-cinemata-strait-blue-50"
+					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-[#111111] px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-white"
 					data-movie-item-duration
 				>
 					{duration}

@@ -1,6 +1,6 @@
 # Home Feature
 
-Modern-track home page: hero section + Featured by Curators row + provisional category rows.
+Modern-track home page: hero section + Featured by Curators row + admin-configured homepage playlist rows + Recent videos grid.
 
 ## Data flow
 
@@ -14,14 +14,21 @@ Modern-track home page: hero section + Featured by Curators row + provisional ca
 3. `useFeaturedMedia` and `useRecommendedMedia` hooks observe keys `['home','featured']` and
    `['home','recommended']`. On `staleTime` expiry or focus, they refetch from the API.
 
-## Category rows (deferred)
+4. `useRecentMedia()` fetches `/api/v1/media?show=latest` for the Recent videos grid. This mirrors the legacy
+   homepage/latest feed while keeping initial hero rendering focused on server-injected featured data.
 
-`useCategoryMedia(categoryId)` is a stub returning `{ data: [], isLoading: false, isError: false }`.
-The `PROVISIONAL_CATEGORIES` list in `HomePage.jsx` defines the shape; category rows hide themselves
-when their data is empty (R7). To wire real data:
+## Homepage playlist rows
 
-1. Replace the body of `hooks/useCategoryMedia.js` with a real query.
-2. The `PROVISIONAL_CATEGORIES` list and `CategorySectionRow` composition in `HomePage.jsx` stay unchanged.
+The legacy homepage lets admins configure playlist rows through `IndexPageFeatured`.
+The modern homepage now uses the same source:
+
+1. `useIndexFeaturedPlaylists()` fetches `/api/v1/indexfeatured`.
+2. Each configured row fetches its returned `api_url` via `usePlaylistMedia(apiUrl)`.
+3. `normalizeMediaList()` accepts playlist detail envelopes via `playlist_media`, plus paginated `results`
+   and bare arrays.
+4. `IndexPageFeatured.text` renders through `SectionRow.HtmlDescription`, preserving the legacy row behavior
+   for admin-authored HTML such as `<br>` and `<a>`, with DOMPurify as a client-side safety net.
+5. Rows hide themselves when their playlist has no visible media, matching the existing `SectionRow` contract.
 
 ## Component tree
 
@@ -32,11 +39,21 @@ HomePage (QueryClientProvider)
     │   ├── HeroSection.Player  (lazy → HeroVideoPlayer → @mediacms/media-player)
     │   └── HeroSection.Card   (title, meta, ExpandableText)
     ├── FeaturedByCuratorsRow  (thin wrapper → SectionRow + useRecommendedMedia)
-    └── CategorySectionRow × N (thin wrapper → SectionRow + useCategoryMedia, renders null)
+    ├── HomepagePlaylistRow × N (thin wrapper → SectionRow + usePlaylistMedia)
+    └── RecentVideosRow        (thin wrapper → SectionRow.Grid + useRecentMedia)
         └── SectionRow (compound)
-            ├── SectionRow.Header
-            ├── SectionRow.Description (ExpandableText)
-            └── SectionRow.Carousel → Carousel (compound)
+            ├── SectionRow.Title
+            ├── SectionRow.HtmlDescription (sanitized admin HTML, playlist rows only)
+            ├── SectionRow.Carousel → Carousel (playlist/curator rows)
+            └── SectionRow.Grid     → responsive movie grid (Recent videos)
+                └── MediaTile       → VerticalMovieItem
+```
+
+Playlist and curator rows use the carousel body. Recent videos intentionally uses `SectionRow.Grid` to match the
+legacy latest-video block rather than the horizontal playlist carousel.
+
+```
+Carousel (compound)
                 ├── Carousel.Track
                 ├── Carousel.Dots
                 └── Carousel.Arrows

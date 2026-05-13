@@ -5,5 +5,6 @@
  */
 export function normalizeMediaList(data) {
 	if (Array.isArray(data)) return data;
+	if (Array.isArray(data?.playlist_media)) return data.playlist_media;
 	return data?.results ?? [];
 }

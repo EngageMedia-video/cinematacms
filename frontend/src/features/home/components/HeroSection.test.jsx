@@ -332,6 +332,13 @@ describe('HeroSection', () => {
 		expect(await screen.findByTestId('hero-video-player')).toBeInTheDocument();
 	});
 
+	it('uses the SVG-to-component pipeline for the poster play affordance', async () => {
+		const source = await import('./HeroSection.jsx?raw');
+		expect(source.default).toMatch(/hero-play-button\.svg\?react/);
+		expect(source.default).not.toMatch(/<svg\b/);
+		expect(source.default).not.toMatch(/PLAY_CIRCLE_PATH/);
+	});
+
 	it('HeroVideoPlayer is imported via dynamic import (lazy-load boundary exists)', async () => {
 		// Verify the module file uses React.lazy by inspecting source
 		const source = await import('./HeroSection.jsx?raw');

@@ -25,12 +25,25 @@ describe('MovieItem', () => {
 		expect(screen.getByText('PG-13')).toBeVisible();
 		expect(screen.getByText('4K')).toBeVisible();
 		expect(screen.getByText('Premiere')).toBeVisible();
-		expect(screen.getByText('2h 3m')).toBeVisible();
+		expect(screen.getByText('2h 3m')).toHaveClass('right-1');
+		expect(screen.getByText('2h 3m')).toHaveClass('bottom-1');
+		expect(screen.getByText('2h 3m')).toHaveClass('text-[12px]');
+		expect(screen.getByText('2h 3m')).toHaveClass('leading-[13.5px]');
+		expect(screen.getByText('2h 3m')).toHaveClass('tracking-[0.5px]');
+		expect(screen.getByText('2h 3m')).toHaveClass('bg-[#111111]');
 		expect(article).toContainElement(image);
-		expect(screen.getByText('Arrival')).toBeVisible();
+		expect(screen.getByText('Arrival')).toHaveClass('text-cinemata-pacific-deep-700');
+		expect(screen.getByText('Arrival')).toHaveClass('[font-family:Inter,Arial,sans-serif]');
+		expect(screen.getByText('Arrival')).toHaveClass('leading-[22px]');
+		expect(screen.getByText('Arrival')).toHaveClass('tracking-[-0.18px]');
+		expect(screen.getByText('Sci-Fi Drama')).toHaveClass('body-body-12-regular');
+		expect(screen.getByText('Sci-Fi Drama')).toHaveClass('text-cinemata-sunset-horizon-400p');
+		expect(screen.getByText('2026').closest('div')).toHaveClass('text-cinemata-pacific-deep-400');
+		expect(screen.getByText('2026').closest('div')).toHaveClass('gap-1');
+		expect(screen.getAllByText('·')[0]).toHaveClass('mr-1');
 	});
 
-	it('renders the vertical layout with the top-right icon chip', () => {
+	it('renders the vertical layout with Figma-aligned copy styles and the top-right icon chip', () => {
 		render(
 			<VerticalMovieItem
 				imageSrc={samplePoster}
@@ -50,7 +63,14 @@ describe('MovieItem', () => {
 		expect(icon).not.toBeNull();
 		expect(screen.getByText('Official Selection')).toBeVisible();
 		expect(screen.getByText('1h 46m')).toBeVisible();
-		expect(screen.getByText('Past Lives')).toBeVisible();
+		expect(screen.getByText('Past Lives')).toHaveClass('text-[16px]');
+		expect(screen.getByText('Past Lives')).toHaveClass('leading-[22px]');
+		expect(screen.getByText('Past Lives')).toHaveClass('tracking-[-0.18px]');
+		expect(screen.getByText('Romance')).toHaveClass('body-body-12-regular');
+		expect(screen.getByText('2025').closest('div')).toHaveClass('gap-1');
+		expect(screen.getByText('2025').closest('div')).toHaveClass('max-h-[42px]');
+		expect(screen.getByText('2025').closest('div')).toHaveClass('whitespace-nowrap');
+		expect(screen.getByText('·')).toHaveClass('mr-1');
 	});
 
 	it('switches variants through the generic MovieItem orientation prop', () => {

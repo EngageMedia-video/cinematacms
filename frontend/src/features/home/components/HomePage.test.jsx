@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import homeQueryClient, { HOME_QUERY_KEYS } from '../queryClient';
 import { HomePage } from './HomePage';
@@ -56,8 +56,36 @@ const RECOMMENDED_MEDIA = {
 	friendly_token: 'rec-token',
 };
 
+const RECENT_MEDIA = {
+	title: 'Recent Film',
+	description: 'Fresh from the archive.',
+	thumbnail_url: 'https://example.com/recent-thumb.jpg',
+	author_name: 'Recent Director',
+	media_country: 'Malaysia',
+	views: 120,
+	encodings_info: {},
+	subtitles_info: [],
+	url: '/media/recent-film/',
+	friendly_token: 'recent-token',
+};
+
+const RECENT_MEDIA_WITH_USER_AUTHOR = {
+	...RECENT_MEDIA,
+	title: 'Fallback Author Film',
+	author_name: '',
+	user: 'Fallback User',
+	media_country: '',
+	media_country_info: [{ title: 'Singapore' }],
+	url: '/media/fallback-author-film/',
+	friendly_token: 'recent-token-with-user-author',
+};
+
 beforeEach(() => {
 	homeQueryClient.clear();
+	homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, []);
+	homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, []);
+	homeQueryClient.setQueryData(HOME_QUERY_KEYS.recent, []);
+	homeQueryClient.setQueryData(HOME_QUERY_KEYS.indexFeatured, []);
 });
 
 afterEach(() => {
@@ -76,6 +104,15 @@ describe('HomePage', () => {
 		const heading = screen.getByRole('heading', { level: 1, name: 'Most Popular' });
 		expect(heading.parentElement).toHaveClass('space-y-8');
 		expect(document.querySelector('[data-modern-track]')).toHaveClass('space-y-10');
+	});
+
+	it('caps the home track width on very large screens', () => {
+		render(<HomePage />);
+		const track = document.querySelector('[data-modern-track]');
+
+		expect(track).toHaveClass('mx-auto');
+		expect(track).toHaveClass('max-w-[1680px]');
+		expect(track).not.toHaveClass('px-4');
 	});
 
 	it('has exactly one h1', () => {
@@ -113,14 +150,69 @@ describe('HomePage', () => {
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, [RECOMMENDED_MEDIA]);
 		render(<HomePage />);
 		expect(await screen.findByText('Recommended Film')).toBeInTheDocument();
-		expect(screen.getByRole('heading', { level: 2, name: 'Featured by Curators' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { level: 2, name: 'Featured by Curators' })).toHaveClass(
+			'heading-h6-20-medium'
+		);
 	});
 
-	it('CategorySectionRow instances render null because useCategoryMedia returns []', () => {
+	it('renders configured legacy homepage playlists from indexfeatured', async () => {
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.indexFeatured, [
+			{
+				title: 'Legacy Playlist',
+				text: 'Playlist description from admin.<br><br>Curated by <a href="#">someone</a>',
+				url: 'https://testserver/view?m=playlist&pl=abc123',
+				api_url: 'https://testserver/api/v1/playlists/abc123',
+				ordering: 1,
+			},
+		]);
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+			ok: true,
+			json: async () => ({
+				playlist_media: [
+					{
+						id: 3,
+						title: 'Playlist Film',
+						thumbnail_url: 'https://example.com/playlist-thumb.jpg',
+						author_name: 'Playlist Curator',
+						url: '/media/playlist-film/',
+					},
+				],
+			}),
+		});
+
 		render(<HomePage />);
-		// PROVISIONAL_CATEGORIES have badgeLabels; they should not appear since rows are empty
-		expect(screen.queryByText('GENDER & SEXUALITY')).toBeNull();
-		expect(screen.queryByText('FILM')).toBeNull();
+
+		expect(await screen.findByText('Playlist Film')).toBeInTheDocument();
+		expect(screen.getByRole('heading', { level: 2, name: 'Legacy Playlist' })).toBeInTheDocument();
+		expect(document.querySelector('[data-modern-track]')).toHaveTextContent('Playlist description from admin.');
+		expect(screen.getByRole('link', { name: 'someone' })).toHaveAttribute('href', '#');
+		expect(globalThis.fetch).toHaveBeenCalledWith('https://testserver/api/v1/playlists/abc123');
+		expect(screen.getByRole('link', { name: 'VIEW ALL' })).toHaveAttribute(
+			'href',
+			'https://testserver/view?m=playlist&pl=abc123'
+		);
+	});
+
+	it('renders Recent videos from the latest media feed', async () => {
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recent, {
+			results: [RECENT_MEDIA, RECENT_MEDIA_WITH_USER_AUTHOR],
+		});
+
+		const { container } = render(<HomePage />);
+
+		expect(await screen.findByText('Recent Film')).toBeInTheDocument();
+		expect(await screen.findByText('Fallback User')).toBeInTheDocument();
+		expect(await screen.findByText('Singapore')).toBeInTheDocument();
+		expect(screen.getByRole('heading', { level: 2, name: 'Recent videos' })).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: 'VIEW ALL' })).toHaveAttribute('href', '/latest');
+		expect(container.querySelector('[data-section-row-grid]')).not.toBeNull();
+		expect(screen.queryByRole('group', { name: 'Page navigation' })).toBeNull();
+	});
+
+	it('does not render playlist rows when indexfeatured returns no playlists', async () => {
+		render(<HomePage />);
+
+		await waitFor(() => expect(screen.queryByText('Legacy Playlist')).toBeNull());
 	});
 
 	it('uses h2 for section headings (under the h1)', () => {
@@ -132,11 +224,9 @@ describe('HomePage', () => {
 		expect(h2).toBeInTheDocument();
 	});
 
-	it('PROVISIONAL_CATEGORIES is referentially identical across re-renders', () => {
-		// Import the module to access the constant
+	it('HomePage module can be re-imported without rebuilding playlist row config', () => {
 		const mod1 = import.meta.glob('./HomePage.jsx', { eager: true });
 		const keys = Object.keys(mod1);
-		// The constant should be defined at module scope — verified by the source contract test
 		expect(keys.length).toBeGreaterThan(0);
 	});
 });

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Carousel } from './Carousel';
@@ -13,6 +13,38 @@ function makeItems(count) {
 		author_name: `Author ${i}`,
 	}));
 }
+
+const originalMatchMedia = window.matchMedia;
+
+function mockViewportWidth(width) {
+	Object.defineProperty(window, 'matchMedia', {
+		configurable: true,
+		writable: true,
+		value: vi.fn().mockImplementation((query) => ({
+			matches: query.includes('max-width: 639px')
+				? width <= 639
+				: query.includes('max-width: 1023px')
+					? width <= 1023
+					: false,
+			media: query,
+			onchange: null,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			dispatchEvent: vi.fn(),
+		})),
+	});
+}
+
+afterEach(() => {
+	Object.defineProperty(window, 'matchMedia', {
+		configurable: true,
+		writable: true,
+		value: originalMatchMedia,
+	});
+	vi.restoreAllMocks();
+});
 
 describe('Carousel — default shape', () => {
 	it('shows items 0-3 initially with 8 items and visibleCount=4', () => {
@@ -47,6 +79,8 @@ describe('Carousel — default shape', () => {
 		const nextButton = screen.getByRole('button', { name: 'Next page' });
 		const icon = nextButton.querySelector('svg[data-icon="caretCircleRight"]');
 
+		expect(nextButton).toHaveClass('hidden');
+		expect(nextButton).toHaveClass('md:flex');
 		expect(nextButton).toHaveClass('size-[70px]');
 		expect(nextButton).toHaveClass('-right-8');
 		expect(nextButton).toHaveClass('text-cinemata-strait-blue-700');
@@ -87,6 +121,64 @@ describe('Carousel — default shape', () => {
 		await user.click(dot2);
 		expect(dot2).toHaveAttribute('aria-current', 'true');
 		expect(dot1).not.toHaveAttribute('aria-current');
+	});
+
+	it('defaults to one visible item on phone viewports', () => {
+		mockViewportWidth(390);
+		render(<Carousel items={makeItems(4)} />);
+
+		const firstItemShell = screen.getByRole('link', { name: 'Open Item 0' }).closest('article').parentElement;
+
+		expect(firstItemShell).toHaveStyle({ width: 'calc(100% - 0rem)' });
+		expect(screen.getByRole('button', { name: 'Go to page 4' })).toBeInTheDocument();
+	});
+
+	it('defaults to two visible items on tablet viewports', () => {
+		mockViewportWidth(820);
+		render(<Carousel items={makeItems(4)} />);
+
+		const firstItemShell = screen.getByRole('link', { name: 'Open Item 0' }).closest('article').parentElement;
+
+		expect(firstItemShell).toHaveStyle({ width: 'calc(50% - 0.5rem)' });
+		expect(screen.getByRole('button', { name: 'Go to page 2' })).toBeInTheDocument();
+	});
+
+	it('swipes left to the next page on touch devices', () => {
+		const { container } = render(<Carousel items={makeItems(4)} visibleCount={1} />);
+		const track = container.querySelector('[data-carousel-track]');
+
+		fireEvent.pointerDown(track, { pointerId: 1, pointerType: 'touch', clientX: 320, clientY: 120 });
+		fireEvent.pointerUp(track, { pointerId: 1, pointerType: 'touch', clientX: 180, clientY: 128 });
+
+		expect(screen.getByRole('button', { name: 'Go to page 2' })).toHaveAttribute('aria-current', 'true');
+	});
+
+	it('swipes right to the previous page on touch devices', () => {
+		const { container } = render(<Carousel items={makeItems(4)} visibleCount={1} defaultPage={1} />);
+		const track = container.querySelector('[data-carousel-track]');
+
+		fireEvent.pointerDown(track, { pointerId: 1, pointerType: 'touch', clientX: 180, clientY: 120 });
+		fireEvent.pointerUp(track, { pointerId: 1, pointerType: 'touch', clientX: 320, clientY: 128 });
+
+		expect(screen.getByRole('button', { name: 'Go to page 1' })).toHaveAttribute('aria-current', 'true');
+	});
+
+	it('keeps vertical drags from changing carousel pages', () => {
+		const { container } = render(<Carousel items={makeItems(4)} visibleCount={1} />);
+		const track = container.querySelector('[data-carousel-track]');
+
+		fireEvent.pointerDown(track, { pointerId: 1, pointerType: 'touch', clientX: 320, clientY: 120 });
+		fireEvent.pointerUp(track, { pointerId: 1, pointerType: 'touch', clientX: 300, clientY: 260 });
+
+		expect(screen.getByRole('button', { name: 'Go to page 1' })).toHaveAttribute('aria-current', 'true');
+	});
+
+	it('hides overlay arrow controls on mobile while keeping them available on desktop', () => {
+		render(<Carousel items={makeItems(4)} visibleCount={1} />);
+
+		const nextButton = screen.getByRole('button', { name: 'Next page' });
+		expect(nextButton).toHaveClass('hidden');
+		expect(nextButton).toHaveClass('md:flex');
 	});
 });
 

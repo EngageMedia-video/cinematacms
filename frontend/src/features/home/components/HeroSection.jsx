@@ -4,6 +4,7 @@ import { useFeaturedMedia } from '../hooks/useFeaturedMedia';
 import { normalizeMediaList } from '../utils/mediaList';
 import { formatDuration } from '../../shared/utils/formatDuration';
 import { HeroMediaCard, HeroMediaCardSkeleton } from './HeroMediaCard';
+import HeroPlayButtonIcon from '../assets/hero-play-button.svg?react';
 
 const HeroVideoPlayer = lazy(() => import('./HeroVideoPlayer'));
 
@@ -15,8 +16,6 @@ const PLAYER_FRAME =
 	'relative aspect-video w-full overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-50 lg:aspect-auto lg:h-[480px]';
 const PLAYER_CLASS = 'relative h-full w-full overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-50';
 const CARD_AREA = 'w-full min-w-0 lg:h-[480px] lg:w-[466px] lg:shrink-0';
-const PLAY_CIRCLE_PATH =
-	'M52.8125 0C42.3672 0 32.1564 3.0974 23.4715 8.90051C14.7865 14.7036 8.01739 22.9518 4.02014 32.602C0.0228828 42.2523 -1.02298 52.8711 1.0148 63.1157C3.05258 73.3603 8.08249 82.7706 15.4684 90.1566C22.8544 97.5425 32.2647 102.572 42.5093 104.61C52.7539 106.648 63.3728 105.602 73.023 101.605C82.6732 97.6076 90.9214 90.8385 96.7245 82.1535C102.528 73.4686 105.625 63.2578 105.625 52.8125C105.61 38.8103 100.041 25.3858 90.1403 15.4848C80.2392 5.58369 66.8147 0.0147866 52.8125 0ZM73.4043 56.1539L46.9981 74.4352C46.3885 74.8567 45.6751 75.1034 44.9354 75.1486C44.1956 75.1939 43.4575 75.0358 42.8011 74.6917C42.1447 74.3475 41.5949 73.8303 41.2114 73.1961C40.8278 72.562 40.625 71.8349 40.625 71.0938V34.5312C40.625 33.7901 40.8278 33.063 41.2114 32.4289C41.5949 31.7947 42.1447 31.2775 42.8011 30.9333C43.4575 30.5892 44.1956 30.4311 44.9354 30.4764C45.6751 30.5216 46.3885 30.7683 46.9981 31.1898L73.4043 49.4711C73.9448 49.8448 74.3866 50.3441 74.6917 50.9261C74.9968 51.5081 75.1562 52.1554 75.1562 52.8125C75.1562 53.4696 74.9968 54.1169 74.6917 54.6989C74.3866 55.2809 73.9448 55.7802 73.4043 56.1539Z';
 const VIDEO_FORMAT_ORDER = ['hls', 'h265', 'vp9', 'h264', 'vp8', 'mp4', 'theora'];
 const VIDEO_FORMAT_EXTENSIONS = {
 	hls: ['m3u8'],
@@ -159,9 +158,7 @@ function PlayAffordance() {
 			className="pointer-events-none absolute left-1/2 top-1/2 z-10 flex size-[72px] -translate-x-1/2 -translate-y-1/2 items-center justify-center lg:size-[130px]"
 			aria-hidden="true"
 		>
-			<svg className="size-[81.25%] text-cinemata-strait-blue-400" viewBox="0 0 106 106" focusable="false">
-				<path d={PLAY_CIRCLE_PATH} fill="currentColor" fillRule="evenodd" clipRule="evenodd" />
-			</svg>
+			<HeroPlayButtonIcon className="size-[81.25%] text-cinemata-strait-blue-400" focusable="false" />
 		</div>
 	);
 }

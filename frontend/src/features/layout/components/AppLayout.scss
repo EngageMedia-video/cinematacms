@@ -49,7 +49,7 @@ body.dark_theme .app-layout {
 }
 
 .app-layout__slot--home {
-	padding: 32px;
+	padding: 16px;
 }
 
 .app-layout__ripple {
@@ -96,5 +96,17 @@ body.dark_theme .app-layout__ripple-image--dark-theme {
 		right: 0;
 		width: 20em;
 		height: 20em;
+	}
+}
+
+@media (min-width: 640px) {
+	.app-layout__slot--home {
+		padding: 24px;
+	}
+}
+
+@media (min-width: 1024px) {
+	.app-layout__slot--home {
+		padding: 32px;
 	}
 }
