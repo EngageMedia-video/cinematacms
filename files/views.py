@@ -183,6 +183,7 @@ def _home_featured_envelope(results, source_envelope=None):
 
 def _home_recommended_envelope(results):
     return {
+        "count": len(results),
         "next": None,
         "previous": None,
         "results": results,
@@ -270,6 +271,7 @@ def _get_home_initial_data(request):
             set_cached_result(home_featured_cache_key, home_initial_featured, MEDIA_LIST_TIMEOUT)
 
         # --- Recommended ---
+        # MediaList.get skips caching for show=recommended; this warms SSR hydration only.
         recommended_cache_key = get_media_list_cache_key(show="recommended_home", page=1, user_id=user_id)
         cached_recommended = get_cached_result(recommended_cache_key)
         if cached_recommended is not None:

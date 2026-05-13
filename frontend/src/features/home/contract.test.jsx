@@ -9,7 +9,7 @@
  */
 import { describe, it, expect } from 'vitest';
 
-const HOME_SOURCES = import.meta.glob('./components/*.jsx', { eager: true, as: 'raw' });
+const HOME_SOURCES = import.meta.glob('./components/*.jsx', { eager: true, query: '?raw', import: 'default' });
 const allSourceText = Object.entries(HOME_SOURCES).map(([path, src]) => ({ path, src }));
 
 function findSource(name) {
@@ -64,25 +64,35 @@ describe('Architecture contract — module-scope homepage playlist constants', (
 describe('Architecture contract — no boolean-mode props on SectionRow or Carousel', () => {
 	const BOOLEAN_MODE_PATTERN = /\b(show[A-Z]|hide[A-Z]|is[A-Z][a-z]*Mode|as[A-Z])/;
 
+	function findDestructuredPropNames(src, componentName) {
+		const match = src.match(new RegExp(`function\\s+${componentName}\\s*\\(\\s*\\{([\\s\\S]*?)\\}\\s*\\)`));
+		if (!match) return [];
+
+		return match[1]
+			.split(',')
+			.map((part) => part.trim().match(/^([A-Za-z_$][\w$]*)\s*(?::|=|$)/)?.[1])
+			.filter(Boolean);
+	}
+
+	function findBooleanModeProp(src, componentName) {
+		return findDestructuredPropNames(src, componentName).find((prop) => BOOLEAN_MODE_PATTERN.test(prop));
+	}
+
 	it('SectionRow.jsx has no boolean-mode prop names', () => {
 		const { src } = findSource('SectionRow') ?? {};
 		expect(src).toBeDefined();
-		const matches = src.match(BOOLEAN_MODE_PATTERN);
-		if (matches) {
-			throw new Error(
-				`Boolean-mode prop "${matches[0]}" found in SectionRow.jsx. Use compound components instead.`
-			);
+		const match = findBooleanModeProp(src, 'SectionRow');
+		if (match) {
+			throw new Error(`Boolean-mode prop "${match}" found in SectionRow.jsx. Use compound components instead.`);
 		}
 	});
 
 	it('Carousel.jsx has no boolean-mode prop names', () => {
 		const { src } = findSource('Carousel') ?? {};
 		expect(src).toBeDefined();
-		const matches = src.match(BOOLEAN_MODE_PATTERN);
-		if (matches) {
-			throw new Error(
-				`Boolean-mode prop "${matches[0]}" found in Carousel.jsx. Use compound components instead.`
-			);
+		const match = findBooleanModeProp(src, 'Carousel');
+		if (match) {
+			throw new Error(`Boolean-mode prop "${match}" found in Carousel.jsx. Use compound components instead.`);
 		}
 	});
 });

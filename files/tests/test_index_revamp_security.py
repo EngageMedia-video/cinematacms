@@ -6,14 +6,19 @@ Any change that removes json_script, switches to {{ data|safe }}, or
 introduces raw script interpolation must cause these tests to fail.
 """
 
-import json
 from unittest.mock import patch
 
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 
 from files.models import Media
-from files.tests.helpers import create_test_media, create_test_user, make_vite_loader_mock
+from files.tests.helpers import (
+    create_test_media,
+    create_test_user,
+    extract_json_script_body,
+    extract_json_script_payload,
+    make_vite_loader_mock,
+)
 
 
 @override_settings(
@@ -53,7 +58,7 @@ class IndexRevampSecurityTest(TestCase):
             content = self._response().content.decode()
             # The raw unescaped injection must not appear
             self.assertNotIn('</script><script>alert("xss")</script>', content)
-            # json_script escapes < as <
+            # json_script escapes < as \u003C
             self.assertIn("\\u003C", content)
         finally:
             media.delete()
@@ -79,20 +84,14 @@ class IndexRevampSecurityTest(TestCase):
         Media.objects.filter(pk=media.pk).update(title="Normal title <with> angles")
         try:
             content = self._response().content.decode()
-            # Extract the featured json_script body
-            start_marker = 'id="home-initial-data-featured" type="application/json">'
-            end_marker = "</script>"
-            start = content.find(start_marker)
-            if start == -1:
+            json_body = extract_json_script_body(content, "home-initial-data-featured")
+            if json_body is None:
                 self.skipTest("Script tag not found — implementation may have changed")
-            start += len(start_marker)
-            end = content.find(end_marker, start)
-            json_body = content[start:end]
             # The raw < character must not appear inside the JSON body
             self.assertNotIn("<", json_body)
             self.assertNotIn(">", json_body)
             # The JSON must still be valid
-            parsed = json.loads(json_body)
+            parsed = extract_json_script_payload(content, "home-initial-data-featured")
             self.assertIsInstance(parsed, dict)
             self.assertIsInstance(parsed["results"], list)
         finally:
@@ -105,14 +104,9 @@ class IndexRevampSecurityTest(TestCase):
         try:
             response = self._response()
             content = response.content.decode()
-            # If the private media token appears, it leaked into the payload
-            start_marker = 'id="home-initial-data-featured" type="application/json">'
-            end_marker = "</script>"
-            start = content.find(start_marker)
-            if start != -1:
-                start += len(start_marker)
-                end = content.find(end_marker, start)
-                payload = json.loads(content[start:end])
+            payload = extract_json_script_payload(content, "home-initial-data-featured")
+            if payload is not None:
+                # If the private media token appears, it leaked into the payload
                 friendly_tokens = [item.get("friendly_token", "") for item in payload["results"]]
                 self.assertNotIn(private_media.friendly_token, friendly_tokens)
         finally:

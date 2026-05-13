@@ -28,6 +28,7 @@ export default function HeroVideoPlayer({
 	const playerRef = useRef(null);
 	const sourcesKey = JSON.stringify(sources);
 
+	// Player instances are created once per mounted media item; HeroSection remounts this boundary when media changes.
 	useEffect(() => {
 		if (!videoRef.current || playerRef.current) {
 			return;

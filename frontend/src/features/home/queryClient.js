@@ -1,8 +1,10 @@
 import { QueryClient } from '@tanstack/react-query';
 
+export const HOME_QUERY_STALE_TIME_MS = 120_000;
+
 const homeQueryClient = new QueryClient({
 	defaultOptions: {
-		queries: { staleTime: 120_000, refetchOnWindowFocus: false },
+		queries: { staleTime: HOME_QUERY_STALE_TIME_MS, refetchOnWindowFocus: false },
 	},
 });
 

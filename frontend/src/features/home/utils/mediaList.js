@@ -27,5 +27,5 @@ export function getMediaDurationLabel(media) {
 	}
 
 	const seconds = Number(raw);
-	return Number.isFinite(seconds) && seconds > 0 ? formatDuration(Math.round(seconds)) : '';
+	return Number.isFinite(seconds) && seconds >= 0 ? formatDuration(Math.round(seconds)) : '';
 }

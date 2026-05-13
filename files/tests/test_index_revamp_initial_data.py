@@ -6,7 +6,6 @@ payloads into the page via Django's json_script template tag, with correct
 JSON shape and XSS-safe escaping.
 """
 
-import json
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -16,7 +15,12 @@ from django.utils import timezone
 
 from files.models import EncodeProfile, Encoding, Media
 from files.query_cache import get_cached_result, get_media_list_cache_key
-from files.tests.helpers import create_test_media, create_test_user, make_vite_loader_mock
+from files.tests.helpers import (
+    create_test_media,
+    create_test_user,
+    extract_json_script_payload,
+    make_vite_loader_mock,
+)
 
 
 @override_settings(
@@ -51,13 +55,9 @@ class IndexRevampInitialDataTest(TestCase):
     def _featured_payload(self):
         response = self._get_revamp_response()
         content = response.content.decode()
-        start_marker = 'id="home-initial-data-featured" type="application/json">'
-        end_marker = "</script>"
-        start = content.find(start_marker)
-        self.assertGreater(start, -1, "home-initial-data-featured script tag not found")
-        start += len(start_marker)
-        end = content.find(end_marker, start)
-        return json.loads(content[start:end])
+        payload = extract_json_script_payload(content, "home-initial-data-featured")
+        self.assertIsNotNone(payload, "home-initial-data-featured script tag not found")
+        return payload
 
     def _featured_results(self):
         return self._featured_payload()["results"]
@@ -186,13 +186,8 @@ class IndexRevampInitialDataTest(TestCase):
     def test_recommended_payload_is_valid_json(self):
         response = self._get_revamp_response()
         content = response.content.decode()
-        start_marker = 'id="home-initial-data-recommended" type="application/json">'
-        end_marker = "</script>"
-        start = content.find(start_marker)
-        self.assertGreater(start, -1, "home-initial-data-recommended script tag not found")
-        start += len(start_marker)
-        end = content.find(end_marker, start)
-        parsed = json.loads(content[start:end])
+        parsed = extract_json_script_payload(content, "home-initial-data-recommended")
+        self.assertIsNotNone(parsed, "home-initial-data-recommended script tag not found")
         self.assertIsInstance(parsed, dict)
         self.assertIsInstance(parsed["results"], list)
 
@@ -205,7 +200,7 @@ class IndexRevampInitialDataTest(TestCase):
             response = self._get_revamp_response()
             content = response.content.decode()
             self.assertNotIn('</script><script>alert("xss")</script>', content)
-            # json_script escapes < as <
+            # json_script escapes < as \u003C
             self.assertIn("\\u003C", content)
         finally:
             media.delete()

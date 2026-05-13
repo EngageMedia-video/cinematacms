@@ -12,7 +12,8 @@ import { readInitialDataFromDom } from '../initialData';
 
 describe('readInitialDataFromDom', () => {
 	afterEach(() => {
-		document.querySelectorAll('script[type="application/json"]').forEach((el) => el.remove());
+		document.getElementById('home-initial-data-featured')?.remove();
+		document.getElementById('home-initial-data-recommended')?.remove();
 	});
 
 	function injectScriptTag(id, content) {

@@ -135,21 +135,26 @@ function HeroPosterFallback({ src }) {
 
 function Player() {
 	const ctx = use(HeroContext);
-	if (!ctx) return null;
-	const { media, isDesktopLayout, isHeroDetailError, retryHeroDetail } = ctx;
-	const playableMedia = media.hero_playback ?? media;
+	const media = ctx?.media;
+	const playableMedia = media ? (media.hero_playback ?? media) : null;
 	const duration = getMediaDurationLabel(playableMedia ?? media);
-	const poster = playableMedia?.poster_url || media.thumbnail_url;
-	const playback = getHeroPlayback(playableMedia);
-	const playerKey = playback.sources[0]?.src ?? poster ?? media.friendly_token;
-
-	const subtitles = playableMedia?.subtitles_info
-		? playableMedia.subtitles_info.map((s) => ({
+	const poster = playableMedia?.poster_url || media?.thumbnail_url;
+	const playback = useMemo(() => getHeroPlayback(playableMedia), [playableMedia]);
+	const subtitlesSource = playableMedia?.subtitles_info;
+	const subtitles = useMemo(
+		() =>
+			subtitlesSource?.map((s) => ({
 				src: s.src ?? s.url,
 				srclang: s.srclang ?? s.language,
 				label: s.label ?? s.language_verbose ?? s.language,
-			}))
-		: [];
+			})) ?? [],
+		[subtitlesSource]
+	);
+	const subtitlesPayload = useMemo(() => ({ languages: subtitles }), [subtitles]);
+	const playerKey = playback.sources[0]?.src ?? poster ?? media?.friendly_token;
+
+	if (!ctx || !media) return null;
+	const { isDesktopLayout, isHeroDetailError, retryHeroDetail } = ctx;
 
 	return (
 		<div className={cn(PLAYER_AREA, isDesktopLayout ? PLAYER_AREA_DESKTOP : '')}>
@@ -164,7 +169,7 @@ function Player() {
 								videoInfo={playback.videoInfo}
 								poster={poster}
 								preload="none"
-								subtitles={{ languages: subtitles }}
+								subtitles={subtitlesPayload}
 							/>
 						</Suspense>
 					</HeroPlayerErrorBoundary>
