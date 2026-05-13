@@ -11,7 +11,7 @@ import { Text } from '../../shared/components/Text';
 
 const HOME_PLAYLIST_ITEM_LIMIT = 20;
 const HOME_RECENT_ITEM_LIMIT = 20;
-const PLAYLIST_LOADING_ROWS = ['playlist-loading-row-1', 'playlist-loading-row-2'];
+const PLAYLIST_LOADING_ROW_COUNT = 2;
 const HOME_TRACK_CLASS = 'mx-auto min-h-screen w-full max-w-[1680px] space-y-10';
 
 function FeaturedByCuratorsRow() {
@@ -44,8 +44,8 @@ function HomepagePlaylistRows() {
 	const { data, isLoading, isError } = useIndexFeaturedPlaylists();
 
 	if (isLoading) {
-		return PLAYLIST_LOADING_ROWS.map((key, index) => (
-			<SectionRow key={key} items={[]} isLoading variant={index % 2 === 0 ? 'card' : 'default'} />
+		return Array.from({ length: PLAYLIST_LOADING_ROW_COUNT }, (_, index) => (
+			<SectionRow key={index} items={[]} isLoading variant={index % 2 === 0 ? 'card' : 'default'} />
 		));
 	}
 

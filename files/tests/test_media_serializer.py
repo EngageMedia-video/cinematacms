@@ -35,3 +35,17 @@ class MediaSerializerTest(TestCase):
         self.assertIn("hls_info", data)
         self.assertIn("subtitles_info", data)
         self.assertEqual(data["encodings_info"][720]["h264"]["status"], "success")
+
+    def test_hero_playback_serializer_absolutizes_urls_with_request_context(self):
+        media = create_test_media(self.user)
+        profile = EncodeProfile.objects.create(name="Hero 720p", extension="mp4", codec="h264", resolution=720)
+        encoding = Encoding(media=media, profile=profile, status="success", progress=100, chunk=False)
+        encoding.media_file.name = "encoded/hero.mp4"
+        encoding.save()
+        request = RequestFactory().get("/api/v1/media")
+
+        data = HeroPlaybackSerializer(media, context={"request": request}).data
+
+        self.assertTrue(
+            data["encodings_info"][720]["h264"]["url"].startswith("http://testserver/media/encoded/hero.mp4")
+        )

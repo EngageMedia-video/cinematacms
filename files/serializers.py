@@ -103,6 +103,57 @@ class MediaSerializer(serializers.ModelSerializer):
 
 
 class HeroPlaybackSerializer(serializers.ModelSerializer):
+    poster_url = serializers.SerializerMethodField()
+    sprites_url = serializers.SerializerMethodField()
+    preview_url = serializers.SerializerMethodField()
+    encodings_info = serializers.SerializerMethodField()
+    hls_info = serializers.SerializerMethodField()
+    subtitles_info = serializers.SerializerMethodField()
+
+    def _absolute_url(self, url):
+        if not url:
+            return url
+        request = self.context.get("request")
+        if not request:
+            return url
+        return request.build_absolute_uri(url)
+
+    def _absolute_encoding_urls(self, value):
+        if isinstance(value, dict):
+            return {
+                key: self._absolute_url(nested)
+                if key == "url" and isinstance(nested, str)
+                else self._absolute_encoding_urls(nested)
+                for key, nested in value.items()
+            }
+        if isinstance(value, list):
+            return [self._absolute_encoding_urls(item) for item in value]
+        return value
+
+    def get_poster_url(self, obj):
+        return self._absolute_url(obj.poster_url)
+
+    def get_sprites_url(self, obj):
+        return self._absolute_url(obj.sprites_url)
+
+    def get_preview_url(self, obj):
+        return self._absolute_url(obj.preview_url)
+
+    def get_encodings_info(self, obj):
+        return self._absolute_encoding_urls(obj.encodings_info)
+
+    def get_hls_info(self, obj):
+        return {key: self._absolute_url(url) for key, url in obj.hls_info.items()}
+
+    def get_subtitles_info(self, obj):
+        return [
+            {
+                **subtitle,
+                "src": self._absolute_url(subtitle.get("src")),
+            }
+            for subtitle in obj.subtitles_info
+        ]
+
     class Meta:
         model = Media
         fields = (

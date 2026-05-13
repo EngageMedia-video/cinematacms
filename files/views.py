@@ -125,100 +125,167 @@ VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 
 logger = logging.getLogger(__name__)
 
+HOME_INITIAL_LIMIT = 20
 
-def _attach_hero_playback_to_first_featured_item(items):
+
+def _build_featured_queryset(limit=None):
+    basic_query = Q(state="public", encoding_status="success", is_reviewed=True)
+    scheduled_featured = get_current_featured_media()
+    now = timezone.now()
+    has_future_schedule = FeaturedVideo.objects.filter(media=OuterRef("pk"), is_active=True, start_date__gt=now)
+
+    if scheduled_featured:
+        other_featured = (
+            Media.objects.filter(basic_query, featured=True)
+            .exclude(pk=scheduled_featured.pk)
+            .exclude(Exists(has_future_schedule))
+            .order_by(F("featured_date").desc(nulls_last=True), "-add_date")
+        )
+        other_featured_ids = other_featured.values_list("pk", flat=True)
+        if limit is not None:
+            other_featured_ids = other_featured_ids[: max(limit - 1, 0)]
+        other_featured_ids = list(other_featured_ids)
+        all_ids = [scheduled_featured.pk] + other_featured_ids
+        preserved_order = Case(
+            *[When(pk=pk, then=Value(pos)) for pos, pk in enumerate(all_ids)],
+            output_field=models.IntegerField(),
+        )
+        return Media.objects.filter(pk__in=all_ids).order_by(preserved_order)
+
+    media = (
+        Media.objects.filter(basic_query, featured=True)
+        .exclude(Exists(has_future_schedule))
+        .order_by(F("featured_date").desc(nulls_last=True), "-add_date")
+    )
+    if limit is not None:
+        return media[:limit]
+    return media
+
+
+def _home_featured_envelope(results, source_envelope=None):
+    envelope = {
+        "count": len(results),
+        "next": None,
+        "previous": None,
+        "results": results,
+    }
+    if isinstance(source_envelope, dict):
+        envelope.update(
+            {
+                "count": source_envelope.get("count", envelope["count"]),
+                "next": source_envelope.get("next"),
+                "previous": source_envelope.get("previous"),
+                "results": results,
+            }
+        )
+    return envelope
+
+
+def _home_recommended_envelope(results):
+    return {
+        "next": None,
+        "previous": None,
+        "results": results,
+    }
+
+
+def _attach_hero_playback_to_first_featured_item(items, request=None):
     """
     Add detail-only playback fields to the first featured item.
 
     The home hero is the only list item that needs player sources. Keeping this
     nested avoids turning every media list response into a detail payload.
     """
-    if not items:
-        return items
+    item_list = list(items)
+    if not item_list:
+        return item_list
 
-    first = items[0]
-    if not isinstance(first, dict):
-        return items
+    first = item_list[0]
+    if not isinstance(first, dict) or first.get("hero_playback"):
+        return item_list
 
     friendly_token = first.get("friendly_token")
     if not friendly_token:
-        return items
+        return item_list
 
-    media = (
-        Media.objects.filter(
-            friendly_token=friendly_token,
-            state="public",
-            encoding_status="success",
-            is_reviewed=True,
+    try:
+        media = (
+            Media.objects.filter(
+                friendly_token=friendly_token,
+                state="public",
+                encoding_status="success",
+                is_reviewed=True,
+            )
+            .prefetch_related("encodings__profile", "subtitles__language")
+            .first()
         )
-        .prefetch_related("encodings__profile", "subtitles__language")
-        .first()
-    )
-    if not media:
-        return items
+        if not media:
+            return item_list
 
-    first["hero_playback"] = HeroPlaybackSerializer(media).data
-    return items
+        serializer_context = {"request": request} if request else {}
+        return [
+            {
+                **first,
+                "hero_playback": HeroPlaybackSerializer(media, context=serializer_context).data,
+            },
+            *item_list[1:],
+        ]
+    except Exception:
+        logger.exception("Failed to attach hero playback to featured media %s", friendly_token)
+        return item_list
 
 
 def _get_home_initial_data(request):
     """
     Fetch featured and recommended payloads for SSR hydration.
 
-    Uses the same cache keys as MediaList so no additional DB hits when warm.
-    Returns (featured_list, recommended_list) as serialized data ready for json_script.
+    Uses home-specific cache keys so SSR can cache the hero-enriched payload
+    without changing the generic media-list API cache contract.
+    Returns paginated envelopes ready for json_script.
     """
-    HOME_INITIAL_LIMIT = 20
-    user_id = request.user.id if request.user.is_authenticated else None
+    try:
+        user_id = request.user.id if request.user.is_authenticated else None
 
-    # --- Featured ---
-    featured_cache_key = get_media_list_cache_key(show="featured", page=1, user_id=user_id)
-    cached_featured = get_cached_result(featured_cache_key)
-    if cached_featured is not None:
-        # Same cache key as MediaList; that response is a paginated envelope, so extract the results list.
-        home_initial_featured = (cached_featured.get("results") or [])[:HOME_INITIAL_LIMIT]
-    else:
-        scheduled_featured = get_current_featured_media()
-        basic_query = Q(state="public", encoding_status="success", is_reviewed=True)
-        now = timezone.now()
-        has_future_schedule = FeaturedVideo.objects.filter(media=OuterRef("pk"), is_active=True, start_date__gt=now)
-        if scheduled_featured:
-            other_ids = list(
-                Media.objects.filter(basic_query, featured=True)
-                .exclude(pk=scheduled_featured.pk)
-                .exclude(Exists(has_future_schedule))
-                .order_by(F("featured_date").desc(nulls_last=True), "-add_date")
-                .values_list("pk", flat=True)[:HOME_INITIAL_LIMIT]
-            )
-            all_ids = [scheduled_featured.pk] + other_ids
-            preserved = Case(
-                *[When(pk=pk, then=Value(pos)) for pos, pk in enumerate(all_ids)],
-                output_field=models.IntegerField(),
-            )
-            qs = Media.objects.filter(pk__in=all_ids).order_by(preserved)
+        # --- Featured ---
+        home_featured_cache_key = get_media_list_cache_key(show="featured_home", page=1, user_id=user_id)
+        cached_home_featured = get_cached_result(home_featured_cache_key)
+        if cached_home_featured is not None:
+            home_initial_featured = cached_home_featured
         else:
-            qs = (
-                Media.objects.filter(basic_query, featured=True)
-                .exclude(Exists(has_future_schedule))
-                .order_by(F("featured_date").desc(nulls_last=True), "-add_date")[:HOME_INITIAL_LIMIT]
+            featured_cache_key = get_media_list_cache_key(show="featured", page=1, user_id=user_id)
+            cached_featured = get_cached_result(featured_cache_key)
+            if cached_featured is not None:
+                featured_results = list((cached_featured.get("results") or [])[:HOME_INITIAL_LIMIT])
+                source_envelope = cached_featured
+            else:
+                qs = (
+                    _build_featured_queryset(limit=HOME_INITIAL_LIMIT)
+                    .select_related("user")
+                    .prefetch_related("category", "topics")
+                )
+                featured_results = list(MediaSerializer(qs, many=True, context={"request": request}).data)
+                source_envelope = None
+            featured_results = _attach_hero_playback_to_first_featured_item(featured_results, request=request)
+            home_initial_featured = _home_featured_envelope(featured_results, source_envelope=source_envelope)
+            set_cached_result(home_featured_cache_key, home_initial_featured, MEDIA_LIST_TIMEOUT)
+
+        # --- Recommended ---
+        recommended_cache_key = get_media_list_cache_key(show="recommended_home", page=1, user_id=user_id)
+        cached_recommended = get_cached_result(recommended_cache_key)
+        if cached_recommended is not None:
+            home_initial_recommended = cached_recommended
+        else:
+            recommended_media = show_recommended_media(request, limit=HOME_INITIAL_LIMIT)
+            recommended_results = list(
+                MediaSerializer(list(recommended_media), many=True, context={"request": request}).data
             )
-        qs = qs.select_related("user").prefetch_related("category", "topics")
-        home_initial_featured = MediaSerializer(qs, many=True, context={"request": request}).data
-    home_initial_featured = _attach_hero_playback_to_first_featured_item(list(home_initial_featured))
+            home_initial_recommended = _home_recommended_envelope(recommended_results)
+            set_cached_result(recommended_cache_key, home_initial_recommended, MEDIA_LIST_TIMEOUT)
 
-    # --- Recommended ---
-    recommended_cache_key = get_media_list_cache_key(show="recommended_home", page=1, user_id=user_id)
-    cached_recommended = get_cached_result(recommended_cache_key)
-    if cached_recommended is not None:
-        home_initial_recommended = cached_recommended
-    else:
-        recommended_media = show_recommended_media(request, limit=HOME_INITIAL_LIMIT)
-        home_initial_recommended = list(
-            MediaSerializer(list(recommended_media), many=True, context={"request": request}).data
-        )
-        set_cached_result(recommended_cache_key, home_initial_recommended, MEDIA_LIST_TIMEOUT)
-
-    return home_initial_featured, home_initial_recommended
+        return home_initial_featured, home_initial_recommended
+    except Exception:
+        logger.exception("Failed to build home initial data")
+        return _home_featured_envelope([]), _home_recommended_envelope([])
 
 
 def index(request):
@@ -226,8 +293,8 @@ def index(request):
     context = {}
     if getattr(request, "ui_variant", None) == "revamp":
         featured, recommended = _get_home_initial_data(request)
-        context["home_initial_featured"] = list(featured)
-        context["home_initial_recommended"] = list(recommended)
+        context["home_initial_featured"] = featured
+        context["home_initial_recommended"] = recommended
     return render(request, template, context)
 
 
@@ -1102,14 +1169,23 @@ class MediaList(APIView):
         # Try cache for standard queries (no author, no offset, no recommended)
         author_param = params.get("author", "").strip()
         page_param = params.get("page", "1")
+        cache_key = None
+        page_num = None
 
         if not author_param and not offset_param and show_param != "recommended":
             try:
-                page_num = int(page_param)
+                page_num = int(page_param or "1")
                 user_id = request.user.id if request.user.is_authenticated else None
                 cache_key = get_media_list_cache_key(show=show_param or "latest", page=page_num, user_id=user_id)
                 cached_result = get_cached_result(cache_key)
                 if cached_result is not None:
+                    if show_param == "featured" and page_num == 1:
+                        cached_result = {
+                            **cached_result,
+                            "results": _attach_hero_playback_to_first_featured_item(
+                                cached_result.get("results") or [], request=request
+                            ),
+                        }
                     return Response(cached_result)
             except (ValueError, TypeError):
                 pass  # Invalid page number, skip cache
@@ -1137,44 +1213,7 @@ class MediaList(APIView):
             if show_param == "latest":
                 media = Media.objects.filter(basic_query).order_by("-add_date")
             elif show_param == "featured":
-                # Get the scheduled featured video (if any) to show as hero
-                scheduled_featured = get_current_featured_media()
-
-                # Subquery to identify videos with future-scheduled FeaturedVideo entries
-                # These should not appear in listings until their start_date arrives
-                now = timezone.now()
-                has_future_schedule = FeaturedVideo.objects.filter(
-                    media=OuterRef("pk"), is_active=True, start_date__gt=now
-                )
-
-                if scheduled_featured:
-                    # Get all other featured videos, ordered by featured date (newest first)
-                    # Use F() with nulls_last to ensure NULL featured_dates sort after dated ones
-                    # Exclude videos that have a future-scheduled FeaturedVideo entry
-                    other_featured_ids = list(
-                        Media.objects.filter(basic_query, featured=True)
-                        .exclude(pk=scheduled_featured.pk)
-                        .exclude(Exists(has_future_schedule))
-                        .order_by(F("featured_date").desc(nulls_last=True), "-add_date")
-                        .values_list("pk", flat=True)
-                    )
-                    # Combine: scheduled first, then others
-                    all_ids = [scheduled_featured.pk] + other_featured_ids
-
-                    # Use Case/When with Value to maintain order
-                    preserved_order = Case(
-                        *[When(pk=pk, then=Value(pos)) for pos, pk in enumerate(all_ids)],
-                        output_field=models.IntegerField(),
-                    )
-                    media = Media.objects.filter(pk__in=all_ids).order_by(preserved_order)
-                else:
-                    # No scheduled video, return all featured videos ordered by featured_date
-                    # Exclude videos that have a future-scheduled FeaturedVideo entry
-                    media = (
-                        Media.objects.filter(basic_query, featured=True)
-                        .exclude(Exists(has_future_schedule))
-                        .order_by(F("featured_date").desc(nulls_last=True), "-add_date")
-                    )
+                media = _build_featured_queryset()
             else:
                 media = Media.objects.filter(basic_query).order_by("-add_date")
         paginator = pagination_class()
@@ -1189,17 +1228,15 @@ class MediaList(APIView):
 
         serializer = MediaSerializer(page, many=True, context={"request": request})
         response_data = paginator.get_paginated_response(serializer.data)
-        if show_param == "featured":
-            response_data.data["results"] = _attach_hero_playback_to_first_featured_item(
-                list(response_data.data.get("results") or [])
-            )
 
         # Cache the response for standard queries
-        if not author_param and not offset_param and show_param != "recommended":
-            try:  # noqa: SIM105
-                set_cached_result(cache_key, response_data.data, MEDIA_LIST_TIMEOUT)
-            except NameError:
-                pass  # cache_key not defined (shouldn't happen, but safe fallback)
+        if cache_key and not author_param and not offset_param and show_param != "recommended":
+            set_cached_result(cache_key, response_data.data, MEDIA_LIST_TIMEOUT)
+
+        if show_param == "featured" and page_num == 1:
+            response_data.data["results"] = _attach_hero_playback_to_first_featured_item(
+                response_data.data.get("results") or [], request=request
+            )
 
         return response_data
 

@@ -23,8 +23,10 @@ describe('ExpandableText', () => {
 	it('shows READ MORE button in collapsed state', () => {
 		render(<ExpandableText text="Some long text" />);
 		const btn = screen.getByRole('button', { name: 'READ MORE' });
+		const paragraph = screen.getByText('Some long text');
 		expect(btn).toBeInTheDocument();
 		expect(btn).toHaveAttribute('aria-expanded', 'false');
+		expect(btn).toHaveAttribute('aria-controls', paragraph.id);
 	});
 
 	it('applies clamp class when collapsed', () => {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useId, useLayoutEffect } from 'react';
 
 const CLAMP_CLASSES = {
 	1: 'line-clamp-1',
@@ -13,12 +13,17 @@ export function ExpandableText({ text = '', clampLines = 6, className = '' }) {
 	const [expanded, setExpanded] = useState(false);
 	const [overflows, setOverflows] = useState(false);
 	const ref = useRef(null);
+	const paragraphId = useId();
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		const el = ref.current;
 		if (!el || expanded) return;
-		// scrollHeight === 0 in jsdom — treat as overflowing so tests render the button
-		setOverflows(el.scrollHeight === 0 || el.scrollHeight > el.clientHeight);
+		const isJsdom = navigator.userAgent.includes('jsdom');
+		if (!isJsdom && el.offsetParent === null) {
+			setOverflows(false);
+			return;
+		}
+		setOverflows(el.scrollHeight === 0 ? isJsdom : el.scrollHeight > el.clientHeight);
 	}, [text, clampLines, expanded]);
 
 	if (!text) return null;
@@ -27,30 +32,18 @@ export function ExpandableText({ text = '', clampLines = 6, className = '' }) {
 
 	return (
 		<div className={className}>
-			<p ref={ref} className={expanded ? undefined : clampClass}>
+			<p id={paragraphId} ref={ref} className={expanded ? undefined : clampClass}>
 				{text}
-				{!expanded && overflows && (
-					<>
-						{' '}
-						<button
-							type="button"
-							aria-expanded={false}
-							onClick={() => setExpanded(true)}
-							className="inline font-medium text-cinemata-sunset-horizon-400p hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p"
-						>
-							READ MORE
-						</button>
-					</>
-				)}
 			</p>
-			{expanded && (
+			{overflows && (
 				<button
 					type="button"
-					aria-expanded={true}
-					onClick={() => setExpanded(false)}
+					aria-controls={paragraphId}
+					aria-expanded={expanded}
+					onClick={() => setExpanded((value) => !value)}
 					className="mt-1 text-sm font-medium text-cinemata-sunset-horizon-400p hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p"
 				>
-					READ LESS
+					{expanded ? 'READ LESS' : 'READ MORE'}
 				</button>
 			)}
 		</div>

@@ -1,4 +1,4 @@
-import { createContext, use } from 'react';
+import { createContext, use, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { Badge } from '../../shared/components/Badge';
 import { ExpandableText } from './ExpandableText';
@@ -35,22 +35,23 @@ function SectionRowHeader({ badgeLabel, badgeColor = '#026690', viewAllHref }) {
 }
 
 function SectionRowTitle({ children, viewAllHref }) {
-	if (viewAllHref) {
-		return (
-			<div className="flex items-center justify-between gap-4">
-				<h2 className="heading-h6-20-medium m-0 text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50">
-					{children}
-				</h2>
-				<a href={viewAllHref} className={VIEW_ALL_LINK_CLASS}>
-					VIEW ALL
-				</a>
-			</div>
-		);
-	}
-	return (
+	const heading = (
 		<h2 className="heading-h6-20-medium m-0 text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50">
 			{children}
 		</h2>
+	);
+
+	if (!viewAllHref) {
+		return heading;
+	}
+
+	return (
+		<div className="flex items-center justify-between gap-4">
+			{heading}
+			<a href={viewAllHref} className={VIEW_ALL_LINK_CLASS}>
+				VIEW ALL
+			</a>
+		</div>
 	);
 }
 
@@ -65,12 +66,13 @@ function SectionRowDescription({ text }) {
 }
 
 function SectionRowHtmlDescription({ html }) {
-	if (!html) return null;
+	const sanitized = useMemo(() => (html ? DOMPurify.sanitize(html) : ''), [html]);
+	if (!sanitized) return null;
 
 	return (
 		<div
 			className="body-body-14-regular space-y-2 text-cinemata-strait-blue-700 dark:text-cinemata-strait-blue-100 [&_a]:font-semibold [&_a]:text-cinemata-sunset-horizon-400p [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:text-cinemata-sunset-horizon-600 [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-cinemata-sunset-horizon-400p [&_br+br]:hidden [&_p]:m-0 dark:[&_a]:text-cinemata-sunset-horizon-200 dark:[&_a:hover]:text-cinemata-sunset-horizon-100"
-			dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
+			dangerouslySetInnerHTML={{ __html: sanitized }}
 		/>
 	);
 }
@@ -125,7 +127,7 @@ export function SectionRow({ items = [], isLoading = false, isError = false, var
 		);
 	}
 
-	const value = { items, variant };
+	const value = useMemo(() => ({ items, variant }), [items, variant]);
 
 	return (
 		<SectionRowContext value={value}>

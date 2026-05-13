@@ -1,23 +1,40 @@
-import { render } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import HeroVideoPlayer from './HeroVideoPlayer';
 
+const mediaPlayerDisposeMock = vi.hoisted(() => vi.fn());
 const mediaPlayerMock = vi.hoisted(() =>
 	vi.fn(function MediaPlayerMock() {
+		this.dispose = mediaPlayerDisposeMock;
 		this.player = { dispose: vi.fn() };
 	})
 );
-const videojsDisposeMock = vi.hoisted(() => vi.fn());
-const videojsMock = vi.hoisted(() => vi.fn(() => ({ dispose: videojsDisposeMock })));
+const videoJsPlayerMock = vi.hoisted(() => ({
+	poster: vi.fn(),
+	preload: vi.fn(),
+	src: vi.fn(),
+	dispose: vi.fn(),
+}));
+const videojsMock = vi.hoisted(() => {
+	const fn = vi.fn(() => videoJsPlayerMock);
+	fn.getPlayer = vi.fn(() => videoJsPlayerMock);
+	return fn;
+});
 
 vi.mock('@mediacms/media-player', () => ({ default: mediaPlayerMock }));
 vi.mock('video.js', () => ({ default: videojsMock }));
 
 describe('HeroVideoPlayer', () => {
 	afterEach(() => {
+		cleanup();
 		mediaPlayerMock.mockClear();
+		mediaPlayerDisposeMock.mockClear();
 		videojsMock.mockClear();
-		videojsDisposeMock.mockClear();
+		videojsMock.getPlayer.mockClear();
+		videoJsPlayerMock.poster.mockClear();
+		videoJsPlayerMock.preload.mockClear();
+		videoJsPlayerMock.src.mockClear();
+		videoJsPlayerMock.dispose.mockClear();
 	});
 
 	it('initializes the MediaCMS player with the proven legacy player option shape', () => {
@@ -69,15 +86,27 @@ describe('HeroVideoPlayer', () => {
 		expect(receivedVideoInfo).toBe(videoInfo);
 	});
 
-	it('disposes the videojs instance on unmount', () => {
+	it('updates the VideoJS source when sources change after mount', () => {
+		const initialSources = [{ src: '/media/initial.mp4', type: 'video/mp4' }];
+		const nextSources = [{ src: '/media/next.mp4', type: 'video/mp4' }];
+
+		const { rerender } = render(<HeroVideoPlayer sources={initialSources} poster="/media/poster.jpg" />);
+		rerender(<HeroVideoPlayer sources={nextSources} poster="/media/poster-2.jpg" preload="auto" />);
+
+		expect(videoJsPlayerMock.poster).toHaveBeenLastCalledWith('/media/poster-2.jpg');
+		expect(videoJsPlayerMock.preload).toHaveBeenLastCalledWith('auto');
+		expect(videoJsPlayerMock.src).toHaveBeenLastCalledWith(nextSources);
+	});
+
+	it('disposes through the MediaPlayerClass wrapper on unmount', () => {
 		const { unmount } = render(<HeroVideoPlayer sources={[{ src: '/media/video.mp4', type: 'video/mp4' }]} />);
-		const videojsCallsBeforeUnmount = videojsMock.mock.calls.length;
-		const disposeCallsBeforeUnmount = videojsDisposeMock.mock.calls.length;
+		const disposeCallsBeforeUnmount = mediaPlayerDisposeMock.mock.calls.length;
+		const videojsDisposeCallsBeforeUnmount = videoJsPlayerMock.dispose.mock.calls.length;
 
 		unmount();
 
-		expect(videojsMock).toHaveBeenCalledTimes(videojsCallsBeforeUnmount + 1);
-		expect(videojsDisposeMock).toHaveBeenCalledTimes(disposeCallsBeforeUnmount + 1);
+		expect(mediaPlayerDisposeMock).toHaveBeenCalledTimes(disposeCallsBeforeUnmount + 1);
+		expect(videoJsPlayerMock.dispose).toHaveBeenCalledTimes(videojsDisposeCallsBeforeUnmount);
 	});
 
 	it('owns the modern hero player skin import', async () => {

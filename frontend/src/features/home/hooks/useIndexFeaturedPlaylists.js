@@ -1,13 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
 import { HOME_QUERY_KEYS } from '../queryClient';
+import { createMediaQueryHook } from './createMediaQueryHook';
 
-export function useIndexFeaturedPlaylists() {
-	return useQuery({
-		queryKey: HOME_QUERY_KEYS.indexFeatured,
-		queryFn: async () => {
-			const r = await fetch('/api/v1/indexfeatured');
-			if (!r.ok) throw new Error(`Failed to fetch homepage playlists: ${r.status}`);
-			return r.json();
-		},
-	});
-}
+export const useIndexFeaturedPlaylists = createMediaQueryHook(HOME_QUERY_KEYS.indexFeatured, '/api/v1/indexfeatured');

@@ -1,23 +1,8 @@
-import { formatDuration } from '../../shared/utils/formatDuration';
 import { VerticalMovieItem } from '../../shared/components/MovieItem/MovieItem';
+import { getMediaDurationLabel } from '../utils/mediaList';
 
 function getAuthorName(item) {
 	return item.author_name || item.user || '';
-}
-
-function getDurationLabel(item) {
-	const rawDuration = item.duration_in_seconds ?? item.duration;
-
-	if (rawDuration === undefined || rawDuration === null || rawDuration === '') {
-		return '';
-	}
-
-	if ('string' === typeof rawDuration && rawDuration.includes(':')) {
-		return rawDuration;
-	}
-
-	const seconds = Number(rawDuration);
-	return Number.isFinite(seconds) && seconds > 0 ? formatDuration(Math.round(seconds)) : '';
 }
 
 function getCountryNames(item) {
@@ -44,7 +29,7 @@ export function MediaTile({ item }) {
 			title={item.title}
 			imageSrc={item.thumbnail_url}
 			link={item.url}
-			duration={getDurationLabel(item)}
+			duration={getMediaDurationLabel(item)}
 			subtitle={getAuthorName(item)}
 			metadata={metadata}
 		/>

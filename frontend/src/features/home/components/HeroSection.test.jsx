@@ -226,6 +226,22 @@ describe('HeroSection', () => {
 		expect(screen.getByRole('heading', { level: 2, name: 'Detail Featured Video' })).toBeInTheDocument();
 	});
 
+	it('surfaces a retry action when legacy hero detail playback fails', async () => {
+		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: false, status: 503 });
+
+		renderHero(
+			[{ ...SAMPLE_MEDIA, hero_playback: undefined, url: '/view?m=legacy-token' }],
+			<HeroSection.Player />
+		);
+
+		expect(await screen.findByRole('button', { name: 'RETRY' })).toBeInTheDocument();
+		expect(fetchSpy).toHaveBeenCalledWith('/api/v1/media/legacy-token');
+		expect(screen.getByRole('img', { name: 'Video poster' })).toHaveAttribute(
+			'src',
+			'https://example.com/thumb.jpg'
+		);
+	});
+
 	it('renders the hero player from hero_playback without calling fetch', async () => {
 		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
 			ok: true,

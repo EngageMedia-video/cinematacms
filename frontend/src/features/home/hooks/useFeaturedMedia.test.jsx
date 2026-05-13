@@ -27,20 +27,20 @@ describe('readInitialDataFromDom', () => {
 		expect(readInitialDataFromDom()).toBeNull();
 	});
 
-	it('returns null when only one script tag is present', () => {
+	it('returns the available block when only one script tag is present', () => {
 		injectScriptTag('home-initial-data-featured', '[]');
-		expect(readInitialDataFromDom()).toBeNull();
+		expect(readInitialDataFromDom()).toEqual({ featured: [], recommended: undefined });
 	});
 
-	it('returns null when JSON.parse throws (malformed JSON)', () => {
+	it('keeps the valid block when the other JSON block is malformed', () => {
 		injectScriptTag('home-initial-data-featured', 'not json {{{');
 		injectScriptTag('home-initial-data-recommended', '[]');
-		expect(readInitialDataFromDom()).toBeNull();
+		expect(readInitialDataFromDom()).toEqual({ featured: undefined, recommended: [] });
 	});
 
-	it('returns { featured, recommended } when both tags contain valid JSON arrays', () => {
-		const featured = [{ id: 1, title: 'Featured' }];
-		const recommended = [{ id: 2, title: 'Recommended' }];
+	it('returns { featured, recommended } when both tags contain valid JSON envelopes', () => {
+		const featured = { results: [{ id: 1, title: 'Featured' }] };
+		const recommended = { results: [{ id: 2, title: 'Recommended' }] };
 		injectScriptTag('home-initial-data-featured', JSON.stringify(featured));
 		injectScriptTag('home-initial-data-recommended', JSON.stringify(recommended));
 

@@ -4,8 +4,10 @@ import homeQueryClient, { HOME_QUERY_KEYS } from '../features/home/queryClient';
 import { readInitialDataFromDom } from '../features/home/initialData';
 
 const initialData = readInitialDataFromDom();
-if (initialData) {
+if (initialData?.featured !== undefined) {
 	homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, initialData.featured);
+}
+if (initialData?.recommended !== undefined) {
 	homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, initialData.recommended);
 }
 

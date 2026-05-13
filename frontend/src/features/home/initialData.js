@@ -1,22 +1,28 @@
 /**
  * Read server-injected initial data from json_script elements in the DOM.
- * Returns { featured, recommended } or null if either tag is absent or malformed.
- * On parse error, degrades gracefully so the app falls back to client-side fetch.
+ * Returns available { featured, recommended } data, or null if both tags are absent.
+ * Each block is parsed independently so one malformed payload does not discard the other.
  */
-export function readInitialDataFromDom() {
+function parseJsonScript(id) {
+	const el = document.getElementById(id);
+	if (!el) {
+		return undefined;
+	}
+
 	try {
-		const featuredEl = document.getElementById('home-initial-data-featured');
-		const recommendedEl = document.getElementById('home-initial-data-recommended');
-
-		if (!featuredEl || !recommendedEl) {
-			return null;
-		}
-
-		const featured = JSON.parse(featuredEl.textContent);
-		const recommended = JSON.parse(recommendedEl.textContent);
-
-		return { featured, recommended };
+		return JSON.parse(el.textContent);
 	} catch {
+		return undefined;
+	}
+}
+
+export function readInitialDataFromDom() {
+	const featured = parseJsonScript('home-initial-data-featured');
+	const recommended = parseJsonScript('home-initial-data-recommended');
+
+	if (featured === undefined && recommended === undefined) {
 		return null;
 	}
+
+	return { featured, recommended };
 }

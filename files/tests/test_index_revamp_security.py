@@ -93,7 +93,8 @@ class IndexRevampSecurityTest(TestCase):
             self.assertNotIn(">", json_body)
             # The JSON must still be valid
             parsed = json.loads(json_body)
-            self.assertIsInstance(parsed, list)
+            self.assertIsInstance(parsed, dict)
+            self.assertIsInstance(parsed["results"], list)
         finally:
             media.delete()
 
@@ -104,7 +105,7 @@ class IndexRevampSecurityTest(TestCase):
         try:
             response = self._response()
             content = response.content.decode()
-            # If the private media title appears, it leaked into the payload
+            # If the private media token appears, it leaked into the payload
             start_marker = 'id="home-initial-data-featured" type="application/json">'
             end_marker = "</script>"
             start = content.find(start_marker)
@@ -112,7 +113,7 @@ class IndexRevampSecurityTest(TestCase):
                 start += len(start_marker)
                 end = content.find(end_marker, start)
                 payload = json.loads(content[start:end])
-                titles = [item.get("title", "") for item in payload]
-                self.assertNotIn(private_media.title, titles)
+                friendly_tokens = [item.get("friendly_token", "") for item in payload["results"]]
+                self.assertNotIn(private_media.friendly_token, friendly_tokens)
         finally:
             private_media.delete()

@@ -15,6 +15,7 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from files.models import EncodeProfile, Encoding, Media
+from files.query_cache import get_cached_result, get_media_list_cache_key
 from files.tests.helpers import create_test_media, create_test_user, make_vite_loader_mock
 
 
@@ -58,6 +59,9 @@ class IndexRevampInitialDataTest(TestCase):
         end = content.find(end_marker, start)
         return json.loads(content[start:end])
 
+    def _featured_results(self):
+        return self._featured_payload()["results"]
+
     def _add_success_encoding(self, media, filename="encoded/hero.mp4"):
         profile = EncodeProfile.objects.create(name="Hero 720p", extension="mp4", codec="h264", resolution=720)
         encoding = Encoding(media=media, profile=profile, status="success", progress=100, chunk=False)
@@ -79,7 +83,8 @@ class IndexRevampInitialDataTest(TestCase):
 
     def test_featured_payload_is_valid_json(self):
         parsed = self._featured_payload()
-        self.assertIsInstance(parsed, list)
+        self.assertIsInstance(parsed, dict)
+        self.assertIsInstance(parsed["results"], list)
 
     def test_first_featured_item_includes_hero_playback(self):
         hero = create_test_media(
@@ -89,7 +94,7 @@ class IndexRevampInitialDataTest(TestCase):
         )
         self._add_success_encoding(hero)
 
-        payload = self._featured_payload()
+        payload = self._featured_results()
 
         self.assertEqual(payload[0]["friendly_token"], hero.friendly_token)
         self.assertIn("hero_playback", payload[0])
@@ -112,7 +117,7 @@ class IndexRevampInitialDataTest(TestCase):
         self._add_success_encoding(hero)
         self._add_success_encoding(other, filename="encoded/other.mp4")
 
-        payload = self._featured_payload()
+        payload = self._featured_results()
         by_token = {item["friendly_token"]: item for item in payload}
 
         self.assertIn("hero_playback", by_token[hero.friendly_token])
@@ -135,6 +140,49 @@ class IndexRevampInitialDataTest(TestCase):
         self.assertIn("hls_info", payload["results"][0]["hero_playback"])
         self.assertIn("subtitles_info", payload["results"][0]["hero_playback"])
 
+        cache_key = get_media_list_cache_key(show="featured", page=1, user_id=None)
+        cached_payload = get_cached_result(cache_key)
+        self.assertIsNotNone(cached_payload)
+        self.assertNotIn("hero_playback", cached_payload["results"][0])
+
+    def test_featured_api_second_page_omits_hero_playback(self):
+        hero = create_test_media(
+            self.user,
+            featured=True,
+            featured_date=timezone.now() + timedelta(minutes=5),
+        )
+        self._add_success_encoding(hero)
+        for index in range(50):
+            create_test_media(
+                self.user,
+                featured=True,
+                featured_date=timezone.now() - timedelta(minutes=index + 1),
+            )
+
+        response = self.client.get("/api/v1/media?show=featured&page=2", SERVER_NAME="localhost")
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(payload["results"][0]["friendly_token"], hero.friendly_token)
+        self.assertNotIn("hero_playback", payload["results"][0])
+
+    def test_home_initial_data_uses_home_cache_without_reenriching(self):
+        hero = create_test_media(
+            self.user,
+            featured=True,
+            featured_date=timezone.now() + timedelta(minutes=5),
+        )
+        self._add_success_encoding(hero)
+
+        first_payload = self._featured_payload()
+        self.assertIn("hero_playback", first_payload["results"][0])
+
+        with patch("files.views.HeroPlaybackSerializer", side_effect=AssertionError("should use home cache")):
+            second_payload = self._featured_payload()
+
+        self.assertEqual(second_payload["results"][0]["friendly_token"], hero.friendly_token)
+        self.assertIn("hero_playback", second_payload["results"][0])
+
     def test_recommended_payload_is_valid_json(self):
         response = self._get_revamp_response()
         content = response.content.decode()
@@ -145,7 +193,8 @@ class IndexRevampInitialDataTest(TestCase):
         start += len(start_marker)
         end = content.find(end_marker, start)
         parsed = json.loads(content[start:end])
-        self.assertIsInstance(parsed, list)
+        self.assertIsInstance(parsed, dict)
+        self.assertIsInstance(parsed["results"], list)
 
     def test_xss_in_title_is_escaped_in_featured_payload(self):
         """A title with </script> must not appear unescaped in the response."""

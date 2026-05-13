@@ -5,9 +5,9 @@ export function usePlaylistMedia(apiUrl) {
 	return useQuery({
 		queryKey: HOME_QUERY_KEYS.playlistMedia(apiUrl),
 		queryFn: async () => {
-			const r = await fetch(apiUrl);
-			if (!r.ok) throw new Error(`Failed to fetch playlist media: ${r.status}`);
-			return r.json();
+			const response = await fetch(apiUrl);
+			if (!response.ok) throw new Error(`Failed to fetch ${apiUrl}: ${response.status}`);
+			return response.json();
 		},
 		enabled: Boolean(apiUrl),
 	});

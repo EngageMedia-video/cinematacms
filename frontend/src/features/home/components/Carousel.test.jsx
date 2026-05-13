@@ -215,12 +215,33 @@ describe('Carousel — default shape', () => {
 	});
 
 	it('syncs dots from native horizontal scrolling', () => {
-		const { container } = render(<Carousel items={makeItems(6)} visibleCount={4} />);
+		const { container } = render(<Carousel items={makeItems(8)} visibleCount={4} />);
 		const track = container.querySelector('[data-carousel-track]');
+		track.scrollTo = vi.fn();
 
 		Object.defineProperty(track, 'clientWidth', { configurable: true, value: 800 });
-		Object.defineProperty(track, 'scrollWidth', { configurable: true, value: 1200 });
-		Object.defineProperty(track, 'scrollLeft', { configurable: true, value: 400 });
+		Object.defineProperty(track, 'scrollWidth', { configurable: true, value: 1616 });
+		Object.defineProperty(track, 'scrollLeft', { configurable: true, value: 500 });
+		fireEvent.scroll(track);
+
+		expect(screen.getByRole('button', { name: 'Go to page 2' })).toHaveAttribute('aria-current', 'true');
+		expect(track.scrollTo).not.toHaveBeenCalled();
+	});
+
+	it('keeps programmatic paging stable during smooth scroll events', async () => {
+		const user = userEvent.setup();
+		const { container } = render(<Carousel items={makeItems(12)} visibleCount={4} />);
+		const track = container.querySelector('[data-carousel-track]');
+		track.scrollTo = vi.fn();
+
+		Object.defineProperty(track, 'clientWidth', { configurable: true, value: 800 });
+		Object.defineProperty(track, 'scrollWidth', { configurable: true, value: 2448 });
+		Object.defineProperty(track, 'scrollLeft', { configurable: true, value: 0, writable: true });
+
+		await user.click(screen.getByRole('button', { name: 'Go to page 2' }));
+		expect(screen.getByRole('button', { name: 'Go to page 2' })).toHaveAttribute('aria-current', 'true');
+
+		track.scrollLeft = 240;
 		fireEvent.scroll(track);
 
 		expect(screen.getByRole('button', { name: 'Go to page 2' })).toHaveAttribute('aria-current', 'true');
@@ -306,6 +327,16 @@ describe('Carousel — controlled mode', () => {
 		rerender(<Carousel items={items} visibleCount={4} currentPage={0} />);
 		expect(screen.getByText('Item 0')).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Go to page 1' })).toHaveAttribute('aria-current', 'true');
+	});
+
+	it('uses the clamped safe page when controlledPage is out of range', async () => {
+		const onPageChange = vi.fn();
+		const user = userEvent.setup();
+		render(<Carousel items={makeItems(8)} visibleCount={4} currentPage={99} onPageChange={onPageChange} />);
+
+		await user.click(screen.getByRole('button', { name: 'Previous page' }));
+
+		expect(onPageChange).toHaveBeenCalledWith(0);
 	});
 });
 

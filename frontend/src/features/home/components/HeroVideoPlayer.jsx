@@ -11,6 +11,11 @@ import './HeroVideoPlayer.css';
 
 const DEFAULT_PLAYER_CLASS = 'relative w-full aspect-video rounded-[6px] overflow-hidden bg-cinemata-pacific-deep-50';
 
+function getVideoJsPlayer(videoElement) {
+	if (!videoElement) return null;
+	return videojs.getPlayer?.(videoElement) ?? videojs(videoElement);
+}
+
 export default function HeroVideoPlayer({
 	sources = [],
 	videoInfo = {},
@@ -21,6 +26,7 @@ export default function HeroVideoPlayer({
 }) {
 	const videoRef = useRef(null);
 	const playerRef = useRef(null);
+	const sourcesKey = JSON.stringify(sources);
 
 	useEffect(() => {
 		if (!videoRef.current || playerRef.current) {
@@ -78,10 +84,24 @@ export default function HeroVideoPlayer({
 		);
 
 		return () => {
-			videojs(videoElement).dispose();
+			if (playerRef.current?.dispose) {
+				playerRef.current.dispose();
+			} else {
+				getVideoJsPlayer(videoElement)?.dispose();
+			}
 			playerRef.current = null;
 		};
 	}, []);
+
+	useEffect(() => {
+		if (!playerRef.current) return;
+		const player = getVideoJsPlayer(videoRef.current);
+		if (!player) return;
+
+		player.poster(poster || '');
+		player.preload(preload);
+		player.src(sources);
+	}, [poster, preload, sourcesKey]);
 
 	return (
 		<div className={className || DEFAULT_PLAYER_CLASS}>
