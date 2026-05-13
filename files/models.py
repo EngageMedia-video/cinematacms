@@ -15,7 +15,7 @@ from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.files import File
 from django.core.validators import RegexValidator
-from django.db import connection, models
+from django.db import DatabaseError, connection, models
 from django.db.models import Q
 from django.db.models.signals import (
     m2m_changed,
@@ -1074,7 +1074,7 @@ class Media(models.Model):
         ret = []
         try:
             ratings_enabled = waffle.switch_is_active("allow_ratings")
-        except Exception:
+        except DatabaseError:
             ratings_enabled = getattr(settings, "ALLOW_RATINGS", False)
         if not ratings_enabled:
             return []

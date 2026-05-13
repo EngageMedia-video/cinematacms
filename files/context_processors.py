@@ -2,6 +2,7 @@ import json
 
 import waffle
 from django.conf import settings
+from django.db import DatabaseError
 
 from .lists import UNUSUAL_COUNTRIES
 from .methods import can_manage_uploads, can_upload_media, is_curator, is_mediacms_editor, is_mediacms_manager
@@ -17,7 +18,7 @@ from .models import HomepagePopup, TopMessage
 def _switch(name, fallback_setting):
     try:
         return waffle.switch_is_active(name)
-    except Exception:
+    except DatabaseError:
         return getattr(settings, fallback_setting, False)
 
 
