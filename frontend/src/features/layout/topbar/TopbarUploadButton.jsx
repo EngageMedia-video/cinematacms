@@ -3,10 +3,7 @@ import React, { useContext } from 'react';
 import LinksContext from '../../../static/js/contexts/LinksContext';
 import UserContext from '../../../static/js/contexts/UserContext';
 import { Icon } from '../../shared/components/Icon';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
+import { joinClasses } from '../../shared/utils/joinClasses';
 
 export function TopbarUploadButton({ className = '', compact = false }) {
 	const user = useContext(UserContext);

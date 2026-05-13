@@ -12,17 +12,15 @@ const HOMEPAGE_POPUP_DISPLAYED_KEY = 'MediaCMS["homepage-popup-has-been-displaye
 export function TopMessageHost() {
 	const apiUrl = useContext(ApiUrlContext);
 
-	const [topMessageText, setTopMessageText] = useState(() =>
-		window.localStorage.getItem(TOP_MESSAGE_TEXT_KEY)
-	);
+	const [topMessageText, setTopMessageText] = useState(() => window.localStorage.getItem(TOP_MESSAGE_TEXT_KEY));
+	// Default fallbacks differ on purpose, preserving legacy behavior:
+	// top message hides until the API confirms it's active; homepage popup shows until acknowledged.
 	const [topMessageHasBeenDisplayed, setTopMessageHasBeenDisplayed] = useState(
 		() => window.localStorage.getItem(TOP_MESSAGE_DISPLAYED_KEY) || 'true'
 	);
 
 	const [homepagePopupText, setHomepagePopupText] = useState(() => {
-		if (window.location.pathname !== '/') {
-			return true;
-		}
+		if (window.location.pathname !== '/') return null;
 		return window.localStorage.getItem(HOMEPAGE_POPUP_TEXT_KEY);
 	});
 	const [homepagePopupHasBeenDisplayed, setHomepagePopupHasBeenDisplayed] = useState(
@@ -84,7 +82,6 @@ export function TopMessageHost() {
 	function closeAlert() {
 		if (topMessageText) {
 			setTopMessageHasBeenDisplayed('true');
-			window.localStorage.setItem(TOP_MESSAGE_TEXT_KEY, topMessageText);
 			window.localStorage.setItem(TOP_MESSAGE_DISPLAYED_KEY, 'true');
 		}
 	}
@@ -92,7 +89,6 @@ export function TopMessageHost() {
 	function closeHomepagePopup() {
 		if (homepagePopupText) {
 			setHomepagePopupHasBeenDisplayed('true');
-			window.localStorage.setItem(HOMEPAGE_POPUP_TEXT_KEY, JSON.stringify(homepagePopupText));
 			window.localStorage.setItem(HOMEPAGE_POPUP_DISPLAYED_KEY, 'true');
 		}
 	}

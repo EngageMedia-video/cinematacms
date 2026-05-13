@@ -4,11 +4,8 @@ import LinksContext from '../../../static/js/contexts/LinksContext';
 import UserContext from '../../../static/js/contexts/UserContext';
 import HeaderContext from '../../../static/js/contexts/HeaderContext';
 import { Avatar } from '../../shared/components/Avatar';
+import { joinClasses } from '../../shared/utils/joinClasses';
 import useTopbarStore from './useTopbarStore';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 function isSignOut(item) {
 	const link = (item?.link || '').toLowerCase();
@@ -30,11 +27,7 @@ function MenuItem({ item }) {
 	const content = (
 		<>
 			{item.icon ? (
-				<i
-					aria-hidden="true"
-					className="material-icons shrink-0"
-					style={{ fontSize: 20, ...iconStyle }}
-				>
+				<i aria-hidden="true" className="material-icons shrink-0" style={{ fontSize: 20, ...iconStyle }}>
 					{item.icon}
 				</i>
 			) : (
@@ -149,10 +142,7 @@ export function TopbarUserMenu() {
 								<div className="text-sm font-semibold text-cinemata-white truncate">
 									{user.username}
 								</div>
-								<div
-									className="text-xs truncate mt-0.5"
-									style={{ color: '#7B98B6' }}
-								>
+								<div className="text-xs truncate mt-0.5" style={{ color: '#7B98B6' }}>
 									View profile
 								</div>
 							</div>

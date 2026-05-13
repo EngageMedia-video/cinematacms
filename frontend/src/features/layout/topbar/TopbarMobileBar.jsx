@@ -60,21 +60,27 @@ export function TopbarMobileBar() {
 	const [home, setHome] = useState(isHome);
 
 	useEffect(() => {
-		const observer = new MutationObserver(() => {
+		function sync() {
 			setTitle(derivePageTitle());
 			setHome(isHome());
-		});
+		}
+		const observer = new MutationObserver(sync);
 		const titleEl = document.querySelector('title');
 		if (titleEl) {
 			observer.observe(titleEl, { childList: true });
 		}
-		return () => observer.disconnect();
+		window.addEventListener('popstate', sync);
+		return () => {
+			observer.disconnect();
+			window.removeEventListener('popstate', sync);
+		};
 	}, []);
 
 	function onBack() {
-		if (typeof window !== 'undefined' && window.history?.length > 1) {
-			window.history.back();
-		}
+		if (typeof window === 'undefined') return;
+		// Direct-entry pages have no prior entry; fall back to home so the button is never inert.
+		if (window.history?.length > 1) window.history.back();
+		else window.location.assign('/');
 	}
 
 	return (

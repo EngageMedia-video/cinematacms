@@ -3,7 +3,9 @@ html body {
 	--header-height: 90px !important;
 }
 
-@media (max-width: 767px) {
+// 639px (one px below Tailwind's `sm:` 640px breakpoint) so this override
+// only kicks in for viewports that actually render the mobile two-row layout.
+@media (max-width: 639px) {
 	html body {
 		--header-height: 124px !important;
 	}

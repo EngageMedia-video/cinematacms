@@ -12,11 +12,17 @@ export function TopbarSearchMobileOverlay() {
 	const inputRef = useRef(null);
 
 	useEffect(() => {
-		if (isOpen) {
-			const timer = setTimeout(() => inputRef.current?.focus(), 50);
-			return () => clearTimeout(timer);
+		if (!isOpen) return;
+		const timer = setTimeout(() => inputRef.current?.focus(), 50);
+		function onKey(event) {
+			if (event.key === 'Escape') close();
 		}
-	}, [isOpen]);
+		document.addEventListener('keydown', onKey);
+		return () => {
+			clearTimeout(timer);
+			document.removeEventListener('keydown', onKey);
+		};
+	}, [isOpen, close]);
 
 	if (!isOpen) {
 		return null;

@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 
+// PageSidebar (legacy) reads from LayoutStore + LayoutActions; mirroring this in a
+// Zustand store would force two sources of truth for the same flag.
+/* eslint-disable no-restricted-imports */
 import LayoutStore from '../../../static/js/stores/LayoutStore.js';
 import * as LayoutActions from '../../../static/js/actions/LayoutActions.js';
+/* eslint-enable no-restricted-imports */
 import { Icon } from '../../shared/components/Icon';
 
 export function TopbarSidebarToggle() {

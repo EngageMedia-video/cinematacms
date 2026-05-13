@@ -15,11 +15,7 @@ export function TopbarLogo() {
 		>
 			<Icon name="cinemataMark" size={36} decorative style={{ color: '#FFFFFF' }} />
 			<span className="hidden sm:inline-flex items-center" style={{ color: '#FFFFFF' }}>
-				<Icon
-					name="cinemataWordmark"
-					style={{ width: 110, height: 26, color: '#FFFFFF' }}
-					decorative
-				/>
+				<Icon name="cinemataWordmark" style={{ width: 110, height: 26, color: '#FFFFFF' }} decorative />
 			</span>
 		</a>
 	);
