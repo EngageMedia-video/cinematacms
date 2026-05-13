@@ -33,6 +33,7 @@ describe('ExpandableText', () => {
 		render(<ExpandableText text="Some long text" clampLines={2} />);
 		const para = screen.getByText('Some long text');
 		expect(para).toHaveClass('line-clamp-2');
+		expect(para).toHaveClass('m-0');
 	});
 
 	it('removes clamp class when expanded', async () => {

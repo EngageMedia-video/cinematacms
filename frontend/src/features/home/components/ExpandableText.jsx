@@ -32,7 +32,7 @@ export function ExpandableText({ text = '', clampLines = 6, className = '' }) {
 
 	return (
 		<div className={className}>
-			<p id={paragraphId} ref={ref} className={expanded ? undefined : clampClass}>
+			<p id={paragraphId} ref={ref} className={expanded ? 'm-0' : `${clampClass} m-0`}>
 				{text}
 			</p>
 			{overflows && (

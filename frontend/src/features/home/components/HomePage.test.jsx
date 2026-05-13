@@ -148,10 +148,13 @@ describe('HomePage', () => {
 
 	it('FeaturedByCuratorsRow renders when recommended data is seeded', async () => {
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, [RECOMMENDED_MEDIA]);
-		render(<HomePage />);
+		const { container } = render(<HomePage />);
 		expect(await screen.findByText('Recommended Film')).toBeInTheDocument();
 		expect(screen.getByRole('heading', { level: 2, name: 'Featured by Curators' })).toHaveClass(
 			'heading-h6-20-medium'
+		);
+		expect(container.querySelector('section > .flex.flex-col.gap-2')).toContainElement(
+			screen.getByText('Hand-picked stories from our editorial team.')
 		);
 	});
 

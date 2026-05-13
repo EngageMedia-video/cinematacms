@@ -20,8 +20,10 @@ function FeaturedByCuratorsRow() {
 
 	return (
 		<SectionRow items={items} isLoading={isLoading} isError={isError}>
-			<SectionRow.Title viewAllHref="/recommended">Featured by Curators</SectionRow.Title>
-			<SectionRow.Description text="Hand-picked stories from our editorial team." />
+			<div className="flex flex-col gap-2">
+				<SectionRow.Title viewAllHref="/recommended">Featured by Curators</SectionRow.Title>
+				<SectionRow.Description text="Hand-picked stories from our editorial team." />
+			</div>
 			<SectionRow.Carousel />
 		</SectionRow>
 	);
