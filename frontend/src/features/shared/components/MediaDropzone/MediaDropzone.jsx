@@ -1,10 +1,7 @@
+import { cn } from '../../utils/classNames';
 import { useId, useRef, useState } from 'react';
 import { Button } from '../Button';
 import { Icon } from '../Icon';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 function fileListToArray(fileList) {
 	return fileList ? Array.from(fileList) : [];
@@ -89,7 +86,7 @@ export function MediaDropzone({
 
 	return (
 		<div
-			className={joinClasses(
+			className={cn(
 				'relative w-full rounded-[16px] bg-cinemata-neutral-100 dark:bg-cinemata-pacific-deep-800 px-6 py-[60px] transition-transform duration-200',
 				isDragging ? 'scale-[1.01]' : '',
 				isDropAnimating ? 'scale-[0.995]' : '',
@@ -136,7 +133,7 @@ export function MediaDropzone({
 			<div className="relative z-10 flex flex-col items-center gap-4 text-center">
 				{iconName ? (
 					<div
-						className={joinClasses(
+						className={cn(
 							'text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50 transition-transform duration-200',
 							isDragging ? '-translate-y-1 scale-105' : '',
 							isDropAnimating ? 'translate-y-0 scale-95' : ''

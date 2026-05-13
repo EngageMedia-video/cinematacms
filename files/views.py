@@ -104,6 +104,7 @@ from .serializers import (
     CategorySerializer,
     CommentSerializer,
     EncodeProfileSerializer,
+    HeroPlaybackSerializer,
     HomepagePopupSerializer,
     IndexPageFeaturedSerializer,
     MediaCountrySerializer,
@@ -123,6 +124,41 @@ from .tasks import save_user_action
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 
 logger = logging.getLogger(__name__)
+
+
+def _attach_hero_playback_to_first_featured_item(items):
+    """
+    Add detail-only playback fields to the first featured item.
+
+    The home hero is the only list item that needs player sources. Keeping this
+    nested avoids turning every media list response into a detail payload.
+    """
+    if not items:
+        return items
+
+    first = items[0]
+    if not isinstance(first, dict):
+        return items
+
+    friendly_token = first.get("friendly_token")
+    if not friendly_token:
+        return items
+
+    media = (
+        Media.objects.filter(
+            friendly_token=friendly_token,
+            state="public",
+            encoding_status="success",
+            is_reviewed=True,
+        )
+        .prefetch_related("encodings__profile", "subtitles__language")
+        .first()
+    )
+    if not media:
+        return items
+
+    first["hero_playback"] = HeroPlaybackSerializer(media).data
+    return items
 
 
 def _get_home_initial_data(request):
@@ -168,6 +204,7 @@ def _get_home_initial_data(request):
             )
         qs = qs.select_related("user").prefetch_related("category", "topics")
         home_initial_featured = MediaSerializer(qs, many=True, context={"request": request}).data
+    home_initial_featured = _attach_hero_playback_to_first_featured_item(list(home_initial_featured))
 
     # --- Recommended ---
     recommended_cache_key = get_media_list_cache_key(show="recommended_home", page=1, user_id=user_id)
@@ -1152,6 +1189,10 @@ class MediaList(APIView):
 
         serializer = MediaSerializer(page, many=True, context={"request": request})
         response_data = paginator.get_paginated_response(serializer.data)
+        if show_param == "featured":
+            response_data.data["results"] = _attach_hero_playback_to_first_featured_item(
+                list(response_data.data.get("results") or [])
+            )
 
         # Cache the response for standard queries
         if not author_param and not offset_param and show_param != "recommended":

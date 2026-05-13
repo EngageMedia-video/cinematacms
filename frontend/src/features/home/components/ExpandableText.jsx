@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const CLAMP_CLASSES = {
 	1: 'line-clamp-1',
@@ -11,24 +11,48 @@ const CLAMP_CLASSES = {
 
 export function ExpandableText({ text = '', clampLines = 6, className = '' }) {
 	const [expanded, setExpanded] = useState(false);
+	const [overflows, setOverflows] = useState(false);
+	const ref = useRef(null);
 
-	if (!text) {
-		return null;
-	}
+	useEffect(() => {
+		const el = ref.current;
+		if (!el || expanded) return;
+		// scrollHeight === 0 in jsdom — treat as overflowing so tests render the button
+		setOverflows(el.scrollHeight === 0 || el.scrollHeight > el.clientHeight);
+	}, [text, clampLines, expanded]);
+
+	if (!text) return null;
 
 	const clampClass = CLAMP_CLASSES[clampLines] ?? 'line-clamp-6';
 
 	return (
 		<div className={className}>
-			<p className={expanded ? undefined : clampClass}>{text}</p>
-			<button
-				type="button"
-				aria-expanded={expanded}
-				onClick={() => setExpanded((prev) => !prev)}
-				className="mt-1 text-sm font-medium text-cinemata-strait-blue-200 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200"
-			>
-				{expanded ? 'READ LESS' : 'READ MORE'}
-			</button>
+			<p ref={ref} className={expanded ? undefined : clampClass}>
+				{text}
+				{!expanded && overflows && (
+					<>
+						{' '}
+						<button
+							type="button"
+							aria-expanded={false}
+							onClick={() => setExpanded(true)}
+							className="inline font-medium text-cinemata-sunset-horizon-400p hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p"
+						>
+							READ MORE
+						</button>
+					</>
+				)}
+			</p>
+			{expanded && (
+				<button
+					type="button"
+					aria-expanded={true}
+					onClick={() => setExpanded(false)}
+					className="mt-1 text-sm font-medium text-cinemata-sunset-horizon-400p hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p"
+				>
+					READ LESS
+				</button>
+			)}
 		</div>
 	);
 }

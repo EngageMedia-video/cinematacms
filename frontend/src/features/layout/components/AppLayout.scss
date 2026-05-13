@@ -24,7 +24,7 @@ body.dark_theme .app-layout {
 	.page-main-inner {
 		position: relative;
 		z-index: 1;
-		margin: 0;
+		margin: 0 !important;
 	}
 }
 
@@ -48,6 +48,10 @@ body.dark_theme .app-layout {
 	z-index: 1;
 }
 
+.app-layout__slot--home {
+	padding: 32px;
+}
+
 .app-layout__ripple {
 	pointer-events: none;
 	position: absolute;
@@ -62,7 +66,7 @@ body.dark_theme .app-layout {
 .app-layout__ripple-image {
 	position: absolute;
 	top: 0;
-	right: -1.5rem;
+	right: 0;
 	display: block;
 	width: 34rem;
 	height: 34rem;
@@ -89,7 +93,7 @@ body.dark_theme .app-layout__ripple-image--dark-theme {
 
 	.app-layout__ripple-image {
 		top: 0;
-		right: -2em;
+		right: 0;
 		width: 20em;
 		height: 20em;
 	}

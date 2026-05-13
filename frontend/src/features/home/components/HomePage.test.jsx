@@ -5,8 +5,15 @@ import { HomePage } from './HomePage';
 
 // Mock the lazy-loaded video player to prevent videojs import in tests
 vi.mock('./HeroVideoPlayer', () => ({
-	default: function HeroVideoPlayerMock({ poster }) {
-		return <div data-testid="hero-video-player" data-poster={poster} />;
+	default: function HeroVideoPlayerMock({ poster, sources = [], videoInfo = {} }) {
+		return (
+			<div
+				data-testid="hero-video-player"
+				data-poster={poster}
+				data-sources={JSON.stringify(sources)}
+				data-video-info={JSON.stringify(videoInfo)}
+			/>
+		);
 	},
 }));
 
@@ -19,6 +26,20 @@ const FEATURED_MEDIA = {
 	views: 5000,
 	encodings_info: {},
 	subtitles_info: [],
+	hero_playback: {
+		duration: 420,
+		poster_url: 'https://example.com/thumb.jpg',
+		hls_info: {},
+		encodings_info: {
+			720: {
+				h264: {
+					url: 'https://example.com/featured-720.mp4',
+					status: 'success',
+				},
+			},
+		},
+		subtitles_info: [],
+	},
 	url: '/media/featured-film/',
 };
 
@@ -47,7 +68,14 @@ afterEach(() => {
 describe('HomePage', () => {
 	it('renders h1 heading', () => {
 		render(<HomePage />);
-		expect(screen.getByRole('heading', { level: 1, name: 'Most Popular' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { level: 1, name: 'Most Popular' })).toHaveClass('heading-h4-32-medium');
+	});
+
+	it('uses 32px spacing between the heading and hero region', () => {
+		render(<HomePage />);
+		const heading = screen.getByRole('heading', { level: 1, name: 'Most Popular' });
+		expect(heading.parentElement).toHaveClass('space-y-8');
+		expect(document.querySelector('[data-modern-track]')).toHaveClass('space-y-10');
 	});
 
 	it('has exactly one h1', () => {
@@ -59,6 +87,26 @@ describe('HomePage', () => {
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_MEDIA]);
 		render(<HomePage />);
 		expect(screen.getByRole('heading', { level: 2, name: 'Featured Film' })).toBeInTheDocument();
+	});
+
+	it('renders the hero player from seeded hero_playback without fetching media detail', async () => {
+		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => [] });
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_MEDIA]);
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, []);
+
+		render(<HomePage />);
+
+		const player = await screen.findByTestId('hero-video-player');
+		expect(fetchSpy).not.toHaveBeenCalled();
+		expect(JSON.parse(player.dataset.sources)).toEqual([
+			{ src: 'https://example.com/featured-720.mp4', type: 'video/mp4' },
+		]);
+		expect(JSON.parse(player.dataset.videoInfo)).toMatchObject({
+			720: {
+				format: ['h264'],
+				url: ['https://example.com/featured-720.mp4'],
+			},
+		});
 	});
 
 	it('FeaturedByCuratorsRow renders when recommended data is seeded', async () => {

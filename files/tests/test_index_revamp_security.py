@@ -9,6 +9,7 @@ introduces raw script interpolation must cause these tests to fail.
 import json
 from unittest.mock import patch
 
+from django.core.cache import cache
 from django.test import TestCase, override_settings
 
 from files.models import Media
@@ -29,6 +30,7 @@ class IndexRevampSecurityTest(TestCase):
 
     def setUp(self):
         super().setUp()
+        cache.clear()
         self._vite_patcher = patch(
             "django_vite.core.asset_loader.DjangoViteAssetLoader.instance",
             return_value=make_vite_loader_mock(),

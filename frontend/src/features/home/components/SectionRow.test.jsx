@@ -89,6 +89,17 @@ describe('SectionRow', () => {
 		expect(screen.getByRole('heading', { name: 'Featured by Curators' })).toBeInTheDocument();
 	});
 
+	it('Title with viewAllHref renders heading and VIEW ALL link on the same line', () => {
+		render(
+			<SectionRow items={ITEMS}>
+				<SectionRow.Title viewAllHref="/recommended">Featured by Curators</SectionRow.Title>
+			</SectionRow>
+		);
+		expect(screen.getByRole('heading', { name: 'Featured by Curators' })).toBeInTheDocument();
+		const link = screen.getByRole('link', { name: 'VIEW ALL' });
+		expect(link).toHaveAttribute('href', '/recommended');
+	});
+
 	it('Title and Description can both render alongside Header', () => {
 		render(
 			<SectionRow items={ITEMS}>

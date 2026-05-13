@@ -1,0 +1,110 @@
+import { render, screen } from '@testing-library/react';
+import { Text } from './Text';
+
+describe('Text', () => {
+	describe('body variants', () => {
+		it('renders a paragraph by default', () => {
+			render(<Text>Hello</Text>);
+			expect(screen.getByText('Hello').tagName).toBe('P');
+		});
+
+		it('applies default body-14 typography variant', () => {
+			render(<Text>Hello</Text>);
+			expect(screen.getByText('Hello')).toHaveClass('body-body-14-regular');
+		});
+
+		it('applies the body color by default', () => {
+			render(<Text>Hello</Text>);
+			const el = screen.getByText('Hello');
+			expect(el).toHaveClass('text-cinemata-pacific-deep-700');
+			expect(el).toHaveClass('dark:text-cinemata-pacific-deep-50');
+		});
+
+		it('applies the meta color when color="meta"', () => {
+			render(<Text color="meta">Meta</Text>);
+			const el = screen.getByText('Meta');
+			expect(el).toHaveClass('text-cinemata-pacific-deep-400');
+			expect(el).toHaveClass('dark:text-cinemata-pacific-deep-300');
+			expect(el).not.toHaveClass('text-cinemata-pacific-deep-700');
+		});
+
+		it('applies the sunset horizon color when color="sunset-horizon"', () => {
+			render(<Text color="sunset-horizon">Author</Text>);
+			const el = screen.getByText('Author');
+			expect(el).toHaveClass('text-cinemata-sunset-horizon-400p');
+			expect(el).toHaveClass('dark:text-cinemata-sunset-horizon-200');
+			expect(el).not.toHaveClass('text-cinemata-pacific-deep-700');
+		});
+
+		it('applies no color when color is unrecognised', () => {
+			render(<Text color="unknown">No color</Text>);
+			const el = screen.getByText('No color');
+			expect(el).not.toHaveClass('text-cinemata-pacific-deep-700');
+			expect(el).not.toHaveClass('text-cinemata-pacific-deep-400');
+		});
+
+		it('applies the selected body variant', () => {
+			render(<Text variant="body-12">Small</Text>);
+			expect(screen.getByText('Small')).toHaveClass('body-body-12-regular');
+		});
+
+		it('renders as a span when as="span"', () => {
+			render(<Text as="span">Inline</Text>);
+			expect(screen.getByText('Inline').tagName).toBe('SPAN');
+		});
+	});
+
+	describe('heading variants', () => {
+		it.each([
+			['h1', 'H1', 'heading-h1-56-medium'],
+			['h2', 'H2', 'heading-h2-48-medium'],
+			['h3', 'H3', 'heading-h3-40-medium'],
+			['h4', 'H4', 'heading-h4-32-medium'],
+			['h5', 'H5', 'heading-h5-24-medium'],
+			['h6', 'H6', 'heading-h6-20-medium'],
+		])('variant="%s" renders <%s> with %s', (variant, tag, cssClass) => {
+			render(<Text variant={variant}>Title</Text>);
+			const el = screen.getByText('Title');
+			expect(el.tagName).toBe(tag);
+			expect(el).toHaveClass(cssClass);
+		});
+
+		it('applies the bold weight variant', () => {
+			render(<Text variant="h4-bold">Bold heading</Text>);
+			expect(screen.getByText('Bold heading')).toHaveClass('heading-h4-32-bold');
+		});
+
+		it('applies the regular weight variant', () => {
+			render(<Text variant="h5-regular">Regular heading</Text>);
+			expect(screen.getByText('Regular heading')).toHaveClass('heading-h5-24-regular');
+		});
+
+		it('does not apply the body color to heading variants', () => {
+			render(<Text variant="h6">No default color</Text>);
+			const el = screen.getByText('No default color');
+			expect(el).not.toHaveClass('text-cinemata-pacific-deep-700');
+			expect(el).not.toHaveClass('dark:text-cinemata-pacific-deep-50');
+		});
+
+		it('overrides the default element with as prop', () => {
+			render(
+				<Text variant="h6" as="h2">
+					Semantic override
+				</Text>
+			);
+			expect(screen.getByText('Semantic override').tagName).toBe('H2');
+		});
+	});
+
+	describe('shared behaviour', () => {
+		it('merges extra className', () => {
+			render(<Text className="m-0">Content</Text>);
+			expect(screen.getByText('Content')).toHaveClass('m-0');
+		});
+
+		it('passes through extra props', () => {
+			render(<Text data-testid="txt">Content</Text>);
+			expect(screen.getByTestId('txt')).toBeInTheDocument();
+		});
+	});
+});

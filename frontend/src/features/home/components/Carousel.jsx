@@ -1,6 +1,7 @@
 import { createContext, use, useState, useCallback } from 'react';
 import { formatDuration } from '../../shared/utils/formatDuration';
 import { VerticalMovieItem } from '../../shared/components/MovieItem/MovieItem';
+import { Icon } from '../../shared/components/Icon';
 
 const CarouselContext = createContext(null);
 
@@ -10,23 +11,50 @@ function clamp(value, min, max) {
 
 const DEFAULT_VISIBLE_COUNT = 4;
 
+function resolveStateIcon(state) {
+	if (!state) return '';
+	if (state === 'private' || state === 'unlisted') return 'eyeSlash';
+	return 'eye';
+}
+
+// Must match gap-4 (1rem). Used in CSS calc expressions below.
+const GAP_REM = 1;
+
 function CarouselTrack() {
 	const { items, visibleCount, currentPage } = use(CarouselContext);
-	const start = currentPage * visibleCount;
-	const visible = items.slice(start, start + visibleCount);
+
+	// N items + N-1 gaps = container.
+	const itemWidth = `calc(${100 / visibleCount}% - ${(visibleCount - 1) / visibleCount}rem)`;
+
+	// Translation per page = N × item width + N gaps = container + one gap.
+	const translateX = `calc(-${currentPage} * (100% + ${GAP_REM}rem))`;
 
 	return (
-		<div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${visibleCount}, minmax(0, 1fr))` }}>
-			{visible.map((item) => (
-				<VerticalMovieItem
-					key={item.friendly_token ?? item.id ?? item.url}
-					title={item.title}
-					imageSrc={item.thumbnail_url}
-					link={item.url}
-					duration={item.duration_in_seconds ? formatDuration(item.duration_in_seconds) : ''}
-					subtitle={item.author_name}
-				/>
-			))}
+		<div className="overflow-hidden">
+			<div
+				className="flex gap-4 transition-transform duration-300 ease-in-out"
+				style={{ transform: `translateX(${translateX})` }}
+			>
+				{items.map((item) => (
+					<div
+						key={item.friendly_token ?? item.id ?? item.url}
+						style={{ flexShrink: 0, flexGrow: 0, width: itemWidth }}
+					>
+						<VerticalMovieItem
+							title={item.title}
+							imageSrc={item.thumbnail_url}
+							link={item.url}
+							duration={item.duration_in_seconds ? formatDuration(item.duration_in_seconds) : ''}
+							subtitle={item.author_name}
+							iconName={resolveStateIcon(item.state)}
+							metadata={[
+								item.media_country || null,
+								item.views != null ? `${Number(item.views).toLocaleString()} views` : null,
+							]}
+						/>
+					</div>
+				))}
+			</div>
 		</div>
 	);
 }
@@ -58,22 +86,41 @@ function CarouselArrows() {
 	);
 }
 
-function CarouselDots() {
-	const { pageCount, currentPage, goToPage } = use(CarouselContext);
+function CarouselOverlayArrows() {
+	const { atStart, atEnd, goPrev, goNext } = use(CarouselContext);
+	const btnClass =
+		'pointer-events-auto absolute top-1/2 z-10 flex size-[70px] -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-cinemata-strait-blue-700 transition-colors hover:text-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200 focus-visible:ring-offset-2 focus-visible:ring-offset-cinemata-pacific-deep-50 dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-400 dark:focus-visible:ring-offset-cinemata-pacific-deep-950';
 
 	return (
-		<div className="flex items-center gap-1" role="group" aria-label="Page navigation">
-			{Array.from({ length: pageCount }, (_, i) => (
+		<>
+			{!atStart && (
+				<button type="button" onClick={goPrev} aria-label="Previous page" className={`${btnClass} -left-8`}>
+					<Icon name="caretCircleRight" size={70} className="rotate-180" decorative />
+				</button>
+			)}
+			{!atEnd && (
+				<button type="button" onClick={goNext} aria-label="Next page" className={`${btnClass} -right-8`}>
+					<Icon name="caretCircleRight" size={70} decorative />
+				</button>
+			)}
+		</>
+	);
+}
+
+export function CarouselIndicator({ count, activeIndex, onSelect }) {
+	return (
+		<div className="flex items-center gap-2" role="group" aria-label="Page navigation">
+			{Array.from({ length: count }, (_, i) => (
 				<button
 					key={i}
 					type="button"
-					onClick={() => goToPage(i)}
+					onClick={() => onSelect(i)}
 					aria-label={`Go to page ${i + 1}`}
-					aria-current={i === currentPage ? 'true' : undefined}
-					className={`h-2 rounded-full transition-[width,background-color] focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200 ${
-						i === currentPage
-							? 'w-4 bg-cinemata-pacific-deep-700 dark:bg-cinemata-strait-blue-50'
-							: 'w-2 bg-cinemata-neutral-400 hover:bg-cinemata-neutral-500 dark:bg-cinemata-pacific-deep-400 dark:hover:bg-cinemata-pacific-deep-300'
+					aria-current={i === activeIndex ? 'true' : undefined}
+					className={`rounded-full p-0 border-0 focus:outline-none ${
+						i === activeIndex
+							? 'h-2 w-6 bg-cinemata-pacific-deep-800 dark:bg-white transition-[width,background-color] duration-300'
+							: 'size-2 min-w-0 bg-cinemata-pacific-deep-800/30 hover:bg-cinemata-pacific-deep-800/50 dark:bg-white/30 dark:hover:bg-white/50'
 					}`}
 				/>
 			))}
@@ -81,13 +128,28 @@ function CarouselDots() {
 	);
 }
 
+function CarouselDots() {
+	const { pageCount, currentPage, goToPage } = use(CarouselContext);
+	return <CarouselIndicator count={pageCount} activeIndex={currentPage} onSelect={goToPage} />;
+}
+
 function DefaultCarouselBody() {
+	const { visibleCount } = use(CarouselContext);
 	return (
 		<>
-			<CarouselTrack />
-			<div className="flex items-center justify-between mt-3">
+			<div className="relative">
+				<CarouselTrack />
+				<div
+					className="pointer-events-none absolute inset-x-0 top-0"
+					style={{ aspectRatio: `${visibleCount * 16} / 9` }}
+				>
+					<div className="relative h-full w-full">
+						<CarouselOverlayArrows />
+					</div>
+				</div>
+			</div>
+			<div className="mt-3 flex justify-center">
 				<CarouselDots />
-				<CarouselArrows />
 			</div>
 		</>
 	);

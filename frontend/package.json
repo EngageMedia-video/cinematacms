@@ -82,6 +82,7 @@
 		"@mediacms/media-player": "file:packages/media-player",
 		"@tanstack/react-query": "^5.100.7",
 		"axios": "^1.15.2",
+		"clsx": "^2.1.1",
 		"dompurify": "^3.4.2",
 		"events": "^3.3.0",
 		"flux": "4.0.4",
@@ -90,6 +91,7 @@
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5",
 		"sortablejs": "^1.15.7",
+		"tailwind-merge": "^3.6.0",
 		"timeago.js": "^4.0.2",
 		"url-parse": "^1.5.10",
 		"zustand": "^5.0.12"

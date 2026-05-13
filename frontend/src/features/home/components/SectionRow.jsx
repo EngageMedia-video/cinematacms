@@ -25,7 +25,22 @@ function SectionRowHeader({ badgeLabel, badgeColor = '#026690', viewAllHref }) {
 	);
 }
 
-function SectionRowTitle({ children }) {
+function SectionRowTitle({ children, viewAllHref }) {
+	if (viewAllHref) {
+		return (
+			<div className="flex items-center justify-between gap-4">
+				<h2 className="heading-h6-20-medium m-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
+					{children}
+				</h2>
+				<a
+					href={viewAllHref}
+					className="caption-caption-10-regular whitespace-nowrap uppercase tracking-wide text-cinemata-strait-blue-200 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200"
+				>
+					VIEW ALL
+				</a>
+			</div>
+		);
+	}
 	return (
 		<h2 className="heading-h6-20-medium m-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
 			{children}
@@ -35,7 +50,11 @@ function SectionRowTitle({ children }) {
 
 function SectionRowDescription({ text }) {
 	return (
-		<ExpandableText text={text} clampLines={2} className="text-cinemata-pacific-deep-400 body-body-14-regular" />
+		<ExpandableText
+			text={text}
+			clampLines={2}
+			className="body-body-14-regular text-cinemata-neutral-700 dark:text-cinemata-strait-blue-100"
+		/>
 	);
 }
 

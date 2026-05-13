@@ -1,3 +1,4 @@
+import { cn } from '../../utils/classNames';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Icon } from '../Icon';
 
@@ -47,10 +48,6 @@ const MENU_VARIANT_CLASSES = {
 	disabled:
 		'border-cinemata-coral-reef-400p bg-cinemata-pacific-deep-50 dark:border-cinemata-red-500 dark:bg-cinemata-pacific-deep-900',
 };
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 function normalizeOption(option) {
 	if (typeof option === 'string') {
@@ -195,7 +192,7 @@ export function Dropdown({
 	return (
 		<div
 			ref={rootRef}
-			className={joinClasses('relative w-max max-w-full', className)}
+			className={cn('relative w-max max-w-full', className)}
 			onBlur={(event) => {
 				if (open && !rootRef.current?.contains(event.relatedTarget)) {
 					setOpen(false);
@@ -203,7 +200,7 @@ export function Dropdown({
 			}}
 		>
 			<div
-				className={joinClasses(
+				className={cn(
 					'group w-full border-b px-0 py-[14px] transition-colors duration-200',
 					SHELL_VARIANT_CLASSES[variant],
 					borderClasses,
@@ -260,16 +257,14 @@ export function Dropdown({
 				>
 					<span className="min-w-0 flex-1">
 						{label ? (
-							<span className={joinClasses('body-body-16-regular mb-2 block', labelClasses)}>
-								{label}
-							</span>
+							<span className={cn('body-body-16-regular mb-2 block', labelClasses)}>{label}</span>
 						) : null}
 						<span
-							className={joinClasses(
+							className={cn(
 								'body-body-16-regular block truncate',
 								selectedOption
 									? VALUE_VARIANT_CLASSES[variant]
-									: joinClasses(
+									: cn(
 											PLACEHOLDER_VARIANT_CLASSES[variant],
 											activeState
 												? 'text-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50'
@@ -282,7 +277,7 @@ export function Dropdown({
 					</span>
 					<span
 						aria-hidden="true"
-						className={joinClasses(
+						className={cn(
 							'inline-flex h-6 w-6 shrink-0 items-center justify-center self-center text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50 transition-transform duration-200',
 							open ? 'rotate-180' : ''
 						)}
@@ -297,7 +292,7 @@ export function Dropdown({
 					id={menuId}
 					role="menu"
 					aria-labelledby={label ? buttonId : undefined}
-					className={joinClasses(
+					className={cn(
 						'absolute left-0 top-full z-20 mt-2 min-w-full list-none overflow-hidden rounded-(--radius-4) border p-0',
 						MENU_VARIANT_CLASSES[variant]
 					)}
@@ -344,7 +339,7 @@ export function Dropdown({
 											});
 										}
 									}}
-									className={joinClasses(
+									className={cn(
 										'body-body-16-regular block w-full px-4 py-3 text-left outline-none transition-colors duration-150 border-0',
 										SHELL_VARIANT_CLASSES[variant],
 										selected ? 'font-black' : 'font-normal'
@@ -359,10 +354,7 @@ export function Dropdown({
 			) : null}
 
 			{helperText ? (
-				<p
-					id={helperTextId}
-					className={joinClasses('body-body-12-regular mt-[7.5px]', HELPER_VARIANT_CLASSES[variant])}
-				>
+				<p id={helperTextId} className={cn('body-body-12-regular mt-[7.5px]', HELPER_VARIANT_CLASSES[variant])}>
 					{helperText}
 				</p>
 			) : null}

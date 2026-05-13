@@ -5,41 +5,66 @@ import { SectionRow } from './SectionRow';
 import { useRecommendedMedia } from '../hooks/useRecommendedMedia';
 import { useCategoryMedia } from '../hooks/useCategoryMedia';
 import { normalizeMediaList } from '../utils/mediaList';
+import { Text } from '../../shared/components/Text';
 
 // Provisional category list — declared at module scope, never inside the render function.
-// These categories display as empty rows today (useCategoryMedia returns []).
-// The deferred category-source work replaces useCategoryMedia bodies without touching this list.
+// playlistId is null until an admin assigns a playlist to each category.
+// Rows with no playlistId render nothing (useCategoryMedia is disabled when playlistId is falsy).
 const PROVISIONAL_CATEGORIES = [
 	{
 		id: 'gender-sexuality',
 		label: 'GENDER & SEXUALITY',
 		color: '#A855F7',
 		viewAllHref: '/search?c=Gender',
-		searchTerm: 'Gender',
+		playlistId: null,
+		description:
+			'Stories exploring identity, expression, and lived experiences across the gender and sexuality spectrum. Highlighting voices, struggles, and perspectives often marginalized or overlooked.',
 	},
-	{ id: 'film', label: 'FILM', color: '#3B82F6', viewAllHref: '/search?c=Film', searchTerm: 'Film' },
-	{ id: 'webinar', label: 'WEBINAR', color: '#10B981', viewAllHref: '/search?c=Webinar', searchTerm: 'Webinar' },
+	{
+		id: 'film',
+		label: 'FILM',
+		color: '#3B82F6',
+		viewAllHref: '/search?c=Film',
+		playlistId: null,
+		description:
+			'Narrative or experimental moving-image works that tell stories through cinematic expression. Spanning fiction, hybrid, and artistic formats across cultures and perspectives.',
+	},
+	{
+		id: 'webinar',
+		label: 'WEBINAR',
+		color: '#10B981',
+		viewAllHref: '/search?c=Webinar',
+		playlistId: null,
+		description:
+			'Recorded or live sessions featuring discussions, talks, or educational content. Designed for learning, dialogue, and knowledge sharing across communities.',
+	},
 	{
 		id: 'documentary',
 		label: 'DOCUMENTARY',
 		color: '#ED7C30',
 		viewAllHref: '/search?c=Documentary',
-		searchTerm: 'Documentary',
+		playlistId: null,
+		description:
+			'Non-fiction films grounded in real events, people, and lived experiences. Focused on truth-telling, social issues, and amplifying underrepresented voices.',
 	},
 	{
 		id: 'animal-rights',
 		label: 'ANIMAL RIGHTS',
 		color: '#F6A474',
 		viewAllHref: '/search?c=Animal+Rights',
-		searchTerm: 'Animal Rights',
+		playlistId: null,
+		description:
+			'Content addressing the ethical treatment, protection, and rights of animals. Exploring activism, environmental impact, and human-animal relationships.',
 	},
 	{
 		id: 'indigenous',
 		label: 'INDIGENOUS',
 		color: '#00876A',
 		viewAllHref: '/search?c=Indigenous',
-		searchTerm: 'Indigenous',
+		playlistId: null,
 		heading: 'Featured by Curators',
+		description:
+			'Voices, stories, and cultural expressions from indigenous communities around the world. Centering land rights, tradition, resistance, and sovereignty.',
 	},
 ];
 
@@ -53,7 +78,7 @@ function FeaturedByCuratorsRow() {
 
 	return (
 		<SectionRow items={items} isLoading={isLoading} isError={isError}>
-			<SectionRow.Title>Featured by Curators</SectionRow.Title>
+			<SectionRow.Title viewAllHref="/recommended">Featured by Curators</SectionRow.Title>
 			<SectionRow.Description text="Hand-picked stories from our editorial team." />
 			<SectionRow.Carousel />
 		</SectionRow>
@@ -61,7 +86,7 @@ function FeaturedByCuratorsRow() {
 }
 
 function CategorySectionRow({ category, variant }) {
-	const { data, isLoading, isError } = useCategoryMedia(category.searchTerm);
+	const { data, isLoading, isError } = useCategoryMedia(category.playlistId);
 	const items = normalizeMediaList(data);
 
 	return (
@@ -72,6 +97,7 @@ function CategorySectionRow({ category, variant }) {
 				viewAllHref={category.viewAllHref}
 			/>
 			{category.heading ? <SectionRow.Title>{category.heading}</SectionRow.Title> : null}
+			{category.description ? <SectionRow.Description text={category.description} /> : null}
 			<SectionRow.Carousel />
 		</SectionRow>
 	);
@@ -79,13 +105,17 @@ function CategorySectionRow({ category, variant }) {
 
 function HomePageContent() {
 	return (
-		<div data-modern-track className="min-h-screen w-full px-6 lg:px-28 py-6 space-y-10">
-			<h1 className="heading-h4-32-medium m-0">Most Popular</h1>
+		<div data-modern-track className="min-h-screen w-full space-y-10">
+			<div className="space-y-8">
+				<Text as="h1" variant="h4">
+					Most Popular
+				</Text>
 
-			<HeroSection>
-				<HeroSection.Player />
-				<HeroSection.Card />
-			</HeroSection>
+				<HeroSection>
+					<HeroSection.Player />
+					<HeroSection.Card />
+				</HeroSection>
+			</div>
 
 			<FeaturedByCuratorsRow />
 

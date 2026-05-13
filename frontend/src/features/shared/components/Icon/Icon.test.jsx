@@ -6,6 +6,7 @@ import { getIconComponent, iconNames } from './iconRegistry.js';
 
 describe('iconRegistry', () => {
 	it('auto-registers shared icons from filenames', () => {
+		expect(iconNames).toContain('caretCircleRight');
 		expect(iconNames).toContain('example');
 		expect(iconNames).toContain('magnifyingGlass');
 		expect(iconNames).toContain('infoCircle');

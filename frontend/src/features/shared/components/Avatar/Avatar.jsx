@@ -1,3 +1,4 @@
+import { cn } from '../../utils/classNames';
 import { useEffect, useState } from 'react';
 import { Icon } from '../Icon';
 
@@ -29,10 +30,6 @@ const BADGE_VARIANTS = {
 		label: 'Like',
 	},
 };
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 function getNormalizedSize(size) {
 	if (size === 'sm') {
@@ -109,7 +106,7 @@ export function Avatar({
 	return (
 		<span
 			{...props}
-			className={joinClasses('relative inline-flex shrink-0 align-top overflow-visible rounded-full', className)}
+			className={cn('relative inline-flex shrink-0 align-top overflow-visible rounded-full', className)}
 			style={{
 				width: sizeConfig.dimension,
 				height: sizeConfig.dimension,
@@ -131,16 +128,14 @@ export function Avatar({
 					/>
 				) : (
 					<span aria-hidden="true" className="inline-flex h-full w-full items-center justify-center">
-						<span className={joinClasses('leading-none uppercase', sizeConfig.textClassName)}>
-							{initials}
-						</span>
+						<span className={cn('leading-none uppercase', sizeConfig.textClassName)}>{initials}</span>
 					</span>
 				)}
 			</span>
 
 			{resolvedBadgeIcon ? (
 				<span
-					className={joinClasses(
+					className={cn(
 						'absolute right-[-8px] bottom-[-20px] inline-flex items-center justify-center rounded-full border-[3px] border-cinemata-white dark:border-cinemata-pacific-deep-900 p-[7px] text-cinemata-strait-blue-600p dark:text-cinemata-strait-blue-100',
 						badgeVariant?.className || 'bg-cinemata-strait-blue-900'
 					)}

@@ -20,6 +20,7 @@ describe('MovieItem', () => {
 
 		const article = screen.getByRole('article');
 		const image = screen.getByRole('img', { name: 'Arrival poster' });
+		expect(image).toHaveClass('object-cover');
 		expect(screen.getByText('2026')).toBeVisible();
 		expect(screen.getByText('PG-13')).toBeVisible();
 		expect(screen.getByText('4K')).toBeVisible();

@@ -19,10 +19,18 @@ describe('Carousel — default shape', () => {
 		render(<Carousel items={makeItems(8)} visibleCount={4} />);
 		expect(screen.getByText('Item 0')).toBeInTheDocument();
 		expect(screen.getByText('Item 3')).toBeInTheDocument();
-		expect(screen.queryByText('Item 4')).toBeNull();
+		expect(screen.getByRole('button', { name: 'Go to page 1' })).toHaveAttribute('aria-current', 'true');
 	});
 
-	it('advances to items 4-7 after clicking right arrow', async () => {
+	it('sizes items so there is no cropped fifth-card peek', () => {
+		render(<Carousel items={makeItems(8)} visibleCount={4} />);
+
+		const firstItemShell = screen.getByRole('link', { name: 'Open Item 0' }).closest('article').parentElement;
+
+		expect(firstItemShell).toHaveStyle({ width: 'calc(25% - 0.75rem)' });
+	});
+
+	it('advances to page 1 after clicking right arrow', async () => {
 		const user = userEvent.setup();
 		render(<Carousel items={makeItems(8)} visibleCount={4} />);
 
@@ -30,20 +38,32 @@ describe('Carousel — default shape', () => {
 
 		expect(screen.getByText('Item 4')).toBeInTheDocument();
 		expect(screen.getByText('Item 7')).toBeInTheDocument();
-		expect(screen.queryByText('Item 0')).toBeNull();
+		expect(screen.getByRole('button', { name: 'Go to page 2' })).toHaveAttribute('aria-current', 'true');
 	});
 
-	it('right arrow is disabled on the last page', async () => {
+	it('uses the Figma caret circle asset for overlay arrows', () => {
+		render(<Carousel items={makeItems(8)} visibleCount={4} />);
+
+		const nextButton = screen.getByRole('button', { name: 'Next page' });
+		const icon = nextButton.querySelector('svg[data-icon="caretCircleRight"]');
+
+		expect(nextButton).toHaveClass('size-[70px]');
+		expect(nextButton).toHaveClass('-right-8');
+		expect(nextButton).toHaveClass('text-cinemata-strait-blue-700');
+		expect(icon).toBeInTheDocument();
+	});
+
+	it('right arrow is not shown on the last page', async () => {
 		const user = userEvent.setup();
 		render(<Carousel items={makeItems(8)} visibleCount={4} />);
 
 		await user.click(screen.getByRole('button', { name: 'Next page' }));
-		expect(screen.getByRole('button', { name: 'Next page' })).toBeDisabled();
+		expect(screen.queryByRole('button', { name: 'Next page' })).toBeNull();
 	});
 
-	it('left arrow is disabled on the first page', () => {
+	it('left arrow is not shown on the first page', () => {
 		render(<Carousel items={makeItems(8)} visibleCount={4} />);
-		expect(screen.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+		expect(screen.queryByRole('button', { name: 'Previous page' })).toBeNull();
 	});
 
 	it('clicking dot N jumps to page N', async () => {
@@ -123,14 +143,14 @@ describe('Carousel — controlled mode', () => {
 		expect(onPageChange).toHaveBeenCalledWith(2);
 	});
 
-	it('switching currentPage from 2 to 0 moves visible slice without remounting items', () => {
+	it('switching currentPage from 2 to 0 updates the active dot', () => {
 		const items = makeItems(12);
 		const { rerender } = render(<Carousel items={items} visibleCount={4} currentPage={2} />);
-		expect(screen.getByText('Item 8')).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Go to page 3' })).toHaveAttribute('aria-current', 'true');
 
 		rerender(<Carousel items={items} visibleCount={4} currentPage={0} />);
 		expect(screen.getByText('Item 0')).toBeInTheDocument();
-		expect(screen.queryByText('Item 8')).toBeNull();
+		expect(screen.getByRole('button', { name: 'Go to page 1' })).toHaveAttribute('aria-current', 'true');
 	});
 });
 

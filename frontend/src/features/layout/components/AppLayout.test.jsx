@@ -24,5 +24,6 @@ describe('AppLayout', () => {
 		expect(screen.getByText('Revamp home content')).toBeInTheDocument();
 		expect(document.getElementById('page-home')).toContainElement(screen.getByText('Revamp home content'));
 		expect(document.querySelector('[data-modern-track]')).toBeInTheDocument();
+		expect(document.getElementById('page-home')).toHaveClass('app-layout__slot--home');
 	});
 });

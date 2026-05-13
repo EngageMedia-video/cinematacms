@@ -1,8 +1,5 @@
+import { cn } from '../../utils/classNames';
 import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from 'react';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 const PLACEMENT_CLASSES = {
 	top: 'bottom-full left-1/2 mb-2 -translate-x-1/2',
@@ -70,7 +67,7 @@ export function Tooltip({
 	return (
 		<span
 			ref={wrapperRef}
-			className={joinClasses('relative inline-flex max-w-full', className)}
+			className={cn('relative inline-flex max-w-full', className)}
 			data-tooltip
 			onMouseEnter={trigger === 'hover' ? () => setOpen(true) : undefined}
 			onMouseLeave={trigger === 'hover' ? () => setOpen(false) : undefined}
@@ -101,7 +98,7 @@ export function Tooltip({
 				<div
 					id={tooltipId}
 					role="tooltip"
-					className={joinClasses(
+					className={cn(
 						'body-body-14-regular absolute z-20 w-[250px] rounded-[8px] border border-cinemata-neutral-300 bg-cinemata-white px-3 py-1.5 leading-[1.2] text-cinemata-neutral-900 dark:border-cinemata-pacific-deep-800 dark:bg-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50',
 						PLACEMENT_CLASSES[resolvedPlacement],
 						contentClassName

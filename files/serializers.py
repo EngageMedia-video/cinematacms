@@ -22,6 +22,7 @@ from .models import (
 
 class MediaSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
+    summary = serializers.ReadOnlyField()
     url = serializers.SerializerMethodField()
     api_url = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
@@ -51,6 +52,7 @@ class MediaSerializer(serializers.ModelSerializer):
             "friendly_token",
             "user",
             "add_date",
+            "summary",
             "views",
             "media_type",
             "state",
@@ -72,6 +74,7 @@ class MediaSerializer(serializers.ModelSerializer):
             "user",
             "title",
             "description",
+            "summary",
             "add_date",
             "views",
             "media_type",
@@ -96,6 +99,21 @@ class MediaSerializer(serializers.ModelSerializer):
             "size",
             "media_country_info",
             "year_produced",
+        )
+
+
+class HeroPlaybackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Media
+        fields = (
+            "duration",
+            "poster_url",
+            "sprites_url",
+            "preview_url",
+            "thumbnail_time",
+            "encodings_info",
+            "hls_info",
+            "subtitles_info",
         )
 
 
