@@ -26,7 +26,7 @@ export function Topbar() {
 				style={{ backgroundColor: '#011C34', color: '#FFFFFF' }}
 				className="fixed top-0 left-0 right-0 z-[60] w-full border-b-2 border-white/10"
 			>
-				<div className="flex items-center gap-3 px-4 h-16 sm:h-[90px]">
+				<div className="flex items-center gap-3 px-4 h-[60px] sm:h-[90px]">
 					<TopbarSidebarToggle />
 					<TopbarLogo />
 					<TopbarSearchDesktop />

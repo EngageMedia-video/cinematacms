@@ -78,20 +78,26 @@ export function TopbarMobileBar() {
 	}
 
 	return (
-		<div className="flex sm:hidden items-center justify-between gap-3 px-4 h-16 bg-cinemata-pacific-deep-900">
+		<div
+			style={{ backgroundColor: '#011C34' }}
+			className="flex sm:hidden items-center justify-between gap-3 px-4 h-16"
+		>
 			{home ? (
-				<span aria-hidden="true" className="w-10 h-10 shrink-0" />
+				<span aria-hidden="true" className="w-8 h-8 shrink-0" />
 			) : (
 				<button
 					type="button"
 					onClick={onBack}
 					aria-label="Go back"
-					className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-cinemata-pacific-deep-800 text-cinemata-white hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0"
+					style={{ color: '#B1DFFB' }}
+					className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0"
 				>
-					<Icon name="chevronLeft" size={20} decorative />
+					<Icon name="chevronLeft" size={18} decorative />
 				</button>
 			)}
-			<h1 className="flex-1 text-xl font-bold text-cinemata-white truncate">{title}</h1>
+			<h1 className="flex-1 text-base font-bold truncate" style={{ color: '#DEFBFF' }}>
+				{title}
+			</h1>
 			<TopbarUploadButton compact />
 		</div>
 	);
