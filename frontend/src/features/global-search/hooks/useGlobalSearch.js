@@ -34,10 +34,7 @@ export function useGlobalSearch(query) {
 		queryKey: ['global-search', 'videos', trimmed],
 		enabled,
 		queryFn: async ({ signal }) => {
-			const data = await fetchJson(
-				buildUrl('/api/v1/search', { q: trimmed, media_type: 'video' }),
-				signal
-			);
+			const data = await fetchJson(buildUrl('/api/v1/search', { q: trimmed, media_type: 'video' }), signal);
 			return normalizeListPayload(data);
 		},
 	});

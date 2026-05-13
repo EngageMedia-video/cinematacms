@@ -13,7 +13,6 @@ export function PlaylistResultRow({ item, onSelect }) {
 		<a
 			href={url}
 			onClick={onSelect}
-			role="option"
 			className="group flex items-start gap-3 rounded-[10px] px-2 py-2 text-left no-underline text-inherit transition-colors duration-150 hover:bg-cinemata-pacific-deep-700/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p"
 		>
 			<span className="relative flex h-[44px] w-[78px] shrink-0 items-center justify-center overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-700">

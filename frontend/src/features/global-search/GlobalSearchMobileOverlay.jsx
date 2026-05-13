@@ -32,11 +32,12 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 		function onKey(event) {
 			if (event.key === 'Escape') onClose();
 		}
+		const prevOverflow = document.body.style.overflow;
 		document.body.style.overflow = 'hidden';
 		document.addEventListener('keydown', onKey);
 		return () => {
 			clearTimeout(timer);
-			document.body.style.overflow = '';
+			document.body.style.overflow = prevOverflow;
 			document.removeEventListener('keydown', onKey);
 		};
 	}, [isOpen, onClose]);
