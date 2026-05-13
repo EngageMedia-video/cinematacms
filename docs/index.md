@@ -86,6 +86,7 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 - [📱 Mobile Interface](features/mobile_interface.md)
 - [♿ Accessibility & Keyboard Shortcuts](features/Cinemata_Accessibility_Keyboard_Shortcuts.md)
 - [🎙️ Automatic Transcription](features/automatic_transcription.md)
+- [🚩 Feature Flags](features/feature_flags.md)
 
 ---
 
