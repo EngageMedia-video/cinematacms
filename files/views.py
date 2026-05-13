@@ -1830,6 +1830,10 @@ class PlaylistList(APIView):
             author = self.request.query_params["author"].strip()
             playlists = playlists.filter(user__username=author)
 
+        search = self.request.query_params.get("search", "").strip()
+        if search:
+            playlists = playlists.filter(title__icontains=search)
+
         page = paginator.paginate_queryset(playlists, request)
 
         serializer = PlaylistSerializer(page, many=True, context={"request": request})
