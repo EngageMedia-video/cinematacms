@@ -551,3 +551,52 @@
 [data-modern-track] :where(a, input, button, select, textarea, h1, h2, h3, h4, h5, h6, p, pre, img) {
 	all: revert-layer;
 }
+
+/*
+ * Topbar cascade-defence block (paired with the [data-modern-track] revert above).
+ *
+ * --header-height: legacy _extra.css sets this on `body` with !important; the
+ * sidebar and main padding consume it, so we have to win the cascade. 90px
+ * desktop, 124px below Tailwind's `sm:` 640px breakpoint where the two-row
+ * mobile layout renders.
+ *
+ * header[data-topbar] resets: unlayered legacy selectors still attack form
+ * controls and links inside the topbar (border/outline/box-shadow/font on
+ * <button> + <input>, text-decoration on <a>). The reset strips them and
+ * the :focus-visible rule restores an accessible focus ring (WCAG 2.4.7).
+ */
+html body {
+	--header-height: 90px !important;
+}
+
+@media (max-width: 639px) {
+	html body {
+		--header-height: 124px !important;
+	}
+}
+
+header[data-topbar] button,
+header[data-topbar] input[type='search'],
+header[data-topbar] input[type='text'] {
+	border: 0;
+	outline: 0;
+	box-shadow: none;
+	font: inherit;
+	letter-spacing: inherit;
+}
+
+header[data-topbar] button:not(:disabled) {
+	cursor: pointer;
+}
+
+header[data-topbar] button:focus-visible,
+header[data-topbar] a:focus-visible,
+header[data-topbar] input:focus-visible {
+	outline: 2px solid #ed7c30;
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
+header[data-topbar] a {
+	text-decoration: none;
+}

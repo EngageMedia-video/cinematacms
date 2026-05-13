@@ -13,8 +13,6 @@ import { TopbarUploadButton } from './TopbarUploadButton';
 import { TopbarUserMenu } from './TopbarUserMenu';
 import useTopbarStore from './useTopbarStore';
 
-import './Topbar.scss';
-
 export function Topbar() {
 	const openMobileSearch = useTopbarStore((state) => state.openMobileSearch);
 
