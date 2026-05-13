@@ -8,7 +8,8 @@ import { formatDuration } from '../../shared/utils/formatDuration';
 export function normalizeMediaList(data) {
 	if (Array.isArray(data)) return data;
 	if (Array.isArray(data?.playlist_media)) return data.playlist_media;
-	return data?.results ?? [];
+	if (Array.isArray(data?.results)) return data.results;
+	return [];
 }
 
 /**

@@ -212,6 +212,7 @@ class IndexRevampInitialDataTest(TestCase):
         try:
             response = self._get_revamp_response()
             content = response.content.decode()
-            self.assertNotIn("<with angle", content)
+            self.assertNotIn("Title < with angle", content)
+            self.assertIn("\\u003C", content)
         finally:
             media.delete()

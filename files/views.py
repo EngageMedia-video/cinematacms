@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import shutil
+from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -1233,7 +1234,7 @@ class MediaList(APIView):
 
         # Cache the response for standard queries
         if cache_key and not author_param and not offset_param and show_param != "recommended":
-            set_cached_result(cache_key, response_data.data, MEDIA_LIST_TIMEOUT)
+            set_cached_result(cache_key, deepcopy(response_data.data), MEDIA_LIST_TIMEOUT)
 
         if show_param == "featured" and page_num == 1:
             response_data.data["results"] = _attach_hero_playback_to_first_featured_item(

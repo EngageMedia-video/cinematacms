@@ -38,6 +38,10 @@ function getVisibleCountForWidth(width) {
 	return clamp(count, 1, DEFAULT_VISIBLE_COUNT);
 }
 
+function getItemIdentity(item) {
+	return item?.friendly_token ?? item?.id ?? item?.url ?? '';
+}
+
 function installViewportFallbackVisibleCount(setResponsiveVisibleCount) {
 	if (!isClient() || !window.matchMedia) {
 		setResponsiveVisibleCount(DEFAULT_VISIBLE_COUNT);
@@ -383,6 +387,7 @@ export function Carousel({
 	const safePage = clamp(currentPage, 0, pageCount - 1);
 	const atStart = safePage === 0;
 	const atEnd = safePage >= pageCount - 1;
+	const itemsKey = useMemo(() => JSON.stringify(items.map(getItemIdentity)), [items]);
 
 	useEffect(() => {
 		if (!isControlled) {
@@ -399,7 +404,7 @@ export function Carousel({
 		if (!isControlled) {
 			setInternalPage(0);
 		}
-	}, [isControlled, items]);
+	}, [isControlled, itemsKey]);
 
 	const goPrev = useCallback(() => {
 		if (isControlled) {

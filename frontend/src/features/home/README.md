@@ -36,7 +36,7 @@ The modern homepage now uses the same source:
 
 ## Component tree
 
-```
+```text
 HomePage (QueryClientProvider)
 └── HomePageContent
     ├── HeroSection (compound, reads useFeaturedMedia)
@@ -56,7 +56,7 @@ HomePage (QueryClientProvider)
 Playlist and curator rows use the carousel body. Recent videos intentionally uses `SectionRow.Grid` to match the
 legacy latest-video block rather than the horizontal playlist carousel.
 
-```
+```text
 Carousel (compound)
                 ├── Carousel.Track
                 ├── Carousel.Dots
