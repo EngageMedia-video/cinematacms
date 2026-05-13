@@ -10,6 +10,8 @@ cms/local_settings.py
 venv/
 .venv/
 .env
+.env*
+!.env.example
 pyvenv.cfg
 .claude/*
 .serena/
