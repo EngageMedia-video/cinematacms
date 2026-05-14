@@ -15,12 +15,14 @@ import '../styles/PageSidebar.scss';
 
 export function PageSidebar() {
 	const containerRef = useRef(null);
+	const scrollActivityTimeoutRef = useRef(null);
 
 	const [isVisible, setIsVisible] = useState(LayoutStore.get('visible-sidebar'));
 	const [isRendered, setIsRendered] = useState(
 		LayoutStore.get('visible-sidebar') || 492 > PageStore.get('window-inner-width')
 	);
 	const [isFixedBottom, setIsFixedBottom] = useState(true);
+	const [isScrolling, setIsScrolling] = useState(false);
 
 	let sidebarBottomInited = false;
 	let sidebarBottomDom = null;
@@ -107,6 +109,18 @@ export function PageSidebar() {
 		setTimeout(initBottom, 20); // Must delay at least 20ms.
 	}
 
+	function onScroll() {
+		if (scrollActivityTimeoutRef.current) {
+			clearTimeout(scrollActivityTimeoutRef.current);
+		}
+
+		setIsScrolling(true);
+		scrollActivityTimeoutRef.current = setTimeout(() => {
+			setIsScrolling(false);
+			scrollActivityTimeoutRef.current = null;
+		}, 700);
+	}
+
 	useEffect(() => {
 		LayoutStore.on('sidebar-visibility-change', onVisibilityChange);
 
@@ -119,12 +133,20 @@ export function PageSidebar() {
 				PageStore.removeListener('window_resize', onWindowResize);
 			}
 
+			if (scrollActivityTimeoutRef.current) {
+				clearTimeout(scrollActivityTimeoutRef.current);
+			}
+
 			LayoutStore.removeListener('sidebar-visibility-change', onVisibilityChange);
 		};
 	}, []);
 
 	return (
-		<div ref={containerRef} className={'page-sidebar' + (isFixedBottom ? ' fixed-bottom' : '')}>
+		<div
+			ref={containerRef}
+			className={'page-sidebar' + (isFixedBottom ? ' fixed-bottom' : '') + (isScrolling ? ' is-scrolling' : '')}
+			onScroll={onScroll}
+		>
 			<div className="page-sidebar-inner">
 				{isVisible || isRendered ? <SidebarNavigationMenu /> : null}
 				{isVisible || isRendered ? <SidebarBelowNavigationMenu /> : null}

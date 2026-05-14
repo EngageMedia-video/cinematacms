@@ -30,10 +30,10 @@ const HERO_LAYOUT_DESKTOP = 'flex-row items-start gap-[26px]';
 const PLAYER_AREA = 'w-full min-w-0';
 const PLAYER_AREA_DESKTOP = 'flex-1';
 const PLAYER_FRAME = 'relative aspect-video w-full overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-50';
-const PLAYER_FRAME_DESKTOP = 'h-[480px] aspect-auto';
+const PLAYER_FRAME_DESKTOP = 'h-[360px] aspect-auto';
 const PLAYER_CLASS = 'relative h-full w-full overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-50';
 const CARD_AREA = 'w-full min-w-0';
-const CARD_AREA_DESKTOP = 'h-[480px] w-[466px] shrink-0';
+const CARD_AREA_DESKTOP = 'h-[360px] w-[466px] shrink-0';
 
 class HeroPlayerErrorBoundary extends Component {
 	constructor(props) {
@@ -96,15 +96,9 @@ function useHeroDesktopLayout() {
 }
 
 function PlayAffordance() {
-	const ctx = use(HeroContext);
-	const isDesktopLayout = ctx?.isDesktopLayout ?? false;
-
 	return (
 		<div
-			className={cn(
-				'pointer-events-none absolute left-1/2 top-1/2 z-10 flex size-[72px] -translate-x-1/2 -translate-y-1/2 items-center justify-center',
-				isDesktopLayout ? 'size-[130px]' : ''
-			)}
+			className="pointer-events-none absolute bottom-12 left-12 z-10 flex size-[72px] items-center justify-center max-[425px]:bottom-6 max-[425px]:left-6 max-[425px]:size-12"
 			aria-hidden="true"
 		>
 			<HeroPlayButtonIcon className="size-[81.25%] text-cinemata-strait-blue-400" focusable="false" />

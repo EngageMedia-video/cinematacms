@@ -150,6 +150,18 @@ describe('HeroVideoPlayer', () => {
 		expect(source.default).toContain('background-color: var(--hero-player-play-hover-color) !important;');
 	});
 
+	it('keeps the hero play button in the production bottom-left placement', async () => {
+		const source = await import('./HeroVideoPlayer.css?raw');
+
+		expect(source.default).toContain('bottom: 48px !important;');
+		expect(source.default).toContain('left: 48px !important;');
+		expect(source.default).toContain('width: 72px !important;');
+		expect(source.default).toContain('@media screen and (width <= 425px)');
+		expect(source.default).toContain('bottom: 24px !important;');
+		expect(source.default).toContain('width: 48px !important;');
+		expect(source.default).not.toContain('top: 50% !important;');
+	});
+
 	it('keeps subtitle cues black and white instead of themed control colors', async () => {
 		const source = await import('./HeroVideoPlayer.css?raw');
 

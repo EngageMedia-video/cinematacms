@@ -66,11 +66,11 @@ body.dark_theme .video-js.vjs-mediacms.vjs-hero-player {
 .video-js.vjs-mediacms.vjs-hero-player .vjs-big-play-button {
 	width: 72px !important;
 	height: 72px !important;
-	top: 50% !important;
+	top: auto !important;
 	right: auto !important;
-	bottom: auto !important;
-	left: 50% !important;
-	margin: -36px 0 0 -36px !important;
+	bottom: 48px !important;
+	left: 48px !important;
+	margin: 0 !important;
 	padding: 0 !important;
 	border: 0 !important;
 	border-radius: 0 !important;
@@ -223,10 +223,11 @@ body.dark_theme .video-js.vjs-mediacms.vjs-hero-player {
 	color: var(--hero-player-subtitle-color) !important;
 }
 
-@media screen and (width >= 1024px) {
+@media screen and (width <= 425px) {
 	.video-js.vjs-mediacms.vjs-hero-player .vjs-big-play-button {
-		width: 130px !important;
-		height: 130px !important;
-		margin: -65px 0 0 -65px !important;
+		width: 48px !important;
+		height: 48px !important;
+		bottom: 24px !important;
+		left: 24px !important;
 	}
 }

@@ -7,12 +7,11 @@ import { useRecentMedia } from '../hooks/useRecentMedia';
 import { useIndexFeaturedPlaylists } from '../hooks/useIndexFeaturedPlaylists';
 import { usePlaylistMedia } from '../hooks/usePlaylistMedia';
 import { normalizeMediaList } from '../utils/mediaList';
-import { Text } from '../../shared/components/Text';
 
 const HOME_PLAYLIST_ITEM_LIMIT = 20;
 const HOME_RECENT_ITEM_LIMIT = 20;
 const PLAYLIST_LOADING_ROW_COUNT = 2;
-const HOME_TRACK_CLASS = 'mx-auto min-h-screen w-full max-w-[1680px] space-y-10';
+const HOME_TRACK_CLASS = 'mx-auto min-h-screen w-full max-w-[1175px] space-y-6';
 
 function FeaturedByCuratorsRow() {
 	const { data, isLoading, isError } = useRecommendedMedia();
@@ -22,7 +21,7 @@ function FeaturedByCuratorsRow() {
 		<SectionRow items={items} isLoading={isLoading} isError={isError}>
 			<div className="flex flex-col gap-2">
 				<SectionRow.Title viewAllHref="/recommended">Featured by Curators</SectionRow.Title>
-				<SectionRow.Description text="Hand-picked stories from our editorial team." />
+				<SectionRow.Description text="Selected by Cinemata's community curators" />
 			</div>
 			<SectionRow.Carousel />
 		</SectionRow>
@@ -79,16 +78,10 @@ function RecentVideosRow() {
 function HomePageContent() {
 	return (
 		<div data-modern-track className={HOME_TRACK_CLASS}>
-			<div className="space-y-8">
-				<Text as="h1" variant="h4" className="text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50">
-					Most Popular
-				</Text>
-
-				<HeroSection>
-					<HeroSection.Player />
-					<HeroSection.Card />
-				</HeroSection>
-			</div>
+			<HeroSection>
+				<HeroSection.Player />
+				<HeroSection.Card />
+			</HeroSection>
 
 			<FeaturedByCuratorsRow />
 

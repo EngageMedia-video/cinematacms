@@ -94,16 +94,17 @@ afterEach(() => {
 });
 
 describe('HomePage', () => {
-	it('renders h1 heading', () => {
+	it('does not render the deprecated Popular hero label', () => {
 		render(<HomePage />);
-		expect(screen.getByRole('heading', { level: 1, name: 'Most Popular' })).toHaveClass('heading-h4-32-medium');
+		expect(screen.queryByText('Most Popular')).not.toBeInTheDocument();
 	});
 
-	it('uses 32px spacing between the heading and hero region', () => {
+	it('uses compact top-level spacing so curator rows stay visible on first load', () => {
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_MEDIA]);
 		render(<HomePage />);
-		const heading = screen.getByRole('heading', { level: 1, name: 'Most Popular' });
-		expect(heading.parentElement).toHaveClass('space-y-8');
-		expect(document.querySelector('[data-modern-track]')).toHaveClass('space-y-10');
+		const track = document.querySelector('[data-modern-track]');
+		expect(track).toHaveClass('space-y-6');
+		expect(track.firstElementChild?.querySelector('section[aria-label="Featured media"]')).not.toBeNull();
 	});
 
 	it('caps the home track width on very large screens', () => {
@@ -111,13 +112,13 @@ describe('HomePage', () => {
 		const track = document.querySelector('[data-modern-track]');
 
 		expect(track).toHaveClass('mx-auto');
-		expect(track).toHaveClass('max-w-[1680px]');
+		expect(track).toHaveClass('max-w-[1175px]');
 		expect(track).not.toHaveClass('px-4');
 	});
 
-	it('has exactly one h1', () => {
+	it('does not promote the hero rail to a page h1', () => {
 		render(<HomePage />);
-		expect(document.querySelectorAll('h1')).toHaveLength(1);
+		expect(document.querySelectorAll('h1')).toHaveLength(0);
 	});
 
 	it('renders HeroSection synchronously from seeded cache data', () => {
@@ -154,7 +155,7 @@ describe('HomePage', () => {
 			'heading-h6-20-medium'
 		);
 		expect(container.querySelector('section > .flex.flex-col.gap-2')).toContainElement(
-			screen.getByText('Hand-picked stories from our editorial team.')
+			screen.getByText("Selected by Cinemata's community curators")
 		);
 	});
 
@@ -218,12 +219,11 @@ describe('HomePage', () => {
 		await waitFor(() => expect(screen.queryByText('Legacy Playlist')).toBeNull());
 	});
 
-	it('uses h2 for section headings (under the h1)', () => {
+	it('uses h2 for hero and section headings without the removed hero label', () => {
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_MEDIA]);
 		render(<HomePage />);
-		const h1 = screen.getByRole('heading', { level: 1 });
 		const h2 = screen.getByRole('heading', { level: 2 });
-		expect(h1).toBeInTheDocument();
+		expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
 		expect(h2).toBeInTheDocument();
 	});
 

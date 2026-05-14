@@ -68,7 +68,7 @@ export function HeroMediaCard({ className = '', media }) {
 
 	return (
 		<div className={cn('w-full min-w-0', className)}>
-			<Card className="flex h-full min-h-[360px] flex-col justify-between gap-8 px-[22px] pb-6 pt-[22px] lg:min-h-0">
+			<Card className="flex h-full min-h-[360px] flex-col justify-between gap-8 overflow-hidden px-[22px] pb-6 pt-[22px] lg:min-h-0">
 				<div className="flex min-w-0 flex-col gap-3">
 					<Text
 						as="h2"
@@ -90,7 +90,7 @@ export function HeroMediaCard({ className = '', media }) {
 					{description ? (
 						<Text
 							variant="body-14"
-							className="m-0 max-h-[260px] overflow-hidden dark:text-[var(--pacific-deep-300,#7B98B6)] lg:max-h-[300px]"
+							className="m-0 max-h-[260px] overflow-hidden dark:text-[var(--pacific-deep-300,#7B98B6)] lg:max-h-[200px]"
 						>
 							{description}
 						</Text>
