@@ -30,10 +30,10 @@ const HERO_LAYOUT_DESKTOP = 'flex-row items-start gap-[26px]';
 const PLAYER_AREA = 'w-full min-w-0';
 const PLAYER_AREA_DESKTOP = 'flex-1';
 const PLAYER_FRAME = 'relative aspect-video w-full overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-50';
-const PLAYER_FRAME_DESKTOP = 'h-[360px] aspect-auto';
+const PLAYER_FRAME_DESKTOP = 'h-[440px] aspect-auto';
 const PLAYER_CLASS = 'relative h-full w-full overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-50';
 const CARD_AREA = 'w-full min-w-0';
-const CARD_AREA_DESKTOP = 'h-[360px] w-[466px] shrink-0';
+const CARD_AREA_DESKTOP = 'h-[440px] w-[466px] shrink-0';
 
 class HeroPlayerErrorBoundary extends Component {
 	constructor(props) {

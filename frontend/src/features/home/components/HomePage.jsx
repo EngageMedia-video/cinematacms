@@ -11,7 +11,7 @@ import { normalizeMediaList } from '../utils/mediaList';
 const HOME_PLAYLIST_ITEM_LIMIT = 20;
 const HOME_RECENT_ITEM_LIMIT = 20;
 const PLAYLIST_LOADING_ROW_COUNT = 2;
-const HOME_TRACK_CLASS = 'mx-auto min-h-screen w-full max-w-[1175px] space-y-6';
+const HOME_TRACK_CLASS = 'mx-auto min-h-screen w-full max-w-[1515px] space-y-6 px-[27px]';
 
 function FeaturedByCuratorsRow() {
 	const { data, isLoading, isError } = useRecommendedMedia();

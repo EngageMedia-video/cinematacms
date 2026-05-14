@@ -94,12 +94,12 @@ afterEach(() => {
 });
 
 describe('HomePage', () => {
-	it('does not render the deprecated Popular hero label', () => {
+	it('does not render the removed Popular hero label', () => {
 		render(<HomePage />);
 		expect(screen.queryByText('Most Popular')).not.toBeInTheDocument();
 	});
 
-	it('uses compact top-level spacing so curator rows stay visible on first load', () => {
+	it('keeps the hero first so curator rows stay visible on first load', () => {
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_MEDIA]);
 		render(<HomePage />);
 		const track = document.querySelector('[data-modern-track]');
@@ -112,8 +112,8 @@ describe('HomePage', () => {
 		const track = document.querySelector('[data-modern-track]');
 
 		expect(track).toHaveClass('mx-auto');
-		expect(track).toHaveClass('max-w-[1175px]');
-		expect(track).not.toHaveClass('px-4');
+		expect(track).toHaveClass('max-w-[1515px]');
+		expect(track).toHaveClass('px-[27px]');
 	});
 
 	it('does not promote the hero rail to a page h1', () => {

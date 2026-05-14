@@ -154,11 +154,11 @@ describe('HeroSection', () => {
 		await waitFor(() => expect(region).toHaveClass('flex-row'));
 
 		const player = await screen.findByTestId('hero-video-player');
-		expect(player.parentElement).toHaveClass('h-[360px]');
+		expect(player.parentElement).toHaveClass('h-[440px]');
 		expect(player.parentElement).toHaveClass('aspect-auto');
 		expect(player.parentElement.parentElement).toHaveClass('flex-1');
 		expect(screen.getByRole('article').parentElement).toHaveClass('w-[466px]');
-		expect(screen.getByRole('article').parentElement).toHaveClass('h-[360px]');
+		expect(screen.getByRole('article').parentElement).toHaveClass('h-[440px]');
 	});
 
 	it('uses the light mode Figma color mapping for the metadata card', () => {
