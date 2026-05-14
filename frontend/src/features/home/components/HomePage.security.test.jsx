@@ -63,13 +63,14 @@ describe('HomePage security — plain-text description rendering', () => {
 });
 
 describe('HomePage accessibility baseline', () => {
-	it('has exactly one h1 element', () => {
+	it('does not render the removed Popular page h1', () => {
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_WITH_XSS]);
 		render(<HomePage />);
-		expect(document.querySelectorAll('h1')).toHaveLength(1);
+		expect(document.querySelectorAll('h1')).toHaveLength(0);
+		expect(screen.queryByText('Most Popular')).not.toBeInTheDocument();
 	});
 
-	it('hero title renders as h2 (under the page h1)', () => {
+	it('hero title renders as h2', () => {
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_WITH_XSS]);
 		render(<HomePage />);
 		expect(screen.getByRole('heading', { level: 2 })).toBeInTheDocument();
