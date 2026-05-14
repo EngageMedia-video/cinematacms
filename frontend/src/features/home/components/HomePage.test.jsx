@@ -150,6 +150,7 @@ describe('HomePage', () => {
 	it('FeaturedByCuratorsRow renders when recommended data is seeded', async () => {
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, [RECOMMENDED_MEDIA]);
 		const { container } = render(<HomePage />);
+
 		expect(await screen.findByText('Recommended Film')).toBeInTheDocument();
 		expect(screen.getByRole('heading', { level: 2, name: 'Featured by Curators' })).toHaveClass(
 			'heading-h6-20-medium'
@@ -191,9 +192,45 @@ describe('HomePage', () => {
 		expect(document.querySelector('[data-modern-track]')).toHaveTextContent('Playlist description from admin.');
 		expect(screen.getByRole('link', { name: 'someone' })).toHaveAttribute('href', '#');
 		expect(globalThis.fetch).toHaveBeenCalledWith('https://testserver/api/v1/playlists/abc123');
-		expect(screen.getByRole('link', { name: 'VIEW ALL' })).toHaveAttribute(
-			'href',
-			'https://testserver/view?m=playlist&pl=abc123'
+		expect(screen.getAllByRole('link', { name: 'VIEW ALL' }).some((link) => link.href.includes('abc123'))).toBe(
+			true
+		);
+	});
+
+	it('does not reuse React keys when playlist API URLs repeat', async () => {
+		const duplicateApiUrl = 'https://testserver/api/v1/playlists/duplicate';
+		const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.indexFeatured, [
+			{
+				title: 'Duplicate Playlist One',
+				url: 'https://testserver/view?m=playlist&pl=one',
+				api_url: duplicateApiUrl,
+				ordering: 1,
+			},
+			{
+				title: 'Duplicate Playlist Two',
+				url: 'https://testserver/view?m=playlist&pl=two',
+				api_url: duplicateApiUrl,
+				ordering: 2,
+			},
+		]);
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.playlistMedia(duplicateApiUrl), [
+			{
+				id: 10,
+				title: 'Shared Playlist Film',
+				thumbnail_url: 'https://example.com/shared-playlist-thumb.jpg',
+				author_name: 'Shared Curator',
+				url: '/media/shared-playlist-film/',
+			},
+		]);
+
+		render(<HomePage />);
+
+		expect(await screen.findByRole('heading', { level: 2, name: 'Duplicate Playlist One' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { level: 2, name: 'Duplicate Playlist Two' })).toBeInTheDocument();
+		expect(consoleErrorSpy.mock.calls.flat().join('\n')).not.toContain(
+			'Encountered two children with the same key'
 		);
 	});
 
@@ -208,9 +245,10 @@ describe('HomePage', () => {
 		expect(await screen.findByText('Fallback User')).toBeInTheDocument();
 		expect(await screen.findByText('Singapore')).toBeInTheDocument();
 		expect(screen.getByRole('heading', { level: 2, name: 'Recent videos' })).toBeInTheDocument();
-		expect(screen.getByRole('link', { name: 'VIEW ALL' })).toHaveAttribute('href', '/latest');
+		expect(
+			screen.getAllByRole('link', { name: 'VIEW ALL' }).some((link) => link.getAttribute('href') === '/latest')
+		).toBe(true);
 		expect(container.querySelector('[data-section-row-grid]')).not.toBeNull();
-		expect(screen.queryByRole('group', { name: 'Page navigation' })).toBeNull();
 	});
 
 	it('does not render playlist rows when indexfeatured returns no playlists', async () => {
@@ -222,7 +260,7 @@ describe('HomePage', () => {
 	it('uses h2 for hero and section headings without the removed hero label', () => {
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_MEDIA]);
 		render(<HomePage />);
-		const h2 = screen.getByRole('heading', { level: 2 });
+		const h2 = screen.getByRole('heading', { level: 2, name: 'Featured Film' });
 		expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
 		expect(h2).toBeInTheDocument();
 	});

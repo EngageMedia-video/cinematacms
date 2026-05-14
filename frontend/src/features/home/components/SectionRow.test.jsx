@@ -143,6 +143,8 @@ describe('SectionRow', () => {
 		const link = screen.getByRole('link', { name: 'VIEW ALL' });
 		expect(link).toHaveAttribute('href', '/recommended');
 		expect(link).toHaveClass('text-cinemata-sunset-horizon-400p');
+		expect(link).toHaveClass('body-body-12-medium');
+		expect(link).not.toHaveClass('caption-caption-10-regular');
 	});
 
 	it('Title and Description can both render alongside Header', () => {

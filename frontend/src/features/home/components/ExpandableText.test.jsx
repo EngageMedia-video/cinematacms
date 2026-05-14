@@ -29,6 +29,20 @@ describe('ExpandableText', () => {
 		expect(btn).toHaveAttribute('aria-controls', paragraph.id);
 	});
 
+	it('styles the control as a text button', () => {
+		render(<ExpandableText text="Some long text" />);
+		const btn = screen.getByRole('button', { name: 'READ MORE' });
+
+		expect(btn).toHaveClass('appearance-none');
+		expect(btn).toHaveClass('border-0');
+		expect(btn).toHaveClass('bg-transparent');
+		expect(btn).toHaveClass('p-0');
+		expect(btn).toHaveClass('body-body-14-regular');
+		expect(btn).toHaveClass('text-cinemata-sunset-horizon-400p');
+		expect(btn).not.toHaveClass('text-sm');
+		expect(btn).not.toHaveClass('font-medium');
+	});
+
 	it('applies clamp class when collapsed', () => {
 		render(<ExpandableText text="Some long text" clampLines={2} />);
 		const para = screen.getByText('Some long text');

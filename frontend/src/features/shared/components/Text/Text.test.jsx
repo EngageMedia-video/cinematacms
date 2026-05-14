@@ -106,5 +106,30 @@ describe('Text', () => {
 			render(<Text data-testid="txt">Content</Text>);
 			expect(screen.getByTestId('txt')).toBeInTheDocument();
 		});
+
+		it('applies the text button action treatment', () => {
+			render(
+				<Text as="button" action="text-button">
+					Read more
+				</Text>
+			);
+			const button = screen.getByRole('button', { name: 'Read more' });
+			expect(button).toHaveClass('appearance-none');
+			expect(button).toHaveClass('border-0');
+			expect(button).toHaveClass('bg-transparent');
+			expect(button).toHaveClass('p-0');
+			expect(button).toHaveClass('hover:underline');
+		});
+
+		it('applies the text link action treatment', () => {
+			render(
+				<Text as="a" action="text-link" href="/films">
+					View all
+				</Text>
+			);
+			const link = screen.getByRole('link', { name: 'View all' });
+			expect(link).toHaveClass('no-underline');
+			expect(link).toHaveClass('focus-visible:ring-2');
+		});
 	});
 });

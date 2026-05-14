@@ -13,6 +13,14 @@ const HOME_RECENT_ITEM_LIMIT = 20;
 const PLAYLIST_LOADING_ROW_COUNT = 2;
 const HOME_TRACK_CLASS = 'mx-auto min-h-screen w-full max-w-[1515px] space-y-6 px-[27px]';
 
+function getHomepagePlaylistRowKey(playlist, index) {
+	const parts = [playlist.api_url, playlist.url, playlist.ordering, playlist.title, index].filter(
+		(part) => part != null && part !== ''
+	);
+
+	return parts.join('::');
+}
+
 function FeaturedByCuratorsRow() {
 	const { data, isLoading, isError } = useRecommendedMedia();
 	const items = normalizeMediaList(data);
@@ -56,7 +64,7 @@ function HomepagePlaylistRows() {
 
 	return data.map((playlist, index) => (
 		<HomepagePlaylistRow
-			key={playlist.api_url ?? playlist.url ?? `${playlist.title}-${playlist.ordering ?? index}`}
+			key={getHomepagePlaylistRowKey(playlist, index)}
 			playlist={playlist}
 			variant={index % 2 === 0 ? 'card' : 'default'}
 		/>

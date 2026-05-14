@@ -1,6 +1,7 @@
 import { createContext, use, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { Badge } from '../../shared/components/Badge';
+import { Text } from '../../shared/components/Text';
 import { ExpandableText } from './ExpandableText';
 import { Carousel } from './Carousel';
 import { CAROUSEL_GRID_TEMPLATE_COLUMNS } from './carouselLayout';
@@ -13,7 +14,7 @@ const BACKGROUND_LAYER_CLASS =
 	'pointer-events-none absolute inset-y-0 -left-4 -right-4 -z-10 bg-cinemata-neutral-50 dark:bg-cinemata-pacific-deep-800 sm:-left-6 sm:-right-6 sm:rounded-[8px] lg:-left-8 lg:-right-8';
 
 const VIEW_ALL_LINK_CLASS =
-	'caption-caption-10-regular whitespace-nowrap uppercase tracking-wide text-cinemata-sunset-horizon-400p no-underline hover:text-cinemata-sunset-horizon-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p dark:text-cinemata-sunset-horizon-200 dark:hover:text-cinemata-sunset-horizon-100';
+	'whitespace-nowrap uppercase tracking-wide hover:text-cinemata-sunset-horizon-600 dark:hover:text-cinemata-sunset-horizon-100';
 
 const SKELETON_ITEMS = Array.from({ length: 4 }, (_, i) => i);
 const GRID_CLASS = 'grid gap-x-4 gap-y-8';
@@ -21,15 +22,26 @@ const DYNAMIC_GRID_STYLE = {
 	gridTemplateColumns: CAROUSEL_GRID_TEMPLATE_COLUMNS,
 };
 
+function ViewAllLink({ href }) {
+	return (
+		<Text
+			as="a"
+			action="text-link"
+			variant="body-12-medium"
+			color="sunset-horizon"
+			href={href}
+			className={VIEW_ALL_LINK_CLASS}
+		>
+			VIEW ALL
+		</Text>
+	);
+}
+
 function SectionRowHeader({ badgeLabel, badgeColor = '#026690', viewAllHref }) {
 	return (
 		<div className="flex items-center justify-between gap-4">
 			{badgeLabel ? <Badge color={badgeColor}>{badgeLabel}</Badge> : null}
-			{viewAllHref ? (
-				<a href={viewAllHref} className={VIEW_ALL_LINK_CLASS}>
-					VIEW ALL
-				</a>
-			) : null}
+			{viewAllHref ? <ViewAllLink href={viewAllHref} /> : null}
 		</div>
 	);
 }
@@ -48,9 +60,7 @@ function SectionRowTitle({ children, viewAllHref }) {
 	return (
 		<div className="flex items-center justify-between gap-4">
 			{heading}
-			<a href={viewAllHref} className={VIEW_ALL_LINK_CLASS}>
-				VIEW ALL
-			</a>
+			<ViewAllLink href={viewAllHref} />
 		</div>
 	);
 }

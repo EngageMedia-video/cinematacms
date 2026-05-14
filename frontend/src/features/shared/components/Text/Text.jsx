@@ -38,6 +38,12 @@ const COLOR_CLASSES = {
 	'sunset-horizon': 'text-cinemata-sunset-horizon-400p dark:text-cinemata-sunset-horizon-200',
 };
 
+const ACTION_CLASSES = {
+	'text-button':
+		'inline-flex w-fit cursor-pointer appearance-none border-0 bg-transparent p-0 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p',
+	'text-link': 'no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p',
+};
+
 const HEADING_VARIANTS = new Set([
 	'h1',
 	'h1-regular',
@@ -59,12 +65,13 @@ const HEADING_VARIANTS = new Set([
 	'h6-bold',
 ]);
 
-export function Text({ as, variant = 'body-14', color, className = '', ...props }) {
+export function Text({ action, as, variant = 'body-14', color, className = '', ...props }) {
 	const [typographyClass, defaultElement] = VARIANT_MAP[variant] ?? VARIANT_MAP['body-14'];
 	const Component = as ?? defaultElement;
 
 	const defaultColor = HEADING_VARIANTS.has(variant) ? null : 'body';
 	const colorClass = COLOR_CLASSES[color ?? defaultColor] ?? '';
+	const actionClass = ACTION_CLASSES[action] ?? '';
 
-	return <Component {...props} className={cn(typographyClass, colorClass, className)} />;
+	return <Component {...props} className={cn(typographyClass, colorClass, actionClass, className)} />;
 }

@@ -10,6 +10,19 @@ vi.mock('./HeroVideoPlayer', () => ({
 }));
 
 const XSS_DESCRIPTION = '<img src=x onerror=alert(1)>';
+const RECOMMENDED_MEDIA = {
+	title: 'Recommended Film',
+	description: 'A curator pick.',
+	thumbnail_url: 'https://example.com/rec-thumb.jpg',
+	author_name: 'Director Two',
+	media_country: 'Indonesia',
+	views: 2000,
+	encodings_info: {},
+	subtitles_info: [],
+	url: '/media/recommended-film/',
+	friendly_token: 'rec-token',
+};
+
 const FEATURED_WITH_XSS = {
 	title: 'Safe Title',
 	description: XSS_DESCRIPTION,
@@ -77,10 +90,9 @@ describe('HomePage accessibility baseline', () => {
 	});
 
 	it('expand toggle button has aria-expanded attribute', () => {
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, [RECOMMENDED_MEDIA]);
 		render(<HomePage />);
-		const expandBtn = screen.queryByRole('button', { name: 'READ MORE' });
-		if (expandBtn) {
-			expect(expandBtn).toHaveAttribute('aria-expanded');
-		}
+		const expandBtn = screen.getByRole('button', { name: 'READ MORE' });
+		expect(expandBtn).toHaveAttribute('aria-expanded', 'false');
 	});
 });

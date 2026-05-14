@@ -1,4 +1,5 @@
 import { useState, useRef, useId, useLayoutEffect } from 'react';
+import { Text } from '../../shared/components/Text';
 
 const CLAMP_CLASSES = {
 	1: 'line-clamp-1',
@@ -36,15 +37,19 @@ export function ExpandableText({ text = '', clampLines = 6, className = '' }) {
 				{text}
 			</p>
 			{overflows && (
-				<button
+				<Text
+					as="button"
+					action="text-button"
+					variant="body-14"
+					color="sunset-horizon"
 					type="button"
 					aria-controls={paragraphId}
 					aria-expanded={expanded}
 					onClick={() => setExpanded((value) => !value)}
-					className="mt-1 text-sm font-medium text-cinemata-sunset-horizon-400p hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p"
+					className="mt-1"
 				>
 					{expanded ? 'READ LESS' : 'READ MORE'}
-				</button>
+				</Text>
 			)}
 		</div>
 	);
