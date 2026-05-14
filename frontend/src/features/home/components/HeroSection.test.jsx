@@ -443,7 +443,7 @@ describe('HeroSection', () => {
 
 	it('uses the SVG-to-component pipeline for the poster play affordance', async () => {
 		const source = await import('./HeroSection.jsx?raw');
-		expect(source.default).toMatch(/hero-play-button\.svg\?react/);
+		expect(source.default).toMatch(/shared\/icons\/hero-play-button\.svg\?react/);
 		expect(source.default).toContain('bottom-12 left-12');
 		expect(source.default).not.toContain('top-1/2');
 		expect(source.default).not.toMatch(/<svg\b/);

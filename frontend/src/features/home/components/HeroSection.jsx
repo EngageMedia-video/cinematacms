@@ -18,7 +18,7 @@ import { getHeroDetailUrl, hasPlaybackPayload, mergeHeroDetail, getHeroPlayback 
 import { HOME_QUERY_KEYS } from '../queryClient';
 import { cn } from '../../shared/utils/classNames';
 import { HeroMediaCard, HeroMediaCardSkeleton } from './HeroMediaCard';
-import HeroPlayButtonIcon from '../assets/hero-play-button.svg?react';
+import HeroPlayButtonIcon from '../../shared/icons/hero-play-button.svg?react';
 
 const HeroVideoPlayer = lazy(() => import('./HeroVideoPlayer'));
 
