@@ -156,7 +156,7 @@ describe('HeroVideoPlayer', () => {
 		expect(source.default).toContain('bottom: 48px !important;');
 		expect(source.default).toContain('left: 48px !important;');
 		expect(source.default).toContain('width: 72px !important;');
-		expect(source.default).toContain('@media screen and (width <= 425px)');
+		expect(source.default).toContain('@media screen and (width <= 640px)');
 		expect(source.default).toContain('bottom: 24px !important;');
 		expect(source.default).toContain('width: 48px !important;');
 		expect(source.default).not.toContain('top: 50% !important;');

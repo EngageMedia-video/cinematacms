@@ -223,7 +223,7 @@ body.dark_theme .video-js.vjs-mediacms.vjs-hero-player {
 	color: var(--hero-player-subtitle-color) !important;
 }
 
-@media screen and (width <= 425px) {
+@media screen and (width <= 640px) {
 	.video-js.vjs-mediacms.vjs-hero-player .vjs-big-play-button {
 		width: 48px !important;
 		height: 48px !important;
