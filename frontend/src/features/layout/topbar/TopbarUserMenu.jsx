@@ -4,7 +4,7 @@ import LinksContext from '../../../static/js/contexts/LinksContext';
 import UserContext from '../../../static/js/contexts/UserContext';
 import HeaderContext from '../../../static/js/contexts/HeaderContext';
 import { Avatar } from '../../shared/components/Avatar';
-import { joinClasses } from '../../shared/utils/joinClasses';
+import { cn } from '../../shared/utils/classNames';
 import useTopbarStore from './useTopbarStore';
 
 function isSignOut(item) {
@@ -39,14 +39,14 @@ function MenuItem({ item }) {
 
 	if (item.itemType === 'open-subpage') {
 		return (
-			<button type="button" className={joinClasses(base, hover, 'text-left')}>
+			<button type="button" className={cn(base, hover, 'text-left')}>
 				{content}
 			</button>
 		);
 	}
 
 	return (
-		<a href={item.link || '#'} className={joinClasses(base, hover)}>
+		<a href={item.link || '#'} className={cn(base, hover)}>
 			{content}
 		</a>
 	);
