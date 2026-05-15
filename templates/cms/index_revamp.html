@@ -26,4 +26,8 @@
 
 {% endblock headermeta %}
 
-{% block modernpageimports %}{% vite_asset 'src/entries/index-revamp.js' %}{% endblock modernpageimports %}
+{% block modernpageimports %}
+{{ home_initial_featured|json_script:"home-initial-data-featured" }}
+{{ home_initial_recommended|json_script:"home-initial-data-recommended" }}
+{% vite_asset 'src/entries/index-revamp.js' %}
+{% endblock modernpageimports %}

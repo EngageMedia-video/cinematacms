@@ -1,8 +1,5 @@
 import { Children } from 'react';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
+import { cn } from '../../shared/utils/classNames';
 
 export function NotificationDialog({
 	children,
@@ -23,7 +20,7 @@ export function NotificationDialog({
 		<div
 			ref={ref}
 			role="dialog"
-			className={joinClasses(
+			className={cn(
 				'absolute right-0 top-full z-50 mt-1 w-80 overflow-hidden rounded-lg border border-border-input/40 bg-surface-popup shadow-lg',
 				className
 			)}

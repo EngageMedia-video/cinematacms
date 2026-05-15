@@ -1,9 +1,6 @@
+import { cn } from '../../utils/classNames';
 import PropTypes from 'prop-types';
 import { Icon } from '../Icon';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 export function CheckboxButton({
 	checked,
@@ -21,7 +18,7 @@ export function CheckboxButton({
 
 	return (
 		<label
-			className={joinClasses(
+			className={cn(
 				'inline-flex cursor-pointer items-center gap-[8px] select-none',
 				disabled && 'cursor-not-allowed opacity-60',
 				className
@@ -41,7 +38,7 @@ export function CheckboxButton({
 			/>
 
 			<span
-				className={joinClasses(
+				className={cn(
 					'inline-flex shrink-0 items-center justify-center bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-900 transition-colors duration-200 peer-checked:bg-cinemata-sunset-horizon-400p peer-focus-visible:ring-2 peer-focus-visible:ring-cinemata-sunset-horizon-400p peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-cinemata-white dark:peer-focus-visible:ring-offset-cinemata-pacific-deep-900'
 				)}
 				style={{ width: 18, height: 18 }}
@@ -51,7 +48,7 @@ export function CheckboxButton({
 					name="checklist"
 					decorative
 					size={14}
-					className={joinClasses(
+					className={cn(
 						'transition-opacity duration-200',
 						checked ? 'text-cinemata-white dark:text-cinemata-pacific-deep-900 opacity-100' : 'opacity-0'
 					)}

@@ -1,8 +1,5 @@
+import { cn } from '../../utils/classNames';
 import { Icon } from '../Icon';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 export function Stepper({
 	label = 'Featured In...',
@@ -12,7 +9,7 @@ export function Stepper({
 	linkLabel = 'VISIT LINK',
 }) {
 	return (
-		<div className={joinClasses('w-full', className)} data-stepper>
+		<div className={cn('w-full', className)} data-stepper>
 			<div className="flex gap-6">
 				<div className="inline-flex p-2 shrink-0 items-center justify-center rounded-full bg-cinemata-neutral-200 text-cinemata-strait-blue-600p dark:bg-cinemata-pacific-deep-800 dark:text-cinemata-strait-blue-200">
 					<Icon name={iconName} decorative data-stepper-icon />
@@ -27,7 +24,7 @@ export function Stepper({
 					<div key={`${item.title}-${index}`} className="flex gap-11 mx-4">
 						<div className="flex shrink-0 flex-col items-center" aria-hidden="true">
 							<span
-								className={joinClasses(
+								className={cn(
 									'w-px h-4 bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-600p',
 									index == 0 ? 'mt-2' : ''
 								)}

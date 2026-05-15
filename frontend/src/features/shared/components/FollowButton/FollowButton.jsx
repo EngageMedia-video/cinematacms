@@ -1,9 +1,6 @@
+import { cn } from '../../utils/classNames';
 import { Icon } from '../Icon';
 import { Button } from '../Button';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 function getLabel(personName, followed) {
 	if (followed) {
@@ -27,7 +24,7 @@ export function FollowButton({
 		<Button
 			variant={followed ? 'secondary-outline' : 'secondary'}
 			icon={<Icon name="followUser" decorative data-testid="follow-icon" size="sm" />}
-			className={joinClasses('border', className)}
+			className={cn('border', className)}
 			aria-label={props['aria-label'] ?? label}
 			aria-pressed={followed}
 			onMouseEnter={onMouseEnter}

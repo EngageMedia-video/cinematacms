@@ -1,3 +1,4 @@
+import { cn } from '../../utils/classNames';
 import { useEffect, useId, useState } from 'react';
 
 const SHELL_VARIANT_CLASSES = {
@@ -38,10 +39,6 @@ const BORDER_VARIANT_CLASSES = {
 	error: 'border-cinemata-red-500 dark:border-cinemata-red-500',
 	disabled: 'border-cinemata-coral-reef-400p dark:border-cinemata-red-500',
 };
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 function hasTextValue(value) {
 	if (value === null || value === undefined) {
@@ -100,9 +97,9 @@ export function EditorField({
 	}, [value]);
 
 	return (
-		<div className={joinClasses('w-max max-w-full', className)}>
+		<div className={cn('w-max max-w-full', className)}>
 			<div
-				className={joinClasses(
+				className={cn(
 					'group w-full border-b px-0 transition-colors duration-200 py-3',
 					SHELL_VARIANT_CLASSES[variant],
 					borderClasses,
@@ -110,10 +107,7 @@ export function EditorField({
 				)}
 			>
 				{label ? (
-					<label
-						htmlFor={textareaId}
-						className={joinClasses('body-body-16-regular mb-2 block', labelClasses)}
-					>
+					<label htmlFor={textareaId} className={cn('body-body-16-regular mb-2 block', labelClasses)}>
 						{label}
 					</label>
 				) : null}
@@ -142,7 +136,7 @@ export function EditorField({
 						}
 						onChange?.(event);
 					}}
-					className={joinClasses(
+					className={cn(
 						'body-body-16-regular block w-full resize-none border-none bg-transparent p-0 outline-none focus:outline-none focus:ring-0 disabled:cursor-not-allowed',
 						INPUT_VARIANT_CLASSES[variant],
 						PLACEHOLDER_VARIANT_CLASSES[variant]
@@ -151,10 +145,7 @@ export function EditorField({
 			</div>
 
 			{helperText ? (
-				<p
-					id={helperTextId}
-					className={joinClasses('body-body-12-regular mt-[7.5px]', HELPER_VARIANT_CLASSES[variant])}
-				>
+				<p id={helperTextId} className={cn('body-body-12-regular mt-[7.5px]', HELPER_VARIANT_CLASSES[variant])}>
 					{helperText}
 				</p>
 			) : null}
