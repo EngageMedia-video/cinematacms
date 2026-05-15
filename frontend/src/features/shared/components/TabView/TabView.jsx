@@ -195,7 +195,14 @@ function TabViewPanel({ item, className = '' }) {
 	);
 }
 
-export function TabContent() {
+export function TabContent({ title, content, value, disabled, triggerClassName, panelClassName, children }) {
+	void title;
+	void content;
+	void value;
+	void disabled;
+	void triggerClassName;
+	void panelClassName;
+	void children;
 	return null;
 }
 

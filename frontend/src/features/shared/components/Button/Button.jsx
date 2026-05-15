@@ -1,5 +1,5 @@
 import { cn } from '../../utils/classNames';
-const VARIANT_CLASSES = {
+export const VARIANT_CLASSES = {
 	primary:
 		'border border-transparent bg-cinemata-strait-blue-600p text-cinemata-white hover:bg-cinemata-strait-blue-800 dark:bg-cinemata-strait-blue-600p dark:text-cinemata-white dark:hover:bg-cinemata-strait-blue-800',
 	secondary:
@@ -10,49 +10,32 @@ const VARIANT_CLASSES = {
 		'border border-cinemata-strait-blue-600p bg-transparent text-cinemata-strait-blue-600p hover:bg-cinemata-strait-blue-600p hover:text-cinemata-white dark:border-cinemata-strait-blue-600p dark:text-cinemata-strait-blue-600p dark:hover:bg-cinemata-strait-blue-600p dark:hover:text-cinemata-white',
 	'secondary-outline':
 		'border border-cinemata-sunset-horizon-500 bg-transparent text-cinemata-sunset-horizon-500 hover:bg-cinemata-sunset-horizon-500 hover:text-cinemata-white dark:border-cinemata-sunset-horizon-500 dark:text-cinemata-sunset-horizon-500 dark:hover:bg-cinemata-sunset-horizon-500 dark:hover:text-cinemata-white',
-	text: 'border-none bg-transparent',
-	icon: 'border-none bg-transparent',
+	text: 'border-none bg-transparent text-cinemata-strait-blue-600p hover:text-cinemata-strait-blue-800 dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-800',
+	icon: 'border-none bg-transparent text-cinemata-strait-blue-600p hover:text-cinemata-strait-blue-800 dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-800',
 };
 
-const TEXT_COLOR_CLASSES = {
-	'strait-blue-600p':
-		'text-cinemata-strait-blue-600p hover:text-cinemata-strait-blue-800 dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-800',
-	'sunset-horizon-300':
-		'text-cinemata-sunset-horizon-500 hover:text-cinemata-sunset-horizon-700 dark:text-cinemata-sunset-horizon-300 dark:hover:text-cinemata-sunset-horizon-500',
-	'sunset-horizon-500':
-		'text-cinemata-sunset-horizon-500 hover:text-cinemata-sunset-horizon-700 dark:text-cinemata-sunset-horizon-500 dark:hover:text-cinemata-sunset-horizon-700',
-	'pacific-deep-950':
-		'text-cinemata-pacific-deep-600p hover:text-cinemata-pacific-deep-700 dark:text-cinemata-pacific-deep-950 dark:hover:text-cinemata-pacific-deep-900',
-	'red-500':
-		'text-cinemata-red-500 hover:text-cinemata-red-600 dark:text-cinemata-red-500 dark:hover:text-cinemata-red-600',
-	'strait-blue-100':
-		'text-cinemata-strait-blue-600p hover:text-cinemata-strait-blue-800 dark:text-cinemata-strait-blue-100 dark:hover:text-cinemata-strait-blue-400',
-	'strait-blue-400':
-		'text-cinemata-strait-blue-600p hover:text-cinemata-strait-blue-800 dark:text-cinemata-strait-blue-400 dark:hover:text-cinemata-strait-blue-600p',
-	'neutral-600':
-		'text-cinemata-neutral-600 hover:text-cinemata-neutral-700 dark:text-cinemata-neutral-600 dark:hover:text-cinemata-neutral-700',
-};
-
-function getTextColorClasses(color) {
-	return TEXT_COLOR_CLASSES[color] ?? TEXT_COLOR_CLASSES['strait-blue-600p'];
-}
-
-function getVariantClasses(variant, color) {
-	if (variant === 'text' || variant === 'icon') {
-		return cn(VARIANT_CLASSES.text, getTextColorClasses(color));
-	}
-
+export function getVariantClasses(variant) {
 	return VARIANT_CLASSES[variant] ?? VARIANT_CLASSES.primary;
 }
 
+export const ALIGN_CLASSES = {
+	left: 'justify-start',
+	center: 'justify-center',
+	right: 'justify-end',
+	between: 'justify-between',
+};
+
+export function getAlignClasses(align) {
+	return ALIGN_CLASSES[align] ?? ALIGN_CLASSES.center;
+}
 function isIconOnlyVariant(variant) {
 	return variant === 'icon';
 }
 
 export function Button({
+	align = 'center',
 	children,
 	className = '',
-	color = 'strait-blue-600p',
 	icon = null,
 	iconPosition,
 	type = 'button',
@@ -74,10 +57,10 @@ export function Button({
 		<button
 			type={type}
 			className={cn(
-				'body-body-14-bold inline-flex items-center justify-center transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60',
+				'body-body-14-bold inline-flex cursor-pointer items-center transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60',
+				getAlignClasses(align),
 				isIconOnlyVariant(variant) ? 'gap-0 p-0' : 'gap-space-xs rounded-ds-4 px-space-base py-size-10',
-				getVariantClasses(variant, color),
-				'cursor-pointer',
+				getVariantClasses(variant),
 				className
 			)}
 			{...props}

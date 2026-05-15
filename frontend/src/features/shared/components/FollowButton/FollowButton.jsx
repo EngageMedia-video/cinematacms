@@ -11,6 +11,7 @@ function getLabel(personName, followed) {
 }
 
 export function FollowButton({
+	'aria-label': ariaLabel,
 	personName = '',
 	followed = false,
 	className = '',
@@ -25,7 +26,7 @@ export function FollowButton({
 			variant={followed ? 'secondary-outline' : 'secondary'}
 			icon={<Icon name="followUser" decorative data-testid="follow-icon" size="sm" />}
 			className={cn('border', className)}
-			aria-label={props['aria-label'] ?? label}
+			aria-label={ariaLabel ?? label}
 			aria-pressed={followed}
 			onMouseEnter={onMouseEnter}
 			onMouseLeave={onMouseLeave}
