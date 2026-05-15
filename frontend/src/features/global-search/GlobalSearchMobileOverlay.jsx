@@ -5,14 +5,11 @@ import { createPortal } from 'react-dom';
 import '../../static/css/tailwind.css';
 
 import { Icon } from '../shared/components/Icon';
+import { cn } from '../shared/utils/classNames';
 import { SearchResultsPanel } from './components/SearchResultsPanel';
 import { useDebouncedValue } from './hooks/useDebouncedValue';
 import { useGlobalSearch } from './hooks/useGlobalSearch';
 import globalSearchQueryClient from './queryClient';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 function navigateToSearch(query) {
 	const trimmed = (query || '').trim();
@@ -84,7 +81,7 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 							placeholder="Search for Films, Members, Events, etc"
 							aria-label="Search"
 							autoComplete="off"
-							className={joinClasses(
+							className={cn(
 								'body-body-14-regular block w-full rounded-[10px] border border-transparent bg-cinemata-pacific-deep-800 px-4 py-3 pr-12 text-cinemata-strait-blue-50 outline-none transition-colors duration-200',
 								'placeholder:text-cinemata-pacific-deep-300 focus:border-cinemata-sunset-horizon-400p focus:ring-0',
 								'[&::-webkit-search-cancel-button]:appearance-none'

@@ -4,14 +4,11 @@ import { useEffect, useId, useRef, useState } from 'react';
 import '../../static/css/tailwind.css';
 
 import { Icon } from '../shared/components/Icon';
+import { cn } from '../shared/utils/classNames';
 import { SearchResultsPanel } from './components/SearchResultsPanel';
 import { useDebouncedValue } from './hooks/useDebouncedValue';
 import { useGlobalSearch } from './hooks/useGlobalSearch';
 import globalSearchQueryClient from './queryClient';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 function navigateToSearch(query) {
 	const trimmed = (query || '').trim();
@@ -82,7 +79,7 @@ function GlobalSearchDropdownInner() {
 						aria-controls={listboxId}
 						aria-expanded={isOpen}
 						autoComplete="off"
-						className={joinClasses(
+						className={cn(
 							'body-body-14-regular block w-full rounded-[10px] border border-transparent bg-cinemata-pacific-deep-800 px-4 py-3 pr-12 text-cinemata-strait-blue-50 outline-none transition-colors duration-200',
 							'placeholder:text-cinemata-pacific-deep-300 focus:border-cinemata-sunset-horizon-400p focus:ring-0',
 							'[&::-webkit-search-cancel-button]:appearance-none'
@@ -100,7 +97,7 @@ function GlobalSearchDropdownInner() {
 			{isOpen ? (
 				<div
 					id={listboxId}
-					className={joinClasses(
+					className={cn(
 						'absolute left-0 right-0 top-[calc(100%+8px)] z-40 max-h-[70vh] overflow-y-auto rounded-[12px]',
 						'border border-cinemata-pacific-deep-700/60 bg-cinemata-pacific-deep-900 shadow-2xl shadow-cinemata-black/40'
 					)}
