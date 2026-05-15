@@ -1,7 +1,4 @@
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
-
+import { cn } from '../../utils/classNames';
 function clamp(value, min, max) {
 	return Math.min(Math.max(value, min), max);
 }
@@ -39,17 +36,17 @@ export function ProgressBar({
 			aria-valuemin={0}
 			aria-valuemax={safeMax}
 			aria-valuenow={safeValue}
-			className={joinClasses('w-full', className)}
+			className={cn('w-full', className)}
 		>
 			<div
-				className={joinClasses(
+				className={cn(
 					'h-2 w-full overflow-hidden rounded-full bg-cinemata-coral-reef-100 dark:bg-cinemata-coral-reef-900',
 					trackClassName
 				)}
 			>
 				<div
 					aria-hidden="true"
-					className={joinClasses(
+					className={cn(
 						'h-full bg-cinemata-coral-reef-400p transition-[width] duration-200',
 						indicatorRadiusClass,
 						indicatorClassName

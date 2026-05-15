@@ -1,9 +1,6 @@
+import { cn } from '../../utils/classNames';
 import PropTypes from 'prop-types';
 import { useState } from 'react';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 export function Switch({
 	checked,
@@ -31,7 +28,7 @@ export function Switch({
 
 	return (
 		<label
-			className={joinClasses(
+			className={cn(
 				'inline-flex cursor-pointer items-center gap-[16px] select-none [--switch-padding:3px] [--switch-thumb-size:14px] [--switch-width:30px]',
 				disabled && 'cursor-not-allowed opacity-60',
 				className
@@ -57,7 +54,7 @@ export function Switch({
 			/>
 
 			<span
-				className={joinClasses(
+				className={cn(
 					'inline-flex h-[calc(var(--switch-thumb-size)+var(--switch-padding)*2)] w-[var(--switch-width)] shrink-0 items-center rounded-full p-[var(--switch-padding)] transition-colors duration-200',
 					resolvedChecked ? 'justify-end' : 'justify-start'
 				)}

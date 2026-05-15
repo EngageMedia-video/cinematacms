@@ -1,13 +1,10 @@
+import { cn } from '../../utils/classNames';
 import { cloneElement, createContext, isValidElement, useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 const DialogContext = createContext(null);
 const FOCUSABLE_SELECTOR =
 	'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 function callHandler(handler, event) {
 	if (typeof handler === 'function') {
@@ -234,7 +231,7 @@ export function DialogContent({
 			<div
 				aria-hidden="true"
 				data-dialog-overlay
-				className={joinClasses(
+				className={cn(
 					'absolute inset-0 bg-cinemata-black/40 dark:bg-cinemata-pacific-deep-950 dark:opacity-80',
 					overlayClassName
 				)}
@@ -253,7 +250,7 @@ export function DialogContent({
 				aria-label={ariaLabel}
 				tabIndex={-1}
 				data-state="open"
-				className={joinClasses('relative z-10 outline-none', className)}
+				className={cn('relative z-10 outline-none', className)}
 			>
 				{children}
 			</div>

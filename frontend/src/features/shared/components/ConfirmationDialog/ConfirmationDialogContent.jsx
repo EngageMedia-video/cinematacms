@@ -1,10 +1,7 @@
+import { cn } from '../../utils/classNames';
 import cornerDecoration from './assets/confirmation-corner.webp';
 import { DialogContent } from '../Dialog';
 import { Icon } from '../Icon';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 export function ConfirmationDialogContent({
 	title = 'Submit changes?',
@@ -20,7 +17,7 @@ export function ConfirmationDialogContent({
 	return (
 		<DialogContent
 			{...props}
-			className={joinClasses('max-w-[520px] min-w-2xl bg-transparent p-0 text-left shadow-none', className)}
+			className={cn('max-w-[520px] min-w-2xl bg-transparent p-0 text-left shadow-none', className)}
 		>
 			<div className="relative overflow-hidden p-[26px] border-[0.5px] rounded-2xl border-cinemata-neutral-300 bg-linear-to-br from-cinemata-white to-cinemata-neutral-50 dark:border-cinemata-strait-blue-300 dark:from-cinemata-pacific-deep-900 dark:to-cinemata-pacific-deep-950">
 				{decorationSrc ? (

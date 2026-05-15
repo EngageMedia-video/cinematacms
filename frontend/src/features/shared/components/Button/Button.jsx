@@ -1,3 +1,4 @@
+import { cn } from '../../utils/classNames';
 const VARIANT_CLASSES = {
 	primary:
 		'border border-transparent bg-cinemata-strait-blue-600p text-cinemata-white hover:bg-cinemata-strait-blue-800 dark:bg-cinemata-strait-blue-600p dark:text-cinemata-white dark:hover:bg-cinemata-strait-blue-800',
@@ -38,14 +39,10 @@ function getTextColorClasses(color) {
 
 function getVariantClasses(variant, color) {
 	if (variant === 'text' || variant === 'icon') {
-		return joinClasses(VARIANT_CLASSES.text, getTextColorClasses(color));
+		return cn(VARIANT_CLASSES.text, getTextColorClasses(color));
 	}
 
 	return VARIANT_CLASSES[variant] ?? VARIANT_CLASSES.primary;
-}
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
 }
 
 function isIconOnlyVariant(variant) {
@@ -76,7 +73,7 @@ export function Button({
 	return (
 		<button
 			type={type}
-			className={joinClasses(
+			className={cn(
 				'body-body-14-bold inline-flex items-center justify-center transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60',
 				isIconOnlyVariant(variant) ? 'gap-0 p-0' : 'gap-space-xs rounded-ds-4 px-space-base py-size-10',
 				getVariantClasses(variant, color),

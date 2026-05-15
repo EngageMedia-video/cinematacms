@@ -1,9 +1,6 @@
+import { cn } from '../../utils/classNames';
 import { useEffect, useState } from 'react';
 import { Icon } from '../Icon';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 export function SquareImage({
 	alt = 'Square image',
@@ -29,7 +26,7 @@ export function SquareImage({
 	return (
 		<span
 			{...props}
-			className={joinClasses(
+			className={cn(
 				'relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800',
 				className
 			)}
@@ -68,7 +65,7 @@ export function SquareImage({
 						name={centeredIconName}
 						decorative
 						size={21}
-						className={joinClasses(
+						className={cn(
 							'text-cinemata-neutral-600 dark:text-cinemata-neutral-50',
 							loading ? 'animate-spin' : ''
 						)}

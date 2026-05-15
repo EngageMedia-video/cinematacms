@@ -3559,7 +3559,7 @@ body .items-list-ver .feat-first-item.hw-most-recent-videos .item:nth-child(2) {
    Video Player Button Override - Custom Design
    Size: 72px circle with 50px triangle
    Position: Bottom-left corner
-   Colors: Cinemata brandbook (#026690 → #ED7C30)
+   Colors: Cinemata design-system tokens
    ======================================== */
 
 body .video-js.vjs-mediacms .vjs-big-play-button {

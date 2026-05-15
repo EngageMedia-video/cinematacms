@@ -1,10 +1,7 @@
+import { cn } from '../../utils/classNames';
 import { useEffect, useRef } from 'react';
 import { Icon } from '../Icon';
 import { Button } from '../Button';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 export function GetNotifiedButton({ notified = false, className = '', onMouseEnter, onMouseLeave, ...props }) {
 	const bellIconRef = useRef(null);
@@ -33,7 +30,7 @@ export function GetNotifiedButton({ notified = false, className = '', onMouseEnt
 	return (
 		<Button
 			variant="primary"
-			className={joinClasses(className)}
+			className={cn(className)}
 			aria-label={props['aria-label'] ?? 'Get Notified'}
 			aria-pressed={notified}
 			onMouseEnter={onMouseEnter}

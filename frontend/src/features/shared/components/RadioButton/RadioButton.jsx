@@ -1,8 +1,5 @@
+import { cn } from '../../utils/classNames';
 import PropTypes from 'prop-types';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 export function RadioButton({
 	checked,
@@ -20,7 +17,7 @@ export function RadioButton({
 
 	return (
 		<label
-			className={joinClasses(
+			className={cn(
 				'inline-flex cursor-pointer items-center gap-[8px] select-none',
 				disabled && 'cursor-not-allowed opacity-60',
 				className
@@ -40,7 +37,7 @@ export function RadioButton({
 			/>
 
 			<span
-				className={joinClasses(
+				className={cn(
 					'inline-flex shrink-0 items-center justify-center rounded-full bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-900 transition-colors duration-200 peer-checked:bg-cinemata-sunset-horizon-400p'
 				)}
 				style={{ width: 18, height: 18, padding: 3 }}

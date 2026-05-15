@@ -1004,14 +1004,17 @@ class Media(models.Model):
             return helpers.build_versioned_url(base_url, self.media_version)
         # get preview_file out of the encodings, since some times preview_file_path
         # is empty but there is the gif encoding!
-        preview_media = self.encodings.filter(profile__extension="gif").first()
+        encodings = self.encodings.all()
+        if "encodings" not in getattr(self, "_prefetched_objects_cache", {}):
+            encodings = encodings.select_related("profile")
+        preview_media = next((encoding for encoding in encodings if encoding.profile.extension == "gif"), None)
         if preview_media and preview_media.media_file:
             # Use .name instead of .path to get relative path from MEDIA_ROOT
             base_url = helpers.url_from_path(preview_media.media_file.name)
             return helpers.build_versioned_url(base_url, self.media_version)
         return None
 
-    @property
+    @cached_property
     def hls_info(self):
         res = {}
         if self.hls_file:

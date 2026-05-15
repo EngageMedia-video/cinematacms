@@ -23,7 +23,7 @@
 /* Individual imports — preflight omitted to avoid stomping normalize.css */
 @layer theme, base, components, utilities;
 @import 'tailwindcss/theme.css' layer(theme);
-@import 'tailwindcss/utilities.css' layer(utilities);
+@import 'tailwindcss/utilities.css' layer(utilities) important;
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
@@ -140,6 +140,9 @@
 	--color-comment-reply-hover: var(--comment-actions-reply-button-hover-text-color);
 	--color-comment-cancel: var(--comment-actions-cancel-removal-button-text-color);
 	--color-comment-cancel-hover: var(--comment-actions-cancel-removal-button-hover-text-color);
+
+	/* ── Surfaces / Cards ────────────────────────────────── */
+	--color-bg-cards: var(--cinemata-neutral-50);
 
 	/* ── Media Items / Cards ──────────────────────────────── */
 	--color-item-bg: var(--item-bg-color);
@@ -538,11 +541,12 @@
  * utilities on <a>, <input>, <button>, and heading elements are silently
  * overridden by the global legacy selectors (e.g. `a { text-decoration: underline }`).
  *
- * Fix: `all: revert-layer` tells the browser "ignore every unlayered
- * declaration for these elements and fall through to the next cascade
- * layer", which is @layer utilities — exactly where Tailwind lives.
+ * Fix: Tailwind utilities are imported with the `important` flag above so
+ * utility declarations can beat legacy unlayered CSS without sprinkling `!`
+ * through component class names. `all: revert-layer` still clears the broad
+ * legacy defaults on common reset-sensitive elements where its selector wins.
  *
- * :where() keeps specificity at (1,0,0) so only the #id contributes,
+ * :where() keeps specificity to the [data-modern-track] attribute,
  * making it easy for component-level overrides to win if needed.
  *
  * Scoped to [data-modern-track] so this only fires inside modern-track

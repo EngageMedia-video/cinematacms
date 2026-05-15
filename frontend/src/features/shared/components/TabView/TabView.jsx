@@ -1,3 +1,4 @@
+import { cn } from '../../utils/classNames';
 import {
 	Children,
 	createContext,
@@ -11,10 +12,6 @@ import {
 } from 'react';
 
 const TabViewContext = createContext(null);
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 function toKebabCase(value) {
 	return String(value)
@@ -100,7 +97,7 @@ function TabViewList({ items, className = '', triggerClassName = '' }) {
 			<div
 				role="tablist"
 				aria-label={ariaLabel}
-				className={joinClasses(
+				className={cn(
 					'flex overflow-hidden rounded-sm bg-cinemata-pacific-deep-800 p-0',
 					tabMode === 'wrap' ? 'w-max min-w-0' : 'min-w-full',
 					className
@@ -111,7 +108,7 @@ function TabViewList({ items, className = '', triggerClassName = '' }) {
 						key={item.value}
 						value={item.value}
 						disabled={item.disabled}
-						className={joinClasses(triggerClassName, item.triggerClassName)}
+						className={cn(triggerClassName, item.triggerClassName)}
 					>
 						{item.label}
 					</TabViewTrigger>
@@ -167,7 +164,7 @@ function TabViewTrigger({ children, value, disabled = false, className = '' }) {
 					selectAndFocus([...tabs].reverse().find((tab) => !tab.disabled)?.value);
 				}
 			}}
-			className={joinClasses(
+			className={cn(
 				'body-body-14-bold cursor-pointer whitespace-nowrap border-0 px-4 py-4 text-cinemata-white uppercase tracking-[0.02em] transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
 				tabMode === 'wrap' ? 'min-w-0 flex-none' : 'min-w-[160px] flex-1',
 				isSelected ? 'bg-cinemata-strait-blue-800' : 'bg-transparent',
@@ -191,7 +188,7 @@ function TabViewPanel({ item, className = '' }) {
 			role="tabpanel"
 			id={getPanelId(item.value)}
 			aria-labelledby={getTabId(item.value)}
-			className={joinClasses('mt-4 w-full', className, item.panelClassName)}
+			className={cn('mt-4 w-full', className, item.panelClassName)}
 		>
 			{item.content}
 		</div>
@@ -276,7 +273,7 @@ export function TabView({
 
 	return (
 		<TabViewContext.Provider value={contextValue}>
-			<div className={joinClasses('w-full', className)}>
+			<div className={cn('w-full', className)}>
 				<TabViewList items={tabs} className={listClassName} triggerClassName={triggerClassName} />
 				<TabViewPanel item={selectedItem} className={panelClassName} />
 			</div>
