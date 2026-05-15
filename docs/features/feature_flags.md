@@ -9,6 +9,7 @@ CinemataCMS uses [django-waffle](https://waffle.readthedocs.io/) to manage featu
 3. Toggle any switch on or off
 4. Changes take effect immediately (subject to cache TTL)
 
+
 ## Available Switches
 
 | Switch name | Default | Description |

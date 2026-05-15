@@ -33,6 +33,7 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 - [🔐 Permission System](admin-guides/permission_system.md)
 - [📊 User Roles Permission Matrix](admin-guides/cinematacms-roles-permission-matrix.md)
 - [🗣️ Language Setup and Configuration](admin-guides/languages.md)
+- [🚩 Feature Flags Management](features/feature_flags.md)
 
 ## 🎨 Customization
 
