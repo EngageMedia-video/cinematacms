@@ -370,6 +370,7 @@ export function ListItem(props) {
 		args.hideCategories = props.hide.categories;
 
 		args.state = props.state;
+		args.contentType = props.contentType;
 	}
 
 	if (props.playlistPage.current || props.playlistPlayback.current) {
