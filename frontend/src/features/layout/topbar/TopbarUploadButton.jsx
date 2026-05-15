@@ -22,7 +22,7 @@ export function TopbarUploadButton({ className = '', compact = false }) {
 			style={{ backgroundColor: '#C2692F', color: '#F9FAFB' }}
 			className={cn(
 				'inline-flex items-center justify-center gap-2 rounded h-10 px-4 hover:brightness-110 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline',
-				compact ? 'w-[129px]' : 'w-[166px]',
+				compact ? 'w-[129px]' : 'min-w-[166px]',
 				className
 			)}
 		>
@@ -33,7 +33,7 @@ export function TopbarUploadButton({ className = '', compact = false }) {
 			>
 				<Icon name="upload" size={20} decorative />
 			</span>
-			<span className="truncate" style={{ color: '#F9FAFB' }}>
+			<span className={compact ? 'truncate' : 'whitespace-nowrap'} style={{ color: '#F9FAFB' }}>
 				{compact ? 'UPLOAD MEDIA…' : 'UPLOAD MEDIA'}
 			</span>
 		</a>
