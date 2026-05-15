@@ -23,6 +23,7 @@ describe('AppLayout', () => {
 
 		render(<AppLayout ContentComponent={HomeContent} pageSlotId="page-home" />);
 
+		expect(screen.getByTestId('top-message-host')).toBeInTheDocument();
 		expect(screen.getByTestId('topbar')).toBeInTheDocument();
 		expect(screen.getByTestId('page-sidebar')).toBeInTheDocument();
 		expect(screen.getByText('Revamp home content')).toBeInTheDocument();

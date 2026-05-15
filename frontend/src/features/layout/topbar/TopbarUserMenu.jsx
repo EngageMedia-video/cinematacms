@@ -24,8 +24,8 @@ function MenuItem({ item }) {
 		: 'hover:bg-white/[0.04] hover:text-cinemata-white';
 	const iconStyle = signOut ? { color: '#F08A4B' } : { color: '#DEFBFF' };
 
-	const content = (
-		<>
+	return (
+		<a href={item.link || '#'} className={cn(base, hover)}>
 			{item.icon ? (
 				<i aria-hidden="true" className="material-icons shrink-0" style={{ fontSize: 20, ...iconStyle }}>
 					{item.icon}
@@ -34,20 +34,6 @@ function MenuItem({ item }) {
 				<span aria-hidden="true" className="w-5 shrink-0" />
 			)}
 			<span className="truncate">{item.text}</span>
-		</>
-	);
-
-	if (item.itemType === 'open-subpage') {
-		return (
-			<button type="button" className={cn(base, hover, 'text-left')}>
-				{content}
-			</button>
-		);
-	}
-
-	return (
-		<a href={item.link || '#'} className={cn(base, hover)}>
-			{content}
 		</a>
 	);
 }
@@ -95,11 +81,14 @@ export function TopbarUserMenu() {
 		);
 	}
 
+	// Legacy 'open-subpage' items (e.g. "Switch theme") relied on the old popup's
+	// nested page mechanism, which the new flat menu does not implement.
+	// Filter them so we don't render dead-click entries; revisit when subpage UX returns.
 	const allItems = [
 		...(header?.popupNavItems?.top || []),
 		...(header?.popupNavItems?.middle || []),
 		...(header?.popupNavItems?.bottom || []),
-	];
+	].filter((item) => item?.itemType !== 'open-subpage');
 	const signOutItems = allItems.filter(isSignOut);
 	const primaryItems = allItems.filter((item) => !isSignOut(item));
 
