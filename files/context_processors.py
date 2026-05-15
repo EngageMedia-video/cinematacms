@@ -32,7 +32,7 @@ def stuff(request):
     ret["LOAD_FROM_CDN"] = _switch("load_from_cdn", "LOAD_FROM_CDN")
     ret["CAN_LOGIN"] = _switch("login_allowed", "LOGIN_ALLOWED")
     ret["CAN_REGISTER"] = _switch("register_allowed", "REGISTER_ALLOWED")
-    ret["CAN_UPLOAD_MEDIA"] = can_upload_media(request.user)
+    ret["CAN_UPLOAD_MEDIA"] = _switch("upload_media_allowed", "UPLOAD_MEDIA_ALLOWED") and can_upload_media(request.user)
     ret["CAN_LIKE_MEDIA"] = _switch("can_like_media", "CAN_LIKE_MEDIA")
     ret["CAN_DISLIKE_MEDIA"] = _switch("can_dislike_media", "CAN_DISLIKE_MEDIA")
     ret["CAN_REPORT_MEDIA"] = _switch("can_report_media", "CAN_REPORT_MEDIA")

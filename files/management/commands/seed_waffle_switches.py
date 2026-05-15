@@ -1,5 +1,15 @@
+"""
+Django Management Command: seed_waffle_switches
+
+Seeds waffle switches from their corresponding Django settings values.
+Run after migrating to ensure all switches exist with correct defaults.
+
+Usage:
+    python manage.py seed_waffle_switches
+"""
+
 from django.conf import settings
-from django.db import migrations
+from django.core.management.base import BaseCommand
 
 SWITCHES = [
     ("load_from_cdn", "LOAD_FROM_CDN", "Fetch external content from CDNs"),
@@ -24,30 +34,22 @@ SWITCHES = [
 ]
 
 
-def seed_switches(apps, schema_editor):
-    Switch = apps.get_model("waffle", "Switch")
-    for name, setting, note in SWITCHES:
-        Switch.objects.get_or_create(
-            name=name,
-            defaults={
-                "active": getattr(settings, setting, False),
-                "note": note,
-            },
-        )
+class Command(BaseCommand):
+    help = "Seed waffle switches from Django settings values"
 
+    def handle(self, *args, **options):
+        from waffle.models import Switch
 
-def unseed_switches(apps, schema_editor):
-    Switch = apps.get_model("waffle", "Switch")
-    switch_names = [name for name, _, _ in SWITCHES]
-    Switch.objects.filter(name__in=switch_names).delete()
+        for name, setting, note in SWITCHES:
+            _, created = Switch.objects.update_or_create(
+                name=name,
+                defaults={
+                    "active": getattr(settings, setting, False),
+                    "note": note,
+                },
+            )
+            status = "created" if created else "updated"
+            active = getattr(settings, setting, False)
+            self.stdout.write(f"  {name}: active={active} ({status})")
 
-
-class Migration(migrations.Migration):
-    dependencies = [
-        ("files", "0021_widen_password_field"),
-        ("waffle", "0004_update_everyone_nullbooleanfield"),
-    ]
-
-    operations = [
-        migrations.RunPython(seed_switches, unseed_switches),
-    ]
+        self.stdout.write(self.style.SUCCESS(f"Seeded {len(SWITCHES)} waffle switches"))

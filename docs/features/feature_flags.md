@@ -47,7 +47,7 @@ The setting `WAFFLE_CREATE_MISSING_SWITCHES = True` is enabled. If code checks a
    ret["YOUR_FLAG"] = _switch("your_switch_name", "YOUR_SETTINGS_FALLBACK")
    ```
 3. The switch will auto-create as inactive on first request
-4. Optionally, add a data migration to seed it with a specific default value and description
+4. Optionally, add it to the `seed_waffle_switches` management command with a specific default value and description
 
 ## Configuration
 
@@ -66,6 +66,16 @@ MIDDLEWARE = [
 
 WAFFLE_CREATE_MISSING_SWITCHES = True
 ```
+
+## Seeding Switches
+
+After deploying, run the seed command to create all switches with their correct defaults from settings:
+
+```bash
+python manage.py seed_waffle_switches
+```
+
+This uses `update_or_create` so it is safe to run multiple times — it will correct any auto-created switches that have wrong defaults.
 
 ## Migration from Settings
 
