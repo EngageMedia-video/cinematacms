@@ -103,13 +103,27 @@ export function MediaItemStateBadge(props) {
 	);
 }
 
+const CONTENT_TYPE_COLORS = {
+	film: { bg: '#00684F', text: '#fff' },
+	webinar: { bg: '#ffe81a', text: '#000' },
+	documentary: { bg: '#1A3F61', text: '#fff' },
+};
+
+const DEFAULT_BADGE_COLOR = { bg: 'rgba(0, 0, 0, 0.75)', text: '#fff' };
+
 export function MediaContentTypeBadge(props) {
 	if (!props.contentType || !props.contentType.title) {
 		return null;
 	}
 
+	const colors = CONTENT_TYPE_COLORS[props.contentType.value] || DEFAULT_BADGE_COLOR;
+
 	return (
-		<span className="item-content-type-badge" title={props.contentType.title}>
+		<span
+			className="item-content-type-badge"
+			title={props.contentType.title}
+			style={{ backgroundColor: colors.bg, color: colors.text }}
+		>
 			<span className="badge-label">{props.contentType.title}</span>
 		</span>
 	);

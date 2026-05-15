@@ -1,6 +1,12 @@
 import { VerticalMovieItem } from '../../shared/components/MovieItem/MovieItem';
 import { getMediaDurationLabel } from '../utils/mediaList';
 
+const CONTENT_TYPE_COLORS = {
+	film: { bg: '#00684F', text: '#fff' },
+	webinar: { bg: '#ffe81a', text: '#000' },
+	documentary: { bg: '#1A3F61', text: '#fff' },
+};
+
 function getAuthorName(item) {
 	return item.author_name || item.user || '';
 }
@@ -35,7 +41,8 @@ export function MediaTile({ item }) {
 			subtitle={getAuthorName(item)}
 			metadata={metadata}
 			badge={contentType?.title || ''}
-			badgeColor={contentType ? '#026690' : undefined}
+			badgeColor={contentType ? CONTENT_TYPE_COLORS[contentType.value]?.bg || '#111111' : undefined}
+			badgeTextColor={contentType ? CONTENT_TYPE_COLORS[contentType.value]?.text || '#fff' : undefined}
 		/>
 	);
 }
