@@ -24,6 +24,8 @@ export function MediaTile({ item }) {
 		item.views != null ? `${Number(item.views).toLocaleString()} views` : null,
 	];
 
+	const contentType = item.media_content_type_info;
+
 	return (
 		<VerticalMovieItem
 			title={item.title}
@@ -32,6 +34,8 @@ export function MediaTile({ item }) {
 			duration={getMediaDurationLabel(item)}
 			subtitle={getAuthorName(item)}
 			metadata={metadata}
+			badge={contentType?.title || ''}
+			badgeColor={contentType ? '#026690' : undefined}
 		/>
 	);
 }
