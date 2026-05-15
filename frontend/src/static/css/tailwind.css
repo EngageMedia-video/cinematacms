@@ -534,30 +534,7 @@
 }
 
 /*
- * Cascade-layer bridge for legacy coexistence.
- *
- * Problem: Legacy styles.scss is *unlayered*, so it outranks everything
- * inside @layer utilities regardless of specificity.  This means Tailwind
- * utilities on <a>, <input>, <button>, and heading elements are silently
- * overridden by the global legacy selectors (e.g. `a { text-decoration: underline }`).
- *
- * Fix: Tailwind utilities are imported with the `important` flag above so
- * utility declarations can beat legacy unlayered CSS without sprinkling `!`
- * through component class names. `all: revert-layer` still clears the broad
- * legacy defaults on common reset-sensitive elements where its selector wins.
- *
- * :where() keeps specificity to the [data-modern-track] attribute,
- * making it easy for component-level overrides to win if needed.
- *
- * Scoped to [data-modern-track] so this only fires inside modern-track
- * containers, leaving the rest of the page untouched.
- */
-[data-modern-track] :where(a, input, button, select, textarea, h1, h2, h3, h4, h5, h6, p, pre, img) {
-	all: revert-layer;
-}
-
-/*
- * Topbar cascade-defence block (paired with the [data-modern-track] revert above).
+ * Topbar cascade-defence block.
  *
  * --header-height: legacy _extra.css sets this on `body` with !important; the
  * sidebar and main padding consume it, so we have to win the cascade. 90px
