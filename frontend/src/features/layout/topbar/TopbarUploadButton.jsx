@@ -19,9 +19,8 @@ export function TopbarUploadButton({ className = '', compact = false }) {
 		<a
 			href={href}
 			aria-label="Upload media"
-			style={{ backgroundColor: '#C2692F', color: '#F9FAFB' }}
 			className={cn(
-				'inline-flex items-center justify-center gap-2 rounded h-10 px-4 hover:brightness-110 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline',
+				'inline-flex items-center justify-center gap-2 rounded h-10 px-4 hover:brightness-110 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline bg-cinemata-sunset-horizon-500 text-cinemata-neutral-50',
 				compact ? 'w-[129px]' : 'min-w-[166px]',
 				className
 			)}
@@ -29,11 +28,11 @@ export function TopbarUploadButton({ className = '', compact = false }) {
 			<span
 				aria-hidden="true"
 				className="inline-flex items-center justify-center shrink-0 [&_svg]:h-full [&_svg]:w-full"
-				style={{ width: 20, height: 20, color: '#F9FAFB' }}
+				style={{ width: 20, height: 20 }}
 			>
 				<Icon name="upload" size={20} decorative />
 			</span>
-			<span className={compact ? 'truncate' : 'whitespace-nowrap'} style={{ color: '#F9FAFB' }}>
+			<span className={compact ? 'truncate' : 'whitespace-nowrap'}>
 				{compact ? 'UPLOAD MEDIA…' : 'UPLOAD MEDIA'}
 			</span>
 		</a>

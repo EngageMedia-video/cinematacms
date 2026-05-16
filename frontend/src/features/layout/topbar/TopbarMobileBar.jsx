@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { Icon } from '../../shared/components/Icon';
+import { Text } from '../../shared/components/Text';
 import { TopbarUploadButton } from './TopbarUploadButton';
 import { useSidebarVisible } from './useSidebarVisible';
 
@@ -87,17 +88,14 @@ export function TopbarMobileBar() {
 
 	if (sidebarVisible) {
 		return (
-			<div style={{ backgroundColor: '#011C34' }} className="flex sm:hidden items-center px-4 h-16">
+			<div className="flex sm:hidden items-center px-4 h-16 bg-cinemata-pacific-deep-900">
 				<TopbarUploadButton className="flex w-full" />
 			</div>
 		);
 	}
 
 	return (
-		<div
-			style={{ backgroundColor: '#011C34' }}
-			className="flex sm:hidden items-center justify-between gap-3 px-4 h-16"
-		>
+		<div className="flex sm:hidden items-center justify-between gap-3 px-4 h-16 bg-cinemata-pacific-deep-900">
 			{home ? (
 				<span aria-hidden="true" className="w-8 h-8 shrink-0" />
 			) : (
@@ -105,15 +103,14 @@ export function TopbarMobileBar() {
 					type="button"
 					onClick={onBack}
 					aria-label="Go back"
-					style={{ color: '#B1DFFB' }}
-					className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0"
+					className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0 text-cinemata-strait-blue-100"
 				>
 					<Icon name="chevronLeft" size={18} decorative />
 				</button>
 			)}
-			<h1 className="flex-1 text-base font-bold truncate" style={{ color: '#DEFBFF' }}>
+			<Text as="h1" variant="body-16-bold" className="m-0 flex-1 truncate text-cinemata-strait-blue-50">
 				{title}
-			</h1>
+			</Text>
 			<TopbarUploadButton compact />
 		</div>
 	);

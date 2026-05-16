@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import '../../../static/css/tailwind.css';
 
@@ -16,13 +16,21 @@ import useTopbarStore from './useTopbarStore';
 export function Topbar() {
 	const openMobileSearch = useTopbarStore((state) => state.openMobileSearch);
 
+	// Marker for the mobile --header-height override in tailwind.css so it
+	// only applies on pages that actually mount this topbar.
+	useEffect(() => {
+		document.body.setAttribute('data-modern-topbar', '');
+		return () => {
+			document.body.removeAttribute('data-modern-topbar');
+		};
+	}, []);
+
 	return (
 		<>
 			<header
 				data-modern-track
 				data-topbar
-				style={{ backgroundColor: '#011C34', color: '#FFFFFF' }}
-				className="fixed top-0 left-0 right-0 z-[60] w-full border-b-2 border-white/10"
+				className="fixed top-0 left-0 right-0 z-[60] w-full border-b-2 border-white/10 bg-cinemata-pacific-deep-900 text-cinemata-white"
 			>
 				<div className="flex items-center gap-3 px-4 h-[60px] sm:h-[90px]">
 					<TopbarSidebarToggle />

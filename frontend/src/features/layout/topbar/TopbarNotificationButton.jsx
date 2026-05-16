@@ -21,8 +21,7 @@ function BellButton() {
 				aria-label={`Notifications${count > 0 ? `, ${count} unread` : ''}`}
 				aria-haspopup="true"
 				aria-expanded={isDropdownOpen}
-				style={{ color: '#DEFBFF' }}
-				className="relative inline-flex items-center justify-center w-8 h-8 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0"
+				className="relative inline-flex items-center justify-center w-8 h-8 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0 text-cinemata-strait-blue-50"
 			>
 				<Icon name="notificationBell" size={24} decorative />
 				{count > 0 ? (

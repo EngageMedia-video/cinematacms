@@ -1,25 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
-// PageSidebar (legacy) reads from LayoutStore + LayoutActions; mirroring this in a
-// Zustand store would force two sources of truth for the same flag.
-/* eslint-disable no-restricted-imports */
-import LayoutStore from '../../../static/js/stores/LayoutStore.js';
+// PageSidebar (legacy) reads from LayoutStore + LayoutActions; mirroring the
+// toggle action in a Zustand store would force two sources of truth.
 import * as LayoutActions from '../../../static/js/actions/LayoutActions.js';
-/* eslint-enable no-restricted-imports */
 import { Icon } from '../../shared/components/Icon';
+import { useSidebarVisible } from './useSidebarVisible';
 
 export function TopbarSidebarToggle() {
-	const [isVisible, setIsVisible] = useState(() => Boolean(LayoutStore.get('visible-sidebar')));
-
-	useEffect(() => {
-		function onChange() {
-			setIsVisible(Boolean(LayoutStore.get('visible-sidebar')));
-		}
-		LayoutStore.on('sidebar-visibility-change', onChange);
-		return () => {
-			LayoutStore.removeListener?.('sidebar-visibility-change', onChange);
-		};
-	}, []);
+	const isVisible = useSidebarVisible();
 
 	function onClick() {
 		LayoutActions.toggleSidebar();

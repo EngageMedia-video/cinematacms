@@ -536,24 +536,29 @@
 /*
  * Topbar cascade-defence block.
  *
- * --header-height: legacy _extra.css sets this on `body` with !important; the
- * sidebar and main padding consume it, so we have to win the cascade. 90px
- * desktop, 124px below Tailwind's `sm:` 640px breakpoint where the two-row
- * mobile layout renders.
+ * --header-height: legacy _extra.css already sets the desktop value (90px)
+ * on `body` with !important; below Tailwind's `sm:` 640px breakpoint the
+ * two-row mobile layout needs 124px. The rule is scoped to pages that
+ * actually mount the new topbar via the `data-modern-topbar` body attribute
+ * set in Topbar.jsx, so legacy/embed pages keep their existing header height.
+ *
+ * .top-message-body offset: the legacy rule in _extra.css only targets
+ * .page-header. The new topbar uses header[data-topbar] and needs the same
+ * offset so an active top message doesn't cover its first row.
  *
  * header[data-topbar] resets: unlayered legacy selectors still attack form
  * controls and links inside the topbar (border/outline/box-shadow/font on
  * <button> + <input>, text-decoration on <a>). The reset strips them and
  * the :focus-visible rule restores an accessible focus ring (WCAG 2.4.7).
  */
-html body {
-	--header-height: 90px !important;
-}
-
 @media (max-width: 639px) {
-	html body {
+	html body[data-modern-topbar] {
 		--header-height: 124px !important;
 	}
+}
+
+.top-message-body header[data-topbar] {
+	top: var(--top-message-height, 43px);
 }
 
 header[data-topbar] button,

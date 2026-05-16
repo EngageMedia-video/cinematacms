@@ -3,7 +3,9 @@ import React, { useContext, useEffect, useRef } from 'react';
 import LinksContext from '../../../static/js/contexts/LinksContext';
 import UserContext from '../../../static/js/contexts/UserContext';
 import HeaderContext from '../../../static/js/contexts/HeaderContext';
+import { useThemeSwitcher } from '../../../static/js/components/-NEW-/hooks/useThemeSwitcher.js';
 import { Avatar } from '../../shared/components/Avatar';
+import { Text } from '../../shared/components/Text';
 import { cn } from '../../shared/utils/classNames';
 import useTopbarStore from './useTopbarStore';
 
@@ -11,6 +13,29 @@ function isSignOut(item) {
 	const link = (item?.link || '').toLowerCase();
 	const text = (item?.text || '').toLowerCase();
 	return link.includes('signout') || link.includes('logout') || text.includes('sign out') || text.includes('log out');
+}
+
+function ThemeSwitcherMenuItem() {
+	const [mode, toggleMode] = useThemeSwitcher();
+	const isDark = mode === 'dark';
+	return (
+		<button
+			type="button"
+			onClick={toggleMode}
+			role="menuitemcheckbox"
+			aria-checked={isDark}
+			className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-cinemata-strait-blue-50 transition-colors duration-150 bg-transparent hover:bg-white/[0.04] hover:text-cinemata-white"
+		>
+			<i
+				aria-hidden="true"
+				className="material-icons shrink-0 text-cinemata-strait-blue-50"
+				style={{ fontSize: 20 }}
+			>
+				{isDark ? 'brightness_3' : 'wb_sunny'}
+			</i>
+			<span className="flex-1 text-left truncate">{isDark ? 'Light mode' : 'Dark mode'}</span>
+		</button>
+	);
 }
 
 function MenuItem({ item }) {
@@ -22,12 +47,12 @@ function MenuItem({ item }) {
 	const hover = signOut
 		? 'hover:bg-cinemata-sunset-horizon-500/10 hover:text-cinemata-sunset-horizon-500'
 		: 'hover:bg-white/[0.04] hover:text-cinemata-white';
-	const iconStyle = signOut ? { color: '#F08A4B' } : { color: '#DEFBFF' };
+	const iconClass = signOut ? 'text-cinemata-sunset-horizon-300' : 'text-cinemata-strait-blue-50';
 
 	return (
 		<a href={item.link || '#'} className={cn(base, hover)}>
 			{item.icon ? (
-				<i aria-hidden="true" className="material-icons shrink-0" style={{ fontSize: 20, ...iconStyle }}>
+				<i aria-hidden="true" className={cn('material-icons shrink-0', iconClass)} style={{ fontSize: 20 }}>
 					{item.icon}
 				</i>
 			) : (
@@ -70,14 +95,28 @@ export function TopbarUserMenu() {
 	if (!user) return null;
 
 	if (user.is?.anonymous) {
+		const canLogin = Boolean(user.can?.login);
+		const canRegister = Boolean(user.can?.register);
+		if (!canLogin && !canRegister) return null;
 		return (
-			<a
-				href={links?.signin || '/accounts/login/'}
-				style={{ backgroundColor: '#C2692F', color: '#F9FAFB' }}
-				className="inline-flex items-center justify-center rounded h-10 px-4 hover:brightness-110 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline"
-			>
-				Sign in
-			</a>
+			<div className="inline-flex items-center gap-2 shrink-0">
+				{canRegister ? (
+					<a
+						href={links?.register || '/accounts/signup/'}
+						className="hidden sm:inline-flex items-center justify-center rounded h-10 px-3 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline border border-white/15 hover:bg-white/[0.04] text-cinemata-strait-blue-50"
+					>
+						Register
+					</a>
+				) : null}
+				{canLogin ? (
+					<a
+						href={links?.signin || '/accounts/login/'}
+						className="inline-flex items-center justify-center rounded h-10 px-4 hover:brightness-110 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline bg-cinemata-sunset-horizon-500 text-cinemata-neutral-50"
+					>
+						Sign in
+					</a>
+				) : null}
+			</div>
 		);
 	}
 
@@ -131,9 +170,13 @@ export function TopbarUserMenu() {
 								<div className="text-sm font-semibold text-cinemata-white truncate">
 									{user.username}
 								</div>
-								<div className="text-xs truncate mt-0.5" style={{ color: '#7B98B6' }}>
+								<Text
+									as="div"
+									variant="body-12"
+									className="m-0 mt-0.5 truncate text-cinemata-pacific-deep-300"
+								>
 									View profile
-								</div>
+								</Text>
 							</div>
 						</a>
 					) : null}
@@ -141,6 +184,7 @@ export function TopbarUserMenu() {
 						{primaryItems.map((item, idx) => (
 							<MenuItem key={`item-${idx}`} item={item} />
 						))}
+						{header?.hasThemeSwitcher ? <ThemeSwitcherMenuItem /> : null}
 					</div>
 					{signOutItems.length > 0 ? (
 						<>

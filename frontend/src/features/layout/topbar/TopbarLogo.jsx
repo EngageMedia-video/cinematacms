@@ -10,12 +10,11 @@ export function TopbarLogo() {
 		<a
 			href={links?.home || '/'}
 			aria-label="Cinemata home"
-			style={{ color: '#FFFFFF' }}
-			className="inline-flex items-center gap-2 shrink-0 no-underline"
+			className="inline-flex items-center gap-2 shrink-0 no-underline text-cinemata-white"
 		>
-			<Icon name="cinemataMark" size={36} decorative style={{ color: '#FFFFFF' }} />
-			<span className="hidden sm:inline-flex items-center" style={{ color: '#FFFFFF' }}>
-				<Icon name="cinemataWordmark" style={{ width: 110, height: 26, color: '#FFFFFF' }} decorative />
+			<Icon name="cinemataMark" size={36} decorative />
+			<span className="hidden sm:inline-flex items-center">
+				<Icon name="cinemataWordmark" style={{ width: 110, height: 26 }} decorative />
 			</span>
 		</a>
 	);
