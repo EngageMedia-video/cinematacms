@@ -48,11 +48,7 @@ export function Link({
 	}
 
 	return (
-		<a
-			href={href}
-			className={cn(TEXT_LINK_CLASSES, className)}
-			{...props}
-		>
+		<a href={href} className={cn(TEXT_LINK_CLASSES, className)} {...props}>
 			{children}
 		</a>
 	);
