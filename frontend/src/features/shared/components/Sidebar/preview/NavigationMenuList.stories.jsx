@@ -44,7 +44,13 @@ const meta = {
 			},
 		},
 	},
-	decorators: [(Story) => <SidebarPanel><Story /></SidebarPanel>],
+	decorators: [
+		(Story) => (
+			<SidebarPanel>
+				<Story />
+			</SidebarPanel>
+		),
+	],
 	argTypes: {
 		removeVerticalPadding: {
 			control: 'boolean',

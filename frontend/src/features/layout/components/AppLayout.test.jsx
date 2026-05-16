@@ -15,6 +15,10 @@ vi.mock('../../../static/js/components/-NEW-/PageSidebar', () => ({
 	PageSidebar: () => <div data-testid="page-sidebar" />,
 }));
 
+vi.mock('../../shared/components/Sidebar', () => ({
+	Sidebar: () => <div data-testid="page-sidebar" />,
+}));
+
 describe('AppLayout', () => {
 	it('renders modern shell chrome and page content inside the requested slot', () => {
 		function HomeContent() {

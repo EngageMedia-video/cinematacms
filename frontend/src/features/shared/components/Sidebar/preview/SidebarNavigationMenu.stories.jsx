@@ -2,10 +2,10 @@ import { LazySidebarComponent, SidebarPanel } from '../storybook/sidebarStoryHel
 
 function SidebarNavigationMenuStory(props) {
 	return (
-			<LazySidebarComponent
-				loadComponent={() => import('../navigation/SidebarNavigationMenu')}
-				exportName="SidebarNavigationMenu"
-				{...props}
+		<LazySidebarComponent
+			loadComponent={() => import('../navigation/SidebarNavigationMenu')}
+			exportName="SidebarNavigationMenu"
+			{...props}
 		/>
 	);
 }
@@ -22,7 +22,13 @@ const meta = {
 			},
 		},
 	},
-	decorators: [(Story) => <SidebarPanel><Story /></SidebarPanel>],
+	decorators: [
+		(Story) => (
+			<SidebarPanel>
+				<Story />
+			</SidebarPanel>
+		),
+	],
 };
 
 export default meta;

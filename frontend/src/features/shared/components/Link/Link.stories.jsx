@@ -142,6 +142,7 @@ export const SecondaryOutline = {
 export const CustomTextColor = {
 	args: {
 		children: 'Terms & Privacy',
-		className: 'body-body-12-regular hover:opacity-90 text-cinemata-pacific-deep-400 dark:text-cinemata-strait-blue-300',
+		className:
+			'body-body-12-regular hover:opacity-90 text-cinemata-pacific-deep-400 dark:text-cinemata-strait-blue-300',
 	},
 };

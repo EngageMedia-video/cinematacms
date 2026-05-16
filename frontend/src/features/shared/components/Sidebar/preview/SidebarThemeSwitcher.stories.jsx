@@ -2,10 +2,10 @@ import { LazySidebarComponent, SidebarPanel } from '../storybook/sidebarStoryHel
 
 function SidebarThemeSwitcherStory(props) {
 	return (
-			<LazySidebarComponent
-				loadComponent={() => import('../theme/SidebarThemeSwitcher')}
-				exportName="SidebarThemeSwitcher"
-				{...props}
+		<LazySidebarComponent
+			loadComponent={() => import('../theme/SidebarThemeSwitcher')}
+			exportName="SidebarThemeSwitcher"
+			{...props}
 		/>
 	);
 }
@@ -22,7 +22,13 @@ const meta = {
 			},
 		},
 	},
-	decorators: [(Story) => <SidebarPanel><Story /></SidebarPanel>],
+	decorators: [
+		(Story) => (
+			<SidebarPanel>
+				<Story />
+			</SidebarPanel>
+		),
+	],
 };
 
 export default meta;
