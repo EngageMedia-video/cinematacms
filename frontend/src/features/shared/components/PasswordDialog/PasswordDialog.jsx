@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
-import { Dialog } from '../Dialog';
-import { DialogContent } from '../Dialog';
+import { Dialog, DialogContent } from '../Dialog';
+import { Button } from '../Button';
+import { TextField } from '../TextField';
 import { postRequest, getCSRFToken } from '../../../../static/js/functions';
 
-export function PasswordDialog({ open, onOpenChange, friendlyToken, onSuccess, onClose }) {
+export function PasswordDialog({ open, onOpenChange, friendlyToken, ownerName, ownerUrl, onSuccess, onClose }) {
 	const [password, setPassword] = useState('');
 	const [error, setError] = useState('');
 	const [submitting, setSubmitting] = useState(false);
@@ -62,59 +63,70 @@ export function PasswordDialog({ open, onOpenChange, friendlyToken, onSuccess, o
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent
 				ariaLabel="Enter password to view media"
-				className="max-w-[420px] min-w-[320px] bg-transparent p-0 text-left shadow-none"
+				className="max-w-[480px] min-w-[320px] bg-transparent p-0 text-left shadow-none"
 			>
-				<div className="relative overflow-hidden p-[26px] border-[0.5px] rounded-2xl border-cinemata-neutral-300 bg-linear-to-br from-cinemata-white to-cinemata-neutral-50 dark:border-cinemata-strait-blue-300 dark:from-cinemata-pacific-deep-900 dark:to-cinemata-pacific-deep-950">
+				<div className="relative overflow-hidden rounded-2xl border-[0.5px] border-cinemata-neutral-300 bg-linear-to-br from-cinemata-white to-cinemata-neutral-50 p-[26px] dark:border-cinemata-strait-blue-300 dark:from-cinemata-pacific-deep-900 dark:to-cinemata-pacific-deep-950">
 					<form onSubmit={handleSubmit} className="relative z-10 flex flex-col">
 						<div className="flex flex-col items-center text-center">
-							<span className="material-icons text-[48px] text-cinemata-neutral-400 dark:text-cinemata-pacific-deep-300">
+							<span className="material-icons text-[56px] text-cinemata-strait-blue-600p dark:text-cinemata-strait-blue-400">
 								lock
 							</span>
-							<h2 className="heading-h5-24-medium p-0 m-0 mt-4 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
-								Password Protected
+							<h2 className="heading-h5-24-medium m-0 mt-4 p-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
+								Enter Password to Access
 							</h2>
-							<p className="body-body-16-regular p-0 m-0 mt-2 text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-300">
-								Enter the password to view this media.
+							<p className="body-body-14-regular m-0 mt-2 p-0 text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-300">
+								{ownerName ? (
+									<>
+										{"If you don't have access, please reach out to "}
+										{ownerUrl ? (
+											<a
+												href={ownerUrl}
+												className="font-medium text-cinemata-strait-blue-600p hover:underline dark:text-cinemata-sunset-horizon-300"
+											>
+												{ownerName}
+											</a>
+										) : (
+											<span className="font-medium">{ownerName}</span>
+										)}
+										{' via their About page to request access.'}
+									</>
+								) : (
+									'Enter the password to view this media.'
+								)}
 							</p>
 						</div>
 
 						{error ? (
 							<div
 								role="alert"
-								className="mt-6 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-900/20 dark:text-red-400"
+								className="body-body-14-regular mt-6 rounded-ds-4 border border-cinemata-red-300 bg-cinemata-red-50 px-4 py-3 text-cinemata-red-700p dark:border-cinemata-red-500/30 dark:bg-cinemata-red-900/20 dark:text-cinemata-red-400"
 							>
 								{error}
 							</div>
 						) : null}
 
-						<input
-							ref={inputRef}
-							type="password"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							placeholder="Password"
-							required
-							autoFocus
-							disabled={submitting}
-							className="mt-6 w-full rounded-lg border border-cinemata-neutral-300 bg-cinemata-white px-4 py-3 text-base text-cinemata-neutral-900 outline-none placeholder:text-cinemata-neutral-400 focus:border-cinemata-strait-blue-500 focus:ring-1 focus:ring-cinemata-strait-blue-500 dark:border-cinemata-strait-blue-300 dark:bg-cinemata-pacific-deep-800 dark:text-cinemata-strait-blue-50 dark:placeholder:text-cinemata-pacific-deep-400 dark:focus:border-cinemata-strait-blue-400 dark:focus:ring-cinemata-strait-blue-400"
-						/>
+						<div className="mt-6">
+							<TextField
+								ref={inputRef}
+								type="password"
+								label="Enter Password"
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+								invalid={!!error}
+								disabled={submitting}
+								className="w-full"
+							/>
+						</div>
 
-						<div className="mt-6 flex justify-end gap-3">
+						<div className="mt-8 flex items-center justify-end gap-3">
 							<Dialog.Close>
-								<button
-									type="button"
-									className="rounded-lg border border-cinemata-neutral-300 bg-transparent px-5 py-2.5 text-sm font-medium text-cinemata-neutral-700 transition-colors hover:bg-cinemata-neutral-100 dark:border-cinemata-strait-blue-300 dark:text-cinemata-strait-blue-100 dark:hover:bg-cinemata-pacific-deep-800"
-								>
+								<Button variant="primary-outline" type="button">
 									Cancel
-								</button>
+								</Button>
 							</Dialog.Close>
-							<button
-								type="submit"
-								disabled={submitting || !password}
-								className="rounded-lg bg-cinemata-strait-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-cinemata-strait-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-cinemata-strait-blue-500 dark:hover:bg-cinemata-strait-blue-400"
-							>
-								{submitting ? 'Verifying...' : 'Submit'}
-							</button>
+							<Button variant="secondary" type="submit" disabled={submitting || !password}>
+								{submitting ? 'Verifying...' : 'UNLOCK'}
+							</Button>
 						</div>
 					</form>
 				</div>

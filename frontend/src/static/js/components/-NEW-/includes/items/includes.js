@@ -87,7 +87,7 @@ export function MediaItemStateBadge(props) {
 	const badgeConfig = {
 		private: { icon: 'lock', label: 'Private', className: 'badge-private' },
 		unlisted: { icon: 'link', label: 'Unlisted', className: 'badge-unlisted' },
-		restricted: { icon: 'lock', label: 'Restricted', className: 'badge-restricted' },
+		restricted: { icon: 'lock', label: 'Locked', className: 'badge-restricted' },
 	};
 
 	const config = badgeConfig[props.state];

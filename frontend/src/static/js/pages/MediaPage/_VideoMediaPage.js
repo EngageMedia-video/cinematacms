@@ -123,6 +123,8 @@ export class _VideoMediaPage extends Page {
 						open={this.state.passwordDialogOpen}
 						onOpenChange={(open) => this.setState({ passwordDialogOpen: open })}
 						friendlyToken={MediaCMS.media_friendly_token || MediaCMS.mediaId}
+						ownerName={MediaCMS.media_owner_name}
+						ownerUrl={MediaCMS.media_owner_url}
 						onSuccess={this.onPasswordSuccess}
 						onClose={() => this.setState({ passwordDialogOpen: false })}
 					/>
