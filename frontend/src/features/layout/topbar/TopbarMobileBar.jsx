@@ -87,10 +87,7 @@ export function TopbarMobileBar() {
 
 	if (sidebarVisible) {
 		return (
-			<div
-				style={{ backgroundColor: '#011C34' }}
-				className="flex sm:hidden items-center px-4 h-16"
-			>
+			<div style={{ backgroundColor: '#011C34' }} className="flex sm:hidden items-center px-4 h-16">
 				<TopbarUploadButton className="flex w-full" />
 			</div>
 		);
