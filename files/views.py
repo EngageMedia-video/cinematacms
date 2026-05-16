@@ -1490,9 +1490,16 @@ class MediaPasswordView(APIView):
 
         if request.user.is_authenticated:
             if request.user == media.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user):
-                token = generate_token(media.uid_hex)
-                request.session[f"media_token_{media.friendly_token}"] = token
-                return Response({"token": token}, status=status.HTTP_200_OK)
+                try:
+                    token = generate_token(media.uid_hex)
+                    request.session[f"media_token_{media.friendly_token}"] = token
+                    return Response({"token": token}, status=status.HTTP_200_OK)
+                except Exception:
+                    logger.warning("Failed to generate token for media %s", media.friendly_token)
+                    return Response(
+                        {"detail": "Server error generating token."},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
 
         ip = get_client_ip(request)
 

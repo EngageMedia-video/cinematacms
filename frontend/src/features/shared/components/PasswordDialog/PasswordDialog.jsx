@@ -27,6 +27,8 @@ export function PasswordDialog({ open, onOpenChange, friendlyToken, onSuccess, o
 				setSubmitting(false);
 				if (response?.data?.token) {
 					onSuccess(response.data.token);
+				} else {
+					setError('An error occurred. Please try again.');
 				}
 			},
 			(err) => {
