@@ -89,16 +89,21 @@ export class _MediaPage extends Page {
 		return (
 			<div className={this.state.viewerClassname}>
 				<div className="viewer-container" key="viewer-container">
-					<div className="restricted-media-placeholder">
-						<div className="restricted-media-bg" />
-						<PasswordDialog
-							friendlyToken={MediaCMS.media_friendly_token || MediaCMS.mediaId}
-							ownerName={MediaCMS.media_owner_name}
-							ownerUrl={MediaCMS.media_owner_url}
-							onSuccess={this.onPasswordSuccess}
-						/>
+					<div className="restricted-media-poster">
+						{MediaCMS.media_poster_url ? (
+							<img src={MediaCMS.media_poster_url} alt="" className="restricted-media-poster-img" />
+						) : null}
+						<div className="restricted-media-poster-overlay" />
 					</div>
 				</div>
+				<PasswordDialog
+					open={true}
+					onOpenChange={() => {}}
+					friendlyToken={MediaCMS.media_friendly_token || MediaCMS.mediaId}
+					ownerName={MediaCMS.media_owner_name}
+					ownerUrl={MediaCMS.media_owner_url}
+					onSuccess={this.onPasswordSuccess}
+				/>
 			</div>
 		);
 	}

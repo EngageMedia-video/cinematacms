@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
+import { Dialog, DialogContent } from '../Dialog';
 import { postRequest, getCSRFToken } from '../../../../static/js/functions';
 import cornerDecoration from '../ConfirmationDialog/assets/confirmation-corner.webp';
 
-export function PasswordDialog({ friendlyToken, ownerName, ownerUrl, onSuccess }) {
+export function PasswordDialog({ open, onOpenChange, friendlyToken, ownerName, ownerUrl, onSuccess }) {
 	const [password, setPassword] = useState('');
 	const [error, setError] = useState('');
 	const [submitting, setSubmitting] = useState(false);
@@ -48,54 +49,70 @@ export function PasswordDialog({ friendlyToken, ownerName, ownerUrl, onSuccess }
 		);
 	}
 
+	function handleOpenChange(nextOpen) {
+		if (!nextOpen) {
+			setPassword('');
+			setError('');
+		}
+		onOpenChange?.(nextOpen);
+	}
+
 	return (
-		<div className="password-dialog-card">
-			<img src={cornerDecoration} alt="" aria-hidden="true" className="password-dialog-decoration" />
+		<Dialog open={open} onOpenChange={handleOpenChange}>
+			<DialogContent
+				ariaLabel="Enter password to view media"
+				className="max-w-[560px] min-w-[320px] bg-transparent p-0 text-left shadow-none"
+				closeOnOverlayClick={false}
+			>
+				<div className="password-dialog-card">
+					<img src={cornerDecoration} alt="" aria-hidden="true" className="password-dialog-decoration" />
 
-			<form onSubmit={handleSubmit} className="password-dialog-content">
-				<span className="material-icons password-dialog-icon">lock</span>
+					<form onSubmit={handleSubmit} className="password-dialog-content">
+						<span className="material-icons password-dialog-icon">lock</span>
 
-				<h2 className="password-dialog-title">Enter Password to Access.</h2>
+						<h2 className="password-dialog-title">Enter Password to Access.</h2>
 
-				<p className="password-dialog-subtitle">
-					{ownerName ? (
-						<>
-							{'If you don’t have access, please reach out to '}
-							{ownerUrl ? (
-								<a href={ownerUrl} className="password-dialog-owner-link">
-									{ownerName}
-								</a>
+						<p className="password-dialog-subtitle">
+							{ownerName ? (
+								<>
+									{"If you don't have access, please reach out to "}
+									{ownerUrl ? (
+										<a href={ownerUrl} className="password-dialog-owner-link">
+											{ownerName}
+										</a>
+									) : (
+										<strong>{ownerName}</strong>
+									)}
+									{' via their About page to request access.'}
+								</>
 							) : (
-								<strong>{ownerName}</strong>
+								'Enter the password to view this media.'
 							)}
-							{' via their About page to request access.'}
-						</>
-					) : (
-						'Enter the password to view this media.'
-					)}
-				</p>
+						</p>
 
-				{error ? (
-					<div role="alert" className="password-dialog-error">
-						{error}
-					</div>
-				) : null}
+						{error ? (
+							<div role="alert" className="password-dialog-error">
+								{error}
+							</div>
+						) : null}
 
-				<div className="password-dialog-form-row">
-					<input
-						ref={inputRef}
-						type="password"
-						value={password}
-						onChange={(e) => setPassword(e.target.value)}
-						placeholder="Enter Password"
-						disabled={submitting}
-						className="password-dialog-input"
-					/>
-					<button type="submit" disabled={submitting || !password} className="password-dialog-unlock">
-						{submitting ? 'Verifying...' : 'UNLOCK'}
-					</button>
+						<div className="password-dialog-form-row">
+							<input
+								ref={inputRef}
+								type="password"
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+								placeholder="Enter Password"
+								disabled={submitting}
+								className="password-dialog-input"
+							/>
+							<button type="submit" disabled={submitting || !password} className="password-dialog-unlock">
+								{submitting ? 'Verifying...' : 'UNLOCK'}
+							</button>
+						</div>
+					</form>
 				</div>
-			</form>
-		</div>
+			</DialogContent>
+		</Dialog>
 	);
 }

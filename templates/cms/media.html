@@ -142,6 +142,7 @@
                 MediaCMS.media_friendly_token = "{{ media_object.friendly_token|escapejs }}";
                 MediaCMS.media_owner_name = "{{ media_object.user.name|default:media_object.user.username|escapejs }}";
                 MediaCMS.media_owner_url = "/user/{{ media_object.user.username|escapejs }}";
+                MediaCMS.media_poster_url = "{{ media_object.poster_url|escapejs }}";
             </script>
             <noscript>
                 <div class="user-action-form-wrap">
