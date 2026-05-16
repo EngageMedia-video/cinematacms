@@ -36,6 +36,13 @@ function injectPreUploadMessage() {
 	if (!uploaderWrap) return;
 	const belowUploadArea = PageStore.get('config-contents')?.uploader?.belowUploadArea;
 	if (!belowUploadArea) return;
+	// Update in place if a previous mount already injected the element
+	// (HMR/fast-refresh would otherwise stack duplicates).
+	const existing = uploaderWrap.querySelector('.pre-upload-msg');
+	if (existing) {
+		existing.innerHTML = belowUploadArea;
+		return;
+	}
 	const preUploadMsgEl = document.createElement('div');
 	preUploadMsgEl.setAttribute('class', 'pre-upload-msg');
 	preUploadMsgEl.innerHTML = belowUploadArea;

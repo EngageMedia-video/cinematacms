@@ -38,6 +38,24 @@ function ThemeSwitcherMenuItem() {
 	);
 }
 
+function ThemeSwitcherInlineButton() {
+	const [mode, toggleMode] = useThemeSwitcher();
+	const isDark = mode === 'dark';
+	return (
+		<button
+			type="button"
+			onClick={toggleMode}
+			aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+			aria-pressed={isDark}
+			className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0 text-cinemata-strait-blue-50"
+		>
+			<i aria-hidden="true" className="material-icons" style={{ fontSize: 20 }}>
+				{isDark ? 'brightness_3' : 'wb_sunny'}
+			</i>
+		</button>
+	);
+}
+
 function MenuItem({ item }) {
 	if (!item) return null;
 	const signOut = isSignOut(item);
@@ -97,9 +115,11 @@ export function TopbarUserMenu() {
 	if (user.is?.anonymous) {
 		const canLogin = Boolean(user.can?.login);
 		const canRegister = Boolean(user.can?.register);
-		if (!canLogin && !canRegister) return null;
+		const showThemeSwitcher = Boolean(header?.hasThemeSwitcher);
+		if (!canLogin && !canRegister && !showThemeSwitcher) return null;
 		return (
 			<div className="inline-flex items-center gap-2 shrink-0">
+				{showThemeSwitcher ? <ThemeSwitcherInlineButton /> : null}
 				{canRegister ? (
 					<a
 						href={links?.register || '/accounts/signup/'}
