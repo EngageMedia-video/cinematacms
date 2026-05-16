@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { Icon } from '../../shared/components/Icon';
 import { TopbarUploadButton } from './TopbarUploadButton';
+import { useSidebarVisible } from './useSidebarVisible';
 
 function isHome() {
 	if (typeof window === 'undefined') return false;
@@ -58,6 +59,7 @@ function derivePageTitle() {
 export function TopbarMobileBar() {
 	const [title, setTitle] = useState(derivePageTitle);
 	const [home, setHome] = useState(isHome);
+	const sidebarVisible = useSidebarVisible();
 
 	useEffect(() => {
 		function sync() {
@@ -81,6 +83,17 @@ export function TopbarMobileBar() {
 		// Direct-entry pages have no prior entry; fall back to home so the button is never inert.
 		if (window.history?.length > 1) window.history.back();
 		else window.location.assign('/');
+	}
+
+	if (sidebarVisible) {
+		return (
+			<div
+				style={{ backgroundColor: '#011C34' }}
+				className="flex sm:hidden items-center px-4 h-16"
+			>
+				<TopbarUploadButton className="flex w-full" />
+			</div>
+		);
 	}
 
 	return (
