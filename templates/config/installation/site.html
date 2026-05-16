@@ -21,27 +21,27 @@ MediaCMS.site = {
         },
     },
     pages: {
-        latest:{
-            title: 'Recent uploads',
+        latest: {
+            title: 'Recently Uploads',
         },
-        featured:{
+        featured: {
             title: 'Featured',
         },
-        recommended:{
+        recommended: {
             title: 'Popular',
         },
-        members:{
+        members: {
             enabled: true,
             title: 'Members',
         },
     },
     userPages: {
         liked: {
-            enabled: {% if request.user.is_authenticated %}true{% else %}false{% endif %},
+            enabled: {% if request.user.is_authenticated %} true {% else %} false {% endif %},
             title: 'My favorites',
         },
         history: {
-            enabled: {% if request.user.is_authenticated %}true{% else %}false{% endif %},
+            enabled: {% if request.user.is_authenticated %} true {% else %} false {% endif %},
             title: 'My history',
         },
     },
