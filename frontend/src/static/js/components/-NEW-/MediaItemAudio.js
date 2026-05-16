@@ -9,7 +9,7 @@ import { PositiveIntegerOrZero } from '../../functions/propTypeFilters';
 import {
 	MediaItemDuration,
 	MediaItemPlaylistIndex,
-	MediaContentTypeBadge,
+	MediaCategoryBadge,
 	MediaItemStateBadge,
 	itemClassname,
 } from './includes/items';
@@ -52,7 +52,7 @@ export function MediaItemAudio(props) {
 				{props.inPlaylistView ? null : (
 					<MediaItemDuration ariaLabel={duration} time={durationISO8601} text={durationStr} />
 				)}
-				<MediaContentTypeBadge contentType={props.contentType} />
+				<MediaCategoryBadge categories={props.badgeCategories} />
 				<MediaItemStateBadge state={props.state} />
 			</a>
 		);

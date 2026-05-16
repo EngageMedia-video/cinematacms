@@ -59,7 +59,6 @@ class MediaForm(forms.ModelForm):
             "website",
             "media_language",
             "media_country",
-            "media_content_type",
             "category",
             "topics",
             "content_sensitivity",
@@ -110,7 +109,6 @@ class MediaForm(forms.ModelForm):
                 self.fields["year_produced"].initial = "other"
                 self.fields["year_produced_custom"].initial = self.instance.year_produced
 
-        self.fields["media_content_type"].label = "Content Type"
         self.fields["state"].label = "Status"
         self.fields["allow_download"].label = "Allow Download"
         self.fields["is_encrypted"].label = "Enable HLS Encryption"

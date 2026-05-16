@@ -103,28 +103,33 @@ export function MediaItemStateBadge(props) {
 	);
 }
 
-const CONTENT_TYPE_COLORS = {
-	film: { bg: '#00684F', text: '#fff' },
-	webinar: { bg: '#ffe81a', text: '#000' },
-	documentary: { bg: '#1A3F61', text: '#fff' },
+const CATEGORY_COLORS = {
+	animation: 'var(--cinemata-amber-600p)',
+	documentary: 'var(--cinemata-pacific-deep-600p)',
+	experimental: 'var(--cinemata-coral-reef-700)',
+	explainer: 'var(--cinemata-sandy-shore-700)',
+	fiction: 'var(--cinemata-strait-blue-600p)',
+	hybrid: 'var(--cinemata-neutral-600)',
+	'music-video': 'var(--cinemata-red-700p)',
+	'news-reel': 'var(--cinemata-green-700p)',
+	'participatory-video': 'var(--cinemata-sunset-horizon-600)',
+	podcast: 'var(--cinemata-coral-reef-400p)',
+	trailers: 'var(--cinemata-amber-700)',
 };
 
-const DEFAULT_BADGE_COLOR = { bg: 'rgba(0, 0, 0, 0.75)', text: '#fff' };
+const DEFAULT_CATEGORY_COLOR = 'var(--cinemata-neutral-600)';
 
-export function MediaContentTypeBadge(props) {
-	if (!props.contentType || !props.contentType.title) {
+export function MediaCategoryBadge(props) {
+	if (!props.categories || !props.categories.length) {
 		return null;
 	}
 
-	const colors = CONTENT_TYPE_COLORS[props.contentType.value] || DEFAULT_BADGE_COLOR;
+	const category = props.categories[0];
+	const bgColor = CATEGORY_COLORS[category.slug] || DEFAULT_CATEGORY_COLOR;
 
 	return (
-		<span
-			className="item-content-type-badge"
-			title={props.contentType.title}
-			style={{ backgroundColor: colors.bg, color: colors.text }}
-		>
-			<span className="badge-label">{props.contentType.title}</span>
+		<span className="item-category-badge" title={category.title} style={{ backgroundColor: bgColor }}>
+			<span className="badge-label">{category.title}</span>
 		</span>
 	);
 }
@@ -146,7 +151,7 @@ export function MediaItemThumbnailLink(props) {
 					<div></div>
 				</div>
 			)}
-			<MediaContentTypeBadge contentType={props.contentType} />
+			<MediaCategoryBadge categories={props.categories} />
 			<MediaItemStateBadge state={props.state} />
 		</a>
 	);

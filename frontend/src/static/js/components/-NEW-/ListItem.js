@@ -200,7 +200,8 @@ export function listItemProps(props, item, index) {
 		hasMediaViewerDescr: false,
 		countries: item.media_country_info || [],
 		state: item.state || null,
-		contentType: item.media_content_type_info || null,
+		badgeCategories:
+			Array.isArray(item.categories_info) && item.categories_info.length ? item.categories_info : null,
 	};
 
 	args.hasMediaViewerDescr = args.hasMediaViewer && !!props.firstItemDescr;
@@ -370,7 +371,7 @@ export function ListItem(props) {
 		args.hideCategories = props.hide.categories;
 
 		args.state = props.state;
-		args.contentType = props.contentType;
+		args.badgeCategories = props.badgeCategories;
 	}
 
 	if (props.playlistPage.current || props.playlistPlayback.current) {

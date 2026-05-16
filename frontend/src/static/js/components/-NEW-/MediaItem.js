@@ -26,7 +26,7 @@ export function MediaItem(props) {
 				title={props.title}
 				link={props.link}
 				state={props.state}
-				contentType={props.contentType}
+				categories={props.badgeCategories}
 			/>
 		);
 	}

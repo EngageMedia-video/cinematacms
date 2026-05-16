@@ -79,7 +79,6 @@ function MoviePoster({
 	imageSrc,
 	badge,
 	badgeColor,
-	badgeTextColor,
 	duration,
 	iconName,
 	iconLabel,
@@ -96,12 +95,7 @@ function MoviePoster({
 			<img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
 
 			{badge ? (
-				<Badge
-					color={badgeColor}
-					className="absolute bottom-3 left-3"
-					style={badgeTextColor ? { color: badgeTextColor } : undefined}
-					data-movie-item-badge
-				>
+				<Badge color={badgeColor} className="absolute bottom-3 left-3" data-movie-item-badge>
 					{badge}
 				</Badge>
 			) : null}
@@ -130,7 +124,6 @@ function MoviePoster({
 export function HorizontalMovieItem({
 	badge = '',
 	badgeColor = '#026690',
-	badgeTextColor = '',
 	className = '',
 	duration = '',
 	imageAlt = 'Movie artwork',
@@ -152,7 +145,6 @@ export function HorizontalMovieItem({
 				imageSrc={imageSrc}
 				badge={badge}
 				badgeColor={badgeColor}
-				badgeTextColor={badgeTextColor}
 				duration={duration}
 				className="aspect-video w-[180px] shrink-0"
 			/>
@@ -167,7 +159,6 @@ export function HorizontalMovieItem({
 export function VerticalMovieItem({
 	badge = '',
 	badgeColor = '#026690',
-	badgeTextColor = '',
 	className = '',
 	duration = '',
 	iconLabel = '',
@@ -191,7 +182,6 @@ export function VerticalMovieItem({
 				imageSrc={imageSrc}
 				badge={badge}
 				badgeColor={badgeColor}
-				badgeTextColor={badgeTextColor}
 				duration={duration}
 				iconName={iconName}
 				iconLabel={iconLabel}

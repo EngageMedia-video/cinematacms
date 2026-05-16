@@ -684,7 +684,7 @@ a.item-edit-link {
 	}
 }
 
-.item-content-type-badge {
+.item-category-badge {
 	position: absolute;
 	bottom: 0;
 	left: 0;
@@ -696,6 +696,7 @@ a.item-edit-link {
 	display: inline-block;
 	z-index: 1;
 	pointer-events: none;
+	color: #fff;
 
 	.badge-label {
 		line-height: 1;
