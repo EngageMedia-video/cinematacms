@@ -1055,6 +1055,14 @@ class Media(models.Model):
         # Use .name to get relative path from MEDIA_ROOT
         return helpers.url_from_path(self.user.logo.name)
 
+    @property
+    def author_is_trusted(self):
+        return self.user.advancedUser
+
+    @property
+    def author_is_manager(self):
+        return self.user.is_superuser or self.user.is_manager
+
     def get_absolute_url(self, api=False, edit=False):
         if edit:
             return reverse("edit_media") + f"?m={self.friendly_token}"

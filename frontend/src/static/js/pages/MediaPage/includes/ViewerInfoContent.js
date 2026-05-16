@@ -19,6 +19,8 @@ import { RatingSystem } from '../../../components/RatingSystem/RatingSystem';
 
 import { PopupMain } from '../../../components/-NEW-/Popup';
 
+import { UserRoleBadge } from '../../../../../features/shared/components/UserRoleBadge';
+
 import { publishedOnDate } from '../../../functions/';
 
 import { formatInnerLink } from '../../../functions/formatInnerLink';
@@ -66,6 +68,7 @@ function MediaAuthorBanner(props) {
 					<a href={props.link} className="author-banner-name" title={props.name}>
 						<span>{props.name}</span>
 					</a>
+					<UserRoleBadge isManager={props.isManager} isTrusted={props.isTrusted} />
 				</span>
 			</div>
 		</div>
@@ -263,6 +266,8 @@ export default function ViewerInfoContent(props) {
 									thumb={authorThumb}
 									name={props.author.name}
 									published={props.published}
+									isManager={props.author.isManager}
+									isTrusted={props.author.isTrusted}
 								/>
 							);
 						}

@@ -26,6 +26,7 @@ import { MaterialIcon } from './MaterialIcon';
 import { UserThumbnail } from './UserThumbnail';
 
 import { PopupMain } from './Popup';
+import { UserRoleBadge } from '../../../../features/shared/components/UserRoleBadge';
 
 import '../styles/Comments.scss';
 import { replaceString } from '../../utils/string-replacement.js';
@@ -283,6 +284,7 @@ function Comment(props) {
 							<a href={props.author_link} title={props.author_name}>
 								{props.author_name}
 							</a>
+							<UserRoleBadge isManager={props.author_is_manager} isTrusted={props.author_is_trusted} />
 						</div>
 						<div className="comment-date">
 							{props.publish_date != null ? replaceString(format(new Date(props.publish_date))) : ''}
@@ -314,6 +316,8 @@ Comment.propTypes = {
 	author_name: PropTypes.string,
 	author_link: PropTypes.string,
 	author_thumb: PropTypes.string,
+	author_is_trusted: PropTypes.bool,
+	author_is_manager: PropTypes.bool,
 	publish_date: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 	likes: PropTypes.number,
 	dislikes: PropTypes.number,
@@ -531,6 +535,8 @@ export default function CommentsList(props) {
 										'/' +
 										c.author_thumbnail_url.replace(/^\//g, '')
 									}
+									author_is_trusted={c.author_is_trusted}
+									author_is_manager={c.author_is_manager}
 									publish_date={c.add_date}
 									likes={0}
 									dislikes={0}

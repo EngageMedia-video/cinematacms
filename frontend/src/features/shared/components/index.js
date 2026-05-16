@@ -24,3 +24,4 @@ export { TextAlert } from './TextAlert';
 export { TabView, TabContent } from './TabView';
 export { Tooltip } from './Tooltip';
 export { Text } from './Text';
+export { UserRoleBadge } from './UserRoleBadge';

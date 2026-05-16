@@ -125,7 +125,7 @@ export function UserItem(props) {
 				)}
 				{isManager && (
 					<div className="badge orange-badge" style={{ top: `${1 + orangeBadgeIndex++ * 1.7}rem` }}>
-						Manager
+						Moderator
 					</div>
 				)}
 			</React.Fragment>
