@@ -1,0 +1,2 @@
+# Django templates are not safe to auto-format.
+templates/
