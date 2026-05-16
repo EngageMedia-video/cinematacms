@@ -65,6 +65,7 @@ django==5.2.13
     #   django-silk
     #   django-tinymce
     #   django-vite
+    #   django-waffle
     #   djangorestframework
 django-allauth==65.16.1
     # via cinemata
@@ -101,6 +102,8 @@ django-silk==5.5.0
 django-tinymce @ git+https://github.com/jazzband/django-tinymce.git@6b413f4e9bdedb9268c8ef25886fdfc994780097
     # via cinemata
 django-vite==3.1.0
+    # via cinemata
+django-waffle==4.2.0
     # via cinemata
 djangorestframework==3.17.1
     # via cinemata
