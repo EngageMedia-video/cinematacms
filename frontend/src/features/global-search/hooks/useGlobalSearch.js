@@ -74,7 +74,8 @@ export function useGlobalSearch(query) {
 	const isLoading = enabled && (videos.isLoading || playlists.isLoading || members.isLoading);
 	const isError = videos.isError && playlists.isError && members.isError;
 	const totalResults = videoSection.items.length + playlistSection.items.length + memberSection.items.length;
-	const isEmpty = enabled && !isLoading && totalResults === 0;
+	const anySectionErrored = videos.isError || playlists.isError || members.isError;
+	const isEmpty = enabled && !isLoading && !anySectionErrored && totalResults === 0;
 
 	return {
 		enabled,

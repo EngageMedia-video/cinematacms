@@ -1,5 +1,14 @@
-export function SearchResultSection({ title, items, hasMore, query, renderItem, onSelect, withDivider = true }) {
-	if (!items.length) return null;
+export function SearchResultSection({
+	title,
+	items,
+	hasMore,
+	query,
+	renderItem,
+	onSelect,
+	isError = false,
+	withDivider = true,
+}) {
+	if (!isError && !items.length) return null;
 
 	const showMoreHref = `/search?q=${encodeURIComponent(query)}`;
 
@@ -13,14 +22,20 @@ export function SearchResultSection({ title, items, hasMore, query, renderItem, 
 			<h3 className="body-body-12-medium px-2 pb-2 text-[11px] uppercase tracking-[0.08em] text-cinemata-pacific-deep-300">
 				{title}
 			</h3>
-			<ul className="m-0 flex list-none flex-col gap-1 p-0">
-				{items.map((item, idx) => (
-					<li key={item.friendly_token || item.url || item.username || idx} className="list-none">
-						{renderItem(item, idx, onSelect)}
-					</li>
-				))}
-			</ul>
-			{hasMore ? (
+			{isError ? (
+				<p role="status" className="body-body-12-regular px-2 py-1 text-cinemata-pacific-deep-300">
+					Couldn&apos;t load {title.toLowerCase()}.
+				</p>
+			) : (
+				<ul className="m-0 flex list-none flex-col gap-1 p-0">
+					{items.map((item, idx) => (
+						<li key={item.friendly_token || item.url || item.username || idx} className="list-none">
+							{renderItem(item, idx, onSelect)}
+						</li>
+					))}
+				</ul>
+			)}
+			{!isError && hasMore ? (
 				<a
 					href={showMoreHref}
 					onClick={onSelect}

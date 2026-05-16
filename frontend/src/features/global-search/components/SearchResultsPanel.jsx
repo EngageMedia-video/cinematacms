@@ -36,6 +36,7 @@ export function SearchResultsPanel({ state, query, onSelect }) {
 				title="Videos"
 				items={state.videos.items}
 				hasMore={state.videos.hasMore}
+				isError={state.videos.isError}
 				query={query}
 				onSelect={onSelect}
 				renderItem={(item, idx, onItemSelect) => (
@@ -46,6 +47,7 @@ export function SearchResultsPanel({ state, query, onSelect }) {
 				title="Playlists"
 				items={state.playlists.items}
 				hasMore={state.playlists.hasMore}
+				isError={state.playlists.isError}
 				query={query}
 				onSelect={onSelect}
 				renderItem={(item, idx, onItemSelect) => (
@@ -56,6 +58,7 @@ export function SearchResultsPanel({ state, query, onSelect }) {
 				title="Members"
 				items={state.members.items}
 				hasMore={state.members.hasMore}
+				isError={state.members.isError}
 				query={query}
 				onSelect={onSelect}
 				renderItem={(item, idx, onItemSelect) => (

@@ -96,9 +96,27 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 					</div>
 				</form>
 			</div>
-			<div className="flex-1 overflow-y-auto">
+			<div className="gs-scrollbar flex-1 overflow-y-auto">
 				<SearchResultsPanel state={state} query={debouncedQuery} onSelect={handleSelect} />
 			</div>
+			<style>{`
+				.gs-scrollbar {
+					scrollbar-color: rgba(2, 102, 144, 0.35) transparent;
+					scrollbar-width: thin;
+				}
+				.gs-scrollbar::-webkit-scrollbar {
+					width: 6px;
+				}
+				.gs-scrollbar::-webkit-scrollbar-track {
+					background: transparent;
+				}
+				.gs-scrollbar::-webkit-scrollbar-thumb {
+					border: 2px solid transparent;
+					border-radius: 999px;
+					background-color: rgba(2, 102, 144, 0.35);
+					background-clip: content-box;
+				}
+			`}</style>
 		</div>,
 		document.body
 	);

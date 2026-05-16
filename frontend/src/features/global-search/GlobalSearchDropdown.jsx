@@ -98,7 +98,7 @@ function GlobalSearchDropdownInner() {
 				<div
 					id={listboxId}
 					className={cn(
-						'absolute left-0 right-0 top-[calc(100%+8px)] z-40 max-h-[70vh] overflow-y-auto rounded-[12px]',
+						'gs-scrollbar absolute left-0 right-0 top-[calc(100%+8px)] z-40 max-h-[70vh] overflow-y-auto rounded-[12px]',
 						'border border-cinemata-pacific-deep-700/60 bg-cinemata-pacific-deep-900 shadow-2xl shadow-cinemata-black/40'
 					)}
 					style={{ animation: 'global-search-fade-in 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}
@@ -111,6 +111,22 @@ function GlobalSearchDropdownInner() {
 				@keyframes global-search-fade-in {
 					from { opacity: 0; transform: translateY(-4px); }
 					to { opacity: 1; transform: translateY(0); }
+				}
+				.gs-scrollbar {
+					scrollbar-color: rgba(2, 102, 144, 0.35) transparent;
+					scrollbar-width: thin;
+				}
+				.gs-scrollbar::-webkit-scrollbar {
+					width: 6px;
+				}
+				.gs-scrollbar::-webkit-scrollbar-track {
+					background: transparent;
+				}
+				.gs-scrollbar::-webkit-scrollbar-thumb {
+					border: 2px solid transparent;
+					border-radius: 999px;
+					background-color: rgba(2, 102, 144, 0.35);
+					background-clip: content-box;
 				}
 			`}</style>
 		</div>
