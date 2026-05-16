@@ -1,10 +1,8 @@
 import { useState, useRef } from 'react';
-import { Dialog, DialogContent } from '../Dialog';
-import { Button } from '../Button';
-import { TextField } from '../TextField';
 import { postRequest, getCSRFToken } from '../../../../static/js/functions';
+import cornerDecoration from '../ConfirmationDialog/assets/confirmation-corner.webp';
 
-export function PasswordDialog({ open, onOpenChange, friendlyToken, ownerName, ownerUrl, onSuccess, onClose }) {
+export function PasswordDialog({ friendlyToken, ownerName, ownerUrl, onSuccess }) {
 	const [password, setPassword] = useState('');
 	const [error, setError] = useState('');
 	const [submitting, setSubmitting] = useState(false);
@@ -40,7 +38,7 @@ export function PasswordDialog({ open, onOpenChange, friendlyToken, ownerName, o
 				if (status === 429) {
 					setError(detail || 'Too many attempts. Please try again later.');
 				} else if (status === 403) {
-					setError(detail || 'Incorrect password.');
+					setError(detail || 'The password is incorrect.');
 					setPassword('');
 					inputRef.current?.focus();
 				} else {
@@ -50,87 +48,54 @@ export function PasswordDialog({ open, onOpenChange, friendlyToken, ownerName, o
 		);
 	}
 
-	function handleOpenChange(nextOpen) {
-		if (!nextOpen) {
-			setPassword('');
-			setError('');
-			onClose?.();
-		}
-		onOpenChange?.(nextOpen);
-	}
-
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent
-				ariaLabel="Enter password to view media"
-				className="max-w-[480px] min-w-[320px] bg-transparent p-0 text-left shadow-none"
-			>
-				<div className="relative overflow-hidden rounded-2xl border-[0.5px] border-cinemata-neutral-300 bg-linear-to-br from-cinemata-white to-cinemata-neutral-50 p-[26px] dark:border-cinemata-strait-blue-300 dark:from-cinemata-pacific-deep-900 dark:to-cinemata-pacific-deep-950">
-					<form onSubmit={handleSubmit} className="relative z-10 flex flex-col">
-						<div className="flex flex-col items-center text-center">
-							<span className="material-icons text-[56px] text-cinemata-strait-blue-600p dark:text-cinemata-strait-blue-400">
-								lock
-							</span>
-							<h2 className="heading-h5-24-medium m-0 mt-4 p-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
-								Enter Password to Access
-							</h2>
-							<p className="body-body-14-regular m-0 mt-2 p-0 text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-300">
-								{ownerName ? (
-									<>
-										{"If you don't have access, please reach out to "}
-										{ownerUrl ? (
-											<a
-												href={ownerUrl}
-												className="font-medium text-cinemata-strait-blue-600p hover:underline dark:text-cinemata-sunset-horizon-300"
-											>
-												{ownerName}
-											</a>
-										) : (
-											<span className="font-medium">{ownerName}</span>
-										)}
-										{' via their About page to request access.'}
-									</>
-								) : (
-									'Enter the password to view this media.'
-								)}
-							</p>
-						</div>
+		<div className="password-dialog-card">
+			<img src={cornerDecoration} alt="" aria-hidden="true" className="password-dialog-decoration" />
 
-						{error ? (
-							<div
-								role="alert"
-								className="body-body-14-regular mt-6 rounded-ds-4 border border-cinemata-red-300 bg-cinemata-red-50 px-4 py-3 text-cinemata-red-700p dark:border-cinemata-red-500/30 dark:bg-cinemata-red-900/20 dark:text-cinemata-red-400"
-							>
-								{error}
-							</div>
-						) : null}
+			<form onSubmit={handleSubmit} className="password-dialog-content">
+				<span className="material-icons password-dialog-icon">lock</span>
 
-						<div className="mt-6">
-							<TextField
-								ref={inputRef}
-								type="password"
-								label="Enter Password"
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								invalid={!!error}
-								disabled={submitting}
-								className="w-full"
-							/>
-						</div>
+				<h2 className="password-dialog-title">Enter Password to Access.</h2>
 
-						<div className="mt-8 flex items-center justify-end gap-3">
-							<Dialog.Close>
-								<Button variant="primary-outline" type="button">
-									Cancel
-								</Button>
-							</Dialog.Close>
-							<Button variant="secondary" type="submit" disabled={submitting || !password}>
-								{submitting ? 'Verifying...' : 'UNLOCK'}
-							</Button>
-						</div>
-					</form>
+				<p className="password-dialog-subtitle">
+					{ownerName ? (
+						<>
+							{'If you don’t have access, please reach out to '}
+							{ownerUrl ? (
+								<a href={ownerUrl} className="password-dialog-owner-link">
+									{ownerName}
+								</a>
+							) : (
+								<strong>{ownerName}</strong>
+							)}
+							{' via their About page to request access.'}
+						</>
+					) : (
+						'Enter the password to view this media.'
+					)}
+				</p>
+
+				{error ? (
+					<div role="alert" className="password-dialog-error">
+						{error}
+					</div>
+				) : null}
+
+				<div className="password-dialog-form-row">
+					<input
+						ref={inputRef}
+						type="password"
+						value={password}
+						onChange={(e) => setPassword(e.target.value)}
+						placeholder="Enter Password"
+						disabled={submitting}
+						className="password-dialog-input"
+					/>
+					<button type="submit" disabled={submitting || !password} className="password-dialog-unlock">
+						{submitting ? 'Verifying...' : 'UNLOCK'}
+					</button>
 				</div>
-			</DialogContent>
-		</Dialog>
+			</form>
+		</div>
 	);
 }

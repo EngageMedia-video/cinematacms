@@ -47,3 +47,4 @@ frontend/.env
 # Storybook generated artifacts
 frontend/storybook-static/
 frontend/debug-storybook.log
+screenshots/

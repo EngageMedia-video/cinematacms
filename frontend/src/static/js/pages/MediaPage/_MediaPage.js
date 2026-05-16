@@ -31,7 +31,6 @@ export class _MediaPage extends Page {
 			viewerNestedClassname: 'viewer-section-nested',
 			pagePlaylistLoaded: false,
 			needsPassword: false,
-			passwordDialogOpen: false,
 		};
 
 		this.onWindowResize = this.onWindowResize.bind(this);
@@ -76,13 +75,13 @@ export class _MediaPage extends Page {
 	}
 
 	onNeedsPassword() {
-		this.setState({ needsPassword: true, passwordDialogOpen: true });
+		this.setState({ needsPassword: true });
 	}
 
 	onPasswordSuccess(token) {
 		MediaCMS.access_token = token;
 		MediaCMS.media_restricted = false;
-		this.setState({ needsPassword: false, passwordDialogOpen: false });
+		this.setState({ needsPassword: false });
 		MediaPageActions.loadMediaData();
 	}
 
@@ -91,21 +90,15 @@ export class _MediaPage extends Page {
 			<div className={this.state.viewerClassname}>
 				<div className="viewer-container" key="viewer-container">
 					<div className="restricted-media-placeholder">
-						<i className="material-icons">lock</i>
-						<h2>This media is password protected</h2>
-						<p>Enter the password to view this media.</p>
-						<button onClick={() => this.setState({ passwordDialogOpen: true })}>Enter Password</button>
+						<div className="restricted-media-bg" />
+						<PasswordDialog
+							friendlyToken={MediaCMS.media_friendly_token || MediaCMS.mediaId}
+							ownerName={MediaCMS.media_owner_name}
+							ownerUrl={MediaCMS.media_owner_url}
+							onSuccess={this.onPasswordSuccess}
+						/>
 					</div>
 				</div>
-				<PasswordDialog
-					open={this.state.passwordDialogOpen}
-					onOpenChange={(open) => this.setState({ passwordDialogOpen: open })}
-					friendlyToken={MediaCMS.media_friendly_token || MediaCMS.mediaId}
-					ownerName={MediaCMS.media_owner_name}
-					ownerUrl={MediaCMS.media_owner_url}
-					onSuccess={this.onPasswordSuccess}
-					onClose={() => this.setState({ passwordDialogOpen: false })}
-				/>
 			</div>
 		);
 	}
