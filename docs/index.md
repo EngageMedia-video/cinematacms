@@ -33,6 +33,7 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 - [🔐 Permission System](admin-guides/permission_system.md)
 - [📊 User Roles Permission Matrix](admin-guides/cinematacms-roles-permission-matrix.md)
 - [🗣️ Language Setup and Configuration](admin-guides/languages.md)
+- [🚩 Feature Flags Management](features/feature_flags.md)
 
 ## 🎨 Customization
 
@@ -90,6 +91,7 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 - [📱 Mobile Interface](features/mobile_interface.md)
 - [♿ Accessibility & Keyboard Shortcuts](features/Cinemata_Accessibility_Keyboard_Shortcuts.md)
 - [🎙️ Automatic Transcription](features/automatic_transcription.md)
+- [🚩 Feature Flags](features/feature_flags.md)
 
 ---
 

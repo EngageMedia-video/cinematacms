@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "django_recaptcha",
     "corsheaders",
     "maintenance_mode",
+    "waffle",
 ]
 
 MIDDLEWARE = [
@@ -90,6 +91,7 @@ MIDDLEWARE = [
     "users.middleware.AdminMFAMiddleware",
     "cms.middleware.MaintenanceTimingMiddleware",  # Track maintenance mode timing
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
+    "waffle.middleware.WaffleMiddleware",
 ]
 
 ROOT_URLCONF = "cms.urls"
@@ -495,17 +497,16 @@ FILE_STORAGE = "django.core.files.storage.DefaultStorage"
 # valid options: content, author
 RELATED_MEDIA_STRATEGY = "content"
 
-# These are passed on every request
-LOAD_FROM_CDN = False  # if set to True will fetch external content from CDNs
-LOGIN_ALLOWED = True  # whether the login button appears
-REGISTER_ALLOWED = True  # whether the register button appears
-UPLOAD_MEDIA_ALLOWED = True  # whether the upload media button appears
-CAN_LIKE_MEDIA = True  # whether the like media appears
-CAN_DISLIKE_MEDIA = True  # whether the dislike media appears
-CAN_REPORT_MEDIA = True  # whether the report media appears
-CAN_SHARE_MEDIA = True  # whether the share media appears
-
-# experimental functionality for user ratings
+# DEPRECATED: These flags are migrated to waffle switches (managed via Django admin).
+# These settings are no longer read. Remove after confirming waffle switches work in production.
+LOAD_FROM_CDN = False
+LOGIN_ALLOWED = True
+REGISTER_ALLOWED = True
+UPLOAD_MEDIA_ALLOWED = True
+CAN_LIKE_MEDIA = True
+CAN_DISLIKE_MEDIA = True
+CAN_REPORT_MEDIA = True
+CAN_SHARE_MEDIA = True
 ALLOW_RATINGS = False
 ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY = False
 
@@ -592,7 +593,8 @@ TINYMCE_DEFAULT_CONFIG = {
 }
 
 # settings that are related with UX/appearance
-# whether a featured item appears enlarged with player on index page
+# DEPRECATED: Migrated to waffle switch "video_player_featured_video_on_index_page".
+# This setting is no longer read. Remove after confirming waffle switch works in production.
 VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
 
 # Video UI/UX settings
@@ -602,6 +604,9 @@ USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
 UI_VARIANT_DEFAULT = "revamp"
 UI_VARIANT_ALLOWED = ["legacy", "revamp"]
 UI_VARIANT_REVAMP_PAGES = []  # Add page keys here as they are migrated, e.g. ["home"]
+
+# django-waffle feature flag settings
+WAFFLE_CREATE_MISSING_SWITCHES = True
 
 # allow option to override the default admin url
 DJANGO_ADMIN_URL = "admin/"
