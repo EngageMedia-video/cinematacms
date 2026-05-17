@@ -1,3 +1,5 @@
+import { Text } from '../../shared/components/Text';
+
 function formatDuration(seconds) {
 	if (!seconds && seconds !== 0) return '';
 	const total = Math.max(0, Math.round(Number(seconds) || 0));
@@ -28,8 +30,14 @@ export function VideoResultRow({ item, onSelect }) {
 				) : null}
 			</span>
 			<span className="flex min-w-0 flex-1 flex-col gap-0.5">
-				<span className="body-body-14-medium line-clamp-2 text-cinemata-strait-blue-50">{title}</span>
-				{author ? <span className="body-body-12-regular text-cinemata-pacific-deep-300">{author}</span> : null}
+				<Text variant="body-14" as="span" className="m-0 line-clamp-2 text-cinemata-strait-blue-50">
+					{title}
+				</Text>
+				{author ? (
+					<Text variant="body-12" as="span" className="m-0 text-cinemata-pacific-deep-300">
+						{author}
+					</Text>
+				) : null}
 			</span>
 		</a>
 	);

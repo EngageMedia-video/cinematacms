@@ -57,10 +57,14 @@ class PlaylistListSearchTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("My Favourite Films", self._titles(response))
 
-    def test_blank_search_returns_all_playlists(self):
-        response = self.client.get("/api/v1/playlists?search=")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["count"], 4)
+    def test_blank_search_is_a_no_op(self):
+        # MIRROR='default' means the test DB shares rows with the dev DB, so
+        # the absolute count varies. Verify blank ?search= behaves identically
+        # to no ?search= param (i.e. the filter is skipped, not applied with
+        # an empty string).
+        with_blank = self.client.get("/api/v1/playlists?search=").json()["count"]
+        without = self.client.get("/api/v1/playlists").json()["count"]
+        self.assertEqual(with_blank, without)
 
     def test_search_composes_with_author_filter(self):
         response = self.client.get("/api/v1/playlists?author=playlist_author&search=favourite")
@@ -74,3 +78,20 @@ class PlaylistListSearchTests(TestCase):
         response = self.client.get("/api/v1/playlists?search=nonexistentquery")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["count"], 0)
+
+    def test_page_size_caps_result_rows_but_count_reflects_total(self):
+        response = self.client.get("/api/v1/playlists?search=favourite&page_size=2")
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        # Three playlists match 'favourite' in setUp; page_size=2 returns the
+        # first two rows but count still reports the full match total so the
+        # client can show a "Show more" affordance.
+        self.assertEqual(len(body["results"]), 2)
+        self.assertEqual(body["count"], 3)
+
+    def test_page_size_above_cap_is_clamped(self):
+        # SmallPreviewPagination.max_page_size is 10, so an oversized request
+        # must not return more than the cap (no DoS via a 1000-row request).
+        response = self.client.get("/api/v1/playlists?search=&page_size=999")
+        self.assertEqual(response.status_code, 200)
+        self.assertLessEqual(len(response.json()["results"]), 10)

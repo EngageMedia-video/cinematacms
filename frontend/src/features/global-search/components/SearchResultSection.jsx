@@ -1,16 +1,16 @@
+import { Text } from '../../shared/components/Text';
+
 export function SearchResultSection({
 	title,
 	items,
 	hasMore,
-	query,
+	showMoreHref,
 	renderItem,
 	onSelect,
 	isError = false,
 	withDivider = true,
 }) {
 	if (!isError && !items.length) return null;
-
-	const showMoreHref = `/search?q=${encodeURIComponent(query)}`;
 
 	return (
 		<section
@@ -19,13 +19,17 @@ export function SearchResultSection({
 			}
 			aria-label={title}
 		>
-			<h3 className="body-body-12-medium px-2 pb-2 text-[11px] uppercase tracking-[0.08em] text-cinemata-pacific-deep-300">
+			<Text
+				as="h3"
+				variant="body-12-medium"
+				className="m-0 px-2 pb-2 text-[11px] uppercase tracking-[0.08em] text-cinemata-pacific-deep-300"
+			>
 				{title}
-			</h3>
+			</Text>
 			{isError ? (
-				<p role="status" className="body-body-12-regular px-2 py-1 text-cinemata-pacific-deep-300">
+				<Text role="status" variant="body-12" as="p" className="m-0 px-2 py-1 text-cinemata-pacific-deep-300">
 					Couldn&apos;t load {title.toLowerCase()}.
-				</p>
+				</Text>
 			) : (
 				<ul className="m-0 flex list-none flex-col gap-1 p-0">
 					{items.map((item, idx) => (
@@ -35,7 +39,7 @@ export function SearchResultSection({
 					))}
 				</ul>
 			)}
-			{!isError && hasMore ? (
+			{!isError && hasMore && showMoreHref ? (
 				<a
 					href={showMoreHref}
 					onClick={onSelect}

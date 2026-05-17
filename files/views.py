@@ -35,7 +35,7 @@ from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
 from actions.models import USER_MEDIA_ACTIONS, MediaAction
-from cms.custom_pagination import FastPaginationWithoutCount
+from cms.custom_pagination import FastPaginationWithoutCount, SmallPreviewPagination
 from cms.permissions import (
     IsAuthorizedToAdd,
     IsUserOrEditor,
@@ -1781,8 +1781,12 @@ class MediaSearch(APIView):
             if category or tag:
                 pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
             else:
-                # pagination_class = FastPaginationWithoutCount
-                pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+                # SmallPreviewPagination is a strict superset of the default
+                # PageNumberPagination: identical default page_size (50) but
+                # additionally honours ?page_size= up to 10 so preview callers
+                # (e.g. the global-search dropdown) can avoid pulling the full
+                # default page and discarding most of it client-side.
+                pagination_class = SmallPreviewPagination
             paginator = pagination_class()
             page = paginator.paginate_queryset(media, request)
             serializer = MediaSearchSerializer(page, many=True, context={"request": request})
@@ -1822,8 +1826,9 @@ class PlaylistList(APIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser, FileUploadParser)
 
     def get(self, request, format=None):
-        pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
-        paginator = pagination_class()
+        # SmallPreviewPagination: default page_size remains 50; ?page_size=
+        # up to 10 is honoured for preview callers (e.g. global-search).
+        paginator = SmallPreviewPagination()
         playlists = Playlist.objects.filter().prefetch_related("user")
 
         if "author" in self.request.query_params:

@@ -1,4 +1,5 @@
 import { Icon } from '../../shared/components/Icon';
+import { Text } from '../../shared/components/Text';
 
 export function LoadingState() {
 	return (
@@ -10,7 +11,9 @@ export function LoadingState() {
 			<span className="inline-flex h-5 w-5 animate-spin items-center justify-center">
 				<Icon name="loading" size={20} decorative />
 			</span>
-			<span className="body-body-12-regular">Searching...</span>
+			<Text variant="body-12" as="span" className="m-0">
+				Searching...
+			</Text>
 		</div>
 	);
 }

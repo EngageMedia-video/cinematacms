@@ -34,7 +34,10 @@ export function useGlobalSearch(query) {
 		queryKey: ['global-search', 'videos', trimmed],
 		enabled,
 		queryFn: async ({ signal }) => {
-			const data = await fetchJson(buildUrl('/api/v1/search', { q: trimmed, media_type: 'video' }), signal);
+			const data = await fetchJson(
+				buildUrl('/api/v1/search', { q: trimmed, media_type: 'video', page_size: GLOBAL_SEARCH_LIMIT }),
+				signal
+			);
 			return normalizeListPayload(data);
 		},
 	});
@@ -43,7 +46,10 @@ export function useGlobalSearch(query) {
 		queryKey: ['global-search', 'playlists', trimmed],
 		enabled,
 		queryFn: async ({ signal }) => {
-			const data = await fetchJson(buildUrl('/api/v1/playlists', { search: trimmed }), signal);
+			const data = await fetchJson(
+				buildUrl('/api/v1/playlists', { search: trimmed, page_size: GLOBAL_SEARCH_LIMIT }),
+				signal
+			);
 			return normalizeListPayload(data);
 		},
 	});
@@ -52,7 +58,10 @@ export function useGlobalSearch(query) {
 		queryKey: ['global-search', 'members', trimmed],
 		enabled,
 		queryFn: async ({ signal }) => {
-			const data = await fetchJson(buildUrl('/api/v1/users', { search: trimmed }), signal);
+			const data = await fetchJson(
+				buildUrl('/api/v1/users', { search: trimmed, page_size: GLOBAL_SEARCH_LIMIT }),
+				signal
+			);
 			return normalizeListPayload(data);
 		},
 	});

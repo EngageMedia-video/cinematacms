@@ -1,4 +1,5 @@
 import { Avatar } from '../../shared/components/Avatar/Avatar';
+import { Text } from '../../shared/components/Text';
 
 export function MemberResultRow({ item, onSelect }) {
 	const name = item.name || item.username || 'Member';
@@ -15,9 +16,13 @@ export function MemberResultRow({ item, onSelect }) {
 		>
 			<Avatar name={name} src={item.thumbnail_url || ''} size="large" />
 			<span className="flex min-w-0 flex-1 flex-col gap-0.5">
-				<span className="body-body-14-medium truncate text-cinemata-strait-blue-50">{name}</span>
+				<Text variant="body-14" as="span" className="m-0 truncate text-cinemata-strait-blue-50">
+					{name}
+				</Text>
 				{meta ? (
-					<span className="body-body-12-regular truncate text-cinemata-pacific-deep-300">{meta}</span>
+					<Text variant="body-12" as="span" className="m-0 truncate text-cinemata-pacific-deep-300">
+						{meta}
+					</Text>
 				) : null}
 			</span>
 		</a>
