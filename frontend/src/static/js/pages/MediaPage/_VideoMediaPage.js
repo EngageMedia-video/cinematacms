@@ -9,7 +9,7 @@ import * as MediaPageActions from './actions.js';
 import ViewerInfoVideo from './includes/ViewerInfoVideo';
 import ViewerError from './includes/ViewerError';
 import ViewerSidebar from './includes/ViewerSidebar';
-import { PasswordDialog } from '../../../../features/shared/components/PasswordDialog';
+import { RestrictedMediaGate } from '../../../../features/shared/components/RestrictedMediaGate';
 
 import VideoViewerStore from '../../components/MediaViewer/VideoViewer/store.js'; // @note: Is usable only in case of video media, but is included in every media page code.
 
@@ -30,7 +30,6 @@ export class _VideoMediaPage extends Page {
 			pagePlaylistLoaded: false,
 			pagePlaylistData: MediaPageStore.get('playlist-data'),
 			needsPassword: false,
-			passwordDialogOpen: false,
 		};
 
 		this.onWindowResize = this.onWindowResize.bind(this);
@@ -94,13 +93,13 @@ export class _VideoMediaPage extends Page {
 	}
 
 	onNeedsPassword() {
-		this.setState({ needsPassword: true, passwordDialogOpen: true });
+		this.setState({ needsPassword: true });
 	}
 
 	onPasswordSuccess(token) {
 		MediaCMS.access_token = token;
 		MediaCMS.media_restricted = false;
-		this.setState({ needsPassword: false, passwordDialogOpen: false });
+		this.setState({ needsPassword: false });
 		MediaPageActions.loadMediaData();
 	}
 
@@ -109,26 +108,7 @@ export class _VideoMediaPage extends Page {
 		const viewerNestedClassname = 'viewer-section-nested' + (this.state.theaterMode ? ' viewer-section' : '');
 
 		if (this.state.needsPassword) {
-			return (
-				<div className={viewerClassname}>
-					<div className="viewer-container" key="viewer-container">
-						<div className="restricted-media-poster">
-							{MediaCMS.media_poster_url ? (
-								<img src={MediaCMS.media_poster_url} alt="" className="restricted-media-poster-img" />
-							) : null}
-							<div className="restricted-media-poster-overlay" />
-						</div>
-					</div>
-					<PasswordDialog
-						open={this.state.passwordDialogOpen}
-						onOpenChange={(open) => this.setState({ passwordDialogOpen: open })}
-						friendlyToken={MediaCMS.media_friendly_token || MediaCMS.mediaId}
-						ownerName={MediaCMS.media_owner_name}
-						ownerUrl={MediaCMS.media_owner_url}
-						onSuccess={this.onPasswordSuccess}
-					/>
-				</div>
-			);
+			return <RestrictedMediaGate viewerClassname={viewerClassname} onPasswordSuccess={this.onPasswordSuccess} />;
 		}
 
 		return this.state.mediaLoadFailed ? (

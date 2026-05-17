@@ -10,7 +10,7 @@ import * as MediaPageActions from './actions.js';
 import ViewerError from './includes/ViewerError';
 import ViewerInfo from './includes/ViewerInfo';
 import ViewerSidebar from './includes/ViewerSidebar';
-import { PasswordDialog } from '../../../../features/shared/components/PasswordDialog';
+import { RestrictedMediaGate } from '../../../../features/shared/components/RestrictedMediaGate';
 
 import '../styles/MediaPage.scss';
 
@@ -31,7 +31,6 @@ export class _MediaPage extends Page {
 			viewerNestedClassname: 'viewer-section-nested',
 			pagePlaylistLoaded: false,
 			needsPassword: false,
-			passwordDialogOpen: false,
 		};
 
 		this.onWindowResize = this.onWindowResize.bind(this);
@@ -76,36 +75,22 @@ export class _MediaPage extends Page {
 	}
 
 	onNeedsPassword() {
-		this.setState({ needsPassword: true, passwordDialogOpen: true });
+		this.setState({ needsPassword: true });
 	}
 
 	onPasswordSuccess(token) {
 		MediaCMS.access_token = token;
 		MediaCMS.media_restricted = false;
-		this.setState({ needsPassword: false, passwordDialogOpen: false });
+		this.setState({ needsPassword: false });
 		MediaPageActions.loadMediaData();
 	}
 
 	restrictedContent() {
 		return (
-			<div className={this.state.viewerClassname}>
-				<div className="viewer-container" key="viewer-container">
-					<div className="restricted-media-poster">
-						{MediaCMS.media_poster_url ? (
-							<img src={MediaCMS.media_poster_url} alt="" className="restricted-media-poster-img" />
-						) : null}
-						<div className="restricted-media-poster-overlay" />
-					</div>
-				</div>
-				<PasswordDialog
-					open={this.state.passwordDialogOpen}
-					onOpenChange={(open) => this.setState({ passwordDialogOpen: open })}
-					friendlyToken={MediaCMS.media_friendly_token || MediaCMS.mediaId}
-					ownerName={MediaCMS.media_owner_name}
-					ownerUrl={MediaCMS.media_owner_url}
-					onSuccess={this.onPasswordSuccess}
-				/>
-			</div>
+			<RestrictedMediaGate
+				viewerClassname={this.state.viewerClassname}
+				onPasswordSuccess={this.onPasswordSuccess}
+			/>
 		);
 	}
 

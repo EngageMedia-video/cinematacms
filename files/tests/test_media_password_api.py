@@ -67,7 +67,6 @@ class MediaPasswordAPITest(TestCase):
         session = self.client.session
         self.assertIn(f"media_token_{self.media.friendly_token}", session)
 
-    @override_settings(CACHES={"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}})
     def test_rate_limit_returns_429(self):
         max_attempts = _get_brute_force_max_attempts()
         for _ in range(max_attempts):
