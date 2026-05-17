@@ -30,6 +30,7 @@ export class _VideoMediaPage extends Page {
 			pagePlaylistLoaded: false,
 			pagePlaylistData: MediaPageStore.get('playlist-data'),
 			needsPassword: false,
+			passwordDialogOpen: false,
 		};
 
 		this.onWindowResize = this.onWindowResize.bind(this);
@@ -93,13 +94,13 @@ export class _VideoMediaPage extends Page {
 	}
 
 	onNeedsPassword() {
-		this.setState({ needsPassword: true });
+		this.setState({ needsPassword: true, passwordDialogOpen: true });
 	}
 
 	onPasswordSuccess(token) {
 		MediaCMS.access_token = token;
 		MediaCMS.media_restricted = false;
-		this.setState({ needsPassword: false });
+		this.setState({ needsPassword: false, passwordDialogOpen: false });
 		MediaPageActions.loadMediaData();
 	}
 
@@ -119,8 +120,8 @@ export class _VideoMediaPage extends Page {
 						</div>
 					</div>
 					<PasswordDialog
-						open={true}
-						onOpenChange={() => {}}
+						open={this.state.passwordDialogOpen}
+						onOpenChange={(open) => this.setState({ passwordDialogOpen: open })}
 						friendlyToken={MediaCMS.media_friendly_token || MediaCMS.mediaId}
 						ownerName={MediaCMS.media_owner_name}
 						ownerUrl={MediaCMS.media_owner_url}
