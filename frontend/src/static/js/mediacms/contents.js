@@ -34,13 +34,13 @@ function sidebarContents(contents) {
 			items: [],
 		},
 		belowNavMenu: '',
-		belowNavMenuNew: '',
 		belowThemeSwitcher: '',
 		footer: '',
 		footerNew: {
 			logo: null,
 			links: [],
 		},
+		socialLinks: [],
 	};
 
 	if (undefined !== contents) {
@@ -162,12 +162,29 @@ function sidebarContents(contents) {
 			}
 		}
 
-		if ('string' === typeof contents.belowNavMenu) {
-			ret.belowNavMenu = contents.belowNavMenu.trim();
+		if (undefined !== contents.socialLinks) {
+			let i = 0;
+			while (i < contents.socialLinks.length) {
+				if (
+					'string' === typeof contents.socialLinks[i].link &&
+					'string' === typeof contents.socialLinks[i].icon &&
+					'string' === typeof contents.socialLinks[i].label
+				) {
+					ret.socialLinks.push({
+						link: contents.socialLinks[i].link,
+						icon: contents.socialLinks[i].icon,
+						label: contents.socialLinks[i].label,
+						target: contents.socialLinks[i].target,
+						rel: contents.socialLinks[i].rel,
+					});
+				}
+
+				i += 1;
+			}
 		}
 
-		if ('string' === typeof contents.belowNavMenuNew) {
-			ret.belowNavMenuNew = contents.belowNavMenuNew.trim();
+		if ('string' === typeof contents.belowNavMenu) {
+			ret.belowNavMenu = contents.belowNavMenu.trim();
 		}
 
 		if ('string' === typeof contents.belowThemeSwitcher) {

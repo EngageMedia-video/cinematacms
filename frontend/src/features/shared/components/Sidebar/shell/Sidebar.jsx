@@ -1,7 +1,6 @@
 /* eslint-disable no-restricted-imports */
 import React, { useState, useEffect } from 'react';
 
-import { SidebarBelowNavigationMenu } from '../content/SidebarBelowNavigationMenu';
 import { SidebarNavigationMenu } from '../navigation/SidebarNavigationMenu';
 import { SidebarThemeSwitcher } from '../theme/SidebarThemeSwitcher';
 
@@ -34,6 +33,26 @@ function SidebarRippleDecoration({ className }) {
 	);
 }
 
+function SidebarSocialLink({ link, icon, label, target = '_blank', rel = 'noreferrer' }) {
+	return (
+		<Link
+			href={link}
+			target={target}
+			rel={rel}
+			aria-label={label}
+			title={label}
+			className={cn(
+				'inline-flex size-9 items-center justify-center rounded-full border no-underline transition-colors duration-200',
+				'border-cinemata-strait-blue-300 text-cinemata-strait-blue-400 hover:border-cinemata-strait-blue-500 hover:text-cinemata-strait-blue-600',
+				'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinemata-strait-blue-500',
+				'dark:border-cinemata-strait-blue-300/40 dark:text-cinemata-strait-blue-300 dark:hover:border-cinemata-strait-blue-300 dark:hover:text-cinemata-white'
+			)}
+		>
+			<Icon name={icon} size={18} decorative className="[&_path]:fill-current" />
+		</Link>
+	);
+}
+
 export function Sidebar() {
 	const [isVisible, setIsVisible] = useState(LayoutStore.get('visible-sidebar'));
 	const [isRendered, setIsRendered] = useState(
@@ -44,6 +63,7 @@ export function Sidebar() {
 	const footerNew = sidebarContents.footerNew || {};
 	const footerLogo = footerNew.logo;
 	const footerLinks = footerNew.links || [];
+	const socialLinks = sidebarContents.socialLinks || [];
 	const isMobileViewport = window.innerWidth < 768;
 	const shouldRenderSidebarContent = isVisible || isRendered;
 
@@ -86,6 +106,7 @@ export function Sidebar() {
 							</span>
 						</a>
 					) : null}
+
 					{footerLinks.map((item) => (
 						<Link
 							key={item.link}
@@ -145,8 +166,14 @@ export function Sidebar() {
 
 					<div className="relative z-10 space-y-4">
 						{shouldRenderSidebarContent ? <SidebarNavigationMenu /> : null}
-						{shouldRenderSidebarContent ? (
-							<SidebarBelowNavigationMenu className="px-6 pb-5 text-cinemata-pacific-deep-300" />
+						{shouldRenderSidebarContent && socialLinks.length ? (
+							<ul className="relative m-0 flex w-full list-none items-center justify-center gap-8 border-y border-sidebar-nav-border px-8 py-4">
+								{socialLinks.map((item) => (
+									<li key={item.link}>
+										<SidebarSocialLink {...item} />
+									</li>
+								))}
+							</ul>
 						) : null}
 						{isMobileViewport ? null : sidebarFooterContent}
 					</div>
