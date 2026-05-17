@@ -44,7 +44,7 @@ function SidebarSocialLink({ link, icon, label, target = '_blank', rel = 'norefe
 			className={cn(
 				'inline-flex size-9 items-center justify-center rounded-full border no-underline transition-colors duration-200',
 				'border-cinemata-strait-blue-300 text-cinemata-strait-blue-400 hover:border-cinemata-strait-blue-500 hover:text-cinemata-strait-blue-600',
-				'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinemata-strait-blue-500',
+				'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinemata-strait-blue-500',
 				'dark:border-cinemata-strait-blue-300/40 dark:text-cinemata-strait-blue-300 dark:hover:border-cinemata-strait-blue-300 dark:hover:text-cinemata-white'
 			)}
 		>
