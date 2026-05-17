@@ -1778,15 +1778,12 @@ class MediaSearch(APIView):
                 "category",
                 "topics",
             )
-            if category or tag:
-                pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
-            else:
-                # SmallPreviewPagination is a strict superset of the default
-                # PageNumberPagination: identical default page_size (50) but
-                # additionally honours ?page_size= up to 10 so preview callers
-                # (e.g. the global-search dropdown) can avoid pulling the full
-                # default page and discarding most of it client-side.
-                pagination_class = SmallPreviewPagination
+            # SmallPreviewPagination (else branch) is a strict superset of
+            # the default PageNumberPagination: identical default page_size
+            # (50) but additionally honours ?page_size= up to 10 so preview
+            # callers (e.g. the global-search dropdown) can avoid pulling
+            # the full default page and discarding most of it client-side.
+            pagination_class = api_settings.DEFAULT_PAGINATION_CLASS if category or tag else SmallPreviewPagination
             paginator = pagination_class()
             page = paginator.paginate_queryset(media, request)
             serializer = MediaSearchSerializer(page, many=True, context={"request": request})
