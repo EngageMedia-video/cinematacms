@@ -103,21 +103,17 @@ export function MediaItemStateBadge(props) {
 	);
 }
 
-const CATEGORY_COLORS = {
-	animation: 'var(--cinemata-amber-600p)',
-	documentary: 'var(--cinemata-pacific-deep-600p)',
-	experimental: 'var(--cinemata-coral-reef-700)',
-	explainer: 'var(--cinemata-sandy-shore-700)',
-	fiction: 'var(--cinemata-strait-blue-600p)',
-	hybrid: 'var(--cinemata-neutral-600)',
-	'music-video': 'var(--cinemata-red-700p)',
-	'news-reel': 'var(--cinemata-green-700p)',
-	'participatory-video': 'var(--cinemata-sunset-horizon-600)',
-	podcast: 'var(--cinemata-coral-reef-400p)',
-	trailers: 'var(--cinemata-amber-700)',
-};
-
 const DEFAULT_CATEGORY_COLOR = 'var(--cinemata-neutral-600)';
+
+function resolveCategoryColor(color) {
+	if (!color) {
+		return DEFAULT_CATEGORY_COLOR;
+	}
+	if (color.startsWith('#') || color.startsWith('var(') || color.startsWith('rgb') || color.startsWith('hsl')) {
+		return color;
+	}
+	return `var(--${color})`;
+}
 
 export function MediaCategoryBadge(props) {
 	if (!props.categories || !props.categories.length) {
@@ -125,10 +121,13 @@ export function MediaCategoryBadge(props) {
 	}
 
 	const category = props.categories[0];
-	const bgColor = CATEGORY_COLORS[category.slug] || DEFAULT_CATEGORY_COLOR;
 
 	return (
-		<span className="item-category-badge" title={category.title} style={{ backgroundColor: bgColor }}>
+		<span
+			className="item-category-badge"
+			title={category.title}
+			style={{ backgroundColor: resolveCategoryColor(category.color) }}
+		>
 			<span className="badge-label">{category.title}</span>
 		</span>
 	);

@@ -878,7 +878,7 @@ class Media(models.Model):
     def categories_info(self):
         ret = []
         for cat in self.category.all():
-            ret.append({"title": cat.title, "slug": cat.slug, "url": cat.get_absolute_url()})
+            ret.append({"title": cat.title, "slug": cat.slug, "url": cat.get_absolute_url(), "color": cat.color})
         return ret
 
     @property
@@ -1135,6 +1135,12 @@ class Category(models.Model):
     add_date = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=100, unique=True, db_index=True)
     slug = models.SlugField(max_length=100, unique=True, blank=True)
+    color = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        help_text="Badge color as a design token (e.g. cinemata-pacific-deep-600p) or hex (#1a3f61)",
+    )
     description = models.TextField(blank=True)
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, blank=True, null=True)
     is_global = models.BooleanField(default=False)
