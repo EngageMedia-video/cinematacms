@@ -20,14 +20,19 @@ const VARIANT_MAP = {
 	'h6-regular': ['heading-h6-20-regular', 'h6'],
 	'h6-bold': ['heading-h6-20-bold', 'h6'],
 	// Body — default element is <p>
+	'body-18': ['body-body-18-regular', 'p'],
+	'body-18-medium': ['body-body-18-medium', 'p'],
+	'body-18-bold': ['body-body-18-bold', 'p'],
 	'body-16': ['body-body-16-regular', 'p'],
 	'body-16-medium': ['body-body-16-medium', 'p'],
+	'body-16-bold': ['body-body-16-bold', 'p'],
 	'body-14': ['body-body-14-regular', 'p'],
 	'body-14-bold': ['body-body-14-bold', 'p'],
 	'body-12': ['body-body-12-regular', 'p'],
 	'body-12-medium': ['body-body-12-medium', 'p'],
 	'body-12-bold': ['body-body-12-bold', 'p'],
 	'caption-10': ['caption-caption-10-regular', 'p'],
+	'caption-10-semibold': ['caption-caption-10-semibold', 'p'],
 };
 
 // Semantic color presets — one class applied at a time, no cascade conflict.

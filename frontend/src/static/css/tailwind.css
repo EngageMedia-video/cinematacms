@@ -532,3 +532,57 @@
 	--color-cinemata-amber-900: var(--cinemata-amber-900);
 	--color-cinemata-amber-950: var(--cinemata-amber-950);
 }
+
+/*
+ * Topbar cascade-defence block.
+ *
+ * --header-height: legacy _extra.css already sets the desktop value (90px)
+ * on `body` with !important; below Tailwind's `sm:` 640px breakpoint the
+ * two-row mobile layout needs 124px. The rule is scoped to pages that
+ * actually mount the new topbar via the `data-modern-topbar` body attribute
+ * set in Topbar.jsx, so legacy/embed pages keep their existing header height.
+ *
+ * .top-message-body offset: the legacy rule in _extra.css only targets
+ * .page-header. The new topbar uses header[data-topbar] and needs the same
+ * offset so an active top message doesn't cover its first row.
+ *
+ * header[data-topbar] resets: unlayered legacy selectors still attack form
+ * controls and links inside the topbar (border/outline/box-shadow/font on
+ * <button> + <input>, text-decoration on <a>). The reset strips them and
+ * the :focus-visible rule restores an accessible focus ring (WCAG 2.4.7).
+ */
+@media (max-width: 639px) {
+	html body[data-modern-topbar] {
+		--header-height: 124px !important;
+	}
+}
+
+.top-message-body header[data-topbar] {
+	top: var(--top-message-height, 43px);
+}
+
+header[data-topbar] button,
+header[data-topbar] input[type='search'],
+header[data-topbar] input[type='text'] {
+	border: 0;
+	outline: 0;
+	box-shadow: none;
+	font: inherit;
+	letter-spacing: inherit;
+}
+
+header[data-topbar] button:not(:disabled) {
+	cursor: pointer;
+}
+
+header[data-topbar] button:focus-visible,
+header[data-topbar] a:focus-visible,
+header[data-topbar] input:focus-visible {
+	outline: 2px solid #ed7c30;
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
+header[data-topbar] a {
+	text-decoration: none;
+}

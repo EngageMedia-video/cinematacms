@@ -48,6 +48,17 @@ describe('Text', () => {
 			expect(screen.getByText('Small')).toHaveClass('body-body-12-regular');
 		});
 
+		it.each([
+			['body-18', 'body-body-18-regular'],
+			['body-18-medium', 'body-body-18-medium'],
+			['body-18-bold', 'body-body-18-bold'],
+			['body-16-bold', 'body-body-16-bold'],
+			['caption-10-semibold', 'caption-caption-10-semibold'],
+		])('exposes variant="%s" as %s', (variant, cssClass) => {
+			render(<Text variant={variant}>Sample</Text>);
+			expect(screen.getByText('Sample')).toHaveClass(cssClass);
+		});
+
 		it('renders as a span when as="span"', () => {
 			render(<Text as="span">Inline</Text>);
 			expect(screen.getByText('Inline').tagName).toBe('SPAN');

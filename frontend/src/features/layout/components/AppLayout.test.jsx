@@ -3,8 +3,12 @@ import { render, screen } from '@testing-library/react';
 
 import { AppLayout } from './AppLayout';
 
-vi.mock('../../../static/js/components/-NEW-/PageHeader', () => ({
-	PageHeader: () => <div data-testid="page-header" />,
+vi.mock('./TopMessageHost', () => ({
+	TopMessageHost: () => <div data-testid="top-message-host" />,
+}));
+
+vi.mock('../topbar', () => ({
+	Topbar: () => <div data-testid="topbar" />,
 }));
 
 vi.mock('../../../static/js/components/-NEW-/PageSidebar', () => ({
@@ -19,7 +23,8 @@ describe('AppLayout', () => {
 
 		render(<AppLayout ContentComponent={HomeContent} pageSlotId="page-home" />);
 
-		expect(screen.getByTestId('page-header')).toBeInTheDocument();
+		expect(screen.getByTestId('top-message-host')).toBeInTheDocument();
+		expect(screen.getByTestId('topbar')).toBeInTheDocument();
 		expect(screen.getByTestId('page-sidebar')).toBeInTheDocument();
 		expect(screen.getByText('Revamp home content')).toBeInTheDocument();
 		expect(document.getElementById('page-home')).toContainElement(screen.getByText('Revamp home content'));
