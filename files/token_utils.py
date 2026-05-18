@@ -197,6 +197,36 @@ def reset_rate_limit(ip: str, friendly_token: str) -> None:
         logger.warning("Failed to reset rate limit", exc_info=True)
 
 
+# --- Shared password authentication ---
+
+
+def authenticate_restricted_media(media, password, ip):
+    """Validate password for restricted media.
+
+    Returns (token, None) on success, or (None, error_dict) on failure.
+    error_dict has keys: detail, status_code.
+    """
+    # Rate limit runs before reading password — blocked users get 429 even with empty body
+    if not check_rate_limit(ip, media.friendly_token):
+        return None, {
+            "detail": "Too many failed attempts. Please try again later.",
+            "status_code": 429,
+        }
+
+    if not password:
+        return None, {"detail": "Password is required.", "status_code": 400}
+
+    from django.contrib.auth.hashers import check_password
+
+    if check_password(password, media.password):
+        token = generate_token(media.uid_hex)
+        reset_rate_limit(ip, media.friendly_token)
+        return token, None
+    else:
+        record_failed_attempt(ip, media.friendly_token)
+        return None, {"detail": "The password is incorrect.", "status_code": 403}
+
+
 # --- HLS manifest rewriting ---
 
 

@@ -1,0 +1,1 @@
+export { RestrictedMediaGate } from './RestrictedMediaGate';

@@ -10,6 +10,7 @@ import * as MediaPageActions from './actions.js';
 import ViewerError from './includes/ViewerError';
 import ViewerInfo from './includes/ViewerInfo';
 import ViewerSidebar from './includes/ViewerSidebar';
+import { RestrictedMediaGate } from '../../../../features/shared/components/RestrictedMediaGate';
 
 import '../styles/MediaPage.scss';
 
@@ -29,16 +30,20 @@ export class _MediaPage extends Page {
 			viewerClassname: 'cf viewer-section viewer-wide',
 			viewerNestedClassname: 'viewer-section-nested',
 			pagePlaylistLoaded: false,
+			needsPassword: false,
 		};
 
 		this.onWindowResize = this.onWindowResize.bind(this);
 		this.onMediaLoad = this.onMediaLoad.bind(this);
 		this.onMediaLoadError = this.onMediaLoadError.bind(this);
 		this.onPagePlaylistLoad = this.onPagePlaylistLoad.bind(this);
+		this.onNeedsPassword = this.onNeedsPassword.bind(this);
+		this.onPasswordSuccess = this.onPasswordSuccess.bind(this);
 
 		MediaPageStore.on('loaded_media_data', this.onMediaLoad);
 		MediaPageStore.on('loaded_media_error', this.onMediaLoadError);
 		MediaPageStore.on('loaded_page_playlist_data', this.onPagePlaylistLoad);
+		MediaPageStore.on('media_needs_password', this.onNeedsPassword);
 	}
 
 	componentDidMount() {
@@ -69,6 +74,26 @@ export class _MediaPage extends Page {
 		this.setState({ mediaLoadFailed: true });
 	}
 
+	onNeedsPassword() {
+		this.setState({ needsPassword: true });
+	}
+
+	onPasswordSuccess(token) {
+		MediaCMS.access_token = token;
+		MediaCMS.media_restricted = false;
+		this.setState({ needsPassword: false });
+		MediaPageActions.loadMediaData();
+	}
+
+	restrictedContent() {
+		return (
+			<RestrictedMediaGate
+				viewerClassname={this.state.viewerClassname}
+				onPasswordSuccess={this.onPasswordSuccess}
+			/>
+		);
+	}
+
 	viewerContainerContent() {
 		return null;
 	}
@@ -78,6 +103,10 @@ export class _MediaPage extends Page {
 	}
 
 	pageContent() {
+		if (this.state.needsPassword) {
+			return this.restrictedContent();
+		}
+
 		return this.state.mediaLoadFailed ? (
 			<div className={this.state.viewerClassname}>
 				<ViewerError />

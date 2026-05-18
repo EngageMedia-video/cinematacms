@@ -608,13 +608,8 @@ def view_media(request):
             can_see_restricted_media = True
 
     if media.state == "restricted" and not can_see_restricted_media:
-        from django.contrib.auth.hashers import check_password
-
         from files.token_utils import (
-            check_rate_limit,
-            generate_token,
-            record_failed_attempt,
-            reset_rate_limit,
+            authenticate_restricted_media,
             validate_token,
         )
 
@@ -632,26 +627,23 @@ def view_media(request):
 
         # Handle password POST
         if not can_see_restricted_media and request.POST.get("password"):
-            if not check_rate_limit(ip, media.friendly_token):
-                rate_limited = True
-            else:
-                submitted_password = request.POST.get("password")
-                if check_password(submitted_password, media.password):
-                    try:
-                        token = generate_token(media_uid)
-                        request.session[f"media_token_{media.friendly_token}"] = token
-                        media_access_token = token
-                        can_see_restricted_media = True
-                    except Exception:
-                        logger.warning(
-                            "Failed to generate token for media %s",
-                            media.friendly_token,
-                        )
-                        wrong_password_provided = True
-                    reset_rate_limit(ip, media.friendly_token)
+            try:
+                token, error = authenticate_restricted_media(media, request.POST.get("password"), ip)
+            except Exception:
+                logger.exception("Failed to generate token for media %s", media.friendly_token)
+                wrong_password_provided = True
+                error = None
+                token = None
+
+            if error:
+                if error["status_code"] == 429:
+                    rate_limited = True
                 else:
                     wrong_password_provided = True
-                    record_failed_attempt(ip, media.friendly_token)
+            elif token:
+                request.session[f"media_token_{media.friendly_token}"] = token
+                media_access_token = token
+                can_see_restricted_media = True
 
     context["can_see_restricted_media"] = can_see_restricted_media
     context["wrong_password_provided"] = wrong_password_provided
@@ -1613,6 +1605,61 @@ class MediaActions(APIView):
             {"detail": "not valid action or no action specified"},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class MediaPasswordView(APIView):
+    """Validate password for restricted media and issue an access token."""
+
+    permission_classes = (permissions.AllowAny,)
+    parser_classes = (JSONParser,)
+
+    def post(self, request, friendly_token):
+        from files.token_utils import (
+            authenticate_restricted_media,
+            generate_token,
+        )
+
+        friendly_token = clean_friendly_token(friendly_token)
+        try:
+            media = Media.objects.get(friendly_token=friendly_token)
+        except Media.DoesNotExist:
+            return Response({"detail": "media not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if media.state != "restricted":
+            return Response({"detail": "media is not restricted"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Owner/editor/manager bypass — no password needed
+        if request.user.is_authenticated:
+            if request.user == media.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user):
+                try:
+                    token = generate_token(media.uid_hex)
+                    request.session[f"media_token_{media.friendly_token}"] = token
+                    return Response({"token": token}, status=status.HTTP_200_OK)
+                except Exception:
+                    logger.exception("Failed to generate token for media %s", media.friendly_token)
+                    return Response(
+                        {"detail": "Server error generating token."},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
+
+        # Authenticated non-owners share IP-keyed rate limit bucket with anonymous users
+        ip = get_client_ip(request)
+        password = request.data.get("password", "")
+
+        try:
+            token, error = authenticate_restricted_media(media, password, ip)
+        except Exception:
+            logger.exception("Failed to generate token for media %s", media.friendly_token)
+            return Response(
+                {"detail": "Server error generating token."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        if error:
+            return Response({"detail": error["detail"]}, status=error["status_code"])
+
+        request.session[f"media_token_{media.friendly_token}"] = token
+        return Response({"token": token}, status=status.HTTP_200_OK)
 
 
 class MediaSearch(APIView):
