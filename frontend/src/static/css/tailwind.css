@@ -557,6 +557,16 @@
 	}
 }
 
+/* `top` is set here rather than via Tailwind's `top-0` utility because
+ * Tailwind's utilities layer is imported with `!important` above. In a
+ * cascade with `!important`, layer ordering reverses and the layered
+ * `.top-0 { top: 0 !important }` would beat any unlayered `!important`
+ * offset rule. Setting top in plain unlayered CSS without `!important`
+ * lets the .top-message-body offset rule win normally on specificity. */
+header[data-topbar] {
+	top: 0;
+}
+
 .top-message-body header[data-topbar] {
 	top: var(--top-message-height, 43px);
 }
