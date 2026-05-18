@@ -23,7 +23,7 @@ def seed_category_colors(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("files", "0021_widen_password_field"),
+        ("files", "0022_contentsensitivity_media_content_sensitivity"),
     ]
 
     operations = [
