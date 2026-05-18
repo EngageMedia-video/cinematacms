@@ -5,6 +5,7 @@ from actions.models import MediaAction
 from .models import (
     Category,
     Comment,
+    ContentSensitivity,
     EncodeProfile,
     HomepagePopup,
     IndexPageFeatured,
@@ -278,6 +279,7 @@ class SingleMediaSerializer(serializers.ModelSerializer):
             "media_language_info",
             "license_info",
             "tags_info",
+            "content_sensitivity_info",
             "hls_info",
             "is_encrypted",
             "subtitles_info",
@@ -339,6 +341,12 @@ class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
         fields = ("title", "media_count", "thumbnail_url")
+
+
+class ContentSensitivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContentSensitivity
+        fields = ("title", "media_count")
 
 
 class MediaLanguageSerializer(serializers.ModelSerializer):

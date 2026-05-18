@@ -11,6 +11,7 @@ from users.validators import validate_internal_html
 from .models import (
     Category,
     Comment,
+    ContentSensitivity,
     EncodeProfile,
     Encoding,
     FeaturedVideo,
@@ -167,6 +168,12 @@ class LicenseAdmin(admin.ModelAdmin):
 @admin.register(Topic)
 class TopicAdmin(admin.ModelAdmin):
     pass
+
+
+@admin.register(ContentSensitivity)
+class ContentSensitivityAdmin(admin.ModelAdmin):
+    list_display = ("title", "media_count")
+    readonly_fields = ("media_count",)
 
 
 @admin.register(MediaLanguage)

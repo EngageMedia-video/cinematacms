@@ -181,6 +181,7 @@ class Media(models.Model):
     category = models.ManyToManyField("Category", blank=True)
     topics = models.ManyToManyField("Topic", blank=True)
     tags = models.ManyToManyField("Tag", blank=True, help_text="select one or more out of the existing tags")
+    content_sensitivity = models.ManyToManyField("ContentSensitivity", blank=True)
     channel = models.ForeignKey("users.Channel", on_delete=models.CASCADE, db_index=True, blank=True, null=True)
     description = models.TextField("More Information and Credits", blank=True)
     summary = models.TextField("Synopsis", help_text="Maximum 60 words")
@@ -895,6 +896,10 @@ class Media(models.Model):
         return ret
 
     @property
+    def content_sensitivity_info(self):
+        return [{"title": cs.title} for cs in self.content_sensitivity.all()]
+
+    @property
     def license_info(self):
         ret = {}
         if self.license:
@@ -1225,6 +1230,23 @@ class Topic(models.Model):
 
     def update_tag_media(self):
         self.media_count = Media.objects.filter(state="public", is_reviewed=True, topics=self).count()
+        self.save(update_fields=["media_count"])
+        return True
+
+
+class ContentSensitivity(models.Model):
+    title = models.CharField(max_length=100, unique=True, db_index=True)
+    media_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        ordering = ["title"]
+        verbose_name_plural = "content sensitivities"
+
+    def update_sensitivity_media(self):
+        self.media_count = Media.objects.filter(state="public", is_reviewed=True, content_sensitivity=self).count()
         self.save(update_fields=["media_count"])
         return True
 
@@ -1924,6 +1946,9 @@ def media_save(sender, instance, created, **kwargs):
     if instance.topics.all():
         for topic in instance.topics.all():
             topic.update_tag_media()
+    if instance.content_sensitivity.all():
+        for cs in instance.content_sensitivity.all():
+            cs.update_sensitivity_media()
     if instance.media_country:
         country = dict(lists.video_countries).get(instance.media_country)
         if country:
@@ -2003,6 +2028,10 @@ def media_file_pre_delete(sender, instance, **kwargs):
         for topic in instance.topics.all():
             instance.topics.remove(topic)
             topic.update_tag_media()
+    if instance.content_sensitivity.all():
+        for cs in instance.content_sensitivity.all():
+            instance.content_sensitivity.remove(cs)
+            cs.update_sensitivity_media()
 
 
 @receiver(post_delete, sender=Media)
@@ -2057,6 +2086,27 @@ def media_topics_m2m(sender, instance, action, pk_set, **kwargs):
             topics = Topic.objects.filter(media=instance)
             for topic in topics:
                 topic.update_tag_media()
+
+
+@receiver(m2m_changed, sender=Media.content_sensitivity.through)
+def media_content_sensitivity_m2m(sender, instance, action, pk_set, **kwargs):
+    if action == "pre_clear":
+        instance._cleared_cs_pks = list(
+            Media.content_sensitivity.through.objects.filter(media_id=instance.pk).values_list(
+                "contentsensitivity_id", flat=True
+            )
+        )
+    elif action in ["post_add", "post_remove", "post_clear"]:
+        if pk_set:
+            sensitivities = ContentSensitivity.objects.filter(pk__in=pk_set)
+            for cs in sensitivities:
+                cs.update_sensitivity_media()
+        elif action == "post_clear":
+            cleared_pks = getattr(instance, "_cleared_cs_pks", [])
+            if cleared_pks:
+                for cs in ContentSensitivity.objects.filter(pk__in=cleared_pks):
+                    cs.update_sensitivity_media()
+                del instance._cleared_cs_pks
 
 
 @receiver(post_save, sender=Encoding)
