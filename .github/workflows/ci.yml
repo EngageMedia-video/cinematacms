@@ -213,6 +213,9 @@ jobs:
       - name: Run migrations
         run: uv run python manage.py migrate --noinput
 
+      - name: Seed feature flag switches
+        run: uv run python manage.py seed_waffle_switches --force
+
       - name: Run tests
         run: uv run python manage.py test --noinput --verbosity=2 --exclude-tag=requires-whisper
 

@@ -202,6 +202,7 @@ chmod +x scripts/build_frontend.sh
 
 uv run manage.py makemigrations files users actions
 uv run manage.py migrate
+uv run manage.py seed_waffle_switches --force
 uv run manage.py loaddata fixtures/encoding_profiles.json
 uv run manage.py loaddata fixtures/categories.json
 uv run manage.py load_apac_languages

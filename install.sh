@@ -119,6 +119,11 @@ fi
 
 
 python manage.py migrate
+echo "Seeding feature flag switches..."
+if ! python manage.py seed_waffle_switches --force; then
+    echo "Error: Feature flag seeding failed. Aborting installation."
+    exit 1
+fi
 python manage.py loaddata files/fixtures/creative_commons_licenses.json
 python manage.py loaddata fixtures/encoding_profiles.json
 python manage.py loaddata fixtures/categories.json

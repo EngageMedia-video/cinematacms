@@ -53,6 +53,11 @@ if ! python manage.py migrate; then
   echo "Database migrations failed. Aborting restart."
   exit 1
 fi
+echo "Seeding feature flag switches..."
+if ! python manage.py seed_waffle_switches; then
+  echo "Feature flag seeding failed. Aborting restart."
+  exit 1
+fi
 
 # Update ownership
 echo "Updating ownership..."
