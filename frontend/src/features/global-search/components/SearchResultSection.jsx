@@ -1,4 +1,5 @@
 import { Text } from '../../shared/components/Text';
+import { isPlainLeftClick } from '../handlers';
 
 export function SearchResultSection({
 	title,
@@ -42,7 +43,9 @@ export function SearchResultSection({
 			{!isError && hasMore && showMoreHref ? (
 				<a
 					href={showMoreHref}
-					onClick={onSelect}
+					onClick={(event) => {
+						if (isPlainLeftClick(event)) onSelect?.(event);
+					}}
 					className="mt-2 inline-flex items-center gap-1 rounded-[8px] px-2 py-1 body-body-12-medium text-cinemata-sunset-horizon-400p no-underline transition-colors duration-150 hover:text-cinemata-sunset-horizon-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p"
 				>
 					Show more

@@ -1836,6 +1836,13 @@ class PlaylistList(APIView):
         if search:
             playlists = playlists.filter(title__icontains=search)
 
+        # add_date is the natural ordering field and is db_index'd. Without an
+        # explicit order_by, paginate_queryset can hand back different rows
+        # for the same query depending on planner choice; that breaks the
+        # global-search preview (page_size=4) where the cursor is stable per
+        # keystroke and breaks plain ?page=2 too.
+        playlists = playlists.order_by("-add_date")
+
         page = paginator.paginate_queryset(playlists, request)
 
         serializer = PlaylistSerializer(page, many=True, context={"request": request})
