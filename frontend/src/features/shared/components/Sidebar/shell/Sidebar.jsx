@@ -54,6 +54,7 @@ function SidebarSocialLink({ link, icon, label, target = '_blank', rel = 'norefe
 }
 
 export function Sidebar() {
+	const [isMobileViewport, setIsMobileViewport] = useState(window.innerWidth < 768);
 	const [isVisible, setIsVisible] = useState(LayoutStore.get('visible-sidebar'));
 	const [isRendered, setIsRendered] = useState(
 		LayoutStore.get('visible-sidebar') || 492 > PageStore.get('window-inner-width')
@@ -64,7 +65,6 @@ export function Sidebar() {
 	const footerLogo = footerNew.logo;
 	const footerLinks = footerNew.links || [];
 	const socialLinks = sidebarContents.socialLinks || [];
-	const isMobileViewport = window.innerWidth < 768;
 	const shouldRenderSidebarContent = isVisible || isRendered;
 
 	const sidebarWidth = isMobileViewport ? '100vw' : 'var(--sidebar-width)';
@@ -129,10 +129,16 @@ export function Sidebar() {
 	}
 
 	useEffect(() => {
+		function onResize() {
+			setIsMobileViewport(window.innerWidth < 768);
+		}
+
 		LayoutStore.on('sidebar-visibility-change', onVisibilityChange);
+		window.addEventListener('resize', onResize);
 
 		return () => {
 			LayoutStore.removeListener('sidebar-visibility-change', onVisibilityChange);
+			window.removeEventListener('resize', onResize);
 		};
 	}, []);
 
