@@ -220,7 +220,7 @@ export function ensureSidebarStoryMediaCMS(mode) {
 						rel: 'noreferrer',
 					},
 					{
-						link: 'http://www.facebook.com/cinematavideo',
+						link: 'https://www.facebook.com/cinematavideo',
 						icon: 'facebook',
 						label: 'Open Cinemata on Facebook',
 						target: '_blank',
