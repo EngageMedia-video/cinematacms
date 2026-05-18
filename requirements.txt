@@ -25,7 +25,7 @@ cffi==2.0.0 ; platform_python_implementation != 'PyPy'
     # via cryptography
 charset-normalizer==3.4.7
     # via requests
-click==8.3.3
+click==8.4.0
     # via
     #   celery
     #   click-didyoumean
@@ -45,11 +45,11 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   tqdm
 crispy-forms-bootstrap2==2024.1
     # via cinemata
-cryptography==47.0.0
+cryptography==48.0.0
     # via fido2
-decorator==5.2.1
+decorator==5.3.1
     # via ipython
-django==5.2.13
+django==5.2.14
     # via
     #   cinemata
     #   django-allauth
@@ -103,7 +103,7 @@ django-tinymce @ git+https://github.com/jazzband/django-tinymce.git@6b413f4e9bde
     # via cinemata
 django-vite==3.1.0
     # via cinemata
-django-waffle==4.2.0
+django-waffle==5.0.0
     # via cinemata
 djangorestframework==3.17.1
     # via cinemata
@@ -121,11 +121,11 @@ flake8==7.3.0
     # via cinemata
 gprof2dot==2025.4.14
     # via django-silk
-idna==3.13
+idna==3.15
     # via requests
 ipython==8.39.0
     # via cinemata
-jedi==0.19.2
+jedi==0.20.0
     # via ipython
 kombu==5.6.2
     # via celery
@@ -133,13 +133,13 @@ m3u8==6.0.0
     # via cinemata
 markdown==3.10.2
     # via cinemata
-matplotlib-inline==0.2.1
+matplotlib-inline==0.2.2
     # via ipython
 mccabe==0.7.0
     # via flake8
 packaging==26.2
     # via kombu
-parso==0.8.6
+parso==0.8.7
     # via jedi
 pep8==1.7.1
     # via cinemata
@@ -181,7 +181,7 @@ qrcode==8.2
     # via cinemata
 redis==7.4.0
     # via django-redis
-requests==2.33.1
+requests==2.34.2
     # via cinemata
 rpdb==0.2.0
     # via cinemata
@@ -196,7 +196,7 @@ stack-data==0.6.3
     # via ipython
 tqdm==4.67.3
     # via cinemata
-traitlets==5.14.3
+traitlets==5.15.0
     # via
     #   ipython
     #   matplotlib-inline
@@ -213,7 +213,7 @@ tzdata==2026.2
     #   tzlocal
 tzlocal==5.3.1
     # via celery
-urllib3==2.6.3
+urllib3==2.7.0
     # via
     #   cinemata
     #   requests
@@ -224,7 +224,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-wcwidth==0.6.0
+wcwidth==0.7.0
     # via prompt-toolkit
 whitenoise==6.12.0
     # via cinemata
