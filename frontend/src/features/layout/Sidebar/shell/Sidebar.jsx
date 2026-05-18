@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { SidebarNavigationMenu } from '../navigation/SidebarNavigationMenu';
 import { SidebarThemeSwitcher } from '../theme/SidebarThemeSwitcher';
 
-import PageStore from '../../../../../static/js/pages/_PageStore.js';
-import LayoutStore from '../../../../../static/js/stores/LayoutStore.js';
-import { Icon } from '../../Icon/Icon.jsx';
-import { Link } from '../../Link/Link.jsx';
-import { cn } from '../../../utils/classNames.js';
+import PageStore from '../../../../static/js/pages/_PageStore.js';
+import LayoutStore from '../../../../static/js/stores/LayoutStore.js';
+import { Icon } from '../../../shared/components/Icon/Icon.jsx';
+import { Link } from '../../../shared/components/Link/Link.jsx';
+import { cn } from '../../../shared/utils/classNames.js';
 
 function SidebarRippleDecoration({ className }) {
 	return (
@@ -53,7 +53,7 @@ function SidebarSocialLink({ link, icon, label, target = '_blank', rel = 'norefe
 	);
 }
 
-export function Sidebar() {
+export function Sidebar({ id = 'app-sidebar' }) {
 	const [isMobileViewport, setIsMobileViewport] = useState(window.innerWidth < 768);
 	const [isVisible, setIsVisible] = useState(LayoutStore.get('visible-sidebar'));
 	const [isRendered, setIsRendered] = useState(
@@ -144,7 +144,7 @@ export function Sidebar() {
 
 	return (
 		<aside
-			id="app-sidebar"
+			id={id || undefined}
 			className="fixed bottom-0 left-0 isolate flex flex-col overflow-hidden overscroll-none bg-neutral-50 dark:bg-cinemata-pacific-deep-900"
 			style={{
 				transform: isVisible ? 'translate(0px, 0px)' : hiddenTransform,

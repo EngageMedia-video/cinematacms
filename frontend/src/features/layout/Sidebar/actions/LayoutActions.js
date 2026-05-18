@@ -1,4 +1,4 @@
-import Dispatcher from '../../../../../static/js/classes_instances/dispatcher';
+import Dispatcher from '../../../../static/js/classes_instances/dispatcher';
 
 export function toggleSidebar() {
 	Dispatcher.dispatch({

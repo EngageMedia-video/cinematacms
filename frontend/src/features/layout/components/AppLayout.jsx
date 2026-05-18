@@ -5,7 +5,7 @@ import '../../../static/css/styles.scss';
 import '../../../static/js/components/styles/PageMain.scss';
 
 import { PageSidebarContentOverlay } from '../../../static/js/components/-NEW-/PageSidebarContentOverlay';
-import { Sidebar } from '../../shared/components/Sidebar';
+import { Sidebar } from '../Sidebar';
 import { RippleDecoration } from './RippleDecoration';
 import { TopMessageHost } from './TopMessageHost';
 import { Topbar } from '../topbar';

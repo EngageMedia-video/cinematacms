@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Icon } from '../../Icon';
-import { getIconComponent } from '../../Icon/iconRegistry';
+import { Icon } from '../../../shared/components/Icon';
+import { getIconComponent } from '../../../shared/components/Icon/iconRegistry';
 
 function joinClasses(...classes) {
 	return classes.filter(Boolean).join(' ');

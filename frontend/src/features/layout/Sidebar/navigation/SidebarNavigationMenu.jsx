@@ -1,11 +1,11 @@
 import React, { useContext } from 'react';
 import urlParse from 'url-parse';
 
-import LinksContext from '../../../../../static/js/contexts/LinksContext';
-import UserContext from '../../../../../static/js/contexts/UserContext';
-import SidebarContext from '../../../../../static/js/contexts/SidebarContext';
+import LinksContext from '../../../../static/js/contexts/LinksContext';
+import UserContext from '../../../../static/js/contexts/UserContext';
+import SidebarContext from '../../../../static/js/contexts/SidebarContext';
 import { NavigationMenuList } from './NavigationMenuList';
-import PageStore from '../../../../../static/js/pages/_PageStore.js';
+import PageStore from '../../../../static/js/pages/_PageStore.js';
 
 export function SidebarNavigationMenu() {
 	const links = useContext(LinksContext);

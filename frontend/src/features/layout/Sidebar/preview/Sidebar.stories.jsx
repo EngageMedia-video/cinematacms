@@ -18,7 +18,7 @@ function SidebarStoryContent() {
 		ensureSidebarStoryMediaCMS();
 
 		let handler;
-		import('../../../../../static/js/stores/LayoutStore.js').then((mod) => {
+		import('../../../../static/js/stores/LayoutStore.js').then((mod) => {
 			const store = mod.default;
 			storeRef.current = store;
 			setSidebarVisible(store.get('visible-sidebar'));

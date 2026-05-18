@@ -1,8 +1,8 @@
 /* eslint-disable no-restricted-imports */
 import { useState, useEffect } from 'react';
 
-import ThemeStore from '../../../../../../static/js/stores/ThemeStore.js';
-import * as ThemeActions from '../../../../../../static/js/actions/ThemeActions.js';
+import ThemeStore from '../../../../../static/js/stores/ThemeStore.js';
+import * as ThemeActions from '../../../../../static/js/actions/ThemeActions.js';
 
 export function useThemeSwitcher() {
 	const [mode, setMode] = useState(ThemeStore.get('mode'));

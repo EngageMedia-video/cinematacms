@@ -1,8 +1,8 @@
 import React, { useContext } from 'react';
 
-import ThemeContext from '../../../../../static/js/contexts/ThemeContext';
+import ThemeContext from '../../../../static/js/contexts/ThemeContext';
+import { SegmentButton } from '../../../shared/components/SegmentButton/SegmentButton';
 import { useThemeSwitcher } from './hooks/useThemeSwitcher';
-import { SegmentButton } from '../../SegmentButton/SegmentButton';
 
 export function SidebarThemeSwitcher() {
 	const theme = useContext(ThemeContext);

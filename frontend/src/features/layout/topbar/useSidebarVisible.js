@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-// PageSidebar (legacy) reads from LayoutStore; mirroring this in a
+// Sidebar reads from LayoutStore; mirroring this in a
 // Zustand store would force two sources of truth for the same flag.
 /* eslint-disable no-restricted-imports */
 import LayoutStore from '../../../static/js/stores/LayoutStore.js';

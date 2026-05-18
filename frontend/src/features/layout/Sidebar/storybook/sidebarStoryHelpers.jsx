@@ -15,8 +15,8 @@ function getStoryColorMode(mode) {
 async function syncSidebarStoryThemeStore(mode) {
 	try {
 		const [{ default: ThemeStore }, ThemeActions] = await Promise.all([
-			import('../../../../../static/js/stores/ThemeStore.js'),
-			import('../../../../../static/js/actions/ThemeActions.js'),
+			import('../../../../static/js/stores/ThemeStore.js'),
+			import('../../../../static/js/actions/ThemeActions.js'),
 		]);
 
 		if (ThemeStore.get('mode') !== mode) {

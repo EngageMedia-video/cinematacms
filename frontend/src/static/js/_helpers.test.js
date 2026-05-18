@@ -3,7 +3,7 @@ import React from 'react';
 const display = vi.fn();
 const AppLayout = vi.fn(() => null);
 const LegacyTopbarMount = vi.fn(() => null);
-const PageSidebar = vi.fn(() => null);
+const Sidebar = vi.fn(() => null);
 
 vi.mock('./classes_instances/components-renderer', () => ({
 	default: {
@@ -13,14 +13,11 @@ vi.mock('./classes_instances/components-renderer', () => ({
 
 vi.mock('../../features/layout', () => ({
 	AppLayout,
+	Sidebar,
 }));
 
 vi.mock('../../features/layout/topbar/LegacyTopbarMount', () => ({
 	LegacyTopbarMount,
-}));
-
-vi.mock('./components/-NEW-/PageSidebar', () => ({
-	PageSidebar,
 }));
 
 describe('renderPage', () => {
@@ -73,8 +70,8 @@ describe('renderPage', () => {
 		expect(display).toHaveBeenNthCalledWith(
 			2,
 			document.getElementById('app-sidebar'),
-			PageSidebar,
-			{},
+			Sidebar,
+			{ id: null },
 			'app-sidebar'
 		);
 		expect(display).toHaveBeenNthCalledWith(3, document.getElementById('page-home'), HomePage, {}, 'page-home');
