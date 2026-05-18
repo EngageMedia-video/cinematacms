@@ -5,6 +5,7 @@ from actions.models import MediaAction
 from .models import (
     Category,
     Comment,
+    ContentSensitivity,
     EncodeProfile,
     HomepagePopup,
     IndexPageFeatured,
@@ -22,6 +23,7 @@ from .models import (
 
 class MediaSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
+    summary = serializers.ReadOnlyField()
     url = serializers.SerializerMethodField()
     api_url = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
@@ -51,6 +53,7 @@ class MediaSerializer(serializers.ModelSerializer):
             "friendly_token",
             "user",
             "add_date",
+            "summary",
             "views",
             "media_type",
             "state",
@@ -72,6 +75,7 @@ class MediaSerializer(serializers.ModelSerializer):
             "user",
             "title",
             "description",
+            "summary",
             "add_date",
             "views",
             "media_type",
@@ -96,6 +100,72 @@ class MediaSerializer(serializers.ModelSerializer):
             "size",
             "media_country_info",
             "year_produced",
+        )
+
+
+class HeroPlaybackSerializer(serializers.ModelSerializer):
+    poster_url = serializers.SerializerMethodField()
+    sprites_url = serializers.SerializerMethodField()
+    preview_url = serializers.SerializerMethodField()
+    encodings_info = serializers.SerializerMethodField()
+    hls_info = serializers.SerializerMethodField()
+    subtitles_info = serializers.SerializerMethodField()
+
+    def _absolute_url(self, url):
+        if not url:
+            return url
+        request = self.context.get("request")
+        if not request:
+            return url
+        return request.build_absolute_uri(url)
+
+    def _absolute_encoding_urls(self, value):
+        if isinstance(value, dict):
+            return {
+                key: self._absolute_url(nested)
+                if key == "url" and isinstance(nested, str)
+                else self._absolute_encoding_urls(nested)
+                for key, nested in value.items()
+            }
+        if isinstance(value, list):
+            return [self._absolute_encoding_urls(item) for item in value]
+        return value
+
+    def get_poster_url(self, obj):
+        return self._absolute_url(obj.poster_url)
+
+    def get_sprites_url(self, obj):
+        return self._absolute_url(obj.sprites_url)
+
+    def get_preview_url(self, obj):
+        return self._absolute_url(obj.preview_url)
+
+    def get_encodings_info(self, obj):
+        return self._absolute_encoding_urls(obj.encodings_info)
+
+    def get_hls_info(self, obj):
+        return {key: self._absolute_url(url) for key, url in obj.hls_info.items()}
+
+    def get_subtitles_info(self, obj):
+        return [
+            {
+                **subtitle,
+                "src": self._absolute_url(subtitle.get("src")),
+            }
+            for subtitle in obj.subtitles_info
+        ]
+
+    class Meta:
+        model = Media
+        fields = (
+            "duration",
+            "poster_url",
+            "sprites_url",
+            "preview_url",
+            "thumbnail_time",
+            "encodings_info",
+            "hls_info",
+            "subtitles_info",
         )
 
 
@@ -209,6 +279,7 @@ class SingleMediaSerializer(serializers.ModelSerializer):
             "media_language_info",
             "license_info",
             "tags_info",
+            "content_sensitivity_info",
             "hls_info",
             "is_encrypted",
             "subtitles_info",
@@ -270,6 +341,12 @@ class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
         fields = ("title", "media_count", "thumbnail_url")
+
+
+class ContentSensitivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContentSensitivity
+        fields = ("title", "media_count")
 
 
 class MediaLanguageSerializer(serializers.ModelSerializer):

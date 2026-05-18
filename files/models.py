@@ -9,12 +9,13 @@ import time
 import uuid
 
 import m3u8
+import waffle
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.files import File
 from django.core.validators import RegexValidator
-from django.db import connection, models
+from django.db import DatabaseError, connection, models
 from django.db.models import Q
 from django.db.models.signals import (
     m2m_changed,
@@ -180,6 +181,7 @@ class Media(models.Model):
     category = models.ManyToManyField("Category", blank=True)
     topics = models.ManyToManyField("Topic", blank=True)
     tags = models.ManyToManyField("Tag", blank=True, help_text="select one or more out of the existing tags")
+    content_sensitivity = models.ManyToManyField("ContentSensitivity", blank=True)
     channel = models.ForeignKey("users.Channel", on_delete=models.CASCADE, db_index=True, blank=True, null=True)
     description = models.TextField("More Information and Credits", blank=True)
     summary = models.TextField("Synopsis", help_text="Maximum 60 words")
@@ -894,6 +896,10 @@ class Media(models.Model):
         return ret
 
     @property
+    def content_sensitivity_info(self):
+        return [{"title": cs.title} for cs in self.content_sensitivity.all()]
+
+    @property
     def license_info(self):
         ret = {}
         if self.license:
@@ -1004,14 +1010,17 @@ class Media(models.Model):
             return helpers.build_versioned_url(base_url, self.media_version)
         # get preview_file out of the encodings, since some times preview_file_path
         # is empty but there is the gif encoding!
-        preview_media = self.encodings.filter(profile__extension="gif").first()
+        encodings = self.encodings.all()
+        if "encodings" not in getattr(self, "_prefetched_objects_cache", {}):
+            encodings = encodings.select_related("profile")
+        preview_media = next((encoding for encoding in encodings if encoding.profile.extension == "gif"), None)
         if preview_media and preview_media.media_file:
             # Use .name instead of .path to get relative path from MEDIA_ROOT
             base_url = helpers.url_from_path(preview_media.media_file.name)
             return helpers.build_versioned_url(base_url, self.media_version)
         return None
 
-    @property
+    @cached_property
     def hls_info(self):
         res = {}
         if self.hls_file:
@@ -1071,7 +1080,11 @@ class Media(models.Model):
     def ratings_info(self):
         # to be used if user ratings are allowed
         ret = []
-        if not settings.ALLOW_RATINGS:
+        try:
+            ratings_enabled = waffle.switch_is_active("allow_ratings")
+        except DatabaseError:
+            ratings_enabled = getattr(settings, "ALLOW_RATINGS", False)
+        if not ratings_enabled:
             return []
         for category in self.category.all():
             ratings = RatingCategory.objects.filter(category=category, enabled=True)
@@ -1217,6 +1230,23 @@ class Topic(models.Model):
 
     def update_tag_media(self):
         self.media_count = Media.objects.filter(state="public", is_reviewed=True, topics=self).count()
+        self.save(update_fields=["media_count"])
+        return True
+
+
+class ContentSensitivity(models.Model):
+    title = models.CharField(max_length=100, unique=True, db_index=True)
+    media_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        ordering = ["title"]
+        verbose_name_plural = "content sensitivities"
+
+    def update_sensitivity_media(self):
+        self.media_count = Media.objects.filter(state="public", is_reviewed=True, content_sensitivity=self).count()
         self.save(update_fields=["media_count"])
         return True
 
@@ -1916,6 +1946,9 @@ def media_save(sender, instance, created, **kwargs):
     if instance.topics.all():
         for topic in instance.topics.all():
             topic.update_tag_media()
+    if instance.content_sensitivity.all():
+        for cs in instance.content_sensitivity.all():
+            cs.update_sensitivity_media()
     if instance.media_country:
         country = dict(lists.video_countries).get(instance.media_country)
         if country:
@@ -1995,6 +2028,10 @@ def media_file_pre_delete(sender, instance, **kwargs):
         for topic in instance.topics.all():
             instance.topics.remove(topic)
             topic.update_tag_media()
+    if instance.content_sensitivity.all():
+        for cs in instance.content_sensitivity.all():
+            instance.content_sensitivity.remove(cs)
+            cs.update_sensitivity_media()
 
 
 @receiver(post_delete, sender=Media)
@@ -2049,6 +2086,27 @@ def media_topics_m2m(sender, instance, action, pk_set, **kwargs):
             topics = Topic.objects.filter(media=instance)
             for topic in topics:
                 topic.update_tag_media()
+
+
+@receiver(m2m_changed, sender=Media.content_sensitivity.through)
+def media_content_sensitivity_m2m(sender, instance, action, pk_set, **kwargs):
+    if action == "pre_clear":
+        instance._cleared_cs_pks = list(
+            Media.content_sensitivity.through.objects.filter(media_id=instance.pk).values_list(
+                "contentsensitivity_id", flat=True
+            )
+        )
+    elif action in ["post_add", "post_remove", "post_clear"]:
+        if pk_set:
+            sensitivities = ContentSensitivity.objects.filter(pk__in=pk_set)
+            for cs in sensitivities:
+                cs.update_sensitivity_media()
+        elif action == "post_clear":
+            cleared_pks = getattr(instance, "_cleared_cs_pks", [])
+            if cleared_pks:
+                for cs in ContentSensitivity.objects.filter(pk__in=cleared_pks):
+                    cs.update_sensitivity_media()
+                del instance._cleared_cs_pks
 
 
 @receiver(post_save, sender=Encoding)

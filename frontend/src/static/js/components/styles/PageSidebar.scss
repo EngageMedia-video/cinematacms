@@ -37,7 +37,32 @@
 	width: var(--sidebar-width);
 	// height: calc(100vh - var(--header-height));
 	overflow: auto;
+	scrollbar-color: transparent transparent;
+	scrollbar-width: thin;
 	transform: translate(calc(-1 * var(--sidebar-width)), 0px);
+
+	&::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	&::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		border: 2px solid transparent;
+		border-radius: 999px;
+		background-color: transparent;
+		background-clip: content-box;
+	}
+
+	&.is-scrolling {
+		scrollbar-color: rgba(2, 102, 144, 0.35) transparent;
+
+		&::-webkit-scrollbar-thumb {
+			background-color: rgba(2, 102, 144, 0.35);
+		}
+	}
 
 	.visible-sidebar & {
 		transform: translate(0px, 0px);

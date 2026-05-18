@@ -347,6 +347,7 @@ dependencies = [
     { name = "django-silk" },
     { name = "django-tinymce" },
     { name = "django-vite" },
+    { name = "django-waffle" },
     { name = "djangorestframework" },
     { name = "fido2" },
     { name = "filetype" },
@@ -399,6 +400,7 @@ requires-dist = [
     { name = "django-silk", specifier = "==5.5.0" },
     { name = "django-tinymce", git = "https://github.com/jazzband/django-tinymce.git?rev=6b413f4e9bdedb9268c8ef25886fdfc994780097" },
     { name = "django-vite", specifier = ">=3.1.0" },
+    { name = "django-waffle", specifier = ">=4.2.0,<5.0" },
     { name = "djangorestframework", specifier = "==3.17.1" },
     { name = "fido2", specifier = "==2.2.0" },
     { name = "filetype", specifier = "==1.2.0" },
@@ -789,6 +791,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/23/fe/4be07f538bbf9bf8bf73b045552ec2a1b4fba67e3176abb30490b643368e/django_vite-3.1.0.tar.gz", hash = "sha256:8b4ffe4a9fa81ff568bfb195e74dde8694aaf13fd4b656ae60bf59cce08b85e8", size = 25434, upload-time = "2025-02-23T15:32:07.914Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/30/59/7df4b1077fa41b43b4e542696d75138dbb86a65f44248c607b3e0f1014ce/django_vite-3.1.0-py3-none-any.whl", hash = "sha256:4e46572bd6b1ce70784be129205dc2ffcbc7a3c19fea50bebfb72b327bbde5fc", size = 23579, upload-time = "2025-02-23T15:32:06.603Z" },
+]
+
+[[package]]
+name = "django-waffle"
+version = "4.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e9/4b/3189241d51f582f1447ad528ed11fffad138d7d9ca3f931220a0da387e3e/django_waffle-4.2.0.tar.gz", hash = "sha256:97709550f4e75ce2a20b13e29f39777e1439a968569f2ee89398ca368afd586c", size = 36538, upload-time = "2024-11-15T17:33:31.816Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/61/64/d9d77ae9fdf00e16cd75199a28c40937e5584992cd6c7763b4f2c1bceadd/django_waffle-4.2.0-py3-none-any.whl", hash = "sha256:774f45b929627c9d303620c85419ce1da54066f2082d741af014f5bbd747e372", size = 46785, upload-time = "2024-11-15T17:33:30.094Z" },
 ]
 
 [[package]]

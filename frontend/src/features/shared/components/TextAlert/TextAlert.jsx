@@ -1,8 +1,5 @@
+import { cn } from '../../utils/classNames';
 import { Icon } from '../Icon';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 export function TextAlert({
 	children = 'Alert message',
@@ -15,7 +12,7 @@ export function TextAlert({
 		<div
 			{...props}
 			role={role}
-			className={joinClasses(
+			className={cn(
 				'body-body-16-regular flex w-full items-center gap-3 text-cinemata-sunset-horizon-600 dark:text-cinemata-sunset-horizon-400p',
 				className
 			)}

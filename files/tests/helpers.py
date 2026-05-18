@@ -1,7 +1,8 @@
 """Shared test helpers for the files app."""
 
+import json
 import uuid
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 
@@ -40,3 +41,35 @@ def create_test_media(user, **kwargs):
     Media.objects.filter(pk=media.pk).update(state=state)
     media.refresh_from_db()
     return media
+
+
+def make_vite_loader_mock():
+    """Return a mock DjangoViteAssetLoader that emits no-op asset tags."""
+    mock_instance = MagicMock()
+    mock_instance.generate_vite_asset.return_value = ""
+    mock_instance.generate_vite_asset_url.return_value = "/static/fake.js"
+    mock_instance.generate_vite_legacy_polyfills.return_value = ""
+    mock_instance.generate_vite_react_hmr.return_value = ""
+    return mock_instance
+
+
+def extract_json_script_body(content, script_id):
+    """Return a json_script body by id, or None when the script tag is absent."""
+    start_marker = f'id="{script_id}" type="application/json">'
+    end_marker = "</script>"
+    start = content.find(start_marker)
+    if start == -1:
+        return None
+    start += len(start_marker)
+    end = content.find(end_marker, start)
+    if end == -1:
+        return None
+    return content[start:end]
+
+
+def extract_json_script_payload(content, script_id):
+    """Parse a json_script payload by id, or None when the script tag is absent."""
+    body = extract_json_script_body(content, script_id)
+    if body is None:
+        return None
+    return json.loads(body)

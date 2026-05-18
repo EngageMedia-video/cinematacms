@@ -77,6 +77,7 @@ urlpatterns = [
     #        views.MediaSubtitles.as_view()),
     path("api/v1/categories", views.CategoryList.as_view()),
     path("api/v1/topics", views.TopicList.as_view()),
+    path("api/v1/content-sensitivities", views.ContentSensitivityList.as_view()),
     path("api/v1/languages", views.MediaLanguageList.as_view()),
     path("api/v1/countries", views.MediaCountryList.as_view()),
     path("api/v1/tags", views.TagList.as_view()),

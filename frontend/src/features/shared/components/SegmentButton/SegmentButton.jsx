@@ -1,9 +1,6 @@
+import { cn } from '../../utils/classNames';
 import { useState } from 'react';
 import { Icon } from '../Icon';
-
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
 
 function normalizeSelection(value, multiple, options) {
 	if (multiple) {
@@ -64,7 +61,7 @@ export function SegmentButton({
 		<div
 			role="group"
 			aria-label={ariaLabel}
-			className={joinClasses(
+			className={cn(
 				isFillLayout ? 'flex w-full max-w-full' : 'inline-flex max-w-full',
 				'overflow-hidden rounded-ds-4',
 				className
@@ -81,7 +78,7 @@ export function SegmentButton({
 						disabled={option.disabled}
 						aria-pressed={selected}
 						onClick={() => handleToggle(option.value)}
-						className={joinClasses(
+						className={cn(
 							'body-body-12-medium inline-flex min-w-0 items-center cursor-pointer justify-center gap-1 border-0 px-4 py-2 text-cinemata-neutral-50 transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 first:rounded-l-(--radius-8) last:rounded-r-(--radius-8) only:rounded-(--radius-8)',
 							isFillLayout ? 'flex-1' : 'shrink-0',
 							selected ? 'bg-cinemata-sunset-horizon-500' : 'bg-cinemata-pacific-deep-800'

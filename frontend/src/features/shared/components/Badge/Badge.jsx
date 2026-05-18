@@ -1,7 +1,4 @@
-function joinClasses(...classes) {
-	return classes.filter(Boolean).join(' ');
-}
-
+import { cn } from '../../utils/classNames';
 function resolveBadgeColor(color) {
 	if (!color) {
 		return color;
@@ -26,7 +23,7 @@ export function Badge({ children = 'Featured', className = '', color = '#111111'
 	return (
 		<span
 			{...props}
-			className={joinClasses(
+			className={cn(
 				'caption-caption-10-regular inline-flex items-center rounded-[2px] p-1 text-cinemata-neutral-50',
 				className
 			)}
