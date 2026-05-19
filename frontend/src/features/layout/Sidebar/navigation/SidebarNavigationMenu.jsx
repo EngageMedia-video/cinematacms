@@ -19,7 +19,10 @@ export function SidebarNavigationMenu() {
 		return items.map((item) => {
 			const url = urlParse(item.link);
 			const urlTarget = (url.host + url.pathname).replace(/\/+$/, '');
-			const active = item.activePattern === 'userProfile' ? /^\/user(?:\/|$)/.test(currentPath) : currentHostPath === urlTarget;
+			const active =
+				item.activePattern === 'userProfile'
+					? /^\/user(?:\/|$)/.test(currentPath)
+					: currentHostPath === urlTarget;
 
 			return {
 				active,
