@@ -51,6 +51,8 @@ const defaults = {
 			bottomBackground: !0,
 			progress: !0,
 			play: !0,
+			seekBackward: !0,
+			seekForward: !0,
 			next: !1,
 			previous: !1,
 			volume: !0,

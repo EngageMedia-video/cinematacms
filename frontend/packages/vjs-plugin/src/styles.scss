@@ -689,13 +689,17 @@ $controlBarAnimationsDuration: 0.1s;
 
 	.vjs-button.vjs-play-control,
 	.vjs-button.vjs-next-button,
-	.vjs-button.vjs-previous-button {
+	.vjs-button.vjs-previous-button,
+	.vjs-button.vjs-seek-backward-button,
+	.vjs-button.vjs-seek-forward-button {
 		overflow: hidden;
 		cursor: pointer;
 	}
 
 	.vjs-button.vjs-next-button,
-	.vjs-button.vjs-previous-button {
+	.vjs-button.vjs-previous-button,
+	.vjs-button.vjs-seek-backward-button,
+	.vjs-button.vjs-seek-forward-button {
 		font-family: VideoJS;
 		font-weight: 400;
 		font-style: normal;
@@ -713,6 +717,42 @@ $controlBarAnimationsDuration: 0.1s;
 		.vjs-icon-placeholder {
 			&:before {
 				content: '\f120';
+			}
+		}
+	}
+
+	.vjs-button.vjs-seek-backward-button,
+	.vjs-button.vjs-seek-forward-button {
+		.vjs-icon-placeholder {
+			&:before {
+				content: '';
+				display: block;
+				background-color: currentColor;
+				-webkit-mask-position: center;
+				mask-position: center;
+				-webkit-mask-repeat: no-repeat;
+				mask-repeat: no-repeat;
+				-webkit-mask-size: 1em 1em;
+				mask-size: 1em 1em;
+				margin-top: 0.01em !important;
+			}
+		}
+	}
+
+	.vjs-button.vjs-seek-backward-button {
+		.vjs-icon-placeholder {
+			&:before {
+				-webkit-mask-image: url('../../../src/features/shared/icons/replay-5.svg');
+				mask-image: url('../../../src/features/shared/icons/replay-5.svg');
+			}
+		}
+	}
+
+	.vjs-button.vjs-seek-forward-button {
+		.vjs-icon-placeholder {
+			&:before {
+				-webkit-mask-image: url('../../../src/features/shared/icons/forward-5.svg');
+				mask-image: url('../../../src/features/shared/icons/forward-5.svg');
 			}
 		}
 	}

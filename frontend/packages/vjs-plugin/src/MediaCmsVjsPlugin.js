@@ -7,6 +7,8 @@ import { isIOSDevice } from './utils/deviceDetection.js';
 let Plugin = null;
 
 function generatePlugin(/*videojs*/) {
+	const SEEK_STEP_SECONDS = 5;
+
 	const videojsComponent = videojs.getComponent('Component');
 	const videojsClickableComponent = videojs.getComponent('ClickableComponent');
 	const videojsComponentButton = videojs.getComponent('Button');
@@ -1029,6 +1031,40 @@ function generatePlugin(/*videojs*/) {
 					struct.leftControls.children.playToggle = null;
 				}
 
+				if (args.options.controlBar.seekBackward) {
+					tmp = composeCustomComp(videojsComponentButton, 'vjs-seek-backward-button vjs-icon-replay-5');
+
+					tmp.methods.constructor = function () {
+						videojsComponentButton.apply(this, arguments);
+						this.controlText(this.player_.localize('Seek backward 5 seconds'));
+					};
+
+					tmp.methods.handleClick = function () {
+						this.player_.trigger('clicked_seek_backward_button');
+					};
+
+					videojs.registerComponent('SeekBackwardButton', videojs.extend(tmp.extend, tmp.methods));
+
+					struct.leftControls.children.seekBackwardButton = null;
+				}
+
+				if (args.options.controlBar.seekForward) {
+					tmp = composeCustomComp(videojsComponentButton, 'vjs-seek-forward-button vjs-icon-forward-5');
+
+					tmp.methods.constructor = function () {
+						videojsComponentButton.apply(this, arguments);
+						this.controlText(this.player_.localize('Seek forward 5 seconds'));
+					};
+
+					tmp.methods.handleClick = function () {
+						this.player_.trigger('clicked_seek_forward_button');
+					};
+
+					videojs.registerComponent('SeekForwardButton', videojs.extend(tmp.extend, tmp.methods));
+
+					struct.leftControls.children.seekForwardButton = null;
+				}
+
 				if (args.options.controlBar.next) {
 					tmp = composeCustomComp(videojsComponentButton, 'vjs-next-button');
 
@@ -1218,6 +1254,8 @@ function generatePlugin(/*videojs*/) {
 			options.controlBar.play ||
 			options.controlBar.previous ||
 			options.controlBar.next ||
+			options.controlBar.seekBackward ||
+			options.controlBar.seekForward ||
 			options.controlBar.volume ||
 			options.controlBar.time
 		) {
@@ -2084,6 +2122,9 @@ function generatePlugin(/*videojs*/) {
 				this.on(player, ['clicked_next_button'], this.onNextButtonClick);
 			}
 
+			this.on(player, ['clicked_seek_backward_button'], this.onSeekBackwardButtonClick);
+			this.on(player, ['clicked_seek_forward_button'], this.onSeekForwardButtonClick);
+
 			this.onPlayerReady = this.onPlayerReady.bind(this);
 
 			player.ready(this.onPlayerReady);
@@ -2109,6 +2150,36 @@ function generatePlugin(/*videojs*/) {
 					this.nextButtonClickCallback();
 				}
 			}
+		}
+
+		seekBySeconds(seconds, eventName) {
+			if (this.player.ended() && seconds > 0) {
+				return;
+			}
+
+			const currentTime = this.player.currentTime();
+
+			if (isNaN(currentTime)) {
+				return;
+			}
+
+			const duration = this.player.duration();
+			let targetTime = Math.max(0, currentTime + seconds);
+
+			if (!isNaN(duration) && isFinite(duration)) {
+				targetTime = Math.min(duration, targetTime);
+			}
+
+			this.player.currentTime(targetTime);
+			this.player.trigger(eventName);
+		}
+
+		onSeekBackwardButtonClick() {
+			this.seekBySeconds(-1 * SEEK_STEP_SECONDS, 'movebackward');
+		}
+
+		onSeekForwardButtonClick() {
+			this.seekBySeconds(SEEK_STEP_SECONDS, 'moveforward');
 		}
 
 		actionAnimation(action) {
