@@ -1,4 +1,4 @@
-import { defineConfig, transformWithEsbuild } from 'vite';
+import { defineConfig, transformWithOxc } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import svgr from 'vite-plugin-svgr';
@@ -10,7 +10,7 @@ const modernTrackVendorPackages = ['/node_modules/@tanstack/', '/node_modules/zu
 export default defineConfig({
 	plugins: [
 		// This codebase uses .js files for JSX (legacy Webpack convention).
-		// Vite's built-in esbuild only parses .jsx/.tsx as JSX, so we need a
+		// Vite only parses .jsx/.tsx as JSX by default, so we need a
 		// pre-transform plugin to handle .js files containing JSX before
 		// Vite's own parser sees them.
 		{
@@ -18,9 +18,8 @@ export default defineConfig({
 			enforce: 'pre',
 			async transform(code, id) {
 				if (!id.match(/src\/.*\.js$/) || id.includes('node_modules')) return null;
-				return transformWithEsbuild(code, id, {
-					loader: 'jsx',
-					jsx: 'automatic',
+				return transformWithOxc(code, id, {
+					lang: 'jsx',
 				});
 			},
 		},
