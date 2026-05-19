@@ -16,9 +16,9 @@ from rest_framework.parsers import (
     MultiPartParser,
 )
 from rest_framework.response import Response
-from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
+from cms.custom_pagination import SmallPreviewPagination
 from cms.permissions import IsUserOrManager
 from files.lists import video_countries
 from files.methods import is_curator, is_mediacms_editor, is_mediacms_manager
@@ -229,8 +229,9 @@ class UserList(APIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser, FileUploadParser)
 
     def get(self, request, format=None):
-        pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
-        paginator = pagination_class()
+        # SmallPreviewPagination: default page_size remains 50; ?page_size=
+        # up to 10 is honoured for preview callers (e.g. global-search).
+        paginator = SmallPreviewPagination()
 
         # Base queryset: active users with at least one video (combat spam)
         users = User.objects.filter(is_active=True, media_count__gt=0).exclude(username="emnews")

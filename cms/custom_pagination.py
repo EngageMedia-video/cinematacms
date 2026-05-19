@@ -28,3 +28,13 @@ class FastPaginationWithoutCount(PageNumberPagination):
                 ]
             )
         )
+
+
+class SmallPreviewPagination(PageNumberPagination):
+    # for preview endpoints (e.g. the global-search dropdown) that show only
+    # a handful of rows per category. Honours ?page_size= up to a small cap
+    # so callers can avoid pulling the full 50-row default page and throwing
+    # most of it away client-side.
+    page_size = 50
+    page_size_query_param = "page_size"
+    max_page_size = 10
