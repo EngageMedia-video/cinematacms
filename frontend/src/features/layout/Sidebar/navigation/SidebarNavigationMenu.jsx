@@ -13,12 +13,13 @@ export function SidebarNavigationMenu() {
 	const sidebar = useContext(SidebarContext);
 	const currentUrl = urlParse(window.location.href);
 	const currentHostPath = (currentUrl.host + currentUrl.pathname).replace(/\/+$/, '');
+	const currentPath = currentUrl.pathname.replace(/\/+$/, '') || '/';
 
 	function formatItems(items) {
 		return items.map((item) => {
 			const url = urlParse(item.link);
 			const urlTarget = (url.host + url.pathname).replace(/\/+$/, '');
-			const active = currentHostPath === urlTarget;
+			const active = item.activePattern === 'userProfile' ? /^\/user(?:\/|$)/.test(currentPath) : currentHostPath === urlTarget;
 
 			return {
 				active,
@@ -92,10 +93,11 @@ export function SidebarNavigationMenu() {
 		if (!user.is.anonymous) {
 			if (user.can.addMedia) {
 				items.push({
-					link: links.user.addMedia,
+					link: user.pages?.home || links.user.addMedia,
 					icon: 'myMedia',
 					text: 'My Media & Playlist',
 					className: 'nav-item-upload-media',
+					activePattern: 'userProfile',
 				});
 			}
 		}
