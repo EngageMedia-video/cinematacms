@@ -99,6 +99,7 @@ class MediaSerializer(serializers.ModelSerializer):
             "user_featured",
             "size",
             "media_country_info",
+            "categories_info",
             "year_produced",
         )
 
@@ -313,6 +314,7 @@ class MediaSearchSerializer(serializers.ModelSerializer):
             "media_type",
             "preview_url",
             "media_country_info",
+            "categories_info",
         )
 
 
@@ -334,6 +336,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "media_count",
             "user",
             "thumbnail_url",
+            "color",
         )
 
 

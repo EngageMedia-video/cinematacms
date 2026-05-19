@@ -20,7 +20,15 @@ export function MediaItem(props) {
 		useMediaItem({ ...props, type });
 
 	function thumbnailComponent() {
-		return <MediaItemThumbnailLink src={thumbnailUrl} title={props.title} link={props.link} state={props.state} />;
+		return (
+			<MediaItemThumbnailLink
+				src={thumbnailUrl}
+				title={props.title}
+				link={props.link}
+				state={props.state}
+				categories={props.badgeCategories}
+			/>
+		);
 	}
 
 	const containerClassname = itemClassname(

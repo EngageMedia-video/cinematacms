@@ -277,11 +277,15 @@ def show_recommended_media(request, limit=100):
     # produced by task get_list_of_popular_media
     if pmi:
         media = list(
-            models.Media.objects.filter(friendly_token__in=pmi).filter(basic_query).prefetch_related("user")[:limit]
+            models.Media.objects.filter(friendly_token__in=pmi)
+            .filter(basic_query)
+            .prefetch_related("user", "category")[:limit]
         )
     else:
         media = list(
-            models.Media.objects.filter(basic_query).order_by("-views", "-likes").prefetch_related("user")[:limit]
+            models.Media.objects.filter(basic_query)
+            .order_by("-views", "-likes")
+            .prefetch_related("user", "category")[:limit]
         )
     random.shuffle(media)
     return media

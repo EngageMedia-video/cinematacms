@@ -105,7 +105,7 @@ class EncodingAdmin(admin.ModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     search_fields = ["title"]
-    list_display = ["title", "user", "add_date", "is_global", "media_count"]
+    list_display = ["title", "user", "add_date", "is_global", "media_count", "color"]
     list_filter = ["is_global"]
     ordering = ("-add_date",)
     readonly_fields = ("user", "media_count")

@@ -103,6 +103,36 @@ export function MediaItemStateBadge(props) {
 	);
 }
 
+const DEFAULT_CATEGORY_COLOR = 'var(--cinemata-neutral-600)';
+
+function resolveCategoryColor(color) {
+	if (!color) {
+		return DEFAULT_CATEGORY_COLOR;
+	}
+	if (color.startsWith('#') || color.startsWith('var(') || color.startsWith('rgb') || color.startsWith('hsl')) {
+		return color;
+	}
+	return `var(--${color})`;
+}
+
+export function MediaCategoryBadge(props) {
+	if (!props.categories || !props.categories.length) {
+		return null;
+	}
+
+	const category = props.categories[0];
+
+	return (
+		<span
+			className="item-category-badge"
+			title={category.title}
+			style={{ backgroundColor: resolveCategoryColor(category.color) }}
+		>
+			<span className="badge-label">{category.title}</span>
+		</span>
+	);
+}
+
 export function MediaItemThumbnailLink(props) {
 	const attr = {
 		href: props.link,
@@ -120,6 +150,7 @@ export function MediaItemThumbnailLink(props) {
 					<div></div>
 				</div>
 			)}
+			<MediaCategoryBadge categories={props.categories} />
 			<MediaItemStateBadge state={props.state} />
 		</a>
 	);
