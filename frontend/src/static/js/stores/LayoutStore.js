@@ -5,8 +5,6 @@ import { exportStore } from '../functions';
 import { addClassname, removeClassname } from '../functions/dom.js';
 import { config as mediaCmsConfig } from '../mediacms/config.js';
 
-import PageStore from '../pages/_PageStore';
-
 let slidingSidebarTimeout;
 
 function onSidebarVisibilityChange(visibleSidebar) {
@@ -15,18 +13,10 @@ function onSidebarVisibilityChange(visibleSidebar) {
 	addClassname(document.body, 'sliding-sidebar');
 
 	slidingSidebarTimeout = setTimeout(function () {
-		if ('media' === PageStore.get('current-page')) {
-			if (visibleSidebar) {
-				addClassname(document.body, 'overflow-hidden');
-			} else {
-				removeClassname(document.body, 'overflow-hidden');
-			}
+		if (!visibleSidebar || 767 < window.innerWidth) {
+			removeClassname(document.body, 'overflow-hidden');
 		} else {
-			if (!visibleSidebar || 767 < window.innerWidth) {
-				removeClassname(document.body, 'overflow-hidden');
-			} else {
-				addClassname(document.body, 'overflow-hidden');
-			}
+			addClassname(document.body, 'overflow-hidden');
 		}
 
 		if (visibleSidebar) {
@@ -62,28 +52,14 @@ class LayoutStore extends EventEmitter {
 			visibleMobileSearch: false,
 		};
 
-		if ('media' === PageStore.get('current-page')) {
-			this.state.visibleSidebar = false;
-		} else {
-			this.state.visibleSidebar =
-				1023 < window.innerWidth && (null === this.state.visibleSidebar || this.state.visibleSidebar);
-		}
+		this.state.visibleSidebar =
+			1023 < window.innerWidth && (null === this.state.visibleSidebar || this.state.visibleSidebar);
 
 		if (this.state.visibleSidebar) {
 			addClassname(document.body, 'visible-sidebar');
 		} else {
 			removeClassname(document.body, 'visible-sidebar');
 		}
-
-		PageStore.once(
-			'page_init',
-			(() => {
-				if ('media' === PageStore.get('current-page')) {
-					this.state.visibleSidebar = false;
-					removeClassname(document.body, 'visible-sidebar');
-				}
-			}).bind(this)
-		);
 	}
 
 	get(type) {
