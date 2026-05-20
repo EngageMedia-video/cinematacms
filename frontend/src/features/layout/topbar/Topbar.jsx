@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useContext, useEffect } from 'react';
 
 import '../../../static/css/tailwind.css';
 
+import UserContext from '../../../static/js/contexts/UserContext';
 import { Icon } from '../../shared/components/Icon';
 import { TopbarLogo } from './TopbarLogo';
 import { TopbarMobileBar } from './TopbarMobileBar';
@@ -12,9 +13,15 @@ import { TopbarSidebarToggle } from './TopbarSidebarToggle';
 import { TopbarUploadButton } from './TopbarUploadButton';
 import { TopbarUserMenu } from './TopbarUserMenu';
 import useTopbarStore from './useTopbarStore';
+import { useIsHomeRoute } from './useIsHomeRoute';
 
 export function Topbar() {
 	const openMobileSearch = useTopbarStore((state) => state.openMobileSearch);
+	const user = useContext(UserContext);
+	const isHome = useIsHomeRoute();
+	// Anonymous home gets a full-width search bar in row 2 instead, so the
+	// top-row icon is redundant in that case. Every other case keeps it.
+	const showMobileSearchIcon = !(user?.is?.anonymous && isHome);
 
 	// Marker for the mobile --header-height override in tailwind.css so it
 	// only applies on pages that actually mount this topbar.
@@ -36,14 +43,18 @@ export function Topbar() {
 					<TopbarSidebarToggle />
 					<TopbarLogo />
 					<TopbarSearchDesktop />
-					<button
-						type="button"
-						onClick={openMobileSearch}
-						aria-label="Open search"
-						className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-full bg-cinemata-pacific-deep-800 text-cinemata-white hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0 ml-auto"
-					>
-						<Icon name="magnifyingGlass" size={20} decorative />
-					</button>
+					{showMobileSearchIcon ? (
+						<button
+							type="button"
+							onClick={openMobileSearch}
+							aria-label="Open search"
+							className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-full bg-cinemata-pacific-deep-800 text-cinemata-white hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0 ml-auto"
+						>
+							<Icon name="magnifyingGlass" size={20} decorative />
+						</button>
+					) : (
+						<span aria-hidden="true" className="sm:hidden ml-auto" />
+					)}
 					<div className="hidden sm:inline-flex shrink-0">
 						<TopbarUploadButton />
 					</div>
