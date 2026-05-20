@@ -1,6 +1,6 @@
 body.dark_theme {
 	--body-text-color: rgba(255, 255, 255, 0.88);
-	--body-bg-color: #121212;
+	--body-bg-color: var(--cinemata-pacific-deep-950);
 
 	--error-text-color: #f87171;
 
@@ -379,19 +379,6 @@ body.dark_theme {
 	--user-action-form-inner-recovery-code-input-text-color: #ffffff;
 
 	/* ################################################## */
-
-	/* ── Site Palette (formalising _extra.css hardcodes) ── */
-	--site-meta-color: #bad8dd;
-	--site-heading-link-color: #7bbbbf;
-	--site-emphasis-color: #7bbbbf;
-	--site-body-bg-color: #101a24;
-	--site-content-box-bg-color: #0b3145;
-	--site-accent-color: #ed7c30;
-	--site-accent-secondary-color: #e7a27b;
-	--site-search-field-bg-color: #102c40;
-	--site-form-btn-bg-color: #7bbbbf;
-	--site-featured-bg-color: #0b3144;
-	--site-player-accent-color: #026690;
 
 	/* ── Cinemata Revamp Palette (raw brand tokens) ─────── */
 	--cinemata-red-50: #fef2f2;

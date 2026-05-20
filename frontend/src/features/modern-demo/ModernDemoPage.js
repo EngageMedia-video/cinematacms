@@ -114,28 +114,6 @@ const TOKEN_SECTIONS = [
 		],
 	},
 	{
-		id: 'site-palette',
-		title: 'Site Palette',
-		group: 'core',
-		description:
-			'Formalised from _extra.css hardcoded colors into proper theme variables. These auto-switch on dark/light toggle — no dark: prefix needed.',
-		display: 'pairs',
-		tokenCount: 10,
-		// [purpose, token, lightHex, darkHex]
-		pairs: [
-			['Meta text & icons (viewer sidebar, filters, playlist counters)', 'site-meta', '#869ea5', '#bad8dd'],
-			['Links & headings (year produced, sidebar icons, category links)', 'site-heading', '#1a3f61', '#7bbbbf'],
-			['Emphasis content (custom pages .emphasis, .emphasis-large)', 'site-emphasis', '#026690', '#7bbbbf'],
-			['Content boxes (.box, .box-list backgrounds)', 'site-box-bg', '#ebf7f9', '#0b3145'],
-			['Brand CTA orange (Sign In, edit buttons, play button hover)', 'site-accent', '#ed7c30', '#ed7c30'],
-			['Brand salmon (heading underlines, decorative elements)', 'site-accent-alt', '#e7a27b', '#e7a27b'],
-			['Header search field background', 'site-search-bg', '#102c40', '#102c40'],
-			['Form buttons (login, register) — navy in light, teal in dark', 'site-form-btn', '#1a3f61', '#7bbbbf'],
-			['Featured item content overlay', 'site-featured-bg', '#dfeff4', '#0b3144'],
-			['Video player accent (play button, progress bar)', 'site-player-accent', '#026690', '#026690'],
-		],
-	},
-	{
 		id: 'button-theme-switches',
 		title: 'Button Theme Switches',
 		group: 'core',
