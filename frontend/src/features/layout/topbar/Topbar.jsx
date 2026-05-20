@@ -14,14 +14,17 @@ import { TopbarUploadButton } from './TopbarUploadButton';
 import { TopbarUserMenu } from './TopbarUserMenu';
 import useTopbarStore from './useTopbarStore';
 import { useIsHomeRoute } from './useIsHomeRoute';
+import { useSidebarVisible } from './useSidebarVisible';
 
 export function Topbar() {
 	const openMobileSearch = useTopbarStore((state) => state.openMobileSearch);
 	const user = useContext(UserContext);
 	const isHome = useIsHomeRoute();
-	// Anonymous home gets a full-width search bar in row 2 instead, so the
-	// top-row icon is redundant in that case. Every other case keeps it.
-	const showMobileSearchIcon = !(user?.is?.anonymous && isHome);
+	const sidebarVisible = useSidebarVisible();
+	// Anonymous users get a full-width search bar in row 2 whenever row 2 has
+	// no UPLOAD action to show (home, or sidebar drawer open). In those cases
+	// the top-row search icon would be redundant.
+	const showMobileSearchIcon = !(user?.is?.anonymous && (isHome || sidebarVisible));
 
 	// Marker for the mobile --header-height override in tailwind.css so it
 	// only applies on pages that actually mount this topbar.

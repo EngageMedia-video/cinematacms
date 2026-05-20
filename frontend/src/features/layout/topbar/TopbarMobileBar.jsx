@@ -50,9 +50,14 @@ function derivePageTitle() {
 	for (const [pattern, label] of ROUTE_TITLES) {
 		if (pattern.test(path)) return label;
 	}
+	// document.title may start with a separator (e.g. "| Sign In" on django-allauth
+	// pages), so filter empty segments before picking the first label.
 	const raw = (typeof document !== 'undefined' && document.title) || '';
-	const first = raw.split(/[-|–—]/)[0].trim();
-	return first || 'Home';
+	const segments = raw
+		.split(/[-|–—]/)
+		.map((segment) => segment.trim())
+		.filter(Boolean);
+	return segments[0] || 'Home';
 }
 
 export function TopbarMobileBar() {
@@ -85,37 +90,30 @@ export function TopbarMobileBar() {
 		else window.location.assign('/');
 	}
 
-	// Sidebar drawer open → row 2 collapses to a single full-width UPLOAD action.
-	if (sidebarVisible) {
-		return (
-			<div className="flex sm:hidden items-center px-4 h-16 bg-cinemata-pacific-deep-900">
-				<TopbarUploadButton className="flex w-full" />
-			</div>
-		);
-	}
+	const isAnonymous = Boolean(user?.is?.anonymous);
 
-	// Home + anonymous → full-width search-bar affordance that opens the
-	// fullscreen overlay on tap (replaces the redundant top-row search icon).
-	if (home && user?.is?.anonymous) {
-		return (
-			<div className="flex sm:hidden items-center px-4 h-16 bg-cinemata-pacific-deep-900">
-				<button
-					type="button"
-					onClick={openMobileSearch}
-					aria-label="Open search"
-					className="flex w-full items-center gap-2 h-10 px-3 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors text-left text-cinemata-strait-blue-100"
-				>
-					<Icon name="magnifyingGlass" size={18} decorative />
-					<Text as="span" variant="body-14" className="m-0 truncate text-cinemata-strait-blue-100">
-						Search for Films, Members, Events, etc
-					</Text>
-				</button>
-			</div>
-		);
-	}
-
-	// Home + logged-in → just the UPLOAD action (or nothing if the user can't upload).
-	if (home) {
+	// Sidebar drawer open OR home → row 2 collapses to a single full-width
+	// primary action. Anonymous users see a search-bar affordance (search is
+	// their only useful action surface, so the row never goes blank); logged-in
+	// users see the UPLOAD MEDIA action they care about.
+	if (sidebarVisible || home) {
+		if (isAnonymous) {
+			return (
+				<div className="flex sm:hidden items-center px-4 h-16 bg-cinemata-pacific-deep-900">
+					<button
+						type="button"
+						onClick={openMobileSearch}
+						aria-label="Open search"
+						className="flex w-full items-center gap-2 h-10 px-3 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors text-left text-cinemata-strait-blue-100"
+					>
+						<Icon name="magnifyingGlass" size={18} decorative />
+						<Text as="span" variant="body-14" className="m-0 truncate text-cinemata-strait-blue-100">
+							Search for Films, Members, Events, etc
+						</Text>
+					</button>
+				</div>
+			);
+		}
 		return (
 			<div className="flex sm:hidden items-center px-4 h-16 bg-cinemata-pacific-deep-900">
 				<TopbarUploadButton className="flex w-full" />
