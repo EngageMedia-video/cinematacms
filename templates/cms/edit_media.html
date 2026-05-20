@@ -55,8 +55,8 @@
 							width: 100%;
 							padding: 20px;
 							margin-top: 15px;
-							border: 2px dashed var(--input-border-color, #ccc);
-							background: var(--input-bg-color, #fafafa);
+							border: 2px dashed var(--add-media-page-tmplt-dropzone-border-color);
+							background: var(--add-media-page-tmplt-uploader-bg-color);
 							border-radius: 4px;
 							box-sizing: border-box;
 							position: relative;
@@ -889,6 +889,10 @@
 				text-align: center;
 				position: relative;
 				z-index: 10;
+				background: var(--add-media-page-tmplt-dropzone-bg-color);
+				border: 1px dashed var(--add-media-page-tmplt-dropzone-border-color);
+				border-radius: 4px;
+				box-sizing: border-box;
 			}
 
 			#media-file-uploader .media-drag-drop-content {
@@ -1028,8 +1032,8 @@
 			#media-file-uploader .media-upload-items-list li {
 				margin: 0;
 				padding: 10px;
-				background: var(--input-bg-color);
-				border: 1px solid var(--input-border-color);
+				background: var(--add-media-page-tmplt-uploader-bg-color);
+				border: 1px solid var(--add-media-page-tmplt-dropzone-border-color);
 				border-radius: 4px;
 			}
 
@@ -1080,8 +1084,8 @@
 			.upload-progress-container {
 				padding: 40px;
 				text-align: center;
-				background: var(--input-bg-color);
-				border: 2px dashed var(--input-border-color);
+				background: var(--add-media-page-tmplt-uploader-bg-color);
+				border: 2px dashed var(--add-media-page-tmplt-dropzone-border-color);
 				border-radius: 4px;
 				margin: 20px 0;
 				animation: fadeIn 0.3s ease-in;
@@ -1089,11 +1093,11 @@
 
 			/* Ensure dashed border is visible in dark mode */
 			.dark_theme .upload-progress-container {
-				border-color: rgba(255, 255, 255, 0.2);
+				border-color: var(--add-media-page-tmplt-dropzone-border-color);
 			}
 
 			.dark_theme .media-uploader-section {
-				border-color: rgba(255, 255, 255, 0.2) !important;
+				border-color: var(--add-media-page-tmplt-dropzone-border-color) !important;
 			}
 
 			.upload-progress-icon {
@@ -1127,7 +1131,7 @@
 
 			.upload-progress-bar-wrapper {
 				width: 100%;
-				background: var(--input-border-color, #ddd);
+				background: var(--add-media-page-tmplt-dropzone-border-color);
 				border-radius: 10px;
 				overflow: hidden;
 				height: 30px;
@@ -1158,8 +1162,8 @@
 
 			.upload-notice-box {
 				padding: 15px;
-				background: var(--body-bg-color);
-				border: 1px solid var(--default-theme-color);
+				background: var(--add-media-page-tmplt-dropzone-bg-color);
+				border: 1px solid var(--add-media-page-tmplt-dropzone-border-color);
 				border-left-width: 4px;
 				margin: 20px auto;
 				text-align: left;
@@ -1224,14 +1228,14 @@
 				align-items: flex-start;
 				gap: 5px;
 				padding: 10px 15px;
-				background: var(--body-bg-color);
+				background: var(--add-media-page-tmplt-dropzone-bg-color);
 				border-radius: 4px;
-				border: 1px solid var(--input-border-color);
+				border: 1px solid var(--add-media-page-tmplt-dropzone-border-color);
 			}
 
 			/* Ensure border is visible in dark mode */
 			.dark_theme .success-details {
-				border-color: rgba(255, 255, 255, 0.2);
+				border-color: var(--add-media-page-tmplt-dropzone-border-color);
 			}
 
 			.success-details .file-name {
@@ -1255,15 +1259,15 @@
 				align-items: flex-start;
 				gap: 8px;
 				padding: 12px;
-				background: var(--body-bg-color);
-				border: 1px solid var(--input-border-color);
+				background: var(--add-media-page-tmplt-dropzone-bg-color);
+				border: 1px solid var(--add-media-page-tmplt-dropzone-border-color);
 				border-radius: 2px;
 				text-align: left;
 			}
 
 			/* Ensure border is visible in dark mode */
 			.dark_theme .success-notice {
-				border-color: rgba(255, 255, 255, 0.2);
+				border-color: var(--add-media-page-tmplt-dropzone-border-color);
 			}
 
 			.success-notice .material-icons {
