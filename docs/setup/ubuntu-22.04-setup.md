@@ -11,3 +11,5 @@ As root, clone the repository on /home/cinemata and run install.sh:
 # chmod +x install.sh install-nodejs.sh scripts/build_frontend.sh
 # ./install.sh
 ```
+
+The installer runs database migrations and seeds django-waffle feature flag switches automatically. New switches are initialized from the default settings during installation.

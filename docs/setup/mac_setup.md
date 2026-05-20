@@ -205,6 +205,7 @@ chmod +x scripts/build_frontend.sh
 
 python manage.py makemigrations files users actions
 python manage.py migrate
+python manage.py seed_waffle_switches --force
 python manage.py loaddata fixtures/encoding_profiles.json
 python manage.py loaddata fixtures/categories.json
 python manage.py load_apac_languages

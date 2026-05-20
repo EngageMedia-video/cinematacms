@@ -70,13 +70,21 @@ WAFFLE_CREATE_MISSING_SWITCHES = True
 
 ## Seeding Switches
 
-After deploying, run the seed command to create all switches with their correct defaults from settings:
+Deployment scripts run the seed command after migrations to create any missing switches from settings defaults. You can also run it manually:
 
 ```bash
 python manage.py seed_waffle_switches
 ```
 
-This uses `update_or_create` so it is safe to run multiple times — it will correct any auto-created switches that have wrong defaults.
+This is safe to run repeatedly because it preserves existing switches and admin-managed values.
+
+For fresh installs or an explicit reset to settings defaults, use `--force`:
+
+```bash
+python manage.py seed_waffle_switches --force
+```
+
+Forced seeding overwrites existing switch values with their corresponding Django settings defaults.
 
 ## Migration from Settings
 

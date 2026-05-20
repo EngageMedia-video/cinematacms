@@ -6,6 +6,7 @@ Run after migrating to ensure all switches exist with correct defaults.
 
 Usage:
     python manage.py seed_waffle_switches
+    python manage.py seed_waffle_switches --force
 """
 
 from django.conf import settings
@@ -37,19 +38,30 @@ SWITCHES = [
 class Command(BaseCommand):
     help = "Seed waffle switches from Django settings values"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Overwrite existing switches with settings defaults",
+        )
+
     def handle(self, *args, **options):
         from waffle.models import Switch
 
+        force = options["force"]
+
         for name, setting, note in SWITCHES:
-            _, created = Switch.objects.update_or_create(
-                name=name,
-                defaults={
-                    "active": getattr(settings, setting, False),
-                    "note": note,
-                },
-            )
-            status = "created" if created else "updated"
-            active = getattr(settings, setting, False)
-            self.stdout.write(f"  {name}: active={active} ({status})")
+            defaults = {
+                "active": getattr(settings, setting, False),
+                "note": note,
+            }
+
+            if force:
+                switch, created = Switch.objects.update_or_create(name=name, defaults=defaults)
+            else:
+                switch, created = Switch.objects.get_or_create(name=name, defaults=defaults)
+
+            status = "created" if created else ("updated" if force else "exists")
+            self.stdout.write(f"  {name}: active={switch.active} ({status})")
 
         self.stdout.write(self.style.SUCCESS(f"Seeded {len(SWITCHES)} waffle switches"))

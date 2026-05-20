@@ -141,6 +141,8 @@ chmod +x install.sh
 ./install.sh
 ```
 
+The installer runs database migrations and seeds django-waffle feature flag switches automatically.
+
 **Local development (macOS or Windows):** See the [docs/](https://github.com/EngageMedia-video/cinematacms/tree/main/docs) directory for platform-specific setup guides.
 
 > ⚠️ The `main` branch contains the latest development code and may include unstable features. Use a tagged release for production deployments.

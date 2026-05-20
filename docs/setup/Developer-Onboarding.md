@@ -103,6 +103,7 @@ make frontend-build
 # 5. Database setup
 uv run manage.py makemigrations files users actions
 uv run manage.py migrate
+uv run manage.py seed_waffle_switches --force
 uv run manage.py loaddata fixtures/encoding_profiles.json
 uv run manage.py loaddata fixtures/categories.json
 uv run manage.py load_apac_languages
@@ -520,6 +521,7 @@ chmod +x scripts/build_frontend.sh
 # Run database migrations
 uv run manage.py makemigrations files users actions
 uv run manage.py migrate
+uv run manage.py seed_waffle_switches --force
 
 # Load initial data
 uv run manage.py loaddata fixtures/encoding_profiles.json
