@@ -3219,12 +3219,14 @@ body.dark_theme .playlist-videos-list .item:hover .item-content h3 span {
 
 /* #################################################################################################### */
 
-body.dark_theme .user-action-form-inner {
+body .user-action-form-inner {
 	background-color: var(--user-action-form-inner-bg-color);
 }
 
-body.dark_theme .user-action-form-inner input,
-body.dark_theme .user-action-form-inner textarea {
+body .user-action-form-inner input,
+body .user-action-form-inner select,
+body .user-action-form-inner textarea {
+	color: var(--user-action-form-inner-input-text-color);
 	border-width: 1px 1px 2px 1px;
 	border-color: var(--user-action-form-inner-bg-color) var(--user-action-form-inner-bg-color)
 		var(--user-action-form-inner-input-border-color) var(--user-action-form-inner-bg-color);
@@ -3235,9 +3237,10 @@ body.dark_theme .user-action-form-inner textarea {
 	border-color: var(--user-action-form-inner-input-border-color);
 }
 
-body.dark_theme .user-action-form-inner input:focus,
-body.dark_theme .user-action-form-inner textarea:focus {
-	/* background-color:rgba(15, 26, 37, 0.2); */
+body .user-action-form-inner input:focus,
+body .user-action-form-inner select:focus,
+body .user-action-form-inner textarea:focus {
+	border-color: var(--default-theme-color);
 }
 
 body.dark_theme .user-action-form-inner button,

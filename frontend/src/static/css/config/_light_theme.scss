@@ -365,13 +365,12 @@ body {
 
 	/* ################################################## */
 
-	--user-action-form-inner-bg-color: #fff;
-	// --user-action-form-inner-title-border-bottom-color: rgba(255,255,255,0,1);
-	--user-action-form-inner-title-border-bottom-color: var(--sidebar-nav-border-color);
+	--user-action-form-inner-bg-color: var(--cinemata-neutral-50);
+	--user-action-form-inner-title-border-bottom-color: var(--cinemata-pacific-deep-100);
 
-	--user-action-form-inner-input-border-color: #d3d3d3;
-	--user-action-form-inner-input-text-color: #000;
-	--user-action-form-inner-input-bg-color: #fff;
+	--user-action-form-inner-input-border-color: var(--cinemata-pacific-deep-500);
+	--user-action-form-inner-input-text-color: var(--cinemata-pacific-deep-900);
+	--user-action-form-inner-input-bg-color: var(--cinemata-neutral-50);
 
 	/* ################################################## */
 

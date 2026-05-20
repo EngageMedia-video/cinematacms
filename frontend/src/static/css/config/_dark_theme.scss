@@ -366,13 +366,12 @@ body.dark_theme {
 
 	/* ################################################## */
 
-	--user-action-form-inner-bg-color: #242424;
-	// --user-action-form-inner-title-border-bottom-color: rgba(255, 255, 255, 0.1);
-	--user-action-form-inner-title-border-bottom-color: var(--sidebar-nav-border-color);
+	--user-action-form-inner-bg-color: var(--cinemata-pacific-deep-900);
+	--user-action-form-inner-title-border-bottom-color: var(--cinemata-pacific-deep-700);
 
-	--user-action-form-inner-input-border-color: #303030;
-	--user-action-form-inner-input-text-color: rgba(255, 255, 255, 0.88);
-	--user-action-form-inner-input-bg-color: #121212;
+	--user-action-form-inner-input-border-color: var(--cinemata-pacific-deep-500);
+	--user-action-form-inner-input-text-color: var(--cinemata-strait-blue-50);
+	--user-action-form-inner-input-bg-color: var(--cinemata-pacific-deep-900);
 
 	/* ################################################## */
 
