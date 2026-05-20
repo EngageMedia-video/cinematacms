@@ -721,7 +721,7 @@ input#authenticator_secret {
 	width: auto;
 
 	@media (min-width: 768px) {
-		body[data-ui-variant='revamp'].visible-sidebar & {
+		.visible-sidebar & {
 			left: calc(-1 * var(--sidebar-width));
 		}
 	}
@@ -747,7 +747,7 @@ input#authenticator_secret {
 		padding-right: 24px;
 
 		@media (min-width: 768px) {
-			body[data-ui-variant='revamp'].visible-sidebar & {
+			.visible-sidebar & {
 				transform: translateX(calc(var(--sidebar-width) / 2));
 			}
 		}
