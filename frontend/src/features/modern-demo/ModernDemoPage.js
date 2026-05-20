@@ -115,22 +115,16 @@ const TOKEN_SECTIONS = [
 	},
 	{
 		id: 'button-theme-switches',
-		title: 'Button Theme Switches',
+		title: 'Button Palette',
 		group: 'core',
-		description:
-			'Existing theme variables that change dramatically between light and dark. These are already bridged as Tailwind tokens — this table highlights the visual difference for developer awareness.',
+		description: 'Button tokens aligned with the modern Button component palette and bridged as Tailwind tokens.',
 		display: 'pairs',
 		tokenCount: 3,
 		// [purpose, token, lightHex, darkHex]
 		pairs: [
-			['Primary button bg — navy in light, orange in dark', 'brand-primary', '#1a3f61', '#ed7c30'],
-			[
-				'Primary button hover — deep blue in light, dark orange in dark',
-				'brand-primary-hover',
-				'#026690',
-				'#c16732',
-			],
-			['Secondary button hover — teal in light, navy in dark', 'brand-secondary-hover', '#4a90a4', '#1a3f61'],
+			['Primary button bg', 'brand-primary', '#026690', '#026690'],
+			['Primary button hover', 'brand-primary-hover', '#003757', '#003757'],
+			['Secondary button hover', 'brand-secondary-hover', '#833e0b', '#833e0b'],
 		],
 	},
 

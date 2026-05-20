@@ -6,16 +6,16 @@ body.dark_theme {
 
 	--hr-color: #2a2a2a;
 
-	--btn-color: white;
-	--btn-primary-icon-color: white;
-	--btn-primary-bg-color: #ed7c30;
-	--btn-primary-bg-hover-color: #c16732;
-	--btn-secondary-color: rgba(255, 255, 255, 0.88);
-	--btn-secondary-icon-color: white;
-	--btn-secondary-icon-hover-color: rgb(243, 243, 243);
-	--btn-secondary-bg-color: transparent;
-	--btn-secondary-border-color: #bad8dd;
-	--btn-secondary-bg-hover-color: #1a3f61;
+	--btn-color: var(--cinemata-white);
+	--btn-primary-icon-color: var(--cinemata-white);
+	--btn-primary-bg-color: var(--cinemata-strait-blue-600p);
+	--btn-primary-bg-hover-color: var(--cinemata-strait-blue-800);
+	--btn-secondary-color: var(--cinemata-white);
+	--btn-secondary-icon-color: var(--cinemata-white);
+	--btn-secondary-icon-hover-color: var(--cinemata-white);
+	--btn-secondary-bg-color: var(--cinemata-sunset-horizon-500);
+	--btn-secondary-border-color: var(--cinemata-sunset-horizon-500);
+	--btn-secondary-bg-hover-color: var(--cinemata-sunset-horizon-700);
 
 	--dotted-outline-color: rgba(255, 255, 255, 0.4);
 

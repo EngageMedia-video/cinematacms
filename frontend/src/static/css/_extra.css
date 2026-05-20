@@ -15,7 +15,7 @@ body {
 	--header-height: 90px !important;
 
 	--default-theme-color: var(--btn-primary-bg-color) !important;
-	--default-brand-color: var(--cinemata-sunset-horizon-300) !important;
+	--default-brand-color: var(--btn-secondary-bg-color) !important;
 
 	--default-item-width: 372px !important;
 	--default-max-item-width: 372px !important;
@@ -33,7 +33,7 @@ body {
 body.dark_theme {
 	/* --default-theme-color: #0F80D7 !important; */
 	--default-theme-color: var(--btn-primary-bg-color) !important;
-	--default-brand-color: var(--cinemata-sunset-horizon-300) !important;
+	--default-brand-color: var(--btn-secondary-bg-color) !important;
 }
 
 /*

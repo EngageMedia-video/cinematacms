@@ -8,16 +8,16 @@ body {
 
 	--dotted-outline-color: rgba(0, 0, 0, 0.4);
 
-	--btn-color: white;
-	--btn-primary-icon-color: #7bbbbf;
-	--btn-primary-bg-color: #1a3f61;
-	--btn-primary-bg-hover-color: #026690;
-	--btn-secondary-color: black;
-	--btn-secondary-icon-color: #1b3f61;
-	--btn-secondary-icon-hover-color: #bad8dd;
-	--btn-secondary-bg-color: hsl(0, 0%, 100%);
-	--btn-secondary-border-color: #bad8dd;
-	--btn-secondary-bg-hover-color: #4a90a4;
+	--btn-color: var(--cinemata-white);
+	--btn-primary-icon-color: var(--cinemata-white);
+	--btn-primary-bg-color: var(--cinemata-strait-blue-600p);
+	--btn-primary-bg-hover-color: var(--cinemata-strait-blue-800);
+	--btn-secondary-color: var(--cinemata-white);
+	--btn-secondary-icon-color: var(--cinemata-white);
+	--btn-secondary-icon-hover-color: var(--cinemata-white);
+	--btn-secondary-bg-color: var(--cinemata-sunset-horizon-500);
+	--btn-secondary-border-color: var(--cinemata-sunset-horizon-500);
+	--btn-secondary-bg-hover-color: var(--cinemata-sunset-horizon-700);
 
 	/* ################################################## */
 
