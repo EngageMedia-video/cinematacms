@@ -3546,11 +3546,6 @@ body .items-list-ver .feat-first-item.hw-most-recent-videos .item:nth-child(2) {
 	padding-top: calc(var(--header-height) + var(--top-message-height, 43px));
 }
 
-.top-message-body #app-sidebar,
-.top-message-body .page-sidebar-inner {
-	margin-top: var(--top-message-height, 43px);
-}
-
 .top-message--text {
 	font-size: 14px;
 }

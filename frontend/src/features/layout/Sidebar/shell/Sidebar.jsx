@@ -150,7 +150,7 @@ export function Sidebar({ id = 'app-sidebar' }) {
 				transform: isVisible ? 'translate(0px, 0px)' : hiddenTransform,
 				transitionDuration: '0.2s',
 				transitionProperty: 'transform',
-				top: 'var(--header-height)',
+				top: 'calc(var(--header-height) + var(--top-message-height, 0px))',
 				width: sidebarWidth,
 				zIndex: isMobileViewport ? 6 : 5,
 			}}
