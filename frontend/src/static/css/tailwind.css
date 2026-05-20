@@ -422,6 +422,7 @@
 	--color-site-meta: var(--site-meta-color);
 	--color-site-heading: var(--site-heading-link-color);
 	--color-site-emphasis: var(--site-emphasis-color);
+	--color-site-body-bg: var(--site-body-bg-color);
 	--color-site-box-bg: var(--site-content-box-bg-color);
 	--color-site-accent: var(--site-accent-color);
 	--color-site-accent-alt: var(--site-accent-secondary-color);

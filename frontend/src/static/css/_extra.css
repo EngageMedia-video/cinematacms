@@ -10,7 +10,7 @@ body {
 	--default-max-row-items: 5 !important;
 	--default-item-margin-right-width: 12px !important; */
 
-	--body-bg-color: var(--cinemata-white) !important;
+	--body-bg-color: var(--site-body-bg-color) !important;
 	--body-text-color: var(--cinemata-black) !important;
 
 	--default-logo-height: 50px !important;
@@ -47,7 +47,7 @@ body {
 
 body.dark_theme {
 	--body-text-color: var(--cinemata-white) !important;
-	--body-bg-color: var(--cinemata-pacific-deep-950) !important;
+	--body-bg-color: var(--site-body-bg-color) !important;
 
 	/* --default-theme-color: #0F80D7 !important; */
 	--default-theme-color: var(--cinemata-coral-reef-300) !important;
@@ -69,14 +69,14 @@ body.dark_theme {
 	--header-popup-menu-icon-color: var(--site-meta-color) !important;
 
 	--media-actions-share-copy-field-border-color: var(--cinemata-pacific-deep-900) !important;
-	--media-actions-share-copy-field-bg-color: var(--cinemata-pacific-deep-950) !important;
+	--media-actions-share-copy-field-bg-color: var(--site-body-bg-color) !important;
 
 	--share-embed-inner-textarea-text-color: rgba(255, 255, 255, 0.88) !important;
 	--share-embed-inner-textarea-border-color: var(--cinemata-pacific-deep-900) !important;
-	--share-embed-inner-textarea-bg-color: var(--cinemata-pacific-deep-950) !important;
+	--share-embed-inner-textarea-bg-color: var(--site-body-bg-color) !important;
 
 	--input-border-color: var(--cinemata-pacific-deep-900) !important;
-	--input-bg-color: var(--cinemata-pacific-deep-950) !important;
+	--input-bg-color: var(--site-body-bg-color) !important;
 
 	--add-media-page-tmplt-uploader-bg-color: var(--site-content-box-bg-color) !important;
 }
