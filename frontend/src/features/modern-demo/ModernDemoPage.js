@@ -348,6 +348,7 @@ const TOKEN_SECTIONS = [
 			['upload-dialog-bg', '--add-media-page-tmplt-dialog-bg-color', 'Dialog bg'],
 			['upload-uploader-bg', '--add-media-page-tmplt-uploader-bg-color', 'Uploader bg'],
 			['upload-dropzone-bg', '--add-media-page-tmplt-dropzone-bg-color', 'Dropzone bg'],
+			['upload-dropzone-border', '--add-media-page-tmplt-dropzone-border-color', 'Dropzone border'],
 			['upload-drag-text', '--add-media-page-tmplt-drag-drop-inner-text-color', 'Drag-drop text'],
 			['upload-spinner', '--add-media-page-tmplt-upload-item-spiner-text-color', 'Upload spinner'],
 			['upload-actions', '--add-media-page-tmplt-upload-item-actions-text-color', 'Upload actions text'],

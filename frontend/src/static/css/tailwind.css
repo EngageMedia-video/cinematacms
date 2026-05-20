@@ -208,6 +208,7 @@
 	--color-upload-dialog-bg: var(--add-media-page-tmplt-dialog-bg-color);
 	--color-upload-uploader-bg: var(--add-media-page-tmplt-uploader-bg-color);
 	--color-upload-dropzone-bg: var(--add-media-page-tmplt-dropzone-bg-color);
+	--color-upload-dropzone-border: var(--add-media-page-tmplt-dropzone-border-color);
 	--color-upload-drag-text: var(--add-media-page-tmplt-drag-drop-inner-text-color);
 	--color-upload-spinner: var(--add-media-page-tmplt-upload-item-spiner-text-color);
 	--color-upload-actions: var(--add-media-page-tmplt-upload-item-actions-text-color);

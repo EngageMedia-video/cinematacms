@@ -922,9 +922,30 @@
 				pointer-events: auto !important;
 				position: relative !important;
 				z-index: 100 !important;
-				display: inline-block !important;
-				padding: 10px 20px !important;
-				border: none !important;
+				display: inline-flex !important;
+				align-items: center !important;
+				justify-content: center !important;
+				padding: var(--size-10) var(--space-base) !important;
+				border: 1px solid transparent !important;
+				border-radius: var(--radius-4) !important;
+				background-color: var(--btn-primary-bg-color) !important;
+				color: var(--btn-color) !important;
+				font-family: var(--font-sans) !important;
+				font-size: 14px !important;
+				font-weight: 700 !important;
+				line-height: 20px !important;
+			}
+
+			#media-file-uploader .qq-upload-button-selector:hover,
+			#media-file-uploader .qq-upload-button-hover {
+				background-color: var(--btn-primary-bg-hover-color) !important;
+				color: var(--btn-color) !important;
+			}
+
+			#media-file-uploader .qq-upload-button-selector:focus,
+			#media-file-uploader .qq-upload-button-focus {
+				outline: 2px solid var(--add-media-page-qq-gallery-upload-button-focus-text-color) !important;
+				outline-offset: 2px !important;
 			}
 
 			#media-file-uploader .browse-files-btn-wrap {

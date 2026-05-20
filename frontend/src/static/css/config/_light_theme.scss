@@ -220,21 +220,22 @@ body {
 	/* ################################################## */
 
 	--add-media-page-tmplt-dialog-bg-color: #fff;
-	--add-media-page-tmplt-uploader-bg-color: #fff;
-	--add-media-page-tmplt-dropzone-bg-color: rgba(255, 255, 255, 0.5);
-	--add-media-page-tmplt-drag-drop-inner-text-color: rgba(17, 17, 17, 0.4);
-	--add-media-page-tmplt-upload-item-spiner-text-color: rgba(17, 17, 17, 0.32);
-	--add-media-page-tmplt-upload-item-actions-text-color: rgba(17, 17, 17, 0.4);
+	--add-media-page-tmplt-uploader-bg-color: var(--body-bg-color);
+	--add-media-page-tmplt-dropzone-bg-color: var(--cinemata-neutral-100);
+	--add-media-page-tmplt-dropzone-border-color: var(--cinemata-neutral-400);
+	--add-media-page-tmplt-drag-drop-inner-text-color: var(--cinemata-neutral-900);
+	--add-media-page-tmplt-upload-item-spiner-text-color: var(--cinemata-neutral-900);
+	--add-media-page-tmplt-upload-item-actions-text-color: var(--cinemata-neutral-900);
 
 	/* ################################################## */
 
-	--add-media-page-qq-gallery-upload-button-text-color: rgba(17, 17, 17, 0.6);
-	--add-media-page-qq-gallery-upload-button-icon-text-color: rgba(17, 17, 17, 0.6);
+	--add-media-page-qq-gallery-upload-button-text-color: var(--btn-color);
+	--add-media-page-qq-gallery-upload-button-icon-text-color: var(--btn-primary-icon-color);
 
-	--add-media-page-qq-gallery-upload-button-hover-text-color: rgba(17, 17, 17, 1);
-	--add-media-page-qq-gallery-upload-button-hover-icon-text-color: rgba(17, 17, 17, 1);
+	--add-media-page-qq-gallery-upload-button-hover-text-color: var(--btn-color);
+	--add-media-page-qq-gallery-upload-button-hover-icon-text-color: var(--btn-primary-icon-color);
 
-	--add-media-page-qq-gallery-upload-button-focus-text-color: rgba(17, 17, 17, 0.4);
+	--add-media-page-qq-gallery-upload-button-focus-text-color: var(--cinemata-strait-blue-200);
 
 	/* ################################################## */
 
