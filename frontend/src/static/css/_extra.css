@@ -28,6 +28,9 @@ body {
 	--default-horizontal-item-margin-bottom-width: 29px !important;
 
 	--horizontal-item-title-line-height: 20px;
+
+	--font-sans: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+	--font-heading: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
 }
 
 body.dark_theme {
@@ -42,7 +45,7 @@ body.dark_theme {
  */
 
 html body {
-	font-family: 'Amulya', Arial, sans-serif;
+	font-family: var(--font-sans);
 }
 
 html body h1,
@@ -57,8 +60,7 @@ html body h5,
 html body .h5,
 html body h6,
 html body .h6 {
-	/* font-family: 'Amulya', Arial, sans-serif; */
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 }
 
 a {
@@ -856,7 +858,7 @@ body.dark_theme ul.sidebar-extra-menu li a:active {
 #page-countries .media-list-header h2,
 #page-languages .media-list-header h2,
 #page-categories .media-list-header h2{
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 	font-size:30px;
 	line-height: 32px;
 	padding:12px 0 8px;
@@ -864,7 +866,7 @@ body.dark_theme ul.sidebar-extra-menu li a:active {
 
 body .items-list-header h2,
 body .media-list-header h2 {
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 	font-size: 30px;
 	line-height: 32px;
 	padding: 12px 0 8px;
@@ -885,7 +887,7 @@ body .hover-overlay-title .item h3 {
 	width: 100%;
 	padding: 0;
 	text-align: left;
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 	font-size: 26px;
 	line-height: 1;
 }
@@ -1345,7 +1347,7 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main h3
 }
 
 body .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 	font-size: 20px;
 	line-height: 26px;
 	background-color: var(--item-bg-color);
@@ -1682,7 +1684,7 @@ body .items-list-ver .feat-first-item .item {
 #page-search .media-list-header h2 {
 	font-size: 21px;
 	line-height: 32px;
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 }
 
 body.dark_theme #page-search .media-list-header h2 {
@@ -1984,7 +1986,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
 .page-main-inner .custom-page-wrapper p,
 .page-main-inner .custom-page-wrapper ul li {
 	font-size: 16px;
-	font-family: 'Amulya', Arial, Helvetica, sans-serif;
+	font-family: var(--font-sans);
 	font-weight: 500;
 	line-height: 1.5;
 	letter-spacing: 0;
@@ -2036,7 +2038,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
 	position: relative;
 	display: block;
 	padding-bottom: 10px;
-	font-family: 'Facultad', Arial, Helvetica, sans-serif;
+	font-family: var(--font-heading);
 	font-size: 32px;
 	line-height: 1.2;
 	color: var(--body-text-color);
@@ -2048,7 +2050,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
 	position: relative;
 	display: block;
 	padding-bottom: 10px;
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 	font-size: 24px;
 	line-height: 1.2;
 	letter-spacing: 0.01;
@@ -2061,7 +2063,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
 	position: relative;
 	display: block;
 	padding-bottom: 10px;
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 	font-size: 18px;
 	line-height: 1.5;
 	letter-spacing: 0.01;
@@ -2101,7 +2103,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper .emphasis-large {
 .page-main-inner .custom-page-wrapper .emphasis-large {
 	font-size: 24px;
 	line-height: 32px;
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 }
 
 .page-main-inner .custom-page-wrapper .emphasis-large strong,
@@ -2199,7 +2201,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper ul.box-list li > * {
 	display: block;
 	font-size: 24px;
 	font-weight: 500;
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 }
 
 .page-main-inner .custom-page-wrapper ul.box-list-half li {
@@ -2655,7 +2657,7 @@ body .media-title-banner h1 {
 	font-size: 26px;
 	line-height: 32px;
 	margin-bottom: 8px;
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 }
 
 body.dark_theme .media-title-banner h1 {
@@ -3069,7 +3071,7 @@ body.dark_theme .profile-page-header .profile-info-nav-wrap:before {
 }
 
 body.dark_theme .profile-page-header .profile-info h1 {
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 }
 
 body.dark_theme .profile-page-header .profile-nav {
@@ -3131,7 +3133,7 @@ body .playlist-view .playlist-media .items-list-hor .item-main h3 {
 }
 
 body .playlist-view .playlist-title {
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 	font-size: 16px;
 }
 
@@ -3187,7 +3189,7 @@ body.dark_theme .playlist-details {
 }
 
 body.dark_theme .playlist-details .playlist-title h1 {
-	font-family: 'Facultad', Arial, sans-serif;
+	font-family: var(--font-heading);
 }
 
 body.dark_theme .playlist-details .playlist-meta {
@@ -3289,12 +3291,12 @@ body .hw-category {
 }
 
 .hw-category-title-h2 {
-	font-family: 'Facultad', Arial, sans-serif !important;
+	font-family: var(--font-heading) !important;
 }
 
 .hw-category-description,
 .hw-category-description * {
-	font-family: 'Amulya', Arial, sans-serif;
+	font-family: var(--font-sans);
 	font-size: 14px;
 }
 

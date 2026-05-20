@@ -94,8 +94,8 @@ const TOKEN_SECTIONS = [
 		description: 'Font family tokens. Use font-heading for titles and font-sans for body text.',
 		display: 'info',
 		tokens: [
-			['font-sans', "'Amulya', 'Arial', sans-serif", 'Body text font'],
-			['font-heading', "'Facultad', 'Arial', sans-serif", 'Heading font'],
+			['font-sans', "'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif", 'Body text font'],
+			['font-heading', "'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif", 'Heading font'],
 		],
 	},
 	{
@@ -1002,9 +1002,11 @@ function TypographyRecipe() {
 	return (
 		<div className="mt-4 rounded border border-border-input/50 bg-surface-body p-4">
 			<p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-content-body/40">Live example</p>
-			<h4 className="font-heading text-lg font-semibold text-content-body">Heading in font-heading (Facultad)</h4>
+			<h4 className="font-heading text-lg font-semibold text-content-body">
+				Heading in font-heading (Barlow Semi Condensed)
+			</h4>
 			<p className="mt-1 font-sans text-sm text-content-body">
-				Body text in font-sans (Amulya) &mdash; the default for all UI elements.
+				Body text in font-sans (Inter) &mdash; the default for all UI elements.
 			</p>
 		</div>
 	);
