@@ -18,33 +18,22 @@ const meta = {
 	args: {
 		children: 'SAVE AS DRAFT',
 		variant: 'primary',
-		color: 'strait-blue-600p',
 	},
 	argTypes: {
+		align: {
+			control: 'radio',
+			options: ['left', 'center', 'right', 'between'],
+			description: 'Horizontal alignment of button content.',
+			table: {
+				type: { summary: "'left' | 'center' | 'right' | 'between'" },
+				defaultValue: { summary: "'center'" },
+			},
+		},
 		children: {
 			control: 'text',
 			description: 'Visible button label. Omit this for the icon-only variant.',
 			table: {
 				type: { summary: 'ReactNode' },
-			},
-		},
-		color: {
-			control: 'radio',
-			if: { arg: 'variant', eq: 'text' },
-			options: [
-				'strait-blue-600p',
-				'sunset-horizon-300',
-				'sunset-horizon-500',
-				'pacific-deep-950',
-				'red-500',
-				'strait-blue-100',
-				'strait-blue-400',
-				'neutral-600',
-			],
-			description: 'Text color token used by the `text` variant.',
-			table: {
-				type: { summary: 'string' },
-				defaultValue: { summary: "'strait-blue-600p'" },
 			},
 		},
 		icon: {
@@ -73,7 +62,8 @@ const meta = {
 		},
 		className: {
 			control: 'text',
-			description: 'Optional extra classes applied to the button element.',
+			description:
+				'Optional extra classes applied to the button element. Use this to override text color or background color.',
 			table: {
 				type: { summary: 'string' },
 				defaultValue: { summary: "''" },
@@ -170,7 +160,6 @@ export const Text = {
 	args: {
 		children: 'Read more',
 		variant: 'text',
-		color: 'strait-blue-600p',
 	},
 };
 
@@ -195,11 +184,10 @@ export const IconText = {
 	args: {
 		children: 'PAUSE',
 		variant: 'text',
-		color: 'sunset-horizon-300',
 		icon: <PauseIcon />,
 		iconPosition: 'left',
 		className:
-			'rounded-none bg-cinemata-neutral-200 px-3 py-2 hover:bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-900 dark:hover:bg-cinemata-pacific-deep-950',
+			'text-cinemata-sunset-horizon-500 hover:text-cinemata-sunset-horizon-700 dark:text-cinemata-sunset-horizon-300 dark:hover:text-cinemata-sunset-horizon-500 rounded-none bg-cinemata-neutral-200 px-3 py-2 hover:bg-cinemata-neutral-300 dark:bg-cinemata-pacific-deep-900 dark:hover:bg-cinemata-pacific-deep-950',
 	},
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);

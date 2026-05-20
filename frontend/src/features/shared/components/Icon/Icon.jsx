@@ -30,8 +30,7 @@ function warnMissingIcon(name) {
 	);
 }
 
-export function Icon(props) {
-	const { name, size = 'md', className = '', label, title, decorative, style, ...restProps } = props;
+export function Icon({ name, size = 'md', className = '', label, title, decorative, style, ...restProps }) {
 	const SvgIcon = getIconComponent(name);
 
 	if (!SvgIcon) {

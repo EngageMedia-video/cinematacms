@@ -55,48 +55,14 @@ describe('Button', () => {
 		expect(button.querySelectorAll('span')).toHaveLength(1);
 	});
 
-	it('renders requested text color variants without affecting semantics', () => {
+	it('allows overriding text color via className', () => {
 		render(
-			<Button variant="text" color="red-500">
+			<Button variant="text" className="text-cinemata-red-500">
 				Delete item
 			</Button>
 		);
 
 		expect(screen.getByRole('button', { name: 'Delete item' })).toBeInTheDocument();
-	});
-
-	it('supports additional text color options', () => {
-		const { rerender } = render(
-			<Button variant="text" color="sunset-horizon-300">
-				Pause
-			</Button>
-		);
-
-		expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
-
-		rerender(
-			<Button variant="text" color="strait-blue-100">
-				Soft link
-			</Button>
-		);
-
-		expect(screen.getByRole('button', { name: 'Soft link' })).toBeInTheDocument();
-
-		rerender(
-			<Button variant="text" color="strait-blue-400">
-				More details
-			</Button>
-		);
-
-		expect(screen.getByRole('button', { name: 'More details' })).toBeInTheDocument();
-
-		rerender(
-			<Button variant="text" color="neutral-600">
-				Dismiss
-			</Button>
-		);
-
-		expect(screen.getByRole('button', { name: 'Dismiss' })).toBeInTheDocument();
 	});
 
 	it('renders special variant icon on the right', () => {
@@ -135,14 +101,14 @@ describe('Button', () => {
 		expect(screen.getByRole('button', { name: 'Fallback' })).toBeInTheDocument();
 	});
 
-	it('falls back to primary text color for unsupported text color', () => {
+	it('allows overriding background color via className', () => {
 		render(
-			<Button variant="text" color="unsupported">
-				Fallback text
+			<Button variant="primary" className="bg-cinemata-red-500">
+				Custom BG
 			</Button>
 		);
 
-		expect(screen.getByRole('button', { name: 'Fallback text' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Custom BG' })).toBeInTheDocument();
 	});
 
 	it('renders long labels without creating icon wrapper when icon is absent', () => {

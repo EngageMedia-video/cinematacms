@@ -12,17 +12,6 @@
 		}
 	}
 
-	.visible-sidebar #page-media & {
-		padding-left: 0;
-	}
-
-	.visible-sidebar & {
-		#page-media {
-			// @note: This need only because of the differences ( of element with class="page-main-wrap" ) between dev environment and online app.
-			padding-left: 0;
-		}
-	}
-
 	> * {
 		// border:1rem solid yellow;
 	}

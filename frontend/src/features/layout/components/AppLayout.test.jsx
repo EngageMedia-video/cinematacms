@@ -11,8 +11,8 @@ vi.mock('../topbar', () => ({
 	Topbar: () => <div data-testid="topbar" />,
 }));
 
-vi.mock('../../../static/js/components/-NEW-/PageSidebar', () => ({
-	PageSidebar: () => <div data-testid="page-sidebar" />,
+vi.mock('../Sidebar', () => ({
+	Sidebar: () => <div data-testid="page-sidebar" />,
 }));
 
 describe('AppLayout', () => {

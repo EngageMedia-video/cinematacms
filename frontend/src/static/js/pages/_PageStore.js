@@ -1,12 +1,6 @@
-import React from 'react';
 import EventEmitter from 'events';
-
 import BrowserCache from '../classes/BrowserCache.js';
-
 import { exportStore } from '../functions';
-
-import { addClassname, removeClassname } from '../functions/dom.js';
-
 import { config as mediaCmsConfig } from '../mediacms/config.js';
 
 /*import * as MediaCMSLib from '../../../../lib/dist/mediacms-frontend-lib.js';
@@ -135,11 +129,10 @@ let page_config = null;
 let mediacms_config = null;
 
 const mediacms_member_page_link = (k) => mediacms_config.member.pages[k] || '#';
-
 const mediacms_api_endpoint_url = (k) => mediacms_config.api[k] || null;
 
 class PageStore extends EventEmitter {
-	constructor(page) {
+	constructor() {
 		super();
 
 		// TODO: Remove setMaxListeners once all 13 components migrate to LayoutContext

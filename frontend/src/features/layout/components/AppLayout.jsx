@@ -4,8 +4,8 @@ import React from 'react';
 import '../../../static/css/styles.scss';
 import '../../../static/js/components/styles/PageMain.scss';
 
-import { PageSidebar } from '../../../static/js/components/-NEW-/PageSidebar';
 import { PageSidebarContentOverlay } from '../../../static/js/components/-NEW-/PageSidebarContentOverlay';
+import { Sidebar } from '../Sidebar';
 import { RippleDecoration } from './RippleDecoration';
 import { TopMessageHost } from './TopMessageHost';
 import { Topbar } from '../topbar';
@@ -24,7 +24,7 @@ export function AppLayout({ ContentComponent, pageSlotId }) {
 
 			<TopMessageHost />
 			<Topbar />
-			<PageSidebar />
+			<Sidebar />
 
 			<main className="page-main">
 				<div className="page-main-inner app-layout__content">

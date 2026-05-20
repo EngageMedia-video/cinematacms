@@ -194,10 +194,52 @@ export function VerticalMovieItem({
 	);
 }
 
-export function MovieItem({ orientation = 'vertical', ...props }) {
+export function MovieItem({
+	badge = '',
+	badgeColor = '#026690',
+	className = '',
+	duration = '',
+	iconLabel = '',
+	iconName = '',
+	imageAlt = 'Movie artwork',
+	imageSrc,
+	link = '',
+	metadata = [],
+	orientation = 'vertical',
+	subtitle = '',
+	title = 'Movie Title',
+}) {
 	if (orientation === 'horizontal') {
-		return <HorizontalMovieItem {...props} />;
+		return (
+			<HorizontalMovieItem
+				badge={badge}
+				badgeColor={badgeColor}
+				className={className}
+				duration={duration}
+				imageAlt={imageAlt}
+				imageSrc={imageSrc}
+				link={link}
+				metadata={metadata}
+				subtitle={subtitle}
+				title={title}
+			/>
+		);
 	}
 
-	return <VerticalMovieItem {...props} />;
+	return (
+		<VerticalMovieItem
+			badge={badge}
+			badgeColor={badgeColor}
+			className={className}
+			duration={duration}
+			iconLabel={iconLabel}
+			iconName={iconName}
+			imageAlt={imageAlt}
+			imageSrc={imageSrc}
+			link={link}
+			metadata={metadata}
+			subtitle={subtitle}
+			title={title}
+		/>
+	);
 }

@@ -3,7 +3,14 @@ import { useEffect, useRef } from 'react';
 import { Icon } from '../Icon';
 import { Button } from '../Button';
 
-export function GetNotifiedButton({ notified = false, className = '', onMouseEnter, onMouseLeave, ...props }) {
+export function GetNotifiedButton({
+	'aria-label': ariaLabel,
+	notified = false,
+	className = '',
+	onMouseEnter,
+	onMouseLeave,
+	...props
+}) {
 	const bellIconRef = useRef(null);
 	const previousNotifiedRef = useRef(notified);
 
@@ -31,7 +38,7 @@ export function GetNotifiedButton({ notified = false, className = '', onMouseEnt
 		<Button
 			variant="primary"
 			className={cn(className)}
-			aria-label={props['aria-label'] ?? 'Get Notified'}
+			aria-label={ariaLabel ?? 'Get Notified'}
 			aria-pressed={notified}
 			onMouseEnter={onMouseEnter}
 			onMouseLeave={onMouseLeave}

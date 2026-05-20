@@ -1,6 +1,6 @@
 import React from 'react';
 
-// PageSidebar (legacy) reads from LayoutStore + LayoutActions; mirroring the
+// Sidebar reads from LayoutStore + LayoutActions; mirroring the
 // toggle action in a Zustand store would force two sources of truth.
 import * as LayoutActions from '../../../static/js/actions/LayoutActions.js';
 import { Icon } from '../../shared/components/Icon';

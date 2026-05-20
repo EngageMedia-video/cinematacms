@@ -17,18 +17,6 @@
 	transition-duration: 0.2s;
 	// transition-timing-function:linear;
 
-	#page-media &,
-	#page-media-video &,
-	#page-media-audio &,
-	#page-media-image &,
-	#page-media-pdf & {
-		body.visible-sidebar & {
-			display: block;
-			opacity: 0.5;
-			visibility: visible;
-		}
-	}
-
 	@media (max-width: 767px) {
 		body.visible-sidebar & {
 			display: block;

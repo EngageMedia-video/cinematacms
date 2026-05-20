@@ -1,7 +1,6 @@
 import ComponentRenderer from './classes_instances/components-renderer';
 
-import { PageSidebar } from './components/-NEW-/PageSidebar';
-import { AppLayout } from '../../features/layout';
+import { AppLayout, Sidebar } from '../../features/layout';
 import { LegacyTopbarMount } from '../../features/layout/topbar/LegacyTopbarMount';
 
 function shouldUseModernShell() {
@@ -21,7 +20,7 @@ export function renderPage(idSelector, PageComponent) {
 	}
 
 	ComponentRenderer.display(document.getElementById('app-header'), LegacyTopbarMount, {}, 'app-header');
-	ComponentRenderer.display(document.getElementById('app-sidebar'), PageSidebar, {}, 'app-sidebar');
+	ComponentRenderer.display(document.getElementById('app-sidebar'), Sidebar, { id: null }, 'app-sidebar');
 
 	if (idSelector !== undefined && PageComponent !== undefined) {
 		const elem = document.getElementById(idSelector);

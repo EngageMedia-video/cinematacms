@@ -11,23 +11,62 @@ The social media links are defined in the `templates/config/installation/content
 The current sidebar social media links are defined in a HTML structure within the `belowNavMenu` property. Here's what it looks like:
 
 ```html
-belowNavMenu: '<ul class="social-media-links">\
-                <li>\
-                    <a href="https://mailer.cinemata.org" target="_blank" rel="noreferrer" title="" alt="">\
-                        <img src="/static/images/icons/dark-mode/newsletter.png" loading="lazy" alt=""/>\
-                    </a>\
-                </li>\
-                <li>\
-                    <a href="http://www.facebook.com/cinematavideo" target="_blank" rel="noreferrer" title="" alt="">\
-                        <img src="/static/images/icons/dark-mode/facebook.png" loading="lazy" alt="" />\
-                    </a>\
-                </li>\
-                <li>\
-                    <a href="http://twitter.com/cinemata" target="_blank" rel="noreferrer" title="" alt="">\
-                        <img src="/static/images/icons/dark-mode/twitter.png" loading="lazy" alt="" />\
-                    </a>\
-                </li>\
-            </ul>',
+belowNavMenu: '
+<ul class="social-media-links">
+  \
+  <li>
+    \
+    <a
+      href="https://mailer.cinemata.org"
+      target="_blank"
+      rel="noreferrer"
+      title=""
+      alt=""
+      >\
+      <img
+        src="/static/images/icons/dark-mode/newsletter.png"
+        loading="lazy"
+        alt=""
+      />\ </a
+    >\
+  </li>
+  \
+  <li>
+    \
+    <a
+      href="https://www.facebook.com/cinematavideo"
+      target="_blank"
+      rel="noreferrer"
+      title=""
+      alt=""
+      >\
+      <img
+        src="/static/images/icons/dark-mode/facebook.png"
+        loading="lazy"
+        alt=""
+      />\ </a
+    >\
+  </li>
+  \
+  <li>
+    \
+    <a
+      href="http://twitter.com/cinemata"
+      target="_blank"
+      rel="noreferrer"
+      title=""
+      alt=""
+      >\
+      <img
+        src="/static/images/icons/dark-mode/twitter.png"
+        loading="lazy"
+        alt=""
+      />\ </a
+    >\
+  </li>
+  \
+</ul>
+',
 ```
 
 ## How to Modify the Social Media Links
@@ -47,11 +86,23 @@ To add an Instagram link, you would:
 2. Add a new `<li>` element in the social media links list:
 
 ```html
-<li>\
-    <a href="https://www.instagram.com/yourprofile" target="_blank" rel="noreferrer" title="Instagram" alt="Instagram">\
-        <img src="/static/images/icons/dark-mode/instagram.png" loading="lazy" alt="Instagram" />\
-    </a>\
-</li>\
+<li>
+  \
+  <a
+    href="https://www.instagram.com/yourprofile"
+    target="_blank"
+    rel="noreferrer"
+    title="Instagram"
+    alt="Instagram"
+    >\
+    <img
+      src="/static/images/icons/dark-mode/instagram.png"
+      loading="lazy"
+      alt="Instagram"
+    />\ </a
+  >\
+</li>
+\
 ```
 
 ## Example: Complete Replacement with New Links
@@ -59,23 +110,62 @@ To add an Instagram link, you would:
 If you want to completely replace the existing links with your own set (e.g., Instagram, LinkedIn, and GitHub), here's how the code would look:
 
 ```html
-belowNavMenu: '<ul class="social-media-links">\
-                <li>\
-                    <a href="https://www.instagram.com/yourprofile" target="_blank" rel="noreferrer" title="Instagram" alt="Instagram">\
-                        <img src="/static/images/icons/dark-mode/instagram.png" loading="lazy" alt="Instagram"/>\
-                    </a>\
-                </li>\
-                <li>\
-                    <a href="https://www.linkedin.com/company/yourcompany" target="_blank" rel="noreferrer" title="LinkedIn" alt="LinkedIn">\
-                        <img src="/static/images/icons/dark-mode/linkedin.png" loading="lazy" alt="LinkedIn" />\
-                    </a>\
-                </li>\
-                <li>\
-                    <a href="https://github.com/yourorganization" target="_blank" rel="noreferrer" title="GitHub" alt="GitHub">\
-                        <img src="/static/images/icons/dark-mode/github.png" loading="lazy" alt="GitHub" />\
-                    </a>\
-                </li>\
-            </ul>',
+belowNavMenu: '
+<ul class="social-media-links">
+  \
+  <li>
+    \
+    <a
+      href="https://www.instagram.com/yourprofile"
+      target="_blank"
+      rel="noreferrer"
+      title="Instagram"
+      alt="Instagram"
+      >\
+      <img
+        src="/static/images/icons/dark-mode/instagram.png"
+        loading="lazy"
+        alt="Instagram"
+      />\ </a
+    >\
+  </li>
+  \
+  <li>
+    \
+    <a
+      href="https://www.linkedin.com/company/yourcompany"
+      target="_blank"
+      rel="noreferrer"
+      title="LinkedIn"
+      alt="LinkedIn"
+      >\
+      <img
+        src="/static/images/icons/dark-mode/linkedin.png"
+        loading="lazy"
+        alt="LinkedIn"
+      />\ </a
+    >\
+  </li>
+  \
+  <li>
+    \
+    <a
+      href="https://github.com/yourorganization"
+      target="_blank"
+      rel="noreferrer"
+      title="GitHub"
+      alt="GitHub"
+      >\
+      <img
+        src="/static/images/icons/dark-mode/github.png"
+        loading="lazy"
+        alt="GitHub"
+      />\ </a
+    >\
+  </li>
+  \
+</ul>
+',
 ```
 
 ## Adding Icons for Dark and Light Mode
@@ -83,18 +173,30 @@ belowNavMenu: '<ul class="social-media-links">\
 If your site supports both dark and light modes, you might want to provide different icons for each mode. You can do this with CSS:
 
 1. Add classes to your images:
+
 ```html
-<img src="/static/images/icons/dark-mode/facebook.png" class="dark-mode-icon" loading="lazy" alt="Facebook" />
-<img src="/static/images/icons/light-mode/facebook.png" class="light-mode-icon" loading="lazy" alt="Facebook" />
+<img
+  src="/static/images/icons/dark-mode/facebook.png"
+  class="dark-mode-icon"
+  loading="lazy"
+  alt="Facebook"
+/>
+<img
+  src="/static/images/icons/light-mode/facebook.png"
+  class="light-mode-icon"
+  loading="lazy"
+  alt="Facebook"
+/>
 ```
 
 2. Add CSS to show/hide the icons based on the current theme:
+
 ```css
 body.light-mode .dark-mode-icon {
-    display: none;
+  display: none;
 }
 body.dark-mode .light-mode-icon {
-    display: none;
+  display: none;
 }
 ```
 
