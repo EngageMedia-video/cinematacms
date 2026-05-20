@@ -3067,7 +3067,7 @@ body.dark_theme .user-contact-form textarea {
 body.dark_theme .profile-page-header .profile-info-nav-wrap,
 body.dark_theme .profile-page-header .profile-info-nav-wrap:before {
 	/* background-color:#0b3144; */
-	background-color: var(--header-bg-color);
+	background-color: var(--profile-page-header-bg-color);
 }
 
 body.dark_theme .profile-page-header .profile-info h1 {
@@ -3075,8 +3075,8 @@ body.dark_theme .profile-page-header .profile-info h1 {
 }
 
 body.dark_theme .profile-page-header .profile-nav {
-	background-color: var(--header-bg-color);
-	border-bottom-color: var(--header-bg-color);
+	background-color: var(--profile-page-header-bg-color);
+	border-bottom-color: var(--profile-page-header-bg-color);
 }
 
 body.dark_theme .profile-page-header .profile-nav ul li a {

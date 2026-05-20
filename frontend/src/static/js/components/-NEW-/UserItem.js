@@ -159,14 +159,14 @@ export function UserItem(props) {
 
 			<style jsx>{`
 				.member-card {
-					background: var(--popup-bg-color, white);
+					background: var(--user-action-form-inner-bg-color, var(--cinemata-neutral-50));
 					border-radius: 12px;
 					padding: 1.5rem;
 					box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 					transition: all 0.2s;
 					position: relative;
 					text-align: center;
-					border: 1px solid var(--input-border-color, #e2e8f0);
+					border: 1px solid var(--user-action-form-inner-input-border-color, var(--cinemata-pacific-deep-500));
 				}
 
 				.member-card:hover {
@@ -265,8 +265,10 @@ export function UserItem(props) {
 					gap: 1rem;
 					margin-bottom: 1rem;
 					padding: 0.75rem 0;
-					border-top: 1px solid var(--input-border-color, #f1f5f9);
-					border-bottom: 1px solid var(--input-border-color, #f1f5f9);
+					border-top: 1px solid
+						var(--user-action-form-inner-input-border-color, var(--cinemata-pacific-deep-500));
+					border-bottom: 1px solid
+						var(--user-action-form-inner-input-border-color, var(--cinemata-pacific-deep-500));
 				}
 
 				.stat {
@@ -290,8 +292,8 @@ export function UserItem(props) {
 				.view-profile {
 					width: 100%;
 					padding: 0.75rem;
-					background: var(--default-theme-color, #3b82f6);
-					color: white !important;
+					background: var(--btn-primary-bg-color, #026690);
+					color: var(--btn-color, white) !important;
 					border: none;
 					border-radius: 8px;
 					font-weight: 500;
@@ -303,8 +305,8 @@ export function UserItem(props) {
 				}
 
 				.view-profile:hover {
-					opacity: 0.9;
-					color: white !important;
+					background: var(--btn-primary-bg-hover-color, #003757);
+					color: var(--btn-color, white) !important;
 				}
 
 				@media (max-width: 768px) {

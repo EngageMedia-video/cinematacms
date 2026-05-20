@@ -120,17 +120,17 @@ body.dark_theme {
 
 	/* ################################################## */
 
-	--item-bg-color: #121212;
+	--item-bg-color: var(--user-action-form-inner-bg-color);
 
 	--item-title-text-color: rgba(255, 255, 255, 0.88);
 
-	--item-thumb-bg-color: var(--sidebar-bg-color);
+	--item-thumb-bg-color: var(--user-action-form-inner-bg-color);
 
 	--item-meta-text-color: #888;
 	--item-meta-link-text-color: var(--item-text-color);
 	--item-meta-link-hover-text-color: rgba(255, 255, 255, 0.74);
 
-	--profile-page-item-content-title-bg-color: #121212;
+	--profile-page-item-content-title-bg-color: var(--user-action-form-inner-bg-color);
 
 	--playlist-item-main-view-full-link-text-color: rgb(170, 170, 170);
 	--playlist-item-main-view-full-link-hover-text-color: #fff;
@@ -168,12 +168,12 @@ body.dark_theme {
 	/* ################################################## */
 
 	// --playlist-view-header-bg-color: #414141;
-	--playlist-view-header-bg-color: #252525;
+	--playlist-view-header-bg-color: var(--user-action-form-inner-bg-color);
 
 	--playlist-view-header-toggle-text-color: #fff;
 
 	// --playlist-view-header-toggle-bg-color: #414141;
-	--playlist-view-header-toggle-bg-color: #252525;
+	--playlist-view-header-toggle-bg-color: var(--user-action-form-inner-bg-color);
 
 	--playlist-view-title-link-text-color: rgba(255, 255, 255, 0.88);
 
@@ -187,10 +187,10 @@ body.dark_theme {
 	--playlist-view-status-icon-text-color: rgba(255, 255, 255, 0.6);
 
 	// --playlist-view-actions-bg-color: #414141;
-	--playlist-view-actions-bg-color: #252525;
+	--playlist-view-actions-bg-color: var(--user-action-form-inner-bg-color);
 
 	// --playlist-view-media-bg-color: #292929;
-	--playlist-view-media-bg-color: var(--sidebar-bg-color);
+	--playlist-view-media-bg-color: var(--body-bg-color);
 
 	--playlist-view-media-order-number-color: rgb(136, 136, 136);
 
@@ -198,13 +198,13 @@ body.dark_theme {
 
 	--playlist-view-item-author-text-color: #fff;
 	// --playlist-view-item-author-bg-color: #292929;
-	--playlist-view-item-author-bg-color: var(--sidebar-bg-color);
+	--playlist-view-item-author-bg-color: var(--body-bg-color);
 
 	/* ################################################## */
 
 	--profile-page-bg-color: var(--body-bg-color);
 
-	--profile-page-header-bg-color: #1a1a1a;
+	--profile-page-header-bg-color: var(--body-bg-color);
 
 	--profile-page-info-videos-number-text-color: #888;
 
@@ -240,13 +240,13 @@ body.dark_theme {
 
 	/* ################################################## */
 
-	--playlist-page-bg-color: #1a1a1a;
+	--playlist-page-bg-color: var(--body-bg-color);
 	--playlist-page-details-text-color: rgb(170, 170, 170);
-	--playlist-page-thumb-bg-color: #272727;
+	--playlist-page-thumb-bg-color: var(--item-thumb-bg-color);
 	--playlist-page-title-link-text-color: #fff;
 
-	--playlist-page-actions-circle-icon-text-color: #1a1a1a;
-	--playlist-page-actions-circle-icon-bg-color: inherit; // @todo: Check this value.
+	--playlist-page-actions-circle-icon-text-color: var(--body-text-color);
+	--playlist-page-actions-circle-icon-bg-color: var(--user-action-form-inner-bg-color); // @todo: Check this value.
 
 	--playlist-page-actions-nav-item-button-text-color: rgba(255, 255, 255, 0.88);
 
@@ -265,33 +265,33 @@ body.dark_theme {
 	--playlist-page-author-edit-playlist-icon-button-text-color: rgb(170, 170, 170);
 
 	// --playlist-page-author-edit-playlist-icon-button-bg-color: #1a1a1a;
-	--playlist-page-author-edit-playlist-icon-button-bg-color: #252525;
+	--playlist-page-author-edit-playlist-icon-button-bg-color: var(--user-action-form-inner-bg-color);
 
 	--playlist-page-author-edit-playlist-icon-button-active-text-color: rgba(255, 255, 255, 0.88);
 
 	--playlist-page-author-edit-playlist-form-wrap-text-color: rgba(255, 255, 255, 0.88);
-	--playlist-page-author-edit-playlist-form-wrap-bg-color: #242424;
+	--playlist-page-author-edit-playlist-form-wrap-bg-color: var(--user-action-form-inner-bg-color);
 
 	--playlist-page-author-edit-playlist-form-wrap-border-color: rgba(255, 255, 255, 0.1);
 
 	--playlist-page-author-edit-playlist-form-wrap-title-circle-icon-hover-text-color: rgba(255, 255, 255, 0.88);
 
 	--playlist-page-author-edit-playlist-author-thumb-text-color: #fff;
-	--playlist-page-author-edit-playlist-author-thumb-bg-color: #272727;
+	--playlist-page-author-edit-playlist-author-thumb-bg-color: var(--item-thumb-bg-color);
 
-	--playlist-page-details-bg-color: #252525;
+	--playlist-page-details-bg-color: var(--user-action-form-inner-bg-color);
 
 	// --playlist-page-video-list-bg-color: rgb(18, 18, 18);
-	--playlist-page-video-list-bg-color: #1c1c1c;
+	--playlist-page-video-list-bg-color: var(--body-bg-color);
 
 	// --playlist-page-video-list-item-title-bg-color: rgb(18, 18, 18);
-	--playlist-page-video-list-item-title-bg-color: #1c1c1c;
+	--playlist-page-video-list-item-title-bg-color: var(--body-bg-color);
 
 	// --playlist-page-video-list-item-hover-bg-color: rgb(36, 36, 36);
-	--playlist-page-video-list-item-hover-bg-color: #333;
+	--playlist-page-video-list-item-hover-bg-color: var(--cinemata-pacific-deep-800);
 
 	// --playlist-page-video-list-item-title-hover-bg-color: rgb(36, 36, 36);
-	--playlist-page-video-list-item-title-hover-bg-color: #333;
+	--playlist-page-video-list-item-title-hover-bg-color: var(--cinemata-pacific-deep-800);
 
 	--playlist-page-video-list-item-after-bg-color: rgba(255, 255, 255, 0.1);
 	--playlist-page-video-list-item-order-text-color: rgb(170, 170, 170);

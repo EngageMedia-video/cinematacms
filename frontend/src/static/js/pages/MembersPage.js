@@ -182,12 +182,13 @@ export class MembersPage extends Page {
 						}
 
 						.search-filters {
-							background: var(--popup-bg-color, white);
+							background: var(--user-action-form-inner-bg-color, var(--cinemata-neutral-50));
 							padding: 1.5rem;
 							border-radius: 12px;
 							margin-bottom: 2rem;
 							box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-							border: 1px solid var(--input-border-color, #e2e8f0);
+							border: 1px solid
+								var(--user-action-form-inner-input-border-color, var(--cinemata-pacific-deep-500));
 						}
 
 						.search-box {
@@ -195,8 +196,9 @@ export class MembersPage extends Page {
 							align-items: center;
 							gap: 0.75rem;
 							padding: 0.75rem 1rem;
-							background: var(--input-bg-color, #f8fafc);
-							border: 1px solid var(--input-border-color, #e2e8f0);
+							background: var(--user-action-form-inner-input-bg-color, var(--cinemata-neutral-50));
+							border: 1px solid
+								var(--user-action-form-inner-input-border-color, var(--cinemata-pacific-deep-500));
 							border-radius: 8px;
 							margin-bottom: 1rem;
 						}
@@ -229,9 +231,10 @@ export class MembersPage extends Page {
 						.filter-select {
 							flex: 1;
 							padding: 0.75rem 2.5rem 0.75rem 1rem;
-							border: 1px solid var(--input-border-color, #e2e8f0);
+							border: 1px solid
+								var(--user-action-form-inner-input-border-color, var(--cinemata-pacific-deep-500));
 							border-radius: 8px;
-							background: var(--input-bg-color, white);
+							background: var(--user-action-form-inner-input-bg-color, var(--cinemata-neutral-50));
 							font-size: 0.95rem;
 							cursor: pointer;
 							color: var(--body-text-color, #1e293b);
@@ -246,11 +249,11 @@ export class MembersPage extends Page {
 
 						.filter-select:focus {
 							outline: none;
-							border-color: var(--default-theme-color, #3b82f6);
+							border-color: var(--btn-primary-bg-color, #026690);
 						}
 
 						.filter-select option {
-							background: var(--input-bg-color, white);
+							background: var(--user-action-form-inner-input-bg-color, var(--cinemata-neutral-50));
 							color: var(--body-text-color, #1e293b);
 						}
 
