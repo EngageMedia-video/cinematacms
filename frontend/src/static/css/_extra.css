@@ -115,7 +115,7 @@ body.dark_theme a {
 }
 
 body.dark_theme .top-message--text a {
-	color: white;
+	color: inherit;
 }
 
 body .auto-play-header .checkbox-switcher-wrap {
