@@ -221,7 +221,7 @@
 				margin-left: 8px;
 				line-height: 1;
 				font-weight: 400;
-				color: #fff;
+				color: var(--btn-color);
 				text-decoration: none;
 				border: 0;
 				border-radius: 1px;
@@ -481,7 +481,7 @@
 		margin-top: 0.5rem;
 
 		> button {
-			color: #fff;
+			color: var(--btn-color);
 		}
 
 		.popup {

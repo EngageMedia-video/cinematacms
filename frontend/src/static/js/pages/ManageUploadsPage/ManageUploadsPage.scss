@@ -70,11 +70,11 @@
 				display: block;
 				width: 120px;
 				height: 68px;
-				background-color: #e0e0e0;
+				background-color: var(--item-thumb-bg-color);
 				border-radius: 2px;
 
 				.dark_theme & {
-					background-color: #333;
+					background-color: var(--item-thumb-bg-color);
 				}
 			}
 		}

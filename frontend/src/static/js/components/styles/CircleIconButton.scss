@@ -1,6 +1,6 @@
 .circle-icon-button {
 	--txt-color: rgba(17, 17, 17, 0.4);
-	--bg-color: #fff;
+	--bg-color: var(--user-action-form-inner-bg-color);
 
 	--bg-focus-color: rgba(0, 0, 0, 0.07);
 	--bg-active-color: rgba(0, 0, 0, 0.11);
@@ -8,7 +8,7 @@
 
 body.dark_theme .circle-icon-button {
 	--txt-color: rgba(255, 255, 255, 0.5);
-	--bg-color: #272727;
+	--bg-color: var(--user-action-form-inner-bg-color);
 
 	--bg-focus-color: rgba(255, 255, 255, 0.14);
 	--bg-active-color: rgba(255, 255, 255, 0.34);

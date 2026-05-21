@@ -62,11 +62,11 @@
 			right: 64px;
 			width: auto;
 			margin-top: 12px;
-			color: rgb(34, 34, 34);
+			color: var(--body-text-color);
 			border-width: 0px 1px 1px;
 			border-style: solid;
-			border-color: #ccc;
-			background-color: #fff;
+			border-color: var(--input-border-color);
+			background-color: var(--popup-bg-color);
 			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 		}
 	}

@@ -574,7 +574,7 @@ header[data-topbar] button:not(:disabled) {
 header[data-topbar] button:focus-visible,
 header[data-topbar] a:focus-visible,
 header[data-topbar] input:focus-visible {
-	outline: 2px solid #ed7c30;
+	outline: 2px solid var(--btn-secondary-bg-color);
 	outline-offset: 2px;
 	border-radius: 4px;
 }

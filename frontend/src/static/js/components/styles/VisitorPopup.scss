@@ -61,8 +61,8 @@
 		}
 
 		> * > * {
-			color: #026690;
-			background: #fff;
+			color: var(--btn-primary-bg-color);
+			background: var(--user-action-form-inner-bg-color);
 		}
 	}
 

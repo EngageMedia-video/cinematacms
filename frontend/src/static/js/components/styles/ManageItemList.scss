@@ -118,12 +118,12 @@
 	margin: 0;
 	border-style: solid;
 	border-width: 0 0 1px;
-	border-color: #f0f0f0;
+	border-color: var(--user-action-form-inner-input-border-color);
 
 	background-color: var(--user-action-form-inner-bg-color);
 
 	.dark_theme & {
-		border-color: #2d2d2d;
+		border-color: var(--user-action-form-inner-input-border-color);
 	}
 
 	&:last-child {
@@ -131,19 +131,19 @@
 	}
 
 	&:nth-child(2n + 1) {
-		background-color: #f5f5f5;
+		background-color: var(--body-bg-color);
 
 		.dark_theme & {
-			background-color: #202020;
+			background-color: var(--body-bg-color);
 		}
 	}
 
 	&:hover {
-		background-color: #eaeaea;
+		background-color: var(--cinemata-neutral-100);
 		box-shadow: 0px 1px 2px 0 rgba(#000, 0.12);
 
 		.dark_theme & {
-			background-color: #181818;
+			background-color: var(--cinemata-pacific-deep-800);
 			box-shadow: 0px 1px 2px 0 rgba(#000, 0.12);
 		}
 
@@ -152,10 +152,10 @@
 
 	> * {
 		display: table-cell;
-		border-right: 1px solid #f0f0f0;
+		border-right: 1px solid var(--user-action-form-inner-input-border-color);
 
 		.dark_theme & {
-			border-color: #2d2d2d;
+			border-color: var(--user-action-form-inner-input-border-color);
 		}
 
 		&:last-child {
@@ -165,10 +165,10 @@
 
 	&:hover {
 		> * {
-			border-color: #eaeaea;
+			border-color: var(--cinemata-neutral-100);
 
 			.dark_theme & {
-				border-color: #181818;
+				border-color: var(--cinemata-pacific-deep-800);
 			}
 		}
 	}
@@ -297,11 +297,11 @@
 				display: block;
 				width: 120px;
 				height: 68px;
-				background-color: #e0e0e0;
+				background-color: var(--item-thumb-bg-color);
 				border-radius: 2px;
 
 				.dark_theme & {
-					background-color: #333;
+					background-color: var(--item-thumb-bg-color);
 				}
 			}
 		}
@@ -513,10 +513,10 @@
 		font-size: 13px;
 		font-weight: 500;
 		letter-spacing: 0.007px;
-		background-color: #e3e3e3;
+		background-color: var(--user-action-form-inner-input-bg-color);
 
 		.dark_theme & {
-			background-color: #151515;
+			background-color: var(--user-action-form-inner-input-bg-color);
 		}
 
 		&:hover {
@@ -701,10 +701,10 @@
 
 		border-width: 1px;
 		border-style: solid;
-		border-color: #f0f0f0;
+		border-color: var(--user-action-form-inner-input-border-color);
 
 		.dark_theme & {
-			border-color: #2d2d2d;
+			border-color: var(--user-action-form-inner-input-border-color);
 		}
 
 		&:hover {
