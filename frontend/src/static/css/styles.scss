@@ -709,13 +709,22 @@ input#authenticator_secret {
 
 .top-message {
 	background-color: #ed7c31;
+	color: var(--cinemata-neutral-50);
 	display: flex;
 	justify-content: center;
+	left: 0;
 	padding: 14px 16px;
 	position: fixed;
+	right: 0;
 	text-align: center;
 	top: 0;
-	width: 100%;
+	width: auto;
+
+	@media (min-width: 768px) {
+		.visible-sidebar & {
+			left: calc(-1 * var(--sidebar-width));
+		}
+	}
 
 	&--close {
 		align-self: end;
@@ -737,8 +746,14 @@ input#authenticator_secret {
 		line-height: 16px;
 		padding-right: 24px;
 
+		@media (min-width: 768px) {
+			.visible-sidebar & {
+				transform: translateX(calc(var(--sidebar-width) / 2));
+			}
+		}
+
 		a {
-			color: white;
+			color: inherit;
 			font-weight: bold;
 			text-decoration: none;
 		}
