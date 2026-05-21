@@ -113,6 +113,7 @@ export default defineConfig({
 				members: 'src/entries/members.js',
 				embed: 'src/entries/embed.js',
 				media: 'src/entries/media.js',
+				'media-revamp': 'src/entries/media-revamp.js',
 				playlist: 'src/entries/playlist.js',
 				tags: 'src/entries/tags.js',
 				categories: 'src/entries/categories.js',

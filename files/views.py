@@ -576,6 +576,7 @@ def upload_media(request):
 
 
 def view_media(request):
+    template = resolve_template(request, "media")
     friendly_token = request.GET.get("m", "").strip()
     context = {}
     #    if not friendly_token:
@@ -584,7 +585,7 @@ def view_media(request):
     if not media:
         # TODO: 404 selida
         context["media"] = None
-        return render(request, "cms/media.html", context)
+        return render(request, template, context)
         # return HttpResponseRedirect('/')
     user_or_session = get_user_or_session(request)
     save_user_action.delay(user_or_session, friendly_token=friendly_token, action="watch")
@@ -653,7 +654,7 @@ def view_media(request):
     context["media_access_token"] = media_access_token
     context["is_media_allowed_type"] = is_media_allowed_type(media)
 
-    response = render(request, "cms/media.html", context)
+    response = render(request, template, context)
     if media.state == "restricted":
         response["Referrer-Policy"] = "same-origin"
         response["Cache-Control"] = "no-store"
@@ -665,6 +666,7 @@ def view_media(request):
 
 
 def view_old_media(request, user, video):
+    template = resolve_template(request, "media")
     url = f"/Members/{user}/videos/{video}"
     media = Media.objects.filter(existing_urls__url__in=[url]).first()
     if media:
@@ -686,7 +688,7 @@ def view_old_media(request, user, video):
             context["CAN_DELETE_MEDIA"] = True
             context["CAN_EDIT_MEDIA"] = True
             context["CAN_DELETE_COMMENTS"] = True
-    return render(request, "cms/media.html", context)
+    return render(request, template, context)
 
 
 @xframe_options_exempt

@@ -39,6 +39,13 @@ class ResolveTemplateTests(TestCase):
         self.assertEqual(result, "cms/index_revamp.html")
         self.assertEqual(request.ui_variant, "revamp")
 
+    @override_settings(UI_VARIANT_REVAMP_PAGES=["media"])
+    def test_media_revamp_when_allowlisted(self):
+        request = self._make_request()
+        result = resolve_template(request, "media")
+        self.assertEqual(result, "cms/media_revamp.html")
+        self.assertEqual(request.ui_variant, "revamp")
+
     @override_settings(UI_VARIANT_REVAMP_PAGES=["home"])
     def test_revamp_when_allowlisted_logged_in(self):
         request = self._make_request(is_staff=False)
