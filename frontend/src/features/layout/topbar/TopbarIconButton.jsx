@@ -4,7 +4,7 @@ import { cn } from '../../shared/utils/classNames';
 
 export const TopbarIconButton = forwardRef(function TopbarIconButton(
 	{ className, children, type = 'button', ...rest },
-	ref,
+	ref
 ) {
 	return (
 		<button
@@ -12,7 +12,7 @@ export const TopbarIconButton = forwardRef(function TopbarIconButton(
 			type={type}
 			className={cn(
 				'inline-flex items-center justify-center w-10 h-10 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0 text-cinemata-white',
-				className,
+				className
 			)}
 			{...rest}
 		>
