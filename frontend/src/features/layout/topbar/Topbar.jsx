@@ -1,8 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useContext, useEffect } from 'react';
 
 import '../../../static/css/tailwind.css';
 
+import UserContext from '../../../static/js/contexts/UserContext';
 import { Icon } from '../../shared/components/Icon';
+import { TopbarIconButton } from './TopbarIconButton';
 import { TopbarLogo } from './TopbarLogo';
 import { TopbarMobileBar } from './TopbarMobileBar';
 import { TopbarNotificationButton } from './TopbarNotificationButton';
@@ -12,9 +14,18 @@ import { TopbarSidebarToggle } from './TopbarSidebarToggle';
 import { TopbarUploadButton } from './TopbarUploadButton';
 import { TopbarUserMenu } from './TopbarUserMenu';
 import useTopbarStore from './useTopbarStore';
+import { useIsHomeRoute } from './useIsHomeRoute';
+import { useSidebarVisible } from './useSidebarVisible';
 
 export function Topbar() {
 	const openMobileSearch = useTopbarStore((state) => state.openMobileSearch);
+	const user = useContext(UserContext);
+	const isHome = useIsHomeRoute();
+	const sidebarVisible = useSidebarVisible();
+	// Anonymous users get a full-width search bar in row 2 whenever row 2 has
+	// no UPLOAD action to show (home, or sidebar drawer open). In those cases
+	// the top-row search icon would be redundant.
+	const showMobileSearchIcon = !(user?.is?.anonymous && (isHome || sidebarVisible));
 
 	// Marker for the mobile --header-height override in tailwind.css so it
 	// only applies on pages that actually mount this topbar.
@@ -36,14 +47,17 @@ export function Topbar() {
 					<TopbarSidebarToggle />
 					<TopbarLogo />
 					<TopbarSearchDesktop />
-					<button
-						type="button"
-						onClick={openMobileSearch}
-						aria-label="Open search"
-						className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-full bg-cinemata-pacific-deep-800 text-cinemata-white hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0 ml-auto"
-					>
-						<Icon name="magnifyingGlass" size={20} decorative />
-					</button>
+					{showMobileSearchIcon ? (
+						<TopbarIconButton
+							onClick={openMobileSearch}
+							aria-label="Open search"
+							className="sm:hidden ml-auto"
+						>
+							<Icon name="magnifyingGlass" size={20} decorative />
+						</TopbarIconButton>
+					) : (
+						<span aria-hidden="true" className="sm:hidden ml-auto" />
+					)}
 					<div className="hidden sm:inline-flex shrink-0">
 						<TopbarUploadButton />
 					</div>
