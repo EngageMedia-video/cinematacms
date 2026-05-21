@@ -41,7 +41,11 @@ const commentsText = {
 };
 
 function formatCommentAuthorThumbnail(url) {
-	return url ? formatInnerLink(url, SiteContext._currentValue?.url || '') : null;
+	if ('string' !== typeof url || '' === url.trim()) {
+		return null;
+	}
+
+	return formatInnerLink(url, SiteContext._currentValue?.url || '');
 }
 
 function CommentForm(props) {
@@ -263,7 +267,11 @@ function Comment(props) {
 	useEffect(() => {
 		if (ENABLED_COMMENTS_READ_MORE) {
 			PageStore.on('window_resize', onWindowResize);
-			setEnabledViewMoreContent(commentTextInnerRef.offsetHeight > commentTextRef.offsetHeight);
+			if (commentTextRef.current && commentTextInnerRef.current) {
+				setEnabledViewMoreContent(
+					commentTextInnerRef.current.offsetHeight > commentTextRef.current.offsetHeight
+				);
+			}
 		}
 
 		return () => {
@@ -274,7 +282,7 @@ function Comment(props) {
 	}, []);
 
 	function parseComment(text) {
-		return { __html: (text || '').replace(/\n/g, `<br />`) };
+		return { __html: String(text || '').replace(/\n/g, `<br />`) };
 	}
 
 	return (

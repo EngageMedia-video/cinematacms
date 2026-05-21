@@ -80,8 +80,8 @@ VideoPlayerError.propTypes = {
 export function VideoPlayer(props) {
 	props = { errorMessage: null, cornerLayers: {}, ...props };
 	const videoElemRef = useRef(null);
-
-	let player = null;
+	const playerRef = useRef(null);
+	const isMountedRef = useRef(false);
 
 	// Device tier detection and bandwidth estimation
 	const deviceDetectionReliable = isDeviceDetectionReliable();
@@ -164,7 +164,7 @@ export function VideoPlayer(props) {
 	}
 
 	function initPlayer() {
-		if (null !== player || null !== props.errorMessage) {
+		if (!isMountedRef.current || null !== playerRef.current || null !== props.errorMessage) {
 			return;
 		}
 
@@ -173,12 +173,14 @@ export function VideoPlayer(props) {
 			document.removeEventListener('visibilitychange', initPlayer);
 		}
 
-		if (!videoElemRef.current) {
+		const videoElement = videoElemRef.current;
+
+		if (!videoElement || !videoElement.isConnected) {
 			return;
 		}
 
 		if (!props.inEmbed) {
-			videoElemRef.current.focus(); // Focus on player before instance init.
+			videoElement.focus(); // Focus on player before instance init.
 		}
 
 		const subtitles = {
@@ -274,8 +276,8 @@ export function VideoPlayer(props) {
 			});
 		}
 
-		player = new MediaPlayerClass(
-			videoElemRef.current,
+		playerRef.current = new MediaPlayerClass(
+			videoElement,
 			playerOptions,
 			{
 				volume: playerStates.playerVolume,
@@ -292,19 +294,25 @@ export function VideoPlayer(props) {
 		);
 
 		if (void 0 !== props.onPlayerInitCallback) {
-			props.onPlayerInitCallback(player, videoElemRef.current);
+			props.onPlayerInitCallback(playerRef.current, videoElement);
 		}
 	}
 
 	function unsetPlayer() {
-		if (null === player) {
-			return;
+		const videoElement = videoElemRef.current;
+		const videoJsPlayer =
+			playerRef.current?.player || (videoElement ? videojs.getPlayer?.(videoElement) : null);
+
+		if (videoJsPlayer && !videoJsPlayer.isDisposed?.()) {
+			videoJsPlayer.dispose();
 		}
-		videojs(videoElemRef.current).dispose();
-		player = null;
+
+		playerRef.current = null;
 	}
 
 	useEffect(() => {
+		isMountedRef.current = true;
+
 		if (props.inEmbed || document.hasFocus() || 'visible' === document.visibilityState) {
 			initPlayer();
 		} else {
@@ -322,6 +330,9 @@ export function VideoPlayer(props) {
         }); */
 
 		return () => {
+			isMountedRef.current = false;
+			window.removeEventListener('focus', initPlayer);
+			document.removeEventListener('visibilitychange', initPlayer);
 			unsetPlayer();
 
 			if (void 0 !== props.onUnmountCallback) {
