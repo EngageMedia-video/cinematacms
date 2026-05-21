@@ -4,6 +4,7 @@ import '../../../static/css/tailwind.css';
 
 import UserContext from '../../../static/js/contexts/UserContext';
 import { Icon } from '../../shared/components/Icon';
+import { TopbarIconButton } from './TopbarIconButton';
 import { TopbarLogo } from './TopbarLogo';
 import { TopbarMobileBar } from './TopbarMobileBar';
 import { TopbarNotificationButton } from './TopbarNotificationButton';
@@ -47,14 +48,13 @@ export function Topbar() {
 					<TopbarLogo />
 					<TopbarSearchDesktop />
 					{showMobileSearchIcon ? (
-						<button
-							type="button"
+						<TopbarIconButton
 							onClick={openMobileSearch}
 							aria-label="Open search"
-							className="sm:hidden inline-flex items-center justify-center w-10 h-10 rounded-full bg-cinemata-pacific-deep-800 text-cinemata-white hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0 ml-auto"
+							className="sm:hidden ml-auto"
 						>
 							<Icon name="magnifyingGlass" size={20} decorative />
-						</button>
+						</TopbarIconButton>
 					) : (
 						<span aria-hidden="true" className="sm:hidden ml-auto" />
 					)}

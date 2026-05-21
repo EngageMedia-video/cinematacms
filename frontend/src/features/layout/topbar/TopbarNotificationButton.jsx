@@ -7,6 +7,7 @@ import { useUnreadCount } from '../../notifications/hooks/useUnreadCount';
 import { NotificationDropdown } from '../../notifications/components/NotificationDropdown';
 import useNotificationStore from '../../notifications/useNotificationStore';
 import notificationQueryClient from '../../notifications/queryClient';
+import { TopbarIconButton } from './TopbarIconButton';
 
 function BellButton() {
 	const { data } = useUnreadCount();
@@ -15,13 +16,12 @@ function BellButton() {
 
 	return (
 		<div className="relative inline-flex items-center">
-			<button
-				type="button"
+			<TopbarIconButton
 				onClick={toggleDropdown}
 				aria-label={`Notifications${count > 0 ? `, ${count} unread` : ''}`}
 				aria-haspopup="true"
 				aria-expanded={isDropdownOpen}
-				className="relative inline-flex items-center justify-center w-10 h-10 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0 text-cinemata-strait-blue-50"
+				className="relative text-cinemata-strait-blue-50"
 			>
 				<Icon name="notificationBell" size={20} decorative />
 				{count > 0 ? (
@@ -30,7 +30,7 @@ function BellButton() {
 						className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full pointer-events-none ring-2 ring-cinemata-pacific-deep-900"
 					/>
 				) : null}
-			</button>
+			</TopbarIconButton>
 			{isDropdownOpen ? <NotificationDropdown /> : null}
 		</div>
 	);
