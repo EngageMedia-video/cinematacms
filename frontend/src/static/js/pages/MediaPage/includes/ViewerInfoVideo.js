@@ -30,6 +30,8 @@ export default class ViewerInfoVideo extends ViewerInfo {
 				name: MediaPageStore.get('media-data').author_name,
 				url: MediaPageStore.get('media-data').author_profile,
 				thumb: MediaPageStore.get('media-author-thumbnail-url'),
+				isTrusted: MediaPageStore.get('media-data').author_is_trusted,
+				isManager: MediaPageStore.get('media-data').author_is_manager,
 			};
 
 			published = MediaPageStore.get('media-data').add_date;

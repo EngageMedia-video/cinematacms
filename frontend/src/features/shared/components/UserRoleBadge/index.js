@@ -1,0 +1,1 @@
+export { UserRoleBadge } from './UserRoleBadge';

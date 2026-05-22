@@ -89,6 +89,8 @@ class MediaSerializer(serializers.ModelSerializer):
             "author_name",
             "author_profile",
             "author_thumbnail",
+            "author_is_trusted",
+            "author_is_manager",
             "encoding_status",
             "views",
             "likes",
@@ -258,6 +260,8 @@ class SingleMediaSerializer(serializers.ModelSerializer):
             "author_name",
             "author_profile",
             "author_thumbnail",
+            "author_is_trusted",
+            "author_is_manager",
             "encodings_info",
             "encoding_status",
             "views",
@@ -411,6 +415,11 @@ class CommentSerializer(serializers.ModelSerializer):
     author_profile = serializers.ReadOnlyField(source="user.get_absolute_url")
     author_name = serializers.ReadOnlyField(source="user.name")
     author_thumbnail_url = serializers.ReadOnlyField(source="user.thumbnail_url")
+    author_is_trusted = serializers.ReadOnlyField(source="user.advancedUser")
+    author_is_manager = serializers.SerializerMethodField()
+
+    def get_author_is_manager(self, obj):
+        return obj.user.is_superuser or obj.user.is_manager
 
     class Meta:
         model = Comment
@@ -422,6 +431,8 @@ class CommentSerializer(serializers.ModelSerializer):
             "author_thumbnail_url",
             "author_profile",
             "author_name",
+            "author_is_trusted",
+            "author_is_manager",
             "media_url",
             "uid",
         )
