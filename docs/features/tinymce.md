@@ -49,9 +49,9 @@ TINYMCE_DEFAULT_CONFIG = {
         "h2": {"block": "h2", "classes": "emphasis-large"},
     },
     "font_family_formats": (
-        "Amulya='Amulya',sans-serif;Facultad='Facultad',sans-serif;"
+        "Inter='Inter',sans-serif;Barlow Semi Condensed='Barlow Semi Condensed',sans-serif;"
     ),
-    "font_css": "/static/lib/Amulya/amulya.css,/static/lib/Facultad/Facultad-Regular.css",
+    "font_css": "/static/lib/Inter/inter.css,/static/lib/BarlowSemiCondensed/barlow-semi-condensed.css",
     "font_size_formats": "16px 24px 32px",
     "images_upload_url": "/tinymce/upload/",
     "images_upload_handler": "tinymce.views.upload_image",

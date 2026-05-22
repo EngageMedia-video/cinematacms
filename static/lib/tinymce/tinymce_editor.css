@@ -37,7 +37,7 @@ body.dark_theme .page-main-inner.custom-page-wrapper {
 .page-main-inner.custom-page-wrapper p,
 .page-main-inner.custom-page-wrapper ul li {
     font-size: 16px;
-    font-family: 'Amulya', Arial, Helvetica, sans-serif;
+    font-family: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
     font-weight: 500;
     line-height: 1.5;
     letter-spacing: 0;
@@ -89,7 +89,7 @@ body.dark_theme .page-main-inner.custom-page-wrapper {
     position: relative;
     display: block;
     padding-bottom: 10px;
-    font-family: 'Facultad', Arial, Helvetica, sans-serif;
+    font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
     font-size: 32px;
     line-height: 1.2;
     color: #000;
@@ -101,7 +101,7 @@ body.dark_theme .page-main-inner.custom-page-wrapper {
     position: relative;
     display: block;
     padding-bottom: 10px;
-    font-family: 'Facultad', Arial, sans-serif;
+    font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
     font-size: 24px;
     line-height: 1.2;
     letter-spacing: 0.01;
@@ -114,7 +114,7 @@ body.dark_theme .page-main-inner.custom-page-wrapper {
     position: relative;
     display: block;
     padding-bottom: 10px;
-    font-family: 'Facultad', Arial, sans-serif;
+    font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
     font-size: 18px;
     line-height: 1.5;
     letter-spacing: 0.01;
@@ -154,7 +154,7 @@ body.dark_theme .page-main-inner.custom-page-wrapper .emphasis-large {
 .page-main-inner.custom-page-wrapper .emphasis-large {
     font-size: 24px;
     line-height: 32px;
-    font-family: 'Facultad', Arial, sans-serif;
+    font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
 }
 
 .page-main-inner.custom-page-wrapper .emphasis-large strong,
@@ -252,7 +252,7 @@ body.dark_theme .page-main-inner.custom-page-wrapper ul.box-list li>* {
     display: block;
     font-size: 24px;
     font-weight: 500;
-    font-family: 'Facultad', Arial, sans-serif;
+    font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
 }
 
 .page-main-inner.custom-page-wrapper ul.box-list-half li {
