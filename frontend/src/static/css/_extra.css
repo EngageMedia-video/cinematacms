@@ -87,7 +87,7 @@ body.dark_theme {
  */
 
 html body {
-	font-family: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+	font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 html body h1,
@@ -102,8 +102,8 @@ html body h5,
 html body .h5,
 html body h6,
 html body .h6 {
-	/* font-family: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif; */
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	/* font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif; */
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 }
 
 a {
@@ -901,7 +901,7 @@ body.dark_theme ul.sidebar-extra-menu li a:active {
 #page-countries .media-list-header h2,
 #page-languages .media-list-header h2,
 #page-categories .media-list-header h2{
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 	font-size:30px;
 	line-height: 32px;
 	padding:12px 0 8px;
@@ -909,7 +909,7 @@ body.dark_theme ul.sidebar-extra-menu li a:active {
 
 body .items-list-header h2,
 body .media-list-header h2 {
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 	font-size: 30px;
 	line-height: 32px;
 	padding: 12px 0 8px;
@@ -930,7 +930,7 @@ body .hover-overlay-title .item h3 {
 	width: 100%;
 	padding: 0;
 	text-align: left;
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 	font-size: 26px;
 	line-height: 1;
 }
@@ -1390,7 +1390,7 @@ body.dark_theme .items-list-ver .feat-first-item .item:first-child .item-main h3
 }
 
 body .items-list-ver .feat-first-item .item:first-child .item-main h3 span {
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 	font-size: 20px;
 	line-height: 26px;
 	background-color: #dfeff4;
@@ -1727,7 +1727,7 @@ body .items-list-ver .feat-first-item .item {
 #page-search .media-list-header h2 {
 	font-size: 21px;
 	line-height: 32px;
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 }
 
 body.dark_theme #page-search .media-list-header h2 {
@@ -2029,7 +2029,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
 .page-main-inner .custom-page-wrapper p,
 .page-main-inner .custom-page-wrapper ul li {
 	font-size: 16px;
-	font-family: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+	font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 	font-weight: 500;
 	line-height: 1.5;
 	letter-spacing: 0;
@@ -2081,7 +2081,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
 	position: relative;
 	display: block;
 	padding-bottom: 10px;
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 	font-size: 32px;
 	line-height: 1.2;
 	color: #000;
@@ -2093,7 +2093,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
 	position: relative;
 	display: block;
 	padding-bottom: 10px;
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 	font-size: 24px;
 	line-height: 1.2;
 	letter-spacing: 0.01;
@@ -2106,7 +2106,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper {
 	position: relative;
 	display: block;
 	padding-bottom: 10px;
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 	font-size: 18px;
 	line-height: 1.5;
 	letter-spacing: 0.01;
@@ -2146,7 +2146,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper .emphasis-large {
 .page-main-inner .custom-page-wrapper .emphasis-large {
 	font-size: 24px;
 	line-height: 32px;
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 }
 
 .page-main-inner .custom-page-wrapper .emphasis-large strong,
@@ -2244,7 +2244,7 @@ body.dark_theme .page-main-inner .custom-page-wrapper ul.box-list li > * {
 	display: block;
 	font-size: 24px;
 	font-weight: 500;
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 }
 
 .page-main-inner .custom-page-wrapper ul.box-list-half li {
@@ -2700,7 +2700,7 @@ body .media-title-banner h1 {
 	font-size: 26px;
 	line-height: 32px;
 	margin-bottom: 8px;
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 }
 
 body.dark_theme .media-title-banner h1 {
@@ -3108,7 +3108,7 @@ body.dark_theme .profile-page-header .profile-info-nav-wrap:before {
 }
 
 body.dark_theme .profile-page-header .profile-info h1 {
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 }
 
 body.dark_theme .profile-page-header .profile-nav {
@@ -3173,7 +3173,7 @@ body .playlist-view .playlist-media .items-list-hor .item-main h3 {
 }
 
 body .playlist-view .playlist-title {
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 	font-size: 16px;
 }
 
@@ -3230,7 +3230,7 @@ body.dark_theme .playlist-details {
 }
 
 body.dark_theme .playlist-details .playlist-title h1 {
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 }
 
 body.dark_theme .playlist-details .playlist-meta {
@@ -3328,12 +3328,12 @@ body .hw-category {
 }
 
 .hw-category-title-h2 {
-	font-family: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif !important;
+	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif !important;
 }
 
 .hw-category-description,
 .hw-category-description * {
-	font-family: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+	font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 	font-size: 14px;
 }
 
