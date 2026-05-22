@@ -625,7 +625,7 @@
 								line-height: 1;
 								font-size: 30px;
 								overflow: hidden;
-								color: #fff;
+								color: var(--cinemata-white);
 							}
 						}
 					}
@@ -672,7 +672,7 @@
 					}
 					.share-email a > *:first-child,
 					.share-email button > *:first-child {
-						background-color: rgb(136, 136, 136);
+						background-color: var(--cinemata-neutral-500);
 					}
 					.share-whatsapp a > *:first-child,
 					.share-whatsapp button > *:first-child {
@@ -727,7 +727,7 @@
 						font-size: 14px;
 						font-weight: 500;
 						cursor: pointer;
-						color: var(--theme-color, #ec1c24);
+						color: var(--theme-color, var(--danger-color));
 					}
 				}
 			}

@@ -547,7 +547,7 @@ $media-upload-item-name-line-height: 20px;
 			margin-left: 0.5rem;
 		}
 		&:hover {
-			color: #fff;
+			color: var(--btn-color);
 		}
 		.material-icons {
 			font-size: 20px;
@@ -570,7 +570,7 @@ $media-upload-item-name-line-height: 20px;
 	border: 0;
 	border-radius: 8px;
 	&:hover {
-		color: #fff;
+		color: var(--btn-color);
 	}
 	.material-icons {
 		font-size: 20px;

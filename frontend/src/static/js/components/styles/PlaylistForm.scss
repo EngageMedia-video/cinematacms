@@ -64,7 +64,7 @@
 				width: 100%;
 				height: 2px;
 				display: block;
-				background-color: rgba(red, 0.8);
+				background-color: var(--danger-color);
 			}
 		}
 	}
@@ -158,20 +158,20 @@
 		&::placeholder {
 			/* Chrome, Firefox, Opera, Safari 10.1+ */
 			// color: #fefefe;
-			color: #909090;
+			color: var(--playlist-save-popup-create-icon-text-color);
 			opacity: 1; /* Firefox */
 		}
 
 		&:-ms-input-placeholder {
 			/* Internet Explorer 10-11 */
 			// color: #fefefe;
-			color: #909090;
+			color: var(--playlist-save-popup-create-icon-text-color);
 		}
 
 		&::-ms-input-placeholder {
 			/* Microsoft Edge */
 			// color: #fefefe;
-			color: #909090;
+			color: var(--playlist-save-popup-create-icon-text-color);
 		}
 	}
 

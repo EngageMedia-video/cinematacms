@@ -63,7 +63,7 @@
 			line-height: 48px;
 			font-size: 13px;
 			color: initial;
-			color: red;
+			color: var(--danger-color);
 
 			&:before {
 				content: '\e153';
@@ -86,7 +86,7 @@
 	.menu-item-icon {
 		margin-right: 24px;
 
-		color: #888;
+		color: var(--sidebar-nav-item-icon-color);
 
 		.material-icons {
 			margin-bottom: 2px;

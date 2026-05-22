@@ -1,6 +1,6 @@
 .player-container {
 	overflow: hidden;
-	background: #000;
+	background: var(--cinemata-black);
 
 	&.error-container {
 	}

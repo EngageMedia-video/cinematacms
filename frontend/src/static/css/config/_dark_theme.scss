@@ -127,7 +127,7 @@ body.dark_theme {
 	--item-thumb-bg-color: var(--user-action-form-inner-bg-color);
 
 	--item-meta-text-color: #888;
-	--item-meta-link-text-color: var(--item-text-color);
+	--item-meta-link-text-color: var(--item-meta-text-color);
 	--item-meta-link-hover-text-color: rgba(255, 255, 255, 0.74);
 
 	--profile-page-item-content-title-bg-color: var(--user-action-form-inner-bg-color);

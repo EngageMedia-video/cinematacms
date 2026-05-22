@@ -148,7 +148,7 @@ $upload-button-margin-bottom: 0.5rem;
 	height: 100%;
 	min-height: 30px;
 	z-index: 2;
-	background: #f9f9f9;
+	background: var(--add-media-page-tmplt-dropzone-bg-color);
 	border-radius: 4px;
 	text-align: center;
 }
@@ -173,7 +173,7 @@ $upload-button-margin-bottom: 0.5rem;
 	}
 
 	.qq-upload-drop-area-active {
-		background: #fdfdfd;
+		background: var(--add-media-page-tmplt-uploader-bg-color);
 		border-radius: 4px;
 	}
 
@@ -238,7 +238,7 @@ $upload-button-margin-bottom: 0.5rem;
 	.qq-upload-continue {
 		border: none;
 		background: none;
-		color: #00a0ba;
+		color: var(--btn-primary-bg-color);
 		font-size: 12px;
 		padding: 0;
 	}
@@ -246,7 +246,7 @@ $upload-button-margin-bottom: 0.5rem;
 
 /* to ensure consistent size of tiles - only display status text before auto-retry or after failure */
 .qq-gallery .qq-upload-status-text {
-	color: #333333;
+	color: var(--cinemata-neutral-800);
 	font-size: 12px;
 	padding-left: 3px;
 	padding-top: 2px;
@@ -383,12 +383,12 @@ $upload-button-margin-bottom: 0.5rem;
 
 .qq-gallery .qq-upload-list li {
 	&.qq-upload-success {
-		background-color: #f2f7ed;
+		background-color: var(--cinemata-green-50);
 	}
 
 	&.qq-upload-fail {
-		background-color: #f5eded;
-		box-shadow: 0 0 1px 0 red;
+		background-color: var(--cinemata-red-50);
+		box-shadow: 0 0 1px 0 var(--danger-color);
 		border: 0;
 	}
 }
@@ -417,7 +417,7 @@ $upload-button-margin-bottom: 0.5rem;
 .qq-gallery .qq-upload-size {
 	float: left;
 	font-size: 11px;
-	color: #929292;
+	color: var(--cinemata-neutral-400);
 	margin-bottom: 3px;
 	margin-right: 0;
 	display: inline-block;
@@ -451,7 +451,7 @@ $upload-button-margin-bottom: 0.5rem;
 	width: -moz-available;
 	padding: 0 8px;
 	margin-bottom: 3px;
-	border: 1px solid #ccc;
+	border: 1px solid var(--input-border-color);
 	border-radius: 2px;
 	font-size: 13px;
 

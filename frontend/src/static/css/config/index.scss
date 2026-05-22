@@ -55,15 +55,15 @@ body {
 	--radius-48: 48px;
 	--radius-full: 999px;
 
-	--default-theme-color: #009933;
+	--default-theme-color: var(--btn-primary-bg-color);
 	// --default-theme-color: #008ede;
 
-	--default-brand-color: #009933;
+	--default-brand-color: var(--btn-secondary-bg-color);
 	// --default-brand-color: #087e04;
 
-	--success-color: #00a28b;
-	--warning-color: #e09f1f;
-	--danger-color: #de623b;
+	--success-color: var(--cinemata-green-600);
+	--warning-color: var(--cinemata-amber-500);
+	--danger-color: var(--cinemata-red-600);
 
 	--input-disabled-bg-color: hsla(0, 0%, 0%, 0.05);
 
@@ -78,6 +78,8 @@ body {
 	--item-title-line-height: 18px;
 
 	--horizontal-item-title-line-height: 21px;
+	--default-horizontal-item-title-line-height: var(--horizontal-item-title-line-height);
+	--horizontal-item-title-max-lines: var(--item-title-max-lines);
 
 	--playlist-item-title-line-height: 20px;
 
@@ -85,6 +87,12 @@ body {
 	--large-item-title-line-height: 22px;
 
 	--links-color: var(--default-theme-color);
+
+	--sidebar-navigation-item-text-color: var(--sidebar-nav-item-text-color);
+	--sidebar-navigation-item-hover-bg-color: var(--nav-menu-item-hover-bg-color);
+	--sidebar-navigation-item-hover-text-color: var(--sidebar-nav-item-text-color);
+	--sidebar-navigation-item-active-bg-color: var(--nav-menu-active-item-bg-color);
+	--sidebar-navigation-item-active-text-color: var(--cinemata-strait-blue-50);
 }
 
 body {

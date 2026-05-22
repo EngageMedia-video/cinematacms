@@ -139,7 +139,7 @@ button {
 
 		max-width: 480px;
 		margin-inline: auto;
-		background-color: var(--btn-secondary-bg-color);
+		background-color: var(--cinemata-sunset-horizon-500);
 		padding: 2em;
 		position: relative;
 
@@ -258,7 +258,7 @@ button {
 		justify-content: center;
 
 		img {
-			background-color: white;
+			background-color: var(--cinemata-white);
 		}
 	}
 
@@ -586,7 +586,7 @@ button {
 	*[type='submit'],
 	*[type='button'] {
 		border: 0;
-		color: white;
+		color: var(--btn-color);
 		border-radius: 8px;
 	}
 
@@ -606,12 +606,12 @@ button {
 
 			p:not(:first-child) {
 				margin: 0;
-				color: darkgray;
+				color: var(--cinemata-neutral-400);
 			}
 		}
 
 		span {
-			color: darkgray;
+			color: var(--cinemata-neutral-400);
 		}
 	}
 
@@ -666,7 +666,7 @@ input#authenticator_secret {
 		display: table;
 		width: 100%;
 		height: 100%;
-		color: white;
+		color: var(--cinemata-white);
 	}
 
 	.error-container-inner {
@@ -726,7 +726,7 @@ input#authenticator_secret {
 		top: 13px;
 
 		&-icon {
-			color: white;
+			color: var(--cinemata-white);
 			height: 16px;
 			width: 16px;
 		}
@@ -738,7 +738,7 @@ input#authenticator_secret {
 		padding-right: 24px;
 
 		a {
-			color: white;
+			color: var(--cinemata-white);
 			font-weight: bold;
 			text-decoration: none;
 		}

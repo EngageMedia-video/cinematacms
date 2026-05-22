@@ -195,7 +195,7 @@ function NotificationPageContent() {
 								...(active
 									? {
 											backgroundColor: 'var(--btn-primary-bg-color)',
-											color: '#fff',
+											color: 'var(--btn-color)',
 											boxShadow: '0 1px 3px rgba(0,0,0,.2)',
 										}
 									: {

@@ -18,13 +18,13 @@ $theme-color: var(--theme-color, var(--default-theme-color));
 
 // $theme-color: #e01e1e;	// EM red brand color.
 
-$color-error-red: rgba(red, 0.8);
+$color-error-red: rgba(#dc2626, 0.8);
 
-$message-default-color: rgba(#111, 0.9);
+$message-default-color: rgba(#111827, 0.9);
 
-$message-default-bg-color: #e6e6e6;
-$message-info-bg-color: #e6e6fa;
-$message-error-bg-color: #fae6e6;
-$message-success-bg-color: #e6f0e6;
+$message-default-bg-color: var(--cinemata-neutral-200);
+$message-info-bg-color: var(--cinemata-pacific-deep-50);
+$message-error-bg-color: var(--cinemata-red-50);
+$message-success-bg-color: var(--cinemata-green-100);
 
-$message-warning-bg-color: #fafae6;
+$message-warning-bg-color: var(--cinemata-amber-50);

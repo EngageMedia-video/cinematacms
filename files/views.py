@@ -1613,6 +1613,13 @@ class MediaPasswordView(APIView):
     permission_classes = (permissions.AllowAny,)
     parser_classes = (JSONParser,)
 
+    @staticmethod
+    def token_response(token):
+        response = Response({"token": token}, status=status.HTTP_200_OK)
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response["Pragma"] = "no-cache"
+        return response
+
     def post(self, request, friendly_token):
         from files.token_utils import (
             authenticate_restricted_media,
@@ -1634,7 +1641,7 @@ class MediaPasswordView(APIView):
                 try:
                     token = generate_token(media.uid_hex)
                     request.session[f"media_token_{media.friendly_token}"] = token
-                    return Response({"token": token}, status=status.HTTP_200_OK)
+                    return self.token_response(token)
                 except Exception:
                     logger.exception("Failed to generate token for media %s", media.friendly_token)
                     return Response(
@@ -1659,7 +1666,7 @@ class MediaPasswordView(APIView):
             return Response({"detail": error["detail"]}, status=error["status_code"])
 
         request.session[f"media_token_{media.friendly_token}"] = token
-        return Response({"token": token}, status=status.HTTP_200_OK)
+        return self.token_response(token)
 
 
 class MediaSearch(APIView):

@@ -196,7 +196,7 @@ export function NotificationPreferencesForm() {
 
 			<div className="flex items-center justify-end gap-3">
 				{isSaveError && (
-					<span className="text-xs text-red-500 mr-auto">{saveError?.message ?? 'Save failed'}</span>
+					<span className="text-xs text-cinemata-red-500 mr-auto">{saveError?.message ?? 'Save failed'}</span>
 				)}
 				{isSuccess && !isDirty && <span className="text-xs text-content-body/60 mr-auto">Saved</span>}
 				<button
@@ -223,7 +223,7 @@ export function NotificationPreferencesForm() {
 						fontSize: '13px',
 						fontWeight: 500,
 						backgroundColor: 'var(--btn-primary-bg-color)',
-						color: '#fff',
+						color: 'var(--btn-color)',
 						boxShadow: '0 1px 3px rgba(0,0,0,.2)',
 						...disabledActionStyle,
 					}}

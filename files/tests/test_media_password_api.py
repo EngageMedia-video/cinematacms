@@ -36,6 +36,8 @@ class MediaPasswordAPITest(TestCase):
         resp = self._post("secretpass")
         self.assertEqual(resp.status_code, 200)
         self.assertIn("token", resp.json())
+        self.assertEqual(resp["Cache-Control"], "no-store, no-cache, must-revalidate, max-age=0")
+        self.assertEqual(resp["Pragma"], "no-cache")
 
     def test_wrong_password_returns_403(self):
         resp = self._post("wrong")
@@ -60,6 +62,8 @@ class MediaPasswordAPITest(TestCase):
         resp = self._post()
         self.assertEqual(resp.status_code, 200)
         self.assertIn("token", resp.json())
+        self.assertEqual(resp["Cache-Control"], "no-store, no-cache, must-revalidate, max-age=0")
+        self.assertEqual(resp["Pragma"], "no-cache")
 
     def test_token_stored_in_session(self):
         resp = self._post("secretpass")

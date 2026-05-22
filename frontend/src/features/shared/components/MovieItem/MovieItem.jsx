@@ -102,7 +102,7 @@ function MoviePoster({
 
 			{duration ? (
 				<span
-					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-[#111111] px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-white"
+					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-cinemata-neutral-900 px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-cinemata-white"
 					data-movie-item-duration
 				>
 					{duration}
@@ -111,7 +111,7 @@ function MoviePoster({
 
 			{showTopRightIcon && iconName ? (
 				<span
-					className="absolute top-2 right-2 inline-flex rounded bg-cinemata-sunset-horizon-400p/90 p-1 text-white"
+					className="absolute top-2 right-2 inline-flex rounded bg-cinemata-sunset-horizon-400p/90 p-1 text-cinemata-white"
 					data-movie-item-icon-chip
 				>
 					<Icon name={iconName} size={14} decorative={iconLabel ? false : true} label={iconLabel} />

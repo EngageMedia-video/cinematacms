@@ -503,7 +503,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 				padding: 0;
 				font-family: 'Material Icons';
 				text-decoration: none;
-				color: #888;
+				color: var(--item-meta-text-color);
 			}
 
 			.video-js {
@@ -776,11 +776,11 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 				float: left;
 				margin-left: 8px;
 				padding-bottom: 8px;
-				color: rgb(144, 144, 144);
+				color: var(--media-actions-share-options-nav-button-text-color);
 
 				button,
 				.circle-icon-button {
-					color: rgb(144, 144, 144);
+					color: var(--media-actions-share-options-nav-button-text-color);
 
 					&:focus {
 						box-shadow: none;
@@ -981,11 +981,11 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							a,
 							button {
 								> *:first-child {
-									background-color: rgb(244, 244, 244);
+									background-color: var(--cinemata-neutral-100);
 								}
 
 								.material-icons {
-									color: rgb(111, 111, 111);
+									color: var(--cinemata-neutral-500);
 								}
 							}
 						}
@@ -1074,7 +1074,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							a,
 							button {
 								> *:first-child {
-									background-color: rgb(136, 136, 136);
+									background-color: var(--cinemata-neutral-500);
 								}
 							}
 						}
@@ -1144,7 +1144,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 				&.share,
 				&.save,
 				&.download a {
-					color: rgb(144, 144, 144);
+					color: var(--media-actions-share-options-nav-button-text-color);
 				}
 
 				&.more-options,
@@ -1624,7 +1624,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 	// font-family:'Roboto', Arial, sans-serif;
 	font-family: inherit;
 	line-height: 21px;
-	color: rgb(136, 136, 136);
+	color: var(--item-meta-text-color);
 }
 
 .media-content-field-label {
@@ -1689,7 +1689,6 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 	right: 0;
 	bottom: 0;
 	display: block;
-	border: 2px solid red;
 }
 
 .share-embed {
@@ -2004,13 +2003,12 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 	}
 
 	li.reports span {
-		color: red;
+		color: var(--danger-color);
 	}
 }
 
 .loggedin-media-reported .menu-item-icon .material-icons {
-	color: red;
-	color: rgba(red, 0.8);
+	color: var(--danger-color);
 }
 
 @media screen and (min-width: 1008px) {

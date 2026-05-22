@@ -19,7 +19,7 @@ function resolveBadgeColor(color) {
 	return `var(--cinemata-${color})`;
 }
 
-export function Badge({ children = 'Featured', className = '', color = '#111111', style, ...props }) {
+export function Badge({ children = 'Featured', className = '', color = 'cinemata-neutral-900', style, ...props }) {
 	return (
 		<span
 			{...props}

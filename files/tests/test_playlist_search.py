@@ -90,8 +90,22 @@ class PlaylistListSearchTests(TestCase):
         self.assertEqual(body["count"], 3)
 
     def test_page_size_above_cap_is_clamped(self):
-        # SmallPreviewPagination.max_page_size is 10, so an oversized request
-        # must not return more than the cap (no DoS via a 1000-row request).
+        # SmallPreviewPagination.max_page_size preserves the existing 50-row
+        # public API contract while still capping oversized requests.
         response = self.client.get("/api/v1/playlists?search=&page_size=999")
         self.assertEqual(response.status_code, 200)
-        self.assertLessEqual(len(response.json()["results"]), 10)
+        self.assertLessEqual(len(response.json()["results"]), 50)
+
+    def test_page_size_50_preserves_public_list_contract(self):
+        for index in range(60):
+            Playlist.objects.create(
+                title=f"Contract preview playlist {index:02d}",
+                user=self.author,
+                friendly_token=f"cp{index:06d}",
+            )
+
+        response = self.client.get("/api/v1/playlists?search=Contract preview playlist&page_size=50")
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(len(body["results"]), 50)
+        self.assertEqual(body["count"], 60)

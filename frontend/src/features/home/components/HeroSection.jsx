@@ -174,7 +174,7 @@ function Player() {
 							<button
 								type="button"
 								onClick={() => retryHeroDetail()}
-								className="body-body-12-medium absolute bottom-2 right-2 z-20 rounded-[4px] bg-cinemata-strait-blue-700 px-3 py-1.5 text-white hover:bg-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200"
+								className="body-body-12-medium absolute bottom-2 right-2 z-20 rounded-[4px] bg-cinemata-strait-blue-700 px-3 py-1.5 text-cinemata-white hover:bg-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200"
 							>
 								RETRY
 							</button>
@@ -229,7 +229,7 @@ export function HeroSection({ children }) {
 								<button
 									type="button"
 									onClick={() => refetch()}
-									className="body-body-14-medium rounded-[4px] bg-cinemata-strait-blue-700 px-4 py-2 text-white hover:bg-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200"
+									className="body-body-14-medium rounded-[4px] bg-cinemata-strait-blue-700 px-4 py-2 text-cinemata-white hover:bg-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200"
 								>
 									RETRY
 								</button>

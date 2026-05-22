@@ -197,6 +197,6 @@
 	&:hover,
 	&:focus {
 		outline: 0;
-		background-color: #eee;
+		background-color: var(--in-popup-nav-menu-item-hover-bg-color);
 	}
 }

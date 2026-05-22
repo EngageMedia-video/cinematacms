@@ -71,7 +71,7 @@
 	/* ── Content / Text ───────────────────────────────────── */
 	--color-content-body: var(--body-text-color);
 	--color-content-input: var(--input-color);
-	--color-content-error: var(--error-text-color, #dc2626);
+	--color-content-error: var(--error-text-color, var(--cinemata-red-600));
 	--color-content-link: var(--links-color);
 	--color-content-success: var(--success-color);
 	--color-content-warning: var(--warning-color);

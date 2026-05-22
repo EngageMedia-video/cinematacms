@@ -427,7 +427,7 @@
 	display: inline-block;
 	width: 100%;
 	margin-top: 4px;
-	color: #909090;
+	color: var(--comment-actions-reply-button-text-color);
 
 	.circle-icon-button {
 		display: inline-block;
@@ -437,7 +437,7 @@
 	}
 
 	.material-icons {
-		color: #909090;
+		color: var(--comment-actions-material-icon-text-color);
 		font-size: 16px;
 		margin-bottom: 2px;
 	}

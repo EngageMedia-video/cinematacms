@@ -103,7 +103,7 @@
 		a,
 		button {
 			padding: 0.625rem 1rem;
-			color: #fff;
+			color: var(--btn-color);
 			text-decoration: none;
 			border-radius: 1px;
 			border: 1px solid var(--default-brand-color);

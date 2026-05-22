@@ -39,7 +39,7 @@ a.item-thumb {
 		padding: 0;
 		font-family: 'Material Icons';
 		text-decoration: none;
-		color: #888;
+		color: var(--item-meta-text-color);
 	}
 
 	// @link: https://github.com/google/material-design-icons/blob/master/iconfont/codepoints
@@ -165,8 +165,8 @@ a.item-thumb {
 		display: inline-block;
 		margin: 4px;
 		padding: 2px 4px;
-		color: hsl(0, 0%, 100%);
-		background-color: hsl(0, 0%, 6.7%);
+		color: var(--cinemata-white);
+		background-color: var(--cinemata-neutral-900);
 		border-radius: 2px;
 		opacity: 0.8;
 	}
@@ -328,7 +328,7 @@ a.item-thumb {
 	$descr-max-lines: 2;
 	$descr-line-height: 18px;
 
-	color: rgb(136, 136, 136);
+	color: var(--item-meta-text-color);
 
 	font-size: $descr-font-size;
 	line-height: 1em;
@@ -444,7 +444,7 @@ a.item-edit-link {
 	text-align: center;
 	text-decoration: none;
 	border-radius: 1px 1px 0 0;
-	color: #fff;
+	color: var(--btn-color);
 	background-color: var(--brand-color, var(--default-brand-color));
 }
 
@@ -573,7 +573,7 @@ a.item-edit-link {
 
 			h3 {
 				z-index: +1;
-				color: #fff;
+				color: var(--cinemata-white);
 				font-weight: 400;
 			}
 
@@ -606,7 +606,7 @@ a.item-edit-link {
 
 			&:hover {
 				h3 {
-					color: #000;
+					color: var(--cinemata-black);
 				}
 
 				&:before {
@@ -657,7 +657,7 @@ a.item-edit-link {
 	gap: 4px;
 	z-index: 1;
 	pointer-events: none;
-	color: #fff;
+	color: var(--cinemata-white);
 
 	.material-icons {
 		font-size: 14px;
@@ -669,18 +669,18 @@ a.item-edit-link {
 	}
 
 	&.badge-private {
-		background: rgba(0, 0, 0, 0.85);
-		color: #fff;
+		background: color-mix(in srgb, var(--cinemata-black) 85%, transparent);
+		color: var(--cinemata-white);
 	}
 
 	&.badge-unlisted {
-		background: rgba(237, 124, 48, 0.9);
-		color: #fff;
+		background: color-mix(in srgb, var(--cinemata-sunset-horizon-400p) 90%, transparent);
+		color: var(--cinemata-white);
 	}
 
 	&.badge-restricted {
-		background: rgba(2, 102, 144, 0.9);
-		color: #fff;
+		background: color-mix(in srgb, var(--cinemata-strait-blue-600p) 90%, transparent);
+		color: var(--cinemata-white);
 	}
 }
 
@@ -696,7 +696,7 @@ a.item-edit-link {
 	display: inline-block;
 	z-index: 1;
 	pointer-events: none;
-	color: #fff;
+	color: var(--cinemata-white);
 
 	.badge-label {
 		line-height: 1;

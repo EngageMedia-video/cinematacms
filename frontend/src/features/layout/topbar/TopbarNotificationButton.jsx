@@ -27,7 +27,7 @@ function BellButton() {
 				{count > 0 ? (
 					<span
 						aria-hidden="true"
-						className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full pointer-events-none ring-2 ring-cinemata-pacific-deep-900"
+						className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-cinemata-red-500 rounded-full pointer-events-none ring-2 ring-cinemata-pacific-deep-900"
 					/>
 				) : null}
 			</button>

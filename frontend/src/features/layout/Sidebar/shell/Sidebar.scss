@@ -64,7 +64,7 @@
 		float: left;
 		padding: 1rem 1.5rem;
 		font-size: 12px;
-		color: rgb(136, 136, 136);
+		color: var(--sidebar-nav-item-icon-color);
 
 		a {
 			text-decoration: none;

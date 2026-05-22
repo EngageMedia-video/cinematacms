@@ -62,7 +62,7 @@ describe('Button', () => {
 			</Button>
 		);
 
-		expect(screen.getByRole('button', { name: 'Delete item' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Delete item' })).toHaveClass('text-cinemata-red-500');
 	});
 
 	it('renders special variant icon on the right', () => {
@@ -108,7 +108,7 @@ describe('Button', () => {
 			</Button>
 		);
 
-		expect(screen.getByRole('button', { name: 'Custom BG' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Custom BG' })).toHaveClass('bg-cinemata-red-500');
 	});
 
 	it('renders long labels without creating icon wrapper when icon is absent', () => {

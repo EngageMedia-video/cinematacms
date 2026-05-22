@@ -57,10 +57,10 @@
 	}
 
 	&.is-scrolling {
-		scrollbar-color: rgba(2, 102, 144, 0.35) transparent;
+		scrollbar-color: color-mix(in srgb, var(--cinemata-strait-blue-600p) 35%, transparent) transparent;
 
 		&::-webkit-scrollbar-thumb {
-			background-color: rgba(2, 102, 144, 0.35);
+			background-color: color-mix(in srgb, var(--cinemata-strait-blue-600p) 35%, transparent);
 		}
 	}
 
@@ -89,7 +89,7 @@
 		float: left;
 		padding: 1rem 1.5rem;
 		font-size: 12px;
-		color: rgb(136, 136, 136);
+		color: var(--item-meta-text-color);
 
 		a {
 			text-decoration: none;
@@ -240,7 +240,7 @@
 			width: 22px;
 			height: 22px;
 			border-radius: 50%;
-			background: #fff;
+			background: var(--cinemata-white);
 			// background: var(--sidebar-nav-border-color);
 			box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.15);
 		}

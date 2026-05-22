@@ -37,7 +37,7 @@
 
 		.error-description {
 			font-size: 16px;
-			color: var(--page-main-secondary-text-color);
+			color: var(--item-meta-text-color);
 			max-width: 600px;
 			margin: 0 auto;
 			line-height: 1.6;
@@ -80,7 +80,7 @@
 			&.error-btn-primary {
 				background: var(--btn-primary-bg-color);
 				color: var(--btn-color);
-				border-color: var(--btn-border-color);
+				border-color: var(--btn-primary-bg-color);
 
 				> .btn-icon {
 					color: var(--btn-primary-icon-color);
@@ -88,14 +88,14 @@
 
 				&:hover {
 					background: var(--btn-primary-bg-hover-color);
+					border-color: var(--btn-primary-bg-hover-color);
 				}
 			}
 
 			&.error-btn-secondary {
 				color: var(--btn-secondary-color);
-				background-color: transparent;
+				background-color: var(--btn-secondary-bg-color);
 				border-color: var(--btn-secondary-border-color);
-				border-width: 0.5px;
 
 				> .btn-icon {
 					color: var(--btn-secondary-icon-color);
@@ -103,7 +103,8 @@
 
 				&:hover {
 					background-color: var(--btn-secondary-bg-hover-color);
-					color: white;
+					color: var(--btn-secondary-color);
+					border-color: var(--btn-secondary-bg-hover-color);
 
 					> .btn-icon {
 						color: var(--btn-secondary-icon-hover-color);
@@ -130,7 +131,7 @@ body.dark_theme .error-page-content {
 			color: var(--btn-secondary-color);
 
 			&:hover {
-				border-color: #fefde6;
+				border-color: var(--cinemata-amber-50);
 			}
 		}
 	}

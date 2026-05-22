@@ -280,7 +280,7 @@
 		text-decoration: none;
 		font-size: 13px;
 		font-weight: 400;
-		color: #fff;
+		color: var(--btn-color);
 		border: 0;
 		line-height: inherit;
 
@@ -844,7 +844,7 @@
 		// font-size: 13px;
 		text-decoration: none;
 		// font-weight: 500;
-		color: #fff;
+		color: var(--btn-color);
 		border: 0;
 		border-radius: 8px;
 		background-color: var(--default-theme-color);
@@ -998,7 +998,7 @@ $side-empty-space: 40px;
 	padding: 11px 16px;
 	font-size: 13px;
 	line-height: 1;
-	color: #fff;
+	color: var(--btn-color);
 	border-style: solid;
 	border-width: 1px;
 	border-radius: 8px;

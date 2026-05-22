@@ -4,7 +4,7 @@ DEFAULT_CATEGORY_COLORS = {
     "animation": "cinemata-amber-600p",
     "documentary": "cinemata-pacific-deep-600p",
     "experimental": "cinemata-coral-reef-700",
-    "explainer": "cinemata-sandy-shore-700",
+    "explainer": "cinemata-sunset-horizon-500",
     "fiction": "cinemata-strait-blue-600p",
     "hybrid": "cinemata-neutral-600",
     "music-video": "cinemata-red-700p",
