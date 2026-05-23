@@ -1,0 +1,93 @@
+import React, { useState, useEffect, useContext } from 'react';
+
+import TextsContext from '../../../static/js/contexts/TextsContext';
+import LinksContext from '../../../static/js/contexts/LinksContext';
+import UserContext from '../../../static/js/contexts/UserContext';
+import SiteContext from '../../../static/js/contexts/SiteContext';
+
+import * as PageActions from '../../../static/js/pages/_PageActions.js';
+
+import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
+import * as MediaPageActions from '../../../static/js/pages/MediaPage/actions.js';
+
+import { CircleIconButton } from '../../../static/js/components/-NEW-/CircleIconButton';
+import { MaterialIcon } from '../../../static/js/components/-NEW-/MaterialIcon';
+
+import { formatNumber } from '../../../static/js/functions';
+import { Button } from '../../shared/components/Button/Button.jsx';
+import { Icon } from '../../shared/components/Icon/Icon.jsx';
+
+export function MediaLikeIcon() {
+	const texts = useContext(TextsContext);
+	const links = useContext(LinksContext);
+	const user = useContext(UserContext);
+	const site = useContext(SiteContext);
+
+	const [likedMedia, setLikedMedia] = useState(MediaPageStore.get('user-liked-media'));
+	const [likesCounter, setLikesCounter] = useState(formatNumber(MediaPageStore.get('media-likes'), false));
+
+	function updateStateValues() {
+		setLikedMedia(MediaPageStore.get('user-liked-media'));
+		setLikesCounter(formatNumber(MediaPageStore.get('media-likes'), false));
+	}
+
+	function onCompleteMediaLike() {
+		updateStateValues();
+		PageActions.addNotification(texts.addToLiked, 'likedMedia');
+	}
+
+	function onCompleteMediaLikeCancel() {
+		updateStateValues();
+		PageActions.addNotification(texts.removeFromLiked, 'unlikedMedia');
+	}
+
+	function onFailMediaLikeRequest() {
+		PageActions.addNotification('Action failed', 'likedMediaRequestFail');
+	}
+
+	function toggleLike(ev) {
+		ev.preventDefault();
+		ev.stopPropagation();
+
+		// Redirect anonymous users to sign-in page
+		if (user.is.anonymous) {
+			const currentPath = window.location.href.replace(site.url, '').replace(/^\//g, '');
+			const loginUrl = links.signin + '?next=/' + currentPath;
+			window.location.href = loginUrl;
+			return;
+		}
+
+		MediaPageActions[likedMedia ? 'unlikeMedia' : 'likeMedia']();
+	}
+
+	useEffect(() => {
+		MediaPageStore.on('liked_media', onCompleteMediaLike);
+		MediaPageStore.on('unliked_media', onCompleteMediaLikeCancel);
+		MediaPageStore.on('liked_media_failed_request', onFailMediaLikeRequest);
+		return () => {
+			MediaPageStore.removeListener('liked_media', onCompleteMediaLike);
+			MediaPageStore.removeListener('unliked_media', onCompleteMediaLikeCancel);
+			MediaPageStore.removeListener('liked_media_failed_request', onFailMediaLikeRequest);
+		};
+	}, []);
+
+	return (
+		<div className="like">
+			<Button
+				variant="primary"
+				icon={<Icon name="thumbUp" className="text-cinemata-strait-blue-100" />}
+				className="dark:bg-cinemata-strait-blue-900 body-body-14-medium"
+				onClick={toggleLike}
+				size="sm"
+			>
+				<span className="body-body-14-medium">{likesCounter}</span>
+			</Button>
+			{/* <button onClick={toggleLike}>
+				<CircleIconButton type="span">
+					<MaterialIcon type="thumb_up" />
+				</CircleIconButton>
+				<span className="likes-counter">{likesCounter}</span>
+			</button> */}
+		</div>
+	);
+}

@@ -5,15 +5,16 @@ import PageStore from '../../../static/js/pages/_PageStore';
 
 import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 import * as MediaPageActions from '../../../static/js/pages/MediaPage/actions.js';
-import ViewerInfoVideo from '../../../static/js/pages/MediaPage/includes/ViewerInfoVideo';
+import ViewerInfoVideo from './ViewerInfoVideo';
 import ViewerError from '../../../static/js/pages/MediaPage/includes/ViewerError';
-import ViewerSidebar from '../../../static/js/pages/MediaPage/includes/ViewerSidebar';
+import ViewerSidebar from './ViewerSidebar';
 import VideoViewer from '../../../static/js/components/MediaViewer/VideoViewer';
 import VideoViewerStore from '../../../static/js/components/MediaViewer/VideoViewer/store.js';
 import { SiteConsumer } from '../../../static/js/contexts/SiteContext';
 import { RestrictedMediaGate } from '../../shared/components/RestrictedMediaGate';
 
 import '../../../static/js/pages/styles/MediaPage.scss';
+import CommentsList from '../../../static/js/components/-NEW-/Comments.js';
 
 const wideLayoutBreakpoint = 1216;
 
@@ -135,24 +136,36 @@ export class VideoViewerPage extends Page {
 					</div>,
 					<div key="viewer-section-nested" className={viewerNestedClassname}>
 						{!this.state.wideLayout || (this.state.isVideoMedia && this.state.theaterMode)
-							? [
-									<ViewerInfoVideo key="viewer-info" />,
-									this.state.pagePlaylistLoaded ? (
-										<ViewerSidebar
-											key="viewer-sidebar"
-											mediaId={MediaPageStore.get('media-id')}
-											playlistData={MediaPageStore.get('playlist-data')}
-										/>
-									) : null,
-								]
-							: [
-									this.state.pagePlaylistLoaded ? (
-										<ViewerSidebar
-											key="viewer-sidebar"
-											mediaId={MediaPageStore.get('media-id')}
-											playlistData={MediaPageStore.get('playlist-data')}
-										/>
-									) : null,
+								? [
+										<ViewerInfoVideo key="viewer-info" />,
+										<div className="viewer-sidebar" key="viewer-sidebar-panel">
+											{/* TODO: Improve comment section */}
+											<div className="viewer-sidebar-panel viewer-sidebar-comments">
+												<CommentsList />
+										</div>
+										{this.state.pagePlaylistLoaded ? (
+											<ViewerSidebar
+												key="viewer-sidebar"
+												mediaId={MediaPageStore.get('media-id')}
+												playlistData={MediaPageStore.get('playlist-data')}
+											/>
+										) : null}
+									</div>,
+									]
+								: [
+										<div className="viewer-sidebar" key="viewer-sidebar-panel">
+											{/* TODO: Improve comment section */}
+											<div className="viewer-sidebar-panel viewer-sidebar-comments">
+												<CommentsList />
+										</div>
+										{this.state.pagePlaylistLoaded ? (
+											<ViewerSidebar
+												key="viewer-sidebar"
+												mediaId={MediaPageStore.get('media-id')}
+												playlistData={MediaPageStore.get('playlist-data')}
+											/>
+										) : null}
+									</div>,
 									<ViewerInfoVideo key="viewer-info" />,
 								]}
 					</div>,
