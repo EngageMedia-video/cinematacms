@@ -391,20 +391,22 @@ function displayCommentsRelatedAlert() {
 	}
 }
 
-const CommentsListHeader = ({ commentsLength }) => {
+const CommentsListHeader = ({ commentsLength, mediaData }) => {
+	const commentsEnabled = !!mediaData?.enable_comments;
+
 	return (
 		<>
-			{!MEMBER.can.readComment || MediaPageStore.get('media-data').enable_comments ? null : (
+			{!MEMBER.can.readComment || commentsEnabled ? null : (
 				<span className="disabled-comments-msg">{commentsText.disabledCommentsMsg}</span>
 			)}
 
-			{MEMBER.can.readComment && (MediaPageStore.get('media-data').enable_comments || MEMBER.can.editMedia) ? (
+			{MEMBER.can.readComment && (commentsEnabled || MEMBER.can.editMedia) ? (
 				<h2>
 					{commentsLength
 						? 1 < commentsLength
 							? commentsLength + ' ' + commentsText.ucfirstPlural
 							: commentsLength + ' ' + commentsText.ucfirstSingle
-						: MediaPageStore.get('media-data').enable_comments
+						: commentsEnabled
 							? 'No' + ' ' + commentsText.single + ' ' + 'yet'
 							: ''}
 				</h2>
@@ -415,6 +417,7 @@ const CommentsListHeader = ({ commentsLength }) => {
 
 export default function CommentsList(props) {
 	const [mediaId, setMediaId] = useState(MediaPageStore.get('media-id'));
+	const [mediaData, setMediaData] = useState(MediaPageStore.get('media-data'));
 
 	const [comments, setComments] = useState(MEMBER.can.readComment ? MediaPageStore.get('media-comments') : []);
 
@@ -429,6 +432,11 @@ export default function CommentsList(props) {
 
 		displayCommentsRelatedAlert();
 		setComments([...retrievedComments]);
+	}
+
+	function onMediaLoad() {
+		setMediaId(MediaPageStore.get('media-id'));
+		setMediaData(MediaPageStore.get('media-data'));
 	}
 
 	function setTimestampAnchors(text) {
@@ -510,13 +518,14 @@ export default function CommentsList(props) {
 
 	useEffect(() => {
 		setDisplayComments(
-			comments.length &&
+			!!comments.length &&
 				MEMBER.can.readComment &&
-				(MediaPageStore.get('media-data').enable_comments || MEMBER.can.editMedia)
+				(!!mediaData?.enable_comments || MEMBER.can.editMedia)
 		);
-	}, [comments]);
+	}, [comments, mediaData]);
 
 	useEffect(() => {
+		MediaPageStore.on('loaded_media_data', onMediaLoad);
 		MediaPageStore.on('comments_load', onCommentsLoad);
 		MediaPageStore.on('comment_submit', onCommentSubmit);
 		MediaPageStore.on('comment_submit_fail', onCommentSubmitFail);
@@ -524,6 +533,7 @@ export default function CommentsList(props) {
 		MediaPageStore.on('comment_delete_fail', onCommentDeleteFail);
 
 		return () => {
+			MediaPageStore.removeListener('loaded_media_data', onMediaLoad);
 			MediaPageStore.removeListener('comments_load', onCommentsLoad);
 			MediaPageStore.removeListener('comment_submit', onCommentSubmit);
 			MediaPageStore.removeListener('comment_submit_fail', onCommentSubmitFail);
@@ -535,9 +545,9 @@ export default function CommentsList(props) {
 	return (
 		<div className="comments-list">
 			<div className="comments-list-inner">
-				<CommentsListHeader commentsLength={comments.length} />
+				<CommentsListHeader commentsLength={comments.length} mediaData={mediaData} />
 
-				{MediaPageStore.get('media-data')?.enable_comments ? <CommentForm media_id={mediaId} /> : null}
+				{mediaData?.enable_comments ? <CommentForm media_id={mediaId} /> : null}
 
 				{displayComments
 					? comments.map((c) => {
