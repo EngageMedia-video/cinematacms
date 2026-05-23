@@ -31,7 +31,7 @@ export function getAlignClasses(align) {
 
 export const SIZE_CLASSES = {
 	base: 'px-space-base py-size-10',
-	sm: 'px-size-3 py-size-8',
+	sm: 'px-size-12 py-size-8',
 };
 
 export function getSizeClasses(size) {
