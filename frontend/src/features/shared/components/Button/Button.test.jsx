@@ -51,6 +51,15 @@ describe('Button', () => {
 		expect(screen.getByRole('button', { name: 'Read more' })).toBeInTheDocument();
 	});
 
+	it('supports base and small size classes', () => {
+		const { rerender } = render(<Button>Base size</Button>);
+
+		expect(screen.getByRole('button', { name: 'Base size' })).toHaveClass('px-space-base', 'py-size-10');
+
+		rerender(<Button size="sm">Small size</Button>);
+		expect(screen.getByRole('button', { name: 'Small size' })).toHaveClass('px-size-3', 'py-size-8');
+	});
+
 	it('renders icon-only variant without visible label text', () => {
 		render(<Button variant="icon" icon={<TestIcon />} aria-label="More actions" />);
 

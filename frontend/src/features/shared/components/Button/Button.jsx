@@ -28,6 +28,16 @@ export const ALIGN_CLASSES = {
 export function getAlignClasses(align) {
 	return ALIGN_CLASSES[align] ?? ALIGN_CLASSES.center;
 }
+
+export const SIZE_CLASSES = {
+	base: 'px-space-base py-size-10',
+	sm: 'px-size-3 py-size-8',
+};
+
+export function getSizeClasses(size) {
+	return SIZE_CLASSES[size] ?? SIZE_CLASSES.base;
+}
+
 function isIconOnlyVariant(variant) {
 	return variant === 'icon';
 }
@@ -38,6 +48,7 @@ export function Button({
 	className = '',
 	icon = null,
 	iconPosition,
+	size = 'base',
 	type = 'button',
 	variant = 'primary',
 	...props
@@ -57,9 +68,9 @@ export function Button({
 		<button
 			type={type}
 			className={cn(
-				'body-body-14-bold inline-flex cursor-pointer items-center transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60',
+				'inline-flex cursor-pointer items-center transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 body-body-14-bold',
 				getAlignClasses(align),
-				isIconOnlyVariant(variant) ? 'gap-0 p-0' : 'gap-space-xs rounded-ds-4 px-space-base py-size-10',
+				isIconOnlyVariant(variant) ? 'gap-0 p-0' : cn('gap-space-xs rounded-ds-4', getSizeClasses(size)),
 				getVariantClasses(variant),
 				className
 			)}
