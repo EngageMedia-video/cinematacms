@@ -166,7 +166,7 @@ export function UserItem(props) {
 					transition: all 0.2s;
 					position: relative;
 					text-align: center;
-					border: 1px solid var(--input-border-color, #e2e8f0);
+					border: 1px solid var(--input-border-color, var(--cinemata-neutral-200));
 				}
 
 				.member-card:hover {
@@ -175,7 +175,7 @@ export function UserItem(props) {
 				}
 
 				.member-card.same-country {
-					border: 2px solid #10b981;
+					border: 2px solid var(--cinemata-coral-reef-400p);
 				}
 
 				.badge {
@@ -190,7 +190,7 @@ export function UserItem(props) {
 
 				.badge.local {
 					right: 1rem;
-					background: #10b981;
+					background: var(--cinemata-coral-reef-400p);
 				}
 
 				.badge.orange-badge {
@@ -201,7 +201,7 @@ export function UserItem(props) {
 				.avatar {
 					width: 80px;
 					height: 80px;
-					background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+					background: linear-gradient(135deg, #667eea 0%, var(--cinemata-pacific-deep-400) 100%);
 					border-radius: 50%;
 					display: flex;
 					align-items: center;
@@ -224,7 +224,7 @@ export function UserItem(props) {
 
 				.member-info :global(h3) {
 					font-size: 1.125rem;
-					color: var(--body-text-color, #1e293b);
+					color: var(--body-text-color, var(--cinemata-neutral-800));
 					margin-bottom: 0.25rem;
 				}
 
@@ -234,11 +234,11 @@ export function UserItem(props) {
 				}
 
 				.member-info :global(h3 a:hover) {
-					color: var(--default-theme-color, #3b82f6);
+					color: var(--default-theme-color, var(--cinemata-strait-blue-400));
 				}
 
 				.username {
-					color: var(--body-text-color, #64748b);
+					color: var(--body-text-color, var(--cinemata-pacific-deep-400));
 					opacity: 0.7;
 					font-size: 0.875rem;
 					margin-bottom: 0.75rem;
@@ -249,7 +249,7 @@ export function UserItem(props) {
 					align-items: center;
 					justify-content: center;
 					gap: 0.5rem;
-					color: var(--body-text-color, #475569);
+					color: var(--body-text-color, var(--cinemata-strait-blue-700));
 					opacity: 0.8;
 					font-size: 0.875rem;
 					margin-bottom: 1rem;
@@ -265,7 +265,7 @@ export function UserItem(props) {
 					gap: 1rem;
 					margin-bottom: 1rem;
 					padding: 0.75rem 0;
-					border-top: 1px solid var(--input-border-color, #f1f5f9);
+					border-top: 1px solid var(--input-border-color, var(--cinemata-pacific-deep-50));
 					border-bottom: 1px solid var(--input-border-color, #f1f5f9);
 				}
 
@@ -273,7 +273,7 @@ export function UserItem(props) {
 					display: flex;
 					align-items: center;
 					gap: 0.5rem;
-					color: var(--body-text-color, #64748b);
+					color: var(--body-text-color, var(--cinemata-pacific-deep-400));
 					opacity: 0.8;
 					font-size: 0.875rem;
 				}
@@ -290,7 +290,7 @@ export function UserItem(props) {
 				.view-profile {
 					width: 100%;
 					padding: 0.75rem;
-					background: var(--default-theme-color, #3b82f6);
+					background: var(--default-theme-color, var(--cinemata-strait-blue-400));
 					color: white !important;
 					border: none;
 					border-radius: 8px;

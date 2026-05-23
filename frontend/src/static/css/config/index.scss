@@ -55,15 +55,15 @@ body {
 	--radius-48: 48px;
 	--radius-full: 999px;
 
-	--default-theme-color: #009933;
-	// --default-theme-color: #008ede;
+	--default-theme-color: var(--cinemata-green-600);
+	// --default-theme-color: var(--cinemata-strait-blue-400);
 
-	--default-brand-color: #009933;
-	// --default-brand-color: #087e04;
+	--default-brand-color: var(--cinemata-green-600);
+	// --default-brand-color: var(--cinemata-green-700p);
 
-	--success-color: #00a28b;
-	--warning-color: #e09f1f;
-	--danger-color: #de623b;
+	--success-color: var(--cinemata-coral-reef-500);
+	--warning-color: var(--cinemata-amber-500);
+	--danger-color: var(--cinemata-sunset-horizon-500);
 
 	--input-disabled-bg-color: hsla(0, 0%, 0%, 0.05);
 

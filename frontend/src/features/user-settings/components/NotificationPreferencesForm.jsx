@@ -223,7 +223,7 @@ export function NotificationPreferencesForm() {
 						fontSize: '13px',
 						fontWeight: 500,
 						backgroundColor: 'var(--btn-primary-bg-color)',
-						color: '#fff',
+						color: 'var(--cinemata-neutral-50)',
 						boxShadow: '0 1px 3px rgba(0,0,0,.2)',
 						...disabledActionStyle,
 					}}

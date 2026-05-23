@@ -102,7 +102,7 @@ function MoviePoster({
 
 			{duration ? (
 				<span
-					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-[#111111] px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-white"
+					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-[var(--cinemata-pacific-deep-950)] px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-white"
 					data-movie-item-duration
 				>
 					{duration}
@@ -123,7 +123,7 @@ function MoviePoster({
 
 export function HorizontalMovieItem({
 	badge = '',
-	badgeColor = '#026690',
+	badgeColor = 'var(--cinemata-strait-blue-500)',
 	className = '',
 	duration = '',
 	imageAlt = 'Movie artwork',

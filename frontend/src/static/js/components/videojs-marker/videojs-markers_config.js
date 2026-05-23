@@ -1,7 +1,7 @@
 //markers on the timebar
 const markerStyle = {
 	width: '15px',
-	'background-color': '#DD7373',
+	'background-color': 'var(--cinemata-red-500)',
 };
 
 //the comment overlay

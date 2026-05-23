@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ArrowLeftIcon = ({ width = 18.657, height = 31.636, fill = '#ffffff' }) => (
+const ArrowLeftIcon = ({ width = 18.657, height = 31.636, fill = 'var(--cinemata-neutral-50)' }) => (
 	<svg
 		width={width}
 		height={height}

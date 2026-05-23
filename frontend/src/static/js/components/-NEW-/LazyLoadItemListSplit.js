@@ -161,7 +161,7 @@ export function LazyLoadItemListSplit(props) {
 
 						.error-icon {
 							margin-bottom: 1.5rem;
-							color: #e74c3c;
+							color: var(--cinemata-red-500);
 							opacity: 0.8;
 						}
 
@@ -181,8 +181,8 @@ export function LazyLoadItemListSplit(props) {
 						.retry-button {
 							padding: 0.75rem 1.5rem;
 							font-size: 1rem;
-							color: #fff;
-							background-color: var(--popup-submit-button-bg, #3498db);
+							color: var(--cinemata-neutral-50);
+							background-color: var(--popup-submit-button-bg, var(--cinemata-strait-blue-300));
 							border: none;
 							border-radius: 4px;
 							cursor: pointer;
@@ -190,7 +190,7 @@ export function LazyLoadItemListSplit(props) {
 						}
 
 						.retry-button:hover {
-							background-color: var(--popup-submit-button-bg-hover, #2980b9);
+							background-color: var(--popup-submit-button-bg-hover, var(--cinemata-strait-blue-400));
 						}
 
 						.retry-button:active {

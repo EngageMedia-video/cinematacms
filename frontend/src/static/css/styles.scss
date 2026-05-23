@@ -269,7 +269,7 @@ button {
 		gap: 20px;
 
 		button.action-button {
-			background-color: #77bec7;
+			background-color: var(--cinemata-strait-blue-200);
 			color: white;
 			border: none;
 			border-radius: 4px;
@@ -474,7 +474,7 @@ button {
 				font-weight: 600;
 				color: var(--user-action-form-inner-otp-input-text-color);
 				background-color: transparent;
-				border: 2px solid #3e3e3e;
+				border: 2px solid var(--cinemata-neutral-700);
 				border-radius: 4px;
 				text-align: center;
 				margin-inline: 0.25em;
@@ -512,7 +512,7 @@ button {
 
 				&:focus {
 					outline: none;
-					border-color: #ed7c30;
+					border-color: var(--cinemata-sunset-horizon-300);
 					box-shadow: 0 0 0 1px #ed7c30;
 				}
 
@@ -708,7 +708,7 @@ input#authenticator_secret {
 }
 
 .top-message {
-	background-color: #ed7c31;
+	background-color: var(--cinemata-sunset-horizon-300);
 	color: var(--cinemata-neutral-50);
 	display: flex;
 	justify-content: center;
@@ -1196,10 +1196,10 @@ input#authenticator_secret {
 	padding: 10px 12px !important;
 	font-size: 12px !important;
 	line-height: 1.5 !important;
-	// color: #e3e3e3 !important;
-	color: rgba(#fff, 1) !important;
-	background-color: #595959 !important;
-	// background-color:#909090 !important;
+	// color: var(--cinemata-pacific-deep-50) !important;
+	color: rgba(var(--cinemata-neutral-50), 1) !important;
+	background-color: var(--cinemata-neutral-600) !important;
+	// background-color:var(--cinemata-pacific-deep-300) !important;
 	border-radius: 2px !important;
 	z-index: +5 !important;
 }
@@ -1621,7 +1621,7 @@ video.show-video {
 	width: 100%;
 	height: 100%;
 
-	background: #000;
+	background: var(--cinemata-black);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1656,7 +1656,7 @@ video.show-video {
 
 .ripple-spinner .circle {
 	position: absolute;
-	border: 5px solid #ed7c31;
+	border: 5px solid var(--cinemata-sunset-horizon-300);
 	border-radius: 50%;
 	top: 50%;
 	left: 50%;
@@ -1708,7 +1708,7 @@ video.show-video {
 	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 	font-size: 50px;
 	font-weight: 400;
-	color: #ffffff;
+	color: var(--cinemata-neutral-50);
 	margin-bottom: 20px;
 	max-width: 80%;
 	word-break: break-word;
@@ -1728,7 +1728,7 @@ video.show-video {
 .metadata-separator {
 	width: 8px;
 	height: 8px;
-	background: #ffffff;
+	background: var(--cinemata-neutral-50);
 	border-radius: 50%;
 	opacity: 0.8;
 }
@@ -1746,7 +1746,7 @@ video.show-video {
 	left: 0;
 	width: 100%;
 	height: 100%;
-	background: #000000;
+	background: var(--cinemata-black);
 	z-index: 10000;
 	display: flex;
 	flex-direction: column;

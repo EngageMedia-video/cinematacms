@@ -37,7 +37,7 @@ function ViewAllLink({ href }) {
 	);
 }
 
-function SectionRowHeader({ badgeLabel, badgeColor = '#026690', viewAllHref }) {
+function SectionRowHeader({ badgeLabel, badgeColor = 'var(--cinemata-strait-blue-500)', viewAllHref }) {
 	return (
 		<div className="flex items-center justify-between gap-4">
 			{badgeLabel ? <Badge color={badgeColor}>{badgeLabel}</Badge> : null}
