@@ -251,6 +251,7 @@ class Media(models.Model):
     duration = models.IntegerField(default=0)
     views = models.IntegerField(default=1)
     likes = models.IntegerField(default=1)
+    comment_count = models.IntegerField(default=0, db_index=True)
     dislikes = models.IntegerField(default=0)
     reported_times = models.IntegerField(default=0)
     state = models.CharField(
@@ -278,6 +279,7 @@ class Media(models.Model):
         help_text="Date when this video was featured (auto-set by scheduling system)",
     )
     user_featured = models.BooleanField(default=False, db_index=True, help_text="Featured by the user")
+    has_award = models.BooleanField(default=False, db_index=True)
     media_type = models.CharField(
         max_length=20,
         blank=True,
@@ -2425,8 +2427,15 @@ def subtitle_storage_usage_delete(sender, instance, **kwargs):
     _schedule_storage_usage_refresh_for_media(instance.media_id)
 
 
+@receiver(post_save, sender=Comment)
+def comment_post_save(sender, instance, created, **kwargs):
+    if created:
+        Media.objects.filter(pk=instance.media_id).update(comment_count=models.F("comment_count") + 1)
+
+
 @receiver(post_delete, sender=Comment)
 def comment_delete(sender, instance, **kwargs):
+    Media.objects.filter(pk=instance.media_id, comment_count__gt=0).update(comment_count=models.F("comment_count") - 1)
     if instance.media.state == "public":
         if settings.UNLISTED_WORKFLOW_MAKE_PRIVATE_UPON_COMMENTARY_DELETE:
             if instance.media.comments.exclude(uid=instance.uid).count() == 0:

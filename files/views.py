@@ -1815,7 +1815,11 @@ class MediaSearch(APIView):
         license = params.get("license", "").strip()
         upload_date = params.get("upload_date", "").strip()
 
-        sort_by_options = ["title", "add_date", "edit_date", "views", "likes"]
+        subtitle_language = params.get("subtitle_language", "").strip()
+        length = params.get("length", "").strip()
+        award = params.get("award", "").strip()
+
+        sort_by_options = ["title", "add_date", "edit_date", "views", "likes", "comment_count", "featured_date"]
         if sort_by not in sort_by_options:
             sort_by = "add_date"
         ordering = "" if ordering == "asc" else "-"
@@ -1823,7 +1827,20 @@ class MediaSearch(APIView):
         if media_type not in ["video", "image", "audio", "pdf"]:
             media_type = None
 
-        if not (query or category or tag or language or country or topic):
+        if not (
+            query
+            or category
+            or tag
+            or language
+            or country
+            or topic
+            or subtitle_language
+            or length
+            or award
+            or media_type
+            or license
+            or upload_date
+        ):
             ret = {}
             return Response(ret, status=status.HTTP_200_OK)
 
@@ -1863,6 +1880,19 @@ class MediaSearch(APIView):
             country = {value: key for key, value in dict(lists.video_countries).items()}.get(country)
             media = media.filter(media_country=country)
 
+        if subtitle_language:
+            media = media.filter(subtitles__language__title=subtitle_language).distinct()
+
+        if length:
+            if length == "less_than_10":
+                media = media.filter(duration__lt=600)
+            elif length == "more_than_10":
+                media = media.filter(duration__gte=600)
+
+        if award:
+            if award == "yes":
+                media = media.filter(has_award=True)
+
         if media_type:
             media = media.filter(media_type=media_type)
 
@@ -1897,7 +1927,13 @@ class MediaSearch(APIView):
             if gte:
                 media = media.filter(add_date__gte=gte)
 
-        media = media.order_by(f"{ordering}{sort_by}")
+        if sort_by == "featured_date":
+            if ordering == "":
+                media = media.order_by(F("featured_date").asc(nulls_last=True))
+            else:
+                media = media.order_by(F("featured_date").desc(nulls_last=True))
+        else:
+            media = media.order_by(f"{ordering}{sort_by}")
 
         if self.request.query_params.get("show", "").strip() == "titles":
             media = media.values("title")[:40]
@@ -2594,6 +2630,21 @@ class TagList(APIView):
         page = paginator.paginate_queryset(tags, request)
         serializer = TagSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
+
+
+class SubtitleLanguageList(APIView):
+    def get(self, request, format=None):
+        languages = (
+            Language.objects.filter(
+                subtitle__media__state="public",
+                subtitle__media__is_reviewed=True,
+            )
+            .exclude(code__in=["automatic", "automatic-translation"])
+            .distinct()
+            .order_by("title")
+            .values("code", "title")
+        )
+        return Response(list(languages))
 
 
 class TopMessageList(APIView):

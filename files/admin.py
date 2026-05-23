@@ -65,7 +65,7 @@ class MediaAdmin(admin.ModelAdmin):
         "featured_date",
         "get_comments_count",
     ]
-    list_filter = ["state", "is_reviewed", "encoding_status", "featured", "category"]
+    list_filter = ["state", "is_reviewed", "encoding_status", "featured", "has_award", "category"]
     ordering = ("-add_date",)
     readonly_fields = ("tags", "category", "channel")
 

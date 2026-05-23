@@ -113,6 +113,9 @@ class SearchRSSFeed(Feed):
         country = request.GET.get("country", "")
         tag = request.GET.get("t", "")
         query = request.GET.get("q", "")
+        subtitle_language = request.GET.get("subtitle_language", "")
+        length = request.GET.get("length", "")
+        award = request.GET.get("award", "")
 
         basic_query = Q(state="public", is_reviewed=True)
         media = Media.objects.filter(basic_query)
@@ -133,6 +136,8 @@ class SearchRSSFeed(Feed):
         elif country:
             country = {value: key for key, value in dict(lists.video_countries).items()}.get(country)
             media = media.filter(media_country=country)
+        elif subtitle_language:
+            media = media.filter(subtitles__language__title=subtitle_language).distinct()
         elif query:
             query = helpers.clean_query(query)
             q_parts = [q_part.strip("y") for q_part in query.split() if q_part not in STOP_WORDS]
@@ -144,6 +149,14 @@ class SearchRSSFeed(Feed):
                 query = None
         if query:
             media = media.filter(search=query)
+
+        if length == "less_than_10":
+            media = media.filter(duration__lt=600)
+        elif length == "more_than_10":
+            media = media.filter(duration__gte=600)
+
+        if award == "yes":
+            media = media.filter(has_award=True)
 
         media = media.order_by("-add_date").prefetch_related("user")
 

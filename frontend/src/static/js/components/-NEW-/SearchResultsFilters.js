@@ -27,6 +27,8 @@ const filters = {
 		{ id: 'date_added_asc', title: 'Upload date (oldest)' },
 		{ id: 'most_views', title: 'View count' },
 		{ id: 'most_likes', title: 'Like count' },
+		{ id: 'most_discussed', title: 'Most discussed' },
+		{ id: 'most_featured', title: 'Most featured' },
 	],
 	license: [
 		{ id: 'all', title: 'All' },
@@ -37,6 +39,15 @@ const filters = {
 		{ id: '9', title: 'Attribution-NonCommercial-ShareAlike 4.0 International' },
 		{ id: '10', title: 'Attribution-NonCommercial-NoDerivatives 4.0 International' },
 		{ id: 'no_license', title: 'No license' },
+	],
+	length: [
+		{ id: 'all', title: 'All' },
+		{ id: 'less_than_10', title: 'Less than 10 mins' },
+		{ id: 'more_than_10', title: 'More than 10 mins' },
+	],
+	award: [
+		{ id: 'all', title: 'All' },
+		{ id: 'yes', title: 'Won an Award' },
 	],
 };
 
@@ -49,6 +60,8 @@ export function SearchResultsFilters(props) {
 	const [uploadDateFilter, setFilter_upload_date] = useState('all');
 	const [sortByFilter, setFilter_sort_by] = useState('date_added_desc');
 	const [licenseFilter, setFilter_license] = useState('all');
+	const [lengthFilter, setFilter_length] = useState('all');
+	const [awardFilter, setFilter_award] = useState('all');
 
 	const containerRef = useRef(null);
 	const innerContainerRef = useRef(null);
@@ -65,6 +78,8 @@ export function SearchResultsFilters(props) {
 			upload_date: uploadDateFilter,
 			license: licenseFilter,
 			sort_by: sortByFilter,
+			length: lengthFilter,
+			award: awardFilter,
 		};
 
 		switch (ev.currentTarget.getAttribute('filter')) {
@@ -87,6 +102,16 @@ export function SearchResultsFilters(props) {
 				args.sort_by = ev.currentTarget.getAttribute('value');
 				props.onFiltersUpdate(args);
 				setFilter_sort_by(args.sort_by);
+				break;
+			case 'length':
+				args.length = ev.currentTarget.getAttribute('value');
+				props.onFiltersUpdate(args);
+				setFilter_length(args.length);
+				break;
+			case 'award':
+				args.award = ev.currentTarget.getAttribute('value');
+				props.onFiltersUpdate(args);
+				setFilter_award(args.award);
 				break;
 		}
 	}
@@ -153,6 +178,30 @@ export function SearchResultsFilters(props) {
 						</div>
 					</div>
 				)}
+
+				<div className="mi-filter">
+					<div className="mi-filter-title">LENGTH</div>
+					<div className="mi-filter-options">
+						<FilterOptions
+							id={'length'}
+							options={filters.length}
+							selected={lengthFilter}
+							onSelect={onFilterSelect}
+						/>
+					</div>
+				</div>
+
+				<div className="mi-filter">
+					<div className="mi-filter-title">AWARD</div>
+					<div className="mi-filter-options">
+						<FilterOptions
+							id={'award'}
+							options={filters.award}
+							selected={awardFilter}
+							onSelect={onFilterSelect}
+						/>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
