@@ -224,7 +224,7 @@ export function NotificationPreferencesForm() {
 						fontWeight: 500,
 						backgroundColor: 'var(--btn-primary-bg-color)',
 						color: 'var(--cinemata-neutral-50)',
-						boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+						boxShadow: '0 1px 3px var(--cinemata-neutral-300)',
 						...disabledActionStyle,
 					}}
 				>

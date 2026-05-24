@@ -162,7 +162,7 @@ export function UserItem(props) {
 					background: var(--popup-bg-color, white);
 					border-radius: 12px;
 					padding: 1.5rem;
-					box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+					box-shadow: 0 1px 3px var(--cinemata-neutral-200);
 					transition: all 0.2s;
 					position: relative;
 					text-align: center;
@@ -171,7 +171,7 @@ export function UserItem(props) {
 
 				.member-card:hover {
 					transform: translateY(-2px);
-					box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+					box-shadow: 0 8px 16px var(--cinemata-neutral-300);
 				}
 
 				.member-card.same-country {

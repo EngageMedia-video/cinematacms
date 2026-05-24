@@ -177,7 +177,7 @@ button {
 	background-color: var(--user-action-form-inner-bg-color);
 
 	border-radius: 2px;
-	box-shadow: 0px 4px 8px 0 rgba(17, 17, 17, 0.06);
+	box-shadow: 0px 4px 8px 0 var(--cinemata-neutral-200);
 
 	@media screen and (max-width: 480px) {
 		padding: 1.25em;
@@ -1067,7 +1067,7 @@ input#authenticator_secret {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background-color: rgba(0, 0, 0, 0.5);
+	background-color: var(--cinemata-neutral-500);
 }
 
 .license_controls_options > div {
@@ -1197,7 +1197,7 @@ input#authenticator_secret {
 	font-size: 12px !important;
 	line-height: 1.5 !important;
 	// color: var(--cinemata-pacific-deep-50) !important;
-	color: rgba(var(--cinemata-neutral-50), 1) !important;
+	color: var(--cinemata-neutral-50) !important;
 	background-color: var(--cinemata-neutral-600) !important;
 	// background-color:var(--cinemata-pacific-deep-300) !important;
 	border-radius: 2px !important;
@@ -1401,14 +1401,14 @@ input#authenticator_secret {
 		background-color: var(--cinemata-strait-blue-500);
 		color: var(--cinemata-white);
 		cursor: pointer;
-		box-shadow: 0 2px 8px rgba(26, 63, 97, 0.15);
+		box-shadow: 0 2px 8px var(--cinemata-neutral-300);
 		transition: all 0.3s ease;
 		transform: translateY(-50%);
 
 		&:hover {
 			background-color: var(--cinemata-sunset-horizon-300);
 			transform: translateY(-50%) scale(1.1);
-			box-shadow: 0 4px 12px rgba(237, 124, 48, 0.3);
+			box-shadow: 0 4px 12px var(--cinemata-sunset-horizon-100);
 		}
 
 		&.left {
@@ -1771,7 +1771,7 @@ video.show-video {
 .prompt-subtitle {
 	font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 	font-size: 24px;
-	color: rgba(255, 255, 255, 0.8);
+	color: var(--cinemata-white);
 	text-align: center;
 	animation: pulse 2s ease-in-out infinite;
 }

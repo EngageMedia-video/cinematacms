@@ -65,7 +65,7 @@ export function PasswordDialog({ open, onOpenChange, friendlyToken, ownerName, o
 				className="max-w-[560px] min-w-[320px] bg-transparent p-0 text-left shadow-none"
 				closeOnOverlayClick={false}
 			>
-				<div className="relative z-[1] w-full max-w-[560px] mx-auto px-9 pt-10 pb-9 bg-[var(--cinemata-pacific-deep-900)] rounded-2xl border border-[rgba(123,152,182,0.2)] overflow-hidden">
+				<div className="relative z-[1] w-full max-w-[560px] mx-auto px-9 pt-10 pb-9 bg-[var(--cinemata-pacific-deep-900)] rounded-2xl border border-[var(--cinemata-neutral-200)] overflow-hidden">
 					<img
 						src={cornerDecoration}
 						alt=""

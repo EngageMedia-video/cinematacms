@@ -186,7 +186,7 @@ export class MembersPage extends Page {
 							padding: 1.5rem;
 							border-radius: 12px;
 							margin-bottom: 2rem;
-							box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+							box-shadow: 0 1px 3px var(--cinemata-neutral-200);
 							border: 1px solid var(--input-border-color, var(--cinemata-neutral-200));
 						}
 

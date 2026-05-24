@@ -113,7 +113,7 @@ function GlobalSearchDropdownInner() {
 					to { opacity: 1; transform: translateY(0); }
 				}
 				.gs-scrollbar {
-					scrollbar-color: rgba(2, 102, 144, 0.35) transparent;
+					scrollbar-color: var(--cinemata-strait-blue-200) transparent;
 					scrollbar-width: thin;
 				}
 				.gs-scrollbar::-webkit-scrollbar {
@@ -125,7 +125,7 @@ function GlobalSearchDropdownInner() {
 				.gs-scrollbar::-webkit-scrollbar-thumb {
 					border: 2px solid transparent;
 					border-radius: 999px;
-					background-color: rgba(2, 102, 144, 0.35);
+					background-color: var(--cinemata-strait-blue-200);
 					background-clip: content-box;
 				}
 			`}</style>

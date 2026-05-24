@@ -160,7 +160,7 @@ export function TopbarUserMenu() {
 				aria-haspopup="true"
 				aria-expanded={isOpen}
 				className="inline-flex items-center justify-center rounded-full overflow-hidden shrink-0 transition-shadow hover:ring-2 hover:ring-white/20"
-				style={{ width: 40, height: 40, boxShadow: '0 0 20px rgba(0,0,0,0.1)' }}
+				style={{ width: 40, height: 40, boxShadow: '0 0 20px var(--cinemata-neutral-200)' }}
 			>
 				<Avatar
 					src={user.thumbnail}
@@ -173,7 +173,9 @@ export function TopbarUserMenu() {
 				<div
 					role="menu"
 					className="absolute right-0 top-full mt-3 w-[240px] overflow-hidden rounded-xl bg-cinemata-pacific-deep-800 ring-1 ring-white/10 shadow-2xl z-50"
-					style={{ boxShadow: '0 24px 48px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)' }}
+					style={{
+						boxShadow: '0 24px 48px -12px var(--cinemata-neutral-500), 0 0 0 1px rgba(255,255,255,0.06)',
+					}}
 				>
 					{user.username ? (
 						<a

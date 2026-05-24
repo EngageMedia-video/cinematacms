@@ -46,7 +46,7 @@ import videojs from 'video.js';
 			style: {
 				width: '100%',
 				height: '20%',
-				'background-color': 'rgba(0,0,0,0.7)',
+				'background-color': 'var(--cinemata-neutral-600)',
 				color: 'white',
 				'font-size': '17px',
 			},

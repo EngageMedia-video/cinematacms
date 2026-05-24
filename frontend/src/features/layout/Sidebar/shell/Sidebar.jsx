@@ -160,10 +160,10 @@ export function Sidebar({ id = 'app-sidebar' }) {
 			<div
 				className={cn(
 					'relative min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]',
-					'[scrollbar-width:thin] [scrollbar-color:rgba(2,102,144,0.35)_transparent]',
+					'[scrollbar-width:thin] [scrollbar-color:var(--cinemata-strait-blue-200)_transparent]',
 					'[&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent',
 					'[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2',
-					'[&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-[rgba(2,102,144,0.35)]',
+					'[&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-[var(--cinemata-strait-blue-200)]',
 					'[&::-webkit-scrollbar-thumb]:bg-clip-content'
 				)}
 			>
