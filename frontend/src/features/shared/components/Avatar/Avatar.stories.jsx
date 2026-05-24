@@ -171,7 +171,7 @@ export const CustomBadgeIcon = {
 
 export const BadgeTypes = {
 	render: () => (
-		<div className="inline-flex gap-12 bg-cinemata-neutral-100 p-8 dark:bg-cinemata-pacific-deep-950">
+		<div className="inline-flex gap-12 bg-bg-page p-8">
 			<Avatar name="Tariq Akbar" src={sampleAvatars[0].src} size="lg" badgeType="comment" label="Comment" />
 			<Avatar
 				name="Layla Hart"
@@ -187,7 +187,7 @@ export const BadgeTypes = {
 
 export const Gallery = {
 	render: () => (
-		<div className="inline-grid grid-cols-2 gap-x-12 gap-y-10 bg-cinemata-neutral-100 p-8 dark:bg-cinemata-pacific-deep-950">
+		<div className="inline-grid grid-cols-2 gap-x-12 gap-y-10 bg-bg-page p-8">
 			{sampleAvatars.map((avatar) => (
 				<div key={avatar.name + avatar.src} className="contents">
 					<Avatar name={avatar.name} src={avatar.src} size="sm" />

@@ -4,47 +4,46 @@ import { Icon } from '../Icon';
 
 const SHELL_VARIANT_CLASSES = {
 	default:
-		'bg-cinemata-neutral-50 hover:bg-cinemata-pacific-deep-50 focus-within:bg-cinemata-neutral-50 dark:bg-cinemata-pacific-deep-900 dark:hover:bg-cinemata-pacific-deep-800 dark:focus-within:bg-cinemata-pacific-deep-900',
-	error: 'bg-cinemata-neutral-50 dark:bg-cinemata-pacific-deep-900',
+		'bg-bg-surface hover:bg-cinemata-pacific-deep-50 focus-within:bg-bg-surface dark:hover:bg-cinemata-pacific-deep-800',
+	error: 'bg-bg-surface',
 	disabled: 'bg-cinemata-pacific-deep-50 dark:bg-cinemata-pacific-deep-900',
 };
 
 const LABEL_VARIANT_CLASSES = {
-	default: 'text-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50',
-	error: 'text-cinemata-red-500 dark:text-cinemata-red-500',
-	disabled: 'text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-400',
+	default: 'text-text-strong',
+	error: 'text-text-danger',
+	disabled: 'text-text-disabled',
 };
 
 const VALUE_VARIANT_CLASSES = {
-	default: 'text-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50',
-	error: 'text-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50',
-	disabled: 'text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-300',
+	default: 'text-text-strong',
+	error: 'text-text-strong',
+	disabled: 'text-text-muted',
 };
 
 const PLACEHOLDER_VARIANT_CLASSES = {
-	default: 'text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-300',
-	error: 'text-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50',
-	disabled: 'text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-300',
+	default: 'text-text-muted',
+	error: 'text-text-strong',
+	disabled: 'text-text-muted',
 };
 
 const HELPER_VARIANT_CLASSES = {
-	default: 'text-cinemata-sunset-horizon-400p dark:text-cinemata-sunset-horizon-400p',
-	error: 'text-cinemata-red-500 dark:text-cinemata-red-500',
-	disabled: 'text-cinemata-sunset-horizon-400p dark:text-cinemata-sunset-horizon-400p',
+	default: 'text-text-accent',
+	error: 'text-text-danger',
+	disabled: 'text-text-accent',
 };
 
-const LABEL_ACTIVE_CLASSES = 'text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-300';
-const ACTIVE_BORDER_CLASSES = 'border-cinemata-coral-reef-400p dark:border-cinemata-sunset-horizon-400p';
+const LABEL_ACTIVE_CLASSES = 'text-text-muted';
+const ACTIVE_BORDER_CLASSES = 'border-border-input';
 const BORDER_VARIANT_CLASSES = {
-	default: 'border-cinemata-pacific-deep-500 dark:border-cinemata-pacific-deep-500',
-	error: 'border-cinemata-red-500 dark:border-cinemata-red-500',
+	default: 'border-border-strong-constant',
+	error: 'border-border-danger',
 	disabled: 'border-cinemata-coral-reef-400p dark:border-cinemata-red-500',
 };
 
 const MENU_VARIANT_CLASSES = {
-	default:
-		'border-cinemata-pacific-deep-500 bg-cinemata-neutral-50 dark:border-cinemata-pacific-deep-500 dark:bg-cinemata-pacific-deep-900',
-	error: 'border-cinemata-red-500 bg-cinemata-neutral-50 dark:border-cinemata-red-500 dark:bg-cinemata-pacific-deep-900',
+	default: 'border-border-strong-constant bg-bg-surface',
+	error: 'border-border-danger bg-bg-surface',
 	disabled:
 		'border-cinemata-coral-reef-400p bg-cinemata-pacific-deep-50 dark:border-cinemata-red-500 dark:bg-cinemata-pacific-deep-900',
 };
@@ -264,12 +263,7 @@ export function Dropdown({
 								'body-body-16-regular block truncate',
 								selectedOption
 									? VALUE_VARIANT_CLASSES[variant]
-									: cn(
-											PLACEHOLDER_VARIANT_CLASSES[variant],
-											activeState
-												? 'text-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50'
-												: ''
-										)
+									: cn(PLACEHOLDER_VARIANT_CLASSES[variant], activeState ? 'text-text-strong' : '')
 							)}
 						>
 							{selectedOption?.label ?? placeholder}
@@ -278,7 +272,7 @@ export function Dropdown({
 					<span
 						aria-hidden="true"
 						className={cn(
-							'inline-flex h-6 w-6 shrink-0 items-center justify-center self-center text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50 transition-transform duration-200',
+							'inline-flex h-6 w-6 shrink-0 items-center justify-center self-center text-text-strong transition-transform duration-200',
 							open ? 'rotate-180' : ''
 						)}
 					>

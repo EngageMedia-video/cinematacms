@@ -74,7 +74,7 @@ const meta = {
 		},
 	},
 	render: (args) => (
-		<div className="w-full min-w-[320px] max-w-[820px] bg-cinemata-neutral-50 dark:bg-cinemata-pacific-deep-950 p-8">
+		<div className="w-full min-w-[320px] max-w-[820px] bg-bg-page p-8">
 			<Stepper {...args} />
 		</div>
 	),
@@ -107,7 +107,7 @@ export const ThreeItems = {
 
 export const MobileWidth = {
 	render: (args) => (
-		<div className="w-full max-w-[360px] bg-cinemata-neutral-50 p-5 dark:bg-cinemata-pacific-deep-950">
+		<div className="w-full max-w-[360px] bg-bg-page p-5">
 			<Stepper {...args} />
 		</div>
 	),

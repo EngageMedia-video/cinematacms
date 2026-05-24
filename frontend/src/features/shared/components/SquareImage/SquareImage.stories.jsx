@@ -139,7 +139,7 @@ export const Loading = {
 
 export const Gallery = {
 	render: () => (
-		<div className="inline-flex gap-6 bg-cinemata-neutral-100 p-8 dark:bg-cinemata-pacific-deep-950">
+		<div className="inline-flex gap-6 bg-bg-page p-8">
 			<SquareImage alt="URL poster" src={sampleUrlImage} />
 			<SquareImage alt="Static poster" src={sampleStaticImage} />
 			<SquareImage alt="Placeholder artwork" src="" iconName="example" />

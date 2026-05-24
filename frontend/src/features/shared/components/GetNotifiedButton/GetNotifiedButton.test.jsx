@@ -10,7 +10,7 @@ describe('GetNotifiedButton', () => {
 		expect(button).toHaveAttribute('aria-pressed', 'false');
 		expect(screen.getByTestId('bell-icon')).toBeInTheDocument();
 		expect(screen.getByText('GET NOTIFIED')).toBeInTheDocument();
-		expect(button.className).toContain('bg-cinemata-strait-blue-600p');
+		expect(button.className).toContain('bg-brand-primary');
 	});
 
 	it('renders active bell plus right check state', () => {
@@ -22,7 +22,7 @@ describe('GetNotifiedButton', () => {
 		expect(screen.getByTestId('bell-icon')).toBeInTheDocument();
 		expect(screen.getByTestId('check-icon')).toBeInTheDocument();
 		expect(screen.queryByText('GET NOTIFIED')).not.toBeInTheDocument();
-		expect(button.className).toContain('bg-cinemata-strait-blue-600p');
+		expect(button.className).toContain('bg-brand-primary');
 	});
 
 	it('has hover class when inactive', () => {
@@ -30,7 +30,7 @@ describe('GetNotifiedButton', () => {
 
 		const button = screen.getByRole('button', { name: 'Get Notified' });
 
-		expect(button.className).toContain('hover:bg-cinemata-strait-blue-800');
+		expect(button.className).toContain('hover:bg-brand-primary-hover');
 	});
 
 	it('shakes when switching from inactive to active', () => {

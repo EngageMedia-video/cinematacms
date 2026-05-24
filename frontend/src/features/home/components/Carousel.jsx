@@ -281,7 +281,7 @@ function CarouselArrows() {
 				onClick={goPrev}
 				disabled={atStart}
 				aria-label="Previous page"
-				className="rounded p-1 text-cinemata-strait-blue-50 hover:bg-cinemata-pacific-deep-700 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200"
+				className="rounded p-1 text-cinemata-strait-blue-50 hover:bg-cinemata-pacific-deep-700 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 			>
 				&#8249;
 			</button>
@@ -290,7 +290,7 @@ function CarouselArrows() {
 				onClick={goNext}
 				disabled={atEnd}
 				aria-label="Next page"
-				className="rounded p-1 text-cinemata-strait-blue-50 hover:bg-cinemata-pacific-deep-700 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200"
+				className="rounded p-1 text-cinemata-strait-blue-50 hover:bg-cinemata-pacific-deep-700 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 			>
 				&#8250;
 			</button>
@@ -301,7 +301,7 @@ function CarouselArrows() {
 function CarouselOverlayArrows() {
 	const { atStart, atEnd, goPrev, goNext } = use(CarouselContext);
 	const btnClass =
-		'pointer-events-auto absolute top-1/2 z-10 hidden size-[70px] -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-cinemata-strait-blue-700 transition-colors hover:text-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-200 focus-visible:ring-offset-2 focus-visible:ring-offset-cinemata-pacific-deep-50 md:flex dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-400 dark:focus-visible:ring-offset-cinemata-pacific-deep-950';
+		'pointer-events-auto absolute top-1/2 z-10 hidden size-[70px] -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-cinemata-strait-blue-700 transition-colors hover:text-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page md:flex dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-400';
 
 	return (
 		<>

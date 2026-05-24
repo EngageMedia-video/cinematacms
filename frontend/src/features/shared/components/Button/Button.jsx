@@ -1,15 +1,15 @@
 import { cn } from '../../utils/classNames';
 export const VARIANT_CLASSES = {
-	primary:
-		'border border-transparent bg-cinemata-strait-blue-600p text-cinemata-white hover:bg-cinemata-strait-blue-800 dark:bg-cinemata-strait-blue-600p dark:text-cinemata-white dark:hover:bg-cinemata-strait-blue-800',
+	primary: 'border border-transparent bg-brand-primary text-btn-text hover:bg-brand-primary-hover',
 	secondary:
-		'border border-transparent bg-cinemata-sunset-horizon-500 text-cinemata-white hover:bg-cinemata-sunset-horizon-700 dark:bg-cinemata-sunset-horizon-500 dark:text-cinemata-white dark:hover:bg-cinemata-sunset-horizon-700',
+		'border border-brand-secondary-border bg-brand-secondary text-btn-secondary-text hover:bg-brand-secondary-hover',
+	tertiary: 'border-0 bg-bg-primary text-text-on-primary hover:bg-bg-primary-hover',
 	special:
 		'border border-transparent bg-cinemata-pacific-deep-600p text-cinemata-white hover:bg-cinemata-pacific-deep-700 dark:bg-cinemata-pacific-deep-950 dark:text-cinemata-white dark:hover:bg-cinemata-pacific-deep-900',
 	'primary-outline':
-		'border border-cinemata-strait-blue-600p bg-transparent text-cinemata-strait-blue-600p hover:bg-cinemata-strait-blue-600p hover:text-cinemata-white dark:border-cinemata-strait-blue-600p dark:text-cinemata-strait-blue-600p dark:hover:bg-cinemata-strait-blue-600p dark:hover:text-cinemata-white',
+		'border border-brand-primary bg-transparent text-brand-primary hover:bg-brand-primary hover:text-btn-text',
 	'secondary-outline':
-		'border border-cinemata-sunset-horizon-500 bg-transparent text-cinemata-sunset-horizon-500 hover:bg-cinemata-sunset-horizon-500 hover:text-cinemata-white dark:border-cinemata-sunset-horizon-500 dark:text-cinemata-sunset-horizon-500 dark:hover:bg-cinemata-sunset-horizon-500 dark:hover:text-cinemata-white',
+		'border border-cinemata-strait-blue-900 bg-transparent text-cinemata-strait-blue-900 hover:bg-cinemata-strait-blue-900 hover:text-cinemata-strait-blue-100 dark:border-cinemata-strait-blue-900 dark:text-cinemata-strait-blue-100 dark:hover:bg-cinemata-strait-blue-900 dark:hover:text-cinemata-strait-blue-100',
 	text: 'border-none bg-transparent text-cinemata-strait-blue-600p hover:text-cinemata-strait-blue-800 dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-800',
 	icon: 'border-none bg-transparent text-cinemata-strait-blue-600p hover:text-cinemata-strait-blue-800 dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-800',
 };

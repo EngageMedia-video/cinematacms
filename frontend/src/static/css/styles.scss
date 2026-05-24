@@ -177,7 +177,7 @@ button {
 	background-color: var(--user-action-form-inner-bg-color);
 
 	border-radius: 2px;
-	box-shadow: 0px 4px 8px 0 var(--cinemata-neutral-200);
+	box-shadow: none;
 
 	@media screen and (max-width: 480px) {
 		padding: 1.25em;
@@ -193,6 +193,19 @@ button {
 	input[type='password'] {
 		display: block;
 		width: 100%;
+	}
+
+	input,
+	select,
+	textarea {
+		color: var(--user-action-form-inner-input-text-color);
+		border-color: var(--user-action-form-inner-input-border-color);
+		background-color: var(--user-action-form-inner-input-bg-color);
+
+		&:focus {
+			background-color: var(--user-action-form-inner-input-bg-color);
+			box-shadow: none;
+		}
 	}
 
 	label {
@@ -574,6 +587,8 @@ button {
 	button,
 	*[type='submit'],
 	*[type='button'],
+	.primaryAction,
+	.secondaryAction,
 	form.login .secondaryAction,
 	form.logout .secondaryAction {
 		min-width: 88px;
@@ -584,9 +599,11 @@ button {
 
 	button,
 	*[type='submit'],
-	*[type='button'] {
+	*[type='button'],
+	.primaryAction,
+	.secondaryAction {
 		border: 0;
-		color: white;
+		color: var(--btn-color);
 		border-radius: 8px;
 	}
 

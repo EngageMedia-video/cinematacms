@@ -27,7 +27,7 @@ export function SquareImage({
 		<span
 			{...props}
 			className={cn(
-				'relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800',
+				'relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-bg-surface-muted',
 				className
 			)}
 			style={{
@@ -52,12 +52,7 @@ export function SquareImage({
 				/>
 			) : null}
 
-			{loading ? (
-				<span
-					aria-hidden="true"
-					className="absolute inset-0 bg-cinemata-neutral-200 dark:bg-cinemata-pacific-deep-800 opacity-80"
-				/>
-			) : null}
+			{loading ? <span aria-hidden="true" className="absolute inset-0 bg-bg-surface-muted opacity-80" /> : null}
 
 			{showCenteredIcon ? (
 				<span aria-hidden="true" className="absolute inset-0 inline-flex items-center justify-center">

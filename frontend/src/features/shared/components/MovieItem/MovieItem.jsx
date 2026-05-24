@@ -9,7 +9,7 @@ function MovieItemContainer({ children, contentClassName = '', shellClassName = 
 				<a
 					href={link}
 					className={cn(
-						'h-full w-full cursor-pointer text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-strait-blue-600p dark:focus-visible:ring-cinemata-strait-blue-200',
+						'h-full w-full cursor-pointer text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus',
 						contentClassName
 					)}
 					aria-label={title ? `Open ${title}` : 'Open movie details'}
@@ -31,7 +31,7 @@ function MovieMetadata({ items = [] }) {
 	}
 
 	return (
-		<div className="body-body-12-regular flex max-h-[42px] items-start gap-1 overflow-hidden pr-1 whitespace-nowrap text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-400">
+		<div className="body-body-12-regular flex max-h-[42px] items-start gap-1 overflow-hidden pr-1 whitespace-nowrap text-text-disabled">
 			{validItems.map((item, index) => (
 				<span key={`${item}-${index}`} className="inline-flex items-center">
 					{index > 0 ? (
@@ -57,17 +57,13 @@ function MovieCopy({ title, subtitle, metadata, orientation = 'vertical' }) {
 			<p
 				className={cn(
 					'm-0 p-0 line-clamp-3',
-					'[font-family:Inter,Arial,sans-serif] text-[16px] font-medium leading-[22px] tracking-[-0.18px] text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50'
+					'[font-family:Inter,Arial,sans-serif] text-[16px] font-medium leading-[22px] tracking-[-0.18px] text-text-primary'
 				)}
 			>
 				{title}
 			</p>
 
-			{subtitle ? (
-				<p className="body-body-12-regular m-0 p-0 text-cinemata-sunset-horizon-400p dark:text-cinemata-sunset-horizon-200">
-					{subtitle}
-				</p>
-			) : null}
+			{subtitle ? <p className="body-body-12-regular m-0 p-0 text-text-link">{subtitle}</p> : null}
 
 			<MovieMetadata items={metadata} />
 		</div>
@@ -86,12 +82,7 @@ function MoviePoster({
 	showTopRightIcon = false,
 }) {
 	return (
-		<div
-			className={cn(
-				'relative overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-100 dark:bg-cinemata-pacific-deep-800',
-				className
-			)}
-		>
+		<div className={cn('relative overflow-hidden rounded-[6px] bg-bg-skeleton', className)}>
 			<img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
 
 			{badge ? (

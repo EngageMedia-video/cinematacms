@@ -56,7 +56,7 @@ export const Default = {
 
 				<DialogContent
 					aria-label="Upload dialog"
-					className="w-full max-w-[480px] rounded-[8px] bg-cinemata-white p-6 dark:bg-cinemata-pacific-deep-800"
+					className="w-full max-w-[480px] rounded-[8px] bg-bg-surface-raised p-6"
 				>
 					<div className="space-y-2">
 						<h2 className="heading-h4 text-cinemata-neutral-900 dark:text-cinemata-white">
@@ -87,7 +87,7 @@ export const OpenPreview = {
 		<Dialog {...args}>
 			<DialogContent
 				aria-label="Invite dialog"
-				className="w-full max-w-[480px] rounded-[8px] bg-cinemata-white p-6 dark:bg-cinemata-pacific-deep-800"
+				className="w-full max-w-[480px] rounded-[8px] bg-bg-surface-raised p-6"
 			>
 				<div className="space-y-2">
 					<h2 className="heading-h4 text-cinemata-neutral-900 dark:text-cinemata-white">
@@ -122,7 +122,7 @@ export const Controlled = {
 
 					<DialogContent
 						aria-label="Details dialog"
-						className="w-full max-w-[480px] rounded-[8px] bg-cinemata-white p-6 dark:bg-cinemata-pacific-deep-800"
+						className="w-full max-w-[480px] rounded-[8px] bg-bg-surface-raised p-6"
 					>
 						<div className="space-y-2">
 							<h2 className="heading-h4 text-cinemata-neutral-900 dark:text-cinemata-white">

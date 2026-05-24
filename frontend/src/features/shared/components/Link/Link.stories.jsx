@@ -61,7 +61,7 @@ const meta = {
 		},
 		variant: {
 			control: 'radio',
-			options: ['text', 'primary', 'secondary', 'special', 'primary-outline', 'secondary-outline'],
+			options: ['text', 'primary', 'secondary', 'tertiary', 'special', 'primary-outline', 'secondary-outline'],
 			description: 'Visual style. Use `text` for a plain link or any button variant for a button-styled link.',
 			table: {
 				type: { summary: 'string' },
@@ -101,10 +101,10 @@ export const Primary = {
 	},
 };
 
-export const PrimaryWithIcon = {
+export const TertiaryWithIcon = {
 	args: {
 		children: 'DONATE',
-		variant: 'primary',
+		variant: 'tertiary',
 		icon: <Icon name="donate" decorative />,
 	},
 };

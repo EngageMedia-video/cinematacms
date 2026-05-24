@@ -80,14 +80,14 @@ function GlobalSearchDropdownInner() {
 						aria-expanded={isOpen}
 						autoComplete="off"
 						className={cn(
-							'body-body-14-regular block w-full rounded-[10px] border border-transparent bg-cinemata-pacific-deep-800 px-4 py-3 pr-12 text-cinemata-strait-blue-50 outline-none transition-colors duration-200',
-							'placeholder:text-cinemata-pacific-deep-300 focus:border-cinemata-sunset-horizon-400p focus:ring-0',
+							'body-body-14-regular block w-full rounded-[10px] border border-transparent bg-bg-chrome px-4 py-3 pr-12 text-text-on-chrome outline-none transition-colors duration-200',
+							'placeholder:text-text-on-chrome-muted focus:border-border-input focus:ring-0',
 							'[&::-webkit-search-cancel-button]:appearance-none'
 						)}
 					/>
 					<span
 						aria-hidden="true"
-						className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-cinemata-pacific-deep-300"
+						className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-text-on-chrome-muted"
 					>
 						<Icon name="magnifyingGlass" size={20} decorative />
 					</span>
@@ -99,7 +99,7 @@ function GlobalSearchDropdownInner() {
 					id={listboxId}
 					className={cn(
 						'gs-scrollbar absolute left-0 right-0 top-[calc(100%+8px)] z-40 max-h-[70vh] overflow-y-auto rounded-[12px]',
-						'border border-cinemata-pacific-deep-700/60 bg-cinemata-pacific-deep-900 shadow-2xl shadow-cinemata-black/40'
+						'border border-border-chrome/60 bg-cinemata-pacific-deep-900 shadow-2xl shadow-cinemata-black/40'
 					)}
 					style={{ animation: 'global-search-fade-in 180ms cubic-bezier(0.22, 1, 0.36, 1)' }}
 				>

@@ -1,6 +1,6 @@
 body {
 	--body-text-color: #111;
-	--body-bg-color: #fafafa;
+	--body-bg-color: var(--cinemata-pacific-deep-50);
 
 	--error-text-color: #dc2626;
 
@@ -8,16 +8,16 @@ body {
 
 	--dotted-outline-color: rgba(0, 0, 0, 0.4);
 
-	--btn-color: white;
-	--btn-primary-icon-color: #7bbbbf;
-	--btn-primary-bg-color: #1a3f61;
-	--btn-primary-bg-hover-color: #026690;
-	--btn-secondary-color: black;
-	--btn-secondary-icon-color: #1b3f61;
-	--btn-secondary-icon-hover-color: #bad8dd;
-	--btn-secondary-bg-color: hsl(0, 0%, 100%);
-	--btn-secondary-border-color: #bad8dd;
-	--btn-secondary-bg-hover-color: #4a90a4;
+	--btn-color: var(--cinemata-neutral-50);
+	--btn-primary-icon-color: var(--cinemata-neutral-50);
+	--btn-primary-bg-color: var(--cinemata-sunset-horizon-400p);
+	--btn-primary-bg-hover-color: var(--cinemata-sunset-horizon-500);
+	--btn-secondary-color: var(--cinemata-strait-blue-100);
+	--btn-secondary-icon-color: var(--cinemata-strait-blue-100);
+	--btn-secondary-icon-hover-color: var(--cinemata-strait-blue-100);
+	--btn-secondary-bg-color: var(--cinemata-strait-blue-900);
+	--btn-secondary-border-color: transparent;
+	--btn-secondary-bg-hover-color: var(--cinemata-strait-blue-800);
 
 	/* ################################################## */
 
@@ -364,13 +364,13 @@ body {
 
 	/* ################################################## */
 
-	--user-action-form-inner-bg-color: #fff;
+	--user-action-form-inner-bg-color: var(--cinemata-neutral-50);
 	// --user-action-form-inner-title-border-bottom-color: rgba(255,255,255,0,1);
 	--user-action-form-inner-title-border-bottom-color: var(--sidebar-nav-border-color);
 
 	--user-action-form-inner-input-border-color: #d3d3d3;
 	--user-action-form-inner-input-text-color: #000;
-	--user-action-form-inner-input-bg-color: #fff;
+	--user-action-form-inner-input-bg-color: var(--cinemata-neutral-50);
 
 	/* ################################################## */
 
@@ -387,7 +387,7 @@ body {
 	--site-accent-color: #ed7c30;
 	--site-accent-secondary-color: #e7a27b;
 	--site-search-field-bg-color: #102c40;
-	--site-form-btn-bg-color: #1a3f61;
+	--site-form-btn-bg-color: var(--btn-primary-bg-color);
 	--site-featured-bg-color: #dfeff4;
 	--site-player-accent-color: #026690;
 

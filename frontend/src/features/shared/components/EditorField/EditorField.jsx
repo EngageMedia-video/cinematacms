@@ -3,40 +3,40 @@ import { useEffect, useId, useState } from 'react';
 
 const SHELL_VARIANT_CLASSES = {
 	default:
-		'bg-cinemata-neutral-50 hover:bg-cinemata-pacific-deep-50 focus-within:bg-cinemata-neutral-50 dark:bg-cinemata-pacific-deep-900 dark:hover:bg-cinemata-pacific-deep-800 dark:focus-within:bg-cinemata-pacific-deep-900',
-	error: 'bg-cinemata-neutral-50 dark:bg-cinemata-pacific-deep-900',
+		'bg-bg-surface hover:bg-cinemata-pacific-deep-50 focus-within:bg-bg-surface dark:hover:bg-cinemata-pacific-deep-800',
+	error: 'bg-bg-surface',
 	disabled: 'bg-cinemata-pacific-deep-50 dark:bg-cinemata-pacific-deep-900',
 };
 
 const LABEL_VARIANT_CLASSES = {
-	default: 'text-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50',
-	error: 'text-cinemata-red-500 dark:text-cinemata-red-500',
-	disabled: 'text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-400',
+	default: 'text-text-strong',
+	error: 'text-text-danger',
+	disabled: 'text-text-disabled',
 };
 
 const INPUT_VARIANT_CLASSES = {
-	default: 'text-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50',
-	error: 'text-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50',
-	disabled: 'text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-300',
+	default: 'text-text-strong',
+	error: 'text-text-strong',
+	disabled: 'text-text-muted',
 };
 
 const PLACEHOLDER_VARIANT_CLASSES = {
-	default: 'placeholder:text-cinemata-pacific-deep-400 dark:placeholder:text-cinemata-pacific-deep-300',
-	error: 'placeholder:text-cinemata-pacific-deep-900 dark:placeholder:text-cinemata-strait-blue-50',
-	disabled: 'placeholder:text-cinemata-pacific-deep-400 dark:placeholder:text-cinemata-pacific-deep-300',
+	default: 'placeholder:text-text-muted',
+	error: 'placeholder:text-text-strong',
+	disabled: 'placeholder:text-text-muted',
 };
 
 const HELPER_VARIANT_CLASSES = {
-	default: 'text-cinemata-sunset-horizon-400p dark:text-cinemata-sunset-horizon-400p',
-	error: 'text-cinemata-red-500 dark:text-cinemata-red-500',
-	disabled: 'text-cinemata-sunset-horizon-400p dark:text-cinemata-sunset-horizon-400p',
+	default: 'text-text-accent',
+	error: 'text-text-danger',
+	disabled: 'text-text-accent',
 };
 
-const LABEL_ACTIVE_CLASSES = 'text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-300';
-const ACTIVE_BORDER_CLASSES = 'border-cinemata-coral-reef-400p dark:border-cinemata-sunset-horizon-400p';
+const LABEL_ACTIVE_CLASSES = 'text-text-muted';
+const ACTIVE_BORDER_CLASSES = 'border-border-input';
 const BORDER_VARIANT_CLASSES = {
-	default: 'border-cinemata-pacific-deep-500 dark:border-cinemata-pacific-deep-500',
-	error: 'border-cinemata-red-500 dark:border-cinemata-red-500',
+	default: 'border-border-strong-constant',
+	error: 'border-border-danger',
 	disabled: 'border-cinemata-coral-reef-400p dark:border-cinemata-red-500',
 };
 

@@ -80,10 +80,10 @@
 			&.error-btn-primary {
 				background: var(--btn-primary-bg-color);
 				color: var(--btn-color);
-				border-color: var(--btn-border-color);
+				border-color: transparent;
 
 				> .btn-icon {
-					color: var(--btn-primary-icon-color);
+					color: currentColor;
 				}
 
 				&:hover {
@@ -93,44 +93,22 @@
 
 			&.error-btn-secondary {
 				color: var(--btn-secondary-color);
-				background-color: transparent;
+				background-color: var(--btn-secondary-bg-color);
 				border-color: var(--btn-secondary-border-color);
-				border-width: 0.5px;
+				border-width: 1px;
 
 				> .btn-icon {
-					color: var(--btn-secondary-icon-color);
+					color: currentColor;
 				}
 
 				&:hover {
 					background-color: var(--btn-secondary-bg-hover-color);
-					color: white;
+					color: var(--btn-secondary-color);
 
 					> .btn-icon {
-						color: var(--btn-secondary-icon-hover-color);
+						color: currentColor;
 					}
 				}
-			}
-		}
-	}
-}
-
-// Dark theme support
-body.dark_theme .error-page-content {
-	.error-actions .error-btn {
-		&.error-btn-primary {
-			background-color: var(--btn-primary-bg-color);
-			border: none;
-
-			&:hover {
-				background-color: var(--btn-primary-bg-hover-color);
-			}
-		}
-
-		&.error-btn-secondary {
-			color: var(--btn-secondary-color);
-
-			&:hover {
-				border-color: #fefde6;
 			}
 		}
 	}

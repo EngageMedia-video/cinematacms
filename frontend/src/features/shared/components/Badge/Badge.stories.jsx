@@ -38,7 +38,7 @@ const meta = {
 		},
 	},
 	render: (args) => (
-		<div className="inline-flex bg-cinemata-neutral-100 p-6 dark:bg-cinemata-pacific-deep-950">
+		<div className="inline-flex bg-bg-page p-6">
 			<Badge {...args} />
 		</div>
 	),

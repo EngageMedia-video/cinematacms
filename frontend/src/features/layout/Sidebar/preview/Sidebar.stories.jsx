@@ -40,9 +40,7 @@ function SidebarStoryContent() {
 			<p className="caption-caption-10-semibold uppercase tracking-[0.18em] text-cinemata-pacific-deep-500 dark:text-cinemata-strait-blue-300">
 				Preview Shell
 			</p>
-			<h2 className="heading-h4-32-medium mt-4 text-cinemata-pacific-deep-900 dark:text-cinemata-strait-blue-50">
-				Sidebar baseline for the upcoming revamp
-			</h2>
+			<h2 className="heading-h4-32-medium mt-4 text-text-strong">Sidebar baseline for the upcoming revamp</h2>
 			<p className="body-body-16-regular mt-3 max-w-xl text-cinemata-pacific-deep-600 dark:text-cinemata-pacific-deep-300">
 				This canvas keeps the copied sidebar fixed on the left and gives the story enough viewport space to
 				preview its current production spacing, footer behavior, and navigation stack.

@@ -92,7 +92,7 @@ const meta = {
 		},
 	},
 	render: (args) => (
-		<div className="max-w-xl bg-cinemata-neutral-50 p-6 dark:bg-cinemata-pacific-deep-950">
+		<div className="max-w-xl bg-bg-page p-6">
 			<Text {...args} />
 		</div>
 	),
@@ -109,7 +109,7 @@ export const Default = {
 
 		await expect(el).toBeVisible();
 		await expect(el).toHaveClass('body-body-14-regular');
-		await expect(el).toHaveClass('text-cinemata-pacific-deep-700');
+		await expect(el).toHaveClass('text-text-primary');
 	},
 };
 
@@ -152,7 +152,7 @@ export const Caption10 = {
 export const MetaColor = {
 	name: 'color="meta" (secondary metadata)',
 	render: () => (
-		<div className="max-w-sm bg-cinemata-neutral-50 p-6 dark:bg-cinemata-pacific-deep-950">
+		<div className="max-w-sm bg-bg-page p-6">
 			<p className="m-0 flex flex-wrap items-center gap-x-1">
 				<Text as="span" variant="body-12" color="meta">
 					Philippines
@@ -170,9 +170,8 @@ export const MetaColor = {
 		const canvas = within(canvasElement);
 		const views = canvas.getByText('12,345 views');
 
-		await expect(views).toHaveClass('text-cinemata-pacific-deep-400');
-		await expect(views).toHaveClass('dark:text-cinemata-pacific-deep-300');
-		await expect(views).not.toHaveClass('text-cinemata-pacific-deep-700');
+		await expect(views).toHaveClass('text-text-muted');
+		await expect(views).not.toHaveClass('text-text-primary');
 	},
 };
 
@@ -183,7 +182,7 @@ export const HeadingH1 = {
 	args: {
 		variant: 'h1',
 		children: 'Asia-Pacific Social Issue Cinema',
-		className: 'text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50',
+		className: 'text-text-primary',
 	},
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
@@ -199,7 +198,7 @@ export const HeadingH2 = {
 	args: {
 		variant: 'h2',
 		children: 'Featured Films',
-		className: 'text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50',
+		className: 'text-text-primary',
 	},
 };
 
@@ -208,7 +207,7 @@ export const HeadingH4 = {
 	args: {
 		variant: 'h4',
 		children: 'Most Popular',
-		className: 'text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50',
+		className: 'text-text-primary',
 	},
 };
 
@@ -217,7 +216,7 @@ export const HeadingH6 = {
 	args: {
 		variant: 'h6',
 		children: 'The Silent Hours',
-		className: 'text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50',
+		className: 'text-text-primary',
 	},
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
@@ -233,7 +232,7 @@ export const HeadingSemanticOverride = {
 		variant: 'h6',
 		as: 'h2',
 		children: 'Card Title (h6 look, h2 in the DOM)',
-		className: 'text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50',
+		className: 'text-text-primary',
 	},
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
@@ -247,9 +246,9 @@ export const HeadingSemanticOverride = {
 
 export const AllHeadings = {
 	render: () => (
-		<div className="flex max-w-2xl flex-col gap-4 bg-cinemata-neutral-50 p-6 dark:bg-cinemata-pacific-deep-950">
+		<div className="flex max-w-2xl flex-col gap-4 bg-bg-page p-6">
 			{['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].map((v) => (
-				<Text key={v} variant={v} className="text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50">
+				<Text key={v} variant={v} className="text-text-primary">
 					{v} — Documentary filmmaking for social change
 				</Text>
 			))}
@@ -265,7 +264,7 @@ export const AllHeadings = {
 
 export const AllBodyVariants = {
 	render: () => (
-		<div className="flex max-w-lg flex-col gap-3 bg-cinemata-neutral-50 p-6 dark:bg-cinemata-pacific-deep-950">
+		<div className="flex max-w-lg flex-col gap-3 bg-bg-page p-6">
 			{BODY_VARIANTS.map((v) => (
 				<Text key={v} variant={v}>
 					{v} — Documentary filmmaking for social change
@@ -290,8 +289,8 @@ export const AsSpan = {
 		children: 'inline text node',
 	},
 	render: (args) => (
-		<div className="max-w-sm bg-cinemata-neutral-50 p-6 dark:bg-cinemata-pacific-deep-950">
-			<p className="body-body-14-regular text-cinemata-pacific-deep-700 dark:text-cinemata-pacific-deep-50">
+		<div className="max-w-sm bg-bg-page p-6">
+			<p className="body-body-14-regular text-text-primary">
 				This paragraph contains <Text {...args} /> rendered as a span.
 			</p>
 		</div>

@@ -19,7 +19,7 @@ export function TopbarSidebarToggle() {
 			onClick={onClick}
 			aria-label={isVisible ? 'Close menu' : 'Open menu'}
 			aria-expanded={isVisible}
-			className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-transparent text-cinemata-white hover:bg-cinemata-pacific-deep-800 transition-colors shrink-0 cursor-pointer"
+			className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-transparent text-cinemata-white hover:bg-bg-chrome transition-colors shrink-0 cursor-pointer"
 		>
 			<Icon name={isVisible ? 'close' : 'menu'} size={22} decorative />
 		</button>

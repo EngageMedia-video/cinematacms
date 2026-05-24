@@ -46,7 +46,7 @@ const meta = {
 		},
 	},
 	render: (args) => (
-		<div className="w-full max-w-sm bg-cinemata-neutral-200 p-6 dark:bg-cinemata-pacific-deep-950">
+		<div className="w-full max-w-sm bg-bg-page p-6">
 			<Card {...args} className="p-6" />
 		</div>
 	),
@@ -60,8 +60,7 @@ export const Default = {
 		const card = canvas.getByRole('article');
 
 		await expect(card).toBeVisible();
-		await expect(card).toHaveClass('bg-bg-cards');
-		await expect(card).toHaveClass('dark:bg-cinemata-pacific-deep-900');
+		await expect(card).toHaveClass('bg-bg-surface');
 		await expect(card).not.toHaveClass('border');
 	},
 };
@@ -75,8 +74,7 @@ export const Muted = {
 		const canvas = within(canvasElement);
 		const card = canvas.getByRole('article');
 
-		await expect(card).toHaveClass('bg-cinemata-neutral-200');
-		await expect(card).toHaveClass('dark:bg-cinemata-pacific-deep-800');
+		await expect(card).toHaveClass('bg-bg-surface-muted');
 	},
 };
 
@@ -90,8 +88,8 @@ export const Outlined = {
 		const card = canvas.getByRole('article');
 
 		await expect(card).toHaveClass('border');
-		await expect(card).toHaveClass('border-cinemata-pacific-deep-100');
-		await expect(card).toHaveClass('dark:border-cinemata-pacific-deep-700');
+		await expect(card).toHaveClass('border-border-default');
+		await expect(card).toHaveClass('bg-bg-surface');
 	},
 };
 
@@ -102,7 +100,7 @@ export const AsSection = {
 		children: 'Rendered as a section element with an accessible label.',
 	},
 	render: (args) => (
-		<div className="w-full max-w-sm bg-cinemata-neutral-200 p-6 dark:bg-cinemata-pacific-deep-950">
+		<div className="w-full max-w-sm bg-bg-page p-6">
 			<Card {...args} aria-label="Featured details" className="p-6" />
 		</div>
 	),
@@ -116,12 +114,10 @@ export const AsSection = {
 
 export const AllVariants = {
 	render: () => (
-		<div className="flex max-w-sm flex-col gap-4 bg-cinemata-neutral-200 p-6 dark:bg-cinemata-pacific-deep-950">
+		<div className="flex max-w-sm flex-col gap-4 bg-bg-page p-6">
 			{['default', 'muted', 'outlined'].map((v) => (
 				<Card key={v} variant={v} className="p-4">
-					<p className="body-body-12-regular m-0 text-cinemata-pacific-deep-700 dark:text-cinemata-pacific-deep-50">
-						{v}
-					</p>
+					<p className="body-body-12-regular m-0 text-text-primary">{v}</p>
 				</Card>
 			))}
 		</div>

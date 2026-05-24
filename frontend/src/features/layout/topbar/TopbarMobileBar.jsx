@@ -99,15 +99,15 @@ export function TopbarMobileBar() {
 	if (sidebarVisible || home) {
 		if (isAnonymous) {
 			return (
-				<div className="flex sm:hidden items-center px-4 h-16 bg-cinemata-pacific-deep-900">
+				<div className="flex sm:hidden items-center px-4 h-16 bg-bg-overlay-dark">
 					<button
 						type="button"
 						onClick={openMobileSearch}
 						aria-label="Open search"
-						className="flex w-full items-center gap-2 h-10 px-3 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors text-left text-cinemata-strait-blue-100"
+						className="flex w-full items-center gap-2 h-10 px-3 rounded-full bg-bg-chrome hover:bg-bg-chrome-hover transition-colors text-left text-text-on-chrome"
 					>
 						<Icon name="magnifyingGlass" size={18} decorative />
-						<Text as="span" variant="body-14" className="m-0 truncate text-cinemata-strait-blue-100">
+						<Text as="span" variant="body-14" className="m-0 truncate text-text-on-chrome">
 							Search for Films, Members, Events, etc
 						</Text>
 					</button>
@@ -115,7 +115,7 @@ export function TopbarMobileBar() {
 			);
 		}
 		return (
-			<div className="flex sm:hidden items-center px-4 h-16 bg-cinemata-pacific-deep-900">
+			<div className="flex sm:hidden items-center px-4 h-16 bg-bg-overlay-dark">
 				<TopbarUploadButton className="flex w-full" />
 			</div>
 		);
@@ -123,16 +123,16 @@ export function TopbarMobileBar() {
 
 	// Non-home → back + page title + (UPLOAD if user can upload).
 	return (
-		<div className="flex sm:hidden items-center justify-between gap-3 px-4 h-16 bg-cinemata-pacific-deep-900">
+		<div className="flex sm:hidden items-center justify-between gap-3 px-4 h-16 bg-bg-overlay-dark">
 			<button
 				type="button"
 				onClick={onBack}
 				aria-label="Go back"
-				className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0 text-cinemata-strait-blue-100"
+				className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-bg-chrome hover:bg-bg-chrome-hover transition-colors shrink-0 text-text-on-chrome"
 			>
 				<Icon name="chevronLeft" size={18} decorative />
 			</button>
-			<Text as="h1" variant="body-16-bold" className="m-0 flex-1 truncate text-cinemata-strait-blue-50">
+			<Text as="h1" variant="body-16-bold" className="m-0 flex-1 truncate text-text-on-chrome">
 				{title}
 			</Text>
 			<TopbarUploadButton compact />

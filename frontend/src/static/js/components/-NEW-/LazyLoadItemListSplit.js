@@ -181,8 +181,8 @@ export function LazyLoadItemListSplit(props) {
 						.retry-button {
 							padding: 0.75rem 1.5rem;
 							font-size: 1rem;
-							color: var(--cinemata-neutral-50);
-							background-color: var(--popup-submit-button-bg, var(--cinemata-strait-blue-300));
+							color: var(--btn-color);
+							background-color: var(--btn-primary-bg-color);
 							border: none;
 							border-radius: 4px;
 							cursor: pointer;
@@ -190,7 +190,7 @@ export function LazyLoadItemListSplit(props) {
 						}
 
 						.retry-button:hover {
-							background-color: var(--popup-submit-button-bg-hover, var(--cinemata-strait-blue-400));
+							background-color: var(--btn-primary-bg-hover-color);
 						}
 
 						.retry-button:active {

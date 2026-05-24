@@ -15,20 +15,18 @@ export function SearchResultSection({
 
 	return (
 		<section
-			className={
-				'px-3 py-3 ' + (withDivider ? 'border-t border-cinemata-pacific-deep-700/60 first:border-t-0' : '')
-			}
+			className={'px-3 py-3 ' + (withDivider ? 'border-t border-border-chrome/60 first:border-t-0' : '')}
 			aria-label={title}
 		>
 			<Text
 				as="h3"
 				variant="body-12-medium"
-				className="m-0 px-2 pb-2 text-[11px] uppercase tracking-[0.08em] text-cinemata-pacific-deep-300"
+				className="m-0 px-2 pb-2 text-[11px] uppercase tracking-[0.08em] text-text-on-chrome-muted"
 			>
 				{title}
 			</Text>
 			{isError ? (
-				<Text role="status" variant="body-12" as="p" className="m-0 px-2 py-1 text-cinemata-pacific-deep-300">
+				<Text role="status" variant="body-12" as="p" className="m-0 px-2 py-1 text-text-on-chrome-muted">
 					Couldn&apos;t load {title.toLowerCase()}.
 				</Text>
 			) : (
@@ -46,7 +44,7 @@ export function SearchResultSection({
 					onClick={(event) => {
 						if (isPlainLeftClick(event)) onSelect?.(event);
 					}}
-					className="mt-2 inline-flex items-center gap-1 rounded-[8px] px-2 py-1 body-body-12-medium text-cinemata-sunset-horizon-400p no-underline transition-colors duration-150 hover:text-cinemata-sunset-horizon-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p"
+					className="mt-2 inline-flex items-center gap-1 rounded-[8px] px-2 py-1 body-body-12-medium text-text-accent no-underline transition-colors duration-150 hover:text-cinemata-sunset-horizon-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 				>
 					Show more
 					<svg

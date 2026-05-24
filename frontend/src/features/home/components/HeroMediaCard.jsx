@@ -38,7 +38,7 @@ function AuthorName({ href, name }) {
 	}
 
 	const className =
-		'm-0 w-fit no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinemata-strait-blue-700 dark:focus-visible:outline-cinemata-strait-blue-100';
+		'm-0 w-fit no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus';
 
 	if (href) {
 		return (
@@ -70,15 +70,11 @@ export function HeroMediaCard({ className = '', media }) {
 		<div className={cn('w-full min-w-0', className)}>
 			<Card className="flex h-full min-h-[360px] flex-col justify-between gap-8 overflow-hidden px-[22px] pb-6 pt-[22px] lg:min-h-0">
 				<div className="flex min-w-0 flex-col gap-3">
-					<Text
-						as="h2"
-						variant="h6"
-						className="m-0 max-w-full overflow-hidden break-words text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50"
-					>
+					<Text as="h2" variant="h6" className="m-0 max-w-full overflow-hidden break-words text-text-primary">
 						{mediaHref ? (
 							<a
 								href={mediaHref}
-								className="text-inherit no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinemata-strait-blue-700 dark:focus-visible:outline-cinemata-strait-blue-100"
+								className="text-inherit no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus"
 							>
 								{media.title}
 							</a>
@@ -128,8 +124,8 @@ export function HeroMediaCard({ className = '', media }) {
 export function HeroMediaCardSkeleton({ className = '' }) {
 	return (
 		<Card as="div" className={cn('w-full min-w-0 p-[22px]', className)}>
-			<div className="h-8 w-3/4 animate-pulse rounded bg-cinemata-pacific-deep-100 dark:bg-cinemata-pacific-deep-700" />
-			<div className="mt-3 h-4 w-1/2 animate-pulse rounded bg-cinemata-pacific-deep-100 dark:bg-cinemata-pacific-deep-700" />
+			<div className="h-8 w-3/4 animate-pulse rounded bg-bg-skeleton" />
+			<div className="mt-3 h-4 w-1/2 animate-pulse rounded bg-bg-skeleton" />
 		</Card>
 	);
 }

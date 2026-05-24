@@ -21,13 +21,13 @@ function BellButton() {
 				aria-label={`Notifications${count > 0 ? `, ${count} unread` : ''}`}
 				aria-haspopup="true"
 				aria-expanded={isDropdownOpen}
-				className="relative text-cinemata-strait-blue-50"
+				className="relative text-text-on-chrome"
 			>
 				<Icon name="notificationBell" size={20} decorative />
 				{count > 0 ? (
 					<span
 						aria-hidden="true"
-						className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full pointer-events-none ring-2 ring-cinemata-pacific-deep-900"
+						className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full pointer-events-none ring-2 ring-bg-overlay-dark"
 					/>
 				) : null}
 			</TopbarIconButton>
