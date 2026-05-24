@@ -28,6 +28,7 @@ const VARIANT_MAP = {
 	'body-16-medium': ['body-body-16-medium', 'p'],
 	'body-16-bold': ['body-body-16-bold', 'p'],
 	'body-14': ['body-body-14-regular', 'p'],
+	'body-14-medium': ['body-body-14-medium', 'p'],
 	'body-14-bold': ['body-body-14-bold', 'p'],
 	'body-12': ['body-body-12-regular', 'p'],
 	'body-12-medium': ['body-body-12-medium', 'p'],
