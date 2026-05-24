@@ -18,7 +18,9 @@ export function AppLayout({ ContentComponent, pageSlotId }) {
 	const slotClassName = pageSlotId === 'page-home' ? 'app-layout__slot app-layout__slot--home' : 'app-layout__slot';
 
 	useEffect(() => {
-		wireAlertDismiss();
+		const disposeAlertDismiss = wireAlertDismiss();
+
+		return () => disposeAlertDismiss();
 	}, []);
 
 	return (

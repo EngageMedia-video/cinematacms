@@ -3284,7 +3284,7 @@ body.dark_theme .user-action-form-inner *[type='button'] {
 body.dark_theme .user-action-form-inner .secondaryAction {
 	color: var(--btn-secondary-color);
 	background-color: var(--btn-secondary-bg-color);
-	border-color: var(--btn-secondary-border-color);
+	border: 1px solid var(--btn-secondary-border-color);
 }
 
 body.dark_theme .user-action-form-inner .secondaryAction:hover,

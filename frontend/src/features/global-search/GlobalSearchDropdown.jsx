@@ -81,7 +81,7 @@ function GlobalSearchDropdownInner() {
 						autoComplete="off"
 						className={cn(
 							'global-search-input body-body-14-regular block w-full rounded-[10px] bg-bg-chrome px-4 py-3 pr-12 text-text-on-chrome outline-none transition-colors duration-200',
-							'placeholder:text-text-on-chrome-muted focus:ring-0',
+							'placeholder:text-text-on-chrome-muted focus:ring-0 focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-chrome',
 							'[&::-webkit-search-cancel-button]:appearance-none'
 						)}
 					/>

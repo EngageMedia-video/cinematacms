@@ -201,7 +201,11 @@ export function UserItem(props) {
 				.avatar {
 					width: 80px;
 					height: 80px;
-					background: linear-gradient(135deg, #667eea 0%, var(--cinemata-pacific-deep-400) 100%);
+					background: linear-gradient(
+						135deg,
+						var(--cinemata-strait-blue-300) 0%,
+						var(--cinemata-pacific-deep-400) 100%
+					);
 					border-radius: 50%;
 					display: flex;
 					align-items: center;

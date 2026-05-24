@@ -8,18 +8,33 @@ import { addClassname } from '../../../static/js/components/-NEW-/functions/dom.
 // 1s delay matches the prior behavior in LegacyTopbarMount: it gives the
 // shell time to render before we query for close buttons.
 export function wireAlertDismiss() {
+	const buttons = new Set();
+	const removalTimers = new Set();
+
 	function onClickAlertClose() {
 		const alertElem = this.parentNode;
 		addClassname(alertElem, 'hiding');
-		setTimeout(() => {
+		const removalTimer = setTimeout(() => {
+			removalTimers.delete(removalTimer);
 			if (alertElem && alertElem.parentNode) {
 				alertElem.parentNode.removeChild(alertElem);
 			}
 		}, 400);
+		removalTimers.add(removalTimer);
 	}
-	setTimeout(() => {
-		document
-			.querySelectorAll('.alert.alert-dismissible .close')
-			.forEach((btn) => btn.addEventListener('click', onClickAlertClose));
+
+	const attachTimer = setTimeout(() => {
+		document.querySelectorAll('.alert.alert-dismissible .close').forEach((btn) => {
+			btn.addEventListener('click', onClickAlertClose);
+			buttons.add(btn);
+		});
 	}, 1000);
+
+	return function disposeAlertDismiss() {
+		clearTimeout(attachTimer);
+		removalTimers.forEach((timer) => clearTimeout(timer));
+		removalTimers.clear();
+		buttons.forEach((btn) => btn.removeEventListener('click', onClickAlertClose));
+		buttons.clear();
+	};
 }

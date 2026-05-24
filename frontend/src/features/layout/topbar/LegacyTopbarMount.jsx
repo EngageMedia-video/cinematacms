@@ -35,11 +35,13 @@ function injectPreUploadMessage() {
 
 export function LegacyTopbarMount() {
 	useEffect(() => {
-		wireAlertDismiss();
+		const disposeAlertDismiss = wireAlertDismiss();
 		const currentPage = PageStore.get('current-page');
 		if (currentPage === undefined || currentPage === 'add-media') {
 			injectPreUploadMessage();
 		}
+
+		return () => disposeAlertDismiss();
 	}, []);
 
 	return (

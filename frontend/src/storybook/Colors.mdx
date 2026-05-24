@@ -96,7 +96,7 @@ Notable bridge: **`bg-brand-primary`** is intentionally redirected to `var(--bg-
 
 <Heading>Source files</Heading>
 
-- `src/static/css/config/_light_theme.scss` — All `--cinemata-*` palette values on `body` (light mode), plus light-mode overrides for the modern semantic intermediate vars.
-- `src/static/css/config/_dark_theme.scss` — Dark-mode overrides on `body.dark_theme` for both the palette singletons and the modern semantic vars.
-- `src/static/css/tailwind.css` — Defines the modern semantic intermediate vars on `body` and `body.dark_theme`, then exposes them via `@theme inline` as `--color-bg-*`, `--color-text-*`, `--color-border-*`, `--color-ring-*`. Also bridges the legacy `--color-brand-primary` through `var(--bg-secondary)`.
+- `frontend/src/static/css/config/_light_theme.scss` — All `--cinemata-*` palette values on `body` (light mode), plus light-mode overrides for the modern semantic intermediate vars.
+- `frontend/src/static/css/config/_dark_theme.scss` — Dark-mode overrides on `body.dark_theme` for both the palette singletons and the modern semantic vars.
+- `frontend/src/static/css/tailwind.css` — Defines the modern semantic intermediate vars on `body` and `body.dark_theme`, then exposes them via `@theme inline` as `--color-bg-*`, `--color-text-*`, `--color-border-*`, `--color-ring-*`. Also bridges the legacy `--color-brand-primary` through `var(--bg-secondary)`.
 - `docs/modern-track-color-system.md` — Architectural overview of all three layers (palette, legacy aliases, modern tokens), body-scoped wiring pattern, and rationale.

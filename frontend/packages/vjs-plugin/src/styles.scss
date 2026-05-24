@@ -864,7 +864,6 @@ $controlBarAnimationsDuration: 0.1s;
 		min-width: 0;
 		width: $control-bar-button-min-width;
 		line-height: $control-bar-height - 2px;
-
 		text-shadow: 0 1px 3px rgba(var(--cinemata-black), 0.05);
 
 		&:focus:before,
@@ -1732,6 +1731,7 @@ $controlBarAnimationsDuration: 0.1s;
 				$lines-to-show: 2,
 				$bg-color: transparent
 			);
+
 			color: var(--site-featured-bg-color);
 
 			&:hover {

@@ -12,7 +12,7 @@ The modern track has three layers:
 2. **Tailwind theme layer** — `tailwind.css` exposes three kinds of `--color-*` variables: the palette mirror, legacy semantic aliases (`--color-content-*`, `--color-brand-*`), and the **modern semantic tokens** (`--color-bg-*`, `--color-text-*`, `--color-border-*`, `--color-ring-*`). Modern tokens are wired through intermediate vars on `body` / `body.dark_theme` so they invert with the theme cleanly.
 3. **Feature consumption** — React components in `features/` consume colors via Tailwind utilities. Modern semantic tokens (`bg-bg-page`, `text-text-strong`, `ring-ring-focus`) are the preferred vocabulary; raw palette utilities and legacy semantic aliases remain available for one-offs and legacy bridges.
 
-```
+```text
 _light_theme.scss / _dark_theme.scss     →  tailwind.css @theme            →  features/*.jsx
   --cinemata-strait-blue-500: #026690         palette mirror                    bg-cinemata-strait-blue-500
   --btn-primary-bg-color: …                   --color-brand-primary: …          bg-brand-primary
@@ -520,7 +520,7 @@ Key characteristics after migration:
 
 | Layer | File |
 |-------|------|
-| Palette | `frontend/src/static/css/config/_light_theme.scss`, `_dark_theme.scss` |
+| Palette | `frontend/src/static/css/config/_light_theme.scss`, `frontend/src/static/css/config/_dark_theme.scss` |
 | Semantic defaults | `frontend/src/static/css/config/index.scss` |
 | Tailwind theme | `frontend/src/static/css/tailwind.css` |
 | Build wiring | `frontend/vite.config.js` (`@tailwindcss/vite`) |

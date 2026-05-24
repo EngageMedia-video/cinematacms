@@ -642,6 +642,7 @@ body.dark_theme {
 	--border-input: var(--cinemata-sunset-horizon-400p);
 }
 
+/* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
 	/* Backgrounds */
 	--color-bg-page: var(--bg-page);

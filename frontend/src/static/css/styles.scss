@@ -1213,9 +1213,11 @@ input#authenticator_secret {
 	padding: 10px 12px !important;
 	font-size: 12px !important;
 	line-height: 1.5 !important;
+
 	// color: var(--cinemata-pacific-deep-50) !important;
 	color: var(--cinemata-neutral-50) !important;
 	background-color: var(--cinemata-neutral-600) !important;
+
 	// background-color:var(--cinemata-pacific-deep-300) !important;
 	border-radius: 2px !important;
 	z-index: +5 !important;
@@ -1637,7 +1639,6 @@ video.show-video {
 	inset: 0; /* shorthand for top/left/right/bottom = 0 */
 	width: 100%;
 	height: 100%;
-
 	background: var(--cinemata-black);
 	display: flex;
 	align-items: center;
