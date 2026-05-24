@@ -36,6 +36,7 @@ export function MediaTile({ item }) {
 			link={item.url}
 			duration={getMediaDurationLabel(item)}
 			subtitle={getAuthorName(item)}
+			subtitleHref={item.author_profile || ''}
 			metadata={metadata}
 			badge={firstCategory?.title || ''}
 			badgeColor={firstCategory?.color || DEFAULT_CATEGORY_COLOR}

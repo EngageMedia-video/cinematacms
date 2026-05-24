@@ -11,7 +11,7 @@ function getCountry(media) {
 }
 
 function getDescription(media) {
-	return media.description || media.summary || '';
+	return media.summary || media.description || '';
 }
 
 function formatViews(value) {
@@ -38,7 +38,7 @@ function AuthorName({ href, name }) {
 	}
 
 	const className =
-		'm-0 w-fit no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus';
+		'm-0 inline-flex min-h-8 w-fit max-w-full touch-manipulation items-center no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus';
 
 	if (href) {
 		return (

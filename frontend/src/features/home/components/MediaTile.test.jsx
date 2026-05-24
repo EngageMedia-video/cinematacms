@@ -7,6 +7,7 @@ const BASE_ITEM = {
 	thumbnail_url: 'https://example.com/thumb.jpg',
 	url: '/media/duration-film/',
 	author_name: 'Duration Author',
+	author_profile: '/profiles/duration-author/',
 	media_country: 'Indonesia',
 	views: 42,
 	state: 'private',
@@ -25,5 +26,13 @@ describe('MediaTile', () => {
 		render(<MediaTile item={{ ...BASE_ITEM, duration: '03:21' }} />);
 
 		expect(screen.getByText('03:21')).toHaveAttribute('data-movie-item-duration');
+	});
+
+	it('links the author name to the author profile', () => {
+		render(<MediaTile item={BASE_ITEM} />);
+
+		const author = screen.getByRole('link', { name: 'Duration Author' });
+
+		expect(author).toHaveAttribute('href', '/profiles/duration-author/');
 	});
 });
