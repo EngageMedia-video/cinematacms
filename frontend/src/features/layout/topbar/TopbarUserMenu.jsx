@@ -174,7 +174,8 @@ export function TopbarUserMenu() {
 					role="menu"
 					className="absolute right-0 top-full mt-3 w-[240px] overflow-hidden rounded-xl bg-cinemata-pacific-deep-800 ring-1 ring-white/10 shadow-2xl z-50"
 					style={{
-						boxShadow: '0 24px 48px -12px var(--cinemata-neutral-500), 0 0 0 1px rgba(255,255,255,0.06)',
+						boxShadow:
+							'0 24px 48px -12px var(--cinemata-neutral-500), 0 0 0 1px var(--cinemata-neutral-50)',
 					}}
 				>
 					{user.username ? (

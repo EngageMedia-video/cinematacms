@@ -167,7 +167,7 @@ function NotificationPageContent() {
 				role="tablist"
 				aria-label="Notifications views"
 				className="inline-flex gap-1 rounded-full p-1 mb-6 bg-surface-popup border border-border-input"
-				style={{ boxShadow: '0 1px 2px rgba(0,0,0,.08)' }}
+				style={{ boxShadow: '0 1px 2px var(--cinemata-neutral-200)' }}
 			>
 				{tabs.map(({ id, label }) => {
 					const active = activeTab === id;

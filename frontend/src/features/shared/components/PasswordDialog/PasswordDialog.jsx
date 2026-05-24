@@ -111,7 +111,7 @@ export function PasswordDialog({ open, onOpenChange, friendlyToken, ownerName, o
 							<div
 								id={errorId}
 								role="alert"
-								className="w-full mt-5 px-4 py-2.5 rounded-lg bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.3)] text-[#fca5a5] text-sm text-left"
+								className="w-full mt-5 px-4 py-2.5 rounded-lg bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.3)] text-[var(--cinemata-red-300)] text-sm text-left"
 							>
 								{error}
 							</div>
@@ -129,12 +129,12 @@ export function PasswordDialog({ open, onOpenChange, friendlyToken, ownerName, o
 								onChange={(e) => setPassword(e.target.value)}
 								placeholder="Enter Password"
 								disabled={submitting}
-								className="flex-1 min-w-0 px-5 py-3.5 rounded-[10px] border border-[rgba(123,152,182,0.25)] bg-[rgba(11,45,74,0.8)] text-white text-[15px] outline-none placeholder:text-[#5a7999] focus:border-[var(--cinemata-pacific-deep-300)] transition-[border-color] duration-200"
+								className="flex-1 min-w-0 px-5 py-3.5 rounded-[10px] border border-[rgba(123,152,182,0.25)] bg-[var(--cinemata-pacific-deep-800)] text-white text-[15px] outline-none placeholder:text-[var(--cinemata-pacific-deep-400)] focus:border-[var(--cinemata-pacific-deep-300)] transition-[border-color] duration-200"
 							/>
 							<button
 								type="submit"
 								disabled={submitting || !password}
-								className="shrink-0 px-7 py-3.5 border-none rounded-[10px] bg-[var(--cinemata-sunset-horizon-300)] text-white text-[15px] font-bold tracking-[0.5px] cursor-pointer hover:bg-[#c2692f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+								className="shrink-0 px-7 py-3.5 border-none rounded-[10px] bg-[var(--cinemata-sunset-horizon-300)] text-white text-[15px] font-bold tracking-[0.5px] cursor-pointer hover:bg-[var(--cinemata-sunset-horizon-500)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
 							>
 								{submitting ? 'Verifying...' : 'UNLOCK'}
 							</button>

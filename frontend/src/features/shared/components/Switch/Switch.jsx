@@ -58,7 +58,11 @@ export function Switch({
 					'inline-flex h-[calc(var(--switch-thumb-size)+var(--switch-padding)*2)] w-[var(--switch-width)] shrink-0 items-center rounded-full p-[var(--switch-padding)] transition-colors duration-200',
 					resolvedChecked ? 'justify-end' : 'justify-start'
 				)}
-				style={{ backgroundColor: resolvedChecked ? '#C7E7EE' : 'var(--cinemata-pacific-deep-900)' }}
+				style={{
+					backgroundColor: resolvedChecked
+						? 'var(--cinemata-coral-reef-100)'
+						: 'var(--cinemata-pacific-deep-900)',
+				}}
 				data-switch-track=""
 				aria-hidden="true"
 			>

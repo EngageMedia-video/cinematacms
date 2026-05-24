@@ -195,7 +195,7 @@ export function UserItem(props) {
 
 				.badge.orange-badge {
 					left: 1rem;
-					background: #f59e0b;
+					background: var(--cinemata-amber-500);
 				}
 
 				.avatar {
