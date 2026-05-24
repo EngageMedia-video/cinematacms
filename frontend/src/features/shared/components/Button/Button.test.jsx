@@ -57,7 +57,11 @@ describe('Button', () => {
 		expect(screen.getByRole('button', { name: 'Base size' })).toHaveClass('px-space-base', 'py-size-10');
 
 		rerender(<Button size="sm">Small size</Button>);
-		expect(screen.getByRole('button', { name: 'Small size' })).toHaveClass('px-size-3', 'py-size-8');
+		expect(screen.getByRole('button', { name: 'Small size' })).toHaveClass(
+			'px-size-12',
+			'py-size-8',
+			'rounded-ds-8'
+		);
 	});
 
 	it('renders icon-only variant without visible label text', () => {
@@ -66,6 +70,37 @@ describe('Button', () => {
 		const button = screen.getByRole('button', { name: 'More actions' });
 
 		expect(screen.queryByText('More actions')).not.toBeInTheDocument();
+		expect(button.querySelectorAll('span')).toHaveLength(1);
+	});
+
+	it('centers a primary button icon when the label is empty', () => {
+		render(<Button variant="primary" icon={<TestIcon />} aria-label="Create item" />);
+
+		const button = screen.getByRole('button', { name: 'Create item' });
+
+		expect(button).toHaveClass('justify-center', 'gap-0', 'p-size-10', 'rounded-ds-4');
+		expect(button.querySelectorAll('span')).toHaveLength(1);
+	});
+
+	it('centers a secondary button icon when the label is empty', () => {
+		render(<Button variant="secondary" icon={<TestIcon />} aria-label="Learn more" size="sm" />);
+
+		const button = screen.getByRole('button', { name: 'Learn more' });
+
+		expect(button).toHaveClass('justify-center', 'gap-0', 'p-size-8', 'rounded-ds-8');
+		expect(button.querySelectorAll('span')).toHaveLength(1);
+	});
+
+	it('treats hidden label content as icon-only for layout', () => {
+		render(
+			<Button variant="primary" icon={<TestIcon />} aria-label="Share" size="sm">
+				<span className="hidden">Share</span>
+			</Button>
+		);
+
+		const button = screen.getByRole('button', { name: 'Share' });
+
+		expect(button).toHaveClass('justify-center', 'gap-0', 'p-size-8', 'rounded-ds-8');
 		expect(button.querySelectorAll('span')).toHaveLength(1);
 	});
 
