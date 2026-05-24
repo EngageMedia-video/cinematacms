@@ -1,8 +1,6 @@
 import '../src/static/lib/material-icons/material-icons.css';
 import '../src/static/lib/Inter/inter.css';
 import '../src/static/lib/BarlowSemiCondensed/barlow-semi-condensed.css';
-import '../src/static/lib/Amulya/amulya.css';
-import '../src/static/lib/Facultad/Facultad-Regular.css';
 import '../src/features/shared/components/storybook-preview.scss';
 import '../src/static/css/tailwind.css';
 import { themes } from 'storybook/theming';

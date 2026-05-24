@@ -342,10 +342,10 @@
 	--color-user-form-recovery-text: var(--user-action-form-inner-recovery-code-input-text-color);
 
 	/* ── Typography ───────────────────────────────────────── */
-	--font-sans: 'Amulya', 'Arial', sans-serif;
-	--font-heading: 'Facultad', 'Arial', sans-serif;
-	--font-inter: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
-	--font-barlow: 'Barlow Semi Condensed', 'Arial Narrow', 'Arial', sans-serif;
+	--font-sans: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	--font-heading: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
+	--font-inter: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	--font-barlow: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 
 	/* ── Layout Dimensions ────────────────────────────────── */
 	/* These read live CSS vars so _extra.css overrides flow through. */

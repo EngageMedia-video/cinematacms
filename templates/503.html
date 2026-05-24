@@ -25,21 +25,20 @@
         --color-secondary: #659ba0;
       }
 
-      /* Fonts - Cinemata uses Amulya and Facultad */
+      /* Fonts - Cinemata uses Inter and Barlow Semi Condensed */
       @font-face {
-        font-family: "Amulya";
-        src: url("/static/lib/Amulya/fonts/Amulya-Variable.woff2")
-            format("woff2"),
-          url("/static/lib/Amulya/fonts/Amulya-Variable.woff") format("woff");
-        font-weight: 300 700;
+        font-family: "Inter";
+        src: url("/static/lib/Inter/inter-latin.woff2") format("woff2");
+        font-weight: 100 900;
         font-display: swap;
         font-style: normal;
       }
 
       @font-face {
-        font-family: "Facultad";
-        src: url("/static/lib/Facultad/Facultad-Regular.otf") format("opentype");
-        font-weight: normal;
+        font-family: "Barlow Semi Condensed";
+        src: url("/static/lib/BarlowSemiCondensed/barlow-semi-condensed-latin-400.woff2")
+          format("woff2");
+        font-weight: 400;
         font-display: swap;
         font-style: normal;
       }
@@ -58,7 +57,7 @@
         margin: 0;
         background: var(--color-bg);
         color: var(--color-fg);
-        font-family: "Amulya", Arial, sans-serif;
+        font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
         line-height: 1.6;
       }
 
@@ -195,7 +194,8 @@
         margin: 0;
         font-size: 1.5rem;
         line-height: 1.3;
-        font-family: "Facultad", Arial, sans-serif;
+        font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
+        font-weight: 400;
       }
 
       .sub {
