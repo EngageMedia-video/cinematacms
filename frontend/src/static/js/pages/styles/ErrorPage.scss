@@ -92,9 +92,9 @@
 			}
 
 			&.error-btn-secondary {
-				color: var(--btn-secondary-color);
-				background-color: var(--btn-secondary-bg-color);
-				border-color: var(--btn-secondary-border-color);
+				color: var(--body-text-color);
+				background-color: transparent;
+				border-color: var(--body-text-color);
 				border-width: 1px;
 
 				> .btn-icon {
@@ -102,8 +102,8 @@
 				}
 
 				&:hover {
-					background-color: var(--btn-secondary-bg-hover-color);
-					color: var(--btn-secondary-color);
+					background-color: var(--body-text-color);
+					color: var(--body-bg-color);
 
 					> .btn-icon {
 						color: currentColor;

@@ -38,7 +38,7 @@ describe('ExpandableText', () => {
 		expect(btn).toHaveClass('bg-transparent');
 		expect(btn).toHaveClass('p-0');
 		expect(btn).toHaveClass('body-body-14-regular');
-		expect(btn).toHaveClass('text-cinemata-sunset-horizon-400p');
+		expect(btn).toHaveClass('text-text-link');
 		expect(btn).not.toHaveClass('text-sm');
 		expect(btn).not.toHaveClass('font-medium');
 	});

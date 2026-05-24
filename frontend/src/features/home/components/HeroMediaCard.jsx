@@ -86,7 +86,8 @@ export function HeroMediaCard({ className = '', media }) {
 					{description ? (
 						<Text
 							variant="body-14"
-							className="m-0 max-h-[260px] overflow-hidden dark:text-[var(--pacific-deep-300,var(--cinemata-pacific-deep-300))] lg:max-h-[280px]"
+							color="description"
+							className="m-0 max-h-[260px] overflow-hidden lg:max-h-[280px]"
 						>
 							{description}
 						</Text>

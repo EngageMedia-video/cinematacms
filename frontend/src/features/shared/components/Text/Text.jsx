@@ -40,6 +40,7 @@ const VARIANT_MAP = {
 const COLOR_CLASSES = {
 	body: 'text-text-primary',
 	meta: 'text-text-muted',
+	description: 'text-text-description',
 	'sunset-horizon': 'text-text-link',
 };
 

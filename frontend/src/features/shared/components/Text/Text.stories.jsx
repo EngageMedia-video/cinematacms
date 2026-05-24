@@ -43,7 +43,7 @@ const meta = {
 		docs: {
 			description: {
 				component:
-					'Unified text component for all typography variants. Body and caption variants default to `color="body"` (`pacific-deep/700` light, `pacific-deep/50` dark). Use `color="meta"` for secondary metadata text (`pacific-deep/400/300`). Heading variants render the matching `<h{x}>` element and carry no default color — pass color via `className`.',
+					'Unified text component for all typography variants. Body and caption variants default to `color="body"` (`pacific-deep/700` light, `strait-blue/50` dark). Use `color="meta"` for secondary metadata text (`pacific-deep/400/300`) and `color="description"` for long-form card descriptions (`pacific-deep/700/300`). Heading variants render the matching `<h{x}>` element and carry no default color — pass color via `className`.',
 			},
 		},
 	},
@@ -68,11 +68,11 @@ const meta = {
 		},
 		color: {
 			control: 'radio',
-			options: ['body', 'meta'],
+			options: ['body', 'meta', 'description'],
 			description:
-				'Semantic color preset. `body` = `pacific-deep/700/50`. `meta` = `pacific-deep/400/300`. Omit on heading variants and supply color via `className` instead.',
+				'Semantic color preset. `body` = `pacific-deep/700` light, `strait-blue/50` dark. `meta` = `pacific-deep/400/300`. `description` = `pacific-deep/700/300`. Omit on heading variants and supply color via `className` instead.',
 			table: {
-				type: { summary: "'body' | 'meta'" },
+				type: { summary: "'body' | 'meta' | 'description'" },
 				defaultValue: { summary: "'body' (body/caption variants), none (heading variants)" },
 			},
 		},
@@ -172,6 +172,25 @@ export const MetaColor = {
 
 		await expect(views).toHaveClass('text-text-muted');
 		await expect(views).not.toHaveClass('text-text-primary');
+	},
+};
+
+export const DescriptionColor = {
+	name: 'color="description" (card descriptions)',
+	render: () => (
+		<div className="max-w-sm bg-bg-surface p-6">
+			<Text color="description">
+				A synopsis loaded from the media description, tuned to stay readable on light surfaces and softer on
+				dark cards.
+			</Text>
+		</div>
+	),
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		const description = canvas.getByText(/A synopsis loaded/);
+
+		await expect(description).toHaveClass('text-text-description');
+		await expect(description).not.toHaveClass('text-text-primary');
 	},
 };
 

@@ -557,7 +557,7 @@
  * follow Tailwind v4's name-prefix convention, e.g. bg-bg-page,
  * text-text-primary, border-border-default, ring-ring-focus.
  *
- * See docs/modern-semantic-tokens.md for the full reference.
+ * See docs/modern-track-color-system.md for the full reference.
  */
 body {
 	/* Backgrounds */
@@ -584,6 +584,7 @@ body {
 	--text-primary: var(--cinemata-pacific-deep-700);
 	--text-secondary: var(--cinemata-strait-blue-700);
 	--text-muted: var(--cinemata-pacific-deep-400);
+	--text-description: var(--cinemata-pacific-deep-700);
 	--text-subtle: var(--cinemata-neutral-500);
 	--text-disabled: var(--cinemata-pacific-deep-400);
 	--text-inverse: var(--cinemata-white);
@@ -627,6 +628,7 @@ body.dark_theme {
 	--text-primary: var(--cinemata-strait-blue-50);
 	--text-secondary: var(--cinemata-strait-blue-100);
 	--text-muted: var(--cinemata-pacific-deep-300);
+	--text-description: var(--cinemata-pacific-deep-300);
 	--text-subtle: var(--cinemata-neutral-400);
 	--text-inverse: var(--cinemata-pacific-deep-900);
 	--text-link: var(--cinemata-sunset-horizon-200);
@@ -665,6 +667,7 @@ body.dark_theme {
 	--color-text-primary: var(--text-primary);
 	--color-text-secondary: var(--text-secondary);
 	--color-text-muted: var(--text-muted);
+	--color-text-description: var(--text-description);
 	--color-text-subtle: var(--text-subtle);
 	--color-text-disabled: var(--text-disabled);
 	--color-text-inverse: var(--text-inverse);
@@ -741,6 +744,16 @@ header[data-topbar] input[type='text'] {
 
 header[data-topbar] button:not(:disabled) {
 	cursor: pointer;
+}
+
+@layer utilities {
+	.global-search-input {
+		border: 1px solid transparent !important;
+	}
+
+	.global-search-input:focus {
+		border-color: var(--border-chrome, var(--color-border-chrome)) !important;
+	}
 }
 
 header[data-topbar] button:focus-visible,

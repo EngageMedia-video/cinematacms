@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 // Required global resets; do not remove.
 import '../../../static/css/styles.scss';
@@ -9,12 +9,17 @@ import { Sidebar } from '../Sidebar';
 import { RippleDecoration } from './RippleDecoration';
 import { TopMessageHost } from './TopMessageHost';
 import { Topbar } from '../topbar';
+import { wireAlertDismiss } from '../utils/wireAlertDismiss';
 
 import './AppLayout.scss';
 
 export function AppLayout({ ContentComponent, pageSlotId }) {
 	const PageContent = ContentComponent || null;
 	const slotClassName = pageSlotId === 'page-home' ? 'app-layout__slot app-layout__slot--home' : 'app-layout__slot';
+
+	useEffect(() => {
+		wireAlertDismiss();
+	}, []);
 
 	return (
 		<div className="app-layout" data-modern-shell="page">

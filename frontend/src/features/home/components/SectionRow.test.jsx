@@ -137,12 +137,10 @@ describe('SectionRow', () => {
 				<SectionRow.Title viewAllHref="/recommended">Featured by Curators</SectionRow.Title>
 			</SectionRow>
 		);
-		expect(screen.getByRole('heading', { name: 'Featured by Curators' })).toHaveClass(
-			'text-cinemata-pacific-deep-700'
-		);
+		expect(screen.getByRole('heading', { name: 'Featured by Curators' })).toHaveClass('text-text-primary');
 		const link = screen.getByRole('link', { name: 'VIEW ALL' });
 		expect(link).toHaveAttribute('href', '/recommended');
-		expect(link).toHaveClass('text-cinemata-sunset-horizon-400p');
+		expect(link).toHaveClass('text-text-link');
 		expect(link).toHaveClass('body-body-12-medium');
 		expect(link).not.toHaveClass('caption-caption-10-regular');
 	});
@@ -172,7 +170,7 @@ describe('SectionRow', () => {
 		expect(description).toHaveClass('space-y-2');
 		expect(description).toHaveClass('[&_p]:m-0');
 		expect(description).toHaveClass('[&_br+br]:hidden');
-		expect(description).toHaveClass('[&_a]:text-cinemata-sunset-horizon-400p');
+		expect(description).toHaveClass('[&_a]:text-text-link');
 		expect(screen.getByRole('link', { name: 'someone' })).toHaveAttribute('href', '#');
 	});
 

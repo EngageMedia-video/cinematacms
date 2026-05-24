@@ -26,7 +26,7 @@ export function SearchBar({
 				placeholder={placeholder}
 				aria-label={ariaLabel}
 				className={cn(
-					'body-body-14-regular block w-full rounded-[8px] border border-transparent bg-bg-chrome px-[22px] py-[15px] pr-[58px] text-text-on-chrome outline-none transition-colors duration-200 placeholder:text-text-on-chrome-muted focus:border-border-input focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70',
+					'global-search-input body-body-14-regular block w-full rounded-[8px] bg-bg-chrome px-[22px] py-[15px] pr-[58px] text-text-on-chrome outline-none transition-colors duration-200 placeholder:text-text-on-chrome-muted focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70',
 					'[&::-webkit-search-cancel-button]:appearance-none'
 				)}
 			/>

@@ -7,8 +7,7 @@ describe('Card', () => {
 		render(<Card>Featured film metadata</Card>);
 
 		const card = screen.getByRole('article');
-		expect(card).toHaveClass('bg-bg-cards');
-		expect(card).toHaveClass('dark:bg-cinemata-pacific-deep-900');
+		expect(card).toHaveClass('bg-bg-surface');
 		expect(card).not.toHaveClass('border');
 		expect(card).not.toHaveClass('border-cinemata-pacific-deep-100');
 	});
@@ -29,8 +28,7 @@ describe('Card', () => {
 		render(<Card variant="muted">Muted card</Card>);
 
 		const card = screen.getByRole('article');
-		expect(card).toHaveClass('bg-cinemata-neutral-200');
-		expect(card).toHaveClass('dark:bg-cinemata-pacific-deep-800');
+		expect(card).toHaveClass('bg-bg-surface-muted');
 	});
 
 	it('supports an outlined variant when a bordered card is needed', () => {
@@ -38,13 +36,12 @@ describe('Card', () => {
 
 		const card = screen.getByRole('article');
 		expect(card).toHaveClass('border');
-		expect(card).toHaveClass('border-cinemata-pacific-deep-100');
-		expect(card).toHaveClass('dark:border-cinemata-pacific-deep-700');
+		expect(card).toHaveClass('border-border-default');
 	});
 
 	it('falls back to the default variant for unsupported variants', () => {
 		render(<Card variant="unsupported">Fallback card</Card>);
 
-		expect(screen.getByRole('article')).toHaveClass('bg-bg-cards');
+		expect(screen.getByRole('article')).toHaveClass('bg-bg-surface');
 	});
 });

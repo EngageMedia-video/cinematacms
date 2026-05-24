@@ -82,8 +82,8 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 							aria-label="Search"
 							autoComplete="off"
 							className={cn(
-								'body-body-14-regular block w-full rounded-[10px] border border-transparent bg-bg-chrome px-4 py-3 pr-12 text-text-on-chrome outline-none transition-colors duration-200',
-								'placeholder:text-text-on-chrome-muted focus:border-border-input focus:ring-0',
+								'global-search-input body-body-14-regular block w-full rounded-[10px] bg-bg-chrome px-4 py-3 pr-12 text-text-on-chrome outline-none transition-colors duration-200',
+								'placeholder:text-text-on-chrome-muted focus:ring-0',
 								'[&::-webkit-search-cancel-button]:appearance-none'
 							)}
 						/>

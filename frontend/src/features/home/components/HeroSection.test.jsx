@@ -164,10 +164,10 @@ describe('HeroSection', () => {
 	it('uses the light mode Figma color mapping for the metadata card', () => {
 		renderHero([SAMPLE_MEDIA]);
 		const card = screen.getByRole('article');
-		expect(card.className).toContain('bg-bg-cards');
+		expect(card).toHaveClass('bg-bg-surface');
 		expect(card).not.toHaveClass('border');
 		expect(card).not.toHaveClass('border-cinemata-pacific-deep-100');
-		expect(screen.getByRole('heading', { level: 2 })).toHaveClass('text-cinemata-pacific-deep-700');
+		expect(screen.getByRole('heading', { level: 2 })).toHaveClass('text-text-primary');
 	});
 
 	it('passes a full-height desktop player class to the lazy player', async () => {

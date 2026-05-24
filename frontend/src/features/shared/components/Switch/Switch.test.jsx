@@ -25,8 +25,8 @@ describe('Switch', () => {
 			.getByRole('checkbox', { name: 'AUTOPLAY' })
 			.parentElement.querySelector('[data-switch-thumb]');
 
-		expect(track).toHaveStyle({ backgroundColor: 'rgb(199, 231, 238)' });
-		expect(thumb).toHaveStyle({ backgroundColor: 'rgb(238, 244, 245)' });
+		expect(track).toHaveStyle({ backgroundColor: 'var(--cinemata-coral-reef-100)' });
+		expect(thumb).toHaveStyle({ backgroundColor: 'var(--cinemata-neutral-100)' });
 	});
 
 	it('uses the inactive track color when unchecked', () => {
@@ -35,7 +35,7 @@ describe('Switch', () => {
 		const input = screen.getByRole('checkbox', { name: 'AUTOPLAY' });
 		const track = input.parentElement.querySelector('[data-switch-track]');
 
-		expect(track).toHaveStyle({ backgroundColor: 'rgb(1, 28, 52)' });
+		expect(track).toHaveStyle({ backgroundColor: 'var(--cinemata-pacific-deep-900)' });
 	});
 
 	it('fires change when toggled', async () => {
