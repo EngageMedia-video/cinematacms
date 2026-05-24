@@ -513,7 +513,7 @@ button {
 				&:focus {
 					outline: none;
 					border-color: var(--cinemata-sunset-horizon-300);
-					box-shadow: 0 0 0 1px #ed7c30;
+					box-shadow: 0 0 0 1px var(--cinemata-sunset-horizon-300);
 				}
 
 				&::-webkit-outer-spin-button,
@@ -558,8 +558,8 @@ button {
 
 				&:focus {
 					outline: none;
-					border-color: #ed7c30;
-					box-shadow: 0 0 0 1px #ed7c30;
+					border-color: var(--cinemata-sunset-horizon-300);
+					box-shadow: 0 0 0 1px var(--cinemata-sunset-horizon-300);
 				}
 
 				&::-webkit-outer-spin-button,
@@ -1718,7 +1718,7 @@ video.show-video {
 	font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 	font-size: 30px;
 	font-weight: 500;
-	color: #ffffff;
+	color: var(--cinemata-neutral-50);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1763,7 +1763,7 @@ video.show-video {
 .prompt-title {
 	font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
 	font-size: 50px;
-	color: #ffffff;
+	color: var(--cinemata-neutral-50);
 	margin: 0 0 20px 0;
 	text-align: center;
 }
