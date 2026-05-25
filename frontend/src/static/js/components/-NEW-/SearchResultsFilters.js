@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import PropTypes from 'prop-types';
 
 import { FilterOptions } from './FilterOptions';
 
+import LinksContext from '../../contexts/LinksContext';
 import PageStore from '../../pages/_PageStore.js';
 
 import '../styles/ManageItemList-filters.scss';
@@ -62,6 +63,26 @@ export function SearchResultsFilters(props) {
 	const [licenseFilter, setFilter_license] = useState('all');
 	const [lengthFilter, setFilter_length] = useState('all');
 	const [awardFilter, setFilter_award] = useState('all');
+
+	const links = useContext(LinksContext);
+	const enabledTaxonomies = PageStore.get('config-enabled').taxonomies;
+	const browseLinks = [
+		{
+			key: 'categories',
+			link: links.archive.categories,
+			fallbackTitle: 'Categories',
+		},
+		{
+			key: 'topics',
+			link: links.archive.topics,
+			fallbackTitle: 'Topics',
+		},
+		{
+			key: 'countries',
+			link: links.archive.countries,
+			fallbackTitle: 'Countries',
+		},
+	].filter((item) => enabledTaxonomies[item.key] && enabledTaxonomies[item.key].enabled && item.link);
 
 	const containerRef = useRef(null);
 	const innerContainerRef = useRef(null);
@@ -202,6 +223,23 @@ export function SearchResultsFilters(props) {
 						/>
 					</div>
 				</div>
+
+				{!browseLinks.length ? null : (
+					<div className="mi-filter mi-filter-browse-links">
+						<div className="mi-filter-title">BROWSE BY</div>
+						<div className="mi-filter-options mi-filter-browse-options">
+							{browseLinks.map((item) => {
+								const title = enabledTaxonomies[item.key].title || item.fallbackTitle;
+
+								return (
+									<a key={item.key} href={item.link} className="mi-filter-browse-link">
+										All {title}
+									</a>
+								);
+							})}
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);
