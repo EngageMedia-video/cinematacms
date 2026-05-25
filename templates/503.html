@@ -64,7 +64,10 @@
         --color-button-text: var(--text-on-primary);
         --color-toggle-border: var(--border-subtle);
         --color-footer-border: var(--border-subtle);
-        --radius: 6px;
+        --radius-ds-6: 6px;
+        --radius-ds-8: 8px;
+        --radius: var(--radius-ds-6);
+        --radius-panel: var(--radius-ds-8);
       }
 
       [data-theme="dark"] {
@@ -178,7 +181,7 @@
         width: 100%;
         max-width: 720px;
         border: none;
-        border-radius: var(--radius);
+        border-radius: var(--radius-panel);
         background: var(--color-panel-bg);
         backdrop-filter: blur(10px);
         padding: 24px;
