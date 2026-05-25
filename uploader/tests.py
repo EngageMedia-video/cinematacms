@@ -1,15 +1,37 @@
 import uuid
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase
+from django.http import HttpResponse
+from django.test import Client, RequestFactory, SimpleTestCase, TestCase
 from django.urls import reverse
 
 from cms.permissions import user_allowed_to_upload
+from files.views import upload_media
 from uploader.fineuploader import ChunkedFineUploader, is_valid_uuid_format, strip_delimiters
 from uploader.forms import FineUploaderUploadForm
 from users.models import User
+
+
+class UploadMediaCsrfCookieTests(SimpleTestCase):
+    def test_authenticated_upload_page_sets_csrf_cookie(self):
+        """Authenticated uploader page must provide the CSRF cookie used by FineUploader."""
+        request = RequestFactory().get(reverse("upload_media"))
+        request.user = SimpleNamespace(is_authenticated=True)
+
+        with (
+            patch("files.views.waffle.switch_is_active", return_value=True),
+            patch("files.views.can_upload_media", return_value=True),
+            patch("files.views.get_allowed_video_extensions", return_value=["mp4"]),
+            patch("files.views.render", return_value=HttpResponse("ok")),
+        ):
+            response = upload_media(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(settings.CSRF_COOKIE_NAME, response.cookies)
 
 
 class UploaderTestSuite(TestCase):
