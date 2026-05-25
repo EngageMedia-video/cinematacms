@@ -1919,6 +1919,14 @@ body .video-js.vjs-mediacms .vjs-big-play-button {
 	border: 1px solid var(--user-action-form-inner-title-border-bottom-color);
 }
 
+.user-action-form-inner .post-form > .requiredField {
+	color: var(--text-primary);
+}
+
+.user-action-form-inner .post-form > .requiredField .asteriskField {
+	color: var(--text-danger, var(--error-text-color));
+}
+
 /*
  * Managemenet pages.
  *
