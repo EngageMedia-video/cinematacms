@@ -257,6 +257,22 @@ describe('Carousel — default shape', () => {
 		expect(screen.getByRole('button', { name: 'Go to page 1' })).toHaveAttribute('aria-current', 'true');
 	});
 
+	it('does not pointer-capture item links on press', () => {
+		const { container } = render(<Carousel items={makeItems(4)} visibleCount={1} />);
+		const track = container.querySelector('[data-carousel-track]');
+		track.setPointerCapture = vi.fn();
+
+		fireEvent.pointerDown(screen.getByRole('link', { name: 'Open Item 0' }), {
+			pointerId: 1,
+			pointerType: 'mouse',
+			button: 0,
+			clientX: 120,
+			clientY: 120,
+		});
+
+		expect(track.setPointerCapture).not.toHaveBeenCalled();
+	});
+
 	it('hides overlay arrow controls on mobile while keeping them available on desktop', () => {
 		render(<Carousel items={makeItems(4)} visibleCount={1} />);
 

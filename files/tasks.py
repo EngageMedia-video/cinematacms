@@ -852,13 +852,19 @@ def check_running_states():
         if (now - encoding.update_date).seconds > settings.RUNNING_STATE_STALE:
             media = encoding.media
             profile = encoding.profile
+            encoding_id = encoding.id
             # task_id = encoding.task_id
             # terminate task
             # if task_id:
             # revoke(task_id, terminate=True)
             encoding.delete()
             media.encode(profiles=[profile])
-            logger.info("X" * 200, profile, encoding.media, encoding)
+            logger.info(
+                "Requeued stale running encoding %s for media %s profile %s",
+                encoding_id,
+                media.friendly_token,
+                profile.name,
+            )
             # TODO: allign with new code + chunksize...
             changed += 1
     if changed:

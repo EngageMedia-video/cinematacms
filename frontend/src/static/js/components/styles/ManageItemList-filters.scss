@@ -20,9 +20,7 @@
 	display: block;
 	padding-bottom: 8px;
 	margin-bottom: 24px;
-	border-style: solid;
-	border-width: 0 0 1px;
-	border-color: var(--sidebar-nav-border-color);
+	border: 0;
 
 	.mi-filter {
 		position: relative;
@@ -118,9 +116,8 @@
 		font-weight: 500;
 		letter-spacing: 0.007px;
 		margin-bottom: 4px;
-		border-style: solid;
-		border-width: 0 0 1px;
-		border-color: var(--sidebar-nav-border-color);
+		border: 0;
+		color: var(--text-secondary, var(--body-text-color));
 	}
 
 	.mi-filter-options {
@@ -133,18 +130,16 @@
 
 			button {
 				display: inline-block;
-				padding: 3px 6px 4px 0;
+				padding: 4px 8px;
+
 				// line-height:16px;
 				line-height: 1.5;
 				text-align: initial;
-				color: var(--header-circle-button-color);
+				color: var(--text-muted, var(--header-circle-button-color));
 				border: 0;
+				border-radius: var(--radius-4);
 				background: none;
-				opacity: 0.85;
-
-				.dark_theme & {
-					opacity: 0.5;
-				}
+				opacity: 1;
 
 				span {
 					display: inline-block;
@@ -162,8 +157,8 @@
 
 			&.active button,
 			button:hover {
-				color: inherit;
-				opacity: 1;
+				color: var(--text-on-primary, var(--cinemata-white));
+				background: var(--bg-primary, var(--cinemata-strait-blue-600p));
 			}
 		}
 	}
@@ -172,16 +167,16 @@
 .mi-filter-search {
 	.mi-search-input {
 		padding: 6px 12px;
-		border: 1px solid var(--input-border-color);
-		border-radius: 4px;
-		background: var(--input-bg-color);
-		color: var(--input-color);
+		border: 0;
+		border-radius: var(--radius-4);
+		background: var(--bg-surface-muted, var(--input-bg-color));
+		color: var(--text-primary, var(--input-color));
 		font-size: 14px;
 		width: 200px;
 		outline: none;
 
 		&:focus {
-			border-color: var(--default-theme-color);
+			box-shadow: 0 0 0 2px var(--ring-focus, var(--border-input));
 		}
 	}
 }
@@ -199,20 +194,16 @@
 		font-size: 14px;
 		font-weight: 500;
 		letter-spacing: 0.007px;
-		color: var(--header-circle-button-color);
+		color: var(--text-on-primary, var(--cinemata-white));
 		border: 0;
-		background: none;
-
-		opacity: 0.85;
-
-		.dark_theme & {
-			opacity: 0.5;
-		}
+		border-radius: var(--radius-4);
+		background: var(--bg-primary, var(--cinemata-strait-blue-600p));
+		opacity: 1;
 
 		&.active,
 		&:hover {
-			color: inherit;
-			opacity: 1;
+			color: var(--text-on-primary, var(--cinemata-white));
+			background: var(--bg-primary-hover, var(--cinemata-strait-blue-800));
 		}
 	}
 

@@ -192,7 +192,6 @@ function CarouselTrack() {
 		programmaticScrollTargetRef.current = null;
 		didSwipeRef.current = false;
 		swipeStartRef.current = { x: event.clientX, y: event.clientY, scrollLeft: event.currentTarget.scrollLeft };
-		event.currentTarget.setPointerCapture?.(event.pointerId);
 	}, []);
 
 	const handlePointerUp = useCallback(

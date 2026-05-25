@@ -18,12 +18,27 @@
 .playlist-form-wrap {
 	.playlist-form-actions {
 		button {
+			border-radius: var(--radius-4);
+
 			&.cancel-btn {
 				color: var(--playlist-form-cancel-button-text-color);
+				background-color: transparent;
 
 				&:hover,
 				&:focus {
 					color: var(--playlist-form-cancel-button-hover-text-color);
+					background-color: var(--bg-surface-muted);
+				}
+			}
+
+			&.create-btn {
+				color: var(--text-on-primary, var(--cinemata-white));
+				background-color: var(--bg-primary, var(--cinemata-strait-blue-600p));
+
+				&:hover,
+				&:focus {
+					color: var(--text-on-primary, var(--cinemata-white));
+					background-color: var(--bg-primary-hover, var(--cinemata-strait-blue-800));
 				}
 			}
 		}
@@ -64,7 +79,7 @@
 				width: 100%;
 				height: 2px;
 				display: block;
-				background-color: rgba(red, 0.8);
+				background-color: var(--bg-danger);
 			}
 		}
 	}
@@ -118,11 +133,26 @@
 			float: left;
 
 			&.cancel-btn {
+				color: var(--playlist-form-cancel-button-text-color);
+				background-color: transparent;
+
+				&:hover,
+				&:focus {
+					color: var(--playlist-form-cancel-button-hover-text-color);
+					background-color: var(--bg-surface-muted);
+				}
 			}
 
 			&.create-btn {
 				float: right;
-				color: $theme-color;
+				color: var(--text-on-primary, var(--cinemata-white));
+				background-color: var(--bg-primary, var(--cinemata-strait-blue-600p));
+
+				&:hover,
+				&:focus {
+					color: var(--text-on-primary, var(--cinemata-white));
+					background-color: var(--bg-primary-hover, var(--cinemata-strait-blue-800));
+				}
 			}
 		}
 	}
@@ -157,21 +187,8 @@
 
 		&::placeholder {
 			/* Chrome, Firefox, Opera, Safari 10.1+ */
-			// color: #fefefe;
-			color: #909090;
+			color: var(--text-subtle);
 			opacity: 1; /* Firefox */
-		}
-
-		&:-ms-input-placeholder {
-			/* Internet Explorer 10-11 */
-			// color: #fefefe;
-			color: #909090;
-		}
-
-		&::-ms-input-placeholder {
-			/* Microsoft Edge */
-			// color: #fefefe;
-			color: #909090;
 		}
 	}
 

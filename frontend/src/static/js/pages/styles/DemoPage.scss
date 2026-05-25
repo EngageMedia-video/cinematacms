@@ -5,14 +5,14 @@
 	padding: 20px;
 
 	&__title {
-		color: #333;
+		color: var(--text-primary);
 		font-size: 32px;
 		margin-bottom: 20px;
 		text-align: center;
 	}
 
 	&__info {
-		background-color: #e3f2fd;
+		background-color: var(--bg-surface-muted);
 		border-radius: 8px;
 		padding: 20px;
 		margin-bottom: 30px;
@@ -23,14 +23,14 @@
 		}
 
 		strong {
-			color: #0d47a1;
+			color: var(--text-secondary);
 			font-size: 20px;
 		}
 	}
 
 	&__add-button {
-		background-color: #4caf50;
-		color: white;
+		background-color: var(--bg-success);
+		color: var(--text-on-primary);
 		border: none;
 		border-radius: 4px;
 		padding: 10px 16px;
@@ -40,7 +40,7 @@
 		margin-top: 10px;
 
 		&:hover {
-			background-color: #388e3c;
+			filter: brightness(0.92);
 		}
 	}
 
@@ -67,9 +67,9 @@
 	.comments-section {
 		margin-top: 2rem;
 		padding: 1rem;
-		background: #fff;
+		background: var(--bg-surface-raised);
 		border-radius: 4px;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 1px 3px rgb(0 12 32 / 0.1);
 
 		.comments-list {
 			max-width: 100%;
@@ -78,7 +78,7 @@
 		.comment {
 			margin-bottom: 1.5rem;
 			padding-bottom: 1.5rem;
-			border-bottom: 1px solid #eee;
+			border-bottom: 1px solid var(--border-subtle);
 
 			&:last-child {
 				margin-bottom: 0;
@@ -89,7 +89,7 @@
 
 		.comment-text {
 			a {
-				color: #2196f3;
+				color: var(--text-link);
 				text-decoration: none;
 
 				&:hover {

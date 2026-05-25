@@ -62,8 +62,7 @@
 			padding: 0 1rem;
 			line-height: 48px;
 			font-size: 13px;
-			color: initial;
-			color: red;
+			color: var(--text-danger);
 
 			&:before {
 				content: '\e153';
@@ -85,8 +84,7 @@
 
 	.menu-item-icon {
 		margin-right: 24px;
-
-		color: #888;
+		color: var(--text-muted);
 
 		.material-icons {
 			margin-bottom: 2px;

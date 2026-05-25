@@ -130,10 +130,10 @@ body {
 	--item-meta-link-text-color: var(--item-text-color);
 	--item-meta-link-hover-text-color: rgba(17, 17, 17, 0.8);
 
-	--profile-page-item-content-title-bg-color: #fff;
+	--profile-page-item-content-title-bg-color: var(--bg-page);
 
-	--playlist-item-main-view-full-link-text-color: rgb(96, 96, 96);
-	--playlist-item-main-view-full-link-hover-text-color: rgb(13, 13, 13);
+	--playlist-item-main-view-full-link-text-color: var(--text-muted);
+	--playlist-item-main-view-full-link-hover-text-color: var(--text-strong);
 
 	/* ################################################## */
 
@@ -147,84 +147,77 @@ body {
 
 	/* ################################################## */
 
-	--playlist-form-title-focused-bg-color: #111;
+	--playlist-form-title-focused-bg-color: var(--ring-focus, var(--cinemata-sunset-horizon-400p));
 
-	--playlist-privacy-border-color: #888;
+	--playlist-privacy-border-color: var(--border-input, var(--cinemata-coral-reef-400p));
 
-	--playlist-form-cancel-button-text-color: rgba(17, 17, 17, 0.6);
-	--playlist-form-cancel-button-hover-text-color: #111;
+	--playlist-form-cancel-button-text-color: var(--text-muted, var(--cinemata-pacific-deep-400));
+	--playlist-form-cancel-button-hover-text-color: var(--text-strong, var(--cinemata-pacific-deep-900));
 
-	--playlist-form-field-text-color: #000;
-	--playlist-form-field-border-color: #888;
-
-	/* ################################################## */
-
-	--playlist-save-popup-text-color: #111;
-	--playlist-save-popup-border-color: #eee;
-
-	--playlist-save-popup-create-icon-text-color: #909090;
-	--playlist-save-popup-create-focus-bg-color: rgba(136, 136, 136, 0.14);
+	--playlist-form-field-text-color: var(--text-strong, var(--cinemata-pacific-deep-900));
+	--playlist-form-field-border-color: var(--border-input, var(--cinemata-coral-reef-400p));
 
 	/* ################################################## */
 
-	// --playlist-view-header-bg-color: #eee;
-	--playlist-view-header-bg-color: #fafafa;
+	--playlist-save-popup-text-color: var(--text-strong);
+	--playlist-save-popup-border-color: var(--border-subtle);
 
-	--playlist-view-header-toggle-text-color: rgb(96, 96, 96);
-
-	// --playlist-view-header-toggle-bg-color: #eee;
-	--playlist-view-header-toggle-bg-color: #fafafa;
-
-	--playlist-view-title-link-text-color: rgb(13, 13, 13);
-
-	--playlist-view-meta-text-color: rgba(17, 17, 17, 0.6);
-	--playlist-view-meta-link-color: rgba(17, 17, 17, 0.6);
-	--playlist-view-meta-link-hover-text-color: rgb(13, 13, 13);
-
-	--playlist-view-status-text-color: rgba(17, 17, 17, 0.6);
-	--playlist-view-status-bg-color: rgba(0, 0, 0, 0.05);
-
-	--playlist-view-status-icon-text-color: rgba(17, 17, 17, 0.4);
-
-	// --playlist-view-actions-bg-color: #eee;
-	--playlist-view-actions-bg-color: #fafafa;
-
-	// --playlist-view-media-bg-color: #f5f5f5;
-	// --playlist-view-media-bg-color: rgba(238,238,238, 0.7);
-	--playlist-view-media-bg-color: var(--sidebar-bg-color);
-
-	--playlist-view-media-order-number-color: rgb(136, 136, 136);
-
-	--playlist-view-item-title-text-color: rgb(13, 13, 13);
-
-	--playlist-view-item-author-text-color: rgb(13, 13, 13);
-
-	// --playlist-view-item-author-bg-color: #f5f5f5;
-	// --playlist-view-item-author-bg-color: rgba(238,238,238, 0.7);
-	--playlist-view-item-author-bg-color: var(--sidebar-bg-color);
+	--playlist-save-popup-create-icon-text-color: var(--text-muted);
+	--playlist-save-popup-create-focus-bg-color: var(--bg-surface-muted);
 
 	/* ################################################## */
 
-	--profile-page-bg-color: #fff;
+	--playlist-view-header-bg-color: var(--bg-surface-raised);
 
-	--profile-page-header-bg-color: var(--body-bg-color);
+	--playlist-view-header-toggle-text-color: var(--text-muted);
 
-	--profile-page-info-videos-number-text-color: rgba(17, 17, 17, 0.6);
+	--playlist-view-header-toggle-bg-color: var(--bg-surface-raised);
 
-	--profile-page-nav-link-text-color: rgba(17, 17, 17, 0.6);
-	--profile-page-nav-link-hover-text-color: #111;
+	--playlist-view-title-link-text-color: var(--text-strong);
 
-	--profile-page-nav-link-active-text-color: #111;
-	--profile-page-nav-link-active-after-bg-color: rgba(17, 17, 17, 0.6);
+	--playlist-view-meta-text-color: var(--text-muted);
+	--playlist-view-meta-link-color: var(--text-link);
+	--playlist-view-meta-link-hover-text-color: var(--text-link-hover);
+
+	--playlist-view-status-text-color: var(--text-muted);
+	--playlist-view-status-bg-color: var(--bg-surface-muted);
+
+	--playlist-view-status-icon-text-color: var(--text-subtle);
+
+	--playlist-view-actions-bg-color: var(--bg-surface-raised);
+
+	--playlist-view-media-bg-color: var(--bg-page);
+
+	--playlist-view-media-order-number-color: var(--text-muted);
+
+	--playlist-view-item-title-text-color: var(--text-strong);
+
+	--playlist-view-item-author-text-color: var(--text-muted);
+
+	--playlist-view-item-author-bg-color: var(--bg-page);
 
 	/* ################################################## */
 
-	--add-media-page-tmplt-dialog-bg-color: #fff;
-	--add-media-page-tmplt-uploader-bg-color: #fff;
-	--add-media-page-tmplt-dropzone-bg-color: rgba(255, 255, 255, 0.5);
-	--add-media-page-tmplt-drag-drop-inner-text-color: rgba(17, 17, 17, 0.4);
-	--add-media-page-tmplt-upload-item-spiner-text-color: rgba(17, 17, 17, 0.32);
-	--add-media-page-tmplt-upload-item-actions-text-color: rgba(17, 17, 17, 0.4);
+	--profile-page-bg-color: var(--bg-page);
+
+	--profile-page-header-bg-color: var(--bg-surface-raised);
+
+	--profile-page-info-videos-number-text-color: var(--text-muted);
+
+	--profile-page-nav-link-text-color: var(--text-muted);
+	--profile-page-nav-link-hover-text-color: var(--text-strong);
+
+	--profile-page-nav-link-active-text-color: var(--text-strong);
+	--profile-page-nav-link-active-after-bg-color: var(--bg-primary);
+
+	/* ################################################## */
+
+	--add-media-page-tmplt-dialog-bg-color: var(--bg-surface-raised);
+	--add-media-page-tmplt-uploader-bg-color: var(--bg-surface-raised);
+	--add-media-page-tmplt-dropzone-bg-color: var(--bg-surface-muted);
+	--add-media-page-tmplt-drag-drop-inner-text-color: var(--text-muted);
+	--add-media-page-tmplt-upload-item-spiner-text-color: var(--text-subtle);
+	--add-media-page-tmplt-upload-item-actions-text-color: var(--text-muted);
 
 	/* ################################################## */
 
@@ -242,69 +235,66 @@ body {
 
 	/* ################################################## */
 
-	--playlist-page-bg-color: rgb(250, 250, 250);
-	--playlist-page-details-text-color: rgb(96, 96, 96);
-	--playlist-page-thumb-bg-color: rgba(0, 0, 0, 0.07);
-	--playlist-page-title-link-text-color: rgb(13, 13, 13);
+	--playlist-page-bg-color: var(--bg-page);
+	--playlist-page-details-text-color: var(--text-muted);
+	--playlist-page-thumb-bg-color: var(--bg-surface-muted);
+	--playlist-page-title-link-text-color: var(--text-strong);
 
-	--playlist-page-actions-circle-icon-text-color: rgb(144, 144, 144);
-	--playlist-page-actions-circle-icon-bg-color: rgb(250, 250, 250);
+	--playlist-page-actions-circle-icon-text-color: var(--text-muted);
+	--playlist-page-actions-circle-icon-bg-color: transparent;
 
-	--playlist-page-actions-nav-item-button-text-color: rgb(10, 10, 10);
+	--playlist-page-actions-nav-item-button-text-color: var(--text-strong);
 
-	--playlist-page-actions-popup-message-bottom-cancel-button-text-color: rgba(17, 17, 17, 0.6);
-	--playlist-page-actions-popup-message-bottom-cancel-button-hover-text-color: #111;
-	--playlist-page-actions-popup-message-bottom-cancel-button-icon-hover-text-color: #111;
+	--playlist-page-actions-popup-message-bottom-cancel-button-text-color: var(--text-strong);
+	--playlist-page-actions-popup-message-bottom-cancel-button-hover-text-color: var(--text-strong);
+	--playlist-page-actions-popup-message-bottom-cancel-button-icon-hover-text-color: var(--text-strong);
 
-	--playlist-page-status-text-color: rgba(17, 17, 17, 0.6);
-	--playlist-page-status-bg-color: rgba(0, 0, 0, 0.1);
+	--playlist-page-status-text-color: var(--text-muted);
+	--playlist-page-status-bg-color: var(--bg-surface-muted);
 
-	--playlist-page-status-icon-text-color: rgba(17, 17, 17, 0.4);
+	--playlist-page-status-icon-text-color: var(--text-subtle);
 
-	--playlist-page-author-border-top-color: rgba(0, 0, 0, 0.1);
-	--playlist-page-author-name-link-color: rgb(13, 13, 13);
+	--playlist-page-author-border-top-color: var(--border-subtle);
+	--playlist-page-author-name-link-color: var(--text-strong);
 
-	--playlist-page-author-edit-playlist-icon-button-text-color: rgb(96, 96, 96);
+	--playlist-page-author-edit-playlist-icon-button-text-color: var(--text-on-primary);
 
-	// --playlist-page-author-edit-playlist-icon-button-bg-color: rgb(250, 250, 250);
-	--playlist-page-author-edit-playlist-icon-button-bg-color: #fafafa;
+	--playlist-page-author-edit-playlist-icon-button-bg-color: var(--bg-primary);
 
-	--playlist-page-author-edit-playlist-icon-button-active-text-color: rgb(13, 13, 13);
+	--playlist-page-author-edit-playlist-icon-button-active-text-color: var(--text-on-primary);
 
-	--playlist-page-author-edit-playlist-form-wrap-text-color: rgb(13, 13, 13);
-	--playlist-page-author-edit-playlist-form-wrap-bg-color: #fff;
+	--playlist-page-author-edit-playlist-form-wrap-text-color: var(--text-strong, var(--cinemata-pacific-deep-900));
+	--playlist-page-author-edit-playlist-form-wrap-bg-color: var(--bg-surface-raised, var(--cinemata-white));
 
-	--playlist-page-author-edit-playlist-form-wrap-border-color: #eee;
+	--playlist-page-author-edit-playlist-form-wrap-border-color: var(--border-subtle, var(--cinemata-neutral-200));
 
-	--playlist-page-author-edit-playlist-form-wrap-title-circle-icon-hover-text-color: #111;
+	--playlist-page-author-edit-playlist-form-wrap-title-circle-icon-hover-text-color: var(
+		--text-strong,
+		var(--cinemata-pacific-deep-900)
+	);
 
-	--playlist-page-author-edit-playlist-author-thumb-text-color: #606060;
-	--playlist-page-author-edit-playlist-author-thumb-bg-color: rgba(0, 0, 0, 0.07);
+	--playlist-page-author-edit-playlist-author-thumb-text-color: var(--text-muted);
+	--playlist-page-author-edit-playlist-author-thumb-bg-color: var(--bg-surface-muted);
 
-	--playlist-page-details-bg-color: #fafafa;
+	--playlist-page-details-bg-color: var(--bg-surface-raised);
 
-	// --playlist-page-video-list-bg-color: #fff;
-	// --playlist-page-video-list-bg-color: #fafafa;
-	--playlist-page-video-list-bg-color: #f5f5f5;
+	--playlist-page-video-list-bg-color: var(--bg-page);
 
-	// --playlist-page-video-list-item-title-bg-color: #fff;
-	--playlist-page-video-list-item-title-bg-color: #f5f5f5;
+	--playlist-page-video-list-item-title-bg-color: var(--bg-page);
 
-	// --playlist-page-video-list-item-hover-bg-color: rgb(245, 245, 245);
-	--playlist-page-video-list-item-hover-bg-color: #ebebeb;
+	--playlist-page-video-list-item-hover-bg-color: var(--bg-surface-muted);
 
-	// --playlist-page-video-list-item-title-hover-bg-color: rgb(245, 245, 245);
-	--playlist-page-video-list-item-title-hover-bg-color: #ebebeb;
+	--playlist-page-video-list-item-title-hover-bg-color: var(--bg-surface-muted);
 
-	--playlist-page-video-list-item-after-bg-color: rgba(0, 0, 0, 0.1);
-	--playlist-page-video-list-item-order-text-color: rgb(96, 96, 96);
+	--playlist-page-video-list-item-after-bg-color: var(--border-subtle);
+	--playlist-page-video-list-item-order-text-color: var(--text-muted);
 
-	--playlist-page-video-list-item-options-icon-hover-color: #111;
+	--playlist-page-video-list-item-options-icon-hover-color: var(--text-strong);
 
-	--playlist-page-video-list-item-options-popup-cancel-removal-button-text-color: rgba(17, 17, 17, 0.6);
-	--playlist-page-video-list-item-options-popup-cancel-removal-button-hover-text-color: #111;
+	--playlist-page-video-list-item-options-popup-cancel-removal-button-text-color: var(--text-strong);
+	--playlist-page-video-list-item-options-popup-cancel-removal-button-hover-text-color: var(--text-strong);
 
-	--playlist-page-video-list-item-options-popup-cancel-removal-button-hover-icon-text-color: #111;
+	--playlist-page-video-list-item-options-popup-cancel-removal-button-hover-icon-text-color: var(--text-strong);
 
 	/* ################################################## */
 

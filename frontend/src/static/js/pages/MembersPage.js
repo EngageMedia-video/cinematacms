@@ -182,12 +182,10 @@ export class MembersPage extends Page {
 						}
 
 						.search-filters {
-							background: var(--popup-bg-color, white);
+							background: var(--bg-surface-raised, var(--cinemata-white));
 							padding: 1.5rem;
 							border-radius: 12px;
 							margin-bottom: 2rem;
-							box-shadow: 0 1px 3px var(--cinemata-neutral-200);
-							border: 1px solid var(--input-border-color, var(--cinemata-neutral-200));
 						}
 
 						.search-box {
@@ -195,15 +193,15 @@ export class MembersPage extends Page {
 							align-items: center;
 							gap: 0.75rem;
 							padding: 0.75rem 1rem;
-							background: var(--input-bg-color, var(--cinemata-neutral-50));
-							border: 1px solid var(--input-border-color, #e2e8f0);
+							background: var(--bg-surface, var(--cinemata-neutral-50));
+							border: 1px solid var(--border-default, var(--cinemata-pacific-deep-200));
 							border-radius: 8px;
 							margin-bottom: 1rem;
 						}
 
 						.search-icon {
 							flex-shrink: 0;
-							color: var(--body-text-color, var(--cinemata-neutral-400));
+							color: var(--text-muted, var(--cinemata-pacific-deep-400));
 							opacity: 0.6;
 						}
 
@@ -213,11 +211,11 @@ export class MembersPage extends Page {
 							background: transparent;
 							font-size: 1rem;
 							outline: none;
-							color: var(--body-text-color, var(--cinemata-neutral-800));
+							color: var(--text-primary, var(--cinemata-pacific-deep-700));
 						}
 
 						.search-box input::placeholder {
-							color: var(--body-text-color, #94a3b8);
+							color: var(--text-subtle, var(--cinemata-neutral-500));
 							opacity: 0.5;
 						}
 
@@ -229,12 +227,12 @@ export class MembersPage extends Page {
 						.filter-select {
 							flex: 1;
 							padding: 0.75rem 2.5rem 0.75rem 1rem;
-							border: 1px solid var(--input-border-color, #e2e8f0);
+							border: 1px solid var(--border-default, var(--cinemata-pacific-deep-200));
 							border-radius: 8px;
-							background: var(--input-bg-color, white);
+							background: var(--bg-surface, var(--cinemata-neutral-50));
 							font-size: 0.95rem;
 							cursor: pointer;
-							color: var(--body-text-color, #1e293b);
+							color: var(--text-primary, var(--cinemata-pacific-deep-700));
 							-webkit-appearance: none;
 							-moz-appearance: none;
 							appearance: none;
@@ -246,12 +244,12 @@ export class MembersPage extends Page {
 
 						.filter-select:focus {
 							outline: none;
-							border-color: var(--default-theme-color, var(--cinemata-strait-blue-400));
+							border-color: var(--ring-focus, var(--cinemata-sunset-horizon-400p));
 						}
 
 						.filter-select option {
-							background: var(--input-bg-color, white);
-							color: var(--body-text-color, #1e293b);
+							background: var(--bg-surface-raised, var(--cinemata-white));
+							color: var(--text-primary, var(--cinemata-pacific-deep-700));
 						}
 
 						.members-grid-container {

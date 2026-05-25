@@ -7,6 +7,10 @@ function getAuthorName(item) {
 	return item.author_name || item.user || '';
 }
 
+function getAuthorLink(item) {
+	return item.author_profile || '';
+}
+
 function getCountryNames(item) {
 	if (Array.isArray(item.media_country_info)) {
 		const countries = item.media_country_info.map((country) => country?.title).filter(Boolean);
@@ -36,7 +40,7 @@ export function MediaTile({ item }) {
 			link={item.url}
 			duration={getMediaDurationLabel(item)}
 			subtitle={getAuthorName(item)}
-			subtitleHref={item.author_profile || ''}
+			subtitleLink={getAuthorLink(item)}
 			metadata={metadata}
 			badge={firstCategory?.title || ''}
 			badgeColor={firstCategory?.color || DEFAULT_CATEGORY_COLOR}

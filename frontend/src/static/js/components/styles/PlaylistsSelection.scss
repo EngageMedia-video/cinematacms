@@ -102,7 +102,7 @@
 				text-align: right;
 				font-size: 18px;
 				vertical-align: top;
-				color: rgb(144, 144, 144);
+				color: var(--text-muted);
 			}
 		}
 	}
@@ -159,7 +159,7 @@
 	ul.nav li:hover span,
 	ul.nav li.active span {
 		font-weight: bold;
-		border-bottom: 1px solid #fff;
+		border-bottom: 1px solid var(--text-on-primary);
 		position: relative;
 		padding-bottom: 18px;
 	}

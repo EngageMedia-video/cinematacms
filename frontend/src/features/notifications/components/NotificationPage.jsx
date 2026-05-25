@@ -32,10 +32,10 @@ function NotificationList({ showUnreadOnly }) {
 
 	return (
 		<>
-			<div className="bg-surface-popup rounded">
-				{isLoading && <p className="px-4 py-8 text-sm text-center text-content-body/60">Loading…</p>}
+			<div className="bg-bg-surface-raised rounded">
+				{isLoading && <p className="px-4 py-8 text-sm text-center text-text-muted">Loading…</p>}
 				{!isLoading && notifications.length === 0 && (
-					<p className="px-4 py-8 text-sm text-center text-content-body/60">No notifications</p>
+					<p className="px-4 py-8 text-sm text-center text-text-muted">No notifications</p>
 				)}
 				{notifications.map((n) => (
 					<NotificationItem key={n.id} notification={n} />
@@ -48,7 +48,7 @@ function NotificationList({ showUnreadOnly }) {
 						type="button"
 						onClick={() => setPage((p) => p - 1)}
 						disabled={!data?.previous}
-						className="border-0 bg-transparent p-0 cursor-pointer text-sm text-content-link hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+						className="border-0 bg-transparent p-0 cursor-pointer text-sm text-text-link hover:text-text-link-hover hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
 					>
 						← Previous
 					</button>
@@ -56,7 +56,7 @@ function NotificationList({ showUnreadOnly }) {
 						type="button"
 						onClick={() => setPage((p) => p + 1)}
 						disabled={!data?.next}
-						className="border-0 bg-transparent p-0 cursor-pointer text-sm text-content-link hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+						className="border-0 bg-transparent p-0 cursor-pointer text-sm text-text-link hover:text-text-link-hover hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
 					>
 						Next →
 					</button>
@@ -147,13 +147,13 @@ function NotificationPageContent() {
 	return (
 		<div className="max-w-2xl mx-auto py-6 px-4">
 			<div className="flex items-center justify-between mb-4">
-				<h1 className="text-xl font-semibold text-content-body">Notifications</h1>
+				<h1 className="text-xl font-semibold text-text-strong">Notifications</h1>
 				{activeTab !== TAB_PREFERENCES && (
 					<button
 						type="button"
 						onClick={() => markAllAsRead()}
 						disabled={isPending}
-						className="border-0 bg-transparent p-0 cursor-pointer text-sm text-content-link hover:underline disabled:opacity-50"
+						className="border-0 bg-transparent p-0 cursor-pointer text-sm text-text-link hover:text-text-link-hover hover:underline disabled:opacity-50"
 					>
 						{isPending ? 'Marking…' : 'Mark all as read'}
 					</button>
@@ -166,7 +166,7 @@ function NotificationPageContent() {
 			<div
 				role="tablist"
 				aria-label="Notifications views"
-				className="inline-flex gap-1 rounded-full p-1 mb-6 bg-surface-popup"
+				className="inline-flex gap-1 rounded-ds-4 p-1 mb-6 bg-bg-surface-raised"
 			>
 				{tabs.map(({ id, label }) => {
 					const active = activeTab === id;
@@ -187,20 +187,20 @@ function NotificationPageContent() {
 							className="cursor-pointer transition-all"
 							style={{
 								padding: '5px 16px',
-								borderRadius: '9999px',
+								borderRadius: 'var(--radius-4)',
 								border: 'none',
 								fontSize: '13px',
 								fontWeight: 500,
 								...(active
 									? {
-											backgroundColor: 'var(--btn-primary-bg-color)',
-											color: 'var(--cinemata-neutral-50)',
+											backgroundColor: 'var(--bg-primary)',
+											color: 'var(--text-on-primary)',
 											boxShadow: 'none',
 										}
 									: {
 											backgroundColor: 'transparent',
-											color: 'var(--body-text-color)',
-											opacity: 0.6,
+											color: 'var(--text-muted)',
+											opacity: 1,
 										}),
 							}}
 						>

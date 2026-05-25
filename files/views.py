@@ -22,6 +22,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_exempt
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import (
@@ -552,6 +553,7 @@ def search(request):
     return render(request, "cms/search.html", context)
 
 
+@ensure_csrf_cookie
 def upload_media(request):
     from allauth.account.forms import LoginForm
 

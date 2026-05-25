@@ -24,7 +24,7 @@
 
 	.playlist-actions {
 		.circle-icon-button {
-			// color: var(--playlist-page-actions-circle-icon-text-color);
+			color: var(--playlist-page-actions-circle-icon-text-color);
 			background-color: var(--playlist-page-actions-circle-icon-bg-color);
 		}
 
@@ -44,6 +44,16 @@
 
 		.popup-message-bottom {
 			button {
+				color: var(--text-strong);
+				border-radius: var(--radius-4);
+				background-color: transparent;
+
+				&:hover,
+				&:focus {
+					color: var(--text-strong);
+					background-color: var(--bg-surface-muted);
+				}
+
 				&.cancel-playlist-removal {
 					color: var(--playlist-page-actions-popup-message-bottom-cancel-button-text-color);
 
@@ -55,6 +65,23 @@
 							color: var(
 								--playlist-page-actions-popup-message-bottom-cancel-button-icon-hover-text-color
 							);
+						}
+					}
+				}
+
+				&.proceed-playlist-removal {
+					color: var(--cinemata-red-700p);
+
+					.dark_theme & {
+						color: var(--cinemata-red-400);
+					}
+
+					&:hover,
+					&:focus {
+						color: var(--cinemata-red-800);
+
+						.dark_theme & {
+							color: var(--cinemata-red-300);
 						}
 					}
 				}
@@ -200,7 +227,6 @@
 	.item-playlist-drag {
 		.circle-icon-button {
 			background-color: transparent;
-			background-color: rgba(0, 0, 0, 0);
 
 			&:hover,
 			&:focus,
@@ -369,8 +395,8 @@
 					right: 0;
 					display: block;
 					text-align: center;
-					color: rgba(white, 0.8);
-					background-color: rgba(17, 17, 17, 0.8);
+					color: var(--text-on-chrome);
+					background-color: rgb(0 12 32 / 0.8);
 
 					> * {
 						display: table;
@@ -479,23 +505,34 @@
 				font-size: 13px;
 				font-weight: 500;
 				border: 0;
+				color: var(--text-muted);
 				background: none;
 				cursor: pointer;
 				padding: 0;
+
+				.circle-icon-button {
+					color: currentcolor;
+					background-color: transparent;
+				}
+
+				&:hover,
+				&:focus {
+					color: var(--text-strong);
+				}
 			}
 
 			.popup-fullscreen .popup-main > .playlist-share-options {
 				position: relative;
 				z-index: +1;
 				display: inline-block;
-				background-color: var(--popup-bg-color);
-				color: var(--body-text-color);
+				background-color: var(--bg-surface);
+				color: var(--text-strong);
 				text-align: initial;
-				border-radius: 2px;
+				border-radius: var(--radius-4);
 				box-shadow:
-					0 16px 24px 2px rgba(0, 0, 0, 0.14),
-					0 6px 30px 5px rgba(0, 0, 0, 0.12),
-					0 8px 10px -5px rgba(0, 0, 0, 0.4);
+					0 16px 24px 2px rgb(0 12 32 / 0.14),
+					0 6px 30px 5px rgb(0 12 32 / 0.12),
+					0 8px 10px -5px rgb(0 12 32 / 0.4);
 				max-width: 560px;
 				width: calc(100vw - 80px);
 
@@ -510,7 +547,7 @@
 					font-weight: 500;
 					margin-bottom: 16px;
 					line-height: 1.25;
-					color: var(--body-text-color);
+					color: var(--text-strong);
 				}
 
 				.share-preview {
@@ -522,7 +559,7 @@
 						max-width: 512px;
 						height: auto;
 						border-radius: 4px;
-						box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+						box-shadow: 0 2px 8px rgb(0 12 32 / 0.15);
 					}
 				}
 
@@ -560,6 +597,17 @@
 						// nudge up slightly so the arrow sits on the icon row,
 						// not on the label below.
 						margin-top: -9px;
+
+						.circle-icon-button {
+							color: var(--text-strong);
+							background-color: var(--bg-surface-raised);
+
+							&:hover,
+							&:focus {
+								color: var(--text-strong);
+								background-color: var(--bg-surface-muted);
+							}
+						}
 					}
 
 					.previous-slide {
@@ -584,8 +632,12 @@
 							text-decoration: none;
 							border: 0;
 							background: none;
-							color: var(--body-text-color);
-							border-radius: 6px;
+							color: var(--text-strong);
+							border-radius: var(--radius-4);
+
+							&:hover {
+								background-color: var(--bg-surface-raised);
+							}
 
 							// Suppress the default focus ring for mouse clicks (where
 							// :focus fires without :focus-visible) but restore a visible
@@ -593,11 +645,12 @@
 							// WCAG 2.4.7 (Focus Visible) requires keyboard users to see
 							// which share option currently has focus.
 							&:focus {
+								background-color: var(--bg-surface-raised);
 								outline: 0;
 							}
 
 							&:focus-visible {
-								outline: 2px solid var(--body-text-color);
+								outline: 2px solid var(--ring-focus);
 								outline-offset: 2px;
 							}
 
@@ -616,7 +669,7 @@
 								font-size: 13px;
 								line-height: 18px;
 								overflow: hidden;
-								color: var(--body-text-color);
+								color: var(--text-strong);
 							}
 
 							.material-icons {
@@ -625,7 +678,7 @@
 								line-height: 1;
 								font-size: 30px;
 								overflow: hidden;
-								color: #fff;
+								color: var(--text-on-primary);
 							}
 						}
 					}
@@ -693,14 +746,15 @@
 					position: relative;
 					width: 100%;
 					padding: 0 24px 20px;
-					color: var(--body-text-color);
+					color: var(--text-strong);
 
 					> div {
 						position: relative;
 						display: block;
 						padding-right: $button-width;
-						border: 1px solid var(--popup-hr-bg-color);
-						border-radius: 2px;
+						border: 1px solid var(--border-subtle);
+						border-radius: var(--radius-4);
+						background-color: var(--bg-surface-raised);
 					}
 
 					input[type='text'] {
@@ -712,7 +766,7 @@
 						line-height: normal;
 						border: 0;
 						background: none;
-						color: var(--body-text-color);
+						color: var(--text-strong);
 					}
 
 					button {
@@ -727,7 +781,12 @@
 						font-size: 14px;
 						font-weight: 500;
 						cursor: pointer;
-						color: var(--theme-color, #ec1c24);
+						color: var(--text-link);
+
+						&:hover,
+						&:focus {
+							color: var(--text-link-hover);
+						}
 					}
 				}
 			}
@@ -739,6 +798,12 @@
 				top: 100%;
 				left: -8px;
 				margin-bottom: 32px;
+				border-radius: var(--radius-4);
+				background-color: var(--bg-surface);
+
+				hr {
+					background-color: var(--border-subtle);
+				}
 
 				// width: 200px !important;
 
@@ -761,12 +826,38 @@
 
 					ul {
 						li {
+							a,
 							button {
+								color: var(--text-strong);
+								border-radius: var(--radius-4);
 								font-size: 13px;
+
+								&:hover,
+								&:focus {
+									color: var(--text-strong);
+									background-color: var(--bg-surface-raised);
+								}
+
+								.menu-item-icon {
+									color: var(--text-muted);
+								}
+
+								&:hover .menu-item-icon,
+								&:focus .menu-item-icon {
+									color: var(--text-strong);
+								}
 							}
 						}
 					}
 				}
+			}
+
+			.popup-message-title {
+				color: var(--text-strong);
+			}
+
+			.popup-message-main {
+				color: var(--text-muted);
 			}
 		}
 
@@ -774,18 +865,32 @@
 			button {
 				position: relative;
 				width: auto;
-				padding: 0;
+				padding: 6px 8px;
 				border: 0;
+				border-radius: var(--radius-4);
+				color: var(--text-strong);
 
 				&.cancel-playlist-removal,
 				&.proceed-playlist-removal {
 					background-color: transparent;
-					background-color: rgba(0, 0, 0, 0);
 				}
 
 				&.proceed-playlist-removal {
 					float: right;
-					color: $theme-color;
+					color: var(--cinemata-red-700p);
+
+					.dark_theme & {
+						color: var(--cinemata-red-400);
+					}
+
+					&:hover,
+					&:focus {
+						color: var(--cinemata-red-800);
+
+						.dark_theme & {
+							color: var(--cinemata-red-300);
+						}
+					}
 				}
 
 				&.cancel-playlist-removal {
@@ -901,10 +1006,16 @@
 				font-size: 14px;
 				font-weight: 500;
 				letter-spacing: 0.007px;
-				border-radius: 1px;
+				border-radius: var(--radius-4);
+
+				&:hover,
+				&:focus {
+					color: var(--text-on-primary);
+					background-color: var(--bg-primary-hover);
+				}
 
 				> * {
-					border-radius: 1px;
+					border-radius: var(--radius-4);
 
 					> * {
 						display: table;
@@ -949,18 +1060,34 @@
 				max-width: 280px;
 				display: inline-block;
 				text-align: initial;
+				border-radius: var(--radius-4);
+				background-color: var(--playlist-page-author-edit-playlist-form-wrap-bg-color);
+				box-shadow:
+					0 16px 24px 2px rgb(0 12 32 / 0.14),
+					0 6px 30px 5px rgb(0 12 32 / 0.12),
+					0 8px 10px -5px rgb(0 12 32 / 0.4);
 
 				.edit-playlist-popup-title {
 					height: 52px;
 					padding: 16px 52px 15px 24px;
 					line-height: 20px;
 					font-size: 16px;
+					color: var(--playlist-page-author-edit-playlist-form-wrap-text-color);
 
 					.circle-icon-button {
 						position: absolute;
 						top: 6px;
 						right: 6px;
-						background: none;
+						color: var(--playlist-form-cancel-button-text-color);
+						background: transparent;
+
+						&:hover,
+						&:focus {
+							color: var(
+								--playlist-page-author-edit-playlist-form-wrap-title-circle-icon-hover-text-color
+							);
+							background-color: var(--bg-surface-muted);
+						}
 					}
 				}
 
@@ -1094,14 +1221,15 @@
 		// visibility:hidden;
 
 		.circle-icon-button {
+			color: var(--text-muted);
 			display: inline-block;
 			background-color: transparent;
-			background-color: rgba(0, 0, 0, 0);
 
 			&:hover,
 			&:focus,
 			&:active {
-				// color:#111;
+				color: var(--text-strong);
+				background-color: var(--bg-surface-raised);
 			}
 		}
 
@@ -1109,6 +1237,12 @@
 			position: absolute;
 			bottom: 100%;
 			right: 0;
+			border-radius: var(--radius-4);
+			background-color: var(--bg-surface);
+
+			hr {
+				background-color: var(--border-subtle);
+			}
 			// margin-bottom:4px;
 		}
 
@@ -1118,22 +1252,79 @@
 			}
 		}
 
+		.popup-main {
+			.nav-menu {
+				padding: 8px 0;
+
+				li {
+					a,
+					button {
+						color: var(--text-strong);
+						border-radius: var(--radius-4);
+
+						&:hover,
+						&:focus {
+							color: var(--text-strong);
+							background-color: var(--bg-surface-raised);
+						}
+
+						.menu-item-icon {
+							color: var(--text-muted);
+						}
+
+						&:hover .menu-item-icon,
+						&:focus .menu-item-icon {
+							color: var(--text-strong);
+						}
+					}
+				}
+			}
+		}
+
+		.popup-message-title {
+			color: var(--text-strong);
+		}
+
+		.popup-message-main {
+			color: var(--text-muted);
+		}
+
 		.popup-message-bottom {
 			button {
 				position: relative;
 				width: auto;
-				padding: 0;
+				padding: 6px 8px;
 				border: 0;
+				border-radius: var(--radius-4);
+				color: var(--text-strong);
+
+				&:hover,
+				&:focus {
+					color: var(--text-strong);
+					background-color: var(--bg-surface-muted);
+				}
 
 				&.cancel-playlist-removal,
 				&.proceed-playlist-removal {
 					background-color: transparent;
-					background-color: rgba(0, 0, 0, 0);
 				}
 
 				&.proceed-playlist-removal {
 					float: right;
-					color: $theme-color;
+					color: var(--cinemata-red-700p);
+
+					.dark_theme & {
+						color: var(--cinemata-red-400);
+					}
+
+					&:hover,
+					&:focus {
+						color: var(--cinemata-red-800);
+
+						.dark_theme & {
+							color: var(--cinemata-red-300);
+						}
+					}
 				}
 
 				&.cancel-playlist-removal {
@@ -1187,6 +1378,56 @@
 						bottom: auto;
 					}
 				}
+			}
+		}
+	}
+}
+
+#page-playlist {
+	.playlist-details .playlist-actions .playlist-options-wrap,
+	.playlist-videos-list .item-playlist-options-wrap {
+		.popup {
+			background-color: var(--bg-surface);
+		}
+
+		.popup-main {
+			.nav-menu {
+				li {
+					a,
+					button {
+						color: var(--text-strong);
+
+						&:hover,
+						&:focus {
+							color: var(--text-strong);
+							background-color: var(--bg-surface-raised);
+						}
+
+						.menu-item-icon {
+							color: var(--text-muted);
+						}
+
+						&:hover .menu-item-icon,
+						&:focus .menu-item-icon {
+							color: var(--text-strong);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	.playlist-details .playlist-actions .playlist-options-wrap,
+	.playlist-videos-list .item-playlist-options-wrap {
+		.circle-icon-button {
+			color: var(--text-muted);
+			background-color: transparent;
+
+			&:hover,
+			&:focus,
+			&:active {
+				color: var(--text-strong);
+				background-color: var(--bg-surface-raised);
 			}
 		}
 	}

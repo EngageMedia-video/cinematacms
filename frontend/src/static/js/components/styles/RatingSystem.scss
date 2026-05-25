@@ -87,12 +87,12 @@
 
 		.active {
 			.material-icons {
-				color: var(--default-brand-color);
+				color: var(--text-link);
 			}
 		}
 
 		.selected {
-			color: var(--default-brand-color);
+			color: var(--text-link);
 		}
 	}
 
@@ -103,11 +103,11 @@
 		a,
 		button {
 			padding: 0.625rem 1rem;
-			color: #fff;
+			color: var(--text-on-primary);
 			text-decoration: none;
 			border-radius: 1px;
-			border: 1px solid var(--default-brand-color);
-			background-color: var(--default-brand-color);
+			border: 1px solid var(--bg-secondary);
+			background-color: var(--bg-secondary);
 			transition:
 				color 0.2s,
 				background-color 0.2s;
@@ -115,8 +115,7 @@
 			&[disabled] {
 				opacity: 0.3;
 				cursor: default;
-				color: var(--default-brand-color);
-				background-color: rgba(0, 0, 0, 0);
+				color: var(--text-link);
 				background-color: transparent;
 			}
 		}
@@ -136,7 +135,7 @@
 	right: 0;
 	bottom: 0;
 	display: block;
-	background-color: rgba(0, 0, 0, 0.05);
+	background-color: var(--bg-surface-muted);
 	// vertical-align: middle;
 	// text-align:center;
 	// color: var(--body-text-color);

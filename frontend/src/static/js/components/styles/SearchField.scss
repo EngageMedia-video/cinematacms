@@ -62,12 +62,12 @@
 			right: 64px;
 			width: auto;
 			margin-top: 12px;
-			color: rgb(34, 34, 34);
+			color: var(--text-primary);
 			border-width: 0px 1px 1px;
 			border-style: solid;
-			border-color: #ccc;
-			background-color: #fff;
-			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+			border-color: var(--border-input);
+			background-color: var(--bg-surface-raised);
+			box-shadow: 0 2px 4px rgb(0 12 32 / 0.2);
 		}
 	}
 
@@ -197,6 +197,6 @@
 	&:hover,
 	&:focus {
 		outline: 0;
-		background-color: #eee;
+		background-color: var(--bg-skeleton);
 	}
 }

@@ -54,7 +54,7 @@ const meta = {
 		},
 	},
 	render: (args) => (
-		<div className="w-[320px] rounded-lg border border-border-input/40 bg-surface-popup">
+		<div className="w-[320px] rounded-lg border border-border-default bg-bg-surface-raised">
 			<QueryClientProvider client={queryClient}>
 				<NotificationItem {...args} />
 			</QueryClientProvider>

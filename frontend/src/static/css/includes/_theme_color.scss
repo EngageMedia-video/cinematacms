@@ -138,7 +138,12 @@ $bg-color_theme-color: $theme-color;
 		.form-buttons {
 			a,
 			button {
-				@include background_gradient();
+				background: var(--bg-secondary);
+
+				&:hover,
+				&:focus {
+					background: var(--bg-secondary-hover);
+				}
 			}
 		}
 	}
@@ -153,7 +158,12 @@ $bg-color_theme-color: $theme-color;
 .comment-actions {
 	.remove-comment {
 		> button {
-			@include background_color_gradient();
+			background-color: var(--bg-secondary);
+
+			&:hover,
+			&:focus {
+				background-color: var(--bg-secondary-hover);
+			}
 		}
 
 		.popup-message-bottom {
@@ -221,7 +231,12 @@ button.thumbnail.circle-icon-button {
 .media-drag-drop-content-inner {
 	.browse-files-btn-wrap {
 		span {
-			@include background_color_gradient();
+			background-color: var(--bg-secondary);
+
+			&:hover,
+			&:focus {
+				background-color: var(--bg-secondary-hover);
+			}
 		}
 	}
 }
@@ -235,14 +250,14 @@ button.thumbnail.circle-icon-button {
 .media-upload-item-bottom-actions {
 	> * {
 		&:hover {
-			@include font_color_gradient();
+			color: var(--text-link);
 		}
 	}
 }
 
 .media-upload-item-progress-bar-container {
 	.media-upload-item-progress-bar {
-		@include background_color_gradient();
+		background-color: var(--cinemata-coral-reef-400p);
 	}
 }
 
@@ -251,7 +266,7 @@ button.thumbnail.circle-icon-button {
 dialog {
 	.qq-dialog-buttons {
 		button {
-			color: $theme-color !important;
+			color: var(--text-link) !important;
 		}
 	}
 }
@@ -259,7 +274,12 @@ dialog {
 .media-drag-drop-content-inner {
 	.browse-files-btn-wrap {
 		span {
-			@include background_color_gradient();
+			background-color: var(--bg-secondary);
+
+			&:hover,
+			&:focus {
+				background-color: var(--bg-secondary-hover);
+			}
 		}
 	}
 }
@@ -268,7 +288,7 @@ dialog {
 .media-upload-item-bottom-actions {
 	> * {
 		&:hover {
-			@include font_color_gradient();
+			color: var(--text-link);
 		}
 	}
 }
@@ -276,22 +296,24 @@ dialog {
 .media-upload-item-bottom-actions {
 	> * {
 		&:hover {
-			@include background_color_gradient();
+			background-color: var(--bg-secondary);
+			color: var(--text-on-primary);
 		}
 	}
 }
 
 .retry-media-upload-item {
-	@include font_color_gradient();
+	color: var(--text-link);
 
 	&:hover {
-		@include background_color_gradient();
+		background-color: var(--bg-secondary);
+		color: var(--text-on-primary);
 	}
 }
 
 .media-upload-item-progress-bar-container {
 	.media-upload-item-progress-bar {
-		@include background_color_gradient();
+		background-color: var(--cinemata-coral-reef-400p);
 	}
 }
 
@@ -310,7 +332,12 @@ dialog {
 .media-author-actions {
 	> a,
 	> button {
-		@include background_color_gradient();
+		background-color: var(--bg-secondary);
+
+		&:hover,
+		&:focus {
+			background-color: var(--bg-secondary-hover);
+		}
 	}
 
 	.popup-message-bottom {
@@ -433,22 +460,72 @@ dialog {
 
 .profile-page-header {
 	a.edit-channel,
-	a.edit-profile,
+	a.edit-profile {
+		background-color: var(--bg-primary);
+
+		&:hover,
+		&:focus {
+			background-color: var(--bg-primary-hover);
+		}
+	}
+
 	button.delete-profile {
-		@include background_color_gradient();
+		background-color: var(--cinemata-red-700p);
+
+		&:hover,
+		&:focus {
+			background-color: var(--cinemata-red-800);
+		}
 	}
 }
 
 .profile-banner-wrap {
+	.popup {
+		background-color: var(--bg-surface-raised);
+
+		hr {
+			background-color: var(--border-subtle);
+		}
+	}
+
+	.popup-message-title {
+		color: var(--text-strong);
+	}
+
+	.popup-message-main {
+		color: var(--text-muted);
+	}
+
 	.popup-message-bottom {
 		> a,
 		> button {
-			@include background_color_gradient();
+			color: var(--text-strong);
+			border-radius: var(--radius-4);
+			background-color: transparent;
+
+			&:hover,
+			&:focus {
+				color: var(--text-strong);
+				background-color: var(--bg-surface-muted);
+			}
 		}
 
 		button {
 			&.proceed-profile-removal {
-				@include font_color_gradient();
+				color: var(--cinemata-red-700p);
+
+				.dark_theme & {
+					color: var(--cinemata-red-400);
+				}
+
+				&:hover,
+				&:focus {
+					color: var(--cinemata-red-800);
+
+					.dark_theme & {
+						color: var(--cinemata-red-300);
+					}
+				}
 			}
 		}
 	}

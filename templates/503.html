@@ -7,22 +7,89 @@
     <title>We'll be back soon</title>
     <style>
       :root {
-        /* Light mode (default) */
-        --color-bg: var(--cinemata-strait-blue-50, #defbff);
-        --color-fg: var(--cinemata-black, #000000);
-        --color-muted: var(--cinemata-pacific-deep-400, #5a7999);
-        --color-primary: var(--cinemata-sunset-horizon-300, #ed7c30);
-        --color-secondary: var(--cinemata-pacific-deep-600p, #1a3f61);
-        --radius: 6px;
+        /* Standalone palette: the 503 page can render without the app CSS. */
+        /* P-suffixed names are canonical palette stops, preserved verbatim. */
+        --cinemata-white: #ffffff;
+        --cinemata-black: #000000;
+        --cinemata-strait-blue-50: #defbff;
+        --cinemata-strait-blue-500: #026690;
+        --cinemata-strait-blue-600p: #026690;
+        --cinemata-strait-blue-700: #004e74;
+        --cinemata-pacific-deep-50: #ebf8ff;
+        --cinemata-pacific-deep-300: #7b98b6;
+        --cinemata-pacific-deep-400: #5a7999;
+        --cinemata-pacific-deep-700: #1a3f61;
+        --cinemata-pacific-deep-800: #0b2d4a;
+        --cinemata-pacific-deep-900: #011c34;
+        --cinemata-pacific-deep-950: #000c20;
+        --cinemata-sunset-horizon-100: #ffc9a4;
+        --cinemata-sunset-horizon-200: #f6a474;
+        --cinemata-sunset-horizon-400p: #ed7c30;
+        --cinemata-sunset-horizon-500: #c2692f;
+        --cinemata-sunset-horizon-600: #a15728;
+        --cinemata-coral-reef-400p: #4ec8a6;
+        --cinemata-neutral-50: #f9fafb;
+        --cinemata-neutral-200: #e5e7eb;
+
+        /* Modern semantic roles, mirroring docs/modern-track-color-system.md. */
+        --bg-page: var(--cinemata-pacific-deep-50);
+        --bg-surface: var(--cinemata-neutral-50);
+        --bg-surface-raised: var(--cinemata-white);
+        --bg-surface-muted: var(--cinemata-neutral-200);
+        --bg-primary: var(--cinemata-strait-blue-600p);
+        --bg-secondary: var(--cinemata-sunset-horizon-400p);
+        --bg-accent: var(--cinemata-coral-reef-400p);
+        --text-strong: var(--cinemata-pacific-deep-900);
+        --text-muted: var(--cinemata-pacific-deep-400);
+        --text-link: var(--cinemata-sunset-horizon-400p);
+        --text-link-hover: var(--cinemata-sunset-horizon-600);
+        --text-on-primary: var(--cinemata-white);
+        --border-subtle: var(--cinemata-neutral-200);
+
+        /* Original 503 color roles mapped onto the modern scheme. */
+        --color-bg: var(--bg-page);
+        --color-fg: var(--text-strong);
+        --color-muted: var(--text-muted);
+        --color-primary: var(--text-link);
+        --color-primary-hover: var(--text-link-hover);
+        --color-secondary: var(--cinemata-pacific-deep-700);
+        --color-panel-bg: var(--bg-surface-raised);
+        --color-main-bg: var(--bg-page);
+        --color-separator: var(--border-subtle);
+        --color-spinner-outer: var(--bg-primary);
+        --color-spinner-inner: var(--bg-primary);
+        --color-status-dot-ring: var(--bg-surface-muted);
+        --color-progress-bg: var(--bg-surface-muted);
+        --color-progress-bar: var(--bg-primary);
+        --color-button-bg: var(--bg-secondary);
+        --color-button-text: var(--text-on-primary);
+        --color-toggle-border: var(--border-subtle);
+        --color-footer-border: var(--border-subtle);
+        --radius-ds-6: 6px;
+        --radius-ds-8: 8px;
+        --radius: var(--radius-ds-6);
+        --radius-panel: var(--radius-ds-8);
       }
 
-      /* Dark mode */
       [data-theme="dark"] {
-        --color-bg: var(--cinemata-neutral-900, #111827);
-        --color-fg: var(--cinemata-neutral-50, #f9fafb);
-        --color-muted: var(--cinemata-pacific-deep-300, #7b98b6);
-        --color-primary: var(--cinemata-sunset-horizon-300, #ed7c30);
-        --color-secondary: var(--cinemata-pacific-deep-300, #7b98b6);
+        --bg-page: var(--cinemata-pacific-deep-950);
+        --bg-surface: var(--cinemata-pacific-deep-900);
+        --bg-surface-raised: var(--cinemata-pacific-deep-800);
+        --bg-surface-muted: var(--cinemata-pacific-deep-800);
+        --bg-primary: var(--cinemata-strait-blue-500);
+        --bg-secondary: var(--cinemata-sunset-horizon-500);
+        --text-strong: var(--cinemata-strait-blue-50);
+        --text-muted: var(--cinemata-pacific-deep-300);
+        --text-link: var(--cinemata-sunset-horizon-200);
+        --text-link-hover: var(--cinemata-sunset-horizon-100);
+        --border-subtle: var(--cinemata-pacific-deep-800);
+
+        --color-secondary: var(--cinemata-pacific-deep-300);
+        --color-panel-bg: var(--bg-surface);
+        --color-main-bg: var(--bg-page);
+        --color-spinner-outer: var(--bg-secondary);
+        --color-spinner-inner: var(--bg-secondary);
+        --color-status-dot-ring: color-mix(in srgb, var(--bg-accent) 24%, transparent);
       }
 
       /* Fonts - Cinemata uses Inter and Barlow Semi Condensed */
@@ -66,6 +133,7 @@
         text-decoration: none;
       }
       a:hover {
+        color: var(--color-primary-hover);
         text-decoration: underline;
       }
 
@@ -81,11 +149,11 @@
         align-items: center;
         justify-content: center;
         padding: 32px 20px;
-        background: var(--site-featured-bg-color);
+        background: var(--color-main-bg);
       }
 
       [data-theme="dark"] main {
-        background: var(--cinemata-strait-blue-900);
+        background: var(--color-main-bg);
       }
 
       /* Logo styles - minimal addition */
@@ -96,6 +164,11 @@
       .logo {
         max-width: 150px;
         height: auto;
+        filter: brightness(0) saturate(100%) invert(10%) sepia(80%) saturate(1500%) hue-rotate(176deg) brightness(92%) contrast(104%);
+      }
+
+      [data-theme="dark"] .logo {
+        filter: none;
       }
 
       /* Spinner container for centering */
@@ -109,14 +182,14 @@
         width: 100%;
         max-width: 720px;
         border: none;
-        border-radius: var(--radius);
-        background: var(--cinemata-neutral-50);
+        border-radius: var(--radius-panel);
+        background: var(--color-panel-bg);
         backdrop-filter: blur(10px);
         padding: 24px;
       }
 
       [data-theme="dark"] .panel {
-        background: var(--cinemata-pacific-deep-300);
+        background: var(--color-panel-bg);
       }
 
       .panel-header {
@@ -137,7 +210,7 @@
         top: 0;
         width: 51px;
         height: 51px;
-        border: 5px solid var(--cinemata-sunset-horizon-300);
+        border: 5px solid var(--color-spinner-outer);
         border-radius: 50%;
         border-top-color: transparent;
         border-right-color: transparent;
@@ -150,7 +223,7 @@
         top: 4px;
         width: 42px;
         height: 42px;
-        border: 5px solid #ed7c31;
+        border: 5px solid var(--color-spinner-inner);
         border-radius: 50%;
         opacity: 0.3;
         border-bottom-color: transparent;
@@ -159,13 +232,13 @@
       }
 
       [data-theme="dark"] .spinner-outer {
-        border-color: #ed7c31;
+        border-color: var(--color-spinner-outer);
         border-top-color: transparent;
         border-right-color: transparent;
       }
 
       [data-theme="dark"] .spinner-inner {
-        border-color: #ed7c31;
+        border-color: var(--color-spinner-inner);
         border-bottom-color: transparent;
         border-left-color: transparent;
         opacity: 0.4;
@@ -205,12 +278,12 @@
         width: 8px;
         height: 8px;
         border-radius: 999px;
-        background: var(--color-primary);
-        box-shadow: 0 0 0 4px var(--cinemata-neutral-200);
+        background: var(--bg-accent);
+        box-shadow: 0 0 0 4px var(--color-status-dot-ring);
       }
 
       [data-theme="dark"] .status-dot {
-        box-shadow: 0 0 0 4px rgba(237, 124, 48, 0.25);
+        box-shadow: 0 0 0 4px var(--color-status-dot-ring);
       }
 
       .block {
@@ -220,11 +293,11 @@
       }
 
       .block-separator {
-        border-top: 1px solid var(--cinemata-neutral-200);
+        border-top: 1px solid var(--color-separator);
       }
 
       [data-theme="dark"] .block-separator {
-        border-top-color: var(--cinemata-neutral-200);
+        border-top-color: var(--color-separator);
       }
 
       .countdown {
@@ -255,13 +328,13 @@
         width: 100%;
         height: 23px; /* Increased height to match design */
         border-radius: 6px; /* Subtle rounded corners */
-        background: var(--cinemata-neutral-200); /* Light teal background */
+        background: var(--color-progress-bg);
         overflow: hidden;
         margin-top: 16px;
       }
 
       [data-theme="dark"] .progress {
-        background: rgba(123, 187, 191, 0.15); /* Slightly transparent for dark mode */
+        background: var(--color-progress-bg);
       }
 
       .progress-bar {
@@ -270,13 +343,13 @@
         top: 0;
         bottom: 0;
         width: 0%;
-        background: var(--cinemata-pacific-deep-800); /* Dark blue for light mode */
+        background: var(--color-progress-bar);
         border-radius: 6px; /* Match parent border radius */
         transition: width 0.3s ease;
       }
 
       [data-theme="dark"] .progress-bar {
-        background: var(--cinemata-pacific-deep-300); /* Teal color for dark mode */
+        background: var(--color-progress-bar);
       }
 
       .actions {
@@ -289,8 +362,8 @@
       .btn {
         appearance: none;
         border: none;
-        background: var(--cinemata-pacific-deep-600p); /* Light mode primary button color */
-        color: var(--cinemata-neutral-50);
+        background: var(--color-button-bg);
+        color: var(--color-button-text);
         border-radius: 8px;
         padding: 12px 24px;
         font-weight: 600;
@@ -301,7 +374,7 @@
       }
 
       [data-theme="dark"] .btn {
-        background: var(--cinemata-sunset-horizon-300); /* Dark mode primary button color */
+        background: var(--color-button-bg);
       }
 
       .btn:hover {
@@ -335,11 +408,11 @@
         text-align: center;
         color: var(--color-muted);
         font-size: 0.9rem;
-        border-top: 1px solid rgba(100, 116, 139, 0.1);
+        border-top: 1px solid var(--color-footer-border);
       }
 
       [data-theme="dark"] footer {
-        border-top-color: rgba(148, 163, 184, 0.15);
+        border-top-color: var(--color-footer-border);
       }
 
       /* Dark mode toggle button */
@@ -349,7 +422,7 @@
         right: 20px;
         z-index: 1000;
         appearance: none;
-        border: 1px solid var(--cinemata-neutral-200);
+        border: 1px solid var(--color-toggle-border);
         background: var(--color-bg);
         color: var(--color-fg);
         border-radius: 50%;
@@ -359,22 +432,22 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 8px var(--cinemata-neutral-200);
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--text-strong) 12%, transparent);
         transition: all 0.3s ease;
       }
 
       [data-theme="dark"] .theme-toggle {
-        border-color: rgba(148, 163, 184, 0.3);
-        box-shadow: 0 2px 8px var(--cinemata-neutral-400);
+        border-color: var(--color-toggle-border);
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--cinemata-black) 30%, transparent);
       }
 
       .theme-toggle:hover {
         transform: scale(1.1);
-        box-shadow: 0 4px 12px var(--cinemata-neutral-300);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--text-strong) 16%, transparent);
       }
 
       [data-theme="dark"] .theme-toggle:hover {
-        box-shadow: 0 4px 12px var(--cinemata-neutral-400);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--cinemata-black) 38%, transparent);
       }
 
       .theme-toggle:focus-visible {
@@ -654,7 +727,7 @@
         // Normal countdown mode
         const timeEl = document.getElementById('time-remaining');
         const REMAINING_SECONDS = parseInt(timeEl?.dataset.secondsRemaining || '0');
-        const TOTAL_SECONDS = {{ MAINTENANCE_MODE_TOTAL|default:MAINTENANCE_MODE_RETRY_AFTER|default:900 }};
+        const TOTAL_SECONDS = parseInt('{{ MAINTENANCE_MODE_TOTAL|default:MAINTENANCE_MODE_RETRY_AFTER|default:900 }}', 10) || 900;
 
         const progressBar = document.getElementById('progress-bar');
         const remainingMs = REMAINING_SECONDS * 1000; // Convert to milliseconds
