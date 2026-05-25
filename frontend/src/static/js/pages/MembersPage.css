@@ -1,4 +1,13 @@
 /* Members Page Grid Layout */
+.members-grid-container {
+	--member-role-trusted-bg: var(--cinemata-amber-700);
+	--member-role-trusted-text: var(--cinemata-white);
+	--member-role-editor-bg: var(--cinemata-red-800);
+	--member-role-editor-text: var(--cinemata-white);
+	--member-role-moderator-bg: var(--cinemata-coral-reef-700);
+	--member-role-moderator-text: var(--cinemata-white);
+}
+
 .members-grid-container .items-list-outer {
 	width: 100% !important;
 }
@@ -29,6 +38,55 @@
 	width: 100% !important;
 	box-sizing: border-box !important;
 	display: block !important;
+	border: 0 !important;
+	box-shadow: none !important;
+}
+
+.members-grid-container .member-card.same-country,
+.members-grid-container .member-card .stats {
+	border: 0 !important;
+}
+
+.members-grid-container .member-card .member-info h3 a {
+	color: var(--text-link, var(--cinemata-sunset-horizon-400p)) !important;
+}
+
+.members-grid-container .member-card .member-info h3 a:hover,
+.members-grid-container .member-card .member-info h3 a:focus,
+.members-grid-container .member-card .member-info h3 a:active {
+	color: var(--text-link-hover, var(--cinemata-sunset-horizon-600)) !important;
+}
+
+.members-grid-container .member-card .badge.role-badge {
+	background: var(--member-role-badge-bg, var(--cinemata-amber-700)) !important;
+	color: var(--member-role-badge-text, var(--text-on-primary, var(--cinemata-white))) !important;
+}
+
+.members-grid-container .member-card .badge.role-badge.trusted {
+	--member-role-badge-bg: var(--member-role-trusted-bg, var(--cinemata-amber-700));
+	--member-role-badge-text: var(--member-role-trusted-text, var(--cinemata-white));
+}
+
+.members-grid-container .member-card .badge.role-badge.editor {
+	--member-role-badge-bg: var(--member-role-editor-bg, var(--cinemata-red-800));
+	--member-role-badge-text: var(--member-role-editor-text, var(--cinemata-white));
+}
+
+.members-grid-container .member-card .badge.role-badge.moderator {
+	--member-role-badge-bg: var(--member-role-moderator-bg, var(--cinemata-coral-reef-700));
+	--member-role-badge-text: var(--member-role-moderator-text, var(--cinemata-white));
+}
+
+.members-grid-container .member-card .view-profile {
+	background: var(--bg-secondary, var(--cinemata-sunset-horizon-400p)) !important;
+	color: var(--text-on-primary, var(--cinemata-white)) !important;
+}
+
+.members-grid-container .member-card .view-profile:hover,
+.members-grid-container .member-card .view-profile:focus,
+.members-grid-container .member-card .view-profile:active {
+	background: var(--bg-secondary-hover, var(--cinemata-sunset-horizon-500)) !important;
+	color: var(--text-on-primary, var(--cinemata-white)) !important;
 }
 
 /* Mobile responsive */

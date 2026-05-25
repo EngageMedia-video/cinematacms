@@ -156,24 +156,24 @@ export function LazyLoadItemListSplit(props) {
 						.error-state {
 							text-align: center;
 							padding: 4rem 2rem;
-							color: var(--body-text-color);
+							color: var(--text-primary, var(--cinemata-pacific-deep-700));
 						}
 
 						.error-icon {
 							margin-bottom: 1.5rem;
-							color: var(--cinemata-red-500);
+							color: var(--text-danger, var(--cinemata-red-500));
 							opacity: 0.8;
 						}
 
 						.error-state h3 {
 							font-size: 1.5rem;
-							color: var(--body-text-color);
+							color: var(--text-strong, var(--cinemata-pacific-deep-900));
 							margin-bottom: 0.5rem;
 						}
 
 						.error-state p {
 							font-size: 1rem;
-							color: var(--body-text-color);
+							color: var(--text-muted, var(--cinemata-pacific-deep-400));
 							opacity: 0.8;
 							margin-bottom: 1.5rem;
 						}
@@ -181,8 +181,8 @@ export function LazyLoadItemListSplit(props) {
 						.retry-button {
 							padding: 0.75rem 1.5rem;
 							font-size: 1rem;
-							color: var(--btn-color);
-							background-color: var(--btn-primary-bg-color);
+							color: var(--text-on-primary, var(--cinemata-white));
+							background-color: var(--bg-primary, var(--cinemata-strait-blue-600p));
 							border: none;
 							border-radius: 4px;
 							cursor: pointer;
@@ -190,7 +190,7 @@ export function LazyLoadItemListSplit(props) {
 						}
 
 						.retry-button:hover {
-							background-color: var(--btn-primary-bg-hover-color);
+							background-color: var(--bg-primary-hover, var(--cinemata-strait-blue-800));
 						}
 
 						.retry-button:active {
@@ -235,7 +235,7 @@ export function LazyLoadItemListSplit(props) {
 						.empty-state {
 							text-align: center;
 							padding: 4rem 2rem;
-							color: var(--body-text-color);
+							color: var(--text-primary, var(--cinemata-pacific-deep-700));
 							opacity: 0.7;
 						}
 
@@ -246,13 +246,13 @@ export function LazyLoadItemListSplit(props) {
 
 						.empty-state h3 {
 							font-size: 1.5rem;
-							color: var(--body-text-color);
+							color: var(--text-strong, var(--cinemata-pacific-deep-900));
 							margin-bottom: 0.5rem;
 						}
 
 						.empty-state p {
 							font-size: 1rem;
-							color: var(--body-text-color);
+							color: var(--text-muted, var(--cinemata-pacific-deep-400));
 							opacity: 0.8;
 						}
 					`}</style>
@@ -274,7 +274,7 @@ export function LazyLoadItemListSplit(props) {
 					{sameCountryItems.length > 0 && hasUserCountry && (
 						<div className="members-section">
 							<div className="section-header">
-								<h2>Members from Your Country</h2>
+								<h6>Members from Your Country</h6>
 								<p>Connect with filmmakers near you</p>
 							</div>
 							<div className={classname.list}>
@@ -289,7 +289,7 @@ export function LazyLoadItemListSplit(props) {
 					{otherCountryItems.length > 0 && (
 						<div className="members-section">
 							<div className="section-header">
-								<h2>{hasUserCountry ? 'Other Active Members' : 'Active Members'}</h2>
+								<h6>{hasUserCountry ? 'Other Active Members' : 'Active Members'}</h6>
 								<p>
 									{hasUserCountry
 										? 'Discover filmmakers from around the region'
@@ -320,22 +320,22 @@ export function LazyLoadItemListSplit(props) {
 					margin: 2rem 0 1.5rem;
 				}
 
-				.section-header h2 {
-					font-size: 1.5rem;
-					color: var(--body-text-color);
-					margin-bottom: 0.25rem;
+				.section-header h6 {
+					font-size: 1.25rem;
+					color: var(--text-strong, var(--cinemata-pacific-deep-900));
+					margin: 0 0 0.25rem;
 					font-weight: 600;
 				}
 
 				.section-header p {
-					color: var(--body-text-color);
+					color: var(--text-muted, var(--cinemata-pacific-deep-400));
 					opacity: 0.7;
 					font-size: 0.95rem;
 				}
 
 				@media (max-width: 768px) {
-					.section-header h2 {
-						font-size: 1.25rem;
+					.section-header h6 {
+						font-size: 1.125rem;
 					}
 
 					.section-header p {

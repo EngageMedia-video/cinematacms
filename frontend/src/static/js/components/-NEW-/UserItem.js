@@ -108,23 +108,23 @@ export function UserItem(props) {
 		if (!isTrusted && !isSameCountry && !isEditor && !isManager) return null;
 
 		// Track badge index for dynamic positioning
-		let orangeBadgeIndex = 0;
+		let roleBadgeIndex = 0;
 
 		return (
 			<React.Fragment>
 				{isSameCountry && <div className="badge local">Local</div>}
 				{isTrusted && (
-					<div className="badge orange-badge" style={{ top: `${1 + orangeBadgeIndex++ * 1.7}rem` }}>
+					<div className="badge role-badge trusted" style={{ top: `${1 + roleBadgeIndex++ * 1.7}rem` }}>
 						Trusted
 					</div>
 				)}
 				{isEditor && (
-					<div className="badge orange-badge" style={{ top: `${1 + orangeBadgeIndex++ * 1.7}rem` }}>
+					<div className="badge role-badge editor" style={{ top: `${1 + roleBadgeIndex++ * 1.7}rem` }}>
 						Editor
 					</div>
 				)}
 				{isManager && (
-					<div className="badge orange-badge" style={{ top: `${1 + orangeBadgeIndex++ * 1.7}rem` }}>
+					<div className="badge role-badge moderator" style={{ top: `${1 + roleBadgeIndex++ * 1.7}rem` }}>
 						Moderator
 					</div>
 				)}
@@ -159,43 +159,37 @@ export function UserItem(props) {
 
 			<style jsx>{`
 				.member-card {
-					background: var(--popup-bg-color, white);
+					background: var(--bg-surface-raised, var(--cinemata-white));
 					border-radius: 12px;
 					padding: 1.5rem;
-					box-shadow: 0 1px 3px var(--cinemata-neutral-200);
 					transition: all 0.2s;
 					position: relative;
 					text-align: center;
-					border: 1px solid var(--input-border-color, var(--cinemata-neutral-200));
 				}
 
 				.member-card:hover {
 					transform: translateY(-2px);
-					box-shadow: 0 8px 16px var(--cinemata-neutral-300);
-				}
-
-				.member-card.same-country {
-					border: 2px solid var(--cinemata-coral-reef-400p);
 				}
 
 				.badge {
 					position: absolute;
-					color: white;
+					color: var(--text-on-primary, var(--cinemata-white));
 					padding: 0.25rem 0.75rem;
-					border-radius: 12px;
-					font-size: 0.75rem;
+					border-radius: var(--radius-ds-2, var(--radius-2, 2px));
+					font-size: var(--size-10, 0.625rem);
 					font-weight: 600;
 					top: 1rem;
 				}
 
 				.badge.local {
 					right: 1rem;
-					background: var(--cinemata-coral-reef-400p);
+					background: var(--bg-success, var(--cinemata-green-500));
 				}
 
-				.badge.orange-badge {
+				.badge.role-badge {
 					left: 1rem;
-					background: var(--cinemata-amber-500);
+					background: var(--member-role-badge-bg, var(--cinemata-amber-700));
+					color: var(--member-role-badge-text, var(--text-on-primary, var(--cinemata-white)));
 				}
 
 				.avatar {
@@ -228,21 +222,21 @@ export function UserItem(props) {
 
 				.member-info :global(h3) {
 					font-size: 1.125rem;
-					color: var(--body-text-color, var(--cinemata-neutral-800));
+					color: var(--text-primary, var(--cinemata-pacific-deep-700));
 					margin-bottom: 0.25rem;
 				}
 
 				.member-info :global(h3 a) {
-					color: inherit;
+					color: var(--text-link, var(--cinemata-sunset-horizon-400p));
 					text-decoration: none;
 				}
 
 				.member-info :global(h3 a:hover) {
-					color: var(--default-theme-color, var(--cinemata-strait-blue-400));
+					color: var(--text-link-hover, var(--cinemata-sunset-horizon-600));
 				}
 
 				.username {
-					color: var(--body-text-color, var(--cinemata-pacific-deep-400));
+					color: var(--text-muted, var(--cinemata-pacific-deep-400));
 					opacity: 0.7;
 					font-size: 0.875rem;
 					margin-bottom: 0.75rem;
@@ -253,7 +247,7 @@ export function UserItem(props) {
 					align-items: center;
 					justify-content: center;
 					gap: 0.5rem;
-					color: var(--body-text-color, var(--cinemata-strait-blue-700));
+					color: var(--text-muted, var(--cinemata-pacific-deep-400));
 					opacity: 0.8;
 					font-size: 0.875rem;
 					margin-bottom: 1rem;
@@ -269,15 +263,13 @@ export function UserItem(props) {
 					gap: 1rem;
 					margin-bottom: 1rem;
 					padding: 0.75rem 0;
-					border-top: 1px solid var(--input-border-color, var(--cinemata-pacific-deep-50));
-					border-bottom: 1px solid var(--input-border-color, #f1f5f9);
 				}
 
 				.stat {
 					display: flex;
 					align-items: center;
 					gap: 0.5rem;
-					color: var(--body-text-color, var(--cinemata-pacific-deep-400));
+					color: var(--text-muted, var(--cinemata-pacific-deep-400));
 					opacity: 0.8;
 					font-size: 0.875rem;
 				}
@@ -294,8 +286,8 @@ export function UserItem(props) {
 				.view-profile {
 					width: 100%;
 					padding: 0.75rem;
-					background: var(--default-theme-color, var(--cinemata-strait-blue-400));
-					color: white !important;
+					background: var(--bg-secondary, var(--cinemata-sunset-horizon-400p));
+					color: var(--text-on-primary, var(--cinemata-white)) !important;
 					border: none;
 					border-radius: 8px;
 					font-weight: 500;
@@ -307,8 +299,8 @@ export function UserItem(props) {
 				}
 
 				.view-profile:hover {
-					opacity: 0.9;
-					color: white !important;
+					background: var(--bg-secondary-hover, var(--cinemata-sunset-horizon-500));
+					color: var(--text-on-primary, var(--cinemata-white)) !important;
 				}
 
 				@media (max-width: 768px) {
@@ -317,7 +309,7 @@ export function UserItem(props) {
 					}
 
 					.badge {
-						font-size: 0.65rem;
+						font-size: var(--size-10, 0.625rem);
 						padding: 0.2rem 0.6rem;
 					}
 
@@ -326,7 +318,7 @@ export function UserItem(props) {
 						right: 0.5rem;
 					}
 
-					.badge.trusted {
+					.badge.role-badge {
 						top: 0.5rem;
 						left: 0.5rem;
 					}
