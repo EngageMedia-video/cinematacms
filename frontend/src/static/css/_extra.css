@@ -1052,8 +1052,7 @@ body .media-list-wrapper {
 }
 
 body .profile-page-header a.edit-channel,
-body .profile-page-header a.edit-profile,
-body .profile-page-header .delete-profile-wrap > button {
+body .profile-page-header a.edit-profile {
 	color: var(--text-on-primary);
 	border-radius: var(--radius-4);
 	background-color: var(--bg-primary);
@@ -1062,11 +1061,21 @@ body .profile-page-header .delete-profile-wrap > button {
 body .profile-page-header a.edit-channel:hover,
 body .profile-page-header a.edit-channel:focus,
 body .profile-page-header a.edit-profile:hover,
-body .profile-page-header a.edit-profile:focus,
+body .profile-page-header a.edit-profile:focus {
+	color: var(--text-on-primary);
+	background-color: var(--bg-primary-hover);
+}
+
+body .profile-page-header .delete-profile-wrap > button {
+	color: var(--text-on-primary);
+	border-radius: var(--radius-4);
+	background-color: var(--cinemata-red-700p);
+}
+
 body .profile-page-header .delete-profile-wrap > button:hover,
 body .profile-page-header .delete-profile-wrap > button:focus {
 	color: var(--text-on-primary);
-	background-color: var(--bg-primary-hover);
+	background-color: var(--cinemata-red-800);
 }
 
 @media (min-width: 600px) and (max-width: 802px) {

@@ -460,32 +460,72 @@ dialog {
 
 .profile-page-header {
 	a.edit-channel,
-	a.edit-profile,
-	button.delete-profile {
-		background-color: var(--bg-secondary);
+	a.edit-profile {
+		background-color: var(--bg-primary);
 
 		&:hover,
 		&:focus {
-			background-color: var(--bg-secondary-hover);
+			background-color: var(--bg-primary-hover);
+		}
+	}
+
+	button.delete-profile {
+		background-color: var(--cinemata-red-700p);
+
+		&:hover,
+		&:focus {
+			background-color: var(--cinemata-red-800);
 		}
 	}
 }
 
 .profile-banner-wrap {
+	.popup {
+		background-color: var(--bg-surface-raised);
+
+		hr {
+			background-color: var(--border-subtle);
+		}
+	}
+
+	.popup-message-title {
+		color: var(--text-strong);
+	}
+
+	.popup-message-main {
+		color: var(--text-muted);
+	}
+
 	.popup-message-bottom {
 		> a,
 		> button {
-			background-color: var(--bg-secondary);
+			color: var(--text-strong);
+			border-radius: var(--radius-4);
+			background-color: transparent;
 
 			&:hover,
 			&:focus {
-				background-color: var(--bg-secondary-hover);
+				color: var(--text-strong);
+				background-color: var(--bg-surface-muted);
 			}
 		}
 
 		button {
 			&.proceed-profile-removal {
-				color: var(--text-link);
+				color: var(--cinemata-red-700p);
+
+				.dark_theme & {
+					color: var(--cinemata-red-400);
+				}
+
+				&:hover,
+				&:focus {
+					color: var(--cinemata-red-800);
+
+					.dark_theme & {
+						color: var(--cinemata-red-300);
+					}
+				}
 			}
 		}
 	}

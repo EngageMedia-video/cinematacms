@@ -167,6 +167,20 @@
 			top: 100%;
 			left: 0;
 			margin-top: 8px;
+			border-radius: var(--radius-4);
+			background-color: var(--bg-surface-raised);
+
+			hr {
+				background-color: var(--border-subtle);
+			}
+		}
+
+		.popup-message-title {
+			color: var(--text-strong);
+		}
+
+		.popup-message-main {
+			color: var(--text-muted);
 		}
 
 		.popup-message-bottom {
@@ -195,18 +209,40 @@
 			button {
 				position: relative;
 				width: auto;
-				padding: 0;
+				padding: 6px 8px;
 				border: 0;
-				background: none;
+				border-radius: var(--radius-4);
+				background: transparent;
 				font-size: 14px;
 
 				&.proceed-profile-removal {
 					float: right;
+					color: var(--cinemata-red-700p);
+
+					.dark_theme & {
+						color: var(--cinemata-red-400);
+					}
+
+					&:hover,
+					&:focus {
+						color: var(--cinemata-red-800);
+						background-color: var(--bg-surface-muted);
+
+						.dark_theme & {
+							color: var(--cinemata-red-300);
+						}
+					}
 				}
 
 				&.cancel-profile-removal {
 					float: left;
-					color: var(--body-text-color);
+					color: var(--text-strong);
+				}
+
+				&.cancel-profile-removal:hover,
+				&.cancel-profile-removal:focus {
+					color: var(--text-strong);
+					background-color: var(--bg-surface-muted);
 				}
 			}
 		}
@@ -302,6 +338,15 @@
 
 	a.edit-channel,
 	a.edit-profile {
+	}
+
+	.delete-profile-wrap > button {
+		background-color: var(--cinemata-red-700p);
+
+		&:hover,
+		&:focus {
+			background-color: var(--cinemata-red-800);
+		}
 	}
 
 	a.edit-channel {
