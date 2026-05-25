@@ -121,7 +121,7 @@ flake8==7.3.0
     # via cinemata
 gprof2dot==2025.4.14
     # via django-silk
-idna==3.13
+idna==3.15
     # via requests
 ipython==8.39.0
     # via cinemata
