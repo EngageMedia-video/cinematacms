@@ -1,3 +1,31 @@
+.media-save-popup {
+	width: 0;
+	height: 0;
+	overflow: visible;
+	box-shadow: none;
+	background-color: transparent;
+
+	.popup-fullscreen {
+		.popup-main {
+			overflow: visible;
+
+			> div.saveto-popup {
+				position: relative;
+				width: 100%;
+				display: inline-block;
+				margin: 0 auto;
+				text-align: initial;
+				background-color: var(--media-actions-share-fullscreen-popup-main-bg-color);
+				box-shadow:
+					rgba(#000, 0.14) 0px 16px 24px 2px,
+					rgba(#000, 0.12) 0px 6px 30px 5px,
+					rgba(#000, 0.4) 0px 8px 10px;
+			}
+		}
+	}
+}
+
+.media-save-popup .popup-fullscreen .popup-main > div.saveto-popup,
 .media-title-banner .media-actions > * > *.save .popup-fullscreen .popup-main > div.saveto-popup {
 	color: var(--playlist-save-popup-text-color);
 
@@ -35,11 +63,13 @@
 	}
 }
 
+.media-save-popup .popup-fullscreen,
 .media-title-banner .media-actions > * > *.save .popup-fullscreen {
 	padding-top: 64px;
 	padding-bottom: 8px;
 }
 
+.media-save-popup .popup-fullscreen .popup-main > div.saveto-popup,
 .media-title-banner .media-actions > * > *.save .popup-fullscreen .popup-main > div.saveto-popup {
 	max-width: 580px;
 	padding: 0;

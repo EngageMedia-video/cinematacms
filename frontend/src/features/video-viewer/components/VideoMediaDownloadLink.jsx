@@ -1,4 +1,5 @@
-import React, { useState, useContext } from 'react';
+import React, { Fragment, useContext, useState } from 'react';
+import PropTypes from 'prop-types';
 
 import { usePopup } from '../../../static/js/components/-NEW-/hooks/usePopup';
 
@@ -6,15 +7,15 @@ import SiteContext from '../../../static/js/contexts/SiteContext';
 
 import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 
-import { CircleIconButton } from '../../../static/js/components/-NEW-/CircleIconButton';
-import { MaterialIcon } from '../../../static/js/components/-NEW-/MaterialIcon';
-
 import { PopupMain } from '../../../static/js/components/-NEW-/Popup';
 
 import { NavigationMenuList } from '../../../static/js/components/-NEW-/NavigationMenuList';
 import { NavigationContentApp } from '../../../static/js/components/-NEW-/NavigationContentApp';
 
 import { formatInnerLink } from '../../../static/js/functions/formatInnerLink';
+import { Button } from '../../shared/components/Button/Button.jsx';
+import { Icon } from '../../shared/components/Icon/Icon.jsx';
+import { Text } from '../../shared/components/Text/Text.jsx';
 
 function downloadOptionsList(siteUrl) {
 	const media_data = MediaPageStore.get('media-data');
@@ -80,25 +81,71 @@ function downloadOptionsPages(siteUrl) {
 	};
 }
 
-export function VideoMediaDownloadLink() {
+export function VideoMediaDownloadLink({
+	contentRef: externalContentRef,
+	popupClassName,
+	popupHideCallback,
+	popupShowCallback,
+	popupStyle,
+	triggerRef,
+}) {
 	const site = useContext(SiteContext);
-	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
+	const [internalContentRef, PopupContent, PopupTrigger] = usePopup();
+	const popupContentRef = externalContentRef || internalContentRef;
 
 	const [downloadOptionsCurrentPage] = useState('main');
 
 	return (
-		<div className="video-downloads hidden-only-in-small">
-			<PopupTrigger contentRef={popupContentRef}>
-				<button>
-					<CircleIconButton type="span">
-						<MaterialIcon type="arrow_downward" />
-					</CircleIconButton>
-					<span>DOWNLOAD</span>
-				</button>
-			</PopupTrigger>
+		<Fragment>
+			<div ref={triggerRef} className="video-downloads" style={{ position: 'relative' }}>
+				<div className="sm:hidden">
+					<PopupTrigger contentRef={popupContentRef}>
+						<Button
+							aria-label="Download"
+							variant="secondary"
+							icon={<Icon name="downloadMedia" className="text-cinemata-strait-blue-100" />}
+							className="body-body-14-medium whitespace-nowrap p-size-8"
+							size="sm"
+						/>
+					</PopupTrigger>
+				</div>
+				<div className="hidden sm:block">
+					<PopupTrigger contentRef={popupContentRef}>
+						<Button
+							aria-label="Download"
+							variant="secondary"
+							icon={<Icon name="downloadMedia" className="text-cinemata-strait-blue-100" />}
+							className="body-body-14-medium whitespace-nowrap"
+							size="sm"
+						>
+							<Text
+								as="span"
+								variant="body-14-medium"
+								className="text-neutral-50 dark:text-cinemata-strait-blue-100 whitespace-nowrap"
+							>
+								Download
+							</Text>
+							<Icon name="caretDown" className="ml-2 w-4 h-4" />
+						</Button>
+					</PopupTrigger>
+				</div>
+			</div>
 
-			<div className={'nav-page-' + downloadOptionsCurrentPage}>
-				<PopupContent contentRef={popupContentRef}>
+			<PopupContent
+				contentRef={popupContentRef}
+				className={popupClassName}
+				hideCallback={popupHideCallback}
+				showCallback={popupShowCallback}
+				style={
+					popupStyle || {
+						position: 'absolute',
+						top: 'calc(100% + 8px)',
+						right: 0,
+						zIndex: 4,
+					}
+				}
+			>
+				<div className={'nav-page-' + downloadOptionsCurrentPage}>
 					<NavigationContentApp
 						pageChangeCallback={null}
 						initPage="main"
@@ -107,8 +154,30 @@ export function VideoMediaDownloadLink() {
 						pageChangeSelector={'.change-page'}
 						pageIdSelectorAttr={'data-page-id'}
 					/>
-				</PopupContent>
-			</div>
-		</div>
+				</div>
+			</PopupContent>
+		</Fragment>
 	);
 }
+
+VideoMediaDownloadLink.propTypes = {
+	contentRef: PropTypes.shape({ current: PropTypes.object }),
+	popupClassName: PropTypes.string,
+	popupHideCallback: PropTypes.func,
+	popupShowCallback: PropTypes.func,
+	popupStyle: PropTypes.object,
+	renderPopup: PropTypes.bool,
+	renderTrigger: PropTypes.bool,
+	triggerRef: PropTypes.shape({ current: PropTypes.any }),
+};
+
+VideoMediaDownloadLink.defaultProps = {
+	contentRef: null,
+	popupClassName: undefined,
+	popupHideCallback: undefined,
+	popupShowCallback: undefined,
+	popupStyle: null,
+	renderPopup: true,
+	renderTrigger: true,
+	triggerRef: null,
+};

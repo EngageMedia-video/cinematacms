@@ -768,3 +768,285 @@ header[data-topbar] input:focus-visible {
 header[data-topbar] a {
 	text-decoration: none;
 }
+
+/*
+ * Typography utilities (mirror of src/static/css/includes/typography/_text_styles.scss)
+ *
+ * Registered as Tailwind v4 @utility so responsive variants (sm:, md:, lg:, …)
+ * and state variants work. Names drop the duplicate "body-" / "heading-" /
+ * "title-" / "caption-" segment used in the legacy SCSS classes.
+ */
+
+/* Title */
+@utility title-72-regular {
+	font-size: 64px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.8px;
+	line-height: 76px;
+}
+@utility title-72-medium {
+	font-size: 64px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.8px;
+	line-height: 76px;
+}
+@utility title-72-bold {
+	font-size: 64px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.8px;
+	line-height: 76px;
+}
+@utility title-56-regular {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.6px;
+	line-height: 68px;
+}
+@utility title-56-medium {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.6px;
+	line-height: 68px;
+}
+@utility title-56-bold {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.6px;
+	line-height: 68px;
+}
+
+/* Headings */
+@utility h1-56-regular {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.5px;
+	line-height: 68px;
+}
+@utility h1-56-medium {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.5px;
+	line-height: 68px;
+}
+@utility h1-56-bold {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.5px;
+	line-height: 68px;
+}
+@utility h2-48-regular {
+	font-size: 48px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.4px;
+	line-height: 58px;
+}
+@utility h2-48-medium {
+	font-size: 48px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.4px;
+	line-height: 58px;
+}
+@utility h2-48-bold {
+	font-size: 48px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.4px;
+	line-height: 58px;
+}
+@utility h3-40-regular {
+	font-size: 40px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.3px;
+	line-height: 48px;
+}
+@utility h3-40-medium {
+	font-size: 40px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.3px;
+	line-height: 48px;
+}
+@utility h3-40-bold {
+	font-size: 40px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.3px;
+	line-height: 48px;
+}
+@utility h4-32-regular {
+	font-size: 32px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.2px;
+	line-height: 38px;
+}
+@utility h4-32-medium {
+	font-size: 32px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.2px;
+	line-height: 38px;
+}
+@utility h4-32-bold {
+	font-size: 32px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.2px;
+	line-height: 38px;
+}
+@utility h5-24-regular {
+	font-size: 24px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.15px;
+	line-height: 30px;
+}
+@utility h5-24-medium {
+	font-size: 24px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.15px;
+	line-height: 30px;
+}
+@utility h5-24-bold {
+	font-size: 24px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.15px;
+	line-height: 30px;
+}
+@utility h6-20-regular {
+	font-size: 20px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility h6-20-medium {
+	font-size: 20px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility h6-20-bold {
+	font-size: 20px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+
+/* Body */
+@utility body-18-regular {
+	font-size: 18px;
+	font-family: var(--font-inter);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 28px;
+}
+@utility body-18-medium {
+	font-size: 18px;
+	font-family: var(--font-inter);
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 28px;
+}
+@utility body-18-bold {
+	font-size: 18px;
+	font-family: var(--font-inter);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 28px;
+}
+@utility body-16-regular {
+	font-size: 16px;
+	font-family: var(--font-inter);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility body-16-medium {
+	font-size: 16px;
+	font-family: var(--font-inter);
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility body-16-bold {
+	font-size: 16px;
+	font-family: var(--font-inter);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility body-14-regular {
+	font-size: 14px;
+	font-family: var(--font-inter);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 20px;
+}
+@utility body-14-medium {
+	font-size: 14px;
+	font-family: var(--font-inter);
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility body-14-bold {
+	font-size: 14px;
+	font-family: var(--font-inter);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 20px;
+}
+@utility body-12-regular {
+	font-size: 12px;
+	font-family: var(--font-inter);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 16px;
+}
+@utility body-12-medium {
+	font-size: 12px;
+	font-family: var(--font-inter);
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 16px;
+}
+@utility body-12-bold {
+	font-size: 12px;
+	font-family: var(--font-inter);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 16px;
+}
+
+/* Captions */
+@utility caption-10-regular {
+	font-size: 10px;
+	font-family: var(--font-inter);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 10px;
+}
+@utility caption-10-semibold {
+	font-size: 10px;
+	font-family: var(--font-inter);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 10px;
+}

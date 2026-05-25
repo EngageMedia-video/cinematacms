@@ -136,15 +136,16 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 	}
 
 	mediaStateBadge(mediaState, stateTooltip) {
-		if ('public' === mediaState) {
-			return null;
-		}
+		// if ('public' === mediaState) {
+		// 	return null;
+		// }
 
 		return (
 			<div className="media-labels-area">
 				<Badge
 					color={stateBadgeColor(mediaState)}
 					className={'media-state-badge media-state-badge-' + mediaState}
+					textClassName="body-body-12-bold"
 					title={stateTooltip}
 				>
 					{String(mediaState).toUpperCase()}
@@ -177,7 +178,11 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 					? this.mediaCategories(true)
 					: null}
 
-				{void 0 !== this.props.title ? <h1>{this.props.title}</h1> : null}
+				{void 0 !== this.props.title ? (
+					<Text variant="h4-medium" className="dark:text-cinemata-strait-blue-50 m-0">
+						{this.props.title}
+					</Text>
+				) : null}
 
 				{this.mediaStateBadge(mediaState, stateTooltip)}
 

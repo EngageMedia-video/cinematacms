@@ -13,7 +13,7 @@ export function UserRoleBadge({ isManager, isTrusted }) {
 	const badge = getRoleBadge(isManager, isTrusted);
 	if (!badge) return null;
 	return (
-		<span className={`user-role-badge user-role-badge--${badge.className}`} aria-label={`Role: ${badge.label}`}>
+		<span className={`user-role-badge--${badge.className}`} aria-label={`Role: ${badge.label}`}>
 			{badge.label}
 		</span>
 	);

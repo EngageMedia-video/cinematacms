@@ -7,21 +7,17 @@ import { UserConsumer } from '../../../static/js/contexts/UserContext';
 import SiteContext from '../../../static/js/contexts/SiteContext';
 
 import PageStore from '../../../static/js/pages/_PageStore';
-
 import * as PageActions from '../../../static/js/pages/_PageActions';
-
 import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 import * as MediaPageActions from '../../../static/js/pages/MediaPage/actions.js';
 
 import { RatingSystem } from '../../../static/js/components/RatingSystem/RatingSystem';
-
 import { PopupMain } from '../../../static/js/components/-NEW-/Popup';
-
 import { UserRoleBadge } from '../../shared/components/UserRoleBadge';
-
-import { publishedOnDate } from '../../../static/js/functions/';
-
 import { formatInnerLink } from '../../../static/js/functions/formatInnerLink';
+import { TabContent, TabView } from '../../shared/components/TabView/TabView.jsx';
+import { Text } from '../../shared/components/Text/Text.jsx';
+import { Avatar } from '../../shared/components/Avatar/Avatar.jsx';
 
 function metafield(arr) {
 	let i;
@@ -52,25 +48,17 @@ function metafield(arr) {
 }
 
 function MediaAuthorBanner(props) {
-	const publishedDate = props.published ? publishedOnDate(new Date(props.published)) : null;
-
 	return (
-		<div className="media-author-banner">
-			<div>
-				<a className="author-banner-thumb" href={props.link || null} title={props.name}>
-					<span style={{ backgroundImage: 'url(' + props.thumb + ')' }}>
-						<img src={props.thumb} loading="lazy" alt={props.name} title={props.name} />
-					</span>
-				</a>
-			</div>
-			<div>
-				<span>
-					<a href={props.link} className="author-banner-name" title={props.name}>
-						<span>{props.name}</span>
-					</a>
-					<UserRoleBadge isManager={props.isManager} isTrusted={props.isTrusted} />
-				</span>
-				{publishedDate ? <span className="author-banner-date">Published on {publishedDate}</span> : null}
+		<div className="flex flex-row gap-4 items-center">
+			<a href={props.link || null} title={props.name}>
+				<Avatar src={props.thumb} name={props.name || 'User'} size="large" style={{ width: 40, height: 40 }} />
+			</a>
+			<div className="flex flex-col justify-center gap-size-6">
+				<Text as="a" variant="body-16-medium" href={props.link} title={props.name} className="no-underline">
+					<span>{props.name}</span>
+				</Text>
+
+				<UserRoleBadge isManager={props.isManager} isTrusted={props.isTrusted} />
 			</div>
 		</div>
 	);
@@ -255,26 +243,64 @@ export default function ViewerInfoContent(props) {
 	return (
 		<UserConsumer>
 			{(user) => (
-				<div className="media-info-content">
-					{(() => {
-						if (
-							void 0 === PageStore.get('config-media-item').displayAuthor ||
-							null === PageStore.get('config-media-item').displayAuthor ||
-							!!PageStore.get('config-media-item').displayAuthor
-						) {
-							return (
-								<MediaAuthorBanner
-									link={authorLink}
-									thumb={authorThumb}
-									name={props.author.name}
-									published={props.published}
-									isManager={props.author.isManager}
-									isTrusted={props.author.isTrusted}
-								/>
-							);
-						}
-						return null;
-					})()}
+				<div className="media-info-content py-8">
+					<TabView
+						tabMode="wrap"
+						listClassName="rounded-none rounded-tl-ds-8 rounded-tr-ds-8"
+						triggerClassName="rounded-none py-3 px-size-22"
+						panelClassName="mt-0 p-0 bg-bg-surface rounded-b-ds-8"
+					>
+						<TabContent title="ABOUT THE FILM & MAKER">
+							<div className="p-4">
+								{(void 0 === PageStore.get('config-media-item').displayAuthor ||
+									null === PageStore.get('config-media-item').displayAuthor ||
+									!!PageStore.get('config-media-item').displayAuthor) && (
+									<>
+										<div>
+											<MediaAuthorBanner
+												link={authorLink}
+												thumb={authorThumb}
+												name={props.author.name}
+												published={props.published}
+												isManager={props.author.isManager}
+												isTrusted={props.author.isTrusted}
+											/>
+										</div>
+
+										<div className="border-b border-b-cinemata-pacific-deep-600p mt-6" />
+									</>
+								)}
+
+								{hasSummary && (
+									<>
+										<div className="media-content-summary mt-6 flex flex-col gap-3">
+											<Text variant="h6-medium" className="m-0">
+												Log Line / Synopsis
+											</Text>
+											<Text variant="body-16" className="m-0">
+												{summary}
+											</Text>
+										</div>
+										<div className="border-b border-b-cinemata-pacific-deep-600p mt-6" />
+									</>
+								)}
+
+								{languagesContent.length && (
+									<div className="mt-6">
+										<MediaMetaField
+											value={languagesContent}
+											title={1 < languagesContent.length ? 'Languages' : 'Language'}
+										/>
+									</div>
+								)}
+
+								{MediaPageStore.get('display-media-license-info') && (
+									<MediaMetaField value={licenseValue} title={licenseTitle} />
+								)}
+							</div>
+						</TabContent>
+						<TabContent title="COMMUNITY IMPACT">Test</TabContent>
+					</TabView>
 
 					<div
 						className={
@@ -285,135 +311,82 @@ export default function ViewerInfoContent(props) {
 						}
 					>
 						<div className="media-content-banner-inner">
-							{(() => {
-								if (hasSummary) {
-									return <div className="media-content-summary">{summary}</div>;
-								}
-								return null;
-							})()}
-							{(() => {
-								if ((!hasSummary || isContentVisible) && description) {
-									return PageStore.get('config-options').pages.media.htmlInDescription ? (
-										<div
-											className="media-content-description"
-											dangerouslySetInnerHTML={{
-												__html: DOMPurify.sanitize(setTimestampAnchors(description)),
-											}}
-										></div>
-									) : (
-										<div className="media-content-description">
-											{setTimestampAnchors(description)}
-										</div>
-									);
-								}
-								return null;
-							})()}
-							{(() => {
-								if (hasSummary) {
-									return (
-										<button className="load-more" onClick={onClickLoadMore}>
-											{isContentVisible ? 'SHOW LESS' : 'SHOW MORE'}
-										</button>
-									);
-								}
-								return null;
-							})()}
+							{hasSummary && <div className="media-content-summary">{summary}</div>}
 
-							{(() => {
-								if (languagesContent.length) {
-									return (
-										<MediaMetaField
-											value={languagesContent}
-											title={1 < languagesContent.length ? 'Languages' : 'Language'}
-										/>
-									);
-								}
-								return null;
-							})()}
+							{(!hasSummary || isContentVisible) &&
+								description &&
+								(PageStore.get('config-options').pages.media.htmlInDescription ? (
+									<div
+										className="media-content-description"
+										dangerouslySetInnerHTML={{
+											__html: DOMPurify.sanitize(setTimestampAnchors(description)),
+										}}
+									></div>
+								) : (
+									<div className="media-content-description">{setTimestampAnchors(description)}</div>
+								))}
 
-							{(() => {
-								if (!!props.yearProduced) {
-									return (
-										<MediaMetaField
-											value={<span className="media-year-produced">{props.yearProduced}</span>}
-											title={'Year produced'}
-										/>
-									);
-								}
-								return null;
-							})()}
+							{hasSummary && (
+								<button className="load-more" onClick={onClickLoadMore}>
+									{isContentVisible ? 'SHOW LESS' : 'SHOW MORE'}
+								</button>
+							)}
 
-							{(() => {
-								if (topicsContent.length) {
-									return (
-										<MediaMetaField
-											value={topicsContent}
-											title={1 < topicsContent.length ? 'Topics' : 'Topic'}
-										/>
-									);
-								}
-								return null;
-							})()}
+							{!!props.yearProduced && (
+								<MediaMetaField
+									value={<span className="media-year-produced">{props.yearProduced}</span>}
+									title={'Year produced'}
+								/>
+							)}
 
-							{(() => {
-								if (categoriesContent.length) {
-									return (
-										<MediaMetaField
-											value={categoriesContent}
-											title={1 < categoriesContent.length ? 'Categories' : 'Category'}
-										/>
-									);
-								}
-								return null;
-							})()}
+							{!!topicsContent.length && (
+								<MediaMetaField
+									value={topicsContent}
+									title={1 < topicsContent.length ? 'Topics' : 'Topic'}
+								/>
+							)}
 
-							{(() => {
-								if (null !== productionCompanyContent && '' !== productionCompanyContent) {
-									return (
-										<MediaMetaField value={productionCompanyContent} title="Production company" />
-									);
-								}
-								return null;
-							})()}
+							{!!categoriesContent.length && (
+								<MediaMetaField
+									value={categoriesContent}
+									title={1 < categoriesContent.length ? 'Categories' : 'Category'}
+								/>
+							)}
 
-							{(() => {
-								if (websiteContent) {
-									return (
-										<MediaMetaField
-											value={
-												<a href={websiteContent} target="_blank" rel="noreferrer noopener">
-													{websiteContent}
-												</a>
-											}
-											title="Website"
-										/>
-									);
-								}
-								return null;
-							})()}
+							{null !== productionCompanyContent && '' !== productionCompanyContent && (
+								<MediaMetaField value={productionCompanyContent} title="Production company" />
+							)}
 
-							{MediaPageStore.get('display-media-license-info') ? (
-								<MediaMetaField value={licenseValue} title={licenseTitle} />
-							) : null}
+							{websiteContent && (
+								<MediaMetaField
+									value={
+										<a href={websiteContent} target="_blank" rel="noreferrer noopener">
+											{websiteContent}
+										</a>
+									}
+									title="Website"
+								/>
+							)}
 
-							{tagsContent.length ? (
+							{!!tagsContent.length && (
 								<MediaMetaField value={tagsContent} title={1 < tagsContent.length ? 'Tags' : 'Tag'} />
-							) : null}
+							)}
 
-							{user.can.editMedia || user.can.editSubtitle || user.can.deleteMedia ? (
+							{(user.can.editMedia || user.can.editSubtitle || user.can.deleteMedia) && (
 								<div className="media-author-actions">
-									{user.can.editMedia ? (
+									{user.can.editMedia && (
 										<EditMediaButton link={MediaPageStore.get('media-data').edit_url} />
-									) : null}
+									)}
+
 									{user.can.editSubtitle &&
-									'video' === MediaPageStore.get('media-data').media_type ? (
-										<EditSubtitleButton
-											link={MediaPageStore.get('media-data').edit_url.replace(
-												'edit?',
-												'add_subtitle?'
-											)}
-										/>
-									) : null}
+										'video' === MediaPageStore.get('media-data').media_type && (
+											<EditSubtitleButton
+												link={MediaPageStore.get('media-data').edit_url.replace(
+													'edit?',
+													'add_subtitle?'
+												)}
+											/>
+										)}
 
 									<PopupTrigger contentRef={popupContentRef}>
 										<button className="remove-media">DELETE MEDIA</button>
@@ -445,16 +418,16 @@ export default function ViewerInfoContent(props) {
 										</PopupMain>
 									</PopupContent>
 								</div>
-							) : null}
+							)}
 						</div>
 					</div>
 
-					{null !== ratings_info ? (
+					{null !== ratings_info && (
 						<section className="media-impact-section" aria-labelledby="media-impact-heading">
 							<h2 id="media-impact-heading">Film&apos;s Impact</h2>
 							<RatingSystem media_id={MediaPageStore.get('media-id')} ratings_data={ratings_info} />
 						</section>
-					) : null}
+					)}
 				</div>
 			)}
 		</UserConsumer>

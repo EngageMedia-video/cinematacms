@@ -19,6 +19,7 @@ const VARIANT_MAP = {
 	'h5-bold': ['heading-h5-24-bold', 'h5'],
 	h6: ['heading-h6-20-medium', 'h6'],
 	'h6-regular': ['heading-h6-20-regular', 'h6'],
+	'h6-medium': ['heading-h6-20-medium', 'h6'],
 	'h6-bold': ['heading-h6-20-bold', 'h6'],
 	// Body — default element is <p>
 	'body-18': ['body-body-18-regular', 'p'],

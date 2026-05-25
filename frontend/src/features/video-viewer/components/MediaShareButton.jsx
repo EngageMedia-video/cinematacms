@@ -5,12 +5,13 @@ import { usePopup } from '../../../static/js/components/-NEW-/hooks/usePopup';
 
 import { PopupMain } from '../../../static/js/components/-NEW-/Popup';
 
-import { MaterialIcon } from '../../../static/js/components/-NEW-/MaterialIcon';
-import { CircleIconButton } from '../../../static/js/components/-NEW-/CircleIconButton';
 import { MediaShareEmbed } from '../../../static/js/components/-NEW-/MediaShareEmbed';
 import { MediaShareOptions } from '../../../static/js/components/-NEW-/MediaShareOptions';
 
 import { NavigationContentApp } from '../../../static/js/components/-NEW-/NavigationContentApp';
+import { Button } from '../../shared/components/Button/Button';
+import { Icon } from '../../shared/components/Icon/Icon';
+import { Text } from '../../shared/components/Text/Text';
 
 function mediaSharePopupPages() {
 	return {
@@ -39,7 +40,7 @@ function videoSharePopupPages(onTriggerPopupClose) {
 	};
 }
 
-export function MediaShareButton(props) {
+export function MediaShareButton({ isVideo }) {
 	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
 
 	const [popupCurrentPage, setPopupCurrentPage] = useState('shareOptions');
@@ -57,21 +58,43 @@ export function MediaShareButton(props) {
 
 	return (
 		<div className="share">
-			<PopupTrigger contentRef={popupContentRef}>
-				<button>
-					<CircleIconButton type="span">
-						<MaterialIcon type="share" />
-					</CircleIconButton>
-					<span>SHARE</span>
-				</button>
-			</PopupTrigger>
+			<div className="sm:hidden">
+				<PopupTrigger contentRef={popupContentRef}>
+					<Button
+						aria-label="Share"
+						variant="secondary"
+						icon={<Icon name="shareMedia" className="text-cinemata-strait-blue-100" />}
+						className="dark:bg-cinemata-strait-blue-900 body-body-14-medium whitespace-nowrap p-size-8"
+						size="sm"
+					/>
+				</PopupTrigger>
+			</div>
+			<div className="hidden sm:block">
+				<PopupTrigger contentRef={popupContentRef}>
+					<Button
+						aria-label="Share"
+						variant="secondary"
+						icon={<Icon name="shareMedia" className="text-cinemata-strait-blue-100" />}
+						className="dark:bg-cinemata-strait-blue-900 body-body-14-medium whitespace-nowrap"
+						size="sm"
+					>
+						<Text
+							as="span"
+							variant="body-14-medium"
+							className="text-neutral-50 dark:text-cinemata-strait-blue-100 whitespace-nowrap"
+						>
+							Share
+						</Text>
+					</Button>
+				</PopupTrigger>
+			</div>
 
-			<PopupContent contentRef={popupContentRef} hideCallback={onPopupHide}>
+			<PopupContent contentRef={popupContentRef} className="media-share-popup" hideCallback={onPopupHide}>
 				<NavigationContentApp
 					initPage={popupCurrentPage}
 					pageChangeSelector={'.change-page'}
 					pageIdSelectorAttr={'data-page-id'}
-					pages={props.isVideo ? videoSharePopupPages(triggerPopupClose) : mediaSharePopupPages()}
+					pages={isVideo ? videoSharePopupPages(triggerPopupClose) : mediaSharePopupPages()}
 					focusFirstItemOnPageChange={false}
 					pageChangeCallback={onPopupPageChange}
 				/>

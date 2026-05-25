@@ -54,33 +54,40 @@ export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
 		}
 
 		return (
-			<div className="py-8 flex flex-col gap-3">
-				{displayViews && PageStore.get('config-options').pages.media.categoriesWithTitle
-					? this.mediaCategories(true)
-					: null}
+			<div className="py-8 px-4 md:px-0 flex flex-col gap-3 border-b border-cinemata-pacific-deep-600p">
+				{displayViews &&
+					PageStore.get('config-options').pages.media.categoriesWithTitle &&
+					this.mediaCategories(true)}
 
-				{void 0 !== this.props.title ? (
-					<Text variant="h4-medium" className="dark:text-cinemata-strait-blue-50 m-0">
-						{this.props.title}
-					</Text>
-				) : null}
+				<div className="flex items-center justify-between gap-3 sm:block">
+					{void 0 !== this.props.title && (
+						<div className="min-w-0 flex-1">
+							<h1 className="heading-h6-20-medium sm:heading-h4-32-medium dark:text-cinemata-strait-blue-50 m-0">
+								{this.props.title}
+							</h1>
+						</div>
+					)}
 
-				<div className="flex flex-row">
-					<div className="flex flex-col gap-3 items-center justify-center">
-						{publishedDate ? (
-							<Text as="span" color="meta">
+					<div className="shrink-0 sm:hidden">{this.mediaStateBadge(mediaState, stateTooltip)}</div>
+				</div>
+
+				<div className="flex flex-col items-start gap-8 min-w-0 sm:flex-row sm:items-center">
+					<div className="flex flex-col gap-3 shrink-0">
+						{publishedDate && (
+							<Text as="span" color="meta" className="m-0">
 								Published on {publishedDate}
 							</Text>
-						) : null}
+						)}
 
-						{this.mediaStateBadge(mediaState, stateTooltip)}
+						<div className="hidden sm:block">{this.mediaStateBadge(mediaState, stateTooltip)}</div>
 					</div>
-					<div className={'flex-1' + (this.state.likedMedia ? ' liked-media' : '')}>
+
+					<div className={'w-full min-w-0 sm:flex-1' + (this.state.likedMedia ? ' liked-media' : '')}>
 						<MediaActions
 							allowDownload={this.props.allowDownload}
 							displayViews={displayViews}
 							downloadLink={this.downloadLink}
-							isVideo={false}
+							isVideo={true}
 							title={this.props.title}
 							views={this.props.views}
 						/>

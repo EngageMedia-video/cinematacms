@@ -6,16 +6,13 @@ import UserContext from '../../../static/js/contexts/UserContext';
 import SiteContext from '../../../static/js/contexts/SiteContext';
 
 import * as PageActions from '../../../static/js/pages/_PageActions.js';
-
 import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 import * as MediaPageActions from '../../../static/js/pages/MediaPage/actions.js';
-
-import { CircleIconButton } from '../../../static/js/components/-NEW-/CircleIconButton';
-import { MaterialIcon } from '../../../static/js/components/-NEW-/MaterialIcon';
 
 import { formatNumber } from '../../../static/js/functions';
 import { Button } from '../../shared/components/Button/Button.jsx';
 import { Icon } from '../../shared/components/Icon/Icon.jsx';
+import { Text } from '../../shared/components/Text/Text.jsx';
 
 export function MediaLikeIcon() {
 	const texts = useContext(TextsContext);
@@ -49,7 +46,6 @@ export function MediaLikeIcon() {
 		ev.preventDefault();
 		ev.stopPropagation();
 
-		// Redirect anonymous users to sign-in page
 		if (user.is.anonymous) {
 			const currentPath = window.location.href.replace(site.url, '').replace(/^\//g, '');
 			const loginUrl = links.signin + '?next=/' + currentPath;
@@ -74,20 +70,22 @@ export function MediaLikeIcon() {
 	return (
 		<div className="like">
 			<Button
-				variant="primary"
-				icon={<Icon name="thumbUp" className="text-cinemata-strait-blue-100" />}
-				className="dark:bg-cinemata-strait-blue-900 body-body-14-medium"
+				aria-label={likedMedia ? `Unlike media, ${likesCounter} likes` : `Like media, ${likesCounter} likes`}
+				variant="secondary"
+				icon={
+					<Icon name={likedMedia ? 'thumbUp' : 'thumbUpOutlined'} className="text-cinemata-strait-blue-100" />
+				}
 				onClick={toggleLike}
 				size="sm"
 			>
-				<span className="body-body-14-medium">{likesCounter}</span>
+				<Text
+					as="span"
+					variant="body-14-medium"
+					className="text-neutral-50 dark:text-cinemata-strait-blue-100 whitespace-nowrap"
+				>
+					{likesCounter}
+				</Text>
 			</Button>
-			{/* <button onClick={toggleLike}>
-				<CircleIconButton type="span">
-					<MaterialIcon type="thumb_up" />
-				</CircleIconButton>
-				<span className="likes-counter">{likesCounter}</span>
-			</button> */}
 		</div>
 	);
 }

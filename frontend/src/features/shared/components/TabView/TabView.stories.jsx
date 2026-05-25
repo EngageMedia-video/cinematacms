@@ -76,6 +76,22 @@ const meta = {
 				defaultValue: { summary: "''" },
 			},
 		},
+		triggerColor: {
+			control: 'text',
+			description:
+				'Optional unselected trigger background color. Accepts raw CSS colors, CSS variables, or Cinemata token names like `pacific-deep-700`.',
+			table: {
+				type: { summary: 'string' },
+			},
+		},
+		triggerSelectedColor: {
+			control: 'text',
+			description:
+				'Optional selected trigger background color. Accepts raw CSS colors, CSS variables, or Cinemata token names like `coral-reef-100`.',
+			table: {
+				type: { summary: 'string' },
+			},
+		},
 		panelClassName: {
 			control: 'text',
 			description: 'Optional extra classes applied to the active generated tab panel.',

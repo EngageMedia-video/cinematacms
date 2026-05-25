@@ -4,10 +4,10 @@ import PropTypes from 'prop-types';
 import { CircleIconButton } from '../../../static/js/components/-NEW-/CircleIconButton';
 import { MaterialIcon } from '../../../static/js/components/-NEW-/MaterialIcon';
 
-export function OtherMediaDownloadLink(props) {
+export function OtherMediaDownloadLink({ link, title }) {
 	return (
 		<div className="download hidden-only-in-small">
-			<a href={props.link} target="_blank" download={props.title} title="Download">
+			<a href={link} target="_blank" download={title} title="Download">
 				<CircleIconButton type="span">
 					<MaterialIcon type="arrow_downward" />
 				</CircleIconButton>
