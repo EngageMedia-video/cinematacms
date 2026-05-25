@@ -588,25 +588,36 @@
 	> select {
 		margin-right: 16px;
 		margin-bottom: 12px;
-		border-color: var(--border-input);
-		background-color: var(--bg-surface, var(--user-action-form-inner-bg-color));
-		box-shadow: 0px 1px 4px 0 rgb(0 12 32 / 0.06);
+		min-height: 40px;
+		padding: 0 40px 0 16px;
+		color: var(--text-primary, var(--input-color));
+		border: 0;
+		border-radius: var(--radius-4);
+		background-color: var(--bg-surface-muted, var(--input-bg-color));
+		box-shadow: none;
+
+		&:focus {
+			box-shadow: 0 0 0 2px var(--ring-focus, var(--border-input));
+		}
 	}
 
 	> button {
-		padding: 0;
-		height: 36px;
-		line-height: 36px;
+		padding: 0 16px;
+		height: 40px;
+		line-height: 40px;
 		margin-right: 16px;
 		margin-bottom: 12px;
-		color: var(--text-link);
-		// font-weight:500;
+		color: var(--text-on-primary, var(--cinemata-white));
+		font-weight: 500;
 		border: 0;
-		background: none;
+		border-radius: var(--radius-4);
+		background: var(--bg-primary, var(--cinemata-strait-blue-600p));
 
 		&:hover,
 		&:focus {
-			text-decoration: underline;
+			color: var(--text-on-primary, var(--cinemata-white));
+			background: var(--bg-primary-hover, var(--cinemata-strait-blue-800));
+			text-decoration: none;
 		}
 	}
 

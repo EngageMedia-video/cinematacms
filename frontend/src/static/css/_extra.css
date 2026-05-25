@@ -1844,7 +1844,7 @@ body.dark_theme #page-search .items-list-hor .item-main .item-description div {
 
 body .mi-filters-toggle {
 	top: 34px;
-	background-color: #1a3f61;
+	background-color: transparent;
 }
 
 body .mi-filters-toggle button {
@@ -1852,13 +1852,16 @@ body .mi-filters-toggle button {
 	line-height: 36px;
 	margin: 0;
 	padding: 0 14px;
-	color: #fff;
-	opacity: 0.75 !important;
+	color: var(--text-on-primary, var(--cinemata-white));
+	border-radius: var(--radius-4);
+	background-color: var(--bg-primary, var(--cinemata-strait-blue-600p));
+	opacity: 1 !important;
 }
 
 body .mi-filters-toggle button.active,
 body .mi-filters-toggle button:hover {
-	color: #fff !important;
+	color: var(--text-on-primary, var(--cinemata-white)) !important;
+	background-color: var(--bg-primary-hover, var(--cinemata-strait-blue-800));
 	opacity: 1 !important;
 }
 
@@ -1868,17 +1871,19 @@ body .mi-filters-row-inner .mi-filter-options > * button {
 }
 
 body .mi-filters-row-inner .mi-filter-options > * button {
-	color: #869ea5 !important;
+	color: var(--text-muted, var(--cinemata-pacific-deep-400)) !important;
+	border-radius: var(--radius-4);
 }
 
 body .mi-filters-row-inner .mi-filter-options > * button:hover,
 body .mi-filters-row-inner .mi-filter-options > *.active button {
-	color: inherit !important;
+	color: var(--text-on-primary, var(--cinemata-white)) !important;
+	background-color: var(--bg-primary, var(--cinemata-strait-blue-600p));
 }
 
 body.dark_theme .mi-filters-row-inner .mi-filter-options > * button:hover,
 body.dark_theme .mi-filters-row-inner .mi-filter-options > *.active button {
-	color: #fff !important;
+	color: var(--text-on-primary, var(--cinemata-white)) !important;
 }
 
 @media (max-width: 767px) {
