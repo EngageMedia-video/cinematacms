@@ -257,7 +257,7 @@ button.thumbnail.circle-icon-button {
 
 .media-upload-item-progress-bar-container {
 	.media-upload-item-progress-bar {
-		@include background_color_gradient();
+		background-color: var(--cinemata-coral-reef-400p);
 	}
 }
 
@@ -313,7 +313,7 @@ dialog {
 
 .media-upload-item-progress-bar-container {
 	.media-upload-item-progress-bar {
-		@include background_color_gradient();
+		background-color: var(--cinemata-coral-reef-400p);
 	}
 }
 
