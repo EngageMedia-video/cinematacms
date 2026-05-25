@@ -64,6 +64,7 @@ class ThemeStore extends EventEmitter {
 		this.cache = new BrowserCache('MediaCMS[' + config.site.id + '][theme]', 86400);
 
 		this.logos = initLogo(config.theme.logo);
+		this.logosMobile = initLogo(config.theme.logoMobile);
 
 		this.state = {
 			mode: initMode(this.cache.get('mode'), config.theme.mode),
@@ -76,6 +77,9 @@ class ThemeStore extends EventEmitter {
 		switch (type) {
 			case 'logo':
 				return this.logos[this.state.mode];
+			case 'logo-mobile':
+				// Fall back to the desktop logo when no mobile override is set.
+				return this.logosMobile[this.state.mode] || this.logos[this.state.mode];
 			case 'mode':
 				return this.state.mode;
 		}
