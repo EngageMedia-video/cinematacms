@@ -1030,9 +1030,16 @@ body .hover-overlay-title .item .item-content-link:hover .item-meta {
 /* #################################################################################################### */
 
 body .empty-channel-media .button-link {
-	color: var(--btn-color);
-	border-color: var(--btn-primary-bg-color);
-	background-color: var(--btn-primary-bg-color);
+	color: var(--text-on-primary);
+	border-color: var(--bg-primary);
+	background-color: var(--bg-primary);
+}
+
+body .empty-channel-media .button-link:hover,
+body .empty-channel-media .button-link:focus {
+	color: var(--text-on-primary);
+	border-color: var(--bg-primary-hover);
+	background-color: var(--bg-primary-hover);
 }
 
 body .profile-page-header .profile-nav ul li a {
@@ -1040,8 +1047,14 @@ body .profile-page-header .profile-nav ul li a {
 }
 
 body a.item-edit-link {
-	color: var(--btn-color);
-	background-color: var(--btn-primary-bg-color);
+	color: var(--text-on-primary);
+	background-color: var(--bg-primary);
+}
+
+body a.item-edit-link:hover,
+body a.item-edit-link:focus {
+	color: var(--text-on-primary);
+	background-color: var(--bg-primary-hover);
 }
 
 body .media-list-wrapper {
@@ -3156,8 +3169,7 @@ body.dark_theme .user-contact-form textarea {
 
 body.dark_theme .profile-page-header .profile-info-nav-wrap,
 body.dark_theme .profile-page-header .profile-info-nav-wrap:before {
-	/* background-color:#0b3144; */
-	background-color: var(--header-bg-color);
+	background-color: var(--profile-page-header-bg-color);
 }
 
 body.dark_theme .profile-page-header .profile-info h1 {
@@ -3165,23 +3177,20 @@ body.dark_theme .profile-page-header .profile-info h1 {
 }
 
 body.dark_theme .profile-page-header .profile-nav {
-	background-color: #0b3144;
-	border-bottom-color: #0b3144;
-
-	background-color: var(--header-bg-color);
-	border-bottom-color: var(--header-bg-color);
+	background-color: var(--profile-page-header-bg-color);
+	border-bottom-color: var(--profile-page-header-bg-color);
 }
 
 body.dark_theme .profile-page-header .profile-nav ul li a {
-	color: #bad8dd;
+	color: var(--profile-page-nav-link-text-color);
 }
 
 body.dark_theme .profile-page-header .profile-nav ul li.active a {
-	color: #fff;
+	color: var(--profile-page-nav-link-active-text-color);
 }
 
 body.dark_theme .profile-page-header .profile-nav ul li.active:after {
-	background-color: var(--default-theme-color);
+	background-color: var(--profile-page-nav-link-active-after-bg-color);
 }
 
 /* #################################################################################################### */

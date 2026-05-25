@@ -130,7 +130,7 @@ body.dark_theme {
 	--item-meta-link-text-color: var(--item-text-color);
 	--item-meta-link-hover-text-color: rgba(255, 255, 255, 0.74);
 
-	--profile-page-item-content-title-bg-color: #121212;
+	--profile-page-item-content-title-bg-color: var(--bg-page);
 
 	--playlist-item-main-view-full-link-text-color: var(--text-muted);
 	--playlist-item-main-view-full-link-hover-text-color: var(--text-strong);
@@ -197,7 +197,7 @@ body.dark_theme {
 
 	/* ################################################## */
 
-	--profile-page-bg-color: var(--body-bg-color);
+	--profile-page-bg-color: var(--bg-page);
 
 	--profile-page-header-bg-color: var(--bg-surface-raised);
 
