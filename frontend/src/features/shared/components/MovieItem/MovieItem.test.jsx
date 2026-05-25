@@ -115,4 +115,31 @@ describe('MovieItem', () => {
 
 		expect(movieLink).toHaveAttribute('href', '/media/cinema-paradiso/');
 	});
+
+	it('keeps the subtitle profile link clickable inside a linked movie card', () => {
+		render(
+			<VerticalMovieItem
+				imageSrc={samplePoster}
+				imageAlt="Clickable poster"
+				title="Cinema Paradiso"
+				subtitle="Giuseppe Tornatore"
+				subtitleHref="/profiles/giuseppe-tornatore/"
+				metadata={['1988']}
+				link="/media/cinema-paradiso/"
+			/>
+		);
+
+		expect(screen.getByRole('link', { name: 'Open Cinema Paradiso' })).toHaveAttribute(
+			'href',
+			'/media/cinema-paradiso/'
+		);
+		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' })).toHaveAttribute(
+			'href',
+			'/profiles/giuseppe-tornatore/'
+		);
+		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' })).toHaveClass('z-20');
+		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' })).toHaveClass('min-h-8');
+		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' })).toHaveClass('touch-manipulation');
+		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' }).closest('a[aria-label]')).toBeNull();
+	});
 });

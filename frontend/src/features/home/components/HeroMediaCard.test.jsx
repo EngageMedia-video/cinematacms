@@ -5,8 +5,8 @@ import { HeroMediaCard, HeroMediaCardSkeleton } from './HeroMediaCard';
 const MEDIA = {
 	title: 'A Long Featured Film Title That Still Needs To Wrap Cleanly',
 	url: '/media/featured-film/',
-	description: 'A synopsis loaded from the media description.',
-	summary: 'A fallback synopsis.',
+	description: 'More information and credits from the media form.',
+	summary: 'A synopsis loaded from the media summary.',
 	author_name: 'Featured Author',
 	author_profile: '/profiles/featured-author/',
 	media_country: 'Philippines',
@@ -37,27 +37,30 @@ describe('HeroMediaCard', () => {
 		expect(titleLink).toHaveClass('text-inherit');
 		expect(titleLink).toHaveClass('hover:underline');
 
-		const description = screen.getByText('A synopsis loaded from the media description.');
+		const description = screen.getByText('A synopsis loaded from the media summary.');
 		expect(description).toHaveClass('body-body-14-regular');
 		expect(description).toHaveClass('text-text-description');
 		expect(description.className).not.toMatch(/dark:text-\[/);
 		expect(description).not.toHaveClass('dark:text-cinemata-pacific-deep-50');
+		expect(screen.queryByText('More information and credits from the media form.')).not.toBeInTheDocument();
 
 		const author = screen.getByRole('link', { name: 'Featured Author' });
 		expect(author).toHaveClass('body-body-12-regular');
 		expect(author).toHaveClass('text-text-link');
+		expect(author).toHaveClass('min-h-8');
+		expect(author).toHaveClass('touch-manipulation');
 
 		const views = screen.getByText('12,345 views');
 		expect(views).toHaveClass('text-text-muted');
 	});
 
-	it('falls back to summary and object-shaped country info from the API', () => {
+	it('falls back to description and object-shaped country info from the API', () => {
 		render(
 			<HeroMediaCard
 				media={{
 					...MEDIA,
-					description: '',
-					summary: 'Summary from the API list payload.',
+					description: 'Description from the API list payload.',
+					summary: '',
 					media_country: '',
 					media_country_info: { title: 'Singapore' },
 					views: '1 view',
@@ -65,7 +68,7 @@ describe('HeroMediaCard', () => {
 			/>
 		);
 
-		expect(screen.getByText('Summary from the API list payload.')).toBeInTheDocument();
+		expect(screen.getByText('Description from the API list payload.')).toBeInTheDocument();
 		expect(screen.getByText('Singapore')).toBeInTheDocument();
 		expect(screen.getByText('1 view')).toBeInTheDocument();
 	});
@@ -80,8 +83,8 @@ describe('HeroMediaCard', () => {
 		expect(screen.queryByRole('link', { name: MEDIA.title })).not.toBeInTheDocument();
 	});
 
-	it('renders description as plain text', () => {
-		render(<HeroMediaCard media={{ ...MEDIA, description: '<img src=x onerror=alert(1)>' }} />);
+	it('renders synopsis as plain text', () => {
+		render(<HeroMediaCard media={{ ...MEDIA, description: '', summary: '<img src=x onerror=alert(1)>' }} />);
 
 		expect(screen.queryByRole('img')).not.toBeInTheDocument();
 		expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument();

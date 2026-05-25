@@ -5,17 +5,13 @@ import { Icon } from '../Icon';
 function MovieItemContainer({ children, contentClassName = '', shellClassName = '', link = '', title = '' }) {
 	if (link) {
 		return (
-			<article className={shellClassName}>
+			<article className={cn(shellClassName, 'relative')}>
 				<a
 					href={link}
-					className={cn(
-						'h-full w-full cursor-pointer text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus',
-						contentClassName
-					)}
+					className="absolute inset-0 z-10 cursor-pointer rounded-[6px] text-inherit no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 					aria-label={title ? `Open ${title}` : 'Open movie details'}
-				>
-					{children}
-				</a>
+				/>
+				<div className={contentClassName}>{children}</div>
 			</article>
 		);
 	}
@@ -49,8 +45,9 @@ function MovieMetadata({ items = [] }) {
 	);
 }
 
-function MovieCopy({ title, subtitle, metadata, orientation = 'vertical' }) {
+function MovieCopy({ title, subtitle, subtitleHref = '', metadata, orientation = 'vertical' }) {
 	const isHorizontal = orientation === 'horizontal';
+	const subtitleClassName = 'body-body-12-regular m-0 p-0 text-text-link';
 
 	return (
 		<div className={cn('flex min-w-0 flex-col', isHorizontal ? 'gap-3' : 'gap-2')} data-movie-copy>
@@ -63,7 +60,19 @@ function MovieCopy({ title, subtitle, metadata, orientation = 'vertical' }) {
 				{title}
 			</p>
 
-			{subtitle ? <p className="body-body-12-regular m-0 p-0 text-text-link">{subtitle}</p> : null}
+			{subtitle && subtitleHref ? (
+				<a
+					href={subtitleHref}
+					className={cn(
+						subtitleClassName,
+						'relative z-20 inline-flex min-h-8 w-fit max-w-full touch-manipulation items-center no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus'
+					)}
+				>
+					{subtitle}
+				</a>
+			) : subtitle ? (
+				<p className={subtitleClassName}>{subtitle}</p>
+			) : null}
 
 			<MovieMetadata items={metadata} />
 		</div>
@@ -122,6 +131,7 @@ export function HorizontalMovieItem({
 	link = '',
 	metadata = [],
 	subtitle = '',
+	subtitleHref = '',
 	title = 'Movie Title',
 }) {
 	return (
@@ -141,7 +151,13 @@ export function HorizontalMovieItem({
 			/>
 
 			<div className="flex min-w-0 flex-1 flex-col gap-3">
-				<MovieCopy title={title} subtitle={subtitle} metadata={metadata} orientation="horizontal" />
+				<MovieCopy
+					title={title}
+					subtitle={subtitle}
+					subtitleHref={subtitleHref}
+					metadata={metadata}
+					orientation="horizontal"
+				/>
 			</div>
 		</MovieItemContainer>
 	);
@@ -159,6 +175,7 @@ export function VerticalMovieItem({
 	link = '',
 	metadata = [],
 	subtitle = '',
+	subtitleHref = '',
 	title = 'Movie Title',
 }) {
 	return (
@@ -180,7 +197,13 @@ export function VerticalMovieItem({
 				className="aspect-video w-full"
 			/>
 
-			<MovieCopy title={title} subtitle={subtitle} metadata={metadata} orientation="vertical" />
+			<MovieCopy
+				title={title}
+				subtitle={subtitle}
+				subtitleHref={subtitleHref}
+				metadata={metadata}
+				orientation="vertical"
+			/>
 		</MovieItemContainer>
 	);
 }
@@ -198,6 +221,7 @@ export function MovieItem({
 	metadata = [],
 	orientation = 'vertical',
 	subtitle = '',
+	subtitleHref = '',
 	title = 'Movie Title',
 }) {
 	if (orientation === 'horizontal') {
@@ -212,6 +236,7 @@ export function MovieItem({
 				link={link}
 				metadata={metadata}
 				subtitle={subtitle}
+				subtitleHref={subtitleHref}
 				title={title}
 			/>
 		);
@@ -230,6 +255,7 @@ export function MovieItem({
 			link={link}
 			metadata={metadata}
 			subtitle={subtitle}
+			subtitleHref={subtitleHref}
 			title={title}
 		/>
 	);

@@ -183,6 +183,18 @@ class IndexRevampInitialDataTest(TestCase):
         self.assertEqual(second_payload["results"][0]["friendly_token"], hero.friendly_token)
         self.assertIn("hero_playback", second_payload["results"][0])
 
+    def test_summary_update_invalidates_home_initial_data_cache(self):
+        first_payload = self._featured_payload()
+        self.assertEqual(first_payload["results"][0]["summary"], self.media.summary)
+
+        self.media.summary = "Updated homepage synopsis"
+        self.media.save(update_fields=["summary"])
+
+        updated_payload = self._featured_payload()
+
+        self.assertEqual(updated_payload["results"][0]["friendly_token"], self.media.friendly_token)
+        self.assertEqual(updated_payload["results"][0]["summary"], "Updated homepage synopsis")
+
     def test_recommended_payload_is_valid_json(self):
         response = self._get_revamp_response()
         content = response.content.decode()

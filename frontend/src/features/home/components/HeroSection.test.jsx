@@ -419,10 +419,11 @@ describe('HeroSection', () => {
 		expect(screen.getByText('Summary from the list API.')).toBeInTheDocument();
 	});
 
-	it('renders description as plain text, not HTML', () => {
+	it('renders synopsis as plain text, not HTML', () => {
 		const mediaWithHtml = {
 			...SAMPLE_MEDIA,
-			description: '<img src=x onerror=alert(1)>',
+			description: '',
+			summary: '<img src=x onerror=alert(1)>',
 		};
 		renderHero([mediaWithHtml]);
 		expect(screen.queryByRole('img', { name: '' })).toBeNull();
