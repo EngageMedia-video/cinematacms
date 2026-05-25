@@ -1,3 +1,4 @@
+import ast
 import itertools
 import logging
 import random
@@ -15,6 +16,31 @@ from . import models
 from .helpers import mask_ip
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_encode_media_task_args(task_args):
+    if isinstance(task_args, (list, tuple)):
+        parts = list(task_args)
+    elif isinstance(task_args, str):
+        try:
+            parsed = ast.literal_eval(task_args)
+        except (SyntaxError, ValueError):
+            parsed = None
+
+        if isinstance(parsed, (list, tuple)):
+            parts = list(parsed)
+        else:
+            parts = [part.strip(" '\"") for part in task_args.strip("()").split(",") if part.strip()]
+    else:
+        return None
+
+    if len(parts) < 2:
+        return None
+
+    try:
+        return str(parts[0]), int(parts[1])
+    except (TypeError, ValueError):
+        return None
 
 
 def list_tasks():
@@ -41,11 +67,11 @@ def list_tasks():
                 task_dict["name"] = task.get("name")
                 task_dict["time_start"] = task.get("time_start")
                 if task.get("name") == "encode_media":
-                    task_args = task.get("args")
-                    for bad in "(),'":
-                        task_args = task_args.replace(bad, "")
-                    friendly_token = task_args.split()[0]
-                    profile_id = task_args.split()[1]
+                    parsed_args = _parse_encode_media_task_args(task.get("args"))
+                    if not parsed_args:
+                        ret[state]["tasks"].append(task_dict)
+                        continue
+                    friendly_token, profile_id = parsed_args
 
                     media = models.Media.objects.filter(friendly_token=friendly_token).first()
                     if media:
