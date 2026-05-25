@@ -200,7 +200,6 @@
 	.item-playlist-drag {
 		.circle-icon-button {
 			background-color: transparent;
-			background-color: rgba(0, 0, 0, 0);
 
 			&:hover,
 			&:focus,
@@ -369,8 +368,8 @@
 					right: 0;
 					display: block;
 					text-align: center;
-					color: rgba(white, 0.8);
-					background-color: rgba(17, 17, 17, 0.8);
+					color: var(--text-on-chrome);
+					background-color: rgb(0 12 32 / 0.8);
 
 					> * {
 						display: table;
@@ -493,9 +492,9 @@
 				text-align: initial;
 				border-radius: 2px;
 				box-shadow:
-					0 16px 24px 2px rgba(0, 0, 0, 0.14),
-					0 6px 30px 5px rgba(0, 0, 0, 0.12),
-					0 8px 10px -5px rgba(0, 0, 0, 0.4);
+					0 16px 24px 2px rgb(0 12 32 / 0.14),
+					0 6px 30px 5px rgb(0 12 32 / 0.12),
+					0 8px 10px -5px rgb(0 12 32 / 0.4);
 				max-width: 560px;
 				width: calc(100vw - 80px);
 
@@ -522,7 +521,7 @@
 						max-width: 512px;
 						height: auto;
 						border-radius: 4px;
-						box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+						box-shadow: 0 2px 8px rgb(0 12 32 / 0.15);
 					}
 				}
 
@@ -625,7 +624,7 @@
 								line-height: 1;
 								font-size: 30px;
 								overflow: hidden;
-								color: #fff;
+								color: var(--text-on-primary);
 							}
 						}
 					}
@@ -727,7 +726,7 @@
 						font-size: 14px;
 						font-weight: 500;
 						cursor: pointer;
-						color: var(--theme-color, #ec1c24);
+						color: var(--text-link);
 					}
 				}
 			}
@@ -780,7 +779,6 @@
 				&.cancel-playlist-removal,
 				&.proceed-playlist-removal {
 					background-color: transparent;
-					background-color: rgba(0, 0, 0, 0);
 				}
 
 				&.proceed-playlist-removal {
@@ -1096,12 +1094,11 @@
 		.circle-icon-button {
 			display: inline-block;
 			background-color: transparent;
-			background-color: rgba(0, 0, 0, 0);
 
 			&:hover,
 			&:focus,
 			&:active {
-				// color:#111;
+				// color: var(--text-primary);
 			}
 		}
 
@@ -1128,7 +1125,6 @@
 				&.cancel-playlist-removal,
 				&.proceed-playlist-removal {
 					background-color: transparent;
-					background-color: rgba(0, 0, 0, 0);
 				}
 
 				&.proceed-playlist-removal {

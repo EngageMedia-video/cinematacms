@@ -180,7 +180,6 @@
 			word-break: break-word;
 			vertical-align: baseline;
 
-			background-color: rgba(0, 0, 0, 0);
 			background-color: transparent;
 
 			font-size: 15px;
@@ -199,7 +198,7 @@
 
 		a.form-textarea-wrap {
 			&:focus {
-				outline: 1px dotted rgba(#0a0a0a, 0.5);
+				outline: 1px dotted var(--ring-focus);
 			}
 
 			text-decoration: none;
@@ -221,7 +220,7 @@
 				margin-left: 8px;
 				line-height: 1;
 				font-weight: 400;
-				color: #fff;
+				color: var(--text-on-primary);
 				text-decoration: none;
 				border: 0;
 				border-radius: 1px;
@@ -427,7 +426,7 @@
 	display: inline-block;
 	width: 100%;
 	margin-top: 4px;
-	color: #909090;
+	color: var(--text-muted);
 
 	.circle-icon-button {
 		display: inline-block;
@@ -437,7 +436,7 @@
 	}
 
 	.material-icons {
-		color: #909090;
+		color: var(--text-muted);
 		font-size: 16px;
 		margin-bottom: 2px;
 	}
@@ -481,7 +480,7 @@
 		margin-top: 0.5rem;
 
 		> button {
-			color: #fff;
+			color: var(--text-on-primary);
 		}
 
 		.popup {
@@ -500,7 +499,6 @@
 					&.cancel-comment-removal,
 					&.proceed-comment-removal {
 						background-color: transparent;
-						background-color: rgba(0, 0, 0, 0);
 					}
 
 					&.proceed-comment-removal {

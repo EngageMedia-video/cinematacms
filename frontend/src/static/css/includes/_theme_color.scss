@@ -138,7 +138,12 @@ $bg-color_theme-color: $theme-color;
 		.form-buttons {
 			a,
 			button {
-				@include background_gradient();
+				background: var(--bg-secondary);
+
+				&:hover,
+				&:focus {
+					background: var(--bg-secondary-hover);
+				}
 			}
 		}
 	}
@@ -153,7 +158,12 @@ $bg-color_theme-color: $theme-color;
 .comment-actions {
 	.remove-comment {
 		> button {
-			@include background_color_gradient();
+			background-color: var(--bg-secondary);
+
+			&:hover,
+			&:focus {
+				background-color: var(--bg-secondary-hover);
+			}
 		}
 
 		.popup-message-bottom {
@@ -221,7 +231,12 @@ button.thumbnail.circle-icon-button {
 .media-drag-drop-content-inner {
 	.browse-files-btn-wrap {
 		span {
-			@include background_color_gradient();
+			background-color: var(--bg-secondary);
+
+			&:hover,
+			&:focus {
+				background-color: var(--bg-secondary-hover);
+			}
 		}
 	}
 }
@@ -235,7 +250,7 @@ button.thumbnail.circle-icon-button {
 .media-upload-item-bottom-actions {
 	> * {
 		&:hover {
-			@include font_color_gradient();
+			color: var(--text-link);
 		}
 	}
 }
@@ -251,7 +266,7 @@ button.thumbnail.circle-icon-button {
 dialog {
 	.qq-dialog-buttons {
 		button {
-			color: $theme-color !important;
+			color: var(--text-link) !important;
 		}
 	}
 }
@@ -259,7 +274,12 @@ dialog {
 .media-drag-drop-content-inner {
 	.browse-files-btn-wrap {
 		span {
-			@include background_color_gradient();
+			background-color: var(--bg-secondary);
+
+			&:hover,
+			&:focus {
+				background-color: var(--bg-secondary-hover);
+			}
 		}
 	}
 }
@@ -268,7 +288,7 @@ dialog {
 .media-upload-item-bottom-actions {
 	> * {
 		&:hover {
-			@include font_color_gradient();
+			color: var(--text-link);
 		}
 	}
 }
@@ -276,16 +296,18 @@ dialog {
 .media-upload-item-bottom-actions {
 	> * {
 		&:hover {
-			@include background_color_gradient();
+			background-color: var(--bg-secondary);
+			color: var(--text-on-primary);
 		}
 	}
 }
 
 .retry-media-upload-item {
-	@include font_color_gradient();
+	color: var(--text-link);
 
 	&:hover {
-		@include background_color_gradient();
+		background-color: var(--bg-secondary);
+		color: var(--text-on-primary);
 	}
 }
 
@@ -310,7 +332,12 @@ dialog {
 .media-author-actions {
 	> a,
 	> button {
-		@include background_color_gradient();
+		background-color: var(--bg-secondary);
+
+		&:hover,
+		&:focus {
+			background-color: var(--bg-secondary-hover);
+		}
 	}
 
 	.popup-message-bottom {
@@ -435,7 +462,12 @@ dialog {
 	a.edit-channel,
 	a.edit-profile,
 	button.delete-profile {
-		@include background_color_gradient();
+		background-color: var(--bg-secondary);
+
+		&:hover,
+		&:focus {
+			background-color: var(--bg-secondary-hover);
+		}
 	}
 }
 
@@ -443,12 +475,17 @@ dialog {
 	.popup-message-bottom {
 		> a,
 		> button {
-			@include background_color_gradient();
+			background-color: var(--bg-secondary);
+
+			&:hover,
+			&:focus {
+				background-color: var(--bg-secondary-hover);
+			}
 		}
 
 		button {
 			&.proceed-profile-removal {
-				@include font_color_gradient();
+				color: var(--text-link);
 			}
 		}
 	}

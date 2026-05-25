@@ -130,7 +130,7 @@
 			}
 
 			&:hover {
-				background-color: rgba(#000, 0.1);
+				background-color: rgb(0 12 32 / 0.1);
 			}
 		}
 
@@ -152,7 +152,7 @@
 				font-family: 'Roboto', Arial, serif;
 				line-height:15px;
 				text-decoration:none;
-				color:#fff;
+				color: var(--text-on-primary);
 				border:0;
 				border-radius: 1px;
 
@@ -182,7 +182,7 @@
 					font-family: 'Roboto', Arial, serif;
 					line-height:15px;
 					text-decoration:none;
-					// color:#fff;
+					// color: var(--text-on-primary);
 					border:0;
 					border-radius: 1px;
 
@@ -280,14 +280,14 @@
 		text-decoration: none;
 		font-size: 13px;
 		font-weight: 400;
-		color: #fff;
+		color: var(--text-on-primary);
 		border: 0;
 		line-height: inherit;
 
 		padding: 6px 12px;
 		border-radius: 8px;
 
-		background-color: var(--brand-color, var(--default-brand-color));
+		background-color: var(--bg-secondary);
 
 		@media screen and (min-width: 710px) {
 			padding: 8px 16px;
@@ -534,7 +534,7 @@
 
 					button {
 						background-color: transparent;
-						background-color: rgba(0, 0, 0, 0);
+						background-color: transparent;
 					}
 
 					input[type='text'] {
@@ -549,7 +549,7 @@
 						font-weight: 500;
 						border-width: 0 0 2px;
 						background-color: transparent;
-						background-color: rgba(0, 0, 0, 0);
+						background-color: transparent;
 						box-shadow: none;
 
 						&:focus {
@@ -844,10 +844,10 @@
 		// font-size: 13px;
 		text-decoration: none;
 		// font-weight: 500;
-		color: #fff;
+		color: var(--text-on-primary);
 		border: 0;
 		border-radius: 8px;
-		background-color: var(--default-theme-color);
+		background-color: var(--bg-secondary);
 	}
 }
 
@@ -998,12 +998,12 @@ $side-empty-space: 40px;
 	padding: 11px 16px;
 	font-size: 13px;
 	line-height: 1;
-	color: #fff;
+	color: var(--text-on-primary);
 	border-style: solid;
 	border-width: 1px;
 	border-radius: 8px;
-	border-color: var(--default-brand-color);
-	background-color: var(--default-brand-color);
+	border-color: var(--bg-secondary);
+	background-color: var(--bg-secondary);
 
 	.material-icons {
 		margin-right: 8px;

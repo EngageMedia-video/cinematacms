@@ -39,7 +39,7 @@ a.item-thumb {
 		padding: 0;
 		font-family: 'Material Icons';
 		text-decoration: none;
-		color: #888;
+		color: var(--text-muted);
 	}
 
 	// @link: https://github.com/google/material-design-icons/blob/master/iconfont/codepoints
@@ -165,8 +165,8 @@ a.item-thumb {
 		display: inline-block;
 		margin: 4px;
 		padding: 2px 4px;
-		color: hsl(0, 0%, 100%);
-		background-color: hsl(0, 0%, 6.7%);
+		color: var(--text-on-chrome);
+		background-color: var(--bg-overlay-dark);
 		border-radius: 2px;
 		opacity: 0.8;
 	}
@@ -328,7 +328,7 @@ a.item-thumb {
 	$descr-max-lines: 2;
 	$descr-line-height: 18px;
 
-	color: rgb(136, 136, 136);
+	color: var(--text-muted);
 
 	font-size: $descr-font-size;
 	line-height: 1em;
@@ -444,8 +444,8 @@ a.item-edit-link {
 	text-align: center;
 	text-decoration: none;
 	border-radius: 1px 1px 0 0;
-	color: #fff;
-	background-color: var(--brand-color, var(--default-brand-color));
+	color: var(--text-on-primary);
+	background-color: var(--bg-secondary);
 }
 
 .playlist-item {
@@ -457,8 +457,8 @@ a.item-edit-link {
 		width: 92px;
 		display: block;
 		line-height: 1.25;
-		color: rgba(#fff, 0.8);
-		background-color: rgba(17, 17, 17, 0.8);
+		color: var(--text-on-chrome);
+		background-color: rgb(0 12 32 / 0.8);
 
 		span {
 			display: inline-block;
@@ -481,8 +481,8 @@ a.item-edit-link {
 		left: 0;
 		font-size: 13px;
 		font-weight: 500;
-		color: rgba(#fff, 0.8);
-		background-color: rgba(17, 17, 17, 0.8);
+		color: var(--text-on-chrome);
+		background-color: rgb(0 12 32 / 0.8);
 
 		letter-spacing: 0.007px;
 		line-height: 1;
@@ -573,7 +573,7 @@ a.item-edit-link {
 
 			h3 {
 				z-index: +1;
-				color: #fff;
+				color: var(--text-on-chrome);
 				font-weight: 400;
 			}
 
@@ -596,17 +596,25 @@ a.item-edit-link {
 
 			&:before {
 				opacity: 1;
-				background: radial-gradient(circle, rgba(#000, 0.75) 0%, rgba(#4a4a4a, 0.75) 100%);
+				background: radial-gradient(
+					circle,
+					color-mix(in srgb, var(--bg-overlay-dark) 75%, transparent) 0%,
+					color-mix(in srgb, var(--bg-chrome) 75%, transparent) 100%
+				);
 			}
 
 			&:after {
 				opacity: 0;
-				background: radial-gradient(circle, rgba(#fff, 0.75) 0%, rgba(#c6c6c6, 0.75) 100%);
+				background: radial-gradient(
+					circle,
+					color-mix(in srgb, var(--bg-surface-raised) 75%, transparent) 0%,
+					color-mix(in srgb, var(--bg-surface-muted) 75%, transparent) 100%
+				);
 			}
 
 			&:hover {
 				h3 {
-					color: #000;
+					color: var(--text-strong);
 				}
 
 				&:before {
@@ -657,7 +665,7 @@ a.item-edit-link {
 	gap: 4px;
 	z-index: 1;
 	pointer-events: none;
-	color: #fff;
+	color: var(--text-on-primary);
 
 	.material-icons {
 		font-size: 14px;
@@ -669,18 +677,18 @@ a.item-edit-link {
 	}
 
 	&.badge-private {
-		background: rgba(0, 0, 0, 0.85);
-		color: #fff;
+		background: var(--bg-overlay-dark);
+		color: var(--text-on-chrome);
 	}
 
 	&.badge-unlisted {
-		background: rgba(237, 124, 48, 0.9);
-		color: #fff;
+		background: var(--bg-secondary);
+		color: var(--text-on-primary);
 	}
 
 	&.badge-restricted {
-		background: rgba(2, 102, 144, 0.9);
-		color: #fff;
+		background: var(--bg-primary);
+		color: var(--text-on-primary);
 	}
 }
 
@@ -696,7 +704,7 @@ a.item-edit-link {
 	display: inline-block;
 	z-index: 1;
 	pointer-events: none;
-	color: #fff;
+	color: var(--text-on-primary);
 
 	.badge-label {
 		line-height: 1;

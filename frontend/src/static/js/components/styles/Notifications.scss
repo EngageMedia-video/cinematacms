@@ -22,10 +22,10 @@
 	max-width: 100%;
 	min-height: 48px;
 	margin: 12px;
-	color: #f1f1f1;
-	background-color: #323232;
+	color: var(--text-on-chrome);
+	background-color: var(--bg-chrome);
 	border-radius: 2px;
-	box-shadow: 0 2px 5px 0 rgba(#000, 0.26);
+	box-shadow: 0 2px 5px 0 rgb(0 12 32 / 0.26);
 
 	transition: opacity 500ms linear;
 

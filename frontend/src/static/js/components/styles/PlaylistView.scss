@@ -1,11 +1,6 @@
 .playlist-view {
 	// box-shadow: 0px 0px 1px 0 rgba(0,0,0, 0.4);
-	border: 1px solid rgba(0, 0, 0, 0.1);
-
-	.dark_theme & {
-		// box-shadow: 0px 0px 1px 0 rgba(255,255,255, 0.7);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-	}
+	border: 1px solid var(--border-subtle);
 
 	.playlist-header {
 		background-color: var(--playlist-view-header-bg-color);
@@ -171,7 +166,7 @@
 			margin-left: 8px;
 
 			&.active {
-				color: var(--theme-color, var(--default-theme-color));
+				color: var(--text-link);
 			}
 
 			&.add-to-playlist {

@@ -1,17 +1,17 @@
 .circle-icon-button {
-	--txt-color: rgba(17, 17, 17, 0.4);
-	--bg-color: #fff;
+	--txt-color: var(--text-muted);
+	--bg-color: var(--bg-surface-raised);
 
-	--bg-focus-color: rgba(0, 0, 0, 0.07);
-	--bg-active-color: rgba(0, 0, 0, 0.11);
+	--bg-focus-color: var(--bg-skeleton);
+	--bg-active-color: var(--bg-surface-muted);
 }
 
 body.dark_theme .circle-icon-button {
-	--txt-color: rgba(255, 255, 255, 0.5);
-	--bg-color: #272727;
+	--txt-color: var(--text-muted);
+	--bg-color: var(--bg-surface-raised);
 
-	--bg-focus-color: rgba(255, 255, 255, 0.14);
-	--bg-active-color: rgba(255, 255, 255, 0.34);
+	--bg-focus-color: var(--bg-skeleton);
+	--bg-active-color: var(--bg-surface-muted);
 }
 
 .circle-icon-button {
@@ -64,7 +64,6 @@ button.circle-icon-button {
 	white-space: nowrap;
 	text-align: center;
 	text-decoration: none;
-	-webkit-tap-highlight-color: rgba(#000, 0);
 	-webkit-tap-highlight-color: transparent;
 
 	outline-width: 0;
@@ -87,8 +86,8 @@ button.circle-icon-button {
 
 	&.button-shadow {
 		box-shadow:
-			0 4px 4px rgba(#000, 0.3),
-			0 0 4px rgba(#000, 0.2);
+			0 4px 4px rgb(0 12 32 / 0.3),
+			0 0 4px rgb(0 12 32 / 0.2);
 	}
 
 	i {

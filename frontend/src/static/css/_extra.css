@@ -184,7 +184,6 @@ body.dark_theme .popup .nav-menu li a:hover,
 body.dark_theme .popup .nav-menu li a:focus,
 body.dark_theme .popup .nav-menu li button:hover,
 body.dark_theme .popup .nav-menu li button:focus {
-	/* color: #bad8dd; */
 	color: #fff;
 }
 
@@ -2716,7 +2715,7 @@ body .media-content-description p {
 body.dark_theme .thumbnail,
 body.dark_theme .thumbnail.circle-icon-button {
 	color: var(--body-bg-color);
-	background-color: #bad8dd;
+	background-color: var(--logged-in-user-thumb-bg-color);
 }
 
 body .media-info-content .media-author-banner .author-banner-name {
@@ -2752,7 +2751,7 @@ body.dark_theme .media-content-field-content a {
 }
 
 body.dark_theme button.load-more {
-	color: #bad8dd;
+	color: var(--text-link);
 }
 
 body .media-author-actions a {
@@ -2901,7 +2900,7 @@ body.dark_theme .media-actions .save > button,
 body.dark_theme .media-actions .download > a,
 body.dark_theme .media-actions .video-downloads > button,
 body.dark_theme .media-actions .more-options > span > button {
-	color: #bad8dd;
+	color: var(--text-link);
 }
 
 body .media-actions .like > button .circle-icon-button > *,

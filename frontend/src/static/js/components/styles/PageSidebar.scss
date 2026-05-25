@@ -57,10 +57,10 @@
 	}
 
 	&.is-scrolling {
-		scrollbar-color: rgba(2, 102, 144, 0.35) transparent;
+		scrollbar-color: var(--border-strong) transparent;
 
 		&::-webkit-scrollbar-thumb {
-			background-color: rgba(2, 102, 144, 0.35);
+			background-color: var(--border-strong);
 		}
 	}
 
@@ -89,7 +89,7 @@
 		float: left;
 		padding: 1rem 1.5rem;
 		font-size: 12px;
-		color: rgb(136, 136, 136);
+		color: var(--text-muted);
 
 		a {
 			text-decoration: none;
@@ -162,7 +162,7 @@
 
 		&.active {
 			i {
-				color: var(--theme-color, var(--default-theme-color));
+				color: var(--text-link);
 			}
 		}
 	}
@@ -189,7 +189,7 @@
 
 			&:checked {
 				&:after {
-					background: var(--theme-color, var(--default-theme-color));
+					background: var(--bg-secondary);
 				}
 			}
 		}
@@ -240,9 +240,9 @@
 			width: 22px;
 			height: 22px;
 			border-radius: 50%;
-			background: #fff;
+			background: var(--bg-surface-raised);
 			// background: var(--sidebar-nav-border-color);
-			box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.15);
+			box-shadow: 1px 1px 3px rgb(0 12 32 / 0.15);
 		}
 
 		&:focus,
@@ -255,13 +255,13 @@
 
 		&:checked {
 			&:before {
-				// background: var( --theme-color, var(--default-theme-color) );
+				// background: var(--bg-secondary);
 			}
 
 			&:after {
 				left: 100%;
 				margin-left: -17px;
-				box-shadow: -1px 1px 3px rgba(0, 0, 0, 0.6);
+				box-shadow: -1px 1px 3px rgb(0 12 32 / 0.6);
 			}
 		}
 	}

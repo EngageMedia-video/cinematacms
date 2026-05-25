@@ -357,5 +357,4 @@ LazyLoadItemListSplit.propTypes = {
 
 LazyLoadItemListSplit.defaults = {
 	...ItemListAsync.defaults,
-	pageItems: 2,
 };

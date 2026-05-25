@@ -503,7 +503,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 				padding: 0;
 				font-family: 'Material Icons';
 				text-decoration: none;
-				color: #888;
+				color: var(--text-muted);
 			}
 
 			.video-js {
@@ -557,7 +557,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 
 .viewer-container .player-container.viewer-pdf-container,
 .viewer-container .player-container.viewer-attachment-container {
-	background-color: #f5f5f5;
+	background-color: var(--bg-surface-muted);
 	min-height: 0.5 * 259px;
 	// padding-top: 20.235%;
 	padding-top: 0.25 * 56.25%;
@@ -565,7 +565,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 	.player-container-inner {
 		.material-icons {
 			font-size: 4rem;
-			color: #888;
+			color: var(--text-muted);
 		}
 
 		> span {
@@ -628,7 +628,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 		font-family: inherit;
 		line-height: 15px;
 		text-decoration: none;
-		color: #fff;
+		color: var(--text-on-primary);
 		border: 0;
 		border-radius: 8px;
 
@@ -776,11 +776,11 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 				float: left;
 				margin-left: 8px;
 				padding-bottom: 8px;
-				color: rgb(144, 144, 144);
+				color: var(--text-muted);
 
 				button,
 				.circle-icon-button {
-					color: rgb(144, 144, 144);
+					color: var(--text-muted);
 
 					&:focus {
 						box-shadow: none;
@@ -972,7 +972,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 									line-height: 1;
 									font-size: 30px;
 									overflow: hidden;
-									color: #fff;
+									color: var(--text-on-primary);
 								}
 							}
 						}
@@ -981,11 +981,11 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 							a,
 							button {
 								> *:first-child {
-									background-color: rgb(244, 244, 244);
+									background-color: var(--bg-surface-muted);
 								}
 
 								.material-icons {
-									color: rgb(111, 111, 111);
+									color: var(--text-muted);
 								}
 							}
 						}
@@ -1144,7 +1144,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 				&.share,
 				&.save,
 				&.download a {
-					color: rgb(144, 144, 144);
+					color: var(--text-muted);
 				}
 
 				&.more-options,
@@ -1176,17 +1176,17 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 								}
 
 								box-shadow:
-									0 16px 24px 2px rgba(#000, 0.14),
-									0 6px 30px 5px rgba(#000, 0.12),
-									0 8px 10px -5px rgba(#000, 0.4);
+									0 16px 24px 2px rgb(0 12 32 / 0.14),
+									0 6px 30px 5px rgb(0 12 32 / 0.12),
+									0 8px 10px -5px rgb(0 12 32 / 0.4);
 
 								&.main-options,
 								&.video-download-options {
 									width: 240px;
 									box-shadow:
-										0 2px 2px 0 rgba(#000, 0.14),
-										0 1px 5px 0 rgba(#000, 0.12),
-										0 3px 1px -2px rgba(#000, 0.2);
+										0 2px 2px 0 rgb(0 12 32 / 0.14),
+										0 1px 5px 0 rgb(0 12 32 / 0.12),
+										0 3px 1px -2px rgb(0 12 32 / 0.2);
 								}
 							}
 						}
@@ -1245,9 +1245,9 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 								text-align: initial;
 
 								box-shadow:
-									rgba(#000, 0.14) 0px 16px 24px 2px,
-									rgba(#000, 0.12) 0px 6px 30px 5px,
-									rgba(#000, 0.4) 0px 8px 10px;
+									rgb(0 12 32 / 0.14) 0px 16px 24px 2px,
+									rgb(0 12 32 / 0.12) 0px 6px 30px 5px,
+									rgb(0 12 32 / 0.4) 0px 8px 10px;
 							}
 						}
 					}
@@ -1286,17 +1286,17 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 								}
 
 								box-shadow:
-									0 16px 24px 2px rgba(#000, 0.14),
-									0 6px 30px 5px rgba(#000, 0.12),
-									0 8px 10px -5px rgba(#000, 0.4);
+									0 16px 24px 2px rgb(0 12 32 / 0.14),
+									0 6px 30px 5px rgb(0 12 32 / 0.12),
+									0 8px 10px -5px rgb(0 12 32 / 0.4);
 
 								&.main-options,
 								&.video-download-options {
 									width: 240px;
 									box-shadow:
-										0 2px 2px 0 rgba(#000, 0.14),
-										0 1px 5px 0 rgba(#000, 0.12),
-										0 3px 1px -2px rgba(#000, 0.2);
+										0 2px 2px 0 rgb(0 12 32 / 0.14),
+										0 1px 5px 0 rgb(0 12 32 / 0.12),
+										0 3px 1px -2px rgb(0 12 32 / 0.2);
 
 									.popup-main {
 										min-height: 0;
@@ -1624,7 +1624,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 	// font-family:'Roboto', Arial, sans-serif;
 	font-family: inherit;
 	line-height: 21px;
-	color: rgb(136, 136, 136);
+	color: var(--text-muted);
 }
 
 .media-content-field-label {
@@ -1689,7 +1689,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 	right: 0;
 	bottom: 0;
 	display: block;
-	border: 2px solid red;
+	border: 2px solid var(--border-danger);
 }
 
 .share-embed {
@@ -1755,7 +1755,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 			left: 0;
 			opacity: 1;
 			pointer-events: none;
-			box-shadow: inset 0px 4px 8px -3px rgba(17, 17, 17, 0.06);
+			box-shadow: inset 0px 4px 8px -3px rgb(0 12 32 / 0.06);
 		}
 
 		.on-right-top-inner {
@@ -1967,7 +1967,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 		}
 
 		button {
-			color: #fff;
+			color: var(--text-on-chrome);
 		}
 
 		.circle-icon-button {
@@ -2004,13 +2004,12 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 	}
 
 	li.reports span {
-		color: red;
+		color: var(--text-danger);
 	}
 }
 
 .loggedin-media-reported .menu-item-icon .material-icons {
-	color: red;
-	color: rgba(red, 0.8);
+	color: var(--text-danger);
 }
 
 @media screen and (min-width: 1008px) {
@@ -2148,7 +2147,7 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 	position: relative;
 	width: 100%;
 	aspect-ratio: 16 / 9;
-	background: #011c34;
+	background: var(--bg-overlay-dark);
 	border-radius: 8px;
 	overflow: hidden;
 }
@@ -2166,5 +2165,5 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 .restricted-media-poster-overlay {
 	position: absolute;
 	inset: 0;
-	background: rgba(1, 28, 52, 0.7);
+	background: rgb(0 12 32 / 0.7);
 }
