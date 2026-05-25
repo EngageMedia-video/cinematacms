@@ -219,12 +219,12 @@ body {
 
 	/* ################################################## */
 
-	--add-media-page-tmplt-dialog-bg-color: #fff;
-	--add-media-page-tmplt-uploader-bg-color: #fff;
-	--add-media-page-tmplt-dropzone-bg-color: rgba(255, 255, 255, 0.5);
-	--add-media-page-tmplt-drag-drop-inner-text-color: rgba(17, 17, 17, 0.4);
-	--add-media-page-tmplt-upload-item-spiner-text-color: rgba(17, 17, 17, 0.32);
-	--add-media-page-tmplt-upload-item-actions-text-color: rgba(17, 17, 17, 0.4);
+	--add-media-page-tmplt-dialog-bg-color: var(--bg-surface-raised);
+	--add-media-page-tmplt-uploader-bg-color: var(--bg-surface-raised);
+	--add-media-page-tmplt-dropzone-bg-color: var(--bg-surface-muted);
+	--add-media-page-tmplt-drag-drop-inner-text-color: var(--text-muted);
+	--add-media-page-tmplt-upload-item-spiner-text-color: var(--text-subtle);
+	--add-media-page-tmplt-upload-item-actions-text-color: var(--text-muted);
 
 	/* ################################################## */
 

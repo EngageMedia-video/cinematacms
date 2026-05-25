@@ -75,7 +75,7 @@ body.dark_theme {
 	--input-border-color: #0f1a25 !important;
 	--input-bg-color: #101a24 !important;
 
-	--add-media-page-tmplt-uploader-bg-color: #0b3145 !important;
+	--add-media-page-tmplt-uploader-bg-color: var(--bg-surface-raised) !important;
 }
 
 /*
@@ -104,11 +104,18 @@ html body .h6 {
 }
 
 a {
-	color: #3385a6;
+	color: var(--text-link);
 }
 
 body.dark_theme a {
-	color: #659ba0;
+	color: var(--text-link);
+}
+
+a:hover,
+a:focus,
+body.dark_theme a:hover,
+body.dark_theme a:focus {
+	color: var(--text-link-hover);
 }
 
 body.dark_theme .top-message--text a {

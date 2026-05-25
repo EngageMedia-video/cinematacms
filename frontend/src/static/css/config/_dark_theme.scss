@@ -216,12 +216,12 @@ body.dark_theme {
 
 	/* ################################################## */
 
-	--add-media-page-tmplt-dialog-bg-color: #242424;
-	--add-media-page-tmplt-uploader-bg-color: #242424;
-	--add-media-page-tmplt-dropzone-bg-color: rgba(28, 28, 28, 0.5);
-	--add-media-page-tmplt-drag-drop-inner-text-color: rgba(255, 255, 255, 0.5);
-	--add-media-page-tmplt-upload-item-spiner-text-color: rgba(255, 255, 255, 0.4);
-	--add-media-page-tmplt-upload-item-actions-text-color: rgba(255, 255, 255, 0.5);
+	--add-media-page-tmplt-dialog-bg-color: var(--bg-surface);
+	--add-media-page-tmplt-uploader-bg-color: var(--bg-surface-raised);
+	--add-media-page-tmplt-dropzone-bg-color: var(--bg-surface);
+	--add-media-page-tmplt-drag-drop-inner-text-color: var(--text-muted);
+	--add-media-page-tmplt-upload-item-spiner-text-color: var(--text-subtle);
+	--add-media-page-tmplt-upload-item-actions-text-color: var(--text-muted);
 
 	/* ################################################## */
 

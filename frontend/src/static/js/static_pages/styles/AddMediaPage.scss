@@ -42,7 +42,7 @@ dialog {
 .media-upload-item-bottom-actions > *,
 .retry-media-upload-item,
 .media-upload-item-progress-bar-container {
-	background-color: var(--sidebar-bg-color);
+	background-color: var(--add-media-page-tmplt-dropzone-bg-color);
 }
 
 @-moz-keyframes spin {
