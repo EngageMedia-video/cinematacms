@@ -995,19 +995,19 @@ body .hover-overlay-title .item .item-meta .item-media-count {
 	font-size: 12px;
 	font-weight: 500;
 	line-height: 1;
-	color: #fff;
-	background-color: #7bbbbf;
-	border-radius: 2em;
+	color: var(--text-on-primary);
+	background-color: var(--bg-primary);
+	border-radius: var(--radius-4);
 }
 
 body .hover-overlay-title .item .item-content-link:before {
-	opacity: 0.6;
-	background: #0f1a25;
+	opacity: 0.7;
+	background: var(--bg-overlay-dark);
 }
 
 body .hover-overlay-title .item .item-content-link:hover:before {
-	opacity: 0.8;
-	background: #0f1a25;
+	opacity: 0.86;
+	background: var(--bg-overlay-dark);
 }
 
 body .hover-overlay-title .item .item-content-link:after {
@@ -1016,18 +1016,17 @@ body .hover-overlay-title .item .item-content-link:after {
 	right: 0;
 	bottom: 0;
 	background: none;
-	opacity: 0.6;
-	border: 1px solid #026690;
+	opacity: 0;
+	border: 0;
 }
 
 body .hover-overlay-title .item .item-content-link:hover:after {
-	background: none;
-	opacity: 0.8;
-	border-color: #7bbbbf;
+	background: var(--bg-primary);
+	opacity: 0.12;
 }
 
 body .hover-overlay-title .item .item-content-link:hover h3 {
-	color: #fff;
+	color: var(--text-on-chrome);
 }
 
 body .hover-overlay-title .item .item-content-link:hover h3 span:after {
