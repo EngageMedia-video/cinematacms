@@ -20,6 +20,7 @@ import * as PageActions from '../../pages/_PageActions.js';
 
 import MediaPageStore from '../../pages/MediaPage/store.js';
 import * as MediaPageActions from '../../pages/MediaPage/actions.js';
+import { formatInnerLink } from '../../functions/formatInnerLink';
 
 import { CircleIconButton } from './CircleIconButton';
 import { MaterialIcon } from './MaterialIcon';
@@ -38,6 +39,10 @@ const commentsText = {
 	submitCommentText: 'SUBMIT',
 	disabledCommentsMsg: 'Comments are disabled',
 };
+
+function formatCommentAuthorThumbnail(url) {
+	return url ? formatInnerLink(url, SiteContext._currentValue?.url || '') : null;
+}
 
 function CommentForm(props) {
 	props = { comment_type: 'new', ...props };
@@ -269,14 +274,20 @@ function Comment(props) {
 	}, []);
 
 	function parseComment(text) {
-		return { __html: text.replace(/\n/g, `<br />`) };
+		return { __html: (text || '').replace(/\n/g, `<br />`) };
 	}
 
 	return (
 		<div className="comment">
 			<div className="comment-inner">
 				<a className="comment-author-thumb" href={props.author_link} title={props.author_name}>
-					<img src={props.author_thumb} alt={props.author_name} />
+					{props.author_thumb ? (
+						<img src={props.author_thumb} alt={props.author_name} />
+					) : (
+						<span className="comment-author-thumb-fallback">
+							<MaterialIcon type="person" />
+						</span>
+					)}
 				</a>
 				<div className="comment-content">
 					<div className="comment-meta">
@@ -530,11 +541,7 @@ export default function CommentsList(props) {
 									text={c.text}
 									author_name={c.author_name}
 									author_link={c.author_profile}
-									author_thumb={
-										(SiteContext._currentValue?.url || '') +
-										'/' +
-										c.author_thumbnail_url.replace(/^\//g, '')
-									}
+									author_thumb={formatCommentAuthorThumbnail(c.author_thumbnail_url)}
 									author_is_trusted={c.author_is_trusted}
 									author_is_manager={c.author_is_manager}
 									publish_date={c.add_date}

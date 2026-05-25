@@ -13,6 +13,8 @@ import {
 	__SettingsMenuItemContentComponent__,
 } from './components';
 
+const SEEK_STEP_SECONDS = 5;
+
 export function generateControlBarComponents(pluginInstanceRef) {
 	function childrenGen(parentKey, child, allComps, parentsConn, level) {
 		var k,
@@ -775,6 +777,40 @@ function initComponents(pluginInstanceRef, which, struct, args) {
 				struct.leftControls.children.playToggle = null;
 			}
 
+			if (args.options.controlBar.seekBackward) {
+				tmp = composeCustomComp(videojsComponentButton, 'vjs-seek-backward-button vjs-icon-replay-5');
+
+				tmp.methods.constructor = function () {
+					videojsComponentButton.apply(this, arguments);
+					this.controlText(this.player_.localize(`Seek backward ${SEEK_STEP_SECONDS} seconds`));
+				};
+
+				tmp.methods.handleClick = function () {
+					this.player_.trigger('clicked_seek_backward_button');
+				};
+
+				videojs.registerComponent('SeekBackwardButton', videojs.extend(tmp.extend, tmp.methods));
+
+				struct.leftControls.children.seekBackwardButton = null;
+			}
+
+			if (args.options.controlBar.seekForward) {
+				tmp = composeCustomComp(videojsComponentButton, 'vjs-seek-forward-button vjs-icon-forward-5');
+
+				tmp.methods.constructor = function () {
+					videojsComponentButton.apply(this, arguments);
+					this.controlText(this.player_.localize(`Seek forward ${SEEK_STEP_SECONDS} seconds`));
+				};
+
+				tmp.methods.handleClick = function () {
+					this.player_.trigger('clicked_seek_forward_button');
+				};
+
+				videojs.registerComponent('SeekForwardButton', videojs.extend(tmp.extend, tmp.methods));
+
+				struct.leftControls.children.seekForwardButton = null;
+			}
+
 			if (args.options.controlBar.next) {
 				tmp = composeCustomComp(videojsComponentButton, 'vjs-next-button');
 
@@ -937,6 +973,8 @@ export function controlBarComponentsStructs(pluginInstanceRef, options) {
 		options.controlBar.play ||
 		options.controlBar.previous ||
 		options.controlBar.next ||
+		options.controlBar.seekBackward ||
+		options.controlBar.seekForward ||
 		options.controlBar.volume ||
 		options.controlBar.time
 	) {

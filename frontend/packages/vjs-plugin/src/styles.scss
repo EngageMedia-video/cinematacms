@@ -154,6 +154,23 @@ $controlBarAnimationsDuration: 0.1s;
 	}
 }
 
+@keyframes onDisplayingDoubleTapSeekFeedback {
+	0% {
+		opacity: 0;
+		transform: scale(0.96);
+	}
+
+	15% {
+		opacity: 1;
+		transform: scale(1);
+	}
+
+	100% {
+		opacity: 0;
+		transform: scale(1.04);
+	}
+}
+
 @-webkit-keyframes spinner-linear-spin {
 	to {
 		-webkit-transform: rotate(360deg);
@@ -689,13 +706,17 @@ $controlBarAnimationsDuration: 0.1s;
 
 	.vjs-button.vjs-play-control,
 	.vjs-button.vjs-next-button,
-	.vjs-button.vjs-previous-button {
+	.vjs-button.vjs-previous-button,
+	.vjs-button.vjs-seek-backward-button,
+	.vjs-button.vjs-seek-forward-button {
 		overflow: hidden;
 		cursor: pointer;
 	}
 
 	.vjs-button.vjs-next-button,
-	.vjs-button.vjs-previous-button {
+	.vjs-button.vjs-previous-button,
+	.vjs-button.vjs-seek-backward-button,
+	.vjs-button.vjs-seek-forward-button {
 		font-family: VideoJS;
 		font-weight: 400;
 		font-style: normal;
@@ -713,6 +734,42 @@ $controlBarAnimationsDuration: 0.1s;
 		.vjs-icon-placeholder {
 			&:before {
 				content: '\f120';
+			}
+		}
+	}
+
+	.vjs-button.vjs-seek-backward-button,
+	.vjs-button.vjs-seek-forward-button {
+		.vjs-icon-placeholder {
+			&:before {
+				content: '';
+				display: block;
+				background-color: currentColor;
+				-webkit-mask-position: center;
+				mask-position: center;
+				-webkit-mask-repeat: no-repeat;
+				mask-repeat: no-repeat;
+				-webkit-mask-size: 1em 1em;
+				mask-size: 1em 1em;
+				margin-top: 0.01em !important;
+			}
+		}
+	}
+
+	.vjs-button.vjs-seek-backward-button {
+		.vjs-icon-placeholder {
+			&:before {
+				-webkit-mask-image: url('../../../src/features/shared/icons/replay-5.svg');
+				mask-image: url('../../../src/features/shared/icons/replay-5.svg');
+			}
+		}
+	}
+
+	.vjs-button.vjs-seek-forward-button {
+		.vjs-icon-placeholder {
+			&:before {
+				-webkit-mask-image: url('../../../src/features/shared/icons/forward-5.svg');
+				mask-image: url('../../../src/features/shared/icons/forward-5.svg');
 			}
 		}
 	}
@@ -1236,6 +1293,100 @@ $controlBarAnimationsDuration: 0.1s;
 					content: '\f11f';
 				}
 			}
+		}
+	}
+
+	.vjs-double-tap-seek-feedback {
+		-webkit-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
+
+		pointer-events: none;
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+		display: block;
+		overflow: hidden;
+		visibility: hidden;
+
+		.vjs-double-tap-seek-zone {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			width: 46%;
+			box-sizing: border-box;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #fff;
+			font-size: 24px;
+			font-weight: 700;
+			line-height: 1;
+			letter-spacing: 0;
+			opacity: 0;
+			text-shadow: 0 1px 3px rgba(var(--cinemata-black), 0.8);
+
+			> span {
+				display: flex;
+				min-width: 56px;
+				min-height: 56px;
+				align-items: center;
+				justify-content: center;
+				border-radius: 50%;
+				background-color: rgba(var(--cinemata-black), 0.42);
+			}
+		}
+
+		.vjs-double-tap-seek-zone-backward {
+			left: 0;
+			justify-content: flex-start;
+			padding-left: 8%;
+			border-radius: 0 999px 999px 0;
+			background: linear-gradient(
+				to right,
+				rgba(var(--cinemata-black), 0.5),
+				rgba(var(--cinemata-black), 0.3) 60%,
+				rgba(var(--cinemata-black), 0)
+			);
+		}
+
+		.vjs-double-tap-seek-zone-forward {
+			right: 0;
+			justify-content: flex-end;
+			padding-right: 8%;
+			border-radius: 999px 0 0 999px;
+			background: linear-gradient(
+				to left,
+				rgba(var(--cinemata-black), 0.5),
+				rgba(var(--cinemata-black), 0.3) 60%,
+				rgba(var(--cinemata-black), 0)
+			);
+		}
+	}
+
+	&.vjs-double-tap-seek-backward,
+	&.vjs-double-tap-seek-forward {
+		.vjs-double-tap-seek-feedback {
+			visibility: visible;
+		}
+	}
+
+	&.vjs-double-tap-seek-backward {
+		.vjs-double-tap-seek-zone-backward {
+			animation-duration: 0.65s;
+			animation-fill-mode: forwards;
+			animation-name: onDisplayingDoubleTapSeekFeedback;
+			animation-timing-function: ease-out;
+		}
+	}
+
+	&.vjs-double-tap-seek-forward {
+		.vjs-double-tap-seek-zone-forward {
+			animation-duration: 0.65s;
+			animation-fill-mode: forwards;
+			animation-name: onDisplayingDoubleTapSeekFeedback;
+			animation-timing-function: ease-out;
 		}
 	}
 

@@ -7,6 +7,13 @@ import { isIOSDevice } from './utils/deviceDetection.js';
 let Plugin = null;
 
 function generatePlugin(/*videojs*/) {
+	const SEEK_STEP_SECONDS = 5;
+	const SEEK_END_PADDING_SECONDS = 0.1;
+	const DOUBLE_TAP_SEEK_DELAY_MS = 300;
+	const DOUBLE_TAP_SEEK_FEEDBACK_MS = 650;
+	const MOBILE_DISPLAY_QUERY = '(max-width: 767px)';
+	const TOUCH_POINTER_QUERY = '(hover: none), (pointer: coarse)';
+
 	const videojsComponent = videojs.getComponent('Component');
 	const videojsClickableComponent = videojs.getComponent('ClickableComponent');
 	const videojsComponentButton = videojs.getComponent('Button');
@@ -37,6 +44,50 @@ function generatePlugin(/*videojs*/) {
 	);
 	const __SettingsMenuItemLabelComponent__ = composeAndExtendCustomComp('vjs-setting-menu-item-label');
 	const __SettingsMenuItemContentComponent__ = composeAndExtendCustomComp('vjs-setting-menu-item-content');
+
+	function isMobileTouchDisplay() {
+		if (typeof window === 'undefined') {
+			return false;
+		}
+
+		if (!window.matchMedia) {
+			return window.innerWidth <= 767;
+		}
+
+		return window.matchMedia(MOBILE_DISPLAY_QUERY).matches && window.matchMedia(TOUCH_POINTER_QUERY).matches;
+	}
+
+	function isInteractiveTouchTarget(target) {
+		return (
+			target &&
+			target.closest &&
+			!!target.closest(
+				'.vjs-control-bar, .vjs-touch-controls button, .vjs-big-play-button, .vjs-menu, .vjs-settings-root, button, a, input, select, textarea'
+			)
+		);
+	}
+
+	function consumePlayerGestureEvent(ev) {
+		if (!ev) {
+			return;
+		}
+
+		if (ev.preventDefault) {
+			ev.preventDefault();
+		}
+
+		if (ev.stopPropagation) {
+			ev.stopPropagation();
+		}
+
+		if (ev.stopImmediatePropagation) {
+			ev.stopImmediatePropagation();
+		}
+
+		if (ev.originalEvent && ev.originalEvent !== ev) {
+			consumePlayerGestureEvent(ev.originalEvent);
+		}
+	}
 
 	function composeCustomCompMethods(ret, extnd, innerHtml, extraCSSClass, htmlAttr) {
 		var innerHtmlIsHTMLElement = !!innerHtml && innerHtml.nodeType === 1;
@@ -376,6 +427,19 @@ function generatePlugin(/*videojs*/) {
 			)
 		);
 		pluginInstanceRef.player.addChild('ActionsAnimations');
+
+		videojs.registerComponent(
+			'DoubleTapSeekFeedback',
+			videojs.extend(
+				__MediaCMSComponent__,
+				composeCustomComp(
+					__MediaCMSComponent__,
+					'vjs-double-tap-seek-feedback',
+					'<span class="vjs-double-tap-seek-zone vjs-double-tap-seek-zone-backward"><span>-5</span></span><span class="vjs-double-tap-seek-zone vjs-double-tap-seek-zone-forward"><span>+5</span></span>'
+				).methods
+			)
+		);
+		pluginInstanceRef.player.addChild('DoubleTapSeekFeedback');
 	}
 
 	function generateLoadingSpinnerComponent(pluginInstanceRef) {
@@ -1029,6 +1093,42 @@ function generatePlugin(/*videojs*/) {
 					struct.leftControls.children.playToggle = null;
 				}
 
+				if (args.options.controlBar.seekBackward) {
+					tmp = composeCustomComp(videojsComponentButton, 'vjs-seek-backward-button vjs-icon-replay-5');
+
+					tmp.methods.constructor = function () {
+						videojsComponentButton.apply(this, arguments);
+						this.controlText(this.player_.localize('Seek backward 5 seconds'));
+					};
+
+					tmp.methods.handleClick = function (ev) {
+						consumePlayerGestureEvent(ev);
+						this.player_.trigger('clicked_seek_backward_button');
+					};
+
+					videojs.registerComponent('SeekBackwardButton', videojs.extend(tmp.extend, tmp.methods));
+
+					struct.leftControls.children.seekBackwardButton = null;
+				}
+
+				if (args.options.controlBar.seekForward) {
+					tmp = composeCustomComp(videojsComponentButton, 'vjs-seek-forward-button vjs-icon-forward-5');
+
+					tmp.methods.constructor = function () {
+						videojsComponentButton.apply(this, arguments);
+						this.controlText(this.player_.localize('Seek forward 5 seconds'));
+					};
+
+					tmp.methods.handleClick = function (ev) {
+						consumePlayerGestureEvent(ev);
+						this.player_.trigger('clicked_seek_forward_button');
+					};
+
+					videojs.registerComponent('SeekForwardButton', videojs.extend(tmp.extend, tmp.methods));
+
+					struct.leftControls.children.seekForwardButton = null;
+				}
+
 				if (args.options.controlBar.next) {
 					tmp = composeCustomComp(videojsComponentButton, 'vjs-next-button');
 
@@ -1218,6 +1318,8 @@ function generatePlugin(/*videojs*/) {
 			options.controlBar.play ||
 			options.controlBar.previous ||
 			options.controlBar.next ||
+			options.controlBar.seekBackward ||
+			options.controlBar.seekForward ||
 			options.controlBar.volume ||
 			options.controlBar.time
 		) {
@@ -1895,6 +1997,8 @@ function generatePlugin(/*videojs*/) {
 			this.timeoutPlaybackSpeedsPanelFocusout = null;
 
 			this.actionAnimationTimeout = null;
+			this.doubleTapSeekLastTouch = null;
+			this.doubleTapSeekFeedbackTimeout = null;
 
 			this.seekingTimeout = null;
 
@@ -2075,6 +2179,8 @@ function generatePlugin(/*videojs*/) {
 
 			this.hasPrevious = !!options.controlBar.previous;
 			this.hasNext = !!options.controlBar.next;
+			this.hasSeekBackward = !!options.controlBar.seekBackward;
+			this.hasSeekForward = !!options.controlBar.seekForward;
 
 			if (this.hasPrevious /*&& 'function' === typeof onPrevButtonClick*/) {
 				this.on(player, ['clicked_previous_button'], this.onPreviousButtonClick);
@@ -2082,6 +2188,18 @@ function generatePlugin(/*videojs*/) {
 
 			if (this.hasNext /*&& 'function' === typeof onNextButtonClick*/) {
 				this.on(player, ['clicked_next_button'], this.onNextButtonClick);
+			}
+
+			this.on(player, ['clicked_seek_backward_button'], this.onSeekBackwardButtonClick);
+			this.on(player, ['clicked_seek_forward_button'], this.onSeekForwardButtonClick);
+
+			this.onDoubleTapSeekTouchEnd = this.onDoubleTapSeekTouchEnd.bind(this);
+
+			if (options.enabledTouchControls && videojs.TOUCH_ENABLED) {
+				this.player.el_.addEventListener('touchend', this.onDoubleTapSeekTouchEnd, {
+					capture: true,
+					passive: false,
+				});
 			}
 
 			this.onPlayerReady = this.onPlayerReady.bind(this);
@@ -2109,6 +2227,116 @@ function generatePlugin(/*videojs*/) {
 					this.nextButtonClickCallback();
 				}
 			}
+		}
+
+		seekBySeconds(seconds, eventName) {
+			if (this.player.ended() && seconds > 0) {
+				return false;
+			}
+
+			const currentTime = this.player.currentTime();
+
+			if (isNaN(currentTime) || !isFinite(currentTime)) {
+				return false;
+			}
+
+			const duration = this.player.duration();
+			let targetTime = Math.max(0, currentTime + seconds);
+
+			if (!isNaN(duration) && isFinite(duration)) {
+				targetTime = Math.min(duration, targetTime);
+
+				if (seconds > 0 && duration > SEEK_END_PADDING_SECONDS) {
+					if (currentTime >= duration - SEEK_END_PADDING_SECONDS) {
+						return false;
+					}
+
+					targetTime = Math.min(duration - SEEK_END_PADDING_SECONDS, targetTime);
+				}
+			}
+
+			this.player.currentTime(targetTime);
+			this.player.trigger(eventName);
+
+			return true;
+		}
+
+		onSeekBackwardButtonClick() {
+			return this.seekBySeconds(-1 * SEEK_STEP_SECONDS, 'movebackward');
+		}
+
+		onSeekForwardButtonClick() {
+			return this.seekBySeconds(SEEK_STEP_SECONDS, 'moveforward');
+		}
+
+		onDoubleTapSeekTouchEnd(ev) {
+			if (
+				!isMobileTouchDisplay() ||
+				isInteractiveTouchTarget(ev.target) ||
+				!ev.changedTouches ||
+				1 !== ev.changedTouches.length ||
+				(ev.touches && ev.touches.length)
+			) {
+				this.doubleTapSeekLastTouch = null;
+				return;
+			}
+
+			const touch = ev.changedTouches[0];
+			const playerRect = this.player.el_.getBoundingClientRect();
+			const isBackwardSide = touch.clientX < playerRect.left + 0.5 * playerRect.width;
+			const direction = isBackwardSide ? 'backward' : 'forward';
+			const now = Date.now();
+			const previousTouch = this.doubleTapSeekLastTouch;
+			const isDoubleTap =
+				previousTouch &&
+				previousTouch.direction === direction &&
+				now - previousTouch.time <= DOUBLE_TAP_SEEK_DELAY_MS;
+
+			this.doubleTapSeekLastTouch = {
+				direction,
+				time: now,
+			};
+
+			if (!isDoubleTap) {
+				return;
+			}
+
+			this.doubleTapSeekLastTouch = null;
+			consumePlayerGestureEvent(ev);
+
+			if (isBackwardSide && this.hasSeekBackward) {
+				if (this.onSeekBackwardButtonClick()) {
+					this.doubleTapSeekFeedback('backward');
+				}
+			} else if (!isBackwardSide && this.hasSeekForward) {
+				if (this.onSeekForwardButtonClick()) {
+					this.doubleTapSeekFeedback('forward');
+				}
+			}
+		}
+
+		doubleTapSeekFeedback(direction) {
+			const cls = 'backward' === direction ? 'vjs-double-tap-seek-backward' : 'vjs-double-tap-seek-forward';
+
+			clearTimeout(this.doubleTapSeekFeedbackTimeout);
+			this.player.removeClass('vjs-double-tap-seek-backward');
+			this.player.removeClass('vjs-double-tap-seek-forward');
+
+			if (this.player.el_ && this.player.el_.offsetWidth) {
+				void this.player.el_.offsetWidth;
+			}
+
+			this.player.addClass(cls);
+
+			this.doubleTapSeekFeedbackTimeout = setTimeout(
+				function (ins) {
+					ins.player.removeClass('vjs-double-tap-seek-backward');
+					ins.player.removeClass('vjs-double-tap-seek-forward');
+					ins.doubleTapSeekFeedbackTimeout = null;
+				},
+				DOUBLE_TAP_SEEK_FEEDBACK_MS,
+				this
+			);
 		}
 
 		actionAnimation(action) {
@@ -2694,6 +2922,8 @@ function generatePlugin(/*videojs*/) {
 
 		onDispose() {
 			window.removeEventListener('resize', this.onWindowResize);
+			this.player.el_.removeEventListener('touchend', this.onDoubleTapSeekTouchEnd, true);
+			clearTimeout(this.doubleTapSeekFeedbackTimeout);
 		}
 
 		onError(e) {
