@@ -108,7 +108,7 @@ export function TopbarMobileBar() {
 					>
 						<Icon name="magnifyingGlass" size={18} decorative />
 						<Text as="span" variant="body-14" className="m-0 truncate text-text-on-chrome">
-							Search for Films, Members, Events, etc
+							Search for Films, Playlists and Members
 						</Text>
 					</button>
 				</div>

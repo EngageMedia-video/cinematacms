@@ -78,7 +78,7 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 							type="search"
 							value={query}
 							onChange={handleInputChange}
-							placeholder="Search for Films, Members, Events, etc"
+							placeholder="Search for Films, Playlists and Members"
 							aria-label="Search"
 							autoComplete="off"
 							className={cn(

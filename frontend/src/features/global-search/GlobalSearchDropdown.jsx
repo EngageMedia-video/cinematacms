@@ -74,7 +74,7 @@ function GlobalSearchDropdownInner() {
 						value={query}
 						onChange={handleInputChange}
 						onFocus={handleInputFocus}
-						placeholder="Search for Films, Members, Events, etc"
+						placeholder="Search for Films, Playlists and Members"
 						aria-label="Search"
 						aria-controls={listboxId}
 						aria-expanded={isOpen}
