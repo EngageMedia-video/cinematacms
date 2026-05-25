@@ -274,7 +274,7 @@ export function LazyLoadItemListSplit(props) {
 					{sameCountryItems.length > 0 && hasUserCountry && (
 						<div className="members-section">
 							<div className="section-header">
-								<h6>Members from Your Country</h6>
+								<h2 className="section-title">Members from Your Country</h2>
 								<p>Connect with filmmakers near you</p>
 							</div>
 							<div className={classname.list}>
@@ -289,7 +289,9 @@ export function LazyLoadItemListSplit(props) {
 					{otherCountryItems.length > 0 && (
 						<div className="members-section">
 							<div className="section-header">
-								<h6>{hasUserCountry ? 'Other Active Members' : 'Active Members'}</h6>
+								<h2 className="section-title">
+									{hasUserCountry ? 'Other Active Members' : 'Active Members'}
+								</h2>
 								<p>
 									{hasUserCountry
 										? 'Discover filmmakers from around the region'
@@ -320,7 +322,7 @@ export function LazyLoadItemListSplit(props) {
 					margin: 2rem 0 1.5rem;
 				}
 
-				.section-header h6 {
+				.section-header .section-title {
 					font-size: 1.25rem;
 					color: var(--text-strong, var(--cinemata-pacific-deep-900));
 					margin: 0 0 0.25rem;
@@ -334,7 +336,7 @@ export function LazyLoadItemListSplit(props) {
 				}
 
 				@media (max-width: 768px) {
-					.section-header h6 {
+					.section-header .section-title {
 						font-size: 1.125rem;
 					}
 

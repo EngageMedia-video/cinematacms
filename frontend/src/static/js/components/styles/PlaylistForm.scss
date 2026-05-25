@@ -190,16 +190,6 @@
 			color: var(--text-subtle);
 			opacity: 1; /* Firefox */
 		}
-
-		&:-ms-input-placeholder {
-			/* Internet Explorer 10-11 */
-			color: var(--text-subtle);
-		}
-
-		&::-ms-input-placeholder {
-			/* Microsoft Edge */
-			color: var(--text-subtle);
-		}
 	}
 
 	input[type='radio'] {

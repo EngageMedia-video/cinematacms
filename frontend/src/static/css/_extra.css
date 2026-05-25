@@ -164,6 +164,12 @@ body .auto-play-header .checkbox-switcher input[type='checkbox']:before {
 	transition: background-color 0.2s ease;
 }
 
+body .auto-play-header .checkbox-switcher input[type='checkbox']:focus-visible:before {
+	box-shadow:
+		0 0 0 2px var(--bg-page),
+		0 0 0 4px var(--ring-focus, var(--cinemata-sunset-horizon-400p));
+}
+
 body .auto-play-header .checkbox-switcher input[type='checkbox']:checked:before {
 	background: var(--bg-primary);
 }
@@ -799,6 +805,12 @@ body .sidebar-theme-switcher .checkbox-switcher {
 body .sidebar-theme-switcher .checkbox-switcher input[type='checkbox']:before {
 	border-radius: 99em;
 	background: #112a40;
+}
+
+body .sidebar-theme-switcher .checkbox-switcher input[type='checkbox']:focus-visible:before {
+	box-shadow:
+		0 0 0 2px var(--bg-page),
+		0 0 0 4px var(--ring-focus, var(--cinemata-sunset-horizon-400p));
 }
 
 body .sidebar-theme-switcher .checkbox-switcher input[type='checkbox']:after {

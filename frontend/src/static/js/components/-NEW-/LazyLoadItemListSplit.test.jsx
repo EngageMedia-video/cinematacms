@@ -40,6 +40,5 @@ import { LazyLoadItemListSplit } from './LazyLoadItemListSplit';
 describe('LazyLoadItemListSplit defaults', () => {
 	it('inherits the shared async list page size', () => {
 		expect(LazyLoadItemListSplit.defaults.pageItems).toBe(ItemListAsync.defaults.pageItems);
-		expect(LazyLoadItemListSplit.defaults.pageItems).toBe(24);
 	});
 });

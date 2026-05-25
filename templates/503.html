@@ -8,6 +8,7 @@
     <style>
       :root {
         /* Standalone palette: the 503 page can render without the app CSS. */
+        /* P-suffixed names are canonical palette stops, preserved verbatim. */
         --cinemata-white: #ffffff;
         --cinemata-black: #000000;
         --cinemata-strait-blue-50: #defbff;
@@ -726,7 +727,7 @@
         // Normal countdown mode
         const timeEl = document.getElementById('time-remaining');
         const REMAINING_SECONDS = parseInt(timeEl?.dataset.secondsRemaining || '0');
-        const TOTAL_SECONDS = {{ MAINTENANCE_MODE_TOTAL|default:MAINTENANCE_MODE_RETRY_AFTER|default:900 }};
+        const TOTAL_SECONDS = parseInt('{{ MAINTENANCE_MODE_TOTAL|default:MAINTENANCE_MODE_RETRY_AFTER|default:900 }}', 10) || 900;
 
         const progressBar = document.getElementById('progress-bar');
         const remainingMs = REMAINING_SECONDS * 1000; // Convert to milliseconds

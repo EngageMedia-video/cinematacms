@@ -231,6 +231,12 @@
 			border-radius: 24px;
 		}
 
+		&:focus-visible:before {
+			box-shadow:
+				0 0 0 2px var(--bg-page),
+				0 0 0 4px var(--ring-focus, var(--cinemata-sunset-horizon-400p));
+		}
+
 		&:after {
 			content: '';
 			display: block;
@@ -241,6 +247,7 @@
 			height: 22px;
 			border-radius: 50%;
 			background: var(--bg-surface-raised);
+
 			// background: var(--sidebar-nav-border-color);
 			box-shadow: 1px 1px 3px rgb(0 12 32 / 0.15);
 		}
