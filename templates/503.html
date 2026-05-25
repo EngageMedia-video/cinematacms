@@ -545,29 +545,38 @@
       // Include site configuration from site.html
       {% include 'config/installation/site.html' %}
 
-      // Populate logo based on MediaCMS.site.logo.desktop configuration,
+      // Populate logo based on MediaCMS.site.logo configuration,
       // matching the topbar's logo source so the maintenance page stays
-      // consistent with the rest of the site.
+      // consistent with the rest of the site. Prefers the new
+      // logo.desktop shape and falls back to the legacy
+      // logo.darkMode / logo.lightMode shape (same backward-compat path
+      // used by frontend/src/static/js/mediacms/theme.js).
       (function() {
         const logoContainer = document.getElementById('logo-container');
-        const desktop = MediaCMS && MediaCMS.site && MediaCMS.site.logo && MediaCMS.site.logo.desktop;
-        const src = desktop && (desktop.svg || desktop.img);
+        const logo = MediaCMS && MediaCMS.site && MediaCMS.site.logo;
+        if (!logo) return;
+        const variant =
+          (logo.desktop && (logo.desktop.svg || logo.desktop.img) && logo.desktop) ||
+          (logo.darkMode && (logo.darkMode.svg || logo.darkMode.img) && logo.darkMode) ||
+          (logo.lightMode && (logo.lightMode.svg || logo.lightMode.img) && logo.lightMode);
+        if (!variant) return;
+        const src = variant.svg || variant.img;
         if (!src) return;
 
-        const logo = document.createElement('img');
-        logo.className = 'logo';
-        logo.src = src;
-        logo.alt = (MediaCMS.site && MediaCMS.site.title) || '{{PORTAL_NAME}}';
-        if (desktop.img && desktop.img !== src) {
-          logo.onerror = function() {
+        const imgEl = document.createElement('img');
+        imgEl.className = 'logo';
+        imgEl.src = src;
+        imgEl.alt = (MediaCMS.site && MediaCMS.site.title) || '{{PORTAL_NAME}}';
+        if (variant.img && variant.img !== src) {
+          imgEl.onerror = function() {
             this.onerror = null;
-            this.src = desktop.img;
+            this.src = variant.img;
             this.addEventListener('error', function() {
               console.warn('Maintenance page logo failed to load');
             }, { once: true });
           };
         }
-        logoContainer.appendChild(logo);
+        logoContainer.appendChild(imgEl);
       })();
 
       // Check if we're in extended maintenance mode
