@@ -18,12 +18,27 @@
 .playlist-form-wrap {
 	.playlist-form-actions {
 		button {
+			border-radius: var(--radius-4);
+
 			&.cancel-btn {
 				color: var(--playlist-form-cancel-button-text-color);
+				background-color: transparent;
 
 				&:hover,
 				&:focus {
 					color: var(--playlist-form-cancel-button-hover-text-color);
+					background-color: var(--bg-surface-muted);
+				}
+			}
+
+			&.create-btn {
+				color: var(--text-on-primary, var(--cinemata-white));
+				background-color: var(--bg-primary, var(--cinemata-strait-blue-600p));
+
+				&:hover,
+				&:focus {
+					color: var(--text-on-primary, var(--cinemata-white));
+					background-color: var(--bg-primary-hover, var(--cinemata-strait-blue-800));
 				}
 			}
 		}
@@ -118,11 +133,26 @@
 			float: left;
 
 			&.cancel-btn {
+				color: var(--playlist-form-cancel-button-text-color);
+				background-color: transparent;
+
+				&:hover,
+				&:focus {
+					color: var(--playlist-form-cancel-button-hover-text-color);
+					background-color: var(--bg-surface-muted);
+				}
 			}
 
 			&.create-btn {
 				float: right;
-				color: $theme-color;
+				color: var(--text-on-primary, var(--cinemata-white));
+				background-color: var(--bg-primary, var(--cinemata-strait-blue-600p));
+
+				&:hover,
+				&:focus {
+					color: var(--text-on-primary, var(--cinemata-white));
+					background-color: var(--bg-primary-hover, var(--cinemata-strait-blue-800));
+				}
 			}
 		}
 	}

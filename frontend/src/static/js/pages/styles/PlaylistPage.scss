@@ -1020,18 +1020,34 @@
 				max-width: 280px;
 				display: inline-block;
 				text-align: initial;
+				border-radius: var(--radius-4);
+				background-color: var(--playlist-page-author-edit-playlist-form-wrap-bg-color);
+				box-shadow:
+					0 16px 24px 2px rgb(0 12 32 / 0.14),
+					0 6px 30px 5px rgb(0 12 32 / 0.12),
+					0 8px 10px -5px rgb(0 12 32 / 0.4);
 
 				.edit-playlist-popup-title {
 					height: 52px;
 					padding: 16px 52px 15px 24px;
 					line-height: 20px;
 					font-size: 16px;
+					color: var(--playlist-page-author-edit-playlist-form-wrap-text-color);
 
 					.circle-icon-button {
 						position: absolute;
 						top: 6px;
 						right: 6px;
-						background: none;
+						color: var(--playlist-form-cancel-button-text-color);
+						background: transparent;
+
+						&:hover,
+						&:focus {
+							color: var(
+								--playlist-page-author-edit-playlist-form-wrap-title-circle-icon-hover-text-color
+							);
+							background-color: var(--bg-surface-muted);
+						}
 					}
 				}
 

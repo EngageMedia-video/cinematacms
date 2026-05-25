@@ -147,15 +147,15 @@ body {
 
 	/* ################################################## */
 
-	--playlist-form-title-focused-bg-color: var(--text-strong);
+	--playlist-form-title-focused-bg-color: var(--ring-focus, var(--cinemata-sunset-horizon-400p));
 
-	--playlist-privacy-border-color: var(--border-input);
+	--playlist-privacy-border-color: var(--border-input, var(--cinemata-coral-reef-400p));
 
-	--playlist-form-cancel-button-text-color: var(--text-muted);
-	--playlist-form-cancel-button-hover-text-color: var(--text-strong);
+	--playlist-form-cancel-button-text-color: var(--text-muted, var(--cinemata-pacific-deep-400));
+	--playlist-form-cancel-button-hover-text-color: var(--text-strong, var(--cinemata-pacific-deep-900));
 
-	--playlist-form-field-text-color: var(--text-strong);
-	--playlist-form-field-border-color: var(--border-input);
+	--playlist-form-field-text-color: var(--text-strong, var(--cinemata-pacific-deep-900));
+	--playlist-form-field-border-color: var(--border-input, var(--cinemata-coral-reef-400p));
 
 	/* ################################################## */
 
@@ -263,12 +263,15 @@ body {
 
 	--playlist-page-author-edit-playlist-icon-button-active-text-color: var(--text-on-primary);
 
-	--playlist-page-author-edit-playlist-form-wrap-text-color: var(--text-strong);
-	--playlist-page-author-edit-playlist-form-wrap-bg-color: var(--bg-surface-raised);
+	--playlist-page-author-edit-playlist-form-wrap-text-color: var(--text-strong, var(--cinemata-pacific-deep-900));
+	--playlist-page-author-edit-playlist-form-wrap-bg-color: var(--bg-surface-raised, var(--cinemata-white));
 
-	--playlist-page-author-edit-playlist-form-wrap-border-color: var(--border-subtle);
+	--playlist-page-author-edit-playlist-form-wrap-border-color: var(--border-subtle, var(--cinemata-neutral-200));
 
-	--playlist-page-author-edit-playlist-form-wrap-title-circle-icon-hover-text-color: var(--text-strong);
+	--playlist-page-author-edit-playlist-form-wrap-title-circle-icon-hover-text-color: var(
+		--text-strong,
+		var(--cinemata-pacific-deep-900)
+	);
 
 	--playlist-page-author-edit-playlist-author-thumb-text-color: var(--text-muted);
 	--playlist-page-author-edit-playlist-author-thumb-bg-color: var(--bg-surface-muted);
