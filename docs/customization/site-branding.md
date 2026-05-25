@@ -4,39 +4,49 @@ This guide shows you how to replace the default logo and tagline with your own b
 
 ## Changing the Logo
 
-The default logo placeholder is a simple image with the text "Your Logo Here". You should replace it with your own logo in both JPG and SVG formats for better display across different devices.
+The default logo is a "Your Logo Here" placeholder. Replace it with your own
+files — one for desktop, one for mobile. Both SVG (preferred) and JPG fallback
+are supported. The topbar background is the same in light and dark theme, so
+a single file per breakpoint is enough.
 
 ### Logo Specifications
-- **Recommended dimensions**: 240px × 60px
-- **File formats needed**:
-  - JPG (for fallback)
-  - SVG (for better scaling)
-- **Locations**: Create both light and dark theme versions
+
+| Breakpoint | Used at        | Recommended dimensions | Notes                                  |
+| ---------- | -------------- | ---------------------- | -------------------------------------- |
+| Desktop    | `sm:` and up   | 240px × 60px (4:1)     | Combined mark + wordmark works well.   |
+| Mobile     | below `sm:`    | 60px × 60px (1:1)      | Mark-only works best in the tight row. |
+
+The same desktop file is also rendered on the 503 maintenance page.
 
 ### Steps to Change the Logo
 
-1. Create your logo in the recommended dimensions
-2. Save it in both JPG and SVG formats
-3. Create versions optimized for both light and dark backgrounds if needed
-4. Place the files in your static directory (e.g., `/static/images/`)
-5. Update the file paths in `templates/config/installation/site.html`:
+1. Create your logo files (one desktop, one mobile).
+2. Save each in both SVG and JPG formats if you want a fallback.
+3. Place the files in your static directory (e.g., `/static/images/`).
+4. Update the file paths in `templates/config/installation/site.html`:
 
 ```html
 MediaCMS.site = {
     // other settings...
     logo:{
-        lightMode:{
-            img: "{{FRONTEND_HOST}}/static/images/your-logo-lightbg.jpg",
-            svg: "{{FRONTEND_HOST}}/static/images/your-logo-lightbg.svg"
+        desktop:{
+            img: "{{FRONTEND_HOST}}/static/images/your-logo-desktop.jpg",
+            svg: "{{FRONTEND_HOST}}/static/images/your-logo-desktop.svg"
         },
-        darkMode:{
-            img: "{{FRONTEND_HOST}}/static/images/your-logo-darkbg.jpg",
-            svg: "{{FRONTEND_HOST}}/static/images/your-logo-darkbg.svg"
+        mobile:{
+            img: "{{FRONTEND_HOST}}/static/images/your-logo-mobile.jpg",
+            svg: "{{FRONTEND_HOST}}/static/images/your-logo-mobile.svg"
         },
     },
     // other settings...
 };
 ```
+
+If `mobile` is omitted the topbar falls back to the `desktop` file.
+
+The legacy `{ lightMode, darkMode }` shape is still accepted for backward
+compatibility — when present, both entries collapse to a single desktop logo —
+but new deployments should use the `desktop` / `mobile` shape above.
 
 ## Changing the Tagline
 
@@ -61,8 +71,8 @@ MediaCMS.contents = {
 
 After making these changes:
 
-1. Run `python manage.py collectstatic` to ensure the static files are properly collected
-2. Restart your web server
-3. Check your site in both light and dark mode to ensure the logos display correctly
+1. Run `python manage.py collectstatic` to ensure the static files are properly collected.
+2. Restart your web server.
+3. Check your site at desktop and mobile viewports to ensure both logos display correctly.
 
 Remember that the tagline should be concise as space in the header is limited.

@@ -6,38 +6,15 @@ import { addClassname, removeClassname } from '../functions/dom.js';
 import { config as mediaCmsConfig } from '../mediacms/config.js';
 import { supportsSvgAsImg } from '../components/-NEW-/functions/dom';
 
-function initLogo(logo) {
-	let light = null;
-	let dark = null;
-
-	if (void 0 !== logo.darkMode) {
-		if (supportsSvgAsImg() && void 0 !== logo.darkMode.svg && '' !== logo.darkMode.svg) {
-			dark = logo.darkMode.svg;
-		} else if (void 0 !== logo.darkMode.img && '' !== logo.darkMode.img) {
-			dark = logo.darkMode.img;
-		}
+function resolveLogoUrl(variant) {
+	if (variant == null) return null;
+	if (supportsSvgAsImg() && 'string' === typeof variant.svg && '' !== variant.svg) {
+		return variant.svg;
 	}
-
-	if (void 0 !== logo.lightMode) {
-		if (supportsSvgAsImg() && void 0 !== logo.lightMode.svg && '' !== logo.lightMode.svg) {
-			light = logo.lightMode.svg;
-		} else if (void 0 !== logo.lightMode.img && '' !== logo.lightMode.img) {
-			light = logo.lightMode.img;
-		}
+	if ('string' === typeof variant.img && '' !== variant.img) {
+		return variant.img;
 	}
-
-	if (null !== light || null !== dark) {
-		if (null === light) {
-			light = dark;
-		} else if (null === dark) {
-			dark = light;
-		}
-	}
-
-	return {
-		light,
-		dark,
-	};
+	return null;
 }
 
 function initMode(cachedValue, defaultValue) {
@@ -63,7 +40,8 @@ class ThemeStore extends EventEmitter {
 		// Keep cache data "fresh" for one day.
 		this.cache = new BrowserCache('MediaCMS[' + config.site.id + '][theme]', 86400);
 
-		this.logos = initLogo(config.theme.logo);
+		this.logoDesktop = resolveLogoUrl(config.theme.logo?.desktop);
+		this.logoMobile = resolveLogoUrl(config.theme.logo?.mobile) || this.logoDesktop;
 
 		this.state = {
 			mode: initMode(this.cache.get('mode'), config.theme.mode),
@@ -75,7 +53,9 @@ class ThemeStore extends EventEmitter {
 	get(type) {
 		switch (type) {
 			case 'logo':
-				return this.logos[this.state.mode];
+				return this.logoDesktop;
+			case 'logo-mobile':
+				return this.logoMobile;
 			case 'mode':
 				return this.state.mode;
 		}

@@ -2,7 +2,7 @@
 
 by [Mico Balina](https://github.com/Micokoko) (Philippines)
 
-The [Theme](../../frontend/src/static/js/mediacms/theme.js) module provides customizable theme settings for the application, including light/dark mode, toggle switch settings, and theme-specific logos.
+The [Theme](../../frontend/src/static/js/mediacms/theme.js) module provides customizable theme settings for the application, including light/dark mode, toggle switch settings, and per-breakpoint logos.
 
 ---
 
@@ -22,11 +22,11 @@ THEME = {
     position: 'header'
   },
   logo: {
-    lightMode: {
+    desktop: {
       img: '',
       svg: ''
     },
-    darkMode: {
+    mobile: {
       img: '',
       svg: ''
     }
@@ -63,22 +63,31 @@ THEME = {
 
 ### Logo Configuration
 
-Configure different logos for light and dark modes.
+Configure a logo file per breakpoint. The topbar background is the same in
+light and dark theme, so no per-mode variant is needed.
 
-#### `logo.lightMode`
+#### `logo.desktop`
 
-- **`img`**: `string` Image URL for light mode logo.  
-- **`svg`**: `string` Inline SVG markup or file path for light mode.
+- **`img`**: `string` Image URL for the desktop logo (`sm:` and up).
+- **`svg`**: `string` SVG URL for the desktop logo. Used in preference to `img`
+  when the browser supports inline SVG.
 
-#### `logo.darkMode`
+#### `logo.mobile`
 
-- **`img`**: `string` Image URL for dark mode logo.  
-- **`svg`**: `string` Inline SVG markup or file path for dark mode.
+- **`img`**: `string` Image URL for the mobile logo (below `sm:`).
+- **`svg`**: `string` SVG URL for the mobile logo.
+
+If `mobile` is omitted or both fields are empty, the topbar reuses the
+`desktop` URL on the mobile breakpoint.
+
+The legacy `{ lightMode, darkMode }` shape is still accepted for backward
+compatibility — both entries collapse to a single desktop logo — but new
+deployments should use the `desktop` / `mobile` shape above.
 
 ---
 
 ## Notes
 
-- Any unrecognized `mode` or `switch.position` values default to `'light'` and `'header'`, respectively.  
-- Empty string values are permitted for logos if no logo is required.  
+- Any unrecognized `mode` or `switch.position` values default to `'light'` and `'header'`, respectively.
+- Empty string values are permitted for logos if no logo is required.
 - Use `.trim()` on input strings to sanitize user input.
