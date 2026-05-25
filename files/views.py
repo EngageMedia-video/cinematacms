@@ -1881,7 +1881,7 @@ class MediaSearch(APIView):
             media = media.filter(media_country=country)
 
         if subtitle_language:
-            media = media.filter(subtitles__language__title=subtitle_language).distinct()
+            media = media.filter(subtitles__language__code=subtitle_language).distinct()
 
         if length:
             if length == "less_than_10":

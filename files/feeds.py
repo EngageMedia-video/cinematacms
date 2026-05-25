@@ -136,8 +136,6 @@ class SearchRSSFeed(Feed):
         elif country:
             country = {value: key for key, value in dict(lists.video_countries).items()}.get(country)
             media = media.filter(media_country=country)
-        elif subtitle_language:
-            media = media.filter(subtitles__language__title=subtitle_language).distinct()
         elif query:
             query = helpers.clean_query(query)
             q_parts = [q_part.strip("y") for q_part in query.split() if q_part not in STOP_WORDS]
@@ -149,6 +147,9 @@ class SearchRSSFeed(Feed):
                 query = None
         if query:
             media = media.filter(search=query)
+
+        if subtitle_language:
+            media = media.filter(subtitles__language__title=subtitle_language).distinct()
 
         if length == "less_than_10":
             media = media.filter(duration__lt=600)

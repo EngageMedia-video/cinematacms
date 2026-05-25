@@ -148,8 +148,9 @@ export class SearchPage extends Page {
 	}
 
 	updateRequestUrl() {
+		const hasSearchQuery = !!(this.state.searchQuery && this.state.searchQuery.trim());
 		const validQuery =
-			this.state.searchQuery ||
+			hasSearchQuery ||
 			this.state.searchCategories ||
 			this.state.searchTags ||
 			this.state.searchCountries ||
@@ -193,7 +194,7 @@ export class SearchPage extends Page {
 							? 'No'
 							: this.state.resultsCount;
 					title += ' media in language "' + this.state.searchLanguages + '"';
-				} else {
+				} else if (hasSearchQuery) {
 					if (null === this.state.resultsCount || 0 === this.state.resultsCount) {
 						title = 'No results for "' + this.state.searchQuery + '"';
 					} else {
