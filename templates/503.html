@@ -28,32 +28,46 @@
         --cinemata-coral-reef-400p: #4ec8a6;
         --cinemata-neutral-50: #f9fafb;
         --cinemata-neutral-200: #e5e7eb;
+        --cinemata-neutral-300: #d1d5db;
         --cinemata-neutral-400: #9ca3af;
-        --cinemata-neutral-500: #6b7280;
 
         --bg-page: var(--cinemata-pacific-deep-50);
         --bg-surface: var(--cinemata-neutral-50);
         --bg-surface-raised: var(--cinemata-white);
         --bg-surface-muted: var(--cinemata-neutral-200);
-        --bg-chrome: var(--cinemata-pacific-deep-800);
         --bg-primary: var(--cinemata-strait-blue-600p);
         --bg-primary-hover: var(--cinemata-strait-blue-800);
         --bg-accent: var(--cinemata-coral-reef-400p);
         --text-strong: var(--cinemata-pacific-deep-900);
-        --text-primary: var(--cinemata-pacific-deep-700);
         --text-muted: var(--cinemata-pacific-deep-400);
-        --text-subtle: var(--cinemata-neutral-500);
         --text-link: var(--cinemata-sunset-horizon-400p);
         --text-link-hover: var(--cinemata-sunset-horizon-600);
         --text-on-primary: var(--cinemata-white);
+        --border-subtle: var(--cinemata-neutral-200);
         --ring-focus: var(--cinemata-sunset-horizon-400p);
-        --radius-2: 2px;
-        --radius-4: 4px;
-        --radius-8: 8px;
-        color-scheme: light;
+
+        --color-bg: var(--bg-page);
+        --color-fg: var(--text-strong);
+        --color-muted: var(--text-muted);
+        --color-primary: var(--text-link);
+        --color-primary-hover: var(--text-link-hover);
+        --color-secondary: var(--cinemata-pacific-deep-700);
+        --color-panel-bg: var(--bg-surface-raised);
+        --color-main-bg: var(--bg-page);
+        --color-separator: var(--border-subtle);
+        --color-spinner-outer: var(--bg-primary);
+        --color-spinner-inner: var(--bg-accent);
+        --color-status-dot-ring: var(--bg-surface-muted);
+        --color-progress-bg: var(--bg-surface-muted);
+        --color-progress-bar: var(--bg-primary);
+        --color-button-bg: var(--bg-primary);
+        --color-button-text: var(--text-on-primary);
+        --color-toggle-border: var(--border-subtle);
+        --color-footer-border: var(--border-subtle);
+        --radius: 6px;
       }
 
-      html[data-theme="dark"] {
+      [data-theme="dark"] {
         --bg-page: var(--cinemata-pacific-deep-950);
         --bg-surface: var(--cinemata-pacific-deep-900);
         --bg-surface-raised: var(--cinemata-pacific-deep-800);
@@ -61,14 +75,18 @@
         --bg-primary: var(--cinemata-strait-blue-500);
         --bg-primary-hover: var(--cinemata-strait-blue-700);
         --text-strong: var(--cinemata-strait-blue-50);
-        --text-primary: var(--cinemata-strait-blue-50);
         --text-muted: var(--cinemata-pacific-deep-300);
-        --text-subtle: var(--cinemata-neutral-400);
         --text-link: var(--cinemata-sunset-horizon-200);
         --text-link-hover: var(--cinemata-sunset-horizon-100);
-        color-scheme: dark;
+        --border-subtle: var(--cinemata-pacific-deep-800);
+
+        --color-secondary: var(--cinemata-pacific-deep-300);
+        --color-panel-bg: var(--bg-surface);
+        --color-main-bg: var(--bg-page);
+        --color-status-dot-ring: color-mix(in srgb, var(--bg-accent) 24%, transparent);
       }
 
+      /* Fonts - Cinemata uses Inter and Barlow Semi Condensed */
       @font-face {
         font-family: "Inter";
         src: url("/static/lib/Inter/inter-latin.woff2") format("woff2");
@@ -79,334 +97,140 @@
 
       @font-face {
         font-family: "Barlow Semi Condensed";
-        src: url("/static/lib/BarlowSemiCondensed/barlow-semi-condensed-latin-500.woff2") format("woff2");
-        font-weight: 500;
+        src: url("/static/lib/BarlowSemiCondensed/barlow-semi-condensed-latin-400.woff2")
+          format("woff2");
+        font-weight: 400;
         font-display: swap;
         font-style: normal;
       }
 
-      @font-face {
-        font-family: "Barlow Semi Condensed";
-        src: url("/static/lib/BarlowSemiCondensed/barlow-semi-condensed-latin-700.woff2") format("woff2");
-        font-weight: 700;
-        font-display: swap;
-        font-style: normal;
-      }
-
+      /* Reset + base */
       *,
       *::before,
       *::after {
         box-sizing: border-box;
       }
-
       html,
       body {
-        min-height: 100%;
+        height: 100%;
       }
-
       body {
         margin: 0;
-        color: var(--text-primary);
-        background: var(--bg-page);
-        background:
-          linear-gradient(135deg, color-mix(in srgb, var(--bg-page) 88%, var(--cinemata-white)) 0%, var(--bg-page) 44%),
-          var(--bg-page);
-        font-family: Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
-        line-height: 1.5;
-      }
-
-      html[data-theme="dark"] body {
-        background: var(--bg-page);
-        background:
-          radial-gradient(circle at 78% 8%, color-mix(in srgb, var(--cinemata-strait-blue-800) 52%, transparent) 0%, transparent 30%),
-          linear-gradient(135deg, var(--cinemata-pacific-deep-950) 0%, var(--cinemata-pacific-deep-900) 100%);
+        background: var(--color-bg);
+        color: var(--color-fg);
+        font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        line-height: 1.6;
       }
 
       a {
-        color: var(--text-link);
+        color: var(--color-primary);
         text-decoration: none;
       }
-
       a:hover {
-        color: var(--text-link-hover);
+        color: var(--color-primary-hover);
         text-decoration: underline;
       }
 
-      .maintenance-shell {
-        min-height: 100vh;
-        display: grid;
-        grid-template-rows: 1fr auto;
-      }
-
-      .maintenance-main {
+      .container {
         min-height: 100%;
-        display: grid;
-        place-items: center;
-        padding: 40px 20px;
+        display: flex;
+        flex-direction: column;
       }
 
-      .maintenance-panel {
-        width: min(100%, 760px);
-        padding: 32px;
-        border-radius: var(--radius-8);
-        background: var(--bg-surface-raised);
-        background: color-mix(in srgb, var(--bg-surface-raised) 94%, transparent);
-        box-shadow: 0 24px 60px color-mix(in srgb, var(--cinemata-pacific-deep-950) 14%, transparent);
-      }
-
-      html[data-theme="dark"] .maintenance-panel {
-        background: var(--bg-surface);
-        background: color-mix(in srgb, var(--bg-surface) 92%, var(--cinemata-pacific-deep-800));
-        box-shadow: 0 24px 64px color-mix(in srgb, var(--cinemata-black) 36%, transparent);
-      }
-
-      .maintenance-identity {
+      main {
+        flex: 1;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 32px;
+        justify-content: center;
+        padding: 32px 20px;
+        background: var(--color-main-bg);
       }
 
+      [data-theme="dark"] main {
+        background: var(--color-main-bg);
+      }
+
+      /* Logo styles - minimal addition */
       .logo-container {
-        display: flex;
-        align-items: center;
-        min-height: 44px;
-        width: fit-content;
-        padding: 6px 10px;
-        border-radius: var(--radius-4);
-        background: var(--bg-chrome);
-      }
-
-      .logo-container:empty {
-        display: none;
+        margin-bottom: 20px;
       }
 
       .logo {
-        display: block;
-        max-width: 168px;
-        max-height: 32px;
+        max-width: 150px;
         height: auto;
       }
 
-      .maintenance-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        min-height: 28px;
-        padding: 6px 10px;
-        border-radius: var(--radius-4);
-        color: var(--text-primary);
-        background: var(--bg-surface-muted);
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0;
-        text-transform: uppercase;
-        white-space: nowrap;
-      }
-
-      .maintenance-badge::before {
-        content: "";
-        width: 8px;
-        height: 8px;
-        border-radius: 999px;
-        background: var(--bg-accent);
-      }
-
-      .maintenance-layout {
-        display: grid;
-        grid-template-columns: 1fr minmax(180px, 220px);
-        gap: 32px;
-        align-items: center;
-      }
-
-      .maintenance-copy {
-        min-width: 0;
-      }
-
-      .maintenance-kicker {
-        margin: 0 0 10px;
-        color: var(--text-muted);
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0;
-        text-transform: uppercase;
-      }
-
-      h1 {
-        max-width: 540px;
-        margin: 0;
-        color: var(--text-strong);
-        font-family: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
-        font-size: clamp(34px, 6vw, 56px);
-        font-weight: 700;
-        line-height: 0.98;
-        letter-spacing: 0;
-      }
-
-      .sub {
-        max-width: 560px;
-        margin: 16px 0 0;
-        color: var(--text-muted);
-        font-size: 16px;
-        line-height: 1.65;
-      }
-
-      .maintenance-status {
-        margin-top: 28px;
-        padding: 20px;
-        border-radius: var(--radius-4);
-        background: var(--bg-surface);
-      }
-
-      html[data-theme="dark"] .maintenance-status {
-        background: var(--bg-surface-raised);
-      }
-
-      .countdown {
+      /* Spinner container for centering */
+      .spinner-container {
         display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 16px;
+        justify-content: center;
+        margin: 20px 0;
       }
 
-      .time {
-        color: var(--text-strong);
-        font-variant-numeric: tabular-nums;
-        font-size: clamp(34px, 8vw, 52px);
-        font-weight: 800;
-        line-height: 1;
-        letter-spacing: 0;
-      }
-
-      .time.extended {
-        color: var(--text-link);
-      }
-
-      .time-label {
-        color: var(--text-muted);
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 0;
-        text-align: right;
-        text-transform: uppercase;
-      }
-
-      .progress {
-        position: relative;
+      .panel {
         width: 100%;
-        height: 8px;
-        margin-top: 18px;
-        overflow: hidden;
-        border-radius: var(--radius-2);
-        background: var(--bg-surface-muted);
+        max-width: 720px;
+        border: none;
+        border-radius: var(--radius);
+        background: var(--color-panel-bg);
+        backdrop-filter: blur(10px);
+        padding: 24px;
       }
 
-      .progress-bar {
-        position: absolute;
-        inset: 0 auto 0 0;
-        width: 0%;
-        border-radius: inherit;
-        background: var(--bg-primary);
-        transition: width 0.3s ease;
+      [data-theme="dark"] .panel {
+        background: var(--color-panel-bg);
       }
 
-      .extended-note {
-        margin-top: 16px;
-        color: var(--text-link);
-        font-weight: 600;
-      }
-
-      .maintenance-actions {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        margin-top: 20px;
-      }
-
-      .last-checked {
-        margin: 0;
-        color: var(--text-subtle);
-        font-size: 13px;
-      }
-
-      .btn {
-        appearance: none;
-        min-height: 44px;
-        padding: 0 18px;
-        border: 0;
-        border-radius: var(--radius-4);
-        color: var(--text-on-primary);
-        background: var(--bg-primary);
-        font: inherit;
-        font-size: 14px;
-        font-weight: 700;
-        cursor: pointer;
-        transition:
-          background-color 0.2s ease,
-          transform 0.2s ease;
-      }
-
-      .btn:hover {
-        background: var(--bg-primary-hover);
-      }
-
-      .btn:active {
-        transform: translateY(1px);
-      }
-
-      .btn:focus-visible,
-      .theme-toggle:focus-visible,
-      a:focus-visible {
-        outline: 2px solid var(--ring-focus);
-        outline-offset: 3px;
-      }
-
-      .maintenance-visual {
-        display: grid;
-        place-items: center;
+      .panel-header {
+        margin-bottom: 12px;
+        text-align: center;
       }
 
       .spinner {
         position: relative;
-        width: 148px;
-        height: 148px;
-        border-radius: 50%;
-        background:
-          radial-gradient(circle, var(--bg-surface-raised) 0 44%, transparent 45%),
-          conic-gradient(var(--bg-primary), var(--bg-accent), var(--bg-primary));
+        width: 51px;
+        height: 51px;
+        flex: 0 0 51px;
       }
 
-      .spinner::before,
-      .spinner::after {
-        content: "";
+      .spinner-outer {
         position: absolute;
-        border-radius: inherit;
-      }
-
-      .spinner::before {
-        inset: 11px;
-        border: 8px solid var(--bg-surface-muted);
-        border: 8px solid color-mix(in srgb, var(--bg-primary) 32%, transparent);
-        border-top-color: var(--bg-primary);
+        left: 0;
+        top: 0;
+        width: 51px;
+        height: 51px;
+        border: 5px solid var(--color-spinner-outer);
+        border-radius: 50%;
+        border-top-color: transparent;
         border-right-color: transparent;
         animation: spin 1.2s linear infinite;
       }
 
-      .spinner::after {
-        inset: 38px;
-        background: var(--bg-surface-raised);
+      .spinner-inner {
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        width: 42px;
+        height: 42px;
+        border: 5px solid var(--color-spinner-inner);
+        border-radius: 50%;
+        opacity: 0.3;
+        border-bottom-color: transparent;
+        border-left-color: transparent;
+        animation: spin 0.8s linear infinite reverse;
       }
 
-      html[data-theme="dark"] .spinner {
-        background:
-          radial-gradient(circle, var(--bg-surface) 0 44%, transparent 45%),
-          conic-gradient(var(--bg-primary), var(--bg-accent), var(--bg-primary));
+      [data-theme="dark"] .spinner-outer {
+        border-color: var(--color-spinner-outer);
+        border-top-color: transparent;
+        border-right-color: transparent;
       }
 
-      html[data-theme="dark"] .spinner::after {
-        background: var(--bg-surface);
+      [data-theme="dark"] .spinner-inner {
+        border-color: var(--color-spinner-inner);
+        border-bottom-color: transparent;
+        border-left-color: transparent;
+        opacity: 0.4;
       }
 
       @keyframes spin {
@@ -415,109 +239,243 @@
         }
       }
 
+      h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        line-height: 1.3;
+        font-family: 'Barlow Semi Condensed', 'Arial Narrow', Arial, sans-serif;
+        font-weight: 400;
+      }
+
+      .sub {
+        margin: 6px 0 0 0;
+        color: var(--color-muted);
+        font-size: 0.95rem;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 16px;
+        font-size: 0.9rem;
+        color: var(--color-muted);
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--bg-accent);
+        box-shadow: 0 0 0 4px var(--color-status-dot-ring);
+      }
+
+      [data-theme="dark"] .status-dot {
+        box-shadow: 0 0 0 4px var(--color-status-dot-ring);
+      }
+
+      .block {
+        margin-top: 20px;
+        padding-top: 12px;
+        text-align: center;
+      }
+
+      .block-separator {
+        border-top: 1px solid var(--color-separator);
+      }
+
+      [data-theme="dark"] .block-separator {
+        border-top-color: var(--color-separator);
+      }
+
+      .countdown {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+      }
+      .time {
+        font-variant-numeric: tabular-nums;
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+      }
+      .time-label {
+        color: var(--color-muted);
+        font-size: 0.9rem;
+      }
+
+      /* Extended maintenance styles */
+      .time.extended {
+        color: var(--color-primary);
+      }
+
+      .progress {
+        position: relative;
+        width: 100%;
+        height: 23px; /* Increased height to match design */
+        border-radius: 6px; /* Subtle rounded corners */
+        background: var(--color-progress-bg);
+        overflow: hidden;
+        margin-top: 16px;
+      }
+
+      [data-theme="dark"] .progress {
+        background: var(--color-progress-bg);
+      }
+
+      .progress-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 0%;
+        background: var(--color-progress-bar);
+        border-radius: 6px; /* Match parent border radius */
+        transition: width 0.3s ease;
+      }
+
+      [data-theme="dark"] .progress-bar {
+        background: var(--color-progress-bar);
+      }
+
+      .actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 16px;
+      }
+
+      .btn {
+        appearance: none;
+        border: none;
+        background: var(--color-button-bg);
+        color: var(--color-button-text);
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: opacity 0.2s ease;
+        box-shadow: none; /* Flat style */
+      }
+
+      [data-theme="dark"] .btn {
+        background: var(--color-button-bg);
+      }
+
+      .btn:hover {
+        opacity: 0.9;
+      }
+
+      .btn:active {
+        opacity: 0.8;
+      }
+
+      .btn:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+      }
+
+      .opt {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--color-muted);
+        font-size: 0.95rem;
+      }
+      .opt input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--color-primary);
+      }
+
+      footer {
+        padding: 20px;
+        text-align: center;
+        color: var(--color-muted);
+        font-size: 0.9rem;
+        border-top: 1px solid var(--color-footer-border);
+      }
+
+      [data-theme="dark"] footer {
+        border-top-color: var(--color-footer-border);
+      }
+
+      /* Dark mode toggle button */
       .theme-toggle {
         position: fixed;
         top: 20px;
         right: 20px;
         z-index: 1000;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        appearance: none;
+        border: 1px solid var(--color-toggle-border);
+        background: var(--color-bg);
+        color: var(--color-fg);
+        border-radius: 50%;
         width: 44px;
         height: 44px;
-        border: 0;
-        border-radius: var(--radius-4);
-        color: var(--text-primary);
-        background: var(--bg-surface-raised);
-        box-shadow: 0 12px 28px color-mix(in srgb, var(--cinemata-pacific-deep-950) 12%, transparent);
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--text-strong) 12%, transparent);
+        transition: all 0.3s ease;
       }
 
-      html[data-theme="dark"] .theme-toggle {
-        background: var(--bg-surface-raised);
-        box-shadow: 0 12px 28px color-mix(in srgb, var(--cinemata-black) 30%, transparent);
+      [data-theme="dark"] .theme-toggle {
+        border-color: var(--color-toggle-border);
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--cinemata-black) 30%, transparent);
+      }
+
+      .theme-toggle:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--text-strong) 16%, transparent);
+      }
+
+      [data-theme="dark"] .theme-toggle:hover {
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--cinemata-black) 38%, transparent);
+      }
+
+      .theme-toggle:focus-visible {
+        outline: 3px solid var(--color-primary);
+        outline-offset: 2px;
       }
 
       .theme-toggle svg {
         width: 20px;
         height: 20px;
+        transition: transform 0.3s ease;
       }
 
-      html[data-theme="dark"] .icon-sun {
+      .theme-toggle:active svg {
+        transform: rotate(20deg);
+      }
+
+      /* Hide sun in dark mode, moon in light mode */
+      [data-theme="dark"] .icon-sun {
         display: none;
       }
-
-      html[data-theme="light"] .icon-moon,
+      [data-theme="light"] .icon-moon,
       :root:not([data-theme]) .icon-moon {
         display: none;
       }
 
-      footer {
-        padding: 0 20px 28px;
-        color: var(--text-muted);
-        font-size: 13px;
-        text-align: center;
-      }
-
-      @media (max-width: 720px) {
-        .maintenance-main {
-          place-items: start center;
-          padding-top: 76px;
+      /* Responsive tweaks */
+      @media (min-width: 640px) {
+        .panel {
+          padding: 28px;
         }
-
-        .maintenance-panel {
-          padding: 24px;
-        }
-
-        .maintenance-identity,
-        .maintenance-layout,
-        .maintenance-actions,
-        .countdown {
-          align-items: flex-start;
-        }
-
-        .maintenance-identity,
-        .maintenance-actions,
-        .countdown {
-          flex-direction: column;
-        }
-
-        .maintenance-layout {
-          grid-template-columns: 1fr;
-          gap: 28px;
-        }
-
-        .maintenance-visual {
-          order: -1;
-        }
-
-        .spinner {
-          width: 112px;
-          height: 112px;
-        }
-
-        .time-label {
-          text-align: left;
-        }
-
-        .btn {
-          width: 100%;
-        }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        *,
-        *::before,
-        *::after {
-          animation-duration: 0.001ms !important;
-          animation-iteration-count: 1 !important;
-          scroll-behavior: auto !important;
-          transition-duration: 0.001ms !important;
+        h1 {
+          font-size: 1.75rem;
         }
       }
     </style>
   </head>
   <body>
+    <!-- Dark mode toggle -->
     <button
       class="theme-toggle"
       id="theme-toggle"
@@ -546,17 +504,24 @@
       </svg>
     </button>
 
-    <div class="maintenance-shell">
-      <main class="maintenance-main" id="content" role="main">
-        <section class="maintenance-panel" aria-labelledby="maint-title">
-          <div class="maintenance-identity">
-            <div class="logo-container" id="logo-container"></div>
-            <div class="maintenance-badge">Service maintenance</div>
+    <div class="container">
+      <main id="content" role="main">
+        <section class="panel" aria-labelledby="maint-title">
+          <!-- Logo Section -->
+          <div class="logo-container" id="logo-container">
+            <!-- Logo will be dynamically inserted based on MediaCMS.site.logo configuration -->
           </div>
 
-          <div class="maintenance-layout">
-            <div class="maintenance-copy">
-              <p class="maintenance-kicker">503 Service Unavailable</p>
+          <!-- Spinner below logo -->
+          <div class="spinner-container">
+            <div class="spinner" aria-hidden="true">
+              <div class="spinner-outer"></div>
+              <div class="spinner-inner"></div>
+            </div>
+          </div>
+
+          <div class="panel-header">
+            <div>
               {% if MAINTENANCE_MODE_IS_EXTENDED %}
                 <h1 id="maint-title">Maintenance is taking longer than expected</h1>
                 <p class="sub">
@@ -565,56 +530,66 @@
               {% else %}
                 <h1 id="maint-title">We'll be back soon</h1>
                 <p class="sub">
-                  We're performing scheduled maintenance to improve reliability and speed.
+                  We're performing scheduled maintenance to improve reliability
+                  and speed.
                 </p>
               {% endif %}
+            </div>
+          </div>
 
-              <div class="maintenance-status" aria-labelledby="eta-label">
-                {% if MAINTENANCE_MODE_IS_EXTENDED %}
-                  <div class="countdown">
-                    <div
-                      class="time extended"
-                      id="time-extended"
-                      aria-live="polite"
-                      aria-atomic="true"
-                      data-extension-time="{{ MAINTENANCE_MODE_EXTENSION_TIME|default:0 }}"
-                    ></div>
-                    <div class="time-label" id="eta-label">over the estimated time</div>
-                  </div>
-                  <p class="extended-note">Please check back in a few minutes.</p>
-                {% else %}
-                  <div class="countdown">
-                    <div
-                      class="time"
-                      id="time-remaining"
-                      aria-live="polite"
-                      aria-atomic="true"
-                      data-seconds-remaining="{{ MAINTENANCE_MODE_REMAINING|default:0 }}"
-                    ></div>
-                    <div class="time-label" id="eta-label">minutes remaining</div>
-                  </div>
-                  <div class="progress" aria-hidden="true">
-                    <div class="progress-bar" id="progress-bar"></div>
-                  </div>
-                {% endif %}
-
-                <div class="maintenance-actions">
-                  <p class="last-checked" id="update-text" aria-live="polite">Last checked just now.</p>
-                  <button
-                    class="btn"
-                    id="refresh-btn"
-                    type="button"
-                    aria-label="Refresh the page to check status"
-                  >
-                    Refresh status
-                  </button>
+          <div class="block block-separator" aria-labelledby="eta-label">
+            {% if MAINTENANCE_MODE_IS_EXTENDED %}
+              <!-- Extended maintenance mode UI -->
+              <div class="countdown">
+                <div
+                  class="time extended"
+                  id="time-extended"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  data-extension-time="{{ MAINTENANCE_MODE_EXTENSION_TIME|default:0 }}"
+                >
+                  <!-- Will be set by JavaScript -->
                 </div>
+                <div class="time-label" id="eta-label">over the estimated time</div>
               </div>
-            </div>
+              <div style="margin-top: 16px; text-align: center;">
+                <p class="sub" style="color: var(--color-primary); margin: 8px 0;">
+                  Please check back in a few minutes
+                </p>
+              </div>
+            {% else %}
+              <!-- Normal countdown mode -->
+              <div class="countdown">
+                <div
+                  class="time"
+                  id="time-remaining"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  data-seconds-remaining="{{ MAINTENANCE_MODE_REMAINING|default:0 }}"
+                >
+                  <!-- Will be set by JavaScript -->
+                </div>
+                <div class="time-label" id="eta-label">minutes remaining</div>
+              </div>
+              <div class="progress" aria-hidden="true">
+                <div class="progress-bar" id="progress-bar"></div>
+              </div>
+            {% endif %}
 
-            <div class="maintenance-visual" aria-hidden="true">
-              <div class="spinner"></div>
+            <div class="actions">
+              <button
+                class="btn"
+                id="refresh-btn"
+                type="button"
+                aria-label="Refresh the page to check status"
+              >
+                Refresh
+              </button>
             </div>
+          </div>
+
+          <div class="block" aria-live="polite">
+            <p class="sub" id="update-text">Last checked just now.</p>
           </div>
         </section>
       </main>
