@@ -24,7 +24,7 @@
 
 	.playlist-actions {
 		.circle-icon-button {
-			// color: var(--playlist-page-actions-circle-icon-text-color);
+			color: var(--playlist-page-actions-circle-icon-text-color);
 			background-color: var(--playlist-page-actions-circle-icon-bg-color);
 		}
 
@@ -44,6 +44,16 @@
 
 		.popup-message-bottom {
 			button {
+				color: var(--text-strong);
+				border-radius: var(--radius-4);
+				background-color: transparent;
+
+				&:hover,
+				&:focus {
+					color: var(--text-strong);
+					background-color: var(--bg-surface-muted);
+				}
+
 				&.cancel-playlist-removal {
 					color: var(--playlist-page-actions-popup-message-bottom-cancel-button-text-color);
 
@@ -55,6 +65,23 @@
 							color: var(
 								--playlist-page-actions-popup-message-bottom-cancel-button-icon-hover-text-color
 							);
+						}
+					}
+				}
+
+				&.proceed-playlist-removal {
+					color: var(--cinemata-red-700p);
+
+					.dark_theme & {
+						color: var(--cinemata-red-400);
+					}
+
+					&:hover,
+					&:focus {
+						color: var(--cinemata-red-800);
+
+						.dark_theme & {
+							color: var(--cinemata-red-300);
 						}
 					}
 				}
@@ -478,19 +505,30 @@
 				font-size: 13px;
 				font-weight: 500;
 				border: 0;
+				color: var(--text-muted);
 				background: none;
 				cursor: pointer;
 				padding: 0;
+
+				.circle-icon-button {
+					color: currentColor;
+					background-color: transparent;
+				}
+
+				&:hover,
+				&:focus {
+					color: var(--text-strong);
+				}
 			}
 
 			.popup-fullscreen .popup-main > .playlist-share-options {
 				position: relative;
 				z-index: +1;
 				display: inline-block;
-				background-color: var(--popup-bg-color);
-				color: var(--body-text-color);
+				background-color: var(--bg-surface-raised);
+				color: var(--text-strong);
 				text-align: initial;
-				border-radius: 2px;
+				border-radius: var(--radius-4);
 				box-shadow:
 					0 16px 24px 2px rgb(0 12 32 / 0.14),
 					0 6px 30px 5px rgb(0 12 32 / 0.12),
@@ -509,7 +547,7 @@
 					font-weight: 500;
 					margin-bottom: 16px;
 					line-height: 1.25;
-					color: var(--body-text-color);
+					color: var(--text-strong);
 				}
 
 				.share-preview {
@@ -583,8 +621,8 @@
 							text-decoration: none;
 							border: 0;
 							background: none;
-							color: var(--body-text-color);
-							border-radius: 6px;
+							color: var(--text-strong);
+							border-radius: var(--radius-4);
 
 							// Suppress the default focus ring for mouse clicks (where
 							// :focus fires without :focus-visible) but restore a visible
@@ -596,7 +634,7 @@
 							}
 
 							&:focus-visible {
-								outline: 2px solid var(--body-text-color);
+								outline: 2px solid var(--ring-focus);
 								outline-offset: 2px;
 							}
 
@@ -615,7 +653,7 @@
 								font-size: 13px;
 								line-height: 18px;
 								overflow: hidden;
-								color: var(--body-text-color);
+								color: var(--text-strong);
 							}
 
 							.material-icons {
@@ -692,14 +730,14 @@
 					position: relative;
 					width: 100%;
 					padding: 0 24px 20px;
-					color: var(--body-text-color);
+					color: var(--text-strong);
 
 					> div {
 						position: relative;
 						display: block;
 						padding-right: $button-width;
-						border: 1px solid var(--popup-hr-bg-color);
-						border-radius: 2px;
+						border: 1px solid var(--border-subtle);
+						border-radius: var(--radius-4);
 					}
 
 					input[type='text'] {
@@ -711,7 +749,7 @@
 						line-height: normal;
 						border: 0;
 						background: none;
-						color: var(--body-text-color);
+						color: var(--text-strong);
 					}
 
 					button {
@@ -738,6 +776,12 @@
 				top: 100%;
 				left: -8px;
 				margin-bottom: 32px;
+				border-radius: var(--radius-4);
+				background-color: var(--bg-surface-raised);
+
+				hr {
+					background-color: var(--border-subtle);
+				}
 
 				// width: 200px !important;
 
@@ -767,14 +811,24 @@
 					}
 				}
 			}
+
+			.popup-message-title {
+				color: var(--text-strong);
+			}
+
+			.popup-message-main {
+				color: var(--text-muted);
+			}
 		}
 
 		.popup-message-bottom {
 			button {
 				position: relative;
 				width: auto;
-				padding: 0;
+				padding: 6px 8px;
 				border: 0;
+				border-radius: var(--radius-4);
+				color: var(--text-strong);
 
 				&.cancel-playlist-removal,
 				&.proceed-playlist-removal {
@@ -783,7 +837,20 @@
 
 				&.proceed-playlist-removal {
 					float: right;
-					color: $theme-color;
+					color: var(--cinemata-red-700p);
+
+					.dark_theme & {
+						color: var(--cinemata-red-400);
+					}
+
+					&:hover,
+					&:focus {
+						color: var(--cinemata-red-800);
+
+						.dark_theme & {
+							color: var(--cinemata-red-300);
+						}
+					}
 				}
 
 				&.cancel-playlist-removal {
@@ -899,10 +966,16 @@
 				font-size: 14px;
 				font-weight: 500;
 				letter-spacing: 0.007px;
-				border-radius: 1px;
+				border-radius: var(--radius-4);
+
+				&:hover,
+				&:focus {
+					color: var(--text-on-primary);
+					background-color: var(--bg-primary-hover);
+				}
 
 				> * {
-					border-radius: 1px;
+					border-radius: var(--radius-4);
 
 					> * {
 						display: table;
@@ -1106,6 +1179,12 @@
 			position: absolute;
 			bottom: 100%;
 			right: 0;
+			border-radius: var(--radius-4);
+			background-color: var(--bg-surface-raised);
+
+			hr {
+				background-color: var(--border-subtle);
+			}
 			// margin-bottom:4px;
 		}
 
@@ -1115,12 +1194,28 @@
 			}
 		}
 
+		.popup-message-title {
+			color: var(--text-strong);
+		}
+
+		.popup-message-main {
+			color: var(--text-muted);
+		}
+
 		.popup-message-bottom {
 			button {
 				position: relative;
 				width: auto;
-				padding: 0;
+				padding: 6px 8px;
 				border: 0;
+				border-radius: var(--radius-4);
+				color: var(--text-strong);
+
+				&:hover,
+				&:focus {
+					color: var(--text-strong);
+					background-color: var(--bg-surface-muted);
+				}
 
 				&.cancel-playlist-removal,
 				&.proceed-playlist-removal {
@@ -1129,7 +1224,20 @@
 
 				&.proceed-playlist-removal {
 					float: right;
-					color: $theme-color;
+					color: var(--cinemata-red-700p);
+
+					.dark_theme & {
+						color: var(--cinemata-red-400);
+					}
+
+					&:hover,
+					&:focus {
+						color: var(--cinemata-red-800);
+
+						.dark_theme & {
+							color: var(--cinemata-red-300);
+						}
+					}
 				}
 
 				&.cancel-playlist-removal {

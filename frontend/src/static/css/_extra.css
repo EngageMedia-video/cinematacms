@@ -3188,20 +3188,21 @@ body.dark_theme .profile-page-header .profile-nav ul li.active:after {
 
 body .playlist-item .playlist-count,
 body .playlist-item .playlist-hover-play-all {
-	background-color: rgba(15, 26, 37, 0.8);
+	color: var(--text-on-chrome);
+	background-color: var(--bg-chrome);
 }
 
 body .playlist-item .playlist-hover-play-all {
-	background-color: rgba(15, 26, 37, 0.8);
+	background-color: var(--bg-chrome);
 }
 
 body.dark_theme .playlist-item .item-main a.view-full-playlist {
 	font-weight: 500;
-	color: rgba(255, 255, 255, 0.4);
+	color: var(--text-muted);
 }
 
 body.dark_theme .playlist-item .item-main a:hover.view-full-playlist {
-	color: #fff;
+	color: var(--text-strong);
 }
 
 body.dark_theme #page-profile-about .profile-details li > span:first-child {
@@ -3214,7 +3215,7 @@ body .playlist-view .playlist-media {
 }
 
 body.dark_theme .playlist-view .playlist-media {
-	background-color: rgba(15, 26, 37, 1);
+	background-color: var(--playlist-page-video-list-bg-color);
 }
 
 body .playlist-view .playlist-media .item {
@@ -3240,21 +3241,21 @@ body .playlist-view .playlist-media .item-order-number {
 }
 
 body .playlist-view .playlist-meta a {
-	color: #000;
+	color: var(--text-link);
 }
 
 body.dark_theme .playlist-view .playlist-meta a {
-	color: #fff;
+	color: var(--text-link);
 }
 
 body .playlist-view .playlist-meta .counter,
 body .playlist-view .playlist-media .item-order-number {
-	color: #869ea5;
+	color: var(--text-muted);
 }
 
-body.dark_theme .playlist-meta .counter,
-body .playlist-view .playlist-media .item-order-number {
-	color: #bad8dd;
+body.dark_theme .playlist-view .playlist-meta .counter,
+body.dark_theme .playlist-view .playlist-media .item-order-number {
+	color: var(--text-muted);
 }
 
 body .playlist-view .playlist-header,
@@ -3265,21 +3266,20 @@ body .playlist-view .playlist-actions .circle-icon-button {
 }
 
 body .playlist-view .playlist-actions .circle-icon-button.active {
-	color: #ed7c30;
+	color: var(--text-link);
 }
 
 body.dark_theme .playlist-view .playlist-header,
 body.dark_theme .playlist-view .playlist-actions,
 body.dark_theme .playlist-view .playlist-header .toggle-playlist-view,
 body.dark_theme .playlist-view .playlist-actions .circle-icon-button {
-	background-color: #0b3145;
+	background-color: var(--playlist-page-details-bg-color);
 }
 
 /* #################################################################################################### */
 
 body.dark_theme .playlist-details {
-	background: rgba(11, 49, 68, 0.6);
-	background-color: #0b3145;
+	background: var(--playlist-page-details-bg-color);
 }
 
 body.dark_theme .playlist-details .playlist-title h1 {
@@ -3288,24 +3288,24 @@ body.dark_theme .playlist-details .playlist-title h1 {
 
 body.dark_theme .playlist-details .playlist-meta {
 	font-weight: 500;
-	color: #869ea5;
+	color: var(--text-muted);
 }
 
 body.dark_theme .playlist-details .playlist-description {
 	font-weight: 500;
-	color: #fff;
+	color: var(--text-strong);
 }
 
 body.dark_theme #page-playlist,
 body.dark_theme .playlist-videos-list,
 body.dark_theme .playlist-videos-list > *,
 body.dark_theme .playlist-videos-list .item .item-content h3 span {
-	background: rgba(15, 26, 37, 1);
+	background: var(--playlist-page-video-list-bg-color);
 }
 
 body.dark_theme .playlist-videos-list .item:hover,
 body.dark_theme .playlist-videos-list .item:hover .item-content h3 span {
-	background: #0d202e;
+	background: var(--playlist-page-video-list-item-hover-bg-color);
 }
 
 /* #################################################################################################### */
