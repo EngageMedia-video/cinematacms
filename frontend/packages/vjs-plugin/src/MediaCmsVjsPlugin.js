@@ -2316,8 +2316,7 @@ function generatePlugin(/*videojs*/) {
 		}
 
 		doubleTapSeekFeedback(direction) {
-			const cls =
-				'backward' === direction ? 'vjs-double-tap-seek-backward' : 'vjs-double-tap-seek-forward';
+			const cls = 'backward' === direction ? 'vjs-double-tap-seek-backward' : 'vjs-double-tap-seek-forward';
 
 			clearTimeout(this.doubleTapSeekFeedbackTimeout);
 			this.player.removeClass('vjs-double-tap-seek-backward');
