@@ -777,7 +777,7 @@
 				left: -8px;
 				margin-bottom: 32px;
 				border-radius: var(--radius-4);
-				background-color: var(--bg-surface-raised);
+				background-color: var(--bg-surface);
 
 				hr {
 					background-color: var(--border-subtle);
@@ -804,8 +804,26 @@
 
 					ul {
 						li {
+							a,
 							button {
+								color: var(--text-strong);
+								border-radius: var(--radius-4);
 								font-size: 13px;
+
+								&:hover,
+								&:focus {
+									color: var(--text-strong);
+									background-color: var(--bg-surface-raised);
+								}
+
+								.menu-item-icon {
+									color: var(--text-muted);
+								}
+
+								&:hover .menu-item-icon,
+								&:focus .menu-item-icon {
+									color: var(--text-strong);
+								}
 							}
 						}
 					}
@@ -1181,13 +1199,15 @@
 		// visibility:hidden;
 
 		.circle-icon-button {
+			color: var(--text-muted);
 			display: inline-block;
 			background-color: transparent;
 
 			&:hover,
 			&:focus,
 			&:active {
-				// color: var(--text-primary);
+				color: var(--text-strong);
+				background-color: var(--bg-surface-raised);
 			}
 		}
 
@@ -1196,7 +1216,7 @@
 			bottom: 100%;
 			right: 0;
 			border-radius: var(--radius-4);
-			background-color: var(--bg-surface-raised);
+			background-color: var(--bg-surface);
 
 			hr {
 				background-color: var(--border-subtle);
@@ -1207,6 +1227,35 @@
 		&.item-playlist-options-main {
 			.popup {
 				width: 16rem;
+			}
+		}
+
+		.popup-main {
+			.nav-menu {
+				padding: 8px 0;
+
+				li {
+					a,
+					button {
+						color: var(--text-strong);
+						border-radius: var(--radius-4);
+
+						&:hover,
+						&:focus {
+							color: var(--text-strong);
+							background-color: var(--bg-surface-raised);
+						}
+
+						.menu-item-icon {
+							color: var(--text-muted);
+						}
+
+						&:hover .menu-item-icon,
+						&:focus .menu-item-icon {
+							color: var(--text-strong);
+						}
+					}
+				}
 			}
 		}
 
@@ -1307,6 +1356,56 @@
 						bottom: auto;
 					}
 				}
+			}
+		}
+	}
+}
+
+#page-playlist {
+	.playlist-details .playlist-actions .playlist-options-wrap,
+	.playlist-videos-list .item-playlist-options-wrap {
+		.popup {
+			background-color: var(--bg-surface);
+		}
+
+		.popup-main {
+			.nav-menu {
+				li {
+					a,
+					button {
+						color: var(--text-strong);
+
+						&:hover,
+						&:focus {
+							color: var(--text-strong);
+							background-color: var(--bg-surface-raised);
+						}
+
+						.menu-item-icon {
+							color: var(--text-muted);
+						}
+
+						&:hover .menu-item-icon,
+						&:focus .menu-item-icon {
+							color: var(--text-strong);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	.playlist-details .playlist-actions .playlist-options-wrap,
+	.playlist-videos-list .item-playlist-options-wrap {
+		.circle-icon-button {
+			color: var(--text-muted);
+			background-color: transparent;
+
+			&:hover,
+			&:focus,
+			&:active {
+				color: var(--text-strong);
+				background-color: var(--bg-surface-raised);
 			}
 		}
 	}
