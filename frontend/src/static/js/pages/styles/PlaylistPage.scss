@@ -525,7 +525,7 @@
 				position: relative;
 				z-index: +1;
 				display: inline-block;
-				background-color: var(--bg-surface-raised);
+				background-color: var(--bg-surface);
 				color: var(--text-strong);
 				text-align: initial;
 				border-radius: var(--radius-4);
@@ -597,6 +597,17 @@
 						// nudge up slightly so the arrow sits on the icon row,
 						// not on the label below.
 						margin-top: -9px;
+
+						.circle-icon-button {
+							color: var(--text-strong);
+							background-color: var(--bg-surface-raised);
+
+							&:hover,
+							&:focus {
+								color: var(--text-strong);
+								background-color: var(--bg-surface-muted);
+							}
+						}
 					}
 
 					.previous-slide {
@@ -624,12 +635,17 @@
 							color: var(--text-strong);
 							border-radius: var(--radius-4);
 
+							&:hover {
+								background-color: var(--bg-surface-raised);
+							}
+
 							// Suppress the default focus ring for mouse clicks (where
 							// :focus fires without :focus-visible) but restore a visible
 							// ring for keyboard navigation via :focus-visible below.
 							// WCAG 2.4.7 (Focus Visible) requires keyboard users to see
 							// which share option currently has focus.
 							&:focus {
+								background-color: var(--bg-surface-raised);
 								outline: 0;
 							}
 
@@ -738,6 +754,7 @@
 						padding-right: $button-width;
 						border: 1px solid var(--border-subtle);
 						border-radius: var(--radius-4);
+						background-color: var(--bg-surface-raised);
 					}
 
 					input[type='text'] {
@@ -765,6 +782,11 @@
 						font-weight: 500;
 						cursor: pointer;
 						color: var(--text-link);
+
+						&:hover,
+						&:focus {
+							color: var(--text-link-hover);
+						}
 					}
 				}
 			}
