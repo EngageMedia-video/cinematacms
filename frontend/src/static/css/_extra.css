@@ -226,7 +226,7 @@ body .media-title-banner .media-actions > * > *.download a {
 body.dark_theme .media-title-banner .media-actions > * > *.share,
 body.dark_theme .media-title-banner .media-actions > * > *.save,
 body.dark_theme .media-title-banner .media-actions > * > *.download a {
-	color: #bad8dd;
+	color: var(--cinemata-strait-blue-200);
 }
 
 /*
@@ -2907,7 +2907,22 @@ body.dark_theme .media-actions .save > button,
 body.dark_theme .media-actions .download > a,
 body.dark_theme .media-actions .video-downloads > button,
 body.dark_theme .media-actions .more-options > span > button {
-	color: var(--text-link);
+	color: var(--cinemata-strait-blue-200);
+}
+
+body.dark_theme .media-actions .like > button:hover,
+body.dark_theme .media-actions .like > button:focus,
+body.dark_theme .media-actions .share > button:hover,
+body.dark_theme .media-actions .share > button:focus,
+body.dark_theme .media-actions .save > button:hover,
+body.dark_theme .media-actions .save > button:focus,
+body.dark_theme .media-actions .download > a:hover,
+body.dark_theme .media-actions .download > a:focus,
+body.dark_theme .media-actions .video-downloads > button:hover,
+body.dark_theme .media-actions .video-downloads > button:focus,
+body.dark_theme .media-actions .more-options > span > button:hover,
+body.dark_theme .media-actions .more-options > span > button:focus {
+	color: var(--cinemata-strait-blue-100);
 }
 
 body .media-actions .like > button .circle-icon-button > *,
