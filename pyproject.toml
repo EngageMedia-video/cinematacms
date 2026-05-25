@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "celery==5.6.3",
-    "django-allauth==65.16.1",
+    "django-allauth==65.17.0",
     "django-celery-email==3.0.0",
     "django-cors-headers==4.9.0",
     "django-crispy-forms>=2.3,<3.0",
@@ -18,7 +18,7 @@ dependencies = [
     "django-recaptcha==4.1.0",
     "django-redis==6.0.0",
     "django-silk==5.5.0",
-    "django==5.2.13",
+    "django==5.2.14",
     "djangorestframework==3.17.1",
     "psycopg2-binary==2.9.12",
     "filetype==1.2.0",
@@ -29,8 +29,8 @@ dependencies = [
     "pep8==1.7.1",
     "pillow==12.2.0",
     "python-dotenv==1.2.2",
-    "requests==2.33.1",
-    "urllib3>=2.6.3",
+    "requests==2.34.2",
+    "urllib3>=2.7.0",
     "rpdb==0.2.0",
     "tqdm==4.67.3",
     "whitenoise==6.12.0",
@@ -40,16 +40,16 @@ dependencies = [
     "django-tinymce==5.0.0",
     "django-maintenance-mode==0.22.0",
     "django-vite>=3.1.0",
-    "django-waffle>=4.2.0,<5.0",
+    "django-waffle>=5.0.0,<6.0",
     "prometheus-client>=0.25.0",
 ]
 
 [dependency-groups]
-dev = ["basedpyright>=1.39.3", "ruff>=0.15.12", "pre-commit>=4.6.0"]
+dev = ["basedpyright>=1.39.6", "ruff>=0.15.14", "pre-commit>=4.6.0"]
 e2e = [
-    "playwright>=1.59.0",
+    "playwright>=1.60.0",
     "pytest>=9.0.3",
-    "pytest-playwright>=0.7.2",
+    "pytest-playwright>=0.8.0",
 ]
 
 [tool.pytest.ini_options]
