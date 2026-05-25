@@ -7,13 +7,13 @@
     <title>We'll be back soon</title>
     <style>
       :root {
+        /* Standalone palette: the 503 page can render without the app CSS. */
         --cinemata-white: #ffffff;
         --cinemata-black: #000000;
         --cinemata-strait-blue-50: #defbff;
         --cinemata-strait-blue-500: #026690;
         --cinemata-strait-blue-600p: #026690;
         --cinemata-strait-blue-700: #004e74;
-        --cinemata-strait-blue-800: #003757;
         --cinemata-pacific-deep-50: #ebf8ff;
         --cinemata-pacific-deep-300: #7b98b6;
         --cinemata-pacific-deep-400: #5a7999;
@@ -28,15 +28,13 @@
         --cinemata-coral-reef-400p: #4ec8a6;
         --cinemata-neutral-50: #f9fafb;
         --cinemata-neutral-200: #e5e7eb;
-        --cinemata-neutral-300: #d1d5db;
-        --cinemata-neutral-400: #9ca3af;
 
+        /* Modern semantic roles, mirroring docs/modern-track-color-system.md. */
         --bg-page: var(--cinemata-pacific-deep-50);
         --bg-surface: var(--cinemata-neutral-50);
         --bg-surface-raised: var(--cinemata-white);
         --bg-surface-muted: var(--cinemata-neutral-200);
         --bg-primary: var(--cinemata-strait-blue-600p);
-        --bg-primary-hover: var(--cinemata-strait-blue-800);
         --bg-accent: var(--cinemata-coral-reef-400p);
         --text-strong: var(--cinemata-pacific-deep-900);
         --text-muted: var(--cinemata-pacific-deep-400);
@@ -44,8 +42,8 @@
         --text-link-hover: var(--cinemata-sunset-horizon-600);
         --text-on-primary: var(--cinemata-white);
         --border-subtle: var(--cinemata-neutral-200);
-        --ring-focus: var(--cinemata-sunset-horizon-400p);
 
+        /* Original 503 color roles mapped onto the modern scheme. */
         --color-bg: var(--bg-page);
         --color-fg: var(--text-strong);
         --color-muted: var(--text-muted);
@@ -73,7 +71,6 @@
         --bg-surface-raised: var(--cinemata-pacific-deep-800);
         --bg-surface-muted: var(--cinemata-pacific-deep-800);
         --bg-primary: var(--cinemata-strait-blue-500);
-        --bg-primary-hover: var(--cinemata-strait-blue-700);
         --text-strong: var(--cinemata-strait-blue-50);
         --text-muted: var(--cinemata-pacific-deep-300);
         --text-link: var(--cinemata-sunset-horizon-200);
