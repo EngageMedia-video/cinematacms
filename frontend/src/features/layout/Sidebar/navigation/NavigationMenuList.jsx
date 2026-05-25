@@ -93,6 +93,7 @@ export function NavigationMenuListItem({
 	const interactiveClassName = joinClasses(
 		'flex min-h-12 w-full items-center gap-3 rounded-[8px] border-0 px-4 py-3 text-left outline-none transition-colors duration-150',
 		'bg-transparent text-[var(--sidebar-navigation-item-text-color)] no-underline',
+		'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus',
 		isLabelItem ? 'cursor-default font-medium' : 'cursor-pointer',
 		isHovered && !active
 			? 'bg-[var(--sidebar-navigation-item-hover-bg-color)] text-[var(--sidebar-navigation-item-hover-text-color)]'
@@ -152,9 +153,10 @@ export function NavigationMenuListItem({
 					title={text || null}
 					className={joinClasses(
 						'flex flex-row gap-4 mx-4 px-4 py-2 no-underline items-center rounded-ds-8 body-body-14-medium',
+						'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus',
 						active
 							? 'bg-cinemata-strait-blue-800 text-cinemata-strait-blue-50'
-							: 'bg-transparent hover:bg-cinemata-pacific-deep-50 dark:hover:bg-cinemata-strait-blue-900 text-cinemata-strait-blue-700 dark:text-cinemata-strait-blue-100'
+							: 'bg-transparent hover:bg-cinemata-pacific-deep-50 dark:hover:bg-cinemata-strait-blue-900 text-text-secondary'
 					)}
 				>
 					{children}

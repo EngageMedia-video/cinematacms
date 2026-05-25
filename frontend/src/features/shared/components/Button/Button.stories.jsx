@@ -53,7 +53,16 @@ const meta = {
 		},
 		variant: {
 			control: 'radio',
-			options: ['primary', 'secondary', 'special', 'primary-outline', 'secondary-outline', 'text', 'icon'],
+			options: [
+				'primary',
+				'secondary',
+				'tertiary',
+				'special',
+				'primary-outline',
+				'secondary-outline',
+				'text',
+				'icon',
+			],
 			description: 'Visual style and layout for the button.',
 			table: {
 				type: { summary: 'string' },
@@ -124,6 +133,14 @@ export const Secondary = {
 	args: {
 		children: 'LEARN MORE',
 		variant: 'secondary',
+	},
+};
+
+export const Tertiary = {
+	args: {
+		children: 'DONATE',
+		variant: 'tertiary',
+		icon: <Icon name="donate" decorative />,
 	},
 };
 

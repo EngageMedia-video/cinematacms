@@ -8,21 +8,21 @@
     <style>
       :root {
         /* Light mode (default) */
-        --color-bg: #f8ffff;
-        --color-fg: #000;
-        --color-muted: #64748b;
-        --color-primary: #ed7c30;
-        --color-secondary: #1a3f61;
+        --color-bg: var(--cinemata-strait-blue-50, #defbff);
+        --color-fg: var(--cinemata-black, #000000);
+        --color-muted: var(--cinemata-pacific-deep-400, #5a7999);
+        --color-primary: var(--cinemata-sunset-horizon-300, #ed7c30);
+        --color-secondary: var(--cinemata-pacific-deep-600p, #1a3f61);
         --radius: 6px;
       }
 
       /* Dark mode */
       [data-theme="dark"] {
-        --color-bg: #101a24;
-        --color-fg: #fff;
-        --color-muted: #869ea5;
-        --color-primary: #ed7c30;
-        --color-secondary: #659ba0;
+        --color-bg: var(--cinemata-neutral-900, #111827);
+        --color-fg: var(--cinemata-neutral-50, #f9fafb);
+        --color-muted: var(--cinemata-pacific-deep-300, #7b98b6);
+        --color-primary: var(--cinemata-sunset-horizon-300, #ed7c30);
+        --color-secondary: var(--cinemata-pacific-deep-300, #7b98b6);
       }
 
       /* Fonts - Cinemata uses Inter and Barlow Semi Condensed */
@@ -81,11 +81,11 @@
         align-items: center;
         justify-content: center;
         padding: 32px 20px;
-        background: #dfeff4;
+        background: var(--site-featured-bg-color);
       }
 
       [data-theme="dark"] main {
-        background: #0f2230;
+        background: var(--cinemata-strait-blue-900);
       }
 
       /* Logo styles - minimal addition */
@@ -123,13 +123,13 @@
         max-width: 720px;
         border: none;
         border-radius: var(--radius);
-        background: rgba(255, 255, 255, 0.5);
+        background: var(--cinemata-neutral-50);
         backdrop-filter: blur(10px);
         padding: 24px;
       }
 
       [data-theme="dark"] .panel {
-        background: rgba(11, 49, 68, 0.5);
+        background: var(--cinemata-pacific-deep-300);
       }
 
       .panel-header {
@@ -150,7 +150,7 @@
         top: 0;
         width: 51px;
         height: 51px;
-        border: 5px solid #ed7c31;
+        border: 5px solid var(--cinemata-sunset-horizon-300);
         border-radius: 50%;
         border-top-color: transparent;
         border-right-color: transparent;
@@ -219,7 +219,7 @@
         height: 8px;
         border-radius: 999px;
         background: var(--color-primary);
-        box-shadow: 0 0 0 4px rgba(231, 162, 123, 0.2);
+        box-shadow: 0 0 0 4px var(--cinemata-neutral-200);
       }
 
       [data-theme="dark"] .status-dot {
@@ -233,11 +233,11 @@
       }
 
       .block-separator {
-        border-top: 1px solid rgba(100, 116, 139, 0.2);
+        border-top: 1px solid var(--cinemata-neutral-200);
       }
 
       [data-theme="dark"] .block-separator {
-        border-top-color: rgba(148, 163, 184, 0.2);
+        border-top-color: var(--cinemata-neutral-200);
       }
 
       .countdown {
@@ -268,7 +268,7 @@
         width: 100%;
         height: 23px; /* Increased height to match design */
         border-radius: 6px; /* Subtle rounded corners */
-        background: rgba(123, 187, 191, 0.2); /* Light teal background */
+        background: var(--cinemata-neutral-200); /* Light teal background */
         overflow: hidden;
         margin-top: 16px;
       }
@@ -283,13 +283,13 @@
         top: 0;
         bottom: 0;
         width: 0%;
-        background: #102c40; /* Dark blue for light mode */
+        background: var(--cinemata-pacific-deep-800); /* Dark blue for light mode */
         border-radius: 6px; /* Match parent border radius */
         transition: width 0.3s ease;
       }
 
       [data-theme="dark"] .progress-bar {
-        background: #7bbbbf; /* Teal color for dark mode */
+        background: var(--cinemata-pacific-deep-300); /* Teal color for dark mode */
       }
 
       .actions {
@@ -302,8 +302,8 @@
       .btn {
         appearance: none;
         border: none;
-        background: #1a3f61; /* Light mode primary button color */
-        color: #fff;
+        background: var(--cinemata-pacific-deep-600p); /* Light mode primary button color */
+        color: var(--cinemata-neutral-50);
         border-radius: 8px;
         padding: 12px 24px;
         font-weight: 600;
@@ -314,7 +314,7 @@
       }
 
       [data-theme="dark"] .btn {
-        background: #ed7c30; /* Dark mode primary button color */
+        background: var(--cinemata-sunset-horizon-300); /* Dark mode primary button color */
       }
 
       .btn:hover {
@@ -362,7 +362,7 @@
         right: 20px;
         z-index: 1000;
         appearance: none;
-        border: 1px solid rgba(100, 116, 139, 0.2);
+        border: 1px solid var(--cinemata-neutral-200);
         background: var(--color-bg);
         color: var(--color-fg);
         border-radius: 50%;
@@ -372,22 +372,22 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 8px var(--cinemata-neutral-200);
         transition: all 0.3s ease;
       }
 
       [data-theme="dark"] .theme-toggle {
         border-color: rgba(148, 163, 184, 0.3);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 2px 8px var(--cinemata-neutral-400);
       }
 
       .theme-toggle:hover {
         transform: scale(1.1);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 12px var(--cinemata-neutral-300);
       }
 
       [data-theme="dark"] .theme-toggle:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 4px 12px var(--cinemata-neutral-400);
       }
 
       .theme-toggle:focus-visible {

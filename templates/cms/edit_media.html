@@ -55,8 +55,8 @@
 							width: 100%;
 							padding: 20px;
 							margin-top: 15px;
-							border: 2px dashed var(--input-border-color, #ccc);
-							background: var(--input-bg-color, #fafafa);
+							border: 2px dashed var(--input-border-color, var(--cinemata-neutral-300));
+							background: var(--input-bg-color, var(--cinemata-neutral-50));
 							border-radius: 4px;
 							box-sizing: border-box;
 							position: relative;
@@ -339,7 +339,7 @@
 				left:0;
 				right:0;
 				bottom:0;
-				background-color:rgba(0,0,0, 0.5);
+				background-color:var(--cinemata-neutral-500);
 			}
 
 			.license_controls_options > div {
@@ -1079,7 +1079,7 @@
 
 			/* Ensure dashed border is visible in dark mode */
 			.dark_theme .upload-progress-container {
-				border-color: rgba(255, 255, 255, 0.2);
+				border-color: var(--cinemata-neutral-50);
 			}
 
 			.dark_theme .media-uploader-section {
@@ -1108,16 +1108,16 @@
 			}
 
 			.upload-progress-title.success {
-				color: var(--success-color, #4CAF50);
+				color: var(--success-color, var(--cinemata-green-600));
 			}
 
 			.upload-progress-title.error {
-				color: var(--error-color, #f44336);
+				color: var(--error-color, var(--cinemata-red-500));
 			}
 
 			.upload-progress-bar-wrapper {
 				width: 100%;
-				background: var(--input-border-color, #ddd);
+				background: var(--input-border-color, var(--cinemata-pacific-deep-100));
 				border-radius: 10px;
 				overflow: hidden;
 				height: 30px;
@@ -1127,7 +1127,7 @@
 			.upload-progress-bar {
 				width: 0%;
 				height: 100%;
-				background: var(--default-brand-color, #e7a27b);
+				background: var(--default-brand-color, var(--cinemata-sunset-horizon-200));
 				transition: width 0.3s ease;
 				display: flex;
 				align-items: center;
@@ -1170,7 +1170,7 @@
 			}
 
 			.cancel-state .upload-progress-icon .material-icons {
-				color: var(--warning-color, #ff9800);
+				color: var(--warning-color, var(--cinemata-amber-500));
 			}
 
 			.success-text {
@@ -1692,7 +1692,7 @@
 			if (customInput) {
 				customInput.style.marginTop = '10px';
 				customInput.style.padding = '8px';
-				customInput.style.border = '2px solid #007cba';
+				customInput.style.border = '2px solid var(--cinemata-strait-blue-400)';
 				customInput.style.borderRadius = '4px';
 			}
 		});

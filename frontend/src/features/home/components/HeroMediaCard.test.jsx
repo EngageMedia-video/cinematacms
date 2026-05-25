@@ -20,16 +20,14 @@ describe('HeroMediaCard', () => {
 
 		const card = screen.getByRole('article');
 		expect(card.parentElement).toHaveClass('lg:h-[480px]');
-		expect(card).toHaveClass('bg-bg-cards');
-		expect(card).toHaveClass('dark:bg-cinemata-pacific-deep-900');
+		expect(card).toHaveClass('bg-bg-surface');
 		expect(card).not.toHaveClass('border');
 		expect(card).not.toHaveClass('border-cinemata-pacific-deep-100');
 
 		const heading = screen.getByRole('heading', { level: 2 });
 		expect(heading).toHaveClass('heading-h6-20-medium');
 		expect(heading).toHaveClass('break-words');
-		expect(heading).toHaveClass('text-cinemata-pacific-deep-700');
-		expect(heading).toHaveClass('dark:text-cinemata-strait-blue-50');
+		expect(heading).toHaveClass('text-text-primary');
 
 		const titleLink = screen.getByRole('link', {
 			name: 'A Long Featured Film Title That Still Needs To Wrap Cleanly',
@@ -41,18 +39,16 @@ describe('HeroMediaCard', () => {
 
 		const description = screen.getByText('A synopsis loaded from the media description.');
 		expect(description).toHaveClass('body-body-14-regular');
-		expect(description).toHaveClass('text-cinemata-pacific-deep-700');
-		expect(description).toHaveClass('dark:text-[var(--pacific-deep-300,#7B98B6)]');
+		expect(description).toHaveClass('text-text-description');
+		expect(description.className).not.toMatch(/dark:text-\[/);
 		expect(description).not.toHaveClass('dark:text-cinemata-pacific-deep-50');
 
 		const author = screen.getByRole('link', { name: 'Featured Author' });
 		expect(author).toHaveClass('body-body-12-regular');
-		expect(author).toHaveClass('text-cinemata-sunset-horizon-400p');
-		expect(author).toHaveClass('dark:text-cinemata-sunset-horizon-200');
+		expect(author).toHaveClass('text-text-link');
 
 		const views = screen.getByText('12,345 views');
-		expect(views).toHaveClass('text-cinemata-pacific-deep-400');
-		expect(views).toHaveClass('dark:text-cinemata-pacific-deep-300');
+		expect(views).toHaveClass('text-text-muted');
 	});
 
 	it('falls back to summary and object-shaped country info from the API', () => {
@@ -95,8 +91,7 @@ describe('HeroMediaCard', () => {
 		const { container } = render(<HeroMediaCardSkeleton className="lg:h-[480px]" />);
 		const skeleton = container.firstChild;
 
-		expect(skeleton).toHaveClass('bg-bg-cards');
-		expect(skeleton).toHaveClass('dark:bg-cinemata-pacific-deep-900');
+		expect(skeleton).toHaveClass('bg-bg-surface');
 		expect(skeleton).not.toHaveClass('border');
 		expect(skeleton).not.toHaveClass('border-cinemata-pacific-deep-100');
 		expect(skeleton).toHaveClass('lg:h-[480px]');

@@ -3,102 +3,100 @@ import { Meta, Title, Subtitle, Heading } from '@storybook/addon-docs/blocks';
 <Meta title="Introduction/Colors" />
 
 <Title>Color Mapping</Title>
-<Subtitle>Light and dark mode color assignments for cinemata-* tokens</Subtitle>
+<Subtitle>Role-based semantic tokens for the modern track, with light/dark behaviour</Subtitle>
 
-This document maps which `cinemata-*` color to use for each UI role in light and dark mode, based on actual component usage across the design system.
+> **This is a living document.** Every new feature, component, or design change that introduces a new color usage, adds a token, or shifts an existing token's meaning must update this page in the same change. The same applies to `docs/modern-track-color-system.md` in the repo root. Treat updates to both surfaces as part of the definition-of-done for any color or theming change. Stale color docs cause real engineering cost: contributors reach for the wrong token, reviewers don't know what's canonical, and the system drifts.
 
-<Heading>Text</Heading>
+The modern track uses **role-based semantic tokens** as the preferred way to apply color. Each token resolves to a different raw `cinemata-*` palette step in light vs dark theme, so components don't need `dark:` variants for theme awareness. Components reach for the raw palette only for genuine one-offs (Switch track, carousel indicator dots, etc.).
 
-- **Primary text** — light: `text-cinemata-neutral-900` / dark: `dark:text-cinemata-white` or `dark:text-cinemata-strait-blue-50`
-- **Secondary / muted text** — light: `text-cinemata-neutral-500` or `text-cinemata-neutral-600` / dark: `dark:text-cinemata-pacific-deep-300` or `dark:text-cinemata-neutral-500`
-- **Placeholder text** — light: `text-cinemata-neutral-400` / dark: `dark:text-cinemata-pacific-deep-300`
-- **Text on colored bg** — `text-cinemata-white` (same in both)
-- **Badge text** — `text-cinemata-neutral-50` (same in both)
-- **Text on dark surface** — `text-cinemata-neutral-950 dark:text-cinemata-neutral-50`
-- **Subtitle / accent text** — light: `text-cinemata-sunset-horizon-600` / dark: `dark:text-cinemata-sunset-horizon-200`
-- **Helper text** — light: `text-cinemata-sunset-horizon-600` / dark: `dark:text-cinemata-sunset-horizon-400p`
-- **Error text** — `text-cinemata-red-500` (same in both)
-- **Link / emphasis text** — `text-cinemata-strait-blue-600p` (same in both)
-- **Label text** — light: `text-cinemata-neutral-900` / dark: `dark:text-cinemata-strait-blue-50`
-- **Label (active / filled)** — light: `text-cinemata-pacific-deep-400` / dark: `dark:text-cinemata-pacific-deep-300`
-- **Label (disabled)** — `text-cinemata-pacific-deep-400` (same in both)
+This page is the working reference for the token catalogue. For the underlying design rationale, the body-scoped wiring pattern, and the full architectural overview (palette, legacy aliases, modern tokens), see `docs/modern-track-color-system.md` in the repo root.
 
-<Heading>Backgrounds</Heading>
+<Heading>Text tokens</Heading>
 
-- **Input / form field surface** — light: `bg-cinemata-neutral-50` / dark: `dark:bg-cinemata-pacific-deep-900`
-- **Input hover** — light: `bg-cinemata-pacific-deep-50` / dark: `dark:bg-cinemata-pacific-deep-800`
-- **Disabled input** — light: `bg-cinemata-pacific-deep-50` / dark: `dark:bg-cinemata-pacific-deep-900`
-- **Card / container** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-pacific-deep-800`
-- **Page / story wrapper** — light: `bg-cinemata-neutral-100` / dark: `dark:bg-cinemata-pacific-deep-950`
-- **Tooltip** — light: `bg-cinemata-white` / dark: `dark:bg-cinemata-pacific-deep-900`
-- **Dropzone** — light: `bg-cinemata-neutral-100` / dark: `dark:bg-cinemata-pacific-deep-800`
-- **Dialog overlay** — light: `bg-cinemata-black/40` / dark: `dark:bg-cinemata-pacific-deep-950 dark:opacity-80`
-- **Dialog content** — light: `bg-cinemata-white` / dark: `dark:bg-cinemata-pacific-deep-800`
-- **Primary button** — `bg-cinemata-strait-blue-600p`, hover: `bg-cinemata-strait-blue-800` (same in both)
-- **Secondary button** — `bg-cinemata-sunset-horizon-500`, hover: `bg-cinemata-sunset-horizon-700` (same in both)
-- **Special button** — light: `bg-cinemata-pacific-deep-600p` / dark: `dark:bg-cinemata-pacific-deep-950`
-- **Segment selected** — `bg-cinemata-sunset-horizon-500` (same in both)
-- **Segment default** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-pacific-deep-800`
-- **Tab bar** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-pacific-deep-800`
-- **Tab selected** — light: `bg-cinemata-strait-blue-200` / dark: `dark:bg-cinemata-strait-blue-800`
-- **Badge** — inline `backgroundColor` from the `color` prop (same in both)
-- **Dot separator** — light: `bg-cinemata-neutral-500` / dark: `dark:bg-cinemata-pacific-deep-400`
-- **Progress track** — light: `bg-cinemata-coral-reef-100` / dark: `dark:bg-cinemata-coral-reef-900`
-- **Progress indicator** — `bg-cinemata-coral-reef-400p` (same in both)
-- **Checkbox / radio unchecked** — light: `bg-cinemata-neutral-300` / dark: `dark:bg-cinemata-pacific-deep-900`
-- **Checkbox / radio checked** — `bg-cinemata-sunset-horizon-400p` (same in both)
-- **Avatar fallback** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-neutral-50`
-- **Avatar badge (comment)** — `bg-cinemata-strait-blue-900` (same in both)
-- **Avatar badge (favorite)** — `bg-cinemata-sunset-horizon-800` (same in both)
-- **Avatar badge (like)** — `bg-cinemata-red-950` (same in both)
-- **Search input** — light: `bg-cinemata-white` / dark: `dark:bg-cinemata-pacific-deep-800`
-- **Image placeholder** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-pacific-deep-800`
+- **`text-text-strong`** — headings, emphasized labels, form input text. Light: `pacific-deep-900` / Dark: `strait-blue-50`
+- **`text-text-primary`** — body text, main content. Light: `pacific-deep-700` / Dark: `strait-blue-50`
+- **`text-text-secondary`** — subheadings, secondary text. Light: `strait-blue-700` / Dark: `strait-blue-100`
+- **`text-text-muted`** — captions, view counts, metadata. Light: `pacific-deep-400` / Dark: `pacific-deep-300`
+- **`text-text-description`** — long-form card descriptions. Light: `pacific-deep-700` / Dark: `pacific-deep-300`
+- **`text-text-subtle`** — auxiliary text, hints, placeholders. Light: `neutral-500` / Dark: `neutral-400`
+- **`text-text-disabled`** — disabled state labels. Constant `pacific-deep-400` in both themes.
+- **`text-text-inverse`** — text on `bg-bg-surface-inverse`. Inverts: Light: `white` / Dark: `pacific-deep-900`
+- **`text-text-on-primary`** — text on `bg-bg-primary` and `bg-bg-secondary` buttons. Constant `white`.
+- **`text-text-on-chrome`** — primary text on always-dark chrome surfaces (topbar, search). Constant `strait-blue-50`.
+- **`text-text-on-chrome-muted`** — muted text on chrome (placeholders inside dropdowns). Constant `pacific-deep-300`.
+- **`text-text-link`** — inline links, "View all" affordances. Light: `sunset-horizon-400p` / Dark: `sunset-horizon-200`
+- **`text-text-link-hover`** — hover state for `text-text-link`. Light: `sunset-horizon-600` / Dark: `sunset-horizon-100`
+- **`text-text-accent`** — theme-agnostic orange accent (helper text, brand emphasis). Constant `sunset-horizon-400p`.
+- **`text-text-danger`** — error labels. Constant `red-500`.
+- **`text-text-success`** — success messages. Light: `green-600` / Dark: `green-500`
+- **`text-text-warning`** — warning messages. Light: `amber-600p` / Dark: `amber-500`
 
-<Heading>Borders</Heading>
+<Heading>Background tokens</Heading>
 
-- **Default input border** — `border-cinemata-pacific-deep-500` (same in both)
-- **Active / focused border** — light: `border-cinemata-coral-reef-400p` / dark: `dark:border-cinemata-sunset-horizon-400p`
-- **Error border** — `border-cinemata-red-500` (same in both)
-- **Disabled border** — light: `border-cinemata-coral-reef-400p` / dark: `dark:border-cinemata-red-500`
-- **Tooltip border** — light: `border-cinemata-neutral-300` / dark: `dark:border-cinemata-pacific-deep-800`
-- **Search input border** — light: `border-cinemata-neutral-300` / dark: `dark:border-transparent`
-- **Outline button border** — `border-cinemata-strait-blue-600p` (same in both)
-- **Focus ring** — light: `ring-cinemata-strait-blue-600p` / dark: `dark:ring-cinemata-strait-blue-200`
-- **Avatar badge border** — light: `border-cinemata-white` / dark: `dark:border-cinemata-pacific-deep-900`
-- **Confirmation dialog border** — light: `border-cinemata-neutral-300` / dark: `dark:border-cinemata-strait-blue-300`
+- **`bg-bg-page`** — page body background. Light: `pacific-deep-50` / Dark: `pacific-deep-950`
+- **`bg-bg-surface`** — default card/panel background. Light: `neutral-50` / Dark: `pacific-deep-900`
+- **`bg-bg-surface-raised`** — popups, modals, dropdowns, tooltips. Light: `white` / Dark: `pacific-deep-800`
+- **`bg-bg-surface-muted`** — muted/recessed regions, image placeholders. Light: `neutral-200` / Dark: `pacific-deep-800`
+- **`bg-bg-surface-inverse`** — high-contrast inverted callouts. Light: `pacific-deep-900` / Dark: `white`
+- **`bg-bg-overlay-dark`** — outer always-dark UI chrome (topbar root, mobile overlays, modal scrims). Constant `pacific-deep-900`.
+- **`bg-bg-chrome`** — inner always-dark chrome surfaces (topbar buttons, search input bg, dropdown row bgs). Constant `pacific-deep-800`.
+- **`bg-bg-chrome-hover`** — hover state for `bg-bg-chrome` controls, often used with `/60` alpha. Constant `pacific-deep-700`.
+- **`bg-bg-skeleton`** — loading skeleton placeholders. Light: `pacific-deep-100` / Dark: `pacific-deep-700`
+- **`bg-bg-control`** — checkbox/radio surfaces. Light: `neutral-300` / Dark: `pacific-deep-900`
+- **`bg-bg-primary`** — primary action surfaces. Light: `strait-blue-600p` / Dark: `strait-blue-500`
+- **`bg-bg-primary-hover`** — hover for `bg-bg-primary`. Light: `strait-blue-800` / Dark: `strait-blue-700`
+- **`bg-bg-secondary`** — brand action / CTA buttons (orange). What `bg-brand-primary` legacy utility now routes through. Light: `sunset-horizon-400p` / Dark: `sunset-horizon-500`
+- **`bg-bg-secondary-hover`** — hover for `bg-bg-secondary`. Light: `sunset-horizon-500` / Dark: `sunset-horizon-700`
+- **`bg-bg-danger`** — destructive surfaces. Constant `red-500`.
+- **`bg-bg-success`** — success surfaces. Constant `green-500`.
+- **`bg-bg-warning`** — warning surfaces. Constant `amber-500`.
 
-<Heading>Decorative elements</Heading>
+<Heading>Border tokens</Heading>
 
-- **Stepper line** — light: `bg-cinemata-neutral-300` / dark: `dark:bg-cinemata-pacific-deep-600p`
-- **Stepper dot** — light: `bg-cinemata-neutral-400` / dark: `dark:bg-cinemata-strait-blue-200`
-- **Stepper icon bg** — light: `bg-cinemata-neutral-200` / dark: `dark:bg-cinemata-pacific-deep-800`
-- **Stepper icon color** — light: `text-cinemata-strait-blue-600p` / dark: `dark:text-cinemata-strait-blue-200`
-- **Dropzone dashed border** — light: `stroke-cinemata-neutral-400` / dark: `dark:stroke-cinemata-strait-blue-300`
-- **Confirmation dialog gradient** — light: `from-cinemata-white to-cinemata-neutral-50` / dark: `dark:from-cinemata-pacific-deep-900 dark:to-cinemata-pacific-deep-950`
+- **`border-border-default`** — default card/panel border. Light: `pacific-deep-200` / Dark: `pacific-deep-700`
+- **`border-border-subtle`** — hairlines, list dividers. Light: `neutral-200` / Dark: `pacific-deep-800`
+- **`border-border-strong`** — emphasized boundaries. Light: `pacific-deep-500` / Dark: `pacific-deep-400`
+- **`border-border-strong-constant`** — TextField default border. Constant `pacific-deep-500` in both themes.
+- **`border-border-chrome`** — hairlines on always-dark chrome (search dropdown dividers, mobile overlay header border). Constant `pacific-deep-700`.
+- **`border-border-input`** — TextField focused/active border. Light: `coral-reef-400p` / Dark: `sunset-horizon-400p`
+- **`border-border-danger`** — error-state borders. Constant `red-500`.
 
-<Heading>Which scale is for what</Heading>
+<Heading>Focus ring</Heading>
 
-- **neutral** — Primary surfaces and text in light mode (50–200 for backgrounds, 500–900 for text)
-- **pacific-deep** — Primary surfaces and text in dark mode (800–950 for backgrounds, 50–300 for text)
-- **strait-blue** — Links, emphasis, primary buttons, focus rings, light text in dark mode (50 for text, 600p for actions)
-- **sunset-horizon** — Secondary actions, accents, alert text, active borders (400p–600 for light text, 200–400p for dark text)
-- **coral-reef** — Active/focused borders in light mode, progress bars
-- **red** — Errors and destructive actions
-- **green** — Success states
-- **amber** — Warnings
-- **white / black** — Absolute values for text on colored backgrounds, dialog overlays
+- **`ring-ring-focus`** — unified focus indicator across the entire modern track. Constant `sunset-horizon-400p` (orange). Used by every interactive control: buttons, inputs, dropdowns, nav items, links, carousels, movie tiles.
 
-<Heading>Pattern summary</Heading>
+<Heading>When to reach past the tokens</Heading>
 
-- All components now define **light mode as default** with `dark:` overrides for dark mode
-- Light mode uses `neutral` and `white` scales for surfaces, `neutral-900` for text
-- Dark mode uses `pacific-deep` scale for surfaces, `strait-blue-50` or `white` for text
-- Buttons keep the same brand colors in both themes — only text/icon variants adapt
-- Badge and avatar badge icons use dark-surface colors in both themes to keep icon/text visible against their colored backgrounds
-- `DialogContent` is unstyled — consumers pass background, padding, and sizing via `className`
+A small number of patterns are genuinely unique and stay on the raw `cinemata-*` palette. These are the documented exceptions:
+
+- **Switch track and thumb** — `coral-reef-100` (track on), `pacific-deep-900` (track off), `neutral-100` (thumb). Component-unique decoration; no other component uses this exact recipe.
+- **Avatar inverted-neutral inner bg** — `bg-cinemata-neutral-200 dark:bg-cinemata-neutral-50`. INVERTS neutrals between themes for the initials-fallback ring.
+- **Carousel indicator dots** — `bg-cinemata-strait-blue-800 dark:bg-white` (active), `bg-cinemata-pacific-deep-400/30 dark:bg-white/30` (inactive). One-off "active indicator on media surface" pattern.
+- **HeroSection retry button** — `bg-cinemata-strait-blue-700` solid with `-800` hover. Bespoke decorative button.
+- **Carousel overlay arrow text** — theme-aware blue pair `strait-blue-700 → strait-blue-600p`. Large chrome controls overlaid on media; no other shared use.
+- **Badge highlights** — Avatar badge backgrounds (`strait-blue-900` for comment, `sunset-horizon-800` for favorite, `red-950` for like) — colored emblems that should not invert per theme.
+
+For all other usages, prefer a semantic token. If you find yourself reaching for the same raw palette pair more than once for the same role, consider whether it deserves a new token.
+
+<Heading>Legacy semantic aliases (still valid, narrower scope)</Heading>
+
+The pre-existing legacy semantic aliases inherited from MediaCMS (`bg-surface-popup`, `text-content-body`, `bg-brand-primary`, etc.) are still wired and still work. They map to the legacy `--btn-*`, `--body-*`, `--site-*` variables in the SCSS theme files. New code in `features/` should generally prefer the role-based tokens above, but the legacy aliases remain useful as bridges into legacy components.
+
+Notable bridge: **`bg-brand-primary`** is intentionally redirected to `var(--bg-secondary)` (orange) so the modern utility and the legacy `--btn-primary-bg-color` SCSS variable can diverge. The modern `.bg-brand-primary` utility renders orange (the brand action color) while legacy server-rendered buttons styled by SCSS rules referencing `--btn-primary-bg-color` keep their historical blue (light) / orange (dark) values.
+
+<Heading>Which palette scale plays which role</Heading>
+
+- **pacific-deep** — themed surfaces and headings (text 700–900 light, surfaces 800–950 dark). Most theme-aware tokens build on this scale.
+- **strait-blue** — primary action color in the modern semantic layer (`bg/primary`), heading/body text on dark surfaces (`strait-blue-50`), nav active states.
+- **sunset-horizon** — secondary action color in the semantic layer (`bg/secondary`, what `bg-brand-primary` routes through), inline links (`text/link`), focus rings (`ring/focus`). The brand's orange.
+- **coral-reef** — focused input border in light mode, progress bars.
+- **neutral** — themed surfaces and text in light mode (50–200 backgrounds, 500–900 text); dark-mode subtle text fallback.
+- **red / green / amber** — semantic feedback (errors / success / warnings).
+- **white / black** — text on colored backgrounds, dialog overlays, badge text.
 
 <Heading>Source files</Heading>
 
-- `src/static/css/config/_light_theme.scss` — All `--cinemata-*` values on `body` (light mode)
-- `src/static/css/config/_dark_theme.scss` — Overrides on `body.dark_theme` (dark mode)
-- `src/static/css/tailwind.css` — `@theme inline` bridge that makes `bg-cinemata-*` / `text-cinemata-*` utilities available
+- `frontend/src/static/css/config/_light_theme.scss` — All `--cinemata-*` palette values on `body` (light mode), plus light-mode overrides for the modern semantic intermediate vars.
+- `frontend/src/static/css/config/_dark_theme.scss` — Dark-mode overrides on `body.dark_theme` for both the palette singletons and the modern semantic vars.
+- `frontend/src/static/css/tailwind.css` — Defines the modern semantic intermediate vars on `body` and `body.dark_theme`, then exposes them via `@theme inline` as `--color-bg-*`, `--color-text-*`, `--color-border-*`, `--color-ring-*`. Also bridges the legacy `--color-brand-primary` through `var(--bg-secondary)`.
+- `docs/modern-track-color-system.md` — Architectural overview of all three layers (palette, legacy aliases, modern tokens), body-scoped wiring pattern, and rationale.

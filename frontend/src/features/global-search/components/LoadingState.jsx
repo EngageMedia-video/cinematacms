@@ -6,7 +6,7 @@ export function LoadingState() {
 		<div
 			role="status"
 			aria-live="polite"
-			className="flex items-center justify-center gap-2 px-6 py-10 text-cinemata-pacific-deep-300"
+			className="flex items-center justify-center gap-2 px-6 py-10 text-text-on-chrome-muted"
 		>
 			<span className="inline-flex h-5 w-5 animate-spin items-center justify-center">
 				<Icon name="loading" size={20} decorative />

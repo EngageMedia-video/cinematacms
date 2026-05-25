@@ -7,9 +7,9 @@
 /* https://websafecolors.info/color-chart */
 
 // $theme-color: red;
-// $theme-color: #009900;
+// $theme-color: var(--cinemata-strait-blue-400);
 
-// $theme-color: #009933;
+// $theme-color: var(--cinemata-green-600);
 
 $theme-color: var(--theme-color, var(--default-theme-color));
 
@@ -21,10 +21,8 @@ $theme-color: var(--theme-color, var(--default-theme-color));
 $color-error-red: rgba(red, 0.8);
 
 $message-default-color: rgba(#111, 0.9);
-
-$message-default-bg-color: #e6e6e6;
-$message-info-bg-color: #e6e6fa;
-$message-error-bg-color: #fae6e6;
-$message-success-bg-color: #e6f0e6;
-
-$message-warning-bg-color: #fafae6;
+$message-default-bg-color: var(--cinemata-neutral-200);
+$message-info-bg-color: var(--cinemata-strait-blue-100);
+$message-error-bg-color: var(--cinemata-red-100);
+$message-success-bg-color: var(--cinemata-coral-reef-100);
+$message-warning-bg-color: var(--cinemata-amber-50);

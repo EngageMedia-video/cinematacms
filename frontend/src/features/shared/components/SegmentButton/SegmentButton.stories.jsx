@@ -99,7 +99,7 @@ const meta = {
 		},
 	},
 	render: (args) => (
-		<div className="bg-cinemata-neutral-100 p-8 dark:bg-cinemata-pacific-deep-950">
+		<div className="bg-bg-page p-8">
 			<SegmentButton {...args} />
 		</div>
 	),
@@ -121,7 +121,7 @@ export const Controlled = {
 		const [value, setValue] = useState('dark');
 
 		return (
-			<div className="w-full min-w-[320px] max-w-[820px] bg-cinemata-neutral-100 p-8 dark:bg-cinemata-pacific-deep-950">
+			<div className="w-full min-w-[320px] max-w-[820px] bg-bg-page p-8">
 				<SegmentButton
 					{...args}
 					value={value}
@@ -155,7 +155,7 @@ export const FillWidth = {
 		layout: 'fill',
 	},
 	render: (args) => (
-		<div className="w-full max-w-[720px] bg-cinemata-neutral-100 p-8 dark:bg-cinemata-pacific-deep-950">
+		<div className="w-full max-w-[720px] bg-bg-page p-8">
 			<SegmentButton {...args} />
 		</div>
 	),

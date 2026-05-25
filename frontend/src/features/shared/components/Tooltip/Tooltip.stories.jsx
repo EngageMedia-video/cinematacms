@@ -105,7 +105,7 @@ const meta = {
 		},
 	},
 	render: (args) => (
-		<div className="flex w-[300px] h-[400px] items-center justify-center bg-cinemata-neutral-100 dark:bg-cinemata-pacific-deep-950 p-10">
+		<div className="flex w-[300px] h-[400px] items-center justify-center bg-bg-page p-10">
 			<Tooltip {...args}>
 				<TooltipIconButton />
 			</Tooltip>
@@ -144,9 +144,7 @@ export const RichContent = {
 		trigger: 'click',
 		content: (
 			<div className="flex max-w-[220px] flex-col gap-1">
-				<p className="body-body-14-bold text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
-					Tooltip Title
-				</p>
+				<p className="body-body-14-bold text-text-strong">Tooltip Title</p>
 				<p className="body-body-14-regular text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-300">
 					Add any custom content here while keeping the same shared tooltip surface.
 				</p>
@@ -160,7 +158,7 @@ export const Controlled = {
 		const [open, setOpen] = useState(true);
 
 		return (
-			<div className="flex min-h-[240px] items-center justify-center bg-cinemata-neutral-100 dark:bg-cinemata-pacific-deep-950 p-10">
+			<div className="flex min-h-[240px] items-center justify-center bg-bg-page p-10">
 				<Tooltip {...args} trigger="click" open={open} onOpenChange={setOpen}>
 					<TooltipIconButton />
 				</Tooltip>

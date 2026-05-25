@@ -38,15 +38,16 @@ const VARIANT_MAP = {
 // Semantic color presets — one class applied at a time, no cascade conflict.
 // Heading variants default to null (no color); body/caption default to 'body'.
 const COLOR_CLASSES = {
-	body: 'text-cinemata-pacific-deep-700 dark:text-cinemata-pacific-deep-50',
-	meta: 'text-cinemata-pacific-deep-400 dark:text-cinemata-pacific-deep-300',
-	'sunset-horizon': 'text-cinemata-sunset-horizon-400p dark:text-cinemata-sunset-horizon-200',
+	body: 'text-text-primary',
+	meta: 'text-text-muted',
+	description: 'text-text-description',
+	'sunset-horizon': 'text-text-link',
 };
 
 const ACTION_CLASSES = {
 	'text-button':
-		'inline-flex w-fit cursor-pointer appearance-none border-0 bg-transparent p-0 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p',
-	'text-link': 'no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p',
+		'inline-flex w-fit cursor-pointer appearance-none border-0 bg-transparent p-0 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus',
+	'text-link': 'no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus',
 };
 
 const HEADING_VARIANTS = new Set([

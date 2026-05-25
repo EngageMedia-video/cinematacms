@@ -472,6 +472,28 @@ p {
 	button,
 	*[type='submit'],
 	*[type='button'] {
-		@include background_color_gradient();
+		color: var(--btn-color);
+		background-color: var(--btn-primary-bg-color);
+	}
+
+	button:hover,
+	button:focus,
+	*[type='submit']:hover,
+	*[type='submit']:focus,
+	*[type='button']:hover,
+	*[type='button']:focus {
+		background-color: var(--btn-primary-bg-hover-color);
+	}
+
+	.secondaryAction {
+		color: var(--btn-secondary-color);
+		background-color: var(--btn-secondary-bg-color);
+		border-color: var(--btn-secondary-border-color);
+	}
+
+	.secondaryAction:hover,
+	.secondaryAction:focus {
+		color: var(--btn-secondary-color);
+		background-color: var(--btn-secondary-bg-hover-color);
 	}
 }

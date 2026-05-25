@@ -20,7 +20,7 @@ export function TopbarUploadButton({ className = '', compact = false }) {
 			href={href}
 			aria-label="Upload media"
 			className={cn(
-				'inline-flex items-center justify-center gap-2 rounded h-10 px-4 hover:brightness-110 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline bg-cinemata-sunset-horizon-500 text-cinemata-neutral-50',
+				'inline-flex items-center justify-center gap-2 rounded h-10 px-4 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline bg-brand-primary text-btn-text hover:bg-brand-primary-hover',
 				compact ? 'w-[129px]' : 'min-w-[166px]',
 				className
 			)}

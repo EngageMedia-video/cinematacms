@@ -134,7 +134,7 @@ export function MediaDropzone({
 				{iconName ? (
 					<div
 						className={cn(
-							'text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50 transition-transform duration-200',
+							'text-text-strong transition-transform duration-200',
 							isDragging ? '-translate-y-1 scale-105' : '',
 							isDropAnimating ? 'translate-y-0 scale-95' : ''
 						)}
@@ -143,9 +143,7 @@ export function MediaDropzone({
 					</div>
 				) : null}
 
-				<p className="body-body-16-regular m-0 p-0 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
-					{label}
-				</p>
+				<p className="body-body-16-regular m-0 p-0 text-text-strong">{label}</p>
 
 				<Button
 					type="button"

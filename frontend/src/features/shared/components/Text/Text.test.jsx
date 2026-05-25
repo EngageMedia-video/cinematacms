@@ -16,31 +16,35 @@ describe('Text', () => {
 		it('applies the body color by default', () => {
 			render(<Text>Hello</Text>);
 			const el = screen.getByText('Hello');
-			expect(el).toHaveClass('text-cinemata-pacific-deep-700');
-			expect(el).toHaveClass('dark:text-cinemata-pacific-deep-50');
+			expect(el).toHaveClass('text-text-primary');
 		});
 
 		it('applies the meta color when color="meta"', () => {
 			render(<Text color="meta">Meta</Text>);
 			const el = screen.getByText('Meta');
-			expect(el).toHaveClass('text-cinemata-pacific-deep-400');
-			expect(el).toHaveClass('dark:text-cinemata-pacific-deep-300');
-			expect(el).not.toHaveClass('text-cinemata-pacific-deep-700');
+			expect(el).toHaveClass('text-text-muted');
+			expect(el).not.toHaveClass('text-text-primary');
+		});
+
+		it('applies the description color when color="description"', () => {
+			render(<Text color="description">Description</Text>);
+			const el = screen.getByText('Description');
+			expect(el).toHaveClass('text-text-description');
+			expect(el).not.toHaveClass('text-text-primary');
 		});
 
 		it('applies the sunset horizon color when color="sunset-horizon"', () => {
 			render(<Text color="sunset-horizon">Author</Text>);
 			const el = screen.getByText('Author');
-			expect(el).toHaveClass('text-cinemata-sunset-horizon-400p');
-			expect(el).toHaveClass('dark:text-cinemata-sunset-horizon-200');
-			expect(el).not.toHaveClass('text-cinemata-pacific-deep-700');
+			expect(el).toHaveClass('text-text-link');
+			expect(el).not.toHaveClass('text-text-primary');
 		});
 
 		it('applies no color when color is unrecognised', () => {
 			render(<Text color="unknown">No color</Text>);
 			const el = screen.getByText('No color');
-			expect(el).not.toHaveClass('text-cinemata-pacific-deep-700');
-			expect(el).not.toHaveClass('text-cinemata-pacific-deep-400');
+			expect(el).not.toHaveClass('text-text-primary');
+			expect(el).not.toHaveClass('text-text-muted');
 		});
 
 		it('applies the selected body variant', () => {
@@ -93,8 +97,7 @@ describe('Text', () => {
 		it('does not apply the body color to heading variants', () => {
 			render(<Text variant="h6">No default color</Text>);
 			const el = screen.getByText('No default color');
-			expect(el).not.toHaveClass('text-cinemata-pacific-deep-700');
-			expect(el).not.toHaveClass('dark:text-cinemata-pacific-deep-50');
+			expect(el).not.toHaveClass('text-text-primary');
 		});
 
 		it('overrides the default element with as prop', () => {

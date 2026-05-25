@@ -20,6 +20,8 @@ describe('SegmentButton', () => {
 		expect(darkButton.className).toContain('first:rounded-l-ds-8');
 		expect(lightButton.className).toContain('last:rounded-r-ds-8');
 		expect(darkButton).toHaveAttribute('aria-pressed', 'true');
+		expect(darkButton.className).toContain('bg-brand-primary');
+		expect(darkButton.className).toContain('text-btn-text');
 		expect(lightButton).toHaveAttribute('aria-pressed', 'false');
 	});
 

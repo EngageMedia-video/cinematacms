@@ -127,10 +127,10 @@ const TOKEN_SECTIONS = [
 			['Links & headings (year produced, sidebar icons, category links)', 'site-heading', '#1a3f61', '#7bbbbf'],
 			['Emphasis content (custom pages .emphasis, .emphasis-large)', 'site-emphasis', '#026690', '#7bbbbf'],
 			['Content boxes (.box, .box-list backgrounds)', 'site-box-bg', '#ebf7f9', '#0b3145'],
-			['Brand CTA orange (Sign In, edit buttons, play button hover)', 'site-accent', '#ed7c30', '#ed7c30'],
+			['Site accent (play button hover, decorative accents)', 'site-accent', '#ed7c30', '#ed7c30'],
 			['Brand salmon (heading underlines, decorative elements)', 'site-accent-alt', '#e7a27b', '#e7a27b'],
 			['Header search field background', 'site-search-bg', '#102c40', '#102c40'],
-			['Form buttons (login, register) — navy in light, teal in dark', 'site-form-btn', '#1a3f61', '#7bbbbf'],
+			['Form buttons (login, register) — primary action', 'site-form-btn', '#ed7c30', '#c2692f'],
 			['Featured item content overlay', 'site-featured-bg', '#dfeff4', '#0b3144'],
 			['Video player accent (play button, progress bar)', 'site-player-accent', '#026690', '#026690'],
 		],
@@ -145,14 +145,9 @@ const TOKEN_SECTIONS = [
 		tokenCount: 3,
 		// [purpose, token, lightHex, darkHex]
 		pairs: [
-			['Primary button bg — navy in light, orange in dark', 'brand-primary', '#1a3f61', '#ed7c30'],
-			[
-				'Primary button hover — deep blue in light, dark orange in dark',
-				'brand-primary-hover',
-				'#026690',
-				'#c16732',
-			],
-			['Secondary button hover — teal in light, navy in dark', 'brand-secondary-hover', '#4a90a4', '#1a3f61'],
+			['Primary button bg — sunset horizon', 'brand-primary', '#ed7c30', '#c2692f'],
+			['Primary button hover — deeper sunset horizon', 'brand-primary-hover', '#c2692f', '#833e0b'],
+			['Secondary button hover — strait blue', 'brand-secondary-hover', '#003757', '#003757'],
 		],
 	},
 

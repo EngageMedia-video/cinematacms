@@ -62,12 +62,12 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 			aria-label="Search"
 			className="fixed inset-0 z-[1100] flex flex-col bg-cinemata-pacific-deep-950"
 		>
-			<div className="flex items-center gap-2 border-b border-cinemata-pacific-deep-700/60 bg-cinemata-pacific-deep-900 px-3 py-3">
+			<div className="flex items-center gap-2 border-b border-border-chrome/60 bg-cinemata-pacific-deep-900 px-3 py-3">
 				<button
 					type="button"
 					onClick={onClose}
 					aria-label="Close search"
-					className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-cinemata-strait-blue-50 transition-colors duration-150 hover:bg-cinemata-pacific-deep-700/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cinemata-sunset-horizon-400p"
+					className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 text-text-on-chrome transition-colors duration-150 hover:bg-bg-chrome-hover/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 				>
 					<Icon name="chevronLeft" size={22} decorative />
 				</button>
@@ -82,14 +82,14 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 							aria-label="Search"
 							autoComplete="off"
 							className={cn(
-								'body-body-14-regular block w-full rounded-[10px] border border-transparent bg-cinemata-pacific-deep-800 px-4 py-3 pr-12 text-cinemata-strait-blue-50 outline-none transition-colors duration-200',
-								'placeholder:text-cinemata-pacific-deep-300 focus:border-cinemata-sunset-horizon-400p focus:ring-0',
+								'global-search-input body-body-14-regular block w-full rounded-[10px] bg-bg-chrome px-4 py-3 pr-12 text-text-on-chrome outline-none transition-colors duration-200',
+								'placeholder:text-text-on-chrome-muted focus:ring-0',
 								'[&::-webkit-search-cancel-button]:appearance-none'
 							)}
 						/>
 						<span
 							aria-hidden="true"
-							className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-cinemata-pacific-deep-300"
+							className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-text-on-chrome-muted"
 						>
 							<Icon name="magnifyingGlass" size={20} decorative />
 						</span>
@@ -101,7 +101,7 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 			</div>
 			<style>{`
 				.gs-scrollbar {
-					scrollbar-color: rgba(2, 102, 144, 0.35) transparent;
+					scrollbar-color: var(--cinemata-strait-blue-200) transparent;
 					scrollbar-width: thin;
 				}
 				.gs-scrollbar::-webkit-scrollbar {
@@ -113,7 +113,7 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 				.gs-scrollbar::-webkit-scrollbar-thumb {
 					border: 2px solid transparent;
 					border-radius: 999px;
-					background-color: rgba(2, 102, 144, 0.35);
+					background-color: var(--cinemata-strait-blue-200);
 					background-clip: content-box;
 				}
 			`}</style>

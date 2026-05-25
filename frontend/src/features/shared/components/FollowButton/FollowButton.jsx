@@ -23,7 +23,7 @@ export function FollowButton({
 
 	return (
 		<Button
-			variant={followed ? 'secondary-outline' : 'secondary'}
+			variant={followed ? 'primary-outline' : 'primary'}
 			icon={<Icon name="followUser" decorative data-testid="follow-icon" size="sm" />}
 			className={cn('border', className)}
 			aria-label={ariaLabel ?? label}

@@ -32,9 +32,7 @@ export function ConfirmationDialogContent({
 				<div className="relative z-10 flex flex-col">
 					<div className="flex flex-col items-start text-left">
 						<Icon name={iconName} size={68} decorative className="shrink-0" />
-						<h2 className="heading-h5-24-medium p-0 m-0 mt-4 text-cinemata-neutral-900 dark:text-cinemata-strait-blue-50">
-							{title}
-						</h2>
+						<h2 className="heading-h5-24-medium p-0 m-0 mt-4 text-text-strong">{title}</h2>
 						<p className="body-body-16-regular p-0 m-0 mt-2 text-cinemata-neutral-500 dark:text-cinemata-pacific-deep-300">
 							{subtitle}
 						</p>

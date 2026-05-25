@@ -80,11 +80,12 @@ export function Sidebar({ id = 'app-sidebar' }) {
 			</div>
 
 			<Link
-				variant="button"
+				variant="tertiary"
 				href="https://support.cinemata.org"
 				target="_blank"
 				align="left"
 				icon={<Icon name="donate" />}
+				style={{ width: '208px' }}
 			>
 				DONATE
 			</Link>
@@ -145,7 +146,7 @@ export function Sidebar({ id = 'app-sidebar' }) {
 	return (
 		<aside
 			id={id || undefined}
-			className="fixed bottom-0 left-0 isolate flex flex-col overflow-hidden overscroll-none bg-neutral-50 dark:bg-cinemata-pacific-deep-900"
+			className="fixed bottom-0 left-0 isolate flex flex-col overflow-hidden overscroll-none bg-bg-surface"
 			style={{
 				transform: isVisible ? 'translate(0px, 0px)' : hiddenTransform,
 				transitionDuration: '0.2s',
@@ -160,10 +161,10 @@ export function Sidebar({ id = 'app-sidebar' }) {
 			<div
 				className={cn(
 					'relative min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]',
-					'[scrollbar-width:thin] [scrollbar-color:rgba(2,102,144,0.35)_transparent]',
+					'[scrollbar-width:thin] [scrollbar-color:var(--cinemata-strait-blue-200)_transparent]',
 					'[&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent',
 					'[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2',
-					'[&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-[rgba(2,102,144,0.35)]',
+					'[&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-[var(--cinemata-strait-blue-200)]',
 					'[&::-webkit-scrollbar-thumb]:bg-clip-content'
 				)}
 			>

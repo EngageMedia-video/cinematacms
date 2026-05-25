@@ -47,8 +47,14 @@
 	--color-brand-accent: var(--default-brand-color);
 
 	/* ── Brand / Action ───────────────────────────────────── */
-	--color-brand-primary: var(--btn-primary-bg-color);
-	--color-brand-primary-hover: var(--btn-primary-bg-hover-color);
+	/* Aligned through the new semantic tokens. The brand's "primary
+	 * action" historically uses sunset-horizon (orange) — that color now
+	 * lives under bg/secondary in the new scheme (where bg/primary is
+	 * strait-blue). So brand-primary wires through bg/secondary to keep
+	 * the existing orange upload/CTA buttons stable. Legacy SCSS using
+	 * var(--btn-primary-bg-color) directly is unaffected. */
+	--color-brand-primary: var(--bg-secondary);
+	--color-brand-primary-hover: var(--bg-secondary-hover);
 	--color-brand-primary-icon: var(--btn-primary-icon-color);
 	--color-brand-secondary: var(--btn-secondary-bg-color);
 	--color-brand-secondary-hover: var(--btn-secondary-bg-hover-color);
@@ -534,6 +540,162 @@
 }
 
 /*
+ * ── Modern Semantic Tokens (role-based, theme-aware) ──────────
+ *
+ * Role-named tokens for features/ track. Each token maps to a raw
+ * --cinemata-* palette step. The mapping differs per theme via the
+ * `body.dark_theme` override below.
+ *
+ * Pattern: intermediate vars (--bg-*, --text-*, --border-*, --ring-*)
+ * defined on `body` (light) and `body.dark_theme` (dark), then exposed
+ * via `@theme inline`. Inline matters because --cinemata-* is defined
+ * on `body` in SCSS — if utilities resolved at :root, var(--cinemata-X)
+ * would compute to invalid and break every new utility (regression
+ * caught in the topbar/donate button).
+ *
+ * Slash-style namespaces: bg/*, text/*, border/*, ring/*. Utilities
+ * follow Tailwind v4's name-prefix convention, e.g. bg-bg-page,
+ * text-text-primary, border-border-default, ring-ring-focus.
+ *
+ * See docs/modern-track-color-system.md for the full reference.
+ */
+body {
+	/* Backgrounds */
+	--bg-page: var(--cinemata-pacific-deep-50);
+	--bg-surface: var(--cinemata-neutral-50);
+	--bg-surface-raised: var(--cinemata-white);
+	--bg-surface-muted: var(--cinemata-neutral-200);
+	--bg-surface-inverse: var(--cinemata-pacific-deep-900);
+	--bg-overlay-dark: var(--cinemata-pacific-deep-900);
+	--bg-chrome: var(--cinemata-pacific-deep-800);
+	--bg-chrome-hover: var(--cinemata-pacific-deep-700);
+	--bg-skeleton: var(--cinemata-pacific-deep-100);
+	--bg-control: var(--cinemata-neutral-300);
+	--bg-primary: var(--cinemata-strait-blue-600p);
+	--bg-primary-hover: var(--cinemata-strait-blue-800);
+	--bg-secondary: var(--cinemata-sunset-horizon-400p);
+	--bg-secondary-hover: var(--cinemata-sunset-horizon-500);
+	--bg-danger: var(--cinemata-red-500);
+	--bg-success: var(--cinemata-green-500);
+	--bg-warning: var(--cinemata-amber-500);
+
+	/* Text */
+	--text-strong: var(--cinemata-pacific-deep-900);
+	--text-primary: var(--cinemata-pacific-deep-700);
+	--text-secondary: var(--cinemata-strait-blue-700);
+	--text-muted: var(--cinemata-pacific-deep-400);
+	--text-description: var(--cinemata-pacific-deep-700);
+	--text-subtle: var(--cinemata-neutral-500);
+	--text-disabled: var(--cinemata-pacific-deep-400);
+	--text-inverse: var(--cinemata-white);
+	--text-on-primary: var(--cinemata-white);
+	--text-on-chrome: var(--cinemata-strait-blue-50);
+	--text-on-chrome-muted: var(--cinemata-pacific-deep-300);
+	--text-link: var(--cinemata-sunset-horizon-400p);
+	--text-link-hover: var(--cinemata-sunset-horizon-600);
+	--text-accent: var(--cinemata-sunset-horizon-400p);
+	--text-danger: var(--cinemata-red-500);
+	--text-success: var(--cinemata-green-600);
+	--text-warning: var(--cinemata-amber-600p);
+
+	/* Borders */
+	--border-default: var(--cinemata-pacific-deep-200);
+	--border-subtle: var(--cinemata-neutral-200);
+	--border-strong: var(--cinemata-pacific-deep-500);
+	--border-strong-constant: var(--cinemata-pacific-deep-500);
+	--border-chrome: var(--cinemata-pacific-deep-700);
+	--border-input: var(--cinemata-coral-reef-400p);
+	--border-danger: var(--cinemata-red-500);
+
+	/* Focus ring */
+	--ring-focus: var(--cinemata-sunset-horizon-400p);
+}
+
+body.dark_theme {
+	--bg-page: var(--cinemata-pacific-deep-950);
+	--bg-surface: var(--cinemata-pacific-deep-900);
+	--bg-surface-raised: var(--cinemata-pacific-deep-800);
+	--bg-surface-muted: var(--cinemata-pacific-deep-800);
+	--bg-surface-inverse: var(--cinemata-white);
+	--bg-skeleton: var(--cinemata-pacific-deep-700);
+	--bg-control: var(--cinemata-pacific-deep-900);
+	--bg-primary: var(--cinemata-strait-blue-500);
+	--bg-primary-hover: var(--cinemata-strait-blue-700);
+	--bg-secondary: var(--cinemata-sunset-horizon-500);
+	--bg-secondary-hover: var(--cinemata-sunset-horizon-700);
+
+	--text-strong: var(--cinemata-strait-blue-50);
+	--text-primary: var(--cinemata-strait-blue-50);
+	--text-secondary: var(--cinemata-strait-blue-100);
+	--text-muted: var(--cinemata-pacific-deep-300);
+	--text-description: var(--cinemata-pacific-deep-300);
+	--text-subtle: var(--cinemata-neutral-400);
+	--text-inverse: var(--cinemata-pacific-deep-900);
+	--text-link: var(--cinemata-sunset-horizon-200);
+	--text-link-hover: var(--cinemata-sunset-horizon-100);
+	--text-success: var(--cinemata-green-500);
+	--text-warning: var(--cinemata-amber-500);
+
+	--border-default: var(--cinemata-pacific-deep-700);
+	--border-subtle: var(--cinemata-pacific-deep-800);
+	--border-strong: var(--cinemata-pacific-deep-400);
+	--border-input: var(--cinemata-sunset-horizon-400p);
+}
+
+/* stylelint-disable-next-line at-rule-no-unknown */
+@theme inline {
+	/* Backgrounds */
+	--color-bg-page: var(--bg-page);
+	--color-bg-surface: var(--bg-surface);
+	--color-bg-surface-raised: var(--bg-surface-raised);
+	--color-bg-surface-muted: var(--bg-surface-muted);
+	--color-bg-surface-inverse: var(--bg-surface-inverse);
+	--color-bg-overlay-dark: var(--bg-overlay-dark);
+	--color-bg-chrome: var(--bg-chrome);
+	--color-bg-chrome-hover: var(--bg-chrome-hover);
+	--color-bg-skeleton: var(--bg-skeleton);
+	--color-bg-control: var(--bg-control);
+	--color-bg-primary: var(--bg-primary);
+	--color-bg-primary-hover: var(--bg-primary-hover);
+	--color-bg-secondary: var(--bg-secondary);
+	--color-bg-secondary-hover: var(--bg-secondary-hover);
+	--color-bg-danger: var(--bg-danger);
+	--color-bg-success: var(--bg-success);
+	--color-bg-warning: var(--bg-warning);
+
+	/* Text */
+	--color-text-strong: var(--text-strong);
+	--color-text-primary: var(--text-primary);
+	--color-text-secondary: var(--text-secondary);
+	--color-text-muted: var(--text-muted);
+	--color-text-description: var(--text-description);
+	--color-text-subtle: var(--text-subtle);
+	--color-text-disabled: var(--text-disabled);
+	--color-text-inverse: var(--text-inverse);
+	--color-text-on-primary: var(--text-on-primary);
+	--color-text-on-chrome: var(--text-on-chrome);
+	--color-text-on-chrome-muted: var(--text-on-chrome-muted);
+	--color-text-link: var(--text-link);
+	--color-text-link-hover: var(--text-link-hover);
+	--color-text-accent: var(--text-accent);
+	--color-text-danger: var(--text-danger);
+	--color-text-success: var(--text-success);
+	--color-text-warning: var(--text-warning);
+
+	/* Borders */
+	--color-border-default: var(--border-default);
+	--color-border-subtle: var(--border-subtle);
+	--color-border-strong: var(--border-strong);
+	--color-border-strong-constant: var(--border-strong-constant);
+	--color-border-chrome: var(--border-chrome);
+	--color-border-input: var(--border-input);
+	--color-border-danger: var(--border-danger);
+
+	/* Focus ring */
+	--color-ring-focus: var(--ring-focus);
+}
+
+/*
  * Topbar cascade-defence block.
  *
  * --header-height: legacy _extra.css already sets the desktop value (90px)
@@ -583,6 +745,16 @@ header[data-topbar] input[type='text'] {
 
 header[data-topbar] button:not(:disabled) {
 	cursor: pointer;
+}
+
+@layer utilities {
+	.global-search-input {
+		border: 1px solid transparent !important;
+	}
+
+	.global-search-input:focus {
+		border-color: var(--border-chrome, var(--color-border-chrome)) !important;
+	}
 }
 
 header[data-topbar] button:focus-visible,

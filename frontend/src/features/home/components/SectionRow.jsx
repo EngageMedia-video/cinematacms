@@ -13,8 +13,7 @@ const BACKGROUND_SECTION_CLASS = 'relative isolate py-4 sm:py-5';
 const BACKGROUND_LAYER_CLASS =
 	'pointer-events-none absolute inset-y-0 -left-4 -right-4 -z-10 bg-cinemata-neutral-50 dark:bg-cinemata-pacific-deep-800 sm:-left-6 sm:-right-6 sm:rounded-[8px] lg:-left-8 lg:-right-8';
 
-const VIEW_ALL_LINK_CLASS =
-	'whitespace-nowrap uppercase tracking-wide hover:text-cinemata-sunset-horizon-600 dark:hover:text-cinemata-sunset-horizon-100';
+const VIEW_ALL_LINK_CLASS = 'whitespace-nowrap uppercase tracking-wide hover:text-text-link-hover';
 
 const SKELETON_ITEMS = Array.from({ length: 4 }, (_, i) => i);
 const GRID_CLASS = 'grid gap-x-4 gap-y-8';
@@ -37,7 +36,7 @@ function ViewAllLink({ href }) {
 	);
 }
 
-function SectionRowHeader({ badgeLabel, badgeColor = '#026690', viewAllHref }) {
+function SectionRowHeader({ badgeLabel, badgeColor = 'var(--cinemata-strait-blue-500)', viewAllHref }) {
 	return (
 		<div className="flex items-center justify-between gap-4">
 			{badgeLabel ? <Badge color={badgeColor}>{badgeLabel}</Badge> : null}
@@ -47,11 +46,7 @@ function SectionRowHeader({ badgeLabel, badgeColor = '#026690', viewAllHref }) {
 }
 
 function SectionRowTitle({ children, viewAllHref }) {
-	const heading = (
-		<h2 className="heading-h6-20-medium m-0 text-cinemata-pacific-deep-700 dark:text-cinemata-strait-blue-50">
-			{children}
-		</h2>
-	);
+	const heading = <h2 className="heading-h6-20-medium m-0 text-text-primary">{children}</h2>;
 
 	if (!viewAllHref) {
 		return heading;
@@ -66,13 +61,7 @@ function SectionRowTitle({ children, viewAllHref }) {
 }
 
 function SectionRowDescription({ text }) {
-	return (
-		<ExpandableText
-			text={text}
-			clampLines={2}
-			className="body-body-14-regular text-cinemata-strait-blue-700 dark:text-cinemata-strait-blue-100"
-		/>
-	);
+	return <ExpandableText text={text} clampLines={2} className="body-body-14-regular text-text-secondary" />;
 }
 
 function SectionRowHtmlDescription({ html }) {
@@ -81,7 +70,7 @@ function SectionRowHtmlDescription({ html }) {
 
 	return (
 		<div
-			className="body-body-14-regular space-y-2 text-cinemata-strait-blue-700 dark:text-cinemata-strait-blue-100 [&_a]:font-semibold [&_a]:text-cinemata-sunset-horizon-400p [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:text-cinemata-sunset-horizon-600 [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-cinemata-sunset-horizon-400p [&_br+br]:hidden [&_p]:m-0 dark:[&_a]:text-cinemata-sunset-horizon-200 dark:[&_a:hover]:text-cinemata-sunset-horizon-100"
+			className="body-body-14-regular space-y-2 text-text-secondary [&_a]:font-semibold [&_a]:text-text-link [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:text-text-link-hover [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_a:focus-visible]:outline-ring-focus [&_br+br]:hidden [&_p]:m-0"
 			dangerouslySetInnerHTML={{ __html: sanitized }}
 		/>
 	);
@@ -109,9 +98,9 @@ function SkeletonGrid() {
 		<div className={GRID_CLASS} style={DYNAMIC_GRID_STYLE}>
 			{SKELETON_ITEMS.map((i) => (
 				<div key={i} className="flex flex-col gap-2">
-					<div className="aspect-video rounded-[6px] bg-cinemata-pacific-deep-100 dark:bg-cinemata-pacific-deep-700 animate-pulse" />
-					<div className="h-4 rounded bg-cinemata-pacific-deep-100 dark:bg-cinemata-pacific-deep-700 animate-pulse w-3/4" />
-					<div className="h-3 rounded bg-cinemata-pacific-deep-100 dark:bg-cinemata-pacific-deep-700 animate-pulse w-1/2" />
+					<div className="aspect-video rounded-[6px] bg-bg-skeleton animate-pulse" />
+					<div className="h-4 rounded bg-bg-skeleton animate-pulse w-3/4" />
+					<div className="h-3 rounded bg-bg-skeleton animate-pulse w-1/2" />
 				</div>
 			))}
 		</div>
@@ -131,7 +120,7 @@ export function SectionRow({ items = [], isLoading = false, isError = false, var
 		return (
 			<section className={sectionClass}>
 				{variant === 'card' ? <div aria-hidden="true" className={BACKGROUND_LAYER_CLASS} /> : null}
-				<div className="h-5 rounded bg-cinemata-pacific-deep-100 dark:bg-cinemata-pacific-deep-700 animate-pulse w-32" />
+				<div className="h-5 rounded bg-bg-skeleton animate-pulse w-32" />
 				<SkeletonGrid />
 			</section>
 		);

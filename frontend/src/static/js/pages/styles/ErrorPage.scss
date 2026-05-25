@@ -80,10 +80,10 @@
 			&.error-btn-primary {
 				background: var(--btn-primary-bg-color);
 				color: var(--btn-color);
-				border-color: var(--btn-border-color);
+				border-color: transparent;
 
 				> .btn-icon {
-					color: var(--btn-primary-icon-color);
+					color: currentcolor;
 				}
 
 				&:hover {
@@ -92,45 +92,23 @@
 			}
 
 			&.error-btn-secondary {
-				color: var(--btn-secondary-color);
+				color: var(--body-text-color);
 				background-color: transparent;
-				border-color: var(--btn-secondary-border-color);
-				border-width: 0.5px;
+				border-color: var(--body-text-color);
+				border-width: 1px;
 
 				> .btn-icon {
-					color: var(--btn-secondary-icon-color);
+					color: currentcolor;
 				}
 
 				&:hover {
-					background-color: var(--btn-secondary-bg-hover-color);
-					color: white;
+					background-color: var(--body-text-color);
+					color: var(--body-bg-color);
 
 					> .btn-icon {
-						color: var(--btn-secondary-icon-hover-color);
+						color: currentcolor;
 					}
 				}
-			}
-		}
-	}
-}
-
-// Dark theme support
-body.dark_theme .error-page-content {
-	.error-actions .error-btn {
-		&.error-btn-primary {
-			background-color: var(--btn-primary-bg-color);
-			border: none;
-
-			&:hover {
-				background-color: var(--btn-primary-bg-hover-color);
-			}
-		}
-
-		&.error-btn-secondary {
-			color: var(--btn-secondary-color);
-
-			&:hover {
-				border-color: #fefde6;
 			}
 		}
 	}

@@ -32,7 +32,7 @@ function NotificationList({ showUnreadOnly }) {
 
 	return (
 		<>
-			<div className="bg-surface-popup rounded border border-border-input divide-y divide-border-input/40">
+			<div className="bg-surface-popup rounded">
 				{isLoading && <p className="px-4 py-8 text-sm text-center text-content-body/60">Loading…</p>}
 				{!isLoading && notifications.length === 0 && (
 					<p className="px-4 py-8 text-sm text-center text-content-body/60">No notifications</p>
@@ -166,8 +166,7 @@ function NotificationPageContent() {
 			<div
 				role="tablist"
 				aria-label="Notifications views"
-				className="inline-flex gap-1 rounded-full p-1 mb-6 bg-surface-popup border border-border-input"
-				style={{ boxShadow: '0 1px 2px rgba(0,0,0,.08)' }}
+				className="inline-flex gap-1 rounded-full p-1 mb-6 bg-surface-popup"
 			>
 				{tabs.map(({ id, label }) => {
 					const active = activeTab === id;
@@ -195,8 +194,8 @@ function NotificationPageContent() {
 								...(active
 									? {
 											backgroundColor: 'var(--btn-primary-bg-color)',
-											color: '#fff',
-											boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+											color: 'var(--cinemata-neutral-50)',
+											boxShadow: 'none',
 										}
 									: {
 											backgroundColor: 'transparent',

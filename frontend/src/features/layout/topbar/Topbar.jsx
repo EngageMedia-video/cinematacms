@@ -41,7 +41,7 @@ export function Topbar() {
 			<header
 				data-modern-track
 				data-topbar
-				className="fixed inset-x-0 z-[60] w-full border-b-2 border-white/10 bg-cinemata-pacific-deep-900 text-cinemata-white"
+				className="fixed inset-x-0 z-[60] w-full border-b-2 border-white/10 bg-bg-overlay-dark text-cinemata-white"
 			>
 				<div className="flex items-center gap-3 px-4 h-[60px] sm:h-[90px]">
 					<TopbarSidebarToggle />

@@ -24,13 +24,9 @@ function ThemeSwitcherMenuItem() {
 			onClick={toggleMode}
 			role="menuitemcheckbox"
 			aria-checked={isDark}
-			className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-cinemata-strait-blue-50 transition-colors duration-150 bg-transparent hover:bg-white/[0.04] hover:text-cinemata-white"
+			className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text-strong transition-colors duration-150 bg-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
 		>
-			<i
-				aria-hidden="true"
-				className="material-icons shrink-0 text-cinemata-strait-blue-50"
-				style={{ fontSize: 20 }}
-			>
+			<i aria-hidden="true" className="material-icons shrink-0 text-text-strong" style={{ fontSize: 20 }}>
 				{isDark ? 'brightness_3' : 'wb_sunny'}
 			</i>
 			<span className="flex-1 text-left truncate">{isDark ? 'Light mode' : 'Dark mode'}</span>
@@ -47,7 +43,7 @@ function ThemeSwitcherInlineButton() {
 			onClick={toggleMode}
 			aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
 			aria-pressed={isDark}
-			className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-cinemata-pacific-deep-800 hover:bg-cinemata-pacific-deep-700 transition-colors shrink-0 text-cinemata-strait-blue-50"
+			className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-bg-chrome hover:bg-bg-chrome-hover transition-colors shrink-0 text-text-on-chrome"
 		>
 			<i aria-hidden="true" className="material-icons" style={{ fontSize: 20 }}>
 				{isDark ? 'brightness_3' : 'wb_sunny'}
@@ -61,11 +57,11 @@ function MenuItem({ item }) {
 	const signOut = isSignOut(item);
 
 	const base =
-		'flex w-full items-center gap-3 px-4 py-2.5 text-sm text-cinemata-strait-blue-50 transition-colors duration-150 no-underline';
+		'flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text-strong transition-colors duration-150 no-underline';
 	const hover = signOut
 		? 'hover:bg-cinemata-sunset-horizon-500/10 hover:text-cinemata-sunset-horizon-500'
-		: 'hover:bg-white/[0.04] hover:text-cinemata-white';
-	const iconClass = signOut ? 'text-cinemata-sunset-horizon-300' : 'text-cinemata-strait-blue-50';
+		: 'hover:bg-black/[0.04] dark:hover:bg-white/[0.04]';
+	const iconClass = signOut ? 'text-cinemata-sunset-horizon-300' : 'text-text-strong';
 
 	return (
 		<a href={item.link || '#'} className={cn(base, hover)}>
@@ -123,7 +119,7 @@ export function TopbarUserMenu() {
 				{canRegister ? (
 					<a
 						href={links?.register || '/accounts/signup/'}
-						className="hidden sm:inline-flex items-center justify-center rounded h-10 px-3 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline border border-white/15 hover:bg-white/[0.04] text-cinemata-strait-blue-50"
+						className="hidden sm:inline-flex items-center justify-center rounded h-10 px-3 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline border border-white/15 hover:bg-white/[0.04] text-text-on-chrome"
 					>
 						Register
 					</a>
@@ -131,7 +127,7 @@ export function TopbarUserMenu() {
 				{canLogin ? (
 					<a
 						href={links?.signin || '/accounts/login/'}
-						className="inline-flex items-center justify-center rounded h-10 px-4 hover:brightness-110 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline bg-cinemata-sunset-horizon-500 text-cinemata-neutral-50"
+						className="inline-flex items-center justify-center rounded h-10 px-4 text-sm font-bold uppercase tracking-wide transition-all shrink-0 no-underline bg-brand-primary text-btn-text hover:bg-brand-primary-hover"
 					>
 						Sign in
 					</a>
@@ -159,8 +155,8 @@ export function TopbarUserMenu() {
 				aria-label={`User menu${user.username ? ` for ${user.username}` : ''}`}
 				aria-haspopup="true"
 				aria-expanded={isOpen}
-				className="inline-flex items-center justify-center rounded-full overflow-hidden shrink-0 transition-shadow hover:ring-2 hover:ring-white/20"
-				style={{ width: 40, height: 40, boxShadow: '0 0 20px rgba(0,0,0,0.1)' }}
+				className="inline-flex items-center justify-center rounded-full overflow-hidden shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus"
+				style={{ width: 40, height: 40 }}
 			>
 				<Avatar
 					src={user.thumbnail}
@@ -172,13 +168,12 @@ export function TopbarUserMenu() {
 			{isOpen ? (
 				<div
 					role="menu"
-					className="absolute right-0 top-full mt-3 w-[240px] overflow-hidden rounded-xl bg-cinemata-pacific-deep-800 ring-1 ring-white/10 shadow-2xl z-50"
-					style={{ boxShadow: '0 24px 48px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)' }}
+					className="absolute right-0 top-full mt-3 w-[240px] overflow-hidden rounded-xl bg-bg-surface-raised ring-1 ring-border-subtle shadow-2xl z-50"
 				>
 					{user.username ? (
 						<a
 							href={user.pages?.about || '#'}
-							className="flex items-center gap-3 px-4 py-3.5 bg-black/20 hover:bg-black/30 transition-colors no-underline border-b border-white/5"
+							className="flex items-center gap-3 px-4 py-3.5 bg-bg-surface hover:bg-black/[0.04] dark:hover:bg-white/[0.04] transition-colors no-underline border-b border-border-subtle"
 						>
 							<Avatar
 								src={user.thumbnail}
@@ -187,14 +182,8 @@ export function TopbarUserMenu() {
 								style={{ width: 36, height: 36 }}
 							/>
 							<div className="min-w-0 flex-1">
-								<div className="text-sm font-semibold text-cinemata-white truncate">
-									{user.username}
-								</div>
-								<Text
-									as="div"
-									variant="body-12"
-									className="m-0 mt-0.5 truncate text-cinemata-pacific-deep-300"
-								>
+								<div className="text-sm font-semibold text-text-strong truncate">{user.username}</div>
+								<Text as="div" variant="body-12" className="m-0 mt-0.5 truncate text-text-muted">
 									View profile
 								</Text>
 							</div>
@@ -208,7 +197,7 @@ export function TopbarUserMenu() {
 					</div>
 					{signOutItems.length > 0 ? (
 						<>
-							<div className="h-px bg-white/5" aria-hidden="true" />
+							<div className="h-px bg-border-subtle" aria-hidden="true" />
 							<div className="py-1.5">
 								{signOutItems.map((item, idx) => (
 									<MenuItem key={`signout-${idx}`} item={item} />

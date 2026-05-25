@@ -1,20 +1,16 @@
-$success-color: #00a28b;
-$warning-color: #e09f1f;
-$danger-color: #de623b;
+$success-color: var(--cinemata-coral-reef-500);
+$warning-color: var(--cinemata-amber-500);
+$danger-color: var(--cinemata-sunset-horizon-500);
+$brand-color: var(--cinemata-strait-blue-400);
+$body-text-color: var(--cinemata-pacific-deep-950);
 
-$brand-color: #008ede;
+// $light-color: var(--cinemata-neutral-50);
+// $dark-color: var(--cinemata-pacific-deep-600p);
 
-$body-text-color: #111;
-
-// $light-color: #faf9fa;
-// $dark-color: #3f4a3c;
-
-$light-color: #fafafa;
+$light-color: var(--cinemata-neutral-50);
 $dark-color: #111;
-
-$light-accent-color: #98bc92;
-$dark-accent-color: #087e04;
-
+$light-accent-color: var(--cinemata-coral-reef-400p);
+$dark-accent-color: var(--cinemata-green-700p);
 $success-dark-color: shade($success-color, 10);
 $warning-dark-color: shade($warning-color, 10);
 $danger-dark-color: shade($danger-color, 10);
