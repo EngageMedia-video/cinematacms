@@ -71,8 +71,8 @@ function arePrefsEqual(a, b) {
 function StatusPill({ children, tone = 'muted' }) {
 	const toneClasses =
 		tone === 'accent'
-			? 'text-content-body/80 bg-surface-popup border-border-input'
-			: 'text-content-body/60 bg-surface-popup border-border-input/60';
+			? 'text-text-secondary bg-bg-surface-muted border-border-default'
+			: 'text-text-muted bg-bg-surface-muted border-border-subtle';
 	return (
 		<span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium border ${toneClasses}`}>
 			{children}
@@ -101,12 +101,12 @@ export function NotificationPreferencesForm() {
 	}, [data, draft]);
 
 	if (isLoading) {
-		return <p className="px-4 py-8 text-sm text-center text-content-body/60">Loading…</p>;
+		return <p className="px-4 py-8 text-sm text-center text-text-muted">Loading…</p>;
 	}
 
 	if (isError) {
 		return (
-			<p className="px-4 py-8 text-sm text-center text-content-body/60">
+			<p className="px-4 py-8 text-sm text-center text-text-muted">
 				Failed to load preferences: {error?.message ?? 'unknown error'}
 			</p>
 		);
@@ -155,7 +155,7 @@ export function NotificationPreferencesForm() {
 					value={draft[row.key] ?? 'in_app'}
 					onChange={(e) => handleChange(row.key, e.target.value)}
 					disabled={isPending}
-					className="w-full sm:w-48 border border-border-input rounded px-3 py-2 text-sm text-content-body bg-surface-popup"
+					className="w-full sm:w-48 border border-border-default rounded px-3 py-2 text-sm text-text-primary bg-bg-surface"
 				>
 					{CHANNEL_OPTIONS.map(({ value, label: optLabel }) => (
 						<option key={value} value={value}>
@@ -170,11 +170,11 @@ export function NotificationPreferencesForm() {
 	return (
 		<form onSubmit={handleSave} className="space-y-6">
 			<div>
-				<h2 className="text-lg font-semibold text-content-body">Notification Settings</h2>
-				<p className="text-sm text-content-body/70 mt-1">Control what you hear about and how.</p>
+				<h2 className="text-lg font-semibold text-text-strong">Notification Settings</h2>
+				<p className="text-sm text-text-muted mt-1">Control what you hear about and how.</p>
 			</div>
 
-			<div className="bg-surface-popup rounded border border-border-input divide-y divide-border-input/40">
+			<div className="bg-bg-surface-raised rounded border border-border-default divide-y divide-border-subtle">
 				{NOTIFICATION_ROWS.map((row) => {
 					const dimmed = row.status !== 'active';
 					return (
@@ -185,8 +185,8 @@ export function NotificationPreferencesForm() {
 							}`}
 						>
 							<div className="flex-1 min-w-0">
-								<p className="text-sm font-medium text-content-body">{row.label}</p>
-								<p className="text-xs text-content-body/60 mt-0.5">{row.description}</p>
+								<p className="text-sm font-medium text-text-primary">{row.label}</p>
+								<p className="text-xs text-text-muted mt-0.5">{row.description}</p>
 							</div>
 							<div className="w-full sm:w-48 flex sm:justify-end">{renderControl(row)}</div>
 						</div>
@@ -196,14 +196,14 @@ export function NotificationPreferencesForm() {
 
 			<div className="flex items-center justify-end gap-3">
 				{isSaveError && (
-					<span className="text-xs text-red-500 mr-auto">{saveError?.message ?? 'Save failed'}</span>
+					<span className="text-xs text-text-danger mr-auto">{saveError?.message ?? 'Save failed'}</span>
 				)}
-				{isSuccess && !isDirty && <span className="text-xs text-content-body/60 mr-auto">Saved</span>}
+				{isSuccess && !isDirty && <span className="text-xs text-text-muted mr-auto">Saved</span>}
 				<button
 					type="button"
 					onClick={handleReset}
 					disabled={!isDirty || isPending}
-					className="border-0 bg-transparent p-0 text-sm text-content-link hover:underline disabled:opacity-40"
+					className="border-0 bg-transparent p-0 text-sm text-text-link hover:text-text-link-hover hover:underline disabled:opacity-40"
 					style={disabledActionStyle}
 				>
 					Reset
@@ -222,9 +222,9 @@ export function NotificationPreferencesForm() {
 						border: 'none',
 						fontSize: '13px',
 						fontWeight: 500,
-						backgroundColor: 'var(--btn-primary-bg-color)',
-						color: 'var(--cinemata-neutral-50)',
-						boxShadow: '0 1px 3px var(--cinemata-neutral-300)',
+						backgroundColor: 'var(--bg-primary)',
+						color: 'var(--text-on-primary)',
+						boxShadow: 'none',
 						...disabledActionStyle,
 					}}
 				>

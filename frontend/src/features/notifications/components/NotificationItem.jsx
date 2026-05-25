@@ -45,23 +45,23 @@ export function NotificationItem({ notification }) {
 					handleClick();
 				}
 			}}
-			className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer hover:bg-surface-popup/50 ${
-				!notification.is_read ? 'bg-brand-theme/5' : ''
+			className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer hover:bg-bg-surface-muted ${
+				!notification.is_read ? 'bg-bg-primary/10' : ''
 			}`}
 		>
-			<span className="w-10 h-10 rounded-full bg-surface-popup flex items-center justify-center shrink-0 overflow-hidden">
+			<span className="w-10 h-10 rounded-full bg-bg-surface-muted flex items-center justify-center shrink-0 overflow-hidden">
 				{notification.actor?.thumbnail_url ? (
 					<img src={notification.actor.thumbnail_url} alt="" className="w-full h-full object-cover" />
 				) : (
-					<i className="material-icons text-lg text-content-body">person</i>
+					<i className="material-icons text-lg text-text-muted">person</i>
 				)}
 			</span>
 			<div className="flex-1 min-w-0">
-				<p className="text-sm text-content-body leading-snug">{renderMessage(notification)}</p>
-				<p className="text-xs text-content-body/50 mt-0.5">{format(notification.created_at)}</p>
+				<p className="text-sm text-text-primary leading-snug">{renderMessage(notification)}</p>
+				<p className="text-xs text-text-muted mt-0.5">{format(notification.created_at)}</p>
 			</div>
 			{!notification.is_read && (
-				<span className="w-2 h-2 rounded-full bg-brand-theme shrink-0" aria-hidden="true" />
+				<span className="w-2 h-2 rounded-full bg-bg-primary shrink-0" aria-hidden="true" />
 			)}
 		</div>
 	);
