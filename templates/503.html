@@ -160,6 +160,11 @@
       .logo {
         max-width: 150px;
         height: auto;
+        filter: brightness(0) saturate(100%) invert(10%) sepia(80%) saturate(1500%) hue-rotate(176deg) brightness(92%) contrast(104%);
+      }
+
+      [data-theme="dark"] .logo {
+        filter: none;
       }
 
       /* Spinner container for centering */
