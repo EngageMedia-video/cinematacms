@@ -123,12 +123,16 @@ describe('MovieItem', () => {
 				imageAlt="Clickable poster"
 				title="Cinema Paradiso"
 				subtitle="Giuseppe Tornatore"
-				subtitleHref="/profiles/giuseppe-tornatore/"
+				subtitleLink="/profiles/giuseppe-tornatore/"
 				metadata={['1988']}
 				link="/media/cinema-paradiso/"
 			/>
 		);
 
+		expect(screen.getByRole('link', { name: 'Cinema Paradiso' })).toHaveAttribute(
+			'href',
+			'/media/cinema-paradiso/'
+		);
 		expect(screen.getByRole('link', { name: 'Open Cinema Paradiso' })).toHaveAttribute(
 			'href',
 			'/media/cinema-paradiso/'

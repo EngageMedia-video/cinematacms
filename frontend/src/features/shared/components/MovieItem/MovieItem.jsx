@@ -2,8 +2,15 @@ import { cn } from '../../utils/classNames';
 import { Badge } from '../Badge';
 import { Icon } from '../Icon';
 
-function MovieItemContainer({ children, contentClassName = '', shellClassName = '', link = '', title = '' }) {
-	if (link) {
+function MovieItemContainer({
+	children,
+	contentClassName = '',
+	shellClassName = '',
+	link = '',
+	title = '',
+	useWrapperLink = true,
+}) {
+	if (link && useWrapperLink) {
 		return (
 			<article className={cn(shellClassName, 'relative')}>
 				<a
@@ -45,27 +52,36 @@ function MovieMetadata({ items = [] }) {
 	);
 }
 
-function MovieCopy({ title, subtitle, subtitleHref = '', metadata, orientation = 'vertical' }) {
+function MovieCopy({ title, titleLink = '', subtitle, subtitleLink = '', metadata, orientation = 'vertical' }) {
 	const isHorizontal = orientation === 'horizontal';
+	const titleClassName = cn(
+		'm-0 p-0 line-clamp-3',
+		'[font-family:Inter,Arial,sans-serif] text-[16px] font-medium leading-[22px] tracking-[-0.18px] text-text-primary'
+	);
 	const subtitleClassName = 'body-body-12-regular m-0 p-0 text-text-link';
 
 	return (
 		<div className={cn('flex min-w-0 flex-col', isHorizontal ? 'gap-3' : 'gap-2')} data-movie-copy>
-			<p
-				className={cn(
-					'm-0 p-0 line-clamp-3',
-					'[font-family:Inter,Arial,sans-serif] text-[16px] font-medium leading-[22px] tracking-[-0.18px] text-text-primary'
-				)}
-			>
-				{title}
-			</p>
-
-			{subtitle && subtitleHref ? (
+			{titleLink ? (
 				<a
-					href={subtitleHref}
+					href={titleLink}
+					className={cn(
+						titleClassName,
+						'block no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus'
+					)}
+				>
+					{title}
+				</a>
+			) : (
+				<p className={titleClassName}>{title}</p>
+			)}
+
+			{subtitle && subtitleLink ? (
+				<a
+					href={subtitleLink}
 					className={cn(
 						subtitleClassName,
-						'relative z-20 inline-flex min-h-8 w-fit max-w-full touch-manipulation items-center no-underline hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus'
+						'relative z-20 inline-flex min-h-8 w-fit max-w-full touch-manipulation items-center no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus'
 					)}
 				>
 					{subtitle}
@@ -88,9 +104,11 @@ function MoviePoster({
 	iconName,
 	iconLabel,
 	className = '',
+	link = '',
+	linkTitle = '',
 	showTopRightIcon = false,
 }) {
-	return (
+	const poster = (
 		<div className={cn('relative overflow-hidden rounded-[6px] bg-bg-skeleton', className)}>
 			<img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
 
@@ -119,6 +137,20 @@ function MoviePoster({
 			) : null}
 		</div>
 	);
+
+	if (!link) {
+		return poster;
+	}
+
+	return (
+		<a
+			href={link}
+			className="block shrink-0 no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+			aria-label={linkTitle ? `Open ${linkTitle}` : 'Open movie details'}
+		>
+			{poster}
+		</a>
+	);
 }
 
 export function HorizontalMovieItem({
@@ -131,15 +163,18 @@ export function HorizontalMovieItem({
 	link = '',
 	metadata = [],
 	subtitle = '',
-	subtitleHref = '',
+	subtitleLink = '',
 	title = 'Movie Title',
 }) {
+	const useStandaloneLinks = Boolean(subtitleLink);
+
 	return (
 		<MovieItemContainer
 			shellClassName={cn('w-full', className)}
 			contentClassName="flex h-full w-full items-start gap-4"
 			link={link}
 			title={title}
+			useWrapperLink={!useStandaloneLinks}
 		>
 			<MoviePoster
 				imageAlt={imageAlt}
@@ -147,14 +182,17 @@ export function HorizontalMovieItem({
 				badge={badge}
 				badgeColor={badgeColor}
 				duration={duration}
+				link={useStandaloneLinks ? link : ''}
+				linkTitle={title}
 				className="aspect-video w-[180px] shrink-0"
 			/>
 
 			<div className="flex min-w-0 flex-1 flex-col gap-3">
 				<MovieCopy
 					title={title}
+					titleLink={useStandaloneLinks ? link : ''}
 					subtitle={subtitle}
-					subtitleHref={subtitleHref}
+					subtitleLink={subtitleLink}
 					metadata={metadata}
 					orientation="horizontal"
 				/>
@@ -175,15 +213,18 @@ export function VerticalMovieItem({
 	link = '',
 	metadata = [],
 	subtitle = '',
-	subtitleHref = '',
+	subtitleLink = '',
 	title = 'Movie Title',
 }) {
+	const useStandaloneLinks = Boolean(subtitleLink);
+
 	return (
 		<MovieItemContainer
 			shellClassName={cn('w-full min-w-0', className)}
 			contentClassName="flex h-full w-full min-w-0 flex-col gap-4"
 			link={link}
 			title={title}
+			useWrapperLink={!useStandaloneLinks}
 		>
 			<MoviePoster
 				imageAlt={imageAlt}
@@ -193,14 +234,17 @@ export function VerticalMovieItem({
 				duration={duration}
 				iconName={iconName}
 				iconLabel={iconLabel}
+				link={useStandaloneLinks ? link : ''}
+				linkTitle={title}
 				showTopRightIcon
 				className="aspect-video w-full"
 			/>
 
 			<MovieCopy
 				title={title}
+				titleLink={useStandaloneLinks ? link : ''}
 				subtitle={subtitle}
-				subtitleHref={subtitleHref}
+				subtitleLink={subtitleLink}
 				metadata={metadata}
 				orientation="vertical"
 			/>
@@ -221,7 +265,7 @@ export function MovieItem({
 	metadata = [],
 	orientation = 'vertical',
 	subtitle = '',
-	subtitleHref = '',
+	subtitleLink = '',
 	title = 'Movie Title',
 }) {
 	if (orientation === 'horizontal') {
@@ -236,7 +280,7 @@ export function MovieItem({
 				link={link}
 				metadata={metadata}
 				subtitle={subtitle}
-				subtitleHref={subtitleHref}
+				subtitleLink={subtitleLink}
 				title={title}
 			/>
 		);
@@ -255,7 +299,7 @@ export function MovieItem({
 			link={link}
 			metadata={metadata}
 			subtitle={subtitle}
-			subtitleHref={subtitleHref}
+			subtitleLink={subtitleLink}
 			title={title}
 		/>
 	);
