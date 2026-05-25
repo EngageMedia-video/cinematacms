@@ -105,19 +105,6 @@
         margin: 20px 0;
       }
 
-      /* Hide dark logo in light mode, light logo in dark mode */
-      .logo-dark {
-        display: none;
-      }
-
-      [data-theme="dark"] .logo-light {
-        display: none;
-      }
-
-      [data-theme="dark"] .logo-dark {
-        display: block;
-      }
-
       .panel {
         width: 100%;
         max-width: 720px;
@@ -558,42 +545,29 @@
       // Include site configuration from site.html
       {% include 'config/installation/site.html' %}
 
-      // Populate logos based on MediaCMS.site.logo configuration
+      // Populate logo based on MediaCMS.site.logo.desktop configuration,
+      // matching the topbar's logo source so the maintenance page stays
+      // consistent with the rest of the site.
       (function() {
         const logoContainer = document.getElementById('logo-container');
+        const desktop = MediaCMS && MediaCMS.site && MediaCMS.site.logo && MediaCMS.site.logo.desktop;
+        const src = desktop && (desktop.svg || desktop.img);
+        if (!src) return;
 
-        if (MediaCMS && MediaCMS.site && MediaCMS.site.logo &&
-            MediaCMS.site.logo.maintenanceLightMode &&
-            MediaCMS.site.logo.maintenanceDarkMode) {
-          const lightLogo = document.createElement('img');
-          lightLogo.className = 'logo logo-light';
-          lightLogo.src = MediaCMS.site.logo.maintenanceLightMode.svg;
-          lightLogo.alt = MediaCMS.site.title || '{{PORTAL_NAME}}';
-          lightLogo.onerror = function() {
+        const logo = document.createElement('img');
+        logo.className = 'logo';
+        logo.src = src;
+        logo.alt = (MediaCMS.site && MediaCMS.site.title) || '{{PORTAL_NAME}}';
+        if (desktop.img && desktop.img !== src) {
+          logo.onerror = function() {
             this.onerror = null;
-            this.src = MediaCMS.site.logo.maintenanceLightMode.img;
-            // Warn if both SVG and fallback image fail
+            this.src = desktop.img;
             this.addEventListener('error', function() {
-              console.warn('Light mode logo image failed to load');
+              console.warn('Maintenance page logo failed to load');
             }, { once: true });
           };
-
-          const darkLogo = document.createElement('img');
-          darkLogo.className = 'logo logo-dark';
-          darkLogo.src = MediaCMS.site.logo.maintenanceDarkMode.svg;
-          darkLogo.alt = MediaCMS.site.title || '{{PORTAL_NAME}}';
-          darkLogo.onerror = function() {
-            this.onerror = null;
-            this.src = MediaCMS.site.logo.maintenanceDarkMode.img;
-            // Warn if both SVG and fallback image fail
-            this.addEventListener('error', function() {
-              console.warn('Dark mode logo image failed to load');
-            }, { once: true });
-          };
-
-          logoContainer.appendChild(lightLogo);
-          logoContainer.appendChild(darkLogo);
         }
+        logoContainer.appendChild(logo);
       })();
 
       // Check if we're in extended maintenance mode

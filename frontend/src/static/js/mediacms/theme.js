@@ -1,5 +1,19 @@
 let THEME = null;
 
+function emptyLogoVariant() {
+	return { img: '', svg: '' };
+}
+
+function readLogoVariant(target, source) {
+	if (source == null || 'object' !== typeof source) return;
+	if ('string' === typeof source.img) {
+		target.img = source.img.trim();
+	}
+	if ('string' === typeof source.svg) {
+		target.svg = source.svg.trim();
+	}
+}
+
 export function init(theme, logo) {
 	THEME = {
 		mode: 'light', // Valid options: 'light', 'dark'.
@@ -7,27 +21,11 @@ export function init(theme, logo) {
 			enabled: true,
 			position: 'header', // Valid options: 'header', 'sidebar'.
 		},
+		// One file per breakpoint. Topbar background is the same in both
+		// light and dark modes, so no per-mode variant is needed.
 		logo: {
-			lightMode: {
-				img: '',
-				svg: '',
-			},
-			darkMode: {
-				img: '',
-				svg: '',
-			},
-		},
-		// Optional mobile-specific override consumed by the new topbar.
-		// When not configured, the topbar falls back to `logo` above.
-		logoMobile: {
-			lightMode: {
-				img: '',
-				svg: '',
-			},
-			darkMode: {
-				img: '',
-				svg: '',
-			},
+			desktop: emptyLogoVariant(),
+			mobile: emptyLogoVariant(),
 		},
 	};
 
@@ -49,44 +47,21 @@ export function init(theme, logo) {
 		}
 	}
 
-	if (void 0 !== logo) {
-		if (void 0 !== logo.lightMode) {
-			if ('string' === typeof logo.lightMode.img) {
-				THEME.logo.lightMode.img = logo.lightMode.img.trim();
-			}
+	if (logo != null && 'object' === typeof logo) {
+		readLogoVariant(THEME.logo.desktop, logo.desktop);
+		// Mobile falls back to the desktop URL when not configured so a single
+		// logo file still works for operators that don't supply a mobile asset.
+		readLogoVariant(THEME.logo.mobile, logo.mobile || logo.desktop);
 
-			if ('string' === typeof logo.lightMode.svg) {
-				THEME.logo.lightMode.svg = logo.lightMode.svg.trim();
-			}
-		}
-
-		if (void 0 !== logo.darkMode) {
-			if ('string' === typeof logo.darkMode.img) {
-				THEME.logo.darkMode.img = logo.darkMode.img.trim();
-			}
-
-			if ('string' === typeof logo.darkMode.svg) {
-				THEME.logo.darkMode.svg = logo.darkMode.svg.trim();
-			}
-		}
-
-		if (void 0 !== logo.mobile) {
-			if (void 0 !== logo.mobile.lightMode) {
-				if ('string' === typeof logo.mobile.lightMode.img) {
-					THEME.logoMobile.lightMode.img = logo.mobile.lightMode.img.trim();
-				}
-				if ('string' === typeof logo.mobile.lightMode.svg) {
-					THEME.logoMobile.lightMode.svg = logo.mobile.lightMode.svg.trim();
-				}
-			}
-
-			if (void 0 !== logo.mobile.darkMode) {
-				if ('string' === typeof logo.mobile.darkMode.img) {
-					THEME.logoMobile.darkMode.img = logo.mobile.darkMode.img.trim();
-				}
-				if ('string' === typeof logo.mobile.darkMode.svg) {
-					THEME.logoMobile.darkMode.svg = logo.mobile.darkMode.svg.trim();
-				}
+		// Backward compatibility with the legacy `{ lightMode, darkMode }`
+		// shape: if the new `desktop` key isn't present but the legacy keys
+		// are, treat them as the desktop logo (the topbar bg is hardcoded
+		// navy in both themes, so the per-mode split is no longer meaningful).
+		if (!logo.desktop && (logo.lightMode || logo.darkMode)) {
+			const legacy = logo.darkMode || logo.lightMode;
+			readLogoVariant(THEME.logo.desktop, legacy);
+			if (!logo.mobile) {
+				readLogoVariant(THEME.logo.mobile, legacy);
 			}
 		}
 	}
