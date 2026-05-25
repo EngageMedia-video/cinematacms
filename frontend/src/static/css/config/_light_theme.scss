@@ -205,17 +205,17 @@ body {
 
 	/* ################################################## */
 
-	--profile-page-bg-color: #fff;
+	--profile-page-bg-color: var(--bg-page);
 
-	--profile-page-header-bg-color: var(--body-bg-color);
+	--profile-page-header-bg-color: var(--bg-surface-raised);
 
-	--profile-page-info-videos-number-text-color: rgba(17, 17, 17, 0.6);
+	--profile-page-info-videos-number-text-color: var(--text-muted);
 
-	--profile-page-nav-link-text-color: rgba(17, 17, 17, 0.6);
-	--profile-page-nav-link-hover-text-color: #111;
+	--profile-page-nav-link-text-color: var(--text-muted);
+	--profile-page-nav-link-hover-text-color: var(--text-strong);
 
-	--profile-page-nav-link-active-text-color: #111;
-	--profile-page-nav-link-active-after-bg-color: rgba(17, 17, 17, 0.6);
+	--profile-page-nav-link-active-text-color: var(--text-strong);
+	--profile-page-nav-link-active-after-bg-color: var(--bg-primary);
 
 	/* ################################################## */
 

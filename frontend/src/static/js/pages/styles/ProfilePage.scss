@@ -285,9 +285,15 @@
 		line-height: inherit;
 
 		padding: 6px 12px;
-		border-radius: 8px;
+		border-radius: var(--radius-4);
 
-		background-color: var(--bg-secondary);
+		background-color: var(--bg-primary);
+
+		&:hover,
+		&:focus {
+			color: var(--text-on-primary);
+			background-color: var(--bg-primary-hover);
+		}
 
 		@media screen and (min-width: 710px) {
 			padding: 8px 16px;
@@ -846,8 +852,14 @@
 		// font-weight: 500;
 		color: var(--text-on-primary);
 		border: 0;
-		border-radius: 8px;
-		background-color: var(--bg-secondary);
+		border-radius: var(--radius-4);
+		background-color: var(--bg-primary);
+
+		&:hover,
+		&:focus {
+			color: var(--text-on-primary);
+			background-color: var(--bg-primary-hover);
+		}
 	}
 }
 
@@ -1000,10 +1012,16 @@ $side-empty-space: 40px;
 	line-height: 1;
 	color: var(--text-on-primary);
 	border-style: solid;
-	border-width: 1px;
-	border-radius: 8px;
-	border-color: var(--bg-secondary);
-	background-color: var(--bg-secondary);
+	border-width: 0;
+	border-radius: var(--radius-4);
+	background-color: var(--bg-primary);
+
+	&:hover,
+	&:focus {
+		color: var(--text-on-primary);
+		background-color: var(--bg-primary-hover);
+		text-decoration: none;
+	}
 
 	.material-icons {
 		margin-right: 8px;
