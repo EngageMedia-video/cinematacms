@@ -166,7 +166,7 @@ function NotificationPageContent() {
 			<div
 				role="tablist"
 				aria-label="Notifications views"
-				className="inline-flex gap-1 rounded-full p-1 mb-6 bg-bg-surface-raised"
+				className="inline-flex gap-1 rounded-ds-4 p-1 mb-6 bg-bg-surface-raised"
 			>
 				{tabs.map(({ id, label }) => {
 					const active = activeTab === id;
@@ -187,7 +187,7 @@ function NotificationPageContent() {
 							className="cursor-pointer transition-all"
 							style={{
 								padding: '5px 16px',
-								borderRadius: '9999px',
+								borderRadius: 'var(--radius-4)',
 								border: 'none',
 								fontSize: '13px',
 								fontWeight: 500,

@@ -70,11 +70,9 @@ function arePrefsEqual(a, b) {
 
 function StatusPill({ children, tone = 'muted' }) {
 	const toneClasses =
-		tone === 'accent'
-			? 'text-text-secondary bg-bg-surface-muted border-border-default'
-			: 'text-text-muted bg-bg-surface-muted border-border-subtle';
+		tone === 'accent' ? 'text-text-secondary bg-bg-surface-muted' : 'text-text-muted bg-bg-surface-muted';
 	return (
-		<span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium border ${toneClasses}`}>
+		<span className={`inline-flex items-center rounded-ds-4 px-3 py-1 text-xs font-medium ${toneClasses}`}>
 			{children}
 		</span>
 	);
@@ -155,7 +153,7 @@ export function NotificationPreferencesForm() {
 					value={draft[row.key] ?? 'in_app'}
 					onChange={(e) => handleChange(row.key, e.target.value)}
 					disabled={isPending}
-					className="w-full sm:w-48 border border-border-default rounded px-3 py-2 text-sm text-text-primary bg-bg-surface"
+					className="w-full sm:w-48 border-0 rounded-ds-4 px-3 py-2 text-sm text-text-primary bg-bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 				>
 					{CHANNEL_OPTIONS.map(({ value, label: optLabel }) => (
 						<option key={value} value={value}>
@@ -174,7 +172,7 @@ export function NotificationPreferencesForm() {
 				<p className="text-sm text-text-muted mt-1">Control what you hear about and how.</p>
 			</div>
 
-			<div className="bg-bg-surface-raised rounded border border-border-default divide-y divide-border-subtle">
+			<div className="bg-bg-surface-raised rounded-ds-4">
 				{NOTIFICATION_ROWS.map((row) => {
 					const dimmed = row.status !== 'active';
 					return (
@@ -222,6 +220,7 @@ export function NotificationPreferencesForm() {
 						border: 'none',
 						fontSize: '13px',
 						fontWeight: 500,
+						borderRadius: 'var(--radius-4)',
 						backgroundColor: 'var(--bg-primary)',
 						color: 'var(--text-on-primary)',
 						boxShadow: 'none',
