@@ -596,6 +596,29 @@ TINYMCE_DEFAULT_CONFIG = {
     "sandbox_iframes": False,
 }
 
+
+def _admin_model_permission(app_label, model_name):
+    def has_permission(request):
+        user = request.user
+        if not user.is_active or not user.is_staff:
+            return False
+        if user.is_superuser:
+            return True
+        return any(
+            user.has_perm(f"{app_label}.{action}_{model_name}") for action in ("view", "change", "add", "delete")
+        )
+
+    return has_permission
+
+
+def _admin_sidebar_item(title, app_label, model_name):
+    return {
+        "title": title,
+        "link": reverse_lazy(f"admin:{app_label}_{model_name}_changelist"),
+        "permission": _admin_model_permission(app_label, model_name),
+    }
+
+
 UNFOLD = {
     "SITE_TITLE": "CinemataCMS Admin",
     "SITE_HEADER": "CinemataCMS",
@@ -657,36 +680,24 @@ UNFOLD = {
                 "separator": True,
                 "collapsible": False,
                 "items": [
-                    {"title": "Media", "link": reverse_lazy("admin:files_media_changelist")},
-                    {"title": "Categories", "link": reverse_lazy("admin:files_category_changelist")},
-                    {"title": "Tags", "link": reverse_lazy("admin:files_tag_changelist")},
-                    {"title": "Topics", "link": reverse_lazy("admin:files_topic_changelist")},
-                    {"title": "Languages", "link": reverse_lazy("admin:files_language_changelist")},
-                    {"title": "Media Languages", "link": reverse_lazy("admin:files_medialanguage_changelist")},
-                    {"title": "Licenses", "link": reverse_lazy("admin:files_license_changelist")},
-                    {"title": "Subtitles", "link": reverse_lazy("admin:files_subtitle_changelist")},
-                    {"title": "Encodings", "link": reverse_lazy("admin:files_encoding_changelist")},
-                    {"title": "Encode Profiles", "link": reverse_lazy("admin:files_encodeprofile_changelist")},
-                    {
-                        "title": "Content Sensitivities",
-                        "link": reverse_lazy("admin:files_contentsensitivity_changelist"),
-                    },
-                    {"title": "TinyMCE Media", "link": reverse_lazy("admin:files_tinymcemedia_changelist")},
-                    {"title": "Pages", "link": reverse_lazy("admin:files_page_changelist")},
-                    {"title": "Homepage Pop-Ups", "link": reverse_lazy("admin:files_homepagepopup_changelist")},
-                    {"title": "Top Messages", "link": reverse_lazy("admin:files_topmessage_changelist")},
-                    {
-                        "title": "Index Page Featured",
-                        "link": reverse_lazy("admin:files_indexpagefeatured_changelist"),
-                    },
-                    {
-                        "title": "Featured Video Schedules",
-                        "link": reverse_lazy("admin:files_featuredvideo_changelist"),
-                    },
-                    {
-                        "title": "Transcription Requests",
-                        "link": reverse_lazy("admin:files_transcriptionrequest_changelist"),
-                    },
+                    _admin_sidebar_item("Media", "files", "media"),
+                    _admin_sidebar_item("Categories", "files", "category"),
+                    _admin_sidebar_item("Tags", "files", "tag"),
+                    _admin_sidebar_item("Topics", "files", "topic"),
+                    _admin_sidebar_item("Languages", "files", "language"),
+                    _admin_sidebar_item("Media Languages", "files", "medialanguage"),
+                    _admin_sidebar_item("Licenses", "files", "license"),
+                    _admin_sidebar_item("Subtitles", "files", "subtitle"),
+                    _admin_sidebar_item("Encodings", "files", "encoding"),
+                    _admin_sidebar_item("Encode Profiles", "files", "encodeprofile"),
+                    _admin_sidebar_item("Content Sensitivities", "files", "contentsensitivity"),
+                    _admin_sidebar_item("TinyMCE Media", "files", "tinymcemedia"),
+                    _admin_sidebar_item("Pages", "files", "page"),
+                    _admin_sidebar_item("Homepage Pop-Ups", "files", "homepagepopup"),
+                    _admin_sidebar_item("Top Messages", "files", "topmessage"),
+                    _admin_sidebar_item("Index Page Featured", "files", "indexpagefeatured"),
+                    _admin_sidebar_item("Featured Video Schedules", "files", "featuredvideo"),
+                    _admin_sidebar_item("Transcription Requests", "files", "transcriptionrequest"),
                 ],
             },
             {
@@ -694,9 +705,9 @@ UNFOLD = {
                 "separator": True,
                 "collapsible": False,
                 "items": [
-                    {"title": "Comments", "link": reverse_lazy("admin:files_comment_changelist")},
-                    {"title": "Ratings", "link": reverse_lazy("admin:files_rating_changelist")},
-                    {"title": "Rating Categories", "link": reverse_lazy("admin:files_ratingcategory_changelist")},
+                    _admin_sidebar_item("Comments", "files", "comment"),
+                    _admin_sidebar_item("Ratings", "files", "rating"),
+                    _admin_sidebar_item("Rating Categories", "files", "ratingcategory"),
                 ],
             },
             {
@@ -704,9 +715,9 @@ UNFOLD = {
                 "separator": True,
                 "collapsible": False,
                 "items": [
-                    {"title": "Users", "link": reverse_lazy("admin:users_user_changelist")},
-                    {"title": "Black Listed Emails", "link": reverse_lazy("admin:users_blacklistedemail_changelist")},
-                    {"title": "Authenticators", "link": reverse_lazy("admin:mfa_authenticator_changelist")},
+                    _admin_sidebar_item("Users", "users", "user"),
+                    _admin_sidebar_item("Black Listed Emails", "users", "blacklistedemail"),
+                    _admin_sidebar_item("Authenticators", "mfa", "authenticator"),
                 ],
             },
             {
@@ -714,14 +725,8 @@ UNFOLD = {
                 "separator": True,
                 "collapsible": False,
                 "items": [
-                    {
-                        "title": "Notifications",
-                        "link": reverse_lazy("admin:notifications_notification_changelist"),
-                    },
-                    {
-                        "title": "Notification Preferences",
-                        "link": reverse_lazy("admin:notifications_notificationpreference_changelist"),
-                    },
+                    _admin_sidebar_item("Notifications", "notifications", "notification"),
+                    _admin_sidebar_item("Notification Preferences", "notifications", "notificationpreference"),
                 ],
             },
         ],
