@@ -622,6 +622,7 @@ def _admin_sidebar_item(title, app_label, model_name):
 UNFOLD = {
     "SITE_TITLE": "CinemataCMS Admin",
     "SITE_HEADER": "CinemataCMS",
+    "THEME": "light",
     # Color scales mirror docs/modern-track-color-system.md - keep in sync if the modern palette changes.
     "COLORS": {
         "primary": {
@@ -638,17 +639,17 @@ UNFOLD = {
             "950": "#001023",
         },
         "base": {
-            "50": "#ebf8ff",
-            "100": "#c1d9f2",
-            "200": "#9eb8d3",
-            "300": "#7b98b6",
-            "400": "#5a7999",
-            "500": "#3a5c7c",
-            "600": "#1a3f61",
-            "700": "#1a3f61",
-            "800": "#0b2d4a",
-            "900": "#011c34",
-            "950": "#000c20",
+            "50": "#f9fafb",
+            "100": "#f3f4f6",
+            "200": "#e5e7eb",
+            "300": "#d1d5db",
+            "400": "#9ca3af",
+            "500": "#6b7280",
+            "600": "#4b5563",
+            "700": "#374151",
+            "800": "#1f2937",
+            "900": "#111827",
+            "950": "#030712",
         },
         "accent": {
             "100": "#ffc9a4",
