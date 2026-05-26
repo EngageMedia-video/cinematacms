@@ -346,6 +346,7 @@ dependencies = [
     { name = "django-redis" },
     { name = "django-silk" },
     { name = "django-tinymce" },
+    { name = "django-unfold" },
     { name = "django-vite" },
     { name = "django-waffle" },
     { name = "djangorestframework" },
@@ -399,6 +400,7 @@ requires-dist = [
     { name = "django-redis", specifier = "==6.0.0" },
     { name = "django-silk", specifier = "==5.5.0" },
     { name = "django-tinymce", git = "https://github.com/jazzband/django-tinymce.git?rev=6b413f4e9bdedb9268c8ef25886fdfc994780097" },
+    { name = "django-unfold", specifier = ">=0.81,<0.82" },
     { name = "django-vite", specifier = ">=3.1.0" },
     { name = "django-waffle", specifier = ">=4.2.0,<5.0" },
     { name = "djangorestframework", specifier = "==3.17.1" },
@@ -779,6 +781,18 @@ version = "5.0.0"
 source = { git = "https://github.com/jazzband/django-tinymce.git?rev=6b413f4e9bdedb9268c8ef25886fdfc994780097#6b413f4e9bdedb9268c8ef25886fdfc994780097" }
 dependencies = [
     { name = "django" },
+]
+
+[[package]]
+name = "django-unfold"
+version = "0.81.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/42/96/54e3852a562fb5da3a626ae7992f2427945cadf7d45325b8dff42c418a3d/django_unfold-0.81.0.tar.gz", hash = "sha256:4746a2e78210d174c556b8dcf6cbc87642b86282a37406d820d6c1b4f6c160be", size = 1111379, upload-time = "2026-02-25T09:48:42.197Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/63/03/f3b11452636bcb8f8fb4b2daa3301781eca7ea1b2ee5781fdc888e315b43/django_unfold-0.81.0-py3-none-any.whl", hash = "sha256:7a800fcf7ac438ae473ffa51cdfbb22ef0e6e8455dad84ce1e1846ddd21deac9", size = 1226399, upload-time = "2026-02-25T09:48:40.646Z" },
 ]
 
 [[package]]
