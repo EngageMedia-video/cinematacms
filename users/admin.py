@@ -1,17 +1,18 @@
 from allauth.mfa.models import Authenticator
 from django.contrib import admin
 from django.db.models import OuterRef, Subquery
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from .models import BlackListedEmail, User
 
 
 @admin.register(BlackListedEmail)
-class BlackListedEmailAdmin(admin.ModelAdmin):
+class BlackListedEmailAdmin(UnfoldModelAdmin):
     pass
 
 
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(UnfoldModelAdmin):
     search_fields = ["email", "username", "name"]
     exclude = (
         "user_permissions",
@@ -106,7 +107,7 @@ admin.site.unregister(Authenticator)
 
 
 @admin.register(Authenticator)
-class CustomAuthenticatorAdmin(admin.ModelAdmin):
+class CustomAuthenticatorAdmin(UnfoldModelAdmin):
     list_display = ("user", "type", "auth_description", "created_at", "last_used_at")
     list_filter = ("type", "created_at", "last_used_at")
     readonly_fields = ("type", "user", "data_masked", "created_at", "last_used_at")
