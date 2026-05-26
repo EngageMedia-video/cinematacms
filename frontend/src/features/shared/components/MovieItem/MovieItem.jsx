@@ -81,7 +81,7 @@ function MovieCopy({ title, titleLink = '', subtitle, subtitleLink = '', metadat
 					href={subtitleLink}
 					className={cn(
 						subtitleClassName,
-						'relative z-20 inline-flex min-h-8 w-fit max-w-full touch-manipulation items-center no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus'
+						'relative z-20 inline-flex w-fit max-w-full touch-manipulation no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus'
 					)}
 				>
 					{subtitle}
