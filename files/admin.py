@@ -4,6 +4,7 @@ from django import forms
 from django.contrib import admin
 from django.utils import timezone
 from tinymce.widgets import TinyMCE
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from users.models import User
 from users.validators import validate_internal_html
@@ -36,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 @admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
+class CommentAdmin(UnfoldModelAdmin):
     search_fields = ["text"]
     list_display = ["text", "add_date", "user", "media"]
     ordering = ("-add_date",)
@@ -44,7 +45,7 @@ class CommentAdmin(admin.ModelAdmin):
 
 
 @admin.register(Media)
-class MediaAdmin(admin.ModelAdmin):
+class MediaAdmin(UnfoldModelAdmin):
     search_fields = ["title"]
     list_display = [
         "title",
@@ -98,12 +99,12 @@ class MediaAdmin(admin.ModelAdmin):
 
 
 @admin.register(Encoding)
-class EncodingAdmin(admin.ModelAdmin):
+class EncodingAdmin(UnfoldModelAdmin):
     pass
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(UnfoldModelAdmin):
     search_fields = ["title"]
     list_display = ["title", "user", "add_date", "is_global", "media_count", "color"]
     list_filter = ["is_global"]
@@ -112,14 +113,14 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(UnfoldModelAdmin):
     search_fields = ["title"]
     list_display = ["title", "user", "media_count"]
     readonly_fields = ("user", "media_count")
 
 
 @admin.register(EncodeProfile)
-class EncodeProfileAdmin(admin.ModelAdmin):
+class EncodeProfileAdmin(UnfoldModelAdmin):
     list_display = ("name", "extension", "resolution", "codec", "description", "active")
     list_filter = ["extension", "resolution", "codec", "active"]
     search_fields = ["name", "extension", "resolution", "codec", "description"]
@@ -128,24 +129,24 @@ class EncodeProfileAdmin(admin.ModelAdmin):
 
 
 @admin.register(Language)
-class LanguageAdmin(admin.ModelAdmin):
+class LanguageAdmin(UnfoldModelAdmin):
     pass
 
 
 @admin.register(Subtitle)
-class SubtitleAdmin(admin.ModelAdmin):
+class SubtitleAdmin(UnfoldModelAdmin):
     list_filter = ["language"]
 
 
 @admin.register(RatingCategory)
-class RatingCategoryAdmin(admin.ModelAdmin):
+class RatingCategoryAdmin(UnfoldModelAdmin):
     search_fields = ["title"]
     list_display = ["title", "enabled", "category"]
     list_filter = ["category"]
 
 
 @admin.register(Rating)
-class RatingAdmin(admin.ModelAdmin):
+class RatingAdmin(UnfoldModelAdmin):
     search_fields = ["user"]
     list_display = ["user", "rating_category", "media"]
     list_filter = ["rating_category"]
@@ -155,7 +156,7 @@ class RatingAdmin(admin.ModelAdmin):
 
 
 @admin.register(License)
-class LicenseAdmin(admin.ModelAdmin):
+class LicenseAdmin(UnfoldModelAdmin):
     list_display = [
         "title",
         "allow_commercial",
@@ -166,18 +167,18 @@ class LicenseAdmin(admin.ModelAdmin):
 
 
 @admin.register(Topic)
-class TopicAdmin(admin.ModelAdmin):
+class TopicAdmin(UnfoldModelAdmin):
     pass
 
 
 @admin.register(ContentSensitivity)
-class ContentSensitivityAdmin(admin.ModelAdmin):
+class ContentSensitivityAdmin(UnfoldModelAdmin):
     list_display = ("title", "media_count")
     readonly_fields = ("media_count",)
 
 
 @admin.register(MediaLanguage)
-class MediaLanguageAdmin(admin.ModelAdmin):
+class MediaLanguageAdmin(UnfoldModelAdmin):
     pass
 
 
@@ -199,12 +200,12 @@ class PageAdminForm(forms.ModelForm):
 
 
 @admin.register(Page)
-class PageAdmin(admin.ModelAdmin):
+class PageAdmin(UnfoldModelAdmin):
     form = PageAdminForm
 
 
 @admin.register(TopMessage)
-class TopMessageAdmin(admin.ModelAdmin):
+class TopMessageAdmin(UnfoldModelAdmin):
     list_display = ("text", "add_date", "active")
 
 
@@ -238,18 +239,18 @@ class IndexPageFeaturedAdminForm(forms.ModelForm):
 
 
 @admin.register(IndexPageFeatured)
-class IndexPageFeaturedAdmin(admin.ModelAdmin):
+class IndexPageFeaturedAdmin(UnfoldModelAdmin):
     form = IndexPageFeaturedAdminForm
     list_display = ("title", "url", "api_url", "ordering", "active")
 
 
 @admin.register(HomepagePopup)
-class HomepagePopupAdmin(admin.ModelAdmin):
+class HomepagePopupAdmin(UnfoldModelAdmin):
     list_display = ("text", "url", "popup", "add_date", "active")
 
 
 @admin.register(TranscriptionRequest)
-class TranscriptionRequestAdmin(admin.ModelAdmin):
+class TranscriptionRequestAdmin(UnfoldModelAdmin):
     list_display = [
         "media_title",
         "add_date",
@@ -338,7 +339,7 @@ class TranscriptionRequestAdmin(admin.ModelAdmin):
 
 
 @admin.register(TinyMCEMedia)
-class TinyMCEMediaAdmin(admin.ModelAdmin):
+class TinyMCEMediaAdmin(UnfoldModelAdmin):
     list_display = ["original_filename", "file_type", "uploaded_at", "user"]
     list_filter = ["file_type", "uploaded_at"]
     search_fields = ["original_filename"]
@@ -347,7 +348,7 @@ class TinyMCEMediaAdmin(admin.ModelAdmin):
 
 
 @admin.register(FeaturedVideo)
-class FeaturedVideoAdmin(admin.ModelAdmin):
+class FeaturedVideoAdmin(UnfoldModelAdmin):
     list_display = [
         "media",
         "start_date",
