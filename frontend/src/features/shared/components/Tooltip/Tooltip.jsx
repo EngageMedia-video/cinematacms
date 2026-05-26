@@ -68,7 +68,6 @@ export function Tooltip({
 		<span
 			ref={wrapperRef}
 			className={cn('relative inline-flex max-w-full', className)}
-			data-tooltip
 			onMouseEnter={trigger === 'hover' ? () => setOpen(true) : undefined}
 			onMouseLeave={trigger === 'hover' ? () => setOpen(false) : undefined}
 			onFocus={trigger === 'hover' ? () => setOpen(true) : undefined}
