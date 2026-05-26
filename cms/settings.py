@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from celery.schedules import crontab
 from corsheaders.defaults import default_headers
+from django.urls import reverse_lazy
 
 from .settings_utils import get_whisper_cpp_paths
 
@@ -47,6 +48,9 @@ AUTHENTICATION_BACKENDS = (
 )
 
 INSTALLED_APPS = [
+    "unfold",
+    "unfold.contrib.forms",
+    "unfold.contrib.filters",
     "django.contrib.admin",
     "django.contrib.auth",
     "allauth",
@@ -590,6 +594,138 @@ TINYMCE_DEFAULT_CONFIG = {
     "paste_remove_styles": False,
     "paste_merge_formats": True,
     "sandbox_iframes": False,
+}
+
+UNFOLD = {
+    "SITE_TITLE": "CinemataCMS Admin",
+    "SITE_HEADER": "CinemataCMS",
+    # Color scales mirror docs/modern-track-color-system.md - keep in sync if the modern palette changes.
+    "COLORS": {
+        "primary": {
+            "50": "#defbff",
+            "100": "#b1dffb",
+            "200": "#8bc0e0",
+            "300": "#64a1c5",
+            "400": "#3d83aa",
+            "500": "#026690",
+            "600": "#026690",
+            "700": "#004e74",
+            "800": "#003757",
+            "900": "#00223d",
+            "950": "#001023",
+        },
+        "base": {
+            "50": "#ebf8ff",
+            "100": "#c1d9f2",
+            "200": "#9eb8d3",
+            "300": "#7b98b6",
+            "400": "#5a7999",
+            "500": "#3a5c7c",
+            "600": "#1a3f61",
+            "700": "#1a3f61",
+            "800": "#0b2d4a",
+            "900": "#011c34",
+            "950": "#000c20",
+        },
+        "accent": {
+            "100": "#ffc9a4",
+            "200": "#f6a474",
+            "300": "#ed7c30",
+            "400": "#ed7c30",
+            "500": "#c2692f",
+            "600": "#a15728",
+            "700": "#833e0b",
+            "800": "#611e00",
+            "900": "#440f00",
+            "950": "#290400",
+        },
+        "font": {
+            "subtle-light": "#6b7280",
+            "subtle-dark": "#9ca3af",
+            "default-light": "#4b5563",
+            "default-dark": "#d1d5db",
+            "important-light": "#111827",
+            "important-dark": "#f3f4f6",
+        },
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "Content",
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {"title": "Media", "link": reverse_lazy("admin:files_media_changelist")},
+                    {"title": "Categories", "link": reverse_lazy("admin:files_category_changelist")},
+                    {"title": "Tags", "link": reverse_lazy("admin:files_tag_changelist")},
+                    {"title": "Topics", "link": reverse_lazy("admin:files_topic_changelist")},
+                    {"title": "Languages", "link": reverse_lazy("admin:files_language_changelist")},
+                    {"title": "Media Languages", "link": reverse_lazy("admin:files_medialanguage_changelist")},
+                    {"title": "Licenses", "link": reverse_lazy("admin:files_license_changelist")},
+                    {"title": "Subtitles", "link": reverse_lazy("admin:files_subtitle_changelist")},
+                    {"title": "Encodings", "link": reverse_lazy("admin:files_encoding_changelist")},
+                    {"title": "Encode Profiles", "link": reverse_lazy("admin:files_encodeprofile_changelist")},
+                    {
+                        "title": "Content Sensitivities",
+                        "link": reverse_lazy("admin:files_contentsensitivity_changelist"),
+                    },
+                    {"title": "TinyMCE Media", "link": reverse_lazy("admin:files_tinymcemedia_changelist")},
+                    {"title": "Pages", "link": reverse_lazy("admin:files_page_changelist")},
+                    {"title": "Homepage Pop-Ups", "link": reverse_lazy("admin:files_homepagepopup_changelist")},
+                    {"title": "Top Messages", "link": reverse_lazy("admin:files_topmessage_changelist")},
+                    {
+                        "title": "Index Page Featured",
+                        "link": reverse_lazy("admin:files_indexpagefeatured_changelist"),
+                    },
+                    {
+                        "title": "Featured Video Schedules",
+                        "link": reverse_lazy("admin:files_featuredvideo_changelist"),
+                    },
+                    {
+                        "title": "Transcription Requests",
+                        "link": reverse_lazy("admin:files_transcriptionrequest_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "Engagement",
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {"title": "Comments", "link": reverse_lazy("admin:files_comment_changelist")},
+                    {"title": "Ratings", "link": reverse_lazy("admin:files_rating_changelist")},
+                    {"title": "Rating Categories", "link": reverse_lazy("admin:files_ratingcategory_changelist")},
+                ],
+            },
+            {
+                "title": "Users & Auth",
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {"title": "Users", "link": reverse_lazy("admin:users_user_changelist")},
+                    {"title": "Black Listed Emails", "link": reverse_lazy("admin:users_blacklistedemail_changelist")},
+                    {"title": "Authenticators", "link": reverse_lazy("admin:mfa_authenticator_changelist")},
+                ],
+            },
+            {
+                "title": "Notifications",
+                "separator": True,
+                "collapsible": False,
+                "items": [
+                    {
+                        "title": "Notifications",
+                        "link": reverse_lazy("admin:notifications_notification_changelist"),
+                    },
+                    {
+                        "title": "Notification Preferences",
+                        "link": reverse_lazy("admin:notifications_notificationpreference_changelist"),
+                    },
+                ],
+            },
+        ],
+    },
 }
 
 # settings that are related with UX/appearance
