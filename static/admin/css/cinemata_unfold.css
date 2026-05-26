@@ -1,0 +1,164 @@
+:root {
+    --cinemata-admin-page: #f9fafb;
+    --cinemata-admin-sidebar: #ebf8ff;
+    --cinemata-admin-sidebar-active: #defbff;
+    --cinemata-admin-surface: #ffffff;
+    --cinemata-admin-surface-muted: #f3f4f6;
+    --cinemata-admin-border: #c1d9f2;
+    --cinemata-admin-border-strong: #9eb8d3;
+    --cinemata-admin-text: #3a5c7c;
+    --cinemata-admin-text-strong: #011c34;
+    --cinemata-admin-text-muted: #5a7999;
+    --cinemata-admin-primary: #026690;
+    --cinemata-admin-primary-hover: #004e74;
+    --cinemata-admin-link: #a15728;
+    --cinemata-admin-link-hover: #833e0b;
+    --cinemata-admin-focus: #ed7c30;
+    --cinemata-admin-focus-soft: #ffc9a4;
+}
+
+html.light body {
+    background: var(--cinemata-admin-page);
+    color: var(--cinemata-admin-text);
+}
+
+html.light #main {
+    background: var(--cinemata-admin-page);
+}
+
+html.light #main > .border-b,
+html.light #main .bg-white,
+html.light #content-main .bg-white {
+    background-color: var(--cinemata-admin-surface);
+}
+
+html.light #main .bg-base-50,
+html.light #main .bg-base-100 {
+    background-color: var(--cinemata-admin-surface-muted);
+}
+
+html.light #main .border-base-200,
+html.light #content-main .border-base-200,
+html.light #result_list .border-base-200 {
+    border-color: var(--cinemata-admin-border);
+}
+
+html.light #main .text-font-important-light,
+html.light #content h1,
+html.light #content h2,
+html.light #content h3 {
+    color: var(--cinemata-admin-text-strong);
+}
+
+html.light #nav-sidebar,
+html.light #nav-sidebar-inner,
+html.light #nav-sidebar .bg-base-50 {
+    background-color: var(--cinemata-admin-sidebar);
+}
+
+html.light #nav-sidebar {
+    border-color: var(--cinemata-admin-border);
+}
+
+html.light #nav-sidebar .border-base-200,
+html.light #nav-sidebar hr {
+    border-color: var(--cinemata-admin-border);
+}
+
+html.light #nav-sidebar h2 {
+    color: var(--cinemata-admin-text-strong);
+}
+
+html.light #nav-sidebar a {
+    color: var(--cinemata-admin-text);
+}
+
+html.light #nav-sidebar a:hover {
+    background-color: var(--cinemata-admin-surface);
+    color: var(--cinemata-admin-primary);
+}
+
+html.light #nav-sidebar a.active {
+    background-color: var(--cinemata-admin-sidebar-active);
+    box-shadow: inset 0 0 0 1px var(--cinemata-admin-border-strong);
+    color: var(--cinemata-admin-primary);
+}
+
+html.light #nav-sidebar input::placeholder {
+    color: var(--cinemata-admin-text-muted);
+}
+
+html.light #changelist .result-list-wrapper > .grow > .flex:first-child,
+html.light .changelist-form-container > .grow > .flex:first-child {
+    background-color: var(--cinemata-admin-surface);
+    border-color: var(--cinemata-admin-border);
+}
+
+html.light #result_list {
+    border-color: var(--cinemata-admin-border);
+}
+
+html.light #result_list tbody,
+html.light #result_list tbody.bg-base-50 {
+    background-color: var(--cinemata-admin-surface);
+}
+
+html.light #result_list tbody:nth-of-type(even) {
+    background-color: var(--cinemata-admin-page);
+}
+
+html.light #result_list th,
+html.light #result_list td {
+    border-color: var(--cinemata-admin-border);
+}
+
+html.light #result_list th {
+    background-color: var(--cinemata-admin-surface-muted);
+    color: var(--cinemata-admin-text-strong);
+}
+
+html.light #result_list .data-row {
+    background-color: var(--cinemata-admin-surface);
+}
+
+html.light fieldset.module > h2,
+html.light .inline-group h2,
+html.light #content-main .bg-base-100 {
+    background-color: var(--cinemata-admin-surface-muted);
+    color: var(--cinemata-admin-text-strong);
+}
+
+html.light #result_list tbody :is(th, td):not(.field-actions_holder) > a,
+html.light #content-main .readonly a,
+html.light #content-main .form-row a {
+    color: var(--cinemata-admin-link);
+}
+
+html.light #result_list tbody :is(th, td):not(.field-actions_holder) > a:hover,
+html.light #content-main .readonly a:hover,
+html.light #content-main .form-row a:hover {
+    color: var(--cinemata-admin-link-hover);
+}
+
+html.light .text-primary-600,
+html.light .hover\:text-primary-600:hover {
+    color: var(--cinemata-admin-primary);
+}
+
+html.light .bg-primary-600,
+html.light button[name="_save"],
+html.light input[type="submit"][name="_save"] {
+    background-color: var(--cinemata-admin-primary);
+}
+
+html.light .bg-primary-600:hover,
+html.light button[name="_save"]:hover,
+html.light input[type="submit"][name="_save"]:hover {
+    background-color: var(--cinemata-admin-primary-hover);
+}
+
+html.light :is(a, button, input, select, textarea):focus-visible,
+html.light :is(.focus-within\:outline-primary-600):focus-within {
+    outline-color: var(--cinemata-admin-focus);
+    box-shadow: 0 0 0 2px var(--cinemata-admin-focus-soft);
+}
