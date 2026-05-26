@@ -1,10 +1,11 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from .models import Notification, NotificationPreference
 
 
 @admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
+class NotificationAdmin(UnfoldModelAdmin):
     list_display = ["recipient", "notification_type", "message", "is_read", "created_at"]
     list_filter = ["notification_type", "is_read", "created_at"]
     search_fields = ["recipient__username", "message"]
@@ -13,7 +14,7 @@ class NotificationAdmin(admin.ModelAdmin):
 
 
 @admin.register(NotificationPreference)
-class NotificationPreferenceAdmin(admin.ModelAdmin):
+class NotificationPreferenceAdmin(UnfoldModelAdmin):
     list_display = ["user", "on_comment", "on_like", "on_follow", "updated_at"]
     search_fields = ["user__username"]
     raw_id_fields = ["user"]
