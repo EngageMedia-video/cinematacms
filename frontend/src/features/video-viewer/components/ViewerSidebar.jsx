@@ -2,8 +2,8 @@ import React from 'react';
 
 import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 
-import { AutoPlay } from '../../../static/js/components/-NEW-/AutoPlay';
-import { RelatedMedia } from '../../../static/js/components/-NEW-/RelatedMedia';
+import { AutoPlay } from './AutoPlay';
+import { RelatedMedia } from './RelatedMedia';
 
 import PlaylistView from './PlaylistView';
 
@@ -51,6 +51,7 @@ export default class ViewerSidebar extends React.PureComponent {
 				) : 'video' === this.state.mediaType || 'audio' === this.state.mediaType ? (
 					<AutoPlay />
 				) : null}
+
 				<RelatedMedia hideFirst={!this.state.isPlaylistPage} />
 			</>
 		);

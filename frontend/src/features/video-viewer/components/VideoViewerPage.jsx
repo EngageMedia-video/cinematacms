@@ -136,12 +136,12 @@ export class VideoViewerPage extends Page {
 					</div>,
 					<div key="viewer-section-nested" className={viewerNestedClassname}>
 						{!this.state.wideLayout || (this.state.isVideoMedia && this.state.theaterMode)
-								? [
-										<ViewerInfoVideo key="viewer-info" />,
-										<div className="viewer-sidebar" key="viewer-sidebar-panel">
-											{/* TODO: Improve comment section */}
-											<div className="viewer-sidebar-panel viewer-sidebar-comments">
-												<CommentsList />
+							? [
+									<ViewerInfoVideo key="viewer-info" />,
+									<div className="viewer-sidebar" key="viewer-sidebar-panel">
+										{/* TODO: Improve comment section */}
+										<div className="viewer-sidebar-panel viewer-sidebar-comments">
+											<CommentsList />
 										</div>
 										{this.state.pagePlaylistLoaded ? (
 											<ViewerSidebar
@@ -151,12 +151,12 @@ export class VideoViewerPage extends Page {
 											/>
 										) : null}
 									</div>,
-									]
-								: [
-										<div className="viewer-sidebar" key="viewer-sidebar-panel">
-											{/* TODO: Improve comment section */}
-											<div className="viewer-sidebar-panel viewer-sidebar-comments">
-												<CommentsList />
+								]
+							: [
+									<div className="viewer-sidebar" key="viewer-sidebar-panel">
+										{/* TODO: Improve comment section */}
+										<div className="viewer-sidebar-panel viewer-sidebar-comments">
+											<CommentsList />
 										</div>
 										{this.state.pagePlaylistLoaded ? (
 											<ViewerSidebar

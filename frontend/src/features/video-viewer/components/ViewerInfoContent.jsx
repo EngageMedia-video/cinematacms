@@ -59,7 +59,6 @@ export default function ViewerInfoContent(props) {
 	const licenseContent = MediaPageStore.get('media-license-info');
 	const languagesContent = metafield(MediaPageStore.get('media-languages'));
 	const topicsContent = metafield(MediaPageStore.get('media-topics'));
-	``;
 	const tagsContent = (() => {
 		if (
 			!PageStore.get('config-enabled').taxonomies.tags ||
@@ -267,10 +266,7 @@ export default function ViewerInfoContent(props) {
 					<TabView
 						tabMode="wrap"
 						listClassName="rounded-none rounded-tl-ds-8 rounded-tr-ds-8"
-						triggerClassName={cn(
-							'rounded-none py-3 px-size-22',
-							'text-neutral-50 aria-selected:text-text-primary dark:aria-selected:text-neutral-50'
-						)}
+						triggerClassName="rounded-none py-3 px-size-22 text-neutral-50 aria-selected:text-text-primary dark:aria-selected:text-neutral-50"
 						triggerSelectedColor="bg-bg-surface"
 						panelClassName="mt-0 p-0 bg-bg-surface rounded-b-ds-8"
 					>

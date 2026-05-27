@@ -42,12 +42,6 @@ export default function MediaActions({ allowDownload, displayViews, downloadLink
 	const downloadPopupRef = useRef(null);
 	const downloadTriggerRef = useRef(null);
 	const [favorite, setFavorite] = useState(MediaPageStore.get('user-liked-media'));
-	const [videoDownloadPopupStyle, setVideoDownloadPopupStyle] = useState({
-		position: 'absolute',
-		top: 'calc(100% + 8px)',
-		right: 0,
-		zIndex: 4,
-	});
 	const user = { ...legacyContextValue(UserContext), favorite };
 	const playlists = legacyContextValue(PlaylistsContext);
 

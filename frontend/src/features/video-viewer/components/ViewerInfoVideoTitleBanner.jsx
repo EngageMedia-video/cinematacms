@@ -9,30 +9,6 @@ import { Text } from '../../shared/components/Text/Text.jsx';
 import publishedOnDate from '../../../static/js/functions/publishedOnDate.js';
 import MediaActions from './MediaActions.jsx';
 
-function CountriesField({ countries }) {
-	let i;
-	let sep;
-	let ret = [];
-
-	if (countries.length) {
-		i = 0;
-		sep = 1 < countries.length ? ', ' : '';
-		while (i < countries.length) {
-			ret[i] = (
-				<span key={i}>
-					<a href={countries[i].url} className="media-country" title={countries[i].title}>
-						{countries[i].title}
-					</a>
-					{i < countries.length - 1 ? sep : ''}
-				</span>
-			);
-			i += 1;
-		}
-	}
-
-	return ret;
-}
-
 export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
 	render() {
 		const displayViews = PageStore.get('config-options').pages.media.displayViews && void 0 !== this.props.views;

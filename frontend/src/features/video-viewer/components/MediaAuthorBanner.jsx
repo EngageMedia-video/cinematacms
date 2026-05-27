@@ -8,6 +8,7 @@ export function MediaAuthorBanner(props) {
 			<a href={props.link || null} title={props.name}>
 				<Avatar src={props.thumb} name={props.name || 'User'} size="large" style={{ width: 40, height: 40 }} />
 			</a>
+
 			<div className="inline-flex flex-col justify-center gap-1.5">
 				<Text
 					as="a"
@@ -19,7 +20,7 @@ export function MediaAuthorBanner(props) {
 					<span>{props.name}</span>
 				</Text>
 
-				<UserRoleBadge isManager={false} isTrusted={true} />
+				<UserRoleBadge isManager={props.isManager} isTrusted={props.isTrusted} />
 			</div>
 		</div>
 	);

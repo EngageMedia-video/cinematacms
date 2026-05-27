@@ -2,19 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import LinksContext from '../../../../static/js/contexts/LinksContext';
-
 import * as PlaylistViewActions from './actions.js';
 import PlaylistViewStore from './store.js';
-
-import PageStore from '../../../../static/js/pages/_PageStore.js';
-
 import * as PageActions from '../../../../static/js/pages/_PageActions.js';
-
 import { PlaylistPlaybackMedia } from '../../../../static/js/components/-NEW-/PlaylistPlaybackMedia';
 import { CircleIconButton } from '../../../../static/js/components/-NEW-/CircleIconButton';
-
 import { PositiveIntegerOrZero } from '../../../../static/js/functions/propTypeFilters';
-
 import '../../../../static/js/components/styles/PlaylistView.scss';
 
 export default class PlaylistView extends React.PureComponent {

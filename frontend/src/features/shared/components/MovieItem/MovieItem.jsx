@@ -53,7 +53,6 @@ function MovieMetadata({ items = [] }) {
 }
 
 function MovieCopy({ title, titleLink = '', subtitle, subtitleLink = '', metadata, orientation = 'vertical' }) {
-	const isHorizontal = orientation === 'horizontal';
 	const titleClassName = cn(
 		'm-0 p-0 line-clamp-3',
 		'[font-family:Inter,Arial,sans-serif] text-[16px] font-medium leading-[22px] tracking-[-0.18px] text-text-primary'
@@ -61,7 +60,7 @@ function MovieCopy({ title, titleLink = '', subtitle, subtitleLink = '', metadat
 	const subtitleClassName = 'body-body-12-regular m-0 p-0 text-text-link';
 
 	return (
-		<div className={cn('flex min-w-0 flex-col', isHorizontal ? 'gap-3' : 'gap-2')} data-movie-copy>
+		<div className="flex min-w-0 flex-col gap-2" data-movie-copy>
 			{titleLink ? (
 				<a
 					href={titleLink}
@@ -120,7 +119,7 @@ function MoviePoster({
 
 			{duration ? (
 				<span
-					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-[var(--cinemata-pacific-deep-950)] px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-white"
+					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-cinemata-pacific-deep-950 px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-white"
 					data-movie-item-duration
 				>
 					{duration}
@@ -171,7 +170,7 @@ export function HorizontalMovieItem({
 	return (
 		<MovieItemContainer
 			shellClassName={cn('w-full', className)}
-			contentClassName="flex h-full w-full items-start gap-4"
+			contentClassName="flex h-full w-full items-center gap-4"
 			link={link}
 			title={title}
 			useWrapperLink={!useStandaloneLinks}
