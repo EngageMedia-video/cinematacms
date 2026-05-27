@@ -40,7 +40,6 @@ export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
 		const publishedDate = this.props.published ? publishedOnDate(new Date(this.props.published)) : null;
 
 		let stateTooltip = '';
-
 		switch (mediaState) {
 			case 'private':
 				stateTooltip = 'The site admins have to make its access public';
@@ -79,7 +78,7 @@ export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
 							</Text>
 						)}
 
-						<div className="hidden sm:block">{this.mediaStateBadge(mediaState, stateTooltip)}</div>
+						{this.mediaStateBadge(mediaState, stateTooltip)}
 					</div>
 
 					<div className={'w-full min-w-0 sm:flex-1' + (this.state.likedMedia ? ' liked-media' : '')}>

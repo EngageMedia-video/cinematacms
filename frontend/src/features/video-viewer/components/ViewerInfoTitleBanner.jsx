@@ -9,65 +9,16 @@ import PageStore from '../../../static/js/pages/_PageStore';
 import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 
 import { Badge } from '../../shared/components/Badge';
+import { Tooltip } from '../../shared/components/Tooltip';
 
 import { formatInnerLink } from '../../../static/js/functions/formatInnerLink';
 import { Text } from '../../shared/components/Text/Text.jsx';
 import MediaActions from './MediaActions';
-
-function Tooltip(el) {
-	// const parent = el.parentNode;
-	const parent = document.body;
-
-	const tooltipElem = document.createElement('span');
-
-	tooltipElem.innerText = el.getAttribute('data-tooltip');
-	tooltipElem.setAttribute('class', 'tooltip');
-
-	el.removeAttribute('data-tooltip');
-
-	// console.log(el);
-	// console.log(tooltipElem);
-
-	function onMouseenter() {
-		const targetClientRect = el.getBoundingClientRect();
-		parent.appendChild(tooltipElem);
-		tooltipElem.style.top = targetClientRect.top - (0 + tooltipElem.offsetHeight) + 'px';
-		tooltipElem.style.left = targetClientRect.left + 'px';
-		document.addEventListener('scroll', onScroll);
-	}
-
-	function onMouseleave() {
-		parent.removeChild(tooltipElem);
-		tooltipElem.style.top = '';
-		tooltipElem.style.left = '';
-		document.removeEventListener('scroll', onScroll);
-	}
-
-	function onScroll() {
-		const targetClientRect = el.getBoundingClientRect();
-		tooltipElem.style.top = targetClientRect.top - (0 + tooltipElem.offsetHeight) + 'px';
-		tooltipElem.style.left = targetClientRect.left + 'px';
-	}
-
-	el.addEventListener('mouseenter', onMouseenter);
-	el.addEventListener('mouseleave', onMouseleave);
-}
+import { Button } from '../../shared/components/Button/Button.jsx';
+import { Icon } from '../../shared/components/Icon/Icon.jsx';
 
 function legacyContextValue(context) {
 	return context['_currentValue'];
-}
-
-function stateBadgeColor(mediaState) {
-	switch (mediaState) {
-		case 'private':
-			return 'cinemata-sunset-horizon-700';
-		case 'restricted':
-			return 'cinemata-pacific-deep-700';
-		case 'unlisted':
-			return 'cinemata-strait-blue-600p';
-		default:
-			return 'cinemata-neutral-700';
-	}
 }
 
 export default class ViewerInfoTitleBanner extends React.PureComponent {
@@ -136,20 +87,28 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 	}
 
 	mediaStateBadge(mediaState, stateTooltip) {
-		// if ('public' === mediaState) {
-		// 	return null;
-		// }
+		if ('public' === mediaState) {
+			return null;
+		}
 
 		return (
-			<div className="media-labels-area">
+			<div className="flex-row gap-2 items-center hidden sm:flex">
 				<Badge
-					color={stateBadgeColor(mediaState)}
+					color="cinemata-pacific-deep-600p"
 					className={'media-state-badge media-state-badge-' + mediaState}
 					textClassName="body-body-12-bold"
 					title={stateTooltip}
 				>
 					{String(mediaState).toUpperCase()}
 				</Badge>
+
+				<Tooltip content={stateTooltip} onOpenChange={() => {}} placement="right" trigger="hover">
+					<Button
+						variant="icon"
+						aria-label="Open tooltip"
+						icon={<Icon name="infoYellow" size={18} decorative />}
+					/>
+				</Tooltip>
 			</div>
 		);
 	}
