@@ -14,6 +14,15 @@ describe('resolveColor', () => {
 		expect(resolveColor('--cinemata-pacific-deep-950')).toBe('var(--cinemata-pacific-deep-950)');
 	});
 
+	it('resolves modern semantic color tokens into CSS variables', () => {
+		expect(resolveColor('bg/primary')).toBe('var(--bg-primary)');
+		expect(resolveColor('bg-primary')).toBe('var(--bg-primary)');
+		expect(resolveColor('bg-bg-primary')).toBe('var(--bg-primary)');
+		expect(resolveColor('text-text-strong')).toBe('var(--text-strong)');
+		expect(resolveColor('border-border-default')).toBe('var(--border-default)');
+		expect(resolveColor('ring-ring-focus')).toBe('var(--ring-focus)');
+	});
+
 	it('supports keyword colors used by shared components', () => {
 		expect(resolveColor('transparent')).toBe('transparent');
 		expect(resolveColor('currentColor')).toBe('currentColor');

@@ -17,9 +17,9 @@ export function ConfirmationDialogContent({
 	return (
 		<DialogContent
 			{...props}
-			className={cn('max-w-[520px] min-w-2xl bg-transparent p-0 text-left shadow-none', className)}
+			className={cn('w-full max-w-[520px] bg-transparent p-0 text-left shadow-none', className)}
 		>
-			<div className="relative overflow-hidden p-[26px] border-[0.5px] rounded-2xl border-cinemata-neutral-300 bg-linear-to-br from-cinemata-white to-cinemata-neutral-50 dark:border-cinemata-strait-blue-300 dark:from-cinemata-pacific-deep-900 dark:to-cinemata-pacific-deep-950">
+			<div className="relative overflow-hidden p-5 sm:p-[26px] border-[0.5px] rounded-2xl border-cinemata-neutral-300 bg-linear-to-br from-cinemata-white to-cinemata-neutral-50 dark:border-cinemata-strait-blue-300 dark:from-cinemata-pacific-deep-900 dark:to-cinemata-pacific-deep-950">
 				{decorationSrc ? (
 					<img
 						src={decorationSrc}
@@ -39,7 +39,9 @@ export function ConfirmationDialogContent({
 					</div>
 
 					{children ? <div className="relative z-10 mt-8">{children}</div> : null}
-					{actions ? <div className="relative z-10 mt-8 flex justify-end gap-4">{actions}</div> : null}
+					{actions ? (
+						<div className="relative z-10 mt-8 flex flex-wrap justify-end gap-3 sm:gap-4">{actions}</div>
+					) : null}
 				</div>
 			</div>
 		</DialogContent>

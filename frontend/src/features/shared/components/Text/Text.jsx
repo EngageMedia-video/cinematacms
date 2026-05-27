@@ -45,6 +45,7 @@ const COLOR_CLASSES = {
 	meta: 'text-text-muted',
 	description: 'text-text-description',
 	'sunset-horizon': 'text-text-link',
+	accent: 'text-text-accent',
 };
 
 const ACTION_CLASSES = {

@@ -100,7 +100,7 @@ function TabViewList({
 	const { ariaLabel, tabMode } = useTabViewContext('TabViewList');
 
 	return (
-		<div className="w-full overflow-x-auto">
+		<div className="w-full overflow-x-auto overscroll-x-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 			<div
 				role="tablist"
 				aria-label={ariaLabel}
