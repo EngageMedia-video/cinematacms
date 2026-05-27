@@ -85,7 +85,6 @@ export function Sidebar({ id = 'app-sidebar' }) {
 				target="_blank"
 				align="left"
 				icon={<Icon name="donate" />}
-				style={{ width: '208px' }}
 			>
 				DONATE
 			</Link>
@@ -164,7 +163,7 @@ export function Sidebar({ id = 'app-sidebar' }) {
 					'[scrollbar-width:thin] [scrollbar-color:var(--cinemata-strait-blue-200)_transparent]',
 					'[&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent',
 					'[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2',
-					'[&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-[var(--cinemata-strait-blue-200)]',
+					'[&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-cinemata-strait-blue-200',
 					'[&::-webkit-scrollbar-thumb]:bg-clip-content'
 				)}
 			>
