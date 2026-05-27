@@ -1,26 +1,16 @@
-import React, { Fragment, useContext, useState } from 'react';
+import React, { Fragment, useContext } from 'react';
 import PropTypes from 'prop-types';
-
-import { usePopup } from '../../../static/js/components/-NEW-/hooks/usePopup';
-
 import SiteContext from '../../../static/js/contexts/SiteContext';
-
 import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
-
-import { PopupMain } from '../../../static/js/components/-NEW-/Popup';
-
-import { NavigationMenuList } from '../../../static/js/components/-NEW-/NavigationMenuList';
-import { NavigationContentApp } from '../../../static/js/components/-NEW-/NavigationContentApp';
-
 import { formatInnerLink } from '../../../static/js/functions/formatInnerLink';
 import { Button } from '../../shared/components/Button/Button.jsx';
 import { Icon } from '../../shared/components/Icon/Icon.jsx';
+import { PopupContent, PopupMain, PopupTrigger, usePopup } from '../../shared/components/Popup';
 import { Text } from '../../shared/components/Text/Text.jsx';
 
 function downloadOptionsList(siteUrl) {
 	const media_data = MediaPageStore.get('media-data');
 
-	const title = media_data.title;
 	const encodings_info = media_data.encodings_info;
 
 	const optionsList = {};
@@ -69,18 +59,6 @@ function downloadOptionsList(siteUrl) {
 	return Object.values(optionsList);
 }
 
-function downloadOptionsPages(siteUrl) {
-	return {
-		main: (
-			<div className="main-options">
-				<PopupMain>
-					<NavigationMenuList items={downloadOptionsList(siteUrl)} />
-				</PopupMain>
-			</div>
-		),
-	};
-}
-
 export function VideoMediaDownloadLink({
 	contentRef: externalContentRef,
 	popupClassName,
@@ -90,14 +68,17 @@ export function VideoMediaDownloadLink({
 	triggerRef,
 }) {
 	const site = useContext(SiteContext);
-	const [internalContentRef, PopupContent, PopupTrigger] = usePopup();
+	const [internalContentRef] = usePopup();
 	const popupContentRef = externalContentRef || internalContentRef;
+	const downloadOptions = downloadOptionsList(site.url);
 
-	const [downloadOptionsCurrentPage] = useState('main');
+	function hidePopup() {
+		popupContentRef.current?.tryToHide();
+	}
 
 	return (
 		<Fragment>
-			<div ref={triggerRef} className="video-downloads" style={{ position: 'relative' }}>
+			<div ref={triggerRef} className="video-downloads relative">
 				<div className="sm:hidden">
 					<PopupTrigger contentRef={popupContentRef}>
 						<Button
@@ -145,16 +126,29 @@ export function VideoMediaDownloadLink({
 					}
 				}
 			>
-				<div className={'nav-page-' + downloadOptionsCurrentPage}>
-					<NavigationContentApp
-						pageChangeCallback={null}
-						initPage="main"
-						focusFirstItemOnPageChange={false}
-						pages={downloadOptionsPages(site.url)}
-						pageChangeSelector={'.change-page'}
-						pageIdSelectorAttr={'data-page-id'}
-					/>
-				</div>
+				<PopupMain>
+					<nav
+						aria-label="Download options"
+						className="min-w-[220px] overflow-hidden rounded-ds-4 border border-border-strong-constant bg-bg-surface"
+					>
+						<ul role="menu" className="m-0 list-none p-size-4">
+							{downloadOptions.map((option) => (
+								<li key={option.link} role="none">
+									<a
+										{...(option.linkAttr || {})}
+										href={option.link}
+										role="menuitem"
+										title={option.text}
+										onClick={hidePopup}
+										className="body-body-14-medium block rounded-ds-4 px-size-12 py-size-10 text-text-strong no-underline transition-colors duration-150 hover:bg-cinemata-pacific-deep-50 focus:bg-cinemata-pacific-deep-50 focus:outline-none dark:hover:bg-cinemata-pacific-deep-800 dark:focus:bg-cinemata-pacific-deep-800"
+									>
+										{option.text}
+									</a>
+								</li>
+							))}
+						</ul>
+					</nav>
+				</PopupMain>
 			</PopupContent>
 		</Fragment>
 	);
