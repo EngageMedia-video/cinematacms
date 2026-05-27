@@ -1,65 +1,45 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { usePopup } from '../../../static/js/components/-NEW-/hooks/usePopup';
+import { Dialog, DialogContent, DialogTrigger } from '../../shared/components/Dialog/Dialog';
+import { MediaShareEmbed } from './MediaShare/MediaShareEmbed';
+import { MediaShareOptions } from './MediaShare/MediaShareOptions';
+import { NavigationContentApp } from './MediaShare/NavigationContentApp';
 
-import { PopupMain } from '../../../static/js/components/-NEW-/Popup';
-
-import { MediaShareEmbed } from '../../../static/js/components/-NEW-/MediaShareEmbed';
-import { MediaShareOptions } from '../../../static/js/components/-NEW-/MediaShareOptions';
-
-import { NavigationContentApp } from '../../../static/js/components/-NEW-/NavigationContentApp';
 import { Button } from '../../shared/components/Button/Button';
 import { Icon } from '../../shared/components/Icon/Icon';
 import { Text } from '../../shared/components/Text/Text';
 
 function mediaSharePopupPages() {
 	return {
-		shareOptions: (
-			<div className="popup-fullscreen">
-				<PopupMain>
-					<span className="popup-fullscreen-overlay"></span>
-					<MediaShareOptions />
-				</PopupMain>
-			</div>
-		),
+		shareOptions: <MediaShareOptions />,
 	};
 }
 
 function videoSharePopupPages(onTriggerPopupClose) {
 	return {
 		...mediaSharePopupPages(),
-		shareEmbed: (
-			<div className="popup-fullscreen share-embed-popup">
-				<PopupMain>
-					<span className="popup-fullscreen-overlay"></span>
-					<MediaShareEmbed triggerPopupClose={onTriggerPopupClose} />
-				</PopupMain>
-			</div>
-		),
+		shareEmbed: <MediaShareEmbed triggerPopupClose={onTriggerPopupClose} />,
 	};
 }
 
 export function MediaShareButton({ isVideo }) {
-	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
-
+	const [isOpen, setIsOpen] = useState(false);
 	const [popupCurrentPage, setPopupCurrentPage] = useState('shareOptions');
 
-	function triggerPopupClose() {
-		popupContentRef.current.toggle();
-	}
-
-	function onPopupPageChange(newPage) {
-		setPopupCurrentPage(newPage);
-	}
-	function onPopupHide() {
+	function onOpenChange(nextOpen) {
+		setIsOpen(nextOpen);
 		setPopupCurrentPage('shareOptions');
 	}
 
+	function triggerPopupClose() {
+		onOpenChange(false);
+	}
+
 	return (
-		<div className="share">
+		<Dialog open={isOpen} onOpenChange={onOpenChange}>
 			<div className="sm:hidden">
-				<PopupTrigger contentRef={popupContentRef}>
+				<DialogTrigger>
 					<Button
 						aria-label="Share"
 						variant="secondary"
@@ -67,10 +47,10 @@ export function MediaShareButton({ isVideo }) {
 						className="dark:bg-cinemata-strait-blue-900 body-body-14-medium whitespace-nowrap p-size-8"
 						size="sm"
 					/>
-				</PopupTrigger>
+				</DialogTrigger>
 			</div>
 			<div className="hidden sm:block">
-				<PopupTrigger contentRef={popupContentRef}>
+				<DialogTrigger>
 					<Button
 						aria-label="Share"
 						variant="secondary"
@@ -86,20 +66,23 @@ export function MediaShareButton({ isVideo }) {
 							Share
 						</Text>
 					</Button>
-				</PopupTrigger>
+				</DialogTrigger>
 			</div>
 
-			<PopupContent contentRef={popupContentRef} className="media-share-popup" hideCallback={onPopupHide}>
+			<DialogContent
+				aria-label="Share media"
+				className="w-full max-w-[560px] rounded-ds-12 bg-bg-surface shadow-2xl"
+			>
 				<NavigationContentApp
 					initPage={popupCurrentPage}
-					pageChangeSelector={'.change-page'}
-					pageIdSelectorAttr={'data-page-id'}
+					pageChangeSelector=".change-page"
+					pageIdSelectorAttr="data-page-id"
 					pages={isVideo ? videoSharePopupPages(triggerPopupClose) : mediaSharePopupPages()}
 					focusFirstItemOnPageChange={false}
-					pageChangeCallback={onPopupPageChange}
+					pageChangeCallback={setPopupCurrentPage}
 				/>
-			</PopupContent>
-		</div>
+			</DialogContent>
+		</Dialog>
 	);
 }
 
