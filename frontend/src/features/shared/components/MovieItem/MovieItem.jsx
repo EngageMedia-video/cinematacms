@@ -66,7 +66,7 @@ function MovieCopy({ title, titleLink = '', subtitle, subtitleLink = '', metadat
 					href={titleLink}
 					className={cn(
 						titleClassName,
-						'block no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus'
+						'block no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus line-clamp-3'
 					)}
 				>
 					{title}
