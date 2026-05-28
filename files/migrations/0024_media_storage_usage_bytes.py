@@ -10,6 +10,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="media",
             name="storage_usage_bytes",
-            field=models.BigIntegerField(default=0),
+            field=models.PositiveBigIntegerField(default=0),
         ),
     ]

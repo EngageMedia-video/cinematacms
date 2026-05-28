@@ -288,7 +288,7 @@ class Media(models.Model):
     video_height = models.IntegerField(default=1)
     md5sum = models.CharField(max_length=50, blank=True, null=True)
     size = models.CharField(max_length=20, blank=True, null=True)
-    storage_usage_bytes = models.BigIntegerField(default=0)
+    storage_usage_bytes = models.PositiveBigIntegerField(default=0)
     # set this here, so we don't perform extra query for it on media listing
     preview_file_path = models.CharField(max_length=501, blank=True)
     password = models.CharField(max_length=256, blank=True, help_text="when video is in restricted state")
@@ -1985,19 +1985,25 @@ def media_save(sender, instance, created, **kwargs):
 def _schedule_storage_usage_refresh_for_media(media_id):
     try:
         from .storage_usage import schedule_refresh_media_storage_usage
-
+    except ImportError:
+        logger.warning("storage_usage module not available; skipping refresh for media %s", media_id)
+        return
+    try:
         schedule_refresh_media_storage_usage(media_id)
-    except Exception as e:
-        logger.warning(f"Failed to schedule storage usage refresh for media {media_id}: {e}")
+    except Exception:
+        logger.warning("Failed to schedule storage usage refresh for media %s", media_id, exc_info=True)
 
 
 def _invalidate_storage_usage_for_user(user_id):
     try:
         from .storage_usage import invalidate_storage_usage_cache
-
+    except ImportError:
+        logger.warning("storage_usage module not available; skipping cache invalidation for user %s", user_id)
+        return
+    try:
         invalidate_storage_usage_cache(user_id=user_id)
-    except Exception as e:
-        logger.warning(f"Failed to invalidate storage usage cache for user {user_id}: {e}")
+    except Exception:
+        logger.warning("Failed to invalidate storage usage cache for user %s", user_id, exc_info=True)
 
 
 @receiver(post_save, sender=Media)

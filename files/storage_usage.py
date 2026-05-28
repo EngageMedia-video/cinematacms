@@ -3,8 +3,9 @@ import os
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db import transaction
+from django.db import OperationalError, transaction
 from django.db.models import Sum
+from django.db.utils import DatabaseError
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +167,7 @@ def schedule_refresh_media_storage_usage(media_or_id):
     def refresh():
         try:
             refresh_media_storage_usage(media_id)
-        except Exception:
+        except (DatabaseError, OperationalError, OSError):
             logger.warning("Failed to refresh storage usage for media %s", media_id, exc_info=True)
 
     transaction.on_commit(refresh)
