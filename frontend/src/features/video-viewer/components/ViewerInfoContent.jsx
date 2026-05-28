@@ -324,7 +324,6 @@ export default function ViewerInfoContent(props) {
 
 												{!isAboutExpanded && isSummaryClamped && (
 													<>
-														{' '}
 														<Text
 															as="button"
 															action="text-button"
@@ -334,7 +333,7 @@ export default function ViewerInfoContent(props) {
 															aria-controls={aboutDetailsId}
 															aria-expanded="false"
 															onClick={() => setIsAboutExpanded(true)}
-															className="ml-1 inline align-baseline lg:hidden"
+															className="inline align-baseline lg:hidden"
 														>
 															READ MORE
 														</Text>
@@ -344,7 +343,6 @@ export default function ViewerInfoContent(props) {
 
 											{!isAboutExpanded && !isSummaryClamped && (
 												<>
-													{' '}
 													<Text
 														as="button"
 														action="text-button"
@@ -354,7 +352,7 @@ export default function ViewerInfoContent(props) {
 														aria-controls={aboutDetailsId}
 														aria-expanded="false"
 														onClick={() => setIsAboutExpanded(true)}
-														className="ml-1 inline align-baseline lg:hidden"
+														className="inline align-baseline lg:hidden"
 													>
 														READ MORE
 													</Text>
