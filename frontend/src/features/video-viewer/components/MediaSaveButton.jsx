@@ -1,65 +1,71 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import { usePopup } from '../../../static/js/components/-NEW-/hooks/usePopup';
+import { Dialog, DialogContent, DialogTrigger } from '../../shared/components/Dialog/Dialog';
+import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 
-import { PopupMain } from '../../../static/js/components/-NEW-/Popup';
-
-import { PlaylistsSelection } from '../../../static/js/components/-NEW-/PlaylistsSelection';
-
-import { NavigationContentApp } from '../../../static/js/components/-NEW-/NavigationContentApp';
+import { PlaylistsSelection } from './MediaSave/PlaylistsSelection';
 import { Button } from '../../shared/components/Button/Button';
 import { Icon } from '../../shared/components/Icon/Icon';
 import { Text } from '../../shared/components/Text/Text';
 
-function mediaSavePopupPages(onTriggerPopupClose) {
-	return {
-		selectPlaylist: (
-			<div className="popup-fullscreen">
-				<PopupMain>
-					<span className="popup-fullscreen-overlay"></span>
-					<PlaylistsSelection triggerPopupClose={onTriggerPopupClose} />
-				</PopupMain>
-			</div>
-		),
-		createPlaylist: (
-			<div className="popup-fullscreen">
-				<PopupMain>
-					<span className="popup-fullscreen-overlay"></span>
-					{/* TODO: Continue here... */}
-				</PopupMain>
-			</div>
-		),
-	};
+function isMediaInUserPlaylist() {
+	const mediaId = MediaPageStore.get('media-id');
+	const playlists = MediaPageStore.get('playlists');
+
+	if (!mediaId || !Array.isArray(playlists)) {
+		return false;
+	}
+
+	return playlists.some((playlist) => Array.isArray(playlist.media_list) && playlist.media_list.includes(mediaId));
 }
 
 export function MediaSaveButton() {
-	const [popupContentRef, PopupContent, PopupTrigger] = usePopup();
+	const [isOpen, setIsOpen] = useState(false);
+	const [savedToPlaylist, setSavedToPlaylist] = useState(isMediaInUserPlaylist);
 
-	const [popupCurrentPage, setPopupCurrentPage] = useState('selectPlaylist');
+	const saveIconClassName = savedToPlaylist
+		? 'text-cinemata-sunset-horizon-600 dark:text-cinemata-sunset-horizon-300'
+		: 'text-cinemata-strait-blue-100';
+
+	useEffect(() => {
+		function syncSavedState() {
+			setSavedToPlaylist(isMediaInUserPlaylist());
+		}
+
+		MediaPageStore.on('playlists_load', syncSavedState);
+		MediaPageStore.on('media_playlist_addition_completed', syncSavedState);
+		MediaPageStore.on('media_playlist_removal_completed', syncSavedState);
+
+		return () => {
+			MediaPageStore.removeListener('playlists_load', syncSavedState);
+			MediaPageStore.removeListener('media_playlist_addition_completed', syncSavedState);
+			MediaPageStore.removeListener('media_playlist_removal_completed', syncSavedState);
+		};
+	}, []);
 
 	function triggerPopupClose() {
-		popupContentRef.current.toggle();
+		setIsOpen(false);
 	}
 
 	return (
-		<div className="save" style={{ position: 'relative' }}>
+		<Dialog open={isOpen} onOpenChange={setIsOpen}>
 			<div className="sm:hidden">
-				<PopupTrigger contentRef={popupContentRef}>
+				<DialogTrigger>
 					<Button
-						aria-label="Save to playlist"
+						aria-label={savedToPlaylist ? 'Added to playlist' : 'Save to playlist'}
 						variant="secondary"
-						icon={<Icon name="bookmarkFilled" className="text-cinemata-strait-blue-100" />}
+						icon={<Icon name="bookmarkFilled" className={saveIconClassName} />}
 						className="body-body-14-medium whitespace-nowrap p-size-8"
 						size="sm"
 					/>
-				</PopupTrigger>
+				</DialogTrigger>
 			</div>
 			<div className="hidden sm:block">
-				<PopupTrigger contentRef={popupContentRef}>
+				<DialogTrigger>
 					<Button
-						aria-label="Save to playlist"
+						aria-label={savedToPlaylist ? 'Added to playlist' : 'Save to playlist'}
 						variant="secondary"
-						icon={<Icon name="bookmarkFilled" className="text-cinemata-strait-blue-100" />}
+						icon={<Icon name="bookmarkFilled" className={saveIconClassName} />}
 						className="body-body-14-medium whitespace-nowrap"
 						size="sm"
 					>
@@ -71,32 +77,15 @@ export function MediaSaveButton() {
 							Save To Playlist
 						</Text>
 					</Button>
-				</PopupTrigger>
+				</DialogTrigger>
 			</div>
 
-			<PopupContent
-				contentRef={popupContentRef}
-				className="media-save-popup"
-				style={{
-					position: 'absolute',
-					top: 0,
-					right: 0,
-					width: 0,
-					height: 0,
-					overflow: 'visible',
-					backgroundColor: 'transparent',
-					boxShadow: 'none',
-				}}
+			<DialogContent
+				aria-label="Save to playlist"
+				className="w-full max-w-[440px] rounded-ds-12 bg-bg-surface shadow-2xl"
 			>
-				<NavigationContentApp
-					initPage={popupCurrentPage}
-					pageChangeSelector={'.change-page'}
-					pageIdSelectorAttr={'data-page-id'}
-					pages={mediaSavePopupPages(triggerPopupClose)}
-					focusFirstItemOnPageChange={false}
-					pageChangeCallback={setPopupCurrentPage}
-				/>
-			</PopupContent>
-		</div>
+				<PlaylistsSelection triggerPopupClose={triggerPopupClose} />
+			</DialogContent>
+		</Dialog>
 	);
 }

@@ -22,6 +22,14 @@ export function MediaLikeIcon() {
 
 	const [likedMedia, setLikedMedia] = useState(MediaPageStore.get('user-liked-media'));
 	const [likesCounter, setLikesCounter] = useState(formatNumber(MediaPageStore.get('media-likes'), false));
+	const activeButtonClassName =
+		'bg-cinemata-red-800 hover:bg-cinemata-red-400 dark:bg-cinemata-red-950 dark:hover:bg-cinemata-red-900';
+	const iconClassName = likedMedia
+		? 'text-cinemata-red-600 dark:text-cinemata-red-500'
+		: 'text-cinemata-strait-blue-100';
+	const textClassName = likedMedia
+		? 'text-cinemata-red-700 dark:text-cinemata-red-100 whitespace-nowrap'
+		: 'text-neutral-50 dark:text-cinemata-strait-blue-100 whitespace-nowrap';
 
 	function updateStateValues() {
 		setLikedMedia(MediaPageStore.get('user-liked-media'));
@@ -72,17 +80,12 @@ export function MediaLikeIcon() {
 			<Button
 				aria-label={likedMedia ? `Unlike media, ${likesCounter} likes` : `Like media, ${likesCounter} likes`}
 				variant="secondary"
-				icon={
-					<Icon name={likedMedia ? 'thumbUp' : 'thumbUpOutlined'} className="text-cinemata-strait-blue-100" />
-				}
+				icon={<Icon name={'thumbsUpFill'} className={iconClassName} />}
+				className={likedMedia ? activeButtonClassName : undefined}
 				onClick={toggleLike}
 				size="sm"
 			>
-				<Text
-					as="span"
-					variant="body-14-medium"
-					className="text-neutral-50 dark:text-cinemata-strait-blue-100 whitespace-nowrap"
-				>
+				<Text as="span" variant="body-14-medium" className={textClassName}>
 					{likesCounter}
 				</Text>
 			</Button>
