@@ -341,6 +341,25 @@ export default function ViewerInfoContent(props) {
 													</>
 												)}
 											</div>
+
+											{!isAboutExpanded && !isSummaryClamped && (
+												<>
+													{' '}
+													<Text
+														as="button"
+														action="text-button"
+														variant="body-14-bold"
+														color="accent"
+														type="button"
+														aria-controls={aboutDetailsId}
+														aria-expanded="false"
+														onClick={() => setIsAboutExpanded(true)}
+														className="ml-1 inline align-baseline lg:hidden"
+													>
+														READ MORE
+													</Text>
+												</>
+											)}
 										</div>
 										{metaFields.length > 0 && (
 											<div
