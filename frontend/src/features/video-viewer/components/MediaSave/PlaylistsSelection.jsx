@@ -144,7 +144,12 @@ export function PlaylistsSelection({ triggerPopupClose }) {
 				/>
 			</div>
 
-			<TabView selectedTab={activeTab} onSelectedTabChange={setActiveTab} tabMode="fill" aria-label="Save options">
+			<TabView
+				selectedTab={activeTab}
+				onSelectedTabChange={setActiveTab}
+				tabMode="fill"
+				aria-label="Save options"
+			>
 				<TabContent title="Save to" value="saveTo">
 					<div className="pt-size-16">
 						<SaveToTab />
