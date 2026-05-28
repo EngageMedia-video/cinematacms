@@ -91,14 +91,36 @@ export function CommentForm({ friendlyToken }) {
 
 	if (isAnonymous) {
 		return (
-			<div className="rounded-lg bg-cinemata-pacific-deep-900 px-4 py-3 text-sm text-cinemata-pacific-deep-100">
-				<a
-					href={getSignInHref()}
-					className="font-bold text-text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus rounded-sm"
-				>
-					Sign in
-				</a>{' '}
-				to leave a comment.
+			<div className="rounded-lg bg-cinemata-pacific-deep-900 px-3 py-3">
+				<div className="mb-1 flex items-center gap-2">
+					<i
+						aria-hidden="true"
+						className="material-icons text-cinemata-sunset-horizon-400p"
+						style={{ fontSize: 18 }}
+					>
+						forum
+					</i>
+					<p className="text-sm font-bold leading-tight text-cinemata-pacific-deep-50">
+						Join the conversation
+					</p>
+				</div>
+				<p className="mb-2.5 text-xs leading-snug text-cinemata-pacific-deep-100">
+					Sign in to share your thoughts, jump to timestamps, and reply to other viewers.
+				</p>
+				<div className="flex flex-wrap items-center gap-2">
+					<a
+						href={getSignInHref()}
+						className="inline-flex h-8 items-center rounded-sm bg-cinemata-sunset-horizon-500 px-4 text-[12px] font-bold uppercase tracking-tight text-white no-underline transition-colors duration-200 hover:bg-cinemata-sunset-horizon-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+					>
+						Sign in
+					</a>
+					<a
+						href="/accounts/signup/"
+						className="inline-flex h-8 items-center rounded-sm px-2 text-xs font-bold tracking-tight text-cinemata-pacific-deep-100 underline-offset-2 hover:text-cinemata-pacific-deep-50 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+					>
+						Create account
+					</a>
+				</div>
 			</div>
 		);
 	}
