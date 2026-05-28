@@ -16,6 +16,8 @@ pyvenv.cfg
 .claude/*
 .serena/
 CLAUDE.md
+AGENTS.md
+.agents/
 
 Bento4-SDK-1-6-0-632.x86_64-unknown-linux/
 DB_DUMPS/

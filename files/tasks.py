@@ -52,6 +52,7 @@ from .models import (
     TranscriptionRequest,
 )
 from .query_cache import invalidate_media_cache
+from .storage_usage import schedule_refresh_media_storage_usage
 
 logger = get_task_logger(__name__)
 
@@ -825,6 +826,8 @@ def create_hls(friendly_token):
             if media.hls_file != pp:
                 media.hls_file = pp
                 media.save(update_fields=["hls_file"])
+            else:
+                schedule_refresh_media_storage_usage(media.id)
     return True
 
 

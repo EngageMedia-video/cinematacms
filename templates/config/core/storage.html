@@ -1,0 +1,4 @@
+MediaCMS.storage = {
+	scope: "{{ STORAGE_SCOPE|default:'site'|escapejs }}",
+	used_bytes: {{ STORAGE_USED_BYTES|default_if_none:"null" }}
+};

@@ -124,6 +124,7 @@ from .serializers import (
     TopMessageSerializer,
 )
 from .stop_words import STOP_WORDS
+from .storage_usage import schedule_refresh_media_storage_usage
 from .tasks import save_user_action
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
@@ -1103,6 +1104,7 @@ def edit_subtitle(request):
                 # CRITICAL FIX: Update media edit_date to bust cache
                 subtitle.media.edit_date = timezone.now()
                 subtitle.media.save(update_fields=["edit_date"])
+                schedule_refresh_media_storage_usage(subtitle.media_id)
 
                 messages.add_message(request, messages.INFO, "Subtitle was edited")
                 return HttpResponseRedirect(subtitle.media.get_absolute_url())

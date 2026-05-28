@@ -7,6 +7,7 @@ from django.db import DatabaseError
 from .lists import UNUSUAL_COUNTRIES
 from .methods import can_manage_uploads, can_upload_media, is_curator, is_mediacms_editor, is_mediacms_manager
 from .models import HomepagePopup, TopMessage
+from .storage_usage import get_storage_usage_for_request
 
 # NOTE: context_processors.py can be considered as a dumping ground of sorts for
 # multiple variables that, as declared, are then instantiated to be referenced
@@ -38,6 +39,13 @@ def stuff(request):
     ret["CAN_REPORT_MEDIA"] = _switch("can_report_media", "CAN_REPORT_MEDIA")
     ret["CAN_SHARE_MEDIA"] = _switch("can_share_media", "CAN_SHARE_MEDIA")
     ret["UPLOAD_MAX_SIZE"] = settings.UPLOAD_MAX_SIZE
+    try:
+        storage_scope, storage_used_bytes = get_storage_usage_for_request(request)
+    except DatabaseError:
+        storage_scope = "site"
+        storage_used_bytes = None
+    ret["STORAGE_SCOPE"] = storage_scope
+    ret["STORAGE_USED_BYTES"] = storage_used_bytes
 
     if request.user.is_authenticated and request.user.advancedUser:
         ret["UPLOAD_MAX_FILES_NUMBER"] = 10

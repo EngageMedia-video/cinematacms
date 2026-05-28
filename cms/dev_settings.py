@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    "allauth.mfa",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     "files.apps.FilesConfig",
     "users.apps.UsersConfig",
     "actions.apps.ActionsConfig",
+    "notifications.apps.NotificationsConfig",
     "debug_toolbar",
     "mptt",
     "crispy_forms",
@@ -40,6 +42,7 @@ INSTALLED_APPS = [
     "djcelery_email",
     "ckeditor",
     "django_recaptcha",
+    "waffle",
 ]
 
 MIDDLEWARE = [
