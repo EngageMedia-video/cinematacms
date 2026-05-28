@@ -154,8 +154,11 @@ class StorageUsageTests(TestCase):
 
         def fake_run(command, capture_output):
             output_dir = next(
-                part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")
+                (part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")),
+                None,
             )
+            if output_dir is None:
+                raise ValueError("Expected mp4hls command to include --output-dir=<path>")
             os.makedirs(output_dir, exist_ok=True)
             with open(os.path.join(output_dir, "master.m3u8"), "wb") as master_file:
                 master_file.write(b"new")

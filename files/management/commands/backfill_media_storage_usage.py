@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from files.models import Media
 from files.storage_usage import calculate_media_storage_usage, invalidate_storage_usage_cache
@@ -27,6 +27,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         batch_size = options["batch_size"]
+        if batch_size <= 0:
+            raise CommandError("Invalid --batch-size: must be a positive integer")
+
         dry_run = options["dry_run"]
         user_id = options.get("user_id")
 
