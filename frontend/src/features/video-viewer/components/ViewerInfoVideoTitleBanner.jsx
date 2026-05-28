@@ -37,7 +37,7 @@ export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
 				<div className="flex items-center justify-between gap-3 sm:block">
 					{void 0 !== this.props.title && (
 						<div className="min-w-0 flex-1">
-							<h1 className="heading-h6-20-medium sm:heading-h4-32-medium dark:text-cinemata-strait-blue-50 m-0">
+							<h1 className="h6-20-medium md:h4-32-medium dark:text-cinemata-strait-blue-50 m-0">
 								{this.props.title}
 							</h1>
 						</div>
