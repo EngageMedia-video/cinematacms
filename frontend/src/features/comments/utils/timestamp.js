@@ -1,4 +1,4 @@
-export const TIMESTAMP_REGEX = /(?:(\d{1,2}):)?(\d{1,2}):(\d{2})/g;
+export const TIMESTAMP_REGEX = /(?:(\d{1,2}):)?(\d{1,2}):(\d{2})/;
 
 export function parseTimestamp(value) {
 	const match = /^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})$/.exec(String(value).trim());
