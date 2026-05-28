@@ -78,7 +78,7 @@ describe('Button', () => {
 
 		const button = screen.getByRole('button', { name: 'Create item' });
 
-		expect(button).toHaveClass('justify-center', 'gap-0', 'p-size-10', 'rounded-ds-4');
+		expect(button).toHaveClass('justify-center', 'gap-0', 'p-size-12', 'rounded-ds-4');
 		expect(button.querySelectorAll('span')).toHaveLength(1);
 	});
 
@@ -87,7 +87,7 @@ describe('Button', () => {
 
 		const button = screen.getByRole('button', { name: 'Learn more' });
 
-		expect(button).toHaveClass('justify-center', 'gap-0', 'p-size-8', 'rounded-ds-8');
+		expect(button).toHaveClass('justify-center', 'gap-0', 'p-size-10', 'rounded-ds-8');
 		expect(button.querySelectorAll('span')).toHaveLength(1);
 	});
 
@@ -100,7 +100,7 @@ describe('Button', () => {
 
 		const button = screen.getByRole('button', { name: 'Share' });
 
-		expect(button).toHaveClass('justify-center', 'gap-0', 'p-size-8', 'rounded-ds-8');
+		expect(button).toHaveClass('justify-center', 'gap-0', 'p-size-10', 'rounded-ds-8');
 		expect(button.querySelectorAll('span')).toHaveLength(1);
 	});
 

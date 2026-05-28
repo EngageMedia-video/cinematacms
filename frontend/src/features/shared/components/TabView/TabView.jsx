@@ -90,13 +90,7 @@ function useTabViewContext(componentName) {
 	return context;
 }
 
-function TabViewList({
-	items,
-	className = '',
-	triggerClassName = '',
-	triggerColor,
-	triggerSelectedColor,
-}) {
+function TabViewList({ items, className = '', triggerClassName = '', triggerColor, triggerSelectedColor }) {
 	const { ariaLabel, tabMode } = useTabViewContext('TabViewList');
 
 	return (
@@ -127,14 +121,7 @@ function TabViewList({
 	);
 }
 
-function TabViewTrigger({
-	children,
-	value,
-	disabled = false,
-	className = '',
-	triggerColor,
-	triggerSelectedColor,
-}) {
+function TabViewTrigger({ children, value, disabled = false, className = '', triggerColor, triggerSelectedColor }) {
 	const { focusTrigger, getPanelId, getTabId, registerTrigger, selectedValue, selectValue, tabs, tabMode } =
 		useTabViewContext('TabViewTrigger');
 	const isSelected = selectedValue === value;

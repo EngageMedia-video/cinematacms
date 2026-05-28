@@ -300,8 +300,7 @@ export function VideoPlayer(props) {
 
 	function unsetPlayer() {
 		const videoElement = videoElemRef.current;
-		const videoJsPlayer =
-			playerRef.current?.player || (videoElement ? videojs.getPlayer?.(videoElement) : null);
+		const videoJsPlayer = playerRef.current?.player || (videoElement ? videojs.getPlayer?.(videoElement) : null);
 
 		if (videoJsPlayer && !videoJsPlayer.isDisposed?.()) {
 			videoJsPlayer.dispose();

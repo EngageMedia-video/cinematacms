@@ -4,11 +4,7 @@ import { Icon } from '../Icon';
 import { Text } from '../Text';
 import { Popup, PopupContent, PopupMain, PopupTop, PopupTrigger, usePopup } from './Popup';
 
-const DOWNLOAD_OPTIONS = [
-	'1080p - H264 (84 MB)',
-	'720p - H264 (42 MB)',
-	'Original file (128 MB)',
-];
+const DOWNLOAD_OPTIONS = ['1080p - H264 (84 MB)', '720p - H264 (42 MB)', 'Original file (128 MB)'];
 
 function PopupMenu() {
 	return (
@@ -44,7 +40,11 @@ function PopupExample({ className = '', style = null }) {
 					icon={<Icon name="downloadMedia" className="text-cinemata-strait-blue-100" />}
 					size="sm"
 				>
-					<Text as="span" variant="body-14-medium" className="text-neutral-50 dark:text-cinemata-strait-blue-100">
+					<Text
+						as="span"
+						variant="body-14-medium"
+						className="text-neutral-50 dark:text-cinemata-strait-blue-100"
+					>
 						Download
 					</Text>
 					<Icon name="caretDown" className="ml-2 h-4 w-4" />

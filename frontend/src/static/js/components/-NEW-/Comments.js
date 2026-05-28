@@ -518,9 +518,7 @@ export default function CommentsList(props) {
 
 	useEffect(() => {
 		setDisplayComments(
-			!!comments.length &&
-				MEMBER.can.readComment &&
-				(!!mediaData?.enable_comments || MEMBER.can.editMedia)
+			!!comments.length && MEMBER.can.readComment && (!!mediaData?.enable_comments || MEMBER.can.editMedia)
 		);
 	}, [comments, mediaData]);
 
