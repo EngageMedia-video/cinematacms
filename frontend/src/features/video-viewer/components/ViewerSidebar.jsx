@@ -18,7 +18,7 @@ export default class ViewerSidebar extends React.PureComponent {
 			mediaType: MediaPageStore.get('media-type'),
 		};
 
-		if (props.playlistData) {
+		if (props.playlistData?.playlist_media) {
 			let i = 0;
 			while (i < props.playlistData.playlist_media.length) {
 				if (props.mediaId === props.playlistData.playlist_media[i].friendly_token) {

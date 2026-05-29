@@ -54,7 +54,7 @@ export function MediaAddToFavorites({ user, onFavoriteChange }) {
 
 		if (user.is.anonymous) {
 			const currentPath = window.location.href.replace(site.url, '').replace(/^\//g, '');
-			const loginUrl = links.signin + '?next=/' + currentPath;
+			const loginUrl = links.signin + '?next=' + encodeURIComponent('/' + currentPath);
 			window.location.href = loginUrl;
 			return;
 		}

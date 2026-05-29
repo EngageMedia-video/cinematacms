@@ -90,10 +90,9 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 				<Badge
 					color="bg/primary"
 					className={'media-state-badge media-state-badge-' + mediaState}
-					textClassName="body-body-12-bold"
 					title={stateTooltip}
 				>
-					{String(mediaState).toUpperCase()}
+					<span className="body-12-bold">{String(mediaState).toUpperCase()}</span>
 				</Badge>
 
 				<Tooltip content={stateTooltip} placement="right" trigger="hover">

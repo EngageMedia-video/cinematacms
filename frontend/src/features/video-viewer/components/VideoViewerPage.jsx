@@ -51,6 +51,17 @@ export class VideoViewerPage extends Page {
 		PageStore.on('window_resize', this.onWindowResize);
 	}
 
+	componentWillUnmount() {
+		MediaPageStore.removeListener('loaded_media_data', this.onMediaLoad);
+		MediaPageStore.removeListener('loaded_media_error', this.onMediaLoadError);
+		MediaPageStore.removeListener('loaded_page_playlist_data', this.onPagePlaylistLoad);
+		MediaPageStore.removeListener('media_needs_password', this.onNeedsPassword);
+		PageStore.removeListener('window_resize', this.onWindowResize);
+		if (this.onViewerModeChange) {
+			VideoViewerStore.removeListener('changed_viewer_mode', this.onViewerModeChange);
+		}
+	}
+
 	onWindowResize() {
 		this.setState({
 			wideLayout: wideLayoutBreakpoint <= PageStore.get('window-inner-width'),
