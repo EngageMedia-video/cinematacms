@@ -7,41 +7,11 @@ import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 import { Button } from '../../shared/components/Button/Button.jsx';
 import { HorizontalMovieItem } from '../../shared/components/MovieItem/MovieItem';
 import { getMediaDurationLabel } from '../../home/utils/mediaList';
+import { buildMetadata, getAuthorLink, getAuthorName } from '../utils/mediaCardMetadata';
 
 function readRelatedMedia() {
 	const md = MediaPageStore.get('media-data');
 	return md?.related_media?.length ? md.related_media : null;
-}
-
-function getAuthorName(item) {
-	return item.author_name || item.user || '';
-}
-
-function getAuthorLink(item) {
-	return item.author_profile || '';
-}
-
-function getCountryNames(item) {
-	if (Array.isArray(item.media_country_info)) {
-		const countries = item.media_country_info.map((country) => country?.title).filter(Boolean);
-		return countries.length ? countries : [item.media_country].filter(Boolean);
-	}
-
-	if (item.media_country_info?.title) {
-		return [item.media_country_info.title];
-	}
-
-	return [item.media_country].filter(Boolean);
-}
-
-function buildMetadata(item, hideViews) {
-	const metadata = [...getCountryNames(item)];
-
-	if (!hideViews && item.views != null) {
-		metadata.push(`${Number(item.views).toLocaleString()} views`);
-	}
-
-	return metadata;
 }
 
 export function RelatedMedia({ hideFirst = true }) {
