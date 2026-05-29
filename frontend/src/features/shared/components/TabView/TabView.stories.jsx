@@ -76,6 +76,22 @@ const meta = {
 				defaultValue: { summary: "''" },
 			},
 		},
+		triggerColor: {
+			control: 'text',
+			description:
+				'Optional unselected trigger background color. Accepts raw CSS colors, CSS variables, or Cinemata token names like `pacific-deep-700`.',
+			table: {
+				type: { summary: 'string' },
+			},
+		},
+		triggerSelectedColor: {
+			control: 'text',
+			description:
+				'Optional selected trigger background color. Accepts raw CSS colors, CSS variables, or Cinemata token names like `coral-reef-100`.',
+			table: {
+				type: { summary: 'string' },
+			},
+		},
 		panelClassName: {
 			control: 'text',
 			description: 'Optional extra classes applied to the active generated tab panel.',
@@ -109,7 +125,7 @@ export const Default = {
 				<TabContent
 					title="Single Film Upload"
 					content={
-						<p className="body-body-14-regular text-cinemata-white">
+						<p className="body-body-14-regular text-text-on-chrome">
 							Upload one title with its own metadata and assets.
 						</p>
 					}
@@ -117,7 +133,7 @@ export const Default = {
 				<TabContent
 					title="Bulk Upload"
 					content={
-						<p className="body-body-14-regular text-cinemata-white">
+						<p className="body-body-14-regular text-text-on-chrome">
 							Import multiple items in one batch workflow.
 						</p>
 					}
@@ -157,7 +173,7 @@ export const Controlled = {
 					<TabContent
 						title="Single Film Upload"
 						content={
-							<p className="body-body-14-regular text-cinemata-white">
+							<p className="body-body-14-regular text-text-on-chrome">
 								Upload one title with its own metadata and assets.
 							</p>
 						}
@@ -165,7 +181,7 @@ export const Controlled = {
 					<TabContent
 						title="Bulk Upload"
 						content={
-							<p className="body-body-14-regular text-cinemata-white">
+							<p className="body-body-14-regular text-text-on-chrome">
 								Import multiple items in one batch workflow.
 							</p>
 						}
@@ -191,7 +207,7 @@ export const Overflow = {
 				<TabContent
 					title="Single Film Upload"
 					content={
-						<p className="body-body-14-regular text-cinemata-white">
+						<p className="body-body-14-regular text-text-on-chrome">
 							Upload one title with its own metadata and assets.
 						</p>
 					}
@@ -199,7 +215,7 @@ export const Overflow = {
 				<TabContent
 					title="Bulk Upload"
 					content={
-						<p className="body-body-14-regular text-cinemata-white">
+						<p className="body-body-14-regular text-text-on-chrome">
 							Import multiple items in one batch workflow.
 						</p>
 					}
@@ -207,7 +223,7 @@ export const Overflow = {
 				<TabContent
 					title="Schedule Release"
 					content={
-						<p className="body-body-14-regular text-cinemata-white">
+						<p className="body-body-14-regular text-text-on-chrome">
 							Set publish timing for upcoming media.
 						</p>
 					}
@@ -215,7 +231,7 @@ export const Overflow = {
 				<TabContent
 					title="Review Settings"
 					content={
-						<p className="body-body-14-regular text-cinemata-white">
+						<p className="body-body-14-regular text-text-on-chrome">
 							Confirm the selected upload configuration.
 						</p>
 					}
@@ -235,7 +251,7 @@ export const WrapContent = {
 				<TabContent
 					title="Single Film Upload"
 					content={
-						<p className="body-body-14-regular text-cinemata-white">
+						<p className="body-body-14-regular text-text-on-chrome">
 							Upload one title with its own metadata and assets.
 						</p>
 					}
@@ -243,7 +259,7 @@ export const WrapContent = {
 				<TabContent
 					title="Bulk Upload"
 					content={
-						<p className="body-body-14-regular text-cinemata-white">
+						<p className="body-body-14-regular text-text-on-chrome">
 							Import multiple items in one batch workflow.
 						</p>
 					}
@@ -261,14 +277,14 @@ export const WithCustomValues = {
 					value="single"
 					title="Single Film Upload"
 					content={
-						<p className="body-body-14-regular text-cinemata-white">Custom keyed single upload panel.</p>
+						<p className="body-body-14-regular text-text-on-chrome">Custom keyed single upload panel.</p>
 					}
 				/>
 				<TabContent
 					value="bulk"
 					title="Bulk Upload"
 					content={
-						<p className="body-body-14-regular text-cinemata-white">Custom keyed bulk upload panel.</p>
+						<p className="body-body-14-regular text-text-on-chrome">Custom keyed bulk upload panel.</p>
 					}
 				/>
 			</TabView>

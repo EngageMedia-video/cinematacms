@@ -16,6 +16,7 @@ export { RadioButton } from './RadioButton';
 export { CheckboxButton } from './CheckboxButton';
 export { MovieItem, HorizontalMovieItem, VerticalMovieItem } from './MovieItem';
 export { ProgressBar } from './ProgressBar';
+export { Popup, PopupContent, PopupMain, PopupTop, PopupTrigger, usePopup } from './Popup';
 export { SegmentButton } from './SegmentButton';
 export { SquareImage } from './SquareImage';
 export { Stepper } from './Stepper';

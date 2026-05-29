@@ -136,6 +136,10 @@ $text-style-font-family-body: 'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', s
 	@include app-text-style(14px, $text-style-font-family-body, 400, 0, 20px);
 }
 
+.body-body-14-medium {
+	@include app-text-style(14px, $text-style-font-family-body, 500, 0, 24px);
+}
+
 .body-body-14-bold {
 	@include app-text-style(14px, $text-style-font-family-body, 700, 0, 20px);
 }

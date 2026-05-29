@@ -170,4 +170,31 @@ describe('TabView', () => {
 
 		expect(screen.getByRole('tabpanel')).toHaveTextContent('Upload many titles.');
 	});
+
+	it('supports custom trigger colors for selected and unselected states', async () => {
+		const user = userEvent.setup();
+
+		render(
+			<TabView
+				defaultSelectedTab="single-film-upload"
+				aria-label="Upload mode"
+				triggerColor="bg/chrome-hover"
+				triggerSelectedColor="#0c5273"
+			>
+				<TabContent title="Single Film Upload" content={<p>Upload one title.</p>} />
+				<TabContent title="Bulk Upload" content={<p>Upload many titles.</p>} />
+			</TabView>
+		);
+
+		const singleTab = screen.getByRole('tab', { name: 'Single Film Upload' });
+		const bulkTab = screen.getByRole('tab', { name: 'Bulk Upload' });
+
+		expect(singleTab.style.backgroundColor).toBe('rgb(12, 82, 115)');
+		expect(bulkTab.style.backgroundColor).toBe('var(--bg-chrome-hover)');
+
+		await user.click(bulkTab);
+
+		expect(singleTab.style.backgroundColor).toBe('var(--bg-chrome-hover)');
+		expect(bulkTab.style.backgroundColor).toBe('rgb(12, 82, 115)');
+	});
 });

@@ -1,40 +1,16 @@
 import { cn } from '../../utils/classNames';
-function resolveBadgeColor(color) {
-	if (!color) {
-		return color;
-	}
+import { resolveColor } from '../../utils/resolveColor';
 
-	if (color.startsWith('var(') || color.startsWith('#') || color.startsWith('rgb') || color.startsWith('hsl')) {
-		return color;
-	}
-
-	if (color.startsWith('--')) {
-		return `var(${color})`;
-	}
-
-	if (color.startsWith('cinemata-')) {
-		return `var(--${color})`;
-	}
-
-	return `var(--cinemata-${color})`;
-}
-
-export function Badge({
-	children = 'Featured',
-	className = '',
-	color = 'var(--cinemata-pacific-deep-950)',
-	style,
-	...props
-}) {
+export function Badge({ children = 'Featured', className = '', color = 'bg/surface-inverse', style, ...props }) {
 	return (
 		<span
 			{...props}
 			className={cn(
-				'caption-caption-10-regular inline-flex items-center rounded-[2px] p-1 text-cinemata-neutral-50',
+				'caption-caption-10-regular inline-flex items-center rounded-[2px] p-1 text-text-on-primary',
 				className
 			)}
 			style={{
-				backgroundColor: resolveBadgeColor(color),
+				backgroundColor: resolveColor(color),
 				...style,
 			}}
 		>

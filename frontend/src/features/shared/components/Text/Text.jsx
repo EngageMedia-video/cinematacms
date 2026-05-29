@@ -12,12 +12,14 @@ const VARIANT_MAP = {
 	'h3-bold': ['heading-h3-40-bold', 'h3'],
 	h4: ['heading-h4-32-medium', 'h4'],
 	'h4-regular': ['heading-h4-32-regular', 'h4'],
+	'h4-medium': ['heading-h4-32-medium', 'h4'],
 	'h4-bold': ['heading-h4-32-bold', 'h4'],
 	h5: ['heading-h5-24-medium', 'h5'],
 	'h5-regular': ['heading-h5-24-regular', 'h5'],
 	'h5-bold': ['heading-h5-24-bold', 'h5'],
 	h6: ['heading-h6-20-medium', 'h6'],
 	'h6-regular': ['heading-h6-20-regular', 'h6'],
+	'h6-medium': ['heading-h6-20-medium', 'h6'],
 	'h6-bold': ['heading-h6-20-bold', 'h6'],
 	// Body — default element is <p>
 	'body-18': ['body-body-18-regular', 'p'],
@@ -27,6 +29,7 @@ const VARIANT_MAP = {
 	'body-16-medium': ['body-body-16-medium', 'p'],
 	'body-16-bold': ['body-body-16-bold', 'p'],
 	'body-14': ['body-body-14-regular', 'p'],
+	'body-14-medium': ['body-body-14-medium', 'p'],
 	'body-14-bold': ['body-body-14-bold', 'p'],
 	'body-12': ['body-body-12-regular', 'p'],
 	'body-12-medium': ['body-body-12-medium', 'p'],
@@ -42,6 +45,7 @@ const COLOR_CLASSES = {
 	meta: 'text-text-muted',
 	description: 'text-text-description',
 	'sunset-horizon': 'text-text-link',
+	accent: 'text-text-accent',
 };
 
 const ACTION_CLASSES = {
@@ -62,6 +66,7 @@ const HEADING_VARIANTS = new Set([
 	'h3-bold',
 	'h4',
 	'h4-regular',
+	'h4-medium',
 	'h4-bold',
 	'h5',
 	'h5-regular',

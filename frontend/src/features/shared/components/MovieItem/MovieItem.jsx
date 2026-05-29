@@ -40,7 +40,7 @@ function MovieMetadata({ items = [] }) {
 					{index > 0 ? (
 						<span
 							aria-hidden="true"
-							className="mr-1 text-[12px] font-bold leading-[18px] text-cinemata-pacific-deep-400"
+							className="mr-1 text-[12px] font-bold leading-[18px] text-text-disabled"
 						>
 							·
 						</span>
@@ -53,7 +53,6 @@ function MovieMetadata({ items = [] }) {
 }
 
 function MovieCopy({ title, titleLink = '', subtitle, subtitleLink = '', metadata, orientation = 'vertical' }) {
-	const isHorizontal = orientation === 'horizontal';
 	const titleClassName = cn(
 		'm-0 p-0 line-clamp-3',
 		'[font-family:Inter,Arial,sans-serif] text-[16px] font-medium leading-[22px] tracking-[-0.18px] text-text-primary'
@@ -61,13 +60,13 @@ function MovieCopy({ title, titleLink = '', subtitle, subtitleLink = '', metadat
 	const subtitleClassName = 'body-body-12-regular m-0 p-0 text-text-link';
 
 	return (
-		<div className={cn('flex min-w-0 flex-col', isHorizontal ? 'gap-3' : 'gap-2')} data-movie-copy>
+		<div className="flex min-w-0 flex-col gap-2" data-movie-copy>
 			{titleLink ? (
 				<a
 					href={titleLink}
 					className={cn(
 						titleClassName,
-						'block no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus'
+						'block no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus line-clamp-3'
 					)}
 				>
 					{title}
@@ -120,7 +119,7 @@ function MoviePoster({
 
 			{duration ? (
 				<span
-					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-[var(--cinemata-pacific-deep-950)] px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-white"
+					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-bg-overlay-dark px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-text-on-chrome"
 					data-movie-item-duration
 				>
 					{duration}
@@ -129,7 +128,7 @@ function MoviePoster({
 
 			{showTopRightIcon && iconName ? (
 				<span
-					className="absolute top-2 right-2 inline-flex rounded bg-cinemata-sunset-horizon-400p/90 p-1 text-white"
+					className="absolute top-2 right-2 inline-flex rounded bg-bg-secondary/90 p-1 text-text-on-primary"
 					data-movie-item-icon-chip
 				>
 					<Icon name={iconName} size={14} decorative={iconLabel ? false : true} label={iconLabel} />
@@ -155,7 +154,7 @@ function MoviePoster({
 
 export function HorizontalMovieItem({
 	badge = '',
-	badgeColor = 'var(--cinemata-strait-blue-500)',
+	badgeColor = 'bg/primary',
 	className = '',
 	duration = '',
 	imageAlt = 'Movie artwork',
@@ -171,7 +170,7 @@ export function HorizontalMovieItem({
 	return (
 		<MovieItemContainer
 			shellClassName={cn('w-full', className)}
-			contentClassName="flex h-full w-full items-start gap-4"
+			contentClassName="flex h-full w-full items-center gap-4"
 			link={link}
 			title={title}
 			useWrapperLink={!useStandaloneLinks}
@@ -203,7 +202,7 @@ export function HorizontalMovieItem({
 
 export function VerticalMovieItem({
 	badge = '',
-	badgeColor = '#026690',
+	badgeColor = 'bg/primary',
 	className = '',
 	duration = '',
 	iconLabel = '',
@@ -254,7 +253,7 @@ export function VerticalMovieItem({
 
 export function MovieItem({
 	badge = '',
-	badgeColor = '#026690',
+	badgeColor = 'bg/primary',
 	className = '',
 	duration = '',
 	iconLabel = '',

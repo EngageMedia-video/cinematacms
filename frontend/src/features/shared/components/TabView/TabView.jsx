@@ -1,4 +1,5 @@
 import { cn } from '../../utils/classNames';
+import { resolveColor } from '../../utils/resolveColor';
 import {
 	Children,
 	createContext,
@@ -89,16 +90,16 @@ function useTabViewContext(componentName) {
 	return context;
 }
 
-function TabViewList({ items, className = '', triggerClassName = '' }) {
+function TabViewList({ items, className = '', triggerClassName = '', triggerColor, triggerSelectedColor }) {
 	const { ariaLabel, tabMode } = useTabViewContext('TabViewList');
 
 	return (
-		<div className="w-full overflow-x-auto">
+		<div className="w-full overflow-x-auto overscroll-x-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 			<div
 				role="tablist"
 				aria-label={ariaLabel}
 				className={cn(
-					'flex overflow-hidden rounded-sm bg-cinemata-pacific-deep-800 p-0',
+					'flex overflow-hidden rounded-sm bg-bg-chrome p-0',
 					tabMode === 'wrap' ? 'w-max min-w-0' : 'min-w-full',
 					className
 				)}
@@ -109,6 +110,8 @@ function TabViewList({ items, className = '', triggerClassName = '' }) {
 						value={item.value}
 						disabled={item.disabled}
 						className={cn(triggerClassName, item.triggerClassName)}
+						triggerColor={triggerColor}
+						triggerSelectedColor={triggerSelectedColor}
 					>
 						{item.label}
 					</TabViewTrigger>
@@ -118,10 +121,11 @@ function TabViewList({ items, className = '', triggerClassName = '' }) {
 	);
 }
 
-function TabViewTrigger({ children, value, disabled = false, className = '' }) {
+function TabViewTrigger({ children, value, disabled = false, className = '', triggerColor, triggerSelectedColor }) {
 	const { focusTrigger, getPanelId, getTabId, registerTrigger, selectedValue, selectValue, tabs, tabMode } =
 		useTabViewContext('TabViewTrigger');
 	const isSelected = selectedValue === value;
+	const backgroundColor = isSelected ? resolveColor(triggerSelectedColor) : resolveColor(triggerColor);
 
 	function selectAndFocus(nextValue) {
 		if (!nextValue) {
@@ -165,11 +169,13 @@ function TabViewTrigger({ children, value, disabled = false, className = '' }) {
 				}
 			}}
 			className={cn(
-				'body-body-14-bold cursor-pointer whitespace-nowrap border-0 px-4 py-4 text-cinemata-white uppercase tracking-[0.02em] transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+				'body-body-14-bold cursor-pointer whitespace-nowrap border-0 px-4 py-4 text-text-on-chrome uppercase tracking-[0.02em] transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
 				tabMode === 'wrap' ? 'min-w-0 flex-none' : 'min-w-[160px] flex-1',
-				isSelected ? 'bg-cinemata-strait-blue-800' : 'bg-transparent',
+				isSelected && !triggerSelectedColor ? 'bg-bg-primary-hover' : '',
+				!isSelected && !triggerColor ? 'bg-transparent' : '',
 				className
 			)}
+			style={{ backgroundColor }}
 		>
 			{children}
 		</button>
@@ -216,6 +222,8 @@ export function TabView({
 	triggerClassName = '',
 	panelClassName = '',
 	tabMode = 'fill',
+	triggerColor,
+	triggerSelectedColor,
 	'aria-label': ariaLabel = 'Tabs',
 }) {
 	const generatedId = useId();
@@ -281,7 +289,13 @@ export function TabView({
 	return (
 		<TabViewContext.Provider value={contextValue}>
 			<div className={cn('w-full', className)}>
-				<TabViewList items={tabs} className={listClassName} triggerClassName={triggerClassName} />
+				<TabViewList
+					items={tabs}
+					className={listClassName}
+					triggerClassName={triggerClassName}
+					triggerColor={triggerColor}
+					triggerSelectedColor={triggerSelectedColor}
+				/>
 				<TabViewPanel item={selectedItem} className={panelClassName} />
 			</div>
 		</TabViewContext.Provider>
