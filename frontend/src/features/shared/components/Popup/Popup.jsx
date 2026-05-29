@@ -99,9 +99,7 @@ export function PopupContent({
 
 	const onKeyDown = useCallback(
 		(event) => {
-			const key = event.keyCode || event.charCode;
-
-			if (key === 27) {
+			if (event.key === 'Escape') {
 				onClickOutside(event);
 			}
 		},
