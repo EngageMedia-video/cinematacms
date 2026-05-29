@@ -79,11 +79,9 @@ export function SegmentButton({
 						aria-pressed={selected}
 						onClick={() => handleToggle(option.value)}
 						className={cn(
-							'body-body-12-medium inline-flex min-w-0 items-center cursor-pointer justify-center gap-1 border-0 px-4 py-2 transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 first:rounded-l-ds-8 last:rounded-r-ds-8 only:rounded-ds-8',
+							'body-body-12-medium inline-flex min-w-0 items-center cursor-pointer justify-center gap-1 border-0 px-4 py-2 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:opacity-50 first:rounded-l-ds-8 last:rounded-r-ds-8 only:rounded-ds-8',
 							isFillLayout ? 'flex-1' : 'shrink-0',
-							selected
-								? 'bg-brand-primary text-btn-text'
-								: 'bg-cinemata-pacific-deep-800 text-cinemata-neutral-50'
+							selected ? 'bg-brand-primary text-btn-text' : 'bg-bg-chrome text-text-on-chrome'
 						)}
 					>
 						{option.iconName ? <Icon name={option.iconName} size={20} decorative /> : null}

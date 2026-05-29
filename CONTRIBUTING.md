@@ -51,6 +51,7 @@ All new features must use modern track patterns.
 7. Create a Django template extending `base.html`
 8. Add URL route in `files/urls.py` **above the catch-all pattern**
 9. Add a view function in `files/views.py`
+10. For any UI or component change, run the Web Interface Guidelines accessibility review before opening a PR. Agents should use the `web-design-guidelines` skill; humans should check the same rules: semantic controls, accessible names, keyboard operation, visible focus states, image dimensions/alt text, and no `transition-all`.
 
 ### Running Locally
 

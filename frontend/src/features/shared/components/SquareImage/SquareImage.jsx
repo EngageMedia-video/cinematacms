@@ -44,6 +44,8 @@ export function SquareImage({
 				<img
 					src={src}
 					alt={alt}
+					width={size}
+					height={size}
 					className="h-full w-full object-cover"
 					onError={(event) => {
 						setShowImage(false);
@@ -60,10 +62,7 @@ export function SquareImage({
 						name={centeredIconName}
 						decorative
 						size={21}
-						className={cn(
-							'text-cinemata-neutral-600 dark:text-cinemata-neutral-50',
-							loading ? 'animate-spin' : ''
-						)}
+						className={cn('text-text-muted', loading ? 'animate-spin' : '')}
 					/>
 				</span>
 			) : null}

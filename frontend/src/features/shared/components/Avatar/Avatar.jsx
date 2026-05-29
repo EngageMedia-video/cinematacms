@@ -15,17 +15,17 @@ const AVATAR_SIZES = {
 
 const BADGE_VARIANTS = {
 	comment: {
-		className: 'bg-cinemata-strait-blue-900',
+		className: 'bg-bg-primary',
 		iconName: 'commentBlue',
 		label: 'Comment',
 	},
 	'added-favorite': {
-		className: 'bg-cinemata-sunset-horizon-800',
+		className: 'bg-bg-secondary',
 		iconName: 'addedFavorite',
 		label: 'Added favorite',
 	},
 	like: {
-		className: 'bg-cinemata-red-950',
+		className: 'bg-bg-danger-strong',
 		iconName: 'thumbsUpRed',
 		label: 'Like',
 	},
@@ -115,11 +115,13 @@ export function Avatar({
 			role={showImage ? undefined : 'img'}
 			aria-label={showImage ? undefined : accessibleName}
 		>
-			<span className="inline-flex h-full w-full select-none items-center justify-center overflow-hidden rounded-full bg-cinemata-neutral-200 dark:bg-cinemata-neutral-50 text-cinemata-neutral-600">
+			<span className="inline-flex h-full w-full select-none items-center justify-center overflow-hidden rounded-full bg-bg-surface-muted text-text-muted">
 				{showImage ? (
 					<img
 						src={src}
 						alt={accessibleName}
+						width={sizeConfig.dimension}
+						height={sizeConfig.dimension}
 						className="h-full w-full object-cover"
 						onError={(event) => {
 							setShowImage(false);
@@ -136,8 +138,8 @@ export function Avatar({
 			{resolvedBadgeIcon ? (
 				<span
 					className={cn(
-						'absolute right-[-8px] bottom-[-20px] inline-flex items-center justify-center rounded-full border-[3px] border-cinemata-white dark:border-cinemata-pacific-deep-900 p-[7px] text-cinemata-strait-blue-600p dark:text-cinemata-strait-blue-100',
-						badgeVariant?.className || 'bg-cinemata-strait-blue-900'
+						'absolute right-[-8px] bottom-[-20px] inline-flex items-center justify-center rounded-full border-[3px] border-border-subtle p-[7px] text-text-on-primary',
+						badgeVariant?.className || 'bg-bg-primary'
 					)}
 					style={{
 						width: sizeConfig.dimension,

@@ -9,7 +9,7 @@ import MediaPlayerClass from '@mediacms/media-player';
 import '@mediacms/media-player/dist/mediacms-media-player.css';
 import './HeroVideoPlayer.css';
 
-const DEFAULT_PLAYER_CLASS = 'relative w-full aspect-video rounded-[6px] overflow-hidden bg-cinemata-pacific-deep-50';
+const DEFAULT_PLAYER_CLASS = 'relative w-full aspect-video rounded-[6px] overflow-hidden bg-site-player-canvas';
 
 function getVideoJsPlayer(videoElement) {
 	if (!videoElement) return null;

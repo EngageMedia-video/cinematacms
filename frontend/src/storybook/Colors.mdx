@@ -88,6 +88,8 @@ The pre-existing legacy semantic aliases inherited from MediaCMS (`bg-surface-po
 
 Notable bridge: **`bg-brand-primary`** is intentionally redirected to `var(--bg-secondary)` (orange) so the modern utility and the legacy `--btn-primary-bg-color` SCSS variable can diverge. The modern `.bg-brand-primary` utility renders orange (the brand action color) while legacy server-rendered buttons styled by SCSS rules referencing `--btn-primary-bg-color` keep their historical blue (light) / orange (dark) values.
 
+Video player theme: the `--site-player-*` family (`-accent-color`, `-progress-color`, `-track-color`, `-loaded-color`, `-tooltip-bg-color`, `-control-color`, `-canvas-color`, `-control-surface-color`, `-subtitle-bg-color`, `-subtitle-color`, `-shadow-color`, exposed as `bg-site-player-*` / `text-site-player-*` utilities) is the shared, theme-aware accent and control-surface system for the media view page player and the home hero player. Progress / volume / subtitle accent uses sunset-horizon (500 light / 400p dark), the big play button uses strait-blue (500 light / 300 dark), the buffered range uses pacific-deep, the seek tooltip uses pacific-deep-950, control and subtitle text use white, and the video canvas uses black. The hero player consumes these tokens directly instead of declaring its own color aliases, and the legacy `VideoPlayer.scss` consumes them as plain `var(--site-player-*)` so the player no longer follows the configurable site `--brand-color`.
+
 <Heading>Which palette scale plays which role</Heading>
 
 - **pacific-deep** — themed surfaces and headings (text 700–900 light, surfaces 800–950 dark). Most theme-aware tokens build on this scale.

@@ -115,39 +115,41 @@ describe('HeroVideoPlayer', () => {
 		expect(source.default).toContain("import './HeroVideoPlayer.css';");
 	});
 
-	it('overrides plugin active indicators with hero theme tokens', async () => {
+	it('overrides plugin active indicators with shared player semantic tokens', async () => {
 		const source = await import('./HeroVideoPlayer.css?raw');
 
-		expect(source.default).toContain('--hero-player-indicator-color');
+		expect(source.default).toContain('var(--site-player-progress-color)');
 		expect(source.default).toContain('.vjs-subtitles-control');
 		expect(source.default).toContain('.vjs-selected-menu-item');
+		expect(source.default).not.toContain('--hero-player-');
 	});
 
-	it('defines separate light defaults and dark-mode hero player tokens', async () => {
-		const source = await import('./HeroVideoPlayer.css?raw');
+	it('relies on global light and dark player token definitions', async () => {
+		const lightTheme = await import('../../../static/css/config/_light_theme.scss?raw');
+		const darkTheme = await import('../../../static/css/config/_dark_theme.scss?raw');
 
-		expect(source.default).toContain('body.dark_theme .video-js.vjs-mediacms.vjs-hero-player');
-		expect(source.default).toContain('var(--cinemata-sunset-horizon-500');
-		expect(source.default).toContain('var(--cinemata-sunset-horizon-400p');
+		expect(lightTheme.default).toContain('--site-player-progress-color: var(--cinemata-sunset-horizon-500)');
+		expect(darkTheme.default).toContain('--site-player-progress-color: var(--cinemata-sunset-horizon-400p)');
 	});
 
 	it('uses Pacific Deep for the seek rail without blue-tinted control icons', async () => {
 		const source = await import('./HeroVideoPlayer.css?raw');
+		const lightTheme = await import('../../../static/css/config/_light_theme.scss?raw');
 
-		expect(source.default).toContain('--hero-player-control-color: #fff;');
-		expect(source.default).toContain('--hero-player-track-color: rgb(0 12 32 / 0.78);');
-		expect(source.default).toContain('--hero-player-loaded-color: var(--cinemata-pacific-deep-700');
+		expect(source.default).toContain('color: var(--site-player-control-color) !important;');
+		expect(source.default).toContain('background-color: var(--site-player-track-color) !important;');
+		expect(source.default).toContain('background-color: var(--site-player-loaded-color) !important;');
+		expect(lightTheme.default).toContain('--site-player-track-color: rgb(0 12 32 / 0.78);');
+		expect(lightTheme.default).toContain('--site-player-loaded-color: var(--cinemata-pacific-deep-700)');
 		expect(source.default).not.toContain('#b5f4ff');
 		expect(source.default).not.toContain('#defbff');
 	});
 
-	it('keeps the hero play button on its separate design-token color', async () => {
+	it('keeps the hero play button on shared player semantic tokens', async () => {
 		const source = await import('./HeroVideoPlayer.css?raw');
 
-		expect(source.default).toContain('--hero-player-play-color: var(--cinemata-strait-blue-500');
-		expect(source.default).toContain('--hero-player-play-hover-color: var(--cinemata-sunset-horizon-500');
-		expect(source.default).toContain('background-color: var(--hero-player-play-color) !important;');
-		expect(source.default).toContain('background-color: var(--hero-player-play-hover-color) !important;');
+		expect(source.default).toContain('background-color: var(--site-player-accent-color) !important;');
+		expect(source.default).toContain('background-color: var(--site-player-progress-color) !important;');
 	});
 
 	it('keeps the hero play button in the production bottom-left placement', async () => {
@@ -164,13 +166,14 @@ describe('HeroVideoPlayer', () => {
 
 	it('keeps subtitle cues black and white instead of themed control colors', async () => {
 		const source = await import('./HeroVideoPlayer.css?raw');
+		const lightTheme = await import('../../../static/css/config/_light_theme.scss?raw');
 
-		expect(source.default).toContain('--hero-player-subtitle-bg-color: rgb(0 0 0 / 0.78);');
-		expect(source.default).toContain('--hero-player-subtitle-color: #fff;');
+		expect(lightTheme.default).toContain('--site-player-subtitle-bg-color: rgb(0 0 0 / 0.78);');
+		expect(lightTheme.default).toContain('--site-player-subtitle-color: var(--cinemata-white)');
 		expect(source.default).toContain('.vjs-text-track-cue > *');
 		expect(source.default).toContain('background-color: transparent !important;');
-		expect(source.default).toContain('background-color: var(--hero-player-subtitle-bg-color) !important;');
-		expect(source.default).toContain('color: var(--hero-player-subtitle-color) !important;');
+		expect(source.default).toContain('background-color: var(--site-player-subtitle-bg-color) !important;');
+		expect(source.default).toContain('color: var(--site-player-subtitle-color) !important;');
 		expect(source.default).not.toContain('.vjs-text-track-cue div');
 	});
 
@@ -179,16 +182,15 @@ describe('HeroVideoPlayer', () => {
 
 		expect(source.default).toContain('position: absolute !important;');
 		expect(source.default).toContain('padding-top: 0 !important;');
-		expect(source.default).toContain('--hero-player-canvas-color: #000;');
-		expect(source.default).toContain('background-color: var(--hero-player-canvas-color);');
+		expect(source.default).toContain('background-color: var(--site-player-canvas-color);');
 		expect(source.default).toContain('object-fit: contain');
 		expect(source.default).toContain('max-width: calc(100% - 24px)');
 		expect(source.default).toContain('.vjs-bottom-bg');
-		expect(source.default).toContain('--hero-player-control-surface-color');
+		expect(source.default).toContain('var(--site-player-control-surface-color)');
 		expect(source.default).toContain('right: -12px !important;');
 		expect(source.default).toContain('height: 36px;');
 		expect(source.default).toContain(
-			'linear-gradient(to bottom, rgb(0 0 0 / 0), var(--hero-player-control-surface-color))'
+			'linear-gradient(to bottom, transparent, var(--site-player-control-surface-color))'
 		);
 	});
 });

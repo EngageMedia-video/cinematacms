@@ -435,6 +435,16 @@
 	--color-site-form-btn: var(--site-form-btn-bg-color);
 	--color-site-featured-bg: var(--site-featured-bg-color);
 	--color-site-player-accent: var(--site-player-accent-color);
+	--color-site-player-progress: var(--site-player-progress-color);
+	--color-site-player-track: var(--site-player-track-color);
+	--color-site-player-loaded: var(--site-player-loaded-color);
+	--color-site-player-tooltip-bg: var(--site-player-tooltip-bg-color);
+	--color-site-player-control: var(--site-player-control-color);
+	--color-site-player-canvas: var(--site-player-canvas-color);
+	--color-site-player-control-surface: var(--site-player-control-surface-color);
+	--color-site-player-subtitle-bg: var(--site-player-subtitle-bg-color);
+	--color-site-player-subtitle: var(--site-player-subtitle-color);
+	--color-site-player-shadow: var(--site-player-shadow-color);
 
 	/* ── Cinemata Revamp Palette ─────────────────────────── */
 	--color-cinemata-white: var(--cinemata-white);
