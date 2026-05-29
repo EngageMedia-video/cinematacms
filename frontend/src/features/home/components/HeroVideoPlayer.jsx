@@ -5,6 +5,7 @@
  */
 import { useRef, useEffect } from 'react';
 import videojs from 'video.js';
+import 'video.js/dist/video-js.css';
 import MediaPlayerClass from '@mediacms/media-player';
 import '@mediacms/media-player/dist/mediacms-media-player.css';
 import './HeroVideoPlayer.css';

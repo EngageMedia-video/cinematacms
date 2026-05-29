@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import homeQueryClient, { HOME_QUERY_KEYS } from '../queryClient';
 import { HomePage } from './HomePage';
@@ -134,6 +135,7 @@ describe('HomePage', () => {
 
 		render(<HomePage />);
 
+		await userEvent.click(screen.getByRole('button', { name: 'Play Featured Film, 7:00' }));
 		const player = await screen.findByTestId('hero-video-player');
 		expect(fetchSpy).not.toHaveBeenCalled();
 		expect(JSON.parse(player.dataset.sources)).toEqual([

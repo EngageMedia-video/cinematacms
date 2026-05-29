@@ -116,6 +116,26 @@ describe('MovieItem', () => {
 		expect(movieLink).toHaveAttribute('href', '/media/cinema-paradiso/');
 	});
 
+	it('includes visible poster overlay text in the poster link accessible name', () => {
+		render(
+			<VerticalMovieItem
+				imageSrc={samplePoster}
+				imageAlt="Clickable poster"
+				title="Cinema Paradiso"
+				subtitle="Giuseppe Tornatore"
+				subtitleLink="/profiles/giuseppe-tornatore/"
+				badge="Documentary"
+				duration="1:02"
+				link="/media/cinema-paradiso/"
+			/>
+		);
+
+		expect(screen.getByRole('link', { name: 'Open Cinema Paradiso, Documentary, 1:02' })).toHaveAttribute(
+			'href',
+			'/media/cinema-paradiso/'
+		);
+	});
+
 	it('keeps the subtitle profile link clickable inside a linked movie card', () => {
 		render(
 			<VerticalMovieItem

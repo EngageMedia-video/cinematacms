@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { HeroSection } from './HeroSection';
@@ -61,6 +62,11 @@ function renderHero(seededData, children) {
 	);
 }
 
+async function playFeaturedMedia() {
+	const user = userEvent.setup();
+	await user.click(await screen.findByRole('button', { name: /Play / }));
+}
+
 describe('HeroSection', () => {
 	afterEach(() => {
 		Object.defineProperty(window, 'ResizeObserver', {
@@ -114,6 +120,8 @@ describe('HeroSection', () => {
 
 	it('renders Player slot only when Card is omitted', async () => {
 		renderHero([SAMPLE_MEDIA], <HeroSection.Player />);
+		expect(screen.getByRole('button', { name: 'Play Test Featured Video, 11:16' })).toBeInTheDocument();
+		await playFeaturedMedia();
 		expect(await screen.findByTestId('hero-video-player')).toBeInTheDocument();
 		expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
 		expect(screen.queryByText('11:16')).not.toBeInTheDocument();
@@ -127,6 +135,7 @@ describe('HeroSection', () => {
 				<HeroSection.Card />
 			</>
 		);
+		await playFeaturedMedia();
 		expect(await screen.findByTestId('hero-video-player')).toBeInTheDocument();
 		expect(screen.getByRole('heading', { level: 2, name: 'Test Featured Video' })).toBeInTheDocument();
 	});
@@ -153,6 +162,7 @@ describe('HeroSection', () => {
 		const region = screen.getByRole('region', { name: 'Featured media' });
 		await waitFor(() => expect(region).toHaveClass('flex-row'));
 
+		await playFeaturedMedia();
 		const player = await screen.findByTestId('hero-video-player');
 		expect(player.parentElement).toHaveClass('h-[440px]');
 		expect(player.parentElement).toHaveClass('aspect-auto');
@@ -171,6 +181,7 @@ describe('HeroSection', () => {
 
 	it('passes a full-height desktop player class to the lazy player', async () => {
 		renderHero([SAMPLE_MEDIA], <HeroSection.Player />);
+		await playFeaturedMedia();
 		const player = await screen.findByTestId('hero-video-player');
 		expect(player).toHaveAttribute('data-class-name', expect.stringContaining('h-full'));
 	});
@@ -218,6 +229,7 @@ describe('HeroSection', () => {
 			</>
 		);
 
+		await playFeaturedMedia();
 		const player = await screen.findByTestId('hero-video-player');
 		expect(fetchSpy).toHaveBeenCalledWith('/api/v1/media/legacy-token');
 		expect(player).toHaveAttribute('data-poster', 'https://example.com/detail-poster.jpg');
@@ -268,6 +280,7 @@ describe('HeroSection', () => {
 			<HeroSection.Player />
 		);
 
+		await playFeaturedMedia();
 		const player = await screen.findByTestId('hero-video-player');
 		expect(fetchSpy).not.toHaveBeenCalled();
 		expect(JSON.parse(player.dataset.sources)).toEqual([
@@ -298,6 +311,7 @@ describe('HeroSection', () => {
 			<HeroSection.Player />
 		);
 
+		await playFeaturedMedia();
 		const player = await screen.findByTestId('hero-video-player');
 		expect(JSON.parse(player.dataset.sources)).toEqual([
 			{ src: 'https://example.com/1080p.mp4', type: 'video/mp4' },
@@ -333,6 +347,7 @@ describe('HeroSection', () => {
 			<HeroSection.Player />
 		);
 
+		await playFeaturedMedia();
 		const player = await screen.findByTestId('hero-video-player');
 		expect(fetchSpy).not.toHaveBeenCalled();
 		expect(JSON.parse(player.dataset.sources)).toEqual([
@@ -372,6 +387,7 @@ describe('HeroSection', () => {
 				<HeroSection.Player />
 			);
 
+			await playFeaturedMedia();
 			const player = await screen.findByTestId('hero-video-player');
 			expect(JSON.parse(player.dataset.sources)).toEqual([
 				{ src: '/media/video-360.mp4?v=123', type: 'video/mp4' },
@@ -437,7 +453,9 @@ describe('HeroSection', () => {
 				<HeroSection.Card />
 			</>
 		);
-		// The mock resolves asynchronously; verify player renders after resolution
+		expect(screen.getByRole('button', { name: 'Play Test Featured Video, 11:16' })).toBeInTheDocument();
+		await playFeaturedMedia();
+		// The mock resolves asynchronously; verify player renders after activation
 		expect(await screen.findByTestId('hero-video-player')).toBeInTheDocument();
 	});
 

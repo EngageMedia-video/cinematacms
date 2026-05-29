@@ -240,11 +240,11 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `bg/page`, `bg/surface`, `bg/surface-raised`, `bg/surface-muted`, `bg/surface-hover`, `bg/surface-inverse` | 6 | Themed page, card, and list/menu hover surfaces — invert per theme. |
 | `bg/overlay-dark`, `bg/chrome`, `bg/chrome-hover` | 3 | Always-dark UI chrome — topbar, search overlays, mobile dialogs. Do not invert. |
 | `bg/skeleton`, `bg/control` | 2 | Loading skeletons and standard small control surfaces, including radio backgrounds. |
-| `bg/primary`, `bg/primary-hover`, `bg/secondary`, `bg/secondary-hover` | 4 | Action surfaces. `primary` is strait-blue; `secondary` is sunset-horizon (the brand action color) and is what `bg-brand-primary` now routes through. |
+| `bg/primary`, `bg/primary-hover`, `bg/secondary`, `bg/secondary-hover` | 4 | Action surfaces. `primary` is strait-blue; `secondary` is the AA-safe sunset-horizon brand action color and is what `bg-brand-primary` now routes through. |
 | `bg/danger`, `bg/danger-strong`, `bg/danger-strong-hover`, `bg/success`, `bg/success-strong`, `bg/warning` | 6 | Semantic feedback. Strong danger tokens cover active destructive/toggled-danger surfaces; `success-strong` pairs with `success` for striped progress fills. |
 | `text/strong`, `text/primary`, `text/secondary`, `text/muted`, `text/description`, `text/subtle`, `text/disabled` | 7 | Themed content text. |
 | `text/inverse`, `text/on-primary`, `text/on-chrome`, `text/on-chrome-muted` | 4 | Text on inverse/action/chrome surfaces. |
-| `text/link`, `text/link-hover`, `text/accent`, `text/danger`, `text/success`, `text/warning` | 6 | Inline-link and semantic text. |
+| `text/link`, `text/link-hover`, `text/accent`, `text/danger`, `text/success`, `text/warning` | 6 | Inline-link and semantic text. Link tokens use darker sunset-horizon steps in light theme for AA contrast on white and raised tinted surfaces. |
 | `border/default`, `border/subtle`, `border/divider`, `border/strong`, `border/strong-constant`, `border/chrome`, `border/input`, `border/danger` | 8 | Card borders, section dividers, hairlines, input borders, and subtle checkbox fills via `bg-border-subtle`. |
 | `ring/focus` | 1 | Unified focus indicator (sunset-horizon-400p, constant). Used by every interactive control. |
 

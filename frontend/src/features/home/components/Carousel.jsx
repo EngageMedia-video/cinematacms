@@ -328,12 +328,17 @@ function CarouselIndicator({ count, activeIndex, onSelect }) {
 					onClick={() => onSelect(i)}
 					aria-label={`Go to page ${i + 1}`}
 					aria-current={i === activeIndex ? 'true' : undefined}
-					className={`rounded-full p-0 border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page ${
-						i === activeIndex
-							? 'h-2 w-6 bg-bg-primary transition-[width,background-color] duration-300'
-							: 'size-2 min-w-0 bg-border-strong/30 hover:bg-border-strong/50'
-					}`}
-				/>
+					className="inline-flex size-6 min-w-6 items-center justify-center rounded-full border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page"
+				>
+					<span
+						aria-hidden="true"
+						className={`rounded-full transition-[width,background-color] duration-300 ${
+							i === activeIndex
+								? 'h-2 w-6 bg-bg-primary'
+								: 'size-2 bg-border-strong/30 hover:bg-border-strong/50'
+						}`}
+					/>
+				</button>
 			))}
 		</div>
 	);

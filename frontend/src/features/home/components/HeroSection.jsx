@@ -4,6 +4,7 @@ import {
 	createContext,
 	lazy,
 	use,
+	useCallback,
 	useEffect,
 	useLayoutEffect,
 	useMemo,
@@ -137,6 +138,22 @@ function HeroPosterFallback({ src }) {
 	);
 }
 
+function HeroPosterButton({ duration, onPlay, src, title }) {
+	const label = [title ? `Play ${title}` : 'Play featured media', duration].filter(Boolean).join(', ');
+
+	return (
+		<button
+			type="button"
+			onClick={onPlay}
+			aria-label={label}
+			className="absolute inset-0 h-full w-full cursor-pointer border-0 bg-transparent p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page"
+		>
+			<HeroPosterFallback src={src} />
+			<DurationBadge value={duration} />
+		</button>
+	);
+}
+
 function Player() {
 	const ctx = use(HeroContext);
 	const media = ctx?.media;
@@ -156,6 +173,12 @@ function Player() {
 	);
 	const subtitlesPayload = useMemo(() => ({ languages: subtitles }), [subtitles]);
 	const playerKey = playback.sources[0]?.src ?? poster ?? media?.friendly_token;
+	const [isPlayerRequested, setIsPlayerRequested] = useState(false);
+	const requestPlayer = useCallback(() => setIsPlayerRequested(true), []);
+
+	useEffect(() => {
+		setIsPlayerRequested(false);
+	}, [playerKey]);
 
 	if (!ctx || !media) return null;
 	const { isDesktopLayout, isHeroDetailError, retryHeroDetail } = ctx;
@@ -163,7 +186,7 @@ function Player() {
 	return (
 		<div className={cn(PLAYER_AREA, isDesktopLayout ? PLAYER_AREA_DESKTOP : '')}>
 			<div className={cn(PLAYER_FRAME, isDesktopLayout ? PLAYER_FRAME_DESKTOP : '')}>
-				{playback.sources.length ? (
+				{playback.sources.length && isPlayerRequested ? (
 					<HeroPlayerErrorBoundary fallback={<HeroPosterFallback src={poster} />} key={playerKey}>
 						<Suspense fallback={<HeroPosterFallback src={poster} />}>
 							<HeroVideoPlayer
@@ -177,6 +200,8 @@ function Player() {
 							/>
 						</Suspense>
 					</HeroPlayerErrorBoundary>
+				) : playback.sources.length ? (
+					<HeroPosterButton duration={duration} onPlay={requestPlayer} src={poster} title={media.title} />
 				) : (
 					<>
 						<HeroPosterFallback src={poster} />

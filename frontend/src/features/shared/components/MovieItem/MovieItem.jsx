@@ -107,6 +107,9 @@ function MoviePoster({
 	linkTitle = '',
 	showTopRightIcon = false,
 }) {
+	const linkLabel = [linkTitle ? `Open ${linkTitle}` : 'Open movie details', badge, duration]
+		.filter(Boolean)
+		.join(', ');
 	const poster = (
 		<div className={cn('relative overflow-hidden rounded-[6px] bg-bg-skeleton', className)}>
 			<img
@@ -153,7 +156,7 @@ function MoviePoster({
 		<a
 			href={link}
 			className="block shrink-0 no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
-			aria-label={linkTitle ? `Open ${linkTitle}` : 'Open movie details'}
+			aria-label={linkLabel}
 		>
 			{poster}
 		</a>

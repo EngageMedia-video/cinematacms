@@ -584,8 +584,8 @@ body {
 	--bg-control: var(--cinemata-neutral-300);
 	--bg-primary: var(--cinemata-strait-blue-600p);
 	--bg-primary-hover: var(--cinemata-strait-blue-800);
-	--bg-secondary: var(--cinemata-sunset-horizon-400p);
-	--bg-secondary-hover: var(--cinemata-sunset-horizon-500);
+	--bg-secondary: var(--cinemata-sunset-horizon-700);
+	--bg-secondary-hover: var(--cinemata-sunset-horizon-800);
 	--bg-danger: var(--cinemata-red-500);
 	--bg-danger-strong: var(--cinemata-red-800);
 	--bg-danger-strong-hover: var(--cinemata-red-400);
@@ -597,16 +597,16 @@ body {
 	--text-strong: var(--cinemata-pacific-deep-900);
 	--text-primary: var(--cinemata-pacific-deep-700);
 	--text-secondary: var(--cinemata-strait-blue-700);
-	--text-muted: var(--cinemata-pacific-deep-400);
+	--text-muted: var(--cinemata-pacific-deep-500);
 	--text-description: var(--cinemata-pacific-deep-700);
 	--text-subtle: var(--cinemata-neutral-500);
-	--text-disabled: var(--cinemata-pacific-deep-400);
+	--text-disabled: var(--cinemata-pacific-deep-500);
 	--text-inverse: var(--cinemata-white);
 	--text-on-primary: var(--cinemata-white);
 	--text-on-chrome: var(--cinemata-strait-blue-50);
 	--text-on-chrome-muted: var(--cinemata-pacific-deep-300);
-	--text-link: var(--cinemata-sunset-horizon-400p);
-	--text-link-hover: var(--cinemata-sunset-horizon-600);
+	--text-link: var(--cinemata-sunset-horizon-700);
+	--text-link-hover: var(--cinemata-sunset-horizon-800);
 	--text-accent: var(--cinemata-sunset-horizon-400p);
 	--text-danger: var(--cinemata-red-500);
 	--text-success: var(--cinemata-green-600);
@@ -637,7 +637,7 @@ body.dark_theme {
 	--bg-control: var(--cinemata-pacific-deep-900);
 	--bg-primary: var(--cinemata-strait-blue-500);
 	--bg-primary-hover: var(--cinemata-strait-blue-700);
-	--bg-secondary: var(--cinemata-sunset-horizon-500);
+	--bg-secondary: var(--cinemata-sunset-horizon-600);
 	--bg-secondary-hover: var(--cinemata-sunset-horizon-700);
 	--bg-danger-strong: var(--cinemata-red-950);
 	--bg-danger-strong-hover: var(--cinemata-red-900);
@@ -648,6 +648,7 @@ body.dark_theme {
 	--text-muted: var(--cinemata-pacific-deep-300);
 	--text-description: var(--cinemata-pacific-deep-300);
 	--text-subtle: var(--cinemata-neutral-400);
+	--text-disabled: var(--cinemata-pacific-deep-400);
 	--text-inverse: var(--cinemata-pacific-deep-900);
 	--text-link: var(--cinemata-sunset-horizon-200);
 	--text-link-hover: var(--cinemata-sunset-horizon-100);

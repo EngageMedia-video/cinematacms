@@ -725,7 +725,7 @@ input#authenticator_secret {
 }
 
 .top-message {
-	background-color: var(--cinemata-sunset-horizon-300);
+	background-color: var(--bg-secondary, var(--cinemata-sunset-horizon-700));
 	color: var(--cinemata-neutral-50);
 	display: flex;
 	justify-content: center;

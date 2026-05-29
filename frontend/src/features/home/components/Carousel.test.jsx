@@ -149,6 +149,15 @@ describe('Carousel — default shape', () => {
 		expect(dot1).not.toHaveAttribute('aria-current');
 	});
 
+	it('keeps carousel dot buttons at a 24px accessible target size', () => {
+		render(<Carousel items={makeItems(8)} visibleCount={4} />);
+
+		const dot = screen.getByRole('button', { name: 'Go to page 2' });
+
+		expect(dot).toHaveClass('size-6');
+		expect(dot.firstElementChild).toHaveClass('size-2');
+	});
+
 	it('defaults to one visible item on phone viewports', () => {
 		mockViewportWidth(390);
 		render(<Carousel items={makeItems(4)} />);

@@ -133,6 +133,22 @@ VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 logger = logging.getLogger(__name__)
 
 HOME_INITIAL_LIMIT = 20
+HOME_INITIAL_MEDIA_FIELDS = (
+    "friendly_token",
+    "url",
+    "api_url",
+    "title",
+    "description",
+    "summary",
+    "views",
+    "duration",
+    "thumbnail_url",
+    "author_name",
+    "author_profile",
+    "media_country_info",
+    "media_country",
+    "categories_info",
+)
 
 
 def _build_featured_queryset(limit=None):
@@ -195,6 +211,20 @@ def _home_recommended_envelope(results):
         "previous": None,
         "results": results,
     }
+
+
+def _slim_home_media_item(item):
+    if not isinstance(item, dict):
+        return item
+
+    slim_item = {field: item[field] for field in HOME_INITIAL_MEDIA_FIELDS if field in item}
+    if "hero_playback" in item:
+        slim_item["hero_playback"] = item["hero_playback"]
+    return slim_item
+
+
+def _slim_home_media_results(items):
+    return [_slim_home_media_item(item) for item in items]
 
 
 def _attach_hero_playback_to_first_featured_item(items, request=None):
@@ -274,6 +304,7 @@ def _get_home_initial_data(request):
                 featured_results = list(MediaSerializer(qs, many=True, context={"request": request}).data)
                 source_envelope = None
             featured_results = _attach_hero_playback_to_first_featured_item(featured_results, request=request)
+            featured_results = _slim_home_media_results(featured_results)
             home_initial_featured = _home_featured_envelope(featured_results, source_envelope=source_envelope)
             set_cached_result(home_featured_cache_key, home_initial_featured, MEDIA_LIST_TIMEOUT)
 
@@ -288,6 +319,7 @@ def _get_home_initial_data(request):
             recommended_results = list(
                 MediaSerializer(list(recommended_media), many=True, context={"request": request}).data
             )
+            recommended_results = _slim_home_media_results(recommended_results)
             home_initial_recommended = _home_recommended_envelope(recommended_results)
             set_cached_result(recommended_cache_key, home_initial_recommended, MEDIA_LIST_TIMEOUT)
 

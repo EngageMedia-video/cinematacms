@@ -86,6 +86,34 @@ class IndexRevampInitialDataTest(TestCase):
         self.assertIsInstance(parsed, dict)
         self.assertIsInstance(parsed["results"], list)
 
+    def test_featured_payload_uses_slim_home_media_shape(self):
+        item = self._featured_results()[0]
+
+        self.assertIn("title", item)
+        self.assertIn("summary", item)
+        self.assertIn("thumbnail_url", item)
+        self.assertIn("author_profile", item)
+        self.assertNotIn("author_thumbnail", item)
+        self.assertNotIn("likes", item)
+        self.assertNotIn("reported_times", item)
+        self.assertNotIn("size", item)
+
+    def test_recommended_payload_uses_slim_home_media_shape(self):
+        response = self._get_revamp_response()
+        content = response.content.decode()
+        parsed = extract_json_script_payload(content, "home-initial-data-recommended")
+        if not parsed["results"]:
+            self.skipTest("Recommended payload is empty for this fixture")
+        item = parsed["results"][0]
+
+        self.assertIn("title", item)
+        self.assertIn("thumbnail_url", item)
+        self.assertIn("categories_info", item)
+        self.assertNotIn("author_thumbnail", item)
+        self.assertNotIn("likes", item)
+        self.assertNotIn("reported_times", item)
+        self.assertNotIn("size", item)
+
     def test_first_featured_item_includes_hero_playback(self):
         hero = create_test_media(
             self.user,
