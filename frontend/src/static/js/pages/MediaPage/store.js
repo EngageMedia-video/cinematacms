@@ -13,6 +13,28 @@ import UrlParse from 'url-parse';
 
 import PageStore from '../_PageStore.js';
 
+function mediaTokenFromPlaylistItem(item) {
+	if (!item) {
+		return null;
+	}
+
+	if (item.friendly_token) {
+		return item.friendly_token;
+	}
+
+	if ('string' !== typeof item.url) {
+		return null;
+	}
+
+	try {
+		const url = new URL(item.url, window.location.origin);
+		return url.searchParams.get('m');
+	} catch {
+		const arr = item.url.split('m=');
+		return 2 === arr.length ? arr[1].split('&')[0] : null;
+	}
+}
+
 function extractPlaylistId() {
 	let playlistId = null;
 
@@ -430,9 +452,13 @@ class MediaPageStore extends EventEmitter {
 			// visitors see the correct counter and cannot re-submit actions.
 			if (response.data.user_has_liked) {
 				MediaPageStoreData[this.id].likedMedia = true;
+			} else {
+				MediaPageStoreData[this.id].likedMedia = false;
 			}
 			if (response.data.user_has_disliked) {
 				MediaPageStoreData[this.id].dislikedMedia = true;
+			} else {
+				MediaPageStoreData[this.id].dislikedMedia = false;
 			}
 
 			switch (this.get('media-type')) {
@@ -486,63 +512,69 @@ class MediaPageStore extends EventEmitter {
 	playlistsResponse(response) {
 		if (response && response.data) {
 			let tmp_playlists = response.data.count ? response.data.results : [];
+			let userPlaylists = tmp_playlists.filter(
+				(playlist) => playlist.user === this.mediacms_config.member.username
+			);
 
 			MediaPageStoreData[this.id].playlists = [];
 
 			let i = 0;
 			let cntr = 0;
 
-			while (i < tmp_playlists.length) {
+			if (!userPlaylists.length) {
+				this.emit('playlists_load');
+				return;
+			}
+
+			while (i < userPlaylists.length) {
 				(function (pos) {
 					let _this = this;
+					let playlist = userPlaylists[pos];
 
-					if (tmp_playlists[pos].user === this.mediacms_config.member.username) {
-						let playlistsIndex = MediaPageStoreData[_this.id].playlists.length;
+					let playlistsIndex = MediaPageStoreData[_this.id].playlists.length;
 
-						MediaPageStoreData[_this.id].playlists[playlistsIndex] = {
-							playlist_id: (function (_url_) {
-								let ret = _url_.split('/');
-								return 1 < ret.length ? ret[ret.length - 1] : null;
-							})(tmp_playlists[pos].url),
-							title: tmp_playlists[pos].title,
-							description: tmp_playlists[pos].description,
-							// url: tmp_playlists[pos].url,
-							// api_url: tmp_playlists[pos].api_url,
-							add_date: tmp_playlists[pos].add_date,
-							// media_count: tmp_playlists[pos].media_count,
-						};
+					MediaPageStoreData[_this.id].playlists[playlistsIndex] = {
+						playlist_id: (function (_url_) {
+							let ret = _url_.split('/');
+							return 1 < ret.length ? ret[ret.length - 1] : null;
+						})(playlist.url),
+						title: playlist.title,
+						description: playlist.description,
+						// url: playlist.url,
+						// api_url: playlist.api_url,
+						add_date: playlist.add_date,
+						media_list: [],
+						// media_count: playlist.media_count,
+					};
 
-						getRequest(
-							this.mediacms_config.site.url + '/' + tmp_playlists[pos].api_url.replace(/^\//g, ''),
-							!1,
-							function (resp) {
-								if (!!resp && !!resp.data) {
-									MediaPageStoreData[_this.id].playlists[playlistsIndex].media_list = [];
+					getRequest(
+						this.mediacms_config.site.url + '/' + playlist.api_url.replace(/^\//g, ''),
+						!1,
+						function (resp) {
+							if (!!resp && !!resp.data) {
+								let f = 0;
+								let mediaToken;
 
-									let f = 0;
-									let arr;
-
-									while (f < resp.data.playlist_media.length) {
-										arr = resp.data.playlist_media[f].url.split('m=');
-										if (2 === arr.length) {
-											MediaPageStoreData[_this.id].playlists[playlistsIndex].media_list.push(
-												arr[1]
-											);
-										}
-										f += 1;
+								while (f < resp.data.playlist_media.length) {
+									mediaToken = mediaTokenFromPlaylistItem(resp.data.playlist_media[f]);
+									if (mediaToken) {
+										MediaPageStoreData[_this.id].playlists[playlistsIndex].media_list.push(
+											mediaToken
+										);
 									}
-								} else {
-									// @todo: ......
+									f += 1;
 								}
-
-								cntr += 1;
-
-								if (cntr === tmp_playlists.length) {
-									this.emit('playlists_load');
-								}
+							} else {
+								// @todo: ......
 							}
-						);
-					}
+
+							cntr += 1;
+
+							if (cntr === userPlaylists.length) {
+								_this.emit('playlists_load');
+							}
+						}
+					);
 				}).bind(this)(i);
 
 				i += 1;
@@ -600,6 +632,55 @@ class MediaPageStore extends EventEmitter {
 				}
 
 				this.emit('liked_media');
+			} else {
+				// @todo: ......
+			}
+		} else {
+			// @todo: ......
+		}
+	}
+
+	requestMediaUnlike() {
+		if (!MediaPageStoreData[this.id].mediaId) {
+			console.warn('Invalid media id:', MediaPageStoreData[this.id].mediaId);
+			return false;
+		}
+
+		const url = this.mediacms_config.api.media + '/' + MediaPageStoreData[this.id].mediaId + '/actions';
+
+		this.unlikeActionResponse = this.unlikeActionResponse.bind(this);
+
+		deleteRequest(
+			url,
+			{
+				data: {
+					type: 'like',
+				},
+				headers: {
+					'X-CSRFToken': getCSRFToken(),
+				},
+			},
+			false,
+			this.unlikeActionResponse,
+			function () {
+				this.emit('liked_media_failed_request');
+			}.bind(this)
+		);
+	}
+
+	unlikeActionResponse(response) {
+		if (response) {
+			if (response instanceof Error) {
+				// console.error( response );
+			} else if (response.data) {
+				MediaPageStoreData[this.id].likedMedia = false;
+				MediaPageStoreData[this.id].likedInSession = false;
+
+				if (void 0 !== response.data.likes && MediaPageStoreData[this.id].data) {
+					MediaPageStoreData[this.id].data.likes = response.data.likes;
+				}
+
+				this.emit('unliked_media');
 			} else {
 				// @todo: ......
 			}
@@ -1038,13 +1119,9 @@ class MediaPageStore extends EventEmitter {
 
 				break;
 			case 'UNLIKE_MEDIA':
-				/*if( MediaPageStoreData[this.id].likedMedia ){
-                    MediaPageStoreData[this.id].likedMedia = false;
-                    this.emit("unliked_media");
-                }*/
-				// if( ! MediaPageStoreData[this.id].likedMedia ){
-				//     this.likeActionResponse();
-				// }
+				if (MediaPageStoreData[this.id].likedMedia) {
+					this.requestMediaUnlike();
+				}
 				break;
 			case 'LIKE_MEDIA':
 				if (!MediaPageStoreData[this.id].likedMedia && !MediaPageStoreData[this.id].dislikedMedia) {

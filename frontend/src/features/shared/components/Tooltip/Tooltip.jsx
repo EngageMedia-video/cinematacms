@@ -68,7 +68,6 @@ export function Tooltip({
 		<span
 			ref={wrapperRef}
 			className={cn('relative inline-flex max-w-full', className)}
-			data-tooltip
 			onMouseEnter={trigger === 'hover' ? () => setOpen(true) : undefined}
 			onMouseLeave={trigger === 'hover' ? () => setOpen(false) : undefined}
 			onFocus={trigger === 'hover' ? () => setOpen(true) : undefined}
@@ -99,7 +98,7 @@ export function Tooltip({
 					id={tooltipId}
 					role="tooltip"
 					className={cn(
-						'body-body-14-regular absolute z-20 w-[250px] rounded-[8px] border border-cinemata-neutral-300 bg-cinemata-white px-3 py-1.5 leading-[1.2] text-text-strong dark:border-cinemata-pacific-deep-800 dark:bg-cinemata-pacific-deep-900',
+						'body-body-14-regular absolute z-20 w-[250px] rounded-[8px] border border-border-subtle bg-bg-surface-raised px-3 py-1.5 leading-[1.2] text-text-strong',
 						PLACEMENT_CLASSES[resolvedPlacement],
 						contentClassName
 					)}

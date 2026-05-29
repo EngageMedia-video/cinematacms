@@ -39,7 +39,7 @@ export function CheckboxButton({
 
 			<span
 				className={cn(
-					'inline-flex shrink-0 items-center justify-center bg-bg-control text-transparent transition-colors duration-200 peer-checked:bg-cinemata-sunset-horizon-400p peer-checked:text-text-inverse peer-checked:[&_.svg-icon]:opacity-100 peer-focus-visible:ring-2 peer-focus-visible:ring-ring-focus peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-cinemata-white dark:peer-focus-visible:ring-offset-cinemata-pacific-deep-900'
+					'inline-flex shrink-0 items-center justify-center bg-border-subtle text-transparent transition-colors duration-200 peer-checked:bg-bg-secondary peer-checked:text-text-inverse peer-checked:[&_.svg-icon]:opacity-100 peer-focus-visible:ring-2 peer-focus-visible:ring-ring-focus peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-bg-surface'
 				)}
 				style={{ width: 18, height: 18 }}
 				aria-hidden="true"
