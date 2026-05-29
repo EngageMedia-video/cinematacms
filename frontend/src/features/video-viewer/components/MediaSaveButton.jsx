@@ -10,13 +10,17 @@ import { Text } from '../../shared/components/Text/Text';
 
 function isMediaInUserPlaylist() {
 	const mediaId = MediaPageStore.get('media-id');
+	const mediaData = MediaPageStore.get('media-data');
+	const mediaIds = [mediaId, mediaData?.friendly_token].filter(Boolean);
 	const playlists = MediaPageStore.get('playlists');
 
-	if (!mediaId || !Array.isArray(playlists)) {
+	if (!mediaIds.length || !Array.isArray(playlists)) {
 		return false;
 	}
 
-	return playlists.some((playlist) => Array.isArray(playlist.media_list) && playlist.media_list.includes(mediaId));
+	return playlists.some(
+		(playlist) => Array.isArray(playlist.media_list) && playlist.media_list.some((item) => mediaIds.includes(item))
+	);
 }
 
 export function MediaSaveButton() {

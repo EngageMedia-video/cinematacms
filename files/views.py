@@ -1565,15 +1565,53 @@ class MediaActions(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+    def _handle_like_dislike_removal(self, request, media, action):
+        """Remove a user's like/dislike and return the updated count."""
+        from actions.models import MediaAction
+
+        user = request.user if request.user.is_authenticated else None
+        session_key = None
+        if not user:
+            if not request.session.session_key:
+                request.session.save()
+            session_key = request.session.session_key
+
+        if not user and not session_key:
+            return Response({"detail": "action not allowed"}, status=status.HTTP_400_BAD_REQUEST)
+
+        action_query = MediaAction.objects.filter(media=media, action=action)
+        action_query = action_query.filter(user=user) if user else action_query.filter(session_key=session_key)
+
+        deleted_count, _ = action_query.delete()
+        if deleted_count:
+            if action == "like":
+                Media.objects.filter(pk=media.pk).update(
+                    likes=Case(When(likes__gt=0, then=F("likes") - 1), default=0)
+                )
+            else:
+                Media.objects.filter(pk=media.pk).update(
+                    dislikes=Case(When(dislikes__gt=0, then=F("dislikes") - 1), default=0)
+                )
+            invalidate_media_cache(media.friendly_token)
+
+        media.refresh_from_db()
+        return Response(
+            {"detail": "action removed", "likes": media.likes, "dislikes": media.dislikes},
+            status=status.HTTP_200_OK,
+        )
+
     def delete(self, request, friendly_token, format=None):
         media = self.get_object(friendly_token)
         if isinstance(media, Response):
             return media
 
+        action = request.data.get("type")
+        if action in ("like", "dislike"):
+            return self._handle_like_dislike_removal(request, media, action)
+
         if not request.user.is_superuser:
             return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        action = request.data.get("type")
         if action:
             if action == "report":  # delete reported actions
                 MediaAction.objects.filter(media=media, action="report").delete()

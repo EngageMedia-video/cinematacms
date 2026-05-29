@@ -12,8 +12,8 @@ import { Text } from '../../../shared/components/Text/Text';
 import { TabContent, TabView } from '../../../shared/components/TabView/TabView';
 import { PlaylistCreationForm } from './PlaylistCreationForm';
 
-function PlaylistRow({ playlist, mediaId }) {
-	const isChecked = playlist.media_list.includes(mediaId);
+function PlaylistRow({ playlist, mediaId, mediaIds }) {
+	const isChecked = playlist.media_list.some((item) => mediaIds.includes(item));
 
 	function onChange() {
 		if (isChecked) {
@@ -33,6 +33,7 @@ function PlaylistRow({ playlist, mediaId }) {
 PlaylistRow.propTypes = {
 	playlist: PropTypes.object.isRequired,
 	mediaId: PropTypes.string,
+	mediaIds: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
 function snapshotPlaylists() {
@@ -46,6 +47,8 @@ function snapshotPlaylists() {
 function SaveToTab() {
 	const [playlists, setPlaylists] = useState(snapshotPlaylists);
 	const mediaId = MediaPageStore.get('media-id');
+	const mediaData = MediaPageStore.get('media-data');
+	const mediaIds = [mediaId, mediaData?.friendly_token].filter(Boolean);
 
 	useEffect(() => {
 		function syncPlaylists() {
@@ -99,7 +102,7 @@ function SaveToTab() {
 	return (
 		<div className="flex max-h-[320px] flex-col gap-size-4 overflow-y-auto pr-size-4">
 			{playlists.map((playlist) => (
-				<PlaylistRow key={playlist.playlist_id} playlist={playlist} mediaId={mediaId} />
+				<PlaylistRow key={playlist.playlist_id} playlist={playlist} mediaId={mediaId} mediaIds={mediaIds} />
 			))}
 		</div>
 	);
