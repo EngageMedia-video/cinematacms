@@ -101,6 +101,7 @@ from .query_cache import (
     get_media_detail_cache_key,
     get_media_list_cache_key,
     get_playlist_detail_cache_key,
+    get_request_cache_origin,
     invalidate_media_cache,
     set_cached_result,
 )
@@ -283,14 +284,19 @@ def _get_home_initial_data(request):
     """
     try:
         user_id = request.user.id if request.user.is_authenticated else None
+        request_origin = get_request_cache_origin(request)
 
         # --- Featured ---
-        home_featured_cache_key = get_media_list_cache_key(show="featured_home", page=1, user_id=user_id)
+        home_featured_cache_key = get_media_list_cache_key(
+            show="featured_home", page=1, user_id=user_id, origin=request_origin
+        )
         cached_home_featured = get_cached_result(home_featured_cache_key)
         if cached_home_featured is not None:
             home_initial_featured = cached_home_featured
         else:
-            featured_cache_key = get_media_list_cache_key(show="featured", page=1, user_id=user_id)
+            featured_cache_key = get_media_list_cache_key(
+                show="featured", page=1, user_id=user_id, origin=request_origin
+            )
             cached_featured = get_cached_result(featured_cache_key)
             if cached_featured is not None:
                 featured_results = list((cached_featured.get("results") or [])[:HOME_INITIAL_LIMIT])
@@ -310,7 +316,9 @@ def _get_home_initial_data(request):
 
         # --- Recommended ---
         # MediaList.get skips caching for show=recommended; this warms SSR hydration only.
-        recommended_cache_key = get_media_list_cache_key(show="recommended_home", page=1, user_id=user_id)
+        recommended_cache_key = get_media_list_cache_key(
+            show="recommended_home", page=1, user_id=user_id, origin=request_origin
+        )
         cached_recommended = get_cached_result(recommended_cache_key)
         if cached_recommended is not None:
             home_initial_recommended = cached_recommended
@@ -1220,7 +1228,12 @@ class MediaList(APIView):
             try:
                 page_num = int(page_param or "1")
                 user_id = request.user.id if request.user.is_authenticated else None
-                cache_key = get_media_list_cache_key(show=show_param or "latest", page=page_num, user_id=user_id)
+                cache_key = get_media_list_cache_key(
+                    show=show_param or "latest",
+                    page=page_num,
+                    user_id=user_id,
+                    origin=get_request_cache_origin(request),
+                )
                 cached_result = get_cached_result(cache_key)
                 if cached_result is not None:
                     if show_param == "featured" and page_num == 1:
@@ -1369,7 +1382,7 @@ class MediaDetail(APIView):
 
         # Try cache for public media only (not private/restricted)
         user_id = request.user.id if request.user.is_authenticated else None
-        cache_key = get_media_detail_cache_key(friendly_token, user_id)
+        cache_key = get_media_detail_cache_key(friendly_token, user_id, origin=get_request_cache_origin(request))
 
         # Skip cache for token-protected requests
         if not token:
@@ -1956,7 +1969,7 @@ class PlaylistDetail(APIView):
     def get(self, request, friendly_token, format=None):
         # Try cache first
         user_id = request.user.id if request.user.is_authenticated else None
-        cache_key = get_playlist_detail_cache_key(friendly_token, user_id)
+        cache_key = get_playlist_detail_cache_key(friendly_token, user_id, origin=get_request_cache_origin(request))
         cached_result = get_cached_result(cache_key)
         if cached_result is not None:
             return Response(cached_result)

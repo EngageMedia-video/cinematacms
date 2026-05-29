@@ -168,7 +168,7 @@ class IndexRevampInitialDataTest(TestCase):
         self.assertIn("hls_info", payload["results"][0]["hero_playback"])
         self.assertIn("subtitles_info", payload["results"][0]["hero_playback"])
 
-        cache_key = get_media_list_cache_key(show="featured", page=1, user_id=None)
+        cache_key = get_media_list_cache_key(show="featured", page=1, user_id=None, origin="http://localhost")
         cached_payload = get_cached_result(cache_key)
         self.assertIsNotNone(cached_payload)
         self.assertNotIn("hero_playback", cached_payload["results"][0])

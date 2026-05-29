@@ -151,7 +151,24 @@ def _generate_cache_key(*args, **kwargs) -> str:
     return f"{CACHE_KEY_PREFIX}:{key_hash}"
 
 
-def get_media_detail_cache_key(friendly_token: str, user_id: int | None = None) -> str:
+def get_request_cache_origin(request) -> str:
+    """
+    Return the request origin used by serializers when building absolute URLs.
+
+    Cached API payloads contain request-bound absolute URLs. Including this
+    origin in the cache key prevents responses warmed through one host, such as
+    a direct IP address, from being served to another host.
+    """
+    return request.build_absolute_uri("/").rstrip("/").lower()
+
+
+def _origin_cache_part(origin: str | None) -> str:
+    if not origin:
+        return "default"
+    return hashlib.md5(origin.encode("utf-8")).hexdigest()[:12]
+
+
+def get_media_detail_cache_key(friendly_token: str, user_id: int | None = None, origin: str | None = None) -> str:
     """
     Generate cache key for media detail endpoint with versioning.
 
@@ -167,10 +184,11 @@ def get_media_detail_cache_key(friendly_token: str, user_id: int | None = None) 
     """
     user_part = user_id if user_id else "anon"
     version = _get_cache_version("media", friendly_token)
-    return f"{CACHE_KEY_PREFIX}:media_detail:{friendly_token}:{user_part}:v{version}"
+    origin_part = _origin_cache_part(origin)
+    return f"{CACHE_KEY_PREFIX}:media_detail:{friendly_token}:{user_part}:{origin_part}:v{version}"
 
 
-def get_playlist_detail_cache_key(friendly_token: str, user_id: int | None = None) -> str:
+def get_playlist_detail_cache_key(friendly_token: str, user_id: int | None = None, origin: str | None = None) -> str:
     """
     Generate cache key for playlist detail endpoint with versioning.
 
@@ -183,11 +201,17 @@ def get_playlist_detail_cache_key(friendly_token: str, user_id: int | None = Non
     """
     user_part = user_id if user_id else "anon"
     version = _get_cache_version("playlist", friendly_token)
-    return f"{CACHE_KEY_PREFIX}:playlist_detail:{friendly_token}:{user_part}:v{version}"
+    origin_part = _origin_cache_part(origin)
+    return f"{CACHE_KEY_PREFIX}:playlist_detail:{friendly_token}:{user_part}:{origin_part}:v{version}"
 
 
 def get_media_list_cache_key(
-    show: str = "latest", category: str | None = None, tag: str | None = None, page: int = 1, user_id: int | None = None
+    show: str = "latest",
+    category: str | None = None,
+    tag: str | None = None,
+    page: int = 1,
+    user_id: int | None = None,
+    origin: str | None = None,
 ) -> str:
     """
     Generate cache key for media list endpoint with versioning.
@@ -212,6 +236,7 @@ def get_media_list_cache_key(
         tag or "all",
         str(page),
         str(user_id) if user_id else "anon",
+        _origin_cache_part(origin),
         f"v{version}",
     ]
     return ":".join(parts)
