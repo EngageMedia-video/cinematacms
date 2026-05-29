@@ -23,8 +23,6 @@ class PlaylistViewStore extends EventEmitter {
 
 	get(type) {
 		switch (type) {
-			case 'logged-in-user-playlist':
-				return false; // TODO: Continue here!
 			case 'enabled-loop':
 				if (null === this.data.playlistId) {
 					this.data.playlistId = MediaPageStore.get('playlist-id');
