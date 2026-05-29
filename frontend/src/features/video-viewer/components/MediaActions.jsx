@@ -20,14 +20,16 @@ function MediaViewsChip({ displayViews, views }) {
 		return null;
 	}
 
+	const viewLabel = 1 >= views ? 'view' : 'views';
+
 	return (
-		<div className="read-only pr-2 sm:px-4 shrink-0 whitespace-nowrap" aria-label={`${views} views`}>
+		<div className="read-only pr-2 sm:px-4 shrink-0 whitespace-nowrap" aria-label={`${views} ${viewLabel}`}>
 			<Text
 				as="span"
 				variant="body-14-medium"
 				className="text-cinemata-neutral-900 dark:text-cinemata-strait-blue-100 whitespace-nowrap"
 			>
-				{formatNumber(views, true)} {1 >= views ? 'view' : 'views'}
+				{formatNumber(views, true)} {viewLabel}
 			</Text>
 		</div>
 	);
