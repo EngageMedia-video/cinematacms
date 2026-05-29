@@ -30,12 +30,7 @@ export default class ViewerInfo extends React.PureComponent {
 
 	renderTitleBanner({ allowDownload, categories, title, views }) {
 		return (
-			<ViewerInfoTitleBanner
-				title={title}
-				views={views}
-				categories={categories}
-				allowDownload={allowDownload}
-			/>
+			<ViewerInfoTitleBanner title={title} views={views} categories={categories} allowDownload={allowDownload} />
 		);
 	}
 

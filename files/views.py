@@ -1585,9 +1585,7 @@ class MediaActions(APIView):
         deleted_count, _ = action_query.delete()
         if deleted_count:
             if action == "like":
-                Media.objects.filter(pk=media.pk).update(
-                    likes=Case(When(likes__gt=0, then=F("likes") - 1), default=0)
-                )
+                Media.objects.filter(pk=media.pk).update(likes=Case(When(likes__gt=0, then=F("likes") - 1), default=0))
             else:
                 Media.objects.filter(pk=media.pk).update(
                     dislikes=Case(When(dislikes__gt=0, then=F("dislikes") - 1), default=0)
