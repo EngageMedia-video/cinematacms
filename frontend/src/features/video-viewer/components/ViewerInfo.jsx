@@ -28,6 +28,17 @@ export default class ViewerInfo extends React.PureComponent {
 		MediaPageStore.removeListener('loaded_media_data', this.onVideoLoad);
 	}
 
+	renderTitleBanner({ allowDownload, categories, title, views }) {
+		return (
+			<ViewerInfoTitleBanner
+				title={title}
+				views={views}
+				categories={categories}
+				allowDownload={allowDownload}
+			/>
+		);
+	}
+
 	render() {
 		let views, categories, title, author, published, description, yearProduced;
 		let allowDownload = false;
@@ -61,12 +72,7 @@ export default class ViewerInfo extends React.PureComponent {
 		return !this.state.videoLoaded ? null : (
 			<div className="viewer-info">
 				<div className="viewer-info-inner">
-					<ViewerInfoTitleBanner
-						title={title}
-						views={views}
-						categories={categories}
-						allowDownload={allowDownload}
-					/>
+					{this.renderTitleBanner({ allowDownload, categories, published, title, views })}
 
 					<ViewerInfoContent
 						author={author}
