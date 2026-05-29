@@ -96,7 +96,7 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 					{String(mediaState).toUpperCase()}
 				</Badge>
 
-				<Tooltip content={stateTooltip} onOpenChange={() => {}} placement="right" trigger="hover">
+				<Tooltip content={stateTooltip} placement="right" trigger="hover">
 					<Button
 						variant="icon"
 						aria-label="Open tooltip"

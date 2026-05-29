@@ -68,7 +68,7 @@ export function UserRoleBadge({ isManager, isTrusted }) {
 				{badge.label}
 			</Badge>
 
-			<Tooltip content={badge.tooltip} onOpenChange={() => {}} placement={tooltipPlacement} trigger="hover">
+			<Tooltip content={badge.tooltip} placement={tooltipPlacement} trigger="hover">
 				<Button
 					variant="icon"
 					aria-label="Open tooltip"
