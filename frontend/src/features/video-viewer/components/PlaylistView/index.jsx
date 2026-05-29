@@ -42,6 +42,12 @@ export default class PlaylistView extends React.PureComponent {
 		PlaylistViewStore.on('saved-updated', this.onPlaylistSaveUpdate);
 	}
 
+	componentWillUnmount() {
+		PlaylistViewStore.removeListener('loop-repeat-updated', this.onLoopRepeatUpdate);
+		PlaylistViewStore.removeListener('shuffle-updated', this.onShuffleUpdate);
+		PlaylistViewStore.removeListener('saved-updated', this.onPlaylistSaveUpdate);
+	}
+
 	onHeaderClick(ev) {
 		this.setState({ expanded: !this.state.expanded });
 	}
