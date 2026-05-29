@@ -5,8 +5,7 @@ export const VARIANT_CLASSES = {
 	secondary:
 		'border border-brand-secondary-border bg-brand-secondary text-btn-secondary-text hover:bg-brand-secondary-hover',
 	tertiary: 'border-0 bg-bg-primary text-text-on-primary hover:bg-bg-primary-hover',
-	special:
-		'border border-transparent bg-bg-overlay-dark text-text-on-chrome hover:bg-bg-chrome-hover',
+	special: 'border border-transparent bg-bg-overlay-dark text-text-on-chrome hover:bg-bg-chrome-hover',
 	'primary-outline':
 		'border border-brand-primary bg-transparent text-brand-primary hover:bg-brand-primary hover:text-btn-text',
 	'secondary-outline':

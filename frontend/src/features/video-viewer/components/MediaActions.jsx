@@ -24,11 +24,7 @@ function MediaViewsChip({ displayViews, views }) {
 
 	return (
 		<div className="read-only pr-2 sm:px-4 shrink-0 whitespace-nowrap" aria-label={`${views} ${viewLabel}`}>
-			<Text
-				as="span"
-				variant="body-14-medium"
-				className="whitespace-nowrap text-text-strong"
-			>
+			<Text as="span" variant="body-14-medium" className="whitespace-nowrap text-text-strong">
 				{formatNumber(views, true)} {viewLabel}
 			</Text>
 		</div>

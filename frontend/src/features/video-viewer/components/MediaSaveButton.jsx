@@ -27,9 +27,7 @@ export function MediaSaveButton() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [savedToPlaylist, setSavedToPlaylist] = useState(isMediaInUserPlaylist);
 
-	const saveIconClassName = savedToPlaylist
-		? 'text-text-accent'
-		: 'text-current';
+	const saveIconClassName = savedToPlaylist ? 'text-text-accent' : 'text-current';
 
 	useEffect(() => {
 		function syncSavedState() {
@@ -73,11 +71,7 @@ export function MediaSaveButton() {
 						className="body-body-14-medium whitespace-nowrap"
 						size="sm"
 					>
-						<Text
-							as="span"
-							variant="body-14-medium"
-							className="whitespace-nowrap text-current"
-						>
+						<Text as="span" variant="body-14-medium" className="whitespace-nowrap text-current">
 							Save To Playlist
 						</Text>
 					</Button>

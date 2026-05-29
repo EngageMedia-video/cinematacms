@@ -58,11 +58,7 @@ export function MediaShareButton({ isVideo }) {
 						className="body-body-14-medium whitespace-nowrap"
 						size="sm"
 					>
-						<Text
-							as="span"
-							variant="body-14-medium"
-							className="whitespace-nowrap text-current"
-						>
+						<Text as="span" variant="body-14-medium" className="whitespace-nowrap text-current">
 							Share
 						</Text>
 					</Button>

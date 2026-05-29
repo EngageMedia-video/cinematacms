@@ -1,13 +1,7 @@
 import { cn } from '../../utils/classNames';
 import { resolveColor } from '../../utils/resolveColor';
 
-export function Badge({
-	children = 'Featured',
-	className = '',
-	color = 'bg/surface-inverse',
-	style,
-	...props
-}) {
+export function Badge({ children = 'Featured', className = '', color = 'bg/surface-inverse', style, ...props }) {
 	return (
 		<span
 			{...props}

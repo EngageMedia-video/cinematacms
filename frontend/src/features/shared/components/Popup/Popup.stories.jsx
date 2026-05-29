@@ -40,11 +40,7 @@ function PopupExample({ className = '', style = null }) {
 					icon={<Icon name="downloadMedia" className="text-current" />}
 					size="sm"
 				>
-					<Text
-						as="span"
-						variant="body-14-medium"
-						className="text-current"
-					>
+					<Text as="span" variant="body-14-medium" className="text-current">
 						Download
 					</Text>
 					<Icon name="caretDown" className="ml-2 h-4 w-4" />

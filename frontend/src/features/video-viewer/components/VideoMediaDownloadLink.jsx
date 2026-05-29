@@ -99,11 +99,7 @@ export function VideoMediaDownloadLink({
 							className="body-body-14-medium whitespace-nowrap"
 							size="sm"
 						>
-							<Text
-								as="span"
-								variant="body-14-medium"
-								className="whitespace-nowrap text-current"
-							>
+							<Text as="span" variant="body-14-medium" className="whitespace-nowrap text-current">
 								Download
 							</Text>
 							<Icon name="caretDown" className="ml-2 w-4 h-4" />
