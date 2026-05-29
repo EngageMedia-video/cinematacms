@@ -68,7 +68,7 @@ export function VideoMediaDownloadLink({
 	triggerRef,
 }) {
 	const site = useContext(SiteContext);
-	const [internalContentRef] = usePopup();
+	const internalContentRef = usePopup();
 	const popupContentRef = externalContentRef || internalContentRef;
 	const downloadOptions = downloadOptionsList(site.url);
 

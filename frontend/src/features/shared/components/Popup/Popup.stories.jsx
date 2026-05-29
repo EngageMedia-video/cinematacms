@@ -29,7 +29,7 @@ function PopupMenu() {
 }
 
 function PopupExample({ className = '', style = null }) {
-	const [contentRef] = usePopup();
+	const contentRef = usePopup();
 
 	return (
 		<div className="relative flex min-h-[280px] items-start justify-center bg-bg-page p-10">
@@ -127,7 +127,7 @@ export const Default = {
 
 export const WithHeader = {
 	render: (args) => {
-		const [contentRef] = usePopup();
+		const contentRef = usePopup();
 
 		return (
 			<div className="relative flex min-h-[320px] items-start justify-center bg-bg-page p-10">

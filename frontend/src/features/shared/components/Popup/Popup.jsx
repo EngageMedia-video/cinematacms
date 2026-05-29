@@ -214,5 +214,5 @@ PopupTrigger.propTypes = {
 export function usePopup() {
 	const popupContentRef = useRef(null);
 
-	return [popupContentRef, PopupContent, PopupTrigger];
+	return popupContentRef;
 }
