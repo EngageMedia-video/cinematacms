@@ -173,7 +173,7 @@ export default function ViewerInfoContent(props) {
 			searchParameters.set('t', s);
 
 			const wrapped =
-				'<a className="text-text-accent" href="' +
+				'<a class="text-text-accent" href="' +
 				MediaPageStore.get('media-url').split('?')[0] +
 				'?' +
 				searchParameters +
