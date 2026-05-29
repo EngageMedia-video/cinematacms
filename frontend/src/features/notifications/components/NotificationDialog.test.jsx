@@ -20,6 +20,7 @@ describe('NotificationDialog', () => {
 		render(<NotificationDialog onMarkAllAsRead={() => {}} unreadCount={0} />);
 
 		expect(screen.getByRole('button', { name: 'Mark all as read' })).toBeDisabled();
+		expect(screen.queryByText('0')).toBeNull();
 	});
 
 	it('renders the empty state when no notification items are provided', () => {

@@ -67,7 +67,7 @@ function arePrefsEqual(a, b) {
 
 function ComingSoonPill() {
 	return (
-		<span className="rounded-[4px] bg-cinemata-strait-blue-900 px-[6px] py-[2px] text-[11px] font-medium leading-[14px] tracking-normal text-cinemata-pacific-deep-300">
+		<span className="rounded-[4px] bg-bg-surface-muted px-[6px] py-[2px] text-[11px] font-medium leading-[14px] tracking-normal text-text-muted dark:bg-cinemata-strait-blue-900 dark:text-cinemata-pacific-deep-300">
 			Coming soon
 		</span>
 	);
@@ -93,12 +93,16 @@ export function NotificationPreferencesForm() {
 	const isDirty = useMemo(() => isDirtyState(draft, data), [draft, data]);
 
 	if (isLoading) {
-		return <p className="px-4 py-8 text-center text-[14px] leading-5 text-cinemata-pacific-deep-400">Loading…</p>;
+		return (
+			<p className="px-4 py-8 text-center text-[14px] leading-5 text-text-muted dark:text-cinemata-pacific-deep-400">
+				Loading…
+			</p>
+		);
 	}
 
 	if (isError) {
 		return (
-			<p className="px-4 py-8 text-center text-[14px] leading-5 text-cinemata-pacific-deep-400">
+			<p className="px-4 py-8 text-center text-[14px] leading-5 text-text-muted dark:text-cinemata-pacific-deep-400">
 				Failed to load preferences: {error?.message ?? 'unknown error'}
 			</p>
 		);
@@ -176,10 +180,10 @@ export function NotificationPreferencesForm() {
 	return (
 		<form onSubmit={handleSave} className="flex flex-col gap-[26px]">
 			<div className="flex flex-col gap-[8px]">
-				<h2 className="m-0 font-heading text-[20px] font-medium leading-[24px] tracking-normal text-cinemata-strait-blue-50">
+				<h2 className="m-0 font-heading text-[20px] font-medium leading-[24px] tracking-normal text-text-strong dark:text-cinemata-strait-blue-50">
 					Notification Preference
 				</h2>
-				<p className="m-0 text-[14px] font-normal leading-[20px] tracking-normal text-cinemata-pacific-deep-400">
+				<p className="m-0 text-[14px] font-normal leading-[20px] tracking-normal text-text-muted dark:text-cinemata-pacific-deep-400">
 					Choose how and when you&apos;d like to be notified about activity on your films, account security,
 					and discussions, so you stay informed without unnecessary noise.
 				</p>
@@ -193,9 +197,14 @@ export function NotificationPreferencesForm() {
 
 				return (
 					<React.Fragment key={category.id}>
-						{idx > 0 && <div className="h-px bg-cinemata-strait-blue-900" aria-hidden="true" />}
+						{idx > 0 && (
+							<div
+								className="h-px bg-border-subtle dark:bg-cinemata-strait-blue-900"
+								aria-hidden="true"
+							/>
+						)}
 						<fieldset className="m-0 flex flex-col gap-[8px] border-0 p-0">
-							<legend className="mb-0 p-0 text-[16px] font-normal leading-[24px] tracking-normal text-cinemata-pacific-deep-50">
+							<legend className="mb-0 p-0 text-[16px] font-normal leading-[24px] tracking-normal text-text-strong dark:text-cinemata-pacific-deep-50">
 								{category.title}
 							</legend>
 							{category.items.map((item) => {
@@ -206,7 +215,7 @@ export function NotificationPreferencesForm() {
 										key={item.label}
 										className="flex min-h-[24px] items-center justify-between gap-3 pb-[1.3px] pt-[2.5px]"
 									>
-										<span className="text-[14px] font-normal leading-[20px] tracking-normal text-cinemata-pacific-deep-400">
+										<span className="text-[14px] font-normal leading-[20px] tracking-normal text-text-secondary dark:text-cinemata-pacific-deep-400">
 											{item.label}
 										</span>
 										{isActive ? (
@@ -224,7 +233,7 @@ export function NotificationPreferencesForm() {
 								);
 							})}
 							<div className="flex min-h-[24px] items-center justify-between gap-3 pb-[1.3px] pt-[2.5px]">
-								<span className="text-[14px] font-normal leading-[20px] tracking-normal text-cinemata-pacific-deep-400">
+								<span className="text-[14px] font-normal leading-[20px] tracking-normal text-text-secondary dark:text-cinemata-pacific-deep-400">
 									Push notification
 								</span>
 								{isCategoryInteractive ? (
@@ -240,7 +249,7 @@ export function NotificationPreferencesForm() {
 								)}
 							</div>
 							<div className="flex min-h-[24px] items-center justify-between gap-3 pb-[1.3px] pt-[2.5px]">
-								<span className="text-[14px] font-normal leading-[20px] tracking-normal text-cinemata-pacific-deep-400">
+								<span className="text-[14px] font-normal leading-[20px] tracking-normal text-text-secondary dark:text-cinemata-pacific-deep-400">
 									Email Notification
 								</span>
 								{isCategoryInteractive ? (
@@ -266,7 +275,9 @@ export function NotificationPreferencesForm() {
 				{isSaveError && (
 					<span className="mr-auto text-xs text-text-danger">{saveError?.message ?? 'Save failed'}</span>
 				)}
-				{isSuccess && !isDirty && <span className="mr-auto text-xs text-cinemata-pacific-deep-400">Saved</span>}
+				{isSuccess && !isDirty && (
+					<span className="mr-auto text-xs text-text-muted dark:text-cinemata-pacific-deep-400">Saved</span>
+				)}
 				<button
 					type="button"
 					onClick={handleReset}

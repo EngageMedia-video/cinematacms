@@ -37,9 +37,11 @@ export function NotificationDialog({
 					<span className="font-heading text-[16px] font-medium leading-5 text-cinemata-strait-blue-50">
 						{title}
 					</span>
-					<span className="font-heading text-[16px] font-medium leading-5 text-cinemata-red-500">
-						{unreadCount > 99 ? '99+' : unreadCount}
-					</span>
+					{unreadCount > 0 ? (
+						<span className="font-heading text-[16px] font-medium leading-5 text-cinemata-red-500">
+							{unreadCount > 99 ? '99+' : unreadCount}
+						</span>
+					) : null}
 				</div>
 				<button
 					type="button"
@@ -78,25 +80,6 @@ export function NotificationDialog({
 					{seeAllLabel}
 				</a>
 			</div>
-
-			<style>{`
-				.notif-scrollbar {
-					scrollbar-color: var(--cinemata-strait-blue-200) transparent;
-					scrollbar-width: thin;
-				}
-				.notif-scrollbar::-webkit-scrollbar {
-					width: 6px;
-				}
-				.notif-scrollbar::-webkit-scrollbar-track {
-					background: transparent;
-				}
-				.notif-scrollbar::-webkit-scrollbar-thumb {
-					border: 2px solid transparent;
-					border-radius: 999px;
-					background-color: var(--cinemata-strait-blue-200);
-					background-clip: content-box;
-				}
-			`}</style>
 		</div>
 	);
 }

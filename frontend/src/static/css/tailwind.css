@@ -755,6 +755,26 @@ header[data-topbar] button:not(:disabled) {
 	.global-search-input:focus {
 		border-color: var(--border-chrome, var(--color-border-chrome)) !important;
 	}
+
+	.notif-scrollbar {
+		scrollbar-color: var(--cinemata-strait-blue-200) transparent;
+		scrollbar-width: thin;
+	}
+
+	.notif-scrollbar::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.notif-scrollbar::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.notif-scrollbar::-webkit-scrollbar-thumb {
+		border: 2px solid transparent;
+		border-radius: 999px;
+		background-color: var(--cinemata-strait-blue-200);
+		background-clip: content-box;
+	}
 }
 
 header[data-topbar] button:focus-visible,
