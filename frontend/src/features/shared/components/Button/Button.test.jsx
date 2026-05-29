@@ -106,7 +106,7 @@ describe('Button', () => {
 
 	it('allows overriding text color via className', () => {
 		render(
-			<Button variant="text" className="text-cinemata-red-500">
+			<Button variant="text" className="text-text-danger">
 				Delete item
 			</Button>
 		);
@@ -152,7 +152,7 @@ describe('Button', () => {
 
 	it('allows overriding background color via className', () => {
 		render(
-			<Button variant="primary" className="bg-cinemata-red-500">
+			<Button variant="primary" className="bg-bg-danger">
 				Custom BG
 			</Button>
 		);

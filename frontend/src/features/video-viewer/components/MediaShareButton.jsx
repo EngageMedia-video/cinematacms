@@ -43,8 +43,8 @@ export function MediaShareButton({ isVideo }) {
 					<Button
 						aria-label="Share"
 						variant="secondary"
-						icon={<Icon name="shareMedia" className="text-cinemata-strait-blue-100" />}
-						className="dark:bg-cinemata-strait-blue-900 body-body-14-medium whitespace-nowrap p-size-8"
+						icon={<Icon name="shareMedia" className="text-current" />}
+						className="body-body-14-medium whitespace-nowrap p-size-8"
 						size="sm"
 					/>
 				</DialogTrigger>
@@ -54,14 +54,14 @@ export function MediaShareButton({ isVideo }) {
 					<Button
 						aria-label="Share"
 						variant="secondary"
-						icon={<Icon name="shareMedia" className="text-cinemata-strait-blue-100" />}
-						className="dark:bg-cinemata-strait-blue-900 body-body-14-medium whitespace-nowrap"
+						icon={<Icon name="shareMedia" className="text-current" />}
+						className="body-body-14-medium whitespace-nowrap"
 						size="sm"
 					>
 						<Text
 							as="span"
 							variant="body-14-medium"
-							className="text-neutral-50 dark:text-cinemata-strait-blue-100 whitespace-nowrap"
+							className="whitespace-nowrap text-current"
 						>
 							Share
 						</Text>

@@ -235,15 +235,15 @@ Component-scoped legacy semantic groups also exist (search, comments, playlists,
 
 | Family | Tokens | Use |
 |---|---|---|
-| `bg/page`, `bg/surface`, `bg/surface-raised`, `bg/surface-muted`, `bg/surface-inverse` | 5 | Themed page and card surfaces — invert per theme. |
+| `bg/page`, `bg/surface`, `bg/surface-raised`, `bg/surface-muted`, `bg/surface-hover`, `bg/surface-inverse` | 6 | Themed page, card, and list/menu hover surfaces — invert per theme. |
 | `bg/overlay-dark`, `bg/chrome`, `bg/chrome-hover` | 3 | Always-dark UI chrome — topbar, search overlays, mobile dialogs. Do not invert. |
 | `bg/skeleton`, `bg/control` | 2 | Loading skeletons and standard small control surfaces, including radio backgrounds. |
 | `bg/primary`, `bg/primary-hover`, `bg/secondary`, `bg/secondary-hover` | 4 | Action surfaces. `primary` is strait-blue; `secondary` is sunset-horizon (the brand action color) and is what `bg-brand-primary` now routes through. |
-| `bg/danger`, `bg/success`, `bg/warning` | 3 | Semantic feedback. Constant in both themes. |
+| `bg/danger`, `bg/danger-strong`, `bg/danger-strong-hover`, `bg/success`, `bg/warning` | 5 | Semantic feedback. Strong danger tokens cover active destructive/toggled-danger surfaces. |
 | `text/strong`, `text/primary`, `text/secondary`, `text/muted`, `text/description`, `text/subtle`, `text/disabled` | 7 | Themed content text. |
 | `text/inverse`, `text/on-primary`, `text/on-chrome`, `text/on-chrome-muted` | 4 | Text on inverse/action/chrome surfaces. |
 | `text/link`, `text/link-hover`, `text/accent`, `text/danger`, `text/success`, `text/warning` | 6 | Inline-link and semantic text. |
-| `border/default`, `border/subtle`, `border/strong`, `border/strong-constant`, `border/chrome`, `border/input`, `border/danger` | 7 | Dividers, hairlines, input borders, and subtle checkbox fills via `bg-border-subtle`. |
+| `border/default`, `border/subtle`, `border/divider`, `border/strong`, `border/strong-constant`, `border/chrome`, `border/input`, `border/danger` | 8 | Card borders, section dividers, hairlines, input borders, and subtle checkbox fills via `bg-border-subtle`. |
 | `ring/focus` | 1 | Unified focus indicator (sunset-horizon-400p, constant). Used by every interactive control. |
 
 For the per-token light/dark lookup table, see the Storybook `Introduction > Colors` page (`frontend/src/storybook/Colors.mdx`).

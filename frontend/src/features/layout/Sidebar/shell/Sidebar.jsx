@@ -43,9 +43,8 @@ function SidebarSocialLink({ link, icon, label, target = '_blank', rel = 'norefe
 			title={label}
 			className={cn(
 				'inline-flex size-9 items-center justify-center rounded-full border no-underline transition-colors duration-200',
-				'border-cinemata-strait-blue-300 text-cinemata-strait-blue-400 hover:border-cinemata-strait-blue-500 hover:text-cinemata-strait-blue-600',
-				'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinemata-strait-blue-500',
-				'dark:border-cinemata-strait-blue-300/40 dark:text-cinemata-strait-blue-300 dark:hover:border-cinemata-strait-blue-300 dark:hover:text-cinemata-white'
+				'border-border-default text-text-muted hover:border-border-strong hover:text-text-strong',
+				'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring-focus'
 			)}
 		>
 			<Icon name={icon} size={18} decorative className="[&_path]:fill-current" />
@@ -113,7 +112,7 @@ export function Sidebar({ id = 'app-sidebar' }) {
 							href={item.link}
 							target={item.target || '_blank'}
 							rel={item.rel || 'noreferrer'}
-							className="body-body-12-regular hover:opacity-90 text-cinemata-pacific-deep-400 dark:text-cinemata-strait-blue-300"
+							className="body-body-12-regular text-text-muted hover:opacity-90"
 						>
 							{item.text}
 						</Link>
@@ -160,10 +159,10 @@ export function Sidebar({ id = 'app-sidebar' }) {
 			<div
 				className={cn(
 					'relative min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]',
-					'[scrollbar-width:thin] [scrollbar-color:var(--cinemata-strait-blue-200)_transparent]',
+					'[scrollbar-width:thin] [scrollbar-color:var(--border-default)_transparent]',
 					'[&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent',
 					'[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2',
-					'[&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-cinemata-strait-blue-200',
+					'[&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-border-default',
 					'[&::-webkit-scrollbar-thumb]:bg-clip-content'
 				)}
 			>

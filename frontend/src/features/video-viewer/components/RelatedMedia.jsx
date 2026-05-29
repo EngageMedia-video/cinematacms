@@ -61,7 +61,7 @@ export function RelatedMedia({ hideFirst = true }) {
 
 			{hasMoreItems ? (
 				<Button type="button" variant="text" size="sm" onClick={onShowMoreClick}>
-					<span className="text-text-accent hover:text-cinemata-sunset-horizon-700">SHOW MORE</span>
+					<span className="text-text-accent hover:text-text-link-hover">SHOW MORE</span>
 				</Button>
 			) : null}
 		</div>

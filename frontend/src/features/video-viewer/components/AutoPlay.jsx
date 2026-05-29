@@ -43,7 +43,7 @@ export function AutoPlay() {
 	const hideViews = !PageStore.get('config-media-item').displayViews;
 
 	return (
-		<div className="flex flex-col gap-size-12 pb-8 border-b border-cinemata-pacific-deep-600p">
+		<div className="flex flex-col gap-size-12 border-b border-b-border-divider pb-8">
 			<div className="flex items-center justify-between">
 				<Text as="h3" variant="body-16" className=" uppercase">
 					Up next

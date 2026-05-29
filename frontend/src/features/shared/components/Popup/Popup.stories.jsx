@@ -16,7 +16,7 @@ function PopupMenu() {
 							<a
 								href="#download"
 								role="menuitem"
-								className="body-body-14-medium block rounded-ds-4 px-size-12 py-size-10 text-text-strong no-underline transition-colors duration-150 hover:bg-cinemata-pacific-deep-50 focus:bg-cinemata-pacific-deep-50 focus:outline-none dark:hover:bg-cinemata-pacific-deep-800 dark:focus:bg-cinemata-pacific-deep-800"
+								className="body-body-14-medium block rounded-ds-4 px-size-12 py-size-10 text-text-strong no-underline transition-colors duration-150 hover:bg-bg-surface-hover focus:bg-bg-surface-hover focus:outline-none"
 							>
 								{option}
 							</a>
@@ -37,13 +37,13 @@ function PopupExample({ className = '', style = null }) {
 				<Button
 					aria-label="Download"
 					variant="secondary"
-					icon={<Icon name="downloadMedia" className="text-cinemata-strait-blue-100" />}
+					icon={<Icon name="downloadMedia" className="text-current" />}
 					size="sm"
 				>
 					<Text
 						as="span"
 						variant="body-14-medium"
-						className="text-neutral-50 dark:text-cinemata-strait-blue-100"
+						className="text-current"
 					>
 						Download
 					</Text>

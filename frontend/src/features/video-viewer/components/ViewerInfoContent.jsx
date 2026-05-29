@@ -288,7 +288,7 @@ export default function ViewerInfoContent(props) {
 										</div>
 
 										{(hasAboutText || metaFields.length) && (
-											<div className="border-b border-b-cinemata-pacific-deep-600p mt-6" />
+											<div className="mt-6 border-b border-b-border-divider" />
 										)}
 									</>
 								)}
@@ -362,7 +362,7 @@ export default function ViewerInfoContent(props) {
 										{metaFields.length > 0 && (
 											<div
 												className={cn(
-													'border-b border-b-cinemata-pacific-deep-600p mt-6',
+													'mt-6 border-b border-b-border-divider',
 													!isAboutExpanded && 'hidden lg:block'
 												)}
 											/>

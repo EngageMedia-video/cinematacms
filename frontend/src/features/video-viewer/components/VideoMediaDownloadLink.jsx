@@ -84,7 +84,7 @@ export function VideoMediaDownloadLink({
 						<Button
 							aria-label="Download"
 							variant="secondary"
-							icon={<Icon name="downloadMedia" className="text-cinemata-strait-blue-100" />}
+							icon={<Icon name="downloadMedia" className="text-current" />}
 							className="body-body-14-medium whitespace-nowrap p-size-8"
 							size="sm"
 						/>
@@ -95,14 +95,14 @@ export function VideoMediaDownloadLink({
 						<Button
 							aria-label="Download"
 							variant="secondary"
-							icon={<Icon name="downloadMedia" className="text-cinemata-strait-blue-100" />}
+							icon={<Icon name="downloadMedia" className="text-current" />}
 							className="body-body-14-medium whitespace-nowrap"
 							size="sm"
 						>
 							<Text
 								as="span"
 								variant="body-14-medium"
-								className="text-neutral-50 dark:text-cinemata-strait-blue-100 whitespace-nowrap"
+								className="whitespace-nowrap text-current"
 							>
 								Download
 							</Text>
@@ -140,7 +140,7 @@ export function VideoMediaDownloadLink({
 										role="menuitem"
 										title={option.text}
 										onClick={hidePopup}
-										className="body-body-14-medium block rounded-ds-4 px-size-12 py-size-10 text-text-strong no-underline transition-colors duration-150 hover:bg-cinemata-pacific-deep-50 focus:bg-cinemata-pacific-deep-50 focus:outline-none dark:hover:bg-cinemata-pacific-deep-800 dark:focus:bg-cinemata-pacific-deep-800"
+										className="body-body-14-medium block rounded-ds-4 px-size-12 py-size-10 text-text-strong no-underline transition-colors duration-150 hover:bg-bg-surface-hover focus:bg-bg-surface-hover focus:outline-none"
 									>
 										{option.text}
 									</a>

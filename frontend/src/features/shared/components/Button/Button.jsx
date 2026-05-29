@@ -6,13 +6,13 @@ export const VARIANT_CLASSES = {
 		'border border-brand-secondary-border bg-brand-secondary text-btn-secondary-text hover:bg-brand-secondary-hover',
 	tertiary: 'border-0 bg-bg-primary text-text-on-primary hover:bg-bg-primary-hover',
 	special:
-		'border border-transparent bg-cinemata-pacific-deep-600p text-cinemata-white hover:bg-cinemata-pacific-deep-700 dark:bg-cinemata-pacific-deep-950 dark:text-cinemata-white dark:hover:bg-cinemata-pacific-deep-900',
+		'border border-transparent bg-bg-overlay-dark text-text-on-chrome hover:bg-bg-chrome-hover',
 	'primary-outline':
 		'border border-brand-primary bg-transparent text-brand-primary hover:bg-brand-primary hover:text-btn-text',
 	'secondary-outline':
-		'border border-cinemata-strait-blue-900 bg-transparent text-cinemata-strait-blue-900 hover:bg-cinemata-strait-blue-900 hover:text-cinemata-strait-blue-100 dark:border-cinemata-strait-blue-900 dark:text-cinemata-strait-blue-100 dark:hover:bg-cinemata-strait-blue-900 dark:hover:text-cinemata-strait-blue-100',
-	text: 'border-none bg-transparent text-cinemata-strait-blue-600p hover:text-cinemata-strait-blue-800 dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-800',
-	icon: 'border-none bg-transparent text-cinemata-strait-blue-600p hover:text-cinemata-strait-blue-800 dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-800',
+		'border border-border-strong bg-transparent text-text-strong hover:bg-bg-surface-inverse hover:text-text-inverse',
+	text: 'border-none bg-transparent text-text-secondary hover:text-text-link-hover',
+	icon: 'border-none bg-transparent text-text-secondary hover:text-text-link-hover',
 };
 
 export function getVariantClasses(variant) {

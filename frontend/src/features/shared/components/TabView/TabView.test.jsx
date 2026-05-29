@@ -178,7 +178,7 @@ describe('TabView', () => {
 			<TabView
 				defaultSelectedTab="single-film-upload"
 				aria-label="Upload mode"
-				triggerColor="pacific-deep-700"
+				triggerColor="bg/chrome-hover"
 				triggerSelectedColor="#0c5273"
 			>
 				<TabContent title="Single Film Upload" content={<p>Upload one title.</p>} />
@@ -190,11 +190,11 @@ describe('TabView', () => {
 		const bulkTab = screen.getByRole('tab', { name: 'Bulk Upload' });
 
 		expect(singleTab.style.backgroundColor).toBe('rgb(12, 82, 115)');
-		expect(bulkTab.style.backgroundColor).toBe('var(--cinemata-pacific-deep-700)');
+		expect(bulkTab.style.backgroundColor).toBe('var(--bg-chrome-hover)');
 
 		await user.click(bulkTab);
 
-		expect(singleTab.style.backgroundColor).toBe('var(--cinemata-pacific-deep-700)');
+		expect(singleTab.style.backgroundColor).toBe('var(--bg-chrome-hover)');
 		expect(bulkTab.style.backgroundColor).toBe('rgb(12, 82, 115)');
 	});
 });

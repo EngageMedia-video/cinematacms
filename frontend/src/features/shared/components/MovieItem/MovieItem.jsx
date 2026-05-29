@@ -40,7 +40,7 @@ function MovieMetadata({ items = [] }) {
 					{index > 0 ? (
 						<span
 							aria-hidden="true"
-							className="mr-1 text-[12px] font-bold leading-[18px] text-cinemata-pacific-deep-400"
+							className="mr-1 text-[12px] font-bold leading-[18px] text-text-disabled"
 						>
 							·
 						</span>
@@ -119,7 +119,7 @@ function MoviePoster({
 
 			{duration ? (
 				<span
-					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-cinemata-pacific-deep-950 px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-white"
+					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-bg-overlay-dark px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-text-on-chrome"
 					data-movie-item-duration
 				>
 					{duration}
@@ -128,7 +128,7 @@ function MoviePoster({
 
 			{showTopRightIcon && iconName ? (
 				<span
-					className="absolute top-2 right-2 inline-flex rounded bg-cinemata-sunset-horizon-400p/90 p-1 text-white"
+					className="absolute top-2 right-2 inline-flex rounded bg-bg-secondary/90 p-1 text-text-on-primary"
 					data-movie-item-icon-chip
 				>
 					<Icon name={iconName} size={14} decorative={iconLabel ? false : true} label={iconLabel} />
@@ -154,7 +154,7 @@ function MoviePoster({
 
 export function HorizontalMovieItem({
 	badge = '',
-	badgeColor = 'var(--cinemata-strait-blue-500)',
+	badgeColor = 'bg/primary',
 	className = '',
 	duration = '',
 	imageAlt = 'Movie artwork',
@@ -202,7 +202,7 @@ export function HorizontalMovieItem({
 
 export function VerticalMovieItem({
 	badge = '',
-	badgeColor = '#026690',
+	badgeColor = 'bg/primary',
 	className = '',
 	duration = '',
 	iconLabel = '',
@@ -253,7 +253,7 @@ export function VerticalMovieItem({
 
 export function MovieItem({
 	badge = '',
-	badgeColor = '#026690',
+	badgeColor = 'bg/primary',
 	className = '',
 	duration = '',
 	iconLabel = '',

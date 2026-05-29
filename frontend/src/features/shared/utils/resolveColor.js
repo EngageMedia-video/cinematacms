@@ -4,6 +4,7 @@ const SEMANTIC_COLOR_TOKENS = {
 		'surface',
 		'surface-raised',
 		'surface-muted',
+		'surface-hover',
 		'surface-inverse',
 		'overlay-dark',
 		'chrome',
@@ -15,6 +16,8 @@ const SEMANTIC_COLOR_TOKENS = {
 		'secondary',
 		'secondary-hover',
 		'danger',
+		'danger-strong',
+		'danger-strong-hover',
 		'success',
 		'warning',
 	]),
@@ -37,7 +40,7 @@ const SEMANTIC_COLOR_TOKENS = {
 		'success',
 		'warning',
 	]),
-	border: new Set(['default', 'subtle', 'strong', 'strong-constant', 'chrome', 'input', 'danger']),
+	border: new Set(['default', 'subtle', 'divider', 'strong', 'strong-constant', 'chrome', 'input', 'danger']),
 	ring: new Set(['focus']),
 };
 

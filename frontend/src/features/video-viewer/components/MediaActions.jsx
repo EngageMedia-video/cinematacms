@@ -27,7 +27,7 @@ function MediaViewsChip({ displayViews, views }) {
 			<Text
 				as="span"
 				variant="body-14-medium"
-				className="text-cinemata-neutral-900 dark:text-cinemata-strait-blue-100 whitespace-nowrap"
+				className="whitespace-nowrap text-text-strong"
 			>
 				{formatNumber(views, true)} {viewLabel}
 			</Text>

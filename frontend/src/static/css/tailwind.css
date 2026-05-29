@@ -565,6 +565,7 @@ body {
 	--bg-surface: var(--cinemata-neutral-50);
 	--bg-surface-raised: var(--cinemata-white);
 	--bg-surface-muted: var(--cinemata-neutral-200);
+	--bg-surface-hover: var(--cinemata-pacific-deep-50);
 	--bg-surface-inverse: var(--cinemata-pacific-deep-900);
 	--bg-overlay-dark: var(--cinemata-pacific-deep-900);
 	--bg-chrome: var(--cinemata-pacific-deep-800);
@@ -576,6 +577,8 @@ body {
 	--bg-secondary: var(--cinemata-sunset-horizon-400p);
 	--bg-secondary-hover: var(--cinemata-sunset-horizon-500);
 	--bg-danger: var(--cinemata-red-500);
+	--bg-danger-strong: var(--cinemata-red-800);
+	--bg-danger-strong-hover: var(--cinemata-red-400);
 	--bg-success: var(--cinemata-green-500);
 	--bg-warning: var(--cinemata-amber-500);
 
@@ -601,6 +604,7 @@ body {
 	/* Borders */
 	--border-default: var(--cinemata-pacific-deep-200);
 	--border-subtle: var(--cinemata-neutral-200);
+	--border-divider: var(--cinemata-pacific-deep-200);
 	--border-strong: var(--cinemata-pacific-deep-500);
 	--border-strong-constant: var(--cinemata-pacific-deep-500);
 	--border-chrome: var(--cinemata-pacific-deep-700);
@@ -616,6 +620,7 @@ body.dark_theme {
 	--bg-surface: var(--cinemata-pacific-deep-900);
 	--bg-surface-raised: var(--cinemata-pacific-deep-800);
 	--bg-surface-muted: var(--cinemata-pacific-deep-800);
+	--bg-surface-hover: var(--cinemata-pacific-deep-800);
 	--bg-surface-inverse: var(--cinemata-white);
 	--bg-skeleton: var(--cinemata-pacific-deep-700);
 	--bg-control: var(--cinemata-pacific-deep-900);
@@ -623,6 +628,8 @@ body.dark_theme {
 	--bg-primary-hover: var(--cinemata-strait-blue-700);
 	--bg-secondary: var(--cinemata-sunset-horizon-500);
 	--bg-secondary-hover: var(--cinemata-sunset-horizon-700);
+	--bg-danger-strong: var(--cinemata-red-950);
+	--bg-danger-strong-hover: var(--cinemata-red-900);
 
 	--text-strong: var(--cinemata-strait-blue-50);
 	--text-primary: var(--cinemata-strait-blue-50);
@@ -638,6 +645,7 @@ body.dark_theme {
 
 	--border-default: var(--cinemata-pacific-deep-700);
 	--border-subtle: var(--cinemata-pacific-deep-800);
+	--border-divider: var(--cinemata-pacific-deep-600p);
 	--border-strong: var(--cinemata-pacific-deep-400);
 	--border-input: var(--cinemata-sunset-horizon-400p);
 }
@@ -649,6 +657,7 @@ body.dark_theme {
 	--color-bg-surface: var(--bg-surface);
 	--color-bg-surface-raised: var(--bg-surface-raised);
 	--color-bg-surface-muted: var(--bg-surface-muted);
+	--color-bg-surface-hover: var(--bg-surface-hover);
 	--color-bg-surface-inverse: var(--bg-surface-inverse);
 	--color-bg-overlay-dark: var(--bg-overlay-dark);
 	--color-bg-chrome: var(--bg-chrome);
@@ -660,6 +669,8 @@ body.dark_theme {
 	--color-bg-secondary: var(--bg-secondary);
 	--color-bg-secondary-hover: var(--bg-secondary-hover);
 	--color-bg-danger: var(--bg-danger);
+	--color-bg-danger-strong: var(--bg-danger-strong);
+	--color-bg-danger-strong-hover: var(--bg-danger-strong-hover);
 	--color-bg-success: var(--bg-success);
 	--color-bg-warning: var(--bg-warning);
 
@@ -685,6 +696,7 @@ body.dark_theme {
 	/* Borders */
 	--color-border-default: var(--border-default);
 	--color-border-subtle: var(--border-subtle);
+	--color-border-divider: var(--border-divider);
 	--color-border-strong: var(--border-strong);
 	--color-border-strong-constant: var(--border-strong-constant);
 	--color-border-chrome: var(--border-chrome);

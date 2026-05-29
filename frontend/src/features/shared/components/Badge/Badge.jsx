@@ -4,7 +4,7 @@ import { resolveColor } from '../../utils/resolveColor';
 export function Badge({
 	children = 'Featured',
 	className = '',
-	color = 'var(--cinemata-pacific-deep-950)',
+	color = 'bg/surface-inverse',
 	style,
 	...props
 }) {
@@ -12,7 +12,7 @@ export function Badge({
 		<span
 			{...props}
 			className={cn(
-				'caption-caption-10-regular inline-flex items-center rounded-[2px] p-1 text-cinemata-neutral-50',
+				'caption-caption-10-regular inline-flex items-center rounded-[2px] p-1 text-text-on-primary',
 				className
 			)}
 			style={{

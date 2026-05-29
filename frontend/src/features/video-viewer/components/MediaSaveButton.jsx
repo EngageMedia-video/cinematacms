@@ -28,8 +28,8 @@ export function MediaSaveButton() {
 	const [savedToPlaylist, setSavedToPlaylist] = useState(isMediaInUserPlaylist);
 
 	const saveIconClassName = savedToPlaylist
-		? 'text-cinemata-sunset-horizon-600 dark:text-cinemata-sunset-horizon-300'
-		: 'text-cinemata-strait-blue-100';
+		? 'text-text-accent'
+		: 'text-current';
 
 	useEffect(() => {
 		function syncSavedState() {
@@ -76,7 +76,7 @@ export function MediaSaveButton() {
 						<Text
 							as="span"
 							variant="body-14-medium"
-							className="text-neutral-50 dark:text-cinemata-strait-blue-100 whitespace-nowrap"
+							className="whitespace-nowrap text-current"
 						>
 							Save To Playlist
 						</Text>

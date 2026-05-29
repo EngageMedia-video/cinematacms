@@ -68,7 +68,7 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 						href={formatInnerLink(this.props.categories[i].url, legacyContextValue(SiteContext).url)}
 						action="text-link"
 						variant="body-12-medium"
-						className="hover:underline dark:text-cinemata-pacific-deep-400 text-cinemata-pacific-deep-900"
+						className="text-text-strong hover:underline"
 					>
 						{this.props.categories[i].title}
 					</Text>
@@ -88,7 +88,7 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 		return (
 			<div className="flex-row gap-2 items-center hidden sm:flex">
 				<Badge
-					color="cinemata-pacific-deep-600p"
+					color="bg/primary"
 					className={'media-state-badge media-state-badge-' + mediaState}
 					textClassName="body-body-12-bold"
 					title={stateTooltip}
@@ -132,7 +132,7 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 					: null}
 
 				{void 0 !== this.props.title ? (
-					<Text variant="h4-medium" className="dark:text-cinemata-strait-blue-50 m-0">
+					<Text variant="h4-medium" className="m-0 text-text-strong">
 						{this.props.title}
 					</Text>
 				) : null}

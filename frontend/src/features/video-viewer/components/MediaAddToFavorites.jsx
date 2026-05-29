@@ -83,14 +83,14 @@ export function MediaAddToFavorites({ user, onFavoriteChange }) {
 	return (
 		<Button
 			variant="primary"
-			icon={<Icon name="love" className="text-cinemata-strait-blue-100" />}
-			className="dark:bg-cinemata-strait-blue-900 body-body-14-medium"
+			icon={<Icon name="love" className="text-current" />}
+			className="body-body-14-medium"
 			onClick={addToFavorites}
 			size="sm"
 			aria-pressed={user.favorite}
 			disabled={pending}
 		>
-			<Text as="span" variant="body-14-medium" className="text-neutral-50 dark:text-cinemata-strait-blue-100">
+			<Text as="span" variant="body-14-medium" className="text-current">
 				Add To Favorites
 			</Text>
 		</Button>
