@@ -15,7 +15,11 @@ export function useComments(friendlyToken, { enabled = true } = {}) {
 			});
 			if (!r.ok) throw new Error(`Failed to load comments: ${r.status}`);
 			const data = await r.json();
-			return Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
+			const results = Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
+			return {
+				results,
+				count: typeof data?.count === 'number' ? data.count : results.length,
+			};
 		},
 	});
 }

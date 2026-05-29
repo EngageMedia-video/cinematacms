@@ -38,11 +38,12 @@ export function CommentsPanel({ friendlyToken, variant = 'inline', onExpandToggl
 	const showTabs = variant === 'sidebar';
 	const isModal = variant === 'modal';
 	const { data, isLoading, isError, refetch } = useComments(friendlyToken);
-	const comments = Array.isArray(data) ? data : [];
-	const count = comments.length;
+	const comments = Array.isArray(data?.results) ? data.results : [];
+	const loadedCount = comments.length;
+	const totalCount = typeof data?.count === 'number' ? data.count : loadedCount;
 
 	const scrollRef = useRef(null);
-	const hiddenBelow = useHiddenBelowCount(scrollRef, count);
+	const hiddenBelow = useHiddenBelowCount(scrollRef, loadedCount);
 
 	const handleScrollToBottom = () => {
 		const el = scrollRef.current;
@@ -60,7 +61,7 @@ export function CommentsPanel({ friendlyToken, variant = 'inline', onExpandToggl
 			)}
 		>
 			<div className="relative flex min-h-0 flex-1 flex-col">
-				{showTabs ? <CommentsTab count={count} /> : null}
+				{showTabs ? <CommentsTab count={totalCount} /> : null}
 
 				<div
 					ref={scrollRef}
@@ -109,19 +110,23 @@ export function CommentsPanel({ friendlyToken, variant = 'inline', onExpandToggl
 								Retry
 							</button>
 						</div>
-					) : count === 0 ? (
+					) : loadedCount === 0 ? (
 						<p className="py-4 text-center text-sm text-text-muted">No comments yet.</p>
 					) : (
 						<ul className="flex list-none flex-col divide-y divide-border-default pl-0">
 							{comments.map((c, idx) => (
 								<li
 									key={c.uid}
-									className={cn('py-[26px]', idx === 0 && 'pt-[26px]', idx === count - 1 && 'pb-0')}
+									className={cn(
+										'py-[26px]',
+										idx === 0 && 'pt-[26px]',
+										idx === loadedCount - 1 && 'pb-0'
+									)}
 								>
 									<CommentItem
 										comment={c}
 										friendlyToken={friendlyToken}
-										showTrail={idx < count - 1}
+										showTrail={idx < loadedCount - 1}
 									/>
 								</li>
 							))}

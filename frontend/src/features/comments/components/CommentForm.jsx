@@ -72,7 +72,7 @@ export function CommentForm({ friendlyToken }) {
 	};
 
 	const handleKeyDown = (event) => {
-		if (event.key === 'Enter') {
+		if (event.key === 'Enter' && !event.isComposing && event.keyCode !== 229) {
 			event.preventDefault();
 			submit();
 		}

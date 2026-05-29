@@ -27,20 +27,6 @@ function CommentsStyleTag() {
 				background-color: var(--cinemata-strait-blue-200);
 				background-clip: content-box;
 			}
-			.comments-form-textarea {
-				min-height: 20px;
-				max-height: 120px;
-				overflow-y: auto;
-				scrollbar-color: var(--cinemata-strait-blue-200) transparent;
-				scrollbar-width: thin;
-			}
-			.comments-form-textarea::-webkit-scrollbar {
-				width: 6px;
-			}
-			.comments-form-textarea::-webkit-scrollbar-thumb {
-				border-radius: 999px;
-				background-color: var(--cinemata-strait-blue-200);
-			}
 		`}</style>
 	);
 }
