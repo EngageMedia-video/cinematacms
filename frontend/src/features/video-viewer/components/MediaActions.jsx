@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import UserContext from '../../../static/js/contexts/UserContext';
@@ -14,10 +14,6 @@ import { MediaShareButton } from './MediaShareButton';
 
 import { formatNumber } from '../../../static/js/functions';
 import { Text } from '../../shared/components/Text/Text.jsx';
-
-function legacyContextValue(context) {
-	return context['_currentValue'];
-}
 
 function MediaViewsChip({ displayViews, views }) {
 	if (!displayViews) {
@@ -42,8 +38,9 @@ export default function MediaActions({ allowDownload, displayViews, downloadLink
 	const downloadPopupRef = useRef(null);
 	const downloadTriggerRef = useRef(null);
 	const [favorite, setFavorite] = useState(MediaPageStore.get('user-liked-media'));
-	const user = { ...legacyContextValue(UserContext), favorite };
-	const playlists = legacyContextValue(PlaylistsContext);
+	const userContext = useContext(UserContext);
+	const user = { ...userContext, favorite };
+	const playlists = useContext(PlaylistsContext);
 
 	function updateFavoriteState() {
 		setFavorite(MediaPageStore.get('user-liked-media'));
