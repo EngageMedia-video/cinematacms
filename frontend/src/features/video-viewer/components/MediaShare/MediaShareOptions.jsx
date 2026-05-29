@@ -97,6 +97,8 @@ function buildShareOptions(socialMedia) {
 	const mediaUrl = MediaPageStore.get('media-url');
 	const mediaTitle = MediaPageStore.get('media-data').title;
 	const mediaType = MediaPageStore.get('media-data').media_type;
+	const encodedUrl = encodeURIComponent(mediaUrl || '');
+	const encodedTitle = encodeURIComponent(mediaTitle || '');
 
 	const result = [];
 	for (const key of socialMedia) {
@@ -107,7 +109,7 @@ function buildShareOptions(socialMedia) {
 			result.push({ key, ...meta });
 			continue;
 		}
-		result.push({ key, ...meta, shareUrl: meta.urlFor(mediaUrl, mediaTitle) });
+		result.push({ key, ...meta, shareUrl: meta.urlFor(encodedUrl, encodedTitle) });
 	}
 	return result;
 }
