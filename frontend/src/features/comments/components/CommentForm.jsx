@@ -89,9 +89,7 @@ export function CommentForm({ friendlyToken }) {
 					>
 						forum
 					</i>
-					<p className="m-0 text-sm font-bold leading-tight text-text-strong">
-						Join the conversation
-					</p>
+					<p className="m-0 text-sm font-bold leading-tight text-text-strong">Join the conversation</p>
 				</div>
 				<p className="mb-2.5 mt-0 text-xs leading-snug text-text-muted">
 					Sign in to share your thoughts, jump to timestamps, and reply to other viewers.

@@ -24,8 +24,7 @@ export function useSubmitComment(friendlyToken) {
 				try {
 					const body = await r.json();
 					detail = body?.detail || body?.text?.[0] || '';
-				} catch {
-				}
+				} catch {}
 				throw new Error(detail || `Failed to submit comment: ${r.status}`);
 			}
 			return r.json();

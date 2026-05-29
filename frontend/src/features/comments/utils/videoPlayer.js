@@ -36,8 +36,7 @@ export function seekPlayerTo(seconds) {
 					result.catch(() => {});
 				}
 			}
-		} catch {
-		}
+		} catch {}
 		return true;
 	} catch {
 		return false;
