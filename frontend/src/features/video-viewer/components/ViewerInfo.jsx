@@ -24,6 +24,10 @@ export default class ViewerInfo extends React.PureComponent {
 		});
 	}
 
+	componentWillUnmount() {
+		MediaPageStore.removeListener('loaded_media_data', this.onVideoLoad);
+	}
+
 	render() {
 		let views, categories, title, author, published, description, yearProduced;
 		let allowDownload = false;
