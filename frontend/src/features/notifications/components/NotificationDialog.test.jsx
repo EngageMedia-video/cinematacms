@@ -4,15 +4,22 @@ import { NotificationDialog } from './NotificationDialog';
 describe('NotificationDialog', () => {
 	it('renders header, children, and footer actions', () => {
 		render(
-			<NotificationDialog onMarkAllAsRead={() => {}}>
+			<NotificationDialog onMarkAllAsRead={() => {}} unreadCount={3}>
 				<div>New follower notification</div>
 			</NotificationDialog>
 		);
 
 		expect(screen.getByText('Notifications')).toBeInTheDocument();
+		expect(screen.getByText('3')).toBeInTheDocument();
 		expect(screen.getByText('New follower notification')).toBeInTheDocument();
-		expect(screen.getByRole('button', { name: 'Mark all as read' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Mark all as read' })).toBeEnabled();
 		expect(screen.getByRole('link', { name: 'See All Notifications' })).toHaveAttribute('href', '/notifications/');
+	});
+
+	it('disables the mark-all action when there is nothing unread', () => {
+		render(<NotificationDialog onMarkAllAsRead={() => {}} unreadCount={0} />);
+
+		expect(screen.getByRole('button', { name: 'Mark all as read' })).toBeDisabled();
 	});
 
 	it('renders the empty state when no notification items are provided', () => {
