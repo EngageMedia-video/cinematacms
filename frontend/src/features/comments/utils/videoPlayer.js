@@ -37,7 +37,6 @@ export function seekPlayerTo(seconds) {
 				}
 			}
 		} catch {
-			/* play() can reject if autoplay blocked — fine */
 		}
 		return true;
 	} catch {

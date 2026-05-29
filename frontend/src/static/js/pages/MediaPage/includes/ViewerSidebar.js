@@ -50,7 +50,7 @@ export default class ViewerSidebar extends React.PureComponent {
 		return (
 			<div className="viewer-sidebar">
 				{this.props.showComments ? (
-					<div className="viewer-sidebar-comments mb-6">
+					<div className="viewer-sidebar-comments mb-6 box-border w-full px-4 md:px-0">
 						<CommentsSection friendlyToken={this.props.mediaId} variant="sidebar" />
 					</div>
 				) : null}

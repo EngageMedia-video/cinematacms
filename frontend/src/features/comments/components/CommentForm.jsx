@@ -19,13 +19,13 @@ function getSignInHref() {
 
 function Avatar({ name, thumbnail }) {
 	if (thumbnail) {
-		return <img src={thumbnail} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />;
+		return <img src={thumbnail} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />;
 	}
 	const { from, to } = gradientForName(name);
 	return (
 		<span
 			aria-hidden="true"
-			className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+			className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
 			style={{ background: `linear-gradient(to bottom, ${from}, ${to})` }}
 		>
 			{initialFor(name)}
@@ -33,15 +33,6 @@ function Avatar({ name, thumbnail }) {
 	);
 }
 
-/**
- * Comment input block. Always rendered on dark navy bg (`pacific-deep-900`)
- * regardless of the surrounding theme so it stands apart visually.
- *
- * The "insert timestamp" affordance is an icon-only toggle: a click captures
- * the player's current time and renders it as a non-editable orange chip at
- * the left of the input; clicking again clears the chip. The chip is a
- * separate element outside the textarea so Backspace cannot remove it.
- */
 export function CommentForm({ friendlyToken }) {
 	const user = getUser();
 	const isAnonymous = !user || user.is?.anonymous;
@@ -54,8 +45,6 @@ export function CommentForm({ friendlyToken }) {
 
 	const trimmed = value.trim();
 	const composed = timestamp ? `${timestamp} ${trimmed}`.trim() : trimmed;
-	// Submit only enables when the user has actually typed text. Inserting a
-	// timestamp alone is not enough — the comment body itself must be present.
 	const disabled = trimmed === '' || submitMutation.isPending;
 
 	const submit = () => {
@@ -91,7 +80,7 @@ export function CommentForm({ friendlyToken }) {
 
 	if (isAnonymous) {
 		return (
-			<div className="rounded-lg bg-cinemata-pacific-deep-900 px-3 py-3">
+			<div className="rounded-lg bg-bg-surface px-4 py-3 dark:bg-cinemata-pacific-deep-900">
 				<div className="mb-1 flex items-center gap-2">
 					<i
 						aria-hidden="true"
@@ -100,11 +89,11 @@ export function CommentForm({ friendlyToken }) {
 					>
 						forum
 					</i>
-					<p className="text-sm font-bold leading-tight text-cinemata-pacific-deep-50">
+					<p className="m-0 text-sm font-bold leading-tight text-text-strong">
 						Join the conversation
 					</p>
 				</div>
-				<p className="mb-2.5 text-xs leading-snug text-cinemata-pacific-deep-100">
+				<p className="mb-2.5 mt-0 text-xs leading-snug text-text-muted">
 					Sign in to share your thoughts, jump to timestamps, and reply to other viewers.
 				</p>
 				<div className="flex flex-wrap items-center gap-2">
@@ -116,7 +105,7 @@ export function CommentForm({ friendlyToken }) {
 					</a>
 					<a
 						href="/accounts/signup/"
-						className="inline-flex h-8 items-center rounded-sm px-2 text-xs font-bold tracking-tight text-cinemata-pacific-deep-100 underline-offset-2 hover:text-cinemata-pacific-deep-50 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+						className="inline-flex h-8 items-center rounded-sm px-2 text-xs font-bold tracking-tight text-text-muted underline-offset-2 hover:text-text-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 					>
 						Create account
 					</a>
@@ -126,7 +115,7 @@ export function CommentForm({ friendlyToken }) {
 	}
 
 	return (
-		<div className="flex flex-col gap-1.5 rounded-lg bg-cinemata-pacific-deep-900 px-3 py-2.5">
+		<div className="flex min-h-[101px] flex-col gap-1.5 rounded-lg bg-bg-surface px-4 py-3 dark:bg-cinemata-pacific-deep-900">
 			<div className="flex items-center gap-2">
 				{timestamp ? (
 					<button
@@ -149,7 +138,7 @@ export function CommentForm({ friendlyToken }) {
 					onChange={(event) => setValue(event.target.value)}
 					onKeyDown={handleKeyDown}
 					placeholder="Leave a comment..."
-					className="block min-w-0 flex-1 border-0 bg-transparent p-0 text-sm leading-5 text-cinemata-pacific-deep-50 placeholder:text-cinemata-pacific-deep-100 focus:outline-none focus:ring-0"
+					className="block min-w-0 flex-1 border-0 bg-transparent p-0 text-sm leading-5 text-text-strong placeholder:text-text-muted focus:outline-none focus:ring-0"
 				/>
 			</div>
 
@@ -173,7 +162,7 @@ export function CommentForm({ friendlyToken }) {
 						aria-label={timestamp ? 'Clear inserted timestamp' : 'Insert current video timestamp'}
 						aria-pressed={!!timestamp}
 						className={
-							'flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-sm border-0 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:opacity-50 ' +
+							'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-sm border-0 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:opacity-50 ' +
 							(timestamp
 								? 'bg-cinemata-sunset-horizon-500 text-white hover:bg-cinemata-sunset-horizon-600'
 								: 'bg-cinemata-pacific-deep-950 text-white hover:bg-cinemata-pacific-deep-800')
@@ -184,7 +173,14 @@ export function CommentForm({ friendlyToken }) {
 						</i>
 					</button>
 
-					<Button variant="primary" type="button" onClick={submit} disabled={disabled}>
+					<Button
+						variant="primary"
+						type="button"
+						size="sm"
+						className="h-8 rounded-sm bg-cinemata-sunset-horizon-500 px-4 text-xs text-white hover:bg-cinemata-sunset-horizon-600"
+						onClick={submit}
+						disabled={disabled}
+					>
 						{submitMutation.isPending ? 'SUBMITTING…' : 'SUBMIT'}
 					</Button>
 				</div>

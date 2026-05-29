@@ -26,8 +26,6 @@ export function useHiddenBelowCount(containerRef, totalCount) {
 			let hidden = 0;
 			for (const item of items) {
 				const r = item.getBoundingClientRect();
-				// Item is considered "below" if its top is past the visible bottom
-				// (i.e. needs scrolling down to see).
 				if (r.top >= viewportBottom - 8) hidden += 1;
 			}
 			setHiddenBelow(hidden);

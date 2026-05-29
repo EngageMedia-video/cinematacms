@@ -5,6 +5,19 @@ import { useHiddenBelowCount } from '../hooks/useHiddenBelowCount';
 import { CommentItem } from './CommentItem';
 import { CommentForm } from './CommentForm';
 
+function CommentsTab({ count }) {
+	return (
+		<div className="flex shrink-0 items-start overflow-hidden rounded-t-lg">
+			<span
+				className="bg-cinemata-pacific-deep-50 px-4 py-3 text-xs font-bold uppercase leading-5 tracking-tight text-cinemata-pacific-deep-900 dark:bg-cinemata-pacific-deep-900 dark:text-cinemata-neutral-50"
+				aria-current="page"
+			>
+				Comments ({count})
+			</span>
+		</div>
+	);
+}
+
 function ScrollMorePill({ count, onClick }) {
 	if (count <= 0) return null;
 	return (
@@ -21,19 +34,9 @@ function ScrollMorePill({ count, onClick }) {
 	);
 }
 
-/**
- * Comments panel. Two stacked rounded blocks:
- *  - (sidebar variant only) Tab pill on top with the comment count. The
- *    modal/expand variant omits the tab.
- *  - List panel (theme-aware): heading + subtitle + expand toggle, divider,
- *    then the comment list with vertical-trail avatars.
- *  - Form panel — kept on dark navy in both themes so the input stands apart
- *    from the surrounding chrome — rendered by `<CommentForm />`.
- *  - "X MORE" pill appears above the form when comments are hidden below the
- *    visible scroll viewport; clicking it smooth-scrolls to the bottom.
- */
 export function CommentsPanel({ friendlyToken, variant = 'inline', onExpandToggle, isExpanded = false }) {
 	const showTabs = variant === 'sidebar';
+	const isModal = variant === 'modal';
 	const { data, isLoading, isError, refetch } = useComments(friendlyToken);
 	const comments = Array.isArray(data) ? data : [];
 	const count = comments.length;
@@ -52,55 +55,46 @@ export function CommentsPanel({ friendlyToken, variant = 'inline', onExpandToggl
 			aria-label="Comments"
 			className={cn(
 				'flex w-full flex-col gap-4',
-				variant === 'sidebar' && 'lg:max-h-[calc(100vh-7rem)] lg:sticky lg:top-24',
-				variant === 'modal' && 'h-full'
+				variant === 'sidebar' && 'max-h-[706px] lg:max-h-[calc(100vh-7rem)] lg:sticky lg:top-24',
+				isModal && 'h-full'
 			)}
 		>
-			{/* List panel (with optional tab strip on top in sidebar variant) */}
 			<div className="relative flex min-h-0 flex-1 flex-col">
-				{showTabs ? (
-					<div className="flex shrink-0 items-start">
-						<span
-							className="rounded-t-lg bg-bg-surface px-3.5 py-2 text-xs font-bold uppercase leading-4 tracking-tight text-text-strong"
-							aria-current="page"
-						>
-							Comments ({count})
-						</span>
-					</div>
-				) : null}
+				{showTabs ? <CommentsTab count={count} /> : null}
 
 				<div
 					ref={scrollRef}
 					className={cn(
-						'comments-scrollbar relative flex min-h-0 flex-1 flex-col overflow-y-auto bg-bg-surface px-3 pb-4 pt-3',
+						'comments-scrollbar relative flex min-h-0 flex-1 flex-col overflow-y-auto bg-bg-surface px-4 pb-4',
 						showTabs ? 'rounded-b-lg rounded-tr-lg' : 'rounded-lg'
 					)}
 				>
-					{/* Header row */}
-					<div className="flex shrink-0 items-start justify-between gap-3">
-						<div className="flex min-w-0 flex-col">
-							<h2 className="font-heading text-lg font-medium leading-tight text-text-strong">
-								Write a Comment
-							</h2>
-							<p className="text-xs leading-tight tracking-tight text-text-muted">
-								Here is what everyone else is saying, let’s hear yours
-							</p>
+					<div className="sticky top-0 z-20 -mx-4 shrink-0 bg-bg-surface px-4 pt-[22px]">
+						<div className="flex items-start justify-between gap-3">
+							<div className="flex min-w-0 flex-col gap-2">
+								<h2 className="m-0 font-heading text-xl font-medium leading-6 text-text-strong">
+									Write a Comment
+								</h2>
+								<p className="m-0 text-sm leading-5 tracking-tight text-text-muted">
+									Here is what everyone else is saying, let’s hear yours
+								</p>
+							</div>
+							{onExpandToggle ? (
+								<button
+									type="button"
+									onClick={onExpandToggle}
+									aria-label={isExpanded ? 'Close expanded comments' : 'Expand comments'}
+									className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-cinemata-strait-blue-400 text-white transition-colors duration-200 hover:bg-cinemata-strait-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+								>
+									<i aria-hidden="true" className="material-icons" style={{ fontSize: 20 }}>
+										{isExpanded ? 'close_fullscreen' : 'open_in_full'}
+									</i>
+								</button>
+							) : null}
 						</div>
-						{onExpandToggle ? (
-							<button
-								type="button"
-								onClick={onExpandToggle}
-								aria-label={isExpanded ? 'Close expanded comments' : 'Expand comments'}
-								className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-cinemata-strait-blue-400 text-white transition-colors duration-200 hover:bg-cinemata-strait-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
-							>
-								<i aria-hidden="true" className="material-icons" style={{ fontSize: 18 }}>
-									{isExpanded ? 'close_fullscreen' : 'open_in_full'}
-								</i>
-							</button>
-						) : null}
-					</div>
 
-					<div className="mt-2 border-t border-border-default" aria-hidden="true" />
+						<div className="mt-[26px] border-t border-border-default" aria-hidden="true" />
+					</div>
 
 					{isLoading ? (
 						<p className="py-4 text-center text-sm text-text-muted">Loading comments…</p>
@@ -122,7 +116,7 @@ export function CommentsPanel({ friendlyToken, variant = 'inline', onExpandToggl
 							{comments.map((c, idx) => (
 								<li
 									key={c.uid}
-									className={cn('py-3', idx === 0 && 'pt-3', idx === count - 1 && 'pb-0')}
+									className={cn('py-[26px]', idx === 0 && 'pt-[26px]', idx === count - 1 && 'pb-0')}
 								>
 									<CommentItem
 										comment={c}

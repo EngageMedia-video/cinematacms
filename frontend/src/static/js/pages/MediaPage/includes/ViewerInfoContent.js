@@ -452,7 +452,9 @@ export default function ViewerInfoContent(props) {
 					) : null}
 
 					{props.hideComments ? null : (
-						<CommentsSection friendlyToken={MediaPageStore.get('media-id')} variant="inline" />
+						<div className="box-border w-full px-4 md:px-0">
+							<CommentsSection friendlyToken={MediaPageStore.get('media-id')} variant="inline" />
+						</div>
 					)}
 				</div>
 			)}

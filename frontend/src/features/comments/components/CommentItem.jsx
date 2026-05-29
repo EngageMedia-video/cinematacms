@@ -39,13 +39,13 @@ function formatTimeOfDay(addDate) {
 
 function Avatar({ name, thumbnail }) {
 	if (thumbnail) {
-		return <img src={thumbnail} alt="" className="h-7 w-7 rounded-full object-cover" />;
+		return <img src={thumbnail} alt="" className="h-8 w-8 rounded-full object-cover" />;
 	}
 	const { from, to } = gradientForName(name);
 	return (
 		<span
 			aria-hidden="true"
-			className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold text-white"
+			className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
 			style={{ background: `linear-gradient(to bottom, ${from}, ${to})` }}
 		>
 			{initialFor(name)}
@@ -108,7 +108,7 @@ export function CommentItem({ comment, friendlyToken, showTrail = true }) {
 	const postedClock = formatTimeOfDay(comment.add_date);
 
 	return (
-		<li data-comment className="flex gap-4 items-start">
+		<div data-comment className="flex gap-4 items-start">
 			<div className="flex flex-col items-center gap-1.5 self-stretch shrink-0">
 				<Avatar name={comment.author_name} thumbnail={comment.author_thumbnail_url} />
 				{showTrail ? (
@@ -122,14 +122,12 @@ export function CommentItem({ comment, friendlyToken, showTrail = true }) {
 						{comment.author_profile ? (
 							<a
 								href={comment.author_profile}
-								className="text-sm leading-5 text-text-muted no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus rounded-sm tracking-tight"
+								className="text-sm leading-5 text-text-muted no-underline hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus rounded-sm"
 							>
 								{comment.author_name || 'User'}
 							</a>
 						) : (
-							<span className="text-sm leading-5 text-text-muted tracking-tight">
-								{comment.author_name || 'User'}
-							</span>
+							<span className="text-sm leading-5 text-text-muted">{comment.author_name || 'User'}</span>
 						)}
 						{comment.author_is_manager ? (
 							<span className="inline-flex items-center rounded-sm bg-cinemata-sunset-horizon-600 px-1.5 py-0.5 text-[12px] leading-4 font-bold uppercase text-white">
@@ -138,11 +136,11 @@ export function CommentItem({ comment, friendlyToken, showTrail = true }) {
 						) : null}
 					</div>
 
-					<p className="text-sm leading-5 text-text-primary">
+					<p className="m-0 text-base leading-6 text-text-primary">
 						<CommentText text={comment.text} />
 					</p>
 
-					<div className="flex items-center gap-2 text-xs leading-4 text-text-muted">
+					<div className="flex items-center gap-2 text-sm leading-5 text-text-muted">
 						{postedRelative ? <span>{postedRelative}</span> : null}
 						{postedRelative && postedClock ? (
 							<span
@@ -166,9 +164,9 @@ export function CommentItem({ comment, friendlyToken, showTrail = true }) {
 							aria-haspopup="menu"
 							aria-expanded={menuOpen}
 							onClick={toggleMenu}
-							className="flex h-[22px] w-[22px] items-center justify-center rounded-full text-text-muted hover:bg-bg-surface-muted hover:text-text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+							className="flex h-[22px] w-[22px] cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-text-muted hover:text-text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 						>
-							<i aria-hidden="true" className="material-icons" style={{ fontSize: 18 }}>
+							<i aria-hidden="true" className="material-icons" style={{ fontSize: 22 }}>
 								more_vert
 							</i>
 						</button>
@@ -205,6 +203,6 @@ export function CommentItem({ comment, friendlyToken, showTrail = true }) {
 					</div>
 				) : null}
 			</div>
-		</li>
+		</div>
 	);
 }
