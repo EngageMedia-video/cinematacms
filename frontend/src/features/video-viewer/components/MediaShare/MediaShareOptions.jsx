@@ -124,7 +124,7 @@ function toHHMMSS(timeInt) {
 }
 
 function getCurrentVideoTimestamp() {
-	const videoElem = document.getElementsByTagName('video')[0];
+	const videoElem = document.querySelector('.viewer-container video');
 	return videoElem?.currentTime ?? 0;
 }
 
