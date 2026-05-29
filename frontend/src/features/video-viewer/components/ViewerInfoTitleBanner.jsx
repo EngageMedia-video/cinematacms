@@ -44,12 +44,6 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 		MediaPageStore.on('unliked_media', this.updateStateValues);
 		MediaPageStore.on('disliked_media', this.updateStateValues);
 		MediaPageStore.on('undisliked_media', this.updateStateValues);
-
-		const tooltips = document.querySelectorAll('[data-tooltip]');
-
-		if (tooltips.length) {
-			tooltips.forEach((tooltipElem) => Tooltip(tooltipElem));
-		}
 	}
 
 	updateStateValues() {
