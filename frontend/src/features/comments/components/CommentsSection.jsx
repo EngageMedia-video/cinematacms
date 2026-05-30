@@ -53,7 +53,7 @@ function CommentsSectionInner({ friendlyToken, variant }) {
 				<DialogContent
 					aria-label="Comments"
 					className="flex h-[min(85vh,860px)] w-full max-w-[520px] flex-col"
-					overlayClassName="bg-cinemata-pacific-deep-950/90 dark:opacity-95"
+					overlayClassName="bg-bg-overlay-dark/90 dark:opacity-95"
 				>
 					<CommentsPanel
 						friendlyToken={friendlyToken}

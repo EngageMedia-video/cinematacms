@@ -25,7 +25,7 @@ function Avatar({ name, thumbnail }) {
 	return (
 		<span
 			aria-hidden="true"
-			className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+			className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-text-on-primary"
 			style={{ background: `linear-gradient(to bottom, ${from}, ${to})` }}
 		>
 			{initialFor(name)}
@@ -80,13 +80,9 @@ export function CommentForm({ friendlyToken }) {
 
 	if (isAnonymous) {
 		return (
-			<div className="rounded-lg bg-bg-surface px-4 py-3 dark:bg-cinemata-pacific-deep-900">
+			<div className="rounded-lg bg-bg-surface px-4 py-3">
 				<div className="mb-1 flex items-center gap-2">
-					<i
-						aria-hidden="true"
-						className="material-icons text-cinemata-sunset-horizon-400p"
-						style={{ fontSize: 18 }}
-					>
+					<i aria-hidden="true" className="material-icons text-text-accent" style={{ fontSize: 18 }}>
 						forum
 					</i>
 					<p className="m-0 text-sm font-bold leading-tight text-text-strong">Join the conversation</p>
@@ -97,7 +93,7 @@ export function CommentForm({ friendlyToken }) {
 				<div className="flex flex-wrap items-center gap-2">
 					<a
 						href={getSignInHref()}
-						className="inline-flex h-8 items-center rounded-sm bg-cinemata-sunset-horizon-500 px-4 text-[12px] font-bold uppercase tracking-tight text-white no-underline transition-colors duration-200 hover:bg-cinemata-sunset-horizon-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+						className="inline-flex h-8 items-center rounded-sm bg-bg-secondary px-4 text-[12px] font-bold uppercase tracking-tight text-text-on-primary no-underline transition-colors duration-200 hover:bg-bg-secondary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 					>
 						Sign in
 					</a>
@@ -113,14 +109,14 @@ export function CommentForm({ friendlyToken }) {
 	}
 
 	return (
-		<div className="flex min-h-[101px] flex-col gap-1.5 rounded-lg bg-bg-surface px-4 py-3 dark:bg-cinemata-pacific-deep-900">
+		<div className="flex min-h-[101px] flex-col gap-1.5 rounded-lg bg-bg-surface px-4 py-3">
 			<div className="flex items-center gap-2">
 				{timestamp ? (
 					<button
 						type="button"
 						onClick={toggleTimestamp}
 						aria-label={`Clear inserted timestamp ${timestamp}`}
-						className="inline-flex shrink-0 cursor-pointer items-center rounded-sm border-0 bg-cinemata-sunset-horizon-500 px-1.5 py-0.5 text-xs font-bold tracking-tight text-white hover:bg-cinemata-sunset-horizon-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+						className="inline-flex shrink-0 cursor-pointer items-center rounded-sm border-0 bg-bg-secondary px-1.5 py-0.5 text-xs font-bold tracking-tight text-text-on-primary hover:bg-bg-secondary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 					>
 						{timestamp}
 					</button>
@@ -162,8 +158,8 @@ export function CommentForm({ friendlyToken }) {
 						className={
 							'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-sm border-0 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:opacity-50 ' +
 							(timestamp
-								? 'bg-cinemata-sunset-horizon-500 text-white hover:bg-cinemata-sunset-horizon-600'
-								: 'bg-cinemata-pacific-deep-950 text-white hover:bg-cinemata-pacific-deep-800')
+								? 'bg-bg-secondary text-text-on-primary hover:bg-bg-secondary-hover'
+								: 'bg-bg-chrome text-text-on-chrome hover:bg-bg-chrome-hover')
 						}
 					>
 						<i aria-hidden="true" className="material-icons" style={{ fontSize: 16 }}>
@@ -175,7 +171,7 @@ export function CommentForm({ friendlyToken }) {
 						variant="primary"
 						type="button"
 						size="sm"
-						className="h-8 rounded-sm bg-cinemata-sunset-horizon-500 px-4 text-xs text-white hover:bg-cinemata-sunset-horizon-600"
+						className="h-8 rounded-sm bg-bg-secondary px-4 text-xs text-text-on-primary hover:bg-bg-secondary-hover"
 						onClick={submit}
 						disabled={disabled}
 					>

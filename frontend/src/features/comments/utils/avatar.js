@@ -1,12 +1,10 @@
 const PALETTE = [
-	['#98e3ff', '#3e6cc2'],
-	['#98a7ff', '#a73ec2'],
-	['#ff98b7', '#c23e6a'],
-	['#ffd698', '#c27e3e'],
-	['#98ffc1', '#3ec27e'],
-	['#c198ff', '#6c3ec2'],
-	['#ffc198', '#c2553e'],
-	['#98ffea', '#3ec2a7'],
+	['var(--bg-secondary)', 'var(--bg-primary)'],
+	['var(--bg-primary)', 'var(--bg-secondary)'],
+	['var(--bg-warning)', 'var(--bg-secondary)'],
+	['var(--bg-success)', 'var(--bg-primary)'],
+	['var(--bg-secondary-hover)', 'var(--bg-danger)'],
+	['var(--bg-primary-hover)', 'var(--bg-secondary-hover)'],
 ];
 
 export function gradientForName(name) {

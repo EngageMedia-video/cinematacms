@@ -9,7 +9,7 @@ function CommentsTab({ count }) {
 	return (
 		<div className="flex shrink-0 items-start overflow-hidden rounded-t-lg">
 			<span
-				className="bg-cinemata-pacific-deep-50 px-4 py-3 text-xs font-bold uppercase leading-5 tracking-tight text-cinemata-pacific-deep-900 dark:bg-cinemata-pacific-deep-900 dark:text-cinemata-neutral-50"
+				className="bg-bg-surface px-4 py-3 text-xs font-bold uppercase leading-5 tracking-tight text-text-strong"
 				aria-current="page"
 			>
 				Comments ({count})
@@ -24,7 +24,7 @@ function ScrollMorePill({ count, onClick }) {
 		<button
 			type="button"
 			onClick={onClick}
-			className="absolute bottom-3 left-1/2 z-10 inline-flex -translate-x-1/2 cursor-pointer items-center gap-1.5 rounded-sm border-0 bg-cinemata-sunset-horizon-500 px-2.5 py-1 text-xs font-bold tracking-tight text-white shadow-md transition-colors duration-200 hover:bg-cinemata-sunset-horizon-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+			className="absolute bottom-3 left-1/2 z-10 inline-flex -translate-x-1/2 cursor-pointer items-center gap-1.5 rounded-sm border-0 bg-bg-secondary px-2.5 py-1 text-xs font-bold tracking-tight text-text-on-primary shadow-md transition-colors duration-200 hover:bg-bg-secondary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 		>
 			<i aria-hidden="true" className="material-icons" style={{ fontSize: 14 }}>
 				arrow_downward
@@ -85,7 +85,7 @@ export function CommentsPanel({ friendlyToken, variant = 'inline', onExpandToggl
 									type="button"
 									onClick={onExpandToggle}
 									aria-label={isExpanded ? 'Close expanded comments' : 'Expand comments'}
-									className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-cinemata-strait-blue-400 text-white transition-colors duration-200 hover:bg-cinemata-strait-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+									className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-bg-primary text-text-on-primary transition-colors duration-200 hover:bg-bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 								>
 									<i aria-hidden="true" className="material-icons" style={{ fontSize: 20 }}>
 										{isExpanded ? 'close_fullscreen' : 'open_in_full'}

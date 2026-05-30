@@ -45,7 +45,7 @@ function Avatar({ name, thumbnail }) {
 	return (
 		<span
 			aria-hidden="true"
-			className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
+			className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-text-on-primary"
 			style={{ background: `linear-gradient(to bottom, ${from}, ${to})` }}
 		>
 			{initialFor(name)}
@@ -130,7 +130,7 @@ export function CommentItem({ comment, friendlyToken, showTrail = true }) {
 							<span className="text-sm leading-5 text-text-muted">{comment.author_name || 'User'}</span>
 						)}
 						{comment.author_is_manager ? (
-							<span className="inline-flex items-center rounded-sm bg-cinemata-sunset-horizon-600 px-1.5 py-0.5 text-[12px] leading-4 font-bold uppercase text-white">
+							<span className="inline-flex items-center rounded-sm bg-bg-secondary px-1.5 py-0.5 text-[12px] leading-4 font-bold uppercase text-text-on-primary">
 								Moderator
 							</span>
 						) : null}
