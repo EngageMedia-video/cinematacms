@@ -1,0 +1,15 @@
+.impact-date-field input[type='date']::-webkit-calendar-picker-indicator {
+	display: none;
+	-webkit-appearance: none;
+}
+
+.impact-date-field input[type='date']::-webkit-inner-spin-button,
+.impact-date-field input[type='date']::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.impact-date-field input[type='date'] {
+	appearance: none;
+	-moz-appearance: none;
+}

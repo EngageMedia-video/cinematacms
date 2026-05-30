@@ -6,7 +6,7 @@ const meta = {
 	component: ImpactTimelineItem,
 	tags: ['autodocs'],
 	args: {
-		accentClassName: 'text-cinemata-coral-reef-400p',
+		accentClassName: 'text-text-accent',
 		date: '2025-02-01',
 		isFirst: true,
 		isLast: false,

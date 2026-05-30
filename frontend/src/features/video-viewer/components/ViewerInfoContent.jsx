@@ -89,6 +89,7 @@ export default function ViewerInfoContent(props) {
 	const hasAboutText = '' !== description;
 	const [isAboutExpanded, setIsAboutExpanded] = useState(false);
 	const [isSummaryClamped, setIsSummaryClamped] = useState(false);
+	const [communityImpacts, setCommunityImpacts] = useState(() => MediaPageStore.get('community-impacts'));
 	const aboutDetailsId = useId();
 	const summaryTextRef = useRef(null);
 
@@ -124,6 +125,20 @@ export default function ViewerInfoContent(props) {
 		return () => {
 			MediaPageStore.removeListener('media_delete', onMediaDelete);
 			MediaPageStore.removeListener('media_delete_fail', onMediaDeleteFail);
+		};
+	}, []);
+
+	useEffect(() => {
+		function syncCommunityImpacts() {
+			setCommunityImpacts(MediaPageStore.get('community-impacts'));
+		}
+
+		MediaPageStore.on('community_impact_submit', syncCommunityImpacts);
+		MediaPageStore.on('loaded_media_data', syncCommunityImpacts);
+
+		return () => {
+			MediaPageStore.removeListener('community_impact_submit', syncCommunityImpacts);
+			MediaPageStore.removeListener('loaded_media_data', syncCommunityImpacts);
 		};
 	}, []);
 
@@ -456,9 +471,9 @@ export default function ViewerInfoContent(props) {
 							</div>
 						</TabContent>
 						<TabContent title="COMMUNITY IMPACT">
-							<div className="p-4">
+							<div className="rounded-b-ds-8 bg-bg-page p-4">
 								<CommunityImpactSection
-									entries={MediaPageStore.get('community-impacts')}
+									entries={communityImpacts}
 									canAdd={!user.is.anonymous}
 									onAddImpact={(formValues) => MediaPageActions.submitCommunityImpact(formValues)}
 								/>

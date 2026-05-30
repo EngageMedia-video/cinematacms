@@ -20,11 +20,13 @@ describe('ImpactCard', () => {
 
 		const toggle = screen.getByRole('button', { name: 'Show all Screened In entries' });
 		expect(toggle).toHaveAttribute('aria-expanded', 'false');
+		expect(toggle.querySelector('svg')).toHaveAttribute('data-icon', 'arrowsOutSimple');
 
 		await user.click(toggle);
 
 		expect(screen.getByText('Jakarta Mutual Aid Screening')).toBeVisible();
 		expect(toggle).toHaveAttribute('aria-expanded', 'true');
+		expect(toggle.querySelector('svg')).toHaveAttribute('data-icon', 'arrowsInSimple');
 	});
 
 	it('renders summary cards without an expand button', () => {

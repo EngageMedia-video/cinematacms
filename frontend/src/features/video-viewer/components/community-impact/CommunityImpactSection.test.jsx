@@ -47,6 +47,12 @@ describe('CommunityImpactSection', () => {
 		expect(screen.getByText('Where this film has made an impact?')).toBeVisible();
 	});
 
+	it('shows only one ADD IMPACT button in the empty state', () => {
+		render(<CommunityImpactSection entries={{}} />);
+
+		expect(screen.getAllByRole('button', { name: 'ADD IMPACT' })).toHaveLength(1);
+	});
+
 	it('opens the add dialog and forwards submitted values', async () => {
 		const user = userEvent.setup();
 		const onAddImpact = vi.fn();
@@ -54,8 +60,8 @@ describe('CommunityImpactSection', () => {
 		render(<CommunityImpactSection entries={{}} onAddImpact={onAddImpact} />);
 
 		await user.click(screen.getAllByRole('button', { name: 'ADD IMPACT' })[0]);
-		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta community hall');
-		await user.type(screen.getByLabelText('When did this happen'), '2026-05-29');
+		await user.type(screen.getByLabelText('Where did this impact happen?'), 'Jakarta community hall');
+		await user.type(screen.getByLabelText('Date of impact'), '2026-05-29');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
 		await user.click(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));

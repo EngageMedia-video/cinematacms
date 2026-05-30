@@ -4,6 +4,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { AddImpactDialog, normalizeImpactLink } from './AddImpactDialog';
 
 describe('AddImpactDialog', () => {
+	it('keeps the date input native while hiding the browser picker indicator', () => {
+		const { baseElement } = render(<AddImpactDialog open />);
+
+		expect(baseElement.querySelector('.impact-date-field input[type="date"]')).not.toBeNull();
+	});
+
 	it('submits trimmed form values with the selected category', async () => {
 		const user = userEvent.setup();
 		const onClose = vi.fn();
@@ -11,9 +17,9 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog onClose={onClose} onSubmit={onSubmit} open />);
 
-		await user.type(screen.getByLabelText('Where did you see this film'), '  Jakarta community hall  ');
+		await user.type(screen.getByLabelText('Where did this impact happen?'), '  Jakarta community hall  ');
 		await user.type(screen.getByLabelText('Add more details'), 'Screened with a youth media collective.');
-		await user.type(screen.getByLabelText('When did this happen'), '2026-05-29');
+		await user.type(screen.getByLabelText('Date of impact'), '2026-05-29');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
 		await user.type(screen.getByLabelText('Add a link'), 'https://example.com/impact');
@@ -37,8 +43,8 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog open />);
 
-		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta');
-		await user.type(screen.getByLabelText('When did this happen'), '2026-05-29');
+		await user.type(screen.getByLabelText('Where did this impact happen?'), 'Jakarta');
+		await user.type(screen.getByLabelText('Date of impact'), '2026-05-29');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
 		await user.type(screen.getByLabelText('Add more details'), tooManyWords);
@@ -65,8 +71,8 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog onClose={onClose} onSubmit={onSubmit} open />);
 
-		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta');
-		await user.type(screen.getByLabelText('When did this happen'), '2026-05-29');
+		await user.type(screen.getByLabelText('Where did this impact happen?'), 'Jakarta');
+		await user.type(screen.getByLabelText('Date of impact'), '2026-05-29');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
 		await user.type(screen.getByLabelText('Add a link'), 'javascript:alert(1)');
@@ -83,8 +89,8 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog onSubmit={onSubmit} open />);
 
-		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta');
-		await user.type(screen.getByLabelText('When did this happen'), '2026-05-29');
+		await user.type(screen.getByLabelText('Where did this impact happen?'), 'Jakarta');
+		await user.type(screen.getByLabelText('Date of impact'), '2026-05-29');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
 		await user.type(screen.getByLabelText('Add a link'), 'example.com/path');

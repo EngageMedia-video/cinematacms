@@ -5,7 +5,7 @@ import { Icon } from '../Icon';
 const SHELL_VARIANT_CLASSES = {
 	default: 'bg-bg-surface hover:bg-bg-surface-hover focus-within:bg-bg-surface',
 	error: 'bg-bg-surface',
-	disabled: 'bg-bg-surface-hover',
+	disabled: 'bg-bg-surface-muted',
 };
 
 const LABEL_VARIANT_CLASSES = {
@@ -43,7 +43,7 @@ const BORDER_VARIANT_CLASSES = {
 const MENU_VARIANT_CLASSES = {
 	default: 'border-border-strong-constant bg-bg-surface',
 	error: 'border-border-danger bg-bg-surface',
-	disabled: 'border-border-input bg-bg-surface-hover',
+	disabled: 'border-border-input bg-bg-surface-muted',
 };
 
 function normalizeOption(option) {
@@ -285,7 +285,7 @@ export function Dropdown({
 					role="menu"
 					aria-labelledby={label ? buttonId : undefined}
 					className={cn(
-						'absolute left-0 top-full z-20 mt-2 min-w-full list-none overflow-hidden rounded-(--radius-4) border p-0',
+						'absolute left-0 top-full z-20 mt-2 max-h-[calc(var(--size-96)*2+var(--size-48))] min-w-full list-none overflow-y-auto overscroll-contain rounded-(--radius-4) border p-0',
 						MENU_VARIANT_CLASSES[variant]
 					)}
 				>
@@ -332,8 +332,9 @@ export function Dropdown({
 										}
 									}}
 									className={cn(
-										'body-body-16-regular block w-full px-4 py-3 text-left outline-none transition-colors duration-150 border-0',
+										'body-body-16-regular block w-full border-0 px-4 py-3 text-left outline-none transition-colors duration-150 hover:bg-bg-surface-hover focus:bg-bg-surface-hover',
 										SHELL_VARIANT_CLASSES[variant],
+										VALUE_VARIANT_CLASSES[variant],
 										selected ? 'font-black' : 'font-normal'
 									)}
 								>

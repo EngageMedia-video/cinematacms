@@ -150,7 +150,7 @@ export function CommunityImpactSection({ canAdd = true, entries = {}, onAddImpac
 					</Text>
 				</div>
 
-				{canAdd ? (
+				{canAdd && populated ? (
 					<Button
 						className="w-full justify-center focus-visible:ring-2 focus-visible:ring-ring-focus sm:w-fit"
 						onClick={handleAddClick}

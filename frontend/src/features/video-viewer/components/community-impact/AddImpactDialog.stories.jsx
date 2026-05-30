@@ -38,8 +38,8 @@ export const SubmitReady = {
 	play: async ({ args }) => {
 		const body = within(document.body);
 
-		await userEvent.type(body.getByLabelText('Where did you see this film'), 'Jakarta community hall');
-		await userEvent.type(body.getByLabelText('When did this happen'), '2026-05-29');
+		await userEvent.type(body.getByLabelText('Where did this impact happen?'), 'Jakarta community hall');
+		await userEvent.type(body.getByLabelText('Date of impact'), '2026-05-29');
 		await userEvent.click(body.getByRole('button', { name: 'Select community impact category' }));
 		await userEvent.click(body.getByRole('menuitemradio', { name: 'Screened In' }));
 		await userEvent.click(body.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));

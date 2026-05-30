@@ -11,6 +11,7 @@ import {
 	TextField,
 } from '../../../shared/components';
 import { COMMUNITY_IMPACT_CATEGORIES, getImpactIconConfig } from './impactIcons';
+import './AddImpactDialog.css';
 
 const EMPTY_VALUES = {
 	category: '',
@@ -22,6 +23,10 @@ const EMPTY_VALUES = {
 
 function countWords(value) {
 	return value.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function openDatePicker(event) {
+	event.currentTarget.showPicker?.();
 }
 
 export function normalizeImpactLink(raw) {
@@ -61,7 +66,7 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 	const wordLimitExceeded = wordCount > 80;
 	const canSubmit = values.location.trim() && values.category && values.eventDate && !wordLimitExceeded;
 	const heartConfig = getImpactIconConfig('heart');
-	const categoryOptions = useMemo(() => categories.map((category) => ({ ...category })), [categories]);
+	const categoryOptions = useMemo(() => categories.filter((category) => category.value !== 'saves'), [categories]);
 
 	function updateValue(name, value) {
 		setValues((current) => ({
@@ -111,16 +116,14 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 		>
 			<DialogContent
 				aria-label="Add community impact"
-				className="w-full max-w-[calc(var(--size-96)*5+var(--size-40))] rounded-ds-8 border border-border-default bg-bg-surface p-space-lg shadow-lg"
+				className="flex max-h-[calc(100vh-var(--size-64))] w-full max-w-[calc(var(--size-96)*5+var(--size-40))] flex-col overflow-hidden rounded-ds-8 border border-border-default bg-bg-surface shadow-lg"
 			>
-				<form onSubmit={handleSubmit} noValidate>
-					<div className="flex items-start justify-between gap-space-base">
-						<span
-							className={`${heartConfig.iconShellClassName} inline-flex h-size-48 w-size-48 shrink-0 items-center justify-center rounded-full`}
-							aria-hidden="true"
-						>
-							<Icon name={heartConfig.iconName} size="md" decorative />
-						</span>
+				<form
+					onSubmit={handleSubmit}
+					noValidate
+					className="flex max-h-full flex-col overflow-y-auto p-space-lg"
+				>
+					<div className="flex justify-end">
 						<Button
 							variant="icon"
 							className="h-size-32 w-size-32 rounded-full text-text-muted outline-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-ring-focus"
@@ -130,17 +133,28 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 						/>
 					</div>
 
-					<Text variant="h5" as="h2" className="m-0 mt-space-base text-text-primary">
-						Where has this film made an impact?
-					</Text>
-					<Text variant="body-14" color="meta" className="m-0 mt-space-xs">
-						Add a community impact signal that helps viewers understand this film's reach.
-					</Text>
+					<div className="flex flex-col items-center text-center">
+						<span
+							className="inline-flex h-size-80 w-size-80 shrink-0 items-center justify-center text-text-accent"
+							aria-hidden="true"
+						>
+							<Icon name={heartConfig.iconName} size={64} decorative />
+						</span>
+
+						<Text variant="h5" as="h2" className="m-0 mt-space-base text-text-primary">
+							Where this film has made an impact?
+						</Text>
+						<Text variant="body-14" color="meta" className="m-0 mt-space-xs">
+							For filmmakers &amp; viewers. Add screenings, playlists, or discussions to show how this
+							film is reaching people.
+						</Text>
+					</div>
 
 					<div className="mt-space-lg grid gap-space-base">
 						<TextField
 							className="w-full"
-							label="Where did you see this film"
+							label="Where did this impact happen?"
+							placeholder="Venue, event, article, course, or playlist"
 							value={values.location}
 							onChange={(event) => updateValue('location', event.target.value)}
 							required
@@ -155,10 +169,11 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 							rows={5}
 						/>
 						<TextField
-							className="w-full"
-							label="When did this happen"
+							className="impact-date-field w-full"
+							label="Date of impact"
 							type="date"
 							value={values.eventDate}
+							onClick={openDatePicker}
 							onChange={(event) => updateValue('eventDate', event.target.value)}
 							required
 						/>

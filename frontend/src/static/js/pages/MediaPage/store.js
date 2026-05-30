@@ -1427,6 +1427,7 @@ class MediaPageStore extends EventEmitter {
 
 	submitCommunityImpactResponse(response) {
 		if (response && 201 === response.status && response.data && Object.keys(response.data)) {
+			this.appendCommunityImpact(response.data);
 			this.emit('community_impact_submit', response.data.uid);
 			this.loadData();
 		}
@@ -1437,6 +1438,36 @@ class MediaPageStore extends EventEmitter {
 			100,
 			this
 		);
+	}
+
+	appendCommunityImpact(impact) {
+		if (!impact || !impact.category) {
+			return;
+		}
+
+		const currentImpacts = MediaPageStoreData[this.id].communityImpacts || {};
+		const currentCategory = currentImpacts[impact.category];
+		const currentEntries = Array.isArray(currentCategory)
+			? currentCategory
+			: Array.isArray(currentCategory?.entries)
+				? currentCategory.entries
+				: [];
+		const nextEntries = [impact].concat(currentEntries.filter((entry) => entry.uid !== impact.uid));
+
+		MediaPageStoreData[this.id].communityImpacts = {
+			...currentImpacts,
+			[impact.category]: Array.isArray(currentCategory)
+				? nextEntries
+				: {
+						...(currentCategory || {}),
+						entries: nextEntries,
+						totalCount: Math.max(Number(currentCategory?.totalCount) || 0, nextEntries.length),
+					},
+		};
+
+		if (MediaPageStoreData[this.id].data) {
+			MediaPageStoreData[this.id].data.community_impacts = MediaPageStoreData[this.id].communityImpacts;
+		}
 	}
 }
 

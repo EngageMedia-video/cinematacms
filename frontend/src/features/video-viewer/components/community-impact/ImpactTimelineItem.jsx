@@ -23,16 +23,20 @@ export function ImpactTimelineItem({ accentClassName = '', date = '', isFirst = 
 
 			<div className="min-w-0">
 				<p className="body-body-14-bold m-0 break-words text-text-primary">{title}</p>
-				<div className="mt-space-2 flex min-w-0 flex-wrap items-center gap-space-2 text-text-muted">
+				<div className="mt-space-2 flex min-w-0 flex-wrap items-center gap-space-xs text-text-muted">
 					{formattedDate ? (
 						<time className="body-body-12-regular" dateTime={date}>
 							{formattedDate}
 						</time>
 					) : null}
-					{safeHref && formattedDate ? <span aria-hidden="true">•</span> : null}
+					{safeHref && formattedDate ? (
+						<span className="body-body-12-regular text-text-muted" aria-hidden="true">
+							•
+						</span>
+					) : null}
 					{safeHref ? (
 						<a
-							className="inline-flex items-center text-cinemata-sunset-horizon-400p outline-none hover:text-cinemata-sunset-horizon-300 focus-visible:ring-2 focus-visible:ring-ring-focus"
+							className="inline-flex h-size-20 w-size-20 items-center justify-center rounded-full text-text-link outline-none hover:bg-bg-surface-hover hover:text-text-link-hover focus-visible:ring-2 focus-visible:ring-ring-focus"
 							href={safeHref}
 							aria-label={`Open impact link for ${title}`}
 							target="_blank"

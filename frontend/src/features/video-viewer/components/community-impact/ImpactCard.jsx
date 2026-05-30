@@ -138,7 +138,7 @@ export function ImpactCard({
 				{canToggle ? (
 					<Button
 						variant="icon"
-						className="h-size-32 w-size-32 shrink-0 rounded-full text-text-muted outline-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-ring-focus"
+						className="h-size-32 w-size-32 shrink-0 rounded-full bg-bg-primary text-text-on-primary outline-none hover:bg-bg-primary-hover hover:text-text-on-primary focus-visible:ring-2 focus-visible:ring-ring-focus"
 						aria-controls={contentId}
 						aria-expanded={expanded}
 						aria-label={
@@ -147,14 +147,7 @@ export function ImpactCard({
 								: `Show all ${title || config.label} entries`
 						}
 						onClick={() => setExpanded((current) => !current)}
-						icon={
-							<Icon
-								name="chevronDown"
-								size="sm"
-								decorative
-								className={cn('transition-transform duration-200', expanded ? 'rotate-180' : '')}
-							/>
-						}
+						icon={<Icon name={expanded ? 'arrowsInSimple' : 'arrowsOutSimple'} size="sm" decorative />}
 					/>
 				) : null}
 			</div>

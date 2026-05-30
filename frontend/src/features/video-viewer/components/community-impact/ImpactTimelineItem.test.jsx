@@ -7,7 +7,7 @@ describe('ImpactTimelineItem', () => {
 		render(
 			<ul>
 				<ImpactTimelineItem
-					accentClassName="text-cinemata-coral-reef-400p"
+					accentClassName="text-text-accent"
 					date="2025-02-01"
 					isFirst
 					title="Manila Community Film Night"
@@ -18,10 +18,10 @@ describe('ImpactTimelineItem', () => {
 
 		expect(screen.getByText('Manila Community Film Night')).toBeVisible();
 		expect(screen.getByText('Feb 1, 2025')).toBeVisible();
-		expect(screen.getByRole('link', { name: 'Open impact link for Manila Community Film Night' })).toHaveAttribute(
-			'href',
-			'https://example.com/manila'
-		);
+		const link = screen.getByRole('link', { name: 'Open impact link for Manila Community Film Night' });
+
+		expect(link).toHaveAttribute('href', 'https://example.com/manila');
+		expect(link).toHaveClass('h-size-20', 'w-size-20', 'rounded-full');
 	});
 
 	it('omits the link when no url is provided', () => {

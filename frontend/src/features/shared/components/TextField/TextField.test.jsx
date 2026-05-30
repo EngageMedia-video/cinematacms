@@ -43,6 +43,17 @@ describe('TextField', () => {
 		expect(input).toHaveValue('A');
 	});
 
+	it('focuses the input when the surrounding field area is clicked', async () => {
+		const user = userEvent.setup();
+		render(<TextField label="Clickable field" />);
+
+		const input = screen.getByLabelText('Clickable field');
+
+		await user.click(input.closest('.field-shell'));
+
+		expect(input).toHaveFocus();
+	});
+
 	it('keeps the entered value in real time when user types', async () => {
 		const user = userEvent.setup();
 		render(<TextField label="Filled field" />);
@@ -52,6 +63,12 @@ describe('TextField', () => {
 		await user.type(input, 'Hello');
 
 		expect(input).toHaveValue('Hello');
+	});
+
+	it('uses a themed input surface instead of the browser default background', () => {
+		render(<TextField label="Themed field" />);
+
+		expect(screen.getByLabelText('Themed field')).toHaveClass('field-input', 'bg-transparent');
 	});
 
 	it('uses error semantics and accessible helper text when invalid', () => {
