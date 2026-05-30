@@ -29,15 +29,15 @@ function NotificationList({ showUnreadOnly }) {
 	const notifications = data?.results ?? [];
 
 	return (
-		<div className="bg-bg-surface py-[22px] dark:bg-cinemata-pacific-deep-900">
+		<div className="bg-notification-surface py-[22px]">
 			<div className="overflow-hidden">
 				{isLoading ? (
-					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-text-muted dark:text-cinemata-pacific-deep-300">
+					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-notification-muted">
 						Loading…
 					</p>
 				) : null}
 				{!isLoading && notifications.length === 0 ? (
-					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-text-muted dark:text-cinemata-pacific-deep-300">
+					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-notification-muted">
 						No notifications
 					</p>
 				) : null}
@@ -185,8 +185,8 @@ function NotificationPageContent() {
 										onKeyDown={handleTabKeyDown}
 										className={`cursor-pointer border-0 text-[14px] font-bold uppercase leading-5 tracking-normal shadow-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring-focus ${
 											active
-												? 'bg-bg-surface px-[22px] py-[12px] text-text-strong dark:bg-cinemata-pacific-deep-900 dark:text-cinemata-neutral-50'
-												: 'bg-bg-surface-muted px-[16px] py-[12px] text-text-secondary hover:bg-bg-surface dark:bg-cinemata-strait-blue-800 dark:text-cinemata-neutral-50 dark:hover:bg-cinemata-strait-blue-700'
+												? 'bg-notification-tab-active px-[22px] py-[12px] text-notification-tab-active-text'
+												: 'bg-notification-tab-inactive px-[16px] py-[12px] text-notification-tab-inactive-text hover:bg-notification-tab-inactive-hover'
 										}`}
 										style={{ border: 'none', boxShadow: 'none', borderRadius: 0 }}
 									>
@@ -199,7 +199,7 @@ function NotificationPageContent() {
 							type="button"
 							onClick={() => markAllAsRead()}
 							disabled={isPending || unreadCount === 0}
-							className="cursor-pointer border-0 bg-transparent p-0 text-[14px] font-medium leading-5 tracking-normal text-text-link hover:text-text-link-hover disabled:cursor-not-allowed disabled:text-text-disabled dark:text-cinemata-strait-blue-100 dark:hover:text-cinemata-sunset-horizon-300 dark:disabled:text-cinemata-neutral-600"
+							className="cursor-pointer border-0 bg-transparent p-0 text-[14px] font-medium leading-5 tracking-normal text-notification-action hover:text-notification-action-hover disabled:cursor-not-allowed disabled:text-notification-action-disabled"
 							style={{ border: 'none', background: 'transparent', boxShadow: 'none' }}
 						>
 							{isPending ? 'Marking…' : 'Mark All as Read'}
@@ -209,7 +209,7 @@ function NotificationPageContent() {
 						role="tabpanel"
 						id={`panel-${activeTab}`}
 						aria-labelledby={`tab-${activeTab}`}
-						className="overflow-hidden rounded-bl-[8px] rounded-br-[8px] rounded-tr-[8px] bg-bg-surface dark:bg-cinemata-pacific-deep-900"
+						className="overflow-hidden rounded-bl-[8px] rounded-br-[8px] rounded-tr-[8px] bg-notification-surface"
 					>
 						<NotificationList
 							key={activeTab === TAB_UNREAD ? 'unread' : 'all'}
@@ -222,7 +222,7 @@ function NotificationPageContent() {
 					id={HASH_PREFERENCES}
 					ref={preferencesRef}
 					aria-label="Notification preferences"
-					className="scroll-mt-6 rounded-[8px] bg-bg-surface px-[16px] pb-[16px] pt-[22px] dark:bg-cinemata-pacific-deep-900"
+					className="scroll-mt-6 rounded-[8px] bg-notification-surface px-[16px] pb-[16px] pt-[22px]"
 				>
 					<NotificationPreferencesForm />
 				</aside>

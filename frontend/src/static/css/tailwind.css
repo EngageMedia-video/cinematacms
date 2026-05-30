@@ -609,6 +609,37 @@ body {
 
 	/* Focus ring */
 	--ring-focus: var(--cinemata-sunset-horizon-400p);
+
+	/* Notification surfaces */
+	--notification-surface-bg: var(--bg-surface);
+	--notification-row-read-bg: var(--bg-surface);
+	--notification-row-unread-bg: var(--cinemata-pacific-deep-50);
+	--notification-row-hover-bg: var(--bg-surface-muted);
+	--notification-avatar-bg: var(--bg-surface-muted);
+	--notification-avatar-fallback-bg: var(--cinemata-neutral-100);
+	--notification-avatar-fallback-text: var(--cinemata-neutral-600);
+	--notification-badge-border: var(--bg-surface);
+	--notification-text: var(--text-primary);
+	--notification-muted: var(--text-muted);
+	--notification-title: var(--text-strong);
+	--notification-label: var(--text-secondary);
+	--notification-divider: var(--border-subtle);
+	--notification-tab-active-bg: var(--bg-surface);
+	--notification-tab-active-text: var(--text-strong);
+	--notification-tab-inactive-bg: var(--bg-surface-muted);
+	--notification-tab-inactive-text: var(--text-secondary);
+	--notification-tab-inactive-hover-bg: var(--bg-surface);
+	--notification-action: var(--text-link);
+	--notification-action-hover: var(--text-link-hover);
+	--notification-action-disabled: var(--text-disabled);
+	--notification-count: var(--text-danger);
+	--notification-scrollbar: var(--cinemata-strait-blue-200);
+	--notification-badge-blue: var(--cinemata-strait-blue-900);
+	--notification-badge-danger: var(--cinemata-red-950);
+	--notification-badge-accent: var(--cinemata-sunset-horizon-800);
+	--notification-badge-muted: var(--cinemata-pacific-deep-700);
+	--notification-coming-soon-bg: var(--bg-surface-muted);
+	--notification-coming-soon-text: var(--text-muted);
 }
 
 body.dark_theme {
@@ -640,6 +671,28 @@ body.dark_theme {
 	--border-subtle: var(--cinemata-pacific-deep-800);
 	--border-strong: var(--cinemata-pacific-deep-400);
 	--border-input: var(--cinemata-sunset-horizon-400p);
+
+	--notification-surface-bg: var(--cinemata-pacific-deep-900);
+	--notification-row-read-bg: var(--cinemata-pacific-deep-900);
+	--notification-row-unread-bg: var(--cinemata-pacific-deep-800);
+	--notification-row-hover-bg: color-mix(in srgb, var(--cinemata-pacific-deep-700) 60%, transparent);
+	--notification-avatar-bg: var(--cinemata-pacific-deep-700);
+	--notification-badge-border: var(--cinemata-pacific-deep-900);
+	--notification-text: var(--cinemata-pacific-deep-50);
+	--notification-muted: var(--cinemata-pacific-deep-300);
+	--notification-title: var(--cinemata-strait-blue-50);
+	--notification-label: var(--cinemata-pacific-deep-400);
+	--notification-divider: var(--cinemata-strait-blue-900);
+	--notification-tab-active-bg: var(--cinemata-pacific-deep-900);
+	--notification-tab-active-text: var(--cinemata-neutral-50);
+	--notification-tab-inactive-bg: var(--cinemata-strait-blue-800);
+	--notification-tab-inactive-text: var(--cinemata-neutral-50);
+	--notification-tab-inactive-hover-bg: var(--cinemata-strait-blue-700);
+	--notification-action: var(--cinemata-strait-blue-100);
+	--notification-action-hover: var(--cinemata-sunset-horizon-300);
+	--notification-action-disabled: var(--cinemata-neutral-600);
+	--notification-coming-soon-bg: var(--cinemata-strait-blue-900);
+	--notification-coming-soon-text: var(--cinemata-pacific-deep-300);
 }
 
 /* stylelint-disable-next-line at-rule-no-unknown */
@@ -693,6 +746,36 @@ body.dark_theme {
 
 	/* Focus ring */
 	--color-ring-focus: var(--ring-focus);
+
+	/* Notifications */
+	--color-notification-surface: var(--notification-surface-bg);
+	--color-notification-row-read: var(--notification-row-read-bg);
+	--color-notification-row-unread: var(--notification-row-unread-bg);
+	--color-notification-row-hover: var(--notification-row-hover-bg);
+	--color-notification-avatar: var(--notification-avatar-bg);
+	--color-notification-avatar-fallback: var(--notification-avatar-fallback-bg);
+	--color-notification-avatar-fallback-text: var(--notification-avatar-fallback-text);
+	--color-notification-badge-border: var(--notification-badge-border);
+	--color-notification-text: var(--notification-text);
+	--color-notification-muted: var(--notification-muted);
+	--color-notification-title: var(--notification-title);
+	--color-notification-label: var(--notification-label);
+	--color-notification-divider: var(--notification-divider);
+	--color-notification-tab-active: var(--notification-tab-active-bg);
+	--color-notification-tab-active-text: var(--notification-tab-active-text);
+	--color-notification-tab-inactive: var(--notification-tab-inactive-bg);
+	--color-notification-tab-inactive-text: var(--notification-tab-inactive-text);
+	--color-notification-tab-inactive-hover: var(--notification-tab-inactive-hover-bg);
+	--color-notification-action: var(--notification-action);
+	--color-notification-action-hover: var(--notification-action-hover);
+	--color-notification-action-disabled: var(--notification-action-disabled);
+	--color-notification-count: var(--notification-count);
+	--color-notification-badge-blue: var(--notification-badge-blue);
+	--color-notification-badge-danger: var(--notification-badge-danger);
+	--color-notification-badge-accent: var(--notification-badge-accent);
+	--color-notification-badge-muted: var(--notification-badge-muted);
+	--color-notification-coming-soon: var(--notification-coming-soon-bg);
+	--color-notification-coming-soon-text: var(--notification-coming-soon-text);
 }
 
 /*
@@ -757,7 +840,7 @@ header[data-topbar] button:not(:disabled) {
 	}
 
 	.notif-scrollbar {
-		scrollbar-color: var(--cinemata-strait-blue-200) transparent;
+		scrollbar-color: var(--notification-scrollbar) transparent;
 		scrollbar-width: thin;
 	}
 
@@ -772,7 +855,7 @@ header[data-topbar] button:not(:disabled) {
 	.notif-scrollbar::-webkit-scrollbar-thumb {
 		border: 2px solid transparent;
 		border-radius: 999px;
-		background-color: var(--cinemata-strait-blue-200);
+		background-color: var(--notification-scrollbar);
 		background-clip: content-box;
 	}
 }

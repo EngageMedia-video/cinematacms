@@ -56,7 +56,7 @@ const meta = {
 		},
 	},
 	render: (args) => (
-		<div className="w-[420px] rounded-lg overflow-hidden bg-cinemata-pacific-deep-900">
+		<div className="w-[420px] rounded-lg overflow-hidden bg-notification-surface">
 			<QueryClientProvider client={queryClient}>
 				<NotificationItem {...args} />
 			</QueryClientProvider>

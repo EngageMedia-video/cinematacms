@@ -6,24 +6,24 @@ import { Icon } from '../../shared/components/Icon';
 
 const ITEM_THEMES = {
 	dark: {
-		readBg: 'bg-cinemata-pacific-deep-900',
-		unreadBg: 'bg-cinemata-pacific-deep-800',
-		hoverBg: 'hover:bg-cinemata-pacific-deep-700/60',
-		avatarBg: 'bg-cinemata-pacific-deep-700',
-		badgeBorder: 'border-cinemata-pacific-deep-900',
-		messageText: 'text-cinemata-pacific-deep-50',
-		metaText: 'text-cinemata-pacific-deep-300',
-		menuText: 'text-cinemata-pacific-deep-300',
+		readBg: 'bg-notification-row-read',
+		unreadBg: 'bg-notification-row-unread',
+		hoverBg: 'hover:bg-notification-row-hover',
+		avatarBg: 'bg-notification-avatar',
+		badgeBorder: 'border-notification-badge-border',
+		messageText: 'text-notification-text',
+		metaText: 'text-notification-muted',
+		menuText: 'text-notification-muted',
 	},
 	light: {
-		readBg: 'bg-bg-surface dark:bg-cinemata-pacific-deep-900',
-		unreadBg: 'bg-cinemata-pacific-deep-50 dark:bg-cinemata-pacific-deep-800',
-		hoverBg: 'hover:bg-bg-surface-muted dark:hover:bg-cinemata-pacific-deep-700/60',
-		avatarBg: 'bg-bg-surface-muted dark:bg-cinemata-pacific-deep-700',
-		badgeBorder: 'border-bg-surface dark:border-cinemata-pacific-deep-900',
-		messageText: 'text-text-primary dark:text-cinemata-pacific-deep-50',
-		metaText: 'text-text-muted dark:text-cinemata-pacific-deep-300',
-		menuText: 'text-text-muted dark:text-cinemata-pacific-deep-300',
+		readBg: 'bg-notification-row-read',
+		unreadBg: 'bg-notification-row-unread',
+		hoverBg: 'hover:bg-notification-row-hover',
+		avatarBg: 'bg-notification-avatar',
+		badgeBorder: 'border-notification-badge-border',
+		messageText: 'text-notification-text',
+		metaText: 'text-notification-muted',
+		menuText: 'text-notification-muted',
 	},
 };
 
@@ -78,7 +78,7 @@ export function NotificationItem({ notification, theme = 'dark' }) {
 					{notification.actor?.thumbnail_url ? (
 						<img src={notification.actor.thumbnail_url} alt="" className="h-full w-full object-cover" />
 					) : (
-						<span className="flex h-full w-full items-center justify-center bg-cinemata-neutral-100 text-[14px] font-semibold leading-none text-cinemata-neutral-600">
+						<span className="flex h-full w-full items-center justify-center bg-notification-avatar-fallback text-[14px] font-semibold leading-none text-notification-avatar-fallback-text">
 							{(notification.actor?.username ?? '?').slice(0, 2).toUpperCase()}
 						</span>
 					)}

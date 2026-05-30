@@ -19,8 +19,8 @@ export function NotificationDialog({
 
 	const markAllColor =
 		unreadCount > 0
-			? 'text-cinemata-strait-blue-100 hover:text-cinemata-sunset-horizon-300'
-			: 'text-cinemata-neutral-600';
+			? 'text-notification-action hover:text-notification-action-hover'
+			: 'text-notification-action-disabled';
 
 	return (
 		<div
@@ -28,17 +28,17 @@ export function NotificationDialog({
 			role="dialog"
 			aria-label={title}
 			className={cn(
-				'absolute right-0 top-full z-50 mt-1 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[8px] bg-cinemata-pacific-deep-900 text-cinemata-strait-blue-50 shadow-lg',
+				'absolute right-0 top-full z-50 mt-1 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[8px] bg-notification-surface text-notification-title shadow-lg',
 				className
 			)}
 		>
 			<div className="flex items-center justify-between px-[16px] pt-[14px] pb-[16px]">
 				<div className="flex items-center gap-1.5">
-					<span className="font-heading text-[16px] font-medium leading-5 text-cinemata-strait-blue-50">
+					<span className="font-heading text-[16px] font-medium leading-5 text-notification-title">
 						{title}
 					</span>
 					{unreadCount > 0 ? (
-						<span className="font-heading text-[16px] font-medium leading-5 text-cinemata-red-500">
+						<span className="font-heading text-[16px] font-medium leading-5 text-notification-count">
 							{unreadCount > 99 ? '99+' : unreadCount}
 						</span>
 					) : null}
@@ -59,23 +59,23 @@ export function NotificationDialog({
 			<div className="notif-scrollbar max-h-[22rem] overflow-y-auto">
 				{isLoading ? (
 					<div className="flex h-[108px] w-full items-center justify-center">
-						<p className="text-[12px] font-medium leading-4 text-cinemata-neutral-600">{loadingMessage}</p>
+						<p className="text-[12px] font-medium leading-4 text-notification-muted">{loadingMessage}</p>
 					</div>
 				) : null}
 				{!isLoading && !hasItems ? (
 					<div className="flex h-[108px] w-full items-center justify-center">
-						<p className="text-[12px] font-medium leading-4 text-cinemata-neutral-600">{emptyMessage}</p>
+						<p className="text-[12px] font-medium leading-4 text-notification-muted">{emptyMessage}</p>
 					</div>
 				) : null}
 				{!isLoading && hasItems ? <div className="flex w-full flex-col">{children}</div> : null}
 			</div>
 
-			<div className="h-px w-full bg-cinemata-pacific-deep-700/60" aria-hidden="true" />
+			<div className="h-px w-full bg-notification-divider" aria-hidden="true" />
 
 			<div className="px-[16px] pt-[16px] pb-[14px]">
 				<a
 					href={seeAllHref}
-					className="rounded-sm text-[12px] font-medium leading-4 text-cinemata-strait-blue-100 no-underline transition-colors hover:text-cinemata-sunset-horizon-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+					className="rounded-sm text-[12px] font-medium leading-4 text-notification-action no-underline transition-colors hover:text-notification-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 				>
 					{seeAllLabel}
 				</a>
