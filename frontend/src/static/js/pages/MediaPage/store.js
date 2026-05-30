@@ -97,6 +97,7 @@ class MediaPageStore extends EventEmitter {
 			while: {
 				deleteMedia: false,
 				submitComment: false,
+				submitCommunityImpact: false,
 				deleteCommentId: null,
 			},
 		};
@@ -106,6 +107,8 @@ class MediaPageStore extends EventEmitter {
 
 		this.submitCommentFail = this.submitCommentFail.bind(this);
 		this.submitCommentResponse = this.submitCommentResponse.bind(this);
+		this.submitCommunityImpactFail = this.submitCommunityImpactFail.bind(this);
+		this.submitCommunityImpactResponse = this.submitCommunityImpactResponse.bind(this);
 
 		this.removeCommentFail = this.removeCommentFail.bind(this);
 		this.removeCommentResponse = this.removeCommentResponse.bind(this);
@@ -154,6 +157,7 @@ class MediaPageStore extends EventEmitter {
 		}
 
 		this.mediaAPIUrl = this.mediacms_config.api.media + '/' + MediaPageStoreData[this.id].mediaId;
+		this.communityImpactAPIUrl = this.mediaAPIUrl + '/community-impacts';
 		if (token) {
 			this.mediaAPIUrl += '?token=' + encodeURIComponent(token);
 		}
@@ -238,6 +242,7 @@ class MediaPageStore extends EventEmitter {
 		if (response && response.data) {
 			//@ todo: Filter data values.
 			MediaPageStoreData[this.id].data = response.data;
+			MediaPageStoreData[this.id].communityImpacts = response.data.community_impacts || {};
 
 			/* ################################################## */
 			/* ################################################## */
@@ -815,6 +820,9 @@ class MediaPageStore extends EventEmitter {
 			case 'media-comments':
 				r = MediaPageStoreData[this.id].comments || [];
 				break;
+			case 'community-impacts':
+				r = MediaPageStoreData[this.id].communityImpacts || {};
+				break;
 			case 'media-data':
 				r = MediaPageStoreData[this.id].data || null;
 				break;
@@ -1214,6 +1222,15 @@ class MediaPageStore extends EventEmitter {
 					this.submitCommentFail
 				);
 				break;
+			case 'SUBMIT_COMMUNITY_IMPACT':
+				if (MediaPageStoreData[this.id].while.submitCommunityImpact) {
+					return;
+				}
+
+				MediaPageStoreData[this.id].while.submitCommunityImpact = true;
+
+				this.submitCommunityImpact(action.communityImpactData);
+				break;
 			case 'DELETE_COMMENT':
 				if (null !== MediaPageStoreData[this.id].while.deleteCommentId) {
 					return;
@@ -1372,6 +1389,50 @@ class MediaPageStore extends EventEmitter {
 		setTimeout(
 			function (ins) {
 				MediaPageStoreData[ins.id].while.submitComment = false;
+			},
+			100,
+			this
+		);
+	}
+
+	submitCommunityImpact(communityImpactData) {
+		const payload = {
+			category: communityImpactData.category,
+			details: communityImpactData.details || '',
+			event_date: communityImpactData.event_date,
+			title: communityImpactData.title || communityImpactData.location,
+			url: communityImpactData.url || communityImpactData.link || '',
+		};
+
+		postRequest(
+			this.communityImpactAPIUrl,
+			payload,
+			{ headers: { 'X-CSRFToken': getCSRFToken() } },
+			false,
+			this.submitCommunityImpactResponse,
+			this.submitCommunityImpactFail
+		);
+	}
+
+	submitCommunityImpactFail() {
+		this.emit('community_impact_submit_fail');
+		setTimeout(
+			function (ins) {
+				MediaPageStoreData[ins.id].while.submitCommunityImpact = false;
+			},
+			100,
+			this
+		);
+	}
+
+	submitCommunityImpactResponse(response) {
+		if (response && 201 === response.status && response.data && Object.keys(response.data)) {
+			this.emit('community_impact_submit', response.data.uid);
+			this.loadData();
+		}
+		setTimeout(
+			function (ins) {
+				MediaPageStoreData[ins.id].while.submitCommunityImpact = false;
 			},
 			100,
 			this
