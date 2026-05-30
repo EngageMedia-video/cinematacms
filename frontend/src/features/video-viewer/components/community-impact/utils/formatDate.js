@@ -13,9 +13,7 @@ export function formatImpactDate(value) {
 
 	if (DATE_ONLY.test(value)) {
 		const [year, month, day] = value.split('-').map(Number);
-		return new Intl.DateTimeFormat('en', FORMAT_OPTIONS).format(
-			new Date(Date.UTC(year, month - 1, day))
-		);
+		return new Intl.DateTimeFormat('en', FORMAT_OPTIONS).format(new Date(Date.UTC(year, month - 1, day)));
 	}
 
 	const date = new Date(value);
