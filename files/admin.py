@@ -11,6 +11,7 @@ from users.validators import validate_internal_html
 from .models import (
     Category,
     Comment,
+    CommunityImpact,
     ContentSensitivity,
     EncodeProfile,
     Encoding,
@@ -100,6 +101,44 @@ class MediaAdmin(admin.ModelAdmin):
 @admin.register(Encoding)
 class EncodingAdmin(admin.ModelAdmin):
     pass
+
+
+@admin.register(CommunityImpact)
+class CommunityImpactAdmin(admin.ModelAdmin):
+    list_display = [
+        "title",
+        "category",
+        "media",
+        "user",
+        "event_date",
+        "add_date",
+    ]
+    list_filter = ["category", "event_date", "add_date"]
+    search_fields = [
+        "title",
+        "details",
+        "media__title",
+        "user__username",
+        "user__email",
+    ]
+    date_hierarchy = "event_date"
+    ordering = ("-event_date", "-add_date")
+    autocomplete_fields = ["media", "user"]
+    readonly_fields = ("uid", "add_date", "edit_date")
+    list_select_related = ("media", "user")
+    list_per_page = 50
+
+    fieldsets = (
+        (None, {"fields": ("media", "user", "category", "title", "details")}),
+        ("Event", {"fields": ("event_date", "url")}),
+        (
+            "Audit",
+            {
+                "fields": ("uid", "add_date", "edit_date"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
 
 
 @admin.register(Category)
