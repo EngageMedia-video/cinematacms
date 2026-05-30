@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import PageStore from '../../../static/js/pages/_PageStore';
 import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 
-import { Button } from '../../shared/components/Button/Button.jsx';
 import { HorizontalMovieItem } from '../../shared/components/MovieItem/MovieItem';
 import { getMediaDurationLabel } from '../../home/utils/mediaList';
 import { buildMetadata, getAuthorLink, getAuthorName } from '../utils/mediaCardMetadata';
@@ -19,6 +18,7 @@ export function RelatedMedia({ hideFirst = true }) {
 	const [mediaType, setMediaType] = useState(MediaPageStore.get('media-type'));
 	const initialSize = PageStore.get('config-options').pages.media.related.initialSize;
 	const [visibleCount, setVisibleCount] = useState(initialSize);
+	const loadMoreRef = useRef(null);
 
 	useEffect(() => {
 		function onMediaDataLoad() {
@@ -31,16 +31,49 @@ export function RelatedMedia({ hideFirst = true }) {
 		return () => MediaPageStore.removeListener('loaded_media_data', onMediaDataLoad);
 	}, [initialSize]);
 
-	if (!items?.length) return null;
-
 	const hideViews = !PageStore.get('config-media-item').displayViews;
-	const relatedItems = hideFirst && (mediaType === 'video' || mediaType === 'audio') ? items.slice(1) : items;
+	const mediaItems = items?.length ? items : [];
+	const relatedItems =
+		hideFirst && (mediaType === 'video' || mediaType === 'audio') ? mediaItems.slice(1) : mediaItems;
 	const displayItems = relatedItems.slice(0, visibleCount);
 	const hasMoreItems = visibleCount < relatedItems.length;
 
-	function onShowMoreClick() {
+	const loadNextPage = useCallback(() => {
 		setVisibleCount((currentVisibleCount) => Math.min(currentVisibleCount + initialSize, relatedItems.length));
-	}
+	}, [initialSize, relatedItems.length]);
+
+	useEffect(() => {
+		const loadMoreElement = loadMoreRef.current;
+
+		if (!hasMoreItems || !loadMoreElement) return undefined;
+
+		if (typeof IntersectionObserver === 'undefined') {
+			function onScroll() {
+				if (loadMoreElement.getBoundingClientRect().top <= window.innerHeight) {
+					loadNextPage();
+				}
+			}
+
+			window.addEventListener('scroll', onScroll, { passive: true });
+			window.addEventListener('resize', onScroll);
+			onScroll();
+
+			return () => {
+				window.removeEventListener('scroll', onScroll);
+				window.removeEventListener('resize', onScroll);
+			};
+		}
+
+		const observer = new IntersectionObserver((entries) => {
+			if (entries.some((entry) => entry.isIntersecting)) {
+				loadNextPage();
+			}
+		});
+
+		observer.observe(loadMoreElement);
+
+		return () => observer.disconnect();
+	}, [hasMoreItems, loadNextPage, visibleCount]);
 
 	if (!displayItems.length) return null;
 
@@ -59,11 +92,7 @@ export function RelatedMedia({ hideFirst = true }) {
 				/>
 			))}
 
-			{hasMoreItems ? (
-				<Button type="button" variant="text" size="sm" onClick={onShowMoreClick}>
-					<span className="text-text-accent hover:text-text-link-hover">SHOW MORE</span>
-				</Button>
-			) : null}
+			{hasMoreItems ? <div ref={loadMoreRef} aria-hidden="true" className="h-px w-full" /> : null}
 		</div>
 	);
 }
