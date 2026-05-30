@@ -84,7 +84,7 @@ export default function MediaActions({ allowDownload, displayViews, downloadLink
 		<div className="relative flex w-full min-w-0 items-center">
 			<div
 				ref={actionsRef}
-				className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden"
+				className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 				onScroll={hideVideoDownloadPopup}
 			>
 				<div className="flex w-max min-w-full flex-nowrap items-center justify-end gap-1 sm:gap-2 *:shrink-0">
