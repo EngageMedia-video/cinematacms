@@ -3,13 +3,12 @@ import os
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db import OperationalError, transaction
+from django.db import transaction
 from django.db.models import Sum
-from django.db.utils import DatabaseError
 
 logger = logging.getLogger(__name__)
 
-STORAGE_USAGE_CACHE_TIMEOUT = 60
+STORAGE_USAGE_CACHE_TIMEOUT = 21600
 SITE_STORAGE_USAGE_CACHE_KEY = "storage_usage:site"
 USER_STORAGE_USAGE_CACHE_KEY = "storage_usage:user:{user_id}"
 
@@ -164,13 +163,15 @@ def refresh_media_storage_usage(media_or_id):
 def schedule_refresh_media_storage_usage(media_or_id):
     media_id = getattr(media_or_id, "id", media_or_id)
 
-    def refresh():
-        try:
-            refresh_media_storage_usage(media_id)
-        except (DatabaseError, OperationalError, OSError):
-            logger.warning("Failed to refresh storage usage for media %s", media_id, exc_info=True)
+    def enqueue():
+        from .tasks import refresh_media_storage_usage_task
 
-    transaction.on_commit(refresh)
+        try:
+            refresh_media_storage_usage_task.apply_async(args=[media_id], queue="short_tasks")
+        except Exception:
+            logger.warning("Failed to enqueue storage usage refresh for media %s", media_id, exc_info=True)
+
+    transaction.on_commit(enqueue)
 
 
 def get_user_storage_usage(user):

@@ -12,7 +12,11 @@ from django.test import RequestFactory, TestCase, override_settings
 from files import tasks
 from files.context_processors import stuff
 from files.models import EncodeProfile, Encoding, Language, Media, Subtitle
-from files.storage_usage import calculate_media_storage_usage, refresh_media_storage_usage
+from files.storage_usage import (
+    calculate_media_storage_usage,
+    refresh_media_storage_usage,
+    schedule_refresh_media_storage_usage,
+)
 from files.tests.helpers import create_test_media, create_test_user
 
 
@@ -107,6 +111,19 @@ class StorageUsageTests(TestCase):
         self.assertEqual(self.media.storage_usage_bytes, 6)
         self.assertIsNone(cache.get(f"storage_usage:user:{self.user.id}"))
         self.assertIsNone(cache.get("storage_usage:site"))
+
+    def test_schedule_refresh_media_storage_usage_enqueues_after_commit(self):
+        with patch("files.tasks.refresh_media_storage_usage_task.apply_async") as apply_async:
+            with self.captureOnCommitCallbacks(execute=True):
+                schedule_refresh_media_storage_usage(self.media)
+
+        apply_async.assert_called_once_with(args=[self.media.pk], queue="short_tasks")
+
+    def test_refresh_media_storage_usage_task_calls_refresh_helper(self):
+        with patch("files.storage_usage.refresh_media_storage_usage") as refresh:
+            self.assertTrue(tasks.refresh_media_storage_usage_task(self.media.pk))
+
+        refresh.assert_called_once_with(self.media.pk)
 
     def test_context_processor_exposes_user_and_site_storage_usage(self):
         other_user = create_test_user(username="storage_other")

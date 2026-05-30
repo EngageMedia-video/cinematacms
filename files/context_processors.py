@@ -1,6 +1,7 @@
 import json
 
 import waffle
+from django.apps import apps
 from django.conf import settings
 from django.db import DatabaseError
 
@@ -17,6 +18,9 @@ from .storage_usage import get_storage_usage_for_request
 
 
 def _switch(name, fallback_setting):
+    if not apps.is_installed("waffle"):
+        return getattr(settings, fallback_setting, False)
+
     try:
         return waffle.switch_is_active(name)
     except DatabaseError:

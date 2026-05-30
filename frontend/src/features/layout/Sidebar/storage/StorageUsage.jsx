@@ -31,7 +31,7 @@ export function StorageUsage({ usedBytes, scope } = {}) {
 					<span className="body-body-12-regular text-text-muted">{label}</span>
 					<span className="h-3 w-14 rounded-full bg-bg-surface-muted" aria-hidden="true" />
 				</div>
-				<div className="h-2 w-full rounded-full bg-cinemata-coral-reef-100 dark:bg-cinemata-coral-reef-900" />
+				<div className="h-2 w-full rounded-full bg-bg-skeleton" />
 			</div>
 		);
 	}
@@ -53,15 +53,12 @@ export function StorageUsage({ usedBytes, scope } = {}) {
 				<span className="body-body-12-regular min-w-0 text-text-muted">{label}</span>
 				<span className="body-body-12-medium shrink-0 text-text-strong">{formatBytes(resolvedUsedBytes)}</span>
 			</div>
-			<div
-				aria-hidden="true"
-				className="h-2 w-full overflow-hidden rounded-full bg-cinemata-coral-reef-100 dark:bg-cinemata-coral-reef-900"
-			>
+			<div aria-hidden="true" className="h-2 w-full overflow-hidden rounded-full bg-bg-skeleton">
 				<div
-					className="h-full w-full rounded-full bg-cinemata-green-700p dark:bg-cinemata-green-800"
+					className="h-full w-full rounded-full bg-bg-success"
 					style={{
 						backgroundImage:
-							'repeating-linear-gradient(135deg, var(--cinemata-green-500) 0, var(--cinemata-green-500) 6px, var(--cinemata-green-800) 6px, var(--cinemata-green-800) 12px)',
+							'repeating-linear-gradient(135deg, var(--bg-success) 0, var(--bg-success) 6px, var(--bg-success-strong) 6px, var(--bg-success-strong) 12px)',
 					}}
 				/>
 			</div>

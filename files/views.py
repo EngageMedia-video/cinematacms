@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import waffle
-from allauth.mfa.utils import is_mfa_enabled
+from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -40,6 +40,7 @@ from cms.custom_pagination import FastPaginationWithoutCount, SmallPreviewPagina
 from cms.permissions import (
     IsAuthorizedToAdd,
     IsUserOrEditor,
+    is_mfa_enabled_for_user,
     user_requires_mfa,
 )
 from cms.request_utils import get_client_ip
@@ -351,7 +352,7 @@ def manage_users(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
     # MFA check
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
         return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
     # Hard config -> ensure superuser / manager only have access
@@ -367,7 +368,7 @@ def manage_media(request):
         return HttpResponseRedirect("/")
 
     # MFA check
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
         return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
     # Hard config -> ensure superuser / manager / editor only have access
@@ -382,7 +383,7 @@ def manage_comments(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
         return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
     if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
@@ -396,7 +397,7 @@ def manage_uploads(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
         return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
     if not can_manage_uploads(request.user):
@@ -561,9 +562,12 @@ def upload_media(request):
     form = LoginForm()
     context = {}
     context["form"] = form
-    try:
-        upload_allowed = waffle.switch_is_active("upload_media_allowed")
-    except DatabaseError:
+    if apps.is_installed("waffle"):
+        try:
+            upload_allowed = waffle.switch_is_active("upload_media_allowed")
+        except DatabaseError:
+            upload_allowed = getattr(settings, "UPLOAD_MEDIA_ALLOWED", True)
+    else:
         upload_allowed = getattr(settings, "UPLOAD_MEDIA_ALLOWED", True)
     context["can_add"] = upload_allowed and can_upload_media(request.user)
     can_upload_exp = settings.CANNOT_ADD_MEDIA_MESSAGE

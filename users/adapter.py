@@ -1,12 +1,11 @@
 from allauth.account.adapter import DefaultAccountAdapter
-from allauth.mfa.utils import is_mfa_enabled
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.shortcuts import resolve_url
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 
-from cms.permissions import user_requires_mfa
+from cms.permissions import is_mfa_enabled_for_user, user_requires_mfa
 from utils.security import generate_cipher, generate_key
 
 from .models import BlackListedEmail
@@ -37,7 +36,7 @@ class MyAccountAdapter(DefaultAccountAdapter):
 
     def get_login_redirect_url(self, request):
         if user_requires_mfa(request.user):
-            mfa_enabled = is_mfa_enabled(request.user)
+            mfa_enabled = is_mfa_enabled_for_user(request.user)
             if not mfa_enabled:
                 return resolve_url("/accounts/2fa/totp/activate")
             return self._get_safe_redirect_url(request)

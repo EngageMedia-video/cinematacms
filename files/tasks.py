@@ -844,6 +844,17 @@ def media_init(friendly_token):
     return True
 
 
+@task(name="refresh_media_storage_usage", queue="short_tasks")
+def refresh_media_storage_usage_task(media_id):
+    from .storage_usage import refresh_media_storage_usage
+
+    try:
+        refresh_media_storage_usage(media_id)
+    except Exception:
+        logger.warning("Failed to refresh storage usage for media %s", media_id, exc_info=True)
+    return True
+
+
 @task(name="check_running_states", queue="short_tasks")
 def check_running_states():
     encodings = Encoding.objects.filter(status="running")

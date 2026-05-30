@@ -1,8 +1,7 @@
 import logging
 
-from allauth.mfa.base.forms import AuthenticateForm
-from allauth.mfa.totp.forms import ActivateTOTPForm
 from django import forms
+from django.apps import apps
 from django.utils.translation import gettext_lazy as _
 from kombu.exceptions import OperationalError
 
@@ -12,6 +11,13 @@ from files.tasks import subscribe_user
 from .models import Channel, User
 
 logger = logging.getLogger(__name__)
+
+if apps.is_installed("allauth.mfa"):
+    from allauth.mfa.base.forms import AuthenticateForm
+    from allauth.mfa.totp.forms import ActivateTOTPForm
+else:
+    AuthenticateForm = forms.Form
+    ActivateTOTPForm = forms.Form
 
 
 class CustomAuthenticateForm(AuthenticateForm):

@@ -10,6 +10,7 @@ import uuid
 
 import m3u8
 import waffle
+from django.apps import apps
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
@@ -1089,9 +1090,12 @@ class Media(models.Model):
     def ratings_info(self):
         # to be used if user ratings are allowed
         ret = []
-        try:
-            ratings_enabled = waffle.switch_is_active("allow_ratings")
-        except DatabaseError:
+        if apps.is_installed("waffle"):
+            try:
+                ratings_enabled = waffle.switch_is_active("allow_ratings")
+            except DatabaseError:
+                ratings_enabled = getattr(settings, "ALLOW_RATINGS", False)
+        else:
             ratings_enabled = getattr(settings, "ALLOW_RATINGS", False)
         if not ratings_enabled:
             return []
