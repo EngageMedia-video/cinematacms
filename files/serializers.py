@@ -480,9 +480,13 @@ class CommunityImpactSerializer(serializers.ModelSerializer):
         return value
 
     def validate_category(self, value):
-        valid_categories = {category for category, _label in CommunityImpact.CATEGORY_CHOICES}
-        if value not in valid_categories:
-            raise serializers.ValidationError(f"Category must be one of: {sorted(valid_categories)}.")
+        # "saves" is a computed/reserved bucket surfaced by SingleMediaSerializer;
+        # it must never be persisted from client input as a CommunityImpact row.
+        writable_categories = {
+            category for category, _label in CommunityImpact.CATEGORY_CHOICES if category != CommunityImpact.SAVES
+        }
+        if value not in writable_categories:
+            raise serializers.ValidationError(f"Category must be one of: {sorted(writable_categories)}.")
         return value
 
     def validate_url(self, value):

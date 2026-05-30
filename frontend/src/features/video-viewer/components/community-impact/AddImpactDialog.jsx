@@ -142,7 +142,7 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 						</span>
 
 						<Text variant="h5" as="h2" className="m-0 mt-space-base text-text-primary">
-							Where this film has made an impact?
+							Where has this film made an impact?
 						</Text>
 						<Text variant="body-14" color="meta" className="m-0 mt-space-xs">
 							For filmmakers &amp; viewers. Add screenings, playlists, or discussions to show how this

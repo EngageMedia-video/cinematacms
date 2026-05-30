@@ -1856,6 +1856,14 @@ class CommunityImpact(models.Model):
         if len(words) > 80:
             self.details = " ".join(words[:80])
         super(CommunityImpact, self).save(*args, **kwargs)
+        # community_impacts is exposed by SingleMediaSerializer, so the cached
+        # media detail must be invalidated when an impact entry changes.
+        invalidate_media_cache(self.media.friendly_token)
+
+    def delete(self, *args, **kwargs):
+        friendly_token = self.media.friendly_token
+        super(CommunityImpact, self).delete(*args, **kwargs)
+        invalidate_media_cache(friendly_token)
 
 
 class Page(models.Model):

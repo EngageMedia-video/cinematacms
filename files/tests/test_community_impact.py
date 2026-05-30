@@ -56,6 +56,18 @@ class CommunityImpactSerializerTests(TestCase):
             self.assertFalse(serializer.is_valid(), msg=f"Expected {bad_url!r} to be rejected")
             self.assertIn("url", serializer.errors)
 
+    def test_rejects_saves_category_on_write(self):
+        serializer = CommunityImpactSerializer(
+            data={
+                "category": CommunityImpact.SAVES,
+                "title": "Fake saves entry",
+                "event_date": "2026-05-29",
+                "url": "",
+            }
+        )
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("category", serializer.errors)
+
     def test_accepts_http_and_https_urls(self):
         for good_url in ("http://example.com/", "https://example.com/path"):
             serializer = CommunityImpactSerializer(
