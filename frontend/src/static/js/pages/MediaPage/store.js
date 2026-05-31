@@ -929,6 +929,13 @@ class MediaPageStore extends EventEmitter {
 						? MediaPageStoreData[this.id].data.topics_info
 						: [];
 				break;
+			case 'media-content-sensitivity':
+				r =
+					void 0 !== MediaPageStoreData[this.id].data &&
+					void 0 !== MediaPageStoreData[this.id].data.content_sensitivity_info
+						? MediaPageStoreData[this.id].data.content_sensitivity_info
+						: [];
+				break;
 			case 'media-tags':
 				r =
 					void 0 !== MediaPageStoreData[this.id].data && void 0 !== MediaPageStoreData[this.id].data.tags_info
