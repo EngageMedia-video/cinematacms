@@ -183,8 +183,8 @@ function NotificationPageContent() {
 										onKeyDown={handleTabKeyDown}
 										className={`cursor-pointer border-0 text-[14px] font-bold uppercase leading-5 tracking-normal shadow-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring-focus ${
 											active
-												? 'bg-bg-surface px-[22px] py-[12px] text-notification-tab-active-text'
-												: 'bg-notification-tab-inactive px-[16px] py-[12px] text-notification-tab-inactive-text hover:bg-notification-tab-inactive-hover'
+												? 'bg-bg-surface px-[22px] py-[12px] text-text-strong'
+												: 'bg-bg-surface-muted px-[16px] py-[12px] text-text-secondary hover:bg-bg-surface-hover'
 										}`}
 										style={{ border: 'none', boxShadow: 'none', borderRadius: 0 }}
 									>
@@ -197,7 +197,7 @@ function NotificationPageContent() {
 							type="button"
 							onClick={() => markAllAsRead()}
 							disabled={isPending || unreadCount === 0}
-							className="cursor-pointer border-0 bg-transparent p-0 text-[14px] font-medium leading-5 tracking-normal text-notification-action hover:text-notification-action-hover disabled:cursor-not-allowed disabled:text-notification-action-disabled"
+							className="cursor-pointer border-0 bg-transparent p-0 text-[14px] font-medium leading-5 tracking-normal text-text-link hover:text-text-link-hover disabled:cursor-not-allowed disabled:text-text-disabled"
 							style={{ border: 'none', background: 'transparent', boxShadow: 'none' }}
 						>
 							{isPending ? 'Marking…' : 'Mark All as Read'}

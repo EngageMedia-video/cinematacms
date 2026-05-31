@@ -18,9 +18,7 @@ export function NotificationDialog({
 	const hasItems = Children.count(children) > 0;
 
 	const markAllColor =
-		unreadCount > 0
-			? 'text-notification-action hover:text-notification-action-hover'
-			: 'text-notification-action-disabled';
+		unreadCount > 0 ? 'text-text-link hover:text-text-link-hover' : 'text-text-disabled';
 
 	return (
 		<div
@@ -54,7 +52,7 @@ export function NotificationDialog({
 				</button>
 			</div>
 
-			<div className="notif-scrollbar max-h-[22rem] overflow-y-auto">
+			<div className="thin-brand-scrollbar max-h-[22rem] overflow-y-auto">
 				{isLoading ? (
 					<div className="flex h-[108px] w-full items-center justify-center">
 						<p className="text-[12px] font-medium leading-4 text-text-muted">{loadingMessage}</p>
@@ -68,12 +66,12 @@ export function NotificationDialog({
 				{!isLoading && hasItems ? <div className="flex w-full flex-col">{children}</div> : null}
 			</div>
 
-			<div className="h-px w-full bg-notification-divider" aria-hidden="true" />
+			<div className="h-px w-full bg-border-subtle" aria-hidden="true" />
 
 			<div className="px-[16px] pt-[16px] pb-[14px]">
 				<a
 					href={seeAllHref}
-					className="rounded-sm text-[12px] font-medium leading-4 text-notification-action no-underline transition-colors hover:text-notification-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+					className="rounded-sm text-[12px] font-medium leading-4 text-text-link no-underline transition-colors hover:text-text-link-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 				>
 					{seeAllLabel}
 				</a>

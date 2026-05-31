@@ -582,6 +582,11 @@ body {
 	--bg-surface-muted: var(--cinemata-neutral-200);
 	--bg-surface-hover: var(--cinemata-pacific-deep-50);
 	--bg-surface-inverse: var(--cinemata-pacific-deep-900);
+	--bg-avatar-fallback: var(--cinemata-neutral-100);
+	--bg-badge-info: var(--cinemata-strait-blue-900);
+	--bg-badge-danger: var(--cinemata-red-950);
+	--bg-badge-accent: var(--cinemata-sunset-horizon-800);
+	--bg-badge-muted: var(--cinemata-pacific-deep-700);
 	--bg-overlay-dark: var(--cinemata-pacific-deep-900);
 	--bg-chrome: var(--cinemata-pacific-deep-800);
 	--bg-chrome-hover: var(--cinemata-pacific-deep-700);
@@ -606,6 +611,7 @@ body {
 	--text-description: var(--cinemata-pacific-deep-700);
 	--text-subtle: var(--cinemata-neutral-500);
 	--text-disabled: var(--cinemata-pacific-deep-500);
+	--text-avatar-fallback: var(--cinemata-neutral-600);
 	--text-inverse: var(--cinemata-white);
 	--text-on-primary: var(--cinemata-white);
 	--text-on-chrome: var(--cinemata-strait-blue-50);
@@ -629,29 +635,6 @@ body {
 
 	/* Focus ring */
 	--ring-focus: var(--cinemata-sunset-horizon-400p);
-
-	/* Notification surfaces */
-	--notification-row-unread-bg: var(--cinemata-pacific-deep-50);
-	--notification-row-hover-bg: var(--bg-surface-muted);
-	--notification-avatar-bg: var(--bg-surface-muted);
-	--notification-avatar-fallback-bg: var(--cinemata-neutral-100);
-	--notification-avatar-fallback-text: var(--cinemata-neutral-600);
-	--notification-text: var(--text-primary);
-	--notification-label: var(--text-secondary);
-	--notification-divider: var(--border-subtle);
-	--notification-tab-active-text: var(--text-strong);
-	--notification-tab-inactive-bg: var(--bg-surface-muted);
-	--notification-tab-inactive-text: var(--text-secondary);
-	--notification-tab-inactive-hover-bg: var(--bg-surface);
-	--notification-action: var(--text-link);
-	--notification-action-hover: var(--text-link-hover);
-	--notification-action-disabled: var(--text-disabled);
-	--notification-scrollbar: var(--cinemata-strait-blue-200);
-	--notification-badge-blue: var(--cinemata-strait-blue-900);
-	--notification-badge-danger: var(--cinemata-red-950);
-	--notification-badge-accent: var(--cinemata-sunset-horizon-800);
-	--notification-badge-muted: var(--cinemata-pacific-deep-700);
-	--notification-coming-soon-bg: var(--bg-surface-muted);
 
 	/* Component: Switch */
 	--switch-track-on-color: var(--cinemata-coral-reef-600);
@@ -694,21 +677,6 @@ body.dark_theme {
 	--border-strong: var(--cinemata-pacific-deep-400);
 	--border-input: var(--cinemata-sunset-horizon-400p);
 
-	--notification-row-unread-bg: var(--cinemata-pacific-deep-800);
-	--notification-row-hover-bg: color-mix(in srgb, var(--cinemata-pacific-deep-700) 60%, transparent);
-	--notification-avatar-bg: var(--cinemata-pacific-deep-700);
-	--notification-text: var(--cinemata-pacific-deep-50);
-	--notification-label: var(--cinemata-pacific-deep-400);
-	--notification-divider: var(--cinemata-strait-blue-900);
-	--notification-tab-active-text: var(--cinemata-neutral-50);
-	--notification-tab-inactive-bg: var(--cinemata-strait-blue-800);
-	--notification-tab-inactive-text: var(--cinemata-neutral-50);
-	--notification-tab-inactive-hover-bg: var(--cinemata-strait-blue-700);
-	--notification-action: var(--cinemata-strait-blue-100);
-	--notification-action-hover: var(--cinemata-sunset-horizon-300);
-	--notification-action-disabled: var(--cinemata-neutral-600);
-	--notification-coming-soon-bg: var(--cinemata-strait-blue-900);
-
 	--switch-track-on-color: var(--cinemata-coral-reef-700);
 	--switch-track-off-color: var(--cinemata-pacific-deep-800);
 }
@@ -722,6 +690,11 @@ body.dark_theme {
 	--color-bg-surface-muted: var(--bg-surface-muted);
 	--color-bg-surface-hover: var(--bg-surface-hover);
 	--color-bg-surface-inverse: var(--bg-surface-inverse);
+	--color-bg-avatar-fallback: var(--bg-avatar-fallback);
+	--color-bg-badge-info: var(--bg-badge-info);
+	--color-bg-badge-danger: var(--bg-badge-danger);
+	--color-bg-badge-accent: var(--bg-badge-accent);
+	--color-bg-badge-muted: var(--bg-badge-muted);
 	--color-bg-overlay-dark: var(--bg-overlay-dark);
 	--color-bg-chrome: var(--bg-chrome);
 	--color-bg-chrome-hover: var(--bg-chrome-hover);
@@ -746,6 +719,7 @@ body.dark_theme {
 	--color-text-description: var(--text-description);
 	--color-text-subtle: var(--text-subtle);
 	--color-text-disabled: var(--text-disabled);
+	--color-text-avatar-fallback: var(--text-avatar-fallback);
 	--color-text-inverse: var(--text-inverse);
 	--color-text-on-primary: var(--text-on-primary);
 	--color-text-on-chrome: var(--text-on-chrome);
@@ -770,27 +744,6 @@ body.dark_theme {
 	/* Focus ring */
 	--color-ring-focus: var(--ring-focus);
 
-	/* Notifications */
-	--color-notification-row-unread: var(--notification-row-unread-bg);
-	--color-notification-row-hover: var(--notification-row-hover-bg);
-	--color-notification-avatar: var(--notification-avatar-bg);
-	--color-notification-avatar-fallback: var(--notification-avatar-fallback-bg);
-	--color-notification-avatar-fallback-text: var(--notification-avatar-fallback-text);
-	--color-notification-text: var(--notification-text);
-	--color-notification-label: var(--notification-label);
-	--color-notification-divider: var(--notification-divider);
-	--color-notification-tab-active-text: var(--notification-tab-active-text);
-	--color-notification-tab-inactive: var(--notification-tab-inactive-bg);
-	--color-notification-tab-inactive-text: var(--notification-tab-inactive-text);
-	--color-notification-tab-inactive-hover: var(--notification-tab-inactive-hover-bg);
-	--color-notification-action: var(--notification-action);
-	--color-notification-action-hover: var(--notification-action-hover);
-	--color-notification-action-disabled: var(--notification-action-disabled);
-	--color-notification-badge-blue: var(--notification-badge-blue);
-	--color-notification-badge-danger: var(--notification-badge-danger);
-	--color-notification-badge-accent: var(--notification-badge-accent);
-	--color-notification-badge-muted: var(--notification-badge-muted);
-	--color-notification-coming-soon: var(--notification-coming-soon-bg);
 }
 
 /*
@@ -854,23 +807,23 @@ header[data-topbar] button:not(:disabled) {
 		border-color: var(--border-chrome, var(--color-border-chrome)) !important;
 	}
 
-	.notif-scrollbar {
-		scrollbar-color: var(--notification-scrollbar) transparent;
+	.thin-brand-scrollbar {
+		scrollbar-color: var(--cinemata-strait-blue-200) transparent;
 		scrollbar-width: thin;
 	}
 
-	.notif-scrollbar::-webkit-scrollbar {
+	.thin-brand-scrollbar::-webkit-scrollbar {
 		width: 6px;
 	}
 
-	.notif-scrollbar::-webkit-scrollbar-track {
+	.thin-brand-scrollbar::-webkit-scrollbar-track {
 		background: transparent;
 	}
 
-	.notif-scrollbar::-webkit-scrollbar-thumb {
+	.thin-brand-scrollbar::-webkit-scrollbar-thumb {
 		border: 2px solid transparent;
 		border-radius: 999px;
-		background-color: var(--notification-scrollbar);
+		background-color: var(--cinemata-strait-blue-200);
 		background-clip: content-box;
 	}
 }
