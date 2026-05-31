@@ -12,9 +12,9 @@ import VideoViewer from '../../../static/js/components/MediaViewer/VideoViewer';
 import VideoViewerStore from '../../../static/js/components/MediaViewer/VideoViewer/store.js';
 import { SiteConsumer } from '../../../static/js/contexts/SiteContext';
 import { RestrictedMediaGate } from '../../shared/components/RestrictedMediaGate';
+import { CommentsSection } from '../../comments';
 
 import '../../../static/js/pages/styles/MediaPage.scss';
-import CommentsList from '../../../static/js/components/-NEW-/Comments.js';
 
 const wideLayoutBreakpoint = 1216;
 
@@ -128,6 +128,11 @@ export class VideoViewerPage extends Page {
 	pageContent() {
 		const viewerClassname = 'cf viewer-section' + (this.state.theaterMode ? ' theater-mode' : ' viewer-wide');
 		const viewerNestedClassname = 'viewer-section-nested' + (this.state.theaterMode ? ' viewer-section' : '');
+		const commentsPanel = this.state.mediaLoaded ? (
+			<div className="viewer-sidebar-comments mb-6 box-border w-full px-4 md:px-0" key="viewer-comments">
+				<CommentsSection friendlyToken={MediaPageStore.get('media-id')} variant="sidebar" />
+			</div>
+		) : null;
 
 		if (this.state.needsPassword) {
 			return <RestrictedMediaGate viewerClassname={viewerClassname} onPasswordSuccess={this.onPasswordSuccess} />;
@@ -150,10 +155,7 @@ export class VideoViewerPage extends Page {
 							? [
 									<ViewerInfoVideo key="viewer-info" />,
 									<div className="viewer-sidebar" key="viewer-sidebar-panel">
-										{/* TODO: Improve comment section */}
-										<div className="viewer-sidebar-panel viewer-sidebar-comments">
-											<CommentsList />
-										</div>
+										{commentsPanel}
 										{this.state.pagePlaylistLoaded ? (
 											<ViewerSidebar
 												key="viewer-sidebar"
@@ -165,10 +167,7 @@ export class VideoViewerPage extends Page {
 								]
 							: [
 									<div className="viewer-sidebar" key="viewer-sidebar-panel">
-										{/* TODO: Improve comment section */}
-										<div className="viewer-sidebar-panel viewer-sidebar-comments">
-											<CommentsList />
-										</div>
+										{commentsPanel}
 										{this.state.pagePlaylistLoaded ? (
 											<ViewerSidebar
 												key="viewer-sidebar"

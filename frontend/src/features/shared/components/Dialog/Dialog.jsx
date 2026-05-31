@@ -227,7 +227,12 @@ export function DialogContent({
 	}
 
 	return createPortal(
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+		// z-[70] sits above the legacy topbar (z-[60]). Some legacy SCSS in
+		// src/static/ uses much higher z-indexes (the topbar mobile menu and
+		// a couple of popup-fullscreen surfaces). If a consumer needs to
+		// overlay one of those, override by passing the matching value via
+		// `overlayClassName` and a peer class on the content wrapper.
+		<div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
 			<div
 				aria-hidden="true"
 				data-dialog-overlay

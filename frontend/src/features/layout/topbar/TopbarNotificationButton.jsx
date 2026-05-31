@@ -27,7 +27,7 @@ function BellButton() {
 				{count > 0 ? (
 					<span
 						aria-hidden="true"
-						className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full pointer-events-none ring-2 ring-bg-overlay-dark"
+						className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-bg-danger rounded-full pointer-events-none ring-2 ring-bg-overlay-dark"
 					/>
 				) : null}
 			</TopbarIconButton>
