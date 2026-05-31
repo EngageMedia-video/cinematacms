@@ -34,9 +34,7 @@ export function NotificationDialog({
 		>
 			<div className="flex items-center justify-between px-[16px] pt-[14px] pb-[16px]">
 				<div className="flex items-center gap-1.5">
-					<span className="font-heading text-[16px] font-medium leading-5 text-text-strong">
-						{title}
-					</span>
+					<span className="font-heading text-[16px] font-medium leading-5 text-text-strong">{title}</span>
 					{unreadCount > 0 ? (
 						<span className="font-heading text-[16px] font-medium leading-5 text-text-danger">
 							{unreadCount > 99 ? '99+' : unreadCount}

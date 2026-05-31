@@ -32,9 +32,7 @@ function NotificationList({ showUnreadOnly }) {
 		<div className="bg-bg-surface py-[22px]">
 			<div className="overflow-hidden">
 				{isLoading ? (
-					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-text-muted">
-						Loading…
-					</p>
+					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-text-muted">Loading…</p>
 				) : null}
 				{!isLoading && notifications.length === 0 ? (
 					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-text-muted">
