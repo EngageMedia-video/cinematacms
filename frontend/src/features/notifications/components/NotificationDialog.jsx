@@ -17,8 +17,7 @@ export function NotificationDialog({
 }) {
 	const hasItems = Children.count(children) > 0;
 
-	const markAllColor =
-		unreadCount > 0 ? 'text-text-link hover:text-text-link-hover' : 'text-text-disabled';
+	const markAllColor = unreadCount > 0 ? 'text-text-link hover:text-text-link-hover' : 'text-text-disabled';
 
 	return (
 		<div

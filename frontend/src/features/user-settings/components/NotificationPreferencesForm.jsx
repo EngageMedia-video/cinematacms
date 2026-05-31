@@ -93,11 +93,7 @@ export function NotificationPreferencesForm() {
 	const isDirty = useMemo(() => isDirtyState(draft, data), [draft, data]);
 
 	if (isLoading) {
-		return (
-			<p className="px-4 py-8 text-center text-[14px] leading-5 text-text-secondary">
-				Loading…
-			</p>
-		);
+		return <p className="px-4 py-8 text-center text-[14px] leading-5 text-text-secondary">Loading…</p>;
 	}
 
 	if (isError) {
