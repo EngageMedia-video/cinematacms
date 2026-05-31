@@ -4,7 +4,8 @@ import { useSubmitComment } from '../hooks/useSubmitComment';
 import { usePlayerReady } from '../hooks/usePlayerReady';
 import { getCurrentPlayerTime } from '../utils/videoPlayer';
 import { formatTimestamp } from '../utils/timestamp';
-import { gradientForName, initialFor } from '../utils/avatar';
+import { resolveAvatarSrc } from '../utils/avatar';
+import { Avatar } from '../../shared/components/Avatar';
 
 function getUser() {
 	if (typeof window === 'undefined') return null;
@@ -15,22 +16,6 @@ function getSignInHref() {
 	if (typeof window === 'undefined') return '/accounts/login/';
 	const next = window.location.pathname + window.location.search;
 	return `/accounts/login/?next=${encodeURIComponent(next)}`;
-}
-
-function Avatar({ name, thumbnail }) {
-	if (thumbnail) {
-		return <img src={thumbnail} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />;
-	}
-	const { from, to } = gradientForName(name);
-	return (
-		<span
-			aria-hidden="true"
-			className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-text-on-primary"
-			style={{ background: `linear-gradient(to bottom, ${from}, ${to})` }}
-		>
-			{initialFor(name)}
-		</span>
-	);
 }
 
 export function CommentForm({ friendlyToken }) {
@@ -139,7 +124,11 @@ export function CommentForm({ friendlyToken }) {
 			{error ? <p className="text-xs text-text-danger">{error}</p> : null}
 
 			<div className="flex items-center justify-between gap-2">
-				<Avatar name={user?.name || user?.username} thumbnail={user?.thumbnail} />
+				<Avatar
+					src={resolveAvatarSrc(user?.thumbnail) || undefined}
+					name={user?.name || user?.username || 'User'}
+					size="large"
+				/>
 
 				<div className="flex items-center gap-2">
 					<button

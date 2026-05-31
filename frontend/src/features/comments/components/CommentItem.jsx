@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { format as formatTimeago } from 'timeago.js';
 import { CommentText } from './CommentText';
 import { useDeleteComment } from '../hooks/useDeleteComment';
-import { gradientForName, initialFor } from '../utils/avatar';
+import { resolveAvatarSrc } from '../utils/avatar';
+import { Avatar } from '../../shared/components/Avatar';
 
 function getUser() {
 	if (typeof window === 'undefined') return null;
@@ -35,22 +36,6 @@ function formatTimeOfDay(addDate) {
 	} catch {
 		return '';
 	}
-}
-
-function Avatar({ name, thumbnail }) {
-	if (thumbnail) {
-		return <img src={thumbnail} alt="" className="h-8 w-8 rounded-full object-cover" />;
-	}
-	const { from, to } = gradientForName(name);
-	return (
-		<span
-			aria-hidden="true"
-			className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-text-on-primary"
-			style={{ background: `linear-gradient(to bottom, ${from}, ${to})` }}
-		>
-			{initialFor(name)}
-		</span>
-	);
 }
 
 export function CommentItem({ comment, friendlyToken, showTrail = true }) {
@@ -110,7 +95,11 @@ export function CommentItem({ comment, friendlyToken, showTrail = true }) {
 	return (
 		<div data-comment className="flex gap-4 items-start">
 			<div className="flex flex-col items-center gap-1.5 self-stretch shrink-0">
-				<Avatar name={comment.author_name} thumbnail={comment.author_thumbnail_url} />
+				<Avatar
+					src={resolveAvatarSrc(comment.author_thumbnail_url) || undefined}
+					name={comment.author_name || 'User'}
+					size="large"
+				/>
 				{showTrail ? (
 					<span aria-hidden="true" className="w-px flex-1 min-h-[16px] bg-border-default opacity-60" />
 				) : null}
