@@ -67,27 +67,21 @@ This page is the working reference for the token catalogue. For the underlying d
 
 <Heading>Notification tokens</Heading>
 
-Notification-specific tokens preserve the notification redesign's chrome without raw palette utilities in JSX.
+Notification-specific tokens cover only the roles whose value differs from every existing semantic token in at least one theme. Where a role matched an existing token in both light and dark it was removed in favour of the base token: the popup/panel and read-row/active-tab surfaces use `bg-bg-surface`, the badge cut-out uses `border-bg-surface`, muted and coming-soon copy use `text-text-muted`, titles use `text-text-strong`, and the unread count uses `text-text-danger`.
 
-- **`bg-notification-surface`** — notification popup, list panel, and preferences panel. Light: `neutral-50` / Dark: `pacific-deep-900`
-- **`bg-notification-row-read`** — read notification row background. Light: `neutral-50` / Dark: `pacific-deep-900`
 - **`bg-notification-row-unread`** — unread notification row highlight. Light: `pacific-deep-50` / Dark: `pacific-deep-800`
 - **`bg-notification-row-hover`** — row hover state. Light: `neutral-200` / Dark: `pacific-deep-700/60`
 - **`bg-notification-avatar`** — avatar placeholder shell. Light: `neutral-200` / Dark: `pacific-deep-700`
 - **`bg-notification-avatar-fallback`** / **`text-notification-avatar-fallback-text`** — initials fallback. Constant `neutral-100` / `neutral-600`
-- **`border-notification-badge-border`** — badge ring against row surface. Light: `neutral-50` / Dark: `pacific-deep-900`
 - **`text-notification-text`** — notification message and section heading text. Light: `pacific-deep-700` / Dark: `pacific-deep-50`
-- **`text-notification-muted`** — timestamps and empty/loading copy. Light: `pacific-deep-400` / Dark: `pacific-deep-300`
-- **`text-notification-title`** — popup/preference title. Light: `pacific-deep-900` / Dark: `strait-blue-50`
 - **`text-notification-label`** — preference labels and descriptions. Light: `strait-blue-700` / Dark: `pacific-deep-400`
 - **`bg-notification-divider`** — dividers and popup hairlines. Light: `neutral-200` / Dark: `strait-blue-900`
-- **`bg-notification-tab-active`** / **`text-notification-tab-active-text`** — active notifications page tab. Light: `neutral-50` / `pacific-deep-900`; Dark: `pacific-deep-900` / `neutral-50`
+- **`text-notification-tab-active-text`** — active notifications page tab label. Light: `pacific-deep-900` / Dark: `neutral-50`. (Active tab background uses `bg-bg-surface`.)
 - **`bg-notification-tab-inactive`** / **`text-notification-tab-inactive-text`** — inactive notifications page tab. Light: `neutral-200` / `strait-blue-700`; Dark: `strait-blue-800` / `neutral-50`
 - **`bg-notification-tab-inactive-hover`** — inactive tab hover. Light: `neutral-50` / Dark: `strait-blue-700`
 - **`text-notification-action`**, **`text-notification-action-hover`**, **`text-notification-action-disabled`** — mark-all/footer action states. Light follows link/disabled text; Dark: `strait-blue-100`, `sunset-horizon-300`, `neutral-600`
-- **`text-notification-count`** — unread count. Constant `red-500`
 - **`bg-notification-badge-blue`**, **`bg-notification-badge-danger`**, **`bg-notification-badge-accent`**, **`bg-notification-badge-muted`** — action badge emblems. Constant `strait-blue-900`, `red-950`, `sunset-horizon-800`, `pacific-deep-700`
-- **`bg-notification-coming-soon`** / **`text-notification-coming-soon-text`** — preference coming-soon pill. Light: `neutral-200` / `pacific-deep-400`; Dark: `strait-blue-900` / `pacific-deep-300`
+- **`bg-notification-coming-soon`** — preference coming-soon pill background. Light: `neutral-200` / Dark: `strait-blue-900`. (Pill text uses `text-text-muted`.)
 
 <Heading>When to reach past the tokens</Heading>
 

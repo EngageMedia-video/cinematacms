@@ -67,7 +67,7 @@ function arePrefsEqual(a, b) {
 
 function ComingSoonPill() {
 	return (
-		<span className="rounded-[4px] bg-notification-coming-soon px-[6px] py-[2px] text-[11px] font-medium leading-[14px] tracking-normal text-notification-coming-soon-text">
+		<span className="rounded-[4px] bg-notification-coming-soon px-[6px] py-[2px] text-[11px] font-medium leading-[14px] tracking-normal text-text-muted">
 			Coming soon
 		</span>
 	);
@@ -176,7 +176,7 @@ export function NotificationPreferencesForm() {
 	return (
 		<form onSubmit={handleSave} className="flex flex-col gap-[26px]">
 			<div className="flex flex-col gap-[8px]">
-				<h2 className="m-0 font-heading text-[20px] font-medium leading-[24px] tracking-normal text-notification-title">
+				<h2 className="m-0 font-heading text-[20px] font-medium leading-[24px] tracking-normal text-text-strong">
 					Notification Preference
 				</h2>
 				<p className="m-0 text-[14px] font-normal leading-[20px] tracking-normal text-notification-label">

@@ -29,15 +29,15 @@ function NotificationList({ showUnreadOnly }) {
 	const notifications = data?.results ?? [];
 
 	return (
-		<div className="bg-notification-surface py-[22px]">
+		<div className="bg-bg-surface py-[22px]">
 			<div className="overflow-hidden">
 				{isLoading ? (
-					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-notification-muted">
+					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-text-muted">
 						Loading…
 					</p>
 				) : null}
 				{!isLoading && notifications.length === 0 ? (
-					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-notification-muted">
+					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-text-muted">
 						No notifications
 					</p>
 				) : null}
@@ -185,7 +185,7 @@ function NotificationPageContent() {
 										onKeyDown={handleTabKeyDown}
 										className={`cursor-pointer border-0 text-[14px] font-bold uppercase leading-5 tracking-normal shadow-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring-focus ${
 											active
-												? 'bg-notification-tab-active px-[22px] py-[12px] text-notification-tab-active-text'
+												? 'bg-bg-surface px-[22px] py-[12px] text-notification-tab-active-text'
 												: 'bg-notification-tab-inactive px-[16px] py-[12px] text-notification-tab-inactive-text hover:bg-notification-tab-inactive-hover'
 										}`}
 										style={{ border: 'none', boxShadow: 'none', borderRadius: 0 }}
@@ -209,7 +209,7 @@ function NotificationPageContent() {
 						role="tabpanel"
 						id={`panel-${activeTab}`}
 						aria-labelledby={`tab-${activeTab}`}
-						className="overflow-hidden rounded-bl-[8px] rounded-br-[8px] rounded-tr-[8px] bg-notification-surface"
+						className="overflow-hidden rounded-bl-[8px] rounded-br-[8px] rounded-tr-[8px] bg-bg-surface"
 					>
 						<NotificationList
 							key={activeTab === TAB_UNREAD ? 'unread' : 'all'}
@@ -222,7 +222,7 @@ function NotificationPageContent() {
 					id={HASH_PREFERENCES}
 					ref={preferencesRef}
 					aria-label="Notification preferences"
-					className="scroll-mt-6 rounded-[8px] bg-notification-surface px-[16px] pb-[16px] pt-[22px]"
+					className="scroll-mt-6 rounded-[8px] bg-bg-surface px-[16px] pb-[16px] pt-[22px]"
 				>
 					<NotificationPreferencesForm />
 				</aside>

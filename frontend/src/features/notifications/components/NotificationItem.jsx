@@ -6,24 +6,24 @@ import { Icon } from '../../shared/components/Icon';
 
 const ITEM_THEMES = {
 	dark: {
-		readBg: 'bg-notification-row-read',
+		readBg: 'bg-bg-surface',
 		unreadBg: 'bg-notification-row-unread',
 		hoverBg: 'hover:bg-notification-row-hover',
 		avatarBg: 'bg-notification-avatar',
-		badgeBorder: 'border-notification-badge-border',
+		badgeBorder: 'border-bg-surface',
 		messageText: 'text-notification-text',
-		metaText: 'text-notification-muted',
-		menuText: 'text-notification-muted',
+		metaText: 'text-text-muted',
+		menuText: 'text-text-muted',
 	},
 	light: {
-		readBg: 'bg-notification-row-read',
+		readBg: 'bg-bg-surface',
 		unreadBg: 'bg-notification-row-unread',
 		hoverBg: 'hover:bg-notification-row-hover',
 		avatarBg: 'bg-notification-avatar',
-		badgeBorder: 'border-notification-badge-border',
+		badgeBorder: 'border-bg-surface',
 		messageText: 'text-notification-text',
-		metaText: 'text-notification-muted',
-		menuText: 'text-notification-muted',
+		metaText: 'text-text-muted',
+		menuText: 'text-text-muted',
 	},
 };
 

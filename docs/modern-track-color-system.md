@@ -245,7 +245,7 @@ Component-scoped legacy semantic groups also exist (search, comments, playlists,
 | `text/link`, `text/link-hover`, `text/accent`, `text/danger`, `text/success`, `text/warning` | 6 | Inline-link and semantic text. |
 | `border/default`, `border/subtle`, `border/strong`, `border/strong-constant`, `border/chrome`, `border/input`, `border/danger` | 7 | Dividers, hairlines, and input borders. |
 | `ring/focus` | 1 | Unified focus indicator (sunset-horizon-400p, constant). Used by every interactive control. |
-| `notification/*` | 28 | Notification popup/page row, tab, action, preference, divider, scrollbar, and badge roles. These preserve the notification redesign without raw palette utilities in JSX. |
+| `notification/*` | 20 | Notification-specific row, tab, action, preference, divider, scrollbar, and badge roles whose value differs from every existing token in at least one theme. Roles that matched an existing token in both light and dark were dropped in favour of the base token (e.g. the popup/panel surface uses `bg-bg-surface`, titles use `text-text-strong`, the unread count uses `text-text-danger`). |
 
 For the per-token light/dark lookup table, see the Storybook `Introduction > Colors` page (`frontend/src/storybook/Colors.mdx`).
 
@@ -441,10 +441,10 @@ Key characteristics after migration:
 
 | File | Color class / token | Element |
 |------|---------------------|---------|
-| NotificationDialog.jsx | `bg-notification-surface`, `text-notification-title`, `text-notification-action` | Popup chrome and actions |
-| NotificationItem.jsx | `bg-notification-row-read`, `bg-notification-row-unread`, `text-notification-text`, `text-notification-muted` | Row read/unread state and copy |
-| NotificationPage.jsx | `bg-notification-tab-active`, `bg-notification-tab-inactive`, `text-notification-action` | Tabs and mark-all action |
-| NotificationPreferencesForm.jsx | `text-notification-title`, `text-notification-label`, `bg-notification-divider` | Preference panel text and section dividers |
+| NotificationDialog.jsx | `bg-bg-surface`, `text-text-strong`, `text-notification-action` | Popup chrome and actions |
+| NotificationItem.jsx | `bg-bg-surface`, `bg-notification-row-unread`, `text-notification-text`, `text-text-muted` | Row read/unread state and copy |
+| NotificationPage.jsx | `bg-bg-surface`, `bg-notification-tab-inactive`, `text-notification-action` | Tabs and mark-all action |
+| NotificationPreferencesForm.jsx | `text-text-strong`, `text-notification-label`, `bg-notification-divider` | Preference panel text and section dividers |
 | notificationBadge.js | `bg-notification-badge-*` | Action-type avatar badge emblems |
 
 ### shared (component library)
