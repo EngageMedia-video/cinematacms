@@ -11,7 +11,7 @@
  * Usage examples:
  *   bg-surface-body          → var(--body-bg-color)
  *   text-content-body        → var(--body-text-color)
- *   bg-brand-primary         → var(--btn-primary-bg-color)
+ *   bg-brand-primary         → var(--bg-secondary)
  *   border-border-input      → var(--input-border-color)
  *   text-comment-author      → var(--comment-author-text-color)
  *
@@ -446,6 +446,11 @@
 	--color-site-player-subtitle: var(--site-player-subtitle-color);
 	--color-site-player-shadow: var(--site-player-shadow-color);
 
+	/* ── Component: Switch ───────────────────────────────── */
+	--color-switch-track-on: var(--switch-track-on-color);
+	--color-switch-track-off: var(--switch-track-off-color);
+	--color-switch-thumb: var(--switch-thumb-color);
+
 	/* ── Cinemata Revamp Palette ─────────────────────────── */
 	--color-cinemata-white: var(--cinemata-white);
 	--color-cinemata-black: var(--cinemata-black);
@@ -584,8 +589,8 @@ body {
 	--bg-control: var(--cinemata-neutral-300);
 	--bg-primary: var(--cinemata-strait-blue-600p);
 	--bg-primary-hover: var(--cinemata-strait-blue-800);
-	--bg-secondary: var(--cinemata-sunset-horizon-700);
-	--bg-secondary-hover: var(--cinemata-sunset-horizon-800);
+	--bg-secondary: var(--cinemata-sunset-horizon-400p);
+	--bg-secondary-hover: var(--cinemata-sunset-horizon-500);
 	--bg-danger: var(--cinemata-red-500);
 	--bg-danger-strong: var(--cinemata-red-800);
 	--bg-danger-strong-hover: var(--cinemata-red-400);
@@ -624,6 +629,11 @@ body {
 
 	/* Focus ring */
 	--ring-focus: var(--cinemata-sunset-horizon-400p);
+
+	/* Component: Switch */
+	--switch-track-on-color: var(--cinemata-coral-reef-600);
+	--switch-track-off-color: var(--cinemata-pacific-deep-900);
+	--switch-thumb-color: var(--cinemata-neutral-100);
 }
 
 body.dark_theme {
@@ -637,8 +647,8 @@ body.dark_theme {
 	--bg-control: var(--cinemata-pacific-deep-900);
 	--bg-primary: var(--cinemata-strait-blue-500);
 	--bg-primary-hover: var(--cinemata-strait-blue-700);
-	--bg-secondary: var(--cinemata-sunset-horizon-600);
-	--bg-secondary-hover: var(--cinemata-sunset-horizon-700);
+	--bg-secondary: var(--cinemata-sunset-horizon-500);
+	--bg-secondary-hover: var(--cinemata-sunset-horizon-400p);
 	--bg-danger-strong: var(--cinemata-red-950);
 	--bg-danger-strong-hover: var(--cinemata-red-900);
 
@@ -660,6 +670,9 @@ body.dark_theme {
 	--border-divider: var(--cinemata-pacific-deep-600p);
 	--border-strong: var(--cinemata-pacific-deep-400);
 	--border-input: var(--cinemata-sunset-horizon-400p);
+
+	--switch-track-on-color: var(--cinemata-coral-reef-700);
+	--switch-track-off-color: var(--cinemata-pacific-deep-800);
 }
 
 /* stylelint-disable-next-line at-rule-no-unknown */

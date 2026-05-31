@@ -7,7 +7,7 @@ import { Meta, Title, Subtitle, Heading } from '@storybook/addon-docs/blocks';
 
 > **This is a living document.** Every new feature, component, or design change that introduces a new color usage, adds a token, or shifts an existing token's meaning must update this page in the same change. The same applies to `docs/modern-track-color-system.md` in the repo root. Treat updates to both surfaces as part of the definition-of-done for any color or theming change. Stale color docs cause real engineering cost: contributors reach for the wrong token, reviewers don't know what's canonical, and the system drifts.
 
-The modern track uses **role-based semantic tokens** as the preferred way to apply color. Each token resolves to a different raw `cinemata-*` palette step in light vs dark theme, so components don't need `dark:` variants for theme awareness. Components reach for the raw palette only for genuine one-offs (Switch track, carousel indicator dots, etc.).
+The modern track uses **role-based semantic tokens** as the preferred way to apply color. Each token resolves to a different raw `cinemata-*` palette step in light vs dark theme, so components don't need `dark:` variants for theme awareness. Components reach for the raw palette only for genuine one-offs (carousel indicator dots, etc.).
 
 This page is the working reference for the token catalogue. For the underlying design rationale, the body-scoped wiring pattern, and the full architectural overview (palette, legacy aliases, modern tokens), see `docs/modern-track-color-system.md` in the repo root.
 
@@ -46,8 +46,8 @@ This page is the working reference for the token catalogue. For the underlying d
 - **`bg-bg-control`** — standard small control surfaces, including radio backgrounds. Light: `neutral-300` / Dark: `pacific-deep-900`
 - **`bg-bg-primary`** — primary action surfaces. Light: `strait-blue-600p` / Dark: `strait-blue-500`
 - **`bg-bg-primary-hover`** — hover for `bg-bg-primary`. Light: `strait-blue-800` / Dark: `strait-blue-700`
-- **`bg-bg-secondary`** — brand action / CTA buttons (orange). What `bg-brand-primary` legacy utility now routes through. Light: `sunset-horizon-700` / Dark: `sunset-horizon-600`
-- **`bg-bg-secondary-hover`** — hover for `bg-bg-secondary`. Light: `sunset-horizon-800` / Dark: `sunset-horizon-700`
+- **`bg-bg-secondary`** — brand action / CTA buttons (orange). What `bg-brand-primary` legacy utility now routes through. Light: `sunset-horizon-400p` / Dark: `sunset-horizon-500`
+- **`bg-bg-secondary-hover`** — hover for `bg-bg-secondary`. Light: `sunset-horizon-500` / Dark: `sunset-horizon-400p`
 - **`bg-bg-danger`** — destructive surfaces. Constant `red-500`.
 - **`bg-bg-danger-strong`** — active destructive/toggled-danger surfaces. Light: `red-800` / Dark: `red-950`
 - **`bg-bg-danger-strong-hover`** — hover for `bg-bg-danger-strong`. Light: `red-400` / Dark: `red-900`
@@ -73,7 +73,7 @@ This page is the working reference for the token catalogue. For the underlying d
 
 A small number of patterns are genuinely unique and stay on the raw `cinemata-*` palette. These are the documented exceptions:
 
-- **Switch track and thumb** — `coral-reef-100` (track on), `pacific-deep-900` (track off), `neutral-100` (thumb). Component-unique decoration; no other component uses this exact recipe.
+- **Switch track and thumb** — `bg-switch-track-on` (light: `coral-reef-600`, dark: `coral-reef-700`), `bg-switch-track-off` (light: `pacific-deep-900`, dark: `pacific-deep-800`), `bg-switch-thumb` (`neutral-100`). Component-unique semantic tokens for the autoplay switch recipe.
 - **Avatar inverted-neutral inner bg** — `bg-cinemata-neutral-200 dark:bg-cinemata-neutral-50`. INVERTS neutrals between themes for the initials-fallback ring.
 - **Carousel indicator dots** — `bg-cinemata-strait-blue-800 dark:bg-white` (active), `bg-cinemata-pacific-deep-400/30 dark:bg-white/30` (inactive). One-off "active indicator on media surface" pattern.
 - **HeroSection retry button** — `bg-cinemata-strait-blue-700` solid with `-800` hover. Bespoke decorative button.
@@ -86,7 +86,7 @@ For all other usages, prefer a semantic token. If you find yourself reaching for
 
 The pre-existing legacy semantic aliases inherited from MediaCMS (`bg-surface-popup`, `text-content-body`, `bg-brand-primary`, etc.) are still wired and still work. They map to the legacy `--btn-*`, `--body-*`, `--site-*` variables in the SCSS theme files. New code in `features/` should generally prefer the role-based tokens above, but the legacy aliases remain useful as bridges into legacy components.
 
-Notable bridge: **`bg-brand-primary`** is intentionally redirected to `var(--bg-secondary)` (orange) so the modern utility and the legacy `--btn-primary-bg-color` SCSS variable can diverge. The modern `.bg-brand-primary` utility renders orange (the brand action color) while legacy server-rendered buttons styled by SCSS rules referencing `--btn-primary-bg-color` keep their historical blue (light) / orange (dark) values.
+Notable bridge: **`bg-brand-primary`** is intentionally redirected to `var(--bg-secondary)` (orange) so the modern utility and the legacy `--btn-primary-bg-color` SCSS variable can diverge. The modern `.bg-brand-primary` utility renders orange (light: `sunset-horizon-400p`, dark: `sunset-horizon-500`) while legacy server-rendered buttons styled by SCSS rules referencing `--btn-primary-bg-color` keep their historical blue (light) / orange (dark) values.
 
 Video player theme: the `--site-player-*` family (`-accent-color`, `-progress-color`, `-track-color`, `-loaded-color`, `-tooltip-bg-color`, `-control-color`, `-canvas-color`, `-control-surface-color`, `-subtitle-bg-color`, `-subtitle-color`, `-shadow-color`, exposed as `bg-site-player-*` / `text-site-player-*` utilities) is the shared, theme-aware accent and control-surface system for the media view page player and the home hero player. Progress / volume / subtitle accent uses sunset-horizon (500 light / 400p dark), the big play button uses strait-blue (500 light / 300 dark), the buffered range uses pacific-deep, the seek tooltip uses pacific-deep-950, control and subtitle text use white, and the video canvas uses black. The hero player consumes these tokens directly instead of declaring its own color aliases, and the legacy `VideoPlayer.scss` consumes them as plain `var(--site-player-*)` so the player no longer follows the configurable site `--brand-color`.
 

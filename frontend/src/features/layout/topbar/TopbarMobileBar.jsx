@@ -103,7 +103,7 @@ export function TopbarMobileBar() {
 					<button
 						type="button"
 						onClick={openMobileSearch}
-						aria-label="Open search"
+						aria-label="Search for Films, Playlists and Members"
 						className="flex w-full items-center gap-2 h-10 px-3 rounded-full bg-bg-chrome hover:bg-bg-chrome-hover transition-colors text-left text-text-on-chrome"
 					>
 						<Icon name="magnifyingGlass" size={18} decorative />

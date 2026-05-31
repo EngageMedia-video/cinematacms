@@ -227,7 +227,7 @@ Utilities are imported with `!important` so they win over the legacy SCSS cascad
 | `--color-surface-popup` | Popup/menu surface | `bg-surface-popup` |
 | `--color-bg-cards` | Card background | `bg-bg-cards` |
 | `--color-brand-theme` | Brand theme color | `bg-brand-theme` |
-| `--color-brand-primary` | Modern primary button bg — redirected to `var(--bg-secondary)` (orange) so the new utility and the legacy `--btn-primary-bg-color` SCSS variable are decoupled. The brand utility stays orange while legacy SCSS rules (e.g. login form `.primaryAction`) still resolve to the legacy blue. | `bg-brand-primary` |
+| `--color-brand-primary` | Modern primary button bg — redirected to `var(--bg-secondary)` (orange) so the new utility and the legacy `--btn-primary-bg-color` SCSS variable are decoupled. The brand utility resolves to sunset-horizon-400p in light mode and sunset-horizon-500 in dark mode while legacy SCSS rules (e.g. login form `.primaryAction`) still resolve to the legacy blue. | `bg-brand-primary` |
 
 Component-scoped legacy semantic groups also exist (search, comments, playlists, media, profile, upload, sidebar, etc.), each mapping to the corresponding legacy semantic token.
 
@@ -240,7 +240,7 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `bg/page`, `bg/surface`, `bg/surface-raised`, `bg/surface-muted`, `bg/surface-hover`, `bg/surface-inverse` | 6 | Themed page, card, and list/menu hover surfaces — invert per theme. |
 | `bg/overlay-dark`, `bg/chrome`, `bg/chrome-hover` | 3 | Always-dark UI chrome — topbar, search overlays, mobile dialogs. Do not invert. |
 | `bg/skeleton`, `bg/control` | 2 | Loading skeletons and standard small control surfaces, including radio backgrounds. |
-| `bg/primary`, `bg/primary-hover`, `bg/secondary`, `bg/secondary-hover` | 4 | Action surfaces. `primary` is strait-blue; `secondary` is the AA-safe sunset-horizon brand action color and is what `bg-brand-primary` now routes through. |
+| `bg/primary`, `bg/primary-hover`, `bg/secondary`, `bg/secondary-hover` | 4 | Action surfaces. `primary` is strait-blue; `secondary` is the AA-safe sunset-horizon brand action color (400p light / 500 dark) and is what `bg-brand-primary` now routes through. |
 | `bg/danger`, `bg/danger-strong`, `bg/danger-strong-hover`, `bg/success`, `bg/success-strong`, `bg/warning` | 6 | Semantic feedback. Strong danger tokens cover active destructive/toggled-danger surfaces; `success-strong` pairs with `success` for striped progress fills. |
 | `text/strong`, `text/primary`, `text/secondary`, `text/muted`, `text/description`, `text/subtle`, `text/disabled` | 7 | Themed content text. |
 | `text/inverse`, `text/on-primary`, `text/on-chrome`, `text/on-chrome-muted` | 4 | Text on inverse/action/chrome surfaces. |
@@ -359,8 +359,8 @@ Two literals remain in the tailwind file (the rest are `var()` references):
 Following the semantic token migration, modern features now consume colors through **three layers**, in this order of preference:
 
 1. **Modern semantic tokens** (`bg-bg-page`, `text-text-strong`, `border-border-default`, `ring-ring-focus`, etc.) — the default and preferred vocabulary. Most components in `features/` were migrated to this layer. Theme-awareness is handled at the token level — no `dark:` variants needed in component code.
-2. **Raw `--cinemata-*` palette utilities** (`bg-cinemata-pacific-deep-700`, etc.) — used only for one-off decorations that don't fit any semantic token. About 78 references remain across the modern track: Switch track inline colors, Avatar inverted-neutral inner bg, carousel indicator dot pair, HeroSection retry button, badge highlights, and decoration accents.
-3. **Legacy semantic aliases** (`bg-brand-primary`, `text-content-body`, `bg-surface-popup`, etc.) — preserved for components that bridge into legacy SCSS contexts. The notable bridge is `bg-brand-primary` itself: it routes through `bg/secondary` so the modern utility renders the brand orange in both themes while the legacy `--btn-primary-bg-color` SCSS variable can independently stay blue (light) / orange (dark) for legacy server-rendered buttons like `.primaryAction` on the login page.
+2. **Raw `--cinemata-*` palette utilities** (`bg-cinemata-pacific-deep-700`, etc.) — used only for one-off decorations that don't fit any semantic token. About 78 references remain across the modern track: Avatar inverted-neutral inner bg, carousel indicator dot pair, HeroSection retry button, badge highlights, and decoration accents.
+3. **Legacy semantic aliases** (`bg-brand-primary`, `text-content-body`, `bg-surface-popup`, etc.) — preserved for components that bridge into legacy SCSS contexts. The notable bridge is `bg-brand-primary` itself: it routes through `bg/secondary` so the modern utility renders sunset-horizon-400p in light mode and sunset-horizon-500 in dark mode while the legacy `--btn-primary-bg-color` SCSS variable can independently stay blue (light) / orange (dark) for legacy server-rendered buttons like `.primaryAction` on the login page.
 
 Key characteristics after migration:
 
@@ -477,8 +477,8 @@ Key characteristics after migration:
 | TextField.jsx | `border-cinemata-red-500`, `text-cinemata-red-500` | Error border / text |
 | TextField.jsx | `text-cinemata-sunset-horizon-400p` | Helper text |
 | Switch.jsx | `text-cinemata-neutral-700 dark:text-cinemata-neutral-500` | Switch label |
-| Switch.jsx | `backgroundColor: '#C7E7EE' / '#011C34'` (inline) | Track (hardcoded hex) |
-| Switch.jsx | `backgroundColor: '#EEF4F5'` (inline) | Thumb (hardcoded hex) |
+| Switch.jsx | `bg-switch-track-on` (light: `coral-reef-600`, dark: `coral-reef-700`) / `bg-switch-track-off` (light: `pacific-deep-900`, dark: `pacific-deep-800`) | Track |
+| Switch.jsx | `bg-switch-thumb` (`neutral-100`) | Thumb |
 
 ### user-settings
 
@@ -501,7 +501,6 @@ Key characteristics after migration:
 
 ## Intentionally raw (will not migrate)
 
-- **Switch track inline colors** (`#C7E7EE` / `#011C34` / `#EEF4F5`) — component-unique decoration. The Switch is the only place these specific shades appear.
 - **Avatar inverted-neutral inner bg** (`bg-cinemata-neutral-200 dark:bg-cinemata-neutral-50`) — INVERTS neutrals between themes for the initials-fallback ring. No clean semantic.
 - **Carousel indicator dot pair** (`bg-cinemata-strait-blue-800 dark:bg-white` for active, `bg-cinemata-pacific-deep-400/30 dark:bg-white/30` for inactive) — one-off "active indicator on media surface" pattern.
 - **HeroSection retry button** (`strait-blue-700 / strait-blue-800` solid) — bespoke decorative button.
@@ -515,7 +514,7 @@ Key characteristics after migration:
 - **No `dark:` variants in most component code** — theme awareness lives in the token layer.
 - **Consistent focus indicator** across the entire modern track (`ring/focus` = sunset-horizon-400p).
 - **Chrome family** captures the "always-dark UI surface" concept as first-class tokens, distinct from theme-aware surfaces.
-- **`bg-brand-primary` ↔ `bg/secondary` bridge** preserves legacy/modern divergence: the modern utility renders the brand orange while legacy SCSS button rules can keep their historical blue.
+- **`bg-brand-primary` ↔ `bg/secondary` bridge** preserves legacy/modern divergence: the modern utility renders sunset-horizon-400p in light mode and sunset-horizon-500 in dark mode while legacy SCSS button rules can keep their historical blue.
 - **Shared component library** (`features/shared/`) centralizes color decisions for Button, Text, Card, TextField, Checkbox, Badge, Switch.
 
 ## Source files

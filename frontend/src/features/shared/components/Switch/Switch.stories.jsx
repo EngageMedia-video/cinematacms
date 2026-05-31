@@ -49,7 +49,7 @@ const meta = {
 		docs: {
 			description: {
 				component:
-					'A right-aligned switch control with grey/99 thumb and cyan/80 active track, based on the provided autoplay reference. Supports uncontrolled usage through `defaultChecked`, or controlled usage through `checked` and `onChange`. Size customization happens through CSS variables on `className`, not dedicated width or thumb-size props.',
+					'A right-aligned switch control using dedicated switch semantic color tokens based on the provided autoplay reference. Supports uncontrolled usage through `defaultChecked`, or controlled usage through `checked` and `onChange`. Size customization happens through CSS variables on `className`, not dedicated width or thumb-size props.',
 			},
 		},
 	},

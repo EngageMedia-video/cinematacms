@@ -107,9 +107,8 @@ function MoviePoster({
 	linkTitle = '',
 	showTopRightIcon = false,
 }) {
-	const linkLabel = [linkTitle ? `Open ${linkTitle}` : 'Open movie details', badge, duration]
-		.filter(Boolean)
-		.join(', ');
+	const visibleLabel = [badge, duration].filter(Boolean).join(' ');
+	const linkLabel = [visibleLabel, linkTitle ? `Open ${linkTitle}` : 'Open movie details'].filter(Boolean).join(', ');
 	const poster = (
 		<div className={cn('relative overflow-hidden rounded-[6px] bg-bg-skeleton', className)}>
 			<img

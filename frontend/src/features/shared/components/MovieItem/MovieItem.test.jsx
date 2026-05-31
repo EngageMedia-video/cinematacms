@@ -130,7 +130,7 @@ describe('MovieItem', () => {
 			/>
 		);
 
-		expect(screen.getByRole('link', { name: 'Open Cinema Paradiso, Documentary, 1:02' })).toHaveAttribute(
+		expect(screen.getByRole('link', { name: 'Documentary 1:02, Open Cinema Paradiso' })).toHaveAttribute(
 			'href',
 			'/media/cinema-paradiso/'
 		);

@@ -25,9 +25,9 @@ describe('Switch', () => {
 			.getByRole('checkbox', { name: 'AUTOPLAY' })
 			.parentElement.querySelector('[data-switch-thumb]');
 
-		expect(track).toHaveClass('bg-bg-secondary');
+		expect(track).toHaveClass('bg-switch-track-on');
 		expect(track).toHaveClass('justify-end');
-		expect(thumb).toHaveClass('bg-bg-surface-raised');
+		expect(thumb).toHaveClass('bg-switch-thumb');
 	});
 
 	it('uses the inactive track color when unchecked', () => {
@@ -36,7 +36,7 @@ describe('Switch', () => {
 		const input = screen.getByRole('checkbox', { name: 'AUTOPLAY' });
 		const track = input.parentElement.querySelector('[data-switch-track]');
 
-		expect(track).toHaveClass('bg-bg-chrome');
+		expect(track).toHaveClass('bg-switch-track-off');
 		expect(track).toHaveClass('justify-start');
 	});
 
