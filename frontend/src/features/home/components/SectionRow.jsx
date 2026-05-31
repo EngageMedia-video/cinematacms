@@ -11,7 +11,7 @@ const SectionRowContext = createContext(null);
 
 const BACKGROUND_SECTION_CLASS = 'relative isolate py-4 sm:py-5';
 const BACKGROUND_LAYER_CLASS =
-	'pointer-events-none absolute inset-y-0 -left-4 -right-4 -z-10 bg-cinemata-neutral-50 dark:bg-cinemata-pacific-deep-800 sm:-left-6 sm:-right-6 sm:rounded-[8px] lg:-left-8 lg:-right-8';
+	'pointer-events-none absolute inset-y-0 -left-4 -right-4 -z-10 bg-bg-surface-raised sm:-left-6 sm:-right-6 sm:rounded-[8px] lg:-left-8 lg:-right-8';
 
 const VIEW_ALL_LINK_CLASS = 'whitespace-nowrap uppercase tracking-wide hover:text-text-link-hover';
 
@@ -36,7 +36,7 @@ function ViewAllLink({ href }) {
 	);
 }
 
-function SectionRowHeader({ badgeLabel, badgeColor = 'var(--cinemata-strait-blue-500)', viewAllHref }) {
+function SectionRowHeader({ badgeLabel, badgeColor = 'bg/primary', viewAllHref }) {
 	return (
 		<div className="flex items-center justify-between gap-4">
 			{badgeLabel ? <Badge color={badgeColor}>{badgeLabel}</Badge> : null}

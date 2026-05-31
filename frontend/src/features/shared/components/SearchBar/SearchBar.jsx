@@ -7,6 +7,7 @@ export function SearchBar({
 	value,
 	onChange,
 	iconName = 'magnifyingGlass',
+	name = 'search',
 	placeholder = 'Search',
 	disabled = false,
 	'aria-label': ariaLabel = 'Search',
@@ -22,11 +23,12 @@ export function SearchBar({
 				value={value}
 				onChange={onChange}
 				type="search"
+				name={name}
 				disabled={disabled}
 				placeholder={placeholder}
 				aria-label={ariaLabel}
 				className={cn(
-					'global-search-input body-body-14-regular block w-full rounded-[8px] bg-bg-chrome px-[22px] py-[15px] pr-[58px] text-text-on-chrome outline-none transition-colors duration-200 placeholder:text-text-on-chrome-muted focus:ring-0 disabled:cursor-not-allowed disabled:opacity-70',
+					'global-search-input body-body-14-regular block w-full rounded-[8px] bg-bg-chrome px-[22px] py-[15px] pr-[58px] text-text-on-chrome outline-none transition-[background-color,color,box-shadow] duration-200 placeholder:text-text-on-chrome-muted focus:ring-0 focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page disabled:cursor-not-allowed disabled:opacity-70',
 					'[&::-webkit-search-cancel-button]:appearance-none'
 				)}
 			/>

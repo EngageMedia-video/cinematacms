@@ -15,7 +15,7 @@ describe('Switch', () => {
 		expect(track).not.toBeNull();
 	});
 
-	it('uses cyan track and moved thumb when checked', () => {
+	it('uses semantic track and thumb tokens when checked', () => {
 		render(<Switch defaultChecked>AUTOPLAY</Switch>);
 
 		const track = screen
@@ -25,8 +25,9 @@ describe('Switch', () => {
 			.getByRole('checkbox', { name: 'AUTOPLAY' })
 			.parentElement.querySelector('[data-switch-thumb]');
 
-		expect(track).toHaveStyle({ backgroundColor: 'var(--cinemata-coral-reef-100)' });
-		expect(thumb).toHaveStyle({ backgroundColor: 'var(--cinemata-neutral-100)' });
+		expect(track).toHaveClass('bg-switch-track-on');
+		expect(track).toHaveClass('justify-end');
+		expect(thumb).toHaveClass('bg-switch-thumb');
 	});
 
 	it('uses the inactive track color when unchecked', () => {
@@ -35,7 +36,8 @@ describe('Switch', () => {
 		const input = screen.getByRole('checkbox', { name: 'AUTOPLAY' });
 		const track = input.parentElement.querySelector('[data-switch-track]');
 
-		expect(track).toHaveStyle({ backgroundColor: 'var(--cinemata-pacific-deep-900)' });
+		expect(track).toHaveClass('bg-switch-track-off');
+		expect(track).toHaveClass('justify-start');
 	});
 
 	it('fires change when toggled', async () => {

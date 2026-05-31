@@ -54,7 +54,7 @@ describe('SectionRow', () => {
 		expect(section).not.toHaveClass('px-4');
 		expect(section).not.toHaveClass('sm:px-6');
 		expect(section).not.toHaveClass('lg:px-8');
-		expect(background).toHaveClass('bg-cinemata-neutral-50');
+		expect(background).toHaveClass('bg-bg-surface-raised');
 		expect(background).toHaveClass('-left-4');
 		expect(background).toHaveClass('-right-4');
 		expect(background).toHaveClass('sm:rounded-[8px]');

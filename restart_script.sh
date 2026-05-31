@@ -53,6 +53,7 @@ if ! python manage.py migrate; then
   echo "Database migrations failed. Aborting restart."
   exit 1
 fi
+python manage.py backfill_media_storage_usage || echo "Warning: storage usage backfill encountered errors; continuing restart."
 
 # Update ownership
 echo "Updating ownership..."

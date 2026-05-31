@@ -1,7 +1,7 @@
 import { VerticalMovieItem } from '../../shared/components/MovieItem/MovieItem';
 import { getMediaDurationLabel } from '../utils/mediaList';
 
-const DEFAULT_CATEGORY_COLOR = 'cinemata-neutral-600';
+const DEFAULT_CATEGORY_COLOR = 'bg/primary';
 
 function getAuthorName(item) {
 	return item.author_name || item.user || '';

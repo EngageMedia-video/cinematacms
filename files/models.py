@@ -10,6 +10,7 @@ import uuid
 
 import m3u8
 import waffle
+from django.apps import apps
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
@@ -288,6 +289,7 @@ class Media(models.Model):
     video_height = models.IntegerField(default=1)
     md5sum = models.CharField(max_length=50, blank=True, null=True)
     size = models.CharField(max_length=20, blank=True, null=True)
+    storage_usage_bytes = models.PositiveBigIntegerField(default=0)
     # set this here, so we don't perform extra query for it on media listing
     preview_file_path = models.CharField(max_length=501, blank=True)
     password = models.CharField(max_length=256, blank=True, help_text="when video is in restricted state")
@@ -1088,9 +1090,12 @@ class Media(models.Model):
     def ratings_info(self):
         # to be used if user ratings are allowed
         ret = []
-        try:
-            ratings_enabled = waffle.switch_is_active("allow_ratings")
-        except DatabaseError:
+        if apps.is_installed("waffle"):
+            try:
+                ratings_enabled = waffle.switch_is_active("allow_ratings")
+            except DatabaseError:
+                ratings_enabled = getattr(settings, "ALLOW_RATINGS", False)
+        else:
             ratings_enabled = getattr(settings, "ALLOW_RATINGS", False)
         if not ratings_enabled:
             return []
@@ -1981,6 +1986,46 @@ def media_save(sender, instance, created, **kwargs):
     instance.transcribe_function()
 
 
+def _schedule_storage_usage_refresh_for_media(media_id):
+    try:
+        from .storage_usage import schedule_refresh_media_storage_usage
+    except ImportError:
+        logger.warning("storage_usage module not available; skipping refresh for media %s", media_id)
+        return
+    try:
+        schedule_refresh_media_storage_usage(media_id)
+    except Exception:
+        logger.warning("Failed to schedule storage usage refresh for media %s", media_id, exc_info=True)
+
+
+def _invalidate_storage_usage_for_user(user_id):
+    try:
+        from .storage_usage import invalidate_storage_usage_cache
+    except ImportError:
+        logger.warning("storage_usage module not available; skipping cache invalidation for user %s", user_id)
+        return
+    try:
+        invalidate_storage_usage_cache(user_id=user_id)
+    except Exception:
+        logger.warning("Failed to invalidate storage usage cache for user %s", user_id, exc_info=True)
+
+
+@receiver(post_save, sender=Media)
+def media_storage_usage_save(sender, instance, created, update_fields=None, **kwargs):
+    file_fields = {
+        "media_file",
+        "thumbnail",
+        "poster",
+        "uploaded_thumbnail",
+        "uploaded_poster",
+        "sprites",
+        "hls_file",
+    }
+    if update_fields is not None and not file_fields.intersection(set(update_fields)):
+        return
+    _schedule_storage_usage_refresh_for_media(instance.id)
+
+
 def _revoke_encoding_tasks(media_instance):
     """Revoke all pending/running Celery encoding tasks for a media instance.
 
@@ -2022,6 +2067,7 @@ def media_file_pre_delete(sender, instance, **kwargs):
     # Invalidate cache before deletion
     invalidate_media_cache(instance.friendly_token)
     invalidate_media_list_cache()
+    _invalidate_storage_usage_for_user(instance.user_id)
 
     # Invalidate media path cache (for secure file serving)
     invalidate_func = get_invalidate_media_path_cache()
@@ -2290,6 +2336,31 @@ def encoding_file_delete(sender, instance, **kwargs):
             instance.media.post_encode_actions(encoding=instance, action="delete")
     # delete local chunks, and remote chunks + media file. Only when the
     # last encoding of a media is complete
+
+
+@receiver(post_save, sender=Encoding)
+def encoding_storage_usage_save(sender, instance, update_fields=None, **kwargs):
+    file_fields = {"media_file", "chunk_file_path", "status"}
+    if update_fields is not None and not file_fields.intersection(set(update_fields)):
+        return
+    _schedule_storage_usage_refresh_for_media(instance.media_id)
+
+
+@receiver(post_delete, sender=Encoding)
+def encoding_storage_usage_delete(sender, instance, **kwargs):
+    _schedule_storage_usage_refresh_for_media(instance.media_id)
+
+
+@receiver(post_save, sender=Subtitle)
+def subtitle_storage_usage_save(sender, instance, update_fields=None, **kwargs):
+    if update_fields is not None and "subtitle_file" not in set(update_fields):
+        return
+    _schedule_storage_usage_refresh_for_media(instance.media_id)
+
+
+@receiver(post_delete, sender=Subtitle)
+def subtitle_storage_usage_delete(sender, instance, **kwargs):
+    _schedule_storage_usage_refresh_for_media(instance.media_id)
 
 
 @receiver(post_delete, sender=Comment)

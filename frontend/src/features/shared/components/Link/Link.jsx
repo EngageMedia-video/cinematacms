@@ -1,7 +1,7 @@
 import { cn } from '../../utils/classNames';
 import { getAlignClasses, getVariantClasses } from '../Button/Button';
 
-const TEXT_LINK_CLASSES = 'no-underline decoration-0 transition-all duration-200';
+const TEXT_LINK_CLASSES = 'no-underline decoration-0 transition-colors duration-200';
 
 function isButtonVariant(variant) {
 	return variant !== 'text';

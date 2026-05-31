@@ -1,7 +1,7 @@
 from django.test import RequestFactory, TestCase
 
-from files.models import EncodeProfile, Encoding
-from files.serializers import HeroPlaybackSerializer, MediaSerializer
+from files.models import ContentSensitivity, EncodeProfile, Encoding
+from files.serializers import HeroPlaybackSerializer, MediaSerializer, SingleMediaSerializer
 from files.tests.helpers import create_test_media, create_test_user
 
 
@@ -21,6 +21,17 @@ class MediaSerializerTest(TestCase):
         data = MediaSerializer(media, context={"request": request}).data
 
         self.assertEqual(data["summary"], "A concise synopsis for homepage and listing cards.")
+
+    def test_single_media_serializer_includes_content_sensitivity_info(self):
+        media = create_test_media(self.user)
+        sensitivity = ContentSensitivity.objects.create(title="Graphic Violence")
+        media.content_sensitivity.add(sensitivity)
+        request = RequestFactory().get("/api/v1/media/test")
+        request.user = self.user
+
+        data = SingleMediaSerializer(media, context={"request": request}).data
+
+        self.assertEqual(data["content_sensitivity_info"], [{"title": "Graphic Violence"}])
 
     def test_hero_playback_serializer_includes_playback_fields(self):
         media = create_test_media(self.user)

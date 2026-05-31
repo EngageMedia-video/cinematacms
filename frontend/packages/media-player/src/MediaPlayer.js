@@ -333,6 +333,9 @@ function constructVideojsOptions(opt, vjopt) {
 	vjopt.bigPlayButton = opt.bigPlayButton;
 	vjopt.poster = opt.poster;
 	vjopt.preload = opt.preload;
+	// Safari native fullscreen owns its controls and uses 10s seek steps; keep VideoJS controls available.
+	vjopt.playsinline = true;
+	vjopt.preferFullWindow = true;
 	vjopt.suppressNotSupportedError = opt.suppressNotSupportedError;
 
 	// Configure VHS options for device-aware adaptive bitrate

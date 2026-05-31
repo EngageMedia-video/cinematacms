@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 import PageStore from '../../pages/_PageStore.js';
 
@@ -89,9 +90,13 @@ export function Notifications() {
 		return () => PageStore.removeListener('added_notification', onNotificationsUpdate);
 	}, []);
 
-	return !notificationsLength ? null : (
+	const notificationsElement = !notificationsLength ? null : (
 		<div className="notifications">
 			<div>{notificationsContent()}</div>{' '}
 		</div>
 	);
+
+	return notificationsElement && typeof document !== 'undefined'
+		? createPortal(notificationsElement, document.body)
+		: notificationsElement;
 }

@@ -379,7 +379,19 @@ body.dark_theme {
 	--site-search-field-bg-color: #102c40;
 	--site-form-btn-bg-color: var(--btn-primary-bg-color);
 	--site-featured-bg-color: #0b3144;
-	--site-player-accent-color: #026690;
+
+	/* ── Video player theme (shared by media view page + home hero) ── */
+	--site-player-accent-color: var(--cinemata-strait-blue-300); /* big play button */
+	--site-player-progress-color: var(--cinemata-sunset-horizon-400p); /* play progress / volume / subtitle accent */
+	--site-player-track-color: rgb(0 12 32 / 0.82); /* slider + progress + volume track */
+	--site-player-loaded-color: var(--cinemata-pacific-deep-600p); /* buffered range */
+	--site-player-tooltip-bg-color: var(--cinemata-pacific-deep-950); /* seek time tooltip */
+	--site-player-control-color: var(--cinemata-white); /* player controls + tooltip text */
+	--site-player-canvas-color: var(--cinemata-black); /* video canvas */
+	--site-player-control-surface-color: rgb(0 0 0 / 0.6); /* control bar scrim */
+	--site-player-subtitle-bg-color: rgb(0 0 0 / 0.78); /* subtitle cue backing */
+	--site-player-subtitle-color: var(--cinemata-white); /* subtitle cue text */
+	--site-player-shadow-color: rgb(0 12 32 / 0.72); /* control text shadow */
 
 	/* ── Cinemata Revamp Palette (raw brand tokens) ─────── */
 	--cinemata-red-50: #fef2f2;

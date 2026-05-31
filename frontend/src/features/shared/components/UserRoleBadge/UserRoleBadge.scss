@@ -12,12 +12,12 @@
 	text-transform: uppercase;
 
 	&--trusted {
-		color: var(--badge-trusted-text-color, #fff);
-		background-color: var(--badge-trusted-bg-color, #4caf50);
+		color: var(--text-on-primary);
+		background-color: var(--bg-primary);
 	}
 
 	&--moderator {
-		color: var(--badge-moderator-text-color, #fff);
-		background-color: var(--badge-moderator-bg-color, #ed7c30);
+		color: var(--text-on-primary);
+		background-color: var(--bg-secondary);
 	}
 }

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import waffle
-from allauth.mfa.utils import is_mfa_enabled
+from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -40,6 +40,7 @@ from cms.custom_pagination import FastPaginationWithoutCount, SmallPreviewPagina
 from cms.permissions import (
     IsAuthorizedToAdd,
     IsUserOrEditor,
+    is_mfa_enabled_for_user,
     user_requires_mfa,
 )
 from cms.request_utils import get_client_ip
@@ -100,6 +101,7 @@ from .query_cache import (
     get_media_detail_cache_key,
     get_media_list_cache_key,
     get_playlist_detail_cache_key,
+    get_request_cache_origin,
     invalidate_media_cache,
     set_cached_result,
 )
@@ -124,6 +126,7 @@ from .serializers import (
     TopMessageSerializer,
 )
 from .stop_words import STOP_WORDS
+from .storage_usage import schedule_refresh_media_storage_usage
 from .tasks import save_user_action
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
@@ -131,6 +134,22 @@ VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 logger = logging.getLogger(__name__)
 
 HOME_INITIAL_LIMIT = 20
+HOME_INITIAL_MEDIA_FIELDS = (
+    "friendly_token",
+    "url",
+    "api_url",
+    "title",
+    "description",
+    "summary",
+    "views",
+    "duration",
+    "thumbnail_url",
+    "author_name",
+    "author_profile",
+    "media_country_info",
+    "media_country",
+    "categories_info",
+)
 
 
 def _build_featured_queryset(limit=None):
@@ -195,6 +214,20 @@ def _home_recommended_envelope(results):
     }
 
 
+def _slim_home_media_item(item):
+    if not isinstance(item, dict):
+        return item
+
+    slim_item = {field: item[field] for field in HOME_INITIAL_MEDIA_FIELDS if field in item}
+    if "hero_playback" in item:
+        slim_item["hero_playback"] = item["hero_playback"]
+    return slim_item
+
+
+def _slim_home_media_results(items):
+    return [_slim_home_media_item(item) for item in items]
+
+
 def _attach_hero_playback_to_first_featured_item(items, request=None):
     """
     Add detail-only playback fields to the first featured item.
@@ -251,14 +284,19 @@ def _get_home_initial_data(request):
     """
     try:
         user_id = request.user.id if request.user.is_authenticated else None
+        request_origin = get_request_cache_origin(request)
 
         # --- Featured ---
-        home_featured_cache_key = get_media_list_cache_key(show="featured_home", page=1, user_id=user_id)
+        home_featured_cache_key = get_media_list_cache_key(
+            show="featured_home", page=1, user_id=user_id, origin=request_origin
+        )
         cached_home_featured = get_cached_result(home_featured_cache_key)
         if cached_home_featured is not None:
             home_initial_featured = cached_home_featured
         else:
-            featured_cache_key = get_media_list_cache_key(show="featured", page=1, user_id=user_id)
+            featured_cache_key = get_media_list_cache_key(
+                show="featured", page=1, user_id=user_id, origin=request_origin
+            )
             cached_featured = get_cached_result(featured_cache_key)
             if cached_featured is not None:
                 featured_results = list((cached_featured.get("results") or [])[:HOME_INITIAL_LIMIT])
@@ -272,12 +310,15 @@ def _get_home_initial_data(request):
                 featured_results = list(MediaSerializer(qs, many=True, context={"request": request}).data)
                 source_envelope = None
             featured_results = _attach_hero_playback_to_first_featured_item(featured_results, request=request)
+            featured_results = _slim_home_media_results(featured_results)
             home_initial_featured = _home_featured_envelope(featured_results, source_envelope=source_envelope)
             set_cached_result(home_featured_cache_key, home_initial_featured, MEDIA_LIST_TIMEOUT)
 
         # --- Recommended ---
         # MediaList.get skips caching for show=recommended; this warms SSR hydration only.
-        recommended_cache_key = get_media_list_cache_key(show="recommended_home", page=1, user_id=user_id)
+        recommended_cache_key = get_media_list_cache_key(
+            show="recommended_home", page=1, user_id=user_id, origin=request_origin
+        )
         cached_recommended = get_cached_result(recommended_cache_key)
         if cached_recommended is not None:
             home_initial_recommended = cached_recommended
@@ -286,6 +327,7 @@ def _get_home_initial_data(request):
             recommended_results = list(
                 MediaSerializer(list(recommended_media), many=True, context={"request": request}).data
             )
+            recommended_results = _slim_home_media_results(recommended_results)
             home_initial_recommended = _home_recommended_envelope(recommended_results)
             set_cached_result(recommended_cache_key, home_initial_recommended, MEDIA_LIST_TIMEOUT)
 
@@ -302,6 +344,10 @@ def index(request):
         featured, recommended = _get_home_initial_data(request)
         context["home_initial_featured"] = featured
         context["home_initial_recommended"] = recommended
+        first_featured = (featured.get("results") or [None])[0] if isinstance(featured, dict) else None
+        if isinstance(first_featured, dict):
+            hero_playback = first_featured.get("hero_playback") or {}
+            context["home_hero_preload_image"] = hero_playback.get("poster_url") or first_featured.get("thumbnail_url")
     return render(request, template, context)
 
 
@@ -350,7 +396,7 @@ def manage_users(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
     # MFA check
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
         return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
     # Hard config -> ensure superuser / manager only have access
@@ -366,7 +412,7 @@ def manage_media(request):
         return HttpResponseRedirect("/")
 
     # MFA check
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
         return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
     # Hard config -> ensure superuser / manager / editor only have access
@@ -381,7 +427,7 @@ def manage_comments(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
         return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
     if not (request.user.is_superuser or request.user.is_manager or request.user.is_editor):
@@ -395,7 +441,7 @@ def manage_uploads(request):
     if request.user.is_anonymous:
         return HttpResponseRedirect("/")
 
-    if user_requires_mfa(request.user) and not is_mfa_enabled(request.user):
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
         return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
     if not can_manage_uploads(request.user):
@@ -560,9 +606,12 @@ def upload_media(request):
     form = LoginForm()
     context = {}
     context["form"] = form
-    try:
-        upload_allowed = waffle.switch_is_active("upload_media_allowed")
-    except DatabaseError:
+    if apps.is_installed("waffle"):
+        try:
+            upload_allowed = waffle.switch_is_active("upload_media_allowed")
+        except DatabaseError:
+            upload_allowed = getattr(settings, "UPLOAD_MEDIA_ALLOWED", True)
+    else:
         upload_allowed = getattr(settings, "UPLOAD_MEDIA_ALLOWED", True)
     context["can_add"] = upload_allowed and can_upload_media(request.user)
     can_upload_exp = settings.CANNOT_ADD_MEDIA_MESSAGE
@@ -576,6 +625,7 @@ def upload_media(request):
 
 
 def view_media(request):
+    template = resolve_template(request, "media")
     friendly_token = request.GET.get("m", "").strip()
     context = {}
     #    if not friendly_token:
@@ -584,7 +634,7 @@ def view_media(request):
     if not media:
         # TODO: 404 selida
         context["media"] = None
-        return render(request, "cms/media.html", context)
+        return render(request, template, context)
         # return HttpResponseRedirect('/')
     user_or_session = get_user_or_session(request)
     save_user_action.delay(user_or_session, friendly_token=friendly_token, action="watch")
@@ -653,7 +703,7 @@ def view_media(request):
     context["media_access_token"] = media_access_token
     context["is_media_allowed_type"] = is_media_allowed_type(media)
 
-    response = render(request, "cms/media.html", context)
+    response = render(request, template, context)
     if media.state == "restricted":
         response["Referrer-Policy"] = "same-origin"
         response["Cache-Control"] = "no-store"
@@ -665,6 +715,7 @@ def view_media(request):
 
 
 def view_old_media(request, user, video):
+    template = resolve_template(request, "media")
     url = f"/Members/{user}/videos/{video}"
     media = Media.objects.filter(existing_urls__url__in=[url]).first()
     if media:
@@ -686,7 +737,7 @@ def view_old_media(request, user, video):
             context["CAN_DELETE_MEDIA"] = True
             context["CAN_EDIT_MEDIA"] = True
             context["CAN_DELETE_COMMENTS"] = True
-    return render(request, "cms/media.html", context)
+    return render(request, template, context)
 
 
 @xframe_options_exempt
@@ -1101,6 +1152,7 @@ def edit_subtitle(request):
                 # CRITICAL FIX: Update media edit_date to bust cache
                 subtitle.media.edit_date = timezone.now()
                 subtitle.media.save(update_fields=["edit_date"])
+                schedule_refresh_media_storage_usage(subtitle.media_id)
 
                 messages.add_message(request, messages.INFO, "Subtitle was edited")
                 return HttpResponseRedirect(subtitle.media.get_absolute_url())
@@ -1180,7 +1232,12 @@ class MediaList(APIView):
             try:
                 page_num = int(page_param or "1")
                 user_id = request.user.id if request.user.is_authenticated else None
-                cache_key = get_media_list_cache_key(show=show_param or "latest", page=page_num, user_id=user_id)
+                cache_key = get_media_list_cache_key(
+                    show=show_param or "latest",
+                    page=page_num,
+                    user_id=user_id,
+                    origin=get_request_cache_origin(request),
+                )
                 cached_result = get_cached_result(cache_key)
                 if cached_result is not None:
                     if show_param == "featured" and page_num == 1:
@@ -1329,7 +1386,7 @@ class MediaDetail(APIView):
 
         # Try cache for public media only (not private/restricted)
         user_id = request.user.id if request.user.is_authenticated else None
-        cache_key = get_media_detail_cache_key(friendly_token, user_id)
+        cache_key = get_media_detail_cache_key(friendly_token, user_id, origin=get_request_cache_origin(request))
 
         # Skip cache for token-protected requests
         if not token:
@@ -1563,15 +1620,51 @@ class MediaActions(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+    def _handle_like_dislike_removal(self, request, media, action):
+        """Remove a user's like/dislike and return the updated count."""
+        from actions.models import MediaAction
+
+        user = request.user if request.user.is_authenticated else None
+        session_key = None
+        if not user:
+            if not request.session.session_key:
+                request.session.save()
+            session_key = request.session.session_key
+
+        if not user and not session_key:
+            return Response({"detail": "action not allowed"}, status=status.HTTP_400_BAD_REQUEST)
+
+        action_query = MediaAction.objects.filter(media=media, action=action)
+        action_query = action_query.filter(user=user) if user else action_query.filter(session_key=session_key)
+
+        deleted_count, _ = action_query.delete()
+        if deleted_count:
+            if action == "like":
+                Media.objects.filter(pk=media.pk).update(likes=Case(When(likes__gt=0, then=F("likes") - 1), default=0))
+            else:
+                Media.objects.filter(pk=media.pk).update(
+                    dislikes=Case(When(dislikes__gt=0, then=F("dislikes") - 1), default=0)
+                )
+            invalidate_media_cache(media.friendly_token)
+
+        media.refresh_from_db()
+        return Response(
+            {"detail": "action removed", "likes": media.likes, "dislikes": media.dislikes},
+            status=status.HTTP_200_OK,
+        )
+
     def delete(self, request, friendly_token, format=None):
         media = self.get_object(friendly_token)
         if isinstance(media, Response):
             return media
 
+        action = request.data.get("type")
+        if action in ("like", "dislike"):
+            return self._handle_like_dislike_removal(request, media, action)
+
         if not request.user.is_superuser:
             return Response({"detail": "not allowed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        action = request.data.get("type")
         if action:
             if action == "report":  # delete reported actions
                 MediaAction.objects.filter(media=media, action="report").delete()
@@ -1880,7 +1973,7 @@ class PlaylistDetail(APIView):
     def get(self, request, friendly_token, format=None):
         # Try cache first
         user_id = request.user.id if request.user.is_authenticated else None
-        cache_key = get_playlist_detail_cache_key(friendly_token, user_id)
+        cache_key = get_playlist_detail_cache_key(friendly_token, user_id, origin=get_request_cache_origin(request))
         cached_result = get_cached_result(cache_key)
         if cached_result is not None:
             return Response(cached_result)

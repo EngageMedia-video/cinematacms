@@ -11,7 +11,7 @@
  * Usage examples:
  *   bg-surface-body          → var(--body-bg-color)
  *   text-content-body        → var(--body-text-color)
- *   bg-brand-primary         → var(--btn-primary-bg-color)
+ *   bg-brand-primary         → var(--bg-secondary)
  *   border-border-input      → var(--input-border-color)
  *   text-comment-author      → var(--comment-author-text-color)
  *
@@ -435,6 +435,21 @@
 	--color-site-form-btn: var(--site-form-btn-bg-color);
 	--color-site-featured-bg: var(--site-featured-bg-color);
 	--color-site-player-accent: var(--site-player-accent-color);
+	--color-site-player-progress: var(--site-player-progress-color);
+	--color-site-player-track: var(--site-player-track-color);
+	--color-site-player-loaded: var(--site-player-loaded-color);
+	--color-site-player-tooltip-bg: var(--site-player-tooltip-bg-color);
+	--color-site-player-control: var(--site-player-control-color);
+	--color-site-player-canvas: var(--site-player-canvas-color);
+	--color-site-player-control-surface: var(--site-player-control-surface-color);
+	--color-site-player-subtitle-bg: var(--site-player-subtitle-bg-color);
+	--color-site-player-subtitle: var(--site-player-subtitle-color);
+	--color-site-player-shadow: var(--site-player-shadow-color);
+
+	/* ── Component: Switch ───────────────────────────────── */
+	--color-switch-track-on: var(--switch-track-on-color);
+	--color-switch-track-off: var(--switch-track-off-color);
+	--color-switch-thumb: var(--switch-thumb-color);
 
 	/* ── Cinemata Revamp Palette ─────────────────────────── */
 	--color-cinemata-white: var(--cinemata-white);
@@ -565,6 +580,7 @@ body {
 	--bg-surface: var(--cinemata-neutral-50);
 	--bg-surface-raised: var(--cinemata-white);
 	--bg-surface-muted: var(--cinemata-neutral-200);
+	--bg-surface-hover: var(--cinemata-pacific-deep-50);
 	--bg-surface-inverse: var(--cinemata-pacific-deep-900);
 	--bg-overlay-dark: var(--cinemata-pacific-deep-900);
 	--bg-chrome: var(--cinemata-pacific-deep-800);
@@ -576,23 +592,26 @@ body {
 	--bg-secondary: var(--cinemata-sunset-horizon-400p);
 	--bg-secondary-hover: var(--cinemata-sunset-horizon-500);
 	--bg-danger: var(--cinemata-red-500);
+	--bg-danger-strong: var(--cinemata-red-800);
+	--bg-danger-strong-hover: var(--cinemata-red-400);
 	--bg-success: var(--cinemata-green-500);
+	--bg-success-strong: var(--cinemata-green-800);
 	--bg-warning: var(--cinemata-amber-500);
 
 	/* Text */
 	--text-strong: var(--cinemata-pacific-deep-900);
 	--text-primary: var(--cinemata-pacific-deep-700);
 	--text-secondary: var(--cinemata-strait-blue-700);
-	--text-muted: var(--cinemata-pacific-deep-400);
+	--text-muted: var(--cinemata-pacific-deep-500);
 	--text-description: var(--cinemata-pacific-deep-700);
 	--text-subtle: var(--cinemata-neutral-500);
-	--text-disabled: var(--cinemata-pacific-deep-400);
+	--text-disabled: var(--cinemata-pacific-deep-500);
 	--text-inverse: var(--cinemata-white);
 	--text-on-primary: var(--cinemata-white);
 	--text-on-chrome: var(--cinemata-strait-blue-50);
 	--text-on-chrome-muted: var(--cinemata-pacific-deep-300);
-	--text-link: var(--cinemata-sunset-horizon-400p);
-	--text-link-hover: var(--cinemata-sunset-horizon-600);
+	--text-link: var(--cinemata-sunset-horizon-700);
+	--text-link-hover: var(--cinemata-sunset-horizon-800);
 	--text-accent: var(--cinemata-sunset-horizon-400p);
 	--text-danger: var(--cinemata-red-500);
 	--text-success: var(--cinemata-green-600);
@@ -601,6 +620,7 @@ body {
 	/* Borders */
 	--border-default: var(--cinemata-pacific-deep-200);
 	--border-subtle: var(--cinemata-neutral-200);
+	--border-divider: var(--cinemata-pacific-deep-200);
 	--border-strong: var(--cinemata-pacific-deep-500);
 	--border-strong-constant: var(--cinemata-pacific-deep-500);
 	--border-chrome: var(--cinemata-pacific-deep-700);
@@ -632,6 +652,11 @@ body {
 	--notification-badge-accent: var(--cinemata-sunset-horizon-800);
 	--notification-badge-muted: var(--cinemata-pacific-deep-700);
 	--notification-coming-soon-bg: var(--bg-surface-muted);
+
+	/* Component: Switch */
+	--switch-track-on-color: var(--cinemata-coral-reef-600);
+	--switch-track-off-color: var(--cinemata-pacific-deep-900);
+	--switch-thumb-color: var(--cinemata-neutral-100);
 }
 
 body.dark_theme {
@@ -639,13 +664,16 @@ body.dark_theme {
 	--bg-surface: var(--cinemata-pacific-deep-900);
 	--bg-surface-raised: var(--cinemata-pacific-deep-800);
 	--bg-surface-muted: var(--cinemata-pacific-deep-800);
+	--bg-surface-hover: var(--cinemata-pacific-deep-800);
 	--bg-surface-inverse: var(--cinemata-white);
 	--bg-skeleton: var(--cinemata-pacific-deep-700);
 	--bg-control: var(--cinemata-pacific-deep-900);
 	--bg-primary: var(--cinemata-strait-blue-500);
 	--bg-primary-hover: var(--cinemata-strait-blue-700);
 	--bg-secondary: var(--cinemata-sunset-horizon-500);
-	--bg-secondary-hover: var(--cinemata-sunset-horizon-700);
+	--bg-secondary-hover: var(--cinemata-sunset-horizon-400p);
+	--bg-danger-strong: var(--cinemata-red-950);
+	--bg-danger-strong-hover: var(--cinemata-red-900);
 
 	--text-strong: var(--cinemata-strait-blue-50);
 	--text-primary: var(--cinemata-strait-blue-50);
@@ -653,6 +681,7 @@ body.dark_theme {
 	--text-muted: var(--cinemata-pacific-deep-300);
 	--text-description: var(--cinemata-pacific-deep-300);
 	--text-subtle: var(--cinemata-neutral-400);
+	--text-disabled: var(--cinemata-pacific-deep-400);
 	--text-inverse: var(--cinemata-pacific-deep-900);
 	--text-link: var(--cinemata-sunset-horizon-200);
 	--text-link-hover: var(--cinemata-sunset-horizon-100);
@@ -661,6 +690,7 @@ body.dark_theme {
 
 	--border-default: var(--cinemata-pacific-deep-700);
 	--border-subtle: var(--cinemata-pacific-deep-800);
+	--border-divider: var(--cinemata-pacific-deep-600p);
 	--border-strong: var(--cinemata-pacific-deep-400);
 	--border-input: var(--cinemata-sunset-horizon-400p);
 
@@ -678,6 +708,9 @@ body.dark_theme {
 	--notification-action-hover: var(--cinemata-sunset-horizon-300);
 	--notification-action-disabled: var(--cinemata-neutral-600);
 	--notification-coming-soon-bg: var(--cinemata-strait-blue-900);
+
+	--switch-track-on-color: var(--cinemata-coral-reef-700);
+	--switch-track-off-color: var(--cinemata-pacific-deep-800);
 }
 
 /* stylelint-disable-next-line at-rule-no-unknown */
@@ -687,6 +720,7 @@ body.dark_theme {
 	--color-bg-surface: var(--bg-surface);
 	--color-bg-surface-raised: var(--bg-surface-raised);
 	--color-bg-surface-muted: var(--bg-surface-muted);
+	--color-bg-surface-hover: var(--bg-surface-hover);
 	--color-bg-surface-inverse: var(--bg-surface-inverse);
 	--color-bg-overlay-dark: var(--bg-overlay-dark);
 	--color-bg-chrome: var(--bg-chrome);
@@ -698,7 +732,10 @@ body.dark_theme {
 	--color-bg-secondary: var(--bg-secondary);
 	--color-bg-secondary-hover: var(--bg-secondary-hover);
 	--color-bg-danger: var(--bg-danger);
+	--color-bg-danger-strong: var(--bg-danger-strong);
+	--color-bg-danger-strong-hover: var(--bg-danger-strong-hover);
 	--color-bg-success: var(--bg-success);
+	--color-bg-success-strong: var(--bg-success-strong);
 	--color-bg-warning: var(--bg-warning);
 
 	/* Text */
@@ -723,6 +760,7 @@ body.dark_theme {
 	/* Borders */
 	--color-border-default: var(--border-default);
 	--color-border-subtle: var(--border-subtle);
+	--color-border-divider: var(--border-divider);
 	--color-border-strong: var(--border-strong);
 	--color-border-strong-constant: var(--border-strong-constant);
 	--color-border-chrome: var(--border-chrome);
@@ -847,4 +885,286 @@ header[data-topbar] input:focus-visible {
 
 header[data-topbar] a {
 	text-decoration: none;
+}
+
+/*
+ * Typography utilities (mirror of src/static/css/includes/typography/_text_styles.scss)
+ *
+ * Registered as Tailwind v4 @utility so responsive variants (sm:, md:, lg:, …)
+ * and state variants work. Names drop the duplicate "body-" / "heading-" /
+ * "title-" / "caption-" segment used in the legacy SCSS classes.
+ */
+
+/* Title */
+@utility title-72-regular {
+	font-size: 64px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.8px;
+	line-height: 76px;
+}
+@utility title-72-medium {
+	font-size: 64px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.8px;
+	line-height: 76px;
+}
+@utility title-72-bold {
+	font-size: 64px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.8px;
+	line-height: 76px;
+}
+@utility title-56-regular {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.6px;
+	line-height: 68px;
+}
+@utility title-56-medium {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.6px;
+	line-height: 68px;
+}
+@utility title-56-bold {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.6px;
+	line-height: 68px;
+}
+
+/* Headings */
+@utility h1-56-regular {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.5px;
+	line-height: 68px;
+}
+@utility h1-56-medium {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.5px;
+	line-height: 68px;
+}
+@utility h1-56-bold {
+	font-size: 56px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.5px;
+	line-height: 68px;
+}
+@utility h2-48-regular {
+	font-size: 48px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.4px;
+	line-height: 58px;
+}
+@utility h2-48-medium {
+	font-size: 48px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.4px;
+	line-height: 58px;
+}
+@utility h2-48-bold {
+	font-size: 48px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.4px;
+	line-height: 58px;
+}
+@utility h3-40-regular {
+	font-size: 40px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.3px;
+	line-height: 48px;
+}
+@utility h3-40-medium {
+	font-size: 40px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.3px;
+	line-height: 48px;
+}
+@utility h3-40-bold {
+	font-size: 40px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.3px;
+	line-height: 48px;
+}
+@utility h4-32-regular {
+	font-size: 32px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.2px;
+	line-height: 38px;
+}
+@utility h4-32-medium {
+	font-size: 32px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.2px;
+	line-height: 38px;
+}
+@utility h4-32-bold {
+	font-size: 32px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.2px;
+	line-height: 38px;
+}
+@utility h5-24-regular {
+	font-size: 24px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: -0.15px;
+	line-height: 30px;
+}
+@utility h5-24-medium {
+	font-size: 24px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: -0.15px;
+	line-height: 30px;
+}
+@utility h5-24-bold {
+	font-size: 24px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: -0.15px;
+	line-height: 30px;
+}
+@utility h6-20-regular {
+	font-size: 20px;
+	font-family: var(--font-barlow);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility h6-20-medium {
+	font-size: 20px;
+	font-family: var(--font-barlow);
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility h6-20-bold {
+	font-size: 20px;
+	font-family: var(--font-barlow);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+
+/* Body */
+@utility body-18-regular {
+	font-size: 18px;
+	font-family: var(--font-inter);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 28px;
+}
+@utility body-18-medium {
+	font-size: 18px;
+	font-family: var(--font-inter);
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 28px;
+}
+@utility body-18-bold {
+	font-size: 18px;
+	font-family: var(--font-inter);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 28px;
+}
+@utility body-16-regular {
+	font-size: 16px;
+	font-family: var(--font-inter);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility body-16-medium {
+	font-size: 16px;
+	font-family: var(--font-inter);
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility body-16-bold {
+	font-size: 16px;
+	font-family: var(--font-inter);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility body-14-regular {
+	font-size: 14px;
+	font-family: var(--font-inter);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 20px;
+}
+@utility body-14-medium {
+	font-size: 14px;
+	font-family: var(--font-inter);
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 24px;
+}
+@utility body-14-bold {
+	font-size: 14px;
+	font-family: var(--font-inter);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 20px;
+}
+@utility body-12-regular {
+	font-size: 12px;
+	font-family: var(--font-inter);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 16px;
+}
+@utility body-12-medium {
+	font-size: 12px;
+	font-family: var(--font-inter);
+	font-weight: 500;
+	letter-spacing: 0;
+	line-height: 16px;
+}
+@utility body-12-bold {
+	font-size: 12px;
+	font-family: var(--font-inter);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 16px;
+}
+
+/* Captions */
+@utility caption-10-regular {
+	font-size: 10px;
+	font-family: var(--font-inter);
+	font-weight: 400;
+	letter-spacing: 0;
+	line-height: 10px;
+}
+@utility caption-10-semibold {
+	font-size: 10px;
+	font-family: var(--font-inter);
+	font-weight: 700;
+	letter-spacing: 0;
+	line-height: 10px;
 }

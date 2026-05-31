@@ -113,6 +113,7 @@ export default defineConfig({
 				members: 'src/entries/members.js',
 				embed: 'src/entries/embed.js',
 				media: 'src/entries/media.js',
+				'media-revamp': 'src/entries/media-revamp.js',
 				playlist: 'src/entries/playlist.js',
 				tags: 'src/entries/tags.js',
 				categories: 'src/entries/categories.js',
@@ -145,6 +146,9 @@ export default defineConfig({
 				// Without this, Rollup might merge them into a shared chunk
 				// that gets loaded by every page (~15KB gzipped).
 				manualChunks(id) {
+					if (id.includes('/node_modules/video.js/')) {
+						return 'videojs';
+					}
 					if (modernTrackVendorPackages.some((packagePath) => id.includes(packagePath))) {
 						return 'modern-track-vendor';
 					}

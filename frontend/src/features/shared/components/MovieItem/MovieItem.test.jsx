@@ -30,7 +30,7 @@ describe('MovieItem', () => {
 		expect(screen.getByText('2h 3m')).toHaveClass('text-[12px]');
 		expect(screen.getByText('2h 3m')).toHaveClass('leading-[13.5px]');
 		expect(screen.getByText('2h 3m')).toHaveClass('tracking-[0.5px]');
-		expect(screen.getByText('2h 3m')).toHaveClass('bg-[var(--cinemata-pacific-deep-950)]');
+		expect(screen.getByText('2h 3m')).toHaveClass('bg-bg-overlay-dark');
 		expect(article).toContainElement(image);
 		expect(screen.getByText('Arrival')).toHaveClass('text-text-primary');
 		expect(screen.getByText('Arrival')).toHaveClass('[font-family:Inter,Arial,sans-serif]');
@@ -114,6 +114,26 @@ describe('MovieItem', () => {
 		const movieLink = screen.getByRole('link', { name: 'Open Cinema Paradiso' });
 
 		expect(movieLink).toHaveAttribute('href', '/media/cinema-paradiso/');
+	});
+
+	it('includes visible poster overlay text in the poster link accessible name', () => {
+		render(
+			<VerticalMovieItem
+				imageSrc={samplePoster}
+				imageAlt="Clickable poster"
+				title="Cinema Paradiso"
+				subtitle="Giuseppe Tornatore"
+				subtitleLink="/profiles/giuseppe-tornatore/"
+				badge="Documentary"
+				duration="1:02"
+				link="/media/cinema-paradiso/"
+			/>
+		);
+
+		expect(screen.getByRole('link', { name: 'Documentary 1:02, Open Cinema Paradiso' })).toHaveAttribute(
+			'href',
+			'/media/cinema-paradiso/'
+		);
 	});
 
 	it('keeps the subtitle profile link clickable inside a linked movie card', () => {

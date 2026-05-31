@@ -1,17 +1,17 @@
+import { Children, isValidElement } from 'react';
 import { cn } from '../../utils/classNames';
 export const VARIANT_CLASSES = {
 	primary: 'border border-transparent bg-brand-primary text-btn-text hover:bg-brand-primary-hover',
-	secondary:
+	secondary: 'border border-transparent bg-bg-primary text-text-on-primary hover:bg-bg-primary-hover',
+	tertiary:
 		'border border-brand-secondary-border bg-brand-secondary text-btn-secondary-text hover:bg-brand-secondary-hover',
-	tertiary: 'border-0 bg-bg-primary text-text-on-primary hover:bg-bg-primary-hover',
-	special:
-		'border border-transparent bg-cinemata-pacific-deep-600p text-cinemata-white hover:bg-cinemata-pacific-deep-700 dark:bg-cinemata-pacific-deep-950 dark:text-cinemata-white dark:hover:bg-cinemata-pacific-deep-900',
+	special: 'border border-transparent bg-bg-overlay-dark text-text-on-chrome hover:bg-bg-chrome-hover',
 	'primary-outline':
 		'border border-brand-primary bg-transparent text-brand-primary hover:bg-brand-primary hover:text-btn-text',
 	'secondary-outline':
-		'border border-cinemata-strait-blue-900 bg-transparent text-cinemata-strait-blue-900 hover:bg-cinemata-strait-blue-900 hover:text-cinemata-strait-blue-100 dark:border-cinemata-strait-blue-900 dark:text-cinemata-strait-blue-100 dark:hover:bg-cinemata-strait-blue-900 dark:hover:text-cinemata-strait-blue-100',
-	text: 'border-none bg-transparent text-cinemata-strait-blue-600p hover:text-cinemata-strait-blue-800 dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-800',
-	icon: 'border-none bg-transparent text-cinemata-strait-blue-600p hover:text-cinemata-strait-blue-800 dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-800',
+		'border border-border-strong bg-transparent text-text-strong hover:bg-bg-surface-inverse hover:text-text-inverse',
+	text: 'border-none bg-transparent text-text-secondary hover:text-text-link-hover',
+	icon: 'border-none bg-transparent text-text-secondary hover:text-text-link-hover',
 };
 
 export function getVariantClasses(variant) {
@@ -28,8 +28,69 @@ export const ALIGN_CLASSES = {
 export function getAlignClasses(align) {
 	return ALIGN_CLASSES[align] ?? ALIGN_CLASSES.center;
 }
+
+export const SIZE_CLASSES = {
+	base: 'px-space-base py-size-10',
+	sm: 'px-size-12 py-size-8 rounded-ds-8',
+};
+
+export function getSizeClasses(size) {
+	return SIZE_CLASSES[size] ?? SIZE_CLASSES.base;
+}
+
+export const ICON_ONLY_SIZE_CLASSES = {
+	base: 'p-size-12 rounded-ds-4',
+	sm: 'p-size-10 rounded-ds-8',
+};
+
+export function getIconOnlySizeClasses(size) {
+	return ICON_ONLY_SIZE_CLASSES[size] ?? ICON_ONLY_SIZE_CLASSES.base;
+}
+
 function isIconOnlyVariant(variant) {
 	return variant === 'icon';
+}
+
+function hasHiddenClassName(className) {
+	if (typeof className !== 'string') {
+		return false;
+	}
+
+	const classTokens = className.split(/\s+/);
+
+	return classTokens.includes('hidden') || classTokens.includes('sr-only');
+}
+
+function hasVisibleNodeContent(node) {
+	if (node == null || typeof node === 'boolean') {
+		return false;
+	}
+
+	if (typeof node === 'string') {
+		return node.trim().length > 0;
+	}
+
+	if (typeof node === 'number') {
+		return true;
+	}
+
+	if (!isValidElement(node)) {
+		return true;
+	}
+
+	if (node.props.hidden || hasHiddenClassName(node.props.className)) {
+		return false;
+	}
+
+	if ('children' in node.props) {
+		return hasVisibleLabelContent(node.props.children);
+	}
+
+	return true;
+}
+
+function hasVisibleLabelContent(children) {
+	return Children.toArray(children).some(hasVisibleNodeContent);
 }
 
 export function Button({
@@ -38,10 +99,12 @@ export function Button({
 	className = '',
 	icon = null,
 	iconPosition,
+	size = 'base',
 	type = 'button',
 	variant = 'primary',
 	...props
 }) {
+	const hasLabel = hasVisibleLabelContent(children);
 	const resolvedIconPosition = iconPosition ?? (variant === 'special' ? 'right' : 'left');
 	const iconElement = icon ? (
 		<span
@@ -52,21 +115,29 @@ export function Button({
 			{icon}
 		</span>
 	) : null;
+	const isCompactIconLayout = isIconOnlyVariant(variant);
+	const shouldCenterIcon = !hasLabel;
+	const layoutClasses = isCompactIconLayout
+		? 'gap-0 p-0'
+		: cn(
+				hasLabel ? getSizeClasses(size) : getIconOnlySizeClasses(size),
+				hasLabel ? 'gap-space-xs rounded-ds-4' : 'gap-0'
+			);
 
 	return (
 		<button
 			type={type}
 			className={cn(
-				'body-body-14-bold inline-flex cursor-pointer items-center transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60',
-				getAlignClasses(align),
-				isIconOnlyVariant(variant) ? 'gap-0 p-0' : 'gap-space-xs rounded-ds-4 px-space-base py-size-10',
+				'inline-flex cursor-pointer items-center transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 body-body-14-bold',
+				getAlignClasses(shouldCenterIcon ? 'center' : align),
 				getVariantClasses(variant),
+				layoutClasses,
 				className
 			)}
 			{...props}
 		>
 			{iconElement && resolvedIconPosition !== 'right' ? iconElement : null}
-			{isIconOnlyVariant(variant) ? null : (
+			{isCompactIconLayout || !hasLabel ? null : (
 				<span className="inline-flex items-center justify-center leading-none">{children}</span>
 			)}
 			{iconElement && resolvedIconPosition === 'right' ? iconElement : null}

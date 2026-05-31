@@ -10,6 +10,8 @@ describe('Avatar', () => {
 
 		expect(avatar).toHaveStyle({ width: 'var(--size-28)', height: 'var(--size-28)' });
 		expect(image).toHaveAttribute('src', 'https://example.com/avatar.jpg');
+		expect(image).toHaveAttribute('width', '28');
+		expect(image).toHaveAttribute('height', '28');
 	});
 
 	it('uses first and last initials when no profile image is provided', () => {
@@ -31,12 +33,14 @@ describe('Avatar', () => {
 	});
 
 	it('supports the large size token for larger presentations', () => {
-		render(<Avatar name="Layla Hart" size="large" data-testid="avatar" />);
+		render(<Avatar name="Layla Hart" size="large" src="https://example.com/avatar.jpg" data-testid="avatar" />);
 
 		const avatar = screen.getByTestId('avatar');
+		const image = screen.getByRole('img', { name: 'Layla Hart' });
 
 		expect(avatar).toHaveStyle({ width: 'var(--size-32)', height: 'var(--size-32)' });
-		expect(avatar).toHaveTextContent('LH');
+		expect(image).toHaveAttribute('width', '32');
+		expect(image).toHaveAttribute('height', '32');
 	});
 
 	it('renders an optional circular badge icon with the requested overlap offsets', () => {

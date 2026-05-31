@@ -1,5 +1,6 @@
 import os
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
 from django.http import HttpResponse
@@ -35,18 +36,25 @@ def metrics_view(request):
     return HttpResponse(data, content_type="text/plain; version=0.0.4; charset=utf-8")
 
 
+def robots_txt(request):
+    return HttpResponse("User-agent: *\nDisallow:\n", content_type="text/plain; charset=utf-8")
+
+
 urlpatterns = [
+    path("robots.txt", robots_txt),
     path("metrics", metrics_view),
     path("health/live", health_live),
     path("health/ready", health_ready),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
-    path("", include("notifications.urls")),
     path("", include("files.urls")),
     path("", include("users.urls")),
     path("accounts/", include("allauth.urls")),
     path("api-auth/", include("rest_framework.urls")),
     path("tinymce/", include("tinymce.urls")),
 ]
+
+if apps.is_installed("notifications"):
+    urlpatterns.insert(4, path("", include("notifications.urls")))
 
 # Only add debug toolbar URLs when DEBUG is True
 if settings.DEBUG:

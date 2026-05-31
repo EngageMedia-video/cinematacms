@@ -249,6 +249,9 @@ class PageStore extends EventEmitter {
 			case 'config-site':
 				r = mediacms_config.site;
 				break;
+			case 'config-storage':
+				r = mediacms_config.storage;
+				break;
 			case 'api-playlists':
 				r = mediacms_api_endpoint_url(type.split('-')[1]);
 				break;
