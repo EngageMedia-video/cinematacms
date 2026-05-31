@@ -13,7 +13,7 @@ import * as PageActions from '../../_PageActions';
 import MediaPageStore from '../store.js';
 import * as MediaPageActions from '../actions.js';
 
-import { CommentsSection } from '../../../../../features/comments';
+import CommentsList from '../../../components/-NEW-/Comments';
 
 import { RatingSystem } from '../../../components/RatingSystem/RatingSystem';
 
@@ -451,11 +451,7 @@ export default function ViewerInfoContent(props) {
 						<RatingSystem media_id={MediaPageStore.get('media-id')} ratings_data={ratings_info} />
 					) : null}
 
-					{props.hideComments ? null : (
-						<div className="box-border w-full px-4 md:px-0">
-							<CommentsSection friendlyToken={MediaPageStore.get('media-id')} variant="inline" />
-						</div>
-					)}
+					<CommentsList />
 				</div>
 			)}
 		</UserConsumer>

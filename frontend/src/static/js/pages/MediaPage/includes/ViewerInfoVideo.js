@@ -54,7 +54,6 @@ export default class ViewerInfoVideo extends ViewerInfo {
 						published={published}
 						description={description}
 						yearProduced={yearProduced}
-						hideComments={this.props.hideComments}
 					/>
 				</div>
 			</div>

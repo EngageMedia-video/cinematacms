@@ -106,8 +106,6 @@ export class _VideoMediaPage extends Page {
 	pageContent() {
 		const viewerClassname = 'cf viewer-section' + (this.state.theaterMode ? ' theater-mode' : ' viewer-wide');
 		const viewerNestedClassname = 'viewer-section-nested' + (this.state.theaterMode ? ' viewer-section' : '');
-		const stackedLayout = !this.state.wideLayout || (this.state.isVideoMedia && this.state.theaterMode);
-		const commentsInSidebar = this.state.isVideoMedia && !stackedLayout;
 
 		if (this.state.needsPassword) {
 			return <RestrictedMediaGate viewerClassname={viewerClassname} onPasswordSuccess={this.onPasswordSuccess} />;
@@ -126,15 +124,14 @@ export class _VideoMediaPage extends Page {
 							: null}
 					</div>,
 					<div key="viewer-section-nested" className={viewerNestedClassname}>
-						{stackedLayout
+						{!this.state.wideLayout || (this.state.isVideoMedia && this.state.theaterMode)
 							? [
-									<ViewerInfoVideo key="viewer-info" hideComments={commentsInSidebar} />,
+									<ViewerInfoVideo key="viewer-info" />,
 									this.state.pagePlaylistLoaded ? (
 										<ViewerSidebar
 											key="viewer-sidebar"
 											mediaId={MediaPageStore.get('media-id')}
 											playlistData={MediaPageStore.get('playlist-data')}
-											showComments={commentsInSidebar}
 										/>
 									) : null,
 								]
@@ -144,10 +141,9 @@ export class _VideoMediaPage extends Page {
 											key="viewer-sidebar"
 											mediaId={MediaPageStore.get('media-id')}
 											playlistData={MediaPageStore.get('playlist-data')}
-											showComments={commentsInSidebar}
 										/>
 									) : null,
-									<ViewerInfoVideo key="viewer-info" hideComments={commentsInSidebar} />,
+									<ViewerInfoVideo key="viewer-info" />,
 								]}
 					</div>,
 				]}

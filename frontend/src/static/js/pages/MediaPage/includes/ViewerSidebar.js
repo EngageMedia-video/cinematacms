@@ -8,8 +8,6 @@ import { RelatedMedia } from '../../../components/-NEW-/RelatedMedia';
 
 import PlaylistView from './PlaylistView';
 
-import { CommentsSection } from '../../../../../features/comments';
-
 export default class ViewerSidebar extends React.PureComponent {
 	constructor(props) {
 		super(props);
@@ -49,11 +47,6 @@ export default class ViewerSidebar extends React.PureComponent {
 	render() {
 		return (
 			<div className="viewer-sidebar">
-				{this.props.showComments ? (
-					<div className="viewer-sidebar-comments mb-6 box-border w-full px-4 md:px-0">
-						<CommentsSection friendlyToken={this.props.mediaId} variant="sidebar" />
-					</div>
-				) : null}
 				{this.state.isPlaylistPage ? (
 					<PlaylistView activeItem={this.state.activeItem} playlistData={this.props.playlistData} />
 				) : 'video' === this.state.mediaType || 'audio' === this.state.mediaType ? (
