@@ -86,23 +86,43 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 		}
 
 		return (
-			<div className="flex-row gap-2 items-center hidden sm:flex">
-				<Badge
-					color="bg/primary"
-					className={'media-state-badge media-state-badge-' + mediaState}
-					title={stateTooltip}
-				>
-					<span className="body-12-bold">{String(mediaState).toUpperCase()}</span>
-				</Badge>
+			<>
+				<div className="flex-row gap-2 items-center hidden sm:flex">
+					<Badge
+						color="bg/primary"
+						className={'media-state-badge media-state-badge-' + mediaState}
+						title={stateTooltip}
+					>
+						<span className="body-12-bold">{String(mediaState).toUpperCase()}</span>
+					</Badge>
 
-				<Tooltip content={stateTooltip} placement="right" trigger="hover">
-					<Button
-						variant="icon"
-						aria-label="Open tooltip"
-						icon={<Icon name="infoYellow" size={18} decorative />}
-					/>
-				</Tooltip>
-			</div>
+					<Tooltip content={stateTooltip} placement="right" trigger="hover">
+						<Button
+							variant="icon"
+							aria-label="Open tooltip"
+							icon={<Icon name="infoYellow" size={18} decorative />}
+						/>
+					</Tooltip>
+				</div>
+
+				<div className="flex-row gap-2 items-center flex sm:hidden">
+					<Badge
+						color="bg/primary"
+						className={'media-state-badge media-state-badge-' + mediaState}
+						title={stateTooltip}
+					>
+						<span className="body-12-bold">{String(mediaState).toUpperCase()}</span>
+					</Badge>
+
+					<Tooltip content={stateTooltip} placement="left" trigger="hover">
+						<Button
+							variant="icon"
+							aria-label="Open tooltip"
+							icon={<Icon name="infoYellow" size={18} decorative />}
+						/>
+					</Tooltip>
+				</div>
+			</>
 		);
 	}
 

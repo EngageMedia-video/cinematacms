@@ -37,7 +37,7 @@ export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
 				<div className="flex items-center justify-between gap-3 sm:block">
 					{void 0 !== this.props.title && (
 						<div className="min-w-0 flex-1">
-							<h1 className="h6-20-medium md:h4-32-medium m-0 p-0 text-text-strong">
+							<h1 className="h6-20-medium md:h4-32-medium m-0 p-0 text-text-strong wrap-break-word">
 								{this.props.title}
 							</h1>
 						</div>
@@ -46,17 +46,17 @@ export default class ViewerInfoVideoTitleBanner extends ViewerInfoTitleBanner {
 					<div className="shrink-0 sm:hidden">{this.mediaStateBadge(mediaState, stateTooltip)}</div>
 				</div>
 
+				<div className="flex flex-col gap-3 shrink-0">
+					{publishedDate && (
+						<Text as="span" color="meta" className="m-0">
+							Published on {publishedDate}
+						</Text>
+					)}
+
+					<div className="hidden sm:block">{this.mediaStateBadge(mediaState, stateTooltip)}</div>
+				</div>
+
 				<div className="flex flex-col items-start gap-8 min-w-0 sm:flex-row sm:items-center">
-					<div className="flex flex-col gap-3 shrink-0">
-						{publishedDate && (
-							<Text as="span" color="meta" className="m-0">
-								Published on {publishedDate}
-							</Text>
-						)}
-
-						{this.mediaStateBadge(mediaState, stateTooltip)}
-					</div>
-
 					<div className={'w-full min-w-0 sm:flex-1' + (this.state.likedMedia ? ' liked-media' : '')}>
 						<MediaActions
 							allowDownload={this.props.allowDownload}
