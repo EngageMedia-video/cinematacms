@@ -9,7 +9,15 @@ export function RestrictedMediaGate({ viewerClassname, onPasswordSuccess }) {
 			<div className="viewer-container" key="viewer-container">
 				<div className="restricted-media-poster">
 					{MediaCMS.media_poster_url ? (
-						<img src={MediaCMS.media_poster_url} alt="" className="restricted-media-poster-img" />
+						<img
+							src={MediaCMS.media_poster_url}
+							alt=""
+							width={1280}
+							height={720}
+							className="restricted-media-poster-img"
+							loading="eager"
+							fetchPriority="high"
+						/>
 					) : null}
 					<div className="restricted-media-poster-overlay" />
 				</div>

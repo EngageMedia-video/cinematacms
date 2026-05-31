@@ -101,6 +101,7 @@ from .query_cache import (
     get_media_detail_cache_key,
     get_media_list_cache_key,
     get_playlist_detail_cache_key,
+    get_request_cache_origin,
     invalidate_media_cache,
     set_cached_result,
 )
@@ -133,6 +134,22 @@ VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 logger = logging.getLogger(__name__)
 
 HOME_INITIAL_LIMIT = 20
+HOME_INITIAL_MEDIA_FIELDS = (
+    "friendly_token",
+    "url",
+    "api_url",
+    "title",
+    "description",
+    "summary",
+    "views",
+    "duration",
+    "thumbnail_url",
+    "author_name",
+    "author_profile",
+    "media_country_info",
+    "media_country",
+    "categories_info",
+)
 
 
 def _build_featured_queryset(limit=None):
@@ -197,6 +214,20 @@ def _home_recommended_envelope(results):
     }
 
 
+def _slim_home_media_item(item):
+    if not isinstance(item, dict):
+        return item
+
+    slim_item = {field: item[field] for field in HOME_INITIAL_MEDIA_FIELDS if field in item}
+    if "hero_playback" in item:
+        slim_item["hero_playback"] = item["hero_playback"]
+    return slim_item
+
+
+def _slim_home_media_results(items):
+    return [_slim_home_media_item(item) for item in items]
+
+
 def _attach_hero_playback_to_first_featured_item(items, request=None):
     """
     Add detail-only playback fields to the first featured item.
@@ -253,14 +284,19 @@ def _get_home_initial_data(request):
     """
     try:
         user_id = request.user.id if request.user.is_authenticated else None
+        request_origin = get_request_cache_origin(request)
 
         # --- Featured ---
-        home_featured_cache_key = get_media_list_cache_key(show="featured_home", page=1, user_id=user_id)
+        home_featured_cache_key = get_media_list_cache_key(
+            show="featured_home", page=1, user_id=user_id, origin=request_origin
+        )
         cached_home_featured = get_cached_result(home_featured_cache_key)
         if cached_home_featured is not None:
             home_initial_featured = cached_home_featured
         else:
-            featured_cache_key = get_media_list_cache_key(show="featured", page=1, user_id=user_id)
+            featured_cache_key = get_media_list_cache_key(
+                show="featured", page=1, user_id=user_id, origin=request_origin
+            )
             cached_featured = get_cached_result(featured_cache_key)
             if cached_featured is not None:
                 featured_results = list((cached_featured.get("results") or [])[:HOME_INITIAL_LIMIT])
@@ -274,12 +310,15 @@ def _get_home_initial_data(request):
                 featured_results = list(MediaSerializer(qs, many=True, context={"request": request}).data)
                 source_envelope = None
             featured_results = _attach_hero_playback_to_first_featured_item(featured_results, request=request)
+            featured_results = _slim_home_media_results(featured_results)
             home_initial_featured = _home_featured_envelope(featured_results, source_envelope=source_envelope)
             set_cached_result(home_featured_cache_key, home_initial_featured, MEDIA_LIST_TIMEOUT)
 
         # --- Recommended ---
         # MediaList.get skips caching for show=recommended; this warms SSR hydration only.
-        recommended_cache_key = get_media_list_cache_key(show="recommended_home", page=1, user_id=user_id)
+        recommended_cache_key = get_media_list_cache_key(
+            show="recommended_home", page=1, user_id=user_id, origin=request_origin
+        )
         cached_recommended = get_cached_result(recommended_cache_key)
         if cached_recommended is not None:
             home_initial_recommended = cached_recommended
@@ -288,6 +327,7 @@ def _get_home_initial_data(request):
             recommended_results = list(
                 MediaSerializer(list(recommended_media), many=True, context={"request": request}).data
             )
+            recommended_results = _slim_home_media_results(recommended_results)
             home_initial_recommended = _home_recommended_envelope(recommended_results)
             set_cached_result(recommended_cache_key, home_initial_recommended, MEDIA_LIST_TIMEOUT)
 
@@ -304,6 +344,10 @@ def index(request):
         featured, recommended = _get_home_initial_data(request)
         context["home_initial_featured"] = featured
         context["home_initial_recommended"] = recommended
+        first_featured = (featured.get("results") or [None])[0] if isinstance(featured, dict) else None
+        if isinstance(first_featured, dict):
+            hero_playback = first_featured.get("hero_playback") or {}
+            context["home_hero_preload_image"] = hero_playback.get("poster_url") or first_featured.get("thumbnail_url")
     return render(request, template, context)
 
 
@@ -1188,7 +1232,12 @@ class MediaList(APIView):
             try:
                 page_num = int(page_param or "1")
                 user_id = request.user.id if request.user.is_authenticated else None
-                cache_key = get_media_list_cache_key(show=show_param or "latest", page=page_num, user_id=user_id)
+                cache_key = get_media_list_cache_key(
+                    show=show_param or "latest",
+                    page=page_num,
+                    user_id=user_id,
+                    origin=get_request_cache_origin(request),
+                )
                 cached_result = get_cached_result(cache_key)
                 if cached_result is not None:
                     if show_param == "featured" and page_num == 1:
@@ -1337,7 +1386,7 @@ class MediaDetail(APIView):
 
         # Try cache for public media only (not private/restricted)
         user_id = request.user.id if request.user.is_authenticated else None
-        cache_key = get_media_detail_cache_key(friendly_token, user_id)
+        cache_key = get_media_detail_cache_key(friendly_token, user_id, origin=get_request_cache_origin(request))
 
         # Skip cache for token-protected requests
         if not token:
@@ -1924,7 +1973,7 @@ class PlaylistDetail(APIView):
     def get(self, request, friendly_token, format=None):
         # Try cache first
         user_id = request.user.id if request.user.is_authenticated else None
-        cache_key = get_playlist_detail_cache_key(friendly_token, user_id)
+        cache_key = get_playlist_detail_cache_key(friendly_token, user_id, origin=get_request_cache_origin(request))
         cached_result = get_cached_result(cache_key)
         if cached_result is not None:
             return Response(cached_result)

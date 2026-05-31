@@ -85,7 +85,7 @@ export const Default = {
 								</Button>
 							</DialogClose>
 							<DialogClose>
-								<Button type="button" variant="secondary">
+								<Button type="button" variant="tertiary">
 									Yes, Submit
 								</Button>
 							</DialogClose>
@@ -120,7 +120,7 @@ export const OpenPreview = {
 							</Button>
 						</DialogClose>
 						<DialogClose>
-							<Button type="button" variant="secondary">
+							<Button type="button" variant="tertiary">
 								Yes, Submit
 							</Button>
 						</DialogClose>
@@ -139,7 +139,7 @@ export const Controlled = {
 			<div className="flex min-h-[220px] items-center justify-center">
 				<Dialog open={open} onOpenChange={setOpen}>
 					<DialogTrigger>
-						<Button variant="secondary">SHOW CONFIRMATION</Button>
+						<Button variant="tertiary">SHOW CONFIRMATION</Button>
 					</DialogTrigger>
 
 					<ConfirmationDialogContent
@@ -159,7 +159,7 @@ export const Controlled = {
 								</Button>
 								<Button
 									type="button"
-									variant="secondary"
+									variant="tertiary"
 									onClick={() => {
 										args.onConfirm?.();
 										setOpen(false);

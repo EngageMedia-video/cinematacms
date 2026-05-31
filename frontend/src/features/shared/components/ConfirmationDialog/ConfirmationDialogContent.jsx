@@ -24,8 +24,12 @@ export function ConfirmationDialogContent({
 					<img
 						src={decorationSrc}
 						alt={decorationAlt}
+						width={320}
+						height={320}
 						aria-hidden={decorationAlt ? undefined : 'true'}
 						className="pointer-events-none absolute right-0 bottom-0 w-[160px] max-w-[52%] object-contain"
+						loading="lazy"
+						decoding="async"
 					/>
 				) : null}
 

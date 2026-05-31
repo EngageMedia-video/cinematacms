@@ -74,14 +74,16 @@
 
     {% block aftercontent %}{% endblock %}
 
-    {# Video.js CSS & JS loading #}
-    {% if LOAD_FROM_CDN %}
-    <link href="https://vjs.zencdn.net/7.20.2/video-js.min.css" rel="stylesheet" integrity="sha384-m/+gruJNOZgxOA44GgPxiXxSBPKfJTu36EVTc8fYIVPKd6V8pBhUoCHx/Zl71xQL" crossorigin="anonymous">
-    <script src="https://vjs.zencdn.net/7.20.2/video.min.js" integrity="sha384-bvO7eGWph8VhsDHnTORUdWRBA1eMIDM+6dzezVZTlHafSfIguxaRh3lCnUmPNHG7" crossorigin="anonymous"></script>
-    {% else %}
-    <link href="{% static "lib/video-js/7.20.2/video-js.min.css" %}" rel="stylesheet">
-    <script src="{% static "lib/video-js/7.20.2/video.min.js" %}"></script>
-    {% endif %}
+    {% block videojs_assets %}
+        {# Video.js CSS & JS loading #}
+        {% if LOAD_FROM_CDN %}
+        <link href="https://vjs.zencdn.net/7.20.2/video-js.min.css" rel="stylesheet" integrity="sha384-m/+gruJNOZgxOA44GgPxiXxSBPKfJTu36EVTc8fYIVPKd6V8pBhUoCHx/Zl71xQL" crossorigin="anonymous">
+        <script src="https://vjs.zencdn.net/7.20.2/video.min.js" integrity="sha384-bvO7eGWph8VhsDHnTORUdWRBA1eMIDM+6dzezVZTlHafSfIguxaRh3lCnUmPNHG7" crossorigin="anonymous"></script>
+        {% else %}
+        <link href="{% static 'lib/video-js/7.20.2/video-js.min.css' %}" rel="stylesheet">
+        <script src="{% static 'lib/video-js/7.20.2/video.min.js' %}"></script>
+        {% endif %}
+    {% endblock videojs_assets %}
 
     {% block externalscripts %}{% endblock externalscripts %}
 
@@ -96,7 +98,7 @@
         _paq.push(['trackPageView']);
         _paq.push(['enableLinkTracking']);
         (function() {
-            var u="//matomo.engagemedia.org/";
+            var u="https://matomo.engagemedia.org/";
             _paq.push(['setTrackerUrl', u+'matomo.php']);
             _paq.push(['setSiteId', '11']);
             var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];

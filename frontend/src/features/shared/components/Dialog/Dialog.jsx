@@ -231,10 +231,7 @@ export function DialogContent({
 			<div
 				aria-hidden="true"
 				data-dialog-overlay
-				className={cn(
-					'absolute inset-0 bg-cinemata-black/40 dark:bg-cinemata-pacific-deep-950 dark:opacity-80',
-					overlayClassName
-				)}
+				className={cn('absolute inset-0 bg-bg-overlay-dark/40 dark:opacity-80', overlayClassName)}
 				onClick={() => {
 					if (closeOnOverlayClick) {
 						setOpen(false);

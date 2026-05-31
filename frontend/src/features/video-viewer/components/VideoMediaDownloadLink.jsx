@@ -83,7 +83,7 @@ export function VideoMediaDownloadLink({
 					<PopupTrigger contentRef={popupContentRef}>
 						<Button
 							aria-label="Download"
-							variant="secondary"
+							variant="tertiary"
 							icon={<Icon name="downloadMedia" className="text-current" />}
 							className="body-body-14-medium whitespace-nowrap p-size-8"
 							size="sm"
@@ -94,7 +94,7 @@ export function VideoMediaDownloadLink({
 					<PopupTrigger contentRef={popupContentRef}>
 						<Button
 							aria-label="Download"
-							variant="secondary"
+							variant="tertiary"
 							icon={<Icon name="downloadMedia" className="text-current" />}
 							className="body-body-14-medium whitespace-nowrap"
 							size="sm"

@@ -38,16 +38,11 @@ export function ProgressBar({
 			aria-valuenow={safeValue}
 			className={cn('w-full', className)}
 		>
-			<div
-				className={cn(
-					'h-2 w-full overflow-hidden rounded-full bg-cinemata-coral-reef-100 dark:bg-cinemata-coral-reef-900',
-					trackClassName
-				)}
-			>
+			<div className={cn('h-2 w-full overflow-hidden rounded-full bg-bg-surface-muted', trackClassName)}>
 				<div
 					aria-hidden="true"
 					className={cn(
-						'h-full bg-cinemata-coral-reef-400p transition-[width] duration-200',
+						'h-full bg-bg-secondary transition-[width] duration-200',
 						indicatorRadiusClass,
 						indicatorClassName
 					)}

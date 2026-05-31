@@ -36,7 +36,12 @@ def metrics_view(request):
     return HttpResponse(data, content_type="text/plain; version=0.0.4; charset=utf-8")
 
 
+def robots_txt(request):
+    return HttpResponse("User-agent: *\nDisallow:\n", content_type="text/plain; charset=utf-8")
+
+
 urlpatterns = [
+    path("robots.txt", robots_txt),
     path("metrics", metrics_view),
     path("health/live", health_live),
     path("health/ready", health_ready),

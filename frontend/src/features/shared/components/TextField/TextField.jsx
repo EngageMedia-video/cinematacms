@@ -2,10 +2,9 @@ import { cn } from '../../utils/classNames';
 import { useEffect, useId, useState } from 'react';
 
 const SHELL_VARIANT_CLASSES = {
-	default:
-		'bg-bg-surface hover:bg-cinemata-pacific-deep-50 focus-within:bg-bg-surface dark:hover:bg-cinemata-pacific-deep-800',
+	default: 'bg-bg-surface hover:bg-bg-surface-hover focus-within:bg-bg-surface',
 	error: 'bg-bg-surface',
-	disabled: 'bg-cinemata-pacific-deep-50 dark:bg-cinemata-pacific-deep-900',
+	disabled: 'bg-bg-surface-hover',
 };
 
 const LABEL_VARIANT_CLASSES = {
@@ -37,7 +36,7 @@ const ACTIVE_BORDER_CLASSES = 'border-border-input';
 const BORDER_VARIANT_CLASSES = {
 	default: 'border-border-strong-constant',
 	error: 'border-border-danger',
-	disabled: 'border-cinemata-coral-reef-400p dark:border-cinemata-red-500',
+	disabled: 'border-border-input',
 };
 
 function hasTextValue(value) {
@@ -56,6 +55,7 @@ export function TextField({
 	id,
 	invalid = false,
 	label = '',
+	name,
 	onChange,
 	onBlur,
 	onFocus,
@@ -90,7 +90,7 @@ export function TextField({
 		<div className={cn('w-max max-w-full', className)}>
 			<div
 				className={cn(
-					'group w-full border-b px-0 py-[14px] transition-colors duration-200',
+					'group w-full border-b px-0 py-[14px] transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
 					SHELL_VARIANT_CLASSES[variant],
 					borderClasses,
 					disabled ? 'cursor-not-allowed' : ''
@@ -107,6 +107,7 @@ export function TextField({
 					defaultValue={defaultValue}
 					ref={ref}
 					id={inputId}
+					name={name ?? inputId}
 					type={type}
 					disabled={disabled}
 					aria-describedby={describedBy}
@@ -127,7 +128,7 @@ export function TextField({
 						onChange?.(event);
 					}}
 					className={cn(
-						'body-body-16-regular block w-full border-none bg-transparent p-0 outline-none focus:outline-none focus:ring-0 disabled:cursor-not-allowed',
+						'body-body-16-regular block w-full border-none bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 disabled:cursor-not-allowed',
 						INPUT_VARIANT_CLASSES[variant],
 						PLACEHOLDER_VARIANT_CLASSES[variant]
 					)}

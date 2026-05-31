@@ -107,9 +107,19 @@ function MoviePoster({
 	linkTitle = '',
 	showTopRightIcon = false,
 }) {
+	const visibleLabel = [badge, duration].filter(Boolean).join(' ');
+	const linkLabel = [visibleLabel, linkTitle ? `Open ${linkTitle}` : 'Open movie details'].filter(Boolean).join(', ');
 	const poster = (
 		<div className={cn('relative overflow-hidden rounded-[6px] bg-bg-skeleton', className)}>
-			<img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
+			<img
+				src={imageSrc}
+				alt={imageAlt}
+				width={320}
+				height={180}
+				className="h-full w-full object-cover"
+				loading="lazy"
+				decoding="async"
+			/>
 
 			{badge ? (
 				<Badge color={badgeColor} className="absolute bottom-3 left-3" data-movie-item-badge>
@@ -145,7 +155,7 @@ function MoviePoster({
 		<a
 			href={link}
 			className="block shrink-0 no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
-			aria-label={linkTitle ? `Open ${linkTitle}` : 'Open movie details'}
+			aria-label={linkLabel}
 		>
 			{poster}
 		</a>

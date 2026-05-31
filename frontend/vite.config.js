@@ -146,6 +146,9 @@ export default defineConfig({
 				// Without this, Rollup might merge them into a shared chunk
 				// that gets loaded by every page (~15KB gzipped).
 				manualChunks(id) {
+					if (id.includes('/node_modules/video.js/')) {
+						return 'videojs';
+					}
 					if (modernTrackVendorPackages.some((packagePath) => id.includes(packagePath))) {
 						return 'modern-track-vendor';
 					}

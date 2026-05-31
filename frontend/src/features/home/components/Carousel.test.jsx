@@ -109,7 +109,7 @@ describe('Carousel — default shape', () => {
 		expect(nextButton).toHaveClass('md:flex');
 		expect(nextButton).toHaveClass('size-[70px]');
 		expect(nextButton).toHaveClass('-right-8');
-		expect(nextButton).toHaveClass('text-cinemata-strait-blue-700');
+		expect(nextButton).toHaveClass('text-text-secondary');
 		expect(icon).toBeInTheDocument();
 	});
 
@@ -147,6 +147,15 @@ describe('Carousel — default shape', () => {
 		await user.click(dot2);
 		expect(dot2).toHaveAttribute('aria-current', 'true');
 		expect(dot1).not.toHaveAttribute('aria-current');
+	});
+
+	it('keeps carousel dot buttons at a 24px accessible target size', () => {
+		render(<Carousel items={makeItems(8)} visibleCount={4} />);
+
+		const dot = screen.getByRole('button', { name: 'Go to page 2' });
+
+		expect(dot).toHaveClass('size-6');
+		expect(dot.firstElementChild).toHaveClass('size-2');
 	});
 
 	it('defaults to one visible item on phone viewports', () => {

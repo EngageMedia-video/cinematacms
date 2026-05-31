@@ -18,6 +18,7 @@ export function MediaDropzone({
 	buttonLabel = 'CHOOSE MEDIA',
 	onFilesSelected,
 	inputId,
+	name = 'media-files',
 	'aria-label': ariaLabel = 'Choose media files',
 }) {
 	const generatedInputId = useId();
@@ -87,7 +88,7 @@ export function MediaDropzone({
 	return (
 		<div
 			className={cn(
-				'relative w-full rounded-[16px] bg-cinemata-neutral-100 dark:bg-cinemata-pacific-deep-800 px-6 py-[60px] transition-transform duration-200',
+				'relative w-full rounded-[16px] bg-bg-surface-muted px-6 py-[60px] transition-transform duration-200',
 				isDragging ? 'scale-[1.01]' : '',
 				isDropAnimating ? 'scale-[0.995]' : '',
 				disabled ? 'opacity-60' : '',
@@ -104,6 +105,7 @@ export function MediaDropzone({
 				id={resolvedInputId}
 				ref={inputRef}
 				type="file"
+				name={name}
 				accept={accept}
 				multiple={multiple}
 				disabled={disabled}
@@ -124,7 +126,7 @@ export function MediaDropzone({
 					rx="16"
 					ry="16"
 					fill="none"
-					className="stroke-cinemata-neutral-400 dark:stroke-cinemata-strait-blue-300"
+					className="stroke-border-strong"
 					strokeWidth="1"
 					strokeDasharray="8 8"
 				/>

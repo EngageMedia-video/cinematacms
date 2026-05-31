@@ -42,7 +42,7 @@ export function MediaShareButton({ isVideo }) {
 				<DialogTrigger>
 					<Button
 						aria-label="Share"
-						variant="secondary"
+						variant="tertiary"
 						icon={<Icon name="shareMedia" className="text-current" />}
 						className="body-body-14-medium whitespace-nowrap p-size-8"
 						size="sm"
@@ -53,7 +53,7 @@ export function MediaShareButton({ isVideo }) {
 				<DialogTrigger>
 					<Button
 						aria-label="Share"
-						variant="secondary"
+						variant="tertiary"
 						icon={<Icon name="shareMedia" className="text-current" />}
 						className="body-body-14-medium whitespace-nowrap"
 						size="sm"

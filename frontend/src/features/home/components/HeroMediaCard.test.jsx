@@ -22,7 +22,6 @@ describe('HeroMediaCard', () => {
 		expect(card.parentElement).toHaveClass('lg:h-[480px]');
 		expect(card).toHaveClass('bg-bg-surface');
 		expect(card).not.toHaveClass('border');
-		expect(card).not.toHaveClass('border-cinemata-pacific-deep-100');
 
 		const heading = screen.getByRole('heading', { level: 2 });
 		expect(heading).toHaveClass('heading-h6-20-medium');
@@ -41,7 +40,6 @@ describe('HeroMediaCard', () => {
 		expect(description).toHaveClass('body-body-14-regular');
 		expect(description).toHaveClass('text-text-description');
 		expect(description.className).not.toMatch(/dark:text-\[/);
-		expect(description).not.toHaveClass('dark:text-cinemata-pacific-deep-50');
 		expect(screen.queryByText('More information and credits from the media form.')).not.toBeInTheDocument();
 
 		const author = screen.getByRole('link', { name: 'Featured Author' });
@@ -96,7 +94,6 @@ describe('HeroMediaCard', () => {
 
 		expect(skeleton).toHaveClass('bg-bg-surface');
 		expect(skeleton).not.toHaveClass('border');
-		expect(skeleton).not.toHaveClass('border-cinemata-pacific-deep-100');
 		expect(skeleton).toHaveClass('lg:h-[480px]');
 	});
 });

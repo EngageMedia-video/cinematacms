@@ -2,9 +2,9 @@ import { Children, isValidElement } from 'react';
 import { cn } from '../../utils/classNames';
 export const VARIANT_CLASSES = {
 	primary: 'border border-transparent bg-brand-primary text-btn-text hover:bg-brand-primary-hover',
-	secondary:
+	secondary: 'border border-transparent bg-bg-primary text-text-on-primary hover:bg-bg-primary-hover',
+	tertiary:
 		'border border-brand-secondary-border bg-brand-secondary text-btn-secondary-text hover:bg-brand-secondary-hover',
-	tertiary: 'border-0 bg-bg-primary text-text-on-primary hover:bg-bg-primary-hover',
 	special: 'border border-transparent bg-bg-overlay-dark text-text-on-chrome hover:bg-bg-chrome-hover',
 	'primary-outline':
 		'border border-brand-primary bg-transparent text-brand-primary hover:bg-brand-primary hover:text-btn-text',
@@ -117,6 +117,12 @@ export function Button({
 	) : null;
 	const isCompactIconLayout = isIconOnlyVariant(variant);
 	const shouldCenterIcon = !hasLabel;
+	const layoutClasses = isCompactIconLayout
+		? 'gap-0 p-0'
+		: cn(
+				hasLabel ? getSizeClasses(size) : getIconOnlySizeClasses(size),
+				hasLabel ? 'gap-space-xs rounded-ds-4' : 'gap-0'
+			);
 
 	return (
 		<button
@@ -124,13 +130,8 @@ export function Button({
 			className={cn(
 				'inline-flex cursor-pointer items-center transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 body-body-14-bold',
 				getAlignClasses(shouldCenterIcon ? 'center' : align),
-				isCompactIconLayout
-					? 'gap-0 p-0'
-					: cn(
-							hasLabel ? getSizeClasses(size) : getIconOnlySizeClasses(size),
-							hasLabel ? 'gap-space-xs rounded-ds-4' : 'gap-0'
-						),
 				getVariantClasses(variant),
+				layoutClasses,
 				className
 			)}
 			{...props}

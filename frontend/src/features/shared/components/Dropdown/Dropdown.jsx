@@ -3,10 +3,9 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Icon } from '../Icon';
 
 const SHELL_VARIANT_CLASSES = {
-	default:
-		'bg-bg-surface hover:bg-cinemata-pacific-deep-50 focus-within:bg-bg-surface dark:hover:bg-cinemata-pacific-deep-800',
+	default: 'bg-bg-surface hover:bg-bg-surface-hover focus-within:bg-bg-surface',
 	error: 'bg-bg-surface',
-	disabled: 'bg-cinemata-pacific-deep-50 dark:bg-cinemata-pacific-deep-900',
+	disabled: 'bg-bg-surface-hover',
 };
 
 const LABEL_VARIANT_CLASSES = {
@@ -38,14 +37,13 @@ const ACTIVE_BORDER_CLASSES = 'border-border-input';
 const BORDER_VARIANT_CLASSES = {
 	default: 'border-border-strong-constant',
 	error: 'border-border-danger',
-	disabled: 'border-cinemata-coral-reef-400p dark:border-cinemata-red-500',
+	disabled: 'border-border-input',
 };
 
 const MENU_VARIANT_CLASSES = {
 	default: 'border-border-strong-constant bg-bg-surface',
 	error: 'border-border-danger bg-bg-surface',
-	disabled:
-		'border-cinemata-coral-reef-400p bg-cinemata-pacific-deep-50 dark:border-cinemata-red-500 dark:bg-cinemata-pacific-deep-900',
+	disabled: 'border-border-input bg-bg-surface-hover',
 };
 
 function normalizeOption(option) {
@@ -200,7 +198,7 @@ export function Dropdown({
 		>
 			<div
 				className={cn(
-					'group w-full border-b px-0 py-[14px] transition-colors duration-200',
+					'group w-full border-b px-0 py-[14px] transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
 					SHELL_VARIANT_CLASSES[variant],
 					borderClasses,
 					disabled ? 'cursor-not-allowed' : 'cursor-pointer'
@@ -252,7 +250,7 @@ export function Dropdown({
 					onBlur={() => {
 						setIsFocused(false);
 					}}
-					className="flex w-full items-center justify-between gap-4 border-none bg-transparent p-0 text-left outline-none focus:outline-none focus:ring-0 disabled:cursor-not-allowed"
+					className="flex w-full items-center justify-between gap-4 border-none bg-transparent p-0 text-left outline-none focus:outline-none focus-visible:outline-none focus:ring-0 disabled:cursor-not-allowed"
 				>
 					<span className="min-w-0 flex-1">
 						{label ? (

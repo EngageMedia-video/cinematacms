@@ -73,7 +73,7 @@ export function MediaLikeIcon() {
 		<div className="like">
 			<Button
 				aria-label={likedMedia ? `Unlike media, ${likesCounter} likes` : `Like media, ${likesCounter} likes`}
-				variant="secondary"
+				variant="tertiary"
 				icon={<Icon name={'thumbsUpFill'} className={likedMedia ? 'text-text-danger' : 'text-current'} />}
 				className={likedMedia ? activeButtonClassName : undefined}
 				onClick={toggleLike}
