@@ -12,7 +12,7 @@ function CommentsStyleTag() {
 	return (
 		<style>{`
 			.comments-scrollbar {
-				scrollbar-color: var(--cinemata-strait-blue-200) transparent;
+				scrollbar-color: var(--border-strong) transparent;
 				scrollbar-width: thin;
 			}
 			.comments-scrollbar::-webkit-scrollbar {
@@ -24,7 +24,7 @@ function CommentsStyleTag() {
 			.comments-scrollbar::-webkit-scrollbar-thumb {
 				border: 2px solid transparent;
 				border-radius: 999px;
-				background-color: var(--cinemata-strait-blue-200);
+				background-color: var(--border-strong);
 				background-clip: content-box;
 			}
 		`}</style>
