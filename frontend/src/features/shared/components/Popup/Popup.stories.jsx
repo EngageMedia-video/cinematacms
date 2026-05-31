@@ -36,7 +36,7 @@ function PopupExample({ className = '', style = null }) {
 			<PopupTrigger contentRef={contentRef}>
 				<Button
 					aria-label="Download"
-					variant="secondary"
+					variant="tertiary"
 					icon={<Icon name="downloadMedia" className="text-current" />}
 					size="sm"
 				>
@@ -128,7 +128,7 @@ export const WithHeader = {
 		return (
 			<div className="relative flex min-h-[320px] items-start justify-center bg-bg-page p-10">
 				<PopupTrigger contentRef={contentRef}>
-					<Button variant="secondary" size="sm">
+					<Button variant="tertiary" size="sm">
 						Open popup
 					</Button>
 				</PopupTrigger>

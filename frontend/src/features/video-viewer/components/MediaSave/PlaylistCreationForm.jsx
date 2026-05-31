@@ -110,7 +110,7 @@ export function PlaylistCreationForm({ onCancel, onPlaylistSave }) {
 			</label>
 
 			<div className="flex justify-end gap-size-8">
-				<Button type="button" variant="secondary" size="sm" onClick={onCancel}>
+				<Button type="button" variant="tertiary" size="sm" onClick={onCancel}>
 					Cancel
 				</Button>
 				<Button type="submit" variant="primary" size="sm">

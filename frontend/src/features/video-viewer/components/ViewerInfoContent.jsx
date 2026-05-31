@@ -423,7 +423,7 @@ export default function ViewerInfoContent(props) {
 													actions={
 														<>
 															<DialogClose>
-																<Button type="button" variant="secondary">
+																<Button type="button" variant="tertiary">
 																	CANCEL
 																</Button>
 															</DialogClose>

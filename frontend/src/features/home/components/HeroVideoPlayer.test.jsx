@@ -136,6 +136,16 @@ describe('HeroVideoPlayer', () => {
 		expect(videoJsPlayerMock.dispose).toHaveBeenCalledTimes(videojsDisposeCallsBeforeUnmount);
 	});
 
+	it('does not create a VideoJS player while cleaning up a cancelled async initialization', () => {
+		videojsMock.getPlayer.mockReturnValueOnce(undefined);
+
+		const { unmount } = render(<HeroVideoPlayer sources={[{ src: '/media/video.mp4', type: 'video/mp4' }]} />);
+		unmount();
+
+		expect(videojsMock.getPlayer).toHaveBeenCalledTimes(1);
+		expect(videojsMock).not.toHaveBeenCalled();
+	});
+
 	it('owns the modern hero player skin import', async () => {
 		const source = await import('./HeroVideoPlayer.jsx?raw');
 
@@ -150,6 +160,7 @@ describe('HeroVideoPlayer', () => {
 		expect(source.default).not.toContain("import MediaPlayerClass from '@mediacms/media-player';");
 		expect(source.default).not.toContain("import('video.js')");
 		expect(source.default).toContain("import('@mediacms/media-player')");
+		expect(source.default).toContain('mediaPlayerClassPromise = undefined;');
 	});
 
 	it('overrides plugin active indicators with shared player semantic tokens', async () => {

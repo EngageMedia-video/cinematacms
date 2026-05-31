@@ -19,9 +19,12 @@ function loadMediaPlayerClass() {
 	globalThis.videojs = videojs;
 
 	if (!mediaPlayerClassPromise) {
-		mediaPlayerClassPromise = import('@mediacms/media-player').then(
-			({ default: MediaPlayerClass }) => MediaPlayerClass
-		);
+		mediaPlayerClassPromise = import('@mediacms/media-player')
+			.then(({ default: MediaPlayerClass }) => MediaPlayerClass)
+			.catch((error) => {
+				mediaPlayerClassPromise = undefined;
+				throw error;
+			});
 	}
 
 	return mediaPlayerClassPromise;
@@ -119,7 +122,7 @@ export default function HeroVideoPlayer({
 			if (playerRef.current?.dispose) {
 				playerRef.current.dispose();
 			} else {
-				getVideoJsPlayer(videoElement)?.dispose();
+				videojs.getPlayer?.(videoElement)?.dispose();
 			}
 			playerRef.current = null;
 		};

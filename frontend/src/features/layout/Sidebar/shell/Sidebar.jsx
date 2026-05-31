@@ -77,7 +77,7 @@ export function Sidebar({ id = 'app-sidebar' }) {
 			<StorageUsage />
 
 			<Link
-				variant="tertiary"
+				variant="secondary"
 				href="https://support.cinemata.org"
 				target="_blank"
 				align="left"

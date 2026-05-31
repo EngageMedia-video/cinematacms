@@ -16,8 +16,19 @@ function loadVideoJs() {
 		const script = document.createElement('script');
 		script.src = videoJsUrl;
 		script.async = true;
-		script.onload = () => resolve(window.videojs);
-		script.onerror = () => reject(new Error(`Failed to load Video.js from ${videoJsUrl}`));
+		const fail = (message) => {
+			window.__cinemataVideoJsPromise = undefined;
+			script.remove();
+			reject(new Error(message));
+		};
+		script.onload = () => {
+			if (window.videojs) {
+				resolve(window.videojs);
+				return;
+			}
+			fail(`Video.js loaded from ${videoJsUrl} but did not initialize window.videojs`);
+		};
+		script.onerror = () => fail(`Failed to load Video.js from ${videoJsUrl}`);
 		document.head.appendChild(script);
 	});
 

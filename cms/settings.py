@@ -685,7 +685,7 @@ if DEBUG and not _is_testing:
 
         request_host = request.get_host().lower()
         host = "[::1]" if request_host.startswith("[::1]") else request_host.split(":", 1)[0]
-        return host in {"localhost", "127.0.0.1", "[::1]"}
+        return host in {"localhost", "127.0.0.1", "0.0.0.0", "[::1]"}
 
     DEBUG_TOOLBAR_CONFIG = {
         "SHOW_TOOLBAR_CALLBACK": show_toolbar,

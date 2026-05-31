@@ -55,7 +55,7 @@ export function MediaSaveButton() {
 				<DialogTrigger>
 					<Button
 						aria-label={savedToPlaylist ? 'Added to playlist' : 'Save to playlist'}
-						variant="secondary"
+						variant="tertiary"
 						icon={<Icon name="bookmarkFilled" className={saveIconClassName} />}
 						className="body-body-14-medium whitespace-nowrap p-size-8"
 						size="sm"
@@ -66,7 +66,7 @@ export function MediaSaveButton() {
 				<DialogTrigger>
 					<Button
 						aria-label={savedToPlaylist ? 'Added to playlist' : 'Save to playlist'}
-						variant="secondary"
+						variant="tertiary"
 						icon={<Icon name="bookmarkFilled" className={saveIconClassName} />}
 						className="body-body-14-medium whitespace-nowrap"
 						size="sm"

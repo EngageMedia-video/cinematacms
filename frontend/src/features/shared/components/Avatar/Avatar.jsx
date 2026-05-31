@@ -5,10 +5,12 @@ import { Icon } from '../Icon';
 const AVATAR_SIZES = {
 	small: {
 		dimension: 'var(--size-28)',
+		pixelDimension: 28,
 		textClassName: 'body-body-12-bold',
 	},
 	large: {
 		dimension: 'var(--size-32)',
+		pixelDimension: 32,
 		textClassName: 'body-body-14-bold',
 	},
 };
@@ -120,8 +122,8 @@ export function Avatar({
 					<img
 						src={src}
 						alt={accessibleName}
-						width={sizeConfig.dimension}
-						height={sizeConfig.dimension}
+						width={sizeConfig.pixelDimension}
+						height={sizeConfig.pixelDimension}
 						className="h-full w-full object-cover"
 						onError={(event) => {
 							setShowImage(false);
