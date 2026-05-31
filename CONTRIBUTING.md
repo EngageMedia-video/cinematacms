@@ -51,7 +51,7 @@ All new features must use modern track patterns.
 7. Create a Django template extending `base.html`
 8. Add URL route in `files/urls.py` **above the catch-all pattern**
 9. Add a view function in `files/views.py`
-10. For any UI or component change, run the Web Interface Guidelines accessibility review before opening a PR. Agents should use the `web-design-guidelines` skill; humans should check the same rules: semantic controls, accessible names, keyboard operation, visible focus states, image dimensions/alt text, and no `transition-all`.
+10. For any UI or component change, complete the Web Interface Guidelines accessibility review before opening a PR: semantic controls, accessible names, keyboard operation, visible focus states, image dimensions/alt text, and no `transition-all`.
 
 ### Running Locally
 
@@ -188,3 +188,4 @@ When submitting a PR:
 - [ ] `QueryClientProvider` is scoped to the feature page, not in shared components
 - [ ] Modern-track components use `useContext()`, not `_currentValue`
 - [ ] URL routes are placed above the catch-all pattern in `files/urls.py`
+- [ ] UI and component changes have completed the Web Interface Guidelines accessibility review
