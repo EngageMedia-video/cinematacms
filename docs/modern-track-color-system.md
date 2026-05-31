@@ -246,7 +246,7 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | `text/strong`, `text/primary`, `text/secondary`, `text/muted`, `text/description`, `text/subtle`, `text/disabled`, `text/avatar-fallback` | 8 | Themed content text plus avatar initials fallback text. |
 | `text/inverse`, `text/on-primary`, `text/on-chrome`, `text/on-chrome-muted` | 4 | Text on inverse/action/chrome surfaces. |
 | `text/link`, `text/link-hover`, `text/accent`, `text/danger`, `text/success`, `text/warning` | 6 | Inline-link and semantic text. Link tokens use darker sunset-horizon steps in light theme for AA contrast on white and raised tinted surfaces. |
-| `border/default`, `border/subtle`, `border/divider`, `border/strong`, `border/strong-constant`, `border/chrome`, `border/input`, `border/danger` | 8 | Card borders, section dividers, hairlines, input borders, and subtle checkbox fills via `bg-border-subtle`. |
+| `border/default`, `border/subtle`, `border/divider`, `border/scrollbar`, `border/strong`, `border/strong-constant`, `border/chrome`, `border/input`, `border/danger` | 9 | Card borders, section dividers, scrollbar thumbs, hairlines, input borders, and subtle checkbox fills via `bg-border-subtle`. |
 | `ring/focus` | 1 | Unified focus indicator (sunset-horizon-400p, constant). Used by every interactive control. |
 
 For the per-token light/dark lookup table, see the Storybook `Introduction > Colors` page (`frontend/src/storybook/Colors.mdx`).

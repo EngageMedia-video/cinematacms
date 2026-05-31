@@ -627,6 +627,7 @@ body {
 	--border-default: var(--cinemata-pacific-deep-200);
 	--border-subtle: var(--cinemata-neutral-200);
 	--border-divider: var(--cinemata-pacific-deep-200);
+	--border-scrollbar: var(--cinemata-strait-blue-200);
 	--border-strong: var(--cinemata-pacific-deep-500);
 	--border-strong-constant: var(--cinemata-pacific-deep-500);
 	--border-chrome: var(--cinemata-pacific-deep-700);
@@ -735,6 +736,7 @@ body.dark_theme {
 	--color-border-default: var(--border-default);
 	--color-border-subtle: var(--border-subtle);
 	--color-border-divider: var(--border-divider);
+	--color-border-scrollbar: var(--border-scrollbar);
 	--color-border-strong: var(--border-strong);
 	--color-border-strong-constant: var(--border-strong-constant);
 	--color-border-chrome: var(--border-chrome);
@@ -807,7 +809,7 @@ header[data-topbar] button:not(:disabled) {
 	}
 
 	.thin-brand-scrollbar {
-		scrollbar-color: var(--cinemata-strait-blue-200) transparent;
+		scrollbar-color: var(--border-scrollbar) transparent;
 		scrollbar-width: thin;
 	}
 
@@ -822,7 +824,7 @@ header[data-topbar] button:not(:disabled) {
 	.thin-brand-scrollbar::-webkit-scrollbar-thumb {
 		border: 2px solid transparent;
 		border-radius: 999px;
-		background-color: var(--cinemata-strait-blue-200);
+		background-color: var(--border-scrollbar);
 		background-clip: content-box;
 	}
 }
