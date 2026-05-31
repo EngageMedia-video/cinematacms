@@ -24,6 +24,10 @@
 <meta name="twitter:description" content="Cinemata is a platform for social and environmental films about the Asia-Pacific. The open-source video website highlights essential yet underheard stories, increasing filmmakers' reach, engagement, and impact.">
 <meta name="twitter:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
 
+{% if home_hero_preload_image %}
+<link rel="preload" as="image" href="{{ home_hero_preload_image }}" fetchpriority="high">
+{% endif %}
+
 {% endblock headermeta %}
 
 {% block modernpageimports %}

@@ -344,6 +344,10 @@ def index(request):
         featured, recommended = _get_home_initial_data(request)
         context["home_initial_featured"] = featured
         context["home_initial_recommended"] = recommended
+        first_featured = (featured.get("results") or [None])[0] if isinstance(featured, dict) else None
+        if isinstance(first_featured, dict):
+            hero_playback = first_featured.get("hero_playback") or {}
+            context["home_hero_preload_image"] = hero_playback.get("poster_url") or first_featured.get("thumbnail_url")
     return render(request, template, context)
 
 

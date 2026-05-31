@@ -81,6 +81,12 @@ class IndexRevampInitialDataTest(TestCase):
         response = self._get_revamp_response()
         self.assertContains(response, 'type="application/json"')
 
+    def test_revamp_home_does_not_emit_legacy_videojs_assets(self):
+        response = self._get_revamp_response()
+
+        self.assertNotContains(response, "lib/video-js/7.20.2/video.min.js")
+        self.assertNotContains(response, "lib/video-js/7.20.2/video-js.min.css")
+
     def test_featured_payload_is_valid_json(self):
         parsed = self._featured_payload()
         self.assertIsInstance(parsed, dict)
@@ -97,6 +103,18 @@ class IndexRevampInitialDataTest(TestCase):
         self.assertNotIn("likes", item)
         self.assertNotIn("reported_times", item)
         self.assertNotIn("size", item)
+
+    def test_featured_poster_is_preloaded(self):
+        Media.objects.filter(pk=self.media.pk).update(thumbnail="original/thumbnails/test-hero.jpg")
+        response = self._get_revamp_response()
+        payload = extract_json_script_payload(response.content.decode(), "home-initial-data-featured")
+        first_featured = payload["results"][0]
+        hero_playback = first_featured.get("hero_playback") or {}
+        expected_href = hero_playback.get("poster_url") or first_featured["thumbnail_url"]
+
+        self.assertContains(response, '<link rel="preload" as="image"', html=False)
+        self.assertContains(response, f'href="{expected_href}"', html=False)
+        self.assertContains(response, 'fetchpriority="high"', html=False)
 
     def test_recommended_payload_uses_slim_home_media_shape(self):
         response = self._get_revamp_response()
