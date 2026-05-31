@@ -580,6 +580,7 @@ body {
 	--bg-danger-strong: var(--cinemata-red-800);
 	--bg-danger-strong-hover: var(--cinemata-red-400);
 	--bg-success: var(--cinemata-green-500);
+	--bg-success-strong: var(--cinemata-green-800);
 	--bg-warning: var(--cinemata-amber-500);
 
 	/* Text */
@@ -672,6 +673,7 @@ body.dark_theme {
 	--color-bg-danger-strong: var(--bg-danger-strong);
 	--color-bg-danger-strong-hover: var(--bg-danger-strong-hover);
 	--color-bg-success: var(--bg-success);
+	--color-bg-success-strong: var(--bg-success-strong);
 	--color-bg-warning: var(--bg-warning);
 
 	/* Text */

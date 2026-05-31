@@ -119,6 +119,7 @@ fi
 
 
 python manage.py migrate
+python manage.py backfill_media_storage_usage || echo "Warning: storage usage backfill encountered errors; continuing installation."
 echo "Seeding feature flag switches..."
 if ! python manage.py seed_waffle_switches --force; then
     echo "Error: Feature flag seeding failed. Aborting installation."

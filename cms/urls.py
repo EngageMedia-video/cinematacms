@@ -1,5 +1,6 @@
 import os
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
 from django.http import HttpResponse
@@ -40,13 +41,15 @@ urlpatterns = [
     path("health/live", health_live),
     path("health/ready", health_ready),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
-    path("", include("notifications.urls")),
     path("", include("files.urls")),
     path("", include("users.urls")),
     path("accounts/", include("allauth.urls")),
     path("api-auth/", include("rest_framework.urls")),
     path("tinymce/", include("tinymce.urls")),
 ]
+
+if apps.is_installed("notifications"):
+    urlpatterns.insert(4, path("", include("notifications.urls")))
 
 # Only add debug toolbar URLs when DEBUG is True
 if settings.DEBUG:
