@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import urlParse from 'url-parse';
-import videojs from 'video.js';
+import videojs from '../../videojsGlobal.js';
 
 import '@mediacms/media-player/dist/mediacms-media-player.css';
 import MediaPlayerClass from '@mediacms/media-player';
@@ -341,7 +341,7 @@ export function VideoPlayer(props) {
 	}, []);
 
 	return null === props.errorMessage ? (
-		<video ref={videoElemRef} className="video-js vjs-mediacms native-dimensions"></video>
+		<video ref={videoElemRef} className="video-js vjs-mediacms native-dimensions" playsInline></video>
 	) : (
 		<div className="error-container">
 			<div className="error-container-inner">
