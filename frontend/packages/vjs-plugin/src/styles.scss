@@ -1741,9 +1741,15 @@ $controlBarAnimationsDuration: 0.1s;
 				button {
 					font-size: $touch-controls-play-icon-font-size;
 				}
-			}
 
-			.vjs-touch-play-button {
+				.vjs-icon-play,
+				.vjs-icon-play:before {
+					font-family: VideoJS;
+				}
+
+				.vjs-icon-play:before {
+					content: '\f101'; /* play */
+				}
 			}
 
 			.vjs-touch-next-button {
@@ -1792,7 +1798,7 @@ $controlBarAnimationsDuration: 0.1s;
 			}
 
 			&.vjs-playing {
-				.vjs-icon-play {
+				.vjs-touch-play-button .vjs-icon-play {
 					&:before {
 						content: '\f103'; /* pause */
 					}
@@ -1804,9 +1810,9 @@ $controlBarAnimationsDuration: 0.1s;
 					visibility: hidden;
 				}
 
-				.vjs-icon-play {
+				.vjs-touch-play-button .vjs-icon-play {
 					&:before {
-						content: '\f116';
+						content: '\f116'; /* replay */
 					}
 				}
 			}

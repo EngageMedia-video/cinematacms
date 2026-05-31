@@ -1,10 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import homeQueryClient, { HOME_QUERY_KEYS } from '../queryClient';
 import { HomePage } from './HomePage';
 
-// Mock the lazy-loaded video player to prevent videojs import in tests
+// Mock the video player to prevent videojs import in tests
 vi.mock('./HeroVideoPlayer', () => ({
 	default: function HeroVideoPlayerMock({ poster, sources = [], videoInfo = {} }) {
 		return (
@@ -135,8 +134,7 @@ describe('HomePage', () => {
 
 		render(<HomePage />);
 
-		await userEvent.click(screen.getByRole('button', { name: 'Play Featured Film, 7:00' }));
-		const player = await screen.findByTestId('hero-video-player');
+		const player = screen.getByTestId('hero-video-player');
 		expect(fetchSpy).not.toHaveBeenCalled();
 		expect(JSON.parse(player.dataset.sources)).toEqual([
 			{ src: 'https://example.com/featured-720.mp4', type: 'video/mp4' },

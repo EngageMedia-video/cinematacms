@@ -1,7 +1,8 @@
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, render, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import HeroVideoPlayer from './HeroVideoPlayer';
 
+const mediaPlayerImportState = vi.hoisted(() => ({ videojs: undefined }));
 const mediaPlayerDisposeMock = vi.hoisted(() => vi.fn());
 const mediaPlayerMock = vi.hoisted(() =>
 	vi.fn(function MediaPlayerMock() {
@@ -21,8 +22,11 @@ const videojsMock = vi.hoisted(() => {
 	return fn;
 });
 
-vi.mock('@mediacms/media-player', () => ({ default: mediaPlayerMock }));
-vi.mock('video.js', () => ({ default: videojsMock }));
+vi.mock('@mediacms/media-player', () => {
+	mediaPlayerImportState.videojs = globalThis.videojs;
+	return { default: mediaPlayerMock };
+});
+vi.mock('video.js/dist/video.es.js', () => ({ default: videojsMock }));
 
 describe('HeroVideoPlayer', () => {
 	afterEach(() => {
@@ -37,7 +41,16 @@ describe('HeroVideoPlayer', () => {
 		videoJsPlayerMock.dispose.mockClear();
 	});
 
-	it('initializes the MediaCMS player with the proven legacy player option shape', () => {
+	it('sets global videojs before importing the MediaCMS player package', async () => {
+		render(<HeroVideoPlayer sources={[{ src: '/media/video.mp4', type: 'video/mp4' }]} />);
+
+		await waitFor(() => expect(mediaPlayerMock).toHaveBeenCalledTimes(1));
+
+		expect(globalThis.videojs).toBe(videojsMock);
+		expect(mediaPlayerImportState.videojs).toBe(videojsMock);
+	});
+
+	it('initializes the MediaCMS player with the proven legacy player option shape', async () => {
 		const sources = [{ src: '/media/video.mp4?v=1', type: 'video/mp4' }];
 		const videoInfo = { 360: { format: ['h264'], url: ['/media/video.mp4?v=1'] } };
 		const subtitles = {
@@ -54,7 +67,8 @@ describe('HeroVideoPlayer', () => {
 			/>
 		);
 
-		expect(mediaPlayerMock).toHaveBeenCalledTimes(1);
+		await waitFor(() => expect(mediaPlayerMock).toHaveBeenCalledTimes(1));
+
 		const [videoNode, options, state, receivedVideoInfo] = mediaPlayerMock.mock.calls[0];
 		expect(videoNode.tagName).toBe('VIDEO');
 		expect(videoNode).toHaveClass('vjs-fill');
@@ -86,11 +100,22 @@ describe('HeroVideoPlayer', () => {
 		expect(receivedVideoInfo).toBe(videoInfo);
 	});
 
-	it('updates the VideoJS source when sources change after mount', () => {
+	it('keeps MediaCMS touch controls enabled for tap-to-pause on mobile', async () => {
+		render(<HeroVideoPlayer sources={[{ src: '/media/video.mp4', type: 'video/mp4' }]} />);
+
+		await waitFor(() => expect(mediaPlayerMock).toHaveBeenCalledTimes(1));
+
+		const [, options] = mediaPlayerMock.mock.calls[0];
+		expect(options.enabledTouchControls).toBe(true);
+	});
+
+	it('updates the VideoJS source when sources change after mount', async () => {
 		const initialSources = [{ src: '/media/initial.mp4', type: 'video/mp4' }];
 		const nextSources = [{ src: '/media/next.mp4', type: 'video/mp4' }];
 
 		const { rerender } = render(<HeroVideoPlayer sources={initialSources} poster="/media/poster.jpg" />);
+		await waitFor(() => expect(mediaPlayerMock).toHaveBeenCalledTimes(1));
+
 		rerender(<HeroVideoPlayer sources={nextSources} poster="/media/poster-2.jpg" preload="auto" />);
 
 		expect(videoJsPlayerMock.poster).toHaveBeenLastCalledWith('/media/poster-2.jpg');
@@ -98,8 +123,10 @@ describe('HeroVideoPlayer', () => {
 		expect(videoJsPlayerMock.src).toHaveBeenLastCalledWith(nextSources);
 	});
 
-	it('disposes through the MediaPlayerClass wrapper on unmount', () => {
+	it('disposes through the MediaPlayerClass wrapper on unmount', async () => {
 		const { unmount } = render(<HeroVideoPlayer sources={[{ src: '/media/video.mp4', type: 'video/mp4' }]} />);
+		await waitFor(() => expect(mediaPlayerMock).toHaveBeenCalledTimes(1));
+
 		const disposeCallsBeforeUnmount = mediaPlayerDisposeMock.mock.calls.length;
 		const videojsDisposeCallsBeforeUnmount = videoJsPlayerMock.dispose.mock.calls.length;
 
@@ -113,6 +140,16 @@ describe('HeroVideoPlayer', () => {
 		const source = await import('./HeroVideoPlayer.jsx?raw');
 
 		expect(source.default).toContain("import './HeroVideoPlayer.css';");
+	});
+
+	it('keeps only the MediaCMS player import behind the videojs global setup', async () => {
+		const source = await import('./HeroVideoPlayer.jsx?raw');
+
+		expect(source.default).toContain("import videojs from 'video.js/dist/video.es.js';");
+		expect(source.default).not.toContain("import videojs from 'video.js';");
+		expect(source.default).not.toContain("import MediaPlayerClass from '@mediacms/media-player';");
+		expect(source.default).not.toContain("import('video.js')");
+		expect(source.default).toContain("import('@mediacms/media-player')");
 	});
 
 	it('overrides plugin active indicators with shared player semantic tokens', async () => {
@@ -150,6 +187,25 @@ describe('HeroVideoPlayer', () => {
 
 		expect(source.default).toContain('background-color: var(--site-player-accent-color) !important;');
 		expect(source.default).toContain('background-color: var(--site-player-progress-color) !important;');
+	});
+
+	it('relies on the shared MediaCMS touch play button glyph fix', async () => {
+		const source = await import('../../../../packages/vjs-plugin/src/styles.scss?raw');
+		const heroSource = await import('./HeroVideoPlayer.css?raw');
+
+		expect(source.default).toContain('.vjs-touch-play-button');
+		expect(source.default).toContain('font-family: VideoJS;');
+		expect(source.default).toContain("content: '\\f101'; /* play */");
+		expect(source.default).toContain("content: '\\f103'; /* pause */");
+		expect(source.default).toContain("content: '\\f116'; /* replay */");
+		expect(heroSource.default).not.toContain('.vjs-touch-play-button .vjs-icon-play');
+	});
+
+	it('keeps Safari fullscreen in VideoJS full-window mode for custom 5 second seek controls', async () => {
+		const source = await import('../../../../packages/media-player/src/MediaPlayer.js?raw');
+
+		expect(source.default).toContain('vjopt.playsinline = true;');
+		expect(source.default).toContain('vjopt.preferFullWindow = true;');
 	});
 
 	it('keeps the hero play button in the production bottom-left placement', async () => {

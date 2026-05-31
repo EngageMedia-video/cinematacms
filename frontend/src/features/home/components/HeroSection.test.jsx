@@ -1,5 +1,4 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { HeroSection } from './HeroSection';
@@ -62,11 +61,6 @@ function renderHero(seededData, children) {
 	);
 }
 
-async function playFeaturedMedia() {
-	const user = userEvent.setup();
-	await user.click(await screen.findByRole('button', { name: /Play / }));
-}
-
 describe('HeroSection', () => {
 	afterEach(() => {
 		Object.defineProperty(window, 'ResizeObserver', {
@@ -118,16 +112,14 @@ describe('HeroSection', () => {
 		expect(screen.queryByTestId('hero-video-player')).toBeNull();
 	});
 
-	it('renders Player slot only when Card is omitted', async () => {
+	it('renders Player slot only when Card is omitted', () => {
 		renderHero([SAMPLE_MEDIA], <HeroSection.Player />);
-		expect(screen.getByRole('button', { name: 'Play Test Featured Video, 11:16' })).toBeInTheDocument();
-		await playFeaturedMedia();
-		expect(await screen.findByTestId('hero-video-player')).toBeInTheDocument();
+		expect(screen.getByTestId('hero-video-player')).toBeInTheDocument();
 		expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
 		expect(screen.queryByText('11:16')).not.toBeInTheDocument();
 	});
 
-	it('renders both Player and Card when composed together', async () => {
+	it('renders both Player and Card when composed together', () => {
 		renderHero(
 			[SAMPLE_MEDIA],
 			<>
@@ -135,8 +127,7 @@ describe('HeroSection', () => {
 				<HeroSection.Card />
 			</>
 		);
-		await playFeaturedMedia();
-		expect(await screen.findByTestId('hero-video-player')).toBeInTheDocument();
+		expect(screen.getByTestId('hero-video-player')).toBeInTheDocument();
 		expect(screen.getByRole('heading', { level: 2, name: 'Test Featured Video' })).toBeInTheDocument();
 	});
 
@@ -162,8 +153,7 @@ describe('HeroSection', () => {
 		const region = screen.getByRole('region', { name: 'Featured media' });
 		await waitFor(() => expect(region).toHaveClass('flex-row'));
 
-		await playFeaturedMedia();
-		const player = await screen.findByTestId('hero-video-player');
+		const player = screen.getByTestId('hero-video-player');
 		expect(player.parentElement).toHaveClass('h-[440px]');
 		expect(player.parentElement).toHaveClass('aspect-auto');
 		expect(player.parentElement.parentElement).toHaveClass('flex-1');
@@ -179,10 +169,9 @@ describe('HeroSection', () => {
 		expect(screen.getByRole('heading', { level: 2 })).toHaveClass('text-text-primary');
 	});
 
-	it('passes a full-height desktop player class to the lazy player', async () => {
+	it('passes a full-height desktop player class to the player', () => {
 		renderHero([SAMPLE_MEDIA], <HeroSection.Player />);
-		await playFeaturedMedia();
-		const player = await screen.findByTestId('hero-video-player');
+		const player = screen.getByTestId('hero-video-player');
 		expect(player).toHaveAttribute('data-class-name', expect.stringContaining('h-full'));
 	});
 
@@ -229,7 +218,6 @@ describe('HeroSection', () => {
 			</>
 		);
 
-		await playFeaturedMedia();
 		const player = await screen.findByTestId('hero-video-player');
 		expect(fetchSpy).toHaveBeenCalledWith('/api/v1/media/legacy-token');
 		expect(player).toHaveAttribute('data-poster', 'https://example.com/detail-poster.jpg');
@@ -280,8 +268,7 @@ describe('HeroSection', () => {
 			<HeroSection.Player />
 		);
 
-		await playFeaturedMedia();
-		const player = await screen.findByTestId('hero-video-player');
+		const player = screen.getByTestId('hero-video-player');
 		expect(fetchSpy).not.toHaveBeenCalled();
 		expect(JSON.parse(player.dataset.sources)).toEqual([
 			{ src: 'https://example.com/hero-video.mp4', type: 'video/mp4' },
@@ -311,8 +298,7 @@ describe('HeroSection', () => {
 			<HeroSection.Player />
 		);
 
-		await playFeaturedMedia();
-		const player = await screen.findByTestId('hero-video-player');
+		const player = screen.getByTestId('hero-video-player');
 		expect(JSON.parse(player.dataset.sources)).toEqual([
 			{ src: 'https://example.com/1080p.mp4', type: 'video/mp4' },
 		]);
@@ -347,8 +333,7 @@ describe('HeroSection', () => {
 			<HeroSection.Player />
 		);
 
-		await playFeaturedMedia();
-		const player = await screen.findByTestId('hero-video-player');
+		const player = screen.getByTestId('hero-video-player');
 		expect(fetchSpy).not.toHaveBeenCalled();
 		expect(JSON.parse(player.dataset.sources)).toEqual([
 			{ src: '/media/hls/master.m3u8?v=123', type: 'application/x-mpegURL' },
@@ -387,8 +372,7 @@ describe('HeroSection', () => {
 				<HeroSection.Player />
 			);
 
-			await playFeaturedMedia();
-			const player = await screen.findByTestId('hero-video-player');
+			const player = screen.getByTestId('hero-video-player');
 			expect(JSON.parse(player.dataset.sources)).toEqual([
 				{ src: '/media/video-360.mp4?v=123', type: 'video/mp4' },
 			]);
@@ -445,7 +429,7 @@ describe('HeroSection', () => {
 		expect(screen.getByText('<img src=x onerror=alert(1)>')).toBeInTheDocument();
 	});
 
-	it('Player wraps in Suspense — poster is visible while player chunk loads', async () => {
+	it('renders the player immediately when playback sources are available', () => {
 		renderHero(
 			[SAMPLE_MEDIA],
 			<>
@@ -453,10 +437,8 @@ describe('HeroSection', () => {
 				<HeroSection.Card />
 			</>
 		);
-		expect(screen.getByRole('button', { name: 'Play Test Featured Video, 11:16' })).toBeInTheDocument();
-		await playFeaturedMedia();
-		// The mock resolves asynchronously; verify player renders after activation
-		expect(await screen.findByTestId('hero-video-player')).toBeInTheDocument();
+		expect(screen.getByTestId('hero-video-player')).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: /Play Test Featured Video/ })).not.toBeInTheDocument();
 	});
 
 	it('uses the SVG-to-component pipeline for the poster play affordance', async () => {
@@ -468,10 +450,9 @@ describe('HeroSection', () => {
 		expect(source.default).not.toMatch(/PLAY_CIRCLE_PATH/);
 	});
 
-	it('HeroVideoPlayer is imported via dynamic import (lazy-load boundary exists)', async () => {
+	it('HeroVideoPlayer is imported eagerly so the first click reaches VideoJS', async () => {
 		const source = await import('./HeroSection.jsx?raw');
-		expect(source.default).toContain('lazy');
-		expect(source.default).toContain('HeroVideoPlayer');
-		expect(source.default).toMatch(/import\s*\(/);
+		expect(source.default).toMatch(/import\s+HeroVideoPlayer\s+from\s+['"]\.\/HeroVideoPlayer['"]/);
+		expect(source.default).not.toContain('lazy');
 	});
 });

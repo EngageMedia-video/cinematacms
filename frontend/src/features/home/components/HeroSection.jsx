@@ -1,16 +1,4 @@
-import {
-	Component,
-	Suspense,
-	createContext,
-	lazy,
-	use,
-	useCallback,
-	useEffect,
-	useLayoutEffect,
-	useMemo,
-	useRef,
-	useState,
-} from 'react';
+import { Component, createContext, use, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { preload } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useFeaturedMedia } from '../hooks/useFeaturedMedia';
@@ -19,9 +7,8 @@ import { getHeroDetailUrl, hasPlaybackPayload, mergeHeroDetail, getHeroPlayback 
 import { HOME_QUERY_KEYS } from '../queryClient';
 import { cn } from '../../shared/utils/classNames';
 import { HeroMediaCard, HeroMediaCardSkeleton } from './HeroMediaCard';
+import HeroVideoPlayer from './HeroVideoPlayer';
 import HeroPlayButtonIcon from '../../shared/icons/hero-play-button.svg?react';
-
-const HeroVideoPlayer = lazy(() => import('./HeroVideoPlayer'));
 
 const HeroContext = createContext(null);
 
@@ -138,22 +125,6 @@ function HeroPosterFallback({ src }) {
 	);
 }
 
-function HeroPosterButton({ duration, onPlay, src, title }) {
-	const label = [title ? `Play ${title}` : 'Play featured media', duration].filter(Boolean).join(', ');
-
-	return (
-		<button
-			type="button"
-			onClick={onPlay}
-			aria-label={label}
-			className="absolute inset-0 h-full w-full cursor-pointer border-0 bg-transparent p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page"
-		>
-			<HeroPosterFallback src={src} />
-			<DurationBadge value={duration} />
-		</button>
-	);
-}
-
 function Player() {
 	const ctx = use(HeroContext);
 	const media = ctx?.media;
@@ -173,12 +144,6 @@ function Player() {
 	);
 	const subtitlesPayload = useMemo(() => ({ languages: subtitles }), [subtitles]);
 	const playerKey = playback.sources[0]?.src ?? poster ?? media?.friendly_token;
-	const [isPlayerRequested, setIsPlayerRequested] = useState(false);
-	const requestPlayer = useCallback(() => setIsPlayerRequested(true), []);
-
-	useEffect(() => {
-		setIsPlayerRequested(false);
-	}, [playerKey]);
 
 	if (!ctx || !media) return null;
 	const { isDesktopLayout, isHeroDetailError, retryHeroDetail } = ctx;
@@ -186,22 +151,18 @@ function Player() {
 	return (
 		<div className={cn(PLAYER_AREA, isDesktopLayout ? PLAYER_AREA_DESKTOP : '')}>
 			<div className={cn(PLAYER_FRAME, isDesktopLayout ? PLAYER_FRAME_DESKTOP : '')}>
-				{playback.sources.length && isPlayerRequested ? (
+				{playback.sources.length ? (
 					<HeroPlayerErrorBoundary fallback={<HeroPosterFallback src={poster} />} key={playerKey}>
-						<Suspense fallback={<HeroPosterFallback src={poster} />}>
-							<HeroVideoPlayer
-								key={playerKey}
-								className={PLAYER_CLASS}
-								sources={playback.sources}
-								videoInfo={playback.videoInfo}
-								poster={poster}
-								preload="none"
-								subtitles={subtitlesPayload}
-							/>
-						</Suspense>
+						<HeroVideoPlayer
+							key={playerKey}
+							className={PLAYER_CLASS}
+							sources={playback.sources}
+							videoInfo={playback.videoInfo}
+							poster={poster}
+							preload="none"
+							subtitles={subtitlesPayload}
+						/>
 					</HeroPlayerErrorBoundary>
-				) : playback.sources.length ? (
-					<HeroPosterButton duration={duration} onPlay={requestPlayer} src={poster} title={media.title} />
 				) : (
 					<>
 						<HeroPosterFallback src={poster} />

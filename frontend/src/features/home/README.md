@@ -40,7 +40,7 @@ The modern homepage now uses the same source:
 HomePage (QueryClientProvider)
 └── HomePageContent
     ├── HeroSection (compound, reads useFeaturedMedia)
-    │   ├── HeroSection.Player  (lazy → HeroVideoPlayer → @mediacms/media-player)
+    │   ├── HeroSection.Player  (HeroVideoPlayer → @mediacms/media-player)
     │   └── HeroSection.Card   (title, meta, ExpandableText)
     ├── FeaturedByCuratorsRow  (thin wrapper → SectionRow + useRecommendedMedia)
     ├── HomepagePlaylistRow × N (thin wrapper → SectionRow + usePlaylistMedia)
