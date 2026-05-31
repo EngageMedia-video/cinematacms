@@ -1992,7 +1992,9 @@ body .video-js.vjs-mediacms .vjs-big-play-button {
 }
 
 .user-action-form-inner .post-form > .requiredField {
-	color: var(--text-primary);
+	color: var(--body-text-color);
+	font-size: 120%;
+	font-weight: 700;
 }
 
 .user-action-form-inner .post-form > .requiredField .asteriskField {
