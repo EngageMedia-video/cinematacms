@@ -15,6 +15,9 @@ function getSummaryEntry({ label, lastEventAt, lastReportedAt, totalCount, varia
 		return {
 			date: lastEventAt,
 			dateLabel: 'Last Saved',
+			title: playlists
+				? `${saves.toLocaleString()} saves in ${playlists.toLocaleString()} playlists`
+				: `${saves.toLocaleString()} community saves and playlists`,
 			titleParts: playlists
 				? [
 						{ text: saves.toLocaleString(), accent: true },
@@ -32,6 +35,7 @@ function getSummaryEntry({ label, lastEventAt, lastReportedAt, totalCount, varia
 	return {
 		date: lastReportedAt,
 		dateLabel: 'Last Reported',
+		title: `Used in ${count.toLocaleString()} ${label || 'academic contexts'}`,
 		titleParts: ['Used in ', { text: count.toLocaleString(), accent: true }, ` ${label || 'academic contexts'}`],
 		url: '',
 	};
@@ -113,6 +117,7 @@ export function ImpactCard({
 		() => (isSummary ? [getSummaryEntry({ label, lastEventAt, lastReportedAt, totalCount, variant })] : entries),
 		[entries, isSummary, label, lastEventAt, lastReportedAt, totalCount, variant]
 	);
+	const detailEntries = isSummary ? previewEntries : entries;
 	const shouldScroll = previewEntries.length > collapsedCount;
 	const visibleEntries = previewEntries;
 	const [firstEntry, ...remainingEntries] = visibleEntries;
@@ -182,7 +187,7 @@ export function ImpactCard({
 			</div>
 
 			<ImpactDetailDialog
-				entries={entries}
+				entries={detailEntries}
 				onClose={() => setModalOpen(false)}
 				open={modalOpen}
 				subtitle={subtitle}

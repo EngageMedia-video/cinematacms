@@ -36,4 +36,24 @@ describe('ImpactTimelineItem', () => {
 
 		expect(screen.queryByRole('link')).not.toBeInTheDocument();
 	});
+
+	it('lets the left rail stretch when item content wraps', () => {
+		const { container } = render(
+			<ul>
+				<ImpactTimelineItem date="2025-02-01" title="A community screening title that is long enough to wrap" />
+			</ul>
+		);
+
+		const item = container.querySelector('li');
+		const rail = item?.querySelector('span[aria-hidden="true"]');
+		const connector = rail?.querySelector('.bg-border-default');
+		const dot = rail?.querySelector('.bg-bg-impact-timeline-dot');
+
+		expect(item).toHaveClass('min-h-[99px]');
+		expect(rail).toHaveClass('min-h-[99px]');
+		expect(rail).not.toHaveClass('h-[99px]');
+		expect(connector).toHaveClass('top-0', 'bottom-0');
+		expect(connector).not.toHaveClass('h-[34px]', 'h-[42px]');
+		expect(dot).toHaveClass('top-[29px]', 'translate-y-1/2');
+	});
 });

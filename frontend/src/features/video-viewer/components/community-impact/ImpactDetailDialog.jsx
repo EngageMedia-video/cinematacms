@@ -138,6 +138,6 @@ ImpactDetailDialog.propTypes = {
 	onClose: PropTypes.func,
 	open: PropTypes.bool,
 	subtitle: PropTypes.string,
-	title: PropTypes.string,
-	variant: PropTypes.string,
+	title: PropTypes.string.isRequired,
+	variant: PropTypes.oneOf(['screening', 'featured', 'saves', 'academic', 'curated']),
 };

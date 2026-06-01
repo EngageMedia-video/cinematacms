@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { ImpactCard } from './ImpactCard';
@@ -63,6 +63,26 @@ describe('ImpactCard', () => {
 		expect(screen.getByText('90')).toBeVisible();
 		expect(screen.getByText('Last Saved')).toBeVisible();
 		expect(screen.getByRole('button', { name: 'Open Saves & Playlists details' })).toBeVisible();
+	});
+
+	it('opens summary card dialogs with the generated preview entry', async () => {
+		const user = userEvent.setup();
+
+		render(
+			<ImpactCard
+				lastEventAt="2026-05-28T08:00:00Z"
+				subtitle="181 saves and 90 playlists"
+				title="Saves & Playlists"
+				totalCount={{ saves: 181, playlists: 90 }}
+				variant="saves"
+			/>
+		);
+
+		await user.click(screen.getByRole('button', { name: 'Open Saves & Playlists details' }));
+
+		const dialog = screen.getByRole('dialog');
+		expect(within(dialog).getByText('181 saves in 90 playlists')).toBeVisible();
+		expect(within(dialog).getByText('May 28, 2026')).toBeVisible();
 	});
 
 	it('renders academic summary cards as the same timeline structure', () => {

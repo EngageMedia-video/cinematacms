@@ -8,10 +8,9 @@ export function ImpactTimelineItem({ date = '', title, url }) {
 
 	return (
 		<li className="relative grid min-h-[99px] grid-cols-[var(--size-32)_1fr] gap-space-sm">
-			<span className="relative flex h-[99px] justify-center" aria-hidden="true">
-				<span className="absolute top-0 h-[34px] w-px bg-border-default" />
-				<span className="absolute top-[57px] h-[42px] w-px bg-border-default" />
-				<span className="absolute top-[43px] z-10 h-size-6 w-size-6 rounded-full bg-bg-impact-timeline-dot" />
+			<span className="relative flex min-h-[99px] justify-center" aria-hidden="true">
+				<span className="absolute top-0 bottom-0 w-px bg-border-default" />
+				<span className="absolute top-[29px] z-10 h-size-6 w-size-6 translate-y-1/2 rounded-full bg-bg-impact-timeline-dot" />
 			</span>
 
 			<div className="min-w-0 pt-[29px]">
