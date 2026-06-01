@@ -29,9 +29,13 @@
       <label class="m-0" for="id_code">{% translate "Code" %}</label>
       <input class="m-0 block h-6 w-full border-0 bg-transparent p-0 leading-6 text-text-strong outline-none placeholder:text-[var(--auth-text-muted)] focus-visible:ring-0" required name="code" placeholder="{% translate 'Code' %}" id="id_code" autocomplete="one-time-code" type="text"{% if form.code.errors %} aria-invalid="true" aria-describedby="id_code-errors"{% endif %}>
     </div>
-    {% for error in form.code.errors %}
-      <p id="id_code-errors" class="mt-2 text-sm leading-5 text-text-danger">{{ error }}</p>
-    {% endfor %}
+    {% if form.code.errors %}
+      <div id="id_code-errors">
+        {% for error in form.code.errors %}
+          <p class="mt-2 text-sm leading-5 text-text-danger">{{ error }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
   </div>
   <div class="flex flex-wrap items-center gap-3">
     <button class="auth-button-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">
