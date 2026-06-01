@@ -8556,4 +8556,3 @@
 		});
 	};
 })(window);
-//# sourceMappingURL=fine-uploader.js.map

@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import videojs from 'video.js';
+import videojs from '../../../videojsGlobal.js';
 
 import SiteContext from '../../../contexts/SiteContext';
 

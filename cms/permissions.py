@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.conf import settings
 from rest_framework import permissions
 
@@ -71,6 +72,15 @@ def user_requires_mfa(user):
     }
 
     return any(role in role_checks and role_checks[role] for role in required_roles)
+
+
+def is_mfa_enabled_for_user(user):
+    if not apps.is_installed("allauth.mfa"):
+        return False
+
+    from allauth.mfa.utils import is_mfa_enabled
+
+    return is_mfa_enabled(user)
 
 
 def should_enforce_mfa_on_path(path):

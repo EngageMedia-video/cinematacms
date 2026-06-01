@@ -76,8 +76,11 @@ function GlobalSearchDropdownInner() {
 						onFocus={handleInputFocus}
 						placeholder="Search for Films, Playlists and Members"
 						aria-label="Search"
+						role="combobox"
 						aria-controls={listboxId}
 						aria-expanded={isOpen}
+						aria-haspopup="listbox"
+						aria-autocomplete="list"
 						autoComplete="off"
 						className={cn(
 							'global-search-input body-body-14-regular block w-full rounded-[10px] bg-bg-chrome px-4 py-3 pr-12 text-text-on-chrome outline-none transition-colors duration-200',

@@ -12,6 +12,7 @@ import * as optionsPages from './optionsPages.js';
 import * as optionsEmbedded from './optionsEmbedded.js';
 import * as playlists from './playlists.js';
 import * as notifications from './notifications.js';
+import * as storage from './storage.js';
 
 let DATA = null;
 
@@ -91,6 +92,7 @@ export function config(glbl) {
 	optionsEmbedded.init(glbl.features.embeddedVideo);
 	media.init(glbl.features.mediaItem, glbl.features.media.shareOptions);
 	playlists.init(glbl.features.playlists);
+	storage.init(glbl.storage);
 
 	notifications.init(glbl.contents.notifications);
 
@@ -100,6 +102,7 @@ export function config(glbl) {
 		member: member.settings(),
 		media: media.settings(),
 		playlists: playlists.settings(),
+		storage: storage.settings(),
 		url: url.pages(),
 		api: api.endpoints(),
 		sidebar: sidebar.settings(),

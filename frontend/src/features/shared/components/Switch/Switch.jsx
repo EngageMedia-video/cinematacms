@@ -34,11 +34,7 @@ export function Switch({
 				className
 			)}
 		>
-			{children && (
-				<span className="body-body-16-regular text-cinemata-neutral-700 dark:text-cinemata-neutral-500">
-					{children}
-				</span>
-			)}
+			{children && <span className="body-body-16-regular text-text-primary">{children}</span>}
 
 			<input
 				type="checkbox"
@@ -56,19 +52,14 @@ export function Switch({
 			<span
 				className={cn(
 					'inline-flex h-[calc(var(--switch-thumb-size)+var(--switch-padding)*2)] w-[var(--switch-width)] shrink-0 items-center rounded-full p-[var(--switch-padding)] transition-colors duration-200',
+					resolvedChecked ? 'bg-switch-track-on' : 'bg-switch-track-off',
 					resolvedChecked ? 'justify-end' : 'justify-start'
 				)}
-				style={{
-					backgroundColor: resolvedChecked
-						? 'var(--cinemata-coral-reef-100)'
-						: 'var(--cinemata-pacific-deep-900)',
-				}}
 				data-switch-track=""
 				aria-hidden="true"
 			>
 				<span
-					className="block size-[var(--switch-thumb-size)] rounded-full bg-[var(--cinemata-neutral-100)] transition-transform duration-200 ease-out"
-					style={{ backgroundColor: 'var(--cinemata-neutral-100)' }}
+					className="block size-[var(--switch-thumb-size)] rounded-full bg-switch-thumb transition-transform duration-200 ease-out"
 					data-switch-thumb=""
 				/>
 			</span>

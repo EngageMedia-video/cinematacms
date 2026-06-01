@@ -117,7 +117,7 @@ export const Controlled = {
 					}}
 				>
 					<DialogTrigger>
-						<Button variant="secondary">SHOW DETAILS</Button>
+						<Button variant="tertiary">SHOW DETAILS</Button>
 					</DialogTrigger>
 
 					<DialogContent

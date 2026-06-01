@@ -679,10 +679,13 @@ if DEBUG and not _is_testing:
 
     # Debug toolbar configuration for 6.0.0
     def show_toolbar(request):
-        """Show toolbar for local development, handling both IP and localhost"""
-        from django.conf import settings
+        """Show the toolbar only for local development unless explicitly enabled."""
+        if os.getenv("ENABLE_DEBUG_TOOLBAR", "").lower() in ("1", "true", "yes"):
+            return True
 
-        return settings.DEBUG
+        request_host = request.get_host().lower()
+        host = "[::1]" if request_host.startswith("[::1]") else request_host.split(":", 1)[0]
+        return host in {"localhost", "127.0.0.1", "0.0.0.0", "[::1]"}
 
     DEBUG_TOOLBAR_CONFIG = {
         "SHOW_TOOLBAR_CALLBACK": show_toolbar,

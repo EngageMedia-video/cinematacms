@@ -1,7 +1,6 @@
-from allauth.mfa.utils import is_mfa_enabled
 from django.http import HttpResponseRedirect
 
-from cms.permissions import should_enforce_mfa_on_path, user_requires_mfa
+from cms.permissions import is_mfa_enabled_for_user, should_enforce_mfa_on_path, user_requires_mfa
 
 
 class AdminMFAMiddleware:
@@ -13,7 +12,7 @@ class AdminMFAMiddleware:
             if not request.user.is_authenticated:
                 return HttpResponseRedirect("/accounts/login/")
             if user_requires_mfa(request.user):
-                if not is_mfa_enabled(request.user):
+                if not is_mfa_enabled_for_user(request.user):
                     return HttpResponseRedirect("/accounts/2fa/totp/activate")
 
         response = self.get_response(request)

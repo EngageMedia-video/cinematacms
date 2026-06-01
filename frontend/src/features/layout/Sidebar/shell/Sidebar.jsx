@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { SidebarNavigationMenu } from '../navigation/SidebarNavigationMenu';
+import { StorageUsage } from '../storage';
 import { SidebarThemeSwitcher } from '../theme/SidebarThemeSwitcher';
 
 import PageStore from '../../../../static/js/pages/_PageStore.js';
@@ -73,13 +74,10 @@ export function Sidebar({ id = 'app-sidebar' }) {
 
 	const sidebarFooterContent = shouldRenderSidebarContent ? (
 		<div className="relative z-10 flex flex-col gap-4 py-4 px-4">
-			<div>
-				{/* TODO: Place storage component here */}
-				<p>Placeholder for storage</p>
-			</div>
+			<StorageUsage />
 
 			<Link
-				variant="tertiary"
+				variant="secondary"
 				href="https://support.cinemata.org"
 				target="_blank"
 				align="left"

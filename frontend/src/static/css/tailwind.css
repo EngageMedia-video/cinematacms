@@ -11,7 +11,7 @@
  * Usage examples:
  *   bg-surface-body          → var(--body-bg-color)
  *   text-content-body        → var(--body-text-color)
- *   bg-brand-primary         → var(--btn-primary-bg-color)
+ *   bg-brand-primary         → var(--bg-secondary)
  *   border-border-input      → var(--input-border-color)
  *   text-comment-author      → var(--comment-author-text-color)
  *
@@ -861,6 +861,21 @@ body .auth-message-close svg {
 	--color-site-form-btn: var(--site-form-btn-bg-color);
 	--color-site-featured-bg: var(--site-featured-bg-color);
 	--color-site-player-accent: var(--site-player-accent-color);
+	--color-site-player-progress: var(--site-player-progress-color);
+	--color-site-player-track: var(--site-player-track-color);
+	--color-site-player-loaded: var(--site-player-loaded-color);
+	--color-site-player-tooltip-bg: var(--site-player-tooltip-bg-color);
+	--color-site-player-control: var(--site-player-control-color);
+	--color-site-player-canvas: var(--site-player-canvas-color);
+	--color-site-player-control-surface: var(--site-player-control-surface-color);
+	--color-site-player-subtitle-bg: var(--site-player-subtitle-bg-color);
+	--color-site-player-subtitle: var(--site-player-subtitle-color);
+	--color-site-player-shadow: var(--site-player-shadow-color);
+
+	/* ── Component: Switch ───────────────────────────────── */
+	--color-switch-track-on: var(--switch-track-on-color);
+	--color-switch-track-off: var(--switch-track-off-color);
+	--color-switch-thumb: var(--switch-thumb-color);
 
 	/* ── Cinemata Revamp Palette ─────────────────────────── */
 	--color-cinemata-white: var(--cinemata-white);
@@ -1006,22 +1021,23 @@ body {
 	--bg-danger-strong: var(--cinemata-red-800);
 	--bg-danger-strong-hover: var(--cinemata-red-400);
 	--bg-success: var(--cinemata-green-500);
+	--bg-success-strong: var(--cinemata-green-800);
 	--bg-warning: var(--cinemata-amber-500);
 
 	/* Text */
 	--text-strong: var(--cinemata-pacific-deep-900);
 	--text-primary: var(--cinemata-pacific-deep-700);
 	--text-secondary: var(--cinemata-strait-blue-700);
-	--text-muted: var(--cinemata-pacific-deep-400);
+	--text-muted: var(--cinemata-pacific-deep-500);
 	--text-description: var(--cinemata-pacific-deep-700);
 	--text-subtle: var(--cinemata-neutral-500);
-	--text-disabled: var(--cinemata-pacific-deep-400);
+	--text-disabled: var(--cinemata-pacific-deep-500);
 	--text-inverse: var(--cinemata-white);
 	--text-on-primary: var(--cinemata-white);
 	--text-on-chrome: var(--cinemata-strait-blue-50);
 	--text-on-chrome-muted: var(--cinemata-pacific-deep-300);
-	--text-link: var(--cinemata-sunset-horizon-400p);
-	--text-link-hover: var(--cinemata-sunset-horizon-600);
+	--text-link: var(--cinemata-sunset-horizon-700);
+	--text-link-hover: var(--cinemata-sunset-horizon-800);
 	--text-accent: var(--cinemata-sunset-horizon-400p);
 	--text-danger: var(--cinemata-red-500);
 	--text-success: var(--cinemata-green-600);
@@ -1039,6 +1055,11 @@ body {
 
 	/* Focus ring */
 	--ring-focus: var(--cinemata-sunset-horizon-400p);
+
+	/* Component: Switch */
+	--switch-track-on-color: var(--cinemata-coral-reef-600);
+	--switch-track-off-color: var(--cinemata-pacific-deep-900);
+	--switch-thumb-color: var(--cinemata-neutral-100);
 }
 
 body.dark_theme {
@@ -1053,7 +1074,7 @@ body.dark_theme {
 	--bg-primary: var(--cinemata-strait-blue-500);
 	--bg-primary-hover: var(--cinemata-strait-blue-700);
 	--bg-secondary: var(--cinemata-sunset-horizon-500);
-	--bg-secondary-hover: var(--cinemata-sunset-horizon-700);
+	--bg-secondary-hover: var(--cinemata-sunset-horizon-400p);
 	--bg-danger-strong: var(--cinemata-red-950);
 	--bg-danger-strong-hover: var(--cinemata-red-900);
 
@@ -1063,6 +1084,7 @@ body.dark_theme {
 	--text-muted: var(--cinemata-pacific-deep-300);
 	--text-description: var(--cinemata-pacific-deep-300);
 	--text-subtle: var(--cinemata-neutral-400);
+	--text-disabled: var(--cinemata-pacific-deep-400);
 	--text-inverse: var(--cinemata-pacific-deep-900);
 	--text-link: var(--cinemata-sunset-horizon-200);
 	--text-link-hover: var(--cinemata-sunset-horizon-100);
@@ -1074,6 +1096,9 @@ body.dark_theme {
 	--border-divider: var(--cinemata-pacific-deep-600p);
 	--border-strong: var(--cinemata-pacific-deep-400);
 	--border-input: var(--cinemata-sunset-horizon-400p);
+
+	--switch-track-on-color: var(--cinemata-coral-reef-700);
+	--switch-track-off-color: var(--cinemata-pacific-deep-800);
 }
 
 /* stylelint-disable-next-line at-rule-no-unknown */
@@ -1098,6 +1123,7 @@ body.dark_theme {
 	--color-bg-danger-strong: var(--bg-danger-strong);
 	--color-bg-danger-strong-hover: var(--bg-danger-strong-hover);
 	--color-bg-success: var(--bg-success);
+	--color-bg-success-strong: var(--bg-success-strong);
 	--color-bg-warning: var(--bg-warning);
 
 	/* Text */

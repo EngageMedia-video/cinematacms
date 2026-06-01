@@ -780,27 +780,62 @@
 	}
 }
 
+/*
+ * Cinemata player color theme.
+ * Consumes the --site-player-* semantic tokens defined in
+ * frontend/src/static/css/config/_light_theme.scss and _dark_theme.scss, so
+ * the media view page player matches the home hero accent system instead of
+ * the configurable site --brand-color. Theme (light/dark) variation lives at
+ * the token level. !important is required to override the video.js base theme
+ * and the @mediacms/media-player package CSS, matching the hero player.
+ */
 .video-js.vjs-mediacms {
 	.vjs-progress-control {
 		.vjs-progress-holder {
 			.vjs-play-progress {
-				background-color: var(--brand-color, var(--default-brand-color));
+				background-color: var(--site-player-progress-color) !important;
 
 				&:before {
-					color: var(--brand-color, var(--default-brand-color));
+					color: var(--site-player-progress-color) !important;
 				}
 			}
 		}
 	}
 
+	.vjs-slider,
+	.vjs-progress-control .vjs-progress-holder,
+	.vjs-volume-bar {
+		background-color: var(--site-player-track-color) !important;
+	}
+
+	.vjs-load-progress,
+	.vjs-load-progress div {
+		background-color: var(--site-player-loaded-color) !important;
+	}
+
+	.vjs-volume-level {
+		background-color: var(--site-player-progress-color) !important;
+
+		&:before {
+			color: var(--site-player-progress-color) !important;
+		}
+	}
+
+	.vjs-time-tooltip,
+	.vjs-mouse-display .vjs-time-tooltip,
+	.vjs-play-progress .vjs-time-tooltip {
+		background-color: var(--site-player-tooltip-bg-color) !important;
+		color: var(--site-player-control-color) !important;
+	}
+
 	&:hover {
 		.vjs-big-play-button {
-			background-color: var(--brand-color, var(--default-brand-color));
+			background-color: var(--site-player-accent-color) !important;
 		}
 	}
 
 	&.vjs-subtitles-on .vjs-subtitles-control .vjs-icon-placeholder:after {
-		background-color: var(--brand-color, var(--default-brand-color));
+		background-color: var(--site-player-progress-color) !important;
 	}
 }
 

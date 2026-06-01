@@ -523,4 +523,3 @@ import videojs from 'video.js';
 
 	videojs.registerPlugin('markers', registerVideoJsMarkersPlugin);
 })(videojs);
-//# sourceMappingURL=videojs-markers.js.map

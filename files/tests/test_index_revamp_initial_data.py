@@ -81,10 +81,56 @@ class IndexRevampInitialDataTest(TestCase):
         response = self._get_revamp_response()
         self.assertContains(response, 'type="application/json"')
 
+    def test_revamp_home_does_not_emit_legacy_videojs_assets(self):
+        response = self._get_revamp_response()
+
+        self.assertNotContains(response, "lib/video-js/7.20.2/video.min.js")
+        self.assertNotContains(response, "lib/video-js/7.20.2/video-js.min.css")
+
     def test_featured_payload_is_valid_json(self):
         parsed = self._featured_payload()
         self.assertIsInstance(parsed, dict)
         self.assertIsInstance(parsed["results"], list)
+
+    def test_featured_payload_uses_slim_home_media_shape(self):
+        item = self._featured_results()[0]
+
+        self.assertIn("title", item)
+        self.assertIn("summary", item)
+        self.assertIn("thumbnail_url", item)
+        self.assertIn("author_profile", item)
+        self.assertNotIn("author_thumbnail", item)
+        self.assertNotIn("likes", item)
+        self.assertNotIn("reported_times", item)
+        self.assertNotIn("size", item)
+
+    def test_featured_poster_is_preloaded(self):
+        Media.objects.filter(pk=self.media.pk).update(thumbnail="original/thumbnails/test-hero.jpg")
+        response = self._get_revamp_response()
+        payload = extract_json_script_payload(response.content.decode(), "home-initial-data-featured")
+        first_featured = payload["results"][0]
+        hero_playback = first_featured.get("hero_playback") or {}
+        expected_href = hero_playback.get("poster_url") or first_featured["thumbnail_url"]
+
+        self.assertContains(response, '<link rel="preload" as="image"', html=False)
+        self.assertContains(response, f'href="{expected_href}"', html=False)
+        self.assertContains(response, 'fetchpriority="high"', html=False)
+
+    def test_recommended_payload_uses_slim_home_media_shape(self):
+        response = self._get_revamp_response()
+        content = response.content.decode()
+        parsed = extract_json_script_payload(content, "home-initial-data-recommended")
+        if not parsed["results"]:
+            self.skipTest("Recommended payload is empty for this fixture")
+        item = parsed["results"][0]
+
+        self.assertIn("title", item)
+        self.assertIn("thumbnail_url", item)
+        self.assertIn("categories_info", item)
+        self.assertNotIn("author_thumbnail", item)
+        self.assertNotIn("likes", item)
+        self.assertNotIn("reported_times", item)
+        self.assertNotIn("size", item)
 
     def test_first_featured_item_includes_hero_playback(self):
         hero = create_test_media(
@@ -140,7 +186,7 @@ class IndexRevampInitialDataTest(TestCase):
         self.assertIn("hls_info", payload["results"][0]["hero_playback"])
         self.assertIn("subtitles_info", payload["results"][0]["hero_playback"])
 
-        cache_key = get_media_list_cache_key(show="featured", page=1, user_id=None)
+        cache_key = get_media_list_cache_key(show="featured", page=1, user_id=None, origin="http://localhost")
         cached_payload = get_cached_result(cache_key)
         self.assertIsNotNone(cached_payload)
         self.assertNotIn("hero_playback", cached_payload["results"][0])

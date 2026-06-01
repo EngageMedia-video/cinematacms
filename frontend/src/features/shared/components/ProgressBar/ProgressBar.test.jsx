@@ -37,11 +37,7 @@ describe('ProgressBar', () => {
 
 	it('supports custom track and indicator props', () => {
 		render(
-			<ProgressBar
-				label="Custom progress"
-				trackClassName="bg-cinemata-pacific-deep-900"
-				indicatorClassName="bg-cinemata-strait-blue-100"
-			/>
+			<ProgressBar label="Custom progress" trackClassName="bg-bg-chrome" indicatorClassName="bg-bg-primary" />
 		);
 
 		const progressbar = screen.getByRole('progressbar', { name: 'Custom progress' });

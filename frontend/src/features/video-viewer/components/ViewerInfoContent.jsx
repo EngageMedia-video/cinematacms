@@ -59,6 +59,7 @@ export default function ViewerInfoContent(props) {
 	const licenseContent = MediaPageStore.get('media-license-info');
 	const languagesContent = metafield(MediaPageStore.get('media-languages'));
 	const topicsContent = metafield(MediaPageStore.get('media-topics'));
+	const contentSensitivityContent = metafield(MediaPageStore.get('media-content-sensitivity'));
 	const tagsContent = (() => {
 		if (
 			!PageStore.get('config-enabled').taxonomies.tags ||
@@ -245,6 +246,10 @@ export default function ViewerInfoContent(props) {
 			title: 1 < topicsContent.length ? 'Topics' : 'Topic',
 			value: topicsContent,
 		},
+		contentSensitivityContent.length && {
+			title: 'Content Sensitivity',
+			value: contentSensitivityContent,
+		},
 		categoriesContent.length && {
 			title: 1 < categoriesContent.length ? 'Categories' : 'Category',
 			value: categoriesContent,
@@ -418,7 +423,7 @@ export default function ViewerInfoContent(props) {
 													actions={
 														<>
 															<DialogClose>
-																<Button type="button" variant="secondary">
+																<Button type="button" variant="tertiary">
 																	CANCEL
 																</Button>
 															</DialogClose>

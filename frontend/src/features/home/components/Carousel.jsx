@@ -280,7 +280,7 @@ function CarouselArrows() {
 				onClick={goPrev}
 				disabled={atStart}
 				aria-label="Previous page"
-				className="rounded p-1 text-cinemata-strait-blue-50 hover:bg-cinemata-pacific-deep-700 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+				className="rounded p-1 text-text-on-chrome hover:bg-bg-chrome-hover disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 			>
 				&#8249;
 			</button>
@@ -289,7 +289,7 @@ function CarouselArrows() {
 				onClick={goNext}
 				disabled={atEnd}
 				aria-label="Next page"
-				className="rounded p-1 text-cinemata-strait-blue-50 hover:bg-cinemata-pacific-deep-700 disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+				className="rounded p-1 text-text-on-chrome hover:bg-bg-chrome-hover disabled:opacity-30 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 			>
 				&#8250;
 			</button>
@@ -300,7 +300,7 @@ function CarouselArrows() {
 function CarouselOverlayArrows() {
 	const { atStart, atEnd, goPrev, goNext } = use(CarouselContext);
 	const btnClass =
-		'pointer-events-auto absolute top-1/2 z-10 hidden size-[70px] -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-cinemata-strait-blue-700 transition-colors hover:text-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page md:flex dark:text-cinemata-strait-blue-600p dark:hover:text-cinemata-strait-blue-400';
+		'pointer-events-auto absolute top-1/2 z-10 hidden size-[70px] -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-text-secondary transition-colors hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page md:flex';
 
 	return (
 		<>
@@ -328,12 +328,17 @@ function CarouselIndicator({ count, activeIndex, onSelect }) {
 					onClick={() => onSelect(i)}
 					aria-label={`Go to page ${i + 1}`}
 					aria-current={i === activeIndex ? 'true' : undefined}
-					className={`rounded-full p-0 border-0 focus:outline-none ${
-						i === activeIndex
-							? 'h-2 w-6 bg-cinemata-strait-blue-800 dark:bg-white transition-[width,background-color] duration-300'
-							: 'size-2 min-w-0 bg-cinemata-pacific-deep-400/30 hover:bg-cinemata-pacific-deep-400/50 dark:bg-white/30 dark:hover:bg-white/50'
-					}`}
-				/>
+					className="inline-flex size-6 min-w-6 items-center justify-center rounded-full border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page"
+				>
+					<span
+						aria-hidden="true"
+						className={`rounded-full transition-[width,background-color] duration-300 ${
+							i === activeIndex
+								? 'h-2 w-6 bg-bg-primary'
+								: 'size-2 bg-border-strong/30 hover:bg-border-strong/50'
+						}`}
+					/>
+				</button>
 			))}
 		</div>
 	);

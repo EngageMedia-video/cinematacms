@@ -33,10 +33,19 @@ describe('Button', () => {
 	it('renders supported variants without breaking semantics', () => {
 		const { rerender } = render(<Button variant="secondary">Learn more</Button>);
 
-		expect(screen.getByRole('button', { name: 'Learn more' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Learn more' })).toHaveClass(
+			'border',
+			'border-transparent',
+			'bg-bg-primary',
+			'text-text-on-primary'
+		);
 
 		rerender(<Button variant="tertiary">Donate</Button>);
-		expect(screen.getByRole('button', { name: 'Donate' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Donate' })).toHaveClass(
+			'border-brand-secondary-border',
+			'bg-brand-secondary',
+			'text-btn-secondary-text'
+		);
 
 		rerender(<Button variant="primary-outline">Outline</Button>);
 		expect(screen.getByRole('button', { name: 'Outline' })).toBeInTheDocument();
@@ -111,7 +120,7 @@ describe('Button', () => {
 			</Button>
 		);
 
-		expect(screen.getByRole('button', { name: 'Delete item' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Delete item' })).toHaveClass('text-text-danger');
 	});
 
 	it('renders special variant icon on the right', () => {
@@ -157,7 +166,7 @@ describe('Button', () => {
 			</Button>
 		);
 
-		expect(screen.getByRole('button', { name: 'Custom BG' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Custom BG' })).toHaveClass('bg-bg-danger');
 	});
 
 	it('renders long labels without creating icon wrapper when icon is absent', () => {

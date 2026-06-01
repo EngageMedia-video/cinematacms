@@ -578,20 +578,14 @@ export default class VideoViewer extends React.PureComponent {
 	}
 
 	requestFullscreen() {
-		const element = this.playerInstance.player.el();
+		const player = this.playerInstance?.player;
 
-		const fn =
-			element.requestFullscreen ||
-			element.webkitRequestFullscreen ||
-			element.mozRequestFullScreen ||
-			element.msRequestFullscreen;
-
-		if (!fn) {
+		if (!player?.requestFullscreen) {
 			return Promise.reject(new Error('Fullscreen API not supported'));
 		}
 
 		try {
-			const result = fn.call(element);
+			const result = player.requestFullscreen();
 			return result && typeof result.then === 'function' ? result : Promise.resolve();
 		} catch (error) {
 			return Promise.reject(error);

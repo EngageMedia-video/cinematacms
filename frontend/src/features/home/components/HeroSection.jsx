@@ -1,15 +1,4 @@
-import {
-	Component,
-	Suspense,
-	createContext,
-	lazy,
-	use,
-	useEffect,
-	useLayoutEffect,
-	useMemo,
-	useRef,
-	useState,
-} from 'react';
+import { Component, createContext, use, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { preload } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useFeaturedMedia } from '../hooks/useFeaturedMedia';
@@ -18,9 +7,8 @@ import { getHeroDetailUrl, hasPlaybackPayload, mergeHeroDetail, getHeroPlayback 
 import { HOME_QUERY_KEYS } from '../queryClient';
 import { cn } from '../../shared/utils/classNames';
 import { HeroMediaCard, HeroMediaCardSkeleton } from './HeroMediaCard';
+import HeroVideoPlayer from './HeroVideoPlayer';
 import HeroPlayButtonIcon from '../../shared/icons/hero-play-button.svg?react';
-
-const HeroVideoPlayer = lazy(() => import('./HeroVideoPlayer'));
 
 const HeroContext = createContext(null);
 
@@ -29,9 +17,9 @@ const HERO_LAYOUT = 'flex w-full flex-col gap-6';
 const HERO_LAYOUT_DESKTOP = 'flex-row items-start gap-[26px]';
 const PLAYER_AREA = 'w-full min-w-0';
 const PLAYER_AREA_DESKTOP = 'flex-1';
-const PLAYER_FRAME = 'relative aspect-video w-full overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-50';
+const PLAYER_FRAME = 'relative aspect-video w-full overflow-hidden rounded-[6px] bg-site-player-canvas';
 const PLAYER_FRAME_DESKTOP = 'h-[440px] aspect-auto';
-const PLAYER_CLASS = 'relative h-full w-full overflow-hidden rounded-[6px] bg-cinemata-pacific-deep-50';
+const PLAYER_CLASS = 'relative h-full w-full overflow-hidden rounded-[6px] bg-site-player-canvas';
 const CARD_AREA = 'w-full min-w-0';
 const CARD_AREA_DESKTOP = 'h-[440px] w-[466px] shrink-0';
 
@@ -101,7 +89,7 @@ function PlayAffordance() {
 			className="pointer-events-none absolute bottom-12 left-12 z-10 flex size-[72px] items-center justify-center max-[425px]:bottom-6 max-[425px]:left-6 max-[425px]:size-12"
 			aria-hidden="true"
 		>
-			<HeroPlayButtonIcon className="size-[81.25%] text-cinemata-strait-blue-400" focusable="false" />
+			<HeroPlayButtonIcon className="size-[81.25%] text-site-player-accent" focusable="false" />
 		</div>
 	);
 }
@@ -112,7 +100,7 @@ function DurationBadge({ value }) {
 	}
 
 	return (
-		<div className="body-body-12-regular absolute bottom-2 right-2 z-20 rounded-[2px] bg-cinemata-strait-blue-900/80 px-1 py-[2px] leading-[13.5px] tracking-[0.5px] text-cinemata-strait-blue-100">
+		<div className="body-body-12-regular absolute bottom-2 right-2 z-20 rounded-[2px] bg-bg-overlay-dark/80 px-1 py-[2px] leading-[13.5px] tracking-[0.5px] text-text-on-chrome">
 			{value}
 		</div>
 	);
@@ -121,7 +109,17 @@ function DurationBadge({ value }) {
 function HeroPosterFallback({ src }) {
 	return (
 		<>
-			{src ? <img src={src} alt="Video poster" className="h-full w-full object-cover" loading="eager" /> : null}
+			{src ? (
+				<img
+					src={src}
+					alt="Video poster"
+					width={1280}
+					height={720}
+					className="h-full w-full object-cover"
+					loading="eager"
+					fetchPriority="high"
+				/>
+			) : null}
 			<PlayAffordance />
 		</>
 	);
@@ -155,17 +153,15 @@ function Player() {
 			<div className={cn(PLAYER_FRAME, isDesktopLayout ? PLAYER_FRAME_DESKTOP : '')}>
 				{playback.sources.length ? (
 					<HeroPlayerErrorBoundary fallback={<HeroPosterFallback src={poster} />} key={playerKey}>
-						<Suspense fallback={<HeroPosterFallback src={poster} />}>
-							<HeroVideoPlayer
-								key={playerKey}
-								className={PLAYER_CLASS}
-								sources={playback.sources}
-								videoInfo={playback.videoInfo}
-								poster={poster}
-								preload="none"
-								subtitles={subtitlesPayload}
-							/>
-						</Suspense>
+						<HeroVideoPlayer
+							key={playerKey}
+							className={PLAYER_CLASS}
+							sources={playback.sources}
+							videoInfo={playback.videoInfo}
+							poster={poster}
+							preload="none"
+							subtitles={subtitlesPayload}
+						/>
 					</HeroPlayerErrorBoundary>
 				) : (
 					<>
@@ -174,7 +170,7 @@ function Player() {
 							<button
 								type="button"
 								onClick={() => retryHeroDetail()}
-								className="body-body-12-medium absolute bottom-2 right-2 z-20 rounded-[4px] bg-cinemata-strait-blue-700 px-3 py-1.5 text-white hover:bg-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+								className="body-body-12-medium absolute bottom-2 right-2 z-20 rounded-[4px] bg-bg-primary px-3 py-1.5 text-text-on-primary hover:bg-bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 							>
 								RETRY
 							</button>
@@ -229,7 +225,7 @@ export function HeroSection({ children }) {
 								<button
 									type="button"
 									onClick={() => refetch()}
-									className="body-body-14-medium rounded-[4px] bg-cinemata-strait-blue-700 px-4 py-2 text-white hover:bg-cinemata-strait-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+									className="body-body-14-medium rounded-[4px] bg-bg-primary px-4 py-2 text-text-on-primary hover:bg-bg-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 								>
 									RETRY
 								</button>
@@ -258,7 +254,7 @@ export function HeroSection({ children }) {
 					<div
 						className={cn(
 							PLAYER_AREA,
-							'aspect-video rounded-[6px] bg-cinemata-pacific-deep-100 animate-pulse',
+							'aspect-video rounded-[6px] bg-bg-skeleton animate-pulse',
 							isDesktopLayout ? `${PLAYER_AREA_DESKTOP} ${PLAYER_FRAME_DESKTOP}` : ''
 						)}
 					/>

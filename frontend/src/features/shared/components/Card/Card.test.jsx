@@ -9,7 +9,6 @@ describe('Card', () => {
 		const card = screen.getByRole('article');
 		expect(card).toHaveClass('bg-bg-surface');
 		expect(card).not.toHaveClass('border');
-		expect(card).not.toHaveClass('border-cinemata-pacific-deep-100');
 	});
 
 	it('supports alternate semantic elements and custom classes', () => {

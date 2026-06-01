@@ -38,7 +38,7 @@ export function RadioButton({
 
 			<span
 				className={cn(
-					'inline-flex shrink-0 items-center justify-center rounded-full bg-bg-control transition-colors duration-200 peer-checked:bg-cinemata-sunset-horizon-400p'
+					'inline-flex shrink-0 items-center justify-center rounded-full bg-bg-control transition-colors duration-200 peer-checked:bg-bg-secondary'
 				)}
 				style={{ width: 18, height: 18, padding: 3 }}
 				aria-hidden="true"
