@@ -1,43 +1,45 @@
-{% extends "base.html" %}
+{% extends "account/auth_base.html" %}
 
 {% block headtitle %} | Sign In{% endblock headtitle %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-	{% if MFA_REQ_DATE %}
-		<div class="alert-banner">
-			We've updated our security requirements. For enhanced account protection,
-			Two-Factor Authentication will be required for admin users and managers starting {{ MFA_REQ_DATE }}.
-		</div>
-	{% else %}
-		<div class="alert-banner">
-			We've updated our security requirements. For enhanced account protection,
-			Two-Factor Authentication will be required for admin users and managers starting [date].
-		</div>
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="signin" %}{% endblock auth_icon %}
+
+{% block auth_title %}Sign In{% endblock auth_title %}
+
+{% block auth_subtitle %}
+<p class="m-0 mt-1 w-full text-base leading-6 text-[var(--auth-text-muted)]">
+	If you have not created an account yet, then please
+	<a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="{{ signup_url }}">sign up</a>
+	first.
+</p>
+{% endblock auth_subtitle %}
+
+{% block auth_body %}
+{% include "account/snippets/auth_form_errors.html" with form=form %}
+
+<form class="flex w-full flex-col gap-6" method="POST" action="{% url 'account_login' %}">
+	{% csrf_token %}
+	<div class="space-y-4 px-1 py-4">
+		{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+		{% for field in form.visible_fields %}
+			{% if field.name != "remember" %}
+				{% include "account/snippets/auth_field.html" with field=field suppress_help=True %}
+			{% endif %}
+		{% endfor %}
+		<a class="inline-flex items-center gap-2 text-sm leading-5 text-text-strong no-underline hover:text-text-link-hover hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="{% url 'account_reset_password' %}">
+			Forgot your password?
+			<svg class="size-4 shrink-0" viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+				<path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm-8,56a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm8,104a12,12,0,1,1,12-12A12,12,0,0,1,128,184Z" />
+			</svg>
+		</a>
+	</div>
+	{% if redirect_field_value %}
+		<input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
 	{% endif %}
-    <div class="user-action-form-inner">
-
-
-		<h1>Sign In</h1>
-
-		<p>If you have not created an account yet, then please <a href="{{ signup_url }}">sign up</a> first.</p>
-
-		<form class="login" method="POST" action="{% url 'account_login' %}">
-		  {% csrf_token %}
-		  {{ form.as_p }}
-		  {% if redirect_field_value %}
-		  <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
-		  {% endif %}
-		  <button class="primaryAction" type="submit">Sign In</button>
-		</form>
-
-		<hr />
-
+	<div class="flex flex-wrap items-center justify-end gap-3">
 		{% url 'account_request_login_code' as account_code_url %}
-		<span>
-			<a href={{account_code_url}}>Sign in with a code</a>
-		</span>
-
-    </div>
-</div>
-{% endblock innercontent %}
+		<a class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="{{ account_code_url }}">Sign in with code</a>
+		<button class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">Login</button>
+	</div>
+</form>
+{% endblock auth_body %}

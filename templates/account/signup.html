@@ -1,37 +1,57 @@
-{% extends "base.html" %}
+{% extends "account/auth_base.html" %}
 
 {% block headtitle %} | Sign Up{% endblock headtitle %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-    <div class="user-action-form-inner">
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="signup" %}{% endblock auth_icon %}
 
-		<h1>Sign Up</h1>
+{% block auth_page_style %}padding-top:76px !important;{% endblock auth_page_style %}
 
-		<p>Already have an account? Then please <a href="{{ login_url }}">sign in</a>.</p>
+{% block auth_title %}Sign Up{% endblock auth_title %}
 
-		<form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
-			{% csrf_token %}
-			{{ form.as_p }}
-			{% if redirect_field_value %}
-				<input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+{% block auth_subtitle %}
+<p class="m-0 w-full text-base leading-6 text-[var(--auth-text-muted)]">
+	Already have an account? Please
+	<a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="{{ login_url }}">sign in</a>.
+</p>
+{% endblock auth_subtitle %}
+
+{% block auth_body %}
+{% include "account/snippets/auth_form_errors.html" with form=form %}
+
+<form class="flex w-full flex-col gap-6" id="signup_form" method="post" action="{% url 'account_signup' %}">
+	{% csrf_token %}
+	<div>
+		{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+		{% for field in form.visible_fields %}
+			{% include "account/snippets/auth_field.html" with field=field suppress_help=True %}
+			{% if field.name == "password1" %}
+				{% include "account/snippets/auth_password_requirements.html" %}
 			{% endif %}
+		{% endfor %}
+	</div>
+	{% if redirect_field_value %}
+		<input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+	{% endif %}
 
+	<label class="auth-checkbox flex items-start gap-2 text-sm leading-5 text-text-strong" for="id_subscribe">
+		<input class="sr-only" type="checkbox" name="subscribe" id="id_subscribe">
+		<span class="auth-checkbox-control mt-0.5 shrink-0" aria-hidden="true">
+			<svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+				<path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z" />
+			</svg>
+		</span>
+		<span>
+			Subscribe to the
+			<a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="https://mailer.cinemata.org/" target="_blank" rel="noopener noreferrer">Cinemata newsletter</a>
+			for updates on social issue films from the Asia-Pacific Region. Read our
+			<a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="/privacy-policy" target="_blank" rel="noopener noreferrer">privacy policy</a>.
+		</span>
+	</label>
 
-		{# Newsletter subscription checkbox - NOW ENABLED #}
-		<p style="margin-top: 20px;">
-			<input type="checkbox" name="subscribe" id="id_subscribe">
-			<label for="id_subscribe" style="display: inline; font-weight: normal;">
-				Subscribe to the <a href="https://mailer.cinemata.org/" target="_blank" rel="noopener noreferrer">Cinemata newsletter</a>
-				for updates on social justice films from the Asia-Pacific region.
-				Read our <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">privacy policy</a>.
-			</label>
-		</p>
-
-		<button type="submit">Sign Up &raquo;</button>
-	</form>
-    </div>
-</div>
+	<div class="flex items-center justify-end">
+		<button class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">Register</button>
+	</div>
+</form>
 
 <script>
 // Country validation - warn about unusual selections
@@ -58,4 +78,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endblock innercontent %}
+{% include "account/snippets/auth_country_select.html" %}
+{% endblock auth_body %}

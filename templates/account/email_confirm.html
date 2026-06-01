@@ -1,32 +1,55 @@
-{% extends "base.html" %}
+{% extends "account/auth_base.html" %}
 {% load account %}
 {% load i18n %}
 
 {% block headtitle %} | Confirm E-mail Address{% endblock headtitle %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-    <div class="user-action-form-inner">
+{% block auth_icon %}
+	{% if confirmation %}
+		{% include "account/snippets/auth_icon.html" with icon="success" %}
+	{% else %}
+		{% include "account/snippets/auth_icon.html" with icon="error" %}
+	{% endif %}
+{% endblock auth_icon %}
 
-		{% if confirmation %}
+{% block auth_title %}
+	{% if confirmation and can_confirm %}
+		{% trans "Verify Email" %}
+	{% elif confirmation %}
+		{% trans "Confirmation Success" %}
+	{% else %}
+		{% trans "Expired Link" %}
+	{% endif %}
+{% endblock auth_title %}
 
+{% block auth_subtitle %}
+<p class="m-0 w-[502px] max-w-full text-base leading-6 text-[var(--auth-text-muted)]">
+	{% if confirmation and can_confirm %}
 		{% user_display confirmation.email_address.user as user_display %}
+		{% blocktrans with confirmation.email_address.email as email %}Please confirm that {{ email }} is the email address for {{ user_display }}.{% endblocktrans %}
+	{% elif confirmation %}
+		{% trans "You have confirmed your email. Please login." %}
+	{% else %}
+		{% trans "This e-mail confirmation link expired or is invalid. Please issue a new e-mail confirmation request." %}
+	{% endif %}
+</p>
+{% endblock auth_subtitle %}
 
-		<p>{% blocktrans with confirmation.email_address.email as email %}Please confirm that <a href="mailto:{{ email }}">{{ email }}</a> is an e-mail address for user {{ user_display }}.{% endblocktrans %}</p>
-
-		<form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
-			{% csrf_token %}
-			<button type="submit">{% trans 'Confirm' %}</button>
-		</form>
-
-		{% else %}
-
-		{% url 'account_email' as email_url %}
-
-		<p>{% blocktrans %}This e-mail confirmation link expired or is invalid. Please <a href="{{ email_url }}">issue a new e-mail confirmation request</a>.{% endblocktrans %}</p>
-
-		{% endif %}
-
-    </div>
-</div>
-{% endblock innercontent %}
+{% block auth_body %}
+{% if confirmation and can_confirm %}
+	<form class="flex justify-center" method="post" action="{% url 'account_confirm_email' confirmation.key %}">
+		{% csrf_token %}
+		<button class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">{% trans 'Confirm Email' %}</button>
+	</form>
+{% elif confirmation %}
+	{% url 'account_login' as login_url %}
+	<a class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="{{ login_url }}">
+		{% trans "Login" %}
+	</a>
+{% else %}
+	{% url 'account_email' as email_url %}
+	<a class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="{{ email_url }}">
+		{% trans "Request New Verification" %}
+	</a>
+{% endif %}
+{% endblock auth_body %}

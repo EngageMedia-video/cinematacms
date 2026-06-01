@@ -1,0 +1,12 @@
+{% if form.non_field_errors %}
+  <div class="mb-6 rounded border border-border-danger bg-bg-danger p-4 text-sm leading-5 text-text-danger" role="alert">
+    {% for error in form.non_field_errors %}
+      <p>{{ error }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+{% if form.errors %}
+  <div class="sr-only" role="alert">
+    Please review the highlighted fields.
+  </div>
+{% endif %}

@@ -2,14 +2,57 @@
 
 {% if messages %}
 
-{% for message in messages %}
-	<div class="alert {{ message.tags }} alert-dismissible" role="alert">
-    	<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      		<span aria-hidden="true">&times;</span>
-    	</button>
-    	{{ message }}
-  	</div>
-{% endfor %}
+{% if request.path|slice:":10" == "/accounts/" %}
+	<div class="auth-message-stack" aria-live="polite" style="position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--auth-message-overlay);">
+		{% for message in messages %}
+			<div class="auth-message-banner" role="alertdialog" aria-modal="true">
+				<div class="auth-message-header">
+					<div class="auth-message-title-row">
+						<span class="auth-message-icon {% if "success" in message.tags %}auth-message-icon-success{% elif "error" in message.tags or "danger" in message.tags %}auth-message-icon-error{% else %}auth-message-icon-info{% endif %}" aria-hidden="true">
+							{% if "success" in message.tags %}
+								<svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+									<path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z" />
+								</svg>
+							{% elif "error" in message.tags or "danger" in message.tags %}
+								<svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+									<path d="M165.66,154.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
+								</svg>
+							{% else %}
+								<svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+									<path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm-8,56a12,12,0,1,1,12,12A12,12,0,0,1,120,80Zm24,96a8,8,0,0,1-16,0V120H120a8,8,0,0,1,0-16h16a8,8,0,0,1,8,8Z" />
+								</svg>
+							{% endif %}
+						</span>
+						<h2 class="auth-message-title">
+							{% if "success" in message.tags %}
+								Success
+							{% elif "error" in message.tags or "danger" in message.tags %}
+								Something went wrong
+							{% else %}
+								Info
+							{% endif %}
+						</h2>
+					</div>
+					<button type="button" class="auth-message-close close" data-dismiss="alert" aria-label="Close" onclick="event.preventDefault(); event.stopPropagation(); this.closest('.auth-message-stack').remove(); return false;">
+						<svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+							<path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
+						</svg>
+					</button>
+				</div>
+				<p class="auth-message-body">{{ message }}</p>
+			</div>
+		{% endfor %}
+	</div>
+{% else %}
+	{% for message in messages %}
+		<div class="alert {{ message.tags }} alert-dismissible" role="alert">
+			<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			</button>
+			{{ message }}
+		</div>
+	{% endfor %}
+{% endif %}
 
 {% endif %}
 

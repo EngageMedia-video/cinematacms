@@ -82,6 +82,29 @@ A small number of patterns are genuinely unique and stay on the raw `cinemata-*`
 
 For all other usages, prefer a semantic token. If you find yourself reaching for the same raw palette pair more than once for the same role, consider whether it deserves a new token.
 
+<Heading>Auth page feature tokens (account / mfa)</Heading>
+
+The redesigned auth pages (`templates/account/`, `templates/mfa/`) render in the legacy Django shell but consume the modern token layer. They use the semantic tokens above directly wherever a token already carries the needed value — `bg-bg-page`, `bg-bg-surface` (gradient start), `text-text-strong`, `text-text-muted`, `text-text-danger`, `ring-ring-focus`, `text-text-link`, and `var(--bg-primary)` for the primary button + header icon. **Fields are transparent** (no surface fill) so the gradient panel shows through, separated only by the underline border.
+
+Feature tokens (`--auth-*`, defined unlayered on `.auth-figma-page`) are kept **only where the value differs from every existing token in at least one theme**:
+
+- **`--auth-panel-to`** — gradient panel end stop (start = `bg-surface`). Light: `pacific-deep-100` / Dark: `pacific-deep-950`
+- **`--auth-field-border`** — underline field border. Light: `pacific-deep-200` / Dark: `pacific-deep-500`
+- **`--auth-text-muted`** — subtitles, placeholders, help text. Light: `pacific-deep-500` / Dark: `pacific-deep-300`
+- **`--auth-ring-color`** — decorative concentric ring outlines. Light: `pacific-deep-200` / Dark: `pacific-deep-500`
+- **`--auth-checkbox-accent`** — checkbox accent / control fill. Constant `sunset-horizon-400p`.
+- **`--auth-button-accent-bg` / `-hover`** — accent submit button. Constant `sunset-horizon-500` / `-600`.
+- **`--auth-button-secondary-bg` / `-hover`** — secondary button. Constant `strait-blue-600p` / `-700`.
+- **`--auth-button-on-primary`** — button label text (near-white). Constant `neutral-50`.
+- **`--auth-requirements-bg` / `-text`** — password-requirements panel. Light: `pacific-deep-100` / `pacific-deep-700` — Dark: `pacific-deep-800` / `strait-blue-100`
+- **`--auth-status-{error,success}-bg` / `-icon`** — soft-tint status icon badges (distinct from solid `bg-danger` / `bg-success`). Error — Light: `red-100` / `red-700p`, Dark: `red-950` / `red-500`. Success — Light: `green-100` / `green-700p`, Dark: `green-950` / `green-500`.
+
+The full-screen message overlay defines a parallel set on `.auth-message-stack` (scrim, banner gradient, `color-mix` ring/shadow, success/error/info icon badges) — see `tailwind.css`.
+
+> The `TextField` shared component exposes a **`transparent`** prop that mirrors this pattern in React: it clears the shell `bg-surface` so the input inherits the surface behind it.
+
+> Aliases that resolved to an existing token in both themes were removed in favour of the existing token: `--auth-page-bg` → `bg-page`, `--auth-field-bg` → `bg-surface`, `--auth-panel-from` → `bg-surface`, `--auth-text-strong` → `text-strong`, `--auth-icon-color` → `bg-primary`, `--auth-button-primary-bg/-hover` → `bg-primary/-hover`.
+
 <Heading>Legacy semantic aliases (still valid, narrower scope)</Heading>
 
 The pre-existing legacy semantic aliases inherited from MediaCMS (`bg-surface-popup`, `text-content-body`, `bg-brand-primary`, etc.) are still wired and still work. They map to the legacy `--btn-*`, `--body-*`, `--site-*` variables in the SCSS theme files. New code in `features/` should generally prefer the role-based tokens above, but the legacy aliases remain useful as bridges into legacy components.

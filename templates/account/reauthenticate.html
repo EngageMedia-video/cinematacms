@@ -2,11 +2,8 @@
 {% load allauth %}
 {% load i18n %}
 {% block reauthenticate_content %}
-    {% element p %}
-        {% blocktranslate %}Enter your password:{% endblocktranslate %}
-    {% endelement %}
     {% url 'account_reauthenticate' as action_url %}
-    <form name="password" method="POST" action="{% url 'account_reauthenticate' %}">
+    <form class="flex w-full flex-col gap-6" name="password" method="POST" action="{% url 'account_reauthenticate' %}">
       {% csrf_token %}
 
       {% comment %}
@@ -14,9 +11,14 @@
         PASSWORD_INPUT_RENDER_VALUE may possibly not behave accordingly for this form.
       {% endcomment %}
 
-      <input name="password" placeholder="Password" type="password" autocomplete="current-password" />
+      <div class="space-y-4 px-1 py-4">
+        <div class="auth-field flex h-[84px] w-full flex-col justify-center gap-2 overflow-hidden border-b border-[var(--auth-field-border)] py-[14px] pr-[22px] text-left text-base leading-6 text-text-strong">
+          <label class="mb-0" for="id_reauthenticate_password">{% blocktranslate %}Password{% endblocktranslate %}</label>
+          <input id="id_reauthenticate_password" class="m-0 block h-6 w-full border-0 bg-transparent p-0 leading-6 text-text-strong outline-none placeholder:text-[var(--auth-text-muted)] focus-visible:ring-0" name="password" placeholder="Password" type="password" autocomplete="current-password" />
+        </div>
+      </div>
       {{ redirect_field }}
-      <button class="primaryAction">
+      <button class="auth-button-primary w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">
         {% trans "Confirm" %}
       </button>
     </form>

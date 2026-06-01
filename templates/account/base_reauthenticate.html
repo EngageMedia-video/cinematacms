@@ -1,44 +1,42 @@
-{% extends "base.html" %}
+{% extends "account/auth_base.html" %}
 {% load allauth %}
 {% load i18n %}
 
 {% block headtitle %}| Confirm Access{% endblock headtitle %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-  <div class="user-action-form-inner">
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="mfa" %}{% endblock auth_icon %}
+
+{% block auth_title %}Confirm Access{% endblock auth_title %}
+
+{% block auth_subtitle %}
+<p class="m-0 w-[502px] max-w-full text-base leading-6 text-[var(--auth-text-muted)]">Please reauthenticate to safeguard your account.</p>
+{% endblock auth_subtitle %}
+
+{% block auth_body %}
 
     {% if form.errors %}
-      <div class="alert error" style="margin-block:1em;">
+      <div class="mb-6 rounded border border-border-danger bg-bg-danger p-4 text-sm leading-5 text-text-danger" role="alert">
         {% for field, errors in form.errors.items %}
           <p>{% for error in errors %}{{ error }}{% endfor %}</p>
         {% endfor %}
       </div>
     {% endif %}
 
-    <h1>Confirm Access</h1>
-    <p>Please reauthenticate to safeguard your account.</p>
-
     {% block reauthenticate_content %}{% endblock %}
     {% if reauthentication_alternatives %}
-        <hr />
-        <h3>
+        <div class="mt-8 border-t border-border-divider pt-6">
+        <h2 class="mb-4 text-base leading-6 text-text-strong">
           {% translate "Alternative options" %}
-        </h3>
-        {% element button_group %}
+        </h2>
+        <div class="flex flex-wrap gap-3">
             {% for alt in reauthentication_alternatives %}
-                {% element button href=alt.url tags="primary,outline" %}
-                    {{ alt.description }}
-                {% endelement %}
+                <a class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="{{ alt.url }}">{{ alt.description }}</a>
             {% endfor %}
-        {% endelement %}
+        </div>
+        </div>
     {% endif %}
 
-  </div>
-
-</div>
-
-{% endblock %}
+{% endblock auth_body %}
 
 {% comment %}
   The base_reauthenticate here does not consider other fields involved

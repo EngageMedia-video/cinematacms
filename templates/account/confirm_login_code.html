@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "account/auth_base.html" %}
 {% load i18n %}
 {% load allauth account %}
 
@@ -6,43 +6,41 @@
   | Sign In
 {% endblock %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-  <div class="user-action-form-inner">
-    <h1>
-      {% translate "Enter Sign-In Code" %}
-    </h1>
-    {% setvar email_link %}
-      <a href="mailto:{{ email }}">{{ email }}</a>
-    {% endsetvar %}
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="code" %}{% endblock auth_icon %}
 
-    <p>
-      {% blocktranslate %}We’ve sent a code to {{ email_link }}. The code expires shortly, so please enter it soon.{% endblocktranslate %}
-    </p>
+{% block auth_title %}{% translate "Enter Sign-In Code" %}{% endblock auth_title %}
 
-    {% url 'account_confirm_login_code' as login_url %}
-    <form method="POST" action="{{ login_url }}">
-      {% csrf_token %}
-      <input
-        required=""
-        name="code"
-        placeholder="Code"
-        id="id_code"
-        autocomplete="one-time-code"
-        type="text"
-      >
-      <button type="submit" class="primaryAction">
-        {% translate "Confirm" %}
-      </button>
-      <button form="logout-from-stage" class="secondaryAction" type="submit">
-        Cancel
-      </button>
-    </form>
+{% block auth_subtitle %}
+{% setvar email_link %}
+  <a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="mailto:{{ email }}">{{ email }}</a>
+{% endsetvar %}
+<p class="m-0 w-[502px] max-w-full text-base leading-6 text-[var(--auth-text-muted)]">
+  {% blocktranslate %}We’ve sent a code to {{ email_link }}. The code expires shortly, so please enter it soon.{% endblocktranslate %}
+</p>
+{% endblock auth_subtitle %}
 
-    <form id="logout-from-stage" method="POST" action="/accounts/logout/">
-      <input type="hidden" name="next" value="/accounts/login" />
-      {% csrf_token %}
-    </form>
+{% block auth_body %}
+{% url 'account_confirm_login_code' as login_url %}
+<form class="flex w-full flex-col gap-6" method="POST" action="{{ login_url }}">
+  {% csrf_token %}
+  <div class="space-y-4 px-1 py-4">
+    <div class="auth-field flex h-[84px] w-full flex-col justify-center gap-2 overflow-hidden border-b border-[var(--auth-field-border)] py-[14px] pr-[22px] text-left text-base leading-6 text-text-strong">
+      <label class="m-0" for="id_code">Code</label>
+      <input class="m-0 block h-6 w-full border-0 bg-transparent p-0 leading-6 text-text-strong outline-none placeholder:text-[var(--auth-text-muted)] focus-visible:ring-0" required name="code" placeholder="Code" id="id_code" autocomplete="one-time-code" type="text">
+    </div>
   </div>
-</div>
-{% endblock %}
+  <div class="flex flex-wrap items-center gap-3">
+    <button class="auth-button-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">
+      {% translate "Confirm" %}
+    </button>
+    <button form="logout-from-stage" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">
+      Cancel
+    </button>
+  </div>
+</form>
+
+<form id="logout-from-stage" method="POST" action="/accounts/logout/">
+  <input type="hidden" name="next" value="/accounts/login" />
+  {% csrf_token %}
+</form>
+{% endblock auth_body %}
