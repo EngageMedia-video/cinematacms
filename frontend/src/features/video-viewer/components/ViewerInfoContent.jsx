@@ -474,7 +474,7 @@ export default function ViewerInfoContent(props) {
 							<div className="rounded-b-ds-8 bg-bg-surface p-4">
 								<CommunityImpactSection
 									entries={communityImpacts}
-									canAdd={!user.is.anonymous}
+									canAdd={user?.is?.anonymous === false}
 									onAddImpact={(formValues) => MediaPageActions.submitCommunityImpact(formValues)}
 								/>
 							</div>

@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("files", "0023_category_color"),
+        ("files", "0024_media_storage_usage_bytes"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
