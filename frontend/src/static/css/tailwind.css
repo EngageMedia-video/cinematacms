@@ -582,6 +582,7 @@ body {
 	--bg-surface-muted: var(--cinemata-neutral-200);
 	--bg-surface-hover: var(--cinemata-pacific-deep-50);
 	--bg-surface-inverse: var(--cinemata-pacific-deep-900);
+	--bg-notification-unread: var(--cinemata-pacific-deep-100);
 	--bg-avatar-fallback: var(--cinemata-neutral-100);
 	--bg-badge-info: var(--cinemata-strait-blue-900);
 	--bg-badge-danger: var(--cinemata-red-950);
@@ -650,6 +651,7 @@ body.dark_theme {
 	--bg-surface-muted: var(--cinemata-pacific-deep-800);
 	--bg-surface-hover: var(--cinemata-pacific-deep-800);
 	--bg-surface-inverse: var(--cinemata-white);
+	--bg-notification-unread: var(--cinemata-pacific-deep-800);
 	--bg-skeleton: var(--cinemata-pacific-deep-700);
 	--bg-control: var(--cinemata-pacific-deep-900);
 	--bg-primary: var(--cinemata-strait-blue-500);
@@ -691,6 +693,7 @@ body.dark_theme {
 	--color-bg-surface-muted: var(--bg-surface-muted);
 	--color-bg-surface-hover: var(--bg-surface-hover);
 	--color-bg-surface-inverse: var(--bg-surface-inverse);
+	--color-bg-notification-unread: var(--bg-notification-unread);
 	--color-bg-avatar-fallback: var(--bg-avatar-fallback);
 	--color-bg-badge-info: var(--bg-badge-info);
 	--color-bg-badge-danger: var(--bg-badge-danger);

@@ -238,6 +238,7 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | Family | Tokens | Use |
 |---|---|---|
 | `bg/page`, `bg/surface`, `bg/surface-raised`, `bg/surface-muted`, `bg/surface-hover`, `bg/surface-inverse` | 6 | Themed page, card, and list/menu hover surfaces — invert per theme. |
+| `bg/notification-unread` | 1 | Unread notification row background. Light `pacific-deep-100`, dark `pacific-deep-800` — a deliberately stronger tint than `bg/surface-hover` so unread rows stand out from the page in light mode. |
 | `bg/avatar-fallback`, `bg/badge-info`, `bg/badge-danger`, `bg/badge-accent`, `bg/badge-muted` | 5 | Small decorative fills for avatar initials and action-type badge emblems. These are semantic aliases for fixed, non-theme-inverting roles. |
 | `bg/overlay-dark`, `bg/chrome`, `bg/chrome-hover` | 3 | Always-dark UI chrome — topbar, search overlays, mobile dialogs. Do not invert. |
 | `bg/skeleton`, `bg/control` | 2 | Loading skeletons and standard small control surfaces, including radio backgrounds. |
@@ -444,7 +445,7 @@ Key characteristics after migration:
 | File | Color class / token | Element |
 |------|---------------------|---------|
 | NotificationDialog.jsx | `bg-bg-surface`, `text-text-strong`, `text-text-link` | Popup chrome and actions |
-| NotificationItem.jsx | `bg-bg-surface`, `bg-bg-surface-hover`, `text-text-primary`, `text-text-muted` | Row read/unread state and copy |
+| NotificationItem.jsx | `bg-bg-surface`, `bg-bg-notification-unread`, `text-text-primary`, `text-text-muted` | Row read/unread state and copy |
 | NotificationPage.jsx | `bg-bg-surface`, `bg-bg-surface-muted`, `text-text-link` | Tabs and mark-all action |
 | NotificationPreferencesForm.jsx | `text-text-strong`, `text-text-secondary`, `bg-border-subtle` | Preference panel text and section dividers |
 | notificationBadge.js | `bg-bg-badge-*` | Fixed action-type avatar badge emblems |

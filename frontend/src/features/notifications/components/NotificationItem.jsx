@@ -7,7 +7,7 @@ import { Icon } from '../../shared/components/Icon';
 const ITEM_THEMES = {
 	dark: {
 		readBg: 'bg-bg-surface',
-		unreadBg: 'bg-bg-surface-hover',
+		unreadBg: 'bg-bg-notification-unread',
 		hoverBg: 'hover:bg-bg-surface-muted',
 		avatarBg: 'bg-bg-surface-muted',
 		badgeBorder: 'border-bg-surface',
@@ -17,7 +17,7 @@ const ITEM_THEMES = {
 	},
 	light: {
 		readBg: 'bg-bg-surface',
-		unreadBg: 'bg-bg-surface-hover',
+		unreadBg: 'bg-bg-notification-unread',
 		hoverBg: 'hover:bg-bg-surface-muted',
 		avatarBg: 'bg-bg-surface-muted',
 		badgeBorder: 'border-bg-surface',
