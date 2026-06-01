@@ -4,10 +4,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { AddImpactDialog, normalizeImpactLink } from './AddImpactDialog';
 
 describe('AddImpactDialog', () => {
-	it('keeps the date input native while hiding the browser picker indicator', () => {
-		const { baseElement } = render(<AddImpactDialog open />);
+	it('renders the Figma content labels in the modal form', () => {
+		render(<AddImpactDialog open />);
 
-		expect(baseElement.querySelector('.impact-date-field input[type="date"]')).not.toBeNull();
+		expect(screen.getByText('Where has this film made an impact?')).toBeVisible();
+		expect(screen.getByLabelText('Where did you see this film')).toBeVisible();
+		expect(screen.getByLabelText('Add more details')).toBeVisible();
+		expect(screen.getByText('Maximum 80 Words')).toBeVisible();
 	});
 
 	it('submits trimmed form values with the selected category', async () => {
@@ -17,9 +20,8 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog onClose={onClose} onSubmit={onSubmit} open />);
 
-		await user.type(screen.getByLabelText('Where did this impact happen?'), '  Jakarta community hall  ');
+		await user.type(screen.getByLabelText('Where did you see this film'), '  Jakarta community hall  ');
 		await user.type(screen.getByLabelText('Add more details'), 'Screened with a youth media collective.');
-		await user.type(screen.getByLabelText('Date of impact'), '2026-05-29');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
 		await user.type(screen.getByLabelText('Add a link'), 'https://example.com/impact');
@@ -28,7 +30,6 @@ describe('AddImpactDialog', () => {
 		expect(onSubmit).toHaveBeenCalledWith({
 			category: 'screening',
 			details: 'Screened with a youth media collective.',
-			event_date: '2026-05-29',
 			link: 'https://example.com/impact',
 			location: 'Jakarta community hall',
 			title: 'Jakarta community hall',
@@ -43,8 +44,7 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog open />);
 
-		await user.type(screen.getByLabelText('Where did this impact happen?'), 'Jakarta');
-		await user.type(screen.getByLabelText('Date of impact'), '2026-05-29');
+		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
 		await user.type(screen.getByLabelText('Add more details'), tooManyWords);
@@ -71,8 +71,7 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog onClose={onClose} onSubmit={onSubmit} open />);
 
-		await user.type(screen.getByLabelText('Where did this impact happen?'), 'Jakarta');
-		await user.type(screen.getByLabelText('Date of impact'), '2026-05-29');
+		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
 		await user.type(screen.getByLabelText('Add a link'), 'javascript:alert(1)');
@@ -89,8 +88,7 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog onSubmit={onSubmit} open />);
 
-		await user.type(screen.getByLabelText('Where did this impact happen?'), 'Jakarta');
-		await user.type(screen.getByLabelText('Date of impact'), '2026-05-29');
+		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
 		await user.type(screen.getByLabelText('Add a link'), 'example.com/path');
@@ -99,6 +97,33 @@ describe('AddImpactDialog', () => {
 		expect(onSubmit).toHaveBeenCalledWith(
 			expect.objectContaining({ link: 'https://example.com/path', url: 'https://example.com/path' })
 		);
+	});
+
+	it('only offers manually writable categories', async () => {
+		const user = userEvent.setup();
+
+		render(
+			<AddImpactDialog
+				open
+				categories={[
+					{ value: 'screening', label: 'Screened In' },
+					{ value: 'featured', label: 'Featured In' },
+					{ value: 'saves', label: 'Saves & Playlists' },
+					{ value: 'playlists', label: 'Playlists' },
+					{ value: 'academic', label: 'Academic Usage' },
+					{ value: 'curated', label: 'Curated Into' },
+				]}
+			/>
+		);
+
+		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
+
+		expect(screen.getByRole('menuitemradio', { name: 'Screened In' })).toBeVisible();
+		expect(screen.getByRole('menuitemradio', { name: 'Featured In' })).toBeVisible();
+		expect(screen.getByRole('menuitemradio', { name: 'Academic Usage' })).toBeVisible();
+		expect(screen.queryByRole('menuitemradio', { name: 'Saves & Playlists' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('menuitemradio', { name: 'Playlists' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('menuitemradio', { name: 'Curated Into' })).not.toBeInTheDocument();
 	});
 });
 

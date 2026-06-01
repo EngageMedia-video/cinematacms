@@ -1,15 +1,92 @@
-.impact-date-field input[type='date']::-webkit-calendar-picker-indicator {
-	display: none;
-	-webkit-appearance: none;
+.impact-add-dialog {
+	background: var(--cinemata-pacific-deep-900);
 }
 
-.impact-date-field input[type='date']::-webkit-inner-spin-button,
-.impact-date-field input[type='date']::-webkit-outer-spin-button {
-	-webkit-appearance: none;
-	margin: 0;
+.impact-add-form .impact-add-field {
+	width: 100%;
 }
 
-.impact-date-field input[type='date'] {
-	appearance: none;
-	-moz-appearance: none;
+.impact-add-form .impact-add-field .field-shell,
+.impact-add-form .impact-add-field > div:first-child {
+	min-height: 84px;
+	border-bottom-width: 1px;
+	border-bottom-color: var(--cinemata-pacific-deep-500);
+	background: transparent;
+	padding: 18px 0 15px;
+}
+
+.impact-add-form .impact-add-field .field-shell:hover,
+.impact-add-form .impact-add-field .field-shell:focus-within,
+.impact-add-form .impact-add-field > div:first-child:hover,
+.impact-add-form .impact-add-field > div:first-child:focus-within {
+	background: transparent;
+}
+
+.impact-add-form .impact-add-field .border-border-input {
+	border-bottom-color: var(--cinemata-sunset-horizon-400p);
+}
+
+.impact-add-form .impact-add-field label,
+.impact-add-form .impact-add-field button > span > span:first-child {
+	margin-bottom: 8px;
+	color: var(--cinemata-pacific-deep-300);
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 24px;
+}
+
+.impact-add-form .impact-add-field .field-input,
+.impact-add-form .impact-add-field textarea,
+.impact-add-form .impact-add-field button > span > span:last-child {
+	color: var(--cinemata-strait-blue-50);
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 24px;
+}
+
+.impact-add-form .impact-add-field input::placeholder,
+.impact-add-form .impact-add-field textarea::placeholder {
+	color: var(--cinemata-pacific-deep-300);
+	opacity: 1;
+}
+
+.impact-add-form .impact-details-field {
+	position: relative;
+}
+
+.impact-add-form .impact-details-field .field-shell {
+	min-height: 176px;
+	padding-top: 18px;
+	padding-bottom: 18px;
+}
+
+.impact-add-form .impact-details-field textarea {
+	min-height: 104px;
+}
+
+.impact-add-form .impact-details-field p {
+	margin: 12px 0 0;
+	color: var(--cinemata-sunset-horizon-400p);
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 24px;
+}
+
+.impact-add-form button[type='submit'] > span {
+	white-space: nowrap;
+}
+
+.impact-add-form .impact-add-field [role='menu'] {
+	border-color: var(--cinemata-pacific-deep-500);
+	background: var(--cinemata-pacific-deep-900);
+}
+
+.impact-add-form .impact-add-field [role='menuitemradio'] {
+	background: transparent;
+	color: var(--cinemata-strait-blue-50);
+}
+
+.impact-add-form .impact-add-field [role='menuitemradio']:hover,
+.impact-add-form .impact-add-field [role='menuitemradio']:focus {
+	background: var(--cinemata-pacific-deep-800);
 }

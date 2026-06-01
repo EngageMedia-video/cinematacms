@@ -2455,6 +2455,7 @@ def playlist_pre_delete(sender, instance, **kwargs):
 def playlist_media_save(sender, instance, created, **kwargs):
     """Invalidate playlist cache when media is added/removed from playlist."""
     invalidate_playlist_cache(instance.playlist.friendly_token)
+    invalidate_media_cache(instance.media.friendly_token)
     delete_composite_thumbnail(instance.playlist.friendly_token)
 
 
@@ -2462,6 +2463,7 @@ def playlist_media_save(sender, instance, created, **kwargs):
 def playlist_media_delete(sender, instance, **kwargs):
     """Invalidate playlist cache when media is removed from playlist."""
     invalidate_playlist_cache(instance.playlist.friendly_token)
+    invalidate_media_cache(instance.media.friendly_token)
     delete_composite_thumbnail(instance.playlist.friendly_token)
 
 

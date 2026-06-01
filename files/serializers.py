@@ -1,3 +1,5 @@
+from django.db.models import Max
+from django.utils import timezone
 from rest_framework import serializers
 
 from actions.models import MediaAction
@@ -14,6 +16,7 @@ from .models import (
     MediaCountry,
     MediaLanguage,
     Playlist,
+    PlaylistMedia,
     Tag,
     Topic,
     TopMessage,
@@ -227,7 +230,23 @@ class SingleMediaSerializer(serializers.ModelSerializer):
         entries = obj.community_impacts.all()
         grouped = {key: [] for key, _label in CommunityImpact.CATEGORY_CHOICES}
         for entry in entries:
+            if entry.category == CommunityImpact.SAVES:
+                continue
             grouped[entry.category].append(CommunityImpactSerializer(entry, context=self.context).data)
+
+        save_actions = MediaAction.objects.filter(media=obj, action="like")
+        playlist_items = PlaylistMedia.objects.filter(media=obj)
+        latest_save = save_actions.aggregate(latest=Max("action_date"))["latest"]
+        latest_playlist = playlist_items.aggregate(latest=Max("action_date"))["latest"]
+        latest_events = [event for event in (latest_save, latest_playlist) if event]
+        grouped[CommunityImpact.SAVES] = {
+            "entries": [],
+            "lastEventAt": max(latest_events).isoformat() if latest_events else "",
+            "totalCount": {
+                "saves": save_actions.count(),
+                "playlists": playlist_items.values("playlist_id").distinct().count(),
+            },
+        }
         return grouped
 
     class Meta:
@@ -451,6 +470,13 @@ class CommentSerializer(serializers.ModelSerializer):
 class CommunityImpactSerializer(serializers.ModelSerializer):
     author_name = serializers.ReadOnlyField(source="user.name")
     author_username = serializers.ReadOnlyField(source="user.username")
+    event_date = serializers.DateField(required=False, default=timezone.localdate)
+
+    WRITABLE_CATEGORIES = {
+        CommunityImpact.SCREENING,
+        CommunityImpact.FEATURED,
+        CommunityImpact.ACADEMIC,
+    }
 
     class Meta:
         model = CommunityImpact
@@ -480,13 +506,8 @@ class CommunityImpactSerializer(serializers.ModelSerializer):
         return value
 
     def validate_category(self, value):
-        # "saves" is a computed/reserved bucket surfaced by SingleMediaSerializer;
-        # it must never be persisted from client input as a CommunityImpact row.
-        writable_categories = {
-            category for category, _label in CommunityImpact.CATEGORY_CHOICES if category != CommunityImpact.SAVES
-        }
-        if value not in writable_categories:
-            raise serializers.ValidationError(f"Category must be one of: {sorted(writable_categories)}.")
+        if value not in self.WRITABLE_CATEGORIES:
+            raise serializers.ValidationError(f"Category must be one of: {sorted(self.WRITABLE_CATEGORIES)}.")
         return value
 
     def validate_url(self, value):

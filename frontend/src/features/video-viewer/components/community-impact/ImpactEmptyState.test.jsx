@@ -12,7 +12,7 @@ describe('ImpactEmptyState', () => {
 
 		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
 
-		expect(screen.getByText('Where this film has made an impact?')).toBeVisible();
+		expect(screen.getByText('Where has this film made an impact?')).toBeVisible();
 		expect(onAddImpact).toHaveBeenCalledTimes(1);
 	});
 

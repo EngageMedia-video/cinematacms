@@ -118,12 +118,12 @@ export function EditorField({
 
 					event.preventDefault();
 					textareaRef.current?.focus();
-					}}
-					className={cn(
-						'field-shell group w-full border-b px-0 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
-						SHELL_VARIANT_CLASSES[variant],
-						borderClasses,
-						disabled ? 'cursor-not-allowed' : ''
+				}}
+				className={cn(
+					'field-shell group w-full border-b px-0 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
+					SHELL_VARIANT_CLASSES[variant],
+					borderClasses,
+					disabled ? 'cursor-not-allowed' : ''
 				)}
 			>
 				{label ? (

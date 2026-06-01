@@ -591,6 +591,15 @@ body {
 	--bg-primary-hover: var(--cinemata-strait-blue-800);
 	--bg-secondary: var(--cinemata-sunset-horizon-400p);
 	--bg-secondary-hover: var(--cinemata-sunset-horizon-500);
+	--bg-impact-icon-screening: var(--cinemata-pacific-deep-900);
+	--bg-impact-icon-featured: var(--cinemata-pacific-deep-800);
+	--bg-impact-icon-saves: var(--cinemata-coral-reef-800);
+	--bg-impact-icon-academic: var(--cinemata-sunset-horizon-700);
+	--bg-impact-icon-curated: var(--cinemata-neutral-800);
+	--bg-impact-modal-close: var(--cinemata-strait-blue-400);
+	--bg-impact-timeline-dot: var(--cinemata-strait-blue-200);
+	--text-impact-icon-saves: var(--cinemata-coral-reef-600);
+	--text-impact-modal-close: var(--cinemata-pacific-deep-900);
 	--bg-danger: var(--cinemata-red-500);
 	--bg-danger-strong: var(--cinemata-red-800);
 	--bg-danger-strong-hover: var(--cinemata-red-400);
@@ -649,6 +658,15 @@ body.dark_theme {
 	--bg-primary-hover: var(--cinemata-strait-blue-700);
 	--bg-secondary: var(--cinemata-sunset-horizon-500);
 	--bg-secondary-hover: var(--cinemata-sunset-horizon-400p);
+	--bg-impact-icon-screening: var(--cinemata-pacific-deep-950);
+	--bg-impact-icon-featured: var(--cinemata-pacific-deep-800);
+	--bg-impact-icon-saves: var(--cinemata-coral-reef-900);
+	--bg-impact-icon-academic: var(--cinemata-sunset-horizon-800);
+	--bg-impact-icon-curated: var(--cinemata-neutral-900);
+	--bg-impact-modal-close: var(--cinemata-strait-blue-400);
+	--bg-impact-timeline-dot: var(--cinemata-strait-blue-200);
+	--text-impact-icon-saves: var(--cinemata-coral-reef-600);
+	--text-impact-modal-close: var(--cinemata-pacific-deep-900);
 	--bg-danger-strong: var(--cinemata-red-950);
 	--bg-danger-strong-hover: var(--cinemata-red-900);
 
@@ -693,6 +711,13 @@ body.dark_theme {
 	--color-bg-primary-hover: var(--bg-primary-hover);
 	--color-bg-secondary: var(--bg-secondary);
 	--color-bg-secondary-hover: var(--bg-secondary-hover);
+	--color-bg-impact-icon-screening: var(--bg-impact-icon-screening);
+	--color-bg-impact-icon-featured: var(--bg-impact-icon-featured);
+	--color-bg-impact-icon-saves: var(--bg-impact-icon-saves);
+	--color-bg-impact-icon-academic: var(--bg-impact-icon-academic);
+	--color-bg-impact-icon-curated: var(--bg-impact-icon-curated);
+	--color-bg-impact-modal-close: var(--bg-impact-modal-close);
+	--color-bg-impact-timeline-dot: var(--bg-impact-timeline-dot);
 	--color-bg-danger: var(--bg-danger);
 	--color-bg-danger-strong: var(--bg-danger-strong);
 	--color-bg-danger-strong-hover: var(--bg-danger-strong-hover);
@@ -715,6 +740,8 @@ body.dark_theme {
 	--color-text-link: var(--text-link);
 	--color-text-link-hover: var(--text-link-hover);
 	--color-text-accent: var(--text-accent);
+	--color-text-impact-icon-saves: var(--text-impact-icon-saves);
+	--color-text-impact-modal-close: var(--text-impact-modal-close);
 	--color-text-danger: var(--text-danger);
 	--color-text-success: var(--text-success);
 	--color-text-warning: var(--text-warning);

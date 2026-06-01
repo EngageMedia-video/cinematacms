@@ -1399,10 +1399,12 @@ class MediaPageStore extends EventEmitter {
 		const payload = {
 			category: communityImpactData.category,
 			details: communityImpactData.details || '',
-			event_date: communityImpactData.event_date,
 			title: communityImpactData.title || communityImpactData.location,
 			url: communityImpactData.url || communityImpactData.link || '',
 		};
+		if (communityImpactData.event_date) {
+			payload.event_date = communityImpactData.event_date;
+		}
 
 		postRequest(
 			this.communityImpactAPIUrl,

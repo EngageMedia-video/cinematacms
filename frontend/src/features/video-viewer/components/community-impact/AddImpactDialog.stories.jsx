@@ -38,8 +38,7 @@ export const SubmitReady = {
 	play: async ({ args }) => {
 		const body = within(document.body);
 
-		await userEvent.type(body.getByLabelText('Where did this impact happen?'), 'Jakarta community hall');
-		await userEvent.type(body.getByLabelText('Date of impact'), '2026-05-29');
+		await userEvent.type(body.getByLabelText('Where did you see this film'), 'Jakarta community hall');
 		await userEvent.click(body.getByRole('button', { name: 'Select community impact category' }));
 		await userEvent.click(body.getByRole('menuitemradio', { name: 'Screened In' }));
 		await userEvent.click(body.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));
@@ -47,7 +46,6 @@ export const SubmitReady = {
 		await expect(args.onSubmit).toHaveBeenCalledWith({
 			category: 'screening',
 			details: '',
-			event_date: '2026-05-29',
 			link: '',
 			location: 'Jakarta community hall',
 			title: 'Jakarta community hall',

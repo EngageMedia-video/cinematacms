@@ -1,32 +1,22 @@
 import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
-import {
-	Button,
-	Dialog,
-	DialogContent,
-	Dropdown,
-	EditorField,
-	Icon,
-	Text,
-	TextField,
-} from '../../../shared/components';
+import { Button, Dialog, DialogContent, Dropdown, EditorField, Icon, TextField } from '../../../shared/components';
 import { COMMUNITY_IMPACT_CATEGORIES, getImpactIconConfig } from './impactIcons';
 import './AddImpactDialog.css';
 
-const EMPTY_VALUES = {
-	category: '',
-	details: '',
-	eventDate: '',
-	link: '',
-	location: '',
-};
+const ADD_IMPACT_CATEGORY_VALUES = new Set(['screening', 'featured', 'academic']);
+
+function createEmptyValues() {
+	return {
+		category: '',
+		details: '',
+		link: '',
+		location: '',
+	};
+}
 
 function countWords(value) {
 	return value.trim().split(/\s+/).filter(Boolean).length;
-}
-
-function openDatePicker(event) {
-	event.currentTarget.showPicker?.();
 }
 
 export function normalizeImpactLink(raw) {
@@ -60,13 +50,16 @@ export function normalizeImpactLink(raw) {
 }
 
 export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onClose, onSubmit, open = false }) {
-	const [values, setValues] = useState(EMPTY_VALUES);
+	const [values, setValues] = useState(createEmptyValues);
 	const [linkError, setLinkError] = useState('');
 	const wordCount = countWords(values.details);
 	const wordLimitExceeded = wordCount > 80;
-	const canSubmit = values.location.trim() && values.category && values.eventDate && !wordLimitExceeded;
+	const canSubmit = values.location.trim() && values.category && !wordLimitExceeded;
 	const heartConfig = getImpactIconConfig('heart');
-	const categoryOptions = useMemo(() => categories.filter((category) => category.value !== 'saves'), [categories]);
+	const categoryOptions = useMemo(
+		() => categories.filter((category) => ADD_IMPACT_CATEGORY_VALUES.has(category.value)),
+		[categories]
+	);
 
 	function updateValue(name, value) {
 		setValues((current) => ({
@@ -94,13 +87,12 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 		onSubmit?.({
 			category: values.category,
 			details: values.details.trim(),
-			event_date: values.eventDate,
 			link: normalizedLink,
 			location: values.location.trim(),
 			title: values.location.trim(),
 			url: normalizedLink,
 		});
-		setValues(EMPTY_VALUES);
+		setValues(createEmptyValues());
 		setLinkError('');
 		onClose?.();
 	}
@@ -116,69 +108,58 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 		>
 			<DialogContent
 				aria-label="Add community impact"
-				className="flex max-h-[calc(100vh-var(--size-64))] w-full max-w-[calc(var(--size-96)*5+var(--size-40))] flex-col overflow-hidden rounded-ds-8 border border-border-default bg-bg-surface shadow-lg"
+				className="impact-add-dialog flex max-h-[calc(100vh-var(--size-64))] w-full max-w-[544px] flex-col overflow-hidden rounded-ds-8 border border-border-default bg-cinemata-pacific-deep-900 shadow-lg"
 			>
 				<form
 					onSubmit={handleSubmit}
 					noValidate
-					className="flex max-h-full flex-col overflow-y-auto p-space-lg"
+					className="impact-add-form relative flex max-h-full flex-col items-center overflow-y-auto px-[64px] pb-[44px] pt-[58px] max-[560px]:px-6 max-[560px]:pt-10"
 				>
-					<div className="flex justify-end">
-						<Button
-							variant="icon"
-							className="h-size-32 w-size-32 rounded-full text-text-muted outline-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-ring-focus"
-							aria-label="Close add impact dialog"
-							onClick={onClose}
-							icon={<Icon name="close" size="sm" decorative />}
-						/>
-					</div>
+					<Button
+						variant="icon"
+						className="absolute right-4 top-4 h-size-32 w-size-32 rounded-full text-cinemata-pacific-deep-300 outline-none hover:text-cinemata-strait-blue-50 focus-visible:ring-2 focus-visible:ring-ring-focus"
+						aria-label="Close add impact dialog"
+						onClick={onClose}
+						icon={<Icon name="close" size="sm" decorative />}
+					/>
 
-					<div className="flex flex-col items-center text-center">
+					<div className="flex w-full flex-col items-center text-center">
 						<span
-							className="inline-flex h-size-80 w-size-80 shrink-0 items-center justify-center text-text-accent"
+							className="inline-flex h-[58px] w-[58px] shrink-0 items-center justify-center text-cinemata-strait-blue-400"
 							aria-hidden="true"
 						>
-							<Icon name={heartConfig.iconName} size={64} decorative />
+							<Icon name={heartConfig.iconName} size={67} decorative />
 						</span>
 
-						<Text variant="h5" as="h2" className="m-0 mt-space-base text-text-primary">
+						<h2 className="m-0 mt-[26px] text-[20px] font-bold leading-[24px] text-cinemata-strait-blue-50">
 							Where has this film made an impact?
-						</Text>
-						<Text variant="body-14" color="meta" className="m-0 mt-space-xs">
+						</h2>
+						<p className="m-0 mt-[11px] max-w-[404px] text-[16px] font-normal leading-[24px] text-cinemata-pacific-deep-300">
 							For filmmakers &amp; viewers. Add screenings, playlists, or discussions to show how this
 							film is reaching people.
-						</Text>
+						</p>
 					</div>
 
-					<div className="mt-space-lg grid gap-space-base">
+					<div className="mt-[33px] grid w-full max-w-[404px] gap-0">
 						<TextField
-							className="w-full"
-							label="Where did this impact happen?"
-							placeholder="Venue, event, article, course, or playlist"
+							className="impact-add-field w-full"
+							label="Where did you see this film"
 							value={values.location}
 							onChange={(event) => updateValue('location', event.target.value)}
 							required
 						/>
 						<EditorField
-							className="w-full"
+							className="impact-add-field impact-details-field w-full"
 							label="Add more details"
+							placeholder="Write here..."
 							value={values.details}
 							onChange={(event) => updateValue('details', event.target.value)}
-							helperText={`Maximum 80 Words${wordCount ? ` • ${wordCount}/80` : ''}`}
+							helperText={`Maximum 80 Words${wordLimitExceeded ? ` • ${wordCount}/80` : ''}`}
 							invalid={wordLimitExceeded}
 							rows={5}
 						/>
-						<TextField
-							className="impact-date-field w-full"
-							label="Date of impact"
-							type="date"
-							value={values.eventDate}
-							onClick={openDatePicker}
-							onChange={(event) => updateValue('eventDate', event.target.value)}
-							required
-						/>
 						<Dropdown
-							className="w-full"
+							className="impact-add-field w-full"
 							label="Choose a category"
 							options={categoryOptions}
 							placeholder="Select community impact category"
@@ -186,7 +167,7 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 							onChange={(value) => updateValue('category', value)}
 						/>
 						<TextField
-							className="w-full"
+							className="impact-add-field w-full"
 							label="Add a link"
 							type="url"
 							value={values.link}
@@ -197,7 +178,7 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 					</div>
 
 					<Button
-						className="mt-space-lg w-full justify-center focus-visible:ring-2 focus-visible:ring-ring-focus"
+						className="mt-[16px] h-[40px] w-[316px] max-w-full justify-center whitespace-nowrap bg-cinemata-sunset-horizon-500 px-0 py-0 text-[14px] font-bold leading-none text-cinemata-white hover:bg-cinemata-sunset-horizon-600 focus-visible:ring-2 focus-visible:ring-ring-focus"
 						disabled={!canSubmit}
 						type="submit"
 					>

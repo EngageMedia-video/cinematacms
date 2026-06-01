@@ -14,7 +14,7 @@ export function ImpactEmptyState({ canAdd = true, onAddImpact }) {
 				<Icon name={heartConfig.iconName} size="lg" decorative />
 			</span>
 			<Text variant="h5" as="h3" className="m-0 mt-space-lg text-text-primary">
-				Where this film has made an impact?
+				Where has this film made an impact?
 			</Text>
 			<Text variant="body-14" color="meta" className="m-0 mt-space-sm max-w-[calc(var(--size-96)*5)]">
 				Share screenings, features, saves, playlists, or academic use so the community can see how this film

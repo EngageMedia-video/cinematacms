@@ -60,6 +60,7 @@ export const Populated = {
 		await expect(canvas.getByRole('heading', { name: "Film's Impact" })).toBeVisible();
 		await expect(canvas.getByText('Screened In')).toBeVisible();
 		await expect(canvas.getByText('Saves & Playlists')).toBeVisible();
+		await expect(canvas.queryByText('Curated Into')).toBeNull();
 	},
 };
 
@@ -70,7 +71,8 @@ export const Empty = {
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 
-		await expect(canvas.getByText('Where this film has made an impact?')).toBeVisible();
+		await expect(canvas.getByText('Where has this film made an impact?')).toBeVisible();
+		await expect(canvas.getAllByRole('button', { name: 'ADD IMPACT' })).toHaveLength(2);
 	},
 };
 

@@ -23,7 +23,7 @@ export const Empty = {
 		const canvas = within(canvasElement);
 		const button = canvas.getByRole('button', { name: 'ADD IMPACT' });
 
-		await expect(canvas.getByText('Where this film has made an impact?')).toBeVisible();
+		await expect(canvas.getByText('Where has this film made an impact?')).toBeVisible();
 		await userEvent.click(button);
 		await expect(args.onAddImpact).toHaveBeenCalled();
 	},

@@ -471,7 +471,7 @@ export default function ViewerInfoContent(props) {
 							</div>
 						</TabContent>
 						<TabContent title="COMMUNITY IMPACT">
-							<div className="rounded-b-ds-8 bg-bg-page p-4">
+							<div className="rounded-b-ds-8 bg-bg-surface p-4">
 								<CommunityImpactSection
 									entries={communityImpacts}
 									canAdd={!user.is.anonymous}

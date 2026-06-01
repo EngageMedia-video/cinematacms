@@ -1,205 +1,204 @@
 import PropTypes from 'prop-types';
 import { useId, useMemo, useState } from 'react';
-import { Button, Card, Icon, Text } from '../../../shared/components';
+import { Button, Card, Icon } from '../../../shared/components';
 import { cn } from '../../../shared/utils/classNames';
+import { ImpactDetailDialog } from './ImpactDetailDialog';
 import { getImpactIconConfig } from './impactIcons';
 import { ImpactTimelineItem } from './ImpactTimelineItem';
-import { formatImpactDate } from './utils/formatDate';
+import { formatImpactDate, formatRelativeImpactTime, getSafeHref } from './utils/formatDate';
 
-function getTotalCount(totalCount) {
-	if (typeof totalCount === 'number') {
-		return totalCount;
-	}
-
-	if (!totalCount || typeof totalCount !== 'object') {
-		return 0;
-	}
-
-	return Object.values(totalCount).reduce((sum, value) => sum + (Number(value) || 0), 0);
-}
-
-function getSummaryRows({ entries, label, lastEventAt, lastReportedAt, totalCount, variant }) {
-	if (entries?.length) {
-		const [latestEntry] = entries;
-		return [
-			{
-				label: label || (variant === 'academic' ? 'Academic references' : 'Community saves and playlists'),
-				value: entries.length.toLocaleString(),
-				meta: entries.length === 1 ? 'Reported use' : 'Reported uses',
-			},
-			latestEntry && {
-				label: 'Latest activity',
-				value: formatImpactDate(latestEntry.date),
-				meta: latestEntry.title,
-			},
-		].filter(Boolean);
-	}
-
+function getSummaryEntry({ label, lastEventAt, lastReportedAt, totalCount, variant }) {
 	if (variant === 'saves') {
-		const saves = Number(totalCount?.saves) || 0;
-		const playlists = Number(totalCount?.playlists) || 0;
+		const saves = typeof totalCount === 'object' ? Number(totalCount?.saves) || 0 : Number(totalCount) || 0;
+		const playlists = typeof totalCount === 'object' ? Number(totalCount?.playlists) || 0 : 0;
 
-		return [
-			{
-				label: 'Saved by viewers',
-				value: saves.toLocaleString(),
-				meta: 'Saves',
-			},
-			{
-				label: 'Added to playlists',
-				value: playlists.toLocaleString(),
-				meta: 'Playlists',
-			},
-			{
-				label: 'Last activity',
-				value: formatImpactDate(lastEventAt),
-				meta: 'Latest community signal',
-			},
-		].filter((row) => row.value);
+		return {
+			date: lastEventAt,
+			dateLabel: 'Last Saved',
+			titleParts: playlists
+				? [
+						{ text: saves.toLocaleString(), accent: true },
+						' saves in ',
+						{ text: playlists.toLocaleString(), accent: true },
+						' playlists',
+					]
+				: [{ text: saves.toLocaleString(), accent: true }, ' community saves and playlists'],
+			url: '',
+		};
 	}
 
 	const count = Number(totalCount) || 0;
 
-	return [
-		{
-			label: label || 'Academic references',
-			value: count.toLocaleString(),
-			meta: 'Reported uses',
-		},
-		{
-			label: 'Last reported',
-			value: formatImpactDate(lastReportedAt),
-			meta: 'Latest academic signal',
-		},
-	].filter((row) => row.value);
+	return {
+		date: lastReportedAt,
+		dateLabel: 'Last Reported',
+		titleParts: ['Used in ', { text: count.toLocaleString(), accent: true }, ` ${label || 'academic contexts'}`],
+		url: '',
+	};
+}
+
+function renderTitle(entry) {
+	if (Array.isArray(entry.titleParts)) {
+		return entry.titleParts.map((part, index) => {
+			if (typeof part === 'string') {
+				return part;
+			}
+
+			return (
+				<span key={`${part.text}-${index}`} className={part.accent ? 'text-text-accent' : undefined}>
+					{part.text}
+				</span>
+			);
+		});
+	}
+
+	return entry.title;
+}
+
+function ImpactMetaRow({ date, dateLabel = '', title, url }) {
+	const safeHref = getSafeHref(url);
+	const formattedDate = dateLabel ? formatRelativeImpactTime(date) || formatImpactDate(date) : formatImpactDate(date);
+	const hasDateMeta = Boolean(dateLabel || formattedDate);
+
+	return (
+		<div className="mt-space-xs flex min-w-0 flex-wrap items-center gap-space-xs text-text-muted">
+			{dateLabel ? <span className="body-body-12-regular text-text-muted">{dateLabel}</span> : null}
+			{dateLabel && formattedDate ? (
+				<span className="body-body-12-regular text-text-muted" aria-hidden="true">
+					•
+				</span>
+			) : null}
+			{formattedDate ? (
+				<time className="body-body-12-regular" dateTime={date}>
+					{formattedDate}
+				</time>
+			) : null}
+			{safeHref && hasDateMeta ? (
+				<span className="body-body-12-regular text-text-muted" aria-hidden="true">
+					•
+				</span>
+			) : null}
+			{safeHref ? (
+				<a
+					className="inline-flex shrink-0 items-center justify-center text-text-link outline-none hover:text-text-link-hover focus-visible:ring-2 focus-visible:ring-ring-focus"
+					href={safeHref}
+					aria-label={`Open impact link for ${title}`}
+					target="_blank"
+					rel="noreferrer"
+				>
+					<Icon name="impactUrlLogo" size={20} decorative />
+				</a>
+			) : null}
+		</div>
+	);
 }
 
 export function ImpactCard({
-	collapsedCount = 2,
-	defaultExpanded = false,
+	collapsedCount = 3,
 	entries = [],
 	label = '',
 	lastEventAt = '',
 	lastReportedAt = '',
-	subtitle,
+	subtitle = '',
 	title,
 	totalCount,
 	variant = 'screening',
 }) {
-	const [expanded, setExpanded] = useState(defaultExpanded);
+	const [modalOpen, setModalOpen] = useState(false);
 	const contentId = useId();
 	const config = getImpactIconConfig(variant);
 	const isSummary = variant === 'saves' || variant === 'academic';
-	const visibleEntries = expanded ? entries : entries.slice(0, collapsedCount);
-	const hiddenCount = Math.max(entries.length - visibleEntries.length, 0);
-	const canToggle = !isSummary && entries.length > collapsedCount;
-	const computedSubtitle =
-		subtitle ??
-		(isSummary
-			? `${getTotalCount(totalCount).toLocaleString()} community signals`
-			: `${entries.length.toLocaleString()} reported ${entries.length === 1 ? 'entry' : 'entries'}`);
-	const summaryRows = useMemo(
-		() => getSummaryRows({ entries, label, lastEventAt, lastReportedAt, totalCount, variant }),
-		[entries, label, lastEventAt, lastReportedAt, totalCount, variant]
+	const categoryLabel = title || config.label;
+	const previewEntries = useMemo(
+		() => (isSummary ? [getSummaryEntry({ label, lastEventAt, lastReportedAt, totalCount, variant })] : entries),
+		[entries, isSummary, label, lastEventAt, lastReportedAt, totalCount, variant]
 	);
+	const shouldScroll = previewEntries.length > collapsedCount;
+	const visibleEntries = previewEntries;
+	const [firstEntry, ...remainingEntries] = visibleEntries;
+	const firstTitleText = firstEntry?.title || firstEntry?.titleParts?.map((part) => part.text || part).join('') || '';
 
 	return (
 		<Card
 			variant="outlined"
-			className="flex min-h-[calc(var(--size-96)*2+var(--size-48))] flex-col rounded-ds-8 border-border-default p-space-lg"
-			aria-labelledby={`${contentId}-title`}
+			className="relative flex flex-col rounded-ds-8 border-border-default p-space-base"
+			aria-label={categoryLabel}
 		>
-			<div className="flex items-start justify-between gap-space-base">
-				<div className="flex min-w-0 items-start gap-space-sm">
-					<span
-						className={cn(
-							'inline-flex h-size-40 w-size-40 shrink-0 items-center justify-center rounded-ds-4',
-							config.iconShellClassName
-						)}
-						aria-hidden="true"
-					>
-						<Icon name={config.iconName} size="md" decorative />
-					</span>
-					<div className="min-w-0">
-						<Text
-							id={`${contentId}-title`}
-							variant="h6-medium"
-							as="h3"
-							className="m-0 break-words text-text-primary"
-						>
-							{title || config.label}
-						</Text>
-						<Text variant="body-12" color="meta" className="m-0 mt-space-2">
-							{computedSubtitle}
-						</Text>
-					</div>
-				</div>
+			<Button
+				variant="icon"
+				className="absolute top-space-base right-space-base z-10 h-size-32 w-size-32 shrink-0 text-text-muted outline-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-ring-focus"
+				aria-haspopup="dialog"
+				aria-label={`Open ${categoryLabel} details`}
+				onClick={() => setModalOpen(true)}
+				icon={<Icon name="arrowsOutSimple" size="sm" decorative />}
+			/>
 
-				{canToggle ? (
-					<Button
-						variant="icon"
-						className="h-size-32 w-size-32 shrink-0 rounded-full bg-bg-primary text-text-on-primary outline-none hover:bg-bg-primary-hover hover:text-text-on-primary focus-visible:ring-2 focus-visible:ring-ring-focus"
-						aria-controls={contentId}
-						aria-expanded={expanded}
-						aria-label={
-							expanded
-								? `Show fewer ${title || config.label} entries`
-								: `Show all ${title || config.label} entries`
-						}
-						onClick={() => setExpanded((current) => !current)}
-						icon={<Icon name={expanded ? 'arrowsInSimple' : 'arrowsOutSimple'} size="sm" decorative />}
-					/>
-				) : null}
-			</div>
-
-			<div id={contentId} className="mt-space-lg min-h-0 flex-1">
-				{isSummary ? (
-					<ul className="m-0 grid list-none gap-space-sm p-0">
-						{summaryRows.map((row) => (
-							<li
-								key={`${row.label}-${row.value}`}
-								className="rounded-ds-4 border border-border-default bg-bg-surface-muted p-space-sm"
-							>
-								<p className="body-body-18-bold m-0 text-text-primary">{row.value}</p>
-								<p className="body-body-14-bold m-0 mt-space-2 text-text-primary">{row.label}</p>
-								{row.meta ? (
-									<p className="body-body-12-regular m-0 mt-space-2 text-text-muted">{row.meta}</p>
-								) : null}
-							</li>
-						))}
-					</ul>
-				) : (
+			<div id={contentId} className="min-h-0 flex-1">
+				{firstEntry ? (
 					<ul
 						className={cn(
-							'm-0 list-none overflow-y-auto p-0 pr-space-xs',
-							expanded && entries.length > 5
-								? 'max-h-[calc(var(--size-96)*3+var(--size-64)+var(--size-8))]'
-								: ''
+							'm-0 list-none p-0 pr-space-xs',
+							shouldScroll && 'max-h-[calc(var(--size-96)*3+var(--size-80))] overflow-y-auto'
 						)}
 					>
-						{visibleEntries.map((entry, index) => (
+						<li className="relative grid min-h-[80px] grid-cols-[var(--size-32)_1fr] gap-space-sm">
+							<span className="relative flex justify-center" aria-hidden="true">
+								<span className="absolute top-[38px] h-[42px] w-px bg-border-default" />
+								<span
+									className={cn(
+										'relative z-10 inline-flex h-size-32 w-size-32 shrink-0 items-center justify-center rounded-full',
+										config.iconShellClassName
+									)}
+								>
+									<Icon name={config.iconName} size="sm" decorative />
+								</span>
+							</span>
+							<div className="min-w-0 pr-size-40">
+								<p className="body-body-12-regular m-0 text-text-muted">{categoryLabel}</p>
+								<p
+									id={`${contentId}-title`}
+									className="body-body-14-bold m-0 mt-space-xs break-words text-text-primary"
+								>
+									{renderTitle(firstEntry)}
+								</p>
+								<ImpactMetaRow
+									date={firstEntry.date}
+									dateLabel={firstEntry.dateLabel}
+									title={firstTitleText}
+									url={firstEntry.url}
+								/>
+							</div>
+						</li>
+						{remainingEntries.map((entry, index) => (
 							<ImpactTimelineItem
 								key={`${entry.title}-${entry.date}-${index}`}
-								accentClassName={config.accentClassName}
 								date={entry.date}
-								isFirst={index === 0}
-								isLast={index === visibleEntries.length - 1}
 								title={entry.title}
 								url={entry.url}
 							/>
 						))}
 					</ul>
-				)}
+				) : null}
 			</div>
 
-			{canToggle && hiddenCount > 0 ? (
-				<Text variant="body-12" color="meta" className="m-0 mt-space-sm">
-					{hiddenCount} more {hiddenCount === 1 ? 'entry' : 'entries'}
-				</Text>
-			) : null}
+			<ImpactDetailDialog
+				entries={entries}
+				onClose={() => setModalOpen(false)}
+				open={modalOpen}
+				subtitle={subtitle}
+				title={categoryLabel}
+				variant={variant}
+			/>
 		</Card>
 	);
 }
+
+ImpactMetaRow.propTypes = {
+	date: PropTypes.string,
+	dateLabel: PropTypes.string,
+	title: PropTypes.string,
+	url: PropTypes.string,
+};
 
 const entryShape = PropTypes.shape({
 	date: PropTypes.string,
@@ -211,7 +210,6 @@ const entryShape = PropTypes.shape({
 
 ImpactCard.propTypes = {
 	collapsedCount: PropTypes.number,
-	defaultExpanded: PropTypes.bool,
 	entries: PropTypes.arrayOf(entryShape),
 	label: PropTypes.string,
 	lastEventAt: PropTypes.string,

@@ -35,22 +35,27 @@ describe('CommunityImpactSection', () => {
 		render(<CommunityImpactSection entries={entries} />);
 
 		expect(screen.getByRole('heading', { name: "Film's Impact" })).toBeVisible();
+		expect(
+			screen.getByText(
+				'For filmmakers & viewers. Add screenings, playlists, or discussions to show how this film is reaching people.'
+			)
+		).toBeVisible();
 		expect(screen.getByText('Screened In')).toBeVisible();
-		expect(screen.getByText('Curated Into')).toBeVisible();
+		expect(screen.queryByText('Curated Into')).not.toBeInTheDocument();
 		expect(screen.getByText('Academic Usage')).toBeVisible();
-		expect(screen.queryByText('Where this film has made an impact?')).not.toBeInTheDocument();
+		expect(screen.queryByText('Where has this film made an impact?')).not.toBeInTheDocument();
 	});
 
 	it('renders the empty state when there are no entries', () => {
 		render(<CommunityImpactSection entries={{}} />);
 
-		expect(screen.getByText('Where this film has made an impact?')).toBeVisible();
+		expect(screen.getByText('Where has this film made an impact?')).toBeVisible();
 	});
 
-	it('shows only one ADD IMPACT button in the empty state', () => {
+	it('keeps the header ADD IMPACT button visible in the empty state', () => {
 		render(<CommunityImpactSection entries={{}} />);
 
-		expect(screen.getAllByRole('button', { name: 'ADD IMPACT' })).toHaveLength(1);
+		expect(screen.getAllByRole('button', { name: 'ADD IMPACT' })).toHaveLength(2);
 	});
 
 	it('opens the add dialog and forwards submitted values', async () => {
@@ -60,8 +65,7 @@ describe('CommunityImpactSection', () => {
 		render(<CommunityImpactSection entries={{}} onAddImpact={onAddImpact} />);
 
 		await user.click(screen.getAllByRole('button', { name: 'ADD IMPACT' })[0]);
-		await user.type(screen.getByLabelText('Where did this impact happen?'), 'Jakarta community hall');
-		await user.type(screen.getByLabelText('Date of impact'), '2026-05-29');
+		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta community hall');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
 		await user.click(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));
@@ -69,7 +73,6 @@ describe('CommunityImpactSection', () => {
 		expect(onAddImpact).toHaveBeenCalledWith({
 			category: 'screening',
 			details: '',
-			event_date: '2026-05-29',
 			link: '',
 			location: 'Jakarta community hall',
 			title: 'Jakarta community hall',

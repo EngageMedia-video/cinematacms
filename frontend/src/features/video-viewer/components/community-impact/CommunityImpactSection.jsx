@@ -32,13 +32,6 @@ function hasSummaryEntries(category) {
 	return hasListEntries(category);
 }
 
-function hasImpactEntries(entries) {
-	return COMMUNITY_IMPACT_CATEGORIES.some(({ value }) => {
-		const category = entries?.[value];
-		return value === 'saves' || value === 'academic' ? hasSummaryEntries(category) : hasListEntries(category);
-	});
-}
-
 function normalizeEntry(entry) {
 	return {
 		...entry,
@@ -64,57 +57,45 @@ function normalizeCategoryData(data = {}) {
 	};
 }
 
+function getTotalCountNumber(totalCount) {
+	if (typeof totalCount === 'number') {
+		return totalCount;
+	}
+
+	if (totalCount && typeof totalCount === 'object') {
+		return Object.values(totalCount).reduce((sum, value) => sum + (Number(value) || 0), 0);
+	}
+
+	return 0;
+}
+
 function buildCardProps(variant, data = {}) {
-	const totalCount = data.totalCount ?? data.entries?.length ?? 0;
-	const numericTotal = Number(totalCount) || data.entries?.length || 0;
+	const total = getTotalCountNumber(data.totalCount ?? data.entries?.length);
 
 	if (variant === 'screening') {
-		return {
-			subtitle: `This film has been screened ${numericTotal}x`,
-			title: 'Screened In',
-		};
+		return { title: 'Screened In', subtitle: `This film has been screened ${total}x` };
 	}
 
 	if (variant === 'featured') {
-		return {
-			subtitle: `This film has been featured ${numericTotal}x`,
-			title: 'Featured In',
-		};
+		return { title: 'Featured In', subtitle: `This film has been featured ${total}x` };
 	}
 
 	if (variant === 'curated') {
 		return {
-			subtitle: `This film has been curated into ${numericTotal} ${numericTotal === 1 ? 'collection' : 'collections'}`,
 			title: 'Curated Into',
+			subtitle: `This film has been curated into ${total} ${total === 1 ? 'collection' : 'collections'}`,
 		};
 	}
 
 	if (variant === 'saves') {
-		if (typeof totalCount === 'number') {
-			return {
-				subtitle: `${totalCount.toLocaleString()} reported community uses`,
-				title: 'Saves & Playlists',
-			};
-		}
-
-		const saves = Number(totalCount?.saves) || 0;
-		const playlists = Number(totalCount?.playlists) || 0;
-
-		return {
-			subtitle: `${saves.toLocaleString()} saves and ${playlists.toLocaleString()} playlists`,
-			title: 'Saves & Playlists',
-		};
+		return { title: 'Saves & Playlists', subtitle: `${total.toLocaleString()} reported community uses` };
 	}
 
-	return {
-		subtitle: `Used in ${(Number(totalCount) || 0).toLocaleString()} ${data.label || 'academic contexts'}`,
-		title: 'Academic Usage',
-	};
+	return { title: 'Academic Usage', subtitle: `Used in ${total.toLocaleString()} academic contexts` };
 }
 
 export function CommunityImpactSection({ canAdd = true, entries = {}, onAddImpact }) {
 	const [dialogOpen, setDialogOpen] = useState(false);
-	const populated = hasImpactEntries(entries);
 	const cards = useMemo(
 		() =>
 			COMMUNITY_IMPACT_CATEGORIES.map(({ value }) => {
@@ -124,11 +105,16 @@ export function CommunityImpactSection({ canAdd = true, entries = {}, onAddImpac
 					...data,
 					variant: value,
 				};
-			}).filter((card) =>
-				card.variant === 'saves' || card.variant === 'academic' ? hasSummaryEntries(card) : hasListEntries(card)
-			),
+			})
+				.filter((card) => card.variant !== 'curated')
+				.filter((card) =>
+					card.variant === 'saves' || card.variant === 'academic'
+						? hasSummaryEntries(card)
+						: hasListEntries(card)
+				),
 		[entries]
 	);
+	const populated = cards.length > 0;
 
 	function handleAddClick() {
 		setDialogOpen(true);
@@ -139,18 +125,19 @@ export function CommunityImpactSection({ canAdd = true, entries = {}, onAddImpac
 	}
 
 	return (
-		<section aria-labelledby="community-impact-heading" className="w-full bg-bg-page text-text-primary">
-			<div className="flex flex-col gap-space-base lg:flex-row lg:items-start lg:justify-between">
+		<section aria-labelledby="community-impact-heading" className="w-full text-text-primary">
+			<div className="flex flex-col gap-space-base lg:flex-row lg:items-center lg:justify-between">
 				<div className="max-w-[calc(var(--size-96)*6+var(--size-64))]">
-					<Text id="community-impact-heading" variant="h4-medium" as="h2" className="m-0 text-text-primary">
+					<Text id="community-impact-heading" variant="h5-bold" as="h2" className="m-0 text-text-primary">
 						Film&apos;s Impact
 					</Text>
 					<Text variant="body-14" color="meta" className="m-0 mt-space-xs">
-						Track where this film has been screened, featured, saved, and used for learning.
+						For filmmakers & viewers. Add screenings, playlists, or discussions to show how this film is
+						reaching people.
 					</Text>
 				</div>
 
-				{canAdd && populated ? (
+				{canAdd ? (
 					<Button
 						className="w-full justify-center focus-visible:ring-2 focus-visible:ring-ring-focus sm:w-fit"
 						onClick={handleAddClick}
