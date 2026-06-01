@@ -25,6 +25,7 @@ export function init(user, features) {
 			manageMedia: false,
 			manageUsers: false,
 			manageComments: false,
+			manageFilmImpact: false,
 			manageUploads: false,
 			reportMedia: false,
 			downloadMedia: false,
@@ -68,6 +69,7 @@ export function init(user, features) {
 			MEMBER.can.manageMedia = true === user.can.manageMedia;
 			MEMBER.can.manageUsers = true === user.can.manageUsers;
 			MEMBER.can.manageComments = true === user.can.manageComments;
+			MEMBER.can.manageFilmImpact = true === user.can.manageFilmImpact;
 			MEMBER.can.manageUploads = true === user.can.manageUploads;
 
 			MEMBER.can.contactUser = true === user.can.contactUser;

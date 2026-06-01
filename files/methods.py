@@ -612,6 +612,14 @@ def can_manage_uploads(user):
         return False
 
 
+def can_manage_film_impact(user):
+    """Check if user can access the film impact management surface."""
+    try:
+        return bool(user.is_authenticated and (user.is_superuser or user.advancedUser))
+    except AttributeError:
+        return False
+
+
 def is_curator(user):
     curator = False
     try:

@@ -108,12 +108,13 @@ class CommunityImpactAdmin(admin.ModelAdmin):
     list_display = [
         "title",
         "category",
+        "status",
         "media",
         "user",
         "event_date",
         "add_date",
     ]
-    list_filter = ["category", "event_date", "add_date"]
+    list_filter = ["category", "status", "event_date", "add_date"]
     search_fields = [
         "title",
         "details",

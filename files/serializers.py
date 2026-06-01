@@ -1,4 +1,5 @@
 from django.db.models import Max
+from django.urls import reverse
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -204,6 +205,94 @@ class ManageUploadSerializer(serializers.ModelSerializer):
         )
 
 
+class ManageCommunityImpactSerializer(serializers.ModelSerializer):
+    WRITABLE_CATEGORIES = {
+        CommunityImpact.SCREENING,
+        CommunityImpact.FEATURED,
+        CommunityImpact.ACADEMIC,
+    }
+
+    category_label = serializers.CharField(source="get_category_display", read_only=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+    edit_url = serializers.SerializerMethodField()
+    media = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
+
+    def get_edit_url(self, obj):
+        url = reverse("manage_film_impact_edit", args=[obj.uid])
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
+    def get_media(self, obj):
+        url = obj.media.get_absolute_url()
+        request = self.context.get("request")
+        return {
+            "friendly_token": obj.media.friendly_token,
+            "title": obj.media.title,
+            "url": request.build_absolute_uri(url) if request else url,
+        }
+
+    def get_user(self, obj):
+        return {
+            "username": obj.user.username,
+            "name": obj.user.name,
+        }
+
+    def validate_details(self, value):
+        if len(value.split()) > 80:
+            raise serializers.ValidationError("Details cannot exceed 80 words.")
+        return value
+
+    def validate_category(self, value):
+        if value not in self.WRITABLE_CATEGORIES:
+            raise serializers.ValidationError(f"Category must be one of: {sorted(self.WRITABLE_CATEGORIES)}.")
+        return value
+
+    def validate_status(self, value):
+        status_options = {choice[0] for choice in CommunityImpact.STATUS_CHOICES}
+        if value not in status_options:
+            raise serializers.ValidationError(f"Status must be one of: {sorted(status_options)}.")
+        return value
+
+    def validate_url(self, value):
+        if not value:
+            return value
+        if not (value.startswith("http://") or value.startswith("https://")):
+            raise serializers.ValidationError("Link must be an http(s) URL.")
+        return value
+
+    class Meta:
+        model = CommunityImpact
+        read_only_fields = (
+            "uid",
+            "category_label",
+            "status_label",
+            "media",
+            "user",
+            "add_date",
+            "edit_date",
+            "edit_url",
+        )
+        fields = (
+            "uid",
+            "title",
+            "category",
+            "category_label",
+            "status",
+            "status_label",
+            "details",
+            "media",
+            "user",
+            "event_date",
+            "add_date",
+            "edit_date",
+            "url",
+            "edit_url",
+        )
+
+
 class SingleMediaSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
     url = serializers.SerializerMethodField()
@@ -227,7 +316,7 @@ class SingleMediaSerializer(serializers.ModelSerializer):
         return False
 
     def get_community_impacts(self, obj):
-        entries = obj.community_impacts.all()
+        entries = obj.community_impacts.filter(status=CommunityImpact.ACTIVE)
         grouped = {key: [] for key, _label in CommunityImpact.CATEGORY_CHOICES}
         for entry in entries:
             if entry.category == CommunityImpact.SAVES:
@@ -471,6 +560,7 @@ class CommunityImpactSerializer(serializers.ModelSerializer):
     author_name = serializers.ReadOnlyField(source="user.name")
     author_username = serializers.ReadOnlyField(source="user.username")
     event_date = serializers.DateField(required=False, default=timezone.localdate)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
 
     WRITABLE_CATEGORIES = {
         CommunityImpact.SCREENING,
@@ -486,10 +576,14 @@ class CommunityImpactSerializer(serializers.ModelSerializer):
             "edit_date",
             "author_name",
             "author_username",
+            "status",
+            "status_label",
         )
         fields = (
             "uid",
             "category",
+            "status",
+            "status_label",
             "title",
             "details",
             "event_date",

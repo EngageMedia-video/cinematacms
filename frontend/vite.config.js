@@ -123,6 +123,7 @@ export default defineConfig({
 				'manage-media': 'src/entries/manage-media.js',
 				'manage-users': 'src/entries/manage-users.js',
 				'manage-comments': 'src/entries/manage-comments.js',
+				'manage-film-impact': 'src/entries/manage-film-impact.js',
 				'manage-uploads': 'src/entries/manage-uploads.js',
 				'profile-home': 'src/entries/profile-home.js',
 				'profile-about': 'src/entries/profile-about.js',

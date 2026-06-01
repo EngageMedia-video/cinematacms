@@ -90,6 +90,7 @@ export default function ViewerInfoContent(props) {
 	const [isAboutExpanded, setIsAboutExpanded] = useState(false);
 	const [isSummaryClamped, setIsSummaryClamped] = useState(false);
 	const [communityImpacts, setCommunityImpacts] = useState(() => MediaPageStore.get('community-impacts'));
+	const [communityImpactSubmitMessage, setCommunityImpactSubmitMessage] = useState('');
 	const aboutDetailsId = useId();
 	const summaryTextRef = useRef(null);
 
@@ -133,11 +134,22 @@ export default function ViewerInfoContent(props) {
 			setCommunityImpacts(MediaPageStore.get('community-impacts'));
 		}
 
-		MediaPageStore.on('community_impact_submit', syncCommunityImpacts);
+		function onCommunityImpactSubmit() {
+			syncCommunityImpacts();
+			setCommunityImpactSubmitMessage('Submitted for review.');
+		}
+
+		function onCommunityImpactSubmitFail() {
+			setCommunityImpactSubmitMessage('Unable to submit film impact entry.');
+		}
+
+		MediaPageStore.on('community_impact_submit', onCommunityImpactSubmit);
+		MediaPageStore.on('community_impact_submit_fail', onCommunityImpactSubmitFail);
 		MediaPageStore.on('loaded_media_data', syncCommunityImpacts);
 
 		return () => {
-			MediaPageStore.removeListener('community_impact_submit', syncCommunityImpacts);
+			MediaPageStore.removeListener('community_impact_submit', onCommunityImpactSubmit);
+			MediaPageStore.removeListener('community_impact_submit_fail', onCommunityImpactSubmitFail);
 			MediaPageStore.removeListener('loaded_media_data', syncCommunityImpacts);
 		};
 	}, []);
@@ -475,7 +487,11 @@ export default function ViewerInfoContent(props) {
 								<CommunityImpactSection
 									entries={communityImpacts}
 									canAdd={user?.is?.anonymous === false}
-									onAddImpact={(formValues) => MediaPageActions.submitCommunityImpact(formValues)}
+									submitMessage={communityImpactSubmitMessage}
+									onAddImpact={(formValues) => {
+										setCommunityImpactSubmitMessage('');
+										MediaPageActions.submitCommunityImpact(formValues);
+									}}
 								/>
 							</div>
 						</TabContent>

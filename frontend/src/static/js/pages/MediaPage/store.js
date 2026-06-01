@@ -1429,7 +1429,6 @@ class MediaPageStore extends EventEmitter {
 
 	submitCommunityImpactResponse(response) {
 		if (response && 201 === response.status && response.data && Object.keys(response.data)) {
-			this.appendCommunityImpact(response.data);
 			this.emit('community_impact_submit', response.data.uid);
 		}
 		setTimeout(

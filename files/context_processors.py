@@ -6,7 +6,14 @@ from django.conf import settings
 from django.db import DatabaseError
 
 from .lists import UNUSUAL_COUNTRIES
-from .methods import can_manage_uploads, can_upload_media, is_curator, is_mediacms_editor, is_mediacms_manager
+from .methods import (
+    can_manage_film_impact,
+    can_manage_uploads,
+    can_upload_media,
+    is_curator,
+    is_mediacms_editor,
+    is_mediacms_manager,
+)
 from .models import HomepagePopup, TopMessage
 from .storage_usage import get_storage_usage_for_request
 
@@ -65,6 +72,7 @@ def stuff(request):
     ret["IS_MEDIACMS_MANAGER"] = is_mediacms_manager(request.user)
     ret["IS_CURATOR"] = is_curator(request.user)
     ret["CAN_MANAGE_UPLOADS"] = can_manage_uploads(request.user)
+    ret["CAN_MANAGE_FILM_IMPACT"] = can_manage_film_impact(request.user)
     ret["ALLOW_RATINGS"] = _switch("allow_ratings", "ALLOW_RATINGS")
     ret["ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY"] = _switch(
         "allow_ratings_confirmed_email_only", "ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY"

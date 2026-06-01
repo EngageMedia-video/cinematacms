@@ -94,7 +94,7 @@ function buildCardProps(variant, data = {}) {
 	return { title: 'Academic Usage', subtitle: `Used in ${total.toLocaleString()} academic contexts` };
 }
 
-export function CommunityImpactSection({ canAdd = true, entries = {}, onAddImpact }) {
+export function CommunityImpactSection({ canAdd = true, entries = {}, onAddImpact, submitMessage = '' }) {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const cards = useMemo(
 		() =>
@@ -146,6 +146,12 @@ export function CommunityImpactSection({ canAdd = true, entries = {}, onAddImpac
 					</Button>
 				) : null}
 			</div>
+
+			{submitMessage ? (
+				<Text as="p" variant="body-14-bold" color="accent" className="m-0 mt-space-sm" aria-live="polite">
+					{submitMessage}
+				</Text>
+			) : null}
 
 			<div className="mt-space-lg">
 				{populated ? (
@@ -204,4 +210,5 @@ CommunityImpactSection.propTypes = {
 		screening: entryCategoryShape,
 	}),
 	onAddImpact: PropTypes.func,
+	submitMessage: PropTypes.string,
 };

@@ -58,6 +58,7 @@ from .helpers import (
     rm_file,
 )
 from .methods import (
+    can_manage_film_impact,
     can_manage_uploads,
     can_upload_media,
     get_current_featured_media,
@@ -74,6 +75,7 @@ from .methods import (
 from .models import (
     Category,
     Comment,
+    CommunityImpact,
     ContentSensitivity,
     EncodeProfile,
     Encoding,
@@ -436,6 +438,36 @@ def manage_comments(request):
 
     context = {}
     return render(request, "cms/manage_comments.html", context)
+
+
+@ensure_csrf_cookie
+def manage_film_impact(request):
+    if request.user.is_anonymous:
+        return HttpResponseRedirect("/")
+
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
+        return HttpResponseRedirect("/accounts/2fa/totp/activate")
+
+    if not can_manage_film_impact(request.user):
+        return HttpResponseRedirect("/")
+
+    context = {}
+    return render(request, "cms/manage_film_impact.html", context)
+
+
+@ensure_csrf_cookie
+def manage_film_impact_edit(request, uid):
+    if request.user.is_anonymous:
+        return HttpResponseRedirect("/")
+
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
+        return HttpResponseRedirect("/accounts/2fa/totp/activate")
+
+    if not can_manage_film_impact(request.user):
+        return HttpResponseRedirect("/")
+
+    context = {}
+    return render(request, "cms/manage_film_impact.html", context)
 
 
 def manage_uploads(request):
@@ -2459,7 +2491,7 @@ class CommunityImpactList(APIView):
         media = self.get_object(friendly_token)
         if isinstance(media, Response):
             return media
-        entries = media.community_impacts.select_related("user").all()
+        entries = media.community_impacts.select_related("user").filter(status=CommunityImpact.ACTIVE)
         serializer = CommunityImpactSerializer(entries, many=True, context={"request": request})
         return Response(serializer.data)
 

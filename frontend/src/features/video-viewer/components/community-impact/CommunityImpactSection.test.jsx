@@ -52,6 +52,12 @@ describe('CommunityImpactSection', () => {
 		expect(screen.getByText('Where has this film made an impact?')).toBeVisible();
 	});
 
+	it('renders submitted-for-review feedback', () => {
+		render(<CommunityImpactSection entries={{}} submitMessage="Submitted for review." />);
+
+		expect(screen.getByText('Submitted for review.')).toBeVisible();
+	});
+
 	it('keeps the header ADD IMPACT button visible in the empty state', () => {
 		render(<CommunityImpactSection entries={{}} />);
 

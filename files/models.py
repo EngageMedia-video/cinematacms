@@ -1820,6 +1820,9 @@ class CommunityImpact(models.Model):
     SAVES = "saves"
     ACADEMIC = "academic"
     CURATED = "curated"
+    PENDING = "pending"
+    ACTIVE = "active"
+    INACTIVE = "inactive"
 
     CATEGORY_CHOICES = [
         (SCREENING, "Screened In"),
@@ -1828,11 +1831,17 @@ class CommunityImpact(models.Model):
         (ACADEMIC, "Academic Usage"),
         (CURATED, "Curated Into"),
     ]
+    STATUS_CHOICES = [
+        (PENDING, "Pending"),
+        (ACTIVE, "Active"),
+        (INACTIVE, "Inactive"),
+    ]
 
     uid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name="community_impacts")
     user = models.ForeignKey("users.User", on_delete=models.CASCADE)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING, db_index=True)
     title = models.CharField(max_length=200)
     details = models.TextField(blank=True, default="")
     event_date = models.DateField()
@@ -1844,6 +1853,7 @@ class CommunityImpact(models.Model):
         ordering = ["-event_date", "-add_date"]
         indexes = [
             models.Index(fields=["media", "category"]),
+            models.Index(fields=["status", "category"]),
         ]
 
     def __str__(self):
