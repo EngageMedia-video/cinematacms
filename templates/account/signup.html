@@ -34,7 +34,7 @@
 	{% endif %}
 
 	<label class="auth-checkbox flex items-start gap-2 text-sm leading-5 text-text-strong" for="id_subscribe">
-		<input class="sr-only" type="checkbox" name="subscribe" id="id_subscribe">
+		<input class="sr-only" type="checkbox" name="subscribe" id="id_subscribe" value="true"{% if request.POST.subscribe %} checked{% endif %}>
 		<span class="auth-checkbox-control mt-0.5 shrink-0" aria-hidden="true">
 			<svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 				<path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z" />

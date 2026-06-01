@@ -20,27 +20,31 @@
 {% endblock auth_subtitle %}
 
 {% block auth_body %}
+{% include "account/snippets/auth_form_errors.html" with form=form %}
 {% url 'account_confirm_login_code' as login_url %}
 <form class="flex w-full flex-col gap-6" method="POST" action="{{ login_url }}">
   {% csrf_token %}
   <div class="space-y-4 px-1 py-4">
     <div class="auth-field flex h-[84px] w-full flex-col justify-center gap-2 overflow-hidden border-b border-[var(--auth-field-border)] py-[14px] pr-[22px] text-left text-base leading-6 text-text-strong">
-      <label class="m-0" for="id_code">Code</label>
-      <input class="m-0 block h-6 w-full border-0 bg-transparent p-0 leading-6 text-text-strong outline-none placeholder:text-[var(--auth-text-muted)] focus-visible:ring-0" required name="code" placeholder="Code" id="id_code" autocomplete="one-time-code" type="text">
+      <label class="m-0" for="id_code">{% translate "Code" %}</label>
+      <input class="m-0 block h-6 w-full border-0 bg-transparent p-0 leading-6 text-text-strong outline-none placeholder:text-[var(--auth-text-muted)] focus-visible:ring-0" required name="code" placeholder="{% translate 'Code' %}" id="id_code" autocomplete="one-time-code" type="text"{% if form.code.errors %} aria-invalid="true" aria-describedby="id_code-errors"{% endif %}>
     </div>
+    {% for error in form.code.errors %}
+      <p id="id_code-errors" class="mt-2 text-sm leading-5 text-text-danger">{{ error }}</p>
+    {% endfor %}
   </div>
   <div class="flex flex-wrap items-center gap-3">
     <button class="auth-button-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">
       {% translate "Confirm" %}
     </button>
     <button form="logout-from-stage" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">
-      Cancel
+      {% translate "Cancel" %}
     </button>
   </div>
 </form>
 
-<form id="logout-from-stage" method="POST" action="/accounts/logout/">
-  <input type="hidden" name="next" value="/accounts/login" />
+<form id="logout-from-stage" method="POST" action="{% url 'account_logout' %}">
+  <input type="hidden" name="next" value="{% url 'account_login' %}" />
   {% csrf_token %}
 </form>
 {% endblock auth_body %}

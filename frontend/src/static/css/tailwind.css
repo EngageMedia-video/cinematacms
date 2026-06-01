@@ -25,7 +25,9 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities) important;
 @custom-variant dark (&:where(.dark, .dark *));
+/* stylelint-disable-next-line at-rule-no-unknown */
 @source "../../../../templates/account";
+/* stylelint-disable-next-line at-rule-no-unknown */
 @source "../../../../templates/mfa";
 
 /* Auth templates live in the legacy shell, so these overrides stay unlayered
@@ -162,6 +164,23 @@ body .auth-figma-page .auth-icon-success {
 body .auth-figma-page .auth-icon-error {
 	background-color: var(--auth-status-error-bg);
 	color: var(--auth-status-error-icon);
+}
+
+/* The auth button classes assume the .auth-figma-page button reset. When they are
+ * used inside an .auth-message-stack overlay on a legacy page (e.g. the sign-out
+ * modal), mirror that reset so legacy button base styles do not leak in. */
+body .auth-message-stack button {
+	appearance: none;
+	background-image: none;
+	border: 0;
+	box-shadow: none;
+	cursor: pointer;
+	text-shadow: none;
+	transition:
+		background-color 160ms ease,
+		border-color 160ms ease,
+		color 160ms ease,
+		opacity 160ms ease;
 }
 
 body .auth-figma-page .auth-button-primary,

@@ -518,7 +518,7 @@ The redesigned authentication pages (`templates/account/`, `templates/mfa/`) ren
 The full-screen flash/message overlay defines a parallel feature set on `.auth-message-stack` (and its dark override): a scrim (`--auth-message-overlay`), banner gradient (`--auth-message-panel-from/-to`), `color-mix`-based ring/shadow, and success / error / info icon-badge pairs. These are genuine one-offs with no existing-token equivalent; see `tailwind.css` for the authoritative values.
 
 > Tokens that previously aliased an existing token in **both** themes (`--auth-page-bg` → `bg-page`, `--auth-field-bg` → `bg-surface`, `--auth-panel-from` → `bg-surface`, `--auth-text-strong` → `text-strong`, `--auth-icon-color` → `bg-primary`, `--auth-button-primary-bg/-hover` → `bg-primary/-hover`) were removed in favour of the existing token, per the no-duplicate-alias rule.
-
+>
 > `*.stories.jsx` and `*.test.jsx` files contain color fixtures but are not part of the production styling path; they are excluded here.
 
 ---

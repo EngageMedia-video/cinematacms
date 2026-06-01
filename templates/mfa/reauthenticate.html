@@ -11,12 +11,12 @@
       </div>
 
       <div class="flex w-full max-w-[480px] justify-center gap-3 sm:gap-6">
-        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" aria-label="Digit 1">
-        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 2">
-        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 3">
-        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 4">
-        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 5">
-        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 6">
+        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" aria-label="{% trans 'Digit 1' %}">
+        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 2' %}">
+        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 3' %}">
+        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 4' %}">
+        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 5' %}">
+        <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 6' %}">
       </div>
 
       <button type="submit" class="auth-button-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">
@@ -35,11 +35,13 @@
 
     // Update the original input value when OTP digits change
     function updateOriginalInput() {
+      if (!originalInput) return;
       let combinedValue = '';
       otpDigits.forEach(digit => {
         combinedValue += digit.value;
       });
-      originalInput.value = Number(combinedValue);
+      // Keep the raw string so leading zeros (e.g. "012345") are preserved.
+      originalInput.value = combinedValue;
     }
 
     // Add event listeners to each OTP digit input

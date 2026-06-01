@@ -57,6 +57,10 @@ keyboard-navigable combobox on top that matches the auth field aesthetic.
 		select.style.setProperty('display', 'none', 'important');
 		select.setAttribute('tabindex', '-1');
 		select.setAttribute('aria-hidden', 'true');
+		// A required, display:none <select> makes native validation throw
+		// "not focusable" and silently blocks submit; drop the client-side
+		// required (the ChoiceField still enforces it server-side).
+		select.removeAttribute('required');
 
 		var row = document.createElement('div');
 		setClass(row, CLASS.row);

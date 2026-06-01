@@ -16,7 +16,7 @@
 {% block auth_overlay %}
   {% if form.errors %}
     <div class="auth-message-stack" aria-live="assertive" style="position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--auth-message-overlay);">
-      <div class="auth-message-banner" role="alertdialog" aria-modal="true">
+      <div class="auth-message-banner" role="alert">
         <div class="auth-message-header">
           <div class="auth-message-title-row">
             <span class="auth-message-icon auth-message-icon-error" aria-hidden="true">
@@ -49,12 +49,12 @@
         </div>
 
         <div id="otp-input-container" class="flex w-full max-w-[480px] justify-center gap-3 sm:gap-6">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" aria-label="Digit 1">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 2">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 3">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 4">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 5">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="Digit 6">
+            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" aria-label="{% trans 'Digit 1' %}">
+            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 2' %}">
+            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 3' %}">
+            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 4' %}">
+            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 5' %}">
+            <input type="text" class="otp-digit h-16 w-12 rounded border border-[var(--auth-field-border)] bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 6' %}">
         </div>
 
         <div id="recovery-input-container" class="!hidden w-full max-w-[466px]">
