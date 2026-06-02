@@ -6,6 +6,7 @@ const queryClient = new QueryClient();
 
 const unreadNotification = {
 	id: 201,
+	notification_type: 'comment',
 	message: 'andriawan24 commented on your upload.',
 	is_read: false,
 	created_at: '2026-05-05T04:30:00Z',
@@ -18,6 +19,7 @@ const unreadNotification = {
 
 const readNotification = {
 	id: 202,
+	notification_type: 'follow',
 	message: 'cinemata-team started following you.',
 	is_read: true,
 	created_at: '2026-05-04T08:15:00Z',
@@ -54,7 +56,7 @@ const meta = {
 		},
 	},
 	render: (args) => (
-		<div className="w-[320px] rounded-lg border border-border-default bg-bg-surface-raised">
+		<div className="w-[420px] rounded-lg overflow-hidden bg-bg-surface">
 			<QueryClientProvider client={queryClient}>
 				<NotificationItem {...args} />
 			</QueryClientProvider>

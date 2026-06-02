@@ -3,10 +3,12 @@ import { NotificationDialog } from './NotificationDialog';
 import { NotificationItem } from './NotificationItem';
 import { useNotifications } from '../hooks/useNotifications';
 import { useMarkAllAsRead } from '../hooks/useMarkAllAsRead';
+import { useUnreadCount } from '../hooks/useUnreadCount';
 import useNotificationStore from '../useNotificationStore';
 
 export function NotificationDropdown() {
 	const { data, isLoading } = useNotifications({ pageSize: 10 });
+	const { data: unread } = useUnreadCount();
 	const { mutate: markAllAsRead, isPending } = useMarkAllAsRead();
 	const closeDropdown = useNotificationStore((s) => s.closeDropdown);
 	const ref = useRef(null);
@@ -39,6 +41,7 @@ export function NotificationDropdown() {
 			onMarkAllAsRead={() => markAllAsRead()}
 			isMarkAllAsReadPending={isPending}
 			isLoading={isLoading}
+			unreadCount={unread?.unread_count ?? 0}
 			ref={ref}
 		>
 			{notifications.map((n) => (

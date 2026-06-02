@@ -2,26 +2,24 @@ import React, { useEffect, useRef, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { NotificationItem } from './NotificationItem';
 import { useNotifications } from '../hooks/useNotifications';
+import { useUnreadCount } from '../hooks/useUnreadCount';
 import { useMarkAllAsRead } from '../hooks/useMarkAllAsRead';
 import notificationQueryClient from '../queryClient';
 import { NotificationPreferencesForm } from '../../user-settings/components/NotificationPreferencesForm';
 
 const TAB_ALL = 'all';
 const TAB_UNREAD = 'unread';
-const TAB_PREFERENCES = 'preferences';
-const TAB_IDS = [TAB_ALL, TAB_UNREAD, TAB_PREFERENCES];
+const TAB_IDS = [TAB_ALL, TAB_UNREAD];
+const HASH_PREFERENCES = 'preferences';
 
 function readTabFromHash() {
 	if (typeof window === 'undefined') return TAB_ALL;
 	const hash = window.location.hash.replace(/^#/, '');
-	if (hash === TAB_UNREAD || hash === TAB_PREFERENCES) return hash;
+	if (hash === TAB_UNREAD) return TAB_UNREAD;
 	return TAB_ALL;
 }
 
 function NotificationList({ showUnreadOnly }) {
-	// `page` state is intentionally local: NotificationList is remounted via
-	// `key` when the filter changes (see parent), so the reset happens
-	// naturally without a useEffect that would double-fetch.
 	const [page, setPage] = useState(1);
 	const { data, isLoading } = useNotifications({
 		pageSize: 20,
@@ -31,24 +29,32 @@ function NotificationList({ showUnreadOnly }) {
 	const notifications = data?.results ?? [];
 
 	return (
-		<>
-			<div className="bg-bg-surface-raised rounded">
-				{isLoading && <p className="px-4 py-8 text-sm text-center text-text-muted">Loading…</p>}
-				{!isLoading && notifications.length === 0 && (
-					<p className="px-4 py-8 text-sm text-center text-text-muted">No notifications</p>
-				)}
-				{notifications.map((n) => (
-					<NotificationItem key={n.id} notification={n} />
-				))}
+		<div className="bg-bg-surface py-[22px]">
+			<div className="overflow-hidden">
+				{isLoading ? (
+					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-text-muted">Loading…</p>
+				) : null}
+				{!isLoading && notifications.length === 0 ? (
+					<p className="m-0 px-[22px] py-8 text-center text-[14px] leading-5 text-text-muted">
+						No notifications
+					</p>
+				) : null}
+				{!isLoading && notifications.length > 0 ? (
+					<div className="flex flex-col">
+						{notifications.map((n) => (
+							<NotificationItem key={n.id} notification={n} theme="light" />
+						))}
+					</div>
+				) : null}
 			</div>
 
 			{(data?.previous || data?.next) && (
-				<div className="flex justify-between mt-4">
+				<div className="flex justify-between px-[22px] pt-[22px]">
 					<button
 						type="button"
 						onClick={() => setPage((p) => p - 1)}
 						disabled={!data?.previous}
-						className="border-0 bg-transparent p-0 cursor-pointer text-sm text-text-link hover:text-text-link-hover hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+						className="cursor-pointer border-0 bg-transparent p-0 text-sm text-text-link hover:text-text-link-hover hover:underline disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						← Previous
 					</button>
@@ -56,54 +62,60 @@ function NotificationList({ showUnreadOnly }) {
 						type="button"
 						onClick={() => setPage((p) => p + 1)}
 						disabled={!data?.next}
-						className="border-0 bg-transparent p-0 cursor-pointer text-sm text-text-link hover:text-text-link-hover hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+						className="cursor-pointer border-0 bg-transparent p-0 text-sm text-text-link hover:text-text-link-hover hover:underline disabled:cursor-not-allowed disabled:opacity-40"
 					>
 						Next →
 					</button>
 				</div>
 			)}
-		</>
+		</div>
 	);
 }
 
 function NotificationPageContent() {
 	const [activeTab, setActiveTab] = useState(readTabFromHash);
+	const { data: unread } = useUnreadCount();
 	const { mutate: markAllAsRead, isPending } = useMarkAllAsRead();
 	const tabRefs = useRef({});
+	const preferencesRef = useRef(null);
+	const unreadCount = unread?.unread_count ?? 0;
+
+	function scrollPreferencesIntoView() {
+		window.requestAnimationFrame(() => {
+			preferencesRef.current?.scrollIntoView({ block: 'start' });
+		});
+	}
 
 	useEffect(() => {
-		const onHashChange = () => setActiveTab(readTabFromHash());
+		const onHashChange = () => {
+			if (window.location.hash.replace(/^#/, '') === HASH_PREFERENCES) {
+				scrollPreferencesIntoView();
+				return;
+			}
+			setActiveTab(readTabFromHash());
+		};
 		window.addEventListener('hashchange', onHashChange);
 		return () => window.removeEventListener('hashchange', onHashChange);
 	}, []);
 
 	useEffect(() => {
-		// Normalize stale/unknown hashes on mount so the URL matches the
-		// resolved tab (e.g. arriving with `#foo` lands on All but previously
-		// left `#foo` in the address bar, blocking future hashchange events
-		// when the user explicitly navigates back to `#foo`).
 		if (typeof window === 'undefined') return;
-		const resolved = readTabFromHash();
 		const currentHash = window.location.hash.replace(/^#/, '');
-		const expectedHash = resolved === TAB_ALL ? '' : resolved;
-		if (currentHash !== expectedHash) {
-			const nextHash = expectedHash ? `#${expectedHash}` : '';
-			const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
+		if (currentHash === HASH_PREFERENCES) {
+			scrollPreferencesIntoView();
+			return;
+		}
+		if (currentHash && currentHash !== TAB_UNREAD) {
+			const nextUrl = `${window.location.pathname}${window.location.search}`;
 			window.history.replaceState(null, '', nextUrl);
 		}
 	}, []);
 
 	function selectTab(tab) {
-		// Clicking the already-active tab is a no-op: no state update and
-		// crucially no pushState, which would otherwise litter history with
-		// duplicate entries and make the Back button "go back" to the same tab.
 		if (tab === activeTab) return;
 		setActiveTab(tab);
 		const nextHash = tab === TAB_ALL ? '' : `#${tab}`;
 		const nextUrl = `${window.location.pathname}${window.location.search}${nextHash}`;
-		// pushState so the browser Back button steps through tabs as users
-		// expect. The mount-time normalization above uses replaceState instead,
-		// to avoid polluting history with a redundant entry on page load.
 		window.history.pushState(null, '', nextUrl);
 	}
 
@@ -139,89 +151,79 @@ function NotificationPageContent() {
 	}
 
 	const tabs = [
-		{ id: TAB_ALL, label: 'All' },
-		{ id: TAB_UNREAD, label: 'Unread' },
-		{ id: TAB_PREFERENCES, label: 'Preferences' },
+		{ id: TAB_ALL, label: 'ALL' },
+		{ id: TAB_UNREAD, label: unreadCount > 0 ? `UNREAD (${unreadCount})` : 'UNREAD' },
 	];
 
 	return (
-		<div className="max-w-2xl mx-auto py-6 px-4">
-			<div className="flex items-center justify-between mb-4">
-				<h1 className="text-xl font-semibold text-text-strong">Notifications</h1>
-				{activeTab !== TAB_PREFERENCES && (
-					<button
-						type="button"
-						onClick={() => markAllAsRead()}
-						disabled={isPending}
-						className="border-0 bg-transparent p-0 cursor-pointer text-sm text-text-link hover:text-text-link-hover hover:underline disabled:opacity-50"
-					>
-						{isPending ? 'Marking…' : 'Mark all as read'}
-					</button>
-				)}
-			</div>
-
-			{/* Inline styles on buttons are required because global _buttons.scss
-                overrides Tailwind @layer utilities for background-color, color,
-                padding, border-radius, and font properties on all button elements. */}
-			<div
-				role="tablist"
-				aria-label="Notifications views"
-				className="inline-flex gap-1 rounded-ds-4 p-1 mb-6 bg-bg-surface-raised"
-			>
-				{tabs.map(({ id, label }) => {
-					const active = activeTab === id;
-					return (
-						<button
-							key={id}
-							ref={(el) => {
-								tabRefs.current[id] = el;
-							}}
-							type="button"
-							role="tab"
-							id={`tab-${id}`}
-							aria-selected={active}
-							aria-controls={`panel-${id}`}
-							tabIndex={active ? 0 : -1}
-							onClick={() => selectTab(id)}
-							onKeyDown={handleTabKeyDown}
-							className="cursor-pointer transition-all"
-							style={{
-								padding: '5px 16px',
-								borderRadius: 'var(--radius-4)',
-								border: 'none',
-								fontSize: '13px',
-								fontWeight: 500,
-								...(active
-									? {
-											backgroundColor: 'var(--bg-primary)',
-											color: 'var(--text-on-primary)',
-											boxShadow: 'none',
-										}
-									: {
-											backgroundColor: 'transparent',
-											color: 'var(--text-muted)',
-											opacity: 1,
-										}),
-							}}
+		<div className="mx-auto max-w-[1054px] px-4 py-6 lg:px-0">
+			<div className="grid grid-cols-1 gap-[26px] lg:grid-cols-[minmax(0,622px)_406px] lg:items-start">
+				<section aria-label="Notification list">
+					<div className="flex w-full items-center justify-between">
+						<div
+							role="tablist"
+							aria-label="Notifications views"
+							className="inline-flex items-start overflow-hidden rounded-t-[8px]"
 						>
-							{label}
+							{tabs.map(({ id, label }) => {
+								const active = activeTab === id;
+								return (
+									<button
+										key={id}
+										ref={(el) => {
+											tabRefs.current[id] = el;
+										}}
+										type="button"
+										role="tab"
+										id={`tab-${id}`}
+										aria-selected={active}
+										aria-controls={`panel-${id}`}
+										tabIndex={active ? 0 : -1}
+										onClick={() => selectTab(id)}
+										onKeyDown={handleTabKeyDown}
+										className={`cursor-pointer border-0 text-[14px] font-bold uppercase leading-5 tracking-normal shadow-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring-focus ${
+											active
+												? 'bg-bg-surface px-[22px] py-[12px] text-text-strong'
+												: 'bg-bg-surface-muted px-[16px] py-[12px] text-text-secondary hover:bg-bg-surface-hover'
+										}`}
+										style={{ border: 'none', boxShadow: 'none', borderRadius: 0 }}
+									>
+										{label}
+									</button>
+								);
+							})}
+						</div>
+						<button
+							type="button"
+							onClick={() => markAllAsRead()}
+							disabled={isPending || unreadCount === 0}
+							className="cursor-pointer border-0 bg-transparent p-0 text-[14px] font-medium leading-5 tracking-normal text-text-link hover:text-text-link-hover disabled:cursor-not-allowed disabled:text-text-disabled"
+							style={{ border: 'none', background: 'transparent', boxShadow: 'none' }}
+						>
+							{isPending ? 'Marking…' : 'Mark All as Read'}
 						</button>
-					);
-				})}
-			</div>
+					</div>
+					<div
+						role="tabpanel"
+						id={`panel-${activeTab}`}
+						aria-labelledby={`tab-${activeTab}`}
+						className="overflow-hidden rounded-bl-[8px] rounded-br-[8px] rounded-tr-[8px] bg-bg-surface"
+					>
+						<NotificationList
+							key={activeTab === TAB_UNREAD ? 'unread' : 'all'}
+							showUnreadOnly={activeTab === TAB_UNREAD}
+						/>
+					</div>
+				</section>
 
-			<div role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
-				{activeTab === TAB_PREFERENCES ? (
+				<aside
+					id={HASH_PREFERENCES}
+					ref={preferencesRef}
+					aria-label="Notification preferences"
+					className="scroll-mt-6 rounded-[8px] bg-bg-surface px-[16px] pb-[16px] pt-[22px]"
+				>
 					<NotificationPreferencesForm />
-				) : (
-					// Remount the list (and reset its `page` state) whenever
-					// the filter flips, so we don't issue a stale-page fetch
-					// followed by a second fetch after a useEffect reset.
-					<NotificationList
-						key={activeTab === TAB_UNREAD ? 'unread' : 'all'}
-						showUnreadOnly={activeTab === TAB_UNREAD}
-					/>
-				)}
+				</aside>
 			</div>
 		</div>
 	);

@@ -1,79 +1,74 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
 import { useUpdateNotificationPreferences } from '../hooks/useUpdateNotificationPreferences';
+import { Switch } from '../../shared/components/Switch';
 
-// Status drives the row's control slot: `active` shows an editable dropdown,
-// `coming_soon` shows a read-only badge, `always_on` shows a static label.
-const NOTIFICATION_ROWS = [
+const PREFERENCE_CATEGORIES = [
 	{
-		key: 'on_comment',
-		status: 'active',
-		label: 'Comments on your films',
-		description: 'New comments on your uploaded films.',
+		id: 'security',
+		title: 'Security & Privacy Alerts',
+		items: [
+			{ label: 'Account login from new device', status: 'coming_soon' },
+			{ label: 'Changes to film visibility', status: 'coming_soon' },
+			{ label: 'Download enabled on your film', status: 'coming_soon' },
+			{ label: 'Password removed or changed', status: 'coming_soon' },
+			{ label: 'Suspicious activity detected', status: 'coming_soon' },
+		],
 	},
 	{
-		key: 'on_like',
-		status: 'active',
-		label: 'Likes on your films',
-		description: 'Likes received on your uploaded films.',
+		id: 'upload',
+		title: 'Upload & Archive Updates',
+		items: [
+			{ label: 'Upload completed', status: 'coming_soon' },
+			{ label: 'Upload failed', status: 'coming_soon' },
+			{ label: 'Processing completed', status: 'coming_soon' },
+			{ key: 'on_new_media_from_following', label: 'New films from people you follow', status: 'active' },
+			{ label: 'Scheduled visibility change', status: 'coming_soon' },
+		],
 	},
 	{
-		key: 'on_reply',
-		status: 'coming_soon',
-		label: 'Replies to your comments',
-		description: 'Replies to comments you have posted.',
+		id: 'engagement',
+		title: 'Engagement & Discussions',
+		items: [
+			{ key: 'on_comment', label: 'New comment on your film', status: 'active' },
+			{ key: 'on_reply', label: 'Replies to your comment', status: 'active' },
+			{ key: 'on_like', label: 'New reactions to your film', status: 'active' },
+			{ key: 'on_follow', label: 'New followers', status: 'active' },
+			{ key: 'on_mention', label: 'Mentions in comments', status: 'active' },
+		],
 	},
 	{
-		key: 'on_follow',
-		status: 'coming_soon',
-		label: 'New followers',
-		description: 'When someone starts following your profile.',
-	},
-	{
-		key: 'on_mention',
-		status: 'coming_soon',
-		label: 'Mentions',
-		description: 'When someone mentions you (@username) in a comment.',
-	},
-	{
-		key: 'on_new_media_from_following',
-		status: 'coming_soon',
-		label: 'New films from filmmakers you follow',
-		description: 'A filmmaker you follow publishes a new film.',
-	},
-	{
-		key: 'on_added_to_playlist',
-		status: 'coming_soon',
-		label: 'Added to a playlist',
-		description: 'Your film is added to a public playlist.',
-	},
-	{
-		key: 'platform_announcements',
-		status: 'always_on',
-		label: 'Platform announcements',
-		description: 'Important updates from the Cinemata team.',
+		id: 'institutional',
+		title: 'Institutional / Access Notifications',
+		items: [
+			{ label: 'Film accessed by reviewer', status: 'coming_soon' },
+			{
+				key: 'on_added_to_playlist',
+				label: 'Film added to a curated collection',
+				status: 'active',
+			},
+			{ label: 'Request for screening or usage permission', status: 'coming_soon' },
+		],
 	},
 ];
 
-const ACTIVE_KEYS = NOTIFICATION_ROWS.filter((r) => r.status === 'active').map((r) => r.key);
+const ALL_KEYS = PREFERENCE_CATEGORIES.flatMap((cat) =>
+	cat.items.filter((i) => i.status === 'active' && i.key).map((i) => i.key)
+);
 
-const CHANNEL_OPTIONS = [
-	{ value: 'email', label: 'In-App + Email' },
-	{ value: 'in_app', label: 'In-App Only' },
-	{ value: 'none', label: 'Disabled' },
-];
+function activeKeysFor(category) {
+	return category.items.filter((i) => i.status === 'active' && i.key).map((i) => i.key);
+}
 
 function arePrefsEqual(a, b) {
 	if (!a || !b) return false;
-	return ACTIVE_KEYS.every((key) => a[key] === b[key]);
+	return ALL_KEYS.every((key) => a[key] === b[key]);
 }
 
-function StatusPill({ children, tone = 'muted' }) {
-	const toneClasses =
-		tone === 'accent' ? 'text-text-secondary bg-bg-surface-muted' : 'text-text-muted bg-bg-surface-muted';
+function ComingSoonPill() {
 	return (
-		<span className={`inline-flex items-center rounded-ds-4 px-3 py-1 text-xs font-medium ${toneClasses}`}>
-			{children}
+		<span className="rounded-[4px] bg-bg-surface-muted px-[6px] py-[2px] text-[11px] font-medium leading-[14px] tracking-normal text-text-muted">
+			Coming soon
 		</span>
 	);
 }
@@ -92,19 +87,18 @@ export function NotificationPreferencesForm() {
 	const [draft, setDraft] = useState(null);
 
 	useEffect(() => {
-		// Seed the draft only on initial load. Background refetches and
-		// post-save cache updates must not overwrite unsaved edits — use
-		// the Reset button to pull the latest server state if needed.
 		if (data && draft === null) setDraft(data);
 	}, [data, draft]);
 
+	const isDirty = useMemo(() => isDirtyState(draft, data), [draft, data]);
+
 	if (isLoading) {
-		return <p className="px-4 py-8 text-sm text-center text-text-muted">Loading…</p>;
+		return <p className="px-4 py-8 text-center text-[14px] leading-5 text-text-secondary">Loading…</p>;
 	}
 
 	if (isError) {
 		return (
-			<p className="px-4 py-8 text-sm text-center text-text-muted">
+			<p className="px-4 py-8 text-center text-[14px] leading-5 text-text-secondary">
 				Failed to load preferences: {error?.message ?? 'unknown error'}
 			</p>
 		);
@@ -112,18 +106,60 @@ export function NotificationPreferencesForm() {
 
 	if (!draft) return null;
 
-	const isDirty = !arePrefsEqual(draft, data);
-
-	function handleChange(key, value) {
-		setDraft((prev) => ({ ...prev, [key]: value }));
+	function clearSaveStatus() {
 		if (isSuccess || isSaveError) reset();
+	}
+
+	function setEventEnabled(key, enabled, categoryEmailOn) {
+		setDraft((prev) => ({
+			...prev,
+			[key]: enabled ? (categoryEmailOn ? 'email' : 'in_app') : 'none',
+		}));
+		clearSaveStatus();
+	}
+
+	function setCategoryPush(category, enabled) {
+		const keys = activeKeysFor(category);
+		setDraft((prev) => {
+			const next = { ...prev };
+			if (enabled) {
+				const emailOn = keys.some((k) => prev[k] === 'email');
+				keys.forEach((k) => {
+					next[k] = emailOn ? 'email' : 'in_app';
+				});
+			} else {
+				keys.forEach((k) => {
+					next[k] = 'none';
+				});
+			}
+			return next;
+		});
+		clearSaveStatus();
+	}
+
+	function setCategoryEmail(category, enabled) {
+		const keys = activeKeysFor(category);
+		setDraft((prev) => {
+			const next = { ...prev };
+			if (enabled) {
+				keys.forEach((k) => {
+					next[k] = 'email';
+				});
+			} else {
+				keys.forEach((k) => {
+					if (prev[k] === 'email') next[k] = 'in_app';
+				});
+			}
+			return next;
+		});
+		clearSaveStatus();
 	}
 
 	function handleSave(e) {
 		e.preventDefault();
 		if (!isDirty) return;
 		const patch = {};
-		ACTIVE_KEYS.forEach((key) => {
+		ALL_KEYS.forEach((key) => {
 			if (data[key] !== draft[key]) patch[key] = draft[key];
 		});
 		if (Object.keys(patch).length === 0) return;
@@ -132,71 +168,105 @@ export function NotificationPreferencesForm() {
 
 	function handleReset() {
 		setDraft(data);
-		if (isSuccess || isSaveError) reset();
+		clearSaveStatus();
 	}
 
-	// Global _buttons.scss forces `cursor: pointer` on `button` and
-	// `cursor: default` on `button:disabled`, which beats Tailwind's
-	// `disabled:cursor-not-allowed` utility. Inline styles win.
 	const disabledActionStyle = { cursor: !isDirty || isPending ? 'not-allowed' : 'pointer' };
 
-	function renderControl(row) {
-		if (row.status === 'coming_soon') return <StatusPill>Coming soon</StatusPill>;
-		if (row.status === 'always_on') return <StatusPill tone="accent">Always on</StatusPill>;
-		return (
-			<>
-				<label className="sr-only" htmlFor={`pref-${row.key}`}>
-					{row.label}
-				</label>
-				<select
-					id={`pref-${row.key}`}
-					value={draft[row.key] ?? 'in_app'}
-					onChange={(e) => handleChange(row.key, e.target.value)}
-					disabled={isPending}
-					className="w-full sm:w-48 border-0 rounded-ds-4 px-3 py-2 text-sm text-text-primary bg-bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
-				>
-					{CHANNEL_OPTIONS.map(({ value, label: optLabel }) => (
-						<option key={value} value={value}>
-							{optLabel}
-						</option>
-					))}
-				</select>
-			</>
-		);
-	}
-
 	return (
-		<form onSubmit={handleSave} className="space-y-6">
-			<div>
-				<h2 className="text-lg font-semibold text-text-strong">Notification Settings</h2>
-				<p className="text-sm text-text-muted mt-1">Control what you hear about and how.</p>
+		<form onSubmit={handleSave} className="flex flex-col gap-[26px]">
+			<div className="flex flex-col gap-[8px]">
+				<h2 className="m-0 font-heading text-[20px] font-medium leading-[24px] tracking-normal text-text-strong">
+					Notification Preference
+				</h2>
+				<p className="m-0 text-[14px] font-normal leading-[20px] tracking-normal text-text-secondary">
+					Choose how and when you&apos;d like to be notified about activity on your films, account security,
+					and discussions, so you stay informed without unnecessary noise.
+				</p>
 			</div>
 
-			<div className="bg-bg-surface-raised rounded-ds-4">
-				{NOTIFICATION_ROWS.map((row) => {
-					const dimmed = row.status !== 'active';
-					return (
-						<div
-							key={row.key}
-							className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 ${
-								dimmed ? 'opacity-75' : ''
-							}`}
-						>
-							<div className="flex-1 min-w-0">
-								<p className="text-sm font-medium text-text-primary">{row.label}</p>
-								<p className="text-xs text-text-muted mt-0.5">{row.description}</p>
+			{PREFERENCE_CATEGORIES.map((category, idx) => {
+				const keys = activeKeysFor(category);
+				const pushOn = keys.length > 0 ? keys.some((k) => draft[k] !== 'none') : true;
+				const emailOn = keys.length > 0 ? keys.some((k) => draft[k] === 'email') : true;
+				const isCategoryInteractive = keys.length > 0;
+
+				return (
+					<React.Fragment key={category.id}>
+						{idx > 0 && <div className="h-px bg-border-subtle" aria-hidden="true" />}
+						<fieldset className="m-0 flex flex-col gap-[8px] border-0 p-0">
+							<legend className="mb-0 p-0 text-[16px] font-normal leading-[24px] tracking-normal text-text-primary">
+								{category.title}
+							</legend>
+							{category.items.map((item) => {
+								const isActive = item.status === 'active' && item.key;
+								const checked = isActive ? draft[item.key] !== 'none' : true;
+								return (
+									<div
+										key={item.label}
+										className="flex min-h-[24px] items-center justify-between gap-3 pb-[1.3px] pt-[2.5px]"
+									>
+										<span className="text-[14px] font-normal leading-[20px] tracking-normal text-text-secondary">
+											{item.label}
+										</span>
+										{isActive ? (
+											<Switch
+												aria-label={item.label}
+												checked={checked}
+												disabled={isPending}
+												className="opacity-100"
+												onChange={(e) => setEventEnabled(item.key, e.target.checked, emailOn)}
+											/>
+										) : (
+											<ComingSoonPill />
+										)}
+									</div>
+								);
+							})}
+							<div className="flex min-h-[24px] items-center justify-between gap-3 pb-[1.3px] pt-[2.5px]">
+								<span className="text-[14px] font-normal leading-[20px] tracking-normal text-text-secondary">
+									Push notification
+								</span>
+								{isCategoryInteractive ? (
+									<Switch
+										aria-label={`${category.title} push notifications`}
+										checked={pushOn}
+										disabled={isPending}
+										className="opacity-100"
+										onChange={(e) => setCategoryPush(category, e.target.checked)}
+									/>
+								) : (
+									<ComingSoonPill />
+								)}
 							</div>
-							<div className="w-full sm:w-48 flex sm:justify-end">{renderControl(row)}</div>
-						</div>
-					);
-				})}
-			</div>
+							<div className="flex min-h-[24px] items-center justify-between gap-3 pb-[1.3px] pt-[2.5px]">
+								<span className="text-[14px] font-normal leading-[20px] tracking-normal text-text-secondary">
+									Email Notification
+								</span>
+								{isCategoryInteractive ? (
+									<Switch
+										aria-label={`${category.title} email notifications`}
+										checked={emailOn}
+										disabled={isPending}
+										className="opacity-100"
+										onChange={(e) => setCategoryEmail(category, e.target.checked)}
+									/>
+								) : (
+									<ComingSoonPill />
+								)}
+							</div>
+						</fieldset>
+					</React.Fragment>
+				);
+			})}
 
-			<div className="flex items-center justify-end gap-3">
+			<div
+				className={`items-center justify-end gap-3 pt-2 ${isDirty || isSaveError || isSuccess ? 'flex' : 'hidden'}`}
+			>
 				{isSaveError && (
-					<span className="text-xs text-text-danger mr-auto">{saveError?.message ?? 'Save failed'}</span>
+					<span className="mr-auto text-xs text-text-danger">{saveError?.message ?? 'Save failed'}</span>
 				)}
-				{isSuccess && !isDirty && <span className="text-xs text-text-muted mr-auto">Saved</span>}
+				{isSuccess && !isDirty && <span className="mr-auto text-xs text-text-secondary">Saved</span>}
 				<button
 					type="button"
 					onClick={handleReset}
@@ -206,17 +276,12 @@ export function NotificationPreferencesForm() {
 				>
 					Reset
 				</button>
-				{/* Inline styles on the save button are required because global
-                    _buttons.scss overrides Tailwind @layer utilities for
-                    background-color, color, padding, border-radius, font, and
-                    cursor on all button elements (see NotificationPage.jsx). */}
 				<button
 					type="submit"
 					disabled={!isDirty || isPending}
 					className="transition-all disabled:opacity-40"
 					style={{
 						padding: '6px 18px',
-						borderRadius: '9999px',
 						border: 'none',
 						fontSize: '13px',
 						fontWeight: 500,
@@ -232,4 +297,9 @@ export function NotificationPreferencesForm() {
 			</div>
 		</form>
 	);
+}
+
+function isDirtyState(draft, data) {
+	if (!draft || !data) return false;
+	return !arePrefsEqual(draft, data);
 }

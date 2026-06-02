@@ -582,6 +582,12 @@ body {
 	--bg-surface-muted: var(--cinemata-neutral-200);
 	--bg-surface-hover: var(--cinemata-pacific-deep-50);
 	--bg-surface-inverse: var(--cinemata-pacific-deep-900);
+	--bg-notification-unread: var(--cinemata-pacific-deep-100);
+	--bg-avatar-fallback: var(--cinemata-neutral-100);
+	--bg-badge-info: var(--cinemata-strait-blue-900);
+	--bg-badge-danger: var(--cinemata-red-950);
+	--bg-badge-accent: var(--cinemata-sunset-horizon-800);
+	--bg-badge-muted: var(--cinemata-pacific-deep-700);
 	--bg-overlay-dark: var(--cinemata-pacific-deep-900);
 	--bg-chrome: var(--cinemata-pacific-deep-800);
 	--bg-chrome-hover: var(--cinemata-pacific-deep-700);
@@ -606,6 +612,7 @@ body {
 	--text-description: var(--cinemata-pacific-deep-700);
 	--text-subtle: var(--cinemata-neutral-500);
 	--text-disabled: var(--cinemata-pacific-deep-500);
+	--text-avatar-fallback: var(--cinemata-neutral-600);
 	--text-inverse: var(--cinemata-white);
 	--text-on-primary: var(--cinemata-white);
 	--text-on-chrome: var(--cinemata-strait-blue-50);
@@ -621,6 +628,7 @@ body {
 	--border-default: var(--cinemata-pacific-deep-200);
 	--border-subtle: var(--cinemata-neutral-200);
 	--border-divider: var(--cinemata-pacific-deep-200);
+	--border-scrollbar: var(--cinemata-strait-blue-200);
 	--border-strong: var(--cinemata-pacific-deep-500);
 	--border-strong-constant: var(--cinemata-pacific-deep-500);
 	--border-chrome: var(--cinemata-pacific-deep-700);
@@ -643,6 +651,7 @@ body.dark_theme {
 	--bg-surface-muted: var(--cinemata-pacific-deep-800);
 	--bg-surface-hover: var(--cinemata-pacific-deep-800);
 	--bg-surface-inverse: var(--cinemata-white);
+	--bg-notification-unread: var(--cinemata-pacific-deep-800);
 	--bg-skeleton: var(--cinemata-pacific-deep-700);
 	--bg-control: var(--cinemata-pacific-deep-900);
 	--bg-primary: var(--cinemata-strait-blue-500);
@@ -684,6 +693,12 @@ body.dark_theme {
 	--color-bg-surface-muted: var(--bg-surface-muted);
 	--color-bg-surface-hover: var(--bg-surface-hover);
 	--color-bg-surface-inverse: var(--bg-surface-inverse);
+	--color-bg-notification-unread: var(--bg-notification-unread);
+	--color-bg-avatar-fallback: var(--bg-avatar-fallback);
+	--color-bg-badge-info: var(--bg-badge-info);
+	--color-bg-badge-danger: var(--bg-badge-danger);
+	--color-bg-badge-accent: var(--bg-badge-accent);
+	--color-bg-badge-muted: var(--bg-badge-muted);
 	--color-bg-overlay-dark: var(--bg-overlay-dark);
 	--color-bg-chrome: var(--bg-chrome);
 	--color-bg-chrome-hover: var(--bg-chrome-hover);
@@ -708,6 +723,7 @@ body.dark_theme {
 	--color-text-description: var(--text-description);
 	--color-text-subtle: var(--text-subtle);
 	--color-text-disabled: var(--text-disabled);
+	--color-text-avatar-fallback: var(--text-avatar-fallback);
 	--color-text-inverse: var(--text-inverse);
 	--color-text-on-primary: var(--text-on-primary);
 	--color-text-on-chrome: var(--text-on-chrome);
@@ -723,6 +739,7 @@ body.dark_theme {
 	--color-border-default: var(--border-default);
 	--color-border-subtle: var(--border-subtle);
 	--color-border-divider: var(--border-divider);
+	--color-border-scrollbar: var(--border-scrollbar);
 	--color-border-strong: var(--border-strong);
 	--color-border-strong-constant: var(--border-strong-constant);
 	--color-border-chrome: var(--border-chrome);
@@ -792,6 +809,26 @@ header[data-topbar] button:not(:disabled) {
 
 	.global-search-input:focus {
 		border-color: var(--border-chrome, var(--color-border-chrome)) !important;
+	}
+
+	.thin-brand-scrollbar {
+		scrollbar-color: var(--border-scrollbar) transparent;
+		scrollbar-width: thin;
+	}
+
+	.thin-brand-scrollbar::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.thin-brand-scrollbar::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.thin-brand-scrollbar::-webkit-scrollbar-thumb {
+		border: 2px solid transparent;
+		border-radius: 999px;
+		background-color: var(--border-scrollbar);
+		background-clip: content-box;
 	}
 }
 
