@@ -49,7 +49,7 @@ export function MediaShareButton({ isVideo }) {
 		? {
 				shareOptions: <MediaShareOptions {...sharedOptionsProps} />,
 				shareEmbed: <MediaShareEmbed triggerPopupClose={triggerPopupClose} startAt={embedStartAt} />,
-		  }
+			}
 		: { shareOptions: <MediaShareOptions {...sharedOptionsProps} /> };
 
 	return (

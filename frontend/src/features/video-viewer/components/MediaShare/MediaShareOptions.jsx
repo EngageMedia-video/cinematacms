@@ -174,10 +174,7 @@ export function MediaShareOptions({ timestamp = 0, startAtSelected = false, onTo
 	const formattedTimestamp = toHHMMSS(timestamp);
 
 	const shareMediaLink = startAtSelected ? `${mediaUrl}&t=${Math.trunc(timestamp)}` : mediaUrl;
-	const shareOptions = useMemo(
-		() => buildShareOptions(socialMedia, shareMediaLink),
-		[socialMedia, shareMediaLink]
-	);
+	const shareOptions = useMemo(() => buildShareOptions(socialMedia, shareMediaLink), [socialMedia, shareMediaLink]);
 
 	function onClickCopy() {
 		if (inputRef.current) {
