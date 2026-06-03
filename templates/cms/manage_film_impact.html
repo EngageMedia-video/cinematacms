@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static %}
+{% load django_vite %}
+
+{% block headtitle %}Manage film impact - {{PORTAL_NAME}}{% endblock headtitle %}
+
+{% block headermeta %}
+
+<meta property="og:title" content="Manage film impact - {{PORTAL_NAME}}">
+<meta property="og:type" content="website">
+<meta property="og:description" content="">
+
+{% endblock headermeta %}
+
+{% block topimports %}{% vite_asset 'src/entries/manage-film-impact.js' %}{% endblock topimports %}
+
+{% block content %}<div id="page-manage-film-impact"></div>{% endblock %}

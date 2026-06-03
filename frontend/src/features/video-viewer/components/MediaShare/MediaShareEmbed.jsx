@@ -24,10 +24,11 @@ const UNIT_BOTH = [
 ];
 const UNIT_PX = [{ key: 'px', label: 'px' }];
 
-function buildEmbedCode({ embedUrl, mediaId, width, widthUnit, height, heightUnit }) {
+function buildEmbedCode({ embedUrl, mediaId, width, widthUnit, height, heightUnit, startAt }) {
 	const w = widthUnit === 'percent' ? `${width}%` : width;
 	const h = heightUnit === 'percent' ? `${height}%` : height;
-	return `<iframe width="${w}" height="${h}" src="${embedUrl}${mediaId}" frameborder="0" allowfullscreen></iframe>`;
+	const src = startAt > 0 ? `${embedUrl}${mediaId}&t=${startAt}` : `${embedUrl}${mediaId}`;
+	return `<iframe width="${w}" height="${h}" src="${src}" frameborder="0" allowfullscreen></iframe>`;
 }
 
 function DimensionInput({ label, value, unit, units, onValueChange, onUnitChange }) {
@@ -68,7 +69,7 @@ DimensionInput.propTypes = {
 	onUnitChange: PropTypes.func.isRequired,
 };
 
-export function MediaShareEmbed({ triggerPopupClose }) {
+export function MediaShareEmbed({ triggerPopupClose, startAt = 0 }) {
 	const links = useContext(LinksContext);
 	const textareaRef = useRef(null);
 
@@ -144,6 +145,7 @@ export function MediaShareEmbed({ triggerPopupClose }) {
 		widthUnit,
 		height: heightValue,
 		heightUnit,
+		startAt: Math.trunc(startAt),
 	});
 
 	return (
@@ -230,4 +232,5 @@ export function MediaShareEmbed({ triggerPopupClose }) {
 
 MediaShareEmbed.propTypes = {
 	triggerPopupClose: PropTypes.func,
+	startAt: PropTypes.number,
 };

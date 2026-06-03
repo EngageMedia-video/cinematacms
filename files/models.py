@@ -1814,6 +1814,68 @@ class Comment(MPTTModel):
         return self.get_absolute_url()
 
 
+class CommunityImpact(models.Model):
+    SCREENING = "screening"
+    FEATURED = "featured"
+    SAVES = "saves"
+    ACADEMIC = "academic"
+    CURATED = "curated"
+    WAITING_APPROVAL = "waiting_approval"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+    CATEGORY_CHOICES = [
+        (SCREENING, "Screened In"),
+        (FEATURED, "Featured In"),
+        (SAVES, "Saves & Playlists"),
+        (ACADEMIC, "Academic Usage"),
+        (CURATED, "Curated Into"),
+    ]
+    STATUS_CHOICES = [
+        (WAITING_APPROVAL, "Waiting for approval"),
+        (APPROVED, "Approved"),
+        (REJECTED, "Rejected"),
+    ]
+
+    uid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name="community_impacts")
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=WAITING_APPROVAL, db_index=True)
+    title = models.CharField(max_length=200)
+    details = models.TextField(blank=True, default="")
+    event_date = models.DateField()
+    url = models.URLField(blank=True, default="")
+    add_date = models.DateTimeField(auto_now_add=True)
+    edit_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-event_date", "-add_date"]
+        indexes = [
+            models.Index(fields=["media", "category"]),
+            models.Index(fields=["status", "category"]),
+        ]
+
+    def __str__(self):
+        return f"{self.get_category_display()} for {self.media.title}"
+
+    def save(self, *args, **kwargs):
+        self.title = strip_tags(self.title)
+        self.details = strip_tags(self.details)
+        words = self.details.split()
+        if len(words) > 80:
+            self.details = " ".join(words[:80])
+        super(CommunityImpact, self).save(*args, **kwargs)
+        # community_impacts is exposed by SingleMediaSerializer, so the cached
+        # media detail must be invalidated when an impact entry changes.
+        invalidate_media_cache(self.media.friendly_token)
+
+    def delete(self, *args, **kwargs):
+        friendly_token = self.media.friendly_token
+        super(CommunityImpact, self).delete(*args, **kwargs)
+        invalidate_media_cache(friendly_token)
+
+
 class Page(models.Model):
     slug = models.SlugField(max_length=200, unique=True)
     title = models.CharField(max_length=200)
@@ -2403,6 +2465,7 @@ def playlist_pre_delete(sender, instance, **kwargs):
 def playlist_media_save(sender, instance, created, **kwargs):
     """Invalidate playlist cache when media is added/removed from playlist."""
     invalidate_playlist_cache(instance.playlist.friendly_token)
+    invalidate_media_cache(instance.media.friendly_token)
     delete_composite_thumbnail(instance.playlist.friendly_token)
 
 
@@ -2410,6 +2473,7 @@ def playlist_media_save(sender, instance, created, **kwargs):
 def playlist_media_delete(sender, instance, **kwargs):
     """Invalidate playlist cache when media is removed from playlist."""
     invalidate_playlist_cache(instance.playlist.friendly_token)
+    invalidate_media_cache(instance.media.friendly_token)
     delete_composite_thumbnail(instance.playlist.friendly_token)
 
 

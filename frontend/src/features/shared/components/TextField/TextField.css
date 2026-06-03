@@ -1,0 +1,11 @@
+.field-input {
+	background-color: transparent !important;
+	caret-color: var(--text-strong);
+	color: var(--text-strong);
+}
+
+.field-input:-webkit-autofill {
+	-webkit-text-fill-color: var(--text-strong);
+	box-shadow: 0 0 0 1000px var(--bg-surface) inset;
+	caret-color: var(--text-strong);
+}

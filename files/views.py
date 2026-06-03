@@ -58,6 +58,7 @@ from .helpers import (
     rm_file,
 )
 from .methods import (
+    can_manage_film_impact,
     can_manage_uploads,
     can_upload_media,
     get_current_featured_media,
@@ -74,6 +75,7 @@ from .methods import (
 from .models import (
     Category,
     Comment,
+    CommunityImpact,
     ContentSensitivity,
     EncodeProfile,
     Encoding,
@@ -109,6 +111,7 @@ from .secure_media_views import check_media_access_permission
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
+    CommunityImpactSerializer,
     ContentSensitivitySerializer,
     EncodeProfileSerializer,
     HeroPlaybackSerializer,
@@ -435,6 +438,36 @@ def manage_comments(request):
 
     context = {}
     return render(request, "cms/manage_comments.html", context)
+
+
+@ensure_csrf_cookie
+def manage_film_impact(request):
+    if request.user.is_anonymous:
+        return HttpResponseRedirect("/")
+
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
+        return HttpResponseRedirect("/accounts/2fa/totp/activate")
+
+    if not can_manage_film_impact(request.user):
+        return HttpResponseRedirect("/")
+
+    context = {}
+    return render(request, "cms/manage_film_impact.html", context)
+
+
+@ensure_csrf_cookie
+def manage_film_impact_edit(request, uid):
+    if request.user.is_anonymous:
+        return HttpResponseRedirect("/")
+
+    if user_requires_mfa(request.user) and not is_mfa_enabled_for_user(request.user):
+        return HttpResponseRedirect("/accounts/2fa/totp/activate")
+
+    if not can_manage_film_impact(request.user):
+        return HttpResponseRedirect("/")
+
+    context = {}
+    return render(request, "cms/manage_film_impact.html", context)
 
 
 def manage_uploads(request):
@@ -1331,6 +1364,7 @@ class MediaDetail(APIView):
                     "content_sensitivity",
                     "subtitles__language",
                     "encodings__profile",
+                    "community_impacts__user",
                 )
                 .get(friendly_token=friendly_token)
             )
@@ -2436,6 +2470,40 @@ class CommentDetail(APIView):
             except Exception:
                 logger.exception("Notification failed for comment %s", comment.pk)
 
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CommunityImpactList(APIView):
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    parser_classes = (JSONParser, MultiPartParser, FormParser, FileUploadParser)
+
+    def get_object(self, friendly_token):
+        media = get_object_or_404(
+            Media.objects.select_related("user").prefetch_related("community_impacts__user"),
+            friendly_token=clean_friendly_token(friendly_token),
+        )
+        if not check_media_access_permission(self.request, media):
+            return Response({"detail": "bad permissions"}, status=status.HTTP_403_FORBIDDEN)
+        return media
+
+    def get(self, request, friendly_token):
+        media = self.get_object(friendly_token)
+        if isinstance(media, Response):
+            return media
+        entries = media.community_impacts.select_related("user").filter(status=CommunityImpact.APPROVED)
+        serializer = CommunityImpactSerializer(entries, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    def post(self, request, friendly_token):
+        media = self.get_object(friendly_token)
+        if isinstance(media, Response):
+            return media
+
+        serializer = CommunityImpactSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save(user=request.user, media=media)
+            invalidate_media_cache(media.friendly_token)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

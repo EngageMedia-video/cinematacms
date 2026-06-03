@@ -112,6 +112,7 @@ export function ensureSidebarStoryMediaCMS(mode) {
 			manageMedia: '/manage/media',
 			manageUsers: '/manage/users',
 			manageComments: '/manage/comments',
+			manageFilmImpact: '/manage/film-impact',
 			manageUploads: '/manage/uploads',
 		},
 		user: {
@@ -133,6 +134,7 @@ export function ensureSidebarStoryMediaCMS(mode) {
 				manageMedia: true,
 				manageUsers: true,
 				manageComments: true,
+				manageFilmImpact: true,
 				manageUploads: true,
 				contactUser: false,
 				addMedia: true,
@@ -161,6 +163,7 @@ export function ensureSidebarStoryMediaCMS(mode) {
 			manage_media: 'manage/media',
 			manage_users: 'manage/users',
 			manage_comments: 'manage/comments',
+			manage_film_impact: 'manage/film-impact',
 			my_uploads: 'manage/uploads',
 			search: 'search',
 		},

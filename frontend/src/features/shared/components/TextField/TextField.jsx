@@ -1,10 +1,11 @@
 import { cn } from '../../utils/classNames';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import './TextField.css';
 
 const SHELL_VARIANT_CLASSES = {
 	default: 'bg-bg-surface hover:bg-bg-surface-hover focus-within:bg-bg-surface',
 	error: 'bg-bg-surface',
-	disabled: 'bg-bg-surface-hover',
+	disabled: 'bg-bg-surface-muted',
 };
 
 // Transparent variant: the shell carries no surface fill so the field inherits
@@ -56,6 +57,17 @@ function hasTextValue(value) {
 	return String(value).length > 0;
 }
 
+function assignRef(ref, value) {
+	if (typeof ref === 'function') {
+		ref(value);
+		return;
+	}
+
+	if (ref) {
+		ref.current = value;
+	}
+}
+
 export function TextField({
 	className = '',
 	defaultValue,
@@ -81,6 +93,7 @@ export function TextField({
 	const variant = disabled ? 'disabled' : invalid ? 'error' : 'default';
 	const [isFocused, setIsFocused] = useState(false);
 	const [hasValue, setHasValue] = useState(hasTextValue(value ?? defaultValue));
+	const inputRef = useRef(null);
 	const helperTextId = helperText ? `${inputId}-helper-text` : undefined;
 	const describedBy = [ariaDescribedBy, helperTextId].filter(Boolean).join(' ') || undefined;
 	const activeState = variant === 'default' && isFocused;
@@ -100,8 +113,19 @@ export function TextField({
 	return (
 		<div className={cn('w-max max-w-full', className)}>
 			<div
+				onMouseDown={(event) => {
+					if (disabled || event.target === inputRef.current) {
+						return;
+					}
+
+					event.preventDefault();
+					inputRef.current?.focus();
+					if (type === 'date') {
+						inputRef.current?.showPicker?.();
+					}
+				}}
 				className={cn(
-					'group w-full border-b px-0 py-[14px] transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
+					'field-shell group w-full border-b px-0 py-[14px] transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
 					shellClasses,
 					borderClasses,
 					disabled ? 'cursor-not-allowed' : ''
@@ -116,7 +140,10 @@ export function TextField({
 				<input
 					{...props}
 					defaultValue={defaultValue}
-					ref={ref}
+					ref={(node) => {
+						inputRef.current = node;
+						assignRef(ref, node);
+					}}
 					id={inputId}
 					name={name ?? inputId}
 					type={type}
@@ -139,7 +166,7 @@ export function TextField({
 						onChange?.(event);
 					}}
 					className={cn(
-						'body-body-16-regular block w-full border-none bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 disabled:cursor-not-allowed',
+						'field-input body-body-16-regular block w-full appearance-none border-none bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 disabled:cursor-not-allowed',
 						INPUT_VARIANT_CLASSES[variant],
 						PLACEHOLDER_VARIANT_CLASSES[variant]
 					)}

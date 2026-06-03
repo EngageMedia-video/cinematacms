@@ -154,16 +154,7 @@ export function Sidebar({ id = 'app-sidebar' }) {
 		>
 			{isMobileViewport ? <SidebarRippleDecoration /> : null}
 
-			<div
-				className={cn(
-					'relative min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]',
-					'[scrollbar-width:thin] [scrollbar-color:var(--border-default)_transparent]',
-					'[&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent',
-					'[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2',
-					'[&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-border-default',
-					'[&::-webkit-scrollbar-thumb]:bg-clip-content'
-				)}
-			>
+			<div className="thin-scrollbar relative min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
 				<div className="relative min-h-full pb-16 md:pb-0">
 					{isMobileViewport ? null : <SidebarRippleDecoration />}
 

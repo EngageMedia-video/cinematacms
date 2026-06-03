@@ -7,6 +7,7 @@ const queryClient = new QueryClient();
 
 const sampleNotification = {
 	id: 101,
+	notification_type: 'comment',
 	message: 'andriawan24 commented on your upload.',
 	is_read: false,
 	created_at: '2026-05-05T04:30:00Z',
@@ -37,6 +38,7 @@ const meta = {
 		seeAllLabel: 'See All Notifications',
 		isLoading: false,
 		isMarkAllAsReadPending: false,
+		unreadCount: 0,
 		className: 'static top-auto right-auto mt-0',
 	},
 	argTypes: {
@@ -131,6 +133,7 @@ const meta = {
 export default meta;
 
 export const WithNotificationItems = {
+	args: { unreadCount: 1 },
 	render: (args) => (
 		<div className="bg-surface-body p-6">
 			<QueryClientProvider client={queryClient}>

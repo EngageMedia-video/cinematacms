@@ -12,43 +12,65 @@ export function NotificationDialog({
 	seeAllHref = '/notifications/',
 	seeAllLabel = 'See All Notifications',
 	title = 'Notifications',
+	unreadCount = 0,
 	ref,
 }) {
 	const hasItems = Children.count(children) > 0;
+
+	const markAllColor = unreadCount > 0 ? 'text-text-link hover:text-text-link-hover' : 'text-text-disabled';
 
 	return (
 		<div
 			ref={ref}
 			role="dialog"
+			aria-label={title}
 			className={cn(
-				'absolute right-0 top-full z-50 mt-1 w-80 overflow-hidden rounded-lg bg-bg-surface-raised shadow-lg',
+				'absolute right-0 top-full z-50 mt-1 flex w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[8px] bg-bg-surface text-text-strong shadow-lg',
 				className
 			)}
 		>
-			<div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
-				<span className="text-base font-bold text-text-strong">{title}</span>
+			<div className="flex items-center justify-between px-[16px] pt-[14px] pb-[16px]">
+				<div className="flex items-center gap-1.5">
+					<span className="font-heading text-[16px] font-medium leading-5 text-text-strong">{title}</span>
+					{unreadCount > 0 ? (
+						<span className="font-heading text-[16px] font-medium leading-5 text-text-danger">
+							{unreadCount > 99 ? '99+' : unreadCount}
+						</span>
+					) : null}
+				</div>
 				<button
 					type="button"
 					onClick={onMarkAllAsRead}
-					disabled={isMarkAllAsReadPending}
-					className="cursor-pointer border-0 bg-transparent p-0 text-xs text-text-muted transition-colors hover:text-text-strong disabled:opacity-50"
+					disabled={isMarkAllAsReadPending || unreadCount === 0}
+					className={cn(
+						'cursor-pointer rounded-sm border-0 bg-transparent p-0 text-[12px] font-medium leading-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed',
+						markAllColor
+					)}
 				>
 					{isMarkAllAsReadPending ? 'Marking…' : 'Mark all as read'}
 				</button>
 			</div>
 
-			<div className="max-h-96 overflow-y-auto divide-y divide-border-subtle">
-				{isLoading ? <p className="px-4 py-6 text-center text-sm text-text-muted">{loadingMessage}</p> : null}
-				{!isLoading && !hasItems ? (
-					<p className="px-4 py-6 text-center text-sm text-text-muted">{emptyMessage}</p>
+			<div className="thin-brand-scrollbar max-h-[22rem] overflow-y-auto">
+				{isLoading ? (
+					<div className="flex h-[108px] w-full items-center justify-center">
+						<p className="text-[12px] font-medium leading-4 text-text-muted">{loadingMessage}</p>
+					</div>
 				) : null}
-				{!isLoading && hasItems ? children : null}
+				{!isLoading && !hasItems ? (
+					<div className="flex h-[108px] w-full items-center justify-center">
+						<p className="text-[12px] font-medium leading-4 text-text-muted">{emptyMessage}</p>
+					</div>
+				) : null}
+				{!isLoading && hasItems ? <div className="flex w-full flex-col">{children}</div> : null}
 			</div>
 
-			<div className="flex items-center justify-center border-t border-border-subtle px-4 py-2.5">
+			<div className="h-px w-full bg-border-subtle" aria-hidden="true" />
+
+			<div className="px-[16px] pt-[16px] pb-[14px]">
 				<a
 					href={seeAllHref}
-					className="text-sm font-bold text-text-strong no-underline transition-colors hover:text-text-muted"
+					className="rounded-sm text-[12px] font-medium leading-4 text-text-link no-underline transition-colors hover:text-text-link-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 				>
 					{seeAllLabel}
 				</a>

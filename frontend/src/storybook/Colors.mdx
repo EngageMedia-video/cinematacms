@@ -20,6 +20,7 @@ This page is the working reference for the token catalogue. For the underlying d
 - **`text-text-description`** — long-form card descriptions. Light: `pacific-deep-700` / Dark: `pacific-deep-300`
 - **`text-text-subtle`** — auxiliary text, hints, placeholders. Light: `neutral-500` / Dark: `neutral-400`
 - **`text-text-disabled`** — disabled state labels. Light: `pacific-deep-500` / Dark: `pacific-deep-400`
+- **`text-text-avatar-fallback`** — avatar initials fallback text. Constant `neutral-600`.
 - **`text-text-inverse`** — text on `bg-bg-surface-inverse`. Inverts: Light: `white` / Dark: `pacific-deep-900`
 - **`text-text-on-primary`** — text on `bg-bg-primary` and `bg-bg-secondary` buttons. Constant `white`.
 - **`text-text-on-chrome`** — primary text on always-dark chrome surfaces (topbar, search). Constant `strait-blue-50`.
@@ -39,6 +40,9 @@ This page is the working reference for the token catalogue. For the underlying d
 - **`bg-bg-surface-muted`** — muted/recessed regions, image placeholders. Light: `neutral-200` / Dark: `pacific-deep-800`
 - **`bg-bg-surface-hover`** — list/menu row hover backgrounds. Light: `pacific-deep-50` / Dark: `pacific-deep-800`
 - **`bg-bg-surface-inverse`** — high-contrast inverted callouts. Light: `pacific-deep-900` / Dark: `white`
+- **`bg-bg-notification-unread`** — unread notification row background. Light: `pacific-deep-100` / Dark: `pacific-deep-800`
+- **`bg-bg-avatar-fallback`** — avatar initials fallback fill. Constant `neutral-100`.
+- **`bg-bg-badge-info`**, **`bg-bg-badge-danger`**, **`bg-bg-badge-accent`**, **`bg-bg-badge-muted`** — fixed decorative badge fills. Constant `strait-blue-900`, `red-950`, `sunset-horizon-800`, `pacific-deep-700`.
 - **`bg-bg-overlay-dark`** — outer always-dark UI chrome (topbar root, mobile overlays, modal scrims). Constant `pacific-deep-900`.
 - **`bg-bg-chrome`** — inner always-dark chrome surfaces (topbar buttons, search input bg, dropdown row bgs). Constant `pacific-deep-800`.
 - **`bg-bg-chrome-hover`** — hover state for `bg-bg-chrome` controls, often used with `/60` alpha. Constant `pacific-deep-700`.
@@ -46,8 +50,14 @@ This page is the working reference for the token catalogue. For the underlying d
 - **`bg-bg-control`** — standard small control surfaces, including radio backgrounds. Light: `neutral-300` / Dark: `pacific-deep-900`
 - **`bg-bg-primary`** — primary action surfaces. Light: `strait-blue-600p` / Dark: `strait-blue-500`
 - **`bg-bg-primary-hover`** — hover for `bg-bg-primary`. Light: `strait-blue-800` / Dark: `strait-blue-700`
+- **`bg-bg-button-playlist-active`** — active playlist/save button background. Light: `strait-blue-800` / Dark: `strait-blue-700`
 - **`bg-bg-secondary`** — brand action / CTA buttons (orange). What `bg-brand-primary` legacy utility now routes through. Light: `sunset-horizon-400p` / Dark: `sunset-horizon-500`
 - **`bg-bg-secondary-hover`** — hover for `bg-bg-secondary`. Light: `sunset-horizon-500` / Dark: `sunset-horizon-400p`
+- **`bg-bg-impact-icon-screening`** — Community Impact screening icon shell. Light: `pacific-deep-900` / Dark: `pacific-deep-950`
+- **`bg-bg-impact-icon-featured`** — Community Impact featured icon shell. Constant `pacific-deep-800`.
+- **`bg-bg-impact-icon-saves`** — Community Impact saves/playlists icon shell. Light: `coral-reef-800` / Dark: `coral-reef-900`
+- **`bg-bg-impact-icon-academic`** — Community Impact academic icon shell. Light: `sunset-horizon-700` / Dark: `sunset-horizon-800`
+- **`bg-bg-impact-icon-curated`** — Community Impact curated icon shell. Light: `neutral-800` / Dark: `neutral-900`
 - **`bg-bg-danger`** — destructive surfaces. Constant `red-500`.
 - **`bg-bg-danger-strong`** — active destructive/toggled-danger surfaces. Light: `red-800` / Dark: `red-950`
 - **`bg-bg-danger-strong-hover`** — hover for `bg-bg-danger-strong`. Light: `red-400` / Dark: `red-900`
@@ -59,6 +69,7 @@ This page is the working reference for the token catalogue. For the underlying d
 - **`border-border-default`** — default card/panel border. Light: `pacific-deep-200` / Dark: `pacific-deep-700`
 - **`border-border-subtle` / `bg-border-subtle`** — hairlines, list dividers, and subtle checkbox fills. Light: `neutral-200` / Dark: `pacific-deep-800`
 - **`border-border-divider`** — section dividers between media viewer content blocks. Light: `pacific-deep-200` / Dark: `pacific-deep-600p`
+- **`border-border-scrollbar`** — thin branded scrollbar thumbs. Constant `strait-blue-200`.
 - **`border-border-strong`** — emphasized boundaries. Light: `pacific-deep-500` / Dark: `pacific-deep-400`
 - **`border-border-strong-constant`** — TextField default border. Constant `pacific-deep-500` in both themes.
 - **`border-border-chrome`** — hairlines on always-dark chrome (search dropdown dividers, mobile overlay header border). Constant `pacific-deep-700`.
@@ -78,7 +89,6 @@ A small number of patterns are genuinely unique and stay on the raw `cinemata-*`
 - **Carousel indicator dots** — `bg-cinemata-strait-blue-800 dark:bg-white` (active), `bg-cinemata-pacific-deep-400/30 dark:bg-white/30` (inactive). One-off "active indicator on media surface" pattern.
 - **HeroSection retry button** — `bg-cinemata-strait-blue-700` solid with `-800` hover. Bespoke decorative button.
 - **Carousel overlay arrow text** — theme-aware blue pair `strait-blue-700 → strait-blue-600p`. Large chrome controls overlaid on media; no other shared use.
-- **Badge highlights** — Avatar badge backgrounds (`strait-blue-900` for comment, `sunset-horizon-800` for favorite, `red-950` for like) — colored emblems that should not invert per theme.
 
 For all other usages, prefer a semantic token. If you find yourself reaching for the same raw palette pair more than once for the same role, consider whether it deserves a new token.
 

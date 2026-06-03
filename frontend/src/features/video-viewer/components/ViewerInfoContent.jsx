@@ -6,10 +6,10 @@ import PageStore from '../../../static/js/pages/_PageStore';
 import * as PageActions from '../../../static/js/pages/_PageActions';
 import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 import * as MediaPageActions from '../../../static/js/pages/MediaPage/actions.js';
-import { RatingSystem } from '../../../static/js/components/RatingSystem/RatingSystem';
 import { formatInnerLink } from '../../../static/js/functions/formatInnerLink';
 import { TabContent, TabView } from '../../shared/components/TabView/TabView.jsx';
 import { Text } from '../../shared/components/Text/Text.jsx';
+import { CommunityImpactSection } from './community-impact';
 import { MediaAuthorBanner } from './MediaAuthorBanner.jsx';
 import { MediaMetaField } from './MediaMetaField.jsx';
 import { Link } from '../../shared/components/Link/Link.jsx';
@@ -89,6 +89,9 @@ export default function ViewerInfoContent(props) {
 	const hasAboutText = '' !== description;
 	const [isAboutExpanded, setIsAboutExpanded] = useState(false);
 	const [isSummaryClamped, setIsSummaryClamped] = useState(false);
+	const [communityImpacts, setCommunityImpacts] = useState(() => MediaPageStore.get('community-impacts'));
+	const [communityImpactSubmitStatus, setCommunityImpactSubmitStatus] = useState('idle');
+	const [communityImpactSubmitError, setCommunityImpactSubmitError] = useState(null);
 	const aboutDetailsId = useId();
 	const summaryTextRef = useRef(null);
 
@@ -126,6 +129,40 @@ export default function ViewerInfoContent(props) {
 			MediaPageStore.removeListener('media_delete_fail', onMediaDeleteFail);
 		};
 	}, []);
+
+	useEffect(() => {
+		function syncCommunityImpacts() {
+			setCommunityImpacts(MediaPageStore.get('community-impacts'));
+		}
+
+		function onCommunityImpactSubmit() {
+			syncCommunityImpacts();
+			setCommunityImpactSubmitStatus('success');
+			setCommunityImpactSubmitError(null);
+		}
+
+		function onCommunityImpactSubmitFail(error) {
+			setCommunityImpactSubmitStatus('error');
+			setCommunityImpactSubmitError(error || { field: null, message: 'Unable to submit film impact entry.' });
+		}
+
+		MediaPageStore.on('community_impact_submit', onCommunityImpactSubmit);
+		MediaPageStore.on('community_impact_submit_fail', onCommunityImpactSubmitFail);
+		MediaPageStore.on('loaded_media_data', syncCommunityImpacts);
+
+		return () => {
+			MediaPageStore.removeListener('community_impact_submit', onCommunityImpactSubmit);
+			MediaPageStore.removeListener('community_impact_submit_fail', onCommunityImpactSubmitFail);
+			MediaPageStore.removeListener('loaded_media_data', syncCommunityImpacts);
+		};
+	}, []);
+
+	function clearCommunityImpactSubmitError() {
+		setCommunityImpactSubmitError(null);
+		if (communityImpactSubmitStatus === 'error') {
+			setCommunityImpactSubmitStatus('idle');
+		}
+	}
 
 	useLayoutEffect(() => {
 		const summaryText = summaryTextRef.current;
@@ -187,12 +224,6 @@ export default function ViewerInfoContent(props) {
 		const timeRegex = new RegExp('((\\d)?\\d:)?(\\d)?\\d:\\d\\d', 'g');
 
 		return text.replace(timeRegex, wrapTimestampWithAnchor);
-	}
-
-	let ratings_info = MediaPageStore.get('media-data').ratings_info;
-
-	if (void 0 === ratings_info || !ratings_info.length) {
-		ratings_info = null;
 	}
 
 	let licenseValue;
@@ -461,16 +492,26 @@ export default function ViewerInfoContent(props) {
 								)}
 							</div>
 						</TabContent>
-						<TabContent title="COMMUNITY IMPACT">Test</TabContent>
+						<TabContent title="COMMUNITY IMPACT">
+							<div className="rounded-b-ds-8 bg-bg-surface p-4">
+								<CommunityImpactSection
+									entries={communityImpacts}
+									canAdd={user?.is?.anonymous === false}
+									submitMessage={
+										communityImpactSubmitStatus === 'success' ? 'Submitted for review.' : ''
+									}
+									submitStatus={communityImpactSubmitStatus}
+									submitError={communityImpactSubmitError}
+									onSubmitErrorClear={clearCommunityImpactSubmitError}
+									onAddImpact={(formValues) => {
+										setCommunityImpactSubmitStatus('submitting');
+										setCommunityImpactSubmitError(null);
+										MediaPageActions.submitCommunityImpact(formValues);
+									}}
+								/>
+							</div>
+						</TabContent>
 					</TabView>
-
-					{null !== ratings_info && (
-						<section className="media-impact-section" aria-labelledby="media-impact-heading">
-							<h2 id="media-impact-heading">Film&apos;s Impact</h2>
-
-							<RatingSystem media_id={MediaPageStore.get('media-id')} ratings_data={ratings_info} />
-						</section>
-					)}
 				</div>
 			)}
 		</UserConsumer>

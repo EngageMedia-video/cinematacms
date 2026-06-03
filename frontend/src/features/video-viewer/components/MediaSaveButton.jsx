@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
-import { Dialog, DialogContent, DialogTrigger } from '../../shared/components/Dialog/Dialog';
 import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 
 import { PlaylistsSelection } from './MediaSave/PlaylistsSelection';
-import { Button } from '../../shared/components/Button/Button';
-import { Icon } from '../../shared/components/Icon/Icon';
-import { Text } from '../../shared/components/Text/Text';
+import { Button, Dialog, DialogContent, DialogTrigger, Icon, Text } from '../../shared/components';
+import { cn } from '../../shared/utils/classNames.js';
 
 function isMediaInUserPlaylist() {
 	const mediaId = MediaPageStore.get('media-id');
@@ -57,7 +55,10 @@ export function MediaSaveButton() {
 						aria-label={savedToPlaylist ? 'Added to playlist' : 'Save to playlist'}
 						variant="tertiary"
 						icon={<Icon name="bookmarkFilled" className={saveIconClassName} />}
-						className="body-body-14-medium whitespace-nowrap p-size-8"
+						className={cn(
+							'body-body-14-medium whitespace-nowrap p-size-8',
+							savedToPlaylist ? 'bg-bg-button-playlist-active' : undefined
+						)}
 						size="sm"
 					/>
 				</DialogTrigger>
@@ -68,7 +69,10 @@ export function MediaSaveButton() {
 						aria-label={savedToPlaylist ? 'Added to playlist' : 'Save to playlist'}
 						variant="tertiary"
 						icon={<Icon name="bookmarkFilled" className={saveIconClassName} />}
-						className="body-body-14-medium whitespace-nowrap"
+						className={cn(
+							'body-body-14-medium whitespace-nowrap',
+							savedToPlaylist ? 'bg-bg-button-playlist-active' : undefined
+						)}
 						size="sm"
 					>
 						<Text as="span" variant="body-14-medium" className="whitespace-nowrap text-current">

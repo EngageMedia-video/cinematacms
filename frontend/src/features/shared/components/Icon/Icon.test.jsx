@@ -11,6 +11,7 @@ describe('iconRegistry', () => {
 		expect(iconNames).toContain('magnifyingGlass');
 		expect(iconNames).toContain('infoCircle');
 		expect(iconNames).toContain('info3d');
+		expect(iconNames).toContain('impactUrlLogo');
 		expect(iconNames).toContain('eye');
 		expect(iconNames).toContain('eyeSlash');
 		expect(iconNames).toContain('upload');

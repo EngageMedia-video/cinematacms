@@ -284,6 +284,15 @@ export function SidebarNavigationMenu() {
 			});
 		}
 
+		if (user.can.manageFilmImpact) {
+			items.push({
+				link: links.manage.filmImpact,
+				icon: 'miscellaneous_services',
+				text: 'Manage film impact',
+				className: 'nav-item-manage-film-impact',
+			});
+		}
+
 		return items.length ? <NavigationMenuList key="admin" items={formatItems(items)} /> : null;
 	}
 

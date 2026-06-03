@@ -64,6 +64,13 @@ export function submitComment(commentText) {
 	});
 }
 
+export function submitCommunityImpact(communityImpactData) {
+	Dispatcher.dispatch({
+		type: 'SUBMIT_COMMUNITY_IMPACT',
+		communityImpactData,
+	});
+}
+
 export function deleteComment(commentId) {
 	Dispatcher.dispatch({
 		type: 'DELETE_COMMENT',

@@ -1,10 +1,10 @@
 import { cn } from '../../utils/classNames';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 const SHELL_VARIANT_CLASSES = {
 	default: 'bg-bg-surface hover:bg-bg-surface-hover focus-within:bg-bg-surface',
 	error: 'bg-bg-surface',
-	disabled: 'bg-bg-surface-hover',
+	disabled: 'bg-bg-surface-muted',
 };
 
 const LABEL_VARIANT_CLASSES = {
@@ -57,6 +57,17 @@ function getMinRows(rows) {
 	return Math.max(5, parsedRows);
 }
 
+function assignRef(ref, value) {
+	if (typeof ref === 'function') {
+		ref(value);
+		return;
+	}
+
+	if (ref) {
+		ref.current = value;
+	}
+}
+
 export function EditorField({
 	className = '',
 	defaultValue,
@@ -81,6 +92,7 @@ export function EditorField({
 	const variant = disabled ? 'disabled' : invalid ? 'error' : 'default';
 	const [isFocused, setIsFocused] = useState(false);
 	const [hasValue, setHasValue] = useState(hasTextValue(value ?? defaultValue));
+	const textareaRef = useRef(null);
 	const helperTextId = helperText ? `${textareaId}-helper-text` : undefined;
 	const describedBy = [ariaDescribedBy, helperTextId].filter(Boolean).join(' ') || undefined;
 	const activeState = variant === 'default' && isFocused;
@@ -99,8 +111,16 @@ export function EditorField({
 	return (
 		<div className={cn('w-max max-w-full', className)}>
 			<div
+				onMouseDown={(event) => {
+					if (disabled || event.target === textareaRef.current) {
+						return;
+					}
+
+					event.preventDefault();
+					textareaRef.current?.focus();
+				}}
 				className={cn(
-					'group w-full border-b px-0 transition-[background-color,border-color,box-shadow] duration-200 py-3 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
+					'field-shell group w-full border-b px-0 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
 					SHELL_VARIANT_CLASSES[variant],
 					borderClasses,
 					disabled ? 'cursor-not-allowed' : ''
@@ -115,7 +135,10 @@ export function EditorField({
 				<textarea
 					{...props}
 					defaultValue={defaultValue}
-					ref={ref}
+					ref={(node) => {
+						textareaRef.current = node;
+						assignRef(ref, node);
+					}}
 					id={textareaId}
 					name={name ?? textareaId}
 					rows={getMinRows(rows)}

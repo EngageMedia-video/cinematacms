@@ -238,14 +238,17 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | Family | Tokens | Use |
 |---|---|---|
 | `bg/page`, `bg/surface`, `bg/surface-raised`, `bg/surface-muted`, `bg/surface-hover`, `bg/surface-inverse` | 6 | Themed page, card, and list/menu hover surfaces — invert per theme. |
+| `bg/notification-unread` | 1 | Unread notification row background. Light `pacific-deep-100`, dark `pacific-deep-800` — a deliberately stronger tint than `bg/surface-hover` so unread rows stand out from the page in light mode. |
+| `bg/avatar-fallback`, `bg/badge-info`, `bg/badge-danger`, `bg/badge-accent`, `bg/badge-muted` | 5 | Small decorative fills for avatar initials and action-type badge emblems. These are semantic aliases for fixed, non-theme-inverting roles. |
 | `bg/overlay-dark`, `bg/chrome`, `bg/chrome-hover` | 3 | Always-dark UI chrome — topbar, search overlays, mobile dialogs. Do not invert. |
 | `bg/skeleton`, `bg/control` | 2 | Loading skeletons and standard small control surfaces, including radio backgrounds. |
 | `bg/primary`, `bg/primary-hover`, `bg/secondary`, `bg/secondary-hover` | 4 | Action surfaces. `primary` is strait-blue; `secondary` is the AA-safe sunset-horizon brand action color (400p light / 500 dark) and is what `bg-brand-primary` now routes through. |
+| `bg/impact-icon-screening`, `bg/impact-icon-featured`, `bg/impact-icon-saves`, `bg/impact-icon-academic`, `bg/impact-icon-curated` | 5 | Community Impact icon shells with solid category fills. |
 | `bg/danger`, `bg/danger-strong`, `bg/danger-strong-hover`, `bg/success`, `bg/success-strong`, `bg/warning` | 6 | Semantic feedback. Strong danger tokens cover active destructive/toggled-danger surfaces; `success-strong` pairs with `success` for striped progress fills. |
-| `text/strong`, `text/primary`, `text/secondary`, `text/muted`, `text/description`, `text/subtle`, `text/disabled` | 7 | Themed content text. |
+| `text/strong`, `text/primary`, `text/secondary`, `text/muted`, `text/description`, `text/subtle`, `text/disabled`, `text/avatar-fallback` | 8 | Themed content text plus avatar initials fallback text. |
 | `text/inverse`, `text/on-primary`, `text/on-chrome`, `text/on-chrome-muted` | 4 | Text on inverse/action/chrome surfaces. |
 | `text/link`, `text/link-hover`, `text/accent`, `text/danger`, `text/success`, `text/warning` | 6 | Inline-link and semantic text. Link tokens use darker sunset-horizon steps in light theme for AA contrast on white and raised tinted surfaces. |
-| `border/default`, `border/subtle`, `border/divider`, `border/strong`, `border/strong-constant`, `border/chrome`, `border/input`, `border/danger` | 8 | Card borders, section dividers, hairlines, input borders, and subtle checkbox fills via `bg-border-subtle`. |
+| `border/default`, `border/subtle`, `border/divider`, `border/scrollbar`, `border/strong`, `border/strong-constant`, `border/chrome`, `border/input`, `border/danger` | 9 | Card borders, section dividers, scrollbar thumbs, hairlines, input borders, and subtle checkbox fills via `bg-border-subtle`. |
 | `ring/focus` | 1 | Unified focus indicator (sunset-horizon-400p, constant). Used by every interactive control. |
 
 For the per-token light/dark lookup table, see the Storybook `Introduction > Colors` page (`frontend/src/storybook/Colors.mdx`).
@@ -359,7 +362,7 @@ Two literals remain in the tailwind file (the rest are `var()` references):
 Following the semantic token migration, modern features now consume colors through **three layers**, in this order of preference:
 
 1. **Modern semantic tokens** (`bg-bg-page`, `text-text-strong`, `border-border-default`, `ring-ring-focus`, etc.) — the default and preferred vocabulary. Most components in `features/` were migrated to this layer. Theme-awareness is handled at the token level — no `dark:` variants needed in component code.
-2. **Raw `--cinemata-*` palette utilities** (`bg-cinemata-pacific-deep-700`, etc.) — used only for one-off decorations that don't fit any semantic token. About 78 references remain across the modern track: Avatar inverted-neutral inner bg, carousel indicator dot pair, HeroSection retry button, badge highlights, and decoration accents.
+2. **Raw `--cinemata-*` palette utilities** (`bg-cinemata-pacific-deep-700`, etc.) — used only for one-off decorations that don't fit any semantic token. Remaining references include the avatar inverted-neutral inner bg, carousel indicator dot pair, HeroSection retry button, and decoration accents.
 3. **Legacy semantic aliases** (`bg-brand-primary`, `text-content-body`, `bg-surface-popup`, etc.) — preserved for components that bridge into legacy SCSS contexts. The notable bridge is `bg-brand-primary` itself: it routes through `bg/secondary` so the modern utility renders sunset-horizon-400p in light mode and sunset-horizon-500 in dark mode while the legacy `--btn-primary-bg-color` SCSS variable can independently stay blue (light) / orange (dark) for legacy server-rendered buttons like `.primaryAction` on the login page.
 
 Key characteristics after migration:
@@ -442,10 +445,11 @@ Key characteristics after migration:
 
 | File | Color class / token | Element |
 |------|---------------------|---------|
-| NotificationItem.jsx | `bg-surface-popup/50`, `bg-brand-theme/5` | Hover / unread state (semantic tokens) |
-| NotificationItem.jsx | `text-content-body`, `text-content-body/50` | Message text (semantic tokens) |
-| NotificationPage.jsx | `backgroundColor: 'var(--btn-primary-bg-color)'` (inline) | Button (legacy var) |
-| NotificationPage.jsx | `color: 'var(--body-text-color)'` (inline) | Text (legacy var) |
+| NotificationDialog.jsx | `bg-bg-surface`, `text-text-strong`, `text-text-link` | Popup chrome and actions |
+| NotificationItem.jsx | `bg-bg-surface`, `bg-bg-notification-unread`, `text-text-primary`, `text-text-muted` | Row read/unread state and copy |
+| NotificationPage.jsx | `bg-bg-surface`, `bg-bg-surface-muted`, `text-text-link` | Tabs and mark-all action |
+| NotificationPreferencesForm.jsx | `text-text-strong`, `text-text-secondary`, `bg-border-subtle` | Preference panel text and section dividers |
+| notificationBadge.js | `bg-bg-badge-*` | Fixed action-type avatar badge emblems |
 
 ### shared (component library)
 

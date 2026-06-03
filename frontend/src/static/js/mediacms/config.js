@@ -78,6 +78,7 @@ export function config(glbl) {
 			media: !glbl.user.is.anonymous ? glbl.url.manageMedia : '',
 			users: !glbl.user.is.anonymous ? glbl.url.manageUsers : '',
 			comments: !glbl.user.is.anonymous ? glbl.url.manageComments : '',
+			filmImpact: !glbl.user.is.anonymous ? glbl.url.manageFilmImpact : '',
 			uploads: !glbl.user.is.anonymous ? glbl.url.manageUploads : '',
 		},
 	});
