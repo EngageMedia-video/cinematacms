@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from 'react';
 
-import { Dialog, DialogContent, DialogTrigger } from '../../shared/components/Dialog/Dialog';
 import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 
 import { PlaylistsSelection } from './MediaSave/PlaylistsSelection';
-import { Button } from '../../shared/components/Button/Button';
-import { Icon } from '../../shared/components/Icon/Icon';
-import { Text } from '../../shared/components/Text/Text';
+import { Button, Dialog, DialogContent, DialogTrigger, Icon, Text } from '../../shared/components';
 import { cn } from '../../shared/utils/classNames.js';
 
 function isMediaInUserPlaylist() {
@@ -60,7 +57,7 @@ export function MediaSaveButton() {
 						icon={<Icon name="bookmarkFilled" className={saveIconClassName} />}
 						className={cn(
 							'body-body-14-medium whitespace-nowrap p-size-8',
-							saveIconClassName ? 'bg-cinemata-strait-blue-800' : undefined
+							savedToPlaylist ? 'bg-bg-button-playlist-active' : undefined
 						)}
 						size="sm"
 					/>
@@ -74,7 +71,7 @@ export function MediaSaveButton() {
 						icon={<Icon name="bookmarkFilled" className={saveIconClassName} />}
 						className={cn(
 							'body-body-14-medium whitespace-nowrap',
-							savedToPlaylist ? 'bg-cinemata-strait-blue-800' : undefined
+							savedToPlaylist ? 'bg-bg-button-playlist-active' : undefined
 						)}
 						size="sm"
 					>
