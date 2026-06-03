@@ -81,6 +81,7 @@ urlpatterns = [
     path("api/v1/languages", views.MediaLanguageList.as_view()),
     path("api/v1/countries", views.MediaCountryList.as_view()),
     path("api/v1/tags", views.TagList.as_view()),
+    path("api/v1/subtitle-languages", views.SubtitleLanguageList.as_view()),
     path("api/v1/comments", views.CommentList.as_view()),
     re_path(
         r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/comments$",

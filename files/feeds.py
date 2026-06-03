@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils.feedgenerator import Rss201rev2Feed
 
 from . import helpers, lists
-from .models import Language, Media
+from .models import CommunityImpact, Language, Media
 from .stop_words import STOP_WORDS
 
 
@@ -113,6 +113,9 @@ class SearchRSSFeed(Feed):
         country = request.GET.get("country", "")
         tag = request.GET.get("t", "")
         query = request.GET.get("q", "")
+        subtitle_language = request.GET.get("subtitle_language", "")
+        length = request.GET.get("length", "")
+        award = request.GET.get("award", "")
 
         basic_query = Q(state="public", is_reviewed=True)
         media = Media.objects.filter(basic_query)
@@ -144,6 +147,23 @@ class SearchRSSFeed(Feed):
                 query = None
         if query:
             media = media.filter(search=query)
+
+        if subtitle_language:
+            media = media.filter(subtitles__language__title=subtitle_language).distinct()
+
+        if length == "less_than_10":
+            media = media.filter(duration__lt=600)
+        elif length == "more_than_10":
+            media = media.filter(duration__gte=600)
+
+        if award == "yes":
+            media = media.filter(
+                community_impacts__status=CommunityImpact.APPROVED,
+                community_impacts__category__in=[
+                    CommunityImpact.SCREENING,
+                    CommunityImpact.FEATURED,
+                ],
+            ).distinct()
 
         media = media.order_by("-add_date").prefetch_related("user")
 
