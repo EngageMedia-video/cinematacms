@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, Dialog, DialogContent, Dropdown, EditorField, Icon, TextField } from '../../../shared/components';
 import { COMMUNITY_IMPACT_CATEGORIES, getImpactIconConfig } from './impactIcons';
 import './AddImpactDialog.css';
@@ -28,7 +28,7 @@ export function normalizeImpactLink(raw) {
 	const tryParse = (candidate) => {
 		try {
 			const url = new URL(candidate);
-			if (url.protocol === 'http:' || url.protocol === 'https:') {
+			if (url.protocol === 'https:') {
 				return url.toString();
 			}
 			return null;
@@ -49,17 +49,39 @@ export function normalizeImpactLink(raw) {
 	return tryParse(`https://${trimmed}`);
 }
 
-export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onClose, onSubmit, open = false }) {
+export function AddImpactDialog({
+	categories = COMMUNITY_IMPACT_CATEGORIES,
+	onClose,
+	onSubmit,
+	onSubmitErrorClear,
+	open = false,
+	submitError = null,
+	submitting = false,
+}) {
 	const [values, setValues] = useState(createEmptyValues);
 	const [linkError, setLinkError] = useState('');
 	const wordCount = countWords(values.details);
 	const wordLimitExceeded = wordCount > 80;
-	const canSubmit = values.location.trim() && values.category && !wordLimitExceeded;
+	const canSubmit = values.location.trim() && values.category && !wordLimitExceeded && !submitting;
+	const formError = submitError && submitError.field !== 'url' ? submitError.message : '';
 	const heartConfig = getImpactIconConfig('heart');
 	const categoryOptions = useMemo(
 		() => categories.filter((category) => ADD_IMPACT_CATEGORY_VALUES.has(category.value)),
 		[categories]
 	);
+
+	useEffect(() => {
+		if (open && submitError?.field === 'url') {
+			setLinkError(submitError.message);
+		}
+	}, [open, submitError]);
+
+	useEffect(() => {
+		if (!open) {
+			setValues(createEmptyValues());
+			setLinkError('');
+		}
+	}, [open]);
 
 	function updateValue(name, value) {
 		setValues((current) => ({
@@ -68,6 +90,9 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 		}));
 		if (name === 'link' && linkError) {
 			setLinkError('');
+		}
+		if (submitError) {
+			onSubmitErrorClear?.();
 		}
 	}
 
@@ -80,7 +105,7 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 
 		const normalizedLink = normalizeImpactLink(values.link);
 		if (normalizedLink === null) {
-			setLinkError('Enter a valid http(s) link, e.g. https://example.com');
+			setLinkError('Enter a valid https link, e.g. https://drive.google.com/file/d/abc/view');
 			return;
 		}
 
@@ -92,9 +117,6 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 			title: values.location.trim(),
 			url: normalizedLink,
 		});
-		setValues(createEmptyValues());
-		setLinkError('');
-		onClose?.();
 	}
 
 	return (
@@ -120,6 +142,7 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 						className="absolute right-4 top-4 h-size-32 w-size-32 rounded-full text-cinemata-pacific-deep-300 outline-none hover:text-cinemata-strait-blue-50 focus-visible:ring-2 focus-visible:ring-ring-focus"
 						aria-label="Close add impact dialog"
 						onClick={onClose}
+						type="button"
 						icon={<Icon name="close" size="sm" decorative />}
 					/>
 
@@ -177,12 +200,18 @@ export function AddImpactDialog({ categories = COMMUNITY_IMPACT_CATEGORIES, onCl
 						/>
 					</div>
 
+					{formError ? (
+						<p className="m-0 mt-[16px] max-w-[404px] text-center text-[12px] leading-[18px] text-text-danger">
+							{formError}
+						</p>
+					) : null}
+
 					<Button
 						className="mt-[16px] h-[40px] w-[316px] max-w-full justify-center whitespace-nowrap bg-cinemata-sunset-horizon-500 px-0 py-0 text-[14px] font-bold leading-none text-cinemata-white hover:bg-cinemata-sunset-horizon-600 focus-visible:ring-2 focus-visible:ring-ring-focus"
 						disabled={!canSubmit}
 						type="submit"
 					>
-						SUBMIT COMMUNITY IMPACT
+						{submitting ? 'SUBMITTING...' : 'SUBMIT COMMUNITY IMPACT'}
 					</Button>
 				</form>
 			</DialogContent>
@@ -199,5 +228,11 @@ AddImpactDialog.propTypes = {
 	),
 	onClose: PropTypes.func,
 	onSubmit: PropTypes.func,
+	onSubmitErrorClear: PropTypes.func,
 	open: PropTypes.bool,
+	submitError: PropTypes.shape({
+		field: PropTypes.string,
+		message: PropTypes.string.isRequired,
+	}),
+	submitting: PropTypes.bool,
 };

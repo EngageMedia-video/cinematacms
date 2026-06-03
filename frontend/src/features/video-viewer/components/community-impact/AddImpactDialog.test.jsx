@@ -24,18 +24,18 @@ describe('AddImpactDialog', () => {
 		await user.type(screen.getByLabelText('Add more details'), 'Screened with a youth media collective.');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
-		await user.type(screen.getByLabelText('Add a link'), 'https://example.com/impact');
+		await user.type(screen.getByLabelText('Add a link'), 'https://drive.google.com/file/d/impact/view');
 		await user.click(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));
 
 		expect(onSubmit).toHaveBeenCalledWith({
 			category: 'screening',
 			details: 'Screened with a youth media collective.',
-			link: 'https://example.com/impact',
+			link: 'https://drive.google.com/file/d/impact/view',
 			location: 'Jakarta community hall',
 			title: 'Jakarta community hall',
-			url: 'https://example.com/impact',
+			url: 'https://drive.google.com/file/d/impact/view',
 		});
-		expect(onClose).toHaveBeenCalledTimes(1);
+		expect(onClose).not.toHaveBeenCalled();
 	});
 
 	it('disables submit when details exceed the word limit', async () => {
@@ -79,7 +79,7 @@ describe('AddImpactDialog', () => {
 
 		expect(onSubmit).not.toHaveBeenCalled();
 		expect(onClose).not.toHaveBeenCalled();
-		expect(screen.getByText(/Enter a valid http\(s\) link/)).toBeVisible();
+		expect(screen.getByText(/Enter a valid https link/)).toBeVisible();
 	});
 
 	it('normalizes bare hostnames to https:// before submitting', async () => {
@@ -97,6 +97,32 @@ describe('AddImpactDialog', () => {
 		expect(onSubmit).toHaveBeenCalledWith(
 			expect.objectContaining({ link: 'https://example.com/path', url: 'https://example.com/path' })
 		);
+	});
+
+	it('keeps the dialog open and renders server URL validation errors', async () => {
+		const user = userEvent.setup();
+		const onClose = vi.fn();
+		const onSubmitErrorClear = vi.fn();
+
+		render(
+			<AddImpactDialog
+				onClose={onClose}
+				onSubmitErrorClear={onSubmitErrorClear}
+				open
+				submitError={{
+					field: 'url',
+					message: 'Link is not trustworthy. Please use a known sharing service.',
+				}}
+			/>
+		);
+
+		expect(screen.getByRole('dialog', { name: 'Add community impact' })).toBeVisible();
+		expect(screen.getByText('Link is not trustworthy. Please use a known sharing service.')).toBeVisible();
+
+		await user.type(screen.getByLabelText('Add a link'), 'https://drive.google.com/file/d/abc/view');
+
+		expect(onSubmitErrorClear).toHaveBeenCalled();
+		expect(onClose).not.toHaveBeenCalled();
 	});
 
 	it('only offers manually writable categories', async () => {
@@ -133,9 +159,12 @@ describe('normalizeImpactLink', () => {
 		expect(normalizeImpactLink('   ')).toBe('');
 	});
 
-	it('accepts http(s) links unchanged (normalized form)', () => {
+	it('accepts https links unchanged (normalized form)', () => {
 		expect(normalizeImpactLink('https://example.com')).toBe('https://example.com/');
-		expect(normalizeImpactLink('http://example.com/path')).toBe('http://example.com/path');
+	});
+
+	it('rejects http links', () => {
+		expect(normalizeImpactLink('http://example.com/path')).toBeNull();
 	});
 
 	it('rejects unsafe schemes', () => {

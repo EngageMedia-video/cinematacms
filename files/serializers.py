@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from actions.models import MediaAction
 
+from .community_impact_validators import validate_trusted_url
 from .models import (
     Category,
     Comment,
@@ -257,11 +258,7 @@ class ManageCommunityImpactSerializer(serializers.ModelSerializer):
         return value
 
     def validate_url(self, value):
-        if not value:
-            return value
-        if not (value.startswith("http://") or value.startswith("https://")):
-            raise serializers.ValidationError("Link must be an http(s) URL.")
-        return value
+        return validate_trusted_url(value)
 
     class Meta:
         model = CommunityImpact
@@ -316,7 +313,7 @@ class SingleMediaSerializer(serializers.ModelSerializer):
         return False
 
     def get_community_impacts(self, obj):
-        entries = obj.community_impacts.filter(status=CommunityImpact.ACTIVE)
+        entries = obj.community_impacts.filter(status=CommunityImpact.APPROVED)
         grouped = {key: [] for key, _label in CommunityImpact.CATEGORY_CHOICES}
         for entry in entries:
             if entry.category == CommunityImpact.SAVES:
@@ -605,11 +602,7 @@ class CommunityImpactSerializer(serializers.ModelSerializer):
         return value
 
     def validate_url(self, value):
-        if not value:
-            return value
-        if not (value.startswith("http://") or value.startswith("https://")):
-            raise serializers.ValidationError("Link must be an http(s) URL.")
-        return value
+        return validate_trusted_url(value)
 
 
 class TopMessageSerializer(serializers.ModelSerializer):

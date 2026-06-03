@@ -1,8 +1,10 @@
+import json
 import logging
 
 from django import forms
 from django.contrib import admin
 from django.utils import timezone
+from django.utils.html import format_html
 from tinymce.widgets import TinyMCE
 
 from users.models import User
@@ -125,13 +127,13 @@ class CommunityImpactAdmin(admin.ModelAdmin):
     date_hierarchy = "event_date"
     ordering = ("-event_date", "-add_date")
     autocomplete_fields = ["media", "user"]
-    readonly_fields = ("uid", "add_date", "edit_date")
+    readonly_fields = ("uid", "url_display", "add_date", "edit_date")
     list_select_related = ("media", "user")
     list_per_page = 50
 
     fieldsets = (
         (None, {"fields": ("media", "user", "category", "title", "details")}),
-        ("Event", {"fields": ("event_date", "url")}),
+        ("Event", {"fields": ("event_date", "url", "url_display")}),
         (
             "Audit",
             {
@@ -140,6 +142,20 @@ class CommunityImpactAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    @admin.display(description="URL")
+    def url_display(self, obj):
+        if not obj or not obj.url:
+            return "-"
+        js_url = json.dumps(obj.url)
+        return format_html(
+            '<div style="display:flex;gap:8px;align-items:center;">'
+            '<input type="text" value="{}" readonly style="width:100%;max-width:640px;" />'
+            '<button type="button" onclick="navigator.clipboard.writeText({})">Copy</button>'
+            "</div>",
+            obj.url,
+            js_url,
+        )
 
 
 @admin.register(Category)

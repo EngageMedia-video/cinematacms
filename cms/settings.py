@@ -430,6 +430,26 @@ PASSWORD_BRUTE_FORCE_MAX_ATTEMPTS = 5
 PASSWORD_BRUTE_FORCE_WINDOW = 900  # 15 minutes
 TRUSTED_PROXIES = [proxy.strip() for proxy in os.getenv("TRUSTED_PROXIES", "127.0.0.1,::1").split(",") if proxy.strip()]
 
+# Community impact submission links must come from known sharing,
+# academic, archive, or news sources. Ops can extend this list in settings
+# when editorial approves a new source.
+TRUSTED_IMPACT_LINK_HOSTS = [
+    "drive.google.com",
+    "docs.google.com",
+    "drive.proton.me",
+    "youtube.com",
+    "www.youtube.com",
+    "youtu.be",
+    "vimeo.com",
+    "archive.org",
+    "jstor.org",
+    "bbc.com",
+    "bbc.co.uk",
+    "reuters.com",
+    "theguardian.com",
+    "nytimes.com",
+]
+
 # Shared secret required to access /health/ready from anonymous callers.
 # Default: "" (gate disabled — endpoint open subject to the existing
 # direct-localhost / staff privilege rule). To enable in production, override

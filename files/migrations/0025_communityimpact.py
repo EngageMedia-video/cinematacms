@@ -31,6 +31,19 @@ class Migration(migrations.Migration):
                         max_length=20,
                     ),
                 ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("waiting_approval", "Waiting for approval"),
+                            ("approved", "Approved"),
+                            ("rejected", "Rejected"),
+                        ],
+                        db_index=True,
+                        default="waiting_approval",
+                        max_length=20,
+                    ),
+                ),
                 ("title", models.CharField(max_length=200)),
                 ("details", models.TextField(blank=True, default="")),
                 ("event_date", models.DateField()),
@@ -54,6 +67,7 @@ class Migration(migrations.Migration):
                 "ordering": ["-event_date", "-add_date"],
                 "indexes": [
                     models.Index(fields=["media", "category"], name="files_commu_media_i_e2a737_idx"),
+                    models.Index(fields=["status", "category"], name="files_commu_status_b5306c_idx"),
                 ],
             },
         ),

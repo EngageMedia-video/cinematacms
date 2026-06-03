@@ -68,6 +68,43 @@ function extractPlaylistId() {
 	return playlistId;
 }
 
+function firstCommunityImpactErrorMessage(value) {
+	if (Array.isArray(value)) {
+		return value.length ? firstCommunityImpactErrorMessage(value[0]) : '';
+	}
+
+	if (value && 'object' === typeof value) {
+		const firstKey = Object.keys(value)[0];
+		return firstKey ? firstCommunityImpactErrorMessage(value[firstKey]) : '';
+	}
+
+	return 'string' === typeof value ? value : '';
+}
+
+function normalizeCommunityImpactSubmitError(error) {
+	const data = error && error.response ? error.response.data : null;
+	const fallback = 'Unable to submit film impact entry.';
+
+	if (!data) {
+		return { field: null, message: fallback };
+	}
+
+	if (data.url) {
+		return { field: 'url', message: firstCommunityImpactErrorMessage(data.url) || fallback };
+	}
+
+	if (data.detail) {
+		return { field: null, message: firstCommunityImpactErrorMessage(data.detail) || fallback };
+	}
+
+	const firstField = Object.keys(data)[0];
+	if (firstField) {
+		return { field: firstField, message: firstCommunityImpactErrorMessage(data[firstField]) || fallback };
+	}
+
+	return { field: null, message: fallback };
+}
+
 const MediaPageStoreData = {};
 
 class MediaPageStore extends EventEmitter {
@@ -1416,8 +1453,8 @@ class MediaPageStore extends EventEmitter {
 		);
 	}
 
-	submitCommunityImpactFail() {
-		this.emit('community_impact_submit_fail');
+	submitCommunityImpactFail(error) {
+		this.emit('community_impact_submit_fail', normalizeCommunityImpactSubmitError(error));
 		setTimeout(
 			function (ins) {
 				MediaPageStoreData[ins.id].while.submitCommunityImpact = false;

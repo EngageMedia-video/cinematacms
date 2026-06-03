@@ -90,7 +90,8 @@ export default function ViewerInfoContent(props) {
 	const [isAboutExpanded, setIsAboutExpanded] = useState(false);
 	const [isSummaryClamped, setIsSummaryClamped] = useState(false);
 	const [communityImpacts, setCommunityImpacts] = useState(() => MediaPageStore.get('community-impacts'));
-	const [communityImpactSubmitMessage, setCommunityImpactSubmitMessage] = useState('');
+	const [communityImpactSubmitStatus, setCommunityImpactSubmitStatus] = useState('idle');
+	const [communityImpactSubmitError, setCommunityImpactSubmitError] = useState(null);
 	const aboutDetailsId = useId();
 	const summaryTextRef = useRef(null);
 
@@ -136,11 +137,13 @@ export default function ViewerInfoContent(props) {
 
 		function onCommunityImpactSubmit() {
 			syncCommunityImpacts();
-			setCommunityImpactSubmitMessage('Submitted for review.');
+			setCommunityImpactSubmitStatus('success');
+			setCommunityImpactSubmitError(null);
 		}
 
-		function onCommunityImpactSubmitFail() {
-			setCommunityImpactSubmitMessage('Unable to submit film impact entry.');
+		function onCommunityImpactSubmitFail(error) {
+			setCommunityImpactSubmitStatus('error');
+			setCommunityImpactSubmitError(error || { field: null, message: 'Unable to submit film impact entry.' });
 		}
 
 		MediaPageStore.on('community_impact_submit', onCommunityImpactSubmit);
@@ -153,6 +156,13 @@ export default function ViewerInfoContent(props) {
 			MediaPageStore.removeListener('loaded_media_data', syncCommunityImpacts);
 		};
 	}, []);
+
+	function clearCommunityImpactSubmitError() {
+		setCommunityImpactSubmitError(null);
+		if (communityImpactSubmitStatus === 'error') {
+			setCommunityImpactSubmitStatus('idle');
+		}
+	}
 
 	useLayoutEffect(() => {
 		const summaryText = summaryTextRef.current;
@@ -487,9 +497,15 @@ export default function ViewerInfoContent(props) {
 								<CommunityImpactSection
 									entries={communityImpacts}
 									canAdd={user?.is?.anonymous === false}
-									submitMessage={communityImpactSubmitMessage}
+									submitMessage={
+										communityImpactSubmitStatus === 'success' ? 'Submitted for review.' : ''
+									}
+									submitStatus={communityImpactSubmitStatus}
+									submitError={communityImpactSubmitError}
+									onSubmitErrorClear={clearCommunityImpactSubmitError}
 									onAddImpact={(formValues) => {
-										setCommunityImpactSubmitMessage('');
+										setCommunityImpactSubmitStatus('submitting');
+										setCommunityImpactSubmitError(null);
 										MediaPageActions.submitCommunityImpact(formValues);
 									}}
 								/>

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, Text } from '../../../shared/components';
 import { AddImpactDialog } from './AddImpactDialog';
 import { ImpactCard } from './ImpactCard';
@@ -94,7 +94,15 @@ function buildCardProps(variant, data = {}) {
 	return { title: 'Academic Usage', subtitle: `Used in ${total.toLocaleString()} academic contexts` };
 }
 
-export function CommunityImpactSection({ canAdd = true, entries = {}, onAddImpact, submitMessage = '' }) {
+export function CommunityImpactSection({
+	canAdd = true,
+	entries = {},
+	onAddImpact,
+	onSubmitErrorClear,
+	submitError = null,
+	submitMessage = '',
+	submitStatus = 'idle',
+}) {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const cards = useMemo(
 		() =>
@@ -115,6 +123,12 @@ export function CommunityImpactSection({ canAdd = true, entries = {}, onAddImpac
 		[entries]
 	);
 	const populated = cards.length > 0;
+
+	useEffect(() => {
+		if (submitStatus === 'success') {
+			setDialogOpen(false);
+		}
+	}, [submitStatus]);
 
 	function handleAddClick() {
 		setDialogOpen(true);
@@ -165,7 +179,14 @@ export function CommunityImpactSection({ canAdd = true, entries = {}, onAddImpac
 				)}
 			</div>
 
-			<AddImpactDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSubmit={handleSubmit} />
+			<AddImpactDialog
+				open={dialogOpen}
+				onClose={() => setDialogOpen(false)}
+				onSubmit={handleSubmit}
+				onSubmitErrorClear={onSubmitErrorClear}
+				submitError={submitError}
+				submitting={submitStatus === 'submitting'}
+			/>
 		</section>
 	);
 }
@@ -210,5 +231,11 @@ CommunityImpactSection.propTypes = {
 		screening: entryCategoryShape,
 	}),
 	onAddImpact: PropTypes.func,
+	onSubmitErrorClear: PropTypes.func,
+	submitError: PropTypes.shape({
+		field: PropTypes.string,
+		message: PropTypes.string.isRequired,
+	}),
 	submitMessage: PropTypes.string,
+	submitStatus: PropTypes.oneOf(['idle', 'submitting', 'success', 'error']),
 };

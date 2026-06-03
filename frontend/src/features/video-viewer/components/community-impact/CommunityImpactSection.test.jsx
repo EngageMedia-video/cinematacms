@@ -85,4 +85,23 @@ describe('CommunityImpactSection', () => {
 			url: '',
 		});
 	});
+
+	it('forwards submit errors into the add dialog', async () => {
+		const user = userEvent.setup();
+
+		render(
+			<CommunityImpactSection
+				entries={{}}
+				submitStatus="error"
+				submitError={{
+					field: 'url',
+					message: 'Link is not trustworthy. Please use a known sharing service.',
+				}}
+			/>
+		);
+
+		await user.click(screen.getAllByRole('button', { name: 'ADD IMPACT' })[0]);
+
+		expect(screen.getByText('Link is not trustworthy. Please use a known sharing service.')).toBeVisible();
+	});
 });

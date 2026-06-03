@@ -2491,7 +2491,7 @@ class CommunityImpactList(APIView):
         media = self.get_object(friendly_token)
         if isinstance(media, Response):
             return media
-        entries = media.community_impacts.select_related("user").filter(status=CommunityImpact.ACTIVE)
+        entries = media.community_impacts.select_related("user").filter(status=CommunityImpact.APPROVED)
         serializer = CommunityImpactSerializer(entries, many=True, context={"request": request})
         return Response(serializer.data)
 

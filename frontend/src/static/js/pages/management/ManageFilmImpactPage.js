@@ -24,9 +24,9 @@ const EDIT_CATEGORY_OPTIONS = CATEGORY_OPTIONS.filter((option) =>
 
 const STATUS_OPTIONS = [
 	{ value: '', label: 'All statuses' },
-	{ value: 'pending', label: 'Pending' },
-	{ value: 'active', label: 'Active' },
-	{ value: 'inactive', label: 'Inactive' },
+	{ value: 'waiting_approval', label: 'Waiting for approval' },
+	{ value: 'approved', label: 'Approved' },
+	{ value: 'rejected', label: 'Rejected' },
 ];
 
 const EDIT_STATUS_OPTIONS = STATUS_OPTIONS.filter((option) => option.value);
@@ -72,18 +72,39 @@ function statusLabel(status) {
 	return option ? option.label : status || '-';
 }
 
-function nextStatus(status) {
-	return status === 'active' ? 'inactive' : 'active';
+function statusActions(status) {
+	return [
+		status !== 'approved' && { label: 'Approve', target: 'approved', cls: 'primary' },
+		status !== 'rejected' && { label: 'Reject', target: 'rejected', cls: 'danger' },
+	].filter(Boolean);
 }
 
-function statusActionLabel(status) {
-	return status === 'active' ? 'Deactivate' : 'Activate';
-}
+function copyText(value) {
+	if (navigator.clipboard && navigator.clipboard.writeText) {
+		return navigator.clipboard.writeText(value);
+	}
 
-function statusButtonClassName(status) {
-	return status === 'active'
-		? 'manage-film-impact-page__button manage-film-impact-page__button--secondary'
-		: 'manage-film-impact-page__button manage-film-impact-page__button--primary';
+	return new Promise((resolve, reject) => {
+		const ta = document.createElement('textarea');
+		ta.value = value;
+		ta.setAttribute('readonly', '');
+		ta.style.position = 'absolute';
+		ta.style.left = '-9999px';
+		document.body.appendChild(ta);
+		ta.select();
+
+		try {
+			if (document.execCommand('copy')) {
+				resolve();
+			} else {
+				reject(new Error('Copy failed.'));
+			}
+		} catch (error) {
+			reject(error);
+		} finally {
+			document.body.removeChild(ta);
+		}
+	});
 }
 
 function editUidFromPath() {
@@ -118,6 +139,8 @@ export class ManageFilmImpactPage extends Page {
 			error: null,
 			deletingUid: null,
 			changingStatusUid: null,
+			copiedUrl: false,
+			openMenuUid: null,
 			next: null,
 			previous: null,
 		};
@@ -133,6 +156,9 @@ export class ManageFilmImpactPage extends Page {
 		this.onSubmitEdit = this.onSubmitEdit.bind(this);
 		this.onDeleteListItem = this.onDeleteListItem.bind(this);
 		this.onStatusListItem = this.onStatusListItem.bind(this);
+		this.onCopyUrl = this.onCopyUrl.bind(this);
+		this.onToggleRowMenu = this.onToggleRowMenu.bind(this);
+		this.onDocumentClickForMenu = this.onDocumentClickForMenu.bind(this);
 	}
 
 	componentDidMount() {
@@ -142,6 +168,25 @@ export class ManageFilmImpactPage extends Page {
 		}
 
 		this.loadItems(this.buildRequestUrl(1), 1);
+		document.addEventListener('click', this.onDocumentClickForMenu);
+	}
+
+	componentWillUnmount() {
+		document.removeEventListener('click', this.onDocumentClickForMenu);
+	}
+
+	onDocumentClickForMenu(event) {
+		if (!this.state.openMenuUid) {
+			return;
+		}
+		if (event.target.closest('.manage-film-impact-page__row-menu')) {
+			return;
+		}
+		this.setState({ openMenuUid: null });
+	}
+
+	onToggleRowMenu(uid) {
+		this.setState((prev) => ({ openMenuUid: prev.openMenuUid === uid ? null : uid }));
 	}
 
 	buildRequestUrl(page) {
@@ -200,7 +245,7 @@ export class ManageFilmImpactPage extends Page {
 						title: data.title || '',
 						category: data.category || 'screening',
 						details: data.details || '',
-						status: data.status || 'pending',
+						status: data.status || 'waiting_approval',
 						event_date: data.event_date || '',
 						url: data.url || '',
 						media: data.media || null,
@@ -295,7 +340,7 @@ export class ManageFilmImpactPage extends Page {
 						title: data.title || '',
 						category: data.category || 'screening',
 						details: data.details || '',
-						status: data.status || 'pending',
+						status: data.status || 'waiting_approval',
 						event_date: data.event_date || '',
 						url: data.url || '',
 						media: data.media || null,
@@ -410,6 +455,19 @@ export class ManageFilmImpactPage extends Page {
 			});
 	}
 
+	onCopyUrl(value) {
+		if (!value) {
+			return;
+		}
+
+		copyText(value).then(() => {
+			this.setState({ copiedUrl: true });
+			window.setTimeout(() => {
+				this.setState({ copiedUrl: false });
+			}, 1500);
+		});
+	}
+
 	renderFieldError(field) {
 		if (!this.state.formErrors || !this.state.formErrors[field]) {
 			return null;
@@ -517,7 +575,22 @@ export class ManageFilmImpactPage extends Page {
 
 					<label>
 						<span>URL</span>
-						<input type="url" name="url" value={this.state.form.url} onChange={this.onFormFieldChange} />
+						<div className="manage-film-impact-page__url-control">
+							<input
+								type="url"
+								name="url"
+								value={this.state.form.url}
+								onChange={this.onFormFieldChange}
+							/>
+							<button
+								type="button"
+								className="manage-film-impact-page__button manage-film-impact-page__button--secondary"
+								onClick={() => this.onCopyUrl(this.state.form.url)}
+								disabled={!this.state.form.url}
+							>
+								{this.state.copiedUrl ? 'Copied' : 'Copy'}
+							</button>
+						</div>
 						{this.renderFieldError('url')}
 					</label>
 
@@ -599,25 +672,64 @@ export class ManageFilmImpactPage extends Page {
 				<td>{formatDate(item.event_date, false)}</td>
 				<td>{formatDate(item.add_date, true)}</td>
 				<td>
-					<button
-						type="button"
-						className={statusButtonClassName(item.status)}
-						onClick={() => this.onStatusListItem(item.uid, nextStatus(item.status))}
-						disabled={this.state.changingStatusUid === item.uid}
-					>
-						{this.state.changingStatusUid === item.uid ? 'Updating...' : statusActionLabel(item.status)}
-					</button>
-					<a className="manage-film-impact-page__action" href={item.edit_url}>
-						Edit
-					</a>
-					<button
-						type="button"
-						className="manage-film-impact-page__action manage-film-impact-page__action-button manage-film-impact-page__danger"
-						onClick={() => this.onDeleteListItem(item.uid)}
-						disabled={this.state.deletingUid === item.uid}
-					>
-						{this.state.deletingUid === item.uid ? 'Deleting...' : 'Delete'}
-					</button>
+					<div className="manage-film-impact-page__row-menu">
+						<button
+							type="button"
+							className="manage-film-impact-page__row-menu-trigger"
+							aria-haspopup="menu"
+							aria-expanded={this.state.openMenuUid === item.uid}
+							aria-label="Row actions"
+							onClick={() => this.onToggleRowMenu(item.uid)}
+						>
+							&#8942;
+						</button>
+						{this.state.openMenuUid === item.uid ? (
+							<ul className="manage-film-impact-page__row-menu-list" role="menu">
+								{statusActions(item.status).map((action) => (
+									<li key={action.target} role="none">
+										<button
+											type="button"
+											role="menuitem"
+											className={
+												'manage-film-impact-page__row-menu-item manage-film-impact-page__row-menu-item--' +
+												action.cls
+											}
+											onClick={() => {
+												this.setState({ openMenuUid: null });
+												this.onStatusListItem(item.uid, action.target);
+											}}
+											disabled={this.state.changingStatusUid === item.uid}
+										>
+											{this.state.changingStatusUid === item.uid ? 'Updating...' : action.label}
+										</button>
+									</li>
+								))}
+								<li role="none">
+									<a
+										className="manage-film-impact-page__row-menu-item"
+										role="menuitem"
+										href={item.edit_url}
+									>
+										Edit
+									</a>
+								</li>
+								<li role="none">
+									<button
+										type="button"
+										role="menuitem"
+										className="manage-film-impact-page__row-menu-item manage-film-impact-page__row-menu-item--danger"
+										onClick={() => {
+											this.setState({ openMenuUid: null });
+											this.onDeleteListItem(item.uid);
+										}}
+										disabled={this.state.deletingUid === item.uid}
+									>
+										{this.state.deletingUid === item.uid ? 'Deleting...' : 'Delete'}
+									</button>
+								</li>
+							</ul>
+						) : null}
+					</div>
 				</td>
 			</tr>
 		));

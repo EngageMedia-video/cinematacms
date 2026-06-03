@@ -47,7 +47,7 @@
 
 	&__table {
 		width: 100%;
-		min-width: 1040px;
+		min-width: 1000px;
 		border-collapse: collapse;
 		font-size: 14px;
 
@@ -68,25 +68,77 @@
 		}
 	}
 
-	&__action {
-		display: inline-flex;
-		margin-right: 10px;
-		margin-bottom: 6px;
-		white-space: nowrap;
+	&__row-menu {
+		position: relative;
+		display: inline-block;
 	}
 
-	&__action-button {
-		border: 0;
+	&__row-menu-trigger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
 		padding: 0;
+		border: 1px solid var(--media-list-row-border-color);
+		border-radius: 4px;
 		background: transparent;
 		color: inherit;
+		font-size: 18px;
+		line-height: 1;
 		cursor: pointer;
+
+		&:hover,
+		&[aria-expanded='true'] {
+			background: var(--nav-menu-item-hover-bg-color);
+		}
+	}
+
+	&__row-menu-list {
+		position: absolute;
+		top: calc(100% + 4px);
+		right: 0;
+		z-index: 20;
+		min-width: 160px;
+		margin: 0;
+		padding: 4px 0;
+		list-style: none;
+		background: var(--popup-bg-color);
+		color: var(--popup-msg-main-text-color);
+		border: 1px solid var(--media-list-row-border-color);
+		border-radius: 6px;
+		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+	}
+
+	&__row-menu-item {
+		display: block;
+		width: 100%;
+		padding: 8px 12px;
+		border: 0;
+		background: transparent;
+		color: inherit;
 		font: inherit;
-		text-decoration: underline;
+		text-align: left;
+		text-decoration: none;
+		cursor: pointer;
+
+		&:hover,
+		&:focus-visible {
+			background: var(--in-popup-nav-menu-item-hover-bg-color);
+			outline: 0;
+		}
 
 		&:disabled {
 			cursor: not-allowed;
 			opacity: 0.6;
+		}
+
+		&--primary {
+			color: var(--success-color);
+		}
+
+		&--danger {
+			color: var(--danger-color);
 		}
 	}
 
@@ -151,18 +203,28 @@
 		line-height: 1;
 	}
 
-	&__status--active {
+	&__status--approved {
 		border-color: var(--success-color);
 		color: var(--success-color);
 	}
 
-	&__status--inactive {
-		border-color: var(--warning-color);
-		color: var(--warning-color);
+	&__status--rejected {
+		border-color: var(--danger-color);
+		color: var(--danger-color);
 	}
 
-	&__status--pending {
+	&__status--waiting_approval {
 		color: var(--text-secondary, var(--body-text-color));
+	}
+
+	&__url-control {
+		display: flex;
+		align-items: stretch;
+		gap: 8px;
+
+		input {
+			min-width: 0;
+		}
 	}
 
 	&__button {
