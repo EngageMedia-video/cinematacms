@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils.feedgenerator import Rss201rev2Feed
 
 from . import helpers, lists
-from .models import Language, Media
+from .models import CommunityImpact, Language, Media
 from .stop_words import STOP_WORDS
 
 
@@ -157,7 +157,13 @@ class SearchRSSFeed(Feed):
             media = media.filter(duration__gte=600)
 
         if award == "yes":
-            media = media.filter(has_award=True)
+            media = media.filter(
+                community_impacts__status=CommunityImpact.APPROVED,
+                community_impacts__category__in=[
+                    CommunityImpact.SCREENING,
+                    CommunityImpact.FEATURED,
+                ],
+            ).distinct()
 
         media = media.order_by("-add_date").prefetch_related("user")
 

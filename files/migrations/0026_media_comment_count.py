@@ -24,10 +24,5 @@ class Migration(migrations.Migration):
             name="comment_count",
             field=models.IntegerField(default=0, db_index=True),
         ),
-        migrations.AddField(
-            model_name="media",
-            name="has_award",
-            field=models.BooleanField(default=False, db_index=True),
-        ),
         migrations.RunPython(backfill_comment_counts, migrations.RunPython.noop),
     ]

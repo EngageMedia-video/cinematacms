@@ -1891,7 +1891,13 @@ class MediaSearch(APIView):
 
         if award:
             if award == "yes":
-                media = media.filter(has_award=True)
+                media = media.filter(
+                    community_impacts__status=CommunityImpact.APPROVED,
+                    community_impacts__category__in=[
+                        CommunityImpact.SCREENING,
+                        CommunityImpact.FEATURED,
+                    ],
+                ).distinct()
 
         if media_type:
             media = media.filter(media_type=media_type)

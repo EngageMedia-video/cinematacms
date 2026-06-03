@@ -279,7 +279,6 @@ class Media(models.Model):
         help_text="Date when this video was featured (auto-set by scheduling system)",
     )
     user_featured = models.BooleanField(default=False, db_index=True, help_text="Featured by the user")
-    has_award = models.BooleanField(default=False, db_index=True)
     media_type = models.CharField(
         max_length=20,
         blank=True,
