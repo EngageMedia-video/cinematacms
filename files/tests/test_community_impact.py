@@ -49,8 +49,8 @@ class CommunityImpactSerializerTests(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn("details", serializer.errors)
 
-    def test_rejects_untrusted_urls(self):
-        for bad_url in ("http://drive.google.com/x", "https://evil.com/x"):
+    def test_rejects_unsafe_urls(self):
+        for bad_url in ("http://drive.google.com/x", "https://192.168.1.1/x"):
             serializer = CommunityImpactSerializer(
                 data={
                     "category": CommunityImpact.SCREENING,
@@ -88,8 +88,8 @@ class CommunityImpactSerializerTests(TestCase):
         self.assertTrue(serializer.is_valid(), msg=serializer.errors)
         self.assertEqual(serializer.validated_data["event_date"], timezone.localdate())
 
-    def test_accepts_trusted_https_urls(self):
-        for good_url in ("https://drive.google.com/file/d/abc/view", "https://foo.drive.google.com/path"):
+    def test_accepts_https_urls(self):
+        for good_url in ("https://drive.google.com/file/d/abc/view", "https://example.com/path"):
             serializer = CommunityImpactSerializer(
                 data={
                     "category": CommunityImpact.SCREENING,
@@ -283,7 +283,7 @@ class CommunityImpactEndpointTests(TestCase):
             data={
                 "category": CommunityImpact.SCREENING,
                 "title": "Unsafe screening",
-                "url": "https://evil.example/x",
+                "url": "https://192.168.1.1/x",
             },
             content_type="application/json",
         )

@@ -1,10 +1,9 @@
 import ipaddress
 from urllib.parse import urlsplit
 
-from django.conf import settings
 from rest_framework import serializers
 
-GENERIC_TRUSTED_URL_ERROR = "Link is not trustworthy. Please use a known sharing service."
+GENERIC_TRUSTED_URL_ERROR = "Link is not trustworthy. Please use a secure HTTPS link."
 
 
 def validate_trusted_url(value):
@@ -31,9 +30,5 @@ def validate_trusted_url(value):
         raise serializers.ValidationError(GENERIC_TRUSTED_URL_ERROR)
     except ValueError:
         pass
-
-    allowed_hosts = {host.lower().rstrip(".") for host in settings.TRUSTED_IMPACT_LINK_HOSTS}
-    if not any(host == allowed_host or host.endswith("." + allowed_host) for allowed_host in allowed_hosts):
-        raise serializers.ValidationError(GENERIC_TRUSTED_URL_ERROR)
 
     return value

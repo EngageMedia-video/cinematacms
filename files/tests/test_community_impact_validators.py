@@ -10,7 +10,7 @@ class TrustedImpactUrlValidatorTests(SimpleTestCase):
             validate_trusted_url(value)
 
         self.assertEqual(str(context.exception.detail[0]), GENERIC_TRUSTED_URL_ERROR)
-        self.assertNotIn("drive.google.com", str(context.exception.detail[0]))
+        self.assertNotIn("allowed", str(context.exception.detail[0]).lower())
 
     def test_rejects_http_scheme(self):
         self.assert_rejects_with_generic_error("http://drive.google.com/x")
@@ -24,16 +24,13 @@ class TrustedImpactUrlValidatorTests(SimpleTestCase):
     def test_rejects_credentials(self):
         self.assert_rejects_with_generic_error("https://user:pass@drive.google.com/x")
 
-    def test_rejects_unlisted_host(self):
-        self.assert_rejects_with_generic_error("https://evil.com/x")
-
-    def test_accepts_allowed_host(self):
+    def test_accepts_https_host(self):
         value = "https://drive.google.com/file/d/abc/view"
 
         self.assertEqual(validate_trusted_url(value), value)
 
-    def test_accepts_allowed_subdomain(self):
-        value = "https://foo.drive.google.com/x"
+    def test_accepts_arbitrary_https_host(self):
+        value = "https://example.com/x"
 
         self.assertEqual(validate_trusted_url(value), value)
 

@@ -95,13 +95,13 @@ describe('CommunityImpactSection', () => {
 				submitStatus="error"
 				submitError={{
 					field: 'url',
-					message: 'Link is not trustworthy. Please use a known sharing service.',
+					message: 'Link is not trustworthy. Please use a secure HTTPS link.',
 				}}
 			/>
 		);
 
 		await user.click(screen.getAllByRole('button', { name: 'ADD IMPACT' })[0]);
 
-		expect(screen.getByText('Link is not trustworthy. Please use a known sharing service.')).toBeVisible();
+		expect(screen.getByText('Link is not trustworthy. Please use a secure HTTPS link.')).toBeVisible();
 	});
 });

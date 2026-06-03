@@ -111,13 +111,13 @@ describe('AddImpactDialog', () => {
 				open
 				submitError={{
 					field: 'url',
-					message: 'Link is not trustworthy. Please use a known sharing service.',
+					message: 'Link is not trustworthy. Please use a secure HTTPS link.',
 				}}
 			/>
 		);
 
 		expect(screen.getByRole('dialog', { name: 'Add community impact' })).toBeVisible();
-		expect(screen.getByText('Link is not trustworthy. Please use a known sharing service.')).toBeVisible();
+		expect(screen.getByText('Link is not trustworthy. Please use a secure HTTPS link.')).toBeVisible();
 
 		await user.type(screen.getByLabelText('Add a link'), 'https://drive.google.com/file/d/abc/view');
 
