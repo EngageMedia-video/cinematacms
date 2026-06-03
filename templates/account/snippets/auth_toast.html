@@ -82,6 +82,7 @@ tokens, so the banner card design is unchanged.
 					document.body.appendChild(stack);
 				}
 				function dismiss(toast) {
+					clearTimeout(toast._dismissTimer);
 					var done = function () {
 						if (!toast.isConnected) return;
 						toast.remove();
@@ -91,12 +92,16 @@ tokens, so the banner card design is unchanged.
 					toast.addEventListener('animationend', done, { once: true });
 					setTimeout(done, 280);
 				}
+				function schedule(toast, delay) {
+					clearTimeout(toast._dismissTimer);
+					toast._dismissTimer = setTimeout(function () { dismiss(toast); }, delay);
+				}
 				stack.querySelectorAll('.auth-message-banner').forEach(function (toast) {
 					if (toast.dataset.toastReady === 'true') return;
 					toast.dataset.toastReady = 'true';
-					var timer = setTimeout(function () { dismiss(toast); }, 3000);
-					toast.addEventListener('mouseenter', function () { clearTimeout(timer); });
-					toast.addEventListener('mouseleave', function () { timer = setTimeout(function () { dismiss(toast); }, 1500); });
+					schedule(toast, 3000);
+					toast.addEventListener('mouseenter', function () { clearTimeout(toast._dismissTimer); });
+					toast.addEventListener('mouseleave', function () { schedule(toast, 1500); });
 				});
 			});
 		}
