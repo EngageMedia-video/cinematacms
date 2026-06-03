@@ -3,7 +3,8 @@
 {% if messages %}
 
 {% if request.path|slice:":10" == "/accounts/" or request.path|slice:":5" == "/mfa/" %}
-	<div class="auth-message-stack" aria-live="polite" style="position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--auth-message-overlay);">
+	{% include "account/snippets/auth_toast.html" %}
+	<div class="auth-message-stack auth-message-toast" role="region" aria-label="Notifications" aria-live="polite">
 		{% for message in messages %}
 			<div class="auth-message-banner" role="status">
 				<div class="auth-message-header">
