@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { Dialog, DialogContent, DialogTrigger } from '../../shared/components/Dialog/Dialog';
@@ -10,22 +10,24 @@ import { Button } from '../../shared/components/Button/Button';
 import { Icon } from '../../shared/components/Icon/Icon';
 import { Text } from '../../shared/components/Text/Text';
 
-function mediaSharePopupPages() {
-	return {
-		shareOptions: <MediaShareOptions />,
-	};
-}
-
-function videoSharePopupPages(onTriggerPopupClose) {
-	return {
-		...mediaSharePopupPages(),
-		shareEmbed: <MediaShareEmbed triggerPopupClose={onTriggerPopupClose} />,
-	};
+function getCurrentVideoTimestamp() {
+	const videoElem = document.querySelector('.viewer-container video');
+	return videoElem?.currentTime ?? 0;
 }
 
 export function MediaShareButton({ isVideo }) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [popupCurrentPage, setPopupCurrentPage] = useState('shareOptions');
+	const [timestamp, setTimestamp] = useState(0);
+	const [startAtSelected, setStartAtSelected] = useState(false);
+
+	useEffect(() => {
+		if (isOpen) {
+			setTimestamp(getCurrentVideoTimestamp());
+		} else {
+			setStartAtSelected(false);
+		}
+	}, [isOpen]);
 
 	function onOpenChange(nextOpen) {
 		setIsOpen(nextOpen);
@@ -35,6 +37,20 @@ export function MediaShareButton({ isVideo }) {
 	function triggerPopupClose() {
 		onOpenChange(false);
 	}
+
+	const sharedOptionsProps = {
+		timestamp,
+		startAtSelected,
+		onToggleStartAt: () => setStartAtSelected((prev) => !prev),
+	};
+	const embedStartAt = startAtSelected ? timestamp : 0;
+
+	const pages = isVideo
+		? {
+				shareOptions: <MediaShareOptions {...sharedOptionsProps} />,
+				shareEmbed: <MediaShareEmbed triggerPopupClose={triggerPopupClose} startAt={embedStartAt} />,
+		  }
+		: { shareOptions: <MediaShareOptions {...sharedOptionsProps} /> };
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -73,7 +89,7 @@ export function MediaShareButton({ isVideo }) {
 					initPage={popupCurrentPage}
 					pageChangeSelector=".change-page"
 					pageIdSelectorAttr="data-page-id"
-					pages={isVideo ? videoSharePopupPages(triggerPopupClose) : mediaSharePopupPages()}
+					pages={pages}
 					focusFirstItemOnPageChange={false}
 					pageChangeCallback={setPopupCurrentPage}
 				/>

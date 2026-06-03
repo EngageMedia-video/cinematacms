@@ -1,4 +1,5 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef } from 'react';
+import PropTypes from 'prop-types';
 
 import ShareOptionsContext from '../../../../static/js/contexts/ShareOptionsContext';
 
@@ -93,11 +94,10 @@ const SHARE_OPTION_META = {
 	},
 };
 
-function buildShareOptions(socialMedia) {
-	const mediaUrl = MediaPageStore.get('media-url');
+function buildShareOptions(socialMedia, shareUrl) {
 	const mediaTitle = MediaPageStore.get('media-data').title;
 	const mediaType = MediaPageStore.get('media-data').media_type;
-	const encodedUrl = encodeURIComponent(mediaUrl || '');
+	const encodedUrl = encodeURIComponent(shareUrl || '');
 	const encodedTitle = encodeURIComponent(mediaTitle || '');
 
 	const result = [];
@@ -121,11 +121,6 @@ function toHHMMSS(timeInt) {
 	const s = total - h * 3600 - m * 60;
 	const pad = (n) => String(n).padStart(2, '0');
 	return h >= 1 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
-}
-
-function getCurrentVideoTimestamp() {
-	const videoElem = document.querySelector('.viewer-container video');
-	return videoElem?.currentTime ?? 0;
 }
 
 const SHARE_TILE_CLASSES =
@@ -171,18 +166,18 @@ function ShareTile({ icon, label, bgColor, iconColor, href, target, dataPageId, 
 	);
 }
 
-export function MediaShareOptions() {
+export function MediaShareOptions({ timestamp = 0, startAtSelected = false, onToggleStartAt }) {
 	const containerRef = useRef(null);
 	const inputRef = useRef(null);
 	const mediaUrl = MediaPageStore.get('media-url');
 	const socialMedia = useContext(ShareOptionsContext);
-	const shareOptions = useMemo(() => buildShareOptions(socialMedia), [socialMedia]);
-
-	const [timestamp, setTimestamp] = useState(0);
-	const [formattedTimestamp, setFormattedTimestamp] = useState('00:00');
-	const [startAtSelected, setStartAtSelected] = useState(false);
+	const formattedTimestamp = toHHMMSS(timestamp);
 
 	const shareMediaLink = startAtSelected ? `${mediaUrl}&t=${Math.trunc(timestamp)}` : mediaUrl;
+	const shareOptions = useMemo(
+		() => buildShareOptions(socialMedia, shareMediaLink),
+		[socialMedia, shareMediaLink]
+	);
 
 	function onClickCopy() {
 		if (inputRef.current) {
@@ -194,15 +189,7 @@ export function MediaShareOptions() {
 		PageActions.addNotification('Link copied to clipboard', 'clipboardLinkCopy');
 	}
 
-	function onToggleStartAt() {
-		setStartAtSelected((prev) => !prev);
-	}
-
 	useEffect(() => {
-		const current = getCurrentVideoTimestamp();
-		setTimestamp(current);
-		setFormattedTimestamp(toHHMMSS(current));
-
 		MediaPageStore.on('copied_media_link', onCompleteCopy);
 		return () => {
 			MediaPageStore.removeListener('copied_media_link', onCompleteCopy);
@@ -216,7 +203,16 @@ export function MediaShareOptions() {
 			</Text>
 
 			{shareOptions.length > 0 && (
-				<div className="mx-size-4 flex flex-nowrap items-start gap-size-16 overflow-x-auto px-size-4 pb-size-4 [scrollbar-width:thin]">
+				<div
+					className={cn(
+						'mx-size-4 flex flex-nowrap items-start gap-size-16 overflow-x-auto px-size-4 pb-size-4',
+						'[scrollbar-width:thin] [scrollbar-color:var(--border-default)_transparent]',
+						'[&::-webkit-scrollbar]:h-[6px] [&::-webkit-scrollbar-track]:bg-transparent',
+						'[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2',
+						'[&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-border-default',
+						'[&::-webkit-scrollbar-thumb]:bg-clip-content'
+					)}
+				>
 					{shareOptions.map((opt) =>
 						opt.key === 'embed' ? (
 							<ShareTile
@@ -261,3 +257,9 @@ export function MediaShareOptions() {
 		</div>
 	);
 }
+
+MediaShareOptions.propTypes = {
+	timestamp: PropTypes.number,
+	startAtSelected: PropTypes.bool,
+	onToggleStartAt: PropTypes.func,
+};
