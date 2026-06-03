@@ -595,6 +595,7 @@ body {
 	--bg-control: var(--cinemata-neutral-300);
 	--bg-primary: var(--cinemata-strait-blue-600p);
 	--bg-primary-hover: var(--cinemata-strait-blue-800);
+	--bg-button-playlist-active: var(--cinemata-strait-blue-800);
 	--bg-secondary: var(--cinemata-sunset-horizon-400p);
 	--bg-secondary-hover: var(--cinemata-sunset-horizon-500);
 	--bg-danger: var(--cinemata-red-500);
@@ -656,6 +657,7 @@ body.dark_theme {
 	--bg-control: var(--cinemata-pacific-deep-900);
 	--bg-primary: var(--cinemata-strait-blue-500);
 	--bg-primary-hover: var(--cinemata-strait-blue-700);
+	--bg-button-playlist-active: var(--cinemata-strait-blue-700);
 	--bg-secondary: var(--cinemata-sunset-horizon-500);
 	--bg-secondary-hover: var(--cinemata-sunset-horizon-400p);
 	--bg-danger-strong: var(--cinemata-red-950);
@@ -706,6 +708,7 @@ body.dark_theme {
 	--color-bg-control: var(--bg-control);
 	--color-bg-primary: var(--bg-primary);
 	--color-bg-primary-hover: var(--bg-primary-hover);
+	--color-bg-button-playlist-active: var(--bg-button-playlist-active);
 	--color-bg-secondary: var(--bg-secondary);
 	--color-bg-secondary-hover: var(--bg-secondary-hover);
 	--color-bg-danger: var(--bg-danger);
@@ -828,6 +831,32 @@ header[data-topbar] button:not(:disabled) {
 		border: 2px solid transparent;
 		border-radius: 999px;
 		background-color: var(--border-scrollbar);
+		background-clip: content-box;
+	}
+
+	/*
+	 * Thin scrollbar utility using --border-default. Works for both
+	 * vertical and horizontal overflow (sets width + height).
+	 * Used by sidebar shell and horizontal share-tile row.
+	 */
+	.thin-scrollbar {
+		scrollbar-color: var(--border-default) transparent;
+		scrollbar-width: thin;
+	}
+
+	.thin-scrollbar::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+
+	.thin-scrollbar::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.thin-scrollbar::-webkit-scrollbar-thumb {
+		border: 2px solid transparent;
+		border-radius: 999px;
+		background-color: var(--border-default);
 		background-clip: content-box;
 	}
 }
