@@ -6,7 +6,6 @@ from django.contrib.auth.models import AnonymousUser
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.utils import timezone
 
-from actions.models import MediaAction
 from files.community_impact_validators import GENERIC_TRUSTED_URL_ERROR
 from files.methods import can_manage_film_impact
 from files.models import CommunityImpact, Playlist, PlaylistMedia
@@ -145,12 +144,11 @@ class CommunityImpactSerializerTests(TestCase):
         self.assertEqual(data["community_impacts"]["featured"], [])
         self.assertEqual(data["community_impacts"]["academic"], [])
 
-    def test_single_media_serializer_aggregates_saves_from_system_data(self):
+    def test_single_media_serializer_counts_playlist_save_without_like(self):
         user = create_test_user()
         media = create_test_media(user)
         playlist = Playlist.objects.create(user=user, title="Community playlist")
         PlaylistMedia.objects.create(media=media, playlist=playlist)
-        MediaAction.objects.create(media=media, user=user, action="like")
         CommunityImpact.objects.create(
             media=media,
             user=user,
@@ -168,6 +166,45 @@ class CommunityImpactSerializerTests(TestCase):
         self.assertEqual(saves["entries"], [])
         self.assertEqual(saves["totalCount"], {"saves": 1, "playlists": 1})
         self.assertTrue(saves["lastEventAt"])
+
+    def test_single_media_serializer_counts_one_saver_across_multiple_playlists(self):
+        user = create_test_user()
+        media = create_test_media(user)
+        PlaylistMedia.objects.create(
+            media=media,
+            playlist=Playlist.objects.create(user=user, title="Community playlist"),
+        )
+        PlaylistMedia.objects.create(
+            media=media,
+            playlist=Playlist.objects.create(user=user, title="Second community playlist"),
+        )
+        request = RequestFactory().get(f"/api/v1/media/{media.friendly_token}")
+        request.user = AnonymousUser()
+
+        data = SingleMediaSerializer(media, context={"request": request}).data
+
+        saves = data["community_impacts"]["saves"]
+        self.assertEqual(saves["totalCount"], {"saves": 1, "playlists": 2})
+
+    def test_single_media_serializer_counts_distinct_playlist_owners_as_savers(self):
+        user = create_test_user()
+        other_user = create_test_user()
+        media = create_test_media(user)
+        PlaylistMedia.objects.create(
+            media=media,
+            playlist=Playlist.objects.create(user=user, title="Community playlist"),
+        )
+        PlaylistMedia.objects.create(
+            media=media,
+            playlist=Playlist.objects.create(user=other_user, title="Another community playlist"),
+        )
+        request = RequestFactory().get(f"/api/v1/media/{media.friendly_token}")
+        request.user = AnonymousUser()
+
+        data = SingleMediaSerializer(media, context={"request": request}).data
+
+        saves = data["community_impacts"]["saves"]
+        self.assertEqual(saves["totalCount"], {"saves": 2, "playlists": 2})
 
 
 class CommunityImpactEndpointTests(TestCase):

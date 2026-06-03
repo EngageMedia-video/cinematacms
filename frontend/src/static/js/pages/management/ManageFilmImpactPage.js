@@ -656,83 +656,97 @@ export class ManageFilmImpactPage extends Page {
 			);
 		}
 
-		return this.state.items.map((item) => (
-			<tr key={item.uid}>
-				<td>
-					<a href={item.edit_url}>{item.title}</a>
-				</td>
-				<td>{item.category_label || item.category}</td>
-				<td>
-					<span className={'manage-film-impact-page__status manage-film-impact-page__status--' + item.status}>
-						{item.status_label || statusLabel(item.status)}
-					</span>
-				</td>
-				<td>{item.media ? <a href={item.media.url}>{item.media.title}</a> : '-'}</td>
-				<td>{userLabel(item.user)}</td>
-				<td>{formatDate(item.event_date, false)}</td>
-				<td>{formatDate(item.add_date, true)}</td>
-				<td>
-					<div className="manage-film-impact-page__row-menu">
-						<button
-							type="button"
-							className="manage-film-impact-page__row-menu-trigger"
-							aria-haspopup="menu"
-							aria-expanded={this.state.openMenuUid === item.uid}
-							aria-label="Row actions"
-							onClick={() => this.onToggleRowMenu(item.uid)}
+		return this.state.items.map((item, index) => {
+			const isMenuOpen = this.state.openMenuUid === item.uid;
+			const opensAbove = index >= Math.max(this.state.items.length - 3, 0);
+			const menuClassName =
+				'manage-film-impact-page__row-menu-list' +
+				(opensAbove ? ' manage-film-impact-page__row-menu-list--above' : '');
+
+			return (
+				<tr key={item.uid}>
+					<td>
+						<a href={item.edit_url}>{item.title}</a>
+					</td>
+					<td>{item.category_label || item.category}</td>
+					<td>
+						<span
+							className={
+								'manage-film-impact-page__status manage-film-impact-page__status--' + item.status
+							}
 						>
-							&#8942;
-						</button>
-						{this.state.openMenuUid === item.uid ? (
-							<ul className="manage-film-impact-page__row-menu-list" role="menu">
-								{statusActions(item.status).map((action) => (
-									<li key={action.target} role="none">
+							{item.status_label || statusLabel(item.status)}
+						</span>
+					</td>
+					<td>{item.media ? <a href={item.media.url}>{item.media.title}</a> : '-'}</td>
+					<td>{userLabel(item.user)}</td>
+					<td>{formatDate(item.event_date, false)}</td>
+					<td>{formatDate(item.add_date, true)}</td>
+					<td className={isMenuOpen ? 'manage-film-impact-page__action-cell--open' : ''}>
+						<div className="manage-film-impact-page__row-menu">
+							<button
+								type="button"
+								className="manage-film-impact-page__row-menu-trigger"
+								aria-haspopup="menu"
+								aria-expanded={isMenuOpen}
+								aria-label="Row actions"
+								onClick={() => this.onToggleRowMenu(item.uid)}
+							>
+								&#8942;
+							</button>
+							{isMenuOpen ? (
+								<ul className={menuClassName} role="menu">
+									{statusActions(item.status).map((action) => (
+										<li key={action.target} role="none">
+											<button
+												type="button"
+												role="menuitem"
+												className={
+													'manage-film-impact-page__row-menu-item manage-film-impact-page__row-menu-item--' +
+													action.cls
+												}
+												onClick={() => {
+													this.setState({ openMenuUid: null });
+													this.onStatusListItem(item.uid, action.target);
+												}}
+												disabled={this.state.changingStatusUid === item.uid}
+											>
+												{this.state.changingStatusUid === item.uid
+													? 'Updating...'
+													: action.label}
+											</button>
+										</li>
+									))}
+									<li role="none">
+										<a
+											className="manage-film-impact-page__row-menu-item"
+											role="menuitem"
+											href={item.edit_url}
+										>
+											Edit
+										</a>
+									</li>
+									<li role="none">
 										<button
 											type="button"
 											role="menuitem"
-											className={
-												'manage-film-impact-page__row-menu-item manage-film-impact-page__row-menu-item--' +
-												action.cls
-											}
+											className="manage-film-impact-page__row-menu-item manage-film-impact-page__row-menu-item--danger"
 											onClick={() => {
 												this.setState({ openMenuUid: null });
-												this.onStatusListItem(item.uid, action.target);
+												this.onDeleteListItem(item.uid);
 											}}
-											disabled={this.state.changingStatusUid === item.uid}
+											disabled={this.state.deletingUid === item.uid}
 										>
-											{this.state.changingStatusUid === item.uid ? 'Updating...' : action.label}
+											{this.state.deletingUid === item.uid ? 'Deleting...' : 'Delete'}
 										</button>
 									</li>
-								))}
-								<li role="none">
-									<a
-										className="manage-film-impact-page__row-menu-item"
-										role="menuitem"
-										href={item.edit_url}
-									>
-										Edit
-									</a>
-								</li>
-								<li role="none">
-									<button
-										type="button"
-										role="menuitem"
-										className="manage-film-impact-page__row-menu-item manage-film-impact-page__row-menu-item--danger"
-										onClick={() => {
-											this.setState({ openMenuUid: null });
-											this.onDeleteListItem(item.uid);
-										}}
-										disabled={this.state.deletingUid === item.uid}
-									>
-										{this.state.deletingUid === item.uid ? 'Deleting...' : 'Delete'}
-									</button>
-								</li>
-							</ul>
-						) : null}
-					</div>
-				</td>
-			</tr>
-		));
+								</ul>
+							) : null}
+						</div>
+					</td>
+				</tr>
+			);
+		});
 	}
 
 	pageContent() {
