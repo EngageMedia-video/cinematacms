@@ -830,6 +830,32 @@ header[data-topbar] button:not(:disabled) {
 		background-color: var(--border-scrollbar);
 		background-clip: content-box;
 	}
+
+	/*
+	 * Thin scrollbar utility using --border-default. Works for both
+	 * vertical and horizontal overflow (sets width + height).
+	 * Used by sidebar shell and horizontal share-tile row.
+	 */
+	.thin-scrollbar {
+		scrollbar-color: var(--border-default) transparent;
+		scrollbar-width: thin;
+	}
+
+	.thin-scrollbar::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+
+	.thin-scrollbar::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.thin-scrollbar::-webkit-scrollbar-thumb {
+		border: 2px solid transparent;
+		border-radius: 999px;
+		background-color: var(--border-default);
+		background-clip: content-box;
+	}
 }
 
 header[data-topbar] button:focus-visible,

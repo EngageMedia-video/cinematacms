@@ -200,16 +200,7 @@ export function MediaShareOptions({ timestamp = 0, startAtSelected = false, onTo
 			</Text>
 
 			{shareOptions.length > 0 && (
-				<div
-					className={cn(
-						'mx-size-4 flex flex-nowrap items-start gap-size-16 overflow-x-auto px-size-4 pb-size-4',
-						'[scrollbar-width:thin] [scrollbar-color:var(--border-default)_transparent]',
-						'[&::-webkit-scrollbar]:h-[6px] [&::-webkit-scrollbar-track]:bg-transparent',
-						'[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2',
-						'[&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-border-default',
-						'[&::-webkit-scrollbar-thumb]:bg-clip-content'
-					)}
-				>
+				<div className="thin-scrollbar mx-size-4 flex flex-nowrap items-start gap-size-16 overflow-x-auto px-size-4 pb-size-4">
 					{shareOptions.map((opt) =>
 						opt.key === 'embed' ? (
 							<ShareTile
