@@ -68,6 +68,43 @@ function extractPlaylistId() {
 	return playlistId;
 }
 
+function firstCommunityImpactErrorMessage(value) {
+	if (Array.isArray(value)) {
+		return value.length ? firstCommunityImpactErrorMessage(value[0]) : '';
+	}
+
+	if (value && 'object' === typeof value) {
+		const firstKey = Object.keys(value)[0];
+		return firstKey ? firstCommunityImpactErrorMessage(value[firstKey]) : '';
+	}
+
+	return 'string' === typeof value ? value : '';
+}
+
+function normalizeCommunityImpactSubmitError(error) {
+	const data = error && error.response ? error.response.data : null;
+	const fallback = 'Unable to submit film impact entry.';
+
+	if (!data) {
+		return { field: null, message: fallback };
+	}
+
+	if (data.url) {
+		return { field: 'url', message: firstCommunityImpactErrorMessage(data.url) || fallback };
+	}
+
+	if (data.detail) {
+		return { field: null, message: firstCommunityImpactErrorMessage(data.detail) || fallback };
+	}
+
+	const firstField = Object.keys(data)[0];
+	if (firstField) {
+		return { field: firstField, message: firstCommunityImpactErrorMessage(data[firstField]) || fallback };
+	}
+
+	return { field: null, message: fallback };
+}
+
 const MediaPageStoreData = {};
 
 class MediaPageStore extends EventEmitter {
@@ -97,6 +134,7 @@ class MediaPageStore extends EventEmitter {
 			while: {
 				deleteMedia: false,
 				submitComment: false,
+				submitCommunityImpact: false,
 				deleteCommentId: null,
 			},
 		};
@@ -106,6 +144,8 @@ class MediaPageStore extends EventEmitter {
 
 		this.submitCommentFail = this.submitCommentFail.bind(this);
 		this.submitCommentResponse = this.submitCommentResponse.bind(this);
+		this.submitCommunityImpactFail = this.submitCommunityImpactFail.bind(this);
+		this.submitCommunityImpactResponse = this.submitCommunityImpactResponse.bind(this);
 
 		this.removeCommentFail = this.removeCommentFail.bind(this);
 		this.removeCommentResponse = this.removeCommentResponse.bind(this);
@@ -154,6 +194,7 @@ class MediaPageStore extends EventEmitter {
 		}
 
 		this.mediaAPIUrl = this.mediacms_config.api.media + '/' + MediaPageStoreData[this.id].mediaId;
+		this.communityImpactAPIUrl = this.mediaAPIUrl + '/community-impacts';
 		if (token) {
 			this.mediaAPIUrl += '?token=' + encodeURIComponent(token);
 		}
@@ -238,6 +279,7 @@ class MediaPageStore extends EventEmitter {
 		if (response && response.data) {
 			//@ todo: Filter data values.
 			MediaPageStoreData[this.id].data = response.data;
+			MediaPageStoreData[this.id].communityImpacts = response.data.community_impacts || {};
 
 			/* ################################################## */
 			/* ################################################## */
@@ -815,6 +857,9 @@ class MediaPageStore extends EventEmitter {
 			case 'media-comments':
 				r = MediaPageStoreData[this.id].comments || [];
 				break;
+			case 'community-impacts':
+				r = MediaPageStoreData[this.id].communityImpacts || {};
+				break;
 			case 'media-data':
 				r = MediaPageStoreData[this.id].data || null;
 				break;
@@ -1214,6 +1259,15 @@ class MediaPageStore extends EventEmitter {
 					this.submitCommentFail
 				);
 				break;
+			case 'SUBMIT_COMMUNITY_IMPACT':
+				if (MediaPageStoreData[this.id].while.submitCommunityImpact) {
+					return;
+				}
+
+				MediaPageStoreData[this.id].while.submitCommunityImpact = true;
+
+				this.submitCommunityImpact(action.communityImpactData);
+				break;
 			case 'DELETE_COMMENT':
 				if (null !== MediaPageStoreData[this.id].while.deleteCommentId) {
 					return;
@@ -1376,6 +1430,81 @@ class MediaPageStore extends EventEmitter {
 			100,
 			this
 		);
+	}
+
+	submitCommunityImpact(communityImpactData) {
+		const payload = {
+			category: communityImpactData.category,
+			details: communityImpactData.details || '',
+			title: communityImpactData.title || communityImpactData.location,
+			url: communityImpactData.url || communityImpactData.link || '',
+		};
+		if (communityImpactData.event_date) {
+			payload.event_date = communityImpactData.event_date;
+		}
+
+		postRequest(
+			this.communityImpactAPIUrl,
+			payload,
+			{ headers: { 'X-CSRFToken': getCSRFToken() } },
+			false,
+			this.submitCommunityImpactResponse,
+			this.submitCommunityImpactFail
+		);
+	}
+
+	submitCommunityImpactFail(error) {
+		this.emit('community_impact_submit_fail', normalizeCommunityImpactSubmitError(error));
+		setTimeout(
+			function (ins) {
+				MediaPageStoreData[ins.id].while.submitCommunityImpact = false;
+			},
+			100,
+			this
+		);
+	}
+
+	submitCommunityImpactResponse(response) {
+		if (response && 201 === response.status && response.data && Object.keys(response.data)) {
+			this.emit('community_impact_submit', response.data.uid);
+		}
+		setTimeout(
+			function (ins) {
+				MediaPageStoreData[ins.id].while.submitCommunityImpact = false;
+			},
+			100,
+			this
+		);
+	}
+
+	appendCommunityImpact(impact) {
+		if (!impact || !impact.category) {
+			return;
+		}
+
+		const currentImpacts = MediaPageStoreData[this.id].communityImpacts || {};
+		const currentCategory = currentImpacts[impact.category];
+		const currentEntries = Array.isArray(currentCategory)
+			? currentCategory
+			: Array.isArray(currentCategory?.entries)
+				? currentCategory.entries
+				: [];
+		const nextEntries = [impact].concat(currentEntries.filter((entry) => entry.uid !== impact.uid));
+
+		MediaPageStoreData[this.id].communityImpacts = {
+			...currentImpacts,
+			[impact.category]: Array.isArray(currentCategory)
+				? nextEntries
+				: {
+						...(currentCategory || {}),
+						entries: nextEntries,
+						totalCount: Math.max(Number(currentCategory?.totalCount) || 0, nextEntries.length),
+					},
+		};
+
+		if (MediaPageStoreData[this.id].data) {
+			MediaPageStoreData[this.id].data.community_impacts = MediaPageStoreData[this.id].communityImpacts;
+		}
 	}
 }
 

@@ -1,10 +1,15 @@
+from django.db.models import Max
+from django.urls import reverse
+from django.utils import timezone
 from rest_framework import serializers
 
 from actions.models import MediaAction
 
+from .community_impact_validators import validate_trusted_url
 from .models import (
     Category,
     Comment,
+    CommunityImpact,
     ContentSensitivity,
     EncodeProfile,
     HomepagePopup,
@@ -13,6 +18,7 @@ from .models import (
     MediaCountry,
     MediaLanguage,
     Playlist,
+    PlaylistMedia,
     Tag,
     Topic,
     TopMessage,
@@ -200,11 +206,96 @@ class ManageUploadSerializer(serializers.ModelSerializer):
         )
 
 
+class ManageCommunityImpactSerializer(serializers.ModelSerializer):
+    WRITABLE_CATEGORIES = {
+        CommunityImpact.SCREENING,
+        CommunityImpact.FEATURED,
+        CommunityImpact.ACADEMIC,
+    }
+
+    category_label = serializers.CharField(source="get_category_display", read_only=True)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+    edit_url = serializers.SerializerMethodField()
+    media = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
+
+    def get_edit_url(self, obj):
+        url = reverse("manage_film_impact_edit", args=[obj.uid])
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
+    def get_media(self, obj):
+        url = obj.media.get_absolute_url()
+        request = self.context.get("request")
+        return {
+            "friendly_token": obj.media.friendly_token,
+            "title": obj.media.title,
+            "url": request.build_absolute_uri(url) if request else url,
+        }
+
+    def get_user(self, obj):
+        return {
+            "username": obj.user.username,
+            "name": obj.user.name,
+        }
+
+    def validate_details(self, value):
+        if len(value.split()) > 80:
+            raise serializers.ValidationError("Details cannot exceed 80 words.")
+        return value
+
+    def validate_category(self, value):
+        if value not in self.WRITABLE_CATEGORIES:
+            raise serializers.ValidationError(f"Category must be one of: {sorted(self.WRITABLE_CATEGORIES)}.")
+        return value
+
+    def validate_status(self, value):
+        status_options = {choice[0] for choice in CommunityImpact.STATUS_CHOICES}
+        if value not in status_options:
+            raise serializers.ValidationError(f"Status must be one of: {sorted(status_options)}.")
+        return value
+
+    def validate_url(self, value):
+        return validate_trusted_url(value)
+
+    class Meta:
+        model = CommunityImpact
+        read_only_fields = (
+            "uid",
+            "category_label",
+            "status_label",
+            "media",
+            "user",
+            "add_date",
+            "edit_date",
+            "edit_url",
+        )
+        fields = (
+            "uid",
+            "title",
+            "category",
+            "category_label",
+            "status",
+            "status_label",
+            "details",
+            "media",
+            "user",
+            "event_date",
+            "add_date",
+            "edit_date",
+            "url",
+            "edit_url",
+        )
+
+
 class SingleMediaSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
     url = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
     user_has_disliked = serializers.SerializerMethodField()
+    community_impacts = serializers.SerializerMethodField()
 
     def get_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
@@ -220,6 +311,29 @@ class SingleMediaSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return MediaAction.objects.filter(media=obj, user=request.user, action="dislike").exists()
         return False
+
+    def get_community_impacts(self, obj):
+        entries = obj.community_impacts.filter(status=CommunityImpact.APPROVED)
+        grouped = {key: [] for key, _label in CommunityImpact.CATEGORY_CHOICES}
+        for entry in entries:
+            if entry.category == CommunityImpact.SAVES:
+                continue
+            grouped[entry.category].append(CommunityImpactSerializer(entry, context=self.context).data)
+
+        save_actions = MediaAction.objects.filter(media=obj, action="like")
+        playlist_items = PlaylistMedia.objects.filter(media=obj)
+        latest_save = save_actions.aggregate(latest=Max("action_date"))["latest"]
+        latest_playlist = playlist_items.aggregate(latest=Max("action_date"))["latest"]
+        latest_events = [event for event in (latest_save, latest_playlist) if event]
+        grouped[CommunityImpact.SAVES] = {
+            "entries": [],
+            "lastEventAt": max(latest_events).isoformat() if latest_events else "",
+            "totalCount": {
+                "saves": save_actions.count(),
+                "playlists": playlist_items.values("playlist_id").distinct().count(),
+            },
+        }
+        return grouped
 
     class Meta:
         model = Media
@@ -289,6 +403,7 @@ class SingleMediaSerializer(serializers.ModelSerializer):
             "is_encrypted",
             "subtitles_info",
             "ratings_info",
+            "community_impacts",
             "allow_download",
             "year_produced",
             "user_has_liked",
@@ -436,6 +551,58 @@ class CommentSerializer(serializers.ModelSerializer):
             "media_url",
             "uid",
         )
+
+
+class CommunityImpactSerializer(serializers.ModelSerializer):
+    author_name = serializers.ReadOnlyField(source="user.name")
+    author_username = serializers.ReadOnlyField(source="user.username")
+    event_date = serializers.DateField(required=False, default=timezone.localdate)
+    status_label = serializers.CharField(source="get_status_display", read_only=True)
+
+    WRITABLE_CATEGORIES = {
+        CommunityImpact.SCREENING,
+        CommunityImpact.FEATURED,
+        CommunityImpact.ACADEMIC,
+    }
+
+    class Meta:
+        model = CommunityImpact
+        read_only_fields = (
+            "uid",
+            "add_date",
+            "edit_date",
+            "author_name",
+            "author_username",
+            "status",
+            "status_label",
+        )
+        fields = (
+            "uid",
+            "category",
+            "status",
+            "status_label",
+            "title",
+            "details",
+            "event_date",
+            "url",
+            "add_date",
+            "edit_date",
+            "author_name",
+            "author_username",
+        )
+
+    def validate_details(self, value):
+        if len(value.split()) > 80:
+            raise serializers.ValidationError("Details cannot exceed 80 words.")
+        return value
+
+    def validate_category(self, value):
+        if value not in self.WRITABLE_CATEGORIES:
+            raise serializers.ValidationError(f"Category must be one of: {sorted(self.WRITABLE_CATEGORIES)}.")
+        return value
+
+    def validate_url(self, value):
+        return validate_trusted_url(value)
 
 
 class TopMessageSerializer(serializers.ModelSerializer):

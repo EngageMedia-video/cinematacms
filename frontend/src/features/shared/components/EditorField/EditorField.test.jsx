@@ -47,6 +47,17 @@ describe('EditorField', () => {
 		expect(textarea).toHaveValue('A');
 	});
 
+	it('focuses the textarea when the surrounding editor area is clicked', async () => {
+		const user = userEvent.setup();
+		render(<EditorField label="Clickable editor" />);
+
+		const textarea = screen.getByLabelText('Clickable editor');
+
+		await user.click(textarea.closest('.field-shell'));
+
+		expect(textarea).toHaveFocus();
+	});
+
 	it('uses error tokens and aria-invalid when invalid', () => {
 		render(<EditorField label="Synopsis" helperText="Synopsis is required." invalid />);
 

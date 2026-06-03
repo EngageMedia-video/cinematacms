@@ -39,6 +39,26 @@ describe('Dropdown', () => {
 		expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 	});
 
+	it('uses semantic text colors for menu options', async () => {
+		const user = userEvent.setup();
+
+		render(<Dropdown label="Category" placeholder="Choose category" options={OPTIONS} />);
+
+		await user.click(screen.getByRole('button', { name: 'Choose category' }));
+
+		expect(screen.getByRole('menuitemradio', { name: 'Documentary' })).toHaveClass('text-text-strong');
+	});
+
+	it('keeps long option lists scrollable inside the viewport', async () => {
+		const user = userEvent.setup();
+
+		render(<Dropdown label="Category" placeholder="Choose category" options={OPTIONS} />);
+
+		await user.click(screen.getByRole('button', { name: 'Choose category' }));
+
+		expect(screen.getByRole('menu')).toHaveClass('overflow-y-auto', 'overscroll-contain');
+	});
+
 	it('supports controlled value', () => {
 		render(<Dropdown label="Category" value="short-form" options={OPTIONS} />);
 

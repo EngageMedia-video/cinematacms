@@ -50,6 +50,7 @@ export function init(base_url, endpoints) {
 			media: endpoints.manage_media,
 			users: endpoints.manage_users,
 			comments: endpoints.manage_comments,
+			filmImpact: endpoints.manage_film_impact,
 			myUploads: endpoints.my_uploads,
 		},
 		search: {

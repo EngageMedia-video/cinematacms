@@ -5,6 +5,7 @@ import uuid
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
+from django.db import connection
 
 from files.models import Media
 
@@ -21,9 +22,39 @@ def create_test_user(**kwargs):
     return User.objects.create_user(**defaults)
 
 
+def ensure_media_insert_defaults():
+    """Allow mirrored local test DBs to carry legacy non-model media columns."""
+    model_columns = {field.column for field in Media._meta.fields}
+    default_by_type = {
+        "bool": "false",
+        "int2": "0",
+        "int4": "0",
+        "int8": "0",
+    }
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT column_name, udt_name
+            FROM information_schema.columns
+            WHERE table_name = 'files_media'
+              AND is_nullable = 'NO'
+              AND column_default IS NULL
+            """
+        )
+        for column_name, udt_name in cursor.fetchall():
+            if column_name in model_columns or udt_name not in default_by_type:
+                continue
+            cursor.execute(
+                f"ALTER TABLE files_media ALTER COLUMN {connection.ops.quote_name(column_name)} "
+                f"SET DEFAULT {default_by_type[udt_name]}"
+            )
+
+
 def create_test_media(user, **kwargs):
     """Create test media. State is set via update() to bypass save() override."""
     state = kwargs.pop("state", "public")
+    ensure_media_insert_defaults()
     defaults = {
         "media_type": "video",
         "duration": 120,
