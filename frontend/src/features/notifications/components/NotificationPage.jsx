@@ -157,8 +157,8 @@ function NotificationPageContent() {
 
 	return (
 		<div className="mx-auto max-w-[1054px] px-4 py-6 sm:px-6 xl:px-0">
-			<div className="grid grid-cols-1 gap-[26px] lg:grid-cols-[minmax(0,1fr)_minmax(320px,406px)] lg:items-start xl:grid-cols-[minmax(0,622px)_406px]">
-				<section aria-label="Notification list">
+			<div className="grid grid-cols-1 gap-[26px] lg:grid-cols-5 lg:items-start">
+				<section aria-label="Notification list" className="lg:col-span-3">
 					<div className="flex w-full items-center justify-between">
 						<div
 							role="tablist"
@@ -220,7 +220,7 @@ function NotificationPageContent() {
 					id={HASH_PREFERENCES}
 					ref={preferencesRef}
 					aria-label="Notification preferences"
-					className="scroll-mt-6 rounded-[8px] bg-bg-surface px-[16px] pb-[16px] pt-[22px]"
+					className="scroll-mt-6 rounded-[8px] bg-bg-surface px-[16px] pb-[16px] pt-[22px] lg:col-span-2"
 				>
 					<NotificationPreferencesForm />
 				</aside>
