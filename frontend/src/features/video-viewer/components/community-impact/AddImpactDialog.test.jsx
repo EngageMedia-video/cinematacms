@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { AddImpactDialog, normalizeImpactLink } from './AddImpactDialog';
@@ -44,10 +44,10 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog open />);
 
-		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta');
+		fireEvent.change(screen.getByLabelText('Where did you see this film'), { target: { value: 'Jakarta' } });
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
-		await user.type(screen.getByLabelText('Add more details'), tooManyWords);
+		fireEvent.change(screen.getByLabelText('Add more details'), { target: { value: tooManyWords } });
 
 		expect(screen.getByText('Maximum 80 Words • 81/80')).toBeVisible();
 		expect(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' })).toBeDisabled();
@@ -71,10 +71,10 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog onClose={onClose} onSubmit={onSubmit} open />);
 
-		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta');
+		fireEvent.change(screen.getByLabelText('Where did you see this film'), { target: { value: 'Jakarta' } });
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
-		await user.type(screen.getByLabelText('Add a link'), 'javascript:alert(1)');
+		fireEvent.change(screen.getByLabelText('Add a link'), { target: { value: 'javascript:alert(1)' } });
 		await user.click(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));
 
 		expect(onSubmit).not.toHaveBeenCalled();
@@ -88,10 +88,10 @@ describe('AddImpactDialog', () => {
 
 		render(<AddImpactDialog onSubmit={onSubmit} open />);
 
-		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta');
+		fireEvent.change(screen.getByLabelText('Where did you see this film'), { target: { value: 'Jakarta' } });
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
-		await user.type(screen.getByLabelText('Add a link'), 'example.com/path');
+		fireEvent.change(screen.getByLabelText('Add a link'), { target: { value: 'example.com/path' } });
 		await user.click(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));
 
 		expect(onSubmit).toHaveBeenCalledWith(
