@@ -4,6 +4,7 @@
 {% block topimports %}
 {{ block.super }}
 <link rel="stylesheet" href="{% vite_asset_url 'src/static/css/tailwind.css' %}">
+{% vite_asset 'src/entries/auth.js' %}
 {% endblock topimports %}
 
 {% block innercontent %}
@@ -36,41 +37,4 @@
     </div>
   </section>
 </div>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const placeholders = {
-      code: 'Code',
-      email: 'Username or email',
-      login: 'Username or email',
-      location_country: 'Country/Region',
-      name: 'Name',
-      new_password1: 'Password',
-      new_password2: 'Password',
-      newpassword1: 'Password',
-      newpassword2: 'Password',
-      oldpassword: 'Current password',
-      password: 'Password',
-      password1: 'Password',
-      password2: 'Password',
-      username: 'Username',
-    };
-
-    document.querySelectorAll('.auth-field input, .auth-field select').forEach(function(field) {
-      if (placeholders[field.name]) {
-        field.setAttribute('placeholder', placeholders[field.name]);
-      }
-    });
-
-    document.addEventListener('click', function(event) {
-      const closeButton = event.target.closest('.auth-message-close');
-      if (!closeButton) return;
-
-      const message = closeButton.closest('.auth-message-stack') || closeButton.closest('.auth-message-banner');
-      if (!message) return;
-
-      event.preventDefault();
-      message.hidden = true;
-    });
-  });
-</script>
 {% endblock innercontent %}

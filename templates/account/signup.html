@@ -1,4 +1,5 @@
 {% extends "account/auth_base.html" %}
+{% load i18n %}
 
 {% block headtitle %} | Sign Up{% endblock headtitle %}
 
@@ -6,7 +7,7 @@
 
 {% block auth_page_style %}padding-top:76px !important;{% endblock auth_page_style %}
 
-{% block auth_title %}Sign Up{% endblock auth_title %}
+{% block auth_title %}{% trans "Sign Up" %}{% endblock auth_title %}
 
 {% block auth_subtitle %}
 <p class="m-0 w-full text-base leading-6 text-text-muted">
@@ -49,7 +50,7 @@
 	</label>
 
 	<div class="flex items-center justify-end">
-		<button class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">Register</button>
+		<button class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">{% trans "Register" %}</button>
 	</div>
 </form>
 
@@ -78,5 +79,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% include "account/snippets/auth_country_select.html" %}
 {% endblock auth_body %}

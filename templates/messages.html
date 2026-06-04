@@ -1,9 +1,9 @@
+{% load i18n %}
 {% block messages %}
 
 {% if messages %}
 
 {% if request.path|slice:":10" == "/accounts/" or request.path|slice:":5" == "/mfa/" %}
-	{% include "account/snippets/auth_toast.html" %}
 	<div class="auth-message-stack auth-message-toast" role="region" aria-label="Notifications" aria-live="polite">
 		{% for message in messages %}
 			<div class="auth-message-banner" role="status">
@@ -26,15 +26,15 @@
 						</span>
 						<h2 class="auth-message-title">
 							{% if "success" in message.tags %}
-								Success
+								{% trans "Success" %}
 							{% elif "error" in message.tags or "danger" in message.tags %}
-								Something went wrong
+								{% trans "Something went wrong" %}
 							{% else %}
-								Info
+								{% trans "Info" %}
 							{% endif %}
 						</h2>
 					</div>
-					<button type="button" class="auth-message-close close" data-dismiss="alert" aria-label="Close" onclick="event.preventDefault(); event.stopPropagation(); var banner = this.closest('.auth-message-banner'); var stack = banner.closest('.auth-message-stack'); banner.remove(); if (stack && !stack.querySelector('.auth-message-banner')) { stack.remove(); } return false;">
+					<button type="button" class="auth-message-close close" aria-label="Close">
 						<svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 							<path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
 						</svg>

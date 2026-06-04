@@ -15,7 +15,6 @@
 
 {% block auth_overlay %}
   {% if form.errors %}
-    {% include "account/snippets/auth_toast.html" %}
     <div class="auth-message-stack auth-message-toast" role="region" aria-label="Notifications" aria-live="assertive">
       <div class="auth-message-banner" role="alert">
         <div class="auth-message-header">
@@ -25,15 +24,19 @@
                 <path d="M165.66,154.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
               </svg>
             </span>
-            <h2 class="auth-message-title">Invalid Code</h2>
+            <h2 class="auth-message-title">{% trans "Verification failed" %}</h2>
           </div>
-          <button type="button" class="auth-message-close close" data-dismiss="alert" aria-label="Close" onclick="event.preventDefault(); event.stopPropagation(); this.closest('.auth-message-stack').remove(); return false;">
+          <button type="button" class="auth-message-close close" aria-label="Close">
             <svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
             </svg>
           </button>
         </div>
-        <p class="auth-message-body">The code you entered is incorrect. Please try again or use a backup code.</p>
+        {% for field, errors in form.errors.items %}
+          {% for error in errors %}<p class="auth-message-body">{{ error }}</p>{% endfor %}
+        {% empty %}
+          <p class="auth-message-body">{% trans "The code you entered is incorrect. Please try again or use a backup code." %}</p>
+        {% endfor %}
       </div>
     </div>
   {% endif %}

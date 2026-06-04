@@ -251,6 +251,15 @@ body .auth-message-stack {
 	z-index: 10000;
 }
 
+/* The sign-out modal ships its full styling in an async chunk (logoutModal.css
+   via the signout entry). Keep this hide rule here, beside the render-blocking
+   display:flex above, so a hidden stack never flashes full-screen before that
+   chunk loads. The .auth-message-stack display above outranks the UA [hidden]
+   rule, so this needs !important. */
+body .auth-message-stack[hidden] {
+	display: none !important;
+}
+
 body.dark_theme .auth-message-stack {
 	--auth-message-overlay: color-mix(in srgb, var(--bg-overlay-dark, var(--bg-page)) 58%, transparent);
 	--auth-message-panel-from: var(--cinemata-pacific-deep-900);
