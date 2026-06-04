@@ -604,6 +604,10 @@ body {
 	--bg-impact-icon-academic: var(--cinemata-sunset-horizon-700);
 	--bg-impact-icon-curated: var(--cinemata-neutral-800);
 	--bg-impact-modal-close: var(--cinemata-strait-blue-400);
+	--bg-impact-modal-field: transparent;
+	--bg-impact-modal-submit: var(--cinemata-sunset-horizon-500);
+	--bg-impact-modal-submit-hover: var(--cinemata-sunset-horizon-600);
+	--bg-impact-modal-surface: var(--cinemata-neutral-50);
 	--bg-impact-timeline-dot: var(--cinemata-strait-blue-200);
 	--text-impact-icon-saves: var(--cinemata-coral-reef-600);
 	--text-impact-modal-close: var(--cinemata-pacific-deep-900);
@@ -630,6 +634,11 @@ body {
 	--text-link: var(--cinemata-sunset-horizon-700);
 	--text-link-hover: var(--cinemata-sunset-horizon-800);
 	--text-accent: var(--cinemata-sunset-horizon-400p);
+	--text-impact-modal-heading: var(--cinemata-pacific-deep-900);
+	--text-impact-modal-label: var(--cinemata-pacific-deep-700);
+	--text-impact-modal-placeholder: var(--cinemata-pacific-deep-500);
+	--text-impact-modal-subtitle: var(--cinemata-pacific-deep-700);
+	--text-impact-modal-value: var(--cinemata-pacific-deep-900);
 	--text-danger: var(--cinemata-red-500);
 	--text-success: var(--cinemata-green-600);
 	--text-warning: var(--cinemata-amber-600p);
@@ -642,6 +651,7 @@ body {
 	--border-strong: var(--cinemata-pacific-deep-500);
 	--border-strong-constant: var(--cinemata-pacific-deep-500);
 	--border-chrome: var(--cinemata-pacific-deep-700);
+	--border-impact-modal-field: var(--cinemata-pacific-deep-200);
 	--border-input: var(--cinemata-coral-reef-400p);
 	--border-danger: var(--cinemata-red-500);
 
@@ -675,6 +685,10 @@ body.dark_theme {
 	--bg-impact-icon-academic: var(--cinemata-sunset-horizon-800);
 	--bg-impact-icon-curated: var(--cinemata-neutral-900);
 	--bg-impact-modal-close: var(--cinemata-strait-blue-400);
+	--bg-impact-modal-field: transparent;
+	--bg-impact-modal-submit: var(--cinemata-sunset-horizon-500);
+	--bg-impact-modal-submit-hover: var(--cinemata-sunset-horizon-600);
+	--bg-impact-modal-surface: var(--cinemata-pacific-deep-900);
 	--bg-impact-timeline-dot: var(--cinemata-strait-blue-200);
 	--text-impact-icon-saves: var(--cinemata-coral-reef-600);
 	--text-impact-modal-close: var(--cinemata-pacific-deep-900);
@@ -691,6 +705,11 @@ body.dark_theme {
 	--text-inverse: var(--cinemata-pacific-deep-900);
 	--text-link: var(--cinemata-sunset-horizon-200);
 	--text-link-hover: var(--cinemata-sunset-horizon-100);
+	--text-impact-modal-heading: var(--cinemata-strait-blue-50);
+	--text-impact-modal-label: var(--cinemata-pacific-deep-300);
+	--text-impact-modal-placeholder: var(--cinemata-pacific-deep-300);
+	--text-impact-modal-subtitle: var(--cinemata-pacific-deep-300);
+	--text-impact-modal-value: var(--cinemata-strait-blue-50);
 	--text-success: var(--cinemata-green-500);
 	--text-warning: var(--cinemata-amber-500);
 
@@ -698,6 +717,7 @@ body.dark_theme {
 	--border-subtle: var(--cinemata-pacific-deep-800);
 	--border-divider: var(--cinemata-pacific-deep-600p);
 	--border-strong: var(--cinemata-pacific-deep-400);
+	--border-impact-modal-field: var(--cinemata-pacific-deep-500);
 	--border-input: var(--cinemata-sunset-horizon-400p);
 
 	--switch-track-on-color: var(--cinemata-coral-reef-700);
@@ -735,6 +755,10 @@ body.dark_theme {
 	--color-bg-impact-icon-academic: var(--bg-impact-icon-academic);
 	--color-bg-impact-icon-curated: var(--bg-impact-icon-curated);
 	--color-bg-impact-modal-close: var(--bg-impact-modal-close);
+	--color-bg-impact-modal-field: var(--bg-impact-modal-field);
+	--color-bg-impact-modal-submit: var(--bg-impact-modal-submit);
+	--color-bg-impact-modal-submit-hover: var(--bg-impact-modal-submit-hover);
+	--color-bg-impact-modal-surface: var(--bg-impact-modal-surface);
 	--color-bg-impact-timeline-dot: var(--bg-impact-timeline-dot);
 	--color-bg-danger: var(--bg-danger);
 	--color-bg-danger-strong: var(--bg-danger-strong);
@@ -761,6 +785,11 @@ body.dark_theme {
 	--color-text-accent: var(--text-accent);
 	--color-text-impact-icon-saves: var(--text-impact-icon-saves);
 	--color-text-impact-modal-close: var(--text-impact-modal-close);
+	--color-text-impact-modal-heading: var(--text-impact-modal-heading);
+	--color-text-impact-modal-label: var(--text-impact-modal-label);
+	--color-text-impact-modal-placeholder: var(--text-impact-modal-placeholder);
+	--color-text-impact-modal-subtitle: var(--text-impact-modal-subtitle);
+	--color-text-impact-modal-value: var(--text-impact-modal-value);
 	--color-text-danger: var(--text-danger);
 	--color-text-success: var(--text-success);
 	--color-text-warning: var(--text-warning);
@@ -773,6 +802,7 @@ body.dark_theme {
 	--color-border-strong: var(--border-strong);
 	--color-border-strong-constant: var(--border-strong-constant);
 	--color-border-chrome: var(--border-chrome);
+	--color-border-impact-modal-field: var(--border-impact-modal-field);
 	--color-border-input: var(--border-input);
 	--color-border-danger: var(--border-danger);
 
