@@ -1,10 +1,11 @@
-{% load i18n %}
+{% load i18n django_vite %}
 {% block messages %}
 
 {% if messages %}
-
-{% if request.path|slice:":10" == "/accounts/" or request.path|slice:":5" == "/mfa/" %}
-	<div class="auth-message-stack auth-message-toast" role="region" aria-label="Notifications" aria-live="polite">
+	{# Django flash messages render as hot toasts (top-right, auto-dismiss) on every page. #}
+	{# The toast entry loads the toast CSS + JS only when a message is actually present. #}
+	{% vite_asset 'src/entries/toast.js' %}
+	<div class="auth-message-stack auth-message-toast" role="region" aria-label="{% trans 'Notifications' %}" aria-live="polite">
 		{% for message in messages %}
 			<div class="auth-message-banner" role="status">
 				<div class="auth-message-header">
@@ -34,7 +35,7 @@
 							{% endif %}
 						</h2>
 					</div>
-					<button type="button" class="auth-message-close close" aria-label="Close">
+					<button type="button" class="auth-message-close close" aria-label="{% trans 'Close' %}">
 						<svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 							<path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
 						</svg>
@@ -44,17 +45,6 @@
 			</div>
 		{% endfor %}
 	</div>
-{% else %}
-	{% for message in messages %}
-		<div class="alert {{ message.tags }} alert-dismissible" role="alert">
-			<button type="button" class="close" data-dismiss="alert" aria-label="Close">
-				<span aria-hidden="true">&times;</span>
-			</button>
-			{{ message }}
-		</div>
-	{% endfor %}
-{% endif %}
-
 {% endif %}
 
 {% endblock %}
