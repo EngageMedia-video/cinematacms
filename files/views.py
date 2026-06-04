@@ -61,6 +61,7 @@ from .methods import (
     can_manage_film_impact,
     can_manage_uploads,
     can_upload_media,
+    community_impact_auto_approves,
     get_current_featured_media,
     get_user_or_session,
     is_curator,
@@ -2544,7 +2545,12 @@ class CommunityImpactList(APIView):
 
         serializer = CommunityImpactSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
-            serializer.save(user=request.user, media=media)
+            new_status = (
+                CommunityImpact.APPROVED
+                if community_impact_auto_approves(request.user, media)
+                else CommunityImpact.WAITING_APPROVAL
+            )
+            serializer.save(user=request.user, media=media, status=new_status)
             invalidate_media_cache(media.friendly_token)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
