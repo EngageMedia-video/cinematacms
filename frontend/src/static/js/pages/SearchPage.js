@@ -66,6 +66,8 @@ export class SearchPage extends Page {
 			license: null,
 			sort_by: null,
 			ordering: null,
+			length: null,
+			award: null,
 		};
 
 		switch (updatedArgs.media_type) {
@@ -105,9 +107,26 @@ export class SearchPage extends Page {
 			case 'most_likes':
 				args.sort_by = 'likes';
 				break;
+			case 'most_discussed':
+				args.sort_by = 'comment_count';
+				break;
+			case 'most_featured':
+				args.sort_by = 'featured_date';
+				break;
 			case 'date_added_asc':
 				args.ordering = 'asc';
 				break;
+		}
+
+		switch (updatedArgs.length) {
+			case 'less_than_10':
+			case 'more_than_10':
+				args.length = updatedArgs.length;
+				break;
+		}
+
+		if (updatedArgs.award === 'yes') {
+			args.award = 'yes';
 		}
 
 		const newArgs = [];
@@ -129,13 +148,15 @@ export class SearchPage extends Page {
 	}
 
 	updateRequestUrl() {
+		const hasSearchQuery = !!(this.state.searchQuery && this.state.searchQuery.trim());
 		const validQuery =
-			this.state.searchQuery ||
+			hasSearchQuery ||
 			this.state.searchCategories ||
 			this.state.searchTags ||
 			this.state.searchCountries ||
 			this.state.searchLanguages ||
-			this.state.searchTopics;
+			this.state.searchTopics ||
+			this.state.filterArgs;
 
 		let title = null;
 
@@ -173,7 +194,7 @@ export class SearchPage extends Page {
 							? 'No'
 							: this.state.resultsCount;
 					title += ' media in language "' + this.state.searchLanguages + '"';
-				} else {
+				} else if (hasSearchQuery) {
 					if (null === this.state.resultsCount || 0 === this.state.resultsCount) {
 						title = 'No results for "' + this.state.searchQuery + '"';
 					} else {

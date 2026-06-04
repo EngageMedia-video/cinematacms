@@ -120,6 +120,30 @@
 		color: var(--text-secondary, var(--body-text-color));
 	}
 
+	.mi-filter-browse-options {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		margin-top: 8px;
+
+		> * {
+			margin-top: 0;
+		}
+	}
+
+	.mi-filter-browse-link {
+		display: inline-block;
+		font-size: 13px;
+		color: var(--header-circle-button-color);
+		opacity: 0.85;
+		text-decoration: none;
+
+		&:hover {
+			opacity: 1;
+			text-decoration: underline;
+		}
+	}
+
 	.mi-filter-options {
 		position: relative;
 		display: block;

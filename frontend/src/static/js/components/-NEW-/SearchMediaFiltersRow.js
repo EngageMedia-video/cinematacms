@@ -194,6 +194,14 @@ const sortingOptions = [
 		id: 'most_likes',
 		label: 'Like count',
 	},
+	{
+		id: 'most_discussed',
+		label: 'Most discussed',
+	},
+	{
+		id: 'most_featured',
+		label: 'Most featured',
+	},
 ];
 
 export function SearchMediaFiltersRow(props) {
@@ -236,6 +244,14 @@ export function SearchMediaFiltersRow(props) {
 				break;
 			case 'most_likes':
 				newArgs.sort_by = 'likes';
+				newArgs.ordering = null;
+				break;
+			case 'most_discussed':
+				newArgs.sort_by = 'comment_count';
+				newArgs.ordering = null;
+				break;
+			case 'most_featured':
+				newArgs.sort_by = 'featured_date';
 				newArgs.ordering = null;
 				break;
 			case 'date_added_asc':
