@@ -68,6 +68,14 @@ export function initToast() {
 			banner.addEventListener('mouseleave', function () {
 				schedule(banner, HOVER_RESUME_MS);
 			});
+			// Pause on keyboard focus too, so a focused close button / link inside
+			// the toast doesn't disappear mid-interaction.
+			banner.addEventListener('focusin', function () {
+				clearTimeout(banner._dismissTimer);
+			});
+			banner.addEventListener('focusout', function () {
+				schedule(banner, HOVER_RESUME_MS);
+			});
 		});
 	});
 }

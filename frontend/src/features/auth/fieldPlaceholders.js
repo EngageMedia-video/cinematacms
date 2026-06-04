@@ -3,7 +3,9 @@
  * allauth renders fields without placeholders, so they are mapped by name here.
  *
  * Moved out of an inline <script> (templates/account/auth_base.html) into the
- * auth Vite entry so the page carries no inline script.
+ * auth Vite entry so the page carries no inline script. Localized strings come
+ * from the #auth-i18n node the template renders with {% trans %}; the English
+ * map below is only a fallback when that node is absent.
  */
 
 const PLACEHOLDERS = {
@@ -24,9 +26,11 @@ const PLACEHOLDERS = {
 };
 
 export function initFieldPlaceholders() {
+	const i18n = document.getElementById('auth-i18n');
 	document.querySelectorAll('.auth-field input, .auth-field select').forEach(function (field) {
-		if (PLACEHOLDERS[field.name]) {
-			field.setAttribute('placeholder', PLACEHOLDERS[field.name]);
-		}
+		const fallback = PLACEHOLDERS[field.name];
+		if (!fallback) return;
+		const localized = i18n && i18n.getAttribute('data-placeholder-' + field.name);
+		field.setAttribute('placeholder', localized || fallback);
 	});
 }

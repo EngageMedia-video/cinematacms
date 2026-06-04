@@ -12,7 +12,6 @@
 .auth-message-toast {
 	align-items: flex-end !important;
 	background: transparent !important;
-	bottom: auto !important;
 	gap: 10px;
 	inset: auto !important;
 	justify-content: flex-start !important;

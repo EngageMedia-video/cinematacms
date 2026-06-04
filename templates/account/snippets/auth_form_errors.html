@@ -1,5 +1,6 @@
+{% load i18n %}
 {% if form.non_field_errors %}
-  <div class="auth-message-stack auth-message-toast" role="region" aria-label="Notifications" aria-live="assertive">
+  <div class="auth-message-stack auth-message-toast" role="region" aria-label="{% trans 'Notifications' %}" aria-live="assertive">
     <div class="auth-message-banner" role="alert">
       <div class="auth-message-header">
         <div class="auth-message-title-row">
@@ -8,9 +9,9 @@
               <path d="M165.66,154.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
             </svg>
           </span>
-          <h2 class="auth-message-title">Something went wrong</h2>
+          <h2 class="auth-message-title">{% trans "Something went wrong" %}</h2>
         </div>
-        <button type="button" class="auth-message-close close" aria-label="Close">
+        <button type="button" class="auth-message-close close" aria-label="{% trans 'Close' %}">
           <svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
           </svg>
@@ -24,6 +25,6 @@
 {% endif %}
 {% if form.errors %}
   <div class="sr-only" role="alert">
-    Please review the highlighted fields.
+    {% trans "Please review the highlighted fields." %}
   </div>
 {% endif %}

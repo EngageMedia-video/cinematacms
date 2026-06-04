@@ -18,6 +18,7 @@
 	--so-panel-to: var(--bg-page);
 	--so-shadow: color-mix(in srgb, var(--bg-overlay-dark) 18%, transparent);
 	--so-ring: color-mix(in srgb, var(--text-muted) 28%, transparent);
+
 	align-items: center;
 	background: linear-gradient(145deg, var(--bg-surface) 33.989%, var(--so-panel-to) 116.01%);
 	border-radius: 16px;

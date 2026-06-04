@@ -34,6 +34,13 @@ const CHECK_SVG =
 	CLASS.check +
 	'" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg>';
 
+// Localized strings come from the #auth-i18n node the template renders with
+// {% trans %}; the English literals passed as fallback are used if it's absent.
+function authI18n(attr, fallback) {
+	const node = document.getElementById('auth-i18n');
+	return (node && node.getAttribute(attr)) || fallback;
+}
+
 function setClass(el, value) {
 	el.className = value;
 }
@@ -96,7 +103,7 @@ function enhance(select) {
 	input.setAttribute('aria-expanded', 'false');
 	input.setAttribute('aria-controls', input.id + '_listbox');
 	input.setAttribute('aria-autocomplete', 'list');
-	input.setAttribute('placeholder', 'Search or select your country');
+	input.setAttribute('placeholder', authI18n('data-country-placeholder', 'Search or select your country'));
 	setClass(input, CLASS.input);
 	if (label) label.setAttribute('for', input.id);
 
@@ -112,7 +119,10 @@ function enhance(select) {
 	const listbox = document.createElement('ul');
 	listbox.id = input.id + '_listbox';
 	listbox.setAttribute('role', 'listbox');
-	listbox.setAttribute('aria-label', label ? label.textContent.trim() : 'Country/Region');
+	listbox.setAttribute(
+		'aria-label',
+		label ? label.textContent.trim() : authI18n('data-country-label', 'Country/Region')
+	);
 	setClass(listbox, CLASS.listbox + ' ' + CLASS.listClosed);
 	wrapper.appendChild(listbox);
 
@@ -140,7 +150,7 @@ function enhance(select) {
 	const emptyEl = document.createElement('li');
 	emptyEl.setAttribute('role', 'presentation');
 	setClass(emptyEl, CLASS.empty);
-	emptyEl.textContent = 'No countries found';
+	emptyEl.textContent = authI18n('data-country-no-results', 'No countries found');
 	emptyEl.hidden = true;
 	listbox.appendChild(emptyEl);
 

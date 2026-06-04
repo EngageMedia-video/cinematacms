@@ -15,7 +15,7 @@
 {% block auth_body %}
 
     {% if form.errors %}
-      <div class="auth-message-stack auth-message-toast" role="region" aria-label="Notifications" aria-live="assertive">
+      <div class="auth-message-stack auth-message-toast" role="region" aria-label="{% trans 'Notifications' %}" aria-live="assertive">
         <div class="auth-message-banner" role="alert">
           <div class="auth-message-header">
             <div class="auth-message-title-row">

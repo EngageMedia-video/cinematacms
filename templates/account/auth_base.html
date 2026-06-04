@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load django_vite %}
+{% load django_vite i18n %}
 
 {% block topimports %}
 {{ block.super }}
@@ -8,6 +8,25 @@
 {% endblock topimports %}
 
 {% block innercontent %}
+{% comment %}Localized strings consumed by the auth enhancement JS (field placeholders + country combobox). Read with getAttribute so values stay correctly escaped.{% endcomment %}
+<span id="auth-i18n" hidden
+  data-placeholder-code="{% trans 'Code' %}"
+  data-placeholder-email="{% trans 'Username or email' %}"
+  data-placeholder-login="{% trans 'Username or email' %}"
+  data-placeholder-location_country="{% trans 'Country/Region' %}"
+  data-placeholder-name="{% trans 'Name' %}"
+  data-placeholder-new_password1="{% trans 'Password' %}"
+  data-placeholder-new_password2="{% trans 'Password' %}"
+  data-placeholder-newpassword1="{% trans 'Password' %}"
+  data-placeholder-newpassword2="{% trans 'Password' %}"
+  data-placeholder-oldpassword="{% trans 'Current password' %}"
+  data-placeholder-password="{% trans 'Password' %}"
+  data-placeholder-password1="{% trans 'Password' %}"
+  data-placeholder-password2="{% trans 'Password' %}"
+  data-placeholder-username="{% trans 'Username' %}"
+  data-country-placeholder="{% trans 'Search or select your country' %}"
+  data-country-label="{% trans 'Country/Region' %}"
+  data-country-no-results="{% trans 'No countries found' %}"></span>
 {% block auth_overlay %}{% endblock auth_overlay %}
 <div class="auth-figma-page relative isolate min-h-[calc(100vh-var(--header-height,90px))] overflow-hidden bg-bg-page px-4 pb-12 pt-16 text-text-strong sm:px-6 lg:px-8 lg:pt-[136px] {% block auth_page_class %}{% endblock auth_page_class %}" style="{% block auth_page_style %}{% endblock auth_page_style %}">
   <div aria-hidden="true" class="pointer-events-none absolute right-[-17rem] top-[-2rem] hidden size-[57rem] rounded-full border border-[var(--auth-ring-color)] opacity-25 md:block"></div>

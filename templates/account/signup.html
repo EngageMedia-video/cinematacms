@@ -11,8 +11,7 @@
 
 {% block auth_subtitle %}
 <p class="m-0 w-full text-base leading-6 text-text-muted">
-	Already have an account? Please
-	<a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="{{ login_url }}">sign in</a>.
+	{% blocktrans %}Already have an account? Please <a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="{{ login_url }}">sign in</a>.{% endblocktrans %}
 </p>
 {% endblock auth_subtitle %}
 
@@ -42,10 +41,7 @@
 			</svg>
 		</span>
 		<span>
-			Subscribe to the
-			<a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="https://mailer.cinemata.org/" target="_blank" rel="noopener noreferrer">Cinemata newsletter</a>
-			for updates on social issue films from the Asia-Pacific Region. Read our
-			<a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="/privacy-policy" target="_blank" rel="noopener noreferrer">privacy policy</a>.
+			{% blocktrans %}Subscribe to the <a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="https://mailer.cinemata.org/" target="_blank" rel="noopener noreferrer">Cinemata newsletter</a> for updates on social issue films from the Asia-Pacific Region. Read our <a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="/privacy-policy" target="_blank" rel="noopener noreferrer">privacy policy</a>.{% endblocktrans %}
 		</span>
 	</label>
 
