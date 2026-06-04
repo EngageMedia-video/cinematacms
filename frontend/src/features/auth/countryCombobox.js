@@ -17,7 +17,8 @@ const CLASS = {
 	input: 'flex-1',
 	chevron: 'pointer-events-none flex shrink-0 text-text-muted transition-transform duration-200 ease-out',
 	chevronOpen: 'rotate-180',
-	listbox: 'absolute left-0 top-full z-20 m-0 mt-2 max-h-64 w-full list-none overflow-auto rounded-lg border border-border-default bg-bg-surface-raised py-1 ps-0 shadow-lg transition duration-150 ease-out [scrollbar-width:thin] [scrollbar-color:var(--border-default)_transparent] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-border-default [&::-webkit-scrollbar-thumb]:bg-clip-content',
+	listbox:
+		'absolute left-0 top-full z-20 m-0 mt-2 max-h-64 w-full list-none overflow-auto rounded-lg border border-border-default bg-bg-surface-raised py-1 ps-0 shadow-lg transition duration-150 ease-out [scrollbar-width:thin] [scrollbar-color:var(--border-default)_transparent] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-border-default [&::-webkit-scrollbar-thumb]:bg-clip-content',
 	listClosed: 'pointer-events-none invisible -translate-y-1 opacity-0',
 	listOpen: 'pointer-events-auto visible translate-y-0 opacity-100',
 	option: 'flex cursor-pointer items-center justify-between gap-3 px-4 py-2 text-sm leading-5 text-text-strong hover:bg-bg-surface-hover',
@@ -26,12 +27,26 @@ const CLASS = {
 	empty: 'px-4 py-3 text-center text-sm leading-5 text-text-muted',
 };
 
-const CHEVRON_SVG = '<svg viewBox="0 0 256 256" class="size-5" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
-const CHECK_SVG = '<svg viewBox="0 0 256 256" class="' + CLASS.check + '" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg>';
+const CHEVRON_SVG =
+	'<svg viewBox="0 0 256 256" class="size-5" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>';
+const CHECK_SVG =
+	'<svg viewBox="0 0 256 256" class="' +
+	CLASS.check +
+	'" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg>';
 
-function setClass(el, value) { el.className = value; }
-function addClass(el, value) { value.split(' ').forEach(function (c) { if (c) el.classList.add(c); }); }
-function removeClass(el, value) { value.split(' ').forEach(function (c) { if (c) el.classList.remove(c); }); }
+function setClass(el, value) {
+	el.className = value;
+}
+function addClass(el, value) {
+	value.split(' ').forEach(function (c) {
+		if (c) el.classList.add(c);
+	});
+}
+function removeClass(el, value) {
+	value.split(' ').forEach(function (c) {
+		if (c) el.classList.remove(c);
+	});
+}
 
 function enhance(select) {
 	if (!select || select.dataset.comboboxReady === 'true') return;
@@ -43,9 +58,14 @@ function enhance(select) {
 	const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 	// Build the option model from the native select; the empty placeholder is "no selection".
-	const options = Array.prototype.slice.call(select.options)
-		.filter(function (opt) { return opt.value !== ''; })
-		.map(function (opt) { return { value: opt.value, label: opt.text }; });
+	const options = Array.prototype.slice
+		.call(select.options)
+		.filter(function (opt) {
+			return opt.value !== '';
+		})
+		.map(function (opt) {
+			return { value: opt.value, label: opt.text };
+		});
 
 	// --- Scaffolding -------------------------------------------------
 	const wrapper = document.createElement('div');
@@ -131,7 +151,10 @@ function enhance(select) {
 	let currentLabel = '';
 	(function initLabel() {
 		for (let i = 0; i < options.length; i++) {
-			if (options[i].value === currentValue) { currentLabel = options[i].label; break; }
+			if (options[i].value === currentValue) {
+				currentLabel = options[i].label;
+				break;
+			}
 		}
 	})();
 	input.value = currentLabel;
@@ -141,12 +164,17 @@ function enhance(select) {
 	// display while keeping li.hidden as the source of truth for logic.
 	function setHidden(el, hidden) {
 		el.hidden = hidden;
-		if (hidden) { el.style.setProperty('display', 'none', 'important'); }
-		else { el.style.removeProperty('display'); }
+		if (hidden) {
+			el.style.setProperty('display', 'none', 'important');
+		} else {
+			el.style.removeProperty('display');
+		}
 	}
 
 	function visibleItems() {
-		return items.filter(function (li) { return !li.hidden; });
+		return items.filter(function (li) {
+			return !li.hidden;
+		});
 	}
 
 	function filter(query) {
@@ -162,7 +190,9 @@ function enhance(select) {
 
 	function setActive(index) {
 		const vis = visibleItems();
-		items.forEach(function (li) { removeClass(li, CLASS.optionActive); });
+		items.forEach(function (li) {
+			removeClass(li, CLASS.optionActive);
+		});
 		activeIndex = index;
 		if (index >= 0 && index < vis.length) {
 			const li = vis[index];
@@ -185,12 +215,20 @@ function enhance(select) {
 		// Highlight the current selection if visible, else the first match.
 		const vis = visibleItems();
 		let idx = -1;
-		for (let i = 0; i < vis.length; i++) { if (vis[i].dataset.value === currentValue) { idx = i; break; } }
+		for (let i = 0; i < vis.length; i++) {
+			if (vis[i].dataset.value === currentValue) {
+				idx = i;
+				break;
+			}
+		}
 		setActive(idx === -1 ? (vis.length ? 0 : -1) : idx);
 	}
 
 	function closeList(revert) {
-		if (!open) { if (revert) input.value = currentLabel; return; }
+		if (!open) {
+			if (revert) input.value = currentLabel;
+			return;
+		}
 		open = false;
 		input.setAttribute('aria-expanded', 'false');
 		input.removeAttribute('aria-activedescendant');
@@ -222,8 +260,12 @@ function enhance(select) {
 	}
 
 	// --- Events ------------------------------------------------------
-	input.addEventListener('focus', function () { openList(true); });
-	input.addEventListener('click', function () { openList(false); });
+	input.addEventListener('focus', function () {
+		openList(true);
+	});
+	input.addEventListener('click', function () {
+		openList(false);
+	});
 
 	input.addEventListener('input', function () {
 		filter(input.value);
@@ -236,20 +278,32 @@ function enhance(select) {
 		switch (event.key) {
 			case 'ArrowDown':
 				event.preventDefault();
-				if (!open) { openList(false); return; }
+				if (!open) {
+					openList(false);
+					return;
+				}
 				vis = visibleItems();
 				setActive(Math.min(activeIndex + 1, vis.length - 1));
 				break;
 			case 'ArrowUp':
 				event.preventDefault();
-				if (!open) { openList(false); return; }
+				if (!open) {
+					openList(false);
+					return;
+				}
 				setActive(Math.max(activeIndex - 1, 0));
 				break;
 			case 'Home':
-				if (open) { event.preventDefault(); setActive(0); }
+				if (open) {
+					event.preventDefault();
+					setActive(0);
+				}
 				break;
 			case 'End':
-				if (open) { event.preventDefault(); setActive(visibleItems().length - 1); }
+				if (open) {
+					event.preventDefault();
+					setActive(visibleItems().length - 1);
+				}
 				break;
 			case 'Enter':
 				if (open && activeIndex >= 0) {
@@ -258,7 +312,10 @@ function enhance(select) {
 				}
 				break;
 			case 'Escape':
-				if (open) { event.preventDefault(); closeList(true); }
+				if (open) {
+					event.preventDefault();
+					closeList(true);
+				}
 				break;
 			case 'Tab':
 				closeList(true);

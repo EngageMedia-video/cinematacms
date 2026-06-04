@@ -32,7 +32,9 @@
 	pointer-events: auto;
 	width: 100% !important;
 }
-.auth-message-toast .auth-message-banner::before { display: none !important; }
+.auth-message-toast .auth-message-banner::before {
+	display: none !important;
+}
 .auth-message-toast .auth-message-icon {
 	height: 26px !important;
 	width: 26px !important;
@@ -41,7 +43,9 @@
 	height: 26px !important;
 	width: 26px !important;
 }
-.auth-message-toast .auth-message-title-row { gap: 8px !important; }
+.auth-message-toast .auth-message-title-row {
+	gap: 8px !important;
+}
 .auth-message-toast .auth-message-title {
 	font-size: 14px !important;
 	line-height: 18px !important;
@@ -62,14 +66,28 @@
 	animation: auth-toast-out 200ms ease-in forwards;
 }
 @keyframes auth-toast-in {
-	from { opacity: 0; transform: translateX(24px); }
-	to { opacity: 1; transform: translateX(0); }
+	from {
+		opacity: 0;
+		transform: translateX(24px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
 }
 @keyframes auth-toast-out {
-	from { opacity: 1; transform: translateX(0); }
-	to { opacity: 0; transform: translateX(24px); }
+	from {
+		opacity: 1;
+		transform: translateX(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateX(24px);
+	}
 }
 @media (prefers-reduced-motion: reduce) {
 	.auth-message-toast .auth-message-banner,
-	.auth-message-toast .auth-message-banner.is-leaving { animation: none; }
+	.auth-message-toast .auth-message-banner.is-leaving {
+		animation: none;
+	}
 }

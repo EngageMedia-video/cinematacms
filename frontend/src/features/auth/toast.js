@@ -33,7 +33,9 @@ function dismiss(banner) {
 
 function schedule(banner, delay) {
 	clearTimeout(banner._dismissTimer);
-	banner._dismissTimer = setTimeout(function () { dismiss(banner); }, delay);
+	banner._dismissTimer = setTimeout(function () {
+		dismiss(banner);
+	}, delay);
 }
 
 function bindDelegatedClose() {
@@ -60,8 +62,12 @@ export function initToast() {
 			if (banner.dataset.toastReady === 'true') return;
 			banner.dataset.toastReady = 'true';
 			schedule(banner, AUTO_DISMISS_MS);
-			banner.addEventListener('mouseenter', function () { clearTimeout(banner._dismissTimer); });
-			banner.addEventListener('mouseleave', function () { schedule(banner, HOVER_RESUME_MS); });
+			banner.addEventListener('mouseenter', function () {
+				clearTimeout(banner._dismissTimer);
+			});
+			banner.addEventListener('mouseleave', function () {
+				schedule(banner, HOVER_RESUME_MS);
+			});
 		});
 	});
 }

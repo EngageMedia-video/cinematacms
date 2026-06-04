@@ -35,7 +35,9 @@ export function initLogoutModal() {
 	function focusables() {
 		return Array.prototype.slice
 			.call(modal.querySelectorAll('a[href], button:not([disabled])'))
-			.filter(function (el) { return el.offsetParent !== null; });
+			.filter(function (el) {
+				return el.offsetParent !== null;
+			});
 	}
 
 	function open() {
