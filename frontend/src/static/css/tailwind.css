@@ -33,41 +33,11 @@
 /* Auth templates live in the legacy shell, so these overrides stay unlayered
  * to outrank legacy unlayered button/form rules. */
 body .auth-figma-page {
-	--auth-panel-to: var(--cinemata-pacific-deep-100);
-	--auth-field-border: var(--cinemata-pacific-deep-200);
-	--auth-text-muted: var(--cinemata-pacific-deep-500);
 	--auth-ring-color: var(--cinemata-pacific-deep-200);
-	--auth-checkbox-accent: var(--cinemata-sunset-horizon-400p);
-	--auth-button-accent-bg: var(--cinemata-sunset-horizon-500);
-	--auth-button-accent-hover: var(--cinemata-sunset-horizon-600);
-	--auth-button-secondary-bg: var(--cinemata-strait-blue-600p);
-	--auth-button-secondary-hover: var(--cinemata-strait-blue-700);
-	--auth-button-on-primary: var(--cinemata-neutral-50);
-	--auth-requirements-bg: var(--cinemata-pacific-deep-100);
-	--auth-requirements-text: var(--cinemata-pacific-deep-700);
-	--auth-status-error-bg: var(--cinemata-red-100);
-	--auth-status-error-icon: var(--cinemata-red-700p);
-	--auth-status-success-bg: var(--cinemata-green-100);
-	--auth-status-success-icon: var(--cinemata-green-700p);
 }
 
 body.dark_theme .auth-figma-page {
-	--auth-panel-to: var(--cinemata-pacific-deep-950);
-	--auth-field-border: var(--cinemata-pacific-deep-500);
-	--auth-text-muted: var(--cinemata-pacific-deep-300);
 	--auth-ring-color: var(--cinemata-pacific-deep-500);
-	--auth-checkbox-accent: var(--cinemata-sunset-horizon-400p);
-	--auth-button-accent-bg: var(--cinemata-sunset-horizon-500);
-	--auth-button-accent-hover: var(--cinemata-sunset-horizon-600);
-	--auth-button-secondary-bg: var(--cinemata-strait-blue-600p);
-	--auth-button-secondary-hover: var(--cinemata-strait-blue-700);
-	--auth-button-on-primary: var(--cinemata-neutral-50);
-	--auth-requirements-bg: var(--cinemata-pacific-deep-800);
-	--auth-requirements-text: var(--cinemata-strait-blue-100);
-	--auth-status-error-bg: var(--cinemata-red-950);
-	--auth-status-error-icon: var(--cinemata-red-500);
-	--auth-status-success-bg: var(--cinemata-green-950);
-	--auth-status-success-icon: var(--cinemata-green-500);
 }
 
 body .auth-figma-page button {
@@ -94,7 +64,7 @@ body .auth-figma-page a[href] {
 }
 
 body .auth-figma-page input[type='checkbox'] {
-	accent-color: var(--auth-checkbox-accent);
+	accent-color: var(--bg-secondary);
 }
 
 body .auth-figma-page .auth-checkbox {
@@ -104,9 +74,9 @@ body .auth-figma-page .auth-checkbox {
 body .auth-figma-page .auth-checkbox-control {
 	align-items: center;
 	background-color: var(--bg-surface);
-	border: 2px solid var(--auth-checkbox-accent);
+	border: 2px solid var(--bg-secondary);
 	border-radius: 4px;
-	color: var(--auth-button-on-primary);
+	color: var(--text-on-primary);
 	display: inline-flex;
 	height: 26px;
 	justify-content: center;
@@ -125,8 +95,8 @@ body .auth-figma-page .auth-checkbox-control svg {
 }
 
 body .auth-figma-page .auth-checkbox input:checked + .auth-checkbox-control {
-	background-color: var(--auth-checkbox-accent);
-	border-color: var(--auth-checkbox-accent);
+	background-color: var(--bg-secondary);
+	border-color: var(--bg-secondary);
 }
 
 body .auth-figma-page .auth-checkbox input:checked + .auth-checkbox-control svg {
@@ -144,7 +114,7 @@ body .auth-figma-page .auth-field :is(input, select) {
 }
 
 body .auth-figma-page .auth-field input::placeholder {
-	color: var(--auth-text-muted);
+	color: var(--text-muted);
 	opacity: 1;
 }
 
@@ -157,13 +127,13 @@ body .auth-figma-page .auth-icon-status {
 }
 
 body .auth-figma-page .auth-icon-success {
-	background-color: var(--auth-status-success-bg);
-	color: var(--auth-status-success-icon);
+	background-color: var(--bg-success-subtle);
+	color: var(--text-success);
 }
 
 body .auth-figma-page .auth-icon-error {
-	background-color: var(--auth-status-error-bg);
-	color: var(--auth-status-error-icon);
+	background-color: var(--bg-danger-subtle);
+	color: var(--text-danger);
 }
 
 /* The auth button classes assume the .auth-figma-page button reset. When they are
@@ -205,26 +175,26 @@ body .auth-message-stack .auth-button-secondary {
 body .auth-figma-page .auth-button-primary,
 body .auth-message-stack .auth-button-primary {
 	background-color: var(--bg-primary);
-	color: var(--auth-button-on-primary);
+	color: var(--text-on-primary);
 }
 
 body .auth-figma-page .auth-button-accent,
 body .auth-message-stack .auth-button-accent {
-	background-color: var(--auth-button-accent-bg);
-	color: var(--auth-button-on-primary);
+	background-color: var(--bg-secondary);
+	color: var(--text-on-primary);
 }
 
 body .auth-figma-page .auth-button-primary:hover,
 body .auth-message-stack .auth-button-primary:hover {
 	background-color: var(--bg-primary-hover);
-	color: var(--auth-button-on-primary);
+	color: var(--text-on-primary);
 	text-decoration: none;
 }
 
 body .auth-figma-page .auth-button-accent:hover,
 body .auth-message-stack .auth-button-accent:hover {
-	background-color: var(--auth-button-accent-hover);
-	color: var(--auth-button-on-primary);
+	background-color: var(--bg-secondary-hover);
+	color: var(--text-on-primary);
 	text-decoration: none;
 }
 
@@ -237,15 +207,15 @@ body .auth-message-stack .auth-button-accent:active {
 
 body .auth-figma-page .auth-button-secondary,
 body .auth-message-stack .auth-button-secondary {
-	background-color: var(--auth-button-secondary-bg);
+	background-color: var(--bg-primary);
 	border: 0;
-	color: var(--auth-button-on-primary);
+	color: var(--text-on-primary);
 }
 
 body .auth-figma-page .auth-button-secondary:hover,
 body .auth-message-stack .auth-button-secondary:hover {
-	background-color: var(--auth-button-secondary-hover);
-	color: var(--auth-button-on-primary);
+	background-color: var(--bg-primary-hover);
+	color: var(--text-on-primary);
 	text-decoration: none;
 }
 
@@ -258,11 +228,6 @@ body .auth-figma-page .auth-text-link:hover {
 }
 
 body .auth-message-stack {
-	--auth-button-accent-bg: var(--cinemata-sunset-horizon-500);
-	--auth-button-accent-hover: var(--cinemata-sunset-horizon-600);
-	--auth-button-secondary-bg: var(--cinemata-strait-blue-600p);
-	--auth-button-secondary-hover: var(--cinemata-strait-blue-700);
-	--auth-button-on-primary: var(--cinemata-neutral-50);
 	--auth-message-overlay: color-mix(in srgb, var(--cinemata-pacific-deep-900) 22%, transparent);
 	--auth-message-panel-from: var(--cinemata-neutral-50);
 	--auth-message-panel-to: var(--cinemata-pacific-deep-100);
@@ -287,11 +252,6 @@ body .auth-message-stack {
 }
 
 body.dark_theme .auth-message-stack {
-	--auth-button-accent-bg: var(--bg-secondary);
-	--auth-button-accent-hover: var(--bg-secondary-hover);
-	--auth-button-secondary-bg: var(--bg-primary);
-	--auth-button-secondary-hover: var(--bg-primary-hover);
-	--auth-button-on-primary: var(--text-on-primary);
 	--auth-message-overlay: color-mix(in srgb, var(--bg-overlay-dark, var(--bg-page)) 58%, transparent);
 	--auth-message-panel-from: var(--cinemata-pacific-deep-900);
 	--auth-message-panel-to: var(--cinemata-pacific-deep-950);
@@ -1053,9 +1013,11 @@ body {
 	--text-impact-icon-saves: var(--cinemata-coral-reef-600);
 	--text-impact-modal-close: var(--cinemata-pacific-deep-900);
 	--bg-danger: var(--cinemata-red-500);
+	--bg-danger-subtle: var(--cinemata-red-100);
 	--bg-danger-strong: var(--cinemata-red-800);
 	--bg-danger-strong-hover: var(--cinemata-red-400);
 	--bg-success: var(--cinemata-green-500);
+	--bg-success-subtle: var(--cinemata-green-100);
 	--bg-success-strong: var(--cinemata-green-800);
 	--bg-warning: var(--cinemata-amber-500);
 
@@ -1123,8 +1085,10 @@ body.dark_theme {
 	--bg-impact-timeline-dot: var(--cinemata-strait-blue-200);
 	--text-impact-icon-saves: var(--cinemata-coral-reef-600);
 	--text-impact-modal-close: var(--cinemata-pacific-deep-900);
+	--bg-danger-subtle: var(--cinemata-red-950);
 	--bg-danger-strong: var(--cinemata-red-950);
 	--bg-danger-strong-hover: var(--cinemata-red-900);
+	--bg-success-subtle: var(--cinemata-green-950);
 
 	--text-strong: var(--cinemata-strait-blue-50);
 	--text-primary: var(--cinemata-strait-blue-50);
@@ -1182,9 +1146,11 @@ body.dark_theme {
 	--color-bg-impact-modal-close: var(--bg-impact-modal-close);
 	--color-bg-impact-timeline-dot: var(--bg-impact-timeline-dot);
 	--color-bg-danger: var(--bg-danger);
+	--color-bg-danger-subtle: var(--bg-danger-subtle);
 	--color-bg-danger-strong: var(--bg-danger-strong);
 	--color-bg-danger-strong-hover: var(--bg-danger-strong-hover);
 	--color-bg-success: var(--bg-success);
+	--color-bg-success-subtle: var(--bg-success-subtle);
 	--color-bg-success-strong: var(--bg-success-strong);
 	--color-bg-warning: var(--bg-warning);
 

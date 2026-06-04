@@ -1,8 +1,26 @@
 {% if form.non_field_errors %}
-  <div class="mb-6 rounded border border-border-danger bg-bg-danger p-4 text-sm leading-5 text-text-danger" role="alert">
-    {% for error in form.non_field_errors %}
-      <p>{{ error }}</p>
-    {% endfor %}
+  {% include "account/snippets/auth_toast.html" %}
+  <div class="auth-message-stack auth-message-toast" role="region" aria-label="Notifications" aria-live="assertive">
+    <div class="auth-message-banner" role="alert">
+      <div class="auth-message-header">
+        <div class="auth-message-title-row">
+          <span class="auth-message-icon auth-message-icon-error" aria-hidden="true">
+            <svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M165.66,154.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
+            </svg>
+          </span>
+          <h2 class="auth-message-title">Something went wrong</h2>
+        </div>
+        <button type="button" class="auth-message-close close" data-dismiss="alert" aria-label="Close" onclick="event.preventDefault(); event.stopPropagation(); var banner = this.closest('.auth-message-banner'); var stack = banner.closest('.auth-message-stack'); banner.remove(); if (stack && !stack.querySelector('.auth-message-banner')) { stack.remove(); } return false;">
+          <svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
+          </svg>
+        </button>
+      </div>
+      {% for error in form.non_field_errors %}
+        <p class="auth-message-body">{{ error }}</p>
+      {% endfor %}
+    </div>
   </div>
 {% endif %}
 {% if form.errors %}

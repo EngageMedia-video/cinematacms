@@ -14,7 +14,7 @@
 {% setvar email_link %}
   <a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="mailto:{{ email }}">{{ email }}</a>
 {% endsetvar %}
-<p class="m-0 w-[502px] max-w-full text-base leading-6 text-[var(--auth-text-muted)]">
+<p class="m-0 w-[502px] max-w-full text-base leading-6 text-text-muted">
   {% blocktranslate %}We’ve sent a code to {{ email_link }}. The code expires shortly, so please enter it soon.{% endblocktranslate %}
 </p>
 {% endblock auth_subtitle %}
@@ -25,9 +25,9 @@
 <form class="flex w-full flex-col gap-6" method="POST" action="{{ login_url }}">
   {% csrf_token %}
   <div class="space-y-4 px-1 py-4">
-    <div class="auth-field flex h-[84px] w-full flex-col justify-center gap-2 overflow-hidden border-b border-[var(--auth-field-border)] py-[14px] pr-[22px] text-left text-base leading-6 text-text-strong">
+    <div class="auth-field flex h-[84px] w-full flex-col justify-center gap-2 overflow-hidden border-b border-border-default py-[14px] pr-[22px] text-left text-base leading-6 text-text-strong">
       <label class="m-0" for="id_code">{% translate "Code" %}</label>
-      <input class="m-0 block h-6 w-full border-0 bg-transparent p-0 leading-6 text-text-strong outline-none placeholder:text-[var(--auth-text-muted)] focus-visible:ring-0" required name="code" placeholder="{% translate 'Code' %}" id="id_code" autocomplete="one-time-code" type="text"{% if form.code.errors %} aria-invalid="true" aria-describedby="id_code-errors"{% endif %}>
+      <input class="m-0 block h-6 w-full border-0 bg-transparent p-0 leading-6 text-text-strong outline-none placeholder:text-text-muted focus-visible:ring-0" required name="code" placeholder="{% translate 'Code' %}" id="id_code" autocomplete="one-time-code" type="text"{% if form.code.errors %} aria-invalid="true" aria-describedby="id_code-errors"{% endif %}>
     </div>
     {% if form.code.errors %}
       <div id="id_code-errors">

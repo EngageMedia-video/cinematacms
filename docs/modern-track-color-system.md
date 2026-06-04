@@ -503,25 +503,34 @@ The redesigned authentication pages (`templates/account/`, `templates/mfa/`) ren
 - `ring-ring-focus` — every focusable control; `text-text-link` / `text-text-link-hover` — inline links.
 - `var(--bg-primary)` / `var(--bg-primary-hover)` — primary button background and the header status icon color (value-identical to the brand primary, so no alias).
 
-**Feature tokens (`--auth-*`) are kept only where the value genuinely differs from every existing token in at least one theme.** Defined on `.auth-figma-page` (and mirrored on `body.dark_theme .auth-figma-page`):
+**Component styling uses purpose-based semantic tokens, not feature-scoped `--auth-*` aliases**, so auth controls stay uniform with the rest of the modern component library. Buttons, the checkbox, field border, requirements panel and status badges map to existing semantic tokens (where the dark value already matched, the light value follows the semantic token since Figma only specs dark mode):
+
+| Auth use | Now uses | Notes |
+|----------|----------|-------|
+| Accent / CTA submit button (`.auth-button-accent`) | `bg-secondary` / `bg-secondary-hover` | the brand CTA used app-wide |
+| Primary & secondary buttons (`.auth-button-primary` / `.auth-button-secondary`) | `bg-primary` / `bg-primary-hover` | both were already the same strait-blue |
+| Button label text | `text-on-primary` | |
+| Checkbox checked fill / accent | `bg-secondary` | matches the shared `CheckboxButton` |
+| Underline field border | `border-default` | |
+| Password-requirements panel bg / text | `bg-surface-muted` / `text-secondary` | |
+| Success / error status icon badge | `bg-success-subtle` / `bg-danger-subtle` (new) + `text-success` / `text-danger` | |
+
+Two **new purpose tokens** were added to the global layer for soft feedback tints (reusable, not auth-scoped):
 
 | Token | Light | Dark | Role |
 |-------|-------|------|------|
-| `--auth-panel-to` | `pacific-deep-100` | `pacific-deep-950` | Gradient panel end stop (start = `bg-surface`) |
-| `--auth-field-border` | `pacific-deep-200` | `pacific-deep-500` | Underline field border (dark differs from `border-default`) |
-| `--auth-text-muted` | `pacific-deep-500` | `pacific-deep-300` | Subtitles, placeholders, help text (light differs from `text-muted`) |
-| `--auth-ring-color` | `pacific-deep-200` | `pacific-deep-500` | Decorative concentric ring outlines |
-| `--auth-checkbox-accent` | `sunset-horizon-400p` | `sunset-horizon-400p` | Checkbox `accent-color` and custom control fill |
-| `--auth-button-accent-bg` / `-hover` | `sunset-horizon-500` / `-600` | `sunset-horizon-500` / `-600` | Accent submit button (constant; differs from `bg-secondary` in light) |
-| `--auth-button-secondary-bg` / `-hover` | `strait-blue-600p` / `-700` | `strait-blue-600p` / `-700` | Secondary button (constant; differs from `bg-primary` in dark) |
-| `--auth-button-on-primary` | `neutral-50` | `neutral-50` | Button label text (near-white, not pure `text-on-primary`) |
-| `--auth-requirements-bg` / `-text` | `pacific-deep-100` / `pacific-deep-700` | `pacific-deep-800` / `strait-blue-100` | Password-requirements panel |
-| `--auth-status-error-bg` / `-icon` | `red-100` / `red-700p` | `red-950` / `red-500` | Status icon badge — soft tint, distinct from solid `bg-danger` |
-| `--auth-status-success-bg` / `-icon` | `green-100` / `green-700p` | `green-950` / `green-500` | Status icon badge — soft tint, distinct from solid `bg-success` |
+| `bg-bg-success-subtle` | `green-100` | `green-950` | Soft success badge / surface tint |
+| `bg-bg-danger-subtle` | `red-100` | `red-950` | Soft danger badge / surface tint |
+
+Only one genuinely auth-specific **decorative** token remains on `.auth-figma-page` (the panel gradient end stop now uses `bg-page` directly: `bg-surface` → `bg-page`):
+
+| Token | Light | Dark | Role |
+|-------|-------|------|------|
+| `--auth-ring-color` | `pacific-deep-200` | `pacific-deep-500` | Decorative concentric ring outlines. Light coincides with `border-default`, but no existing token has the dark `pacific-deep-500` (lighter than `border-default`'s `pacific-deep-700`) needed to keep the faint rings visible on the dark panel |
 
 The full-screen flash/message overlay defines a parallel feature set on `.auth-message-stack` (and its dark override): a scrim (`--auth-message-overlay`), banner gradient (`--auth-message-panel-from/-to`), `color-mix`-based ring/shadow, and success / error / info icon-badge pairs. These are genuine one-offs with no existing-token equivalent; see `tailwind.css` for the authoritative values.
 
-> Tokens that previously aliased an existing token in **both** themes (`--auth-page-bg` → `bg-page`, `--auth-field-bg` → `bg-surface`, `--auth-panel-from` → `bg-surface`, `--auth-text-strong` → `text-strong`, `--auth-icon-color` → `bg-primary`, `--auth-button-primary-bg/-hover` → `bg-primary/-hover`) were removed in favour of the existing token, per the no-duplicate-alias rule.
+> Tokens that resolve to an existing token in **both** themes (`--auth-page-bg` → `bg-page`, `--auth-field-bg` → `bg-surface`, `--auth-panel-from` → `bg-surface`, `--auth-text-strong` → `text-strong`, `--auth-icon-color` → `bg-primary`, `--auth-button-primary-bg/-hover` → `bg-primary/-hover`, `--auth-text-muted` → `text-muted`, `--auth-panel-to` → `bg-page`) were removed in favour of the existing token, per the no-duplicate-alias rule. `--auth-text-muted` once differed in light (`pacific-deep-500` vs `text-muted`'s `pacific-deep-400`), but `text-muted` was later moved to `pacific-deep-500`, so the two now coincide and the feature alias was dropped.
 >
 > `*.stories.jsx` and `*.test.jsx` files contain color fixtures but are not part of the production styling path; they are excluded here.
 
