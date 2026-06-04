@@ -6,10 +6,10 @@
 
 {% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="mfa" %}{% endblock auth_icon %}
 
-{% block auth_title %}Confirm Access{% endblock auth_title %}
+{% block auth_title %}{% trans "Confirm Access" %}{% endblock auth_title %}
 
 {% block auth_subtitle %}
-<p class="m-0 w-[502px] max-w-full text-base leading-6 text-text-muted">Please reauthenticate to safeguard your account.</p>
+<p class="m-0 w-[502px] max-w-full text-base leading-6 text-text-muted">{% trans "Please reauthenticate to safeguard your account." %}</p>
 {% endblock auth_subtitle %}
 
 {% block auth_body %}
@@ -25,7 +25,7 @@
                   <path d="M165.66,154.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
                 </svg>
               </span>
-              <h2 class="auth-message-title">Something went wrong</h2>
+              <h2 class="auth-message-title">{% trans "Something went wrong" %}</h2>
             </div>
             <button type="button" class="auth-message-close close" data-dismiss="alert" aria-label="Close" onclick="event.preventDefault(); event.stopPropagation(); var banner = this.closest('.auth-message-banner'); var stack = banner.closest('.auth-message-stack'); banner.remove(); if (stack && !stack.querySelector('.auth-message-banner')) { stack.remove(); } return false;">
               <svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
