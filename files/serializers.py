@@ -320,16 +320,13 @@ class SingleMediaSerializer(serializers.ModelSerializer):
                 continue
             grouped[entry.category].append(CommunityImpactSerializer(entry, context=self.context).data)
 
-        save_actions = MediaAction.objects.filter(media=obj, action="like")
         playlist_items = PlaylistMedia.objects.filter(media=obj)
-        latest_save = save_actions.aggregate(latest=Max("action_date"))["latest"]
-        latest_playlist = playlist_items.aggregate(latest=Max("action_date"))["latest"]
-        latest_events = [event for event in (latest_save, latest_playlist) if event]
+        latest_save = playlist_items.aggregate(latest=Max("action_date"))["latest"]
         grouped[CommunityImpact.SAVES] = {
             "entries": [],
-            "lastEventAt": max(latest_events).isoformat() if latest_events else "",
+            "lastEventAt": latest_save.isoformat() if latest_save else "",
             "totalCount": {
-                "saves": save_actions.count(),
+                "saves": playlist_items.values("playlist__user").distinct().count(),
                 "playlists": playlist_items.values("playlist_id").distinct().count(),
             },
         }

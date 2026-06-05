@@ -613,11 +613,26 @@ def can_manage_uploads(user):
 
 
 def can_manage_film_impact(user):
-    """Check if user can access the film impact management surface."""
+    """Check if user can access the film impact management surface.
+    Curators, Editors, Managers, and Superusers."""
     try:
-        return bool(user.is_authenticated and (user.is_superuser or user.advancedUser))
+        return bool(
+            user.is_authenticated and (user.is_superuser or user.is_manager or user.is_editor or user.is_curator)
+        )
     except AttributeError:
         return False
+
+
+def community_impact_auto_approves(user, media):
+    """Whether a new community-impact entry skips the approval queue."""
+    try:
+        if user.is_superuser or user.is_manager or user.is_editor or user.is_curator:
+            return True
+        if user.advancedUser and media.user_id == user.id:
+            return True
+    except AttributeError:
+        pass
+    return False
 
 
 def is_curator(user):

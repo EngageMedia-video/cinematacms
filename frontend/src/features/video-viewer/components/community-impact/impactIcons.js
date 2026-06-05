@@ -26,37 +26,37 @@ export const IMPACT_ICON_CONFIG = {
 		iconName: 'filmReel',
 		label: 'Screened In',
 		accentClassName: 'text-text-accent',
-		iconShellClassName: 'bg-bg-impact-icon-screening text-text-secondary',
+		iconShellClassName: 'bg-bg-emblem-blue-deep text-text-secondary',
 	},
 	featured: {
 		iconName: 'eye',
 		label: 'Featured In',
 		accentClassName: 'text-text-secondary',
-		iconShellClassName: 'bg-bg-impact-icon-featured text-text-secondary',
+		iconShellClassName: 'bg-bg-emblem-blue text-text-secondary',
 	},
 	saves: {
 		iconName: 'bookmarkPennant',
 		label: 'Saves & Playlists',
 		accentClassName: 'text-text-link',
-		iconShellClassName: 'bg-bg-impact-icon-saves text-text-impact-icon-saves',
+		iconShellClassName: 'bg-bg-emblem-green text-text-on-emblem-green',
 	},
 	academic: {
 		iconName: 'bookFilled',
 		label: 'Academic Usage',
 		accentClassName: 'text-text-warning',
-		iconShellClassName: 'bg-bg-impact-icon-academic text-text-accent',
+		iconShellClassName: 'bg-bg-emblem-orange text-text-accent',
 	},
 	curated: {
 		iconName: 'curatedPlaylist',
 		label: 'Curated Into',
 		accentClassName: 'text-text-muted',
-		iconShellClassName: 'bg-bg-impact-icon-curated text-text-muted',
+		iconShellClassName: 'bg-bg-emblem-gray text-text-muted',
 	},
 	heart: {
 		iconName: 'heart',
 		label: 'Community Impact',
 		accentClassName: 'text-text-secondary',
-		iconShellClassName: 'bg-bg-impact-icon-featured text-text-secondary',
+		iconShellClassName: 'bg-bg-emblem-blue text-text-secondary',
 	},
 };
 

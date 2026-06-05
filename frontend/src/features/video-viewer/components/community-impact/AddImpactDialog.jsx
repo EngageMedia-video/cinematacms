@@ -130,7 +130,7 @@ export function AddImpactDialog({
 		>
 			<DialogContent
 				aria-label="Add community impact"
-				className="impact-add-dialog flex max-h-[calc(100vh-var(--size-64))] w-full max-w-[544px] flex-col overflow-hidden rounded-ds-8 border border-border-default bg-cinemata-pacific-deep-900 shadow-lg"
+				className="impact-add-dialog flex max-h-[calc(100vh-var(--size-64))] w-full max-w-[544px] flex-col overflow-hidden rounded-ds-8 border border-border-default bg-bg-surface shadow-lg"
 			>
 				<form
 					onSubmit={handleSubmit}
@@ -139,7 +139,7 @@ export function AddImpactDialog({
 				>
 					<Button
 						variant="icon"
-						className="absolute right-4 top-4 h-size-32 w-size-32 rounded-full text-cinemata-pacific-deep-300 outline-none hover:text-cinemata-strait-blue-50 focus-visible:ring-2 focus-visible:ring-ring-focus"
+						className="absolute right-4 top-4 h-size-32 w-size-32 rounded-full text-text-description outline-none hover:text-text-strong focus-visible:ring-2 focus-visible:ring-ring-focus"
 						aria-label="Close add impact dialog"
 						onClick={onClose}
 						type="button"
@@ -148,16 +148,16 @@ export function AddImpactDialog({
 
 					<div className="flex w-full flex-col items-center text-center">
 						<span
-							className="inline-flex h-[58px] w-[58px] shrink-0 items-center justify-center text-cinemata-strait-blue-400"
+							className="inline-flex h-[58px] w-[58px] shrink-0 items-center justify-center text-text-dialog-accent"
 							aria-hidden="true"
 						>
 							<Icon name={heartConfig.iconName} size={67} decorative />
 						</span>
 
-						<h2 className="m-0 mt-[26px] text-[20px] font-bold leading-[24px] text-cinemata-strait-blue-50">
+						<h2 className="m-0 mt-[26px] text-[20px] font-bold leading-[24px] text-text-strong">
 							Where has this film made an impact?
 						</h2>
-						<p className="m-0 mt-[11px] max-w-[404px] text-[16px] font-normal leading-[24px] text-cinemata-pacific-deep-300">
+						<p className="m-0 mt-[11px] max-w-[404px] text-[16px] font-normal leading-[24px] text-text-description">
 							For filmmakers &amp; viewers. Add screenings, playlists, or discussions to show how this
 							film is reaching people.
 						</p>
@@ -207,7 +207,7 @@ export function AddImpactDialog({
 					) : null}
 
 					<Button
-						className="mt-[16px] h-[40px] w-[316px] max-w-full justify-center whitespace-nowrap bg-cinemata-sunset-horizon-500 px-0 py-0 text-[14px] font-bold leading-none text-cinemata-white hover:bg-cinemata-sunset-horizon-600 focus-visible:ring-2 focus-visible:ring-ring-focus"
+						className="mt-[16px] h-[40px] w-[316px] max-w-full justify-center whitespace-nowrap bg-bg-secondary px-0 py-0 text-[14px] font-bold leading-none text-text-on-primary hover:bg-bg-secondary-hover focus-visible:ring-2 focus-visible:ring-ring-focus"
 						disabled={!canSubmit}
 						type="submit"
 					>

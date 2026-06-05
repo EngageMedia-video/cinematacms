@@ -6,7 +6,6 @@ from django.contrib.auth.models import AnonymousUser
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.utils import timezone
 
-from actions.models import MediaAction
 from files.community_impact_validators import GENERIC_TRUSTED_URL_ERROR
 from files.methods import can_manage_film_impact
 from files.models import CommunityImpact, Playlist, PlaylistMedia
@@ -145,12 +144,11 @@ class CommunityImpactSerializerTests(TestCase):
         self.assertEqual(data["community_impacts"]["featured"], [])
         self.assertEqual(data["community_impacts"]["academic"], [])
 
-    def test_single_media_serializer_aggregates_saves_from_system_data(self):
+    def test_single_media_serializer_counts_playlist_save_without_like(self):
         user = create_test_user()
         media = create_test_media(user)
         playlist = Playlist.objects.create(user=user, title="Community playlist")
         PlaylistMedia.objects.create(media=media, playlist=playlist)
-        MediaAction.objects.create(media=media, user=user, action="like")
         CommunityImpact.objects.create(
             media=media,
             user=user,
@@ -168,6 +166,45 @@ class CommunityImpactSerializerTests(TestCase):
         self.assertEqual(saves["entries"], [])
         self.assertEqual(saves["totalCount"], {"saves": 1, "playlists": 1})
         self.assertTrue(saves["lastEventAt"])
+
+    def test_single_media_serializer_counts_one_saver_across_multiple_playlists(self):
+        user = create_test_user()
+        media = create_test_media(user)
+        PlaylistMedia.objects.create(
+            media=media,
+            playlist=Playlist.objects.create(user=user, title="Community playlist"),
+        )
+        PlaylistMedia.objects.create(
+            media=media,
+            playlist=Playlist.objects.create(user=user, title="Second community playlist"),
+        )
+        request = RequestFactory().get(f"/api/v1/media/{media.friendly_token}")
+        request.user = AnonymousUser()
+
+        data = SingleMediaSerializer(media, context={"request": request}).data
+
+        saves = data["community_impacts"]["saves"]
+        self.assertEqual(saves["totalCount"], {"saves": 1, "playlists": 2})
+
+    def test_single_media_serializer_counts_distinct_playlist_owners_as_savers(self):
+        user = create_test_user()
+        other_user = create_test_user()
+        media = create_test_media(user)
+        PlaylistMedia.objects.create(
+            media=media,
+            playlist=Playlist.objects.create(user=user, title="Community playlist"),
+        )
+        PlaylistMedia.objects.create(
+            media=media,
+            playlist=Playlist.objects.create(user=other_user, title="Another community playlist"),
+        )
+        request = RequestFactory().get(f"/api/v1/media/{media.friendly_token}")
+        request.user = AnonymousUser()
+
+        data = SingleMediaSerializer(media, context={"request": request}).data
+
+        saves = data["community_impacts"]["saves"]
+        self.assertEqual(saves["totalCount"], {"saves": 2, "playlists": 2})
 
 
 class CommunityImpactEndpointTests(TestCase):
@@ -251,11 +288,51 @@ class CommunityImpactEndpointTests(TestCase):
         self.assertEqual(impact.status, CommunityImpact.WAITING_APPROVAL)
         self.assertEqual(response.json()["status"], CommunityImpact.WAITING_APPROVAL)
 
-    def test_allowed_authenticated_roles_can_create_community_impact(self):
+    def test_trusted_user_auto_approves_own_media_submission(self):
+        trusted_user = create_test_user(username="trustedownerimpact", password="testpass123", advancedUser=True)
+        trusted_media = create_test_media(trusted_user)
+        self.client.login(username="trustedownerimpact", password="testpass123")
+
+        response = self.client.post(
+            f"/api/v1/media/{trusted_media.friendly_token}/community-impacts",
+            data={
+                "category": CommunityImpact.SCREENING,
+                "title": "Community screening by owner",
+                "url": "",
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        impact = CommunityImpact.objects.get(media=trusted_media, user=trusted_user)
+        self.assertEqual(impact.status, CommunityImpact.APPROVED)
+        self.assertEqual(response.json()["status"], CommunityImpact.APPROVED)
+
+    def test_trusted_user_submission_on_other_media_waits_for_approval(self):
+        trusted_user = create_test_user(username="trustedotherimpact", password="testpass123", advancedUser=True)
+        self.client.login(username="trustedotherimpact", password="testpass123")
+
+        response = self.client.post(
+            self.url,
+            data={
+                "category": CommunityImpact.SCREENING,
+                "title": "Community screening by trusted user",
+                "url": "",
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        impact = CommunityImpact.objects.get(media=self.media, user=trusted_user)
+        self.assertEqual(impact.status, CommunityImpact.WAITING_APPROVAL)
+        self.assertEqual(response.json()["status"], CommunityImpact.WAITING_APPROVAL)
+
+    def test_elevated_roles_auto_approve_any_media_submission(self):
         role_users = [
-            create_test_user(username="trustedimpact", password="testpass123", advancedUser=True),
-            create_test_user(username="editorimpact", password="testpass123", is_editor=True),
             create_test_user(username="curatorimpact", password="testpass123", is_curator=True),
+            create_test_user(username="editorimpact", password="testpass123", is_editor=True),
+            create_test_user(username="managerimpact", password="testpass123", is_manager=True),
+            create_test_user(username="superimpact", password="testpass123", is_superuser=True),
         ]
 
         for role_user in role_users:
@@ -273,7 +350,9 @@ class CommunityImpactEndpointTests(TestCase):
                 )
 
                 self.assertEqual(response.status_code, 201)
-                self.assertTrue(CommunityImpact.objects.filter(media=self.media, user=role_user).exists())
+                impact = CommunityImpact.objects.get(media=self.media, user=role_user)
+                self.assertEqual(impact.status, CommunityImpact.APPROVED)
+                self.assertEqual(response.json()["status"], CommunityImpact.APPROVED)
 
     def test_rejects_unsafe_submission_url(self):
         self.client.login(username="impactuser", password="testpass123")
@@ -331,6 +410,21 @@ class ManageCommunityImpactTests(TestCase):
             password="testpass123",
             advancedUser=True,
         )
+        self.curator_user = create_test_user(
+            username="curatorimpactmanager",
+            password="testpass123",
+            is_curator=True,
+        )
+        self.editor_user = create_test_user(
+            username="editorimpactmanager",
+            password="testpass123",
+            is_editor=True,
+        )
+        self.manager_user = create_test_user(
+            username="managerimpactmanager",
+            password="testpass123",
+            is_manager=True,
+        )
         self.superuser = create_test_user(
             username="impactadmin",
             password="testpass123",
@@ -360,7 +454,10 @@ class ManageCommunityImpactTests(TestCase):
 
     def test_can_manage_film_impact_helper(self):
         self.assertFalse(can_manage_film_impact(self.regular_user))
-        self.assertTrue(can_manage_film_impact(self.advanced_user))
+        self.assertFalse(can_manage_film_impact(self.advanced_user))
+        self.assertTrue(can_manage_film_impact(self.curator_user))
+        self.assertTrue(can_manage_film_impact(self.editor_user))
+        self.assertTrue(can_manage_film_impact(self.manager_user))
         self.assertTrue(can_manage_film_impact(self.superuser))
 
     def test_manage_serializer_uses_cinemata_edit_url(self):
@@ -382,12 +479,24 @@ class ManageCommunityImpactTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
 
-    def test_api_advanced_user_allowed(self):
+    def test_api_advanced_user_forbidden(self):
         self.client.login(username="advancedimpact", password="testpass123")
 
         response = self.client.get("/api/v1/manage_film_impact")
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 403)
+
+    def test_api_moderation_roles_allowed(self):
+        role_users = (self.curator_user, self.editor_user, self.manager_user)
+
+        for role_user in role_users:
+            with self.subTest(username=role_user.username):
+                self.client.logout()
+                self.client.login(username=role_user.username, password="testpass123")
+
+                response = self.client.get("/api/v1/manage_film_impact")
+
+                self.assertEqual(response.status_code, 200)
 
     def test_api_superuser_can_filter_by_search_and_category(self):
         self.client.login(username="impactadmin", password="testpass123")
@@ -406,9 +515,8 @@ class ManageCommunityImpactTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         results = response.json()["results"]
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0]["uid"], str(self.impact.uid))
-        self.assertEqual(results[0]["status"], CommunityImpact.WAITING_APPROVAL)
+        self.assertIn(str(self.impact.uid), {result["uid"] for result in results})
+        self.assertTrue(all(result["status"] == CommunityImpact.WAITING_APPROVAL for result in results))
 
     @patch(
         "django_vite.core.asset_loader.DjangoViteAssetLoader.instance",
@@ -426,26 +534,60 @@ class ManageCommunityImpactTests(TestCase):
         "django_vite.core.asset_loader.DjangoViteAssetLoader.instance",
         return_value=make_vite_loader_mock(),
     )
-    def test_manage_page_advanced_user_allowed(self, _mock_vite):
+    def test_manage_page_advanced_user_redirected(self, _mock_vite):
         self.client.login(username="advancedimpact", password="testpass123")
 
         response = self.client.get("/manage/film-impact")
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
     @patch(
         "django_vite.core.asset_loader.DjangoViteAssetLoader.instance",
         return_value=make_vite_loader_mock(),
     )
-    def test_edit_page_advanced_user_allowed(self, _mock_vite):
+    @override_settings(MFA_REQUIRED_ROLES=[])
+    def test_manage_page_moderation_roles_allowed(self, _mock_vite):
+        role_users = (self.curator_user, self.editor_user, self.manager_user)
+
+        for role_user in role_users:
+            with self.subTest(username=role_user.username):
+                self.client.logout()
+                self.client.login(username=role_user.username, password="testpass123")
+
+                response = self.client.get("/manage/film-impact")
+
+                self.assertEqual(response.status_code, 200)
+
+    @patch(
+        "django_vite.core.asset_loader.DjangoViteAssetLoader.instance",
+        return_value=make_vite_loader_mock(),
+    )
+    def test_edit_page_advanced_user_redirected(self, _mock_vite):
         self.client.login(username="advancedimpact", password="testpass123")
 
         response = self.client.get(f"/manage/film-impact/{self.impact.uid}/edit")
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
-    def test_api_advanced_user_can_update_impact(self):
-        self.client.login(username="advancedimpact", password="testpass123")
+    @patch(
+        "django_vite.core.asset_loader.DjangoViteAssetLoader.instance",
+        return_value=make_vite_loader_mock(),
+    )
+    @override_settings(MFA_REQUIRED_ROLES=[])
+    def test_edit_page_moderation_roles_allowed(self, _mock_vite):
+        role_users = (self.curator_user, self.editor_user, self.manager_user)
+
+        for role_user in role_users:
+            with self.subTest(username=role_user.username):
+                self.client.logout()
+                self.client.login(username=role_user.username, password="testpass123")
+
+                response = self.client.get(f"/manage/film-impact/{self.impact.uid}/edit")
+
+                self.assertEqual(response.status_code, 200)
+
+    def test_api_manager_can_update_impact(self):
+        self.client.login(username="managerimpactmanager", password="testpass123")
 
         response = self.client.patch(
             f"/api/v1/manage_film_impact/{self.impact.uid}",
@@ -469,8 +611,8 @@ class ManageCommunityImpactTests(TestCase):
         self.assertEqual(self.impact.status, CommunityImpact.APPROVED)
         self.assertEqual(self.impact.event_date, date(2026, 6, 2))
 
-    def test_api_advanced_user_can_reject_impact(self):
-        self.client.login(username="advancedimpact", password="testpass123")
+    def test_api_manager_can_reject_impact(self):
+        self.client.login(username="managerimpactmanager", password="testpass123")
         CommunityImpact.objects.filter(pk=self.impact.pk).update(status=CommunityImpact.APPROVED)
 
         response = self.client.patch(
@@ -483,8 +625,8 @@ class ManageCommunityImpactTests(TestCase):
         self.impact.refresh_from_db()
         self.assertEqual(self.impact.status, CommunityImpact.REJECTED)
 
-    def test_api_advanced_user_can_reject_waiting_approval_impact(self):
-        self.client.login(username="advancedimpact", password="testpass123")
+    def test_api_manager_can_reject_waiting_approval_impact(self):
+        self.client.login(username="managerimpactmanager", password="testpass123")
         CommunityImpact.objects.filter(pk=self.impact.pk).update(status=CommunityImpact.WAITING_APPROVAL)
 
         response = self.client.patch(
@@ -498,7 +640,7 @@ class ManageCommunityImpactTests(TestCase):
         self.assertEqual(self.impact.status, CommunityImpact.REJECTED)
 
     def test_api_rejects_invalid_status(self):
-        self.client.login(username="advancedimpact", password="testpass123")
+        self.client.login(username="managerimpactmanager", password="testpass123")
 
         response = self.client.patch(
             f"/api/v1/manage_film_impact/{self.impact.uid}",
@@ -509,8 +651,8 @@ class ManageCommunityImpactTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("status", response.json())
 
-    def test_api_advanced_user_cannot_update_to_system_category(self):
-        self.client.login(username="advancedimpact", password="testpass123")
+    def test_api_manager_cannot_update_to_system_category(self):
+        self.client.login(username="managerimpactmanager", password="testpass123")
 
         response = self.client.patch(
             f"/api/v1/manage_film_impact/{self.impact.uid}",
@@ -521,8 +663,8 @@ class ManageCommunityImpactTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("category", response.json())
 
-    def test_api_advanced_user_can_delete_impact(self):
-        self.client.login(username="advancedimpact", password="testpass123")
+    def test_api_manager_can_delete_impact(self):
+        self.client.login(username="managerimpactmanager", password="testpass123")
 
         response = self.client.delete(f"/api/v1/manage_film_impact/{self.impact.uid}")
 
