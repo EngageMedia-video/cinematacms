@@ -1,16 +1,24 @@
-{% extends "base.html" %}
+{% extends "account/auth_base.html" %}
 {% load i18n %}
 
 {% block headtitle %} | Verify Your E-mail Address{% endblock headtitle %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-    <div class="user-action-form-inner">
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="email" %}{% endblock auth_icon %}
 
-		<h1>{% trans "Verify Your E-mail Address" %}</h1>
+{% block auth_title %}{% trans "Email Sent" %}{% endblock auth_title %}
 
-		<p>{% blocktrans %}We've sent a verification email to your address. Please follow the link in the email to complete your signup. If you don't receive it within a few minutes, please email contact@cinemata.org.{% endblocktrans %}</p>
+{% block auth_subtitle %}
+<p class="m-0 w-[502px] max-w-full text-base leading-6 text-text-muted">
+	{% blocktrans with email=email|default:"your address" %}We've sent a confirmation email to {{ email }}. Please follow the link in the email to complete your registration.{% endblocktrans %}
+	<br><br>
+	{% blocktrans %}If you don't receive it within a few minutes, please contact us at <a class="auth-text-link focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="mailto:curators@cinemata.org">curators@cinemata.org</a>.{% endblocktrans %}
+</p>
+{% endblock auth_subtitle %}
 
-    </div>
+{% block auth_body %}
+<div class="flex justify-center">
+	<a class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="/">
+		{% trans "Back to Home" %}
+	</a>
 </div>
-{% endblock innercontent %}
+{% endblock auth_body %}

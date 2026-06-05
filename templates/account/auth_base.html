@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load django_vite i18n %}
+
+{% block topimports %}
+{{ block.super }}
+<link rel="stylesheet" href="{% vite_asset_url 'src/static/css/tailwind.css' %}">
+{% vite_asset 'src/entries/auth.js' %}
+{% endblock topimports %}
+
+{% block innercontent %}
+{% comment %}Localized strings consumed by the auth enhancement JS (field placeholders + country combobox). Read with getAttribute so values stay correctly escaped.{% endcomment %}
+<span id="auth-i18n" hidden
+  data-placeholder-code="{% trans 'Code' %}"
+  data-placeholder-email="{% trans 'Username or email' %}"
+  data-placeholder-login="{% trans 'Username or email' %}"
+  data-placeholder-location_country="{% trans 'Country/Region' %}"
+  data-placeholder-name="{% trans 'Name' %}"
+  data-placeholder-new_password1="{% trans 'Password' %}"
+  data-placeholder-new_password2="{% trans 'Password' %}"
+  data-placeholder-newpassword1="{% trans 'Password' %}"
+  data-placeholder-newpassword2="{% trans 'Password' %}"
+  data-placeholder-oldpassword="{% trans 'Current password' %}"
+  data-placeholder-password="{% trans 'Password' %}"
+  data-placeholder-password1="{% trans 'Password' %}"
+  data-placeholder-password2="{% trans 'Password' %}"
+  data-placeholder-username="{% trans 'Username' %}"
+  data-country-placeholder="{% trans 'Search or select your country' %}"
+  data-country-label="{% trans 'Country/Region' %}"
+  data-country-no-results="{% trans 'No countries found' %}"></span>
+{% block auth_overlay %}{% endblock auth_overlay %}
+<div class="auth-figma-page relative isolate min-h-[calc(100vh-var(--header-height,90px))] overflow-hidden bg-bg-page px-4 pb-12 pt-16 text-text-strong sm:px-6 lg:px-8 lg:pt-[136px] {% block auth_page_class %}{% endblock auth_page_class %}" style="{% block auth_page_style %}{% endblock auth_page_style %}">
+  <div aria-hidden="true" class="pointer-events-none absolute right-[-17rem] top-[-2rem] hidden size-[57rem] rounded-full border border-[var(--auth-ring-color)] opacity-25 md:block"></div>
+  <div aria-hidden="true" class="pointer-events-none absolute right-[-12rem] top-[3rem] hidden size-[42rem] rounded-full border border-[var(--auth-ring-color)] opacity-20 md:block"></div>
+  <div aria-hidden="true" class="pointer-events-none absolute right-[-7rem] top-[8rem] hidden size-[28rem] rounded-full border border-[var(--auth-ring-color)] opacity-15 md:block"></div>
+
+  <section
+    class="relative z-10 mx-auto flex w-full max-w-[640px] flex-col items-center gap-6 overflow-hidden rounded-2xl p-6"
+    aria-labelledby="auth-title"
+    {% block auth_section_attributes %}{% endblock auth_section_attributes %}
+    style="background-image: linear-gradient(118deg, var(--bg-surface) 33.989%, var(--bg-page) 116.01%);"
+  >
+    <div aria-hidden="true" class="pointer-events-none absolute bottom-[-7.5rem] right-[-8rem] size-[18.625rem] rounded-full border border-[var(--auth-ring-color)] opacity-35"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute bottom-[-5rem] right-[-5.5rem] size-[13rem] rounded-full border border-[var(--auth-ring-color)] opacity-30"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute bottom-[-2.25rem] right-[-3rem] size-[7.5rem] rounded-full border border-[var(--auth-ring-color)] opacity-25"></div>
+
+    <header class="relative z-10 flex w-full max-w-[502px] flex-col items-center gap-3 text-center">
+      {% block auth_icon %}{% endblock auth_icon %}
+      <h1 id="auth-title" class="m-0 max-w-full text-center font-heading text-[32px] font-medium leading-[38px] tracking-normal text-text-strong">
+        {% block auth_title %}{% endblock auth_title %}
+      </h1>
+      {% block auth_subtitle %}{% endblock auth_subtitle %}
+    </header>
+
+    <div class="relative z-10 w-full">
+      {% block auth_body %}{% endblock auth_body %}
+    </div>
+  </section>
+</div>
+{% endblock innercontent %}

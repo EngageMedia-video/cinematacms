@@ -1,0 +1,92 @@
+/*
+ * Hot-toast presentation for .auth-message-stack banners: positions the stack
+ * top-right, non-blocking (no dim overlay), with slide-in and auto-dismiss. Add
+ * the `auth-message-toast` modifier to any .auth-message-stack that should read
+ * as a toast (django messages, the MFA inline error). The shared
+ * .auth-message-stack still supplies the --auth-message-* tokens, so the banner
+ * card design is unchanged.
+ *
+ * Moved out of an inline <style> (templates/account/snippets/auth_toast.html)
+ * into the auth Vite entry so it ships as one cached asset.
+ */
+.auth-message-toast {
+	align-items: flex-end !important;
+	background: transparent !important;
+	gap: 10px;
+	inset: auto !important;
+	justify-content: flex-start !important;
+	left: auto !important;
+	padding: 0 !important;
+	pointer-events: none;
+	right: 16px !important;
+	top: calc(var(--header-height, 90px) + 16px) !important;
+	width: min(360px, calc(100vw - 32px));
+}
+/* Compact toast sizing (scoped to the toast variant only). */
+.auth-message-toast .auth-message-banner {
+	animation: auth-toast-in 240ms cubic-bezier(0.22, 1, 0.36, 1);
+	border-radius: 12px !important;
+	gap: 6px !important;
+	padding: 12px 14px !important;
+	pointer-events: auto;
+	width: 100% !important;
+}
+.auth-message-toast .auth-message-banner::before {
+	display: none !important;
+}
+.auth-message-toast .auth-message-icon {
+	height: 26px !important;
+	width: 26px !important;
+}
+.auth-message-toast .auth-message-icon svg {
+	height: 26px !important;
+	width: 26px !important;
+}
+.auth-message-toast .auth-message-title-row {
+	gap: 8px !important;
+}
+.auth-message-toast .auth-message-title {
+	font-size: 14px !important;
+	line-height: 18px !important;
+}
+.auth-message-toast .auth-message-body {
+	font-size: 13px !important;
+	line-height: 18px !important;
+}
+.auth-message-toast .auth-message-close {
+	height: 18px !important;
+	width: 18px !important;
+}
+.auth-message-toast .auth-message-close svg {
+	height: 16px !important;
+	width: 16px !important;
+}
+.auth-message-toast .auth-message-banner.is-leaving {
+	animation: auth-toast-out 200ms ease-in forwards;
+}
+@keyframes auth-toast-in {
+	from {
+		opacity: 0;
+		transform: translateX(24px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+@keyframes auth-toast-out {
+	from {
+		opacity: 1;
+		transform: translateX(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateX(24px);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.auth-message-toast .auth-message-banner,
+	.auth-message-toast .auth-message-banner.is-leaving {
+		animation: none;
+	}
+}

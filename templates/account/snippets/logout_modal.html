@@ -1,0 +1,39 @@
+{% comment %}
+Sign-out confirmation. Rendered two ways from one source:
+  - Global modal (included in base.html for authenticated users): hidden until a
+    sign-out link is clicked from any page, then POSTs to log out.
+  - Standalone /accounts/logout/ page (logout.html) when included with page_mode=True.
+Semantic tokens only; the brand button colours come from the shared
+.auth-button-* system (scoped by the .auth-message-stack overlay).
+{% endcomment %}
+{% load i18n django_vite %}
+{# Loaded here (a body-level include present on every authenticated page) rather #}
+{# than in a topimports block, which legacy/revamp pages override without super. #}
+{% vite_asset 'src/entries/signout.js' %}
+<div class="auth-message-stack logout-signout"{% if not page_mode %} hidden data-signout-modal{% endif %} aria-live="polite">
+	<div class="logout-signout__card" role="dialog" aria-modal="true" aria-labelledby="signout-modal-title" tabindex="-1">
+		<div class="logout-signout__content">
+			<header class="logout-signout__header">
+				<span class="logout-signout__icon" aria-hidden="true">
+					<svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+						<path d="M120,216a8,8,0,0,1-8,8H48a16,16,0,0,1-16-16V48A16,16,0,0,1,48,32h64a8,8,0,0,1,0,16H48V208h64A8,8,0,0,1,120,216Zm109.66-93.66-40-40a8,8,0,0,0-11.32,11.32L204.69,120H112a8,8,0,0,0,0,16h92.69l-26.35,26.34a8,8,0,0,0,11.32,11.32l40-40A8,8,0,0,0,229.66,122.34Z" />
+					</svg>
+				</span>
+				<h2 id="signout-modal-title" class="logout-signout__title">{% trans "Are you sure you want to log out?" %}</h2>
+				<p class="logout-signout__body">{% trans "You will lose access to certain features." %}</p>
+			</header>
+			<form method="post" class="logout-signout__actions" action="{% url 'account_logout' %}">
+				{% csrf_token %}
+				{% if redirect_field_value %}
+					<input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+				{% endif %}
+				{% if page_mode %}
+					<a class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="/">{% trans "Cancel" %}</a>
+				{% else %}
+					<button type="button" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" data-signout-cancel>{% trans "Cancel" %}</button>
+				{% endif %}
+				<button type="submit" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Log out" %}</button>
+			</form>
+		</div>
+	</div>
+</div>

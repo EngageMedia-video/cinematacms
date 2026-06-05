@@ -18,6 +18,9 @@
 
 {% block aftercontent %}
 {% include "components/footer.html" %}
+{% if request.user.is_authenticated and request.resolver_match.url_name != 'account_logout' %}
+{% include "account/snippets/logout_modal.html" %}
+{% endif %}
 {% endblock %}
 
 {% block topimports %}{% vite_asset 'src/entries/base.js' %}{% endblock topimports %}

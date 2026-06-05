@@ -25,6 +25,420 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities) important;
 @custom-variant dark (&:where(.dark, .dark *));
+/* stylelint-disable-next-line at-rule-no-unknown */
+@source "../../../../templates/account";
+/* stylelint-disable-next-line at-rule-no-unknown */
+@source "../../../../templates/mfa";
+
+/* Auth templates live in the legacy shell, so these overrides stay unlayered
+ * to outrank legacy unlayered button/form rules. */
+body .auth-figma-page {
+	--auth-ring-color: var(--cinemata-pacific-deep-200);
+}
+
+body.dark_theme .auth-figma-page {
+	--auth-ring-color: var(--cinemata-pacific-deep-500);
+}
+
+body .auth-figma-page button {
+	appearance: none;
+	background-image: none;
+	border: 0;
+	box-shadow: none;
+	cursor: pointer;
+	text-shadow: none;
+	transition:
+		background-color 160ms ease,
+		border-color 160ms ease,
+		color 160ms ease,
+		opacity 160ms ease;
+}
+
+body .auth-figma-page button:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
+body .auth-figma-page a[href] {
+	cursor: pointer;
+}
+
+body .auth-figma-page input[type='checkbox'] {
+	accent-color: var(--bg-secondary);
+}
+
+body .auth-figma-page .auth-checkbox {
+	cursor: pointer;
+}
+
+body .auth-figma-page .auth-checkbox-control {
+	align-items: center;
+	background-color: var(--bg-surface);
+	border: 2px solid var(--bg-secondary);
+	border-radius: 4px;
+	color: var(--text-on-primary);
+	display: inline-flex;
+	height: 26px;
+	justify-content: center;
+	transition:
+		background-color 160ms ease,
+		border-color 160ms ease,
+		box-shadow 160ms ease;
+	width: 26px;
+}
+
+body .auth-figma-page .auth-checkbox-control svg {
+	height: 18px;
+	opacity: 0;
+	transition: opacity 120ms ease;
+	width: 18px;
+}
+
+body .auth-figma-page .auth-checkbox input:checked + .auth-checkbox-control {
+	background-color: var(--bg-secondary);
+	border-color: var(--bg-secondary);
+}
+
+body .auth-figma-page .auth-checkbox input:checked + .auth-checkbox-control svg {
+	opacity: 1;
+}
+
+body .auth-figma-page .auth-checkbox input:focus-visible + .auth-checkbox-control {
+	box-shadow: 0 0 0 2px var(--ring-focus);
+	outline: 2px solid var(--ring-focus);
+	outline-offset: 2px;
+}
+
+body .auth-figma-page .auth-field :is(input, select) {
+	color: var(--text-strong);
+}
+
+body .auth-figma-page .auth-field input::placeholder {
+	color: var(--text-muted);
+	opacity: 1;
+}
+
+body .auth-figma-page .auth-icon {
+	color: var(--bg-primary);
+}
+
+body .auth-figma-page .auth-icon-status {
+	border-radius: 500px;
+}
+
+body .auth-figma-page .auth-icon-success {
+	background-color: var(--bg-success-subtle);
+	color: var(--text-success);
+}
+
+body .auth-figma-page .auth-icon-error {
+	background-color: var(--bg-danger-subtle);
+	color: var(--text-danger);
+}
+
+/* The auth button classes assume the .auth-figma-page button reset. When they are
+ * used inside an .auth-message-stack overlay on a legacy page (e.g. the sign-out
+ * modal), mirror that reset so legacy button base styles do not leak in. */
+body .auth-message-stack button {
+	appearance: none;
+	background-image: none;
+	border: 0;
+	box-shadow: none;
+	cursor: pointer;
+	text-shadow: none;
+	transition:
+		background-color 160ms ease,
+		border-color 160ms ease,
+		color 160ms ease,
+		opacity 160ms ease;
+}
+
+body .auth-figma-page .auth-button-primary,
+body .auth-figma-page .auth-button-accent,
+body .auth-figma-page .auth-button-secondary,
+body .auth-message-stack .auth-button-primary,
+body .auth-message-stack .auth-button-accent,
+body .auth-message-stack .auth-button-secondary {
+	align-items: center;
+	border-radius: 4px;
+	display: inline-flex;
+	font-size: 14px;
+	font-weight: 700;
+	height: 40px;
+	justify-content: center;
+	line-height: 20px;
+	padding-inline: 16px;
+	text-decoration: none;
+	text-transform: uppercase;
+}
+
+body .auth-figma-page .auth-button-primary,
+body .auth-message-stack .auth-button-primary {
+	background-color: var(--bg-primary);
+	color: var(--text-on-primary);
+}
+
+body .auth-figma-page .auth-button-accent,
+body .auth-message-stack .auth-button-accent {
+	background-color: var(--bg-secondary);
+	color: var(--text-on-primary);
+}
+
+body .auth-figma-page .auth-button-primary:hover,
+body .auth-message-stack .auth-button-primary:hover {
+	background-color: var(--bg-primary-hover);
+	color: var(--text-on-primary);
+	text-decoration: none;
+}
+
+body .auth-figma-page .auth-button-accent:hover,
+body .auth-message-stack .auth-button-accent:hover {
+	background-color: var(--bg-secondary-hover);
+	color: var(--text-on-primary);
+	text-decoration: none;
+}
+
+body .auth-figma-page .auth-button-primary:active,
+body .auth-figma-page .auth-button-accent:active,
+body .auth-message-stack .auth-button-primary:active,
+body .auth-message-stack .auth-button-accent:active {
+	filter: brightness(0.94);
+}
+
+body .auth-figma-page .auth-button-secondary,
+body .auth-message-stack .auth-button-secondary {
+	background-color: var(--bg-primary);
+	border: 0;
+	color: var(--text-on-primary);
+}
+
+body .auth-figma-page .auth-button-secondary:hover,
+body .auth-message-stack .auth-button-secondary:hover {
+	background-color: var(--bg-primary-hover);
+	color: var(--text-on-primary);
+	text-decoration: none;
+}
+
+body .auth-figma-page .auth-text-link {
+	color: var(--text-link);
+}
+
+body .auth-figma-page .auth-text-link:hover {
+	color: var(--text-link-hover);
+}
+
+body .auth-message-stack {
+	--auth-message-overlay: color-mix(in srgb, var(--cinemata-pacific-deep-900) 22%, transparent);
+	--auth-message-panel-from: var(--cinemata-neutral-50);
+	--auth-message-panel-to: var(--cinemata-pacific-deep-100);
+	--auth-message-text: var(--cinemata-pacific-deep-900);
+	--auth-message-ring: color-mix(in srgb, var(--cinemata-pacific-deep-400) 28%, transparent);
+	--auth-message-shadow: color-mix(in srgb, var(--cinemata-pacific-deep-900) 18%, transparent);
+	--auth-message-icon-success-bg: var(--cinemata-green-100);
+	--auth-message-icon-success-color: var(--cinemata-green-700p);
+	--auth-message-icon-error-bg: var(--cinemata-red-100);
+	--auth-message-icon-error-color: var(--cinemata-red-700p);
+	--auth-message-icon-info-bg: var(--cinemata-strait-blue-100);
+	--auth-message-icon-info-color: var(--cinemata-strait-blue-700);
+	align-items: center;
+	background: var(--auth-message-overlay);
+	display: flex;
+	flex-direction: column;
+	inset: 0;
+	justify-content: center;
+	padding: 24px;
+	position: fixed;
+	z-index: 10000;
+}
+
+/* The sign-out modal ships its full styling in an async chunk (logoutModal.css
+   via the signout entry). Keep this hide rule here, beside the render-blocking
+   display:flex above, so a hidden stack never flashes full-screen before that
+   chunk loads. The .auth-message-stack display above outranks the UA [hidden]
+   rule, so this needs !important. */
+body .auth-message-stack[hidden] {
+	display: none !important;
+}
+
+body.dark_theme .auth-message-stack {
+	--auth-message-overlay: color-mix(in srgb, var(--bg-overlay-dark, var(--bg-page)) 58%, transparent);
+	--auth-message-panel-from: var(--cinemata-pacific-deep-900);
+	--auth-message-panel-to: var(--cinemata-pacific-deep-950);
+	--auth-message-text: var(--text-on-primary);
+	--auth-message-ring: color-mix(in srgb, var(--text-on-primary) 24%, transparent);
+	--auth-message-shadow: color-mix(in srgb, var(--bg-overlay-dark, var(--bg-page)) 28%, transparent);
+	--auth-message-icon-success-bg: var(--cinemata-green-950);
+	--auth-message-icon-success-color: var(--cinemata-green-500);
+	--auth-message-icon-error-bg: var(--cinemata-red-950);
+	--auth-message-icon-error-color: var(--cinemata-red-500);
+	--auth-message-icon-info-bg: var(--cinemata-strait-blue-500);
+	--auth-message-icon-info-color: var(--cinemata-pacific-deep-950);
+}
+
+body .auth-message-banner {
+	background: linear-gradient(145deg, var(--auth-message-panel-from) 33.989%, var(--auth-message-panel-to) 116.01%);
+	border-radius: 16px;
+	box-shadow: 0 24px 64px var(--auth-message-shadow);
+	color: var(--auth-message-text);
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	isolation: isolate;
+	overflow: hidden;
+	padding: 24px;
+	pointer-events: auto;
+	position: relative;
+	width: min(480px, 100%);
+}
+
+body .auth-message-banner::before {
+	background: repeating-radial-gradient(
+		circle,
+		transparent 0 20px,
+		var(--auth-message-ring) 21px 22px,
+		transparent 23px 40px
+	);
+	bottom: -120px;
+	content: '';
+	height: 298px;
+	opacity: 0.8;
+	pointer-events: none;
+	position: absolute;
+	right: -130px;
+	width: 298px;
+}
+
+body .auth-message-banner + .auth-message-banner {
+	margin-top: 16px;
+}
+
+body .auth-message-header {
+	align-items: flex-start;
+	display: flex;
+	justify-content: space-between;
+	min-width: 0;
+	position: relative;
+	width: 100%;
+	z-index: 1;
+}
+
+body .auth-message-title-row {
+	align-items: center;
+	display: flex;
+	flex: 1 1 auto;
+	gap: 12px;
+	min-width: 0;
+}
+
+body .auth-message-icon {
+	align-items: center;
+	border-radius: 500px;
+	display: inline-flex;
+	flex: 0 0 auto;
+	height: 70px;
+	justify-content: center;
+	width: 70px;
+}
+
+body .auth-message-icon-success {
+	background: var(--auth-message-icon-success-bg);
+	color: var(--auth-message-icon-success-color);
+}
+
+body .auth-message-icon-error,
+body .auth-message-icon-danger {
+	background: var(--auth-message-icon-error-bg);
+	color: var(--auth-message-icon-error-color);
+}
+
+body .auth-message-icon-info {
+	background: var(--auth-message-icon-info-bg);
+	color: var(--auth-message-icon-info-color);
+}
+
+body .auth-message-icon svg {
+	height: 70px;
+	width: 70px;
+}
+
+body .auth-message-copy {
+	min-width: 0;
+}
+
+body .auth-message-title {
+	color: inherit;
+	font-size: 24px;
+	font-weight: 700;
+	line-height: 30px;
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+body .auth-message-body {
+	color: inherit;
+	font-size: 16px;
+	font-weight: 500;
+	line-height: 24px;
+	margin: 0;
+	position: relative;
+	z-index: 1;
+}
+
+body .auth-message-body a {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+body .auth-message-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	position: relative;
+	z-index: 1;
+}
+
+body .auth-message-close {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+	color: inherit;
+	cursor: pointer;
+	display: inline-flex;
+	flex: 0 0 auto;
+	height: 24px;
+	justify-content: center;
+	margin: 0;
+	opacity: 0.8;
+	padding: 0;
+	position: relative;
+	text-shadow: none;
+	width: 24px;
+	z-index: 1;
+}
+
+body .auth-message-close:hover {
+	background: transparent;
+	opacity: 1;
+}
+
+body .auth-message-close svg {
+	height: 20px;
+	width: 20px;
+}
+
+@media (max-width: 767px) {
+	body .auth-message-banner {
+		padding: 18px;
+	}
+
+	body .auth-message-icon,
+	body .auth-message-icon svg {
+		height: 56px;
+		width: 56px;
+	}
+}
 
 /*
  * @theme inline ensures Tailwind emits var(--btn-primary-bg-color) directly
@@ -608,9 +1022,11 @@ body {
 	--text-impact-icon-saves: var(--cinemata-coral-reef-600);
 	--text-impact-modal-close: var(--cinemata-pacific-deep-900);
 	--bg-danger: var(--cinemata-red-500);
+	--bg-danger-subtle: var(--cinemata-red-100);
 	--bg-danger-strong: var(--cinemata-red-800);
 	--bg-danger-strong-hover: var(--cinemata-red-400);
 	--bg-success: var(--cinemata-green-500);
+	--bg-success-subtle: var(--cinemata-green-100);
 	--bg-success-strong: var(--cinemata-green-800);
 	--bg-warning: var(--cinemata-amber-500);
 
@@ -678,8 +1094,10 @@ body.dark_theme {
 	--bg-impact-timeline-dot: var(--cinemata-strait-blue-200);
 	--text-impact-icon-saves: var(--cinemata-coral-reef-600);
 	--text-impact-modal-close: var(--cinemata-pacific-deep-900);
+	--bg-danger-subtle: var(--cinemata-red-950);
 	--bg-danger-strong: var(--cinemata-red-950);
 	--bg-danger-strong-hover: var(--cinemata-red-900);
+	--bg-success-subtle: var(--cinemata-green-950);
 
 	--text-strong: var(--cinemata-strait-blue-50);
 	--text-primary: var(--cinemata-strait-blue-50);
@@ -737,9 +1155,11 @@ body.dark_theme {
 	--color-bg-impact-modal-close: var(--bg-impact-modal-close);
 	--color-bg-impact-timeline-dot: var(--bg-impact-timeline-dot);
 	--color-bg-danger: var(--bg-danger);
+	--color-bg-danger-subtle: var(--bg-danger-subtle);
 	--color-bg-danger-strong: var(--bg-danger-strong);
 	--color-bg-danger-strong-hover: var(--bg-danger-strong-hover);
 	--color-bg-success: var(--bg-success);
+	--color-bg-success-subtle: var(--bg-success-subtle);
 	--color-bg-success-strong: var(--bg-success-strong);
 	--color-bg-warning: var(--bg-warning);
 
