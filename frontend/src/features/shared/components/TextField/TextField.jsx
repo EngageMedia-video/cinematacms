@@ -8,6 +8,15 @@ const SHELL_VARIANT_CLASSES = {
 	disabled: 'bg-bg-surface-muted',
 };
 
+// Transparent variant: the shell carries no surface fill so the field inherits
+// whatever sits behind it (e.g. a gradient auth panel). The input is already
+// transparent, so only the shell background needs to be cleared per state.
+const SHELL_TRANSPARENT_CLASSES = {
+	default: 'bg-transparent hover:bg-transparent focus-within:bg-transparent',
+	error: 'bg-transparent',
+	disabled: 'bg-transparent',
+};
+
 const LABEL_VARIANT_CLASSES = {
 	default: 'text-text-strong',
 	error: 'text-text-danger',
@@ -71,6 +80,7 @@ export function TextField({
 	onChange,
 	onBlur,
 	onFocus,
+	transparent = false,
 	type = 'text',
 	value,
 	'aria-describedby': ariaDescribedBy,
@@ -92,6 +102,7 @@ export function TextField({
 		variant === 'default' && (activeState || filledState) ? LABEL_ACTIVE_CLASSES : LABEL_VARIANT_CLASSES[variant];
 	const borderClasses =
 		variant === 'default' && (activeState || filledState) ? ACTIVE_BORDER_CLASSES : BORDER_VARIANT_CLASSES[variant];
+	const shellClasses = transparent ? SHELL_TRANSPARENT_CLASSES[variant] : SHELL_VARIANT_CLASSES[variant];
 
 	useEffect(() => {
 		if (value !== undefined) {
@@ -115,7 +126,7 @@ export function TextField({
 				}}
 				className={cn(
 					'field-shell group w-full border-b px-0 py-[14px] transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
-					SHELL_VARIANT_CLASSES[variant],
+					shellClasses,
 					borderClasses,
 					disabled ? 'cursor-not-allowed' : ''
 				)}

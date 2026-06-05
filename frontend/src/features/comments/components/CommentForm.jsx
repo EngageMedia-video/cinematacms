@@ -95,13 +95,13 @@ export function CommentForm({ friendlyToken }) {
 
 	return (
 		<div className="flex min-h-[101px] flex-col gap-1.5 rounded-lg bg-bg-surface px-4 py-3">
-			<div className="flex items-center gap-2">
+			<div className="flex min-h-8 items-center gap-2">
 				{timestamp ? (
 					<button
 						type="button"
 						onClick={toggleTimestamp}
 						aria-label={`Clear inserted timestamp ${timestamp}`}
-						className="inline-flex shrink-0 cursor-pointer items-center rounded-sm border-0 bg-bg-secondary px-1.5 py-0.5 text-xs font-bold tracking-tight text-text-on-primary hover:bg-bg-secondary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+						className="inline-flex h-6 shrink-0 cursor-pointer items-center rounded-sm border-0 bg-bg-primary px-2 text-xs font-bold leading-6 tracking-tight text-text-on-primary hover:bg-bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 					>
 						{timestamp}
 					</button>
@@ -117,7 +117,7 @@ export function CommentForm({ friendlyToken }) {
 					onChange={(event) => setValue(event.target.value)}
 					onKeyDown={handleKeyDown}
 					placeholder="Leave a comment..."
-					className="block min-w-0 flex-1 border-0 bg-transparent p-0 text-sm leading-5 text-text-strong placeholder:text-text-muted focus:outline-none focus:ring-0"
+					className="mb-0 block h-6 min-w-0 flex-1 border-0 bg-transparent p-0 text-sm leading-6 text-text-strong placeholder:text-text-muted focus:outline-none focus:ring-0"
 				/>
 			</div>
 
@@ -147,8 +147,8 @@ export function CommentForm({ friendlyToken }) {
 						className={
 							'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-sm border-0 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:opacity-50 ' +
 							(timestamp
-								? 'bg-bg-secondary text-text-on-primary hover:bg-bg-secondary-hover'
-								: 'bg-bg-chrome text-text-on-chrome hover:bg-bg-chrome-hover')
+								? 'bg-bg-primary text-text-on-primary hover:bg-bg-primary-hover'
+								: 'bg-bg-control text-text-muted hover:bg-bg-surface-hover hover:text-text-strong')
 						}
 					>
 						<i aria-hidden="true" className="material-icons" style={{ fontSize: 16 }}>

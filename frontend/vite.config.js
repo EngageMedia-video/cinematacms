@@ -104,6 +104,9 @@ export default defineConfig({
 			external: ['video.js'],
 			input: {
 				base: 'src/entries/base.js',
+				auth: 'src/entries/auth.js',
+				signout: 'src/entries/signout.js',
+				toast: 'src/entries/toast.js',
 				tailwinds: 'src/static/css/tailwind.css',
 				index: 'src/entries/index.js',
 				search: 'src/entries/search.js',

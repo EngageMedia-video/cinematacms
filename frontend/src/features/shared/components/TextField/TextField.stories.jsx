@@ -60,6 +60,15 @@ const meta = {
 				defaultValue: { summary: 'false' },
 			},
 		},
+		transparent: {
+			control: 'boolean',
+			description:
+				'Clears the field shell background so the input inherits the surface behind it (e.g. a gradient panel) instead of painting its own `bg-surface`.',
+			table: {
+				type: { summary: 'boolean' },
+				defaultValue: { summary: 'false' },
+			},
+		},
 		className: {
 			control: 'text',
 			description: 'Optional class for outer container only.',
@@ -169,4 +178,30 @@ export const WithHorizontalPadding = {
 		className: 'px-4',
 		helperText: 'Horizontal padding comes from className overrides.',
 	},
+};
+
+export const Transparent = {
+	args: {
+		transparent: true,
+		helperText: 'Shell background is cleared so the panel shows through.',
+	},
+	parameters: {
+		docs: {
+			description: {
+				story: 'Transparent variant for placing the field on a coloured or gradient surface. The shell paints no `bg-surface`; only the bottom border and text remain.',
+			},
+		},
+	},
+	decorators: [
+		(Story) => (
+			<div
+				className="rounded-2xl p-6"
+				style={{
+					backgroundImage: 'linear-gradient(118deg, var(--color-bg-surface) 34%, var(--color-bg-page) 116%)',
+				}}
+			>
+				<Story />
+			</div>
+		),
+	],
 };

@@ -1,0 +1,22 @@
+{% if field.field.widget.input_type == "checkbox" %}
+  <label class="flex items-start gap-3 text-left text-sm leading-5 text-text-strong [&_input]:mt-1 [&_input]:size-[18px] [&_input]:shrink-0 [&_input]:focus-visible:outline-none [&_input]:focus-visible:ring-2 [&_input]:focus-visible:ring-ring-focus" for="{{ field.id_for_label }}">
+    {{ field }}
+    <span>{{ field.label }}</span>
+  </label>
+{% else %}
+  <div class="auth-field flex h-[84px] w-full flex-col justify-center gap-2 overflow-hidden border-b border-border-default py-[14px] pr-[22px] text-left text-base leading-6 text-text-strong [&_input]:m-0 [&_input]:block [&_input]:h-6 [&_input]:w-full [&_input]:border-0 [&_input]:bg-transparent [&_input]:p-0 [&_input]:leading-6 [&_input]:text-text-strong [&_input]:outline-none [&_input]:placeholder:text-text-muted [&_input]:focus-visible:ring-0 [&_select]:m-0 [&_select]:block [&_select]:h-6 [&_select]:w-full [&_select]:border-0 [&_select]:p-0 [&_select]:leading-6 [&_select]:text-text-strong [&_select]:outline-none [&_select]:focus-visible:ring-0">
+    <label class="m-0 text-base leading-6 text-text-strong" for="{{ field.id_for_label }}">{{ label|default:field.label }}</label>
+    {{ field }}
+  </div>
+{% endif %}
+
+{% if field.help_text and not suppress_help %}
+  <p class="m-0 mt-2 text-xs leading-5 text-text-muted">{{ field.help_text|safe }}</p>
+{% endif %}
+{% for error in field.errors %}
+  {% if error == "You must type the same password each time." %}
+    <p class="mt-2 text-sm leading-5 text-text-danger">Passwords do not match</p>
+  {% else %}
+    <p class="mt-2 text-sm leading-5 text-text-danger">{{ error }}</p>
+  {% endif %}
+{% endfor %}

@@ -37,7 +37,7 @@ This page is the working reference for the token catalogue. For the underlying d
 
 <Heading>Background tokens</Heading>
 
-- **`bg-bg-page`** — page body background. Light: `pacific-deep-50` / Dark: `pacific-deep-950`
+- **`bg-bg-page`** — page body background and theme-matched full-screen surfaces, including the expanded comments overlay backdrop. Light: `pacific-deep-50` / Dark: `pacific-deep-950`
 - **`bg-bg-surface`** — default card/panel background. Light: `neutral-50` / Dark: `pacific-deep-900`
 - **`bg-bg-surface-raised`** — popups, modals, dropdowns, tooltips. Light: `white` / Dark: `pacific-deep-800`
 - **`bg-bg-surface-muted`** — muted/recessed regions, image placeholders. Light: `neutral-200` / Dark: `pacific-deep-800`
@@ -50,7 +50,7 @@ This page is the working reference for the token catalogue. For the underlying d
 - **`bg-bg-chrome`** — inner always-dark chrome surfaces (topbar buttons, search input bg, dropdown row bgs). Constant `pacific-deep-800`.
 - **`bg-bg-chrome-hover`** — hover state for `bg-bg-chrome` controls, often used with `/60` alpha. Constant `pacific-deep-700`.
 - **`bg-bg-skeleton`** — loading skeleton placeholders. Light: `pacific-deep-100` / Dark: `pacific-deep-700`
-- **`bg-bg-control`** — standard small control surfaces, including radio backgrounds. Light: `neutral-300` / Dark: `pacific-deep-900`
+- **`bg-bg-control`** — standard small control surfaces, including inactive timestamp controls. Light: `neutral-300` / Dark: `pacific-deep-900`
 - **`bg-bg-primary`** — primary action surfaces. Light: `strait-blue-600p` / Dark: `strait-blue-500`
 - **`bg-bg-primary-hover`** — hover for `bg-bg-primary`. Light: `strait-blue-800` / Dark: `strait-blue-700`
 - **`bg-bg-button-playlist-active`** — active playlist/save button background. Light: `strait-blue-800` / Dark: `strait-blue-700`
@@ -64,9 +64,11 @@ This page is the working reference for the token catalogue. For the underlying d
 - **`bg-bg-dialog-close`** — filled circular dialog close-button surface. Constant `strait-blue-400`.
 - **`bg-bg-timeline-dot`** — node marker on a vertical timeline rail. Constant `strait-blue-200`.
 - **`bg-bg-danger`** — destructive surfaces. Constant `red-500`.
+- **`bg-bg-danger-subtle`** — soft danger badge / surface tint. Light: `red-100` / Dark: `red-950`
 - **`bg-bg-danger-strong`** — active destructive/toggled-danger surfaces. Light: `red-800` / Dark: `red-950`
 - **`bg-bg-danger-strong-hover`** — hover for `bg-bg-danger-strong`. Light: `red-400` / Dark: `red-900`
 - **`bg-bg-success`** — success surfaces. Constant `green-500`.
+- **`bg-bg-success-subtle`** — soft success badge / surface tint. Light: `green-100` / Dark: `green-950`
 - **`bg-bg-warning`** — warning surfaces. Constant `amber-500`.
 
 <Heading>Border tokens</Heading>
@@ -96,6 +98,22 @@ A small number of patterns are genuinely unique and stay on the raw `cinemata-*`
 - **Carousel overlay arrow text** — theme-aware blue pair `strait-blue-700 → strait-blue-600p`. Large chrome controls overlaid on media; no other shared use.
 
 For all other usages, prefer a semantic token. If you find yourself reaching for the same raw palette pair more than once for the same role, consider whether it deserves a new token.
+
+<Heading>Auth page feature tokens (account / mfa)</Heading>
+
+The redesigned auth pages (`templates/account/`, `templates/mfa/`) render in the legacy Django shell but consume the modern token layer. They use the semantic tokens above directly wherever a token already carries the needed value — `bg-bg-page`, `bg-bg-surface` (gradient start), `text-text-strong`, `text-text-muted`, `text-text-danger`, `ring-ring-focus`, `text-text-link`, and `var(--bg-primary)` for the primary button + header icon. **Fields are transparent** (no surface fill) so the gradient panel shows through, separated only by the underline border.
+
+Auth **components** use purpose-based semantic tokens (uniform with the rest of the app), not `--auth-*` feature aliases: accent/CTA button → `bg-secondary`/`bg-secondary-hover`; primary & secondary buttons → `bg-primary`/`bg-primary-hover`; button text → `text-on-primary`; checkbox checked fill → `bg-secondary` (same as the shared `CheckboxButton`); field underline → `border-default`; requirements panel → `bg-surface-muted` / `text-secondary`; status badges → `bg-success-subtle` / `bg-danger-subtle` (new, see Background tokens) + `text-success` / `text-danger`.
+
+Only one genuinely auth-specific **decorative** feature token remains on `.auth-figma-page` (the panel gradient end stop now uses `bg-page` directly):
+
+- **`--auth-ring-color`** — decorative concentric ring outlines. Light: `pacific-deep-200` (coincides with `border-default`) / Dark: `pacific-deep-500` (no existing token has this dark, kept lighter than `border-default`'s `pacific-deep-700` so the faint rings stay visible).
+
+The full-screen message overlay defines a parallel set on `.auth-message-stack` (scrim, banner gradient, `color-mix` ring/shadow, success/error/info icon badges) — see `tailwind.css`.
+
+> The `TextField` shared component exposes a **`transparent`** prop that mirrors this pattern in React: it clears the shell `bg-surface` so the input inherits the surface behind it.
+
+> Aliases that resolve to an existing token in both themes were removed in favour of the existing token: `--auth-page-bg` → `bg-page`, `--auth-field-bg` → `bg-surface`, `--auth-panel-from` → `bg-surface`, `--auth-text-strong` → `text-strong`, `--auth-icon-color` → `bg-primary`, `--auth-button-primary-bg/-hover` → `bg-primary/-hover`, `--auth-text-muted` → `text-muted` (this last one differed only in light but coincided after `text-muted` moved to `pacific-deep-500`), `--auth-panel-to` → `bg-page` (dark already matched; light follows).
 
 <Heading>Legacy semantic aliases (still valid, narrower scope)</Heading>
 

@@ -452,6 +452,15 @@ Key characteristics after migration:
 | NotificationPreferencesForm.jsx | `text-text-strong`, `text-text-secondary`, `bg-border-subtle` | Preference panel text and section dividers |
 | notificationBadge.js | `bg-bg-badge-*` | Fixed action-type avatar badge emblems |
 
+### comments
+
+| File | Color class / token | Element |
+|------|---------------------|---------|
+| CommentsSection.jsx | `bg-bg-page` | Expanded comments overlay backdrop, matching the page background in both themes |
+| CommentsPanel.jsx | `bg-bg-surface`, `text-text-strong`, `text-text-muted`, `border-border-default` | Comments panel, sticky header, tabs, and dividers |
+| CommentForm.jsx | `bg-bg-surface`, `bg-bg-control`, `bg-bg-primary`, `bg-bg-secondary`, `text-text-strong`, `text-text-muted`, `text-text-on-primary` | Comment card, inactive/active timestamp controls, input text, and submit CTA |
+| CommentItem.jsx | `text-text-primary`, `text-text-muted`, `bg-bg-surface-raised`, `bg-bg-surface-muted` | Comment body, metadata, and moderator menu |
+
 ### shared (component library)
 
 | File | Color class / token | Element |
@@ -481,6 +490,7 @@ Key characteristics after migration:
 | TextField.jsx | `border-cinemata-pacific-deep-500` | Default border |
 | TextField.jsx | `border-cinemata-red-500`, `text-cinemata-red-500` | Error border / text |
 | TextField.jsx | `text-cinemata-sunset-horizon-400p` | Helper text |
+| TextField.jsx | `transparent` prop → shell `bg-transparent` (no surface fill) | Transparent variant: field inherits the surface behind it (e.g. a gradient panel) instead of painting its own `bg-surface` |
 | Switch.jsx | `text-cinemata-neutral-700 dark:text-cinemata-neutral-500` | Switch label |
 | Switch.jsx | `bg-switch-track-on` (light: `coral-reef-600`, dark: `coral-reef-700`) / `bg-switch-track-off` (light: `pacific-deep-900`, dark: `pacific-deep-800`) | Track |
 | Switch.jsx | `bg-switch-thumb` (`neutral-100`) | Thumb |
@@ -491,6 +501,47 @@ Key characteristics after migration:
 |------|---------------------|---------|
 | NotificationPreferencesForm.jsx | `backgroundColor: 'var(--btn-primary-bg-color)'` (inline) | Button (legacy var) |
 
+### account / mfa (auth pages — Django templates + Tailwind)
+
+The redesigned authentication pages (`templates/account/`, `templates/mfa/`) render inside the **legacy Django shell**, not in `features/`, but they consume the modern Tailwind v4 token layer. Because they sit in the legacy unlayered cascade, a small block of **unlayered** overrides in `tailwind.css` (scoped to `.auth-figma-page` and `.auth-message-stack`) is needed to outrank legacy unlayered button/form rules.
+
+**Modern semantic tokens are used directly wherever an existing token already carries the needed value** (no feature alias is created for these):
+
+- `bg-bg-page` — page background; `bg-bg-surface` — gradient panel start stop; fields are **transparent** (no fill) so the panel shows through, separated only by the underline border.
+- `text-text-strong` — titles, labels, input text; `text-text-muted`/`text-text-danger` — help and error copy.
+- `border-border-danger`, `bg-bg-danger` — non-field error callouts.
+- `ring-ring-focus` — every focusable control; `text-text-link` / `text-text-link-hover` — inline links.
+- `var(--bg-primary)` / `var(--bg-primary-hover)` — primary button background and the header status icon color (value-identical to the brand primary, so no alias).
+
+**Component styling uses purpose-based semantic tokens, not feature-scoped `--auth-*` aliases**, so auth controls stay uniform with the rest of the modern component library. Buttons, the checkbox, field border, requirements panel and status badges map to existing semantic tokens (where the dark value already matched, the light value follows the semantic token since Figma only specs dark mode):
+
+| Auth use | Now uses | Notes |
+|----------|----------|-------|
+| Accent / CTA submit button (`.auth-button-accent`) | `bg-secondary` / `bg-secondary-hover` | the brand CTA used app-wide |
+| Primary & secondary buttons (`.auth-button-primary` / `.auth-button-secondary`) | `bg-primary` / `bg-primary-hover` | both were already the same strait-blue |
+| Button label text | `text-on-primary` | |
+| Checkbox checked fill / accent | `bg-secondary` | matches the shared `CheckboxButton` |
+| Underline field border | `border-default` | |
+| Password-requirements panel bg / text | `bg-surface-muted` / `text-secondary` | |
+| Success / error status icon badge | `bg-success-subtle` / `bg-danger-subtle` (new) + `text-success` / `text-danger` | |
+
+Two **new purpose tokens** were added to the global layer for soft feedback tints (reusable, not auth-scoped):
+
+| Token | Light | Dark | Role |
+|-------|-------|------|------|
+| `bg-bg-success-subtle` | `green-100` | `green-950` | Soft success badge / surface tint |
+| `bg-bg-danger-subtle` | `red-100` | `red-950` | Soft danger badge / surface tint |
+
+Only one genuinely auth-specific **decorative** token remains on `.auth-figma-page` (the panel gradient end stop now uses `bg-page` directly: `bg-surface` → `bg-page`):
+
+| Token | Light | Dark | Role |
+|-------|-------|------|------|
+| `--auth-ring-color` | `pacific-deep-200` | `pacific-deep-500` | Decorative concentric ring outlines. Light coincides with `border-default`, but no existing token has the dark `pacific-deep-500` (lighter than `border-default`'s `pacific-deep-700`) needed to keep the faint rings visible on the dark panel |
+
+The full-screen flash/message overlay defines a parallel feature set on `.auth-message-stack` (and its dark override): a scrim (`--auth-message-overlay`), banner gradient (`--auth-message-panel-from/-to`), `color-mix`-based ring/shadow, and success / error / info icon-badge pairs. These are genuine one-offs with no existing-token equivalent; see `tailwind.css` for the authoritative values.
+
+> Tokens that resolve to an existing token in **both** themes (`--auth-page-bg` → `bg-page`, `--auth-field-bg` → `bg-surface`, `--auth-panel-from` → `bg-surface`, `--auth-text-strong` → `text-strong`, `--auth-icon-color` → `bg-primary`, `--auth-button-primary-bg/-hover` → `bg-primary/-hover`, `--auth-text-muted` → `text-muted`, `--auth-panel-to` → `bg-page`) were removed in favour of the existing token, per the no-duplicate-alias rule. `--auth-text-muted` once differed in light (`pacific-deep-500` vs `text-muted`'s `pacific-deep-400`), but `text-muted` was later moved to `pacific-deep-500`, so the two now coincide and the feature alias was dropped.
+>
 > `*.stories.jsx` and `*.test.jsx` files contain color fixtures but are not part of the production styling path; they are excluded here.
 
 ---

@@ -1,0 +1,134 @@
+/*
+ * Sign-out confirmation modal styling. Loaded via the signout entry (from the
+ * logout_modal.html include) on every authenticated page where the modal markup
+ * is injected. Uses semantic tokens only; the modern bg/text custom properties
+ * are defined in both the modern (tailwind.css) and legacy (theme SCSS) layers,
+ * so they resolve on legacy pages too.
+ *
+ * Moved out of an inline <style> (templates/account/snippets/logout_modal.html)
+ * into the Vite pipeline so it ships as one cached asset instead of an inline
+ * style block on every page.
+ *
+ * Note: the `.auth-message-stack[hidden]` hide rule lives in tailwind.css (beside
+ * the render-blocking display:flex it overrides) so the closed modal never
+ * flashes full-screen before this async chunk loads.
+ */
+
+.logout-signout__card {
+	--so-panel-to: var(--bg-page);
+	--so-shadow: color-mix(in srgb, var(--bg-overlay-dark) 18%, transparent);
+	--so-ring: color-mix(in srgb, var(--text-muted) 28%, transparent);
+
+	align-items: center;
+	background: linear-gradient(145deg, var(--bg-surface) 33.989%, var(--so-panel-to) 116.01%);
+	border-radius: 16px;
+	box-shadow: 0 24px 64px var(--so-shadow);
+	color: var(--text-strong);
+	display: flex;
+	flex-direction: column;
+	gap: 32px;
+	isolation: isolate;
+	overflow: hidden;
+	padding: 24px;
+	position: relative;
+	width: min(640px, 100%);
+}
+
+body.dark_theme .logout-signout__card {
+	--so-shadow: color-mix(in srgb, var(--bg-overlay-dark) 28%, transparent);
+	--so-ring: color-mix(in srgb, var(--text-strong) 24%, transparent);
+}
+
+.logout-signout__card::before {
+	background: repeating-radial-gradient(circle, transparent 0 20px, var(--so-ring) 21px 22px, transparent 23px 40px);
+	bottom: -120px;
+	content: '';
+	height: 298px;
+	opacity: 0.8;
+	pointer-events: none;
+	position: absolute;
+	right: -130px;
+	width: 298px;
+}
+
+.logout-signout__content {
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+	position: relative;
+	width: 100%;
+	z-index: 1;
+}
+
+.logout-signout__header {
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	text-align: center;
+	width: min(502px, 100%);
+}
+
+.logout-signout__icon {
+	align-items: center;
+	color: var(--bg-primary);
+	display: flex;
+	flex: 0 0 auto;
+	height: 70px;
+	justify-content: center;
+	width: 70px;
+}
+
+.logout-signout__icon svg {
+	height: 70px;
+	width: 70px;
+}
+
+.logout-signout__title {
+	color: var(--text-strong);
+	font-family: var(--font-heading);
+	font-size: 32px;
+	font-weight: 500;
+	line-height: 38px;
+	margin: 0;
+	max-width: 100%;
+	overflow-wrap: anywhere;
+	text-align: center;
+}
+
+.logout-signout__body {
+	color: var(--text-muted);
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 24px;
+	margin: 0;
+	text-align: center;
+	width: 100%;
+}
+
+.logout-signout__actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	justify-content: center;
+	position: relative;
+	z-index: 1;
+}
+
+@media (max-width: 767px) {
+	.logout-signout__card {
+		gap: 24px;
+		padding: 18px;
+	}
+
+	.logout-signout__title {
+		font-size: 28px;
+		line-height: 34px;
+	}
+
+	.logout-signout__actions {
+		width: 100%;
+	}
+}

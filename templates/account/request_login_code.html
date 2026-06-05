@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "account/auth_base.html" %}
 {% load i18n %}
 {% load allauth account %}
 
@@ -6,36 +6,37 @@
   | Sign In
 {% endblock %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-  <div class="user-action-form-inner">
-    <h1>
-      {% translate "Mail me a sign-in code" %}
-    </h1>
-    <p>
-      {% blocktranslate %}You will receive an email containing a special code for a password-free sign-in.{% endblocktranslate %}
-    </p>
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="code" %}{% endblock auth_icon %}
 
-    {% url 'account_request_login_code' as login_url %}
-    {% element form form=form method="post" action=login_url tags="entrance,login" %}
-        {% slot body %}
-            {% csrf_token %}
-            {% element fields form=form unlabeled=True %}
-            {% endelement %}
-            {{ redirect_field }}
-        {% endslot %}
-        {% slot actions %}
-          <button type="submit" class="primaryAction">
-            {% translate "Request Code" %}
-          </button>
-        {% endslot %}
-    {% endelement %}
+{% block auth_title %}{% translate "Sign in with Code" %}{% endblock auth_title %}
 
+{% block auth_subtitle %}
+<p class="m-0 w-[502px] max-w-full px-1 text-base leading-6 text-text-muted sm:px-0">
+  {% blocktranslate %}You will receive an email containing a special code for a password-free sign-in.{% endblocktranslate %}
+</p>
+{% endblock auth_subtitle %}
+
+{% block auth_body %}
+{% include "account/snippets/auth_form_errors.html" with form=form %}
+
+{% url 'account_request_login_code' as login_url %}
+<form class="flex w-full flex-col gap-6" method="post" action="{{ login_url }}">
+  {% csrf_token %}
+  <div>
+    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+    {% for field in form.visible_fields %}
+      {% include "account/snippets/auth_field.html" with field=field label="Email" suppress_help=True %}
+    {% endfor %}
+    {{ redirect_field }}
+  </div>
+  <div class="flex flex-wrap items-center justify-end gap-3">
     {% url 'account_login' as login_url %}
-    <a href="{{login_url}}">
+    <a class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" href="{{ login_url }}">
       {% translate "Other sign-in options" %}
     </a>
-
+    <button class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus" type="submit">
+      {% translate "Request Code" %}
+    </button>
   </div>
-</div>
-{% endblock %}
+</form>
+{% endblock auth_body %}
