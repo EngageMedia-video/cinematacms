@@ -149,7 +149,7 @@ export function SidebarNavigationMenu() {
 			items.push({
 				link: links.manage.media,
 				icon: 'gear',
-				text: 'Manage media',
+				text: 'Media',
 				className: 'nav-item-manage-media',
 			});
 		}
@@ -158,7 +158,7 @@ export function SidebarNavigationMenu() {
 			items.push({
 				link: links.manage.users,
 				icon: 'gear',
-				text: 'Manage users',
+				text: 'Users',
 				className: 'nav-item-manage-users',
 			});
 		}
@@ -167,7 +167,7 @@ export function SidebarNavigationMenu() {
 			items.push({
 				link: links.manage.comments,
 				icon: 'gear',
-				text: 'Manage comments',
+				text: 'Comments',
 				className: 'nav-item-manage-comments',
 			});
 		}
@@ -176,12 +176,12 @@ export function SidebarNavigationMenu() {
 			items.push({
 				link: links.manage.filmImpact,
 				icon: 'gear',
-				text: 'Manage film impact',
+				text: 'Film Impact',
 				className: 'nav-item-manage-film-impact',
 			});
 		}
 
-		return items.length ? <NavigationMenuList key="admin" items={formatItems(items)} /> : null;
+		return items.length ? <NavigationMenuList key="admin" title="Manage" items={formatItems(items)} /> : null;
 	}
 
 	const sections = [

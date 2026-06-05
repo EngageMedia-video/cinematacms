@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import PropTypes from 'prop-types';
 
 import { Icon } from '../../../shared/components/Icon';
@@ -210,19 +210,33 @@ NavigationMenuListItem.propTypes = {
 	linkAttr: PropTypes.object,
 };
 
-export function NavigationMenuList({ removeVerticalPadding = false, items }) {
+export function NavigationMenuList({ removeVerticalPadding = false, title = null, items }) {
+	const headingId = useId();
 	const menuItems = items.map((item, index) => <NavigationMenuListItem key={index} itemType="label" {...item} />);
 
-	return menuItems.length ? (
+	if (!menuItems.length) {
+		return null;
+	}
+
+	return (
 		<div className={joinClasses(removeVerticalPadding ? 'py-0' : 'py-3')}>
-			<nav>
+			{title ? (
+				<h2
+					id={headingId}
+					className="mx-4 mb-1 px-4 pt-1 body-body-12-medium uppercase tracking-wide text-text-muted"
+				>
+					{title}
+				</h2>
+			) : null}
+			<nav aria-labelledby={title ? headingId : undefined}>
 				<ul className="m-0 list-none p-0">{menuItems}</ul>
 			</nav>
 		</div>
-	) : null;
+	);
 }
 
 NavigationMenuList.propTypes = {
 	removeVerticalPadding: PropTypes.bool,
+	title: PropTypes.string,
 	items: PropTypes.arrayOf(PropTypes.shape(NavigationMenuListItem.propTypes)).isRequired,
 };
