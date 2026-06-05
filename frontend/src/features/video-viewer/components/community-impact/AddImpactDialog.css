@@ -1,6 +1,6 @@
 @layer utilities {
 	.impact-add-dialog {
-		background: var(--bg-impact-modal-surface);
+		background: var(--bg-surface);
 	}
 
 	.impact-add-form .impact-add-field {
@@ -11,8 +11,8 @@
 	.impact-add-form .impact-add-field > div:first-child {
 		min-height: 84px;
 		border-bottom-width: 1px;
-		border-bottom-color: var(--border-impact-modal-field) !important;
-		background-color: var(--bg-impact-modal-field) !important;
+		border-bottom-color: var(--border-default) !important;
+		background-color: transparent !important;
 		padding: 18px 0 15px;
 	}
 
@@ -20,7 +20,7 @@
 	.impact-add-form .impact-add-field .field-shell:focus-within,
 	.impact-add-form .impact-add-field > div:first-child:hover,
 	.impact-add-form .impact-add-field > div:first-child:focus-within {
-		background-color: var(--bg-impact-modal-field) !important;
+		background-color: transparent !important;
 	}
 
 	.impact-add-form .impact-add-field .border-border-input {
@@ -30,7 +30,7 @@
 	.impact-add-form .impact-add-field label,
 	.impact-add-form .impact-add-field button > span > span:first-child {
 		margin-bottom: 8px;
-		color: var(--text-impact-modal-label) !important;
+		color: var(--text-description) !important;
 		font-size: 16px;
 		font-weight: 400;
 		line-height: 24px;
@@ -39,7 +39,7 @@
 	.impact-add-form .impact-add-field .field-input,
 	.impact-add-form .impact-add-field textarea,
 	.impact-add-form .impact-add-field button > span > span:last-child {
-		color: var(--text-impact-modal-value) !important;
+		color: var(--text-strong) !important;
 		font-size: 16px;
 		font-weight: 400;
 		line-height: 24px;
@@ -47,7 +47,7 @@
 
 	.impact-add-form .impact-add-field input::placeholder,
 	.impact-add-form .impact-add-field textarea::placeholder {
-		color: var(--text-impact-modal-placeholder) !important;
+		color: var(--text-muted) !important;
 		opacity: 1;
 	}
 
@@ -78,13 +78,13 @@
 	}
 
 	.impact-add-form .impact-add-field [role='menu'] {
-		border-color: var(--border-impact-modal-field) !important;
-		background-color: var(--bg-impact-modal-surface) !important;
+		border-color: var(--border-default) !important;
+		background-color: var(--bg-surface) !important;
 	}
 
 	.impact-add-form .impact-add-field [role='menuitemradio'] {
 		background-color: transparent !important;
-		color: var(--text-impact-modal-value) !important;
+		color: var(--text-strong) !important;
 	}
 
 	.impact-add-form .impact-add-field [role='menuitemradio']:hover,
