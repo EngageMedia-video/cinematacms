@@ -451,6 +451,15 @@ Key characteristics after migration:
 | NotificationPreferencesForm.jsx | `text-text-strong`, `text-text-secondary`, `bg-border-subtle` | Preference panel text and section dividers |
 | notificationBadge.js | `bg-bg-badge-*` | Fixed action-type avatar badge emblems |
 
+### comments
+
+| File | Color class / token | Element |
+|------|---------------------|---------|
+| CommentsSection.jsx | `bg-bg-page` | Expanded comments overlay backdrop, matching the page background in both themes |
+| CommentsPanel.jsx | `bg-bg-surface`, `text-text-strong`, `text-text-muted`, `border-border-default` | Comments panel, sticky header, tabs, and dividers |
+| CommentForm.jsx | `bg-bg-surface`, `bg-bg-control`, `bg-bg-primary`, `bg-bg-secondary`, `text-text-strong`, `text-text-muted`, `text-text-on-primary` | Comment card, inactive/active timestamp controls, input text, and submit CTA |
+| CommentItem.jsx | `text-text-primary`, `text-text-muted`, `bg-bg-surface-raised`, `bg-bg-surface-muted` | Comment body, metadata, and moderator menu |
+
 ### shared (component library)
 
 | File | Color class / token | Element |
