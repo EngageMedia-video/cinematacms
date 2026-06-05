@@ -128,7 +128,7 @@ export function Button({
 		<button
 			type={type}
 			className={cn(
-				'inline-flex cursor-pointer items-center transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 body-body-14-bold',
+				'inline-flex cursor-pointer items-center uppercase transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 body-body-14-bold',
 				getAlignClasses(shouldCenterIcon ? 'center' : align),
 				getVariantClasses(variant),
 				layoutClasses,
