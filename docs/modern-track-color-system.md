@@ -238,13 +238,14 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | Family | Tokens | Use |
 |---|---|---|
 | `bg/page`, `bg/surface`, `bg/surface-raised`, `bg/surface-muted`, `bg/surface-hover`, `bg/surface-inverse` | 6 | Themed page, card, and list/menu hover surfaces — invert per theme. |
-| `bg/panel-primary`, `bg/panel-surface`, `bg/panel-selected` | 3 | Primary panel/rail surface, inner expanded body, and selected-state card — reusable for any panel-style layout (currently: search filter sidebar and mobile sheet). |
+| `bg/panel-primary`, `bg/panel-surface`, `bg/panel-selected` | 3 | Primary panel/rail surface, inner expanded body, and selected-state card — reusable for any panel-style layout. The selected card is `neutral-50` in light mode per Figma `40000003-11716` and `pacific-deep-900` in dark mode. |
 | `bg/section-header` | 1 | Colored section-header bar inside a panel. Light `strait-blue-600p` / Dark `strait-blue-800`. |
+| `bg/disclosure-trigger`, `bg/disclosure-content` | 2 | Disclosure/accordion trigger and expanded content surfaces. Light mode uses neutral trigger/content surfaces; dark mode uses the filled strait-blue/pacific-deep treatment. |
 | `bg/action-inverse` | 1 | Dark action button surface (inverted relative to panel background). Light `strait-blue-900` / Dark `strait-blue-600p`. |
-| `bg/control-unchecked` | 1 | Unchecked state of a checkbox or radio control. Light `pacific-deep-100` / Dark `pacific-deep-900`. |
-| `bg/chip-active`, `bg/chip` | 2 | Active/selected chip fill (also the checked-checkbox fill — constant `sunset-horizon-400p`) and inactive chip fill. |
-| `text/panel-muted`, `text/option`, `text/section-header`, `text/action-inverse`, `text/panel-heading` | 5 | Quiet panel metadata, option/choice labels, text on section-header bars, text on dark action buttons, and panel card headings. |
-| `border/panel-divider` | 1 | Dividers and category borders inside a panel. Light `#dfeff4` (Figma grey/92) / Dark `pacific-deep-500`. |
+| `bg/control-unchecked`, `bg/control-checked` | 2 | Unchecked and checked states of checkbox/radio controls. Light checked controls stay `pacific-deep-100` per Figma `40000003-11716`; dark checked controls use `sunset-horizon-400p` per `40000003-11739`. |
+| `bg/chip-active`, `bg/chip` | 2 | Active/selected chip fill (constant `sunset-horizon-400p`) and inactive chip fill. |
+| `text/panel-muted`, `text/option`, `text/section-header`, `text/disclosure-trigger`, `text/action-inverse`, `text/panel-heading`, `text/control-checked` | 7 | Quiet panel metadata, option/choice labels, text on section-header bars, disclosure trigger labels, text on dark action buttons, panel card headings, and checked-control icons. |
+| `border/panel-divider`, `border/disclosure-content`, `border/disclosure-trigger`, `border/chip-active` | 4 | Dividers and category borders inside a panel. Disclosure content uses `pacific-deep-300` light / `pacific-deep-500` dark; closed disclosure triggers keep the light divider from Figma `40000003-11716` but are transparent in dark mode per `40000003-11739`. Active chips use the constant orange active-chip border. |
 | `bg/notification-unread` | 1 | Unread notification row background. Light `pacific-deep-100`, dark `pacific-deep-800` — a deliberately stronger tint than `bg/surface-hover` so unread rows stand out from the page in light mode. |
 | `bg/avatar-fallback`, `bg/badge-info`, `bg/badge-danger`, `bg/badge-accent`, `bg/badge-muted` | 5 | Small decorative fills for avatar initials and action-type badge emblems. These are semantic aliases for fixed, non-theme-inverting roles. |
 | `bg/overlay-dark`, `bg/chrome`, `bg/chrome-hover` | 3 | Always-dark UI chrome — topbar, search overlays, mobile dialogs. Do not invert. |

@@ -47,7 +47,7 @@ function MobileFilterSheetContent({ filters, sort, filterOptionSections, onReset
 			<div className="flex gap-2 border-t border-border-panel-divider bg-bg-panel-primary p-3">
 				<button
 					type="button"
-					className="inline-flex h-10 flex-1 cursor-pointer appearance-none items-center justify-center rounded-[4px] border-0 bg-bg-section-header px-4 font-sans text-[14px] leading-5 font-bold text-text-section-header uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+					className="inline-flex h-10 flex-1 cursor-pointer appearance-none items-center justify-center rounded-[4px] border-0 bg-bg-action-inverse px-4 font-sans text-[14px] leading-5 font-bold text-text-on-primary uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 					style={{ appearance: 'none', border: 0, boxShadow: 'none' }}
 					onClick={handleCancel}
 				>
@@ -55,7 +55,7 @@ function MobileFilterSheetContent({ filters, sort, filterOptionSections, onReset
 				</button>
 				<button
 					type="button"
-					className="inline-flex h-10 flex-1 cursor-pointer appearance-none items-center justify-center rounded-[4px] border-0 bg-bg-chip-active px-4 font-sans text-[14px] leading-5 font-bold text-text-on-primary uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+					className="inline-flex h-10 flex-1 cursor-pointer appearance-none items-center justify-center rounded-[4px] border-0 bg-bg-secondary px-4 font-sans text-[14px] leading-5 font-bold text-text-on-primary uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 					style={{ appearance: 'none', border: 0, boxShadow: 'none' }}
 					onClick={handleSave}
 				>

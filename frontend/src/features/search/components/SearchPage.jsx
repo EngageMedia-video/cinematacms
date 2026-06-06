@@ -269,8 +269,8 @@ function SearchPageContent() {
 					</div>
 				</div>
 
-				<main className="flex min-w-0 flex-col gap-6">
-					<div className="flex flex-col gap-4">
+				<main className="flex min-w-0 flex-col gap-4 sm:gap-8">
+					<div className="flex flex-col gap-2 sm:gap-4">
 						<div className="sm:hidden">
 							<MobileFilterSheet
 								filters={filters}

@@ -36,8 +36,13 @@ export function FilterCategory({
 	}
 
 	return (
-		<section className="overflow-hidden rounded-[4px] bg-bg-section-header">
-			<div className="flex h-9 items-center rounded-[4px] bg-bg-section-header text-text-section-header">
+		<section
+			className={cn(
+				'overflow-hidden rounded-[4px] bg-bg-disclosure-trigger',
+				!isExpanded && 'border-b border-border-disclosure-trigger'
+			)}
+		>
+			<div className="flex h-9 items-center rounded-[4px] bg-bg-disclosure-trigger text-text-disclosure-trigger">
 				<button
 					type="button"
 					className="flex h-9 min-w-0 flex-1 cursor-pointer appearance-none items-center gap-2 border-0 bg-transparent px-3 py-2 text-left text-inherit uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
@@ -59,7 +64,7 @@ export function FilterCategory({
 			{isExpanded ? (
 				<div
 					id={`${name}-options`}
-					className="flex max-h-[186px] flex-col gap-2 overflow-y-auto border-b border-border-panel-divider bg-bg-panel-surface p-3"
+					className="flex max-h-[186px] flex-col gap-2 overflow-y-auto border-b border-border-disclosure-content bg-bg-disclosure-content p-3"
 				>
 					{options.length ? (
 						options.map((option) => (
@@ -71,7 +76,7 @@ export function FilterCategory({
 								onChange={() => handleChange(option.value)}
 								{...controlProps}
 								className="w-full items-start"
-								controlClassName="bg-bg-control-unchecked peer-checked:bg-bg-chip-active peer-checked:text-text-on-primary"
+								controlClassName="bg-bg-control-unchecked peer-checked:bg-bg-control-checked peer-checked:text-text-control-checked"
 								controlStyle={{ width: 26, height: 26 }}
 								labelClassName="text-text-option"
 							>
