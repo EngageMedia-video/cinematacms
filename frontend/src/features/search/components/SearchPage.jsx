@@ -284,11 +284,7 @@ function SearchPageContent() {
 								}}
 							/>
 						</div>
-						<SelectedFilters
-							filters={selectedFilters}
-							onDismiss={handleDismiss}
-							onClearAll={handleClearAll}
-						/>
+						<SelectedFilters filters={selectedFilters} onDismiss={handleDismiss} />
 					</div>
 
 					<section className="rounded-[8px] bg-bg-panel-primary px-4 py-6 sm:p-6">

@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { Badge } from '../../shared/components/Badge';
 import { cn } from '../../shared/utils/classNames';
 
-export function SelectedFilters({ filters = [], onClearAll, onDismiss, variant = 'desktop' }) {
+export function SelectedFilters({ filters = [], onDismiss, variant = 'desktop' }) {
 	if (!filters.length) {
 		return null;
 	}
@@ -34,14 +34,6 @@ export function SelectedFilters({ filters = [], onClearAll, onDismiss, variant =
 						{filter.label}
 					</Badge>
 				))}
-				<button
-					type="button"
-					className="cursor-pointer appearance-none rounded-[2px] border-0 bg-transparent px-1 font-sans text-[12px] leading-4 font-bold whitespace-nowrap text-text-accent uppercase shadow-none hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
-					style={{ appearance: 'none', background: 'transparent', border: 0, boxShadow: 'none' }}
-					onClick={onClearAll}
-				>
-					Clear all
-				</button>
 			</div>
 		</div>
 	);
@@ -55,7 +47,6 @@ SelectedFilters.propTypes = {
 			value: PropTypes.string.isRequired,
 		})
 	),
-	onClearAll: PropTypes.func.isRequired,
 	onDismiss: PropTypes.func,
 	variant: PropTypes.oneOf(['desktop', 'mobile']),
 };

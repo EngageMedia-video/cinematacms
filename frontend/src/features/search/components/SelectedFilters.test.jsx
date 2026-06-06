@@ -8,18 +8,15 @@ const FILTERS = [
 ];
 
 describe('SelectedFilters', () => {
-	it('dismisses individual chips and clears all', async () => {
+	it('dismisses individual chips', async () => {
 		const user = userEvent.setup();
 		const onDismiss = vi.fn();
-		const onClearAll = vi.fn();
 
-		render(<SelectedFilters filters={FILTERS} onDismiss={onDismiss} onClearAll={onClearAll} />);
+		render(<SelectedFilters filters={FILTERS} onDismiss={onDismiss} />);
 
 		await user.click(screen.getByRole('button', { name: 'Remove Philippines' }));
-		await user.click(screen.getByRole('button', { name: 'Clear all' }));
 
 		expect(onDismiss).toHaveBeenCalledWith(FILTERS[0]);
-		expect(onClearAll).toHaveBeenCalledTimes(1);
 	});
 
 	it('renders nothing without selected filters', () => {
