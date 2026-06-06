@@ -23,7 +23,7 @@
       </div>
       <div class="flex flex-wrap gap-3">
         {% if authenticators.totp %}
-          <a href="{% url 'mfa_deactivate_totp' %}" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% translate "Deactivate" %}</a>
+          <a href="{% url 'mfa_deactivate_totp' %}" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% translate "Deactivate" %}</a>
         {% else %}
           <a href="{% url 'mfa_activate_totp' %}" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% translate "Activate" %}</a>
         {% endif %}
