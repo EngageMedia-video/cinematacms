@@ -1,42 +1,26 @@
-{% extends "base.html" %}
-{% load i18n %}
-{% load allauth %}
+{% extends "account/auth_base.html" %}
+{% load allauth i18n %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-  <div class="user-action-form-inner">
+{% block headtitle %}| {% trans "Generate Recovery Codes" %}{% endblock headtitle %}
 
-    <h1>
-      {% translate "Recovery Codes" %}
-    </h1>
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="mfa" %}{% endblock auth_icon %}
 
-    <p>
-      {% blocktranslate %}You are about to generate a new set of recovery codes for your account.{% endblocktranslate %}
-      {% if unused_code_count %}
-          {% blocktranslate %}This action will invalidate your existing codes.{% endblocktranslate %}
-      {% endif %}
-      {% blocktranslate %}Are you sure?{% endblocktranslate %}
-    </p>
+{% block auth_title %}{% trans "Generate New Recovery Codes" %}{% endblock auth_title %}
 
-    {% url 'mfa_generate_recovery_codes' as action_url %}
-    {% element form method="post" action=action_url no_visible_fields=True %}
-        {% slot body %}
-            {% csrf_token %}
-            {{ form.as_p }}
-        {% endslot %}
-        {% slot actions %}
-            {% setvar tags %}
-                {% if unused_code_count %}
-                    danger
-                {% else %}
-                {% endif %}
-            {% endsetvar %}
-            <button type="submit" class="primaryAction">
-              {% trans "Generate" %}
-            </button>
-        {% endslot %}
-    {% endelement %}
+{% block auth_subtitle %}
+<p class="m-0 mt-1 w-full text-base leading-6 text-text-muted">
+  {% blocktranslate %}You are about to generate a new set of recovery codes.{% endblocktranslate %}{% if unused_code_count %} {% blocktranslate %}This will invalidate your existing codes.{% endblocktranslate %}{% endif %}
+</p>
+{% endblock auth_subtitle %}
 
+{% block auth_body %}
+<form method="post" action="{% url 'mfa_generate_recovery_codes' %}" class="flex w-full flex-col items-center gap-6">
+  {% csrf_token %}
+  <div class="hidden">{{ form.as_p }}</div>
+
+  <div class="flex w-full flex-col items-center gap-3">
+    <button type="submit" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Generate new codes" %}</button>
+    <a href="{% url 'mfa_view_recovery_codes' %}" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Cancel" %}</a>
   </div>
-</div>
-{% endblock %}
+</form>
+{% endblock auth_body %}

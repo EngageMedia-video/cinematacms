@@ -1,178 +1,172 @@
-{% extends "base.html" %}
+{% extends "account/auth_base.html" %}
 {% load allauth i18n %}
-{% block headtitle %}| Activate Authenticator App{% endblock headtitle %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-  <div class="alert-banner">
-    {% include "account/messages/mfa_reminder.txt" %}
-  </div>
-  <div class="user-action-form-inner">
+{% block headtitle %}| {% trans "Activate Authenticator App" %}{% endblock headtitle %}
 
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="mfa" %}{% endblock auth_icon %}
 
-    {% if form.errors %}
-      <div class="alert error" style="margin-block:1em;">
+{% block auth_title %}{% trans "Set Up Two-Factor Authentication" %}{% endblock auth_title %}
+
+{% block auth_subtitle %}
+<p id="step-1-subtitle" class="m-0 mt-1 w-full text-base leading-6 text-text-muted">{% trans "Step 1 of 3 — Scan the QR code with your authenticator app." %}</p>
+<p id="step-2-subtitle" class="hidden m-0 mt-1 w-full text-base leading-6 text-text-muted">{% trans "Step 2 of 3 — Enter the 6-digit code from your app to confirm." %}</p>
+{% endblock auth_subtitle %}
+
+{% block auth_overlay %}
+  {% if form.errors %}
+    <div class="auth-message-stack auth-message-toast" role="region" aria-label="{% trans 'Notifications' %}" aria-live="assertive">
+      <div class="auth-message-banner" role="alert">
+        <div class="auth-message-header">
+          <div class="auth-message-title-row">
+            <span class="auth-message-icon auth-message-icon-error" aria-hidden="true">
+              <svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M165.66,154.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
+              </svg>
+            </span>
+            <h2 class="auth-message-title">{% trans "Verification failed" %}</h2>
+          </div>
+          <button type="button" class="auth-message-close close" aria-label="{% trans 'Close' %}">
+            <svg viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
+            </svg>
+          </button>
+        </div>
         {% for field, errors in form.errors.items %}
-          <p>{% for error in errors %}{{ error }}{% endfor %}</p>
+          {% for error in errors %}<p class="auth-message-body">{{ error }}</p>{% endfor %}
+        {% empty %}
+          <p class="auth-message-body">{% trans "The code you entered is incorrect. Please try again." %}</p>
         {% endfor %}
       </div>
-    {% endif %}
-
-    <div id="step-1-container">
-      <h1>Step 1: Set up an authenticator app</h1>
-
-      <ul>
-        <li>Google Authenticator</li>
-        <li>Microsoft Authenticator</li>
-        <li>Authy</li>
-      </ul>
-
-    <div class="qr-code-div">
-      {% element img src=totp_svg_data_uri alt=form.secret tags="mfa,totp,qr" %}
-      {% endelement %}
     </div>
-    <div id="activate-totp-step-1-description-reminders" style="display: block;">
-      <p style="text-align: center;">Scan this QR code with your authenticator app.</p>
+  {% endif %}
+{% endblock auth_overlay %}
 
-      <p style="margin: 0">Can't scan the QR code?</p>
-      <p style="margin: 0">Enter this code manually in your app:</p>
-    </div>
-
-    {% element field id="authenticator_secret" type="text" value=form.secret disabled=True %}
-        {% slot label %}
-            Authenticator secret key
-        {% endslot %}
-        {% slot help_text %}
-            You can save this secret key for backup if you need to reinstall your authenticator app later.
-        {% endslot %}
-    {% endelement %}
-
-      <div class="button-container">
-        <button id="nextButton" type="button" class="action-button">Next</button>
+{% block auth_body %}
+  {# --- Step 1: scan the QR / save the key --- #}
+  <div id="step-1-container" class="flex w-full flex-col items-center gap-6">
+    <div class="flex w-full flex-col items-center gap-2">
+      {# QR codes need a light background with a quiet zone in both themes to stay scannable. #}
+      <div class="rounded-xl border border-border-default bg-white p-4 [&_img]:block [&_img]:h-44 [&_img]:w-44">
+        {% element img src=totp_svg_data_uri alt=form.secret tags="mfa,totp,qr" %}
+        {% endelement %}
       </div>
+      <p class="m-0 text-center text-sm leading-5 text-text-muted">{% trans "Scan this QR code with an authenticator app such as Google Authenticator, Microsoft Authenticator or Authy." %}</p>
     </div>
 
-    <div id="step-2-container" style="display: none;">
-      <h1>Step 2: Verify your setup</h1>
+    <div class="w-full">
+      <p class="m-0 mb-2 text-sm leading-5 text-text-muted">{% trans "Can't scan it? Enter this key manually:" %}</p>
+      <div class="flex items-center gap-3 rounded border border-border-default bg-bg-surface-muted px-4 py-3">
+        <code id="totp-secret" class="min-w-0 flex-1 break-all text-sm font-medium tracking-wide text-text-strong">{{ form.secret }}</code>
+        <button type="button" id="copySecret" class="auth-text-link shrink-0 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Copy" %}</button>
+      </div>
+      <p class="m-0 mt-2 text-xs leading-5 text-text-muted">{% trans "Save this key somewhere safe so you can restore access if you lose your device." %}</p>
+    </div>
 
-      <form name="code" method="POST" action="{% url 'mfa_activate_totp' %}">
-        {% csrf_token %}
-
-        <div class="hidden-input-container">
-          {% element fields form=form %}
-          {% endelement %}
-        </div>
-
-        <!-- OTP input boxes -->
-        <div class="otp-input-container">
-          <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric">
-          <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric">
-          <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric">
-          <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric">
-          <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric">
-          <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric">
-        </div>
-
-        <div class="button-container">
-          <button id="backButton" type="button" class="secondaryAction">Back</button>
-          <button  type="submit" class="primaryAction">Verify your code</button>
-        </div>
-      </form>
-
-
+    <button id="nextButton" type="button" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Next" %}</button>
   </div>
-</div>
+
+  {# --- Step 2: confirm with a code --- #}
+  <div id="step-2-container" class="hidden w-full flex-col items-center gap-6">
+    <form name="code" method="POST" action="{% url 'mfa_activate_totp' %}" class="flex w-full flex-col items-center gap-6">
+      {% csrf_token %}
+
+      <div class="hidden">
+        {% element fields form=form %}
+        {% endelement %}
+      </div>
+
+      <div id="otp-input-container" class="flex w-full max-w-[480px] justify-center gap-2 sm:gap-3 md:gap-6">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" aria-label="{% trans 'Digit 1' %}">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 2' %}">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 3' %}">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 4' %}">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 5' %}">
+        <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 6' %}">
+      </div>
+
+      <div class="flex w-full flex-col items-center gap-3">
+        <button type="submit" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Verify and activate" %}</button>
+        <button id="backButton" type="button" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Back" %}</button>
+      </div>
+    </form>
+  </div>
 
 <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const step1Container = document.getElementById("step-1-container");
-    const step2Container = document.getElementById("step-2-container");
-    const nextButton = document.getElementById("nextButton");
-    const backButton = document.getElementById("backButton");
-
-    // Handle navigation between steps
-    nextButton.addEventListener("click", function() {
-      step1Container.style.display = "none";
-      step2Container.style.display = "block";
-    });
-
-    backButton.addEventListener("click", function() {
-      step2Container.style.display = "none";
-      step1Container.style.display = "block";
-    });
-
-    // OTP-specific
-    const originalInput = document.querySelector('.otp-hidden-input');
+  document.addEventListener('DOMContentLoaded', function () {
+    const step1 = document.getElementById('step-1-container');
+    const step2 = document.getElementById('step-2-container');
+    const step1Subtitle = document.getElementById('step-1-subtitle');
+    const step2Subtitle = document.getElementById('step-2-subtitle');
+    const nextButton = document.getElementById('nextButton');
+    const backButton = document.getElementById('backButton');
     const otpDigits = document.querySelectorAll('.otp-digit');
+    const originalInput = document.querySelector('.otp-hidden-input');
+    const copyButton = document.getElementById('copySecret');
 
-    // Focus the first input on page load
-    otpDigits[0].focus();
-
-    // Update the original input value when OTP digits change
-    function updateOriginalInput() {
-      let combinedValue = '';
-      otpDigits.forEach(digit => {
-        combinedValue += digit.value;
-      });
-      originalInput.value = Number(combinedValue);
+    function showStep(step) {
+      const onStep2 = step === 2;
+      step1.classList.toggle('hidden', onStep2);
+      step1.classList.toggle('flex', !onStep2);
+      step2.classList.toggle('hidden', !onStep2);
+      step2.classList.toggle('flex', onStep2);
+      step1Subtitle.classList.toggle('hidden', onStep2);
+      step2Subtitle.classList.toggle('hidden', !onStep2);
+      if (onStep2) otpDigits[0].focus();
     }
 
-    // Add event listeners to each OTP digit input
-    otpDigits.forEach((digit, index) => {
-      // Handle input
-      digit.addEventListener('input', function(e) {
-        // Allow only numbers
-        this.value = this.value.replace(/[^0-9]/g, '');
+    nextButton.addEventListener('click', function () { showStep(2); });
+    backButton.addEventListener('click', function () { showStep(1); });
 
-        // Move to next input if a digit was entered
-        if (this.value && index < otpDigits.length - 1) {
-          otpDigits[index + 1].focus();
+    if (copyButton) {
+      copyButton.addEventListener('click', function () {
+        const secret = document.getElementById('totp-secret').textContent.trim();
+        const done = function () {
+          const original = copyButton.textContent;
+          copyButton.textContent = '{% trans "Copied" %}';
+          setTimeout(function () { copyButton.textContent = original; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(secret).then(done).catch(function () {});
         }
+      });
+    }
 
+    function updateOriginalInput() {
+      if (!originalInput) return;
+      let combined = '';
+      otpDigits.forEach(function (digit) { combined += digit.value; });
+      originalInput.value = combined;
+    }
+
+    otpDigits.forEach(function (digit, index) {
+      digit.addEventListener('input', function () {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        if (this.value && index < otpDigits.length - 1) otpDigits[index + 1].focus();
         updateOriginalInput();
       });
-
-      // Handle backspace and arrow keys
-      digit.addEventListener('keydown', function(e) {
+      digit.addEventListener('keydown', function (e) {
         if (e.key === 'Backspace' && !this.value && index > 0) {
-          // Move to previous input on backspace if current is empty
           otpDigits[index - 1].focus();
         } else if (e.key === 'ArrowLeft' && index > 0) {
-          // Move to previous input on left arrow
           otpDigits[index - 1].focus();
         } else if (e.key === 'ArrowRight' && index < otpDigits.length - 1) {
-          // Move to next input on right arrow
           otpDigits[index + 1].focus();
         }
       });
-
-      // Select all text on focus
-      digit.addEventListener('focus', function() {
-        this.select();
-      });
+      digit.addEventListener('focus', function () { this.select(); });
     });
 
-    // Handle paste events (paste into first input)
-    otpDigits[0].addEventListener('paste', function(e) {
+    otpDigits[0].addEventListener('paste', function (e) {
       e.preventDefault();
-
-      // Get pasted data
-      let pastedData = (e.clipboardData || window.clipboardData).getData('text');
-
-      // Remove non-numeric characters
-      pastedData = pastedData.replace(/[^0-9]/g, '');
-
-      // Fill the inputs with pasted data
-      for (let i = 0; i < Math.min(pastedData.length, otpDigits.length); i++) {
-        otpDigits[i].value = pastedData[i];
+      let pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
+      for (let i = 0; i < Math.min(pasted.length, otpDigits.length); i++) {
+        otpDigits[i].value = pasted[i];
       }
-
-      // Focus the next empty input or the last one
-      const nextEmptyIndex = Math.min(pastedData.length, otpDigits.length - 1);
-      otpDigits[nextEmptyIndex].focus();
-
+      otpDigits[Math.min(pasted.length, otpDigits.length - 1)].focus();
       updateOriginalInput();
     });
-  })
+
+    {% if form.errors %}showStep(2);{% endif %}
+  });
 </script>
-{% endblock innercontent %}
+{% endblock auth_body %}
