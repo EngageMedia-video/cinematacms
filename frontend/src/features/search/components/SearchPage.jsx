@@ -122,7 +122,7 @@ function SearchSortButton({ sort, onToggle }) {
 	return (
 		<button
 			type="button"
-			className="inline-flex h-9 cursor-pointer appearance-none items-center justify-center gap-2 rounded-[4px] border-0 bg-bg-filter-sort px-3 py-2 font-sans text-[12px] leading-4 font-medium text-text-filter-sort uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
+			className="inline-flex h-9 cursor-pointer appearance-none items-center justify-center gap-2 rounded-[4px] border-0 bg-bg-action-inverse px-3 py-2 font-sans text-[12px] leading-4 font-medium text-text-action-inverse uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
 			style={{ appearance: 'none', border: 0, boxShadow: 'none' }}
 			onClick={onToggle}
 			disabled={disabled}
@@ -291,7 +291,7 @@ function SearchPageContent() {
 						/>
 					</div>
 
-					<section className="rounded-[8px] bg-bg-filter-panel px-4 py-6 sm:p-6">
+					<section className="rounded-[8px] bg-bg-panel-primary px-4 py-6 sm:p-6">
 						<div className="mb-6 flex items-center justify-between gap-3">
 							<p className="m-0 font-sans text-[14px] leading-5 text-text-primary">{resultsLabel}</p>
 							<SearchSortButton sort={sort} onToggle={handleSortToggle} />
@@ -318,7 +318,7 @@ function SearchPageContent() {
 						) : null}
 
 						{activeSearch && !search.isLoading && !search.isError && results.length === 0 ? (
-							<div className="rounded-[4px] border border-border-filter-divider bg-bg-surface p-6 text-text-muted">
+							<div className="rounded-[4px] border border-border-panel-divider bg-bg-surface p-6 text-text-muted">
 								No results match these filters.
 							</div>
 						) : null}

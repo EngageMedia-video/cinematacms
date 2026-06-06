@@ -38,7 +38,7 @@ describe('Badge', () => {
 		const onDismiss = vi.fn();
 
 		render(
-			<Badge color="bg/filter-chip-active" onDismiss={onDismiss}>
+			<Badge color="bg/chip-active" onDismiss={onDismiss}>
 				Philippines
 			</Badge>
 		);

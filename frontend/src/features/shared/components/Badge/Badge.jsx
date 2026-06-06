@@ -30,7 +30,7 @@ export function Badge({
 			{isDismissible ? (
 				<button
 					type="button"
-					className="inline-flex h-4 w-4 cursor-pointer appearance-none items-center justify-center border-0 bg-transparent p-0 text-current shadow-none transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-1 focus-visible:ring-offset-bg-filter-chip-active"
+					className="inline-flex h-4 w-4 cursor-pointer appearance-none items-center justify-center border-0 bg-transparent p-0 text-current shadow-none transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-1 focus-visible:ring-offset-bg-chip-active"
 					style={{ appearance: 'none', background: 'transparent', border: 0, boxShadow: 'none' }}
 					aria-label={dismissLabel || `Remove ${typeof children === 'string' ? children : ''}`}
 					onClick={onDismiss}

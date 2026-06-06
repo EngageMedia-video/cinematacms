@@ -238,9 +238,13 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | Family | Tokens | Use |
 |---|---|---|
 | `bg/page`, `bg/surface`, `bg/surface-raised`, `bg/surface-muted`, `bg/surface-hover`, `bg/surface-inverse` | 6 | Themed page, card, and list/menu hover surfaces — invert per theme. |
-| `bg/filter-panel`, `bg/filter-surface`, `bg/filter-selected`, `bg/filter-header`, `bg/filter-sort`, `bg/filter-checkbox`, `bg/filter-chip-active`, `bg/filter-chip` | 8 | Search filter rail, expanded category bodies, selected-filter card, accordion headers, sort control, checkbox fills, and selected filter chips. |
-| `text/filter-muted`, `text/filter-option`, `text/filter-header`, `text/filter-sort`, `text/filter-selected-heading` | 5 | Search filter metadata, option labels, accordion header labels, sort button labels, and selected-filter card headings. |
-| `border/filter-divider` | 1 | Search filter rail dividers; light mode uses the Figma-only `#dfeff4` grey/92 value. |
+| `bg/panel-primary`, `bg/panel-surface`, `bg/panel-selected` | 3 | Primary panel/rail surface, inner expanded body, and selected-state card — reusable for any panel-style layout (currently: search filter sidebar and mobile sheet). |
+| `bg/section-header` | 1 | Colored section-header bar inside a panel. Light `strait-blue-600p` / Dark `strait-blue-800`. |
+| `bg/action-inverse` | 1 | Dark action button surface (inverted relative to panel background). Light `strait-blue-900` / Dark `strait-blue-600p`. |
+| `bg/control-unchecked` | 1 | Unchecked state of a checkbox or radio control. Light `pacific-deep-100` / Dark `pacific-deep-900`. |
+| `bg/chip-active`, `bg/chip` | 2 | Active/selected chip fill (also the checked-checkbox fill — constant `sunset-horizon-400p`) and inactive chip fill. |
+| `text/panel-muted`, `text/option`, `text/section-header`, `text/action-inverse`, `text/panel-heading` | 5 | Quiet panel metadata, option/choice labels, text on section-header bars, text on dark action buttons, and panel card headings. |
+| `border/panel-divider` | 1 | Dividers and category borders inside a panel. Light `#dfeff4` (Figma grey/92) / Dark `pacific-deep-500`. |
 | `bg/notification-unread` | 1 | Unread notification row background. Light `pacific-deep-100`, dark `pacific-deep-800` — a deliberately stronger tint than `bg/surface-hover` so unread rows stand out from the page in light mode. |
 | `bg/avatar-fallback`, `bg/badge-info`, `bg/badge-danger`, `bg/badge-accent`, `bg/badge-muted` | 5 | Small decorative fills for avatar initials and action-type badge emblems. These are semantic aliases for fixed, non-theme-inverting roles. |
 | `bg/overlay-dark`, `bg/chrome`, `bg/chrome-hover` | 3 | Always-dark UI chrome — topbar, search overlays, mobile dialogs. Do not invert. |

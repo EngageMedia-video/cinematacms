@@ -3,7 +3,7 @@ import { FilterCategory } from './FilterCategory';
 
 export function FilterPanel({ onReset, onSectionChange, sections = [] }) {
 	return (
-		<aside className="w-full rounded-[8px] bg-bg-filter-panel px-4 py-6 text-text-primary sm:max-w-[317px]">
+		<aside className="w-full rounded-[8px] bg-bg-panel-primary px-4 py-6 text-text-primary sm:max-w-[317px]">
 			<div className="mb-4 flex items-end justify-between gap-3">
 				<h2 className="m-0 font-['Barlow_Semi_Condensed',Arial,sans-serif] text-[20px] leading-6 font-medium text-text-primary">
 					Choose Filters

@@ -65,7 +65,7 @@ export const CoralReef = {
 export const Dismissible = {
 	args: {
 		children: 'Philippines',
-		color: 'bg/filter-chip-active',
+		color: 'bg/chip-active',
 		className: 'rounded-[4px] px-2 py-[2px] font-bold',
 		onDismiss: () => {},
 	},
