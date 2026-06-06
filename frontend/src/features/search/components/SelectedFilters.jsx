@@ -57,7 +57,7 @@ SelectedFilters.propTypes = {
 			value: PropTypes.string.isRequired,
 		})
 	),
-	onClearAll: PropTypes.func,
+	onClearAll: PropTypes.func.isRequired,
 	onDismiss: PropTypes.func,
 	variant: PropTypes.oneOf(['desktop', 'mobile']),
 };

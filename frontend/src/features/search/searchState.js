@@ -14,11 +14,17 @@ export function createEmptyFilters() {
 }
 
 function getAll(searchParams, key, legacyKey) {
-	const values = searchParams.getAll(key);
-	if (legacyKey) {
-		values.push(...searchParams.getAll(legacyKey));
+	const raw = [...searchParams.getAll(key), ...(legacyKey ? searchParams.getAll(legacyKey) : [])];
+	const seen = new Set();
+	const result = [];
+	for (const v of raw) {
+		const trimmed = v.trim();
+		if (trimmed && !seen.has(trimmed)) {
+			seen.add(trimmed);
+			result.push(trimmed);
+		}
 	}
-	return values.filter(Boolean);
+	return result;
 }
 
 export function parseSearchState(search = '') {
@@ -37,7 +43,7 @@ export function parseSearchState(search = '') {
 	const POPULARITY_FIELDS = ['views', 'likes', 'comment_count', 'featured_date'];
 	return {
 		filters,
-		page: Number(searchParams.get('page')) || 1,
+		page: Math.max(1, parseInt(searchParams.get('page'), 10) || 1),
 		query: searchParams.get('q') || '',
 		sort: {
 			popularity: POPULARITY_FIELDS.includes(sortBy) ? sortBy : null,

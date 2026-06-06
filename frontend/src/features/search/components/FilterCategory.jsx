@@ -68,7 +68,6 @@ export function FilterCategory({
 								name={name}
 								value={option.value}
 								checked={selected.has(option.value)}
-								aria-label={option.label}
 								onChange={() => handleChange(option.value)}
 								{...controlProps}
 								className="w-full items-start"
