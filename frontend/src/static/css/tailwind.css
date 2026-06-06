@@ -1029,6 +1029,17 @@ body {
 	--bg-success-subtle: var(--cinemata-green-100);
 	--bg-success-strong: var(--cinemata-green-800);
 	--bg-warning: var(--cinemata-amber-500);
+	--bg-panel-primary: var(--cinemata-neutral-50);
+	--bg-panel-surface: var(--cinemata-pacific-deep-50);
+	--bg-panel-selected: var(--cinemata-neutral-50);
+	--bg-section-header: var(--cinemata-strait-blue-600p);
+	--bg-disclosure-trigger: var(--cinemata-neutral-50);
+	--bg-disclosure-content: var(--cinemata-neutral-100);
+	--bg-action-inverse: var(--cinemata-strait-blue-900);
+	--bg-control-unchecked: var(--cinemata-pacific-deep-100);
+	--bg-control-checked: var(--cinemata-pacific-deep-100);
+	--bg-chip-active: var(--cinemata-sunset-horizon-400p);
+	--bg-chip: var(--cinemata-strait-blue-100);
 
 	/* Text */
 	--text-strong: var(--cinemata-pacific-deep-900);
@@ -1052,6 +1063,13 @@ body {
 	--text-danger: var(--cinemata-red-500);
 	--text-success: var(--cinemata-green-600);
 	--text-warning: var(--cinemata-amber-600p);
+	--text-panel-muted: var(--cinemata-pacific-deep-400);
+	--text-option: var(--cinemata-pacific-deep-700);
+	--text-section-header: var(--cinemata-neutral-50);
+	--text-disclosure-trigger: var(--cinemata-pacific-deep-700);
+	--text-action-inverse: var(--cinemata-strait-blue-100);
+	--text-panel-heading: var(--cinemata-pacific-deep-700);
+	--text-control-checked: var(--cinemata-pacific-deep-700);
 
 	/* Borders */
 	--border-default: var(--cinemata-pacific-deep-200);
@@ -1063,6 +1081,10 @@ body {
 	--border-chrome: var(--cinemata-pacific-deep-700);
 	--border-input: var(--cinemata-coral-reef-400p);
 	--border-danger: var(--cinemata-red-500);
+	--border-panel-divider: #dfeff4;
+	--border-disclosure-content: var(--cinemata-pacific-deep-300);
+	--border-disclosure-trigger: var(--cinemata-pacific-deep-300);
+	--border-chip-active: var(--cinemata-sunset-horizon-400p);
 
 	/* Focus ring */
 	--ring-focus: var(--cinemata-sunset-horizon-400p);
@@ -1096,6 +1118,17 @@ body.dark_theme {
 	--bg-danger-strong: var(--cinemata-red-950);
 	--bg-danger-strong-hover: var(--cinemata-red-900);
 	--bg-success-subtle: var(--cinemata-green-950);
+	--bg-panel-primary: var(--cinemata-pacific-deep-900);
+	--bg-panel-surface: var(--cinemata-pacific-deep-800);
+	--bg-panel-selected: var(--cinemata-pacific-deep-900);
+	--bg-section-header: var(--cinemata-strait-blue-800);
+	--bg-disclosure-trigger: var(--cinemata-strait-blue-800);
+	--bg-disclosure-content: var(--cinemata-pacific-deep-800);
+	--bg-action-inverse: var(--cinemata-strait-blue-600p);
+	--bg-control-unchecked: var(--cinemata-pacific-deep-900);
+	--bg-control-checked: var(--cinemata-sunset-horizon-400p);
+	--bg-chip-active: var(--cinemata-sunset-horizon-400p);
+	--bg-chip: var(--cinemata-pacific-deep-700);
 
 	--text-strong: var(--cinemata-strait-blue-50);
 	--text-primary: var(--cinemata-strait-blue-50);
@@ -1109,12 +1142,23 @@ body.dark_theme {
 	--text-link-hover: var(--cinemata-sunset-horizon-100);
 	--text-success: var(--cinemata-green-500);
 	--text-warning: var(--cinemata-amber-500);
+	--text-panel-muted: var(--cinemata-pacific-deep-300);
+	--text-option: var(--cinemata-strait-blue-50);
+	--text-section-header: var(--cinemata-strait-blue-100);
+	--text-disclosure-trigger: var(--cinemata-strait-blue-100);
+	--text-action-inverse: var(--cinemata-strait-blue-50);
+	--text-panel-heading: var(--cinemata-neutral-50);
+	--text-control-checked: var(--cinemata-pacific-deep-900);
 
 	--border-default: var(--cinemata-pacific-deep-700);
 	--border-subtle: var(--cinemata-pacific-deep-800);
 	--border-divider: var(--cinemata-pacific-deep-600p);
 	--border-strong: var(--cinemata-pacific-deep-400);
 	--border-input: var(--cinemata-sunset-horizon-400p);
+	--border-panel-divider: var(--cinemata-pacific-deep-500);
+	--border-disclosure-content: var(--cinemata-pacific-deep-500);
+	--border-disclosure-trigger: transparent;
+	--border-chip-active: var(--cinemata-sunset-horizon-400p);
 
 	--switch-track-on-color: var(--cinemata-coral-reef-700);
 	--switch-track-off-color: var(--cinemata-pacific-deep-800);
@@ -1160,6 +1204,17 @@ body.dark_theme {
 	--color-bg-success-subtle: var(--bg-success-subtle);
 	--color-bg-success-strong: var(--bg-success-strong);
 	--color-bg-warning: var(--bg-warning);
+	--color-bg-panel-primary: var(--bg-panel-primary);
+	--color-bg-panel-surface: var(--bg-panel-surface);
+	--color-bg-panel-selected: var(--bg-panel-selected);
+	--color-bg-section-header: var(--bg-section-header);
+	--color-bg-disclosure-trigger: var(--bg-disclosure-trigger);
+	--color-bg-disclosure-content: var(--bg-disclosure-content);
+	--color-bg-action-inverse: var(--bg-action-inverse);
+	--color-bg-control-unchecked: var(--bg-control-unchecked);
+	--color-bg-control-checked: var(--bg-control-checked);
+	--color-bg-chip-active: var(--bg-chip-active);
+	--color-bg-chip: var(--bg-chip);
 
 	/* Text */
 	--color-text-strong: var(--text-strong);
@@ -1183,6 +1238,13 @@ body.dark_theme {
 	--color-text-danger: var(--text-danger);
 	--color-text-success: var(--text-success);
 	--color-text-warning: var(--text-warning);
+	--color-text-panel-muted: var(--text-panel-muted);
+	--color-text-option: var(--text-option);
+	--color-text-section-header: var(--text-section-header);
+	--color-text-disclosure-trigger: var(--text-disclosure-trigger);
+	--color-text-action-inverse: var(--text-action-inverse);
+	--color-text-panel-heading: var(--text-panel-heading);
+	--color-text-control-checked: var(--text-control-checked);
 
 	/* Borders */
 	--color-border-default: var(--border-default);
@@ -1194,6 +1256,10 @@ body.dark_theme {
 	--color-border-chrome: var(--border-chrome);
 	--color-border-input: var(--border-input);
 	--color-border-danger: var(--border-danger);
+	--color-border-panel-divider: var(--border-panel-divider);
+	--color-border-disclosure-content: var(--border-disclosure-content);
+	--color-border-disclosure-trigger: var(--border-disclosure-trigger);
+	--color-border-chip-active: var(--border-chip-active);
 
 	/* Focus ring */
 	--color-ring-focus: var(--ring-focus);

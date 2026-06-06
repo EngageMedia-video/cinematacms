@@ -54,7 +54,7 @@ function MovieMetadata({ items = [] }) {
 
 function MovieCopy({ title, titleLink = '', subtitle, subtitleLink = '', metadata, orientation = 'vertical' }) {
 	const titleClassName = cn(
-		'm-0 p-0 line-clamp-3',
+		'm-0 p-0 line-clamp-3 [overflow-wrap:anywhere]',
 		'[font-family:Inter,Arial,sans-serif] text-[16px] font-medium leading-[22px] tracking-[-0.18px] text-text-primary'
 	);
 	const subtitleClassName = 'body-body-12-regular m-0 p-0 text-text-link';
@@ -80,7 +80,7 @@ function MovieCopy({ title, titleLink = '', subtitle, subtitleLink = '', metadat
 					href={subtitleLink}
 					className={cn(
 						subtitleClassName,
-						'relative z-20 inline-flex w-fit max-w-full touch-manipulation no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus'
+						'inline-flex w-fit max-w-full touch-manipulation no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus'
 					)}
 				>
 					{subtitle}
@@ -171,6 +171,7 @@ export function HorizontalMovieItem({
 	imageSrc,
 	link = '',
 	metadata = [],
+	posterClassName = 'aspect-video w-[180px]',
 	subtitle = '',
 	subtitleLink = '',
 	title = 'Movie Title',
@@ -193,7 +194,7 @@ export function HorizontalMovieItem({
 				duration={duration}
 				link={useStandaloneLinks ? link : ''}
 				linkTitle={title}
-				className="aspect-video w-[180px] shrink-0"
+				className={cn(posterClassName, 'shrink-0')}
 			/>
 
 			<div className="flex min-w-0 flex-1 flex-col gap-3">

@@ -10,6 +10,36 @@ from .models import CommunityImpact, Language, Media
 from .stop_words import STOP_WORDS
 
 
+def _getlist(params, *keys):
+    values = []
+    for key in keys:
+        values.extend(value.strip() for value in params.getlist(key) if value.strip())
+    return values
+
+
+def _resolve_language_codes(values):
+    if not values:
+        return []
+
+    languages = Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list("code", "title")
+    valid_codes = set()
+    code_by_title = {}
+    for code, title in languages:
+        valid_codes.add(code)
+        code_by_title[title] = code
+
+    return [
+        value if value in valid_codes else code_by_title[value]
+        for value in values
+        if value in valid_codes or value in code_by_title
+    ]
+
+
+def _resolve_country_codes(values):
+    country_by_title = {title: code for code, title in lists.video_countries}
+    return [country_by_title[value] for value in values if value in country_by_title]
+
+
 class MediaRSSFeed(Rss201rev2Feed):
     def rss_attributes(self):
         attrs = super(MediaRSSFeed, self).rss_attributes()
@@ -107,36 +137,35 @@ class SearchRSSFeed(Feed):
         return "/rss/search"
 
     def get_object(self, request):
-        category = request.GET.get("c", "")
-        topic = request.GET.get("topic", "")
-        language = request.GET.get("language", "")
-        country = request.GET.get("country", "")
-        tag = request.GET.get("t", "")
+        category = _getlist(request.GET, "category", "c")
+        topic = _getlist(request.GET, "topic")
+        language = _getlist(request.GET, "language")
+        country = _getlist(request.GET, "country")
+        tag = _getlist(request.GET, "tag", "t")
         query = request.GET.get("q", "")
-        subtitle_language = request.GET.get("subtitle_language", "")
+        subtitle_language = _getlist(request.GET, "subtitle_language")
         length = request.GET.get("length", "")
         award = request.GET.get("award", "")
+        community_impact = _getlist(request.GET, "community_impact")
 
         basic_query = Q(state="public", is_reviewed=True)
         media = Media.objects.filter(basic_query)
 
         if category:
-            media = media.filter(category__title=category)
-        elif tag:
-            media = media.filter(tags__title=tag)
-        elif topic:
-            media = media.filter(topics__title__contains=topic)
-        elif language:
-            code_by_title = dict(
-                Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list("title", "code")
-            )
-            language_code = code_by_title.get(language)
-            if language_code:
-                media = media.filter(media_language=language_code)
-        elif country:
-            country = {value: key for key, value in dict(lists.video_countries).items()}.get(country)
-            media = media.filter(media_country=country)
-        elif query:
+            media = media.filter(category__title__in=category).distinct()
+        if tag:
+            media = media.filter(tags__title__in=tag).distinct()
+        if topic:
+            media = media.filter(topics__title__in=topic).distinct()
+        if language:
+            language_codes = _resolve_language_codes(language)
+            if language_codes:
+                media = media.filter(media_language__in=language_codes)
+        if country:
+            country_codes = _resolve_country_codes(country)
+            if country_codes:
+                media = media.filter(media_country__in=country_codes)
+        if query:
             query = helpers.clean_query(query)
             q_parts = [q_part.strip("y") for q_part in query.split() if q_part not in STOP_WORDS]
             if q_parts:
@@ -149,7 +178,7 @@ class SearchRSSFeed(Feed):
             media = media.filter(search=query)
 
         if subtitle_language:
-            media = media.filter(subtitles__language__title=subtitle_language).distinct()
+            media = media.filter(subtitles__language__code__in=subtitle_language).distinct()
 
         if length == "less_than_10":
             media = media.filter(duration__lt=600)
@@ -164,6 +193,20 @@ class SearchRSSFeed(Feed):
                     CommunityImpact.FEATURED,
                 ],
             ).distinct()
+
+        if community_impact:
+            community_impact_options = {
+                CommunityImpact.SCREENING,
+                CommunityImpact.FEATURED,
+                CommunityImpact.SAVES,
+                CommunityImpact.ACADEMIC,
+            }
+            community_impact_values = [value for value in community_impact if value in community_impact_options]
+            if community_impact_values:
+                media = media.filter(
+                    community_impacts__status=CommunityImpact.APPROVED,
+                    community_impacts__category__in=community_impact_values,
+                ).distinct()
 
         media = media.order_by("-add_date").prefetch_related("user")
 

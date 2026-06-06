@@ -161,7 +161,6 @@ describe('MovieItem', () => {
 			'href',
 			'/profiles/giuseppe-tornatore/'
 		);
-		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' })).toHaveClass('z-20');
 		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' })).not.toHaveClass('min-h-8');
 		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' })).toHaveClass('touch-manipulation');
 		expect(screen.getByRole('link', { name: 'Giuseppe Tornatore' }).closest('a[aria-label]')).toBeNull();

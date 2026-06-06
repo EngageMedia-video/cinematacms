@@ -61,3 +61,17 @@ export const CoralReef = {
 		color: '#D0735F',
 	},
 };
+
+export const Dismissible = {
+	args: {
+		children: 'Philippines',
+		color: 'bg/chip-active',
+		className: 'rounded-[4px] px-2 py-[2px] font-bold',
+		onDismiss: () => {},
+	},
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+
+		await expect(canvas.getByRole('button', { name: 'Remove Philippines' })).toBeVisible();
+	},
+};

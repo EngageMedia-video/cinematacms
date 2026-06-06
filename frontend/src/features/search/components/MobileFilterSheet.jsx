@@ -1,0 +1,109 @@
+import PropTypes from 'prop-types';
+import { useState } from 'react';
+import { DEFAULT_SORT } from '../constants';
+import { buildSections } from '../filterSections';
+import { createEmptyFilters, toggleFilterValue } from '../searchState';
+import { Dialog } from '../../shared/components/Dialog';
+import { Icon } from '../../shared/components/Icon';
+import { FilterPanel } from './FilterPanel';
+
+function MobileFilterSheetContent({ filters, sort, filterOptionSections, onReset, onSave, onClose }) {
+	const [localFilters, setLocalFilters] = useState(filters);
+	const [localSort, setLocalSort] = useState(sort);
+
+	function handleSectionChange(key, value, checked) {
+		if (key === 'sort') {
+			setLocalSort((current) => ({
+				...current,
+				popularity: checked ? value : null,
+			}));
+			return;
+		}
+		setLocalFilters((current) => toggleFilterValue(current, key, value, checked));
+	}
+
+	function handleReset() {
+		setLocalFilters(createEmptyFilters());
+		setLocalSort(DEFAULT_SORT);
+		onReset();
+	}
+
+	function handleSave() {
+		onSave(localFilters, localSort);
+		onClose();
+	}
+
+	function handleCancel() {
+		onClose();
+	}
+
+	const sections = buildSections(localFilters, localSort, filterOptionSections);
+
+	return (
+		<>
+			<div className="flex-1 overflow-y-auto p-3">
+				<FilterPanel sections={sections} onReset={handleReset} onSectionChange={handleSectionChange} />
+			</div>
+			<div className="flex gap-2 border-t border-border-panel-divider bg-bg-panel-primary p-3">
+				<button
+					type="button"
+					className="inline-flex h-10 flex-1 cursor-pointer appearance-none items-center justify-center rounded-[4px] border-0 bg-bg-action-inverse px-4 font-sans text-[14px] leading-5 font-bold text-text-on-primary uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+					style={{ appearance: 'none', border: 0, boxShadow: 'none' }}
+					onClick={handleCancel}
+				>
+					Cancel
+				</button>
+				<button
+					type="button"
+					className="inline-flex h-10 flex-1 cursor-pointer appearance-none items-center justify-center rounded-[4px] border-0 bg-bg-secondary px-4 font-sans text-[14px] leading-5 font-bold text-text-on-primary uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+					style={{ appearance: 'none', border: 0, boxShadow: 'none' }}
+					onClick={handleSave}
+				>
+					Save
+				</button>
+			</div>
+		</>
+	);
+}
+
+export function MobileFilterSheet({ filters, sort, filterOptionSections, onReset, onSave }) {
+	const [open, setOpen] = useState(false);
+
+	return (
+		<Dialog open={open} onOpenChange={setOpen}>
+			<Dialog.Trigger>
+				<button
+					type="button"
+					aria-label="Filters"
+					className="inline-flex h-9 cursor-pointer appearance-none items-center gap-2 rounded-[4px] border-0 bg-bg-section-header px-3 py-2 font-sans text-[12px] leading-4 font-medium text-text-section-header uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+					style={{ appearance: 'none', border: 0, boxShadow: 'none' }}
+				>
+					Filters
+					<Icon name="caretDown" size={16} decorative />
+				</button>
+			</Dialog.Trigger>
+			<Dialog.Content
+				aria-label="Search filters"
+				className="flex flex-col overflow-hidden bg-bg-panel-primary"
+				fullScreen
+			>
+				<MobileFilterSheetContent
+					filters={filters}
+					sort={sort}
+					filterOptionSections={filterOptionSections}
+					onReset={onReset}
+					onSave={onSave}
+					onClose={() => setOpen(false)}
+				/>
+			</Dialog.Content>
+		</Dialog>
+	);
+}
+
+MobileFilterSheet.propTypes = {
+	filters: PropTypes.object.isRequired,
+	sort: PropTypes.shape({ field: PropTypes.string, ordering: PropTypes.string }).isRequired,
+	filterOptionSections: PropTypes.object.isRequired,
+	onReset: PropTypes.func,
+	onSave: PropTypes.func,
+};

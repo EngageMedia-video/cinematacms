@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Badge } from './Badge';
 
 describe('Badge', () => {
@@ -30,5 +31,20 @@ describe('Badge', () => {
 		const badge = screen.getByText('Featured');
 
 		expect(badge.style.backgroundColor).toBe('var(--cinemata-pacific-deep-950)');
+	});
+
+	it('calls onDismiss from the dismiss button', async () => {
+		const user = userEvent.setup();
+		const onDismiss = vi.fn();
+
+		render(
+			<Badge color="bg/chip-active" onDismiss={onDismiss}>
+				Philippines
+			</Badge>
+		);
+
+		await user.click(screen.getByRole('button', { name: 'Remove Philippines' }));
+
+		expect(onDismiss).toHaveBeenCalledTimes(1);
 	});
 });

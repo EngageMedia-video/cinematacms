@@ -1,4 +1,4 @@
 import { renderPage } from '../static/js/_helpers.js';
-import { SearchPage } from '../static/js/pages/SearchPage';
+import { SearchPage } from '../features/search';
 
 renderPage('page-search', SearchPage);
