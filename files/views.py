@@ -118,7 +118,6 @@ from .serializers import (
     HeroPlaybackSerializer,
     HomepagePopupSerializer,
     IndexPageFeaturedSerializer,
-    MediaCountrySerializer,
     MediaLanguageSerializer,
     MediaSearchSerializer,
     MediaSerializer,
@@ -1795,15 +1794,44 @@ class MediaPasswordView(APIView):
 class MediaSearch(APIView):
     parser_classes = (JSONParser,)
 
+    def _getlist(self, params, *keys):
+        values = []
+        for key in keys:
+            values.extend(value.strip() for value in params.getlist(key) if value.strip())
+        return values
+
+    def _resolve_language_codes(self, values):
+        if not values:
+            return []
+
+        languages = Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list(
+            "code", "title"
+        )
+        valid_codes = set()
+        code_by_title = {}
+        for code, title in languages:
+            valid_codes.add(code)
+            code_by_title[title] = code
+
+        return [
+            value if value in valid_codes else code_by_title[value]
+            for value in values
+            if value in valid_codes or value in code_by_title
+        ]
+
+    def _resolve_country_codes(self, values):
+        country_by_title = {title: code for code, title in lists.video_countries}
+        return [country_by_title[value] for value in values if value in country_by_title]
+
     def get(self, request, format=None):
         params = self.request.query_params
         params.get("show", "")
         query = params.get("q", "").strip().lower()
-        category = params.get("c", "").strip()
-        tag = params.get("t", "").strip()
-        language = params.get("language", "").strip()
-        country = params.get("country", "").strip()
-        topic = params.get("topic", "").strip()
+        category = self._getlist(params, "category", "c")
+        tag = self._getlist(params, "tag", "t")
+        language = self._getlist(params, "language")
+        country = self._getlist(params, "country")
+        topic = self._getlist(params, "topic")
 
         ordering = params.get("ordering", "").strip()
         sort_by = params.get("sort_by", "").strip()
@@ -1813,12 +1841,13 @@ class MediaSearch(APIView):
 
         author = params.get("author", "").strip()
 
-        license = params.get("license", "").strip()
+        license_values = self._getlist(params, "license")
         upload_date = params.get("upload_date", "").strip()
 
-        subtitle_language = params.get("subtitle_language", "").strip()
+        subtitle_language = self._getlist(params, "subtitle_language")
         length = params.get("length", "").strip()
         award = params.get("award", "").strip()
+        community_impact = self._getlist(params, "community_impact")
 
         sort_by_options = ["title", "add_date", "edit_date", "views", "likes", "comment_count", "featured_date"]
         if sort_by not in sort_by_options:
@@ -1838,8 +1867,9 @@ class MediaSearch(APIView):
             or subtitle_language
             or length
             or award
+            or community_impact
             or media_type
-            or license
+            or license_values
             or upload_date
         ):
             ret = {}
@@ -1860,29 +1890,26 @@ class MediaSearch(APIView):
             media = media.filter(search=query)
 
         if tag:
-            media = media.filter(tags__title=tag)
+            media = media.filter(tags__title__in=tag).distinct()
 
         if category:
-            media = media.filter(category__title__contains=category)
+            media = media.filter(category__title__in=category).distinct()
 
         if topic:
-            media = media.filter(topics__title__contains=topic)
+            media = media.filter(topics__title__in=topic).distinct()
 
         if language:
-            language = {
-                value: key
-                for key, value in Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list(
-                    "code", "title"
-                )
-            }.get(language)
-            media = media.filter(media_language=language)
+            language_codes = self._resolve_language_codes(language)
+            if language_codes:
+                media = media.filter(media_language__in=language_codes)
 
         if country:
-            country = {value: key for key, value in dict(lists.video_countries).items()}.get(country)
-            media = media.filter(media_country=country)
+            country_codes = self._resolve_country_codes(country)
+            if country_codes:
+                media = media.filter(media_country__in=country_codes)
 
         if subtitle_language:
-            media = media.filter(subtitles__language__code=subtitle_language).distinct()
+            media = media.filter(subtitles__language__code__in=subtitle_language).distinct()
 
         if length:
             if length == "less_than_10":
@@ -1900,21 +1927,42 @@ class MediaSearch(APIView):
                     ],
                 ).distinct()
 
+        if community_impact:
+            community_impact_options = {
+                CommunityImpact.SCREENING,
+                CommunityImpact.FEATURED,
+                CommunityImpact.SAVES,
+                CommunityImpact.ACADEMIC,
+            }
+            community_impact_values = [value for value in community_impact if value in community_impact_options]
+            if community_impact_values:
+                media = media.filter(
+                    community_impacts__status=CommunityImpact.APPROVED,
+                    community_impacts__category__in=community_impact_values,
+                ).distinct()
+
         if media_type:
             media = media.filter(media_type=media_type)
 
         if author:
             media = media.filter(user__username=author)
 
-        if license:
-            if license == "no_license":
-                media = media.filter(license=None)
-            else:
+        if license_values:
+            license_query = Q()
+            license_ids = []
+            if "no_license" in license_values:
+                license_query |= Q(license=None)
+            for license_value in license_values:
+                if license_value == "no_license":
+                    continue
                 try:
-                    license = int(license)
-                    media = media.filter(license_id=license)
+                    license_ids.append(int(license_value))
                 except ValueError:
                     pass
+            if license_ids:
+                license_query |= Q(license_id__in=license_ids)
+            if license_query:
+                media = media.filter(license_query)
 
         if upload_date:
             gte = lte = None
@@ -2595,7 +2643,7 @@ class CategoryList(APIView):
 
 class TopicList(APIView):
     def get(self, request, format=None):
-        topics = Topic.objects.filter(media_count__gt=0).order_by("title")
+        topics = Topic.objects.filter().order_by("title")
         serializer = TopicSerializer(topics, many=True, context={"request": request})
         ret = serializer.data
         return Response(ret)
@@ -2623,9 +2671,37 @@ class MediaLanguageList(APIView):
 
 class MediaCountryList(APIView):
     def get(self, request, format=None):
-        countries = MediaCountry.objects.exclude(listings_thumbnail="").filter(media_count__gt=0).order_by("title")
-        serializer = MediaCountrySerializer(countries, many=True, context={"request": request})
-        ret = serializer.data
+        country_counts = dict(
+            Media.objects.filter(state="public", is_reviewed=True)
+            .exclude(media_country__isnull=True)
+            .exclude(media_country="")
+            .values("media_country")
+            .annotate(media_count=models.Count("id"))
+            .values_list("media_country", "media_count")
+        )
+        stored_countries = {country.title: country for country in MediaCountry.objects.filter()}
+        ret = []
+
+        for code, title in lists.video_countries:
+            stored_country = stored_countries.pop(title, None)
+            ret.append(
+                {
+                    "title": title,
+                    "thumbnail_url": stored_country.thumbnail_url if stored_country else None,
+                    "media_count": country_counts.get(code, stored_country.media_count if stored_country else 0),
+                }
+            )
+
+        for stored_country in stored_countries.values():
+            ret.append(
+                {
+                    "title": stored_country.title,
+                    "thumbnail_url": stored_country.thumbnail_url,
+                    "media_count": stored_country.media_count,
+                }
+            )
+
+        ret.sort(key=lambda country: country["title"])
         return Response(ret)
 
 
@@ -2647,12 +2723,7 @@ class TagList(APIView):
 class SubtitleLanguageList(APIView):
     def get(self, request, format=None):
         languages = (
-            Language.objects.filter(
-                subtitle__media__state="public",
-                subtitle__media__is_reviewed=True,
-            )
-            .exclude(code__in=["automatic", "automatic-translation"])
-            .distinct()
+            Language.objects.exclude(code__in=["automatic", "automatic-translation"])
             .order_by("title")
             .values("code", "title")
         )

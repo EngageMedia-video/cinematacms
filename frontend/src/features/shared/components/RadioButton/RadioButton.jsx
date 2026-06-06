@@ -5,8 +5,11 @@ export function RadioButton({
 	checked,
 	children,
 	className = '',
+	controlClassName = '',
+	controlStyle,
 	defaultChecked = false,
 	disabled = false,
+	labelClassName = '',
 	name,
 	onChange,
 	readOnly = false,
@@ -38,9 +41,10 @@ export function RadioButton({
 
 			<span
 				className={cn(
-					'inline-flex shrink-0 items-center justify-center rounded-full bg-bg-control transition-colors duration-200 peer-checked:bg-bg-secondary'
+					'inline-flex shrink-0 items-center justify-center rounded-full bg-bg-control transition-colors duration-200 peer-checked:bg-bg-secondary',
+					controlClassName
 				)}
-				style={{ width: 18, height: 18, padding: 3 }}
+				style={{ width: 18, height: 18, padding: 3, ...controlStyle }}
 				aria-hidden="true"
 			>
 				<span
@@ -49,7 +53,9 @@ export function RadioButton({
 				/>
 			</span>
 
-			{children && <span className="body-body-16-regular text-text-strong">{children}</span>}
+			{children && (
+				<span className={cn('body-body-16-regular text-text-strong', labelClassName)}>{children}</span>
+			)}
 		</label>
 	);
 }
@@ -58,8 +64,11 @@ RadioButton.propTypes = {
 	checked: PropTypes.bool,
 	children: PropTypes.node,
 	className: PropTypes.string,
+	controlClassName: PropTypes.string,
+	controlStyle: PropTypes.object,
 	defaultChecked: PropTypes.bool,
 	disabled: PropTypes.bool,
+	labelClassName: PropTypes.string,
 	name: PropTypes.string,
 	onChange: PropTypes.func,
 	readOnly: PropTypes.bool,

@@ -238,6 +238,9 @@ The **video player** group (`--site-player-accent-color`, `--site-player-progres
 | Family | Tokens | Use |
 |---|---|---|
 | `bg/page`, `bg/surface`, `bg/surface-raised`, `bg/surface-muted`, `bg/surface-hover`, `bg/surface-inverse` | 6 | Themed page, card, and list/menu hover surfaces — invert per theme. |
+| `bg/filter-panel`, `bg/filter-surface`, `bg/filter-selected`, `bg/filter-header`, `bg/filter-sort`, `bg/filter-checkbox`, `bg/filter-chip-active`, `bg/filter-chip` | 8 | Search filter rail, expanded category bodies, selected-filter card, accordion headers, sort control, checkbox fills, and selected filter chips. |
+| `text/filter-muted`, `text/filter-option`, `text/filter-header`, `text/filter-sort`, `text/filter-selected-heading` | 5 | Search filter metadata, option labels, accordion header labels, sort button labels, and selected-filter card headings. |
+| `border/filter-divider` | 1 | Search filter rail dividers; light mode uses the Figma-only `#dfeff4` grey/92 value. |
 | `bg/notification-unread` | 1 | Unread notification row background. Light `pacific-deep-100`, dark `pacific-deep-800` — a deliberately stronger tint than `bg/surface-hover` so unread rows stand out from the page in light mode. |
 | `bg/avatar-fallback`, `bg/badge-info`, `bg/badge-danger`, `bg/badge-accent`, `bg/badge-muted` | 5 | Small decorative fills for avatar initials and action-type badge emblems. These are semantic aliases for fixed, non-theme-inverting roles. |
 | `bg/overlay-dark`, `bg/chrome`, `bg/chrome-hover` | 3 | Always-dark UI chrome — topbar, search overlays, mobile dialogs. Do not invert. |

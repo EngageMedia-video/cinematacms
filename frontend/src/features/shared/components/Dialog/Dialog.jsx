@@ -112,7 +112,9 @@ export function DialogClose({ children }) {
 export function DialogContent({
 	children,
 	className = '',
+	containerClassName = '',
 	overlayClassName = '',
+	fullScreen = false,
 	'aria-label': ariaLabel = 'Dialog',
 	closeOnOverlayClick = true,
 	...props
@@ -194,12 +196,29 @@ export function DialogContent({
 			element.setAttribute('inert', '');
 		});
 
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+
+		// .page-main-wrap has will-change:padding-left which creates a stacking
+		// context and breaks fixed positioning for portal children.
+		const pageMainWrap = document.querySelector('.page-main-wrap');
+		const previousWillChange = pageMainWrap?.style.willChange ?? '';
+		if (pageMainWrap) {
+			pageMainWrap.style.willChange = 'auto';
+		}
+
 		document.addEventListener('focusin', handleFocusIn);
 		document.addEventListener('keydown', handleTabKey);
 
 		return () => {
 			document.removeEventListener('focusin', handleFocusIn);
 			document.removeEventListener('keydown', handleTabKey);
+
+			document.body.style.overflow = previousOverflow;
+
+			if (pageMainWrap) {
+				pageMainWrap.style.willChange = previousWillChange;
+			}
 
 			siblingState.forEach(({ element, ariaHidden, inert }) => {
 				if (ariaHidden === null) {
@@ -232,17 +251,26 @@ export function DialogContent({
 		// a couple of popup-fullscreen surfaces). If a consumer needs to
 		// overlay one of those, override by passing the matching value via
 		// `overlayClassName` and a peer class on the content wrapper.
-		<div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-			<div
-				aria-hidden="true"
-				data-dialog-overlay
-				className={cn('absolute inset-0', overlayClassName || 'bg-bg-overlay-dark/40 dark:opacity-80')}
-				onClick={() => {
-					if (closeOnOverlayClick) {
-						setOpen(false);
-					}
-				}}
-			/>
+		<div
+			className={
+				fullScreen
+					? undefined
+					: cn('fixed inset-0 z-[70] flex items-center justify-center p-4', containerClassName)
+			}
+			style={fullScreen ? { position: 'fixed', inset: 0, zIndex: 70 } : undefined}
+		>
+			{!fullScreen && (
+				<div
+					aria-hidden="true"
+					data-dialog-overlay
+					className={cn('absolute inset-0', overlayClassName || 'bg-bg-overlay-dark/40 dark:opacity-80')}
+					onClick={() => {
+						if (closeOnOverlayClick) {
+							setOpen(false);
+						}
+					}}
+				/>
+			)}
 
 			<div
 				{...props}
@@ -252,7 +280,12 @@ export function DialogContent({
 				aria-label={ariaLabel}
 				tabIndex={-1}
 				data-state="open"
-				className={cn('relative z-10 outline-none', className)}
+				className={fullScreen ? cn('outline-none', className) : cn('relative z-10 outline-none', className)}
+				style={
+					fullScreen
+						? { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' }
+						: undefined
+				}
 			>
 				{children}
 			</div>
