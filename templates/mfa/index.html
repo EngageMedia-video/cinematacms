@@ -1,121 +1,74 @@
-{% extends "base.html" %}
-{% load allauth %}
-{% load i18n %}
-{% block headtitle %}
-    | {% trans "Two-Factor Authentication" %}
-{% endblock headtitle %}
-{% block innercontent %}
-<div class="user-action-form-wrap">
-  <div class="user-action-form-inner">
-    <h1>
-      {% trans "Two-Factor Authentication" %}
-    </h1>
-    {% if "totp" in MFA_SUPPORTED_TYPES %}
-        {% element panel %}
-            {% slot title %}
-                {% translate "Authenticator App" %}
-            {% endslot %}
-            {% slot body %}
-                {% if authenticators.totp %}
-                    {% element p %}
-                        {% translate "Authentication using an authenticator app is active." %}
-                    {% endelement %}
-                {% else %}
-                    {% element p %}
-                        {% translate "An authenticator app is not active." %}
-                    {% endelement %}
-                {% endif %}
-            {% endslot %}
-            {% slot actions %}
-                {% url 'mfa_deactivate_totp' as deactivate_url %}
-                {% url 'mfa_activate_totp' as activate_url %}
-                {% if authenticators.totp %}
-                    {% element button href=deactivate_url tags="danger,delete,panel" %}
-                        {% translate "Deactivate" %}
-                    {% endelement %}
-                {% else %}
-                    {% element button href=activate_url tags="panel" %}
-                        {% translate "Activate" %}
-                    {% endelement %}
-                {% endif %}
-            {% endslot %}
-        {% endelement %}
-    {% endif %}
-    {% if "webauthn" in MFA_SUPPORTED_TYPES %}
-        {% element panel %}
-            {% slot title %}
-                {% translate "Security Keys" %}
-            {% endslot %}
-            {% slot body %}
-                {% if authenticators.webauthn|length %}
-                    {% element p %}
-                        {% blocktranslate count count=authenticators.webauthn|length %}You have added {{ count }} security key.{% plural %}You have added {{ count }} security keys.{% endblocktranslate %}
-                    {% endelement %}
-                {% else %}
-                    {% element p %}
-                        {% translate "No security keys have been added." %}
-                    {% endelement %}
-                {% endif %}
-            {% endslot %}
-            {% slot actions %}
-                {% if authenticators.webauthn|length %}
-                    {% url 'mfa_list_webauthn' as webauthn_list_url %}
-                    {% element button href=webauthn_list_url %}
-                        {% translate "Manage" %}
-                    {% endelement %}
-                {% else %}
-                    {% url 'mfa_add_webauthn' as webauthn_add_url %}
-                    {% element button href=webauthn_add_url %}
-                        {% translate "Add" %}
-                    {% endelement %}
-                {% endif %}
-            {% endslot %}
-        {% endelement %}
-    {% endif %}
-    {% if "recovery_codes" in MFA_SUPPORTED_TYPES %}
-        {% with total_count=authenticators.recovery_codes.generate_codes|length unused_count=authenticators.recovery_codes.get_unused_codes|length %}
-            {% element panel %}
-                {% slot title %}
-                    {% translate "Recovery Codes" %}
-                {% endslot %}
-                {% slot body %}
-                    {% if authenticators.recovery_codes %}
-                        {% element p %}
-                            {% blocktranslate count unused_count=unused_count %}There is {{ unused_count }} out of {{ total_count }} recovery codes available.{% plural %}There are {{ unused_count }} out of {{ total_count }} recovery codes available.{% endblocktranslate %}
-                        {% endelement %}
-                    {% else %}
-                        {% element p %}
-                            {% translate "No recovery codes set up." %}
-                        {% endelement %}
-                    {% endif %}
-                {% endslot %}
-                {% if is_mfa_enabled %}
-                    {% if authenticators.recovery_codes %}
-                        {% if unused_count > 0 %}
-                            {% slot actions %}
-                                {% url 'mfa_view_recovery_codes' as view_url %}
-                                {% element button href=view_url tags="panel" %}
-                                    {% translate "View" %}
-                                {% endelement %}
-                            {% endslot %}
-                            {% slot actions %}
-                                {% url 'mfa_download_recovery_codes' as download_url %}
-                                {% element button href=download_url tags="secondary,panel" %}
-                                    {% translate "Download" %}
-                                {% endelement %}
-                            {% endslot %}
-                        {% endif %}
-                    {% endif %}
-                    {% slot actions %}
-                        {% url 'mfa_generate_recovery_codes' as generate_url %}
-                        {% element button href=generate_url tags="secondary,panel" %}
-                            {% translate "Generate" %}
-                        {% endelement %}
-                    {% endslot %}
-                {% endif %}
-            {% endelement %}
-        {% endwith %}
-    {% endif %}
-  </div>
+{% extends "account/auth_base.html" %}
+{% load allauth i18n %}
+
+{% block headtitle %}| {% trans "Two-Factor Authentication" %}{% endblock headtitle %}
+
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="mfa" %}{% endblock auth_icon %}
+
+{% block auth_title %}{% trans "Two-Factor Authentication" %}{% endblock auth_title %}
+
+{% block auth_subtitle %}
+<p class="m-0 mt-1 w-full text-base leading-6 text-text-muted">{% trans "Add an extra layer of security to your account when signing in." %}</p>
+{% endblock auth_subtitle %}
+
+{% block auth_body %}
+<div class="flex w-full flex-col">
+  {% if "totp" in MFA_SUPPORTED_TYPES %}
+    <div class="flex flex-col gap-3 border-b border-border-divider py-6 first:pt-0">
+      <div class="flex flex-col gap-1 text-left">
+        <h2 class="m-0 text-base font-medium leading-6 text-text-strong">{% translate "Authenticator App" %}</h2>
+        <p class="m-0 text-sm leading-5 text-text-muted">
+          {% if authenticators.totp %}{% translate "Authentication using an authenticator app is active." %}{% else %}{% translate "An authenticator app is not active." %}{% endif %}
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        {% if authenticators.totp %}
+          <a href="{% url 'mfa_deactivate_totp' %}" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% translate "Deactivate" %}</a>
+        {% else %}
+          <a href="{% url 'mfa_activate_totp' %}" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% translate "Activate" %}</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if "webauthn" in MFA_SUPPORTED_TYPES %}
+    <div class="flex flex-col gap-3 border-b border-border-divider py-6 first:pt-0">
+      <div class="flex flex-col gap-1 text-left">
+        <h2 class="m-0 text-base font-medium leading-6 text-text-strong">{% translate "Security Keys" %}</h2>
+        <p class="m-0 text-sm leading-5 text-text-muted">
+          {% if authenticators.webauthn|length %}{% blocktranslate count count=authenticators.webauthn|length %}You have added {{ count }} security key.{% plural %}You have added {{ count }} security keys.{% endblocktranslate %}{% else %}{% translate "No security keys have been added." %}{% endif %}
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        {% if authenticators.webauthn|length %}
+          <a href="{% url 'mfa_list_webauthn' %}" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% translate "Manage" %}</a>
+        {% else %}
+          <a href="{% url 'mfa_add_webauthn' %}" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% translate "Add" %}</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if "recovery_codes" in MFA_SUPPORTED_TYPES %}
+    {% with total_count=authenticators.recovery_codes.generate_codes|length unused_count=authenticators.recovery_codes.get_unused_codes|length %}
+    <div class="flex flex-col gap-3 border-b border-border-divider py-6 first:pt-0 last:border-b-0 last:pb-0">
+      <div class="flex flex-col gap-1 text-left">
+        <h2 class="m-0 text-base font-medium leading-6 text-text-strong">{% translate "Recovery Codes" %}</h2>
+        <p class="m-0 text-sm leading-5 text-text-muted">
+          {% if authenticators.recovery_codes %}{% blocktranslate count unused_count=unused_count %}There is {{ unused_count }} out of {{ total_count }} recovery code available.{% plural %}There are {{ unused_count }} out of {{ total_count }} recovery codes available.{% endblocktranslate %}{% else %}{% translate "No recovery codes set up." %}{% endif %}
+        </p>
+      </div>
+      {% if is_mfa_enabled %}
+        <div class="flex flex-wrap gap-3">
+          {% if authenticators.recovery_codes and unused_count > 0 %}
+            <a href="{% url 'mfa_view_recovery_codes' %}" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% translate "View" %}</a>
+            <a href="{% url 'mfa_download_recovery_codes' %}" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% translate "Download" %}</a>
+          {% endif %}
+          <a href="{% url 'mfa_generate_recovery_codes' %}" class="auth-text-link text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% translate "Generate new codes" %}</a>
+        </div>
+      {% endif %}
+    </div>
+    {% endwith %}
+  {% endif %}
 </div>
-{% endblock innercontent %}
+{% endblock auth_body %}

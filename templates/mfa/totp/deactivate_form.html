@@ -1,34 +1,27 @@
-{% extends "base.html" %}
+{% extends "account/auth_base.html" %}
 {% load allauth i18n %}
 
-{% block head_title %}
-    | Deactivate Authenticator App
-{% endblock head_title %}
+{% block headtitle %}| {% trans "Deactivate Authenticator App" %}{% endblock headtitle %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-  <div class="user-action-form-inner">
-    <h1>
-        Deactivate Authenticator App
-    </h1>
-    <p>
-      You are about to deactivate authenticator app based authentication. Are you sure?
-    </p>
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="mfa" %}{% endblock auth_icon %}
 
-    {% url 'mfa_deactivate_totp' as action_url %}
-    {% element form form=form method="post" action=action_url no_visible_fields=True %}
-        {% slot body %}
-            {% csrf_token %}
-            {% element fields form=form %}
-                {{ form.as_p }}
-            {% endelement %}
-        {% endslot %}
-        {% slot actions %}
-          <button class="primaryAction" type="submit">
-            {% trans "Deactivate" %}
-          </button>
-        {% endslot %}
+{% block auth_title %}{% trans "Turn Off Two-Factor Authentication" %}{% endblock auth_title %}
+
+{% block auth_subtitle %}
+<p class="m-0 mt-1 w-full text-base leading-6 text-text-muted">{% trans "You are about to deactivate authenticator app sign-in. Your account will be less protected." %}</p>
+{% endblock auth_subtitle %}
+
+{% block auth_body %}
+<form method="post" action="{% url 'mfa_deactivate_totp' %}" class="flex w-full flex-col items-center gap-6">
+  {% csrf_token %}
+  <div class="hidden">
+    {% element fields form=form %}
     {% endelement %}
   </div>
-</div>
-{% endblock innercontent %}
+
+  <div class="flex w-full flex-col items-center gap-3">
+    <button type="submit" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Deactivate" %}</button>
+    <a href="{% url 'mfa_index' %}" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Cancel" %}</a>
+  </div>
+</form>
+{% endblock auth_body %}

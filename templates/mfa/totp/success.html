@@ -1,35 +1,27 @@
-{% extends "base.html" %}
+{% extends "account/auth_base.html" %}
 {% load allauth i18n %}
 
-{% block head_title %}
-    | Success
-{% endblock head_title %}
+{% block headtitle %}| {% trans "Two-Factor Authentication Enabled" %}{% endblock headtitle %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-  <div class="alert-banner">
-    Two-Factor Authentication Enabled
-  </div>
-  <div class="user-action-form-inner">
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="mfa" %}{% endblock auth_icon %}
 
+{% block auth_title %}{% trans "Two-Factor Authentication Enabled" %}{% endblock auth_title %}
 
-    <h1 style="text-align:center; margin-top: 1em; padding-bottom: 2em;">
-        Your account is now more secure with 2FA.
-    </h1>
+{% block auth_subtitle %}
+<p class="m-0 mt-1 w-full text-base leading-6 text-text-muted">{% trans "Your account is now protected with an extra layer of security." %}</p>
+{% endblock auth_subtitle %}
 
-    <p>
-      Remember:
-    </p>
-
-    <ul>
-      <li>You'll need your authenticator app or a backup code to sign in.</li>
-      <li>Keep your backup codes in a safe place.</li>
-      <li>If you get a new device, you'll need to set up your authenticator app again.</li>
+{% block auth_body %}
+<div class="flex w-full flex-col items-center gap-6">
+  <div class="w-full rounded bg-bg-surface-muted p-4 text-left text-sm leading-5 text-text-secondary">
+    <p class="m-0 mb-2 font-medium text-text-strong">{% trans "Remember" %}</p>
+    <ul class="m-0 list-disc space-y-1 pl-5">
+      <li>{% trans "You'll need your authenticator app or a backup code to sign in." %}</li>
+      <li>{% trans "Keep your backup codes in a safe place." %}</li>
+      <li>{% trans "If you get a new device, you'll need to set up your authenticator app again." %}</li>
     </ul>
-
-    <form method="GET" style="display: flex; justify-content: center;">
-      <button class="primaryAction" formaction="/">Return to Cinemata</button>
-    </form>
   </div>
+
+  <a href="/" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% blocktrans %}Return to {{ PORTAL_NAME }}{% endblocktrans %}</a>
 </div>
-{% endblock innercontent %}
+{% endblock auth_body %}

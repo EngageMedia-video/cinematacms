@@ -1,82 +1,51 @@
-{% extends "base.html" %}
-{% load i18n %}
-{% load allauth %}
+{% extends "account/auth_base.html" %}
+{% load allauth i18n %}
 
-{% block headtitle %} | Recovery Codes {% endblock headtitle %}
+{% block headtitle %}| {% trans "Recovery Codes" %}{% endblock headtitle %}
 
-{% block innercontent %}
-<div class="user-action-form-wrap">
-  <div class="user-action-form-inner">
+{% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="mfa" %}{% endblock auth_icon %}
 
-    {% if "accounts/2fa/totp/activate/" in request.META.HTTP_REFERER %}
-      <h1>Step 3: Save your backup codes</h1>
-    {% else %}
-      <h1>Backup Codes</h1>
-    {% endif %}
+{% block auth_title %}
+{% if "accounts/2fa/totp/activate/" in request.META.HTTP_REFERER %}{% trans "Set Up Two-Factor Authentication" %}{% else %}{% trans "Backup Codes" %}{% endif %}
+{% endblock auth_title %}
 
-    <p>If you lose access to your authenticator app, you can use these
-      backup codes to sign in. Each code can only be used once.
-    </p>
-    {% element p %}
-        {% blocktranslate count unused_count=unused_codes|length %}There is {{ unused_count }} out of {{ total_count }} recovery codes available.{% plural %}There are {{ unused_count }} out of {{ total_count }} recovery codes available.{% endblocktranslate %}
-    {% endelement %}
+{% block auth_subtitle %}
+{% if "accounts/2fa/totp/activate/" in request.META.HTTP_REFERER %}
+<p class="m-0 mt-1 w-full text-base leading-6 text-text-muted">{% trans "Step 3 of 3 — Save these backup codes somewhere safe." %}</p>
+{% else %}
+<p class="m-0 mt-1 w-full text-base leading-6 text-text-muted">{% trans "Use a backup code to sign in if you lose access to your authenticator app. Each code works once." %}</p>
+{% endif %}
+{% endblock auth_subtitle %}
 
-    <div class="recovery-code-div">
-      <div class="recovery-codes">
-        {% for code in unused_codes %}
-          <span>{{ code }}</span>
-        {% endfor %}
-      </div>
-    </div>
+{% block auth_body %}
+<div class="flex w-full flex-col items-center gap-6">
+  {% if "accounts/2fa/totp/activate/" in request.META.HTTP_REFERER %}
+  <p class="m-0 w-full text-center text-sm leading-5 text-text-muted">{% trans "If you lose access to your authenticator app, use one of these codes to sign in. Each code can only be used once." %}</p>
+  {% endif %}
 
-    <div class="recovery-code-buttons">
-      {% if unused_codes %}
-        {% url 'mfa_download_recovery_codes' as download_url %}
-        <a href="{% url 'mfa_download_recovery_codes' %}">
-          {% translate "Download codes" %}
-        </a>
-      {% endif %}
+  <p class="m-0 text-sm leading-5 text-text-secondary">
+    {% blocktranslate count unused_count=unused_codes|length %}{{ unused_count }} of {{ total_count }} recovery code available.{% plural %}{{ unused_count }} of {{ total_count }} recovery codes available.{% endblocktranslate %}
+  </p>
 
-
-      {% url 'mfa_generate_recovery_codes' as generate_url %}
-      <a href="{% url 'mfa_generate_recovery_codes' %}">
-        {% translate "Generate new codes" %}
-      </a>
-    </div>
-
-
-    {% if "accounts/2fa/totp/activate/" in request.META.HTTP_REFERER %}
-      <hr style="margin-bottom:0;" />
-      <form method="GET" action="/accounts/2fa/totp/success"
-      style="display:flex;flex-direction: row-reverse;margin-top:0;">
-        <button class="primaryAction">
-          Complete Setup
-        </button>
-      </form>
-    {% endif %}
+  <div class="w-full rounded-lg border border-border-default bg-bg-surface-muted p-4">
+    <ul class="m-0 grid list-none grid-cols-2 gap-x-6 gap-y-2 p-0 text-center font-mono text-sm tracking-wide text-text-strong">
+      {% for code in unused_codes %}
+        <li>{{ code }}</li>
+      {% endfor %}
+    </ul>
   </div>
+
+  <div class="flex w-full flex-col items-center gap-3">
+    {% if unused_codes %}
+      <a href="{% url 'mfa_download_recovery_codes' %}" class="auth-button-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Download codes" %}</a>
+    {% endif %}
+    <a href="{% url 'mfa_generate_recovery_codes' %}" class="auth-text-link text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Generate new codes" %}</a>
+  </div>
+
+  {% if "accounts/2fa/totp/activate/" in request.META.HTTP_REFERER %}
+    <div class="flex w-full justify-center border-t border-border-divider pt-6">
+      <a href="{% url 'mfa_success' %}" class="auth-button-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus">{% trans "Complete setup" %}</a>
+    </div>
+  {% endif %}
 </div>
-
-<style>
-  .recovery-code-buttons {
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .recovery-code-div {
-    display: flex;
-    justify-content: center;
-    margin-block: 1.25em;
-  }
-
-  .recovery-codes {
-    display: grid;
-    grid-template-columns: auto auto;
-    padding: 1em;
-    text-align: center;
-    width: 30vw;
-    border: 1px solid grey;
-    color: var(--cinemata-pacific-deep-300);
-  }
-</style>
-{% endblock %}
+{% endblock auth_body %}

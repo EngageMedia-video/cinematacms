@@ -9,8 +9,8 @@
 {% block auth_title %}Two-Factor Authentication{% endblock auth_title %}
 
 {% block auth_subtitle %}
-<p id="otp-instruction" class="m-0 mt-1 w-[502px] max-w-[calc(100vw-3rem)] text-base leading-6 text-text-muted sm:max-w-none">Enter the 6-digit code from your authenticator app to continue.</p>
-<p id="recovery-instruction" class="hidden m-0 mt-1 w-[502px] max-w-[calc(100vw-3rem)] text-base leading-6 text-text-muted sm:max-w-none">Enter your 12-digit recovery code to continue.</p>
+<p id="otp-instruction" class="m-0 mt-1 w-full max-w-[502px] text-base leading-6 text-text-muted">Enter the 6-digit code from your authenticator app to continue.</p>
+<p id="recovery-instruction" class="hidden m-0 mt-1 w-full max-w-[502px] text-base leading-6 text-text-muted">Enter your 12-digit recovery code to continue.</p>
 {% endblock auth_subtitle %}
 
 {% block auth_overlay %}
@@ -52,13 +52,13 @@
           {% endelement %}
         </div>
 
-        <div id="otp-input-container" class="flex w-full max-w-[480px] justify-center gap-3 sm:gap-6">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-border-default bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" aria-label="{% trans 'Digit 1' %}">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-border-default bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 2' %}">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-border-default bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 3' %}">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-border-default bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 4' %}">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-border-default bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 5' %}">
-            <input type="text" class="otp-digit h-16 w-12 rounded border border-border-default bg-bg-surface text-center text-2xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:h-20 sm:w-[60px]" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 6' %}">
+        <div id="otp-input-container" class="flex w-full max-w-[480px] justify-center gap-2 sm:gap-3 md:gap-6">
+            <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="one-time-code" aria-label="{% trans 'Digit 1' %}">
+            <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 2' %}">
+            <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 3' %}">
+            <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 4' %}">
+            <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 5' %}">
+            <input type="text" class="otp-digit aspect-[3/4] min-w-0 flex-1 rounded border border-border-default bg-bg-surface text-center text-xl font-medium leading-none text-text-strong outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:text-2xl" maxlength="1" pattern="[0-9]" inputmode="numeric" aria-label="{% trans 'Digit 6' %}">
         </div>
 
         <div id="recovery-input-container" class="!hidden w-full max-w-[466px]">
