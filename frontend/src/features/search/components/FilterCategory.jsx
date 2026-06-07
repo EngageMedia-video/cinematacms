@@ -76,7 +76,12 @@ export function FilterCategory({
 								onChange={() => handleChange(option.value)}
 								{...controlProps}
 								className="w-full items-start"
-								controlClassName="bg-bg-control-unchecked peer-checked:bg-bg-control-checked peer-checked:text-text-control-checked"
+								controlClassName={cn(
+									'bg-bg-control-unchecked ',
+									selectMode !== 'single'
+										? 'peer-checked:bg-bg-control-checked peer-checked:text-text-control-checked'
+										: 'peer-checked:bg-bg-control-checked'
+								)}
 								controlStyle={{ width: 26, height: 26 }}
 								labelClassName="text-text-option"
 							>
