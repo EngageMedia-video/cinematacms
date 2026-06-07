@@ -1037,7 +1037,7 @@ body {
 	--bg-disclosure-content: var(--cinemata-neutral-100);
 	--bg-action-inverse: var(--cinemata-strait-blue-900);
 	--bg-control-unchecked: var(--cinemata-pacific-deep-100);
-	--bg-control-checked: var(--cinemata-pacific-deep-100);
+	--bg-control-checked: var(--cinemata-pacific-deep-700);
 	--bg-chip-active: var(--cinemata-sunset-horizon-400p);
 	--bg-chip: var(--cinemata-strait-blue-100);
 
@@ -1069,7 +1069,7 @@ body {
 	--text-disclosure-trigger: var(--cinemata-pacific-deep-700);
 	--text-action-inverse: var(--cinemata-strait-blue-100);
 	--text-panel-heading: var(--cinemata-pacific-deep-700);
-	--text-control-checked: var(--cinemata-pacific-deep-700);
+	--text-control-checked: var(--cinemata-pacific-deep-100);
 
 	/* Borders */
 	--border-default: var(--cinemata-pacific-deep-200);
