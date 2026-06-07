@@ -86,14 +86,15 @@ export default function ViewerInfoContent(props) {
 	let summary = MediaPageStore.get('media-summary');
 	summary = summary ? summary.trim() : '';
 
-	const hasAboutText = '' !== description;
-	const [isAboutExpanded, setIsAboutExpanded] = useState(false);
-	const [isSummaryClamped, setIsSummaryClamped] = useState(false);
+	const hasSynopsis = '' !== summary;
+	const hasMoreInformationText = '' !== description;
+	const [isInfoExpanded, setIsInfoExpanded] = useState(false);
+	const [isInfoClamped, setIsInfoClamped] = useState(false);
+	const infoDetailsId = useId();
+	const infoTextRef = useRef(null);
 	const [communityImpacts, setCommunityImpacts] = useState(() => MediaPageStore.get('community-impacts'));
 	const [communityImpactSubmitStatus, setCommunityImpactSubmitStatus] = useState('idle');
 	const [communityImpactSubmitError, setCommunityImpactSubmitError] = useState(null);
-	const aboutDetailsId = useId();
-	const summaryTextRef = useRef(null);
 
 	function proceedMediaRemoval() {
 		MediaPageActions.removeMedia();
@@ -165,32 +166,30 @@ export default function ViewerInfoContent(props) {
 	}
 
 	useLayoutEffect(() => {
-		const summaryText = summaryTextRef.current;
+		const infoText = infoTextRef.current;
 
-		if (!summaryText || !hasAboutText || isAboutExpanded) {
-			setIsSummaryClamped(false);
+		if (!infoText || !hasMoreInformationText || isInfoExpanded) {
 			return undefined;
 		}
 
-		function measureSummaryClamp() {
-			const isBelowLg = window.matchMedia('(max-width: 1023.98px)').matches;
-			setIsSummaryClamped(isBelowLg && summaryText.scrollHeight > summaryText.clientHeight + 1);
+		function measureInfoClamp() {
+			setIsInfoClamped(infoText.scrollHeight > infoText.clientHeight + 1);
 		}
 
-		measureSummaryClamp();
-		window.addEventListener('resize', measureSummaryClamp);
+		measureInfoClamp();
+		window.addEventListener('resize', measureInfoClamp);
 
-		const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measureSummaryClamp) : null;
+		const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measureInfoClamp) : null;
 
 		if (resizeObserver) {
-			resizeObserver.observe(summaryText);
+			resizeObserver.observe(infoText);
 		}
 
 		return () => {
-			window.removeEventListener('resize', measureSummaryClamp);
+			window.removeEventListener('resize', measureInfoClamp);
 			resizeObserver?.disconnect();
 		};
-	}, [description, hasAboutText, isAboutExpanded]);
+	}, [description, hasMoreInformationText, isInfoExpanded]);
 
 	const authorLink = formatInnerLink(props.author.url, site.url);
 	const authorThumb = formatInnerLink(props.author.thumb, site.url);
@@ -246,10 +245,6 @@ export default function ViewerInfoContent(props) {
 	}
 
 	const metaFields = [
-		summary && {
-			title: 'Synopsis',
-			value: summary,
-		},
 		languagesContent.length && {
 			title: languagesContent.length > 1 ? 'Languages' : 'Language',
 			value: languagesContent,
@@ -323,26 +318,49 @@ export default function ViewerInfoContent(props) {
 											/>
 										</div>
 
-										{(hasAboutText || metaFields.length) && (
+										{(hasSynopsis || hasMoreInformationText || metaFields.length) && (
 											<div className="mt-6 border-b border-b-border-divider" />
 										)}
 									</>
 								)}
 
-								{hasAboutText && (
+								{hasSynopsis && (
+									<div className="media-content-summary mt-6 flex flex-col gap-3">
+										<Text variant="h6-medium" className="m-0">
+											Log Line / Synopsis
+										</Text>
+
+										<div className="relative">
+											<Text variant="body-16" className="m-0 wrap-break-word">
+												{hasHtmlDescription ? (
+													<span
+														dangerouslySetInnerHTML={{
+															__html: DOMPurify.sanitize(setTimestampAnchors(summary)),
+														}}
+													/>
+												) : (
+													setTimestampAnchors(summary)
+												)}
+											</Text>
+										</div>
+									</div>
+								)}
+
+								{hasMoreInformationText && (
 									<>
 										<div className="media-content-summary mt-6 flex flex-col gap-3">
 											<Text variant="h6-medium" className="m-0">
-												Log Line / Synopsis
+												More Information and Credits
 											</Text>
 
 											<div className="relative">
 												<Text
-													ref={summaryTextRef}
+													ref={infoTextRef}
+													id={infoDetailsId}
 													variant="body-16"
 													className={cn(
-														'm-0',
-														!isAboutExpanded && 'line-clamp-5 lg:line-clamp-none'
+														'm-0 wrap-break-word',
+														!isInfoExpanded && 'line-clamp-4'
 													)}
 												>
 													{hasHtmlDescription ? (
@@ -358,58 +376,46 @@ export default function ViewerInfoContent(props) {
 													)}
 												</Text>
 
-												{!isAboutExpanded && isSummaryClamped && (
-													<>
-														<Text
-															as="button"
-															action="text-button"
-															variant="body-14-bold"
-															color="accent"
-															type="button"
-															aria-controls={aboutDetailsId}
-															aria-expanded="false"
-															onClick={() => setIsAboutExpanded(true)}
-															className="inline align-baseline lg:hidden"
-														>
-															READ MORE
-														</Text>
-													</>
-												)}
-											</div>
-
-											{!isAboutExpanded && !isSummaryClamped && (
-												<>
+												{!isInfoExpanded && isInfoClamped && (
 													<Text
 														as="button"
 														action="text-button"
 														variant="body-14-bold"
 														color="accent"
 														type="button"
-														aria-controls={aboutDetailsId}
+														aria-controls={infoDetailsId}
 														aria-expanded="false"
-														onClick={() => setIsAboutExpanded(true)}
-														className="inline align-baseline lg:hidden"
+														onClick={() => setIsInfoExpanded(true)}
+														className="inline align-baseline"
 													>
 														READ MORE
 													</Text>
-												</>
-											)}
+												)}
+
+												{isInfoExpanded && (
+													<Text
+														as="button"
+														action="text-button"
+														variant="body-14-bold"
+														color="accent"
+														type="button"
+														aria-controls={infoDetailsId}
+														aria-expanded="true"
+														onClick={() => setIsInfoExpanded(false)}
+														className="inline align-baseline"
+													>
+														READ LESS
+													</Text>
+												)}
+											</div>
 										</div>
 										{metaFields.length > 0 && (
-											<div
-												className={cn(
-													'mt-6 border-b border-b-border-divider',
-													!isAboutExpanded && 'hidden lg:block'
-												)}
-											/>
+											<div className="mt-6 border-b border-b-border-divider" />
 										)}
 									</>
 								)}
 
-								<div
-									id={aboutDetailsId}
-									className={cn(hasAboutText && !isAboutExpanded ? 'hidden lg:block' : 'block')}
-								>
+								<div className="block">
 									{metaFields.length > 0 && (
 										<div className="flex flex-col gap-3 mt-6">
 											{metaFields.map((field) => (
@@ -474,22 +480,6 @@ export default function ViewerInfoContent(props) {
 										</div>
 									)}
 								</div>
-
-								{hasAboutText && isAboutExpanded && (
-									<Text
-										as="button"
-										action="text-button"
-										variant="body-14-bold"
-										color="accent"
-										type="button"
-										aria-controls={aboutDetailsId}
-										aria-expanded="true"
-										onClick={() => setIsAboutExpanded(false)}
-										className="mx-auto mt-6 flex lg:hidden"
-									>
-										CLOSE
-									</Text>
-								)}
 							</div>
 						</TabContent>
 						<TabContent title="COMMUNITY IMPACT">
