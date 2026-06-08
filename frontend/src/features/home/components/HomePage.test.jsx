@@ -147,8 +147,9 @@ describe('HomePage', () => {
 		});
 	});
 
-	it('FeaturedByCuratorsRow renders when recommended data is seeded', async () => {
-		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, [RECOMMENDED_MEDIA]);
+	it('FeaturedByCuratorsRow renders the remaining featured media after the hero', async () => {
+		// The hero consumes featured[0] (FEATURED_MEDIA); the row renders featured.slice(1).
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_MEDIA, RECOMMENDED_MEDIA]);
 		const { container } = render(<HomePage />);
 
 		expect(await screen.findByText('Recommended Film')).toBeInTheDocument();

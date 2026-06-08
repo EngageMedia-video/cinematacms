@@ -90,7 +90,10 @@ describe('HomePage accessibility baseline', () => {
 	});
 
 	it('expand toggle button has aria-expanded attribute', () => {
-		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, [RECOMMENDED_MEDIA]);
+		// The curators row carries the expandable description and only renders when
+		// there is featured media beyond the hero. Seed two featured items so the
+		// hero takes the first and the row renders the second.
+		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_WITH_XSS, RECOMMENDED_MEDIA]);
 		render(<HomePage />);
 		const expandBtn = screen.getByRole('button', { name: 'READ MORE' });
 		expect(expandBtn).toHaveAttribute('aria-expanded', 'false');
