@@ -2,7 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import homeQueryClient from '../queryClient';
 import { HeroSection } from './HeroSection';
 import { SectionRow } from './SectionRow';
-import { useRecommendedMedia } from '../hooks/useRecommendedMedia';
+import { useFeaturedMedia } from '../hooks/useFeaturedMedia';
 import { useRecentMedia } from '../hooks/useRecentMedia';
 import { useIndexFeaturedPlaylists } from '../hooks/useIndexFeaturedPlaylists';
 import { usePlaylistMedia } from '../hooks/usePlaylistMedia';
@@ -22,13 +22,15 @@ function getHomepagePlaylistRowKey(playlist, index) {
 }
 
 function FeaturedByCuratorsRow() {
-	const { data, isLoading, isError } = useRecommendedMedia();
-	const items = normalizeMediaList(data);
+	const { data, isLoading, isError } = useFeaturedMedia();
+	// The hero shows featured[0]; this row shows the remaining featured media,
+	// matching the pre-modern home (featuredVideos.slice(1)).
+	const items = normalizeMediaList(data).slice(1);
 
 	return (
 		<SectionRow items={items} isLoading={isLoading} isError={isError}>
 			<div className="flex flex-col gap-2">
-				<SectionRow.Title viewAllHref="/recommended">Featured by Curators</SectionRow.Title>
+				<SectionRow.Title viewAllHref="/featured">Featured by Curators</SectionRow.Title>
 				<SectionRow.Description text="Selected by Cinemata's community curators" />
 			</div>
 			<SectionRow.Carousel />
