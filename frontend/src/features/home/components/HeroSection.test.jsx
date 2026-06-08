@@ -43,6 +43,7 @@ const SAMPLE_MEDIA = {
 };
 
 const originalResizeObserver = window.ResizeObserver;
+const originalInnerWidth = window.innerWidth;
 
 function makeClient(seededData) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 60_000 } } });
@@ -68,10 +69,23 @@ describe('HeroSection', () => {
 			writable: true,
 			value: originalResizeObserver,
 		});
+		Object.defineProperty(window, 'innerWidth', {
+			configurable: true,
+			writable: true,
+			value: originalInnerWidth,
+		});
 		vi.restoreAllMocks();
 	});
 
 	function mockHeroWidth(width) {
+		// Two-column layout requires both a desktop viewport and a container that
+		// clears the floor, so mock the viewport alongside the container width.
+		Object.defineProperty(window, 'innerWidth', {
+			configurable: true,
+			writable: true,
+			value: Math.max(width, 1366),
+		});
+
 		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
 			bottom: 0,
 			height: 0,
@@ -154,11 +168,15 @@ describe('HeroSection', () => {
 		await waitFor(() => expect(region).toHaveClass('flex-row'));
 
 		const player = screen.getByTestId('hero-video-player');
-		expect(player.parentElement).toHaveClass('h-[440px]');
 		expect(player.parentElement).toHaveClass('aspect-auto');
+		// The player frame keeps a fixed 16:9 height; the card uses the same value as a
+		// minHeight floor so the two columns match without the player letterboxing.
+		expect(player.parentElement).toHaveStyle({ height: '440px' });
 		expect(player.parentElement.parentElement).toHaveClass('flex-1');
-		expect(screen.getByRole('article').parentElement).toHaveClass('w-[466px]');
-		expect(screen.getByRole('article').parentElement).toHaveClass('h-[440px]');
+		expect(screen.getByRole('article').parentElement).toHaveClass('shrink-0');
+		// The card width is fixed; its height is a floor (minHeight), so the card
+		// grows past the player height when the synopsis is long instead of clipping.
+		expect(screen.getByRole('article').parentElement).toHaveStyle({ width: '466px', minHeight: '440px' });
 	});
 
 	it('uses the light mode Figma color mapping for the metadata card', () => {
