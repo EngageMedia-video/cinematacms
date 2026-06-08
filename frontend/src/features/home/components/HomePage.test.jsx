@@ -113,7 +113,9 @@ describe('HomePage', () => {
 
 		expect(track).toHaveClass('mx-auto');
 		expect(track).toHaveClass('max-w-[1515px]');
-		expect(track).toHaveClass('px-[27px]');
+		// Horizontal padding comes from .app-layout__slot--home, not the track, so the
+		// homepage inset matches the media page instead of doubling up.
+		expect(track).not.toHaveClass('px-[27px]');
 	});
 
 	it('does not promote the hero rail to a page h1', () => {

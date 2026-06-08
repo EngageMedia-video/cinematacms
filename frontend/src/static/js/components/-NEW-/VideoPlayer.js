@@ -60,6 +60,93 @@ export function formatInnerLink(url, baseUrl) {
 	return link.toString();
 }
 
+// YouTube-style fullscreen orientation. Landscape videos
+// rotate the fullscreen view to landscape; portrait videos stay portrait. This
+// gives the control bar enough width on phones (the cramped-controls fix).
+//
+// Platform split:
+// - iOS Safari: video.js already has a native fullscreen path (its HTML5 tech
+//   calls webkitEnterFullScreen, presenting the native player, which rotates on
+//   its own). But the package sets preferFullWindow:true, and video.js gates the
+//   native path on `!preferFullWindow` (Player.prototype.requestFullscreen), so
+//   it falls back to a portrait full-window view. Clearing the flag on iOS
+//   restores video.js's own native handler.
+// - Android / desktop use the real Fullscreen API, so screen.orientation.lock()
+//   works while fullscreen; rejections (desktop, user lock) are non-fatal.
+function isIosSafari() {
+	if (typeof navigator === 'undefined') {
+		return false;
+	}
+	const ua = navigator.userAgent || '';
+	// iPadOS 13+ reports as MacIntel with touch points, so detect that too.
+	return /iP(hone|od|ad)/.test(ua) || ('MacIntel' === navigator.platform && (navigator.maxTouchPoints || 0) > 1);
+}
+
+function getVideoOrientationTarget(videoElement) {
+	const w = videoElement?.videoWidth || 0;
+	const h = videoElement?.videoHeight || 0;
+	// Default to landscape until intrinsic dimensions are known.
+	return h > w && h > 0 ? 'portrait' : 'landscape';
+}
+
+export function setupFullscreenOrientation(playerInstance, videoElement) {
+	const player = playerInstance?.player;
+
+	if (!player || 'function' !== typeof player.on || !videoElement) {
+		return;
+	}
+
+	// iOS: restore video.js's own native fullscreen path. video.js calls the
+	// HTML5 tech's enterFullScreen (-> webkitEnterFullScreen), which presents the
+	// native player and rotates to landscape, but only when preferFullWindow is
+	// falsy (Player.requestFullscreen: `tech.supportsFullScreen() &&
+	// !preferFullWindow`). The package sets preferFullWindow:true, forcing the
+	// portrait full-window fallback instead. Clear it on iOS so native runs.
+	if (isIosSafari()) {
+		if (player.options_) {
+			player.options_.preferFullWindow = false;
+		}
+
+		return;
+	}
+
+	// Android / desktop: lock orientation to the video's aspect while fullscreen.
+	const orientation = 'undefined' !== typeof screen ? screen.orientation : null;
+
+	if (!orientation || 'function' !== typeof orientation.lock) {
+		return;
+	}
+
+	const lockToVideo = () => {
+		try {
+			const result = orientation.lock(getVideoOrientationTarget(videoElement));
+			if (result && 'function' === typeof result.catch) {
+				result.catch(() => {});
+			}
+		} catch (_e) {
+			/* lock unsupported in this context */
+		}
+	};
+
+	const unlock = () => {
+		try {
+			orientation.unlock?.();
+		} catch (_e) {
+			/* no-op */
+		}
+	};
+
+	player.on('fullscreenchange', () => {
+		if (player.isFullscreen()) {
+			lockToVideo();
+		} else {
+			unlock();
+		}
+	});
+
+	player.on('dispose', unlock);
+}
+
 export function VideoPlayerError(props) {
 	return (
 		<div className="error-container">
@@ -296,6 +383,8 @@ export function VideoPlayer(props) {
 		if (void 0 !== props.onPlayerInitCallback) {
 			props.onPlayerInitCallback(playerRef.current, videoElement);
 		}
+
+		setupFullscreenOrientation(playerRef.current, videoElement);
 	}
 
 	function unsetPlayer() {

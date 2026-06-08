@@ -67,14 +67,24 @@ vi.mock('../../../static/js/pages/MediaPage/store.js', () => ({
 }));
 
 vi.mock('../../shared/components/MovieItem/MovieItem', () => ({
-	HorizontalMovieItem: ({ title }) => <article>{title}</article>,
+	HorizontalMovieItem: ({ title, badge, badgeColor }) => (
+		<article>
+			{title}
+			{badge ? (
+				<span data-testid="badge" data-badge-color={badgeColor}>
+					{badge}
+				</span>
+			) : null}
+		</article>
+	),
 }));
 
 vi.mock('../../home/utils/mediaList', () => ({
 	getMediaDurationLabel: () => null,
 }));
 
-vi.mock('../utils/mediaCardMetadata', () => ({
+vi.mock('../utils/mediaCardMetadata', async (importOriginal) => ({
+	...(await importOriginal()),
 	buildMetadata: () => [],
 	getAuthorLink: () => null,
 	getAuthorName: () => null,
@@ -130,5 +140,35 @@ describe('RelatedMedia', () => {
 		});
 
 		expect(screen.getByText('Media 5')).toBeVisible();
+	});
+
+	it('shows the first category as a badge, matching the homepage tile', () => {
+		storeMocks.state.mediaData = {
+			related_media: [
+				{
+					friendly_token: 'with-category',
+					title: 'Has Category',
+					url: '/media/with-category',
+					thumbnail_url: '/thumb-a.jpg',
+					categories_info: [
+						{ title: 'Documentary', color: 'bg/secondary' },
+						{ title: 'Experimental', color: 'bg/primary' },
+					],
+				},
+				{
+					friendly_token: 'no-category',
+					title: 'No Category',
+					url: '/media/no-category',
+					thumbnail_url: '/thumb-b.jpg',
+				},
+			],
+		};
+
+		render(<RelatedMedia hideFirst={false} />);
+
+		const badges = screen.getAllByTestId('badge');
+		expect(badges).toHaveLength(1);
+		expect(badges[0]).toHaveTextContent('Documentary');
+		expect(badges[0]).toHaveAttribute('data-badge-color', 'bg/secondary');
 	});
 });

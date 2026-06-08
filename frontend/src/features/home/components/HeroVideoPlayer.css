@@ -15,6 +15,19 @@
 	aspect-ratio: auto;
 }
 
+/*
+ * Real fullscreen (Android/desktop, via the Fullscreen API) must fill the
+ * viewport. The base rule above pins the player to its hero card with
+ * position:absolute, which would otherwise trap it inside the card. iOS uses
+ * the native video player for fullscreen and is unaffected by this.
+ */
+.cinemata-hero-legacy-player .video-js.vjs-mediacms.vjs-fullscreen {
+	position: fixed !important;
+	inset: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+}
+
 .cinemata-hero-legacy-player .video-js.vjs-mediacms.vjs-fluid:not(.vjs-audio-only-mode),
 .cinemata-hero-legacy-player .video-js.vjs-mediacms.vjs-16-9:not(.vjs-audio-only-mode),
 .cinemata-hero-legacy-player .video-js.vjs-mediacms.vjs-4-3:not(.vjs-audio-only-mode),
@@ -208,5 +221,24 @@
 		height: 48px !important;
 		bottom: 24px !important;
 		left: 24px !important;
+	}
+
+	/*
+	 * On narrow viewports the control bar holds play, ±5s seek, volume and time on
+	 * the left plus subtitles, settings and fullscreen on the right. The default
+	 * 12px side insets cost 24px of usable width, which pushed the right group into
+	 * the left group and hid CC/settings/fullscreen. Reduce the insets to 4px to
+	 * reclaim 16px so the right controls clear the left group.
+	 */
+	.cinemata-hero-legacy-player .video-js.vjs-mediacms .vjs-control-bar {
+		right: 4px !important;
+		left: 4px !important;
+		max-width: calc(100% - 8px);
+	}
+
+	/* Keep the bottom gradient reaching the player edges after the inset change. */
+	.cinemata-hero-legacy-player .video-js.vjs-mediacms .vjs-bottom-bg {
+		right: -4px !important;
+		left: -4px !important;
 	}
 }

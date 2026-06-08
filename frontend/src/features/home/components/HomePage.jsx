@@ -11,7 +11,11 @@ import { normalizeMediaList } from '../utils/mediaList';
 const HOME_PLAYLIST_ITEM_LIMIT = 20;
 const HOME_RECENT_ITEM_LIMIT = 20;
 const PLAYLIST_LOADING_ROW_COUNT = 2;
-const HOME_TRACK_CLASS = 'mx-auto min-h-screen w-full max-w-[1515px] space-y-6 px-[27px]';
+// Horizontal padding is supplied by .app-layout__slot--home (16/24/32px responsive),
+// matching the media page inset. The track only centers and caps width, so it must
+// not add its own horizontal padding (doing so previously doubled the inset to 43px
+// on mobile and squeezed the hero player below the control bar's required width).
+const HOME_TRACK_CLASS = 'mx-auto min-h-screen w-full max-w-[1515px] space-y-6';
 
 function getHomepagePlaylistRowKey(playlist, index) {
 	const parts = [playlist.api_url, playlist.url, playlist.ordering, playlist.title, index].filter(

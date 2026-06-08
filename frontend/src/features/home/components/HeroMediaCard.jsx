@@ -55,7 +55,7 @@ function AuthorName({ href, name }) {
 	);
 }
 
-export function HeroMediaCard({ className = '', media, style, isDesktop = false }) {
+export function HeroMediaCard({ className = '', media, style }) {
 	if (!media) {
 		return null;
 	}
@@ -70,13 +70,13 @@ export function HeroMediaCard({ className = '', media, style, isDesktop = false 
 		<div className={cn('flex min-w-0 flex-col', className)} style={style}>
 			<Card
 				className={cn(
-					// justify-between pins the author/country/views block to the card bottom
-					// when the summary is short (the spare height goes into the gap). When the
-					// summary is long there is no spare height, so the groups sit at the gap-4
-					// minimum (16px) and the card grows past its floor without clipping. The
-					// card fills its minHeight floor via flex-1.
-					'flex flex-1 flex-col justify-between gap-4 overflow-hidden px-[22px] pb-6 pt-[22px]',
-					isDesktop ? '' : 'min-h-[360px]'
+					// On desktop the card fills the player-matched minHeight floor (from
+					// heroCardStyle) via flex-1, and justify-between pins the author block to
+					// the bottom while the spare height goes into the gap. In single column
+					// there is no sibling player to match, so no floor is applied and the card
+					// hugs its content: the groups sit at the gap-4 minimum (16px) with no
+					// empty slack, and the card still grows past that when the summary is long.
+					'flex flex-1 flex-col justify-between gap-4 overflow-hidden px-[22px] pb-6 pt-[22px]'
 				)}
 			>
 				<div className="flex min-w-0 flex-col gap-3">

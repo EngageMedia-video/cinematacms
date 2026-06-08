@@ -108,7 +108,8 @@ describe('Carousel — default shape', () => {
 		expect(nextButton).toHaveClass('hidden');
 		expect(nextButton).toHaveClass('md:flex');
 		expect(nextButton).toHaveClass('size-[70px]');
-		expect(nextButton).toHaveClass('-right-8');
+		expect(nextButton).toHaveClass('-right-6');
+		expect(nextButton).toHaveClass('lg:-right-8');
 		expect(nextButton).toHaveClass('text-text-secondary');
 		expect(icon).toBeInTheDocument();
 	});

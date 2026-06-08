@@ -9,7 +9,7 @@ import { HorizontalMovieItem } from '../../shared/components/MovieItem/MovieItem
 import { Switch } from '../../shared/components/Switch/Switch';
 import { Text } from '../../shared/components/Text/Text';
 import { getMediaDurationLabel } from '../../home/utils/mediaList';
-import { buildMetadata, getAuthorLink, getAuthorName } from '../utils/mediaCardMetadata';
+import { buildMetadata, getAuthorLink, getAuthorName, getCategoryBadge } from '../utils/mediaCardMetadata';
 
 function readAutoPlayMedia() {
 	const md = MediaPageStore.get('media-data');
@@ -66,6 +66,7 @@ export function AutoPlay() {
 				subtitle={getAuthorName(media)}
 				subtitleLink={getAuthorLink(media)}
 				metadata={buildMetadata(media, hideViews)}
+				{...getCategoryBadge(media)}
 			/>
 		</div>
 	);

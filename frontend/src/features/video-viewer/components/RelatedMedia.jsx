@@ -6,7 +6,7 @@ import MediaPageStore from '../../../static/js/pages/MediaPage/store.js';
 
 import { HorizontalMovieItem } from '../../shared/components/MovieItem/MovieItem';
 import { getMediaDurationLabel } from '../../home/utils/mediaList';
-import { buildMetadata, getAuthorLink, getAuthorName } from '../utils/mediaCardMetadata';
+import { buildMetadata, getAuthorLink, getAuthorName, getCategoryBadge } from '../utils/mediaCardMetadata';
 
 function readRelatedMedia() {
 	const md = MediaPageStore.get('media-data');
@@ -89,6 +89,7 @@ export function RelatedMedia({ hideFirst = true }) {
 					subtitle={getAuthorName(item)}
 					subtitleLink={getAuthorLink(item)}
 					metadata={buildMetadata(item, hideViews)}
+					{...getCategoryBadge(item)}
 				/>
 			))}
 
