@@ -65,10 +65,12 @@ export function formatInnerLink(url, baseUrl) {
 // gives the control bar enough width on phones (the cramped-controls fix).
 //
 // Platform split:
-// - iOS Safari has no element Fullscreen API and cannot lock orientation, so the
-//   fullscreen button is routed to the native video player (webkitEnterFullscreen),
-//   which rotates on its own. The package sets playsinline + preferFullWindow,
-//   which otherwise keeps iOS in a portrait full-window view.
+// - iOS Safari: video.js already has a native fullscreen path (its HTML5 tech
+//   calls webkitEnterFullScreen, presenting the native player, which rotates on
+//   its own). But the package sets preferFullWindow:true, and video.js gates the
+//   native path on `!preferFullWindow` (Player.prototype.requestFullscreen), so
+//   it falls back to a portrait full-window view. Clearing the flag on iOS
+//   restores video.js's own native handler.
 // - Android / desktop use the real Fullscreen API, so screen.orientation.lock()
 //   works while fullscreen; rejections (desktop, user lock) are non-fatal.
 function isIosSafari() {
@@ -94,31 +96,16 @@ export function setupFullscreenOrientation(playerInstance, videoElement) {
 		return;
 	}
 
-	// iOS: route every fullscreen request to the native video player, which
-	// rotates to landscape on its own. Overriding the player's own
-	// requestFullscreen/exitFullscreen is more robust than intercepting the
-	// button's DOM click, which can be missed on touch or after a re-render and
-	// does not cover programmatic requests. The control bar toggle, keyboard
-	// shortcut, and the watch page's restore-fullscreen logic all funnel through
-	// these two methods.
-	if (isIosSafari() && 'function' === typeof videoElement.webkitEnterFullscreen) {
-		player.requestFullscreen = () => {
-			try {
-				videoElement.webkitEnterFullscreen();
-			} catch (_e) {
-				/* native fullscreen unavailable; ignore */
-			}
-			return Promise.resolve();
-		};
-
-		player.exitFullscreen = () => {
-			try {
-				videoElement.webkitExitFullscreen?.();
-			} catch (_e) {
-				/* no-op */
-			}
-			return Promise.resolve();
-		};
+	// iOS: restore video.js's own native fullscreen path. video.js calls the
+	// HTML5 tech's enterFullScreen (-> webkitEnterFullScreen), which presents the
+	// native player and rotates to landscape, but only when preferFullWindow is
+	// falsy (Player.requestFullscreen: `tech.supportsFullScreen() &&
+	// !preferFullWindow`). The package sets preferFullWindow:true, forcing the
+	// portrait full-window fallback instead. Clear it on iOS so native runs.
+	if (isIosSafari()) {
+		if (player.options_) {
+			player.options_.preferFullWindow = false;
+		}
 
 		return;
 	}
