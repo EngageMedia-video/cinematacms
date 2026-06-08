@@ -15,6 +15,19 @@
 	aspect-ratio: auto;
 }
 
+/*
+ * Real fullscreen (Android/desktop, via the Fullscreen API) must fill the
+ * viewport. The base rule above pins the player to its hero card with
+ * position:absolute, which would otherwise trap it inside the card. iOS uses
+ * the native video player for fullscreen and is unaffected by this.
+ */
+.cinemata-hero-legacy-player .video-js.vjs-mediacms.vjs-fullscreen {
+	position: fixed !important;
+	inset: 0 !important;
+	width: 100% !important;
+	height: 100% !important;
+}
+
 .cinemata-hero-legacy-player .video-js.vjs-mediacms.vjs-fluid:not(.vjs-audio-only-mode),
 .cinemata-hero-legacy-player .video-js.vjs-mediacms.vjs-16-9:not(.vjs-audio-only-mode),
 .cinemata-hero-legacy-player .video-js.vjs-mediacms.vjs-4-3:not(.vjs-audio-only-mode),
