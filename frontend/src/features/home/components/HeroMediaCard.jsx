@@ -55,7 +55,7 @@ function AuthorName({ href, name }) {
 	);
 }
 
-export function HeroMediaCard({ className = '', media }) {
+export function HeroMediaCard({ className = '', media, style, isDesktop = false }) {
 	if (!media) {
 		return null;
 	}
@@ -67,8 +67,18 @@ export function HeroMediaCard({ className = '', media }) {
 	const mediaHref = getMediaHref(media);
 
 	return (
-		<div className={cn('w-full min-w-0', className)}>
-			<Card className="flex h-full min-h-[360px] flex-col justify-between gap-8 overflow-hidden px-[22px] pb-6 pt-[22px] lg:min-h-0">
+		<div className={cn('flex min-w-0 flex-col', className)} style={style}>
+			<Card
+				className={cn(
+					// justify-between pins the author/country/views block to the card bottom
+					// when the summary is short (the spare height goes into the gap). When the
+					// summary is long there is no spare height, so the groups sit at the gap-4
+					// minimum (16px) and the card grows past its floor without clipping. The
+					// card fills its minHeight floor via flex-1.
+					'flex flex-1 flex-col justify-between gap-4 overflow-hidden px-[22px] pb-6 pt-[22px]',
+					isDesktop ? '' : 'min-h-[360px]'
+				)}
+			>
 				<div className="flex min-w-0 flex-col gap-3">
 					<Text as="h2" variant="h6" className="m-0 max-w-full overflow-hidden break-words text-text-primary">
 						{mediaHref ? (
@@ -87,7 +97,13 @@ export function HeroMediaCard({ className = '', media }) {
 						<Text
 							variant="body-14"
 							color="description"
-							className="m-0 max-h-[260px] overflow-hidden lg:max-h-[280px]"
+							// The card height is a floor, not a cap (see heroCardStyle and
+							// the flex-1 card), so the full text always renders and the card
+							// grows when needed. The displayed field is `summary`, capped at
+							// 60 words server-side (files/forms.py clean_summary);
+							// `description` is the rare unbounded fallback used only when
+							// summary is empty.
+							className="m-0"
 						>
 							{description}
 						</Text>
@@ -122,9 +138,9 @@ export function HeroMediaCard({ className = '', media }) {
 	);
 }
 
-export function HeroMediaCardSkeleton({ className = '' }) {
+export function HeroMediaCardSkeleton({ className = '', style }) {
 	return (
-		<Card as="div" className={cn('w-full min-w-0 p-[22px]', className)}>
+		<Card as="div" className={cn('min-w-0 p-[22px]', className)} style={style}>
 			<div className="h-8 w-3/4 animate-pulse rounded bg-bg-skeleton" />
 			<div className="mt-3 h-4 w-1/2 animate-pulse rounded bg-bg-skeleton" />
 		</Card>

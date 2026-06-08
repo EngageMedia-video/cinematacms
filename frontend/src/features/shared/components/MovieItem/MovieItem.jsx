@@ -121,19 +121,23 @@ function MoviePoster({
 				decoding="async"
 			/>
 
-			{badge ? (
-				<Badge color={badgeColor} className="absolute bottom-3 left-3" data-movie-item-badge>
-					{badge}
-				</Badge>
-			) : null}
+			{badge || duration ? (
+				<div className="absolute inset-x-2 bottom-2 flex items-center gap-2">
+					{badge ? (
+						<Badge color={badgeColor} data-movie-item-badge>
+							{badge}
+						</Badge>
+					) : null}
 
-			{duration ? (
-				<span
-					className="absolute right-1 bottom-1 inline-flex rounded-[2px] bg-bg-overlay-dark px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-text-on-chrome"
-					data-movie-item-duration
-				>
-					{duration}
-				</span>
+					{duration ? (
+						<span
+							className="ml-auto inline-flex rounded-[2px] bg-bg-overlay-dark px-1 py-[2px] font-sans text-[12px] font-medium leading-[13.5px] tracking-[0.5px] text-text-on-chrome"
+							data-movie-item-duration
+						>
+							{duration}
+						</span>
+					) : null}
+				</div>
 			) : null}
 
 			{showTopRightIcon && iconName ? (

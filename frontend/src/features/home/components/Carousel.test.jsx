@@ -158,6 +158,33 @@ describe('Carousel — default shape', () => {
 		expect(dot.firstElementChild).toHaveClass('size-2');
 	});
 
+	it('caps page dots at seven so many pages cannot overflow the row', () => {
+		render(<Carousel items={makeItems(20)} visibleCount={1} />);
+
+		const dots = screen.getAllByRole('button', { name: /^Go to page \d+$/ });
+		expect(dots).toHaveLength(7);
+		expect(screen.getByRole('button', { name: 'Go to page 1' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Go to page 8' })).toBeNull();
+	});
+
+	it('shrinks the boundary dot when more pages exist beyond the window', () => {
+		render(<Carousel items={makeItems(20)} visibleCount={1} />);
+
+		const trailingEdge = screen.getByRole('button', { name: 'Go to page 7' });
+		expect(trailingEdge.firstElementChild).toHaveClass('size-1.5');
+	});
+
+	it('slides the dot window to keep the active page in view', async () => {
+		const user = userEvent.setup();
+		render(<Carousel items={makeItems(20)} visibleCount={1} />);
+
+		await user.click(screen.getByRole('button', { name: 'Go to page 7' }));
+
+		expect(screen.getByRole('button', { name: 'Go to page 7' })).toHaveAttribute('aria-current', 'true');
+		expect(screen.getByRole('button', { name: 'Go to page 10' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Go to page 1' })).toBeNull();
+	});
+
 	it('defaults to one visible item on phone viewports', () => {
 		mockViewportWidth(390);
 		render(<Carousel items={makeItems(4)} />);

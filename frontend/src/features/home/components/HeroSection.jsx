@@ -12,16 +12,73 @@ import HeroPlayButtonIcon from '../../shared/icons/hero-play-button.svg?react';
 
 const HeroContext = createContext(null);
 
-const HERO_DESKTOP_MIN_WIDTH = 1175;
+// Two-column layout engages by VIEWPORT width at the common 1366px laptop width.
+// The common desktop CSS widths are 1280, 1366, 1440, 1536, 1920; 1366 and above
+// render two columns (1366, 1440, 1536, 1920) and below it (1024, 1280) renders
+// one column in both sidebar states. Two columns at 1280 left the text card too
+// narrow, so the switch is set at 1366 where the card has more room. A
+// container-width threshold cannot separate the close cases reliably: 1024 with
+// the sidebar closed (~906px container) and 1280 with the sidebar open (~922px)
+// are only ~16px apart. The container is still measured with a ResizeObserver to
+// size the player and card, and must clear a floor (the `md` breakpoint, 768px)
+// so two columns never render in a container too narrow to hold them.
+const HERO_DESKTOP_MIN_VIEWPORT = 1366;
+const HERO_CONTAINER_MIN_WIDTH = 768;
+const HERO_GAP_PX = 26;
+const HERO_CARD_MIN_WIDTH_PX = 320;
+const HERO_CARD_MAX_WIDTH_PX = 466;
+const HERO_CARD_WIDTH_RATIO = 0.36;
+const HERO_HEIGHT_MIN_PX = 300;
+const HERO_HEIGHT_MAX_PX = 440;
+const HERO_PLAYER_ASPECT = 9 / 16;
 const HERO_LAYOUT = 'flex w-full flex-col gap-6';
 const HERO_LAYOUT_DESKTOP = 'flex-row items-start gap-[26px]';
 const PLAYER_AREA = 'w-full min-w-0';
 const PLAYER_AREA_DESKTOP = 'flex-1';
 const PLAYER_FRAME = 'relative aspect-video w-full overflow-hidden rounded-[6px] bg-site-player-canvas';
-const PLAYER_FRAME_DESKTOP = 'h-[440px] aspect-auto';
+const PLAYER_FRAME_DESKTOP = 'aspect-auto';
 const PLAYER_CLASS = 'relative h-full w-full overflow-hidden rounded-[6px] bg-site-player-canvas';
-const CARD_AREA = 'w-full min-w-0';
-const CARD_AREA_DESKTOP = 'h-[440px] w-[466px] shrink-0';
+// The card width is set via the computed inline style on desktop. Tailwind
+// utilities are generated with !important in this project, so `w-full` would
+// override that inline width and collapse the player. The card therefore takes
+// `w-full` only on mobile (CARD_AREA_MOBILE) and relies on the inline width plus
+// `shrink-0` on desktop.
+const CARD_AREA = 'min-w-0';
+const CARD_AREA_MOBILE = 'w-full';
+const CARD_AREA_DESKTOP = 'shrink-0';
+
+// Fluid two-column metrics. The card width scales with the container (clamped to
+// a 320-466px band) and the shared player/card height is derived from the
+// remaining player width at a 16:9 ratio (clamped to 300-440px). This keeps the
+// player at a correct aspect ratio at every desktop width instead of forcing a
+// fixed 440px height that squashes the video on narrower screens.
+function computeHeroDesktopMetrics(containerWidth) {
+	const cardWidth = Math.round(
+		Math.min(HERO_CARD_MAX_WIDTH_PX, Math.max(HERO_CARD_MIN_WIDTH_PX, containerWidth * HERO_CARD_WIDTH_RATIO))
+	);
+	const playerWidth = containerWidth - cardWidth - HERO_GAP_PX;
+	const height = Math.round(
+		Math.min(HERO_HEIGHT_MAX_PX, Math.max(HERO_HEIGHT_MIN_PX, playerWidth * HERO_PLAYER_ASPECT))
+	);
+	return { cardWidth, height };
+}
+
+function heroPlayerFrameStyle(metrics) {
+	// Fixed height keeps the player at a true 16:9 frame (the height is derived from
+	// the player width at a 9/16 ratio in computeHeroDesktopMetrics). The card uses
+	// the same value as a minHeight floor, so the two columns match while the player
+	// never letterboxes.
+	return metrics ? { height: metrics.height } : undefined;
+}
+
+function heroCardStyle(metrics) {
+	// The card width is fixed, but the height is a floor, not a cap. It matches the
+	// player height when the synopsis is short and grows past it when the text is
+	// longer, so the card never clips the description or the author/country/views
+	// block. The wrapper is a flex column and the card is flex-1 (see HeroMediaCard),
+	// which lets the card fill the floor yet expand to its content height.
+	return metrics ? { width: metrics.cardWidth, minHeight: metrics.height } : undefined;
+}
 
 class HeroPlayerErrorBoundary extends Component {
 	constructor(props) {
@@ -58,29 +115,41 @@ function useHeroMediaDetail(media) {
 
 function useHeroDesktopLayout() {
 	const rootRef = useRef(null);
-	const [isDesktopLayout, setIsDesktopLayout] = useState(false);
+	const [containerWidth, setContainerWidth] = useState(0);
+	const [viewportWidth, setViewportWidth] = useState(0);
 
 	useLayoutEffect(() => {
 		const root = rootRef.current;
 		if (!root) return undefined;
 
 		const updateLayout = () => {
-			setIsDesktopLayout(root.getBoundingClientRect().width >= HERO_DESKTOP_MIN_WIDTH);
+			setContainerWidth(root.getBoundingClientRect().width);
+			setViewportWidth(window.innerWidth);
 		};
 
 		updateLayout();
 
+		let resizeObserver;
 		if ('undefined' !== typeof ResizeObserver) {
-			const resizeObserver = new ResizeObserver(updateLayout);
+			resizeObserver = new ResizeObserver(updateLayout);
 			resizeObserver.observe(root);
-			return () => resizeObserver.disconnect();
 		}
-
 		window.addEventListener('resize', updateLayout);
-		return () => window.removeEventListener('resize', updateLayout);
+		return () => {
+			if (resizeObserver) {
+				resizeObserver.disconnect();
+			}
+			window.removeEventListener('resize', updateLayout);
+		};
 	}, []);
 
-	return { rootRef, isDesktopLayout };
+	const isDesktopLayout = viewportWidth >= HERO_DESKTOP_MIN_VIEWPORT && containerWidth >= HERO_CONTAINER_MIN_WIDTH;
+	const desktopMetrics = useMemo(
+		() => (isDesktopLayout ? computeHeroDesktopMetrics(containerWidth) : null),
+		[isDesktopLayout, containerWidth]
+	);
+
+	return { rootRef, isDesktopLayout, desktopMetrics };
 }
 
 function PlayAffordance() {
@@ -146,11 +215,14 @@ function Player() {
 	const playerKey = playback.sources[0]?.src ?? poster ?? media?.friendly_token;
 
 	if (!ctx || !media) return null;
-	const { isDesktopLayout, isHeroDetailError, retryHeroDetail } = ctx;
+	const { isDesktopLayout, desktopMetrics, isHeroDetailError, retryHeroDetail } = ctx;
 
 	return (
 		<div className={cn(PLAYER_AREA, isDesktopLayout ? PLAYER_AREA_DESKTOP : '')}>
-			<div className={cn(PLAYER_FRAME, isDesktopLayout ? PLAYER_FRAME_DESKTOP : '')}>
+			<div
+				className={cn(PLAYER_FRAME, isDesktopLayout ? PLAYER_FRAME_DESKTOP : '')}
+				style={heroPlayerFrameStyle(desktopMetrics)}
+			>
 				{playback.sources.length ? (
 					<HeroPlayerErrorBoundary fallback={<HeroPosterFallback src={poster} />} key={playerKey}>
 						<HeroVideoPlayer
@@ -187,14 +259,21 @@ function Player() {
 function Card() {
 	const ctx = use(HeroContext);
 	if (!ctx) return null;
-	const { media, isDesktopLayout } = ctx;
+	const { media, isDesktopLayout, desktopMetrics } = ctx;
 
-	return <HeroMediaCard media={media} className={cn(CARD_AREA, isDesktopLayout ? CARD_AREA_DESKTOP : '')} />;
+	return (
+		<HeroMediaCard
+			media={media}
+			isDesktop={isDesktopLayout}
+			className={cn(CARD_AREA, isDesktopLayout ? CARD_AREA_DESKTOP : CARD_AREA_MOBILE)}
+			style={heroCardStyle(desktopMetrics)}
+		/>
+	);
 }
 
 export function HeroSection({ children }) {
 	const { data, isLoading, isError, refetch } = useFeaturedMedia();
-	const { rootRef, isDesktopLayout } = useHeroDesktopLayout();
+	const { rootRef, isDesktopLayout, desktopMetrics } = useHeroDesktopLayout();
 
 	const items = normalizeMediaList(data);
 	const listMedia = items[0] ?? null;
@@ -208,8 +287,8 @@ export function HeroSection({ children }) {
 	}, [media?.thumbnail_url]);
 
 	const value = useMemo(
-		() => ({ media, isDesktopLayout, isHeroDetailError, retryHeroDetail }),
-		[media, isDesktopLayout, isHeroDetailError, retryHeroDetail]
+		() => ({ media, isDesktopLayout, desktopMetrics, isHeroDetailError, retryHeroDetail }),
+		[media, isDesktopLayout, desktopMetrics, isHeroDetailError, retryHeroDetail]
 	);
 
 	if (isError && !media) {
@@ -220,7 +299,10 @@ export function HeroSection({ children }) {
 					aria-label="Featured media"
 				>
 					<div className={cn(PLAYER_AREA, isDesktopLayout ? PLAYER_AREA_DESKTOP : '')}>
-						<div className={cn(PLAYER_FRAME, isDesktopLayout ? PLAYER_FRAME_DESKTOP : '')}>
+						<div
+							className={cn(PLAYER_FRAME, isDesktopLayout ? PLAYER_FRAME_DESKTOP : '')}
+							style={heroPlayerFrameStyle(desktopMetrics)}
+						>
 							<div className="flex h-full w-full items-center justify-center">
 								<button
 									type="button"
@@ -232,7 +314,10 @@ export function HeroSection({ children }) {
 							</div>
 						</div>
 					</div>
-					<HeroMediaCardSkeleton className={cn(CARD_AREA, isDesktopLayout ? CARD_AREA_DESKTOP : '')} />
+					<HeroMediaCardSkeleton
+						className={cn(CARD_AREA, isDesktopLayout ? CARD_AREA_DESKTOP : CARD_AREA_MOBILE)}
+						style={heroCardStyle(desktopMetrics)}
+					/>
 				</section>
 			</div>
 		);
@@ -257,8 +342,12 @@ export function HeroSection({ children }) {
 							'aspect-video rounded-[6px] bg-bg-skeleton animate-pulse',
 							isDesktopLayout ? `${PLAYER_AREA_DESKTOP} ${PLAYER_FRAME_DESKTOP}` : ''
 						)}
+						style={heroPlayerFrameStyle(desktopMetrics)}
 					/>
-					<HeroMediaCardSkeleton className={cn(CARD_AREA, isDesktopLayout ? CARD_AREA_DESKTOP : '')} />
+					<HeroMediaCardSkeleton
+						className={cn(CARD_AREA, isDesktopLayout ? CARD_AREA_DESKTOP : CARD_AREA_MOBILE)}
+						style={heroCardStyle(desktopMetrics)}
+					/>
 				</div>
 			</div>
 		);
