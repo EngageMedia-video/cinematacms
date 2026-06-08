@@ -8,9 +8,18 @@ import { HorizontalMovieItem } from '../../shared/components/MovieItem/MovieItem
 import { getMediaDurationLabel } from '../../home/utils/mediaList';
 import { buildMetadata, getAuthorLink, getAuthorName } from '../utils/mediaCardMetadata';
 
+const DEFAULT_CATEGORY_COLOR = 'bg/primary';
+
 function readRelatedMedia() {
 	const md = MediaPageStore.get('media-data');
 	return md?.related_media?.length ? md.related_media : null;
+}
+
+// The related list shows the first category as a thumbnail badge, matching the
+// homepage tile (MediaTile). The data comes from MediaSerializer.categories_info.
+function getFirstCategory(item) {
+	const categories = Array.isArray(item.categories_info) ? item.categories_info : [];
+	return categories[0] || null;
 }
 
 export function RelatedMedia({ hideFirst = true }) {
@@ -79,18 +88,24 @@ export function RelatedMedia({ hideFirst = true }) {
 
 	return (
 		<div className="flex flex-col gap-size-20 mt-6 items-start">
-			{displayItems.map((item) => (
-				<HorizontalMovieItem
-					key={item.friendly_token || item.url}
-					title={item.title}
-					imageSrc={item.thumbnail_url}
-					link={item.url}
-					duration={getMediaDurationLabel(item)}
-					subtitle={getAuthorName(item)}
-					subtitleLink={getAuthorLink(item)}
-					metadata={buildMetadata(item, hideViews)}
-				/>
-			))}
+			{displayItems.map((item) => {
+				const firstCategory = getFirstCategory(item);
+
+				return (
+					<HorizontalMovieItem
+						key={item.friendly_token || item.url}
+						title={item.title}
+						imageSrc={item.thumbnail_url}
+						link={item.url}
+						duration={getMediaDurationLabel(item)}
+						subtitle={getAuthorName(item)}
+						subtitleLink={getAuthorLink(item)}
+						metadata={buildMetadata(item, hideViews)}
+						badge={firstCategory?.title || ''}
+						badgeColor={firstCategory?.color || DEFAULT_CATEGORY_COLOR}
+					/>
+				);
+			})}
 
 			{hasMoreItems ? <div ref={loadMoreRef} aria-hidden="true" className="h-px w-full" /> : null}
 		</div>
