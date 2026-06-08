@@ -359,7 +359,7 @@ export default function ViewerInfoContent(props) {
 													id={infoDetailsId}
 													variant="body-16"
 													className={cn(
-														'm-0 wrap-break-word',
+														'm-0 whitespace-pre-wrap wrap-break-word',
 														!isInfoExpanded && 'line-clamp-4'
 													)}
 												>
@@ -409,10 +409,11 @@ export default function ViewerInfoContent(props) {
 												)}
 											</div>
 										</div>
-										{metaFields.length > 0 && (
-											<div className="mt-6 border-b border-b-border-divider" />
-										)}
 									</>
+								)}
+
+								{(hasMoreInformationText || hasSynopsis) && metaFields.length > 0 && (
+									<div className="mt-6 border-b border-b-border-divider" />
 								)}
 
 								<div className="block">
