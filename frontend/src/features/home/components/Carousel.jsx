@@ -318,28 +318,68 @@ function CarouselOverlayArrows() {
 	);
 }
 
+// Cap how many page dots render at once so a long playlist (up to 20 pages on
+// mobile, where one item fills the viewport) cannot overflow the screen. The
+// window slides to keep the active page centered; boundary dots shrink to
+// signal that more pages exist beyond the visible range.
+const MAX_VISIBLE_DOTS = 7;
+
+function getDotWindow(count, activeIndex, maxVisible) {
+	if (count <= maxVisible) {
+		return { start: 0, end: count - 1 };
+	}
+	const half = Math.floor(maxVisible / 2);
+	let start = activeIndex - half;
+	let end = activeIndex + half;
+	if (start < 0) {
+		end -= start;
+		start = 0;
+	}
+	if (end > count - 1) {
+		start -= end - (count - 1);
+		end = count - 1;
+	}
+	return { start: Math.max(0, start), end };
+}
+
 function CarouselIndicator({ count, activeIndex, onSelect }) {
+	const { start, end } = getDotWindow(count, activeIndex, MAX_VISIBLE_DOTS);
+	const indices = [];
+	for (let i = start; i <= end; i += 1) {
+		indices.push(i);
+	}
+
 	return (
 		<div className="flex items-center gap-2" role="group" aria-label="Page navigation">
-			{Array.from({ length: count }, (_, i) => (
-				<button
-					key={i}
-					type="button"
-					onClick={() => onSelect(i)}
-					aria-label={`Go to page ${i + 1}`}
-					aria-current={i === activeIndex ? 'true' : undefined}
-					className="inline-flex size-6 min-w-6 items-center justify-center rounded-full border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page"
-				>
-					<span
-						aria-hidden="true"
-						className={`rounded-full transition-[width,background-color] duration-300 ${
-							i === activeIndex
-								? 'h-2 w-6 bg-bg-primary'
-								: 'size-2 bg-border-strong/30 hover:bg-border-strong/50'
-						}`}
-					/>
-				</button>
-			))}
+			{indices.map((i) => {
+				const isActive = i === activeIndex;
+				const isEdge = !isActive && ((i === start && start > 0) || (i === end && end < count - 1));
+
+				let dotClass;
+				if (isActive) {
+					dotClass = 'h-2 w-6 bg-bg-primary';
+				} else if (isEdge) {
+					dotClass = 'size-1.5 bg-border-strong/30 hover:bg-border-strong/50';
+				} else {
+					dotClass = 'size-2 bg-border-strong/30 hover:bg-border-strong/50';
+				}
+
+				return (
+					<button
+						key={i}
+						type="button"
+						onClick={() => onSelect(i)}
+						aria-label={`Go to page ${i + 1}`}
+						aria-current={isActive ? 'true' : undefined}
+						className="inline-flex size-6 min-w-6 items-center justify-center rounded-full border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page"
+					>
+						<span
+							aria-hidden="true"
+							className={`rounded-full transition-[width,background-color] duration-300 ${dotClass}`}
+						/>
+					</button>
+				);
+			})}
 		</div>
 	);
 }
