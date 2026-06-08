@@ -264,7 +264,6 @@ function Card() {
 	return (
 		<HeroMediaCard
 			media={media}
-			isDesktop={isDesktopLayout}
 			className={cn(CARD_AREA, isDesktopLayout ? CARD_AREA_DESKTOP : CARD_AREA_MOBILE)}
 			style={heroCardStyle(desktopMetrics)}
 		/>

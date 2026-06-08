@@ -302,15 +302,29 @@ function CarouselOverlayArrows() {
 	const btnClass =
 		'pointer-events-auto absolute top-1/2 z-10 hidden size-[70px] -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0 text-text-secondary transition-colors hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-page md:flex';
 
+	// The arrows are offset outside the carousel box into the page inset. That
+	// outset must not exceed the inset, or the arrow pokes past the viewport edge
+	// and creates a horizontal scrollbar. The home inset is 24px at md and 32px at
+	// lg (.app-layout__slot--home), so the outset matches: -6 (24px) then -8 (32px).
 	return (
 		<>
 			{!atStart && (
-				<button type="button" onClick={goPrev} aria-label="Previous page" className={`${btnClass} -left-8`}>
+				<button
+					type="button"
+					onClick={goPrev}
+					aria-label="Previous page"
+					className={`${btnClass} -left-6 lg:-left-8`}
+				>
 					<Icon name="caretCircleRight" size={70} className="rotate-180" decorative />
 				</button>
 			)}
 			{!atEnd && (
-				<button type="button" onClick={goNext} aria-label="Next page" className={`${btnClass} -right-8`}>
+				<button
+					type="button"
+					onClick={goNext}
+					aria-label="Next page"
+					className={`${btnClass} -right-6 lg:-right-8`}
+				>
 					<Icon name="caretCircleRight" size={70} decorative />
 				</button>
 			)}
