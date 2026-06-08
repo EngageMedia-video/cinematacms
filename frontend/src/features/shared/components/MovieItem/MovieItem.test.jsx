@@ -25,8 +25,10 @@ describe('MovieItem', () => {
 		expect(screen.getByText('PG-13')).toBeVisible();
 		expect(screen.getByText('4K')).toBeVisible();
 		expect(screen.getByText('Premiere')).toBeVisible();
-		expect(screen.getByText('2h 3m')).toHaveClass('right-1');
-		expect(screen.getByText('2h 3m')).toHaveClass('bottom-1');
+		// Badge and duration share one bottom row; duration is pushed to the right edge with ml-auto.
+		expect(screen.getByText('2h 3m')).toHaveClass('ml-auto');
+		expect(screen.getByText('2h 3m').closest('div')).toHaveClass('inset-x-2');
+		expect(screen.getByText('2h 3m').closest('div')).toHaveClass('bottom-2');
 		expect(screen.getByText('2h 3m')).toHaveClass('text-[12px]');
 		expect(screen.getByText('2h 3m')).toHaveClass('leading-[13.5px]');
 		expect(screen.getByText('2h 3m')).toHaveClass('tracking-[0.5px]');
