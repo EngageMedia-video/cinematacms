@@ -359,7 +359,7 @@ export default function ViewerInfoContent(props) {
 													id={infoDetailsId}
 													variant="body-16"
 													className={cn(
-														'm-0 wrap-break-word',
+														'm-0 whitespace-pre-wrap wrap-break-word',
 														!isInfoExpanded && 'line-clamp-4'
 													)}
 												>

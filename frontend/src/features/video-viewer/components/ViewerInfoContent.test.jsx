@@ -108,7 +108,7 @@ vi.mock('../../../static/js/contexts/SiteContext', async () => {
 	};
 });
 
-function renderViewerInfoContent() {
+function renderViewerInfoContent(overrides = {}) {
 	return render(
 		<ViewerInfoContent
 			author={{
@@ -118,7 +118,7 @@ function renderViewerInfoContent() {
 				thumb: '',
 				url: '/members/test-author',
 			}}
-			description=""
+			description={overrides.description ?? ''}
 			published="2026-05-31"
 			yearProduced=""
 		/>
@@ -153,5 +153,16 @@ describe('ViewerInfoContent', () => {
 		renderViewerInfoContent();
 
 		expect(screen.queryByText('Content Sensitivity')).not.toBeInTheDocument();
+	});
+
+	it('preserves paragraph breaks in more information and credits text', () => {
+		const description = 'Director statement.\n\nCredits and thanks.';
+
+		renderViewerInfoContent({ description });
+
+		const moreInformation = screen.getByText((_, element) => element?.tagName === 'P' && element.textContent === description);
+
+		expect(moreInformation).toHaveClass('whitespace-pre-wrap');
+		expect(moreInformation.textContent).toBe(description);
 	});
 });
