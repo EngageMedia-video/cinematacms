@@ -1276,6 +1276,24 @@
 				}
 			}
 
+			/*
+			 * Below 1024px, AddMediaPage.scss sizes the uploader with an aspect-ratio
+			 * hack: .media-uploader-bottom-left-wrap gets height: 0 + padding-top: 75%,
+			 * and .media-drag-drop-wrap must be position: absolute to fill that box.
+			 * The inline rule above sets .media-drag-drop-wrap to position: relative,
+			 * which breaks the fill and leaves a tall empty box with the content
+			 * overflowing below it. Neutralise the aspect-ratio sizing here and let
+			 * .media-drag-drop-inner (min-height: 200px, centered) drive the height.
+			 * Desktop (>=1024px) drops the hack in the SCSS, so it is left untouched.
+			 */
+			@media (max-width: 1023px) {
+				#media-file-uploader .media-uploader-bottom-left-wrap {
+					height: auto;
+					min-height: 0;
+					padding-top: 0;
+				}
+			}
+
 			/* Ensure responsive layout */
 			@media (max-width: 768px) {
 				.media-uploader-section {
