@@ -94,30 +94,31 @@ export function setupFullscreenOrientation(playerInstance, videoElement) {
 		return;
 	}
 
-	// iOS: hand the fullscreen button off to the native player, which rotates.
+	// iOS: route every fullscreen request to the native video player, which
+	// rotates to landscape on its own. Overriding the player's own
+	// requestFullscreen/exitFullscreen is more robust than intercepting the
+	// button's DOM click, which can be missed on touch or after a re-render and
+	// does not cover programmatic requests. The control bar toggle, keyboard
+	// shortcut, and the watch page's restore-fullscreen logic all funnel through
+	// these two methods.
 	if (isIosSafari() && 'function' === typeof videoElement.webkitEnterFullscreen) {
-		const routeToNative = (event) => {
-			// Pre-empt VideoJS full-window handling before it runs.
-			event.preventDefault();
-			event.stopImmediatePropagation();
-
+		player.requestFullscreen = () => {
 			try {
-				if (videoElement.webkitDisplayingFullscreen) {
-					videoElement.webkitExitFullscreen?.();
-				} else {
-					videoElement.webkitEnterFullscreen();
-				}
+				videoElement.webkitEnterFullscreen();
 			} catch (_e) {
-				/* native fullscreen unavailable; leave default behaviour */
+				/* native fullscreen unavailable; ignore */
 			}
+			return Promise.resolve();
 		};
 
-		player.ready(() => {
-			const root = player.el?.();
-			const button = root?.querySelector?.('.vjs-fullscreen-control');
-			// Capture phase so this runs before the VideoJS click handler.
-			button?.addEventListener('click', routeToNative, true);
-		});
+		player.exitFullscreen = () => {
+			try {
+				videoElement.webkitExitFullscreen?.();
+			} catch (_e) {
+				/* no-op */
+			}
+			return Promise.resolve();
+		};
 
 		return;
 	}
