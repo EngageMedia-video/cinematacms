@@ -83,7 +83,8 @@ vi.mock('../../home/utils/mediaList', () => ({
 	getMediaDurationLabel: () => null,
 }));
 
-vi.mock('../utils/mediaCardMetadata', () => ({
+vi.mock('../utils/mediaCardMetadata', async (importOriginal) => ({
+	...(await importOriginal()),
 	buildMetadata: () => [],
 	getAuthorLink: () => null,
 	getAuthorName: () => null,
