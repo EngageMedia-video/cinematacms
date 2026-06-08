@@ -160,7 +160,9 @@ describe('ViewerInfoContent', () => {
 
 		renderViewerInfoContent({ description });
 
-		const moreInformation = screen.getByText((_, element) => element?.tagName === 'P' && element.textContent === description);
+		const moreInformation = screen.getByText(
+			(_, element) => element?.tagName === 'P' && element.textContent === description
+		);
 
 		expect(moreInformation).toHaveClass('whitespace-pre-wrap');
 		expect(moreInformation.textContent).toBe(description);
