@@ -409,10 +409,11 @@ export default function ViewerInfoContent(props) {
 												)}
 											</div>
 										</div>
-										{metaFields.length > 0 && (
-											<div className="mt-6 border-b border-b-border-divider" />
-										)}
 									</>
+								)}
+
+								{(hasMoreInformationText || hasSynopsis) && metaFields.length > 0 && (
+									<div className="mt-6 border-b border-b-border-divider" />
 								)}
 
 								<div className="block">
