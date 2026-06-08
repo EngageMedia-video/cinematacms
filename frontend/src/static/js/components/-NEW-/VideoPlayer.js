@@ -60,7 +60,7 @@ export function formatInnerLink(url, baseUrl) {
 	return link.toString();
 }
 
-// ANIMATIC-SPECIFIC: YouTube-style fullscreen orientation. Landscape videos
+// YouTube-style fullscreen orientation. Landscape videos
 // rotate the fullscreen view to landscape; portrait videos stay portrait. This
 // gives the control bar enough width on phones (the cramped-controls fix).
 //
