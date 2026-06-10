@@ -26,3 +26,4 @@ export { TabView, TabContent } from './TabView';
 export { Tooltip } from './Tooltip';
 export { Text } from './Text';
 export { UserRoleBadge } from './UserRoleBadge';
+export { UploadMediaItem } from './UploadMediaItem';
