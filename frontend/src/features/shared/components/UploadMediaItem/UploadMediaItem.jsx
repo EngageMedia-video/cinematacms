@@ -169,7 +169,7 @@ export function UploadMediaItem({
 				{ key: 'pause', label: 'Pause', iconName: 'pause', type: 'warning' },
 				{ key: 'continue', label: 'Continue', iconName: 'playCircle', type: 'warning' },
 				{ key: 'cancel', label: 'Cancel', iconName: 'cancel', type: 'danger' },
-				{ key: 'reupload', label: 'Reupload', iconName: 'arrowClockwise' },
+				{ key: 'reupload', label: 'Replace', iconName: 'arrowClockwise' },
 				{ key: 'retry', label: 'Retry', iconName: 'arrowClockwise', type: 'warning' },
 				{ key: 'delete', label: 'Delete', iconName: 'trash', type: 'danger' },
 			]
@@ -183,10 +183,10 @@ export function UploadMediaItem({
 			)}
 			data-upload-status={status}
 		>
-			<div className="relative shrink-0">
+			<div className="relative h-[72px] w-[72px] shrink-0 self-start">
 				<SquareImage
 					alt={thumbnailAlt}
-					className="qq-thumbnail-selector"
+					className="qq-thumbnail-selector h-full w-full [&_img]:aspect-square [&_img]:object-cover"
 					loading={false}
 					radius={8}
 					size={72}
@@ -274,7 +274,7 @@ export function UploadMediaItem({
 							</Text>
 						</div>
 
-						<div className="flex flex-wrap items-center">
+						<div className="flex flex-col items-start sm:flex-row sm:flex-wrap sm:items-center">
 							{actions.map((action) => (
 								<ActionButton
 									key={action.key}
