@@ -62,7 +62,7 @@ export function SquareImage({
 						name={centeredIconName}
 						decorative
 						size={21}
-						className={cn('text-text-muted', loading ? 'animate-spin' : '')}
+						className={cn('text-panel-heading', loading ? 'animate-spin' : '')}
 					/>
 				</span>
 			) : null}
