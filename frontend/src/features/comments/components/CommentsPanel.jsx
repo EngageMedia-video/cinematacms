@@ -34,10 +34,19 @@ function ScrollMorePill({ count, onClick }) {
 	);
 }
 
-export function CommentsPanel({ friendlyToken, variant = 'inline', onExpandToggle, isExpanded = false }) {
+export function CommentsPanel({
+	friendlyToken,
+	variant = 'inline',
+	onExpandToggle,
+	isExpanded = false,
+	commentsDisabled = false,
+}) {
 	const showTabs = variant === 'sidebar';
 	const isModal = variant === 'modal';
-	const { data, isLoading, isError, refetch } = useComments(friendlyToken);
+	// When the owner has turned comments off (commentsDisabled prop) we skip the
+	// request entirely; the private-video case is detected from the response.
+	const { data, isLoading, isError, refetch } = useComments(friendlyToken, { enabled: !commentsDisabled });
+	const isDisabled = commentsDisabled || data?.commentsDisabled === true;
 	const comments = Array.isArray(data?.results) ? data.results : [];
 	const loadedCount = comments.length;
 	const totalCount = typeof data?.count === 'number' ? data.count : loadedCount;
@@ -50,6 +59,34 @@ export function CommentsPanel({ friendlyToken, variant = 'inline', onExpandToggl
 		if (!el) return;
 		el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
 	};
+
+	if (isDisabled) {
+		return (
+			<section
+				aria-label="Comments"
+				className={cn(
+					'flex w-full flex-col gap-4',
+					variant === 'sidebar' && 'max-h-[706px] lg:max-h-[calc(100vh-7rem)] lg:sticky lg:top-24',
+					isModal && 'h-full'
+				)}
+			>
+				<div className="relative flex min-h-0 flex-1 flex-col">
+					{showTabs ? <CommentsTab count={totalCount} /> : null}
+					<div
+						className={cn(
+							'flex min-h-0 flex-1 flex-col items-center justify-center gap-2 bg-bg-surface px-4 py-10 text-center',
+							showTabs ? 'rounded-b-lg rounded-tr-lg' : 'rounded-lg'
+						)}
+					>
+						<i aria-hidden="true" className="material-icons text-text-muted" style={{ fontSize: 32 }}>
+							lock
+						</i>
+						<p className="m-0 text-sm leading-5 text-text-muted">Comments are disabled for this video.</p>
+					</div>
+				</div>
+			</section>
+		);
+	}
 
 	return (
 		<section
