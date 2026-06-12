@@ -130,7 +130,11 @@ export class VideoViewerPage extends Page {
 		const viewerNestedClassname = 'viewer-section-nested' + (this.state.theaterMode ? ' viewer-section' : '');
 		const commentsPanel = this.state.mediaLoaded ? (
 			<div className="viewer-sidebar-comments mb-6 box-border w-full" key="viewer-comments">
-				<CommentsSection friendlyToken={MediaPageStore.get('media-id')} variant="sidebar" />
+				<CommentsSection
+					friendlyToken={MediaPageStore.get('media-id')}
+					variant="sidebar"
+					commentsDisabled={MediaPageStore.get('media-data')?.enable_comments === false}
+				/>
 			</div>
 		) : null;
 
