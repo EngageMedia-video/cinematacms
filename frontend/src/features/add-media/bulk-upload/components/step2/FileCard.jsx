@@ -17,6 +17,7 @@ import {
 	AllowDownloadCheckbox,
 	StatusRadioGroup,
 	RestrictedPasswordField,
+	VisibilityExpirationField,
 	StreamProtectionField,
 	AdminSettingsFields,
 	ThumbnailUploadField,
@@ -134,14 +135,12 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 							/>
 						</>
 					) : null}
-
 					{subStep === 'thumbnail' ? (
 						<ThumbnailUploadField
 							posterFile={file.posterFile}
 							onFileSelected={(posterFile) => setPosterFile(file.id, posterFile)}
 						/>
 					) : null}
-
 					{subStep === 'other' ? (
 						<>
 							<CompanyField value={meta.company} onChange={(value) => patch({ company: value })} />
@@ -196,7 +195,6 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 							/>
 						</>
 					) : null}
-
 					{subStep === 'final' ? (
 						<div className="flex flex-col">
 							<EnableCommentsCheckbox
@@ -229,13 +227,30 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 
 							<Divider />
 
+							<VisibilityExpirationField
+								idPrefix={`visibility-${file.id}`}
+								expireEnabled={meta.expireEnabled}
+								startDate={meta.startDate}
+								endDate={meta.endDate}
+								onToggle={(checked) =>
+									patch(
+										checked
+											? { expireEnabled: true }
+											: { expireEnabled: false, startDate: '', endDate: '' }
+									)
+								}
+								onStartDateChange={(value) => patch({ startDate: value })}
+								onEndDateChange={(value) => patch({ endDate: value })}
+							/>
+
+							<Divider />
+
 							<StreamProtectionField
 								checked={meta.is_encrypted}
 								onChange={(checked) => patch({ is_encrypted: checked })}
 							/>
 						</div>
 					) : null}
-
 					{subStep === 'admin' && canUseAdminSettings ? (
 						<AdminSettingsFields
 							featured={meta.featured}
@@ -243,6 +258,7 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 							onChange={(next) => patch(next)}
 							idPrefix={`file-${file.id}`}
 						/>
+					) : null}
 					) : null}
 				</div>
 			</Card>

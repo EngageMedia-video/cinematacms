@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import datetime, time, timedelta
 
 from django import forms
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 from django_recaptcha.fields import ReCaptchaField
 from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
@@ -16,6 +17,15 @@ MEDIA_STATES = (
 )
 
 
+def _to_local_midnight(value):
+    if value is None:
+        return None
+    dt = value if isinstance(value, datetime) else datetime.combine(value, time.min)
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt.astimezone(timezone.get_current_timezone()).replace(hour=0, minute=0, second=0, microsecond=0)
+
+
 class MultipleSelect(forms.CheckboxSelectMultiple):
     input_type = "checkbox"
 
@@ -24,6 +34,16 @@ class MediaForm(forms.ModelForm):
     new_tags = forms.CharField(label="Tags", help_text="Use a comma to separate multiple tags.", required=False)
     no_license = forms.BooleanField(required=False, label="All Rights Reserved")
     custom_license = forms.CharField(required=False, label="Just a placeholder")
+    visibility_start = forms.DateField(
+        required=False,
+        input_formats=["%Y-%m-%d"],
+        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+    )
+    visibility_end = forms.DateField(
+        required=False,
+        input_formats=["%Y-%m-%d"],
+        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+    )
 
     # Add New Field Declarations to MediaForm
     # Override year_produced to handle dropdown + custom input
@@ -110,6 +130,8 @@ class MediaForm(forms.ModelForm):
                 self.fields["year_produced_custom"].initial = self.instance.year_produced
 
         self.fields["state"].label = "Status"
+        self.fields["visibility_start"].label = "Enter Start Date"
+        self.fields["visibility_end"].label = "Enter End Date"
         self.fields["allow_download"].label = "Allow Download"
         self.fields["is_encrypted"].label = "Enable HLS Encryption"
         self.fields["reported_times"].label = "Reported Times"
@@ -268,6 +290,17 @@ class MediaForm(forms.ModelForm):
             error = "This video cannot be featured as it is Restricted."
             self.add_error("featured", error)
 
+        visibility_start_date = _to_local_midnight(cleaned_data.get("visibility_start"))
+        visibility_expires_at = _to_local_midnight(cleaned_data.get("visibility_end"))
+        if visibility_expires_at:
+            visibility_expires_at += timedelta(days=1)
+
+        cleaned_data["visibility_start_date"] = visibility_start_date
+        cleaned_data["visibility_expires_at"] = visibility_expires_at
+
+        if visibility_start_date and visibility_expires_at and visibility_expires_at <= visibility_start_date:
+            self.add_error("visibility_end", "End date must be after the start date.")
+
         # Always return the full cleaned_data dictionary
         return cleaned_data
 
@@ -292,6 +325,20 @@ class MediaForm(forms.ModelForm):
                             # self.instance.state = self.initial['state']
                     else:
                         self.instance.state = "private"
+
+        has_visibility_schedule = bool(data.get("visibility_start_date") or data.get("visibility_expires_at"))
+        visibility_fields_submitted = "visibility_start" in self.data or "visibility_end" in self.data
+        if has_visibility_schedule:
+            self.instance.visibility_start_date = data.get("visibility_start_date")
+            self.instance.visibility_expires_at = data.get("visibility_expires_at")
+            self.instance.visibility_after_expiry = "private"
+            self.instance.visibility_window_state = self.instance.state
+            self.instance.state = self.instance.expected_visibility_state(timezone.now())
+        elif visibility_fields_submitted:
+            self.instance.visibility_start_date = None
+            self.instance.visibility_expires_at = None
+            self.instance.visibility_after_expiry = None
+            self.instance.visibility_window_state = None
 
         if data.get("custom_license", "") and data.get("custom_license", "") not in ["None"]:
             self.instance.license_id = data.get("custom_license")

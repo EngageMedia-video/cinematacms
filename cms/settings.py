@@ -298,6 +298,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "dispatch_deferred_encodings",
         "schedule": timedelta(seconds=60),
     },
+    # Apply scheduled media visibility windows
+    "apply_visibility_schedules": {
+        "task": "apply_visibility_schedules",
+        "schedule": timedelta(seconds=60),
+    },
     #     "schedule": timedelta(seconds=5),
     #     "args": (16, 16)
 }

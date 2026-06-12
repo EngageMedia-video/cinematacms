@@ -20,6 +20,7 @@ from django.core.cache import cache
 from django.core.files import File
 from django.db.models import F, Q
 from django.urls import reverse
+from django.utils import timezone
 
 from actions.models import USER_MEDIA_ACTIONS, MediaAction
 from users.models import User
@@ -1555,6 +1556,63 @@ def dispatch_deferred_encodings():
         _dispatch_deferred_encodings_inner()
     finally:
         cache.delete(lock_key)
+
+
+@task(name="apply_visibility_schedules", queue="short_tasks")
+def apply_visibility_schedules():
+    """Apply scheduled media visibility windows.
+
+    Uses a singleton cache lock so only one worker updates visibility at a time.
+    """
+    lock_key = "apply_visibility_schedules_lock"
+    lock_timeout = getattr(settings, "VISIBILITY_SCHEDULE_LOCK_TIMEOUT", 120)
+
+    if not cache.add(lock_key, "locked", lock_timeout):
+        logger.debug("Visibility schedule task skipped: another worker holds the lock")
+        return
+
+    try:
+        _apply_visibility_schedules_inner()
+    finally:
+        cache.delete(lock_key)
+
+
+def _apply_visibility_schedules_inner():
+    now = timezone.now()
+    # Load full rows (no .only()): the candidate set is small (only scheduled
+    # media), and deferring fields here is unsafe — Media.save() fires the
+    # track_featured_change pre_save signal which reads `featured`, and
+    # Media.__init__ reads `media_file`/`thumbnail_time`. If any of those are
+    # deferred, lazy-loading re-enters __init__ and recurses infinitely.
+    scheduled_media = Media.objects.filter(
+        Q(visibility_start_date__isnull=False) | Q(visibility_expires_at__isnull=False)
+    ).order_by("id")
+
+    transition_count = 0
+    for media in scheduled_media.iterator():
+        try:
+            expected = media.expected_visibility_state(now)
+            if media.state == expected:
+                continue
+
+            logger.info(
+                "Applying visibility schedule for media %s: %s -> %s",
+                media.friendly_token,
+                media.state,
+                expected,
+            )
+            media.state = expected
+            # Keep Media.save() from interpreting this state-only transition as a
+            # media-file or thumbnail-time edit and dispatching encoding work.
+            media._Media__original_media_file = media.media_file
+            media._Media__original_thumbnail_time = media.thumbnail_time
+            media.save(update_fields=["state"])
+            transition_count += 1
+        except (django.db.DatabaseError, OSError, TypeError, ValueError):
+            logger.exception("Failed to apply visibility schedule for media %s", getattr(media, "pk", "unknown"))
+
+    if transition_count:
+        logger.info("Applied %d visibility schedule transitions", transition_count)
 
 
 def _dispatch_deferred_encodings_inner():

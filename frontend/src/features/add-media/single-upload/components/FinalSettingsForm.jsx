@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { DateChooserField, RadioButton, Text, formatDMY } from '../../../shared/components';
+import { RadioButton, Text } from '../../../shared/components';
 import { CheckboxButton } from '../../../shared/components/CheckboxButton';
 import { TextField } from '../../../shared/components/TextField';
-import { diffInDays, todayIso } from '../../utils/helpers';
+import { VisibilityExpirationField } from '../../../shared/components/upload-media';
 import { FieldGroup } from './FieldGroup';
 
 const STATUS_OPTIONS = [
@@ -14,15 +14,9 @@ const STATUS_OPTIONS = [
 
 export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false }) {
 	const [showPassword, setShowPassword] = useState(false);
-	const effectiveStart = singleUpload.startDate || todayIso();
-	const visibleDays = singleUpload.endDate ? diffInDays(effectiveStart, singleUpload.endDate) : 0;
 	const statusOptions = canUseRestrictedStatus
 		? STATUS_OPTIONS
 		: STATUS_OPTIONS.filter((option) => option.value !== 'restricted');
-
-	function toggleExpire(event) {
-		singleUpload.setExpireEnabled(event.target.checked);
-	}
 
 	return (
 		<FieldGroup title="Final Settings">
@@ -83,39 +77,14 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 
 				<div className="my-4 border-b border-b-border-divider" />
 
-				<CheckboxButton checked={singleUpload.expireEnabled} onChange={toggleExpire}>
-					Set Visibility Expiration
-				</CheckboxButton>
-
-				{singleUpload.expireEnabled ? (
-					<>
-						<div className="flex flex-col gap-4 sm:flex-row">
-							<DateChooserField
-								id="visibility_start"
-								name="visibility_start"
-								label="Enter Start Date"
-								value={singleUpload.startDate}
-								onChange={singleUpload.setStartDate}
-							/>
-
-							<DateChooserField
-								id="visibility_end"
-								name="visibility_end"
-								label="Enter End Date"
-								value={singleUpload.endDate}
-								min={singleUpload.startDate || todayIso()}
-								onChange={singleUpload.setEndDate}
-							/>
-						</div>
-
-						{singleUpload.endDate ? (
-							<Text variant="body-14" color="meta" className="m-0">
-								Your film will be visible for {visibleDays} days, starting {formatDMY(effectiveStart)}{' '}
-								to {formatDMY(singleUpload.endDate)}
-							</Text>
-						) : null}
-					</>
-				) : null}
+				<VisibilityExpirationField
+					expireEnabled={singleUpload.expireEnabled}
+					startDate={singleUpload.startDate}
+					endDate={singleUpload.endDate}
+					onToggle={singleUpload.setExpireEnabled}
+					onStartDateChange={singleUpload.setStartDate}
+					onEndDateChange={singleUpload.setEndDate}
+				/>
 
 				<div className="my-4 border-b border-b-border-divider" />
 
