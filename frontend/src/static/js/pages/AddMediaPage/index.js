@@ -202,6 +202,8 @@ function CannotUploadMessage({ config }) {
 }
 
 export class AddMediaPage extends Page {
+	static contextType = UserContext;
+
 	constructor(props) {
 		super(props, 'add-media');
 		this.config = getAddMediaConfig();
@@ -216,7 +218,7 @@ export class AddMediaPage extends Page {
 	}
 
 	componentDidMount() {
-		if (UserContext._currentValue.is.anonymous || !this.config.canAdd) {
+		if (this.context.is.anonymous || !this.config.canAdd) {
 			return;
 		}
 
@@ -416,7 +418,7 @@ export class AddMediaPage extends Page {
 	};
 
 	pageContent() {
-		if (UserContext._currentValue.is.anonymous) {
+		if (this.context.is.anonymous) {
 			return <LoginForm config={this.config} />;
 		}
 
