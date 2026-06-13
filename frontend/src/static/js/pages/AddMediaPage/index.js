@@ -35,13 +35,19 @@ function getCSRFToken() {
 }
 
 function getUploadStatus(status) {
+	const qqStatus = window.qq && window.qq.status;
+
+	if (!qqStatus) {
+		return 'uploading';
+	}
+
 	switch (status) {
-		case window.qq.status.UPLOAD_SUCCESSFUL:
+		case qqStatus.UPLOAD_SUCCESSFUL:
 			return 'complete';
-		case window.qq.status.UPLOAD_FAILED:
-		case window.qq.status.REJECTED:
+		case qqStatus.UPLOAD_FAILED:
+		case qqStatus.REJECTED:
 			return 'failed';
-		case window.qq.status.PAUSED:
+		case qqStatus.PAUSED:
 			return 'paused';
 		default:
 			return 'uploading';
