@@ -185,7 +185,16 @@ export function UploadMediaItem({
 			<div className="relative h-[72px] w-[72px] shrink-0 self-start">
 				<SquareImage
 					alt={thumbnailAlt}
-					className="qq-thumbnail-selector h-full w-full [&_img]:aspect-square [&_img]:object-cover"
+					className="h-full w-full [&_img]:aspect-square [&_img]:object-cover"
+					imageProps={
+						includeFineUploaderSelectors
+							? {
+									className: 'qq-thumbnail-selector',
+									'qq-max-size': '120',
+									'qq-server-scale': '',
+								}
+							: undefined
+					}
 					loading={false}
 					radius={8}
 					size={72}

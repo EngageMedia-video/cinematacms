@@ -6,6 +6,7 @@ export function SquareImage({
 	alt = 'Square image',
 	className = '',
 	iconName = '',
+	imageProps = {},
 	loading = false,
 	onError,
 	radius = 8,
@@ -20,8 +21,16 @@ export function SquareImage({
 		setShowImage(Boolean(src));
 	}, [src]);
 
+	const {
+		alt: imageAlt,
+		className: imageClassName = '',
+		onError: imageOnError,
+		src: imageSrc,
+		...restImageProps
+	} = imageProps;
 	const centeredIconName = loading ? 'loading' : iconName;
 	const showCenteredIcon = Boolean(centeredIconName) && (loading || !showImage);
+	const shouldRenderImage = showImage || Object.keys(imageProps).length > 0;
 
 	return (
 		<span
@@ -36,19 +45,21 @@ export function SquareImage({
 				borderRadius: radius,
 				...style,
 			}}
-			role={showImage ? undefined : 'img'}
-			aria-label={showImage ? undefined : alt}
+			role={shouldRenderImage ? undefined : 'img'}
+			aria-label={shouldRenderImage ? undefined : alt}
 			aria-busy={loading ? 'true' : undefined}
 		>
-			{showImage ? (
+			{shouldRenderImage ? (
 				<img
-					src={src}
-					alt={alt}
+					{...restImageProps}
+					src={src || imageSrc || undefined}
+					alt={imageAlt ?? alt}
 					width={size}
 					height={size}
-					className="h-full w-full object-cover"
+					className={cn('h-full w-full object-cover', imageClassName)}
 					onError={(event) => {
 						setShowImage(false);
+						imageOnError?.(event);
 						onError?.(event);
 					}}
 				/>
