@@ -286,7 +286,7 @@ export class AddMediaPage extends Page {
 					updateUploadItemStatus(id, 'failed', 'Upload failed');
 					console.warn(window.qq.format('Error on file number {} - {}.  Reason: {}', id, name, errorReason));
 				},
-				onComplete: function (id, _name, response) {
+				onComplete: (id, _name, response) => {
 					if (!response.success) {
 						updateUploadItemStatus(id, 'failed', 'Upload failed');
 						return;
@@ -294,7 +294,7 @@ export class AddMediaPage extends Page {
 
 					updateUploadItemStatus(id, 'complete', 'Complete');
 
-					if (this._currentItemLimit === 1) {
+					if (this.config.uploadMaxFilesNumber === 1) {
 						// setTimeout(function(){ window.location.href = response.media_url; }, 500);
 						window.location.href = response.media_url.replace('/view?', '/edit?');
 						return;
