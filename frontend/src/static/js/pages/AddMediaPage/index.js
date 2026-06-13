@@ -63,7 +63,7 @@ function getStatusLabel(status) {
 		case 'paused':
 			return 'Paused';
 		default:
-			return 'Uploaded';
+			return 'Uploading';
 	}
 }
 

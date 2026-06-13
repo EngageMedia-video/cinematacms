@@ -143,7 +143,6 @@ function ActionButton({ action, callbacks, includeFineUploaderSelectors }) {
 export function UploadMediaItem({
 	alt,
 	className = '',
-	contactHref = '/contact',
 	fileSize,
 	includeFineUploaderSelectors = false,
 	onCancel,
