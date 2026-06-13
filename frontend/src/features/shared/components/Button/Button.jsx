@@ -42,6 +42,7 @@ export function getSizeClasses(size) {
 export const ICON_ONLY_SIZE_CLASSES = {
 	base: 'p-size-12 rounded-ds-4',
 	sm: 'p-size-10 rounded-ds-8',
+	xs: 'p-size-8 rounded-ds-4',
 };
 
 export function getIconOnlySizeClasses(size) {
