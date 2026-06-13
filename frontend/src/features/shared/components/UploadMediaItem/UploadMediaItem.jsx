@@ -8,7 +8,7 @@ import { formatBytes } from '../../utils/formatBytes';
 
 const STATUS_CONFIG = {
 	uploading: {
-		statusText: 'Uploaded',
+		statusText: 'Uploading',
 		statusClassName: 'text-text-muted',
 		progressClassName: 'bg-cinemata-coral-reef-400p',
 		showProgress: true,
