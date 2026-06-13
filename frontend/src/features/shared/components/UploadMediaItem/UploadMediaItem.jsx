@@ -197,25 +197,25 @@ export function UploadMediaItem({
 					aria-hidden="true"
 					className="absolute inset-0 hidden items-center justify-center rounded-ds-8 bg-bg-surface-muted/80 group-data-[upload-status=uploading]:flex"
 				>
-					<Icon name="loading" decorative size={21} className="animate-spin text-panel-heading" />
+					<Icon name="loading" decorative size={21} className="animate-spin text-text-panel-heading" />
 				</span>
 				<span
 					aria-hidden="true"
 					className="absolute inset-0 hidden items-center justify-center rounded-ds-8 bg-bg-surface-muted/80 group-data-[upload-status=paused]:flex"
 				>
-					<Icon name="pauseOutlined" decorative size={21} className="text-panel-heading" />
+					<Icon name="pauseOutlined" decorative size={21} className="text-text-panel-heading" />
 				</span>
 				<span
 					aria-hidden="true"
 					className="absolute inset-0 hidden items-center justify-center rounded-ds-8 bg-bg-surface-muted group-data-[upload-status=complete]:flex"
 				>
-					<Icon name="checklist" decorative size={21} className="text-panel-heading" />
+					<Icon name="checklist" decorative size={21} className="text-text-panel-heading" />
 				</span>
 				<span
 					aria-hidden="true"
 					className="absolute inset-0 hidden items-center justify-center rounded-ds-8 bg-bg-surface-muted group-data-[upload-status=failed]:flex"
 				>
-					<Icon name="close" decorative size={21} className="text-panel-heading" />
+					<Icon name="close" decorative size={21} className="text-text-panel-heading" />
 				</span>
 			</div>
 
