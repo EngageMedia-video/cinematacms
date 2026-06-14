@@ -501,6 +501,13 @@ $media-upload-item-name-line-height: 20px;
 	}
 }
 
+.filename-edit {
+	display: none;
+	&.qq-editable {
+		display: block;
+	}
+}
+
 .media-upload-item-bottom-actions {
 	position: relative;
 	width: 100%;

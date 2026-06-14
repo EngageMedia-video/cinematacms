@@ -32,6 +32,7 @@ export function getAlignClasses(align) {
 export const SIZE_CLASSES = {
 	base: 'px-space-base py-size-10',
 	sm: 'px-size-12 py-size-8 rounded-ds-8',
+	xs: 'px-size-12 py-size-4 rounded-ds-4',
 };
 
 export function getSizeClasses(size) {
@@ -41,6 +42,7 @@ export function getSizeClasses(size) {
 export const ICON_ONLY_SIZE_CLASSES = {
 	base: 'p-size-12 rounded-ds-4',
 	sm: 'p-size-10 rounded-ds-8',
+	xs: 'p-size-8 rounded-ds-4',
 };
 
 export function getIconOnlySizeClasses(size) {
@@ -98,6 +100,8 @@ export function Button({
 	children,
 	className = '',
 	icon = null,
+	textClassName = '',
+	iconContainerClassName = '',
 	iconPosition,
 	size = 'base',
 	type = 'button',
@@ -109,7 +113,10 @@ export function Button({
 	const iconElement = icon ? (
 		<span
 			aria-hidden="true"
-			className="inline-flex shrink-0 items-center justify-center leading-none [&_img]:h-full [&_img]:w-full [&_svg]:h-full [&_svg]:w-full"
+			className={cn(
+				'inline-flex shrink-0 items-center justify-center leading-none [&_img]:h-full [&_img]:w-full [&_svg]:h-full [&_svg]:w-full',
+				iconContainerClassName
+			)}
 			style={{ width: 'var(--size-20)', height: 'var(--size-20)' }}
 		>
 			{icon}
@@ -138,7 +145,9 @@ export function Button({
 		>
 			{iconElement && resolvedIconPosition !== 'right' ? iconElement : null}
 			{isCompactIconLayout || !hasLabel ? null : (
-				<span className="inline-flex items-center justify-center leading-none">{children}</span>
+				<span className={cn('inline-flex items-center justify-center leading-none', textClassName)}>
+					{children}
+				</span>
 			)}
 			{iconElement && resolvedIconPosition === 'right' ? iconElement : null}
 		</button>
