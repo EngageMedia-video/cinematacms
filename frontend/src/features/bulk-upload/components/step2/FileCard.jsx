@@ -215,7 +215,9 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 								<RequirePasswordField
 									checked={meta.requirePassword}
 									password={meta.password}
-									onCheckedChange={(checked) => patch({ requirePassword: checked })}
+									onCheckedChange={(checked) =>
+										patch({ requirePassword: checked, password: checked ? meta.password : '' })
+									}
 									onPasswordChange={(value) => patch({ password: value })}
 									error={errors.password}
 								/>

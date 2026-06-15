@@ -10,6 +10,9 @@ export function SubmitForReviewDialog({ open, onCancel, onConfirm, isSubmitting 
 			open={open}
 			onOpenChange={(nextOpen) => {
 				if (!nextOpen) {
+					if (isSubmitting) {
+						return;
+					}
 					onCancel?.();
 				}
 			}}

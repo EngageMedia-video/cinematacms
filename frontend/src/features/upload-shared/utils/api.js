@@ -8,8 +8,9 @@ export { getCSRFToken };
  * modern-track hooks (notifications, comments, user-settings).
  */
 export async function apiFetch(url, { method = 'GET', body, signal } = {}) {
+	const normalizedMethod = method.toUpperCase();
 	const headers = {};
-	const isUnsafe = method !== 'GET' && method !== 'HEAD';
+	const isUnsafe = normalizedMethod !== 'GET' && normalizedMethod !== 'HEAD';
 	if (body !== undefined) {
 		headers['Content-Type'] = 'application/json';
 	}
@@ -18,7 +19,7 @@ export async function apiFetch(url, { method = 'GET', body, signal } = {}) {
 	}
 
 	return fetch(url, {
-		method,
+		method: normalizedMethod,
 		credentials: 'same-origin',
 		headers,
 		body: body !== undefined ? JSON.stringify(body) : undefined,

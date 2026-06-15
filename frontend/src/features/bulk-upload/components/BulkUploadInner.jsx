@@ -114,11 +114,15 @@ export function BulkUploadInner() {
 		const file = files.find((item) => item.id === id);
 		if (file?.friendlyToken) {
 			try {
-				await apiFetch(`/api/v1/media/${file.friendlyToken}`, { method: 'DELETE' });
-			} catch {
-				// best-effort; the row is removed locally regardless.
+				const response = await apiFetch(`/api/v1/media/${file.friendlyToken}`, { method: 'DELETE' });
+				if (!response.ok) {
+					throw new Error(`Delete failed with status ${response.status}`);
+				}
+				removeFile(id);
+			} catch (error) {
+				console.error(`Failed to delete uploaded media ${file.friendlyToken}`, error);
+				setSubmitError('Could not delete the uploaded file. Please try again.');
 			}
-			removeFile(id);
 		} else {
 			uploadActions.cancel(id);
 		}

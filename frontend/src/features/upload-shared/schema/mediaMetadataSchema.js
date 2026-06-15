@@ -72,5 +72,5 @@ export function validateMetadata(metadata = {}) {
 }
 
 export function hasErrors(errors) {
-	return errors && Object.keys(errors).length > 0;
+	return Boolean(errors && Object.keys(errors).length > 0);
 }

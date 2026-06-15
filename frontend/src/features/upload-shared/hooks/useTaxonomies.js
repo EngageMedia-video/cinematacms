@@ -22,8 +22,8 @@ export function useTaxonomies(endpoint = DEFAULT_OPTIONS_ENDPOINT) {
 	const query = useQuery({
 		queryKey: ['upload-taxonomies', endpoint],
 		staleTime: 5 * 60_000,
-		queryFn: async () => {
-			const response = await apiFetch(endpoint);
+		queryFn: async ({ signal }) => {
+			const response = await apiFetch(endpoint, { signal });
 			if (!response.ok) {
 				throw new Error(`Failed to load form options: ${response.status}`);
 			}

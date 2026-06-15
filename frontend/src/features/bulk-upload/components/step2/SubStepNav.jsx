@@ -13,8 +13,7 @@ const SUB_STEP_ITEMS = [
  */
 export function SubStepNav({ value, onChange }) {
 	return (
-		<div
-			role="tablist"
+		<nav
 			aria-label="Detail sections"
 			className="flex gap-1 overflow-x-auto border-b border-border-divider [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 		>
@@ -24,8 +23,6 @@ export function SubStepNav({ value, onChange }) {
 					<button
 						key={item.value}
 						type="button"
-						role="tab"
-						aria-selected={active}
 						aria-current={active ? 'step' : undefined}
 						onClick={() => onChange(item.value)}
 						className={cn(
@@ -39,6 +36,6 @@ export function SubStepNav({ value, onChange }) {
 					</button>
 				);
 			})}
-		</div>
+		</nav>
 	);
 }

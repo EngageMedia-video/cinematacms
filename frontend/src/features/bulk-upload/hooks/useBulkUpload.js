@@ -114,6 +114,7 @@ export function useBulkUpload() {
 
 		uploaderRef.current = uploader;
 		return () => {
+			uploaderRef.current?.cancelAll();
 			uploaderRef.current = null;
 			filesByIdRef.current.clear();
 		};

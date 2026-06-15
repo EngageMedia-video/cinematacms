@@ -71,4 +71,30 @@ describe('PreviewSubmit', () => {
 		expect(screen.getByRole('alert')).toHaveTextContent('Synopsis');
 		expect(screen.getByRole('alert')).toHaveTextContent('Category');
 	});
+
+	it('uses human-readable labels for server validation fields', () => {
+		render(
+			<PreviewSubmit
+				files={[
+					{
+						id: 'file-1',
+						name: 'draft.mp4',
+						sizeBytes: 0,
+						metadata: validMetadata(),
+					},
+				]}
+				options={options}
+				validationErrors={{
+					'file-1': {
+						custom_license: 'Select a valid license.',
+						content_sensitivity: 'Select a value.',
+					},
+				}}
+			/>
+		);
+
+		expect(screen.getByRole('alert')).toHaveTextContent('License');
+		expect(screen.getByRole('alert')).toHaveTextContent('Content Sensitivity');
+		expect(screen.getByRole('alert')).not.toHaveTextContent('custom_license');
+	});
 });

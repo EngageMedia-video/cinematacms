@@ -659,6 +659,7 @@ def upload_media(request):
     return render(request, "cms/add-media.html", context)
 
 
+@ensure_csrf_cookie
 def bulk_upload_media(request):
     """Dedicated bulk-upload page (issue #524), a sibling of the single-upload page.
 

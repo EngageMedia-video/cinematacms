@@ -8,7 +8,7 @@ from django.urls import reverse
 
 from cms.permissions import max_bulk_upload_files
 from files import lists
-from files.models import Category, Language, Media
+from files.models import Category, Language, License, Media
 from users.models import User
 
 
@@ -70,8 +70,8 @@ class BulkUploadOptionsTests(TestCase):
     def setUp(self):
         self.client = Client()
         self.regular = User.objects.create_user(username="reg", email="reg@e.com", password="pw")
-        Category.objects.create(title="Documentary")
-        Language.objects.create(code="en", title="English")
+        Category.objects.get_or_create(title="Documentary")
+        Language.objects.get_or_create(code="en", defaults={"title": "English"})
 
     def test_anonymous_forbidden(self):
         response = self.client.get("/api/v1/my_uploads/bulk_options")
@@ -93,8 +93,8 @@ class BulkUploadSubmitTests(TestCase):
         self.client = Client()
         self.user = User.objects.create_user(username="reg", email="reg@e.com", password="pw")
         self.other = User.objects.create_user(username="other", email="other@e.com", password="pw")
-        self.category = Category.objects.create(title="Documentary")
-        Language.objects.create(code="en", title="English")
+        self.category, _ = Category.objects.get_or_create(title="Documentary")
+        Language.objects.get_or_create(code="en", defaults={"title": "English"})
         self.country_code = lists.video_countries[0][0]
         self.media = create_test_media(self.user, "Original", state="private")
 
@@ -191,6 +191,31 @@ class BulkUploadSubmitTests(TestCase):
         self.client.login(username="reg", password="pw")
         response = self._post("publish", [{"friendly_token": self.media.friendly_token, "metadata": {}}])
         self.assertEqual(response.status_code, 400)
+
+    def test_rejects_malformed_metadata(self):
+        self.client.login(username="reg", password="pw")
+        response = self._post("draft", [{"friendly_token": self.media.friendly_token, "metadata": "not an object"}])
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["detail"], "metadata must be an object")
+        response = self._post("draft", [{"friendly_token": self.media.friendly_token, "metadata": None}])
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["detail"], "metadata must be an object")
+
+    def test_rejects_invalid_license_reference(self):
+        self.client.login(username="reg", password="pw")
+        missing_license_id = (License.objects.order_by("-id").first().id if License.objects.exists() else 0) + 1
+        response = self._post(
+            "draft",
+            [
+                {
+                    "friendly_token": self.media.friendly_token,
+                    "metadata": self._valid_metadata(custom_license=missing_license_id, no_license=False),
+                }
+            ],
+        )
+        self.assertEqual(response.status_code, 400)
+        body = response.json()
+        self.assertIn("custom_license", body["errors"][self.media.friendly_token])
 
     def test_editor_submit_does_not_require_admin_only_fields(self):
         # Editors keep admin-only MediaForm fields (reported_times, featured,

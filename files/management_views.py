@@ -256,6 +256,18 @@ _DRAFT_M2M_MODELS = {
 }
 
 
+def _bulk_license_error(metadata):
+    if metadata.get("no_license") or not metadata.get("custom_license"):
+        return None
+    try:
+        license_id = int(metadata["custom_license"])
+    except (TypeError, ValueError):
+        return "Select a valid license."
+    if not License.objects.filter(pk=license_id).exists():
+        return "Select a valid license."
+    return None
+
+
 def _bulk_apply_draft(media, metadata, user):
     """Leniently apply whatever metadata exists, marking the media a private draft.
 
@@ -286,9 +298,12 @@ def _bulk_apply_draft(media, metadata, user):
         media.license = None
     elif metadata.get("custom_license"):
         try:
-            media.license_id = int(metadata["custom_license"])
+            license_id = int(metadata["custom_license"])
         except (TypeError, ValueError):
             pass
+        else:
+            if License.objects.filter(pk=license_id).exists():
+                media.license_id = license_id
 
     # Drafts are always kept private and flagged out of the admin review queue.
     media.state = "private"
@@ -390,7 +405,16 @@ class BulkUploadSubmit(APIView):
             token = (item.get("friendly_token") or "").strip()
             if not token:
                 return Response({"detail": "each item requires a friendly_token"}, status=status.HTTP_400_BAD_REQUEST)
-            metadata_by_token[token] = item.get("metadata") or {}
+            metadata = item.get("metadata")
+            if not isinstance(metadata, dict):
+                return Response({"detail": "metadata must be an object"}, status=status.HTTP_400_BAD_REQUEST)
+            license_error = _bulk_license_error(metadata)
+            if license_error:
+                return Response(
+                    {"detail": "invalid metadata", "errors": {token: {"custom_license": [license_error]}}},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            metadata_by_token[token] = metadata
 
         tokens = list(metadata_by_token.keys())
 

@@ -5,14 +5,27 @@ import { QuickPreview } from '../../../upload-quick-preview';
 import { formatFileSize } from '../../utils/formatSize';
 
 const FIELD_LABELS = {
+	title: 'Title',
 	summary: 'Synopsis',
+	description: 'More Information',
 	year_produced: 'Year Produced',
 	year_produced_custom: 'Year Produced',
+	company: 'Production Company',
 	category: 'Category',
+	topics: 'Topic',
+	content_sensitivity: 'Content Sensitivity',
 	media_country: 'Media Country',
 	media_language: 'Media Language',
 	website: 'Website',
+	new_tags: 'Tags',
+	custom_license: 'License',
+	no_license: 'License',
+	enable_comments: 'Enable Comments',
+	allow_download: 'Allow Download',
+	state: 'Status',
+	requirePassword: 'Require Password',
 	password: 'Password',
+	__all__: 'Form',
 };
 
 const STATUS_LABELS = {

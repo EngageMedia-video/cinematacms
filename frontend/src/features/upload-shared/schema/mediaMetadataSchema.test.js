@@ -1,6 +1,7 @@
 import {
 	validateMetadata,
 	countSynopsisWords,
+	hasErrors,
 	synopsisWordsRemaining,
 	SYNOPSIS_MAX_WORDS,
 } from './mediaMetadataSchema';
@@ -69,5 +70,17 @@ describe('validateMetadata', () => {
 		expect(
 			validateMetadata({ ...validMetadata, requirePassword: true, password: 'secret12' }).password
 		).toBeUndefined();
+	});
+});
+
+describe('hasErrors', () => {
+	it('returns false for empty, null, or undefined error objects', () => {
+		expect(hasErrors({})).toBe(false);
+		expect(hasErrors(null)).toBe(false);
+		expect(hasErrors(undefined)).toBe(false);
+	});
+
+	it('returns true for non-empty error objects', () => {
+		expect(hasErrors({ summary: 'Required' })).toBe(true);
 	});
 });

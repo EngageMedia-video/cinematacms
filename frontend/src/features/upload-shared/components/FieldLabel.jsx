@@ -10,10 +10,13 @@ export function FieldLabel({ children, htmlFor, required = false, className = ''
 		<label id={id} htmlFor={htmlFor} className={cn('body-body-16-regular mb-2 block text-text-strong', className)}>
 			{children}
 			{required ? (
-				<span className="text-text-accent" aria-hidden="true">
-					{' '}
-					*
-				</span>
+				<>
+					<span className="text-text-accent" aria-hidden="true">
+						{' '}
+						*
+					</span>
+					<span className="sr-only"> required</span>
+				</>
 			) : null}
 		</label>
 	);

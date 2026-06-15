@@ -7,9 +7,10 @@ describe('SubStepNav', () => {
 		const onChange = vi.fn();
 		render(<SubStepNav value="basic" onChange={onChange} />);
 
-		expect(screen.getByRole('tab', { name: 'Basic Details' })).toHaveAttribute('aria-selected', 'true');
+		expect(screen.getByRole('navigation', { name: 'Detail sections' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Basic Details' })).toHaveAttribute('aria-current', 'step');
 
-		await userEvent.click(screen.getByRole('tab', { name: 'Other Details' }));
+		await userEvent.click(screen.getByRole('button', { name: 'Other Details' }));
 		expect(onChange).toHaveBeenCalledWith('other');
 	});
 });
