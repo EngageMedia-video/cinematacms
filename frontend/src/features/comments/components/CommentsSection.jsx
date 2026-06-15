@@ -31,7 +31,7 @@ function CommentsStyleTag() {
 	);
 }
 
-function CommentsSectionInner({ friendlyToken, variant }) {
+function CommentsSectionInner({ friendlyToken, variant, commentsDisabled }) {
 	const isExpanded = useCommentsStore((s) => s.isExpanded);
 	const openExpanded = useCommentsStore((s) => s.openExpanded);
 	const closeExpanded = useCommentsStore((s) => s.closeExpanded);
@@ -45,6 +45,7 @@ function CommentsSectionInner({ friendlyToken, variant }) {
 			<CommentsPanel
 				friendlyToken={friendlyToken}
 				variant={variant}
+				commentsDisabled={commentsDisabled}
 				onExpandToggle={openExpanded}
 				isExpanded={false}
 			/>
@@ -58,6 +59,7 @@ function CommentsSectionInner({ friendlyToken, variant }) {
 					<CommentsPanel
 						friendlyToken={friendlyToken}
 						variant="modal"
+						commentsDisabled={commentsDisabled}
 						onExpandToggle={closeExpanded}
 						isExpanded={true}
 					/>
@@ -67,12 +69,12 @@ function CommentsSectionInner({ friendlyToken, variant }) {
 	);
 }
 
-export function CommentsSection({ friendlyToken, variant = 'inline' }) {
+export function CommentsSection({ friendlyToken, variant = 'inline', commentsDisabled = false }) {
 	const resolvedToken = friendlyToken || getFriendlyTokenFromLocation();
 	return (
 		<QueryClientProvider client={commentsQueryClient}>
 			<CommentsStyleTag />
-			<CommentsSectionInner friendlyToken={resolvedToken} variant={variant} />
+			<CommentsSectionInner friendlyToken={resolvedToken} variant={variant} commentsDisabled={commentsDisabled} />
 		</QueryClientProvider>
 	);
 }
