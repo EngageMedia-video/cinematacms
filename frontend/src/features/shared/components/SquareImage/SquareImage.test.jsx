@@ -33,6 +33,25 @@ describe('SquareImage', () => {
 		expect(overlay).not.toBeNull();
 	});
 
+	it('passes image props to the inner image even before a source is available', () => {
+		render(
+			<SquareImage
+				alt="Pending thumbnail"
+				imageProps={{
+					className: 'qq-thumbnail-selector',
+					'qq-max-size': '120',
+					'qq-server-scale': '',
+				}}
+			/>
+		);
+
+		const image = screen.getByRole('img', { name: 'Pending thumbnail' });
+
+		expect(image).toHaveClass('qq-thumbnail-selector');
+		expect(image).toHaveAttribute('qq-max-size', '120');
+		expect(image).toHaveAttribute('qq-server-scale', '');
+	});
+
 	it('falls back to icon state when image load fails', () => {
 		const { container } = render(
 			<SquareImage alt="Broken poster" src="https://example.com/broken-poster.jpg" iconName="example" />
