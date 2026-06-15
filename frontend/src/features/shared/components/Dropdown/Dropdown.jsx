@@ -285,7 +285,7 @@ export function Dropdown({
 					role="menu"
 					aria-labelledby={label ? buttonId : undefined}
 					className={cn(
-						'absolute left-0 top-full z-20 mt-2 max-h-[calc(var(--size-96)*2+var(--size-48))] min-w-full list-none overflow-y-auto overscroll-contain rounded-(--radius-4) border p-0',
+						'thin-scrollbar absolute left-0 top-full z-20 mt-2 max-h-[calc(var(--size-96)*2+var(--size-48))] min-w-full list-none overflow-y-auto overscroll-contain rounded-(--radius-4) border p-0',
 						MENU_VARIANT_CLASSES[variant]
 					)}
 				>

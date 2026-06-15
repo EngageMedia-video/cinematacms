@@ -491,6 +491,13 @@ UPLOAD_MAX_SIZE = 800 * 1024 * 1000 * 5
 UPLOAD_MAX_FILES_NUMBER = 100
 CONCURRENT_UPLOADS = True
 CHUNKS_DONE_PARAM_NAME = "done"
+
+# Per-batch file limits for the bulk-upload flow (issue #524). Trusted Users
+# (advancedUser) and staff get the higher limit; everyone else gets the regular
+# limit. A regular limit below 2 makes a user "single-file-only" and they are
+# redirected away from the bulk page to the single-upload page.
+BULK_UPLOAD_MAX_FILES_REGULAR = 2
+BULK_UPLOAD_MAX_FILES_TRUSTED = 10
 FILE_STORAGE = "django.core.files.storage.DefaultStorage"
 
 

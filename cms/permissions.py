@@ -57,6 +57,37 @@ def user_allowed_to_upload(request):
     return False
 
 
+def max_bulk_upload_files(user):
+    """Maximum number of files a user may upload in a single bulk-upload batch.
+
+    Trusted Users (advancedUser) and staff get the higher limit; everyone else
+    gets the regular limit. Both limits are settings-overridable so a deployment
+    can tighten or relax the policy without code changes (issue #524).
+    """
+    if not user or user.is_anonymous:
+        return 0
+    trusted_limit = getattr(settings, "BULK_UPLOAD_MAX_FILES_TRUSTED", 10)
+    regular_limit = getattr(settings, "BULK_UPLOAD_MAX_FILES_REGULAR", 2)
+    try:
+        if user.is_superuser or user.is_manager or user.is_editor or user.advancedUser:
+            return trusted_limit
+    except AttributeError:
+        return 0
+    return regular_limit
+
+
+def user_allowed_to_bulk_upload(request):
+    """Whether a user may use the dedicated bulk-upload page.
+
+    The user must be allowed to upload at all and have a per-batch limit of at
+    least two files. Single-file-only users (limit < 2) are rejected here and
+    sent to the single-upload page (issue #524, decision D8).
+    """
+    if not user_allowed_to_upload(request):
+        return False
+    return max_bulk_upload_files(request.user) >= 2
+
+
 def user_requires_mfa(user):
     if not user.is_authenticated:
         return False

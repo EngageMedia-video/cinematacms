@@ -185,7 +185,7 @@ class Media(models.Model):
     content_sensitivity = models.ManyToManyField("ContentSensitivity", blank=True)
     channel = models.ForeignKey("users.Channel", on_delete=models.CASCADE, db_index=True, blank=True, null=True)
     description = models.TextField("More Information and Credits", blank=True)
-    summary = models.TextField("Synopsis", help_text="Maximum 60 words")
+    summary = models.TextField("Synopsis", help_text="Maximum 80 words")
     media_language = models.CharField(
         max_length=35,
         blank=True,
@@ -265,6 +265,11 @@ class Media(models.Model):
         default=settings.MEDIA_IS_REVIEWED,
         db_index=True,
         help_text="Only reviewed films will appear in public listings.",
+    )
+    is_draft = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Draft uploads are kept private and excluded from the admin review queue until submitted.",
     )
     encoding_status = models.CharField(max_length=20, choices=MEDIA_ENCODING_STATUS, default="pending", db_index=True)
     featured = models.BooleanField(

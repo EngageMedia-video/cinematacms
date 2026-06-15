@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% load django_vite %}
+
+{% block headtitle %}Bulk Upload Media - {{PORTAL_NAME}}{% endblock headtitle %}
+
+{% block externallinks %}
+{% if LOAD_FROM_CDN %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" rel="preload" as="script" integrity="sha384-s4tTAUzowK9zROQxp/mYIe9Ah2IqXf8pSUWZAk4o2C/Ri/wSbqiEE1+F6AQIQaAz" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" integrity="sha384-s4tTAUzowK9zROQxp/mYIe9Ah2IqXf8pSUWZAk4o2C/Ri/wSbqiEE1+F6AQIQaAz" crossorigin="anonymous"></script>
+{% else %}
+<link href="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}" rel="preload" as="script">
+<script src="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}"></script>
+{% endif %}
+{% endblock externallinks %}
+
+{% block topimports %}{% vite_asset 'src/entries/bulk-upload.js' %}{% endblock topimports %}
+
+{% block content %}
+{% if request.user.is_authenticated and can_add %}
+	<script type="application/json" id="bulk-upload-config">
+	{
+		"uploadEndpoint": "{% url 'uploader:upload' %}",
+		"chunksDoneParam": "{{ chunks_done_param|default:'done' }}",
+		"optionsEndpoint": "/api/v1/my_uploads/bulk_options",
+		"submitEndpoint": "/api/v1/my_uploads/bulk_submit",
+		"singleUploadUrl": "/upload",
+		"postSubmitUrl": "/user/{{ request.user.username }}/media",
+		"maxFiles": {{ max_bulk_files|default:2 }},
+		"maxSizeBytes": {{ upload_max_size|default:0 }},
+		"allowedExtensions": {{ allowed_extensions|safe }},
+		"isTrustedUser": {{ is_trusted_user|yesno:"true,false" }}
+	}
+	</script>
+	<div id="page-bulk-upload"></div>
+{% else %}
+	<div class="page-main">
+		<div class="page-main-inner">
+			{% if request.user.is_authenticated %}
+				{{ can_upload_exp }}
+				<br>
+				<a href='/contact'>Contact</a> the admin owners for more information.
+			{% else %}
+				<div class="user-action-form-wrap">
+					<div class="user-action-form-inner">
+						<h1>Sign In</h1>
+						Please log in or register before uploading a video.
+						{% url 'bulk_upload' as redirect_url %}
+						<p>If you have not created an account yet, then please <a href="{% url 'account_signup' %}?next={{ redirect_url }}">sign up</a> first.</p>
+						<form class="login" method="POST" action="{% url 'account_login' %}">
+							{% csrf_token %}
+							{{ form.as_p }}
+							<input type="hidden" name="next" value="{{ redirect_url }}" />
+							<a class="button secondaryAction" href="{% url 'account_reset_password' %}">Forgot Password?</a>
+							<button class="primaryAction" type="submit">Sign In</button>
+						</form>
+					</div>
+				</div>
+			{% endif %}
+		</div>
+	</div>
+{% endif %}
+{% endblock %}
