@@ -85,6 +85,7 @@ export function Dropdown({
 	id,
 	invalid = false,
 	label = '',
+	name,
 	onChange,
 	options = [],
 	placeholder = 'Select option',
@@ -110,8 +111,6 @@ export function Dropdown({
 	const selectedOption = getSelectedOption(normalizedOptions, selectedValue);
 	const activeState = variant === 'default' && (isFocused || open);
 	const filledState = variant === 'default' && !!selectedOption;
-	const labelClasses =
-		variant === 'default' && (activeState || filledState) ? LABEL_ACTIVE_CLASSES : LABEL_VARIANT_CLASSES[variant];
 	const borderClasses =
 		variant === 'default' && (activeState || filledState) ? ACTIVE_BORDER_CLASSES : BORDER_VARIANT_CLASSES[variant];
 
@@ -196,6 +195,8 @@ export function Dropdown({
 				}
 			}}
 		>
+			{name ? <input type="hidden" name={name} value={selectedValue ?? ''} /> : null}
+
 			<div
 				className={cn(
 					'group w-full border-b px-0 py-[14px] transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
@@ -254,7 +255,16 @@ export function Dropdown({
 				>
 					<span className="min-w-0 flex-1">
 						{label ? (
-							<span className={cn('body-body-16-regular mb-2 block', labelClasses)}>{label}</span>
+							<span
+								className={cn(
+									'body-body-16-regular mb-2 block',
+									activeState || filledState
+										? LABEL_VARIANT_CLASSES.disabled
+										: LABEL_VARIANT_CLASSES.default
+								)}
+							>
+								{label}
+							</span>
 						) : null}
 						<span
 							className={cn(
