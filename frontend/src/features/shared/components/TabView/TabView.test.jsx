@@ -53,7 +53,10 @@ describe('TabView', () => {
 
 		render(
 			<TabView defaultSelectedTab="single-film-upload" aria-label="Upload mode" keepMounted>
-				<TabContent title="Single Film Upload" content={<div data-testid="single-uploader">Upload one title.</div>} />
+				<TabContent
+					title="Single Film Upload"
+					content={<div data-testid="single-uploader">Upload one title.</div>}
+				/>
 				<TabContent title="Bulk Upload" content={<p>Upload many titles.</p>} />
 			</TabView>
 		);

@@ -22,16 +22,17 @@ export function required(message = 'This field is required') {
 }
 
 export function maxWords(max, message) {
-	return (value) => (countWords(value) > max ? message ?? `Maximum ${max} words` : '');
+	return (value) => (countWords(value) > max ? (message ?? `Maximum ${max} words`) : '');
 }
 
 export function maxLength(max, message) {
-	return (value) => (toText(value).length > max ? message ?? `Maximum ${max} characters` : '');
+	return (value) => (toText(value).length > max ? (message ?? `Maximum ${max} characters`) : '');
 }
 
 export function minLength(min, message) {
 	const text = (value) => toText(value);
-	return (value) => (text(value).length > 0 && text(value).length < min ? message ?? `Minimum ${min} characters` : '');
+	return (value) =>
+		text(value).length > 0 && text(value).length < min ? (message ?? `Minimum ${min} characters`) : '';
 }
 
 export function pattern(regex, message = 'Invalid format') {
