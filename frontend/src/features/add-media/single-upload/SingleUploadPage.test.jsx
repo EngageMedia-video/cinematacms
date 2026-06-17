@@ -2,8 +2,12 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { SingleUploadPage } from './SingleUploadPage';
 
 describe('SingleUploadPage', () => {
+	function renderUploadedPage() {
+		return render(<SingleUploadPage hasUploadedMedia uploadedMedia={{ editUrl: '/media/test/edit' }} />);
+	}
+
 	it('shows the last selected thumbnail file after choosing an image', () => {
-		render(<SingleUploadPage />);
+		renderUploadedPage();
 
 		const thumbnailInput = screen.getByLabelText('Choose thumbnail image');
 		const file = new File(['poster'], 'poster.png', { type: 'image/png' });
@@ -17,7 +21,7 @@ describe('SingleUploadPage', () => {
 	});
 
 	it('updates the hidden license field from the dialog choices', () => {
-		render(<SingleUploadPage />);
+		renderUploadedPage();
 
 		const licenseField = document.querySelector('input[name="custom_license"]');
 		const noLicenseField = screen.getByRole('checkbox', { name: /All Rights Reserved/ });
