@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
 	Card,
+	ConfirmationDialogContent,
 	DateChooserField,
 	Dialog,
 	DialogContent,
@@ -17,7 +18,9 @@ import { EditorField } from '../../shared/components/EditorField';
 import { MediaDropzone } from '../../shared/components/MediaDropzone';
 import { Text } from '../../shared/components/Text';
 import { TextField } from '../../shared/components/TextField';
-import { maxWords, required } from '../../shared/utils/validators';
+import { maxWords, required, runValidators } from '../../shared/utils/validators';
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 const DESCRIPTION_FIELDS = [
 	{
@@ -29,10 +32,10 @@ const DESCRIPTION_FIELDS = [
 		id: 'summary',
 		label: 'Synopsis',
 		placeholder: 'Write here...',
-		helperText: 'Maximum 80 Words',
+		helperText: 'Maximum 60 Words',
 		required: true,
 		multiline: true,
-		validate: [required(), maxWords(80)],
+		validate: [required(), maxWords(60)],
 	},
 	{
 		id: 'description',
@@ -44,6 +47,8 @@ const DESCRIPTION_FIELDS = [
 		id: 'year_produced',
 		label: 'Year Produced',
 		placeholder: 'Write here...',
+		required: true,
+		validate: [required()],
 	},
 ];
 
@@ -308,12 +313,24 @@ function LicenseChooser() {
 }
 
 function MediaDetailsForm({
+	canPublishDirectly = false,
 	categories = [],
 	contentSensitivities = [],
+	csrfToken = '',
+	editUrl = '',
 	mediaCountries = [],
 	mediaLanguages = [],
 	topics = [],
 }) {
+	const formRef = useRef(null);
+	const [allowDownload, setAllowDownload] = useState(false);
+	// Per-field required-field errors, keyed by form field name.
+	const [errors, setErrors] = useState({});
+	// Top-level message shown when the server rejects the submission.
+	const [submitError, setSubmitError] = useState('');
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	// Share Media confirmation gate: null | 'download' | 'review'.
+	const [shareStage, setShareStage] = useState(null);
 	const [lastSelectedThumbnailFile, setLastSelectedThumbnailFile] = useState('');
 	const [mediaStatus, setMediaStatus] = useState('public');
 	const [requirePassword, setRequirePassword] = useState(false);
@@ -359,293 +376,518 @@ function MediaDetailsForm({
 		setLastSelectedThumbnailFile(file?.name ?? '');
 	}
 
+	// Required fields the backend rejects when empty. Keeping this in sync with
+	// MediaForm avoids a server round-trip that navigates away from this page.
+	function validateForm() {
+		const form = formRef.current;
+
+		if (!form) {
+			return {};
+		}
+
+		const data = new FormData(form);
+		const nextErrors = {};
+
+		// Synopsis: required, max 60 words (backend clean_summary enforces 60).
+		const summaryError = runValidators([required(), maxWords(60)], data.get('summary'));
+		if (summaryError) {
+			nextErrors.summary = summaryError;
+		}
+
+		// Year Produced: backend expects an integer between 2000 and the current year.
+		const year = String(data.get('year_produced') ?? '').trim();
+		if (!year) {
+			nextErrors.year_produced = 'This field is required';
+		} else if (!/^\d+$/.test(year) || Number(year) < 2000 || Number(year) > CURRENT_YEAR) {
+			nextErrors.year_produced = `Enter a year between 2000 and ${CURRENT_YEAR}`;
+		}
+
+		// Website is optional, but must start with https:// when provided.
+		const website = String(data.get('website') ?? '').trim();
+		if (website && !website.startsWith('https://')) {
+			nextErrors.website = 'Website should start with https://';
+		}
+
+		if (!String(data.get('media_language') ?? '').trim()) {
+			nextErrors.media_language = 'Select a media language';
+		}
+
+		if (!String(data.get('media_country') ?? '').trim()) {
+			nextErrors.media_country = 'Select a media country';
+		}
+
+		if (data.getAll('category').length === 0) {
+			nextErrors.category = 'Select at least one category';
+		}
+
+		if (data.getAll('topics').length === 0) {
+			nextErrors.topics = 'Select at least one topic';
+		}
+
+		return nextErrors;
+	}
+
+	// Submit over fetch instead of a native form POST so a server-side validation
+	// failure keeps the user on this page (with an alert) instead of navigating
+	// to the rendered edit-media page.
+	async function submitMedia() {
+		setShareStage(null);
+
+		const form = formRef.current;
+
+		if (!form || isSubmitting) {
+			return;
+		}
+
+		setIsSubmitting(true);
+		setSubmitError('');
+
+		try {
+			const response = await fetch(form.action, {
+				method: 'POST',
+				body: new FormData(form),
+				credentials: 'same-origin',
+				headers: { 'X-Requested-With': 'XMLHttpRequest' },
+			});
+
+			const data = await response.json().catch(() => null);
+
+			if (response.ok && data?.success) {
+				window.location.assign(data.url);
+				return;
+			}
+
+			// Map server-side MediaForm errors onto their fields + a summary banner.
+			if (data?.errors) {
+				const fieldErrors = {};
+				const messages = [];
+
+				for (const [field, value] of Object.entries(data.errors)) {
+					const text = Array.isArray(value) ? value.join(' ') : String(value);
+					fieldErrors[field] = text;
+					messages.push(field === '__all__' ? text : `${field}: ${text}`);
+				}
+
+				setErrors(fieldErrors);
+				setSubmitError(messages.join(' • ') || 'Please review your inputs and try again.');
+				return;
+			}
+
+			throw new Error(`Unexpected response: ${response.status}`);
+		} catch (error) {
+			console.warn('Failed to share media', error);
+			setSubmitError('Something went wrong while sharing your media. Please try again.');
+		} finally {
+			setIsSubmitting(false);
+		}
+	}
+
+	// Trusted users (advancedUser/editor/manager/superuser) publish immediately;
+	// regular users must acknowledge the admin review first.
+	function postOrReview() {
+		if (canPublishDirectly) {
+			submitMedia();
+		} else {
+			setShareStage('review');
+		}
+	}
+
+	function handleShareClick() {
+		setSubmitError('');
+		const nextErrors = validateForm();
+		setErrors(nextErrors);
+
+		// Block the share flow and keep the user on the page while anything is missing.
+		if (Object.keys(nextErrors).length > 0) {
+			const firstInvalid = formRef.current?.querySelector('[aria-invalid="true"]');
+			firstInvalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			return;
+		}
+
+		// Allowing downloads needs an explicit heads-up before anything else.
+		if (allowDownload) {
+			setShareStage('download');
+		} else {
+			postOrReview();
+		}
+	}
+
 	return (
-		<form className="mt-10 flex flex-col gap-8" data-single-upload-form>
-			<FieldGroup
-				title="Basic Details"
-				description="Add the information viewers and editors need before this media is published."
+		<>
+			<form
+				ref={formRef}
+				action={editUrl || undefined}
+				method="post"
+				encType="multipart/form-data"
+				className="mt-10 flex flex-col gap-8"
+				data-single-upload-form
 			>
-				{DESCRIPTION_FIELDS.map((field) =>
-					field.multiline ? (
-						<EditorField
-							key={field.id}
-							className="w-full"
-							id={field.id}
-							name={field.id}
-							label={field.label}
-							required={field.required}
-							placeholder={field.placeholder}
-							helperText={field.helperText}
-							validate={field.validate}
-						/>
-					) : (
-						<TextField
-							key={field.id}
-							className="w-full"
-							id={field.id}
-							name={field.id}
-							label={field.label}
-							placeholder={field.placeholder}
-							helperText={field.helperText}
-							required={field.required}
-							validate={field.validate}
-						/>
-					)
-				)}
-			</FieldGroup>
-
-			<FieldGroup
-				title="Thumbnail Image Upload"
-				description="This image will display when your video isn’t autoplaying. You can select an auto-generated image, upload a custom image or choose a still frame from your video."
-			>
-				<div>
-					<TabView
-						tabMode="wrap"
-						triggerClassName="rounded-none py-3 px-size-22 text-neutral-50 aria-selected:text-text-primary aria-selected:text-neutral-50"
-						panelClassName="mt-8"
-						aria-label="Upload media type"
-						defaultSelectedTab="single-film-upload"
-					>
-						<TabContent title="UPLOAD THUMBNAIL" value="upload-thumbnail">
-							<MediaDropzone
-								accept="image/*"
-								buttonVariant="secondary"
-								iconName={null}
-								multiple={false}
-								name="thumbnail"
-								aria-label="Choose thumbnail image"
-								onFilesSelected={onFileChanged}
+				<input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+				{/* Editors/managers keep MediaForm's required moderation field; a new
+				    upload always starts at zero reports. Regular users never see it. */}
+				<input type="hidden" name="reported_times" value="0" />
+				<FieldGroup
+					title="Basic Details"
+					description="Add the information viewers and editors need before this media is published."
+				>
+					{DESCRIPTION_FIELDS.map((field) =>
+						field.multiline ? (
+							<EditorField
+								key={field.id}
+								className="w-full"
+								id={field.id}
+								name={field.id}
+								label={field.label}
+								required={field.required}
+								placeholder={field.placeholder}
+								helperText={errors[field.id] || field.helperText}
+								invalid={!!errors[field.id]}
+								validate={field.validate}
 							/>
+						) : (
+							<TextField
+								key={field.id}
+								className="w-full"
+								id={field.id}
+								name={field.id}
+								label={field.label}
+								placeholder={field.placeholder}
+								helperText={errors[field.id] || field.helperText}
+								invalid={!!errors[field.id]}
+								required={field.required}
+								validate={field.validate}
+							/>
+						)
+					)}
+				</FieldGroup>
 
-							{lastSelectedThumbnailFile ? (
-								<Text variant="body-14" className="m-0 mt-4 text-cinemata-pacific-deep-300">
-									Last selected: {lastSelectedThumbnailFile}
-								</Text>
-							) : null}
-						</TabContent>
-						<TabContent title="CHOOSE FROM VIDEO" value="choose-from-video">
-							<p>Choose from video</p>
-						</TabContent>
-					</TabView>
-				</div>
-			</FieldGroup>
-
-			<FieldGroup title="Others Details">
-				<TextField
-					className="w-full"
-					id="production-company"
-					name="production-company"
-					label="Production Company"
-					placeholder="Write here..."
-				/>
-
-				<TextField className="w-full" id="website" name="website" label="Website" placeholder="Write here..." />
-
-				<Dropdown
-					className="w-full"
-					placeholder="Select media language"
-					label="Media Language"
-					options={mediaLanguages}
-				/>
-
-				<Dropdown
-					className="w-full"
-					placeholder="Select media country"
-					label="Media Country"
-					options={mediaCountries}
-				/>
-
-				<div className="flex flex-col sm:flex-row gap-4 mt-3">
-					<div className="flex flex-col flex-1">
-						<label className="body-body-16-regular mb-2 text-text-muted">
-							Categories
-							<span className="text-text-danger"> *</span>
-						</label>
-
-						<div className="flex flex-col max-h-40 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent [&::-webkit-scrollbar-thumb]:rounded-full">
-							{categories.map((option) => (
-								<CheckboxButton key={option.value} name="category" value={option.value}>
-									{option.label}
-								</CheckboxButton>
-							))}
-						</div>
-					</div>
-
-					<div className="flex flex-col flex-1">
-						<label className="body-body-16-regular mb-2 text-text-muted">
-							Content Sensitivity
-							<span className="text-text-danger"> *</span>
-						</label>
-
-						<div className="flex flex-col max-h-40 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent [&::-webkit-scrollbar-thumb]:rounded-full">
-							{contentSensitivities.map((option) => (
-								<CheckboxButton key={option.value} name="content_sensitivity" value={option.value}>
-									{option.label}
-								</CheckboxButton>
-							))}
-						</div>
-					</div>
-				</div>
-
-				<div className="flex flex-col sm:flex-row gap-4 mt-3">
-					<div className="flex flex-col flex-1">
-						<label className="body-body-16-regular mb-2 text-text-muted">
-							Topics
-							<span className="text-text-danger"> *</span>
-						</label>
-
-						<div className="grid grid-cols-1 md:grid-cols-3">
-							{topics.map((option) => (
-								<CheckboxButton key={option.value} name="topics" value={option.value}>
-									{option.label}
-								</CheckboxButton>
-							))}
-						</div>
-					</div>
-				</div>
-
-				<TextField
-					className="w-full"
-					id="tags"
-					name="tags"
-					label="Tags"
-					placeholder="Write here..."
-					helperText="Use a comma to separate multiple tags (eq. first,second)"
-				/>
-
-				<LicenseChooser />
-			</FieldGroup>
-
-			<FieldGroup title="Final Settings">
-				<div className="flex flex-col">
-					<CheckboxButton>Enable Comments</CheckboxButton>
-
-					<CheckboxButton>Allow Download</CheckboxButton>
-
-					<div className="my-4 border-b border-b-border-divider" />
-
-					<fieldset className="m-0 border-0 p-0">
-						<legend className="body-body-16-regular mb-2 text-text-muted">Status</legend>
-						<div className="flex flex-wrap items-center gap-6">
-							{STATUS_OPTIONS.map((option) => (
-								<RadioButton
-									key={option.value}
-									name="state"
-									value={option.value}
-									controlClassName="bg-bg-surface-hover"
-									checked={mediaStatus === option.value}
-									onChange={() => setMediaStatus(option.value)}
-								>
-									{option.label}
-								</RadioButton>
-							))}
-						</div>
-					</fieldset>
-
-					<div className="my-4 border-b border-b-border-divider" />
-
-					<div className="flex items-center justify-between gap-4">
-						<CheckboxButton checked={requirePassword} onChange={toggleRequirePassword}>
-							Require Password
-						</CheckboxButton>
-
-						{requirePassword && !isEditingPassword ? (
-							<Button
-								variant="text"
-								className="body-body-14-bold uppercase text-text-accent"
-								onClick={() => {
-									setPasswordDraft(savedPassword);
-									setIsEditingPassword(true);
-								}}
-							>
-								Edit Password
-							</Button>
-						) : null}
-					</div>
-
-					{requirePassword && isEditingPassword ? (
-						<TextField
-							className="w-full"
-							id="password"
-							name="password"
-							type="text"
-							label="Enter Password"
-							placeholder="Write here..."
-							value={passwordDraft}
-							onChange={(event) => setPasswordDraft(event.target.value)}
-							rightButtonLabel="Save"
-							onRightButtonClick={savePassword}
-						/>
-					) : null}
-
-					{requirePassword && !isEditingPassword ? (
-						<input type="hidden" name="password" value={savedPassword} readOnly />
-					) : null}
-
-					<div className="my-4 border-b border-b-border-divider" />
-
-					<CheckboxButton checked={expireEnabled} onChange={toggleExpire}>
-						Set Visibility Expiration
-					</CheckboxButton>
-
-					{expireEnabled ? (
-						<>
-							<div className="flex flex-col gap-4 sm:flex-row">
-								<DateChooserField
-									id="visibility_start"
-									name="visibility_start"
-									label="Enter Start Date"
-									value={startDate}
-									onChange={setStartDate}
+				<FieldGroup
+					title="Thumbnail Image Upload"
+					description="This image will display when your video isn’t autoplaying. You can select an auto-generated image, upload a custom image or choose a still frame from your video."
+				>
+					<div>
+						<TabView
+							tabMode="wrap"
+							triggerClassName="rounded-none py-3 px-size-22 text-neutral-50 aria-selected:text-text-primary aria-selected:text-neutral-50"
+							panelClassName="mt-8"
+							aria-label="Upload media type"
+							defaultSelectedTab="single-film-upload"
+						>
+							<TabContent title="UPLOAD THUMBNAIL" value="upload-thumbnail">
+								<MediaDropzone
+									accept="image/*"
+									buttonVariant="secondary"
+									iconName={null}
+									multiple={false}
+									name="thumbnail"
+									aria-label="Choose thumbnail image"
+									onFilesSelected={onFileChanged}
 								/>
 
-								<DateChooserField
-									id="visibility_end"
-									name="visibility_end"
-									label="Enter End Date"
-									value={endDate}
-									min={startDate || todayIso()}
-									onChange={setEndDate}
-								/>
+								{lastSelectedThumbnailFile ? (
+									<Text variant="body-14" className="m-0 mt-4 text-cinemata-pacific-deep-300">
+										Last selected: {lastSelectedThumbnailFile}
+									</Text>
+								) : null}
+							</TabContent>
+							<TabContent title="CHOOSE FROM VIDEO" value="choose-from-video">
+								<p>Choose from video</p>
+							</TabContent>
+						</TabView>
+					</div>
+				</FieldGroup>
+
+				<FieldGroup title="Others Details">
+					<TextField
+						className="w-full"
+						id="production-company"
+						name="company"
+						label="Production Company"
+						placeholder="Write here..."
+					/>
+
+					<TextField
+						className="w-full"
+						id="website"
+						name="website"
+						label="Website"
+						placeholder="Write here..."
+						helperText={errors.website}
+						invalid={!!errors.website}
+					/>
+
+					<Dropdown
+						className="w-full"
+						name="media_language"
+						placeholder="Select media language"
+						label="Media Language"
+						options={mediaLanguages}
+						invalid={!!errors.media_language}
+						helperText={errors.media_language}
+					/>
+
+					<Dropdown
+						className="w-full"
+						name="media_country"
+						placeholder="Select media country"
+						label="Media Country"
+						options={mediaCountries}
+						invalid={!!errors.media_country}
+						helperText={errors.media_country}
+					/>
+
+					<div className="flex flex-col sm:flex-row gap-4 mt-3">
+						<div className="flex flex-col flex-1">
+							<label className="body-body-16-regular mb-2 text-text-muted">
+								Categories
+								<span className="text-text-danger"> *</span>
+							</label>
+
+							<div className="flex flex-col max-h-40 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent [&::-webkit-scrollbar-thumb]:rounded-full">
+								{categories.map((option) => (
+									<CheckboxButton key={option.value} name="category" value={option.value}>
+										{option.label}
+									</CheckboxButton>
+								))}
 							</div>
 
-							{endDate ? (
-								<Text variant="body-14" color="meta" className="m-0">
-									Your film will be visible for {visibleDays} days, starting{' '}
-									{formatDMY(effectiveStart)} to {formatDMY(endDate)}
-								</Text>
+							{errors.category ? (
+								<p className="body-body-12-regular mt-2 mb-0 text-text-danger">{errors.category}</p>
 							) : null}
-						</>
-					) : null}
+						</div>
+
+						<div className="flex flex-col flex-1">
+							<label className="body-body-16-regular mb-2 text-text-muted">Content Sensitivity</label>
+
+							<div className="flex flex-col max-h-40 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent [&::-webkit-scrollbar-thumb]:rounded-full">
+								{contentSensitivities.map((option) => (
+									<CheckboxButton key={option.value} name="content_sensitivity" value={option.value}>
+										{option.label}
+									</CheckboxButton>
+								))}
+							</div>
+						</div>
+					</div>
+
+					<div className="flex flex-col sm:flex-row gap-4 mt-3">
+						<div className="flex flex-col flex-1">
+							<label className="body-body-16-regular mb-2 text-text-muted">
+								Topics
+								<span className="text-text-danger"> *</span>
+							</label>
+
+							<div className="grid grid-cols-1 md:grid-cols-3">
+								{topics.map((option) => (
+									<CheckboxButton key={option.value} name="topics" value={option.value}>
+										{option.label}
+									</CheckboxButton>
+								))}
+							</div>
+
+							{errors.topics ? (
+								<p className="body-body-12-regular mt-2 mb-0 text-text-danger">{errors.topics}</p>
+							) : null}
+						</div>
+					</div>
+
+					<TextField
+						className="w-full"
+						id="tags"
+						name="new_tags"
+						label="Tags"
+						placeholder="Write here..."
+						helperText="Use a comma to separate multiple tags (eq. first,second)"
+					/>
+
+					<LicenseChooser />
+				</FieldGroup>
+
+				<FieldGroup title="Final Settings">
+					<div className="flex flex-col">
+						<CheckboxButton name="enable_comments">Enable Comments</CheckboxButton>
+
+						<CheckboxButton
+							name="allow_download"
+							checked={allowDownload}
+							onChange={(event) => setAllowDownload(event.target.checked)}
+						>
+							Allow Download
+						</CheckboxButton>
+
+						<div className="my-4 border-b border-b-border-divider" />
+
+						<fieldset className="m-0 border-0 p-0">
+							<legend className="body-body-16-regular mb-2 text-text-muted">Status</legend>
+							<div className="flex flex-wrap items-center gap-6">
+								{STATUS_OPTIONS.map((option) => (
+									<RadioButton
+										key={option.value}
+										name="state"
+										value={option.value}
+										controlClassName="bg-bg-surface-hover"
+										checked={mediaStatus === option.value}
+										onChange={() => setMediaStatus(option.value)}
+									>
+										{option.label}
+									</RadioButton>
+								))}
+							</div>
+						</fieldset>
+
+						<div className="my-4 border-b border-b-border-divider" />
+
+						<div className="flex items-center justify-between gap-4">
+							<CheckboxButton checked={requirePassword} onChange={toggleRequirePassword}>
+								Require Password
+							</CheckboxButton>
+
+							{requirePassword && !isEditingPassword ? (
+								<Button
+									variant="text"
+									className="body-body-14-bold uppercase text-text-accent"
+									onClick={() => {
+										setPasswordDraft(savedPassword);
+										setIsEditingPassword(true);
+									}}
+								>
+									Edit Password
+								</Button>
+							) : null}
+						</div>
+
+						{requirePassword && isEditingPassword ? (
+							<TextField
+								className="w-full"
+								id="password"
+								name="password"
+								type="text"
+								label="Enter Password"
+								placeholder="Write here..."
+								value={passwordDraft}
+								onChange={(event) => setPasswordDraft(event.target.value)}
+								rightButtonLabel="Save"
+								onRightButtonClick={savePassword}
+							/>
+						) : null}
+
+						{requirePassword && !isEditingPassword ? (
+							<input type="hidden" name="password" value={savedPassword} readOnly />
+						) : null}
+
+						<div className="my-4 border-b border-b-border-divider" />
+
+						<CheckboxButton checked={expireEnabled} onChange={toggleExpire}>
+							Set Visibility Expiration
+						</CheckboxButton>
+
+						{expireEnabled ? (
+							<>
+								<div className="flex flex-col gap-4 sm:flex-row">
+									<DateChooserField
+										id="visibility_start"
+										name="visibility_start"
+										label="Enter Start Date"
+										value={startDate}
+										onChange={setStartDate}
+									/>
+
+									<DateChooserField
+										id="visibility_end"
+										name="visibility_end"
+										label="Enter End Date"
+										value={endDate}
+										min={startDate || todayIso()}
+										onChange={setEndDate}
+									/>
+								</div>
+
+								{endDate ? (
+									<Text variant="body-14" color="meta" className="m-0">
+										Your film will be visible for {visibleDays} days, starting{' '}
+										{formatDMY(effectiveStart)} to {formatDMY(endDate)}
+									</Text>
+								) : null}
+							</>
+						) : null}
+					</div>
+				</FieldGroup>
+
+				<TextAlert>
+					Uploading to Cinemata does not transfer ownership. <br />
+					You keep full rights and control over how your film is shared.
+				</TextAlert>
+
+				{submitError || Object.keys(errors).length > 0 ? (
+					<div
+						role="alert"
+						className="rounded-ds-4 border border-border-danger bg-bg-surface px-4 py-3 text-text-danger"
+					>
+						<Text variant="body-14-bold" as="p" className="m-0 text-text-danger">
+							{submitError || 'Please fill in all required fields before sharing your media.'}
+						</Text>
+					</div>
+				) : null}
+
+				<div className="flex flex-col gap-3 pt-8 sm:flex-row sm:items-center sm:justify-end">
+					<Button
+						type="button"
+						variant="secondary"
+						title="Saving as draft will be wired in a later integration slice."
+					>
+						Save as Draft
+					</Button>
+
+					<Button type="button" onClick={handleShareClick} disabled={isSubmitting}>
+						{isSubmitting ? 'Sharing…' : 'Share Media'}
+					</Button>
 				</div>
-			</FieldGroup>
+			</form>
 
-			<TextAlert>
-				Uploading to Cinemata does not transfer ownership. <br />
-				You keep full rights and control over how your film is shared.
-			</TextAlert>
+			<Dialog open={shareStage === 'download'} onOpenChange={(open) => !open && setShareStage(null)}>
+				<ConfirmationDialogContent
+					title="Heads-up! This media can be downloaded."
+					subtitle="Just to confirm that you consciously checked the Allow Download button."
+					aria-label="Allow download confirmation"
+					actions={
+						<>
+							<Button variant="secondary-outline" onClick={() => setShareStage(null)}>
+								Cancel
+							</Button>
+							<Button variant="primary" onClick={postOrReview}>
+								Yes, Proceed
+							</Button>
+						</>
+					}
+				/>
+			</Dialog>
 
-			<div className="flex flex-col gap-3 pt-8 sm:flex-row sm:items-center sm:justify-end">
-				<Button
-					type="button"
-					variant="secondary"
-					title="Saving from this form will be wired in the next integration slice."
-				>
-					Save as Draft
-				</Button>
-
-				<Button type="button" title="Saving from this form will be wired in the next integration slice.">
-					Share Media
-				</Button>
-			</div>
-		</form>
+			<Dialog open={shareStage === 'review'} onOpenChange={(open) => !open && setShareStage(null)}>
+				<ConfirmationDialogContent
+					title="Submit For Review?"
+					subtitle="As a regular user, your video needs to be reviewed by an admin before being published. You will get an email notification after the review."
+					aria-label="Submit for review confirmation"
+					actions={
+						<>
+							<Button variant="secondary-outline" onClick={() => setShareStage(null)}>
+								Cancel
+							</Button>
+							<Button variant="primary" onClick={submitMedia}>
+								Yes, Submit
+							</Button>
+						</>
+					}
+				/>
+			</Dialog>
+		</>
 	);
 }
 
 export function SingleUploadPage({
 	accept = 'video/*',
+	canPublishDirectly = false,
 	categories = [],
 	contentSensitivities = [],
+	csrfToken = '',
 	hasUploadedMedia = false,
 	maxFiles = 1,
 	mediaCountries = [],
@@ -687,8 +929,11 @@ export function SingleUploadPage({
 
 			{hasUploadedMedia ? (
 				<MediaDetailsForm
+					canPublishDirectly={canPublishDirectly}
 					categories={categories}
 					contentSensitivities={contentSensitivities}
+					csrfToken={csrfToken}
+					editUrl={uploadedMedia?.editUrl ?? ''}
 					mediaCountries={mediaCountries}
 					mediaLanguages={mediaLanguages}
 					topics={topics}
