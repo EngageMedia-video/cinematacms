@@ -172,7 +172,7 @@ function TabViewTrigger({ children, value, disabled = false, className = '', tri
 				'body-body-14-bold cursor-pointer whitespace-nowrap border-0 px-4 py-4 text-text-on-chrome uppercase tracking-[0.02em] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-chrome disabled:cursor-not-allowed disabled:opacity-50',
 				tabMode === 'wrap' ? 'min-w-0 flex-none' : 'min-w-[160px] flex-1',
 				isSelected && !triggerSelectedColor ? 'bg-bg-primary-hover' : '',
-				!isSelected && !triggerColor ? 'bg-transparent' : '',
+				!isSelected && !triggerColor ? 'bg-bg-chrome' : '',
 				className
 			)}
 			style={{ backgroundColor }}
@@ -182,10 +182,12 @@ function TabViewTrigger({ children, value, disabled = false, className = '', tri
 	);
 }
 
-function TabViewPanel({ item, className = '' }) {
+function TabViewPanel({ item, className = '', isActive = true, keepMounted = false }) {
 	const { getPanelId, getTabId, selectedValue } = useTabViewContext('TabViewPanel');
 
-	if (!item || selectedValue !== item.value) {
+	const resolvedIsActive = isActive && selectedValue === item?.value;
+
+	if (!item || (!keepMounted && !resolvedIsActive)) {
 		return null;
 	}
 
@@ -194,6 +196,7 @@ function TabViewPanel({ item, className = '' }) {
 			role="tabpanel"
 			id={getPanelId(item.value)}
 			aria-labelledby={getTabId(item.value)}
+			hidden={!resolvedIsActive}
 			className={cn('mt-4 w-full', className, item.panelClassName)}
 		>
 			{item.content}
@@ -224,6 +227,7 @@ export function TabView({
 	tabMode = 'fill',
 	triggerColor,
 	triggerSelectedColor,
+	keepMounted = false,
 	'aria-label': ariaLabel = 'Tabs',
 }) {
 	const generatedId = useId();
@@ -296,7 +300,19 @@ export function TabView({
 					triggerColor={triggerColor}
 					triggerSelectedColor={triggerSelectedColor}
 				/>
-				<TabViewPanel item={selectedItem} className={panelClassName} />
+				{keepMounted ? (
+					tabs.map((tab) => (
+						<TabViewPanel
+							key={tab.value}
+							item={tab}
+							className={panelClassName}
+							isActive={tab.value === selectedValue}
+							keepMounted
+						/>
+					))
+				) : (
+					<TabViewPanel item={selectedItem} className={panelClassName} />
+				)}
 			</div>
 		</TabViewContext.Provider>
 	);

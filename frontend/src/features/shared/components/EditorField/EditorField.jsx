@@ -1,4 +1,5 @@
 import { cn } from '../../utils/classNames';
+import { runValidators } from '../../utils/validators';
 import { useEffect, useId, useRef, useState } from 'react';
 
 const SHELL_VARIANT_CLASSES = {
@@ -31,7 +32,6 @@ const HELPER_VARIANT_CLASSES = {
 	disabled: 'text-text-accent',
 };
 
-const LABEL_ACTIVE_CLASSES = 'text-text-muted';
 const ACTIVE_BORDER_CLASSES = 'border-border-input';
 const BORDER_VARIANT_CLASSES = {
 	default: 'border-border-strong-constant',
@@ -80,7 +80,10 @@ export function EditorField({
 	onBlur,
 	onChange,
 	onFocus,
+	required = false,
 	rows = 5,
+	type = 'text',
+	validate,
 	value,
 	'aria-describedby': ariaDescribedBy,
 	'aria-invalid': ariaInvalid,
@@ -89,16 +92,18 @@ export function EditorField({
 }) {
 	const generatedId = useId();
 	const textareaId = id ?? generatedId;
-	const variant = disabled ? 'disabled' : invalid ? 'error' : 'default';
 	const [isFocused, setIsFocused] = useState(false);
 	const [hasValue, setHasValue] = useState(hasTextValue(value ?? defaultValue));
+	const [validationError, setValidationError] = useState('');
+	const editedRef = useRef(false);
 	const textareaRef = useRef(null);
-	const helperTextId = helperText ? `${textareaId}-helper-text` : undefined;
+	const showError = invalid || !!validationError;
+	const variant = disabled ? 'disabled' : showError ? 'error' : 'default';
+	const resolvedHelperText = validationError || helperText;
+	const helperTextId = resolvedHelperText ? `${textareaId}-helper-text` : undefined;
 	const describedBy = [ariaDescribedBy, helperTextId].filter(Boolean).join(' ') || undefined;
 	const activeState = variant === 'default' && isFocused;
 	const filledState = variant === 'default' && hasValue;
-	const labelClasses =
-		variant === 'default' && (activeState || filledState) ? LABEL_ACTIVE_CLASSES : LABEL_VARIANT_CLASSES[variant];
 	const borderClasses =
 		variant === 'default' && (activeState || filledState) ? ACTIVE_BORDER_CLASSES : BORDER_VARIANT_CLASSES[variant];
 
@@ -120,15 +125,22 @@ export function EditorField({
 					textareaRef.current?.focus();
 				}}
 				className={cn(
-					'field-shell group w-full border-b px-0 py-3 transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
+					'field-shell group w-full border-b-2 px-0 py-3 transition-all duration-200',
 					SHELL_VARIANT_CLASSES[variant],
 					borderClasses,
 					disabled ? 'cursor-not-allowed' : ''
 				)}
 			>
 				{label ? (
-					<label htmlFor={textareaId} className={cn('body-body-16-regular mb-2 block', labelClasses)}>
+					<label
+						htmlFor={textareaId}
+						className={cn(
+							'body-body-16-regular mb-2 block',
+							activeState || filledState ? LABEL_VARIANT_CLASSES.disabled : LABEL_VARIANT_CLASSES.default
+						)}
+					>
 						{label}
+						{required ? <span className="text-text-danger"> *</span> : null}
 					</label>
 				) : null}
 
@@ -141,10 +153,12 @@ export function EditorField({
 					}}
 					id={textareaId}
 					name={name ?? textareaId}
+					type={type}
 					rows={getMinRows(rows)}
 					disabled={disabled}
+					required={required}
 					aria-describedby={describedBy}
-					aria-invalid={ariaInvalid ?? (invalid || undefined)}
+					aria-invalid={ariaInvalid ?? (showError || undefined)}
 					value={value}
 					onFocus={(event) => {
 						setIsFocused(true);
@@ -152,11 +166,20 @@ export function EditorField({
 					}}
 					onBlur={(event) => {
 						setIsFocused(false);
+						if (editedRef.current) {
+							setValidationError(runValidators(validate, event.target.value));
+						}
 						onBlur?.(event);
 					}}
 					onChange={(event) => {
+						editedRef.current = true;
 						if (value === undefined) {
 							setHasValue(hasTextValue(event.target.value));
+						}
+						// Re-run validators live only once an error is already showing,
+						// so the message clears/updates as the user fixes the field.
+						if (validationError) {
+							setValidationError(runValidators(validate, event.target.value));
 						}
 						onChange?.(event);
 					}}
@@ -166,13 +189,16 @@ export function EditorField({
 						PLACEHOLDER_VARIANT_CLASSES[variant]
 					)}
 				/>
-			</div>
 
-			{helperText ? (
-				<p id={helperTextId} className={cn('body-body-12-regular mt-[7.5px]', HELPER_VARIANT_CLASSES[variant])}>
-					{helperText}
-				</p>
-			) : null}
+				{resolvedHelperText ? (
+					<p
+						id={helperTextId}
+						className={cn('body-body-12-regular mt-2 mb-0', HELPER_VARIANT_CLASSES[variant])}
+					>
+						{resolvedHelperText}
+					</p>
+				) : null}
+			</div>
 		</div>
 	);
 }
