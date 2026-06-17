@@ -87,6 +87,7 @@ export function EditorField({
 	value,
 	'aria-describedby': ariaDescribedBy,
 	'aria-invalid': ariaInvalid,
+	'aria-label': ariaLabel,
 	ref,
 	...props
 }) {
@@ -140,7 +141,12 @@ export function EditorField({
 						)}
 					>
 						{label}
-						{required ? <span className="text-text-danger"> *</span> : null}
+						{required ? (
+							<span aria-hidden="true" className="text-text-danger">
+								{' '}
+								*
+							</span>
+						) : null}
 					</label>
 				) : null}
 
@@ -159,6 +165,7 @@ export function EditorField({
 					required={required}
 					aria-describedby={describedBy}
 					aria-invalid={ariaInvalid ?? (showError || undefined)}
+					aria-label={ariaLabel ?? (required && label ? label : undefined)}
 					value={value}
 					onFocus={(event) => {
 						setIsFocused(true);
