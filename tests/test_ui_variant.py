@@ -46,6 +46,13 @@ class ResolveTemplateTests(TestCase):
         self.assertEqual(result, "cms/media_revamp.html")
         self.assertEqual(request.ui_variant, "revamp")
 
+    @override_settings(UI_VARIANT_REVAMP_PAGES=["upload"])
+    def test_upload_revamp_when_allowlisted(self):
+        request = self._make_request()
+        result = resolve_template(request, "upload")
+        self.assertEqual(result, "cms/add-media_revamp.html")
+        self.assertEqual(request.ui_variant, "revamp")
+
     @override_settings(UI_VARIANT_REVAMP_PAGES=["home"])
     def test_revamp_when_allowlisted_logged_in(self):
         request = self._make_request(is_staff=False)
@@ -178,3 +185,20 @@ class UIVariantViewTests(TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["UI_VARIANT"], "revamp")
+
+    @override_settings(UI_VARIANT_REVAMP_PAGES=["upload"])
+    def test_upload_revamp_when_allowlisted(self):
+        response = self.client.get("/upload")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(response.context)
+        self.assertEqual(response.context["UI_VARIANT"], "revamp")
+        self.assertIn(b'id="app-root"', response.content)
+        self.assertIn(b"src/entries/add-media.js", response.content)
+
+    @override_settings(UI_VARIANT_REVAMP_PAGES=[])
+    def test_upload_legacy_when_not_allowlisted(self):
+        response = self.client.get("/upload")
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(response.context)
+        self.assertEqual(response.context["UI_VARIANT"], "legacy")
+        self.assertIn(b'id="page-add-media"', response.content)

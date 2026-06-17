@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 UI_VARIANT_PAGES = {
     "home": ("cms/index.html", "cms/index_revamp.html"),
     "media": ("cms/media.html", "cms/media_revamp.html"),
+    "upload": ("cms/add-media.html", "cms/add-media_revamp.html"),
 }
 
 

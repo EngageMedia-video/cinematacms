@@ -638,6 +638,7 @@ def search(request):
 def upload_media(request):
     from allauth.account.forms import LoginForm
 
+    template = resolve_template(request, "upload")
     form = LoginForm()
     context = {}
     context["form"] = form
@@ -656,7 +657,27 @@ def upload_media(request):
     video_extensions = get_allowed_video_extensions()
     context["allowed_extensions"] = json.dumps(video_extensions)
 
-    return render(request, "cms/add-media.html", context)
+    # Media language / country options, sourced from the DB and lists the same
+    # way edit-media does so both pages stay in sync.
+    language_choices = Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list(
+        "code", "title"
+    )
+    context["media_languages"] = json.dumps([{"value": code, "label": title} for code, title in language_choices])
+    context["media_countries"] = json.dumps([{"value": code, "label": title} for code, title in lists.video_countries])
+
+    # Taxonomy options (Category/Topic/ContentSensitivity), value=pk, label=title,
+    # ordered by title via each model's Meta — same source the edit-media form uses.
+    context["categories"] = json.dumps(
+        [{"value": pk, "label": title} for pk, title in Category.objects.values_list("id", "title")]
+    )
+    context["topics"] = json.dumps(
+        [{"value": pk, "label": title} for pk, title in Topic.objects.values_list("id", "title")]
+    )
+    context["content_sensitivities"] = json.dumps(
+        [{"value": pk, "label": title} for pk, title in ContentSensitivity.objects.values_list("id", "title")]
+    )
+
+    return render(request, template, context)
 
 
 @ensure_csrf_cookie

@@ -1,0 +1,49 @@
+{% extends "base_modern.html" %}
+{% load static %}
+{% load django_vite %}
+
+{% block headtitle %}Add new media - {{PORTAL_NAME}}{% endblock headtitle %}
+
+{% block headermeta %}{% endblock headermeta %}
+
+{% block externallinks %}
+{% if LOAD_FROM_CDN %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" rel="preload" as="script" integrity="sha384-s4tTAUzowK9zROQxp/mYIe9Ah2IqXf8pSUWZAk4o2C/Ri/wSbqiEE1+F6AQIQaAz" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" integrity="sha384-s4tTAUzowK9zROQxp/mYIe9Ah2IqXf8pSUWZAk4o2C/Ri/wSbqiEE1+F6AQIQaAz" crossorigin="anonymous"></script>
+{% else %}
+<link href="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}" rel="preload" as="script">
+<script src="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}"></script>
+{% endif %}
+{% endblock externallinks %}
+
+{% block modernpageimports %}
+{% vite_asset 'src/entries/add-media.js' %}
+{% endblock modernpageimports %}
+
+{% block content %}
+<script>
+	window.MediaCMS = window.MediaCMS || {};
+	window.MediaCMS.addMediaPage = {
+		canAdd: {% if can_add %}true{% else %}false{% endif %},
+		uploadEndpoint: "{% url 'uploader:upload' %}",
+		uploadCompleteEndpoint: "{% url 'uploader:upload' %}?done",
+		uploadMaxFilesNumber: {{ UPLOAD_MAX_FILES_NUMBER }},
+		uploadMaxSize: {{ UPLOAD_MAX_SIZE }},
+		allowedExtensions: {{ allowed_extensions|safe }},
+		canUploadMessage: "{{ can_upload_exp|escapejs }}",
+		uploadMediaUrl: "{% url 'upload_media' %}",
+		signupUrl: "{% url 'account_signup' %}",
+		loginUrl: "{% url 'account_login' %}",
+		resetPasswordUrl: "{% url 'account_reset_password' %}",
+		csrfToken: "{{ csrf_token|escapejs }}",
+		loginFormHtml: "{{ form.as_p|escapejs }}",
+		mediaLanguages: {{ media_languages|safe }},
+		mediaCountries: {{ media_countries|safe }},
+		categories: {{ categories|safe }},
+		topics: {{ topics|safe }},
+		contentSensitivities: {{ content_sensitivities|safe }},
+	};
+</script>
+
+<div id="app-root"></div>
+{% endblock content %}
