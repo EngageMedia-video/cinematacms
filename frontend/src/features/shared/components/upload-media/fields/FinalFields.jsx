@@ -1,4 +1,6 @@
-import { TextField, CheckboxButton, RadioButton } from '../../../shared/components';
+import { TextField } from '../../TextField';
+import { CheckboxButton } from '../../CheckboxButton';
+import { RadioButton } from '../../RadioButton';
 
 const STATUS_OPTIONS = [
 	{ value: 'public', label: 'Public' },

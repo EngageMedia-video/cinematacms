@@ -18,7 +18,7 @@ import {
 	AllowDownloadCheckbox,
 	StatusRadioGroup,
 	RequirePasswordField,
-} from '../../../upload-shared';
+} from '../../../shared/components/upload-media';
 import { QuickPreview } from '../../../upload-quick-preview';
 import useBulkUploadStore from '../../useBulkUploadStore';
 import { useBulkUploadConfig } from '../../bulkUploadConfig';

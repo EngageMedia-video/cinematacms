@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import useBulkUploadStore, { UPLOAD_STATUS } from '../useBulkUploadStore';
 import { useBulkUploadConfig } from '../bulkUploadConfig';
-import { apiFetch, getCSRFToken, parseFriendlyToken } from '../../upload-shared/utils/api';
+import { apiFetch, getCSRFToken, parseFriendlyToken } from '../../shared/utils/api';
 
 /**
  * Drives N concurrent chunked uploads through the bundled FineUploader engine
@@ -120,49 +120,66 @@ export function useBulkUpload() {
 		};
 	}, [config, addFile, updateFile, removeFile, setLastError]);
 
-	function addFiles(fileList) {
+	const addFiles = useCallback((fileList) => {
 		if (uploaderRef.current) {
 			uploaderRef.current.addFiles(fileList);
 		}
-	}
+	}, []);
 
-	function pause(id) {
+	const pause = useCallback((id) => {
 		uploaderRef.current?.pauseUpload(id);
-	}
+	}, []);
 
-	function resume(id) {
-		if (uploaderRef.current?.continueUpload(id)) {
-			updateFile(id, { uploadStatus: UPLOAD_STATUS.UPLOADING });
-		}
-	}
+	const resume = useCallback(
+		(id) => {
+			if (uploaderRef.current?.continueUpload(id)) {
+				updateFile(id, { uploadStatus: UPLOAD_STATUS.UPLOADING });
+			}
+		},
+		[updateFile]
+	);
 
-	function cancel(id) {
-		// Abort the in-flight/queued upload, then drop the row unconditionally.
-		// The FineUploader method is `cancel(id)` (not `cancelUpload`); guard it
-		// so a throw can't stop us from clearing the row (removeFile is idempotent
-		// and onCancel may not fire for a paused item).
-		try {
-			uploaderRef.current?.cancel(id);
-		} catch {
-			// best-effort abort; the row is removed regardless.
-		}
-		removeFile(id);
-		filesByIdRef.current.delete(id);
-	}
+	const cancel = useCallback(
+		(id) => {
+			// Abort the in-flight/queued upload, then drop the row unconditionally.
+			// The FineUploader method is `cancel(id)` (not `cancelUpload`); guard it
+			// so a throw can't stop us from clearing the row (removeFile is idempotent
+			// and onCancel may not fire for a paused item).
+			try {
+				uploaderRef.current?.cancel(id);
+			} catch {
+				// best-effort abort; the row is removed regardless.
+			}
+			removeFile(id);
+			filesByIdRef.current.delete(id);
+		},
+		[removeFile]
+	);
 
-	function retry(id) {
-		updateFile(id, { uploadStatus: UPLOAD_STATUS.UPLOADING, progress: 0, error: null });
-		uploaderRef.current?.retry(id);
-	}
+	const retry = useCallback(
+		(id) => {
+			updateFile(id, { uploadStatus: UPLOAD_STATUS.UPLOADING, progress: 0, error: null });
+			uploaderRef.current?.retry(id);
+		},
+		[updateFile]
+	);
 
-	function reupload(id) {
-		const file = filesByIdRef.current.get(id);
-		removeFile(id);
-		filesByIdRef.current.delete(id);
-		if (file && uploaderRef.current) {
-			uploaderRef.current.addFiles([file]);
-		}
-	}
+	const reupload = useCallback(
+		(id) => {
+			const file = filesByIdRef.current.get(id);
+			removeFile(id);
+			filesByIdRef.current.delete(id);
+			if (file && uploaderRef.current) {
+				uploaderRef.current.addFiles([file]);
+			}
+		},
+		[removeFile]
+	);
 
-	return { addFiles, pause, resume, cancel, retry, reupload };
+	// Stable action bag so consumers — and the context provider value built from
+	// it — don't get a brand-new reference on every render.
+	return useMemo(
+		() => ({ addFiles, pause, resume, cancel, retry, reupload }),
+		[addFiles, pause, resume, cancel, retry, reupload]
+	);
 }

@@ -346,6 +346,11 @@ class BulkUploadOptions(APIView):
 # altered here — notably the editor-only admin fields (featured, reported_times,
 # is_reviewed, add_date) that MediaForm keeps required for editors but the bulk
 # UI never shows, plus the upload/poster fields handled elsewhere.
+#
+# This is an allowlist coupled to MediaForm.Meta.fields by hand: every entry
+# must be a real MediaForm field or it silently won't be saved (construct_instance
+# only iterates the remaining form.fields). test_bulk_upload guards the subset
+# invariant; if you expose a new field in the bulk UI, add it here too.
 _BULK_SUBMIT_FIELDS = {
     "title",
     "summary",
@@ -459,9 +464,8 @@ class BulkUploadSubmit(APIView):
                 media._current_user = request.user
                 saved = form.save()
                 _bulk_apply_tags(saved, form.cleaned_data.get("new_tags"), request.user)
-                if saved.is_draft:
-                    saved.is_draft = False
-                    saved.save(update_fields=["is_draft"])
+                # MediaForm.save() clears is_draft for a completed item (shared
+                # with the edit-page path), so no separate clear is needed here.
             return Response({"updated": len(valid_forms)}, status=status.HTTP_200_OK)
 
 

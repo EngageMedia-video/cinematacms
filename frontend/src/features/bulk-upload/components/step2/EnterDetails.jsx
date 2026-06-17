@@ -1,5 +1,5 @@
 import { Text } from '../../../shared/components';
-import { EditorialPolicyNotice } from '../../../upload-shared';
+import { EditorialPolicyNotice } from '../../../shared/components/upload-media';
 import useBulkUploadStore from '../../useBulkUploadStore';
 import { SubStepNav } from './SubStepNav';
 import { FileCard } from './FileCard';

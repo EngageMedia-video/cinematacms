@@ -57,23 +57,35 @@ def user_allowed_to_upload(request):
     return False
 
 
+def is_trusted_uploader(user):
+    """Whether a user counts as a "trusted" uploader for upload-limit purposes.
+
+    Single source of truth for the elevated-trust check: superusers, managers,
+    editors and advanced users. Keeps the role list from being duplicated across
+    the bulk-upload limit helpers.
+    """
+    if not user or user.is_anonymous:
+        return False
+    try:
+        return bool(user.is_superuser or user.is_manager or user.is_editor or user.advancedUser)
+    except AttributeError:
+        return False
+
+
 def max_bulk_upload_files(user):
     """Maximum number of files a user may upload in a single bulk-upload batch.
 
-    Trusted Users (advancedUser) and staff get the higher limit; everyone else
-    gets the regular limit. Both limits are settings-overridable so a deployment
-    can tighten or relax the policy without code changes (issue #524).
+    Trusted uploaders (see ``is_trusted_uploader``) get the higher limit;
+    everyone else gets the regular limit. Both limits are settings-overridable so
+    a deployment can tighten or relax the policy without code changes (issue
+    #524). This is distinct from the single-upload page's per-user FineUploader
+    cap (``UPLOAD_MAX_FILES_NUMBER`` in files/context_processors.py).
     """
     if not user or user.is_anonymous:
         return 0
     trusted_limit = getattr(settings, "BULK_UPLOAD_MAX_FILES_TRUSTED", 10)
     regular_limit = getattr(settings, "BULK_UPLOAD_MAX_FILES_REGULAR", 2)
-    try:
-        if user.is_superuser or user.is_manager or user.is_editor or user.advancedUser:
-            return trusted_limit
-    except AttributeError:
-        return 0
-    return regular_limit
+    return trusted_limit if is_trusted_uploader(user) else regular_limit
 
 
 def user_allowed_to_bulk_upload(request):

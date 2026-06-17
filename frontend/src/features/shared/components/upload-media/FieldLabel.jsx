@@ -1,4 +1,4 @@
-import { cn } from '../../shared/utils/classNames';
+import { cn } from '../../../shared/utils/classNames';
 
 /**
  * Section/field label with an optional required marker. Used by field groups

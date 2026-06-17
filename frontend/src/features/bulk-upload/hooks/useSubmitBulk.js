@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { apiFetch } from '../../upload-shared/utils/api';
+import { apiFetch } from '../../shared/utils/api';
 import { useBulkUploadConfig } from '../bulkUploadConfig';
 
 /**

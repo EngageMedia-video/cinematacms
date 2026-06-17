@@ -13,9 +13,22 @@ class Migration(migrations.Migration):
             model_name="media",
             name="is_draft",
             field=models.BooleanField(
-                db_index=True,
                 default=False,
                 help_text="Draft uploads are kept private and excluded from the admin review queue until submitted.",
+            ),
+        ),
+        # Partial index over just the draft rows. is_draft is False for almost
+        # every Media row and is only ever queried as `.exclude(is_draft=True)`,
+        # so a partial index stays tiny and selective rather than a full
+        # low-cardinality b-tree on every row. On a very large existing table,
+        # swap this for AddIndexConcurrently (with atomic=False) to avoid the
+        # write lock during the build.
+        migrations.AddIndex(
+            model_name="media",
+            index=models.Index(
+                condition=models.Q(("is_draft", True)),
+                fields=["is_draft"],
+                name="idx_media_is_draft",
             ),
         ),
         migrations.AlterField(

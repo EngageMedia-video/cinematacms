@@ -1,4 +1,4 @@
-import { cn } from '../../shared/utils/classNames';
+import { cn } from '../../../shared/utils/classNames';
 
 /**
  * Editorial-policy reminder shown above the upload form on both the single and

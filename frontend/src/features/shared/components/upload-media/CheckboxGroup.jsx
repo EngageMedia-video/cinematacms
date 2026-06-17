@@ -1,5 +1,5 @@
-import { cn } from '../../shared/utils/classNames';
-import { CheckboxButton } from '../../shared/components';
+import { cn } from '../../../shared/utils/classNames';
+import { CheckboxButton } from '../CheckboxButton';
 import { useId } from 'react';
 
 /**

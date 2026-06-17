@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
-import { TextField, Dropdown, CheckboxButton } from '../../../shared/components';
+import { TextField } from '../../TextField';
+import { Dropdown } from '../../Dropdown';
+import { CheckboxButton } from '../../CheckboxButton';
 import { CheckboxGroup } from '../CheckboxGroup';
 
 function toCodeOptions(items = []) {

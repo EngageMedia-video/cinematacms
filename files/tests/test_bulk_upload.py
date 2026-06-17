@@ -231,6 +231,17 @@ class BulkUploadSubmitTests(TestCase):
         media.refresh_from_db()
         self.assertEqual(media.title, "My Film")
 
+    def test_bulk_submit_fields_are_a_subset_of_media_form(self):
+        # _BULK_SUBMIT_FIELDS is an allowlist coupled to MediaForm by hand. Guard
+        # that every entry is a real MediaForm field, otherwise a submit would
+        # silently fail to save it (construct_instance only iterates form.fields).
+        from files.forms import MediaForm
+        from files.management_views import _BULK_SUBMIT_FIELDS
+
+        declared = set(MediaForm.base_fields)
+        missing = _BULK_SUBMIT_FIELDS - declared
+        self.assertEqual(missing, set(), f"_BULK_SUBMIT_FIELDS entries not on MediaForm: {missing}")
+
 
 class BulkDraftReviewExclusionTests(TestCase):
     """Drafts must never appear in the admin review queue (MediaList)."""
@@ -252,6 +263,39 @@ class BulkDraftReviewExclusionTests(TestCase):
         tokens = [item["friendly_token"] for item in response.json().get("results", [])]
         self.assertIn(self.normal.friendly_token, tokens)
         self.assertNotIn(self.draft.friendly_token, tokens)
+
+    def test_completed_draft_reenters_review_queue(self):
+        # Finishing a draft through the standard edit form (MediaForm.save)
+        # clears is_draft, so it stops being excluded from the review queue.
+        from files.forms import MediaForm
+
+        category, _ = Category.objects.get_or_create(title="Documentary")
+        Language.objects.get_or_create(code="en", defaults={"title": "English"})
+        data = {
+            "title": "Done",
+            "summary": "A finished synopsis.",
+            "description": "",
+            "year_produced": "2021",
+            "media_language": "en",
+            "media_country": lists.video_countries[0][0],
+            "category": [category.id],
+            "topics": [],
+            "new_tags": "",
+            "state": "private",
+            "enable_comments": True,
+            "allow_download": True,
+        }
+        form = MediaForm(self.author, data=data, instance=self.draft)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        form.save()
+        self.draft.refresh_from_db()
+        self.assertFalse(self.draft.is_draft)
+
+        self.client.login(username="editor", password="pw")
+        response = self.client.get("/api/v1/manage_media")
+        self.assertEqual(response.status_code, 200)
+        tokens = [item["friendly_token"] for item in response.json().get("results", [])]
+        self.assertIn(self.draft.friendly_token, tokens)
 
 
 class AutoDraftUploadTests(TestCase):

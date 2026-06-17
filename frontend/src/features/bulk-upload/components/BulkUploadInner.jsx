@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TextAlert } from '../../shared/components';
-import { useTaxonomies, validateMetadata, apiFetch } from '../../upload-shared';
+import { useTaxonomies, validateMetadata } from '../../shared/components/upload-media';
+import { apiFetch } from '../../shared/utils/api';
 import useBulkUploadStore, { UPLOAD_STATUS } from '../useBulkUploadStore';
 import { useBulkUploadConfig } from '../bulkUploadConfig';
 import { useBulkUpload } from '../hooks/useBulkUpload';
@@ -128,8 +129,8 @@ export function BulkUploadInner() {
 		}
 	}
 
-	// uploadActions is stable for the page lifetime; deleteFile closes over the
-	// current files list, so the action bag is rebuilt whenever files change.
+	// uploadActions is a stable (memoized) bag; deleteFile closes over the current
+	// files list, so the action bag is rebuilt whenever files change.
 	const actions = useMemo(() => ({ ...uploadActions, deleteFile }), [uploadActions, files]);
 
 	// Clear a field's red error as soon as the user edits it, and drop the
@@ -284,7 +285,10 @@ export function BulkUploadInner() {
 			    actual content width, which shrinks when the app sidebar is open. */}
 			<div className="@container/page mx-auto max-w-[1100px] px-4 py-6 sm:px-6">
 				<div className="grid grid-cols-1 gap-8 @4xl/page:grid-cols-[220px_minmax(0,1fr)]">
-					<aside className="@4xl/page:pt-2">
+					{/* Pin the step rail while the form/preview column scrolls, so the
+					    left column isn't left blank. self-start keeps the sticky box at
+					    its natural height; only applies once it becomes a side rail. */}
+					<aside className="@4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start @4xl/page:pt-2">
 						<WizardStepper currentStep={currentStep} />
 					</aside>
 					{/* Step 1 has no Quick Preview, so constrain it to the same left-column

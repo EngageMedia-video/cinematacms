@@ -26,8 +26,11 @@ function isBlank(value) {
 /**
  * Validate a single file's metadata for the "submit" action. Returns a map of
  * `{ fieldName: message }`; an empty object means the item is valid. Required
- * fields match MediaForm: summary, year_produced, category, media_country,
- * media_language. Drafts skip this entirely.
+ * fields mirror what the server (MediaForm) enforces: summary, year_produced,
+ * category, media_country and media_language. NOTE: the latter three are
+ * `blank=True` on the Media model but MediaForm.__init__ overrides them to
+ * `required=True`, so they are genuinely required on submit (single upload and
+ * bulk alike). Drafts skip this entirely.
  */
 export function validateMetadata(metadata = {}) {
 	const errors = {};

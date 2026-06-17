@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
-import { TextField, Dropdown, EditorField } from '../../../shared/components';
-import { SYNOPSIS_MAX_WORDS, countSynopsisWords } from '../../schema/mediaMetadataSchema';
+import { TextField } from '../../TextField';
+import { Dropdown } from '../../Dropdown';
+import { EditorField } from '../../EditorField';
+import { SYNOPSIS_MAX_WORDS, countSynopsisWords } from '../schema/mediaMetadataSchema';
 
 export function TitleField({ value = '', onChange, error = '' }) {
 	return (

@@ -14,7 +14,7 @@ const STEPS = [
 export function WizardStepper({ currentStep = 1 }) {
 	return (
 		<nav aria-label="Upload steps" className="w-full">
-			<ol className="flex flex-row gap-4 lg:flex-col lg:gap-6">
+			<ol className="flex flex-row gap-4 @4xl/page:flex-col @4xl/page:gap-6">
 				{STEPS.map(({ step, label }) => {
 					const isActive = currentStep === step;
 					const isDone = currentStep > step;
@@ -22,7 +22,7 @@ export function WizardStepper({ currentStep = 1 }) {
 						<li
 							key={step}
 							aria-current={isActive ? 'step' : undefined}
-							className="flex min-w-0 flex-1 items-center gap-3 lg:flex-none"
+							className="flex min-w-0 flex-1 items-center gap-3 @4xl/page:flex-none"
 						>
 							<span
 								className={cn(
