@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
 	Card,
+	DateChooserField,
 	Dialog,
 	DialogContent,
 	DialogTrigger,
@@ -102,15 +103,6 @@ const STATUS_OPTIONS = [
 	{ value: 'unlisted', label: 'Unlisted' },
 ];
 
-function formatDMY(isoDate) {
-	if (!isoDate) {
-		return '';
-	}
-
-	const [year, month, day] = isoDate.split('-');
-	return `${day}/${month}/${year}`;
-}
-
 function todayIso() {
 	const now = new Date();
 	const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -122,51 +114,6 @@ function diffInDays(startIso, endIso) {
 	const start = new Date(startIso);
 	const end = new Date(endIso);
 	return Math.max(0, Math.ceil((end - start) / 86400000));
-}
-
-// Read-only date field: value is shown formatted, the native picker is opened
-// via the CHOOSE button (the visible input never accepts typed text).
-function DateChooserField({ id, name, label, value, min, onChange }) {
-	const inputRef = useRef(null);
-
-	function openPicker() {
-		const el = inputRef.current;
-		if (!el) {
-			return;
-		}
-
-		if (typeof el.showPicker === 'function') {
-			el.showPicker();
-		} else {
-			el.click();
-		}
-	}
-
-	return (
-		<div className="relative flex-1">
-			<TextField
-				className="w-full"
-				label={label}
-				placeholder="DD / MM / YYYY"
-				value={formatDMY(value)}
-				readOnly
-				rightButtonLabel="Choose"
-				onRightButtonClick={openPicker}
-			/>
-			<input
-				ref={inputRef}
-				type="date"
-				id={id}
-				name={name}
-				min={min}
-				value={value}
-				onChange={(event) => onChange(event.target.value)}
-				tabIndex={-1}
-				aria-hidden="true"
-				className="pointer-events-none absolute bottom-0 left-0 h-0 w-0 opacity-0"
-			/>
-		</div>
-	);
 }
 
 function FieldGroup({ children, description, title }) {
@@ -738,15 +685,15 @@ export function SingleUploadPage({
 				</section>
 			</Card>
 
-			{/* {hasUploadedMedia ? ( */}
-			<MediaDetailsForm
-				categories={categories}
-				contentSensitivities={contentSensitivities}
-				mediaCountries={mediaCountries}
-				mediaLanguages={mediaLanguages}
-				topics={topics}
-			/>
-			{/* ) : null} */}
+			{hasUploadedMedia ? (
+				<MediaDetailsForm
+					categories={categories}
+					contentSensitivities={contentSensitivities}
+					mediaCountries={mediaCountries}
+					mediaLanguages={mediaLanguages}
+					topics={topics}
+				/>
+			) : null}
 		</div>
 	);
 }

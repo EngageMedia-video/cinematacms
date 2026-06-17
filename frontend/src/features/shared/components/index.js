@@ -7,6 +7,7 @@ export { FollowButton } from './FollowButton';
 export { GetNotifiedButton } from './GetNotifiedButton';
 export { TextField } from './TextField';
 export { EditorField } from './EditorField';
+export { DateChooserField, formatDMY } from './DateChooserField';
 export { Dialog, DialogClose, DialogContent, DialogTrigger } from './Dialog';
 export { ConfirmationDialogContent } from './ConfirmationDialog';
 export { Dropdown } from './Dropdown';
