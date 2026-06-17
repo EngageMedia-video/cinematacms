@@ -8,6 +8,8 @@ import { Dialog } from '../shared/components/Dialog';
 import { TabContent, TabView } from '../shared/components/TabView';
 import { Text } from '../shared/components/Text';
 import UserContext from '../../static/js/contexts/UserContext';
+import { deleteRequest } from '../../static/js/functions';
+import { config as mediacmsConfig } from '../../static/js/mediacms/config.js';
 import { Page } from '../../static/js/pages/_Page';
 import { SingleUploadPage } from './single-upload/SingleUploadPage';
 import { AddMediaUploadTemplate } from './components/AddMediaUploadTemplate';
@@ -31,6 +33,9 @@ export class AddMediaPage extends Page {
 		this.uploaderRef = React.createRef();
 		this.uploader = null;
 		this.pendingReplaceId = null;
+		// Maps FineUploader file id -> server friendly_token once the upload
+		// completes, so a later delete can remove the real Media object.
+		this.completedTokens = {};
 		this.state = {
 			confirmDeleteOpen: false,
 			hasSelectedMedia: false,
@@ -98,13 +103,8 @@ export class AddMediaPage extends Page {
 					const status = getUploadStatus(newStatus);
 					updateUploadItemStatus(id, status, getStatusLabel(status));
 				},
-				onSubmitted: (id) => {
+				onSubmitted: () => {
 					this.setState({ hasSelectedMedia: true, uploadedMedia: null });
-					// A reupload only replaces the original once the new file is in.
-					if (this.pendingReplaceId != null && this.pendingReplaceId !== id) {
-						this.removeUploadItem(this.pendingReplaceId);
-						this.pendingReplaceId = null;
-					}
 				},
 				onError: function (id, name, errorReason) {
 					updateUploadItemStatus(id, 'failed', 'Upload failed');
@@ -118,8 +118,11 @@ export class AddMediaPage extends Page {
 
 					updateUploadItemStatus(id, 'complete', 'Complete');
 
+					const details = getUploadedMediaDetails(response, _name);
+					this.completedTokens[id] = details.friendlyToken;
+
 					if (this.config.uploadMaxFilesNumber === 1) {
-						this.setState({ uploadedMedia: getUploadedMediaDetails(response, _name) });
+						this.setState({ uploadedMedia: details });
 					}
 				},
 			},
@@ -145,30 +148,78 @@ export class AddMediaPage extends Page {
 	}
 
 	openFilePicker() {
-		const root = this.uploaderRef.current;
+		// This page adds files manually (MediaDropzone -> addFiles) and has no
+		// FineUploader browse button, so spin up a transient file input instead.
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = 'video/*';
+		input.className = 'hidden';
 
-		if (!root) {
+		const cleanup = () => input.remove();
+
+		input.addEventListener('change', () => {
+			const files = Array.from(input.files || []);
+
+			if (files.length) {
+				// Replace = delete the old media first (frees the item-limit slot and
+				// removes the old server-side Media), then upload the new one.
+				if (this.pendingReplaceId != null) {
+					this.removeUploadItem(this.pendingReplaceId);
+					this.pendingReplaceId = null;
+				}
+
+				this.handleFilesSelected(files);
+			} else {
+				this.pendingReplaceId = null;
+			}
+
+			cleanup();
+		});
+
+		// Picker dismissed without choosing: keep the original media untouched.
+		input.addEventListener('cancel', () => {
+			this.pendingReplaceId = null;
+			cleanup();
+		});
+
+		document.body.appendChild(input);
+		input.click();
+	}
+
+	deleteUploadedMedia(id) {
+		const friendlyToken = this.completedTokens[id];
+
+		// Only completed uploads exist server-side; in-flight ones are handled by cancel().
+		if (!friendlyToken) {
 			return;
 		}
 
-		const fileInput = root.querySelector('.qq-upload-button-selector input[type="file"]');
+		delete this.completedTokens[id];
 
-		if (fileInput) {
-			fileInput.click();
+		const mediaApiUrl = mediacmsConfig(window.MediaCMS).api.media;
+
+		if (!mediaApiUrl) {
+			console.warn('Media API endpoint unavailable; cannot delete media ' + friendlyToken);
 			return;
 		}
 
-		const browseButton = root.querySelector('.qq-upload-button-selector');
-
-		if (browseButton) {
-			browseButton.click();
-		}
+		deleteRequest(
+			mediaApiUrl + '/' + friendlyToken,
+			{ headers: { 'X-CSRFToken': getCSRFToken() } },
+			false,
+			null,
+			(error) => console.warn('Unable to delete uploaded media ' + friendlyToken, error)
+		);
 	}
 
 	removeUploadItem(id) {
 		if (id == null) {
 			return;
 		}
+
+		// FineUploader.cancel() only aborts in-flight uploads; a finished upload has
+		// already created a Media row, so delete it on the server too.
+		this.deleteUploadedMedia(id);
 
 		try {
 			this.uploader.cancel(id);
@@ -307,6 +358,8 @@ export class AddMediaPage extends Page {
 							content={
 								<SingleUploadPage
 									accept="video/*"
+									canPublishDirectly={!!this.config.canPublishDirectly}
+									csrfToken={this.config.csrfToken}
 									hasUploadedMedia={!!uploadedMedia}
 									maxFiles={2}
 									mediaLanguages={this.config.mediaLanguages || []}
