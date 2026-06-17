@@ -25,6 +25,7 @@
 	window.MediaCMS = window.MediaCMS || {};
 	window.MediaCMS.addMediaPage = {
 		canAdd: {% if can_add %}true{% else %}false{% endif %},
+		canPublishDirectly: {% if can_publish_directly %}true{% else %}false{% endif %},
 		uploadEndpoint: "{% url 'uploader:upload' %}",
 		uploadCompleteEndpoint: "{% url 'uploader:upload' %}?done",
 		uploadMaxFilesNumber: {{ UPLOAD_MAX_FILES_NUMBER }},

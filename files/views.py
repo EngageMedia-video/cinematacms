@@ -17,7 +17,7 @@ from django.contrib.postgres.search import SearchQuery
 from django.core.mail import EmailMessage
 from django.db import DatabaseError, models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
-from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
@@ -650,6 +650,9 @@ def upload_media(request):
     else:
         upload_allowed = getattr(settings, "UPLOAD_MEDIA_ALLOWED", True)
     context["can_add"] = upload_allowed and can_upload_media(request.user)
+    # Trusted users (advancedUser/editor/manager/superuser) publish without admin
+    # review; regular users get the "Submit For Review?" confirmation instead.
+    context["can_publish_directly"] = can_manage_uploads(request.user)
     can_upload_exp = settings.CANNOT_ADD_MEDIA_MESSAGE
     context["can_upload_exp"] = can_upload_exp
 
@@ -1131,7 +1134,14 @@ def edit_media(request):
             else:
                 messages.add_message(request, messages.INFO, "Media was edited!")
 
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": True, "url": media.get_absolute_url()})
+
             return HttpResponseRedirect(media.get_absolute_url())
+        elif request.headers.get("x-requested-with") == "XMLHttpRequest":
+            # Surface validation errors to the async add-media form instead of
+            # re-rendering the legacy edit page.
+            return JsonResponse({"success": False, "errors": form.errors}, status=400)
     else:
         form = MediaForm(request.user, instance=media)
     licenses = License.objects.filter()
