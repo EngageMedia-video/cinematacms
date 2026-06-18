@@ -6,6 +6,7 @@ export function createDefaultSingleUploadState() {
 		errors: {},
 		submitError: '',
 		shareStage: null,
+		selectedThumbnailFile: null,
 		lastSelectedThumbnailFile: '',
 		mediaStatus: 'public',
 		requirePassword: false,
@@ -32,7 +33,8 @@ const useSingleUploadStore = create((set) => ({
 	setErrors: (errors) => set({ errors }),
 	setSubmitError: (submitError) => set({ submitError }),
 	setShareStage: (shareStage) => set({ shareStage }),
-	setLastSelectedThumbnailFile: (lastSelectedThumbnailFile) => set({ lastSelectedThumbnailFile }),
+	setSelectedThumbnailFile: (selectedThumbnailFile) =>
+		set({ selectedThumbnailFile, lastSelectedThumbnailFile: selectedThumbnailFile?.name ?? '' }),
 	setMediaStatus: (mediaStatus) => set({ mediaStatus }),
 
 	setRequirePassword: (requirePassword) =>

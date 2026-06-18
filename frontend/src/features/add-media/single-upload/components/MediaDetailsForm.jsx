@@ -28,7 +28,7 @@ export function MediaDetailsForm({
 
 	function onFileChanged(files) {
 		const [file] = files;
-		singleUpload.setLastSelectedThumbnailFile(file?.name ?? '');
+		singleUpload.setSelectedThumbnailFile(file ?? null);
 	}
 
 	function validateForm() {
@@ -104,7 +104,7 @@ export function MediaDetailsForm({
 
 		singleUpload.setSubmitError('');
 		submitMutation.mutate(
-			{ form },
+			{ form, thumbnailFile: singleUpload.selectedThumbnailFile },
 			{
 				onSuccess: (data) => {
 					window.location.assign(data.url);
@@ -167,6 +167,7 @@ export function MediaDetailsForm({
 			<ThumbnailImageUpload
 				lastSelectedThumbnailFile={singleUpload.lastSelectedThumbnailFile}
 				onFileChanged={onFileChanged}
+				selectedThumbnailFile={singleUpload.selectedThumbnailFile}
 			/>
 
 			<OtherDetailsForm

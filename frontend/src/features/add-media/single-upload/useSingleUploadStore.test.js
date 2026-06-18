@@ -11,6 +11,7 @@ describe('useSingleUploadStore', () => {
 		expect(state.allowDownload).toBe(false);
 		expect(state.mediaStatus).toBe('public');
 		expect(state.noLicense).toBe(true);
+		expect(state.selectedThumbnailFile).toBeNull();
 		expect(state.selectedLicenseId).toBe('1');
 		expect(state.selectedLicenseFields).toEqual({ commercial: 'yes', derivatives: 'yes' });
 	});

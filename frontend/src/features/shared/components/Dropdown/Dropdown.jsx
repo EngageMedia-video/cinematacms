@@ -196,9 +196,7 @@ export function Dropdown({
 				}
 			}}
 		>
-			{name ? (
-				<input type="hidden" name={name} value={selectedValue ?? ''} required={required} />
-			) : null}
+			{name ? <input type="hidden" name={name} value={selectedValue ?? ''} required={required} /> : null}
 
 			<div
 				className={cn(

@@ -9,13 +9,7 @@ describe('SingleUploadPage', () => {
 	});
 
 	function renderUploadedPage(props = {}) {
-		return render(
-			<SingleUploadPage
-				hasUploadedMedia
-				uploadedMedia={{ editUrl: '/media/test/edit' }}
-				{...props}
-			/>
-		);
+		return render(<SingleUploadPage hasUploadedMedia uploadedMedia={{ editUrl: '/media/test/edit' }} {...props} />);
 	}
 
 	afterEach(() => {
@@ -24,17 +18,26 @@ describe('SingleUploadPage', () => {
 	});
 
 	it('shows the last selected thumbnail file after choosing an image', () => {
+		vi.stubGlobal('URL', {
+			createObjectURL: vi.fn(() => 'blob:thumbnail-preview'),
+			revokeObjectURL: vi.fn(),
+		});
 		renderUploadedPage();
 
 		const thumbnailInput = screen.getByLabelText('Choose thumbnail image');
 		const file = new File(['poster'], 'poster.png', { type: 'image/png' });
 
 		expect(thumbnailInput).toHaveAttribute('accept', 'image/*');
+		expect(thumbnailInput).toHaveAttribute('name', 'uploaded_poster');
 		expect(thumbnailInput).not.toHaveAttribute('multiple');
 
 		fireEvent.change(thumbnailInput, { target: { files: [file] } });
 
 		expect(screen.getByText('Last selected: poster.png')).toBeInTheDocument();
+		expect(screen.getByRole('img', { name: 'Selected thumbnail preview' })).toHaveAttribute(
+			'src',
+			'blob:thumbnail-preview'
+		);
 	});
 
 	it('updates the hidden license field from the dialog choices', () => {
@@ -91,9 +94,14 @@ describe('SingleUploadPage', () => {
 
 		await user.click(screen.getByLabelText('Documentary'));
 		await user.click(screen.getByLabelText('Culture'));
+
+		const thumbnail = new File(['poster'], 'poster.png', { type: 'image/png' });
+		fireEvent.change(screen.getByLabelText('Choose thumbnail image'), { target: { files: [thumbnail] } });
+
 		await user.click(screen.getByRole('button', { name: 'Share Media' }));
 
 		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+		const submittedBody = fetchMock.mock.calls[0][1].body;
 
 		expect(fetchMock).toHaveBeenCalledWith('http://localhost:3000/media/test/edit', {
 			method: 'POST',
@@ -101,6 +109,8 @@ describe('SingleUploadPage', () => {
 			credentials: 'same-origin',
 			headers: { 'X-Requested-With': 'XMLHttpRequest' },
 		});
+		expect(submittedBody.get('uploaded_poster')).toBe(thumbnail);
+		expect(submittedBody.get('thumbnail')).toBeNull();
 		expect(await screen.findByText('summary: Keep this under 60 words.')).toBeInTheDocument();
 	});
 });

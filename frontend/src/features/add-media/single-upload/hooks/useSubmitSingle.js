@@ -6,10 +6,17 @@ import { useMutation } from '@tanstack/react-query';
  */
 export function useSubmitSingle() {
 	return useMutation({
-		mutationFn: async ({ form }) => {
+		mutationFn: async ({ form, thumbnailFile }) => {
+			const body = new FormData(form);
+
+			body.delete('uploaded_poster');
+			if (thumbnailFile) {
+				body.set('uploaded_poster', thumbnailFile);
+			}
+
 			const response = await fetch(form.action, {
 				method: 'POST',
-				body: new FormData(form),
+				body,
 				credentials: 'same-origin',
 				headers: { 'X-Requested-With': 'XMLHttpRequest' },
 			});

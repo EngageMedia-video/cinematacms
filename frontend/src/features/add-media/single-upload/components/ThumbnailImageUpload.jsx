@@ -1,9 +1,24 @@
+import { useEffect, useState } from 'react';
 import { TabContent, TabView } from '../../../shared/components';
 import { MediaDropzone } from '../../../shared/components/MediaDropzone';
 import { Text } from '../../../shared/components/Text';
 import { FieldGroup } from './FieldGroup';
 
-export function ThumbnailImageUpload({ lastSelectedThumbnailFile, onFileChanged }) {
+export function ThumbnailImageUpload({ lastSelectedThumbnailFile, onFileChanged, selectedThumbnailFile }) {
+	const [previewUrl, setPreviewUrl] = useState('');
+
+	useEffect(() => {
+		if (!selectedThumbnailFile || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
+			setPreviewUrl('');
+			return undefined;
+		}
+
+		const nextPreviewUrl = URL.createObjectURL(selectedThumbnailFile);
+		setPreviewUrl(nextPreviewUrl);
+
+		return () => URL.revokeObjectURL(nextPreviewUrl);
+	}, [selectedThumbnailFile]);
+
 	return (
 		<FieldGroup
 			title="Thumbnail Image Upload"
@@ -23,10 +38,18 @@ export function ThumbnailImageUpload({ lastSelectedThumbnailFile, onFileChanged 
 							buttonVariant="secondary"
 							iconName={null}
 							multiple={false}
-							name="thumbnail"
+							name="uploaded_poster"
 							aria-label="Choose thumbnail image"
 							onFilesSelected={onFileChanged}
 						/>
+
+						{previewUrl ? (
+							<img
+								src={previewUrl}
+								alt="Selected thumbnail preview"
+								className="mt-4 aspect-video w-full max-w-[280px] rounded-ds-4 object-cover"
+							/>
+						) : null}
 
 						{lastSelectedThumbnailFile ? (
 							<Text variant="body-14" className="m-0 mt-4 text-cinemata-pacific-deep-300">
