@@ -1,0 +1,192 @@
+import { useEffect, useRef } from 'react';
+import { maxWords, required, runValidators } from '../../../shared/utils/validators';
+import { useSubmitSingle } from '../hooks/useSubmitSingle';
+import useSingleUploadStore from '../useSingleUploadStore';
+import { BasicDetailsForm } from './BasicDetailsForm';
+import { FinalSettingsForm } from './FinalSettingsForm';
+import { OtherDetailsForm } from './OtherDetailsForm';
+import { SubmitSection } from './SubmitSection';
+import { ThumbnailImageUpload } from './ThumbnailImageUpload';
+
+const CURRENT_YEAR = new Date().getFullYear();
+
+export function MediaDetailsForm({
+	canPublishDirectly = false,
+	categories = [],
+	contentSensitivities = [],
+	csrfToken = '',
+	editUrl = '',
+	mediaCountries = [],
+	mediaLanguages = [],
+	topics = [],
+}) {
+	const formRef = useRef(null);
+	const submitMutation = useSubmitSingle();
+	const singleUpload = useSingleUploadStore();
+
+	useEffect(() => singleUpload.reset, [singleUpload.reset]);
+
+	function onFileChanged(files) {
+		const [file] = files;
+		singleUpload.setLastSelectedThumbnailFile(file?.name ?? '');
+	}
+
+	function validateForm() {
+		const form = formRef.current;
+
+		if (!form) {
+			return {};
+		}
+
+		const data = new FormData(form);
+		const nextErrors = {};
+
+		const summaryError = runValidators([required(), maxWords(60)], data.get('summary'));
+		if (summaryError) {
+			nextErrors.summary = summaryError;
+		}
+
+		const year = String(data.get('year_produced') ?? '').trim();
+		if (!year) {
+			nextErrors.year_produced = 'This field is required';
+		} else if (!/^\d+$/.test(year) || Number(year) < 2000 || Number(year) > CURRENT_YEAR) {
+			nextErrors.year_produced = `Enter a year between 2000 and ${CURRENT_YEAR}`;
+		}
+
+		const website = String(data.get('website') ?? '').trim();
+		if (website && !website.startsWith('https://')) {
+			nextErrors.website = 'Website should start with https://';
+		}
+
+		if (!String(data.get('media_language') ?? '').trim()) {
+			nextErrors.media_language = 'Select a media language';
+		}
+
+		if (!String(data.get('media_country') ?? '').trim()) {
+			nextErrors.media_country = 'Select a media country';
+		}
+
+		if (data.getAll('category').length === 0) {
+			nextErrors.category = 'Select at least one category';
+		}
+
+		if (data.getAll('topics').length === 0) {
+			nextErrors.topics = 'Select at least one topic';
+		}
+
+		return nextErrors;
+	}
+
+	function normalizeServerErrors(fieldErrors) {
+		const nextErrors = {};
+		const messages = [];
+
+		for (const [field, value] of Object.entries(fieldErrors || {})) {
+			const text = Array.isArray(value) ? value.join(' ') : String(value);
+			nextErrors[field] = text;
+			messages.push(field === '__all__' ? text : `${field}: ${text}`);
+		}
+
+		return {
+			fieldErrors: nextErrors,
+			message: messages.join(' • ') || 'Please review your inputs and try again.',
+		};
+	}
+
+	function submitMedia() {
+		singleUpload.setShareStage(null);
+
+		const form = formRef.current;
+
+		if (!form || submitMutation.isPending) {
+			return;
+		}
+
+		singleUpload.setSubmitError('');
+		submitMutation.mutate(
+			{ form },
+			{
+				onSuccess: (data) => {
+					window.location.assign(data.url);
+				},
+				onError: (error) => {
+					if (error.fieldErrors) {
+						const normalized = normalizeServerErrors(error.fieldErrors);
+						singleUpload.setErrors(normalized.fieldErrors);
+						singleUpload.setSubmitError(normalized.message);
+						return;
+					}
+
+					console.warn('Failed to share media', error);
+					singleUpload.setSubmitError('Something went wrong while sharing your media. Please try again.');
+				},
+			}
+		);
+	}
+
+	function postOrReview() {
+		if (canPublishDirectly) {
+			submitMedia();
+		} else {
+			singleUpload.setShareStage('review');
+		}
+	}
+
+	function handleShareClick() {
+		singleUpload.setSubmitError('');
+		const nextErrors = validateForm();
+		singleUpload.setErrors(nextErrors);
+
+		if (Object.keys(nextErrors).length > 0) {
+			const firstInvalid = formRef.current?.querySelector('[aria-invalid="true"]');
+			firstInvalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			return;
+		}
+
+		if (singleUpload.allowDownload) {
+			singleUpload.setShareStage('download');
+		} else {
+			postOrReview();
+		}
+	}
+
+	return (
+		<form
+			ref={formRef}
+			action={editUrl || undefined}
+			method="post"
+			encType="multipart/form-data"
+			className="mt-10 flex flex-col gap-8"
+			data-single-upload-form
+		>
+			<input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
+			<input type="hidden" name="reported_times" value="0" />
+
+			<BasicDetailsForm errors={singleUpload.errors} />
+
+			<ThumbnailImageUpload
+				lastSelectedThumbnailFile={singleUpload.lastSelectedThumbnailFile}
+				onFileChanged={onFileChanged}
+			/>
+
+			<OtherDetailsForm
+				categories={categories}
+				contentSensitivities={contentSensitivities}
+				mediaCountries={mediaCountries}
+				mediaLanguages={mediaLanguages}
+				singleUpload={singleUpload}
+				topics={topics}
+			/>
+
+			<FinalSettingsForm singleUpload={singleUpload} />
+
+			<SubmitSection
+				onReviewConfirm={submitMedia}
+				onShareClick={handleShareClick}
+				onSubmitAfterDownloadConfirm={postOrReview}
+				singleUpload={singleUpload}
+				submitMutation={submitMutation}
+			/>
+		</form>
+	);
+}

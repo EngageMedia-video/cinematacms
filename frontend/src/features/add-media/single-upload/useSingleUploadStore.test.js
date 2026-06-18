@@ -1,0 +1,64 @@
+import useSingleUploadStore, { createDefaultSingleUploadState } from './useSingleUploadStore';
+
+beforeEach(() => {
+	useSingleUploadStore.getState().reset();
+});
+
+describe('useSingleUploadStore', () => {
+	it('provides default single-upload form state', () => {
+		const state = createDefaultSingleUploadState();
+
+		expect(state.allowDownload).toBe(false);
+		expect(state.mediaStatus).toBe('public');
+		expect(state.noLicense).toBe(true);
+		expect(state.selectedLicenseId).toBe('1');
+		expect(state.selectedLicenseFields).toEqual({ commercial: 'yes', derivatives: 'yes' });
+	});
+
+	it('resets password values when password protection is disabled', () => {
+		const store = useSingleUploadStore.getState();
+
+		store.setRequirePassword(true);
+		store.setPasswordDraft('secret');
+		store.savePassword();
+		store.beginEditingPassword();
+		store.setRequirePassword(false);
+
+		expect(useSingleUploadStore.getState()).toMatchObject({
+			requirePassword: false,
+			isEditingPassword: false,
+			passwordDraft: '',
+			savedPassword: '',
+		});
+	});
+
+	it('resets visibility dates when expiration is disabled', () => {
+		const store = useSingleUploadStore.getState();
+
+		store.setExpireEnabled(true);
+		store.setStartDate('2026-01-01');
+		store.setEndDate('2026-01-31');
+		store.setExpireEnabled(false);
+
+		expect(useSingleUploadStore.getState()).toMatchObject({
+			expireEnabled: false,
+			startDate: '',
+			endDate: '',
+		});
+	});
+
+	it('applies selected license details', () => {
+		const store = useSingleUploadStore.getState();
+
+		store.setSelectedLicenseField('commercial', 'no');
+		store.setSelectedLicenseField('derivatives', 'sharealike');
+		store.applySelectedLicense('4');
+
+		expect(useSingleUploadStore.getState()).toMatchObject({
+			licenseDialogOpen: false,
+			noLicense: false,
+			selectedLicenseId: '4',
+			selectedLicenseFields: { commercial: 'no', derivatives: 'sharealike' },
+		});
+	});
+});
