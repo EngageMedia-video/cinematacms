@@ -1,4 +1,4 @@
-import { cn } from '../../../shared/utils/classNames';
+import { cn } from '../../../../shared/utils/classNames';
 
 const SUB_STEP_ITEMS = [
 	{ value: 'basic', label: 'Basic Details' },

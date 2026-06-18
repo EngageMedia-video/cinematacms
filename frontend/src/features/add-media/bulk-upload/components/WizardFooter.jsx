@@ -1,4 +1,4 @@
-import { Button } from '../../shared/components';
+import { Button } from '../../../shared/components';
 
 /**
  * Wizard footer: SAVE AS DRAFT (left), and BACK + NEXT/SHARE MEDIA (right).

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import useBulkUploadStore, { UPLOAD_STATUS } from '../useBulkUploadStore';
 import { useBulkUploadConfig } from '../bulkUploadConfig';
-import { apiFetch, getCSRFToken, parseFriendlyToken } from '../../shared/utils/api';
+import { apiFetch, getCSRFToken, parseFriendlyToken } from '../../../shared/utils/api';
 
 /**
  * Drives N concurrent chunked uploads through the bundled FineUploader engine

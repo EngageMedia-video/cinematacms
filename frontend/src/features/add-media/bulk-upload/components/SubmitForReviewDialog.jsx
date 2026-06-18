@@ -1,4 +1,4 @@
-import { Dialog, ConfirmationDialogContent, Button } from '../../shared/components';
+import { Dialog, ConfirmationDialogContent, Button } from '../../../shared/components';
 
 /**
  * "Submit For Review?" confirmation, shown to regular (non-trusted) users before

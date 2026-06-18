@@ -1,5 +1,5 @@
-import { MediaDropzone, TextAlert, Text } from '../../../shared/components';
-import { EditorialPolicyNotice } from '../../../shared/components/upload-media';
+import { MediaDropzone, TextAlert, Text } from '../../../../shared/components';
+import { EditorialPolicyNotice } from '../../../../shared/components/upload-media';
 import { useBulkUploadConfig } from '../../bulkUploadConfig';
 import { useBulkUploadActions } from '../../BulkUploadActionsContext';
 import useBulkUploadStore from '../../useBulkUploadStore';

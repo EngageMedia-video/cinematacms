@@ -1,5 +1,5 @@
-import { cn } from '../../shared/utils/classNames';
-import { Icon } from '../../shared/components';
+import { cn } from '../../../shared/utils/classNames';
+import { Icon } from '../../../shared/components';
 
 const STEPS = [
 	{ step: 1, label: 'Bulk Upload Media' },

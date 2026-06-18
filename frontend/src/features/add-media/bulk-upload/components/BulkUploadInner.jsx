@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { TextAlert } from '../../shared/components';
-import { useTaxonomies, validateMetadata } from '../../shared/components/upload-media';
-import { apiFetch } from '../../shared/utils/api';
+import { useTaxonomies, validateMetadata } from '../../../shared/components/upload-media';
+import { apiFetch } from '../../../shared/utils/api';
 import useBulkUploadStore, { UPLOAD_STATUS } from '../useBulkUploadStore';
 import { useBulkUploadConfig } from '../bulkUploadConfig';
 import { useBulkUpload } from '../hooks/useBulkUpload';
@@ -15,6 +14,7 @@ import { EnterDetails } from './step2/EnterDetails';
 import { PreviewSubmit } from './step3/PreviewSubmit';
 import { RedirectNoticeDialog } from './RedirectNoticeDialog';
 import { SubmitForReviewDialog } from './SubmitForReviewDialog';
+import { TextAlert } from '../../../shared/components';
 
 const SUB_STEP_ORDER = ['basic', 'thumbnail', 'other', 'final'];
 const SUB_STEP_LABELS = {

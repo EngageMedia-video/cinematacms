@@ -1,4 +1,4 @@
-import { cn } from '../../shared/utils/classNames';
+import { cn } from '../../../shared/utils/classNames';
 import { useBulkUploadConfig } from '../bulkUploadConfig';
 
 const SEGMENT_BASE =

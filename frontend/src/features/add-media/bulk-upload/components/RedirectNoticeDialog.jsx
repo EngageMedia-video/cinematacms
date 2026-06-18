@@ -1,4 +1,4 @@
-import { Dialog, ConfirmationDialogContent, Button } from '../../shared/components';
+import { Dialog, ConfirmationDialogContent, Button } from '../../../shared/components';
 
 /**
  * Mandatory notice shown when the bulk selection becomes exactly one file

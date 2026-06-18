@@ -1,4 +1,4 @@
-import { Icon, Button, TextAlert } from '../../../shared/components';
+import { Icon, Button, TextAlert } from '../../../../shared/components';
 import {
 	TitleField,
 	SynopsisField,
@@ -18,8 +18,8 @@ import {
 	AllowDownloadCheckbox,
 	StatusRadioGroup,
 	RequirePasswordField,
-} from '../../../shared/components/upload-media';
-import { QuickPreview } from '../../../upload-quick-preview';
+} from '../../../../shared/components/upload-media';
+import { QuickPreview } from '../../../../upload-quick-preview';
 import useBulkUploadStore from '../../useBulkUploadStore';
 import { useBulkUploadConfig } from '../../bulkUploadConfig';
 import { useBulkUploadActions } from '../../BulkUploadActionsContext';

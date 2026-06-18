@@ -1,4 +1,4 @@
-import { UploadMediaItem } from '../../../shared/components';
+import { UploadMediaItem } from '../../../../shared/components';
 import { useBulkUploadActions } from '../../BulkUploadActionsContext';
 
 /**

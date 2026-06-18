@@ -1,4 +1,4 @@
-import { Icon } from '../../../shared/components';
+import { Icon } from '../../../../shared/components';
 
 /**
  * Empty slot for the Thumbnail Image Upload sub-step, owned by issue #541. The

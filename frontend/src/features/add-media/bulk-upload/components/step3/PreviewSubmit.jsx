@@ -1,7 +1,7 @@
-import { Text, TextAlert } from '../../../shared/components';
-import { cn } from '../../../shared/utils/classNames';
-import { validateMetadata } from '../../../shared/components/upload-media';
-import { QuickPreview } from '../../../upload-quick-preview';
+import { Text, TextAlert } from '../../../../shared/components';
+import { cn } from '../../../../shared/utils/classNames';
+import { validateMetadata } from '../../../../shared/components/upload-media';
+import { QuickPreview } from '../../../../upload-quick-preview';
 import { formatFileSize } from '../../utils/formatSize';
 
 const FIELD_LABELS = {

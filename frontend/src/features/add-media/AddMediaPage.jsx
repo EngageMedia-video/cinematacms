@@ -23,6 +23,7 @@ import {
 	getUploadedMediaDetails,
 	updateUploadItemStatus,
 } from './utils/helpers';
+import BulkUploadPage from './bulk-upload/components/BulkUploadPage.jsx';
 
 export class AddMediaPage extends Page {
 	static contextType = UserContext;
@@ -379,11 +380,7 @@ export class AddMediaPage extends Page {
 								/>
 							}
 						/>
-						<TabContent
-							title="Bulk Upload"
-							value="bulk-upload"
-							content={<p>Placeholder for bulk media upload</p>}
-						/>
+						<TabContent title="Bulk Upload" value="bulk-upload" content={<BulkUploadPage />} />
 					</TabView>
 				</main>
 
