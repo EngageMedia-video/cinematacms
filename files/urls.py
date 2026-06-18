@@ -39,6 +39,7 @@ urlpatterns = [
     re_path("^embed", views.embed_media, name="get_embed"),
     re_path("^upload", views.upload_media, name="upload_media"),
     re_path("^scpublisher", views.upload_media, name="upload_media"),
+    path("bulk_upload", views.bulk_upload_media, name="bulk_upload"),
     re_path("^search", views.search, name="search"),
     re_path(
         r"^playlist/(?P<friendly_token>[\w]+(-[\w]+)*)$",
@@ -124,6 +125,8 @@ urlpatterns = [
     # USER MANAGE UPLOADS
     path("api/v1/my_uploads", management_views.MyUploadsList.as_view()),
     path("api/v1/my_uploads/bulk_state", management_views.MyUploadsBulkState.as_view()),
+    path("api/v1/my_uploads/bulk_options", management_views.BulkUploadOptions.as_view()),
+    path("api/v1/my_uploads/bulk_submit", management_views.BulkUploadSubmit.as_view()),
     path("manage/uploads", views.manage_uploads, name="manage_uploads"),
     path("manage/users/export", views.export_users, name="export_users"),
     path("api/v1/encode_profiles/", views.EncodeProfileList.as_view()),

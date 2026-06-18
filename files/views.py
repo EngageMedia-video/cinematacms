@@ -18,7 +18,7 @@ from django.core.mail import EmailMessage
 from django.db import DatabaseError, models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
 from django.http import Http404, HttpResponse, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import slugify
 from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_exempt
@@ -41,6 +41,8 @@ from cms.permissions import (
     IsAuthorizedToAdd,
     IsUserOrEditor,
     is_mfa_enabled_for_user,
+    max_bulk_upload_files,
+    user_allowed_to_bulk_upload,
     user_requires_mfa,
 )
 from cms.request_utils import get_client_ip
@@ -655,6 +657,47 @@ def upload_media(request):
     context["allowed_extensions"] = json.dumps(video_extensions)
 
     return render(request, "cms/add-media.html", context)
+
+
+@ensure_csrf_cookie
+def bulk_upload_media(request):
+    """Dedicated bulk-upload page (issue #524), a sibling of the single-upload page.
+
+    Single-file-only users (per-batch limit < 2) are rejected server-side and
+    redirected to the single-upload page (decision D8). Anonymous users fall
+    through to the sign-in prompt rendered by the template.
+    """
+    from allauth.account.forms import LoginForm
+
+    if request.user.is_authenticated and not user_allowed_to_bulk_upload(request):
+        # Canonical single-upload path. The "upload_media" name is bound to two
+        # patterns (^upload and ^scpublisher), so reverse() is ambiguous here.
+        return redirect("/upload")
+
+    context = {}
+    context["form"] = LoginForm()
+    if apps.is_installed("waffle"):
+        try:
+            upload_allowed = waffle.switch_is_active("upload_media_allowed")
+        except DatabaseError:
+            upload_allowed = getattr(settings, "UPLOAD_MEDIA_ALLOWED", True)
+    else:
+        upload_allowed = getattr(settings, "UPLOAD_MEDIA_ALLOWED", True)
+    context["can_add"] = upload_allowed and can_upload_media(request.user)
+    context["can_upload_exp"] = settings.CANNOT_ADD_MEDIA_MESSAGE
+
+    context["allowed_extensions"] = json.dumps(get_allowed_video_extensions())
+    context["max_bulk_files"] = max_bulk_upload_files(request.user)
+    context["upload_max_size"] = settings.UPLOAD_MAX_SIZE
+    context["chunks_done_param"] = settings.CHUNKS_DONE_PARAM_NAME
+    context["is_trusted_user"] = bool(
+        request.user.is_authenticated
+        and (
+            request.user.is_superuser or request.user.is_manager or request.user.is_editor or request.user.advancedUser
+        )
+    )
+
+    return render(request, "cms/bulk_upload.html", context)
 
 
 def view_media(request):

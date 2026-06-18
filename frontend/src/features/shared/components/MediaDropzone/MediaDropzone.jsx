@@ -149,6 +149,7 @@ export function MediaDropzone({
 
 				<Button
 					type="button"
+					variant="secondary"
 					onClick={openPicker}
 					disabled={disabled}
 					icon={<Icon name={buttonIconName} size={20} decorative />}

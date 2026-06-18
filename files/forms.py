@@ -192,9 +192,9 @@ class MediaForm(forms.ModelForm):
 
     def clean_summary(self):
         summary = self.cleaned_data.get("summary", "")
-        num_words = len(summary.split(" "))
-        if num_words > 60:
-            raise forms.ValidationError("Synopsis should have 60 words maximum")
+        num_words = len(summary.split())
+        if num_words > 80:
+            raise forms.ValidationError("Synopsis should have 80 words maximum")
         return summary
 
     def clean_uploaded_poster(self):
@@ -303,6 +303,15 @@ class MediaForm(forms.ModelForm):
         # Password is hashed in clean() via make_password() before it reaches
         # the model. Media.save() retains a structural hash guard as
         # defense-in-depth only.
+
+        # Completing a media item through any MediaForm save path (the edit page
+        # or bulk submit) clears the bulk-upload draft flag, so a finished item
+        # re-enters the normal pipeline and stops being excluded from the admin
+        # review queue. is_draft is only ever set by the bulk-upload flow, and
+        # its partial-draft action bypasses this save() entirely, so drafts that
+        # are still in progress stay flagged.
+        if getattr(self.instance, "is_draft", False):
+            self.instance.is_draft = False
 
         media = super(MediaForm, self).save(*args, **kwargs)
         return media

@@ -487,10 +487,23 @@ ORPHANED_UPLOAD_CLEANUP_HOURS = 24
 # bytes, size of uploaded media
 UPLOAD_MAX_SIZE = 800 * 1024 * 1000 * 5
 
-# number of files to upload using fineuploader at once
+# Default file count for the single-upload page's FineUploader. NOTE: this value
+# is overridden per-user in files/context_processors.py (advanced users -> 10,
+# everyone else -> 1), so the 100 here is only a ceiling/fallback. The dedicated
+# bulk-upload flow (issue #524) uses its own per-role limits instead — see
+# BULK_UPLOAD_MAX_FILES_* below and cms.permissions.max_bulk_upload_files.
 UPLOAD_MAX_FILES_NUMBER = 100
 CONCURRENT_UPLOADS = True
 CHUNKS_DONE_PARAM_NAME = "done"
+
+# Per-batch file limits for the bulk-upload flow (issue #524). Trusted uploaders
+# (superuser/manager/editor/advancedUser, see cms.permissions.is_trusted_uploader)
+# get the higher limit; everyone else gets the regular limit. A regular limit
+# below 2 makes a user "single-file-only" and they are redirected away from the
+# bulk page to the single-upload page. Distinct from UPLOAD_MAX_FILES_NUMBER
+# above, which governs the legacy single-upload page.
+BULK_UPLOAD_MAX_FILES_REGULAR = 2
+BULK_UPLOAD_MAX_FILES_TRUSTED = 10
 FILE_STORAGE = "django.core.files.storage.DefaultStorage"
 
 

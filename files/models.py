@@ -185,7 +185,7 @@ class Media(models.Model):
     content_sensitivity = models.ManyToManyField("ContentSensitivity", blank=True)
     channel = models.ForeignKey("users.Channel", on_delete=models.CASCADE, db_index=True, blank=True, null=True)
     description = models.TextField("More Information and Credits", blank=True)
-    summary = models.TextField("Synopsis", help_text="Maximum 60 words")
+    summary = models.TextField("Synopsis", help_text="Maximum 80 words")
     media_language = models.CharField(
         max_length=35,
         blank=True,
@@ -265,6 +265,10 @@ class Media(models.Model):
         default=settings.MEDIA_IS_REVIEWED,
         db_index=True,
         help_text="Only reviewed films will appear in public listings.",
+    )
+    is_draft = models.BooleanField(
+        default=False,
+        help_text="Draft uploads are kept private and excluded from the admin review queue until submitted.",
     )
     encoding_status = models.CharField(max_length=20, choices=MEDIA_ENCODING_STATUS, default="pending", db_index=True)
     featured = models.BooleanField(
@@ -352,6 +356,11 @@ class Media(models.Model):
             # matches the DB and makemigrations --check stays green.
             models.Index(fields=["user", "state", "add_date"], name="media_user_state_date_idx"),
             models.Index(fields=["user", "encoding_status"], name="media_user_encoding_idx"),
+            # is_draft is False for almost every row and is only ever read as
+            # `.exclude(is_draft=True)` on the admin review queue, so a partial
+            # index over just the draft rows stays tiny and selective instead of
+            # a full low-cardinality b-tree carried on every Media write.
+            models.Index(fields=["is_draft"], name="idx_media_is_draft", condition=models.Q(is_draft=True)),
         ]
 
     def __str__(self):

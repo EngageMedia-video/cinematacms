@@ -6,7 +6,7 @@ from django.contrib.auth.hashers import check_password
 from django.test import TestCase, override_settings
 
 from files.forms import MediaForm
-from files.models import Category, Language
+from files.models import Category, Language, Media
 from files.tests.helpers import create_test_media, create_test_user
 
 
@@ -100,3 +100,19 @@ class MediaFormPasswordValidationTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("password", form.errors)
         self.assertIn("12", form.errors["password"][0])
+
+    def test_completing_draft_clears_is_draft_flag(self):
+        """A bulk-upload draft finished through the normal MediaForm save path
+        (the edit page) drops is_draft, so the media re-enters the admin review
+        queue instead of being excluded forever."""
+        Media.objects.filter(pk=self.media.pk).update(is_draft=True)
+        self.media.refresh_from_db()
+        self.assertTrue(self.media.is_draft)
+
+        data = self._get_form_data(password="validpass123")
+        form = MediaForm(self.user, data=data, instance=self.media)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        form.save()
+
+        self.media.refresh_from_db()
+        self.assertFalse(self.media.is_draft)
