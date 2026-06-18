@@ -15,6 +15,7 @@ export { MediaDropzone } from './MediaDropzone';
 export { SearchBar } from './SearchBar';
 export { RadioButton } from './RadioButton';
 export { CheckboxButton } from './CheckboxButton';
+export { CheckboxGroup } from './CheckboxGroup';
 export { MovieItem, HorizontalMovieItem, VerticalMovieItem } from './MovieItem';
 export { ProgressBar } from './ProgressBar';
 export { Popup, PopupContent, PopupMain, PopupTop, PopupTrigger, usePopup } from './Popup';

@@ -89,6 +89,7 @@ export function Dropdown({
 	onChange,
 	options = [],
 	placeholder = 'Select option',
+	required = false,
 	value,
 	'aria-describedby': ariaDescribedBy,
 	'aria-invalid': ariaInvalid,
@@ -195,7 +196,9 @@ export function Dropdown({
 				}
 			}}
 		>
-			{name ? <input type="hidden" name={name} value={selectedValue ?? ''} /> : null}
+			{name ? (
+				<input type="hidden" name={name} value={selectedValue ?? ''} required={required} />
+			) : null}
 
 			<div
 				className={cn(
@@ -264,6 +267,12 @@ export function Dropdown({
 								)}
 							>
 								{label}
+								{required ? (
+									<span aria-hidden="true" className="text-text-danger">
+										{' '}
+										*
+									</span>
+								) : null}
 							</span>
 						) : null}
 						<span
@@ -295,7 +304,7 @@ export function Dropdown({
 					role="menu"
 					aria-labelledby={label ? buttonId : undefined}
 					className={cn(
-						'thin-scrollbar absolute left-0 top-full z-20 mt-2 max-h-[calc(var(--size-96)*2+var(--size-48))] min-w-full list-none overflow-y-auto overscroll-contain rounded-(--radius-4) border p-0',
+						'thin-scrollbar absolute left-0 top-full z-20 mt-2 max-h-[calc(var(--size-96)*2+var(--size-48))] min-w-full list-none overflow-y-auto overscroll-contain rounded-ds-4 border p-0',
 						MENU_VARIANT_CLASSES[variant]
 					)}
 				>
