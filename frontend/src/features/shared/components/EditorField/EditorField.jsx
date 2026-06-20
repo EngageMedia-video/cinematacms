@@ -1,6 +1,7 @@
 import { cn } from '../../utils/classNames';
 import { runValidators } from '../../utils/validators';
 import { useEffect, useId, useRef, useState } from 'react';
+import '../TextField/TextField.css';
 
 const SHELL_VARIANT_CLASSES = {
 	default: 'bg-bg-surface hover:bg-bg-surface-hover focus-within:bg-bg-surface',
@@ -47,6 +48,68 @@ function hasTextValue(value) {
 	return String(value).length > 0;
 }
 
+function toTextValue(value) {
+	return value === null || value === undefined ? '' : String(value);
+}
+
+function countWords(value) {
+	return toTextValue(value).trim().split(/\s+/).filter(Boolean).length;
+}
+
+function getMaxWordsLength(maxWordsLength) {
+	if (maxWordsLength === null || maxWordsLength === undefined) {
+		return null;
+	}
+
+	const parsedMax = Number(maxWordsLength);
+
+	if (!Number.isFinite(parsedMax)) {
+		return null;
+	}
+
+	return Math.max(0, Math.floor(parsedMax));
+}
+
+function limitWords(value, maxWordsLength) {
+	if (value === null || value === undefined || maxWordsLength === null) {
+		return value;
+	}
+
+	if (maxWordsLength === 0) {
+		return '';
+	}
+
+	const text = String(value);
+	const words = [...text.matchAll(/\S+/g)];
+
+	if (words.length <= maxWordsLength) {
+		return text;
+	}
+
+	const lastAllowedWord = words[maxWordsLength - 1];
+	return text.slice(0, lastAllowedWord.index + lastAllowedWord[0].length);
+}
+
+function getNextValueWithinWordLimit(nextValue, previousValue, maxWordsLength) {
+	if (maxWordsLength === null || countWords(nextValue) <= maxWordsLength) {
+		return nextValue;
+	}
+
+	if (countWords(previousValue) >= maxWordsLength && nextValue.startsWith(previousValue)) {
+		return previousValue;
+	}
+
+	return limitWords(nextValue, maxWordsLength);
+}
+
+function formatCounterText(wordCount, maxWordsLength) {
+	if (maxWordsLength !== null) {
+		return `${wordCount}/${maxWordsLength} words`;
+	}
+
+	return `${wordCount} ${wordCount === 1 ? 'word' : 'words'}`;
+}
+
 function getMinRows(rows) {
 	const parsedRows = Number(rows);
 
@@ -72,10 +135,12 @@ export function EditorField({
 	className = '',
 	defaultValue,
 	disabled = false,
+	enableCounter = false,
 	helperText = '',
 	id,
 	invalid = false,
 	label = '',
+	maxWordsLength = null,
 	name,
 	onBlur,
 	onChange,
@@ -93,26 +158,48 @@ export function EditorField({
 }) {
 	const generatedId = useId();
 	const textareaId = id ?? generatedId;
+	const resolvedMaxWordsLength = getMaxWordsLength(maxWordsLength);
+	const limitedDefaultValue = limitWords(defaultValue, resolvedMaxWordsLength);
+	const limitedValue = value === undefined ? undefined : limitWords(value, resolvedMaxWordsLength);
 	const [isFocused, setIsFocused] = useState(false);
-	const [hasValue, setHasValue] = useState(hasTextValue(value ?? defaultValue));
+	const [currentText, setCurrentText] = useState(toTextValue(limitedValue ?? limitedDefaultValue));
+	const [hasValue, setHasValue] = useState(hasTextValue(limitedValue ?? limitedDefaultValue));
 	const [validationError, setValidationError] = useState('');
 	const editedRef = useRef(false);
 	const textareaRef = useRef(null);
 	const showError = invalid || !!validationError;
 	const variant = disabled ? 'disabled' : showError ? 'error' : 'default';
 	const resolvedHelperText = validationError || helperText;
-	const helperTextId = resolvedHelperText ? `${textareaId}-helper-text` : undefined;
+	const helperTextId = resolvedHelperText || enableCounter ? `${textareaId}-helper-text` : undefined;
 	const describedBy = [ariaDescribedBy, helperTextId].filter(Boolean).join(' ') || undefined;
 	const activeState = variant === 'default' && isFocused;
 	const filledState = variant === 'default' && hasValue;
 	const borderClasses =
 		variant === 'default' && (activeState || filledState) ? ACTIVE_BORDER_CLASSES : BORDER_VARIANT_CLASSES[variant];
+	const wordCount = countWords(currentText);
+	const counterText = enableCounter ? formatCounterText(wordCount, resolvedMaxWordsLength) : '';
 
 	useEffect(() => {
 		if (value !== undefined) {
-			setHasValue(hasTextValue(value));
+			setCurrentText(toTextValue(limitedValue));
+			setHasValue(hasTextValue(limitedValue));
 		}
-	}, [value]);
+	}, [limitedValue, value]);
+
+	useEffect(() => {
+		if (value !== undefined || resolvedMaxWordsLength === null || !textareaRef.current) {
+			return;
+		}
+
+		const nextValue = limitWords(textareaRef.current.value, resolvedMaxWordsLength);
+
+		if (nextValue !== textareaRef.current.value) {
+			textareaRef.current.value = nextValue;
+		}
+
+		setCurrentText(toTextValue(nextValue));
+		setHasValue(hasTextValue(nextValue));
+	}, [resolvedMaxWordsLength, value]);
 
 	return (
 		<div className={cn('w-max max-w-full', className)}>
@@ -152,7 +239,7 @@ export function EditorField({
 
 				<textarea
 					{...props}
-					defaultValue={defaultValue}
+					defaultValue={limitedDefaultValue}
 					ref={(node) => {
 						textareaRef.current = node;
 						assignRef(ref, node);
@@ -166,44 +253,71 @@ export function EditorField({
 					aria-describedby={describedBy}
 					aria-invalid={ariaInvalid ?? (showError || undefined)}
 					aria-label={ariaLabel ?? (required && label ? label : undefined)}
-					value={value}
+					value={limitedValue}
 					onFocus={(event) => {
 						setIsFocused(true);
 						onFocus?.(event);
 					}}
 					onBlur={(event) => {
 						setIsFocused(false);
+						const nextValue = getNextValueWithinWordLimit(
+							event.target.value,
+							currentText,
+							resolvedMaxWordsLength
+						);
+
+						if (nextValue !== event.target.value) {
+							event.target.value = nextValue;
+						}
+
+						setCurrentText(toTextValue(nextValue));
+						setHasValue(hasTextValue(nextValue));
 						if (editedRef.current) {
-							setValidationError(runValidators(validate, event.target.value));
+							setValidationError(runValidators(validate, nextValue));
 						}
 						onBlur?.(event);
 					}}
 					onChange={(event) => {
 						editedRef.current = true;
+						const nextValue = getNextValueWithinWordLimit(
+							event.target.value,
+							currentText,
+							resolvedMaxWordsLength
+						);
+
+						if (nextValue !== event.target.value) {
+							event.target.value = nextValue;
+						}
+
+						setCurrentText(toTextValue(nextValue));
 						if (value === undefined) {
-							setHasValue(hasTextValue(event.target.value));
+							setHasValue(hasTextValue(nextValue));
 						}
 						// Re-run validators live only once an error is already showing,
 						// so the message clears/updates as the user fixes the field.
 						if (validationError) {
-							setValidationError(runValidators(validate, event.target.value));
+							setValidationError(runValidators(validate, nextValue));
 						}
 						onChange?.(event);
 					}}
 					className={cn(
-						'body-body-16-regular block w-full resize-none border-none bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 disabled:cursor-not-allowed',
+						'field-input body-body-16-regular block w-full resize-none border-none bg-transparent p-0 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 disabled:cursor-not-allowed',
 						INPUT_VARIANT_CLASSES[variant],
 						PLACEHOLDER_VARIANT_CLASSES[variant]
 					)}
 				/>
 
-				{resolvedHelperText ? (
-					<p
-						id={helperTextId}
-						className={cn('body-body-12-regular mt-2 mb-0', HELPER_VARIANT_CLASSES[variant])}
-					>
-						{resolvedHelperText}
-					</p>
+				{resolvedHelperText || enableCounter ? (
+					<div id={helperTextId} className="body-body-12-regular mt-2 flex items-start justify-between gap-4">
+						{resolvedHelperText ? (
+							<p className={cn('m-0 min-w-0', HELPER_VARIANT_CLASSES[variant])}>{resolvedHelperText}</p>
+						) : null}
+						{enableCounter ? (
+							<span className="ml-auto shrink-0 text-text-muted" aria-live="polite">
+								{counterText}
+							</span>
+						) : null}
+					</div>
 				) : null}
 			</div>
 		</div>

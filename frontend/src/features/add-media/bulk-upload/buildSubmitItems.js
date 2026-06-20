@@ -1,11 +1,8 @@
 /**
  * Maps a file's UI metadata to the payload `MediaForm` expects on the server.
- * The "Require Password" checkbox maps to the restricted state with a password,
- * mirroring MediaForm semantics (restricted requires a password; advanced users
- * only).
+ * Restricted media carries a password; other states intentionally clear it.
  */
 export function buildSubmitMetadata(metadata) {
-	const requiresPassword = Boolean(metadata.requirePassword);
 	return {
 		title: metadata.title,
 		summary: metadata.summary,
@@ -24,8 +21,8 @@ export function buildSubmitMetadata(metadata) {
 		no_license: metadata.no_license,
 		enable_comments: metadata.enable_comments,
 		allow_download: metadata.allow_download,
-		state: requiresPassword ? 'restricted' : metadata.state,
-		password: requiresPassword ? metadata.password : '',
+		state: metadata.state,
+		password: metadata.state === 'restricted' ? metadata.password : '',
 	};
 }
 

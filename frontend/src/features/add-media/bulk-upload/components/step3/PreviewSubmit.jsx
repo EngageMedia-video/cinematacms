@@ -23,7 +23,6 @@ const FIELD_LABELS = {
 	enable_comments: 'Enable Comments',
 	allow_download: 'Allow Download',
 	state: 'Status',
-	requirePassword: 'Require Password',
 	password: 'Password',
 	__all__: 'Form',
 };
@@ -51,9 +50,6 @@ function joinOptionLabels(values = [], options = [], valueKey = 'id') {
 }
 
 function metadataStatus(metadata) {
-	if (metadata.requirePassword) {
-		return STATUS_LABELS.restricted;
-	}
 	return STATUS_LABELS[metadata.state] || metadata.state || 'Not selected';
 }
 

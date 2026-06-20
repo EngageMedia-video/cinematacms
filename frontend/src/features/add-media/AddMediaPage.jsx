@@ -46,6 +46,7 @@ export class AddMediaPage extends Page {
 		};
 	}
 
+	// TODO: Move this to single-upload
 	componentDidMount() {
 		if (this.context.is.anonymous || !this.config.canAdd) {
 			return;
@@ -323,6 +324,12 @@ export class AddMediaPage extends Page {
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
 				<main className="add-media-feature mx-auto w-full max-w-6xl px-4 py-8 text-text-primary sm:px-6 lg:px-8">
+					{/* TODO: Grid 3 */}
+
+					{/* Left View (stepper) */}
+
+					{/* Form */}
+
 					<header className="mb-8">
 						<Text variant="h4" as="h1" className="m-0 text-text-strong">
 							Upload Media to Cinemata
@@ -360,6 +367,7 @@ export class AddMediaPage extends Page {
 								<SingleUploadPage
 									accept="video/*"
 									canPublishDirectly={!!this.config.canPublishDirectly}
+									canUseAdminSettings={!!this.context.is.admin}
 									csrfToken={this.config.csrfToken}
 									hasUploadedMedia={!!uploadedMedia}
 									maxFiles={2}
@@ -382,6 +390,8 @@ export class AddMediaPage extends Page {
 						/>
 						<TabContent title="Bulk Upload" value="bulk-upload" content={<BulkUploadPage />} />
 					</TabView>
+
+					{/* Quick Preview */}
 				</main>
 
 				<Dialog open={confirmDeleteOpen} onOpenChange={(open) => !open && this.closeDeleteDialog()}>

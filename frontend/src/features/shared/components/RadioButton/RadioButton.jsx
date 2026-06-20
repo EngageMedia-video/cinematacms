@@ -41,15 +41,15 @@ export function RadioButton({
 
 			<span
 				className={cn(
-					'inline-flex shrink-0 items-center justify-center rounded-full bg-bg-control transition-colors duration-200 peer-checked:bg-bg-secondary',
+					'inline-flex shrink-0 items-center justify-center rounded-full bg-bg-control transition-colors duration-200 peer-checked:bg-bg-control-checked',
 					controlClassName
 				)}
-				style={{ width: 18, height: 18, padding: 3, ...controlStyle }}
+				style={{ width: 20, height: 20, padding: 3, ...controlStyle }}
 				aria-hidden="true"
 			>
 				<span
 					className="block rounded-full bg-bg-control transition-transform duration-200"
-					style={{ width: 8, height: 8 }}
+					style={{ width: 6, height: 6 }}
 				/>
 			</span>
 

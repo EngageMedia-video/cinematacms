@@ -3,6 +3,7 @@ import { Button } from '../../../shared/components/Button';
 import { Text } from '../../../shared/components/Text';
 
 export function SubmitSection({
+	onSaveDraft,
 	onReviewConfirm,
 	onShareClick,
 	onSubmitAfterDownloadConfirm,
@@ -28,12 +29,8 @@ export function SubmitSection({
 			) : null}
 
 			<div className="flex flex-col gap-3 pt-8 sm:flex-row sm:items-center sm:justify-end">
-				<Button
-					type="button"
-					variant="secondary"
-					title="Saving as draft will be wired in a later integration slice."
-				>
-					Save as Draft
+				<Button type="button" variant="secondary" onClick={onSaveDraft} disabled={submitMutation.isPending}>
+					{submitMutation.isPending ? 'Saving…' : 'Save as Draft'}
 				</Button>
 
 				<Button type="button" onClick={onShareClick} disabled={submitMutation.isPending}>

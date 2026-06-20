@@ -19,7 +19,7 @@ from django.db import DatabaseError, models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.defaultfilters import slugify
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -50,6 +50,7 @@ from cms.ui_variant import resolve_template
 from users.models import User
 
 from . import lists
+from .draft_utils import apply_media_draft, apply_tags, draft_license_error, form_data_to_draft_metadata
 from .forms import ContactForm, EditSubtitleForm, MediaForm, SubtitleForm
 from .helpers import (
     clean_friendly_token,
@@ -875,23 +876,28 @@ def edit_media(request):
         return HttpResponseRedirect(media.get_absolute_url())
 
     if request.method == "POST":
+        action = request.POST.get("action", "submit").strip().lower()
+        if action == "draft":
+            metadata = form_data_to_draft_metadata(request.POST)
+            license_error = draft_license_error(metadata)
+            if license_error:
+                return JsonResponse(
+                    {"success": False, "errors": {"custom_license": [license_error]}},
+                    status=400,
+                )
+            apply_media_draft(media, metadata, request.user)
+            messages.add_message(request, messages.INFO, "Media draft was saved!")
+            draft_url = reverse("get_user_media", kwargs={"username": request.user.username})
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": True, "url": draft_url})
+            return HttpResponseRedirect(draft_url)
+
         form = MediaForm(request.user, request.POST, request.FILES, instance=media)
         if form.is_valid():
             # Set current user for FeaturedVideo signal tracking
             media._current_user = request.user
             media = form.save()
-            for tag in media.tags.all():
-                media.tags.remove(tag)
-            if form.cleaned_data.get("new_tags"):
-                for tag in form.cleaned_data.get("new_tags").split(","):
-                    tag = slugify(tag)
-                    if tag:
-                        try:
-                            tag = Tag.objects.get(title=tag)
-                        except Tag.DoesNotExist:
-                            tag = Tag.objects.create(title=tag, user=request.user)
-                        if tag not in media.tags.all():
-                            media.tags.add(tag)
+            apply_tags(media, form.cleaned_data.get("new_tags"), request.user)
 
             # Check if a new media file was uploaded via Fine Uploader
             session_key = f"media_file_updated_{media.friendly_token}"

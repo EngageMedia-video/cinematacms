@@ -2,7 +2,6 @@ from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
-from django.utils.text import slugify
 from rest_framework import status
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
@@ -14,6 +13,7 @@ from users.models import User
 from users.serializers import UserSerializer
 
 from . import lists
+from .draft_utils import apply_media_draft, apply_tags, draft_license_error
 from .forms import MediaForm
 from .methods import is_mediacms_manager
 from .models import (
@@ -23,7 +23,6 @@ from .models import (
     ContentSensitivity,
     License,
     Media,
-    Tag,
     Topic,
     get_language_choices,
 )
@@ -220,105 +219,6 @@ class MyUploadsBulkState(APIView):
         return Response({"updated": updated}, status=status.HTTP_200_OK)
 
 
-def _bulk_apply_tags(media, new_tags_value, user):
-    """Replace a media's tags from a comma-separated string.
-
-    Mirrors the tag handling in files.views.edit_media so bulk submit produces
-    the same tags as the single-upload edit flow.
-    """
-    media.tags.clear()
-    if not new_tags_value:
-        return
-    for raw in str(new_tags_value).split(","):
-        tag_title = slugify(raw)
-        if not tag_title:
-            continue
-        try:
-            tag = Tag.objects.get(title=tag_title)
-        except Tag.DoesNotExist:
-            tag = Tag.objects.create(title=tag_title, user=user)
-        media.tags.add(tag)
-
-
-_DRAFT_SCALAR_FIELDS = (
-    "title",
-    "summary",
-    "description",
-    "company",
-    "website",
-    "media_language",
-    "media_country",
-)
-_DRAFT_M2M_MODELS = {
-    "category": Category,
-    "topics": Topic,
-    "content_sensitivity": ContentSensitivity,
-}
-
-
-def _bulk_license_error(metadata):
-    if metadata.get("no_license") or not metadata.get("custom_license"):
-        return None
-    try:
-        license_id = int(metadata["custom_license"])
-    except (TypeError, ValueError):
-        return "Select a valid license."
-    if not License.objects.filter(pk=license_id).exists():
-        return "Select a valid license."
-    return None
-
-
-def _bulk_apply_draft(media, metadata, user):
-    """Leniently apply whatever metadata exists, marking the media a private draft.
-
-    Drafts skip required-field validation so a user can save partial progress at
-    any sub-step. Everything is best-effort; invalid scalars are ignored rather
-    than raising, since a draft is by definition incomplete.
-    """
-    for field in _DRAFT_SCALAR_FIELDS:
-        value = metadata.get(field)
-        if value is not None:
-            setattr(media, field, value)
-
-    year = metadata.get("year_produced")
-    if year == "other":
-        year = metadata.get("year_produced_custom")
-    if year not in (None, "", "other"):
-        try:
-            media.year_produced = int(year)
-        except (TypeError, ValueError):
-            pass
-
-    if "enable_comments" in metadata:
-        media.enable_comments = bool(metadata["enable_comments"])
-    if "allow_download" in metadata:
-        media.allow_download = bool(metadata["allow_download"])
-
-    if metadata.get("no_license"):
-        media.license = None
-    elif metadata.get("custom_license"):
-        try:
-            license_id = int(metadata["custom_license"])
-        except (TypeError, ValueError):
-            pass
-        else:
-            if License.objects.filter(pk=license_id).exists():
-                media.license_id = license_id
-
-    # Drafts are always kept private and flagged out of the admin review queue.
-    media.state = "private"
-    media.is_draft = True
-    media.save()
-
-    for field, model in _DRAFT_M2M_MODELS.items():
-        value = metadata.get(field)
-        if isinstance(value, list):
-            getattr(media, field).set(model.objects.filter(pk__in=value))
-
-    if "new_tags" in metadata:
-        _bulk_apply_tags(media, metadata.get("new_tags"), user)
-
-
 class BulkUploadOptions(APIView):
     """Form option lists for the bulk-upload metadata step.
 
@@ -413,7 +313,7 @@ class BulkUploadSubmit(APIView):
             metadata = item.get("metadata")
             if not isinstance(metadata, dict):
                 return Response({"detail": "metadata must be an object"}, status=status.HTTP_400_BAD_REQUEST)
-            license_error = _bulk_license_error(metadata)
+            license_error = draft_license_error(metadata)
             if license_error:
                 return Response(
                     {"detail": "invalid metadata", "errors": {token: {"custom_license": [license_error]}}},
@@ -434,7 +334,7 @@ class BulkUploadSubmit(APIView):
 
             if action == "draft":
                 for token, media in media_by_token.items():
-                    _bulk_apply_draft(media, metadata_by_token[token], request.user)
+                    apply_media_draft(media, metadata_by_token[token], request.user)
                 return Response({"updated": len(media_by_token)}, status=status.HTTP_200_OK)
 
             # action == "submit": validate every item first (all-or-nothing),
@@ -463,7 +363,7 @@ class BulkUploadSubmit(APIView):
                 media = media_by_token[token]
                 media._current_user = request.user
                 saved = form.save()
-                _bulk_apply_tags(saved, form.cleaned_data.get("new_tags"), request.user)
+                apply_tags(saved, form.cleaned_data.get("new_tags"), request.user)
                 # MediaForm.save() clears is_draft for a completed item (shared
                 # with the edit-page path), so no separate clear is needed here.
             return Response({"updated": len(valid_forms)}, status=status.HTTP_200_OK)

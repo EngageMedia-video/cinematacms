@@ -26,9 +26,11 @@ export function BasicDetailsForm({ errors }) {
 				label="Synopsis"
 				required
 				placeholder="Write here..."
-				helperText={errors.summary || 'Maximum 60 Words'}
+				enableCounter
+				maxWordsLength={80}
+				helperText={errors.summary || 'Maximum 80 Words'}
 				invalid={!!errors.summary}
-				validate={[required(), maxWords(60)]}
+				validate={[required(), maxWords(80)]}
 			/>
 
 			<EditorField
@@ -51,6 +53,7 @@ export function BasicDetailsForm({ errors }) {
 				invalid={!!errors.year_produced}
 				required
 				validate={[required()]}
+				maxLength={4}
 			/>
 		</FieldGroup>
 	);

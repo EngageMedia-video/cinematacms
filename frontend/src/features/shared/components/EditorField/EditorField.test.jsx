@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditorField } from './EditorField';
 
@@ -77,5 +77,60 @@ describe('EditorField', () => {
 		const textarea = screen.getByLabelText('Synopsis');
 		expect(textarea).toBeDisabled();
 		expect(textarea).toHaveValue('Blue Boat summary');
+	});
+
+	it('uses the shared themed input surface instead of the browser default background', () => {
+		render(<EditorField label="Themed editor" />);
+
+		expect(screen.getByLabelText('Themed editor')).toHaveClass('field-input', 'bg-transparent');
+	});
+
+	it('shows a muted word counter on the helper text row when enabled', () => {
+		render(
+			<EditorField
+				label="Synopsis"
+				helperText="Maximum 5 words"
+				defaultValue="The Blue Boat"
+				enableCounter
+				maxWordsLength={5}
+			/>
+		);
+
+		const textarea = screen.getByLabelText('Synopsis');
+		const counter = screen.getByText('3/5 words');
+
+		expect(counter).toBeVisible();
+		expect(counter).toHaveClass('text-text-muted');
+		expect(textarea).toHaveAccessibleDescription('Maximum 5 words 3/5 words');
+	});
+
+	it('counts words without a maximum when only the counter is enabled', () => {
+		render(<EditorField label="Synopsis" defaultValue="The Blue Boat" enableCounter />);
+
+		expect(screen.getByText('3 words')).toBeVisible();
+	});
+
+	it('limits pasted text to maxWordsLength before notifying onChange', () => {
+		const handleChange = vi.fn();
+		render(<EditorField label="Synopsis" enableCounter maxWordsLength={3} onChange={handleChange} />);
+
+		const textarea = screen.getByLabelText('Synopsis');
+		fireEvent.change(textarea, { target: { value: 'one two three four five' } });
+
+		expect(textarea).toHaveValue('one two three');
+		expect(screen.getByText('3/3 words')).toBeVisible();
+		expect(handleChange).toHaveBeenCalledTimes(1);
+		expect(handleChange.mock.calls[0][0].target.value).toBe('one two three');
+	});
+
+	it('blocks typed words beyond maxWordsLength without changing the last allowed word', async () => {
+		const user = userEvent.setup();
+		render(<EditorField label="Synopsis" enableCounter maxWordsLength={2} />);
+
+		const textarea = screen.getByLabelText('Synopsis');
+		await user.type(textarea, 'one two three');
+
+		expect(textarea).toHaveValue('one two ');
+		expect(screen.getByText('2/2 words')).toBeVisible();
 	});
 });

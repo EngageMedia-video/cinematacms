@@ -2,17 +2,14 @@ import { create } from 'zustand';
 
 export function createDefaultSingleUploadState() {
 	return {
-		allowDownload: false,
+		allowDownload: true,
 		errors: {},
 		submitError: '',
 		shareStage: null,
 		selectedThumbnailFile: null,
 		lastSelectedThumbnailFile: '',
 		mediaStatus: 'public',
-		requirePassword: false,
-		isEditingPassword: false,
-		passwordDraft: '',
-		savedPassword: '',
+		password: '',
 		expireEnabled: false,
 		startDate: '',
 		endDate: '',
@@ -35,30 +32,9 @@ const useSingleUploadStore = create((set) => ({
 	setShareStage: (shareStage) => set({ shareStage }),
 	setSelectedThumbnailFile: (selectedThumbnailFile) =>
 		set({ selectedThumbnailFile, lastSelectedThumbnailFile: selectedThumbnailFile?.name ?? '' }),
-	setMediaStatus: (mediaStatus) => set({ mediaStatus }),
-
-	setRequirePassword: (requirePassword) =>
-		set(
-			requirePassword
-				? { requirePassword }
-				: {
-						requirePassword,
-						isEditingPassword: false,
-						passwordDraft: '',
-						savedPassword: '',
-					}
-		),
-	beginEditingPassword: () =>
-		set((state) => ({
-			passwordDraft: state.savedPassword,
-			isEditingPassword: true,
-		})),
-	setPasswordDraft: (passwordDraft) => set({ passwordDraft }),
-	savePassword: () =>
-		set((state) => ({
-			savedPassword: state.passwordDraft,
-			isEditingPassword: false,
-		})),
+	setMediaStatus: (mediaStatus) =>
+		set((state) => ({ mediaStatus, password: mediaStatus === 'restricted' ? state.password : '' })),
+	setPassword: (password) => set({ password }),
 
 	setExpireEnabled: (expireEnabled) =>
 		set(expireEnabled ? { expireEnabled } : { expireEnabled, startDate: '', endDate: '' }),

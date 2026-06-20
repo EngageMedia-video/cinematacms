@@ -6,8 +6,9 @@ import { useMutation } from '@tanstack/react-query';
  */
 export function useSubmitSingle() {
 	return useMutation({
-		mutationFn: async ({ form, thumbnailFile }) => {
+		mutationFn: async ({ action = 'submit', form, thumbnailFile }) => {
 			const body = new FormData(form);
+			body.set('action', action);
 
 			body.delete('uploaded_poster');
 			if (thumbnailFile) {

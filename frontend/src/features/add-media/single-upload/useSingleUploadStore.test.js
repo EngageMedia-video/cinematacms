@@ -8,7 +8,7 @@ describe('useSingleUploadStore', () => {
 	it('provides default single-upload form state', () => {
 		const state = createDefaultSingleUploadState();
 
-		expect(state.allowDownload).toBe(false);
+		expect(state.allowDownload).toBe(true);
 		expect(state.mediaStatus).toBe('public');
 		expect(state.noLicense).toBe(true);
 		expect(state.selectedThumbnailFile).toBeNull();
@@ -16,20 +16,16 @@ describe('useSingleUploadStore', () => {
 		expect(state.selectedLicenseFields).toEqual({ commercial: 'yes', derivatives: 'yes' });
 	});
 
-	it('resets password values when password protection is disabled', () => {
+	it('resets password when restricted status is disabled', () => {
 		const store = useSingleUploadStore.getState();
 
-		store.setRequirePassword(true);
-		store.setPasswordDraft('secret');
-		store.savePassword();
-		store.beginEditingPassword();
-		store.setRequirePassword(false);
+		store.setMediaStatus('restricted');
+		store.setPassword('secret');
+		store.setMediaStatus('public');
 
 		expect(useSingleUploadStore.getState()).toMatchObject({
-			requirePassword: false,
-			isEditingPassword: false,
-			passwordDraft: '',
-			savedPassword: '',
+			mediaStatus: 'public',
+			password: '',
 		});
 	});
 

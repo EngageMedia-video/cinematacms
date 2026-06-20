@@ -8,6 +8,7 @@ import singleUploadQueryClient from './queryClient';
 export function SingleUploadPage({
 	accept = 'video/*',
 	canPublishDirectly = false,
+	canUseAdminSettings = false,
 	categories = [],
 	contentSensitivities = [],
 	csrfToken = '',
@@ -54,6 +55,7 @@ export function SingleUploadPage({
 				{hasUploadedMedia ? (
 					<MediaDetailsForm
 						canPublishDirectly={canPublishDirectly}
+						canUseAdminSettings={canUseAdminSettings}
 						categories={categories}
 						contentSensitivities={contentSensitivities}
 						csrfToken={csrfToken}

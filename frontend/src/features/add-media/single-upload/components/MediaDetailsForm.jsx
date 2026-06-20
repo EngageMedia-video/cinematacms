@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { maxWords, required, runValidators } from '../../../shared/utils/validators';
 import { useSubmitSingle } from '../hooks/useSubmitSingle';
 import useSingleUploadStore from '../useSingleUploadStore';
+import { AdminSettingsForm } from './AdminSettingsForm';
 import { BasicDetailsForm } from './BasicDetailsForm';
 import { FinalSettingsForm } from './FinalSettingsForm';
 import { OtherDetailsForm } from './OtherDetailsForm';
@@ -12,6 +13,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 export function MediaDetailsForm({
 	canPublishDirectly = false,
+	canUseAdminSettings = false,
 	categories = [],
 	contentSensitivities = [],
 	csrfToken = '',
@@ -70,8 +72,8 @@ export function MediaDetailsForm({
 			nextErrors.category = 'Select at least one category';
 		}
 
-		if (data.getAll('topics').length === 0) {
-			nextErrors.topics = 'Select at least one topic';
+		if (data.get('state') === 'restricted' && !String(data.get('password') ?? '').trim()) {
+			nextErrors.password = 'Password has to be set when state is Restricted.';
 		}
 
 		return nextErrors;
@@ -93,7 +95,7 @@ export function MediaDetailsForm({
 		};
 	}
 
-	function submitMedia() {
+	function submitMedia(action = 'submit') {
 		singleUpload.setShareStage(null);
 
 		const form = formRef.current;
@@ -104,7 +106,7 @@ export function MediaDetailsForm({
 
 		singleUpload.setSubmitError('');
 		submitMutation.mutate(
-			{ form, thumbnailFile: singleUpload.selectedThumbnailFile },
+			{ action, form, thumbnailFile: singleUpload.selectedThumbnailFile },
 			{
 				onSuccess: (data) => {
 					window.location.assign(data.url);
@@ -117,11 +119,19 @@ export function MediaDetailsForm({
 						return;
 					}
 
-					console.warn('Failed to share media', error);
-					singleUpload.setSubmitError('Something went wrong while sharing your media. Please try again.');
+					console.warn(action === 'draft' ? 'Failed to save media draft' : 'Failed to share media', error);
+					singleUpload.setSubmitError(
+						action === 'draft'
+							? 'Something went wrong while saving your draft. Please try again.'
+							: 'Something went wrong while sharing your media. Please try again.'
+					);
 				},
 			}
 		);
+	}
+
+	function handleSaveDraftClick() {
+		submitMedia('draft');
 	}
 
 	function postOrReview() {
@@ -160,7 +170,7 @@ export function MediaDetailsForm({
 			data-single-upload-form
 		>
 			<input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
-			<input type="hidden" name="reported_times" value="0" />
+			{canUseAdminSettings ? null : <input type="hidden" name="reported_times" value="0" />}
 
 			<BasicDetailsForm errors={singleUpload.errors} />
 
@@ -179,10 +189,13 @@ export function MediaDetailsForm({
 				topics={topics}
 			/>
 
-			<FinalSettingsForm singleUpload={singleUpload} />
+			<FinalSettingsForm canUseRestrictedStatus={canPublishDirectly} singleUpload={singleUpload} />
+
+			{canUseAdminSettings ? <AdminSettingsForm /> : null}
 
 			<SubmitSection
-				onReviewConfirm={submitMedia}
+				onSaveDraft={handleSaveDraftClick}
+				onReviewConfirm={() => submitMedia()}
 				onShareClick={handleShareClick}
 				onSubmitAfterDownloadConfirm={postOrReview}
 				singleUpload={singleUpload}

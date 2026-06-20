@@ -74,6 +74,7 @@ export function TextField({
 	id,
 	invalid = false,
 	label = '',
+	maxLength = null,
 	name,
 	onChange,
 	onBlur,
@@ -164,6 +165,7 @@ export function TextField({
 						id={inputId}
 						name={name ?? inputId}
 						type={type}
+						maxLength={maxLength ?? undefined}
 						disabled={disabled}
 						required={required}
 						aria-describedby={describedBy}

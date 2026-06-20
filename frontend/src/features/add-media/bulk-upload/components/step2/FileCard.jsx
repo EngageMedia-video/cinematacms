@@ -17,7 +17,7 @@ import {
 	EnableCommentsCheckbox,
 	AllowDownloadCheckbox,
 	StatusRadioGroup,
-	RequirePasswordField,
+	RestrictedPasswordField,
 } from '../../../../shared/components/upload-media';
 import { QuickPreview } from '../../../../upload-quick-preview';
 import useBulkUploadStore from '../../useBulkUploadStore';
@@ -209,15 +209,15 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 							<StatusRadioGroup
 								name={`status-${file.id}`}
 								value={meta.state}
-								onChange={(value) => patch({ state: value })}
+								includeRestricted={isTrustedUser}
+								onChange={(value) =>
+									patch({ state: value, password: value === 'restricted' ? meta.password : '' })
+								}
 							/>
-							{isTrustedUser ? (
-								<RequirePasswordField
-									checked={meta.requirePassword}
+							{isTrustedUser && meta.state === 'restricted' ? (
+								<RestrictedPasswordField
+									id={`password-${file.id}`}
 									password={meta.password}
-									onCheckedChange={(checked) =>
-										patch({ requirePassword: checked, password: checked ? meta.password : '' })
-									}
 									onPasswordChange={(value) => patch({ password: value })}
 									error={errors.password}
 								/>

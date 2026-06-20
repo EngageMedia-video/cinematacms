@@ -29,7 +29,6 @@ export function createDefaultMetadata() {
 		enable_comments: true,
 		allow_download: true,
 		state: 'public',
-		requirePassword: false,
 		password: '',
 	};
 }

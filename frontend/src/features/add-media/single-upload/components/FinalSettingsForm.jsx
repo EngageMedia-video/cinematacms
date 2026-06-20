@@ -1,5 +1,5 @@
+import { useState } from 'react';
 import { DateChooserField, RadioButton, Text, formatDMY } from '../../../shared/components';
-import { Button } from '../../../shared/components/Button';
 import { CheckboxButton } from '../../../shared/components/CheckboxButton';
 import { TextField } from '../../../shared/components/TextField';
 import { FieldGroup } from './FieldGroup';
@@ -7,6 +7,7 @@ import { FieldGroup } from './FieldGroup';
 const STATUS_OPTIONS = [
 	{ value: 'public', label: 'Public' },
 	{ value: 'private', label: 'Private' },
+	{ value: 'restricted', label: 'Restricted' },
 	{ value: 'unlisted', label: 'Unlisted' },
 ];
 
@@ -23,13 +24,13 @@ function diffInDays(startIso, endIso) {
 	return Math.max(0, Math.ceil((end - start) / 86400000));
 }
 
-export function FinalSettingsForm({ singleUpload }) {
+export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false }) {
+	const [showPassword, setShowPassword] = useState(false);
 	const effectiveStart = singleUpload.startDate || todayIso();
 	const visibleDays = singleUpload.endDate ? diffInDays(effectiveStart, singleUpload.endDate) : 0;
-
-	function toggleRequirePassword(event) {
-		singleUpload.setRequirePassword(event.target.checked);
-	}
+	const statusOptions = canUseRestrictedStatus
+		? STATUS_OPTIONS
+		: STATUS_OPTIONS.filter((option) => option.value !== 'restricted');
 
 	function toggleExpire(event) {
 		singleUpload.setExpireEnabled(event.target.checked);
@@ -38,7 +39,9 @@ export function FinalSettingsForm({ singleUpload }) {
 	return (
 		<FieldGroup title="Final Settings">
 			<div className="flex flex-col">
-				<CheckboxButton name="enable_comments">Enable Comments</CheckboxButton>
+				<CheckboxButton name="enable_comments" defaultChecked>
+					Enable Comments
+				</CheckboxButton>
 
 				<CheckboxButton
 					name="allow_download"
@@ -53,7 +56,7 @@ export function FinalSettingsForm({ singleUpload }) {
 				<fieldset className="m-0 border-0 p-0">
 					<legend className="body-body-16-regular mb-2 text-text-muted">Status</legend>
 					<div className="flex flex-wrap items-center gap-6">
-						{STATUS_OPTIONS.map((option) => (
+						{statusOptions.map((option) => (
 							<RadioButton
 								key={option.value}
 								name="state"
@@ -68,41 +71,22 @@ export function FinalSettingsForm({ singleUpload }) {
 					</div>
 				</fieldset>
 
-				<div className="my-4 border-b border-b-border-divider" />
-
-				<div className="flex items-center justify-between gap-4">
-					<CheckboxButton checked={singleUpload.requirePassword} onChange={toggleRequirePassword}>
-						Require Password
-					</CheckboxButton>
-
-					{singleUpload.requirePassword && !singleUpload.isEditingPassword ? (
-						<Button
-							variant="text"
-							className="body-body-14-bold uppercase text-text-accent"
-							onClick={singleUpload.beginEditingPassword}
-						>
-							Edit Password
-						</Button>
-					) : null}
-				</div>
-
-				{singleUpload.requirePassword && singleUpload.isEditingPassword ? (
+				{singleUpload.mediaStatus === 'restricted' ? (
 					<TextField
 						className="w-full"
 						id="password"
 						name="password"
-						type="text"
+						type={showPassword ? 'text' : 'password'}
 						label="Enter Password"
 						placeholder="Write here..."
-						value={singleUpload.passwordDraft}
-						onChange={(event) => singleUpload.setPasswordDraft(event.target.value)}
-						rightButtonLabel="Save"
-						onRightButtonClick={singleUpload.savePassword}
+						value={singleUpload.password}
+						onChange={(event) => singleUpload.setPassword(event.target.value)}
+						invalid={Boolean(singleUpload.errors.password)}
+						helperText={singleUpload.errors.password || ''}
+						autoComplete="new-password"
+						rightButtonLabel={showPassword ? 'Hide' : 'Show'}
+						onRightButtonClick={() => setShowPassword((visible) => !visible)}
 					/>
-				) : null}
-
-				{singleUpload.requirePassword && !singleUpload.isEditingPassword ? (
-					<input type="hidden" name="password" value={singleUpload.savedPassword} readOnly />
 				) : null}
 
 				<div className="my-4 border-b border-b-border-divider" />
@@ -140,6 +124,25 @@ export function FinalSettingsForm({ singleUpload }) {
 						) : null}
 					</>
 				) : null}
+
+				<div className="my-4 border-b border-b-border-divider" />
+
+				<legend className="body-body-16-regular mb-2 text-text-muted">Stream Protection</legend>
+
+				<div className="flex flex-row items-start gap-2">
+					<CheckboxButton name="is_encrypted" className="mt-0.5" defaultChecked />
+
+					<div className="flex flex-col gap-2">
+						<Text className="m-0" variant="body-16">
+							Encrypt this video’s stream
+						</Text>
+						<Text className="m-0" variant="body-12">
+							Require Adds an extra layer of protection so only authorized viewers can watch this fil. If
+							your video has already been processed, enabling this will trigger a re-encoding. This may
+							take a few minutes.
+						</Text>
+					</div>
+				</div>
 			</div>
 		</FieldGroup>
 	);

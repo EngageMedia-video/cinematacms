@@ -49,7 +49,10 @@ describe('SingleUploadPage', () => {
 		expect(licenseField).toHaveValue('None');
 		expect(noLicenseField).toBeChecked();
 
-		fireEvent.click(screen.getByRole('button', { name: 'Choose License' }));
+		const chooseLicenseButton = screen.getByRole('button', { name: 'Choose License' });
+		expect(chooseLicenseButton).toHaveClass('text-text-accent');
+
+		fireEvent.click(chooseLicenseButton);
 
 		expect(screen.getByRole('dialog', { name: 'Choose Creative Commons license' })).toBeInTheDocument();
 
@@ -60,6 +63,99 @@ describe('SingleUploadPage', () => {
 		expect(licenseField).toHaveValue('4');
 		expect(noLicenseField).not.toBeChecked();
 		expect(screen.getByText('CC BY-NC-SA 4.0 - Attribution-NonCommercial-ShareAlike')).toBeInTheDocument();
+	});
+
+	it('limits year produced to four characters', async () => {
+		const user = userEvent.setup();
+		renderUploadedPage();
+
+		const yearInput = screen.getByLabelText('Year Produced');
+
+		await user.type(yearInput, '20245');
+
+		expect(yearInput).toHaveValue('2024');
+	});
+
+	it('enables comments and downloads by default', () => {
+		renderUploadedPage();
+
+		expect(screen.getByRole('checkbox', { name: 'Enable Comments' })).toBeChecked();
+		expect(screen.getByRole('checkbox', { name: 'Allow Download' })).toBeChecked();
+	});
+
+	it('keeps admin settings hidden for non-admin uploads and submits reported times as zero', async () => {
+		const user = userEvent.setup();
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: false,
+			status: 500,
+			json: async () => ({}),
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		renderUploadedPage();
+
+		expect(screen.queryByRole('heading', { name: 'Admin Settings' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('checkbox', { name: 'Featured' })).not.toBeInTheDocument();
+		expect(screen.queryByLabelText('Reported Times')).not.toBeInTheDocument();
+
+		await user.click(screen.getByRole('button', { name: 'Save as Draft' }));
+		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+		const submittedBody = fetchMock.mock.calls[0][1].body;
+		expect(submittedBody.get('reported_times')).toBe('0');
+		expect(submittedBody.get('featured')).toBeNull();
+	});
+
+	it('shows admin settings for admins and submits featured and reported times', async () => {
+		const user = userEvent.setup();
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: false,
+			status: 500,
+			json: async () => ({}),
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		renderUploadedPage({ canUseAdminSettings: true });
+
+		expect(screen.getByRole('heading', { name: 'Admin Settings' })).toBeInTheDocument();
+
+		await user.click(screen.getByRole('checkbox', { name: 'Featured' }));
+		await user.clear(screen.getByLabelText('Reported Times'));
+		await user.type(screen.getByLabelText('Reported Times'), '3');
+		await user.click(screen.getByRole('button', { name: 'Save as Draft' }));
+
+		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+		const submittedBody = fetchMock.mock.calls[0][1].body;
+
+		expect(submittedBody.get('featured')).toBe('on');
+		expect(submittedBody.get('reported_times')).toBe('3');
+	});
+
+	it('submits stream protection as the HLS encryption field', () => {
+		renderUploadedPage();
+
+		const streamProtection = document.querySelector('input[name="is_encrypted"]');
+
+		expect(screen.getByText('Stream Protection')).toBeInTheDocument();
+		expect(streamProtection).toBeChecked();
+	});
+
+	it('shows a password field with visibility toggle for restricted status', async () => {
+		const user = userEvent.setup();
+		renderUploadedPage({ canPublishDirectly: true });
+
+		expect(screen.queryByLabelText('Enter Password')).not.toBeInTheDocument();
+
+		await user.click(screen.getByLabelText('Restricted'));
+
+		const passwordInput = screen.getByLabelText('Enter Password');
+		expect(passwordInput).toHaveAttribute('type', 'password');
+
+		await user.click(screen.getByRole('button', { name: 'Show' }));
+		expect(passwordInput).toHaveAttribute('type', 'text');
+
+		await user.click(screen.getByRole('button', { name: 'Hide' }));
+		expect(passwordInput).toHaveAttribute('type', 'password');
 	});
 
 	it('submits the details form through fetch and maps server field errors', async () => {
@@ -99,6 +195,7 @@ describe('SingleUploadPage', () => {
 		fireEvent.change(screen.getByLabelText('Choose thumbnail image'), { target: { files: [thumbnail] } });
 
 		await user.click(screen.getByRole('button', { name: 'Share Media' }));
+		await user.click(screen.getByRole('button', { name: 'Yes, Proceed' }));
 
 		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 		const submittedBody = fetchMock.mock.calls[0][1].body;
@@ -111,6 +208,70 @@ describe('SingleUploadPage', () => {
 		});
 		expect(submittedBody.get('uploaded_poster')).toBe(thumbnail);
 		expect(submittedBody.get('thumbnail')).toBeNull();
+		expect(submittedBody.get('action')).toBe('submit');
 		expect(await screen.findByText('summary: Keep this under 60 words.')).toBeInTheDocument();
+	});
+
+	it('saves draft without running share validation', async () => {
+		const user = userEvent.setup();
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: false,
+			status: 500,
+			json: async () => ({}),
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		renderUploadedPage();
+
+		await user.click(screen.getByRole('button', { name: 'Save as Draft' }));
+
+		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+		const submittedBody = fetchMock.mock.calls[0][1].body;
+
+		expect(submittedBody.get('action')).toBe('draft');
+		expect(
+			screen.queryByText('Please fill in all required fields before sharing your media.')
+		).not.toBeInTheDocument();
+	});
+
+	it('submits for review with the submit action', async () => {
+		const user = userEvent.setup();
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: false,
+			status: 400,
+			json: async () => ({
+				errors: {
+					summary: ['Needs review.'],
+				},
+			}),
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		renderUploadedPage({
+			mediaLanguages: [{ label: 'English', value: 'en' }],
+			mediaCountries: [{ label: 'Indonesia', value: 'id' }],
+			categories: [{ label: 'Documentary', value: 'documentary' }],
+			topics: [{ label: 'Culture', value: 'culture' }],
+		});
+
+		await user.type(screen.getByLabelText('Synopsis'), 'A short synopsis.');
+		await user.type(screen.getByLabelText('Year Produced'), '2024');
+
+		await user.click(screen.getByRole('button', { name: 'Select media language' }));
+		await user.click(screen.getByRole('menuitemradio', { name: 'English' }));
+
+		await user.click(screen.getByRole('button', { name: 'Select media country' }));
+		await user.click(screen.getByRole('menuitemradio', { name: 'Indonesia' }));
+
+		await user.click(screen.getByLabelText('Documentary'));
+		await user.click(screen.getByLabelText('Culture'));
+
+		await user.click(screen.getByRole('button', { name: 'Share Media' }));
+		await user.click(screen.getByRole('button', { name: 'Yes, Proceed' }));
+		await user.click(screen.getByRole('button', { name: 'Yes, Submit' }));
+
+		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+		expect(fetchMock.mock.calls[0][1].body.get('action')).toBe('submit');
 	});
 });

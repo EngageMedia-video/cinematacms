@@ -2,8 +2,8 @@ import { buildSubmitItems, buildSubmitMetadata } from './buildSubmitItems';
 import { createDefaultMetadata } from './useBulkUploadStore';
 
 describe('buildSubmitMetadata', () => {
-	it('maps requirePassword to the restricted state with a password', () => {
-		const metadata = { ...createDefaultMetadata(), requirePassword: true, password: 'secret', state: 'public' };
+	it('keeps the password when the selected state is restricted', () => {
+		const metadata = { ...createDefaultMetadata(), password: 'secret', state: 'restricted' };
 		const result = buildSubmitMetadata(metadata);
 		expect(result.state).toBe('restricted');
 		expect(result.password).toBe('secret');
@@ -14,7 +14,7 @@ describe('buildSubmitMetadata', () => {
 		expect(buildSubmitMetadata(metadata).custom_license).toBe('');
 	});
 
-	it('passes the chosen state through when no password is required', () => {
+	it('clears the password when the selected state is not restricted', () => {
 		const metadata = { ...createDefaultMetadata(), state: 'unlisted' };
 		const result = buildSubmitMetadata(metadata);
 		expect(result.state).toBe('unlisted');

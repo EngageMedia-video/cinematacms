@@ -19,6 +19,8 @@ const meta = {
 		helperText: '',
 		invalid: false,
 		disabled: false,
+		enableCounter: false,
+		maxWordsLength: null,
 		rows: 5,
 	},
 	argTypes: {
@@ -59,6 +61,22 @@ const meta = {
 			table: {
 				type: { summary: 'boolean' },
 				defaultValue: { summary: 'false' },
+			},
+		},
+		enableCounter: {
+			control: 'boolean',
+			description: 'Shows a muted word counter on the helper text row.',
+			table: {
+				type: { summary: 'boolean' },
+				defaultValue: { summary: 'false' },
+			},
+		},
+		maxWordsLength: {
+			control: 'number',
+			description: 'Optional maximum word count. Pasted or typed text is limited when set.',
+			table: {
+				type: { summary: 'number | null' },
+				defaultValue: { summary: 'null' },
 			},
 		},
 		className: {
@@ -138,6 +156,15 @@ export const Default = {
 export const WithHelperText = {
 	args: {
 		helperText: 'This appears on detail pages and search previews.',
+	},
+};
+
+export const WithCounter = {
+	args: {
+		helperText: 'Maximum 80 words',
+		defaultValue: 'A washed-up captain returns for one last impossible voyage.',
+		enableCounter: true,
+		maxWordsLength: 80,
 	},
 };
 

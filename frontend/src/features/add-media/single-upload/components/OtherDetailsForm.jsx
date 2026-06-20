@@ -135,7 +135,7 @@ function LicenseChooser({ singleUpload }) {
 
 					<Dialog open={singleUpload.licenseDialogOpen} onOpenChange={singleUpload.setLicenseDialogOpen}>
 						<DialogTrigger>
-							<Button type="button" variant="secondary-outline" size="sm">
+							<Button type="button" variant="text" className="text-text-accent">
 								Choose License
 							</Button>
 						</DialogTrigger>
@@ -211,6 +211,7 @@ function LicenseChooser({ singleUpload }) {
 				checked={singleUpload.noLicense}
 				className="items-start"
 				onChange={(event) => singleUpload.setNoLicense(event.target.checked)}
+				controlClassName="bg-bg-control-unchecked peer-checked:bg-bg-control-checked"
 			>
 				<span>
 					<span className="body-body-16-regular block text-text-strong">All Rights Reserved</span>
@@ -296,10 +297,8 @@ export function OtherDetailsForm({
 					className="flex flex-col flex-1"
 					label="Topics"
 					name="topics"
-					required
 					options={topics}
-					error={singleUpload.errors.topics}
-					listClassName="grid grid-cols-1 md:grid-cols-3"
+					listClassName="grid grid-cols-1 md:grid-cols-3 max-h-50 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent [&::-webkit-scrollbar-thumb]:rounded-full"
 				/>
 			</div>
 
