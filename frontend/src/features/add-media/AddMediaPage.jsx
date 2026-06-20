@@ -38,10 +38,12 @@ export class AddMediaPage extends Page {
 		// completes, so a later delete can remove the real Media object.
 		this.completedTokens = {};
 		this.state = {
+			confirmBulkUploadOpen: false,
 			confirmDeleteOpen: false,
 			hasSelectedMedia: false,
 			pendingDeleteId: null,
 			pendingDeleteName: '',
+			selectedTab: 'single-film-upload',
 			uploadedMedia: null,
 		};
 	}
@@ -295,8 +297,23 @@ export class AddMediaPage extends Page {
 		this.removeUploadItem(id);
 	};
 
+	closeBulkUploadDialog = () => {
+		this.pendingReplaceId = null;
+		this.setState({ confirmBulkUploadOpen: false });
+	};
+
+	proceedToBulkUpload = () => {
+		this.pendingReplaceId = null;
+		this.setState({ confirmBulkUploadOpen: false, selectedTab: 'bulk-upload' });
+	};
+
 	handleFilesSelected = (files) => {
 		if (!files?.length) {
+			return;
+		}
+
+		if (files.length > 1) {
+			this.setState({ confirmBulkUploadOpen: true });
 			return;
 		}
 
@@ -319,7 +336,14 @@ export class AddMediaPage extends Page {
 			return <CannotUploadMessage config={this.config} />;
 		}
 
-		const { confirmDeleteOpen, hasSelectedMedia, pendingDeleteName, uploadedMedia } = this.state;
+		const {
+			confirmBulkUploadOpen,
+			confirmDeleteOpen,
+			hasSelectedMedia,
+			pendingDeleteName,
+			selectedTab,
+			uploadedMedia,
+		} = this.state;
 
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
@@ -357,6 +381,8 @@ export class AddMediaPage extends Page {
 						panelClassName="mt-8"
 						aria-label="Upload media type"
 						defaultSelectedTab="single-film-upload"
+						selectedTab={selectedTab}
+						onSelectedTabChange={(nextTab) => this.setState({ selectedTab: nextTab })}
 						className="add-media-tabs"
 						keepMounted
 					>
@@ -410,6 +436,24 @@ export class AddMediaPage extends Page {
 								</Button>
 								<Button variant="primary" onClick={this.confirmDelete}>
 									Delete
+								</Button>
+							</>
+						}
+					/>
+				</Dialog>
+
+				<Dialog open={confirmBulkUploadOpen} onOpenChange={(open) => !open && this.closeBulkUploadDialog()}>
+					<ConfirmationDialogContent
+						title="Upload multiple media?"
+						subtitle="Single film upload only accepts one media file. This selection will be canceled. Continue to bulk upload instead?"
+						aria-label="Multiple media upload confirmation"
+						actions={
+							<>
+								<Button variant="secondary-outline" onClick={this.closeBulkUploadDialog}>
+									Cancel
+								</Button>
+								<Button variant="primary" onClick={this.proceedToBulkUpload}>
+									Proceed
 								</Button>
 							</>
 						}
