@@ -404,7 +404,6 @@ export class AddMediaPage extends Page {
 										canUseAdminSettings={!!this.context.is.admin}
 										csrfToken={this.config.csrfToken}
 										hasUploadedMedia={!!uploadedMedia}
-										maxFiles={2}
 										mediaLanguages={this.config.mediaLanguages || []}
 										mediaCountries={this.config.mediaCountries || []}
 										categories={this.config.categories || []}
