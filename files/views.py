@@ -681,6 +681,18 @@ def upload_media(request):
         [{"value": pk, "label": title} for pk, title in ContentSensitivity.objects.values_list("id", "title")]
     )
 
+    context["licenses"] = json.dumps(
+        [
+            {
+                "id": str(lic.id),
+                "title": lic.title,
+                "allowCommercial": "sharealike" if (lic.allow_commercial or "").lower() == "partially" else (lic.allow_commercial or "no").lower(),
+                "allowModifications": "sharealike" if (lic.allow_modifications or "").lower() == "partially" else (lic.allow_modifications or "no").lower(),
+            }
+            for lic in License.objects.order_by("id")
+        ]
+    )
+
     return render(request, template, context)
 
 

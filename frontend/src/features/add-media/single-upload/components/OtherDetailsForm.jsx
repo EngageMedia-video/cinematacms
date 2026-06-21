@@ -6,44 +6,7 @@ import { Text } from '../../../shared/components/Text';
 import { TextField } from '../../../shared/components/TextField';
 import { FieldGroup } from './FieldGroup';
 
-const LICENSES = [
-	{
-		id: '1',
-		title: 'CC BY 4.0 - Attribution',
-		allowCommercial: 'yes',
-		allowModifications: 'yes',
-	},
-	{
-		id: '2',
-		title: 'CC BY-SA 4.0 - Attribution-ShareAlike',
-		allowCommercial: 'yes',
-		allowModifications: 'sharealike',
-	},
-	{
-		id: '3',
-		title: 'CC BY-NC 4.0 - Attribution-NonCommercial',
-		allowCommercial: 'no',
-		allowModifications: 'yes',
-	},
-	{
-		id: '4',
-		title: 'CC BY-NC-SA 4.0 - Attribution-NonCommercial-ShareAlike',
-		allowCommercial: 'no',
-		allowModifications: 'sharealike',
-	},
-	{
-		id: '5',
-		title: 'CC BY-ND 4.0 - Attribution-NoDerivatives',
-		allowCommercial: 'yes',
-		allowModifications: 'no',
-	},
-	{
-		id: '6',
-		title: 'CC BY-NC-ND 4.0 - Attribution-NonCommercial-NoDerivatives',
-		allowCommercial: 'no',
-		allowModifications: 'no',
-	},
-];
+const DEFAULT_LICENSES = [];
 
 const COMMERCIAL_OPTIONS = [
 	{ value: 'yes', label: 'Yes' },
@@ -56,13 +19,13 @@ const MODIFICATION_OPTIONS = [
 	{ value: 'no', label: 'No' },
 ];
 
-function getLicenseById(id) {
-	return LICENSES.find((license) => license.id === id) ?? null;
+function getLicenseById(licenses, id) {
+	return licenses.find((license) => license.id === id) ?? null;
 }
 
-function getLicenseByFields({ commercial, derivatives }) {
+function getLicenseByFields(licenses, { commercial, derivatives }) {
 	return (
-		LICENSES.find(
+		licenses.find(
 			(license) => license.allowCommercial === commercial && license.allowModifications === derivatives
 		) ?? null
 	);
@@ -96,11 +59,11 @@ function LicenseRadioGroup({ legend, name, options, selectedValue, onChange }) {
 	);
 }
 
-function LicenseChooser({ singleUpload }) {
-	const defaultLicense = LICENSES[0];
-	const selectedLicense = getLicenseById(singleUpload.selectedLicenseId) ?? defaultLicense;
-	const pendingLicense = getLicenseByFields(singleUpload.selectedLicenseFields);
-	const displayTitle = singleUpload.noLicense ? '-' : selectedLicense.title;
+function LicenseChooser({ licenses, singleUpload }) {
+	const defaultLicense = licenses[0] ?? null;
+	const selectedLicense = getLicenseById(licenses, singleUpload.selectedLicenseId) ?? defaultLicense;
+	const pendingLicense = getLicenseByFields(licenses, singleUpload.selectedLicenseFields);
+	const displayTitle = singleUpload.noLicense ? '-' : (selectedLicense?.title ?? '-');
 
 	function updateSelectedLicense() {
 		if (!pendingLicense) {
@@ -115,7 +78,7 @@ function LicenseChooser({ singleUpload }) {
 			<input
 				type="hidden"
 				name="custom_license"
-				value={singleUpload.noLicense ? 'None' : selectedLicense.id}
+				value={singleUpload.noLicense ? 'None' : (selectedLicense?.id ?? '')}
 				readOnly
 			/>
 
@@ -227,6 +190,7 @@ function LicenseChooser({ singleUpload }) {
 export function OtherDetailsForm({
 	categories,
 	contentSensitivities,
+	licenses = DEFAULT_LICENSES,
 	mediaCountries,
 	mediaLanguages,
 	singleUpload,
@@ -311,7 +275,7 @@ export function OtherDetailsForm({
 				helperText="Use a comma to separate multiple tags (eq. first,second)"
 			/>
 
-			<LicenseChooser singleUpload={singleUpload} />
+			<LicenseChooser licenses={licenses} singleUpload={singleUpload} />
 		</FieldGroup>
 	);
 }

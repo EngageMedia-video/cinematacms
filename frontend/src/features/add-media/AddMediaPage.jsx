@@ -402,6 +402,7 @@ export class AddMediaPage extends Page {
 										categories={this.config.categories || []}
 										topics={this.config.topics || []}
 										contentSensitivities={this.config.contentSensitivities || []}
+										licenses={this.config.licenses || []}
 										onFilesSelected={this.handleFilesSelected}
 										showUploader={hasSelectedMedia || !!uploadedMedia}
 										uploadedMedia={uploadedMedia}

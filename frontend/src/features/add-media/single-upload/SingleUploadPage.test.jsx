@@ -3,13 +3,22 @@ import userEvent from '@testing-library/user-event';
 import { SingleUploadPage } from './SingleUploadPage';
 import useSingleUploadStore from './useSingleUploadStore';
 
+const TEST_LICENSES = [
+	{ id: '1', title: 'CC BY 4.0 - Attribution', allowCommercial: 'yes', allowModifications: 'yes' },
+	{ id: '2', title: 'CC BY-SA 4.0 - Attribution-ShareAlike', allowCommercial: 'yes', allowModifications: 'sharealike' },
+	{ id: '3', title: 'CC BY-NC 4.0 - Attribution-NonCommercial', allowCommercial: 'no', allowModifications: 'yes' },
+	{ id: '4', title: 'CC BY-NC-SA 4.0 - Attribution-NonCommercial-ShareAlike', allowCommercial: 'no', allowModifications: 'sharealike' },
+	{ id: '5', title: 'CC BY-ND 4.0 - Attribution-NoDerivatives', allowCommercial: 'yes', allowModifications: 'no' },
+	{ id: '6', title: 'CC BY-NC-ND 4.0 - Attribution-NonCommercial-NoDerivatives', allowCommercial: 'no', allowModifications: 'no' },
+];
+
 describe('SingleUploadPage', () => {
 	beforeEach(() => {
 		useSingleUploadStore.getState().reset();
 	});
 
 	function renderUploadedPage(props = {}) {
-		return render(<SingleUploadPage hasUploadedMedia uploadedMedia={{ editUrl: '/media/test/edit' }} {...props} />);
+		return render(<SingleUploadPage hasUploadedMedia licenses={TEST_LICENSES} uploadedMedia={{ editUrl: '/media/test/edit' }} {...props} />);
 	}
 
 	afterEach(() => {

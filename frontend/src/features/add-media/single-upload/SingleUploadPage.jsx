@@ -14,6 +14,7 @@ export function SingleUploadPage({
 	csrfToken = '',
 	hasUploadedMedia = false,
 	maxFiles = 1,
+	licenses = [],
 	mediaCountries = [],
 	mediaLanguages = [],
 	onFilesSelected,
@@ -60,9 +61,10 @@ export function SingleUploadPage({
 						contentSensitivities={contentSensitivities}
 						csrfToken={csrfToken}
 						editUrl={uploadedMedia?.editUrl ?? ''}
-						mediaCountries={mediaCountries}
-						mediaLanguages={mediaLanguages}
-						topics={topics}
+					licenses={licenses}
+					mediaCountries={mediaCountries}
+					mediaLanguages={mediaLanguages}
+					topics={topics}
 					/>
 				) : null}
 			</div>

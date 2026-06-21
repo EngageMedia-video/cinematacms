@@ -18,6 +18,7 @@ export function MediaDetailsForm({
 	contentSensitivities = [],
 	csrfToken = '',
 	editUrl = '',
+	licenses = [],
 	mediaCountries = [],
 	mediaLanguages = [],
 	topics = [],
@@ -183,6 +184,7 @@ export function MediaDetailsForm({
 			<OtherDetailsForm
 				categories={categories}
 				contentSensitivities={contentSensitivities}
+				licenses={licenses}
 				mediaCountries={mediaCountries}
 				mediaLanguages={mediaLanguages}
 				singleUpload={singleUpload}
