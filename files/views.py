@@ -671,12 +671,8 @@ def upload_media(request):
 
     # Taxonomy options (Category/Topic/ContentSensitivity), value=pk, label=title,
     # ordered by title via each model's Meta — same source the edit-media form uses.
-    context["categories"] = [
-        {"value": pk, "label": title} for pk, title in Category.objects.values_list("id", "title")
-    ]
-    context["topics"] = [
-        {"value": pk, "label": title} for pk, title in Topic.objects.values_list("id", "title")
-    ]
+    context["categories"] = [{"value": pk, "label": title} for pk, title in Category.objects.values_list("id", "title")]
+    context["topics"] = [{"value": pk, "label": title} for pk, title in Topic.objects.values_list("id", "title")]
     context["content_sensitivities"] = [
         {"value": pk, "label": title} for pk, title in ContentSensitivity.objects.values_list("id", "title")
     ]
@@ -685,8 +681,12 @@ def upload_media(request):
         {
             "id": str(lic.id),
             "title": lic.title,
-            "allowCommercial": "sharealike" if (lic.allow_commercial or "").lower() == "partially" else (lic.allow_commercial or "no").lower(),
-            "allowModifications": "sharealike" if (lic.allow_modifications or "").lower() == "partially" else (lic.allow_modifications or "no").lower(),
+            "allowCommercial": "sharealike"
+            if (lic.allow_commercial or "").lower() == "partially"
+            else (lic.allow_commercial or "no").lower(),
+            "allowModifications": "sharealike"
+            if (lic.allow_modifications or "").lower() == "partially"
+            else (lic.allow_modifications or "no").lower(),
         }
         for lic in License.objects.order_by("id")
     ]

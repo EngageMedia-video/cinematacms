@@ -61,10 +61,10 @@ export function SingleUploadPage({
 						contentSensitivities={contentSensitivities}
 						csrfToken={csrfToken}
 						editUrl={uploadedMedia?.editUrl ?? ''}
-					licenses={licenses}
-					mediaCountries={mediaCountries}
-					mediaLanguages={mediaLanguages}
-					topics={topics}
+						licenses={licenses}
+						mediaCountries={mediaCountries}
+						mediaLanguages={mediaLanguages}
+						topics={topics}
 					/>
 				) : null}
 			</div>
