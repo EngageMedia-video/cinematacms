@@ -659,39 +659,37 @@ def upload_media(request):
 
     # Get allowed video extensions from helper function
     video_extensions = get_allowed_video_extensions()
-    context["allowed_extensions"] = json.dumps(video_extensions)
+    context["allowed_extensions"] = video_extensions
 
     # Media language / country options, sourced from the DB and lists the same
     # way edit-media does so both pages stay in sync.
     language_choices = Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list(
         "code", "title"
     )
-    context["media_languages"] = json.dumps([{"value": code, "label": title} for code, title in language_choices])
-    context["media_countries"] = json.dumps([{"value": code, "label": title} for code, title in lists.video_countries])
+    context["media_languages"] = [{"value": code, "label": title} for code, title in language_choices]
+    context["media_countries"] = [{"value": code, "label": title} for code, title in lists.video_countries]
 
     # Taxonomy options (Category/Topic/ContentSensitivity), value=pk, label=title,
     # ordered by title via each model's Meta — same source the edit-media form uses.
-    context["categories"] = json.dumps(
-        [{"value": pk, "label": title} for pk, title in Category.objects.values_list("id", "title")]
-    )
-    context["topics"] = json.dumps(
-        [{"value": pk, "label": title} for pk, title in Topic.objects.values_list("id", "title")]
-    )
-    context["content_sensitivities"] = json.dumps(
-        [{"value": pk, "label": title} for pk, title in ContentSensitivity.objects.values_list("id", "title")]
-    )
+    context["categories"] = [
+        {"value": pk, "label": title} for pk, title in Category.objects.values_list("id", "title")
+    ]
+    context["topics"] = [
+        {"value": pk, "label": title} for pk, title in Topic.objects.values_list("id", "title")
+    ]
+    context["content_sensitivities"] = [
+        {"value": pk, "label": title} for pk, title in ContentSensitivity.objects.values_list("id", "title")
+    ]
 
-    context["licenses"] = json.dumps(
-        [
-            {
-                "id": str(lic.id),
-                "title": lic.title,
-                "allowCommercial": "sharealike" if (lic.allow_commercial or "").lower() == "partially" else (lic.allow_commercial or "no").lower(),
-                "allowModifications": "sharealike" if (lic.allow_modifications or "").lower() == "partially" else (lic.allow_modifications or "no").lower(),
-            }
-            for lic in License.objects.order_by("id")
-        ]
-    )
+    context["licenses"] = [
+        {
+            "id": str(lic.id),
+            "title": lic.title,
+            "allowCommercial": "sharealike" if (lic.allow_commercial or "").lower() == "partially" else (lic.allow_commercial or "no").lower(),
+            "allowModifications": "sharealike" if (lic.allow_modifications or "").lower() == "partially" else (lic.allow_modifications or "no").lower(),
+        }
+        for lic in License.objects.order_by("id")
+    ]
 
     return render(request, template, context)
 

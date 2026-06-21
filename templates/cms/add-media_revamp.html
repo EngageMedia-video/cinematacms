@@ -21,6 +21,14 @@
 {% endblock modernpageimports %}
 
 {% block content %}
+{{ allowed_extensions|json_script:"add-media-allowed-extensions" }}
+{{ media_languages|json_script:"add-media-languages" }}
+{{ media_countries|json_script:"add-media-countries" }}
+{{ categories|json_script:"add-media-categories" }}
+{{ topics|json_script:"add-media-topics" }}
+{{ content_sensitivities|json_script:"add-media-content-sensitivities" }}
+{{ licenses|json_script:"add-media-licenses" }}
+
 <script>
 	window.MediaCMS = window.MediaCMS || {};
 	window.MediaCMS.addMediaPage = {
@@ -30,7 +38,7 @@
 		uploadCompleteEndpoint: "{% url 'uploader:upload' %}?done",
 		uploadMaxFilesNumber: {{ UPLOAD_MAX_FILES_NUMBER }},
 		uploadMaxSize: {{ UPLOAD_MAX_SIZE }},
-		allowedExtensions: {{ allowed_extensions|safe }},
+		allowedExtensions: JSON.parse(document.getElementById('add-media-allowed-extensions').textContent),
 		canUploadMessage: "{{ can_upload_exp|escapejs }}",
 		uploadMediaUrl: "{% url 'upload_media' %}",
 		signupUrl: "{% url 'account_signup' %}",
@@ -38,12 +46,12 @@
 		resetPasswordUrl: "{% url 'account_reset_password' %}",
 		csrfToken: "{{ csrf_token|escapejs }}",
 		loginFormHtml: "{{ form.as_p|escapejs }}",
-		mediaLanguages: {{ media_languages|safe }},
-		mediaCountries: {{ media_countries|safe }},
-		categories: {{ categories|safe }},
-		topics: {{ topics|safe }},
-		contentSensitivities: {{ content_sensitivities|safe }},
-		licenses: {{ licenses|safe }},
+		mediaLanguages: JSON.parse(document.getElementById('add-media-languages').textContent),
+		mediaCountries: JSON.parse(document.getElementById('add-media-countries').textContent),
+		categories: JSON.parse(document.getElementById('add-media-categories').textContent),
+		topics: JSON.parse(document.getElementById('add-media-topics').textContent),
+		contentSensitivities: JSON.parse(document.getElementById('add-media-content-sensitivities').textContent),
+		licenses: JSON.parse(document.getElementById('add-media-licenses').textContent),
 	};
 </script>
 
