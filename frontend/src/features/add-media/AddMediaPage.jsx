@@ -165,6 +165,14 @@ export class AddMediaPage extends Page {
 			const files = Array.from(input.files || []);
 
 			if (files.length) {
+				// Check for multi-file selection before deleting the original
+				if (files.length > 1) {
+					this.pendingReplaceId = null;
+					this.setState({ confirmBulkUploadOpen: true });
+					cleanup();
+					return;
+				}
+
 				// Replace = delete the old media first (frees the item-limit slot and
 				// removes the old server-side Media), then upload the new one.
 				if (this.pendingReplaceId != null) {
