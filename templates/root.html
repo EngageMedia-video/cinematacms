@@ -20,6 +20,13 @@
 
         {% include "common/head-links.html" %}
 
+        {# Global stylesheet as a render-blocking <link> so the page is styled #}
+        {# before React/JS loads. Without this, styles.scss is only pulled in via #}
+        {# JS module imports, which causes a flash of unstyled content on slow #}
+        {# connections. Tailwind utilities load after this (in topimports) so their #}
+        {# important layer keeps precedence. #}
+        <link rel="stylesheet" href="{% vite_asset_url 'src/static/css/styles.scss' %}">
+
         {# Import map — must appear before any <script type="module"> so the browser #}
         {# can resolve the bare "video.js" specifier used in Vite's externalized chunks. #}
         <script type="importmap">

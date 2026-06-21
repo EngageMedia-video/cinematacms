@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 
-// Legacy pages don't load AppLayout, so these globals must reload here.
-import '../../../static/css/styles.scss';
+// Global styles.scss is loaded as a render-blocking <link> in root.html, so it
+// is not imported here (that caused a flash of unstyled content on slow links).
 import '../../../static/js/components/styles/PageMain.scss';
 
 import PageStore from '../../../static/js/pages/_PageStore.js';
