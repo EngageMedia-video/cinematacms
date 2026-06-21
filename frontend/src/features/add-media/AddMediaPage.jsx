@@ -384,7 +384,7 @@ export class AddMediaPage extends Page {
 
 						<TabView
 							tabMode="wrap"
-							triggerClassName="rounded-none py-3 px-size-22 text-neutral-50 aria-selected:text-text-primary aria-selected:text-neutral-50"
+							triggerClassName="rounded-none py-3 px-size-22 text-neutral-50 aria-selected:text-text-primary"
 							triggerSelectedColor="bg-bg-section-header"
 							panelClassName="mt-8"
 							aria-label="Upload media type"
