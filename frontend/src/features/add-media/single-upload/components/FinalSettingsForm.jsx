@@ -137,8 +137,8 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 							Encrypt this video’s stream
 						</Text>
 						<Text className="m-0" variant="body-12">
-							Require Adds an extra layer of protection so only authorized viewers can watch this fil. If
-							your video has already been processed, enabling this will trigger a re-encoding. This may
+							Adds an extra layer of protection so only authorized viewers can watch this film. If
+							your video has already been processed, enabling this will trigger a re-encoding, which may
 							take a few minutes.
 						</Text>
 					</div>
