@@ -44,7 +44,7 @@ export function MediaDetailsForm({
 		const data = new FormData(form);
 		const nextErrors = {};
 
-		const summaryError = runValidators([required(), maxWords(60)], data.get('summary'));
+		const summaryError = runValidators([required(), maxWords(80)], data.get('summary'));
 		if (summaryError) {
 			nextErrors.summary = summaryError;
 		}

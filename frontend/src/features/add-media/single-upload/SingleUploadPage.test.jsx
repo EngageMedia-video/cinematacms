@@ -174,7 +174,7 @@ describe('SingleUploadPage', () => {
 			status: 400,
 			json: async () => ({
 				errors: {
-					summary: ['Keep this under 60 words.'],
+					summary: ['Keep this under 80 words.'],
 				},
 			}),
 		});
@@ -218,7 +218,7 @@ describe('SingleUploadPage', () => {
 		expect(submittedBody.get('uploaded_poster')).toBe(thumbnail);
 		expect(submittedBody.get('thumbnail')).toBeNull();
 		expect(submittedBody.get('action')).toBe('submit');
-		expect(await screen.findByText('summary: Keep this under 60 words.')).toBeInTheDocument();
+		expect(await screen.findByText('summary: Keep this under 80 words.')).toBeInTheDocument();
 	});
 
 	it('saves draft without running share validation', async () => {
