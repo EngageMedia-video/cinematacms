@@ -347,77 +347,81 @@ export class AddMediaPage extends Page {
 
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
-				<main className="add-media-feature mx-auto w-full max-w-6xl px-4 py-8 text-text-primary sm:px-6 lg:px-8">
-					{/* TODO: Grid 3 */}
+				<main className="add-media-feature mx-4 grid w-auto grid-cols-1 gap-8 py-8 text-text-primary sm:mx-6 lg:mx-10 lg:grid-cols-6 lg:items-start">
+					<aside className="hidden min-w-0 lg:block bg-white" aria-hidden="true">
+						{/* TODO: Left View (stepper) */}
+						<p>Test</p>
+					</aside>
 
-					{/* Left View (stepper) */}
+					<section className="min-w-0 col-span-4">
+						<header className="mb-8">
+							<Text variant="h4" as="h1" className="m-0 text-text-strong">
+								Upload Media to Cinemata
+							</Text>
+							<Text variant="body-16" color="description" className="m-0 mt-4 max-w-[720px]">
+								Please check our&nbsp;
+								<a
+									href="/editorial-policy"
+									className="text-text-accent no-underline underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+								>
+									Editorial Policy
+								</a>
+								&nbsp;before uploading media.
+								<br />
+								Any media that does not comply with the policy will be deleted from Cinemata.org.
+							</Text>
+						</header>
 
-					{/* Form */}
+						<AddMediaUploadTemplate />
 
-					<header className="mb-8">
-						<Text variant="h4" as="h1" className="m-0 text-text-strong">
-							Upload Media to Cinemata
-						</Text>
-						<Text variant="body-16" color="description" className="m-0 mt-4 max-w-[720px]">
-							Please check our&nbsp;
-							<a
-								href="/editorial-policy"
-								className="text-text-accent no-underline underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
-							>
-								Editorial Policy
-							</a>
-							&nbsp;before uploading media.
-							<br />
-							Any media that does not comply with the policy will be deleted from Cinemata.org.
-						</Text>
-					</header>
+						<TabView
+							tabMode="wrap"
+							triggerClassName="rounded-none py-3 px-size-22 text-neutral-50 aria-selected:text-text-primary aria-selected:text-neutral-50"
+							triggerSelectedColor="bg-bg-section-header"
+							panelClassName="mt-8"
+							aria-label="Upload media type"
+							defaultSelectedTab="single-film-upload"
+							selectedTab={selectedTab}
+							onSelectedTabChange={(nextTab) => this.setState({ selectedTab: nextTab })}
+							className="add-media-tabs"
+							keepMounted
+						>
+							<TabContent
+								title="Single Film Upload"
+								value="single-film-upload"
+								content={
+									<SingleUploadPage
+										accept="video/*"
+										canPublishDirectly={!!this.config.canPublishDirectly}
+										canUseAdminSettings={!!this.context.is.admin}
+										csrfToken={this.config.csrfToken}
+										hasUploadedMedia={!!uploadedMedia}
+										maxFiles={2}
+										mediaLanguages={this.config.mediaLanguages || []}
+										mediaCountries={this.config.mediaCountries || []}
+										categories={this.config.categories || []}
+										topics={this.config.topics || []}
+										contentSensitivities={this.config.contentSensitivities || []}
+										onFilesSelected={this.handleFilesSelected}
+										showUploader={hasSelectedMedia || !!uploadedMedia}
+										uploadedMedia={uploadedMedia}
+										uploader={
+											<div
+												className="media-uploader add-media-uploader-mount"
+												ref={this.uploaderRef}
+											></div>
+										}
+									/>
+								}
+							/>
+							<TabContent title="Bulk Upload" value="bulk-upload" content={<BulkUploadPage />} />
+						</TabView>
+					</section>
 
-					<AddMediaUploadTemplate />
-
-					<TabView
-						tabMode="wrap"
-						triggerClassName="rounded-none py-3 px-size-22 text-neutral-50 aria-selected:text-text-primary aria-selected:text-neutral-50"
-						triggerSelectedColor="bg-bg-section-header"
-						panelClassName="mt-8"
-						aria-label="Upload media type"
-						defaultSelectedTab="single-film-upload"
-						selectedTab={selectedTab}
-						onSelectedTabChange={(nextTab) => this.setState({ selectedTab: nextTab })}
-						className="add-media-tabs"
-						keepMounted
-					>
-						<TabContent
-							title="Single Film Upload"
-							value="single-film-upload"
-							content={
-								<SingleUploadPage
-									accept="video/*"
-									canPublishDirectly={!!this.config.canPublishDirectly}
-									canUseAdminSettings={!!this.context.is.admin}
-									csrfToken={this.config.csrfToken}
-									hasUploadedMedia={!!uploadedMedia}
-									maxFiles={2}
-									mediaLanguages={this.config.mediaLanguages || []}
-									mediaCountries={this.config.mediaCountries || []}
-									categories={this.config.categories || []}
-									topics={this.config.topics || []}
-									contentSensitivities={this.config.contentSensitivities || []}
-									onFilesSelected={this.handleFilesSelected}
-									showUploader={hasSelectedMedia || !!uploadedMedia}
-									uploadedMedia={uploadedMedia}
-									uploader={
-										<div
-											className="media-uploader add-media-uploader-mount"
-											ref={this.uploaderRef}
-										></div>
-									}
-								/>
-							}
-						/>
-						<TabContent title="Bulk Upload" value="bulk-upload" content={<BulkUploadPage />} />
-					</TabView>
-
-					{/* Quick Preview */}
+					<aside className="hidden min-w-0 lg:block bg-white" aria-hidden="true">
+						{/* TODO: Right View (preview) */}
+						<p>Test</p>
+					</aside>
 				</main>
 
 				<Dialog open={confirmDeleteOpen} onOpenChange={(open) => !open && this.closeDeleteDialog()}>
