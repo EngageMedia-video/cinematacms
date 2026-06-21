@@ -66,6 +66,8 @@ def apply_media_draft(media, metadata, user):
         media.enable_comments = bool(metadata["enable_comments"])
     if "allow_download" in metadata:
         media.allow_download = bool(metadata["allow_download"])
+    if "is_encrypted" in metadata:
+        media.is_encrypted = bool(metadata["is_encrypted"])
 
     if metadata.get("no_license"):
         media.license = None
@@ -118,4 +120,5 @@ def form_data_to_draft_metadata(post_data):
     metadata["enable_comments"] = "enable_comments" in post_data
     metadata["allow_download"] = "allow_download" in post_data
     metadata["no_license"] = "no_license" in post_data
+    metadata["is_encrypted"] = "is_encrypted" in post_data
     return metadata
