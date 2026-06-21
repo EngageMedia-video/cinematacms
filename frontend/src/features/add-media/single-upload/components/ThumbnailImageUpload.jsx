@@ -30,7 +30,7 @@ export function ThumbnailImageUpload({ lastSelectedThumbnailFile, onFileChanged,
 					triggerClassName="rounded-none py-3 px-size-22 text-neutral-50 aria-selected:text-text-primary"
 					panelClassName="mt-8"
 					aria-label="Upload media type"
-					defaultSelectedTab="single-film-upload"
+					defaultSelectedTab="upload-thumbnail"
 				>
 					<TabContent title="UPLOAD THUMBNAIL" value="upload-thumbnail">
 						<MediaDropzone

@@ -7,7 +7,11 @@ export function formatDMY(isoDate) {
 		return '';
 	}
 
-	const [year, month, day] = isoDate.split('-');
+	const parts = isoDate.split('-');
+	if (parts.length !== 3) {
+		return '';
+	}
+	const [year, month, day] = parts;
 	return `${day}/${month}/${year}`;
 }
 

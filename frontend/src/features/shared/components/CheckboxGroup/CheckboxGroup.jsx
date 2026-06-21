@@ -55,7 +55,13 @@ export function CheckboxGroup({
 				</span>
 			) : null}
 
-			<div role="group" aria-labelledby={labelId} className={listClassName}>
+			<div
+				role="group"
+				aria-labelledby={labelId}
+				aria-describedby={error ? errorId : undefined}
+				aria-invalid={error ? 'true' : undefined}
+				className={listClassName}
+			>
 				{normalizedOptions.map((option) => (
 					<CheckboxButton
 						key={option.value}
