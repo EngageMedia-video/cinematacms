@@ -1040,6 +1040,7 @@ body {
 	--bg-control-checked: var(--cinemata-pacific-deep-700);
 	--bg-chip-active: var(--cinemata-sunset-horizon-400p);
 	--bg-chip: var(--cinemata-strait-blue-100);
+	--bg-tab-trigger-selected: var(--cinemata-strait-blue-200);
 
 	/* Text */
 	--text-strong: var(--cinemata-pacific-deep-900);
@@ -1070,6 +1071,7 @@ body {
 	--text-action-inverse: var(--cinemata-strait-blue-100);
 	--text-panel-heading: var(--cinemata-pacific-deep-700);
 	--text-control-checked: var(--cinemata-pacific-deep-100);
+	--text-tab-trigger: var(--cinemata-neutral-50);
 
 	/* Borders */
 	--border-default: var(--cinemata-pacific-deep-200);
@@ -1129,6 +1131,7 @@ body.dark_theme {
 	--bg-control-checked: var(--cinemata-sunset-horizon-400p);
 	--bg-chip-active: var(--cinemata-sunset-horizon-400p);
 	--bg-chip: var(--cinemata-pacific-deep-700);
+	--bg-tab-trigger-selected: var(--cinemata-strait-blue-200);
 
 	--text-strong: var(--cinemata-strait-blue-50);
 	--text-primary: var(--cinemata-strait-blue-50);
@@ -1149,6 +1152,7 @@ body.dark_theme {
 	--text-action-inverse: var(--cinemata-strait-blue-50);
 	--text-panel-heading: var(--cinemata-neutral-50);
 	--text-control-checked: var(--cinemata-pacific-deep-900);
+	--text-tab-trigger: var(--cinemata-neutral-50);
 
 	--border-default: var(--cinemata-pacific-deep-700);
 	--border-subtle: var(--cinemata-pacific-deep-800);
@@ -1215,6 +1219,7 @@ body.dark_theme {
 	--color-bg-control-checked: var(--bg-control-checked);
 	--color-bg-chip-active: var(--bg-chip-active);
 	--color-bg-chip: var(--bg-chip);
+	--color-bg-tab-trigger-selected: var(--bg-tab-trigger-selected);
 
 	/* Text */
 	--color-text-strong: var(--text-strong);
@@ -1245,6 +1250,7 @@ body.dark_theme {
 	--color-text-action-inverse: var(--text-action-inverse);
 	--color-text-panel-heading: var(--text-panel-heading);
 	--color-text-control-checked: var(--text-control-checked);
+	--color-text-tab-trigger: var(--text-tab-trigger);
 
 	/* Borders */
 	--color-border-default: var(--border-default);
