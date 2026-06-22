@@ -31,6 +31,7 @@ const SEMANTIC_COLOR_TOKENS = {
 		'control-checked',
 		'chip-active',
 		'chip',
+		'tab-trigger-selected',
 	]),
 	text: new Set([
 		'strong',
@@ -57,6 +58,7 @@ const SEMANTIC_COLOR_TOKENS = {
 		'action-inverse',
 		'panel-heading',
 		'control-checked',
+		'tab-trigger',
 	]),
 	border: new Set([
 		'default',

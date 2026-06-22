@@ -27,8 +27,8 @@ export function ThumbnailImageUpload({ lastSelectedThumbnailFile, onFileChanged,
 			<div>
 				<TabView
 					tabMode="wrap"
-					triggerClassName="rounded-none py-3 px-size-22 text-neutral-50"
-					triggerSelectedColor="cinemata-strait-blue-200"
+					triggerClassName="rounded-none py-3 px-size-22 text-text-tab-trigger"
+					triggerSelectedColor="bg-bg-tab-trigger-selected"
 					panelClassName="mt-8"
 					aria-label="Upload media type"
 					defaultSelectedTab="upload-thumbnail"
