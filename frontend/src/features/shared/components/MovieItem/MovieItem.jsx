@@ -106,6 +106,7 @@ function MoviePoster({
 	link = '',
 	linkTitle = '',
 	showTopRightIcon = false,
+	thumbnailOverlay = null,
 }) {
 	const visibleLabel = [badge, duration].filter(Boolean).join(' ');
 	const linkLabel = [visibleLabel, linkTitle ? `Open ${linkTitle}` : 'Open movie details'].filter(Boolean).join(', ');
@@ -120,6 +121,8 @@ function MoviePoster({
 				loading="lazy"
 				decoding="async"
 			/>
+
+			{thumbnailOverlay ? <div className="absolute inset-0">{thumbnailOverlay}</div> : null}
 
 			{badge || duration ? (
 				<div className="absolute inset-x-2 bottom-2 flex items-center gap-2">
@@ -178,6 +181,7 @@ export function HorizontalMovieItem({
 	posterClassName = 'aspect-video w-[180px]',
 	subtitle = '',
 	subtitleLink = '',
+	thumbnailOverlay = null,
 	title = 'Movie Title',
 }) {
 	const useStandaloneLinks = Boolean(subtitleLink);
@@ -199,6 +203,7 @@ export function HorizontalMovieItem({
 				link={useStandaloneLinks ? link : ''}
 				linkTitle={title}
 				className={cn(posterClassName, 'shrink-0')}
+				thumbnailOverlay={thumbnailOverlay}
 			/>
 
 			<div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -228,6 +233,7 @@ export function VerticalMovieItem({
 	metadata = [],
 	subtitle = '',
 	subtitleLink = '',
+	thumbnailOverlay = null,
 	title = 'Movie Title',
 }) {
 	const useStandaloneLinks = Boolean(subtitleLink);
@@ -252,6 +258,7 @@ export function VerticalMovieItem({
 				linkTitle={title}
 				showTopRightIcon
 				className="aspect-video w-full"
+				thumbnailOverlay={thumbnailOverlay}
 			/>
 
 			<MovieCopy

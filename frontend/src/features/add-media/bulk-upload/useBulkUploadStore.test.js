@@ -24,6 +24,41 @@ describe('useBulkUploadStore', () => {
 		expect(file.metadata.title).toBe('Hi');
 	});
 
+	it('keeps per-file poster upload and frame selection mutually exclusive', () => {
+		const { addFile, setPosterFile, setThumbnailTime } = useBulkUploadStore.getState();
+		const poster = new File(['poster'], 'poster.png', { type: 'image/png' });
+		const frame = { index: 2, seconds: 20, spritesUrl: '/sprites.jpg', rowsInSheet: 3 };
+
+		addFile({ id: 4, name: 'd.mp4', sizeBytes: 1 });
+		addFile({ id: 5, name: 'e.mp4', sizeBytes: 1 });
+
+		setPosterFile(4, poster);
+		expect(useBulkUploadStore.getState().files.find((file) => file.id === 4)).toMatchObject({
+			posterFile: poster,
+			thumbnailTime: null,
+			thumbnailFrame: null,
+		});
+
+		setThumbnailTime(4, 20, frame);
+		expect(useBulkUploadStore.getState().files.find((file) => file.id === 4)).toMatchObject({
+			posterFile: null,
+			thumbnailTime: 20,
+			thumbnailFrame: frame,
+		});
+		expect(useBulkUploadStore.getState().files.find((file) => file.id === 5)).toMatchObject({
+			posterFile: null,
+			thumbnailTime: null,
+			thumbnailFrame: null,
+		});
+
+		setPosterFile(4, poster);
+		expect(useBulkUploadStore.getState().files.find((file) => file.id === 4)).toMatchObject({
+			posterFile: poster,
+			thumbnailTime: null,
+			thumbnailFrame: null,
+		});
+	});
+
 	it('removes files', () => {
 		const { addFile, removeFile } = useBulkUploadStore.getState();
 		addFile({ id: 3, name: 'c.mp4', sizeBytes: 1 });

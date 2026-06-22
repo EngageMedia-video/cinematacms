@@ -23,6 +23,7 @@ export function MediaDetailsForm({
 	mediaLanguages = [],
 	topics = [],
 	onPreviewChange,
+	uploadedMedia = null,
 }) {
 	const formRef = useRef(null);
 	const submitMutation = useSubmitSingle();
@@ -41,7 +42,7 @@ export function MediaDetailsForm({
 			return undefined;
 		}
 		const url = URL.createObjectURL(selectedThumbnailFile);
-		onPreviewChange({ thumbnailUrl: url });
+		onPreviewChange({ thumbnailUrl: url, thumbnailFrame: null });
 		return () => URL.revokeObjectURL(url);
 	}, [selectedThumbnailFile, onPreviewChange]);
 
@@ -60,6 +61,11 @@ export function MediaDetailsForm({
 	function onFileChanged(files) {
 		const [file] = files;
 		singleUpload.setSelectedThumbnailFile(file ?? null);
+	}
+
+	function onFrameSelect(seconds, frame) {
+		singleUpload.setThumbnailTime(seconds);
+		onPreviewChange?.({ thumbnailUrl: '', thumbnailFrame: frame });
 	}
 
 	function validateForm() {
@@ -136,7 +142,12 @@ export function MediaDetailsForm({
 
 		singleUpload.setSubmitError('');
 		submitMutation.mutate(
-			{ action, form, thumbnailFile: singleUpload.selectedThumbnailFile },
+			{
+				action,
+				form,
+				thumbnailFile: singleUpload.selectedThumbnailFile,
+				thumbnailTime: singleUpload.thumbnailTime,
+			},
 			{
 				onSuccess: (data) => {
 					window.location.assign(data.url);
@@ -205,9 +216,16 @@ export function MediaDetailsForm({
 			<BasicDetailsForm singleUpload={singleUpload} />
 
 			<ThumbnailImageUpload
+				currentThumbnailTime={uploadedMedia?.thumbnailTime ?? ''}
+				duration={uploadedMedia?.duration ?? ''}
+				friendlyToken={uploadedMedia?.friendlyToken ?? ''}
 				lastSelectedThumbnailFile={singleUpload.lastSelectedThumbnailFile}
 				onFileChanged={onFileChanged}
+				onFrameSelect={onFrameSelect}
+				posterUrl={uploadedMedia?.posterUrl ?? ''}
 				selectedThumbnailFile={singleUpload.selectedThumbnailFile}
+				spriteSecs={uploadedMedia?.spriteNumSecs ?? ''}
+				spritesUrl={uploadedMedia?.spritesUrl ?? ''}
 			/>
 
 			<OtherDetailsForm

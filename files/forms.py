@@ -73,6 +73,7 @@ class MediaForm(forms.ModelForm):
             "year_produced_custom",
             "media_file",
             "uploaded_poster",
+            "thumbnail_time",
             "allow_whisper_transcribe_and_translate",
             "add_date",
             "company",

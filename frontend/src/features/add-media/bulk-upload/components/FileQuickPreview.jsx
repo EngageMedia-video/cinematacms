@@ -30,6 +30,7 @@ export function FileQuickPreview({ file, options = {}, className = '' }) {
 		<QuickPreview
 			title={meta.title}
 			thumbnailUrl={posterPreviewUrl || file.thumbnailUrl || ''}
+			thumbnailFrame={file.thumbnailFrame}
 			subtitle={userName || ''}
 			country={countryLabel}
 			category={previewCategory}

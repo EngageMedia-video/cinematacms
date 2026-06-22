@@ -1,4 +1,4 @@
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
 
 from files.models import ContentSensitivity, EncodeProfile, Encoding
 from files.serializers import HeroPlaybackSerializer, MediaSerializer, SingleMediaSerializer
@@ -32,6 +32,18 @@ class MediaSerializerTest(TestCase):
         data = SingleMediaSerializer(media, context={"request": request}).data
 
         self.assertEqual(data["content_sensitivity_info"], [{"title": "Graphic Violence"}])
+
+    @override_settings(SPRITE_NUM_SECS=7)
+    def test_single_media_serializer_exposes_sprite_num_secs(self):
+        # The thumbnail selector maps a chosen tile back to its timestamp via this value;
+        # it must reflect the server setting so the client never assumes a hardcoded 10.
+        media = create_test_media(self.user)
+        request = RequestFactory().get("/api/v1/media/test")
+        request.user = self.user
+
+        data = SingleMediaSerializer(media, context={"request": request}).data
+
+        self.assertEqual(data["sprite_num_secs"], 7)
 
     def test_hero_playback_serializer_includes_playback_fields(self):
         media = create_test_media(self.user)

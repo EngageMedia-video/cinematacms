@@ -1,0 +1,154 @@
+import os
+import shutil
+import tempfile
+
+from django.conf import settings
+from django.core.files import File
+
+from .helpers import get_file_name, get_file_type, run_command
+
+SPRITE_WIDTH = 160
+SPRITE_HEIGHT = 90
+
+
+def _command_exists(command):
+    if os.path.sep in command:
+        return os.path.isfile(command) and os.access(command, os.X_OK)
+    return shutil.which(command) is not None
+
+
+def resolve_imagemagick_command():
+    configured_command = getattr(settings, "IMAGEMAGICK_COMMAND", None)
+    if configured_command:
+        if _command_exists(configured_command):
+            return [configured_command]
+        return None
+
+    convert_command = shutil.which("convert")
+    if convert_command:
+        return [convert_command]
+
+    magick_command = shutil.which("magick")
+    if magick_command:
+        return [magick_command]
+
+    return None
+
+
+def _media_file_path(media):
+    try:
+        if not media.media_file:
+            return None
+        return media.media_file.path
+    except (NotImplementedError, ValueError):
+        return None
+
+
+def _failure(media, reason, error=None):
+    result = {
+        "ok": False,
+        "reason": reason,
+        "friendly_token": getattr(media, "friendly_token", None),
+    }
+    if error:
+        result["error"] = error
+    return result
+
+
+def generate_sprite_for_media(media):
+    if media.media_type != "video":
+        return _failure(media, "not_video")
+
+    ffmpeg_command = getattr(settings, "FFMPEG_COMMAND", None)
+    if not ffmpeg_command or not _command_exists(ffmpeg_command):
+        return _failure(media, "missing_ffmpeg")
+
+    imagemagick_command = resolve_imagemagick_command()
+    if not imagemagick_command:
+        return _failure(media, "missing_imagemagick")
+
+    temp_directory = getattr(settings, "TEMP_DIRECTORY", None)
+    if not temp_directory or not os.path.isdir(temp_directory) or not os.access(temp_directory, os.W_OK):
+        return _failure(media, "missing_temp_directory")
+
+    media_file_path = _media_file_path(media)
+    if not media_file_path or not os.path.exists(media_file_path):
+        return _failure(media, "missing_media_file")
+
+    with tempfile.TemporaryDirectory(dir=temp_directory) as tmpdirname:
+        output_name = os.path.join(tmpdirname, "sprites.jpg")
+
+        sprite_num_secs = getattr(settings, "SPRITE_NUM_SECS", 10)
+
+        # Extract each sprite tile at an EXACT timestamp (i * sprite_num_secs) using the
+        # same `-ss <time> -i <file> -vframes 1` input-seek mechanism the poster uses in
+        # Media.produce_thumbnails_from_video(). The previous `fps=1/N` approach decoded
+        # frames on a different seek model than the poster's input-seek (which snaps to the
+        # nearest keyframe), so the tile a user clicked and the poster generated for that
+        # same second could be different frames. Extracting both the same way guarantees
+        # that selecting tile `i` (time i*sprite_num_secs) yields exactly that poster.
+        duration = int(getattr(media, "duration", 0) or 0)
+        if duration <= 0:
+            return _failure(media, "missing_duration")
+
+        timestamps = list(range(0, duration, sprite_num_secs))
+        if not timestamps:
+            timestamps = [0]
+
+        last_ffmpeg_error = None
+        image_files = []
+        for index, timestamp in enumerate(timestamps):
+            frame_path = os.path.join(tmpdirname, f"img{index:03d}.jpg")
+            ffmpeg_cmd = [
+                ffmpeg_command,
+                "-threads",
+                "1",
+                "-ss",
+                str(timestamp),  # input seek: -ss before -i, matching the poster command
+                "-i",
+                media_file_path,
+                "-vframes",
+                "1",
+                "-vf",
+                f"scale={SPRITE_WIDTH}:{SPRITE_HEIGHT}",
+                "-y",
+                frame_path,
+            ]
+            ffmpeg_result = run_command(ffmpeg_cmd)
+            if os.path.exists(frame_path):
+                image_files.append(frame_path)
+            else:
+                last_ffmpeg_error = ffmpeg_result.get("error")
+                return _failure(media, "ffmpeg_missing_frame", last_ffmpeg_error)
+
+        if not image_files:
+            return _failure(media, "ffmpeg_no_frames", last_ffmpeg_error)
+
+        convert_cmd = [
+            *imagemagick_command,
+            *image_files,
+            "-append",
+            output_name,
+        ]
+        convert_result = run_command(convert_cmd)
+
+        if not os.path.exists(output_name):
+            return _failure(media, "imagemagick_no_output", convert_result.get("error"))
+        if get_file_type(output_name) != "image":
+            return _failure(media, "invalid_sprite_output")
+
+        with open(output_name, "rb") as sprite_file:
+            media.sprites.save(
+                content=File(sprite_file),
+                name=get_file_name(media_file_path) + "sprites.jpg",
+            )
+
+    if not media.sprites:
+        return _failure(media, "sprite_not_saved")
+
+    return {
+        "ok": True,
+        "reason": None,
+        "friendly_token": media.friendly_token,
+        "sprites": media.sprites.name,
+    }

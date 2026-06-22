@@ -1,11 +1,21 @@
 import { useEffect, useState } from 'react';
-import { TabContent, TabView } from '../../../shared/components';
-import { MediaDropzone } from '../../../shared/components/MediaDropzone';
-import { Text } from '../../../shared/components/Text';
+import { ThumbnailUploadField } from '../../../shared/components/upload-media';
+import { SpriteFrame } from '../../../shared/components/upload-media/ChooseFromVideo/SpriteFrame';
 import { FieldGroup } from './FieldGroup';
 
-export function ThumbnailImageUpload({ lastSelectedThumbnailFile, onFileChanged, selectedThumbnailFile }) {
+export function ThumbnailImageUpload({
+	currentThumbnailTime = '',
+	duration = '',
+	friendlyToken = '',
+	onFileChanged,
+	onFrameSelect,
+	posterUrl = '',
+	selectedThumbnailFile,
+	spriteSecs = '',
+	spritesUrl = '',
+}) {
 	const [previewUrl, setPreviewUrl] = useState('');
+	const [selectedVideoFrame, setSelectedVideoFrame] = useState(null);
 
 	useEffect(() => {
 		if (!selectedThumbnailFile || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
@@ -13,56 +23,63 @@ export function ThumbnailImageUpload({ lastSelectedThumbnailFile, onFileChanged,
 			return undefined;
 		}
 
+		setSelectedVideoFrame(null);
 		const nextPreviewUrl = URL.createObjectURL(selectedThumbnailFile);
 		setPreviewUrl(nextPreviewUrl);
 
 		return () => URL.revokeObjectURL(nextPreviewUrl);
 	}, [selectedThumbnailFile]);
 
+	function handleFrameSelect(seconds, frame) {
+		setSelectedVideoFrame(frame);
+		onFrameSelect?.(seconds, frame);
+	}
+
+	function handleFileSelected(file) {
+		onFileChanged?.(file ? [file] : []);
+	}
+
+	const headerPreview = selectedVideoFrame?.spritesUrl ? (
+		<SpriteFrame
+			index={selectedVideoFrame.index}
+			label={`Selected video frame at ${selectedVideoFrame.mmss}`}
+			rowsInSheet={selectedVideoFrame.rowsInSheet}
+			selected
+			spritesUrl={selectedVideoFrame.spritesUrl}
+			variant="preview"
+		/>
+	) : previewUrl ? (
+		<img
+			src={previewUrl}
+			alt="Selected thumbnail header preview"
+			className="aspect-video w-[150px] rounded-ds-4 object-cover"
+		/>
+	) : posterUrl ? (
+		<img
+			src={posterUrl}
+			alt="Current thumbnail preview"
+			className="aspect-video w-[150px] rounded-ds-4 object-cover"
+		/>
+	) : null;
+
 	return (
 		<FieldGroup
 			title="Thumbnail Image Upload"
-			description="This image will display when your video isn’t autoplaying. You can select an auto-generated image, upload a custom image or choose a still frame from your video."
+			description="This image displays when your video isn’t autoplaying. Use the auto-generated thumbnail, upload a custom image, or choose a still frame from your video."
+			headerAside={headerPreview}
 		>
-			<div>
-				<TabView
-					tabMode="wrap"
-					triggerClassName="rounded-none py-3 px-size-22 text-text-tab-trigger"
-					triggerSelectedColor="bg-bg-tab-trigger-selected"
-					panelClassName="mt-8"
-					aria-label="Upload media type"
-					defaultSelectedTab="upload-thumbnail"
-				>
-					<TabContent title="UPLOAD THUMBNAIL" value="upload-thumbnail">
-						<MediaDropzone
-							accept="image/*"
-							buttonVariant="secondary"
-							iconName={null}
-							multiple={false}
-							name="uploaded_poster"
-							aria-label="Choose thumbnail image"
-							onFilesSelected={onFileChanged}
-						/>
-
-						{previewUrl ? (
-							<img
-								src={previewUrl}
-								alt="Selected thumbnail preview"
-								className="mt-4 aspect-video w-full max-w-[280px] rounded-ds-4 object-cover"
-							/>
-						) : null}
-
-						{lastSelectedThumbnailFile ? (
-							<Text variant="body-14" className="m-0 mt-4 text-cinemata-pacific-deep-300">
-								Last selected: {lastSelectedThumbnailFile}
-							</Text>
-						) : null}
-					</TabContent>
-					<TabContent title="CHOOSE FROM VIDEO" value="choose-from-video">
-						<p>Choose from video</p>
-					</TabContent>
-				</TabView>
-			</div>
+			<ThumbnailUploadField
+				currentThumbnailTime={currentThumbnailTime}
+				duration={duration}
+				friendlyToken={friendlyToken}
+				onFileSelected={handleFileSelected}
+				onFrameSelect={handleFrameSelect}
+				posterFile={selectedThumbnailFile}
+				posterPreviewClassName="mt-4 aspect-video w-full max-w-[280px] rounded-ds-4 object-cover md:hidden"
+				posterUrl={posterUrl}
+				spriteSecs={spriteSecs}
+				spritesUrl={spritesUrl}
+			/>
 		</FieldGroup>
 	);
 }

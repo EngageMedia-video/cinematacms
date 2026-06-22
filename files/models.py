@@ -436,7 +436,7 @@ class Media(models.Model):
         for item in strip_text_items:
             setattr(self, item, strip_tags(getattr(self, item, None)))
         self.title = self.title[:99]
-        if self.thumbnail_time:
+        if self.thumbnail_time is not None:
             self.thumbnail_time = round(self.thumbnail_time, 1)
         if not self.add_date:
             self.add_date = timezone.now()
@@ -459,9 +459,18 @@ class Media(models.Model):
                 from . import tasks
 
                 tasks.media_init.apply_async(args=[self.friendly_token], countdown=5)
-            if self.thumbnail_time != self.__original_thumbnail_time:
+            thumbnail_time_changed = self.thumbnail_time != self.__original_thumbnail_time
+            uploaded_poster_changed = self.uploaded_poster != self.__original_uploaded_poster
+            if thumbnail_time_changed and self.thumbnail_time is not None and not uploaded_poster_changed:
+                if self.uploaded_thumbnail:
+                    self.uploaded_thumbnail.delete(save=False)
+                if self.uploaded_poster:
+                    self.uploaded_poster.delete(save=False)
+                self.__original_uploaded_poster = self.uploaded_poster
                 self.__original_thumbnail_time = self.thumbnail_time
                 self.set_thumbnail(force=True)
+            elif thumbnail_time_changed:
+                self.__original_thumbnail_time = self.thumbnail_time
         else:
             self.state = helpers.get_default_state(user=self.user)
             self.license = License.objects.filter(id=10).first()
@@ -703,7 +712,7 @@ class Media(models.Model):
     def produce_thumbnails_from_video(self):
         if self.media_type != "video":
             return False
-        if self.thumbnail_time and 0 <= self.thumbnail_time < self.duration:
+        if self.thumbnail_time is not None and 0 <= self.thumbnail_time < self.duration:
             thumbnail_time = self.thumbnail_time
         else:
             thumbnail_time = round(random.uniform(0, self.duration - 0.1), 1)
@@ -992,10 +1001,10 @@ class Media(models.Model):
     def media_version(self):
         """Get media version based on edit_date timestamp for URL versioning"""
         if self.edit_date:
-            return int(self.edit_date.timestamp())
+            return int(self.edit_date.timestamp() * 1000)
         # Fallback to add_date if edit_date is not available
         if self.add_date:
-            return int(self.add_date.timestamp())
+            return int(self.add_date.timestamp() * 1000)
         # Final fallback: use hash of uid to ensure uniqueness
         return hash(str(self.uid)) & 0x7FFFFFFF  # Ensure positive 32-bit integer
 

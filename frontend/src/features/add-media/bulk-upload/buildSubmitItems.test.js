@@ -78,6 +78,24 @@ describe('buildEditFormData', () => {
 		const data = buildEditFormData({ metadata: createDefaultMetadata(), posterFile: poster });
 		expect(data.get('reported_times')).toBe('0');
 		expect(data.get('uploaded_poster')).toBeInstanceOf(File);
+		expect(data.get('thumbnail_time')).toBeNull();
+	});
+
+	it('sends thumbnail_time when a frame is selected without a poster file', () => {
+		const data = buildEditFormData({ metadata: createDefaultMetadata(), thumbnailTime: 20 });
+		expect(data.get('thumbnail_time')).toBe('20');
+		expect(data.get('uploaded_poster')).toBeNull();
+	});
+
+	it('prefers uploaded_poster over thumbnail_time when both are present', () => {
+		const poster = new File(['x'], 'poster.png', { type: 'image/png' });
+		const data = buildEditFormData({
+			metadata: createDefaultMetadata(),
+			posterFile: poster,
+			thumbnailTime: 20,
+		});
+		expect(data.get('uploaded_poster')).toBeInstanceOf(File);
+		expect(data.get('thumbnail_time')).toBeNull();
 	});
 });
 

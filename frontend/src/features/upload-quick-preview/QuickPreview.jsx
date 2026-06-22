@@ -1,4 +1,5 @@
 import { VerticalMovieItem } from '../shared/components/MovieItem';
+import { SpriteFrame } from '../shared/components/upload-media/ChooseFromVideo/SpriteFrame';
 import { cn } from '../shared/utils/classNames';
 
 // Fully transparent 1x1 GIF. While no thumbnail has been selected or
@@ -33,6 +34,7 @@ function formatViews(views) {
 export function QuickPreview({
 	title = '',
 	thumbnailUrl = '',
+	thumbnailFrame = null,
 	durationLabel = '',
 	category = null,
 	subtitle = '',
@@ -41,6 +43,17 @@ export function QuickPreview({
 	className = '',
 }) {
 	const metadata = [country, formatViews(views)].filter(Boolean);
+	const thumbnailOverlay = thumbnailFrame?.spritesUrl ? (
+		<SpriteFrame
+			className="h-full w-full"
+			index={thumbnailFrame.index}
+			label={title ? `${title} selected video frame` : 'Selected video frame thumbnail preview'}
+			rowsInSheet={thumbnailFrame.rowsInSheet}
+			selected
+			spritesUrl={thumbnailFrame.spritesUrl}
+			variant="fill"
+		/>
+	) : null;
 
 	return (
 		<section
@@ -53,6 +66,7 @@ export function QuickPreview({
 				title={title || 'Untitled media'}
 				imageSrc={thumbnailUrl || PLACEHOLDER_THUMBNAIL}
 				imageAlt={title ? `${title} thumbnail` : 'Thumbnail preview'}
+				thumbnailOverlay={thumbnailOverlay}
 				duration={durationLabel}
 				badge={category?.title || ''}
 				badgeColor={category?.color || DEFAULT_BADGE_COLOR}

@@ -53,9 +53,22 @@ function SingleUploadContent({
 		if (preview.thumbnailUrl) {
 			next.thumbnailUrl = preview.thumbnailUrl;
 		}
-
+		if (Object.prototype.hasOwnProperty.call(preview, 'thumbnailUrl') && preview.thumbnailUrl === '') {
+			next.thumbnailUrl = '';
+		}
+		if (Object.prototype.hasOwnProperty.call(preview, 'thumbnailFrame')) {
+			next.thumbnailFrame = preview.thumbnailFrame;
+		}
 		onPreviewChange?.(next);
-	}, [onPreviewChange, preview.title, preview.company, countryLabel, categoryLabel, preview.thumbnailUrl]);
+	}, [
+		onPreviewChange,
+		preview.title,
+		preview.company,
+		countryLabel,
+		categoryLabel,
+		preview.thumbnailUrl,
+		preview.thumbnailFrame,
+	]);
 
 	return (
 		<div className="single-upload-page">
@@ -112,6 +125,7 @@ function SingleUploadContent({
 					mediaCountries={mediaCountries}
 					mediaLanguages={mediaLanguages}
 					topics={topics}
+					uploadedMedia={uploadedMedia}
 					onPreviewChange={handleFormPreviewChange}
 				/>
 			) : null}

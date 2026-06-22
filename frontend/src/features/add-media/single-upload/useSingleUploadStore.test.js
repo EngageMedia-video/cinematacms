@@ -12,8 +12,35 @@ describe('useSingleUploadStore', () => {
 		expect(state.mediaStatus).toBe('public');
 		expect(state.noLicense).toBe(true);
 		expect(state.selectedThumbnailFile).toBeNull();
+		expect(state.thumbnailTime).toBeNull();
 		expect(state.selectedLicenseId).toBe('1');
 		expect(state.selectedLicenseFields).toEqual({ commercial: 'yes', derivatives: 'yes' });
+	});
+
+	it('keeps custom thumbnail upload and frame selection mutually exclusive', () => {
+		const store = useSingleUploadStore.getState();
+		const file = new File(['poster'], 'poster.png', { type: 'image/png' });
+
+		store.setSelectedThumbnailFile(file);
+		expect(useSingleUploadStore.getState()).toMatchObject({
+			selectedThumbnailFile: file,
+			lastSelectedThumbnailFile: 'poster.png',
+			thumbnailTime: null,
+		});
+
+		store.setThumbnailTime(20);
+		expect(useSingleUploadStore.getState()).toMatchObject({
+			selectedThumbnailFile: null,
+			lastSelectedThumbnailFile: '',
+			thumbnailTime: 20,
+		});
+
+		store.setSelectedThumbnailFile(file);
+		expect(useSingleUploadStore.getState()).toMatchObject({
+			selectedThumbnailFile: file,
+			lastSelectedThumbnailFile: 'poster.png',
+			thumbnailTime: null,
+		});
 	});
 
 	it('resets password when restricted status is disabled', () => {
