@@ -20,7 +20,17 @@ class UploadMediaCsrfCookieTests(TestCase):
     def test_authenticated_upload_page_sets_csrf_cookie(self):
         """Authenticated uploader page must provide the CSRF cookie used by FineUploader."""
         request = RequestFactory().get(reverse("upload_media"))
-        request.user = SimpleNamespace(is_authenticated=True)
+        # Mirror a real authenticated user: the view now reads role flags for the
+        # bulk-upload config (is_trusted_user / max_bulk_files), which call
+        # is_anonymous and the role attributes.
+        request.user = SimpleNamespace(
+            is_authenticated=True,
+            is_anonymous=False,
+            is_superuser=False,
+            is_manager=False,
+            is_editor=False,
+            advancedUser=False,
+        )
 
         with (
             patch("files.views.waffle.switch_is_active", return_value=True),
