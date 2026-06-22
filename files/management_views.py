@@ -26,7 +26,13 @@ from .models import (
     Topic,
     get_language_choices,
 )
-from .permissions import IsBulkUploadUser, IsFilmImpactManager, IsManageUploadsUser, IsMediacmsEditor
+from .permissions import (
+    IsBulkUploadUser,
+    IsFilmImpactManager,
+    IsManageUploadsUser,
+    IsMediacmsEditor,
+    IsUploadMediaUser,
+)
 from .serializers import CommentSerializer, ManageCommunityImpactSerializer, ManageUploadSerializer, MediaSerializer
 
 VALID_MEDIA_STATES = ["private", "public", "restricted", "unlisted"]
@@ -219,15 +225,26 @@ class MyUploadsBulkState(APIView):
         return Response({"updated": updated}, status=status.HTTP_200_OK)
 
 
+def _normalize_license_field(value):
+    """Maps the model's stored license choice to the values the UI expects.
+
+    The single-upload license chooser matches options by 'yes'/'no'/'sharealike';
+    the model stores 'Partially' for share-alike. Mirrors the upload_media view.
+    """
+    normalized = (value or "").lower()
+    return "sharealike" if normalized == "partially" else (normalized or "no")
+
+
 class BulkUploadOptions(APIView):
-    """Form option lists for the bulk-upload metadata step.
+    """Form option lists for the single- and bulk-upload metadata steps.
 
     Returns ids/codes (not just titles) so the client submits exactly what
     MediaForm expects: M2M PKs for category/topic/content-sensitivity, language
-    and country codes, and license PKs.
+    and country codes, and license PKs. Licenses also carry allowCommercial /
+    allowModifications so the single-upload license chooser can match selections.
     """
 
-    permission_classes = (IsBulkUploadUser,)
+    permission_classes = (IsUploadMediaUser,)
 
     def get(self, request, format=None):
         data = {
@@ -236,7 +253,15 @@ class BulkUploadOptions(APIView):
             "content_sensitivities": list(ContentSensitivity.objects.order_by("title").values("id", "title")),
             "languages": [{"code": code, "title": title} for code, title in get_language_choices()],
             "countries": [{"code": code, "title": title} for code, title in lists.video_countries],
-            "licenses": list(License.objects.order_by("title").values("id", "title")),
+            "licenses": [
+                {
+                    "id": str(lic.id),
+                    "title": lic.title,
+                    "allowCommercial": _normalize_license_field(lic.allow_commercial),
+                    "allowModifications": _normalize_license_field(lic.allow_modifications),
+                }
+                for lic in License.objects.order_by("title")
+            ],
         }
         return Response(data)
 

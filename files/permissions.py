@@ -1,6 +1,6 @@
 from rest_framework import permissions
 
-from .methods import can_manage_film_impact, can_manage_uploads, is_mediacms_editor
+from .methods import can_manage_film_impact, can_manage_uploads, can_upload_media, is_mediacms_editor
 
 
 class IsMediacmsEditor(permissions.BasePermission):
@@ -25,6 +25,19 @@ class IsBulkUploadUser(permissions.BasePermission):
         from cms.permissions import user_allowed_to_bulk_upload
 
         return bool(request.user.is_authenticated and user_allowed_to_bulk_upload(request))
+
+
+class IsUploadMediaUser(permissions.BasePermission):
+    """Allows any authenticated user who may upload media (single or bulk).
+
+    Broader than IsBulkUploadUser: single-file-only users must also be able to
+    fetch the shared form option lists for the single-upload page. The options
+    are public taxonomy data (categories, languages, licenses) with no per-user
+    content, so gating on upload capability alone is sufficient.
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user.is_authenticated and can_upload_media(request.user))
 
 
 class IsFilmImpactManager(permissions.BasePermission):

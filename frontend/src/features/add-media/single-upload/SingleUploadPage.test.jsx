@@ -27,20 +27,33 @@ const TEST_LICENSES = [
 	},
 ];
 
+// SingleUploadPage now loads form options from useTaxonomies (GET bulk_options).
+// Mock the hook so the option lists are available synchronously; the API shape
+// uses codes for language/country and ids for the taxonomies/licenses.
+const taxonomyOptions = {
+	categories: [{ id: 'documentary', title: 'Documentary' }],
+	topics: [{ id: 'culture', title: 'Culture' }],
+	content_sensitivities: [],
+	languages: [{ code: 'en', title: 'English' }],
+	countries: [{ code: 'id', title: 'Indonesia' }],
+	licenses: TEST_LICENSES,
+};
+
+vi.mock('../../shared/components/upload-media', async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+		useTaxonomies: () => ({ options: taxonomyOptions }),
+	};
+});
+
 describe('SingleUploadPage', () => {
 	beforeEach(() => {
 		useSingleUploadStore.getState().reset();
 	});
 
 	function renderUploadedPage(props = {}) {
-		return render(
-			<SingleUploadPage
-				hasUploadedMedia
-				licenses={TEST_LICENSES}
-				uploadedMedia={{ editUrl: '/media/test/edit' }}
-				{...props}
-			/>
-		);
+		return render(<SingleUploadPage hasUploadedMedia uploadedMedia={{ editUrl: '/media/test/edit' }} {...props} />);
 	}
 
 	afterEach(() => {
@@ -202,13 +215,7 @@ describe('SingleUploadPage', () => {
 		});
 		vi.stubGlobal('fetch', fetchMock);
 
-		renderUploadedPage({
-			canPublishDirectly: true,
-			mediaLanguages: [{ label: 'English', value: 'en' }],
-			mediaCountries: [{ label: 'Indonesia', value: 'id' }],
-			categories: [{ label: 'Documentary', value: 'documentary' }],
-			topics: [{ label: 'Culture', value: 'culture' }],
-		});
+		renderUploadedPage({ canPublishDirectly: true });
 
 		await user.type(screen.getByLabelText('Synopsis'), 'A short synopsis.');
 		await user.type(screen.getByLabelText('Year Produced'), '2024');
@@ -278,12 +285,7 @@ describe('SingleUploadPage', () => {
 		});
 		vi.stubGlobal('fetch', fetchMock);
 
-		renderUploadedPage({
-			mediaLanguages: [{ label: 'English', value: 'en' }],
-			mediaCountries: [{ label: 'Indonesia', value: 'id' }],
-			categories: [{ label: 'Documentary', value: 'documentary' }],
-			topics: [{ label: 'Culture', value: 'culture' }],
-		});
+		renderUploadedPage();
 
 		await user.type(screen.getByLabelText('Synopsis'), 'A short synopsis.');
 		await user.type(screen.getByLabelText('Year Produced'), '2024');

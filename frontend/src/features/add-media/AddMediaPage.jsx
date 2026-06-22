@@ -48,19 +48,13 @@ export class AddMediaPage extends Page {
 		};
 	}
 
-	// TODO: Move this to single-upload
 	componentDidMount() {
-		if (this.context.is.anonymous || !this.config.canAdd) {
-			return;
-		}
-
 		if (!window.qq || !window.qq.FineUploader || !this.uploaderRef.current) {
 			console.warn('FineUploader is not available for the add media page.');
 			return;
 		}
 
 		this.uploaderRef.current.addEventListener('click', this.handleUploaderClick);
-
 		this.uploader = new window.qq.FineUploader({
 			debug: false,
 			element: this.uploaderRef.current,
@@ -114,6 +108,12 @@ export class AddMediaPage extends Page {
 					updateUploadItemStatus(id, 'failed', 'Upload failed');
 					console.warn(window.qq.format('Error on file number {} - {}.  Reason: {}', id, name, errorReason));
 				},
+				onCancel: () => {
+					// FineUploader's built-in cancel button removes the item element after
+					// this callback returns, so defer the state sync to the next tick. When
+					// the list empties, reset hasSelectedMedia so the dropzone reappears.
+					window.setTimeout(() => this.syncUploaderState(), 0);
+				},
 				onComplete: (id, _name, response) => {
 					if (!response.success) {
 						updateUploadItemStatus(id, 'failed', 'Upload failed');
@@ -125,7 +125,7 @@ export class AddMediaPage extends Page {
 					const details = getUploadedMediaDetails(response, _name);
 					this.completedTokens[id] = details.friendlyToken;
 
-					if (this.config.uploadMaxFilesNumber === 1) {
+					if (this.config.uploadMaxFilesNumber >= 1) {
 						this.setState({ uploadedMedia: details });
 					}
 				},
@@ -245,8 +245,13 @@ export class AddMediaPage extends Page {
 			itemEl.remove();
 		}
 
-		// When the list empties, reset FineUploader so the dropzone, browse button,
-		// and item-limit counters return to their initial state.
+		this.syncUploaderState();
+	}
+
+	// Reconciles React state with the current upload list. When the list empties,
+	// resets FineUploader so the dropzone, browse button, and item-limit counters
+	// return to their initial state.
+	syncUploaderState() {
 		const listEl = this.uploaderRef.current && this.uploaderRef.current.querySelector('.qq-upload-list-selector');
 		const hasRemainingItems = !!listEl?.children.length;
 
@@ -356,9 +361,9 @@ export class AddMediaPage extends Page {
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
 				<main className="add-media-feature mx-4 grid w-auto grid-cols-1 gap-8 py-8 text-text-primary sm:mx-6 lg:mx-10 lg:grid-cols-6 lg:items-start">
-					<aside className="hidden min-w-0 lg:block bg-white" aria-hidden="true">
+					<aside className="hidden min-w-0 lg:block" aria-hidden="true">
 						{/* TODO: Left View (stepper) */}
-						<p>Test</p>
+						Stepper Section
 					</aside>
 
 					<section className="min-w-0 col-span-4">
@@ -384,7 +389,7 @@ export class AddMediaPage extends Page {
 
 						<TabView
 							tabMode="wrap"
-							triggerClassName="rounded-none py-3 px-size-22 text-neutral-50 aria-selected:text-text-primary"
+							triggerClassName="rounded-none py-3 px-size-22 text-neutral-50 aria-selected:text-neutral-50"
 							triggerSelectedColor="bg-bg-section-header"
 							panelClassName="mt-8"
 							aria-label="Upload media type"
@@ -404,12 +409,6 @@ export class AddMediaPage extends Page {
 										canUseAdminSettings={!!this.context.is.admin}
 										csrfToken={this.config.csrfToken}
 										hasUploadedMedia={!!uploadedMedia}
-										mediaLanguages={this.config.mediaLanguages || []}
-										mediaCountries={this.config.mediaCountries || []}
-										categories={this.config.categories || []}
-										topics={this.config.topics || []}
-										contentSensitivities={this.config.contentSensitivities || []}
-										licenses={this.config.licenses || []}
 										onFilesSelected={this.handleFilesSelected}
 										showUploader={hasSelectedMedia || !!uploadedMedia}
 										uploadedMedia={uploadedMedia}
@@ -426,9 +425,9 @@ export class AddMediaPage extends Page {
 						</TabView>
 					</section>
 
-					<aside className="hidden min-w-0 lg:block bg-white" aria-hidden="true">
+					<aside className="hidden min-w-0 lg:block" aria-hidden="true">
 						{/* TODO: Right View (preview) */}
-						<p>Test</p>
+						Quick Preview Section
 					</aside>
 				</main>
 

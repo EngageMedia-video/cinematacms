@@ -661,35 +661,9 @@ def upload_media(request):
     video_extensions = get_allowed_video_extensions()
     context["allowed_extensions"] = video_extensions
 
-    # Media language / country options, sourced from the DB and lists the same
-    # way edit-media does so both pages stay in sync.
-    language_choices = Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list(
-        "code", "title"
-    )
-    context["media_languages"] = [{"value": code, "label": title} for code, title in language_choices]
-    context["media_countries"] = [{"value": code, "label": title} for code, title in lists.video_countries]
-
-    # Taxonomy options (Category/Topic/ContentSensitivity), value=pk, label=title,
-    # ordered by title via each model's Meta — same source the edit-media form uses.
-    context["categories"] = [{"value": pk, "label": title} for pk, title in Category.objects.values_list("id", "title")]
-    context["topics"] = [{"value": pk, "label": title} for pk, title in Topic.objects.values_list("id", "title")]
-    context["content_sensitivities"] = [
-        {"value": pk, "label": title} for pk, title in ContentSensitivity.objects.values_list("id", "title")
-    ]
-
-    context["licenses"] = [
-        {
-            "id": str(lic.id),
-            "title": lic.title,
-            "allowCommercial": "sharealike"
-            if (lic.allow_commercial or "").lower() == "partially"
-            else (lic.allow_commercial or "no").lower(),
-            "allowModifications": "sharealike"
-            if (lic.allow_modifications or "").lower() == "partially"
-            else (lic.allow_modifications or "no").lower(),
-        }
-        for lic in License.objects.order_by("id")
-    ]
+    # The single-upload form options (languages, countries, categories, topics,
+    # content sensitivities, licenses) are loaded client-side from the shared
+    # bulk_options endpoint (useTaxonomies), so they are no longer injected here.
 
     return render(request, template, context)
 
