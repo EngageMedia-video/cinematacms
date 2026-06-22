@@ -177,7 +177,7 @@ export function UploadMediaItem({
 	return (
 		<article
 			className={cn(
-				'upload-media-item group flex w-full gap-3 rounded-ds-8 bg-bg-surface p-3 text-text-primary shadow-sm sm:gap-4 sm:p-4',
+				'upload-media-item group flex w-full gap-3 rounded-ds-8 bg-bg-surface text-text-primary shadow-sm sm:gap-4',
 				className
 			)}
 			data-upload-status={status}

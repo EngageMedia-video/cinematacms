@@ -85,9 +85,11 @@ export function Dropdown({
 	id,
 	invalid = false,
 	label = '',
+	name,
 	onChange,
 	options = [],
 	placeholder = 'Select option',
+	required = false,
 	value,
 	'aria-describedby': ariaDescribedBy,
 	'aria-invalid': ariaInvalid,
@@ -110,8 +112,6 @@ export function Dropdown({
 	const selectedOption = getSelectedOption(normalizedOptions, selectedValue);
 	const activeState = variant === 'default' && (isFocused || open);
 	const filledState = variant === 'default' && !!selectedOption;
-	const labelClasses =
-		variant === 'default' && (activeState || filledState) ? LABEL_ACTIVE_CLASSES : LABEL_VARIANT_CLASSES[variant];
 	const borderClasses =
 		variant === 'default' && (activeState || filledState) ? ACTIVE_BORDER_CLASSES : BORDER_VARIANT_CLASSES[variant];
 
@@ -196,6 +196,8 @@ export function Dropdown({
 				}
 			}}
 		>
+			{name ? <input type="hidden" name={name} value={selectedValue ?? ''} required={required} /> : null}
+
 			<div
 				className={cn(
 					'group w-full border-b px-0 py-[14px] transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
@@ -254,7 +256,22 @@ export function Dropdown({
 				>
 					<span className="min-w-0 flex-1">
 						{label ? (
-							<span className={cn('body-body-16-regular mb-2 block', labelClasses)}>{label}</span>
+							<span
+								className={cn(
+									'body-body-16-regular mb-2 block',
+									activeState || filledState
+										? LABEL_VARIANT_CLASSES.disabled
+										: LABEL_VARIANT_CLASSES.default
+								)}
+							>
+								{label}
+								{required ? (
+									<span aria-hidden="true" className="text-text-danger">
+										{' '}
+										*
+									</span>
+								) : null}
+							</span>
 						) : null}
 						<span
 							className={cn(
@@ -285,7 +302,7 @@ export function Dropdown({
 					role="menu"
 					aria-labelledby={label ? buttonId : undefined}
 					className={cn(
-						'thin-scrollbar absolute left-0 top-full z-20 mt-2 max-h-[calc(var(--size-96)*2+var(--size-48))] min-w-full list-none overflow-y-auto overscroll-contain rounded-(--radius-4) border p-0',
+						'thin-scrollbar absolute left-0 top-full z-20 mt-2 max-h-[calc(var(--size-96)*2+var(--size-48))] min-w-full list-none overflow-y-auto overscroll-contain rounded-ds-4 border p-0',
 						MENU_VARIANT_CLASSES[variant]
 					)}
 				>

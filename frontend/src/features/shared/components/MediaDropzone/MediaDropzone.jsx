@@ -14,6 +14,7 @@ export function MediaDropzone({
 	disabled = false,
 	iconName = 'upload',
 	buttonIconName = 'uploadSmall',
+	buttonVariant = 'primary',
 	label = 'Drag & Drop Files(s) or',
 	buttonLabel = 'CHOOSE MEDIA',
 	onFilesSelected,
@@ -127,7 +128,7 @@ export function MediaDropzone({
 					ry="16"
 					fill="none"
 					className="stroke-border-strong"
-					strokeWidth="1"
+					strokeWidth="2"
 					strokeDasharray="8 8"
 				/>
 			</svg>
@@ -149,7 +150,7 @@ export function MediaDropzone({
 
 				<Button
 					type="button"
-					variant="secondary"
+					variant={buttonVariant}
 					onClick={openPicker}
 					disabled={disabled}
 					icon={<Icon name={buttonIconName} size={20} decorative />}

@@ -48,6 +48,26 @@ describe('TabView', () => {
 		expect(screen.getByRole('tabpanel')).toHaveTextContent('Upload many titles.');
 	});
 
+	it('keeps inactive panels mounted when requested', async () => {
+		const user = userEvent.setup();
+
+		render(
+			<TabView defaultSelectedTab="single-film-upload" aria-label="Upload mode" keepMounted>
+				<TabContent
+					title="Single Film Upload"
+					content={<div data-testid="single-uploader">Upload one title.</div>}
+				/>
+				<TabContent title="Bulk Upload" content={<p>Upload many titles.</p>} />
+			</TabView>
+		);
+
+		await user.click(screen.getByRole('tab', { name: 'Bulk Upload' }));
+
+		expect(screen.getByTestId('single-uploader')).toBeInTheDocument();
+		expect(screen.getByTestId('single-uploader').closest('[role="tabpanel"]')).toHaveAttribute('hidden');
+		expect(screen.getByRole('tabpanel')).toHaveTextContent('Upload many titles.');
+	});
+
 	it('supports controlled selection changes', async () => {
 		const user = userEvent.setup();
 

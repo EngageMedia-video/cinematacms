@@ -281,11 +281,8 @@ dialog {
 	margin: 0 0.75rem 0.75rem 0.75rem;
 	padding: 0;
 	overflow: auto;
-	max-height: 80vh;
 	list-style: none;
-	@media screen and (min-width: 1024px) {
-		min-height: 320px;
-	}
+
 	li {
 		position: relative;
 		float: left;
@@ -295,8 +292,7 @@ dialog {
 		@media screen and (min-width: 1024px) {
 			padding: 0.75rem 0.75rem 0;
 		}
-		&:hover {
-		}
+
 		&:before {
 			content: '';
 			position: absolute;
@@ -312,11 +308,13 @@ dialog {
 				right: 0.75rem;
 			}
 		}
+
 		&:first-child {
 			&:before {
 				display: none;
 			}
 		}
+
 		&:last-child {
 			margin-bottom: 0;
 		}
@@ -615,4 +613,72 @@ $media-upload-item-name-line-height: 20px;
 
 .five-by-eight-ratio-thumb {
 	padding-top: math.div(5, 8) * 100%;
+}
+
+.add-media-page-wrap {
+	max-width: none;
+	margin-bottom: 0;
+	padding: 0;
+}
+
+.add-media-page-wrap .media-uploader {
+	background: transparent;
+	padding: 0;
+
+	&::after {
+		content: none;
+	}
+}
+
+.add-media-feature {
+	min-height: calc(100vh - 160px);
+}
+
+.add-media-tabs [role='tablist'] {
+	box-shadow: inset 0 -1px 0 var(--border-subtle);
+}
+
+.add-media-upload-stage {
+	width: 100%;
+}
+
+.add-media-fine-uploader {
+	width: 100%;
+}
+
+.add-media-fine-uploader-hidden-button {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.add-media-upload-items {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.add-media-upload-items li {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.add-media-upload-stage[data-upload-complete='false'] .add-media-upload-items:empty {
+	display: none;
+}
+
+.add-media-upload-stage[data-upload-complete='true'] .add-media-upload-items {
+	display: flex;
+}
+
+.single-upload-page input,
+.single-upload-page textarea {
+	box-shadow: none;
 }

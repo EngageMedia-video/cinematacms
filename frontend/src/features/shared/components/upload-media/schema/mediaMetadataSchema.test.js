@@ -65,10 +65,10 @@ describe('validateMetadata', () => {
 		expect(validateMetadata({ ...validMetadata, website: 'https://x.com' }).website).toBeUndefined();
 	});
 
-	it('requires a password when one is requested', () => {
-		expect(validateMetadata({ ...validMetadata, requirePassword: true }).password).toBeTruthy();
+	it('requires a password when status is restricted', () => {
+		expect(validateMetadata({ ...validMetadata, state: 'restricted' }).password).toBeTruthy();
 		expect(
-			validateMetadata({ ...validMetadata, requirePassword: true, password: 'secret12' }).password
+			validateMetadata({ ...validMetadata, state: 'restricted', password: 'secret12' }).password
 		).toBeUndefined();
 	});
 });

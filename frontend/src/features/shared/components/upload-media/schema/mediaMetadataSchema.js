@@ -67,8 +67,8 @@ export function validateMetadata(metadata = {}) {
 		errors.website = 'Website should start with https://';
 	}
 
-	if (metadata.requirePassword && isBlank(metadata.password)) {
-		errors.password = 'Password has to be set when a password is required.';
+	if (metadata.state === 'restricted' && isBlank(metadata.password)) {
+		errors.password = 'Password has to be set when state is Restricted.';
 	}
 
 	return errors;

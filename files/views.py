@@ -17,9 +17,9 @@ from django.contrib.postgres.search import SearchQuery
 from django.core.mail import EmailMessage
 from django.db import DatabaseError, models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
-from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.defaultfilters import slugify
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -50,6 +50,7 @@ from cms.ui_variant import resolve_template
 from users.models import User
 
 from . import lists
+from .draft_utils import apply_media_draft, apply_tags, draft_license_error, form_data_to_draft_metadata
 from .forms import ContactForm, EditSubtitleForm, MediaForm, SubtitleForm
 from .helpers import (
     clean_friendly_token,
@@ -638,6 +639,7 @@ def search(request):
 def upload_media(request):
     from allauth.account.forms import LoginForm
 
+    template = resolve_template(request, "upload")
     form = LoginForm()
     context = {}
     context["form"] = form
@@ -649,14 +651,47 @@ def upload_media(request):
     else:
         upload_allowed = getattr(settings, "UPLOAD_MEDIA_ALLOWED", True)
     context["can_add"] = upload_allowed and can_upload_media(request.user)
+    # Trusted users (advancedUser/editor/manager/superuser) publish without admin
+    # review; regular users get the "Submit For Review?" confirmation instead.
+    context["can_publish_directly"] = can_manage_uploads(request.user)
     can_upload_exp = settings.CANNOT_ADD_MEDIA_MESSAGE
     context["can_upload_exp"] = can_upload_exp
 
     # Get allowed video extensions from helper function
     video_extensions = get_allowed_video_extensions()
-    context["allowed_extensions"] = json.dumps(video_extensions)
+    context["allowed_extensions"] = video_extensions
 
-    return render(request, "cms/add-media.html", context)
+    # Media language / country options, sourced from the DB and lists the same
+    # way edit-media does so both pages stay in sync.
+    language_choices = Language.objects.exclude(code__in=["automatic", "automatic-translation"]).values_list(
+        "code", "title"
+    )
+    context["media_languages"] = [{"value": code, "label": title} for code, title in language_choices]
+    context["media_countries"] = [{"value": code, "label": title} for code, title in lists.video_countries]
+
+    # Taxonomy options (Category/Topic/ContentSensitivity), value=pk, label=title,
+    # ordered by title via each model's Meta — same source the edit-media form uses.
+    context["categories"] = [{"value": pk, "label": title} for pk, title in Category.objects.values_list("id", "title")]
+    context["topics"] = [{"value": pk, "label": title} for pk, title in Topic.objects.values_list("id", "title")]
+    context["content_sensitivities"] = [
+        {"value": pk, "label": title} for pk, title in ContentSensitivity.objects.values_list("id", "title")
+    ]
+
+    context["licenses"] = [
+        {
+            "id": str(lic.id),
+            "title": lic.title,
+            "allowCommercial": "sharealike"
+            if (lic.allow_commercial or "").lower() == "partially"
+            else (lic.allow_commercial or "no").lower(),
+            "allowModifications": "sharealike"
+            if (lic.allow_modifications or "").lower() == "partially"
+            else (lic.allow_modifications or "no").lower(),
+        }
+        for lic in License.objects.order_by("id")
+    ]
+
+    return render(request, template, context)
 
 
 @ensure_csrf_cookie
@@ -851,23 +886,28 @@ def edit_media(request):
         return HttpResponseRedirect(media.get_absolute_url())
 
     if request.method == "POST":
+        action = request.POST.get("action", "submit").strip().lower()
+        if action == "draft":
+            metadata = form_data_to_draft_metadata(request.POST)
+            license_error = draft_license_error(metadata)
+            if license_error:
+                return JsonResponse(
+                    {"success": False, "errors": {"custom_license": [license_error]}},
+                    status=400,
+                )
+            apply_media_draft(media, metadata, request.user)
+            messages.add_message(request, messages.INFO, "Media draft was saved!")
+            draft_url = reverse("get_user_media", kwargs={"username": request.user.username})
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": True, "url": draft_url})
+            return HttpResponseRedirect(draft_url)
+
         form = MediaForm(request.user, request.POST, request.FILES, instance=media)
         if form.is_valid():
             # Set current user for FeaturedVideo signal tracking
             media._current_user = request.user
             media = form.save()
-            for tag in media.tags.all():
-                media.tags.remove(tag)
-            if form.cleaned_data.get("new_tags"):
-                for tag in form.cleaned_data.get("new_tags").split(","):
-                    tag = slugify(tag)
-                    if tag:
-                        try:
-                            tag = Tag.objects.get(title=tag)
-                        except Tag.DoesNotExist:
-                            tag = Tag.objects.create(title=tag, user=request.user)
-                        if tag not in media.tags.all():
-                            media.tags.add(tag)
+            apply_tags(media, form.cleaned_data.get("new_tags"), request.user)
 
             # Check if a new media file was uploaded via Fine Uploader
             session_key = f"media_file_updated_{media.friendly_token}"
@@ -1110,7 +1150,14 @@ def edit_media(request):
             else:
                 messages.add_message(request, messages.INFO, "Media was edited!")
 
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": True, "url": media.get_absolute_url()})
+
             return HttpResponseRedirect(media.get_absolute_url())
+        elif request.headers.get("x-requested-with") == "XMLHttpRequest":
+            # Surface validation errors to the async add-media form instead of
+            # re-rendering the legacy edit page.
+            return JsonResponse({"success": False, "errors": form.errors}, status=400)
     else:
         form = MediaForm(request.user, instance=media)
     licenses = License.objects.filter()

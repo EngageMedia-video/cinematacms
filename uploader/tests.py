@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
-from django.test import Client, RequestFactory, SimpleTestCase, TestCase
+from django.test import Client, RequestFactory, TestCase
 from django.urls import reverse
 
 from cms.permissions import user_allowed_to_upload
@@ -16,7 +16,7 @@ from uploader.forms import FineUploaderUploadForm
 from users.models import User
 
 
-class UploadMediaCsrfCookieTests(SimpleTestCase):
+class UploadMediaCsrfCookieTests(TestCase):
     def test_authenticated_upload_page_sets_csrf_cookie(self):
         """Authenticated uploader page must provide the CSRF cookie used by FineUploader."""
         request = RequestFactory().get(reverse("upload_media"))

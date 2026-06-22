@@ -27,7 +27,20 @@ describe('TextField', () => {
 		const input = screen.getByLabelText('Custom field');
 
 		expect(input).toHaveAttribute('name', 'headline');
+		expect(input).not.toHaveAttribute('maxlength');
 		expect(input).toHaveValue('Blue Boat');
+	});
+
+	it('limits typed input when maxLength is provided', async () => {
+		const user = userEvent.setup();
+		render(<TextField label="Limited field" maxLength={4} />);
+
+		const input = screen.getByLabelText('Limited field');
+
+		await user.type(input, '12345');
+
+		expect(input).toHaveAttribute('maxlength', '4');
+		expect(input).toHaveValue('1234');
 	});
 
 	it('keeps focus while typing and updates the value', async () => {
