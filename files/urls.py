@@ -126,7 +126,6 @@ urlpatterns = [
     path("api/v1/my_uploads", management_views.MyUploadsList.as_view()),
     path("api/v1/my_uploads/bulk_state", management_views.MyUploadsBulkState.as_view()),
     path("api/v1/my_uploads/bulk_options", management_views.BulkUploadOptions.as_view()),
-    path("api/v1/my_uploads/bulk_submit", management_views.BulkUploadSubmit.as_view()),
     path("manage/uploads", views.manage_uploads, name="manage_uploads"),
     path("manage/users/export", views.export_users, name="export_users"),
     path("api/v1/encode_profiles/", views.EncodeProfileList.as_view()),

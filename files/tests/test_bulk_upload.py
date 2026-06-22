@@ -1,4 +1,3 @@
-import json
 import uuid
 from unittest.mock import patch
 
@@ -8,7 +7,7 @@ from django.urls import reverse
 
 from cms.permissions import max_bulk_upload_files
 from files import lists
-from files.models import Category, Language, License, Media
+from files.models import Category, Language, Media
 from users.models import User
 
 
@@ -87,160 +86,16 @@ class BulkUploadOptionsTests(TestCase):
         self.assertTrue(any(language["code"] == "en" for language in data["languages"]))
         self.assertTrue(any(category["title"] == "Documentary" for category in data["categories"]))
 
-
-class BulkUploadSubmitTests(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(username="reg", email="reg@e.com", password="pw")
-        self.other = User.objects.create_user(username="other", email="other@e.com", password="pw")
-        self.category, _ = Category.objects.get_or_create(title="Documentary")
-        Language.objects.get_or_create(code="en", defaults={"title": "English"})
-        self.country_code = lists.video_countries[0][0]
-        self.media = create_test_media(self.user, "Original", state="private")
-
-    def _valid_metadata(self, **overrides):
-        metadata = {
-            "title": "My Film",
-            "summary": "A concise synopsis of the film.",
-            "description": "Credits here",
-            "year_produced": "2021",
-            "year_produced_custom": "",
-            "company": "ABC Media",
-            "website": "https://example.com",
-            "media_language": "en",
-            "media_country": self.country_code,
-            "category": [self.category.id],
-            "topics": [],
-            "content_sensitivity": [],
-            "new_tags": "one, two",
-            "custom_license": "",
-            "no_license": True,
-            "enable_comments": True,
-            "allow_download": True,
-            "state": "public",
-            "password": "",
-        }
-        metadata.update(overrides)
-        return metadata
-
-    def _post(self, action, items):
-        return self.client.post(
-            "/api/v1/my_uploads/bulk_submit",
-            data=json.dumps({"action": action, "items": items}),
-            content_type="application/json",
-        )
-
-    def test_draft_marks_media_private_and_draft(self):
+    def test_licenses_expose_creative_commons_fields(self):
+        # The shared CC license chooser resolves a license from the commercial /
+        # modifications selection, so bulk_options must expose those fields (same
+        # shape the single-upload page injects via window.MediaCMS.addMediaPage).
         self.client.login(username="reg", password="pw")
-        response = self._post(
-            "draft", [{"friendly_token": self.media.friendly_token, "metadata": {"title": "Draft title"}}]
-        )
-        self.assertEqual(response.status_code, 200)
-        self.media.refresh_from_db()
-        self.assertTrue(self.media.is_draft)
-        self.assertEqual(self.media.state, "private")
-        self.assertEqual(self.media.title, "Draft title")
-
-    def test_submit_applies_metadata_and_clears_draft(self):
-        Media.objects.filter(pk=self.media.pk).update(is_draft=True)
-        self.client.login(username="reg", password="pw")
-        response = self._post(
-            "submit", [{"friendly_token": self.media.friendly_token, "metadata": self._valid_metadata()}]
-        )
-        self.assertEqual(response.status_code, 200)
-        self.media.refresh_from_db()
-        self.assertFalse(self.media.is_draft)
-        self.assertEqual(self.media.title, "My Film")
-        self.assertIn(self.category, self.media.category.all())
-        self.assertEqual(self.media.tags.count(), 2)
-        # Regular users cannot publish directly; state is clamped to private (review path).
-        self.assertEqual(self.media.state, "private")
-
-    def test_submit_rejects_synopsis_over_80_words(self):
-        self.client.login(username="reg", password="pw")
-        long_summary = " ".join(["word"] * 81)
-        response = self._post(
-            "submit",
-            [{"friendly_token": self.media.friendly_token, "metadata": self._valid_metadata(summary=long_summary)}],
-        )
-        self.assertEqual(response.status_code, 400)
-        body = response.json()
-        self.assertIn("errors", body)
-        self.assertIn("summary", body["errors"][self.media.friendly_token])
-
-    def test_cannot_submit_other_users_media(self):
-        self.client.login(username="reg", password="pw")
-        others_media = create_test_media(self.other, "Theirs", state="private")
-        response = self._post(
-            "submit", [{"friendly_token": others_media.friendly_token, "metadata": self._valid_metadata()}]
-        )
-        self.assertEqual(response.status_code, 400)
-
-    def test_batch_over_limit_rejected(self):
-        self.client.login(username="reg", password="pw")
-        extra1 = create_test_media(self.user, "Extra1", state="private")
-        extra2 = create_test_media(self.user, "Extra2", state="private")
-        items = [
-            {"friendly_token": token, "metadata": {"title": "x"}}
-            for token in (self.media.friendly_token, extra1.friendly_token, extra2.friendly_token)
-        ]
-        response = self._post("draft", items)  # 3 items > regular limit of 2
-        self.assertEqual(response.status_code, 400)
-
-    def test_invalid_action_rejected(self):
-        self.client.login(username="reg", password="pw")
-        response = self._post("publish", [{"friendly_token": self.media.friendly_token, "metadata": {}}])
-        self.assertEqual(response.status_code, 400)
-
-    def test_rejects_malformed_metadata(self):
-        self.client.login(username="reg", password="pw")
-        response = self._post("draft", [{"friendly_token": self.media.friendly_token, "metadata": "not an object"}])
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["detail"], "metadata must be an object")
-        response = self._post("draft", [{"friendly_token": self.media.friendly_token, "metadata": None}])
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["detail"], "metadata must be an object")
-
-    def test_rejects_invalid_license_reference(self):
-        self.client.login(username="reg", password="pw")
-        missing_license_id = (License.objects.order_by("-id").first().id if License.objects.exists() else 0) + 1
-        response = self._post(
-            "draft",
-            [
-                {
-                    "friendly_token": self.media.friendly_token,
-                    "metadata": self._valid_metadata(custom_license=missing_license_id, no_license=False),
-                }
-            ],
-        )
-        self.assertEqual(response.status_code, 400)
-        body = response.json()
-        self.assertIn("custom_license", body["errors"][self.media.friendly_token])
-
-    def test_editor_submit_does_not_require_admin_only_fields(self):
-        # Editors keep admin-only MediaForm fields (reported_times, featured,
-        # is_reviewed, add_date) required, but the bulk UI never exposes them —
-        # the bulk submit must not reject on those fields.
-        editor = User.objects.create_user(username="ed", email="ed@e.com", password="pw")
-        editor.is_editor = True
-        editor.save()
-        media = create_test_media(editor, "EditorMedia", state="private")
-        self.client.login(username="ed", password="pw")
-        response = self._post("submit", [{"friendly_token": media.friendly_token, "metadata": self._valid_metadata()}])
-        self.assertEqual(response.status_code, 200)
-        media.refresh_from_db()
-        self.assertEqual(media.title, "My Film")
-
-    def test_bulk_submit_fields_are_a_subset_of_media_form(self):
-        # _BULK_SUBMIT_FIELDS is an allowlist coupled to MediaForm by hand. Guard
-        # that every entry is a real MediaForm field, otherwise a submit would
-        # silently fail to save it (construct_instance only iterates form.fields).
-        from files.forms import MediaForm
-        from files.management_views import _BULK_SUBMIT_FIELDS
-
-        declared = set(MediaForm.base_fields)
-        missing = _BULK_SUBMIT_FIELDS - declared
-        self.assertEqual(missing, set(), f"_BULK_SUBMIT_FIELDS entries not on MediaForm: {missing}")
+        response = self.client.get("/api/v1/my_uploads/bulk_options")
+        licenses = response.json()["licenses"]
+        if licenses:
+            for key in ("id", "title", "allowCommercial", "allowModifications"):
+                self.assertIn(key, licenses[0])
 
 
 class BulkDraftReviewExclusionTests(TestCase):
@@ -265,8 +120,9 @@ class BulkDraftReviewExclusionTests(TestCase):
         self.assertNotIn(self.draft.friendly_token, tokens)
 
     def test_completed_draft_reenters_review_queue(self):
-        # Finishing a draft through the standard edit form (MediaForm.save)
-        # clears is_draft, so it stops being excluded from the review queue.
+        # Finishing a draft through the standard edit form (MediaForm.save) — the
+        # exact path the bulk flow now submits through — clears is_draft, so it
+        # stops being excluded from the review queue.
         from files.forms import MediaForm
 
         category, _ = Category.objects.get_or_create(title="Documentary")

@@ -11,7 +11,7 @@ export function RedirectNoticeDialog({ open, onContinue }) {
 			<ConfirmationDialogContent
 				aria-label="Switch to single upload"
 				title="Switching to Single Upload"
-				subtitle="You have only one file selected. A single file is uploaded on the single-upload page. Continue to go there and re-select your file."
+				subtitle="You have only one file. Single files are handled on the single-upload tab — continue to move it there and finish adding details. Your upload is kept; you won't need to upload again."
 				iconName="info3d"
 				actions={
 					<Button variant="primary" onClick={onContinue}>

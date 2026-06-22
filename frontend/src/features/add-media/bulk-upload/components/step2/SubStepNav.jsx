@@ -10,8 +10,11 @@ const SUB_STEP_ITEMS = [
 /**
  * Horizontal indicator for the Enter-Details sub-steps. Clickable so users can
  * jump directly; the footer NEXT/BACK buttons also move between them.
+ *
+ * `incompleteSubSteps` is a Set of sub-step values that still have required
+ * fields to fill; those tabs show a `*` marker that disappears once filled.
  */
-export function SubStepNav({ value, onChange }) {
+export function SubStepNav({ value, onChange, incompleteSubSteps }) {
 	return (
 		<nav
 			aria-label="Detail sections"
@@ -19,6 +22,7 @@ export function SubStepNav({ value, onChange }) {
 		>
 			{SUB_STEP_ITEMS.map((item) => {
 				const active = item.value === value;
+				const incomplete = incompleteSubSteps?.has(item.value);
 				return (
 					<button
 						key={item.value}
@@ -33,6 +37,15 @@ export function SubStepNav({ value, onChange }) {
 						)}
 					>
 						{item.label}
+						{incomplete ? (
+							<>
+								<span aria-hidden="true" className="text-text-accent">
+									{' '}
+									*
+								</span>
+								<span className="sr-only"> (has required fields to complete)</span>
+							</>
+						) : null}
 					</button>
 				);
 			})}

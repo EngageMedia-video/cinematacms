@@ -22,12 +22,28 @@ export function MediaDetailsForm({
 	mediaCountries = [],
 	mediaLanguages = [],
 	topics = [],
+	onPreviewChange,
 }) {
 	const formRef = useRef(null);
 	const submitMutation = useSubmitSingle();
 	const singleUpload = useSingleUploadStore();
 
 	useEffect(() => singleUpload.reset, [singleUpload.reset]);
+
+	// Feed the live Quick Preview from the (uncontrolled) form on every edit.
+	function reportPreview() {
+		const form = formRef.current;
+		if (!form || !onPreviewChange) {
+			return;
+		}
+		const data = new FormData(form);
+		onPreviewChange({
+			title: data.get('title') || '',
+			company: data.get('company') || '',
+			media_country: data.get('media_country') || '',
+			category: data.getAll('category')[0] ?? '',
+		});
+	}
 
 	function onFileChanged(files) {
 		const [file] = files;
@@ -169,6 +185,8 @@ export function MediaDetailsForm({
 			encType="multipart/form-data"
 			className="mt-10 flex flex-col gap-8"
 			data-single-upload-form
+			onInput={reportPreview}
+			onChange={reportPreview}
 		>
 			<input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
 			{canUseAdminSettings ? null : <input type="hidden" name="reported_times" value="0" />}

@@ -5,7 +5,6 @@ import useBulkUploadStore, { UPLOAD_STATUS } from '../useBulkUploadStore';
 import { useBulkUploadConfig } from '../bulkUploadConfig';
 import { useBulkUpload } from '../hooks/useBulkUpload';
 import { useSubmitBulk } from '../hooks/useSubmitBulk';
-import { buildSubmitItems } from '../buildSubmitItems';
 import { BulkUploadActionsProvider } from '../BulkUploadActionsContext';
 import { WizardStepper } from './WizardStepper';
 import { WizardFooter } from './WizardFooter';
@@ -14,7 +13,7 @@ import { EnterDetails } from './step2/EnterDetails';
 import { PreviewSubmit } from './step3/PreviewSubmit';
 import { RedirectNoticeDialog } from './RedirectNoticeDialog';
 import { SubmitForReviewDialog } from './SubmitForReviewDialog';
-import { TextAlert } from '../../../shared/components';
+import { Button, ConfirmationDialogContent, Dialog, TextAlert } from '../../../shared/components';
 
 const SUB_STEP_ORDER = ['basic', 'thumbnail', 'other', 'final'];
 const SUB_STEP_LABELS = {
@@ -31,7 +30,6 @@ const FIELD_SUB_STEP = {
 	summary: 'basic',
 	description: 'basic',
 	year_produced: 'basic',
-	year_produced_custom: 'basic',
 	company: 'other',
 	website: 'other',
 	media_language: 'other',
@@ -46,6 +44,9 @@ const FIELD_SUB_STEP = {
 	allow_download: 'final',
 	state: 'final',
 	password: 'final',
+	is_encrypted: 'final',
+	featured: 'final',
+	reported_times: 'final',
 };
 
 const VALIDATION_BANNER = 'Please complete the required fields highlighted below.';
@@ -88,6 +89,7 @@ export function BulkUploadInner() {
 
 	const [showRedirect, setShowRedirect] = useState(false);
 	const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+	const [showDownloadNotice, setShowDownloadNotice] = useState(false);
 	const [validationErrors, setValidationErrors] = useState({});
 	const [submitError, setSubmitError] = useState(null);
 
@@ -97,6 +99,17 @@ export function BulkUploadInner() {
 		[files]
 	);
 	const allComplete = fileCount > 0 && files.every((file) => file.uploadStatus === UPLOAD_STATUS.COMPLETE);
+
+	// Live set of sub-steps that still have required fields to fill (across all
+	// completed files), so the sub-step nav can show/clear a marker as the user
+	// edits — independent of whether a submit has been attempted yet.
+	const incompleteSubSteps = useMemo(() => {
+		const set = new Set();
+		completedFiles.forEach((file) => {
+			Object.keys(validateMetadata(file.metadata)).forEach((field) => set.add(FIELD_SUB_STEP[field] || 'basic'));
+		});
+		return set;
+	}, [completedFiles]);
 
 	// Bulk -> single redirect (decision D2): when the selection settles on exactly
 	// one file, the move to the single-upload page is mandatory. Debounced so a
@@ -224,38 +237,51 @@ export function BulkUploadInner() {
 	}
 
 	function doSubmit(action) {
-		const sourceFiles = action === 'draft' ? files : completedFiles;
-		const items = buildSubmitItems(sourceFiles);
-		if (items.length === 0) {
+		const sourceFiles = (action === 'draft' ? files : completedFiles).filter((file) => file.friendlyToken);
+		if (sourceFiles.length === 0) {
 			return;
 		}
 		setSubmitError(null);
 		submitMutation.mutate(
-			{ action, items },
+			{ action, files: sourceFiles },
 			{
-				onSuccess: () => {
-					window.location.href = config.postSubmitUrl;
-				},
-				onError: (error) => {
-					if (error.fieldErrors) {
-						const byFile = {};
-						files.forEach((file) => {
-							const tokenErrors = file.friendlyToken && error.fieldErrors[file.friendlyToken];
-							if (tokenErrors) {
-								byFile[file.id] = normalizeFieldErrors(tokenErrors);
-							}
-						});
-						if (Object.keys(byFile).length > 0) {
-							setValidationErrors(byFile);
-							setStep(2);
-							setSubStep(firstErrorSubStep(byFile));
-						}
+				onSuccess: ({ failed }) => {
+					if (failed.length === 0) {
+						window.location.href = config.postSubmitUrl;
+						return;
 					}
-					setSubmitError(error.message || 'Submission failed.');
+					// Per-file submit (decision D4): some items may fail while others
+					// go through. Map each failure's field errors back onto its card.
+					const byFile = {};
+					failed.forEach((result) => {
+						if (result.fieldErrors) {
+							byFile[result.id] = normalizeFieldErrors(result.fieldErrors);
+						}
+					});
+					if (Object.keys(byFile).length > 0) {
+						setValidationErrors(byFile);
+						setStep(2);
+						setSubStep(firstErrorSubStep(byFile));
+					}
+					const firstMessage = failed.find((result) => result.message)?.message;
+					setSubmitError(firstMessage || 'Some files could not be submitted.');
+					setShowSubmitDialog(false);
+				},
+				onError: () => {
+					setSubmitError('Submission failed. Please try again.');
 					setShowSubmitDialog(false);
 				},
 			}
 		);
+	}
+
+	// Trusted users publish directly; everyone else confirms the review path.
+	function proceedShare() {
+		if (config.isTrustedUser) {
+			doSubmit('submit');
+		} else {
+			setShowSubmitDialog(true);
+		}
 	}
 
 	function handleShare() {
@@ -272,82 +298,91 @@ export function BulkUploadInner() {
 		}
 		setValidationErrors({});
 		setSubmitError(null);
-		if (config.isTrustedUser) {
-			doSubmit('submit');
-		} else {
-			setShowSubmitDialog(true);
+		// Mirror single-upload: warn once if any media is downloadable before sharing.
+		if (completedFiles.some((file) => file.metadata?.allow_download)) {
+			setShowDownloadNotice(true);
+			return;
 		}
+		proceedShare();
 	}
+
+	// The step body (form/preview/footer). Embedded as the add-media tab, the host
+	// provides the @container/page shell + the stepper rail, so we render this
+	// directly. Standalone (/bulk_upload), we wrap it with our own stepper rail.
+	const stepBody = (
+		<main className="@container/main min-w-0">
+			{submitError ? (
+				<TextAlert role="alert" className="mb-4 text-text-danger" iconName="infoYellow">
+					{submitError}
+				</TextAlert>
+			) : null}
+
+			{currentStep === 1 ? (
+				<div className="@3xl/main:pr-[372px]">
+					<Step1UploadMedia files={files} />
+				</div>
+			) : currentStep === 2 ? (
+				<EnterDetails
+					files={files}
+					options={options}
+					validationErrors={validationErrors}
+					incompleteSubSteps={incompleteSubSteps}
+					onClearErrors={clearFieldErrors}
+				/>
+			) : (
+				<PreviewSubmit files={completedFiles} options={options} validationErrors={validationErrors} />
+			)}
+
+			<div
+				className={
+					currentStep === 1
+						? 'grid grid-cols-1 items-start gap-8 @3xl/main:grid-cols-[minmax(0,1fr)_340px]'
+						: ''
+				}
+			>
+				<WizardFooter
+					showBack={currentStep > 1}
+					backLabel={backLabel}
+					primaryLabel={primaryLabel}
+					primaryAction={primaryAction}
+					onBack={handleBack}
+					onNext={handleNext}
+					onShare={handleShare}
+					onSaveDraft={() => doSubmit('draft')}
+					canPrimary={canPrimary}
+					canDraft={completedFiles.length > 0}
+					isSubmitting={submitMutation.isPending}
+				/>
+			</div>
+		</main>
+	);
 
 	return (
 		<BulkUploadActionsProvider value={actions}>
-			{/* Container queries (not viewport `lg:`) so the layout responds to the
-			    actual content width, which shrinks when the app sidebar is open. */}
-			<div className="@container/page mx-auto max-w-[1100px] px-4 py-6 sm:px-6">
-				<div className="grid grid-cols-1 gap-8 @4xl/page:grid-cols-[220px_minmax(0,1fr)]">
-					{/* Pin the step rail while the form/preview column scrolls, so the
-					    left column isn't left blank. self-start keeps the sticky box at
-					    its natural height; only applies once it becomes a side rail. */}
-					<aside className="@4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start @4xl/page:pt-2">
-						<WizardStepper currentStep={currentStep} />
-					</aside>
-					{/* Step 1 has no Quick Preview, so constrain it to the same left-column
-					    width as Step 2 (form column), leaving space on the right per Figma. */}
-					<main className="@container/main min-w-0">
-						{submitError ? (
-							<TextAlert role="alert" className="mb-4 text-text-danger" iconName="infoYellow">
-								{submitError}
-							</TextAlert>
-						) : null}
-
-						{currentStep === 1 ? (
-							<div className="@3xl/main:pr-[324px]">
-								<Step1UploadMedia files={files} />
-							</div>
-						) : currentStep === 2 ? (
-							<EnterDetails
-								files={files}
-								options={options}
-								validationErrors={validationErrors}
-								onClearErrors={clearFieldErrors}
-							/>
-						) : (
-							<PreviewSubmit
-								files={completedFiles}
-								options={options}
-								validationErrors={validationErrors}
-							/>
-						)}
-
-						<div
-							className={
-								currentStep === 1
-									? 'grid grid-cols-1 items-start gap-6 @3xl/main:grid-cols-[minmax(0,1fr)_300px]'
-									: ''
-							}
-						>
-							<WizardFooter
-								showBack={currentStep > 1}
-								backLabel={backLabel}
-								primaryLabel={primaryLabel}
-								primaryAction={primaryAction}
-								onBack={handleBack}
-								onNext={handleNext}
-								onShare={handleShare}
-								onSaveDraft={() => doSubmit('draft')}
-								canPrimary={canPrimary}
-								canDraft={completedFiles.length > 0}
-								isSubmitting={submitMutation.isPending}
-							/>
-						</div>
-					</main>
+			{config.embedded ? (
+				stepBody
+			) : (
+				<div className="@container/page mx-auto max-w-[1100px] px-4 py-6 sm:px-6">
+					<div className="grid grid-cols-1 gap-8 @4xl/page:grid-cols-[220px_minmax(0,1fr)]">
+						<aside className="@4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start @4xl/page:pt-2">
+							<WizardStepper />
+						</aside>
+						{stepBody}
+					</div>
 				</div>
-			</div>
+			)}
 
 			<RedirectNoticeDialog
 				open={showRedirect}
 				onContinue={() => {
-					window.location.href = config.singleUploadUrl;
+					// Move the uploaded file into the single tab (no re-upload) when
+					// embedded; fall back to navigating on the standalone page.
+					const file = files.find((item) => item.friendlyToken) || files[0];
+					if (config.embedded && config.onMoveSingle && file?.friendlyToken) {
+						config.onMoveSingle(file);
+					} else {
+						window.location.href = config.singleUploadUrl;
+					}
 				}}
 			/>
 			<SubmitForReviewDialog
@@ -356,6 +391,29 @@ export function BulkUploadInner() {
 				onConfirm={() => doSubmit('submit')}
 				isSubmitting={submitMutation.isPending}
 			/>
+			<Dialog open={showDownloadNotice} onOpenChange={(open) => !open && setShowDownloadNotice(false)}>
+				<ConfirmationDialogContent
+					title="Heads-up! This media can be downloaded."
+					subtitle="Just to confirm that you consciously checked the Allow Download button."
+					aria-label="Allow download confirmation"
+					actions={
+						<>
+							<Button variant="secondary-outline" onClick={() => setShowDownloadNotice(false)}>
+								Cancel
+							</Button>
+							<Button
+								variant="primary"
+								onClick={() => {
+									setShowDownloadNotice(false);
+									proceedShare();
+								}}
+							>
+								Yes, Proceed
+							</Button>
+						</>
+					}
+				/>
+			</Dialog>
 		</BulkUploadActionsProvider>
 	);
 }

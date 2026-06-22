@@ -8,9 +8,10 @@ describe('SubStepNav', () => {
 		render(<SubStepNav value="basic" onChange={onChange} />);
 
 		expect(screen.getByRole('navigation', { name: 'Detail sections' })).toBeInTheDocument();
-		expect(screen.getByRole('button', { name: 'Basic Details' })).toHaveAttribute('aria-current', 'step');
+		// Basic Details and Other Details carry a required marker, so match by prefix.
+		expect(screen.getByRole('button', { name: /Basic Details/ })).toHaveAttribute('aria-current', 'step');
 
-		await userEvent.click(screen.getByRole('button', { name: 'Other Details' }));
+		await userEvent.click(screen.getByRole('button', { name: /Other Details/ }));
 		expect(onChange).toHaveBeenCalledWith('other');
 	});
 });

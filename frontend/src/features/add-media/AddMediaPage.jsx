@@ -7,6 +7,8 @@ import { ConfirmationDialogContent } from '../shared/components/ConfirmationDial
 import { Dialog } from '../shared/components/Dialog';
 import { TabContent, TabView } from '../shared/components/TabView';
 import { Text } from '../shared/components/Text';
+import { QuickPreview } from '../upload-quick-preview';
+import { cn } from '../shared/utils/classNames';
 import UserContext from '../../static/js/contexts/UserContext';
 import { deleteRequest } from '../../static/js/functions';
 import { config as mediacmsConfig } from '../../static/js/mediacms/config.js';
@@ -24,6 +26,10 @@ import {
 	updateUploadItemStatus,
 } from './utils/helpers';
 import BulkUploadPage from './bulk-upload/components/BulkUploadPage.jsx';
+import { BulkStepperSlot } from './bulk-upload/components/BulkStepperSlot';
+import useBulkUploadStore from './bulk-upload/useBulkUploadStore';
+
+const EMPTY_SINGLE_PREVIEW = { title: '', company: '', country: '', category: null, thumbnailUrl: '' };
 
 export class AddMediaPage extends Page {
 	static contextType = UserContext;
@@ -40,11 +46,19 @@ export class AddMediaPage extends Page {
 		this.state = {
 			confirmBulkUploadOpen: false,
 			confirmDeleteOpen: false,
+			confirmTabSwitchOpen: false,
+			pendingTab: null,
 			hasSelectedMedia: false,
 			pendingDeleteId: null,
 			pendingDeleteName: '',
 			selectedTab: 'single-film-upload',
 			uploadedMedia: null,
+			// Set when a bulk file is moved into the single tab (one file left): the
+			// media is already uploaded, so single shows its edit form (no re-upload).
+			externalMedia: null,
+			// Live data for the single-upload Quick Preview, reported up from the
+			// form so it can render in the shared right-hand slot (below).
+			singlePreview: { ...EMPTY_SINGLE_PREVIEW },
 		};
 	}
 
@@ -102,7 +116,7 @@ export class AddMediaPage extends Page {
 					updateUploadItemStatus(id, status, getStatusLabel(status));
 				},
 				onSubmitted: () => {
-					this.setState({ hasSelectedMedia: true, uploadedMedia: null });
+					this.setState({ hasSelectedMedia: true, uploadedMedia: null, externalMedia: null });
 				},
 				onError: function (id, name, errorReason) {
 					updateUploadItemStatus(id, 'failed', 'Upload failed');
@@ -127,6 +141,7 @@ export class AddMediaPage extends Page {
 
 					if (this.config.uploadMaxFilesNumber >= 1) {
 						this.setState({ uploadedMedia: details });
+						this.fetchSinglePreviewThumbnail(details.friendlyToken);
 					}
 				},
 			},
@@ -320,6 +335,125 @@ export class AddMediaPage extends Page {
 		this.setState({ confirmBulkUploadOpen: false, selectedTab: 'bulk-upload' });
 	};
 
+	// Stable reference so the single-upload form's preview effect doesn't loop.
+	// Merge so the upload's thumbnail (set on complete) isn't clobbered by the
+	// form's title/company/country/category updates.
+	handleSinglePreviewChange = (preview) => {
+		this.setState((state) => ({ singlePreview: { ...state.singlePreview, ...preview } }));
+	};
+
+	// True when there's work that switching tabs would discard: a single-upload
+	// selection/upload, or any files in the bulk wizard.
+	hasUploadInProgress = () => {
+		let bulkFileCount = 0;
+		try {
+			bulkFileCount = useBulkUploadStore.getState().files.length;
+		} catch {
+			bulkFileCount = 0;
+		}
+		return this.state.hasSelectedMedia || !!this.state.uploadedMedia || bulkFileCount > 0;
+	};
+
+	// Clears both flows and switches; called directly when nothing's in progress,
+	// or after the user confirms the switch dialog.
+	doTabSwitch = (nextTab) => {
+		this.completedTokens = {};
+		try {
+			this.uploader?.reset();
+		} catch (error) {
+			console.warn('Unable to reset uploader on tab change', error);
+		}
+		try {
+			useBulkUploadStore.getState().reset();
+		} catch (error) {
+			console.warn('Unable to reset bulk upload store on tab change', error);
+		}
+		this.setState({
+			selectedTab: nextTab,
+			hasSelectedMedia: false,
+			uploadedMedia: null,
+			externalMedia: null,
+			singlePreview: { ...EMPTY_SINGLE_PREVIEW },
+			confirmTabSwitchOpen: false,
+			pendingTab: null,
+		});
+	};
+
+	// Bulk -> single when only one file remains (decision D2): the media is already
+	// uploaded, so move it into the single tab's edit form instead of discarding it
+	// (no re-upload needed). The bulk wizard is cleared.
+	moveBulkMediaToSingle = (file) => {
+		if (!file?.friendlyToken) {
+			return;
+		}
+		const token = file.friendlyToken;
+		this.completedTokens = {};
+		try {
+			useBulkUploadStore.getState().reset();
+		} catch (error) {
+			console.warn('Unable to reset bulk upload store on move-to-single', error);
+		}
+		this.setState({
+			selectedTab: 'single-film-upload',
+			hasSelectedMedia: true,
+			uploadedMedia: {
+				friendlyToken: token,
+				editUrl: `/edit?m=${encodeURIComponent(token)}`,
+				viewUrl: `/view?m=${encodeURIComponent(token)}`,
+				name: file.name || '',
+			},
+			externalMedia: { name: file.name || '' },
+			singlePreview: { ...EMPTY_SINGLE_PREVIEW },
+			confirmTabSwitchOpen: false,
+			pendingTab: null,
+		});
+		this.fetchSinglePreviewThumbnail(token);
+	};
+
+	handleTabChange = (nextTab) => {
+		if (nextTab === this.state.selectedTab) {
+			return;
+		}
+		// Confirm before discarding in-progress work; otherwise switch immediately.
+		if (this.hasUploadInProgress()) {
+			this.setState({ confirmTabSwitchOpen: true, pendingTab: nextTab });
+			return;
+		}
+		this.doTabSwitch(nextTab);
+	};
+
+	cancelTabSwitch = () => {
+		this.setState({ confirmTabSwitchOpen: false, pendingTab: null });
+	};
+
+	confirmTabSwitch = () => {
+		if (this.state.pendingTab) {
+			this.doTabSwitch(this.state.pendingTab);
+		}
+	};
+
+	// Pull the uploaded media's poster so the Quick Preview shows a real image.
+	fetchSinglePreviewThumbnail = (friendlyToken) => {
+		if (!friendlyToken) {
+			return;
+		}
+		const mediaApiUrl = mediacmsConfig(window.MediaCMS).api.media;
+		if (!mediaApiUrl) {
+			return;
+		}
+		fetch(`${mediaApiUrl}/${friendlyToken}`, { credentials: 'same-origin' })
+			.then((response) => (response.ok ? response.json() : null))
+			.then((data) => {
+				const thumbnailUrl = data && (data.thumbnail_url || data.poster_url);
+				if (thumbnailUrl) {
+					this.setState((state) => ({ singlePreview: { ...state.singlePreview, thumbnailUrl } }));
+				}
+			})
+			.catch(() => {
+				// Preview thumbnail is non-critical; ignore failures.
+			});
+	};
+
 	handleFilesSelected = (files) => {
 		if (!files?.length) {
 			return;
@@ -335,7 +469,7 @@ export class AddMediaPage extends Page {
 			return;
 		}
 
-		this.setState({ hasSelectedMedia: true, uploadedMedia: null }, () => {
+		this.setState({ hasSelectedMedia: true, uploadedMedia: null, externalMedia: null }, () => {
 			this.uploader.addFiles(files);
 		});
 	};
@@ -352,22 +486,46 @@ export class AddMediaPage extends Page {
 		const {
 			confirmBulkUploadOpen,
 			confirmDeleteOpen,
+			confirmTabSwitchOpen,
+			externalMedia,
 			hasSelectedMedia,
 			pendingDeleteName,
+			pendingTab,
 			selectedTab,
+			singlePreview,
 			uploadedMedia,
 		} = this.state;
 
+		const pendingTabLabel = pendingTab === 'bulk-upload' ? 'Bulk Upload' : 'Single Film Upload';
+
+		const isBulk = selectedTab === 'bulk-upload';
+
+		// Stable bulk config: built once and reused so a re-render (e.g. opening the
+		// tab-switch dialog) doesn't hand BulkUploadPage a new object — that would
+		// re-run useBulkUpload's effect and cancelAll() an in-progress upload.
+		if (!this.bulkConfig) {
+			this.bulkConfig = {
+				isTrustedUser: !!this.config.isTrustedUser,
+				canUseAdminSettings: !!this.context.is.admin,
+				maxFiles: this.config.maxBulkFiles,
+				uploadEndpoint: this.config.uploadEndpoint || undefined,
+				chunksDoneParam: this.config.chunksDoneParam || undefined,
+				onMoveSingle: this.moveBulkMediaToSingle,
+			};
+		}
+
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
-				<main className="add-media-feature mx-4 grid w-auto grid-cols-1 gap-8 py-8 text-text-primary sm:mx-6 lg:mx-10 lg:grid-cols-6 lg:items-start">
-					<aside className="hidden min-w-0 lg:block" aria-hidden="true">
-						{/* TODO: Left View (stepper) */}
-						Stepper Section
-					</aside>
-
-					<section className="min-w-0 col-span-4">
-						<header className="mb-8">
+				{/* Shared 3-column shell: left stepper rail, centre form, right Quick
+				    Preview. The single tab uses these slots directly; the bulk tab
+				    renders its own stepper/per-file preview, so it spans full width and
+				    the side slots are hidden. Container queries respond to the real
+				    content width (shrinks when the app sidebar is open). */}
+				<main className="add-media-feature @container/page mx-4 py-8 text-text-primary sm:mx-6 lg:mx-10">
+					{/* Header sits above the grid with the same left offset as the rail,
+					    so it aligns with the centre content identically on both tabs. */}
+					<header className="mb-8 flex items-start justify-between gap-4 @4xl/page:pl-[252px]">
+						<div className="min-w-0">
 							<Text variant="h4" as="h1" className="m-0 text-text-strong">
 								Upload Media to Cinemata
 							</Text>
@@ -383,52 +541,86 @@ export class AddMediaPage extends Page {
 								<br />
 								Any media that does not comply with the policy will be deleted from Cinemata.org.
 							</Text>
-						</header>
+						</div>
+						<span className="body-body-12-regular shrink-0 text-text-accent">* Required</span>
+					</header>
 
-						<AddMediaUploadTemplate />
+					<div className="grid grid-cols-1 gap-8 @4xl/page:grid-cols-[220px_minmax(0,1fr)_340px] @4xl/page:items-start">
+						{/* Left rail — the bulk wizard stepper; empty (reserved) on the
+						    single tab so the centre card stays aligned across tabs. */}
+						<aside className="hidden min-w-0 @4xl/page:block @4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start @4xl/page:pt-2">
+							{isBulk ? <BulkStepperSlot /> : null}
+						</aside>
 
-						<TabView
-							tabMode="wrap"
-							triggerClassName="rounded-none py-3 px-size-22 text-text-tab-trigger"
-							triggerSelectedColor="bg-bg-section-header"
-							panelClassName="mt-8"
-							aria-label="Upload media type"
-							defaultSelectedTab="single-film-upload"
-							selectedTab={selectedTab}
-							onSelectedTabChange={(nextTab) => this.setState({ selectedTab: nextTab })}
-							className="add-media-tabs"
-							keepMounted
+						<section className={cn('min-w-0', isBulk && '@4xl/page:col-span-2')}>
+							<AddMediaUploadTemplate />
+
+							<TabView
+								tabMode="wrap"
+								triggerClassName="rounded-none py-3 px-size-22 text-text-tab-trigger"
+								triggerSelectedColor="bg-bg-section-header"
+								panelClassName="mt-8"
+								aria-label="Upload media type"
+								defaultSelectedTab="single-film-upload"
+								selectedTab={selectedTab}
+								onSelectedTabChange={this.handleTabChange}
+								className="add-media-tabs"
+								keepMounted
+							>
+								<TabContent
+									title="Single Film Upload"
+									value="single-film-upload"
+									content={
+										<SingleUploadPage
+											accept="video/*"
+											canPublishDirectly={!!this.config.canPublishDirectly}
+											canUseAdminSettings={!!this.context.is.admin}
+											csrfToken={this.config.csrfToken}
+											externalMedia={externalMedia}
+											hasUploadedMedia={!!uploadedMedia}
+											onFilesSelected={this.handleFilesSelected}
+											onPreviewChange={this.handleSinglePreviewChange}
+											showUploader={hasSelectedMedia || !!uploadedMedia}
+											uploadedMedia={uploadedMedia}
+											uploader={
+												<div
+													className="media-uploader add-media-uploader-mount"
+													ref={this.uploaderRef}
+												></div>
+											}
+										/>
+									}
+								/>
+								<TabContent
+									title="Bulk Upload"
+									value="bulk-upload"
+									content={<BulkUploadPage embedded config={this.bulkConfig} />}
+								/>
+							</TabView>
+						</section>
+
+						{/* Right slot — live Quick Preview for the single tab, shown once a
+						    file has been uploaded. The column stays reserved before then so
+						    the form doesn't shift. Hidden for bulk (per-file preview lives
+						    inside each card). */}
+						<aside
+							className={cn(
+								'hidden min-w-0 @4xl/page:block @4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start',
+								isBulk && '@4xl/page:hidden'
+							)}
 						>
-							<TabContent
-								title="Single Film Upload"
-								value="single-film-upload"
-								content={
-									<SingleUploadPage
-										accept="video/*"
-										canPublishDirectly={!!this.config.canPublishDirectly}
-										canUseAdminSettings={!!this.context.is.admin}
-										csrfToken={this.config.csrfToken}
-										hasUploadedMedia={!!uploadedMedia}
-										onFilesSelected={this.handleFilesSelected}
-										showUploader={hasSelectedMedia || !!uploadedMedia}
-										uploadedMedia={uploadedMedia}
-										uploader={
-											<div
-												className="media-uploader add-media-uploader-mount"
-												ref={this.uploaderRef}
-											></div>
-										}
-									/>
-								}
-							/>
-							<TabContent title="Bulk Upload" value="bulk-upload" content={<BulkUploadPage />} />
-						</TabView>
-					</section>
-
-					<aside className="hidden min-w-0 lg:block" aria-hidden="true">
-						{/* TODO: Right View (preview) */}
-						Quick Preview Section
-					</aside>
+							{!isBulk && uploadedMedia ? (
+								<QuickPreview
+									title={singlePreview.title}
+									subtitle={singlePreview.company}
+									country={singlePreview.country}
+									category={singlePreview.category}
+									thumbnailUrl={singlePreview.thumbnailUrl}
+									className="min-w-0"
+								/>
+							) : null}
+						</aside>
+					</div>
 				</main>
 
 				<Dialog open={confirmDeleteOpen} onOpenChange={(open) => !open && this.closeDeleteDialog()}>
@@ -465,6 +657,24 @@ export class AddMediaPage extends Page {
 								</Button>
 								<Button variant="primary" onClick={this.proceedToBulkUpload}>
 									Proceed
+								</Button>
+							</>
+						}
+					/>
+				</Dialog>
+
+				<Dialog open={confirmTabSwitchOpen} onOpenChange={(open) => !open && this.cancelTabSwitch()}>
+					<ConfirmationDialogContent
+						title={`Switch to ${pendingTabLabel}?`}
+						subtitle="You have media in progress. Switching tabs will discard it and start over. Do you want to continue?"
+						aria-label="Switch upload type confirmation"
+						actions={
+							<>
+								<Button variant="secondary-outline" onClick={this.cancelTabSwitch}>
+									Stay
+								</Button>
+								<Button variant="primary" onClick={this.confirmTabSwitch}>
+									Switch
 								</Button>
 							</>
 						}

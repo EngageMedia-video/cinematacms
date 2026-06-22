@@ -657,6 +657,18 @@ def upload_media(request):
     can_upload_exp = settings.CANNOT_ADD_MEDIA_MESSAGE
     context["can_upload_exp"] = can_upload_exp
 
+    # Bulk-upload config consumed by the Bulk Upload tab (sibling of single).
+    # Mirrors the standalone bulk_upload_media view so the tab and the dedicated
+    # page behave identically (per-role batch limit, trusted-user gating).
+    context["max_bulk_files"] = max_bulk_upload_files(request.user)
+    context["chunks_done_param"] = settings.CHUNKS_DONE_PARAM_NAME
+    context["is_trusted_user"] = bool(
+        request.user.is_authenticated
+        and (
+            request.user.is_superuser or request.user.is_manager or request.user.is_editor or request.user.advancedUser
+        )
+    )
+
     # Get allowed video extensions from helper function
     video_extensions = get_allowed_video_extensions()
     context["allowed_extensions"] = video_extensions

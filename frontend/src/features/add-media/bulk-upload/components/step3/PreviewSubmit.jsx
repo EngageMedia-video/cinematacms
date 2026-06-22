@@ -9,7 +9,6 @@ const FIELD_LABELS = {
 	summary: 'Synopsis',
 	description: 'More Information',
 	year_produced: 'Year Produced',
-	year_produced_custom: 'Year Produced',
 	company: 'Production Company',
 	category: 'Category',
 	topics: 'Topic',
@@ -66,9 +65,13 @@ function errorLabels(errors) {
 
 function SummaryRow({ label, value }) {
 	return (
-		<div>
+		<div className="min-w-0">
 			<dt className="body-body-12-medium m-0 text-text-muted">{label}</dt>
-			<dd className="body-body-14-regular m-0 mt-1 text-text-strong">{value || 'Not provided'}</dd>
+			{/* #767: long synopsis / values must wrap (incl. unbroken strings) instead
+			    of overflowing the card. */}
+			<dd className="body-body-14-regular m-0 mt-1 break-words whitespace-pre-line text-text-strong">
+				{value || 'Not provided'}
+			</dd>
 		</div>
 	);
 }
@@ -78,7 +81,7 @@ export function PreviewSubmit({ files = [], options = {}, validationErrors = {} 
 
 	return (
 		<div>
-			<div className="@3xl/main:pr-[324px]">
+			<div className="@3xl/main:pr-[372px]">
 				<Text as="h1" variant="h5" className="text-text-strong">
 					Preview & Submit
 				</Text>
@@ -138,7 +141,7 @@ export function PreviewSubmit({ files = [], options = {}, validationErrors = {} 
 					return (
 						<div
 							key={file.id}
-							className="grid grid-cols-1 items-start gap-6 @3xl/main:grid-cols-[minmax(0,1fr)_300px]"
+							className="grid grid-cols-1 items-start gap-8 @3xl/main:grid-cols-[minmax(0,1fr)_340px]"
 						>
 							<article className="min-w-0 rounded-ds-8 border border-border-default bg-bg-surface p-5">
 								<header className="flex flex-col gap-3 border-b border-border-divider pb-4 sm:flex-row sm:items-start sm:justify-between">
@@ -176,14 +179,7 @@ export function PreviewSubmit({ files = [], options = {}, validationErrors = {} 
 
 								<dl className="mt-5 grid gap-4 sm:grid-cols-2">
 									<SummaryRow label="Synopsis" value={meta.summary} />
-									<SummaryRow
-										label="Year Produced"
-										value={
-											meta.year_produced === 'other'
-												? meta.year_produced_custom
-												: meta.year_produced
-										}
-									/>
+									<SummaryRow label="Year Produced" value={meta.year_produced} />
 									<SummaryRow
 										label="Language"
 										value={findOptionLabel(options.languages, meta.media_language, 'code')}

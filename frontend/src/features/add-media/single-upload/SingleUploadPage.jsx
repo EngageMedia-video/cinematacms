@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useTaxonomies } from '../../shared/components/upload-media';
-import { Card } from '../../shared/components';
+import { Card, Icon } from '../../shared/components';
 import { MediaDropzone } from '../../shared/components/MediaDropzone';
 import { Text } from '../../shared/components/Text';
 import { MediaDetailsForm } from './components/MediaDetailsForm';
@@ -17,14 +17,23 @@ function toIdOptions(items = []) {
 	return items.map((item) => ({ value: item.id, label: item.title }));
 }
 
+const EMPTY_PREVIEW = { title: '', company: '', media_country: '', category: '' };
+
+function findLabel(options = [], value) {
+	const option = options.find((item) => String(item.value ?? item.code) === String(value));
+	return option?.label || option?.title || '';
+}
+
 function SingleUploadContent({
 	accept = 'video/*',
 	canPublishDirectly = false,
 	canUseAdminSettings = false,
 	csrfToken = '',
+	externalMedia = null,
 	hasUploadedMedia = false,
 	maxFiles = 1,
 	onFilesSelected,
+	onPreviewChange,
 	showUploader = false,
 	uploadedMedia = null,
 	uploader,
@@ -41,6 +50,21 @@ function SingleUploadContent({
 	);
 	const licenses = options.licenses;
 
+	// Raw values reported by the (uncontrolled) form, resolved to display labels
+	// and pushed up so the host can render the Quick Preview in its shared slot.
+	const [preview, setPreview] = useState(EMPTY_PREVIEW);
+	const countryLabel = findLabel(mediaCountries, preview.media_country);
+	const categoryLabel = findLabel(categories, preview.category);
+
+	useEffect(() => {
+		onPreviewChange?.({
+			title: preview.title,
+			company: preview.company,
+			country: countryLabel,
+			category: categoryLabel ? { title: categoryLabel } : null,
+		});
+	}, [onPreviewChange, preview.title, preview.company, countryLabel, categoryLabel]);
+
 	return (
 		<div className="single-upload-page">
 			<Card className="py-8 px-6">
@@ -55,18 +79,32 @@ function SingleUploadContent({
 
 					<div className="my-4 border-b border-b-border-divider" />
 
-					{!showUploader ? (
-						<MediaDropzone
-							accept={accept}
-							multiple={maxFiles !== 1}
-							label="Drag & Drop File or"
-							buttonVariant="secondary"
-							buttonLabel="CHOOSE MEDIA"
-							onFilesSelected={onFilesSelected}
-						/>
-					) : null}
+					{externalMedia ? (
+						/* A file moved here from the bulk tab — already uploaded, so show a
+						   "ready" row instead of the dropzone/uploader (no re-upload). */
+						<div className="flex items-center gap-3 rounded-ds-4 bg-bg-surface-muted px-4 py-3">
+							<Icon name="check" size={20} decorative className="text-text-success" />
+							<span className="body-body-14-medium text-text-strong">
+								{externalMedia.name || 'Uploaded media'}
+							</span>
+							<span className="body-body-12-regular text-text-success">Ready</span>
+						</div>
+					) : (
+						<>
+							{!showUploader ? (
+								<MediaDropzone
+									accept={accept}
+									multiple={maxFiles !== 1}
+									label="Drag & Drop File or"
+									buttonVariant="secondary"
+									buttonLabel="CHOOSE MEDIA"
+									onFilesSelected={onFilesSelected}
+								/>
+							) : null}
 
-					<div hidden={!showUploader}>{uploader}</div>
+							<div hidden={!showUploader}>{uploader}</div>
+						</>
+					)}
 				</section>
 			</Card>
 
@@ -82,6 +120,7 @@ function SingleUploadContent({
 					mediaCountries={mediaCountries}
 					mediaLanguages={mediaLanguages}
 					topics={topics}
+					onPreviewChange={setPreview}
 				/>
 			) : null}
 		</div>

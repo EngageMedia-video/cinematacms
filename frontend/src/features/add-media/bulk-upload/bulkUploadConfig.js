@@ -9,13 +9,19 @@ export const BULK_UPLOAD_CONFIG_DEFAULTS = {
 	uploadEndpoint: '/fu/upload/',
 	chunksDoneParam: 'done',
 	optionsEndpoint: '/api/v1/my_uploads/bulk_options',
-	submitEndpoint: '/api/v1/my_uploads/bulk_submit',
 	singleUploadUrl: '/upload',
 	postSubmitUrl: '/',
 	maxFiles: 2,
 	maxSizeBytes: 0,
 	allowedExtensions: [],
 	isTrustedUser: false,
+	// Admin-only "Admin Settings" section (Featured / Reported Times). On the
+	// add-media tab this comes from the host page; defaults off otherwise.
+	canUseAdminSettings: false,
+	// True when rendered as the Bulk Upload tab inside AddMediaPage (which already
+	// provides the page header, editorial-policy notice and container width). The
+	// standalone /bulk_upload page renders those itself, so it stays false.
+	embedded: false,
 };
 
 export function readBulkUploadConfig() {

@@ -8,13 +8,10 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
-from cms.permissions import max_bulk_upload_files
 from users.models import User
 from users.serializers import UserSerializer
 
 from . import lists
-from .draft_utils import apply_media_draft, apply_tags, draft_license_error
-from .forms import MediaForm
 from .methods import is_mediacms_manager
 from .models import (
     Category,
@@ -27,7 +24,6 @@ from .models import (
     get_language_choices,
 )
 from .permissions import (
-    IsBulkUploadUser,
     IsFilmImpactManager,
     IsManageUploadsUser,
     IsMediacmsEditor,
@@ -266,132 +262,11 @@ class BulkUploadOptions(APIView):
         return Response(data)
 
 
-# The bulk metadata form only ever exposes this fixed set of fields. Any other
-# MediaForm field is dropped before validation so it is neither required nor
-# altered here — notably the editor-only admin fields (featured, reported_times,
-# is_reviewed, add_date) that MediaForm keeps required for editors but the bulk
-# UI never shows, plus the upload/poster fields handled elsewhere.
-#
-# This is an allowlist coupled to MediaForm.Meta.fields by hand: every entry
-# must be a real MediaForm field or it silently won't be saved (construct_instance
-# only iterates the remaining form.fields). test_bulk_upload guards the subset
-# invariant; if you expose a new field in the bulk UI, add it here too.
-_BULK_SUBMIT_FIELDS = {
-    "title",
-    "summary",
-    "description",
-    "year_produced",
-    "year_produced_custom",
-    "company",
-    "website",
-    "media_language",
-    "media_country",
-    "category",
-    "topics",
-    "content_sensitivity",
-    "new_tags",
-    "custom_license",
-    "no_license",
-    "enable_comments",
-    "allow_download",
-    "state",
-    "password",
-}
-
-
-class BulkUploadSubmit(APIView):
-    """Apply per-file metadata to a batch of already-uploaded media.
-
-    Each uploaded file already exists as a Media row (created by the chunked
-    uploader). This endpoint applies the wizard metadata to those rows, either
-    saving them as private drafts (action="draft") or running the same
-    validation/publish path as the single-upload edit flow (action="submit").
-    """
-
-    permission_classes = (IsBulkUploadUser,)
-    parser_classes = (JSONParser,)
-
-    def post(self, request, format=None):
-        action = (request.data.get("action") or "").strip().lower()
-        items = request.data.get("items", [])
-
-        if action not in ("draft", "submit"):
-            return Response({"detail": "action must be 'draft' or 'submit'"}, status=status.HTTP_400_BAD_REQUEST)
-        if not isinstance(items, list) or not items:
-            return Response({"detail": "items must be a non-empty list"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Enforce the per-role batch limit server-side (authoritative).
-        max_files = max_bulk_upload_files(request.user)
-        if len(items) > max_files:
-            return Response(
-                {"detail": f"You can submit at most {max_files} files in one batch."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        metadata_by_token = {}
-        for item in items:
-            if not isinstance(item, dict):
-                return Response({"detail": "each item must be an object"}, status=status.HTTP_400_BAD_REQUEST)
-            token = (item.get("friendly_token") or "").strip()
-            if not token:
-                return Response({"detail": "each item requires a friendly_token"}, status=status.HTTP_400_BAD_REQUEST)
-            metadata = item.get("metadata")
-            if not isinstance(metadata, dict):
-                return Response({"detail": "metadata must be an object"}, status=status.HTTP_400_BAD_REQUEST)
-            license_error = draft_license_error(metadata)
-            if license_error:
-                return Response(
-                    {"detail": "invalid metadata", "errors": {token: {"custom_license": [license_error]}}},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            metadata_by_token[token] = metadata
-
-        tokens = list(metadata_by_token.keys())
-
-        with transaction.atomic():
-            qs = Media.objects.select_for_update().filter(friendly_token__in=tokens, user=request.user)
-            media_by_token = {m.friendly_token: m for m in qs}
-            if len(media_by_token) != len(tokens):
-                return Response(
-                    {"detail": "one or more tokens not found or not owned by you"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            if action == "draft":
-                for token, media in media_by_token.items():
-                    apply_media_draft(media, metadata_by_token[token], request.user)
-                return Response({"updated": len(media_by_token)}, status=status.HTTP_200_OK)
-
-            # action == "submit": validate every item first (all-or-nothing),
-            # reusing MediaForm so semantics match the single-upload edit flow.
-            errors = {}
-            valid_forms = {}
-            for token, media in media_by_token.items():
-                form = MediaForm(request.user, data=metadata_by_token[token], instance=media)
-                # Restrict validation/saving to the fields the bulk UI exposes,
-                # so role-dependent admin fields (e.g. reported_times for editors)
-                # don't reject a submit for metadata the user can't even enter.
-                for field_name in list(form.fields):
-                    if field_name not in _BULK_SUBMIT_FIELDS:
-                        form.fields.pop(field_name, None)
-                if form.is_valid():
-                    valid_forms[token] = form
-                else:
-                    errors[token] = form.errors
-            if errors:
-                return Response(
-                    {"detail": "validation failed", "errors": errors},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            for token, form in valid_forms.items():
-                media = media_by_token[token]
-                media._current_user = request.user
-                saved = form.save()
-                apply_tags(saved, form.cleaned_data.get("new_tags"), request.user)
-                # MediaForm.save() clears is_draft for a completed item (shared
-                # with the edit-page path), so no separate clear is needed here.
-            return Response({"updated": len(valid_forms)}, status=status.HTTP_200_OK)
+# NOTE: the bulk-upload flow no longer has a dedicated batch-submit endpoint.
+# Each completed file is submitted per-file through the single-upload edit view
+# (`files.views.edit_media`, action=draft/submit) so bulk and single share the
+# exact same MediaForm validation, publish/review path, poster upload and field
+# set. See frontend `bulk-upload/hooks/useSubmitBulk.js`.
 
 
 class CommentList(APIView):

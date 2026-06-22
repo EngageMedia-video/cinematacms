@@ -49,15 +49,10 @@ describe('validateMetadata', () => {
 		);
 	});
 
-	it('validates the custom year range when "other" is chosen', () => {
-		expect(
-			validateMetadata({ ...validMetadata, year_produced: 'other', year_produced_custom: '1800' })
-				.year_produced_custom
-		).toBeTruthy();
-		expect(
-			validateMetadata({ ...validMetadata, year_produced: 'other', year_produced_custom: '2010' })
-				.year_produced_custom
-		).toBeUndefined();
+	it('validates the year range (free-text 2000..current, like single-upload)', () => {
+		expect(validateMetadata({ ...validMetadata, year_produced: '1800' }).year_produced).toBeTruthy();
+		expect(validateMetadata({ ...validMetadata, year_produced: 'abc' }).year_produced).toBeTruthy();
+		expect(validateMetadata({ ...validMetadata, year_produced: '2010' }).year_produced).toBeUndefined();
 	});
 
 	it('requires an https website', () => {
