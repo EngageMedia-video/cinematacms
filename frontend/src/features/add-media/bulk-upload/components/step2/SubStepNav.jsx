@@ -1,4 +1,5 @@
 import { cn } from '../../../../shared/utils/classNames';
+import { useBulkUploadConfig } from '../../bulkUploadConfig';
 
 const SUB_STEP_ITEMS = [
 	{ value: 'basic', label: 'Basic Details' },
@@ -6,6 +7,9 @@ const SUB_STEP_ITEMS = [
 	{ value: 'other', label: 'Other Details' },
 	{ value: 'final', label: 'Final Settings' },
 ];
+
+// Shown only to users with admin rights, as the last tab (mirrors single-upload).
+const ADMIN_SUB_STEP_ITEM = { value: 'admin', label: 'Admin Settings' };
 
 /**
  * Horizontal indicator for the Enter-Details sub-steps. Clickable so users can
@@ -15,12 +19,15 @@ const SUB_STEP_ITEMS = [
  * fields to fill; those tabs show a `*` marker that disappears once filled.
  */
 export function SubStepNav({ value, onChange, incompleteSubSteps }) {
+	const { canUseAdminSettings } = useBulkUploadConfig();
+	const items = canUseAdminSettings ? [...SUB_STEP_ITEMS, ADMIN_SUB_STEP_ITEM] : SUB_STEP_ITEMS;
+
 	return (
 		<nav
 			aria-label="Detail sections"
 			className="flex gap-1 overflow-x-auto border-b border-border-divider [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 		>
-			{SUB_STEP_ITEMS.map((item) => {
+			{items.map((item) => {
 				const active = item.value === value;
 				const incomplete = incompleteSubSteps?.has(item.value);
 				return (

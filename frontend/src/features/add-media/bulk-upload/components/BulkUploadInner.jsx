@@ -15,11 +15,15 @@ import { SubmitForReviewDialog } from './SubmitForReviewDialog';
 import { Button, ConfirmationDialogContent, Dialog, TextAlert } from '../../../shared/components';
 
 const SUB_STEP_ORDER = ['basic', 'thumbnail', 'other', 'final'];
+// Admin Settings is an extra sub-step appended only for users with admin rights
+// (mirrors single-upload, which renders it as its own admin-only section).
+const ADMIN_SUB_STEP = 'admin';
 const SUB_STEP_LABELS = {
 	basic: 'Basic Details',
 	thumbnail: 'Thumbnail Image Upload',
 	other: 'Other Details',
 	final: 'Final Settings',
+	admin: 'Admin Settings',
 };
 
 // Which sub-step each metadata field lives on, so a validation error can send
@@ -44,8 +48,8 @@ const FIELD_SUB_STEP = {
 	state: 'final',
 	password: 'final',
 	is_encrypted: 'final',
-	featured: 'final',
-	reported_times: 'final',
+	featured: 'admin',
+	reported_times: 'admin',
 };
 
 const VALIDATION_BANNER = 'Please complete the required fields highlighted below.';
@@ -175,7 +179,14 @@ export function BulkUploadInner() {
 		});
 	}, []);
 
-	const subStepIndex = SUB_STEP_ORDER.indexOf(subStep);
+	// Admins get an extra "Admin Settings" tab after Final; everyone else stops at
+	// Final. Drives sub-step navigation, the NEXT/BACK labels and the last tab.
+	const subStepOrder = useMemo(
+		() => (config.canUseAdminSettings ? [...SUB_STEP_ORDER, ADMIN_SUB_STEP] : SUB_STEP_ORDER),
+		[config.canUseAdminSettings]
+	);
+	const lastSubStep = subStepOrder[subStepOrder.length - 1];
+	const subStepIndex = subStepOrder.indexOf(subStep);
 	const inDetails = currentStep === 2;
 	const inPreview = currentStep === 3;
 	const primaryAction = inPreview ? 'share' : 'next';
@@ -183,15 +194,15 @@ export function BulkUploadInner() {
 	const primaryLabel =
 		currentStep === 1
 			? 'Next: Add Details'
-			: inDetails && subStepIndex < SUB_STEP_ORDER.length - 1
-				? `Next: ${SUB_STEP_LABELS[SUB_STEP_ORDER[subStepIndex + 1]]}`
+			: inDetails && subStepIndex < subStepOrder.length - 1
+				? `Next: ${SUB_STEP_LABELS[subStepOrder[subStepIndex + 1]]}`
 				: 'Next: Preview & Submit';
 	const backLabel =
 		currentStep === 3
-			? 'Back: Final Settings'
+			? `Back: ${SUB_STEP_LABELS[lastSubStep]}`
 			: !inDetails || subStepIndex <= 0
 				? 'Back'
-				: `Back: ${SUB_STEP_LABELS[SUB_STEP_ORDER[subStepIndex - 1]]}`;
+				: `Back: ${SUB_STEP_LABELS[subStepOrder[subStepIndex - 1]]}`;
 	const canPrimary = currentStep === 1 ? allComplete : primaryAction === 'share' ? completedFiles.length > 0 : true;
 
 	function handleNext() {
@@ -200,8 +211,8 @@ export function BulkUploadInner() {
 			setSubStep('basic');
 			return;
 		}
-		if (subStepIndex < SUB_STEP_ORDER.length - 1) {
-			setSubStep(SUB_STEP_ORDER[subStepIndex + 1]);
+		if (subStepIndex < subStepOrder.length - 1) {
+			setSubStep(subStepOrder[subStepIndex + 1]);
 			return;
 		}
 		const errorsByFile = computeValidationErrors();
@@ -212,7 +223,7 @@ export function BulkUploadInner() {
 	function handleBack() {
 		if (currentStep === 3) {
 			setStep(2);
-			setSubStep('final');
+			setSubStep(lastSubStep);
 			return;
 		}
 		if (currentStep === 2 && subStepIndex <= 0) {
@@ -220,7 +231,7 @@ export function BulkUploadInner() {
 			return;
 		}
 		if (currentStep === 2) {
-			setSubStep(SUB_STEP_ORDER[subStepIndex - 1]);
+			setSubStep(subStepOrder[subStepIndex - 1]);
 		}
 	}
 

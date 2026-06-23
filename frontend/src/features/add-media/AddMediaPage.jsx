@@ -58,10 +58,28 @@ export class AddMediaPage extends Page {
 			// Live data for the single-upload Quick Preview, reported up from the
 			// form so it can render in the shared right-hand slot (below).
 			singlePreview: { ...EMPTY_SINGLE_PREVIEW },
+			// Config for the Bulk Upload tab; built once in componentDidMount (after
+			// UserContext has settled) so canUseAdminSettings reflects the real admin
+			// flag rather than a first-render snapshot. Kept stable thereafter.
+			bulkConfig: null,
 		};
 	}
 
 	componentDidMount() {
+		// Build the bulk config now that context is settled. Set once and never
+		// rebuilt, so the reference stays stable across re-renders — recreating it
+		// would re-run useBulkUpload's effect and cancel an in-progress upload.
+		this.setState({
+			bulkConfig: {
+				isTrustedUser: !!this.config.isTrustedUser,
+				canUseAdminSettings: !!this.context.is.admin,
+				maxFiles: this.config.maxBulkFiles,
+				uploadEndpoint: this.config.uploadEndpoint || undefined,
+				chunksDoneParam: this.config.chunksDoneParam || undefined,
+				onMoveSingle: this.moveBulkMediaToSingle,
+			},
+		});
+
 		if (!window.qq || !window.qq.FineUploader || !this.uploaderRef.current) {
 			console.warn('FineUploader is not available for the add media page.');
 			return;
@@ -526,20 +544,7 @@ export class AddMediaPage extends Page {
 		const pendingTabLabel = pendingTab === 'bulk-upload' ? 'Bulk Upload' : 'Single Film Upload';
 
 		const isBulk = selectedTab === 'bulk-upload';
-
-		// Stable bulk config: built once and reused so a re-render (e.g. opening the
-		// tab-switch dialog) doesn't hand BulkUploadPage a new object — that would
-		// re-run useBulkUpload's effect and cancelAll() an in-progress upload.
-		if (!this.bulkConfig) {
-			this.bulkConfig = {
-				isTrustedUser: !!this.config.isTrustedUser,
-				canUseAdminSettings: !!this.context.is.admin,
-				maxFiles: this.config.maxBulkFiles,
-				uploadEndpoint: this.config.uploadEndpoint || undefined,
-				chunksDoneParam: this.config.chunksDoneParam || undefined,
-				onMoveSingle: this.moveBulkMediaToSingle,
-			};
-		}
+		const bulkConfig = this.state.bulkConfig;
 
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
@@ -621,7 +626,7 @@ export class AddMediaPage extends Page {
 								<TabContent
 									title="Bulk Upload"
 									value="bulk-upload"
-									content={<BulkUploadPage config={this.bulkConfig} />}
+									content={bulkConfig ? <BulkUploadPage config={bulkConfig} /> : null}
 								/>
 							</TabView>
 						</section>

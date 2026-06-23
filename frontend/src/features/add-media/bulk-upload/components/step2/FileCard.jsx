@@ -45,6 +45,7 @@ const SECTION_META = {
 	},
 	other: { title: 'Other Details' },
 	final: { title: 'Final Settings' },
+	admin: { title: 'Admin Settings' },
 };
 
 /**
@@ -237,19 +238,16 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 								checked={meta.is_encrypted}
 								onChange={(checked) => patch({ is_encrypted: checked })}
 							/>
-
-							{canUseAdminSettings ? (
-								<>
-									<Divider />
-									<AdminSettingsFields
-										featured={meta.featured}
-										reportedTimes={meta.reported_times}
-										onChange={(next) => patch(next)}
-										idPrefix={`file-${file.id}`}
-									/>
-								</>
-							) : null}
 						</div>
+					) : null}
+
+					{subStep === 'admin' && canUseAdminSettings ? (
+						<AdminSettingsFields
+							featured={meta.featured}
+							reportedTimes={meta.reported_times}
+							onChange={(next) => patch(next)}
+							idPrefix={`file-${file.id}`}
+						/>
 					) : null}
 				</div>
 			</Card>
