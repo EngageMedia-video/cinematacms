@@ -148,9 +148,10 @@ class UploaderTestSuite(TestCase):
         """Test access to upload page"""
         upload_url = reverse("upload_media")
 
-        # Test anonymous user access
+        # Anonymous users are redirected to the redesigned allauth sign-in page.
         response = self.client.get(upload_url)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("account_login"), response["Location"])
 
         # Test authenticated user access
         self.client.login(username=self.username, password=self.password)

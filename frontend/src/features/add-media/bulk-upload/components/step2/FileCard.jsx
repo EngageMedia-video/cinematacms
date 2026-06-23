@@ -43,7 +43,7 @@ const SECTION_META = {
 		description:
 			'This image will display when your video isn’t autoplaying. You can select an auto-generated image, upload a custom image or choose a still frame from your video.',
 	},
-	other: { title: 'Others Details' },
+	other: { title: 'Other Details' },
 	final: { title: 'Final Settings' },
 };
 
@@ -245,6 +245,7 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 										featured={meta.featured}
 										reportedTimes={meta.reported_times}
 										onChange={(next) => patch(next)}
+										idPrefix={`file-${file.id}`}
 									/>
 								</>
 							) : null}

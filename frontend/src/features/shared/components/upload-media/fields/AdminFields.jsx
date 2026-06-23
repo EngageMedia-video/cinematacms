@@ -12,11 +12,11 @@ export function FeaturedCheckbox({ checked = false, onChange }) {
 	);
 }
 
-export function ReportedTimesField({ value = '0', onChange }) {
+export function ReportedTimesField({ value = '0', onChange, idPrefix = 'admin' }) {
 	return (
 		<TextField
 			className="w-full max-w-sm"
-			id="reported_times"
+			id={`${idPrefix}-reported_times`}
 			name="reported_times"
 			type="number"
 			label="Reported Times"
@@ -29,11 +29,15 @@ export function ReportedTimesField({ value = '0', onChange }) {
 	);
 }
 
-export function AdminSettingsFields({ featured = false, reportedTimes = '0', onChange }) {
+export function AdminSettingsFields({ featured = false, reportedTimes = '0', onChange, idPrefix = 'admin' }) {
 	return (
 		<div className="flex flex-col gap-5">
 			<FeaturedCheckbox checked={featured} onChange={(next) => onChange?.({ featured: next })} />
-			<ReportedTimesField value={reportedTimes} onChange={(next) => onChange?.({ reported_times: next })} />
+			<ReportedTimesField
+				value={reportedTimes}
+				onChange={(next) => onChange?.({ reported_times: next })}
+				idPrefix={idPrefix}
+			/>
 		</div>
 	);
 }

@@ -16,7 +16,6 @@ import { Page } from '../../static/js/pages/_Page';
 import { SingleUploadPage } from './single-upload/SingleUploadPage';
 import { AddMediaUploadTemplate } from './components/AddMediaUploadTemplate';
 import { CannotUploadMessage } from './components/CannotUploadMessage';
-import { LoginForm } from './components/LoginForm';
 import {
 	getAddMediaConfig,
 	getCSRFToken,
@@ -213,15 +212,12 @@ export class AddMediaPage extends Page {
 		input.click();
 	}
 
-	deleteUploadedMedia(id) {
-		const friendlyToken = this.completedTokens[id];
-
-		// Only completed uploads exist server-side; in-flight ones are handled by cancel().
+	// Delete a Media row created by a finished upload. Best-effort and fire-and-
+	// forget: a failed cleanup is logged but never blocks the UI.
+	deleteMediaByToken(friendlyToken) {
 		if (!friendlyToken) {
 			return;
 		}
-
-		delete this.completedTokens[id];
 
 		const mediaApiUrl = mediacmsConfig(window.MediaCMS).api.media;
 
@@ -237,6 +233,18 @@ export class AddMediaPage extends Page {
 			null,
 			(error) => console.warn('Unable to delete uploaded media ' + friendlyToken, error)
 		);
+	}
+
+	deleteUploadedMedia(id) {
+		const friendlyToken = this.completedTokens[id];
+
+		// Only completed uploads exist server-side; in-flight ones are handled by cancel().
+		if (!friendlyToken) {
+			return;
+		}
+
+		delete this.completedTokens[id];
+		this.deleteMediaByToken(friendlyToken);
 	}
 
 	removeUploadItem(id) {
@@ -357,6 +365,19 @@ export class AddMediaPage extends Page {
 	// Clears both flows and switches; called directly when nothing's in progress,
 	// or after the user confirms the switch dialog.
 	doTabSwitch = (nextTab) => {
+		// Discarding in-progress work also removes any media already created on the
+		// server — single completed uploads plus bulk files — so switching tabs
+		// never leaves orphan drafts behind.
+		Object.values(this.completedTokens).forEach((token) => this.deleteMediaByToken(token));
+		try {
+			useBulkUploadStore.getState().files.forEach((file) => {
+				if (file.friendlyToken) {
+					this.deleteMediaByToken(file.friendlyToken);
+				}
+			});
+		} catch (error) {
+			console.warn('Unable to read bulk upload files on tab change', error);
+		}
 		this.completedTokens = {};
 		try {
 			this.uploader?.reset();
@@ -441,9 +462,15 @@ export class AddMediaPage extends Page {
 		if (!mediaApiUrl) {
 			return;
 		}
+		// Guard against out-of-order responses: only the most recently requested
+		// token may write the preview, so a slow earlier fetch can't clobber it.
+		this.latestPreviewToken = friendlyToken;
 		fetch(`${mediaApiUrl}/${friendlyToken}`, { credentials: 'same-origin' })
 			.then((response) => (response.ok ? response.json() : null))
 			.then((data) => {
+				if (friendlyToken !== this.latestPreviewToken) {
+					return;
+				}
 				const thumbnailUrl = data && (data.thumbnail_url || data.poster_url);
 				if (thumbnailUrl) {
 					this.setState((state) => ({ singlePreview: { ...state.singlePreview, thumbnailUrl } }));
@@ -475,10 +502,10 @@ export class AddMediaPage extends Page {
 	};
 
 	pageContent() {
-		if (this.context.is.anonymous) {
-			return <LoginForm config={this.config} />;
-		}
-
+		// Anonymous users never reach this React app: the upload_media view redirects
+		// them to the (redesigned) allauth sign-in page before the page is served.
+		// If that guard is ever bypassed, canAdd is false for them, so they fall
+		// through to CannotUploadMessage below.
 		if (!this.config.canAdd) {
 			return <CannotUploadMessage config={this.config} />;
 		}
@@ -594,7 +621,7 @@ export class AddMediaPage extends Page {
 								<TabContent
 									title="Bulk Upload"
 									value="bulk-upload"
-									content={<BulkUploadPage embedded config={this.bulkConfig} />}
+									content={<BulkUploadPage config={this.bulkConfig} />}
 								/>
 							</TabView>
 						</section>

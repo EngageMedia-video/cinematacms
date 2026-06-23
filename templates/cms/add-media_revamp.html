@@ -37,12 +37,7 @@
 		isTrustedUser: {% if is_trusted_user %}true{% else %}false{% endif %},
 		allowedExtensions: JSON.parse(document.getElementById('add-media-allowed-extensions').textContent),
 		canUploadMessage: "{{ can_upload_exp|escapejs }}",
-		uploadMediaUrl: "{% url 'upload_media' %}",
-		signupUrl: "{% url 'account_signup' %}",
-		loginUrl: "{% url 'account_login' %}",
-		resetPasswordUrl: "{% url 'account_reset_password' %}",
 		csrfToken: "{{ csrf_token|escapejs }}",
-		loginFormHtml: "{{ form.as_p|escapejs }}",
 	};
 </script>
 

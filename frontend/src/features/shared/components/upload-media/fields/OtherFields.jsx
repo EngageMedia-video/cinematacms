@@ -159,6 +159,13 @@ function getLicenseByFields(licenses, { commercial, derivatives }) {
 	);
 }
 
+function fieldsFromLicense(license) {
+	return {
+		commercial: license?.allowCommercial ?? 'yes',
+		derivatives: license?.allowModifications ?? 'yes',
+	};
+}
+
 function LicenseRadioGroup({ legend, name, options, selectedValue, onChange }) {
 	return (
 		<fieldset className="m-0 border-0 p-0">
@@ -193,13 +200,22 @@ function LicenseRadioGroup({ legend, name, options, selectedValue, onChange }) {
  * Emits `{ custom_license, no_license }` patches.
  */
 export function LicenseChooser({ value = '', noLicense = false, options = [], onChange, name = 'license' }) {
-	const [dialogOpen, setDialogOpen] = useState(false);
-	const [pendingFields, setPendingFields] = useState({ commercial: 'yes', derivatives: 'yes' });
-
 	const defaultLicense = options[0] ?? null;
 	const selectedLicense = getLicenseById(options, value) ?? defaultLicense;
+
+	const [dialogOpen, setDialogOpen] = useState(false);
+	// Radios reflect the current license; re-synced each time the dialog opens so
+	// it never shows stale defaults.
+	const [pendingFields, setPendingFields] = useState(() => fieldsFromLicense(selectedLicense));
 	const pendingLicense = getLicenseByFields(options, pendingFields);
 	const displayTitle = noLicense ? '-' : (selectedLicense?.title ?? '-');
+
+	function handleOpenChange(open) {
+		if (open) {
+			setPendingFields(fieldsFromLicense(selectedLicense));
+		}
+		setDialogOpen(open);
+	}
 
 	function updateSelectedLicense() {
 		if (!pendingLicense) {

@@ -6,7 +6,6 @@ import { useBulkUploadConfig } from '../bulkUploadConfig';
 import { useBulkUpload } from '../hooks/useBulkUpload';
 import { useSubmitBulk } from '../hooks/useSubmitBulk';
 import { BulkUploadActionsProvider } from '../BulkUploadActionsContext';
-import { WizardStepper } from './WizardStepper';
 import { WizardFooter } from './WizardFooter';
 import { Step1UploadMedia } from './step1/Step1UploadMedia';
 import { EnterDetails } from './step2/EnterDetails';
@@ -306,11 +305,11 @@ export function BulkUploadInner() {
 		proceedShare();
 	}
 
-	// The step body (form/preview/footer). Embedded as the add-media tab, the host
-	// provides the @container/page shell + the stepper rail, so we render this
-	// directly. Standalone (/bulk_upload), we wrap it with our own stepper rail.
+	// The step body (form/preview/footer). The host add-media page provides the
+	// @container/page shell, the stepper rail and the <main> landmark, so this is a
+	// plain <div> to avoid nesting a second <main>.
 	const stepBody = (
-		<main className="@container/main min-w-0">
+		<div className="@container/main min-w-0">
 			{submitError ? (
 				<TextAlert role="alert" className="mb-4 text-text-danger" iconName="infoYellow">
 					{submitError}
@@ -354,31 +353,19 @@ export function BulkUploadInner() {
 					isSubmitting={submitMutation.isPending}
 				/>
 			</div>
-		</main>
+		</div>
 	);
 
 	return (
 		<BulkUploadActionsProvider value={actions}>
-			{config.embedded ? (
-				stepBody
-			) : (
-				<div className="@container/page mx-auto max-w-[1100px] px-4 py-6 sm:px-6">
-					<div className="grid grid-cols-1 gap-8 @4xl/page:grid-cols-[220px_minmax(0,1fr)]">
-						<aside className="@4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start @4xl/page:pt-2">
-							<WizardStepper />
-						</aside>
-						{stepBody}
-					</div>
-				</div>
-			)}
+			{stepBody}
 
 			<RedirectNoticeDialog
 				open={showRedirect}
 				onContinue={() => {
-					// Move the uploaded file into the single tab (no re-upload) when
-					// embedded; fall back to navigating on the standalone page.
+					// Move the remaining uploaded file into the single tab (no re-upload).
 					const file = files.find((item) => item.friendlyToken) || files[0];
-					if (config.embedded && config.onMoveSingle && file?.friendlyToken) {
+					if (config.onMoveSingle && file?.friendlyToken) {
 						config.onMoveSingle(file);
 					} else {
 						window.location.href = config.singleUploadUrl;

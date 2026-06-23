@@ -85,6 +85,7 @@ export function StreamProtectionField({ checked = true, onChange }) {
 			<div className="flex flex-row items-start gap-2">
 				<CheckboxButton
 					name="is_encrypted"
+					aria-label="Encrypt this video’s stream"
 					className="mt-0.5"
 					checked={checked}
 					onChange={(event) => onChange?.(event.target.checked)}

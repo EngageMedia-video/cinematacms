@@ -1,33 +1,19 @@
 import { Card, MediaDropzone, TextAlert, Text } from '../../../../shared/components';
-import { EditorialPolicyNotice } from '../../../../shared/components/upload-media';
-import { cn } from '../../../../shared/utils/classNames';
 import { useBulkUploadConfig } from '../../bulkUploadConfig';
 import { useBulkUploadActions } from '../../BulkUploadActionsContext';
 import useBulkUploadStore from '../../useBulkUploadStore';
 import { UploadedFilesList } from './UploadedFilesList';
 
 export function Step1UploadMedia({ files }) {
-	const { isTrustedUser, maxFiles, embedded } = useBulkUploadConfig();
+	const { isTrustedUser, maxFiles } = useBulkUploadConfig();
 	const { addFiles } = useBulkUploadActions();
 	const lastError = useBulkUploadStore((state) => state.lastError);
 
 	return (
 		<div>
-			{/* Standalone page header. As the add-media tab (embedded) the host page
-			    already renders the title, editorial-policy notice and tab switcher. */}
-			{!embedded ? (
-				<>
-					<div className="flex items-start justify-between gap-4">
-						<Text as="h1" variant="h5" className="text-text-strong">
-							Bulk Upload Media to Cinemata
-						</Text>
-						<span className="body-body-12-regular shrink-0 text-text-accent">* Required</span>
-					</div>
-					<EditorialPolicyNotice className="mt-2" />
-				</>
-			) : null}
-
-			<Card as="section" className={cn('add-media-upload-stage py-8 px-6', !embedded && 'mt-6')}>
+			{/* The host add-media page renders the title, editorial-policy notice and
+			    tab switcher; this component only owns the upload stage onward. */}
+			<Card as="section" className="add-media-upload-stage py-8 px-6">
 				<Text as="h2" variant="h5" id="bulk-media-upload-title" className="m-0 text-text-strong">
 					Bulk Media Upload
 				</Text>

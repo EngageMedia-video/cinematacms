@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from cms.permissions import max_bulk_upload_files
 from files import lists
-from files.models import Category, Language, Media
+from files.models import Category, Language, License, Media
 from users.models import User
 
 
@@ -42,29 +42,6 @@ class MaxBulkUploadFilesTests(TestCase):
         self.assertEqual(max_bulk_upload_files(self.trusted), 5)
 
 
-class BulkUploadPageGuardTests(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.regular = User.objects.create_user(username="reg", email="reg@e.com", password="pw")
-
-    def test_anonymous_sees_page(self):
-        # Anonymous users are not redirected; the template renders a sign-in prompt.
-        response = self.client.get("/bulk_upload")
-        self.assertEqual(response.status_code, 200)
-
-    def test_regular_user_allowed(self):
-        self.client.login(username="reg", password="pw")
-        response = self.client.get("/bulk_upload")
-        self.assertEqual(response.status_code, 200)
-
-    @override_settings(BULK_UPLOAD_MAX_FILES_REGULAR=1)
-    def test_single_file_only_user_redirected_to_single(self):
-        self.client.login(username="reg", password="pw")
-        response = self.client.get("/bulk_upload")
-        self.assertEqual(response.status_code, 302)
-        self.assertIn("/upload", response["Location"])
-
-
 class BulkUploadOptionsTests(TestCase):
     def setUp(self):
         self.client = Client()
@@ -90,12 +67,16 @@ class BulkUploadOptionsTests(TestCase):
         # The shared CC license chooser resolves a license from the commercial /
         # modifications selection, so bulk_options must expose those fields (same
         # shape the single-upload page injects via window.MediaCMS.addMediaPage).
+        License.objects.get_or_create(
+            title="Test License",
+            defaults={"allow_commercial": "yes", "allow_modifications": "yes"},
+        )
         self.client.login(username="reg", password="pw")
         response = self.client.get("/api/v1/my_uploads/bulk_options")
         licenses = response.json()["licenses"]
-        if licenses:
-            for key in ("id", "title", "allowCommercial", "allowModifications"):
-                self.assertIn(key, licenses[0])
+        self.assertTrue(licenses, "expected at least one license in bulk_options")
+        for key in ("id", "title", "allowCommercial", "allowModifications"):
+            self.assertIn(key, licenses[0])
 
 
 class BulkDraftReviewExclusionTests(TestCase):

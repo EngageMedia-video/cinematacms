@@ -39,7 +39,6 @@ urlpatterns = [
     re_path("^embed", views.embed_media, name="get_embed"),
     re_path("^upload", views.upload_media, name="upload_media"),
     re_path("^scpublisher", views.upload_media, name="upload_media"),
-    path("bulk_upload", views.bulk_upload_media, name="bulk_upload"),
     re_path("^search", views.search, name="search"),
     re_path(
         r"^playlist/(?P<friendly_token>[\w]+(-[\w]+)*)$",

@@ -12,8 +12,8 @@ const STEPS = [
  * Three-step wizard rail. Vertical on large screens (left rail), horizontal on
  * smaller screens. Steps are clickable for non-linear navigation (issue #767 /
  * QA feedback): step 1 is always reachable; steps 2–3 unlock once every file has
- * finished uploading. Reads the bulk store directly so it works both embedded in
- * the add-media tab and on the standalone page.
+ * finished uploading. Reads the bulk store directly, so the add-media page can
+ * render it in its own left rail (via BulkStepperSlot).
  */
 export function WizardStepper() {
 	const currentStep = useBulkUploadStore((state) => state.currentStep);
