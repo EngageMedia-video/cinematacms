@@ -68,7 +68,7 @@ describe('buildEditFormData', () => {
 		expect(off.get('allow_download')).toBeNull();
 		expect(off.get('is_encrypted')).toBeNull();
 
-		const on = buildEditFormData({ metadata: createDefaultMetadata() });
+		const on = buildEditFormData({ metadata: { ...createDefaultMetadata(), is_encrypted: true } });
 		expect(on.get('enable_comments')).toBe('on');
 		expect(on.get('is_encrypted')).toBe('on');
 	});

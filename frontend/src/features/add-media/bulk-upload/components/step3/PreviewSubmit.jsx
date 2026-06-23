@@ -1,7 +1,7 @@
 import { Text, TextAlert } from '../../../../shared/components';
 import { cn } from '../../../../shared/utils/classNames';
 import { validateMetadata } from '../../../../shared/components/upload-media';
-import { QuickPreview } from '../../../../upload-quick-preview';
+import { FileQuickPreview } from '../FileQuickPreview';
 import { formatFileSize } from '../../utils/formatSize';
 
 const FIELD_LABELS = {
@@ -82,10 +82,8 @@ export function PreviewSubmit({ files = [], options = {}, validationErrors = {} 
 	return (
 		<div>
 			<div className="@3xl/main:pr-[372px]">
-				<Text as="h1" variant="h5" className="text-text-strong">
-					Preview & Submit
-				</Text>
-				<Text as="p" variant="body-14" className="mt-2 max-w-[680px] text-text-muted">
+				{/* The "Preview & Submit" title is rendered by the page header (host). */}
+				<Text as="p" variant="body-14" className="max-w-[680px] text-text-muted">
 					Check each item for missing required details. Sharing saves the batch and starts the normal review
 					path for regular users.
 				</Text>
@@ -131,12 +129,6 @@ export function PreviewSubmit({ files = [], options = {}, validationErrors = {} 
 					const hasErrors = Object.keys(errors).length > 0;
 					const labels = errorLabels(errors);
 					const title = meta.title || file.name;
-					const countryLabel = findOptionLabel(options.countries, meta.media_country, 'code');
-					const firstCategoryId = Array.isArray(meta.category) ? meta.category[0] : undefined;
-					const firstCategory = options.categories?.find(
-						(category) => normalizeId(category.id) === normalizeId(firstCategoryId)
-					);
-					const previewCategory = firstCategory ? { title: firstCategory.title } : null;
 
 					return (
 						<div
@@ -206,12 +198,9 @@ export function PreviewSubmit({ files = [], options = {}, validationErrors = {} 
 								</dl>
 							</article>
 
-							<QuickPreview
-								title={meta.title}
-								thumbnailUrl={file.thumbnailUrl || ''}
-								subtitle={meta.company}
-								country={countryLabel}
-								category={previewCategory}
+							<FileQuickPreview
+								file={file}
+								options={options}
 								className="min-w-0 @3xl/main:sticky @3xl/main:top-[calc(var(--header-height)+1rem)]"
 							/>
 						</div>

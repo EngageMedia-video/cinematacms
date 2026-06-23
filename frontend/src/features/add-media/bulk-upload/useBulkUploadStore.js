@@ -4,6 +4,7 @@ export const SUB_STEPS = ['basic', 'thumbnail', 'other', 'final'];
 
 export const UPLOAD_STATUS = {
 	UPLOADING: 'uploading',
+	PROCESSING: 'processing',
 	PAUSED: 'paused',
 	COMPLETE: 'complete',
 	FAILED: 'failed',
@@ -32,8 +33,8 @@ export function createDefaultMetadata() {
 		allow_download: true,
 		state: 'public',
 		password: '',
-		// Stream Protection defaults on, matching single-upload.
-		is_encrypted: true,
+		// Stream Protection (HLS encryption) is off by default, matching single-upload.
+		is_encrypted: false,
 		// Admin-only fields (shown only to admins); reported_times mirrors the
 		// hidden "0" the single-upload form posts for non-admins.
 		featured: false,

@@ -43,7 +43,8 @@ describe('PreviewSubmit', () => {
 			/>
 		);
 
-		expect(screen.getByRole('heading', { name: /preview & submit/i })).toBeInTheDocument();
+		// The "Preview & Submit" title is rendered by the host page header, not here.
+		expect(screen.getByText(/Check each item for missing required details/i)).toBeInTheDocument();
 		expect(screen.getByText('1 of 1')).toBeInTheDocument();
 		expect(screen.getByText('Ready to submit')).toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: /quick preview/i })).toBeInTheDocument();

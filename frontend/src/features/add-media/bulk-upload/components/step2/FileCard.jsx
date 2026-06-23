@@ -21,7 +21,7 @@ import {
 	AdminSettingsFields,
 	ThumbnailUploadField,
 } from '../../../../shared/components/upload-media';
-import { QuickPreview } from '../../../../upload-quick-preview';
+import { FileQuickPreview } from '../FileQuickPreview';
 import useBulkUploadStore from '../../useBulkUploadStore';
 import { useBulkUploadConfig } from '../../bulkUploadConfig';
 import { useBulkUploadActions } from '../../BulkUploadActionsContext';
@@ -65,12 +65,6 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 		// Clear the red error on any field the user just edited.
 		onClearErrors?.(file.id, Object.keys(next));
 	};
-
-	// Resolve codes/ids to display labels for the preview card.
-	const countryLabel = options.countries?.find((country) => country.code === meta.media_country)?.title || '';
-	const firstCategoryId = Array.isArray(meta.category) ? meta.category[0] : undefined;
-	const firstCategory = options.categories?.find((category) => category.id === firstCategoryId);
-	const previewCategory = firstCategory ? { title: firstCategory.title } : null;
 
 	return (
 		<div className="grid grid-cols-1 items-start gap-8 @3xl/main:grid-cols-[minmax(0,1fr)_340px]">
@@ -253,12 +247,9 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 				</div>
 			</Card>
 
-			<QuickPreview
-				title={meta.title}
-				thumbnailUrl={file.thumbnailUrl || ''}
-				subtitle={meta.company}
-				country={countryLabel}
-				category={previewCategory}
+			<FileQuickPreview
+				file={file}
+				options={options}
 				className="min-w-0 @3xl/main:sticky @3xl/main:top-[calc(var(--header-height)+1rem)]"
 			/>
 		</div>

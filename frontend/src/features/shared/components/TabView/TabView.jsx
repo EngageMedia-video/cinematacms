@@ -224,6 +224,7 @@ export function TabView({
 	listClassName = '',
 	triggerClassName = '',
 	panelClassName = '',
+	hideTabList = false,
 	tabMode = 'fill',
 	triggerColor,
 	triggerSelectedColor,
@@ -293,13 +294,15 @@ export function TabView({
 	return (
 		<TabViewContext.Provider value={contextValue}>
 			<div className={cn('w-full', className)}>
-				<TabViewList
-					items={tabs}
-					className={listClassName}
-					triggerClassName={triggerClassName}
-					triggerColor={triggerColor}
-					triggerSelectedColor={triggerSelectedColor}
-				/>
+				{hideTabList ? null : (
+					<TabViewList
+						items={tabs}
+						className={listClassName}
+						triggerClassName={triggerClassName}
+						triggerColor={triggerColor}
+						triggerSelectedColor={triggerSelectedColor}
+					/>
+				)}
 				{keepMounted ? (
 					tabs.map((tab) => (
 						<TabViewPanel

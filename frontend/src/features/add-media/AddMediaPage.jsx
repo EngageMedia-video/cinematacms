@@ -62,6 +62,9 @@ export class AddMediaPage extends Page {
 			// UserContext has settled) so canUseAdminSettings reflects the real admin
 			// flag rather than a first-render snapshot. Kept stable thereafter.
 			bulkConfig: null,
+			// Mirrors the bulk wizard's current step so the Single/Bulk tab switcher
+			// can hide itself on steps 2 and 3 (matching the Figma).
+			bulkStep: 1,
 		};
 	}
 
@@ -78,6 +81,16 @@ export class AddMediaPage extends Page {
 				chunksDoneParam: this.config.chunksDoneParam || undefined,
 				onMoveSingle: this.moveBulkMediaToSingle,
 			},
+		});
+
+		// Track the bulk wizard step so the Single/Bulk tab switcher can hide on
+		// steps 2 and 3 (only update on actual step changes to avoid extra renders).
+		this.lastBulkStep = 1;
+		this.unsubscribeBulkStep = useBulkUploadStore.subscribe((state) => {
+			if (state.currentStep !== this.lastBulkStep) {
+				this.lastBulkStep = state.currentStep;
+				this.setState({ bulkStep: state.currentStep });
+			}
 		});
 
 		if (!window.qq || !window.qq.FineUploader || !this.uploaderRef.current) {
@@ -169,6 +182,7 @@ export class AddMediaPage extends Page {
 		if (this.uploaderRef.current) {
 			this.uploaderRef.current.removeEventListener('click', this.handleUploaderClick);
 		}
+		this.unsubscribeBulkStep?.();
 	}
 
 	getFileIdFromElement(element) {
@@ -529,6 +543,7 @@ export class AddMediaPage extends Page {
 		}
 
 		const {
+			bulkStep,
 			confirmBulkUploadOpen,
 			confirmDeleteOpen,
 			confirmTabSwitchOpen,
@@ -545,6 +560,20 @@ export class AddMediaPage extends Page {
 
 		const isBulk = selectedTab === 'bulk-upload';
 		const bulkConfig = this.state.bulkConfig;
+		// On bulk steps 2 & 3 the Single/Bulk tab switcher is hidden (matching the
+		// Figma), so the panel's top margin (which normally separates it from the
+		// tabs) is dropped to avoid a large gap under the header.
+		const tabsHidden = isBulk && bulkStep > 1;
+
+		// The header title tracks the bulk wizard step (matching the Figma); single
+		// keeps a single title. The description stays the same across steps.
+		const headerTitle = !isBulk
+			? 'Upload Media to Cinemata'
+			: bulkStep === 2
+				? 'Enter Details'
+				: bulkStep === 3
+					? 'Preview & Submit'
+					: 'Bulk Upload Media to Cinemata';
 
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
@@ -554,44 +583,52 @@ export class AddMediaPage extends Page {
 				    the side slots are hidden. Container queries respond to the real
 				    content width (shrinks when the app sidebar is open). */}
 				<main className="add-media-feature @container/page mx-4 py-8 text-text-primary sm:mx-6 lg:mx-10">
-					{/* Header sits above the grid with the same left offset as the rail,
-					    so it aligns with the centre content identically on both tabs. */}
-					<header className="mb-8 flex items-start justify-between gap-4 @4xl/page:pl-[252px]">
-						<div className="min-w-0">
-							<Text variant="h4" as="h1" className="m-0 text-text-strong">
-								Upload Media to Cinemata
-							</Text>
-							<Text variant="body-16" color="description" className="m-0 mt-4 max-w-[720px]">
-								Please check our&nbsp;
-								<a
-									href="/editorial-policy"
-									className="text-text-accent no-underline underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
-								>
-									Editorial Policy
-								</a>
-								&nbsp;before uploading media.
-								<br />
-								Any media that does not comply with the policy will be deleted from Cinemata.org.
-							</Text>
-						</div>
-						<span className="body-body-12-regular shrink-0 text-text-accent">* Required</span>
-					</header>
-
 					<div className="grid grid-cols-1 gap-8 @4xl/page:grid-cols-[220px_minmax(0,1fr)_340px] @4xl/page:items-start">
-						{/* Left rail — the bulk wizard stepper; empty (reserved) on the
-						    single tab so the centre card stays aligned across tabs. */}
-						<aside className="hidden min-w-0 @4xl/page:block @4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start @4xl/page:pt-2">
+						{/* Header — lives in the centre column (row 1) so it aligns with the
+						    form and never bleeds into the Quick Preview column; the stepper
+						    rail (left) lines up with its top. */}
+						<header className="flex items-start justify-between gap-4 @4xl/page:col-start-2 @4xl/page:row-start-1">
+							<div className="min-w-0">
+								<Text variant="h4" as="h1" className="m-0 text-text-strong">
+									{headerTitle}
+								</Text>
+								<Text variant="body-16" color="description" className="m-0 mt-4 max-w-[720px]">
+									Please check our&nbsp;
+									<a
+										href="/editorial-policy"
+										className="text-text-accent no-underline underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+									>
+										Editorial Policy
+									</a>
+									&nbsp;before uploading media.
+									<br />
+									Any media that does not comply with the policy will be deleted from Cinemata.org.
+								</Text>
+							</div>
+							<span className="body-body-12-regular shrink-0 text-text-accent">* Required</span>
+						</header>
+
+						{/* Left rail — the bulk wizard stepper; spans from the header row so it
+						    sits flush at the top and stays pinned while scrolling. Empty
+						    (reserved) on the single tab so the centre card stays aligned. */}
+						<aside className="hidden min-w-0 @4xl/page:block @4xl/page:col-start-1 @4xl/page:row-start-1 @4xl/page:row-span-2 @4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start">
 							{isBulk ? <BulkStepperSlot /> : null}
 						</aside>
 
-						<section className={cn('min-w-0', isBulk && '@4xl/page:col-span-2')}>
+						<section
+							className={cn(
+								'min-w-0 @4xl/page:col-start-2 @4xl/page:row-start-2',
+								isBulk && '@4xl/page:col-end-4'
+							)}
+						>
 							<AddMediaUploadTemplate />
 
 							<TabView
 								tabMode="wrap"
 								triggerClassName="rounded-none py-3 px-size-22 text-text-tab-trigger"
 								triggerSelectedColor="bg-bg-section-header"
-								panelClassName="mt-8"
+								panelClassName={tabsHidden ? 'mt-0' : 'mt-8'}
+								hideTabList={tabsHidden}
 								aria-label="Upload media type"
 								defaultSelectedTab="single-film-upload"
 								selectedTab={selectedTab}
@@ -637,7 +674,10 @@ export class AddMediaPage extends Page {
 						    inside each card). */}
 						<aside
 							className={cn(
-								'hidden min-w-0 @4xl/page:block @4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start',
+								'hidden min-w-0 @4xl/page:block @4xl/page:col-start-3 @4xl/page:row-start-2 @4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start',
+								// Offset down so the Quick Preview lines up with the form's first
+								// card (clears the tab bar ~44px + the panel's mt-8 = 76px).
+								'@4xl/page:mt-[76px]',
 								isBulk && '@4xl/page:hidden'
 							)}
 						>

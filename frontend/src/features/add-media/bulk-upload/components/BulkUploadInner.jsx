@@ -206,6 +206,9 @@ export function BulkUploadInner() {
 	const canPrimary = currentStep === 1 ? allComplete : primaryAction === 'share' ? completedFiles.length > 0 : true;
 
 	function handleNext() {
+		// Each step/sub-step is a fresh view, so start it scrolled to the top
+		// (the Next button lives at the bottom of the previous one).
+		window.scrollTo({ top: 0 });
 		if (currentStep === 1) {
 			setStep(2);
 			setSubStep('basic');
@@ -221,6 +224,7 @@ export function BulkUploadInner() {
 	}
 
 	function handleBack() {
+		window.scrollTo({ top: 0 });
 		if (currentStep === 3) {
 			setStep(2);
 			setSubStep(lastSubStep);

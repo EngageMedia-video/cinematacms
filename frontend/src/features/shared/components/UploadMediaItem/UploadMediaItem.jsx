@@ -17,6 +17,13 @@ const STATUS_CONFIG = {
 			{ key: 'cancel', label: 'Cancel', iconName: 'cancel', type: 'danger' },
 		],
 	},
+	processing: {
+		statusText: 'Processing...',
+		statusClassName: 'text-text-muted',
+		progressClassName: 'bg-cinemata-coral-reef-400p',
+		showProgress: false,
+		actions: [{ key: 'cancel', label: 'Cancel', iconName: 'cancel', type: 'danger' }],
+	},
 	paused: {
 		statusText: 'Paused',
 		statusClassName: 'text-text-muted',
