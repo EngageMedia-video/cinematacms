@@ -12,6 +12,15 @@ describe('buildEditFormData', () => {
 		expect(data.get('csrfmiddlewaretoken')).toBe('abc');
 		expect(data.get('title')).toBe('My Film');
 		expect(data.get('year_produced')).toBe('2021');
+		expect(data.get('year_produced_custom')).toBeNull();
+	});
+
+	it('maps a pre-2000 year to the MediaForm "other" + custom contract', () => {
+		const data = buildEditFormData({
+			metadata: { ...createDefaultMetadata(), year_produced: '1995' },
+		});
+		expect(data.get('year_produced')).toBe('other');
+		expect(data.get('year_produced_custom')).toBe('1995');
 	});
 
 	it('appends each category as a repeated field', () => {

@@ -42,16 +42,22 @@ export function validateMetadata(metadata = {}) {
 		errors.summary = `Synopsis should have ${SYNOPSIS_MAX_WORDS} words maximum.`;
 	}
 
-	// Year is a free-text field (2000..current), mirroring single-upload.
+	// Year is chosen from a year picker spanning 1900..current. MediaForm accepts
+	// 2000..current directly and 1900..1999 via the "other"/custom path (handled in
+	// buildEditFormData), so the full range is valid here.
 	const year = String(metadata.year_produced ?? '').trim();
 	if (!year) {
 		errors.year_produced = 'This field is required';
-	} else if (!/^\d+$/.test(year) || Number(year) < 2000 || Number(year) > currentYear) {
-		errors.year_produced = `Enter a year between 2000 and ${currentYear}`;
+	} else if (!/^\d+$/.test(year) || Number(year) < 1900 || Number(year) > currentYear) {
+		errors.year_produced = `Enter a year between 1900 and ${currentYear}`;
 	}
 
 	if (!Array.isArray(metadata.category) || metadata.category.length === 0) {
 		errors.category = 'Select at least one category';
+	}
+
+	if (!Array.isArray(metadata.topics) || metadata.topics.length === 0) {
+		errors.topics = 'Select at least one topic';
 	}
 
 	if (isBlank(metadata.media_country)) {

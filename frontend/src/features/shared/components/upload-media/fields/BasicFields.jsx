@@ -1,5 +1,6 @@
 import { EditorField } from '../../EditorField';
 import { TextField } from '../../TextField';
+import { YearChooserField } from '../../YearChooserField';
 import { SYNOPSIS_MAX_WORDS } from '../schema/mediaMetadataSchema';
 
 // Controlled twins of the single-upload BasicDetailsForm fields (kept visually
@@ -53,16 +54,13 @@ export function MoreInfoField({ value = '', onChange }) {
 
 export function YearProducedField({ value = '', onChange, error = '' }) {
 	return (
-		<TextField
+		<YearChooserField
 			className="w-full"
 			label="Year Produced"
-			placeholder="Write here..."
-			value={value}
-			onChange={(event) => onChange?.(event.target.value)}
-			invalid={Boolean(error)}
-			helperText={error}
 			required
-			maxLength={4}
+			value={value}
+			onChange={(year) => onChange?.(year)}
+			error={error}
 		/>
 	);
 }

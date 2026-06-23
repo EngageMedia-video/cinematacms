@@ -16,7 +16,16 @@ export function buildEditFormData({ metadata = {}, posterFile = null, action = '
 	data.set('title', metadata.title ?? '');
 	data.set('summary', metadata.summary ?? '');
 	data.set('description', metadata.description ?? '');
-	data.set('year_produced', metadata.year_produced ?? '');
+	// Map the picked year to MediaForm's dropdown + custom contract: 2000..current
+	// posts as-is, while older years (1900..1999) post the "other" sentinel plus the
+	// custom year (mirrors the legacy / single-upload year field).
+	const yearProduced = String(metadata.year_produced ?? '').trim();
+	if (yearProduced && Number(yearProduced) < 2000) {
+		data.set('year_produced', 'other');
+		data.set('year_produced_custom', yearProduced);
+	} else {
+		data.set('year_produced', yearProduced);
+	}
 	data.set('company', metadata.company ?? '');
 	data.set('website', metadata.website ?? '');
 	data.set('media_language', metadata.media_language ?? '');

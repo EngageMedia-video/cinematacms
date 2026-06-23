@@ -108,16 +108,18 @@ export function ContentSensitivityGroup({ value = [], onChange, options = [], na
 	);
 }
 
-export function TopicCheckboxGroup({ value = [], onChange, options = [], name }) {
+export function TopicCheckboxGroup({ value = [], onChange, options = [], name, error = '' }) {
 	const groupOptions = useMemo(() => toIdOptions(options), [options]);
 	return (
 		<CheckboxGroup
 			className="flex flex-col flex-1"
 			label="Topics"
+			required
 			name={name}
 			options={groupOptions}
 			value={value}
 			onChange={(next) => onChange?.(next)}
+			error={error}
 			listClassName="grid grid-cols-1 md:grid-cols-3 max-h-50 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent [&::-webkit-scrollbar-thumb]:rounded-full"
 		/>
 	);

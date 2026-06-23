@@ -36,7 +36,7 @@ function Divider() {
 const SECTION_META = {
 	basic: {
 		title: 'Basic Details',
-		description: 'Add the information viewers and editors need before this media is published.',
+		description: 'What viewers and curators will see when they find your film on Cinemata.',
 	},
 	thumbnail: {
 		title: 'Thumbnail Image Upload',
@@ -189,6 +189,7 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 									value={meta.topics}
 									onChange={(value) => patch({ topics: value })}
 									options={options.topics}
+									error={errors.topics}
 								/>
 							</div>
 							<TagsField value={meta.new_tags} onChange={(value) => patch({ new_tags: value })} />
