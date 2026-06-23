@@ -50,12 +50,12 @@ class BulkUploadOptionsTests(TestCase):
         Language.objects.get_or_create(code="en", defaults={"title": "English"})
 
     def test_anonymous_forbidden(self):
-        response = self.client.get("/api/v1/my_uploads/bulk_options")
+        response = self.client.get("/api/v1/my_uploads/upload_options")
         self.assertEqual(response.status_code, 403)
 
     def test_regular_user_gets_options(self):
         self.client.login(username="reg", password="pw")
-        response = self.client.get("/api/v1/my_uploads/bulk_options")
+        response = self.client.get("/api/v1/my_uploads/upload_options")
         self.assertEqual(response.status_code, 200)
         data = response.json()
         for key in ("categories", "topics", "content_sensitivities", "languages", "countries", "licenses"):
@@ -65,16 +65,16 @@ class BulkUploadOptionsTests(TestCase):
 
     def test_licenses_expose_creative_commons_fields(self):
         # The shared CC license chooser resolves a license from the commercial /
-        # modifications selection, so bulk_options must expose those fields (same
+        # modifications selection, so upload_options must expose those fields (same
         # shape the single-upload page injects via window.MediaCMS.addMediaPage).
         License.objects.get_or_create(
             title="Test License",
             defaults={"allow_commercial": "yes", "allow_modifications": "yes"},
         )
         self.client.login(username="reg", password="pw")
-        response = self.client.get("/api/v1/my_uploads/bulk_options")
+        response = self.client.get("/api/v1/my_uploads/upload_options")
         licenses = response.json()["licenses"]
-        self.assertTrue(licenses, "expected at least one license in bulk_options")
+        self.assertTrue(licenses, "expected at least one license in upload_options")
         for key in ("id", "title", "allowCommercial", "allowModifications"):
             self.assertIn(key, licenses[0])
 

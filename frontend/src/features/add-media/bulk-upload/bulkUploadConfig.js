@@ -8,7 +8,7 @@ import { createContext, useContext } from 'react';
 export const BULK_UPLOAD_CONFIG_DEFAULTS = {
 	uploadEndpoint: '/fu/upload/',
 	chunksDoneParam: 'done',
-	optionsEndpoint: '/api/v1/my_uploads/bulk_options',
+	optionsEndpoint: '/api/v1/my_uploads/upload_options',
 	singleUploadUrl: '/upload',
 	postSubmitUrl: '/',
 	maxFiles: 2,
