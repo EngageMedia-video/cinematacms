@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory, TestCase, override_settings
+from django.urls import reverse
 
 from cms.ui_variant import resolve_template, ui_variant_context_processor
 
@@ -188,6 +189,7 @@ class UIVariantViewTests(TestCase):
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=["upload"])
     def test_upload_revamp_when_allowlisted(self):
+        self.client.login(username="regularuser", password="testpass")
         response = self.client.get("/upload")
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.context)
@@ -197,8 +199,14 @@ class UIVariantViewTests(TestCase):
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=[])
     def test_upload_legacy_when_not_allowlisted(self):
+        self.client.login(username="regularuser", password="testpass")
         response = self.client.get("/upload")
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.context)
         self.assertEqual(response.context["UI_VARIANT"], "legacy")
         self.assertIn(b'id="page-add-media"', response.content)
+
+    def test_upload_anonymous_redirects_to_login(self):
+        response = self.client.get("/upload")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], f"{reverse('account_login')}?next=%2Fupload")
