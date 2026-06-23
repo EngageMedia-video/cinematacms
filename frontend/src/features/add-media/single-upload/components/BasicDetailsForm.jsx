@@ -1,9 +1,12 @@
 import { EditorField } from '../../../shared/components/EditorField';
 import { TextField } from '../../../shared/components/TextField';
+import { YearChooserField } from '../../../shared/components/YearChooserField';
 import { maxWords, required } from '../../../shared/utils/validators';
 import { FieldGroup } from './FieldGroup';
 
-export function BasicDetailsForm({ errors }) {
+export function BasicDetailsForm({ singleUpload }) {
+	const { errors } = singleUpload;
+
 	return (
 		<FieldGroup
 			title="Basic Details"
@@ -15,6 +18,8 @@ export function BasicDetailsForm({ errors }) {
 				name="title"
 				label="Title"
 				placeholder="Write here..."
+				value={singleUpload.title}
+				onChange={(event) => singleUpload.setTitle(event.target.value)}
 				helperText={errors.title}
 				invalid={!!errors.title}
 			/>
@@ -28,6 +33,8 @@ export function BasicDetailsForm({ errors }) {
 				placeholder="Write here..."
 				enableCounter
 				maxWordsLength={80}
+				value={singleUpload.summary}
+				onChange={singleUpload.setSummary}
 				helperText={errors.summary || 'Maximum 80 Words'}
 				invalid={!!errors.summary}
 				validate={[required(), maxWords(80)]}
@@ -39,21 +46,21 @@ export function BasicDetailsForm({ errors }) {
 				name="description"
 				label="More Information and Credits"
 				placeholder="Write here..."
+				value={singleUpload.description}
+				onChange={singleUpload.setDescription}
 				helperText={errors.description}
 				invalid={!!errors.description}
 			/>
 
-			<TextField
+			<YearChooserField
 				className="w-full"
-				id="year_produced"
 				name="year_produced"
 				label="Year Produced"
-				placeholder="Write here..."
-				helperText={errors.year_produced}
-				invalid={!!errors.year_produced}
 				required
-				validate={[required()]}
-				maxLength={4}
+				value={singleUpload.yearProduced}
+				onChange={singleUpload.setYearProduced}
+				error={errors.year_produced}
+				minYear={2000}
 			/>
 		</FieldGroup>
 	);

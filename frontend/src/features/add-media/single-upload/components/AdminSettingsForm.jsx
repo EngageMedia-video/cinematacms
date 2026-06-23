@@ -2,11 +2,17 @@ import { CheckboxButton } from '../../../shared/components/CheckboxButton';
 import { TextField } from '../../../shared/components/TextField';
 import { FieldGroup } from './FieldGroup';
 
-export function AdminSettingsForm() {
+export function AdminSettingsForm({ singleUpload }) {
 	return (
 		<FieldGroup title="Admin Settings">
 			<div className="flex flex-col gap-5">
-				<CheckboxButton name="featured">Featured</CheckboxButton>
+				<CheckboxButton
+					name="featured"
+					checked={singleUpload.featured}
+					onChange={(event) => singleUpload.setFeatured(event.target.checked)}
+				>
+					Featured
+				</CheckboxButton>
 
 				<TextField
 					className="w-full max-w-sm"
@@ -14,7 +20,8 @@ export function AdminSettingsForm() {
 					name="reported_times"
 					type="number"
 					label="Reported Times"
-					defaultValue="0"
+					value={singleUpload.reportedTimes}
+					onChange={(event) => singleUpload.setReportedTimes(event.target.value)}
 					min="0"
 					step="1"
 					required

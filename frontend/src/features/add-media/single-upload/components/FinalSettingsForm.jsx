@@ -39,7 +39,11 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 	return (
 		<FieldGroup title="Final Settings">
 			<div className="flex flex-col">
-				<CheckboxButton name="enable_comments" defaultChecked>
+				<CheckboxButton
+					name="enable_comments"
+					checked={singleUpload.enableComments}
+					onChange={(event) => singleUpload.setEnableComments(event.target.checked)}
+				>
 					Enable Comments
 				</CheckboxButton>
 
@@ -49,6 +53,14 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 					onChange={(event) => singleUpload.setAllowDownload(event.target.checked)}
 				>
 					Allow Download
+				</CheckboxButton>
+
+				<CheckboxButton
+					name="is_encrypted"
+					checked={singleUpload.isEncrypted}
+					onChange={(event) => singleUpload.setIsEncrypted(event.target.checked)}
+				>
+					Encrypt this video&rsquo;s stream
 				</CheckboxButton>
 
 				<div className="my-4 border-b border-b-border-divider" />
@@ -126,23 +138,6 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 				) : null}
 
 				<div className="my-4 border-b border-b-border-divider" />
-
-				<legend className="body-body-16-regular mb-2 text-text-muted">Stream Protection</legend>
-
-				<div className="flex flex-row items-start gap-2">
-					<CheckboxButton name="is_encrypted" className="mt-0.5" aria-label="Encrypt this video’s stream" />
-
-					<div className="flex flex-col gap-2">
-						<Text className="m-0" variant="body-16">
-							Encrypt this video’s stream
-						</Text>
-						<Text className="m-0" variant="body-12">
-							Adds an extra layer of protection so only authorized viewers can watch this film. If your
-							video has already been processed, enabling this will trigger a re-encoding, which may take a
-							few minutes.
-						</Text>
-					</div>
-				</div>
 			</div>
 		</FieldGroup>
 	);
