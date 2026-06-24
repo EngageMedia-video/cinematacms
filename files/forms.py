@@ -328,10 +328,13 @@ class MediaForm(forms.ModelForm):
 
         has_visibility_schedule = bool(data.get("visibility_start_date") or data.get("visibility_expires_at"))
         visibility_fields_submitted = "visibility_start" in self.data or "visibility_end" in self.data
+        is_new_instance = not self.instance.pk
         if has_visibility_schedule:
             self.instance.visibility_start_date = data.get("visibility_start_date")
             self.instance.visibility_expires_at = data.get("visibility_expires_at")
-            self.instance.visibility_after_expiry = "private"
+            # Preserve an existing after-expiry preference; default to "private" only when absent.
+            if not self.instance.visibility_after_expiry:
+                self.instance.visibility_after_expiry = "private"
             self.instance.visibility_window_state = self.instance.state
             self.instance.state = self.instance.expected_visibility_state(timezone.now())
         elif visibility_fields_submitted:
@@ -360,6 +363,21 @@ class MediaForm(forms.ModelForm):
             self.instance.is_draft = False
 
         media = super(MediaForm, self).save(*args, **kwargs)
+
+        # Media.save() resets state via get_default_state() on creation (no pk
+        # before super().save()). Re-apply the scheduled state after the row
+        # exists so it isn't clobbered by that default.
+        if is_new_instance and has_visibility_schedule:
+            scheduled_state = media.expected_visibility_state(timezone.now())
+            type(media).objects.filter(pk=media.pk).update(
+                state=scheduled_state,
+                visibility_start_date=media.visibility_start_date,
+                visibility_expires_at=media.visibility_expires_at,
+                visibility_after_expiry=media.visibility_after_expiry,
+                visibility_window_state=media.visibility_window_state,
+            )
+            media.state = scheduled_state
+
         return media
 
 

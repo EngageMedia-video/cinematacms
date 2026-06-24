@@ -259,7 +259,6 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 							idPrefix={`file-${file.id}`}
 						/>
 					) : null}
-					) : null}
 				</div>
 			</Card>
 

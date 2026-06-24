@@ -18,6 +18,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files import File
+from django.db import transaction
 from django.db.models import F, Q
 from django.urls import reverse
 from django.utils import timezone
@@ -1563,18 +1564,26 @@ def apply_visibility_schedules():
     """Apply scheduled media visibility windows.
 
     Uses a singleton cache lock so only one worker updates visibility at a time.
+    The lock value is a unique token so the finally block only deletes the lock
+    this invocation set, not one a newer worker may have already claimed.
     """
+    import uuid
+
     lock_key = "apply_visibility_schedules_lock"
     lock_timeout = getattr(settings, "VISIBILITY_SCHEDULE_LOCK_TIMEOUT", 120)
+    lock_token = str(uuid.uuid4())
 
-    if not cache.add(lock_key, "locked", lock_timeout):
+    if not cache.add(lock_key, lock_token, lock_timeout):
         logger.debug("Visibility schedule task skipped: another worker holds the lock")
         return
 
     try:
         _apply_visibility_schedules_inner()
     finally:
-        cache.delete(lock_key)
+        # Only release the lock if we still own it — guards against a slow run
+        # where the TTL expired and a new worker already claimed the key.
+        if cache.get(lock_key) == lock_token:
+            cache.delete(lock_key)
 
 
 def _apply_visibility_schedules_inner():
@@ -1591,24 +1600,32 @@ def _apply_visibility_schedules_inner():
     transition_count = 0
     for media in scheduled_media.iterator():
         try:
-            expected = media.expected_visibility_state(now)
-            if media.state == expected:
-                continue
+            with transaction.atomic():
+                # Re-fetch under a row lock so a concurrent user edit that arrived
+                # between the queryset evaluation and this point isn't overwritten.
+                try:
+                    media = Media.objects.select_for_update().get(pk=media.pk)
+                except Media.DoesNotExist:
+                    continue
 
-            logger.info(
-                "Applying visibility schedule for media %s: %s -> %s",
-                media.friendly_token,
-                media.state,
-                expected,
-            )
-            media.state = expected
-            # Keep Media.save() from interpreting this state-only transition as a
-            # media-file or thumbnail-time edit and dispatching encoding work.
-            media._Media__original_media_file = media.media_file
-            media._Media__original_thumbnail_time = media.thumbnail_time
-            media.save(update_fields=["state"])
+                expected = media.expected_visibility_state(now)
+                if media.state == expected:
+                    continue
+
+                logger.info(
+                    "Applying visibility schedule for media %s: %s -> %s",
+                    media.friendly_token,
+                    media.state,
+                    expected,
+                )
+                media.state = expected
+                # Keep Media.save() from interpreting this state-only transition as a
+                # media-file or thumbnail-time edit and dispatching encoding work.
+                media._Media__original_media_file = media.media_file
+                media._Media__original_thumbnail_time = media.thumbnail_time
+                media.save(update_fields=["state"])
             transition_count += 1
-        except (django.db.DatabaseError, OSError, TypeError, ValueError):
+        except Exception:
             logger.exception("Failed to apply visibility schedule for media %s", getattr(media, "pk", "unknown"))
 
     if transition_count:
