@@ -93,6 +93,7 @@ export function BulkUploadInner() {
 	const [showRedirect, setShowRedirect] = useState(false);
 	const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 	const [showDownloadNotice, setShowDownloadNotice] = useState(false);
+	const [pendingDeleteId, setPendingDeleteId] = useState(null);
 	const [validationErrors, setValidationErrors] = useState({});
 	const [submitError, setSubmitError] = useState(null);
 
@@ -127,7 +128,7 @@ export function BulkUploadInner() {
 		return () => clearTimeout(timer);
 	}, [fileCount]);
 
-	async function deleteFile(id) {
+	async function performDeleteFile(id) {
 		const file = files.find((item) => item.id === id);
 		if (file?.friendlyToken) {
 			try {
@@ -145,9 +146,17 @@ export function BulkUploadInner() {
 		}
 	}
 
-	// uploadActions is a stable (memoized) bag; deleteFile closes over the current
-	// files list, so the action bag is rebuilt whenever files change.
-	const actions = useMemo(() => ({ ...uploadActions, deleteFile }), [uploadActions, files]);
+	// Delete is confirmed first (steps 1 & 2) to avoid an accidental click wiping an
+	// uploaded file; the actual removal runs from the confirmation dialog.
+	function requestDeleteFile(id) {
+		setPendingDeleteId(id);
+	}
+
+	const pendingDeleteFile = pendingDeleteId == null ? null : files.find((item) => item.id === pendingDeleteId);
+
+	// uploadActions is a stable (memoized) bag; requestDeleteFile closes over the
+	// current files list, so the action bag is rebuilt whenever files change.
+	const actions = useMemo(() => ({ ...uploadActions, deleteFile: requestDeleteFile }), [uploadActions, files]);
 
 	// Clear a field's red error as soon as the user edits it, and drop the
 	// top-of-page banner (they are actively fixing things).
@@ -411,6 +420,34 @@ export function BulkUploadInner() {
 								}}
 							>
 								Yes, Proceed
+							</Button>
+						</>
+					}
+				/>
+			</Dialog>
+			<Dialog open={pendingDeleteId != null} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+				<ConfirmationDialogContent
+					title="Delete this file?"
+					subtitle={
+						pendingDeleteFile?.name
+							? `“${pendingDeleteFile.name}” will be removed from this upload.`
+							: 'This file will be removed from this upload.'
+					}
+					aria-label="Delete file confirmation"
+					actions={
+						<>
+							<Button variant="secondary-outline" onClick={() => setPendingDeleteId(null)}>
+								Cancel
+							</Button>
+							<Button
+								variant="primary"
+								onClick={() => {
+									const id = pendingDeleteId;
+									setPendingDeleteId(null);
+									performDeleteFile(id);
+								}}
+							>
+								Delete
 							</Button>
 						</>
 					}
