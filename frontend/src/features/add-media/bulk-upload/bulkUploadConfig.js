@@ -1,21 +1,23 @@
 import { createContext, useContext } from 'react';
 
 /**
- * Server-provided configuration for the bulk-upload page, injected by the Django
- * template as a JSON `<script id="bulk-upload-config">` block. Read once on the
- * page root and shared via context.
+ * Default configuration for the Bulk Upload tab. The host add-media page
+ * (AddMediaPage) supplies overrides sourced from window.MediaCMS; these defaults
+ * fill in the rest. Shared via context.
  */
 export const BULK_UPLOAD_CONFIG_DEFAULTS = {
 	uploadEndpoint: '/fu/upload/',
 	chunksDoneParam: 'done',
 	optionsEndpoint: '/api/v1/my_uploads/bulk_options',
-	submitEndpoint: '/api/v1/my_uploads/bulk_submit',
 	singleUploadUrl: '/upload',
 	postSubmitUrl: '/',
 	maxFiles: 2,
 	maxSizeBytes: 0,
 	allowedExtensions: [],
 	isTrustedUser: false,
+	// Admin-only "Admin Settings" section (Featured / Reported Times). Provided by
+	// the host add-media page; defaults off otherwise.
+	canUseAdminSettings: false,
 };
 
 export function readBulkUploadConfig() {

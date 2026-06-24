@@ -1,9 +1,7 @@
-import { MediaDropzone, TextAlert, Text } from '../../../../shared/components';
-import { EditorialPolicyNotice } from '../../../../shared/components/upload-media';
+import { Card, MediaDropzone, TextAlert, Text } from '../../../../shared/components';
 import { useBulkUploadConfig } from '../../bulkUploadConfig';
 import { useBulkUploadActions } from '../../BulkUploadActionsContext';
 import useBulkUploadStore from '../../useBulkUploadStore';
-import { UploadTabs } from '../UploadTabs';
 import { UploadedFilesList } from './UploadedFilesList';
 
 export function Step1UploadMedia({ files }) {
@@ -13,26 +11,21 @@ export function Step1UploadMedia({ files }) {
 
 	return (
 		<div>
-			<div className="flex items-start justify-between gap-4">
-				<Text as="h1" variant="h5" className="text-text-strong">
-					Bulk Upload Media to Cinemata
-				</Text>
-				<span className="body-body-12-regular shrink-0 text-text-accent">* Required</span>
-			</div>
-
-			<EditorialPolicyNotice className="mt-2" />
-
-			<div className="mt-6">
-				<UploadTabs />
-			</div>
-
-			<section className="mt-6 rounded-ds-8 bg-bg-surface p-5" aria-labelledby="bulk-media-upload-title">
-				<Text as="h2" variant="h6" id="bulk-media-upload-title" className="m-0 text-text-strong">
+			{/* The host add-media page renders the title, editorial-policy notice and
+			    tab switcher; this component only owns the upload stage onward. */}
+			<Card as="section" className="add-media-upload-stage py-8 px-6">
+				<Text as="h2" variant="h5" id="bulk-media-upload-title" className="m-0 text-text-strong">
 					Bulk Media Upload
 				</Text>
-				<div className="mt-4 border-t border-border-divider pt-4">
-					<MediaDropzone multiple accept="video/*" onFilesSelected={addFiles} />
-				</div>
+				<div className="my-4 border-b border-b-border-divider" />
+				<MediaDropzone
+					multiple
+					accept="video/*"
+					buttonVariant="secondary"
+					label="Drag & Drop File(s) or"
+					buttonLabel="CHOOSE MEDIA"
+					onFilesSelected={addFiles}
+				/>
 
 				<Text as="p" variant="body-14" className="m-0 mt-4 text-text-muted">
 					{isTrustedUser ? (
@@ -51,7 +44,7 @@ export function Step1UploadMedia({ files }) {
 						</>
 					)}
 				</Text>
-			</section>
+			</Card>
 
 			{lastError ? (
 				<TextAlert className="mt-3 text-text-danger" role="alert" iconName="infoYellow">

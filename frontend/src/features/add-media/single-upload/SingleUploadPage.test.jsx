@@ -181,7 +181,8 @@ describe('SingleUploadPage', () => {
 		const streamProtection = document.querySelector('input[name="is_encrypted"]');
 
 		expect(screen.getByText('Stream Protection')).toBeInTheDocument();
-		expect(streamProtection).toBeChecked();
+		// HLS encryption is opt-in: the checkbox is present but off by default.
+		expect(streamProtection).not.toBeChecked();
 	});
 
 	it('shows a password field with visibility toggle for restricted status', async () => {

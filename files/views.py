@@ -7,6 +7,7 @@ import shutil
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import urlencode
 
 import waffle
 from django.apps import apps
@@ -41,8 +42,8 @@ from cms.permissions import (
     IsAuthorizedToAdd,
     IsUserOrEditor,
     is_mfa_enabled_for_user,
+    is_trusted_uploader,
     max_bulk_upload_files,
-    user_allowed_to_bulk_upload,
     user_requires_mfa,
 )
 from cms.request_utils import get_client_ip
@@ -639,6 +640,11 @@ def search(request):
 def upload_media(request):
     from allauth.account.forms import LoginForm
 
+    # Anonymous users get the redesigned allauth sign-in page (with a next= back to
+    # the upload page) instead of the legacy inline login form.
+    if not request.user.is_authenticated:
+        return redirect(f"{reverse('account_login')}?{urlencode({'next': request.path})}")
+
     template = resolve_template(request, "upload")
     form = LoginForm()
     context = {}
@@ -657,6 +663,12 @@ def upload_media(request):
     can_upload_exp = settings.CANNOT_ADD_MEDIA_MESSAGE
     context["can_upload_exp"] = can_upload_exp
 
+    # Bulk-upload config consumed by the Bulk Upload tab (sibling of single):
+    # per-role batch limit and trusted-user gating.
+    context["max_bulk_files"] = max_bulk_upload_files(request.user)
+    context["chunks_done_param"] = settings.CHUNKS_DONE_PARAM_NAME
+    context["is_trusted_user"] = is_trusted_uploader(request.user)
+
     # Get allowed video extensions from helper function
     video_extensions = get_allowed_video_extensions()
     context["allowed_extensions"] = video_extensions
@@ -666,47 +678,6 @@ def upload_media(request):
     # bulk_options endpoint (useTaxonomies), so they are no longer injected here.
 
     return render(request, template, context)
-
-
-@ensure_csrf_cookie
-def bulk_upload_media(request):
-    """Dedicated bulk-upload page (issue #524), a sibling of the single-upload page.
-
-    Single-file-only users (per-batch limit < 2) are rejected server-side and
-    redirected to the single-upload page (decision D8). Anonymous users fall
-    through to the sign-in prompt rendered by the template.
-    """
-    from allauth.account.forms import LoginForm
-
-    if request.user.is_authenticated and not user_allowed_to_bulk_upload(request):
-        # Canonical single-upload path. The "upload_media" name is bound to two
-        # patterns (^upload and ^scpublisher), so reverse() is ambiguous here.
-        return redirect("/upload")
-
-    context = {}
-    context["form"] = LoginForm()
-    if apps.is_installed("waffle"):
-        try:
-            upload_allowed = waffle.switch_is_active("upload_media_allowed")
-        except DatabaseError:
-            upload_allowed = getattr(settings, "UPLOAD_MEDIA_ALLOWED", True)
-    else:
-        upload_allowed = getattr(settings, "UPLOAD_MEDIA_ALLOWED", True)
-    context["can_add"] = upload_allowed and can_upload_media(request.user)
-    context["can_upload_exp"] = settings.CANNOT_ADD_MEDIA_MESSAGE
-
-    context["allowed_extensions"] = json.dumps(get_allowed_video_extensions())
-    context["max_bulk_files"] = max_bulk_upload_files(request.user)
-    context["upload_max_size"] = settings.UPLOAD_MAX_SIZE
-    context["chunks_done_param"] = settings.CHUNKS_DONE_PARAM_NAME
-    context["is_trusted_user"] = bool(
-        request.user.is_authenticated
-        and (
-            request.user.is_superuser or request.user.is_manager or request.user.is_editor or request.user.advancedUser
-        )
-    )
-
-    return render(request, "cms/bulk_upload.html", context)
 
 
 def view_media(request):

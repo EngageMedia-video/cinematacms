@@ -20,7 +20,17 @@ class UploadMediaCsrfCookieTests(TestCase):
     def test_authenticated_upload_page_sets_csrf_cookie(self):
         """Authenticated uploader page must provide the CSRF cookie used by FineUploader."""
         request = RequestFactory().get(reverse("upload_media"))
-        request.user = SimpleNamespace(is_authenticated=True)
+        # Mirror a real authenticated user: the view now reads role flags for the
+        # bulk-upload config (is_trusted_user / max_bulk_files), which call
+        # is_anonymous and the role attributes.
+        request.user = SimpleNamespace(
+            is_authenticated=True,
+            is_anonymous=False,
+            is_superuser=False,
+            is_manager=False,
+            is_editor=False,
+            advancedUser=False,
+        )
 
         with (
             patch("files.views.waffle.switch_is_active", return_value=True),
@@ -138,9 +148,10 @@ class UploaderTestSuite(TestCase):
         """Test access to upload page"""
         upload_url = reverse("upload_media")
 
-        # Test anonymous user access
+        # Anonymous users are redirected to the redesigned allauth sign-in page.
         response = self.client.get(upload_url)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("account_login"), response["Location"])
 
         # Test authenticated user access
         self.client.login(username=self.username, password=self.password)

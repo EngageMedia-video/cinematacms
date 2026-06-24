@@ -1,29 +1,65 @@
 import { useMutation } from '@tanstack/react-query';
-import { apiFetch } from '../../../shared/utils/api';
-import { useBulkUploadConfig } from '../bulkUploadConfig';
+import { getCSRFToken } from '../../../shared/utils/api';
+import { buildEditFormData, getMediaEditUrl } from '../buildSubmitItems';
 
 /**
- * Submits the batch metadata. `action` is "draft" (save privately, keep out of
- * the review queue) or "submit" (validate via MediaForm + run the publish/review
- * path). Per-item validation errors come back keyed by friendly_token.
+ * Submits each completed file per-file through the shared `edit_media` view —
+ * the same path single-upload uses — as multipart FormData (so a chosen
+ * thumbnail rides along as `uploaded_poster`). `action` is "draft" or "submit".
+ *
+ * Resolves with an aggregate `{ results, failed, succeeded }` (never rejects on
+ * a per-file validation failure) so the caller can surface per-file errors and
+ * still know which items went through. Field errors come back keyed by field
+ * name, same as the single-upload edit response.
  */
 export function useSubmitBulk() {
-	const config = useBulkUploadConfig();
-
 	return useMutation({
-		mutationFn: async ({ action, items }) => {
-			const response = await apiFetch(config.submitEndpoint, {
-				method: 'POST',
-				body: { action, items },
-			});
-			const data = await response.json().catch(() => ({}));
-			if (!response.ok) {
-				const error = new Error(data.detail || 'Submission failed.');
-				error.fieldErrors = data.errors || null;
-				error.status = response.status;
-				throw error;
-			}
-			return data;
+		mutationFn: async ({ action, files }) => {
+			const csrfToken = getCSRFToken() ?? '';
+
+			const results = await Promise.all(
+				files.map(async (file) => {
+					const body = buildEditFormData({
+						metadata: file.metadata,
+						posterFile: file.posterFile,
+						action,
+						csrfToken,
+					});
+					try {
+						const response = await fetch(getMediaEditUrl(file.friendlyToken), {
+							method: 'POST',
+							body,
+							credentials: 'same-origin',
+							headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken },
+						});
+						const data = await response.json().catch(() => null);
+						if (response.ok && data?.success) {
+							return { id: file.id, token: file.friendlyToken, ok: true, url: data.url };
+						}
+						return {
+							id: file.id,
+							token: file.friendlyToken,
+							ok: false,
+							fieldErrors: data?.errors || null,
+							message: data?.detail || 'Submission failed.',
+						};
+					} catch {
+						return {
+							id: file.id,
+							token: file.friendlyToken,
+							ok: false,
+							fieldErrors: null,
+							message: 'Network error. Please try again.',
+						};
+					}
+				})
+			);
+
+			return {
+				results,
+				succeeded: results.filter((result) => result.ok),
+				failed: results.filter((result) => !result.ok),
+			};
 		},
 	});
 }

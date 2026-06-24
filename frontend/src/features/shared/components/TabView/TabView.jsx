@@ -182,7 +182,7 @@ function TabViewTrigger({ children, value, disabled = false, className = '', tri
 	);
 }
 
-function TabViewPanel({ item, className = '', isActive = true, keepMounted = false }) {
+function TabViewPanel({ item, className = '', isActive = true, keepMounted = false, hideTabList = false }) {
 	const { getPanelId, getTabId, selectedValue } = useTabViewContext('TabViewPanel');
 
 	const resolvedIsActive = isActive && selectedValue === item?.value;
@@ -195,7 +195,9 @@ function TabViewPanel({ item, className = '', isActive = true, keepMounted = fal
 		<div
 			role="tabpanel"
 			id={getPanelId(item.value)}
-			aria-labelledby={getTabId(item.value)}
+			// When the tab list is hidden the labelling tab isn't in the DOM, so omit
+			// the dangling aria-labelledby reference.
+			aria-labelledby={hideTabList ? undefined : getTabId(item.value)}
 			hidden={!resolvedIsActive}
 			className={cn('mt-4 w-full', className, item.panelClassName)}
 		>
@@ -224,6 +226,7 @@ export function TabView({
 	listClassName = '',
 	triggerClassName = '',
 	panelClassName = '',
+	hideTabList = false,
 	tabMode = 'fill',
 	triggerColor,
 	triggerSelectedColor,
@@ -293,13 +296,15 @@ export function TabView({
 	return (
 		<TabViewContext.Provider value={contextValue}>
 			<div className={cn('w-full', className)}>
-				<TabViewList
-					items={tabs}
-					className={listClassName}
-					triggerClassName={triggerClassName}
-					triggerColor={triggerColor}
-					triggerSelectedColor={triggerSelectedColor}
-				/>
+				{hideTabList ? null : (
+					<TabViewList
+						items={tabs}
+						className={listClassName}
+						triggerClassName={triggerClassName}
+						triggerColor={triggerColor}
+						triggerSelectedColor={triggerSelectedColor}
+					/>
+				)}
 				{keepMounted ? (
 					tabs.map((tab) => (
 						<TabViewPanel
@@ -307,11 +312,12 @@ export function TabView({
 							item={tab}
 							className={panelClassName}
 							isActive={tab.value === selectedValue}
+							hideTabList={hideTabList}
 							keepMounted
 						/>
 					))
 				) : (
-					<TabViewPanel item={selectedItem} className={panelClassName} />
+					<TabViewPanel item={selectedItem} className={panelClassName} hideTabList={hideTabList} />
 				)}
 			</div>
 		</TabViewContext.Provider>

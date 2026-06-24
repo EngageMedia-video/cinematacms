@@ -130,7 +130,7 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 				<legend className="body-body-16-regular mb-2 text-text-muted">Stream Protection</legend>
 
 				<div className="flex flex-row items-start gap-2">
-					<CheckboxButton name="is_encrypted" className="mt-0.5" defaultChecked />
+					<CheckboxButton name="is_encrypted" className="mt-0.5" aria-label="Encrypt this video’s stream" />
 
 					<div className="flex flex-col gap-2">
 						<Text className="m-0" variant="body-16">

@@ -14,6 +14,7 @@ export function UploadFileRow({ file }) {
 	return (
 		<li>
 			<UploadMediaItem
+				className="p-3 sm:p-4"
 				title={name}
 				fileSize={sizeBytes}
 				status={uploadStatus}

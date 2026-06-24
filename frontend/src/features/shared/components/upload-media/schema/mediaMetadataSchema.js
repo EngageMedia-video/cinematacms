@@ -37,30 +37,35 @@ export function validateMetadata(metadata = {}) {
 	const currentYear = new Date().getFullYear();
 
 	if (isBlank(metadata.summary)) {
-		errors.summary = 'Synopsis is required.';
+		errors.summary = 'This field is required';
 	} else if (countSynopsisWords(metadata.summary) > SYNOPSIS_MAX_WORDS) {
 		errors.summary = `Synopsis should have ${SYNOPSIS_MAX_WORDS} words maximum.`;
 	}
 
-	if (isBlank(metadata.year_produced)) {
-		errors.year_produced = 'Please select a year.';
-	} else if (metadata.year_produced === 'other') {
-		const custom = Number(metadata.year_produced_custom);
-		if (!Number.isInteger(custom) || custom < 1900 || custom > currentYear) {
-			errors.year_produced_custom = `Please enter a year between 1900 and ${currentYear}.`;
-		}
+	// Year is chosen from a year picker spanning 1900..current. MediaForm accepts
+	// 2000..current directly and 1900..1999 via the "other"/custom path (handled in
+	// buildEditFormData), so the full range is valid here.
+	const year = String(metadata.year_produced ?? '').trim();
+	if (!year) {
+		errors.year_produced = 'This field is required';
+	} else if (!/^\d+$/.test(year) || Number(year) < 1900 || Number(year) > currentYear) {
+		errors.year_produced = `Enter a year between 1900 and ${currentYear}`;
 	}
 
 	if (!Array.isArray(metadata.category) || metadata.category.length === 0) {
-		errors.category = 'Please select at least one category.';
+		errors.category = 'Select at least one category';
+	}
+
+	if (!Array.isArray(metadata.topics) || metadata.topics.length === 0) {
+		errors.topics = 'Select at least one topic';
 	}
 
 	if (isBlank(metadata.media_country)) {
-		errors.media_country = 'Please select a country.';
+		errors.media_country = 'Select a media country';
 	}
 
 	if (isBlank(metadata.media_language)) {
-		errors.media_language = 'Please select a language.';
+		errors.media_language = 'Select a media language';
 	}
 
 	if (!isBlank(metadata.website) && !String(metadata.website).startsWith('https://')) {

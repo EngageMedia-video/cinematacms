@@ -57,7 +57,13 @@ export function useBulkUpload() {
 				},
 				onProgress(id, name, uploadedBytes, totalBytes) {
 					const progress = totalBytes > 0 ? Math.round((uploadedBytes / totalBytes) * 100) : 0;
-					updateFile(id, { progress, uploadStatus: UPLOAD_STATUS.UPLOADING });
+					// Once all bytes are sent the uploader is combining chunks server-side;
+					// show "Processing..." (like single-upload) instead of a full progress bar
+					// until onComplete fires.
+					updateFile(id, {
+						progress,
+						uploadStatus: progress >= 100 ? UPLOAD_STATUS.PROCESSING : UPLOAD_STATUS.UPLOADING,
+					});
 				},
 				onComplete(id, name, response) {
 					if (response && response.success && response.media_url) {
