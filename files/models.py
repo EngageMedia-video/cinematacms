@@ -81,6 +81,10 @@ MEDIA_STATES = (
     ("restricted", "Restricted"),
     ("unlisted", "Unlisted"),
 )
+VISIBILITY_AFTER_EXPIRY_STATES = (
+    ("private", "Private"),
+    ("unlisted", "Unlisted"),
+)
 MEDIA_TYPES_SUPPORTED = (
     ("video", "Video"),
     ("image", "Image"),
@@ -260,6 +264,32 @@ class Media(models.Model):
         default=helpers.get_portal_workflow(),
         db_index=True,
     )
+    visibility_start_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="When the film becomes visible at its chosen Status. Stored in UTC. Blank = immediate.",
+    )
+    visibility_expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="When visibility ends and the film flips to the after-expiry state. Stored in UTC. Blank = never.",
+    )
+    visibility_after_expiry = models.CharField(
+        max_length=20,
+        choices=VISIBILITY_AFTER_EXPIRY_STATES,
+        null=True,
+        blank=True,
+        help_text="State the film flips to after the window ends.",
+    )
+    visibility_window_state = models.CharField(
+        max_length=20,
+        choices=MEDIA_STATES,
+        null=True,
+        blank=True,
+        help_text="Chosen Status to restore while the visibility window is active. Set automatically.",
+    )
     is_reviewed = models.BooleanField(
         "Reviewed",
         default=settings.MEDIA_IS_REVIEWED,
@@ -374,6 +404,16 @@ class Media(models.Model):
         self.__original_state = self.state
         self.__original_password = self.password
         self.__original_is_encrypted = self.is_encrypted
+
+    def expected_visibility_state(self, now=None):
+        """Return the state this media should have for its visibility window."""
+        if now is None:
+            now = timezone.now()
+        if self.visibility_start_date and now < self.visibility_start_date:
+            return "private"
+        if self.visibility_expires_at and now >= self.visibility_expires_at:
+            return self.visibility_after_expiry or "private"
+        return self.visibility_window_state or self.state
 
     def set_password(self, raw_password):
         """Hash and set the media password. Single entry point for password changes."""

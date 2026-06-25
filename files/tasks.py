@@ -18,8 +18,10 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files import File
+from django.db import transaction
 from django.db.models import F, Q
 from django.urls import reverse
+from django.utils import timezone
 
 from actions.models import USER_MEDIA_ACTIONS, MediaAction
 from users.models import User
@@ -1555,6 +1557,118 @@ def dispatch_deferred_encodings():
         _dispatch_deferred_encodings_inner()
     finally:
         cache.delete(lock_key)
+
+
+@task(name="apply_visibility_schedules", queue="short_tasks")
+def apply_visibility_schedules():
+    """Apply scheduled media visibility windows.
+
+    Uses a singleton cache lock so only one worker updates visibility at a time.
+    The lock value is a unique token so the finally block only deletes the lock
+    this invocation set, not one a newer worker may have already claimed.
+    """
+    import uuid
+
+    lock_key = "apply_visibility_schedules_lock"
+    lock_timeout = getattr(settings, "VISIBILITY_SCHEDULE_LOCK_TIMEOUT", 120)
+    lock_token = str(uuid.uuid4())
+
+    if not cache.add(lock_key, lock_token, lock_timeout):
+        logger.debug("Visibility schedule task skipped: another worker holds the lock")
+        return
+
+    try:
+        _apply_visibility_schedules_inner()
+    finally:
+        # Only release the lock if we still own it — guards against a slow run
+        # where the TTL expired and a new worker already claimed the key.
+        if cache.get(lock_key) == lock_token:
+            cache.delete(lock_key)
+
+
+def _apply_visibility_schedules_inner():
+    now = timezone.now()
+    # Load full rows (no .only()): the candidate set is small (only scheduled
+    # media), and deferring fields here is unsafe — Media.save() fires the
+    # track_featured_change pre_save signal which reads `featured`, and
+    # Media.__init__ reads `media_file`/`thumbnail_time`. If any of those are
+    # deferred, lazy-loading re-enters __init__ and recurses infinitely.
+    scheduled_media = Media.objects.filter(
+        Q(visibility_start_date__isnull=False) | Q(visibility_expires_at__isnull=False)
+    ).order_by("id")
+
+    transition_count = 0
+    # Collect tokens that transition to public so we can notify after all row
+    # locks are released — notify_users() sends email synchronously and must
+    # not run while a DB row lock and transaction are still open.
+    tokens_to_notify = []
+
+    for media in scheduled_media.iterator():
+        try:
+            went_public = False
+            with transaction.atomic():
+                # Re-fetch under a row lock so a concurrent user edit that arrived
+                # between the queryset evaluation and this point isn't overwritten.
+                try:
+                    media = Media.objects.select_for_update().get(pk=media.pk)
+                except Media.DoesNotExist:
+                    continue
+
+                expected = media.expected_visibility_state(now)
+                if media.state == expected:
+                    continue
+
+                logger.info(
+                    "Applying visibility schedule for media %s: %s -> %s",
+                    media.friendly_token,
+                    media.state,
+                    expected,
+                )
+                went_public = expected == "public"
+                media.state = expected
+                # Keep Media.save() from interpreting this state-only transition as a
+                # media-file or thumbnail-time edit and dispatching encoding work.
+                media._Media__original_media_file = media.media_file
+                media._Media__original_thumbnail_time = media.thumbnail_time
+
+                update_fields = ["state"]
+                # Once a schedule has fully settled (past expiry and now in the
+                # after-expiry state) clear the datetime fields so this row no
+                # longer appears in future scans and accumulates unnecessary locks.
+                if (
+                    media.visibility_expires_at
+                    and now >= media.visibility_expires_at
+                    and expected == (media.visibility_after_expiry or "private")
+                ):
+                    media.visibility_start_date = None
+                    media.visibility_expires_at = None
+                    media.visibility_after_expiry = None
+                    media.visibility_window_state = None
+                    update_fields += [
+                        "visibility_start_date",
+                        "visibility_expires_at",
+                        "visibility_after_expiry",
+                        "visibility_window_state",
+                    ]
+
+                media.save(update_fields=update_fields)
+
+            transition_count += 1
+            if went_public:
+                tokens_to_notify.append(media.friendly_token)
+        except Exception:
+            logger.exception("Failed to apply visibility schedule for media %s", getattr(media, "pk", "unknown"))
+
+    # Send publish notifications after all row locks are released so SMTP
+    # round-trips don't hold the DB transaction open.
+    for token in tokens_to_notify:
+        try:
+            notify_users(friendly_token=token, action="media_published")
+        except Exception:
+            logger.exception("Failed to send publish notification for media %s", token)
+
+    if transition_count:
+        logger.info("Applied %d visibility schedule transitions", transition_count)
 
 
 def _dispatch_deferred_encodings_inner():

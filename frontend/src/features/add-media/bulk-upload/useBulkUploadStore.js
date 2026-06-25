@@ -33,6 +33,9 @@ export function createDefaultMetadata() {
 		allow_download: true,
 		state: 'public',
 		password: '',
+		expireEnabled: false,
+		startDate: '',
+		endDate: '',
 		// Stream Protection (HLS encryption) is off by default, matching single-upload.
 		is_encrypted: false,
 		// Admin-only fields (shown only to admins); reported_times mirrors the

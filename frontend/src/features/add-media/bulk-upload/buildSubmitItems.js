@@ -58,6 +58,11 @@ export function buildEditFormData({ metadata = {}, posterFile = null, action = '
 		data.set('password', metadata.password);
 	}
 
+	if (metadata.expireEnabled) {
+		if (metadata.startDate) data.set('visibility_start', metadata.startDate);
+		if (metadata.endDate) data.set('visibility_end', metadata.endDate);
+	}
+
 	// Admin fields: reported_times is always sent (single sends a hidden 0 for
 	// non-admins; MediaForm drops it for non-editors), featured only when set.
 	data.set('reported_times', metadata.reported_times ?? '0');
