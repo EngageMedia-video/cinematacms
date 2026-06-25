@@ -37,6 +37,9 @@ export class AddMediaPage extends Page {
 		super(props, 'add-media');
 		this.config = getAddMediaConfig();
 		this.uploaderRef = React.createRef();
+		// The @container/page element; its width drives the bulk layout, so we watch
+		// it to gate bulk availability on the same threshold as the grid (@4xl/page).
+		this.pageRef = React.createRef();
 		this.uploader = null;
 		this.pendingReplaceId = null;
 		this.completedTokens = {};
@@ -76,13 +79,18 @@ export class AddMediaPage extends Page {
 			},
 		});
 
-		// Hide the Single/Bulk switcher on mobile + tablet (bulk needs the desktop
-		// layout); track the breakpoint so the tab is forced to single below it.
-		if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-			this.narrowQuery = window.matchMedia('(max-width: 1023px)');
-			this.handleNarrowChange = (event) => this.setState({ isNarrow: event.matches });
-			this.setState({ isNarrow: this.narrowQuery.matches });
-			this.narrowQuery.addEventListener('change', this.handleNarrowChange);
+		// Bulk needs the desktop grid, so gate it on the same threshold the layout
+		// uses (@4xl/page = 56rem container). Watch the @container/page width — not
+		// the viewport — so it stays in sync with the grid even when the app sidebar
+		// changes the available width. Guarded for non-browser/test environments.
+		if (typeof ResizeObserver !== 'undefined' && this.pageRef.current) {
+			const FOUR_XL_PX = 56 * 16; // @4xl/page container width (56rem)
+			this.pageObserver = new ResizeObserver((entries) => {
+				const width = entries[0]?.contentRect?.width ?? 0;
+				const narrow = width > 0 && width < FOUR_XL_PX;
+				this.setState((state) => (state.isNarrow === narrow ? null : { isNarrow: narrow }));
+			});
+			this.pageObserver.observe(this.pageRef.current);
 		}
 
 		this.lastBulkStep = 1;
@@ -183,7 +191,7 @@ export class AddMediaPage extends Page {
 			this.uploaderRef.current.removeEventListener('click', this.handleUploaderClick);
 		}
 		this.unsubscribeBulkStep?.();
-		this.narrowQuery?.removeEventListener('change', this.handleNarrowChange);
+		this.pageObserver?.disconnect();
 	}
 
 	getFileIdFromElement(element) {
@@ -557,7 +565,10 @@ export class AddMediaPage extends Page {
 
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
-				<main className="add-media-feature @container/page mx-4 py-8 text-text-primary sm:mx-6 lg:mx-10">
+				<main
+					ref={this.pageRef}
+					className="add-media-feature @container/page mx-4 py-8 text-text-primary sm:mx-6 lg:mx-10"
+				>
 					<div className="grid grid-cols-1 gap-8 @4xl/page:grid-cols-[220px_minmax(0,1fr)_340px] @4xl/page:items-start">
 						<header className="flex items-start justify-between gap-4 @4xl/page:col-start-2 @4xl/page:row-start-1">
 							<div className="w-full">
@@ -653,7 +664,7 @@ export class AddMediaPage extends Page {
 							{!isBulk && uploadedMedia ? (
 								<QuickPreview
 									title={singlePreview.title}
-									subtitle={this.config.userName}
+									subtitle={this.config.userName || ''}
 									country={singlePreview.country}
 									category={singlePreview.category}
 									thumbnailUrl={singlePreview.thumbnailUrl}
