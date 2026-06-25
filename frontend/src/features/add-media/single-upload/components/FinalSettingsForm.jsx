@@ -55,14 +55,6 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 					Allow Download
 				</CheckboxButton>
 
-				<CheckboxButton
-					name="is_encrypted"
-					checked={singleUpload.isEncrypted}
-					onChange={(event) => singleUpload.setIsEncrypted(event.target.checked)}
-				>
-					Encrypt this video&rsquo;s stream
-				</CheckboxButton>
-
 				<div className="my-4 border-b border-b-border-divider" />
 
 				<fieldset className="m-0 border-0 p-0">
@@ -138,6 +130,29 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 				) : null}
 
 				<div className="my-4 border-b border-b-border-divider" />
+
+				<div>
+					<span className="body-body-16-regular mb-2 block text-text-muted">Stream Protection</span>
+					<div className="flex flex-row items-start gap-2">
+						<CheckboxButton
+							name="is_encrypted"
+							className="mt-0.5"
+							aria-label="Encrypt this video&rsquo;s stream"
+							checked={singleUpload.isEncrypted}
+							onChange={(event) => singleUpload.setIsEncrypted(event.target.checked)}
+						/>
+						<div className="flex flex-col gap-2">
+							<Text className="m-0" variant="body-16">
+								Encrypt this video&rsquo;s stream
+							</Text>
+							<Text className="m-0" variant="body-12">
+								Adds an extra layer of protection so only authorized viewers can watch this film. If your
+								video has already been processed, enabling this will trigger a re-encoding, which may take
+								a few minutes.
+							</Text>
+						</div>
+					</div>
+				</div>
 			</div>
 		</FieldGroup>
 	);

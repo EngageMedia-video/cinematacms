@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useTaxonomies } from '../../shared/components/upload-media';
-import { Card, Icon } from '../../shared/components';
+import { Card, Icon, TextAlert } from '../../shared/components';
 import { MediaDropzone } from '../../shared/components/MediaDropzone';
 import { Text } from '../../shared/components/Text';
 import { MediaDetailsForm } from './components/MediaDetailsForm';
 import singleUploadQueryClient from './queryClient';
+import { AlertOwnershipMedia } from './components/AlertOwnershipMedia';
 
-// Language/country use codes; the M2M taxonomies use ids. Mirrors the bulk-upload
-// field mapping so both flows submit exactly what MediaForm expects.
 function toCodeOptions(items = []) {
 	return items.map((item) => ({ value: item.code, label: item.title }));
 }
@@ -117,6 +116,8 @@ function SingleUploadContent({
 					)}
 				</section>
 			</Card>
+
+			{!showUploader && <AlertOwnershipMedia className="mt-8" />}
 
 			{hasUploadedMedia ? (
 				<MediaDetailsForm

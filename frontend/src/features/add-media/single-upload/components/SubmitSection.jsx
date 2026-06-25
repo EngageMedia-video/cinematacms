@@ -1,6 +1,7 @@
-import { ConfirmationDialogContent, Dialog, TextAlert } from '../../../shared/components';
+import { ConfirmationDialogContent, Dialog } from '../../../shared/components';
 import { Button } from '../../../shared/components/Button';
 import { Text } from '../../../shared/components/Text';
+import { AlertOwnershipMedia } from './AlertOwnershipMedia';
 
 export function SubmitSection({
 	onSaveDraft,
@@ -12,10 +13,7 @@ export function SubmitSection({
 }) {
 	return (
 		<>
-			<TextAlert>
-				Uploading to Cinemata does not transfer ownership. <br />
-				You keep full rights and control over how your film is shared.
-			</TextAlert>
+			<AlertOwnershipMedia />
 
 			{singleUpload.submitError || Object.keys(singleUpload.errors).length > 0 ? (
 				<div

@@ -4,6 +4,7 @@ import { CheckboxButton } from '../../../shared/components/CheckboxButton';
 import { CheckboxGroup } from '../../../shared/components/CheckboxGroup';
 import { Text } from '../../../shared/components/Text';
 import { TextField } from '../../../shared/components/TextField';
+import { pattern } from '../../../shared/utils/validators';
 import { FieldGroup } from './FieldGroup';
 
 const DEFAULT_LICENSES = [];
@@ -218,6 +219,7 @@ export function OtherDetailsForm({
 				onChange={(event) => singleUpload.setWebsite(event.target.value)}
 				helperText={singleUpload.errors.website}
 				invalid={!!singleUpload.errors.website}
+				validate={[pattern(/^https:\/\//, 'Website should start with https://')]}
 			/>
 
 			<Dropdown

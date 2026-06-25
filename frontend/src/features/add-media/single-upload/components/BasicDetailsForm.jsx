@@ -17,11 +17,13 @@ export function BasicDetailsForm({ singleUpload }) {
 				id="title"
 				name="title"
 				label="Title"
+				required
 				placeholder="Write here..."
 				value={singleUpload.title}
 				onChange={(event) => singleUpload.setTitle(event.target.value)}
 				helperText={errors.title}
 				invalid={!!errors.title}
+				validate={[required()]}
 			/>
 
 			<EditorField
@@ -34,7 +36,7 @@ export function BasicDetailsForm({ singleUpload }) {
 				enableCounter
 				maxWordsLength={80}
 				value={singleUpload.summary}
-				onChange={singleUpload.setSummary}
+				onChange={(event) => singleUpload.setSummary(event.target.value)}
 				helperText={errors.summary || 'Maximum 80 Words'}
 				invalid={!!errors.summary}
 				validate={[required(), maxWords(80)]}
@@ -47,7 +49,7 @@ export function BasicDetailsForm({ singleUpload }) {
 				label="More Information and Credits"
 				placeholder="Write here..."
 				value={singleUpload.description}
-				onChange={singleUpload.setDescription}
+				onChange={(event) => singleUpload.setDescription(event.target.value)}
 				helperText={errors.description}
 				invalid={!!errors.description}
 			/>

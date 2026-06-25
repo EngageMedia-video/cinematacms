@@ -30,7 +30,6 @@ export function MediaDetailsForm({
 
 	useEffect(() => singleUpload.reset, [singleUpload.reset]);
 
-	// Reflect a chosen thumbnail in the live Quick Preview right away.
 	const selectedThumbnailFile = singleUpload.selectedThumbnailFile;
 	useEffect(() => {
 		if (

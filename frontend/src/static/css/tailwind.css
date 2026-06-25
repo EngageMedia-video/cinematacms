@@ -1251,6 +1251,7 @@ body.dark_theme {
 	--color-text-panel-heading: var(--text-panel-heading);
 	--color-text-control-checked: var(--text-control-checked);
 	--color-text-tab-trigger: var(--text-tab-trigger);
+	--color-text-title-required: var(--cinemata-red-400);
 
 	/* Borders */
 	--color-border-default: var(--border-default);

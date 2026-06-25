@@ -588,10 +588,17 @@ export class AddMediaPage extends Page {
 						    form and never bleeds into the Quick Preview column; the stepper
 						    rail (left) lines up with its top. */}
 						<header className="flex items-start justify-between gap-4 @4xl/page:col-start-2 @4xl/page:row-start-1">
-							<div className="min-w-0">
-								<Text variant="h4" as="h1" className="m-0 text-text-strong">
-									{headerTitle}
-								</Text>
+							<div className="w-full">
+								<div className="flex flex-row items-center">
+									<Text variant="h4" as="h1" className="m-0 text-text-strong flex-1">
+										{headerTitle}
+									</Text>
+
+									<span className="body-body-12-regular shrink-0 text-text-title-required">
+										* Required
+									</span>
+								</div>
+
 								<Text variant="body-16" color="description" className="m-0 mt-4 max-w-[720px]">
 									Please check our&nbsp;
 									<a
@@ -605,7 +612,6 @@ export class AddMediaPage extends Page {
 									Any media that does not comply with the policy will be deleted from Cinemata.org.
 								</Text>
 							</div>
-							<span className="body-body-12-regular shrink-0 text-text-accent">* Required</span>
 						</header>
 
 						{/* Left rail — the bulk wizard stepper; spans from the header row so it
