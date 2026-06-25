@@ -58,6 +58,9 @@ export class AddMediaPage extends Page {
 	}
 
 	componentDidMount() {
+		// Build the bulk config now that context is settled. Set once and never
+		// rebuilt, so the reference stays stable across re-renders — recreating it
+		// would re-run useBulkUpload's effect and cancel an in-progress upload.
 		this.setState({
 			bulkConfig: {
 				isTrustedUser: !!this.config.isTrustedUser,
@@ -137,6 +140,9 @@ export class AddMediaPage extends Page {
 					console.warn(window.qq.format('Error on file number {} - {}.  Reason: {}', id, name, errorReason));
 				},
 				onCancel: () => {
+					// FineUploader's built-in cancel button removes the item element after
+					// this callback returns, so defer the state sync to the next tick. When
+					// the list empties, reset hasSelectedMedia so the dropzone reappears.
 					window.setTimeout(() => this.syncUploaderState(), 0);
 				},
 				onComplete: (id, _name, response) => {
@@ -458,6 +464,8 @@ export class AddMediaPage extends Page {
 			return;
 		}
 
+		// Guard against out-of-order responses: only the most recently requested
+		// token may write the preview, so a slow earlier fetch can't clobber it.
 		this.latestPreviewToken = friendlyToken;
 
 		fetch(`${mediaApiUrl}/${friendlyToken}`, { credentials: 'same-origin' })
