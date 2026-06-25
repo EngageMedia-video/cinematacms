@@ -84,7 +84,8 @@ export class AddMediaPage extends Page {
 		// the viewport — so it stays in sync with the grid even when the app sidebar
 		// changes the available width. Guarded for non-browser/test environments.
 		if (typeof ResizeObserver !== 'undefined' && this.pageRef.current) {
-			const FOUR_XL_PX = 56 * 16; // @4xl/page container width (56rem)
+			// Keep in sync with Tailwind's @4xl/page container breakpoint.
+			const FOUR_XL_PX = 56 * 16;
 			this.pageObserver = new ResizeObserver((entries) => {
 				const width = entries[0]?.contentRect?.width ?? 0;
 				const narrow = width > 0 && width < FOUR_XL_PX;
