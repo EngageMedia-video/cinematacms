@@ -1,5 +1,16 @@
 import { create } from 'zustand';
 
+// Drops a single field error so live validation can take over after submit.
+function withoutError(errors, field) {
+	if (!(field in errors)) {
+		return errors;
+	}
+
+	const next = { ...errors };
+	delete next[field];
+	return next;
+}
+
 export function createDefaultSingleUploadState() {
 	return {
 		// Basic details
@@ -56,19 +67,22 @@ const useSingleUploadStore = create((set) => ({
 	...createDefaultSingleUploadState(),
 
 	// Basic details
-	setTitle: (title) => set({ title }),
-	setSummary: (summary) => set({ summary }),
+	setTitle: (title) => set((state) => ({ title, errors: withoutError(state.errors, 'title') })),
+	setSummary: (summary) => set((state) => ({ summary, errors: withoutError(state.errors, 'summary') })),
 	setDescription: (description) => set({ description }),
-	setYearProduced: (yearProduced) => set({ yearProduced }),
+	setYearProduced: (yearProduced) =>
+		set((state) => ({ yearProduced, errors: withoutError(state.errors, 'year_produced') })),
 
 	// Other details
 	setCompany: (company) => set({ company }),
-	setWebsite: (website) => set({ website }),
-	setMediaLanguage: (mediaLanguage) => set({ mediaLanguage }),
-	setMediaCountry: (mediaCountry) => set({ mediaCountry }),
-	setCategory: (category) => set({ category }),
+	setWebsite: (website) => set((state) => ({ website, errors: withoutError(state.errors, 'website') })),
+	setMediaLanguage: (mediaLanguage) =>
+		set((state) => ({ mediaLanguage, errors: withoutError(state.errors, 'media_language') })),
+	setMediaCountry: (mediaCountry) =>
+		set((state) => ({ mediaCountry, errors: withoutError(state.errors, 'media_country') })),
+	setCategory: (category) => set((state) => ({ category, errors: withoutError(state.errors, 'category') })),
 	setContentSensitivity: (contentSensitivity) => set({ contentSensitivity }),
-	setTopics: (topics) => set({ topics }),
+	setTopics: (topics) => set((state) => ({ topics, errors: withoutError(state.errors, 'topics') })),
 	setTags: (tags) => set({ tags }),
 
 	// License
@@ -91,7 +105,7 @@ const useSingleUploadStore = create((set) => ({
 	setIsEncrypted: (isEncrypted) => set({ isEncrypted }),
 	setMediaStatus: (mediaStatus) =>
 		set((state) => ({ mediaStatus, password: mediaStatus === 'restricted' ? state.password : '' })),
-	setPassword: (password) => set({ password }),
+	setPassword: (password) => set((state) => ({ password, errors: withoutError(state.errors, 'password') })),
 	setExpireEnabled: (expireEnabled) =>
 		set(expireEnabled ? { expireEnabled } : { expireEnabled, startDate: '', endDate: '' }),
 	setStartDate: (startDate) => set({ startDate }),

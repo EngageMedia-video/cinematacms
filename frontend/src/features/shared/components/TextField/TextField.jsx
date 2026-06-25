@@ -188,11 +188,9 @@ export function TextField({
 							if (value === undefined) {
 								setHasValue(hasTextValue(event.target.value));
 							}
-							// Re-run validators live only once an error is already showing,
-							// so the message clears/updates as the user fixes the field.
-							if (validationError) {
-								setValidationError(runValidators(validate, event.target.value));
-							}
+							// Validate live on every keystroke, but only after the user
+							// has started typing in this field.
+							setValidationError(runValidators(validate, event.target.value));
 							onChange?.(event);
 						}}
 						className={cn(

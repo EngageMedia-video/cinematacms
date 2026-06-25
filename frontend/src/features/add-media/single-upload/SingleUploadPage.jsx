@@ -1,27 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useTaxonomies } from '../../shared/components/upload-media';
-import { Card, Icon, TextAlert } from '../../shared/components';
+import { Card, Icon } from '../../shared/components';
 import { MediaDropzone } from '../../shared/components/MediaDropzone';
 import { Text } from '../../shared/components/Text';
 import { MediaDetailsForm } from './components/MediaDetailsForm';
 import singleUploadQueryClient from './queryClient';
 import { AlertOwnershipMedia } from './components/AlertOwnershipMedia';
-
-function toCodeOptions(items = []) {
-	return items.map((item) => ({ value: item.code, label: item.title }));
-}
-
-function toIdOptions(items = []) {
-	return items.map((item) => ({ value: item.id, label: item.title }));
-}
-
-const EMPTY_PREVIEW = { title: '', company: '', media_country: '', category: '' };
-
-function findLabel(options = [], value) {
-	const option = options.find((item) => String(item.value ?? item.code) === String(value));
-	return option?.label || option?.title || '';
-}
+import { EMPTY_PREVIEW, findLabel, toCodeOptions, toIdOptions } from '../utils/helpers';
 
 function SingleUploadContent({
 	accept = 'video/*',
@@ -39,6 +25,7 @@ function SingleUploadContent({
 }) {
 	const { options } = useTaxonomies();
 
+	// Form Options
 	const mediaLanguages = useMemo(() => toCodeOptions(options.languages), [options.languages]);
 	const mediaCountries = useMemo(() => toCodeOptions(options.countries), [options.countries]);
 	const categories = useMemo(() => toIdOptions(options.categories), [options.categories]);
@@ -49,14 +36,10 @@ function SingleUploadContent({
 	);
 	const licenses = options.licenses;
 
-	// Raw values reported by the (uncontrolled) form, resolved to display labels
-	// and pushed up so the host can render the Quick Preview in its shared slot.
+	// Preview
 	const [preview, setPreview] = useState(EMPTY_PREVIEW);
 	const countryLabel = findLabel(mediaCountries, preview.media_country);
 	const categoryLabel = findLabel(categories, preview.category);
-
-	// Stable so the form's thumbnail effect (which creates/revokes an object URL on
-	// change) doesn't re-run every render and revoke the preview blob early.
 	const handleFormPreviewChange = useCallback((partial) => setPreview((prev) => ({ ...prev, ...partial })), []);
 
 	useEffect(() => {
@@ -66,11 +49,11 @@ function SingleUploadContent({
 			country: countryLabel,
 			category: categoryLabel ? { title: categoryLabel } : null,
 		};
-		// Only forward a chosen-thumbnail preview when one exists, so it doesn't wipe
-		// the uploaded media's auto thumbnail that the host fetched on upload.
+
 		if (preview.thumbnailUrl) {
 			next.thumbnailUrl = preview.thumbnailUrl;
 		}
+
 		onPreviewChange?.(next);
 	}, [onPreviewChange, preview.title, preview.company, countryLabel, categoryLabel, preview.thumbnailUrl]);
 
@@ -89,8 +72,6 @@ function SingleUploadContent({
 					<div className="my-4 border-b border-b-border-divider" />
 
 					{externalMedia ? (
-						/* A file moved here from the bulk tab — already uploaded, so show a
-						   "ready" row instead of the dropzone/uploader (no re-upload). */
 						<div className="flex items-center gap-3 rounded-ds-4 bg-bg-surface-muted px-4 py-3">
 							<Icon name="check" size={20} decorative className="text-text-success" />
 							<span className="body-body-14-medium text-text-strong">

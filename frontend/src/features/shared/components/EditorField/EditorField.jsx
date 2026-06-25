@@ -293,11 +293,9 @@ export function EditorField({
 						if (value === undefined) {
 							setHasValue(hasTextValue(nextValue));
 						}
-						// Re-run validators live only once an error is already showing,
-						// so the message clears/updates as the user fixes the field.
-						if (validationError) {
-							setValidationError(runValidators(validate, nextValue));
-						}
+						// Validate live on every keystroke, but only after the user
+						// has started typing in this field.
+						setValidationError(runValidators(validate, nextValue));
 						onChange?.(event);
 					}}
 					className={cn(

@@ -1,3 +1,18 @@
+export const EMPTY_PREVIEW = { title: '', company: '', media_country: '', category: '' };
+
+export function findLabel(options = [], value) {
+	const option = options.find((item) => String(item.value ?? item.code) === String(value));
+	return option?.label || option?.title || '';
+}
+
+export function toCodeOptions(items = []) {
+	return items.map((item) => ({ value: item.code, label: item.title }));
+}
+
+export function toIdOptions(items = []) {
+	return items.map((item) => ({ value: item.id, label: item.title }));
+}
+
 export function getAddMediaConfig() {
 	return (window.MediaCMS && window.MediaCMS.addMediaPage) || {};
 }
