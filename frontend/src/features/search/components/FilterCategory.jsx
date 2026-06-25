@@ -24,8 +24,6 @@ export function FilterCategory({
 	const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 	const selected = new Set(normalizeSelectedValues(selectedValues));
 	const Control = selectMode === 'single' ? RadioButton : CheckboxButton;
-	const controlProps = selectMode === 'single' ? {} : { iconName: 'check' };
-
 	function handleChange(value) {
 		if (selectMode === 'single') {
 			onChange?.(value, true);
@@ -74,7 +72,6 @@ export function FilterCategory({
 								value={option.value}
 								checked={selected.has(option.value)}
 								onChange={() => handleChange(option.value)}
-								{...controlProps}
 								className="w-full items-start"
 								controlClassName={cn(
 									'bg-bg-control-unchecked ',
