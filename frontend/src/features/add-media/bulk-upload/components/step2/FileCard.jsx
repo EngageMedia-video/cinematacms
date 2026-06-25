@@ -140,7 +140,6 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 					) : null}
 					{subStep === 'thumbnail' ? (
 						<ThumbnailUploadField
-							currentThumbnailTime={file.thumbnailTime ?? ''}
 							friendlyToken={file.friendlyToken ?? ''}
 							onFrameSelect={(seconds, frame) => setThumbnailTime(file.id, seconds, frame)}
 							posterFile={file.posterFile}

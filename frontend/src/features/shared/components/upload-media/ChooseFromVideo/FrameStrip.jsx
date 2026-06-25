@@ -57,7 +57,7 @@ export function FrameStrip({
 
 	function selectFrame(frame) {
 		setSelectedIndex(frame.index);
-		const selectedFrameData = { ...frame, rowsInSheet };
+		const selectedFrameData = { ...frame, rowsInSheet, spritesUrl };
 
 		if (thumbnailInput) {
 			thumbnailInput.value = String(frame.seconds);

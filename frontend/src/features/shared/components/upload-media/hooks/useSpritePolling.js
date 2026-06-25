@@ -53,7 +53,7 @@ export function useSpritePolling({
 		duration: initialDuration || cachedMediaData?.duration || '',
 		posterUrl: initialPosterUrl || cachedMediaData?.posterUrl || '',
 		spritesUrl: initialSpritesUrl || cachedMediaData?.spritesUrl || '',
-		thumbnailTime: resolveThumbnailTime(initialThumbnailTime, cachedMediaData?.thumbnailTime || ''),
+		thumbnailTime: resolveThumbnailTime(initialThumbnailTime, cachedMediaData?.thumbnailTime ?? ''),
 		spriteNumSecs: initialSpriteNumSecs || cachedMediaData?.spriteNumSecs || '',
 	});
 	const [status, setStatus] = useState(initialSpritesUrl || cachedMediaData?.spritesUrl ? 'ready' : 'idle');
@@ -77,7 +77,7 @@ export function useSpritePolling({
 					: initialSpritesUrl || current.spritesUrl || cached?.spritesUrl || '',
 				thumbnailTime: resolveThumbnailTime(
 					initialThumbnailTime,
-					tokenChanged ? cached?.thumbnailTime || '' : current.thumbnailTime
+					tokenChanged ? (cached?.thumbnailTime ?? '') : current.thumbnailTime
 				),
 				spriteNumSecs: tokenChanged
 					? initialSpriteNumSecs || cached?.spriteNumSecs || ''

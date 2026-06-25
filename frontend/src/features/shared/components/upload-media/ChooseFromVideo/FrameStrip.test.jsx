@@ -22,6 +22,8 @@ class MockImage {
 describe('FrameStrip', () => {
 	const OriginalImage = global.Image;
 
+	const originalScrollIntoView = Element.prototype.scrollIntoView;
+
 	beforeEach(() => {
 		MockImage.instances = [];
 		global.Image = MockImage;
@@ -30,6 +32,7 @@ describe('FrameStrip', () => {
 
 	afterEach(() => {
 		global.Image = OriginalImage;
+		Element.prototype.scrollIntoView = originalScrollIntoView;
 	});
 
 	it('writes the selected frame seconds into the hidden thumbnail input', async () => {
