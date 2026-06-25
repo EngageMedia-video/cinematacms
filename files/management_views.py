@@ -24,7 +24,6 @@ from .models import (
     get_language_choices,
 )
 from .permissions import (
-    IsBulkUploadUser,
     IsFilmImpactManager,
     IsManageUploadsUser,
     IsMediacmsEditor,
