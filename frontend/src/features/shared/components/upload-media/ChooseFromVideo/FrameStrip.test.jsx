@@ -70,7 +70,7 @@ describe('FrameStrip', () => {
 		});
 
 		await waitFor(() => {
-			expect(screen.getByText(/Please hang tight when the video loads/i)).toBeInTheDocument();
+			expect(screen.getByText(/Frame preview is unavailable for this video/i)).toBeInTheDocument();
 		});
 	});
 });
