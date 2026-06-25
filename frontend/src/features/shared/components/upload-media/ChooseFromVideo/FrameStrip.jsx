@@ -8,12 +8,12 @@ function nearestFrameIndex(frames, currentSeconds, spriteSecs) {
 		return 0;
 	}
 
-	const index = Math.floor((Number(currentSeconds) || 0) / (Number(spriteSecs) || 10));
+	const index = Math.round((Number(currentSeconds) || 0) / (Number(spriteSecs) || 10));
 	return Math.max(0, Math.min(index, frames.length - 1));
 }
 
-function placeholderMessage() {
-	return 'Please hang tight when the video loads...';
+function placeholderMessage(unavailable) {
+	return unavailable ? 'Frame preview is unavailable for this video.' : 'Please hang tight when the video loads...';
 }
 
 export function FrameStrip({
@@ -74,7 +74,7 @@ export function FrameStrip({
 	}
 
 	const showPlaceholder = unavailable || pending || status !== 'ready' || frames.length === 0;
-	const message = placeholderMessage();
+	const message = placeholderMessage(unavailable);
 
 	return (
 		<div className="flex min-w-0 max-w-full flex-col gap-space-base overflow-hidden">

@@ -11,6 +11,7 @@ export function useSubmitSingle() {
 			body.set('action', action);
 
 			body.delete('uploaded_poster');
+			body.delete('thumbnail_time');
 			if (thumbnailFile) {
 				body.set('uploaded_poster', thumbnailFile);
 			} else if (thumbnailTime != null) {

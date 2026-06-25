@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { config as mediacmsConfig } from '../../../../../static/js/mediacms/config.js';
 import { apiFetch } from '../../../utils/api';
 
 const DEFAULT_MAX_ATTEMPTS = 12;
@@ -28,7 +29,13 @@ function buildMediaApiUrl(friendlyToken) {
 		return '';
 	}
 
-	return `/api/v1/media/${encodeURIComponent(friendlyToken)}`;
+	let base = '/api/v1/media';
+	try {
+		base = mediacmsConfig(window.MediaCMS).api.media || base;
+	} catch (_e) {
+		// window.MediaCMS not yet initialised (e.g. test environment); use default.
+	}
+	return `${base}/${encodeURIComponent(friendlyToken)}`;
 }
 
 export function useSpritePolling({

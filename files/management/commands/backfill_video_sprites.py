@@ -79,9 +79,9 @@ class Command(BaseCommand):
             "--include-unencoded",
             action="store_true",
             help=(
-                "Also target videos that have not finished encoding "
-                "(encoding_status != 'success'). Off by default so the backfill never "
-                "races a video whose normal post-encoding sprite step has not run yet."
+                "Also target videos still in 'pending' encoding state. "
+                "Off by default so the backfill does not race fresh uploads "
+                "whose normal post-encoding sprite step has not run yet."
             ),
         )
 
@@ -107,14 +107,16 @@ class Command(BaseCommand):
         if user_id:
             queryset = queryset.filter(user_id=user_id)
 
-        # Primary race guard: only touch videos that finished encoding. Sprite
-        # generation normally runs post-encoding, so a non-"success" video either
-        # hasn't reached that step yet or failed encoding (no usable source) —
-        # backfilling it would either duplicate pending work or fail anyway.
+        # Race guard: skip videos that are still being encoded so the backfill
+        # doesn't race the normal post-encoding sprite step. Once the age floor
+        # passes the upload is old enough that any in-progress encoding has
+        # either finished or failed — at that point a usable media_file and
+        # duration are the only real prerequisites (checked per-row below).
         if not options["include_unencoded"]:
-            queryset = queryset.filter(encoding_status="success")
+            queryset = queryset.exclude(encoding_status="pending")
 
-        # Belt-and-suspenders time floor on top of the encoding_status guard.
+        # Time floor keeps us clear of uploads that haven't had time to finish
+        # their encoding + sprite pipeline yet.
         if min_age_minutes:
             queryset = queryset.filter(add_date__lte=timezone.now() - timedelta(minutes=min_age_minutes))
 

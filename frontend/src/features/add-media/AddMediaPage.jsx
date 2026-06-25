@@ -507,7 +507,12 @@ export class AddMediaPage extends Page {
 				const thumbnailUrl = data && (data.thumbnail_url || data.poster_url);
 				if (thumbnailUrl) {
 					this.setState((state) => ({
-						singlePreview: { ...state.singlePreview, thumbnailUrl, thumbnailFrame: null },
+						singlePreview: {
+							...state.singlePreview,
+							thumbnailUrl: state.singlePreview.thumbnailFrame
+								? state.singlePreview.thumbnailUrl
+								: thumbnailUrl,
+						},
 					}));
 				}
 			})
