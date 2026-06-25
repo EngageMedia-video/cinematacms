@@ -27,6 +27,7 @@ import useBulkUploadStore from '../../useBulkUploadStore';
 import { useBulkUploadConfig } from '../../bulkUploadConfig';
 import { useBulkUploadActions } from '../../BulkUploadActionsContext';
 import { formatFileSize } from '../../utils/formatSize';
+import { required } from '../../../../shared/utils/validators';
 
 function Divider() {
 	return <div className="my-4 border-b border-b-border-divider" />;
@@ -117,6 +118,7 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 							<TitleField
 								value={meta.title}
 								onChange={(value) => patch({ title: value })}
+								validate={[required()]}
 								error={errors.title}
 							/>
 							<SynopsisField

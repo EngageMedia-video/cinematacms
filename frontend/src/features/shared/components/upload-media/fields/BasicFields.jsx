@@ -7,14 +7,16 @@ import { SYNOPSIS_MAX_WORDS } from '../schema/mediaMetadataSchema';
 // identical: same labels, placeholders, widgets and helper text), driven by
 // per-file metadata so the bulk wizard can render one set per file.
 
-export function TitleField({ value = '', onChange, error = '' }) {
+export function TitleField({ value = '', onChange, error = '', validate }) {
 	return (
 		<TextField
 			className="w-full"
 			label="Title"
+			required
 			placeholder="Write here..."
 			value={value}
 			onChange={(event) => onChange?.(event.target.value)}
+			validate={validate}
 			invalid={Boolean(error)}
 			helperText={error}
 		/>

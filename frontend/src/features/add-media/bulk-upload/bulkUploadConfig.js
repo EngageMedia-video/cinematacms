@@ -15,6 +15,8 @@ export const BULK_UPLOAD_CONFIG_DEFAULTS = {
 	maxSizeBytes: 0,
 	allowedExtensions: [],
 	isTrustedUser: false,
+	// Logged-in user's full name, shown as the uploader in each file's Quick Preview.
+	userName: '',
 	// Admin-only "Admin Settings" section (Featured / Reported Times). Provided by
 	// the host add-media page; defaults off otherwise.
 	canUseAdminSettings: false,

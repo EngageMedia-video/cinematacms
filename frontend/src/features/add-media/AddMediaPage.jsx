@@ -37,6 +37,9 @@ export class AddMediaPage extends Page {
 		super(props, 'add-media');
 		this.config = getAddMediaConfig();
 		this.uploaderRef = React.createRef();
+		// The @container/page element; its width drives the bulk layout, so we watch
+		// it to gate bulk availability on the same threshold as the grid (@4xl/page).
+		this.pageRef = React.createRef();
 		this.uploader = null;
 		this.pendingReplaceId = null;
 		this.completedTokens = {};
@@ -54,6 +57,9 @@ export class AddMediaPage extends Page {
 			singlePreview: { ...EMPTY_SINGLE_PREVIEW },
 			bulkConfig: null,
 			bulkStep: 1,
+			// Bulk upload needs the desktop layout; below this the Single/Bulk switcher
+			// is hidden and only single upload is shown (mobile + tablet).
+			isNarrow: false,
 		};
 	}
 
@@ -68,9 +74,25 @@ export class AddMediaPage extends Page {
 				maxFiles: this.config.maxBulkFiles,
 				uploadEndpoint: this.config.uploadEndpoint || undefined,
 				chunksDoneParam: this.config.chunksDoneParam || undefined,
+				userName: this.config.userName || '',
 				onMoveSingle: this.moveBulkMediaToSingle,
 			},
 		});
+
+		// Bulk needs the desktop grid, so gate it on the same threshold the layout
+		// uses (@4xl/page = 56rem container). Watch the @container/page width — not
+		// the viewport — so it stays in sync with the grid even when the app sidebar
+		// changes the available width. Guarded for non-browser/test environments.
+		if (typeof ResizeObserver !== 'undefined' && this.pageRef.current) {
+			// Keep in sync with Tailwind's @4xl/page container breakpoint.
+			const FOUR_XL_PX = 56 * 16;
+			this.pageObserver = new ResizeObserver((entries) => {
+				const width = entries[0]?.contentRect?.width ?? 0;
+				const narrow = width > 0 && width < FOUR_XL_PX;
+				this.setState((state) => (state.isNarrow === narrow ? null : { isNarrow: narrow }));
+			});
+			this.pageObserver.observe(this.pageRef.current);
+		}
 
 		this.lastBulkStep = 1;
 		this.unsubscribeBulkStep = useBulkUploadStore.subscribe((state) => {
@@ -170,6 +192,7 @@ export class AddMediaPage extends Page {
 			this.uploaderRef.current.removeEventListener('click', this.handleUploaderClick);
 		}
 		this.unsubscribeBulkStep?.();
+		this.pageObserver?.disconnect();
 	}
 
 	getFileIdFromElement(element) {
@@ -516,6 +539,7 @@ export class AddMediaPage extends Page {
 			confirmTabSwitchOpen,
 			externalMedia,
 			hasSelectedMedia,
+			isNarrow,
 			pendingDeleteName,
 			pendingTab,
 			selectedTab,
@@ -525,9 +549,12 @@ export class AddMediaPage extends Page {
 
 		const pendingTabLabel = pendingTab === 'bulk-upload' ? 'Bulk Upload' : 'Single Film Upload';
 
-		const isBulk = selectedTab === 'bulk-upload';
+		// Bulk needs the desktop layout, so on mobile/tablet the switcher is hidden
+		// and the tab is forced to single.
+		const effectiveTab = isNarrow ? 'single-film-upload' : selectedTab;
+		const isBulk = effectiveTab === 'bulk-upload';
 		const bulkConfig = this.state.bulkConfig;
-		const tabsHidden = isBulk && bulkStep > 1;
+		const tabsHidden = isNarrow || (isBulk && bulkStep > 1);
 
 		const headerTitle = !isBulk
 			? 'Upload Media to Cinemata'
@@ -539,7 +566,10 @@ export class AddMediaPage extends Page {
 
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
-				<main className="add-media-feature @container/page mx-4 py-8 text-text-primary sm:mx-6 lg:mx-10">
+				<main
+					ref={this.pageRef}
+					className="add-media-feature @container/page mx-4 py-8 text-text-primary sm:mx-6 lg:mx-10"
+				>
 					<div className="grid grid-cols-1 gap-8 @4xl/page:grid-cols-[220px_minmax(0,1fr)_340px] @4xl/page:items-start">
 						<header className="flex items-start justify-between gap-4 @4xl/page:col-start-2 @4xl/page:row-start-1">
 							<div className="w-full">
@@ -588,7 +618,7 @@ export class AddMediaPage extends Page {
 								hideTabList={tabsHidden}
 								aria-label="Upload media type"
 								defaultSelectedTab="single-film-upload"
-								selectedTab={selectedTab}
+								selectedTab={effectiveTab}
 								onSelectedTabChange={this.handleTabChange}
 								className="add-media-tabs"
 								keepMounted
@@ -635,10 +665,11 @@ export class AddMediaPage extends Page {
 							{!isBulk && uploadedMedia ? (
 								<QuickPreview
 									title={singlePreview.title}
-									subtitle={singlePreview.company}
+									subtitle={this.config.userName || ''}
 									country={singlePreview.country}
 									category={singlePreview.category}
 									thumbnailUrl={singlePreview.thumbnailUrl}
+									views={0}
 									className="min-w-0"
 								/>
 							) : null}

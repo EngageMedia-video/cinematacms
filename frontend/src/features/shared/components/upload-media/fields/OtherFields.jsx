@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { pattern } from '../../../utils/validators';
 import { TextField } from '../../TextField';
 import { Dropdown } from '../../Dropdown';
 import { CheckboxButton } from '../../CheckboxButton';
@@ -38,6 +39,7 @@ export function WebsiteField({ value = '', onChange, error = '' }) {
 			placeholder="Write here..."
 			value={value}
 			onChange={(event) => onChange?.(event.target.value)}
+			validate={[pattern(/^https:\/\//, 'Website should start with https://')]}
 			invalid={Boolean(error)}
 			helperText={error}
 		/>

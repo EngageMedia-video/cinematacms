@@ -7,6 +7,7 @@ import {
 } from './mediaMetadataSchema';
 
 const validMetadata = {
+	title: 'My Film',
 	summary: 'A short synopsis.',
 	year_produced: '2021',
 	category: [1],
@@ -36,6 +37,7 @@ describe('validateMetadata', () => {
 
 	it('flags the required fields when empty', () => {
 		const errors = validateMetadata({});
+		expect(errors.title).toBeTruthy();
 		expect(errors.summary).toBeTruthy();
 		expect(errors.year_produced).toBeTruthy();
 		expect(errors.category).toBeTruthy();
