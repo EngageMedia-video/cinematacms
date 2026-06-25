@@ -4,6 +4,7 @@ import { CheckboxButton } from '../../../shared/components/CheckboxButton';
 import { CheckboxGroup } from '../../../shared/components/CheckboxGroup';
 import { Text } from '../../../shared/components/Text';
 import { TextField } from '../../../shared/components/TextField';
+import { pattern } from '../../../shared/utils/validators';
 import { FieldGroup } from './FieldGroup';
 
 const DEFAULT_LICENSES = [];
@@ -204,6 +205,8 @@ export function OtherDetailsForm({
 				name="company"
 				label="Production Company"
 				placeholder="Write here..."
+				value={singleUpload.company}
+				onChange={(event) => singleUpload.setCompany(event.target.value)}
 			/>
 
 			<TextField
@@ -212,8 +215,11 @@ export function OtherDetailsForm({
 				name="website"
 				label="Website"
 				placeholder="Write here..."
+				value={singleUpload.website}
+				onChange={(event) => singleUpload.setWebsite(event.target.value)}
 				helperText={singleUpload.errors.website}
 				invalid={!!singleUpload.errors.website}
+				validate={[pattern(/^https:\/\//, 'Website should start with https://')]}
 			/>
 
 			<Dropdown
@@ -223,6 +229,8 @@ export function OtherDetailsForm({
 				label="Media Language"
 				required
 				options={mediaLanguages}
+				value={singleUpload.mediaLanguage}
+				onChange={(value) => singleUpload.setMediaLanguage(value)}
 				invalid={!!singleUpload.errors.media_language}
 				helperText={singleUpload.errors.media_language}
 			/>
@@ -234,6 +242,8 @@ export function OtherDetailsForm({
 				label="Media Country"
 				required
 				options={mediaCountries}
+				value={singleUpload.mediaCountry}
+				onChange={(value) => singleUpload.setMediaCountry(value)}
 				invalid={!!singleUpload.errors.media_country}
 				helperText={singleUpload.errors.media_country}
 			/>
@@ -245,6 +255,8 @@ export function OtherDetailsForm({
 					name="category"
 					required
 					options={categories}
+					value={singleUpload.category}
+					onChange={singleUpload.setCategory}
 					error={singleUpload.errors.category}
 				/>
 
@@ -253,6 +265,8 @@ export function OtherDetailsForm({
 					label="Content Sensitivity"
 					name="content_sensitivity"
 					options={contentSensitivities}
+					value={singleUpload.contentSensitivity}
+					onChange={singleUpload.setContentSensitivity}
 				/>
 			</div>
 
@@ -261,7 +275,11 @@ export function OtherDetailsForm({
 					className="flex flex-col flex-1"
 					label="Topics"
 					name="topics"
+					required
 					options={topics}
+					value={singleUpload.topics}
+					onChange={singleUpload.setTopics}
+					error={singleUpload.errors.topics}
 					listClassName="grid grid-cols-1 md:grid-cols-3 max-h-50 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent [&::-webkit-scrollbar-thumb]:rounded-full"
 				/>
 			</div>
@@ -272,6 +290,8 @@ export function OtherDetailsForm({
 				name="new_tags"
 				label="Tags"
 				placeholder="Write here..."
+				value={singleUpload.tags}
+				onChange={(event) => singleUpload.setTags(event.target.value)}
 				helperText="Use a comma to separate multiple tags (eq. first,second)"
 			/>
 

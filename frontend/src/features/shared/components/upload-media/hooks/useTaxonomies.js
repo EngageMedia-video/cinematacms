@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../../../utils/api';
 
-const DEFAULT_OPTIONS_ENDPOINT = '/api/v1/my_uploads/bulk_options';
+const DEFAULT_OPTIONS_ENDPOINT = '/api/v1/my_uploads/upload_options';
 
 const EMPTY_OPTIONS = {
 	categories: [],

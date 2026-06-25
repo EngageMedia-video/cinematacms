@@ -39,8 +39,6 @@ export class AddMediaPage extends Page {
 		this.uploaderRef = React.createRef();
 		this.uploader = null;
 		this.pendingReplaceId = null;
-		// Maps FineUploader file id -> server friendly_token once the upload
-		// completes, so a later delete can remove the real Media object.
 		this.completedTokens = {};
 		this.state = {
 			confirmBulkUploadOpen: false,
@@ -52,18 +50,9 @@ export class AddMediaPage extends Page {
 			pendingDeleteName: '',
 			selectedTab: 'single-film-upload',
 			uploadedMedia: null,
-			// Set when a bulk file is moved into the single tab (one file left): the
-			// media is already uploaded, so single shows its edit form (no re-upload).
 			externalMedia: null,
-			// Live data for the single-upload Quick Preview, reported up from the
-			// form so it can render in the shared right-hand slot (below).
 			singlePreview: { ...EMPTY_SINGLE_PREVIEW },
-			// Config for the Bulk Upload tab; built once in componentDidMount (after
-			// UserContext has settled) so canUseAdminSettings reflects the real admin
-			// flag rather than a first-render snapshot. Kept stable thereafter.
 			bulkConfig: null,
-			// Mirrors the bulk wizard's current step so the Single/Bulk tab switcher
-			// can hide itself on steps 2 and 3 (matching the Figma).
 			bulkStep: 1,
 		};
 	}
@@ -83,8 +72,6 @@ export class AddMediaPage extends Page {
 			},
 		});
 
-		// Track the bulk wizard step so the Single/Bulk tab switcher can hide on
-		// steps 2 and 3 (only update on actual step changes to avoid extra renders).
 		this.lastBulkStep = 1;
 		this.unsubscribeBulkStep = useBulkUploadStore.subscribe((state) => {
 			if (state.currentStep !== this.lastBulkStep) {
@@ -198,8 +185,6 @@ export class AddMediaPage extends Page {
 	}
 
 	openFilePicker() {
-		// This page adds files manually (MediaDropzone -> addFiles) and has no
-		// FineUploader browse button, so spin up a transient file input instead.
 		const input = document.createElement('input');
 		input.type = 'file';
 		input.accept = 'video/*';
@@ -211,7 +196,6 @@ export class AddMediaPage extends Page {
 			const files = Array.from(input.files || []);
 
 			if (files.length) {
-				// Check for multi-file selection before deleting the original
 				if (files.length > 1) {
 					this.pendingReplaceId = null;
 					this.setState({ confirmBulkUploadOpen: true });
@@ -219,8 +203,6 @@ export class AddMediaPage extends Page {
 					return;
 				}
 
-				// Replace = delete the old media first (frees the item-limit slot and
-				// removes the old server-side Media), then upload the new one.
 				if (this.pendingReplaceId != null) {
 					this.removeUploadItem(this.pendingReplaceId);
 					this.pendingReplaceId = null;
@@ -234,7 +216,6 @@ export class AddMediaPage extends Page {
 			cleanup();
 		});
 
-		// Picker dismissed without choosing: keep the original media untouched.
 		input.addEventListener('cancel', () => {
 			this.pendingReplaceId = null;
 			cleanup();
@@ -244,8 +225,6 @@ export class AddMediaPage extends Page {
 		input.click();
 	}
 
-	// Delete a Media row created by a finished upload. Best-effort and fire-and-
-	// forget: a failed cleanup is logged but never blocks the UI.
 	deleteMediaByToken(friendlyToken) {
 		if (!friendlyToken) {
 			return;
@@ -269,8 +248,6 @@ export class AddMediaPage extends Page {
 
 	deleteUploadedMedia(id) {
 		const friendlyToken = this.completedTokens[id];
-
-		// Only completed uploads exist server-side; in-flight ones are handled by cancel().
 		if (!friendlyToken) {
 			return;
 		}
@@ -284,8 +261,6 @@ export class AddMediaPage extends Page {
 			return;
 		}
 
-		// FineUploader.cancel() only aborts in-flight uploads; a finished upload has
-		// already created a Media row, so delete it on the server too.
 		this.deleteUploadedMedia(id);
 
 		try {
@@ -303,9 +278,6 @@ export class AddMediaPage extends Page {
 		this.syncUploaderState();
 	}
 
-	// Reconciles React state with the current upload list. When the list empties,
-	// resets FineUploader so the dropzone, browse button, and item-limit counters
-	// return to their initial state.
 	syncUploaderState() {
 		const listEl = this.uploaderRef.current && this.uploaderRef.current.querySelector('.qq-upload-list-selector');
 		const hasRemainingItems = !!listEl?.children.length;
@@ -326,8 +298,6 @@ export class AddMediaPage extends Page {
 
 		if (reuploadButton) {
 			event.preventDefault();
-			// Defer removing the existing item until the user actually picks a new
-			// file (onSubmitted). Canceling the picker keeps the original in place.
 			this.pendingReplaceId = this.getFileIdFromElement(reuploadButton);
 			this.openFilePicker();
 			return;
@@ -375,32 +345,25 @@ export class AddMediaPage extends Page {
 		this.setState({ confirmBulkUploadOpen: false, selectedTab: 'bulk-upload' });
 	};
 
-	// Stable reference so the single-upload form's preview effect doesn't loop.
-	// Merge so the upload's thumbnail (set on complete) isn't clobbered by the
-	// form's title/company/country/category updates.
 	handleSinglePreviewChange = (preview) => {
 		this.setState((state) => ({ singlePreview: { ...state.singlePreview, ...preview } }));
 	};
 
-	// True when there's work that switching tabs would discard: a single-upload
-	// selection/upload, or any files in the bulk wizard.
 	hasUploadInProgress = () => {
 		let bulkFileCount = 0;
+
 		try {
 			bulkFileCount = useBulkUploadStore.getState().files.length;
 		} catch {
 			bulkFileCount = 0;
 		}
+
 		return this.state.hasSelectedMedia || !!this.state.uploadedMedia || bulkFileCount > 0;
 	};
 
-	// Clears both flows and switches; called directly when nothing's in progress,
-	// or after the user confirms the switch dialog.
 	doTabSwitch = (nextTab) => {
-		// Discarding in-progress work also removes any media already created on the
-		// server — single completed uploads plus bulk files — so switching tabs
-		// never leaves orphan drafts behind.
 		Object.values(this.completedTokens).forEach((token) => this.deleteMediaByToken(token));
+
 		try {
 			useBulkUploadStore.getState().files.forEach((file) => {
 				if (file.friendlyToken) {
@@ -410,17 +373,21 @@ export class AddMediaPage extends Page {
 		} catch (error) {
 			console.warn('Unable to read bulk upload files on tab change', error);
 		}
+
 		this.completedTokens = {};
+
 		try {
 			this.uploader?.reset();
 		} catch (error) {
 			console.warn('Unable to reset uploader on tab change', error);
 		}
+
 		try {
 			useBulkUploadStore.getState().reset();
 		} catch (error) {
 			console.warn('Unable to reset bulk upload store on tab change', error);
 		}
+
 		this.setState({
 			selectedTab: nextTab,
 			hasSelectedMedia: false,
@@ -432,20 +399,20 @@ export class AddMediaPage extends Page {
 		});
 	};
 
-	// Bulk -> single when only one file remains (decision D2): the media is already
-	// uploaded, so move it into the single tab's edit form instead of discarding it
-	// (no re-upload needed). The bulk wizard is cleared.
 	moveBulkMediaToSingle = (file) => {
 		if (!file?.friendlyToken) {
 			return;
 		}
+
 		const token = file.friendlyToken;
 		this.completedTokens = {};
+
 		try {
 			useBulkUploadStore.getState().reset();
 		} catch (error) {
 			console.warn('Unable to reset bulk upload store on move-to-single', error);
 		}
+
 		this.setState({
 			selectedTab: 'single-film-upload',
 			hasSelectedMedia: true,
@@ -460,6 +427,7 @@ export class AddMediaPage extends Page {
 			confirmTabSwitchOpen: false,
 			pendingTab: null,
 		});
+
 		this.fetchSinglePreviewThumbnail(token);
 	};
 
@@ -467,11 +435,12 @@ export class AddMediaPage extends Page {
 		if (nextTab === this.state.selectedTab) {
 			return;
 		}
-		// Confirm before discarding in-progress work; otherwise switch immediately.
+
 		if (this.hasUploadInProgress()) {
 			this.setState({ confirmTabSwitchOpen: true, pendingTab: nextTab });
 			return;
 		}
+
 		this.doTabSwitch(nextTab);
 	};
 
@@ -485,18 +454,20 @@ export class AddMediaPage extends Page {
 		}
 	};
 
-	// Pull the uploaded media's poster so the Quick Preview shows a real image.
 	fetchSinglePreviewThumbnail = (friendlyToken) => {
 		if (!friendlyToken) {
 			return;
 		}
+
 		const mediaApiUrl = mediacmsConfig(window.MediaCMS).api.media;
 		if (!mediaApiUrl) {
 			return;
 		}
+
 		// Guard against out-of-order responses: only the most recently requested
 		// token may write the preview, so a slow earlier fetch can't clobber it.
 		this.latestPreviewToken = friendlyToken;
+
 		fetch(`${mediaApiUrl}/${friendlyToken}`, { credentials: 'same-origin' })
 			.then((response) => (response.ok ? response.json() : null))
 			.then((data) => {
@@ -534,10 +505,6 @@ export class AddMediaPage extends Page {
 	};
 
 	pageContent() {
-		// Anonymous users never reach this React app: the upload_media view redirects
-		// them to the (redesigned) allauth sign-in page before the page is served.
-		// If that guard is ever bypassed, canAdd is false for them, so they fall
-		// through to CannotUploadMessage below.
 		if (!this.config.canAdd) {
 			return <CannotUploadMessage config={this.config} />;
 		}
@@ -560,13 +527,8 @@ export class AddMediaPage extends Page {
 
 		const isBulk = selectedTab === 'bulk-upload';
 		const bulkConfig = this.state.bulkConfig;
-		// On bulk steps 2 & 3 the Single/Bulk tab switcher is hidden (matching the
-		// Figma), so the panel's top margin (which normally separates it from the
-		// tabs) is dropped to avoid a large gap under the header.
 		const tabsHidden = isBulk && bulkStep > 1;
 
-		// The header title tracks the bulk wizard step (matching the Figma); single
-		// keeps a single title. The description stays the same across steps.
 		const headerTitle = !isBulk
 			? 'Upload Media to Cinemata'
 			: bulkStep === 2
@@ -577,21 +539,20 @@ export class AddMediaPage extends Page {
 
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
-				{/* Shared 3-column shell: left stepper rail, centre form, right Quick
-				    Preview. The single tab uses these slots directly; the bulk tab
-				    renders its own stepper/per-file preview, so it spans full width and
-				    the side slots are hidden. Container queries respond to the real
-				    content width (shrinks when the app sidebar is open). */}
 				<main className="add-media-feature @container/page mx-4 py-8 text-text-primary sm:mx-6 lg:mx-10">
 					<div className="grid grid-cols-1 gap-8 @4xl/page:grid-cols-[220px_minmax(0,1fr)_340px] @4xl/page:items-start">
-						{/* Header — lives in the centre column (row 1) so it aligns with the
-						    form and never bleeds into the Quick Preview column; the stepper
-						    rail (left) lines up with its top. */}
 						<header className="flex items-start justify-between gap-4 @4xl/page:col-start-2 @4xl/page:row-start-1">
-							<div className="min-w-0">
-								<Text variant="h4" as="h1" className="m-0 text-text-strong">
-									{headerTitle}
-								</Text>
+							<div className="w-full">
+								<div className="flex flex-row items-center">
+									<Text variant="h4" as="h1" className="m-0 text-text-strong flex-1">
+										{headerTitle}
+									</Text>
+
+									<span className="body-body-12-regular shrink-0 text-text-title-required">
+										* Required
+									</span>
+								</div>
+
 								<Text variant="body-16" color="description" className="m-0 mt-4 max-w-[720px]">
 									Please check our&nbsp;
 									<a
@@ -605,12 +566,8 @@ export class AddMediaPage extends Page {
 									Any media that does not comply with the policy will be deleted from Cinemata.org.
 								</Text>
 							</div>
-							<span className="body-body-12-regular shrink-0 text-text-accent">* Required</span>
 						</header>
 
-						{/* Left rail — the bulk wizard stepper; spans from the header row so it
-						    sits flush at the top and stays pinned while scrolling. Empty
-						    (reserved) on the single tab so the centre card stays aligned. */}
 						<aside className="hidden min-w-0 @4xl/page:block @4xl/page:col-start-1 @4xl/page:row-start-1 @4xl/page:row-span-2 @4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start">
 							{isBulk ? <BulkStepperSlot /> : null}
 						</aside>
@@ -668,15 +625,9 @@ export class AddMediaPage extends Page {
 							</TabView>
 						</section>
 
-						{/* Right slot — live Quick Preview for the single tab, shown once a
-						    file has been uploaded. The column stays reserved before then so
-						    the form doesn't shift. Hidden for bulk (per-file preview lives
-						    inside each card). */}
 						<aside
 							className={cn(
 								'hidden min-w-0 @4xl/page:block @4xl/page:col-start-3 @4xl/page:row-start-2 @4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start',
-								// Offset down so the Quick Preview lines up with the form's first
-								// card (clears the tab bar ~44px + the panel's mt-8 = 76px).
 								'@4xl/page:mt-[76px]',
 								isBulk && '@4xl/page:hidden'
 							)}

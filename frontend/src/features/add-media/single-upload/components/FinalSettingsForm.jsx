@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DateChooserField, RadioButton, Text, formatDMY } from '../../../shared/components';
 import { CheckboxButton } from '../../../shared/components/CheckboxButton';
 import { TextField } from '../../../shared/components/TextField';
+import { diffInDays, todayIso } from '../../utils/helpers';
 import { FieldGroup } from './FieldGroup';
 
 const STATUS_OPTIONS = [
@@ -10,19 +11,6 @@ const STATUS_OPTIONS = [
 	{ value: 'restricted', label: 'Restricted' },
 	{ value: 'unlisted', label: 'Unlisted' },
 ];
-
-function todayIso() {
-	const now = new Date();
-	const month = String(now.getMonth() + 1).padStart(2, '0');
-	const day = String(now.getDate()).padStart(2, '0');
-	return `${now.getFullYear()}-${month}-${day}`;
-}
-
-function diffInDays(startIso, endIso) {
-	const start = new Date(startIso);
-	const end = new Date(endIso);
-	return Math.max(0, Math.ceil((end - start) / 86400000));
-}
 
 export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false }) {
 	const [showPassword, setShowPassword] = useState(false);
@@ -39,7 +27,11 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 	return (
 		<FieldGroup title="Final Settings">
 			<div className="flex flex-col">
-				<CheckboxButton name="enable_comments" defaultChecked>
+				<CheckboxButton
+					name="enable_comments"
+					checked={singleUpload.enableComments}
+					onChange={(event) => singleUpload.setEnableComments(event.target.checked)}
+				>
 					Enable Comments
 				</CheckboxButton>
 
@@ -127,20 +119,26 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 
 				<div className="my-4 border-b border-b-border-divider" />
 
-				<legend className="body-body-16-regular mb-2 text-text-muted">Stream Protection</legend>
-
-				<div className="flex flex-row items-start gap-2">
-					<CheckboxButton name="is_encrypted" className="mt-0.5" aria-label="Encrypt this video’s stream" />
-
-					<div className="flex flex-col gap-2">
-						<Text className="m-0" variant="body-16">
-							Encrypt this video’s stream
-						</Text>
-						<Text className="m-0" variant="body-12">
-							Adds an extra layer of protection so only authorized viewers can watch this film. If your
-							video has already been processed, enabling this will trigger a re-encoding, which may take a
-							few minutes.
-						</Text>
+				<div>
+					<span className="body-body-16-regular mb-2 block text-text-muted">Stream Protection</span>
+					<div className="flex flex-row items-start gap-2">
+						<CheckboxButton
+							name="is_encrypted"
+							className="mt-0.5"
+							aria-label="Encrypt this video&rsquo;s stream"
+							checked={singleUpload.isEncrypted}
+							onChange={(event) => singleUpload.setIsEncrypted(event.target.checked)}
+						/>
+						<div className="flex flex-col gap-2">
+							<Text className="m-0" variant="body-16">
+								Encrypt this video&rsquo;s stream
+							</Text>
+							<Text className="m-0" variant="body-12">
+								Adds an extra layer of protection so only authorized viewers can watch this film. If
+								your video has already been processed, enabling this will trigger a re-encoding, which
+								may take a few minutes.
+							</Text>
+						</div>
 					</div>
 				</div>
 			</div>

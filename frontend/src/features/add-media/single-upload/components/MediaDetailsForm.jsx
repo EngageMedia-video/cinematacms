@@ -30,7 +30,6 @@ export function MediaDetailsForm({
 
 	useEffect(() => singleUpload.reset, [singleUpload.reset]);
 
-	// Reflect a chosen thumbnail in the live Quick Preview right away.
 	const selectedThumbnailFile = singleUpload.selectedThumbnailFile;
 	useEffect(() => {
 		if (
@@ -46,20 +45,17 @@ export function MediaDetailsForm({
 		return () => URL.revokeObjectURL(url);
 	}, [selectedThumbnailFile, onPreviewChange]);
 
-	// Feed the live Quick Preview from the (uncontrolled) form on every edit.
-	function reportPreview() {
-		const form = formRef.current;
-		if (!form || !onPreviewChange) {
+	useEffect(() => {
+		if (!onPreviewChange) {
 			return;
 		}
-		const data = new FormData(form);
 		onPreviewChange({
-			title: data.get('title') || '',
-			company: data.get('company') || '',
-			media_country: data.get('media_country') || '',
-			category: data.getAll('category')[0] ?? '',
+			title: singleUpload.title,
+			company: singleUpload.company,
+			media_country: singleUpload.mediaCountry,
+			category: singleUpload.category[0] ?? '',
 		});
-	}
+	}, [onPreviewChange, singleUpload.title, singleUpload.company, singleUpload.mediaCountry, singleUpload.category]);
 
 	function onFileChanged(files) {
 		const [file] = files;
@@ -67,45 +63,46 @@ export function MediaDetailsForm({
 	}
 
 	function validateForm() {
-		const form = formRef.current;
-
-		if (!form) {
-			return {};
-		}
-
-		const data = new FormData(form);
 		const nextErrors = {};
 
-		const summaryError = runValidators([required(), maxWords(80)], data.get('summary'));
+		const titleError = runValidators([required()], singleUpload.title);
+		if (titleError) {
+			nextErrors.title = titleError;
+		}
+
+		const summaryError = runValidators([required(), maxWords(80)], singleUpload.summary);
 		if (summaryError) {
 			nextErrors.summary = summaryError;
 		}
 
-		const year = String(data.get('year_produced') ?? '').trim();
+		const year = String(singleUpload.yearProduced).trim();
 		if (!year) {
 			nextErrors.year_produced = 'This field is required';
 		} else if (!/^\d+$/.test(year) || Number(year) < 2000 || Number(year) > CURRENT_YEAR) {
 			nextErrors.year_produced = `Enter a year between 2000 and ${CURRENT_YEAR}`;
 		}
 
-		const website = String(data.get('website') ?? '').trim();
-		if (website && !website.startsWith('https://')) {
+		if (singleUpload.website && !singleUpload.website.startsWith('https://')) {
 			nextErrors.website = 'Website should start with https://';
 		}
 
-		if (!String(data.get('media_language') ?? '').trim()) {
+		if (!singleUpload.mediaLanguage) {
 			nextErrors.media_language = 'Select a media language';
 		}
 
-		if (!String(data.get('media_country') ?? '').trim()) {
+		if (!singleUpload.mediaCountry) {
 			nextErrors.media_country = 'Select a media country';
 		}
 
-		if (data.getAll('category').length === 0) {
+		if (singleUpload.category.length === 0) {
 			nextErrors.category = 'Select at least one category';
 		}
 
-		if (data.get('state') === 'restricted' && !String(data.get('password') ?? '').trim()) {
+		if (singleUpload.topics.length === 0) {
+			nextErrors.topics = 'Select at least one topic';
+		}
+
+		if (singleUpload.mediaStatus === 'restricted' && !singleUpload.password) {
 			nextErrors.password = 'Password has to be set when state is Restricted.';
 		}
 
@@ -201,13 +198,11 @@ export function MediaDetailsForm({
 			encType="multipart/form-data"
 			className="mt-10 flex flex-col gap-8"
 			data-single-upload-form
-			onInput={reportPreview}
-			onChange={reportPreview}
 		>
 			<input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
 			{canUseAdminSettings ? null : <input type="hidden" name="reported_times" value="0" />}
 
-			<BasicDetailsForm errors={singleUpload.errors} />
+			<BasicDetailsForm singleUpload={singleUpload} />
 
 			<ThumbnailImageUpload
 				lastSelectedThumbnailFile={singleUpload.lastSelectedThumbnailFile}
@@ -227,7 +222,7 @@ export function MediaDetailsForm({
 
 			<FinalSettingsForm canUseRestrictedStatus={canPublishDirectly} singleUpload={singleUpload} />
 
-			{canUseAdminSettings ? <AdminSettingsForm /> : null}
+			{canUseAdminSettings ? <AdminSettingsForm singleUpload={singleUpload} /> : null}
 
 			<SubmitSection
 				onSaveDraft={handleSaveDraftClick}

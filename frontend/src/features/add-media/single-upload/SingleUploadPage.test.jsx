@@ -27,7 +27,7 @@ const TEST_LICENSES = [
 	},
 ];
 
-// SingleUploadPage now loads form options from useTaxonomies (GET bulk_options).
+// SingleUploadPage now loads form options from useTaxonomies (GET upload_options).
 // Mock the hook so the option lists are available synchronously; the API shape
 // uses codes for language/country and ids for the taxonomies/licenses.
 const taxonomyOptions = {
@@ -109,15 +109,16 @@ describe('SingleUploadPage', () => {
 		expect(screen.getByText('CC BY-NC-SA 4.0 - Attribution-NonCommercial-ShareAlike')).toBeInTheDocument();
 	});
 
-	it('limits year produced to four characters', async () => {
+	it('selects a year from the popover picker', async () => {
 		const user = userEvent.setup();
 		renderUploadedPage();
 
-		const yearInput = screen.getByLabelText('Year Produced');
+		await user.click(screen.getByRole('button', { name: 'Choose' }));
 
-		await user.type(yearInput, '20245');
+		const yearButton = screen.getByRole('button', { name: '2024' });
+		await user.click(yearButton);
 
-		expect(yearInput).toHaveValue('2024');
+		expect(document.querySelector('input[name="year_produced"]')).toHaveValue('2024');
 	});
 
 	it('enables comments and downloads by default', () => {
@@ -175,14 +176,12 @@ describe('SingleUploadPage', () => {
 		expect(submittedBody.get('reported_times')).toBe('3');
 	});
 
-	it('submits stream protection as the HLS encryption field', () => {
+	it('renders the stream protection checkbox unchecked by default', () => {
 		renderUploadedPage();
 
-		const streamProtection = document.querySelector('input[name="is_encrypted"]');
+		const encryptionCheckbox = screen.getByRole('checkbox', { name: /Encrypt this video/ });
 
-		expect(screen.getByText('Stream Protection')).toBeInTheDocument();
-		// HLS encryption is opt-in: the checkbox is present but off by default.
-		expect(streamProtection).not.toBeChecked();
+		expect(encryptionCheckbox).not.toBeChecked();
 	});
 
 	it('shows a password field with visibility toggle for restricted status', async () => {
@@ -218,8 +217,10 @@ describe('SingleUploadPage', () => {
 
 		renderUploadedPage({ canPublishDirectly: true });
 
+		await user.type(screen.getByLabelText('Title'), 'A short title.');
 		await user.type(screen.getByLabelText('Synopsis'), 'A short synopsis.');
-		await user.type(screen.getByLabelText('Year Produced'), '2024');
+		await user.click(screen.getByRole('button', { name: 'Choose' }));
+		await user.click(screen.getByRole('button', { name: '2024' }));
 
 		await user.click(screen.getByRole('button', { name: 'Select media language' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'English' }));
@@ -288,8 +289,10 @@ describe('SingleUploadPage', () => {
 
 		renderUploadedPage();
 
+		await user.type(screen.getByLabelText('Title'), 'A short title.');
 		await user.type(screen.getByLabelText('Synopsis'), 'A short synopsis.');
-		await user.type(screen.getByLabelText('Year Produced'), '2024');
+		await user.click(screen.getByRole('button', { name: 'Choose' }));
+		await user.click(screen.getByRole('button', { name: '2024' }));
 
 		await user.click(screen.getByRole('button', { name: 'Select media language' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'English' }));

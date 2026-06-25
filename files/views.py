@@ -675,7 +675,7 @@ def upload_media(request):
 
     # The single-upload form options (languages, countries, categories, topics,
     # content sensitivities, licenses) are loaded client-side from the shared
-    # bulk_options endpoint (useTaxonomies), so they are no longer injected here.
+    # upload_options endpoint (useTaxonomies), so they are no longer injected here.
 
     return render(request, template, context)
 
