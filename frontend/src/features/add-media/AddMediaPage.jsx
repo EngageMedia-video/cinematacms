@@ -28,7 +28,14 @@ import BulkUploadPage from './bulk-upload/components/BulkUploadPage.jsx';
 import { BulkStepperSlot } from './bulk-upload/components/BulkStepperSlot';
 import useBulkUploadStore from './bulk-upload/useBulkUploadStore';
 
-const EMPTY_SINGLE_PREVIEW = { title: '', company: '', country: '', category: null, thumbnailUrl: '' };
+const EMPTY_SINGLE_PREVIEW = {
+	title: '',
+	company: '',
+	country: '',
+	category: null,
+	thumbnailUrl: '',
+	thumbnailFrame: null,
+};
 
 export class AddMediaPage extends Page {
 	static contextType = UserContext;
@@ -499,7 +506,14 @@ export class AddMediaPage extends Page {
 				}
 				const thumbnailUrl = data && (data.thumbnail_url || data.poster_url);
 				if (thumbnailUrl) {
-					this.setState((state) => ({ singlePreview: { ...state.singlePreview, thumbnailUrl } }));
+					this.setState((state) => ({
+						singlePreview: {
+							...state.singlePreview,
+							thumbnailUrl: state.singlePreview.thumbnailFrame
+								? state.singlePreview.thumbnailUrl
+								: thumbnailUrl,
+						},
+					}));
 				}
 			})
 			.catch(() => {
@@ -669,6 +683,7 @@ export class AddMediaPage extends Page {
 									country={singlePreview.country}
 									category={singlePreview.category}
 									thumbnailUrl={singlePreview.thumbnailUrl}
+									thumbnailFrame={singlePreview.thumbnailFrame}
 									views={0}
 									className="min-w-0"
 								/>

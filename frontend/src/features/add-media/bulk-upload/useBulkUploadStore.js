@@ -69,6 +69,8 @@ const useBulkUploadStore = create((set) => ({
 						thumbnailUrl: null,
 						// Chosen thumbnail image File, sent as uploaded_poster on submit.
 						posterFile: null,
+						thumbnailTime: null,
+						thumbnailFrame: null,
 						error: null,
 						metadata: createDefaultMetadata(),
 					},
@@ -95,7 +97,16 @@ const useBulkUploadStore = create((set) => ({
 
 	setPosterFile: (id, posterFile) =>
 		set((state) => ({
-			files: state.files.map((file) => (file.id === id ? { ...file, posterFile } : file)),
+			files: state.files.map((file) =>
+				file.id === id ? { ...file, posterFile, thumbnailTime: null, thumbnailFrame: null } : file
+			),
+		})),
+
+	setThumbnailTime: (id, thumbnailTime, thumbnailFrame = null) =>
+		set((state) => ({
+			files: state.files.map((file) =>
+				file.id === id ? { ...file, thumbnailTime, thumbnailFrame, posterFile: null } : file
+			),
 		})),
 
 	setStep: (currentStep) => set({ currentStep }),

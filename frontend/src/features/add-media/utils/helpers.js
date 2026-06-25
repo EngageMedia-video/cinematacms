@@ -101,9 +101,14 @@ export function getUploadedMediaDetails(response, fileName) {
 	}
 
 	return {
+		duration: response?.duration ?? '',
 		editUrl,
 		friendlyToken,
 		name: fileName || '',
+		posterUrl: response?.poster_url ?? '',
+		spritesUrl: response?.sprites_url ?? '',
+		spriteNumSecs: response?.sprite_num_secs ?? '',
+		thumbnailTime: response?.thumbnail_time ?? '',
 		viewUrl,
 	};
 }

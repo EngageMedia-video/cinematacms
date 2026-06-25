@@ -8,7 +8,13 @@
  * appended when enabled, and omitted (→ False) otherwise — matching the native
  * checkboxes the single-upload form renders.
  */
-export function buildEditFormData({ metadata = {}, posterFile = null, action = 'submit', csrfToken = '' }) {
+export function buildEditFormData({
+	metadata = {},
+	posterFile = null,
+	thumbnailTime = null,
+	action = 'submit',
+	csrfToken = '',
+}) {
 	const data = new FormData();
 	data.set('csrfmiddlewaretoken', csrfToken || '');
 	data.set('action', action);
@@ -72,6 +78,8 @@ export function buildEditFormData({ metadata = {}, posterFile = null, action = '
 
 	if (posterFile) {
 		data.set('uploaded_poster', posterFile);
+	} else if (thumbnailTime != null) {
+		data.set('thumbnail_time', String(thumbnailTime));
 	}
 
 	return data;

@@ -38,6 +38,18 @@ describe('QuickPreview', () => {
 		expect(screen.getByText('12,345 views')).toBeVisible();
 	});
 
+	it('renders a selected video frame over the poster when supplied', () => {
+		render(
+			<QuickPreview
+				title="A"
+				thumbnailUrl={samplePoster}
+				thumbnailFrame={{ index: 1, rowsInSheet: 3, spritesUrl: '/sprites.jpg' }}
+			/>
+		);
+
+		expect(screen.getByRole('img', { name: 'A selected video frame' })).toBeVisible();
+	});
+
 	it('falls back to placeholders while fields are empty', () => {
 		render(<QuickPreview />);
 

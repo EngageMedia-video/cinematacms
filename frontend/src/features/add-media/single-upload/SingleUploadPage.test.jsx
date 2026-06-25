@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SingleUploadPage } from './SingleUploadPage';
 import useSingleUploadStore from './useSingleUploadStore';
@@ -47,9 +47,29 @@ vi.mock('../../shared/components/upload-media', async (importOriginal) => {
 	};
 });
 
+class MockImage {
+	static instances = [];
+
+	constructor() {
+		this.naturalHeight = 450;
+		MockImage.instances.push(this);
+	}
+
+	set src(value) {
+		this._src = value;
+	}
+
+	get src() {
+		return this._src;
+	}
+}
+
+const OriginalImage = global.Image;
+
 describe('SingleUploadPage', () => {
 	beforeEach(() => {
 		useSingleUploadStore.getState().reset();
+		MockImage.instances = [];
 	});
 
 	function renderUploadedPage(props = {}) {
@@ -57,6 +77,7 @@ describe('SingleUploadPage', () => {
 	}
 
 	afterEach(() => {
+		global.Image = OriginalImage;
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 	});
@@ -272,6 +293,40 @@ describe('SingleUploadPage', () => {
 		expect(
 			screen.queryByText('Please fill in all required fields before sharing your media.')
 		).not.toBeInTheDocument();
+	});
+
+	it('submits a selected video frame as thumbnail_time', async () => {
+		const user = userEvent.setup();
+		global.Image = MockImage;
+		Element.prototype.scrollIntoView = vi.fn();
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: false,
+			status: 500,
+			json: async () => ({}),
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		renderUploadedPage({
+			uploadedMedia: {
+				duration: 80,
+				editUrl: '/media/test/edit',
+				friendlyToken: 'abc123',
+				spritesUrl: '/sprites.jpg',
+			},
+		});
+
+		await user.click(screen.getByRole('tab', { name: 'CHOOSE FROM VIDEO' }));
+		act(() => {
+			MockImage.instances[0].onload();
+		});
+		await user.click(await screen.findByRole('button', { name: /0:20/i }));
+		await user.click(screen.getByRole('button', { name: 'Save as Draft' }));
+
+		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+		const submittedBody = fetchMock.mock.calls[0][1].body;
+
+		expect(submittedBody.get('thumbnail_time')).toBe('20');
+		expect(submittedBody.get('uploaded_poster')).toBeNull();
 	});
 
 	it('submits for review with the submit action', async () => {

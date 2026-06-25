@@ -55,6 +55,7 @@ export function createDefaultSingleUploadState() {
 		// Thumbnail
 		selectedThumbnailFile: null,
 		lastSelectedThumbnailFile: '',
+		thumbnailTime: null,
 
 		// Form state
 		errors: {},
@@ -121,7 +122,17 @@ const useSingleUploadStore = create((set) => ({
 
 	// Thumbnail
 	setSelectedThumbnailFile: (selectedThumbnailFile) =>
-		set({ selectedThumbnailFile, lastSelectedThumbnailFile: selectedThumbnailFile?.name ?? '' }),
+		set({
+			selectedThumbnailFile,
+			lastSelectedThumbnailFile: selectedThumbnailFile?.name ?? '',
+			thumbnailTime: null,
+		}),
+	setThumbnailTime: (thumbnailTime) =>
+		set({
+			thumbnailTime,
+			selectedThumbnailFile: null,
+			lastSelectedThumbnailFile: '',
+		}),
 
 	// Form state
 	setErrors: (errors) => set({ errors }),

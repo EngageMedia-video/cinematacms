@@ -2,15 +2,26 @@ import { useEffect, useState } from 'react';
 import { TabContent, TabView } from '../../TabView';
 import { MediaDropzone } from '../../MediaDropzone';
 import { Text } from '../../Text';
+import { ChooseFromVideo } from '../ChooseFromVideo/ChooseFromVideo';
 
 /**
  * Per-file thumbnail picker, mirroring the single-upload ThumbnailImageUpload
- * (identical TabView styling, dropzone props and preview): an "Upload Thumbnail"
- * tab (choose a photo) and a "Choose from Video" placeholder (owned by #541).
- * Controlled by the chosen poster File so the bulk wizard can keep one per file;
- * the file is sent as `uploaded_poster` on submit (decision D4).
+ * tab contract: upload a photo or choose a frame from the uploaded video.
  */
-export function ThumbnailUploadField({ posterFile = null, onFileSelected }) {
+export function ThumbnailUploadField({
+	currentThumbnailTime = '',
+	duration = '',
+	friendlyToken = '',
+	onFileSelected,
+	onFrameSelect,
+	posterFile = null,
+	posterPreviewClassName = 'mt-4 aspect-video w-full max-w-[280px] rounded-ds-4 object-cover',
+	posterUrl = '',
+	spriteSecs = '',
+	spritesUrl = '',
+	thumbnailFrame = null,
+	thumbnailTime = null,
+}) {
 	const [previewUrl, setPreviewUrl] = useState('');
 
 	useEffect(() => {
@@ -25,13 +36,18 @@ export function ThumbnailUploadField({ posterFile = null, onFileSelected }) {
 		return () => URL.revokeObjectURL(nextPreviewUrl);
 	}, [posterFile]);
 
+	function handleFrameSelect(frame) {
+		onFrameSelect?.(frame.seconds, frame);
+	}
+
 	return (
-		<div>
+		<div className="min-w-0 max-w-full overflow-hidden">
 			<TabView
+				className="min-w-0 max-w-full overflow-hidden"
 				tabMode="wrap"
 				triggerClassName="rounded-none py-3 px-size-22 text-text-tab-trigger"
 				triggerSelectedColor="bg-bg-tab-trigger-selected"
-				panelClassName="mt-8"
+				panelClassName="mt-4 min-w-0 max-w-full overflow-hidden"
 				aria-label="Upload media type"
 				defaultSelectedTab="upload-thumbnail"
 			>
@@ -41,16 +57,13 @@ export function ThumbnailUploadField({ posterFile = null, onFileSelected }) {
 						buttonVariant="secondary"
 						iconName={null}
 						multiple={false}
+						name="uploaded_poster"
 						aria-label="Choose thumbnail image"
 						onFilesSelected={(files) => onFileSelected?.(files?.[0] ?? null)}
 					/>
 
 					{previewUrl ? (
-						<img
-							src={previewUrl}
-							alt="Selected thumbnail preview"
-							className="mt-4 aspect-video w-full max-w-[280px] rounded-ds-4 object-cover"
-						/>
+						<img src={previewUrl} alt="Selected thumbnail preview" className={posterPreviewClassName} />
 					) : null}
 
 					{posterFile?.name ? (
@@ -60,7 +73,15 @@ export function ThumbnailUploadField({ posterFile = null, onFileSelected }) {
 					) : null}
 				</TabContent>
 				<TabContent title="CHOOSE FROM VIDEO" value="choose-from-video">
-					<p>Choose from video</p>
+					<ChooseFromVideo
+						currentThumbnailTime={thumbnailTime ?? currentThumbnailTime}
+						duration={duration}
+						friendlyToken={friendlyToken}
+						onFrameSelect={handleFrameSelect}
+						posterUrl={posterUrl}
+						spriteSecs={spriteSecs}
+						spritesUrl={spritesUrl || thumbnailFrame?.spritesUrl || ''}
+					/>
 				</TabContent>
 			</TabView>
 		</div>

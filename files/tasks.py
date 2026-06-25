@@ -54,6 +54,7 @@ from .models import (
     TranscriptionRequest,
 )
 from .query_cache import invalidate_media_cache
+from .sprites import generate_sprite_for_media
 from .storage_usage import schedule_refresh_media_storage_usage
 
 logger = get_task_logger(__name__)
@@ -725,51 +726,19 @@ def produce_sprite_from_video(friendly_token):
 
     try:
         media = Media.objects.get(friendly_token=friendly_token)
-    except BaseException:
+    except Media.DoesNotExist:
         logger.info("failed to get media with friendly_token %s" % friendly_token)
-        return False
+        return {"ok": False, "reason": "media_not_found", "friendly_token": friendly_token}
 
-    with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as tmpdirname:
-        try:
-            tmpdir_image_files = tmpdirname + "/img%03d.jpg"
-            output_name = tmpdirname + "/sprites.jpg"
-
-            fps = getattr(settings, "SPRITE_NUM_SECS", 10)
-            ffmpeg_cmd = [
-                settings.FFMPEG_COMMAND,
-                "-threads",
-                "1",
-                "-i",
-                media.media_file.path,
-                "-f",
-                "image2",
-                "-vf",
-                f"fps=1/{fps}, scale=160:90",
-                tmpdir_image_files,
-            ]
-            run_command(ffmpeg_cmd)
-            image_files = [f for f in os.listdir(tmpdirname) if f.startswith("img") and f.endswith(".jpg")]
-            image_files = sorted(image_files, key=lambda x: int(re.search(r"\d+", x).group()))
-            image_files = [os.path.join(tmpdirname, f) for f in image_files]
-            cmd_convert = [
-                "convert",
-                *image_files,  # image files, unpacked into the list
-                "-append",
-                output_name,
-            ]
-
-            run_command(cmd_convert)
-
-            if os.path.exists(output_name) and get_file_type(output_name) == "image":
-                with open(output_name, "rb") as f:
-                    myfile = File(f)
-                    media.sprites.save(
-                        content=myfile,
-                        name=get_file_name(media.media_file.path) + "sprites.jpg",
-                    )
-        except BaseException:
-            pass
-    return True
+    result = generate_sprite_for_media(media)
+    if not result["ok"]:
+        logger.error(
+            "Failed to generate sprite for media %s: %s%s",
+            friendly_token,
+            result["reason"],
+            f" ({result['error']})" if result.get("error") else "",
+        )
+    return result
 
 
 @task(name="create_hls", queue="long_tasks")

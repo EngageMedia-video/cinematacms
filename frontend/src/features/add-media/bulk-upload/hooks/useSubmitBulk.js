@@ -22,6 +22,7 @@ export function useSubmitBulk() {
 					const body = buildEditFormData({
 						metadata: file.metadata,
 						posterFile: file.posterFile,
+						thumbnailTime: file.thumbnailTime,
 						action,
 						csrfToken,
 					});

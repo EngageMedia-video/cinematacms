@@ -234,6 +234,7 @@ HLS_DIR = os.path.join(MEDIA_ROOT, "hls/")
 
 FFMPEG_COMMAND = "ffmpeg"  # this is the path
 FFPROBE_COMMAND = "ffprobe"  # this is the path
+IMAGEMAGICK_COMMAND = None  # optional path/name for ImageMagick; auto-detects convert or magick when unset
 MP4HLS = "mp4hls"
 
 ALLOW_ANONYMOUS_ACTIONS = ["report", "like", "dislike", "watch"]  # need be a list

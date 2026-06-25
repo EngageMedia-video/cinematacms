@@ -43,7 +43,7 @@ const SECTION_META = {
 	thumbnail: {
 		title: 'Thumbnail Image Upload',
 		description:
-			'This image will display when your video isn’t autoplaying. You can select an auto-generated image, upload a custom image or choose a still frame from your video.',
+			'This image displays when your video isn’t autoplaying. Use the auto-generated thumbnail, upload a custom image, or choose a still frame from your video.',
 	},
 	other: { title: 'Other Details' },
 	final: { title: 'Final Settings' },
@@ -59,6 +59,7 @@ const SECTION_META = {
 export function FileCard({ file, subStep, options, errors = {}, onClearErrors }) {
 	const setMetadata = useBulkUploadStore((state) => state.setMetadata);
 	const setPosterFile = useBulkUploadStore((state) => state.setPosterFile);
+	const setThumbnailTime = useBulkUploadStore((state) => state.setThumbnailTime);
 	const { deleteFile } = useBulkUploadActions();
 	const { isTrustedUser, canUseAdminSettings } = useBulkUploadConfig();
 	const meta = file.metadata;
@@ -139,8 +140,13 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 					) : null}
 					{subStep === 'thumbnail' ? (
 						<ThumbnailUploadField
+							friendlyToken={file.friendlyToken ?? ''}
+							onFrameSelect={(seconds, frame) => setThumbnailTime(file.id, seconds, frame)}
 							posterFile={file.posterFile}
+							posterUrl={file.thumbnailUrl ?? ''}
 							onFileSelected={(posterFile) => setPosterFile(file.id, posterFile)}
+							thumbnailFrame={file.thumbnailFrame}
+							thumbnailTime={file.thumbnailTime}
 						/>
 					) : null}
 					{subStep === 'other' ? (

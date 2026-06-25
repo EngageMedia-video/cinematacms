@@ -296,9 +296,19 @@ class SingleMediaSerializer(serializers.ModelSerializer):
     user_has_liked = serializers.SerializerMethodField()
     user_has_disliked = serializers.SerializerMethodField()
     community_impacts = serializers.SerializerMethodField()
+    sprite_num_secs = serializers.SerializerMethodField()
 
     def get_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
+
+    def get_sprite_num_secs(self, obj):
+        # Seconds between consecutive sprite-sheet frames. The thumbnail selector needs
+        # this to map a chosen tile back to its exact timestamp (tile i -> i * value),
+        # which must match how files/sprites.py extracts the tiles. Exposed instead of
+        # hardcoding 10 on the client so the two never drift if the setting changes.
+        from django.conf import settings
+
+        return getattr(settings, "SPRITE_NUM_SECS", 10)
 
     def get_user_has_liked(self, obj):
         request = self.context.get("request")
@@ -367,6 +377,7 @@ class SingleMediaSerializer(serializers.ModelSerializer):
             "thumbnail_time",
             "url",
             "sprites_url",
+            "sprite_num_secs",
             "preview_url",
             "author_name",
             "author_profile",
