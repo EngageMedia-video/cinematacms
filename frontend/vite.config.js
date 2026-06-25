@@ -108,6 +108,7 @@ export default defineConfig({
 				signout: 'src/entries/signout.js',
 				toast: 'src/entries/toast.js',
 				tailwinds: 'src/static/css/tailwind.css',
+				styles: 'src/static/css/styles.scss',
 				index: 'src/entries/index.js',
 				search: 'src/entries/search.js',
 				latest: 'src/entries/latest.js',

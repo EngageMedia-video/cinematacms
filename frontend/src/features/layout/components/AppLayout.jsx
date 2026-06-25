@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 
-// Required global resets; do not remove.
-import '../../../static/css/styles.scss';
+// Global styles.scss is loaded as a render-blocking <link> in root.html so the
+// page is styled before JS executes (avoids a flash of unstyled content on slow
+// connections). Do not import it here.
 import '../../../static/js/components/styles/PageMain.scss';
 
 import { PageSidebarContentOverlay } from '../../../static/js/components/-NEW-/PageSidebarContentOverlay';
