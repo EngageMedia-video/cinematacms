@@ -80,7 +80,9 @@ export function VisibilityExpirationField({
 	idPrefix = 'visibility',
 }) {
 	const effectiveStart = startDate || todayIso();
-	const visibleDays = endDate ? diffInDays(effectiveStart, endDate) : 0;
+	// Backend treats end date as inclusive (+1 day in forms.py), so add 1 to
+	// match: same start and end date = a valid 1-day window, not 0 days.
+	const visibleDays = endDate ? diffInDays(effectiveStart, endDate) + 1 : 0;
 
 	return (
 		<>

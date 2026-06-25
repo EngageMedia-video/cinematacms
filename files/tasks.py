@@ -1598,8 +1598,14 @@ def _apply_visibility_schedules_inner():
     ).order_by("id")
 
     transition_count = 0
+    # Collect tokens that transition to public so we can notify after all row
+    # locks are released — notify_users() sends email synchronously and must
+    # not run while a DB row lock and transaction are still open.
+    tokens_to_notify = []
+
     for media in scheduled_media.iterator():
         try:
+            went_public = False
             with transaction.atomic():
                 # Re-fetch under a row lock so a concurrent user edit that arrived
                 # between the queryset evaluation and this point isn't overwritten.
@@ -1618,15 +1624,48 @@ def _apply_visibility_schedules_inner():
                     media.state,
                     expected,
                 )
+                went_public = expected == "public"
                 media.state = expected
                 # Keep Media.save() from interpreting this state-only transition as a
                 # media-file or thumbnail-time edit and dispatching encoding work.
                 media._Media__original_media_file = media.media_file
                 media._Media__original_thumbnail_time = media.thumbnail_time
-                media.save(update_fields=["state"])
+
+                update_fields = ["state"]
+                # Once a schedule has fully settled (past expiry and now in the
+                # after-expiry state) clear the datetime fields so this row no
+                # longer appears in future scans and accumulates unnecessary locks.
+                if (
+                    media.visibility_expires_at
+                    and now >= media.visibility_expires_at
+                    and expected == (media.visibility_after_expiry or "private")
+                ):
+                    media.visibility_start_date = None
+                    media.visibility_expires_at = None
+                    media.visibility_after_expiry = None
+                    media.visibility_window_state = None
+                    update_fields += [
+                        "visibility_start_date",
+                        "visibility_expires_at",
+                        "visibility_after_expiry",
+                        "visibility_window_state",
+                    ]
+
+                media.save(update_fields=update_fields)
+
             transition_count += 1
+            if went_public:
+                tokens_to_notify.append(media.friendly_token)
         except Exception:
             logger.exception("Failed to apply visibility schedule for media %s", getattr(media, "pk", "unknown"))
+
+    # Send publish notifications after all row locks are released so SMTP
+    # round-trips don't hold the DB transaction open.
+    for token in tokens_to_notify:
+        try:
+            notify_users(friendly_token=token, action="media_published")
+        except Exception:
+            logger.exception("Failed to send publish notification for media %s", token)
 
     if transition_count:
         logger.info("Applied %d visibility schedule transitions", transition_count)
