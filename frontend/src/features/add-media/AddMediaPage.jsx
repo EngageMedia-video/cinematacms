@@ -54,6 +54,9 @@ export class AddMediaPage extends Page {
 			singlePreview: { ...EMPTY_SINGLE_PREVIEW },
 			bulkConfig: null,
 			bulkStep: 1,
+			// Bulk upload needs the desktop layout; below this the Single/Bulk switcher
+			// is hidden and only single upload is shown (mobile + tablet).
+			isNarrow: false,
 		};
 	}
 
@@ -68,9 +71,19 @@ export class AddMediaPage extends Page {
 				maxFiles: this.config.maxBulkFiles,
 				uploadEndpoint: this.config.uploadEndpoint || undefined,
 				chunksDoneParam: this.config.chunksDoneParam || undefined,
+				userName: this.config.userName || '',
 				onMoveSingle: this.moveBulkMediaToSingle,
 			},
 		});
+
+		// Hide the Single/Bulk switcher on mobile + tablet (bulk needs the desktop
+		// layout); track the breakpoint so the tab is forced to single below it.
+		if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+			this.narrowQuery = window.matchMedia('(max-width: 1023px)');
+			this.handleNarrowChange = (event) => this.setState({ isNarrow: event.matches });
+			this.setState({ isNarrow: this.narrowQuery.matches });
+			this.narrowQuery.addEventListener('change', this.handleNarrowChange);
+		}
 
 		this.lastBulkStep = 1;
 		this.unsubscribeBulkStep = useBulkUploadStore.subscribe((state) => {
@@ -170,6 +183,7 @@ export class AddMediaPage extends Page {
 			this.uploaderRef.current.removeEventListener('click', this.handleUploaderClick);
 		}
 		this.unsubscribeBulkStep?.();
+		this.narrowQuery?.removeEventListener('change', this.handleNarrowChange);
 	}
 
 	getFileIdFromElement(element) {
@@ -516,6 +530,7 @@ export class AddMediaPage extends Page {
 			confirmTabSwitchOpen,
 			externalMedia,
 			hasSelectedMedia,
+			isNarrow,
 			pendingDeleteName,
 			pendingTab,
 			selectedTab,
@@ -525,9 +540,12 @@ export class AddMediaPage extends Page {
 
 		const pendingTabLabel = pendingTab === 'bulk-upload' ? 'Bulk Upload' : 'Single Film Upload';
 
-		const isBulk = selectedTab === 'bulk-upload';
+		// Bulk needs the desktop layout, so on mobile/tablet the switcher is hidden
+		// and the tab is forced to single.
+		const effectiveTab = isNarrow ? 'single-film-upload' : selectedTab;
+		const isBulk = effectiveTab === 'bulk-upload';
 		const bulkConfig = this.state.bulkConfig;
-		const tabsHidden = isBulk && bulkStep > 1;
+		const tabsHidden = isNarrow || (isBulk && bulkStep > 1);
 
 		const headerTitle = !isBulk
 			? 'Upload Media to Cinemata'
@@ -588,7 +606,7 @@ export class AddMediaPage extends Page {
 								hideTabList={tabsHidden}
 								aria-label="Upload media type"
 								defaultSelectedTab="single-film-upload"
-								selectedTab={selectedTab}
+								selectedTab={effectiveTab}
 								onSelectedTabChange={this.handleTabChange}
 								className="add-media-tabs"
 								keepMounted
@@ -635,10 +653,11 @@ export class AddMediaPage extends Page {
 							{!isBulk && uploadedMedia ? (
 								<QuickPreview
 									title={singlePreview.title}
-									subtitle={singlePreview.company}
+									subtitle={this.config.userName}
 									country={singlePreview.country}
 									category={singlePreview.category}
 									thumbnailUrl={singlePreview.thumbnailUrl}
+									views={0}
 									className="min-w-0"
 								/>
 							) : null}

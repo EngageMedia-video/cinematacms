@@ -36,6 +36,10 @@ export function validateMetadata(metadata = {}) {
 	const errors = {};
 	const currentYear = new Date().getFullYear();
 
+	if (isBlank(metadata.title)) {
+		errors.title = 'This field is required';
+	}
+
 	if (isBlank(metadata.summary)) {
 		errors.summary = 'This field is required';
 	} else if (countSynopsisWords(metadata.summary) > SYNOPSIS_MAX_WORDS) {

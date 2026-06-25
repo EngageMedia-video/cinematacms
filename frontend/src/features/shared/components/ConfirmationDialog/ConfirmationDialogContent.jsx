@@ -27,7 +27,9 @@ export function ConfirmationDialogContent({
 						width={320}
 						height={320}
 						aria-hidden={decorationAlt ? undefined : 'true'}
-						className="pointer-events-none absolute right-0 bottom-0 w-[160px] max-w-[52%] object-contain"
+						// The corner ripple art is light-toned (made for the dark dialog). Invert
+						// it in light mode so it stays visible there too; keep it as-is in dark.
+						className="pointer-events-none absolute right-0 bottom-0 w-[160px] max-w-[52%] object-contain invert dark:invert-0"
 						loading="lazy"
 						decoding="async"
 					/>

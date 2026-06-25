@@ -12,6 +12,7 @@ export function TitleField({ value = '', onChange, error = '' }) {
 		<TextField
 			className="w-full"
 			label="Title"
+			required
 			placeholder="Write here..."
 			value={value}
 			onChange={(event) => onChange?.(event.target.value)}

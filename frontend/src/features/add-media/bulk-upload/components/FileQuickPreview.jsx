@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { QuickPreview } from '../../../upload-quick-preview';
+import { useBulkUploadConfig } from '../bulkUploadConfig';
 
 // Per-file Quick Preview shared by the Enter-Details cards (step 2) and the
 // Preview & Submit summary (step 3), so both show the same thing: a chosen
@@ -7,6 +8,7 @@ import { QuickPreview } from '../../../upload-quick-preview';
 // media's auto thumbnail.
 export function FileQuickPreview({ file, options = {}, className = '' }) {
 	const meta = file.metadata || {};
+	const { userName } = useBulkUploadConfig();
 
 	const [posterPreviewUrl, setPosterPreviewUrl] = useState('');
 	useEffect(() => {
@@ -28,9 +30,10 @@ export function FileQuickPreview({ file, options = {}, className = '' }) {
 		<QuickPreview
 			title={meta.title}
 			thumbnailUrl={posterPreviewUrl || file.thumbnailUrl || ''}
-			subtitle={meta.company}
+			subtitle={userName || ''}
 			country={countryLabel}
 			category={previewCategory}
+			views={0}
 			className={className}
 		/>
 	);
