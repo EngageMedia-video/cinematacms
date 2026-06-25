@@ -104,7 +104,11 @@ const useSingleUploadStore = create((set) => ({
 	setEnableComments: (enableComments) => set({ enableComments }),
 	setIsEncrypted: (isEncrypted) => set({ isEncrypted }),
 	setMediaStatus: (mediaStatus) =>
-		set((state) => ({ mediaStatus, password: mediaStatus === 'restricted' ? state.password : '' })),
+		set((state) => ({
+			mediaStatus,
+			password: mediaStatus === 'restricted' ? state.password : '',
+			errors: mediaStatus === 'restricted' ? state.errors : withoutError(state.errors, 'password'),
+		})),
 	setPassword: (password) => set((state) => ({ password, errors: withoutError(state.errors, 'password') })),
 	setExpireEnabled: (expireEnabled) =>
 		set(expireEnabled ? { expireEnabled } : { expireEnabled, startDate: '', endDate: '' }),
