@@ -65,6 +65,11 @@ export function MediaDetailsForm({
 	function validateForm() {
 		const nextErrors = {};
 
+		const titleError = runValidators([required()], singleUpload.title);
+		if (titleError) {
+			nextErrors.title = titleError;
+		}
+
 		const summaryError = runValidators([required(), maxWords(80)], singleUpload.summary);
 		if (summaryError) {
 			nextErrors.summary = summaryError;
@@ -91,6 +96,10 @@ export function MediaDetailsForm({
 
 		if (singleUpload.category.length === 0) {
 			nextErrors.category = 'Select at least one category';
+		}
+
+		if (singleUpload.topics.length === 0) {
+			nextErrors.topics = 'Select at least one topic';
 		}
 
 		if (singleUpload.mediaStatus === 'restricted' && !singleUpload.password) {

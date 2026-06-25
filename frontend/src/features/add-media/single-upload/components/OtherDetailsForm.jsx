@@ -275,9 +275,11 @@ export function OtherDetailsForm({
 					className="flex flex-col flex-1"
 					label="Topics"
 					name="topics"
+					required
 					options={topics}
 					value={singleUpload.topics}
 					onChange={singleUpload.setTopics}
+					error={singleUpload.errors.topics}
 					listClassName="grid grid-cols-1 md:grid-cols-3 max-h-50 overflow-y-scroll [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent [&::-webkit-scrollbar-thumb]:rounded-full"
 				/>
 			</div>

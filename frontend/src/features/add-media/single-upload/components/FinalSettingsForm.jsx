@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DateChooserField, RadioButton, Text, formatDMY } from '../../../shared/components';
 import { CheckboxButton } from '../../../shared/components/CheckboxButton';
 import { TextField } from '../../../shared/components/TextField';
+import { diffInDays, todayIso } from '../../utils/helpers';
 import { FieldGroup } from './FieldGroup';
 
 const STATUS_OPTIONS = [
@@ -10,19 +11,6 @@ const STATUS_OPTIONS = [
 	{ value: 'restricted', label: 'Restricted' },
 	{ value: 'unlisted', label: 'Unlisted' },
 ];
-
-function todayIso() {
-	const now = new Date();
-	const month = String(now.getMonth() + 1).padStart(2, '0');
-	const day = String(now.getDate()).padStart(2, '0');
-	return `${now.getFullYear()}-${month}-${day}`;
-}
-
-function diffInDays(startIso, endIso) {
-	const start = new Date(startIso);
-	const end = new Date(endIso);
-	return Math.max(0, Math.ceil((end - start) / 86400000));
-}
 
 export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false }) {
 	const [showPassword, setShowPassword] = useState(false);

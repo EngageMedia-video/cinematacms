@@ -1,5 +1,18 @@
 export const EMPTY_PREVIEW = { title: '', company: '', media_country: '', category: '' };
 
+export function todayIso() {
+	const now = new Date();
+	const month = String(now.getMonth() + 1).padStart(2, '0');
+	const day = String(now.getDate()).padStart(2, '0');
+	return `${now.getFullYear()}-${month}-${day}`;
+}
+
+export function diffInDays(startIso, endIso) {
+	const start = new Date(startIso);
+	const end = new Date(endIso);
+	return Math.max(0, Math.ceil((end - start) / 86400000));
+}
+
 export function findLabel(options = [], value) {
 	const option = options.find((item) => String(item.value ?? item.code) === String(value));
 	return option?.label || option?.title || '';

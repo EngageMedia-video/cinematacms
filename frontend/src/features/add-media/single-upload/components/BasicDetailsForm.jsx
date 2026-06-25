@@ -10,7 +10,7 @@ export function BasicDetailsForm({ singleUpload }) {
 	return (
 		<FieldGroup
 			title="Basic Details"
-			description="Add the information viewers and editors need before this media is published."
+			description="What viewers and curators will see when they find your film on Cinemata."
 		>
 			<TextField
 				className="w-full"
