@@ -14,17 +14,21 @@ export function buildEditFormData({
 	thumbnailTime = null,
 	action = 'submit',
 	csrfToken = '',
+	isReviewed = false,
 }) {
 	const data = new FormData();
 	data.set('csrfmiddlewaretoken', csrfToken || '');
 	data.set('action', action);
+	if (isReviewed) {
+		data.set('is_reviewed', 'on');
+	}
 
 	data.set('title', metadata.title ?? '');
 	data.set('summary', metadata.summary ?? '');
 	data.set('description', metadata.description ?? '');
 	// Map the picked year to MediaForm's dropdown + custom contract: 2000..current
-	// posts as-is, while older years (1900..1999) post the "other" sentinel plus the
-	// custom year (mirrors the legacy / single-upload year field).
+	// posts as-is, while older years post the "other" sentinel plus the custom year
+	// (mirrors the legacy / single-upload year field).
 	const yearProduced = String(metadata.year_produced ?? '').trim();
 	if (yearProduced && Number(yearProduced) < 2000) {
 		data.set('year_produced', 'other');

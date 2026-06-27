@@ -93,6 +93,19 @@ class MediaFormPasswordValidationTest(TestCase):
         if not form.is_valid():
             self.assertNotIn("password", form.errors)
 
+    def test_custom_year_before_1900_is_accepted(self):
+        data = self._get_form_data(year_produced="other", year_produced_custom="1898")
+        form = MediaForm(self.user, data=data, instance=self.media)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        media = form.save()
+        self.assertEqual(media.year_produced, 1898)
+
+    def test_custom_year_zero_is_rejected(self):
+        data = self._get_form_data(year_produced="other", year_produced_custom="0")
+        form = MediaForm(self.user, data=data, instance=self.media)
+        self.assertFalse(form.is_valid())
+        self.assertIn("year_produced_custom", form.errors)
+
     @override_settings(MEDIA_PASSWORD_MIN_LENGTH=12)
     def test_respects_configurable_min_length(self):
         data = self._get_form_data(password="short1234")  # 9 chars, less than 12

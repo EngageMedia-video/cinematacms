@@ -198,7 +198,7 @@ export function OtherDetailsForm({
 	topics,
 }) {
 	return (
-		<FieldGroup title="Others Details">
+		<FieldGroup title="Other Details">
 			<TextField
 				className="w-full"
 				id="production-company"

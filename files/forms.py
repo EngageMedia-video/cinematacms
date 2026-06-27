@@ -56,8 +56,8 @@ class MediaForm(forms.ModelForm):
         widget=forms.NumberInput(
             attrs={
                 "class": "year-custom-input",
-                "placeholder": "Enter year (e.g. 1995)",
-                "min": "1900",
+                "placeholder": "Enter year (e.g. 1895)",
+                "min": "1",
                 "style": "display: none;",
             }
         ),
@@ -247,8 +247,8 @@ class MediaForm(forms.ModelForm):
                     if not self.has_error("year_produced_custom"):
                         self.add_error("year_produced_custom", "Please specify a year.")
                 else:
-                    if not (1900 <= year_produced_custom <= current_year):
-                        self.add_error("year_produced_custom", f"Please enter a year between 1900 and {current_year}.")
+                    if not (1 <= year_produced_custom <= current_year):
+                        self.add_error("year_produced_custom", f"Please enter a year up to {current_year}.")
                     else:
                         cleaned_data["year_produced"] = year_produced_custom
             elif year_produced:

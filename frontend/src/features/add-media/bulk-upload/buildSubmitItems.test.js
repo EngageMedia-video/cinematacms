@@ -15,6 +15,14 @@ describe('buildEditFormData', () => {
 		expect(data.get('year_produced_custom')).toBeNull();
 	});
 
+	it('only marks the media reviewed when the trusted flow requests it', () => {
+		const regular = buildEditFormData({ metadata: createDefaultMetadata() });
+		expect(regular.get('is_reviewed')).toBeNull();
+
+		const trusted = buildEditFormData({ metadata: createDefaultMetadata(), isReviewed: true });
+		expect(trusted.get('is_reviewed')).toBe('on');
+	});
+
 	it('maps a pre-2000 year to the MediaForm "other" + custom contract', () => {
 		const data = buildEditFormData({
 			metadata: { ...createDefaultMetadata(), year_produced: '1995' },
