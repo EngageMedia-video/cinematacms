@@ -84,8 +84,8 @@ export function MediaDetailsForm({
 		const year = String(singleUpload.yearProduced).trim();
 		if (!year) {
 			nextErrors.year_produced = 'This field is required';
-		} else if (!/^\d+$/.test(year) || Number(year) < 2000 || Number(year) > CURRENT_YEAR) {
-			nextErrors.year_produced = `Enter a year between 2000 and ${CURRENT_YEAR}`;
+		} else if (!/^\d+$/.test(year) || Number(year) < 1 || Number(year) > CURRENT_YEAR) {
+			nextErrors.year_produced = `Enter a year up to ${CURRENT_YEAR}`;
 		}
 
 		if (singleUpload.website && !singleUpload.website.startsWith('https://')) {

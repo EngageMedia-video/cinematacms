@@ -53,9 +53,10 @@ describe('validateMetadata', () => {
 		);
 	});
 
-	it('validates the year range (1900..current, from the year picker)', () => {
-		expect(validateMetadata({ ...validMetadata, year_produced: '1800' }).year_produced).toBeTruthy();
+	it('validates the year range (positive year through current, from the year picker)', () => {
+		expect(validateMetadata({ ...validMetadata, year_produced: '0' }).year_produced).toBeTruthy();
 		expect(validateMetadata({ ...validMetadata, year_produced: 'abc' }).year_produced).toBeTruthy();
+		expect(validateMetadata({ ...validMetadata, year_produced: '1800' }).year_produced).toBeUndefined();
 		expect(validateMetadata({ ...validMetadata, year_produced: '1995' }).year_produced).toBeUndefined();
 		expect(validateMetadata({ ...validMetadata, year_produced: '2010' }).year_produced).toBeUndefined();
 	});

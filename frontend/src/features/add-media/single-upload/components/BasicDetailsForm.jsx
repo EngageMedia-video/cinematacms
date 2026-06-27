@@ -62,7 +62,6 @@ export function BasicDetailsForm({ singleUpload }) {
 				value={singleUpload.yearProduced}
 				onChange={singleUpload.setYearProduced}
 				error={errors.year_produced}
-				minYear={2000}
 			/>
 		</FieldGroup>
 	);
