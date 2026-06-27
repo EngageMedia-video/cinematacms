@@ -220,9 +220,15 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 								name={`status-${file.id}`}
 								value={meta.state}
 								includeRestricted={isTrustedUser}
-								onChange={(value) =>
-									patch({ state: value, password: value === 'restricted' ? meta.password : '' })
-								}
+								onChange={(value) => {
+									const next = {
+										state: value,
+										password: value === 'restricted' ? meta.password : '',
+									};
+									if (value === 'private')
+										Object.assign(next, { expireEnabled: false, startDate: '', endDate: '' });
+									patch(next);
+								}}
 							/>
 							{isTrustedUser && meta.state === 'restricted' ? (
 								<RestrictedPasswordField
@@ -233,23 +239,28 @@ export function FileCard({ file, subStep, options, errors = {}, onClearErrors })
 								/>
 							) : null}
 
-							<Divider />
+							{meta.state !== 'private' ? (
+								<>
+									<Divider />
 
-							<VisibilityExpirationField
-								idPrefix={`visibility-${file.id}`}
-								expireEnabled={meta.expireEnabled}
-								startDate={meta.startDate}
-								endDate={meta.endDate}
-								onToggle={(checked) =>
-									patch(
-										checked
-											? { expireEnabled: true }
-											: { expireEnabled: false, startDate: '', endDate: '' }
-									)
-								}
-								onStartDateChange={(value) => patch({ startDate: value })}
-								onEndDateChange={(value) => patch({ endDate: value })}
-							/>
+									<VisibilityExpirationField
+										idPrefix={`visibility-${file.id}`}
+										expireEnabled={meta.expireEnabled}
+										startDate={meta.startDate}
+										endDate={meta.endDate}
+										mediaStatus={meta.state}
+										onToggle={(checked) =>
+											patch(
+												checked
+													? { expireEnabled: true }
+													: { expireEnabled: false, startDate: '', endDate: '' }
+											)
+										}
+										onStartDateChange={(value) => patch({ startDate: value })}
+										onEndDateChange={(value) => patch({ endDate: value })}
+									/>
+								</>
+							) : null}
 
 							<Divider />
 

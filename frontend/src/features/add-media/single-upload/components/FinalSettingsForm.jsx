@@ -49,7 +49,10 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 								value={option.value}
 								controlClassName="bg-bg-surface-hover"
 								checked={singleUpload.mediaStatus === option.value}
-								onChange={() => singleUpload.setMediaStatus(option.value)}
+								onChange={() => {
+									if (option.value === 'private') singleUpload.setExpireEnabled(false);
+									singleUpload.setMediaStatus(option.value);
+								}}
 							>
 								{option.label}
 							</RadioButton>
@@ -75,16 +78,21 @@ export function FinalSettingsForm({ singleUpload, canUseRestrictedStatus = false
 					/>
 				) : null}
 
-				<div className="my-4 border-b border-b-border-divider" />
+				{singleUpload.mediaStatus !== 'private' ? (
+					<>
+						<div className="my-4 border-b border-b-border-divider" />
 
-				<VisibilityExpirationField
-					expireEnabled={singleUpload.expireEnabled}
-					startDate={singleUpload.startDate}
-					endDate={singleUpload.endDate}
-					onToggle={singleUpload.setExpireEnabled}
-					onStartDateChange={singleUpload.setStartDate}
-					onEndDateChange={singleUpload.setEndDate}
-				/>
+						<VisibilityExpirationField
+							expireEnabled={singleUpload.expireEnabled}
+							startDate={singleUpload.startDate}
+							endDate={singleUpload.endDate}
+							mediaStatus={singleUpload.mediaStatus}
+							onToggle={singleUpload.setExpireEnabled}
+							onStartDateChange={singleUpload.setStartDate}
+							onEndDateChange={singleUpload.setEndDate}
+						/>
+					</>
+				) : null}
 
 				<div className="my-4 border-b border-b-border-divider" />
 
