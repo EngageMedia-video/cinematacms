@@ -252,6 +252,18 @@ class Media(models.Model):
         help_text="Time on video file that a thumbnail will be taken",
     )
     sprites = models.FileField(upload_to=original_thumbnail_file_path, blank=True, max_length=500)
+    sprite_num_secs = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Seconds between consecutive tiles in the generated sprite sheet. Stored per "
+            "media because long videos use a widened interval (see SPRITE_MAX_TILES). The "
+            "thumbnail selector maps a chosen tile back to its timestamp as tile_index * "
+            "this value, so it must match what files/sprites.py used to space the tiles. "
+            "Null for legacy rows generated before this field existed; callers fall back "
+            "to settings.SPRITE_NUM_SECS."
+        ),
+    )
     duration = models.IntegerField(default=0)
     views = models.IntegerField(default=1)
     likes = models.IntegerField(default=1)

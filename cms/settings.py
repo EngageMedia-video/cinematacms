@@ -390,6 +390,14 @@ FFPROBE_COMMAND = "ffprobe"  # this is the path
 IMAGEMAGICK_COMMAND = None  # optional path/name for ImageMagick; auto-detects convert or magick when unset
 MP4HLS = "mp4hls"
 
+# Sprite sheet generation (powers the "choose from video" thumbnail selector).
+# SPRITE_NUM_SECS is the *minimum* spacing between tiles for short videos. For long
+# videos the spacing is widened automatically so the total tile count never exceeds
+# SPRITE_MAX_TILES — this bounds both the ffmpeg cost on the worker and the height of
+# the generated JPEG (which the browser must decode). See files/sprites.py.
+SPRITE_NUM_SECS = 10
+SPRITE_MAX_TILES = 100
+
 ALLOW_ANONYMOUS_ACTIONS = ["watch"]  # need be a list - only watching allowed for anonymous users
 MASK_IPS_FOR_ACTIONS = True
 # how many seconds a process in running state without reporting progress is

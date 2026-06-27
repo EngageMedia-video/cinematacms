@@ -34,16 +34,33 @@ class MediaSerializerTest(TestCase):
         self.assertEqual(data["content_sensitivity_info"], [{"title": "Graphic Violence"}])
 
     @override_settings(SPRITE_NUM_SECS=7)
-    def test_single_media_serializer_exposes_sprite_num_secs(self):
-        # The thumbnail selector maps a chosen tile back to its timestamp via this value;
-        # it must reflect the server setting so the client never assumes a hardcoded 10.
+    def test_single_media_serializer_uses_historical_constant_for_legacy_rows(self):
+        # Legacy media generated before sprite_num_secs existed has a null field. Its sheet
+        # was always spaced at a fixed 10s, so the serializer must report 10 regardless of
+        # the current SPRITE_NUM_SECS setting (here overridden to 7) — otherwise changing
+        # the setting would remap legacy sheets to the wrong timestamps.
         media = create_test_media(self.user)
+        self.assertIsNone(media.sprite_num_secs)
         request = RequestFactory().get("/api/v1/media/test")
         request.user = self.user
 
         data = SingleMediaSerializer(media, context={"request": request}).data
 
-        self.assertEqual(data["sprite_num_secs"], 7)
+        self.assertEqual(data["sprite_num_secs"], 10)
+
+    @override_settings(SPRITE_NUM_SECS=10)
+    def test_single_media_serializer_prefers_per_media_sprite_num_secs(self):
+        # Long videos store a widened interval; the serializer must report THAT value, not
+        # the global setting, so the selector maps tiles to the correct timestamps.
+        media = create_test_media(self.user)
+        media.sprite_num_secs = 17
+        media.save(update_fields=["sprite_num_secs"])
+        request = RequestFactory().get("/api/v1/media/test")
+        request.user = self.user
+
+        data = SingleMediaSerializer(media, context={"request": request}).data
+
+        self.assertEqual(data["sprite_num_secs"], 17)
 
     def test_hero_playback_serializer_includes_playback_fields(self):
         media = create_test_media(self.user)

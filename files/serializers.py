@@ -290,6 +290,12 @@ class ManageCommunityImpactSerializer(serializers.ModelSerializer):
         )
 
 
+# Spacing (seconds) at which sprite sheets were generated before Media.sprite_num_secs
+# existed. Fixed by history (the old generator hardcoded a 10s fallback), so legacy rows
+# must report this value regardless of the current SPRITE_NUM_SECS setting.
+LEGACY_SPRITE_NUM_SECS = 10
+
+
 class SingleMediaSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
     url = serializers.SerializerMethodField()
@@ -304,11 +310,16 @@ class SingleMediaSerializer(serializers.ModelSerializer):
     def get_sprite_num_secs(self, obj):
         # Seconds between consecutive sprite-sheet frames. The thumbnail selector needs
         # this to map a chosen tile back to its exact timestamp (tile i -> i * value),
-        # which must match how files/sprites.py extracts the tiles. Exposed instead of
-        # hardcoding 10 on the client so the two never drift if the setting changes.
-        from django.conf import settings
-
-        return getattr(settings, "SPRITE_NUM_SECS", 10)
+        # which must match how files/sprites.py extracted the tiles for THIS media. Long
+        # videos use a widened interval, so this is stored per-media.
+        #
+        # Legacy rows created before sprite_num_secs existed have a null field. Their
+        # sheets were ALWAYS generated at a fixed 10s (the old code used a hardcoded
+        # getattr(settings, "SPRITE_NUM_SECS", 10) and the setting was never defined), so
+        # we fall back to the historical constant 10 — NOT the live setting. Using the
+        # current setting would remap those legacy sheets to the wrong timestamps if an
+        # admin ever changes SPRITE_NUM_SECS.
+        return obj.sprite_num_secs or LEGACY_SPRITE_NUM_SECS
 
     def get_user_has_liked(self, obj):
         request = self.context.get("request")

@@ -202,7 +202,10 @@ export function VideoPlayerByPageLink(props) {
 						!!data.sprites_url
 							? {
 									url: formatInnerLink(data.sprites_url, site.url),
-									frame: { width: 160, height: 90, seconds: 10 },
+									// seconds-per-tile must match the interval the backend used to build
+									// THIS sheet. Long videos use a widened interval (see files/sprites.py),
+									// exposed as sprite_num_secs; fall back to 10 for legacy rows.
+									frame: { width: 160, height: 90, seconds: data.sprite_num_secs || 10 },
 								}
 							: null
 					);

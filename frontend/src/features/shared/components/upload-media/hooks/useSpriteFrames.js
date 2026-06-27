@@ -65,12 +65,15 @@ export function useSpriteFrames({ spritesUrl, duration, spriteSecs }) {
 
 		let cancelled = false;
 		const image = new Image();
+		// Decoding the stacked sprite JPEG can take a while for longer videos (taller sheet).
+		// The backend caps tile count so the sheet height stays bounded, but slower devices
+		// still need more than the previous 10s before we declare the preview unavailable.
 		const timeoutId = window.setTimeout(() => {
 			if (!cancelled) {
 				setRowsInSheet(0);
 				setStatus('error');
 			}
-		}, 10000);
+		}, 30000);
 		setStatus('loading');
 		setRowsInSheet(0);
 
