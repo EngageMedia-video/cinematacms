@@ -289,10 +289,30 @@ describe('SingleUploadPage', () => {
 		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 		const submittedBody = fetchMock.mock.calls[0][1].body;
 
+		expect(submittedBody.get('is_reviewed')).toBeNull();
 		expect(submittedBody.get('action')).toBe('draft');
 		expect(
 			screen.queryByText('Please fill in all required fields before sharing your media.')
 		).not.toBeInTheDocument();
+	});
+
+	it('marks direct-publish uploads as reviewed by default', async () => {
+		const user = userEvent.setup();
+		const fetchMock = vi.fn().mockResolvedValue({
+			ok: false,
+			status: 500,
+			json: async () => ({}),
+		});
+		vi.stubGlobal('fetch', fetchMock);
+
+		renderUploadedPage({ canPublishDirectly: true });
+
+		await user.click(screen.getByRole('button', { name: 'Save as Draft' }));
+
+		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+		const submittedBody = fetchMock.mock.calls[0][1].body;
+
+		expect(submittedBody.get('is_reviewed')).toBe('on');
 	});
 
 	it('submits a selected video frame as thumbnail_time', async () => {
@@ -365,5 +385,6 @@ describe('SingleUploadPage', () => {
 		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 
 		expect(fetchMock.mock.calls[0][1].body.get('action')).toBe('submit');
+		expect(fetchMock.mock.calls[0][1].body.get('is_reviewed')).toBeNull();
 	});
 });

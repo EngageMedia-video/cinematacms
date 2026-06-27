@@ -143,6 +143,7 @@ class AutoDraftUploadTests(TestCase):
 
     def setUp(self):
         self.client = Client()
+        self.regular = User.objects.create_user(username="regupload", email="regupload@e.com", password="pw")
         self.trusted = User.objects.create_user(username="tru", email="tru@e.com", password="pw")
         self.trusted.advancedUser = True
         self.trusted.save()
@@ -175,3 +176,21 @@ class AutoDraftUploadTests(TestCase):
         self.assertEqual(response.status_code, 200)
         media = Media.objects.filter(user=self.trusted).latest("add_date")
         self.assertFalse(media.is_draft)
+
+    @patch.object(Media, "media_init", return_value=None)
+    @override_settings(MEDIA_IS_REVIEWED=False)
+    def test_trusted_upload_is_reviewed_even_when_global_default_requires_review(self, _mock_init):
+        response = self._upload()
+        self.assertEqual(response.status_code, 200)
+        media = Media.objects.filter(user=self.trusted).latest("add_date")
+        self.assertTrue(media.is_reviewed)
+
+    @patch.object(Media, "media_init", return_value=None)
+    @override_settings(MEDIA_IS_REVIEWED=True)
+    def test_regular_upload_is_unreviewed_even_when_global_default_allows_reviewed(self, _mock_init):
+        self.client.force_login(self.regular)
+
+        response = self._upload()
+        self.assertEqual(response.status_code, 200)
+        media = Media.objects.filter(user=self.regular).latest("add_date")
+        self.assertFalse(media.is_reviewed)

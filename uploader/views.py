@@ -9,7 +9,7 @@ from django.core.files import File
 from django.http import JsonResponse
 from django.views import generic
 
-from cms.permissions import user_allowed_to_upload
+from cms.permissions import is_trusted_uploader, user_allowed_to_upload
 from files.helpers import cleanup_temp_upload_files, rm_file
 from files.models import Media
 
@@ -89,7 +89,12 @@ class FineUploaderView(generic.FormView):
         media_file = os.path.join(settings.MEDIA_ROOT, self.upload.real_path)
         with open(media_file, "rb") as f:
             myfile = File(f)
-            new = Media.objects.create(media_file=myfile, user=self.request.user, is_draft=is_draft)
+            new = Media.objects.create(
+                media_file=myfile,
+                user=self.request.user,
+                is_draft=is_draft,
+                is_reviewed=is_trusted_uploader(self.request.user),
+            )
         if is_draft and new.state != "private":
             # save() set the role-based default state (unlisted for advanced
             # users); normalise drafts to private to match the draft convention.

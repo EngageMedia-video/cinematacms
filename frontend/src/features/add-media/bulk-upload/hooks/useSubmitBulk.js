@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { getCSRFToken } from '../../../shared/utils/api';
 import { buildEditFormData, getMediaEditUrl } from '../buildSubmitItems';
+import { useBulkUploadConfig } from '../bulkUploadConfig';
 
 /**
  * Submits each completed file per-file through the shared `edit_media` view —
@@ -13,6 +14,8 @@ import { buildEditFormData, getMediaEditUrl } from '../buildSubmitItems';
  * name, same as the single-upload edit response.
  */
 export function useSubmitBulk() {
+	const config = useBulkUploadConfig();
+
 	return useMutation({
 		mutationFn: async ({ action, files }) => {
 			const csrfToken = getCSRFToken() ?? '';
@@ -25,6 +28,7 @@ export function useSubmitBulk() {
 						thumbnailTime: file.thumbnailTime,
 						action,
 						csrfToken,
+						isReviewed: !!config.isTrustedUser,
 					});
 					try {
 						const response = await fetch(getMediaEditUrl(file.friendlyToken), {

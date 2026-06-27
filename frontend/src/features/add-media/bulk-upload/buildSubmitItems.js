@@ -14,10 +14,14 @@ export function buildEditFormData({
 	thumbnailTime = null,
 	action = 'submit',
 	csrfToken = '',
+	isReviewed = false,
 }) {
 	const data = new FormData();
 	data.set('csrfmiddlewaretoken', csrfToken || '');
 	data.set('action', action);
+	if (isReviewed) {
+		data.set('is_reviewed', 'on');
+	}
 
 	data.set('title', metadata.title ?? '');
 	data.set('summary', metadata.summary ?? '');
