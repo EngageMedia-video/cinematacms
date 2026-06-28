@@ -70,10 +70,18 @@ function diffInDays(startIso, endIso) {
 	return Math.max(0, Math.ceil((end - start) / 86400000));
 }
 
+const STATUS_LABELS = {
+	public: 'Public',
+	private: 'Private',
+	restricted: 'Restricted',
+	unlisted: 'Unlisted',
+};
+
 export function VisibilityExpirationField({
 	expireEnabled = false,
 	startDate = '',
 	endDate = '',
+	mediaStatus = 'public',
 	onToggle,
 	onStartDateChange,
 	onEndDateChange,
@@ -83,12 +91,18 @@ export function VisibilityExpirationField({
 	// Backend treats end date as inclusive (+1 day in forms.py), so add 1 to
 	// match: same start and end date = a valid 1-day window, not 0 days.
 	const visibleDays = endDate ? diffInDays(effectiveStart, endDate) + 1 : 0;
+	const statusLabel = STATUS_LABELS[mediaStatus] ?? 'Public';
 
 	return (
 		<>
 			<CheckboxButton checked={expireEnabled} onChange={(event) => onToggle?.(event.target.checked)}>
 				Set Visibility Expiration
 			</CheckboxButton>
+
+			<Text variant="body-14" color="meta" className="m-0">
+				Set a window during which your film is visible. Once the end date passes, it will automatically switch
+				to Private.
+			</Text>
 
 			{expireEnabled ? (
 				<>
@@ -112,8 +126,8 @@ export function VisibilityExpirationField({
 
 					{endDate ? (
 						<Text variant="body-14" color="meta" className="m-0">
-							Your film will be visible for {visibleDays} days, starting {formatDMY(effectiveStart)} to{' '}
-							{formatDMY(endDate)}
+							Your film will be set to {statusLabel} from {formatDMY(effectiveStart)} to{' '}
+							{formatDMY(endDate)}. After that, it will automatically switch to Private.
 						</Text>
 					) : null}
 				</>
