@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { config as mediacmsConfig } from '../../../../../static/js/mediacms/config.js';
 import { apiFetch } from '../../../utils/api';
 
-const DEFAULT_MAX_ATTEMPTS = 12;
+// Sprite generation runs on the long_tasks worker, competing with the encode job that the
+// same upload kicks off. For long/large videos the sheet can take a few minutes to appear,
+// so poll for up to ~5 minutes (60 attempts x 5s) before giving up. The backend caps the
+// tile count (SPRITE_MAX_TILES), which keeps generation bounded, but queue contention can
+// still push the wait past the previous 60s budget.
+const DEFAULT_MAX_ATTEMPTS = 60;
 const DEFAULT_INTERVAL_MS = 5000;
 const mediaDataCache = new Map();
 

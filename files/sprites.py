@@ -1,3 +1,5 @@
+import logging
+import math
 import os
 import shutil
 import tempfile
@@ -7,8 +9,28 @@ from django.core.files import File
 
 from .helpers import get_file_name, get_file_type, run_command
 
+logger = logging.getLogger(__name__)
+
 SPRITE_WIDTH = 160
 SPRITE_HEIGHT = 90
+
+
+def resolve_sprite_interval(duration, base_interval, max_tiles):
+    """Choose the spacing (in seconds) between sprite tiles for a video.
+
+    Short videos keep ``base_interval`` (e.g. 10s). Long videos widen the spacing so the
+    total tile count never exceeds ``max_tiles`` — this bounds both the number of ffmpeg
+    invocations on the worker and the height of the stacked JPEG the browser must decode.
+    The returned value is authoritative: it is persisted on the media and used by the
+    thumbnail selector to map a chosen tile (index i) back to its timestamp (i * interval),
+    so it MUST match the spacing actually used to extract the tiles.
+    """
+    base_interval = max(1, int(base_interval or 1))
+    if duration <= 0 or max_tiles <= 0:
+        return base_interval
+    # ceil(duration / max_tiles) is the smallest interval that keeps tile count <= max_tiles.
+    min_interval_for_cap = math.ceil(duration / max_tiles)
+    return max(base_interval, min_interval_for_cap)
 
 
 def _command_exists(command):
@@ -78,7 +100,8 @@ def generate_sprite_for_media(media):
     with tempfile.TemporaryDirectory(dir=temp_directory) as tmpdirname:
         output_name = os.path.join(tmpdirname, "sprites.jpg")
 
-        sprite_num_secs = getattr(settings, "SPRITE_NUM_SECS", 10)
+        base_interval = getattr(settings, "SPRITE_NUM_SECS", 10)
+        max_tiles = getattr(settings, "SPRITE_MAX_TILES", 100)
 
         # Extract each sprite tile at an EXACT timestamp (i * sprite_num_secs) using the
         # same `-ss <time> -i <file> -vframes 1` input-seek mechanism the poster uses in
@@ -91,11 +114,23 @@ def generate_sprite_for_media(media):
         if duration <= 0:
             return _failure(media, "missing_duration")
 
+        # Widen the spacing for long videos so the tile count stays bounded. The interval
+        # used here is persisted on the media (sprite_num_secs) and surfaced to the client
+        # so the chosen tile maps to the correct poster timestamp. See resolve_sprite_interval.
+        sprite_num_secs = resolve_sprite_interval(duration, base_interval, max_tiles)
+
         timestamps = list(range(0, duration, sprite_num_secs))
         if not timestamps:
             timestamps = [0]
 
         last_ffmpeg_error = None
+        # A single failed frame must NOT abort the whole job — for long/large files an
+        # occasional seek failure near EOF is expected, and a partial sheet is far better
+        # than none. But the thumbnail selector maps tile position i back to time
+        # i*sprite_num_secs, so the surviving tiles must stay aligned to their original
+        # positions. We therefore keep the contiguous run of tiles from index 0 and STOP
+        # at the first failure (truncating the tail) rather than renumbering past a gap,
+        # which would shift every later tile onto the wrong timestamp.
         image_files = []
         for index, timestamp in enumerate(timestamps):
             frame_path = os.path.join(tmpdirname, f"img{index:03d}.jpg")
@@ -119,7 +154,14 @@ def generate_sprite_for_media(media):
                 image_files.append(frame_path)
             else:
                 last_ffmpeg_error = ffmpeg_result.get("error")
-                return _failure(media, "ffmpeg_missing_frame", last_ffmpeg_error)
+                logger.warning(
+                    "Sprite generation for media %s stopped at frame %d/%d (error: %s)",
+                    getattr(media, "friendly_token", None),
+                    index,
+                    len(timestamps),
+                    last_ffmpeg_error,
+                )
+                break
 
         if not image_files:
             return _failure(media, "ffmpeg_no_frames", last_ffmpeg_error)
@@ -137,6 +179,10 @@ def generate_sprite_for_media(media):
         if get_file_type(output_name) != "image":
             return _failure(media, "invalid_sprite_output")
 
+        # Persist the interval actually used so the serializer can report it per-media and
+        # the selector maps tiles to the correct timestamps. Set it before sprites.save()
+        # so the FileField save also writes the column in one round-trip.
+        media.sprite_num_secs = sprite_num_secs
         with open(output_name, "rb") as sprite_file:
             media.sprites.save(
                 content=File(sprite_file),
@@ -150,5 +196,6 @@ def generate_sprite_for_media(media):
         "ok": True,
         "reason": None,
         "friendly_token": media.friendly_token,
+        "sprite_num_secs": sprite_num_secs,
         "sprites": media.sprites.name,
     }

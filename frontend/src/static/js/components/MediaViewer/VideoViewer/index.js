@@ -800,7 +800,10 @@ export default class VideoViewer extends React.PureComponent {
 		const previewSprite = !!this.props.data.sprites_url
 			? {
 					url: this.props.siteUrl + '/' + this.props.data.sprites_url.replace(/^\//g, ''),
-					frame: { width: 160, height: 90, seconds: 10 },
+					// seconds-per-tile must match the interval the backend used to build THIS
+					// sheet. Long videos use a widened interval (see files/sprites.py), exposed
+					// as sprite_num_secs; fall back to 10 for legacy rows without the field.
+					frame: { width: 160, height: 90, seconds: this.props.data.sprite_num_secs || 10 },
 				}
 			: null;
 
