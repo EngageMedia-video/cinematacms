@@ -113,7 +113,9 @@ export function useEditMediaState(config) {
 			updateState((current) => ({
 				...current,
 				noLicense,
-				selectedLicenseId: noLicense ? current.selectedLicenseId : current.selectedLicenseId || licenses[0]?.id || '',
+				selectedLicenseId: noLicense
+					? current.selectedLicenseId
+					: current.selectedLicenseId || licenses[0]?.id || '',
 			})),
 		setSelectedLicenseField: (field, value) =>
 			updateState((current) => ({

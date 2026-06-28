@@ -52,7 +52,9 @@ export function FinalSettingsSection({ config, editState }) {
 						name="password"
 						type="password"
 						label="Enter Password"
-						placeholder={config.media?.hasPassword ? 'Leave blank to keep the current password' : 'Write here...'}
+						placeholder={
+							config.media?.hasPassword ? 'Leave blank to keep the current password' : 'Write here...'
+						}
 						value={editState.password}
 						onChange={(event) => editState.setPassword(event.target.value)}
 						invalid={Boolean(editState.errors.password)}

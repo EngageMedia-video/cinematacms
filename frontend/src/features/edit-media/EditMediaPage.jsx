@@ -111,7 +111,8 @@ function EditMediaPageContent() {
 	function scrollToFirstError(errors) {
 		const firstField = ERROR_FIELD_ORDER.find((field) => field in errors);
 		const selector = ERROR_FIELD_SELECTORS[firstField] || '[aria-invalid="true"]';
-		const target = formRef.current?.querySelector(selector) || formRef.current?.querySelector('[aria-invalid="true"]');
+		const target =
+			formRef.current?.querySelector(selector) || formRef.current?.querySelector('[aria-invalid="true"]');
 
 		target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 		if (typeof target?.focus === 'function') {
@@ -176,7 +177,11 @@ function EditMediaPageContent() {
 							noValidate
 							onSubmit={submitForm}
 						>
-							<input type="hidden" name="csrfmiddlewaretoken" value={config.csrfToken || getCSRFToken() || ''} />
+							<input
+								type="hidden"
+								name="csrfmiddlewaretoken"
+								value={config.csrfToken || getCSRFToken() || ''}
+							/>
 
 							<BasicDetailsForm singleUpload={editState} />
 
