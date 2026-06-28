@@ -1,0 +1,30 @@
+{% extends "base_modern.html" %}
+{% load static %}
+{% load django_vite %}
+
+{% block headtitle %}Edit Media - {{PORTAL_NAME}}{% endblock headtitle %}
+
+{% block externallinks %}
+{% if LOAD_FROM_CDN %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" rel="preload" as="script" integrity="sha384-s4tTAUzowK9zROQxp/mYIe9Ah2IqXf8pSUWZAk4o2C/Ri/wSbqiEE1+F6AQIQaAz" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/file-uploader/5.13.0/fine-uploader.min.js" integrity="sha384-s4tTAUzowK9zROQxp/mYIe9Ah2IqXf8pSUWZAk4o2C/Ri/wSbqiEE1+F6AQIQaAz" crossorigin="anonymous"></script>
+{% else %}
+<link href="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}" rel="preload" as="script">
+<script src="{% static "lib/file-uploader/5.13.0/fine-uploader.min.js" %}"></script>
+{% endif %}
+{% endblock externallinks %}
+
+{% block modernpageimports %}
+{% vite_asset 'src/entries/edit-media.js' %}
+{% endblock modernpageimports %}
+
+{% block content %}
+{{ edit_media_page_config|json_script:"edit-media-page-config" }}
+
+<script>
+	window.MediaCMS = window.MediaCMS || {};
+	window.MediaCMS.editMediaPage = JSON.parse(document.getElementById('edit-media-page-config').textContent);
+</script>
+
+<div id="app-root"></div>
+{% endblock content %}

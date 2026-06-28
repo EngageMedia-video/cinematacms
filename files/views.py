@@ -19,6 +19,7 @@ from django.core.mail import EmailMessage
 from django.db import DatabaseError, models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
+from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -680,6 +681,171 @@ def upload_media(request):
     return render(request, template, context)
 
 
+def _json_value(value):
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, datetime):
+        return _local_or_naive_datetime(value).strftime("%Y-%m-%d")
+    if hasattr(value, "isoformat") and not isinstance(value, str):
+        return value.isoformat()
+    if isinstance(value, (list, tuple, set)):
+        return [_json_value(item) for item in value]
+    if hasattr(value, "value"):
+        return str(value.value)
+    return str(value)
+
+
+def _local_or_naive_datetime(value):
+    if timezone.is_naive(value):
+        return value
+    return timezone.localtime(value)
+
+
+def _choice_value(value):
+    if hasattr(value, "value"):
+        value = value.value
+    return "" if value is None else str(value)
+
+
+def _field_options(form, field_name):
+    field = form.fields.get(field_name)
+    if not field or not hasattr(field, "choices"):
+        return []
+
+    options = []
+    for value, label in field.choices:
+        if value in ("", None):
+            continue
+        options.append({"value": _choice_value(value), "label": str(label)})
+    return options
+
+
+def _field_value(form, field_name):
+    if field_name not in form.fields:
+        return "" if field_name not in {"enable_comments", "allow_download", "featured", "is_reviewed"} else False
+
+    return _json_value(form[field_name].value())
+
+
+def _datetime_field_value(form, field_name):
+    if field_name not in form.fields:
+        return ""
+
+    value = form[field_name].value()
+    if isinstance(value, datetime):
+        return _local_or_naive_datetime(value).strftime("%Y-%m-%d %H:%M:%S")
+    return _json_value(value)
+
+
+def _file_info(file_field):
+    if not file_field:
+        return {"name": "", "url": ""}
+
+    name = getattr(file_field, "name", "") or ""
+    try:
+        url = file_field.url
+    except Exception:
+        url = ""
+    return {"name": os.path.basename(name), "url": url}
+
+
+def _form_errors_for_json(form):
+    return {field: [str(error) for error in errors] for field, errors in form.errors.items()}
+
+
+def _license_options_for_json(licenses_dict):
+    return [
+        {
+            "id": str(data["id"]),
+            "title": data["title"],
+            "allowCommercial": data["allow_commercial"],
+            "allowModifications": data["allow_modifications"],
+        }
+        for data in licenses_dict.values()
+    ]
+
+
+def _edit_media_page_config(request, form, media, licenses_dict, video_extensions):
+    form_fields = set(form.fields.keys())
+    media_file = _file_info(media.media_file)
+    uploaded_poster = _file_info(media.uploaded_poster)
+
+    try:
+        sprites_url = media.sprites.url if media.sprites else ""
+    except Exception:
+        sprites_url = ""
+
+    selected_license = _field_value(form, "custom_license")
+    no_license = bool(_field_value(form, "no_license")) or selected_license in ("", "None", "none")
+    update_url = reverse("uploader:update", kwargs={"friendly_token": media.friendly_token})
+
+    return {
+        "csrfToken": get_token(request),
+        "editUrl": request.get_full_path(),
+        "uploadEndpoint": update_url,
+        "uploadCompleteEndpoint": f"{update_url}?{settings.CHUNKS_DONE_PARAM_NAME}",
+        "uploadCancelEndpoint": reverse("uploader:cancel", kwargs={"friendly_token": media.friendly_token}),
+        "uploadMaxSize": settings.UPLOAD_MAX_SIZE,
+        "allowedExtensions": video_extensions,
+        "permissions": {
+            "canReplaceMedia": "media_file" in form_fields,
+            "canUseAdminSettings": bool({"featured", "reported_times", "is_reviewed", "add_date"} & form_fields),
+            "canUseEncryption": "is_encrypted" in form_fields,
+            "canUseWhisperTranslate": "allow_whisper_transcribe_and_translate" in form_fields,
+        },
+        "fields": sorted(form_fields),
+        "options": {
+            "mediaLanguages": _field_options(form, "media_language"),
+            "mediaCountries": _field_options(form, "media_country"),
+            "categories": _field_options(form, "category"),
+            "contentSensitivities": _field_options(form, "content_sensitivity"),
+            "topics": _field_options(form, "topics"),
+            "states": _field_options(form, "state"),
+            "licenses": _license_options_for_json(licenses_dict),
+        },
+        "media": {
+            "friendlyToken": media.friendly_token,
+            "title": _field_value(form, "title"),
+            "summary": _field_value(form, "summary"),
+            "description": _field_value(form, "description"),
+            "yearProduced": _field_value(form, "year_produced_custom") or _field_value(form, "year_produced"),
+            "company": _field_value(form, "company"),
+            "website": _field_value(form, "website"),
+            "mediaLanguage": _field_value(form, "media_language"),
+            "mediaCountry": _field_value(form, "media_country"),
+            "category": _field_value(form, "category"),
+            "contentSensitivity": _field_value(form, "content_sensitivity"),
+            "topics": _field_value(form, "topics"),
+            "tags": _field_value(form, "new_tags"),
+            "selectedLicenseId": "" if no_license else selected_license,
+            "noLicense": no_license,
+            "enableComments": bool(_field_value(form, "enable_comments")),
+            "allowDownload": bool(_field_value(form, "allow_download")),
+            "isEncrypted": bool(_field_value(form, "is_encrypted")),
+            "mediaStatus": _field_value(form, "state"),
+            "hasPassword": bool(media.password),
+            "featured": bool(_field_value(form, "featured")),
+            "isReviewed": bool(_field_value(form, "is_reviewed")),
+            "reportedTimes": _field_value(form, "reported_times"),
+            "addDate": _datetime_field_value(form, "add_date"),
+            "allowWhisperTranslate": bool(_field_value(form, "allow_whisper_transcribe_and_translate")),
+            "visibilityStart": _field_value(form, "visibility_start"),
+            "visibilityEnd": _field_value(form, "visibility_end"),
+            "currentMediaFile": media_file,
+            "currentPosterFile": uploaded_poster,
+            "posterUrl": getattr(media, "poster_url", "") or uploaded_poster["url"],
+            "spritesUrl": sprites_url,
+            "spriteNumSecs": getattr(media, "sprite_num_secs", "") or "",
+            "thumbnailTime": _field_value(form, "thumbnail_time"),
+            "duration": getattr(media, "duration", "") or "",
+            "views": getattr(media, "views", 0) or 0,
+            "errors": _form_errors_for_json(form),
+        },
+    }
+
+
 def view_media(request):
     template = resolve_template(request, "media")
     friendly_token = request.GET.get("m", "").strip()
@@ -1117,16 +1283,15 @@ def edit_media(request):
     # Get allowed video extensions from helper function
     video_extensions = get_allowed_video_extensions()
 
-    return render(
-        request,
-        "cms/edit_media.html",
-        {
-            "form": form,
-            "licenses": json.dumps(licenses_dict),
-            "add_subtitle_url": media.add_subtitle_url,
-            "allowed_extensions": json.dumps(video_extensions),
-        },
-    )
+    template = resolve_template(request, "edit_media")
+    context = {
+        "form": form,
+        "licenses": json.dumps(licenses_dict),
+        "add_subtitle_url": media.add_subtitle_url,
+        "allowed_extensions": json.dumps(video_extensions),
+        "edit_media_page_config": _edit_media_page_config(request, form, media, licenses_dict, video_extensions),
+    }
+    return render(request, template, context)
 
 
 @login_required

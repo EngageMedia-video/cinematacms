@@ -56,6 +56,7 @@ export function BasicDetailsForm({ singleUpload }) {
 
 			<YearChooserField
 				className="w-full"
+				id="year_produced"
 				name="year_produced"
 				label="Year Produced"
 				required

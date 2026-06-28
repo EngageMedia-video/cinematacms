@@ -27,7 +27,7 @@ const STATUS_CONFIG = {
 	paused: {
 		statusText: 'Paused',
 		statusClassName: 'text-text-muted',
-		progressClassName: 'bg-bg-secondary',
+		progressClassName: 'bg-cinemata-coral-reef-400p',
 		showProgress: true,
 		actions: [
 			{ key: 'continue', label: 'Continue', iconName: 'playCircle', type: 'warning' },
@@ -160,10 +160,12 @@ export function UploadMediaItem({
 	onReupload,
 	progress = 0,
 	status = 'uploading',
+	statusText,
 	thumbnailSrc = '',
 	title = 'Untitled media file',
 }) {
 	const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.uploading;
+	const displayStatusText = statusText ?? config.statusText;
 	const progressPercent = status === 'complete' ? 100 : clampPercent(progress);
 	const fileSizeLabel = getFileSizeLabel(fileSize);
 	const sizeLabel = [`${progressPercent}%`, fileSizeLabel ? `(${fileSizeLabel})` : ''].filter(Boolean).join(' ');
@@ -285,7 +287,7 @@ export function UploadMediaItem({
 								)}
 								role={status === 'failed' ? 'status' : undefined}
 							>
-								{includeFineUploaderSelectors ? null : config.statusText}
+								{includeFineUploaderSelectors ? null : displayStatusText}
 							</Text>
 						</div>
 

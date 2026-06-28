@@ -224,6 +224,7 @@ export function OtherDetailsForm({
 
 			<Dropdown
 				className="w-full"
+				id="media_language"
 				name="media_language"
 				placeholder="Select media language"
 				label="Media Language"
@@ -237,6 +238,7 @@ export function OtherDetailsForm({
 
 			<Dropdown
 				className="w-full"
+				id="media_country"
 				name="media_country"
 				placeholder="Select media country"
 				label="Media Country"
@@ -251,6 +253,7 @@ export function OtherDetailsForm({
 			<div className="flex flex-col sm:flex-row gap-4 mt-3">
 				<CheckboxGroup
 					className="flex flex-col flex-1"
+					id="category"
 					label="Categories"
 					name="category"
 					required
@@ -273,6 +276,7 @@ export function OtherDetailsForm({
 			<div className="flex flex-col sm:flex-row gap-4 mt-3">
 				<CheckboxGroup
 					className="flex flex-col flex-1"
+					id="topics"
 					label="Topics"
 					name="topics"
 					required

@@ -11,6 +11,7 @@ export function ThumbnailImageUpload({
 	onFrameSelect,
 	posterUrl = '',
 	selectedThumbnailFile,
+	showHeaderPreview = true,
 	spriteSecs = '',
 	spritesUrl = '',
 }) {
@@ -66,7 +67,7 @@ export function ThumbnailImageUpload({
 		<FieldGroup
 			title="Thumbnail Image Upload"
 			description="This image displays when your video isn’t autoplaying. Use the auto-generated thumbnail, upload a custom image, or choose a still frame from your video."
-			headerAside={headerPreview}
+			headerAside={showHeaderPreview ? headerPreview : null}
 		>
 			<ThumbnailUploadField
 				currentThumbnailTime={currentThumbnailTime}
