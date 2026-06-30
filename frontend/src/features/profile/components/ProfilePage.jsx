@@ -1,5 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { config as createRuntimeConfig } from '../../../static/js/mediacms/config';
+import defaultProfileBanner from '../assets/profile-banner.png';
 import profileQueryClient from '../queryClient';
 import { getProfileTabs } from '../utils/tabConfig';
 import { ProfileHeader } from './ProfileHeader';
@@ -30,20 +31,21 @@ function ProfilePageContent({ author, activeTab }) {
 	const selectedTab = tabs.some((tab) => tab.id === activeTab) ? activeTab : 'about';
 	const tab = tabs.find((item) => item.id === selectedTab) || tabs[0];
 	const ActiveSection = SECTIONS[selectedTab] || AboutSection;
+	const bannerImage = author.banner_thumbnail_url || defaultProfileBanner;
 
 	return (
 		<div className="min-h-screen bg-bg-page text-text-primary">
 			<div
-				className="relative h-[310px] overflow-hidden bg-bg-chrome"
-				style={
+				className={`relative h-[230px] overflow-hidden bg-bg-chrome bg-cover sm:h-[310px] ${
 					author.banner_thumbnail_url
-						? {
-								backgroundImage: `linear-gradient(color-mix(in srgb, var(--bg-overlay-dark) 38%, transparent), color-mix(in srgb, var(--bg-overlay-dark) 38%, transparent)), url("${author.banner_thumbnail_url}")`,
-								backgroundPosition: 'center',
-								backgroundSize: 'cover',
-							}
-						: undefined
-				}
+						? 'bg-center'
+						: 'bg-[position:35%_center] sm:bg-center sm:bg-[length:100%_167.92%]'
+				}`}
+				style={{
+					backgroundImage: author.banner_thumbnail_url
+						? `linear-gradient(color-mix(in srgb, var(--bg-overlay-dark) 38%, transparent), color-mix(in srgb, var(--bg-overlay-dark) 38%, transparent)), url("${bannerImage}")`
+						: `url("${bannerImage}")`,
+				}}
 				aria-hidden="true"
 			/>
 

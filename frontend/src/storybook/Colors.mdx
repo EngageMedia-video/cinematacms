@@ -11,8 +11,10 @@ The modern track uses **role-based semantic tokens** as the preferred way to app
 
 The modern profile page is a representative composed surface: its banner,
 header, multi-page tab navigation, cards, loading states, and focus rings use
-the existing `bg/*`, `text/*`, `border/*`, and `ring/focus` roles. It adds no
-profile-only color aliases.
+the existing `bg/*`, `text/*`, `border/*`, and `ring/focus` roles. It introduces
+one profile-specific token, `text-text-profile-section-icon`, for the section
+emblem glyphs (see Text tokens below); everything else routes through shared
+roles rather than new aliases.
 
 This page is the working reference for the token catalogue. For the underlying design rationale, the body-scoped wiring pattern, and the full architectural overview (palette, legacy aliases, modern tokens), see `docs/modern-track-color-system.md` in the repo root.
 

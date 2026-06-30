@@ -1,10 +1,18 @@
-const YEAR_IN_MS = 365.25 * 24 * 60 * 60 * 1000;
+function getCalendarYearsElapsed(joined, now) {
+	let years = now.getFullYear() - joined.getFullYear();
+	const anniversaryThisYear = new Date(joined);
+	anniversaryThisYear.setFullYear(joined.getFullYear() + years);
+	if (anniversaryThisYear.getTime() > now.getTime()) {
+		years -= 1;
+	}
+	return years;
+}
 
 export function getJoinedLabel(dateAdded, now = new Date()) {
 	const joined = new Date(dateAdded);
 	if (Number.isNaN(joined.getTime())) return '';
 
-	const years = Math.floor((now.getTime() - joined.getTime()) / YEAR_IN_MS);
+	const years = getCalendarYearsElapsed(joined, now);
 	if (years >= 1) {
 		return `Member for ${years} ${years === 1 ? 'year' : 'years'}`;
 	}

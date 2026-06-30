@@ -10,5 +10,12 @@ export function ImpactSection({ author }) {
 	}
 	if (isError) return <Text className="text-text-danger">Community impact could not be loaded.</Text>;
 
-	return <CommunityImpactSection entries={data || {}} canAdd={false} />;
+	return (
+		<CommunityImpactSection
+			entries={data || {}}
+			canAdd={false}
+			title="Community Impact"
+			description="Screenings, playlists, and discussions that show how this creator's work is reaching people."
+		/>
+	);
 }

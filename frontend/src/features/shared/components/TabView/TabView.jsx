@@ -159,20 +159,17 @@ function TabViewTrigger({
 		style: { backgroundColor },
 	};
 
+	if (href && disabled) {
+		return (
+			<span role="link" aria-disabled="true" tabIndex={-1} {...sharedProps}>
+				{children}
+			</span>
+		);
+	}
+
 	if (href) {
 		return (
-			<a
-				href={href}
-				aria-current={isSelected ? 'page' : undefined}
-				aria-disabled={disabled || undefined}
-				tabIndex={disabled ? -1 : undefined}
-				onClick={(event) => {
-					if (disabled) {
-						event.preventDefault();
-					}
-				}}
-				{...sharedProps}
-			>
+			<a href={href} aria-current={isSelected ? 'page' : undefined} {...sharedProps}>
 				{children}
 			</a>
 		);

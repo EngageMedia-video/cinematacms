@@ -96,14 +96,26 @@ function RecentPlaylists({ playlists, author }) {
 			<ul className="mt-4 grid list-none gap-4 p-0 sm:ml-[57px]">
 				{playlists.slice(0, 4).map((playlist) => (
 					<li key={playlist.url || playlist.title} className="flex min-w-0 gap-3">
-						<img
-							src={playlist.thumbnail_url}
-							alt=""
-							width="180"
-							height="135"
-							loading="lazy"
-							className="aspect-[4/3] w-[120px] shrink-0 rounded object-cover"
-						/>
+						<a
+							href={playlist.url}
+							className="relative h-[135px] w-[180px] shrink-0 overflow-hidden rounded"
+							aria-label={`Play all in ${playlist.title}`}
+						>
+							<img
+								src={playlist.thumbnail_url}
+								alt=""
+								width="180"
+								height="135"
+								loading="lazy"
+								className="h-full w-full object-cover"
+							/>
+							<span className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-center gap-2 bg-bg-overlay-dark/80 py-[10px]">
+								<Icon name="play" size="sm" className="text-text-on-chrome" decorative />
+								<Text as="span" variant="body-14-medium" className="text-text-on-chrome uppercase">
+									Play all
+								</Text>
+							</span>
+						</a>
 						<div className="min-w-0">
 							<a
 								href={playlist.url}
@@ -128,6 +140,7 @@ export function AboutSection({ author }) {
 	const favorites = normalizeMediaList(favoritesQuery.data).slice(0, 4);
 	const playlists = normalizeList(playlistQuery.data);
 	const sanitizedBiography = useMemo(() => DOMPurify.sanitize(author.description || ''), [author.description]);
+	const showPlaylists = playlistQuery.isSuccess && playlists.length > 0;
 
 	return (
 		<div className="space-y-4">
@@ -150,12 +163,21 @@ export function AboutSection({ author }) {
 				<Details author={author} />
 			</div>
 
-			{author.is_owner || playlists.length ? (
-				<div className={`grid gap-4 ${author.is_owner && playlists.length ? 'xl:grid-cols-2' : ''}`}>
+			{author.is_owner || showPlaylists ? (
+				<div className={`grid gap-4 ${author.is_owner && showPlaylists ? 'xl:grid-cols-2' : ''}`}>
 					{author.is_owner ? (
 						<section className="rounded-lg border border-border-default p-4">
 							<ProfileSectionHeader icon="profileFavoriteFilms" title="Favorite Films" />
-							{favorites.length ? (
+							{favoritesQuery.isLoading ? (
+								<div
+									className="mt-4 h-24 animate-pulse rounded-lg bg-bg-skeleton sm:ml-[57px]"
+									aria-label="Loading favorite films"
+								/>
+							) : favoritesQuery.isError ? (
+								<Text as="p" variant="body-14" className="mt-4 mb-0 text-text-danger sm:ml-[57px]">
+									Favorite films could not be loaded.
+								</Text>
+							) : favorites.length ? (
 								<div className="mt-4 sm:ml-[57px]">
 									<MediaGrid items={favorites} layout="compact" />
 								</div>
@@ -166,7 +188,7 @@ export function AboutSection({ author }) {
 							)}
 						</section>
 					) : null}
-					{playlists.length ? <RecentPlaylists playlists={playlists} author={author} /> : null}
+					{showPlaylists ? <RecentPlaylists playlists={playlists} author={author} /> : null}
 				</div>
 			) : null}
 

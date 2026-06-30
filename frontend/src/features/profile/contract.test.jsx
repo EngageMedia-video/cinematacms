@@ -49,4 +49,13 @@ describe('Profile architecture contract', () => {
 		expect(manageUploadsSource).not.toContain('<Card');
 		expect(notesSource).not.toContain('<Card');
 	});
+
+	it('renders the Figma profile banner when the profile has no uploaded banner', () => {
+		const profilePageSource = Object.fromEntries(sources)['./components/ProfilePage.jsx'];
+
+		expect(profilePageSource).toContain("import defaultProfileBanner from '../assets/profile-banner.png'");
+		expect(profilePageSource).toContain('author.banner_thumbnail_url || defaultProfileBanner');
+		expect(profilePageSource).toContain('h-[230px]');
+		expect(profilePageSource).toContain('sm:bg-[length:100%_167.92%]');
+	});
 });

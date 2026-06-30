@@ -1,5 +1,6 @@
-import { Avatar, Card, Link, Text, UserRoleBadge } from '../../shared/components';
+import { Avatar, Card, Icon, Link, Text, UserRoleBadge } from '../../shared/components';
 import { useSimilarProfiles } from '../hooks/useSimilarProfiles';
+import { getJoinedLabel } from '../utils/joinedDate';
 import { ProfileSectionHeader } from './ProfileSectionHeader';
 
 function normalizeProfiles(data) {
@@ -35,10 +36,13 @@ export function SimilarProfiles({ author }) {
 						))
 					: profiles.map((profile) => {
 							const name = profile.name || profile.username;
+							const mediaCount = Number(profile.media_count || 0);
+							const joinedLabel = getJoinedLabel(profile.date_added);
 							return (
 								<Card
 									key={profile.username}
-									className="flex min-h-[310px] flex-col items-center gap-4 p-6 text-center"
+									variant="outlined"
+									className="flex min-h-[310px] flex-col items-center gap-4 bg-bg-surface-raised p-6 text-center"
 								>
 									<Avatar
 										name={name}
@@ -47,18 +51,56 @@ export function SimilarProfiles({ author }) {
 										style={{ width: 80, height: 80 }}
 									/>
 									<div className="min-w-0">
-										<Text as="h3" variant="h6" className="m-0 text-text-primary">
+										<Text as="h3" variant="h5-bold" className="m-0 text-text-primary">
 											{name}
 										</Text>
-										<Text as="p" variant="body-14" className="mt-1 mb-0 text-text-accent">
-											@{profile.username}
-										</Text>
+										<div className="mt-1 flex items-center justify-center gap-1">
+											<Text as="span" variant="body-16-medium" className="text-text-accent">
+												@{profile.username}
+											</Text>
+											{profile.is_trusted ? (
+												<Icon
+													name="verifiedCheck"
+													size="sm"
+													className="text-text-success"
+													label="Trusted member"
+												/>
+											) : null}
+										</div>
 									</div>
 									<UserRoleBadge isManager={profile.is_manager} isTrusted={profile.is_trusted} />
-									<Text as="p" variant="body-12" className="m-0 text-text-muted">
-										{profile.location || 'Cinemata community'} ·{' '}
-										{Number(profile.media_count || 0).toLocaleString()} videos
-									</Text>
+									<div className="flex flex-col items-center gap-1">
+										{profile.location ? (
+											<Text
+												as="p"
+												variant="body-14"
+												className="m-0 inline-flex items-center gap-2 text-text-secondary"
+											>
+												<Icon name="profileLocation" size="xs" decorative />
+												{profile.location}
+											</Text>
+										) : null}
+										<div className="flex items-center gap-4">
+											<Text
+												as="p"
+												variant="body-14"
+												className="m-0 inline-flex items-center gap-2 text-text-secondary"
+											>
+												<Icon name="profileVideoCount" size="xs" decorative />
+												{mediaCount.toLocaleString()} {mediaCount === 1 ? 'video' : 'videos'}
+											</Text>
+											{joinedLabel ? (
+												<Text
+													as="p"
+													variant="body-14"
+													className="m-0 inline-flex items-center gap-2 text-text-secondary"
+												>
+													<Icon name="profileMemberSince" size="xs" decorative />
+													{joinedLabel}
+												</Text>
+											) : null}
+										</div>
+									</div>
 									<Link
 										href={profile.url || `/user/${encodeURIComponent(profile.username)}`}
 										variant="primary"

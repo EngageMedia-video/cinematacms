@@ -96,12 +96,14 @@ function buildCardProps(variant, data = {}) {
 
 export function CommunityImpactSection({
 	canAdd = true,
+	description = 'For filmmakers & viewers. Add screenings, playlists, or discussions to show how this film is reaching people.',
 	entries = {},
 	onAddImpact,
 	onSubmitErrorClear,
 	submitError = null,
 	submitMessage = '',
 	submitStatus = 'idle',
+	title = "Film's Impact",
 }) {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const cards = useMemo(
@@ -143,11 +145,10 @@ export function CommunityImpactSection({
 			<div className="flex flex-col gap-space-base lg:flex-row lg:items-center lg:justify-between">
 				<div className="max-w-[calc(var(--size-96)*6+var(--size-64))]">
 					<Text id="community-impact-heading" variant="h5-bold" as="h2" className="m-0 text-text-primary">
-						Film&apos;s Impact
+						{title}
 					</Text>
 					<Text variant="body-14" color="meta" className="m-0 mt-space-xs">
-						For filmmakers & viewers. Add screenings, playlists, or discussions to show how this film is
-						reaching people.
+						{description}
 					</Text>
 				</div>
 
@@ -207,6 +208,8 @@ const entryCategoryShape = PropTypes.oneOfType([
 
 CommunityImpactSection.propTypes = {
 	canAdd: PropTypes.bool,
+	description: PropTypes.string,
+	title: PropTypes.string,
 	entries: PropTypes.shape({
 		academic: PropTypes.oneOfType([
 			PropTypes.arrayOf(listEntryShape),
