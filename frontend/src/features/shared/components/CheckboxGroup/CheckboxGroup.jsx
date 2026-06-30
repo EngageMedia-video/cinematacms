@@ -47,7 +47,7 @@ export function CheckboxGroup({
 	}
 
 	return (
-		<div className={className}>
+		<div id={groupId} className={className}>
 			{label ? (
 				<span id={labelId} className="body-body-16-regular mb-2 text-text-muted">
 					{label}

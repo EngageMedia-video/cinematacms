@@ -9,6 +9,7 @@ UI_VARIANT_PAGES = {
     "home": ("cms/index.html", "cms/index_revamp.html"),
     "media": ("cms/media.html", "cms/media_revamp.html"),
     "upload": ("cms/add-media.html", "cms/add-media_revamp.html"),
+    "edit_media": ("cms/edit_media.html", "cms/edit_media_revamp.html"),
 }
 
 

@@ -136,6 +136,7 @@ export default defineConfig({
 				history: 'src/entries/history.js',
 				liked: 'src/entries/liked.js',
 				'add-media': 'src/entries/add-media.js',
+				'edit-media': 'src/entries/edit-media.js',
 				error: 'src/entries/error.js',
 				'modern-demo': 'src/entries/modern-demo.js',
 				notifications: 'src/entries/notifications.js',
