@@ -106,13 +106,13 @@ export function MediaUploadSection({ config, disabled }) {
 		uploader?.addFiles(files.slice(0, 1));
 	}
 
-	async function cancelPendingUpload() {
+	async function clearReplacementUpload() {
 		if (status.id !== undefined) {
 			uploaderRef.current?.cancel(status.id);
 		}
 
 		if (config.uploadCancelEndpoint) {
-			await fetch(config.uploadCancelEndpoint, {
+			const response = await fetch(config.uploadCancelEndpoint, {
 				method: 'POST',
 				credentials: 'same-origin',
 				headers: {
@@ -120,6 +120,15 @@ export function MediaUploadSection({ config, disabled }) {
 					'X-CSRFToken': getCSRFToken() || config.csrfToken || '',
 				},
 			}).catch(() => null);
+
+			if (!response?.ok) {
+				setStatus((current) => ({
+					...current,
+					phase: 'error',
+					error: 'Could not remove the replacement upload. Please try again.',
+				}));
+				return;
+			}
 		}
 
 		resetStatus();
@@ -187,18 +196,18 @@ export function MediaUploadSection({ config, disabled }) {
 				{hasUploadItem ? (
 					<>
 						<UploadMediaItem
-							className="mt-2"
+							className="mt-2 p-2"
 							title={status.name || 'Uploaded media'}
 							fileSize={status.size}
 							status={uploadItemStatus}
 							statusText={uploadItemStatusText}
 							progress={status.progress}
-							onCancel={cancelPendingUpload}
+							onCancel={clearReplacementUpload}
 							onContinue={continueUpload}
-							onDelete={cancelPendingUpload}
+							onDelete={clearReplacementUpload}
 							onPause={pauseUpload}
 							onRetry={retryUpload}
-							onReupload={resetStatus}
+							onReupload={clearReplacementUpload}
 						/>
 						{status.phase === 'complete' ? (
 							<Text variant="body-12" className="m-0 mt-3 text-text-muted">
