@@ -772,10 +772,7 @@ def _edit_media_page_config(request, form, media, licenses_dict, video_extension
     media_file = _file_info(media.media_file)
     uploaded_poster = _file_info(media.uploaded_poster)
 
-    try:
-        sprites_url = media.sprites.url if media.sprites else ""
-    except Exception:
-        sprites_url = ""
+    sprites_url = getattr(media, "sprites_url", "") or ""
 
     selected_license = _field_value(form, "custom_license")
     no_license = bool(_field_value(form, "no_license")) or selected_license in ("", "None", "none")
