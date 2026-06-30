@@ -40,6 +40,7 @@ function flattenTabContentItems(children, items = []) {
 				label: child.props.title,
 				content: child.props.content ?? child.props.children,
 				disabled: !!child.props.disabled,
+				href: child.props.href ?? '',
 				triggerClassName: child.props.triggerClassName ?? '',
 				panelClassName: child.props.panelClassName ?? '',
 			});
@@ -92,11 +93,13 @@ function useTabViewContext(componentName) {
 
 function TabViewList({ items, className = '', triggerClassName = '', triggerColor, triggerSelectedColor }) {
 	const { ariaLabel, tabMode } = useTabViewContext('TabViewList');
+	const isNavigation = items.length > 0 && items.every((item) => item.href);
+	const ListElement = isNavigation ? 'nav' : 'div';
 
 	return (
 		<div className="w-full overflow-x-auto overscroll-x-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-			<div
-				role="tablist"
+			<ListElement
+				role={isNavigation ? undefined : 'tablist'}
 				aria-label={ariaLabel}
 				className={cn(
 					'flex overflow-hidden rounded-sm bg-bg-chrome p-0',
@@ -109,6 +112,7 @@ function TabViewList({ items, className = '', triggerClassName = '', triggerColo
 						key={item.value}
 						value={item.value}
 						disabled={item.disabled}
+						href={item.href}
 						className={cn(triggerClassName, item.triggerClassName)}
 						triggerColor={triggerColor}
 						triggerSelectedColor={triggerSelectedColor}
@@ -116,12 +120,20 @@ function TabViewList({ items, className = '', triggerClassName = '', triggerColo
 						{item.label}
 					</TabViewTrigger>
 				))}
-			</div>
+			</ListElement>
 		</div>
 	);
 }
 
-function TabViewTrigger({ children, value, disabled = false, className = '', triggerColor, triggerSelectedColor }) {
+function TabViewTrigger({
+	children,
+	value,
+	disabled = false,
+	href = '',
+	className = '',
+	triggerColor,
+	triggerSelectedColor,
+}) {
 	const { focusTrigger, getPanelId, getTabId, registerTrigger, selectedValue, selectValue, tabs, tabMode } =
 		useTabViewContext('TabViewTrigger');
 	const isSelected = selectedValue === value;
@@ -134,6 +146,36 @@ function TabViewTrigger({ children, value, disabled = false, className = '', tri
 
 		selectValue(nextValue);
 		focusTrigger(nextValue);
+	}
+
+	const sharedProps = {
+		className: cn(
+			'body-body-14-bold cursor-pointer whitespace-nowrap border-0 px-4 py-4 text-text-on-chrome uppercase tracking-[0.02em] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-chrome disabled:cursor-not-allowed disabled:opacity-50',
+			tabMode === 'wrap' ? 'min-w-0 flex-none' : 'min-w-[160px] flex-1',
+			isSelected && !triggerSelectedColor ? 'bg-bg-primary-hover' : '',
+			!isSelected && !triggerColor ? 'bg-bg-chrome' : '',
+			className
+		),
+		style: { backgroundColor },
+	};
+
+	if (href) {
+		return (
+			<a
+				href={href}
+				aria-current={isSelected ? 'page' : undefined}
+				aria-disabled={disabled || undefined}
+				tabIndex={disabled ? -1 : undefined}
+				onClick={(event) => {
+					if (disabled) {
+						event.preventDefault();
+					}
+				}}
+				{...sharedProps}
+			>
+				{children}
+			</a>
+		);
 	}
 
 	return (
@@ -168,14 +210,7 @@ function TabViewTrigger({ children, value, disabled = false, className = '', tri
 					selectAndFocus([...tabs].reverse().find((tab) => !tab.disabled)?.value);
 				}
 			}}
-			className={cn(
-				'body-body-14-bold cursor-pointer whitespace-nowrap border-0 px-4 py-4 text-text-on-chrome uppercase tracking-[0.02em] transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-chrome disabled:cursor-not-allowed disabled:opacity-50',
-				tabMode === 'wrap' ? 'min-w-0 flex-none' : 'min-w-[160px] flex-1',
-				isSelected && !triggerSelectedColor ? 'bg-bg-primary-hover' : '',
-				!isSelected && !triggerColor ? 'bg-bg-chrome' : '',
-				className
-			)}
-			style={{ backgroundColor }}
+			{...sharedProps}
 		>
 			{children}
 		</button>
@@ -206,11 +241,12 @@ function TabViewPanel({ item, className = '', isActive = true, keepMounted = fal
 	);
 }
 
-export function TabContent({ title, content, value, disabled, triggerClassName, panelClassName, children }) {
+export function TabContent({ title, content, value, disabled, href, triggerClassName, panelClassName, children }) {
 	void title;
 	void content;
 	void value;
 	void disabled;
+	void href;
 	void triggerClassName;
 	void panelClassName;
 	void children;
@@ -239,6 +275,7 @@ export function TabView({
 	const [internalValue, setInternalValue] = useState(() => clampTabsValue(tabs, defaultSelectedTab));
 	const selectedValue = clampTabsValue(tabs, selectedTab ?? internalValue);
 	const selectedItem = tabs.find((tab) => tab.value === selectedValue) ?? tabs[0];
+	const isNavigation = tabs.length > 0 && tabs.every((tab) => tab.href);
 
 	const selectValue = useCallback(
 		(nextValue) => {
@@ -305,7 +342,7 @@ export function TabView({
 						triggerSelectedColor={triggerSelectedColor}
 					/>
 				)}
-				{keepMounted ? (
+				{isNavigation ? null : keepMounted ? (
 					tabs.map((tab) => (
 						<TabViewPanel
 							key={tab.value}

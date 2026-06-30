@@ -26,6 +26,31 @@ urlpatterns = [
         views.view_user_about,
         name="get_user_about",
     ),
+    re_path(
+        rf"^user/(?P<username>{USERNAME_RE})/uploads$",
+        views.view_user_manage_uploads,
+        name="get_user_manage_uploads",
+    ),
+    re_path(
+        rf"^user/(?P<username>{USERNAME_RE})/notes$",
+        views.view_user_notes,
+        name="get_user_notes",
+    ),
+    re_path(
+        rf"^user/(?P<username>{USERNAME_RE})/impact$",
+        views.view_user_impact,
+        name="get_user_impact",
+    ),
+    re_path(
+        rf"^user/(?P<username>{USERNAME_RE})/history$",
+        views.view_user_history,
+        name="get_user_history",
+    ),
+    re_path(
+        rf"^user/(?P<username>{USERNAME_RE})/liked$",
+        views.view_user_liked,
+        name="get_user_liked",
+    ),
     re_path(rf"^user/(?P<username>{USERNAME_RE})/edit$", views.edit_user, name="edit_user"),
     re_path(
         rf"^user/(?P<username>{USERNAME_RE})/settings$",
@@ -45,6 +70,11 @@ urlpatterns = [
         rf"^api/v1/users/(?P<username>{USERNAME_RE})$",
         views.UserDetail.as_view(),
         name="api_get_user",
+    ),
+    re_path(
+        rf"^api/v1/users/(?P<username>{USERNAME_RE})/community-impacts$",
+        views.UserCommunityImpactList.as_view(),
+        name="api_user_community_impacts",
     ),
     re_path(
         rf"^api/v1/users/(?P<username>{USERNAME_RE})/contact",

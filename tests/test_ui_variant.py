@@ -61,6 +61,20 @@ class ResolveTemplateTests(TestCase):
         self.assertEqual(result, "cms/edit_media_revamp.html")
         self.assertEqual(request.ui_variant, "revamp")
 
+    @override_settings(UI_VARIANT_REVAMP_PAGES=["profile"])
+    def test_profile_revamp_when_allowlisted(self):
+        request = self._make_request()
+        result = resolve_template(request, "profile")
+        self.assertEqual(result, "cms/user_revamp.html")
+        self.assertEqual(request.ui_variant, "revamp")
+
+    @override_settings(UI_VARIANT_REVAMP_PAGES=[])
+    def test_profile_legacy_when_not_allowlisted(self):
+        request = self._make_request()
+        result = resolve_template(request, "profile")
+        self.assertEqual(result, "cms/user.html")
+        self.assertEqual(request.ui_variant, "legacy")
+
     @override_settings(UI_VARIANT_REVAMP_PAGES=["home"])
     def test_revamp_when_allowlisted_logged_in(self):
         request = self._make_request(is_staff=False)

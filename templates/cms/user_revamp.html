@@ -1,0 +1,16 @@
+{% extends "base_modern.html" %}
+{% load django_vite %}
+
+{% block headtitle %}{% if user.name %}{{ user.name }} - {% endif %}{{ PORTAL_NAME }}{% endblock headtitle %}
+
+{% block headermeta %}
+<meta property="og:title" content="{% if user.name %}{{ user.name }} - {% endif %}{{ PORTAL_NAME }}">
+<meta property="og:type" content="profile">
+<meta property="og:description" content="{{ user.description|striptags|truncatechars:180 }}">
+<meta name="twitter:card" content="summary">
+{% endblock headermeta %}
+
+{% block modernpageimports %}
+{{ PROFILE_INITIAL_DATA|json_script:"profile-initial-data" }}
+{% vite_asset 'src/entries/profile-revamp.js' %}
+{% endblock modernpageimports %}
