@@ -362,6 +362,7 @@ class MediaForm(forms.ModelForm):
         # that are still in progress stay flagged.
         if getattr(self.instance, "is_draft", False):
             self.instance.is_draft = False
+        self.instance.metadata_saved_at = timezone.now()
 
         media = super(MediaForm, self).save(*args, **kwargs)
 

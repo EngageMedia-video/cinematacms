@@ -293,6 +293,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "cleanup_orphaned_uploads",
         "schedule": crontab(hour="2", minute="0"),
     },
+    # Clean up uploaded media rows whose metadata form was never submitted
+    "cleanup_orphaned_draft_media": {
+        "task": "cleanup_orphaned_draft_media",
+        "schedule": crontab(hour="3", minute="0"),
+    },
     # Dispatch deferred encoding tasks when queue capacity is available
     "dispatch_deferred_encodings": {
         "task": "dispatch_deferred_encodings",
@@ -498,6 +503,8 @@ UPLOAD_DIR = "uploads/"
 CHUNKS_DIR = "chunks/"
 # Hours after which orphaned upload files/chunks are considered stale and removed
 ORPHANED_UPLOAD_CLEANUP_HOURS = 24
+# Hours after which uploaded media rows with no saved metadata are removed
+ORPHANED_DRAFT_CLEANUP_HOURS = 168
 # bytes, size of uploaded media
 UPLOAD_MAX_SIZE = 800 * 1024 * 1000 * 5
 

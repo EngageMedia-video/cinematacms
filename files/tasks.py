@@ -1441,6 +1441,30 @@ def cleanup_orphaned_uploads():
     return result
 
 
+@task(name="cleanup_orphaned_draft_media", queue="short_tasks")
+def cleanup_orphaned_draft_media():
+    """Delete stale media rows whose upload completed but metadata was never saved."""
+    cleanup_age_hours = getattr(settings, "ORPHANED_DRAFT_CLEANUP_HOURS", 168)
+    cutoff = timezone.now() - timedelta(hours=cleanup_age_hours)
+
+    orphaned_media = Media.objects.filter(metadata_saved_at__isnull=True, add_date__lt=cutoff)
+    deleted = 0
+    errors = []
+
+    for media in orphaned_media.iterator():
+        token = media.friendly_token
+        try:
+            media.delete()
+            deleted += 1
+        except Exception as exc:
+            error_msg = f"Failed to delete orphaned draft media {token}: {exc}"
+            logger.error(error_msg, exc_info=True)
+            errors.append(error_msg)
+
+    logger.info("cleanup_orphaned_draft_media removed %s orphaned media rows", deleted)
+    return {"drafts_deleted": deleted, "errors": errors}
+
+
 @task(name="subscribe_user", queue="short_tasks")
 def subscribe_user(email, name, country=None):
     """

@@ -312,6 +312,14 @@ class Media(models.Model):
         default=False,
         help_text="Draft uploads are kept private and excluded from the admin review queue until submitted.",
     )
+    metadata_saved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Set when the user submits the metadata form as a draft or full submission. "
+            "NULL means the upload completed but the form was never saved."
+        ),
+    )
     encoding_status = models.CharField(max_length=20, choices=MEDIA_ENCODING_STATUS, default="pending", db_index=True)
     featured = models.BooleanField(
         default=False,
@@ -403,6 +411,11 @@ class Media(models.Model):
             # index over just the draft rows stays tiny and selective instead of
             # a full low-cardinality b-tree carried on every Media write.
             models.Index(fields=["is_draft"], name="idx_media_is_draft", condition=models.Q(is_draft=True)),
+            models.Index(
+                fields=["add_date"],
+                name="idx_media_unsaved_meta",
+                condition=models.Q(metadata_saved_at__isnull=True),
+            ),
         ]
 
     def __str__(self):
