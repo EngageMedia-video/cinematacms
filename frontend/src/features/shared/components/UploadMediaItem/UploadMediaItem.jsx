@@ -10,7 +10,7 @@ const STATUS_CONFIG = {
 	uploading: {
 		statusText: 'Uploading',
 		statusClassName: 'text-text-muted',
-		progressClassName: 'bg-cinemata-coral-reef-400p',
+		progressClassName: 'bg-bg-progress-bar-upload',
 		showProgress: true,
 		actions: [
 			{ key: 'pause', label: 'Pause', iconName: 'pause', type: 'warning' },
@@ -20,14 +20,14 @@ const STATUS_CONFIG = {
 	processing: {
 		statusText: 'Processing...',
 		statusClassName: 'text-text-muted',
-		progressClassName: 'bg-cinemata-coral-reef-400p',
+		progressClassName: 'bg-bg-progress-bar-upload',
 		showProgress: false,
 		actions: [{ key: 'cancel', label: 'Cancel', iconName: 'cancel', type: 'danger' }],
 	},
 	paused: {
 		statusText: 'Paused',
 		statusClassName: 'text-text-muted',
-		progressClassName: 'bg-cinemata-coral-reef-400p',
+		progressClassName: 'bg-bg-progress-bar-upload',
 		showProgress: true,
 		actions: [
 			{ key: 'continue', label: 'Continue', iconName: 'playCircle', type: 'warning' },
