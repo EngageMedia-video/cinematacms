@@ -26,6 +26,14 @@ def _to_local_midnight(value):
     return dt.astimezone(timezone.get_current_timezone()).replace(hour=0, minute=0, second=0, microsecond=0)
 
 
+def _to_local_date(value):
+    if value is None:
+        return None
+    if timezone.is_aware(value):
+        value = timezone.localtime(value)
+    return value.date()
+
+
 class MultipleSelect(forms.CheckboxSelectMultiple):
     input_type = "checkbox"
 
@@ -133,6 +141,12 @@ class MediaForm(forms.ModelForm):
         self.fields["state"].label = "Status"
         self.fields["visibility_start"].label = "Enter Start Date"
         self.fields["visibility_end"].label = "Enter End Date"
+        if self.instance and self.instance.pk:
+            self.fields["visibility_start"].initial = _to_local_date(self.instance.visibility_start_date)
+            if self.instance.visibility_expires_at:
+                self.fields["visibility_end"].initial = _to_local_date(
+                    self.instance.visibility_expires_at - timedelta(days=1)
+                )
         self.fields["allow_download"].label = "Allow Download"
         self.fields["is_encrypted"].label = "Enable HLS Encryption"
         self.fields["reported_times"].label = "Reported Times"

@@ -142,6 +142,11 @@ function EditMediaPageContent() {
 				form: formRef.current,
 				thumbnailFile: editState.selectedThumbnailFile,
 				thumbnailTime: editState.thumbnailTime,
+				visibilityExpiration: {
+					expireEnabled: editState.expireEnabled,
+					startDate: editState.startDate,
+					endDate: editState.endDate,
+				},
 			},
 			{
 				onSuccess: (data) => {
