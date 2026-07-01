@@ -145,7 +145,18 @@ def generate_sprite_for_media(media):
                 "-vframes",
                 "1",
                 "-vf",
-                f"scale={SPRITE_WIDTH}:{SPRITE_HEIGHT}",
+                # Fit the frame inside SPRITE_WIDTH x SPRITE_HEIGHT preserving aspect ratio, then
+                # pad to the exact box (letterbox/pillarbox). Two reasons:
+                #   1. A bare `scale=W:H` force-stretches non-16:9 sources (e.g. vertical 9:16
+                #      videos get horizontally squashed).
+                #   2. It guarantees EVERY tile is exactly SPRITE_HEIGHT tall, so the stacked
+                #      sheet is a clean rows*SPRITE_HEIGHT column. The client slices tiles on a
+                #      fixed SPRITE_HEIGHT grid; a tile that came back a few pixels short (e.g. a
+                #      frame near EOF) otherwise makes the last frame render resized.
+                (
+                    f"scale={SPRITE_WIDTH}:{SPRITE_HEIGHT}:force_original_aspect_ratio=decrease,"
+                    f"pad={SPRITE_WIDTH}:{SPRITE_HEIGHT}:(ow-iw)/2:(oh-ih)/2:color=black"
+                ),
                 "-y",
                 frame_path,
             ]

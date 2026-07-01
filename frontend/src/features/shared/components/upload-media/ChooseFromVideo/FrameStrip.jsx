@@ -108,6 +108,7 @@ export function FrameStrip({
 									<SpriteFrame
 										index={frame.index}
 										label={`Select video frame at ${frame.mmss}`}
+										rowsInSheet={rowsInSheet}
 										selected={selected}
 										spritesUrl={spritesUrl}
 									/>
