@@ -23,6 +23,10 @@ async function fetchAllPages(url, signal) {
 		pageCount += 1;
 	}
 
+	if (nextUrl) {
+		throw new Error(`Media catalog exceeded ${MAX_PAGES}-page limit; results would be incomplete.`);
+	}
+
 	return results;
 }
 

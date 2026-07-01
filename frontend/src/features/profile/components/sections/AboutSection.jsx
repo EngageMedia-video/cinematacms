@@ -141,6 +141,8 @@ export function AboutSection({ author }) {
 	const playlists = normalizeList(playlistQuery.data);
 	const sanitizedBiography = useMemo(() => DOMPurify.sanitize(author.description || ''), [author.description]);
 	const showPlaylists = playlistQuery.isSuccess && playlists.length > 0;
+	const playlistsLoading = playlistQuery.isLoading;
+	const playlistsError = playlistQuery.isError;
 
 	return (
 		<div className="space-y-4">
@@ -164,7 +166,9 @@ export function AboutSection({ author }) {
 			</div>
 
 			{author.is_owner || showPlaylists ? (
-				<div className={`grid gap-4 ${author.is_owner && showPlaylists ? 'xl:grid-cols-2' : ''}`}>
+				<div
+					className={`grid gap-4 ${author.is_owner && (showPlaylists || playlistsLoading || playlistsError) ? 'xl:grid-cols-2' : ''}`}
+				>
 					{author.is_owner ? (
 						<section className="rounded-lg border border-border-default p-4">
 							<ProfileSectionHeader icon="profileFavoriteFilms" title="Favorite Films" />
@@ -188,7 +192,24 @@ export function AboutSection({ author }) {
 							)}
 						</section>
 					) : null}
-					{showPlaylists ? <RecentPlaylists playlists={playlists} author={author} /> : null}
+					{author.is_owner && playlistsLoading ? (
+						<section className="rounded-lg border border-border-default p-4">
+							<ProfileSectionHeader icon="profileRecentPlaylists" title="Recent Playlists" />
+							<div
+								className="mt-4 h-24 animate-pulse rounded-lg bg-bg-skeleton sm:ml-[57px]"
+								aria-label="Loading playlists"
+							/>
+						</section>
+					) : author.is_owner && playlistsError ? (
+						<section className="rounded-lg border border-border-default p-4">
+							<ProfileSectionHeader icon="profileRecentPlaylists" title="Recent Playlists" />
+							<Text as="p" variant="body-14" className="mt-4 mb-0 text-text-danger sm:ml-[57px]">
+								Playlists could not be loaded.
+							</Text>
+						</section>
+					) : showPlaylists ? (
+						<RecentPlaylists playlists={playlists} author={author} />
+					) : null}
 				</div>
 			) : null}
 
