@@ -1,9 +1,9 @@
 import { FieldGroup } from '../../add-media/single-upload/components/FieldGroup';
 import { Text } from '../../shared/components';
 import { CheckboxButton } from '../../shared/components/CheckboxButton';
-import { DateChooserField } from '../../shared/components/DateChooserField';
 import { RadioButton } from '../../shared/components/RadioButton';
 import { TextField } from '../../shared/components/TextField';
+import { VisibilityExpirationField } from '../../shared/components/upload-media';
 
 export function FinalSettingsSection({ config, editState }) {
 	return (
@@ -65,30 +65,15 @@ export function FinalSettingsSection({ config, editState }) {
 
 				<div className="border-b border-b-border-divider" />
 
-				<CheckboxButton
-					checked={editState.expireEnabled}
-					onChange={(event) => editState.setExpireEnabled(event.target.checked)}
-				>
-					Set Visibility Expiration
-				</CheckboxButton>
-				{editState.expireEnabled ? (
-					<div className="flex flex-col gap-4 sm:flex-row">
-						<DateChooserField
-							id="visibility_start"
-							name="visibility_start"
-							label="Enter Start Date"
-							value={editState.startDate}
-							onChange={editState.setStartDate}
-						/>
-						<DateChooserField
-							id="visibility_end"
-							name="visibility_end"
-							label="Enter End Date"
-							value={editState.endDate}
-							onChange={editState.setEndDate}
-						/>
-					</div>
-				) : null}
+				<VisibilityExpirationField
+					expireEnabled={editState.expireEnabled}
+					startDate={editState.startDate}
+					endDate={editState.endDate}
+					mediaStatus={editState.mediaStatus}
+					onToggle={editState.setExpireEnabled}
+					onStartDateChange={editState.setStartDate}
+					onEndDateChange={editState.setEndDate}
+				/>
 
 				{config.permissions?.canUseEncryption ? (
 					<>

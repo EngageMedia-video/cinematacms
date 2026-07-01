@@ -40,6 +40,10 @@ class MediaFormVisibilityScheduleTest(TestCase):
         data.update(overrides)
         return data
 
+    def _date_value(self, form, field_name):
+        value = form[field_name].value()
+        return value.isoformat() if hasattr(value, "isoformat") else value
+
     def test_end_date_before_start_date_is_invalid(self):
         today = timezone.localdate()
         data = self._get_form_data(
@@ -112,6 +116,23 @@ class MediaFormVisibilityScheduleTest(TestCase):
         self.assertEqual(_to_local_midnight(day), expected)
         self.assertEqual(_to_local_midnight(naive_dt), expected)
         self.assertEqual(_to_local_midnight(aware_dt), expected)
+
+    def test_initializes_visibility_dates_from_existing_schedule(self):
+        today = timezone.localdate()
+        start_date = today + timedelta(days=5)
+        end_date = today + timedelta(days=10)
+        Media.objects.filter(pk=self.media.pk).update(
+            visibility_start_date=_to_local_midnight(start_date),
+            visibility_expires_at=_to_local_midnight(end_date) + timedelta(days=1),
+            visibility_after_expiry="private",
+            visibility_window_state="public",
+        )
+        self.media.refresh_from_db()
+
+        form = MediaForm(self.user, instance=self.media)
+
+        self.assertEqual(self._date_value(form, "visibility_start"), start_date.isoformat())
+        self.assertEqual(self._date_value(form, "visibility_end"), end_date.isoformat())
 
     def test_unchecking_schedule_clears_visibility_fields(self):
         Media.objects.filter(pk=self.media.pk).update(
