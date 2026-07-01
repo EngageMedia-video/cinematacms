@@ -37,7 +37,10 @@ export function FinalSettingsSection({ config, editState }) {
 								value={option.value}
 								controlClassName="bg-bg-surface-hover"
 								checked={editState.mediaStatus === option.value}
-								onChange={() => editState.setMediaStatus(option.value)}
+								onChange={() => {
+									if (option.value === 'private') editState.setExpireEnabled(false);
+									editState.setMediaStatus(option.value);
+								}}
 							>
 								{option.label}
 							</RadioButton>
@@ -65,15 +68,17 @@ export function FinalSettingsSection({ config, editState }) {
 
 				<div className="border-b border-b-border-divider" />
 
-				<VisibilityExpirationField
-					expireEnabled={editState.expireEnabled}
-					startDate={editState.startDate}
-					endDate={editState.endDate}
-					mediaStatus={editState.mediaStatus}
-					onToggle={editState.setExpireEnabled}
-					onStartDateChange={editState.setStartDate}
-					onEndDateChange={editState.setEndDate}
-				/>
+				{editState.mediaStatus !== 'private' ? (
+					<VisibilityExpirationField
+						expireEnabled={editState.expireEnabled}
+						startDate={editState.startDate}
+						endDate={editState.endDate}
+						mediaStatus={editState.mediaStatus}
+						onToggle={editState.setExpireEnabled}
+						onStartDateChange={editState.setStartDate}
+						onEndDateChange={editState.setEndDate}
+					/>
+				) : null}
 
 				{config.permissions?.canUseEncryption ? (
 					<>
