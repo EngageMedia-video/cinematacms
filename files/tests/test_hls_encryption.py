@@ -292,7 +292,7 @@ class CreateHlsVersionedDirectoryTests(TestCase):
         )
 
     @staticmethod
-    def _fake_run_writing_master(command, capture_output):
+    def _fake_run_writing_master(command, capture_output, timeout=None):
         output_dir = next(
             (part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")),
             None,
@@ -303,7 +303,18 @@ class CreateHlsVersionedDirectoryTests(TestCase):
         return MagicMock(returncode=0)
 
     @staticmethod
-    def _fake_run_producing_nothing(command, capture_output):
+    def _fake_run_producing_nothing(command, capture_output, timeout=None):
+        return MagicMock(returncode=1)
+
+    @staticmethod
+    def _fake_run_failing_after_master(command, capture_output, timeout=None):
+        output_dir = next(
+            (part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")),
+            None,
+        )
+        os.makedirs(output_dir, exist_ok=True)
+        with open(os.path.join(output_dir, "master.m3u8"), "wb") as master_file:
+            master_file.write(b"incomplete")
         return MagicMock(returncode=1)
 
     def test_first_generation_writes_versioned_directory(self):
@@ -370,7 +381,23 @@ class CreateHlsVersionedDirectoryTests(TestCase):
         self.assertEqual(self.media.hls_file, good_hls_file)
         self.assertTrue(os.path.exists(good_hls_file))
 
-    def test_concurrent_run_skips_when_lock_held(self):
+    def test_mp4hls_nonzero_with_master_discards_partial_output(self):
+        from files import tasks
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.media.refresh_from_db()
+        good_hls_file = self.media.hls_file
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_failing_after_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.hls_file, good_hls_file)
+        uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
+        self.assertEqual(os.listdir(uid_dir), [os.path.basename(os.path.dirname(good_hls_file))])
+
+    def test_concurrent_run_marks_pending_when_lock_held(self):
         from files import tasks
 
         with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
@@ -380,17 +407,39 @@ class CreateHlsVersionedDirectoryTests(TestCase):
         dir_before = os.path.dirname(hls_file_before)
 
         lock_key = f"create_hls_lock_{self.media.uid.hex}"
+        pending_key = f"create_hls_pending_{self.media.uid.hex}"
         cache.add(lock_key, "1", timeout=tasks.HLS_LOCK_TIMEOUT)
         try:
-            with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master) as mock_run:
+            with (
+                patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master) as mock_run,
+                patch("files.tasks.create_hls.apply_async") as mock_apply_async,
+            ):
                 self.assertTrue(tasks.create_hls(self.media.friendly_token))
             mock_run.assert_not_called()
+            mock_apply_async.assert_not_called()
+            self.assertEqual(cache.get(pending_key), "1")
         finally:
             cache.delete(lock_key)
+            cache.delete(pending_key)
 
         self.media.refresh_from_db()
         self.assertEqual(self.media.hls_file, hls_file_before)
         self.assertTrue(os.path.exists(dir_before))
+
+    def test_pending_overlap_schedules_follow_up_after_lock_release(self):
+        from files import tasks
+
+        pending_key = f"create_hls_pending_{self.media.uid.hex}"
+        cache.set(pending_key, "1", timeout=tasks.HLS_PENDING_RETRY_TIMEOUT)
+
+        with (
+            patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master),
+            patch("files.tasks.create_hls.apply_async") as mock_apply_async,
+        ):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        mock_apply_async.assert_called_once_with(args=[self.media.friendly_token])
+        self.assertIsNone(cache.get(pending_key))
 
     def test_removal_stays_within_uid_directory(self):
         from files import tasks

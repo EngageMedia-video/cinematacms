@@ -62,6 +62,7 @@ logger = get_task_logger(__name__)
 # abandoned (e.g. a worker crashed mid-run). Generous enough to cover the
 # mp4hls remux of a typical video across all h264 encoding profiles.
 HLS_LOCK_TIMEOUT = 600
+HLS_PENDING_RETRY_TIMEOUT = HLS_LOCK_TIMEOUT * 2
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 
@@ -773,8 +774,11 @@ def create_hls(friendly_token):
     # runs for the same media are routine, not rare. Only the lock holder
     # writes output, updates hls_file, and runs cleanup.
     lock_key = f"create_hls_lock_{p}"
-    if not cache.add(lock_key, "1", timeout=HLS_LOCK_TIMEOUT):
-        logger.info("create_hls already running for media %s, skipping overlapping run", friendly_token)
+    pending_key = f"create_hls_pending_{p}"
+    lock_token = produce_friendly_token()
+    if not cache.add(lock_key, lock_token, timeout=HLS_LOCK_TIMEOUT):
+        cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
+        logger.info("create_hls already running for media %s, queued follow-up run", friendly_token)
         return True
 
     try:
@@ -801,12 +805,33 @@ def create_hls(friendly_token):
             *encryption_flags,
             *files,
         ]
-        subprocess.run(cmd, capture_output=True)
+        try:
+            result = subprocess.run(cmd, capture_output=True, timeout=HLS_LOCK_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            logger.error("mp4hls timed out for media %s, discarding partial output", friendly_token)
+            shutil.rmtree(output_dir, ignore_errors=True)
+            cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
+            return True
+
+        if result.returncode != 0:
+            logger.error(
+                "mp4hls failed for media %s with return code %s, discarding partial output",
+                friendly_token,
+                result.returncode,
+            )
+            shutil.rmtree(output_dir, ignore_errors=True)
+            return True
 
         pp = os.path.join(output_dir, "master.m3u8")
         if not os.path.exists(pp):
             logger.error("mp4hls produced no master.m3u8 for media %s, discarding partial output", friendly_token)
             shutil.rmtree(output_dir, ignore_errors=True)
+            return True
+
+        if cache.get(lock_key) != lock_token:
+            logger.warning("create_hls lock expired for media %s, discarding stale output", friendly_token)
+            shutil.rmtree(output_dir, ignore_errors=True)
+            cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
             return True
 
         # New URLs every regeneration: hls_file always changes, so the
@@ -831,7 +856,13 @@ def create_hls(friendly_token):
                     except OSError:
                         pass
     finally:
-        cache.delete(lock_key)
+        released_lock = False
+        if cache.get(lock_key) == lock_token:
+            cache.delete(lock_key)
+            released_lock = True
+        if cache.get(pending_key) and (released_lock or cache.get(lock_key) is None):
+            cache.delete(pending_key)
+            create_hls.apply_async(args=[friendly_token])
 
     return True
 

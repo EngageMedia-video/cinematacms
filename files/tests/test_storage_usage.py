@@ -169,7 +169,7 @@ class StorageUsageTests(TestCase):
             master_file.write(b"old")
         Media.objects.filter(pk=self.media.pk).update(hls_file=old_hls_path)
 
-        def fake_run(command, capture_output):
+        def fake_run(command, capture_output, timeout=None):
             output_dir = next(
                 (part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")),
                 None,
