@@ -2,11 +2,11 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import commentsQueryClient from '../queryClient';
 import useCommentsStore from '../useCommentsStore';
-import { Dialog, DialogContent } from '../../shared/components/Dialog';
+import { Dialog, DialogContent } from '../../../shared/components/Dialog';
 import { getFriendlyTokenFromLocation } from '../utils/videoPlayer';
 import { CommentsPanel } from './CommentsPanel';
 
-import '../../../static/css/tailwind.css';
+import '../../../../static/css/tailwind.css';
 
 function CommentsStyleTag() {
 	return (

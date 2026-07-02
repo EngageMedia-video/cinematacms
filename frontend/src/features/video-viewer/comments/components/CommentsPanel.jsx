@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { cn } from '../../shared/utils/classNames';
+import { cn } from '../../../shared/utils/classNames';
 import { useComments } from '../hooks/useComments';
 import { useHiddenBelowCount } from '../hooks/useHiddenBelowCount';
 import { CommentItem } from './CommentItem';

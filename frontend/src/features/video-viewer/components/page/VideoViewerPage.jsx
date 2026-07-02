@@ -12,7 +12,7 @@ import VideoViewer from '../../../../static/js/components/MediaViewer/VideoViewe
 import VideoViewerStore from '../../../../static/js/components/MediaViewer/VideoViewer/store.js';
 import { SiteConsumer } from '../../../../static/js/contexts/SiteContext';
 import { RestrictedMediaGate } from '../../../shared/components/RestrictedMediaGate';
-import { CommentsSection } from '../../../comments';
+import { CommentsSection } from '../../comments';
 
 import '../../../../static/js/pages/styles/MediaPage.scss';
 

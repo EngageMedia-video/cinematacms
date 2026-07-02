@@ -3,7 +3,7 @@ import { format as formatTimeago } from 'timeago.js';
 import { CommentText } from './CommentText';
 import { useDeleteComment } from '../hooks/useDeleteComment';
 import { resolveAvatarSrc } from '../utils/avatar';
-import { Avatar } from '../../shared/components/Avatar';
+import { Avatar } from '../../../shared/components/Avatar';
 
 function getUser() {
 	if (typeof window === 'undefined') return null;

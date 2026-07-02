@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
-import { Button } from '../../shared/components/Button';
+import { Button } from '../../../shared/components/Button';
 import { useSubmitComment } from '../hooks/useSubmitComment';
 import { usePlayerReady } from '../hooks/usePlayerReady';
 import { getCurrentPlayerTime } from '../utils/videoPlayer';
 import { formatTimestamp } from '../utils/timestamp';
 import { resolveAvatarSrc } from '../utils/avatar';
-import { Avatar } from '../../shared/components/Avatar';
+import { Avatar } from '../../../shared/components/Avatar';
 
 function getUser() {
 	if (typeof window === 'undefined') return null;

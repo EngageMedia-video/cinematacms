@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import getCSRFToken from '../../../static/js/functions/getCSRFToken';
+import getCSRFToken from '../../../../static/js/functions/getCSRFToken';
 import { commentsQueryKey } from './useComments';
 
 export function useDeleteComment(friendlyToken) {
