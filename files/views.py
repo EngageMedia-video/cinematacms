@@ -988,6 +988,13 @@ def cleanup_hls_directory_for_media(media):
     make an older direct-child check silently skip cleanup. Targeting the
     uid directory itself removes both the versioned tree and any legacy
     flat-layout output in one pass, and works even if hls_file is empty.
+
+    Failure policy: best-effort, non-blocking, matching the sibling cleanup
+    blocks (original file, encodings, preview file) in the calling
+    media-replace flow. A failed rmtree is logged, not raised, so it never
+    aborts the replace; the next create_hls run writes a new versioned
+    subdirectory regardless, so any leftover directory is orphaned disk
+    usage rather than a correctness or cache-busting problem.
     """
     hls_dir_setting = getattr(settings, "HLS_DIR", None)
     if not hls_dir_setting:
