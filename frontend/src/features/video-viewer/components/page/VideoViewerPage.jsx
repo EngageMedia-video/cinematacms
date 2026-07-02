@@ -12,7 +12,9 @@ import VideoViewer from '../../../../static/js/components/MediaViewer/VideoViewe
 import VideoViewerStore from '../../../../static/js/components/MediaViewer/VideoViewer/store.js';
 import { SiteConsumer } from '../../../../static/js/contexts/SiteContext';
 import { RestrictedMediaGate } from '../../../shared/components/RestrictedMediaGate';
+import { TabContent, TabView } from '../../../shared/components/TabView/TabView.jsx';
 import { CommentsSection } from '../../comments';
+import { PrivateJournalSection } from '../../private-journal/PrivateJournalSection.jsx';
 
 import '../../../../static/js/pages/styles/MediaPage.scss';
 
@@ -31,6 +33,7 @@ export class VideoViewerPage extends Page {
 			pagePlaylistLoaded: false,
 			pagePlaylistData: MediaPageStore.get('playlist-data'),
 			needsPassword: false,
+			commentsCount: 0,
 		};
 
 		this.onWindowResize = this.onWindowResize.bind(this);
@@ -39,6 +42,7 @@ export class VideoViewerPage extends Page {
 		this.onPagePlaylistLoad = this.onPagePlaylistLoad.bind(this);
 		this.onNeedsPassword = this.onNeedsPassword.bind(this);
 		this.onPasswordSuccess = this.onPasswordSuccess.bind(this);
+		this.onCommentsCountChange = this.onCommentsCountChange.bind(this);
 
 		MediaPageStore.on('loaded_media_data', this.onMediaLoad);
 		MediaPageStore.on('loaded_media_error', this.onMediaLoadError);
@@ -115,6 +119,14 @@ export class VideoViewerPage extends Page {
 		MediaPageActions.loadMediaData();
 	}
 
+	onCommentsCountChange(commentsCount) {
+		if (this.state.commentsCount === commentsCount) {
+			return;
+		}
+
+		this.setState({ commentsCount });
+	}
+
 	viewerContainerContent(mediaData) {
 		return (
 			<SiteConsumer>{(site) => <VideoViewer data={mediaData} siteUrl={site.url} inEmbed={!1} />}</SiteConsumer>
@@ -130,11 +142,26 @@ export class VideoViewerPage extends Page {
 		const viewerNestedClassname = 'viewer-section-nested' + (this.state.theaterMode ? ' viewer-section' : '');
 		const commentsPanel = this.state.mediaLoaded ? (
 			<div className="viewer-sidebar-comments mb-6 box-border w-full" key="viewer-comments">
-				<CommentsSection
-					friendlyToken={MediaPageStore.get('media-id')}
-					variant="sidebar"
-					commentsDisabled={MediaPageStore.get('media-data')?.enable_comments === false}
-				/>
+				<TabView
+					tabMode="wrap"
+					listClassName="rounded-none rounded-tl-ds-8 rounded-tr-ds-8"
+					triggerClassName="rounded-none py-3 px-size-22 text-neutral-50 aria-selected:text-text-primary dark:aria-selected:text-neutral-50"
+					triggerSelectedColor="bg-bg-surface"
+					panelClassName="mt-0 p-0 bg-bg-surface rounded-b-ds-8"
+					aria-label="Video comments and notes"
+				>
+					<TabContent title={`COMMENTS (${this.state.commentsCount})`} value="comments">
+						<CommentsSection
+							friendlyToken={MediaPageStore.get('media-id')}
+							variant="sidebar"
+							commentsDisabled={MediaPageStore.get('media-data')?.enable_comments === false}
+							onCommentsCountChange={this.onCommentsCountChange}
+						/>
+					</TabContent>
+					<TabContent title="YOUR NOTES" value="your-notes">
+						<PrivateJournalSection />
+					</TabContent>
+				</TabView>
 			</div>
 		) : null;
 
