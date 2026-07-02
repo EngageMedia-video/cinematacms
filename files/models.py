@@ -1691,6 +1691,7 @@ class Playlist(models.Model):
     uid = models.UUIDField(unique=True, default=uuid.uuid4)
     title = models.CharField(max_length=90, db_index=True)
     description = models.TextField(blank=True, help_text="description")
+    curator_note = models.TextField(blank=True, default="", help_text="Curator's editorial note for this playlist")
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, db_index=True, related_name="playlists")
     add_date = models.DateTimeField(auto_now_add=True, db_index=True)
     media = models.ManyToManyField(Media, through="playlistmedia", blank=True)

@@ -41,23 +41,31 @@ const ROUTE_TITLES = [
 	[/^\/manage\/comments\/?$/, 'Manage comments'],
 	[/^\/manage\/uploads\/?$/, 'Manage uploads'],
 	[/^\/view\b/, 'Watch'],
-	[/^\/playlist\//, 'Playlist'],
 ];
 
-function derivePageTitle() {
-	if (typeof window === 'undefined') return 'Home';
-	const path = window.location.pathname || '/';
-	for (const [pattern, label] of ROUTE_TITLES) {
-		if (pattern.test(path)) return label;
-	}
-	// document.title may start with a separator (e.g. "| Sign In" on django-allauth
-	// pages), so filter empty segments before picking the first label.
+const DOCUMENT_TITLE_ROUTES = [/^\/playlist\//, /^\/playlists\//];
+
+function getDocumentTitleLabel() {
 	const raw = (typeof document !== 'undefined' && document.title) || '';
 	const segments = raw
 		.split(/[-|–—]/)
 		.map((segment) => segment.trim())
 		.filter(Boolean);
-	return segments[0] || 'Home';
+	return segments[0] || '';
+}
+
+function derivePageTitle() {
+	if (typeof window === 'undefined') return 'Home';
+	const path = window.location.pathname || '/';
+	if (DOCUMENT_TITLE_ROUTES.some((pattern) => pattern.test(path))) {
+		return getDocumentTitleLabel() || 'Playlist';
+	}
+	for (const [pattern, label] of ROUTE_TITLES) {
+		if (pattern.test(path)) return label;
+	}
+	// document.title may start with a separator (e.g. "| Sign In" on django-allauth
+	// pages), so filter empty segments before picking the first label.
+	return getDocumentTitleLabel() || 'Home';
 }
 
 export function TopbarMobileBar() {

@@ -528,6 +528,12 @@ class PlaylistSerializer(serializers.ModelSerializer):
 
 class PlaylistDetailSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
+    user_display_name = serializers.ReadOnlyField(source="user.name")
+    author_is_trusted = serializers.ReadOnlyField(source="user.advancedUser")
+    author_is_manager = serializers.SerializerMethodField()
+
+    def get_author_is_manager(self, obj):
+        return obj.user.is_superuser or obj.user.is_manager
 
     class Meta:
         model = Playlist
@@ -537,7 +543,11 @@ class PlaylistDetailSerializer(serializers.ModelSerializer):
             "add_date",
             "user_thumbnail_url",
             "description",
+            "curator_note",
             "user",
+            "user_display_name",
+            "author_is_trusted",
+            "author_is_manager",
             "media_count",
             "url",
             "thumbnail_url",
