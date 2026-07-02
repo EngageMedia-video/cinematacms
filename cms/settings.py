@@ -505,6 +505,9 @@ CHUNKS_DIR = "chunks/"
 ORPHANED_UPLOAD_CLEANUP_HOURS = 24
 # Hours after which uploaded media rows with no saved metadata are removed
 ORPHANED_DRAFT_CLEANUP_HOURS = 168
+# Max orphaned draft rows a single cleanup run deletes; bounds worst-case runtime
+# (each delete fires the post_delete file/HLS cascade). The next run drains the rest.
+ORPHANED_DRAFT_CLEANUP_BATCH_SIZE = 2000
 # bytes, size of uploaded media
 UPLOAD_MAX_SIZE = 800 * 1024 * 1000 * 5
 

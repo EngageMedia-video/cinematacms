@@ -317,7 +317,11 @@ class Media(models.Model):
         blank=True,
         help_text=(
             "Set when the user submits the metadata form as a draft or full submission. "
-            "NULL means the upload completed but the form was never saved."
+            "NULL means the upload completed but the form was never saved. "
+            "CONTRACT: the cleanup_orphaned_draft_media reaper deletes any row left NULL "
+            "past ORPHANED_DRAFT_CLEANUP_HOURS, so every Media creation path that is NOT "
+            "an abandonable upload (admin, management commands, imports, new API paths) "
+            "MUST stamp this field, or its rows will be silently reaped."
         ),
     )
     encoding_status = models.CharField(max_length=20, choices=MEDIA_ENCODING_STATUS, default="pending", db_index=True)

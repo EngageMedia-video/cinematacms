@@ -1447,7 +1447,12 @@ def cleanup_orphaned_draft_media():
     cleanup_age_hours = getattr(settings, "ORPHANED_DRAFT_CLEANUP_HOURS", 168)
     cutoff = timezone.now() - timedelta(hours=cleanup_age_hours)
 
-    orphaned_media = Media.objects.filter(metadata_saved_at__isnull=True, add_date__lt=cutoff)
+    # Cap rows deleted per run so an upstream bug that mass-creates unsaved rows
+    # can't make one daily run exceed the short_tasks soft time limit mid-sweep
+    # (each delete fires the post_delete file/HLS cascade). The next run drains
+    # the remainder.
+    batch_size = getattr(settings, "ORPHANED_DRAFT_CLEANUP_BATCH_SIZE", 2000)
+    orphaned_media = Media.objects.filter(metadata_saved_at__isnull=True, add_date__lt=cutoff)[:batch_size]
     deleted = 0
     errors = []
 

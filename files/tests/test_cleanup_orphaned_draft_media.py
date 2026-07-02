@@ -82,6 +82,20 @@ class CleanupOrphanedDraftMediaTests(TestCase):
         self.assertFalse(Media.objects.filter(pk=media.pk).exists())
         self.assertFalse(Encoding.objects.filter(pk=encoding.pk).exists())
 
+    @override_settings(ORPHANED_DRAFT_CLEANUP_HOURS=168, ORPHANED_DRAFT_CLEANUP_BATCH_SIZE=2)
+    def test_caps_deletions_per_run_to_batch_size(self):
+        orphans = [self._age(create_test_media(self.user, metadata_saved_at=None), self.old) for _ in range(3)]
+
+        # First run deletes at most batch_size (2); the remainder survives for the next run.
+        first = cleanup_orphaned_draft_media()
+        self.assertEqual(first["drafts_deleted"], 2)
+        self.assertEqual(Media.objects.filter(pk__in=[m.pk for m in orphans]).count(), 1)
+
+        # A subsequent run drains the rest.
+        second = cleanup_orphaned_draft_media()
+        self.assertEqual(second["drafts_deleted"], 1)
+        self.assertFalse(Media.objects.filter(pk__in=[m.pk for m in orphans]).exists())
+
 
 class MetadataSavedMarkerTests(TestCase):
     def setUp(self):
