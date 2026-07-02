@@ -154,7 +154,7 @@ class StorageUsageTests(TestCase):
         self.assertEqual(self.media.storage_usage_bytes, 6)
         self.assertIn("Storage usage backfill complete", out.getvalue())
 
-    def test_create_hls_refreshes_storage_usage_when_hls_path_is_unchanged(self):
+    def test_create_hls_refreshes_storage_usage_on_regeneration(self):
         fake_mp4hls = os.path.join(self.tmpdir.name, "mp4hls")
         with open(fake_mp4hls, "w", encoding="utf-8") as command_file:
             command_file.write("#!/bin/sh\n")
@@ -163,11 +163,11 @@ class StorageUsageTests(TestCase):
         encoding = Encoding.objects.create(media=self.media, profile=self._profile(), status="success")
         self._attach_file(encoding, "media_file", "encoded.mp4", b"encoded")
 
-        hls_path = os.path.join(self.hls_dir, self.media.uid.hex, "master.m3u8")
-        os.makedirs(os.path.dirname(hls_path), exist_ok=True)
-        with open(hls_path, "wb") as master_file:
+        old_hls_path = os.path.join(self.hls_dir, self.media.uid.hex, "master.m3u8")
+        os.makedirs(os.path.dirname(old_hls_path), exist_ok=True)
+        with open(old_hls_path, "wb") as master_file:
             master_file.write(b"old")
-        Media.objects.filter(pk=self.media.pk).update(hls_file=hls_path)
+        Media.objects.filter(pk=self.media.pk).update(hls_file=old_hls_path)
 
         def fake_run(command, capture_output):
             output_dir = next(
@@ -184,10 +184,12 @@ class StorageUsageTests(TestCase):
         with (
             override_settings(MP4HLS_COMMAND=fake_mp4hls),
             patch("files.tasks.subprocess.run", side_effect=fake_run),
-            patch("files.tasks.schedule_refresh_media_storage_usage") as schedule_refresh,
+            patch("files.storage_usage.schedule_refresh_media_storage_usage") as schedule_refresh,
         ):
             self.assertTrue(tasks.create_hls(self.media.friendly_token))
 
         self.media.refresh_from_db()
-        self.assertEqual(self.media.hls_file, hls_path)
+        self.assertNotEqual(self.media.hls_file, old_hls_path)
+        self.assertTrue(os.path.exists(self.media.hls_file))
+        self.assertFalse(os.path.exists(old_hls_path))
         schedule_refresh.assert_called_once_with(self.media.id)

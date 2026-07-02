@@ -55,9 +55,13 @@ from .models import (
 )
 from .query_cache import invalidate_media_cache
 from .sprites import generate_sprite_for_media
-from .storage_usage import schedule_refresh_media_storage_usage
 
 logger = get_task_logger(__name__)
+
+# How long a per-media create_hls lock is held before it is considered
+# abandoned (e.g. a worker crashed mid-run). Generous enough to cover the
+# mp4hls remux of a typical video across all h264 encoding profiles.
+HLS_LOCK_TIMEOUT = 600
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 
@@ -759,13 +763,25 @@ def create_hls(friendly_token):
         return False
 
     p = media.uid.hex
-    output_dir = os.path.join(settings.HLS_DIR, p)
+    uid_dir = os.path.join(settings.HLS_DIR, p)
     encodings = media.encodings.filter(profile__extension="mp4", status="success", chunk=False, profile__codec="h264")
-    if encodings:
-        existing_output_dir = None
-        if os.path.exists(output_dir):
-            existing_output_dir = output_dir
-            output_dir = os.path.join(settings.HLS_DIR, p + produce_friendly_token())
+    if not encodings:
+        return True
+
+    # Serialize regeneration per media: create_hls.delay fires once per
+    # successful h264 profile and again on encryption toggle, so overlapping
+    # runs for the same media are routine, not rare. Only the lock holder
+    # writes output, updates hls_file, and runs cleanup.
+    lock_key = f"create_hls_lock_{p}"
+    if not cache.add(lock_key, "1", timeout=HLS_LOCK_TIMEOUT):
+        logger.info("create_hls already running for media %s, skipping overlapping run", friendly_token)
+        return True
+
+    try:
+        version = produce_friendly_token()
+        output_dir = os.path.join(uid_dir, version)
+        os.makedirs(output_dir, exist_ok=True)
+
         files = [f.media_file.path for f in encodings if f.media_file]
         encryption_flags = []
         if media.is_encrypted:
@@ -786,19 +802,37 @@ def create_hls(friendly_token):
             *files,
         ]
         subprocess.run(cmd, capture_output=True)
-        if existing_output_dir:
-            # Replace old HLS output with new. Use shutil instead of
-            # `cp -rT` which is GNU-only and fails silently on macOS.
-            shutil.rmtree(existing_output_dir)
-            shutil.move(output_dir, existing_output_dir)
-            output_dir = existing_output_dir
+
         pp = os.path.join(output_dir, "master.m3u8")
-        if os.path.exists(pp):
-            if media.hls_file != pp:
-                media.hls_file = pp
-                media.save(update_fields=["hls_file"])
-            else:
-                schedule_refresh_media_storage_usage(media.id)
+        if not os.path.exists(pp):
+            logger.error("mp4hls produced no master.m3u8 for media %s, discarding partial output", friendly_token)
+            shutil.rmtree(output_dir, ignore_errors=True)
+            return True
+
+        # New URLs every regeneration: hls_file always changes, so the
+        # post_save signal on Media always fires the storage usage refresh.
+        media.hls_file = pp
+        media.save(update_fields=["hls_file"])
+
+        # Remove stale output: never delete the directory hls_file currently
+        # references (guards against a concurrently-committed newer run),
+        # but clear every other version directory plus legacy flat siblings.
+        current_dir = os.path.dirname(media.hls_file)
+        if os.path.isdir(uid_dir):
+            for entry in os.listdir(uid_dir):
+                entry_path = os.path.join(uid_dir, entry)
+                if entry_path == current_dir:
+                    continue
+                if os.path.isdir(entry_path):
+                    shutil.rmtree(entry_path, ignore_errors=True)
+                else:
+                    try:
+                        os.remove(entry_path)
+                    except OSError:
+                        pass
+    finally:
+        cache.delete(lock_key)
+
     return True
 
 
