@@ -31,7 +31,7 @@ function CommentsStyleTag() {
 	);
 }
 
-function CommentsSectionInner({ friendlyToken, variant, commentsDisabled }) {
+function CommentsSectionInner({ friendlyToken, variant, commentsDisabled, onCommentsCountChange }) {
 	const isExpanded = useCommentsStore((s) => s.isExpanded);
 	const openExpanded = useCommentsStore((s) => s.openExpanded);
 	const closeExpanded = useCommentsStore((s) => s.closeExpanded);
@@ -46,6 +46,7 @@ function CommentsSectionInner({ friendlyToken, variant, commentsDisabled }) {
 				friendlyToken={friendlyToken}
 				variant={variant}
 				commentsDisabled={commentsDisabled}
+				onCommentsCountChange={onCommentsCountChange}
 				onExpandToggle={openExpanded}
 				isExpanded={false}
 			/>
@@ -69,12 +70,22 @@ function CommentsSectionInner({ friendlyToken, variant, commentsDisabled }) {
 	);
 }
 
-export function CommentsSection({ friendlyToken, variant = 'inline', commentsDisabled = false }) {
+export function CommentsSection({
+	friendlyToken,
+	variant = 'inline',
+	commentsDisabled = false,
+	onCommentsCountChange,
+}) {
 	const resolvedToken = friendlyToken || getFriendlyTokenFromLocation();
 	return (
 		<QueryClientProvider client={commentsQueryClient}>
 			<CommentsStyleTag />
-			<CommentsSectionInner friendlyToken={resolvedToken} variant={variant} commentsDisabled={commentsDisabled} />
+			<CommentsSectionInner
+				friendlyToken={resolvedToken}
+				variant={variant}
+				commentsDisabled={commentsDisabled}
+				onCommentsCountChange={onCommentsCountChange}
+			/>
 		</QueryClientProvider>
 	);
 }

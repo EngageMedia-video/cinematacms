@@ -1,22 +1,9 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { cn } from '../../../shared/utils/classNames';
 import { useComments } from '../hooks/useComments';
 import { useHiddenBelowCount } from '../hooks/useHiddenBelowCount';
 import { CommentItem } from './CommentItem';
 import { CommentForm } from './CommentForm';
-
-function CommentsTab({ count }) {
-	return (
-		<div className="flex shrink-0 items-start overflow-hidden rounded-t-lg">
-			<span
-				className="bg-bg-surface px-4 py-3 text-xs font-bold uppercase leading-5 tracking-tight text-text-strong"
-				aria-current="page"
-			>
-				Comments ({count})
-			</span>
-		</div>
-	);
-}
 
 function ScrollMorePill({ count, onClick }) {
 	if (count <= 0) return null;
@@ -40,8 +27,9 @@ export function CommentsPanel({
 	onExpandToggle,
 	isExpanded = false,
 	commentsDisabled = false,
+	onCommentsCountChange,
 }) {
-	const showTabs = variant === 'sidebar';
+	const isSidebar = variant === 'sidebar';
 	const isModal = variant === 'modal';
 	// When the owner has turned comments off (commentsDisabled prop) we skip the
 	// request entirely; the private-video case is detected from the response.
@@ -53,6 +41,10 @@ export function CommentsPanel({
 
 	const scrollRef = useRef(null);
 	const hiddenBelow = useHiddenBelowCount(scrollRef, loadedCount);
+
+	useEffect(() => {
+		onCommentsCountChange?.(totalCount);
+	}, [onCommentsCountChange, totalCount]);
 
 	const handleScrollToBottom = () => {
 		const el = scrollRef.current;
@@ -71,11 +63,10 @@ export function CommentsPanel({
 				)}
 			>
 				<div className="relative flex min-h-0 flex-1 flex-col">
-					{showTabs ? <CommentsTab count={totalCount} /> : null}
 					<div
 						className={cn(
 							'flex min-h-0 flex-1 flex-col items-center justify-center gap-2 bg-bg-surface px-4 py-10 text-center',
-							showTabs ? 'rounded-b-lg rounded-tr-lg' : 'rounded-lg'
+							!isSidebar && 'rounded-lg'
 						)}
 					>
 						<i aria-hidden="true" className="material-icons text-text-muted" style={{ fontSize: 32 }}>
@@ -98,13 +89,11 @@ export function CommentsPanel({
 			)}
 		>
 			<div className="relative flex min-h-0 flex-1 flex-col">
-				{showTabs ? <CommentsTab count={totalCount} /> : null}
-
 				<div
 					ref={scrollRef}
 					className={cn(
 						'comments-scrollbar relative flex min-h-0 flex-1 flex-col overflow-y-auto bg-bg-surface px-4 pb-4',
-						showTabs ? 'rounded-b-lg rounded-tr-lg' : 'rounded-lg'
+						!isSidebar && 'rounded-lg'
 					)}
 				>
 					<div className="sticky top-0 z-20 -mx-4 shrink-0 bg-bg-surface px-4 pt-[22px]">
