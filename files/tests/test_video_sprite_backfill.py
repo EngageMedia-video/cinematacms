@@ -106,6 +106,38 @@ class VideoSpriteBackfillTests(TestCase):
         self.assertEqual(media.sprite_num_secs, 10)
         self.assertEqual(result["sprite_num_secs"], 10)
 
+    def test_generate_sprite_letterboxes_tiles_to_exact_box(self):
+        # Tiles must preserve aspect ratio (so vertical videos aren't squashed) AND land on an
+        # exact SPRITE_WIDTH x SPRITE_HEIGHT box (so every row is the same height and the client's
+        # fixed-grid slice doesn't drift on the last frame). A bare `scale=W:H` does neither.
+        media = self._attach_media_file(create_test_media(self.user, duration=15))
+
+        vf_filters = []
+
+        def fake_run(command):
+            if command[0] == self.fake_ffmpeg:
+                vf_filters.append(command[command.index("-vf") + 1])
+                with open(command[-1], "wb") as frame_file:
+                    frame_file.write(b"frame")
+            else:
+                with open(command[-1], "wb") as sprite_file:
+                    sprite_file.write(b"sprite")
+            return {"out": "", "error": ""}
+
+        with (
+            patch("files.sprites.run_command", side_effect=fake_run),
+            patch("files.sprites.get_file_type", return_value="image"),
+        ):
+            result = generate_sprite_for_media(media)
+
+        self.assertTrue(result["ok"])
+        self.assertTrue(vf_filters)
+        for vf in vf_filters:
+            self.assertIn("force_original_aspect_ratio=decrease", vf)
+            self.assertIn("pad=160:90", vf)
+            # Guard against regressing to a bare force-stretch.
+            self.assertNotEqual(vf, "scale=160:90")
+
     @override_settings(SPRITE_NUM_SECS=10, SPRITE_MAX_TILES=100)
     def test_generate_sprite_caps_tile_count_for_long_videos(self):
         # A 27-minute video at 10s spacing would be 162 tiles. With max_tiles=100 the

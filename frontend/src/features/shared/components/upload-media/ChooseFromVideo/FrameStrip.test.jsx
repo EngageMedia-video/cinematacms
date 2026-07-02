@@ -76,4 +76,30 @@ describe('FrameStrip', () => {
 			expect(screen.getByText(/Frame preview is unavailable for this video/i)).toBeInTheDocument();
 		});
 	});
+
+	it('renders every frame — including the last — at the same size on a fixed grid', async () => {
+		// 450px natural height / 90 = 5 rows; duration 50 / 10 = 5 frames (indices 0..4).
+		// Unique URL so useSpriteFrames' per-URL rows cache doesn't short-circuit image load.
+		render(
+			<FrameStrip currentThumbnailTime="0" duration={50} spriteSecs={10} spritesUrl="/sprites-lastframe.jpg" />
+		);
+
+		act(() => {
+			MockImage.instances[0].onload();
+		});
+
+		await waitFor(() => expect(screen.getByRole('img', { name: /0:40/i })).toBeInTheDocument());
+
+		// The last frame (0:40) must not shrink relative to the first (0:00): same height, and a
+		// backgroundSize whose height is pinned to rows*scaledFrameHeight (not `auto`).
+		const first = screen.getByRole('img', { name: /video frame at 0:00/i });
+		const last = screen.getByRole('img', { name: /video frame at 0:40/i });
+
+		expect(last.style.height).toBe(first.style.height);
+		expect(last.style.backgroundSize).toBe(first.style.backgroundSize);
+		// Height is pinned to rows*scaledFrameHeight, not `auto` (the source of the last-frame drift).
+		expect(last.style.backgroundSize).not.toContain('auto');
+		const scaledFrameHeight = (90 * 78.421) / 160;
+		expect(last.style.backgroundSize).toBe(`78.421px ${5 * scaledFrameHeight}px`);
+	});
 });
