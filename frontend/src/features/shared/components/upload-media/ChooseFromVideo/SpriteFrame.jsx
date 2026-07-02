@@ -49,7 +49,7 @@ export function SpriteFrame({
 	// (a frame grabbed near EOF can), the sheet height is not a clean rows*90 and only the LAST
 	// frame drifts — it renders resized. Forcing an explicit height puts every row (last one
 	// included) on the same fixed grid, independent of the JPEG's trailing-row height.
-	const safeRows = Math.max(1, Number(rowsInSheet) || Number(index) + 1);
+	const safeRows = Math.max(1, Number(rowsInSheet) || Number(index) + 1 || 1);
 
 	return (
 		<span
