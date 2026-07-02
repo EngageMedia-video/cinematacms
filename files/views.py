@@ -978,6 +978,57 @@ def embed_old_media(request, user, video):
 #########################
 
 
+def cleanup_hls_directory_for_media(media):
+    """Remove all on-disk HLS output for `media`, versioned and legacy alike.
+
+    Targets HLS_DIR/<uid> directly rather than deriving the directory from
+    hls_file's parent: create_hls nests output one level deeper as
+    HLS_DIR/<uid>/<version>/, and hls_file's parent under that layout is
+    HLS_DIR/<uid>/<version> (not a direct child of HLS_DIR), which used to
+    make an older direct-child check silently skip cleanup. Targeting the
+    uid directory itself removes both the versioned tree and any legacy
+    flat-layout output in one pass, and works even if hls_file is empty.
+    """
+    hls_dir_setting = getattr(settings, "HLS_DIR", None)
+    if not hls_dir_setting:
+        logger.warning(f"HLS_DIR setting not configured, skipping HLS cleanup for media {media.friendly_token}")
+        return
+
+    try:
+        hls_base_dir = Path(hls_dir_setting).resolve()
+        hls_uid_dir = (hls_base_dir / media.uid.hex).resolve()
+
+        # Security checks:
+        # 1. Ensure the uid directory is within HLS_DIR
+        # 2. Ensure it's a direct child of HLS_DIR (not deeply nested)
+        # 3. Prevent directory traversal outside HLS_DIR
+        try:
+            is_within_hls_dir = hls_uid_dir.is_relative_to(hls_base_dir)
+        except AttributeError:
+            # Fallback for Python < 3.9
+            try:
+                is_within_hls_dir = hls_base_dir in hls_uid_dir.parents or hls_base_dir == hls_uid_dir
+            except ValueError:
+                is_within_hls_dir = False
+
+        is_direct_child = hls_uid_dir.parent == hls_base_dir
+
+        if is_within_hls_dir and is_direct_child:
+            if hls_uid_dir.exists():
+                shutil.rmtree(hls_uid_dir)
+        else:
+            logger.warning(
+                f"Attempted directory traversal or invalid HLS path: {hls_uid_dir} "
+                f"(expected direct child of {hls_base_dir}) "
+                f"for media {media.friendly_token}"
+            )
+    except Exception as e:
+        logger.error(
+            f"Failed to remove HLS directory for media {media.friendly_token} (hls_file={media.hls_file}): {e}",
+            exc_info=True,
+        )
+
+
 @login_required
 def edit_media(request):
     friendly_token = request.GET.get("m", "").strip()
@@ -1116,54 +1167,8 @@ def edit_media(request):
                             )
                     old_encodings.delete()
 
-                    # Delete old HLS files if they exist (with directory traversal protection)
-                    if media.hls_file:
-                        # Guard against missing HLS_DIR setting
-                        hls_dir_setting = getattr(settings, "HLS_DIR", None)
-                        if hls_dir_setting:
-                            try:
-                                # Build the full path relative to MEDIA_ROOT
-                                media_root = Path(settings.MEDIA_ROOT).resolve()
-                                hls_base_dir = Path(hls_dir_setting).resolve()
-                                hls_dir = (media_root / media.hls_file).parent.resolve()
-
-                                # Security checks:
-                                # 1. Ensure HLS_DIR is within MEDIA_ROOT
-                                # 2. Ensure hls_dir is a direct child of HLS_DIR (not deeply nested)
-                                # 3. Prevent directory traversal outside HLS_DIR
-                                try:
-                                    # Check if hls_dir is relative to hls_base_dir (Python 3.9+)
-                                    is_within_hls_dir = hls_dir.is_relative_to(hls_base_dir)
-                                except AttributeError:
-                                    # Fallback for Python < 3.9
-                                    try:
-                                        is_within_hls_dir = hls_base_dir in hls_dir.parents or hls_base_dir == hls_dir
-                                    except ValueError:
-                                        is_within_hls_dir = False
-
-                                # Additional check: ensure it's a direct subdirectory of HLS_DIR
-                                # (i.e., HLS_DIR/{uid}/, not HLS_DIR/../../etc/)
-                                is_direct_child = hls_dir.parent == hls_base_dir
-
-                                if is_within_hls_dir and is_direct_child:
-                                    if hls_dir.exists():
-                                        shutil.rmtree(hls_dir)
-                                else:
-                                    logger.warning(
-                                        f"Attempted directory traversal or invalid HLS path: {hls_dir} "
-                                        f"(expected direct child of {hls_base_dir}) "
-                                        f"for media {media.friendly_token}"
-                                    )
-                            except Exception as e:
-                                logger.error(
-                                    f"Failed to remove HLS directory for media {media.friendly_token} "
-                                    f"(hls_file={media.hls_file}): {e}",
-                                    exc_info=True,
-                                )
-                        else:
-                            logger.warning(
-                                f"HLS_DIR setting not configured, skipping HLS cleanup for media {media.friendly_token}"
-                            )
+                    # Delete old HLS files if they exist (with directory traversal protection).
+                    cleanup_hls_directory_for_media(media)
 
                     # Delete preview_file_path if it exists (with directory traversal protection)
                     if media.preview_file_path:
