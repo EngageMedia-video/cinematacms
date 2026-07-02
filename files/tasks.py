@@ -58,10 +58,11 @@ from .sprites import generate_sprite_for_media
 
 logger = get_task_logger(__name__)
 
-# How long a per-media create_hls lock is held before it is considered
-# abandoned (e.g. a worker crashed mid-run). Generous enough to cover the
-# mp4hls remux of a typical video across all h264 encoding profiles.
-HLS_LOCK_TIMEOUT = 600
+# How long mp4hls may remux before the worker discards the partial output.
+MP4HLS_SUBPROCESS_TIMEOUT = 600
+# Keep the per-media create_hls lock longer than the subprocess timeout so a
+# valid near-timeout run can still save and clean up while holding its token.
+HLS_LOCK_TIMEOUT = MP4HLS_SUBPROCESS_TIMEOUT + 120
 HLS_PENDING_RETRY_TIMEOUT = HLS_LOCK_TIMEOUT * 2
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
@@ -806,7 +807,7 @@ def create_hls(friendly_token):
             *files,
         ]
         try:
-            result = subprocess.run(cmd, capture_output=True, timeout=HLS_LOCK_TIMEOUT)
+            result = subprocess.run(cmd, capture_output=True, timeout=MP4HLS_SUBPROCESS_TIMEOUT)
         except subprocess.TimeoutExpired:
             logger.error("mp4hls timed out for media %s, discarding partial output", friendly_token)
             shutil.rmtree(output_dir, ignore_errors=True)
@@ -814,10 +815,12 @@ def create_hls(friendly_token):
             return True
 
         if result.returncode != 0:
+            stderr = result.stderr.decode("utf-8", errors="replace") if result.stderr else ""
             logger.error(
-                "mp4hls failed for media %s with return code %s, discarding partial output",
+                "mp4hls failed for media %s with return code %s, discarding partial output: %s",
                 friendly_token,
                 result.returncode,
+                stderr,
             )
             shutil.rmtree(output_dir, ignore_errors=True)
             return True

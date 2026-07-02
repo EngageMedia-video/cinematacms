@@ -10,6 +10,7 @@ Covers:
 """
 
 import os
+import subprocess
 import tempfile
 from unittest.mock import MagicMock, patch
 
@@ -396,6 +397,61 @@ class CreateHlsVersionedDirectoryTests(TestCase):
         self.assertEqual(self.media.hls_file, good_hls_file)
         uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
         self.assertEqual(os.listdir(uid_dir), [os.path.basename(os.path.dirname(good_hls_file))])
+
+    def test_mp4hls_timeout_discards_partial_output_and_schedules_retry(self):
+        from files import tasks
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.media.refresh_from_db()
+        good_hls_file = self.media.hls_file
+
+        def fake_timeout(command, capture_output, timeout=None):
+            output_dir = next(
+                (part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")),
+                None,
+            )
+            os.makedirs(output_dir, exist_ok=True)
+            with open(os.path.join(output_dir, "master.m3u8"), "wb") as master_file:
+                master_file.write(b"incomplete")
+            raise subprocess.TimeoutExpired(cmd=command, timeout=timeout)
+
+        with (
+            patch("files.tasks.subprocess.run", side_effect=fake_timeout),
+            patch("files.tasks.create_hls.apply_async") as mock_apply_async,
+        ):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.hls_file, good_hls_file)
+        uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
+        self.assertEqual(os.listdir(uid_dir), [os.path.basename(os.path.dirname(good_hls_file))])
+        mock_apply_async.assert_called_once_with(args=[self.media.friendly_token])
+
+    def test_expired_lock_discards_stale_output_and_schedules_retry(self):
+        from files import tasks
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.media.refresh_from_db()
+        good_hls_file = self.media.hls_file
+        lock_key = f"create_hls_lock_{self.media.uid.hex}"
+
+        def fake_run_after_lock_expired(command, capture_output, timeout=None):
+            cache.delete(lock_key)
+            return self._fake_run_writing_master(command, capture_output, timeout=timeout)
+
+        with (
+            patch("files.tasks.subprocess.run", side_effect=fake_run_after_lock_expired),
+            patch("files.tasks.create_hls.apply_async") as mock_apply_async,
+        ):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.hls_file, good_hls_file)
+        uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
+        self.assertEqual(os.listdir(uid_dir), [os.path.basename(os.path.dirname(good_hls_file))])
+        mock_apply_async.assert_called_once_with(args=[self.media.friendly_token])
 
     def test_concurrent_run_marks_pending_when_lock_held(self):
         from files import tasks
