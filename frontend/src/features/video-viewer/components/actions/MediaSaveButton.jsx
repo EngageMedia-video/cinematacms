@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import MediaPageStore from '../../../../static/js/pages/MediaPage/store.js';
 
-import { PlaylistsSelection } from './MediaSave/PlaylistsSelection';
+import { PlaylistsSelection } from './media-save/PlaylistsSelection';
 import { Button, Dialog, DialogContent, DialogTrigger, Icon, Text } from '../../../shared/components';
 import { cn } from '../../../shared/utils/classNames.js';
 

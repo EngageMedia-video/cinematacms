@@ -49,7 +49,7 @@ vi.mock('../../../../static/js/pages/MediaPage/store.js', () => ({
 	default: storeMocks.mediaPageStore,
 }));
 
-vi.mock('./MediaSave/PlaylistsSelection', () => ({
+vi.mock('./media-save/PlaylistsSelection', () => ({
 	PlaylistsSelection: () => null,
 }));
 

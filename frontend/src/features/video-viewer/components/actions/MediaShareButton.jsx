@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { Dialog, DialogContent, DialogTrigger } from '../../../shared/components/Dialog/Dialog';
-import { MediaShareEmbed } from './MediaShare/MediaShareEmbed';
-import { MediaShareOptions } from './MediaShare/MediaShareOptions';
-import { NavigationContentApp } from './MediaShare/NavigationContentApp';
+import { MediaShareEmbed } from './media-share/MediaShareEmbed';
+import { MediaShareOptions } from './media-share/MediaShareOptions';
+import { NavigationContentApp } from './media-share/NavigationContentApp';
 
 import { Button } from '../../../shared/components/Button/Button';
 import { Icon } from '../../../shared/components/Icon/Icon';

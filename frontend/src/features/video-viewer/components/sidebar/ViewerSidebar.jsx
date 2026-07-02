@@ -5,7 +5,7 @@ import MediaPageStore from '../../../../static/js/pages/MediaPage/store.js';
 import { AutoPlay } from './AutoPlay';
 import { RelatedMedia } from './RelatedMedia';
 
-import PlaylistView from './PlaylistView';
+import PlaylistView from './playlist-view';
 
 export default class ViewerSidebar extends React.PureComponent {
 	constructor(props) {
