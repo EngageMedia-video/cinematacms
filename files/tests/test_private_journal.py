@@ -53,6 +53,26 @@ class PrivateJournalEndpointTests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertFalse(PrivateJournalNote.objects.filter(media=self.media).exists())
 
+    def test_anonymous_user_cannot_update_or_delete_private_journal_note(self):
+        note = PrivateJournalNote.objects.create(
+            media=self.media,
+            user=self.user,
+            text="Private",
+            timestamp_seconds=10,
+        )
+
+        patch_response = self.client.patch(
+            f"{self.url}/{note.uid}",
+            data={"text": "Changed"},
+            content_type="application/json",
+        )
+        delete_response = self.client.delete(f"{self.url}/{note.uid}")
+
+        self.assertEqual(patch_response.status_code, 403)
+        self.assertEqual(delete_response.status_code, 403)
+        note.refresh_from_db()
+        self.assertEqual(note.text, "Private")
+
     def test_rejects_empty_text_after_stripping_markup(self):
         self.client.login(username="journaluser", password="testpass123")
 
@@ -88,6 +108,38 @@ class PrivateJournalEndpointTests(TestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["uid"], str(own_note.uid))
         self.assertEqual(results[0]["text"], "Mine")
+
+    def test_user_can_get_their_own_note_detail(self):
+        note = PrivateJournalNote.objects.create(
+            media=self.media,
+            user=self.user,
+            text="Detail",
+            timestamp_seconds=30,
+        )
+        self.client.login(username="journaluser", password="testpass123")
+
+        response = self.client.get(f"{self.url}/{note.uid}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["uid"], str(note.uid))
+        self.assertEqual(response.json()["text"], "Detail")
+
+    def test_detail_route_rejects_post(self):
+        note = PrivateJournalNote.objects.create(
+            media=self.media,
+            user=self.user,
+            text="Detail",
+            timestamp_seconds=30,
+        )
+        self.client.login(username="journaluser", password="testpass123")
+
+        response = self.client.post(
+            f"{self.url}/{note.uid}",
+            data={"text": "Should not create here"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 405)
 
     def test_media_owner_cannot_update_or_delete_other_users_note(self):
         note = PrivateJournalNote.objects.create(
@@ -134,8 +186,31 @@ class PrivateJournalEndpointTests(TestCase):
 
     def test_rejects_private_media_without_access(self):
         private_media = create_test_media(self.user, state="private")
+        note = PrivateJournalNote.objects.create(
+            media=private_media,
+            user=self.user,
+            text="Owner note",
+            timestamp_seconds=40,
+        )
         self.client.login(username="otherjournaluser", password="testpass123")
 
-        response = self.client.get(f"/api/v1/media/{private_media.friendly_token}/private-journal")
+        private_url = f"/api/v1/media/{private_media.friendly_token}/private-journal"
+        response = self.client.get(private_url)
+        post_response = self.client.post(
+            private_url,
+            data={"text": "Blocked", "timestamp_seconds": 10},
+            content_type="application/json",
+        )
+        patch_response = self.client.patch(
+            f"{private_url}/{note.uid}",
+            data={"text": "Blocked"},
+            content_type="application/json",
+        )
+        delete_response = self.client.delete(f"{private_url}/{note.uid}")
 
         self.assertEqual(response.status_code, 403)
+        self.assertEqual(post_response.status_code, 403)
+        self.assertEqual(patch_response.status_code, 403)
+        self.assertEqual(delete_response.status_code, 403)
+        note.refresh_from_db()
+        self.assertEqual(note.text, "Owner note")

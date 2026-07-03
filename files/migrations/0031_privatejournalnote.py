@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("files", "0029_media_sprite_num_secs"),
+        ("files", "0030_media_metadata_saved_at"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

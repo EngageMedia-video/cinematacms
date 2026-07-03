@@ -2788,7 +2788,7 @@ class CommentDetail(APIView):
 
 class PrivateJournalNoteDetail(APIView):
     permission_classes = (permissions.IsAuthenticated,)
-    parser_classes = (JSONParser, MultiPartParser, FormParser, FileUploadParser)
+    parser_classes = (JSONParser, FormParser)
 
     def get_media(self, request, friendly_token):
         media = get_object_or_404(
@@ -2805,10 +2805,14 @@ class PrivateJournalNoteDetail(APIView):
             uid=uid,
         )
 
-    def get(self, request, friendly_token):
+    def get(self, request, friendly_token, uid=None):
         media = self.get_media(request, friendly_token)
         if isinstance(media, Response):
             return media
+        if uid is not None:
+            note = self.get_note(media, uid)
+            serializer = PrivateJournalNoteSerializer(note, context={"request": request})
+            return Response(serializer.data)
 
         notes = media.private_journal_notes.filter(user=request.user).order_by("-add_date")
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
@@ -2817,7 +2821,10 @@ class PrivateJournalNoteDetail(APIView):
         serializer = PrivateJournalNoteSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
-    def post(self, request, friendly_token):
+    def post(self, request, friendly_token, uid=None):
+        if uid is not None:
+            return Response({"detail": "method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
         media = self.get_media(request, friendly_token)
         if isinstance(media, Response):
             return media
