@@ -270,7 +270,12 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 			}
 			await navigator.clipboard.writeText(shareUrl);
 			setStatusMessage('Link copied.');
-		} catch {
+		} catch (error) {
+			// Dismissing the native share sheet rejects with AbortError; that is
+			// not a failure, so show no fallback message for it.
+			if (error?.name === 'AbortError') {
+				return;
+			}
 			setStatusMessage('Copy the page URL from your browser to share.');
 		}
 	}
