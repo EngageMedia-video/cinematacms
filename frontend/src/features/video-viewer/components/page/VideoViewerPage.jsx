@@ -159,7 +159,7 @@ export class VideoViewerPage extends Page {
 						/>
 					</TabContent>
 					<TabContent title="YOUR NOTES" value="your-notes">
-						<PrivateJournalSection />
+						<PrivateJournalSection friendlyToken={MediaPageStore.get('media-id')} />
 					</TabContent>
 				</TabView>
 			</div>

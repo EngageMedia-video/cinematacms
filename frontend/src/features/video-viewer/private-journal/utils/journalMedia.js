@@ -16,6 +16,32 @@ export function formatTimestamp(totalSeconds) {
 	return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
 
+export function formatClock(value) {
+	const date = value instanceof Date ? value : new Date(value);
+	if (Number.isNaN(date.getTime())) return '';
+	return date
+		.toLocaleTimeString([], {
+			hour: 'numeric',
+			minute: '2-digit',
+			hour12: true,
+		})
+		.replace(' ', '');
+}
+
+export function formatDayLabel(value) {
+	const date = value instanceof Date ? value : new Date(value);
+	if (Number.isNaN(date.getTime())) return '';
+	const today = new Date();
+	if (
+		date.getFullYear() === today.getFullYear() &&
+		date.getMonth() === today.getMonth() &&
+		date.getDate() === today.getDate()
+	) {
+		return 'Today';
+	}
+	return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export function getVideoPlayer() {
 	if (typeof document === 'undefined' || typeof window === 'undefined') return null;
 	const el = document.querySelector(PLAYER_SELECTOR);

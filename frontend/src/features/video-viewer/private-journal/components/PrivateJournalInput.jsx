@@ -6,9 +6,9 @@ function getUser() {
 	return window.MediaCMS?.user ?? null;
 }
 
-export function PrivateJournalInput({ value, onChange, onSubmit }) {
+export function PrivateJournalInput({ value, onChange, onSubmit, disabled = false, isSubmitting = false }) {
 	const user = getUser();
-	const disabled = value.trim() === '';
+	const submitDisabled = disabled || isSubmitting || value.trim() === '';
 
 	return (
 		<div className="flex flex-col rounded-lg bg-bg-page px-4 py-3">
@@ -19,6 +19,7 @@ export function PrivateJournalInput({ value, onChange, onSubmit }) {
 			<textarea
 				id="private-journal-note-input"
 				value={value}
+				disabled={disabled}
 				onChange={(event) => onChange(event.target.value)}
 				onKeyDown={(event) => {
 					if (event.key === 'Enter' && event.shiftKey && !event.isComposing && event.keyCode !== 229) {
@@ -40,10 +41,10 @@ export function PrivateJournalInput({ value, onChange, onSubmit }) {
 				<button
 					type="button"
 					onClick={onSubmit}
-					disabled={disabled}
+					disabled={submitDisabled}
 					className="inline-flex h-8 cursor-pointer items-center rounded-sm border-0 bg-site-accent px-4 text-xs font-bold leading-5 text-white transition-colors duration-200 hover:bg-bg-secondary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:opacity-50"
 				>
-					ADD NOTE
+					{isSubmitting ? 'ADDING...' : 'ADD NOTE'}
 				</button>
 			</div>
 		</div>
