@@ -1,5 +1,7 @@
 from datetime import timedelta
+from unittest.mock import patch
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.utils import timezone
 
@@ -168,3 +170,32 @@ class MediaAbandonTests(TestCase):
 
         self.assertEqual(response.status_code, 403)
         self.assertTrue(Media.objects.filter(pk=media.pk).exists())
+
+
+class MediaCreationContractTests(TestCase):
+    """Lock in the NULL-until-submitted contract at both Media creation paths:
+    the uploader leaves metadata_saved_at NULL (abandonable), while MediaList.post
+    (API create) stamps it so API-created media is not reaped."""
+
+    def setUp(self):
+        self.user = create_test_user()
+
+    def test_uploader_created_media_has_null_metadata_saved_at(self):
+        # Mirrors FineUploaderView.form_valid, which creates the row before the
+        # metadata form is submitted and never stamps metadata_saved_at.
+        with patch.object(Media, "media_init", return_value=None):
+            media = Media.objects.create(title="uploaded", user=self.user, media_type="video")
+
+        self.assertIsNone(media.metadata_saved_at)
+
+    def test_media_list_post_stamps_metadata_saved_at(self):
+        client = Client()
+        client.force_login(self.user)
+        upload = SimpleUploadedFile("clip.mp4", b"fake video bytes", content_type="video/mp4")
+
+        with patch.object(Media, "media_init", return_value=None):
+            response = client.post("/api/v1/media", {"media_file": upload})
+
+        self.assertEqual(response.status_code, 201)
+        media = Media.objects.get(friendly_token=response.json()["friendly_token"])
+        self.assertIsNotNone(media.metadata_saved_at)

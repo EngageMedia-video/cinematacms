@@ -73,7 +73,6 @@ export class AddMediaPage extends Page {
 
 	componentDidMount() {
 		window.addEventListener('pagehide', this.handlePageUnload);
-		window.addEventListener('beforeunload', this.handlePageUnload);
 
 		// Build the bulk config now that context is settled. Set once and never
 		// rebuilt, so the reference stays stable across re-renders — recreating it
@@ -200,7 +199,6 @@ export class AddMediaPage extends Page {
 
 	componentWillUnmount() {
 		window.removeEventListener('pagehide', this.handlePageUnload);
-		window.removeEventListener('beforeunload', this.handlePageUnload);
 		if (this.uploaderRef.current) {
 			this.uploaderRef.current.removeEventListener('click', this.handleUploaderClick);
 		}
@@ -246,7 +244,13 @@ export class AddMediaPage extends Page {
 		}).catch((error) => console.warn('Unable to abandon uploaded media ' + friendlyToken, error));
 	}
 
-	handlePageUnload = () => {
+	handlePageUnload = (event) => {
+		// Skip bfcache navigations: the page is frozen, not discarded, and the
+		// user may return to their in-progress upload — abandoning it here would
+		// destroy work they haven't left behind.
+		if (event?.persisted) {
+			return;
+		}
 		this.getAbandonableTokens().forEach((token) => this.abandonMediaByToken(token));
 	};
 

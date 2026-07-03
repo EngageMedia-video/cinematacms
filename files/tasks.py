@@ -1452,7 +1452,12 @@ def cleanup_orphaned_draft_media():
     # (each delete fires the post_delete file/HLS cascade). The next run drains
     # the remainder.
     batch_size = getattr(settings, "ORPHANED_DRAFT_CLEANUP_BATCH_SIZE", 2000)
-    orphaned_media = Media.objects.filter(metadata_saved_at__isnull=True, add_date__lt=cutoff)[:batch_size]
+    # Oldest first (overriding Media.Meta.ordering of -add_date) so a backlog
+    # larger than one batch drains from the tail instead of starving the oldest
+    # orphans across runs.
+    orphaned_media = Media.objects.filter(metadata_saved_at__isnull=True, add_date__lt=cutoff).order_by("add_date")[
+        :batch_size
+    ]
     deleted = 0
     errors = []
 
