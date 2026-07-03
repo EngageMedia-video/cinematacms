@@ -20,6 +20,11 @@ import '../../../../static/js/pages/styles/MediaPage.scss';
 
 const wideLayoutBreakpoint = 1216;
 
+function isLoggedInUser() {
+	if (typeof window === 'undefined') return false;
+	return window.MediaCMS?.user?.is?.anonymous === false;
+}
+
 export class VideoViewerPage extends Page {
 	constructor(props) {
 		super(props, 'media');
@@ -140,6 +145,7 @@ export class VideoViewerPage extends Page {
 	pageContent() {
 		const viewerClassname = 'cf viewer-section' + (this.state.theaterMode ? ' theater-mode' : ' viewer-wide');
 		const viewerNestedClassname = 'viewer-section-nested' + (this.state.theaterMode ? ' viewer-section' : '');
+		const showPrivateJournal = isLoggedInUser();
 		const commentsPanel = this.state.mediaLoaded ? (
 			<div className="viewer-sidebar-comments mb-6 box-border w-full" key="viewer-comments">
 				<TabView
@@ -158,9 +164,11 @@ export class VideoViewerPage extends Page {
 							onCommentsCountChange={this.onCommentsCountChange}
 						/>
 					</TabContent>
-					<TabContent title="YOUR NOTES" value="your-notes">
-						<PrivateJournalSection friendlyToken={MediaPageStore.get('media-id')} />
-					</TabContent>
+					{showPrivateJournal ? (
+						<TabContent title="YOUR NOTES" value="your-notes">
+							<PrivateJournalSection friendlyToken={MediaPageStore.get('media-id')} />
+						</TabContent>
+					) : null}
 				</TabView>
 			</div>
 		) : null;
