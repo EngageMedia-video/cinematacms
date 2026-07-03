@@ -17,10 +17,18 @@ export function usePlaylistQuery(token, config) {
 			});
 
 			if (!response.ok) {
-				throw new Error(`Failed to load playlist: ${response.status}`);
+				const error = new Error(`Failed to load playlist: ${response.status}`);
+				error.status = response.status;
+				throw error;
 			}
 
 			return response.json();
+		},
+		retry: (failureCount, error) => {
+			if (error?.status >= 400 && error?.status < 500) {
+				return false;
+			}
+			return failureCount < 1;
 		},
 	});
 }

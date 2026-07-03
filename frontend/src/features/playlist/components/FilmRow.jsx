@@ -34,7 +34,7 @@ function useCloseOnOutside(open, close) {
 	return ref;
 }
 
-function FilmRowMenu({ index, isOwner, media, mediaCount, onMove, onRemove, onShare }) {
+function FilmRowMenu({ index, isOwner, media, mediaCount, mediaUrl, onMove, onRemove, onShare }) {
 	const [open, setOpen] = useState(false);
 	const close = () => setOpen(false);
 	const menuRef = useCloseOnOutside(open, close);
@@ -98,14 +98,14 @@ function FilmRowMenu({ index, isOwner, media, mediaCount, onMove, onRemove, onSh
 					<button
 						type="button"
 						role="menuitem"
-						onClick={() => run(() => onShare(media.url))}
+						onClick={() => run(() => onShare(mediaUrl))}
 						className="min-h-11 cursor-pointer border-0 bg-transparent px-4 text-left text-text-strong hover:bg-bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-14-regular"
 					>
 						Share video
 					</button>
 					<a
 						role="menuitem"
-						href={media.url}
+						href={mediaUrl}
 						className="min-h-11 px-4 py-3 text-text-strong no-underline hover:bg-bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-14-regular"
 					>
 						Open video
@@ -152,16 +152,16 @@ export function FilmRow({ index, isOwner, media, mediaCount, onMove, onRemove, o
 	return (
 		<li
 			data-media-token={media?.friendly_token}
-			className="group grid grid-cols-[minmax(0,1fr)_44px] gap-x-2 gap-y-3 rounded-ds-4 border-b border-border-divider py-4 last:border-b-0 lg:grid-cols-[24px_220px_200px_minmax(0,1fr)_28px] lg:items-center lg:gap-x-5 lg:py-5"
+			className="group grid grid-cols-[minmax(0,1fr)_44px] gap-x-2 gap-y-3 rounded-ds-4 border-b border-border-divider py-4 last:border-b-0 @2xl:grid-cols-[24px_180px_minmax(140px,0.8fr)_minmax(0,1.2fr)_28px] @2xl:items-center @2xl:gap-x-4 @2xl:py-5 @4xl:grid-cols-[24px_220px_200px_minmax(0,1fr)_28px] @4xl:gap-x-5"
 		>
-			<div className="hidden lg:flex lg:justify-center lg:self-center">
+			<div className="hidden @2xl:flex @2xl:justify-center @2xl:self-center">
 				<RowOrderCell index={index} isOwner={isOwner} title={title} />
 			</div>
 
-			<div className="col-start-1 flex min-w-0 gap-3 lg:contents">
+			<div className="col-start-1 flex min-w-0 gap-3 @2xl:contents">
 				<a
 					href={mediaUrl}
-					className="relative block aspect-video w-[152px] shrink-0 overflow-hidden rounded-ds-6 bg-bg-skeleton no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus min-[420px]:w-[171px] lg:w-[220px]"
+					className="relative block aspect-video w-[152px] shrink-0 overflow-hidden rounded-ds-6 bg-bg-skeleton no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus min-[420px]:w-[171px] @2xl:w-[180px] @4xl:w-[220px]"
 					aria-label={`Open ${title}`}
 				>
 					{media?.thumbnail_url ? (
@@ -205,10 +205,10 @@ export function FilmRow({ index, isOwner, media, mediaCount, onMove, onRemove, o
 				</div>
 			</div>
 
-			<div className="col-span-2 min-w-0 lg:col-span-1">
+			<div className="col-span-2 min-w-0 @2xl:col-span-1">
 				<p className="m-0 mb-3 text-text-muted body-body-14-regular">Synopsis</p>
 				{description ? (
-					<p className="m-0 line-clamp-6 max-w-[75ch] text-text-primary body-body-14-regular lg:line-clamp-3">
+					<p className="m-0 line-clamp-6 break-words text-text-primary body-body-14-regular @2xl:line-clamp-3">
 						{description}
 					</p>
 				) : (
@@ -216,12 +216,13 @@ export function FilmRow({ index, isOwner, media, mediaCount, onMove, onRemove, o
 				)}
 			</div>
 
-			<div className="col-start-2 row-start-1 justify-self-end lg:col-start-auto lg:row-start-auto lg:self-center">
+			<div className="col-start-2 row-start-1 justify-self-end @2xl:col-start-auto @2xl:row-start-auto @2xl:self-center">
 				<FilmRowMenu
 					index={index}
 					isOwner={isOwner}
 					media={media}
 					mediaCount={mediaCount}
+					mediaUrl={mediaUrl}
 					onMove={onMove}
 					onRemove={onRemove}
 					onShare={onShare}

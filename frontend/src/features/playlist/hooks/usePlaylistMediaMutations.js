@@ -1,13 +1,17 @@
+import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../shared/utils/api';
 import { getPlaylistApiUrl, moveItem } from '../utils/playlist';
 import { playlistQueryKey } from './usePlaylistQuery';
 
-async function updateMediaOrder(config, token, media) {
+async function updateMediaOrder(config, token, media, previousMedia) {
 	const playlistUrl = getPlaylistApiUrl(config, token);
 
 	for (let index = 0; index < media.length; index += 1) {
 		const item = media[index];
+		if (previousMedia?.[index]?.friendly_token === item.friendly_token) {
+			continue;
+		}
 		const response = await apiFetch(playlistUrl, {
 			method: 'PUT',
 			body: {
@@ -27,8 +31,8 @@ export function useReorderPlaylistMediaMutation(token, config) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async ({ media }) => {
-			await updateMediaOrder(config, token, media);
+		mutationFn: async ({ media, previousMedia }) => {
+			await updateMediaOrder(config, token, media, previousMedia);
 			return media;
 		},
 		onMutate: async ({ media }) => {
@@ -61,16 +65,18 @@ export function useReorderPlaylistMediaMutation(token, config) {
 
 export function useMovePlaylistMediaMutation(token, config) {
 	const reorderMutation = useReorderPlaylistMediaMutation(token, config);
-
-	return {
-		...reorderMutation,
-		move: (media, fromIndex, toIndex) => {
+	const { mutate } = reorderMutation;
+	const move = useCallback(
+		(media, fromIndex, toIndex) => {
 			const nextMedia = moveItem(media, fromIndex, toIndex);
 			if (nextMedia !== media) {
-				reorderMutation.mutate({ media: nextMedia });
+				mutate({ media: nextMedia, previousMedia: media });
 			}
 		},
-	};
+		[mutate]
+	);
+
+	return { ...reorderMutation, move };
 }
 
 export function useRemovePlaylistMediaMutation(token, config) {

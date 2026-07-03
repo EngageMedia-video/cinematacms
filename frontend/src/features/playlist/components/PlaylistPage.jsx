@@ -172,7 +172,7 @@ function CuratorNoteCard({ isOwner, playlist }) {
 				<ReadMore
 					id="playlist-curator-note"
 					text={playlist.curator_note}
-					charBudget={320}
+					charBudget={500}
 					colorClassName="text-text-description"
 					className="mt-3"
 				/>
@@ -248,31 +248,37 @@ function ShareStatusToast({ message }) {
 function PlaylistContent({ config, playlist, playlistToken }) {
 	const isOwner = isOwnerPlaylist(config, playlist);
 	const deleteMutation = useDeletePlaylistMutation(playlistToken, config);
-	const [shareMessage, setShareMessage] = useState('');
+	const [statusMessage, setStatusMessage] = useState('');
 	const playlistUrl = getPlaylistPageUrl(config, playlistToken);
 
 	useEffect(() => {
-		if (!shareMessage) {
+		if (!statusMessage) {
 			return undefined;
 		}
 
-		const timeout = setTimeout(() => setShareMessage(''), 3000);
+		const timeout = setTimeout(() => setStatusMessage(''), 3000);
 		return () => clearTimeout(timeout);
-	}, [shareMessage]);
+	}, [statusMessage]);
 
 	async function handleShare(url = playlistUrl) {
 		const shareUrl = url || playlistUrl;
 		try {
 			if (navigator.share && shareUrl === playlistUrl) {
 				await navigator.share({ title: playlist.title, url: shareUrl });
-				setShareMessage('Share sheet opened.');
+				setStatusMessage('Share sheet opened.');
 				return;
 			}
 			await navigator.clipboard.writeText(shareUrl);
-			setShareMessage('Link copied.');
+			setStatusMessage('Link copied.');
 		} catch {
-			setShareMessage('Copy the page URL from your browser to share.');
+			setStatusMessage('Copy the page URL from your browser to share.');
 		}
+	}
+
+	function handleDelete() {
+		deleteMutation.mutate(undefined, {
+			onError: () => setStatusMessage('The playlist could not be deleted. Try again.'),
+		});
 	}
 
 	return (
@@ -284,7 +290,7 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 					</div>
 					<HeaderActions
 						isOwner={isOwner}
-						onDelete={() => deleteMutation.mutate()}
+						onDelete={handleDelete}
 						onShare={handleShare}
 						playlist={playlist}
 					/>
@@ -295,10 +301,7 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 						<CoverCard
 							mobileActions={
 								isOwner ? (
-									<DeletePlaylistButton
-										onDelete={() => deleteMutation.mutate()}
-										playlistTitle={playlist.title}
-									/>
+									<DeletePlaylistButton onDelete={handleDelete} playlistTitle={playlist.title} />
 								) : null
 							}
 							onShare={handleShare}
@@ -321,7 +324,7 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 				</div>
 			</div>
 			{isOwner ? <CuratorNoteDialog config={config} playlist={playlist} token={playlistToken} /> : null}
-			<ShareStatusToast message={shareMessage} />
+			<ShareStatusToast message={statusMessage} />
 		</div>
 	);
 }

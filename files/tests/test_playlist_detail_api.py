@@ -39,3 +39,36 @@ class PlaylistDetailCuratorNoteTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.playlist.refresh_from_db()
         self.assertEqual(self.playlist.curator_note, "Updated editorial framing")
+
+    def test_non_owner_cannot_update_curator_note(self):
+        other_user = create_test_user(username="playlist_visitor")
+        self.client.force_login(other_user)
+
+        response = self.client.post(
+            f"/api/v1/playlists/{self.playlist.friendly_token}",
+            {
+                "title": self.playlist.title,
+                "description": self.playlist.description,
+                "curator_note": "Hijacked note",
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.playlist.refresh_from_db()
+        self.assertEqual(self.playlist.curator_note, "Initial curator note")
+
+    def test_anonymous_cannot_update_curator_note(self):
+        response = self.client.post(
+            f"/api/v1/playlists/{self.playlist.friendly_token}",
+            {
+                "title": self.playlist.title,
+                "description": self.playlist.description,
+                "curator_note": "Anonymous note",
+            },
+            content_type="application/json",
+        )
+
+        self.assertIn(response.status_code, (401, 403))
+        self.playlist.refresh_from_db()
+        self.assertEqual(self.playlist.curator_note, "Initial curator note")

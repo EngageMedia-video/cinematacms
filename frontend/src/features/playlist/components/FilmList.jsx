@@ -10,6 +10,7 @@ export function FilmList({ config, isOwner, media = [], onShare, playlistToken }
 	const orderedMedia = useMemo(() => orderedPlaylistMedia(media), [media]);
 	const moveMutation = useMovePlaylistMediaMutation(playlistToken, config);
 	const removeMutation = useRemovePlaylistMediaMutation(playlistToken, config);
+	const { move } = moveMutation;
 
 	useEffect(() => {
 		if (!isOwner || !listRef.current || orderedMedia.length < 2) {
@@ -24,15 +25,15 @@ export function FilmList({ config, isOwner, media = [], onShare, playlistToken }
 				if (event.oldIndex === event.newIndex) {
 					return;
 				}
-				moveMutation.move(orderedMedia, event.oldIndex, event.newIndex);
+				move(orderedMedia, event.oldIndex, event.newIndex);
 			},
 		});
 
 		return () => sortable.destroy();
-	}, [isOwner, moveMutation, orderedMedia]);
+	}, [isOwner, move, orderedMedia]);
 
 	function handleMove(fromIndex, toIndex) {
-		moveMutation.move(orderedMedia, fromIndex, toIndex);
+		move(orderedMedia, fromIndex, toIndex);
 	}
 
 	return (
@@ -42,7 +43,7 @@ export function FilmList({ config, isOwner, media = [], onShare, playlistToken }
 			</div>
 
 			{orderedMedia.length ? (
-				<ul ref={listRef} className="m-0 list-none px-3 py-0 sm:px-5 lg:px-4">
+				<ul ref={listRef} className="@container m-0 list-none px-3 py-0 sm:px-5 lg:px-4">
 					{orderedMedia.map((item, index) => (
 						<FilmRow
 							key={item.friendly_token || item.url || index}

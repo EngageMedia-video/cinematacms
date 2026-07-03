@@ -24,7 +24,7 @@ export function ReadMore({ id, text, charBudget = 300, colorClassName = 'text-te
 	const visibleText = !shouldOfferToggle || expanded ? text : `${truncateAtWord(text, charBudget)}...`;
 
 	return (
-		<p id={textId} className={cn('m-0 max-w-[75ch] body-body-14-regular', colorClassName, className)}>
+		<p id={textId} className={cn('m-0 break-words body-body-14-regular', colorClassName, className)}>
 			{visibleText}{' '}
 			{shouldOfferToggle ? (
 				<button
