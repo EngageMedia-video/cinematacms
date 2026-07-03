@@ -1,6 +1,7 @@
 from django.db.models import Max
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import strip_tags
 from rest_framework import serializers
 
 from actions.models import MediaAction
@@ -19,6 +20,7 @@ from .models import (
     MediaLanguage,
     Playlist,
     PlaylistMedia,
+    PrivateJournalNote,
     Tag,
     Topic,
     TopMessage,
@@ -570,6 +572,27 @@ class CommentSerializer(serializers.ModelSerializer):
             "media_url",
             "uid",
         )
+
+
+class PrivateJournalNoteSerializer(serializers.ModelSerializer):
+    timestamp_seconds = serializers.FloatField(min_value=0, required=False, default=0)
+
+    class Meta:
+        model = PrivateJournalNote
+        read_only_fields = ("uid", "add_date", "edit_date")
+        fields = (
+            "uid",
+            "text",
+            "timestamp_seconds",
+            "add_date",
+            "edit_date",
+        )
+
+    def validate_text(self, value):
+        text = strip_tags(value or "").strip()
+        if not text:
+            raise serializers.ValidationError("This field may not be blank.")
+        return text
 
 
 class CommunityImpactSerializer(serializers.ModelSerializer):

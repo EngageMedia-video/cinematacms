@@ -96,6 +96,7 @@ from .models import (
     Page,
     Playlist,
     PlaylistMedia,
+    PrivateJournalNote,
     Subtitle,
     Tag,
     Topic,
@@ -128,6 +129,7 @@ from .serializers import (
     MediaSerializer,
     PlaylistDetailSerializer,
     PlaylistSerializer,
+    PrivateJournalNoteSerializer,
     SingleMediaSerializer,
     TagSerializer,
     TopicSerializer,
@@ -2782,6 +2784,74 @@ class CommentDetail(APIView):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PrivateJournalNoteDetail(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    parser_classes = (JSONParser, MultiPartParser, FormParser, FileUploadParser)
+
+    def get_media(self, request, friendly_token):
+        media = get_object_or_404(
+            Media.objects.select_related("user"),
+            friendly_token=clean_friendly_token(friendly_token),
+        )
+        if not check_media_access_permission(request, media):
+            return Response({"detail": "bad permissions"}, status=status.HTTP_403_FORBIDDEN)
+        return media
+
+    def get_note(self, media, uid):
+        return get_object_or_404(
+            PrivateJournalNote.objects.filter(media=media, user=self.request.user),
+            uid=uid,
+        )
+
+    def get(self, request, friendly_token):
+        media = self.get_media(request, friendly_token)
+        if isinstance(media, Response):
+            return media
+
+        notes = media.private_journal_notes.filter(user=request.user).order_by("-add_date")
+        pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+        paginator = pagination_class()
+        page = paginator.paginate_queryset(notes, request)
+        serializer = PrivateJournalNoteSerializer(page, many=True, context={"request": request})
+        return paginator.get_paginated_response(serializer.data)
+
+    def post(self, request, friendly_token):
+        media = self.get_media(request, friendly_token)
+        if isinstance(media, Response):
+            return media
+
+        serializer = PrivateJournalNoteSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save(user=request.user, media=media)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, friendly_token, uid=None):
+        media = self.get_media(request, friendly_token)
+        if isinstance(media, Response):
+            return media
+        if uid is None:
+            return Response({"detail": "note does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        note = self.get_note(media, uid)
+        serializer = PrivateJournalNoteSerializer(note, data=request.data, partial=True, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, friendly_token, uid=None):
+        media = self.get_media(request, friendly_token)
+        if isinstance(media, Response):
+            return media
+        if uid is None:
+            return Response({"detail": "note does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        note = self.get_note(media, uid)
+        note.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CommunityImpactList(APIView):

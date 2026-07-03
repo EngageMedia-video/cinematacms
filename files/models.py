@@ -1902,6 +1902,33 @@ class Comment(MPTTModel):
         return self.get_absolute_url()
 
 
+class PrivateJournalNote(models.Model):
+    uid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    text = models.TextField(help_text="text")
+    timestamp_seconds = models.FloatField(default=0)
+    add_date = models.DateTimeField(auto_now_add=True)
+    edit_date = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE, db_index=True)
+    media = models.ForeignKey(Media, on_delete=models.CASCADE, db_index=True, related_name="private_journal_notes")
+
+    class Meta:
+        ordering = ["-add_date"]
+        indexes = [
+            models.Index(fields=["media", "user", "-add_date"], name="idx_pjn_media_user_date"),
+            models.Index(fields=["user", "-add_date"], name="idx_pjn_user_date"),
+        ]
+
+    def __str__(self):
+        return f"Private journal note on {self.media.title} by {self.user.username}"
+
+    def save(self, *args, **kwargs):
+        self.text = strip_tags(self.text or "")
+        if self.text:
+            self.text = self.text[: settings.MAX_CHARS_FOR_COMMENT]
+        self.timestamp_seconds = max(0, float(self.timestamp_seconds or 0))
+        super(PrivateJournalNote, self).save(*args, **kwargs)
+
+
 class CommunityImpact(models.Model):
     SCREENING = "screening"
     FEATURED = "featured"
