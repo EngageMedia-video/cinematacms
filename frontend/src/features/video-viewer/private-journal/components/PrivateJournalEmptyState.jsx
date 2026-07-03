@@ -3,7 +3,7 @@ import { Text } from '../../../shared/components';
 
 export function PrivateJournalEmptyState() {
 	return (
-		<div className="flex min-h-[254px] flex-col items-center justify-center px-0 py-14 text-center">
+		<div className="flex flex-col items-center justify-center px-0 py-14 text-center">
 			<Icon name="notes" size={58} className="text-text-dialog-accent" />
 
 			<div className="mt-4 flex flex-col items-center gap-2">
