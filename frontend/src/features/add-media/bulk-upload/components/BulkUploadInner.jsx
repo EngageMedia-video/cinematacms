@@ -85,6 +85,7 @@ export function BulkUploadInner() {
 	const setStep = useBulkUploadStore((state) => state.setStep);
 	const setSubStep = useBulkUploadStore((state) => state.setSubStep);
 	const removeFile = useBulkUploadStore((state) => state.removeFile);
+	const removeSubmittedFiles = useBulkUploadStore((state) => state.removeSubmittedFiles);
 
 	const uploadActions = useBulkUpload();
 	const { options } = useTaxonomies(config.optionsEndpoint);
@@ -268,7 +269,8 @@ export function BulkUploadInner() {
 		submitMutation.mutate(
 			{ action, files: sourceFiles },
 			{
-				onSuccess: ({ failed }) => {
+				onSuccess: ({ failed, succeeded }) => {
+					removeSubmittedFiles(succeeded.map((result) => result.token));
 					if (failed.length === 0) {
 						window.location.href = config.postSubmitUrl;
 						return;

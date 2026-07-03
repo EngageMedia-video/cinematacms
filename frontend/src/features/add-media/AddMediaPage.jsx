@@ -50,6 +50,7 @@ export class AddMediaPage extends Page {
 		this.uploader = null;
 		this.pendingReplaceId = null;
 		this.completedTokens = {};
+		this.abandonedTokens = new Set();
 		this.state = {
 			confirmBulkUploadOpen: false,
 			confirmDeleteOpen: false,
@@ -71,6 +72,8 @@ export class AddMediaPage extends Page {
 	}
 
 	componentDidMount() {
+		window.addEventListener('pagehide', this.handlePageUnload);
+
 		// Build the bulk config now that context is settled. Set once and never
 		// rebuilt, so the reference stays stable across re-renders — recreating it
 		// would re-run useBulkUpload's effect and cancel an in-progress upload.
@@ -195,12 +198,73 @@ export class AddMediaPage extends Page {
 	}
 
 	componentWillUnmount() {
+		window.removeEventListener('pagehide', this.handlePageUnload);
 		if (this.uploaderRef.current) {
 			this.uploaderRef.current.removeEventListener('click', this.handleUploaderClick);
 		}
 		this.unsubscribeBulkStep?.();
 		this.pageObserver?.disconnect();
 	}
+
+	getAbandonableTokens() {
+		const tokens = new Set(Object.values(this.completedTokens).filter(Boolean));
+
+		try {
+			useBulkUploadStore.getState().files.forEach((file) => {
+				if (file.friendlyToken) {
+					tokens.add(file.friendlyToken);
+				}
+			});
+		} catch (error) {
+			console.warn('Unable to read bulk upload files for unload cleanup', error);
+		}
+
+		return Array.from(tokens);
+	}
+
+	abandonMediaByToken(friendlyToken) {
+		if (!friendlyToken || this.abandonedTokens.has(friendlyToken)) {
+			return;
+		}
+
+		const mediaApiUrl = mediacmsConfig(window.MediaCMS).api.media;
+
+		if (!mediaApiUrl) {
+			console.warn('Media API endpoint unavailable; cannot abandon media ' + friendlyToken);
+			return;
+		}
+
+		this.abandonedTokens.add(friendlyToken);
+
+		fetch(mediaApiUrl + '/' + encodeURIComponent(friendlyToken) + '/abandon', {
+			method: 'POST',
+			credentials: 'same-origin',
+			keepalive: true,
+			headers: { 'X-CSRFToken': getCSRFToken() },
+		}).catch((error) => console.warn('Unable to abandon uploaded media ' + friendlyToken, error));
+	}
+
+	handlePageUnload = (event) => {
+		// Skip bfcache navigations: the page is frozen, not discarded, and the
+		// user may return to their in-progress upload — abandoning it here would
+		// destroy work they haven't left behind.
+		if (event?.persisted) {
+			return;
+		}
+		this.getAbandonableTokens().forEach((token) => this.abandonMediaByToken(token));
+	};
+
+	clearSubmittedToken = (friendlyToken) => {
+		if (!friendlyToken) {
+			return;
+		}
+
+		Object.entries(this.completedTokens).forEach(([id, token]) => {
+			if (token === friendlyToken) {
+				delete this.completedTokens[id];
+			}
+		});
+	};
 
 	getFileIdFromElement(element) {
 		const item = element.closest('[class*="qq-file-id-"]');
@@ -435,7 +499,7 @@ export class AddMediaPage extends Page {
 		}
 
 		const token = file.friendlyToken;
-		this.completedTokens = {};
+		this.completedTokens = { moved: token };
 
 		try {
 			useBulkUploadStore.getState().reset();
@@ -658,6 +722,7 @@ export class AddMediaPage extends Page {
 													ref={this.uploaderRef}
 												></div>
 											}
+											onSubmitSuccess={this.clearSubmittedToken}
 										/>
 									}
 								/>

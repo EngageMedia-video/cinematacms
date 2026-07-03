@@ -59,6 +59,11 @@ urlpatterns = [
         name="api_get_media",
     ),
     re_path(
+        r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/abandon$",
+        views.MediaAbandon.as_view(),
+        name="api_abandon_media",
+    ),
+    re_path(
         r"^api/v1/media/encoding/(?P<encoding_id>[\w]*)$",
         views.EncodingDetail.as_view(),
         name="api_get_encoding",

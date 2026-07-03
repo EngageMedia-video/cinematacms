@@ -88,6 +88,16 @@ const useBulkUploadStore = create((set) => ({
 			files: state.files.filter((file) => file.id !== id),
 		})),
 
+	removeSubmittedFiles: (tokens) => {
+		const submittedTokens = new Set(tokens.filter(Boolean));
+		if (submittedTokens.size === 0) {
+			return;
+		}
+		set((state) => ({
+			files: state.files.filter((file) => !submittedTokens.has(file.friendlyToken)),
+		}));
+	},
+
 	setMetadata: (id, patch) =>
 		set((state) => ({
 			files: state.files.map((file) =>

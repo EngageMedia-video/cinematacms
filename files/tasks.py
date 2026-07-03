@@ -1441,6 +1441,40 @@ def cleanup_orphaned_uploads():
     return result
 
 
+@task(name="cleanup_orphaned_draft_media", queue="short_tasks")
+def cleanup_orphaned_draft_media():
+    """Delete stale media rows whose upload completed but metadata was never saved."""
+    cleanup_age_hours = getattr(settings, "ORPHANED_DRAFT_CLEANUP_HOURS", 168)
+    cutoff = timezone.now() - timedelta(hours=cleanup_age_hours)
+
+    # Cap rows deleted per run so an upstream bug that mass-creates unsaved rows
+    # can't make one daily run exceed the short_tasks soft time limit mid-sweep
+    # (each delete fires the post_delete file/HLS cascade). The next run drains
+    # the remainder.
+    batch_size = getattr(settings, "ORPHANED_DRAFT_CLEANUP_BATCH_SIZE", 2000)
+    # Oldest first (overriding Media.Meta.ordering of -add_date) so a backlog
+    # larger than one batch drains from the tail instead of starving the oldest
+    # orphans across runs.
+    orphaned_media = Media.objects.filter(metadata_saved_at__isnull=True, add_date__lt=cutoff).order_by("add_date")[
+        :batch_size
+    ]
+    deleted = 0
+    errors = []
+
+    for media in orphaned_media.iterator():
+        token = media.friendly_token
+        try:
+            media.delete()
+            deleted += 1
+        except Exception as exc:
+            error_msg = f"Failed to delete orphaned draft media {token}: {exc}"
+            logger.error(error_msg, exc_info=True)
+            errors.append(error_msg)
+
+    logger.info("cleanup_orphaned_draft_media removed %s orphaned media rows", deleted)
+    return {"drafts_deleted": deleted, "errors": errors}
+
+
 @task(name="subscribe_user", queue="short_tasks")
 def subscribe_user(email, name, country=None):
     """

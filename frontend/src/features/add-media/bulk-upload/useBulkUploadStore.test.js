@@ -66,6 +66,19 @@ describe('useBulkUploadStore', () => {
 		expect(useBulkUploadStore.getState().files).toHaveLength(0);
 	});
 
+	it('removes submitted files by friendly token', () => {
+		const { addFile, removeSubmittedFiles, updateFile } = useBulkUploadStore.getState();
+		addFile({ id: 6, name: 'submitted.mp4', sizeBytes: 1 });
+		addFile({ id: 7, name: 'failed.mp4', sizeBytes: 1 });
+		updateFile(6, { uploadStatus: UPLOAD_STATUS.COMPLETE, friendlyToken: 'submitted-token' });
+		updateFile(7, { uploadStatus: UPLOAD_STATUS.COMPLETE, friendlyToken: 'failed-token' });
+
+		removeSubmittedFiles(['submitted-token']);
+
+		expect(useBulkUploadStore.getState().files).toHaveLength(1);
+		expect(useBulkUploadStore.getState().files[0].friendlyToken).toBe('failed-token');
+	});
+
 	it('provides sensible default metadata', () => {
 		const meta = createDefaultMetadata();
 		expect(meta.enable_comments).toBe(true);

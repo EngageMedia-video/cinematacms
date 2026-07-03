@@ -296,6 +296,34 @@ describe('SingleUploadPage', () => {
 		).not.toBeInTheDocument();
 	});
 
+	it('notifies the parent before redirecting after a successful submit', async () => {
+		const user = userEvent.setup();
+		const onSubmitSuccess = vi.fn();
+		const assignMock = vi.fn();
+		vi.stubGlobal('location', { ...window.location, assign: assignMock });
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: async () => ({ success: true, url: '/user/me/media' }),
+			})
+		);
+
+		renderUploadedPage({
+			onSubmitSuccess,
+			uploadedMedia: {
+				editUrl: '/media/test/edit',
+				friendlyToken: 'submitted-token',
+			},
+		});
+
+		await user.click(screen.getByRole('button', { name: 'Save as Draft' }));
+
+		await waitFor(() => expect(onSubmitSuccess).toHaveBeenCalledWith('submitted-token'));
+		expect(assignMock).toHaveBeenCalledWith('/user/me/media');
+	});
+
 	it('marks direct-publish uploads as reviewed by default', async () => {
 		const user = userEvent.setup();
 		const fetchMock = vi.fn().mockResolvedValue({
