@@ -23,7 +23,7 @@ export function PrivateJournalInput({ value, onChange, onSubmit, disabled = fals
 				disabled={disabled}
 				onChange={(event) => onChange(event.target.value)}
 				onKeyDown={(event) => {
-					if (event.key === 'Enter' && event.shiftKey && !event.isComposing && event.keyCode !== 229) {
+					if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
 						event.preventDefault();
 						onSubmit();
 					}

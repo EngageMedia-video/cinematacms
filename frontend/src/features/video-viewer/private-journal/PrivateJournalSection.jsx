@@ -131,18 +131,20 @@ function PrivateJournalSectionInner({ friendlyToken, initialNotes = [] }) {
 				) : notesQuery.isError ? (
 					<p className="py-4 text-center text-sm text-text-muted">Could not load notes.</p>
 				) : sortedNotes.length ? (
-					<ul className="m-0 flex list-none flex-col gap-6 p-0">
-						{sortedNotes.map((note) => (
-							<JournalEntry
-								key={note.id}
-								note={note}
-								onUpdate={updateNote}
-								onDelete={deleteNote}
-								isUpdating={updateMutation.isPending}
-								isDeleting={deleteMutation.isPending}
-							/>
-						))}
-					</ul>
+					<div className="max-h-[420px] overflow-y-scroll overscroll-contain pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:[-webkit-appearance:none] [&::-webkit-scrollbar-track]:bg-bg-surface-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-text-dialog-accent">
+						<ul className="m-0 flex list-none flex-col gap-6 p-0">
+							{sortedNotes.map((note) => (
+								<JournalEntry
+									key={note.id}
+									note={note}
+									onUpdate={updateNote}
+									onDelete={deleteNote}
+									isUpdating={updateMutation.isPending}
+									isDeleting={deleteMutation.isPending}
+								/>
+							))}
+						</ul>
+					</div>
 				) : (
 					<PrivateJournalEmptyState />
 				)}

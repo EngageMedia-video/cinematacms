@@ -28,4 +28,20 @@ describe('PrivateJournalSection', () => {
 		expect(screen.getByText('2:30')).toBeInTheDocument();
 		expect(screen.queryByText('No Documented Thoughts')).not.toBeInTheDocument();
 	});
+
+	it('keeps the note list scrollable when notes are present', () => {
+		render(
+			<PrivateJournalSection
+				initialNotes={[
+					{ id: 'note-1', text: 'First saved thought', timestamp_seconds: 20 },
+					{ id: 'note-2', text: 'Second saved thought', timestamp_seconds: 40 },
+				]}
+			/>
+		);
+
+		const listContainer = screen.getByText('First saved thought').closest('ul')?.parentElement;
+
+		expect(listContainer).toHaveClass('max-h-[420px]', 'overflow-y-scroll', 'overscroll-contain');
+		expect(listContainer?.className).toContain('[&::-webkit-scrollbar-thumb]:bg-text-dialog-accent');
+	});
 });
