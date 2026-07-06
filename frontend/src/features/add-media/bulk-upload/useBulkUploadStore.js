@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+import { getAddMediaConfig } from '../utils/helpers';
+
 export const SUB_STEPS = ['basic', 'thumbnail', 'other', 'final'];
 
 export const UPLOAD_STATUS = {
@@ -31,7 +33,7 @@ export function createDefaultMetadata() {
 		no_license: true,
 		enable_comments: true,
 		allow_download: true,
-		state: 'public',
+		state: getAddMediaConfig().defaultMediaStatus || 'public',
 		password: '',
 		expireEnabled: false,
 		startDate: '',
