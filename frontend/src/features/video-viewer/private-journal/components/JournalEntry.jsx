@@ -126,7 +126,7 @@ export function JournalEntry({ note, onUpdate, onDelete, isUpdating = false, isD
 							</div>
 						</div>
 					) : (
-						<Text as="h6" variant="body-16" className="m-0 mt-2">
+						<Text as="p" variant="body-16" className="m-0 mt-2 whitespace-pre-wrap break-words">
 							{note.text}
 						</Text>
 					)}
