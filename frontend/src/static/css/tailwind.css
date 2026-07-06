@@ -1073,7 +1073,6 @@ body {
 	--text-panel-heading: var(--cinemata-pacific-deep-700);
 	--text-control-checked: var(--cinemata-pacific-deep-100);
 	--text-tab-trigger: var(--cinemata-neutral-50);
-	--text-label-private-journal: var(--cinemata-pacific-deep-950);
 
 	/* Borders */
 	--border-default: var(--cinemata-pacific-deep-200);
@@ -1156,7 +1155,6 @@ body.dark_theme {
 	--text-panel-heading: var(--cinemata-neutral-50);
 	--text-control-checked: var(--cinemata-pacific-deep-900);
 	--text-tab-trigger: var(--cinemata-neutral-50);
-	--text-label-private-journal: var(--cinemata-pacific-deep-100);
 
 	--border-default: var(--cinemata-pacific-deep-700);
 	--border-subtle: var(--cinemata-pacific-deep-800);
@@ -1257,7 +1255,6 @@ body.dark_theme {
 	--color-text-control-checked: var(--text-control-checked);
 	--color-text-tab-trigger: var(--text-tab-trigger);
 	--color-text-title-required: var(--cinemata-red-400);
-	--color-text-label-private-journal: var(--text-label-private-journal);
 
 	/* Borders */
 	--color-border-default: var(--border-default);
