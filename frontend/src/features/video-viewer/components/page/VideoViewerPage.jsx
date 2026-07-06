@@ -155,6 +155,7 @@ export class VideoViewerPage extends Page {
 					triggerSelectedColor="bg-bg-surface"
 					panelClassName="mt-0 p-0 bg-bg-surface rounded-b-ds-8"
 					aria-label="Video comments and notes"
+					keepMounted
 				>
 					<TabContent title={`COMMENTS (${this.state.commentsCount})`} value="comments">
 						<CommentsSection
