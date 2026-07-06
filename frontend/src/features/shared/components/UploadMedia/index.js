@@ -1,10 +1,7 @@
 // "Upload media" component group — controlled field assemblies, metadata
-// validation and taxonomy data for the bulk (#524) upload flow. Kept visually
-// identical to the single-upload (#523) form by reusing the same shared
-// primitives (TextField, EditorField, Dropdown, CheckboxGroup, RadioButton,
-// CheckboxButton, MediaDropzone). Single keeps its own form components; this
-// group is bulk's controlled, per-file composition layer. Generic HTTP helpers
-// live in shared/utils/api.
+// validation and taxonomy data for upload flows. Single upload uses these as
+// form-aware field building blocks; bulk uses the same controlled components
+// for per-file metadata. Generic HTTP helpers live in shared/utils/api.
 export * from './fields/BasicFields';
 export * from './fields/OtherFields';
 export * from './fields/FinalFields';

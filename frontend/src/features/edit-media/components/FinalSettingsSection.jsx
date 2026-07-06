@@ -3,7 +3,7 @@ import { Text } from '../../shared/components';
 import { CheckboxButton } from '../../shared/components/CheckboxButton';
 import { RadioButton } from '../../shared/components/RadioButton';
 import { TextField } from '../../shared/components/TextField';
-import { VisibilityExpirationField } from '../../shared/components/upload-media';
+import { VisibilityExpirationField } from '../../shared/components/UploadMedia';
 
 export function FinalSettingsSection({ config, editState }) {
 	return (

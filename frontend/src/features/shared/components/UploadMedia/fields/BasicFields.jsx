@@ -3,14 +3,15 @@ import { TextField } from '../../TextField';
 import { YearChooserField } from '../../YearChooserField';
 import { SYNOPSIS_MAX_WORDS } from '../schema/mediaMetadataSchema';
 
-// Controlled twins of the single-upload BasicDetailsForm fields (kept visually
-// identical: same labels, placeholders, widgets and helper text), driven by
-// per-file metadata so the bulk wizard can render one set per file.
+// Controlled basic-detail fields shared by single upload and bulk per-file
+// metadata forms.
 
-export function TitleField({ value = '', onChange, error = '', validate }) {
+export function TitleField({ value = '', onChange, error = '', validate, id, name }) {
 	return (
 		<TextField
 			className="w-full"
+			id={id}
+			name={name}
 			label="Title"
 			required
 			placeholder="Write here..."
@@ -23,10 +24,12 @@ export function TitleField({ value = '', onChange, error = '', validate }) {
 	);
 }
 
-export function SynopsisField({ value = '', onChange, error = '' }) {
+export function SynopsisField({ value = '', onChange, error = '', validate, id, name }) {
 	return (
 		<EditorField
 			className="w-full"
+			id={id}
+			name={name}
 			label="Synopsis"
 			required
 			placeholder="Write here..."
@@ -35,29 +38,36 @@ export function SynopsisField({ value = '', onChange, error = '' }) {
 			maxWordsLength={SYNOPSIS_MAX_WORDS}
 			value={value}
 			onChange={(event) => onChange?.(event.target.value)}
+			validate={validate}
 			invalid={Boolean(error)}
 			helperText={error || `Maximum ${SYNOPSIS_MAX_WORDS} Words`}
 		/>
 	);
 }
 
-export function MoreInfoField({ value = '', onChange }) {
+export function MoreInfoField({ value = '', onChange, error = '', id, name }) {
 	return (
 		<EditorField
 			className="w-full"
+			id={id}
+			name={name}
 			label="More Information and Credits"
 			placeholder="Write here..."
 			rows={5}
 			value={value}
 			onChange={(event) => onChange?.(event.target.value)}
+			invalid={Boolean(error)}
+			helperText={error}
 		/>
 	);
 }
 
-export function YearProducedField({ value = '', onChange, error = '' }) {
+export function YearProducedField({ value = '', onChange, error = '', id, name }) {
 	return (
 		<YearChooserField
 			className="w-full"
+			id={id}
+			name={name}
 			label="Year Produced"
 			required
 			value={value}

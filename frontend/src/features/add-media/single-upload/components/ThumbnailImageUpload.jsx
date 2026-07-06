@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ThumbnailUploadField } from '../../../shared/components/upload-media';
-import { SpriteFrame } from '../../../shared/components/upload-media/ChooseFromVideo/SpriteFrame';
+import { ThumbnailUploadField } from '../../../shared/components/UploadMedia';
+import { SpriteFrame } from '../../../shared/components/UploadMedia/ChooseFromVideo/SpriteFrame';
 import { FieldGroup } from './FieldGroup';
 
 export function ThumbnailImageUpload({

@@ -7,22 +7,37 @@ import { CheckboxGroup } from '../../CheckboxGroup';
 import { Dialog, DialogContent, DialogTrigger } from '../../Dialog';
 import { Button } from '../../Button';
 import { Text } from '../../Text';
+import { RadioButton } from '../../RadioButton';
 
-// Controlled twins of the single-upload OtherDetailsForm fields. Same widgets,
-// labels and CC license chooser as single, driven by per-file metadata.
+// Controlled other-detail fields shared by single upload and bulk per-file
+// metadata forms.
+
+function toOption(item, valueKey) {
+	if (typeof item === 'string') {
+		return { value: item, label: item };
+	}
+
+	if (Object.prototype.hasOwnProperty.call(item, 'value')) {
+		return item;
+	}
+
+	return { value: item[valueKey], label: item.title };
+}
 
 function toCodeOptions(items = []) {
-	return items.map((item) => ({ value: item.code, label: item.title }));
+	return items.map((item) => toOption(item, 'code'));
 }
 
 function toIdOptions(items = []) {
-	return items.map((item) => ({ value: item.id, label: item.title }));
+	return items.map((item) => toOption(item, 'id'));
 }
 
-export function CompanyField({ value = '', onChange }) {
+export function CompanyField({ value = '', onChange, id, name }) {
 	return (
 		<TextField
 			className="w-full"
+			id={id}
+			name={name}
 			label="Production Company"
 			placeholder="Write here..."
 			value={value}
@@ -31,10 +46,12 @@ export function CompanyField({ value = '', onChange }) {
 	);
 }
 
-export function WebsiteField({ value = '', onChange, error = '' }) {
+export function WebsiteField({ value = '', onChange, error = '', id, name }) {
 	return (
 		<TextField
 			className="w-full"
+			id={id}
+			name={name}
 			label="Website"
 			placeholder="Write here..."
 			value={value}
@@ -46,11 +63,13 @@ export function WebsiteField({ value = '', onChange, error = '' }) {
 	);
 }
 
-export function MediaLanguageSelect({ value = '', onChange, options = [], error = '' }) {
+export function MediaLanguageSelect({ value = '', onChange, options = [], error = '', id, name }) {
 	const dropdownOptions = useMemo(() => toCodeOptions(options), [options]);
 	return (
 		<Dropdown
 			className="w-full"
+			id={id}
+			name={name}
 			label="Media Language"
 			required
 			placeholder="Select media language"
@@ -63,11 +82,13 @@ export function MediaLanguageSelect({ value = '', onChange, options = [], error 
 	);
 }
 
-export function MediaCountrySelect({ value = '', onChange, options = [], error = '' }) {
+export function MediaCountrySelect({ value = '', onChange, options = [], error = '', id, name }) {
 	const dropdownOptions = useMemo(() => toCodeOptions(options), [options]);
 	return (
 		<Dropdown
 			className="w-full"
+			id={id}
+			name={name}
 			label="Media Country"
 			required
 			placeholder="Select media country"
@@ -80,11 +101,12 @@ export function MediaCountrySelect({ value = '', onChange, options = [], error =
 	);
 }
 
-export function CategoryCheckboxGroup({ value = [], onChange, options = [], name, error = '' }) {
+export function CategoryCheckboxGroup({ value = [], onChange, options = [], id, name, error = '' }) {
 	const groupOptions = useMemo(() => toIdOptions(options), [options]);
 	return (
 		<CheckboxGroup
 			className="flex flex-col flex-1"
+			id={id}
 			label="Categories"
 			required
 			name={name}
@@ -96,11 +118,12 @@ export function CategoryCheckboxGroup({ value = [], onChange, options = [], name
 	);
 }
 
-export function ContentSensitivityGroup({ value = [], onChange, options = [], name }) {
+export function ContentSensitivityGroup({ value = [], onChange, options = [], id, name }) {
 	const groupOptions = useMemo(() => toIdOptions(options), [options]);
 	return (
 		<CheckboxGroup
 			className="flex flex-col flex-1"
+			id={id}
 			label="Content Sensitivity"
 			name={name}
 			options={groupOptions}
@@ -110,11 +133,12 @@ export function ContentSensitivityGroup({ value = [], onChange, options = [], na
 	);
 }
 
-export function TopicCheckboxGroup({ value = [], onChange, options = [], name, error = '' }) {
+export function TopicCheckboxGroup({ value = [], onChange, options = [], id, name, error = '' }) {
 	const groupOptions = useMemo(() => toIdOptions(options), [options]);
 	return (
 		<CheckboxGroup
 			className="flex flex-col flex-1"
+			id={id}
 			label="Topics"
 			required
 			name={name}
@@ -127,10 +151,12 @@ export function TopicCheckboxGroup({ value = [], onChange, options = [], name, e
 	);
 }
 
-export function TagsField({ value = '', onChange }) {
+export function TagsField({ value = '', onChange, id, name }) {
 	return (
 		<TextField
 			className="w-full"
+			id={id}
+			name={name}
 			label="Tags"
 			placeholder="Write here..."
 			value={value}
@@ -173,24 +199,27 @@ function fieldsFromLicense(license) {
 function LicenseRadioGroup({ legend, name, options, selectedValue, onChange }) {
 	return (
 		<fieldset className="m-0 border-0 p-0">
-			<legend className="body-body-16-bold m-0 mb-3 text-text-strong">{legend}</legend>
-			<div className="grid gap-2">
+			<Text variant="body-16-bold" as="legend" className="m-0 mb-3 text-text-strong">
+				{legend}
+			</Text>
+
+			<div className="grid gap-3">
 				{options.map((option) => (
-					<label
+					<RadioButton
 						key={option.value}
-						className="flex cursor-pointer items-start gap-3 rounded-ds-4 border border-border-subtle bg-bg-surface px-4 py-3 transition-colors hover:bg-bg-surface-hover"
+						name={name}
+						value={option.value}
+						checked={selectedValue === option.value}
+						aria-label={`${legend} ${option.label}`}
+						controlClassName="bg-bg-surface-hover"
+						controlStyle={{ width: 18, height: 18, padding: 6 }}
+						labelClassName="contents"
+						onChange={() => onChange(option.value)}
 					>
-						<input
-							type="radio"
-							name={name}
-							value={option.value}
-							checked={selectedValue === option.value}
-							aria-label={`${legend} ${option.label}`}
-							className="mt-1 h-4 w-4 accent-current"
-							onChange={() => onChange(option.value)}
-						/>
-						<span className="body-body-14-regular text-text-strong">{option.label}</span>
-					</label>
+						<Text variant="body-14" as="span" className="text-text-strong">
+							{option.label}
+						</Text>
+					</RadioButton>
 				))}
 			</div>
 		</fieldset>
@@ -198,12 +227,21 @@ function LicenseRadioGroup({ legend, name, options, selectedValue, onChange }) {
 }
 
 /**
- * Creative Commons license chooser, mirroring the single-upload LicenseChooser
- * but controlled by per-file metadata. The user picks a license by answering the
+ * Creative Commons license chooser. The user picks a license by answering the
  * commercial/modifications questions; "All Rights Reserved" clears the license.
  * Emits `{ custom_license, no_license }` patches.
  */
-export function LicenseChooser({ value = '', noLicense = false, options = [], onChange, name = 'license' }) {
+export function LicenseChooser({
+	value = '',
+	noLicense = false,
+	options = [],
+	onChange,
+	name = 'license',
+	hiddenInputName,
+	noLicenseName,
+	labelId,
+	displayId,
+}) {
 	const defaultLicense = options[0] ?? null;
 	const selectedLicense = getLicenseById(options, value) ?? defaultLicense;
 
@@ -231,15 +269,32 @@ export function LicenseChooser({ value = '', noLicense = false, options = [], on
 
 	return (
 		<div className="grid gap-3">
+			{hiddenInputName ? (
+				<input
+					type="hidden"
+					name={hiddenInputName}
+					value={noLicense ? 'None' : (selectedLicense?.id ?? '')}
+					readOnly
+				/>
+			) : null}
+
 			<div>
-				<span className="body-body-16-regular mb-2 block text-text-strong">License</span>
+				<Text variant="body-16" as="span" className="mb-2 block text-text-strong" id={labelId}>
+					License
+				</Text>
 
 				<div className="flex flex-col gap-3 border-b border-border-strong-constant pb-4 sm:flex-row sm:items-center sm:justify-between">
-					<span className="body-body-16-regular min-h-6 text-text-strong" aria-live="polite">
+					<Text
+						variant="body-16"
+						as="span"
+						id={displayId}
+						className="min-h-6 text-text-strong"
+						aria-live="polite"
+					>
 						{displayTitle}
-					</span>
+					</Text>
 
-					<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+					<Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
 						<DialogTrigger>
 							<Button type="button" variant="text" className="text-text-accent">
 								Choose License
@@ -311,18 +366,24 @@ export function LicenseChooser({ value = '', noLicense = false, options = [], on
 			</div>
 
 			<CheckboxButton
+				name={noLicenseName}
 				checked={noLicense}
 				className="items-start"
 				onChange={(event) =>
-					onChange?.({ no_license: event.target.checked, custom_license: event.target.checked ? '' : value })
+					onChange?.({
+						no_license: event.target.checked,
+						custom_license: event.target.checked ? '' : String(selectedLicense?.id ?? value ?? ''),
+					})
 				}
 				controlClassName="bg-bg-control-unchecked peer-checked:bg-bg-control-checked"
 			>
 				<span>
-					<span className="body-body-16-regular block text-text-strong">All Rights Reserved</span>
-					<span className="body-body-12-regular block text-text-muted">
+					<Text variant="body-16" as="span" className="block text-text-strong">
+						All Rights Reserved
+					</Text>
+					<Text variant="body-12" as="span" color="meta" className="block">
 						Use this when you do not want to apply a Creative Commons license.
-					</span>
+					</Text>
 				</span>
 			</CheckboxButton>
 		</div>

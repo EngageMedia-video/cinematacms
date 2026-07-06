@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { config as mediacmsConfig } from '../../../../../static/js/mediacms/config.js';
-import { apiFetch } from '../../../utils/api';
+import { apiFetch } from '../../../utils/api.js';
 
 // Sprite generation runs on the long_tasks worker, competing with the encode job that the
 // same upload kicks off. For long/large videos the sheet can take a few minutes to appear,

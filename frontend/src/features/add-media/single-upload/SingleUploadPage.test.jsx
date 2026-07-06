@@ -39,7 +39,7 @@ const taxonomyOptions = {
 	licenses: TEST_LICENSES,
 };
 
-vi.mock('../../shared/components/upload-media', async (importOriginal) => {
+vi.mock('../../shared/components/UploadMedia', async (importOriginal) => {
 	const actual = await importOriginal();
 	return {
 		...actual,

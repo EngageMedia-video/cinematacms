@@ -1,6 +1,6 @@
 import { Text, TextAlert } from '../../../../shared/components';
 import { cn } from '../../../../shared/utils/classNames';
-import { validateMetadata } from '../../../../shared/components/upload-media';
+import { validateMetadata } from '../../../../shared/components/UploadMedia';
 import { FileQuickPreview } from '../FileQuickPreview';
 import { formatFileSize } from '../../utils/formatSize';
 
