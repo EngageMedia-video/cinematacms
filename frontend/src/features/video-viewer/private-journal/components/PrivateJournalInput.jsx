@@ -1,4 +1,5 @@
 import { Avatar } from '../../../shared/components/Avatar';
+import { Button } from '../../../shared/components/Button';
 import { resolveAvatarSrc } from '../utils/journalMedia';
 
 function getUser() {
@@ -38,14 +39,16 @@ export function PrivateJournalInput({ value, onChange, onSubmit, disabled = fals
 					size="large"
 				/>
 
-				<button
+				<Button
 					type="button"
+					variant="primary"
+					size="sm"
 					onClick={onSubmit}
 					disabled={submitDisabled}
-					className="inline-flex h-8 cursor-pointer items-center rounded-sm border-0 bg-site-accent px-4 text-xs font-bold leading-5 text-white transition-colors duration-200 hover:bg-bg-secondary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:opacity-50"
+					className="h-8 rounded-sm px-4 text-xs leading-5"
 				>
 					{isSubmitting ? 'ADDING...' : 'ADD NOTE'}
-				</button>
+				</Button>
 			</div>
 		</div>
 	);
