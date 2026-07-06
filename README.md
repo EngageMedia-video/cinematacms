@@ -136,7 +136,7 @@ The instructions below have been tested on Ubuntu 22.04. Make sure no other serv
 ```bash
 cd /home
 mkdir cinemata && cd cinemata
-git clone -b v2.1.8 https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
+git clone -b v3.1.0 https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
 chmod +x install.sh
 ./install.sh
 ```
