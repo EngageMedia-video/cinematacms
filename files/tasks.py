@@ -64,6 +64,13 @@ MP4HLS_SUBPROCESS_TIMEOUT = 600
 # valid near-timeout run can still save and clean up while holding its token.
 HLS_LOCK_TIMEOUT = MP4HLS_SUBPROCESS_TIMEOUT + 120
 HLS_PENDING_RETRY_TIMEOUT = HLS_LOCK_TIMEOUT * 2
+# A subprocess timeout is often deterministic (input too large for the ceiling).
+# Retry it a bounded number of times with a delay instead of the immediate
+# overlap retry used for lock contention, so a bad input cannot loop a worker
+# for MP4HLS_SUBPROCESS_TIMEOUT seconds indefinitely.
+HLS_TIMEOUT_MAX_RETRIES = 2
+HLS_TIMEOUT_RETRY_DELAY = 60
+HLS_TIMEOUT_RETRY_KEY_TIMEOUT = HLS_PENDING_RETRY_TIMEOUT
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 
@@ -776,6 +783,7 @@ def create_hls(friendly_token):
     # writes output, updates hls_file, and runs cleanup.
     lock_key = f"create_hls_lock_{p}"
     pending_key = f"create_hls_pending_{p}"
+    timeout_retry_key = f"create_hls_timeout_retries_{p}"
     lock_token = produce_friendly_token()
     if not cache.add(lock_key, lock_token, timeout=HLS_LOCK_TIMEOUT):
         cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
@@ -811,7 +819,28 @@ def create_hls(friendly_token):
         except subprocess.TimeoutExpired:
             logger.error("mp4hls timed out for media %s, discarding partial output", friendly_token)
             shutil.rmtree(output_dir, ignore_errors=True)
-            cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
+            # Timeouts are usually deterministic, so bound the retries and delay
+            # them instead of the immediate overlap retry used for lock
+            # contention. This avoids looping a worker for
+            # MP4HLS_SUBPROCESS_TIMEOUT seconds on an input that never fits.
+            attempts = (cache.get(timeout_retry_key) or 0) + 1
+            if attempts <= HLS_TIMEOUT_MAX_RETRIES:
+                cache.set(timeout_retry_key, attempts, timeout=HLS_TIMEOUT_RETRY_KEY_TIMEOUT)
+                logger.info(
+                    "scheduling bounded timeout retry %s/%s for media %s in %ss",
+                    attempts,
+                    HLS_TIMEOUT_MAX_RETRIES,
+                    friendly_token,
+                    HLS_TIMEOUT_RETRY_DELAY,
+                )
+                create_hls.apply_async(args=[friendly_token], countdown=HLS_TIMEOUT_RETRY_DELAY)
+            else:
+                cache.delete(timeout_retry_key)
+                logger.error(
+                    "mp4hls timed out %s times for media %s, giving up and preserving last known-good hls_file",
+                    HLS_TIMEOUT_MAX_RETRIES,
+                    friendly_token,
+                )
             return True
 
         if result.returncode != 0:
@@ -858,6 +887,10 @@ def create_hls(friendly_token):
                         os.remove(entry_path)
                     except OSError:
                         pass
+
+        # A successful regeneration clears any prior timeout backoff so a media
+        # that once timed out (e.g. transient load) starts fresh next time.
+        cache.delete(timeout_retry_key)
     finally:
         released_lock = False
         if cache.get(lock_key) == lock_token:

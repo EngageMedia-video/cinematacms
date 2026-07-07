@@ -398,7 +398,18 @@ class CreateHlsVersionedDirectoryTests(TestCase):
         uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
         self.assertEqual(os.listdir(uid_dir), [os.path.basename(os.path.dirname(good_hls_file))])
 
-    def test_mp4hls_timeout_discards_partial_output_and_schedules_retry(self):
+    @staticmethod
+    def _fake_timeout(command, capture_output, timeout=None):
+        output_dir = next(
+            (part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")),
+            None,
+        )
+        os.makedirs(output_dir, exist_ok=True)
+        with open(os.path.join(output_dir, "master.m3u8"), "wb") as master_file:
+            master_file.write(b"incomplete")
+        raise subprocess.TimeoutExpired(cmd=command, timeout=timeout)
+
+    def test_mp4hls_timeout_discards_partial_output_and_schedules_delayed_retry(self):
         from files import tasks
 
         with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
@@ -406,18 +417,8 @@ class CreateHlsVersionedDirectoryTests(TestCase):
         self.media.refresh_from_db()
         good_hls_file = self.media.hls_file
 
-        def fake_timeout(command, capture_output, timeout=None):
-            output_dir = next(
-                (part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")),
-                None,
-            )
-            os.makedirs(output_dir, exist_ok=True)
-            with open(os.path.join(output_dir, "master.m3u8"), "wb") as master_file:
-                master_file.write(b"incomplete")
-            raise subprocess.TimeoutExpired(cmd=command, timeout=timeout)
-
         with (
-            patch("files.tasks.subprocess.run", side_effect=fake_timeout),
+            patch("files.tasks.subprocess.run", side_effect=self._fake_timeout),
             patch("files.tasks.create_hls.apply_async") as mock_apply_async,
         ):
             self.assertTrue(tasks.create_hls(self.media.friendly_token))
@@ -426,7 +427,44 @@ class CreateHlsVersionedDirectoryTests(TestCase):
         self.assertEqual(self.media.hls_file, good_hls_file)
         uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
         self.assertEqual(os.listdir(uid_dir), [os.path.basename(os.path.dirname(good_hls_file))])
-        mock_apply_async.assert_called_once_with(args=[self.media.friendly_token])
+        # Timeout retries are bounded and delayed, not the immediate overlap retry.
+        mock_apply_async.assert_called_once_with(
+            args=[self.media.friendly_token],
+            countdown=tasks.HLS_TIMEOUT_RETRY_DELAY,
+        )
+
+    def test_mp4hls_timeout_retries_are_bounded(self):
+        from files import tasks
+
+        # Every run times out. The retry must stop after HLS_TIMEOUT_MAX_RETRIES
+        # so a deterministically-too-large input cannot loop a worker forever.
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_timeout):
+            for _ in range(tasks.HLS_TIMEOUT_MAX_RETRIES + 3):
+                with patch("files.tasks.create_hls.apply_async") as mock_apply_async:
+                    self.assertTrue(tasks.create_hls(self.media.friendly_token))
+                # Record whether this attempt scheduled a follow-up run.
+                if mock_apply_async.call_count == 0:
+                    break
+
+        # After the bound is reached the retry key is cleared and no run queued.
+        timeout_retry_key = f"create_hls_timeout_retries_{self.media.uid.hex}"
+        self.assertIsNone(cache.get(timeout_retry_key))
+        self.assertEqual(mock_apply_async.call_count, 0)
+
+    def test_successful_generation_clears_timeout_backoff(self):
+        from files import tasks
+
+        timeout_retry_key = f"create_hls_timeout_retries_{self.media.uid.hex}"
+        with (
+            patch("files.tasks.subprocess.run", side_effect=self._fake_timeout),
+            patch("files.tasks.create_hls.apply_async"),
+        ):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.assertEqual(cache.get(timeout_retry_key), 1)
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.assertIsNone(cache.get(timeout_retry_key))
 
     def test_expired_lock_discards_stale_output_and_schedules_retry(self):
         from files import tasks
