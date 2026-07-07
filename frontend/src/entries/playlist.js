@@ -1,4 +1,4 @@
 import { renderPage } from '../static/js/_helpers.js';
-import { PlaylistPage } from '../static/js/pages/PlaylistPage/index';
+import { PlaylistFeature } from '../features/playlist';
 
-renderPage('page-playlist', PlaylistPage);
+renderPage('page-playlist', PlaylistFeature);

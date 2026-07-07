@@ -72,7 +72,7 @@ export function UserRoleBadge({ isManager, isTrusted }) {
 				<Button
 					variant="icon"
 					aria-label="Open tooltip"
-					icon={<Icon name="infoYellow" size={18} decorative />}
+					icon={<Icon name="infoCircle" size={18} decorative />}
 				/>
 			</Tooltip>
 		</span>
