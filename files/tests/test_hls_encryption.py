@@ -6,11 +6,16 @@ Covers:
 - Media.ensure_encryption_key() generation and idempotency
 - Encryption toggle re-dispatching create_hls
 - create_hls task encryption flag injection
+- create_hls versioned output directory / cache-busting (issue #791)
 """
 
-from unittest.mock import patch
+import os
+import subprocess
+import tempfile
+from unittest.mock import MagicMock, patch
 
-from django.test import Client, TestCase
+from django.core.cache import cache
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from files.models import Media
@@ -251,3 +256,295 @@ class CreateHlsEncryptionFlagsTests(TestCase):
         self.assertTrue(key_uri.startswith("/"), f"Expected root-relative URI, got: {key_uri}")
         self.assertFalse(key_uri.startswith("http"), f"URI should not be absolute, got: {key_uri}")
         self.assertIn(media.friendly_token, key_uri)
+
+
+class CreateHlsVersionedDirectoryTests(TestCase):
+    """Tests create_hls writing to HLS_DIR/<uid>/<version>/ (issue #791)."""
+
+    def setUp(self):
+        from files.models import EncodeProfile, Encoding
+
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.hls_dir = os.path.join(self.tmpdir.name, "hls")
+        os.makedirs(self.hls_dir, exist_ok=True)
+        self.fake_mp4hls = os.path.join(self.tmpdir.name, "mp4hls")
+        with open(self.fake_mp4hls, "w", encoding="utf-8") as command_file:
+            command_file.write("#!/bin/sh\n")
+
+        self.override = override_settings(
+            MEDIA_ROOT=self.tmpdir.name,
+            HLS_DIR=self.hls_dir,
+            TEMP_DIRECTORY=self.tmpdir.name,
+            MP4HLS_COMMAND=self.fake_mp4hls,
+        )
+        self.override.enable()
+        self.addCleanup(self.override.disable)
+        self.addCleanup(self.tmpdir.cleanup)
+        cache.clear()
+
+        self.user = User.objects.create_user(username="owner", email="owner@example.com", password="pw")
+        self.profile = EncodeProfile.objects.create(name="h264_test", extension="mp4", codec="h264", resolution=720)
+        self.media = create_test_media(self.user)
+        self.encoding = Encoding.objects.create(
+            media=self.media,
+            profile=self.profile,
+            status="success",
+            media_file="encoded/fake.mp4",
+        )
+
+    @staticmethod
+    def _fake_run_writing_master(command, capture_output, timeout=None):
+        output_dir = next(
+            (part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")),
+            None,
+        )
+        os.makedirs(output_dir, exist_ok=True)
+        with open(os.path.join(output_dir, "master.m3u8"), "wb") as master_file:
+            master_file.write(b"content")
+        return MagicMock(returncode=0)
+
+    @staticmethod
+    def _fake_run_producing_nothing(command, capture_output, timeout=None):
+        return MagicMock(returncode=1)
+
+    @staticmethod
+    def _fake_run_failing_after_master(command, capture_output, timeout=None):
+        output_dir = next(
+            (part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")),
+            None,
+        )
+        os.makedirs(output_dir, exist_ok=True)
+        with open(os.path.join(output_dir, "master.m3u8"), "wb") as master_file:
+            master_file.write(b"incomplete")
+        return MagicMock(returncode=1)
+
+    def test_first_generation_writes_versioned_directory(self):
+        from files import tasks
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        self.media.refresh_from_db()
+        uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
+        self.assertTrue(self.media.hls_file.startswith(uid_dir + os.sep))
+        self.assertNotEqual(os.path.dirname(self.media.hls_file), uid_dir)
+        self.assertTrue(os.path.exists(self.media.hls_file))
+
+    def test_regeneration_removes_previous_version_directory(self):
+        from files import tasks
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.media.refresh_from_db()
+        first_dir = os.path.dirname(self.media.hls_file)
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.media.refresh_from_db()
+        second_dir = os.path.dirname(self.media.hls_file)
+
+        self.assertNotEqual(first_dir, second_dir)
+        self.assertFalse(os.path.exists(first_dir))
+        self.assertTrue(os.path.exists(second_dir))
+
+        uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
+        self.assertEqual(os.listdir(uid_dir), [os.path.basename(second_dir)])
+
+    def test_regeneration_removes_legacy_flat_layout_siblings(self):
+        from files import tasks
+
+        uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
+        os.makedirs(uid_dir, exist_ok=True)
+        legacy_master = os.path.join(uid_dir, "master.m3u8")
+        with open(legacy_master, "wb") as f:
+            f.write(b"legacy")
+        Media.objects.filter(pk=self.media.pk).update(hls_file=legacy_master)
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        self.assertFalse(os.path.exists(legacy_master))
+        self.media.refresh_from_db()
+        self.assertTrue(os.path.exists(self.media.hls_file))
+
+    def test_mp4hls_failure_leaves_previous_hls_file_untouched(self):
+        from files import tasks
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.media.refresh_from_db()
+        good_hls_file = self.media.hls_file
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_producing_nothing):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.hls_file, good_hls_file)
+        self.assertTrue(os.path.exists(good_hls_file))
+
+    def test_mp4hls_nonzero_with_master_discards_partial_output(self):
+        from files import tasks
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.media.refresh_from_db()
+        good_hls_file = self.media.hls_file
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_failing_after_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.hls_file, good_hls_file)
+        uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
+        self.assertEqual(os.listdir(uid_dir), [os.path.basename(os.path.dirname(good_hls_file))])
+
+    @staticmethod
+    def _fake_timeout(command, capture_output, timeout=None):
+        output_dir = next(
+            (part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")),
+            None,
+        )
+        os.makedirs(output_dir, exist_ok=True)
+        with open(os.path.join(output_dir, "master.m3u8"), "wb") as master_file:
+            master_file.write(b"incomplete")
+        raise subprocess.TimeoutExpired(cmd=command, timeout=timeout)
+
+    def test_mp4hls_timeout_discards_partial_output_and_schedules_delayed_retry(self):
+        from files import tasks
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.media.refresh_from_db()
+        good_hls_file = self.media.hls_file
+
+        with (
+            patch("files.tasks.subprocess.run", side_effect=self._fake_timeout),
+            patch("files.tasks.create_hls.apply_async") as mock_apply_async,
+        ):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.hls_file, good_hls_file)
+        uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
+        self.assertEqual(os.listdir(uid_dir), [os.path.basename(os.path.dirname(good_hls_file))])
+        # Timeout retries are bounded and delayed, not the immediate overlap retry.
+        mock_apply_async.assert_called_once_with(
+            args=[self.media.friendly_token],
+            countdown=tasks.HLS_TIMEOUT_RETRY_DELAY,
+        )
+
+    def test_mp4hls_timeout_retries_are_bounded(self):
+        from files import tasks
+
+        # Every run times out. The retry must stop after HLS_TIMEOUT_MAX_RETRIES
+        # so a deterministically-too-large input cannot loop a worker forever.
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_timeout):
+            for _ in range(tasks.HLS_TIMEOUT_MAX_RETRIES + 3):
+                with patch("files.tasks.create_hls.apply_async") as mock_apply_async:
+                    self.assertTrue(tasks.create_hls(self.media.friendly_token))
+                # Record whether this attempt scheduled a follow-up run.
+                if mock_apply_async.call_count == 0:
+                    break
+
+        # After the bound is reached the retry key is cleared and no run queued.
+        timeout_retry_key = f"create_hls_timeout_retries_{self.media.uid.hex}"
+        self.assertIsNone(cache.get(timeout_retry_key))
+        self.assertEqual(mock_apply_async.call_count, 0)
+
+    def test_successful_generation_clears_timeout_backoff(self):
+        from files import tasks
+
+        timeout_retry_key = f"create_hls_timeout_retries_{self.media.uid.hex}"
+        with (
+            patch("files.tasks.subprocess.run", side_effect=self._fake_timeout),
+            patch("files.tasks.create_hls.apply_async"),
+        ):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.assertEqual(cache.get(timeout_retry_key), 1)
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.assertIsNone(cache.get(timeout_retry_key))
+
+    def test_expired_lock_discards_stale_output_and_schedules_retry(self):
+        from files import tasks
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.media.refresh_from_db()
+        good_hls_file = self.media.hls_file
+        lock_key = f"create_hls_lock_{self.media.uid.hex}"
+
+        def fake_run_after_lock_expired(command, capture_output, timeout=None):
+            cache.delete(lock_key)
+            return self._fake_run_writing_master(command, capture_output, timeout=timeout)
+
+        with (
+            patch("files.tasks.subprocess.run", side_effect=fake_run_after_lock_expired),
+            patch("files.tasks.create_hls.apply_async") as mock_apply_async,
+        ):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.hls_file, good_hls_file)
+        uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
+        self.assertEqual(os.listdir(uid_dir), [os.path.basename(os.path.dirname(good_hls_file))])
+        mock_apply_async.assert_called_once_with(args=[self.media.friendly_token])
+
+    def test_concurrent_run_marks_pending_when_lock_held(self):
+        from files import tasks
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        self.media.refresh_from_db()
+        hls_file_before = self.media.hls_file
+        dir_before = os.path.dirname(hls_file_before)
+
+        lock_key = f"create_hls_lock_{self.media.uid.hex}"
+        pending_key = f"create_hls_pending_{self.media.uid.hex}"
+        cache.add(lock_key, "1", timeout=tasks.HLS_LOCK_TIMEOUT)
+        try:
+            with (
+                patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master) as mock_run,
+                patch("files.tasks.create_hls.apply_async") as mock_apply_async,
+            ):
+                self.assertTrue(tasks.create_hls(self.media.friendly_token))
+            mock_run.assert_not_called()
+            mock_apply_async.assert_not_called()
+            self.assertEqual(cache.get(pending_key), "1")
+        finally:
+            cache.delete(lock_key)
+            cache.delete(pending_key)
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.hls_file, hls_file_before)
+        self.assertTrue(os.path.exists(dir_before))
+
+    def test_pending_overlap_schedules_follow_up_after_lock_release(self):
+        from files import tasks
+
+        pending_key = f"create_hls_pending_{self.media.uid.hex}"
+        cache.set(pending_key, "1", timeout=tasks.HLS_PENDING_RETRY_TIMEOUT)
+
+        with (
+            patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master),
+            patch("files.tasks.create_hls.apply_async") as mock_apply_async,
+        ):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        mock_apply_async.assert_called_once_with(args=[self.media.friendly_token])
+        self.assertIsNone(cache.get(pending_key))
+
+    def test_removal_stays_within_uid_directory(self):
+        from files import tasks
+
+        other_uid_dir = os.path.join(self.hls_dir, "0" * 32)
+        os.makedirs(other_uid_dir, exist_ok=True)
+        sentinel = os.path.join(other_uid_dir, "master.m3u8")
+        with open(sentinel, "wb") as f:
+            f.write(b"other media, do not touch")
+
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+
+        self.assertTrue(os.path.exists(sentinel))

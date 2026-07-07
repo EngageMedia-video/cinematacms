@@ -55,9 +55,22 @@ from .models import (
 )
 from .query_cache import invalidate_media_cache
 from .sprites import generate_sprite_for_media
-from .storage_usage import schedule_refresh_media_storage_usage
 
 logger = get_task_logger(__name__)
+
+# How long mp4hls may remux before the worker discards the partial output.
+MP4HLS_SUBPROCESS_TIMEOUT = 600
+# Keep the per-media create_hls lock longer than the subprocess timeout so a
+# valid near-timeout run can still save and clean up while holding its token.
+HLS_LOCK_TIMEOUT = MP4HLS_SUBPROCESS_TIMEOUT + 120
+HLS_PENDING_RETRY_TIMEOUT = HLS_LOCK_TIMEOUT * 2
+# A subprocess timeout is often deterministic (input too large for the ceiling).
+# Retry it a bounded number of times with a delay instead of the immediate
+# overlap retry used for lock contention, so a bad input cannot loop a worker
+# for MP4HLS_SUBPROCESS_TIMEOUT seconds indefinitely.
+HLS_TIMEOUT_MAX_RETRIES = 2
+HLS_TIMEOUT_RETRY_DELAY = 60
+HLS_TIMEOUT_RETRY_KEY_TIMEOUT = HLS_PENDING_RETRY_TIMEOUT
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 
@@ -759,13 +772,29 @@ def create_hls(friendly_token):
         return False
 
     p = media.uid.hex
-    output_dir = os.path.join(settings.HLS_DIR, p)
+    uid_dir = os.path.join(settings.HLS_DIR, p)
     encodings = media.encodings.filter(profile__extension="mp4", status="success", chunk=False, profile__codec="h264")
-    if encodings:
-        existing_output_dir = None
-        if os.path.exists(output_dir):
-            existing_output_dir = output_dir
-            output_dir = os.path.join(settings.HLS_DIR, p + produce_friendly_token())
+    if not encodings:
+        return True
+
+    # Serialize regeneration per media: create_hls.delay fires once per
+    # successful h264 profile and again on encryption toggle, so overlapping
+    # runs for the same media are routine, not rare. Only the lock holder
+    # writes output, updates hls_file, and runs cleanup.
+    lock_key = f"create_hls_lock_{p}"
+    pending_key = f"create_hls_pending_{p}"
+    timeout_retry_key = f"create_hls_timeout_retries_{p}"
+    lock_token = produce_friendly_token()
+    if not cache.add(lock_key, lock_token, timeout=HLS_LOCK_TIMEOUT):
+        cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
+        logger.info("create_hls already running for media %s, queued follow-up run", friendly_token)
+        return True
+
+    try:
+        version = produce_friendly_token()
+        output_dir = os.path.join(uid_dir, version)
+        os.makedirs(output_dir, exist_ok=True)
+
         files = [f.media_file.path for f in encodings if f.media_file]
         encryption_flags = []
         if media.is_encrypted:
@@ -785,20 +814,92 @@ def create_hls(friendly_token):
             *encryption_flags,
             *files,
         ]
-        subprocess.run(cmd, capture_output=True)
-        if existing_output_dir:
-            # Replace old HLS output with new. Use shutil instead of
-            # `cp -rT` which is GNU-only and fails silently on macOS.
-            shutil.rmtree(existing_output_dir)
-            shutil.move(output_dir, existing_output_dir)
-            output_dir = existing_output_dir
-        pp = os.path.join(output_dir, "master.m3u8")
-        if os.path.exists(pp):
-            if media.hls_file != pp:
-                media.hls_file = pp
-                media.save(update_fields=["hls_file"])
+        try:
+            result = subprocess.run(cmd, capture_output=True, timeout=MP4HLS_SUBPROCESS_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            logger.error("mp4hls timed out for media %s, discarding partial output", friendly_token)
+            shutil.rmtree(output_dir, ignore_errors=True)
+            # Timeouts are usually deterministic, so bound the retries and delay
+            # them instead of the immediate overlap retry used for lock
+            # contention. This avoids looping a worker for
+            # MP4HLS_SUBPROCESS_TIMEOUT seconds on an input that never fits.
+            attempts = (cache.get(timeout_retry_key) or 0) + 1
+            if attempts <= HLS_TIMEOUT_MAX_RETRIES:
+                cache.set(timeout_retry_key, attempts, timeout=HLS_TIMEOUT_RETRY_KEY_TIMEOUT)
+                logger.info(
+                    "scheduling bounded timeout retry %s/%s for media %s in %ss",
+                    attempts,
+                    HLS_TIMEOUT_MAX_RETRIES,
+                    friendly_token,
+                    HLS_TIMEOUT_RETRY_DELAY,
+                )
+                create_hls.apply_async(args=[friendly_token], countdown=HLS_TIMEOUT_RETRY_DELAY)
             else:
-                schedule_refresh_media_storage_usage(media.id)
+                cache.delete(timeout_retry_key)
+                logger.error(
+                    "mp4hls timed out %s times for media %s, giving up and preserving last known-good hls_file",
+                    HLS_TIMEOUT_MAX_RETRIES,
+                    friendly_token,
+                )
+            return True
+
+        if result.returncode != 0:
+            stderr = result.stderr.decode("utf-8", errors="replace") if result.stderr else ""
+            logger.error(
+                "mp4hls failed for media %s with return code %s, discarding partial output: %s",
+                friendly_token,
+                result.returncode,
+                stderr,
+            )
+            shutil.rmtree(output_dir, ignore_errors=True)
+            return True
+
+        pp = os.path.join(output_dir, "master.m3u8")
+        if not os.path.exists(pp):
+            logger.error("mp4hls produced no master.m3u8 for media %s, discarding partial output", friendly_token)
+            shutil.rmtree(output_dir, ignore_errors=True)
+            return True
+
+        if cache.get(lock_key) != lock_token:
+            logger.warning("create_hls lock expired for media %s, discarding stale output", friendly_token)
+            shutil.rmtree(output_dir, ignore_errors=True)
+            cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
+            return True
+
+        # New URLs every regeneration: hls_file always changes, so the
+        # post_save signal on Media always fires the storage usage refresh.
+        media.hls_file = pp
+        media.save(update_fields=["hls_file"])
+
+        # Remove stale output: never delete the directory hls_file currently
+        # references (guards against a concurrently-committed newer run),
+        # but clear every other version directory plus legacy flat siblings.
+        current_dir = os.path.dirname(media.hls_file)
+        if os.path.isdir(uid_dir):
+            for entry in os.listdir(uid_dir):
+                entry_path = os.path.join(uid_dir, entry)
+                if entry_path == current_dir:
+                    continue
+                if os.path.isdir(entry_path):
+                    shutil.rmtree(entry_path, ignore_errors=True)
+                else:
+                    try:
+                        os.remove(entry_path)
+                    except OSError:
+                        pass
+
+        # A successful regeneration clears any prior timeout backoff so a media
+        # that once timed out (e.g. transient load) starts fresh next time.
+        cache.delete(timeout_retry_key)
+    finally:
+        released_lock = False
+        if cache.get(lock_key) == lock_token:
+            cache.delete(lock_key)
+            released_lock = True
+        if cache.get(pending_key) and (released_lock or cache.get(lock_key) is None):
+            cache.delete(pending_key)
+            create_hls.apply_async(args=[friendly_token])
+
     return True
 
 
