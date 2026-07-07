@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("files", "0030_media_metadata_saved_at"),
+        ("files", "0031_playlist_curator_note"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
