@@ -7,7 +7,7 @@ import { PROFILE_QUERY_KEYS } from '../queryClient';
 // follow `next` links until the catalog is fully loaded.
 const MAX_PAGES = 20;
 
-async function fetchAllPages(url, signal) {
+export async function fetchAllPages(url, signal) {
 	const results = [];
 	let nextUrl = url;
 	let pageCount = 0;
@@ -23,11 +23,9 @@ async function fetchAllPages(url, signal) {
 		pageCount += 1;
 	}
 
-	if (nextUrl) {
-		throw new Error(`Media catalog exceeded ${MAX_PAGES}-page limit; results would be incomplete.`);
-	}
-
-	return results;
+	// Hitting the page cap on a prolific author should not blank the whole tab.
+	// Return the partial catalog and flag the truncation so the UI can say so.
+	return { results, truncated: Boolean(nextUrl) };
 }
 
 export function useAuthorMedia(username) {

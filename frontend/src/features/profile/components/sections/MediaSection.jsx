@@ -5,7 +5,7 @@ import { MediaGrid } from '../MediaGrid';
 
 export function MediaSection({ author }) {
 	const { data, isLoading, isError } = useAuthorMedia(author.username);
-	const items = normalizeMediaList(data);
+	const items = normalizeMediaList(data?.results);
 
 	if (isLoading) {
 		return <div className="h-64 animate-pulse rounded-xl bg-bg-skeleton" aria-label="Loading films" />;
@@ -16,5 +16,10 @@ export function MediaSection({ author }) {
 	if (!items.length) {
 		return <Text className="text-text-muted">No films uploaded yet.</Text>;
 	}
-	return <MediaGrid items={items} authorDisplay="hide" />;
+	return (
+		<div className="flex flex-col gap-4">
+			{data?.truncated && <Text className="text-text-muted">Showing the first {items.length} films.</Text>}
+			<MediaGrid items={items} authorDisplay="hide" />
+		</div>
+	);
 }
