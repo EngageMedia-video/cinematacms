@@ -20,8 +20,11 @@ from rest_framework.views import APIView
 
 from cms.custom_pagination import SmallPreviewPagination
 from cms.permissions import IsUserOrManager
+from cms.ui_variant import resolve_template
 from files.lists import video_countries
 from files.methods import is_curator, is_mediacms_editor, is_mediacms_manager
+from files.models import CommunityImpact
+from files.serializers import CommunityImpactSerializer
 
 from .forms import ChannelForm, UserForm
 from .models import Channel, User
@@ -36,67 +39,108 @@ def get_user(username):
         return None
 
 
-def view_user(request, username):
-    context = {}
+def _profile_context(request, user, active_tab):
+    can_edit = bool(user == request.user or is_mediacms_manager(request.user))
+    can_delete = bool(user == request.user or is_mediacms_manager(request.user))
+    serialized_user = dict(UserDetailSerializer(user, context={"request": request}).data)
+    serialized_user.update(
+        {
+            "is_owner": bool(request.user.is_authenticated and user == request.user),
+            "can_edit": can_edit,
+            "can_delete": can_delete,
+            "playlist_count": user.playlists.count(),
+            "active_tab": active_tab,
+        }
+    )
+    return {
+        "user": user,
+        "active_tab": active_tab,
+        "CAN_EDIT": can_edit,
+        "CAN_DELETE": can_delete,
+        "SHOW_CONTACT_FORM": bool(user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)),
+        "PROFILE_INITIAL_DATA": serialized_user,
+    }
+
+
+def _render_profile(request, user, active_tab, legacy_template):
+    template = resolve_template(request, "profile")
+    if request.ui_variant == "legacy":
+        template = legacy_template
+    return render(request, template, _profile_context(request, user, active_tab))
+
+
+def _get_profile_user_or_redirect(username):
     user = get_user(username=username)
     if not user:
-        return HttpResponseRedirect("/members")
-    context["user"] = user
-    context["CAN_EDIT"] = bool(user and user == request.user or is_mediacms_manager(request.user))
-    context["CAN_DELETE"] = bool(is_mediacms_manager(request.user))
-    context["SHOW_CONTACT_FORM"] = bool(
-        user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)
-    )
+        return None, HttpResponseRedirect("/members")
+    return user, None
 
-    return render(request, "cms/user.html", context)
+
+def view_user(request, username):
+    user, redirect_response = _get_profile_user_or_redirect(username)
+    if redirect_response:
+        return redirect_response
+    return _render_profile(request, user, "about", "cms/user.html")
 
 
 def view_user_media(request, username):
-    context = {}
-    user = get_user(username=username)
-    if not user:
-        return HttpResponseRedirect("/members")
-
-    context["user"] = user
-    context["CAN_EDIT"] = bool(user and user == request.user or is_mediacms_manager(request.user))
-    context["CAN_DELETE"] = bool(is_mediacms_manager(request.user))
-    context["SHOW_CONTACT_FORM"] = bool(
-        user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)
-    )
-
-    return render(request, "cms/user_media.html", context)
+    user, redirect_response = _get_profile_user_or_redirect(username)
+    if redirect_response:
+        return redirect_response
+    return _render_profile(request, user, "media", "cms/user_media.html")
 
 
 def view_user_playlists(request, username):
-    context = {}
-    user = get_user(username=username)
-    if not user:
-        return HttpResponseRedirect("/members")
-
-    context["user"] = user
-    context["CAN_EDIT"] = bool(user and user == request.user or is_mediacms_manager(request.user))
-    context["CAN_DELETE"] = bool(is_mediacms_manager(request.user))
-    context["SHOW_CONTACT_FORM"] = bool(
-        user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)
-    )
-
-    return render(request, "cms/user_playlists.html", context)
+    user, redirect_response = _get_profile_user_or_redirect(username)
+    if redirect_response:
+        return redirect_response
+    return _render_profile(request, user, "playlists", "cms/user_playlists.html")
 
 
 def view_user_about(request, username):
-    context = {}
-    user = get_user(username=username)
-    if not user:
-        return HttpResponseRedirect("/members")
+    user, redirect_response = _get_profile_user_or_redirect(username)
+    if redirect_response:
+        return redirect_response
+    return _render_profile(request, user, "about", "cms/user_about.html")
 
-    context["user"] = user
-    context["CAN_EDIT"] = bool(user and user == request.user or is_mediacms_manager(request.user))
-    context["CAN_DELETE"] = bool(is_mediacms_manager(request.user))
-    context["SHOW_CONTACT_FORM"] = bool(
-        user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)
-    )
 
-    return render(request, "cms/user_about.html", context)
+def _owner_profile_tab(request, username, active_tab, legacy_redirect=None):
+    user, redirect_response = _get_profile_user_or_redirect(username)
+    if redirect_response:
+        return redirect_response
+    if not request.user.is_authenticated or request.user != user:
+        return HttpResponseRedirect(user.get_absolute_url())
+
+    template = resolve_template(request, "profile")
+    if request.ui_variant == "legacy":
+        return HttpResponseRedirect(legacy_redirect or user.get_absolute_url())
+    return render(request, template, _profile_context(request, user, active_tab))
+
+
+def view_user_manage_uploads(request, username):
+    return _owner_profile_tab(request, username, "manage-uploads", "/manage/uploads")
+
+
+def view_user_notes(request, username):
+    return _owner_profile_tab(request, username, "notes")
+
+
+def view_user_history(request, username):
+    return _owner_profile_tab(request, username, "history", "/history")
+
+
+def view_user_liked(request, username):
+    return _owner_profile_tab(request, username, "liked", "/liked")
+
+
+def view_user_impact(request, username):
+    user, redirect_response = _get_profile_user_or_redirect(username)
+    if redirect_response:
+        return redirect_response
+    template = resolve_template(request, "profile")
+    if request.ui_variant == "legacy":
+        return HttpResponseRedirect(user.get_absolute_url())
+    return render(request, template, _profile_context(request, user, "impact"))
 
 
 @login_required
@@ -377,3 +421,35 @@ class UserDetail(APIView):
 
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserCommunityImpactList(APIView):
+    permission_classes = (permissions.AllowAny,)
+    category_limit = 50
+
+    def get(self, request, username):
+        user = get_user(username)
+        if not user:
+            return Response({"detail": "user does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        entries = CommunityImpact.objects.filter(
+            media__user=user,
+            media__state="public",
+            media__is_reviewed=True,
+            media__encoding_status="success",
+            status=CommunityImpact.APPROVED,
+        )
+        grouped = {}
+        for category, _label in CommunityImpact.CATEGORY_CHOICES:
+            category_entries = entries.filter(category=category)
+            grouped[category] = {
+                "entries": CommunityImpactSerializer(
+                    category_entries.select_related("media", "user").order_by("-event_date", "-add_date")[
+                        : self.category_limit
+                    ],
+                    many=True,
+                    context={"request": request},
+                ).data,
+                "totalCount": category_entries.count(),
+            }
+        return Response(grouped)

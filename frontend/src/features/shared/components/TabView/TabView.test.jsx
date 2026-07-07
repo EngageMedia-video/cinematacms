@@ -31,6 +31,21 @@ describe('TabView', () => {
 		expect(screen.getByRole('tab', { name: 'Single Film Upload' })).toHaveAttribute('aria-selected', 'true');
 	});
 
+	it('renders href-backed content as multi-page navigation links', () => {
+		render(
+			<TabView selectedTab="about" aria-label="Profile sections" tabMode="wrap">
+				<TabContent value="about" title="About" href="/user/jen" />
+				<TabContent value="media" title="Jen's Media" href="/user/jen/media" />
+			</TabView>
+		);
+
+		expect(screen.getByRole('navigation', { name: 'Profile sections' })).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute('aria-current', 'page');
+		expect(screen.getByRole('link', { name: "Jen's Media" })).toHaveAttribute('href', '/user/jen/media');
+		expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+		expect(screen.queryByRole('tabpanel')).not.toBeInTheDocument();
+	});
+
 	it('switches panels in the TabContent API when a tab is clicked', async () => {
 		const user = userEvent.setup();
 

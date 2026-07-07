@@ -1056,6 +1056,7 @@ body {
 	--text-on-primary: var(--cinemata-white);
 	--text-on-chrome: var(--cinemata-strait-blue-50);
 	--text-on-chrome-muted: var(--cinemata-pacific-deep-300);
+	--text-profile-section-icon: var(--cinemata-pacific-deep-200);
 	--text-link: var(--cinemata-sunset-horizon-700);
 	--text-link-hover: var(--cinemata-sunset-horizon-800);
 	--text-accent: var(--cinemata-sunset-horizon-400p);
@@ -1142,6 +1143,7 @@ body.dark_theme {
 	--text-description: var(--cinemata-pacific-deep-300);
 	--text-subtle: var(--cinemata-neutral-400);
 	--text-disabled: var(--cinemata-pacific-deep-400);
+	--text-profile-section-icon: var(--cinemata-pacific-deep-200);
 	--text-inverse: var(--cinemata-pacific-deep-900);
 	--text-link: var(--cinemata-sunset-horizon-200);
 	--text-link-hover: var(--cinemata-sunset-horizon-100);
@@ -1237,6 +1239,7 @@ body.dark_theme {
 	--color-text-on-primary: var(--text-on-primary);
 	--color-text-on-chrome: var(--text-on-chrome);
 	--color-text-on-chrome-muted: var(--text-on-chrome-muted);
+	--color-text-profile-section-icon: var(--text-profile-section-icon);
 	--color-text-link: var(--text-link);
 	--color-text-link-hover: var(--text-link-hover);
 	--color-text-accent: var(--text-accent);

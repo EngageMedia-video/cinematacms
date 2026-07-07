@@ -22,7 +22,10 @@ class UserSerializer(serializers.ModelSerializer):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url(api=True))
 
     def get_thumbnail_url(self, obj):
-        return self.context["request"].build_absolute_uri(obj.thumbnail_url())
+        thumbnail_url = obj.thumbnail_url()
+        if not thumbnail_url:
+            return None
+        return self.context["request"].build_absolute_uri(thumbnail_url)
 
     def get_location(self, obj):
         # If user has custom location text, use that
@@ -71,6 +74,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     api_url = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
+    is_trusted = serializers.BooleanField(source="advancedUser", read_only=True)
 
     def get_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
@@ -79,11 +83,22 @@ class UserDetailSerializer(serializers.ModelSerializer):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url(api=True))
 
     def get_thumbnail_url(self, obj):
-        return self.context["request"].build_absolute_uri(obj.thumbnail_url())
+        thumbnail_url = obj.thumbnail_url()
+        if not thumbnail_url:
+            return None
+        return self.context["request"].build_absolute_uri(thumbnail_url)
 
     class Meta:
         model = User
-        read_only_fields = ("date_added", "is_featured", "uid", "username")
+        read_only_fields = (
+            "date_added",
+            "is_featured",
+            "uid",
+            "username",
+            "is_manager",
+            "is_editor",
+            "media_count",
+        )
         fields = (
             "description",
             "date_added",
@@ -93,10 +108,19 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "banner_thumbnail_url",
             "url",
             "username",
+            "is_manager",
+            "is_editor",
+            "is_trusted",
+            "email_is_verified",
+            "media_count",
             "media_info",
             "api_url",
             "edit_url",
             "default_channel_edit_url",
+            "institution",
+            "title",
+            "location",
+            "location_country",
             "home_page",
             "social_media_links",
             "location_info",

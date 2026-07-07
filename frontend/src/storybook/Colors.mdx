@@ -9,6 +9,13 @@ import { Meta, Title, Subtitle, Heading } from '@storybook/addon-docs/blocks';
 
 The modern track uses **role-based semantic tokens** as the preferred way to apply color. Each token resolves to a different raw `cinemata-*` palette step in light vs dark theme, so components don't need `dark:` variants for theme awareness. Components reach for the raw palette only for genuine one-offs (carousel indicator dots, etc.).
 
+The modern profile page is a representative composed surface: its banner,
+header, multi-page tab navigation, cards, loading states, and focus rings use
+the existing `bg/*`, `text/*`, `border/*`, and `ring/focus` roles. It introduces
+one profile-specific token, `text-text-profile-section-icon`, for the section
+emblem glyphs (see Text tokens below); everything else routes through shared
+roles rather than new aliases.
+
 This page is the working reference for the token catalogue. For the underlying design rationale, the body-scoped wiring pattern, and the full architectural overview (palette, legacy aliases, modern tokens), see `docs/modern-track-color-system.md` in the repo root.
 
 <Heading>Text tokens</Heading>
@@ -25,6 +32,7 @@ This page is the working reference for the token catalogue. For the underlying d
 - **`text-text-on-primary`** — text on `bg-bg-primary` and `bg-bg-secondary` buttons. Constant `white`.
 - **`text-text-on-chrome`** — primary text on always-dark chrome surfaces (topbar, search). Constant `strait-blue-50`.
 - **`text-text-on-chrome-muted`** — muted text on chrome (placeholders inside dropdowns). Constant `pacific-deep-300`.
+- **`text-text-profile-section-icon`** — foreground for the distinct profile section emblem glyphs. Constant `pacific-deep-200`.
 - **`text-text-on-emblem-green`** — icon foreground on `bg-bg-emblem-green` (Community Impact: saves). Constant `coral-reef-600`.
 - **`text-text-on-dialog-close`** — icon on the filled `bg-bg-dialog-close` control. Constant `pacific-deep-900`.
 - **`text-text-link`** — inline links, "View all" affordances. Light: `sunset-horizon-700` / Dark: `sunset-horizon-200`
