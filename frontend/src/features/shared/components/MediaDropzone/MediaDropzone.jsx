@@ -1,5 +1,5 @@
 import { cn } from '../../utils/classNames';
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Button } from '../Button';
 import { Icon } from '../Icon';
 
@@ -26,8 +26,20 @@ export function MediaDropzone({
 	const resolvedInputId = inputId ?? generatedInputId;
 	const inputRef = useRef(null);
 	const dragDepthRef = useRef(0);
+	const dropAnimationTimeoutRef = useRef(null);
 	const [isDragging, setIsDragging] = useState(false);
 	const [isDropAnimating, setIsDropAnimating] = useState(false);
+
+	// Clear any pending drop-animation timer on unmount so its deferred
+	// setIsDropAnimating(false) can't fire after the component (and, in tests,
+	// the jsdom environment) is gone.
+	useEffect(() => {
+		return () => {
+			if (dropAnimationTimeoutRef.current) {
+				clearTimeout(dropAnimationTimeoutRef.current);
+			}
+		};
+	}, []);
 
 	function emitFiles(files) {
 		onFilesSelected?.(files);
@@ -83,7 +95,13 @@ export function MediaDropzone({
 		setIsDragging(false);
 		setIsDropAnimating(true);
 		emitFiles(fileListToArray(event.dataTransfer.files));
-		window.setTimeout(() => setIsDropAnimating(false), 220);
+		if (dropAnimationTimeoutRef.current) {
+			clearTimeout(dropAnimationTimeoutRef.current);
+		}
+		dropAnimationTimeoutRef.current = window.setTimeout(() => {
+			dropAnimationTimeoutRef.current = null;
+			setIsDropAnimating(false);
+		}, 220);
 	}
 
 	return (

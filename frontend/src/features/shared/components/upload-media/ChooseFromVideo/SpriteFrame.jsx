@@ -43,6 +43,13 @@ export function SpriteFrame({
 	// same content. Derive both from the source aspect ratio instead of a rounded constant.
 	const scale = width / SPRITE_SOURCE_WIDTH;
 	const scaledFrameHeight = SPRITE_SOURCE_HEIGHT * scale;
+	// Pin the background height to `rows * scaledFrameHeight` instead of `auto`. `auto` scales
+	// the sheet by its REAL natural height, but the offset math above assumes every row is
+	// exactly SPRITE_SOURCE_HEIGHT tall. If the last extracted tile came back a few pixels off
+	// (a frame grabbed near EOF can), the sheet height is not a clean rows*90 and only the LAST
+	// frame drifts — it renders resized. Forcing an explicit height puts every row (last one
+	// included) on the same fixed grid, independent of the JPEG's trailing-row height.
+	const safeRows = Math.max(1, Number(rowsInSheet) || Number(index) + 1 || 1);
 
 	return (
 		<span
@@ -59,7 +66,7 @@ export function SpriteFrame({
 				height: scaledFrameHeight,
 				backgroundImage: `url("${spritesUrl}")`,
 				backgroundPosition: `0 -${index * scaledFrameHeight}px`,
-				backgroundSize: `${width}px auto`,
+				backgroundSize: `${width}px ${safeRows * scaledFrameHeight}px`,
 			}}
 		/>
 	);

@@ -1536,7 +1536,7 @@ class MediaList(APIView):
         serializer = MediaSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             media_file = request.data["media_file"]
-            serializer.save(user=request.user, media_file=media_file)
+            serializer.save(user=request.user, media_file=media_file, metadata_saved_at=timezone.now())
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1707,6 +1707,28 @@ class MediaDetail(APIView):
         media = self.get_object(friendly_token)
         if isinstance(media, Response):
             return media
+        media.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MediaAbandon(APIView):
+    """Delete an owned upload only if its metadata form was never saved."""
+
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request, friendly_token, format=None):
+        friendly_token = clean_friendly_token(friendly_token)
+        try:
+            media = Media.objects.select_related("user").get(friendly_token=friendly_token)
+        except Media.DoesNotExist:
+            return Response({"detail": "media file does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        if media.user_id != request.user.id:
+            return Response({"detail": "not allowed"}, status=status.HTTP_403_FORBIDDEN)
+
+        if media.metadata_saved_at is not None:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
         media.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

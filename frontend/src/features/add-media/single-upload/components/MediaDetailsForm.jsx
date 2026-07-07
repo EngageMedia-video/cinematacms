@@ -23,6 +23,7 @@ export function MediaDetailsForm({
 	mediaLanguages = [],
 	topics = [],
 	onPreviewChange,
+	onSubmitSuccess,
 	uploadedMedia = null,
 }) {
 	const formRef = useRef(null);
@@ -150,6 +151,7 @@ export function MediaDetailsForm({
 			},
 			{
 				onSuccess: (data) => {
+					onSubmitSuccess?.(uploadedMedia?.friendlyToken);
 					window.location.assign(data.url);
 				},
 				onError: (error) => {

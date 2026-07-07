@@ -1,4 +1,5 @@
 from django.template.defaultfilters import slugify
+from django.utils import timezone
 
 from .models import Category, ContentSensitivity, License, Tag, Topic
 
@@ -83,6 +84,7 @@ def apply_media_draft(media, metadata, user):
     # Drafts are always kept private and flagged out of the admin review queue.
     media.state = "private"
     media.is_draft = True
+    media.metadata_saved_at = timezone.now()
     media.save()
 
     for field, model in DRAFT_M2M_MODELS.items():

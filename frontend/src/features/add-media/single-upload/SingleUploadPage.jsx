@@ -19,6 +19,7 @@ function SingleUploadContent({
 	maxFiles = 1,
 	onFilesSelected,
 	onPreviewChange,
+	onSubmitSuccess,
 	showUploader = false,
 	uploadedMedia = null,
 	uploader,
@@ -127,6 +128,7 @@ function SingleUploadContent({
 					topics={topics}
 					uploadedMedia={uploadedMedia}
 					onPreviewChange={handleFormPreviewChange}
+					onSubmitSuccess={onSubmitSuccess}
 				/>
 			) : null}
 		</div>

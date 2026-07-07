@@ -136,7 +136,7 @@ The instructions below have been tested on Ubuntu 22.04. Make sure no other serv
 ```bash
 cd /home
 mkdir cinemata && cd cinemata
-git clone -b v2.1.8 https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
+git clone -b v3.1.0 https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
 chmod +x install.sh
 ./install.sh
 ```
@@ -163,7 +163,7 @@ The installer runs database migrations and seeds django-waffle feature flag swit
 - Comprehensive developer documentation and setup guides (Ubuntu, macOS, Windows, Docker)
 - Virtual developer showcase and learning session
 
-### 🔄 Milestone 2: August 2025 – June 2026 (Current)
+### ✅ Milestone 2: August 2025 – June 2026 (Current)
 
 Active development focus through the Cinemata Community Assembly in June 2026.
 
@@ -186,7 +186,7 @@ Active development focus through the Cinemata Community Assembly in June 2026.
 - Delivered in partnership with [Kumquat](https://kumquat.cc) via OTF UX & Discovery Lab grant
 - Privacy-first design system; responsive desktop and mobile layouts
 
-### 📋 Milestone 3: Post-June 2026
+### 📋 Milestone 3: Post-July 2026
 
 Scope to be confirmed based on sustainability plan and community input at the June 2026 Assembly.
 

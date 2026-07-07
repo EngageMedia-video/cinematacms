@@ -56,4 +56,26 @@ describe('MediaDropzone', () => {
 
 		expect(handleFilesSelected).toHaveBeenCalledWith([file]);
 	});
+
+	it('clears the pending drop-animation timer on unmount so it cannot fire afterwards', () => {
+		vi.useFakeTimers();
+		try {
+			const { container, unmount } = render(<MediaDropzone onFilesSelected={vi.fn()} />);
+			const dropzone = container.querySelector('[data-dropzone]');
+			const file = new File(['video'], 'trailer.mp4', { type: 'video/mp4' });
+
+			fireEvent.drop(dropzone, { dataTransfer: { files: [file] } });
+
+			const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
+			unmount();
+			expect(clearSpy).toHaveBeenCalled();
+
+			// Advancing past the 220ms delay must not run any leftover callback
+			// (which would try to setState on an unmounted component).
+			expect(() => vi.advanceTimersByTime(300)).not.toThrow();
+			expect(vi.getTimerCount()).toBe(0);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
 });
