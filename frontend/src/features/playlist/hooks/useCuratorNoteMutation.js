@@ -7,14 +7,12 @@ export function useCuratorNoteMutation(token, config) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async ({ playlist, curatorNote }) => {
+		mutationFn: async ({ curatorNote }) => {
+			// Partial update: only the note travels, so concurrent title or
+			// description edits elsewhere are never stomped.
 			const response = await apiFetch(getPlaylistApiUrl(config, token), {
 				method: 'POST',
-				body: {
-					title: playlist.title,
-					description: playlist.description || '',
-					curator_note: curatorNote,
-				},
+				body: { curator_note: curatorNote },
 			});
 
 			if (!response.ok) {

@@ -19,7 +19,7 @@ export function CuratorNoteDialog({ config, playlist, token }) {
 	function handleSubmit(event) {
 		event.preventDefault();
 		mutation.mutate(
-			{ playlist, curatorNote: note },
+			{ curatorNote: note },
 			{
 				onSuccess: () => {
 					setOpen(false);

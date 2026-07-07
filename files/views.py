@@ -2368,9 +2368,12 @@ class PlaylistDetail(APIView):
         playlist = self.get_playlist(friendly_token)
         if isinstance(playlist, Response):
             return playlist
-        serializer = PlaylistDetailSerializer(playlist, data=request.data, context={"request": request})
+        # Partial update that keeps the existing owner: IsUserOrEditor also
+        # allows editors/managers to write, and reassigning user on save would
+        # silently transfer ownership to them.
+        serializer = PlaylistDetailSerializer(playlist, data=request.data, partial=True, context={"request": request})
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

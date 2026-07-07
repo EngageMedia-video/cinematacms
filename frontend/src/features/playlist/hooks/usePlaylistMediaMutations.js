@@ -4,6 +4,11 @@ import { apiFetch } from '../../shared/utils/api';
 import { getPlaylistApiUrl, moveItem } from '../utils/playlist';
 import { playlistQueryKey } from './usePlaylistQuery';
 
+// Follow-up: the API only supports per-item `PUT type=ordering`, so a
+// long-distance move still costs one sequential request per shifted row and is
+// not atomic server-side (matches legacy behavior; the onSettled refetch
+// reconciles the UI). A batch endpoint that accepts the full ordered token
+// list in one transaction would fix both.
 async function updateMediaOrder(config, token, media, previousMedia) {
 	const playlistUrl = getPlaylistApiUrl(config, token);
 

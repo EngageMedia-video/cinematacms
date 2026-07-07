@@ -40,6 +40,36 @@ class PlaylistDetailCuratorNoteTests(TestCase):
         self.playlist.refresh_from_db()
         self.assertEqual(self.playlist.curator_note, "Updated editorial framing")
 
+    def test_partial_note_update_keeps_title_and_description(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(
+            f"/api/v1/playlists/{self.playlist.friendly_token}",
+            {"curator_note": "Note-only update"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.playlist.refresh_from_db()
+        self.assertEqual(self.playlist.curator_note, "Note-only update")
+        self.assertEqual(self.playlist.title, "Curated Shorts")
+        self.assertEqual(self.playlist.description, "A program note")
+
+    def test_editor_update_does_not_transfer_ownership(self):
+        editor = create_test_user(username="playlist_editor", is_editor=True)
+        self.client.force_login(editor)
+
+        response = self.client.post(
+            f"/api/v1/playlists/{self.playlist.friendly_token}",
+            {"curator_note": "Editor note"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.playlist.refresh_from_db()
+        self.assertEqual(self.playlist.curator_note, "Editor note")
+        self.assertEqual(self.playlist.user, self.user)
+
     def test_non_owner_cannot_update_curator_note(self):
         other_user = create_test_user(username="playlist_visitor")
         self.client.force_login(other_user)

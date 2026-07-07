@@ -22,10 +22,15 @@ export function FilmList({ config, isOwner, media = [], onShare, playlistToken }
 			handle: '.playlist-drag-handle',
 			chosenClass: 'bg-bg-surface-raised',
 			onEnd: (event) => {
-				if (event.oldIndex === event.newIndex) {
+				const { from, item, newIndex, oldIndex } = event;
+				if (oldIndex === newIndex) {
 					return;
 				}
-				move(orderedMedia, event.oldIndex, event.newIndex);
+				// Revert SortableJS's DOM move so React stays the owner of this
+				// list; the optimistic cache update below performs the reorder.
+				from.removeChild(item);
+				from.insertBefore(item, from.children[oldIndex] ?? null);
+				move(orderedMedia, oldIndex, newIndex);
 			},
 		});
 

@@ -51,7 +51,6 @@ function FilmRowMenu({ index, isOwner, media, mediaCount, mediaUrl, onMove, onRe
 				type="button"
 				aria-label={`More actions for ${title}`}
 				aria-expanded={open}
-				aria-haspopup="menu"
 				onClick={() => setOpen((value) => !value)}
 				className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-ds-4 border border-transparent bg-transparent text-text-secondary hover:bg-bg-surface-hover hover:text-text-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
 			>
@@ -62,14 +61,14 @@ function FilmRowMenu({ index, isOwner, media, mediaCount, mediaUrl, onMove, onRe
 
 			{open ? (
 				<div
-					role="menu"
+					role="group"
+					aria-label={`Actions for ${title}`}
 					className="absolute right-0 z-20 mt-2 flex w-[220px] flex-col overflow-hidden rounded-ds-8 border border-border-strong-constant bg-bg-surface py-2 shadow-2xl"
 				>
 					{isOwner ? (
 						<>
 							<button
 								type="button"
-								role="menuitem"
 								disabled={index === 0}
 								onClick={() => run(() => onMove(index, index - 1))}
 								className="min-h-11 cursor-pointer border-0 bg-transparent px-4 text-left text-text-strong hover:bg-bg-surface-hover focus:bg-bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:text-text-disabled body-body-14-regular"
@@ -78,7 +77,6 @@ function FilmRowMenu({ index, isOwner, media, mediaCount, mediaUrl, onMove, onRe
 							</button>
 							<button
 								type="button"
-								role="menuitem"
 								disabled={index === mediaCount - 1}
 								onClick={() => run(() => onMove(index, index + 1))}
 								className="min-h-11 cursor-pointer border-0 bg-transparent px-4 text-left text-text-strong hover:bg-bg-surface-hover focus:bg-bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:text-text-disabled body-body-14-regular"
@@ -87,7 +85,6 @@ function FilmRowMenu({ index, isOwner, media, mediaCount, mediaUrl, onMove, onRe
 							</button>
 							<button
 								type="button"
-								role="menuitem"
 								onClick={() => run(() => onRemove(media.friendly_token))}
 								className="min-h-11 cursor-pointer border-0 bg-transparent px-4 text-left text-text-danger hover:bg-bg-danger-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-14-regular"
 							>
@@ -97,14 +94,12 @@ function FilmRowMenu({ index, isOwner, media, mediaCount, mediaUrl, onMove, onRe
 					) : null}
 					<button
 						type="button"
-						role="menuitem"
 						onClick={() => run(() => onShare(mediaUrl))}
 						className="min-h-11 cursor-pointer border-0 bg-transparent px-4 text-left text-text-strong hover:bg-bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-14-regular"
 					>
 						Share video
 					</button>
 					<a
-						role="menuitem"
 						href={mediaUrl}
 						className="min-h-11 px-4 py-3 text-text-strong no-underline hover:bg-bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-14-regular"
 					>
