@@ -223,6 +223,20 @@ describe('SingleUploadPage', () => {
 		expect(passwordInput).toHaveAttribute('type', 'password');
 	});
 
+	it('flags a restricted password shorter than the minimum while typing', async () => {
+		const user = userEvent.setup();
+		renderUploadedPage({ canPublishDirectly: true });
+
+		await user.click(screen.getByLabelText('Restricted'));
+		await user.type(screen.getByLabelText('Enter Password'), 'short');
+
+		expect(screen.getByText('Password must be at least 8 characters.')).toBeInTheDocument();
+
+		await user.type(screen.getByLabelText('Enter Password'), 'password');
+
+		expect(screen.queryByText('Password must be at least 8 characters.')).not.toBeInTheDocument();
+	});
+
 	it('submits the details form through fetch and maps server field errors', async () => {
 		const user = userEvent.setup();
 		const fetchMock = vi.fn().mockResolvedValue({

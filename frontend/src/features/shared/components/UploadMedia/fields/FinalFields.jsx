@@ -4,6 +4,8 @@ import { CheckboxButton } from '../../CheckboxButton';
 import { RadioButton } from '../../RadioButton';
 import { DateChooserField, formatDMY } from '../../DateChooserField';
 import { Text } from '../../Text';
+import { minLength } from '../../../utils/validators';
+import { MEDIA_PASSWORD_MIN_LENGTH, MEDIA_PASSWORD_MIN_LENGTH_ERROR } from '../schema/mediaMetadataSchema';
 
 // Controlled final-setting fields shared by single upload and bulk per-file
 // metadata forms.
@@ -155,6 +157,7 @@ export function RestrictedPasswordField({
 			type={showPassword ? 'text' : 'password'}
 			value={password}
 			onChange={(event) => onPasswordChange?.(event.target.value)}
+			validate={minLength(MEDIA_PASSWORD_MIN_LENGTH, MEDIA_PASSWORD_MIN_LENGTH_ERROR)}
 			invalid={Boolean(error)}
 			helperText={error || ''}
 			autoComplete="new-password"
