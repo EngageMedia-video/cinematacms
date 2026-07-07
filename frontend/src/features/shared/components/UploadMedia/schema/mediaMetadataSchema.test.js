@@ -4,6 +4,8 @@ import {
 	hasErrors,
 	synopsisWordsRemaining,
 	SYNOPSIS_MAX_WORDS,
+	MEDIA_PASSWORD_MIN_LENGTH,
+	MEDIA_PASSWORD_MIN_LENGTH_ERROR,
 } from './mediaMetadataSchema';
 
 const validMetadata = {
@@ -71,6 +73,14 @@ describe('validateMetadata', () => {
 		expect(
 			validateMetadata({ ...validMetadata, state: 'restricted', password: 'secret12' }).password
 		).toBeUndefined();
+	});
+
+	it('requires restricted passwords to meet the minimum length', () => {
+		expect(validateMetadata({ ...validMetadata, state: 'restricted', password: 'short' }).password).toBe(
+			MEDIA_PASSWORD_MIN_LENGTH_ERROR
+		);
+		const exact = 'x'.repeat(MEDIA_PASSWORD_MIN_LENGTH);
+		expect(validateMetadata({ ...validMetadata, state: 'restricted', password: exact }).password).toBeUndefined();
 	});
 });
 

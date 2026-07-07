@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { MEDIA_PASSWORD_MIN_LENGTH, MEDIA_PASSWORD_MIN_LENGTH_ERROR } from '../../../shared/components/UploadMedia';
 import { maxWords, required, runValidators } from '../../../shared/utils/validators';
 import { useSubmitSingle } from '../hooks/useSubmitSingle';
 import useSingleUploadStore from '../useSingleUploadStore';
@@ -109,8 +110,12 @@ export function MediaDetailsForm({
 			nextErrors.topics = 'Select at least one topic';
 		}
 
-		if (singleUpload.mediaStatus === 'restricted' && !singleUpload.password) {
-			nextErrors.password = 'Password has to be set when state is Restricted.';
+		if (singleUpload.mediaStatus === 'restricted') {
+			if (!singleUpload.password) {
+				nextErrors.password = 'Password has to be set when state is Restricted.';
+			} else if (singleUpload.password.length < MEDIA_PASSWORD_MIN_LENGTH) {
+				nextErrors.password = MEDIA_PASSWORD_MIN_LENGTH_ERROR;
+			}
 		}
 
 		return nextErrors;

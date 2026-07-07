@@ -7,6 +7,12 @@
 
 export const SYNOPSIS_MAX_WORDS = 80;
 
+// Mirrors the server's MEDIA_PASSWORD_MIN_LENGTH setting (cms/settings.py):
+// MediaForm rejects restricted-media passwords shorter than this, so the
+// client must flag them before submit instead of failing the upload.
+export const MEDIA_PASSWORD_MIN_LENGTH = 8;
+export const MEDIA_PASSWORD_MIN_LENGTH_ERROR = `Password must be at least ${MEDIA_PASSWORD_MIN_LENGTH} characters.`;
+
 export function countSynopsisWords(text) {
 	const value = (text ?? '').trim();
 	if (!value) {
@@ -76,8 +82,12 @@ export function validateMetadata(metadata = {}) {
 		errors.website = 'Website should start with https://';
 	}
 
-	if (metadata.state === 'restricted' && isBlank(metadata.password)) {
-		errors.password = 'Password has to be set when state is Restricted.';
+	if (metadata.state === 'restricted') {
+		if (isBlank(metadata.password)) {
+			errors.password = 'Password has to be set when state is Restricted.';
+		} else if (String(metadata.password).length < MEDIA_PASSWORD_MIN_LENGTH) {
+			errors.password = MEDIA_PASSWORD_MIN_LENGTH_ERROR;
+		}
 	}
 
 	return errors;
