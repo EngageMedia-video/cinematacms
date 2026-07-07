@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { useTaxonomies } from '../../shared/components/upload-media';
+import { useTaxonomies } from '../../shared/components/UploadMedia';
 import { Card, Icon } from '../../shared/components';
 import { MediaDropzone } from '../../shared/components/MediaDropzone';
 import { Text } from '../../shared/components/Text';

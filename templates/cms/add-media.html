@@ -28,6 +28,7 @@
 		uploadMaxFilesNumber: {{ UPLOAD_MAX_FILES_NUMBER }},
 		uploadMaxSize: {{ UPLOAD_MAX_SIZE }},
 		allowedExtensions: {{ allowed_extensions|safe }},
+		defaultMediaStatus: "{{ default_media_status|escapejs }}",
 		canUploadMessage: "{{ can_upload_exp|escapejs }}",
 		uploadMediaUrl: "{% url 'upload_media' %}",
 		signupUrl: "{% url 'account_signup' %}",

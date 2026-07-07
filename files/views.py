@@ -59,6 +59,7 @@ from .helpers import (
     clean_query,
     cleanup_temp_upload_files,
     get_allowed_video_extensions,
+    get_default_state,
     produce_ffmpeg_commands,
     rm_file,
 )
@@ -671,6 +672,7 @@ def upload_media(request):
     context["max_bulk_files"] = max_bulk_upload_files(request.user)
     context["chunks_done_param"] = settings.CHUNKS_DONE_PARAM_NAME
     context["is_trusted_user"] = is_trusted_uploader(request.user)
+    context["default_media_status"] = get_default_state(request.user)
 
     # Get allowed video extensions from helper function
     video_extensions = get_allowed_video_extensions()

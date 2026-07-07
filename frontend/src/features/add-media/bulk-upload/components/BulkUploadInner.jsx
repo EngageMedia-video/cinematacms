@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTaxonomies, validateMetadata } from '../../../shared/components/upload-media';
+import { useTaxonomies, validateMetadata } from '../../../shared/components/UploadMedia';
 import { apiFetch } from '../../../shared/utils/api';
 import useBulkUploadStore, { UPLOAD_STATUS } from '../useBulkUploadStore';
 import { useBulkUploadConfig } from '../bulkUploadConfig';

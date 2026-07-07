@@ -1,7 +1,12 @@
 import useSingleUploadStore, { createDefaultSingleUploadState } from './useSingleUploadStore';
 
 beforeEach(() => {
+	window.MediaCMS = { addMediaPage: {} };
 	useSingleUploadStore.getState().reset();
+});
+
+afterEach(() => {
+	delete window.MediaCMS;
 });
 
 describe('useSingleUploadStore', () => {
@@ -15,6 +20,15 @@ describe('useSingleUploadStore', () => {
 		expect(state.thumbnailTime).toBeNull();
 		expect(state.selectedLicenseId).toBe('1');
 		expect(state.selectedLicenseFields).toEqual({ commercial: 'yes', derivatives: 'yes' });
+	});
+
+	it('uses the configured default media status', () => {
+		window.MediaCMS.addMediaPage.defaultMediaStatus = 'unlisted';
+
+		expect(createDefaultSingleUploadState().mediaStatus).toBe('unlisted');
+
+		useSingleUploadStore.getState().reset();
+		expect(useSingleUploadStore.getState().mediaStatus).toBe('unlisted');
 	});
 
 	it('keeps custom thumbnail upload and frame selection mutually exclusive', () => {

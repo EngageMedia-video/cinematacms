@@ -5,8 +5,8 @@ import { RadioButton } from '../../RadioButton';
 import { DateChooserField, formatDMY } from '../../DateChooserField';
 import { Text } from '../../Text';
 
-// Controlled twins of the single-upload FinalSettingsForm fields. Same widgets,
-// labels and copy as single, driven by per-file metadata.
+// Controlled final-setting fields shared by single upload and bulk per-file
+// metadata forms.
 
 const STATUS_OPTIONS = [
 	{ value: 'public', label: 'Public' },
@@ -15,17 +15,17 @@ const STATUS_OPTIONS = [
 	{ value: 'unlisted', label: 'Unlisted' },
 ];
 
-export function EnableCommentsCheckbox({ checked = true, onChange }) {
+export function EnableCommentsCheckbox({ checked = true, onChange, name = 'enable_comments' }) {
 	return (
-		<CheckboxButton name="enable_comments" checked={checked} onChange={(event) => onChange?.(event.target.checked)}>
+		<CheckboxButton name={name} checked={checked} onChange={(event) => onChange?.(event.target.checked)}>
 			Enable Comments
 		</CheckboxButton>
 	);
 }
 
-export function AllowDownloadCheckbox({ checked = true, onChange }) {
+export function AllowDownloadCheckbox({ checked = true, onChange, name = 'allow_download' }) {
 	return (
-		<CheckboxButton name="allow_download" checked={checked} onChange={(event) => onChange?.(event.target.checked)}>
+		<CheckboxButton name={name} checked={checked} onChange={(event) => onChange?.(event.target.checked)}>
 			Allow Download
 		</CheckboxButton>
 	);
@@ -149,7 +149,7 @@ export function RestrictedPasswordField({
 		<TextField
 			className="w-full"
 			id={id}
-			name="password"
+			name={name}
 			label="Enter Password"
 			placeholder="Write here..."
 			type={showPassword ? 'text' : 'password'}

@@ -21,7 +21,7 @@ import {
 	StreamProtectionField,
 	AdminSettingsFields,
 	ThumbnailUploadField,
-} from '../../../../shared/components/upload-media';
+} from '../../../../shared/components/UploadMedia';
 import { FileQuickPreview } from '../FileQuickPreview';
 import useBulkUploadStore from '../../useBulkUploadStore';
 import { useBulkUploadConfig } from '../../bulkUploadConfig';

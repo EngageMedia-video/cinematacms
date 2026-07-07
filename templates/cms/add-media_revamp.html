@@ -35,6 +35,7 @@
 		maxBulkFiles: {{ max_bulk_files }},
 		chunksDoneParam: "{{ chunks_done_param|escapejs }}",
 		isTrustedUser: {% if is_trusted_user %}true{% else %}false{% endif %},
+		defaultMediaStatus: "{{ default_media_status|escapejs }}",
 		userName: "{{ request.user.name|default:request.user.username|escapejs }}",
 		allowedExtensions: JSON.parse(document.getElementById('add-media-allowed-extensions').textContent),
 		canUploadMessage: "{{ can_upload_exp|escapejs }}",

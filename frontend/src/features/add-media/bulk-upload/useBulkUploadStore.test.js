@@ -1,7 +1,12 @@
 import useBulkUploadStore, { createDefaultMetadata, UPLOAD_STATUS } from './useBulkUploadStore';
 
 beforeEach(() => {
+	window.MediaCMS = { addMediaPage: {} };
 	useBulkUploadStore.getState().reset();
+});
+
+afterEach(() => {
+	delete window.MediaCMS;
 });
 
 describe('useBulkUploadStore', () => {
@@ -85,5 +90,15 @@ describe('useBulkUploadStore', () => {
 		expect(meta.allow_download).toBe(true);
 		expect(meta.state).toBe('public');
 		expect(meta.category).toEqual([]);
+	});
+
+	it('uses the configured default media status for new files', () => {
+		window.MediaCMS.addMediaPage.defaultMediaStatus = 'unlisted';
+
+		expect(createDefaultMetadata().state).toBe('unlisted');
+
+		const { addFile } = useBulkUploadStore.getState();
+		addFile({ id: 8, name: 'configured.mp4', sizeBytes: 1 });
+		expect(useBulkUploadStore.getState().files[0].metadata.state).toBe('unlisted');
 	});
 });

@@ -1,5 +1,5 @@
 import { VerticalMovieItem } from '../shared/components/MovieItem';
-import { SpriteFrame } from '../shared/components/upload-media/ChooseFromVideo/SpriteFrame';
+import { SpriteFrame } from '../shared/components/UploadMedia/ChooseFromVideo/SpriteFrame';
 import { cn } from '../shared/utils/classNames';
 
 // Fully transparent 1x1 GIF. While no thumbnail has been selected or

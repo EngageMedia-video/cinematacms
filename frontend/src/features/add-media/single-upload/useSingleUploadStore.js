@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+import { getAddMediaConfig } from '../utils/helpers';
+
 // Drops a single field error so live validation can take over after submit.
 function withoutError(errors, field) {
 	if (!(field in errors)) {
@@ -42,7 +44,7 @@ export function createDefaultSingleUploadState() {
 		allowDownload: true,
 		enableComments: true,
 		isEncrypted: false,
-		mediaStatus: 'public',
+		mediaStatus: getAddMediaConfig().defaultMediaStatus || 'public',
 		password: '',
 		expireEnabled: false,
 		startDate: '',
