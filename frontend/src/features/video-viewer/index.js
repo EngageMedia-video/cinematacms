@@ -1,1 +1,1 @@
-export { VideoViewerPage } from './components/VideoViewerPage';
+export { VideoViewerPage } from './components/page/VideoViewerPage';

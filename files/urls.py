@@ -97,6 +97,14 @@ urlpatterns = [
         views.CommentDetail.as_view(),
     ),
     re_path(
+        r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/private-journal$",
+        views.PrivateJournalNoteDetail.as_view(),
+    ),
+    re_path(
+        r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/private-journal/(?P<uid>[\w]+(-[\w]+)*)$",
+        views.PrivateJournalNoteDetail.as_view(),
+    ),
+    re_path(
         r"^api/v1/media/(?P<friendly_token>[\w]+(-[\w]+)*)/community-impacts$",
         views.CommunityImpactList.as_view(),
     ),
