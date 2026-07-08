@@ -35,6 +35,7 @@ from imagekit.models import ProcessedImageField
 from imagekit.processors import ResizeToFit
 from mptt.models import MPTTModel, TreeForeignKey
 
+from cms.observability import inject_trace_headers
 from users.validators import validate_internal_html
 
 from . import helpers, lists
@@ -577,9 +578,16 @@ class Media(models.Model):
             from . import tasks
 
             if can_transcribe:
-                tasks.whisper_transcribe.delay(self.friendly_token)
+                tasks.whisper_transcribe.apply_async(
+                    args=[self.friendly_token],
+                    headers=inject_trace_headers(),
+                )
             if can_transcribe_and_translate:
-                tasks.whisper_transcribe.delay(self.friendly_token, translate=True)
+                tasks.whisper_transcribe.apply_async(
+                    args=[self.friendly_token],
+                    kwargs={"translate": True},
+                    headers=inject_trace_headers(),
+                )
 
     def update_search_vector(self):
         """
@@ -771,7 +779,10 @@ class Media(models.Model):
     def produce_sprite_from_video(self):
         from . import tasks
 
-        tasks.produce_sprite_from_video.delay(self.friendly_token)
+        tasks.produce_sprite_from_video.apply_async(
+            args=[self.friendly_token],
+            headers=inject_trace_headers(),
+        )
         return True
 
     def _is_encoding_rate_limited(self):
@@ -837,7 +848,7 @@ class Media(models.Model):
                 args=[self.friendly_token, profile.id, encoding.id, enc_url],
                 kwargs=task_kwargs,
                 priority=priority,
-                headers={"enqueued_at": time.time()},
+                headers=inject_trace_headers({"enqueued_at": time.time()}),
             )
         except Exception:
             logger.exception(

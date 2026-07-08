@@ -11,6 +11,7 @@ from prometheus_client import multiprocess as prom_multiprocess
 from cms.health import live as health_live
 from cms.health import ready as health_ready
 from cms.request_utils import get_client_ip
+from files.metrics import refresh_runtime_metrics
 
 
 def metrics_view(request):
@@ -23,6 +24,8 @@ def metrics_view(request):
         from django.http import HttpResponseForbidden
 
         return HttpResponseForbidden()
+
+    refresh_runtime_metrics()
 
     # Use multiprocess registry when PROMETHEUS_MULTIPROC_DIR is set (production),
     # fall back to default in-process registry (dev with CELERY_TASK_ALWAYS_EAGER)
