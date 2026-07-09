@@ -119,6 +119,12 @@ echo 'FRONTEND_HOST='\'"$FRONTEND_HOST_HTTP_PREFIX"\' >> cms/local_settings.py
 echo 'PORTAL_NAME='\'"$PORTAL_NAME"\' >> cms/local_settings.py
 echo "SSL_FRONTEND_HOST = FRONTEND_HOST.replace('http', 'https')" >> cms/local_settings.py
 
+# Add the entered domain to ALLOWED_HOSTS. settings.py appends FRONTEND_HOST to
+# ALLOWED_HOSTS before local_settings.py is imported, so at that point it still
+# holds the default value, not the domain entered here. Because local_settings.py
+# is imported last, defining ALLOWED_HOSTS here is the effective override.
+echo "ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '$FRONTEND_HOST']" >> cms/local_settings.py
+
 echo 'SECRET_KEY='\'"$SECRET_KEY"\' >> cms/local_settings.py
 echo "LOCAL_INSTALL = True" >> cms/local_settings.py
 echo "SITE_ID = 1" >> cms/local_settings.py
