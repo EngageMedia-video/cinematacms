@@ -6,7 +6,7 @@ rate limiting, embed auth, and manifest rewriting.
 from django.test import Client, TestCase, override_settings
 
 from files.tests.helpers import create_test_media, create_test_user
-from files.token_utils import _get_brute_force_max_attempts, generate_token
+from files.token_utils import _get_brute_force_max_attempts, generate_token, reset_rate_limit
 
 
 class ViewMediaPasswordTest(TestCase):
@@ -83,6 +83,15 @@ class ViewMediaRateLimitTest(TestCase):
         self.media.set_password("correct")
         self.media.save()
         self.url = f"/view?m={self.media.friendly_token}"
+        self._reset_rate_limit_keys()
+
+    def tearDown(self):
+        self._reset_rate_limit_keys()
+        super().tearDown()
+
+    def _reset_rate_limit_keys(self):
+        for ip in ("127.0.0.1", "198.51.100.20", "203.0.113.10"):
+            reset_rate_limit(ip, self.media.friendly_token)
 
     def test_rate_limit_after_max_attempts(self):
         for _ in range(_get_brute_force_max_attempts()):
