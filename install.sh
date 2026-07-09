@@ -7,6 +7,21 @@ if [ `id -u` -ne 0 ]
   exit
 fi
 
+# This installer hardcodes the repository location /home/cinemata/cinematacms
+# for the virtualenv, systemd services, NGINX config, media directories and
+# ownership. Running it from any other location fails partway through with
+# confusing errors, so verify the layout up front and fail fast otherwise.
+EXPECTED_DIR="/home/cinemata/cinematacms"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ "$SCRIPT_DIR" != "$EXPECTED_DIR" ]; then
+    echo "Error: this installer must be located at and run from $EXPECTED_DIR"
+    echo "Current location: $SCRIPT_DIR"
+    echo "Clone the repository to the expected path and re-run, for example:"
+    echo "  git clone <repository-url> $EXPECTED_DIR"
+    echo "  cd $EXPECTED_DIR && sudo ./install.sh"
+    exit 1
+fi
+
 
 while true; do
     read -p "
