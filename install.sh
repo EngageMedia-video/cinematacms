@@ -52,8 +52,14 @@ su -c "psql -c \"CREATE USER mediacms WITH ENCRYPTED PASSWORD 'mediacms'\"" post
 su -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE mediacms TO mediacms\"" postgres
 
 echo 'Installing Node.js v22 LTS...'
-# Try to find install-nodejs.sh in the cinematacms directory
-NODEJS_SCRIPT="/home/cinemata/cinematacms/install-nodejs.sh"
+# Resolve install-nodejs.sh relative to this script's own location, so the
+# installer works regardless of where the repository was cloned or the current
+# working directory. Fall back to the legacy fixed path for compatibility.
+INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NODEJS_SCRIPT="$INSTALL_DIR/install-nodejs.sh"
+if [ ! -f "$NODEJS_SCRIPT" ]; then
+    NODEJS_SCRIPT="/home/cinemata/cinematacms/install-nodejs.sh"
+fi
 
 # Run the Node.js installation script
 if [ -f "$NODEJS_SCRIPT" ]; then
