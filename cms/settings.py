@@ -81,6 +81,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    "cms.observability_middleware.ObservabilityMetricsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -155,13 +156,29 @@ FILE_UPLOAD_HANDLERS = [
 
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 
+# Observability settings are intentionally defined here, not read from .env.
+# Production currently manages runtime configuration through settings.py.
+OTEL_ENABLED = False
+OTEL_SERVICE_NAME = "cinematacms"
+OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:4318/v1/traces"
+OTEL_EXPORTER_OTLP_HEADERS = ""
+OTEL_TRACES_SAMPLER_ARG = 1.0
+OBSERVABILITY_CELERY_QUEUES = ["long_tasks", "short_tasks", "whisper_tasks"]
+OBSERVABILITY_SLOW_REQUEST_SECONDS = 2.0
+OBSERVABILITY_SLOW_QUERY_SECONDS = 1.0
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "otel_trace": {
+            "()": "cms.observability.OpenTelemetryLogFilter",
+        },
+    },
     "formatters": {
         "json": {
             "()": "pythonjsonlogger.json.JsonFormatter",
-            "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
+            "format": "%(asctime)s %(name)s %(levelname)s %(message)s %(trace_id)s %(span_id)s",
             "rename_fields": {
                 "asctime": "timestamp",
                 "levelname": "level",
@@ -180,12 +197,14 @@ LOGGING = {
             "class": "logging.FileHandler",
             "filename": os.path.join(LOGS_DIR, "app.json.log"),
             "formatter": "json",
+            "filters": ["otel_trace"],
         },
         "legacy_file": {
             "level": "INFO",
             "class": "logging.FileHandler",
             "filename": os.path.join(LOGS_DIR, "debug.log"),
             "formatter": "plain",
+            "filters": ["otel_trace"],
         },
     },
     "loggers": {

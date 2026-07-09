@@ -2,6 +2,8 @@ import os
 
 from celery import Celery
 
+from cms.observability import configure_celery_observability
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cms.settings")
 app = Celery("cms")
 
@@ -13,6 +15,8 @@ app.conf.broker_transport_options = {"visibility_timeout": 60 * 60 * 24}  # 1 da
 
 
 app.conf.worker_prefetch_multiplier = 1
+
+configure_celery_observability()
 
 
 @app.task(bind=True)

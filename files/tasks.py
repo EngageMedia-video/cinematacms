@@ -24,6 +24,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from actions.models import USER_MEDIA_ACTIONS, MediaAction
+from cms.observability import inject_trace_headers, start_span
 from users.models import User
 
 from .backends import FFmpegBackend
@@ -40,6 +41,7 @@ from .helpers import (
     run_command,
 )
 from .methods import list_tasks, notify_users, pre_save_action
+from .metrics import observe_media_pipeline, record_stale_encoding
 from .models import (
     Category,
     EncodeProfile,
@@ -405,7 +407,17 @@ def encode_media(
             ffmpeg_command = [str(s) for s in ffmpeg_command]
             encoding_backend = FFmpegBackend()
             try:
-                encoding_command = encoding_backend.encode(ffmpeg_command)
+                with start_span(
+                    "media.encode.ffmpeg.start",
+                    {
+                        "media.type": media.media_type,
+                        "encoding.profile_id": profile.id,
+                        "encoding.resolution": profile.resolution,
+                        "encoding.codec": profile.codec,
+                        "encoding.extension": profile.extension,
+                    },
+                ):
+                    encoding_command = encoding_backend.encode(ffmpeg_command)
                 _duration, n_times = 0, 0
                 output = ""
                 start_time = time.time()
@@ -518,6 +530,7 @@ def encode_media(
 
         try:
             encoding.save(update_fields=["status", "logs", "progress", "total_run_time"])
+            observe_media_pipeline(media, profile, "success" if success else "fail")
         except (Encoding.DoesNotExist, django.db.DatabaseError) as e:
             logger.warning(
                 f"Failed to save final encoding state for encoding {encoding.id}: {e}. Media may have been deleted."
@@ -609,7 +622,8 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
             logger.info(f"Running ffmpeg command: {' '.join(ffmpeg_cmd)}")
 
             try:
-                ret = subprocess.run(ffmpeg_cmd, capture_output=True, shell=False)
+                with start_span("media.whisper.ffmpeg_extract", {"media.type": media.media_type}):
+                    ret = subprocess.run(ffmpeg_cmd, capture_output=True, shell=False)
                 logger.info(f"ffmpeg return code: {ret.returncode}")
 
                 if ret.returncode != 0:
@@ -658,7 +672,8 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
             logger.info(f"Running whisper command: {cmd_str}")
 
             try:
-                ret = subprocess.run(whisper_cmd, capture_output=True)
+                with start_span("media.whisper.transcribe", {"media.type": media.media_type, "translate": translate}):
+                    ret = subprocess.run(whisper_cmd, capture_output=True)
                 logger.info(f"Whisper return code: {ret.returncode}")
 
                 stdout = ret.stdout.decode("utf-8")
@@ -743,7 +758,8 @@ def produce_sprite_from_video(friendly_token):
         logger.info("failed to get media with friendly_token %s" % friendly_token)
         return {"ok": False, "reason": "media_not_found", "friendly_token": friendly_token}
 
-    result = generate_sprite_for_media(media)
+    with start_span("media.sprite.generate", {"media.type": media.media_type}):
+        result = generate_sprite_for_media(media)
     if not result["ok"]:
         logger.error(
             "Failed to generate sprite for media %s: %s%s",
@@ -943,6 +959,7 @@ def check_running_states():
             # terminate task
             # if task_id:
             # revoke(task_id, terminate=True)
+            record_stale_encoding(encoding)
             encoding.delete()
             media.encode(profiles=[profile])
             logger.info(
@@ -1834,7 +1851,7 @@ def _dispatch_deferred_encodings_inner():
                 args=[encoding.media.friendly_token, encoding.profile.id, encoding.id, enc_url],
                 kwargs=task_kwargs,
                 priority=priority,
-                headers={"enqueued_at": time.time()},
+                headers=inject_trace_headers({"enqueued_at": time.time()}),
             )
         except Exception:
             logger.exception(
