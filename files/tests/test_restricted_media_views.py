@@ -23,7 +23,8 @@ class ViewMediaPasswordTest(TestCase):
     def test_restricted_media_shows_locked_page(self):
         resp = self.client.get(self.url)
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "page-media")
+        self.assertTemplateUsed(resp, "cms/media_revamp.html")
+        self.assertContains(resp, "app-root")
         self.assertContains(resp, "media_restricted")
         self.assertNotContains(resp, "media-access-token")
 
@@ -219,7 +220,8 @@ class PublicMediaRegressionTest(TestCase):
         media = create_test_media(self.user, state="public")
         resp = self.client.get(f"/view?m={media.friendly_token}")
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "page-media")
+        self.assertTemplateUsed(resp, "cms/media_revamp.html")
+        self.assertContains(resp, "app-root")
 
     def test_public_api_accessible_without_token(self):
         media = create_test_media(self.user, state="public")

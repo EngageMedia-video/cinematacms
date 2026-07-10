@@ -32,17 +32,25 @@ if [ -n "${NVM_INSTALL_SHA256:-}" ]; then
   echo "${NVM_INSTALL_SHA256}  ${NVM_INSTALL_TMP}" | sha256sum -c -
 fi
 bash "${NVM_INSTALL_TMP}"
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 
-# Load nvm for the current session
+# Load nvm for the current session.
+# nvm.sh is not compatible with `set -euo pipefail`, so relax strict mode
+# (and suspend the ERR trap) while sourcing it, then restore.
 export NVM_DIR="$HOME/.nvm"
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-    \. "$NVM_DIR/nvm.sh"
-else
+if [ ! -s "$NVM_DIR/nvm.sh" ]; then
     echo "Error: nvm.sh not found at $NVM_DIR/nvm.sh"
     exit 1
 fi
+trap - ERR
+set +euo pipefail
+\. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+set -Eeuo pipefail
+trap 'echo "Error on line $LINENO"; exit 1' ERR
+if ! command -v nvm >/dev/null 2>&1; then
+    echo "Error: nvm did not load from $NVM_DIR/nvm.sh"
+    exit 1
+fi
 
 # Install Node.js v22 LTS
 echo "Installing Node.js v22 LTS..."

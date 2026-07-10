@@ -13,6 +13,7 @@ HERMETIC_DJANGO_VITE = deepcopy(settings.DJANGO_VITE)
 HERMETIC_DJANGO_VITE["default"]["dev_mode"] = True
 
 
+@override_settings(UI_VARIANT_ALLOWED=["legacy", "revamp"])
 class ResolveTemplateTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -32,6 +33,13 @@ class ResolveTemplateTests(TestCase):
         result = resolve_template(request, "home")
         self.assertEqual(result, "cms/index.html")
         self.assertEqual(request.ui_variant, "legacy")
+
+    @override_settings(UI_VARIANT_ALLOWED=["revamp"], UI_VARIANT_REVAMP_PAGES=[])
+    def test_revamp_only_defaults_to_revamp(self):
+        request = self._make_request()
+        result = resolve_template(request, "home")
+        self.assertEqual(result, "cms/index_revamp.html")
+        self.assertEqual(request.ui_variant, "revamp")
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=["home"])
     def test_revamp_when_allowlisted(self):
@@ -163,7 +171,7 @@ class UIVariantViewTests(TestCase):
         self.assertEqual(response.context["UI_VARIANT"], "revamp")
         self.assertIn(b"index-revamp", response.content)
 
-    @override_settings(UI_VARIANT_REVAMP_PAGES=[])
+    @override_settings(UI_VARIANT_ALLOWED=["legacy", "revamp"], UI_VARIANT_REVAMP_PAGES=[])
     def test_legacy_when_not_allowlisted(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
@@ -175,15 +183,15 @@ class UIVariantViewTests(TestCase):
         response = self.client.get("/")
         self.assertIn(b'data-ui-variant="revamp"', response.content)
 
-    @override_settings(UI_VARIANT_REVAMP_PAGES=[])
+    @override_settings(UI_VARIANT_ALLOWED=["legacy", "revamp"], UI_VARIANT_REVAMP_PAGES=[])
     def test_legacy_page_has_data_ui_variant_legacy(self):
         response = self.client.get("/")
         self.assertIn(b'data-ui-variant="legacy"', response.content)
 
-    def test_bootstrap_contains_mediaCMS_ui_variant(self):
+    def test_bootstrap_contains_default_revamp_ui_variant(self):
         response = self.client.get("/")
         self.assertIn(b"ui: { variant:", response.content)
-        self.assertIn(b'"legacy"', response.content)
+        self.assertIn(b'"revamp"', response.content)
 
     @override_settings(UI_VARIANT_REVAMP_PAGES=[])
     def test_staff_preview_param_returns_revamp(self):
@@ -193,7 +201,7 @@ class UIVariantViewTests(TestCase):
         self.assertIsNotNone(response.context)
         self.assertEqual(response.context["UI_VARIANT"], "revamp")
 
-    @override_settings(UI_VARIANT_REVAMP_PAGES=[])
+    @override_settings(UI_VARIANT_ALLOWED=["legacy", "revamp"], UI_VARIANT_REVAMP_PAGES=[])
     def test_non_staff_preview_param_returns_legacy_indistinguishable(self):
         self.client.login(username="regularuser", password="testpass")
         response = self.client.get("/?ui=revamp")
@@ -218,7 +226,7 @@ class UIVariantViewTests(TestCase):
         self.assertIn(b'id="app-root"', response.content)
         self.assertIn(b"src/entries/add-media.js", response.content)
 
-    @override_settings(UI_VARIANT_REVAMP_PAGES=[])
+    @override_settings(UI_VARIANT_ALLOWED=["legacy", "revamp"], UI_VARIANT_REVAMP_PAGES=[])
     def test_upload_legacy_when_not_allowlisted(self):
         self.client.login(username="regularuser", password="testpass")
         response = self.client.get("/upload")

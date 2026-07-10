@@ -7,6 +7,21 @@ if [ `id -u` -ne 0 ]
   exit
 fi
 
+# This installer hardcodes the repository location /home/cinemata/cinematacms
+# for the virtualenv, systemd services, NGINX config, media directories and
+# ownership. Running it from any other location fails partway through with
+# confusing errors, so verify the layout up front and fail fast otherwise.
+EXPECTED_DIR="/home/cinemata/cinematacms"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ "$SCRIPT_DIR" != "$EXPECTED_DIR" ]; then
+    echo "Error: this installer must be located at and run from $EXPECTED_DIR"
+    echo "Current location: $SCRIPT_DIR"
+    echo "Clone the repository to the expected path and re-run, for example:"
+    echo "  git clone <repository-url> $EXPECTED_DIR"
+    echo "  cd $EXPECTED_DIR && sudo ./install.sh"
+    exit 1
+fi
+
 
 while true; do
     read -p "
@@ -45,6 +60,18 @@ read -p "Enter portal name, or press enter for 'CinemataCMS : " PORTAL_NAME
 [ -z "$PORTAL_NAME" ] && PORTAL_NAME='CinemataCMS'
 [ -z "$FRONTEND_HOST" ] && FRONTEND_HOST='localhost'
 
+# Normalize and validate the entered host before using it in shell commands or
+# generated Python settings. Restricting it to DNS-style labels (including
+# localhost and IPv4-shaped values) prevents quotes and other metacharacters
+# from changing the generated local_settings.py code.
+FRONTEND_HOST="${FRONTEND_HOST#http://}"
+FRONTEND_HOST="${FRONTEND_HOST#https://}"
+FRONTEND_HOST="${FRONTEND_HOST%/}"
+if [[ ! "$FRONTEND_HOST" =~ ^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)*[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
+    echo "Error: portal URL must contain a valid hostname without a path or port"
+    exit 1
+fi
+
 echo 'Creating database to be used in CinemataCMS'
 
 su -c "psql -c \"CREATE DATABASE mediacms\"" postgres
@@ -52,8 +79,13 @@ su -c "psql -c \"CREATE USER mediacms WITH ENCRYPTED PASSWORD 'mediacms'\"" post
 su -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE mediacms TO mediacms\"" postgres
 
 echo 'Installing Node.js v22 LTS...'
-# Try to find install-nodejs.sh in the cinematacms directory
-NODEJS_SCRIPT="/home/cinemata/cinematacms/install-nodejs.sh"
+# Resolve install-nodejs.sh relative to this script's own location, so the
+# installer works regardless of where the repository was cloned or the current
+# working directory. Fall back to the legacy fixed path for compatibility.
+NODEJS_SCRIPT="$SCRIPT_DIR/install-nodejs.sh"
+if [ ! -f "$NODEJS_SCRIPT" ]; then
+    NODEJS_SCRIPT="/home/cinemata/cinematacms/install-nodejs.sh"
+fi
 
 # Run the Node.js installation script
 if [ -f "$NODEJS_SCRIPT" ]; then
@@ -80,15 +112,11 @@ cd cinematacms
 pip install -r requirements.txt
 cd .. && git clone https://github.com/ggerganov/whisper.cpp.git
 cd whisper.cpp/
-bash ./models/download-ggml-model.sh large-v3
+bash ./models/download-ggml-model.sh base
 make
 cd ../cinematacms
 
 SECRET_KEY=`python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`
-
-# remove http or https prefix
-FRONTEND_HOST=`echo "$FRONTEND_HOST" | sed -r 's/http:\/\///g'`
-FRONTEND_HOST=`echo "$FRONTEND_HOST" | sed -r 's/https:\/\///g'`
 
 sed -i s/localhost/$FRONTEND_HOST/g deploy/mediacms.io
 
@@ -97,6 +125,12 @@ FRONTEND_HOST_HTTP_PREFIX='http://'$FRONTEND_HOST
 echo 'FRONTEND_HOST='\'"$FRONTEND_HOST_HTTP_PREFIX"\' >> cms/local_settings.py
 echo 'PORTAL_NAME='\'"$PORTAL_NAME"\' >> cms/local_settings.py
 echo "SSL_FRONTEND_HOST = FRONTEND_HOST.replace('http', 'https')" >> cms/local_settings.py
+
+# Add the entered domain to ALLOWED_HOSTS. settings.py appends FRONTEND_HOST to
+# ALLOWED_HOSTS before local_settings.py is imported, so at that point it still
+# holds the default value, not the domain entered here. Because local_settings.py
+# is imported last, defining ALLOWED_HOSTS here is the effective override.
+echo "ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '$FRONTEND_HOST']" >> cms/local_settings.py
 
 echo 'SECRET_KEY='\'"$SECRET_KEY"\' >> cms/local_settings.py
 echo "LOCAL_INSTALL = True" >> cms/local_settings.py
