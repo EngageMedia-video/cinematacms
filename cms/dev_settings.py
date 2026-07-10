@@ -399,7 +399,7 @@ INSTALLED_APPS.append("corsheaders")
 PYSUBS_COMMAND = "pysubs2"
 
 WHISPER_CPP_COMMAND = "/home/cinemata/whisper.cpp/build/bin/main"
-WHISPER_CPP_MODEL = "/home/cinemata/whisper.cpp/models/ggml-large-v3.bin"
+WHISPER_CPP_MODEL = "/home/cinemata/whisper.cpp/models/ggml-base.bin"
 
 DJANGO_ADMIN_URL = "adminx/"
 ALLOWED_MEDIA_UPLOAD_TYPES = ["video"]

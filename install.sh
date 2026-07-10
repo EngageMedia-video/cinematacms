@@ -112,7 +112,7 @@ cd cinematacms
 pip install -r requirements.txt
 cd .. && git clone https://github.com/ggerganov/whisper.cpp.git
 cd whisper.cpp/
-bash ./models/download-ggml-model.sh large-v3
+bash ./models/download-ggml-model.sh base
 make
 cd ../cinematacms
 
