@@ -47,6 +47,10 @@ set +euo pipefail
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
+if ! command -v nvm >/dev/null 2>&1; then
+    echo "Error: nvm did not load from $NVM_DIR/nvm.sh"
+    exit 1
+fi
 
 # Install Node.js v22 LTS
 echo "Installing Node.js v22 LTS..."

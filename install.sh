@@ -60,6 +60,18 @@ read -p "Enter portal name, or press enter for 'CinemataCMS : " PORTAL_NAME
 [ -z "$PORTAL_NAME" ] && PORTAL_NAME='CinemataCMS'
 [ -z "$FRONTEND_HOST" ] && FRONTEND_HOST='localhost'
 
+# Normalize and validate the entered host before using it in shell commands or
+# generated Python settings. Restricting it to DNS-style labels (including
+# localhost and IPv4-shaped values) prevents quotes and other metacharacters
+# from changing the generated local_settings.py code.
+FRONTEND_HOST="${FRONTEND_HOST#http://}"
+FRONTEND_HOST="${FRONTEND_HOST#https://}"
+FRONTEND_HOST="${FRONTEND_HOST%/}"
+if [[ ! "$FRONTEND_HOST" =~ ^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)*[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
+    echo "Error: portal URL must contain a valid hostname without a path or port"
+    exit 1
+fi
+
 echo 'Creating database to be used in CinemataCMS'
 
 su -c "psql -c \"CREATE DATABASE mediacms\"" postgres
@@ -70,8 +82,7 @@ echo 'Installing Node.js v22 LTS...'
 # Resolve install-nodejs.sh relative to this script's own location, so the
 # installer works regardless of where the repository was cloned or the current
 # working directory. Fall back to the legacy fixed path for compatibility.
-INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NODEJS_SCRIPT="$INSTALL_DIR/install-nodejs.sh"
+NODEJS_SCRIPT="$SCRIPT_DIR/install-nodejs.sh"
 if [ ! -f "$NODEJS_SCRIPT" ]; then
     NODEJS_SCRIPT="/home/cinemata/cinematacms/install-nodejs.sh"
 fi
@@ -106,10 +117,6 @@ make
 cd ../cinematacms
 
 SECRET_KEY=`python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`
-
-# remove http or https prefix
-FRONTEND_HOST=`echo "$FRONTEND_HOST" | sed -r 's/http:\/\///g'`
-FRONTEND_HOST=`echo "$FRONTEND_HOST" | sed -r 's/https:\/\///g'`
 
 sed -i s/localhost/$FRONTEND_HOST/g deploy/mediacms.io
 
