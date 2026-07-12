@@ -531,6 +531,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
 class PlaylistDetailSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
     user_display_name = serializers.ReadOnlyField(source="user.name")
+    user_bionote = serializers.ReadOnlyField(source="user.description")
     author_is_trusted = serializers.ReadOnlyField(source="user.advancedUser")
     author_is_manager = serializers.SerializerMethodField()
 
@@ -548,6 +549,7 @@ class PlaylistDetailSerializer(serializers.ModelSerializer):
             "curator_note",
             "user",
             "user_display_name",
+            "user_bionote",
             "author_is_trusted",
             "author_is_manager",
             "media_count",

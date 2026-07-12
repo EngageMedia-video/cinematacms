@@ -4,6 +4,37 @@ from files.models import Playlist
 from files.tests.helpers import create_test_user
 
 
+class PlaylistDetailBionoteTests(TestCase):
+    def test_detail_exposes_creator_bionote(self):
+        user = create_test_user(username="bionote_owner")
+        user.description = "Community archivist.\n\nBased in Manila."
+        user.save(update_fields=["description"])
+        playlist = Playlist.objects.create(
+            title="Bionote Shorts",
+            description="A program note",
+            user=user,
+            friendly_token="plbio001",
+        )
+
+        response = self.client.get(f"/api/v1/playlists/{playlist.friendly_token}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["user_bionote"], "Community archivist.\n\nBased in Manila.")
+
+    def test_detail_bionote_empty_when_unset(self):
+        user = create_test_user(username="bionote_less_owner")
+        playlist = Playlist.objects.create(
+            title="No Bionote Shorts",
+            user=user,
+            friendly_token="plbio002",
+        )
+
+        response = self.client.get(f"/api/v1/playlists/{playlist.friendly_token}")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["user_bionote"], "")
+
+
 class PlaylistDetailCuratorNoteTests(TestCase):
     def setUp(self):
         self.user = create_test_user(username="playlist_owner")
