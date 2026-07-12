@@ -1,11 +1,7 @@
 import { formatCreatedDate } from '../../../playlist/utils/playlist';
 import { Icon, Text } from '../../../shared/components';
 import { useAuthorPlaylists } from '../../hooks/useAuthorPlaylists';
-
-function normalizeList(data) {
-	if (Array.isArray(data)) return data;
-	return Array.isArray(data?.results) ? data.results : [];
-}
+import { normalizeList } from '../../utils/list';
 
 function PlaylistCard({ playlist }) {
 	const link = playlist.url || '#';
@@ -75,8 +71,8 @@ export function PlaylistsSection({ author }) {
 		// Match the legacy profile grid: cards cap at --default-item-width
 		// (372px) rather than stretching to fill the column, up to 4 per row.
 		<ul className="grid list-none grid-cols-[repeat(auto-fill,minmax(min(100%,280px),372px))] justify-start gap-x-[27px] gap-y-8 p-0">
-			{playlists.map((playlist) => (
-				<PlaylistCard key={playlist.url || playlist.title} playlist={playlist} />
+			{playlists.map((playlist, index) => (
+				<PlaylistCard key={playlist.url || playlist.title || index} playlist={playlist} />
 			))}
 		</ul>
 	);

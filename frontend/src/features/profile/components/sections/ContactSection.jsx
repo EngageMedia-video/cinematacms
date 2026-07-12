@@ -48,7 +48,7 @@ export function ContactSection({ author }) {
 				className="w-full"
 			/>
 
-			<div className="field-shell w-full px-0 pt-4">
+			<div className="field-shell w-full rounded px-0 pt-4 transition-shadow duration-200 focus-within:ring-2 focus-within:ring-ring-focus">
 				<label htmlFor="contact-message" className="body-body-16-regular mb-2 block">
 					Message
 					<span aria-hidden="true" className="text-text-danger">

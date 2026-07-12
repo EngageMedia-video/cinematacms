@@ -148,6 +148,29 @@ class ProfileRevampViewTests(TestCase):
 
         self.assertEqual(response.status_code, 204)
 
+    def test_contact_post_unknown_username_returns_404(self):
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            "/api/v1/users/does-not-exist/contact",
+            data={"subject": "Hi", "body": "Hello"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_contact_post_missing_subject_or_body_returns_400(self):
+        self.client.force_login(self.viewer)
+
+        for payload in ({"body": "Hello"}, {"subject": "Hi"}):
+            response = self.client.post(
+                f"/api/v1/users/{self.owner.username}/contact",
+                data=payload,
+                content_type="application/json",
+            )
+
+            self.assertEqual(response.status_code, 400, msg=payload)
+
     def test_user_detail_exposes_profile_header_fields(self):
         response = self.client.get(f"/api/v1/users/{self.owner.username}")
 

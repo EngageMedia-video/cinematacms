@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.mail import EmailMessage
@@ -30,6 +32,8 @@ from files.serializers import CommunityImpactSerializer, MediaSerializer
 from .forms import ChannelForm, UserForm
 from .models import Channel, User
 from .serializers import ProfilePrivateJournalNoteSerializer, UserDetailSerializer, UserSerializer
+
+logger = logging.getLogger(__name__)
 
 
 def get_user(username):
@@ -264,8 +268,17 @@ def contact_user(request, username):
     recipient = user
     sender_display_name = sender.name or sender.username
     recipient_display_name = recipient.name or recipient.username
-    form_subject = request.data.get("subject", "").strip()
-    form_body = request.data.get("body", "").strip()
+    form_subject = request.data.get("subject", "")
+    form_body = request.data.get("body", "")
+
+    if not isinstance(form_subject, str) or not isinstance(form_body, str):
+        return Response(
+            {"detail": "Subject and body are required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    form_subject = form_subject.strip()
+    form_body = form_body.strip()
 
     if not form_subject or not form_body:
         return Response(
@@ -287,7 +300,12 @@ def contact_user(request, username):
         to=[recipient.email],
         reply_to=[sender.email],
     )
-    recipient_email.send(fail_silently=True)
+    if not recipient_email.send(fail_silently=True):
+        logger.error(
+            "Failed to send contact email from user %s to user %s (recipient)",
+            sender.username,
+            recipient.username,
+        )
 
     # Copy to sender
     timestamp = timezone.now().strftime("%B %d, %Y at %I:%M %p")
@@ -305,7 +323,12 @@ def contact_user(request, username):
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[sender.email],
     )
-    sender_copy.send(fail_silently=True)
+    if not sender_copy.send(fail_silently=True):
+        logger.error(
+            "Failed to send contact email copy to sender %s (message to %s)",
+            sender.username,
+            recipient.username,
+        )
 
     return Response(status=status.HTTP_204_NO_CONTENT)
 
