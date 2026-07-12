@@ -184,7 +184,7 @@ export function FilmRow({ index, isOwner, media, mediaCount, onMove, onRemove, o
 				<div className="flex min-w-0 flex-1 flex-col gap-3">
 					<a
 						href={mediaUrl}
-						className="line-clamp-3 text-text-strong no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-16-medium"
+						className="break-words text-text-strong no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-16-medium"
 					>
 						{title}
 					</a>

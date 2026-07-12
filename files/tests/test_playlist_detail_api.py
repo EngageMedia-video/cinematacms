@@ -21,6 +21,25 @@ class PlaylistDetailBionoteTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["user_bionote"], "Community archivist.\n\nBased in Manila.")
 
+    def test_profile_bionote_update_invalidates_cached_detail(self):
+        user = create_test_user(username="bionote_editor")
+        user.description = "Original bionote"
+        user.save(update_fields=["description"])
+        playlist = Playlist.objects.create(
+            title="Cache Shorts",
+            user=user,
+            friendly_token="plbio003",
+        )
+
+        first = self.client.get(f"/api/v1/playlists/{playlist.friendly_token}")
+        self.assertEqual(first.json()["user_bionote"], "Original bionote")
+
+        user.description = "Updated bionote"
+        user.save(update_fields=["description"])
+
+        second = self.client.get(f"/api/v1/playlists/{playlist.friendly_token}")
+        self.assertEqual(second.json()["user_bionote"], "Updated bionote")
+
     def test_detail_bionote_empty_when_unset(self):
         user = create_test_user(username="bionote_less_owner")
         playlist = Playlist.objects.create(

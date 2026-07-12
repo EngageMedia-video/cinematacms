@@ -2588,6 +2588,23 @@ def playlist_pre_delete(sender, instance, **kwargs):
     delete_composite_thumbnail(instance.friendly_token)
 
 
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def invalidate_user_playlists_on_profile_change(sender, instance, created, update_fields=None, **kwargs):
+    """Invalidate cached playlist details when the owner's profile changes.
+
+    Cached PlaylistDetail payloads embed owner profile data (bionote, display
+    name, thumbnail, role flags), so profile edits must bump those entries.
+    Skips the login-time `last_login`-only save to avoid churning the cache.
+    """
+    if created:
+        return
+    if update_fields and set(update_fields) == {"last_login"}:
+        return
+    friendly_tokens = Playlist.objects.filter(user=instance).values_list("friendly_token", flat=True)
+    for friendly_token in friendly_tokens:
+        invalidate_playlist_cache(friendly_token)
+
+
 @receiver(post_save, sender=PlaylistMedia)
 def playlist_media_save(sender, instance, created, **kwargs):
     """Invalidate playlist cache when media is added/removed from playlist."""
