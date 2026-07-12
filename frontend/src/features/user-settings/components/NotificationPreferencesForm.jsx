@@ -181,7 +181,7 @@ export function NotificationPreferencesForm() {
 										key={item.label}
 										className="grid min-h-[24px] min-w-0 grid-cols-1 gap-2 pb-[1.3px] pt-[2.5px] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
 									>
-										<span className="min-w-0 whitespace-nowrap text-[13px] font-normal leading-[20px] tracking-normal text-text-secondary">
+										<span className="min-w-0 text-[13px] font-normal leading-[20px] tracking-normal text-text-secondary">
 											{item.label}
 										</span>
 										{isActive ? (
