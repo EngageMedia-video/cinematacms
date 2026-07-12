@@ -4,6 +4,7 @@ import { config as mediacmsConfig } from '../../../static/js/mediacms/config';
 import { Button, Card, Icon, UserRoleBadge } from '../../shared/components';
 import { useDeletePlaylistMutation } from '../hooks/useDeletePlaylistMutation';
 import { usePlaylistQuery } from '../hooks/usePlaylistQuery';
+import usePlaylistUiStore from '../store/usePlaylistUiStore';
 import {
 	addPlaylistParam,
 	formatCount,
@@ -13,6 +14,7 @@ import {
 	getPlaylistViews,
 	isOwnerPlaylist,
 } from '../utils/playlist';
+import { EditDescriptionDialog } from './EditDescriptionDialog';
 import { FilmList } from './FilmList';
 import { ReadMore } from './ReadMore';
 
@@ -150,21 +152,43 @@ function AboutCuratorCard({ playlist }) {
 
 // "Description / Curator's Note": renders the playlist description entered in
 // the Create New Playlist flow — the single source for this section (#805).
-function CuratorNoteCard({ playlist }) {
-	if (!playlist.description) {
+// Owners edit that same description through EditDescriptionDialog.
+function CuratorNoteCard({ isOwner, playlist }) {
+	const setOpen = usePlaylistUiStore((state) => state.setDescriptionDialogOpen);
+	const hasDescription = Boolean(playlist.description);
+
+	if (!hasDescription && !isOwner) {
 		return null;
 	}
 
 	return (
 		<Card className="rounded-ds-8 p-5 sm:p-[22px]">
-			<h2 className="m-0 text-text-strong heading-h6-20-medium">Curator's Notes</h2>
-			<ReadMore
-				id="playlist-curator-note"
-				text={playlist.description}
-				charBudget={500}
-				colorClassName="text-text-description"
-				className="mt-3"
-			/>
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<h2 className="m-0 text-text-strong heading-h6-20-medium">Curator's Notes</h2>
+				{isOwner ? (
+					<Button
+						variant="text"
+						size="sm"
+						onClick={() => setOpen(true)}
+						className="w-fit focus-visible:ring-2 focus-visible:ring-ring-focus"
+					>
+						{hasDescription ? 'Edit' : 'Add description'}
+					</Button>
+				) : null}
+			</div>
+			{hasDescription ? (
+				<ReadMore
+					id="playlist-curator-note"
+					text={playlist.description}
+					charBudget={500}
+					colorClassName="text-text-description"
+					className="mt-3"
+				/>
+			) : (
+				<p className="mt-4 mb-0 text-text-muted body-body-14-regular">
+					Add a description to help viewers understand this program.
+				</p>
+			)}
 		</Card>
 	);
 }
@@ -301,7 +325,7 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 					</aside>
 
 					<div className="flex min-w-0 flex-col gap-3 lg:gap-4">
-						<CuratorNoteCard playlist={playlist} />
+						<CuratorNoteCard isOwner={isOwner} playlist={playlist} />
 						<FilmList
 							config={config}
 							isOwner={isOwner}
@@ -312,6 +336,7 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 					</div>
 				</div>
 			</div>
+			{isOwner ? <EditDescriptionDialog config={config} playlist={playlist} token={playlistToken} /> : null}
 			<ShareStatusToast message={statusMessage} />
 		</div>
 	);
