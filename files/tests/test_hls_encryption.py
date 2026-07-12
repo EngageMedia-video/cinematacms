@@ -548,3 +548,81 @@ class CreateHlsVersionedDirectoryTests(TestCase):
             self.assertTrue(tasks.create_hls(self.media.friendly_token))
 
         self.assertTrue(os.path.exists(sentinel))
+
+
+class HlsInfoVersionParameterTests(TestCase):
+    """The ?v= on HLS URLs must track the HLS generation, not edit_date (issue #791).
+
+    create_hls commits the new playlist with save(update_fields=["hls_file"]), which
+    never writes the auto_now edit_date. A ?v= derived from edit_date therefore stays
+    frozen across regenerations and busts nothing.
+    """
+
+    def setUp(self):
+        from files.models import EncodeProfile, Encoding
+
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.hls_dir = os.path.join(self.tmpdir.name, "hls")
+        os.makedirs(self.hls_dir, exist_ok=True)
+        self.fake_mp4hls = os.path.join(self.tmpdir.name, "mp4hls")
+        with open(self.fake_mp4hls, "w", encoding="utf-8") as command_file:
+            command_file.write("#!/bin/sh\n")
+
+        self.override = override_settings(
+            MEDIA_ROOT=self.tmpdir.name,
+            HLS_DIR=self.hls_dir,
+            TEMP_DIRECTORY=self.tmpdir.name,
+            MP4HLS_COMMAND=self.fake_mp4hls,
+        )
+        self.override.enable()
+        self.addCleanup(self.override.disable)
+        self.addCleanup(self.tmpdir.cleanup)
+        cache.clear()
+
+        self.user = User.objects.create_user(username="owner2", email="owner2@example.com", password="pw")
+        self.profile = EncodeProfile.objects.create(name="h264_v", extension="mp4", codec="h264", resolution=720)
+        self.media = create_test_media(self.user)
+        Encoding.objects.create(
+            media=self.media,
+            profile=self.profile,
+            status="success",
+            media_file="encoded/fake.mp4",
+        )
+
+    @staticmethod
+    def _fake_run_writing_master(command, capture_output, timeout=None):
+        output_dir = next(
+            (part.removeprefix("--output-dir=") for part in command if part.startswith("--output-dir=")),
+            None,
+        )
+        os.makedirs(output_dir, exist_ok=True)
+        with open(os.path.join(output_dir, "master.m3u8"), "w", encoding="utf-8") as master_file:
+            master_file.write("#EXTM3U\n#EXT-X-VERSION:4\n")
+        return MagicMock(returncode=0)
+
+    def _generate_and_read_master_url(self):
+        from files import tasks
+
+        cache.clear()
+        with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
+            self.assertTrue(tasks.create_hls(self.media.friendly_token))
+        # Re-fetch: hls_info and hls_version are cached_property.
+        fresh = Media.objects.get(pk=self.media.pk)
+        return fresh, fresh.hls_info["master_file"]
+
+    def test_version_param_is_the_generation_directory(self):
+        fresh, master_url = self._generate_and_read_master_url()
+        version_dir = os.path.basename(os.path.dirname(fresh.hls_file))
+        self.assertEqual(fresh.hls_version, version_dir)
+        self.assertIn(f"?v={version_dir}", master_url)
+
+    def test_version_param_changes_on_regeneration(self):
+        first, first_url = self._generate_and_read_master_url()
+        second, second_url = self._generate_and_read_master_url()
+
+        self.assertNotEqual(first.hls_file, second.hls_file)
+        self.assertNotEqual(first_url, second_url)
+
+        # The regression: edit_date does not move, so a media_version-derived ?v=
+        # would have been identical across both generations.
+        self.assertEqual(first.media_version, second.media_version)

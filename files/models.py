@@ -1111,6 +1111,19 @@ class Media(models.Model):
         return None
 
     @cached_property
+    def hls_version(self):
+        """Version token for HLS URLs, taken from the per-generation output directory.
+
+        create_hls writes every generation to HLS_DIR/<uid>/<version>/, so this changes
+        exactly when the HLS output changes. media_version cannot be used here: it derives
+        from edit_date, and create_hls saves hls_file with update_fields, which never
+        writes the auto_now edit_date.
+        """
+        if not self.hls_file:
+            return None
+        return os.path.basename(os.path.dirname(self.hls_file))
+
+    @cached_property
     def hls_info(self):
         res = {}
         if self.hls_file:
@@ -1120,19 +1133,19 @@ class Media(models.Model):
                 m3u8_obj = m3u8.load(hls_file)
                 if os.path.exists(hls_file):
                     base_url = helpers.url_from_path(hls_file)
-                    res["master_file"] = helpers.build_versioned_url(base_url, self.media_version)
+                    res["master_file"] = helpers.build_versioned_url(base_url, self.hls_version)
                     for iframe_playlist in m3u8_obj.iframe_playlists:
                         uri = os.path.join(p, iframe_playlist.uri)
                         if os.path.exists(uri):
                             resolution = iframe_playlist.iframe_stream_info.resolution[1]
                             base_url = helpers.url_from_path(uri)
-                            res[f"{resolution}_iframe"] = helpers.build_versioned_url(base_url, self.media_version)
+                            res[f"{resolution}_iframe"] = helpers.build_versioned_url(base_url, self.hls_version)
                     for playlist in m3u8_obj.playlists:
                         uri = os.path.join(p, playlist.uri)
                         if os.path.exists(uri):
                             resolution = playlist.stream_info.resolution[1]
                             base_url = helpers.url_from_path(uri)
-                            res[f"{resolution}_playlist"] = helpers.build_versioned_url(base_url, self.media_version)
+                            res[f"{resolution}_playlist"] = helpers.build_versioned_url(base_url, self.hls_version)
         return res
 
     @property
