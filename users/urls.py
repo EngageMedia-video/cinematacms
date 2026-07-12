@@ -82,6 +82,11 @@ urlpatterns = [
         name="api_user_community_impacts",
     ),
     re_path(
+        rf"^api/v1/users/(?P<username>{USERNAME_RE})/private-journal$",
+        views.UserPrivateJournalList.as_view(),
+        name="api_user_private_journal",
+    ),
+    re_path(
         rf"^api/v1/users/(?P<username>{USERNAME_RE})/contact",
         views.contact_user,
         name="api_contact_user",

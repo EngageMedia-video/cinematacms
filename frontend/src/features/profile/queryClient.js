@@ -17,6 +17,7 @@ export const PROFILE_QUERY_KEYS = {
 	playlists: (username) => ['profile', username, 'playlists'],
 	similar: (username, location) => ['profile', username, 'similar', location],
 	impact: (username) => ['profile', username, 'impact'],
+	notes: (username) => ['profile', username, 'notes'],
 	history: (username) => ['profile', username, 'history'],
 	liked: (username) => ['profile', username, 'liked'],
 };

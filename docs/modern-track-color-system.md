@@ -552,6 +552,18 @@ The full-screen flash/message overlay defines a parallel feature set on `.auth-m
 >
 > `*.stories.jsx` and `*.test.jsx` files contain color fixtures but are not part of the production styling path; they are excluded here.
 
+### profile — My Notes (features/profile)
+
+The profile **My Notes** tab renders each film-note card with a film thumbnail (with a **film duration pill** at the bottom-right) and the latest note timestamp beside a standalone vertical divider (per `jeremy-tasks/design/notes-in-profile/notes-in-profile.svg`). The pill is a light chip and the divider uses the exported `#1A3F61` line color, both constant across themes, so purpose-based tokens are defined in the global layer (light `body` + dark `body.dark_theme` + `@theme inline`):
+
+| Token | Light | Dark | Role |
+|-------|-------|------|------|
+| `bg-bg-note-thumbnail-duration` | `strait-blue-50` | `strait-blue-50` | Film duration pill background on the note thumbnail (theme-invariant light chip) |
+| `text-text-note-thumbnail-duration` | `pacific-deep-900` | `pacific-deep-900` | Film duration text on the pill |
+| `border-border-note-divider` | `pacific-deep-600p` | `pacific-deep-600p` | Standalone vertical divider in profile note entries |
+
+Named by purpose (the duration pill, the note divider), not by hue. `border-divider` was close but is intentionally theme-adaptive, whereas the exported note divider is constant; `text-on-chrome` is the closest to the pill's light fill but is a text color. The note thumbnail's empty/loading fill reuses the existing theme-aware `bg-bg-skeleton` (consistent with `FilmRow` / `ImpactFilmRow`).
+
 ---
 
 # 4. Consistency observations & remaining work

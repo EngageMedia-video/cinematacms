@@ -1,11 +1,43 @@
 from rest_framework import serializers
 
 from files.lists import video_countries
+from files.serializers import PrivateJournalNoteSerializer
 
 from .models import User
 
 # Pre-build country dict once at module level to avoid rebuilding on every serialization
 VIDEO_COUNTRIES_DICT = dict(video_countries)
+
+
+class ProfilePrivateJournalNoteSerializer(PrivateJournalNoteSerializer):
+    """Notes aggregated on the profile carry their media context so each entry
+    can render a thumbnail card and deep-link back to the film at its timestamp.
+
+    The per-media viewer serializer omits this because the viewer already knows
+    its own media.
+    """
+
+    media = serializers.SerializerMethodField()
+
+    class Meta(PrivateJournalNoteSerializer.Meta):
+        fields = PrivateJournalNoteSerializer.Meta.fields + ("media",)
+
+    def get_media(self, obj):
+        media = obj.media
+        request = self.context.get("request")
+        thumbnail_url = media.thumbnail_url
+        url = media.get_absolute_url()
+        if request is not None:
+            if thumbnail_url:
+                thumbnail_url = request.build_absolute_uri(thumbnail_url)
+            url = request.build_absolute_uri(url)
+        return {
+            "title": media.title,
+            "friendly_token": media.friendly_token,
+            "url": url,
+            "thumbnail_url": thumbnail_url,
+            "duration": media.duration,
+        }
 
 
 class UserSerializer(serializers.ModelSerializer):

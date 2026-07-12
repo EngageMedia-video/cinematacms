@@ -16,6 +16,7 @@ from rest_framework.parsers import (
     MultiPartParser,
 )
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
 from cms.custom_pagination import SmallPreviewPagination
@@ -23,12 +24,12 @@ from cms.permissions import IsUserOrManager
 from cms.ui_variant import resolve_template
 from files.lists import video_countries
 from files.methods import is_curator, is_mediacms_editor, is_mediacms_manager
-from files.models import CommunityImpact
+from files.models import CommunityImpact, PrivateJournalNote
 from files.serializers import CommunityImpactSerializer, MediaSerializer
 
 from .forms import ChannelForm, UserForm
 from .models import Channel, User
-from .serializers import UserDetailSerializer, UserSerializer
+from .serializers import ProfilePrivateJournalNoteSerializer, UserDetailSerializer, UserSerializer
 
 
 def get_user(username):
@@ -513,3 +514,27 @@ class UserCommunityImpactList(APIView):
                 bucket["entries"].append(CommunityImpactSerializer(entry, context={"request": request}).data)
 
         return Response({"films": list(films.values())})
+
+
+class UserPrivateJournalList(APIView):
+    """Author-scoped private journal notes for the profile "My Notes" tab.
+
+    Private notes: a user may only list their own notes, so this requires
+    authentication and matching the requested username (403 otherwise) — unlike
+    the public Impact endpoint.
+    """
+
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, username):
+        if request.user.username != username:
+            return Response(
+                {"detail": "You may only view your own notes"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        notes = PrivateJournalNote.objects.filter(user=request.user).select_related("media").order_by("-add_date")
+        paginator = api_settings.DEFAULT_PAGINATION_CLASS()
+        page = paginator.paginate_queryset(notes, request)
+        serializer = ProfilePrivateJournalNoteSerializer(page, many=True, context={"request": request})
+        return paginator.get_paginated_response(serializer.data)

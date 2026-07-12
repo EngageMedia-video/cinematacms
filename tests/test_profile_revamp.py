@@ -4,7 +4,7 @@ from datetime import date
 from django.conf import settings
 from django.test import TestCase, override_settings
 
-from files.models import CommunityImpact, Media
+from files.models import CommunityImpact, Media, PrivateJournalNote
 from files.tests.helpers import create_test_media
 from users.models import User
 
@@ -253,3 +253,75 @@ class UserCommunityImpactApiTests(TestCase):
         response = self.client.get("/api/v1/users/missing-user/community-impacts")
 
         self.assertEqual(response.status_code, 404)
+
+
+class UserPrivateJournalApiTests(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="notes-owner", password="testpass", name="Notes Owner")
+        self.other = User.objects.create_user(username="notes-other", password="testpass")
+        self.media = create_test_media(self.owner)
+        self.url = f"/api/v1/users/{self.owner.username}/private-journal"
+
+    def _create_note(self, *, text, timestamp_seconds=0.0):
+        return PrivateJournalNote.objects.create(
+            media=self.media,
+            user=self.owner,
+            text=text,
+            timestamp_seconds=timestamp_seconds,
+        )
+
+    def test_anonymous_is_denied(self):
+        # DRF SessionAuthentication returns 403 (not 401) for unauthenticated
+        # requests since it sends no WWW-Authenticate challenge header.
+        response = self.client.get(self.url)
+
+        self.assertIn(response.status_code, (401, 403))
+
+    def test_other_user_is_forbidden(self):
+        self.client.force_login(self.other)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_owner_sees_own_notes_with_media_context(self):
+        self._create_note(text="A key moment", timestamp_seconds=42)
+        self.client.force_login(self.owner)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        results = response.json()["results"]
+        self.assertEqual(len(results), 1)
+        note = results[0]
+        self.assertEqual(note["text"], "A key moment")
+        self.assertEqual(note["timestamp_seconds"], 42.0)
+        # Media context is embedded so the frontend can render + deep-link.
+        self.assertEqual(note["media"]["friendly_token"], self.media.friendly_token)
+        self.assertEqual(note["media"]["title"], self.media.title)
+
+    def test_owner_does_not_see_other_users_notes(self):
+        # A note authored by someone else on the owner's media must not leak.
+        other_media = create_test_media(self.other)
+        PrivateJournalNote.objects.create(
+            media=other_media,
+            user=self.other,
+            text="Other user's private note",
+            timestamp_seconds=0,
+        )
+        self._create_note(text="Owner's note")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        texts = [note["text"] for note in response.json()["results"]]
+        self.assertEqual(texts, ["Owner's note"])
+
+    def test_owner_with_no_notes_gets_empty_results(self):
+        self.client.force_login(self.owner)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["results"], [])
