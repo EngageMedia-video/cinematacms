@@ -24,7 +24,7 @@ from cms.ui_variant import resolve_template
 from files.lists import video_countries
 from files.methods import is_curator, is_mediacms_editor, is_mediacms_manager
 from files.models import CommunityImpact
-from files.serializers import CommunityImpactSerializer
+from files.serializers import CommunityImpactSerializer, MediaSerializer
 
 from .forms import ChannelForm, UserForm
 from .models import Channel, User
@@ -39,15 +39,31 @@ def get_user(username):
         return None
 
 
+def can_contact_user(viewer, target):
+    """Whether ``viewer`` may send a contact message to ``target``.
+
+    A single source of truth shared by the profile bootstrap (``can_contact``),
+    the Contact tab view, and the ``contact_user`` POST endpoint so the tab is
+    only shown when the send will actually succeed. The viewer must be
+    authenticated and not the target; the target must allow contact, unless the
+    viewer is an editor/curator (override roles).
+    """
+    if not viewer.is_authenticated or viewer == target:
+        return False
+    return bool(target.allow_contact or is_mediacms_editor(viewer) or is_curator(viewer))
+
+
 def _profile_context(request, user, active_tab):
     can_edit = bool(user == request.user or is_mediacms_manager(request.user))
     can_delete = bool(user == request.user or is_mediacms_manager(request.user))
+    can_contact = can_contact_user(request.user, user)
     serialized_user = dict(UserDetailSerializer(user, context={"request": request}).data)
     serialized_user.update(
         {
             "is_owner": bool(request.user.is_authenticated and user == request.user),
             "can_edit": can_edit,
             "can_delete": can_delete,
+            "can_contact": can_contact,
             "playlist_count": user.playlists.count(),
             "active_tab": active_tab,
         }
@@ -57,6 +73,10 @@ def _profile_context(request, user, active_tab):
         "active_tab": active_tab,
         "CAN_EDIT": can_edit,
         "CAN_DELETE": can_delete,
+        # Legacy template config (templates/config/core/user.html) keys
+        # member.can.contactUser off this; keep its profile-level semantics
+        # (allow_contact / editor / curator) — the legacy frontend applies its
+        # own non-owner/anonymous checks.
         "SHOW_CONTACT_FORM": bool(user.allow_contact or is_mediacms_editor(request.user) or is_curator(request.user)),
         "PROFILE_INITIAL_DATA": serialized_user,
     }
@@ -143,6 +163,20 @@ def view_user_impact(request, username):
     return render(request, template, _profile_context(request, user, "impact"))
 
 
+def view_user_contact(request, username):
+    user, redirect_response = _get_profile_user_or_redirect(username)
+    if redirect_response:
+        return redirect_response
+    template = resolve_template(request, "profile")
+    if request.ui_variant == "legacy":
+        return HttpResponseRedirect(user.get_absolute_url())
+    # Contact is a public-facing tab, but only for authenticated non-owners on
+    # profiles that allow contact (mirrors the contact_user POST gate).
+    if not can_contact_user(request.user, user):
+        return HttpResponseRedirect(user.get_absolute_url())
+    return render(request, template, _profile_context(request, user, "contact"))
+
+
 @login_required
 def edit_user(request, username):
     user = get_user(username=username)
@@ -217,53 +251,60 @@ def contact_user(request, username):
             status=status.HTTP_401_UNAUTHORIZED,
         )
     user = User.objects.filter(username=username).first()
-    if user and (user.allow_contact or is_mediacms_editor(request.user)):
-        sender = request.user
-        recipient = user
-        sender_display_name = sender.name or sender.username
-        recipient_display_name = recipient.name or recipient.username
-        form_subject = request.data.get("subject", "").strip()
-        form_body = request.data.get("body", "").strip()
-
-        if not form_subject or not form_body:
-            return Response(
-                {"detail": "Subject and body are required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Email to recipient
-        recipient_email = EmailMessage(
-            subject=f"[{settings.PORTAL_NAME}] Message from {sender.username}: {form_subject}",
-            body=(
-                f"You have received a message from {sender_display_name} ({sender.email}) on {settings.PORTAL_NAME}.\n\n"
-                f"Subject: {form_subject}\n\n"
-                f"---\n{form_body}\n---\n\n"
-                f"Reply to this email to reach {sender_display_name} directly.\n\n"
-                f"--\nThis message was sent via {settings.PORTAL_NAME}\n"
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[recipient.email],
-            reply_to=[sender.email],
+    if not user:
+        return Response({"detail": "user does not exist"}, status=status.HTTP_404_NOT_FOUND)
+    if not can_contact_user(request.user, user):
+        return Response(
+            {"detail": "You are not allowed to contact this user"},
+            status=status.HTTP_403_FORBIDDEN,
         )
-        recipient_email.send(fail_silently=True)
 
-        # Copy to sender
-        timestamp = timezone.now().strftime("%B %d, %Y at %I:%M %p")
-        sender_copy = EmailMessage(
-            subject=f"[{settings.PORTAL_NAME}] Copy of your message to {recipient_display_name}",
-            body=(
-                f"This is a copy of the message you sent on {settings.PORTAL_NAME}.\n\n"
-                f"To: {recipient_display_name}\n"
-                f"Date: {timestamp}\n"
-                f"Subject: {form_subject}\n\n"
-                f"---\n{form_body}\n---\n\n"
-                f"This is a confirmation copy for your records.\n\n"
-                f"--\nThis message was sent via {settings.PORTAL_NAME}\n"
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[sender.email],
+    sender = request.user
+    recipient = user
+    sender_display_name = sender.name or sender.username
+    recipient_display_name = recipient.name or recipient.username
+    form_subject = request.data.get("subject", "").strip()
+    form_body = request.data.get("body", "").strip()
+
+    if not form_subject or not form_body:
+        return Response(
+            {"detail": "Subject and body are required"},
+            status=status.HTTP_400_BAD_REQUEST,
         )
-        sender_copy.send(fail_silently=True)
+
+    # Email to recipient
+    recipient_email = EmailMessage(
+        subject=f"[{settings.PORTAL_NAME}] Message from {sender.username}: {form_subject}",
+        body=(
+            f"You have received a message from {sender_display_name} ({sender.email}) on {settings.PORTAL_NAME}.\n\n"
+            f"Subject: {form_subject}\n\n"
+            f"---\n{form_body}\n---\n\n"
+            f"Reply to this email to reach {sender_display_name} directly.\n\n"
+            f"--\nThis message was sent via {settings.PORTAL_NAME}\n"
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[recipient.email],
+        reply_to=[sender.email],
+    )
+    recipient_email.send(fail_silently=True)
+
+    # Copy to sender
+    timestamp = timezone.now().strftime("%B %d, %Y at %I:%M %p")
+    sender_copy = EmailMessage(
+        subject=f"[{settings.PORTAL_NAME}] Copy of your message to {recipient_display_name}",
+        body=(
+            f"This is a copy of the message you sent on {settings.PORTAL_NAME}.\n\n"
+            f"To: {recipient_display_name}\n"
+            f"Date: {timestamp}\n"
+            f"Subject: {form_subject}\n\n"
+            f"---\n{form_body}\n---\n\n"
+            f"This is a confirmation copy for your records.\n\n"
+            f"--\nThis message was sent via {settings.PORTAL_NAME}\n"
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[sender.email],
+    )
+    sender_copy.send(fail_silently=True)
 
     return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -432,24 +473,43 @@ class UserCommunityImpactList(APIView):
         if not user:
             return Response({"detail": "user does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        entries = CommunityImpact.objects.filter(
-            media__user=user,
-            media__state="public",
-            media__is_reviewed=True,
-            media__encoding_status="success",
-            status=CommunityImpact.APPROVED,
+        # "curated" is never surfaced on the profile Impact tab, so exclude it
+        # here — otherwise a film whose only entries are curated would produce
+        # an empty film group in the UI.
+        display_categories = [
+            category for category, _ in CommunityImpact.CATEGORY_CHOICES if category != CommunityImpact.CURATED
+        ]
+        entries = (
+            CommunityImpact.objects.filter(
+                media__user=user,
+                media__state="public",
+                media__is_reviewed=True,
+                media__encoding_status="success",
+                status=CommunityImpact.APPROVED,
+                category__in=display_categories,
+            )
+            .select_related("media", "media__user", "user")
+            .order_by("-event_date", "-add_date")
         )
-        grouped = {}
-        for category, _label in CommunityImpact.CATEGORY_CHOICES:
-            category_entries = entries.filter(category=category)
-            grouped[category] = {
-                "entries": CommunityImpactSerializer(
-                    category_entries.select_related("media", "user").order_by("-event_date", "-add_date")[
-                        : self.category_limit
-                    ],
-                    many=True,
-                    context={"request": request},
-                ).data,
-                "totalCount": category_entries.count(),
-            }
-        return Response(grouped)
+
+        # Group entries under the film they belong to so the profile Impact tab
+        # can attribute each entry to its media (issue #810). Films keep the
+        # order in which their most recent impact entry appears (entries are
+        # already ordered by -event_date, -add_date above).
+        films = {}
+        for entry in entries:
+            media = entry.media
+            film = films.get(media.pk)
+            if film is None:
+                film = {
+                    "media": MediaSerializer(media, context={"request": request}).data,
+                    "impact": {category: {"entries": [], "totalCount": 0} for category in display_categories},
+                }
+                films[media.pk] = film
+
+            bucket = film["impact"][entry.category]
+            bucket["totalCount"] += 1
+            if len(bucket["entries"]) < self.category_limit:
+                bucket["entries"].append(CommunityImpactSerializer(entry, context={"request": request}).data)
+
+        return Response({"films": list(films.values())})

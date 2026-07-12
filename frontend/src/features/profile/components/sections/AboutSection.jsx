@@ -151,7 +151,7 @@ export function AboutSection({ author }) {
 					<ProfileSectionHeader icon="profileBionote" title="Bionote" />
 					{sanitizedBiography ? (
 						<div
-							className="body-body-14-regular mt-4 space-y-3 text-text-primary sm:ml-[57px] [&_a]:text-text-link [&_p]:m-0"
+							className="body-body-14-regular mt-4 space-y-3 whitespace-pre-line text-text-primary sm:ml-[57px] [&_a]:text-text-link [&_p]:m-0"
 							dangerouslySetInnerHTML={{ __html: sanitizedBiography }}
 						/>
 					) : (

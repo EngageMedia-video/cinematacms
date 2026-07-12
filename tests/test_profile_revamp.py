@@ -4,7 +4,7 @@ from datetime import date
 from django.conf import settings
 from django.test import TestCase, override_settings
 
-from files.models import CommunityImpact
+from files.models import CommunityImpact, Media
 from files.tests.helpers import create_test_media
 from users.models import User
 
@@ -65,6 +65,89 @@ class ProfileRevampViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["active_tab"], "impact")
 
+    def test_non_owner_can_open_contact_tab_when_contact_allowed(self):
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(f"/user/{self.owner.username}/contact")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["active_tab"], "contact")
+        self.assertTrue(response.context["PROFILE_INITIAL_DATA"]["can_contact"])
+
+    def test_contact_tab_redirects_when_contact_disallowed(self):
+        self.owner.allow_contact = False
+        self.owner.save(update_fields=["allow_contact"])
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(f"/user/{self.owner.username}/contact")
+
+        self.assertRedirects(
+            response,
+            self.owner.get_absolute_url(),
+            fetch_redirect_response=False,
+        )
+
+    def test_owner_is_redirected_from_own_contact_tab(self):
+        self.client.force_login(self.owner)
+
+        response = self.client.get(f"/user/{self.owner.username}/contact")
+
+        self.assertRedirects(
+            response,
+            self.owner.get_absolute_url(),
+            fetch_redirect_response=False,
+        )
+
+    def test_anonymous_is_redirected_from_contact_tab(self):
+        # allow_contact defaults to True, but the tab still requires an
+        # authenticated viewer since the contact POST does.
+        response = self.client.get(f"/user/{self.owner.username}/contact")
+
+        self.assertRedirects(
+            response,
+            self.owner.get_absolute_url(),
+            fetch_redirect_response=False,
+        )
+
+    def test_contact_flag_is_false_for_anonymous_viewer(self):
+        response = self.client.get(self.owner.get_absolute_url())
+
+        self.assertFalse(response.context["PROFILE_INITIAL_DATA"]["can_contact"])
+
+    def test_contact_post_requires_authentication(self):
+        response = self.client.post(
+            f"/api/v1/users/{self.owner.username}/contact",
+            data={"subject": "Hi", "body": "Hello"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_contact_post_forbidden_when_contact_disallowed(self):
+        self.owner.allow_contact = False
+        self.owner.save(update_fields=["allow_contact"])
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            f"/api/v1/users/{self.owner.username}/contact",
+            data={"subject": "Hi", "body": "Hello"},
+            content_type="application/json",
+        )
+
+        # Must NOT be a silent 204 success — the message was not sent.
+        self.assertEqual(response.status_code, 403)
+
+    def test_contact_post_succeeds_when_allowed(self):
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            f"/api/v1/users/{self.owner.username}/contact",
+            data={"subject": "Hi", "body": "Hello"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 204)
+
     def test_user_detail_exposes_profile_header_fields(self):
         response = self.client.get(f"/api/v1/users/{self.owner.username}")
 
@@ -98,24 +181,57 @@ class UserCommunityImpactApiTests(TestCase):
             event_date=date(2026, 6, 30),
         )
 
-    def test_endpoint_groups_only_approved_entries(self):
+    def test_endpoint_groups_only_approved_entries_under_their_film(self):
         self._create_impact(status=CommunityImpact.APPROVED, title="Approved screening")
         self._create_impact(status=CommunityImpact.WAITING_APPROVAL, title="Pending screening")
 
         response = self.client.get(f"/api/v1/users/{self.author.username}/community-impacts")
 
         self.assertEqual(response.status_code, 200)
+        films = response.json()["films"]
+        self.assertEqual(len(films), 1)
+        film = films[0]
+        # Each film group carries its media so entries can be attributed.
+        self.assertEqual(film["media"]["title"], self.media.title)
         self.assertEqual(
-            [entry["title"] for entry in response.json()[CommunityImpact.SCREENING]["entries"]],
+            [entry["title"] for entry in film["impact"][CommunityImpact.SCREENING]["entries"]],
             ["Approved screening"],
         )
-        self.assertEqual(response.json()[CommunityImpact.FEATURED], {"entries": [], "totalCount": 0})
+        self.assertEqual(film["impact"][CommunityImpact.FEATURED], {"entries": [], "totalCount": 0})
 
-    def test_endpoint_returns_empty_groups_for_author_without_entries(self):
+    def test_endpoint_groups_entries_per_film(self):
+        other_media = create_test_media(self.author)
+        Media.objects.filter(pk=other_media.pk).update(title="Second Film")
+        other_media.refresh_from_db()
+        self._create_impact(status=CommunityImpact.APPROVED, title="First film screening")
+        CommunityImpact.objects.create(
+            media=other_media,
+            user=self.submitter,
+            category=CommunityImpact.FEATURED,
+            status=CommunityImpact.APPROVED,
+            title="Second film feature",
+            event_date=date(2026, 6, 30),
+        )
+
         response = self.client.get(f"/api/v1/users/{self.author.username}/community-impacts")
 
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(all(category == {"entries": [], "totalCount": 0} for category in response.json().values()))
+        films = response.json()["films"]
+        self.assertEqual(len(films), 2)
+        entries_by_token = {
+            film["media"]["friendly_token"]: [
+                entry["title"] for bucket in film["impact"].values() for entry in bucket["entries"]
+            ]
+            for film in films
+        }
+        self.assertEqual(entries_by_token[self.media.friendly_token], ["First film screening"])
+        self.assertEqual(entries_by_token[other_media.friendly_token], ["Second film feature"])
+
+    def test_endpoint_returns_no_films_for_author_without_entries(self):
+        response = self.client.get(f"/api/v1/users/{self.author.username}/community-impacts")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"films": []})
 
     def test_endpoint_does_not_expose_impacts_for_private_media(self):
         private_media = create_test_media(self.author, state="private")
@@ -131,7 +247,7 @@ class UserCommunityImpactApiTests(TestCase):
         response = self.client.get(f"/api/v1/users/{self.author.username}/community-impacts")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()[CommunityImpact.SCREENING], {"entries": [], "totalCount": 0})
+        self.assertEqual(response.json(), {"films": []})
 
     def test_endpoint_returns_not_found_for_unknown_author(self):
         response = self.client.get("/api/v1/users/missing-user/community-impacts")

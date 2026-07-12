@@ -53,6 +53,28 @@ describe('getProfileTabs', () => {
 		expect(tabs.find((tab) => tab.id === 'media').label).toBe("Jen's Media");
 	});
 
+	it('shows the contact tab to visitors when contact is allowed', () => {
+		const tabs = getProfileTabs({ ...AUTHOR, is_owner: false, can_contact: true }, runtimeConfig());
+
+		expect(tabs.map((tab) => tab.id)).toEqual(['about', 'media', 'playlists', 'impact', 'contact']);
+		const contact = tabs.find((tab) => tab.id === 'contact');
+		expect(contact.heading).toBe('Contact Jen');
+		expect(contact.href).toBe('/user/jen/contact');
+	});
+
+	it('hides the contact tab when the backend disallows contact', () => {
+		const tabs = getProfileTabs({ ...AUTHOR, is_owner: false, can_contact: false }, runtimeConfig());
+
+		expect(tabs.map((tab) => tab.id)).not.toContain('contact');
+	});
+
+	it('never shows the contact tab to the profile owner', () => {
+		// The backend never sets can_contact for the owner, but guard anyway.
+		const tabs = getProfileTabs({ ...AUTHOR, is_owner: true, can_contact: true }, runtimeConfig());
+
+		expect(tabs.map((tab) => tab.id)).not.toContain('contact');
+	});
+
 	it('honors existing capability flags', () => {
 		const tabs = getProfileTabs(
 			{ ...AUTHOR, is_owner: true },

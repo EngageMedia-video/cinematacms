@@ -60,6 +60,18 @@ export function getProfileTabs(author, runtimeConfig) {
 			visible: true,
 		},
 		{
+			id: 'contact',
+			label: 'Contact',
+			heading: `Contact ${name}`,
+			subtext: `Send a message directly to ${name}. You'll receive a copy in your own inbox so you can continue the conversation by email.`,
+			href: `${base}/contact`,
+			// author.can_contact is the viewer-aware flag from the backend
+			// (authenticated, non-owner, and the profile allows contact or the
+			// viewer is an editor/curator) — the same gate as the contact POST.
+			// The owner check is defensive; the backend never sets it for owners.
+			visible: !owner && Boolean(author.can_contact),
+		},
+		{
 			id: 'history',
 			label: 'Viewing History',
 			heading: 'Watching History',

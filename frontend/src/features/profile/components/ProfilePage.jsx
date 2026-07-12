@@ -7,6 +7,7 @@ import { ProfileHeader } from './ProfileHeader';
 import { ProfileTabs } from './ProfileTabs';
 import { SectionHeading } from './SectionHeading';
 import { AboutSection } from './sections/AboutSection';
+import { ContactSection } from './sections/ContactSection';
 import { ImpactSection } from './sections/ImpactSection';
 import { ManageUploadsSection } from './sections/ManageUploadsSection';
 import { MediaSection } from './sections/MediaSection';
@@ -21,6 +22,7 @@ const SECTIONS = {
 	playlists: PlaylistsSection,
 	notes: NotesSection,
 	impact: ImpactSection,
+	contact: ContactSection,
 	history: (props) => <OwnerMediaSection {...props} action="history" />,
 	liked: (props) => <OwnerMediaSection {...props} action="liked" />,
 };

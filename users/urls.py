@@ -42,6 +42,11 @@ urlpatterns = [
         name="get_user_impact",
     ),
     re_path(
+        rf"^user/(?P<username>{USERNAME_RE})/contact$",
+        views.view_user_contact,
+        name="get_user_contact",
+    ),
+    re_path(
         rf"^user/(?P<username>{USERNAME_RE})/history$",
         views.view_user_history,
         name="get_user_history",
