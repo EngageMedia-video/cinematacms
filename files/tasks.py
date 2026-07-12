@@ -793,7 +793,9 @@ def create_hls(friendly_token):
     try:
         version = produce_friendly_token()
         output_dir = os.path.join(uid_dir, version)
-        os.makedirs(output_dir, exist_ok=True)
+        # mp4hls creates output_dir itself with os.mkdir and exits 1 if it
+        # already exists (unless --force), so only the parent may be created here.
+        os.makedirs(uid_dir, exist_ok=True)
 
         files = [f.media_file.path for f in encodings if f.media_file]
         encryption_flags = []
