@@ -1,12 +1,14 @@
-import { formatDuration } from '../../../shared/utils/formatDuration';
 import { formatCount, getMediaCountry, getMediaDescription } from '../../../playlist/utils/playlist';
+import { formatDuration } from '../../../shared/utils/formatDuration';
 
 /**
- * Read-only film header for the profile Impact tab. Mirrors the Playlist page
- * FilmRow layout (thumbnail, title, uploader, country, views, synopsis) but
- * without the owner reorder/menu controls — impact entries render beneath it.
+ * Read-only film-row header for the profile Impact tab. Faithfully mirrors the
+ * Playlist page FilmRow layout — order number, thumbnail with a duration pill,
+ * title, uploader, country · views, and a dedicated Synopsis column — but
+ * without the owner reorder/share menu. Impact entries render beneath it.
  */
-export function ImpactFilmRow({ media }) {
+export function ImpactFilmRow({ media, index = 0 }) {
+	const url = media?.url || '#';
 	const title = media?.title || 'Untitled video';
 	const author = media?.author_name || media?.user || 'Cinemata member';
 	const country = getMediaCountry(media);
@@ -15,11 +17,15 @@ export function ImpactFilmRow({ media }) {
 	const metadata = [country, formatCount(media?.views || 0, 'view')].filter(Boolean).join(' · ');
 
 	return (
-		<div className="grid grid-cols-1 gap-x-4 gap-y-3 @2xl:grid-cols-[220px_minmax(0,1fr)] @2xl:items-start">
+		<div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-[24px_180px_minmax(140px,0.8fr)_minmax(0,1.2fr)] sm:items-start lg:grid-cols-[24px_220px_200px_minmax(0,1fr)] lg:gap-x-5">
+			<span className="hidden text-center text-text-muted body-body-14-regular sm:block sm:self-center">
+				{index + 1}
+			</span>
+
 			<a
-				href={media?.url || '#'}
-				className="relative block aspect-video w-full shrink-0 overflow-hidden rounded-ds-6 bg-bg-skeleton no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus @2xl:w-[220px]"
+				href={url}
 				aria-label={`Open ${title}`}
+				className="relative block aspect-video w-full max-w-[220px] shrink-0 overflow-hidden rounded-ds-6 bg-bg-skeleton no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus sm:w-[180px] sm:max-w-none lg:w-[220px]"
 			>
 				{media?.thumbnail_url ? (
 					<img
@@ -45,21 +51,29 @@ export function ImpactFilmRow({ media }) {
 
 			<div className="flex min-w-0 flex-col gap-2">
 				<a
-					href={media?.url || '#'}
-					className="line-clamp-2 text-text-strong no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-16-medium"
+					href={url}
+					className="line-clamp-3 text-text-strong no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-16-medium"
 				>
 					{title}
 				</a>
 				<a
 					href={media?.author_profile || '#'}
-					className="line-clamp-1 w-fit text-text-link no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-12-regular"
+					className="line-clamp-2 w-fit text-text-link no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-12-regular"
 				>
 					{author}
 				</a>
 				{metadata ? <p className="m-0 text-text-muted body-body-12-regular">{metadata}</p> : null}
+			</div>
+
+			<div className="min-w-0">
+				<p className="m-0 mb-3 text-text-muted body-body-14-regular">Synopsis</p>
 				{description ? (
-					<p className="m-0 line-clamp-3 break-words text-text-primary body-body-14-regular">{description}</p>
-				) : null}
+					<p className="m-0 line-clamp-6 break-words text-text-primary body-body-14-regular sm:line-clamp-3">
+						{description}
+					</p>
+				) : (
+					<p className="m-0 text-text-muted body-body-14-regular">No synopsis available.</p>
+				)}
 			</div>
 		</div>
 	);
