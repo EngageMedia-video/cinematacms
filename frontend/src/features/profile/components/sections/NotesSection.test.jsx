@@ -29,7 +29,9 @@ describe('NotesSection', () => {
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
-	it('renders the owner notes with media context and timestamp deep-link', async () => {
+	it('renders one card per film from the server aggregate, with media context and count', async () => {
+		// The endpoint already returns one latest note per film plus note_count;
+		// the client renders it directly (no grouping).
 		vi.spyOn(globalThis, 'fetch').mockResolvedValue({
 			ok: true,
 			json: async () => ({
@@ -39,19 +41,7 @@ describe('NotesSection', () => {
 						text: 'Latest note',
 						timestamp_seconds: 65,
 						add_date: '2026-07-11T05:12:00Z',
-						media: {
-							title: 'My Film',
-							friendly_token: 'abc',
-							url: '/view?m=abc',
-							thumbnail_url: '',
-							duration: 120,
-						},
-					},
-					{
-						uid: 'n2',
-						text: 'Older note',
-						timestamp_seconds: 30,
-						add_date: '2026-07-10T05:12:00Z',
+						note_count: 2,
 						media: {
 							title: 'My Film',
 							friendly_token: 'abc',
@@ -68,7 +58,6 @@ describe('NotesSection', () => {
 		renderSection({ username: 'jen', is_owner: true });
 
 		await waitFor(() => expect(screen.getByText('Latest note')).toBeInTheDocument());
-		expect(screen.queryByText('Older note')).not.toBeInTheDocument();
 		expect(screen.getByText('Last Note')).toBeInTheDocument();
 		// The note timestamp (1:05) shows beside the card; the film duration
 		// (2:00) shows as a pill on the thumbnail.
@@ -76,10 +65,24 @@ describe('NotesSection', () => {
 		expect(screen.getByText('2:00')).toBeInTheDocument();
 		const link = screen.getByRole('link', { name: /open my film at 1:05/i });
 		expect(link).toHaveAttribute('href', '/view?m=abc&t=65');
+		// Count comes from the server-provided note_count, not the array length.
 		expect(screen.getByRole('link', { name: /view all 2 notes on this film/i })).toHaveAttribute(
 			'href',
 			'/view?m=abc'
 		);
+	});
+
+	it('fetches the notes endpoint exactly once (no client-side page walk)', async () => {
+		const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+			ok: true,
+			json: async () => ({ results: [], next: '' }),
+		});
+
+		renderSection({ username: 'jen', is_owner: true });
+
+		await waitFor(() => expect(screen.getByText(/no notes yet/i)).toBeInTheDocument());
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/users/jen/private-journal');
 	});
 
 	it('shows the empty state when the owner has no notes', async () => {

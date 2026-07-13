@@ -2,34 +2,9 @@ import { Icon, Text } from '../../../shared/components';
 import { useAuthorNotes } from '../../hooks/useAuthorNotes';
 import { NoteEntry } from './NoteEntry';
 
-function mediaKey(note) {
+function noteKey(note) {
 	const media = note?.media || {};
 	return media.friendly_token || media.url || media.title || note.uid;
-}
-
-function noteTime(note) {
-	const value = new Date(note?.add_date || note?.edit_date || 0).getTime();
-	return Number.isNaN(value) ? 0 : value;
-}
-
-function latestNotesByFilm(notes) {
-	const groups = new Map();
-
-	for (const note of notes) {
-		const key = mediaKey(note);
-		const current = groups.get(key);
-		if (!current) {
-			groups.set(key, { note, noteCount: 1 });
-			continue;
-		}
-
-		current.noteCount += 1;
-		if (noteTime(note) > noteTime(current.note)) {
-			current.note = note;
-		}
-	}
-
-	return Array.from(groups.values()).sort((a, b) => noteTime(b.note) - noteTime(a.note));
 }
 
 function EmptyNotes() {
@@ -61,14 +36,15 @@ export function NotesSection({ author }) {
 	}
 	if (isError) return <Text className="text-text-danger">Your notes could not be loaded.</Text>;
 
-	const notes = Array.isArray(data?.results) ? data.results : [];
-	if (!notes.length) return <EmptyNotes />;
-	const filmNotes = latestNotesByFilm(notes);
+	// The endpoint already returns one latest note per film with a note_count,
+	// newest film first — render directly, no client-side grouping.
+	const films = Array.isArray(data?.results) ? data.results : [];
+	if (!films.length) return <EmptyNotes />;
 
 	return (
 		<ul className="-mx-4 grid list-none grid-cols-1 justify-items-center gap-y-[48px] p-0 sm:mx-0 xl:grid-cols-[repeat(2,564px)] xl:justify-items-start xl:gap-x-[33px] xl:gap-y-[37px]">
-			{filmNotes.map(({ note, noteCount }) => (
-				<NoteEntry key={mediaKey(note)} note={note} noteCount={noteCount} />
+			{films.map((note) => (
+				<NoteEntry key={noteKey(note)} note={note} noteCount={note.note_count || 1} />
 			))}
 		</ul>
 	);
