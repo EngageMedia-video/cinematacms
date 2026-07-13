@@ -10,17 +10,26 @@ VIDEO_COUNTRIES_DICT = dict(video_countries)
 
 
 class ProfilePrivateJournalNoteSerializer(PrivateJournalNoteSerializer):
-    """Notes aggregated on the profile carry their media context so each entry
-    can render a thumbnail card and deep-link back to the film at its timestamp.
+    """The latest note for a film on the profile "My Notes" tab. Carries media
+    context (so the card can render a thumbnail and deep-link back to the film
+    at its timestamp) and ``note_count`` — the total notes the user has on that
+    film, since the tab shows one card per film with a "View all N" link.
 
-    The per-media viewer serializer omits this because the viewer already knows
-    its own media.
+    The per-media viewer serializer omits both because the viewer already knows
+    its own media and lists notes individually.
     """
 
     media = serializers.SerializerMethodField()
+    note_count = serializers.SerializerMethodField()
 
     class Meta(PrivateJournalNoteSerializer.Meta):
-        fields = PrivateJournalNoteSerializer.Meta.fields + ("media",)
+        fields = PrivateJournalNoteSerializer.Meta.fields + ("media", "note_count")
+
+    def get_note_count(self, obj):
+        # Aggregated per-film count supplied by the view; falls back to 1 (this
+        # note) when the serializer is used outside the aggregated endpoint.
+        note_counts = self.context.get("note_counts") or {}
+        return note_counts.get(obj.media_id, 1)
 
     def get_media(self, obj):
         media = obj.media

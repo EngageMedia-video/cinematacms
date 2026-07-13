@@ -2,8 +2,9 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import redirect_to_login
 from django.core.mail import EmailMessage
-from django.db.models import Case, Q, Value, When
+from django.db.models import Case, Count, Max, Q, Value, When
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils import timezone
@@ -27,7 +28,7 @@ from cms.ui_variant import resolve_template
 from files.lists import video_countries
 from files.methods import is_curator, is_mediacms_editor, is_mediacms_manager
 from files.models import CommunityImpact, PrivateJournalNote
-from files.serializers import CommunityImpactSerializer, MediaSerializer
+from files.serializers import CommunityImpactSerializer
 
 from .forms import ChannelForm, UserForm
 from .models import Channel, User
@@ -48,14 +49,17 @@ def can_contact_user(viewer, target):
     """Whether ``viewer`` may send a contact message to ``target``.
 
     A single source of truth shared by the profile bootstrap (``can_contact``),
-    the Contact tab view, and the ``contact_user`` POST endpoint so the tab is
-    only shown when the send will actually succeed. The viewer must be
+    the Contact tab view, and the ``contact_user`` POST endpoint so the modern
+    tab is only shown when the send will actually succeed. The viewer must be
     authenticated and not the target; the target must allow contact, unless the
-    viewer is an editor/curator (override roles).
+    viewer is an editor (the override role the original ``contact_user`` gate
+    honoured). Curators are intentionally NOT included here — this PR does not
+    change the pre-existing contact/email behaviour, and the original send gate
+    was ``allow_contact or is_mediacms_editor`` only.
     """
     if not viewer.is_authenticated or viewer == target:
         return False
-    return bool(target.allow_contact or is_mediacms_editor(viewer) or is_curator(viewer))
+    return bool(target.allow_contact or is_mediacms_editor(viewer))
 
 
 def _profile_context(request, user, active_tab):
@@ -175,8 +179,12 @@ def view_user_contact(request, username):
     template = resolve_template(request, "profile")
     if request.ui_variant == "legacy":
         return HttpResponseRedirect(user.get_absolute_url())
-    # Contact is a public-facing tab, but only for authenticated non-owners on
-    # profiles that allow contact (mirrors the contact_user POST gate).
+    # Contact requires an authenticated non-owner on a profile that accepts
+    # contact (mirrors the contact_user POST gate). Send anonymous visitors who
+    # follow a shared /contact link to login with a next back to the tab, like
+    # the rest of the site's gated pages; everyone else bounces to the profile.
+    if not request.user.is_authenticated:
+        return redirect_to_login(request.get_full_path())
     if not can_contact_user(request.user, user):
         return HttpResponseRedirect(user.get_absolute_url())
     return render(request, template, _profile_context(request, user, "contact"))
@@ -247,6 +255,13 @@ def edit_channel(request, friendly_token):
     return render(request, "cms/channel_edit.html", {"form": form})
 
 
+# Contact message length caps (characters). Subject sits in an email header;
+# body is the message. Generous but bounded so the endpoint cannot be abused to
+# send huge emails.
+CONTACT_SUBJECT_MAX_LENGTH = 200
+CONTACT_BODY_MAX_LENGTH = 5000
+
+
 @csrf_exempt
 @api_view(["POST"])
 def contact_user(request, username):
@@ -283,6 +298,29 @@ def contact_user(request, username):
     if not form_subject or not form_body:
         return Response(
             {"detail": "Subject and body are required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # The subject is interpolated into an email Subject header. A newline would
+    # make Django raise BadHeaderError from EmailMessage.message() — which is
+    # NOT swallowed by fail_silently (that only covers SMTP send errors) — so an
+    # unvalidated newline turns into a 500. Reject it here as a 400 instead.
+    if "\n" in form_subject or "\r" in form_subject:
+        return Response(
+            {"detail": "Subject may not contain line breaks"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Bound both fields so the endpoint cannot be used to send arbitrarily large
+    # emails (otherwise limited only by DATA_UPLOAD_MAX_MEMORY_SIZE).
+    if len(form_subject) > CONTACT_SUBJECT_MAX_LENGTH:
+        return Response(
+            {"detail": f"Subject may not exceed {CONTACT_SUBJECT_MAX_LENGTH} characters"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if len(form_body) > CONTACT_BODY_MAX_LENGTH:
+        return Response(
+            {"detail": f"Message may not exceed {CONTACT_BODY_MAX_LENGTH} characters"},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -488,20 +526,57 @@ class UserDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+def _impact_film_media(media, request):
+    """Minimal media payload for an Impact-tab film-row header.
+
+    ImpactFilmRow (mirroring the Playlist FilmRow) only needs title, url,
+    thumbnail, uploader, country, views, synopsis and duration. Building this
+    dict directly — instead of the full MediaSerializer — avoids that
+    serializer's per-media work (e.g. encoding/preview lookups), so the endpoint
+    stays flat regardless of how many films are returned, and keeps the payload
+    scoped to what the UI renders.
+    """
+    thumbnail_url = media.thumbnail_url
+    return {
+        "friendly_token": media.friendly_token,
+        "title": media.title,
+        "url": request.build_absolute_uri(media.get_absolute_url()),
+        "thumbnail_url": request.build_absolute_uri(thumbnail_url) if thumbnail_url else None,
+        "author_name": media.author_name,
+        "author_profile": request.build_absolute_uri(media.author_profile()),
+        "duration": media.duration,
+        "views": media.views,
+        "summary": media.summary,
+        "media_country_info": media.media_country_info,
+    }
+
+
 class UserCommunityImpactList(APIView):
     permission_classes = (permissions.AllowAny,)
+    # Entries kept per category per film. The profile UI lists individual
+    # entries, so this caps a single film's list; it does not cap the number of
+    # films (see film_limit).
     category_limit = 50
+    # Films returned per request. Community impact is manually submitted and
+    # admin-approved per film, so a single author realistically has impact on a
+    # handful of films (single digits in practice). This cap is defensive
+    # insurance against a future data explosion, surfaced via `has_more` rather
+    # than full pagination, which the tiny realistic bound does not warrant.
+    film_limit = 50
 
     def get(self, request, username):
         user = get_user(username)
         if not user:
             return Response({"detail": "user does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        # "curated" is never surfaced on the profile Impact tab, so exclude it
-        # here — otherwise a film whose only entries are curated would produce
-        # an empty film group in the UI.
+        # Only categories the profile Impact tab actually renders (see
+        # ImpactFilmGroup). "curated" is never shown, and "saves" is a
+        # summary-only category with no listable entries, so excluding both
+        # keeps the payload aligned with the UI and avoids empty film groups.
         display_categories = [
-            category for category, _ in CommunityImpact.CATEGORY_CHOICES if category != CommunityImpact.CURATED
+            category
+            for category, _ in CommunityImpact.CATEGORY_CHOICES
+            if category not in (CommunityImpact.CURATED, CommunityImpact.SAVES)
         ]
         entries = (
             CommunityImpact.objects.filter(
@@ -512,6 +587,9 @@ class UserCommunityImpactList(APIView):
                 status=CommunityImpact.APPROVED,
                 category__in=display_categories,
             )
+            # select_related covers everything _impact_film_media reads (media +
+            # its user); it builds a minimal dict, so there is no per-film m2m or
+            # encoding lookup to prefetch.
             .select_related("media", "media__user", "user")
             .order_by("-event_date", "-add_date")
         )
@@ -519,32 +597,42 @@ class UserCommunityImpactList(APIView):
         # Group entries under the film they belong to so the profile Impact tab
         # can attribute each entry to its media (issue #810). Films keep the
         # order in which their most recent impact entry appears (entries are
-        # already ordered by -event_date, -add_date above).
+        # already ordered by -event_date, -add_date above). Films beyond
+        # film_limit are dropped and flagged via has_more.
         films = {}
+        has_more = False
         for entry in entries:
             media = entry.media
             film = films.get(media.pk)
             if film is None:
+                if len(films) >= self.film_limit:
+                    has_more = True
+                    continue
                 film = {
-                    "media": MediaSerializer(media, context={"request": request}).data,
-                    "impact": {category: {"entries": [], "totalCount": 0} for category in display_categories},
+                    "media": _impact_film_media(media, request),
+                    "impact": {category: {"entries": []} for category in display_categories},
                 }
                 films[media.pk] = film
 
             bucket = film["impact"][entry.category]
-            bucket["totalCount"] += 1
             if len(bucket["entries"]) < self.category_limit:
                 bucket["entries"].append(CommunityImpactSerializer(entry, context={"request": request}).data)
 
-        return Response({"films": list(films.values())})
+        return Response({"films": list(films.values()), "has_more": has_more})
 
 
 class UserPrivateJournalList(APIView):
-    """Author-scoped private journal notes for the profile "My Notes" tab.
+    """Author-scoped private journal notes for the profile "My Notes" tab,
+    aggregated by film.
+
+    The tab renders one card per film (latest note + a total count), so this
+    endpoint groups server-side and paginates by *film* — mirroring the Impact
+    endpoint's per-film shape — instead of returning every note and collapsing
+    on the client. That keeps the note count authoritative and the request
+    count constant regardless of how many notes a user has.
 
     Private notes: a user may only list their own notes, so this requires
-    authentication and matching the requested username (403 otherwise) — unlike
-    the public Impact endpoint.
+    authentication and matching the requested username (403 otherwise).
     """
 
     permission_classes = (permissions.IsAuthenticated,)
@@ -556,8 +644,36 @@ class UserPrivateJournalList(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        notes = PrivateJournalNote.objects.filter(user=request.user).select_related("media").order_by("-add_date")
+        # One row per film the user has notes on, ordered by the most recent
+        # note, with the per-film note count. Uses the (user, -add_date) index.
+        films = (
+            PrivateJournalNote.objects.filter(user=request.user)
+            .values("media")
+            .annotate(note_count=Count("id"), latest_note_date=Max("add_date"))
+            .order_by("-latest_note_date")
+        )
+
         paginator = api_settings.DEFAULT_PAGINATION_CLASS()
-        page = paginator.paginate_queryset(notes, request)
-        serializer = ProfilePrivateJournalNoteSerializer(page, many=True, context={"request": request})
+        page = paginator.paginate_queryset(films, request)
+
+        # Fetch the latest note per film in the page. self.request.user scopes
+        # this to the owner, and there is one film row per media, so this is a
+        # bounded number of point lookups (page size), not an N+1 over all notes.
+        counts = {row["media"]: row["note_count"] for row in page}
+        latest_notes = []
+        for media_pk in counts:
+            note = (
+                PrivateJournalNote.objects.filter(user=request.user, media=media_pk)
+                .select_related("media")
+                .order_by("-add_date")
+                .first()
+            )
+            if note is not None:
+                latest_notes.append(note)
+
+        serializer = ProfilePrivateJournalNoteSerializer(
+            latest_notes,
+            many=True,
+            context={"request": request, "note_counts": counts},
+        )
         return paginator.get_paginated_response(serializer.data)
