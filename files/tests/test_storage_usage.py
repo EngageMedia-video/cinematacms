@@ -190,6 +190,6 @@ class StorageUsageTests(TestCase):
 
         self.media.refresh_from_db()
         self.assertNotEqual(self.media.hls_file, old_hls_path)
-        self.assertTrue(os.path.exists(self.media.hls_file))
+        self.assertTrue(os.path.exists(self.media.hls_file_path))
         self.assertFalse(os.path.exists(old_hls_path))
         schedule_refresh.assert_called_once_with(self.media.id)

@@ -325,10 +325,11 @@ class CreateHlsVersionedDirectoryTests(TestCase):
             self.assertTrue(tasks.create_hls(self.media.friendly_token))
 
         self.media.refresh_from_db()
-        uid_dir = os.path.join(self.hls_dir, self.media.uid.hex)
-        self.assertTrue(self.media.hls_file.startswith(uid_dir + os.sep))
-        self.assertNotEqual(os.path.dirname(self.media.hls_file), uid_dir)
-        self.assertTrue(os.path.exists(self.media.hls_file))
+        uid_rel = os.path.join("hls", self.media.uid.hex)
+        self.assertFalse(os.path.isabs(self.media.hls_file))
+        self.assertTrue(self.media.hls_file.startswith(uid_rel + os.sep))
+        self.assertNotEqual(os.path.dirname(self.media.hls_file), uid_rel)
+        self.assertTrue(os.path.exists(self.media.hls_file_path))
 
     def test_regeneration_removes_previous_version_directory(self):
         from files import tasks
@@ -336,12 +337,12 @@ class CreateHlsVersionedDirectoryTests(TestCase):
         with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
             self.assertTrue(tasks.create_hls(self.media.friendly_token))
         self.media.refresh_from_db()
-        first_dir = os.path.dirname(self.media.hls_file)
+        first_dir = os.path.dirname(self.media.hls_file_path)
 
         with patch("files.tasks.subprocess.run", side_effect=self._fake_run_writing_master):
             self.assertTrue(tasks.create_hls(self.media.friendly_token))
         self.media.refresh_from_db()
-        second_dir = os.path.dirname(self.media.hls_file)
+        second_dir = os.path.dirname(self.media.hls_file_path)
 
         self.assertNotEqual(first_dir, second_dir)
         self.assertFalse(os.path.exists(first_dir))
@@ -365,7 +366,7 @@ class CreateHlsVersionedDirectoryTests(TestCase):
 
         self.assertFalse(os.path.exists(legacy_master))
         self.media.refresh_from_db()
-        self.assertTrue(os.path.exists(self.media.hls_file))
+        self.assertTrue(os.path.exists(self.media.hls_file_path))
 
     def test_mp4hls_failure_leaves_previous_hls_file_untouched(self):
         from files import tasks
@@ -380,7 +381,7 @@ class CreateHlsVersionedDirectoryTests(TestCase):
 
         self.media.refresh_from_db()
         self.assertEqual(self.media.hls_file, good_hls_file)
-        self.assertTrue(os.path.exists(good_hls_file))
+        self.assertTrue(os.path.exists(self.media.hls_file_path))
 
     def test_mp4hls_nonzero_with_master_discards_partial_output(self):
         from files import tasks
@@ -498,7 +499,7 @@ class CreateHlsVersionedDirectoryTests(TestCase):
             self.assertTrue(tasks.create_hls(self.media.friendly_token))
         self.media.refresh_from_db()
         hls_file_before = self.media.hls_file
-        dir_before = os.path.dirname(hls_file_before)
+        dir_before = os.path.dirname(self.media.hls_file_path)
 
         lock_key = f"create_hls_lock_{self.media.uid.hex}"
         pending_key = f"create_hls_pending_{self.media.uid.hex}"

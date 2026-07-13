@@ -136,7 +136,7 @@ def calculate_media_storage_usage(media):
     for subtitle in media.subtitles.all():
         total += _safe_filefield_size(subtitle.subtitle_file, seen_paths)
 
-    total += _safe_local_directory_size(media.hls_file, seen_paths)
+    total += _safe_local_directory_size(media.hls_file_path, seen_paths)
 
     return total
 

@@ -190,7 +190,37 @@ def rm_dir(directory):
 
 def url_from_path(filename):
     # TODO: find a way to preserver http - https ...
-    return f"{settings.MEDIA_URL}{filename.replace(settings.MEDIA_ROOT, '')}"
+    # Accepts MEDIA_ROOT-relative names (the storage convention) and absolute
+    # paths; absolute prefixes are stripped even when the stored value and the
+    # current MEDIA_ROOT disagree about a trailing slash (#789).
+    name = str(filename or "")
+    media_root = settings.MEDIA_ROOT.rstrip("/")
+    if name.startswith(media_root + "/"):
+        name = name[len(media_root) + 1 :]
+    return f"{settings.MEDIA_URL}{name.lstrip('/')}"
+
+
+def hls_path_to_relative(path):
+    """Return the MEDIA_ROOT-relative form of an HLS file path.
+
+    Legacy rows store absolute paths whose prefix may no longer match the
+    current MEDIA_ROOT, so this anchors on the "/hls/" directory marker
+    (HLS output always lives in MEDIA_ROOT/hls/) before falling back to a
+    plain prefix strip. Already-relative values pass through unchanged, so
+    the conversion is idempotent (#789).
+    """
+    if not path:
+        return path
+    if not os.path.isabs(path):
+        return path.lstrip("/")
+    marker = "/hls/"
+    idx = path.find(marker)
+    if idx != -1:
+        return path[idx + 1 :]
+    media_root = settings.MEDIA_ROOT.rstrip("/") + "/"
+    if path.startswith(media_root):
+        return path[len(media_root) :]
+    return path
 
 
 def build_versioned_url(base_url, version):
