@@ -15,6 +15,12 @@ export function ContactSection({ author }) {
 	const recipientName = author.name || author.username;
 	const canSubmit = status !== SENDING && subject.trim() !== '' && body.trim() !== '';
 
+	// Clear a lingering success/error banner once the user starts a new message,
+	// so it never sits above a half-typed follow-up.
+	function clearStatusOnEdit() {
+		if (status === SUCCESS || status === ERROR) setStatus(IDLE);
+	}
+
 	async function handleSubmit(event) {
 		event.preventDefault();
 		if (!canSubmit) return;
@@ -44,7 +50,10 @@ export function ContactSection({ author }) {
 				name="subject"
 				required
 				value={subject}
-				onChange={(event) => setSubject(event.target.value)}
+				onChange={(event) => {
+					setSubject(event.target.value);
+					clearStatusOnEdit();
+				}}
 				className="w-full"
 			/>
 
@@ -62,7 +71,10 @@ export function ContactSection({ author }) {
 					required
 					rows={8}
 					value={body}
-					onChange={(event) => setBody(event.target.value)}
+					onChange={(event) => {
+						setBody(event.target.value);
+						clearStatusOnEdit();
+					}}
 					className="body-body-16-regular w-full resize-y border-0 bg-transparent text-text-strong outline-none placeholder:text-text-muted"
 				/>
 			</div>

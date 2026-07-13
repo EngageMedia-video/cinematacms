@@ -107,7 +107,6 @@ export function CommunityImpactSection({
 }) {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const headingId = useId();
-	const showHeader = Boolean(title) || Boolean(description);
 	const cards = useMemo(
 		() =>
 			COMMUNITY_IMPACT_CATEGORIES.map(({ value }) => {
@@ -143,38 +142,26 @@ export function CommunityImpactSection({
 	}
 
 	return (
-		<section
-			aria-labelledby={title ? headingId : undefined}
-			aria-label={title ? undefined : 'Community impact'}
-			className="w-full text-text-primary"
-		>
-			{showHeader || canAdd ? (
-				<div className="flex flex-col gap-space-base lg:flex-row lg:items-center lg:justify-between">
-					{showHeader ? (
-						<div className="max-w-[calc(var(--size-96)*6+var(--size-64))]">
-							{title ? (
-								<Text id={headingId} variant="h5-bold" as="h2" className="m-0 text-text-primary">
-									{title}
-								</Text>
-							) : null}
-							{description ? (
-								<Text variant="body-14" color="meta" className="m-0 mt-space-xs">
-									{description}
-								</Text>
-							) : null}
-						</div>
-					) : null}
-
-					{canAdd ? (
-						<Button
-							className="w-full justify-center focus-visible:ring-2 focus-visible:ring-ring-focus sm:w-fit"
-							onClick={handleAddClick}
-						>
-							ADD IMPACT
-						</Button>
-					) : null}
+		<section aria-labelledby={headingId} className="w-full text-text-primary">
+			<div className="flex flex-col gap-space-base lg:flex-row lg:items-center lg:justify-between">
+				<div className="max-w-[calc(var(--size-96)*6+var(--size-64))]">
+					<Text id={headingId} variant="h5-bold" as="h2" className="m-0 text-text-primary">
+						{title}
+					</Text>
+					<Text variant="body-14" color="meta" className="m-0 mt-space-xs">
+						{description}
+					</Text>
 				</div>
-			) : null}
+
+				{canAdd ? (
+					<Button
+						className="w-full justify-center focus-visible:ring-2 focus-visible:ring-ring-focus sm:w-fit"
+						onClick={handleAddClick}
+					>
+						ADD IMPACT
+					</Button>
+				) : null}
+			</div>
 
 			{submitMessage ? (
 				<Text as="p" variant="body-14-bold" color="accent" className="m-0 mt-space-sm" aria-live="polite">
@@ -182,7 +169,7 @@ export function CommunityImpactSection({
 				</Text>
 			) : null}
 
-			<div className={showHeader ? 'mt-space-lg' : ''}>
+			<div className="mt-space-lg">
 				{populated ? (
 					<div className="grid grid-cols-1 gap-space-base lg:grid-cols-2">
 						{cards.map((card) => (

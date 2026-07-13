@@ -1,4 +1,3 @@
-import { Icon } from '../../../shared/components';
 import { formatDuration } from '../../../shared/utils/formatDuration';
 import { formatClock, formatTimestamp } from '../../../video-viewer/private-journal/utils/journalMedia';
 
@@ -40,7 +39,7 @@ export function NoteEntry({ note, noteCount = 1 }) {
 	const noteCountLabel = `${noteCount} ${noteCount === 1 ? 'Note' : 'Notes'}`;
 
 	return (
-		<li className="grid w-full max-w-[360px] min-w-0 grid-cols-1 gap-y-[16px] sm:max-w-none sm:grid-cols-[220px_16px_36px_17px_1px_33px_minmax(0,1fr)_24px]">
+		<li className="grid w-full max-w-[360px] min-w-0 grid-cols-1 gap-y-[16px] sm:max-w-none sm:grid-cols-[220px_16px_36px_17px_1px_33px_minmax(0,1fr)]">
 			<a
 				href={href}
 				aria-label={`Open ${title} at ${noteTime}`}
@@ -68,7 +67,7 @@ export function NoteEntry({ note, noteCount = 1 }) {
 				) : null}
 			</a>
 
-			<div className="col-span-full grid min-w-0 grid-cols-[36px_17px_1px_33px_minmax(0,1fr)_24px] sm:col-start-3 sm:col-end-9 sm:row-start-1">
+			<div className="col-span-full grid min-w-0 grid-cols-[36px_17px_1px_33px_minmax(0,1fr)] sm:col-start-3 sm:col-end-8 sm:row-start-1">
 				<a
 					href={href}
 					className="col-start-1 self-start text-text-accent no-underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus body-body-14-medium"
@@ -93,13 +92,6 @@ export function NoteEntry({ note, noteCount = 1 }) {
 						</p>
 					) : null}
 				</div>
-
-				<span
-					className="col-start-6 flex h-[24px] w-[24px] items-start justify-center text-text-primary"
-					aria-hidden="true"
-				>
-					<Icon name="threeDots" size={22} decorative />
-				</span>
 			</div>
 
 			<div className="col-span-full sm:col-start-1 sm:row-start-2">
