@@ -48,4 +48,14 @@ describe('EditDescriptionDialog', () => {
 			expect.objectContaining({ method: 'POST', body: { description: LONG_DESCRIPTION } })
 		);
 	});
+
+	it('shows an error banner when the save fails', async () => {
+		const user = userEvent.setup();
+		apiFetch.mockResolvedValue({ ok: false, status: 500, json: async () => ({}) });
+
+		renderDialog({ description: 'Original' });
+		await user.click(screen.getByRole('button', { name: 'Save' }));
+
+		expect(await screen.findByText('The description could not be saved. Try again.')).toBeInTheDocument();
+	});
 });

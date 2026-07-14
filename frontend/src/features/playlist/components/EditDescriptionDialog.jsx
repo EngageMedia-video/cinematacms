@@ -10,13 +10,17 @@ export function EditDescriptionDialog({ config, playlist, token }) {
 	const setOpen = usePlaylistUiStore((state) => state.setDescriptionDialogOpen);
 	const [description, setDescription] = useState(playlist?.description || '');
 	const mutation = usePlaylistDescriptionMutation(token, config);
+	const resetMutation = mutation.reset;
 	const errorId = 'playlist-description-error';
 
 	useEffect(() => {
 		if (open) {
 			setDescription(playlist?.description || '');
+			// A failed save from a previous open would otherwise keep showing
+			// its error banner on reopen.
+			resetMutation();
 		}
-	}, [open, playlist?.description]);
+	}, [open, playlist?.description, resetMutation]);
 
 	function handleSubmit(event) {
 		event.preventDefault();
