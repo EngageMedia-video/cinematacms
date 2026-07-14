@@ -11,6 +11,21 @@ export function getVideoPlayer() {
 	}
 }
 
+// Pure lookup, unlike getVideoPlayer: videojs(el) initializes a player with
+// default options when the element has none yet, which must not happen from
+// passive observers (e.g. before the page's configured player setup runs).
+// Returns the already-initialized player or null.
+export function getExistingVideoPlayer() {
+	if (typeof document === 'undefined' || typeof window === 'undefined') return null;
+	const el = document.querySelector(PLAYER_SELECTOR);
+	if (!el || typeof window.videojs?.getPlayer !== 'function') return null;
+	try {
+		return window.videojs.getPlayer(el) ?? null;
+	} catch {
+		return null;
+	}
+}
+
 export function getCurrentPlayerTime() {
 	const player = getVideoPlayer();
 	if (!player || typeof player.currentTime !== 'function') return null;

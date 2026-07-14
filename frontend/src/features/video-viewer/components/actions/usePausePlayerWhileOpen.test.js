@@ -1,9 +1,9 @@
 import { renderHook } from '@testing-library/react';
 import { usePausePlayerWhileOpen } from './usePausePlayerWhileOpen';
-import { getVideoPlayer } from '../../comments/utils/videoPlayer';
+import { getExistingVideoPlayer } from '../../comments/utils/videoPlayer';
 
 vi.mock('../../comments/utils/videoPlayer', () => ({
-	getVideoPlayer: vi.fn(),
+	getExistingVideoPlayer: vi.fn(),
 }));
 
 function createMockPlayer({ paused = false } = {}) {
@@ -21,7 +21,7 @@ describe('usePausePlayerWhileOpen', () => {
 
 	it('pauses a playing video when the dialog opens', () => {
 		const player = createMockPlayer({ paused: false });
-		getVideoPlayer.mockReturnValue(player);
+		getExistingVideoPlayer.mockReturnValue(player);
 
 		const { rerender } = renderHook(({ isOpen }) => usePausePlayerWhileOpen(isOpen), {
 			initialProps: { isOpen: false },
@@ -33,7 +33,7 @@ describe('usePausePlayerWhileOpen', () => {
 
 	it('resumes playback on close only when the hook paused it', () => {
 		const player = createMockPlayer({ paused: false });
-		getVideoPlayer.mockReturnValue(player);
+		getExistingVideoPlayer.mockReturnValue(player);
 
 		const { rerender } = renderHook(({ isOpen }) => usePausePlayerWhileOpen(isOpen), {
 			initialProps: { isOpen: false },
@@ -46,7 +46,7 @@ describe('usePausePlayerWhileOpen', () => {
 
 	it('does not pause or resume when the video was already paused', () => {
 		const player = createMockPlayer({ paused: true });
-		getVideoPlayer.mockReturnValue(player);
+		getExistingVideoPlayer.mockReturnValue(player);
 
 		const { rerender } = renderHook(({ isOpen }) => usePausePlayerWhileOpen(isOpen), {
 			initialProps: { isOpen: false },
@@ -60,7 +60,7 @@ describe('usePausePlayerWhileOpen', () => {
 
 	it('pauses and resumes again across repeated open/close cycles', () => {
 		const player = createMockPlayer({ paused: false });
-		getVideoPlayer.mockReturnValue(player);
+		getExistingVideoPlayer.mockReturnValue(player);
 
 		const { rerender } = renderHook(({ isOpen }) => usePausePlayerWhileOpen(isOpen), {
 			initialProps: { isOpen: false },
@@ -77,7 +77,7 @@ describe('usePausePlayerWhileOpen', () => {
 	it('swallows a rejected play() promise on resume', async () => {
 		const player = createMockPlayer({ paused: false });
 		player.play = vi.fn(() => Promise.reject(new Error('autoplay blocked')));
-		getVideoPlayer.mockReturnValue(player);
+		getExistingVideoPlayer.mockReturnValue(player);
 
 		const { rerender } = renderHook(({ isOpen }) => usePausePlayerWhileOpen(isOpen), {
 			initialProps: { isOpen: false },
@@ -90,8 +90,32 @@ describe('usePausePlayerWhileOpen', () => {
 		await new Promise((resolve) => setTimeout(resolve, 0));
 	});
 
+	it('never touches the player while the dialog stays closed', () => {
+		getExistingVideoPlayer.mockReturnValue(createMockPlayer({ paused: false }));
+
+		renderHook(({ isOpen }) => usePausePlayerWhileOpen(isOpen), {
+			initialProps: { isOpen: false },
+		});
+
+		expect(getExistingVideoPlayer).not.toHaveBeenCalled();
+	});
+
+	it('resumes on unmount while the dialog is still open', () => {
+		const player = createMockPlayer({ paused: false });
+		getExistingVideoPlayer.mockReturnValue(player);
+
+		const { rerender, unmount } = renderHook(({ isOpen }) => usePausePlayerWhileOpen(isOpen), {
+			initialProps: { isOpen: false },
+		});
+		rerender({ isOpen: true });
+		unmount();
+
+		expect(player.pause).toHaveBeenCalledTimes(1);
+		expect(player.play).toHaveBeenCalledTimes(1);
+	});
+
 	it('does nothing when no player is on the page', () => {
-		getVideoPlayer.mockReturnValue(null);
+		getExistingVideoPlayer.mockReturnValue(null);
 
 		const { rerender } = renderHook(({ isOpen }) => usePausePlayerWhileOpen(isOpen), {
 			initialProps: { isOpen: false },
