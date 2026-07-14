@@ -46,6 +46,15 @@ const MENU_VARIANT_CLASSES = {
 	disabled: 'border-border-input bg-bg-surface-muted',
 };
 
+const TYPEAHEAD_RESET_DELAY = 500;
+
+function normalizeTypeaheadText(text) {
+	return text
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase();
+}
+
 function normalizeOption(option) {
 	if (typeof option === 'string') {
 		return {
@@ -108,6 +117,8 @@ export function Dropdown({
 	const rootRef = useRef(null);
 	const optionRefs = useRef([]);
 	const pendingFocusIndexRef = useRef(null);
+	const typeaheadBufferRef = useRef('');
+	const typeaheadTimerRef = useRef(null);
 	const selectedValue = controlled ? value : internalValue;
 	const selectedOption = getSelectedOption(normalizedOptions, selectedValue);
 	const activeState = variant === 'default' && (isFocused || open);
@@ -151,6 +162,14 @@ export function Dropdown({
 		optionRefs.current[nextIndex]?.focus();
 	}, [open, normalizedOptions.length]);
 
+	useEffect(() => {
+		return () => {
+			if (typeaheadTimerRef.current) {
+				clearTimeout(typeaheadTimerRef.current);
+			}
+		};
+	}, []);
+
 	function focusOption(index) {
 		const nextIndex = clampIndex(index, normalizedOptions.length);
 
@@ -170,6 +189,77 @@ export function Dropdown({
 
 		pendingFocusIndexRef.current = index;
 		setOpen(true);
+	}
+
+	function getTypeaheadAnchorIndex() {
+		const focusedIndex = optionRefs.current.indexOf(document.activeElement);
+
+		if (focusedIndex !== -1) {
+			return focusedIndex;
+		}
+
+		return normalizedOptions.findIndex((option) => option.value === selectedValue);
+	}
+
+	function handleTypeaheadKey(event) {
+		if (disabled || event.metaKey || event.ctrlKey || event.altKey) {
+			return;
+		}
+
+		// An empty-buffer Space keeps its native role (toggle the trigger, activate
+		// an option); mid-search it joins the query so multi-word labels such as
+		// "New Zealand" stay reachable without committing a selection.
+		const isSearchSpace = event.key === ' ' && typeaheadBufferRef.current.length > 0;
+
+		if (event.key.length !== 1 || (event.key === ' ' && !isSearchSpace)) {
+			return;
+		}
+
+		if (isSearchSpace) {
+			event.preventDefault();
+		}
+
+		if (typeaheadTimerRef.current) {
+			clearTimeout(typeaheadTimerRef.current);
+		}
+
+		typeaheadTimerRef.current = setTimeout(() => {
+			typeaheadBufferRef.current = '';
+		}, TYPEAHEAD_RESET_DELAY);
+
+		const buffer = typeaheadBufferRef.current + normalizeTypeaheadText(event.key);
+		typeaheadBufferRef.current = buffer;
+
+		// Repeating one letter cycles through its matches, as native selects do;
+		// any other buffer is a prefix search anchored at the focused option.
+		const cycling = buffer.length > 1 && [...buffer].every((char) => char === buffer[0]);
+		const searchText = cycling ? buffer[0] : buffer;
+		const anchor = getTypeaheadAnchorIndex();
+		const total = normalizedOptions.length;
+		const searchFromNext = cycling || buffer.length === 1;
+		const start = anchor === -1 ? 0 : anchor + (searchFromNext ? 1 : 0);
+
+		let matchIndex = -1;
+
+		for (let step = 0; step < total; step += 1) {
+			const index = (start + step) % total;
+			const option = normalizedOptions[index];
+
+			if (typeof option.label === 'string' && normalizeTypeaheadText(option.label).startsWith(searchText)) {
+				matchIndex = index;
+				break;
+			}
+		}
+
+		if (matchIndex === -1) {
+			return;
+		}
+
+		if (open) {
+			focusOption(matchIndex);
+		} else {
+			openMenuWithFocus(matchIndex);
+		}
 	}
 
 	function getSelectedIndex() {
@@ -245,6 +335,8 @@ export function Dropdown({
 							event.preventDefault();
 							openMenuWithFocus(normalizedOptions.length - 1);
 						}
+
+						handleTypeaheadKey(event);
 					}}
 					onFocus={() => {
 						setIsFocused(true);
@@ -347,6 +439,8 @@ export function Dropdown({
 												rootRef.current?.querySelector('button')?.focus();
 											});
 										}
+
+										handleTypeaheadKey(event);
 									}}
 									className={cn(
 										'body-body-16-regular block w-full border-0 px-4 py-3 text-left outline-none transition-colors duration-150 hover:bg-bg-surface-hover focus:bg-bg-surface-hover',
