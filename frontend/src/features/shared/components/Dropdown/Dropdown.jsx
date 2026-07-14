@@ -46,6 +46,15 @@ const MENU_VARIANT_CLASSES = {
 	disabled: 'border-border-input bg-bg-surface-muted',
 };
 
+const TYPEAHEAD_RESET_DELAY = 500;
+
+function normalizeTypeaheadText(text) {
+	return text
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase();
+}
+
 function normalizeOption(option) {
 	if (typeof option === 'string') {
 		return {
@@ -108,6 +117,8 @@ export function Dropdown({
 	const rootRef = useRef(null);
 	const optionRefs = useRef([]);
 	const pendingFocusIndexRef = useRef(null);
+	const typeaheadBufferRef = useRef('');
+	const typeaheadTimerRef = useRef(null);
 	const selectedValue = controlled ? value : internalValue;
 	const selectedOption = getSelectedOption(normalizedOptions, selectedValue);
 	const activeState = variant === 'default' && (isFocused || open);
@@ -151,6 +162,14 @@ export function Dropdown({
 		optionRefs.current[nextIndex]?.focus();
 	}, [open, normalizedOptions.length]);
 
+	useEffect(() => {
+		return () => {
+			if (typeaheadTimerRef.current) {
+				clearTimeout(typeaheadTimerRef.current);
+			}
+		};
+	}, []);
+
 	function focusOption(index) {
 		const nextIndex = clampIndex(index, normalizedOptions.length);
 
@@ -170,6 +189,43 @@ export function Dropdown({
 
 		pendingFocusIndexRef.current = index;
 		setOpen(true);
+	}
+
+	function handleTypeaheadKey(event) {
+		if (disabled || event.metaKey || event.ctrlKey || event.altKey) {
+			return;
+		}
+
+		// Space is excluded so it keeps toggling the trigger / activating options.
+		if (event.key.length !== 1 || event.key === ' ') {
+			return;
+		}
+
+		if (typeaheadTimerRef.current) {
+			clearTimeout(typeaheadTimerRef.current);
+		}
+
+		typeaheadTimerRef.current = setTimeout(() => {
+			typeaheadBufferRef.current = '';
+		}, TYPEAHEAD_RESET_DELAY);
+
+		typeaheadBufferRef.current += normalizeTypeaheadText(event.key);
+
+		const matchIndex = normalizedOptions.findIndex(
+			(option) =>
+				typeof option.label === 'string' &&
+				normalizeTypeaheadText(option.label).startsWith(typeaheadBufferRef.current)
+		);
+
+		if (matchIndex === -1) {
+			return;
+		}
+
+		if (open) {
+			focusOption(matchIndex);
+		} else {
+			openMenuWithFocus(matchIndex);
+		}
 	}
 
 	function getSelectedIndex() {
@@ -245,6 +301,8 @@ export function Dropdown({
 							event.preventDefault();
 							openMenuWithFocus(normalizedOptions.length - 1);
 						}
+
+						handleTypeaheadKey(event);
 					}}
 					onFocus={() => {
 						setIsFocused(true);
@@ -347,6 +405,8 @@ export function Dropdown({
 												rootRef.current?.querySelector('button')?.focus();
 											});
 										}
+
+										handleTypeaheadKey(event);
 									}}
 									className={cn(
 										'body-body-16-regular block w-full border-0 px-4 py-3 text-left outline-none transition-colors duration-150 hover:bg-bg-surface-hover focus:bg-bg-surface-hover',
