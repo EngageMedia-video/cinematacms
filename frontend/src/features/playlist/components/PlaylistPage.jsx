@@ -12,9 +12,10 @@ import {
 	getPlaylistPageUrl,
 	getPlaylistTokenFromLocation,
 	getPlaylistViews,
+	htmlToPlainText,
 	isOwnerPlaylist,
 } from '../utils/playlist';
-import { CuratorNoteDialog } from './CuratorNoteDialog';
+import { EditDescriptionDialog } from './EditDescriptionDialog';
 import { FilmList } from './FilmList';
 import { ReadMore } from './ReadMore';
 
@@ -99,11 +100,11 @@ function CoverCard({ mobileActions = null, onShare, playlist, playlistToken }) {
 }
 
 function AboutCuratorCard({ playlist }) {
+	const bionote = htmlToPlainText(playlist.user_bionote);
+
 	return (
 		<Card className="flex flex-col rounded-ds-8 p-5 sm:p-[22px]">
-			<h2 className="order-2 m-0 mt-4 text-text-strong heading-h6-20-medium lg:order-1 lg:mt-0">
-				About the Curator
-			</h2>
+			<h2 className="order-2 m-0 mt-4 text-text-strong heading-h6-20-medium lg:order-1 lg:mt-0">Bionote</h2>
 			<div className="order-1 flex items-start gap-4 lg:order-2 lg:mt-5">
 				<div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-bg-avatar-fallback">
 					{playlist.user_thumbnail_url ? (
@@ -124,32 +125,42 @@ function AboutCuratorCard({ playlist }) {
 				</div>
 				<div className="min-w-0 flex-1">
 					<p className="m-0 text-text-muted body-body-14-regular">Playlist Curated by</p>
-					<p className="mt-1 mb-0 text-text-strong body-body-16-medium">
-						{playlist.user_display_name || playlist.user}
+					<p className="mt-1 mb-0">
+						<a
+							href={`/user/${playlist.user}/about`}
+							className="rounded-ds-4 text-text-strong no-underline body-body-16-medium hover:text-text-link-hover hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+						>
+							{playlist.user_display_name || playlist.user}
+						</a>
 					</p>
 					<UserRoleBadge isTrusted={playlist.author_is_trusted} isManager={playlist.author_is_manager} />
 				</div>
 			</div>
-			{playlist.description ? (
+			{bionote ? (
 				<ReadMore
-					id="playlist-description"
-					text={playlist.description}
+					id="playlist-curator-bionote"
+					text={bionote}
 					charBudget={260}
 					colorClassName="text-text-description"
 					className="order-3 mt-4"
 				/>
 			) : (
-				<p className="order-3 mt-4 mb-0 text-text-muted body-body-14-regular">No curator introduction yet.</p>
+				<p className="order-3 mt-4 mb-0 text-text-muted body-body-14-regular">
+					This community member hasn&rsquo;t added a bionote yet.
+				</p>
 			)}
 		</Card>
 	);
 }
 
+// "Description / Curator's Note": renders the playlist description entered in
+// the Create New Playlist flow — the single source for this section (#805).
+// Owners edit that same description through EditDescriptionDialog.
 function CuratorNoteCard({ isOwner, playlist }) {
-	const setOpen = usePlaylistUiStore((state) => state.setCuratorNoteDialogOpen);
-	const hasNote = Boolean(playlist.curator_note);
+	const setOpen = usePlaylistUiStore((state) => state.setDescriptionDialogOpen);
+	const hasDescription = Boolean(playlist.description);
 
-	if (!hasNote && !isOwner) {
+	if (!hasDescription && !isOwner) {
 		return null;
 	}
 
@@ -164,21 +175,21 @@ function CuratorNoteCard({ isOwner, playlist }) {
 						onClick={() => setOpen(true)}
 						className="w-fit focus-visible:ring-2 focus-visible:ring-ring-focus"
 					>
-						{hasNote ? 'Edit' : 'Add curator note'}
+						{hasDescription ? 'Edit' : 'Add description'}
 					</Button>
 				) : null}
 			</div>
-			{hasNote ? (
+			{hasDescription ? (
 				<ReadMore
 					id="playlist-curator-note"
-					text={playlist.curator_note}
+					text={playlist.description}
 					charBudget={500}
 					colorClassName="text-text-description"
 					className="mt-3"
 				/>
 			) : (
 				<p className="mt-4 mb-0 text-text-muted body-body-14-regular">
-					Add editorial framing to help viewers understand this program.
+					Add a description to help viewers understand this program.
 				</p>
 			)}
 		</Card>
@@ -328,7 +339,7 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 					</div>
 				</div>
 			</div>
-			{isOwner ? <CuratorNoteDialog config={config} playlist={playlist} token={playlistToken} /> : null}
+			{isOwner ? <EditDescriptionDialog config={config} playlist={playlist} token={playlistToken} /> : null}
 			<ShareStatusToast message={statusMessage} />
 		</div>
 	);

@@ -9,6 +9,7 @@ import { NavigationContentApp } from './media-share/NavigationContentApp';
 import { Button } from '../../../shared/components/Button/Button';
 import { Icon } from '../../../shared/components/Icon/Icon';
 import { Text } from '../../../shared/components/Text/Text';
+import { usePausePlayerWhileOpen } from './usePausePlayerWhileOpen';
 
 function getCurrentVideoTimestamp() {
 	const videoElem = document.querySelector('.viewer-container video');
@@ -20,6 +21,8 @@ export function MediaShareButton({ isVideo }) {
 	const [popupCurrentPage, setPopupCurrentPage] = useState('shareOptions');
 	const [timestamp, setTimestamp] = useState(0);
 	const [startAtSelected, setStartAtSelected] = useState(false);
+
+	usePausePlayerWhileOpen(isOpen);
 
 	useEffect(() => {
 		if (isOpen) {

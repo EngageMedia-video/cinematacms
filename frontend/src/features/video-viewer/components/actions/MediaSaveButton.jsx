@@ -5,6 +5,7 @@ import MediaPageStore from '../../../../static/js/pages/MediaPage/store.js';
 import { PlaylistsSelection } from './media-save/PlaylistsSelection';
 import { Button, Dialog, DialogContent, DialogTrigger, Icon, Text } from '../../../shared/components';
 import { cn } from '../../../shared/utils/classNames.js';
+import { usePausePlayerWhileOpen } from './usePausePlayerWhileOpen';
 
 function isMediaInUserPlaylist() {
 	const mediaId = MediaPageStore.get('media-id');
@@ -24,6 +25,8 @@ function isMediaInUserPlaylist() {
 export function MediaSaveButton() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [savedToPlaylist, setSavedToPlaylist] = useState(isMediaInUserPlaylist);
+
+	usePausePlayerWhileOpen(isOpen);
 
 	const saveIconClassName = savedToPlaylist ? 'text-text-accent' : 'text-current';
 

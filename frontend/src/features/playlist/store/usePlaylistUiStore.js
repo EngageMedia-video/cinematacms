@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 
 const usePlaylistUiStore = create((set) => ({
-	curatorNoteDialogOpen: false,
+	descriptionDialogOpen: false,
 	expandedTextIds: {},
-	setCuratorNoteDialogOpen: (curatorNoteDialogOpen) => set({ curatorNoteDialogOpen }),
+	setDescriptionDialogOpen: (descriptionDialogOpen) => set({ descriptionDialogOpen }),
 	toggleExpandedText: (id) =>
 		set((state) => ({
 			expandedTextIds: {
@@ -11,7 +11,7 @@ const usePlaylistUiStore = create((set) => ({
 				[id]: !state.expandedTextIds[id],
 			},
 		})),
-	resetPlaylistUi: () => set({ curatorNoteDialogOpen: false, expandedTextIds: {} }),
+	resetPlaylistUi: () => set({ descriptionDialogOpen: false, expandedTextIds: {} }),
 }));
 
 export default usePlaylistUiStore;

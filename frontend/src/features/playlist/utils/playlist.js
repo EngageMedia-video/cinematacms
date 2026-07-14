@@ -119,3 +119,20 @@ export function moveItem(items, fromIndex, toIndex) {
 export function orderedPlaylistMedia(media = []) {
 	return Array.isArray(media) ? [...media] : [];
 }
+
+// User bios (User.description) may contain HTML on deployments that enable
+// pages.profile.htmlInDescription — the About page sanitizes and renders that
+// markup. The playlist Bionote card renders plain text through ReadMore (which
+// escapes markup and truncates raw characters), so derive display text first:
+// block-level breaks become newlines, tags are dropped, entities are decoded.
+export function htmlToPlainText(html) {
+	if (!html) {
+		return '';
+	}
+
+	const normalized = String(html)
+		.replace(/<br\s*\/?>/gi, '\n')
+		.replace(/<\/(p|div|li|h[1-6]|blockquote)>/gi, '\n\n');
+	const doc = new DOMParser().parseFromString(normalized, 'text/html');
+	return (doc.body.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+}
