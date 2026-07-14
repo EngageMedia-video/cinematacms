@@ -4,15 +4,17 @@ from django.conf import settings
 from django.db import migrations
 
 # Rewrites Media.hls_file from absolute filesystem paths to MEDIA_ROOT-relative
-# ones (#789). Logic is inlined (not imported from files.helpers) so the
-# migration stays stable if the helper evolves.
+# ones (#789). The migration owns this logic (nothing is imported from
+# files.helpers) so it stays stable if application code evolves.
 #
-# Forward is idempotent: already-relative rows are skipped, and absolute rows
-# are anchored on the "/hls/" marker (HLS output always lives under
-# MEDIA_ROOT/hls/), so it also converts rows whose stored prefix no longer
-# matches the current MEDIA_ROOT — the exact failure the issue describes.
-# Rows in neither form are left untouched; the tolerant reader on the model
-# (Media.hls_file_path) still resolves them.
+# Forward is idempotent: already-relative rows are skipped. Absolute rows are
+# stripped of the exact current MEDIA_ROOT prefix first; only rows whose
+# stored prefix no longer matches fall back to anchoring on the last "/hls/"
+# marker (HLS output always lives under MEDIA_ROOT/hls/, and the uid/version
+# segments are hex tokens, so the last occurrence is always the HLS root —
+# unlike earlier occurrences, which can belong to a foreign prefix such as
+# /mnt/hls/...). Rows in neither form are left untouched; the tolerant reader
+# on the model (Media.hls_file_path) still resolves them.
 
 BATCH_SIZE = 500
 
@@ -20,12 +22,12 @@ BATCH_SIZE = 500
 def _to_relative(path):
     if not path or not os.path.isabs(path):
         return path
-    idx = path.find("/hls/")
-    if idx != -1:
-        return path[idx + 1 :]
     media_root = settings.MEDIA_ROOT.rstrip("/") + "/"
     if path.startswith(media_root):
         return path[len(media_root) :]
+    idx = path.rfind("/hls/")
+    if idx != -1:
+        return path[idx + 1 :]
     return path
 
 

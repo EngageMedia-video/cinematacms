@@ -200,29 +200,6 @@ def url_from_path(filename):
     return f"{settings.MEDIA_URL}{name.lstrip('/')}"
 
 
-def hls_path_to_relative(path):
-    """Return the MEDIA_ROOT-relative form of an HLS file path.
-
-    Legacy rows store absolute paths whose prefix may no longer match the
-    current MEDIA_ROOT, so this anchors on the "/hls/" directory marker
-    (HLS output always lives in MEDIA_ROOT/hls/) before falling back to a
-    plain prefix strip. Already-relative values pass through unchanged, so
-    the conversion is idempotent (#789).
-    """
-    if not path:
-        return path
-    if not os.path.isabs(path):
-        return path.lstrip("/")
-    marker = "/hls/"
-    idx = path.find(marker)
-    if idx != -1:
-        return path[idx + 1 :]
-    media_root = settings.MEDIA_ROOT.rstrip("/") + "/"
-    if path.startswith(media_root):
-        return path[len(media_root) :]
-    return path
-
-
 def build_versioned_url(base_url, version):
     """Build a versioned URL with proper query parameter handling"""
     if not base_url:
