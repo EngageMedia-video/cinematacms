@@ -62,7 +62,7 @@ def backwards(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("files", "0032_privatejournalnote"),
+        ("files", "0033_remove_playlist_curator_note"),
     ]
 
     operations = [
