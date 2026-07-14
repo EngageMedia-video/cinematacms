@@ -1708,7 +1708,6 @@ class Playlist(models.Model):
     uid = models.UUIDField(unique=True, default=uuid.uuid4)
     title = models.CharField(max_length=90, db_index=True)
     description = models.TextField(blank=True, help_text="description")
-    curator_note = models.TextField(blank=True, default="", help_text="Curator's editorial note for this playlist")
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, db_index=True, related_name="playlists")
     add_date = models.DateTimeField(auto_now_add=True, db_index=True)
     media = models.ManyToManyField(Media, through="playlistmedia", blank=True)
@@ -2588,17 +2587,33 @@ def playlist_pre_delete(sender, instance, **kwargs):
     delete_composite_thumbnail(instance.friendly_token)
 
 
+# The owner profile fields PlaylistDetailSerializer embeds in cached payloads:
+# description → user_bionote, name → user_display_name, logo →
+# user_thumbnail_url, advancedUser → author_is_trusted, is_manager /
+# is_superuser → author_is_manager.
+CACHED_PLAYLIST_PROFILE_FIELDS = {
+    "description",
+    "name",
+    "logo",
+    "advancedUser",
+    "is_manager",
+    "is_superuser",
+}
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def invalidate_user_playlists_on_profile_change(sender, instance, created, update_fields=None, **kwargs):
     """Invalidate cached playlist details when the owner's profile changes.
 
     Cached PlaylistDetail payloads embed owner profile data (bionote, display
     name, thumbnail, role flags), so profile edits must bump those entries.
-    Skips the login-time `last_login`-only save to avoid churning the cache.
+    Targeted saves that touch none of those fields (e.g. Django's login-time
+    `update_fields=["last_login"]`) skip the invalidation; full saves
+    (`update_fields=None`) can't be classified, so they always invalidate.
     """
     if created:
         return
-    if update_fields and set(update_fields) == {"last_login"}:
+    if update_fields is not None and not (set(update_fields) & CACHED_PLAYLIST_PROFILE_FIELDS):
         return
     friendly_tokens = Playlist.objects.filter(user=instance).values_list("friendly_token", flat=True)
     for friendly_token in friendly_tokens:

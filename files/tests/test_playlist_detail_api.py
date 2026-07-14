@@ -54,56 +54,53 @@ class PlaylistDetailBionoteTests(TestCase):
         self.assertEqual(response.json()["user_bionote"], "")
 
 
-class PlaylistDetailCuratorNoteTests(TestCase):
+class PlaylistDetailDescriptionTests(TestCase):
     def setUp(self):
         self.user = create_test_user(username="playlist_owner")
         self.playlist = Playlist.objects.create(
             title="Curated Shorts",
             description="A program note",
-            curator_note="Initial curator note",
             user=self.user,
             friendly_token="plnote01",
         )
 
-    def test_detail_exposes_curator_note(self):
+    def test_detail_exposes_description(self):
         response = self.client.get(f"/api/v1/playlists/{self.playlist.friendly_token}")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["curator_note"], "Initial curator note")
+        self.assertEqual(response.json()["description"], "A program note")
         self.assertEqual(response.json()["user_display_name"], self.user.name)
         self.assertFalse(response.json()["author_is_manager"])
 
-    def test_owner_can_update_curator_note(self):
+    def test_owner_can_update_description(self):
         self.client.force_login(self.user)
 
         response = self.client.post(
             f"/api/v1/playlists/{self.playlist.friendly_token}",
             {
                 "title": self.playlist.title,
-                "description": self.playlist.description,
-                "curator_note": "Updated editorial framing",
+                "description": "Updated editorial framing",
             },
             content_type="application/json",
         )
 
         self.assertEqual(response.status_code, 201)
         self.playlist.refresh_from_db()
-        self.assertEqual(self.playlist.curator_note, "Updated editorial framing")
+        self.assertEqual(self.playlist.description, "Updated editorial framing")
 
-    def test_partial_note_update_keeps_title_and_description(self):
+    def test_partial_description_update_keeps_title(self):
         self.client.force_login(self.user)
 
         response = self.client.post(
             f"/api/v1/playlists/{self.playlist.friendly_token}",
-            {"curator_note": "Note-only update"},
+            {"description": "Description-only update"},
             content_type="application/json",
         )
 
         self.assertEqual(response.status_code, 201)
         self.playlist.refresh_from_db()
-        self.assertEqual(self.playlist.curator_note, "Note-only update")
+        self.assertEqual(self.playlist.description, "Description-only update")
         self.assertEqual(self.playlist.title, "Curated Shorts")
-        self.assertEqual(self.playlist.description, "A program note")
 
     def test_editor_update_does_not_transfer_ownership(self):
         editor = create_test_user(username="playlist_editor", is_editor=True)
@@ -111,16 +108,16 @@ class PlaylistDetailCuratorNoteTests(TestCase):
 
         response = self.client.post(
             f"/api/v1/playlists/{self.playlist.friendly_token}",
-            {"curator_note": "Editor note"},
+            {"description": "Editor description"},
             content_type="application/json",
         )
 
         self.assertEqual(response.status_code, 201)
         self.playlist.refresh_from_db()
-        self.assertEqual(self.playlist.curator_note, "Editor note")
+        self.assertEqual(self.playlist.description, "Editor description")
         self.assertEqual(self.playlist.user, self.user)
 
-    def test_non_owner_cannot_update_curator_note(self):
+    def test_non_owner_cannot_update_description(self):
         other_user = create_test_user(username="playlist_visitor")
         self.client.force_login(other_user)
 
@@ -128,27 +125,25 @@ class PlaylistDetailCuratorNoteTests(TestCase):
             f"/api/v1/playlists/{self.playlist.friendly_token}",
             {
                 "title": self.playlist.title,
-                "description": self.playlist.description,
-                "curator_note": "Hijacked note",
+                "description": "Hijacked description",
             },
             content_type="application/json",
         )
 
         self.assertEqual(response.status_code, 400)
         self.playlist.refresh_from_db()
-        self.assertEqual(self.playlist.curator_note, "Initial curator note")
+        self.assertEqual(self.playlist.description, "A program note")
 
-    def test_anonymous_cannot_update_curator_note(self):
+    def test_anonymous_cannot_update_description(self):
         response = self.client.post(
             f"/api/v1/playlists/{self.playlist.friendly_token}",
             {
                 "title": self.playlist.title,
-                "description": self.playlist.description,
-                "curator_note": "Anonymous note",
+                "description": "Anonymous description",
             },
             content_type="application/json",
         )
 
         self.assertIn(response.status_code, (401, 403))
         self.playlist.refresh_from_db()
-        self.assertEqual(self.playlist.curator_note, "Initial curator note")
+        self.assertEqual(self.playlist.description, "A program note")

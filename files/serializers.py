@@ -546,7 +546,6 @@ class PlaylistDetailSerializer(serializers.ModelSerializer):
             "add_date",
             "user_thumbnail_url",
             "description",
-            "curator_note",
             "user",
             "user_display_name",
             "user_bionote",
