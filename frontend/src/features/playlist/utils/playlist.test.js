@@ -9,6 +9,7 @@ import {
 	getPlaylistPageUrl,
 	getPlaylistTokenFromLocation,
 	getPlaylistViews,
+	htmlToPlainText,
 	isOwnerPlaylist,
 	moveItem,
 	orderedPlaylistMedia,
@@ -112,5 +113,29 @@ describe('playlist utils', () => {
 		expect(formatCreatedDate('2026-07-01T23:59:30Z', now)).toBe('Created just now');
 		expect(formatCreatedDate(undefined, now)).toBe('Created recently');
 		expect(formatCreatedDate('not-a-date', now)).toBe('Created recently');
+	});
+});
+
+describe('htmlToPlainText', () => {
+	it('passes plain text through unchanged', () => {
+		expect(htmlToPlainText('Community archivist.\n\nBased in Manila.')).toBe(
+			'Community archivist.\n\nBased in Manila.'
+		);
+	});
+
+	it('strips markup and keeps paragraph breaks', () => {
+		expect(htmlToPlainText('<p>Filmmaker &amp; <strong>curator</strong>.</p><p>Based in Manila.</p>')).toBe(
+			'Filmmaker & curator.\n\nBased in Manila.'
+		);
+	});
+
+	it('converts line breaks and never executes markup', () => {
+		expect(htmlToPlainText('one<br>two<img src=x onerror="window.__pwned = true">')).toBe('one\ntwo');
+		expect(window.__pwned).toBeUndefined();
+	});
+
+	it('returns an empty string for empty input', () => {
+		expect(htmlToPlainText('')).toBe('');
+		expect(htmlToPlainText(null)).toBe('');
 	});
 });

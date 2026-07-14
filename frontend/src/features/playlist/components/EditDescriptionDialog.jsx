@@ -45,12 +45,13 @@ export function EditDescriptionDialog({ config, playlist, token }) {
 						</p>
 					</div>
 
+					{/* No word limit: Playlist.description and the Create New Playlist
+					    form are unbounded, and EditorField's limiter truncates an
+					    over-limit value on render — silently dropping existing text. */}
 					<EditorField
 						label="Description"
 						value={description}
 						rows={8}
-						enableCounter
-						maxWordsLength={450}
 						aria-describedby={mutation.isError ? errorId : undefined}
 						onChange={(event) => setDescription(event.target.value)}
 						className="w-full"

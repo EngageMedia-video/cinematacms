@@ -12,6 +12,7 @@ import {
 	getPlaylistPageUrl,
 	getPlaylistTokenFromLocation,
 	getPlaylistViews,
+	htmlToPlainText,
 	isOwnerPlaylist,
 } from '../utils/playlist';
 import { EditDescriptionDialog } from './EditDescriptionDialog';
@@ -99,6 +100,8 @@ function CoverCard({ mobileActions = null, onShare, playlist, playlistToken }) {
 }
 
 function AboutCuratorCard({ playlist }) {
+	const bionote = htmlToPlainText(playlist.user_bionote);
+
 	return (
 		<Card className="flex flex-col rounded-ds-8 p-5 sm:p-[22px]">
 			<h2 className="order-2 m-0 mt-4 text-text-strong heading-h6-20-medium lg:order-1 lg:mt-0">Bionote</h2>
@@ -133,10 +136,10 @@ function AboutCuratorCard({ playlist }) {
 					<UserRoleBadge isTrusted={playlist.author_is_trusted} isManager={playlist.author_is_manager} />
 				</div>
 			</div>
-			{playlist.user_bionote ? (
+			{bionote ? (
 				<ReadMore
 					id="playlist-curator-bionote"
-					text={playlist.user_bionote}
+					text={bionote}
 					charBudget={260}
 					colorClassName="text-text-description"
 					className="order-3 mt-4"
