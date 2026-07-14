@@ -597,13 +597,13 @@ TINYMCE_DEFAULT_CONFIG = {
             "forecolor backcolor removeformat",
         },
     },
-    "plugins": "advlist,autolink,autosave,lists,link,image,charmap,print,preview,anchor,"
+    "plugins": "accordion,advlist,autolink,autosave,lists,link,image,charmap,print,preview,anchor,"
     "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,directionality,"
     "code,help,wordcount,emoticons,file,image,media",
     "toolbar": "undo redo | code preview | blocks | "
     "bold italic | alignleft aligncenter "
     "alignright alignjustify ltr rtl | bullist numlist outdent indent | "
-    "removeformat | restoredraft help | image media",
+    "accordion | removeformat | restoredraft help | image media",
     "branding": False,  # remove branding
     "promotion": False,  # remove promotion
     "content_css": "/static/lib/tinymce/tinymce_editor.css",  # extra css to load on the body of the editor
