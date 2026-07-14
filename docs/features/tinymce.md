@@ -74,6 +74,7 @@ TINYMCE_DEFAULT_CONFIG = {
 - **Lists**: Create bulleted and numbered lists using the list buttons
 - **Indentation**: Use the indent/outdent buttons to adjust text hierarchy
 - **Text Direction**: Switch between LTR and RTL text direction for multilingual content
+- **Collapsible Sections (Accordion)**: Use the accordion button to insert a collapsible `<details>`/`<summary>` section — type the always-visible heading on the summary line and the collapsible content below it. New sections are inserted expanded; toggle a section closed in the editor before saving to make it collapsed by default on the published page
 
 ### Media Management
 1. **Inserting Images**:
