@@ -13,7 +13,10 @@ describe('formatInnerLink', () => {
 		);
 	});
 
-	it('collapses multiple boundary slashes from both sides', () => {
+	// Deliberate: a "//host/path" input is treated as a path to join, not as a
+	// protocol-relative URL. The API only ever emits root-relative paths, so a
+	// leading "//" here is a sloppy join artifact, not a scheme-less URL.
+	it('treats a double-slash-prefixed path as a path, collapsing boundary slashes', () => {
 		expect(formatInnerLink('//media/file.mp4', 'https://host//')).toBe('https://host/media/file.mp4');
 	});
 

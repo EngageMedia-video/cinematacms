@@ -2,8 +2,11 @@ import urlParse from 'url-parse';
 
 // Join a base URL and a relative path with exactly one slash between them,
 // whether or not baseUrl ends with a slash or the path starts with one.
-// A trailing-slash site URL would otherwise yield "https://host//media/...",
-// which fragments CDN caches into separate // and / namespaces (#788).
+// This is not an edge case: the site config template hardcodes a trailing
+// slash (templates/config/installation/site.html emits `url: '{{FRONTEND_HOST}}/'`),
+// so site.url ends in "/" on every deployment and the old join produced
+// "https://host//media/..." everywhere, fragmenting CDN caches into separate
+// // and / namespaces (#788).
 function joinWithBase(url, baseUrl) {
 	const safeUrl = url == null ? '' : url;
 	const safeBase = baseUrl == null ? '' : String(baseUrl).replace(/\/+$/, '');
