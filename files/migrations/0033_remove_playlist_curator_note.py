@@ -11,7 +11,10 @@ def merge_curator_notes_into_description(apps, schema_editor):
     """
     Playlist = apps.get_model("files", "Playlist")
     for playlist in Playlist.objects.exclude(curator_note="").iterator():
-        note = playlist.curator_note.strip()
+        # The column is NOT NULL (0031 added it with default=""), but data
+        # migrations run against whatever state a deployment really has, so
+        # stay safe against manually introduced NULLs.
+        note = (playlist.curator_note or "").strip()
         if not note:
             continue
         description = (playlist.description or "").strip()
