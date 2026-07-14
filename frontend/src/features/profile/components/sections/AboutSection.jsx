@@ -4,14 +4,10 @@ import { Icon, Link, Text } from '../../../shared/components';
 import { useAuthorPlaylists } from '../../hooks/useAuthorPlaylists';
 import { useOwnerMedia } from '../../hooks/useOwnerMedia';
 import { normalizeMediaList } from '../../utils/media';
+import { normalizeList } from '../../utils/list';
 import { MediaGrid } from '../MediaGrid';
 import { ProfileSectionHeader } from '../ProfileSectionHeader';
 import { SimilarProfiles } from '../SimilarProfiles';
-
-function normalizeList(data) {
-	if (Array.isArray(data)) return data;
-	return Array.isArray(data?.results) ? data.results : [];
-}
 
 function getSafeExternalUrl(value) {
 	try {
@@ -151,7 +147,7 @@ export function AboutSection({ author }) {
 					<ProfileSectionHeader icon="profileBionote" title="Bionote" />
 					{sanitizedBiography ? (
 						<div
-							className="body-body-14-regular mt-4 space-y-3 text-text-primary sm:ml-[57px] [&_a]:text-text-link [&_p]:m-0"
+							className="body-body-14-regular mt-4 space-y-3 whitespace-pre-line text-text-primary sm:ml-[57px] [&_a]:text-text-link [&_p]:m-0"
 							dangerouslySetInnerHTML={{ __html: sanitizedBiography }}
 						/>
 					) : (

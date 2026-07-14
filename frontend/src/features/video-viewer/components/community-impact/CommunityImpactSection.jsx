@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { Button, Text } from '../../../shared/components';
 import { AddImpactDialog } from './AddImpactDialog';
 import { ImpactCard } from './ImpactCard';
@@ -106,6 +106,7 @@ export function CommunityImpactSection({
 	title = "Film's Impact",
 }) {
 	const [dialogOpen, setDialogOpen] = useState(false);
+	const headingId = useId();
 	const cards = useMemo(
 		() =>
 			COMMUNITY_IMPACT_CATEGORIES.map(({ value }) => {
@@ -141,10 +142,10 @@ export function CommunityImpactSection({
 	}
 
 	return (
-		<section aria-labelledby="community-impact-heading" className="w-full text-text-primary">
+		<section aria-labelledby={headingId} className="w-full text-text-primary">
 			<div className="flex flex-col gap-space-base lg:flex-row lg:items-center lg:justify-between">
 				<div className="max-w-[calc(var(--size-96)*6+var(--size-64))]">
-					<Text id="community-impact-heading" variant="h5-bold" as="h2" className="m-0 text-text-primary">
+					<Text id={headingId} variant="h5-bold" as="h2" className="m-0 text-text-primary">
 						{title}
 					</Text>
 					<Text variant="body-14" color="meta" className="m-0 mt-space-xs">

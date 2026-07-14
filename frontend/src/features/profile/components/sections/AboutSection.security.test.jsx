@@ -29,4 +29,17 @@ describe('AboutSection biography security', () => {
 		expect(container).toHaveTextContent('Filmmaker');
 		expect(container.querySelector('[onerror]')).toBeNull();
 	});
+
+	it('preserves plain-text paragraph breaks in the biography', () => {
+		const author = { ...AUTHOR, description: 'First paragraph.\n\nSecond paragraph.' };
+		const { container } = render(
+			<QueryClientProvider client={profileQueryClient}>
+				<AboutSection author={author} />
+			</QueryClientProvider>
+		);
+
+		const bio = container.querySelector('.whitespace-pre-line');
+		expect(bio).not.toBeNull();
+		expect(bio.textContent).toContain('First paragraph.\n\nSecond paragraph.');
+	});
 });

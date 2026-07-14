@@ -1004,6 +1004,10 @@ body {
 	--bg-badge-danger: var(--cinemata-red-950);
 	--bg-badge-accent: var(--cinemata-sunset-horizon-800);
 	--bg-badge-muted: var(--cinemata-pacific-deep-700);
+	/* Film duration pill on the profile My Notes thumbnail — light pill in both
+	   themes per the notes-in-profile design spec. */
+	--bg-note-thumbnail-duration: var(--cinemata-strait-blue-50);
+	--text-note-thumbnail-duration: var(--cinemata-pacific-deep-900);
 	--bg-overlay-dark: var(--cinemata-pacific-deep-900);
 	--bg-chrome: var(--cinemata-pacific-deep-800);
 	--bg-chrome-hover: var(--cinemata-pacific-deep-700);
@@ -1085,6 +1089,7 @@ body {
 	--border-chrome: var(--cinemata-pacific-deep-700);
 	--border-input: var(--cinemata-coral-reef-400p);
 	--border-danger: var(--cinemata-red-500);
+	--border-note-divider: var(--cinemata-pacific-deep-600p);
 	--border-panel-divider: #dfeff4;
 	--border-disclosure-content: var(--cinemata-pacific-deep-300);
 	--border-disclosure-trigger: var(--cinemata-pacific-deep-300);
@@ -1112,6 +1117,9 @@ body.dark_theme {
 	--bg-primary: var(--cinemata-strait-blue-500);
 	--bg-primary-hover: var(--cinemata-strait-blue-700);
 	--bg-button-playlist-active: var(--cinemata-strait-blue-700);
+	/* Duration pill stays a light pill in dark theme too (notes-in-profile design). */
+	--bg-note-thumbnail-duration: var(--cinemata-strait-blue-50);
+	--text-note-thumbnail-duration: var(--cinemata-pacific-deep-900);
 	--bg-secondary: var(--cinemata-sunset-horizon-500);
 	--bg-secondary-hover: var(--cinemata-sunset-horizon-400p);
 	--bg-emblem-blue-deep: var(--cinemata-pacific-deep-950);
@@ -1163,6 +1171,7 @@ body.dark_theme {
 	--border-divider: var(--cinemata-pacific-deep-600p);
 	--border-strong: var(--cinemata-pacific-deep-400);
 	--border-input: var(--cinemata-sunset-horizon-400p);
+	--border-note-divider: var(--cinemata-pacific-deep-600p);
 	--border-panel-divider: var(--cinemata-pacific-deep-500);
 	--border-disclosure-content: var(--cinemata-pacific-deep-500);
 	--border-disclosure-trigger: transparent;
@@ -1187,6 +1196,7 @@ body.dark_theme {
 	--color-bg-badge-danger: var(--bg-badge-danger);
 	--color-bg-badge-accent: var(--bg-badge-accent);
 	--color-bg-badge-muted: var(--bg-badge-muted);
+	--color-bg-note-thumbnail-duration: var(--bg-note-thumbnail-duration);
 	--color-bg-overlay-dark: var(--bg-overlay-dark);
 	--color-bg-chrome: var(--bg-chrome);
 	--color-bg-chrome-hover: var(--bg-chrome-hover);
@@ -1239,6 +1249,7 @@ body.dark_theme {
 	--color-text-on-primary: var(--text-on-primary);
 	--color-text-on-chrome: var(--text-on-chrome);
 	--color-text-on-chrome-muted: var(--text-on-chrome-muted);
+	--color-text-note-thumbnail-duration: var(--text-note-thumbnail-duration);
 	--color-text-profile-section-icon: var(--text-profile-section-icon);
 	--color-text-link: var(--text-link);
 	--color-text-link-hover: var(--text-link-hover);
@@ -1269,6 +1280,7 @@ body.dark_theme {
 	--color-border-chrome: var(--border-chrome);
 	--color-border-input: var(--border-input);
 	--color-border-danger: var(--border-danger);
+	--color-border-note-divider: var(--border-note-divider);
 	--color-border-panel-divider: var(--border-panel-divider);
 	--color-border-disclosure-content: var(--border-disclosure-content);
 	--color-border-disclosure-trigger: var(--border-disclosure-trigger);

@@ -42,6 +42,11 @@ urlpatterns = [
         name="get_user_impact",
     ),
     re_path(
+        rf"^user/(?P<username>{USERNAME_RE})/contact$",
+        views.view_user_contact,
+        name="get_user_contact",
+    ),
+    re_path(
         rf"^user/(?P<username>{USERNAME_RE})/history$",
         views.view_user_history,
         name="get_user_history",
@@ -75,6 +80,11 @@ urlpatterns = [
         rf"^api/v1/users/(?P<username>{USERNAME_RE})/community-impacts$",
         views.UserCommunityImpactList.as_view(),
         name="api_user_community_impacts",
+    ),
+    re_path(
+        rf"^api/v1/users/(?P<username>{USERNAME_RE})/private-journal$",
+        views.UserPrivateJournalList.as_view(),
+        name="api_user_private_journal",
     ),
     re_path(
         rf"^api/v1/users/(?P<username>{USERNAME_RE})/contact",
