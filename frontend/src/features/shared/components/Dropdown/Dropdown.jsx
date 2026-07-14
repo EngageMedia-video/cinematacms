@@ -191,14 +191,32 @@ export function Dropdown({
 		setOpen(true);
 	}
 
+	function getTypeaheadAnchorIndex() {
+		const focusedIndex = optionRefs.current.indexOf(document.activeElement);
+
+		if (focusedIndex !== -1) {
+			return focusedIndex;
+		}
+
+		return normalizedOptions.findIndex((option) => option.value === selectedValue);
+	}
+
 	function handleTypeaheadKey(event) {
 		if (disabled || event.metaKey || event.ctrlKey || event.altKey) {
 			return;
 		}
 
-		// Space is excluded so it keeps toggling the trigger / activating options.
-		if (event.key.length !== 1 || event.key === ' ') {
+		// An empty-buffer Space keeps its native role (toggle the trigger, activate
+		// an option); mid-search it joins the query so multi-word labels such as
+		// "New Zealand" stay reachable without committing a selection.
+		const isSearchSpace = event.key === ' ' && typeaheadBufferRef.current.length > 0;
+
+		if (event.key.length !== 1 || (event.key === ' ' && !isSearchSpace)) {
 			return;
+		}
+
+		if (isSearchSpace) {
+			event.preventDefault();
 		}
 
 		if (typeaheadTimerRef.current) {
@@ -209,13 +227,29 @@ export function Dropdown({
 			typeaheadBufferRef.current = '';
 		}, TYPEAHEAD_RESET_DELAY);
 
-		typeaheadBufferRef.current += normalizeTypeaheadText(event.key);
+		const buffer = typeaheadBufferRef.current + normalizeTypeaheadText(event.key);
+		typeaheadBufferRef.current = buffer;
 
-		const matchIndex = normalizedOptions.findIndex(
-			(option) =>
-				typeof option.label === 'string' &&
-				normalizeTypeaheadText(option.label).startsWith(typeaheadBufferRef.current)
-		);
+		// Repeating one letter cycles through its matches, as native selects do;
+		// any other buffer is a prefix search anchored at the focused option.
+		const cycling = buffer.length > 1 && [...buffer].every((char) => char === buffer[0]);
+		const searchText = cycling ? buffer[0] : buffer;
+		const anchor = getTypeaheadAnchorIndex();
+		const total = normalizedOptions.length;
+		const searchFromNext = cycling || buffer.length === 1;
+		const start = anchor === -1 ? 0 : anchor + (searchFromNext ? 1 : 0);
+
+		let matchIndex = -1;
+
+		for (let step = 0; step < total; step += 1) {
+			const index = (start + step) % total;
+			const option = normalizedOptions[index];
+
+			if (typeof option.label === 'string' && normalizeTypeaheadText(option.label).startsWith(searchText)) {
+				matchIndex = index;
+				break;
+			}
+		}
 
 		if (matchIndex === -1) {
 			return;

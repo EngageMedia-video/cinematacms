@@ -15,6 +15,14 @@ const COUNTRY_OPTIONS = [
 	{ label: 'Indonesia', value: 'ID' },
 ];
 
+const MULTI_WORD_OPTIONS = [
+	{ label: 'Nauru', value: 'NR' },
+	{ label: 'Nepal', value: 'NP' },
+	{ label: 'New Caledonia', value: 'NC' },
+	{ label: 'New Zealand', value: 'NZ' },
+	{ label: 'Northern Mariana Islands', value: 'MP' },
+];
+
 describe('Dropdown', () => {
 	it('renders placeholder, label, helper text, and chevron icon', () => {
 		render(
@@ -150,18 +158,68 @@ describe('Dropdown', () => {
 	});
 
 	it('starts a new type-to-jump search after a pause', async () => {
-		const user = userEvent.setup();
+		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame'] });
 
-		render(<Dropdown label="Country" placeholder="Choose country" options={COUNTRY_OPTIONS} />);
+		try {
+			render(<Dropdown label="Country" placeholder="Choose country" options={COUNTRY_OPTIONS} />);
+
+			const trigger = screen.getByRole('button', { name: 'Choose country' });
+			trigger.focus();
+			fireEvent.keyDown(trigger, { key: 'i' });
+			await vi.advanceTimersByTimeAsync(50);
+			expect(screen.getByRole('menuitemradio', { name: 'Iceland' })).toHaveFocus();
+
+			await vi.advanceTimersByTimeAsync(600);
+
+			fireEvent.keyDown(screen.getByRole('menuitemradio', { name: 'Iceland' }), { key: 'c' });
+			await vi.advanceTimersByTimeAsync(50);
+			expect(screen.getByRole('menuitemradio', { name: "Côte d'Ivoire" })).toHaveFocus();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('treats Space as a search character once the buffer is active', async () => {
+		const user = userEvent.setup();
+		const onChange = vi.fn();
+
+		render(
+			<Dropdown label="Country" placeholder="Choose country" options={MULTI_WORD_OPTIONS} onChange={onChange} />
+		);
 
 		screen.getByRole('button', { name: 'Choose country' }).focus();
-		await user.keyboard('i');
-		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Iceland' })).toHaveFocus());
+		await user.keyboard('new z');
 
-		await new Promise((resolve) => setTimeout(resolve, 600));
+		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'New Zealand' })).toHaveFocus());
+		expect(onChange).not.toHaveBeenCalled();
+		expect(screen.getByRole('menu')).toBeInTheDocument();
+	});
 
-		await user.keyboard('c');
-		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: "Côte d'Ivoire" })).toHaveFocus());
+	it('keeps native Space behaviour when no search is active', async () => {
+		const user = userEvent.setup();
+
+		render(<Dropdown label="Country" placeholder="Choose country" options={MULTI_WORD_OPTIONS} />);
+
+		screen.getByRole('button', { name: 'Choose country' }).focus();
+		await user.keyboard(' ');
+
+		expect(screen.getByRole('menu')).toBeInTheDocument();
+	});
+
+	it('cycles through matches when the same letter is pressed repeatedly', async () => {
+		const user = userEvent.setup();
+
+		render(<Dropdown label="Country" placeholder="Choose country" options={MULTI_WORD_OPTIONS} />);
+
+		screen.getByRole('button', { name: 'Choose country' }).focus();
+		await user.keyboard('n');
+		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Nauru' })).toHaveFocus());
+
+		await user.keyboard('n');
+		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Nepal' })).toHaveFocus());
+
+		await user.keyboard('n');
+		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'New Caledonia' })).toHaveFocus());
 	});
 
 	it('ignores printable keys pressed with a modifier', async () => {
