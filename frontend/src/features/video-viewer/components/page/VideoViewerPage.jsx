@@ -25,6 +25,18 @@ function isLoggedInUser() {
 	return window.MediaCMS?.user?.is?.anonymous === false;
 }
 
+// Deep-links from the profile's "My Notes" page carry `?tab=notes` so the media
+// page opens on the Your Notes tab rather than the default Comments tab. TabView
+// clamps to a valid tab, so this safely no-ops for anonymous users (no Notes tab).
+function requestedTab() {
+	if (typeof window === 'undefined') return undefined;
+	try {
+		return new URLSearchParams(window.location.search).get('tab') === 'notes' ? 'your-notes' : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 export class VideoViewerPage extends Page {
 	constructor(props) {
 		super(props, 'media');
@@ -150,6 +162,7 @@ export class VideoViewerPage extends Page {
 			<div className="viewer-sidebar-comments mb-6 box-border w-full" key="viewer-comments">
 				<TabView
 					tabMode="wrap"
+					defaultSelectedTab={requestedTab()}
 					listClassName="rounded-none rounded-tl-ds-8 rounded-tr-ds-8"
 					triggerClassName="rounded-none py-3 px-size-22 text-text-tab-trigger aria-selected:text-text-primary"
 					triggerSelectedColor="bg-bg-surface"
