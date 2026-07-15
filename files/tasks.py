@@ -870,13 +870,14 @@ def create_hls(friendly_token):
 
         # New URLs every regeneration: hls_file always changes, so the
         # post_save signal on Media always fires the storage usage refresh.
-        media.hls_file = pp
+        # Stored MEDIA_ROOT-relative so the row survives a MEDIA_ROOT move (#789).
+        media.hls_file = os.path.relpath(pp, settings.MEDIA_ROOT)
         media.save(update_fields=["hls_file"])
 
         # Remove stale output: never delete the directory hls_file currently
         # references (guards against a concurrently-committed newer run),
         # but clear every other version directory plus legacy flat siblings.
-        current_dir = os.path.dirname(media.hls_file)
+        current_dir = os.path.dirname(pp)
         if os.path.isdir(uid_dir):
             for entry in os.listdir(uid_dir):
                 entry_path = os.path.join(uid_dir, entry)

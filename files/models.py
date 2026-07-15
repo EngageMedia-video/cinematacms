@@ -1110,6 +1110,20 @@ class Media(models.Model):
             return helpers.build_versioned_url(base_url, self.media_version)
         return None
 
+    @property
+    def hls_file_path(self):
+        """Absolute filesystem path for hls_file.
+
+        hls_file stores a MEDIA_ROOT-relative path (#789). Legacy rows may
+        still hold an absolute path until the data migration has run, so both
+        forms resolve here; never read hls_file directly for filesystem access.
+        """
+        if not self.hls_file:
+            return ""
+        if os.path.isabs(self.hls_file):
+            return self.hls_file
+        return os.path.join(settings.MEDIA_ROOT, self.hls_file)
+
     @cached_property
     def hls_version(self):
         """Version token for HLS URLs, taken from the per-generation output directory.
@@ -1127,8 +1141,8 @@ class Media(models.Model):
     def hls_info(self):
         res = {}
         if self.hls_file:
-            if os.path.exists(self.hls_file):
-                hls_file = self.hls_file
+            hls_file = self.hls_file_path
+            if os.path.exists(hls_file):
                 p = os.path.dirname(hls_file)
                 m3u8_obj = m3u8.load(hls_file)
                 if os.path.exists(hls_file):
@@ -2307,7 +2321,7 @@ def media_file_delete(sender, instance, **kwargs):
     if instance.sprites:
         helpers.rm_file(instance.sprites.path)
     if instance.hls_file:
-        p = os.path.dirname(instance.hls_file)
+        p = os.path.dirname(instance.hls_file_path)
         helpers.rm_dir(p)
     instance.user.update_user_media()
 
