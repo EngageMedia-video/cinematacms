@@ -23,14 +23,6 @@ function popupTopNavItems() {
 					className: 'visible-only-in-small',
 				},
 			});
-
-			if (user.pages.home) {
-				items.push({
-					link: user.pages.home,
-					icon: 'video_library',
-					text: 'My media',
-				});
-			}
 		}
 
 		items.push({
