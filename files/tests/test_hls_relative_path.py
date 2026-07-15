@@ -43,6 +43,18 @@ class UrlFromPathTests(TestCase):
         )
 
     @override_settings(MEDIA_ROOT="/srv/media_files/", MEDIA_URL="/media/")
+    def test_absolute_path_with_foreign_root_uses_hls_marker(self):
+        # A row that escaped the backfill must not leak the server path.
+        self.assertEqual(
+            helpers.url_from_path("/old/container/media/hls/uid/v1/master.m3u8"),
+            "/media/hls/uid/v1/master.m3u8",
+        )
+        self.assertEqual(
+            helpers.url_from_path("/mnt/hls/cinemata/media_files/hls/uid/v1/master.m3u8"),
+            "/media/hls/uid/v1/master.m3u8",
+        )
+
+    @override_settings(MEDIA_ROOT="/srv/media_files/", MEDIA_URL="/media/")
     def test_empty_value(self):
         self.assertEqual(helpers.url_from_path(""), "/media/")
 

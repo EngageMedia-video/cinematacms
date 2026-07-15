@@ -192,11 +192,18 @@ def url_from_path(filename):
     # TODO: find a way to preserver http - https ...
     # Accepts MEDIA_ROOT-relative names (the storage convention) and absolute
     # paths; absolute prefixes are stripped even when the stored value and the
-    # current MEDIA_ROOT disagree about a trailing slash (#789).
+    # current MEDIA_ROOT disagree about a trailing slash. Foreign-root
+    # absolutes fall back to the last "/hls/" marker, mirroring migration
+    # 0034's _to_relative, so a row that escaped the backfill can never leak
+    # the server filesystem path into a URL (#789).
     name = str(filename or "")
     media_root = settings.MEDIA_ROOT.rstrip("/")
     if name.startswith(media_root + "/"):
         name = name[len(media_root) + 1 :]
+    elif os.path.isabs(name):
+        idx = name.rfind("/hls/")
+        if idx != -1:
+            name = name[idx + 1 :]
     return f"{settings.MEDIA_URL}{name.lstrip('/')}"
 
 
