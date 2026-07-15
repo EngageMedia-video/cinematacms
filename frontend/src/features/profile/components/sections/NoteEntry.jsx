@@ -1,16 +1,25 @@
 import { formatDuration } from '../../../shared/utils/formatDuration';
 import { formatClock, formatTimestamp } from '../../../video-viewer/private-journal/utils/journalMedia';
 
-// Deep-link back into the film at the note's timestamp: /view?m=<token>&t=<seconds>.
+// Deep-link back into the film at the note's timestamp, opening the Notes tab:
+// /view?m=<token>&t=<seconds>&tab=notes. The `tab=notes` marker tells the media
+// page to select the "Your Notes" tab instead of the default Comments tab.
 function noteHref(media) {
 	const seconds = Math.max(0, Math.floor(Number(media?.timestamp_seconds) || 0));
-	const base = media?.url || (media?.friendly_token ? `/view?m=${encodeURIComponent(media.friendly_token)}` : '#');
+	const base = mediaBase(media);
 	if (base === '#') return base;
 	const separator = base.includes('?') ? '&' : '?';
-	return `${base}${separator}t=${seconds}`;
+	return `${base}${separator}t=${seconds}&tab=notes`;
 }
 
 function filmHref(media) {
+	const base = mediaBase(media);
+	if (base === '#') return base;
+	const separator = base.includes('?') ? '&' : '?';
+	return `${base}${separator}tab=notes`;
+}
+
+function mediaBase(media) {
 	return media?.url || (media?.friendly_token ? `/view?m=${encodeURIComponent(media.friendly_token)}` : '#');
 }
 

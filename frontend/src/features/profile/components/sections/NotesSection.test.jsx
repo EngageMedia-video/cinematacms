@@ -63,12 +63,13 @@ describe('NotesSection', () => {
 		// (2:00) shows as a pill on the thumbnail.
 		expect(screen.getByText('1:05')).toBeInTheDocument();
 		expect(screen.getByText('2:00')).toBeInTheDocument();
+		// Links carry `tab=notes` so the media page opens the Your Notes tab (#835).
 		const link = screen.getByRole('link', { name: /open my film at 1:05/i });
-		expect(link).toHaveAttribute('href', '/view?m=abc&t=65');
+		expect(link).toHaveAttribute('href', '/view?m=abc&t=65&tab=notes');
 		// Count comes from the server-provided note_count, not the array length.
 		expect(screen.getByRole('link', { name: /view all 2 notes on this film/i })).toHaveAttribute(
 			'href',
-			'/view?m=abc'
+			'/view?m=abc&tab=notes'
 		);
 	});
 
