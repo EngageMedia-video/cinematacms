@@ -98,7 +98,7 @@ export function SidebarNavigationMenu() {
 				items.push({
 					link: user.pages?.home || links.user.addMedia,
 					icon: 'myMedia',
-					text: 'My Media & Playlist',
+					text: 'My Profile',
 					className: 'nav-item-upload-media',
 					activePattern: 'userProfile',
 				});
