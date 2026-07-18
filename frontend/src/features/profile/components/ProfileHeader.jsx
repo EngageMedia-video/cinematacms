@@ -51,7 +51,12 @@ export function ProfileHeader({ author }) {
 								{displayName}
 							</Text>
 							{author.email_is_verified ? (
-								<Icon name="check" size="sm" label="Email verified" className="text-text-success" />
+								<Icon
+									name="verifiedCheck"
+									size="md"
+									label="Email verified"
+									className="text-text-success"
+								/>
 							) : null}
 						</div>
 						<Text as="p" variant="body-16" className="mt-1 mb-0 text-text-accent">

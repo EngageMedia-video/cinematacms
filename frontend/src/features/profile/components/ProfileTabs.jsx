@@ -7,7 +7,7 @@ export function ProfileTabs({ activeTab, tabs }) {
 			tabMode="wrap"
 			aria-label="Profile sections"
 			className="w-full"
-			listClassName="rounded-none"
+			listClassName="rounded-none rounded-tl-ds-8 rounded-tr-ds-8"
 			triggerClassName="min-w-max no-underline text-text-tab-trigger"
 			triggerSelectedColor="bg-bg-tab-trigger-selected"
 		>
