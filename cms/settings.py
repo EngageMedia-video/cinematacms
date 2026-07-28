@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "django_vite",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "django_prometheus",
     "rest_framework",
     "rest_framework.authtoken",
     "imagekit",
@@ -79,6 +80,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -92,6 +94,7 @@ MIDDLEWARE = [
     "cms.middleware.MaintenanceTimingMiddleware",  # Track maintenance mode timing
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
     "waffle.middleware.WaffleMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "cms.urls"
@@ -155,21 +158,57 @@ LOGS_DIR = os.path.join(BASE_DIR, "logs")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.json.JsonFormatter",
+            "format": "%(asctime)s %(name)s %(levelname)s %(message)s",
+            "rename_fields": {
+                "asctime": "timestamp",
+                "levelname": "level",
+            },
+            "static_fields": {
+                "service": "cinematacms",
+            },
+        },
+        "plain": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        },
+    },
     "handlers": {
-        "file": {
-            "level": "ERROR",
+        "json_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOGS_DIR, "app.json.log"),
+            "formatter": "json",
+        },
+        "legacy_file": {
+            "level": "INFO",
             "class": "logging.FileHandler",
             "filename": os.path.join(LOGS_DIR, "debug.log"),
+            "formatter": "plain",
         },
     },
     "loggers": {
+        "files": {"handlers": ["json_file", "legacy_file"], "level": "INFO"},
+        "users": {"handlers": ["json_file", "legacy_file"], "level": "INFO"},
+        "uploader": {"handlers": ["json_file", "legacy_file"], "level": "INFO"},
+        "actions": {"handlers": ["json_file", "legacy_file"], "level": "INFO"},
+        "celery": {"handlers": ["json_file"], "level": "WARNING"},
         "django": {
-            "handlers": ["file"],
-            "level": "ERROR",
+            "handlers": ["json_file", "legacy_file"],
+            "level": "INFO",
             "propagate": True,
         },
     },
+    "root": {
+        "handlers": ["json_file"],
+        "level": "INFO",
+    },
 }
+
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CELERY_WORKER_LOG_FORMAT = "%(message)s"
+CELERY_WORKER_TASK_LOG_FORMAT = "%(message)s"
 
 DATABASES = {
     "default": {
@@ -264,6 +303,8 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_SOFT_TIME_LIMIT = 2 * 60 * 60
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_WORKER_SEND_TASK_EVENTS = True
+CELERY_TASK_SEND_SENT_EVENT = True
 
 CELERY_BEAT_SCHEDULE = {
     #    'check_running_states': {
