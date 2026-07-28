@@ -82,7 +82,7 @@
 	"dependencies": {
 		"@mediacms/media-player": "file:packages/media-player",
 		"@tanstack/react-query": "^5.100.7",
-		"axios": "^1.15.2",
+		"axios": "^1.16.0",
 		"clsx": "^2.1.1",
 		"dompurify": "^3.4.2",
 		"events": "^3.3.0",
