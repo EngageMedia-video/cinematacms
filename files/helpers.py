@@ -534,6 +534,40 @@ def show_file_size(size):
     return size
 
 
+def get_whisper_command(wav_file, output_name, translate=False):
+    """Build the whisper.cpp transcription command.
+
+    Arguments:
+        wav_file {str} -- 16 kHz mono WAV to transcribe
+        output_name {str} -- output path without the .vtt suffix
+        translate {bool} -- translate the result to English
+    """
+    cmd = [
+        settings.WHISPER_CPP_COMMAND,
+        "-m",
+        settings.WHISPER_CPP_MODEL,
+        # whisper-cli opens 4 threads unless told otherwise.
+        "-t",
+        str(settings.WHISPER_CPP_THREADS),
+        # NOTE: any configurations for running the whisper transcription task
+        # should be added/removed here!
+        "--entropy-thold",
+        "2.8",
+        "--max-context",
+        "0",
+        "--language",
+        "auto",
+        "-f",
+        wav_file,
+    ]
+
+    if translate:
+        cmd.append("--translate")
+
+    cmd.extend(["--output-vtt", "--output-file", output_name])
+    return cmd
+
+
 def get_base_ffmpeg_command(
     input_file,
     output_file,
@@ -573,13 +607,19 @@ def get_base_ffmpeg_command(
     if target_fps > 90:
         target_fps = 90
 
+    encoder_threads = str(settings.FFMPEG_ENCODER_THREADS)
+
     base_cmd = [
         settings.FFMPEG_COMMAND,
         "-y",
+        # Before -i this bounds the decoder only. The encoder ignores it and
+        # opens one thread per core, so it needs its own limit after the input.
         "-threads",
         "1",
         "-i",
         input_file,
+        "-threads",
+        encoder_threads,
         "-c:v",
         encoder,
         "-filter:v",
@@ -658,6 +698,8 @@ def get_base_ffmpeg_command(
 
     elif encoder == "libx265":
         x265_params = [
+            # x265 sizes its own thread pool and ignores ffmpeg's -threads.
+            "pools=" + encoder_threads,
             "vbv-maxrate=" + str(int(int(target_rate) * MAX_RATE_MULTIPLIER)),
             "vbv-bufsize=" + str(int(int(target_rate) * BUF_SIZE_MULTIPLIER)),
             "keyint=" + str(keyframe_distance * 2),

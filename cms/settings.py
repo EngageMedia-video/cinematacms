@@ -392,6 +392,12 @@ HLS_DIR = os.path.join(MEDIA_ROOT, "hls/")
 
 FFMPEG_COMMAND = "ffmpeg"  # this is the path
 FFPROBE_COMMAND = "ffprobe"  # this is the path
+# Threads each encoder process may open. Without a limit x264/x265/vp9 open one
+# thread per core, so N concurrent long_tasks workers oversubscribe the host by
+# N times. Budget this against the worker concurrency in deploy/celery_long.service:
+# roughly cores / concurrency. Raising it trades headroom for the web application
+# against encode latency, which matters most when the queue is nearly empty.
+FFMPEG_ENCODER_THREADS = 2
 IMAGEMAGICK_COMMAND = None  # optional path/name for ImageMagick; auto-detects convert or magick when unset
 MP4HLS = "mp4hls"
 
@@ -657,6 +663,10 @@ MFA_EXCLUDE_PATHS = ["/fu/", "/api/", "/manage/", "/accounts/"]
 # Can be set via WHISPER_MODEL_SIZE environment variable for container deployments.
 _whisper_model_requested = os.getenv("WHISPER_MODEL_SIZE", "base").strip()
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL, WHISPER_MODEL = get_whisper_cpp_paths(_whisper_model_requested)
+
+# Threads each whisper-cli process may open; it defaults to 4 when unset.
+# Budget this against the worker concurrency in deploy/celery_whisper.service.
+WHISPER_CPP_THREADS = 2
 
 # django-maintenance-mode settings
 MAINTENANCE_MODE = None  # None/False/True
