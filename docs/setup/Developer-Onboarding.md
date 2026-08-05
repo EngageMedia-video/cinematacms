@@ -159,9 +159,25 @@ These versions are tested and confirmed working:
 | **FFmpeg** | 4.4+ | For video processing |
 | **Docker** | 20.10+ | Docker Compose included |
 | **uv** | Latest | Python package manager |
-| **npm** | 10+ | Comes with Node.js |
+| **npm** | 11+ | Node.js 22 bundles npm 10 — you must upgrade, see note below |
 
 > **⚠️ Important:** Node.js v22.x is required for the frontend build. Version 22.22.2 is tested and recommended.
+
+> **⚠️ npm 11 is required.** Node.js 22 bundles npm 10, which does not understand the
+> `libc` field that `frontend/package-lock.json` uses to pick the correct native binary
+> on glibc versus musl systems. Running `npm install` with npm 10 silently deletes those
+> fields and produces a lockfile that can resolve the wrong binary on Linux. Upgrade
+> after installing Node:
+>
+> ```bash
+> cd frontend
+> npm i -g "$(node -p "require('./package.json').packageManager")"
+> npm --version   # must report 11.x
+> ```
+>
+> The exact version is pinned by the `packageManager` field in `frontend/package.json`.
+> If you see a `git diff` on `package-lock.json` that only removes `libc` entries, you
+> are on npm 10 — discard the diff and upgrade.
 
 ---
 
