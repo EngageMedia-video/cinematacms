@@ -665,7 +665,8 @@ _whisper_model_requested = os.getenv("WHISPER_MODEL_SIZE", "base").strip()
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL, WHISPER_MODEL = get_whisper_cpp_paths(_whisper_model_requested)
 
 # Threads each whisper-cli process may open; it defaults to 4 when unset.
-# Budget this against the worker concurrency in deploy/celery_whisper.service.
+# deploy/celery_whisper.service runs a single worker, because a large-v3 model
+# holds roughly 3 GB resident and a second worker would hold its own copy.
 WHISPER_CPP_THREADS = 2
 
 # django-maintenance-mode settings

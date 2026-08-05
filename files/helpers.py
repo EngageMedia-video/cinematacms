@@ -698,7 +698,9 @@ def get_base_ffmpeg_command(
 
     elif encoder == "libx265":
         x265_params = [
-            # x265 sizes its own thread pool and ignores ffmpeg's -threads.
+            # ffmpeg's -threads reaches x265 as frame threads only; its worker
+            # pool is sized separately and defaults to one thread per core.
+            # The two add, so h265 runs somewhat above the budget h264 keeps to.
             "pools=" + encoder_threads,
             "vbv-maxrate=" + str(int(int(target_rate) * MAX_RATE_MULTIPLIER)),
             "vbv-bufsize=" + str(int(int(target_rate) * BUF_SIZE_MULTIPLIER)),

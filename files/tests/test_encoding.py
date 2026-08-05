@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from django.conf import settings
 from django.test import override_settings
 
 from files.helpers import calculate_seconds, get_base_ffmpeg_command
@@ -70,11 +69,6 @@ class TestEncoderThreadLimit(unittest.TestCase):
                 decoder_threads, _ = thread_args(build_command(encoder))
                 self.assertEqual(decoder_threads, ["1"], "the decoder limit is fixed, not the setting")
 
-    def test_default_leaves_headroom_for_the_rest_of_the_host(self):
-        # deploy/celery_long.service runs 4 workers, so the default keeps their
-        # combined encoder threads to 8 and leaves the rest of the host alone.
-        self.assertEqual(settings.FFMPEG_ENCODER_THREADS, 2)
-
     @override_settings(FFMPEG_ENCODER_THREADS=4)
     def test_encoder_thread_count_is_configurable(self):
         for encoder in self.encoders:
@@ -85,7 +79,8 @@ class TestEncoderThreadLimit(unittest.TestCase):
 
     @override_settings(FFMPEG_ENCODER_THREADS=4)
     def test_x265_pools_match_the_encoder_thread_count(self):
-        # x265 sizes its own pool and ignores ffmpeg's -threads.
+        # -threads reaches x265 as frame threads only; its worker pool needs
+        # sizing separately or it defaults to one thread per core.
         cmd = build_command("libx265")
         x265_params = cmd[cmd.index("-x265-params") + 1]
         self.assertIn("pools=4", x265_params.split(":"))

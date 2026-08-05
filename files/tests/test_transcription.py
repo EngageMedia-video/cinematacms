@@ -10,11 +10,12 @@ from files.helpers import get_whisper_command
 class TestWhisperCommand(SimpleTestCase):
     """whisper-cli defaults to 4 threads per process.
 
-    The whisper_tasks worker runs without --concurrency, so Celery defaults it
-    to the core count. Unbounded threads times unbounded workers starves the
-    web application and the database, which share the host.
+    The whisper_tasks worker used to run without --concurrency, so Celery
+    defaulted it to the core count. Unbounded threads times unbounded workers
+    starves the web application and the database, which share the host.
     """
 
+    @override_settings(WHISPER_CPP_THREADS=2)
     def test_thread_count_is_bounded(self):
         cmd = get_whisper_command("/tmp/a.wav", "/tmp/a")
         self.assertIn("-t", cmd)

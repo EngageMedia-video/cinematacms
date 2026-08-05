@@ -230,7 +230,8 @@ whisper_cmd_conf = [
 ### Production Recommendations
 - **2GB RAM systems**: Use `ggml-base.bin` or smaller
 - **4GB+ RAM systems**: Can use `ggml-large-v3.bin` for better accuracy
-- **Concurrent Processing**: Limit to 1 whisper task at a time (`--concurrency=1`)
+- **Concurrent Processing**: Limit to 1 whisper task at a time (`--concurrency=1`, as set in `deploy/celery_whisper.service`). Each worker loads its own copy of the model, so a second worker costs another ~3GB on `large-v3`.
+- **Threads per process**: `WHISPER_CPP_THREADS` (default 2) is passed as `-t`. Without it whisper-cli opens 4. Budget it against the worker concurrency above.
 - **Monitoring**: Set up alerts for OOM conditions
 
 ---
