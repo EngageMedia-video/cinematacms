@@ -36,7 +36,7 @@
 	"overrides": {
 		"@xmldom/xmldom": "0.8.13",
 		"picomatch": "4.0.4",
-		"postcss": "8.5.13"
+		"postcss": "8.5.25"
 	},
 	"devDependencies": {
 		"autoprefixer": "^10.5.0",
