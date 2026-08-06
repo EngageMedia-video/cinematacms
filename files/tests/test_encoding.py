@@ -1,7 +1,95 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from files.helpers import calculate_seconds
+from django.test import override_settings
+
+from files.helpers import calculate_seconds, get_base_ffmpeg_command
+
+
+def build_command(encoder, **overrides):
+    kwargs = {
+        "input_file": "/tmp/in.mp4",
+        "output_file": "/tmp/out.mp4",
+        "has_audio": True,
+        "codec": {"libx264": "h264", "libx265": "h265", "libvpx-vp9": "vp9"}[encoder],
+        "encoder": encoder,
+        "audio_encoder": "aac",
+        "target_fps": 30,
+        "target_height": 720,
+        "target_rate": 2500,
+        "target_rate_audio": 128,
+        "pass_file": "/tmp/pass",
+        "pass_number": 2,
+        "enc_type": "crf",
+        "chunk": False,
+    }
+    kwargs.update(overrides)
+    return get_base_ffmpeg_command(**kwargs)
+
+
+def thread_args(cmd, input_file="/tmp/in.mp4"):
+    """Values of every -threads flag, split by side of the input file.
+
+    ffmpeg scopes an option to the file that follows it, so -threads before -i
+    bounds the decoder and -threads after it bounds the encoder.
+    """
+    boundary = cmd.index(input_file)
+    decoder, encoder = [], []
+    for i, arg in enumerate(cmd):
+        if arg == "-threads":
+            (decoder if i < boundary else encoder).append(cmd[i + 1])
+    return decoder, encoder
+
+
+class TestEncoderThreadLimit(unittest.TestCase):
+    """The encoder needs its own -threads after -i.
+
+    A single -threads before -i bounds the decoder only, so x264 opens one
+    thread per core. Multiplied by the long_tasks worker concurrency that
+    starves the web application and the database on the same host.
+    """
+
+    encoders = ("libx264", "libx265", "libvpx-vp9")
+
+    @override_settings(FFMPEG_ENCODER_THREADS=7)
+    def test_encoder_is_bounded(self):
+        for encoder in self.encoders:
+            with self.subTest(encoder=encoder):
+                _, encoder_threads = thread_args(build_command(encoder))
+                self.assertEqual(
+                    encoder_threads,
+                    ["7"],
+                    "-threads must appear after the input file to bound the encoder",
+                )
+
+    @override_settings(FFMPEG_ENCODER_THREADS=7)
+    def test_decoder_stays_bounded(self):
+        for encoder in self.encoders:
+            with self.subTest(encoder=encoder):
+                decoder_threads, _ = thread_args(build_command(encoder))
+                self.assertEqual(decoder_threads, ["1"], "the decoder limit is fixed, not the setting")
+
+    @override_settings(FFMPEG_ENCODER_THREADS=4)
+    def test_encoder_thread_count_is_configurable(self):
+        for encoder in self.encoders:
+            with self.subTest(encoder=encoder):
+                decoder_threads, encoder_threads = thread_args(build_command(encoder))
+                self.assertEqual(encoder_threads, ["4"])
+                self.assertEqual(decoder_threads, ["1"], "the decoder limit is independent")
+
+    @override_settings(FFMPEG_ENCODER_THREADS=4)
+    def test_x265_pools_match_the_encoder_thread_count(self):
+        # -threads reaches x265 as frame threads only; its worker pool needs
+        # sizing separately or it defaults to one thread per core.
+        cmd = build_command("libx265")
+        x265_params = cmd[cmd.index("-x265-params") + 1]
+        self.assertIn("pools=4", x265_params.split(":"))
+
+    @override_settings(FFMPEG_ENCODER_THREADS=7)
+    def test_first_pass_bounds_the_encoder_too(self):
+        cmd = build_command("libx264", pass_number=1, enc_type="twopass")
+        _, encoder_threads = thread_args(cmd)
+        self.assertEqual(encoder_threads, ["7"])
 
 
 class TestEncodingProgressTracking(unittest.TestCase):

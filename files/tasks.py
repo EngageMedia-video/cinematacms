@@ -33,6 +33,7 @@ from .helpers import (
     create_temp_file,
     get_file_name,
     get_file_type,
+    get_whisper_command,
     media_file_info,
     produce_ffmpeg_commands,
     produce_friendly_token,
@@ -629,30 +630,7 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
                 transcription_request.delete()
                 return False
 
-            # NOTE: any configurations for running the whisper transcription task should be added/removed here!
-            whisper_cmd_conf = [
-                "--entropy-thold",
-                "2.8",
-                "--max-context",
-                "0",
-                "--language",
-                "auto",
-            ]
-
-            # Run whisper.cpp
-            whisper_cmd = [
-                settings.WHISPER_CPP_COMMAND,
-                "-m",
-                settings.WHISPER_CPP_MODEL,
-                *whisper_cmd_conf,
-                "-f",
-                wav_file,
-            ]
-
-            if translate:
-                whisper_cmd.append("--translate")
-
-            whisper_cmd.extend(["--output-vtt", "--output-file", output_name])
+            whisper_cmd = get_whisper_command(wav_file, output_name, translate=translate)
 
             cmd_str = " ".join(whisper_cmd)
             logger.info(f"Running whisper command: {cmd_str}")
