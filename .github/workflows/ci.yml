@@ -35,6 +35,15 @@ jobs:
             frontend/packages/vjs-plugin/package-lock.json
             frontend/packages/media-player/package-lock.json
 
+      # Node 22 bundles npm 10, which does not understand the `libc` field and
+      # strips it from the lockfile. Install the npm pinned by packageManager so
+      # CI resolves optional native binaries the same way contributors do.
+      - name: Pin npm to the version in packageManager
+        working-directory: frontend
+        run: |
+          npm i -g "$(node -p "require('./package.json').packageManager")"
+          npm --version
+
       # Install frontend deps first: this populates frontend/node_modules
       # (including `autoprefixer`, required by frontend/postcss.config.js which
       # the workspace packages' vite builds pick up via upward config search)

@@ -5,6 +5,11 @@
 	"author": "styiannis",
 	"license": "MIT",
 	"keywords": [],
+	"packageManager": "npm@11.19.0",
+	"engines": {
+		"node": ">=22",
+		"npm": ">=11"
+	},
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
@@ -64,14 +69,14 @@
 		"flux": {
 			"react": "^19.2.4"
 		},
-		"ip-address": "10.2.0",
+		"ip-address": "10.4.0",
 		"mpd-parser": {
 			"@xmldom/xmldom": "0.8.13"
 		},
 		"mpd-parser@0.22.1": {
 			"@xmldom/xmldom": "0.8.13"
 		},
-		"postcss": "8.5.13",
+		"postcss": "8.5.25",
 		"svg2ttf": {
 			"@xmldom/xmldom": "0.8.13"
 		},
