@@ -148,7 +148,13 @@ function MoviePoster({
 					className="absolute top-2 right-2 inline-flex rounded bg-bg-secondary/90 p-1 text-text-on-primary"
 					data-movie-item-icon-chip
 				>
-					<Icon name={iconName} size={14} decorative={iconLabel ? false : true} label={iconLabel} />
+					<Icon
+						name={iconName}
+						size={14}
+						decorative={iconLabel ? false : true}
+						label={iconLabel}
+						title={iconLabel}
+					/>
 				</span>
 			) : null}
 		</div>
