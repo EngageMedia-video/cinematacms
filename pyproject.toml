@@ -30,7 +30,7 @@ dependencies = [
     "pillow==12.2.0",
     "python-dotenv==1.2.2",
     "requests==2.33.1",
-    "urllib3>=2.6.3",
+    "urllib3>=2.7.0",
     "rpdb==0.2.0",
     "tqdm==4.67.3",
     "whitenoise==6.12.0",
