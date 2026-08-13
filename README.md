@@ -1,8 +1,10 @@
 # CinemataCMS: Privacy-First Video Platform for Asia-Pacific Social Issue Films
 
-[Cinemata](https://cinemata.org) is an open-source video CMS built upon [MediaCMS](https://github.com/mediacms-io/mediacms), enhanced with features specifically designed for social issue filmmakers, human rights advocates, and civil society organisations across the Asia-Pacific region. Since its public release in 2021, Cinemata has grown to more than 7,000 films from 30+ countries.
-
-The project is managed by [EngageMedia](https://engagemedia.org), an Asia-Pacific non-profit advocating for digital rights, open technology, and social issue films. Our goal is to make these Cinemata-specific integrations and improvements available to the public, enabling more organisations to build and maintain their own community video infrastructure — free from surveillance capitalism, algorithmic manipulation, and corporate content takedowns.
+[Cinemata](https://cinemata.org) is an open-source video CMS for social issue filmmakers, human rights advocates, and civil society organisations across the Asia-Pacific region. It originated from [MediaCMS](https://github.com/mediacms-io/mediacms) but has since diverged into an independent codebase, now architecturally distinct, particularly on the frontend. Since its public release in 2021, Cinemata.org has grown to more than 7,300 films from 30+ countries.
+ 
+The project is managed by [EngageMedia](https://engagemedia.org), an Asia-Pacific non-profit advocating for digital rights, open technology, and social issue films. The goal is to make Cinemata's work available to the public, so that more organisations can build and maintain their own community video platforms, free from surveillance capitalism, algorithmic manipulation, and corporate content takedowns.
+ 
+In June 2026, the UN Special Rapporteur on freedom of opinion and expression, Irene Khan, named Cinemata in her final report to the Human Rights Council ([A/HRC/62/67](https://documents.un.org/), para. 96) as one of the infrastructural alternatives working to "de-oligarchize" information spaces, alongside the federated platform Mastodon and the data-standards project MyData Global. The report describes Cinemata as a non-profit platform for Asia-Pacific civic media, promoting regional solidarity across Indonesia, Malaysia, and the Philippines.
 
 ---
 
@@ -21,42 +23,41 @@ This makes CinemataCMS one of the few open-source video platforms with documente
 
 ## 🎨 UX Redesign in Partnership with Kumquat (Supported by OTF)
 
-CinemataCMS is currently undergoing a full UX research and redesign engagement with [Kumquat](https://kumquat.cc), a Cape Town-based design consultancy, supported by the [Open Technology Fund's UX & Discovery Lab](https://opentech.fund/labs/ux-lab/).
-
-This is not a cosmetic refresh. The engagement is grounded in research with the actual communities Cinemata serves — activist filmmakers, curators, human rights documentarians, and civil society partners across Southeast Asia — many of whom operate under surveillance or in contexts where platform design choices have real safety implications.
-
-**What the engagement covers:**
-
-- **UX research** — 5–8 interviews with filmmakers, curators, and partners; synthesis of existing survey data; audience archetypes and priority user journey mapping
-- **Privacy-first design system** — A base component library built with accessibility, neurodiversity-friendly layouts, and clear privacy affordances (opt-in participation, anonymity states, data minimisation cues)
-- **Full redesign of priority pages** — Homepage, film detail page, and editorial/discovery surfaces; responsive desktop and mobile layouts
-- **Community engagement UX** — Design patterns for following/subscriptions, timeline comments, and contextual interaction that don't replicate surveillance-capitalism models
-- **Developer handoff** — Dev-ready Figma files with annotated component guidance, aligned to the May–June 2026 implementation sprint
-
-**Designs expected: late April 2026. Implementation: May–June 2026.**
-
-The research phase is specifically attentive to Cinemata's unusual UX constraints: users balancing discoverability with anonymity, filmmakers wary of public distribution due to festival circuit norms, and audiences across 30+ countries with varying threat models and connectivity. The outputs will be reusable design patterns that other internet freedom projects can adapt.
-
-This makes CinemataCMS one of the few open-source video platforms with both a third-party security audit and a dedicated, research-backed UX design process — both supported by OTF.
+CinemataCMS underwent a full UX research and redesign engagement with [Kumquat](https://kumquat.cc), a Cape Town-based design consultancy, supported by the [Open Technology Fund's UX & Discovery Lab](https://opentech.fund/labs/ux-lab/).
+ 
+This was not a cosmetic refresh. The engagement was grounded in research with the communities Cinemata serves: activist filmmakers, curators, human rights documentarians, and civil society partners across Southeast Asia, many of whom operate under surveillance or in contexts where platform design choices have real safety implications.
+ 
+**What the engagement covered:**
+ 
+- **UX research**, with targeted interviews across filmmakers, curators, and partners; synthesis of existing survey data; audience archetypes and priority user journey mapping
+- **Privacy-first design system**, a base component library built with accessibility, neurodiversity-friendly layouts, and clear privacy affordances (opt-in participation, anonymity states, data minimisation cues)
+- **Full redesign of priority pages**, covering the homepage, film detail page, and editorial and discovery surfaces, with responsive desktop and mobile layouts
+- **Community engagement UX**, design patterns for following and subscriptions, timeline comments, and contextual interaction that do not replicate surveillance-capitalism models
+- **Developer handoff**, dev-ready Figma files with annotated component guidance
+The redesigned interface launched at the first Cinemata Community Convening in Manila in June 2026. The outputs are reusable design patterns that other internet freedom projects can adapt. This makes CinemataCMS one of the few open-source video platforms with both a third-party security audit and a dedicated, research-backed UX design process, both supported by OTF.
 
 ---
 
 ## Key Features
 
-Built on [MediaCMS](https://github.com/mediacms-io/mediacms), with Cinemata-specific additions:
+Cinemata-specific features built on top of the platform's MediaCMS origins:
+ 
+- **OTF-audited security**: MFA, X-Accel-Redirect media protection, session hardening
+- **AES-128 HLS encryption**: encrypted stream segments, Cloudflare-cacheable with Django-gated key delivery
+- **AI transcription**: [Whisper.cpp](https://github.com/ggml-org/whisper.cpp) integration for English translation and subtitle generation
+- **SRT subtitle management**: upload, edit, and download subtitle and caption files
+- **Granular media privacy**: public, private, and password-protected content with enforced file-level access controls
+- **Scheduled visibility control**: set a film private during a festival window, with automatic public release after a chosen date
+- **Community Impact recording**: impact measured as screenings, academic use, curation, and playlist inclusion, not view counts or viral metrics
+- **Content sensitivity tagging**: films can be marked with sensitivity labels and context notes
+- **Expanded user roles**: Trusted User role with elevated publishing and ASR access; Curator role; role badges on media pages and comments
+- **Notification system**: bell icon, in-app and email notifications
+- **Comment threads**: threaded discussion designed for screening debriefs rather than social-media reply chains
+- **Bulk upload**: multi-film upload for institutional partners
+- **Search and discovery**: multi-dimensional filters (region, topic, language, length, visibility) and a mobile-optimised search sheet, with curated content distinguished from user uploads
+- **Upload progress and encoding status**: real-time progress, encoding state, and error messages
+- **Privacy-by-design**: no third-party tracker dependencies, self-hosted static assets, activity logging opt-out
 
-- **OTF-audited security** — MFA, X-Accel-Redirect media protection, session hardening
-- **AI transcription** — [Whisper.cpp](https://github.com/ggml-org/whisper.cpp) integration for English translation and subtitle generation
-- **SRT subtitle management** — Upload, edit, and download subtitle/caption files
-- **Granular media privacy** — Public, private, and password-protected content with enforced file-level access controls
-- **Expanded user roles** — Trusted User role with elevated publishing and ASR access; Curator role
-- **Featured video scheduling** — Editorial control over homepage curation
-- **Notification system** *(active development)* — Bell icon, in-app and email notifications
-- **Timeline-based video commenting** *(active development)* — Comment at specific timestamps, rendered as Video.js markers
-- **@Mention system** *(active development)* — User mentions in comments with autocomplete and notification triggers
-- - **HLS video encryption** — AES-128 encrypted stream segments; Cloudflare-cacheable with Django-gated key delivery *(active development*
-- **User following and subscriptions** *(active development)*
-- **Privacy-by-design** — No third-party tracker dependencies; self-hosted static assets; activity logging opt-out
 
 ---
 
@@ -104,18 +105,17 @@ We're building a vibrant developer community. **Paid opportunities** are availab
 
 ## Potential Use Cases
 
-CinemataCMS is built for organisations that need to manage, showcase, and distribute video content with a focus on social impact — particularly where privacy, security, and sovereignty over content matter:
-
-- **Human rights documentation** — NGOs and advocacy groups documenting sensitive situations, where secure hosting and access controls are essential
-- **Activist archiving** — Community media groups preserving footage under threat of government censorship or platform removal
-- **Film festivals** — Virtual and physical festivals hosting submissions and curated collections, including privacy-sensitive or politically sensitive work
-- **Educational institutions** — Universities, film schools, and educational programmes building accessible archives of instructional and student content
-- **Independent media organisations** — Documentary collectives and citizen journalism projects requiring secure hosting
-- **Community archiving initiatives** — Cultural organisations preserving local stories and historical footage
-- **Environmental advocacy** — Organisations documenting environmental issues and climate change impacts
-- **Digital storytelling projects** — Initiatives using video as a tool for empowerment and social change
-
-The platform's emphasis on privacy, security, and community engagement makes it particularly suitable for projects operating in contexts where content creators and their audiences face surveillance, harassment, or censorship risk.
+CinemataCMS is built for organisations that need to manage, showcase, and distribute video content with a focus on social impact, particularly where privacy, security, and sovereignty over content matter:
+ 
+- **Human rights documentation**: NGOs and advocacy groups documenting sensitive situations, where secure hosting and access controls are essential
+- **Activist archiving**: community media groups preserving footage under threat of government censorship or platform removal
+- **Film festivals**: virtual and physical festivals hosting submissions and curated collections, including privacy-sensitive or politically sensitive work
+- **Educational institutions**: universities, film schools, and educational programmes building accessible archives of instructional and student content
+- **Independent media organisations**: documentary collectives and citizen journalism projects requiring secure hosting
+- **Community archiving initiatives**: cultural organisations preserving local stories and historical footage
+- **Environmental advocacy**: organisations documenting environmental issues and climate change impacts
+- **Digital storytelling projects**: initiatives using video as a tool for empowerment and social change
+The emphasis on privacy, security, and community engagement makes CinemataCMS particularly suitable for projects operating in contexts where content creators and their audiences face surveillance, harassment, or censorship risk.
 
 ---
 
@@ -129,14 +129,14 @@ The platform's emphasis on privacy, security, and community engagement makes it 
 ---
 
 ## Installation
-
-The instructions below have been tested on Ubuntu 22.04. Make sure no other services are running on the system (specifically no nginx or PostgreSQL), as the installation script will install and configure them.
-
+The instructions below have been tested on Ubuntu 22.04. Make sure no other services are running on the system (specifically no Nginx or PostgreSQL), as the installation script will install and configure them.
+ 
 **Production install (as root):**
-```bash
+ 
+```
 cd /home
 mkdir cinemata && cd cinemata
-git clone -b v3.1.0 https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
+git clone -b v3.0.1 https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
 chmod +x install.sh
 ./install.sh
 ```
@@ -154,7 +154,7 @@ The installer runs database migrations and seeds django-waffle feature flag swit
 ## Roadmap
 
 ### ✅ Milestone 1: January – July 2025 (Completed)
-
+ 
 - OTF security audit response and implementation
 - Full open-source release as CinemataCMS 2.0
 - Multi-Factor Authentication for admin accounts
@@ -162,41 +162,55 @@ The installer runs database migrations and seeds django-waffle feature flag swit
 - Whisper.cpp ASR integration for English translation
 - Comprehensive developer documentation and setup guides (Ubuntu, macOS, Windows, Docker)
 - Virtual developer showcase and learning session
-
-### ✅ Milestone 2: August 2025 – June 2026 (Current)
-
-Active development focus through the Cinemata Community Assembly in June 2026.
-
-**Platform stability and security (Feb–Mar 2026)**
-- Bug fixes: bulk upload duplication, mobile header, Mainconcept codec compatibility
+### ✅ Milestone 2: February – June 2026 (Completed)
+ 
+Shipped over five months and launched at the first Cinemata Community Convening in Manila, June 2026.
+ 
+**Platform and frontend**
+ 
+- Frontend modernisation: React 17 to 19, Webpack to Vite, dual-track architecture
+- AES-128 HLS encrypted streaming
 - Transcode and Celery concurrency optimisation
-- AES-128 HLS stream encryption
-
-**Infrastructure and notifications (Feb–Apr 2026)**
-- Notification system: bell icon UI, in-app notifications, email triggers on publish and interaction
-- Whisper resource isolation to prevent transcoding conflicts
-
-**Community engagement features (Apr–May 2026)**
-- Timeline-based video commenting (timestamp-anchored comments rendered as Video.js markers)
-- @Mention system in comments with autocomplete (Tribute.js) and notification triggers
-- User following and subscription system
-
-**UI redesign (May–Jun 2026)**
-- Full homepage and film detail page redesign based on Kumquat UX research
-- Delivered in partnership with [Kumquat](https://kumquat.cc) via OTF UX & Discovery Lab grant
-- Privacy-first design system; responsive desktop and mobile layouts
-
-### 📋 Milestone 3: Post-July 2026
-
-Scope to be confirmed based on sustainability plan and community input at the June 2026 Assembly.
-
-- Mobile-optimised design across all pages
-- Filmmaker direct support / donation features
-- Search and discovery improvements
-- Members page with community algorithm
-- Live streaming support
-- Mobile native app (exploratory)
-
+**Notifications and community engagement**
+ 
+- Notification system: bell icon UI, in-app notifications, email triggers
+- Renewed comment system with threading
+- Contributor role badges on media pages and comments
+**Filmmaker and curator tools**
+ 
+- Scheduled visibility control (festival-window privacy)
+- Bulk upload for institutional partners
+- Community Impact recording (screenings, academic use, curation, playlist inclusion)
+- Content sensitivity tagging with context notes
+- Upload progress and encoding status
+- Profile and media management redesign
+**Search and interface**
+ 
+- Search and discovery overhaul: multi-dimensional filters and a mobile-optimised search sheet
+- Full homepage and film detail page redesign (Kumquat, via OTF UX & Discovery Lab)
+- Privacy-first design system, responsive desktop and mobile layouts
+Some Milestone 2 work has complete backends but no frontend yet, and carries into Milestone 3: @mention wiring, the follow and subscribe UI, and notification preference toggles.
+ 
+### 📋 Milestone 3: July 2026 – June 2027 (In planning)
+ 
+Milestone 3 is being planned in public with the Technology Working Group formed at the Manila Convening, following the [Cinemata Community Governance Document](https://cinemata.org). Funded capacity this cycle is modest, so the plan is organised into two tracks.
+ 
+**Core Track** is committed work that ships regardless of further funding. The focus is stewardship: keeping the platform stable, fast, and observable for the 7,300+ films that depend on it.
+ 
+- **Fix-first security and stability**: closing a set of fail-open gaps found during planning, where a protection appears active but is not, and nothing alerts. This includes an encryption bypass, an IP-masking bypass on one media path, a mention notification that leaks a restricted film's title, and a filmmaker-initiated takedown for Community Impact entries.
+- **Monitoring and visibility**: error tracking and alerting, so the team sees failures before filmmakers do.
+- **Performance and delivery**: adaptive bitrate streaming and homepage load improvements, aimed at the platform's Asia-Pacific audience.
+- **Finishing Milestone 2**: wiring the @mention frontend, the follow and subscribe UI, notification preference toggles, and Community Impact notifications.
+**Horizon Track** is designed and estimated now so that if further funding lands, development starts within weeks. Nothing on this track is promised.
+ 
+- Social share cards for films
+- A collaborator and collaborative-playlist system, plus private and unlisted playlists
+- A swipeable discovery feed, framed around discovery rather than retention
+- Offline and low-bandwidth viewing support
+- Deployability for other organisations: a production Docker Compose setup and a documentation site
+- Progressive Web App capability as a near-term step ahead of any native mobile app
+The final Milestone 3 plan will be published on the Cinemata blog and tracked on a public GitHub Projects board.
+ 
 ---
 
 ## History
@@ -211,16 +225,6 @@ Cinemata's content originates from EngageMedia's previous video platform, which 
 - In Thai and Lao: **ta**
 
 "Cinemata" represents our focus on highlighting Asia-Pacific perspectives and connecting issues, films, and filmmakers across the region.
-
----
-
-## About CinemataCMS 2.0
-
-With CinemataCMS 2.0, we're building a community of developers, designers, and contributors who share our vision of bringing critical but often overlooked stories to the forefront. Join us in creating a platform that connects filmmakers, advocacy groups, human rights defenders, educators, and audiences — through collaborative initiatives such as film screenings, archiving, curation, outreach, and promotion.
-
-By contributing to this project, you'll be part of an effort to make these tools available to a wider range of organisations, amplifying the impact of visual storytelling for social change across the Asia-Pacific and beyond.
-
-In a region where freedom of expression faces increasing threats, CinemataCMS demonstrates that alternative digital spaces aren't just possible — they're necessary. Built by Southeast Asian developers for Asia-Pacific communities, this is technology that serves movements, not markets.
 
 ---
 
