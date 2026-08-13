@@ -201,6 +201,7 @@ Milestone 3 is being planned in public with the Technology Working Group formed 
 - **Monitoring and visibility**: error tracking and alerting, so the team sees failures before filmmakers do.
 - **Performance and delivery**: adaptive bitrate streaming and homepage load improvements, aimed at the platform's Asia-Pacific audience.
 - **Finishing Milestone 2**: wiring the @mention frontend, the follow and subscribe UI, notification preference toggles, and Community Impact notifications.
+
 **Horizon Track** is designed and estimated now so that if further funding lands, development starts within weeks. Nothing on this track is promised.
  
 - Social share cards for films
