@@ -1,5 +1,7 @@
 # CinemataCMS: Privacy-First Video Platform for Asia-Pacific Social Issue Films
 
+![Homepage](images/1_1sBakvc.png)
+
 [Cinemata](https://cinemata.org) is an open-source video CMS for social issue filmmakers, human rights advocates, and civil society organisations across the Asia-Pacific region. It originated from [MediaCMS](https://github.com/mediacms-io/mediacms) but has since diverged into an independent codebase, now architecturally distinct, particularly on the frontend. Since its public release in 2021, Cinemata.org has grown to more than 7,300 films from 30+ countries.
  
 The project is managed by [EngageMedia](https://engagemedia.org), an Asia-Pacific non-profit advocating for digital rights, open technology, and social issue films. The goal is to make Cinemata's work available to the public, so that more organisations can build and maintain their own community video platforms, free from surveillance capitalism, algorithmic manipulation, and corporate content takedowns.
@@ -121,10 +123,9 @@ The emphasis on privacy, security, and community engagement makes CinemataCMS pa
 
 ## Screenshots
 
-[![Homepage](https://github.com/EngageMedia-video/cinematacms/raw/main/images/IMG_1934.jpeg)](https://github.com/EngageMedia-video/cinematacms/blob/main/images/IMG_1934.jpeg)
-[![Media Page](https://github.com/EngageMedia-video/cinematacms/raw/main/images/IMG_1935.jpeg)](https://github.com/EngageMedia-video/cinematacms/blob/main/images/IMG_1935.jpeg)
-[![Whisper ASR](https://github.com/EngageMedia-video/cinemata/raw/main/images/Integration%20of%20Whisper%20ASR%20for%20English%20Translation.png)](https://github.com/EngageMedia-video/cinemata/blob/main/images/Integration%20of%20Whisper%20ASR%20for%20English%20Translation.png)
-[![Upload](https://github.com/EngageMedia-video/cinematacms/raw/main/images/IMG_1931.jpeg)](https://github.com/EngageMedia-video/cinematacms/blob/main/images/IMG_1931.jpeg)
+![Homepage](https://github.com/EngageMedia-video/cinematacms/blob/f1cfbfd8693c9b57c5c12d00221bdb0755487e5f/images/profile%20page.png)
+![Playlists Page](https://github.com/EngageMedia-video/cinematacms/blob/f1cfbfd8693c9b57c5c12d00221bdb0755487e5f/images/members%20page.png)
+![Profile Page](https://github.com/EngageMedia-video/cinematacms/blob/f1cfbfd8693c9b57c5c12d00221bdb0755487e5f/images/profile%20page.png)
 
 ---
 
@@ -136,7 +137,7 @@ The instructions below have been tested on Ubuntu 22.04. Make sure no other serv
 ```
 cd /home
 mkdir cinemata && cd cinemata
-git clone -b v3.0.1 https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
+git clone -b v3.2.1 https://github.com/EngageMedia-video/cinematacms.git cinematacms && cd cinematacms
 chmod +x install.sh
 ./install.sh
 ```
@@ -216,7 +217,7 @@ The final Milestone 3 plan will be published on the Cinemata blog and tracked on
 
 ## History
 
-Cinemata's content originates from EngageMedia's previous video platform, which operated from 2006 to 2020 using the Plumi video content management system. By migrating this valuable archive to an improved MediaCMS-based platform, we're ensuring the preservation and continued accessibility of essential narratives from the region. Since its 2021 launch, Cinemata has grown to more than 6,700 films contributed by filmmakers and curators across 30+ countries. Cinemata was co-developed with Markos Gogoulos of MediaCMS.
+Cinemata's content originates from EngageMedia's previous video platform, which operated from 2006 to 2020 using the Plumi video content management system. By migrating this valuable archive to an improved video CMS-based platform, we're ensuring the preservation and continued accessibility of essential narratives from the region. The legacy version of Cinemata from 2021 to 2024 was co-developed with Markos Gogoulos of MediaCMS.
 
 "Cinemata" comes from the combination of "cine", meaning "motion picture", and "mata", meaning "eye" in several regional languages:
 
