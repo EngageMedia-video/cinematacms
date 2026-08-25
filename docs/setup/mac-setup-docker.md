@@ -1,6 +1,6 @@
 # About
 
-__Implemented by [Adryan Eka Vandra](https://github.com/adryanev) (Indonesia)__
+__Implemented by [Adryan Eka Vandra](https://github.com/adryanev) (Indonesia) and [Sara Santillan](https://github.com/s-santillan)__
 
 This guide will help you set up Cinemata for local development on Mac OSX.
 
@@ -12,22 +12,29 @@ This guide will help you set up Cinemata for local development on Mac OSX.
 ## Pre-installation
 
 1. ### Install Homebrew
+
 Homebrew is a package manager for Mac that makes it easy to install software. Open Terminal and run:
 
 ```zsh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-After installation, you will need to add Homebrew to your PATH to ensure Homebrew will work. The installation output will tell you if you need to do this and how.
+After installation, you must add Homebrew to your PATH to ensure Homebrew will work. The installation output will tell you if you need to do this and how.
 
+2. ### Install required packages
 
-2. ### Install required packaged
 Install all the necessary software using Homebrew:
 
 ```zsh
 brew install wget openssl ffmpeg make cmake python docker bento4 uv node@22
 ```
-This command also installs Docker. Ensure Docker is started before proceeding. For Mac, installing `docker` via Homebrew typically includes Docker Desktop, which you'll need to run.
+
+
+[tk check]
+
+This command installs Docker. In addition to Docker, you must install Docker Desktop. Navigate to [Docker Desktop](https://www.docker.com/products/docker-desktop/) and click **Download Docker Desktop**. Select the install option that matches your Mac.
+
+Finally, you must **run** or **execute** Docker Desktop. The first time it runs, it builds the symlinks to execute various Docker commands on the command line.
 
 Since `node@22` is keg-only and won't be added to your PATH automatically, you need to link it:
 
@@ -46,21 +53,31 @@ This command works on both Intel Macs (which use `/usr/local`) and Apple Silicon
 > [!NOTE]
 > The `uv` package manager is installed via Homebrew in the previous step. It will be used to manage Python dependencies and virtual environments for the Cinemata project. This is a faster alternative to `pip` and provides better dependency resolution.
 
+NodeJS installs `npm` 10. [tk]
+[Lastly, tk explain that nodejs 22 installs npm 20update npm 10 to 11]
+
+cd frontend
+npm i -g "$(node -p "require('./package.json').packageManager")"
+npm --version   # must report 11.x
 
 3. ### Prepare for Dockerized Services
+
 PostgreSQL and Redis will be run as Docker containers using Docker Compose. The configuration file (`docker-compose.dev.yml`) is located within the `cinematacms` repository, which you will clone in the next section.
 
 4. ### Create your working directory
-Create a folder to hold all your project files:
+
+Create a folder to hold all your project files. This guide creates a folder from the `HOME` directory, but you can use your own folder structure.
 
 ```zsh
-cd ~/Desktop
+cd # Enter your home directory
 mkdir cinemata
 cd cinemata
 ```
 
 ## Installation
+
 1. ### Clone the repositories
+
 First, clone the Cinemata repository:
 
 ```zsh
@@ -79,13 +96,15 @@ make
 cd ..
 ```
 
-2. ### Start Background Services with Docker Compose
+2. ### Start background services with Docker Compose
 Now that you have cloned the `cinematacms` repository and are inside the `cinematacms` directory, start the PostgreSQL and Redis services using the Makefile:
 
 ```zsh
 make docker-up
 ```
+
 This command utilizes the `Makefile` target `docker-up`, which in turn runs `docker-compose -f docker-compose.dev.yml up -d`. This will:
+
 - Pull the required Docker images for all services defined in `docker-compose.dev.yml` (including PostgreSQL and Redis) if they are not already present.
 - Start these service containers in detached mode (`-d`).
 - The PostgreSQL database named `mediacms` with user `mediacms` and password `mediacms` will be automatically created as defined in the `docker-compose.dev.yml` file.
@@ -93,14 +112,16 @@ This command utilizes the `Makefile` target `docker-up`, which in turn runs `doc
 You can check if the containers are running with `docker ps`.
 
 3. ### Create environment files
-Go back to the `/cinematacms` folder (if you navigated away, e.g., into `whisper.cpp`) and create an `.env` file by copying the example file:
+
+Navigate to the `/cinematacms` folder and create an `.env` file by copying the example file:
 
 ```zsh
-cd ~/Desktop/cinemata/cinematacms # Ensure you are in the correct directory
+cd ~/cinemata/cinematacms # Ensure you are in the correct directory
 cp .env.example .env
 ```
 
-4. ### Prepare Python Environment
+4. ### Prepare Python environment
+
 The `cinematacms` project requires Python 3.10. `uv`, which you'll use in the next step, will create and manage a Python virtual environment for the project using an available Python 3.10 interpreter.
 
 Ensure you have Python 3.10 installed on your system and accessible in your PATH. `uv` will use this version to create the virtual environment. If Python 3.10 is not installed, you can install it using various methods, for example, directly from [python.org](https://www.python.org/downloads/) or via Homebrew (`brew install python@3.10`).
@@ -114,22 +135,25 @@ cd ~/Desktop/cinemata/cinematacms
 
 The virtual environment itself will be created by `uv` in the next step. You won't need to manually create or activate it for the `make` targets provided in this guide.
 
-5. ### Install Python packages and Create Virtual Environment
+5. ### Install Python packages and create virtual environment
+
 Ensuring you are in the `cinematacms` directory (after setting the `pyenv local` version), install the required Python packages using the Makefile command. This step will also automatically create a virtual environment (typically named `.venv` in the `cinematacms` directory) if one doesn't already exist, using the Python 3.10 version set previously.
 
 ```zsh
 make sync
 ```
+
 This command uses the `sync` target in the `Makefile`, which executes `uv sync`. `uv sync` installs or updates Python packages based on the project's dependency configuration (e.g., `pyproject.toml` or `requirements.txt` if configured for `uv`). After this, subsequent `uv run` commands or `make` targets that use `uv run` (like `make dev-server`) will automatically use this managed environment.
 
 6. ### Generate a secret key
+
 Generate a secret key for Django:
 
 ```zsh
 uv run python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
 ```
 
-Copy the output (this is your secret key)
+Copy the output (this is your secret key).
 
 7. ### Set up environment files
 Open the `.env` file in a text editor (it was just copied from `.env.example`):
@@ -225,6 +249,7 @@ echo "Your admin password is $ADMIN_PASS"
 Write down the admin password that's displayed as this will let you access the Django admin panel.
 
 10. ### Start the server
+
 Finally, start the Django development server using the Makefile command. This will run the server within the `uv`-managed environment:
 
 ```zsh
@@ -236,7 +261,7 @@ You should now be able to access Cinemata at http://127.0.0.1:8000 in your brows
 - Username: admin
 - Password: (the ADMIN_PASS that was displayed earlier)
 
-## Running Celery Workers
+## Running Celery workers
 
 Once the main development server is running, you may also need to start the Celery workers for background task processing, such as video encoding, notifications, and speech-to-text transcription. These workers handle different types of tasks.
 
@@ -274,7 +299,7 @@ To check the status of Celery processes, you can use:
 
 Refer to the [Makefile and uv Usage Guide](./makefile-and-uv.md) for more Celery-related commands, including how to stop and restart workers.
 
-## Frontend Development
+## Frontend development
 
 The frontend uses React 19 and Vite. For HMR (Hot Module Replacement) during development, you need two terminals:
 
@@ -297,6 +322,7 @@ make frontend-build
 ```
 
 ## Troubleshooting
+
 (This section is intentionally left blank for now, as Docker setup simplifies many common issues. If you encounter Docker-specific problems, refer to Docker documentation or community forums.)
 
 ## Additional Tips
