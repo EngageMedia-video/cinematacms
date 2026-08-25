@@ -2,7 +2,7 @@
 
 # About
 
-__Implemented by [Adryan Eka Vandra](https://github.com/adryanev) (Indonesia) and [Sara Santillan](https://github.com/s-santillan)__
+__Implemented by [Adryan Eka Vandra](https://github.com/adryanev) (Indonesia) and [Sara Santillan](https://github.com/s-santillan)__.
 
 This guide will help you set up Cinemata for local development on Mac OSX.
 
@@ -189,7 +189,7 @@ BASE_DIR = os.path.abspath('.')
 
 FRONTEND_HOST='http://127.0.0.1:8000'
 PORTAL_NAME='CinemataCMS'
-SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'http')
+SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'https')
 SECRET_KEY=os.getenv('SECRET_KEY')
 LOCAL_INSTALL=True
 DEBUG = True
