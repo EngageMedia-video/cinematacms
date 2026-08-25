@@ -127,7 +127,7 @@ After ensuring Python 3.10 is available, navigate into the `cinematacms` project
 
 ```zsh
 # Navigate into the cinematacms project directory
-cd ~/Desktop/cinemata/cinematacms
+cd ~/cinemata/cinematacms
 ```
 
 The virtual environment itself will be created by `uv` in the next step. You won't need to manually create or activate it for the `make` targets provided in this guide.
@@ -269,7 +269,7 @@ You should now be able to access Cinemata at http://127.0.0.1:8000 in your brows
 
 Once the main development server is running, you may also need to start the Celery workers for background task processing, such as video encoding, notifications, and speech-to-text transcription. These workers handle different types of tasks.
 
-Open new terminal windows or tabs for each Celery service you want to run. Navigate to the `cinematacms` project directory (`~/Desktop/cinemata/cinematacms`) in each terminal before running the commands.
+Open new terminal windows or tabs for each Celery service you want to run. Navigate to the `cinematacms` project directory (`~/cinemata/cinematacms`) in each terminal before running the commands.
 
 - **Celery Beat (Scheduler):** Responsible for scheduling periodic tasks.
   ```zsh
@@ -334,7 +334,7 @@ make frontend-build
 - If you wish to run Python commands directly (e.g., `python manage.py <command>`, `pip list` within the project's environment) outside of the `make` targets, you'll need to activate the virtual environment first. `uv` creates it inside the `cinematacms` directory, usually as `.venv`.
   To activate it:
   ```zsh
-  cd ~/Desktop/cinemata/cinematacms  # If not already there
+  cd ~/cinemata/cinematacms  # If not already there
   source .venv/bin/activate
   ```
 - Once activated, your terminal prompt often changes (e.g., showing `(.venv)`).
