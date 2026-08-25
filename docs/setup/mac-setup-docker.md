@@ -1,3 +1,5 @@
+# Mac OSX with Docker
+
 # About
 
 __Implemented by [Adryan Eka Vandra](https://github.com/adryanev) (Indonesia) and [Sara Santillan](https://github.com/s-santillan)__
@@ -26,20 +28,17 @@ After installation, you must add Homebrew to your PATH to ensure Homebrew will w
 Install all the necessary software using Homebrew:
 
 ```zsh
-brew install wget openssl ffmpeg make cmake python docker bento4 uv node@22
+brew install wget openssl ffmpeg make cmake python docker bento4 uv node@25
 ```
-
-
-[tk check]
 
 This command installs Docker. In addition to Docker, you must install Docker Desktop. Navigate to [Docker Desktop](https://www.docker.com/products/docker-desktop/) and click **Download Docker Desktop**. Select the install option that matches your Mac.
 
-Finally, you must **run** or **execute** Docker Desktop. The first time it runs, it builds the symlinks to execute various Docker commands on the command line.
+Finally, you must **run** or **execute** Docker Desktop. The first time it runs, it builds the symlinks necessary to run Docker commands on the command line.
 
 Since `node@22` is keg-only and won't be added to your PATH automatically, you need to link it:
 
 ```zsh
-brew link --overwrite --force node@22
+brew link --overwrite --force node@25
 ```
 
 Alternatively, you can add it to your PATH manually by adding this to your `~/.zshrc` or `~/.bash_profile`:
@@ -53,12 +52,12 @@ This command works on both Intel Macs (which use `/usr/local`) and Apple Silicon
 > [!NOTE]
 > The `uv` package manager is installed via Homebrew in the previous step. It will be used to manage Python dependencies and virtual environments for the Cinemata project. This is a faster alternative to `pip` and provides better dependency resolution.
 
-NodeJS installs `npm` 10. [tk]
-[Lastly, tk explain that nodejs 22 installs npm 20update npm 10 to 11]
+CinemataCMS requires a minimum `npm` version 11. Enter the following to check your `npm` version:
 
+```
 cd frontend
-npm i -g "$(node -p "require('./package.json').packageManager")"
 npm --version   # must report 11.x
+```
 
 3. ### Prepare for Dockerized Services
 
@@ -116,7 +115,7 @@ You can check if the containers are running with `docker ps`.
 Navigate to the `/cinematacms` folder and create an `.env` file by copying the example file:
 
 ```zsh
-cd ~/cinemata/cinematacms # Ensure you are in the correct directory
+cd ~/cinemata/cinematacms      # Replace `~` if installing CinemataCMS in a different folder
 cp .env.example .env
 ```
 
@@ -156,7 +155,8 @@ uv run python -c 'from django.core.management.utils import get_random_secret_key
 Copy the output (this is your secret key).
 
 7. ### Set up environment files
-Open the `.env` file in a text editor (it was just copied from `.env.example`):
+
+Open the `.env` file in a text editor:
 
 ```zsh
 open -a TextEdit .env
@@ -206,11 +206,17 @@ CELERY_BROKER_URL = REDIS_LOCATION
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 
 MP4HLS_COMMAND = (
-    "/opt/homebrew/bin/mp4hls" # IMPORTANT: run which mp4hls to find the path on your system
+    "/opt/homebrew/bin/mp4hls" # IMPORTANT: replace with output of `which mp4hls`
 )
 ```
 
-Change the path accordingly, save and close the file.
+The MP4HLS_COMMAND path differs depending on your Mac OS. Replace the `MP4HLS_COMMAND` path with the output of the following:
+
+```
+which mp4hls
+```
+
+Save and close the file.
 
 8. ### Set up database and static files
 Go back to the `/cinematacms` directory and create necessary folders and run the Django management commands:
