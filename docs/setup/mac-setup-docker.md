@@ -1,8 +1,6 @@
-# Mac OSX with Docker
-
 # About
 
-__Implemented by [Adryan Eka Vandra](https://github.com/adryanev) (Indonesia) and [Sara Santillan](https://github.com/s-santillan)__.
+__Implemented by [Adryan Eka Vandra](https://github.com/adryanev) (Indonesia) and [Sara Santillan](https://github.com/s-santillan)__ (Philippines).
 
 This guide will help you set up Cinemata for local development on Mac OSX.
 
@@ -35,7 +33,7 @@ This command installs Docker. In addition to Docker, you must install Docker Des
 
 Finally, you must **run** or **execute** Docker Desktop. The first time it runs, it builds the symlinks necessary to run Docker commands on the command line.
 
-Since `node@22` is keg-only and won't be added to your PATH automatically, you need to link it:
+Since `node@25` is keg-only and won't be added to your PATH automatically, you need to link it:
 
 ```zsh
 brew link --overwrite --force node@25
@@ -44,7 +42,7 @@ brew link --overwrite --force node@25
 Alternatively, you can add it to your PATH manually by adding this to your `~/.zshrc` or `~/.bash_profile`:
 
 ```zsh
-export PATH="$(brew --prefix node@22)/bin:$PATH"
+export PATH="$(brew --prefix node@25)/bin:$PATH"
 ```
 
 This command works on both Intel Macs (which use `/usr/local`) and Apple Silicon Macs (which use `/opt/homebrew`).
