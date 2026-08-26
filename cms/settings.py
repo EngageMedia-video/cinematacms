@@ -188,14 +188,17 @@ LOGGING = {
             "formatter": "plain",
         },
     },
+    # Every logger below propagates to the root logger, which owns the sole
+    # json_file handler. Naming json_file here as well would write each record
+    # to app.json.log twice.
     "loggers": {
-        "files": {"handlers": ["json_file", "legacy_file"], "level": "INFO"},
-        "users": {"handlers": ["json_file", "legacy_file"], "level": "INFO"},
-        "uploader": {"handlers": ["json_file", "legacy_file"], "level": "INFO"},
-        "actions": {"handlers": ["json_file", "legacy_file"], "level": "INFO"},
-        "celery": {"handlers": ["json_file"], "level": "WARNING"},
+        "files": {"handlers": ["legacy_file"], "level": "INFO"},
+        "users": {"handlers": ["legacy_file"], "level": "INFO"},
+        "uploader": {"handlers": ["legacy_file"], "level": "INFO"},
+        "actions": {"handlers": ["legacy_file"], "level": "INFO"},
+        "celery": {"handlers": [], "level": "WARNING"},
         "django": {
-            "handlers": ["json_file", "legacy_file"],
+            "handlers": ["legacy_file"],
             "level": "INFO",
             "propagate": True,
         },
