@@ -114,10 +114,14 @@ run the checks that cover every changed area.
 ### Repository checks
 
 ```bash
-make lint
+make agent-check
 uv run python manage.py makemigrations --check
 uv run python manage.py test --noinput --verbosity=2 --exclude-tag=requires-whisper
 ```
+
+`make agent-check` is the shared baseline for human and agent-authored changes.
+It checks the patch for whitespace errors and runs every pre-commit hook. It
+does not replace the tests for the area you changed.
 
 The Django test suite requires the PostgreSQL and Redis services described in
 the developer onboarding guide.

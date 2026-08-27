@@ -15,7 +15,7 @@ venv/
 pyvenv.cfg
 .claude/*
 .serena/
-CLAUDE.md
+CLAUDE.local.md
 .agents/
 
 Bento4-SDK-1-6-0-632.x86_64-unknown-linux/

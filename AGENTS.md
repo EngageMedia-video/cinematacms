@@ -17,6 +17,8 @@ Read the source that matches the task before you edit files:
 - For AI disclosure, commit attribution, pull request rules, coverage policy, or
   merge controls, read
   `docs/technical/engineering-standards-proposal.md`.
+- For agent adapters or shared agent setup, read
+  `docs/technical/agentic-workflow.md`.
 
 Keep each rule in its source document. Link to that source instead of copying a
 second version into another file.
@@ -77,8 +79,7 @@ Work is complete when all of these conditions hold:
 
 - The task diff contains only the intended changes. Existing user-owned changes
   remain untouched.
-- `git diff --check` passes.
-- `make lint` passes.
+- `make agent-check` passes.
 - Relevant backend, frontend, migration, build, and workflow checks pass.
 - When the task includes a pull request, the pull request records the commands,
   manual checks, limits, and AI declaration that apply.
