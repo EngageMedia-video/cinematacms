@@ -254,6 +254,14 @@ jobs:
             frontend/packages/vjs-plugin/package-lock.json
             frontend/packages/media-player/package-lock.json
 
+      # Node 22 bundles npm 10, which cannot resolve this repository's npm 11
+      # lockfile reliably. Use the package manager version declared by frontend.
+      - name: Pin npm to the version in packageManager
+        working-directory: frontend
+        run: |
+          npm i -g "$(node -p "require('./package.json').packageManager")"
+          npm --version
+
       - name: Extract changed dependency information
         id: dep-info
         run: |
