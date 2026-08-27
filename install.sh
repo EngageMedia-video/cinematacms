@@ -201,6 +201,8 @@ cp deploy/dhparams.pem /etc/nginx/dhparams/dhparams.pem
 cp deploy/mediacms.io /etc/nginx/sites-available/mediacms.io
 ln -s /etc/nginx/sites-available/mediacms.io /etc/nginx/sites-enabled/mediacms.io
 cp deploy/uwsgi_params /etc/nginx/sites-enabled/uwsgi_params
+mkdir -p /etc/nginx/conf.d
+cp deploy/cloudflare_real_ip.conf /etc/nginx/conf.d/cloudflare_real_ip.conf
 cp deploy/nginx.conf /etc/nginx/
 systemctl stop nginx
 systemctl start nginx

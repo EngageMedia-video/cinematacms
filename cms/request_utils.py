@@ -27,15 +27,25 @@ def _is_trusted_proxy(remote_addr, trusted_proxies):
 
 
 def get_client_ip(request):
-    """Return client IP, trusting X-Forwarded-For only from configured proxies."""
+    """Return client IP, trusting X-Forwarded-For only from configured proxies.
+
+    X-Forwarded-For is read right to left. Each proxy appends the peer it saw,
+    so the rightmost entries are the ones trusted proxies wrote and the first
+    untrusted entry from that end is the client. The leftmost entry is whatever
+    the original caller sent, which anyone can set to 127.0.0.1.
+    """
     remote_addr = request.META.get("REMOTE_ADDR", "")
-    forwarded_for = request.headers.get("x-forwarded-for", "")
     trusted_proxies = getattr(settings, "TRUSTED_PROXIES", ("127.0.0.1", "::1"))
     if isinstance(trusted_proxies, str):
         trusted_proxies = [proxy.strip() for proxy in trusted_proxies.split(",") if proxy.strip()]
 
+    if not _is_trusted_proxy(remote_addr, trusted_proxies):
+        return remote_addr
+
+    forwarded_for = request.headers.get("x-forwarded-for", "")
     forwarded_ips = [ip.strip() for ip in forwarded_for.split(",") if ip.strip()]
-    if forwarded_ips and _is_trusted_proxy(remote_addr, trusted_proxies):
-        return forwarded_ips[0]
+    for candidate in reversed(forwarded_ips):
+        if not _is_trusted_proxy(candidate, trusted_proxies):
+            return candidate
 
     return remote_addr
