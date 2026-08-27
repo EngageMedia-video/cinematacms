@@ -180,6 +180,11 @@ Tokens follow `{group}-{variant}` naming. The Tailwind utility prefix comes from
 
 ## Pull Request Guidelines
 
+Read the [AI-assisted contributions policy](docs/technical/engineering-standards-proposal.md#contributor-policy)
+before you open a pull request. Declare substantive AI assistance in the pull
+request template. Mechanical edits, translation, and grammar correction are
+exempt when they meet the policy definition.
+
 When submitting a PR:
 
 - [ ] I have not imported `flux` in a new component

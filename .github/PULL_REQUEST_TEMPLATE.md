@@ -15,6 +15,16 @@ Fixes #(issue)
 
 ## Screenshots (if appropriate):
 
+## AI assistance
+
+<!-- Select exactly one. Read docs/technical/engineering-standards-proposal.md#contributor-policy. -->
+- [ ] This contribution includes substantive AI assistance.
+- [ ] This contribution does not include substantive AI assistance.
+
+### AI tools and use
+
+<!-- Required when substantive AI assistance is declared. Name each tool and describe how you used it. -->
+
 ## Types of changes
 <!--- What types of changes does your code introduce? Put an `x` in all the boxes that apply: -->
 - [ ] Bug fix (non-breaking change which fixes an issue)
