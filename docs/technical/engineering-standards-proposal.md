@@ -4,7 +4,7 @@
 |---|---|
 | Audience | CinemataCMS contributors, maintainers, and project stakeholders |
 | Decided | 2026-08-18 |
-| Status | Accepted. Implementation is tracked in the rollout section. |
+| Status | Accepted. Initial controls are implemented or in pull request #894. |
 | Decision owner | Project owner |
 
 This document records the decision, contributor policy, rollout plan, evidence,
@@ -63,9 +63,9 @@ required checks because they do not report a result on every pull request.
 
 ### Coverage starts as information
 
-The repository does not currently report backend or frontend coverage. Counts
-of test files cannot replace coverage data. An adjacent test file also does not
-prove that a source file is tested.
+Before this rollout, the repository did not report backend or frontend
+coverage. Counts of test files cannot replace coverage data. An adjacent test
+file also does not prove that a source file is tested.
 
 The project will first report coverage without blocking a pull request. After
 one month of data, the project owner will decide whether to require coverage for
@@ -215,17 +215,17 @@ Complete the work in this section in order.
 
 | Work | Status on 2026-08-27 | Completion evidence |
 |---|---|---|
-| Publish this policy | Ready in this change | `CONTRIBUTING.md` links to this section |
-| Add declaration fields to the pull request template | Ready in this change | A new pull request shows both fields |
-| Validate the declaration in CI | Not started | The check fails when zero or two fields are selected |
-| Label declared AI assistance | Not started | A declared pull request receives the label |
-| Protect `main` | Not started | The GitHub API reports the required checks and one approval |
-| Report coverage | Not started | Each pull request reports backend and frontend coverage |
+| Publish this policy | Implemented in pull request #894 | `CONTRIBUTING.md` links to this section |
+| Add declaration fields to the pull request template | Implemented in pull request #894 | The template contains both fields |
+| Validate the declaration in CI | Implemented in pull request #894; activates after merge | Parser tests cover zero, one, and two selections, whitespace, and unrelated checkboxes |
+| Label declared AI assistance | Implemented in pull request #894; activates after merge | The workflow adds or removes `ai-assisted` from the selected declaration |
+| Protect `main` | Complete | The GitHub API reports the four required checks, one approval, and administrator enforcement |
+| Report coverage | Implemented in pull request #894 | The existing backend and frontend jobs publish informational summaries |
 | Decide a changed-line target | Deferred | One month of coverage data has been reviewed |
 
 ### Protect `main`
 
-Configure the branch rule for `main` with these settings:
+The branch rule for `main` was configured on 2026-08-27 with these settings:
 
 1. Require a pull request before merging.
 2. Require one approval.
@@ -243,12 +243,13 @@ gh api repos/EngageMedia-video/cinematacms/branches/main/protection \
 	--jq '{checks: .required_status_checks.contexts, approvals: .required_pull_request_reviews.required_approving_review_count, admins: .enforce_admins.enabled}'
 ```
 
-The result must list all four checks, one approval, and `admins: true`.
+The verified result lists all four checks, one approval, and `admins: true`.
+Force pushes and branch deletion are disabled.
 
 ### Validate the AI declaration
 
-Add a CI job that reads the pull request body and counts the two declaration
-fields from `.github/PULL_REQUEST_TEMPLATE.md`.
+`.github/workflows/ai-declaration.yml` reads the pull request body and counts
+the two declaration fields from `.github/PULL_REQUEST_TEMPLATE.md`.
 
 The job must behave as follows:
 
@@ -258,8 +259,12 @@ The job must behave as follows:
 | One | Pass |
 | Two | Fail with instructions to clear one field |
 
-Test the parser against edited whitespace and unrelated checkboxes. Do not infer
-AI use from any other text in the pull request.
+The parser tests cover edited whitespace and unrelated checkboxes. The parser
+does not infer AI use from any other text in the pull request.
+
+The workflow uses `pull_request_target` so it can label pull requests from
+forks. It checks out the validator from the default branch and does not execute
+code from the pull request. It writes a commit status named `AI declaration`.
 
 Add the job to the branch rule only after the workflow is on `main` and has
 reported a result on a pull request. GitHub blocks a merge indefinitely when a
@@ -267,22 +272,38 @@ required check never starts.
 
 ### Add the declaration label
 
-When the substantive-assistance field is selected, add an `ai-assisted` label.
-Remove the label when the contributor changes the declaration.
+When the substantive-assistance field is selected, the workflow adds an
+`ai-assisted` label. It removes the label when the contributor changes the
+declaration.
 
 The label records volume. It does not change review priority or approval rules.
 
 ### Report coverage
 
-Add coverage collection to the existing backend and frontend test jobs. Report
-these values separately:
+The existing backend and frontend test jobs collect coverage and report these
+values separately:
 
 - Backend Python coverage.
 - Modern frontend coverage under `frontend/src/features/`.
 - Legacy frontend coverage under `frontend/src/static/js/`.
 
-Publish the values on each pull request as a check summary or comment. Keep this
-phase informational. A coverage decrease must not block a pull request.
+The backend job uses Coverage.py with branch coverage. It runs
+`coverage run manage.py test` against `actions`, `cms`, `files`,
+`notifications`, `uploader`, and `users`. It omits migrations, tests, and empty
+files from the report.
+
+The frontend job uses the Vitest V8 provider and runs
+`npm run test:coverage`. It includes JavaScript and JSX under
+`frontend/src/features/` and `frontend/src/static/js/`. It excludes tests, test
+setup, and
+`frontend/src/static/js/components/-NEW-/InlineSliderItemListAsync.js`. That
+legacy file contains JSX under a `.js` extension, which the V8 provider cannot
+remap when the file is uncovered.
+
+Each job publishes its values in the workflow run summary and uploads JSON
+coverage data with 30-day retention. These reports and artifacts form the
+baseline for the one-month observation period. This phase is informational: a
+coverage decrease does not block a pull request.
 
 Record the tool, command, included paths, excluded paths, and baseline artifact
 in the implementation pull request. The report must distinguish full-repository

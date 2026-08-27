@@ -47,7 +47,12 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["basedpyright>=1.39.3", "ruff>=0.15.12", "pre-commit>=4.6.0"]
+dev = [
+    "basedpyright>=1.39.3",
+    "coverage[toml]>=7.6,<8",
+    "pre-commit>=4.6.0",
+    "ruff>=0.15.12",
+]
 e2e = [
     "playwright>=1.59.0",
     "pytest>=9.0.3",
@@ -77,6 +82,14 @@ markers = [
     "contact: Contact form tests",
 ]
 addopts = "--tb=short"
+
+[tool.coverage.run]
+branch = true
+source = ["actions", "cms", "files", "notifications", "uploader", "users"]
+
+[tool.coverage.report]
+omit = ["*/migrations/*", "*/tests/*", "*/tests.py"]
+skip_empty = true
 
 # ── Ruff (linter + formatter) ──────────────────────────────
 [tool.ruff]
