@@ -35,8 +35,6 @@ Apply these project rules:
 
 - Test through the public boundary used by a caller or user.
 - Add a regression test that fails before a bug fix and passes after it.
-- Use an independent expected value from the requirement or a worked example.
-  Do not repeat the implementation algorithm in the assertion.
 - Prefer the real Django test database and repository components. Mock an
   external service, time, randomness, or another true system boundary.
 - Keep a focused test deterministic. Fix or isolate a flaky dependency before
@@ -44,6 +42,19 @@ Apply these project rules:
 - Do not weaken, skip, or delete a valid test to make a change pass.
 
 Use the `tdd` repository skill when the work requires a test-first cycle.
+
+### Tautological tests are harmful
+
+A tautological test derives its expected result with the same rules as the code
+under test. The test passes when both copies contain the same mistake, so it
+does not provide independent evidence.
+
+- Take expected values from the requirement, a worked example, a fixed fixture,
+  or another independent source of truth.
+- Do not repeat the implementation algorithm in the assertion.
+- Do not assert a constant against itself or verify only that a mock returns its
+  configured value.
+- Confirm that the test fails when the behavior it specifies is absent or wrong.
 
 ## Choose the frontend track by directory
 
@@ -118,11 +129,17 @@ reduced-motion behavior. Check each affected viewport and theme.
 - Keep dependency-only updates separate from feature work unless the feature
   requires the update.
 
+## Keep comments short
+
+- State only a non-obvious reason, invariant, constraint, or trade-off.
+- Delete any claim that a reader can derive from the code.
+- Keep the comment next to the code that gives it meaning.
+- Update or delete the comment when the underlying behavior changes.
+- Delete commented-out code. Git keeps the previous version.
+
 ## Write durable documentation
 
 - Document public behavior, setup requirements, and operational constraints.
-- Use comments to explain a non-obvious reason or invariant. Do not narrate code
-  that already states the operation.
 - Use repository-relative paths and commands that work at the current commit.
 - Pin a count or baseline to a commit and include the command that reproduces
   it.
