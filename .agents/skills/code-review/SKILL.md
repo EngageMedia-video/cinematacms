@@ -10,12 +10,14 @@ pull request.
 
 ## Pin the review scope
 
-1. Inspect the current branch, worktree, and staged changes.
+1. Inspect the current branch, worktree, staged changes, and untracked files.
 2. Use the fixed point that the user supplied. Otherwise, use the pull request
    base, `upstream/main`, or `main`, in that order when each source is available.
 3. Compare committed changes against the merge base. Include staged and
-   unstaged changes in the review.
-4. Stop if the fixed point does not resolve or the complete diff is empty.
+   unstaged changes. Enumerate untracked files with
+   `git ls-files --others --exclude-standard` and read the task files directly.
+4. Stop if the fixed point does not resolve. Stop for an empty review only when
+   the committed, staged, unstaged, and untracked scopes are all empty.
 
 ## Load the review sources
 

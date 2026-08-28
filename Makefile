@@ -280,6 +280,7 @@ agent-check:
 	@echo "Checking the patch and repository-wide quality gates..."
 	git diff --check
 	git diff --cached --check
+	uv run python scripts/check_untracked_files.py
 	$(MAKE) lint
 
 test-ci:

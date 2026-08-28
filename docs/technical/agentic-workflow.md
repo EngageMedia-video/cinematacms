@@ -93,9 +93,9 @@ diff. Every change also runs:
 make agent-check
 ```
 
-The command checks staged and unstaged patches for whitespace errors and runs
-all repository pre-commit hooks. It does not replace the tests for the changed
-area.
+The command checks staged and unstaged diffs. It runs pre-commit hooks on
+untracked files and runs every hook against tracked files. It does not replace
+the tests for the changed area.
 
 ### Review and hand off
 

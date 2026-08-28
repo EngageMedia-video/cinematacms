@@ -62,18 +62,9 @@ source the pull request head in that security context.
 
 ## Record AI assistance
 
-Agent-produced content that remains in a contribution is substantive AI
-assistance. Before creating a commit or editing a pull request, follow the
-engineering standards document.
-
-For a commit that contains agent-produced content, add:
-
-```text
-Assisted-by: <tool> <model-version>
-```
-
-Use the substantive-assistance declaration in the pull request and describe the
-tool's contribution. Reserve `Co-Authored-By:` for human authors.
+Before committing agent-assisted changes or editing a pull request, follow the
+AI disclosure, attribution, and declaration rules in the
+[engineering standards](docs/technical/engineering-standards-proposal.md#contributor-policy).
 
 ## Finish with evidence
 

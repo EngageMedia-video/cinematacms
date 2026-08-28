@@ -259,8 +259,16 @@ jobs:
       - name: Pin npm to the version in packageManager
         working-directory: frontend
         run: |
-          npm i -g "$(node -p "require('./package.json').packageManager")"
-          npm --version
+          package_manager="$(node -p "require('./package.json').packageManager")"
+          expected_npm="${package_manager#npm@}"
+          npm i -g "$package_manager"
+          actual_npm="$(npm --version)"
+
+          echo "Using npm at $(command -v npm)"
+          if [ "$actual_npm" != "$expected_npm" ]; then
+            echo "Expected npm $expected_npm, but npm --version returned $actual_npm"
+            exit 1
+          fi
 
       - name: Extract changed dependency information
         id: dep-info

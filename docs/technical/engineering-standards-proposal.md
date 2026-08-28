@@ -219,19 +219,22 @@ Complete the work in this section in order.
 | Add declaration fields to the pull request template | Implemented in pull request #894 | The template contains both fields |
 | Validate the declaration in CI | Implemented in pull request #894; activates after merge | Parser tests cover zero, one, and two selections, whitespace, and unrelated checkboxes |
 | Label declared AI assistance | Implemented in pull request #894; activates after merge | The workflow adds or removes `ai-assisted` from the selected declaration |
-| Protect `main` | Complete | The GitHub API reports the four required checks, one approval, and administrator enforcement |
+| Protect `main` | Complete | The GitHub API reports the four required checks, one write-permission approval, latest-push approval, administrator enforcement, and disabled force pushes and deletion |
 | Report coverage | Implemented in pull request #894 | The existing backend and frontend jobs publish informational summaries |
 | Decide a changed-line target | Deferred | Review starts after one month of coverage data |
 
 ### Protect `main`
 
-The branch rule for `main` was configured on 2026-08-27 with these settings:
+The branch rule for `main` was configured and first confirmed on 2026-08-27.
+Review freshness was added on 2026-08-28. The rule has these settings:
 
 1. Require a pull request before merging.
-2. Require one approval.
-3. Require the four status checks named in the decision section.
-4. Apply the rule to administrators.
-5. Block direct pushes and force pushes.
+2. Require one approval from a reviewer with write permission.
+3. Require approval of the most recent reviewable push by someone other than
+   the person who pushed it.
+4. Require the four status checks named in the decision section.
+5. Apply the rule to administrators.
+6. Block direct pushes, force pushes, and branch deletion.
 
 Do not require jobs from `.github/workflows/dependabot-check.yml`. Those jobs
 run only when dependency manifests change.
@@ -240,11 +243,13 @@ After the rule is saved, run:
 
 ```bash
 gh api repos/EngageMedia-video/cinematacms/branches/main/protection \
-	--jq '{checks: .required_status_checks.contexts, approvals: .required_pull_request_reviews.required_approving_review_count, admins: .enforce_admins.enabled}'
+	--jq '{checks: .required_status_checks.contexts, pull_request_reviews: (.required_pull_request_reviews != null), approvals: .required_pull_request_reviews.required_approving_review_count, latest_push_approval: .required_pull_request_reviews.require_last_push_approval, admins: .enforce_admins.enabled, force_pushes: .allow_force_pushes.enabled, deletions: .allow_deletions.enabled}'
 ```
 
-The verified result lists all four checks, one approval, and `admins: true`.
-Force pushes and branch deletion are disabled.
+The result verified on 2026-08-28 lists all four checks and reports
+`pull_request_reviews: true`, `approvals: 1`, `latest_push_approval: true`,
+`admins: true`, `force_pushes: false`, and `deletions: false`. GitHub counts the
+required approval only from a reviewer with write permission.
 
 ### Validate the AI declaration
 
@@ -686,6 +691,7 @@ appearance-heavy among all fixes: 12
 - [QEMU code provenance policy](https://www.qemu.org/docs/master/devel/code-provenance.html#use-of-ai-generated-content)
 - [Rust policy on LLM-generated content](https://forge.rust-lang.org/policies/llm-usage.html)
 - [Developer Certificate of Origin 1.1](https://developercertificate.org/)
+- [GitHub protected branch review requirements](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)
 - [OpenAI's retired AI classifier](https://openai.com/index/new-ai-classifier-for-indicating-ai-written-text/)
 - [Daniel Stenberg on ending curl's bug bounty](https://daniel.haxx.se/blog/2026/01/26/the-end-of-the-curl-bug-bounty/)
 - [Daniel Stenberg on curl security reporting](https://daniel.haxx.se/blog/2026/02/25/curl-security-moves-again/)
