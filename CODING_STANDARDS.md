@@ -206,22 +206,43 @@ Use `kebab-case` for feature directories and entry files. Name a Zustand store
 Read `docs/technical/FRONTEND_WORKFLOW.md` before choosing an application shell
 or changing a frontend entry point.
 
-## Use semantic styles and accessible controls
+## Color a modern component with semantic tokens
 
-Use Tailwind utilities and the semantic tokens in
-`frontend/src/static/css/tailwind.css` for modern code. Pick the token that
-describes the role, such as `bg-brand-primary`, `bg-surface-body`, or
-`text-content-error`.
+Modern code names the role, not the color. A semantic token already carries the
+light and dark value, so a component that uses one needs no `dark:` variant.
+
+Choose the first layer that covers the case:
+
+1. A modern semantic token utility, such as `bg-bg-page`, `text-text-strong`,
+   `border-border-default`, or `ring-ring-focus`. This is the default.
+2. A raw `--cinemata-*` palette utility, such as `bg-cinemata-neutral-200`, when
+   the color must stay the same in both themes and no semantic role covers it.
+3. A legacy alias, such as `bg-brand-primary` or `text-content-body`, when the
+   component must match a legacy SCSS rule.
+
+- Do not write a raw CSS custom property into a modern component, either as an
+  arbitrary utility such as `bg-[var(--body-bg-color)]` or as an inline
+  `style` value. `docs/modern-track-color-system.md` lists the few bridges that
+  keep one on purpose; extend that list in the same change if you add one.
+- Do not write a hex, `rgb()`, or `hsl()` literal for a themed color.
+- Add a semantic token instead of reaching for the same raw palette step a
+  second time for the same role.
+
+`frontend/eslint.config.mjs` fails a modern file that puts a raw CSS variable
+or a color literal in a utility class or an inline `style` color. Test files
+and the sidebar bridge are the configured exceptions.
+
+The `@theme inline` blocks in `frontend/src/static/css/tailwind.css` hold the
+canonical token list, and `docs/modern-track-color-system.md` explains the
+palette, the token layers, and the deliberate exceptions. When `DEBUG=True`,
+`/modern-demo/` shows the tokens and their theme behavior.
+
+## Keep styling in Tailwind and controls accessible
 
 - Do not add an SCSS file for a modern feature.
-- Do not hardcode a color when a semantic token exists.
 - Write complete Tailwind class strings. Do not build class names at runtime.
 - Do not import `tailwind.css` into a legacy component.
 - Do not use `transition-all`.
-
-When `DEBUG=True`, `/modern-demo/` shows the available tokens and their theme
-behavior. The `@theme inline` block in `tailwind.css` is the canonical token
-list.
 
 For a UI change, verify semantic controls, accessible names, keyboard
 operation, visible focus, image dimensions, alternative text, and

@@ -10,8 +10,8 @@ or replace instructions for its directory.
 Read the source that matches the task before you edit files:
 
 - For code, tests, CI, or contributor documentation, read `CONTRIBUTING.md`.
-- For implementation, test design, frontend boundaries, accessibility, or
-  dependency changes, read `CODING_STANDARDS.md`.
+- For implementation, test design, frontend boundaries, color tokens,
+  accessibility, or dependency changes, read `CODING_STANDARDS.md`.
 - For a first-time local environment or service failure, read
   `docs/setup/Developer-Onboarding.md`.
 - For frontend entry points, packages, shells, assets, or builds, read
@@ -19,7 +19,7 @@ Read the source that matches the task before you edit files:
 - For AI disclosure, commit attribution, pull request rules, coverage policy, or
   merge controls, read
   `docs/technical/engineering-standards-proposal.md`.
-- For agent adapters or shared agent setup, read
+- For task routing, shared skills, agent adapters, or shared agent setup, read
   `docs/technical/agentic-workflow.md`.
 
 Keep each rule in its source document. Link to that source instead of copying a
