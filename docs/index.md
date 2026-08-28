@@ -39,7 +39,7 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 
 ### Site Appearance & Configuration
 - [🏷️ Site Branding](customization/site-branding.md)
-- [📑 Sidebar Content Guide](customization/sidebar-content-guide.md)
+- [📑 Sidebar Content Guide](customization/sidebar-content-about-editorial-contact.md)
 - [📱 Social Media Links](customization/Customise-social-media-links.md)
 - [💻 Frontend Development](customization/frontend-development.md)
 
@@ -54,9 +54,9 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 ## 🏗️ Technical Documentation
 
 ### API References
-- [📹 Media API Endpoints](technical/API-endpoints/media-endpoints.md)
-- [🎵 Playlist API Endpoints](technical/API-endpoints/playlist-endpoints.md)
-- [👤 User API Endpoints](technical/API-endpoints/user-endpoints.md)
+- [📹 Media API Endpoints](technical/API%20endpoints/media-endpoints.md)
+- [🎵 Playlist API Endpoints](technical/API%20endpoints/playlist-endpoints.md)
+- [👤 User API Endpoints](technical/API%20endpoints/user-endpoints.md)
 
 ### Media Processing Pipeline
 - [🎬 Media Processing Overview](technical/media-processing/intro-media-processing-pipeline-docu.md)
@@ -77,11 +77,19 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 - [🤖 Video Recommendation Algorithms](technical/CinemataCMS-recommendations-algorithms.md)
 - [📁 Directory Structure](technical/directory.md)
 - [📈 System Monitoring & Optimization](technical/system_monitoring_and_optimization.md)
-- [📝 TinyMCE Editor Configuration](technical/tinymce.md)
+- [📝 TinyMCE Editor Configuration](features/tinymce.md)
 
 ### Frontend Modernization
 - [📚 Storybook Workflow](technical/frontend-modernization/storybook-workflow.md)
 - [🧩 Modern SVG Icon System](technical/frontend-modernization/svg-icon-system.md)
+- [🎨 Modern Track Color System](modern-track-color-system.md)
+
+### Engineering Standards & Agent Workflow
+- [📐 Coding Standards](../CODING_STANDARDS.md)
+- [🤝 Contributing Guide](../CONTRIBUTING.md)
+- [🤖 Agent Instructions](../AGENTS.md)
+- [🔁 Shared Agentic Workflow](technical/agentic-workflow.md)
+- [📋 Engineering Standards](technical/engineering-standards-proposal.md)
 
 ## 🌐 Platform Features
 

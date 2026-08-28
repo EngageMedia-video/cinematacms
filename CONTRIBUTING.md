@@ -40,6 +40,10 @@ requirements.
 For frontend build architecture, entry points, and revamp-gated shells, also
 read the [frontend workflow](docs/technical/FRONTEND_WORKFLOW.md).
 
+If you use a coding agent, follow the
+[shared agentic workflow](docs/technical/agentic-workflow.md). It defines the
+task paths, shared skills, verification sequence, and human decision points.
+
 ## Verify the change
 
 Run the smallest relevant test while you work. Before you open the pull request,
