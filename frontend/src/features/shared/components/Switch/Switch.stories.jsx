@@ -55,7 +55,7 @@ const meta = {
 	},
 	decorators: [
 		(Story) => (
-			<div className="inline-flex bg-cinemata-neutral-100 p-8 dark:bg-[#1F1F1F]">
+			<div className="inline-flex bg-bg-page p-8">
 				<Story />
 			</div>
 		),

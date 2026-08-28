@@ -1,6 +1,28 @@
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 
+const legacyContextAccess = {
+	selector: 'MemberExpression[property.name="_currentValue"]',
+	message: 'Use useContext() instead of ._currentValue in modern track code.',
+};
+
+// Tailwind color utility with an arbitrary value, such as bg-[var(--body-bg-color)]
+// or text-[#1F1F1F]. Sizing arbitrary values such as text-[11px] stay allowed.
+const rawColorUtility =
+	'/\\b(bg|text|border|ring|outline|divide|fill|stroke|shadow|caret|accent|decoration|placeholder|from|via|to)-\\[(var\\(--|#)/';
+
+const inlineColorProperty =
+	'Property[key.name=/^(color|backgroundColor|borderColor|borderTopColor|borderRightColor|borderBottomColor|borderLeftColor|outlineColor|fill|stroke|caretColor|accentColor|textDecorationColor|columnRuleColor)$/] > Literal[value=/var\\(--/]';
+
+const semanticTokenMessage =
+	'Use a semantic token utility, such as bg-bg-page or text-text-strong, instead of a raw CSS variable or color literal. See CODING_STANDARDS.md and docs/modern-track-color-system.md.';
+
+const rawColorSelectors = [
+	{ selector: `Literal[value=${rawColorUtility}]`, message: semanticTokenMessage },
+	{ selector: `TemplateElement[value.raw=${rawColorUtility}]`, message: semanticTokenMessage },
+	{ selector: inlineColorProperty, message: semanticTokenMessage },
+];
+
 export default [
 	{
 		ignores: ['build/**', 'node_modules/**', 'packages/**', 'config/**', 'scripts/**'],
@@ -40,13 +62,17 @@ export default [
 					],
 				},
 			],
-			'no-restricted-syntax': [
-				'error',
-				{
-					selector: 'MemberExpression[property.name="_currentValue"]',
-					message: 'Use useContext() instead of ._currentValue in modern track code.',
-				},
-			],
+			'no-restricted-syntax': ['error', legacyContextAccess, ...rawColorSelectors],
+		},
+	},
+
+	// Test files assert on class strings instead of styling an interface.
+	// NavigationMenuList is the documented sidebar bridge into legacy SCSS
+	// variables; see docs/modern-track-color-system.md.
+	{
+		files: ['src/features/**/*.test.{js,jsx}', 'src/features/layout/Sidebar/navigation/NavigationMenuList.jsx'],
+		rules: {
+			'no-restricted-syntax': ['error', legacyContextAccess],
 		},
 	},
 
