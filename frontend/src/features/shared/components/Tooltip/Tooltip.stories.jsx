@@ -154,7 +154,7 @@ export const RichContent = {
 };
 
 export const Controlled = {
-	render: (args) => {
+	render: function ControlledStory(args) {
 		const [open, setOpen] = useState(true);
 
 		return (

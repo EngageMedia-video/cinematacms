@@ -122,7 +122,7 @@ export const Default = {
 };
 
 export const WithHeader = {
-	render: (args) => {
+	render: function HeaderStory(args) {
 		const contentRef = usePopup();
 
 		return (

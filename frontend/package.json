@@ -38,6 +38,7 @@
 		"core-js": "^3.49.0",
 		"dotenv": "^17.4.2",
 		"eslint": "^10.3.0",
+		"eslint-plugin-react-hooks": "^7.1.1",
 		"globals": "^17.5.0",
 		"jsdom": "^29.1.1",
 		"prop-types": "^15.8.1",

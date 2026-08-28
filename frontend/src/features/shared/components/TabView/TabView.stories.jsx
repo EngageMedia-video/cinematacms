@@ -157,7 +157,7 @@ export const Controlled = {
 	args: {
 		selectedTab: 'single-film-upload',
 	},
-	render: (args) => {
+	render: function ControlledStory(args) {
 		const [selectedTab, setSelectedTab] = useState(args.selectedTab);
 
 		return (

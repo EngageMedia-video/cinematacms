@@ -117,7 +117,7 @@ export const SingleSelect = {
 };
 
 export const Controlled = {
-	render: (args) => {
+	render: function ControlledStory(args) {
 		const [value, setValue] = useState('dark');
 
 		return (

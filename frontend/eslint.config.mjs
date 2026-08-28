@@ -1,23 +1,11 @@
-/**
- * ESLint Configuration — Track Boundary Enforcement
- *
- * This config enforces the dual-track architecture boundary:
- *
- * - Modern track (features/**): Must NOT import legacy Flux stores or dispatcher.
- * - Legacy track (pages/**, components/**): Should NOT import modern-track libs,
- *   plus a small set of warn-only sanity rules to catch new regressions without
- *   forcing a cleanup of existing code.
- */
-
 import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
-	// Ignore build artifacts and node_modules
 	{
 		ignores: ['build/**', 'node_modules/**', 'packages/**', 'config/**', 'scripts/**'],
 	},
 
-	// Enable JSX parsing for all JS files (this codebase uses .js for JSX)
 	{
 		files: ['src/**/*.{js,jsx}'],
 		languageOptions: {
@@ -27,10 +15,14 @@ export default [
 		},
 	},
 
-	// Modern track: ERROR on legacy imports
 	{
 		files: ['src/features/**/*.{js,jsx}'],
+		plugins: {
+			'react-hooks': reactHooks,
+		},
 		rules: {
+			'react-hooks/rules-of-hooks': 'error',
+			'react-hooks/exhaustive-deps': 'warn',
 			'no-restricted-imports': [
 				'error',
 				{
@@ -58,9 +50,7 @@ export default [
 		},
 	},
 
-	// Legacy track: WARN on modern imports + a few warn-only safety rules.
-	// All rules here are intentionally warn-only — they catch new regressions
-	// without forcing cleanup of existing legacy code.
+	// Keep legacy-only rules non-blocking until the migration changes their baseline.
 	{
 		files: ['src/static/js/pages/**/*.{js,jsx}', 'src/static/js/components/**/*.{js,jsx}'],
 		languageOptions: {
