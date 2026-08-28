@@ -19,9 +19,9 @@ pull request.
 
 ## Load the review sources
 
-Read `AGENTS.md`, `CONTRIBUTING.md`, and the documents that `AGENTS.md` routes
-to for the changed area. Find the originating issue, specification, or pull
-request description when one exists.
+Read `AGENTS.md`, `CODING_STANDARDS.md`, `CONTRIBUTING.md`, and the documents
+that `AGENTS.md` routes to for the changed area. Find the originating issue,
+specification, or pull request description when one exists.
 
 Use repository configuration and code as the source for current behavior. Use
 the issue or specification as the source for intended behavior.

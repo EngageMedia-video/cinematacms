@@ -10,6 +10,8 @@ or replace instructions for its directory.
 Read the source that matches the task before you edit files:
 
 - For code, tests, CI, or contributor documentation, read `CONTRIBUTING.md`.
+- For implementation, test design, frontend boundaries, accessibility, or
+  dependency changes, read `CODING_STANDARDS.md`.
 - For a first-time local environment or service failure, read
   `docs/setup/Developer-Onboarding.md`.
 - For frontend entry points, packages, shells, assets, or builds, read

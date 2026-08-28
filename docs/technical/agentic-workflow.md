@@ -38,6 +38,7 @@ The repository includes these skills:
 | Skill | Use it for |
 |---|---|
 | `code-review` | Review a branch, pull request, or worktree without editing it. |
+| `implement` | Implement a scoped issue or specification end to end. |
 | `tdd` | Implement one behavior at a time through a red-green-refactor cycle. |
 | `diagnosing-bugs` | Reproduce a defect and establish its cause before changing code. |
 | `verify-change` | Select and run the checks that cover the current diff. |
