@@ -221,7 +221,7 @@ Complete the work in this section in order.
 | Label declared AI assistance | Implemented in pull request #894; activates after merge | The workflow adds or removes `ai-assisted` from the selected declaration |
 | Protect `main` | Complete | The GitHub API reports the four required checks, one approval, and administrator enforcement |
 | Report coverage | Implemented in pull request #894 | The existing backend and frontend jobs publish informational summaries |
-| Decide a changed-line target | Deferred | One month of coverage data has been reviewed |
+| Decide a changed-line target | Deferred | Review starts after one month of coverage data |
 
 ### Protect `main`
 
@@ -351,8 +351,8 @@ the snapshot, method, results, and limits. It does not set policy.
 All repository measurements use the fixed commit. The commands do not use
 `origin/main`, `HEAD`, or a relative date.
 
-The GitHub API returned `404 Branch not protected` when branch protection was
-rechecked on 2026-08-27:
+Before the branch rule was configured on 2026-08-27, the GitHub API returned
+`404 Branch not protected`:
 
 ```bash
 gh api repos/EngageMedia-video/cinematacms/branches/main/protection

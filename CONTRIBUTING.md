@@ -73,13 +73,13 @@ make frontend-build
 If you changed legacy frontend code, also run:
 
 ```bash
-npm run lint:legacy
+npm --prefix frontend run lint:legacy
 ```
 
 To inspect the informational coverage report, run:
 
 ```bash
-npm run test:coverage
+npm --prefix frontend run test:coverage
 ```
 
 Record the commands and manual checks in the pull request. For a UI change, add
