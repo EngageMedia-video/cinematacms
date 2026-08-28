@@ -11,10 +11,12 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 - [🧑‍💻 Developer Onboarding](setup/Developer-Onboarding.md)
 
 ### Contributor Environment
-These guides live in the [wiki](https://github.com/EngageMedia-video/cinematacms/wiki) so contributors can correct them without a pull request.
-- [🍎 Mac Setup (Manual)](https://github.com/EngageMedia-video/cinematacms/wiki/Setup-macOS-Manual)
-- [🐳 Mac Setup (Docker)](https://github.com/EngageMedia-video/cinematacms/wiki/Setup-macOS-Docker)
-- [⚡ Makefile and uv Usage](https://github.com/EngageMedia-video/cinematacms/wiki/Makefile-and-uv-Usage)
+
+The repository owns setup commands, version requirements, and contributor
+rules. The wiki helps contributors find those sources.
+
+- [🧑‍💻 Developer Onboarding](setup/Developer-Onboarding.md)
+- [🗺️ Contributor Wiki](https://github.com/EngageMedia-video/cinematacms/wiki)
 - [🚀 Contributor Quickstart](https://github.com/EngageMedia-video/cinematacms/wiki/Contributor-Quickstart)
 - [🤖 Working with Coding Agents](https://github.com/EngageMedia-video/cinematacms/wiki/Working-with-Coding-Agents)
 
