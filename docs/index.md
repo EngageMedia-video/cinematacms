@@ -6,11 +6,17 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 
 ### Installation & Setup
 - [🐧 Ubuntu 22.04 Setup](setup/ubuntu-22.04-setup.md)
-- [🍎 Mac Setup (Manual)](setup/mac_setup.md)
-- [🐳 Mac Setup (Docker)](setup/mac-setup-docker.md)
 - [📋 Post-Installation Guide](setup/Post-installation-guide.md)
 - [👑 Creating Superuser](setup/creating_superuser.md)
-- [⚡ Makefile and uv Usage](setup/makefile-and-uv.md)
+- [🧑‍💻 Developer Onboarding](setup/Developer-Onboarding.md)
+
+### Contributor Environment
+These guides live in the [wiki](https://github.com/EngageMedia-video/cinematacms/wiki) so contributors can correct them without a pull request.
+- [🍎 Mac Setup (Manual)](https://github.com/EngageMedia-video/cinematacms/wiki/Setup-macOS-Manual)
+- [🐳 Mac Setup (Docker)](https://github.com/EngageMedia-video/cinematacms/wiki/Setup-macOS-Docker)
+- [⚡ Makefile and uv Usage](https://github.com/EngageMedia-video/cinematacms/wiki/Makefile-and-uv-Usage)
+- [🚀 Contributor Quickstart](https://github.com/EngageMedia-video/cinematacms/wiki/Contributor-Quickstart)
+- [🤖 Working with Coding Agents](https://github.com/EngageMedia-video/cinematacms/wiki/Working-with-Coding-Agents)
 
 ## 👤 User Guides
 
