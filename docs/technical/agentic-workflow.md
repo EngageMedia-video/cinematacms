@@ -27,6 +27,25 @@ The compatibility choices follow the official documentation for
 [Claude Code project instructions](https://code.claude.com/docs/en/memory), and
 [GitHub Copilot instruction support](https://docs.github.com/en/copilot/reference/custom-instructions-support).
 
+## Repository skills
+
+`.agents/skills/` is the canonical directory for shared skills. Codex and
+GitHub Copilot discover skills there. `.claude/skills` points to the same
+directory so Claude Code loads the same files.
+
+The repository includes these skills:
+
+| Skill | Use it for |
+|---|---|
+| `code-review` | Review a branch, pull request, or worktree without editing it. |
+| `tdd` | Implement one behavior at a time through a red-green-refactor cycle. |
+| `diagnosing-bugs` | Reproduce a defect and establish its cause before changing code. |
+| `verify-change` | Select and run the checks that cover the current diff. |
+
+Keep each skill focused on one workflow. Put standing repository rules in
+`AGENTS.md`, and put commands and project facts in their existing source files.
+Edit only the canonical copy under `.agents/skills/`.
+
 ## Shared and personal configuration
 
 Commit configuration when every contributor needs it to complete repository
@@ -35,7 +54,8 @@ work consistently. Shared configuration includes:
 - repository rules and links to their sources;
 - portable build, lint, test, and verification commands;
 - checked-in hooks or tool settings that enforce a team decision;
-- agent adapters required to load the canonical instructions.
+- agent adapters required to load the canonical instructions;
+- task-specific skills used by the team.
 
 Keep configuration local when it depends on a person, machine, account, or
 agent installation. Do not commit:
@@ -46,9 +66,11 @@ agent installation. Do not commit:
 - editor state, local indexes, or agent caches;
 - MCP server configuration that depends on a developer's private installation.
 
-The ignored `.serena/`, `.claude/`, `.agents/`, and `CLAUDE.local.md` paths are
-available for this local configuration. A local instruction can add a personal
-preference, but it must not weaken repository security or completion rules.
+The repository tracks `.agents/skills/` and the `.claude/skills` adapter. Other
+content under `.agents/` and `.claude/` remains local. The ignored `.serena/`
+and `CLAUDE.local.md` paths are also available for local configuration. A local
+instruction can add a personal preference, but it must not weaken repository
+security or completion rules.
 
 ## Tool capability and fallback
 
@@ -89,3 +111,7 @@ When a shared rule changes:
 
 If an agent needs a non-portable setup, document the required capability and a
 fallback here. Keep the installation details in personal configuration.
+
+When a skill changes, validate its `SKILL.md` frontmatter and run
+`make agent-check`. Test both an explicit invocation and a prompt that should
+trigger the skill automatically.
