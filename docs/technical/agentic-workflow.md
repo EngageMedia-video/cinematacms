@@ -44,19 +44,22 @@ Load only the sources that apply to the task.
 
 Use the path that matches the requested outcome:
 
-| Task | Primary path | Completion point |
-|---|---|---|
-| Small documentation or configuration edit | Work directly | The focused diff is verified |
-| Scoped issue, specification, or acceptance criteria | `implement` | Every requirement has evidence |
-| New behavior or requested regression test | `tdd` | Each behavior completes a red-green-refactor cycle |
-| Reported defect, flaky test, or regression | `diagnosing-bugs` | The cause is established; fix only when requested |
-| Module interface or refactor design | `codebase-design` | The interface, seam, callers, and tests are defined |
-| Domain term, context boundary, or durable decision | `domain-modeling` | Language and recorded decisions agree with the intended domain |
-| Current external technical fact | `research` | Each recommendation is traceable to a primary source |
-| In-progress merge or rebase conflict | `resolving-merge-conflicts` | Git has no unresolved path and affected behavior is verified |
-| Branch, pull request, commit range, or worktree review | `code-review` | Actionable findings and residual risks are reported without edits |
-| `AGENTS.md`, `CLAUDE.md`, or shared skill change | `writing-for-agents` | Pointers, ownership, and skill triggers are unambiguous |
-| Any completed change | `verify-change` | Every affected area has a passed, failed, blocked, or unrun result |
+| Task | Primary path | Example request | Completion point |
+|---|---|---|---|
+| Small documentation or configuration edit | Work directly | `Fix the broken link in docs/index.md.` | The focused diff is verified |
+| Scoped issue, specification, or acceptance criteria | [`implement`](../../.agents/skills/implement/SKILL.md) | `Use implement for issue #123.` | Every requirement has evidence |
+| New behavior or requested regression test | [`tdd`](../../.agents/skills/tdd/SKILL.md) | `Use tdd to add a regression test for duplicate uploads.` | Each behavior completes a red-green-refactor cycle |
+| Reported defect, flaky test, or regression | [`diagnosing-bugs`](../../.agents/skills/diagnosing-bugs/SKILL.md) | `Use diagnosing-bugs to find why uploads stall.` | The cause is established; fix only when requested |
+| Module interface or refactor design | [`codebase-design`](../../.agents/skills/codebase-design/SKILL.md) | `Use codebase-design to redesign the media service interface.` | The interface, seam, callers, and tests are defined |
+| Domain term, context boundary, or durable decision | [`domain-modeling`](../../.agents/skills/domain-modeling/SKILL.md) | `Use domain-modeling to define the moderation context.` | Language and recorded decisions agree with the intended domain |
+| Current external technical fact | [`research`](../../.agents/skills/research/SKILL.md) | `Use research to verify the supported Django API.` | Each recommendation is traceable to a primary source |
+| In-progress merge or rebase conflict | [`resolving-merge-conflicts`](../../.agents/skills/resolving-merge-conflicts/SKILL.md) | `Use resolving-merge-conflicts to finish this rebase.` | Git has no unresolved path and affected behavior is verified |
+| Branch, pull request, commit range, or worktree review | [`code-review`](../../.agents/skills/code-review/SKILL.md) | `Use code-review to review this worktree.` | Actionable findings and residual risks are reported without edits |
+| `AGENTS.md`, `CLAUDE.md`, or shared skill change | [`writing-for-agents`](../../.agents/skills/writing-for-agents/SKILL.md) | `Use writing-for-agents to update AGENTS.md.` | Pointers, ownership, and skill triggers are unambiguous |
+| Any completed change | [`verify-change`](../../.agents/skills/verify-change/SKILL.md) | `Use verify-change to check this diff.` | Every affected area has a passed, failed, blocked, or unrun result |
+
+The examples use ordinary requests instead of agent-specific slash commands.
+They work across the supported agents.
 
 A small direct edit does not need `implement`. A feature can use `implement` as
 the primary path and call `tdd` for each behavior. A bug fix starts with
