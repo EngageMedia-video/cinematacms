@@ -14,10 +14,12 @@ venv/
 !.env.example
 pyvenv.cfg
 .claude/*
+!.claude/skills
 .serena/
-CLAUDE.md
-AGENTS.md
-.agents/
+CLAUDE.local.md
+.agents/*
+!.agents/skills/
+!.agents/skills/**
 
 Bento4-SDK-1-6-0-632.x86_64-unknown-linux/
 DB_DUMPS/

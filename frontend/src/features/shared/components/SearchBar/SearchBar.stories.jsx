@@ -111,7 +111,7 @@ export const Controlled = {
 	args: {
 		value: 'The Blue Boat',
 	},
-	render: (args) => {
+	render: function ControlledStory(args) {
 		const [value, setValue] = useState(args.value ?? '');
 
 		return (

@@ -1,4 +1,4 @@
-.PHONY: docker-up docker-down docker-restart docker-logs docker-ps docker-clean docker-build docker-shell-db docker-shell-redis sync help dev-server start-celery-beat stop-celery-beat start-celery-long stop-celery-long start-celery-short stop-celery-short start-celery-whisper stop-celery-whisper celery-beat-start celery-beat-stop celery-beat-restart celery-long-start celery-long-stop celery-long-restart celery-short-start celery-short-stop celery-short-restart celery-whisper-start celery-whisper-stop celery-whisper-restart celery-start-all celery-stop-all celery-restart-all celery-status frontend-build frontend-dev storybook storybook-build storybook-test frontend-clean quick-build test lint test-ci
+.PHONY: docker-up docker-down docker-restart docker-logs docker-ps docker-clean docker-build docker-shell-db docker-shell-redis sync help dev-server start-celery-beat stop-celery-beat start-celery-long stop-celery-long start-celery-short stop-celery-short start-celery-whisper stop-celery-whisper celery-beat-start celery-beat-stop celery-beat-restart celery-long-start celery-long-stop celery-long-restart celery-short-start celery-short-stop celery-short-restart celery-whisper-start celery-whisper-stop celery-whisper-restart celery-start-all celery-stop-all celery-restart-all celery-status frontend-build frontend-dev storybook storybook-build storybook-test frontend-clean quick-build test lint agent-check test-ci
 
 # Docker compose file to use
 COMPOSE_FILE = docker-compose.dev.yml
@@ -51,6 +51,7 @@ help:
 	@echo "Quality & Tests:"
 	@echo "  make test            - Run Django test suite (verbose)"
 	@echo "  make lint            - Run pre-commit on all files"
+	@echo "  make agent-check     - Run the shared baseline verification"
 	@echo "  make test-ci         - Run tests with --keepdb --parallel (CI mode)"
 	@echo ""
 	@echo "Celery Commands:"
@@ -274,6 +275,13 @@ test:
 lint:
 	@echo "Running pre-commit on all files..."
 	uv run pre-commit run --all-files --show-diff-on-failure
+
+agent-check:
+	@echo "Checking the patch and repository-wide quality gates..."
+	git diff --check
+	git diff --cached --check
+	uv run python scripts/check_untracked_files.py
+	$(MAKE) lint
 
 test-ci:
 	@echo "Running tests with --keepdb --parallel..."
