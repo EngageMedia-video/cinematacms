@@ -80,9 +80,20 @@ jobs:
         working-directory: frontend
         run: npm run lint:legacy
 
-      - name: Test frontend
+      - name: Test frontend with coverage
         working-directory: frontend
-        run: npm run test:run
+        run: npm run test:coverage
+
+      - name: Publish frontend coverage
+        working-directory: frontend
+        run: node ../.github/scripts/summarize-frontend-coverage.mjs coverage/coverage-summary.json
+
+      - name: Upload frontend coverage data
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-${{ github.sha }}
+          path: frontend/coverage/coverage-summary.json
+          retention-days: 30
 
       - name: Build frontend
         working-directory: frontend
@@ -222,8 +233,25 @@ jobs:
       - name: Run migrations
         run: uv run python manage.py migrate --noinput
 
-      - name: Run tests
-        run: uv run python manage.py test --noinput --verbosity=2 --exclude-tag=requires-whisper
+      - name: Run tests with coverage
+        run: uv run coverage run manage.py test --noinput --verbosity=2 --exclude-tag=requires-whisper
+
+      - name: Publish backend coverage
+        run: |
+          uv run coverage report
+          uv run coverage json -o coverage.json
+          {
+            echo '### Backend Python coverage'
+            echo
+            uv run coverage report --format=markdown
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload backend coverage data
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-${{ github.sha }}
+          path: coverage.json
+          retention-days: 30
 
   deploy-dev:
     name: Deploy to Dev VPS

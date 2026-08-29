@@ -1,23 +1,33 @@
-/**
- * ESLint Configuration — Track Boundary Enforcement
- *
- * This config enforces the dual-track architecture boundary:
- *
- * - Modern track (features/**): Must NOT import legacy Flux stores or dispatcher.
- * - Legacy track (pages/**, components/**): Should NOT import modern-track libs,
- *   plus a small set of warn-only sanity rules to catch new regressions without
- *   forcing a cleanup of existing code.
- */
-
 import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+
+const legacyContextAccess = {
+	selector: 'MemberExpression[property.name="_currentValue"]',
+	message: 'Use useContext() instead of ._currentValue in modern track code.',
+};
+
+// Tailwind color utility with an arbitrary value, such as bg-[var(--body-bg-color)]
+// or text-[#1F1F1F]. Sizing arbitrary values such as text-[11px] stay allowed.
+const rawColorUtility =
+	'/\\b(bg|text|border|ring|outline|divide|fill|stroke|shadow|caret|accent|decoration|placeholder|from|via|to)-\\[(var\\(--|#)/';
+
+const inlineColorProperty =
+	'Property[key.name=/^(color|backgroundColor|borderColor|borderTopColor|borderRightColor|borderBottomColor|borderLeftColor|outlineColor|fill|stroke|caretColor|accentColor|textDecorationColor|columnRuleColor)$/] > Literal[value=/var\\(--/]';
+
+const semanticTokenMessage =
+	'Use a semantic token utility, such as bg-bg-page or text-text-strong, instead of a raw CSS variable or color literal. See CODING_STANDARDS.md and docs/modern-track-color-system.md.';
+
+const rawColorSelectors = [
+	{ selector: `Literal[value=${rawColorUtility}]`, message: semanticTokenMessage },
+	{ selector: `TemplateElement[value.raw=${rawColorUtility}]`, message: semanticTokenMessage },
+	{ selector: inlineColorProperty, message: semanticTokenMessage },
+];
 
 export default [
-	// Ignore build artifacts and node_modules
 	{
 		ignores: ['build/**', 'node_modules/**', 'packages/**', 'config/**', 'scripts/**'],
 	},
 
-	// Enable JSX parsing for all JS files (this codebase uses .js for JSX)
 	{
 		files: ['src/**/*.{js,jsx}'],
 		languageOptions: {
@@ -27,10 +37,14 @@ export default [
 		},
 	},
 
-	// Modern track: ERROR on legacy imports
 	{
 		files: ['src/features/**/*.{js,jsx}'],
+		plugins: {
+			'react-hooks': reactHooks,
+		},
 		rules: {
+			'react-hooks/rules-of-hooks': 'error',
+			'react-hooks/exhaustive-deps': 'warn',
 			'no-restricted-imports': [
 				'error',
 				{
@@ -48,19 +62,21 @@ export default [
 					],
 				},
 			],
-			'no-restricted-syntax': [
-				'error',
-				{
-					selector: 'MemberExpression[property.name="_currentValue"]',
-					message: 'Use useContext() instead of ._currentValue in modern track code.',
-				},
-			],
+			'no-restricted-syntax': ['error', legacyContextAccess, ...rawColorSelectors],
 		},
 	},
 
-	// Legacy track: WARN on modern imports + a few warn-only safety rules.
-	// All rules here are intentionally warn-only — they catch new regressions
-	// without forcing cleanup of existing legacy code.
+	// Test files assert on class strings instead of styling an interface.
+	// NavigationMenuList is the documented sidebar bridge into legacy SCSS
+	// variables; see docs/modern-track-color-system.md.
+	{
+		files: ['src/features/**/*.test.{js,jsx}', 'src/features/layout/Sidebar/navigation/NavigationMenuList.jsx'],
+		rules: {
+			'no-restricted-syntax': ['error', legacyContextAccess],
+		},
+	},
+
+	// Keep legacy-only rules non-blocking until the migration changes their baseline.
 	{
 		files: ['src/static/js/pages/**/*.{js,jsx}', 'src/static/js/components/**/*.{js,jsx}'],
 		languageOptions: {
