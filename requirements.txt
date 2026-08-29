@@ -60,6 +60,7 @@ django==5.2.13
     #   django-debug-toolbar
     #   django-filter
     #   django-js-asset
+    #   django-prometheus
     #   django-recaptcha
     #   django-redis
     #   django-silk
@@ -93,6 +94,8 @@ django-maintenance-mode==0.22.0
     # via cinemata
 django-mptt==0.18.0
     # via cinemata
+django-prometheus==2.5.0
+    # via cinemata
 django-recaptcha==4.1.0
     # via cinemata
 django-redis==6.0.0
@@ -119,6 +122,8 @@ filetype==1.2.0
     # via cinemata
 flake8==7.3.0
     # via cinemata
+googleapis-common-protos==1.75.0
+    # via opentelemetry-exporter-otlp-proto-http
 gprof2dot==2025.4.14
     # via django-silk
 idna==3.13
@@ -137,8 +142,68 @@ matplotlib-inline==0.2.1
     # via ipython
 mccabe==0.7.0
     # via flake8
+opentelemetry-api==1.43.0
+    # via
+    #   cinemata
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-celery
+    #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-django
+    #   opentelemetry-instrumentation-psycopg2
+    #   opentelemetry-instrumentation-redis
+    #   opentelemetry-instrumentation-wsgi
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-exporter-otlp-proto-common==1.43.0
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-http==1.43.0
+    # via cinemata
+opentelemetry-instrumentation==0.64b0
+    # via
+    #   opentelemetry-instrumentation-celery
+    #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-django
+    #   opentelemetry-instrumentation-psycopg2
+    #   opentelemetry-instrumentation-redis
+    #   opentelemetry-instrumentation-wsgi
+opentelemetry-instrumentation-celery==0.64b0
+    # via cinemata
+opentelemetry-instrumentation-dbapi==0.64b0
+    # via opentelemetry-instrumentation-psycopg2
+opentelemetry-instrumentation-django==0.64b0
+    # via cinemata
+opentelemetry-instrumentation-psycopg2==0.64b0
+    # via cinemata
+opentelemetry-instrumentation-redis==0.64b0
+    # via cinemata
+opentelemetry-instrumentation-wsgi==0.64b0
+    # via opentelemetry-instrumentation-django
+opentelemetry-proto==1.43.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-common
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-sdk==1.43.0
+    # via
+    #   cinemata
+    #   opentelemetry-exporter-otlp-proto-http
+opentelemetry-semantic-conventions==0.64b0
+    # via
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-celery
+    #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-django
+    #   opentelemetry-instrumentation-redis
+    #   opentelemetry-instrumentation-wsgi
+    #   opentelemetry-sdk
+opentelemetry-util-http==0.64b0
+    # via
+    #   opentelemetry-instrumentation-django
+    #   opentelemetry-instrumentation-wsgi
 packaging==26.2
-    # via kombu
+    # via
+    #   kombu
+    #   opentelemetry-instrumentation
 parso==0.8.6
     # via jedi
 pep8==1.7.1
@@ -152,11 +217,17 @@ pillow==12.2.0
     #   cinemata
     #   pilkit
 prometheus-client==0.25.0
-    # via cinemata
+    # via
+    #   cinemata
+    #   django-prometheus
 prompt-toolkit==3.0.52
     # via
     #   click-repl
     #   ipython
+protobuf==7.35.1
+    # via
+    #   googleapis-common-protos
+    #   opentelemetry-proto
 psycopg2-binary==2.9.12
     # via cinemata
 ptyprocess==0.7.0 ; sys_platform != 'emscripten' and sys_platform != 'win32'
@@ -177,12 +248,16 @@ python-dotenv==1.2.2
     # via cinemata
 python-fsutil==0.16.1
     # via django-maintenance-mode
+python-json-logger==4.1.0
+    # via cinemata
 qrcode==8.2
     # via cinemata
 redis==7.4.0
     # via django-redis
 requests==2.33.1
-    # via cinemata
+    # via
+    #   cinemata
+    #   opentelemetry-exporter-otlp-proto-http
 rpdb==0.2.0
     # via cinemata
 six==1.17.0
@@ -200,12 +275,16 @@ traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-typing-extensions==4.15.0 ; python_full_version < '3.12'
+typing-extensions==4.15.0
     # via
     #   asgiref
     #   cryptography
     #   exceptiongroup
     #   ipython
+    #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
 tzdata==2026.2
     # via
     #   django
@@ -228,3 +307,8 @@ wcwidth==0.6.0
     # via prompt-toolkit
 whitenoise==6.12.0
     # via cinemata
+wrapt==2.2.2
+    # via
+    #   opentelemetry-instrumentation
+    #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-redis
