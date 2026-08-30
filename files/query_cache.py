@@ -26,6 +26,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.serializers.json import DjangoJSONEncoder
 
+from .metrics import record_cache_operation
+
 logger = logging.getLogger(__name__)
 
 # Cache configuration
@@ -294,12 +296,15 @@ def get_cached_result(cache_key: str) -> Any | None:
         result = cache.get(cache_key, version=QUERY_CACHE_VERSION)
         if result is not None:
             logger.debug(f"Query cache HIT: {cache_key}")
+            record_cache_operation("query", "get", hit=True)
             return result
         else:
             logger.debug(f"Query cache MISS: {cache_key}")
+            record_cache_operation("query", "get", hit=False)
             return None
     except Exception as e:
         logger.warning(f"Cache get failed for {cache_key}: {e}")
+        record_cache_operation("query", "get", ok=False)
         return None
 
 
@@ -318,9 +323,11 @@ def set_cached_result(cache_key: str, data: Any, timeout: int) -> bool:
     try:
         cache.set(cache_key, data, timeout, version=QUERY_CACHE_VERSION)
         logger.debug(f"Query cache SET: {cache_key} (TTL: {timeout}s)")
+        record_cache_operation("query", "set")
         return True
     except Exception as e:
         logger.warning(f"Cache set failed for {cache_key}: {e}")
+        record_cache_operation("query", "set", ok=False)
         return False
 
 
