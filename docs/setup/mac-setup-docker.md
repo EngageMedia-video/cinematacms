@@ -2,10 +2,10 @@
 
 __Implemented by [Adryan Eka Vandra](https://github.com/adryanev) (Indonesia) and [Sara Santillan](https://github.com/s-santillan)__ (Philippines).
 
-This guide will help you set up Cinemata for local development on Mac OSX.
+This guide will help you set up Cinemata for local development on macOS.
 
 > [!WARNING]
-> This guide has been tested for Mac OSX Sequoia 15.7.3, Ventura 13.0, and Sonoma 15.2. It may not work for versions below 13.0 so proceed accordingly.
+> This guide has been tested for macOS Sequoia 15.7.3, Ventura 13.0, and Sequoia 15.2. It may not work for versions below 13.0 so proceed accordingly.
 
 # Steps
 
@@ -13,7 +13,7 @@ This guide will help you set up Cinemata for local development on Mac OSX.
 
 1. ### Install Homebrew
 
-Homebrew is a package manager for Mac that makes it easy to install software. Open Terminal and run:
+Homebrew is a package manager for macOS that makes it easy to install software. Open Terminal and run:
 
 ```zsh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -26,23 +26,23 @@ After installation, you must add Homebrew to your PATH to ensure Homebrew will w
 Install all the necessary software using Homebrew:
 
 ```zsh
-brew install wget openssl ffmpeg make cmake python docker bento4 uv node@25
+brew install wget openssl ffmpeg make cmake python docker bento4 uv node@24
 ```
 
-This command installs Docker. In addition to Docker, you must install Docker Desktop. Navigate to [Docker Desktop](https://www.docker.com/products/docker-desktop/) and click **Download Docker Desktop**. Select the install option that matches your Mac.
+This command installs Docker. In addition to Docker, you must install Docker Desktop. Navigate to [Docker Desktop](https://www.docker.com/products/docker-desktop/) and click **Download Docker Desktop**. Select the install option that matches your macOS.
 
 Finally, you must **run** or **execute** Docker Desktop. The first time it runs, it builds the symlinks necessary to run Docker commands on the command line.
 
-Since `node@25` is keg-only and won't be added to your PATH automatically, you need to link it:
+Since `node@24` is keg-only and won't be added to your PATH automatically, you need to link it:
 
 ```zsh
-brew link --overwrite --force node@25
+brew link --overwrite --force node@24
 ```
 
 Alternatively, you can add it to your PATH manually by adding this to your `~/.zshrc` or `~/.bash_profile`:
 
 ```zsh
-export PATH="$(brew --prefix node@25)/bin:$PATH"
+export PATH="$(brew --prefix node@24)/bin:$PATH"
 ```
 
 This command works on both Intel Macs (which use `/usr/local`) and Apple Silicon Macs (which use `/opt/homebrew`).
@@ -208,7 +208,7 @@ MP4HLS_COMMAND = (
 )
 ```
 
-The MP4HLS_COMMAND path differs depending on your Mac OS. Replace the `MP4HLS_COMMAND` path with the output of the following:
+The MP4HLS_COMMAND path differs depending on your macOS. Replace the `MP4HLS_COMMAND` path with the output of the following:
 
 ```
 which mp4hls
