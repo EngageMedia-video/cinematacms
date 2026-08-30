@@ -67,6 +67,7 @@ CELERY_QUEUE_DEPTH = Gauge(
     "cinemata_celery_queue_depth",
     "Redis broker queue length by queue name",
     ["queue"],
+    multiprocess_mode="mostrecent",
 )
 
 MEDIA_ENCODING_PROFILE_TOTAL = Counter(
@@ -90,6 +91,7 @@ TRANSCRIPTION_REQUESTS = Gauge(
     "cinemata_transcription_requests",
     "Current transcription request rows",
     ["translate_to_english"],
+    multiprocess_mode="mostrecent",
 )
 ENCODING_STALE_TOTAL = Counter(
     "cinemata_encoding_stale_total",
@@ -100,6 +102,7 @@ ENCODING_STALLED = Gauge(
     "cinemata_encoding_stalled",
     "Current running encoding rows older than RUNNING_STATE_STALE",
     ["resolution", "codec", "extension"],
+    multiprocess_mode="mostrecent",
 )
 CACHE_OPERATIONS_TOTAL = Counter(
     "cinemata_cache_operations_total",
@@ -109,6 +112,13 @@ CACHE_OPERATIONS_TOTAL = Counter(
 
 _task_start_times: dict[str, float] = {}
 _stalled_encoding_label_values: set[tuple[str, str, str]] = set()
+
+
+def _safe_metric(metric_name: str, emit) -> None:
+    try:
+        emit()
+    except Exception:
+        logger.debug("Could not record %s metric", metric_name, exc_info=True)
 
 
 def classify_endpoint_group(path: str) -> str:
@@ -189,7 +199,10 @@ def record_cache_operation(cache_name: str, operation: str, hit: bool | None = N
         result = "ok"
     else:
         result = "hit" if hit else "miss"
-    CACHE_OPERATIONS_TOTAL.labels(cache=cache_name, operation=operation, result=result).inc()
+    _safe_metric(
+        "cache operation",
+        lambda: CACHE_OPERATIONS_TOTAL.labels(cache=cache_name, operation=operation, result=result).inc(),
+    )
 
 
 def _profile_labels(profile) -> dict[str, str]:
@@ -201,20 +214,32 @@ def _profile_labels(profile) -> dict[str, str]:
 
 
 def observe_media_pipeline(media, profile, status: str) -> None:
-    MEDIA_ENCODING_PROFILE_TOTAL.labels(status=status, **_profile_labels(profile)).inc()
+    _safe_metric(
+        "media encoding profile",
+        lambda: MEDIA_ENCODING_PROFILE_TOTAL.labels(status=status, **_profile_labels(profile)).inc(),
+    )
     media_type = str(getattr(media, "media_type", None) or "unknown")
     duration = getattr(media, "duration", 0) or 0
     if duration > 0:
-        MEDIA_DURATION_SECONDS.labels(media_type=media_type).observe(duration)
+        _safe_metric(
+            "media duration",
+            lambda: MEDIA_DURATION_SECONDS.labels(media_type=media_type).observe(duration),
+        )
     try:
         if getattr(media, "media_file", None):
-            MEDIA_FILE_SIZE_BYTES.labels(media_type=media_type).observe(media.media_file.size)
+            _safe_metric(
+                "media file size",
+                lambda: MEDIA_FILE_SIZE_BYTES.labels(media_type=media_type).observe(media.media_file.size),
+            )
     except Exception:
-        logger.debug("Could not observe media file size", exc_info=True)
+        logger.debug("Could not read media file size", exc_info=True)
 
 
 def record_stale_encoding(encoding) -> None:
-    ENCODING_STALE_TOTAL.labels(**_profile_labels(encoding.profile)).inc()
+    _safe_metric(
+        "stale encoding",
+        lambda: ENCODING_STALE_TOTAL.labels(**_profile_labels(encoding.profile)).inc(),
+    )
 
 
 def refresh_runtime_metrics() -> None:
