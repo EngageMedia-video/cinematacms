@@ -147,6 +147,9 @@ automated installation, pass `--non-interactive` with `--domain`, `--proxy`,
 and `--observability`. The [deployment guide](deploy/README.md) lists the
 options and the upgrade command.
 
+The production installer supports Ubuntu 22.04 on `amd64` and `arm64`. Run
+`./install.sh --check-platform` on the target host before installation.
+
 The installer runs database migrations and seeds django-waffle feature flag
 switches automatically.
 

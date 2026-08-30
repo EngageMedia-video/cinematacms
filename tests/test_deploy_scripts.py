@@ -13,15 +13,310 @@ UPDATER = PROJECT_ROOT / "deploy" / "apply-release-config.sh"
 
 
 class InstallScriptTests(unittest.TestCase):
-    def run_installer(self, *args, input_text=""):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_root = Path(self.temp_dir.name)
+
+    def run_installer(self, *args, input_text="", env=None):
         return subprocess.run(
             ["bash", str(INSTALLER), *args],
             cwd=PROJECT_ROOT,
+            env=env,
             input=input_text,
             capture_output=True,
             text=True,
             check=False,
         )
+
+    def platform_env(self, version="22.04", architecture="amd64"):
+        os_release = self.test_root / "os-release"
+        os_release.write_text(f'ID=ubuntu\nVERSION_ID="{version}"\n')
+        fake_bin = self.test_root / "bin"
+        fake_bin.mkdir(exist_ok=True)
+        dpkg = fake_bin / "dpkg"
+        dpkg.write_text(f"#!/bin/sh\nprintf '%s\\n' '{architecture}'\n")
+        dpkg.chmod(dpkg.stat().st_mode | stat.S_IXUSR)
+        env = os.environ.copy()
+        env.update(
+            {
+                "CINEMATA_OS_RELEASE_FILE": str(os_release),
+                "PATH": f"{fake_bin}:{env['PATH']}",
+            }
+        )
+        return env
+
+    def run_installer_function(self, function_call, env=None):
+        return subprocess.run(
+            [
+                "bash",
+                "-c",
+                'source "$1"; eval "$2"',
+                "installer-test",
+                str(INSTALLER),
+                function_call,
+            ],
+            cwd=PROJECT_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def service_env(self, postgres_exit="0", redis_exit="0"):
+        fake_bin = self.test_root / "service-bin"
+        fake_bin.mkdir(exist_ok=True)
+        command_log = self.test_root / "service-commands.log"
+        commands = {
+            "systemctl": "exit 0",
+            "pg_isready": f'exit "{postgres_exit}"',
+            "redis-cli": f'exit "{redis_exit}"',
+        }
+        for name, result in commands.items():
+            command = fake_bin / name
+            command.write_text(f'#!/bin/sh\nprintf "%s\\n" "{name} $*" >> "$FAKE_COMMAND_LOG"\n{result}\n')
+            command.chmod(command.stat().st_mode | stat.S_IXUSR)
+        env = os.environ.copy()
+        env.update(
+            {
+                "CINEMATA_SERVICE_WAIT_ATTEMPTS": "1",
+                "CINEMATA_SERVICE_WAIT_DELAY": "0",
+                "FAKE_COMMAND_LOG": str(command_log),
+                "PATH": f"{fake_bin}:{env['PATH']}",
+            }
+        )
+        return env, command_log
+
+    def bento4_env(self, git_clone_exit="0", mp4hls_exit="0"):
+        fake_bin = self.test_root / "bento4-bin"
+        fake_bin.mkdir(exist_ok=True)
+        command_log = self.test_root / "bento4-commands.log"
+        install_dir = self.test_root / "opt" / "bento4"
+        git = fake_bin / "git"
+        git.write_text(
+            textwrap.dedent(
+                f"""\
+                #!/bin/sh
+                printf '%s\\n' "git $*" >> "$FAKE_COMMAND_LOG"
+                if [ "$1" = "clone" ]; then
+                    [ "{git_clone_exit}" = "0" ] || exit "{git_clone_exit}"
+                    for argument in "$@"; do destination="$argument"; done
+                    mkdir -p "$destination/Scripts"
+                    exit 0
+                fi
+                if [ "$1" = "-C" ]; then
+                    printf '%s\\n' dc264854d1f76c370b65b18d9f303a95f7f21ab1
+                    exit 0
+                fi
+                exit 1
+                """
+            )
+        )
+        cmake = fake_bin / "cmake"
+        cmake.write_text('#!/bin/sh\nprintf \'%s\\n\' "cmake $*" >> "$FAKE_COMMAND_LOG"\nexit 0\n')
+        python = fake_bin / "python3"
+        python.write_text(
+            textwrap.dedent(
+                f"""\
+                #!/bin/sh
+                printf '%s\n' "python3 $*" >> "$FAKE_COMMAND_LOG"
+                target="$2"
+                sdk="SDK/Bento4-SDK-1-6-0-641.$target"
+                mkdir -p "$sdk/bin"
+                printf '#!/bin/sh\nexit {mp4hls_exit}\n' > "$sdk/bin/mp4hls"
+                chmod +x "$sdk/bin/mp4hls"
+                """
+            )
+        )
+        nproc = fake_bin / "nproc"
+        nproc.write_text("#!/bin/sh\nprintf '2\\n'\n")
+        for command in (git, cmake, python, nproc):
+            command.chmod(command.stat().st_mode | stat.S_IXUSR)
+        env = os.environ.copy()
+        env.update(
+            {
+                "CINEMATA_BENTO4_INSTALL_DIR": str(install_dir),
+                "FAKE_COMMAND_LOG": str(command_log),
+                "PATH": f"{fake_bin}:{env['PATH']}",
+            }
+        )
+        return env, command_log, install_dir
+
+    def npm_env(self, installed_version="11.19.0"):
+        fake_bin = self.test_root / "npm-bin"
+        fake_bin.mkdir(exist_ok=True)
+        command_log = self.test_root / "npm-commands.log"
+        node = fake_bin / "node"
+        node.write_text("#!/bin/sh\nprintf 'npm@11.19.0\\n'\n")
+        npm = fake_bin / "npm"
+        npm.write_text(
+            textwrap.dedent(
+                f"""\
+                #!/bin/sh
+                printf '%s\\n' "npm $*" >> "$FAKE_COMMAND_LOG"
+                if [ "$1" = "-v" ]; then
+                    printf '%s\\n' "{installed_version}"
+                fi
+                """
+            )
+        )
+        for command in (node, npm):
+            command.chmod(command.stat().st_mode | stat.S_IXUSR)
+        env = os.environ.copy()
+        env.update(
+            {
+                "FAKE_COMMAND_LOG": str(command_log),
+                "PATH": f"{fake_bin}:{env['PATH']}",
+            }
+        )
+        return env, command_log
+
+    def test_service_readiness_starts_and_checks_postgres_and_redis(self):
+        env, command_log = self.service_env()
+
+        result = self.run_installer_function("ensure_services_ready", env=env)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            command_log.read_text().splitlines(),
+            [
+                "systemctl enable --now postgresql redis-server",
+                "pg_isready -q",
+                "redis-cli ping",
+            ],
+        )
+
+    def test_service_readiness_fails_when_postgres_does_not_start(self):
+        env, _ = self.service_env(postgres_exit="1")
+
+        result = self.run_installer_function("ensure_services_ready", env=env)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("PostgreSQL did not become ready", result.stderr)
+
+    def test_bento4_build_target_matches_supported_architecture(self):
+        expected_targets = {
+            "amd64": "x86_64-unknown-linux",
+            "arm64": "arm64-unknown-linux",
+        }
+
+        for architecture, expected_target in expected_targets.items():
+            with self.subTest(architecture=architecture):
+                result = self.run_installer_function(f"bento4_target_for_arch {architecture}")
+
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.strip(), expected_target)
+
+    def test_bento4_install_builds_arm64_and_smoke_tests_mp4hls(self):
+        env, command_log, install_dir = self.bento4_env()
+
+        result = self.run_installer_function("install_bento4 arm64", env=env)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((install_dir / "bin" / "mp4hls").is_file())
+        commands = command_log.read_text()
+        self.assertIn("arm64-unknown-linux", commands)
+        self.assertIn("checkout --quiet -b cinematacms-build", commands)
+        self.assertIn("Bento4 installed", result.stdout)
+
+    def test_bento4_download_failure_stops_installation(self):
+        env, _, install_dir = self.bento4_env(git_clone_exit="23")
+
+        result = self.run_installer_function("install_bento4 amd64", env=env)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("could not download Bento4", result.stderr)
+        self.assertNotIn("Bento4 installed", result.stdout)
+        self.assertFalse(install_dir.exists())
+
+    def test_bento4_smoke_test_failure_leaves_no_partial_install(self):
+        env, _, install_dir = self.bento4_env(mp4hls_exit="7")
+
+        result = self.run_installer_function("install_bento4 arm64", env=env)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("failed its smoke test", result.stderr)
+        self.assertFalse(install_dir.exists())
+
+    def test_project_npm_version_comes_from_frontend_package(self):
+        env, command_log = self.npm_env()
+
+        result = self.run_installer_function(
+            f"install_project_npm {PROJECT_ROOT / 'frontend' / 'package.json'}",
+            env=env,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("npm install --global npm@11.19.0", command_log.read_text())
+
+    def test_project_npm_version_mismatch_fails_installation(self):
+        env, _ = self.npm_env(installed_version="10.9.8")
+
+        result = self.run_installer_function(
+            f"install_project_npm {PROJECT_ROOT / 'frontend' / 'package.json'}",
+            env=env,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("expected npm 11.19.0", result.stderr)
+
+    def test_non_interactive_install_disables_package_prompts(self):
+        result = self.run_installer_function(
+            "NON_INTERACTIVE=true; configure_package_manager; printf '%s' \"$DEBIAN_FRONTEND\""
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, "noninteractive")
+
+    def test_platform_check_accepts_ubuntu_22_arm64(self):
+        result = self.run_installer(
+            "--check-platform",
+            env=self.platform_env(architecture="arm64"),
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Supported platform: Ubuntu 22.04 (arm64)", result.stdout)
+
+    def test_platform_check_rejects_other_ubuntu_release(self):
+        result = self.run_installer(
+            "--check-platform",
+            env=self.platform_env(version="24.04"),
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Ubuntu 22.04 is required", result.stderr)
+
+    def test_platform_check_rejects_unsupported_architecture(self):
+        result = self.run_installer(
+            "--check-platform",
+            env=self.platform_env(architecture="ppc64el"),
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("amd64 and arm64", result.stderr)
+
+    def test_full_install_rejects_non_root_with_failure_status(self):
+        fake_bin = self.test_root / "non-root-bin"
+        fake_bin.mkdir()
+        fake_id = fake_bin / "id"
+        fake_id.write_text("#!/bin/sh\nprintf '1000\\n'\n")
+        fake_id.chmod(fake_id.stat().st_mode | stat.S_IXUSR)
+        env = os.environ.copy()
+        env["PATH"] = f"{fake_bin}:{env['PATH']}"
+
+        result = self.run_installer(
+            "--non-interactive",
+            "--domain",
+            "localhost",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            env=env,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must run as root", result.stderr)
 
     def test_non_interactive_dry_run_resolves_all_options(self):
         result = self.run_installer(
@@ -48,7 +343,7 @@ class InstallScriptTests(unittest.TestCase):
         env = os.environ.copy()
         env.update(
             {
-                "DJANGO_SETTINGS_MODULE": "cms.settings",
+                "DJANGO_SETTINGS_MODULE": "cms.ci_settings",
                 "OTEL_ENABLED": "true",
                 "OTEL_SERVICE_NAME": "cinematacms-deploy-test",
                 "OTEL_EXPORTER_OTLP_ENDPOINT": "http://127.0.0.1:14318/v1/traces",
