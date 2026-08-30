@@ -142,7 +142,13 @@ chmod +x install.sh
 ./install.sh
 ```
 
-The installer runs database migrations and seeds django-waffle feature flag switches automatically.
+The installer prompts for the domain, proxy, and observability settings. For an
+automated installation, pass `--non-interactive` with `--domain`, `--proxy`,
+and `--observability`. The [deployment guide](deploy/README.md) lists the
+options and the upgrade command.
+
+The installer runs database migrations and seeds django-waffle feature flag
+switches automatically.
 
 **Local development (macOS, Linux, or Windows):** Follow the
 [developer onboarding guide](docs/setup/Developer-Onboarding.md). The

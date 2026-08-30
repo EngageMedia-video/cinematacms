@@ -1,3 +1,4 @@
+# Managed by CinemataCMS deployment tooling.
 server {
     listen 80 ;
     server_name localhost;
@@ -53,17 +54,7 @@ server {
     # All media requests now go through Django for authentication
     # Django will use X-Accel-Redirect to serve files efficiently
 
-    # Scraped from the box itself. With cloudflare_real_ip.conf loaded,
-    # $remote_addr is the real client, so a request arriving through Cloudflare
-    # is denied here and never reaches the application.
-    location = /metrics {
-        allow 127.0.0.1;
-        allow ::1;
-        deny all;
-
-        include /etc/nginx/sites-enabled/uwsgi_params;
-        uwsgi_pass 127.0.0.1:9000;
-    }
+    include /etc/nginx/snippets/cinematacms-metrics.conf;
 
     location / {
 
@@ -127,17 +118,7 @@ server {
     # All media requests now go through Django for authentication
     # Django will use X-Accel-Redirect to serve files efficiently
 
-    # Scraped from the box itself. With cloudflare_real_ip.conf loaded,
-    # $remote_addr is the real client, so a request arriving through Cloudflare
-    # is denied here and never reaches the application.
-    location = /metrics {
-        allow 127.0.0.1;
-        allow ::1;
-        deny all;
-
-        include /etc/nginx/sites-enabled/uwsgi_params;
-        uwsgi_pass 127.0.0.1:9000;
-    }
+    include /etc/nginx/snippets/cinematacms-metrics.conf;
 
     location / {
 

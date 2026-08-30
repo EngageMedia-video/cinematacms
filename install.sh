@@ -1,8 +1,135 @@
 #!/bin/bash
 # should be run as root and only on Ubuntu 22
-echo "Welcome to the Cinemata installation!";
 
-if [ `id -u` -ne 0 ]
+usage() {
+    cat <<'EOF'
+Usage: sudo ./install.sh [options]
+
+Options:
+  --non-interactive       Do not prompt for installation values.
+  --domain HOST           Portal hostname without a scheme, path, or port.
+  --portal-name NAME      Portal name. Defaults to CinemataCMS.
+  --proxy MODE            Reverse proxy mode: none or cloudflare.
+  --observability MODE    Observability mode: none or local.
+  --dry-run               Resolve and validate options without changing the system.
+  -h, --help              Show this help text.
+EOF
+}
+
+fail() {
+    echo "Error: $*" >&2
+    exit 1
+}
+
+validate_domain() {
+    local domain="$1"
+    [[ "$domain" =~ ^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)*[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]
+}
+
+validate_portal_name() {
+    local portal_name="$1"
+    [[ "$portal_name" =~ ^[A-Za-z0-9._\ -]{1,100}$ ]]
+}
+
+NON_INTERACTIVE=false
+DRY_RUN=false
+FRONTEND_HOST=""
+PORTAL_NAME=""
+PROXY_MODE=""
+OBSERVABILITY_MODE=""
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --non-interactive)
+            NON_INTERACTIVE=true
+            shift
+            ;;
+        --domain)
+            [ "$#" -ge 2 ] || fail "--domain requires a value"
+            FRONTEND_HOST="$2"
+            shift 2
+            ;;
+        --portal-name)
+            [ "$#" -ge 2 ] || fail "--portal-name requires a value"
+            PORTAL_NAME="$2"
+            shift 2
+            ;;
+        --proxy)
+            [ "$#" -ge 2 ] || fail "--proxy requires a value"
+            PROXY_MODE="$2"
+            shift 2
+            ;;
+        --observability)
+            [ "$#" -ge 2 ] || fail "--observability requires a value"
+            OBSERVABILITY_MODE="$2"
+            shift 2
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            fail "unknown option: $1"
+            ;;
+    esac
+done
+
+if [ "$NON_INTERACTIVE" = true ]; then
+    [ -n "$FRONTEND_HOST" ] || fail "--domain is required with --non-interactive"
+    [ -n "$PROXY_MODE" ] || fail "--proxy is required with --non-interactive"
+    [ -n "$OBSERVABILITY_MODE" ] || fail "--observability is required with --non-interactive"
+else
+    if [ -z "$FRONTEND_HOST" ]; then
+        read -r -p "Enter the portal hostname, or press Enter for localhost: " FRONTEND_HOST
+    fi
+    if [ -z "$PORTAL_NAME" ]; then
+        read -r -p "Enter the portal name, or press Enter for CinemataCMS: " PORTAL_NAME
+    fi
+    if [ -z "$PROXY_MODE" ]; then
+        read -r -p "Enter the reverse proxy mode [none/cloudflare], or press Enter for none: " PROXY_MODE
+    fi
+    if [ -z "$OBSERVABILITY_MODE" ]; then
+        read -r -p "Enter the observability mode [none/local], or press Enter for none: " OBSERVABILITY_MODE
+    fi
+fi
+
+[ -n "$FRONTEND_HOST" ] || FRONTEND_HOST="localhost"
+[ -n "$PORTAL_NAME" ] || PORTAL_NAME="CinemataCMS"
+[ -n "$PROXY_MODE" ] || PROXY_MODE="none"
+[ -n "$OBSERVABILITY_MODE" ] || OBSERVABILITY_MODE="none"
+
+FRONTEND_HOST="${FRONTEND_HOST#http://}"
+FRONTEND_HOST="${FRONTEND_HOST#https://}"
+FRONTEND_HOST="${FRONTEND_HOST%/}"
+validate_domain "$FRONTEND_HOST" || fail "--domain must contain a hostname without a scheme, path, or port"
+validate_portal_name "$PORTAL_NAME" || fail "--portal-name may contain letters, numbers, spaces, periods, underscores, and hyphens"
+case "$PROXY_MODE" in
+    none|cloudflare) ;;
+    *) fail "--proxy must be none or cloudflare" ;;
+esac
+case "$OBSERVABILITY_MODE" in
+    none|local) ;;
+    *) fail "--observability must be none or local" ;;
+esac
+
+echo "Resolved installation configuration:"
+echo "  domain=$FRONTEND_HOST"
+echo "  portal_name=$PORTAL_NAME"
+echo "  proxy=$PROXY_MODE"
+echo "  observability=$OBSERVABILITY_MODE"
+
+if [ "$DRY_RUN" = true ]; then
+    echo "No changes were made."
+    exit 0
+fi
+
+echo "Welcome to the Cinemata installation!"
+
+if [ "$(id -u)" -ne 0 ]
   then echo "Please run as root"
   exit
 fi
@@ -23,17 +150,19 @@ if [ "$SCRIPT_DIR" != "$EXPECTED_DIR" ]; then
 fi
 
 
-while true; do
-    read -p "
+if [ "$NON_INTERACTIVE" = false ]; then
+    while true; do
+        read -r -p "
 This script will attempt to perform a system update, install required dependencies, install and configure PostgreSQL, NGINX, Redis and a few other utilities.
 It is expected to run on a new system **with no running instances of any these services**. Make sure you check the script before you continue. Then enter yes or no
 " yn
-    case $yn in
-        [Yy]* ) echo "OK!"; break;;
-        [Nn]* ) echo "Have a great day"; exit;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
+        case $yn in
+            [Yy]* ) echo "OK!"; break;;
+            [Nn]* ) echo "Installation cancelled"; exit;;
+            * ) echo "Enter yes or no.";;
+        esac
+    done
+fi
 
 
 osVersion=$(lsb_release -d)
@@ -54,24 +183,6 @@ cp -v tmp/{ffmpeg,ffprobe,qt-faststart} /usr/local/bin
 rm -rf tmp ffmpeg-release-amd64-static.tar.xz
 echo "ffmpeg installed to /usr/local/bin"
 
-read -p "Enter portal URL, or press enter for localhost : " FRONTEND_HOST
-read -p "Enter portal name, or press enter for 'CinemataCMS : " PORTAL_NAME
-
-[ -z "$PORTAL_NAME" ] && PORTAL_NAME='CinemataCMS'
-[ -z "$FRONTEND_HOST" ] && FRONTEND_HOST='localhost'
-
-# Normalize and validate the entered host before using it in shell commands or
-# generated Python settings. Restricting it to DNS-style labels (including
-# localhost and IPv4-shaped values) prevents quotes and other metacharacters
-# from changing the generated local_settings.py code.
-FRONTEND_HOST="${FRONTEND_HOST#http://}"
-FRONTEND_HOST="${FRONTEND_HOST#https://}"
-FRONTEND_HOST="${FRONTEND_HOST%/}"
-if [[ ! "$FRONTEND_HOST" =~ ^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)*[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?$ ]]; then
-    echo "Error: portal URL must contain a valid hostname without a path or port"
-    exit 1
-fi
-
 echo 'Creating database to be used in CinemataCMS'
 
 su -c "psql -c \"CREATE DATABASE mediacms\"" postgres
@@ -91,10 +202,14 @@ fi
 if [ -f "$NODEJS_SCRIPT" ]; then
     if bash "$NODEJS_SCRIPT"; then
         export NVM_DIR="/root/.nvm"
+        # shellcheck source=/dev/null
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         # Ensure Node is on PATH in this shell
         nvm use --silent default >/dev/null 2>&1 || nvm use --silent 22 >/dev/null 2>&1
-        node -v && npm -v || { echo "Error: node/npm not on PATH after install"; exit 1; }
+        if ! node -v || ! npm -v; then
+            echo "Error: node/npm not on PATH after install"
+            exit 1
+        fi
         hash -r
     else
         echo "Error: Node.js installation script failed"; exit 1
@@ -105,36 +220,34 @@ fi
 
 echo 'Creating python virtualenv on /home/cinemata'
 
-cd /home/cinemata
+cd /home/cinemata || exit 1
 virtualenv . --python=python3
-source  /home/cinemata/bin/activate
-cd cinematacms
+# shellcheck source=/dev/null
+source /home/cinemata/bin/activate
+cd cinematacms || exit 1
 pip install -r requirements.txt
 cd .. && git clone https://github.com/ggerganov/whisper.cpp.git
-cd whisper.cpp/
+cd whisper.cpp/ || exit 1
 bash ./models/download-ggml-model.sh base
 make
-cd ../cinematacms
+cd ../cinematacms || exit 1
 
-SECRET_KEY=`python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`
+SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
 
-sed -i s/localhost/$FRONTEND_HOST/g deploy/mediacms.io
+FRONTEND_HOST_HTTP_PREFIX="http://$FRONTEND_HOST"
 
-FRONTEND_HOST_HTTP_PREFIX='http://'$FRONTEND_HOST
+{
+    echo 'FRONTEND_HOST='\'"$FRONTEND_HOST_HTTP_PREFIX"\'
+    echo 'PORTAL_NAME='\'"$PORTAL_NAME"\'
+    echo "SSL_FRONTEND_HOST = FRONTEND_HOST.replace('http', 'https')"
 
-echo 'FRONTEND_HOST='\'"$FRONTEND_HOST_HTTP_PREFIX"\' >> cms/local_settings.py
-echo 'PORTAL_NAME='\'"$PORTAL_NAME"\' >> cms/local_settings.py
-echo "SSL_FRONTEND_HOST = FRONTEND_HOST.replace('http', 'https')" >> cms/local_settings.py
-
-# Add the entered domain to ALLOWED_HOSTS. settings.py appends FRONTEND_HOST to
-# ALLOWED_HOSTS before local_settings.py is imported, so at that point it still
-# holds the default value, not the domain entered here. Because local_settings.py
-# is imported last, defining ALLOWED_HOSTS here is the effective override.
-echo "ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '$FRONTEND_HOST']" >> cms/local_settings.py
-
-echo 'SECRET_KEY='\'"$SECRET_KEY"\' >> cms/local_settings.py
-echo "LOCAL_INSTALL = True" >> cms/local_settings.py
-echo "SITE_ID = 1" >> cms/local_settings.py
+    # Add the entered domain to ALLOWED_HOSTS. settings.py appends FRONTEND_HOST
+    # before local_settings.py is imported, so this is the effective override.
+    echo "ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '$FRONTEND_HOST']"
+    echo 'SECRET_KEY='\'"$SECRET_KEY"\'
+    echo "LOCAL_INSTALL = True"
+    echo "SITE_ID = 1"
+} >> cms/local_settings.py
 
 mkdir -p logs
 mkdir -p pids
@@ -168,7 +281,7 @@ python manage.py populate_media_countries
 python manage.py populate_topics
 python manage.py populate_content_sensitivities
 
-ADMIN_PASS=`python -c "import secrets;chars = 'abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(10)))"`
+ADMIN_PASS=$(python -c "import secrets;chars = 'abcdefghijklmnopqrstuvwxyz0123456789';print(''.join(secrets.choice(chars) for i in range(10)))")
 echo "from users.models import User; User.objects.create_superuser('admin', 'admin@example.com', '$ADMIN_PASS')" | python manage.py shell
 
 # Configure Django Site with proper error handling
@@ -179,40 +292,31 @@ if ! python manage.py update_site_name --name "$PORTAL_NAME" --domain "$FRONTEND
 fi
 
 chown -R www-data. /home/cinemata/
-cp deploy/celery_long.service /etc/systemd/system/celery_long.service && systemctl enable celery_long && systemctl start celery_long
-cp deploy/celery_short.service /etc/systemd/system/celery_short.service && systemctl enable celery_short && systemctl start celery_short
-cp deploy/celery_beat.service /etc/systemd/system/celery_beat.service && systemctl enable celery_beat && systemctl start celery_beat
-cp deploy/mediacms.service /etc/systemd/system/mediacms.service && systemctl enable mediacms.service && systemctl start mediacms.service
-
-cp deploy/celery_whisper.service /etc/systemd/system/celery_whisper.service && systemctl enable celery_whisper.service && systemctl start celery_whisper.service
-
-
 mkdir -p /etc/letsencrypt/live/mediacms.io/
-mkdir -p /etc/letsencrypt/live/$FRONTEND_HOST
+mkdir -p "/etc/letsencrypt/live/$FRONTEND_HOST"
 mkdir -p /etc/nginx/sites-enabled
 mkdir -p /etc/nginx/sites-available
 mkdir -p /etc/nginx/dhparams/
 rm -rf /etc/nginx/conf.d/default.conf
 rm -rf /etc/nginx/sites-enabled/default
-cp deploy/mediacms.io_fullchain.pem /etc/letsencrypt/live/$FRONTEND_HOST/fullchain.pem
+cp deploy/mediacms.io_fullchain.pem "/etc/letsencrypt/live/$FRONTEND_HOST/fullchain.pem"
 # this is just a self signed key, will be replaced by certbot
-cp deploy/mediacms.io_privkey.pem /etc/letsencrypt/live/$FRONTEND_HOST/privkey.pem
+cp deploy/mediacms.io_privkey.pem "/etc/letsencrypt/live/$FRONTEND_HOST/privkey.pem"
 cp deploy/dhparams.pem /etc/nginx/dhparams/dhparams.pem
-cp deploy/mediacms.io /etc/nginx/sites-available/mediacms.io
-ln -s /etc/nginx/sites-available/mediacms.io /etc/nginx/sites-enabled/mediacms.io
-cp deploy/uwsgi_params /etc/nginx/sites-enabled/uwsgi_params
 mkdir -p /etc/nginx/conf.d
-cp deploy/cloudflare_real_ip.conf /etc/nginx/conf.d/cloudflare_real_ip.conf
-cp deploy/nginx.conf /etc/nginx/
-systemctl stop nginx
-systemctl start nginx
+
+chmod +x deploy/apply-release-config.sh
+deploy/apply-release-config.sh \
+    --domain "$FRONTEND_HOST" \
+    --proxy "$PROXY_MODE" \
+    --observability "$OBSERVABILITY_MODE"
 
 # attempt to get a valid certificate for specified domain
 
 if [ "$FRONTEND_HOST" != "localhost" ]; then
-    echo 'attempt to get a valid certificate for specified url $FRONTEND_HOST'
-    certbot --nginx -n --agree-tos --register-unsafely-without-email -d $FRONTEND_HOST
-    certbot --nginx -n --agree-tos --register-unsafely-without-email -d $FRONTEND_HOST
+    echo "Attempting to get a certificate for $FRONTEND_HOST"
+    certbot --nginx -n --agree-tos --register-unsafely-without-email -d "$FRONTEND_HOST"
+    certbot --nginx -n --agree-tos --register-unsafely-without-email -d "$FRONTEND_HOST"
     # unfortunately for some reason it needs to be run two times in order to create the entries
     # and directory structure!!!
     systemctl restart nginx
@@ -231,7 +335,7 @@ fi
 
 # Bento4 utility installation, for HLS
 
-cd /home/cinemata/cinematacms
+cd /home/cinemata/cinematacms || exit 1
 wget http://zebulon.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip
 unzip Bento4-SDK-1-6-0-632.x86_64-unknown-linux.zip
 mkdir -p /home/cinemata/cinematacms/media_files/hls
@@ -239,7 +343,7 @@ mkdir -p /home/cinemata/cinematacms/media_files/hls
 # Create user logos directory and default avatar
 echo "Creating default user avatar..."
 mkdir -p /home/cinemata/cinematacms/media_files/userlogos
-wget -O /home/cinemata/cinematacms/media_files/userlogos/user.jpg https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y
+wget -O /home/cinemata/cinematacms/media_files/userlogos/user.jpg "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
 
 # last, set default owner
 chown -R www-data. /home/cinemata/

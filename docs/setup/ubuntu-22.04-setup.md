@@ -2,7 +2,8 @@
 
 The instructions have been tested on Ubuntu 22.04. Ensure no other services are running in the system, specifically no nginx/Postgresql, as the installation script will install them and replace any configs.
 
-As root, clone the repository on /home/cinemata and run install.sh:
+As root, clone the repository under `/home/cinemata` and run the interactive
+installer:
 
 ```
 # cd /home
@@ -12,4 +13,19 @@ As root, clone the repository on /home/cinemata and run install.sh:
 # ./install.sh
 ```
 
-The installer runs database migrations and seeds django-waffle feature flag switches automatically. New switches are initialized from the default settings during installation.
+For an automated installation, pass every required value:
+
+```bash
+# ./install.sh \
+    --non-interactive \
+    --domain video.example.org \
+    --portal-name "Example Video" \
+    --proxy cloudflare \
+    --observability local
+```
+
+The installer runs database migrations and seeds django-waffle feature flag
+switches. It saves the deployment choices in
+`/etc/cinematacms/deployment.env`. Follow the
+[deployment guide](../../deploy/README.md) to apply release configuration after
+an upgrade.
