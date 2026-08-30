@@ -10,6 +10,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = PROJECT_ROOT / "install.sh"
 UPDATER = PROJECT_ROOT / "deploy" / "apply-release-config.sh"
+LOCAL_OBSERVABILITY_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-observability.sh"
 
 
 class InstallScriptTests(unittest.TestCase):
@@ -119,11 +120,11 @@ class InstallScriptTests(unittest.TestCase):
             textwrap.dedent(
                 f"""\
                 #!/bin/sh
-                printf '%s\n' "python3 $*" >> "$FAKE_COMMAND_LOG"
+                printf '%s\\n' "python3 $*" >> "$FAKE_COMMAND_LOG"
                 target="$2"
                 sdk="SDK/Bento4-SDK-1-6-0-641.$target"
                 mkdir -p "$sdk/bin"
-                printf '#!/bin/sh\nexit {mp4hls_exit}\n' > "$sdk/bin/mp4hls"
+                printf '#!/bin/sh\\nexit {mp4hls_exit}\\n' > "$sdk/bin/mp4hls"
                 chmod +x "$sdk/bin/mp4hls"
                 """
             )
@@ -142,12 +143,12 @@ class InstallScriptTests(unittest.TestCase):
         )
         return env, command_log, install_dir
 
-    def npm_env(self, installed_version="11.19.0"):
+    def npm_env(self, installed_version="11.19.0", package_manager="npm@11.19.0"):
         fake_bin = self.test_root / "npm-bin"
         fake_bin.mkdir(exist_ok=True)
         command_log = self.test_root / "npm-commands.log"
         node = fake_bin / "node"
-        node.write_text("#!/bin/sh\nprintf 'npm@11.19.0\\n'\n")
+        node.write_text(f"#!/bin/sh\nprintf '%s\\n' '{package_manager}'\n")
         npm = fake_bin / "npm"
         npm.write_text(
             textwrap.dedent(
@@ -260,6 +261,18 @@ class InstallScriptTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("expected npm 11.19.0", result.stderr)
 
+    def test_project_npm_ignores_corepack_integrity_suffix_for_version_check(self):
+        package_manager = "npm@11.19.0+sha512.deadbeef"
+        env, command_log = self.npm_env(package_manager=package_manager)
+
+        result = self.run_installer_function(
+            f"install_project_npm {PROJECT_ROOT / 'frontend' / 'package.json'}",
+            env=env,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"npm install --global {package_manager}", command_log.read_text())
+
     def test_non_interactive_install_disables_package_prompts(self):
         result = self.run_installer_function(
             "NON_INTERACTIVE=true; configure_package_manager; printf '%s' \"$DEBIAN_FRONTEND\""
@@ -339,6 +352,29 @@ class InstallScriptTests(unittest.TestCase):
         self.assertIn("observability=local", result.stdout)
         self.assertIn("No changes were made.", result.stdout)
 
+    def test_non_interactive_dry_run_rejects_portal_name_with_backslash(self):
+        result = self.run_installer(
+            "--non-interactive",
+            "--domain",
+            "video.example.org",
+            "--portal-name",
+            "Example\\",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--dry-run",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--portal-name may contain", result.stderr)
+
+    def test_bento4_fake_python_has_valid_shebang(self):
+        self.bento4_env()
+
+        python = self.test_root / "bento4-bin" / "python3"
+        self.assertTrue(python.read_bytes().startswith(b"#!/bin/sh\n"))
+
     def test_runtime_settings_read_observability_environment(self):
         env = os.environ.copy()
         env.update(
@@ -375,6 +411,30 @@ class InstallScriptTests(unittest.TestCase):
             ["True", "cinematacms-deploy-test", "http://127.0.0.1:14318/v1/traces", "0.25"],
         )
 
+    def test_runtime_settings_fall_back_for_invalid_sampler_value(self):
+        env = os.environ.copy()
+        env.update(
+            {
+                "DJANGO_SETTINGS_MODULE": "cms.ci_settings",
+                "OTEL_TRACES_SAMPLER_ARG": "0,25",
+            }
+        )
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "from django.conf import settings; print(settings.OTEL_TRACES_SAMPLER_ARG)",
+            ],
+            cwd=PROJECT_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "1.0")
+
     def test_non_interactive_mode_rejects_missing_required_option(self):
         result = self.run_installer(
             "--non-interactive",
@@ -401,6 +461,132 @@ class InstallScriptTests(unittest.TestCase):
         self.assertIn("observability=local", result.stdout)
 
 
+class LocalObservabilityInstallerTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.fake_bin = Path(self.temp_dir.name) / "bin"
+        self.command_log = Path(self.temp_dir.name) / "commands.log"
+        self.fake_bin.mkdir()
+        self._write_fake_command("prometheus", "exit 0")
+        self._write_fake_command("otelcol-contrib", "exit 0")
+        self._write_fake_command(
+            "id",
+            """
+            if [ "$#" -eq 1 ] && [ "$1" = "-u" ]; then
+                printf '0\\n'
+                exit 0
+            fi
+            if [ "${FAKE_USER_EXISTS:-0}" = "1" ]; then
+                printf '999\\n'
+                exit 0
+            fi
+            exit 1
+            """,
+        )
+        self._write_fake_command(
+            "getent",
+            """
+            [ "${FAKE_GROUP_EXISTS:-0}" = "1" ]
+            """,
+        )
+        self._write_fake_command("groupadd", "exit 0")
+        self._write_fake_command("useradd", "exit 0")
+        self._write_fake_command(
+            "systemctl",
+            """
+            case "$1" in
+                show)
+                    if [ "${FAKE_MISSING_UNITS:-0}" = "1" ]; then
+                        printf 'not-found\\n'
+                    else
+                        printf 'loaded\\n'
+                    fi
+                    ;;
+                disable)
+                    [ "${FAKE_DISABLE_FAIL_SERVICE:-}" != "$3" ]
+                    ;;
+                is-active)
+                    [ "${FAKE_ACTIVE_SERVICE:-}" = "$3" ]
+                    ;;
+            esac
+            """,
+        )
+
+    def _write_fake_command(self, name, body):
+        command = self.fake_bin / name
+        command.write_text(
+            "#!/bin/sh\nprintf '%s\\n' \"" + name + ' $*" >> "$FAKE_COMMAND_LOG"\n' + textwrap.dedent(body).lstrip()
+        )
+        command.chmod(command.stat().st_mode | stat.S_IXUSR)
+
+    def run_installer(self, *args, env_updates=None):
+        env = os.environ.copy()
+        env.update(
+            {
+                "FAKE_COMMAND_LOG": str(self.command_log),
+                "PATH": f"{self.fake_bin}:{env['PATH']}",
+            }
+        )
+        if env_updates:
+            env.update(env_updates)
+        return subprocess.run(
+            ["bash", str(LOCAL_OBSERVABILITY_INSTALLER), *args],
+            cwd=PROJECT_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    def test_missing_group_is_created_before_the_service_user(self):
+        result = self.run_installer("--no-service-changes")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        commands = self.command_log.read_text().splitlines()
+        groupadd = commands.index("groupadd --system otelcol-contrib")
+        useradd = commands.index(
+            "useradd --system --gid otelcol-contrib --home-dir /nonexistent --shell /usr/sbin/nologin otelcol-contrib"
+        )
+        self.assertLess(groupadd, useradd)
+
+    def test_existing_service_shutdown_failure_aborts_installation(self):
+        result = self.run_installer(
+            env_updates={
+                "FAKE_USER_EXISTS": "1",
+                "FAKE_GROUP_EXISTS": "1",
+                "FAKE_DISABLE_FAIL_SERVICE": "prometheus",
+            }
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("could not stop package service prometheus", result.stderr)
+
+    def test_service_that_remains_active_aborts_installation(self):
+        result = self.run_installer(
+            env_updates={
+                "FAKE_USER_EXISTS": "1",
+                "FAKE_GROUP_EXISTS": "1",
+                "FAKE_ACTIVE_SERVICE": "prometheus",
+            }
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("package service prometheus is still active", result.stderr)
+
+    def test_missing_package_services_are_ignored(self):
+        result = self.run_installer(
+            env_updates={
+                "FAKE_USER_EXISTS": "1",
+                "FAKE_GROUP_EXISTS": "1",
+                "FAKE_MISSING_UNITS": "1",
+            }
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("systemctl disable", self.command_log.read_text())
+
+
 class ApplyReleaseConfigTests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -421,7 +607,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
                 #!/bin/sh
                 echo "install-observability" >> "$FAKE_COMMAND_LOG"
                 for command in prometheus otelcol-contrib; do
-                    printf '#!/bin/sh\nexit 0\n' > "$FAKE_BIN/$command"
+                    printf '#!/bin/sh\\nexit 0\\n' > "$FAKE_BIN/$command"
                     chmod +x "$FAKE_BIN/$command"
                 done
                 """
@@ -463,6 +649,9 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             text=True,
             check=False,
         )
+
+    def test_fake_observability_installer_has_valid_shebang(self):
+        self.assertTrue(self.observability_installer.read_bytes().startswith(b"#!/bin/sh\n"))
 
     def test_first_apply_persists_config_and_installs_managed_files(self):
         result = self.run_updater(
@@ -537,6 +726,27 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("nginx validation failed", result.stderr)
         self.assertEqual(site_path.read_text(), original)
+
+    def test_managed_file_write_failure_restores_previous_config(self):
+        config_path = self.deploy_root / "etc/cinematacms/deployment.env"
+        config_path.parent.mkdir(parents=True)
+        original = (
+            "CINEMATA_DOMAIN=video.example.org\n"
+            "CINEMATA_PROXY=none\n"
+            "CINEMATA_OBSERVABILITY=none\n"
+            "# preserve this line\n"
+        )
+        config_path.write_text(original)
+        self._write_fake_command("install", "exit 17")
+
+        result = self.run_updater(
+            "--proxy",
+            "cloudflare",
+            "--no-restart",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(config_path.read_text(), original)
 
     def test_local_mode_installs_missing_observability_binaries(self):
         (self.fake_bin / "prometheus").unlink()

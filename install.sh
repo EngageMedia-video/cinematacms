@@ -168,7 +168,10 @@ install_project_npm() {
     package_manager=$(node -e 'console.log(require(process.argv[1]).packageManager)' "$package_file") || \
         fail "could not read packageManager from $package_file"
     case "$package_manager" in
-        npm@*) expected_version="${package_manager#npm@}" ;;
+        npm@*)
+            expected_version="${package_manager#npm@}"
+            expected_version="${expected_version%%+*}"
+            ;;
         *) fail "unsupported frontend package manager $package_manager" ;;
     esac
     npm install --global "$package_manager" || fail "could not install $package_manager"

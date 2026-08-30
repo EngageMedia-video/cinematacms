@@ -56,12 +56,32 @@ if ! command -v otelcol-contrib >/dev/null 2>&1; then
     apt-get install -y "$package"
 fi
 
-if ! id -u otelcol-contrib >/dev/null 2>&1; then
-    useradd --system --home-dir /nonexistent --shell /usr/sbin/nologin otelcol-contrib
+if ! getent group otelcol-contrib >/dev/null 2>&1; then
+    groupadd --system otelcol-contrib
 fi
+
+if ! id -u otelcol-contrib >/dev/null 2>&1; then
+    useradd --system --gid otelcol-contrib --home-dir /nonexistent --shell /usr/sbin/nologin otelcol-contrib
+fi
+
+stop_package_service() {
+    local service="$1"
+    local load_state
+
+    load_state="$(systemctl show "$service" --property=LoadState --value 2>/dev/null)" || \
+        fail "could not inspect package service $service"
+    [ "$load_state" != "not-found" ] || return 0
+
+    systemctl disable --now "$service" >/dev/null 2>&1 || \
+        fail "could not stop package service $service"
+    if systemctl is-active --quiet "$service"; then
+        fail "package service $service is still active"
+    fi
+}
 
 if [ "$CHANGE_SERVICE_STATE" = true ]; then
     # The release configuration owns loopback-only services with project config
     # files. Stop package defaults that may listen on broader addresses.
-    systemctl disable --now prometheus otelcol-contrib >/dev/null 2>&1 || true
+    stop_package_service prometheus
+    stop_package_service otelcol-contrib
 fi

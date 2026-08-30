@@ -496,11 +496,13 @@ def encode_media(
                         if n_times > iteration_limit:
                             logger.error(f"Encoding iteration limit ({iteration_limit}) exceeded")
                             encoding_backend.terminate_process()
+                            encoding_command.close()
                             break
 
                         if time.time() - last_progress_time > no_progress_timeout:
                             logger.error(f"No progress for {no_progress_timeout} seconds, likely stuck")
                             encoding_backend.terminate_process()
+                            encoding_command.close()
                             break
 
                     except StopIteration:

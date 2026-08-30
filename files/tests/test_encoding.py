@@ -183,12 +183,12 @@ class TestEncodingProgressTracking(unittest.TestCase):
 
 
 class TestFFmpegSpanLifetime(unittest.TestCase):
-    @override_settings(TEMP_DIRECTORY="/tmp")
-    def test_ffmpeg_generator_is_consumed_inside_span(self):
+    def _run_safety_break(self, time_patch):
         from files.tasks import encode_media
 
         span_active = False
-        observed = []
+        observed_span_states = []
+        output_count = 0
 
         @contextmanager
         def fake_span(*_args, **_kwargs):
@@ -200,9 +200,18 @@ class TestFFmpegSpanLifetime(unittest.TestCase):
                 span_active = False
 
         def output_stream():
-            observed.append(span_active)
-            return
-            yield  # pragma: no cover
+            nonlocal output_count
+            while True:
+                output_count += 1
+                if output_count == 1:
+                    observed_span_states.append(span_active)
+                yield "unparseable"
+
+        def check_media_exists(_media_id, _encoding_id, stage):
+            if stage == "final_save":
+                observed_span_states.append(span_active)
+                return False
+            return True
 
         media = SimpleNamespace(
             pk=1,
@@ -225,7 +234,10 @@ class TestFFmpegSpanLifetime(unittest.TestCase):
         query = Mock()
         query.count.return_value = 1
         query.exclude.return_value.delete = Mock()
-        backend = SimpleNamespace(encode=Mock(return_value=output_stream()))
+        backend = SimpleNamespace(
+            encode=Mock(return_value=output_stream()),
+            terminate_process=Mock(),
+        )
 
         with (
             patch("files.tasks.Media.objects.get", return_value=media),
@@ -236,11 +248,27 @@ class TestFFmpegSpanLifetime(unittest.TestCase):
             patch("files.tasks.produce_ffmpeg_commands", return_value=[["ffmpeg", "-i", "source"]]),
             patch("files.tasks.FFmpegBackend", return_value=backend),
             patch("files.tasks.start_span", side_effect=fake_span),
-            patch("files.tasks._check_media_exists_or_cleanup", return_value=False),
+            patch("files.tasks.calculate_seconds", return_value=None),
+            time_patch,
+            patch("files.tasks.logger.error"),
+            patch("files.tasks.logger.info"),
+            patch("files.tasks._check_media_exists_or_cleanup", side_effect=check_media_exists),
         ):
             encode_media.run("token", profile.id, encoding.id, "url")
 
-        self.assertEqual(observed, [True])
+        return observed_span_states
+
+    @override_settings(TEMP_DIRECTORY="/tmp")
+    def test_ffmpeg_generator_is_closed_before_timeout_break_final_save(self):
+        observed_span_states = self._run_safety_break(patch("files.tasks.time.time", side_effect=[0, 1, 1801]))
+
+        self.assertEqual(observed_span_states, [True, False])
+
+    @override_settings(TEMP_DIRECTORY="/tmp")
+    def test_ffmpeg_generator_is_closed_before_iteration_limit_final_save(self):
+        observed_span_states = self._run_safety_break(patch("files.tasks.time.time", return_value=0))
+
+        self.assertEqual(observed_span_states, [True, False])
 
 
 class TestEncodingOutcomeObservation(unittest.TestCase):

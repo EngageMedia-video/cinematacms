@@ -160,7 +160,10 @@ OTEL_ENABLED = os.getenv("OTEL_ENABLED", "false").lower() in ("1", "true", "yes"
 OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "cinematacms")
 OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/traces")
 OTEL_EXPORTER_OTLP_HEADERS = os.getenv("OTEL_EXPORTER_OTLP_HEADERS", "")
-OTEL_TRACES_SAMPLER_ARG = float(os.getenv("OTEL_TRACES_SAMPLER_ARG", "1.0"))
+try:
+    OTEL_TRACES_SAMPLER_ARG = float(os.getenv("OTEL_TRACES_SAMPLER_ARG", "1.0"))
+except ValueError:
+    OTEL_TRACES_SAMPLER_ARG = 1.0
 OBSERVABILITY_CELERY_QUEUES = ["long_tasks", "short_tasks", "whisper_tasks"]
 OBSERVABILITY_SLOW_REQUEST_SECONDS = 2.0
 OBSERVABILITY_SLOW_QUERY_SECONDS = 1.0

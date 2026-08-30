@@ -6,7 +6,7 @@ services.
 
 As root, clone the repository under `/home/cinemata`:
 
-```
+```bash
 # cd /home
 # mkdir cinemata && cd cinemata
 # git clone https://github.com/EngageMedia-video/cinematacms cinematacms && cd cinematacms
