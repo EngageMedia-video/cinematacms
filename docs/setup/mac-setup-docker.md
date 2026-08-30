@@ -52,7 +52,7 @@ This command works on both Intel Macs (which use `/usr/local`) and Apple Silicon
 
 CinemataCMS requires a minimum `npm` version 11. Enter the following to check your `npm` version:
 
-```
+```zsh
 cd frontend
 npm --version   # must report 11.x
 ```
@@ -187,7 +187,11 @@ BASE_DIR = os.path.abspath('.')
 
 FRONTEND_HOST='http://127.0.0.1:8000'
 PORTAL_NAME='CinemataCMS'
-SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'https')
+
+# SSL_FRONTEND_HOST: If you intend to push to prod, 
+# replace the second argument with 'https'
+SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'http')
+
 SECRET_KEY=os.getenv('SECRET_KEY')
 LOCAL_INSTALL=True
 DEBUG = True
@@ -210,7 +214,7 @@ MP4HLS_COMMAND = (
 
 The MP4HLS_COMMAND path differs depending on your macOS. Replace the `MP4HLS_COMMAND` path with the output of the following:
 
-```
+```zsh
 which mp4hls
 ```
 
