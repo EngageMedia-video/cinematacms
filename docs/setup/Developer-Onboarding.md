@@ -241,9 +241,6 @@ docker compose version
 <details>
 <summary><strong>Windows (WSL2)</strong></summary>
 
-> [!WARNING]
-> CinemataCMS requires the use of `systemd`, which is supported in WSL version 0.67.6 and newer. See [How to enable systemd](https://learn.microsoft.com/en-us/windows/wsl/systemd#how-to-enable-systemd) to check your WSL version and enable `systemd` manually if necessary.
-
 **In PowerShell (Administrator):**
 
 ```powershell

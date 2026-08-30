@@ -53,7 +53,6 @@ This command works on both Intel Macs (which use `/usr/local`) and Apple Silicon
 CinemataCMS requires a minimum `npm` version 11. Enter the following to check your `npm` version:
 
 ```zsh
-cd frontend
 npm --version   # must report 11.x
 ```
 
@@ -100,7 +99,7 @@ Now that you have cloned the `cinematacms` repository and are inside the `cinema
 make docker-up
 ```
 
-This command utilizes the `Makefile` target `docker-up`, which in turn runs `docker-compose -f docker-compose.dev.yml up -d`. This will:
+This command utilizes the `Makefile` target `docker-up`, which in turn runs `docker compose -f docker-compose.dev.yml up -d`. This will:
 
 - Pull the required Docker images for all services defined in `docker-compose.dev.yml` (including PostgreSQL and Redis) if they are not already present.
 - Start these service containers in detached mode (`-d`).
