@@ -2,7 +2,7 @@
 {% load static %}
 {% load django_vite %}
 
-{% block headtitle %}Manage comments - {{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}Manage comments - {{ block.super }}{% endblock headtitle %}
 
 {% block headermeta %}
 

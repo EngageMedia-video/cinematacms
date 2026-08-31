@@ -2,7 +2,7 @@
 {% load static %}
 {% load django_vite %}
 
-{% block headtitle %}{% if playlist %}{{ playlist.title }} - {% endif %}{{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}{% if playlist %}{{ playlist.title }} - {% endif %}{{ block.super }}{% endblock headtitle %}
 
 {% block headermeta %}
 

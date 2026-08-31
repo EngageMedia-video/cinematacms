@@ -2,9 +2,7 @@
 {% load i18n %}
 {% load allauth account %}
 
-{% block headtitle %}
-  | Sign In
-{% endblock %}
+{% block headtitle %}Sign in - {{ block.super }}{% endblock headtitle %}
 
 {% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="code" %}{% endblock auth_icon %}
 
