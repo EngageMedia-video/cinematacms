@@ -1,7 +1,7 @@
 {% extends "account/auth_base.html" %}
 {% load i18n %}
 
-{% block headtitle %}Sign up - {{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}Sign up - {{ block.super }}{% endblock headtitle %}
 
 {% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="signup" %}{% endblock auth_icon %}
 

@@ -2,7 +2,7 @@
 {% load static %}
 {% load custom_tags %}
 
-{% block headtitle %}{{page.title}} - {{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}{{page.title}} - {{ block.super }}{% endblock headtitle %}
 
 {% block headermeta %}
 

@@ -1,7 +1,7 @@
 {% extends "account/auth_base.html" %}
 {% load allauth i18n %}
 
-{% block headtitle %}{% trans "Recovery codes" %} - {{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}{% trans "Recovery codes" %} - {{ block.super }}{% endblock headtitle %}
 
 {% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="mfa" %}{% endblock auth_icon %}
 

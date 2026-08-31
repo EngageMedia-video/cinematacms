@@ -2,7 +2,7 @@
 {% load static %}
 {% load django_vite %}
 
-{% block headtitle %}Recent uploads - {{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}Recent uploads - {{ block.super }}{% endblock headtitle %}
 
 {% block headermeta %}
 

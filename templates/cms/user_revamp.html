@@ -1,7 +1,7 @@
 {% extends "base_modern.html" %}
 {% load django_vite %}
 
-{% block headtitle %}{% if user.name %}{{ user.name }} - {% endif %}{{ PORTAL_NAME }}{% endblock headtitle %}
+{% block headtitle %}{% if user.name %}{{ user.name }} - {% endif %}{{ block.super }}{% endblock headtitle %}
 
 {% block headermeta %}
 <meta property="og:title" content="{% if user.name %}{{ user.name }} - {% endif %}{{ PORTAL_NAME }}">
