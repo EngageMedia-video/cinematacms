@@ -2769,21 +2769,26 @@ class CommentDetail(APIView):
             try:
                 from notifications.services import NotificationService
 
-                # TODO: When @mention parsing is built (Tribute.js),
-                # parse mentioned_users from comment.text and call:
-                # mentioned = NotificationService.on_mention(
-                #     actor=request.user, media=media, comment=comment,
-                #     mentioned_users=parsed_users,
-                # )
-                # Then merge mentioned into notified below for overlap prevention.
+                from .mentions import resolve_mentioned_users
 
-                notified = set()
+                # Resolve @handles from the saved text, not from the request
+                # body, so the recipient set matches what the comment says.
+                notified = set(
+                    NotificationService.on_mention(
+                        actor=request.user,
+                        media=media,
+                        comment=comment,
+                        mentioned_users=resolve_mentioned_users(comment.text, exclude=request.user),
+                    )
+                )
+
                 if comment.parent is not None:
-                    if NotificationService.on_reply(
+                    if comment.parent.user not in notified and NotificationService.on_reply(
                         actor=request.user,
                         media=media,
                         comment=comment,
                         parent_comment=comment.parent,
+                        mentioned_users=notified,
                     ):
                         notified.add(comment.parent.user)
 
