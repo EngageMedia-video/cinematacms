@@ -293,6 +293,15 @@ def encode_media(
         Encoding.objects.filter(id=encoding_id).delete()
         return False
 
+    outcome_recorded = False
+
+    def record_encoding_outcome(success):
+        nonlocal outcome_recorded
+        if outcome_recorded:
+            return
+        outcome_recorded = True
+        observe_media_pipeline(media, profile, "success" if success else "fail")
+
     # break logic with chunk True/False
     if chunk:
         # TODO: in case a video is chunkized and this enters here many times
@@ -303,6 +312,7 @@ def encode_media(
             and not force
         ):
             Encoding.objects.filter(id=encoding_id).delete()
+            record_encoding_outcome(False)
             return False
         else:
             try:
@@ -325,6 +335,7 @@ def encode_media(
     else:
         if Encoding.objects.filter(media=media, profile=profile).count() > 1 and force is False:
             Encoding.objects.filter(id=encoding_id).delete()
+            record_encoding_outcome(False)
             return False
         else:
             try:
@@ -368,14 +379,17 @@ def encode_media(
                 encoding.status = "success"
                 encoding.media_file.save(content=myfile, name=tf)
                 rm_file(tf)
+                record_encoding_outcome(True)
                 return True
         else:
+            record_encoding_outcome(False)
             return False
     original_media_path = chunk_file_path if chunk else media.media_file.path
 
     if not media.duration:
         encoding.status = "fail"
         encoding.save(update_fields=["status"])
+        record_encoding_outcome(False)
         return False
 
     with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as temp_dir:
@@ -393,6 +407,7 @@ def encode_media(
         if not ffmpeg_commands:
             encoding.status = "fail"
             encoding.save(update_fields=["status"])
+            record_encoding_outcome(False)
             return False
 
         encoding.temp_file = tf
@@ -408,17 +423,21 @@ def encode_media(
             ffmpeg_command = [str(s) for s in ffmpeg_command]
             encoding_backend = FFmpegBackend()
             try:
-                with start_span(
-                    "media.encode.ffmpeg.start",
-                    {
-                        "media.type": media.media_type,
-                        "encoding.profile_id": profile.id,
-                        "encoding.resolution": profile.resolution,
-                        "encoding.codec": profile.codec,
-                        "encoding.extension": profile.extension,
-                    },
-                ):
-                    encoding_command = encoding_backend.encode(ffmpeg_command)
+
+                def encoding_output(backend=encoding_backend, command=ffmpeg_command):
+                    with start_span(
+                        "media.encode.ffmpeg.start",
+                        {
+                            "media.type": media.media_type,
+                            "encoding.profile_id": profile.id,
+                            "encoding.resolution": profile.resolution,
+                            "encoding.codec": profile.codec,
+                            "encoding.extension": profile.extension,
+                        },
+                    ):
+                        yield from backend.encode(command)
+
+                encoding_command = encoding_output()
                 _duration, n_times = 0, 0
                 output = ""
                 start_time = time.time()
@@ -445,6 +464,7 @@ def encode_media(
                                     if n_times % 20 == 0:
                                         if not _check_media_exists_or_cleanup(media.pk, encoding.id, "progress_save"):
                                             encoding_backend.terminate_process()
+                                            record_encoding_outcome(False)
                                             return False
                                         encoding.progress = percent
                                         try:
@@ -460,6 +480,7 @@ def encode_media(
                             if n_times % 100 == 0:
                                 if not _check_media_exists_or_cleanup(media.pk, encoding.id, "heartbeat_save"):
                                     encoding_backend.terminate_process()
+                                    record_encoding_outcome(False)
                                     return False
                                 try:
                                     encoding.save(update_fields=["update_date"])
@@ -475,11 +496,13 @@ def encode_media(
                         if n_times > iteration_limit:
                             logger.error(f"Encoding iteration limit ({iteration_limit}) exceeded")
                             encoding_backend.terminate_process()
+                            encoding_command.close()
                             break
 
                         if time.time() - last_progress_time > no_progress_timeout:
                             logger.error(f"No progress for {no_progress_timeout} seconds, likely stuck")
                             encoding_backend.terminate_process()
+                            encoding_command.close()
                             break
 
                     except StopIteration:
@@ -506,6 +529,8 @@ def encode_media(
                     if error_msg.lower() in output.lower():
                         raise_exception = False
                 if raise_exception:
+                    if self.request.retries >= 1:
+                        record_encoding_outcome(False)
                     raise self.retry(exc=e, countdown=5, max_retries=1)
 
         encoding.logs = output
@@ -513,6 +538,7 @@ def encode_media(
 
         # Check media still exists before final save
         if not _check_media_exists_or_cleanup(media.pk, encoding.id, "final_save"):
+            record_encoding_outcome(False)
             return False
 
         success = False
@@ -531,12 +557,12 @@ def encode_media(
 
         try:
             encoding.save(update_fields=["status", "logs", "progress", "total_run_time"])
-            observe_media_pipeline(media, profile, "success" if success else "fail")
         except (Encoding.DoesNotExist, django.db.DatabaseError) as e:
             logger.warning(
                 f"Failed to save final encoding state for encoding {encoding.id}: {e}. Media may have been deleted."
             )
 
+        record_encoding_outcome(success)
         return success
 
 

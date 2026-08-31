@@ -127,6 +127,58 @@ class CacheMetricTests(SimpleTestCase):
         record.assert_called_once_with("query", "get", hit=True)
 
 
+class MetricFailureIsolationTests(SimpleTestCase):
+    def test_cache_fallback_survives_metric_failure(self):
+        from files import cache_utils
+
+        with (
+            patch.object(cache_utils.cache, "get", return_value=True),
+            patch("files.metrics.CACHE_OPERATIONS_TOTAL.labels", side_effect=RuntimeError("metrics unavailable")),
+        ):
+            self.assertTrue(cache_utils.get_cached_permission("permission-key"))
+
+    def test_media_observation_survives_profile_metric_failure(self):
+        from files.metrics import observe_media_pipeline
+
+        media = SimpleNamespace(media_type="video", duration=120, media_file=SimpleNamespace(size=123456))
+        profile = SimpleNamespace(resolution=720, codec="h264", extension="mp4")
+        with (
+            patch("files.metrics.MEDIA_ENCODING_PROFILE_TOTAL.labels", side_effect=RuntimeError("metrics unavailable")),
+            patch("files.metrics.MEDIA_DURATION_SECONDS") as duration,
+            patch("files.metrics.MEDIA_FILE_SIZE_BYTES") as file_size,
+        ):
+            duration.labels.return_value.observe = Mock()
+            file_size.labels.return_value.observe = Mock()
+
+            observe_media_pipeline(media, profile, "success")
+
+        duration.labels.return_value.observe.assert_called_once_with(120)
+        file_size.labels.return_value.observe.assert_called_once_with(123456)
+
+    def test_stale_encoding_recovery_survives_metric_failure(self):
+        from files.metrics import record_stale_encoding
+
+        encoding = SimpleNamespace(
+            profile=SimpleNamespace(resolution=720, codec="h264", extension="mp4"),
+        )
+        with patch("files.metrics.ENCODING_STALE_TOTAL.labels", side_effect=RuntimeError("metrics unavailable")):
+            record_stale_encoding(encoding)
+
+
+class RuntimeGaugeTests(SimpleTestCase):
+    def test_runtime_snapshot_gauges_use_mostrecent_multiprocess_mode(self):
+        from files import metrics
+
+        snapshot_gauges = {
+            "celery queue depth": metrics.CELERY_QUEUE_DEPTH,
+            "transcription requests": metrics.TRANSCRIPTION_REQUESTS,
+            "stalled encodings": metrics.ENCODING_STALLED,
+        }
+        for name, gauge in snapshot_gauges.items():
+            with self.subTest(metric=name):
+                self.assertEqual(gauge._multiprocess_mode, "mostrecent")
+
+
 class CeleryAndMediaMetricTests(SimpleTestCase):
     def test_celery_task_signal_helpers_record_lifecycle(self):
         from files import metrics

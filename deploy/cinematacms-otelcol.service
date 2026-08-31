@@ -1,0 +1,14 @@
+[Unit]
+Description=CinemataCMS OpenTelemetry Collector
+After=network.target
+
+[Service]
+Type=simple
+User=otelcol-contrib
+Group=otelcol-contrib
+ExecStart=/usr/bin/otelcol-contrib --config=/etc/cinematacms/otelcol-contrib.yml
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

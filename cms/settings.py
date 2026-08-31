@@ -156,13 +156,14 @@ FILE_UPLOAD_HANDLERS = [
 
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 
-# Observability settings are intentionally defined here, not read from .env.
-# Production currently manages runtime configuration through settings.py.
-OTEL_ENABLED = False
-OTEL_SERVICE_NAME = "cinematacms"
-OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:4318/v1/traces"
-OTEL_EXPORTER_OTLP_HEADERS = ""
-OTEL_TRACES_SAMPLER_ARG = 1.0
+OTEL_ENABLED = os.getenv("OTEL_ENABLED", "false").lower() in ("1", "true", "yes")
+OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "cinematacms")
+OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/traces")
+OTEL_EXPORTER_OTLP_HEADERS = os.getenv("OTEL_EXPORTER_OTLP_HEADERS", "")
+try:
+    OTEL_TRACES_SAMPLER_ARG = float(os.getenv("OTEL_TRACES_SAMPLER_ARG", "1.0"))
+except ValueError:
+    OTEL_TRACES_SAMPLER_ARG = 1.0
 OBSERVABILITY_CELERY_QUEUES = ["long_tasks", "short_tasks", "whisper_tasks"]
 OBSERVABILITY_SLOW_REQUEST_SECONDS = 2.0
 OBSERVABILITY_SLOW_QUERY_SECONDS = 1.0
