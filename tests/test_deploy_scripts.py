@@ -684,6 +684,86 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertIn("nginx -t", self.command_log.read_text())
         self.assertNotIn("systemctl enable --now", self.command_log.read_text())
 
+    def test_apply_restarts_active_application_services(self):
+        result = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        commands = self.command_log.read_text().splitlines()
+        application_services = "mediacms celery_long celery_short celery_whisper celery_beat"
+        self.assertIn(f"systemctl enable {application_services}", commands)
+        self.assertIn(f"systemctl restart {application_services}", commands)
+        self.assertNotIn(f"systemctl enable --now {application_services}", commands)
+
+    def test_application_service_restart_failure_aborts_apply(self):
+        self._write_fake_command(
+            "systemctl",
+            """
+            if [ "$1" = "restart" ]; then
+                exit 23
+            fi
+            """,
+        )
+
+        result = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        commands = self.command_log.read_text().splitlines()
+        self.assertIn(
+            "systemctl restart mediacms celery_long celery_short celery_whisper celery_beat",
+            commands,
+        )
+        self.assertNotIn("systemctl reload-or-restart nginx", commands)
+
+    def test_no_restart_performs_no_service_lifecycle_actions(self):
+        result = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lifecycle_actions = {"enable", "disable", "start", "stop", "restart", "reload-or-restart"}
+        systemctl_commands = (
+            command.split()[1]
+            for command in self.command_log.read_text().splitlines()
+            if command.startswith("systemctl ")
+        )
+        self.assertTrue(lifecycle_actions.isdisjoint(systemctl_commands))
+
+    def test_installed_mediacms_unit_uses_systemd_process_shutdown(self):
+        result = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        unit = (self.deploy_root / "etc/systemd/system/mediacms.service").read_text()
+        self.assertNotIn("ExecStop=", unit)
+        self.assertNotIn("killall", unit)
+
     def test_second_apply_reuses_saved_config_without_duplicate_nginx_include(self):
         first = self.run_updater(
             "--domain",
