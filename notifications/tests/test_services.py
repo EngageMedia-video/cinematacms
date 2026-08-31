@@ -1,6 +1,8 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from notifications.models import (
     Notification,
@@ -22,7 +24,7 @@ def _create_user(username, email=None):
     )
 
 
-def _create_media(user, title="Test Video", friendly_token="abc-def-123"):  # noqa: S107
+def _create_media(user, title="Test Video", friendly_token="abc-def-123", state="public"):  # noqa: S107
     """Create a minimal Media object for testing.
 
     Patches media_init to prevent file processing errors (same pattern
@@ -31,14 +33,20 @@ def _create_media(user, title="Test Video", friendly_token="abc-def-123"):  # no
     from files.models import Media
 
     with patch.object(Media, "media_init", return_value=None):
-        return Media.objects.create(
+        media = Media.objects.create(
             user=user,
             title=title,
             friendly_token=friendly_token,
             media_type="video",
-            state="public",
+            state=state,
             encoding_status="success",
         )
+    # Media.save() overwrites state with the portal workflow default on create,
+    # so pin the requested state without re-running the publish side effects.
+    if media.state != state:
+        Media.objects.filter(pk=media.pk).update(state=state)
+        media.state = state
+    return media
 
 
 def _create_comment(user, media, text="test comment", parent=None):
@@ -351,7 +359,13 @@ class OnMentionTest(TestCase):
             actor=actor, media=media, comment=comment, mentioned_users=[user_a, user_b]
         )
         self.assertEqual(notified, {user_a, user_b})
-        self.assertEqual(Notification.objects.filter(notification_type=NotificationType.MENTION).count(), 2)
+        self.assertEqual(
+            Notification.objects.filter(
+                notification_type=NotificationType.MENTION,
+                metadata__comment_id=comment.id,
+            ).count(),
+            2,
+        )
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_self_mention_skipped(self, _):
@@ -361,6 +375,115 @@ class OnMentionTest(TestCase):
 
         notified = NotificationService.on_mention(actor=actor, media=media, comment=comment, mentioned_users=[actor])
         self.assertEqual(notified, set())
+
+
+class MentionTitleRedactionTest(TestCase):
+    """The mention message must not leak a title the recipient cannot open."""
+
+    @patch("notifications.tasks.send_notification_email.delay")
+    def test_public_media_title_is_included(self, _):
+        actor = _create_user("redact_actor")
+        recipient = _create_user("redact_recipient")
+        media = _create_media(_create_user("redact_owner"), title="Public Film", friendly_token="red-pub")
+        comment = _create_comment(actor, media)
+
+        NotificationService.on_mention(actor=actor, media=media, comment=comment, mentioned_users=[recipient])
+
+        notification = Notification.objects.get(recipient=recipient)
+        self.assertIn("Public Film", notification.message)
+
+    @patch("notifications.tasks.send_notification_email.delay")
+    def test_private_media_title_is_hidden_from_outsiders(self, _):
+        actor = _create_user("priv_actor")
+        recipient = _create_user("priv_recipient")
+        media = _create_media(
+            _create_user("priv_owner"),
+            title="Secret Film",
+            friendly_token="red-priv",
+            state="private",
+        )
+        comment = _create_comment(actor, media)
+
+        NotificationService.on_mention(actor=actor, media=media, comment=comment, mentioned_users=[recipient])
+
+        notification = Notification.objects.get(recipient=recipient)
+        self.assertNotIn("Secret Film", notification.message)
+        self.assertEqual(notification.message, f"{actor.username} mentioned you in a comment")
+
+    @patch("notifications.tasks.send_notification_email.delay")
+    def test_private_media_owner_still_sees_the_title(self, _):
+        actor = _create_user("priv_owner_actor")
+        owner = _create_user("priv_owner_recipient")
+        media = _create_media(owner, title="Secret Film", friendly_token="red-priv-own", state="private")
+        comment = _create_comment(actor, media)
+
+        NotificationService.on_mention(actor=actor, media=media, comment=comment, mentioned_users=[owner])
+
+        self.assertIn("Secret Film", Notification.objects.get(recipient=owner).message)
+
+    @patch("notifications.tasks.send_notification_email.delay")
+    def test_restricted_media_title_is_hidden_from_outsiders(self, _):
+        actor = _create_user("restr_actor")
+        recipient = _create_user("restr_recipient")
+        media = _create_media(
+            _create_user("restr_owner"),
+            title="Restricted Film",
+            friendly_token="red-restr",
+            state="restricted",
+        )
+        comment = _create_comment(actor, media)
+
+        NotificationService.on_mention(actor=actor, media=media, comment=comment, mentioned_users=[recipient])
+
+        self.assertNotIn("Restricted Film", Notification.objects.get(recipient=recipient).message)
+
+
+class MentionEditDeduplicationTest(TestCase):
+    """Re-notifying for a mention already delivered on the same comment."""
+
+    @patch("notifications.tasks.send_notification_email.delay")
+    def test_second_call_for_same_comment_creates_no_duplicate(self, _):
+        actor = _create_user("edit_actor")
+        recipient = _create_user("edit_recipient")
+        media = _create_media(_create_user("edit_owner"), friendly_token="edit-tok")
+        comment = _create_comment(actor, media)
+
+        NotificationService.on_mention(actor=actor, media=media, comment=comment, mentioned_users=[recipient])
+        # Simulate an edit that keeps the same handle, well past the 5-minute
+        # duplicate window that _is_duplicate() covers.
+        Notification.objects.filter(recipient=recipient).update(created_at=timezone.now() - timedelta(days=1))
+
+        notified = NotificationService.on_mention(
+            actor=actor, media=media, comment=comment, mentioned_users=[recipient]
+        )
+
+        self.assertEqual(notified, {recipient})
+        self.assertEqual(
+            Notification.objects.filter(recipient=recipient, notification_type=NotificationType.MENTION).count(),
+            1,
+        )
+
+    @patch("notifications.tasks.send_notification_email.delay")
+    def test_a_newly_added_handle_on_the_same_comment_is_notified(self, _):
+        actor = _create_user("edit_actor_2")
+        first = _create_user("edit_first")
+        second = _create_user("edit_second")
+        media = _create_media(_create_user("edit_owner_2"), friendly_token="edit-tok-2")
+        comment = _create_comment(actor, media)
+
+        NotificationService.on_mention(actor=actor, media=media, comment=comment, mentioned_users=[first])
+        notified = NotificationService.on_mention(
+            actor=actor, media=media, comment=comment, mentioned_users=[first, second]
+        )
+
+        self.assertEqual(notified, {first, second})
+        self.assertEqual(
+            Notification.objects.filter(
+                notification_type=NotificationType.MENTION,
+                metadata__comment_id=comment.id,
+            ).count(),
+            2,
+        )
 
 
 class OnNewMediaTest(TestCase):
@@ -547,7 +670,13 @@ class EdgeCaseServiceTest(TestCase):
             mentioned_users=[],
         )
         self.assertEqual(notified, set())
-        self.assertEqual(Notification.objects.filter(notification_type=NotificationType.MENTION).count(), 0)
+        self.assertEqual(
+            Notification.objects.filter(
+                notification_type=NotificationType.MENTION,
+                metadata__comment_id=comment.id,
+            ).count(),
+            0,
+        )
 
     @patch("notifications.tasks.send_notification_email.delay")
     def test_inactive_user_still_receives_single_notification(self, _):
