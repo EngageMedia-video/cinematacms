@@ -94,8 +94,15 @@ class NotificationService:
         if actor and getattr(actor, "is_anonymous", False):
             return None
 
-        # 3. Duplicate check (5-minute window)
-        if actor and cls._is_duplicate(recipient, actor, notification_type, action_url):
+        # 3. Duplicate check (5-minute window).
+        # Mentions are exempt: action_url is the same for every comment on a
+        # film, so the window would swallow a second mention of the same person
+        # in a different comment. on_mention() keys on the comment instead.
+        if (
+            actor
+            and notification_type != NotificationType.MENTION
+            and cls._is_duplicate(recipient, actor, notification_type, action_url)
+        ):
             return None
 
         # 4. Channel preference check — fetch prefs once, reuse for content filter
@@ -202,17 +209,62 @@ class NotificationService:
             metadata={},
         )
 
+    @staticmethod
+    def _unique_users(users):
+        """The given users without repeats, in first-seen order.
+
+        A comment that names the same person more than once — "@naufal @naufal"
+        — is one mention as far as the recipient is concerned.
+        """
+        seen = set()
+        unique = []
+        for user in users:
+            if user.pk in seen:
+                continue
+            seen.add(user.pk)
+            unique.append(user)
+        return unique
+
+    @classmethod
+    def _mention_message(cls, actor, media, recipient):
+        """Mention text for one recipient, without leaking a title they cannot see."""
+        from files.methods import can_user_view_media
+
+        if can_user_view_media(recipient, media):
+            return f"{actor.username} mentioned you in a comment on '{media.title}'"
+        return f"{actor.username} mentioned you in a comment"
+
+    @classmethod
+    def _already_mentioned_in_comment(cls, recipient, comment):
+        """Whether ``recipient`` already holds a mention notification for ``comment``.
+
+        Keyed on the comment rather than on a time window, so editing a comment
+        never re-notifies someone for a mention they were already told about.
+        """
+        return Notification.objects.filter(
+            recipient=recipient,
+            notification_type=NotificationType.MENTION,
+            metadata__comment_id=comment.id,
+        ).exists()
+
     @classmethod
     def on_mention(cls, actor, media, comment, mentioned_users):
         """Creates mention notifications. Returns set of notified users
         (used by on_comment for overlap prevention)."""
         notified = set()
-        for user in mentioned_users:
+        for user in cls._unique_users(mentioned_users):
+            # A repeat mention of the same person in the same comment — an edit
+            # that keeps the handle — must not produce a second notification.
+            # They still count as notified so the owner notification stays deduped.
+            if cls._already_mentioned_in_comment(user, comment):
+                notified.add(user)
+                continue
+
             result = cls._create_notification(
                 recipient=user,
                 actor=actor,
                 notification_type=NotificationType.MENTION,
-                message=f"{actor.username} mentioned you in a comment on '{media.title}'",
+                message=cls._mention_message(actor, media, user),
                 action_url=f"/view?m={media.friendly_token}",
                 metadata={
                     "media_id": media.id,
