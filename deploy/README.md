@@ -71,7 +71,13 @@ The updater performs these actions:
 3. Installs the application and observability systemd units.
 4. Runs `nginx -t`.
 5. Restores the backup if nginx rejects the configuration.
-6. Restarts the affected services and reloads nginx.
+6. Restarts the application and Celery services, updates the selected
+   observability services, and reloads nginx.
+
+Use `--no-restart` to install and validate the files without changing any
+service state. Run the updater without that option during a maintenance window
+because the application restart briefly interrupts requests and background
+tasks.
 
 Pass new proxy or observability values to change the saved deployment settings:
 

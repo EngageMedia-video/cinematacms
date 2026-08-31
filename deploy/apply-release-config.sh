@@ -295,7 +295,8 @@ trap - ERR
 
 systemctl daemon-reload
 if [ "$NO_RESTART" = false ]; then
-    systemctl enable --now mediacms celery_long celery_short celery_whisper celery_beat
+    systemctl enable mediacms celery_long celery_short celery_whisper celery_beat
+    systemctl restart mediacms celery_long celery_short celery_whisper celery_beat
     if [ "$OBSERVABILITY_MODE" = "local" ]; then
         systemctl enable --now cinematacms-prometheus cinematacms-otelcol
     else
