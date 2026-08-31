@@ -1,5 +1,6 @@
 import { splitTextByTimestamps } from '../utils/timestamp';
 import { seekPlayerTo } from '../utils/videoPlayer';
+import { mentionProfileHref, splitTextByMentions } from '../utils/mentions';
 
 function buildSeekHref(seconds) {
 	if (typeof window === 'undefined') return `?t=${seconds}`;
@@ -16,7 +17,7 @@ export function CommentText({ text }) {
 		<>
 			{lines.map((line, lineIdx) => (
 				<span key={lineIdx} className="whitespace-pre-wrap break-words">
-					{splitTextByTimestamps(line).map((seg, segIdx) =>
+					{splitTextByTimestamps(line).flatMap((seg, segIdx) =>
 						seg.type === 'timestamp' ? (
 							<a
 								key={segIdx}
@@ -35,7 +36,20 @@ export function CommentText({ text }) {
 								{seg.value}
 							</a>
 						) : (
-							<span key={segIdx}>{seg.value}</span>
+							// Plain runs are scanned again so an @handle becomes a profile link.
+							splitTextByMentions(seg.value).map((part, partIdx) =>
+								part.type === 'mention' ? (
+									<a
+										key={`${segIdx}-${partIdx}`}
+										href={mentionProfileHref(part.handle)}
+										className="font-medium text-text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus rounded-sm"
+									>
+										{part.value}
+									</a>
+								) : (
+									<span key={`${segIdx}-${partIdx}`}>{part.value}</span>
+								)
+							)
 						)
 					)}
 					{lineIdx < lines.length - 1 ? '\n' : null}

@@ -1,6 +1,9 @@
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '../../../shared/components/Button';
 import { useSubmitComment } from '../hooks/useSubmitComment';
+import { useMentionAutocomplete } from '../hooks/useMentionAutocomplete';
+import { MentionHighlightInput } from './MentionHighlightInput';
+import { mentionRanges } from '../utils/mentions';
 import { usePlayerReady } from '../hooks/usePlayerReady';
 import { getCurrentPlayerTime } from '../utils/videoPlayer';
 import { formatTimestamp } from '../utils/timestamp';
@@ -27,6 +30,35 @@ export function CommentForm({ friendlyToken }) {
 	const [error, setError] = useState(null);
 	const playerReady = usePlayerReady();
 	const submitMutation = useSubmitComment(friendlyToken);
+	// Handles the user picked from the suggestion menu. A picked mention is
+	// deleted as one unit; a handle still being typed is not.
+	const [committedHandles, setCommittedHandles] = useState([]);
+
+	const handleMentionReplaced = useCallback((nextValue, picked) => {
+		setValue(nextValue);
+		if (!picked?.username) return;
+		setCommittedHandles((current) =>
+			current.some((handle) => handle.toLowerCase() === picked.username.toLowerCase())
+				? current
+				: [...current, picked.username]
+		);
+	}, []);
+
+	const mentions = useMentionAutocomplete({
+		inputRef: textareaRef,
+		onReplace: handleMentionReplaced,
+		enabled: !isAnonymous,
+	});
+
+	// Forget a handle once its mention is no longer in the text, so retyping it
+	// by hand starts out editable again.
+	useEffect(() => {
+		const present = new Set(mentionRanges(value).map((range) => range.handle.toLowerCase()));
+		setCommittedHandles((current) => {
+			const kept = current.filter((handle) => present.has(handle.toLowerCase()));
+			return kept.length === current.length ? current : kept;
+		});
+	}, [value]);
 
 	const trimmed = value.trim();
 	const composed = timestamp ? `${timestamp} ${trimmed}`.trim() : trimmed;
@@ -39,6 +71,7 @@ export function CommentForm({ friendlyToken }) {
 			onSuccess: () => {
 				setValue('');
 				setTimestamp(null);
+				setCommittedHandles([]);
 			},
 			onError: (err) => setError(err?.message || 'Failed to submit comment.'),
 		});
@@ -57,6 +90,9 @@ export function CommentForm({ friendlyToken }) {
 	};
 
 	const handleKeyDown = (event) => {
+		// While the @mention menu is open, Enter picks the highlighted person
+		// rather than posting a half-written comment.
+		if (mentions.isMenuOpen()) return;
 		if (event.key === 'Enter' && !event.isComposing && event.keyCode !== 229) {
 			event.preventDefault();
 			submit();
@@ -109,15 +145,15 @@ export function CommentForm({ friendlyToken }) {
 				<label htmlFor={`comment-input-${friendlyToken}`} className="sr-only">
 					Leave a comment
 				</label>
-				<input
-					ref={textareaRef}
+				<MentionHighlightInput
+					inputRef={textareaRef}
 					id={`comment-input-${friendlyToken}`}
-					type="text"
 					value={value}
-					onChange={(event) => setValue(event.target.value)}
+					onChange={setValue}
 					onKeyDown={handleKeyDown}
+					committedHandles={committedHandles}
 					placeholder="Leave a comment..."
-					className="mb-0 block h-6 min-w-0 flex-1 border-0 bg-transparent p-0 text-sm leading-6 text-text-strong placeholder:text-text-muted focus:outline-none focus:ring-0"
+					className="mb-0 block border-0 placeholder:text-text-muted focus:outline-none focus:ring-0"
 				/>
 			</div>
 
