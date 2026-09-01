@@ -119,7 +119,7 @@ class NotificationService:
             metadata=metadata,
         )
 
-        # 7. Route to email if needed (deferred until transaction commits)
+        # 7. Route to email. The delivery module publishes only after commit.
         if channel == NotificationChannel.EMAIL:
             from django.db import transaction as db_transaction
 

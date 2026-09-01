@@ -337,6 +337,7 @@ def contact_user(request, username):
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[recipient.email],
         reply_to=[sender.email],
+        headers={"X-Cinemata-Email-Kind": "contact_form"},
     )
     if not recipient_email.send(fail_silently=True):
         logger.error(
@@ -360,6 +361,7 @@ def contact_user(request, username):
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[sender.email],
+        headers={"X-Cinemata-Email-Kind": "contact_form"},
     )
     if not sender_copy.send(fail_silently=True):
         logger.error(

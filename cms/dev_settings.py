@@ -33,11 +33,11 @@ INSTALLED_APPS = [
     "files.apps.FilesConfig",
     "users.apps.UsersConfig",
     "actions.apps.ActionsConfig",
+    "email_delivery.apps.EmailDeliveryConfig",
     "debug_toolbar",
     "mptt",
     "crispy_forms",
     "uploader.apps.UploaderConfig",
-    "djcelery_email",
     "ckeditor",
     "django_recaptcha",
 ]
@@ -346,6 +346,12 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 EMAIL_HOST = "mediacms.io"
 EMAIL_PORT = 587
 ADMIN_EMAIL_LIST = ["info@mediacms.io"]
+EMAIL_BACKEND = "email_delivery.backend.EmailBackend"
+EMAIL_TRANSPORT_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_RECIPIENT_HMAC_VERSION = "dev"
+EMAIL_RECIPIENT_HMAC_KEY = SECRET_KEY
+EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY = ""
+EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION = "previous"
 
 CKEDITOR_CONFIGS = {
     "default": {

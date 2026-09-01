@@ -469,8 +469,8 @@ class SendNotificationEmailTest(TestCase):
         SSL_FRONTEND_HOST="https://test.example.com",
         DEFAULT_FROM_EMAIL="noreply@test.com",
     )
-    @patch("notifications.tasks.EmailMessage")
-    def test_sends_email_with_correct_content(self, mock_email_cls):
+    @patch("notifications.tasks.enqueue")
+    def test_sends_email_with_correct_content(self, mock_enqueue):
         from notifications.tasks import send_notification_email
 
         recipient = _create_user("email_rcpt")
@@ -485,20 +485,19 @@ class SendNotificationEmailTest(TestCase):
         )
         send_notification_email(notif.id)
 
-        mock_email_cls.assert_called_once()
-        call_kwargs = mock_email_cls.call_args[1]
-        self.assertIn("[TestCMS]", call_kwargs["subject"])
-        self.assertIn("https://test.example.com/view/abc", call_kwargs["body"])
-        self.assertIn("preferences", call_kwargs["body"])
-        self.assertEqual(call_kwargs["to"], [recipient.email])
-        mock_email_cls.return_value.send.assert_called_once()
+        mock_enqueue.assert_called_once()
+        envelope = mock_enqueue.call_args.args[0]
+        self.assertIn("[TestCMS]", envelope.subject)
+        self.assertIn("https://test.example.com/view/abc", envelope.text_body)
+        self.assertIn("preferences", envelope.text_body)
+        self.assertEqual(envelope.recipient, recipient.email)
 
-    @patch("notifications.tasks.EmailMessage")
-    def test_handles_missing_notification(self, mock_email_cls):
+    @patch("notifications.tasks.enqueue")
+    def test_handles_missing_notification(self, mock_enqueue):
         from notifications.tasks import send_notification_email
 
         send_notification_email(99999)
-        mock_email_cls.assert_not_called()
+        mock_enqueue.assert_not_called()
 
 
 class NotifyFollowersNewMediaTaskTest(TestCase):
@@ -571,9 +570,9 @@ class EmailValidationTest(TestCase):
         SSL_FRONTEND_HOST="https://test.example.com",
         DEFAULT_FROM_EMAIL="noreply@test.com",
     )
-    @patch("notifications.tasks.EmailMessage")
-    def test_email_skipped_when_recipient_has_no_email(self, mock_email_cls):
-        """Recipient with blank email -> task skips, no EmailMessage call."""
+    @patch("notifications.tasks.enqueue")
+    def test_email_skipped_when_recipient_has_no_email(self, mock_enqueue):
+        """A recipient with no address does not create a delivery receipt."""
         from notifications.tasks import send_notification_email
 
         recipient = _create_user("no_email_user")
@@ -589,16 +588,16 @@ class EmailValidationTest(TestCase):
             metadata={},
         )
         send_notification_email(notif.id)
-        mock_email_cls.assert_not_called()
+        mock_enqueue.assert_not_called()
 
     @override_settings(
         PORTAL_NAME="TestCMS",
         SSL_FRONTEND_HOST="https://test.example.com",
         DEFAULT_FROM_EMAIL="noreply@test.com",
     )
-    @patch("notifications.tasks.EmailMessage")
-    def test_email_preference_recheck_at_send_time(self, mock_email_cls):
-        """If preference changes to in_app between enqueue and send, email is skipped."""
+    @patch("notifications.tasks.enqueue")
+    def test_email_carries_preference_recheck_to_delivery(self, mock_enqueue):
+        """The delivery task receives the notification needed to re-check consent."""
         from notifications.tasks import send_notification_email
 
         recipient = _create_user("recheck_user")
@@ -615,20 +614,23 @@ class EmailValidationTest(TestCase):
             action_url="/view/abc",
             metadata={},
         )
-        # Simulate preference change before task runs
+        send_notification_email(notif.id)
+        envelope = mock_enqueue.call_args.args[0]
+        self.assertEqual(envelope.preference, {"kind": "notification", "id": notif.id})
         pref = NotificationPreference.objects.get(user=recipient)
         pref.on_comment = NotificationChannel.IN_APP
         pref.save()
-        send_notification_email(notif.id)
-        mock_email_cls.assert_not_called()
+        from email_delivery.tasks import _preference_allows
+
+        self.assertFalse(_preference_allows(envelope.preference))
 
     @override_settings(
         PORTAL_NAME="TestCMS",
         SSL_FRONTEND_HOST="https://test.example.com",
         DEFAULT_FROM_EMAIL="noreply@test.com",
     )
-    @patch("notifications.tasks.EmailMessage")
-    def test_email_body_contains_action_link(self, mock_email_cls):
+    @patch("notifications.tasks.enqueue")
+    def test_email_body_contains_action_link(self, mock_enqueue):
         """Email body includes full action URL with site prefix."""
         from notifications.tasks import send_notification_email
 
@@ -643,8 +645,8 @@ class EmailValidationTest(TestCase):
             metadata={},
         )
         send_notification_email(notif.id)
-        mock_email_cls.assert_called_once()
-        body = mock_email_cls.call_args[1]["body"]
+        mock_enqueue.assert_called_once()
+        body = mock_enqueue.call_args.args[0].text_body
         self.assertIn("https://test.example.com/view?m=abc", body)
 
     @override_settings(
@@ -652,8 +654,8 @@ class EmailValidationTest(TestCase):
         SSL_FRONTEND_HOST="https://test.example.com",
         DEFAULT_FROM_EMAIL="noreply@test.com",
     )
-    @patch("notifications.tasks.EmailMessage")
-    def test_email_body_contains_preferences_link(self, mock_email_cls):
+    @patch("notifications.tasks.enqueue")
+    def test_email_body_contains_preferences_link(self, mock_enqueue):
         """Email body includes notification preferences link."""
         from notifications.tasks import send_notification_email
 
@@ -668,6 +670,6 @@ class EmailValidationTest(TestCase):
             metadata={},
         )
         send_notification_email(notif.id)
-        mock_email_cls.assert_called_once()
-        body = mock_email_cls.call_args[1]["body"]
+        mock_enqueue.assert_called_once()
+        body = mock_enqueue.call_args.args[0].text_body
         self.assertIn("/notifications/#preferences", body)

@@ -7,7 +7,13 @@ from unittest.mock import Mock, call, patch
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
-from cms.observability import OpenTelemetryLogFilter, inject_trace_headers
+from cms.observability import (
+    OpenTelemetryLogFilter,
+    OperationAwareSampler,
+    SafeSpanExporter,
+    inject_trace_headers,
+    start_span,
+)
 from cms.observability_middleware import ObservabilityMetricsMiddleware
 from cms.urls import metrics_view
 from files.metrics import classify_endpoint_group
@@ -25,6 +31,55 @@ class ObservabilityConfigTests(SimpleTestCase):
         self.assertTrue(OpenTelemetryLogFilter().filter(record))
         self.assertEqual(record.trace_id, "")
         self.assertEqual(record.span_id, "")
+
+    def test_worker_process_initialization_resets_inherited_state(self):
+        from cms import observability
+
+        observability._tracer_configured = True
+        observability._celery_instrumented = True
+        with patch("cms.observability.configure_celery_observability") as configure:
+            observability.configure_celery_worker_process()
+        self.assertFalse(observability._tracer_configured)
+        self.assertFalse(observability._celery_instrumented)
+        configure.assert_called_once_with()
+
+    @override_settings(OTEL_ENABLED=True)
+    def test_span_filter_keeps_receipt_refs_and_drops_sensitive_content(self):
+        span = Mock()
+        context = Mock()
+        context.__enter__ = Mock(return_value=span)
+        context.__exit__ = Mock(return_value=False)
+        tracer = Mock()
+        tracer.start_as_current_span.return_value = context
+        with patch("cms.observability.get_tracer", return_value=tracer):
+            with start_span(
+                "privacy",
+                {
+                    "email.recipient_ref": "v1:opaque",
+                    "request.authorization": "secret",
+                    "media.filename": "private.mp4",
+                },
+            ):
+                pass
+        span.set_attribute.assert_called_once_with("email.recipient_ref", "v1:opaque")
+
+    def test_export_failure_is_reported_without_raising(self):
+        from opentelemetry.sdk.trace.export import SpanExportResult
+
+        exporter = Mock()
+        exporter.export.side_effect = RuntimeError("collector unavailable")
+        with patch("cms.observability.TELEMETRY_EXPORT_FAILURES_TOTAL") as failures:
+            failures.labels.return_value.inc = Mock()
+            result = SafeSpanExporter(exporter).export([])
+        self.assertEqual(result, SpanExportResult.FAILURE)
+        failures.labels.assert_called_once_with(signal="traces")
+
+    def test_priority_operations_can_sample_above_ordinary_web_requests(self):
+        from opentelemetry.sdk.trace.sampling import Decision
+
+        sampler = OperationAwareSampler(default_ratio=0, priority_ratio=1)
+        self.assertEqual(sampler.should_sample(None, 1, "GET /about").decision, Decision.DROP)
+        self.assertEqual(sampler.should_sample(None, 1, "email.delivery").decision, Decision.RECORD_AND_SAMPLE)
 
 
 class EndpointGroupingTests(SimpleTestCase):
@@ -171,7 +226,7 @@ class RuntimeGaugeTests(SimpleTestCase):
 
         snapshot_gauges = {
             "celery queue depth": metrics.CELERY_QUEUE_DEPTH,
-            "transcription requests": metrics.TRANSCRIPTION_REQUESTS,
+            "transcription database staleness": metrics.TRANSCRIPTION_REQUESTS,
             "stalled encodings": metrics.ENCODING_STALLED,
         }
         for name, gauge in snapshot_gauges.items():
@@ -183,7 +238,9 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
     def test_celery_task_signal_helpers_record_lifecycle(self):
         from files import metrics
 
-        sender = SimpleNamespace(name="encode_media")
+        sender = SimpleNamespace(
+            name="encode_media", request=SimpleNamespace(delivery_info={"routing_key": "long_tasks"})
+        )
         with (
             patch("files.metrics.CELERY_TASKS_TOTAL") as task_total,
             patch("files.metrics.CELERY_TASK_ACTIVE") as task_active,
@@ -198,10 +255,45 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             metrics._on_task_prerun(sender=sender, task_id="task-1")
             metrics._on_task_postrun(sender=sender, task_id="task-1", state="SUCCESS")
 
-        task_total.labels.assert_any_call(task_name="encode_media", state="started")
-        task_total.labels.assert_any_call(task_name="encode_media", state="success")
-        task_active.labels.assert_called_with(task_name="encode_media")
-        duration.labels.assert_called_once_with(task_name="encode_media")
+        task_total.labels.assert_any_call(task_name="encode_media", queue="long_tasks", state="started")
+        task_total.labels.assert_any_call(task_name="encode_media", queue="long_tasks", state="succeeded")
+        task_active.labels.assert_called_with(task_name="encode_media", queue="long_tasks")
+        duration.labels.assert_called_once_with(task_name="encode_media", queue="long_tasks")
+
+    def test_queue_normalization_and_terminal_states_are_bounded(self):
+        from files import metrics
+
+        unknown = SimpleNamespace(name="custom", request=SimpleNamespace(delivery_info={"routing_key": "tenant-42"}))
+        self.assertEqual(metrics.normalize_queue(sender=unknown), "default")
+        with patch("files.metrics.CELERY_TASKS_TOTAL") as task_total:
+            task_total.labels.return_value.inc = Mock()
+            metrics._on_task_failure(sender=unknown, task_id="failed-1")
+            metrics._on_task_retry(sender=unknown, request=SimpleNamespace(id="retry-1"))
+            metrics._on_task_revoked(sender=unknown, request=SimpleNamespace(id="revoked-1"))
+        states = {call.kwargs["state"] for call in task_total.labels.call_args_list}
+        self.assertEqual(states, {"failed", "retried", "revoked"})
+
+    def test_domain_outcome_rejects_unbounded_state(self):
+        from files.metrics import record_domain_outcome
+
+        with self.assertRaises(ValueError):
+            record_domain_outcome("encoding", "user-supplied")
+
+    def test_returned_domain_failure_is_separate_from_celery_success(self):
+        from files import metrics
+
+        sender = SimpleNamespace(
+            name="chunkize_media", request=SimpleNamespace(delivery_info={"routing_key": "short_tasks"})
+        )
+        with (
+            patch("files.metrics.CELERY_TASKS_TOTAL") as task_total,
+            patch("files.metrics.CELERY_TASK_ACTIVE"),
+            patch("files.metrics.record_domain_outcome") as domain,
+        ):
+            task_total.labels.return_value.inc = Mock()
+            metrics._on_task_postrun(sender=sender, task_id="domain-failure", state="SUCCESS", retval=False)
+        task_total.labels.assert_called_with(task_name="chunkize_media", queue="short_tasks", state="succeeded")
+        domain.assert_called_once_with("chunking", "failed", "returned_false")
 
     def test_media_pipeline_observation_uses_low_cardinality_profile_labels(self):
         from files.metrics import observe_media_pipeline
@@ -223,7 +315,8 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             resolution="720",
             codec="h264",
             extension="mp4",
-            status="success",
+            outcome="succeeded",
+            reason_code="none",
         )
         duration.labels.assert_called_once_with(media_type="video")
         duration.labels.return_value.observe.assert_called_once_with(120)

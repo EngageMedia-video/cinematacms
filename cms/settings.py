@@ -67,11 +67,11 @@ INSTALLED_APPS = [
     "users.apps.UsersConfig",
     "actions.apps.ActionsConfig",
     "notifications.apps.NotificationsConfig",
+    "email_delivery.apps.EmailDeliveryConfig",
     "mptt",
     "crispy_forms",
     "crispy_forms_bootstrap2",
     "uploader.apps.UploaderConfig",
-    "djcelery_email",
     "tinymce",
     "django_recaptcha",
     "corsheaders",
@@ -158,13 +158,25 @@ LOGS_DIR = os.path.join(BASE_DIR, "logs")
 
 OTEL_ENABLED = os.getenv("OTEL_ENABLED", "false").lower() in ("1", "true", "yes")
 OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "cinematacms")
+OTEL_SERVICE_NAMESPACE = os.getenv("OTEL_SERVICE_NAMESPACE", "CinemataCMS")
+OTEL_SERVICE_ROLE = os.getenv("OTEL_SERVICE_ROLE", "web")
+OTEL_ENVIRONMENT = os.getenv("OTEL_ENVIRONMENT", "development")
+OTEL_INSTANCE_ID = os.getenv("OTEL_INSTANCE_ID", "unknown")
 OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/traces")
 OTEL_EXPORTER_OTLP_HEADERS = os.getenv("OTEL_EXPORTER_OTLP_HEADERS", "")
 try:
     OTEL_TRACES_SAMPLER_ARG = float(os.getenv("OTEL_TRACES_SAMPLER_ARG", "1.0"))
 except ValueError:
     OTEL_TRACES_SAMPLER_ARG = 1.0
-OBSERVABILITY_CELERY_QUEUES = ["long_tasks", "short_tasks", "whisper_tasks"]
+try:
+    OTEL_PRIORITY_TRACES_SAMPLER_ARG = float(os.getenv("OTEL_PRIORITY_TRACES_SAMPLER_ARG", "1.0"))
+except ValueError:
+    OTEL_PRIORITY_TRACES_SAMPLER_ARG = 1.0
+OBSERVABILITY_CELERY_QUEUES = ["long_tasks", "short_tasks", "whisper_tasks", "email_tasks", "default"]
+EMAIL_RECIPIENT_HMAC_VERSION = os.getenv("EMAIL_RECIPIENT_HMAC_VERSION", "v1")
+EMAIL_RECIPIENT_HMAC_KEY = os.getenv("EMAIL_RECIPIENT_HMAC_KEY", "")
+EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY = os.getenv("EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY", "")
+EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION = os.getenv("EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION", "previous")
 OBSERVABILITY_SLOW_REQUEST_SECONDS = 2.0
 OBSERVABILITY_SLOW_QUERY_SECONDS = 1.0
 
@@ -330,6 +342,18 @@ CELERY_WORKER_SEND_TASK_EVENTS = True
 CELERY_TASK_SEND_SENT_EVENT = True
 
 CELERY_BEAT_SCHEDULE = {
+    "record_beat_freshness": {
+        "task": "record_beat_freshness",
+        "schedule": timedelta(minutes=1),
+    },
+    "recover_stale_email_deliveries": {
+        "task": "recover_stale_email_deliveries",
+        "schedule": timedelta(minutes=1),
+    },
+    "cleanup_email_delivery_receipts": {
+        "task": "cleanup_email_delivery_receipts",
+        "schedule": crontab(hour="2", minute="30"),
+    },
     #    'check_running_states': {
     #        'task': 'check_running_states',
     #        'schedule': crontab(minute='*/10'),
@@ -621,10 +645,8 @@ ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY = False
 X_FRAME_OPTIONS = "SAMEORIGIN"
 # TODO: Configure Content-Security-Policy via django-csp middleware.
 # See todos/006-pending-p2-no-csp-configured.md for implementation details.
-EMAIL_BACKEND = "djcelery_email.backends.CeleryEmailBackend"
-CELERY_EMAIL_TASK_CONFIG = {
-    "queue": "short_tasks",
-}
+EMAIL_BACKEND = "email_delivery.backend.EmailBackend"
+EMAIL_TRANSPORT_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 PRE_UPLOAD_MEDIA_MESSAGE = ""
 

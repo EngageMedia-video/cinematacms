@@ -13,6 +13,7 @@ sys.modules["cms.local_settings"] = _stub
 from .settings import *  # noqa: E402,F401,F403
 
 SECRET_KEY = "ci-test-key-not-for-production"
+EMAIL_RECIPIENT_HMAC_KEY = "ci-test-email-hmac-key-not-for-production"
 DEBUG = False
 CELERY_TASK_ALWAYS_EAGER = True
 

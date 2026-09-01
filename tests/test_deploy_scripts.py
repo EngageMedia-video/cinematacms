@@ -675,7 +675,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertTrue((self.deploy_root / "etc/cinematacms/otelcol-contrib.yml").is_file())
         observability_env = (self.deploy_root / "etc/cinematacms/observability.env").read_text()
         self.assertIn("OTEL_ENABLED=true", observability_env)
-        for unit in ("mediacms", "celery_long", "celery_short", "celery_whisper", "celery_beat"):
+        for unit in ("mediacms", "celery_long", "celery_short", "celery_whisper", "celery_email", "celery_beat"):
             unit_text = (self.deploy_root / f"etc/systemd/system/{unit}.service").read_text()
             self.assertIn("EnvironmentFile=-/etc/cinematacms/observability.env", unit_text)
         site = (self.deploy_root / "etc/nginx/sites-available/mediacms.io").read_text()
@@ -696,7 +696,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         commands = self.command_log.read_text().splitlines()
-        application_services = "mediacms celery_long celery_short celery_whisper celery_beat"
+        application_services = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
         self.assertIn(f"systemctl enable {application_services}", commands)
         self.assertIn(f"systemctl restart {application_services}", commands)
         self.assertNotIn(f"systemctl enable --now {application_services}", commands)
@@ -723,7 +723,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         commands = self.command_log.read_text().splitlines()
         self.assertIn(
-            "systemctl restart mediacms celery_long celery_short celery_whisper celery_beat",
+            "systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat",
             commands,
         )
         self.assertNotIn("systemctl reload-or-restart nginx", commands)

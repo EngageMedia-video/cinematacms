@@ -7,7 +7,6 @@ requires-python = ">=3.10"
 dependencies = [
     "celery==5.6.3",
     "django-allauth==65.19.1",
-    "django-celery-email==3.0.0",
     "django-cors-headers==4.9.0",
     "django-crispy-forms>=2.3,<3.0",
     "crispy-forms-bootstrap2==2024.1",
@@ -50,6 +49,7 @@ dependencies = [
     "opentelemetry-instrumentation-django>=0.65b0",
     "opentelemetry-instrumentation-celery>=0.65b0",
     "opentelemetry-instrumentation-redis>=0.65b0",
+    "opentelemetry-instrumentation-requests>=0.65b0",
     "opentelemetry-instrumentation-psycopg2>=0.65b0",
 ]
 
