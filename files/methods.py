@@ -292,9 +292,15 @@ The %s Team
         notify_items.append(d)
 
     for item in notify_items:
-        email = EmailMessage(item["title"], item["msg"], settings.DEFAULT_FROM_EMAIL, item["to"])
+        email = EmailMessage(
+            item["title"],
+            item["msg"],
+            settings.DEFAULT_FROM_EMAIL,
+            item["to"],
+            headers={"X-Cinemata-Email-Kind": "media_lifecycle"},
+        )
         email.send(fail_silently=True)
-        return True
+    return bool(notify_items)
 
 
 def show_recommended_media(request, limit=100):
@@ -454,7 +460,13 @@ View it on %s
             media.title,
             media_url,
         )
-        email = EmailMessage(title, msg, settings.DEFAULT_FROM_EMAIL, [media.user.email])
+        email = EmailMessage(
+            title,
+            msg,
+            settings.DEFAULT_FROM_EMAIL,
+            [media.user.email],
+            headers={"X-Cinemata-Email-Kind": "activity_notification"},
+        )
         email.send(fail_silently=True)
     return True
 
@@ -565,19 +577,15 @@ The {portal_name} Team
         msg,
         settings.DEFAULT_FROM_EMAIL,
         [user.email],
+        headers={"X-Cinemata-Email-Kind": "role_change"},
     )
     # Follow existing email patterns (fail_silently=True)
     sent_count = email_message.send(fail_silently=True)
     if sent_count:
-        logger.info(
-            f"Role update notification sent to {user.username} ({user.email}) for roles: {', '.join(upgraded_roles)}"
-        )
+        logger.info("Role update notification queued for user %s", user.pk)
         return True
     else:
-        logger.warning(
-            f"Role update notification failed to send to {user.username} ({user.email}) "
-            f"for roles: {', '.join(upgraded_roles)}"
-        )
+        logger.warning("Role update notification could not be queued for user %s", user.pk)
         return False
 
 

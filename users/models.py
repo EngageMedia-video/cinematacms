@@ -260,7 +260,13 @@ Visit user profile page at %s
                 instance.email,
                 settings.SSL_FRONTEND_HOST + instance.get_absolute_url(),
             )
-            email = EmailMessage(title, msg, settings.DEFAULT_FROM_EMAIL, settings.ADMIN_EMAIL_LIST)
+            email = EmailMessage(
+                title,
+                msg,
+                settings.DEFAULT_FROM_EMAIL,
+                settings.ADMIN_EMAIL_LIST,
+                headers={"X-Cinemata-Email-Kind": "administrative"},
+            )
             email.send(fail_silently=True)
 
 
