@@ -3,6 +3,8 @@ import Tribute from 'tributejs';
 import { fetchMentionSuggestions } from '../utils/mentions';
 import '../components/MentionMenu.css';
 
+const SUGGESTION_DEBOUNCE_MS = 150;
+
 const HTML_ESCAPES = {
 	'&': '&amp;',
 	'<': '&lt;',
@@ -67,6 +69,7 @@ export function useMentionAutocomplete({ inputRef, onReplace, enabled = true }) 
 		if (!enabled || !element) return undefined;
 
 		let inFlight = null;
+		let pending = null;
 
 		const tribute = new Tribute({
 			trigger: '@',
@@ -84,13 +87,19 @@ export function useMentionAutocomplete({ inputRef, onReplace, enabled = true }) 
 			menuItemTemplate: renderMenuItem,
 			noMatchTemplate: () => '<span class="mention-menu-empty">No matching people</span>',
 			values: (query, populate) => {
-				inFlight?.abort();
-				inFlight = new AbortController();
-				fetchMentionSuggestions(query, { signal: inFlight.signal })
-					.then(populate)
-					.catch((error) => {
-						if (error?.name !== 'AbortError') populate([]);
-					});
+				// Tribute asks on every keystroke. Debounce below the 300ms the
+				// global search uses, so the menu still feels immediate while a
+				// fast typist stops issuing one icontains query per character.
+				clearTimeout(pending);
+				pending = setTimeout(() => {
+					inFlight?.abort();
+					inFlight = new AbortController();
+					fetchMentionSuggestions(query, { signal: inFlight.signal })
+						.then(populate)
+						.catch((error) => {
+							if (error?.name !== 'AbortError') populate([]);
+						});
+				}, SUGGESTION_DEBOUNCE_MS);
 			},
 		});
 
@@ -102,6 +111,7 @@ export function useMentionAutocomplete({ inputRef, onReplace, enabled = true }) 
 
 		return () => {
 			element.removeEventListener('tribute-replaced', handleReplaced);
+			clearTimeout(pending);
 			inFlight?.abort();
 			tribute.detach(element);
 			tributeRef.current = null;
