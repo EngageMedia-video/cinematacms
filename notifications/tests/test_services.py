@@ -422,6 +422,23 @@ class MentionTitleRedactionTest(TestCase):
         self.assertIn("Secret Film", Notification.objects.get(recipient=owner).message)
 
     @patch("notifications.tasks.send_notification_email.delay")
+    def test_unlisted_media_keeps_its_title(self, _):
+        """Unlisted is link-gated, and the notification carries the link (issue #855)."""
+        actor = _create_user("unlisted_actor")
+        recipient = _create_user("unlisted_recipient")
+        media = _create_media(
+            _create_user("unlisted_owner"),
+            title="Unlisted Film",
+            friendly_token="red-unlisted",
+            state="unlisted",
+        )
+        comment = _create_comment(actor, media)
+
+        NotificationService.on_mention(actor=actor, media=media, comment=comment, mentioned_users=[recipient])
+
+        self.assertIn("Unlisted Film", Notification.objects.get(recipient=recipient).message)
+
+    @patch("notifications.tasks.send_notification_email.delay")
     def test_restricted_media_title_is_hidden_from_outsiders(self, _):
         actor = _create_user("restr_actor")
         recipient = _create_user("restr_recipient")

@@ -4,7 +4,8 @@ import json
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.core import mail
+from django.test import Client, TestCase, override_settings
 
 from files.models import Comment, Media
 from notifications.models import Notification, NotificationType
@@ -133,6 +134,56 @@ class CommentMentionNotificationTest(TestCase):
         }
         notified_for = {notification.metadata["comment_id"] for notification in self._mentions_for(self.mentioned)}
         self.assertEqual(notified_for, comment_ids)
+
+    def _password_protected_media(self):
+        """A film in the state the password gate actually keys on (issue #855)."""
+        media = _create_media(
+            self.owner,
+            title="Locked Film",
+            friendly_token="mention-pw",
+            state="restricted",
+        )
+        media.set_password("filmpassword123")
+        Media.objects.filter(pk=media.pk).update(password=media.password)
+        return media
+
+    def test_password_protected_media_mention_hides_the_title(self, _):
+        """Reproduces issue #855: the mentioned user has neither password nor grant."""
+        media = self._password_protected_media()
+        self.client.login(username="media_owner", password=PASSWORD)
+
+        response = self.client.post(
+            f"/api/v1/media/{media.friendly_token}/comments",
+            data=json.dumps({"text": "take a look @mentioned_user"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        message = self._mentions_for(self.mentioned).get().message
+        self.assertNotIn("Locked Film", message)
+        self.assertEqual(message, "media_owner mentioned you in a comment")
+
+    @override_settings(CELERY_EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_the_mention_email_never_carries_a_hidden_title(self, _):
+        """The title must be gone before the row is written; an email cannot be un-sent."""
+        from notifications.tasks import send_notification_email
+
+        media = self._password_protected_media()
+        self.client.login(username="media_owner", password=PASSWORD)
+        self.client.post(
+            f"/api/v1/media/{media.friendly_token}/comments",
+            data=json.dumps({"text": "take a look @mentioned_user"}),
+            content_type="application/json",
+        )
+
+        notification = self._mentions_for(self.mentioned).get()
+        mail.outbox = []
+        send_notification_email(notification.id)
+
+        self.assertEqual(len(mail.outbox), 1)
+        sent = mail.outbox[0]
+        self.assertNotIn("Locked Film", sent.subject)
+        self.assertNotIn("Locked Film", sent.body)
 
     def test_private_media_mention_hides_the_title(self, _):
         private_media = _create_media(
