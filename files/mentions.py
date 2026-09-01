@@ -65,5 +65,17 @@ def resolve_mentioned_users(text, exclude=None):
     if exclude is not None and getattr(exclude, "pk", None) is not None:
         users = users.exclude(pk=exclude.pk)
 
-    by_handle = {user.username.lower(): user for user in users}
-    return [by_handle[handle.lower()] for handle in handles if handle.lower() in by_handle]
+    # Usernames are unique but case-sensitive, so "Alice" and "alice" can both
+    # exist and one iexact lookup can return both. Prefer the exact spelling the
+    # comment used; fall back to a case-insensitive match for a hand-typed handle.
+    exact = {user.username: user for user in users}
+    folded = {}
+    for user in users:
+        folded.setdefault(user.username.lower(), user)
+
+    resolved = []
+    for handle in handles:
+        user = exact.get(handle) or folded.get(handle.lower())
+        if user is not None:
+            resolved.append(user)
+    return resolved
