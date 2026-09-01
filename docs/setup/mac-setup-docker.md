@@ -96,6 +96,7 @@ cd ..
 Now that you have cloned the `cinematacms` repository and are inside the `cinematacms` directory, start the PostgreSQL and Redis services using the Makefile:
 
 ```zsh
+cd cinematacms
 make docker-up
 ```
 
