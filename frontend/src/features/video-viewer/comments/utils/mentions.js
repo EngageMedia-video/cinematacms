@@ -5,10 +5,16 @@
  * The handle pattern mirrors `files.mentions.MENTION_RE` on the server: a
  * mention starts at the beginning of the text or after whitespace, so an email
  * address is never read as a mention, and trailing sentence punctuation is not
- * part of the handle.
+ * part of the handle. The two patterns must stay in step, or a handle the
+ * server resolves would render here as plain text or, worse, as a truncated
+ * link to the wrong profile.
  */
 
-const MENTION_PATTERN = /(^|\s)@(\w[\w.@_-]*)/g;
+// The handle class matches Python's ``\w`` (letters, digits, marks, connector
+// punctuation) rather than JavaScript's ASCII-only ``\w``, so a handle such as
+// "@José" parses the same here as it does in files/mentions.py. Django's
+// UnicodeUsernameValidator accepts those usernames.
+const MENTION_PATTERN = /(^|\s)@([\p{L}\p{N}\p{M}\p{Pc}][\p{L}\p{N}\p{M}\p{Pc}.@-]*)/gu;
 const TRAILING_PUNCTUATION = /[.\-_@]+$/;
 
 export const MENTION_SUGGESTIONS_URL = '/api/v1/users/mention-suggestions';

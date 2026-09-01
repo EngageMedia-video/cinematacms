@@ -17,6 +17,15 @@ describe('CommentText mentions', () => {
 		expect(screen.getByRole('link', { name: '@bob' })).toBeInTheDocument();
 	});
 
+	it('links a non-ASCII handle to the right profile', () => {
+		render(<CommentText text="thanks @José" />);
+
+		expect(screen.getByRole('link', { name: '@José' })).toHaveAttribute(
+			'href',
+			`/user/${encodeURIComponent('José')}`
+		);
+	});
+
 	it('does not linkify an email address', () => {
 		render(<CommentText text="mail alice@example.com" />);
 
