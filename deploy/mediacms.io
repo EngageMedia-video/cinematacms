@@ -1,3 +1,4 @@
+# Managed by CinemataCMS deployment tooling.
 server {
     listen 80 ;
     server_name localhost;
@@ -52,6 +53,8 @@ server {
 
     # All media requests now go through Django for authentication
     # Django will use X-Accel-Redirect to serve files efficiently
+
+    include /etc/nginx/snippets/cinematacms-metrics.conf;
 
     location / {
 
@@ -114,6 +117,8 @@ server {
 
     # All media requests now go through Django for authentication
     # Django will use X-Accel-Redirect to serve files efficiently
+
+    include /etc/nginx/snippets/cinematacms-metrics.conf;
 
     location / {
 

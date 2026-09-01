@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load allauth %}
 {% load allauth static %}
-{% block headtitle %}| Two-Factor Authentication {% endblock headtitle %}
+{% block headtitle %}Two-factor authentication - {{ block.super }}{% endblock headtitle %}
 
 {% block auth_icon %}{% include "account/snippets/auth_icon.html" with icon="mfa" %}{% endblock auth_icon %}
 

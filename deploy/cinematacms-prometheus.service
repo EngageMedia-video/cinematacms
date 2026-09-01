@@ -1,0 +1,14 @@
+[Unit]
+Description=CinemataCMS Prometheus
+After=network.target mediacms.service
+
+[Service]
+Type=simple
+User=prometheus
+Group=prometheus
+ExecStart=/usr/bin/prometheus --config.file=/etc/cinematacms/prometheus.yml --storage.tsdb.path=/var/lib/prometheus --web.listen-address=127.0.0.1:9090
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

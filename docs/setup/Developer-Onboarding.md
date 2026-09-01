@@ -481,12 +481,12 @@ if command -v mp4hls &> /dev/null; then
 # MP4HLS command path
 MP4HLS_COMMAND = '$(which mp4hls)'
 " >> cms/local_settings.py
-    echo "✅ MP4HLS configured"
+    echo "MP4HLS configured"
 else
-    echo "⚠️  MP4HLS not found - HLS streaming will be disabled"
+    echo "MP4HLS not found. HLS streaming will be disabled."
     echo "   Install bento4 if you need HLS support:"
     echo "   - macOS: brew install bento4"
-    echo "   - Ubuntu: Download from https://github.com/axiomatic-systems/Bento4/releases"
+    echo "   - Ubuntu: follow the Bento4 source build instructions"
 fi
 ```
 
@@ -499,22 +499,15 @@ brew install bento4
 ```
 
 **Ubuntu/Linux:**
-```bash
-# Download latest release
-wget https://github.com/axiomatic-systems/Bento4/releases/download/v1-6-0-639/Bento4-SDK-1-6-0-639.x86_64-unknown-linux.zip
-unzip Bento4-SDK-*.zip
-sudo cp Bento4-SDK-*/bin/mp4hls /usr/local/bin/
-sudo chmod +x /usr/local/bin/mp4hls
-```
+
+Follow the
+[Bento4 CMake build instructions](https://github.com/axiomatic-systems/Bento4/blob/v1.6.0-641/README.md#on-linux-and-other-platforms-using-cmake).
+The production `install.sh` builds the pinned source revision for both `amd64`
+and `arm64`.
 
 **Windows (WSL2):**
-```bash
-# Same as Ubuntu/Linux
-wget https://github.com/axiomatic-systems/Bento4/releases/download/v1-6-0-639/Bento4-SDK-1-6-0-639.x86_64-unknown-linux.zip
-unzip Bento4-SDK-*.zip
-sudo cp Bento4-SDK-*/bin/mp4hls /usr/local/bin/
-sudo chmod +x /usr/local/bin/mp4hls
-```
+
+Follow the same Bento4 source build instructions as Ubuntu.
 
 </details>
 

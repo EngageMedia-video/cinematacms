@@ -2,7 +2,7 @@
 {% load static %}
 {% load django_vite %}
 
-{% block headtitle %}Countries - {{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}Countries - {{ block.super }}{% endblock headtitle %}
 
 {% block headermeta %}
 

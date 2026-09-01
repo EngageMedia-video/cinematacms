@@ -24,6 +24,8 @@ from typing import Any
 from django.conf import settings
 from django.core.cache import cache
 
+from .metrics import record_cache_operation
+
 logger = logging.getLogger(__name__)
 
 # Cache configuration constants
@@ -97,9 +99,13 @@ def get_cached_permission(cache_key: str) -> bool | None:
         result = cache.get(cache_key, version=CACHE_VERSION)
         if result is not None:
             logger.debug(f"Cache hit for key: {cache_key}")
+            record_cache_operation("permission", "get", hit=True)
+        else:
+            record_cache_operation("permission", "get", hit=False)
         return result
     except Exception as e:
         logger.warning(f"Cache get failed for key {cache_key}: {e}")
+        record_cache_operation("permission", "get", ok=False)
         return None
 
 
@@ -121,9 +127,11 @@ def set_cached_permission(cache_key: str, permission_result: bool, timeout: int 
     try:
         cache.set(cache_key, permission_result, timeout, version=CACHE_VERSION)
         logger.debug(f"Cached permission result for key: {cache_key}")
+        record_cache_operation("permission", "set")
         return True
     except Exception as e:
         logger.warning(f"Cache set failed for key {cache_key}: {e}")
+        record_cache_operation("permission", "set", ok=False)
         return False
 
 
@@ -140,9 +148,11 @@ def batch_get_cached_permissions(cache_keys: list) -> dict[str, bool | None]:
     try:
         results = cache.get_many(cache_keys, version=CACHE_VERSION)
         logger.debug(f"Batch cache get: {len(results)}/{len(cache_keys)} hits")
+        record_cache_operation("permission", "get_many", hit=bool(results))
         return results
     except Exception as e:
         logger.warning(f"Batch cache get failed: {e}")
+        record_cache_operation("permission", "get_many", ok=False)
         return {}
 
 
@@ -163,9 +173,11 @@ def batch_set_cached_permissions(cache_data: dict[str, bool], timeout: int | Non
     try:
         cache.set_many(cache_data, timeout, version=CACHE_VERSION)
         logger.debug(f"Batch cache set: {len(cache_data)} entries")
+        record_cache_operation("permission", "set_many")
         return True
     except Exception as e:
         logger.warning(f"Batch cache set failed: {e}")
+        record_cache_operation("permission", "set_many", ok=False)
         return False
 
 

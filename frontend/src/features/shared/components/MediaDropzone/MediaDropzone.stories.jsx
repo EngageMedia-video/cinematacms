@@ -117,7 +117,7 @@ export const Disabled = {
 };
 
 export const WithSelectionState = {
-	render: (args) => {
+	render: function SelectionStateStory(args) {
 		const [selectedNames, setSelectedNames] = useState([]);
 
 		return (

@@ -2,13 +2,12 @@
 {% load static %}
 {% load django_vite %}
 
-{% block headtitle %}404 - {{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}404 - {{ block.super }}{% endblock headtitle %}
 
 {% block headermeta %}
 <meta charset="utf-8">
 <meta http-equiv="x-ua-compatible" content="ie=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Page Not Found - {{ PORTAL_NAME }}</title>
 {% endblock headermeta %}
 
 {% block topimports %}{% vite_asset 'src/entries/error.js' %}{% endblock topimports %}

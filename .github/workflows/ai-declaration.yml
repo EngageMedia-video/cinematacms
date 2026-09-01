@@ -1,0 +1,92 @@
+name: AI contribution declaration
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+
+concurrency:
+  group: ai-declaration-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  declaration:
+    name: Validate AI declaration
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout the validator from the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Validate the declaration
+        id: validation
+        continue-on-error: true
+        env:
+          PR_BODY: ${{ github.event.pull_request.body || '' }}
+        run: node .github/scripts/ai-declaration.mjs
+
+      - name: Update the status and label
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          ASSISTED: ${{ steps.validation.outputs.assisted }}
+          MESSAGE: ${{ steps.validation.outputs.message }}
+          VALID: ${{ steps.validation.outputs.valid }}
+        with:
+          script: |
+            const label = 'ai-assisted';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+            const sha = context.payload.pull_request.head.sha;
+            const valid = process.env.VALID === 'true';
+            const assisted = valid && process.env.ASSISTED === 'true';
+
+            await github.rest.repos.createCommitStatus({
+              owner,
+              repo,
+              sha,
+              state: valid ? 'success' : 'failure',
+              context: 'AI declaration',
+              description: process.env.MESSAGE,
+              target_url: `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`,
+            });
+
+            if (assisted) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: label });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: label,
+                  color: '8250df',
+                  description: 'The contributor declared substantive AI assistance.',
+                });
+              }
+
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: [label],
+              });
+            } else {
+              try {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number, name: label });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+              }
+            }
+
+            if (!valid) core.setFailed(process.env.MESSAGE);

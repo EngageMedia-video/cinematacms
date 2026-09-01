@@ -109,6 +109,7 @@ function SkeletonGrid() {
 
 export function SectionRow({ items = [], isLoading = false, isError = false, variant = 'default', children }) {
 	const isEmpty = !isLoading && items.length === 0;
+	const value = useMemo(() => ({ items, variant }), [items, variant]);
 
 	if (isError || isEmpty) {
 		return null;
@@ -125,8 +126,6 @@ export function SectionRow({ items = [], isLoading = false, isError = false, var
 			</section>
 		);
 	}
-
-	const value = useMemo(() => ({ items, variant }), [items, variant]);
 
 	return (
 		<SectionRowContext value={value}>

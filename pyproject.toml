@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "celery==5.6.3",
-    "django-allauth==65.16.1",
+    "django-allauth==65.19.1",
     "django-celery-email==3.0.0",
     "django-cors-headers==4.9.0",
     "django-crispy-forms>=2.3,<3.0",
@@ -17,39 +17,53 @@ dependencies = [
     "django-mptt==0.18.0",
     "django-recaptcha==4.1.0",
     "django-redis==6.0.0",
-    "django-silk==5.5.0",
-    "django==5.2.13",
-    "djangorestframework==3.17.1",
+    "django-silk==5.5.2",
+    "django==5.2.17",
+    "djangorestframework==3.18.0",
     "psycopg2-binary==2.9.12",
     "filetype==1.2.0",
     "flake8==7.3.0",
     "ipython==8.39.0",
     "m3u8==6.0.0",
-    "markdown==3.10.2",
+    "markdown==3.10.3",
     "pep8==1.7.1",
-    "pillow==12.2.0",
-    "python-dotenv==1.2.2",
-    "requests==2.33.1",
-    "urllib3>=2.6.3",
+    "pillow==12.3.0",
+    "python-dotenv==1.2.3",
+    "requests==2.34.2",
+    "urllib3>=2.7.0",
     "rpdb==0.2.0",
-    "tqdm==4.67.3",
+    "tqdm==4.70.0",
     "whitenoise==6.12.0",
-    "fido2==2.2.0",
+    "fido2==2.2.1",
     "uwsgi==2.0.31",
     "qrcode==8.2",
     "django-tinymce==5.0.0",
-    "django-maintenance-mode==0.22.0",
+    "django-maintenance-mode==0.23.0",
+    "django-prometheus>=2.4.1",
     "django-vite>=3.1.0",
     "django-waffle>=4.2.0,<5.0",
-    "prometheus-client>=0.25.0",
+    "prometheus-client>=0.26.0",
+    "python-json-logger>=4.2.0",
+    "opentelemetry-api>=1.44.0",
+    "opentelemetry-sdk>=1.44.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.44.0",
+    "opentelemetry-instrumentation-django>=0.65b0",
+    "opentelemetry-instrumentation-celery>=0.65b0",
+    "opentelemetry-instrumentation-redis>=0.65b0",
+    "opentelemetry-instrumentation-psycopg2>=0.65b0",
 ]
 
 [dependency-groups]
-dev = ["basedpyright>=1.39.3", "ruff>=0.15.12", "pre-commit>=4.6.0"]
+dev = [
+    "basedpyright>=1.39.10",
+    "coverage[toml]>=7.6,<8",
+    "pre-commit>=4.6.2",
+    "ruff>=0.16.5",
+]
 e2e = [
-    "playwright>=1.59.0",
-    "pytest>=9.0.3",
-    "pytest-playwright>=0.7.2",
+    "playwright>=1.62.0",
+    "pytest>=9.1.1",
+    "pytest-playwright>=0.9.0",
 ]
 
 [tool.pytest.ini_options]
@@ -75,6 +89,14 @@ markers = [
     "contact: Contact form tests",
 ]
 addopts = "--tb=short"
+
+[tool.coverage.run]
+branch = true
+source = ["actions", "cms", "files", "notifications", "uploader", "users"]
+
+[tool.coverage.report]
+omit = ["*/migrations/*", "*/tests/*", "*/tests.py"]
+skip_empty = true
 
 # ── Ruff (linter + formatter) ──────────────────────────────
 [tool.ruff]

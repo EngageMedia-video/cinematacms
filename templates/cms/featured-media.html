@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load django_vite %}
 
-{% block headtitle %}Staff picks - {{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}Staff picks - {{ block.super }}{% endblock headtitle %}
 
 {% block headermeta %}
 

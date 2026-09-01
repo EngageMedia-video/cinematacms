@@ -2,7 +2,7 @@
 {% load static %}
 {% load django_vite %}
 
-{% block headtitle %}Popular - {{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}Popular - {{ block.super }}{% endblock headtitle %}
 
 {% block headermeta %}
 

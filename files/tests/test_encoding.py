@@ -1,5 +1,8 @@
 import unittest
-from unittest.mock import Mock, patch
+from contextlib import ExitStack, contextmanager
+from datetime import datetime, timezone
+from types import SimpleNamespace
+from unittest.mock import Mock, mock_open, patch
 
 from django.test import override_settings
 
@@ -177,3 +180,289 @@ class TestEncodingProgressTracking(unittest.TestCase):
                             # We can't easily test this without refactoring encode_media.
                             # The integration test will cover the behavior.
                             pass
+
+
+class TestFFmpegSpanLifetime(unittest.TestCase):
+    def _run_safety_break(self, time_patch):
+        from files.tasks import encode_media
+
+        span_active = False
+        observed_span_states = []
+        output_count = 0
+
+        @contextmanager
+        def fake_span(*_args, **_kwargs):
+            nonlocal span_active
+            span_active = True
+            try:
+                yield
+            finally:
+                span_active = False
+
+        def output_stream():
+            nonlocal output_count
+            while True:
+                output_count += 1
+                if output_count == 1:
+                    observed_span_states.append(span_active)
+                yield "unparseable"
+
+        def check_media_exists(_media_id, _encoding_id, stage):
+            if stage == "final_save":
+                observed_span_states.append(span_active)
+                return False
+            return True
+
+        media = SimpleNamespace(
+            pk=1,
+            media_type="video",
+            duration=120,
+            media_info="{}",
+            media_file=SimpleNamespace(path="/tmp/source.mp4"),
+        )
+        profile = SimpleNamespace(id=2, extension="mp4", resolution=720, codec="h264")
+        encoding = SimpleNamespace(
+            id=3,
+            profile=profile,
+            status="pending",
+            temp_file="",
+            commands="",
+            logs="",
+            progress=0,
+            save=Mock(),
+        )
+        query = Mock()
+        query.count.return_value = 1
+        query.exclude.return_value.delete = Mock()
+        backend = SimpleNamespace(
+            encode=Mock(return_value=output_stream()),
+            terminate_process=Mock(),
+        )
+
+        with (
+            patch("files.tasks.Media.objects.get", return_value=media),
+            patch("files.tasks.EncodeProfile.objects.get", return_value=profile),
+            patch("files.tasks.Encoding.objects.get", return_value=encoding),
+            patch("files.tasks.Encoding.objects.filter", return_value=query),
+            patch("files.tasks.create_temp_file", side_effect=["/tmp/output.mp4", "/tmp/pass"]),
+            patch("files.tasks.produce_ffmpeg_commands", return_value=[["ffmpeg", "-i", "source"]]),
+            patch("files.tasks.FFmpegBackend", return_value=backend),
+            patch("files.tasks.start_span", side_effect=fake_span),
+            patch("files.tasks.calculate_seconds", return_value=None),
+            time_patch,
+            patch("files.tasks.logger.error"),
+            patch("files.tasks.logger.info"),
+            patch("files.tasks._check_media_exists_or_cleanup", side_effect=check_media_exists),
+        ):
+            encode_media.run("token", profile.id, encoding.id, "url")
+
+        return observed_span_states
+
+    @override_settings(TEMP_DIRECTORY="/tmp")
+    def test_ffmpeg_generator_is_closed_before_timeout_break_final_save(self):
+        observed_span_states = self._run_safety_break(patch("files.tasks.time.time", side_effect=[0, 1, 1801]))
+
+        self.assertEqual(observed_span_states, [True, False])
+
+    @override_settings(TEMP_DIRECTORY="/tmp")
+    def test_ffmpeg_generator_is_closed_before_iteration_limit_final_save(self):
+        observed_span_states = self._run_safety_break(patch("files.tasks.time.time", return_value=0))
+
+        self.assertEqual(observed_span_states, [True, False])
+
+
+class TestEncodingOutcomeObservation(unittest.TestCase):
+    def _run_encode_media(
+        self,
+        *,
+        extension="mp4",
+        duration=120,
+        ffmpeg_commands=None,
+        output_exists=False,
+        output_type=None,
+        media_info=None,
+        backend_exception=None,
+        capture_exception=False,
+        task_retries=None,
+    ):
+        from files.tasks import encode_media
+
+        media = SimpleNamespace(
+            pk=1,
+            media_type="video",
+            duration=duration,
+            media_info=media_info or "{}",
+            media_file=SimpleNamespace(path="/tmp/source.mp4"),
+        )
+        profile = SimpleNamespace(id=2, extension=extension, resolution=720, codec="h264")
+        encoding = SimpleNamespace(
+            id=3,
+            profile=profile,
+            status="pending",
+            temp_file="",
+            commands="",
+            logs="",
+            progress=0,
+            add_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            update_date=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            media_file=Mock(),
+            save=Mock(),
+        )
+        query = Mock()
+        query.count.return_value = 1
+        query.exclude.return_value.delete = Mock()
+        observer = Mock()
+        backend = SimpleNamespace(
+            encode=(
+                Mock(side_effect=backend_exception) if backend_exception is not None else Mock(return_value=iter(()))
+            ),
+            terminate_process=Mock(),
+        )
+
+        @contextmanager
+        def temporary_directory():
+            yield "/tmp/encoding-test"
+
+        output_file = "/tmp/encoding-test/output.mp4"
+        pass_file = "/tmp/encoding-test/pass"
+        temporary_files = [output_file, pass_file]
+        if extension == "gif":
+            temporary_files = ["/tmp/encoding-test/output.gif"]
+            output_file = temporary_files[0]
+
+        def path_exists(path):
+            return path == output_file and output_exists
+
+        with ExitStack() as stack:
+            stack.enter_context(patch("files.tasks.Media.objects.get", return_value=media))
+            stack.enter_context(patch("files.tasks.EncodeProfile.objects.get", return_value=profile))
+            stack.enter_context(patch("files.tasks.Encoding.objects.get", return_value=encoding))
+            stack.enter_context(patch("files.tasks.Encoding.objects.filter", return_value=query))
+            stack.enter_context(patch("files.tasks.create_temp_file", side_effect=temporary_files))
+            stack.enter_context(
+                patch(
+                    "files.tasks.produce_ffmpeg_commands",
+                    return_value=ffmpeg_commands if ffmpeg_commands is not None else [["ffmpeg", "-i", "source"]],
+                )
+            )
+            stack.enter_context(patch("files.tasks.FFmpegBackend", return_value=backend))
+            stack.enter_context(patch("files.tasks._check_media_exists_or_cleanup", return_value=True))
+            stack.enter_context(patch("files.tasks.observe_media_pipeline", observer))
+            if task_retries is not None:
+                stack.enter_context(patch.object(encode_media.request, "retries", task_retries))
+            stack.enter_context(patch("files.tasks.os.path.exists", side_effect=path_exists))
+            if output_type is not None:
+                stack.enter_context(patch("files.tasks.get_file_type", return_value=output_type))
+            if extension != "gif":
+                stack.enter_context(patch("files.tasks.media_file_info", return_value=media_info or {}))
+            if output_exists:
+                stack.enter_context(patch("files.tasks.os.path.getsize", return_value=1))
+                stack.enter_context(patch("builtins.open", mock_open(read_data=b"encoded")))
+                stack.enter_context(patch("files.tasks.File"))
+            if extension == "gif":
+                stack.enter_context(patch("files.tasks.run_command", return_value={"out": ""}))
+                stack.enter_context(patch("files.tasks.rm_file"))
+
+            try:
+                result = encode_media.run("token", profile.id, encoding.id, "url")
+            except Exception as exception:
+                if not capture_exception:
+                    raise
+                result = exception
+
+        return result, media, profile, encoding, observer
+
+    def test_gif_success_records_one_success(self):
+        result, media, profile, encoding, observer = self._run_encode_media(
+            extension="gif",
+            output_exists=True,
+            output_type="image",
+        )
+
+        self.assertTrue(result)
+        self.assertEqual(encoding.status, "success")
+        observer.assert_called_once_with(media, profile, "success")
+
+    def test_missing_duration_records_one_failure(self):
+        result, media, profile, encoding, observer = self._run_encode_media(duration=0)
+
+        self.assertFalse(result)
+        self.assertEqual(encoding.status, "fail")
+        encoding.save.assert_any_call(update_fields=["status"])
+        observer.assert_called_once_with(media, profile, "fail")
+
+    def test_missing_ffmpeg_commands_records_one_failure(self):
+        result, media, profile, encoding, observer = self._run_encode_media(ffmpeg_commands=[])
+
+        self.assertFalse(result)
+        self.assertEqual(encoding.status, "fail")
+        encoding.save.assert_any_call(update_fields=["status"])
+        observer.assert_called_once_with(media, profile, "fail")
+
+    def test_normal_success_records_one_success(self):
+        result, media, profile, encoding, observer = self._run_encode_media(
+            output_exists=True,
+            media_info={"is_video": True},
+        )
+
+        self.assertTrue(result)
+        self.assertEqual(encoding.status, "success")
+        encoding.media_file.save.assert_called_once()
+        observer.assert_called_once_with(media, profile, "success")
+
+    def test_normal_failure_records_one_failure(self):
+        result, media, profile, encoding, observer = self._run_encode_media(
+            output_exists=True,
+            media_info={"is_video": False, "is_audio": False},
+        )
+
+        self.assertFalse(result)
+        self.assertEqual(encoding.status, "fail")
+        observer.assert_called_once_with(media, profile, "fail")
+
+    def test_gif_failure_records_one_failure(self):
+        result, media, profile, encoding, observer = self._run_encode_media(extension="gif")
+
+        self.assertFalse(result)
+        observer.assert_called_once_with(media, profile, "fail")
+
+    def test_retryable_ffmpeg_exception_does_not_record_terminal_outcome(self):
+        from files.tasks import encode_media
+
+        with patch.object(encode_media, "retry", side_effect=RuntimeError("retry")) as retry:
+            result, _media, _profile, _encoding, observer = self._run_encode_media(
+                backend_exception=RuntimeError("unknown ffmpeg failure"),
+                capture_exception=True,
+            )
+
+        self.assertIsInstance(result, RuntimeError)
+        retry.assert_called_once()
+        observer.assert_not_called()
+
+    def test_known_ffmpeg_error_defers_outcome_until_final_result(self):
+        from files.exceptions import VideoEncodingError
+
+        result, media, profile, encoding, observer = self._run_encode_media(
+            output_exists=True,
+            media_info={"is_video": True},
+            backend_exception=VideoEncodingError("Invalid data found when processing input"),
+        )
+
+        self.assertTrue(result)
+        self.assertEqual(encoding.status, "success")
+        observer.assert_called_once_with(media, profile, "success")
+
+    def test_exhausted_retryable_ffmpeg_error_records_terminal_failure(self):
+        from files.tasks import encode_media
+
+        error = RuntimeError("unknown ffmpeg failure")
+        with patch.object(encode_media, "retry", side_effect=error) as retry:
+            result, media, profile, _encoding, observer = self._run_encode_media(
+                backend_exception=error,
+                capture_exception=True,
+                task_retries=1,
+            )
+
+        self.assertIs(result, error)
+        retry.assert_called_once()
+        observer.assert_called_once_with(media, profile, "fail")

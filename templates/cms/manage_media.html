@@ -2,7 +2,7 @@
 {% load static %}
 {% load django_vite %}
 
-{% block headtitle %}Manage media - {{PORTAL_NAME}}{% endblock headtitle %}
+{% block headtitle %}Manage media - {{ block.super }}{% endblock headtitle %}
 
 {% block headermeta %}
 

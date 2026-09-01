@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "django_vite",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "django_prometheus",
     "rest_framework",
     "rest_framework.authtoken",
     "imagekit",
@@ -79,6 +80,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
+    "cms.observability_middleware.ObservabilityMetricsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -92,6 +95,7 @@ MIDDLEWARE = [
     "cms.middleware.MaintenanceTimingMiddleware",  # Track maintenance mode timing
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
     "waffle.middleware.WaffleMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "cms.urls"
@@ -152,24 +156,82 @@ FILE_UPLOAD_HANDLERS = [
 
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 
+OTEL_ENABLED = os.getenv("OTEL_ENABLED", "false").lower() in ("1", "true", "yes")
+OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "cinematacms")
+OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/traces")
+OTEL_EXPORTER_OTLP_HEADERS = os.getenv("OTEL_EXPORTER_OTLP_HEADERS", "")
+try:
+    OTEL_TRACES_SAMPLER_ARG = float(os.getenv("OTEL_TRACES_SAMPLER_ARG", "1.0"))
+except ValueError:
+    OTEL_TRACES_SAMPLER_ARG = 1.0
+OBSERVABILITY_CELERY_QUEUES = ["long_tasks", "short_tasks", "whisper_tasks"]
+OBSERVABILITY_SLOW_REQUEST_SECONDS = 2.0
+OBSERVABILITY_SLOW_QUERY_SECONDS = 1.0
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "file": {
-            "level": "ERROR",
-            "class": "logging.FileHandler",
-            "filename": os.path.join(LOGS_DIR, "debug.log"),
+    "filters": {
+        "otel_trace": {
+            "()": "cms.observability.OpenTelemetryLogFilter",
         },
     },
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.json.JsonFormatter",
+            "format": "%(asctime)s %(name)s %(levelname)s %(message)s %(trace_id)s %(span_id)s",
+            "rename_fields": {
+                "asctime": "timestamp",
+                "levelname": "level",
+            },
+            "static_fields": {
+                "service": "cinematacms",
+            },
+        },
+        "plain": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        },
+    },
+    "handlers": {
+        "json_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOGS_DIR, "app.json.log"),
+            "formatter": "json",
+            "filters": ["otel_trace"],
+        },
+        "legacy_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOGS_DIR, "debug.log"),
+            "formatter": "plain",
+            "filters": ["otel_trace"],
+        },
+    },
+    # Every logger below propagates to the root logger, which owns the sole
+    # json_file handler. Naming json_file here as well would write each record
+    # to app.json.log twice.
     "loggers": {
+        "files": {"handlers": ["legacy_file"], "level": "INFO"},
+        "users": {"handlers": ["legacy_file"], "level": "INFO"},
+        "uploader": {"handlers": ["legacy_file"], "level": "INFO"},
+        "actions": {"handlers": ["legacy_file"], "level": "INFO"},
+        "celery": {"handlers": [], "level": "WARNING"},
         "django": {
-            "handlers": ["file"],
-            "level": "ERROR",
+            "handlers": ["legacy_file"],
+            "level": "INFO",
             "propagate": True,
         },
     },
+    "root": {
+        "handlers": ["json_file"],
+        "level": "INFO",
+    },
 }
+
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+CELERY_WORKER_LOG_FORMAT = "%(message)s"
+CELERY_WORKER_TASK_LOG_FORMAT = "%(message)s"
 
 DATABASES = {
     "default": {
@@ -264,6 +326,8 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_SOFT_TIME_LIMIT = 2 * 60 * 60
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_WORKER_SEND_TASK_EVENTS = True
+CELERY_TASK_SEND_SENT_EVENT = True
 
 CELERY_BEAT_SCHEDULE = {
     #    'check_running_states': {
