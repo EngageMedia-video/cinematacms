@@ -1,10 +1,12 @@
 #!/bin/bash
+set -e
+
 # Cinemata restart script after code changes
 # Run as root
 
 if [ `id -u` -ne 0 ]
   then echo "Please run as root"
-  exit
+  exit 1
 fi
 
 echo "Starting Cinemata restart process..."
@@ -61,15 +63,15 @@ chown -R www-data. /home/cinemata/
 
 # Reload systemd unit files in case service definitions changed
 echo "Reloading systemd daemon..."
+for unit in mediacms celery_long celery_short celery_whisper celery_email celery_beat; do
+  install -m 0644 "deploy/$unit.service" "/etc/systemd/system/$unit.service"
+done
 systemctl daemon-reload
 
 # Restart services
 echo "Restarting services..."
-systemctl restart celery_long
-systemctl restart celery_short
-systemctl restart celery_beat
-systemctl restart mediacms.service
-systemctl restart celery_whisper.service
+systemctl enable mediacms celery_long celery_short celery_whisper celery_email celery_beat
+systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
 systemctl restart nginx
 
 echo "Cinemata restart completed successfully!"

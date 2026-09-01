@@ -11,6 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = PROJECT_ROOT / "install.sh"
 UPDATER = PROJECT_ROOT / "deploy" / "apply-release-config.sh"
 LOCAL_OBSERVABILITY_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-observability.sh"
+RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
 
 
 class InstallScriptTests(unittest.TestCase):
@@ -864,6 +865,18 @@ class ApplyReleaseConfigTests(unittest.TestCase):
 
         self.assertNotEqual(second.returncode, 0)
         self.assertIn("Certbot and nginx", second.stderr)
+
+
+class RestartScriptTests(unittest.TestCase):
+    def test_restart_installs_and_starts_every_application_unit(self):
+        script = RESTART_SCRIPT.read_text()
+        units = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
+
+        self.assertIn("set -e", script)
+        self.assertIn(f"for unit in {units}; do", script)
+        self.assertIn('install -m 0644 "deploy/$unit.service" "/etc/systemd/system/$unit.service"', script)
+        self.assertIn(f"systemctl enable {units}", script)
+        self.assertIn(f"systemctl restart {units}", script)
 
 
 if __name__ == "__main__":
