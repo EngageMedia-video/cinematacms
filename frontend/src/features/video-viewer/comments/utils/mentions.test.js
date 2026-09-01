@@ -39,6 +39,23 @@ describe('splitTextByMentions', () => {
 		]);
 	});
 
+	it('parses a handle with non-ASCII letters, matching the server', () => {
+		// Django's UnicodeUsernameValidator allows these usernames, and
+		// files/mentions.py resolves them, so the field must not truncate them.
+		expect(splitTextByMentions('hey @José welcome')).toEqual([
+			{ type: 'text', value: 'hey ' },
+			{ type: 'mention', value: '@José', handle: 'José' },
+			{ type: 'text', value: ' welcome' },
+		]);
+	});
+
+	it('parses a handle written in a non-Latin script', () => {
+		expect(splitTextByMentions('hi @наталья')).toEqual([
+			{ type: 'text', value: 'hi ' },
+			{ type: 'mention', value: '@наталья', handle: 'наталья' },
+		]);
+	});
+
 	it('leaves an email address alone', () => {
 		expect(splitTextByMentions('write to alice@example.com')).toEqual([
 			{ type: 'text', value: 'write to alice@example.com' },
