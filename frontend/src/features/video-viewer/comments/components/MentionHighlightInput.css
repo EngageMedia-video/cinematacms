@@ -40,3 +40,16 @@
 	color: var(--text-accent);
 	font-weight: 500;
 }
+
+/* Forced-colors mode overrides `color`, so the field's own glyphs reappear and
+   collide with the backdrop copy. Show the real input and drop the duplicate;
+   the accent colour is replaced by the user's palette there in any case. */
+@media (forced-colors: active) {
+	.mention-input-shell .mention-input-field {
+		color: CanvasText;
+	}
+
+	.mention-input-backdrop {
+		display: none;
+	}
+}

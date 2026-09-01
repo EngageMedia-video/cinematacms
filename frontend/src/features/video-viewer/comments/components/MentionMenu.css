@@ -3,7 +3,9 @@
    below is presentation only, expressed in the shared color tokens. */
 
 .mention-menu {
-	z-index: 60;
+	/* Tribute appends the menu to <body>, so it must clear the legacy topbar,
+	   which also sits at 60 and would otherwise win on paint order alone. */
+	z-index: 90;
 	min-width: 14rem;
 	max-width: 20rem;
 	overflow: hidden;
