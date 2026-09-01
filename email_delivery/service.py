@@ -19,6 +19,7 @@ class EmailEnvelope:
     html_body: str = ""
     reply_to: tuple[str, ...] = ()
     preference: dict | None = None
+    from_email: str = ""
 
     def validated(self):
         recipient = self.recipient.strip().lower()
@@ -33,6 +34,8 @@ class EmailEnvelope:
             raise ValidationError("Unknown email kind")
         for address in self.reply_to:
             validate_email(address)
+        from_email = self.from_email or settings.DEFAULT_FROM_EMAIL
+        validate_email(from_email)
         return EmailEnvelope(
             recipient=recipient,
             subject=self.subject,
@@ -41,6 +44,7 @@ class EmailEnvelope:
             reply_to=tuple(self.reply_to),
             email_kind=self.email_kind,
             preference=self.preference,
+            from_email=from_email,
         )
 
 
@@ -81,8 +85,9 @@ def enqueue(envelope: EmailEnvelope) -> EmailDeliveryReceipt:
             )
             receipt.status = "failed"
             receipt.reason_code = "queue_publish_failed"
-            from .telemetry import record_event
+            from .telemetry import record_event, record_terminal_metrics
 
+            record_terminal_metrics(receipt)
             record_event(receipt, receipt.status, receipt.reason_code)
 
     transaction.on_commit(publish)

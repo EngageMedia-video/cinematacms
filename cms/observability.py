@@ -1,6 +1,8 @@
 import logging
 from contextlib import contextmanager
+from ipaddress import ip_address
 from typing import Any
+from urllib.parse import urlparse
 
 from django.conf import settings
 from prometheus_client import Counter
@@ -93,6 +95,22 @@ def _parse_otlp_headers(value: str | dict[str, str] | None) -> dict[str, str] | 
     return headers or None
 
 
+def _credentialed_endpoint_is_secure(endpoint: str, headers: dict[str, str] | None) -> bool:
+    if not headers:
+        return True
+    parsed = urlparse(endpoint)
+    if parsed.scheme == "https":
+        return True
+    if parsed.scheme != "http" or not parsed.hostname:
+        return False
+    if parsed.hostname.lower() == "localhost":
+        return True
+    try:
+        return ip_address(parsed.hostname).is_loopback
+    except ValueError:
+        return False
+
+
 def _configure_tracer_provider() -> bool:
     global _tracer_configured
 
@@ -131,10 +149,12 @@ def _configure_tracer_provider() -> bool:
         )
     )
     provider = TracerProvider(resource=resource, sampler=sampler)
-    exporter = OTLPSpanExporter(
-        endpoint=getattr(settings, "OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/traces"),
-        headers=_parse_otlp_headers(getattr(settings, "OTEL_EXPORTER_OTLP_HEADERS", "")),
-    )
+    endpoint = getattr(settings, "OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/traces")
+    headers = _parse_otlp_headers(getattr(settings, "OTEL_EXPORTER_OTLP_HEADERS", ""))
+    if not _credentialed_endpoint_is_secure(endpoint, headers):
+        logger.error("Credentialed OTLP endpoints require HTTPS unless the endpoint is loopback")
+        return False
+    exporter = OTLPSpanExporter(endpoint=endpoint, headers=headers)
     provider.add_span_processor(BatchSpanProcessor(SafeSpanExporter(exporter)))
     trace.set_tracer_provider(provider)
     _tracer_configured = True

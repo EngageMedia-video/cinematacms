@@ -11,6 +11,7 @@ from cms.observability import (
     OpenTelemetryLogFilter,
     OperationAwareSampler,
     SafeSpanExporter,
+    _credentialed_endpoint_is_secure,
     inject_trace_headers,
     start_span,
 )
@@ -20,6 +21,15 @@ from files.metrics import classify_endpoint_group
 
 
 class ObservabilityConfigTests(SimpleTestCase):
+    def test_credentialed_otlp_endpoint_requires_https_or_loopback(self):
+        headers = {"authorization": "secret"}
+        self.assertFalse(_credentialed_endpoint_is_secure("http://collector.internal:4318/v1/traces", headers))
+        self.assertTrue(_credentialed_endpoint_is_secure("https://collector.internal:4318/v1/traces", headers))
+        self.assertTrue(_credentialed_endpoint_is_secure("http://127.0.0.1:4318/v1/traces", headers))
+        self.assertTrue(_credentialed_endpoint_is_secure("http://[::1]:4318/v1/traces", headers))
+        self.assertTrue(_credentialed_endpoint_is_secure("http://localhost:4318/v1/traces", headers))
+        self.assertTrue(_credentialed_endpoint_is_secure("http://collector.internal:4318/v1/traces", None))
+
     @override_settings(OTEL_ENABLED=False)
     def test_trace_header_injection_is_noop_when_disabled(self):
         headers = inject_trace_headers({"enqueued_at": 123})

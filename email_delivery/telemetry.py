@@ -1,5 +1,6 @@
 import logging
 
+from django.utils import timezone
 from prometheus_client import Counter, Histogram
 
 from cms.observability import current_trace_ids, start_span
@@ -22,6 +23,15 @@ DELIVERY_LATENCY_SECONDS = Histogram(
     "Time from queueing to terminal email delivery state",
     buckets=(1, 5, 15, 30, 60, 120, 300, 600),
 )
+
+
+def record_terminal_metrics(receipt) -> None:
+    try:
+        if receipt.attempt_count:
+            DELIVERY_ATTEMPTS.observe(receipt.attempt_count)
+        DELIVERY_LATENCY_SECONDS.observe((timezone.now() - receipt.created_at).total_seconds())
+    except Exception:
+        logger.debug("Could not record terminal email metrics", exc_info=True)
 
 
 def record_event(receipt, outcome: str, reason_code: str = "") -> None:

@@ -4,6 +4,7 @@
     {"condition":"email_terminal_failure","state":"degraded","values":{"smtp_accepted":12,"failed":1}},
     {"condition":"email_terminal_failure","state":"unknown","values":{}},
     {"condition":"email_terminal_failure","state":"recovered","values":{"smtp_accepted":2,"failed":0}},
+    {"condition":"email_terminal_failure","state":"healthy","values":{"smtp_accepted":3,"failed":0}},
     {"condition":"scheduled_job_stale","state":"healthy","values":{"age_seconds":30,"absence_seconds":180}},
     {"condition":"scheduled_job_stale","state":"degraded","values":{"age_seconds":181,"absence_seconds":180}},
     {"condition":"scheduled_job_stale","state":"unknown","values":{}},

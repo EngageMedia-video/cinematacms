@@ -35,6 +35,8 @@ def validate(catalog_path, fixtures_path):
             errors.append(f"{name}: expected {case['state']}, got {actual}")
         if actual == "degraded":
             degraded.add(name)
+        elif actual == "recovered":
+            degraded.discard(name)
     missing = conditions - seen
     if missing:
         errors.append(f"missing fixtures: {', '.join(sorted(missing))}")

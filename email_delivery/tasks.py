@@ -9,7 +9,7 @@ from django.core.mail import EmailMultiAlternatives, get_connection
 from django.utils import timezone
 
 from .models import DeliveryStatus, EmailDeliveryReceipt
-from .telemetry import DELIVERY_ATTEMPTS, DELIVERY_LATENCY_SECONDS, delivery_span, record_event
+from .telemetry import delivery_span, record_event, record_terminal_metrics
 
 TRANSIENT_ERRORS = (ConnectionError, TimeoutError, socket.timeout, smtplib.SMTPServerDisconnected)
 
@@ -49,6 +49,7 @@ def deliver_email(self, delivery_id: str, envelope: dict):
         receipt.status = DeliveryStatus.SKIPPED
         receipt.reason_code = "preference_changed"
         receipt.save(update_fields=["status", "reason_code", "updated_at"])
+        record_terminal_metrics(receipt)
         record_event(receipt, receipt.status, receipt.reason_code)
         return receipt.status
 
@@ -66,7 +67,7 @@ def deliver_email(self, delivery_id: str, envelope: dict):
             message = EmailMultiAlternatives(
                 envelope["subject"],
                 envelope["text_body"],
-                settings.DEFAULT_FROM_EMAIL,
+                envelope.get("from_email") or settings.DEFAULT_FROM_EMAIL,
                 [envelope["recipient"]],
                 reply_to=envelope.get("reply_to") or None,
                 connection=connection,
@@ -87,16 +88,13 @@ def deliver_email(self, delivery_id: str, envelope: dict):
             receipt.status = DeliveryStatus.FAILED
             receipt.reason_code = reason
             receipt.save(update_fields=["status", "reason_code", "updated_at"])
+            record_terminal_metrics(receipt)
             record_event(receipt, receipt.status, reason)
             return receipt.status
 
     receipt.status = DeliveryStatus.SMTP_ACCEPTED
     receipt.save(update_fields=["status", "updated_at"])
-    try:
-        DELIVERY_ATTEMPTS.observe(receipt.attempt_count)
-        DELIVERY_LATENCY_SECONDS.observe((timezone.now() - receipt.created_at).total_seconds())
-    except Exception:
-        pass
+    record_terminal_metrics(receipt)
     record_event(receipt, receipt.status)
     return receipt.status
 
@@ -109,6 +107,7 @@ def recover_stale_email_deliveries():
         receipt.status = DeliveryStatus.UNKNOWN
         receipt.reason_code = "worker_lost"
         receipt.save(update_fields=["status", "reason_code", "updated_at"])
+        record_terminal_metrics(receipt)
         record_event(receipt, receipt.status, receipt.reason_code)
     return len(stale)
 
