@@ -42,7 +42,7 @@ from .helpers import (
     run_command,
 )
 from .methods import list_tasks, notify_users, pre_save_action
-from .metrics import observe_media_pipeline, record_stale_encoding
+from .metrics import observe_media_pipeline, record_domain_outcome, record_stale_encoding
 from .models import (
     Category,
     EncodeProfile,
@@ -778,23 +778,27 @@ def produce_sprite_from_video(friendly_token):
 def create_hls(friendly_token):
     if not hasattr(settings, "MP4HLS_COMMAND"):
         logger.error("Bento4 mp4hls command is missing from configuration")
+        record_domain_outcome("hls", "failed", "configuration_error")
         return False
 
     mp4hls_path = settings.MP4HLS_COMMAND
     if not os.path.exists(mp4hls_path):
         logger.error(f"Bento4 mp4hls command not found at: {mp4hls_path}")
+        record_domain_outcome("hls", "failed", "configuration_error")
         return False
 
     try:
         media = Media.objects.get(friendly_token=friendly_token)
     except:
         logger.info("failed to get media with friendly_token %s" % friendly_token)
+        record_domain_outcome("hls", "failed", "media_not_found")
         return False
 
     p = media.uid.hex
     uid_dir = os.path.join(settings.HLS_DIR, p)
     encodings = media.encodings.filter(profile__extension="mp4", status="success", chunk=False, profile__codec="h264")
     if not encodings:
+        record_domain_outcome("hls", "skipped", "no_h264_encoding")
         return True
 
     # Serialize regeneration per media: create_hls.delay fires once per
@@ -808,6 +812,7 @@ def create_hls(friendly_token):
     if not cache.add(lock_key, lock_token, timeout=HLS_LOCK_TIMEOUT):
         cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
         logger.info("create_hls already running for media %s, queued follow-up run", friendly_token)
+        record_domain_outcome("hls", "retried", "lock_held")
         return True
 
     try:
@@ -856,6 +861,7 @@ def create_hls(friendly_token):
                     HLS_TIMEOUT_RETRY_DELAY,
                 )
                 create_hls.apply_async(args=[friendly_token], countdown=HLS_TIMEOUT_RETRY_DELAY)
+                record_domain_outcome("hls", "retried", "subprocess_timeout")
             else:
                 cache.delete(timeout_retry_key)
                 logger.error(
@@ -863,6 +869,7 @@ def create_hls(friendly_token):
                     HLS_TIMEOUT_MAX_RETRIES,
                     friendly_token,
                 )
+                record_domain_outcome("hls", "failed", "subprocess_timeout")
             return True
 
         if result.returncode != 0:
@@ -874,18 +881,43 @@ def create_hls(friendly_token):
                 stderr,
             )
             shutil.rmtree(output_dir, ignore_errors=True)
+            record_domain_outcome("hls", "failed", "subprocess_failed")
             return True
 
         pp = os.path.join(output_dir, "master.m3u8")
         if not os.path.exists(pp):
             logger.error("mp4hls produced no master.m3u8 for media %s, discarding partial output", friendly_token)
             shutil.rmtree(output_dir, ignore_errors=True)
+            record_domain_outcome("hls", "failed", "missing_playlist")
             return True
+
+        if media.is_encrypted:
+            playlists = [
+                os.path.join(root, filename)
+                for root, _directories, filenames in os.walk(output_dir)
+                for filename in filenames
+                if filename.endswith(".m3u8")
+            ]
+            encrypted = False
+            for playlist in playlists:
+                try:
+                    with open(playlist, encoding="utf-8") as stream:
+                        if "#EXT-X-KEY" in stream.read():
+                            encrypted = True
+                            break
+                except OSError:
+                    continue
+            if not encrypted:
+                logger.error("mp4hls produced an unencrypted playlist for encrypted media %s", friendly_token)
+                shutil.rmtree(output_dir, ignore_errors=True)
+                record_domain_outcome("hls", "failed", "encryption_bypass")
+                return True
 
         if cache.get(lock_key) != lock_token:
             logger.warning("create_hls lock expired for media %s, discarding stale output", friendly_token)
             shutil.rmtree(output_dir, ignore_errors=True)
             cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
+            record_domain_outcome("hls", "cancelled", "lock_expired")
             return True
 
         # New URLs every regeneration: hls_file always changes, so the
@@ -914,6 +946,7 @@ def create_hls(friendly_token):
         # A successful regeneration clears any prior timeout backoff so a media
         # that once timed out (e.g. transient load) starts fresh next time.
         cache.delete(timeout_retry_key)
+        record_domain_outcome("hls", "succeeded", "none")
     finally:
         released_lock = False
         if cache.get(lock_key) == lock_token:
@@ -1067,8 +1100,8 @@ def clear_sessions():
         engine = import_module(settings.SESSION_ENGINE)
         engine.SessionStore.clear_expired()
     except:
-        return False
-    return True
+        return {"outcome": "failed", "reason_code": "cleanup_failed", "failed": 1}
+    return {"outcome": "succeeded"}
 
 
 @task(name="save_user_action", queue="short_tasks")
@@ -1190,6 +1223,7 @@ def update_listings_thumbnails():
     from .lists import video_countries
     from .models import Language
 
+    total_changed = 0
     # Categories
     used_media = []
     saved = 0
@@ -1207,6 +1241,7 @@ def update_listings_thumbnails():
             used_media.append(media.friendly_token)
             saved += 1
     logger.info(f"updated {saved} categories")
+    total_changed += saved
 
     # Tags
     used_media = []
@@ -1225,6 +1260,7 @@ def update_listings_thumbnails():
             used_media.append(media.friendly_token)
             saved += 1
     logger.info(f"updated {saved} tags")
+    total_changed += saved
 
     # Topics
     used_media = []
@@ -1243,6 +1279,7 @@ def update_listings_thumbnails():
             used_media.append(media.friendly_token)
             saved += 1
     logger.info(f"updated {saved} topics")
+    total_changed += saved
 
     # Language
     used_media = []
@@ -1275,6 +1312,7 @@ def update_listings_thumbnails():
             used_media.append(media.friendly_token)
             saved += 1
     logger.info(f"updated {saved} language thumbnails and {updated_counts} language counts")
+    total_changed += saved + updated_counts
 
     # Country
     used_media = []
@@ -1304,8 +1342,9 @@ def update_listings_thumbnails():
             used_media.append(media.friendly_token)
             saved += 1
     logger.info(f"updated {saved} country thumbnails and {updated_counts} country counts")
+    total_changed += saved + updated_counts
 
-    return True
+    return {"outcome": "succeeded", "processed": total_changed, "changed": total_changed}
 
 
 @task(name="start_missing_encodings", queue="short_tasks")
@@ -1559,7 +1598,17 @@ def cleanup_orphaned_uploads():
             logger.error(error_msg)
             errors.append(error_msg)
 
-    result = {"chunks_cleaned": chunks_cleaned, "uploads_cleaned": uploads_cleaned, "errors": errors}
+    cleaned = chunks_cleaned + uploads_cleaned
+    result = {
+        "chunks_cleaned": chunks_cleaned,
+        "uploads_cleaned": uploads_cleaned,
+        "errors": errors,
+        "outcome": "failed" if errors else "succeeded",
+        "reason_code": "item_errors" if errors else "none",
+        "processed": cleaned + len(errors),
+        "changed": cleaned,
+        "failed": len(errors),
+    }
 
     logger.info(f"Cleanup completed: {chunks_cleaned} chunk dirs, {uploads_cleaned} upload dirs removed")
 
@@ -1597,7 +1646,15 @@ def cleanup_orphaned_draft_media():
             errors.append(error_msg)
 
     logger.info("cleanup_orphaned_draft_media removed %s orphaned media rows", deleted)
-    return {"drafts_deleted": deleted, "errors": errors}
+    return {
+        "drafts_deleted": deleted,
+        "errors": errors,
+        "outcome": "failed" if errors else "succeeded",
+        "reason_code": "item_errors" if errors else "none",
+        "processed": deleted + len(errors),
+        "changed": deleted,
+        "failed": len(errors),
+    }
 
 
 @task(name="subscribe_user", queue="short_tasks")
@@ -1679,10 +1736,11 @@ def dispatch_deferred_encodings():
 
     if not cache.add(lock_key, "locked", lock_timeout):
         logger.debug("Drain task skipped: another worker holds the lock")
-        return
+        return {"outcome": "skipped", "reason_code": "lock_held"}
 
     try:
-        _dispatch_deferred_encodings_inner()
+        dispatched = _dispatch_deferred_encodings_inner()
+        return {"outcome": "succeeded", "processed": dispatched, "changed": dispatched}
     finally:
         cache.delete(lock_key)
 
@@ -1703,10 +1761,17 @@ def apply_visibility_schedules():
 
     if not cache.add(lock_key, lock_token, lock_timeout):
         logger.debug("Visibility schedule task skipped: another worker holds the lock")
-        return
+        return {"outcome": "skipped", "reason_code": "lock_held"}
 
     try:
-        _apply_visibility_schedules_inner()
+        changed, failed = _apply_visibility_schedules_inner()
+        return {
+            "outcome": "failed" if failed else "succeeded",
+            "reason_code": "item_errors" if failed else "none",
+            "processed": changed + failed,
+            "changed": changed,
+            "failed": failed,
+        }
     finally:
         # Only release the lock if we still own it — guards against a slow run
         # where the TTL expired and a new worker already claimed the key.
@@ -1726,6 +1791,7 @@ def _apply_visibility_schedules_inner():
     ).order_by("id")
 
     transition_count = 0
+    failure_count = 0
     # Collect tokens that transition to public so we can notify after all row
     # locks are released — notify_users() sends email synchronously and must
     # not run while a DB row lock and transaction are still open.
@@ -1785,6 +1851,7 @@ def _apply_visibility_schedules_inner():
             if went_public:
                 tokens_to_notify.append(media.friendly_token)
         except Exception:
+            failure_count += 1
             logger.exception("Failed to apply visibility schedule for media %s", getattr(media, "pk", "unknown"))
 
     # Send publish notifications after all row locks are released so SMTP
@@ -1793,10 +1860,12 @@ def _apply_visibility_schedules_inner():
         try:
             notify_users(friendly_token=token, action="media_published")
         except Exception:
+            failure_count += 1
             logger.exception("Failed to send publish notification for media %s", token)
 
     if transition_count:
         logger.info("Applied %d visibility schedule transitions", transition_count)
+    return transition_count, failure_count
 
 
 def _dispatch_deferred_encodings_inner():
@@ -1810,7 +1879,7 @@ def _dispatch_deferred_encodings_inner():
     )
 
     if not deferred.exists():
-        return
+        return 0
 
     dispatched_count = 0
     for encoding in deferred:
@@ -1872,3 +1941,4 @@ def _dispatch_deferred_encodings_inner():
 
     if dispatched_count:
         logger.info("Drain task dispatched %d deferred encodings", dispatched_count)
+    return dispatched_count

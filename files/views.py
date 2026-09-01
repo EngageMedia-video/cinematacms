@@ -566,9 +566,10 @@ Sender email: %s\n
                 settings.DEFAULT_FROM_EMAIL,
                 settings.ADMIN_EMAIL_LIST,
                 reply_to=[from_email],
+                headers={"X-Cinemata-Email-Kind": "contact_form"},
             )
             email.send(fail_silently=True)
-            success_msg = "Message was sent! Thanks for contacting"
+            success_msg = "Message was queued. Thanks for contacting us."
             context["success_msg"] = success_msg
 
         else:

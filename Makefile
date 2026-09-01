@@ -190,6 +190,29 @@ celery-whisper-stop:
 
 celery-whisper-restart: celery-whisper-stop celery-whisper-start
 
+## EMAIL Tasks Worker
+EMAIL_QUEUE := email_tasks
+EMAIL_OPTS := --concurrency=4 --prefetch-multiplier=1
+
+celery-email-start:
+	$(CELERY_BIN) -A $(CELERY_APP) worker \
+		-n email1@%h \
+		--pidfile=$(CELERYD_PID_DIR)/email.pid \
+		--logfile=$(CELERYD_LOG_DIR)/email.log \
+		--loglevel=$(CELERYD_LOG_LEVEL) \
+		$(EMAIL_OPTS) \
+		-Q $(EMAIL_QUEUE) \
+
+celery-email-stop:
+	@if [ -f $(CELERYD_PID_DIR)/email.pid ]; then \
+		kill -TERM $$(cat $(CELERYD_PID_DIR)/email.pid) || true; \
+		rm -f $(CELERYD_PID_DIR)/email.pid; \
+	else \
+		echo "Email worker PID file not found"; \
+	fi
+
+celery-email-restart: celery-email-stop celery-email-start
+
 ## Combined Commands
 celery-start-all:
 	$(CELERY_BIN) -A $(CELERY_APP) beat \
@@ -221,8 +244,16 @@ celery-start-all:
 		$(WHISPER_OPTS) \
 		-Q $(WHISPER_QUEUE) \
 		--detach
+	$(CELERY_BIN) -A $(CELERY_APP) worker \
+		-n email1@%h \
+		--pidfile=$(CELERYD_PID_DIR)/email.pid \
+		--logfile=$(CELERYD_LOG_DIR)/email.log \
+		--loglevel=$(CELERYD_LOG_LEVEL) \
+		$(EMAIL_OPTS) \
+		-Q $(EMAIL_QUEUE) \
+		--detach
 
-celery-stop-all: celery-beat-stop celery-long-stop celery-short-stop celery-whisper-stop
+celery-stop-all: celery-beat-stop celery-long-stop celery-short-stop celery-whisper-stop celery-email-stop
 
 celery-restart-all: celery-stop-all celery-start-all
 

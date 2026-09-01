@@ -217,6 +217,7 @@ OTEL_SERVICE_NAME=cinematacms
 OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318/v1/traces
 OTEL_EXPORTER_OTLP_HEADERS=
 OTEL_TRACES_SAMPLER_ARG=1.0
+OTEL_PRIORITY_TRACES_SAMPLER_ARG=1.0
 "
 
 NGINX_SNIPPET="$(root_path /etc/nginx/snippets/cinematacms-metrics.conf)"
@@ -271,7 +272,7 @@ if [ ! -e "$NGINX_ENABLED" ] && [ ! -L "$NGINX_ENABLED" ]; then
     ln -s ../sites-available/mediacms.io "$NGINX_ENABLED"
 fi
 
-for unit in mediacms celery_long celery_short celery_whisper celery_beat; do
+for unit in mediacms celery_long celery_short celery_whisper celery_email celery_beat; do
     install_managed_file "$SCRIPT_DIR/$unit.service" "$(root_path /etc/systemd/system/$unit.service)"
 done
 
@@ -295,8 +296,8 @@ trap - ERR
 
 systemctl daemon-reload
 if [ "$NO_RESTART" = false ]; then
-    systemctl enable mediacms celery_long celery_short celery_whisper celery_beat
-    systemctl restart mediacms celery_long celery_short celery_whisper celery_beat
+    systemctl enable mediacms celery_long celery_short celery_whisper celery_email celery_beat
+    systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
     if [ "$OBSERVABILITY_MODE" = "local" ]; then
         systemctl enable --now cinematacms-prometheus cinematacms-otelcol
     else

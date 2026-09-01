@@ -1,19 +1,14 @@
 import logging
-from smtplib import SMTPException
 
 from celery import shared_task
 from django.conf import settings
-from django.core.mail import EmailMessage, get_connection
+
+from email_delivery.models import EmailKind
+from email_delivery.service import EmailEnvelope, enqueue
 
 logger = logging.getLogger(__name__)
 
 
-@shared_task(
-    name="send_notification_email",
-    queue="short_tasks",
-    autoretry_for=(SMTPException, ConnectionError, OSError),
-    retry_kwargs={"max_retries": 3, "countdown": 60},
-)
 def send_notification_email(notification_id):
     from .models import Notification
 
@@ -26,18 +21,8 @@ def send_notification_email(notification_id):
     site_url = getattr(settings, "SSL_FRONTEND_HOST", "")
     portal_name = getattr(settings, "PORTAL_NAME", "CinemataCMS")
 
-    # Re-check deliverability at send time (preferences may have changed since enqueue)
     recipient = notification.recipient
     if not recipient.email:
-        logger.info("Skipping notification email %s: recipient has no email", notification_id)
-        return
-
-    from .models import NotificationChannel
-    from .services import NotificationService
-
-    channel = NotificationService._get_channel(recipient, notification.notification_type)
-    if channel != NotificationChannel.EMAIL:
-        logger.info("Skipping notification email %s: preference changed to %s", notification_id, channel)
         return
 
     action_link = f"{site_url}{notification.action_url}" if notification.action_url else ""
@@ -48,20 +33,18 @@ def send_notification_email(notification_id):
         body += f"\n\nView it here: {action_link}"
     body += f"\n\n---\nUpdate your notification preferences: {prefs_link}\n"
 
-    try:
-        real_backend = getattr(settings, "CELERY_EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
-        connection = get_connection(backend=real_backend)
-        email = EmailMessage(
+    return enqueue(
+        EmailEnvelope(
+            recipient=recipient.email,
             subject=f"[{portal_name}] {notification.message}",
-            body=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[recipient.email],
-            connection=connection,
+            text_body=body,
+            email_kind=EmailKind.ACTIVITY_NOTIFICATION,
+            preference={"kind": "notification", "id": notification.id},
         )
-        email.send(fail_silently=False)
-    except Exception:
-        logger.exception("Failed to send notification email %s", notification_id)
-        raise
+    )
+
+
+send_notification_email.delay = send_notification_email
 
 
 @shared_task(name="notify_followers_new_media", queue="short_tasks")

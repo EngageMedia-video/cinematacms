@@ -2,7 +2,17 @@ import logging
 import socket
 import time
 
-from celery.signals import task_postrun, task_prerun, worker_ready, worker_shutdown
+from celery.signals import (
+    beat_init,
+    heartbeat_sent,
+    task_failure,
+    task_postrun,
+    task_prerun,
+    task_retry,
+    task_revoked,
+    worker_ready,
+    worker_shutdown,
+)
 from django.conf import settings
 from django.contrib.auth.signals import user_login_failed
 from prometheus_client import Counter, Gauge, Histogram
@@ -45,23 +55,40 @@ AUTH_FAILURES_TOTAL = Counter(
 CELERY_TASKS_TOTAL = Counter(
     "cinemata_celery_tasks_total",
     "Celery task lifecycle events",
-    ["task_name", "state"],
+    ["task_name", "queue", "state"],
 )
 CELERY_TASK_DURATION_SECONDS = Histogram(
     "cinemata_celery_task_duration_seconds",
     "Celery task duration by task name",
-    ["task_name"],
+    ["task_name", "queue"],
     buckets=(0.1, 0.5, 1, 5, 15, 30, 60, 120, 300, 600, 1800, 3600, 7200),
 )
 CELERY_TASK_ACTIVE = Gauge(
     "cinemata_celery_task_active",
     "Currently running Celery tasks by task name",
-    ["task_name"],
+    ["task_name", "queue"],
+    multiprocess_mode="livesum",
 )
 CELERY_WORKER_UP = Gauge(
     "cinemata_celery_worker_up",
     "Celery worker process seen as ready",
     ["worker"],
+)
+CELERY_WORKER_HEARTBEAT_TIMESTAMP = Gauge(
+    "cinemata_celery_worker_heartbeat_timestamp_seconds",
+    "Unix timestamp of the last Celery worker heartbeat",
+    ["worker"],
+    multiprocess_mode="mostrecent",
+)
+CELERY_BEAT_FRESHNESS_TIMESTAMP = Gauge(
+    "cinemata_celery_beat_freshness_timestamp_seconds",
+    "Unix timestamp when Celery beat initialized",
+    multiprocess_mode="mostrecent",
+)
+DOMAIN_OUTCOMES_TOTAL = Counter(
+    "cinemata_domain_outcomes_total",
+    "Application operation outcomes",
+    ["operation", "outcome", "reason_code"],
 )
 CELERY_QUEUE_DEPTH = Gauge(
     "cinemata_celery_queue_depth",
@@ -73,23 +100,23 @@ CELERY_QUEUE_DEPTH = Gauge(
 MEDIA_ENCODING_PROFILE_TOTAL = Counter(
     "cinemata_media_encoding_profile_total",
     "Encoding completions by profile and result",
-    ["resolution", "codec", "extension", "status"],
+    ["resolution", "codec", "extension", "outcome", "reason_code"],
 )
 MEDIA_FILE_SIZE_BYTES = Histogram(
-    "cinemata_media_file_size_bytes",
-    "Original media file size by media type",
+    "cinemata_encoding_input_file_size_bytes",
+    "Encoding input file size by media type",
     ["media_type"],
     buckets=(1_000_000, 10_000_000, 50_000_000, 100_000_000, 500_000_000, 1_000_000_000, 5_000_000_000),
 )
 MEDIA_DURATION_SECONDS = Histogram(
-    "cinemata_media_duration_seconds",
-    "Media duration by media type",
+    "cinemata_encoding_input_duration_seconds",
+    "Encoding input duration by media type",
     ["media_type"],
     buckets=(30, 60, 300, 600, 1200, 1800, 3600, 7200, 14400),
 )
 TRANSCRIPTION_REQUESTS = Gauge(
-    "cinemata_transcription_requests",
-    "Current transcription request rows",
+    "cinemata_transcription_database_stale",
+    "Persisted transcription request rows that have not progressed",
     ["translate_to_english"],
     multiprocess_mode="mostrecent",
 )
@@ -111,6 +138,7 @@ CACHE_OPERATIONS_TOTAL = Counter(
 )
 
 _task_start_times: dict[str, float] = {}
+_task_labels: dict[str, tuple[str, str]] = {}
 _stalled_encoding_label_values: set[tuple[str, str, str]] = set()
 
 
@@ -149,21 +177,132 @@ def _task_name(sender=None, task_id=None, **kwargs) -> str:
     return "unknown"
 
 
+QUEUE_NAMES = frozenset({"long_tasks", "short_tasks", "whisper_tasks", "email_tasks", "default"})
+DOMAIN_OUTCOMES = frozenset({"succeeded", "failed", "skipped", "retried", "cancelled"})
+MEDIA_TASK_OPERATIONS = {
+    "chunkize_media": "chunking",
+    "whisper_transcribe": "transcription",
+    "produce_sprite_from_video": "sprites",
+}
+
+
+def normalize_queue(sender=None, **kwargs) -> str:
+    request = getattr(sender, "request", None)
+    delivery = getattr(request, "delivery_info", None) or kwargs.get("delivery_info") or {}
+    queue = delivery.get("routing_key") or delivery.get("exchange") or "default"
+    return queue if queue in QUEUE_NAMES else "default"
+
+
+def record_domain_outcome(operation: str, outcome: str, reason_code: str = "none") -> None:
+    if outcome not in DOMAIN_OUTCOMES:
+        raise ValueError(f"Unsupported domain outcome: {outcome}")
+    _safe_metric(
+        "domain outcome",
+        lambda: DOMAIN_OUTCOMES_TOTAL.labels(operation=operation, outcome=outcome, reason_code=reason_code).inc(),
+    )
+    try:
+        from opentelemetry import trace
+
+        span = trace.get_current_span()
+        if span.is_recording():
+            span.set_attribute("domain.operation", operation)
+            span.set_attribute("domain.outcome", outcome)
+            span.set_attribute("domain.reason_code", reason_code)
+    except Exception:
+        logger.debug("Could not add the domain outcome to the current span", exc_info=True)
+
+
+def _record_task_domain_result(name: str, outcome: str, reason_code: str) -> None:
+    operation = MEDIA_TASK_OPERATIONS.get(name)
+    if operation:
+        record_domain_outcome(operation, outcome, reason_code)
+
+
+def _record_scheduled_result(name: str, outcome: str, reason_code: str, retval=None) -> None:
+    try:
+        from cms.scheduled_jobs import SCHEDULED_JOBS, record_scheduled_outcome
+
+        if name not in SCHEDULED_JOBS:
+            return
+        result = retval if isinstance(retval, dict) else {}
+        record_scheduled_outcome(
+            name,
+            result.get("outcome", outcome),
+            result.get("reason_code", reason_code),
+            processed=result.get("processed", 0),
+            changed=result.get("changed", 0),
+            failed=result.get("failed", 0),
+            timestamp=time.time(),
+        )
+    except Exception:
+        logger.debug("Could not record the scheduled job result", exc_info=True)
+
+
 def _on_task_prerun(sender=None, task_id=None, **kwargs):
     name = _task_name(sender=sender, **kwargs)
+    queue = normalize_queue(sender=sender, **kwargs)
     if task_id:
         _task_start_times[task_id] = time.monotonic()
-    CELERY_TASKS_TOTAL.labels(task_name=name, state="started").inc()
-    CELERY_TASK_ACTIVE.labels(task_name=name).inc()
+        _task_labels[task_id] = (name, queue)
+    _safe_metric(
+        "Celery started", lambda: CELERY_TASKS_TOTAL.labels(task_name=name, queue=queue, state="started").inc()
+    )
+    _safe_metric("Celery active", lambda: CELERY_TASK_ACTIVE.labels(task_name=name, queue=queue).inc())
+    try:
+        from cms.scheduled_jobs import record_scheduled_start
+
+        record_scheduled_start(name, time.time())
+    except Exception:
+        logger.debug("Could not record the scheduled job start", exc_info=True)
 
 
-def _on_task_postrun(sender=None, task_id=None, state=None, **kwargs):
+def _on_task_postrun(sender=None, task_id=None, state=None, retval=None, **kwargs):
     name = _task_name(sender=sender, **kwargs)
+    queue = normalize_queue(sender=sender, **kwargs)
+    if task_id in _task_labels:
+        name, queue = _task_labels.pop(task_id)
     if task_id and task_id in _task_start_times:
-        CELERY_TASK_DURATION_SECONDS.labels(task_name=name).observe(time.monotonic() - _task_start_times.pop(task_id))
-    if state in {"SUCCESS", "FAILURE"}:
-        CELERY_TASKS_TOTAL.labels(task_name=name, state=state.lower()).inc()
-    CELERY_TASK_ACTIVE.labels(task_name=name).dec()
+        elapsed = time.monotonic() - _task_start_times.pop(task_id)
+        _safe_metric(
+            "Celery duration", lambda: CELERY_TASK_DURATION_SECONDS.labels(task_name=name, queue=queue).observe(elapsed)
+        )
+    if state == "SUCCESS":
+        _safe_metric(
+            "Celery succeeded", lambda: CELERY_TASKS_TOTAL.labels(task_name=name, queue=queue, state="succeeded").inc()
+        )
+        domain_outcome = "failed" if retval is False else "succeeded"
+        reason = "returned_false" if retval is False else "none"
+        _record_task_domain_result(name, domain_outcome, reason)
+        _record_scheduled_result(name, domain_outcome, reason, retval)
+    _safe_metric("Celery active", lambda: CELERY_TASK_ACTIVE.labels(task_name=name, queue=queue).dec())
+
+
+def _terminal_task_event(state, sender=None, task_id=None, **kwargs):
+    name, queue = _task_labels.get(
+        task_id, (_task_name(sender=sender, **kwargs), normalize_queue(sender=sender, **kwargs))
+    )
+    _safe_metric(f"Celery {state}", lambda: CELERY_TASKS_TOTAL.labels(task_name=name, queue=queue, state=state).inc())
+
+
+def _on_task_failure(sender=None, task_id=None, **kwargs):
+    _terminal_task_event("failed", sender=sender, task_id=task_id, **kwargs)
+    name = _task_name(sender=sender, **kwargs)
+    _record_task_domain_result(name, "failed", "task_exception")
+    _record_scheduled_result(name, "failed", "task_exception")
+
+
+def _on_task_retry(sender=None, request=None, **kwargs):
+    _terminal_task_event("retried", sender=sender, task_id=getattr(request, "id", None), **kwargs)
+    name = _task_name(sender=sender, **kwargs)
+    _record_task_domain_result(name, "retried", "task_retry")
+    _record_scheduled_result(name, "retried", "task_retry")
+
+
+def _on_task_revoked(sender=None, request=None, **kwargs):
+    _terminal_task_event("revoked", sender=sender, task_id=getattr(request, "id", None), **kwargs)
+    name = _task_name(sender=sender, **kwargs)
+    _record_task_domain_result(name, "cancelled", "task_revoked")
+    _record_scheduled_result(name, "cancelled", "task_revoked")
 
 
 def _worker_label(sender=None) -> str:
@@ -180,6 +319,17 @@ def _on_worker_shutdown(sender=None, **kwargs):
     CELERY_WORKER_UP.labels(worker=_worker_label(sender)).set(0)
 
 
+def _on_heartbeat(sender=None, **kwargs):
+    _safe_metric(
+        "worker heartbeat",
+        lambda: CELERY_WORKER_HEARTBEAT_TIMESTAMP.labels(worker=_worker_label(sender)).set(time.time()),
+    )
+
+
+def _on_beat_init(sender=None, **kwargs):
+    _safe_metric("beat freshness", lambda: CELERY_BEAT_FRESHNESS_TIMESTAMP.set(time.time()))
+
+
 def _on_user_login_failed(sender=None, **kwargs):
     AUTH_FAILURES_TOTAL.labels(source="django").inc()
 
@@ -187,8 +337,13 @@ def _on_user_login_failed(sender=None, **kwargs):
 def connect_signal_handlers() -> None:
     task_prerun.connect(_on_task_prerun, dispatch_uid="cinemata_metrics_task_prerun", weak=False)
     task_postrun.connect(_on_task_postrun, dispatch_uid="cinemata_metrics_task_postrun", weak=False)
+    task_failure.connect(_on_task_failure, dispatch_uid="cinemata_metrics_task_failure", weak=False)
+    task_retry.connect(_on_task_retry, dispatch_uid="cinemata_metrics_task_retry", weak=False)
+    task_revoked.connect(_on_task_revoked, dispatch_uid="cinemata_metrics_task_revoked", weak=False)
     worker_ready.connect(_on_worker_ready, dispatch_uid="cinemata_metrics_worker_ready", weak=False)
     worker_shutdown.connect(_on_worker_shutdown, dispatch_uid="cinemata_metrics_worker_shutdown", weak=False)
+    heartbeat_sent.connect(_on_heartbeat, dispatch_uid="cinemata_metrics_worker_heartbeat", weak=False)
+    beat_init.connect(_on_beat_init, dispatch_uid="cinemata_metrics_beat_init", weak=False)
     user_login_failed.connect(_on_user_login_failed, dispatch_uid="cinemata_metrics_login_failed", weak=False)
 
 
@@ -214,10 +369,17 @@ def _profile_labels(profile) -> dict[str, str]:
 
 
 def observe_media_pipeline(media, profile, status: str) -> None:
+    outcome = "succeeded" if status in {"success", "succeeded"} else "failed"
+    reason_code = "none" if outcome == "succeeded" else "encoding_failed"
     _safe_metric(
         "media encoding profile",
-        lambda: MEDIA_ENCODING_PROFILE_TOTAL.labels(status=status, **_profile_labels(profile)).inc(),
+        lambda: MEDIA_ENCODING_PROFILE_TOTAL.labels(
+            outcome=outcome,
+            reason_code=reason_code,
+            **_profile_labels(profile),
+        ).inc(),
     )
+    record_domain_outcome("encoding", outcome, reason_code)
     media_type = str(getattr(media, "media_type", None) or "unknown")
     duration = getattr(media, "duration", 0) or 0
     if duration > 0:
