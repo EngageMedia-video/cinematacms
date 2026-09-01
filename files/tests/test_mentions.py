@@ -65,6 +65,18 @@ class ResolveMentionedUsersTest(TestCase):
         bob = self._create_user("bob")
         self.assertEqual(resolve_mentioned_users("@author @bob", exclude=author), [bob])
 
+    def test_prefers_the_exact_spelling_when_usernames_differ_only_by_case(self):
+        """Usernames are case-sensitive, so an iexact lookup can return two users."""
+        lower = self._create_user("casey")
+        self._create_user("Casey")
+
+        self.assertEqual(resolve_mentioned_users("@casey"), [lower])
+
+    def test_falls_back_to_a_case_insensitive_match_for_a_hand_typed_handle(self):
+        alice = self._create_user("alice")
+
+        self.assertEqual(resolve_mentioned_users("@ALICE"), [alice])
+
     def test_preserves_mention_order(self):
         alice = self._create_user("alice")
         bob = self._create_user("bob")
