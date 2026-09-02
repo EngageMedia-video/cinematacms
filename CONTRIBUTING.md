@@ -5,13 +5,19 @@ local setup, follow the [developer onboarding guide](docs/setup/Developer-Onboar
 
 ## Start from `upstream/main`
 
-Fork the repository, add the upstream remote, and create a focused branch:
+Fork the repository, clone your fork, add the upstream remote, and create a
+focused branch:
 
 ```bash
+git clone https://github.com/<your-username>/cinematacms.git
+cd cinematacms
 git remote add upstream https://github.com/EngageMedia-video/cinematacms.git
 git fetch upstream
 git switch -c fix/private-media-access upstream/main
 ```
+
+`origin` is your fork and receives every push. `upstream` is the EngageMedia
+repository and is only a source to fetch from. You never push to `upstream`.
 
 Use a short branch type such as `feat`, `fix`, `docs`, `refactor`, `test`, or
 `chore`.
