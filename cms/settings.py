@@ -162,6 +162,8 @@ OTEL_SERVICE_NAMESPACE = os.getenv("OTEL_SERVICE_NAMESPACE", "CinemataCMS")
 OTEL_SERVICE_ROLE = os.getenv("OTEL_SERVICE_ROLE", "web")
 OTEL_ENVIRONMENT = os.getenv("OTEL_ENVIRONMENT", "development")
 OTEL_INSTANCE_ID = os.getenv("OTEL_INSTANCE_ID", "unknown")
+TELEMETRY_WORKER_ID = os.getenv("TELEMETRY_WORKER_ID", "")
+TELEMETRY_WORKER_HMAC_KEY = os.getenv("TELEMETRY_WORKER_HMAC_KEY", "")
 OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/traces")
 OTEL_EXPORTER_OTLP_HEADERS = os.getenv("OTEL_EXPORTER_OTLP_HEADERS", "")
 try:
@@ -177,8 +179,9 @@ EMAIL_RECIPIENT_HMAC_VERSION = os.getenv("EMAIL_RECIPIENT_HMAC_VERSION", "v1")
 EMAIL_RECIPIENT_HMAC_KEY = os.getenv("EMAIL_RECIPIENT_HMAC_KEY", "")
 EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY = os.getenv("EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY", "")
 EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION = os.getenv("EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION", "previous")
-OBSERVABILITY_SLOW_REQUEST_SECONDS = 2.0
-OBSERVABILITY_SLOW_QUERY_SECONDS = 1.0
+OBSERVABILITY_SLOW_REQUEST_SECONDS = float(os.getenv("OBSERVABILITY_SLOW_REQUEST_SECONDS", "2"))
+OBSERVABILITY_SLOW_QUERY_SECONDS = float(os.getenv("OBSERVABILITY_SLOW_QUERY_SECONDS", "1"))
+OBSERVABILITY_SLOW_CACHE_SECONDS = float(os.getenv("OBSERVABILITY_SLOW_CACHE_SECONDS", "0.1"))
 
 LOGGING = {
     "version": 1,
@@ -247,7 +250,7 @@ CELERY_WORKER_TASK_LOG_FORMAT = "%(message)s"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "cms.db_backend.postgresql",
         "NAME": "mediacms",
         "HOST": "127.0.0.1",
         "PORT": "5432",
@@ -797,6 +800,12 @@ NEWSLETTER_LIST_IDS = [2]
 import sys
 
 from .local_settings import *
+
+# Keep the application-owned PostgreSQL seam active when local settings replace
+# the base ``DATABASES`` mapping above.
+for _database_config in DATABASES.values():
+    if _database_config.get("ENGINE") == "django.db.backends.postgresql":
+        _database_config["ENGINE"] = "cms.db_backend.postgresql"
 
 _is_testing = "test" in sys.argv or "pytest" in sys.modules
 

@@ -5,8 +5,13 @@ Tests for files.token_utils — token lifecycle, rate limiting, and manifest rew
 from unittest.mock import patch
 
 from django.test import SimpleTestCase, TestCase, override_settings
+from django_redis import get_redis_connection
 
 from files import token_utils
+
+
+def _redis():
+    return get_redis_connection("default")
 
 
 class TokenGenerationTest(TestCase):
@@ -28,7 +33,7 @@ class TokenGenerationTest(TestCase):
         media_id = "test-media-uid"
         token = token_utils.generate_token(media_id)
 
-        redis = token_utils._get_redis()
+        redis = _redis()
         access_key = token_utils.ACCESS_KEY_TEMPLATE.format(token=token)
         media_set_key = token_utils.MEDIA_SET_KEY_TEMPLATE.format(media_id=media_id)
 
@@ -67,7 +72,7 @@ class TokenValidationTest(TestCase):
         token = token_utils.generate_token(media_id)
 
         # Manually expire the key
-        redis = token_utils._get_redis()
+        redis = _redis()
         access_key = token_utils.ACCESS_KEY_TEMPLATE.format(token=token)
         redis.delete(access_key)
 
@@ -76,7 +81,7 @@ class TokenValidationTest(TestCase):
     def test_redis_unavailable_fails_closed(self):
         token = token_utils.generate_token("media-closed")
 
-        with patch.object(token_utils, "_get_redis", side_effect=Exception("Redis down")):
+        with patch.object(token_utils.restricted_media_redis, "_connection", side_effect=Exception("Redis down")):
             self.assertFalse(token_utils.validate_token(token, "media-closed"))
 
 
@@ -112,7 +117,7 @@ class RateLimitTest(TestCase):
     def setUp(self):
         # Clean up any leftover keys
         try:
-            redis = token_utils._get_redis()
+            redis = _redis()
             key = token_utils.RATE_LIMIT_KEY_TEMPLATE.format(ip="1.2.3.4", friendly_token="ft123")
             redis.delete(key)
         except Exception:

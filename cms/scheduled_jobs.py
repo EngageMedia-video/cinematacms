@@ -29,24 +29,24 @@ SCHEDULED_JOBS = {
 }
 
 SCHEDULED_JOB_RUNS_TOTAL = Counter(
-    "cinemata_scheduled_job_runs_total",
+    "cinematacms_scheduled_job_runs_total",
     "Scheduled job domain outcomes",
     ["job", "outcome", "reason_code"],
 )
 SCHEDULED_JOB_LAST_STARTED = Gauge(
-    "cinemata_scheduled_job_last_started_timestamp_seconds",
+    "cinematacms_scheduled_job_last_started_timestamp_seconds",
     "Last scheduled job start time",
     ["job"],
     multiprocess_mode="mostrecent",
 )
 SCHEDULED_JOB_LAST_SUCCESS = Gauge(
-    "cinemata_scheduled_job_last_success_timestamp_seconds",
+    "cinematacms_scheduled_job_last_success_timestamp_seconds",
     "Last successful scheduled job completion time",
     ["job"],
     multiprocess_mode="mostrecent",
 )
 SCHEDULED_JOB_ITEMS_TOTAL = Counter(
-    "cinemata_scheduled_job_items_total",
+    "cinematacms_scheduled_job_items_total",
     "Items handled by scheduled jobs",
     ["job", "result"],
 )

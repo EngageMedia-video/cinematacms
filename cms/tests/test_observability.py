@@ -1,5 +1,4 @@
 import logging
-from contextlib import contextmanager
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
@@ -7,6 +6,7 @@ from unittest.mock import Mock, call, patch
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
+from cms.http_telemetry import classify_request
 from cms.observability import (
     OpenTelemetryLogFilter,
     OperationAwareSampler,
@@ -17,10 +17,20 @@ from cms.observability import (
 )
 from cms.observability_middleware import ObservabilityMetricsMiddleware
 from cms.urls import metrics_view
-from files.metrics import classify_endpoint_group
 
 
 class ObservabilityConfigTests(SimpleTestCase):
+    @override_settings(
+        OBSERVABILITY_SLOW_REQUEST_SECONDS=0.3,
+        OBSERVABILITY_SLOW_QUERY_SECONDS=1.0,
+        OBSERVABILITY_SLOW_CACHE_SECONDS=0.1,
+    )
+    def test_diagnostic_threshold_must_match_histogram_bucket(self):
+        from files.metrics import validate_telemetry_settings
+
+        with self.assertRaisesMessage(ValueError, "OBSERVABILITY_SLOW_REQUEST_SECONDS"):
+            validate_telemetry_settings()
+
     def test_credentialed_otlp_endpoint_requires_https_or_loopback(self):
         headers = {"authorization": "secret"}
         self.assertFalse(_credentialed_endpoint_is_secure("http://collector.internal:4318/v1/traces", headers))
@@ -47,11 +57,36 @@ class ObservabilityConfigTests(SimpleTestCase):
 
         observability._tracer_configured = True
         observability._celery_instrumented = True
+        observability._redis_instrumented = True
+        observability._requests_instrumented = True
         with patch("cms.observability.configure_celery_observability") as configure:
             observability.configure_celery_worker_process()
         self.assertFalse(observability._tracer_configured)
         self.assertFalse(observability._celery_instrumented)
+        self.assertFalse(observability._redis_instrumented)
+        self.assertFalse(observability._requests_instrumented)
         configure.assert_called_once_with()
+
+    @override_settings(OTEL_ENABLED=True)
+    def test_celery_child_instruments_redis_and_outbound_http_without_psycopg2(self):
+        from cms import observability
+
+        observability._celery_instrumented = False
+        observability._redis_instrumented = False
+        observability._requests_instrumented = False
+        with (
+            patch("cms.observability._configure_tracer_provider", return_value=True),
+            patch("opentelemetry.instrumentation.celery.CeleryInstrumentor.instrument") as celery,
+            patch("opentelemetry.instrumentation.redis.RedisInstrumentor.instrument") as redis,
+            patch("opentelemetry.instrumentation.requests.RequestsInstrumentor.instrument") as requests,
+            patch("opentelemetry.instrumentation.psycopg2.Psycopg2Instrumentor.instrument") as psycopg2,
+        ):
+            observability.configure_celery_observability()
+
+        celery.assert_called_once_with()
+        redis.assert_called_once_with()
+        requests.assert_called_once_with()
+        psycopg2.assert_not_called()
 
     @override_settings(OTEL_ENABLED=True)
     def test_span_filter_keeps_receipt_refs_and_drops_sensitive_content(self):
@@ -73,16 +108,30 @@ class ObservabilityConfigTests(SimpleTestCase):
                 pass
         span.set_attribute.assert_called_once_with("email.recipient_ref", "v1:opaque")
 
+    @override_settings(OTEL_ENABLED=True)
+    def test_span_start_failure_does_not_change_application_behavior(self):
+        tracer = Mock()
+        tracer.start_as_current_span.side_effect = RuntimeError("tracer unavailable")
+        with (
+            patch("cms.observability.get_tracer", return_value=tracer),
+            patch("files.metrics.record_telemetry_failure") as failure,
+        ):
+            with start_span("safe.operation", {"token": "secret"}) as span:
+                result = "application-result"
+
+        self.assertIsNone(span)
+        self.assertEqual(result, "application-result")
+        failure.assert_called_once_with("traces", "span", "start")
+
     def test_export_failure_is_reported_without_raising(self):
         from opentelemetry.sdk.trace.export import SpanExportResult
 
         exporter = Mock()
         exporter.export.side_effect = RuntimeError("collector unavailable")
-        with patch("cms.observability.TELEMETRY_EXPORT_FAILURES_TOTAL") as failures:
-            failures.labels.return_value.inc = Mock()
+        with patch("files.metrics.record_telemetry_failure") as failures:
             result = SafeSpanExporter(exporter).export([])
         self.assertEqual(result, SpanExportResult.FAILURE)
-        failures.labels.assert_called_once_with(signal="traces")
+        failures.assert_called_once_with("traces", "exporter", "export")
 
     def test_priority_operations_can_sample_above_ordinary_web_requests(self):
         from opentelemetry.sdk.trace.sampling import Decision
@@ -93,54 +142,98 @@ class ObservabilityConfigTests(SimpleTestCase):
 
 
 class EndpointGroupingTests(SimpleTestCase):
-    def test_endpoint_grouping_uses_low_cardinality_labels(self):
-        cases = {
-            "/metrics": "system",
-            "/health/ready": "system",
-            "/api/v1/search?q=abc": "api_search",
-            "/api/v1/media/abc123": "api_media",
-            "/api/v1/manage_media": "api_manage",
-            "/manage/media": "api_manage",
-            "/fu/upload/": "uploads",
-            "/upload": "uploads",
-            "/media/original/video.mp4": "media_serve",
-            "/api/v1/users": "api_other",
-            "/some-page": "pages",
-        }
-        for path, expected in cases.items():
-            with self.subTest(path=path):
-                self.assertEqual(classify_endpoint_group(path), expected)
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def test_endpoint_grouping_uses_resolved_operation_not_raw_path(self):
+        request = self.factory.get("/ignored-sensitive-value")
+        request.resolver_match = SimpleNamespace(
+            url_name="api_get_media",
+            namespace="",
+            func=SimpleNamespace(__module__="files.views"),
+            route="^api/v1/media/(?P<friendly_token>[\\w]+(-[\\w]+)*)$",
+        )
+
+        self.assertEqual(classify_request(request), ("media_api", "media_detail"))
+
+    def test_unresolved_request_has_dedicated_operation(self):
+        request = self.factory.get("/missing-sensitive-value")
+        request.resolver_match = None
+
+        self.assertEqual(classify_request(request), ("unmatched", "not_found"))
+
+    def test_third_party_request_is_separate_from_application_routes(self):
+        request = self.factory.post("/ignored-sensitive-value")
+        request.resolver_match = SimpleNamespace(
+            url_name="login",
+            namespace="rest_framework",
+            func=SimpleNamespace(__module__="django.contrib.auth.views"),
+            route="api-auth/login/",
+        )
+
+        self.assertEqual(classify_request(request), ("third_party", "third_party"))
 
 
 class ObservabilityMiddlewareTests(SimpleTestCase):
     def setUp(self):
         self.factory = RequestFactory()
 
-    @contextmanager
-    def _fake_execute_wrapper(self):
-        yield
-
-    @override_settings(OBSERVABILITY_SLOW_REQUEST_SECONDS=0)
     def test_middleware_records_request_without_raw_path_label(self):
         request = self.factory.get("/api/v1/media/sensitive-token")
+        request.resolver_match = SimpleNamespace(
+            url_name="api_get_media",
+            namespace="",
+            func=SimpleNamespace(__module__="files.views"),
+            route="^api/v1/media/(?P<friendly_token>[\\w]+(-[\\w]+)*)$",
+        )
         response = HttpResponse("ok", status=201)
 
         with (
-            patch("cms.observability_middleware.connection.execute_wrapper", return_value=self._fake_execute_wrapper()),
             patch("cms.observability_middleware.HTTP_REQUESTS_TOTAL") as requests_total,
             patch("cms.observability_middleware.HTTP_REQUEST_DURATION_SECONDS") as duration,
-            patch("cms.observability_middleware.SLOW_REQUESTS_TOTAL") as slow_requests,
         ):
             requests_total.labels.return_value.inc = Mock()
             duration.labels.return_value.observe = Mock()
-            slow_requests.labels.return_value.inc = Mock()
-
             result = ObservabilityMetricsMiddleware(lambda _request: response)(request)
 
         self.assertIs(result, response)
-        requests_total.labels.assert_called_once_with(endpoint_group="api_media", method="GET", status_class="2xx")
-        duration.labels.assert_called_once_with(endpoint_group="api_media", method="GET", status_class="2xx")
-        slow_requests.labels.assert_called_once_with(endpoint_group="api_media", method="GET")
+        requests_total.labels.assert_called_once_with(
+            route_group="media_api", operation="media_detail", method="GET", status_code="201"
+        )
+        duration.labels.assert_called_once_with(
+            route_group="media_api", operation="media_detail", method="GET", status_class="2xx"
+        )
+
+    def test_metric_failure_cannot_change_successful_response(self):
+        request = self.factory.get("/metrics")
+        request.resolver_match = SimpleNamespace(
+            url_name=None,
+            namespace="",
+            func=SimpleNamespace(__module__="cms.urls", __name__="metrics_view"),
+            route="metrics",
+        )
+        response = HttpResponse("ok")
+        with patch("cms.observability_middleware.HTTP_REQUESTS_TOTAL.labels", side_effect=RuntimeError("down")):
+            result = ObservabilityMetricsMiddleware(lambda _request: response)(request)
+
+        self.assertIs(result, response)
+
+    def test_method_and_status_values_are_bounded(self):
+        request = self.factory.generic("BREW", "/missing/path")
+        request.resolver_match = None
+        response = SimpleNamespace(status_code=700)
+        with (
+            patch("cms.observability_middleware.HTTP_REQUESTS_TOTAL") as requests_total,
+            patch("cms.observability_middleware.HTTP_REQUEST_DURATION_SECONDS") as duration,
+        ):
+            ObservabilityMetricsMiddleware(lambda _request: response)(request)
+
+        requests_total.labels.assert_called_once_with(
+            route_group="unmatched", operation="not_found", method="OTHER", status_code="other"
+        )
+        duration.labels.assert_called_once_with(
+            route_group="unmatched", operation="not_found", method="OTHER", status_class="other"
+        )
 
 
 class MetricsViewTests(SimpleTestCase):
@@ -170,35 +263,61 @@ class MetricsViewTests(SimpleTestCase):
 
 class CacheMetricTests(SimpleTestCase):
     def test_permission_cache_miss_is_recorded(self):
+        from cms import cache_telemetry
         from files import cache_utils
 
         with (
-            patch.object(cache_utils.cache, "get", return_value=None),
-            patch("files.cache_utils.record_cache_operation") as record,
+            patch.object(
+                cache_telemetry.owned_cache.backend,
+                "get",
+                side_effect=lambda key, default=None, **kwargs: default,
+            ),
+            patch.object(cache_telemetry, "CACHE_OPERATIONS_TOTAL") as operations,
         ):
             self.assertIsNone(cache_utils.get_cached_permission("permission-key"))
 
-        record.assert_called_once_with("permission", "get", hit=False)
+        operations.labels.assert_called_once_with(family="permission", operation="read", result="miss")
 
     def test_query_cache_hit_is_recorded(self):
+        from cms import cache_telemetry
         from files import query_cache
 
         with (
-            patch.object(query_cache.cache, "get", return_value={"ok": True}),
-            patch("files.query_cache.record_cache_operation") as record,
+            patch.object(cache_telemetry.owned_cache.backend, "get", return_value={"ok": True}),
+            patch.object(cache_telemetry, "CACHE_OPERATIONS_TOTAL") as operations,
         ):
             self.assertEqual(query_cache.get_cached_result("query-key"), {"ok": True})
 
-        record.assert_called_once_with("query", "get", hit=True)
+        operations.labels.assert_called_once_with(family="query", operation="read", result="hit")
 
 
 class MetricFailureIsolationTests(SimpleTestCase):
+    def test_telemetry_failure_warnings_are_rate_limited_and_include_suppressed_count(self):
+        from files import metrics
+
+        metrics._telemetry_warning_state.clear()
+        with (
+            patch("files.metrics.time.monotonic", side_effect=[0, 10, 61]),
+            patch("files.metrics.TELEMETRY_EMISSION_FAILURES_TOTAL") as total,
+            patch("files.metrics.logger.warning") as warning,
+        ):
+            metrics.record_telemetry_failure("metrics", "http", "emit")
+            metrics.record_telemetry_failure("metrics", "http", "emit")
+            metrics.record_telemetry_failure("metrics", "http", "emit")
+
+        self.assertEqual(total.labels.return_value.inc.call_count, 3)
+        self.assertEqual(warning.call_count, 2)
+        self.assertEqual(warning.call_args.kwargs["extra"]["suppressed_count"], 1)
+
     def test_cache_fallback_survives_metric_failure(self):
+        from cms import cache_telemetry
         from files import cache_utils
 
         with (
-            patch.object(cache_utils.cache, "get", return_value=True),
-            patch("files.metrics.CACHE_OPERATIONS_TOTAL.labels", side_effect=RuntimeError("metrics unavailable")),
+            patch.object(cache_telemetry.owned_cache.backend, "get", return_value=True),
+            patch.object(
+                cache_telemetry, "CACHE_OPERATIONS_TOTAL", labels=Mock(side_effect=RuntimeError("metrics unavailable"))
+            ),
         ):
             self.assertTrue(cache_utils.get_cached_permission("permission-key"))
 
@@ -230,6 +349,18 @@ class MetricFailureIsolationTests(SimpleTestCase):
             record_stale_encoding(encoding)
 
 
+class AuthenticationMetricTests(SimpleTestCase):
+    def test_django_login_failure_uses_bounded_contract(self):
+        from files import metrics
+
+        with patch("files.metrics.AUTH_FAILURES_TOTAL") as failures:
+            metrics._on_user_login_failed()
+
+        failures.labels.assert_called_once_with(
+            surface="account_login", mechanism="password", reason="invalid_credentials"
+        )
+
+
 class RuntimeGaugeTests(SimpleTestCase):
     def test_runtime_snapshot_gauges_use_mostrecent_multiprocess_mode(self):
         from files import metrics
@@ -245,6 +376,79 @@ class RuntimeGaugeTests(SimpleTestCase):
 
 
 class CeleryAndMediaMetricTests(SimpleTestCase):
+    def test_task_names_are_normalized_to_bounded_families(self):
+        from files.metrics import normalize_task_family
+
+        self.assertEqual(normalize_task_family("files.tasks.encode_media"), "encoding")
+        self.assertEqual(normalize_task_family("email_delivery.tasks.deliver_email"), "email_delivery")
+        self.assertEqual(normalize_task_family("tenant.dynamic.task"), "unknown")
+
+    def test_every_registered_application_task_has_a_known_family(self):
+        from files.metrics import TASK_FAMILY_BY_NAME, normalize_task_family
+
+        expected_tasks = {
+            "chunkize_media",
+            "encode_media",
+            "whisper_transcribe",
+            "produce_sprite_from_video",
+            "create_hls",
+            "media_init",
+            "refresh_media_storage_usage",
+            "check_running_states",
+            "check_media_states",
+            "check_pending_states",
+            "check_missing_profiles",
+            "clear_sessions",
+            "save_user_action",
+            "get_list_of_popular_media",
+            "update_listings_thumbnails",
+            "start_missing_encodings",
+            "sum_two_numbers",
+            "sum_two_numbers_two",
+            "beat_test",
+            "remove_media_file",
+            "cleanup_orphaned_uploads",
+            "cleanup_orphaned_draft_media",
+            "subscribe_user",
+            "dispatch_deferred_encodings",
+            "apply_visibility_schedules",
+            "deliver_email",
+            "recover_stale_email_deliveries",
+            "cleanup_email_delivery_receipts",
+            "notify_followers_new_media",
+            "record_beat_freshness",
+            "cms.celery.debug_task",
+        }
+        self.assertEqual(set(TASK_FAMILY_BY_NAME), expected_tasks)
+        for task_name in expected_tasks:
+            with self.subTest(task_name=task_name):
+                self.assertNotEqual(normalize_task_family(task_name), "unknown")
+
+    @override_settings(
+        OTEL_SERVICE_ROLE="long-task",
+        TELEMETRY_WORKER_ID="long-1",
+        TELEMETRY_WORKER_HMAC_KEY="test-only-secret",
+    )
+    def test_worker_reference_is_stable_and_hides_infrastructure_identity(self):
+        from files.metrics import worker_reference
+
+        first = worker_reference()
+        second = worker_reference()
+        self.assertEqual(first, second)
+        self.assertTrue(first.startswith("v1:"))
+        self.assertNotIn("long-1", first)
+        self.assertNotIn("hostname", first)
+
+    @override_settings(TELEMETRY_WORKER_ID="", TELEMETRY_WORKER_HMAC_KEY="")
+    def test_missing_worker_identity_emits_reserved_role_level_reference(self):
+        from files import metrics
+
+        with patch("files.metrics.record_contract_violation") as violation:
+            reference = metrics.worker_reference()
+
+        self.assertEqual(reference, "v1:" + "0" * 32)
+        violation.assert_called_once_with("celery", "worker_ref")
+
     def test_celery_task_signal_helpers_record_lifecycle(self):
         from files import metrics
 
@@ -265,10 +469,12 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             metrics._on_task_prerun(sender=sender, task_id="task-1")
             metrics._on_task_postrun(sender=sender, task_id="task-1", state="SUCCESS")
 
-        task_total.labels.assert_any_call(task_name="encode_media", queue="long_tasks", state="started")
-        task_total.labels.assert_any_call(task_name="encode_media", queue="long_tasks", state="succeeded")
-        task_active.labels.assert_called_with(task_name="encode_media", queue="long_tasks")
-        duration.labels.assert_called_once_with(task_name="encode_media", queue="long_tasks")
+        task_total.labels.assert_any_call(task_family="encoding", queue="long_tasks", event="started", outcome="none")
+        task_total.labels.assert_any_call(
+            task_family="encoding", queue="long_tasks", event="completed", outcome="succeeded"
+        )
+        task_active.labels.assert_called_with(task_family="encoding", queue="long_tasks")
+        duration.labels.assert_called_once_with(task_family="encoding", queue="long_tasks", outcome="succeeded")
 
     def test_queue_normalization_and_terminal_states_are_bounded(self):
         from files import metrics
@@ -280,14 +486,28 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             metrics._on_task_failure(sender=unknown, task_id="failed-1")
             metrics._on_task_retry(sender=unknown, request=SimpleNamespace(id="retry-1"))
             metrics._on_task_revoked(sender=unknown, request=SimpleNamespace(id="revoked-1"))
-        states = {call.kwargs["state"] for call in task_total.labels.call_args_list}
+        states = {call.kwargs["outcome"] for call in task_total.labels.call_args_list}
         self.assertEqual(states, {"failed", "retried", "revoked"})
 
-    def test_domain_outcome_rejects_unbounded_state(self):
-        from files.metrics import record_domain_outcome
+    def test_domain_outcome_normalizes_unbounded_values_without_raising(self):
+        from files import metrics
 
-        with self.assertRaises(ValueError):
-            record_domain_outcome("encoding", "user-supplied")
+        with (
+            patch("files.metrics.DOMAIN_OUTCOMES_TOTAL") as total,
+            patch("files.metrics.record_contract_violation") as violation,
+        ):
+            metrics.record_domain_outcome("tenant-operation", "user-supplied", "secret-reason")
+
+        total.labels.assert_called_once_with(operation="other", outcome="failed", reason_code="other")
+        self.assertEqual(violation.call_count, 3)
+
+    def test_unregistered_queue_reports_contract_violation(self):
+        from files import metrics
+
+        sender = SimpleNamespace(request=SimpleNamespace(delivery_info={"routing_key": "tenant-42"}))
+        with patch("files.metrics.record_contract_violation") as violation:
+            self.assertEqual(metrics.normalize_queue(sender=sender), "default")
+        violation.assert_called_once_with("celery", "queue")
 
     def test_returned_domain_failure_is_separate_from_celery_success(self):
         from files import metrics
@@ -302,7 +522,9 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
         ):
             task_total.labels.return_value.inc = Mock()
             metrics._on_task_postrun(sender=sender, task_id="domain-failure", state="SUCCESS", retval=False)
-        task_total.labels.assert_called_with(task_name="chunkize_media", queue="short_tasks", state="succeeded")
+        task_total.labels.assert_called_with(
+            task_family="encoding", queue="short_tasks", event="completed", outcome="succeeded"
+        )
         domain.assert_called_once_with("chunking", "failed", "returned_false")
 
     def test_media_pipeline_observation_uses_low_cardinality_profile_labels(self):

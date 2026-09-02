@@ -1,0 +1,2399 @@
+{
+  "version": 1,
+  "namespace": "cinematacms",
+  "registries": {
+    "domains": {
+      "values": [
+        "http",
+        "database",
+        "cache",
+        "authentication",
+        "celery",
+        "media",
+        "email",
+        "scheduled",
+        "telemetry"
+      ]
+    },
+    "http_route_groups": {
+      "values": [
+        "system",
+        "pages",
+        "web_search",
+        "media_delivery",
+        "upload_ui",
+        "upload_transfer",
+        "search_api",
+        "media_api",
+        "moderation_api",
+        "moderation_ui",
+        "self_upload_api",
+        "notifications_api",
+        "users_api",
+        "playlists_api",
+        "taxonomy_api",
+        "task_api",
+        "api_other",
+        "third_party",
+        "unmatched"
+      ],
+      "description": "Bounded route groups resolved after Django URL matching."
+    },
+    "http_operations": {
+      "values": [
+        "request",
+        "not_found",
+        "third_party",
+        "metrics",
+        "health_live",
+        "health_ready",
+        "home",
+        "robots",
+        "upload_page",
+        "manage_uploads",
+        "film_impact_page",
+        "web_search",
+        "rss_search",
+        "media_delivery",
+        "upload_options",
+        "upload_transfer",
+        "search",
+        "media_list",
+        "media_create",
+        "media_detail",
+        "restricted_media_token",
+        "moderation_media",
+        "moderation_film_impact",
+        "self_uploads_list",
+        "self_uploads_bulk_state",
+        "self_upload_options",
+        "notifications_list",
+        "notification_read",
+        "notifications_mark_all_read",
+        "notifications_preferences",
+        "notifications_unread_count",
+        "user_list",
+        "user_contact",
+        "private_journal",
+        "user_community_impacts",
+        "playlist_list",
+        "playlist_detail",
+        "taxonomy_categories",
+        "taxonomy_countries",
+        "taxonomy_topics",
+        "taxonomy_subtitle_languages",
+        "task_control",
+        "api_other",
+        "other"
+      ],
+      "description": "Bounded semantic operation names for resolved routes."
+    },
+    "http_methods": {
+      "values": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+        "OTHER"
+      ],
+      "description": "Normalized HTTP methods."
+    },
+    "http_status_codes": {
+      "values": [
+        "other"
+      ],
+      "description": "Exact HTTP status codes, represented as an inclusive range plus other.",
+      "ranges": [
+        {
+          "start": 100,
+          "end": 599
+        }
+      ]
+    },
+    "http_status_classes": {
+      "values": [
+        "1xx",
+        "2xx",
+        "3xx",
+        "4xx",
+        "5xx",
+        "other"
+      ],
+      "description": "Normalized HTTP status classes."
+    },
+    "db_workloads": {
+      "values": [
+        "web",
+        "celery",
+        "other"
+      ],
+      "description": "Database workload contexts."
+    },
+    "db_context_groups": {
+      "values": [
+        "system",
+        "pages",
+        "web_search",
+        "media_delivery",
+        "upload_ui",
+        "upload_transfer",
+        "search_api",
+        "media_api",
+        "moderation_api",
+        "moderation_ui",
+        "self_upload_api",
+        "notifications_api",
+        "users_api",
+        "playlists_api",
+        "taxonomy_api",
+        "task_api",
+        "api_other",
+        "third_party",
+        "celery",
+        "other"
+      ],
+      "description": "Bounded route or task context groups."
+    },
+    "db_operations": {
+      "values": [
+        "select",
+        "insert",
+        "update",
+        "delete",
+        "transaction",
+        "other"
+      ],
+      "description": "Normalized database operation categories."
+    },
+    "db_outcomes": {
+      "values": [
+        "success",
+        "error"
+      ],
+      "description": "Database execution outcomes."
+    },
+    "databases": {
+      "values": [
+        "default",
+        "other"
+      ],
+      "description": "Bounded database aliases."
+    },
+    "cache_families": {
+      "values": [
+        "permission",
+        "query",
+        "query_version",
+        "media_path",
+        "storage_usage",
+        "popular_media",
+        "maintenance_timing",
+        "hls_coordination",
+        "scheduled_task_lock",
+        "restricted_media_token",
+        "restricted_media_rate_limit",
+        "cache_probe"
+      ],
+      "description": "Application-owned cache semantic families."
+    },
+    "cache_operations": {
+      "values": [
+        "read",
+        "bulk_read",
+        "write",
+        "invalidate",
+        "lock",
+        "probe",
+        "token_validate",
+        "rate_limit",
+        "other"
+      ],
+      "description": "Logical cache operations."
+    },
+    "cache_results": {
+      "values": [
+        "hit",
+        "partial_hit",
+        "miss",
+        "success",
+        "error",
+        "other"
+      ],
+      "description": "Logical cache operation results."
+    },
+    "auth_surfaces": {
+      "values": [
+        "account_login",
+        "api",
+        "restricted_media",
+        "other"
+      ],
+      "description": "Authentication surfaces."
+    },
+    "auth_mechanisms": {
+      "values": [
+        "password",
+        "basic",
+        "session",
+        "token",
+        "media_password",
+        "media_token",
+        "unknown"
+      ],
+      "description": "Authentication mechanisms.",
+      "fallback_values": [
+        "unknown"
+      ]
+    },
+    "auth_reasons": {
+      "values": [
+        "invalid_credentials",
+        "malformed_credentials",
+        "inactive_principal",
+        "csrf_rejected",
+        "rate_limited",
+        "missing_credentials",
+        "invalid_token",
+        "dependency_unavailable",
+        "internal_error",
+        "unknown_failure",
+        "other"
+      ],
+      "description": "Authentication failure reasons."
+    },
+    "celery_task_families": {
+      "values": [
+        "encoding",
+        "transcription",
+        "media_derivative",
+        "media_lifecycle",
+        "storage_maintenance",
+        "discovery",
+        "user_activity",
+        "email_delivery",
+        "platform_maintenance",
+        "diagnostic",
+        "unknown"
+      ],
+      "description": "Bounded Celery task families.",
+      "fallback_values": [
+        "unknown"
+      ]
+    },
+    "celery_queues": {
+      "values": [
+        "long_tasks",
+        "short_tasks",
+        "whisper_tasks",
+        "email_tasks",
+        "default"
+      ],
+      "description": "Normalized Celery queues."
+    },
+    "celery_events": {
+      "values": [
+        "started",
+        "completed"
+      ],
+      "description": "Celery lifecycle events; terminal state is carried by outcome."
+    },
+    "celery_outcomes": {
+      "values": [
+        "none",
+        "succeeded",
+        "failed",
+        "retried",
+        "revoked"
+      ],
+      "description": "Celery task metric outcomes; domain outcomes use a separate registry."
+    },
+    "service_roles": {
+      "values": [
+        "web",
+        "long-task",
+        "short-task",
+        "transcription",
+        "email",
+        "beat"
+      ],
+      "description": "Bounded process service roles."
+    },
+    "domain_operations": {
+      "values": [
+        "encoding",
+        "transcription",
+        "media_derivative",
+        "media_lifecycle",
+        "storage_maintenance",
+        "discovery",
+        "user_activity",
+        "email_delivery",
+        "platform_maintenance",
+        "diagnostic",
+        "scheduled.record_beat_freshness",
+        "scheduled.recover_stale_email_deliveries",
+        "scheduled.cleanup_email_delivery_receipts",
+        "scheduled.clear_sessions",
+        "scheduled.update_listings_thumbnails",
+        "scheduled.cleanup_orphaned_uploads",
+        "scheduled.cleanup_orphaned_draft_media",
+        "scheduled.dispatch_deferred_encodings",
+        "scheduled.apply_visibility_schedules",
+        "other"
+      ],
+      "description": "Application-owned domain operations."
+    },
+    "domain_outcomes": {
+      "values": [
+        "succeeded",
+        "failed",
+        "skipped",
+        "retried",
+        "cancelled"
+      ],
+      "description": "Application-owned domain outcomes."
+    },
+    "domain_reason_codes": {
+      "values": [
+        "none",
+        "encoding_failed",
+        "encryption_bypass",
+        "invalid_encryption",
+        "queue_publish_failed",
+        "preference_changed",
+        "smtp_4xx",
+        "smtp_5xx",
+        "timeout",
+        "worker_lost",
+        "lock_held",
+        "item_errors",
+        "cleanup_failed",
+        "dependency_unavailable",
+        "invalid_credentials",
+        "malformed_credentials",
+        "inactive_principal",
+        "csrf_rejected",
+        "rate_limited",
+        "missing_credentials",
+        "invalid_token",
+        "internal_error",
+        "other"
+      ],
+      "description": "Bounded domain reason codes."
+    },
+    "media_resolutions": {
+      "values": [
+        "source",
+        "240p",
+        "360p",
+        "480p",
+        "720p",
+        "1080p",
+        "1440p",
+        "2160p",
+        "other"
+      ],
+      "description": "Bounded media resolution labels."
+    },
+    "media_codecs": {
+      "values": [
+        "h264",
+        "h265",
+        "vp8",
+        "vp9",
+        "av1",
+        "other"
+      ],
+      "description": "Bounded media codec labels."
+    },
+    "media_extensions": {
+      "values": [
+        "mp4",
+        "webm",
+        "m3u8",
+        "ts",
+        "vtt",
+        "mp3",
+        "wav",
+        "other"
+      ],
+      "description": "Bounded media extension labels."
+    },
+    "media_types": {
+      "values": [
+        "video",
+        "audio",
+        "image",
+        "subtitle",
+        "other"
+      ],
+      "description": "Bounded media type labels."
+    },
+    "email_kinds": {
+      "values": [
+        "activity_notification",
+        "media_lifecycle",
+        "role_change",
+        "account",
+        "authentication",
+        "contact_form",
+        "administrative"
+      ],
+      "description": "Email kinds."
+    },
+    "email_outcomes": {
+      "values": [
+        "queued",
+        "sending",
+        "retrying",
+        "smtp_accepted",
+        "failed",
+        "skipped",
+        "unknown"
+      ],
+      "description": "Email delivery outcomes.",
+      "fallback_values": [
+        "unknown"
+      ]
+    },
+    "email_reasons": {
+      "values": [
+        "none",
+        "queue_publish_failed",
+        "preference_changed",
+        "smtp_4xx",
+        "smtp_5xx",
+        "timeout",
+        "worker_lost",
+        "other"
+      ],
+      "description": "Email delivery reason codes."
+    },
+    "scheduled_jobs": {
+      "values": [
+        "record_beat_freshness",
+        "recover_stale_email_deliveries",
+        "cleanup_email_delivery_receipts",
+        "clear_sessions",
+        "update_listings_thumbnails",
+        "cleanup_orphaned_uploads",
+        "cleanup_orphaned_draft_media",
+        "dispatch_deferred_encodings",
+        "apply_visibility_schedules"
+      ],
+      "description": "Registered scheduled jobs."
+    },
+    "scheduled_outcomes": {
+      "values": [
+        "succeeded",
+        "failed",
+        "skipped",
+        "retried",
+        "cancelled"
+      ],
+      "description": "Scheduled job outcomes."
+    },
+    "telemetry_signals": {
+      "values": [
+        "cinematacms_http_requests_total",
+        "cinematacms_http_request_duration_seconds",
+        "cinematacms_db_query_duration_seconds",
+        "cinematacms_cache_operations_total",
+        "cinematacms_cache_operation_duration_seconds",
+        "cinematacms_cache_items_total",
+        "cinematacms_authentication_failures_total",
+        "cinematacms_celery_tasks_total",
+        "cinematacms_celery_task_duration_seconds",
+        "cinematacms_celery_worker_heartbeat_timestamp_seconds",
+        "cinematacms_celery_queue_depth",
+        "cinematacms_domain_outcomes_total",
+        "cinematacms_media_encoding_profile_total",
+        "cinematacms_media_duration_seconds",
+        "cinematacms_media_file_size_bytes",
+        "cinematacms_email_deliveries_total",
+        "cinematacms_email_delivery_attempts",
+        "cinematacms_email_delivery_latency_seconds",
+        "cinematacms_scheduled_job_runs_total",
+        "cinematacms_scheduled_job_last_started_timestamp_seconds",
+        "cinematacms_scheduled_job_last_success_timestamp_seconds",
+        "cinematacms_celery_beat_freshness_timestamp_seconds",
+        "cinematacms_telemetry_emission_failures_total",
+        "cinematacms_telemetry_contract_violations_total"
+      ],
+      "description": "Application metric signal names."
+    },
+    "telemetry_components": {
+      "values": [
+        "metrics",
+        "logs",
+        "traces",
+        "exporter",
+        "contract"
+      ],
+      "description": "Telemetry components."
+    },
+    "telemetry_stages": {
+      "values": [
+        "emit",
+        "serialize",
+        "export",
+        "warning",
+        "startup"
+      ],
+      "description": "Telemetry emission stages."
+    },
+    "telemetry_violation_fields": {
+      "values": [
+        "route_group",
+        "operation",
+        "method",
+        "status_code",
+        "status_class",
+        "workload",
+        "context_group",
+        "database",
+        "family",
+        "result",
+        "surface",
+        "mechanism",
+        "reason",
+        "task_family",
+        "queue",
+        "event",
+        "outcome",
+        "service_role",
+        "worker_ref",
+        "resolution",
+        "codec",
+        "extension",
+        "media_type",
+        "email_kind",
+        "job",
+        "signal",
+        "component",
+        "stage",
+        "metric",
+        "event_name",
+        "registry"
+      ],
+      "description": "Bounded fields reported by contract violations."
+    },
+    "worker_refs": {
+      "values": [],
+      "pattern": "v[0-9]+:[0-9a-f]{32,64}",
+      "description": "Versioned HMAC-derived worker references; values are deployment-specific."
+    }
+  },
+  "events": [
+    "cinematacms.http.request.slow",
+    "cinematacms.http.request.failed",
+    "cinematacms.http.request.trace",
+    "cinematacms.db.query.slow",
+    "cinematacms.db.query.failed",
+    "cinematacms.db.query.trace",
+    "cinematacms.cache.operation.slow",
+    "cinematacms.cache.operation.failed",
+    "cinematacms.cache.operation.trace",
+    "cinematacms.authentication.failed",
+    "cinematacms.celery.worker.heartbeat",
+    "cinematacms.celery.task.trace",
+    "cinematacms.media.pipeline",
+    "cinematacms.domain.outcome",
+    "cinematacms.email.delivery",
+    "cinematacms.scheduled_job.outcome",
+    "cinematacms.telemetry.emission_failed",
+    "cinematacms.telemetry.contract_violation"
+  ],
+  "metric_schemas": {
+    "cinematacms_http_requests_total": {
+      "type": "counter",
+      "labels": [
+        "route_group",
+        "operation",
+        "method",
+        "status_code"
+      ],
+      "dimension_registries": {
+        "route_group": "http_route_groups",
+        "operation": "http_operations",
+        "method": "http_methods",
+        "status_code": "http_status_codes"
+      },
+      "description": "cinematacms_http_requests_total application telemetry signal"
+    },
+    "cinematacms_http_request_duration_seconds": {
+      "type": "histogram",
+      "labels": [
+        "route_group",
+        "operation",
+        "method",
+        "status_class"
+      ],
+      "dimension_registries": {
+        "route_group": "http_route_groups",
+        "operation": "http_operations",
+        "method": "http_methods",
+        "status_class": "http_status_classes"
+      },
+      "description": "cinematacms_http_request_duration_seconds application telemetry signal",
+      "buckets": [
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1,
+        2,
+        5,
+        10,
+        30
+      ]
+    },
+    "cinematacms_db_query_duration_seconds": {
+      "type": "histogram",
+      "labels": [
+        "workload",
+        "context_group",
+        "operation",
+        "outcome",
+        "database"
+      ],
+      "dimension_registries": {
+        "workload": "db_workloads",
+        "context_group": "db_context_groups",
+        "operation": "db_operations",
+        "outcome": "db_outcomes",
+        "database": "databases"
+      },
+      "description": "cinematacms_db_query_duration_seconds application telemetry signal",
+      "buckets": [
+        0.001,
+        0.005,
+        0.01,
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1,
+        2,
+        5,
+        10,
+        30
+      ]
+    },
+    "cinematacms_cache_operations_total": {
+      "type": "counter",
+      "labels": [
+        "family",
+        "operation",
+        "result"
+      ],
+      "dimension_registries": {
+        "family": "cache_families",
+        "operation": "cache_operations",
+        "result": "cache_results"
+      },
+      "description": "cinematacms_cache_operations_total application telemetry signal"
+    },
+    "cinematacms_cache_operation_duration_seconds": {
+      "type": "histogram",
+      "labels": [
+        "family",
+        "operation",
+        "result"
+      ],
+      "dimension_registries": {
+        "family": "cache_families",
+        "operation": "cache_operations",
+        "result": "cache_results"
+      },
+      "description": "cinematacms_cache_operation_duration_seconds application telemetry signal",
+      "buckets": [
+        0.0005,
+        0.001,
+        0.0025,
+        0.005,
+        0.01,
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1,
+        2,
+        5
+      ]
+    },
+    "cinematacms_cache_items_total": {
+      "type": "counter",
+      "labels": [
+        "family",
+        "result"
+      ],
+      "dimension_registries": {
+        "family": "cache_families",
+        "result": "cache_results"
+      },
+      "description": "cinematacms_cache_items_total application telemetry signal"
+    },
+    "cinematacms_authentication_failures_total": {
+      "type": "counter",
+      "labels": [
+        "surface",
+        "mechanism",
+        "reason"
+      ],
+      "dimension_registries": {
+        "surface": "auth_surfaces",
+        "mechanism": "auth_mechanisms",
+        "reason": "auth_reasons"
+      },
+      "description": "cinematacms_authentication_failures_total application telemetry signal"
+    },
+    "cinematacms_celery_tasks_total": {
+      "type": "counter",
+      "labels": [
+        "task_family",
+        "queue",
+        "event",
+        "outcome"
+      ],
+      "dimension_registries": {
+        "task_family": "celery_task_families",
+        "queue": "celery_queues",
+        "event": "celery_events",
+        "outcome": "celery_outcomes"
+      },
+      "description": "cinematacms_celery_tasks_total application telemetry signal"
+    },
+    "cinematacms_celery_task_duration_seconds": {
+      "type": "histogram",
+      "labels": [
+        "task_family",
+        "queue",
+        "outcome"
+      ],
+      "dimension_registries": {
+        "task_family": "celery_task_families",
+        "queue": "celery_queues",
+        "outcome": "celery_outcomes"
+      },
+      "description": "cinematacms_celery_task_duration_seconds application telemetry signal",
+      "buckets": [
+        0.1,
+        0.5,
+        1,
+        5,
+        15,
+        30,
+        60,
+        120,
+        300,
+        600,
+        1800,
+        3600,
+        7200
+      ]
+    },
+    "cinematacms_celery_worker_heartbeat_timestamp_seconds": {
+      "type": "gauge",
+      "labels": [
+        "service_role",
+        "worker_ref"
+      ],
+      "dimension_registries": {
+        "service_role": "service_roles",
+        "worker_ref": "worker_refs"
+      },
+      "description": "cinematacms_celery_worker_heartbeat_timestamp_seconds application telemetry signal"
+    },
+    "cinematacms_celery_queue_depth": {
+      "type": "gauge",
+      "labels": [
+        "queue"
+      ],
+      "dimension_registries": {
+        "queue": "celery_queues"
+      },
+      "description": "cinematacms_celery_queue_depth application telemetry signal"
+    },
+    "cinematacms_domain_outcomes_total": {
+      "type": "counter",
+      "labels": [
+        "operation",
+        "outcome",
+        "reason_code"
+      ],
+      "dimension_registries": {
+        "operation": "domain_operations",
+        "outcome": "domain_outcomes",
+        "reason_code": "domain_reason_codes"
+      },
+      "description": "cinematacms_domain_outcomes_total application telemetry signal"
+    },
+    "cinematacms_media_encoding_profile_total": {
+      "type": "counter",
+      "labels": [
+        "resolution",
+        "codec",
+        "extension",
+        "outcome",
+        "reason_code"
+      ],
+      "dimension_registries": {
+        "resolution": "media_resolutions",
+        "codec": "media_codecs",
+        "extension": "media_extensions",
+        "outcome": "domain_outcomes",
+        "reason_code": "domain_reason_codes"
+      },
+      "description": "cinematacms_media_encoding_profile_total application telemetry signal"
+    },
+    "cinematacms_media_duration_seconds": {
+      "type": "histogram",
+      "labels": [
+        "media_type"
+      ],
+      "dimension_registries": {
+        "media_type": "media_types"
+      },
+      "description": "cinematacms_media_duration_seconds application telemetry signal",
+      "buckets": [
+        30,
+        60,
+        300,
+        600,
+        1200,
+        1800,
+        3600,
+        7200,
+        14400
+      ]
+    },
+    "cinematacms_media_file_size_bytes": {
+      "type": "histogram",
+      "labels": [
+        "media_type"
+      ],
+      "dimension_registries": {
+        "media_type": "media_types"
+      },
+      "description": "cinematacms_media_file_size_bytes application telemetry signal",
+      "buckets": [
+        1000000,
+        10000000,
+        50000000,
+        100000000,
+        500000000,
+        1000000000,
+        5000000000
+      ]
+    },
+    "cinematacms_email_deliveries_total": {
+      "type": "counter",
+      "labels": [
+        "email_kind",
+        "outcome",
+        "reason_code"
+      ],
+      "dimension_registries": {
+        "email_kind": "email_kinds",
+        "outcome": "email_outcomes",
+        "reason_code": "email_reasons"
+      },
+      "description": "cinematacms_email_deliveries_total application telemetry signal"
+    },
+    "cinematacms_email_delivery_attempts": {
+      "type": "histogram",
+      "labels": [],
+      "dimension_registries": {},
+      "description": "cinematacms_email_delivery_attempts application telemetry signal",
+      "buckets": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "cinematacms_email_delivery_latency_seconds": {
+      "type": "histogram",
+      "labels": [],
+      "dimension_registries": {},
+      "description": "cinematacms_email_delivery_latency_seconds application telemetry signal",
+      "buckets": [
+        1,
+        5,
+        15,
+        30,
+        60,
+        120,
+        300,
+        600
+      ]
+    },
+    "cinematacms_scheduled_job_runs_total": {
+      "type": "counter",
+      "labels": [
+        "job",
+        "outcome",
+        "reason_code"
+      ],
+      "dimension_registries": {
+        "job": "scheduled_jobs",
+        "outcome": "scheduled_outcomes",
+        "reason_code": "domain_reason_codes"
+      },
+      "description": "cinematacms_scheduled_job_runs_total application telemetry signal"
+    },
+    "cinematacms_scheduled_job_last_started_timestamp_seconds": {
+      "type": "gauge",
+      "labels": [
+        "job"
+      ],
+      "dimension_registries": {
+        "job": "scheduled_jobs"
+      },
+      "description": "cinematacms_scheduled_job_last_started_timestamp_seconds application telemetry signal"
+    },
+    "cinematacms_scheduled_job_last_success_timestamp_seconds": {
+      "type": "gauge",
+      "labels": [
+        "job"
+      ],
+      "dimension_registries": {
+        "job": "scheduled_jobs"
+      },
+      "description": "cinematacms_scheduled_job_last_success_timestamp_seconds application telemetry signal"
+    },
+    "cinematacms_celery_beat_freshness_timestamp_seconds": {
+      "type": "gauge",
+      "labels": [],
+      "dimension_registries": {},
+      "description": "cinematacms_celery_beat_freshness_timestamp_seconds application telemetry signal"
+    },
+    "cinematacms_telemetry_emission_failures_total": {
+      "type": "counter",
+      "labels": [
+        "signal",
+        "component",
+        "stage"
+      ],
+      "dimension_registries": {
+        "signal": "telemetry_signals",
+        "component": "telemetry_components",
+        "stage": "telemetry_stages"
+      },
+      "description": "cinematacms_telemetry_emission_failures_total application telemetry signal"
+    },
+    "cinematacms_telemetry_contract_violations_total": {
+      "type": "counter",
+      "labels": [
+        "component",
+        "field"
+      ],
+      "dimension_registries": {
+        "component": "telemetry_components",
+        "field": "telemetry_violation_fields"
+      },
+      "description": "cinematacms_telemetry_contract_violations_total application telemetry signal"
+    }
+  },
+  "diagnostic_thresholds": {
+    "http": {
+      "metric": "cinematacms_http_request_duration_seconds",
+      "default": 2
+    },
+    "database": {
+      "metric": "cinematacms_db_query_duration_seconds",
+      "default": 1
+    },
+    "cache": {
+      "metric": "cinematacms_cache_operation_duration_seconds",
+      "default": 0.1
+    }
+  },
+  "inventory": {
+    "routes": [
+      {
+        "id": "system.metrics",
+        "route": "/metrics",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "system",
+        "operation": "metrics"
+      },
+      {
+        "id": "system.health_live",
+        "route": "/health/live",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "route_group": "system",
+        "operation": "health_live"
+      },
+      {
+        "id": "system.health_ready",
+        "route": "/health/ready",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "system",
+        "operation": "health_ready"
+      },
+      {
+        "id": "pages.home",
+        "route": "/",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "pages",
+        "operation": "home"
+      },
+      {
+        "id": "pages.robots",
+        "route": "/robots.txt",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "pages",
+        "operation": "robots"
+      },
+      {
+        "id": "web.search",
+        "route": "/search",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "web_search",
+        "operation": "web_search"
+      },
+      {
+        "id": "web.rss_search",
+        "route": "/rss/search/",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "web_search",
+        "operation": "rss_search"
+      },
+      {
+        "id": "media.delivery",
+        "route": "/media/<opaque>",
+        "methods": [
+          "GET",
+          "HEAD"
+        ],
+        "route_group": "media_delivery",
+        "operation": "media_delivery"
+      },
+      {
+        "id": "upload.page",
+        "route": "/upload",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "upload_ui",
+        "operation": "upload_page"
+      },
+      {
+        "id": "upload.transfer",
+        "route": "/api/v1/media",
+        "methods": [
+          "POST"
+        ],
+        "route_group": "upload_transfer",
+        "operation": "upload_transfer"
+      },
+      {
+        "id": "search.api",
+        "route": "/api/v1/search",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "search_api",
+        "operation": "search"
+      },
+      {
+        "id": "media.api.list",
+        "route": "/api/v1/media",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "media_api",
+        "operation": "media_list"
+      },
+      {
+        "id": "media.api.detail",
+        "route": "/api/v1/media/<opaque>",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "media_api",
+        "operation": "media_detail"
+      },
+      {
+        "id": "media.api.restricted_token",
+        "route": "/api/v1/media/sensitive-token",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "media_api",
+        "operation": "restricted_media_token"
+      },
+      {
+        "id": "moderation.api.media",
+        "route": "/api/v1/manage_media",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "moderation_api",
+        "operation": "moderation_media"
+      },
+      {
+        "id": "moderation.api.impact",
+        "route": "/api/v1/manage_film_impact",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "moderation_api",
+        "operation": "moderation_film_impact"
+      },
+      {
+        "id": "moderation.ui.impact",
+        "route": "/manage/film-impact",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "moderation_ui",
+        "operation": "film_impact_page"
+      },
+      {
+        "id": "self_uploads.list",
+        "route": "/api/v1/my_uploads",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "self_upload_api",
+        "operation": "self_uploads_list"
+      },
+      {
+        "id": "self_uploads.bulk_state",
+        "route": "/api/v1/my_uploads/bulk_state",
+        "methods": [
+          "POST"
+        ],
+        "route_group": "self_upload_api",
+        "operation": "self_uploads_bulk_state"
+      },
+      {
+        "id": "self_uploads.options",
+        "route": "/api/v1/my_uploads/upload_options",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "self_upload_api",
+        "operation": "self_upload_options"
+      },
+      {
+        "id": "notifications.list",
+        "route": "/api/v1/notifications/",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "notifications_api",
+        "operation": "notifications_list"
+      },
+      {
+        "id": "notifications.read",
+        "route": "/api/v1/notifications/<opaque>/read/",
+        "methods": [
+          "PATCH"
+        ],
+        "route_group": "notifications_api",
+        "operation": "notification_read"
+      },
+      {
+        "id": "notifications.mark_all_read",
+        "route": "/api/v1/notifications/mark-all-read/",
+        "methods": [
+          "PATCH"
+        ],
+        "route_group": "notifications_api",
+        "operation": "notifications_mark_all_read"
+      },
+      {
+        "id": "notifications.preferences.read",
+        "route": "/api/v1/notifications/preferences/",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "notifications_api",
+        "operation": "notifications_preferences"
+      },
+      {
+        "id": "notifications.preferences.update",
+        "route": "/api/v1/notifications/preferences/",
+        "methods": [
+          "PATCH"
+        ],
+        "route_group": "notifications_api",
+        "operation": "notifications_preferences"
+      },
+      {
+        "id": "notifications.unread_count",
+        "route": "/api/v1/notifications/unread-count/",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "notifications_api",
+        "operation": "notifications_unread_count"
+      },
+      {
+        "id": "users.list",
+        "route": "/api/v1/users",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "users_api",
+        "operation": "user_list"
+      },
+      {
+        "id": "users.contact",
+        "route": "/api/v1/users/<opaque>/contact",
+        "methods": [
+          "POST"
+        ],
+        "route_group": "users_api",
+        "operation": "user_contact"
+      },
+      {
+        "id": "users.private_journal",
+        "route": "/api/v1/users/<opaque>/private-journal",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "users_api",
+        "operation": "private_journal"
+      },
+      {
+        "id": "users.community_impacts",
+        "route": "/api/v1/users/<opaque>/community-impacts",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "users_api",
+        "operation": "user_community_impacts"
+      },
+      {
+        "id": "playlists.list",
+        "route": "/api/v1/playlists",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "playlists_api",
+        "operation": "playlist_list"
+      },
+      {
+        "id": "playlists.detail",
+        "route": "/api/v1/playlists/<opaque>",
+        "methods": [
+          "GET",
+          "PATCH",
+          "DELETE"
+        ],
+        "route_group": "playlists_api",
+        "operation": "playlist_detail"
+      },
+      {
+        "id": "taxonomy.categories",
+        "route": "/api/v1/categories",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "taxonomy_api",
+        "operation": "taxonomy_categories"
+      },
+      {
+        "id": "taxonomy.countries",
+        "route": "/api/v1/countries",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "taxonomy_api",
+        "operation": "taxonomy_countries"
+      },
+      {
+        "id": "taxonomy.topics",
+        "route": "/api/v1/topics",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "taxonomy_api",
+        "operation": "taxonomy_topics"
+      },
+      {
+        "id": "taxonomy.subtitle_languages",
+        "route": "/api/v1/subtitle-languages",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "taxonomy_api",
+        "operation": "taxonomy_subtitle_languages"
+      },
+      {
+        "id": "task.control",
+        "route": "/api/v1/tasks/<opaque>",
+        "methods": [
+          "POST"
+        ],
+        "route_group": "task_api",
+        "operation": "task_control"
+      },
+      {
+        "id": "api.other",
+        "route": "/api/v1/<opaque>",
+        "methods": [
+          "OTHER"
+        ],
+        "route_group": "api_other",
+        "operation": "api_other"
+      },
+      {
+        "id": "third_party.routes",
+        "route": "<third-party-resolved-route>",
+        "methods": [
+          "OTHER"
+        ],
+        "route_group": "third_party",
+        "operation": "third_party"
+      },
+      {
+        "id": "unmatched.routes",
+        "route": "<unresolved-route>",
+        "methods": [
+          "OTHER"
+        ],
+        "route_group": "unmatched",
+        "operation": "not_found"
+      }
+    ]
+  },
+  "coverage": [
+    {
+      "id": "http.requests",
+      "status": "covered",
+      "domain": "http",
+      "operation": "request",
+      "outcomes": [
+        "success",
+        "redirect",
+        "client_error",
+        "server_error"
+      ],
+      "metric": [
+        "cinematacms_http_requests_total",
+        "cinematacms_http_request_duration_seconds"
+      ],
+      "dimensions": [
+        "route_group",
+        "operation",
+        "method",
+        "status_code",
+        "status_class"
+      ],
+      "events": [
+        "cinematacms.http.request.slow",
+        "cinematacms.http.request.failed",
+        "cinematacms.http.request.trace"
+      ],
+      "instrumentation_seam": "cms.http_telemetry.HttpTelemetryMiddleware",
+      "privacy_constraints": [
+        "Never use raw paths, query strings, IDs, IP addresses, credentials, or exception messages as labels or event fields."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "cms.tests.test_observability"
+      ],
+      "operator_query": "Rate 5xx responses by route_group and operation; inspect the correlated trace and failed-request event.",
+      "registry_coverage": {
+        "domains": [
+          "http"
+        ],
+        "http_route_groups": [
+          "system",
+          "pages",
+          "web_search",
+          "media_delivery",
+          "upload_ui",
+          "upload_transfer",
+          "search_api",
+          "media_api",
+          "moderation_api",
+          "moderation_ui",
+          "self_upload_api",
+          "notifications_api",
+          "users_api",
+          "playlists_api",
+          "taxonomy_api",
+          "task_api",
+          "api_other",
+          "third_party",
+          "unmatched"
+        ],
+        "http_operations": [
+          "request",
+          "not_found",
+          "third_party",
+          "metrics",
+          "health_live",
+          "health_ready",
+          "home",
+          "robots",
+          "upload_page",
+          "manage_uploads",
+          "film_impact_page",
+          "web_search",
+          "rss_search",
+          "media_delivery",
+          "upload_options",
+          "upload_transfer",
+          "search",
+          "media_list",
+          "media_create",
+          "media_detail",
+          "restricted_media_token",
+          "moderation_media",
+          "moderation_film_impact",
+          "self_uploads_list",
+          "self_uploads_bulk_state",
+          "self_upload_options",
+          "notifications_list",
+          "notification_read",
+          "notifications_mark_all_read",
+          "notifications_preferences",
+          "notifications_unread_count",
+          "user_list",
+          "user_contact",
+          "private_journal",
+          "user_community_impacts",
+          "playlist_list",
+          "playlist_detail",
+          "taxonomy_categories",
+          "taxonomy_countries",
+          "taxonomy_topics",
+          "taxonomy_subtitle_languages",
+          "task_control",
+          "api_other",
+          "other"
+        ],
+        "http_methods": [
+          "GET",
+          "HEAD",
+          "POST",
+          "PUT",
+          "PATCH",
+          "DELETE",
+          "OPTIONS",
+          "OTHER"
+        ],
+        "http_status_codes": [
+          "100-599",
+          "other"
+        ],
+        "http_status_classes": [
+          "1xx",
+          "2xx",
+          "3xx",
+          "4xx",
+          "5xx",
+          "other"
+        ]
+      },
+      "inventory_ref": "routes"
+    },
+    {
+      "id": "database.queries",
+      "status": "covered",
+      "domain": "database",
+      "operation": "query",
+      "outcomes": [
+        "success",
+        "error"
+      ],
+      "metric": [
+        "cinematacms_db_query_duration_seconds"
+      ],
+      "dimensions": [
+        "workload",
+        "context_group",
+        "operation",
+        "outcome",
+        "database"
+      ],
+      "events": [
+        "cinematacms.db.query.slow",
+        "cinematacms.db.query.failed",
+        "cinematacms.db.query.trace"
+      ],
+      "instrumentation_seam": "cms.db_telemetry.OwnedDatabaseWrapper",
+      "privacy_constraints": [
+        "Never export SQL text, bound parameters, raw task names, raw routes, IDs, or exception messages."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "cms.tests.test_database_telemetry"
+      ],
+      "operator_query": "Compare query duration and error rates by workload and context_group; inspect the privacy-safe query event.",
+      "registry_coverage": {
+        "domains": [
+          "database"
+        ],
+        "db_workloads": [
+          "web",
+          "celery",
+          "other"
+        ],
+        "db_context_groups": [
+          "system",
+          "pages",
+          "web_search",
+          "media_delivery",
+          "upload_ui",
+          "upload_transfer",
+          "search_api",
+          "media_api",
+          "moderation_api",
+          "moderation_ui",
+          "self_upload_api",
+          "notifications_api",
+          "users_api",
+          "playlists_api",
+          "taxonomy_api",
+          "task_api",
+          "api_other",
+          "third_party",
+          "celery",
+          "other"
+        ],
+        "db_operations": [
+          "select",
+          "insert",
+          "update",
+          "delete",
+          "transaction",
+          "other"
+        ],
+        "db_outcomes": [
+          "success",
+          "error"
+        ],
+        "databases": [
+          "default",
+          "other"
+        ]
+      }
+    },
+    {
+      "id": "database.pool_saturation",
+      "status": "not_applicable",
+      "domain": "database",
+      "operation": "pool_saturation",
+      "outcomes": [
+        "not_applicable"
+      ],
+      "metric": [],
+      "dimensions": [],
+      "events": [],
+      "instrumentation_seam": "configuration contract",
+      "privacy_constraints": [
+        "The application does not configure a database connection pool; no pool credentials or topology are part of this contract."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests"
+      ],
+      "operator_query": "Not applicable: CinemataCMS uses direct Django database connections.",
+      "registry_coverage": {
+        "domains": [
+          "database"
+        ]
+      },
+      "not_applicable": {
+        "reason": "CinemataCMS does not configure a database connection pool.",
+        "validation_rule": "CI rejects a pool backend or pool settings unless this row is replaced by a covered pool signal."
+      }
+    },
+    {
+      "id": "cache.operations",
+      "status": "covered",
+      "domain": "cache",
+      "operation": "logical_operation",
+      "outcomes": [
+        "hit",
+        "partial_hit",
+        "miss",
+        "success",
+        "error"
+      ],
+      "metric": [
+        "cinematacms_cache_operations_total",
+        "cinematacms_cache_operation_duration_seconds",
+        "cinematacms_cache_items_total"
+      ],
+      "dimensions": [
+        "family",
+        "operation",
+        "result"
+      ],
+      "events": [
+        "cinematacms.cache.operation.slow",
+        "cinematacms.cache.operation.failed",
+        "cinematacms.cache.operation.trace"
+      ],
+      "instrumentation_seam": "cms.cache_telemetry.OwnedCacheAdapter",
+      "privacy_constraints": [
+        "Never use cache keys, tokens, IDs, password-derived values, or raw exceptions as labels or event fields."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "cms.tests.test_cache_telemetry"
+      ],
+      "operator_query": "Compare hit, partial_hit, miss, mutation, and error rates by family; inspect the logical operation trace.",
+      "registry_coverage": {
+        "domains": [
+          "cache"
+        ],
+        "cache_families": [
+          "permission",
+          "query",
+          "query_version",
+          "media_path",
+          "storage_usage",
+          "popular_media",
+          "maintenance_timing",
+          "hls_coordination",
+          "scheduled_task_lock",
+          "restricted_media_token",
+          "restricted_media_rate_limit",
+          "cache_probe"
+        ],
+        "cache_operations": [
+          "read",
+          "bulk_read",
+          "write",
+          "invalidate",
+          "lock",
+          "probe",
+          "token_validate",
+          "rate_limit",
+          "other"
+        ],
+        "cache_results": [
+          "hit",
+          "partial_hit",
+          "miss",
+          "success",
+          "error",
+          "other"
+        ]
+      }
+    },
+    {
+      "id": "authentication.failures",
+      "status": "covered",
+      "domain": "authentication",
+      "operation": "failure",
+      "outcomes": [
+        "invalid_credentials",
+        "malformed_credentials",
+        "inactive_principal",
+        "csrf_rejected",
+        "rate_limited",
+        "missing_credentials",
+        "invalid_token",
+        "dependency_unavailable",
+        "internal_error",
+        "unknown_failure",
+        "other"
+      ],
+      "metric": [
+        "cinematacms_authentication_failures_total"
+      ],
+      "dimensions": [
+        "surface",
+        "mechanism",
+        "reason"
+      ],
+      "events": [
+        "cinematacms.authentication.failed"
+      ],
+      "instrumentation_seam": "cms.authentication_telemetry.AuthenticationFailureRecorder",
+      "privacy_constraints": [
+        "Never record credentials, tokens, password-derived values, user IDs, IP addresses, or raw authorization headers."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "cms.tests.test_authentication_telemetry"
+      ],
+      "operator_query": "Rate authentication failures by surface, mechanism, and reason; dependency_unavailable must map to HTTP 503.",
+      "registry_coverage": {
+        "domains": [
+          "authentication"
+        ],
+        "auth_surfaces": [
+          "account_login",
+          "api",
+          "restricted_media",
+          "other"
+        ],
+        "auth_mechanisms": [
+          "password",
+          "basic",
+          "session",
+          "token",
+          "media_password",
+          "media_token",
+          "unknown"
+        ],
+        "auth_reasons": [
+          "invalid_credentials",
+          "malformed_credentials",
+          "inactive_principal",
+          "csrf_rejected",
+          "rate_limited",
+          "missing_credentials",
+          "invalid_token",
+          "dependency_unavailable",
+          "internal_error",
+          "unknown_failure",
+          "other"
+        ]
+      }
+    },
+    {
+      "id": "celery.tasks",
+      "status": "covered",
+      "domain": "celery",
+      "operation": "task",
+      "outcomes": [
+        "none",
+        "succeeded",
+        "failed",
+        "retried",
+        "revoked"
+      ],
+      "metric": [
+        "cinematacms_celery_tasks_total",
+        "cinematacms_celery_task_duration_seconds"
+      ],
+      "dimensions": [
+        "task_family",
+        "queue",
+        "event",
+        "outcome"
+      ],
+      "events": [
+        "cinematacms.celery.task.trace"
+      ],
+      "instrumentation_seam": "files.celery_telemetry.TaskTelemetry",
+      "privacy_constraints": [
+        "Keep full task names and task IDs in restricted traces only; metrics use task_family and bounded queue/event/outcome."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "cms.tests.test_celery_telemetry"
+      ],
+      "operator_query": "Compare terminal failure and retry rates by task_family and queue; follow the child trace to PostgreSQL, Redis, and HTTP spans.",
+      "registry_coverage": {
+        "domains": [
+          "celery"
+        ],
+        "celery_task_families": [
+          "encoding",
+          "transcription",
+          "media_derivative",
+          "media_lifecycle",
+          "storage_maintenance",
+          "discovery",
+          "user_activity",
+          "email_delivery",
+          "platform_maintenance",
+          "diagnostic",
+          "unknown"
+        ],
+        "celery_queues": [
+          "long_tasks",
+          "short_tasks",
+          "whisper_tasks",
+          "email_tasks",
+          "default"
+        ],
+        "celery_events": [
+          "started",
+          "completed"
+        ],
+        "celery_outcomes": [
+          "none",
+          "succeeded",
+          "failed",
+          "retried",
+          "revoked"
+        ]
+      }
+    },
+    {
+      "id": "celery.worker_heartbeat",
+      "status": "covered",
+      "domain": "celery",
+      "operation": "worker_heartbeat",
+      "outcomes": [
+        "present",
+        "stale",
+        "role_only"
+      ],
+      "metric": [
+        "cinematacms_celery_worker_heartbeat_timestamp_seconds"
+      ],
+      "dimensions": [
+        "service_role",
+        "worker_ref"
+      ],
+      "events": [
+        "cinematacms.celery.worker.heartbeat"
+      ],
+      "instrumentation_seam": "files.celery_telemetry.WorkerHeartbeatRecorder",
+      "privacy_constraints": [
+        "worker_ref is a versioned HMAC reference; never use hostnames, pod names, IPs, queue names, or raw worker IDs."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "cms.tests.test_celery_telemetry"
+      ],
+      "operator_query": "Compare heartbeat age by service_role and worker_ref; a role-only heartbeat indicates missing identity and a contract violation.",
+      "registry_coverage": {
+        "domains": [
+          "celery"
+        ],
+        "service_roles": [
+          "web",
+          "long-task",
+          "short-task",
+          "transcription",
+          "email",
+          "beat"
+        ],
+        "worker_refs": "all"
+      }
+    },
+    {
+      "id": "domain.outcomes",
+      "status": "covered",
+      "domain": "telemetry",
+      "operation": "domain_outcome",
+      "outcomes": [
+        "succeeded",
+        "failed",
+        "skipped",
+        "retried",
+        "cancelled"
+      ],
+      "metric": [
+        "cinematacms_domain_outcomes_total"
+      ],
+      "dimensions": [
+        "operation",
+        "outcome",
+        "reason_code"
+      ],
+      "events": [
+        "cinematacms.domain.outcome"
+      ],
+      "instrumentation_seam": "files.domain_telemetry.record_domain_outcome",
+      "privacy_constraints": [
+        "Use only fixed operation, outcome, and reason_code vocabularies; never include IDs, filenames, URLs, or exception text."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "cms.tests.test_observability"
+      ],
+      "operator_query": "Break terminal domain failures down by operation and reason_code; compare with task execution outcomes.",
+      "registry_coverage": {
+        "domains": [
+          "telemetry"
+        ],
+        "domain_operations": [
+          "encoding",
+          "transcription",
+          "media_derivative",
+          "media_lifecycle",
+          "storage_maintenance",
+          "discovery",
+          "user_activity",
+          "email_delivery",
+          "platform_maintenance",
+          "diagnostic",
+          "scheduled.record_beat_freshness",
+          "scheduled.recover_stale_email_deliveries",
+          "scheduled.cleanup_email_delivery_receipts",
+          "scheduled.clear_sessions",
+          "scheduled.update_listings_thumbnails",
+          "scheduled.cleanup_orphaned_uploads",
+          "scheduled.cleanup_orphaned_draft_media",
+          "scheduled.dispatch_deferred_encodings",
+          "scheduled.apply_visibility_schedules",
+          "other"
+        ],
+        "domain_outcomes": [
+          "succeeded",
+          "failed",
+          "skipped",
+          "retried",
+          "cancelled"
+        ],
+        "domain_reason_codes": [
+          "none",
+          "encoding_failed",
+          "encryption_bypass",
+          "invalid_encryption",
+          "queue_publish_failed",
+          "preference_changed",
+          "smtp_4xx",
+          "smtp_5xx",
+          "timeout",
+          "worker_lost",
+          "lock_held",
+          "item_errors",
+          "cleanup_failed",
+          "dependency_unavailable",
+          "invalid_credentials",
+          "malformed_credentials",
+          "inactive_principal",
+          "csrf_rejected",
+          "rate_limited",
+          "missing_credentials",
+          "invalid_token",
+          "internal_error",
+          "other"
+        ]
+      }
+    },
+    {
+      "id": "media.encoding",
+      "status": "covered",
+      "domain": "media",
+      "operation": "encoding",
+      "outcomes": [
+        "succeeded",
+        "failed"
+      ],
+      "metric": [
+        "cinematacms_media_encoding_profile_total",
+        "cinematacms_media_duration_seconds",
+        "cinematacms_media_file_size_bytes"
+      ],
+      "dimensions": [
+        "resolution",
+        "codec",
+        "extension",
+        "outcome",
+        "reason_code",
+        "media_type"
+      ],
+      "events": [
+        "cinematacms.media.pipeline"
+      ],
+      "instrumentation_seam": "files.media_telemetry.MediaPipelineRecorder",
+      "privacy_constraints": [
+        "Use fixed media labels only; never export media IDs, filenames, source paths, URLs, or exception text."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "cms.tests.test_media_telemetry"
+      ],
+      "operator_query": "Compare encoding failures and input size/duration by bounded profile labels; inspect the media pipeline event.",
+      "registry_coverage": {
+        "domains": [
+          "media"
+        ],
+        "media_resolutions": [
+          "source",
+          "240p",
+          "360p",
+          "480p",
+          "720p",
+          "1080p",
+          "1440p",
+          "2160p",
+          "other"
+        ],
+        "media_codecs": [
+          "h264",
+          "h265",
+          "vp8",
+          "vp9",
+          "av1",
+          "other"
+        ],
+        "media_extensions": [
+          "mp4",
+          "webm",
+          "m3u8",
+          "ts",
+          "vtt",
+          "mp3",
+          "wav",
+          "other"
+        ],
+        "domain_outcomes": [
+          "succeeded",
+          "failed",
+          "skipped",
+          "retried",
+          "cancelled"
+        ],
+        "domain_reason_codes": [
+          "none",
+          "encoding_failed",
+          "encryption_bypass",
+          "invalid_encryption",
+          "queue_publish_failed",
+          "preference_changed",
+          "smtp_4xx",
+          "smtp_5xx",
+          "timeout",
+          "worker_lost",
+          "lock_held",
+          "item_errors",
+          "cleanup_failed",
+          "dependency_unavailable",
+          "invalid_credentials",
+          "malformed_credentials",
+          "inactive_principal",
+          "csrf_rejected",
+          "rate_limited",
+          "missing_credentials",
+          "invalid_token",
+          "internal_error",
+          "other"
+        ],
+        "media_types": [
+          "video",
+          "audio",
+          "image",
+          "subtitle",
+          "other"
+        ]
+      }
+    },
+    {
+      "id": "email.delivery",
+      "status": "covered",
+      "domain": "email",
+      "operation": "delivery",
+      "outcomes": [
+        "queued",
+        "sending",
+        "retrying",
+        "smtp_accepted",
+        "failed",
+        "skipped",
+        "unknown"
+      ],
+      "allow_fallback_values": [
+        "unknown"
+      ],
+      "metric": [
+        "cinematacms_email_deliveries_total",
+        "cinematacms_email_delivery_attempts",
+        "cinematacms_email_delivery_latency_seconds"
+      ],
+      "dimensions": [
+        "email_kind",
+        "outcome",
+        "reason_code"
+      ],
+      "events": [
+        "cinematacms.email.delivery"
+      ],
+      "instrumentation_seam": "email_delivery.telemetry.record_event",
+      "privacy_constraints": [
+        "Use recipient_ref only in restricted structured logs/traces; never use addresses, subjects, bodies, credentials, IDs, or task names in metric labels."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "email_delivery.tests"
+      ],
+      "operator_query": "Treat smtp_accepted as the success boundary; investigate failed or unknown outcomes with recipient_ref-correlated restricted telemetry.",
+      "registry_coverage": {
+        "domains": [
+          "email"
+        ],
+        "email_kinds": [
+          "activity_notification",
+          "media_lifecycle",
+          "role_change",
+          "account",
+          "authentication",
+          "contact_form",
+          "administrative"
+        ],
+        "email_outcomes": [
+          "queued",
+          "sending",
+          "retrying",
+          "smtp_accepted",
+          "failed",
+          "skipped",
+          "unknown"
+        ],
+        "email_reasons": [
+          "none",
+          "queue_publish_failed",
+          "preference_changed",
+          "smtp_4xx",
+          "smtp_5xx",
+          "timeout",
+          "worker_lost",
+          "other"
+        ]
+      }
+    },
+    {
+      "id": "scheduled.jobs",
+      "status": "covered",
+      "domain": "scheduled",
+      "operation": "job",
+      "outcomes": [
+        "succeeded",
+        "failed",
+        "skipped",
+        "retried",
+        "cancelled"
+      ],
+      "metric": [
+        "cinematacms_scheduled_job_runs_total",
+        "cinematacms_scheduled_job_last_started_timestamp_seconds",
+        "cinematacms_scheduled_job_last_success_timestamp_seconds"
+      ],
+      "dimensions": [
+        "job",
+        "outcome",
+        "reason_code"
+      ],
+      "events": [
+        "cinematacms.scheduled_job.outcome"
+      ],
+      "instrumentation_seam": "cms.scheduled_jobs.record_scheduled_outcome",
+      "privacy_constraints": [
+        "Use only registered job names and bounded outcome/reason_code values; never export task IDs or exception text."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "cms.tests.test_scheduled_jobs"
+      ],
+      "operator_query": "Alert on a registered job whose last success exceeds its absence window; inspect the run outcome and reason code.",
+      "registry_coverage": {
+        "domains": [
+          "scheduled"
+        ],
+        "scheduled_jobs": [
+          "record_beat_freshness",
+          "recover_stale_email_deliveries",
+          "cleanup_email_delivery_receipts",
+          "clear_sessions",
+          "update_listings_thumbnails",
+          "cleanup_orphaned_uploads",
+          "cleanup_orphaned_draft_media",
+          "dispatch_deferred_encodings",
+          "apply_visibility_schedules"
+        ],
+        "scheduled_outcomes": [
+          "succeeded",
+          "failed",
+          "skipped",
+          "retried",
+          "cancelled"
+        ],
+        "domain_reason_codes": [
+          "none",
+          "encoding_failed",
+          "encryption_bypass",
+          "invalid_encryption",
+          "queue_publish_failed",
+          "preference_changed",
+          "smtp_4xx",
+          "smtp_5xx",
+          "timeout",
+          "worker_lost",
+          "lock_held",
+          "item_errors",
+          "cleanup_failed",
+          "dependency_unavailable",
+          "invalid_credentials",
+          "malformed_credentials",
+          "inactive_principal",
+          "csrf_rejected",
+          "rate_limited",
+          "missing_credentials",
+          "invalid_token",
+          "internal_error",
+          "other"
+        ]
+      }
+    },
+    {
+      "id": "telemetry.emission_failures",
+      "status": "covered",
+      "domain": "telemetry",
+      "operation": "emission_failure",
+      "outcomes": [
+        "counted",
+        "suppressed_warning"
+      ],
+      "metric": [
+        "cinematacms_telemetry_emission_failures_total"
+      ],
+      "dimensions": [
+        "signal",
+        "component",
+        "stage"
+      ],
+      "events": [
+        "cinematacms.telemetry.emission_failed"
+      ],
+      "instrumentation_seam": "cms.observability.TelemetryFailureRecorder",
+      "privacy_constraints": [
+        "Signals, components, and stages are fixed; warning fields exclude exception text and sensitive payloads."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "cms.tests.test_observability"
+      ],
+      "operator_query": "Rate emission failures by signal, component, and stage; verify application request/task result is unchanged.",
+      "registry_coverage": {
+        "domains": [
+          "telemetry"
+        ],
+        "telemetry_signals": [
+          "cinematacms_http_requests_total",
+          "cinematacms_http_request_duration_seconds",
+          "cinematacms_db_query_duration_seconds",
+          "cinematacms_cache_operations_total",
+          "cinematacms_cache_operation_duration_seconds",
+          "cinematacms_cache_items_total",
+          "cinematacms_authentication_failures_total",
+          "cinematacms_celery_tasks_total",
+          "cinematacms_celery_task_duration_seconds",
+          "cinematacms_celery_worker_heartbeat_timestamp_seconds",
+          "cinematacms_celery_queue_depth",
+          "cinematacms_domain_outcomes_total",
+          "cinematacms_media_encoding_profile_total",
+          "cinematacms_media_duration_seconds",
+          "cinematacms_media_file_size_bytes",
+          "cinematacms_email_deliveries_total",
+          "cinematacms_email_delivery_attempts",
+          "cinematacms_email_delivery_latency_seconds",
+          "cinematacms_scheduled_job_runs_total",
+          "cinematacms_scheduled_job_last_started_timestamp_seconds",
+          "cinematacms_scheduled_job_last_success_timestamp_seconds",
+          "cinematacms_celery_beat_freshness_timestamp_seconds",
+          "cinematacms_telemetry_emission_failures_total",
+          "cinematacms_telemetry_contract_violations_total"
+        ],
+        "telemetry_components": [
+          "metrics",
+          "logs",
+          "traces",
+          "exporter",
+          "contract"
+        ],
+        "telemetry_stages": [
+          "emit",
+          "serialize",
+          "export",
+          "warning",
+          "startup"
+        ]
+      }
+    },
+    {
+      "id": "telemetry.contract_violations",
+      "status": "covered",
+      "domain": "telemetry",
+      "operation": "contract_violation",
+      "outcomes": [
+        "normalized",
+        "counted"
+      ],
+      "metric": [
+        "cinematacms_telemetry_contract_violations_total"
+      ],
+      "dimensions": [
+        "component",
+        "field"
+      ],
+      "events": [
+        "cinematacms.telemetry.contract_violation"
+      ],
+      "instrumentation_seam": "cms.observability.TelemetryContractViolationRecorder",
+      "privacy_constraints": [
+        "Record only bounded component and field names; never include the invalid raw value."
+      ],
+      "tests": [
+        "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
+        "cms.tests.test_observability"
+      ],
+      "operator_query": "Investigate contract violation increases by component and field; the normalized fallback must preserve application behavior.",
+      "registry_coverage": {
+        "domains": [
+          "telemetry"
+        ],
+        "telemetry_components": [
+          "metrics",
+          "logs",
+          "traces",
+          "exporter",
+          "contract"
+        ],
+        "telemetry_violation_fields": [
+          "route_group",
+          "operation",
+          "method",
+          "status_code",
+          "status_class",
+          "workload",
+          "context_group",
+          "database",
+          "family",
+          "result",
+          "surface",
+          "mechanism",
+          "reason",
+          "task_family",
+          "queue",
+          "event",
+          "outcome",
+          "service_role",
+          "worker_ref",
+          "resolution",
+          "codec",
+          "extension",
+          "media_type",
+          "email_kind",
+          "job",
+          "signal",
+          "component",
+          "stage",
+          "metric",
+          "event_name",
+          "registry"
+        ]
+      }
+    }
+  ]
+}

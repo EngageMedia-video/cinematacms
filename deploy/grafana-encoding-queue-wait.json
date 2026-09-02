@@ -9,15 +9,15 @@
         "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
         "targets": [
           {
-            "expr": "histogram_quantile(0.50, sum by (le)(rate(cinemata_encoding_queue_wait_seconds_bucket[5m])))",
+            "expr": "histogram_quantile(0.50, sum by (le)(rate(cinematacms_encoding_queue_wait_seconds_bucket[5m])))",
             "legendFormat": "p50"
           },
           {
-            "expr": "histogram_quantile(0.95, sum by (le)(rate(cinemata_encoding_queue_wait_seconds_bucket[5m])))",
+            "expr": "histogram_quantile(0.95, sum by (le)(rate(cinematacms_encoding_queue_wait_seconds_bucket[5m])))",
             "legendFormat": "p95"
           },
           {
-            "expr": "histogram_quantile(0.99, sum by (le)(rate(cinemata_encoding_queue_wait_seconds_bucket[5m])))",
+            "expr": "histogram_quantile(0.99, sum by (le)(rate(cinematacms_encoding_queue_wait_seconds_bucket[5m])))",
             "legendFormat": "p99"
           }
         ],
@@ -40,7 +40,7 @@
         "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
         "targets": [
           {
-            "expr": "rate(cinemata_encoding_queue_wait_seconds_count[5m])",
+            "expr": "rate(cinematacms_encoding_queue_wait_seconds_count[5m])",
             "legendFormat": "tasks/sec"
           }
         ]
@@ -51,7 +51,7 @@
         "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
         "targets": [
           {
-            "expr": "rate(cinemata_encoding_queue_wait_seconds_sum[5m]) / rate(cinemata_encoding_queue_wait_seconds_count[5m])",
+            "expr": "rate(cinematacms_encoding_queue_wait_seconds_sum[5m]) / rate(cinematacms_encoding_queue_wait_seconds_count[5m])",
             "legendFormat": "avg wait"
           }
         ],
