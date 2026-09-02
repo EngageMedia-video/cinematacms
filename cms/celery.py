@@ -28,7 +28,7 @@ def debug_task(self):
     print(f"Request: {self.request!r}")
 
 
-@app.task(name="record_beat_freshness", queue="default")
+@app.task(name="record_beat_freshness", queue="short_tasks")
 def record_beat_freshness():
     import time
 
