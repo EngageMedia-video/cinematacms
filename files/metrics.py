@@ -489,14 +489,13 @@ def _on_beat_init(sender=None, **kwargs):
     _safe_metric("beat freshness", lambda: CELERY_BEAT_FRESHNESS_TIMESTAMP.set(time.time()))
 
 
-def _on_user_login_failed(sender=None, **kwargs):
-    _safe_metric(
-        "authentication failure",
-        lambda: AUTH_FAILURES_TOTAL.labels(
-            surface="account_login", mechanism="password", reason="invalid_credentials"
-        ).inc(),
-        component="authentication",
-    )
+def _on_user_login_failed(sender=None, request=None, **kwargs):
+    from cms.authentication_telemetry import record_authentication_failure
+
+    authorization = getattr(request, "META", {}).get("HTTP_AUTHORIZATION", "").lower()
+    if authorization.startswith(("basic", "token")):
+        return
+    record_authentication_failure("account_login", "password", "invalid_credentials")
 
 
 def connect_signal_handlers() -> None:
@@ -576,11 +575,10 @@ def refresh_runtime_metrics() -> None:
 
 def _refresh_queue_depths() -> None:
     try:
-        from django_redis import get_redis_connection
+        from cms.redis_telemetry import observability_redis
 
-        connection = get_redis_connection("default")
         for queue in getattr(settings, "OBSERVABILITY_CELERY_QUEUES", []):
-            CELERY_QUEUE_DEPTH.labels(queue=queue).set(connection.llen(queue))
+            CELERY_QUEUE_DEPTH.labels(queue=queue).set(observability_redis.queue_depth(queue))
     except Exception:
         logger.debug("Could not refresh Celery queue depth metrics", exc_info=True)
 

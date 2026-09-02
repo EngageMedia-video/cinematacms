@@ -7,6 +7,7 @@ from unittest.mock import patch
 from django.test import SimpleTestCase, TestCase, override_settings
 from django_redis import get_redis_connection
 
+from cms.authentication_telemetry import AuthenticationDependencyUnavailable
 from files import token_utils
 
 
@@ -82,7 +83,21 @@ class TokenValidationTest(TestCase):
         token = token_utils.generate_token("media-closed")
 
         with patch.object(token_utils.restricted_media_redis, "_connection", side_effect=Exception("Redis down")):
-            self.assertFalse(token_utils.validate_token(token, "media-closed"))
+            with self.assertRaises(AuthenticationDependencyUnavailable):
+                token_utils.validate_token(token, "media-closed")
+
+    def test_restricted_password_dependency_outage_returns_503(self):
+        media = type("Media", (), {"friendly_token": "media", "uid_hex": "uid", "password": "hash"})()
+
+        with (
+            patch.object(token_utils, "check_rate_limit", side_effect=AuthenticationDependencyUnavailable()),
+            patch.object(token_utils, "record_authentication_failure") as record,
+        ):
+            token, error = token_utils.authenticate_restricted_media(media, "password", "192.0.2.1")
+
+        self.assertIsNone(token)
+        self.assertEqual(error["status_code"], 503)
+        record.assert_called_once_with("restricted_media", "media_password", "dependency_unavailable")
 
 
 class TokenInvalidationTest(TestCase):

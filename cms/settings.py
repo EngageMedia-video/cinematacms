@@ -80,8 +80,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "cms.observability_middleware.ObservabilityMetricsMiddleware",
+    "cms.authentication_telemetry.AuthenticationDependencyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -95,8 +95,8 @@ MIDDLEWARE = [
     "cms.middleware.MaintenanceTimingMiddleware",  # Track maintenance mode timing
     "maintenance_mode.middleware.MaintenanceModeMiddleware",
     "waffle.middleware.WaffleMiddleware",
-    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
+CSRF_FAILURE_VIEW = "cms.authentication_telemetry.csrf_failure"
 
 ROOT_URLCONF = "cms.urls"
 
@@ -450,9 +450,9 @@ CAN_ADD_MEDIA = "all"
 # django rest settings
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
+        "cms.authentication_telemetry.SessionAuthentication",
+        "cms.authentication_telemetry.BasicAuthentication",
+        "cms.authentication_telemetry.TokenAuthentication",
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,

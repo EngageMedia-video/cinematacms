@@ -13,6 +13,7 @@ from typing import Any
 
 from files.metrics import record_telemetry_failure
 
+from .authentication_telemetry import AuthenticationDependencyUnavailable
 from .cache_telemetry import (
     CACHE_FAMILIES,
     CACHE_OPERATIONS,
@@ -48,12 +49,14 @@ class RestrictedMediaRedisAdapter:
         *,
         fallback: Any,
         classify: Callable[[Any], str],
+        dependency_required: bool = False,
     ) -> Any:
         normalized_family = _normalize(family, CACHE_FAMILIES, field="family", fallback="cache_probe")
         normalized_operation = _normalize(operation, CACHE_OPERATIONS, field="operation", fallback="other")
         value = fallback
         result = "error"
-        error = False
+        is_error = False
+        dependency_error = None
         try:
             started = self.clock()
         except Exception:
@@ -69,9 +72,10 @@ class RestrictedMediaRedisAdapter:
                         span.set_attribute("cinematacms.cache.result", result)
                     except Exception:
                         record_telemetry_failure("traces", "cache", "attribute")
-        except Exception:
-            error = True
+        except Exception as caught_error:
+            is_error = True
             result = "error"
+            dependency_error = caught_error
 
         try:
             duration = max(0.0, self.clock() - started)
@@ -81,10 +85,12 @@ class RestrictedMediaRedisAdapter:
 
         _safe_counter(normalized_family, normalized_operation, result)
         _safe_duration(normalized_family, normalized_operation, result, duration)
-        if error:
+        if is_error:
             _safe_event("cinematacms.cache.operation.failed", normalized_family, normalized_operation, result, duration)
         if duration >= _slow_threshold():
             _safe_event("cinematacms.cache.operation.slow", normalized_family, normalized_operation, result, duration)
+        if is_error and dependency_required:
+            raise AuthenticationDependencyUnavailable() from dependency_error
         return value
 
     def store_token(self, access_key: str, media_set_key: str, payload: str, ttl: int) -> bool:
@@ -107,6 +113,7 @@ class RestrictedMediaRedisAdapter:
             lambda redis: redis.get(access_key),
             fallback=None,
             classify=lambda value: "hit" if value is not None else "miss",
+            dependency_required=True,
         )
 
     def invalidate_tokens(self, media_set_key: str, script: str) -> int:
@@ -132,6 +139,7 @@ class RestrictedMediaRedisAdapter:
                 callback,
                 fallback=False,
                 classify=lambda allowed: "miss" if allowed else "hit",
+                dependency_required=True,
             )
         )
 
@@ -165,3 +173,15 @@ class RestrictedMediaRedisAdapter:
 
 
 restricted_media_redis = RestrictedMediaRedisAdapter()
+
+
+class ObservabilityRedisAdapter:
+    """Read Redis-backed operational state without exposing queue names as telemetry values."""
+
+    def queue_depth(self, queue: str) -> int:
+        from django_redis import get_redis_connection
+
+        return int(get_redis_connection("default").llen(queue))
+
+
+observability_redis = ObservabilityRedisAdapter()

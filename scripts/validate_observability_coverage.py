@@ -482,6 +482,14 @@ def _validate_rows(matrix, registries, schemas, event_names, inventory, errors):
             continue
         if "not_applicable" in row:
             errors.append(f"{path}.not_applicable: only covered rows may omit this field")
+        seam = row.get("instrumentation_seam")
+        if isinstance(seam, str) and "." in seam and not _reference_module_exists(seam):
+            errors.append(f"{path}.instrumentation_seam: module does not exist for {seam!r}")
+        tests = row.get("tests")
+        if isinstance(tests, list):
+            for test in tests:
+                if isinstance(test, str) and not _reference_module_exists(test):
+                    errors.append(f"{path}.tests: module does not exist for {test!r}")
         metrics = _as_list(row.get("metric"))
         if metrics is None:
             errors.append(f"{path}.metric: must be a metric name or list")
@@ -510,6 +518,18 @@ def _validate_rows(matrix, registries, schemas, event_names, inventory, errors):
             errors.append(f"{path}.inventory_ref: unknown inventory {inventory_ref!r}")
     _validate_registry_coverage(matrix, registries, rows, errors)
     return rows
+
+
+def _reference_module_exists(reference):
+    """Return whether a dotted symbol reference starts with a repository module."""
+
+    parts = reference.split(".")
+    root = Path(__file__).resolve().parents[1]
+    for end in range(len(parts), 1, -1):
+        candidate = root.joinpath(*parts[:end])
+        if candidate.with_suffix(".py").is_file() or (candidate / "__init__.py").is_file():
+            return True
+    return False
 
 
 def validate_matrix(matrix):

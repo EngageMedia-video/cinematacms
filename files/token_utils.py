@@ -20,6 +20,7 @@ from urllib.parse import urlsplit
 
 from django.conf import settings
 
+from cms.authentication_telemetry import AuthenticationDependencyUnavailable, record_authentication_failure
 from cms.redis_telemetry import restricted_media_redis
 
 logger = logging.getLogger("files.security")
@@ -82,18 +83,27 @@ def validate_token(token: str, expected_media_id: str) -> bool:
 
     access_key = ACCESS_KEY_TEMPLATE.format(token=token)
 
-    data_raw = restricted_media_redis.get_token(access_key)
+    try:
+        data_raw = restricted_media_redis.get_token(access_key)
+    except AuthenticationDependencyUnavailable:
+        record_authentication_failure("restricted_media", "media_token", "dependency_unavailable")
+        raise
 
     if data_raw is None:
+        record_authentication_failure("restricted_media", "media_token", "invalid_token")
         return False
 
     try:
         data = json.loads(data_raw)
     except (json.JSONDecodeError, TypeError):
+        record_authentication_failure("restricted_media", "media_token", "invalid_token")
         return False
 
     stored_media_id = data.get("media_id", "")
-    return hmac.compare_digest(str(stored_media_id), str(expected_media_id))
+    valid = hmac.compare_digest(str(stored_media_id), str(expected_media_id))
+    if not valid:
+        record_authentication_failure("restricted_media", "media_token", "invalid_token")
+    return valid
 
 
 _INVALIDATE_LUA = """
@@ -167,13 +177,23 @@ def authenticate_restricted_media(media, password, ip):
     error_dict has keys: detail, status_code.
     """
     # Rate limit runs before reading password — blocked users get 429 even with empty body
-    if not check_rate_limit(ip, media.friendly_token):
+    try:
+        allowed = check_rate_limit(ip, media.friendly_token)
+    except AuthenticationDependencyUnavailable:
+        record_authentication_failure("restricted_media", "media_password", "dependency_unavailable")
+        return None, {
+            "detail": "Authentication service is temporarily unavailable.",
+            "status_code": 503,
+        }
+    if not allowed:
+        record_authentication_failure("restricted_media", "media_password", "rate_limited")
         return None, {
             "detail": "Too many failed attempts. Please try again later.",
             "status_code": 429,
         }
 
     if not password:
+        record_authentication_failure("restricted_media", "media_password", "missing_credentials")
         return None, {"detail": "Password is required.", "status_code": 400}
 
     from django.contrib.auth.hashers import check_password
@@ -183,6 +203,7 @@ def authenticate_restricted_media(media, password, ip):
         reset_rate_limit(ip, media.friendly_token)
         return token, None
     else:
+        record_authentication_failure("restricted_media", "media_password", "invalid_credentials")
         record_failed_attempt(ip, media.friendly_token)
         return None, {"detail": "The password is incorrect.", "status_code": 403}
 

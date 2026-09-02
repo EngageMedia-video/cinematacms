@@ -165,3 +165,11 @@ class ObservabilityCoverageContractTests(SimpleTestCase):
         errors = validate_matrix(candidate)
 
         self.assertTrue(any("route_group" in error and "registry" in error for error in errors), errors)
+
+    def test_validator_rejects_a_covered_row_with_a_missing_module(self):
+        candidate = matrix()
+        candidate["coverage"][0]["instrumentation_seam"] = "cms.missing_telemetry.Recorder"
+
+        errors = validate_matrix(candidate)
+
+        self.assertTrue(any("module does not exist" in error for error in errors), errors)

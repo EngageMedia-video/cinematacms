@@ -93,7 +93,7 @@ class CacheAccessEnforcementTests(SimpleTestCase):
 
         root = Path(__file__).resolve().parents[2]
         allowed_cache = {root / "cms" / "cache_telemetry.py"}
-        allowed_redis = {root / "cms" / "redis_telemetry.py", root / "files" / "metrics.py"}
+        allowed_redis = {root / "cms" / "redis_telemetry.py"}
         violations = []
         for path in (root / "cms").rglob("*.py"):
             if "/tests/" in str(path) or path in allowed_cache or path in allowed_redis:
