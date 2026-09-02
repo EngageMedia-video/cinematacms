@@ -6,6 +6,11 @@ from cms.scheduled_jobs import SCHEDULED_JOBS, record_scheduled_outcome
 
 
 class ScheduledJobContractTests(SimpleTestCase):
+    def test_beat_freshness_runs_on_a_consumed_queue(self):
+        from cms.celery import record_beat_freshness
+
+        self.assertEqual(record_beat_freshness.queue, "short_tasks")
+
     def test_registry_matches_the_production_beat_schedule(self):
         from django.conf import settings
 
