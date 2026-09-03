@@ -108,17 +108,19 @@ Use the `tdd` repository skill when the work requires a test-first cycle.
 
 ## Make new behavior observable
 
-Use the existing application-owned telemetry for every feature. HTTP and
-database telemetry apply automatically. Use the owned cache, Redis,
-authentication, Celery, scheduled-job, and domain-outcome interfaces instead of
-calling their backends directly.
-
-Update [`config/observability/coverage.json`](config/observability/coverage.json)
-only when a change adds or changes an observable operation, outcome, dependency,
-or operator workflow. The
+Before implementation, map the feature to the existing
 [application observability contract](docs/technical/observability-contract.md)
-defines the required bounded labels, privacy rules, tests, events, and operator
-queries.
+and its machine-readable source of truth,
+[`config/observability/coverage.json`](config/observability/coverage.json). If
+the contract already covers the feature's operation, outcomes, dependencies,
+and operator workflow, use the existing application-owned telemetry.
+
+If the contract does not cover the feature, extend the coverage matrix and its
+contract tests first. Register each new HTTP route and supported method in
+`cms.http_telemetry.ROUTE_OPERATION_REGISTRY`. Define the bounded labels,
+privacy constraints, diagnostic events, implementation point, and operator
+query. Then implement the feature through the owned HTTP, database, cache,
+Redis, authentication, Celery, scheduled-job, and domain-outcome interfaces.
 
 Never put raw URLs, SQL, parameters, cache keys, credentials, tokens,
 identifiers, IP addresses, hostnames, exception messages, or unrestricted task

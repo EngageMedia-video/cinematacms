@@ -55,10 +55,10 @@ task paths, shared skills, verification sequence, and human decision points.
 Run the smallest relevant test while you work. Before you open the pull request,
 run the checks that cover every changed area.
 
-For a new feature or changed operational behavior, follow
+Before you implement a new feature or changed operational behavior, follow
 [Make new behavior observable](CODING_STANDARDS.md#make-new-behavior-observable).
-Update the coverage matrix only when the change adds or changes an observable
-operation, outcome, dependency, or operator workflow.
+Map the feature to the existing contract. If the contract does not cover the
+feature, extend the coverage matrix and contract tests first.
 
 ### Repository checks
 
