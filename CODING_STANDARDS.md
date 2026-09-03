@@ -122,9 +122,11 @@ privacy constraints, diagnostic events, implementation point, and operator
 query. Then implement the feature through the owned HTTP, database, cache,
 Redis, authentication, Celery, scheduled-job, and domain-outcome interfaces.
 
-Never put raw URLs, SQL, parameters, cache keys, credentials, tokens,
-identifiers, IP addresses, hostnames, exception messages, or unrestricted task
-names in telemetry.
+Never put raw URLs, SQL, parameters, cache keys, credentials, tokens, user or
+media identifiers, IP addresses, hostnames, exception messages, or unrestricted
+task names in telemetry. Use operational identifiers only where the
+observability contract permits `trace_id`, `span_id`, `task_id`, a delivery
+UUID, or `recipient_ref`. Do not use these identifiers as metric labels.
 
 Run the contract checks with the feature tests:
 

@@ -416,6 +416,21 @@ class DatabaseTelemetryCursor:
     def copy_expert(self, sql: Any, file: Any, size: int = 8192):
         return self._execute(sql, lambda: self.cursor.copy_expert(sql, file, size=size))
 
+    def copy_from(
+        self,
+        file: Any,
+        table: str,
+        sep: str = "\t",
+        null: str = r"\N",
+        size: int = 8192,
+        columns: Any = None,
+    ):
+        statement = f"COPY {table} FROM STDIN"
+        return self._execute(
+            statement,
+            lambda: self.cursor.copy_from(file, table, sep=sep, null=null, size=size, columns=columns),
+        )
+
     def copy_to(
         self,
         file: Any,

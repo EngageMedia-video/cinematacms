@@ -143,14 +143,16 @@ class DatabaseTelemetryCursorTests(SimpleTestCase):
     @override_settings(OBSERVABILITY_SLOW_QUERY_SECONDS=999)
     def test_copy_entry_points_record_query_telemetry(self):
         self.raw_cursor.copy_expert.return_value = "copied-from"
+        self.raw_cursor.copy_from.return_value = "copied-from-table"
         self.raw_cursor.copy_to.return_value = "copied-to"
 
         with patch.object(DB_QUERY_DURATION_SECONDS, "labels") as labels:
             labels.return_value.observe = Mock()
             self.assertEqual(self.cursor.copy_expert("COPY media FROM STDIN", object()), "copied-from")
+            self.assertEqual(self.cursor.copy_from(object(), "media"), "copied-from-table")
             self.assertEqual(self.cursor.copy_to(object(), "media"), "copied-to")
 
-        self.assertEqual(labels.call_count, 2)
+        self.assertEqual(labels.call_count, 3)
         self.assertTrue(all(call.kwargs["operation"] == "other" for call in labels.call_args_list))
 
 
@@ -175,6 +177,7 @@ class PostgreSQLCursorFactoryTests(SimpleTestCase):
         for cursor in cursors:
             self.assertIsInstance(cursor, DatabaseTelemetryCursor)
             self.assertTrue(callable(cursor.copy_expert))
+            self.assertTrue(callable(cursor.copy_from))
             self.assertTrue(callable(cursor.copy_to))
 
 
