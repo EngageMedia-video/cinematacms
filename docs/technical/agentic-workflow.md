@@ -88,6 +88,12 @@ smallest observable behavior, run its focused check, and keep the loop green
 before starting the next behavior. Update the source documentation when a
 command, configuration option, contributor rule, or user workflow changes.
 
+For new features and changed operational behavior, apply
+[Make new behavior observable](../../CODING_STANDARDS.md#make-new-behavior-observable)
+in the same implementation slice. Do not hand off a feature until its coverage
+matrix row, owned instrumentation, privacy checks, operator query, and tests are
+complete.
+
 Use `verify-change` after the focused loops. It selects the backend, frontend,
 migration, build, workflow, and documentation checks that cover the complete
 diff. Every change also runs:

@@ -106,6 +106,34 @@ for data migrations, non-atomic migrations, and migration ordering.
 
 Use the `tdd` repository skill when the work requires a test-first cycle.
 
+## Make new behavior observable
+
+Treat observability as part of each new feature and changed operational behavior. The machine-readable source of truth is
+[`config/observability/coverage.json`](config/observability/coverage.json). The
+[application observability contract](docs/technical/observability-contract.md)
+explains the public telemetry boundary.
+
+Before completing a feature:
+
+1. Add each new operation and outcome to the coverage matrix. Record its metric, bounded dimensions, diagnostic event, implementation point, privacy constraints, test, and operator query.
+2. Register each new HTTP route and supported method in `cms.http_telemetry.ROUTE_OPERATION_REGISTRY`.
+3. Use the application-owned cache, Redis, authentication, database, Celery, scheduled-job, and domain-outcome instrumentation points. Do not call a backend directly when an owned adapter exists.
+4. Use fixed categories for metric labels. Do not use raw URLs, SQL, parameters, cache keys, credentials, tokens, user or media identifiers, IP addresses, hostnames, exception messages, or unrestricted task names.
+5. Test successful, failed, and dependency-unavailable outcomes. Test slow behavior when the operation has a diagnostic threshold. Prove that a telemetry failure cannot change the application result.
+6. Update the human-readable observability contract when the feature adds a signal, label, event, configuration option, or operator workflow.
+
+Run the contract checks with the feature tests:
+
+```bash
+uv run python scripts/validate_observability_coverage.py
+uv run python manage.py test cms.tests.test_observability_coverage
+make agent-check
+```
+
+Do not mark the feature complete when the coverage matrix has an unregistered
+operation, a placeholder row, a missing implementation or test module, or an
+operator query without a diagnostic path.
+
 ### Tautological tests are harmful
 
 A tautological test derives its expected result with the same rules as the code
