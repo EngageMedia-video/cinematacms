@@ -42,7 +42,8 @@ uv run python scripts/validate_observability_coverage.py
 uv run python manage.py test cms.tests.test_alertability_contract cms.tests.test_observability cms.tests.test_scheduled_jobs email_delivery
 ```
 
-When a feature adds or changes an operation, update
-`config/observability/coverage.json` in the same pull request. Follow
+When a feature adds or changes an observable operation, outcome, dependency, or
+operator workflow, update `config/observability/coverage.json` in the same pull
+request. Follow
 [Make new behavior observable](../../CODING_STANDARDS.md#make-new-behavior-observable)
 for the required inventory, privacy, test, and operator-query fields.

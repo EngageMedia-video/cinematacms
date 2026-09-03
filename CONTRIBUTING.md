@@ -57,8 +57,8 @@ run the checks that cover every changed area.
 
 For a new feature or changed operational behavior, follow
 [Make new behavior observable](CODING_STANDARDS.md#make-new-behavior-observable).
-Include the coverage-matrix change and its contract checks in the same pull
-request as the feature.
+Update the coverage matrix only when the change adds or changes an observable
+operation, outcome, dependency, or operator workflow.
 
 ### Repository checks
 

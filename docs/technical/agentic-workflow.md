@@ -90,9 +90,9 @@ command, configuration option, contributor rule, or user workflow changes.
 
 For new features and changed operational behavior, apply
 [Make new behavior observable](../../CODING_STANDARDS.md#make-new-behavior-observable)
-in the same implementation slice. Do not hand off a feature until its coverage
-matrix row, owned instrumentation, privacy checks, operator query, and tests are
-complete.
+in the same implementation slice. Update the coverage matrix only when the
+change adds or changes an observable operation, outcome, dependency, or operator
+workflow.
 
 Use `verify-change` after the focused loops. It selects the backend, frontend,
 migration, build, workflow, and documentation checks that cover the complete
