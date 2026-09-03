@@ -57,6 +57,24 @@ class OwnedCacheAdapterTests(SimpleTestCase):
         items.return_value.inc.assert_any_call(2)
         items.return_value.inc.assert_any_call(1)
 
+    def test_bulk_read_counts_duplicate_keys_once(self):
+        from cms import cache_telemetry
+
+        backend = Mock()
+        backend.get_many.return_value = {"one": 1}
+        adapter = cache_telemetry.OwnedCacheAdapter(backend=backend)
+
+        with (
+            patch.object(cache_telemetry.CACHE_OPERATIONS_TOTAL, "labels") as operations,
+            patch.object(cache_telemetry.CACHE_OPERATION_DURATION_SECONDS, "labels"),
+            patch.object(cache_telemetry.CACHE_ITEMS_TOTAL, "labels") as items,
+        ):
+            self.assertEqual(adapter.get_many("query", ["one", "one", "two"]), {"one": 1})
+
+        backend.get_many.assert_called_once_with(["one", "two"])
+        operations.assert_called_once_with(family="query", operation="bulk_read", result="partial_hit")
+        self.assertEqual([call.args[0] for call in items.return_value.inc.call_args_list], [1, 1])
+
     @override_settings(OBSERVABILITY_SLOW_CACHE_SECONDS=0)
     def test_backend_error_is_fail_soft_and_emits_failed_event(self):
         from cms import cache_telemetry
@@ -100,13 +118,31 @@ class CacheAccessEnforcementTests(SimpleTestCase):
                 continue
             tree = ast.parse(path.read_text(), filename=str(path))
             for node in ast.walk(tree):
-                if isinstance(node, ast.ImportFrom) and node.module in {"django.core.cache", "django_redis"}:
+                if isinstance(node, ast.ImportFrom):
+                    prohibited = node.module in {"django.core.cache", "django_redis"}
+                    prohibited = prohibited or (
+                        node.module == "django.core" and any(alias.name == "cache" for alias in node.names)
+                    )
+                    if prohibited:
+                        violations.append(f"{path}:{node.lineno}")
+                if isinstance(node, ast.Import) and any(
+                    alias.name in {"django.core.cache", "django_redis"} for alias in node.names
+                ):
                     violations.append(f"{path}:{node.lineno}")
         for path in (root / "files").rglob("*.py"):
             if "/tests/" in str(path) or path in allowed_cache or path in allowed_redis:
                 continue
             tree = ast.parse(path.read_text(), filename=str(path))
             for node in ast.walk(tree):
-                if isinstance(node, ast.ImportFrom) and node.module in {"django.core.cache", "django_redis"}:
+                if isinstance(node, ast.ImportFrom):
+                    prohibited = node.module in {"django.core.cache", "django_redis"}
+                    prohibited = prohibited or (
+                        node.module == "django.core" and any(alias.name == "cache" for alias in node.names)
+                    )
+                    if prohibited:
+                        violations.append(f"{path}:{node.lineno}")
+                if isinstance(node, ast.Import) and any(
+                    alias.name in {"django.core.cache", "django_redis"} for alias in node.names
+                ):
                     violations.append(f"{path}:{node.lineno}")
         self.assertEqual(violations, [])

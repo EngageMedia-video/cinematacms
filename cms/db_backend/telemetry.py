@@ -405,15 +405,32 @@ class DatabaseTelemetryCursor:
         self.database = _normalize_database(database)
 
     def execute(self, sql: Any, params: Any = None):
-        return self._execute("execute", sql, params)
+        return self._execute(sql, lambda: self.cursor.execute(sql, params))
 
     def executemany(self, sql: Any, param_list: Any):
-        return self._execute("executemany", sql, param_list)
+        return self._execute(sql, lambda: self.cursor.executemany(sql, param_list))
 
     def callproc(self, procname: Any, params: Any = None):
-        return self._execute("callproc", procname, params)
+        return self._execute(procname, lambda: self.cursor.callproc(procname, params))
 
-    def _execute(self, method: str, sql: Any, params: Any):
+    def copy_expert(self, sql: Any, file: Any, size: int = 8192):
+        return self._execute(sql, lambda: self.cursor.copy_expert(sql, file, size=size))
+
+    def copy_to(
+        self,
+        file: Any,
+        table: str,
+        sep: str = "\t",
+        null: str = r"\N",
+        columns: Any = None,
+    ):
+        statement = f"COPY {table}"
+        return self._execute(
+            statement,
+            lambda: self.cursor.copy_to(file, table, sep=sep, null=null, columns=columns),
+        )
+
+    def _execute(self, sql: Any, callback):
         workload, context_group = current_database_context()
         operation = database_operation(sql)
         fingerprint = sql_fingerprint(sql)
@@ -425,7 +442,7 @@ class DatabaseTelemetryCursor:
 
         try:
             with _database_span(operation, self.database, workload, context_group, fingerprint) as span:
-                result = getattr(self.cursor, method)(sql, params)
+                result = callback()
                 _set_span_outcome(span, "success")
         except Exception as error:
             duration = 0.0

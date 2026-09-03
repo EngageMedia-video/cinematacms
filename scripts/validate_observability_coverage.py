@@ -2,6 +2,7 @@
 """Validate the application-owned observability coverage matrix."""
 
 import argparse
+import ast
 import json
 import math
 import re
@@ -14,6 +15,13 @@ GENERIC_UNKNOWN_VALUES = {"generic", "tbd", "todo", "unclassified", "unknown", "
 REGISTRY_COVERAGE_ALL = "all"
 VALID_STATUSES = {"covered", "not_applicable"}
 VALID_METRIC_TYPES = {"counter", "gauge", "histogram", "info", "summary"}
+PYTHON_ALLOWLISTS = {
+    "domain_operations": "DOMAIN_OPERATIONS",
+    "domain_reason_codes": "DOMAIN_REASON_CODES",
+    "telemetry_signals": "TELEMETRY_SIGNALS",
+    "telemetry_components": "TELEMETRY_COMPONENTS",
+    "telemetry_stages": "TELEMETRY_STAGES",
+}
 REQUIRED_ROW_FIELDS = (
     "id",
     "status",
@@ -527,9 +535,39 @@ def _reference_module_exists(reference):
     root = Path(__file__).resolve().parents[1]
     for end in range(len(parts), 1, -1):
         candidate = root.joinpath(*parts[:end])
-        if candidate.with_suffix(".py").is_file() or (candidate / "__init__.py").is_file():
+        if candidate.with_suffix(".py").is_file():
             return True
+        if (candidate / "__init__.py").is_file():
+            remaining = parts[end:]
+            return not remaining or not remaining[0][:1].islower()
     return False
+
+
+def _python_allowlists():
+    source = Path(__file__).resolve().parents[1] / "files" / "metrics.py"
+    tree = ast.parse(source.read_text(), filename=str(source))
+    wanted = set(PYTHON_ALLOWLISTS.values())
+    values = {}
+    for node in tree.body:
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+            continue
+        name = node.targets[0].id
+        if name not in wanted or not isinstance(node.value, ast.Call) or len(node.value.args) != 1:
+            continue
+        values[name] = set(ast.literal_eval(node.value.args[0]))
+    return values
+
+
+def _validate_python_allowlists(registries, errors):
+    source_values = _python_allowlists()
+    for registry_name, constant_name in PYTHON_ALLOWLISTS.items():
+        expected = source_values.get(constant_name)
+        if expected is None:
+            errors.append(f"files.metrics.{constant_name}: missing literal frozenset allowlist")
+            continue
+        actual, fallback = _registry_values(registries.get(registry_name, {}))
+        if set(actual) | set(fallback) != expected:
+            errors.append(f"registries.{registry_name}: differs from files.metrics.{constant_name}")
 
 
 def validate_matrix(matrix):
@@ -543,6 +581,7 @@ def validate_matrix(matrix):
     if matrix.get("namespace") != "cinematacms":
         errors.append("namespace: expected 'cinematacms'")
     registries = _validate_registries(matrix, errors)
+    _validate_python_allowlists(registries, errors)
     schemas = _validate_metric_schemas(matrix, registries, errors)
     event_names = _validate_events(matrix, errors)
     inventory = _validate_inventory(matrix, registries, errors)

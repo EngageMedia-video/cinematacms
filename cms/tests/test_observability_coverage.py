@@ -173,3 +173,11 @@ class ObservabilityCoverageContractTests(SimpleTestCase):
         errors = validate_matrix(candidate)
 
         self.assertTrue(any("module does not exist" in error for error in errors), errors)
+
+    def test_validator_rejects_registry_drift_from_python_allowlist(self):
+        candidate = matrix()
+        candidate["registries"]["domain_operations"]["values"].remove("hls")
+
+        errors = validate_matrix(candidate)
+
+        self.assertTrue(any("files.metrics.DOMAIN_OPERATIONS" in error for error in errors), errors)

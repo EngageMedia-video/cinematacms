@@ -489,6 +489,26 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
         states = {call.kwargs["outcome"] for call in task_total.labels.call_args_list}
         self.assertEqual(states, {"failed", "retried", "revoked"})
 
+    def test_terminal_event_reuses_cached_labels_without_normalizing_again(self):
+        from files import metrics
+
+        metrics._task_labels["cached-task"] = ("encoding", "long_tasks")
+        try:
+            with (
+                patch("files.metrics.normalize_task_family") as family,
+                patch("files.metrics.normalize_queue") as queue,
+                patch("files.metrics.CELERY_TASKS_TOTAL") as task_total,
+            ):
+                metrics._terminal_task_event("failed", task_id="cached-task")
+        finally:
+            metrics._task_labels.pop("cached-task", None)
+
+        family.assert_not_called()
+        queue.assert_not_called()
+        task_total.labels.assert_called_once_with(
+            task_family="encoding", queue="long_tasks", event="completed", outcome="failed"
+        )
+
     def test_domain_outcome_normalizes_unbounded_values_without_raising(self):
         from files import metrics
 

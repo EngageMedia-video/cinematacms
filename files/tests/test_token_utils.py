@@ -99,6 +99,32 @@ class TokenValidationTest(TestCase):
         self.assertEqual(error["status_code"], 503)
         record.assert_called_once_with("restricted_media", "media_password", "dependency_unavailable")
 
+    def test_token_write_dependency_outage_returns_503(self):
+        media = type("Media", (), {"friendly_token": "media", "uid_hex": "uid", "password": "hash"})()
+
+        with (
+            patch.object(token_utils, "check_rate_limit", return_value=True),
+            patch("django.contrib.auth.hashers.check_password", return_value=True),
+            patch.object(token_utils, "generate_token", side_effect=AuthenticationDependencyUnavailable()),
+        ):
+            token, error = token_utils.authenticate_restricted_media(media, "password", "192.0.2.1")
+
+        self.assertIsNone(token)
+        self.assertEqual(error["status_code"], 503)
+
+    def test_failed_attempt_write_dependency_outage_returns_503(self):
+        media = type("Media", (), {"friendly_token": "media", "uid_hex": "uid", "password": "hash"})()
+
+        with (
+            patch.object(token_utils, "check_rate_limit", return_value=True),
+            patch("django.contrib.auth.hashers.check_password", return_value=False),
+            patch.object(token_utils, "record_failed_attempt", side_effect=AuthenticationDependencyUnavailable()),
+        ):
+            token, error = token_utils.authenticate_restricted_media(media, "wrong", "192.0.2.1")
+
+        self.assertIsNone(token)
+        self.assertEqual(error["status_code"], 503)
+
 
 class TokenInvalidationTest(TestCase):
     """Test per-media token invalidation."""

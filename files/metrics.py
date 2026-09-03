@@ -232,6 +232,15 @@ DOMAIN_OPERATIONS = frozenset(
         "user_activity",
         "platform_maintenance",
         "diagnostic",
+        "scheduled.record_beat_freshness",
+        "scheduled.recover_stale_email_deliveries",
+        "scheduled.cleanup_email_delivery_receipts",
+        "scheduled.clear_sessions",
+        "scheduled.update_listings_thumbnails",
+        "scheduled.cleanup_orphaned_uploads",
+        "scheduled.cleanup_orphaned_draft_media",
+        "scheduled.dispatch_deferred_encodings",
+        "scheduled.apply_visibility_schedules",
         "other",
     }
 )
@@ -272,6 +281,22 @@ DOMAIN_REASON_CODES = frozenset(
         "other",
     }
 )
+TELEMETRY_SIGNALS = frozenset({"metrics", "logs", "traces", "timing", "context", "database"})
+TELEMETRY_COMPONENTS = frozenset(
+    {
+        "application",
+        "authentication",
+        "cache",
+        "celery",
+        "database",
+        "domain",
+        "exporter",
+        "http",
+        "span",
+        "telemetry_contract",
+    }
+)
+TELEMETRY_STAGES = frozenset({"emit", "export", "start", "attribute", "finish", "reset", "prepare", "record"})
 MEDIA_TASK_OPERATIONS = {
     "chunkize_media": "chunking",
     "whisper_transcribe": "transcription",
@@ -448,7 +473,10 @@ def _on_task_postrun(sender=None, task_id=None, state=None, retval=None, **kwarg
 
 def _terminal_task_event(state, sender=None, task_id=None, **kwargs):
     name = _task_name(sender=sender, **kwargs)
-    family, queue = _task_labels.get(task_id, (normalize_task_family(name), normalize_queue(sender=sender, **kwargs)))
+    labels = _task_labels.get(task_id)
+    if labels is None:
+        labels = (normalize_task_family(name), normalize_queue(sender=sender, **kwargs))
+    family, queue = labels
     _safe_metric(
         f"Celery {state}",
         lambda: CELERY_TASKS_TOTAL.labels(task_family=family, queue=queue, event="completed", outcome=state).inc(),

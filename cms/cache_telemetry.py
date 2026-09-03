@@ -243,10 +243,11 @@ class OwnedCacheAdapter:
         return default if value is missing else value
 
     def get_many(self, family: str, keys: list[str] | tuple[str, ...], *, version: int | None = None) -> dict:
-        requested = len(keys)
+        distinct_keys = list(dict.fromkeys(keys))
+        requested = len(distinct_keys)
 
         def callback(_span: Any) -> dict:
-            return dict(self._call("get_many", keys, version=version))
+            return dict(self._call("get_many", distinct_keys, version=version))
 
         def classify(values: dict) -> str:
             hits = len(values)

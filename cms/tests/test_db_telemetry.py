@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 from django.conf import settings
 from django.test import SimpleTestCase, override_settings
 
+from cms.db_backend.postgresql.base import DatabaseWrapper
 from cms.db_backend.telemetry import (
     DB_QUERY_DURATION_SECONDS,
     DatabaseTelemetryCursor,
@@ -138,6 +139,43 @@ class DatabaseTelemetryCursorTests(SimpleTestCase):
 
         self.assertEqual(result, "executed")
         failure.assert_called_once_with("metrics", "database", "emit")
+
+    @override_settings(OBSERVABILITY_SLOW_QUERY_SECONDS=999)
+    def test_copy_entry_points_record_query_telemetry(self):
+        self.raw_cursor.copy_expert.return_value = "copied-from"
+        self.raw_cursor.copy_to.return_value = "copied-to"
+
+        with patch.object(DB_QUERY_DURATION_SECONDS, "labels") as labels:
+            labels.return_value.observe = Mock()
+            self.assertEqual(self.cursor.copy_expert("COPY media FROM STDIN", object()), "copied-from")
+            self.assertEqual(self.cursor.copy_to(object(), "media"), "copied-to")
+
+        self.assertEqual(labels.call_count, 2)
+        self.assertTrue(all(call.kwargs["operation"] == "other" for call in labels.call_args_list))
+
+
+class PostgreSQLCursorFactoryTests(SimpleTestCase):
+    def test_normal_and_debug_factories_return_telemetry_cursors_with_copy_methods(self):
+        wrapper = DatabaseWrapper.__new__(DatabaseWrapper)
+        wrapper.alias = "default"
+        raw_cursor = Mock()
+
+        with (
+            patch(
+                "django.db.backends.postgresql.base.DatabaseWrapper.make_cursor",
+                side_effect=lambda cursor: cursor,
+            ),
+            patch(
+                "django.db.backends.postgresql.base.DatabaseWrapper.make_debug_cursor",
+                side_effect=lambda cursor: cursor,
+            ),
+        ):
+            cursors = [wrapper.make_cursor(raw_cursor), wrapper.make_debug_cursor(raw_cursor)]
+
+        for cursor in cursors:
+            self.assertIsInstance(cursor, DatabaseTelemetryCursor)
+            self.assertTrue(callable(cursor.copy_expert))
+            self.assertTrue(callable(cursor.copy_to))
 
 
 @contextmanager

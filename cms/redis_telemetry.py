@@ -103,7 +103,14 @@ class RestrictedMediaRedisAdapter:
             return True
 
         return bool(
-            self._run("restricted_media_token", "write", callback, fallback=False, classify=lambda _: "success")
+            self._run(
+                "restricted_media_token",
+                "write",
+                callback,
+                fallback=False,
+                classify=lambda _: "success",
+                dependency_required=True,
+            )
         )
 
     def get_token(self, access_key: str) -> Any:
@@ -124,6 +131,7 @@ class RestrictedMediaRedisAdapter:
                 lambda redis: int(redis.eval(script, 1, media_set_key)),
                 fallback=0,
                 classify=lambda _: "success",
+                dependency_required=True,
             )
         )
 

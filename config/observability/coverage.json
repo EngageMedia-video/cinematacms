@@ -324,7 +324,10 @@
     "domain_operations": {
       "values": [
         "encoding",
+        "hls",
         "transcription",
+        "sprites",
+        "chunking",
         "media_derivative",
         "media_lifecycle",
         "storage_maintenance",
@@ -360,8 +363,18 @@
       "values": [
         "none",
         "encoding_failed",
+        "configuration_error",
+        "media_not_found",
+        "no_h264_encoding",
         "encryption_bypass",
-        "invalid_encryption",
+        "subprocess_timeout",
+        "subprocess_failed",
+        "missing_playlist",
+        "lock_expired",
+        "returned_false",
+        "task_exception",
+        "task_retry",
+        "task_revoked",
         "queue_publish_failed",
         "preference_changed",
         "smtp_4xx",
@@ -498,50 +511,40 @@
     },
     "telemetry_signals": {
       "values": [
-        "cinematacms_http_requests_total",
-        "cinematacms_http_request_duration_seconds",
-        "cinematacms_db_query_duration_seconds",
-        "cinematacms_cache_operations_total",
-        "cinematacms_cache_operation_duration_seconds",
-        "cinematacms_cache_items_total",
-        "cinematacms_authentication_failures_total",
-        "cinematacms_celery_tasks_total",
-        "cinematacms_celery_task_duration_seconds",
-        "cinematacms_celery_worker_heartbeat_timestamp_seconds",
-        "cinematacms_celery_queue_depth",
-        "cinematacms_domain_outcomes_total",
-        "cinematacms_media_encoding_profile_total",
-        "cinematacms_media_duration_seconds",
-        "cinematacms_media_file_size_bytes",
-        "cinematacms_email_deliveries_total",
-        "cinematacms_email_delivery_attempts",
-        "cinematacms_email_delivery_latency_seconds",
-        "cinematacms_scheduled_job_runs_total",
-        "cinematacms_scheduled_job_last_started_timestamp_seconds",
-        "cinematacms_scheduled_job_last_success_timestamp_seconds",
-        "cinematacms_celery_beat_freshness_timestamp_seconds",
-        "cinematacms_telemetry_emission_failures_total",
-        "cinematacms_telemetry_contract_violations_total"
-      ],
-      "description": "Application metric signal names."
-    },
-    "telemetry_components": {
-      "values": [
         "metrics",
         "logs",
         "traces",
+        "timing",
+        "context",
+        "database"
+      ],
+      "description": "Telemetry signal kinds."
+    },
+    "telemetry_components": {
+      "values": [
+        "application",
+        "authentication",
+        "cache",
+        "celery",
+        "database",
+        "domain",
         "exporter",
-        "contract"
+        "http",
+        "span",
+        "telemetry_contract"
       ],
       "description": "Telemetry components."
     },
     "telemetry_stages": {
       "values": [
         "emit",
-        "serialize",
         "export",
-        "warning",
-        "startup"
+        "start",
+        "attribute",
+        "finish",
+        "reset",
+        "prepare",
+        "record"
       ],
       "description": "Telemetry emission stages."
     },
@@ -1547,7 +1550,7 @@
       ],
       "tests": [
         "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
-        "cms.tests.test_database_telemetry"
+        "cms.tests.test_db_telemetry"
       ],
       "operator_query": "Compare query duration and error rates by workload and context_group; inspect the privacy-safe query event.",
       "registry_coverage": {
@@ -1806,7 +1809,7 @@
       ],
       "tests": [
         "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
-        "cms.tests.test_celery_telemetry"
+        "cms.tests.test_observability"
       ],
       "operator_query": "Compare terminal failure and retry rates by task_family and queue; follow the child trace to PostgreSQL, Redis, and HTTP spans.",
       "registry_coverage": {
@@ -1872,7 +1875,7 @@
       ],
       "tests": [
         "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
-        "cms.tests.test_celery_telemetry"
+        "cms.tests.test_observability"
       ],
       "operator_query": "Compare heartbeat age by service_role and worker_ref; a role-only heartbeat indicates missing identity and a contract violation.",
       "registry_coverage": {
@@ -1928,7 +1931,10 @@
         ],
         "domain_operations": [
           "encoding",
+          "hls",
           "transcription",
+          "sprites",
+          "chunking",
           "media_derivative",
           "media_lifecycle",
           "storage_maintenance",
@@ -1958,8 +1964,18 @@
         "domain_reason_codes": [
           "none",
           "encoding_failed",
+          "configuration_error",
+          "media_not_found",
+          "no_h264_encoding",
           "encryption_bypass",
-          "invalid_encryption",
+          "subprocess_timeout",
+          "subprocess_failed",
+          "missing_playlist",
+          "lock_expired",
+          "returned_false",
+          "task_exception",
+          "task_retry",
+          "task_revoked",
           "queue_publish_failed",
           "preference_changed",
           "smtp_4xx",
@@ -2013,7 +2029,7 @@
       ],
       "tests": [
         "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
-        "cms.tests.test_media_telemetry"
+        "cms.tests.test_observability"
       ],
       "operator_query": "Compare encoding failures and input size/duration by bounded profile labels; inspect the media pipeline event.",
       "registry_coverage": {
@@ -2060,7 +2076,6 @@
           "none",
           "encoding_failed",
           "encryption_bypass",
-          "invalid_encryption",
           "queue_publish_failed",
           "preference_changed",
           "smtp_4xx",
@@ -2223,7 +2238,6 @@
           "none",
           "encoding_failed",
           "encryption_bypass",
-          "invalid_encryption",
           "queue_publish_failed",
           "preference_changed",
           "smtp_4xx",
@@ -2280,44 +2294,34 @@
           "telemetry"
         ],
         "telemetry_signals": [
-          "cinematacms_http_requests_total",
-          "cinematacms_http_request_duration_seconds",
-          "cinematacms_db_query_duration_seconds",
-          "cinematacms_cache_operations_total",
-          "cinematacms_cache_operation_duration_seconds",
-          "cinematacms_cache_items_total",
-          "cinematacms_authentication_failures_total",
-          "cinematacms_celery_tasks_total",
-          "cinematacms_celery_task_duration_seconds",
-          "cinematacms_celery_worker_heartbeat_timestamp_seconds",
-          "cinematacms_celery_queue_depth",
-          "cinematacms_domain_outcomes_total",
-          "cinematacms_media_encoding_profile_total",
-          "cinematacms_media_duration_seconds",
-          "cinematacms_media_file_size_bytes",
-          "cinematacms_email_deliveries_total",
-          "cinematacms_email_delivery_attempts",
-          "cinematacms_email_delivery_latency_seconds",
-          "cinematacms_scheduled_job_runs_total",
-          "cinematacms_scheduled_job_last_started_timestamp_seconds",
-          "cinematacms_scheduled_job_last_success_timestamp_seconds",
-          "cinematacms_celery_beat_freshness_timestamp_seconds",
-          "cinematacms_telemetry_emission_failures_total",
-          "cinematacms_telemetry_contract_violations_total"
-        ],
-        "telemetry_components": [
           "metrics",
           "logs",
           "traces",
+          "timing",
+          "context",
+          "database"
+        ],
+        "telemetry_components": [
+          "application",
+          "authentication",
+          "cache",
+          "celery",
+          "database",
+          "domain",
           "exporter",
-          "contract"
+          "http",
+          "span",
+          "telemetry_contract"
         ],
         "telemetry_stages": [
           "emit",
-          "serialize",
           "export",
-          "warning",
-          "startup"
+          "start",
+          "attribute",
+          "finish",
+          "reset",
+          "prepare",
+          "record"
         ]
       }
     },
@@ -2354,11 +2358,16 @@
           "telemetry"
         ],
         "telemetry_components": [
-          "metrics",
-          "logs",
-          "traces",
+          "application",
+          "authentication",
+          "cache",
+          "celery",
+          "database",
+          "domain",
           "exporter",
-          "contract"
+          "http",
+          "span",
+          "telemetry_contract"
         ],
         "telemetry_violation_fields": [
           "route_group",

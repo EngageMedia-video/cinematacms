@@ -325,9 +325,9 @@ def set_cached_result(cache_key: str, data: Any, timeout: int) -> bool:
         bool: True if successful
     """
     try:
-        query_cache.set(cache_key, data, timeout, version=QUERY_CACHE_VERSION)
+        stored = query_cache.set(cache_key, data, timeout, version=QUERY_CACHE_VERSION)
         logger.debug(f"Query cache SET: {cache_key} (TTL: {timeout}s)")
-        return True
+        return stored
     except Exception as e:
         logger.warning(f"Cache set failed for {cache_key}: {e}")
         return False

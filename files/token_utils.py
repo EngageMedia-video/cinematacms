@@ -199,12 +199,26 @@ def authenticate_restricted_media(media, password, ip):
     from django.contrib.auth.hashers import check_password
 
     if check_password(password, media.password):
-        token = generate_token(media.uid_hex)
+        try:
+            token = generate_token(media.uid_hex)
+        except AuthenticationDependencyUnavailable:
+            record_authentication_failure("restricted_media", "media_password", "dependency_unavailable")
+            return None, {
+                "detail": "Authentication service is temporarily unavailable.",
+                "status_code": 503,
+            }
         reset_rate_limit(ip, media.friendly_token)
         return token, None
     else:
         record_authentication_failure("restricted_media", "media_password", "invalid_credentials")
-        record_failed_attempt(ip, media.friendly_token)
+        try:
+            record_failed_attempt(ip, media.friendly_token)
+        except AuthenticationDependencyUnavailable:
+            record_authentication_failure("restricted_media", "media_password", "dependency_unavailable")
+            return None, {
+                "detail": "Authentication service is temporarily unavailable.",
+                "status_code": 503,
+            }
         return None, {"detail": "The password is incorrect.", "status_code": 403}
 
 
