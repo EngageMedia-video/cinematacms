@@ -188,7 +188,7 @@ BASE_DIR = os.path.abspath('.')
 FRONTEND_HOST='http://127.0.0.1:8000'
 PORTAL_NAME='CinemataCMS'
 
-# SSL_FRONTEND_HOST: If you intend to push to prod, 
+# SSL_FRONTEND_HOST: If you intend to push to prod,
 # replace the second argument with 'https'
 SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'http')
 
