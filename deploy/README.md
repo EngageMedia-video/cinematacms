@@ -18,6 +18,9 @@ such as domain, proxy, and observability mode. It is not loaded by Django.
 During the first upgrade, the release updater imports supported values from the
 ignored legacy `cms/local_settings.py` and `/etc/cinematacms/observability.env`.
 The application no longer imports either legacy configuration source.
+If a client has an uppercase legacy setting outside the migration contract, the
+upgrade stops and reports only its name. Add an explicit environment mapping or
+confirm that the setting is obsolete before retrying; values are never printed.
 
 Existing installations must provision the runtime environment before installing
 or restarting the new systemd units:

@@ -5,7 +5,7 @@ from celery.schedules import crontab
 from corsheaders.defaults import default_headers
 from django.core.exceptions import ImproperlyConfigured
 
-from .runtime_config import env_bool, env_csv, env_float, env_int
+from .runtime_config import env_bool, env_csv, env_float, env_int, env_optional_bool
 from .settings_utils import get_whisper_cpp_paths
 
 # PORTAL SETTINGS
@@ -17,6 +17,7 @@ ALLOWED_HOSTS = env_csv("ALLOWED_HOSTS", ["127.0.0.1", "localhost"])
 # In production, override with explicit CORS_ALLOWED_ORIGINS list.
 # CORS_ORIGIN_ALLOW_ALL = True is kept for local development only.
 CORS_ORIGIN_ALLOW_ALL = env_bool("CORS_ALLOW_ALL_ORIGINS", True)
+CORS_ALLOWED_ORIGINS = env_csv("CORS_ALLOWED_ORIGINS", [])
 CORS_ALLOW_HEADERS = default_headers + (
     "x-requested-with",  # Add X-Requested-With
     "if-modified-since",  # Add If-Modified-Since
@@ -280,7 +281,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 USE_I18N = True
 USE_TZ = True
-SITE_ID = 1
+SITE_ID = env_int("SITE_ID", 1)
 
 # Security improvements
 SESSION_COOKIE_AGE = 28800  # 8 hours in seconds
@@ -600,14 +601,14 @@ ORPHANED_DRAFT_CLEANUP_HOURS = 168
 # (each delete fires the post_delete file/HLS cascade). The next run drains the rest.
 ORPHANED_DRAFT_CLEANUP_BATCH_SIZE = 2000
 # bytes, size of uploaded media
-UPLOAD_MAX_SIZE = 800 * 1024 * 1000 * 5
+UPLOAD_MAX_SIZE = env_int("UPLOAD_MAX_SIZE", 800 * 1024 * 1000 * 5)
 
 # Default file count for the single-upload page's FineUploader. NOTE: this value
 # is overridden per-user in files/context_processors.py (advanced users -> 10,
 # everyone else -> 1), so the 100 here is only a ceiling/fallback. The dedicated
 # bulk-upload flow (issue #524) uses its own per-role limits instead — see
 # BULK_UPLOAD_MAX_FILES_* below and cms.permissions.max_bulk_upload_files.
-UPLOAD_MAX_FILES_NUMBER = 100
+UPLOAD_MAX_FILES_NUMBER = env_int("UPLOAD_MAX_FILES_NUMBER", 100)
 CONCURRENT_UPLOADS = True
 CHUNKS_DONE_PARAM_NAME = "done"
 
@@ -670,7 +671,7 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "info@mediacms.io")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "info@mediacms.io")
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
-SERVER_EMAIL = DEFAULT_FROM_EMAIL
+SERVER_EMAIL = os.getenv("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
 EMAIL_HOST = os.getenv("EMAIL_HOST", "mediacms.io")
 EMAIL_PORT = env_int("EMAIL_PORT", 587)
 ADMIN_EMAIL_LIST = env_csv("ADMIN_EMAIL_LIST", ["info@mediacms.io"])
@@ -729,15 +730,15 @@ VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
 USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
 
 # UI variant gate
-UI_VARIANT_DEFAULT = "revamp"
-UI_VARIANT_ALLOWED = ["revamp"]
-UI_VARIANT_REVAMP_PAGES = []  # Add page keys here as they are migrated, e.g. ["home"]
+UI_VARIANT_DEFAULT = os.getenv("UI_VARIANT_DEFAULT", "revamp")
+UI_VARIANT_ALLOWED = env_csv("UI_VARIANT_ALLOWED", ["revamp"])
+UI_VARIANT_REVAMP_PAGES = env_csv("UI_VARIANT_REVAMP_PAGES", [])
 
 # django-waffle feature flag settings
 WAFFLE_CREATE_MISSING_SWITCHES = True
 
 # allow option to override the default admin url
-DJANGO_ADMIN_URL = "admin/"
+DJANGO_ADMIN_URL = os.getenv("DJANGO_ADMIN_URL", "admin/")
 
 # additional MFA-permission configs
 MFA_REQUIRED_ROLES = env_csv("MFA_REQUIRED_ROLES", ["superuser", "manager", "curator"])
@@ -748,6 +749,9 @@ MFA_EXCLUDE_PATHS = ["/fu/", "/api/", "/manage/", "/accounts/"]
 # Can be set via WHISPER_MODEL_SIZE environment variable for container deployments.
 _whisper_model_requested = os.getenv("WHISPER_MODEL_SIZE", "base").strip()
 WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL, WHISPER_MODEL = get_whisper_cpp_paths(_whisper_model_requested)
+WHISPER_CPP_DIR = os.getenv("WHISPER_CPP_DIR", WHISPER_CPP_DIR)
+WHISPER_CPP_COMMAND = os.getenv("WHISPER_CPP_COMMAND", WHISPER_CPP_COMMAND)
+WHISPER_CPP_MODEL = os.getenv("WHISPER_CPP_MODEL", WHISPER_CPP_MODEL)
 
 # Threads each whisper-cli process may open; it defaults to 4 when unset.
 # deploy/celery_whisper.service runs a single worker, because a large-v3 model
@@ -755,16 +759,16 @@ WHISPER_CPP_DIR, WHISPER_CPP_COMMAND, WHISPER_CPP_MODEL, WHISPER_MODEL = get_whi
 WHISPER_CPP_THREADS = 2
 
 # django-maintenance-mode settings
-MAINTENANCE_MODE = None  # None/False/True
-MAINTENANCE_MODE_TEMPLATE = "503.html"
+MAINTENANCE_MODE = env_optional_bool("MAINTENANCE_MODE")
+MAINTENANCE_MODE_TEMPLATE = os.getenv("MAINTENANCE_MODE_TEMPLATE", "503.html")
 # if True the superuser will not see the maintenance-mode page
-MAINTENANCE_MODE_IGNORE_SUPERUSER = True
+MAINTENANCE_MODE_IGNORE_SUPERUSER = env_bool("MAINTENANCE_MODE_IGNORE_SUPERUSER", True)
 # if True the staff users will not see the maintenance-mode page
-MAINTENANCE_MODE_IGNORE_STAFF = True
+MAINTENANCE_MODE_IGNORE_STAFF = env_bool("MAINTENANCE_MODE_IGNORE_STAFF", True)
 # if True admin site will not be affected by the maintenance-mode page
-MAINTENANCE_MODE_IGNORE_ADMIN_SITE = True
+MAINTENANCE_MODE_IGNORE_ADMIN_SITE = env_bool("MAINTENANCE_MODE_IGNORE_ADMIN_SITE", True)
 # the value in seconds of the Retry-After header during maintenance-mode
-MAINTENANCE_MODE_RETRY_AFTER = 3600  # 1 hour
+MAINTENANCE_MODE_RETRY_AFTER = env_int("MAINTENANCE_MODE_RETRY_AFTER", 3600)
 # URLs that should be accessible during maintenance mode
 MAINTENANCE_MODE_IGNORE_URLS = (
     r"^/static/.*$",  # Allow static files
@@ -782,8 +786,14 @@ ALLOWED_HOSTS.append(FRONTEND_HOST.replace("http://", "").replace("https://", ""
 
 ALLOWED_MEDIA_UPLOAD_TYPES = ["video"]
 
-RECAPTCHA_PRIVATE_KEY = ""
-RECAPTCHA_PUBLIC_KEY = ""
+RECAPTCHA_PRIVATE_KEY = os.getenv("RECAPTCHA_PRIVATE_KEY", "")
+RECAPTCHA_PUBLIC_KEY = os.getenv("RECAPTCHA_PUBLIC_KEY", "")
+
+SECURE_CONTENT_TYPE_NOSNIFF = env_bool("SECURE_CONTENT_TYPE_NOSNIFF", True)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
+SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)
+SECURE_HSTS_SECONDS = env_int("SECURE_HSTS_SECONDS", 0)
+SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)
 
 CRISPY_TEMPLATE_PACK = "bootstrap"
 

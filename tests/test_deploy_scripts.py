@@ -13,6 +13,7 @@ UPDATER = PROJECT_ROOT / "deploy" / "apply-release-config.sh"
 LOCAL_OBSERVABILITY_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-observability.sh"
 RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
 CI_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
+APP_ENV_RENDERER = PROJECT_ROOT / "deploy" / "render-app-env.py"
 
 
 class InstallScriptTests(unittest.TestCase):
@@ -822,6 +823,87 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             (self.deploy_root / "etc/cinematacms/app.env").read_text(),
         )
         self.assertFalse(legacy_path.exists())
+
+    def test_legacy_python_settings_are_translated_to_supported_environment_keys(self):
+        legacy = Path(self.temp_dir.name) / "local_settings.py"
+        output = Path(self.temp_dir.name) / "app.env"
+        legacy.write_text(
+            "CORS_ALLOW_ALL_ORIGINS = False\n"
+            "CORS_ALLOWED_ORIGINS = ['https://video.example.org']\n"
+            "CACHES = {'default': {'LOCATION': 'redis://cache.example/4'}}\n"
+            "DJANGO_ADMIN_URL = 'private-admin/'\n"
+            "MAINTENANCE_MODE = True\n"
+            "RECAPTCHA_PRIVATE_KEY = 'private-placeholder'\n"
+            "SECURE_HSTS_SECONDS = 31536000\n"
+            "UI_VARIANT_ALLOWED = ['legacy', 'revamp']\n"
+            "UPLOAD_MAX_SIZE = 123456\n"
+            "WHISPER_MODEL = 'large-v3'\n"
+            "WHISPER_CPP_DIR = '/opt/whisper'\n"
+            "WHISPER_CPP_COMMAND = '/opt/whisper/whisper-cli'\n"
+            "WHISPER_CPP_MODEL = '/opt/whisper/model.bin'\n"
+        )
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(APP_ENV_RENDERER),
+                "--output",
+                str(output),
+                "--domain",
+                "video.example.org",
+                "--otel-enabled",
+                "false",
+                "--legacy-local-settings",
+                str(legacy),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        migrated = output.read_text()
+        self.assertIn("CORS_ALLOW_ALL_ORIGINS=false", migrated)
+        self.assertIn("CORS_ALLOWED_ORIGINS=https://video.example.org", migrated)
+        self.assertIn("REDIS_LOCATION=redis://cache.example/4", migrated)
+        self.assertIn("DJANGO_ADMIN_URL=private-admin/", migrated)
+        self.assertIn("MAINTENANCE_MODE=true", migrated)
+        self.assertIn("RECAPTCHA_PRIVATE_KEY=private-placeholder", migrated)
+        self.assertIn("SECURE_HSTS_SECONDS=31536000", migrated)
+        self.assertIn("UI_VARIANT_ALLOWED=legacy,revamp", migrated)
+        self.assertIn("UPLOAD_MAX_SIZE=123456", migrated)
+        self.assertIn("WHISPER_MODEL_SIZE=large-v3", migrated)
+        self.assertIn("WHISPER_CPP_DIR=/opt/whisper", migrated)
+        self.assertIn("WHISPER_CPP_COMMAND=/opt/whisper/whisper-cli", migrated)
+        self.assertIn("WHISPER_CPP_MODEL=/opt/whisper/model.bin", migrated)
+
+    def test_unknown_legacy_setting_stops_migration_without_printing_its_value(self):
+        legacy = Path(self.temp_dir.name) / "local_settings.py"
+        output = Path(self.temp_dir.name) / "app.env"
+        legacy.write_text("CLIENT_ONLY_SETTING = 'do-not-print-this-value'\n")
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(APP_ENV_RENDERER),
+                "--output",
+                str(output),
+                "--domain",
+                "video.example.org",
+                "--otel-enabled",
+                "false",
+                "--legacy-local-settings",
+                str(legacy),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("CLIENT_ONLY_SETTING", result.stderr)
+        self.assertNotIn("do-not-print-this-value", result.stderr)
+        self.assertFalse(output.exists())
 
     def test_failed_nginx_validation_restores_existing_site(self):
         site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"

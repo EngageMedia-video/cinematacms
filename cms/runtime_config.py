@@ -34,3 +34,9 @@ def env_int(name, default):
         return int(os.getenv(name, str(default)))
     except ValueError:
         return default
+
+
+def env_optional_bool(name, default=None):
+    if name not in os.environ:
+        return default
+    return env_bool(name, False)
