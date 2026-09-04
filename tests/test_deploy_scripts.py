@@ -674,11 +674,16 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertTrue((self.deploy_root / "etc/nginx/conf.d/cloudflare_real_ip.conf").is_file())
         self.assertTrue((self.deploy_root / "etc/cinematacms/prometheus.yml").is_file())
         self.assertTrue((self.deploy_root / "etc/cinematacms/otelcol-contrib.yml").is_file())
-        observability_env = (self.deploy_root / "etc/cinematacms/observability.env").read_text()
-        self.assertIn("OTEL_ENABLED=true", observability_env)
+        app_env_path = self.deploy_root / "etc/cinematacms/app.env"
+        app_env = app_env_path.read_text()
+        self.assertIn("OTEL_ENABLED=true", app_env)
+        self.assertIn("FRONTEND_HOST=https://video.example.org", app_env)
+        self.assertRegex(app_env, r"TELEMETRY_WORKER_ID=[0-9a-f-]{36}")
+        self.assertRegex(app_env, r"TELEMETRY_WORKER_HMAC_KEY=[A-Za-z0-9_-]{40,}")
+        self.assertFalse((self.deploy_root / "etc/cinematacms/observability.env").exists())
         for unit in ("mediacms", "celery_long", "celery_short", "celery_whisper", "celery_email", "celery_beat"):
             unit_text = (self.deploy_root / f"etc/systemd/system/{unit}.service").read_text()
-            self.assertIn("EnvironmentFile=-/etc/cinematacms/observability.env", unit_text)
+            self.assertIn("EnvironmentFile=/etc/cinematacms/app.env", unit_text)
         site = (self.deploy_root / "etc/nginx/sites-available/mediacms.io").read_text()
         self.assertIn("server_name video.example.org;", site)
         self.assertEqual(site.count("cinematacms-metrics.conf"), 2)
@@ -776,6 +781,9 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             "--no-restart",
         )
         self.assertEqual(first.returncode, 0, first.stderr)
+        app_env_path = self.deploy_root / "etc/cinematacms/app.env"
+        original_app_env = app_env_path.read_text()
+        app_env_path.write_text(original_app_env + "EMAIL_HOST=smtp.example.org\n")
         site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
         site_path.write_text(site_path.read_text() + "# retained Certbot configuration\n")
 
@@ -785,7 +793,34 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         site = site_path.read_text()
         self.assertEqual(site.count("cinematacms-metrics.conf"), 2)
         self.assertIn("# retained Certbot configuration", site)
+        updated_app_env = app_env_path.read_text()
+        self.assertIn("EMAIL_HOST=smtp.example.org", updated_app_env)
+        for key in ("TELEMETRY_WORKER_ID", "TELEMETRY_WORKER_HMAC_KEY"):
+            original_value = next(line for line in original_app_env.splitlines() if line.startswith(f"{key}="))
+            self.assertIn(original_value, updated_app_env)
         self.assertFalse((self.deploy_root / "etc/nginx/conf.d/cloudflare_real_ip.conf").exists())
+
+    def test_first_apply_migrates_and_removes_legacy_observability_environment(self):
+        legacy_path = self.deploy_root / "etc/cinematacms/observability.env"
+        legacy_path.parent.mkdir(parents=True)
+        legacy_path.write_text("OTEL_SERVICE_NAMESPACE=legacy-namespace\n")
+
+        result = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "local",
+            "--no-restart",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(
+            "OTEL_SERVICE_NAMESPACE=legacy-namespace",
+            (self.deploy_root / "etc/cinematacms/app.env").read_text(),
+        )
+        self.assertFalse(legacy_path.exists())
 
     def test_failed_nginx_validation_restores_existing_site(self):
         site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
@@ -873,6 +908,7 @@ class RestartScriptTests(unittest.TestCase):
         units = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
 
         self.assertIn("set -e", script)
+        self.assertIn("deploy/apply-release-config.sh --no-restart", script)
         self.assertIn(f"for unit in {units}; do", script)
         self.assertIn('install -m 0644 "deploy/$unit.service" "/etc/systemd/system/$unit.service"', script)
         self.assertIn(f"systemctl enable {units}", script)

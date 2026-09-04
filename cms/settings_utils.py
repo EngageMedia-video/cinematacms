@@ -31,8 +31,7 @@ def get_whisper_cpp_paths(model_name="base"):
     current_file_path = Path(__file__).resolve()
 
     # Navigate to the cinematacms root directory
-    # If this is cms/settings.py, go up one level to cinematacms root
-    # If this is cms/local_settings.py, go up one level to cinematacms root
+    # Go up from cms/ to the repository root.
     cinematacms_root = current_file_path.parent.parent
 
     # Get the parent directory that contains both cinematacms and whisper.cpp

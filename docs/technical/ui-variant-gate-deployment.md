@@ -24,7 +24,7 @@ Ship the gate in a dormant state first, then enable the revamp per page through 
 
 ## Recommended Production Configuration
 
-Add or override the gate settings in `cms/local_settings.py`:
+Add or override the gate settings in `.env`:
 
 ```python
 # UI variant gate
@@ -208,7 +208,7 @@ Cause:
 
 Checks:
 
-- inspect the final values loaded from `cms/local_settings.py`
+- inspect the final values loaded from the runtime environment
 - confirm the running release includes the allowlist-aware resolver from `cms/ui_variant.py`
 
 ### Staff Preview Does Not Work

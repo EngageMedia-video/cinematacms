@@ -3,21 +3,20 @@ from datetime import timedelta
 
 from celery.schedules import crontab
 from corsheaders.defaults import default_headers
+from django.core.exceptions import ImproperlyConfigured
 
+from .runtime_config import env_bool, env_csv, env_float, env_int
 from .settings_utils import get_whisper_cpp_paths
 
 # PORTAL SETTINGS
-PORTAL_NAME = "EngageMedia Video"  #  this is shown on several places, eg on contact email, or html title
+PORTAL_NAME = os.getenv("PORTAL_NAME", "EngageMedia Video")
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Europe/London"
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "localhost",
-]
+ALLOWED_HOSTS = env_csv("ALLOWED_HOSTS", ["127.0.0.1", "localhost"])
 # Import default headers to extend them
 # In production, override with explicit CORS_ALLOWED_ORIGINS list.
 # CORS_ORIGIN_ALLOW_ALL = True is kept for local development only.
-CORS_ORIGIN_ALLOW_ALL = os.getenv("CORS_ALLOW_ALL", "True") == "True"
+CORS_ORIGIN_ALLOW_ALL = env_bool("CORS_ALLOW_ALL_ORIGINS", True)
 CORS_ALLOW_HEADERS = default_headers + (
     "x-requested-with",  # Add X-Requested-With
     "if-modified-since",  # Add If-Modified-Since
@@ -36,8 +35,14 @@ CORS_EXPOSE_HEADERS = [
 
 
 INTERNAL_IPS = ["127.0.0.1", "0.0.0.0"]
-FRONTEND_HOST = "http://cinemata.org"
+FRONTEND_HOST = os.getenv("FRONTEND_HOST", "http://cinemata.org")
+if "://" not in FRONTEND_HOST:
+    FRONTEND_HOST = f"http://{FRONTEND_HOST}"
 SSL_FRONTEND_HOST = FRONTEND_HOST.replace("http", "https")
+SECRET_KEY = os.getenv("SECRET_KEY", "")
+LOCAL_INSTALL = env_bool("LOCAL_INSTALL", False)
+if not SECRET_KEY and os.getenv("DJANGO_SETTINGS_MODULE") != "cms.ci_settings":
+    raise ImproperlyConfigured("SECRET_KEY must be set in the runtime environment")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -156,7 +161,7 @@ FILE_UPLOAD_HANDLERS = [
 
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 
-OTEL_ENABLED = os.getenv("OTEL_ENABLED", "false").lower() in ("1", "true", "yes")
+OTEL_ENABLED = env_bool("OTEL_ENABLED", False)
 OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "cinematacms")
 OTEL_SERVICE_NAMESPACE = os.getenv("OTEL_SERVICE_NAMESPACE", "CinemataCMS")
 OTEL_SERVICE_ROLE = os.getenv("OTEL_SERVICE_ROLE", "web")
@@ -166,22 +171,16 @@ TELEMETRY_WORKER_ID = os.getenv("TELEMETRY_WORKER_ID", "")
 TELEMETRY_WORKER_HMAC_KEY = os.getenv("TELEMETRY_WORKER_HMAC_KEY", "")
 OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/traces")
 OTEL_EXPORTER_OTLP_HEADERS = os.getenv("OTEL_EXPORTER_OTLP_HEADERS", "")
-try:
-    OTEL_TRACES_SAMPLER_ARG = float(os.getenv("OTEL_TRACES_SAMPLER_ARG", "1.0"))
-except ValueError:
-    OTEL_TRACES_SAMPLER_ARG = 1.0
-try:
-    OTEL_PRIORITY_TRACES_SAMPLER_ARG = float(os.getenv("OTEL_PRIORITY_TRACES_SAMPLER_ARG", "1.0"))
-except ValueError:
-    OTEL_PRIORITY_TRACES_SAMPLER_ARG = 1.0
+OTEL_TRACES_SAMPLER_ARG = env_float("OTEL_TRACES_SAMPLER_ARG", 1.0)
+OTEL_PRIORITY_TRACES_SAMPLER_ARG = env_float("OTEL_PRIORITY_TRACES_SAMPLER_ARG", 1.0)
 OBSERVABILITY_CELERY_QUEUES = ["long_tasks", "short_tasks", "whisper_tasks", "email_tasks", "default"]
 EMAIL_RECIPIENT_HMAC_VERSION = os.getenv("EMAIL_RECIPIENT_HMAC_VERSION", "v1")
 EMAIL_RECIPIENT_HMAC_KEY = os.getenv("EMAIL_RECIPIENT_HMAC_KEY", "")
 EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY = os.getenv("EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY", "")
 EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION = os.getenv("EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION", "previous")
-OBSERVABILITY_SLOW_REQUEST_SECONDS = float(os.getenv("OBSERVABILITY_SLOW_REQUEST_SECONDS", "2"))
-OBSERVABILITY_SLOW_QUERY_SECONDS = float(os.getenv("OBSERVABILITY_SLOW_QUERY_SECONDS", "1"))
-OBSERVABILITY_SLOW_CACHE_SECONDS = float(os.getenv("OBSERVABILITY_SLOW_CACHE_SECONDS", "0.1"))
+OBSERVABILITY_SLOW_REQUEST_SECONDS = env_float("OBSERVABILITY_SLOW_REQUEST_SECONDS", 2.0)
+OBSERVABILITY_SLOW_QUERY_SECONDS = env_float("OBSERVABILITY_SLOW_QUERY_SECONDS", 1.0)
+OBSERVABILITY_SLOW_CACHE_SECONDS = env_float("OBSERVABILITY_SLOW_CACHE_SECONDS", 0.1)
 
 LOGGING = {
     "version": 1,
@@ -251,11 +250,11 @@ CELERY_WORKER_TASK_LOG_FORMAT = "%(message)s"
 DATABASES = {
     "default": {
         "ENGINE": "cms.db_backend.postgresql",
-        "NAME": "mediacms",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
-        "USER": "mediacms",
-        "PASSWORD": "mediacms",
+        "NAME": os.getenv("DATABASE_NAME", "mediacms"),
+        "HOST": os.getenv("DATABASE_HOST", "127.0.0.1"),
+        "PORT": os.getenv("DATABASE_PORT", "5432"),
+        "USER": os.getenv("DATABASE_USER", "mediacms"),
+        "PASSWORD": os.getenv("DATABASE_PASSWORD", "mediacms"),
         "TEST": {
             "MIRROR": "default",  # mirror - default enables you to work on the database's copy
             "MIGRATE": False,
@@ -266,7 +265,7 @@ DATABASES = {
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 
-REDIS_LOCATION = "redis://127.0.0.1:6379/1"
+REDIS_LOCATION = os.getenv("REDIS_LOCATION", "redis://127.0.0.1:6379/1")
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -333,8 +332,8 @@ DJANGO_VITE = {
 
 
 # CELERY STUFF
-CELERY_BROKER_URL = REDIS_LOCATION
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", REDIS_LOCATION)
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
 CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -417,7 +416,7 @@ MAX_ANONYMOUS_VIEWS_PER_5SEC = 30
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_METHODS = {"username", "email"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*"]
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"  # 'mandatory' 'none'
+ACCOUNT_EMAIL_VERIFICATION = os.getenv("ACCOUNT_EMAIL_VERIFICATION", "mandatory")
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_USERNAME_MIN_LENGTH = "4"
 ACCOUNT_ADAPTER = "users.adapter.MyAccountAdapter"
@@ -524,7 +523,7 @@ SHOW_ORIGINAL_MEDIA = True
 # X-Accel-Redirect settings for secure media serving
 # Set to True when using Nginx with X-Accel-Redirect (production)
 # Set to False when using Django development server
-USE_X_ACCEL_REDIRECT = os.getenv("USE_X_ACCEL_REDIRECT", "True").lower() not in ("false", "0", "no")
+USE_X_ACCEL_REDIRECT = env_bool("USE_X_ACCEL_REDIRECT", True)
 
 # Permission cache settings
 # Set to True to enable Redis caching for permission checks (recommended)
@@ -547,13 +546,8 @@ PASSWORD_BRUTE_FORCE_WINDOW = 900  # 15 minutes
 TRUSTED_PROXIES = [proxy.strip() for proxy in os.getenv("TRUSTED_PROXIES", "127.0.0.1,::1").split(",") if proxy.strip()]
 
 # Shared secret required to access /health/ready from anonymous callers.
-# Default: "" (gate disabled — endpoint open subject to the existing
-# direct-localhost / staff privilege rule). To enable in production, override
-# in `cms/local_settings.py` (see `local_settings_example.py` for the canonical
-# snippet). Operators on the box and authenticated staff bypass the gate; all
-# other callers must send `X-Healthcheck-Token: <value>` or they get 401
-# *before* the expensive checks run.
-HEALTH_READY_TOKEN = ""
+# Operators on the box and authenticated staff bypass the gate.
+HEALTH_READY_TOKEN = os.getenv("HEALTH_READY_TOKEN", "")
 
 # Media password validation
 MEDIA_PASSWORD_MIN_LENGTH = 8
@@ -649,7 +643,7 @@ X_FRAME_OPTIONS = "SAMEORIGIN"
 # TODO: Configure Content-Security-Policy via django-csp middleware.
 # See todos/006-pending-p2-no-csp-configured.md for implementation details.
 EMAIL_BACKEND = "email_delivery.backend.EmailBackend"
-EMAIL_TRANSPORT_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_TRANSPORT_BACKEND = os.getenv("EMAIL_TRANSPORT_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 
 PRE_UPLOAD_MEDIA_MESSAGE = ""
 
@@ -665,19 +659,21 @@ CANNOT_ADD_MEDIA_MESSAGE = ""
 UNLISTED_WORKFLOW_MAKE_PUBLIC_UPON_COMMENTARY_ADD = False
 UNLISTED_WORKFLOW_MAKE_PRIVATE_UPON_COMMENTARY_DELETE = False
 
-MP4HLS_COMMAND = "/home/cinemata/cinematacms/Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4hls"
+MP4HLS_COMMAND = os.getenv(
+    "MP4HLS_COMMAND", "/home/cinemata/cinematacms/Bento4-SDK-1-6-0-632.x86_64-unknown-linux/bin/mp4hls"
+)
 
 
-DEBUG = False
+DEBUG = env_bool("DEBUG", False)
 
-DEFAULT_FROM_EMAIL = "info@mediacms.io"
-EMAIL_HOST_PASSWORD = "xyz"
-EMAIL_HOST_USER = "info@mediacms.io"
-EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "info@mediacms.io")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "info@mediacms.io")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
-EMAIL_HOST = "mediacms.io"
-EMAIL_PORT = 587
-ADMIN_EMAIL_LIST = ["info@mediacms.io"]
+EMAIL_HOST = os.getenv("EMAIL_HOST", "mediacms.io")
+EMAIL_PORT = env_int("EMAIL_PORT", 587)
+ADMIN_EMAIL_LIST = env_csv("ADMIN_EMAIL_LIST", ["info@mediacms.io"])
 
 TINYMCE_DEFAULT_CONFIG = {
     "theme": "silver",
@@ -744,7 +740,7 @@ WAFFLE_CREATE_MISSING_SWITCHES = True
 DJANGO_ADMIN_URL = "admin/"
 
 # additional MFA-permission configs
-MFA_REQUIRED_ROLES = ["superuser", "manager", "curator"]
+MFA_REQUIRED_ROLES = env_csv("MFA_REQUIRED_ROLES", ["superuser", "manager", "curator"])
 MFA_ENFORCE_ON_PATHS = [f"/{DJANGO_ADMIN_URL}"]
 MFA_EXCLUDE_PATHS = ["/fu/", "/api/", "/manage/", "/accounts/"]
 
@@ -798,14 +794,6 @@ NEWSLETTER_API_URL = "https://mailer.cinemata.org/wp-json/newsletter/v1/subscrib
 NEWSLETTER_LIST_IDS = [2]
 
 import sys
-
-from .local_settings import *
-
-# Keep the application-owned PostgreSQL seam active when local settings replace
-# the base ``DATABASES`` mapping above.
-for _database_config in DATABASES.values():
-    if _database_config.get("ENGINE") == "django.db.backends.postgresql":
-        _database_config["ENGINE"] = "cms.db_backend.postgresql"
 
 _is_testing = "test" in sys.argv or "pytest" in sys.modules
 
