@@ -19,6 +19,19 @@ During the first upgrade, the release updater imports supported values from the
 ignored legacy `cms/local_settings.py` and `/etc/cinematacms/observability.env`.
 The application no longer imports either legacy configuration source.
 
+Existing installations must provision the runtime environment before installing
+or restarting the new systemd units:
+
+```bash
+sudo git -C /home/cinemata/cinematacms pull --ff-only
+sudo /home/cinemata/cinematacms/deploy/apply-release-config.sh --no-restart
+sudo /home/cinemata/cinematacms/restart_script.sh
+```
+
+The CI deploy job performs these steps in this order. This ordering also makes
+the first deployment safe when the currently running `restart_script.sh` comes
+from a release that predates `app.env`.
+
 ## Install a new server
 
 Run the interactive installer:

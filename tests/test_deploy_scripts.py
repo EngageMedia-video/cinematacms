@@ -12,6 +12,7 @@ INSTALLER = PROJECT_ROOT / "install.sh"
 UPDATER = PROJECT_ROOT / "deploy" / "apply-release-config.sh"
 LOCAL_OBSERVABILITY_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-observability.sh"
 RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
+CI_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
 
 
 class InstallScriptTests(unittest.TestCase):
@@ -913,6 +914,15 @@ class RestartScriptTests(unittest.TestCase):
         self.assertIn('install -m 0644 "deploy/$unit.service" "/etc/systemd/system/$unit.service"', script)
         self.assertIn(f"systemctl enable {units}", script)
         self.assertIn(f"systemctl restart {units}", script)
+
+    def test_deployer_bootstraps_runtime_config_before_running_restart_script(self):
+        workflow = CI_WORKFLOW.read_text()
+        pull = "sudo git -C /home/cinemata/cinematacms pull --ff-only"
+        configure = "sudo /home/cinemata/cinematacms/deploy/apply-release-config.sh --no-restart"
+        restart = "sudo /home/cinemata/cinematacms/restart_script.sh"
+
+        self.assertLess(workflow.index(pull), workflow.index(configure))
+        self.assertLess(workflow.index(configure), workflow.index(restart))
 
 
 if __name__ == "__main__":

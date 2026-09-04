@@ -317,7 +317,9 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh ${{ secrets.DEPLOY_DEV_USER }}@${{ secrets.DEPLOY_DEV_HOST }} \
-            'sudo /home/cinemata/cinematacms/restart_script.sh'
+            'sudo git -C /home/cinemata/cinematacms pull --ff-only &&
+             sudo /home/cinemata/cinematacms/deploy/apply-release-config.sh --no-restart &&
+             sudo /home/cinemata/cinematacms/restart_script.sh'
 
       - name: Set deployment success
         if: success()
