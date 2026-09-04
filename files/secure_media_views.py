@@ -6,13 +6,14 @@ import re
 from urllib.parse import quote, unquote
 
 from django.conf import settings
-from django.core.cache import cache
 from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseForbidden
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_http_methods
+
+from cms.cache_telemetry import owned_cache
 
 from .cache_utils import (
     PERMISSION_CACHE_TIMEOUT,
@@ -24,6 +25,8 @@ from .cache_utils import (
 )
 from .methods import is_curator, is_mediacms_editor, is_mediacms_manager
 from .models import Encoding, Media, Subtitle
+
+media_path_cache = owned_cache.bind("media_path")
 
 logger = logging.getLogger(__name__)
 
@@ -221,14 +224,14 @@ def get_cached_media_id(file_path: str) -> int | None:
     """Get cached Media ID for a file path."""
     try:
         cache_key = get_media_path_cache_key(file_path)
-        media_id = cache.get(cache_key)
+        media_id = media_path_cache.get(cache_key)
         if media_id:
-            logger.debug(f"Cache HIT for media path: {file_path}")
+            logger.debug("Cache HIT for media path lookup")
             return media_id
-        logger.debug(f"Cache MISS for media path: {file_path}")
+        logger.debug("Cache MISS for media path lookup")
         return None
     except Exception as e:
-        logger.warning(f"Failed to get cached media ID for {file_path}: {e}")
+        logger.warning(f"Failed to get cached media ID: {e}")
         return None
 
 
@@ -248,29 +251,26 @@ def set_cached_media_id(file_path: str, media_id: int) -> bool:
         reverse_key = get_reverse_mapping_key(media_id)
 
         # Store the forward mapping: file_path → media_id
-        cache.set(cache_key, media_id, MEDIA_PATH_CACHE_TIMEOUT)
+        media_path_cache.set(cache_key, media_id, MEDIA_PATH_CACHE_TIMEOUT)
 
         # Add to reverse mapping set: media_id → {cache_key1, cache_key2, ...}
         # Use a Redis set to track all cache keys for this media
-        # Note: django-redis supports Redis SET operations
-        try:
-            # Try using Redis SET operations (sadd)
-            cache.sadd(reverse_key, cache_key)
-            # Set expiration on the reverse mapping set
-            cache.expire(reverse_key, MEDIA_PATH_CACHE_TIMEOUT)
-        except AttributeError:
-            # Fallback: If sadd is not available, use a simple list in cache
+        if media_path_cache.supports("sadd") and media_path_cache.supports("expire"):
+            media_path_cache.sadd(reverse_key, cache_key)
+            media_path_cache.expire(reverse_key, MEDIA_PATH_CACHE_TIMEOUT)
+        else:
+            # Fallback: If sadd is not available, use a simple set in cache
             # This is less efficient but works with any cache backend
-            existing_keys = cache.get(reverse_key, set())
+            existing_keys = media_path_cache.get(reverse_key, set())
             if not isinstance(existing_keys, set):
                 existing_keys = set()
             existing_keys.add(cache_key)
-            cache.set(reverse_key, existing_keys, MEDIA_PATH_CACHE_TIMEOUT)
+            media_path_cache.set(reverse_key, existing_keys, MEDIA_PATH_CACHE_TIMEOUT)
 
-        logger.debug(f"Cached media ID {media_id} for path: {file_path}")
+        logger.debug(f"Cached media ID {media_id} for path lookup")
         return True
-    except Exception as e:
-        logger.warning(f"Failed to cache media ID for {file_path}: {e}")
+    except Exception:
+        logger.warning("Failed to cache media ID for path lookup")
         return False
 
 
@@ -292,12 +292,12 @@ def invalidate_media_path_cache(media_id: int) -> int:
 
         # Get all cache keys for this media from the reverse mapping
         cache_keys = None
-        try:
-            # Try Redis SET operations first (smembers)
-            cache_keys = cache.smembers(reverse_key)
-        except AttributeError:
+        if media_path_cache.supports("smembers"):
+            # Prefer Redis SET operations (smembers)
+            cache_keys = media_path_cache.smembers(reverse_key)
+        else:
             # Fallback for non-Redis backends
-            cache_keys = cache.get(reverse_key, set())
+            cache_keys = media_path_cache.get(reverse_key, set())
             if not isinstance(cache_keys, set):
                 cache_keys = set()
 
@@ -305,14 +305,11 @@ def invalidate_media_path_cache(media_id: int) -> int:
             # Delete all forward mapping cache keys
             deleted_count = 0
             for cache_key in cache_keys:
-                try:
-                    cache.delete(cache_key)
-                    deleted_count += 1
-                except Exception as e:
-                    logger.warning(f"Failed to delete cache key {cache_key}: {e}")
+                media_path_cache.delete(cache_key)
+                deleted_count += 1
 
             # Delete the reverse mapping itself
-            cache.delete(reverse_key)
+            media_path_cache.delete(reverse_key)
 
             logger.info(f"Invalidated {deleted_count} cache entries for media {media_id}")
             return deleted_count
@@ -553,7 +550,7 @@ class SecureMediaView(View):
                     if not self._verify_media_owns_thumbnail_path(media, file_path):
                         logger.warning(f"Stale cache: media {media.friendly_token} no longer owns path {file_path}")
                         # Invalidate stale media path cache entry (file_path → media_id mapping)
-                        cache.delete(get_media_path_cache_key(file_path))
+                        media_path_cache.delete(get_media_path_cache_key(file_path))
                         # Fall through to fresh lookup
                     else:
                         return (media, None)

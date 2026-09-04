@@ -5,6 +5,9 @@ This module provides utilities for managing Redis cache related to media permiss
 It's designed to be imported by both models.py and secure_media_views.py to avoid
 circular import issues.
 
+All cache access goes through the application-owned cache adapter, which records
+one bounded telemetry observation per logical operation.
+
 Functions:
     - clear_media_permission_cache: Clear permission cache for specific media
     - clear_user_permission_cache: Clear permission cache for specific user
@@ -22,11 +25,12 @@ import time
 from typing import Any
 
 from django.conf import settings
-from django.core.cache import cache
 
-from .metrics import record_cache_operation
+from cms.cache_telemetry import owned_cache
 
 logger = logging.getLogger(__name__)
+
+permission_cache = owned_cache.bind("permission")
 
 # Cache configuration constants
 
@@ -87,7 +91,10 @@ def get_elevated_access_cache_key(user_id: int, media_uid: str) -> str:
 
 def get_cached_permission(cache_key: str) -> bool | None:
     """
-    Get cached permission result with enhanced error handling.
+    Get cached permission result.
+
+    The owned adapter is fail-soft: a cache backend error is observed and
+    reported as a miss without raising.
 
     Args:
         cache_key: The cache key to look up
@@ -95,23 +102,12 @@ def get_cached_permission(cache_key: str) -> bool | None:
     Returns:
         bool or None: Cached permission result, or None if not found/error
     """
-    try:
-        result = cache.get(cache_key, version=CACHE_VERSION)
-        if result is not None:
-            logger.debug(f"Cache hit for key: {cache_key}")
-            record_cache_operation("permission", "get", hit=True)
-        else:
-            record_cache_operation("permission", "get", hit=False)
-        return result
-    except Exception as e:
-        logger.warning(f"Cache get failed for key {cache_key}: {e}")
-        record_cache_operation("permission", "get", ok=False)
-        return None
+    return permission_cache.get(cache_key, version=CACHE_VERSION)
 
 
 def set_cached_permission(cache_key: str, permission_result: bool, timeout: int | None = None) -> bool:
     """
-    Set cached permission result with enhanced error handling.
+    Set cached permission result.
 
     Args:
         cache_key: The cache key to set
@@ -124,15 +120,7 @@ def set_cached_permission(cache_key: str, permission_result: bool, timeout: int 
     if timeout is None:
         timeout = PERMISSION_CACHE_TIMEOUT
 
-    try:
-        cache.set(cache_key, permission_result, timeout, version=CACHE_VERSION)
-        logger.debug(f"Cached permission result for key: {cache_key}")
-        record_cache_operation("permission", "set")
-        return True
-    except Exception as e:
-        logger.warning(f"Cache set failed for key {cache_key}: {e}")
-        record_cache_operation("permission", "set", ok=False)
-        return False
+    return permission_cache.set(cache_key, permission_result, timeout, version=CACHE_VERSION)
 
 
 def batch_get_cached_permissions(cache_keys: list) -> dict[str, bool | None]:
@@ -145,15 +133,7 @@ def batch_get_cached_permissions(cache_keys: list) -> dict[str, bool | None]:
     Returns:
         dict: Mapping of cache_key -> permission_result (or None if not found)
     """
-    try:
-        results = cache.get_many(cache_keys, version=CACHE_VERSION)
-        logger.debug(f"Batch cache get: {len(results)}/{len(cache_keys)} hits")
-        record_cache_operation("permission", "get_many", hit=bool(results))
-        return results
-    except Exception as e:
-        logger.warning(f"Batch cache get failed: {e}")
-        record_cache_operation("permission", "get_many", ok=False)
-        return {}
+    return permission_cache.get_many(cache_keys, version=CACHE_VERSION)
 
 
 def batch_set_cached_permissions(cache_data: dict[str, bool], timeout: int | None = None) -> bool:
@@ -170,15 +150,7 @@ def batch_set_cached_permissions(cache_data: dict[str, bool], timeout: int | Non
     if timeout is None:
         timeout = PERMISSION_CACHE_TIMEOUT
 
-    try:
-        cache.set_many(cache_data, timeout, version=CACHE_VERSION)
-        logger.debug(f"Batch cache set: {len(cache_data)} entries")
-        record_cache_operation("permission", "set_many")
-        return True
-    except Exception as e:
-        logger.warning(f"Batch cache set failed: {e}")
-        record_cache_operation("permission", "set_many", ok=False)
-        return False
+    return permission_cache.set_many(cache_data, timeout, version=CACHE_VERSION)
 
 
 def clear_media_permission_cache(media_uid: str | Any, user_id: int | None = None) -> bool:
@@ -201,60 +173,40 @@ def clear_media_permission_cache(media_uid: str | Any, user_id: int | None = Non
         clear_media_permission_cache(media.uid)
     """
     media_uid = _normalize_media_uid(media_uid)
-    try:
-        if user_id:
-            # Clear specific user's cache (base + restricted + elevated)
-            if hasattr(cache, "delete_pattern"):
-                patterns = [
-                    f"{CACHE_KEY_PREFIX}:media_permission:{user_id}:{media_uid}*",
-                    f"{CACHE_KEY_PREFIX}:elevated_access:{user_id}:{media_uid}",
-                ]
-                total_deleted = 0
-                for pattern in patterns:
-                    deleted_count = cache.delete_pattern(pattern, version=CACHE_VERSION)
-                    total_deleted += deleted_count
-                    logger.debug(f"Cleared {deleted_count} cache entries for pattern: {pattern}")
-                logger.info(f"Cleared {total_deleted} cache entries for user {user_id}, media {media_uid}")
-                return True
-            else:
-                # Fallback clears known keys; restricted variants cannot be enumerated
-                cache_keys = [
-                    get_permission_cache_key(user_id, media_uid),
-                    get_elevated_access_cache_key(user_id, media_uid),
-                ]
-                cache.delete_many(cache_keys, version=CACHE_VERSION)
-                logger.warning(
-                    "delete_pattern not available; restricted permission keys may remain for "
-                    f"user {user_id}, media {media_uid}"
-                )
-                return True
+    if user_id:
+        # Clear specific user's cache (base + restricted + elevated)
+        if permission_cache.supports("delete_pattern"):
+            patterns = [
+                f"{CACHE_KEY_PREFIX}:media_permission:{user_id}:{media_uid}*",
+                f"{CACHE_KEY_PREFIX}:elevated_access:{user_id}:{media_uid}",
+            ]
+            for pattern in patterns:
+                permission_cache.delete_pattern(pattern, version=CACHE_VERSION)
+            return True
         else:
-            # For clearing all users' cache for this media, we'd need to use
-            # cache.delete_pattern() which requires django-redis
-            # This is a more expensive operation and should be used sparingly
-            try:
-                # Try to use delete_pattern if available (django-redis)
-                if hasattr(cache, "delete_pattern"):
-                    patterns = [
-                        f"{CACHE_KEY_PREFIX}:media_permission:*:{media_uid}*",
-                        f"{CACHE_KEY_PREFIX}:elevated_access:*:{media_uid}",
-                    ]
-                    total_deleted = 0
-                    for pattern in patterns:
-                        deleted_count = cache.delete_pattern(pattern, version=CACHE_VERSION)
-                        total_deleted += deleted_count
-                        logger.debug(f"Cleared {deleted_count} cache entries for pattern: {pattern}")
-                    logger.info(f"Cleared {total_deleted} total cache entries for media {media_uid}")
-                    return True
-                else:
-                    logger.warning("delete_pattern not available, cannot clear all user caches for media")
-                    return False
-            except Exception as e:
-                logger.warning(f"Pattern-based cache deletion failed: {e}")
-                return False
-    except Exception as e:
-        logger.error(f"Failed to clear permission cache for media {media_uid}: {e}")
-        return False
+            # Fallback clears known keys; restricted variants cannot be enumerated
+            cache_keys = [
+                get_permission_cache_key(user_id, media_uid),
+                get_elevated_access_cache_key(user_id, media_uid),
+            ]
+            permission_cache.delete_many(cache_keys, version=CACHE_VERSION)
+            logger.warning("delete_pattern not available; restricted permission keys may remain")
+            return True
+    else:
+        # For clearing all users' cache for this media, we'd need to use
+        # cache.delete_pattern() which requires django-redis
+        # This is a more expensive operation and should be used sparingly
+        if permission_cache.supports("delete_pattern"):
+            patterns = [
+                f"{CACHE_KEY_PREFIX}:media_permission:*:{media_uid}*",
+                f"{CACHE_KEY_PREFIX}:elevated_access:*:{media_uid}",
+            ]
+            for pattern in patterns:
+                permission_cache.delete_pattern(pattern, version=CACHE_VERSION)
+            return True
+        else:
+            logger.warning("delete_pattern not available, cannot clear all user caches for media")
+            return False
 
 
 def clear_user_permission_cache(user_id: int) -> bool:
@@ -268,24 +220,16 @@ def clear_user_permission_cache(user_id: int) -> bool:
     Returns:
         bool: True if cache was cleared successfully, False otherwise
     """
-    try:
-        if hasattr(cache, "delete_pattern"):
-            patterns = [
-                f"{CACHE_KEY_PREFIX}:media_permission:{user_id}:*",
-                f"{CACHE_KEY_PREFIX}:elevated_access:{user_id}:*",
-            ]
-            total_deleted = 0
-            for pattern in patterns:
-                deleted_count = cache.delete_pattern(pattern, version=CACHE_VERSION)
-                total_deleted += deleted_count
-                logger.debug(f"Cleared {deleted_count} cache entries for user {user_id} with pattern: {pattern}")
-            logger.info(f"Cleared {total_deleted} total cache entries for user {user_id}")
-            return True
-        else:
-            logger.warning("delete_pattern not available, cannot clear all caches for user")
-            return False
-    except Exception as e:
-        logger.error(f"Failed to clear permission cache for user {user_id}: {e}")
+    if permission_cache.supports("delete_pattern"):
+        patterns = [
+            f"{CACHE_KEY_PREFIX}:media_permission:{user_id}:*",
+            f"{CACHE_KEY_PREFIX}:elevated_access:{user_id}:*",
+        ]
+        for pattern in patterns:
+            permission_cache.delete_pattern(pattern, version=CACHE_VERSION)
+        return True
+    else:
+        logger.warning("delete_pattern not available, cannot clear all caches for user")
         return False
 
 
@@ -297,27 +241,18 @@ def invalidate_all_permission_cache() -> int:
     Returns:
         int: Number of cache entries cleared
     """
-    try:
-        patterns = [
-            f"{CACHE_KEY_PREFIX}:media_permission:*",
-            f"{CACHE_KEY_PREFIX}:elevated_access:*",
-        ]
+    patterns = [
+        f"{CACHE_KEY_PREFIX}:media_permission:*",
+        f"{CACHE_KEY_PREFIX}:elevated_access:*",
+    ]
 
-        total_cleared = 0
-        if hasattr(cache, "delete_pattern"):
-            for pattern in patterns:
-                count = cache.delete_pattern(pattern, version=CACHE_VERSION)
-                total_cleared += count
-                logger.info(f"Cleared {count} entries for pattern: {pattern}")
-            logger.info(f"Total permission cache entries cleared: {total_cleared}")
-            return total_cleared
-        else:
-            logger.warning(
-                "Pattern-based cache deletion not available. django-redis backend required for this feature."
-            )
-            return 0
-    except Exception as e:
-        logger.error(f"Error clearing all permission cache: {e}")
+    total_cleared = 0
+    if permission_cache.supports("delete_pattern"):
+        for pattern in patterns:
+            total_cleared += permission_cache.delete_pattern(pattern, version=CACHE_VERSION)
+        return total_cleared
+    else:
+        logger.warning("Pattern-based cache deletion not available. django-redis backend required for this feature.")
         return 0
 
 
@@ -328,14 +263,7 @@ def get_cache_stats() -> dict[str, Any]:
     Returns:
         dict: Cache statistics or empty dict if not available
     """
-    try:
-        if hasattr(cache, "get_stats"):
-            return cache.get_stats()
-        else:
-            return {"message": "Cache statistics not available"}
-    except Exception as e:
-        logger.warning(f"Failed to get cache stats: {e}")
-        return {"error": str(e)}
+    return owned_cache.get_stats()
 
 
 def health_check() -> dict[str, Any]:
@@ -349,27 +277,14 @@ def health_check() -> dict[str, Any]:
     test_key = f"{CACHE_KEY_PREFIX}:health_check"
     test_value = "test"
 
-    try:
-        # Test cache set
-        cache.set(test_key, test_value, 30, version=CACHE_VERSION)
+    result = owned_cache.probe(test_key, test_value, 30)
+    latency = (time.time() - start_time) * 1000
 
-        # Test cache get
-        retrieved_value = cache.get(test_key, version=CACHE_VERSION)
-
-        # Test cache delete
-        cache.delete(test_key, version=CACHE_VERSION)
-
-        latency = (time.time() - start_time) * 1000  # Convert to milliseconds
-
-        if retrieved_value == test_value:
-            return {"status": "healthy", "latency_ms": round(latency, 2), "timestamp": time.time()}
-        else:
-            return {
-                "status": "unhealthy",
-                "error": "Cache value mismatch",
-                "latency_ms": round(latency, 2),
-                "timestamp": time.time(),
-            }
-    except Exception as e:
-        latency = (time.time() - start_time) * 1000
-        return {"status": "unhealthy", "error": str(e), "latency_ms": round(latency, 2), "timestamp": time.time()}
+    if result.get("status") == "healthy":
+        return {"status": "healthy", "latency_ms": round(latency, 2), "timestamp": time.time()}
+    return {
+        "status": "unhealthy",
+        "error": "Cache value mismatch",
+        "latency_ms": round(latency, 2),
+        "timestamp": time.time(),
+    }

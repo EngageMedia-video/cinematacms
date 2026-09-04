@@ -27,15 +27,17 @@ Note: This command is for manual administrative use only.
 The automatic cache invalidation system handles normal operations.
 """
 
-from django.core.cache import cache
 from django.core.management.base import BaseCommand
 
+from cms.cache_telemetry import owned_cache
 from files.cache_utils import (
     CACHE_KEY_PREFIX,
     CACHE_VERSION,
     clear_media_permission_cache,
     invalidate_all_permission_cache,
 )
+
+permission_cache = owned_cache.bind("permission")
 
 
 class Command(BaseCommand):
@@ -84,9 +86,9 @@ class Command(BaseCommand):
     def clear_cache_by_pattern(self, pattern):
         """Clear cache entries matching a specific pattern."""
         try:
-            if hasattr(cache, "delete_pattern"):
+            if permission_cache.supports("delete_pattern"):
                 normalized = pattern if pattern.startswith(f"{CACHE_KEY_PREFIX}:") else f"{CACHE_KEY_PREFIX}:{pattern}"
-                count = cache.delete_pattern(normalized, version=CACHE_VERSION)
+                count = permission_cache.delete_pattern(normalized, version=CACHE_VERSION)
                 self.stdout.write(self.style.SUCCESS(f"Cleared {count} entries for pattern: {normalized}"))
             else:
                 self.stdout.write(

@@ -1,5 +1,6 @@
+import hashlib
+import hmac
 import logging
-import socket
 import time
 
 from celery.signals import (
@@ -10,8 +11,6 @@ from celery.signals import (
     task_prerun,
     task_retry,
     task_revoked,
-    worker_ready,
-    worker_shutdown,
 )
 from django.conf import settings
 from django.contrib.auth.signals import user_login_failed
@@ -19,153 +18,192 @@ from prometheus_client import Counter, Gauge, Histogram
 
 logger = logging.getLogger(__name__)
 
+HTTP_DURATION_BUCKETS = (0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30)
+DB_DURATION_BUCKETS = (0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30)
+CACHE_DURATION_BUCKETS = (0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5)
+
 ENCODING_QUEUE_WAIT_SECONDS = Histogram(
-    "cinemata_encoding_queue_wait_seconds",
+    "cinematacms_encoding_queue_wait_seconds",
     "Time an encoding task waited in the Celery queue before execution",
     buckets=(1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600),
 )
 
 HTTP_REQUESTS_TOTAL = Counter(
-    "cinemata_http_requests_total",
-    "HTTP requests grouped by stable endpoint class",
-    ["endpoint_group", "method", "status_class"],
+    "cinematacms_http_requests_total",
+    "HTTP requests grouped by bounded application operation",
+    ["route_group", "operation", "method", "status_code"],
 )
 HTTP_REQUEST_DURATION_SECONDS = Histogram(
-    "cinemata_http_request_duration_seconds",
-    "HTTP request duration grouped by stable endpoint class",
-    ["endpoint_group", "method", "status_class"],
-    buckets=(0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30),
-)
-SLOW_REQUESTS_TOTAL = Counter(
-    "cinemata_http_slow_requests_total",
-    "HTTP requests exceeding OBSERVABILITY_SLOW_REQUEST_SECONDS",
-    ["endpoint_group", "method"],
-)
-SLOW_DB_QUERIES_TOTAL = Counter(
-    "cinemata_db_slow_queries_total",
-    "Database queries exceeding OBSERVABILITY_SLOW_QUERY_SECONDS",
-    ["endpoint_group"],
+    "cinematacms_http_request_duration_seconds",
+    "HTTP request duration grouped by bounded application operation",
+    ["route_group", "operation", "method", "status_class"],
+    buckets=HTTP_DURATION_BUCKETS,
 )
 AUTH_FAILURES_TOTAL = Counter(
-    "cinemata_auth_failures_total",
+    "cinematacms_authentication_failures_total",
     "Failed authentication attempts",
-    ["source"],
+    ["surface", "mechanism", "reason"],
 )
 
 CELERY_TASKS_TOTAL = Counter(
-    "cinemata_celery_tasks_total",
+    "cinematacms_celery_tasks_total",
     "Celery task lifecycle events",
-    ["task_name", "queue", "state"],
+    ["task_family", "queue", "event", "outcome"],
 )
 CELERY_TASK_DURATION_SECONDS = Histogram(
-    "cinemata_celery_task_duration_seconds",
-    "Celery task duration by task name",
-    ["task_name", "queue"],
+    "cinematacms_celery_task_duration_seconds",
+    "Celery task duration by task family",
+    ["task_family", "queue", "outcome"],
     buckets=(0.1, 0.5, 1, 5, 15, 30, 60, 120, 300, 600, 1800, 3600, 7200),
 )
 CELERY_TASK_ACTIVE = Gauge(
-    "cinemata_celery_task_active",
-    "Currently running Celery tasks by task name",
-    ["task_name", "queue"],
+    "cinematacms_celery_task_active",
+    "Currently running Celery tasks by task family",
+    ["task_family", "queue"],
     multiprocess_mode="livesum",
 )
-CELERY_WORKER_UP = Gauge(
-    "cinemata_celery_worker_up",
-    "Celery worker process seen as ready",
-    ["worker"],
-)
 CELERY_WORKER_HEARTBEAT_TIMESTAMP = Gauge(
-    "cinemata_celery_worker_heartbeat_timestamp_seconds",
+    "cinematacms_celery_worker_heartbeat_timestamp_seconds",
     "Unix timestamp of the last Celery worker heartbeat",
-    ["worker"],
+    ["service_role", "worker_ref"],
     multiprocess_mode="mostrecent",
 )
 CELERY_BEAT_FRESHNESS_TIMESTAMP = Gauge(
-    "cinemata_celery_beat_freshness_timestamp_seconds",
+    "cinematacms_celery_beat_freshness_timestamp_seconds",
     "Unix timestamp when Celery beat initialized",
     multiprocess_mode="mostrecent",
 )
 DOMAIN_OUTCOMES_TOTAL = Counter(
-    "cinemata_domain_outcomes_total",
+    "cinematacms_domain_outcomes_total",
     "Application operation outcomes",
     ["operation", "outcome", "reason_code"],
 )
 CELERY_QUEUE_DEPTH = Gauge(
-    "cinemata_celery_queue_depth",
+    "cinematacms_celery_queue_depth",
     "Redis broker queue length by queue name",
     ["queue"],
     multiprocess_mode="mostrecent",
 )
 
 MEDIA_ENCODING_PROFILE_TOTAL = Counter(
-    "cinemata_media_encoding_profile_total",
+    "cinematacms_media_encoding_profile_total",
     "Encoding completions by profile and result",
     ["resolution", "codec", "extension", "outcome", "reason_code"],
 )
 MEDIA_FILE_SIZE_BYTES = Histogram(
-    "cinemata_encoding_input_file_size_bytes",
+    "cinematacms_encoding_input_file_size_bytes",
     "Encoding input file size by media type",
     ["media_type"],
     buckets=(1_000_000, 10_000_000, 50_000_000, 100_000_000, 500_000_000, 1_000_000_000, 5_000_000_000),
 )
 MEDIA_DURATION_SECONDS = Histogram(
-    "cinemata_encoding_input_duration_seconds",
+    "cinematacms_encoding_input_duration_seconds",
     "Encoding input duration by media type",
     ["media_type"],
     buckets=(30, 60, 300, 600, 1200, 1800, 3600, 7200, 14400),
 )
 TRANSCRIPTION_REQUESTS = Gauge(
-    "cinemata_transcription_database_stale",
+    "cinematacms_transcription_database_stale",
     "Persisted transcription request rows that have not progressed",
     ["translate_to_english"],
     multiprocess_mode="mostrecent",
 )
 ENCODING_STALE_TOTAL = Counter(
-    "cinemata_encoding_stale_total",
+    "cinematacms_encoding_stale_total",
     "Encoding rows considered stale and requeued",
     ["resolution", "codec", "extension"],
 )
 ENCODING_STALLED = Gauge(
-    "cinemata_encoding_stalled",
+    "cinematacms_encoding_stalled",
     "Current running encoding rows older than RUNNING_STATE_STALE",
     ["resolution", "codec", "extension"],
     multiprocess_mode="mostrecent",
 )
 CACHE_OPERATIONS_TOTAL = Counter(
-    "cinemata_cache_operations_total",
-    "Explicit project cache helper operations",
-    ["cache", "operation", "result"],
+    "cinematacms_cache_operations_total",
+    "Application-owned logical cache operations",
+    ["family", "operation", "result"],
+)
+CACHE_OPERATION_DURATION_SECONDS = Histogram(
+    "cinematacms_cache_operation_duration_seconds",
+    "Application-owned logical cache operation duration",
+    ["family", "operation", "result"],
+    buckets=CACHE_DURATION_BUCKETS,
+)
+CACHE_ITEMS_TOTAL = Counter(
+    "cinematacms_cache_items_total",
+    "Items returned by logical bulk cache reads",
+    ["family", "result"],
+)
+TELEMETRY_EMISSION_FAILURES_TOTAL = Counter(
+    "cinematacms_telemetry_emission_failures_total",
+    "Runtime telemetry emission failures",
+    ["signal", "component", "stage"],
+)
+TELEMETRY_CONTRACT_VIOLATIONS_TOTAL = Counter(
+    "cinematacms_telemetry_contract_violations_total",
+    "Unexpected values normalized by the telemetry contract",
+    ["component", "field"],
 )
 
 _task_start_times: dict[str, float] = {}
 _task_labels: dict[str, tuple[str, str]] = {}
 _stalled_encoding_label_values: set[tuple[str, str, str]] = set()
+_telemetry_warning_state: dict[tuple[str, str, str], tuple[float, int]] = {}
 
 
-def _safe_metric(metric_name: str, emit) -> None:
+def validate_telemetry_settings() -> None:
+    thresholds = {
+        "OBSERVABILITY_SLOW_REQUEST_SECONDS": HTTP_DURATION_BUCKETS,
+        "OBSERVABILITY_SLOW_QUERY_SECONDS": DB_DURATION_BUCKETS,
+        "OBSERVABILITY_SLOW_CACHE_SECONDS": CACHE_DURATION_BUCKETS,
+    }
+    for setting_name, buckets in thresholds.items():
+        value = getattr(settings, setting_name)
+        if value not in buckets:
+            raise ValueError(f"{setting_name} must match a telemetry histogram bucket")
+
+
+def record_telemetry_failure(signal: str, component: str, stage: str) -> None:
+    try:
+        TELEMETRY_EMISSION_FAILURES_TOTAL.labels(signal=signal, component=component, stage=stage).inc()
+    except Exception:
+        logger.debug("Could not record telemetry emission failure", exc_info=True)
+    key = (signal, component, stage)
+    try:
+        now = time.monotonic()
+        previous = _telemetry_warning_state.get(key)
+        if previous is not None and now - previous[0] < 60:
+            _telemetry_warning_state[key] = (previous[0], previous[1] + 1)
+            return
+        suppressed_count = previous[1] if previous is not None else 0
+        _telemetry_warning_state[key] = (now, 0)
+        logger.warning(
+            "cinematacms.telemetry.emission_failed",
+            extra={
+                "signal": signal,
+                "component": component,
+                "stage": stage,
+                "suppressed_count": suppressed_count,
+            },
+        )
+    except Exception:
+        pass
+
+
+def record_contract_violation(component: str, field: str) -> None:
+    try:
+        TELEMETRY_CONTRACT_VIOLATIONS_TOTAL.labels(component=component, field=field).inc()
+    except Exception:
+        record_telemetry_failure("metrics", "telemetry_contract", "emit")
+
+
+def _safe_metric(metric_name: str, emit, component: str = "application") -> None:
     try:
         emit()
     except Exception:
+        record_telemetry_failure("metrics", component, "emit")
         logger.debug("Could not record %s metric", metric_name, exc_info=True)
-
-
-def classify_endpoint_group(path: str) -> str:
-    normalized = path.rstrip("/") or "/"
-    if normalized in {"/metrics", "/health/live", "/health/ready"}:
-        return "system"
-    if normalized.startswith("/api/v1/search"):
-        return "api_search"
-    if normalized.startswith("/api/v1/media"):
-        return "api_media"
-    if normalized.startswith("/api/v1/manage") or normalized.startswith("/manage"):
-        return "api_manage"
-    if normalized.startswith("/fu/") or normalized.startswith("/upload"):
-        return "uploads"
-    if normalized.startswith("/media/") or normalized.startswith("/internal/media/"):
-        return "media_serve"
-    if normalized.startswith("/api/"):
-        return "api_other"
-    return "pages"
 
 
 def _task_name(sender=None, task_id=None, **kwargs) -> str:
@@ -179,33 +217,179 @@ def _task_name(sender=None, task_id=None, **kwargs) -> str:
 
 QUEUE_NAMES = frozenset({"long_tasks", "short_tasks", "whisper_tasks", "email_tasks", "default"})
 DOMAIN_OUTCOMES = frozenset({"succeeded", "failed", "skipped", "retried", "cancelled"})
+DOMAIN_OPERATIONS = frozenset(
+    {
+        "encoding",
+        "hls",
+        "transcription",
+        "sprites",
+        "email_delivery",
+        "chunking",
+        "media_derivative",
+        "media_lifecycle",
+        "storage_maintenance",
+        "discovery",
+        "user_activity",
+        "platform_maintenance",
+        "diagnostic",
+        "scheduled.record_beat_freshness",
+        "scheduled.recover_stale_email_deliveries",
+        "scheduled.cleanup_email_delivery_receipts",
+        "scheduled.clear_sessions",
+        "scheduled.update_listings_thumbnails",
+        "scheduled.cleanup_orphaned_uploads",
+        "scheduled.cleanup_orphaned_draft_media",
+        "scheduled.dispatch_deferred_encodings",
+        "scheduled.apply_visibility_schedules",
+        "other",
+    }
+)
+DOMAIN_REASON_CODES = frozenset(
+    {
+        "none",
+        "encoding_failed",
+        "configuration_error",
+        "media_not_found",
+        "no_h264_encoding",
+        "lock_held",
+        "subprocess_timeout",
+        "subprocess_failed",
+        "missing_playlist",
+        "encryption_bypass",
+        "lock_expired",
+        "returned_false",
+        "task_exception",
+        "task_retry",
+        "task_revoked",
+        "queue_publish_failed",
+        "preference_changed",
+        "smtp_4xx",
+        "smtp_5xx",
+        "timeout",
+        "worker_lost",
+        "item_errors",
+        "cleanup_failed",
+        "dependency_unavailable",
+        "invalid_credentials",
+        "malformed_credentials",
+        "inactive_principal",
+        "csrf_rejected",
+        "rate_limited",
+        "missing_credentials",
+        "invalid_token",
+        "internal_error",
+        "other",
+    }
+)
+TELEMETRY_SIGNALS = frozenset({"metrics", "logs", "traces", "timing", "context", "database"})
+TELEMETRY_COMPONENTS = frozenset(
+    {
+        "application",
+        "authentication",
+        "cache",
+        "celery",
+        "database",
+        "domain",
+        "exporter",
+        "http",
+        "span",
+        "telemetry_contract",
+    }
+)
+TELEMETRY_STAGES = frozenset({"emit", "export", "start", "attribute", "finish", "reset", "prepare", "record"})
 MEDIA_TASK_OPERATIONS = {
     "chunkize_media": "chunking",
     "whisper_transcribe": "transcription",
     "produce_sprite_from_video": "sprites",
 }
+TASK_FAMILY_BY_NAME = {
+    "chunkize_media": "encoding",
+    "encode_media": "encoding",
+    "whisper_transcribe": "transcription",
+    "produce_sprite_from_video": "media_derivative",
+    "create_hls": "media_derivative",
+    "media_init": "media_lifecycle",
+    "refresh_media_storage_usage": "storage_maintenance",
+    "check_running_states": "media_lifecycle",
+    "check_media_states": "media_lifecycle",
+    "check_pending_states": "media_lifecycle",
+    "check_missing_profiles": "media_lifecycle",
+    "clear_sessions": "platform_maintenance",
+    "save_user_action": "user_activity",
+    "get_list_of_popular_media": "discovery",
+    "update_listings_thumbnails": "media_derivative",
+    "start_missing_encodings": "encoding",
+    "sum_two_numbers": "diagnostic",
+    "sum_two_numbers_two": "diagnostic",
+    "beat_test": "diagnostic",
+    "remove_media_file": "media_lifecycle",
+    "cleanup_orphaned_uploads": "storage_maintenance",
+    "cleanup_orphaned_draft_media": "media_lifecycle",
+    "subscribe_user": "user_activity",
+    "dispatch_deferred_encodings": "encoding",
+    "apply_visibility_schedules": "media_lifecycle",
+    "deliver_email": "email_delivery",
+    "recover_stale_email_deliveries": "email_delivery",
+    "cleanup_email_delivery_receipts": "email_delivery",
+    "notify_followers_new_media": "user_activity",
+    "record_beat_freshness": "platform_maintenance",
+    "cms.celery.debug_task": "diagnostic",
+}
+
+
+def normalize_task_family(task_name: str) -> str:
+    short_name = task_name.rsplit(".", 1)[-1]
+    family = TASK_FAMILY_BY_NAME.get(task_name) or TASK_FAMILY_BY_NAME.get(short_name)
+    if family:
+        return family
+    record_contract_violation("celery", "task_family")
+    return "unknown"
+
+
+def worker_reference() -> str:
+    worker_id = getattr(settings, "TELEMETRY_WORKER_ID", "")
+    secret = getattr(settings, "TELEMETRY_WORKER_HMAC_KEY", "")
+    if not worker_id or not secret:
+        record_contract_violation("celery", "worker_ref")
+        return f"v1:{'0' * 32}"
+    digest = hmac.new(secret.encode(), f"v1:{worker_id}".encode(), hashlib.sha256).hexdigest()[:32]
+    return f"v1:{digest}"
 
 
 def normalize_queue(sender=None, **kwargs) -> str:
     request = getattr(sender, "request", None)
     delivery = getattr(request, "delivery_info", None) or kwargs.get("delivery_info") or {}
     queue = delivery.get("routing_key") or delivery.get("exchange") or "default"
-    return queue if queue in QUEUE_NAMES else "default"
+    if queue in QUEUE_NAMES:
+        return queue
+    record_contract_violation("celery", "queue")
+    return "default"
 
 
 def record_domain_outcome(operation: str, outcome: str, reason_code: str = "none") -> None:
+    if operation.startswith("scheduled.") or operation in DOMAIN_OPERATIONS:
+        normalized_operation = operation
+    else:
+        record_contract_violation("domain", "operation")
+        normalized_operation = "other"
     if outcome not in DOMAIN_OUTCOMES:
-        raise ValueError(f"Unsupported domain outcome: {outcome}")
+        record_contract_violation("domain", "outcome")
+        outcome = "failed"
+    if reason_code not in DOMAIN_REASON_CODES:
+        record_contract_violation("domain", "reason_code")
+        reason_code = "other"
     _safe_metric(
         "domain outcome",
-        lambda: DOMAIN_OUTCOMES_TOTAL.labels(operation=operation, outcome=outcome, reason_code=reason_code).inc(),
+        lambda: DOMAIN_OUTCOMES_TOTAL.labels(
+            operation=normalized_operation, outcome=outcome, reason_code=reason_code
+        ).inc(),
     )
     try:
         from opentelemetry import trace
 
         span = trace.get_current_span()
         if span.is_recording():
-            span.set_attribute("domain.operation", operation)
+            span.set_attribute("domain.operation", normalized_operation)
             span.set_attribute("domain.outcome", outcome)
             span.set_attribute("domain.reason_code", reason_code)
     except Exception:
@@ -240,14 +424,16 @@ def _record_scheduled_result(name: str, outcome: str, reason_code: str, retval=N
 
 def _on_task_prerun(sender=None, task_id=None, **kwargs):
     name = _task_name(sender=sender, **kwargs)
+    family = normalize_task_family(name)
     queue = normalize_queue(sender=sender, **kwargs)
     if task_id:
         _task_start_times[task_id] = time.monotonic()
-        _task_labels[task_id] = (name, queue)
+        _task_labels[task_id] = (family, queue)
     _safe_metric(
-        "Celery started", lambda: CELERY_TASKS_TOTAL.labels(task_name=name, queue=queue, state="started").inc()
+        "Celery started",
+        lambda: CELERY_TASKS_TOTAL.labels(task_family=family, queue=queue, event="started", outcome="none").inc(),
     )
-    _safe_metric("Celery active", lambda: CELERY_TASK_ACTIVE.labels(task_name=name, queue=queue).inc())
+    _safe_metric("Celery active", lambda: CELERY_TASK_ACTIVE.labels(task_family=family, queue=queue).inc())
     try:
         from cms.scheduled_jobs import record_scheduled_start
 
@@ -258,30 +444,43 @@ def _on_task_prerun(sender=None, task_id=None, **kwargs):
 
 def _on_task_postrun(sender=None, task_id=None, state=None, retval=None, **kwargs):
     name = _task_name(sender=sender, **kwargs)
+    family = normalize_task_family(name)
     queue = normalize_queue(sender=sender, **kwargs)
     if task_id in _task_labels:
-        name, queue = _task_labels.pop(task_id)
+        family, queue = _task_labels.pop(task_id)
     if task_id and task_id in _task_start_times:
         elapsed = time.monotonic() - _task_start_times.pop(task_id)
+        duration_outcome = "succeeded" if state == "SUCCESS" else "failed"
         _safe_metric(
-            "Celery duration", lambda: CELERY_TASK_DURATION_SECONDS.labels(task_name=name, queue=queue).observe(elapsed)
+            "Celery duration",
+            lambda: CELERY_TASK_DURATION_SECONDS.labels(
+                task_family=family, queue=queue, outcome=duration_outcome
+            ).observe(elapsed),
         )
     if state == "SUCCESS":
         _safe_metric(
-            "Celery succeeded", lambda: CELERY_TASKS_TOTAL.labels(task_name=name, queue=queue, state="succeeded").inc()
+            "Celery succeeded",
+            lambda: CELERY_TASKS_TOTAL.labels(
+                task_family=family, queue=queue, event="completed", outcome="succeeded"
+            ).inc(),
         )
         domain_outcome = "failed" if retval is False else "succeeded"
         reason = "returned_false" if retval is False else "none"
         _record_task_domain_result(name, domain_outcome, reason)
         _record_scheduled_result(name, domain_outcome, reason, retval)
-    _safe_metric("Celery active", lambda: CELERY_TASK_ACTIVE.labels(task_name=name, queue=queue).dec())
+    _safe_metric("Celery active", lambda: CELERY_TASK_ACTIVE.labels(task_family=family, queue=queue).dec())
 
 
 def _terminal_task_event(state, sender=None, task_id=None, **kwargs):
-    name, queue = _task_labels.get(
-        task_id, (_task_name(sender=sender, **kwargs), normalize_queue(sender=sender, **kwargs))
+    name = _task_name(sender=sender, **kwargs)
+    labels = _task_labels.get(task_id)
+    if labels is None:
+        labels = (normalize_task_family(name), normalize_queue(sender=sender, **kwargs))
+    family, queue = labels
+    _safe_metric(
+        f"Celery {state}",
+        lambda: CELERY_TASKS_TOTAL.labels(task_family=family, queue=queue, event="completed", outcome=state).inc(),
     )
-    _safe_metric(f"Celery {state}", lambda: CELERY_TASKS_TOTAL.labels(task_name=name, queue=queue, state=state).inc())
 
 
 def _on_task_failure(sender=None, task_id=None, **kwargs):
@@ -305,24 +504,12 @@ def _on_task_revoked(sender=None, request=None, **kwargs):
     _record_scheduled_result(name, "cancelled", "task_revoked")
 
 
-def _worker_label(sender=None) -> str:
-    if sender is not None and getattr(sender, "hostname", None):
-        return str(sender.hostname)
-    return socket.gethostname()
-
-
-def _on_worker_ready(sender=None, **kwargs):
-    CELERY_WORKER_UP.labels(worker=_worker_label(sender)).set(1)
-
-
-def _on_worker_shutdown(sender=None, **kwargs):
-    CELERY_WORKER_UP.labels(worker=_worker_label(sender)).set(0)
-
-
 def _on_heartbeat(sender=None, **kwargs):
     _safe_metric(
         "worker heartbeat",
-        lambda: CELERY_WORKER_HEARTBEAT_TIMESTAMP.labels(worker=_worker_label(sender)).set(time.time()),
+        lambda: CELERY_WORKER_HEARTBEAT_TIMESTAMP.labels(
+            service_role=getattr(settings, "OTEL_SERVICE_ROLE", "unknown"), worker_ref=worker_reference()
+        ).set(time.time()),
     )
 
 
@@ -330,33 +517,37 @@ def _on_beat_init(sender=None, **kwargs):
     _safe_metric("beat freshness", lambda: CELERY_BEAT_FRESHNESS_TIMESTAMP.set(time.time()))
 
 
-def _on_user_login_failed(sender=None, **kwargs):
-    AUTH_FAILURES_TOTAL.labels(source="django").inc()
+def _on_user_login_failed(sender=None, request=None, **kwargs):
+    from cms.authentication_telemetry import record_authentication_failure
+
+    authorization = getattr(request, "META", {}).get("HTTP_AUTHORIZATION", "").lower()
+    if authorization.startswith(("basic", "token")):
+        return
+    record_authentication_failure("account_login", "password", "invalid_credentials")
 
 
 def connect_signal_handlers() -> None:
-    task_prerun.connect(_on_task_prerun, dispatch_uid="cinemata_metrics_task_prerun", weak=False)
-    task_postrun.connect(_on_task_postrun, dispatch_uid="cinemata_metrics_task_postrun", weak=False)
-    task_failure.connect(_on_task_failure, dispatch_uid="cinemata_metrics_task_failure", weak=False)
-    task_retry.connect(_on_task_retry, dispatch_uid="cinemata_metrics_task_retry", weak=False)
-    task_revoked.connect(_on_task_revoked, dispatch_uid="cinemata_metrics_task_revoked", weak=False)
-    worker_ready.connect(_on_worker_ready, dispatch_uid="cinemata_metrics_worker_ready", weak=False)
-    worker_shutdown.connect(_on_worker_shutdown, dispatch_uid="cinemata_metrics_worker_shutdown", weak=False)
-    heartbeat_sent.connect(_on_heartbeat, dispatch_uid="cinemata_metrics_worker_heartbeat", weak=False)
-    beat_init.connect(_on_beat_init, dispatch_uid="cinemata_metrics_beat_init", weak=False)
-    user_login_failed.connect(_on_user_login_failed, dispatch_uid="cinemata_metrics_login_failed", weak=False)
+    task_prerun.connect(_on_task_prerun, dispatch_uid="cinematacms_metrics_task_prerun", weak=False)
+    task_postrun.connect(_on_task_postrun, dispatch_uid="cinematacms_metrics_task_postrun", weak=False)
+    task_failure.connect(_on_task_failure, dispatch_uid="cinematacms_metrics_task_failure", weak=False)
+    task_retry.connect(_on_task_retry, dispatch_uid="cinematacms_metrics_task_retry", weak=False)
+    task_revoked.connect(_on_task_revoked, dispatch_uid="cinematacms_metrics_task_revoked", weak=False)
+    heartbeat_sent.connect(_on_heartbeat, dispatch_uid="cinematacms_metrics_worker_heartbeat", weak=False)
+    beat_init.connect(_on_beat_init, dispatch_uid="cinematacms_metrics_beat_init", weak=False)
+    user_login_failed.connect(_on_user_login_failed, dispatch_uid="cinematacms_metrics_login_failed", weak=False)
 
 
 def record_cache_operation(cache_name: str, operation: str, hit: bool | None = None, ok: bool = True) -> None:
     if not ok:
         result = "error"
     elif hit is None:
-        result = "ok"
+        result = "success"
     else:
         result = "hit" if hit else "miss"
     _safe_metric(
         "cache operation",
-        lambda: CACHE_OPERATIONS_TOTAL.labels(cache=cache_name, operation=operation, result=result).inc(),
+        lambda: CACHE_OPERATIONS_TOTAL.labels(family=cache_name, operation=operation, result=result).inc(),
+        component="cache",
     )
 
 
@@ -412,11 +603,10 @@ def refresh_runtime_metrics() -> None:
 
 def _refresh_queue_depths() -> None:
     try:
-        from django_redis import get_redis_connection
+        from cms.redis_telemetry import observability_redis
 
-        connection = get_redis_connection("default")
         for queue in getattr(settings, "OBSERVABILITY_CELERY_QUEUES", []):
-            CELERY_QUEUE_DEPTH.labels(queue=queue).set(connection.llen(queue))
+            CELERY_QUEUE_DEPTH.labels(queue=queue).set(observability_redis.queue_depth(queue))
     except Exception:
         logger.debug("Could not refresh Celery queue depth metrics", exc_info=True)
 

@@ -2,9 +2,12 @@ import logging
 import os
 
 from django.conf import settings
-from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Sum
+
+from cms.cache_telemetry import owned_cache
+
+storage_usage_cache = owned_cache.bind("storage_usage")
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +21,9 @@ def user_storage_usage_cache_key(user_id):
 
 
 def invalidate_storage_usage_cache(user_id=None):
-    cache.delete(SITE_STORAGE_USAGE_CACHE_KEY)
+    storage_usage_cache.delete(SITE_STORAGE_USAGE_CACHE_KEY)
     if user_id:
-        cache.delete(user_storage_usage_cache_key(user_id))
+        storage_usage_cache.delete(user_storage_usage_cache_key(user_id))
 
 
 def _normalize_local_path(path):
@@ -179,26 +182,26 @@ def get_user_storage_usage(user):
         return get_site_storage_usage()
 
     key = user_storage_usage_cache_key(user.id)
-    cached = cache.get(key)
+    cached = storage_usage_cache.get(key)
     if cached is not None:
         return cached
 
     from .models import Media
 
     used_bytes = Media.objects.filter(user=user).aggregate(total=Sum("storage_usage_bytes"))["total"] or 0
-    cache.set(key, used_bytes, STORAGE_USAGE_CACHE_TIMEOUT)
+    storage_usage_cache.set(key, used_bytes, STORAGE_USAGE_CACHE_TIMEOUT)
     return used_bytes
 
 
 def get_site_storage_usage():
-    cached = cache.get(SITE_STORAGE_USAGE_CACHE_KEY)
+    cached = storage_usage_cache.get(SITE_STORAGE_USAGE_CACHE_KEY)
     if cached is not None:
         return cached
 
     from .models import Media
 
     used_bytes = Media.objects.aggregate(total=Sum("storage_usage_bytes"))["total"] or 0
-    cache.set(SITE_STORAGE_USAGE_CACHE_KEY, used_bytes, STORAGE_USAGE_CACHE_TIMEOUT)
+    storage_usage_cache.set(SITE_STORAGE_USAGE_CACHE_KEY, used_bytes, STORAGE_USAGE_CACHE_TIMEOUT)
     return used_bytes
 
 

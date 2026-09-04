@@ -106,6 +106,36 @@ for data migrations, non-atomic migrations, and migration ordering.
 
 Use the `tdd` repository skill when the work requires a test-first cycle.
 
+## Make new behavior observable
+
+Before implementation, map the feature to the existing
+[application observability contract](docs/technical/observability-contract.md)
+and its machine-readable source of truth,
+[`config/observability/coverage.json`](config/observability/coverage.json). If
+the contract already covers the feature's operation, outcomes, dependencies,
+and operator workflow, use the existing application-owned telemetry.
+
+If the contract does not cover the feature, extend the coverage matrix and its
+contract tests first. Register each new HTTP route and supported method in
+`cms.http_telemetry.ROUTE_OPERATION_REGISTRY`. Define the bounded labels,
+privacy constraints, diagnostic events, implementation point, and operator
+query. Then implement the feature through the owned HTTP, database, cache,
+Redis, authentication, Celery, scheduled-job, and domain-outcome interfaces.
+
+Never put raw URLs, SQL, parameters, cache keys, credentials, tokens, user or
+media identifiers, IP addresses, hostnames, exception messages, or unrestricted
+task names in telemetry. Use operational identifiers only where the
+observability contract permits `trace_id`, `span_id`, `task_id`, a delivery
+UUID, or `recipient_ref`. Do not use these identifiers as metric labels.
+
+Run the contract checks with the feature tests:
+
+```bash
+uv run python scripts/validate_observability_coverage.py
+uv run python manage.py test cms.tests.test_observability_coverage
+make agent-check
+```
+
 ### Tautological tests are harmful
 
 A tautological test derives its expected result with the same rules as the code

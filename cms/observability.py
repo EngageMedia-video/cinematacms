@@ -5,7 +5,6 @@ from typing import Any
 from urllib.parse import urlparse
 
 from django.conf import settings
-from prometheus_client import Counter
 
 logger = logging.getLogger(__name__)
 
@@ -13,17 +12,11 @@ _tracer_configured = False
 _django_instrumented = False
 _celery_instrumented = False
 _redis_instrumented = False
-_psycopg2_instrumented = False
 _requests_instrumented = False
 
 ALLOWED_SERVICE_ROLES = frozenset({"web", "long-task", "short-task", "transcription", "email", "beat"})
 SENSITIVE_ATTRIBUTE_PARTS = ("email", "authorization", "secret", "password", "body", "filename", "url")
 RESTRICTED_EMAIL_ATTRIBUTES = frozenset({"email.delivery_id", "email.recipient_ref", "email.kind", "email.attempt"})
-TELEMETRY_EXPORT_FAILURES_TOTAL = Counter(
-    "cinemata_telemetry_export_failures_total",
-    "Failed OpenTelemetry export batches",
-    ["signal"],
-)
 
 
 class SafeSpanExporter:
@@ -36,10 +29,14 @@ class SafeSpanExporter:
         try:
             result = self.exporter.export(spans)
         except Exception:
-            TELEMETRY_EXPORT_FAILURES_TOTAL.labels(signal="traces").inc()
+            from files.metrics import record_telemetry_failure
+
+            record_telemetry_failure("traces", "exporter", "export")
             return SpanExportResult.FAILURE
         if result is not SpanExportResult.SUCCESS:
-            TELEMETRY_EXPORT_FAILURES_TOTAL.labels(signal="traces").inc()
+            from files.metrics import record_telemetry_failure
+
+            record_telemetry_failure("traces", "exporter", "export")
         return result
 
     def shutdown(self):
@@ -161,8 +158,23 @@ def _configure_tracer_provider() -> bool:
     return True
 
 
+def _configure_dependency_instrumentation() -> None:
+    global _redis_instrumented, _requests_instrumented
+
+    if not _redis_instrumented:
+        from opentelemetry.instrumentation.redis import RedisInstrumentor
+
+        RedisInstrumentor().instrument()
+        _redis_instrumented = True
+    if not _requests_instrumented:
+        from opentelemetry.instrumentation.requests import RequestsInstrumentor
+
+        RequestsInstrumentor().instrument()
+        _requests_instrumented = True
+
+
 def configure_django_observability() -> None:
-    global _django_instrumented, _redis_instrumented, _psycopg2_instrumented, _requests_instrumented
+    global _django_instrumented
 
     if not _configure_tracer_provider():
         return
@@ -173,21 +185,7 @@ def configure_django_observability() -> None:
 
             DjangoInstrumentor().instrument()
             _django_instrumented = True
-        if not _redis_instrumented:
-            from opentelemetry.instrumentation.redis import RedisInstrumentor
-
-            RedisInstrumentor().instrument()
-            _redis_instrumented = True
-        if not _psycopg2_instrumented:
-            from opentelemetry.instrumentation.psycopg2 import Psycopg2Instrumentor
-
-            Psycopg2Instrumentor().instrument()
-            _psycopg2_instrumented = True
-        if not _requests_instrumented:
-            from opentelemetry.instrumentation.requests import RequestsInstrumentor
-
-            RequestsInstrumentor().instrument()
-            _requests_instrumented = True
+        _configure_dependency_instrumentation()
     except Exception:
         logger.exception("Failed to configure Django observability")
 
@@ -204,15 +202,18 @@ def configure_celery_observability() -> None:
 
             CeleryInstrumentor().instrument()
             _celery_instrumented = True
+        _configure_dependency_instrumentation()
     except Exception:
         logger.exception("Failed to configure Celery observability")
 
 
 def configure_celery_worker_process() -> None:
     """Configure tracing in a prefork child instead of the parent process."""
-    global _tracer_configured, _celery_instrumented
+    global _tracer_configured, _celery_instrumented, _redis_instrumented, _requests_instrumented
     _tracer_configured = False
     _celery_instrumented = False
+    _redis_instrumented = False
+    _requests_instrumented = False
     configure_celery_observability()
 
 
@@ -277,13 +278,29 @@ def get_tracer(name: str):
         return None
 
 
+def _record_telemetry_failure(signal: str, component: str, stage: str) -> None:
+    try:
+        from files.metrics import record_telemetry_failure
+
+        record_telemetry_failure(signal, component, stage)
+    except Exception:
+        pass
+
+
 @contextmanager
 def start_span(name: str, attributes: dict[str, Any] | None = None):
     tracer = get_tracer("cinematacms")
     if not observability_enabled() or tracer is None:
         yield None
         return
-    with tracer.start_as_current_span(name) as span:
+    try:
+        manager = tracer.start_as_current_span(name)
+        span = manager.__enter__()
+    except Exception:
+        _record_telemetry_failure("traces", "span", "start")
+        yield None
+        return
+    try:
         if attributes:
             for key, value in attributes.items():
                 normalized_key = key.lower()
@@ -291,5 +308,19 @@ def start_span(name: str, attributes: dict[str, Any] | None = None):
                     part in normalized_key for part in SENSITIVE_ATTRIBUTE_PARTS
                 )
                 if value is not None and safe:
-                    span.set_attribute(key, value)
+                    try:
+                        span.set_attribute(key, value)
+                    except Exception:
+                        _record_telemetry_failure("traces", "span", "attribute")
         yield span
+    except BaseException as error:
+        try:
+            manager.__exit__(type(error), error, error.__traceback__)
+        except Exception:
+            _record_telemetry_failure("traces", "span", "finish")
+        raise
+    else:
+        try:
+            manager.__exit__(None, None, None)
+        except Exception:
+            _record_telemetry_failure("traces", "span", "finish")
