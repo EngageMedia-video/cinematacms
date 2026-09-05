@@ -312,6 +312,12 @@ _OWNED_ROUTE_RULES = (
     _rule("^channel/(?P<friendly_token>\\w+(-\\w+)*)/edit$", "pages", "other", url_name="edit_channel"),
     _rule("api/v1/users", "users_api", "user_list", url_name="api_users"),
     _rule("api/v1/users/", "users_api", "user_list"),
+    _rule(
+        "api/v1/users/mention-suggestions",
+        "users_api",
+        "mention_suggestions",
+        url_name="api_mention_suggestions",
+    ),
     _rule("^api/v1/users/(?P<username>[\\w@._-]+)$", "users_api", "other", url_name="api_get_user"),
     _rule(
         "^api/v1/users/(?P<username>[\\w@._-]+)/community-impacts$",
