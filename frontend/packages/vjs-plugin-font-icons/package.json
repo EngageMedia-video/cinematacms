@@ -18,7 +18,7 @@
 		"pack": "npm run build && npm pack"
 	},
 	"overrides": {
-		"@xmldom/xmldom": "0.8.13",
+		"@xmldom/xmldom": "0.8.15",
 		"handlebars": "4.7.9",
 		"ip-address": "10.4.0",
 		"lodash": "4.18.1"
