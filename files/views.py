@@ -2692,11 +2692,17 @@ class CommentDetail(APIView):
         try:
             media = Media.objects.select_related("user").get(friendly_token=friendly_token)
             self.check_object_permissions(self.request, media)
-            if media.state == "private" and self.request.user != media.user:
-                return Response({"detail": "media is private"}, status=status.HTTP_400_BAD_REQUEST)
+            # Comment access follows view access, through the same helper every
+            # other media endpoint uses. Checking only for "private" left
+            # restricted media open to anyone holding the URL, with none of the
+            # token check that gates the film itself. Unlisted stays readable and
+            # commentable: the link is its only gate, so a recipient who can watch
+            # the film can also talk about it.
+            if not check_media_access_permission(self.request, media):
+                return Response({"detail": "bad permissions"}, status=status.HTTP_403_FORBIDDEN)
             return media
         except PermissionDenied:
-            return Response({"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "bad permissions"}, status=status.HTTP_403_FORBIDDEN)
         except Media.DoesNotExist:
             return Response(
                 {"detail": "media file does not exist"},
