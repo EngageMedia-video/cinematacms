@@ -512,6 +512,29 @@ class Media(models.Model):
                 from django.contrib.auth.hashers import make_password
 
                 self.password = make_password(self.password)
+
+        # Protect encryption_key from stale-instance lost updates (#840).
+        # create_hls generates the key mid-pipeline, so an instance loaded before
+        # that write still holds encryption_key="". A full-row save() writes every
+        # column from memory, so that blank would overwrite the stored key while
+        # is_encrypted stayed True. The key is the only copy, so the encrypted .ts
+        # segments become undecryptable and playback breaks silently.
+        # The stored value is re-read rather than trusted from memory because uWSGI
+        # and the Celery workers are separate processes sharing only the row.
+        # is_encrypted distinguishes an accidental blank from an intentional clear:
+        # disabling encryption sets it False, so that blank still persists.
+        # update_fields is the 4th positional in Model.save(), so read args too.
+        update_fields = kwargs.get("update_fields", args[3] if len(args) > 3 else None)
+        if (
+            self.pk
+            and self.is_encrypted
+            and not self.encryption_key
+            and (update_fields is None or "encryption_key" in update_fields)
+        ):
+            stored_key = self.__class__.objects.filter(pk=self.pk).values_list("encryption_key", flat=True).first()
+            if stored_key:
+                self.encryption_key = stored_key
+
         super(Media, self).save(*args, **kwargs)
         # Notify user when video is published (state changed to public)
         if self.pk and self.__original_state and self.__original_state != "public" and self.state == "public":

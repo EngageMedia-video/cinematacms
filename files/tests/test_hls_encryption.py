@@ -15,10 +15,12 @@ import tempfile
 from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
+from django.db import connection
 from django.test import Client, TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
-from files.models import Media
+from files.models import Category, Language, Media
 from users.models import User
 
 
@@ -31,6 +33,17 @@ def create_test_media(user, title="Test Video", **kwargs):
         Media.objects.filter(pk=media.pk).update(state=desired_state)
         media.refresh_from_db()
     return media
+
+
+def _jpeg_bytes():
+    """Smallest real JPEG, for ProcessedImageField saves that run bytes through PIL."""
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (1, 1)).save(buf, format="JPEG")
+    return buf.getvalue()
 
 
 class EnsureEncryptionKeyTests(TestCase):
@@ -627,3 +640,199 @@ class HlsInfoVersionParameterTests(TestCase):
         # The regression: edit_date does not move, so a media_version-derived ?v=
         # would have been identical across both generations.
         self.assertEqual(first.media_version, second.media_version)
+
+
+class EncryptionKeyLostUpdateTests(TestCase):
+    """Regression tests for issue #840: stale instances blanking encryption_key.
+
+    Media.save() without update_fields writes every concrete column from
+    in-memory state. An instance loaded before create_hls generated the key
+    carries encryption_key="" and would write that blank back over the stored
+    key, leaving is_encrypted=True and no key -- unrecoverable, since the .ts
+    segments are already encrypted with it.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(username="owner", email="owner@example.com", password="pw")
+        # MediaForm requires a category, a language and a country to validate.
+        self.category = Category.objects.first() or Category.objects.create(
+            title="Test Category", user=self.user, is_global=True
+        )
+        Language.objects.get_or_create(code="en", defaults={"title": "English"})
+
+    def _form_payload(self, **overrides):
+        """A fully valid MediaForm payload, mirroring test_media_forms._get_form_data."""
+        data = {
+            "title": "Test",
+            "state": "public",
+            "summary": "test summary",
+            "description": "test description",
+            "media_language": "en",
+            "media_country": "AU",
+            "category": [self.category.id],
+            "topics": [],
+            "new_tags": "",
+            "year_produced": "2025",
+            "enable_comments": True,
+            "allow_download": True,
+            "is_encrypted": True,
+        }
+        data.update(overrides)
+        return data
+
+    def _encrypted_media_with_stale_instance(self):
+        """Return (stale, key): an instance loaded before the key was written."""
+        # media_type="video": MediaForm drops the is_encrypted field otherwise.
+        media = create_test_media(self.user, is_encrypted=True, media_type="video")
+        # Loaded while encryption_key was still blank, as a uWSGI worker or a
+        # Celery task holding the row across a long encode would be.
+        stale = Media.objects.get(pk=media.pk)
+        # Meanwhile create_hls generates and stores the key on its own instance.
+        key = Media.objects.get(pk=media.pk).ensure_encryption_key()
+        self.assertTrue(key)
+        self.assertEqual(stale.encryption_key, "")
+        return stale, key
+
+    def _stored_key(self, media):
+        return Media.objects.filter(pk=media.pk).values_list("encryption_key", flat=True).first()
+
+    def test_stale_full_row_saves_preserve_key(self):
+        """Every full-row write path leaves the stored key intact."""
+        from django.core.files.base import ContentFile
+
+        from files.draft_utils import apply_media_draft
+
+        def plain_save(stale):
+            stale.save()
+
+        def sprites_save(stale):
+            # files/sprites.py:198 -- the path confirmed live in issue #840.
+            stale.sprites.save(content=ContentFile(b"sprite-bytes"), name="sprites.jpg")
+
+        def thumbnail_and_poster_save(stale):
+            # files/models.py:745-746, the set_thumbnail / produce_thumbnails pair.
+            # These are ProcessedImageFields, so the bytes must decode as an image.
+            stale.thumbnail.save(content=ContentFile(_jpeg_bytes()), name="thumb.jpg")
+            stale.poster.save(content=ContentFile(_jpeg_bytes()), name="poster.jpg")
+
+        def media_form_save(stale):
+            # files/forms.py:363,366 -- MediaForm lists is_encrypted but not
+            # encryption_key, so a plain admin edit is a non-race trigger that
+            # needs no concurrency at all.
+            from files.forms import MediaForm
+
+            form = MediaForm(self.user, instance=stale, data=self._form_payload(title="Edited via form"))
+            self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+            form.save()
+
+        def draft_save(stale):
+            # files/draft_utils.py:88
+            apply_media_draft(stale, {"title": "Draft title"}, self.user)
+
+        def update_fields_save(stale):
+            # Already safe today; pinned so the safe path cannot regress.
+            stale.title = "Renamed"
+            stale.save(update_fields=["title"])
+
+        cases = [
+            ("plain full save", plain_save),
+            ("sprites.save", sprites_save),
+            ("thumbnail and poster save", thumbnail_and_poster_save),
+            ("MediaForm save", media_form_save),
+            ("apply_media_draft", draft_save),
+            ("save with update_fields", update_fields_save),
+        ]
+
+        for name, write in cases:
+            with self.subTest(case=name):
+                stale, key = self._encrypted_media_with_stale_instance()
+                write(stale)
+                self.assertEqual(
+                    self._stored_key(stale),
+                    key,
+                    f"{name} blanked encryption_key on an encrypted media",
+                )
+
+    def test_intentional_disable_clears_key(self):
+        """Turning encryption off must still be able to clear the key."""
+        media = create_test_media(self.user, is_encrypted=True)
+        media.ensure_encryption_key()
+
+        fresh = Media.objects.get(pk=media.pk)
+        fresh.is_encrypted = False
+        fresh.encryption_key = ""
+        fresh.save()
+
+        self.assertEqual(self._stored_key(media), "")
+
+    def test_unencrypted_media_gets_no_key_invented(self):
+        media = create_test_media(self.user, is_encrypted=False)
+        media.title = "Renamed"
+        media.save()
+
+        self.assertEqual(self._stored_key(media), "")
+
+    def test_guard_is_noop_when_key_present_in_memory(self):
+        media = create_test_media(self.user, is_encrypted=True)
+        key = media.ensure_encryption_key()
+
+        media.title = "Renamed"
+        media.save()
+
+        self.assertEqual(self._stored_key(media), key)
+        self.assertEqual(media.encryption_key, key)
+
+    def test_ensure_encryption_key_stays_idempotent(self):
+        media = create_test_media(self.user, is_encrypted=True)
+        first = media.ensure_encryption_key()
+        second = media.ensure_encryption_key()
+
+        self.assertEqual(first, second)
+        self.assertEqual(self._stored_key(media), first)
+
+    def _guard_reads(self, media):
+        """Count the guard's key re-reads during one full-row save.
+
+        The guard is the only caller that selects encryption_key on its own, so
+        its deferred-column SELECT is distinguishable from the full-row loads
+        Media.save() already makes. Counting that one query instead of asserting
+        a total keeps the test pinned to the guard rather than to unrelated
+        query churn elsewhere in save().
+        """
+        with CaptureQueriesContext(connection) as ctx:
+            media.title = "Renamed"
+            media.save()
+        return len(
+            [q for q in ctx.captured_queries if 'SELECT "files_media"."encryption_key" AS "encryption_key"' in q["sql"]]
+        )
+
+    def test_guard_costs_one_query_only_on_the_stale_path(self):
+        """The re-read fires once when it must, and never otherwise.
+
+        Nothing but this test stops someone hoisting the re-read above the
+        is_encrypted check, which would charge every Media.save() in the
+        codebase an extra query to protect a column almost none of them touch.
+        """
+        stale, _ = self._encrypted_media_with_stale_instance()
+
+        # media_type matches the stale fixture: post-save notification work
+        # differs by type, and only the guard's own query is being measured.
+        encrypted_with_key = create_test_media(self.user, is_encrypted=True, media_type="video")
+        encrypted_with_key.ensure_encryption_key()
+        encrypted_with_key = Media.objects.get(pk=encrypted_with_key.pk)
+
+        unencrypted = create_test_media(self.user, is_encrypted=False, media_type="video")
+
+        cases = [
+            ("stale encrypted instance", stale, 1),
+            ("encrypted with key in memory", encrypted_with_key, 0),
+            ("unencrypted media", unencrypted, 0),
+        ]
+
+        for name, media, expected in cases:
+            with self.subTest(case=name):
+                self.assertEqual(
+                    self._guard_reads(media),
+                    expected,
+                    f"{name}: unexpected number of encryption_key re-reads",
+                )
