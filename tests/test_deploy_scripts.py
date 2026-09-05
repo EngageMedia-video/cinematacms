@@ -992,6 +992,11 @@ class RestartScriptTests(unittest.TestCase):
 
         self.assertIn("set -e", script)
         self.assertIn("deploy/apply-release-config.sh --no-restart", script)
+        configure_position = script.index("deploy/apply-release-config.sh --no-restart")
+        load_position = script.index("source /etc/cinematacms/app.env")
+        migrate_position = script.index("python manage.py migrate")
+        self.assertLess(configure_position, load_position)
+        self.assertLess(load_position, migrate_position)
         self.assertIn(f"for unit in {units}; do", script)
         self.assertIn('install -m 0644 "deploy/$unit.service" "/etc/systemd/system/$unit.service"', script)
         self.assertIn(f"systemctl enable {units}", script)

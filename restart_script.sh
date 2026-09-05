@@ -45,6 +45,10 @@ pip install -r requirements.txt
 
 # Reconcile the single runtime environment before Django or systemd reads it.
 deploy/apply-release-config.sh --no-restart
+set -a
+# shellcheck source=/etc/cinematacms/app.env
+source /etc/cinematacms/app.env
+set +a
 
 # Build frontend and collect static files
 echo "Building frontend and collecting static files..."
