@@ -836,3 +836,44 @@ class EncryptionKeyLostUpdateTests(TestCase):
                     expected,
                     f"{name}: unexpected number of encryption_key re-reads",
                 )
+
+    def test_iterable_update_fields_survive_the_guard(self):
+        """A one-shot or positional update_fields still reaches Model.save() intact.
+
+        Django accepts any iterable for update_fields, and Model.save() consumes
+        it twice (an emptiness check, then frozenset()). The guard's membership
+        test would exhaust a generator first, leaving Django an empty iterable
+        and tripping the assert in save_base(), so it is materialized once up
+        front. update_fields is also the 4th positional argument, so the
+        positional form has to survive the same normalization.
+        """
+
+        def generator_kwarg(stale):
+            stale.save(update_fields=(f for f in ["title"]))
+
+        def iterator_kwarg(stale):
+            stale.save(update_fields=iter(["title"]))
+
+        def positional(stale):
+            # Model.save(force_insert, force_update, using, update_fields)
+            stale.save(False, False, None, ["title"])
+
+        def positional_generator(stale):
+            stale.save(False, False, None, (f for f in ["title"]))
+
+        cases = [
+            ("generator keyword", generator_kwarg),
+            ("iterator keyword", iterator_kwarg),
+            ("positional list", positional),
+            ("positional generator", positional_generator),
+        ]
+
+        for name, write in cases:
+            with self.subTest(case=name):
+                stale, key = self._encrypted_media_with_stale_instance()
+                stale.title = "Renamed"
+                write(stale)
+
+                stored = Media.objects.get(pk=stale.pk)
+                self.assertEqual(stored.title, "Renamed", f"{name}: update_fields save did not persist")
+                self.assertEqual(stored.encryption_key, key, f"{name}: blanked encryption_key")
