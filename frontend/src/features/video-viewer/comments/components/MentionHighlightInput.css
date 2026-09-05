@@ -1,0 +1,55 @@
+/* The comment field paints its own text through a backdrop layer so an
+   @mention can be coloured, which a plain <input> cannot do for a substring.
+
+   The input keeps the caret and the selection; only its glyphs are hidden. The
+   backdrop sits above the input so the selection band it draws does not cover
+   the text, and it ignores pointer events so clicking still targets the input. */
+
+.mention-input-shell {
+	position: relative;
+	display: flex;
+	min-width: 0;
+	flex: 1 1 0%;
+}
+
+.mention-input-shell .mention-input-field {
+	position: relative;
+	z-index: 0;
+	width: 100%;
+	/* The backdrop only lines up with the field while both use the same metrics. */
+	font: inherit;
+	letter-spacing: inherit;
+	color: transparent;
+	background-color: transparent;
+	caret-color: var(--text-strong);
+}
+
+.mention-input-backdrop {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	overflow: hidden;
+	pointer-events: none;
+	white-space: pre;
+	font: inherit;
+	letter-spacing: inherit;
+	color: var(--text-strong);
+}
+
+.mention-input-token {
+	color: var(--text-accent);
+	font-weight: 500;
+}
+
+/* Forced-colors mode overrides `color`, so the field's own glyphs reappear and
+   collide with the backdrop copy. Show the real input and drop the duplicate;
+   the accent colour is replaced by the user's palette there in any case. */
+@media (forced-colors: active) {
+	.mention-input-shell .mention-input-field {
+		color: CanvasText;
+	}
+
+	.mention-input-backdrop {
+		display: none;
+	}
+}

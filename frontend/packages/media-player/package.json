@@ -34,7 +34,8 @@
 		"@mediacms/vjs-plugin": "file:../vjs-plugin"
 	},
 	"overrides": {
-		"@xmldom/xmldom": "0.8.13",
+		"@xmldom/xmldom": "0.8.15",
+		"browserslist": "4.28.7",
 		"picomatch": "4.0.4",
 		"postcss": "8.5.25"
 	},

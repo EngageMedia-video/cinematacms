@@ -655,6 +655,33 @@ def is_curator(user):
     return curator
 
 
+def can_user_view_media(user, media):
+    """Whether ``user`` may open ``media`` and therefore see its title.
+
+    Mirrors the state checks in ``MediaDetail.get_object``. The four states are
+    decided separately, per issue #855:
+
+    - ``private``: hidden. Only the owner, an editor or a curator may open it.
+    - ``restricted``: hidden. This is the password-protected state — the gate in
+      ``view_media`` keys on this state, not on the password field. A password
+      or share token can open it, but both belong to a single request and
+      cannot be assumed for a stored notification, so it counts as hidden
+      unless the user holds a standing role.
+    - ``unlisted``: shown. The link is the only access control, and the
+      notification carries that link already, so withholding the title would
+      hide nothing the recipient cannot reach.
+    - ``public``: shown.
+    """
+    if media is None:
+        return False
+    state = getattr(media, "state", None)
+    if state == "private":
+        return bool(user == media.user or is_mediacms_editor(user) or is_curator(user))
+    if state == "restricted":
+        return bool(user == media.user or is_mediacms_editor(user) or is_mediacms_manager(user))
+    return True
+
+
 def can_upload_media(user):
     try:
         # trusted user, or editor/manager?

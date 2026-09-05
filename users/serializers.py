@@ -111,6 +111,23 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
 
+class MentionSuggestionSerializer(serializers.ModelSerializer):
+    """Minimal user shape for the @mention autocomplete list."""
+
+    thumbnail_url = serializers.SerializerMethodField()
+
+    def get_thumbnail_url(self, obj):
+        thumbnail_url = obj.thumbnail_url()
+        if not thumbnail_url:
+            return None
+        request = self.context.get("request")
+        return request.build_absolute_uri(thumbnail_url) if request else thumbnail_url
+
+    class Meta:
+        model = User
+        fields = ("username", "name", "thumbnail_url")
+
+
 class UserDetailSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     api_url = serializers.SerializerMethodField()

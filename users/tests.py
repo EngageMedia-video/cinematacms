@@ -280,3 +280,87 @@ class MFATestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "mfa/totp/success.html")
+
+
+class MentionSuggestionListTest(TestCase):
+    """The @mention autocomplete source."""
+
+    url = "/api/v1/users/mention-suggestions"
+
+    def setUp(self):
+        self.client = Client()
+        self.caller = User.objects.create_user(
+            username="caller",
+            email="caller@example.com",
+            password="securepassword123",
+        )
+        self.alice = User.objects.create_user(
+            username="alice",
+            email="alice@example.com",
+            password="securepassword123",
+            name="Alice Anderson",
+        )
+        self.bob = User.objects.create_user(
+            username="bobby",
+            email="bob@example.com",
+            password="securepassword123",
+            name="Bob Brown",
+        )
+
+    def _login(self):
+        self.client.login(username="caller", password="securepassword123")
+
+    def test_requires_authentication(self):
+        response = self.client.get(self.url, {"q": "ali"})
+        self.assertIn(response.status_code, (401, 403))
+
+    def test_matches_on_handle(self):
+        self._login()
+        response = self.client.get(self.url, {"q": "ali"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([entry["username"] for entry in response.json()], ["alice"])
+
+    def test_matches_on_display_name(self):
+        self._login()
+        response = self.client.get(self.url, {"q": "Brown"})
+        self.assertEqual([entry["username"] for entry in response.json()], ["bobby"])
+
+    def test_tolerates_a_leading_at_sign(self):
+        self._login()
+        response = self.client.get(self.url, {"q": "@ali"})
+        self.assertEqual([entry["username"] for entry in response.json()], ["alice"])
+
+    def test_handle_prefix_matches_rank_first(self):
+        self._login()
+        User.objects.create_user(
+            username="zoe",
+            email="zoe@example.com",
+            password="securepassword123",
+            name="Alicia Zane",
+        )
+        response = self.client.get(self.url, {"q": "ali"})
+        self.assertEqual([entry["username"] for entry in response.json()], ["alice", "zoe"])
+
+    def test_excludes_the_caller_and_inactive_users(self):
+        self._login()
+        User.objects.create_user(
+            username="callerghost",
+            email="ghost@example.com",
+            password="securepassword123",
+            is_active=False,
+        )
+        response = self.client.get(self.url, {"q": "caller"})
+        self.assertEqual(response.json(), [])
+
+    def test_empty_query_returns_a_starting_list(self):
+        self._login()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        usernames = [entry["username"] for entry in response.json()]
+        self.assertIn("alice", usernames)
+        self.assertNotIn("caller", usernames)
+
+    def test_returns_the_shape_the_autocomplete_needs(self):
+        self._login()
+        entry = self.client.get(self.url, {"q": "ali"}).json()[0]
+        self.assertEqual(set(entry.keys()), {"username", "name", "thumbnail_url"})
