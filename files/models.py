@@ -524,7 +524,19 @@ class Media(models.Model):
         # is_encrypted distinguishes an accidental blank from an intentional clear:
         # disabling encryption sets it False, so that blank still persists.
         # update_fields is the 4th positional in Model.save(), so read args too.
-        update_fields = kwargs.get("update_fields", args[3] if len(args) > 3 else None)
+        # Django accepts any iterable, and both the membership test below and
+        # Model.save() itself consume it, so materialize it once and hand the
+        # same collection on rather than an exhausted generator.
+        update_fields_index = 3
+        passed_positionally = len(args) > update_fields_index
+        update_fields = args[update_fields_index] if passed_positionally else kwargs.get("update_fields")
+        if update_fields is not None:
+            update_fields = frozenset(update_fields)
+            if passed_positionally:
+                args = args[:update_fields_index] + (update_fields,) + args[update_fields_index + 1 :]
+            else:
+                kwargs["update_fields"] = update_fields
+
         if (
             self.pk
             and self.is_encrypted
