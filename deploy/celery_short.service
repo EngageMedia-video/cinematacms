@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=www-data
 Group=www-data
-EnvironmentFile=-/etc/cinematacms/observability.env
+EnvironmentFile=/etc/cinematacms/app.env
 Restart=always
 RestartSec=10
 Environment=APP_DIR="/home/cinemata/cinematacms"

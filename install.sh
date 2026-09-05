@@ -418,23 +418,9 @@ make
 cd ../cinematacms || exit 1
 
 SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
-
-CURRENT_STEP="application settings"
-FRONTEND_HOST_HTTP_PREFIX="http://$FRONTEND_HOST"
-
-{
-    echo 'FRONTEND_HOST='\'"$FRONTEND_HOST_HTTP_PREFIX"\'
-    echo 'PORTAL_NAME='\'"$PORTAL_NAME"\'
-    echo "SSL_FRONTEND_HOST = FRONTEND_HOST.replace('http', 'https')"
-
-    # Add the entered domain to ALLOWED_HOSTS. settings.py appends FRONTEND_HOST
-    # before local_settings.py is imported, so this is the effective override.
-    echo "ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '$FRONTEND_HOST']"
-    echo 'SECRET_KEY='\'"$SECRET_KEY"\'
-    echo "LOCAL_INSTALL = True"
-    echo "SITE_ID = 1"
-    echo "MP4HLS_COMMAND = '/opt/bento4/bin/mp4hls'"
-} >> cms/local_settings.py
+export SECRET_KEY PORTAL_NAME FRONTEND_HOST
+export CINEMATACMS_APP_SECRET_KEY="$SECRET_KEY"
+export CINEMATACMS_APP_PORTAL_NAME="$PORTAL_NAME"
 
 mkdir -p logs
 mkdir -p pids

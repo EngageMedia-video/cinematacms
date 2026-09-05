@@ -4,6 +4,37 @@ Use `install.sh` for a new Ubuntu 22.04 server. Use
 `deploy/apply-release-config.sh` after an application upgrade. Both commands use
 the same nginx, systemd, and observability files.
 
+## Runtime configuration
+
+CinemataCMS reads deployment-varying application settings only from environment
+variables. Local development loads the repository `.env` file. Systemd services
+load `/etc/cinematacms/app.env`; `deploy/apply-release-config.sh` creates it with
+mode `0640`, preserves operator-managed values, and supplies stable telemetry
+worker identity values.
+
+`/etc/cinematacms/deployment.env` contains only inputs owned by the release tool,
+such as domain, proxy, and observability mode. It is not loaded by Django.
+
+During the first upgrade, the release updater imports supported values from the
+ignored legacy `cms/local_settings.py` and `/etc/cinematacms/observability.env`.
+The application no longer imports either legacy configuration source.
+If a client has an uppercase legacy setting outside the migration contract, the
+upgrade stops and reports only its name. Add an explicit environment mapping or
+confirm that the setting is obsolete before retrying; values are never printed.
+
+Existing installations must provision the runtime environment before installing
+or restarting the new systemd units:
+
+```bash
+sudo git -C /home/cinemata/cinematacms pull --ff-only
+sudo /home/cinemata/cinematacms/deploy/apply-release-config.sh --no-restart
+sudo /home/cinemata/cinematacms/restart_script.sh
+```
+
+The CI deploy job performs these steps in this order. This ordering also makes
+the first deployment safe when the currently running `restart_script.sh` comes
+from a release that predates `app.env`.
+
 ## Install a new server
 
 Run the interactive installer:

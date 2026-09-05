@@ -12,6 +12,8 @@ INSTALLER = PROJECT_ROOT / "install.sh"
 UPDATER = PROJECT_ROOT / "deploy" / "apply-release-config.sh"
 LOCAL_OBSERVABILITY_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-observability.sh"
 RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
+CI_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
+APP_ENV_RENDERER = PROJECT_ROOT / "deploy" / "render-app-env.py"
 
 
 class InstallScriptTests(unittest.TestCase):
@@ -674,11 +676,16 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertTrue((self.deploy_root / "etc/nginx/conf.d/cloudflare_real_ip.conf").is_file())
         self.assertTrue((self.deploy_root / "etc/cinematacms/prometheus.yml").is_file())
         self.assertTrue((self.deploy_root / "etc/cinematacms/otelcol-contrib.yml").is_file())
-        observability_env = (self.deploy_root / "etc/cinematacms/observability.env").read_text()
-        self.assertIn("OTEL_ENABLED=true", observability_env)
+        app_env_path = self.deploy_root / "etc/cinematacms/app.env"
+        app_env = app_env_path.read_text()
+        self.assertIn("OTEL_ENABLED=true", app_env)
+        self.assertIn("FRONTEND_HOST=https://video.example.org", app_env)
+        self.assertRegex(app_env, r"TELEMETRY_WORKER_ID=[0-9a-f-]{36}")
+        self.assertRegex(app_env, r"TELEMETRY_WORKER_HMAC_KEY=[A-Za-z0-9_-]{40,}")
+        self.assertFalse((self.deploy_root / "etc/cinematacms/observability.env").exists())
         for unit in ("mediacms", "celery_long", "celery_short", "celery_whisper", "celery_email", "celery_beat"):
             unit_text = (self.deploy_root / f"etc/systemd/system/{unit}.service").read_text()
-            self.assertIn("EnvironmentFile=-/etc/cinematacms/observability.env", unit_text)
+            self.assertIn("EnvironmentFile=/etc/cinematacms/app.env", unit_text)
         site = (self.deploy_root / "etc/nginx/sites-available/mediacms.io").read_text()
         self.assertIn("server_name video.example.org;", site)
         self.assertEqual(site.count("cinematacms-metrics.conf"), 2)
@@ -776,6 +783,9 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             "--no-restart",
         )
         self.assertEqual(first.returncode, 0, first.stderr)
+        app_env_path = self.deploy_root / "etc/cinematacms/app.env"
+        original_app_env = app_env_path.read_text()
+        app_env_path.write_text(original_app_env + "EMAIL_HOST=smtp.example.org\n")
         site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
         site_path.write_text(site_path.read_text() + "# retained Certbot configuration\n")
 
@@ -785,7 +795,115 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         site = site_path.read_text()
         self.assertEqual(site.count("cinematacms-metrics.conf"), 2)
         self.assertIn("# retained Certbot configuration", site)
+        updated_app_env = app_env_path.read_text()
+        self.assertIn("EMAIL_HOST=smtp.example.org", updated_app_env)
+        for key in ("TELEMETRY_WORKER_ID", "TELEMETRY_WORKER_HMAC_KEY"):
+            original_value = next(line for line in original_app_env.splitlines() if line.startswith(f"{key}="))
+            self.assertIn(original_value, updated_app_env)
         self.assertFalse((self.deploy_root / "etc/nginx/conf.d/cloudflare_real_ip.conf").exists())
+
+    def test_first_apply_migrates_and_removes_legacy_observability_environment(self):
+        legacy_path = self.deploy_root / "etc/cinematacms/observability.env"
+        legacy_path.parent.mkdir(parents=True)
+        legacy_path.write_text("OTEL_SERVICE_NAMESPACE=legacy-namespace\n")
+
+        result = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "local",
+            "--no-restart",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(
+            "OTEL_SERVICE_NAMESPACE=legacy-namespace",
+            (self.deploy_root / "etc/cinematacms/app.env").read_text(),
+        )
+        self.assertFalse(legacy_path.exists())
+
+    def test_legacy_python_settings_are_translated_to_supported_environment_keys(self):
+        legacy = Path(self.temp_dir.name) / "local_settings.py"
+        output = Path(self.temp_dir.name) / "app.env"
+        legacy.write_text(
+            "CORS_ALLOW_ALL_ORIGINS = False\n"
+            "CORS_ALLOWED_ORIGINS = ['https://video.example.org']\n"
+            "CACHES = {'default': {'LOCATION': 'redis://cache.example/4'}}\n"
+            "DJANGO_ADMIN_URL = 'private-admin/'\n"
+            "MAINTENANCE_MODE = True\n"
+            "RECAPTCHA_PRIVATE_KEY = 'private-placeholder'\n"
+            "SECURE_HSTS_SECONDS = 31536000\n"
+            "UI_VARIANT_ALLOWED = ['legacy', 'revamp']\n"
+            "UPLOAD_MAX_SIZE = 123456\n"
+            "WHISPER_MODEL = 'large-v3'\n"
+            "WHISPER_CPP_DIR = '/opt/whisper'\n"
+            "WHISPER_CPP_COMMAND = '/opt/whisper/whisper-cli'\n"
+            "WHISPER_CPP_MODEL = '/opt/whisper/model.bin'\n"
+        )
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(APP_ENV_RENDERER),
+                "--output",
+                str(output),
+                "--domain",
+                "video.example.org",
+                "--otel-enabled",
+                "false",
+                "--legacy-local-settings",
+                str(legacy),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        migrated = output.read_text()
+        self.assertIn("CORS_ALLOW_ALL_ORIGINS=false", migrated)
+        self.assertIn("CORS_ALLOWED_ORIGINS=https://video.example.org", migrated)
+        self.assertIn("REDIS_LOCATION=redis://cache.example/4", migrated)
+        self.assertIn("DJANGO_ADMIN_URL=private-admin/", migrated)
+        self.assertIn("MAINTENANCE_MODE=true", migrated)
+        self.assertIn("RECAPTCHA_PRIVATE_KEY=private-placeholder", migrated)
+        self.assertIn("SECURE_HSTS_SECONDS=31536000", migrated)
+        self.assertIn("UI_VARIANT_ALLOWED=legacy,revamp", migrated)
+        self.assertIn("UPLOAD_MAX_SIZE=123456", migrated)
+        self.assertIn("WHISPER_MODEL_SIZE=large-v3", migrated)
+        self.assertIn("WHISPER_CPP_DIR=/opt/whisper", migrated)
+        self.assertIn("WHISPER_CPP_COMMAND=/opt/whisper/whisper-cli", migrated)
+        self.assertIn("WHISPER_CPP_MODEL=/opt/whisper/model.bin", migrated)
+
+    def test_unknown_legacy_setting_stops_migration_without_printing_its_value(self):
+        legacy = Path(self.temp_dir.name) / "local_settings.py"
+        output = Path(self.temp_dir.name) / "app.env"
+        legacy.write_text("CLIENT_ONLY_SETTING = 'do-not-print-this-value'\n")
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(APP_ENV_RENDERER),
+                "--output",
+                str(output),
+                "--domain",
+                "video.example.org",
+                "--otel-enabled",
+                "false",
+                "--legacy-local-settings",
+                str(legacy),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("CLIENT_ONLY_SETTING", result.stderr)
+        self.assertNotIn("do-not-print-this-value", result.stderr)
+        self.assertFalse(output.exists())
 
     def test_failed_nginx_validation_restores_existing_site(self):
         site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
@@ -873,10 +991,27 @@ class RestartScriptTests(unittest.TestCase):
         units = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
 
         self.assertIn("set -e", script)
+        self.assertIn("deploy/apply-release-config.sh --no-restart", script)
+        configure_position = script.index("deploy/apply-release-config.sh --no-restart")
+        load_position = script.index("source /etc/cinematacms/app.env")
+        migrate_position = script.index("python manage.py migrate")
+        self.assertLess(configure_position, load_position)
+        self.assertLess(load_position, migrate_position)
         self.assertIn(f"for unit in {units}; do", script)
         self.assertIn('install -m 0644 "deploy/$unit.service" "/etc/systemd/system/$unit.service"', script)
         self.assertIn(f"systemctl enable {units}", script)
         self.assertIn(f"systemctl restart {units}", script)
+
+    def test_deployer_bootstraps_runtime_config_before_running_restart_script(self):
+        workflow = CI_WORKFLOW.read_text()
+        pull = "sudo git -C /home/cinemata/cinematacms pull --ff-only"
+        configure = "sudo /home/cinemata/cinematacms/deploy/apply-release-config.sh --no-restart"
+        restart = "sudo /home/cinemata/cinematacms/restart_script.sh"
+
+        self.assertLess(workflow.index(pull), workflow.index(configure))
+        self.assertLess(workflow.index(configure), workflow.index(restart))
+        self.assertNotIn("local_settings_example.py", workflow)
+        self.assertNotIn("Materialize CI local_settings", workflow)
 
 
 if __name__ == "__main__":

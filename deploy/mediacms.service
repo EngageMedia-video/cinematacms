@@ -2,7 +2,7 @@
 Description=uwsgi cinemata
 
 [Service]
-EnvironmentFile=-/etc/cinematacms/observability.env
+EnvironmentFile=/etc/cinematacms/app.env
 Environment=PROMETHEUS_MULTIPROC_DIR="/tmp/prometheus_multiproc"
 Environment=OTEL_SERVICE_ROLE="web"
 ExecStartPre=/bin/bash -c "mkdir -p /tmp/prometheus_multiproc && chown www-data:www-data /tmp/prometheus_multiproc"
