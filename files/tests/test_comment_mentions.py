@@ -4,8 +4,7 @@ import json
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.core import mail
-from django.test import Client, TestCase, override_settings
+from django.test import Client, TestCase
 
 from files.models import Comment, Media
 from notifications.models import Notification, NotificationType
@@ -163,9 +162,13 @@ class CommentMentionNotificationTest(TestCase):
         self.assertNotIn("Locked Film", message)
         self.assertEqual(message, "media_owner mentioned you in a comment")
 
-    @override_settings(CELERY_EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_the_mention_email_never_carries_a_hidden_title(self, _):
-        """The title must be gone before the row is written; an email cannot be un-sent."""
+        """The title must be gone before the row is written; an email cannot be un-sent.
+
+        Asserted on the envelope handed to the delivery layer, which is where the
+        message text is finalised, rather than on a sent message: delivery is
+        deferred to a Celery task on transaction commit.
+        """
         from notifications.tasks import send_notification_email
 
         media = self._password_protected_media()
@@ -177,13 +180,13 @@ class CommentMentionNotificationTest(TestCase):
         )
 
         notification = self._mentions_for(self.mentioned).get()
-        mail.outbox = []
-        send_notification_email(notification.id)
+        with patch("notifications.tasks.enqueue") as enqueue:
+            send_notification_email(notification.id)
 
-        self.assertEqual(len(mail.outbox), 1)
-        sent = mail.outbox[0]
-        self.assertNotIn("Locked Film", sent.subject)
-        self.assertNotIn("Locked Film", sent.body)
+        enqueue.assert_called_once()
+        envelope = enqueue.call_args.args[0]
+        self.assertNotIn("Locked Film", envelope.subject)
+        self.assertNotIn("Locked Film", envelope.text_body)
 
     def test_private_media_mention_hides_the_title(self, _):
         private_media = _create_media(
