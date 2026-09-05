@@ -1010,6 +1010,8 @@ class RestartScriptTests(unittest.TestCase):
 
         self.assertLess(workflow.index(pull), workflow.index(configure))
         self.assertLess(workflow.index(configure), workflow.index(restart))
+        self.assertNotIn("local_settings_example.py", workflow)
+        self.assertNotIn("Materialize CI local_settings", workflow)
 
 
 if __name__ == "__main__":
