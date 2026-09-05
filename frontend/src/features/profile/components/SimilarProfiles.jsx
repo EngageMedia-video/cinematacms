@@ -25,7 +25,7 @@ export function SimilarProfiles({ author }) {
 				as="h2"
 				id="similar-profiles-heading"
 			/>
-			<div className="mt-4 grid grid-cols-1 gap-5 sm:ml-[57px] sm:grid-cols-2 xl:grid-cols-4">
+			<div className="mt-4 grid grid-cols-1 gap-5 sm:ml-[57px] sm:grid-cols-2 lg:grid-cols-3 xl:ml-0 xl:grid-cols-4">
 				{isLoading
 					? Array.from({ length: 4 }, (_, index) => (
 							<div
@@ -42,7 +42,7 @@ export function SimilarProfiles({ author }) {
 								<Card
 									key={profile.username}
 									variant="outlined"
-									className="flex min-h-[310px] flex-col items-center gap-4 bg-bg-surface-raised p-6 text-center"
+									className="flex min-h-[310px] min-w-0 flex-col items-center gap-4 bg-bg-surface-raised p-6 text-center"
 								>
 									<Avatar
 										name={name}
@@ -50,12 +50,16 @@ export function SimilarProfiles({ author }) {
 										alt={`${name}'s profile photo`}
 										style={{ width: 80, height: 80 }}
 									/>
-									<div className="min-w-0">
-										<Text as="h3" variant="h5-bold" className="m-0 text-text-primary">
+									<div className="w-full min-w-0">
+										<Text as="h3" variant="h5-bold" className="m-0 break-words text-text-primary">
 											{name}
 										</Text>
 										<div className="mt-1 flex items-center justify-center gap-1">
-											<Text as="span" variant="body-16-medium" className="text-text-accent">
+											<Text
+												as="span"
+												variant="body-16-medium"
+												className="min-w-0 break-all text-text-accent"
+											>
 												@{profile.username}
 											</Text>
 											{profile.is_trusted ? (
@@ -80,11 +84,11 @@ export function SimilarProfiles({ author }) {
 												{profile.location}
 											</Text>
 										) : null}
-										<div className="flex items-center gap-4">
+										<div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
 											<Text
 												as="p"
 												variant="body-14"
-												className="m-0 inline-flex items-center gap-2 text-text-secondary"
+												className="m-0 inline-flex items-center gap-2 whitespace-nowrap text-text-secondary"
 											>
 												<Icon name="profileVideoCount" size="xs" decorative />
 												{mediaCount.toLocaleString()} {mediaCount === 1 ? 'video' : 'videos'}
@@ -93,7 +97,7 @@ export function SimilarProfiles({ author }) {
 												<Text
 													as="p"
 													variant="body-14"
-													className="m-0 inline-flex items-center gap-2 text-text-secondary"
+													className="m-0 inline-flex items-center gap-2 whitespace-nowrap text-text-secondary"
 												>
 													<Icon name="profileMemberSince" size="xs" decorative />
 													{joinedLabel}
