@@ -5,12 +5,26 @@ set -e
 # Run as root
 
 PULL_LATEST=true
-if [ "${1:-}" = "--no-pull" ]; then
-  PULL_LATEST=false
-elif [ "$#" -gt 0 ]; then
-  echo "Usage: $0 [--no-pull]" >&2
-  exit 2
-fi
+DEPLOY_REVISION=""
+case "${1:-}" in
+  --no-pull)
+    PULL_LATEST=false
+    ;;
+  --revision)
+    if [[ "${2:-}" =~ ^[0-9a-f]{40}$ ]] && [ "$#" -eq 2 ]; then
+      DEPLOY_REVISION="$2"
+    else
+      echo "--revision requires a full 40-character lowercase commit SHA" >&2
+      exit 2
+    fi
+    ;;
+  "")
+    ;;
+  *)
+    echo "Usage: $0 [--no-pull | --revision COMMIT_SHA]" >&2
+    exit 2
+    ;;
+esac
 
 if [ `id -u` -ne 0 ]
   then echo "Please run as root"
@@ -34,7 +48,11 @@ mkdir -p "$(dirname "$DEPLOY_LOG")"
 PREV_SHA="${CINEMATA_PREV_SHA:-$(git rev-parse HEAD)}"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-if [ "$PULL_LATEST" = true ]; then
+if [ -n "$DEPLOY_REVISION" ]; then
+  echo "Deploying requested commit $DEPLOY_REVISION..."
+  git fetch origin "$DEPLOY_REVISION"
+  git merge --ff-only "$DEPLOY_REVISION"
+elif [ "$PULL_LATEST" = true ]; then
   echo "Pulling latest changes from git repository..."
   git pull --ff-only
 fi

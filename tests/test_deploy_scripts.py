@@ -1038,15 +1038,21 @@ class RestartScriptTests(unittest.TestCase):
         self.assertIn(f"systemctl enable {units}", script)
         self.assertIn(f"systemctl restart {units}", script)
 
-    def test_deployer_bootstraps_runtime_config_before_running_restart_script(self):
-        workflow = CI_WORKFLOW.read_text()
-        fetch = "sudo git -C /home/cinemata/cinematacms fetch origin ${{ github.sha }}"
-        merge = "sudo git -C /home/cinemata/cinematacms merge --ff-only ${{ github.sha }}"
-        restart = "/home/cinemata/cinematacms/restart_script.sh --no-pull"
+    def test_restart_can_deploy_an_exact_revision(self):
+        script = RESTART_SCRIPT.read_text()
 
-        self.assertLess(workflow.index(fetch), workflow.index(merge))
-        self.assertLess(workflow.index(merge), workflow.index(restart))
-        self.assertIn('CINEMATA_PREV_SHA="$previous_sha"', workflow)
+        self.assertIn("--revision requires a full 40-character lowercase commit SHA", script)
+        self.assertIn('git fetch origin "$DEPLOY_REVISION"', script)
+        self.assertIn('git merge --ff-only "$DEPLOY_REVISION"', script)
+
+    def test_deployer_uses_the_authorized_restart_boundary(self):
+        workflow = CI_WORKFLOW.read_text()
+        restart = "sudo /home/cinemata/cinematacms/restart_script.sh"
+
+        self.assertEqual(workflow.count(restart), 2)
+        self.assertIn(f"{restart} --revision ${{{{ github.sha }}}}", workflow)
+        self.assertNotIn("sudo git", workflow)
+        self.assertNotIn("sudo env", workflow)
         self.assertNotIn("local_settings_example.py", workflow)
         self.assertNotIn("Materialize CI local_settings", workflow)
 

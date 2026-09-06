@@ -311,10 +311,11 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh ${{ secrets.DEPLOY_DEV_USER }}@${{ secrets.DEPLOY_DEV_HOST }} \
-            'previous_sha=$(sudo git -C /home/cinemata/cinematacms rev-parse HEAD) &&
-             sudo git -C /home/cinemata/cinematacms fetch origin ${{ github.sha }} &&
-             sudo git -C /home/cinemata/cinematacms merge --ff-only ${{ github.sha }} &&
-             sudo env CINEMATA_PREV_SHA="$previous_sha" /home/cinemata/cinematacms/restart_script.sh --no-pull'
+            'if grep -q -- "--revision" /home/cinemata/cinematacms/restart_script.sh; then
+               sudo /home/cinemata/cinematacms/restart_script.sh --revision ${{ github.sha }};
+             else
+               sudo /home/cinemata/cinematacms/restart_script.sh;
+             fi'
 
       - name: Set deployment success
         if: success()
