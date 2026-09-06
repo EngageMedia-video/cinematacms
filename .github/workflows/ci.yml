@@ -311,9 +311,10 @@ jobs:
       - name: Deploy via SSH
         run: |
           ssh ${{ secrets.DEPLOY_DEV_USER }}@${{ secrets.DEPLOY_DEV_HOST }} \
-            'sudo git -C /home/cinemata/cinematacms pull --ff-only &&
-             sudo /home/cinemata/cinematacms/deploy/apply-release-config.sh --no-restart &&
-             sudo /home/cinemata/cinematacms/restart_script.sh'
+            'previous_sha=$(sudo git -C /home/cinemata/cinematacms rev-parse HEAD) &&
+             sudo git -C /home/cinemata/cinematacms fetch origin ${{ github.sha }} &&
+             sudo git -C /home/cinemata/cinematacms merge --ff-only ${{ github.sha }} &&
+             sudo env CINEMATA_PREV_SHA="$previous_sha" /home/cinemata/cinematacms/restart_script.sh --no-pull'
 
       - name: Set deployment success
         if: success()

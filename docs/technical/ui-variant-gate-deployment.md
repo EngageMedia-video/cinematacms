@@ -24,18 +24,19 @@ Ship the gate in a dormant state first, then enable the revamp per page through 
 
 ## Recommended Production Configuration
 
-Add or override the gate settings in `.env`:
+Add or override the gate settings in `/etc/cinematacms/app.env`. The repository
+`.env` file is only for local development.
 
-```python
+```dotenv
 # UI variant gate
-UI_VARIANT_ALLOWED = ["legacy", "revamp"]
+UI_VARIANT_ALLOWED=legacy,revamp
 
 # Recommended explicit production fallback even though the resolver already
 # treats legacy as authoritative when both tracks are allowed.
-UI_VARIANT_DEFAULT = "legacy"
+UI_VARIANT_DEFAULT=legacy
 
 # Start empty for a no-risk deploy. Add page keys only when ready to roll out.
-UI_VARIANT_REVAMP_PAGES = []
+UI_VARIANT_REVAMP_PAGES=
 ```
 
 Production should also ensure Vite dev mode is disabled:

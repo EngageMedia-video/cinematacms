@@ -105,7 +105,12 @@ def migrate_local_settings(path):
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, (ast.Assign, ast.AnnAssign)):
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
-            assigned.update(target.id for target in targets if isinstance(target, ast.Name) and target.id.isupper())
+            for target in targets:
+                assigned.update(
+                    name.id
+                    for name in ast.walk(target)
+                    if isinstance(name, ast.Name) and isinstance(name.ctx, ast.Store) and name.id.isupper()
+                )
     supported = set(DIRECT_SETTINGS) | STRUCTURED_SETTINGS | IGNORED_LEGACY_SETTINGS
     unknown = sorted(name for name in assigned if not name.startswith("_") and name not in supported)
     if unknown:
@@ -158,6 +163,11 @@ def main():
         values["SECRET_KEY"] = serialize(os.environ["CINEMATACMS_APP_SECRET_KEY"])
     if "CINEMATACMS_APP_PORTAL_NAME" in os.environ:
         values["PORTAL_NAME"] = serialize(os.environ["CINEMATACMS_APP_PORTAL_NAME"])
+    if "CINEMATACMS_APP_FRONTEND_HOST" in os.environ:
+        frontend_host = os.environ["CINEMATACMS_APP_FRONTEND_HOST"]
+        if "://" not in frontend_host:
+            frontend_host = f"https://{frontend_host}"
+        values["FRONTEND_HOST"] = serialize(frontend_host)
     values.setdefault("SECRET_KEY", serialize(secrets.token_urlsafe(50)))
     values.setdefault("FRONTEND_HOST", serialize(f"https://{args.domain}"))
     values.setdefault("ALLOWED_HOSTS", serialize(f"127.0.0.1,localhost,{args.domain}"))

@@ -355,6 +355,14 @@ class InstallScriptTests(unittest.TestCase):
         self.assertIn("observability=local", result.stdout)
         self.assertIn("No changes were made.", result.stdout)
 
+    def test_installer_preserves_url_separately_from_certificate_domain(self):
+        script = INSTALLER.read_text()
+
+        self.assertIn('FRONTEND_DOMAIN="${FRONTEND_HOST#http://}"', script)
+        self.assertIn("export SECRET_KEY PORTAL_NAME FRONTEND_HOST", script)
+        self.assertIn('export CINEMATACMS_APP_FRONTEND_HOST="$FRONTEND_DOMAIN"', script)
+        self.assertIn('--domain "$FRONTEND_DOMAIN"', script)
+
     def test_non_interactive_dry_run_rejects_portal_name_with_backslash(self):
         result = self.run_installer(
             "--non-interactive",
@@ -905,6 +913,34 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertNotIn("do-not-print-this-value", result.stderr)
         self.assertFalse(output.exists())
 
+    def test_destructured_unknown_legacy_setting_stops_migration(self):
+        legacy = Path(self.temp_dir.name) / "local_settings.py"
+        output = Path(self.temp_dir.name) / "app.env"
+        legacy.write_text("DEBUG, CLIENT_ONLY_SETTING = False, 'private-value'\n")
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(APP_ENV_RENDERER),
+                "--output",
+                str(output),
+                "--domain",
+                "video.example.org",
+                "--otel-enabled",
+                "false",
+                "--legacy-local-settings",
+                str(legacy),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("CLIENT_ONLY_SETTING", result.stderr)
+        self.assertNotIn("private-value", result.stderr)
+        self.assertFalse(output.exists())
+
     def test_failed_nginx_validation_restores_existing_site(self):
         site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
         site_path.parent.mkdir(parents=True)
@@ -1004,12 +1040,13 @@ class RestartScriptTests(unittest.TestCase):
 
     def test_deployer_bootstraps_runtime_config_before_running_restart_script(self):
         workflow = CI_WORKFLOW.read_text()
-        pull = "sudo git -C /home/cinemata/cinematacms pull --ff-only"
-        configure = "sudo /home/cinemata/cinematacms/deploy/apply-release-config.sh --no-restart"
-        restart = "sudo /home/cinemata/cinematacms/restart_script.sh"
+        fetch = "sudo git -C /home/cinemata/cinematacms fetch origin ${{ github.sha }}"
+        merge = "sudo git -C /home/cinemata/cinematacms merge --ff-only ${{ github.sha }}"
+        restart = "/home/cinemata/cinematacms/restart_script.sh --no-pull"
 
-        self.assertLess(workflow.index(pull), workflow.index(configure))
-        self.assertLess(workflow.index(configure), workflow.index(restart))
+        self.assertLess(workflow.index(fetch), workflow.index(merge))
+        self.assertLess(workflow.index(merge), workflow.index(restart))
+        self.assertIn('CINEMATA_PREV_SHA="$previous_sha"', workflow)
         self.assertNotIn("local_settings_example.py", workflow)
         self.assertNotIn("Materialize CI local_settings", workflow)
 

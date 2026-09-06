@@ -21,6 +21,11 @@ class RuntimeConfigTests(unittest.TestCase):
         with patch.dict(os.environ, {"FLOAT_VALUE": "0,25"}, clear=False):
             self.assertEqual(env_float("FLOAT_VALUE", 1.0), 1.0)
 
+    def test_invalid_boolean_uses_the_declared_default(self):
+        with patch.dict(os.environ, {"EMAIL_USE_TLS": "tru"}, clear=False):
+            self.assertTrue(env_bool("EMAIL_USE_TLS", True))
+            self.assertFalse(env_bool("EMAIL_USE_TLS", False))
+
     def test_optional_boolean_distinguishes_unset_from_false(self):
         with patch.dict(os.environ, {}, clear=True):
             self.assertIsNone(env_optional_bool("OPTIONAL_VALUE"))
