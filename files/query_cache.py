@@ -23,10 +23,12 @@ import logging
 from typing import Any
 
 from django.conf import settings
-from django.core.cache import cache
 from django.core.serializers.json import DjangoJSONEncoder
 
-from .metrics import record_cache_operation
+from cms.cache_telemetry import owned_cache
+
+query_cache = owned_cache.bind("query")
+query_version_cache = owned_cache.bind("query_version")
 
 logger = logging.getLogger(__name__)
 
@@ -73,10 +75,10 @@ def _get_cache_version(scope: str, identifier: str) -> int:
     """
     try:
         version_key = _get_cache_version_key(scope, identifier)
-        version = cache.get(version_key)
+        version = query_version_cache.get(version_key)
         if version is None:
             # Initialize version to 1 with TTL on first access
-            cache.set(version_key, 1, CACHE_VERSION_TIMEOUT)
+            query_version_cache.set(version_key, 1, CACHE_VERSION_TIMEOUT)
             return 1
         return int(version)
     except Exception as e:
@@ -102,24 +104,29 @@ def _bump_cache_version(scope: str, identifier: str) -> int:
         version_key = _get_cache_version_key(scope, identifier)
 
         # Check if key exists first
-        current_version = cache.get(version_key)
+        current_version = query_version_cache.get(version_key)
         if current_version is None:
             # Initialize on first bump with TTL
-            cache.set(version_key, 1, CACHE_VERSION_TIMEOUT)
+            query_version_cache.set(version_key, 1, CACHE_VERSION_TIMEOUT)
             logger.debug(f"Initialized cache version for {scope}:{identifier} to 1")
             return 1
 
         # Try atomic increment (Redis, Memcached)
         try:
-            new_version = cache.incr(version_key)
-            # Do NOT call cache.set() here - it would create a race condition
-            # The TTL was set during initialization and persists across incr() calls
-            logger.debug(f"Bumped cache version for {scope}:{identifier} to {new_version}")
-            return new_version
-        except (AttributeError, ValueError):
+            new_version = query_version_cache.incr(version_key)
+            # The adapter is fail-soft: a backend failure returns 0, which is
+            # never a usable version, so fall back to an explicit set.
+            if new_version > current_version:
+                # Do NOT call set() here on success - it would create a race
+                # condition. The TTL was set during initialization and
+                # persists across incr() calls.
+                logger.debug(f"Bumped cache version for {scope}:{identifier} to {new_version}")
+                return new_version
+            raise ValueError("increment did not advance the version")
+        except (AttributeError, ValueError, TypeError):
             # Fallback for backends without incr support
             new_version = current_version + 1
-            cache.set(version_key, new_version, CACHE_VERSION_TIMEOUT)
+            query_version_cache.set(version_key, new_version, CACHE_VERSION_TIMEOUT)
             logger.debug(f"Bumped cache version for {scope}:{identifier} to {new_version} (fallback)")
             return new_version
 
@@ -293,18 +300,15 @@ def get_cached_result(cache_key: str) -> Any | None:
         Cached result or None if not found
     """
     try:
-        result = cache.get(cache_key, version=QUERY_CACHE_VERSION)
+        result = query_cache.get(cache_key, version=QUERY_CACHE_VERSION)
         if result is not None:
             logger.debug(f"Query cache HIT: {cache_key}")
-            record_cache_operation("query", "get", hit=True)
             return result
         else:
             logger.debug(f"Query cache MISS: {cache_key}")
-            record_cache_operation("query", "get", hit=False)
             return None
     except Exception as e:
         logger.warning(f"Cache get failed for {cache_key}: {e}")
-        record_cache_operation("query", "get", ok=False)
         return None
 
 
@@ -321,13 +325,11 @@ def set_cached_result(cache_key: str, data: Any, timeout: int) -> bool:
         bool: True if successful
     """
     try:
-        cache.set(cache_key, data, timeout, version=QUERY_CACHE_VERSION)
+        stored = query_cache.set(cache_key, data, timeout, version=QUERY_CACHE_VERSION)
         logger.debug(f"Query cache SET: {cache_key} (TTL: {timeout}s)")
-        record_cache_operation("query", "set")
-        return True
+        return stored
     except Exception as e:
         logger.warning(f"Cache set failed for {cache_key}: {e}")
-        record_cache_operation("query", "set", ok=False)
         return False
 
 

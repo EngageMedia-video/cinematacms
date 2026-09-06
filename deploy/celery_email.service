@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=www-data
 Group=www-data
-EnvironmentFile=-/etc/cinematacms/observability.env
+EnvironmentFile=/etc/cinematacms/app.env
 Environment=APP_DIR="/home/cinemata/cinematacms"
 Environment=CELERY_QUEUE="email_tasks"
 Environment=CELERY_BIN="/home/cinemata/bin/celery"

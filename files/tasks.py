@@ -16,7 +16,6 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.signals import task_revoked, worker_shutting_down
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from django.core.cache import cache
 from django.core.files import File
 from django.db import transaction
 from django.db.models import F, Q
@@ -24,6 +23,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from actions.models import USER_MEDIA_ACTIONS, MediaAction
+from cms.cache_telemetry import owned_cache
 from cms.observability import inject_trace_headers, start_span
 from users.models import User
 
@@ -58,6 +58,10 @@ from .models import (
 )
 from .query_cache import invalidate_media_cache
 from .sprites import generate_sprite_for_media
+
+hls_coordination_cache = owned_cache.bind("hls_coordination")
+popular_media_cache = owned_cache.bind("popular_media")
+scheduled_task_lock_cache = owned_cache.bind("scheduled_task_lock")
 
 logger = get_task_logger(__name__)
 
@@ -809,8 +813,8 @@ def create_hls(friendly_token):
     pending_key = f"create_hls_pending_{p}"
     timeout_retry_key = f"create_hls_timeout_retries_{p}"
     lock_token = produce_friendly_token()
-    if not cache.add(lock_key, lock_token, timeout=HLS_LOCK_TIMEOUT):
-        cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
+    if not hls_coordination_cache.add(lock_key, lock_token, timeout=HLS_LOCK_TIMEOUT):
+        hls_coordination_cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
         logger.info("create_hls already running for media %s, queued follow-up run", friendly_token)
         record_domain_outcome("hls", "retried", "lock_held")
         return True
@@ -850,9 +854,9 @@ def create_hls(friendly_token):
             # them instead of the immediate overlap retry used for lock
             # contention. This avoids looping a worker for
             # MP4HLS_SUBPROCESS_TIMEOUT seconds on an input that never fits.
-            attempts = (cache.get(timeout_retry_key) or 0) + 1
+            attempts = (hls_coordination_cache.get(timeout_retry_key) or 0) + 1
             if attempts <= HLS_TIMEOUT_MAX_RETRIES:
-                cache.set(timeout_retry_key, attempts, timeout=HLS_TIMEOUT_RETRY_KEY_TIMEOUT)
+                hls_coordination_cache.set(timeout_retry_key, attempts, timeout=HLS_TIMEOUT_RETRY_KEY_TIMEOUT)
                 logger.info(
                     "scheduling bounded timeout retry %s/%s for media %s in %ss",
                     attempts,
@@ -863,7 +867,7 @@ def create_hls(friendly_token):
                 create_hls.apply_async(args=[friendly_token], countdown=HLS_TIMEOUT_RETRY_DELAY)
                 record_domain_outcome("hls", "retried", "subprocess_timeout")
             else:
-                cache.delete(timeout_retry_key)
+                hls_coordination_cache.delete(timeout_retry_key)
                 logger.error(
                     "mp4hls timed out %s times for media %s, giving up and preserving last known-good hls_file",
                     HLS_TIMEOUT_MAX_RETRIES,
@@ -913,10 +917,10 @@ def create_hls(friendly_token):
                 record_domain_outcome("hls", "failed", "encryption_bypass")
                 return True
 
-        if cache.get(lock_key) != lock_token:
+        if hls_coordination_cache.get(lock_key) != lock_token:
             logger.warning("create_hls lock expired for media %s, discarding stale output", friendly_token)
             shutil.rmtree(output_dir, ignore_errors=True)
-            cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
+            hls_coordination_cache.set(pending_key, "1", timeout=HLS_PENDING_RETRY_TIMEOUT)
             record_domain_outcome("hls", "cancelled", "lock_expired")
             return True
 
@@ -945,15 +949,15 @@ def create_hls(friendly_token):
 
         # A successful regeneration clears any prior timeout backoff so a media
         # that once timed out (e.g. transient load) starts fresh next time.
-        cache.delete(timeout_retry_key)
+        hls_coordination_cache.delete(timeout_retry_key)
         record_domain_outcome("hls", "succeeded", "none")
     finally:
         released_lock = False
-        if cache.get(lock_key) == lock_token:
-            cache.delete(lock_key)
+        if hls_coordination_cache.get(lock_key) == lock_token:
+            hls_coordination_cache.delete(lock_key)
             released_lock = True
-        if cache.get(pending_key) and (released_lock or cache.get(lock_key) is None):
-            cache.delete(pending_key)
+        if hls_coordination_cache.get(pending_key) and (released_lock or hls_coordination_cache.get(lock_key) is None):
+            hls_coordination_cache.delete(pending_key)
             create_hls.apply_async(args=[friendly_token])
 
     return True
@@ -1208,7 +1212,7 @@ def get_list_of_popular_media():
     media_ids = [a[0] for a in x]
     media_ids.extend([a[0] for a in y])
     media_ids = list(set(media_ids))
-    cache.set("popular_media_ids", media_ids, 60 * 60 * 12)
+    popular_media_cache.set("popular_media_ids", media_ids, 60 * 60 * 12)
     logger.info("saved popular media ids")
 
     return media_ids
@@ -1734,7 +1738,7 @@ def dispatch_deferred_encodings():
     lock_key = "dispatch_deferred_encodings_lock"
     lock_timeout = getattr(settings, "ENCODING_DRAIN_LOCK_TIMEOUT", 120)
 
-    if not cache.add(lock_key, "locked", lock_timeout):
+    if not scheduled_task_lock_cache.add(lock_key, "locked", lock_timeout):
         logger.debug("Drain task skipped: another worker holds the lock")
         return {"outcome": "skipped", "reason_code": "lock_held"}
 
@@ -1742,7 +1746,7 @@ def dispatch_deferred_encodings():
         dispatched = _dispatch_deferred_encodings_inner()
         return {"outcome": "succeeded", "processed": dispatched, "changed": dispatched}
     finally:
-        cache.delete(lock_key)
+        scheduled_task_lock_cache.delete(lock_key)
 
 
 @task(name="apply_visibility_schedules", queue="short_tasks")
@@ -1759,7 +1763,7 @@ def apply_visibility_schedules():
     lock_timeout = getattr(settings, "VISIBILITY_SCHEDULE_LOCK_TIMEOUT", 120)
     lock_token = str(uuid.uuid4())
 
-    if not cache.add(lock_key, lock_token, lock_timeout):
+    if not scheduled_task_lock_cache.add(lock_key, lock_token, lock_timeout):
         logger.debug("Visibility schedule task skipped: another worker holds the lock")
         return {"outcome": "skipped", "reason_code": "lock_held"}
 
@@ -1775,8 +1779,8 @@ def apply_visibility_schedules():
     finally:
         # Only release the lock if we still own it — guards against a slow run
         # where the TTL expired and a new worker already claimed the key.
-        if cache.get(lock_key) == lock_token:
-            cache.delete(lock_key)
+        if scheduled_task_lock_cache.get(lock_key) == lock_token:
+            scheduled_task_lock_cache.delete(lock_key)
 
 
 def _apply_visibility_schedules_inner():

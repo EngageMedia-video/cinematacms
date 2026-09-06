@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
 from files.query_cache import (
@@ -5,6 +7,7 @@ from files.query_cache import (
     get_media_list_cache_key,
     get_playlist_detail_cache_key,
     get_request_cache_origin,
+    set_cached_result,
 )
 
 
@@ -29,3 +32,7 @@ class QueryCacheKeyTest(SimpleTestCase):
 
         with override_settings(ALLOWED_HOSTS=["dev.cinemata.org"]):
             self.assertEqual(get_request_cache_origin(request), "https://dev.cinemata.org")
+
+    def test_set_cached_result_preserves_backend_failure_result(self):
+        with patch("files.query_cache.query_cache.set", return_value=False):
+            self.assertFalse(set_cached_result("opaque-key", {"value": 1}, 60))

@@ -9,17 +9,17 @@ from files.metrics import record_domain_outcome
 logger = logging.getLogger("email_delivery")
 
 DELIVERIES_TOTAL = Counter(
-    "cinemata_email_deliveries_total",
+    "cinematacms_email_deliveries_total",
     "Email delivery outcomes after queueing",
     ["email_kind", "outcome", "reason_code"],
 )
 DELIVERY_ATTEMPTS = Histogram(
-    "cinemata_email_delivery_attempts",
+    "cinematacms_email_delivery_attempts",
     "SMTP attempts per terminal email delivery",
     buckets=(1, 2, 3, 4),
 )
 DELIVERY_LATENCY_SECONDS = Histogram(
-    "cinemata_email_delivery_latency_seconds",
+    "cinematacms_email_delivery_latency_seconds",
     "Time from queueing to terminal email delivery state",
     buckets=(1, 5, 15, 30, 60, 120, 300, 600),
 )

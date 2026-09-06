@@ -117,7 +117,7 @@ class VisibilityScheduleTaskTest(TestCase):
 
     def test_lock_returns_without_running_inner_task(self):
         with (
-            patch("files.tasks.cache.add", return_value=False),
+            patch("files.tasks.scheduled_task_lock_cache.add", return_value=False),
             patch("files.tasks._apply_visibility_schedules_inner") as inner,
         ):
             apply_visibility_schedules()

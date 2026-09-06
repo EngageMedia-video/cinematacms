@@ -4,8 +4,10 @@ Token utilities for restricted media access.
 Provides token lifecycle management, brute-force rate limiting,
 and HLS manifest rewriting for password-restricted media.
 
-Uses raw Redis client (django_redis.get_redis_connection) for SET operations
-that have no equivalent in Django's cache API.
+All restricted-media Redis state goes through the application-owned Redis
+adapter (cms.redis_telemetry), which records one bounded telemetry
+observation per logical operation while keeping keys and values out of
+metrics, logs, and spans.
 """
 
 import hmac
@@ -17,6 +19,9 @@ from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
 from django.conf import settings
+
+from cms.authentication_telemetry import AuthenticationDependencyUnavailable, record_authentication_failure
+from cms.redis_telemetry import restricted_media_redis
 
 logger = logging.getLogger("files.security")
 
@@ -45,13 +50,6 @@ RATE_LIMIT_KEY_TEMPLATE = f"{TOKEN_KEY_PREFIX}:pw_attempts:{{ip}}:{{friendly_tok
 _URI_ATTR_RE = re.compile(r'(URI=")([^"]+)(")')
 
 
-def _get_redis():
-    """Get raw Redis connection. Raises if unavailable."""
-    from django_redis import get_redis_connection
-
-    return get_redis_connection("default")
-
-
 # --- Token lifecycle ---
 
 
@@ -66,13 +64,11 @@ def generate_token(media_id: str) -> str:
     access_key = ACCESS_KEY_TEMPLATE.format(token=token)
     media_set_key = MEDIA_SET_KEY_TEMPLATE.format(media_id=media_id)
 
-    redis = _get_redis()
-    pipe = redis.pipeline()
     ttl = _get_token_ttl()
-    pipe.setex(access_key, ttl, data)
-    pipe.sadd(media_set_key, access_key)
-    pipe.expire(media_set_key, ttl)
-    pipe.execute()
+    if not restricted_media_redis.store_token(access_key, media_set_key, data, ttl):
+        # Fail closed loudly: callers report a server error instead of issuing
+        # a token that cannot validate later.
+        raise ConnectionError("restricted media token storage is unavailable")
 
     return token
 
@@ -88,22 +84,26 @@ def validate_token(token: str, expected_media_id: str) -> bool:
     access_key = ACCESS_KEY_TEMPLATE.format(token=token)
 
     try:
-        redis = _get_redis()
-        data_raw = redis.get(access_key)
-    except Exception:
-        logger.error("Redis unavailable during token validation — failing closed")
-        return False
+        data_raw = restricted_media_redis.get_token(access_key)
+    except AuthenticationDependencyUnavailable:
+        record_authentication_failure("restricted_media", "media_token", "dependency_unavailable")
+        raise
 
     if data_raw is None:
+        record_authentication_failure("restricted_media", "media_token", "invalid_token")
         return False
 
     try:
         data = json.loads(data_raw)
     except (json.JSONDecodeError, TypeError):
+        record_authentication_failure("restricted_media", "media_token", "invalid_token")
         return False
 
     stored_media_id = data.get("media_id", "")
-    return hmac.compare_digest(str(stored_media_id), str(expected_media_id))
+    valid = hmac.compare_digest(str(stored_media_id), str(expected_media_id))
+    if not valid:
+        record_authentication_failure("restricted_media", "media_token", "invalid_token")
+    return valid
 
 
 _INVALIDATE_LUA = """
@@ -128,17 +128,11 @@ def invalidate_media_tokens(media_id: str) -> int:
     """
     media_set_key = MEDIA_SET_KEY_TEMPLATE.format(media_id=media_id)
 
-    try:
-        redis = _get_redis()
-        count = redis.eval(_INVALIDATE_LUA, 1, media_set_key)
-        count = int(count)
+    count = restricted_media_redis.invalidate_tokens(media_set_key, _INVALIDATE_LUA)
 
-        if count:
-            logger.info("Invalidated %d token(s) for media %s", count, media_id)
-        return count
-    except Exception:
-        logger.error("Failed to invalidate tokens for media %s", media_id, exc_info=True)
-        return 0
+    if count:
+        logger.info("Invalidated %d token(s) for a media item", count)
+    return count
 
 
 # --- Rate limiting ---
@@ -151,50 +145,26 @@ def check_rate_limit(ip: str, friendly_token: str) -> bool:
     """
     key = RATE_LIMIT_KEY_TEMPLATE.format(ip=ip, friendly_token=friendly_token)
 
-    try:
-        redis = _get_redis()
-        attempts = redis.get(key)
-        return not (attempts is not None and int(attempts) >= _get_brute_force_max_attempts())
-    except Exception:
-        logger.error("Redis unavailable during rate limit check — failing closed")
-        return False
+    return restricted_media_redis.check_rate_limit(key, _get_brute_force_max_attempts())
 
 
 def record_failed_attempt(ip: str, friendly_token: str) -> int:
     """Record a failed password attempt. Returns the new attempt count."""
     key = RATE_LIMIT_KEY_TEMPLATE.format(ip=ip, friendly_token=friendly_token)
 
-    try:
-        redis = _get_redis()
-        pipe = redis.pipeline()
-        pipe.incr(key)
-        pipe.expire(key, _get_brute_force_window())
-        results = pipe.execute()
-        count = results[0]
+    count = restricted_media_redis.record_failed_attempt(key, _get_brute_force_window())
 
-        if count >= _get_brute_force_max_attempts():
-            logger.warning(
-                "Rate limit triggered: ip=%s media=%s attempts=%d",
-                ip,
-                friendly_token,
-                count,
-            )
+    if count >= _get_brute_force_max_attempts():
+        logger.warning("Rate limit triggered for a restricted-media password attempt")
 
-        return count
-    except Exception:
-        logger.error("Failed to record rate limit attempt", exc_info=True)
-        return 0
+    return count
 
 
 def reset_rate_limit(ip: str, friendly_token: str) -> None:
     """Reset rate limit counter after successful authentication."""
     key = RATE_LIMIT_KEY_TEMPLATE.format(ip=ip, friendly_token=friendly_token)
 
-    try:
-        redis = _get_redis()
-        redis.delete(key)
-    except Exception:
-        logger.warning("Failed to reset rate limit", exc_info=True)
+    restricted_media_redis.reset_rate_limit(key)
 
 
 # --- Shared password authentication ---
@@ -207,23 +177,48 @@ def authenticate_restricted_media(media, password, ip):
     error_dict has keys: detail, status_code.
     """
     # Rate limit runs before reading password — blocked users get 429 even with empty body
-    if not check_rate_limit(ip, media.friendly_token):
+    try:
+        allowed = check_rate_limit(ip, media.friendly_token)
+    except AuthenticationDependencyUnavailable:
+        record_authentication_failure("restricted_media", "media_password", "dependency_unavailable")
+        return None, {
+            "detail": "Authentication service is temporarily unavailable.",
+            "status_code": 503,
+        }
+    if not allowed:
+        record_authentication_failure("restricted_media", "media_password", "rate_limited")
         return None, {
             "detail": "Too many failed attempts. Please try again later.",
             "status_code": 429,
         }
 
     if not password:
+        record_authentication_failure("restricted_media", "media_password", "missing_credentials")
         return None, {"detail": "Password is required.", "status_code": 400}
 
     from django.contrib.auth.hashers import check_password
 
     if check_password(password, media.password):
-        token = generate_token(media.uid_hex)
+        try:
+            token = generate_token(media.uid_hex)
+        except AuthenticationDependencyUnavailable:
+            record_authentication_failure("restricted_media", "media_password", "dependency_unavailable")
+            return None, {
+                "detail": "Authentication service is temporarily unavailable.",
+                "status_code": 503,
+            }
         reset_rate_limit(ip, media.friendly_token)
         return token, None
     else:
-        record_failed_attempt(ip, media.friendly_token)
+        record_authentication_failure("restricted_media", "media_password", "invalid_credentials")
+        try:
+            record_failed_attempt(ip, media.friendly_token)
+        except AuthenticationDependencyUnavailable:
+            record_authentication_failure("restricted_media", "media_password", "dependency_unavailable")
+            return None, {
+                "detail": "Authentication service is temporarily unavailable.",
+                "status_code": 503,
+            }
         return None, {"detail": "The password is incorrect.", "status_code": 403}
 
 

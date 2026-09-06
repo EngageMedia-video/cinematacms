@@ -87,8 +87,7 @@ cd ../whisper.cpp && sh ./models/download-ggml-model.sh base && make && cd ../ci
 make docker-up
 
 # 3. Configure environment (follow Step 5 for details)
-touch .env  # Add SECRET_KEY
-# Create cms/local_settings.py and frontend/.env
+cp .env.example .env  # Set SECRET_KEY and any local overrides
 
 # Create required directories
 mkdir -p logs pids media_files/hls
@@ -440,31 +439,12 @@ Add the generated secret key:
 SECRET_KEY='YOUR_GENERATED_SECRET_KEY_HERE'
 ```
 
-**Create `cms/local_settings.py`:**
+**Configure `.env`:**
 
 ```bash
-cat > cms/local_settings.py << 'EOF'
-import os
-from dotenv import load_dotenv
-load_dotenv()
-
-BASE_DIR = os.path.abspath('.')
-FRONTEND_HOST='http://127.0.0.1:8000'
-PORTAL_NAME='CinemataCMS'
-SSL_FRONTEND_HOST=FRONTEND_HOST.replace('http', 'https')
-SECRET_KEY=os.getenv('SECRET_KEY')
-LOCAL_INSTALL=True
-DEBUG = True
-ACCOUNT_EMAIL_VERIFICATION = "none"
-USE_X_ACCEL_REDIRECT = False
-CORS_ALLOW_ALL_ORIGINS = True
-MFA_REQUIRED_ROLES = ['superuser']
-
-# Redis configuration
-REDIS_LOCATION = "redis://127.0.0.1:6379/1"
-CELERY_BROKER_URL = REDIS_LOCATION
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-EOF
+cp .env.example .env
+# Generate SECRET_KEY, then edit .env and replace its empty value.
+uv run python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
 
 **Additional Configuration - MP4HLS (if using HLS streaming):**
@@ -475,12 +455,9 @@ Check if mp4hls is installed and configure the path:
 # Check if mp4hls is available
 which mp4hls
 
-# If found, add to local_settings.py
+# If found, add its path to .env
 if command -v mp4hls &> /dev/null; then
-    echo "
-# MP4HLS command path
-MP4HLS_COMMAND = '$(which mp4hls)'
-" >> cms/local_settings.py
+    printf '\nMP4HLS_COMMAND=%s\n' "$(which mp4hls)" >> .env
     echo "MP4HLS configured"
 else
     echo "MP4HLS not found. HLS streaming will be disabled."
@@ -911,7 +888,7 @@ uv run manage.py test --keepdb --parallel
 cinematacms/
 ├── cms/                    # Django project settings
 │   ├── settings.py         # Main configuration
-│   ├── local_settings.py   # Local overrides
+│   ├── runtime_config.py   # Typed environment parsing
 │   └── celery.py          # Celery config
 ├── files/                  # Media management (9,585 LOC)
 │   ├── models.py          # Media, Encoding, Category
@@ -974,7 +951,7 @@ frontend/
 | **Create UI component** | `frontend/src/static/js/components/-NEW-/` | Modern component patterns |
 | **Change theme colors** | `frontend/src/static/css/config/` | `_light_theme.scss`, `_dark_theme.scss` |
 | **Add Celery task** | `<app>/tasks.py` | Define task function |
-| **Configure settings** | `cms/local_settings.py` | Local development config |
+| **Configure settings** | `.env` | Local development config |
 | **Modify database schema** | Run `makemigrations` after model changes | Then `migrate` |
 
 ### Code Navigation by Feature
@@ -1023,7 +1000,7 @@ frontend/
 **Key files:**
 - `users/models.py:User` - Custom user model
 - `cms/settings.py` - MFA configuration
-- `cms/local_settings.py:MFA_REQUIRED_ROLES` - Role requirements
+- `.env:MFA_REQUIRED_ROLES` - Role requirements
 
 #### Frontend Page Rendering
 
@@ -1208,7 +1185,7 @@ CinemataCMS uses Django templates that load React components via Vite-bundled en
 
 Vite only exposes environment variables prefixed with `VITE_` to frontend code. The `frontend/.env` file is optional — no variables are currently required for development.
 
-**Django-side configuration** (in `cms/local_settings.py` or environment):
+**Django-side configuration** (in `.env` or the process environment):
 - Set `VITE_DEV_MODE=True` to enable HMR during development
 - This tells `django-vite` to load assets from the Vite dev server instead of the production manifest
 
@@ -1993,8 +1970,7 @@ uv run manage.py createsuperuser
 make frontend-build
 uv run manage.py collectstatic --noinput --clear
 
-# Check STATIC_ROOT in local_settings.py
-# Should have: USE_X_ACCEL_REDIRECT = False for local dev
+# Check USE_X_ACCEL_REDIRECT=false in .env for local development
 
 # Restart Django server
 # Kill current server (Ctrl+C) and restart
@@ -2114,7 +2090,7 @@ pip install -r requirements.txt
 # Should see output from: make frontend-dev
 
 # Verify VITE_DEV_MODE is set for Django
-# In your environment or local_settings.py:
+# In .env or your process environment:
 # VITE_DEV_MODE=True
 
 # Ensure Django server is running on port 8000

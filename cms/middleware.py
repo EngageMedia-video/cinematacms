@@ -8,8 +8,11 @@ import os
 import time
 
 from django.conf import settings
-from django.core.cache import cache
 from django.utils.deprecation import MiddlewareMixin
+
+from .cache_telemetry import owned_cache
+
+maintenance_cache = owned_cache.bind("maintenance_timing")
 
 
 class MaintenanceTimingMiddleware(MiddlewareMixin):
@@ -70,7 +73,7 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
         Uses cache for atomic operations, falls back to file if needed.
         """
         # Try to get from cache first
-        start_time = cache.get(self.CACHE_KEY)
+        start_time = maintenance_cache.get(self.CACHE_KEY)
 
         if start_time is not None:
             return start_time
@@ -79,13 +82,13 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
         current_time = time.time()
 
         # cache.add() is atomic - returns True only if key didn't exist
-        if cache.add(self.CACHE_KEY, current_time, self.CACHE_TIMEOUT):
+        if maintenance_cache.add(self.CACHE_KEY, current_time, self.CACHE_TIMEOUT):
             # We successfully set it, also save to file as backup
             self._save_to_file(current_time)
             return current_time
 
         # Another request beat us to it, get the value they set
-        start_time = cache.get(self.CACHE_KEY)
+        start_time = maintenance_cache.get(self.CACHE_KEY)
         if start_time is not None:
             return start_time
 
@@ -125,7 +128,7 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
                         start_time = data.get("start_time")
                         if start_time is not None:
                             # Also populate cache for next time
-                            cache.set(self.CACHE_KEY, start_time, self.CACHE_TIMEOUT)
+                            maintenance_cache.set(self.CACHE_KEY, start_time, self.CACHE_TIMEOUT)
                             return start_time
                 except (OSError, json.JSONDecodeError):
                     pass
@@ -135,7 +138,7 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
             self._save_to_file(current_time)
 
             # Also try to populate cache
-            cache.set(self.CACHE_KEY, current_time, self.CACHE_TIMEOUT)
+            maintenance_cache.set(self.CACHE_KEY, current_time, self.CACHE_TIMEOUT)
 
             return current_time
 
@@ -156,7 +159,7 @@ class MaintenanceTimingMiddleware(MiddlewareMixin):
     def _clear_timing(self):
         """Clear the timing data when maintenance mode is disabled."""
         # Clear from cache
-        cache.delete(self.CACHE_KEY)
+        maintenance_cache.delete(self.CACHE_KEY)
 
         # Clear file
         if os.path.exists(self.TIMING_FILE):

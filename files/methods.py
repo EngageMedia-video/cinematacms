@@ -5,15 +5,17 @@ import random
 from datetime import datetime, timedelta
 
 from django.conf import settings
-from django.core.cache import cache
 from django.core.mail import EmailMessage
 from django.db.models import Q
 from django.utils import timezone
 
 from cms import celery_app
+from cms.cache_telemetry import owned_cache
 
 from . import models
 from .helpers import mask_ip
+
+popular_media_cache = owned_cache.bind("popular_media")
 
 logger = logging.getLogger(__name__)
 
@@ -305,7 +307,7 @@ The %s Team
 
 def show_recommended_media(request, limit=100):
     basic_query = Q(state="public", is_reviewed=True, encoding_status="success")
-    pmi = cache.get("popular_media_ids")
+    pmi = popular_media_cache.get("popular_media_ids")
     # produced by task get_list_of_popular_media
     if pmi:
         media = list(

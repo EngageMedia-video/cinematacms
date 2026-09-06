@@ -5,4 +5,6 @@ class FilesConfig(AppConfig):
     name = "files"
 
     def ready(self):
-        import files.metrics  # noqa: F401 — register Prometheus metrics and signal handlers at startup
+        from files.metrics import validate_telemetry_settings
+
+        validate_telemetry_settings()
