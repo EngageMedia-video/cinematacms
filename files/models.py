@@ -16,7 +16,7 @@ from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.files import File
 from django.core.validators import RegexValidator
-from django.db import DatabaseError, connection, models
+from django.db import DatabaseError, connection, models, transaction
 from django.db.models import Q
 from django.db.models.signals import (
     m2m_changed,
@@ -537,17 +537,28 @@ class Media(models.Model):
             else:
                 kwargs["update_fields"] = update_fields
 
+        # ensure_encryption_key() can commit a key between an unlocked re-read and
+        # this save, and the write would then still carry the stale blank. Take the
+        # row lock and hold it across both, matching the lock that method already
+        # uses, so the two orderings serialize instead of interleaving.
         if (
             self.pk
             and self.is_encrypted
             and not self.encryption_key
             and (update_fields is None or "encryption_key" in update_fields)
         ):
-            stored_key = self.__class__.objects.filter(pk=self.pk).values_list("encryption_key", flat=True).first()
-            if stored_key:
-                self.encryption_key = stored_key
-
-        super(Media, self).save(*args, **kwargs)
+            with transaction.atomic(using=self._state.db):
+                stored_key = (
+                    self.__class__.objects.select_for_update()
+                    .filter(pk=self.pk)
+                    .values_list("encryption_key", flat=True)
+                    .first()
+                )
+                if stored_key:
+                    self.encryption_key = stored_key
+                super(Media, self).save(*args, **kwargs)
+        else:
+            super(Media, self).save(*args, **kwargs)
         # Notify user when video is published (state changed to public)
         if self.pk and self.__original_state and self.__original_state != "public" and self.state == "public":
             from .methods import notify_users

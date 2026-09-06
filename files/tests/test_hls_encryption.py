@@ -12,11 +12,15 @@ Covers:
 import os
 import subprocess
 import tempfile
+import threading
+import time
+import uuid
 from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
 from django.db import connection
-from django.test import Client, TestCase, override_settings
+from django.db.models.query import QuerySet
+from django.test import Client, TestCase, TransactionTestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
@@ -877,3 +881,80 @@ class EncryptionKeyLostUpdateTests(TestCase):
                 stored = Media.objects.get(pk=stale.pk)
                 self.assertEqual(stored.title, "Renamed", f"{name}: update_fields save did not persist")
                 self.assertEqual(stored.encryption_key, key, f"{name}: blanked encryption_key")
+
+
+class EncryptionKeyRaceTests(TransactionTestCase):
+    """Issue #840: the guard's re-read must serialize with its own write.
+
+    ensure_encryption_key() takes a row lock, but an unlocked re-read in
+    Media.save() could read blank, have the key committed underneath it, and
+    then write the stale blank anyway -- losing the key the guard exists to
+    protect.
+
+    The competing write runs on its own connection in another thread, because
+    select_for_update() never blocks the transaction already holding the lock:
+    a same-thread simulation would prove nothing about the real ordering.
+    TransactionTestCase is required for the same reason, since
+    select_for_update() needs real committed transactions that TestCase's
+    wrapping transaction would mask.
+    """
+
+    reset_sequences = True
+
+    def test_key_committed_by_another_worker_is_not_overwritten(self):
+        # uuid4 rather than a fixed name: TransactionTestCase commits its rows,
+        # so a fixed username collides with whatever a previous run left behind.
+        username = f"race_owner_{uuid.uuid4().hex[:12]}"
+        user = User.objects.create_user(username=username, email=f"{username}@example.com", password="pw")
+        media = create_test_media(user, is_encrypted=True, media_type="video")
+
+        stale = Media.objects.get(pk=media.pk)
+        self.assertEqual(stale.encryption_key, "")
+
+        generated = {}
+        guard_has_read = threading.Event()
+        worker_started = threading.Event()
+
+        def other_worker():
+            """Stand in for create_hls generating the key on its own connection."""
+            worker_started.set()
+            guard_has_read.wait(timeout=10)
+            try:
+                other = Media.objects.get(pk=media.pk)
+                generated["key"] = other.ensure_encryption_key()
+            except Exception as exc:  # surfaced by the assertions below
+                generated["error"] = repr(exc)
+            finally:
+                connection.close()
+
+        original_first = QuerySet.first
+
+        def release_worker_after_the_read(queryset):
+            result = original_first(queryset)
+            # The guard has now resolved its re-read (blank, pre-fix). Release the
+            # other worker and give it room to commit before the guard writes.
+            # Unlocked, it commits here and the write below clobbers it. Locked,
+            # it blocks on the row until this transaction commits.
+            if not guard_has_read.is_set():
+                guard_has_read.set()
+                time.sleep(0.3)
+            return result
+
+        thread = threading.Thread(target=other_worker, daemon=True)
+        thread.start()
+        worker_started.wait(timeout=5)
+        try:
+            stale.title = "Renamed"
+            with patch.object(QuerySet, "first", release_worker_after_the_read):
+                stale.save()
+        finally:
+            guard_has_read.set()
+            thread.join(timeout=15)
+
+        self.assertNotIn("error", generated, f"the other worker failed: {generated.get('error')}")
+        self.assertIn("key", generated, "the other worker never generated a key")
+        self.assertEqual(
+            Media.objects.get(pk=media.pk).encryption_key,
+            generated["key"],
+            "a key committed by another worker was overwritten with a blank",
+        )
