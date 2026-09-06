@@ -4,6 +4,14 @@ set -e
 # Cinemata restart script after code changes
 # Run as root
 
+PULL_LATEST=true
+if [ "${1:-}" = "--no-pull" ]; then
+  PULL_LATEST=false
+elif [ "$#" -gt 0 ]; then
+  echo "Usage: $0 [--no-pull]" >&2
+  exit 2
+fi
+
 if [ `id -u` -ne 0 ]
   then echo "Please run as root"
   exit 1
@@ -23,12 +31,13 @@ cd cinematacms
 # Record current commit so rollback.sh can find the previous deployment.
 DEPLOY_LOG=/var/log/cinemata/deploy.log
 mkdir -p "$(dirname "$DEPLOY_LOG")"
-PREV_SHA=$(git rev-parse HEAD)
+PREV_SHA="${CINEMATA_PREV_SHA:-$(git rev-parse HEAD)}"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# Pull latest changes from git
-echo "Pulling latest changes from git repository..."
-git pull
+if [ "$PULL_LATEST" = true ]; then
+  echo "Pulling latest changes from git repository..."
+  git pull --ff-only
+fi
 
 # Append a deploy-log entry only when the pull actually advanced HEAD.
 NEW_SHA=$(git rev-parse HEAD)
@@ -42,6 +51,13 @@ fi
 # Install any new requirements
 echo "Installing any new requirements..."
 pip install -r requirements.txt
+
+# Reconcile the single runtime environment before Django or systemd reads it.
+deploy/apply-release-config.sh --no-restart
+set -a
+# shellcheck source=/etc/cinematacms/app.env
+source /etc/cinematacms/app.env
+set +a
 
 # Build frontend and collect static files
 echo "Building frontend and collecting static files..."

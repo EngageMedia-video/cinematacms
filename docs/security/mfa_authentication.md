@@ -295,13 +295,13 @@ The allowed roles based on this logic are the following:
 ['superuser', 'advanced_user', 'authenticated', 'manager', 'editor', 'curator']
 ```
 
-Under your custom `local_settings.py`, input the following line:
+Set the following variable in `.env` (local) or `/etc/cinematacms/app.env` (server):
 
 ```
-MFA_REQUIRED_ROLES = ['superuser', # ... ]
+MFA_REQUIRED_ROLES=superuser
 ```
 
-Where the "..." may refer to any of the listed roles found above.
+Add more roles as comma-separated values, for example `superuser,manager`.
 
 
 #### Front-end

@@ -212,13 +212,26 @@ if [ "$OBSERVABILITY_MODE" = "local" ]; then
 else
     otel_enabled="false"
 fi
-write_config "$CONFIG_DIR/observability.env" 0640 "OTEL_ENABLED=$otel_enabled
-OTEL_SERVICE_NAME=cinematacms
-OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318/v1/traces
-OTEL_EXPORTER_OTLP_HEADERS=
-OTEL_TRACES_SAMPLER_ARG=1.0
-OTEL_PRIORITY_TRACES_SAMPLER_ARG=1.0
-"
+APP_ENV="$CONFIG_DIR/app.env"
+backup_file "$APP_ENV"
+legacy_local_settings=""
+if [ "$DEPLOY_ROOT" = "/" ] && [ -f "$SCRIPT_DIR/../cms/local_settings.py" ]; then
+    legacy_local_settings="$SCRIPT_DIR/../cms/local_settings.py"
+fi
+render_args=(
+    --output "$APP_ENV"
+    --domain "$DOMAIN"
+    --otel-enabled "$otel_enabled"
+    --legacy-observability "$CONFIG_DIR/observability.env"
+)
+if [ -n "$legacy_local_settings" ]; then
+    render_args+=(--legacy-local-settings "$legacy_local_settings")
+fi
+python3 "$SCRIPT_DIR/render-app-env.py" "${render_args[@]}"
+if [ -f "$CONFIG_DIR/observability.env" ]; then
+    backup_file "$CONFIG_DIR/observability.env"
+    rm -f "$CONFIG_DIR/observability.env"
+fi
 
 NGINX_SNIPPET="$(root_path /etc/nginx/snippets/cinematacms-metrics.conf)"
 NGINX_SITE="$(root_path /etc/nginx/sites-available/mediacms.io)"

@@ -284,10 +284,13 @@ fi
 [ -n "$PROXY_MODE" ] || PROXY_MODE="none"
 [ -n "$OBSERVABILITY_MODE" ] || OBSERVABILITY_MODE="none"
 
-FRONTEND_HOST="${FRONTEND_HOST#http://}"
-FRONTEND_HOST="${FRONTEND_HOST#https://}"
 FRONTEND_HOST="${FRONTEND_HOST%/}"
-validate_domain "$FRONTEND_HOST" || fail "--domain must contain a hostname without a scheme, path, or port"
+FRONTEND_DOMAIN="${FRONTEND_HOST#http://}"
+FRONTEND_DOMAIN="${FRONTEND_DOMAIN#https://}"
+validate_domain "$FRONTEND_DOMAIN" || fail "--domain must contain a hostname without a scheme, path, or port"
+if [[ "$FRONTEND_HOST" != *://* ]]; then
+    FRONTEND_HOST="http://$FRONTEND_HOST"
+fi
 validate_portal_name "$PORTAL_NAME" || fail "--portal-name may contain letters, numbers, spaces, periods, underscores, and hyphens"
 case "$PROXY_MODE" in
     none|cloudflare) ;;
@@ -299,7 +302,7 @@ case "$OBSERVABILITY_MODE" in
 esac
 
 echo "Resolved installation configuration:"
-echo "  domain=$FRONTEND_HOST"
+echo "  domain=$FRONTEND_DOMAIN"
 echo "  portal_name=$PORTAL_NAME"
 echo "  proxy=$PROXY_MODE"
 echo "  observability=$OBSERVABILITY_MODE"
@@ -418,23 +421,10 @@ make
 cd ../cinematacms || exit 1
 
 SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
-
-CURRENT_STEP="application settings"
-FRONTEND_HOST_HTTP_PREFIX="http://$FRONTEND_HOST"
-
-{
-    echo 'FRONTEND_HOST='\'"$FRONTEND_HOST_HTTP_PREFIX"\'
-    echo 'PORTAL_NAME='\'"$PORTAL_NAME"\'
-    echo "SSL_FRONTEND_HOST = FRONTEND_HOST.replace('http', 'https')"
-
-    # Add the entered domain to ALLOWED_HOSTS. settings.py appends FRONTEND_HOST
-    # before local_settings.py is imported, so this is the effective override.
-    echo "ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '$FRONTEND_HOST']"
-    echo 'SECRET_KEY='\'"$SECRET_KEY"\'
-    echo "LOCAL_INSTALL = True"
-    echo "SITE_ID = 1"
-    echo "MP4HLS_COMMAND = '/opt/bento4/bin/mp4hls'"
-} >> cms/local_settings.py
+export SECRET_KEY PORTAL_NAME FRONTEND_HOST
+export CINEMATACMS_APP_SECRET_KEY="$SECRET_KEY"
+export CINEMATACMS_APP_PORTAL_NAME="$PORTAL_NAME"
+export CINEMATACMS_APP_FRONTEND_HOST="$FRONTEND_DOMAIN"
 
 mkdir -p logs
 mkdir -p pids
@@ -477,7 +467,7 @@ echo "from users.models import User; User.objects.create_superuser('admin', 'adm
 # Configure Django Site with proper error handling
 CURRENT_STEP="site configuration"
 echo "Configuring Django Site..."
-if ! python manage.py update_site_name --name "$PORTAL_NAME" --domain "$FRONTEND_HOST"; then
+if ! python manage.py update_site_name --name "$PORTAL_NAME" --domain "$FRONTEND_DOMAIN"; then
     echo "Error: Failed to configure Django Site. Aborting installation."
     exit 1
 fi
@@ -485,31 +475,31 @@ fi
 chown -R www-data. /home/cinemata/
 CURRENT_STEP="nginx and service configuration"
 mkdir -p /etc/letsencrypt/live/mediacms.io/
-mkdir -p "/etc/letsencrypt/live/$FRONTEND_HOST"
+mkdir -p "/etc/letsencrypt/live/$FRONTEND_DOMAIN"
 mkdir -p /etc/nginx/sites-enabled
 mkdir -p /etc/nginx/sites-available
 mkdir -p /etc/nginx/dhparams/
 rm -rf /etc/nginx/conf.d/default.conf
 rm -rf /etc/nginx/sites-enabled/default
-cp deploy/mediacms.io_fullchain.pem "/etc/letsencrypt/live/$FRONTEND_HOST/fullchain.pem"
+cp deploy/mediacms.io_fullchain.pem "/etc/letsencrypt/live/$FRONTEND_DOMAIN/fullchain.pem"
 # this is just a self signed key, will be replaced by certbot
-cp deploy/mediacms.io_privkey.pem "/etc/letsencrypt/live/$FRONTEND_HOST/privkey.pem"
+cp deploy/mediacms.io_privkey.pem "/etc/letsencrypt/live/$FRONTEND_DOMAIN/privkey.pem"
 cp deploy/dhparams.pem /etc/nginx/dhparams/dhparams.pem
 mkdir -p /etc/nginx/conf.d
 
 chmod +x deploy/apply-release-config.sh
 deploy/apply-release-config.sh \
-    --domain "$FRONTEND_HOST" \
+    --domain "$FRONTEND_DOMAIN" \
     --proxy "$PROXY_MODE" \
     --observability "$OBSERVABILITY_MODE"
 
 # attempt to get a valid certificate for specified domain
 
 CURRENT_STEP="TLS certificate configuration"
-if [ "$FRONTEND_HOST" != "localhost" ]; then
-    echo "Attempting to get a certificate for $FRONTEND_HOST"
-    certbot --nginx -n --agree-tos --register-unsafely-without-email -d "$FRONTEND_HOST"
-    certbot --nginx -n --agree-tos --register-unsafely-without-email -d "$FRONTEND_HOST"
+if [ "$FRONTEND_DOMAIN" != "localhost" ]; then
+    echo "Attempting to get a certificate for $FRONTEND_DOMAIN"
+    certbot --nginx -n --agree-tos --register-unsafely-without-email -d "$FRONTEND_DOMAIN"
+    certbot --nginx -n --agree-tos --register-unsafely-without-email -d "$FRONTEND_DOMAIN"
     # unfortunately for some reason it needs to be run two times in order to create the entries
     # and directory structure!!!
     systemctl restart nginx
@@ -518,7 +508,7 @@ else
 fi
 
 # Generate individual DH params
-if [ "$FRONTEND_HOST" != "localhost" ]; then
+if [ "$FRONTEND_DOMAIN" != "localhost" ]; then
     # Only generate new DH params when using "real" certificates.
     openssl dhparam -out /etc/nginx/dhparams/dhparams.pem 4096
     systemctl restart nginx
@@ -537,4 +527,4 @@ wget -O /home/cinemata/cinematacms/media_files/userlogos/user.jpg "https://www.g
 # last, set default owner
 chown -R www-data. /home/cinemata/
 
-echo 'Cinemata installation completed, open browser on http://'"$FRONTEND_HOST"' and login with user admin and password '"$ADMIN_PASS"''
+echo "Cinemata installation completed, open browser on $FRONTEND_HOST and login with user admin and password $ADMIN_PASS"
