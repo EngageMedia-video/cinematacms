@@ -1022,6 +1022,39 @@ class ApplyReleaseConfigTests(unittest.TestCase):
 
 
 class RestartScriptTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_root = Path(self.temp_dir.name)
+
+    def run_restart_functions(self, arguments, *, run_selection=False):
+        fake_bin = self.test_root / "bin"
+        fake_bin.mkdir(exist_ok=True)
+        command_log = self.test_root / "commands.log"
+        git = fake_bin / "git"
+        git.write_text('#!/bin/sh\nprintf \'%s\\n\' "git $*" >> "$FAKE_COMMAND_LOG"\n')
+        git.chmod(git.stat().st_mode | stat.S_IXUSR)
+        env = os.environ.copy()
+        env.update(
+            {
+                "FAKE_COMMAND_LOG": str(command_log),
+                "PATH": f"{fake_bin}:{env['PATH']}",
+            }
+        )
+        command = 'source "$1"; shift; parse_restart_args "$@"'
+        if run_selection:
+            command += "; select_release"
+        result = subprocess.run(
+            ["bash", "-c", command, "restart-test", str(RESTART_SCRIPT), *arguments],
+            cwd=PROJECT_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        commands = command_log.read_text().splitlines() if command_log.exists() else []
+        return result, commands
+
     def test_restart_installs_and_starts_every_application_unit(self):
         script = RESTART_SCRIPT.read_text()
         units = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
@@ -1038,15 +1071,39 @@ class RestartScriptTests(unittest.TestCase):
         self.assertIn(f"systemctl enable {units}", script)
         self.assertIn(f"systemctl restart {units}", script)
 
-    def test_deployer_bootstraps_runtime_config_before_running_restart_script(self):
-        workflow = CI_WORKFLOW.read_text()
-        fetch = "sudo git -C /home/cinemata/cinematacms fetch origin ${{ github.sha }}"
-        merge = "sudo git -C /home/cinemata/cinematacms merge --ff-only ${{ github.sha }}"
-        restart = "/home/cinemata/cinematacms/restart_script.sh --no-pull"
+    def test_restart_can_deploy_an_exact_revision(self):
+        revision = "a" * 40
 
-        self.assertLess(workflow.index(fetch), workflow.index(merge))
-        self.assertLess(workflow.index(merge), workflow.index(restart))
-        self.assertIn('CINEMATA_PREV_SHA="$previous_sha"', workflow)
+        result, commands = self.run_restart_functions(["--revision", revision], run_selection=True)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(commands, [f"git fetch origin {revision}", f"git merge --ff-only {revision}"])
+
+    def test_restart_rejects_invalid_revision(self):
+        result, commands = self.run_restart_functions(["--revision", "not-a-commit"])
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("full 40-character lowercase commit SHA", result.stderr)
+        self.assertEqual(commands, [])
+
+    def test_restart_rejects_trailing_arguments_for_each_mode(self):
+        revision = "a" * 40
+
+        for arguments in (["--no-pull", "extra"], ["--revision", revision, "extra"]):
+            with self.subTest(arguments=arguments):
+                result, commands = self.run_restart_functions(arguments)
+
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(commands, [])
+
+    def test_deployer_uses_the_authorized_restart_boundary(self):
+        workflow = CI_WORKFLOW.read_text()
+        restart = "sudo /home/cinemata/cinematacms/restart_script.sh"
+
+        self.assertEqual(workflow.count(restart), 2)
+        self.assertIn(f"{restart} --revision ${{{{ github.sha }}}}", workflow)
+        self.assertNotIn("sudo git", workflow)
+        self.assertNotIn("sudo env", workflow)
         self.assertNotIn("local_settings_example.py", workflow)
         self.assertNotIn("Materialize CI local_settings", workflow)
 

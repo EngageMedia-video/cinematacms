@@ -4,13 +4,47 @@ set -e
 # Cinemata restart script after code changes
 # Run as root
 
-PULL_LATEST=true
-if [ "${1:-}" = "--no-pull" ]; then
-  PULL_LATEST=false
-elif [ "$#" -gt 0 ]; then
-  echo "Usage: $0 [--no-pull]" >&2
-  exit 2
-fi
+parse_restart_args() {
+  PULL_LATEST=true
+  DEPLOY_REVISION=""
+  case "${1:-}" in
+    --no-pull)
+      if [ "$#" -ne 1 ]; then
+        echo "Usage: $0 [--no-pull | --revision COMMIT_SHA]" >&2
+        return 2
+      fi
+      PULL_LATEST=false
+      ;;
+    --revision)
+      if [[ "${2:-}" =~ ^[0-9a-f]{40}$ ]] && [ "$#" -eq 2 ]; then
+        DEPLOY_REVISION="$2"
+      else
+        echo "--revision requires a full 40-character lowercase commit SHA" >&2
+        return 2
+      fi
+      ;;
+    "")
+      ;;
+    *)
+      echo "Usage: $0 [--no-pull | --revision COMMIT_SHA]" >&2
+      return 2
+      ;;
+  esac
+}
+
+select_release() {
+  if [ -n "$DEPLOY_REVISION" ]; then
+    echo "Deploying requested commit $DEPLOY_REVISION..."
+    git fetch origin "$DEPLOY_REVISION"
+    git merge --ff-only "$DEPLOY_REVISION"
+  elif [ "$PULL_LATEST" = true ]; then
+    echo "Pulling latest changes from git repository..."
+    git pull --ff-only
+  fi
+}
+
+main() {
+parse_restart_args "$@"
 
 if [ `id -u` -ne 0 ]
   then echo "Please run as root"
@@ -34,10 +68,7 @@ mkdir -p "$(dirname "$DEPLOY_LOG")"
 PREV_SHA="${CINEMATA_PREV_SHA:-$(git rev-parse HEAD)}"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-if [ "$PULL_LATEST" = true ]; then
-  echo "Pulling latest changes from git repository..."
-  git pull --ff-only
-fi
+select_release
 
 # Append a deploy-log entry only when the pull actually advanced HEAD.
 NEW_SHA=$(git rev-parse HEAD)
@@ -91,3 +122,8 @@ systemctl restart mediacms celery_long celery_short celery_whisper celery_email 
 systemctl restart nginx
 
 echo "Cinemata restart completed successfully!"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
