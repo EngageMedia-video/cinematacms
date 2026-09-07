@@ -454,7 +454,7 @@ class Media(models.Model):
         else:
             self.password = ""
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, update_fields=None, **kwargs):
         if not self.title:
             self.title = self.media_file.path.split("/")[-1]
 
@@ -523,19 +523,12 @@ class Media(models.Model):
         # and the Celery workers are separate processes sharing only the row.
         # is_encrypted distinguishes an accidental blank from an intentional clear:
         # disabling encryption sets it False, so that blank still persists.
-        # update_fields is the 4th positional in Model.save(), so read args too.
-        # Django accepts any iterable, and both the membership test below and
-        # Model.save() itself consume it, so materialize it once and hand the
-        # same collection on rather than an exhausted generator.
-        update_fields_index = 3
-        passed_positionally = len(args) > update_fields_index
-        update_fields = args[update_fields_index] if passed_positionally else kwargs.get("update_fields")
+        # Django accepts any iterable for update_fields, and both the membership
+        # test below and Model.save() itself consume it, so materialize it once
+        # and hand the same collection on rather than an exhausted generator.
         if update_fields is not None:
             update_fields = frozenset(update_fields)
-            if passed_positionally:
-                args = args[:update_fields_index] + (update_fields,) + args[update_fields_index + 1 :]
-            else:
-                kwargs["update_fields"] = update_fields
+            kwargs["update_fields"] = update_fields
 
         # ensure_encryption_key() can commit a key between an unlocked re-read and
         # this save, and the write would then still carry the stale blank. Take the

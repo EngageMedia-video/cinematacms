@@ -848,8 +848,13 @@ class EncryptionKeyLostUpdateTests(TestCase):
         it twice (an emptiness check, then frozenset()). The guard's membership
         test would exhaust a generator first, leaving Django an empty iterable
         and tripping the assert in save_base(), so it is materialized once up
-        front. update_fields is also the 4th positional argument, so the
-        positional form has to survive the same normalization.
+        front.
+
+        The positional cases cover Django's deprecated positional form
+        (RemovedInDjango60Warning). Those bypass the keyword-only parameter and
+        reach Model.save() untouched, so the guard sees update_fields=None and
+        runs rather than being skipped -- it fails safe, and the key still has
+        to survive.
         """
 
         def generator_kwarg(stale):
