@@ -1022,6 +1022,39 @@ class ApplyReleaseConfigTests(unittest.TestCase):
 
 
 class RestartScriptTests(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.test_root = Path(self.temp_dir.name)
+
+    def run_restart_functions(self, arguments, *, run_selection=False):
+        fake_bin = self.test_root / "bin"
+        fake_bin.mkdir(exist_ok=True)
+        command_log = self.test_root / "commands.log"
+        git = fake_bin / "git"
+        git.write_text('#!/bin/sh\nprintf \'%s\\n\' "git $*" >> "$FAKE_COMMAND_LOG"\n')
+        git.chmod(git.stat().st_mode | stat.S_IXUSR)
+        env = os.environ.copy()
+        env.update(
+            {
+                "FAKE_COMMAND_LOG": str(command_log),
+                "PATH": f"{fake_bin}:{env['PATH']}",
+            }
+        )
+        command = 'source "$1"; shift; parse_restart_args "$@"'
+        if run_selection:
+            command += "; select_release"
+        result = subprocess.run(
+            ["bash", "-c", command, "restart-test", str(RESTART_SCRIPT), *arguments],
+            cwd=PROJECT_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        commands = command_log.read_text().splitlines() if command_log.exists() else []
+        return result, commands
+
     def test_restart_installs_and_starts_every_application_unit(self):
         script = RESTART_SCRIPT.read_text()
         units = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
@@ -1039,11 +1072,29 @@ class RestartScriptTests(unittest.TestCase):
         self.assertIn(f"systemctl restart {units}", script)
 
     def test_restart_can_deploy_an_exact_revision(self):
-        script = RESTART_SCRIPT.read_text()
+        revision = "a" * 40
 
-        self.assertIn("--revision requires a full 40-character lowercase commit SHA", script)
-        self.assertIn('git fetch origin "$DEPLOY_REVISION"', script)
-        self.assertIn('git merge --ff-only "$DEPLOY_REVISION"', script)
+        result, commands = self.run_restart_functions(["--revision", revision], run_selection=True)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(commands, [f"git fetch origin {revision}", f"git merge --ff-only {revision}"])
+
+    def test_restart_rejects_invalid_revision(self):
+        result, commands = self.run_restart_functions(["--revision", "not-a-commit"])
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("full 40-character lowercase commit SHA", result.stderr)
+        self.assertEqual(commands, [])
+
+    def test_restart_rejects_trailing_arguments_for_each_mode(self):
+        revision = "a" * 40
+
+        for arguments in (["--no-pull", "extra"], ["--revision", revision, "extra"]):
+            with self.subTest(arguments=arguments):
+                result, commands = self.run_restart_functions(arguments)
+
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(commands, [])
 
     def test_deployer_uses_the_authorized_restart_boundary(self):
         workflow = CI_WORKFLOW.read_text()
