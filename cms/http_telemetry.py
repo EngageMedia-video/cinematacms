@@ -87,6 +87,7 @@ _OWNED_ROUTE_RULES = (
     _rule("metrics", "system", "metrics"),
     _rule("health/live", "system", "health_live"),
     _rule("health/ready", "system", "health_ready"),
+    _rule("internal/observability/references", "system", "observability_reference_lookup"),
     # notifications.urls
     _rule("api/v1/notifications/", "notifications_api", "notifications_list", url_name="notification-list"),
     _rule(

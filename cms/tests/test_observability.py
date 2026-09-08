@@ -117,6 +117,26 @@ class ObservabilityConfigTests(SimpleTestCase):
         self.assertEqual(current_actor_ref(), "")
         span.set_attribute.assert_called_once_with("cinematacms.actor_ref", "v7:opaque")
 
+    @override_settings(OBSERVABILITY_SLOW_REQUEST_SECONDS=0)
+    def test_actor_context_is_active_when_request_diagnostic_is_logged(self):
+        request = RequestFactory().get("/health/ready")
+        request.user = SimpleNamespace(is_authenticated=True, email="person@example.com")
+        observed_actor_refs = []
+
+        def capture_warning(*_args, **_kwargs):
+            observed_actor_refs.append(current_actor_ref())
+
+        metrics = ObservabilityMetricsMiddleware(lambda _request: HttpResponse("ok"))
+        middleware = ObservabilityActorMiddleware(metrics)
+        with (
+            patch("cms.observability_middleware.recipient_reference", return_value="v7:opaque"),
+            patch("cms.observability_middleware.logger.warning", side_effect=capture_warning),
+        ):
+            response = middleware(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(observed_actor_refs, ["v7:opaque"])
+
     @override_settings(
         OBSERVABILITY_SLOW_REQUEST_SECONDS=0.3,
         OBSERVABILITY_SLOW_QUERY_SECONDS=1.0,

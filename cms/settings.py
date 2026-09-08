@@ -86,7 +86,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "cms.observability_middleware.ObservabilityMetricsMiddleware",
     "cms.authentication_telemetry.AuthenticationDependencyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -95,6 +94,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "cms.observability_middleware.ObservabilityActorMiddleware",
+    "cms.observability_middleware.ObservabilityMetricsMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",

@@ -15,6 +15,10 @@ class RuntimeConfigTests(unittest.TestCase):
             settings.index("django.contrib.auth.middleware.AuthenticationMiddleware"),
             settings.index("cms.observability_middleware.ObservabilityActorMiddleware"),
         )
+        self.assertLess(
+            settings.index("cms.observability_middleware.ObservabilityActorMiddleware"),
+            settings.index("cms.observability_middleware.ObservabilityMetricsMiddleware"),
+        )
 
     def test_environment_values_use_one_typed_parser(self):
         with patch.dict(
