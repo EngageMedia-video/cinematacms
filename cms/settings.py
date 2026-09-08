@@ -94,6 +94,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "cms.observability_middleware.ObservabilityActorMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
@@ -194,7 +195,7 @@ LOGGING = {
     "formatters": {
         "json": {
             "()": "pythonjsonlogger.json.JsonFormatter",
-            "format": "%(asctime)s %(name)s %(levelname)s %(message)s %(trace_id)s %(span_id)s",
+            "format": "%(asctime)s %(name)s %(levelname)s %(message)s %(trace_id)s %(span_id)s %(actor_ref)s",
             "rename_fields": {
                 "asctime": "timestamp",
                 "levelname": "level",

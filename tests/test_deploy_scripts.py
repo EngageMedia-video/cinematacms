@@ -355,6 +355,23 @@ class InstallScriptTests(unittest.TestCase):
         self.assertIn("observability=local", result.stdout)
         self.assertIn("No changes were made.", result.stdout)
 
+    def test_non_interactive_dry_run_accepts_managed_observability(self):
+        result = self.run_installer(
+            "--non-interactive",
+            "--domain",
+            "video.example.org",
+            "--portal-name",
+            "Example Video",
+            "--proxy",
+            "cloudflare",
+            "--observability",
+            "managed",
+            "--dry-run",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("observability=managed", result.stdout)
+
     def test_installer_preserves_url_separately_from_certificate_domain(self):
         script = INSTALLER.read_text()
 
@@ -690,6 +707,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertIn("FRONTEND_HOST=https://video.example.org", app_env)
         self.assertRegex(app_env, r"TELEMETRY_WORKER_ID=[0-9a-f-]{36}")
         self.assertRegex(app_env, r"TELEMETRY_WORKER_HMAC_KEY=[A-Za-z0-9_-]{40,}")
+        self.assertRegex(app_env, r"EMAIL_RECIPIENT_HMAC_KEY=[A-Za-z0-9_-]{40,}")
         self.assertFalse((self.deploy_root / "etc/cinematacms/observability.env").exists())
         for unit in ("mediacms", "celery_long", "celery_short", "celery_whisper", "celery_email", "celery_beat"):
             unit_text = (self.deploy_root / f"etc/systemd/system/{unit}.service").read_text()
@@ -699,6 +717,30 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertEqual(site.count("cinematacms-metrics.conf"), 2)
         self.assertIn("nginx -t", self.command_log.read_text())
         self.assertNotIn("systemctl enable --now", self.command_log.read_text())
+
+    def test_managed_observability_enables_tracing_without_local_collector(self):
+        result = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "managed",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        config = (self.deploy_root / "etc/cinematacms/deployment.env").read_text()
+        app_env = (self.deploy_root / "etc/cinematacms/app.env").read_text()
+        self.assertIn("CINEMATA_OBSERVABILITY=managed", config)
+        self.assertIn("OTEL_ENABLED=true", app_env)
+        commands = self.command_log.read_text()
+        self.assertNotIn("install-observability", commands)
+        self.assertIn(
+            "systemctl disable --now cinematacms-prometheus cinematacms-otelcol",
+            commands,
+        )
+        self.assertFalse((self.deploy_root / "etc/cinematacms/prometheus.yml").exists())
+        self.assertFalse((self.deploy_root / "etc/cinematacms/otelcol-contrib.yml").exists())
 
     def test_apply_restarts_active_application_services(self):
         result = self.run_updater(
@@ -805,7 +847,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertIn("# retained Certbot configuration", site)
         updated_app_env = app_env_path.read_text()
         self.assertIn("EMAIL_HOST=smtp.example.org", updated_app_env)
-        for key in ("TELEMETRY_WORKER_ID", "TELEMETRY_WORKER_HMAC_KEY"):
+        for key in ("TELEMETRY_WORKER_ID", "TELEMETRY_WORKER_HMAC_KEY", "EMAIL_RECIPIENT_HMAC_KEY"):
             original_value = next(line for line in original_app_env.splitlines() if line.startswith(f"{key}="))
             self.assertIn(original_value, updated_app_env)
         self.assertFalse((self.deploy_root / "etc/nginx/conf.d/cloudflare_real_ip.conf").exists())

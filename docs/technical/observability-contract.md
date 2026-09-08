@@ -24,7 +24,28 @@ The web process configures Django tracing during WSGI startup. A Celery child co
 
 `OTEL_TRACES_SAMPLER_ARG` sets the ordinary trace ratio. `OTEL_PRIORITY_TRACES_SAMPLER_ARG` sets the ratio for Celery, media, transcription, HLS, and email spans. Parent sampling decisions propagate across queued work.
 
-JSON logs add `trace_id`, `span_id`, `task_id`, `task_name`, and the normalized queue. Span filtering removes attributes whose names identify message bodies, addresses, authorization data, secrets, passwords, filenames, or URLs. Restricted email spans may contain only the delivery UUID, the recipient reference, the email kind, and the attempt number.
+The deployment mode controls who owns the Collector. `local` installs the
+repository's Collector, `managed` sends traces to a Collector managed by the
+deployment, and `none` disables application tracing.
+
+JSON logs add `trace_id`, `span_id`, `actor_ref`, `task_id`, `task_name`, and the
+normalized queue. For an authenticated request, `actor_ref` is the same
+versioned keyed reference used for an email recipient; the current request span
+also carries `cinematacms.actor_ref`. This permits restricted incident lookup
+without exporting an email address. Generate current and previous-key lookup
+values on the application host, where the HMAC secrets are available:
+
+```bash
+python manage.py email_recipient_ref
+```
+
+The command reads the address from a hidden prompt and never prints it. Search
+logs by `actor_ref` for general user activity or by `recipient_ref` for an email
+delivery, then use the matching `trace_id` to follow downstream work. Span
+filtering removes attributes whose names identify message bodies, addresses,
+authorization data, secrets, passwords, filenames, or URLs. Restricted email
+spans may contain only the delivery UUID, the recipient reference, the email
+kind, and the attempt number.
 
 ## Scheduled jobs
 

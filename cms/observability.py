@@ -1,5 +1,6 @@
 import logging
 from contextlib import contextmanager
+from contextvars import ContextVar
 from ipaddress import ip_address
 from typing import Any
 from urllib.parse import urlparse
@@ -13,6 +14,7 @@ _django_instrumented = False
 _celery_instrumented = False
 _redis_instrumented = False
 _requests_instrumented = False
+_actor_ref: ContextVar[str] = ContextVar("cinematacms_actor_ref", default="")
 
 ALLOWED_SERVICE_ROLES = frozenset({"web", "long-task", "short-task", "transcription", "email", "beat"})
 SENSITIVE_ATTRIBUTE_PARTS = ("email", "authorization", "secret", "password", "body", "filename", "url")
@@ -230,6 +232,19 @@ def inject_trace_headers(headers: dict[str, Any] | None = None) -> dict[str, Any
     return merged
 
 
+@contextmanager
+def actor_reference_context(actor_ref: str):
+    token = _actor_ref.set(actor_ref)
+    try:
+        yield
+    finally:
+        _actor_ref.reset(token)
+
+
+def current_actor_ref() -> str:
+    return _actor_ref.get()
+
+
 def current_trace_ids() -> tuple[str, str]:
     if not observability_enabled():
         return "", ""
@@ -249,6 +264,7 @@ class OpenTelemetryLogFilter(logging.Filter):
         trace_id, span_id = current_trace_ids()
         record.trace_id = trace_id
         record.span_id = span_id
+        record.actor_ref = current_actor_ref()
         try:
             from celery import current_task
 

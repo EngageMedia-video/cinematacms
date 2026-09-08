@@ -21,7 +21,7 @@ Run without configuration options to reuse /etc/cinematacms/deployment.env.
 Options:
   --domain HOST           Portal hostname without a scheme, path, or port.
   --proxy MODE            Reverse proxy mode: none or cloudflare.
-  --observability MODE    Observability mode: none or local.
+  --observability MODE    Observability mode: none, local, or managed.
   --no-restart            Install and validate files without restarting services.
   -h, --help              Show this help text.
 EOF
@@ -116,8 +116,8 @@ case "$PROXY_MODE" in
     *) fail "--proxy must be none or cloudflare" ;;
 esac
 case "$OBSERVABILITY_MODE" in
-    none|local) ;;
-    *) fail "--observability must be none or local" ;;
+    none|local|managed) ;;
+    *) fail "--observability must be none, local, or managed" ;;
 esac
 
 if [ "$OBSERVABILITY_MODE" = "local" ]; then
@@ -207,7 +207,7 @@ CINEMATA_PROXY=$PROXY_MODE
 CINEMATA_OBSERVABILITY=$OBSERVABILITY_MODE
 "
 
-if [ "$OBSERVABILITY_MODE" = "local" ]; then
+if [ "$OBSERVABILITY_MODE" = "local" ] || [ "$OBSERVABILITY_MODE" = "managed" ]; then
     otel_enabled="true"
 else
     otel_enabled="false"

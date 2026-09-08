@@ -12,14 +12,37 @@ from cms.observability import (
     OperationAwareSampler,
     SafeSpanExporter,
     _credentialed_endpoint_is_secure,
+    current_actor_ref,
     inject_trace_headers,
     start_span,
 )
-from cms.observability_middleware import ObservabilityMetricsMiddleware
+from cms.observability_middleware import ObservabilityActorMiddleware, ObservabilityMetricsMiddleware
 from cms.urls import metrics_view
 
 
 class ObservabilityConfigTests(SimpleTestCase):
+    @override_settings(OTEL_ENABLED=True)
+    def test_authenticated_request_adds_pseudonymous_actor_ref_to_logs_and_trace(self):
+        record = logging.LogRecord("test", logging.INFO, __file__, 1, "msg", (), None)
+        span = Mock()
+        request = RequestFactory().get("/upload")
+        request.user = SimpleNamespace(is_authenticated=True, email="person@example.com")
+
+        def response(_request):
+            OpenTelemetryLogFilter().filter(record)
+            return HttpResponse("ok")
+
+        with (
+            patch("cms.observability_middleware.recipient_reference", return_value="v7:opaque"),
+            patch("opentelemetry.trace.get_current_span", return_value=span),
+        ):
+            result = ObservabilityActorMiddleware(response)(request)
+
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(record.actor_ref, "v7:opaque")
+        self.assertEqual(current_actor_ref(), "")
+        span.set_attribute.assert_called_once_with("cinematacms.actor_ref", "v7:opaque")
+
     @override_settings(
         OBSERVABILITY_SLOW_REQUEST_SECONDS=0.3,
         OBSERVABILITY_SLOW_QUERY_SECONDS=1.0,
