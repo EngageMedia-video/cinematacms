@@ -35,6 +35,10 @@ DIRECT_SETTINGS = (
     "EMAIL_RECIPIENT_HMAC_KEY",
     "OBSERVABILITY_REFERENCE_HMAC_KEY",
     "OBSERVABILITY_REFERENCE_LOOKUP_TOKEN",
+    "OBSERVABILITY_REFERENCE_ALLOWED_IPS",
+    "OBSERVABILITY_REFERENCE_RATE_LIMIT",
+    "OBSERVABILITY_REFERENCE_RATE_WINDOW_SECONDS",
+    "OBSERVABILITY_REFERENCE_MAX_BODY_BYTES",
     "HEALTH_READY_TOKEN",
     "MFA_REQUIRED_ROLES",
     "MAINTENANCE_MODE",
@@ -184,6 +188,10 @@ def main():
     values.setdefault("EMAIL_RECIPIENT_HMAC_KEY", secrets.token_urlsafe(48))
     values.setdefault("OBSERVABILITY_REFERENCE_HMAC_KEY", secrets.token_urlsafe(48))
     values.setdefault("OBSERVABILITY_REFERENCE_LOOKUP_TOKEN", secrets.token_urlsafe(48))
+    values.setdefault("OBSERVABILITY_REFERENCE_ALLOWED_IPS", "127.0.0.1,::1")
+    values.setdefault("OBSERVABILITY_REFERENCE_RATE_LIMIT", "30")
+    values.setdefault("OBSERVABILITY_REFERENCE_RATE_WINDOW_SECONDS", "60")
+    values.setdefault("OBSERVABILITY_REFERENCE_MAX_BODY_BYTES", "1024")
     values["OTEL_ENABLED"] = args.otel_enabled
     values.setdefault("OTEL_SERVICE_NAME", "cinematacms")
     values.setdefault("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/traces")

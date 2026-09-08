@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
 
+from django.core.cache import cache
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
@@ -23,6 +24,9 @@ from cms.urls import metrics_view, observability_reference_lookup
 
 
 class ObservabilityConfigTests(SimpleTestCase):
+    def tearDown(self):
+        cache.clear()
+
     @override_settings(
         OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
         OBSERVABILITY_REFERENCE_HMAC_KEY="reference-secret",
@@ -68,6 +72,89 @@ class ObservabilityConfigTests(SimpleTestCase):
 
         self.assertEqual(unauthorized.status_code, 403)
         self.assertEqual(unknown.status_code, 400)
+
+    @override_settings(
+        OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
+        OBSERVABILITY_REFERENCE_ALLOWED_IPS=["127.0.0.1", "::1"],
+    )
+    def test_reference_lookup_rejects_public_and_forwarded_clients(self):
+        factory = RequestFactory()
+        body = '{"kind":"actor","value":"person@example.com"}'
+
+        public = factory.post(
+            "/internal/observability/references",
+            data=body,
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer lookup-secret",
+            REMOTE_ADDR="203.0.113.10",
+        )
+        forwarded = factory.post(
+            "/internal/observability/references",
+            data=body,
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer lookup-secret",
+            REMOTE_ADDR="127.0.0.1",
+            HTTP_X_FORWARDED_FOR="203.0.113.10",
+        )
+
+        self.assertEqual(observability_reference_lookup(public).status_code, 403)
+        self.assertEqual(observability_reference_lookup(forwarded).status_code, 403)
+
+    @override_settings(
+        OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
+        OBSERVABILITY_REFERENCE_ALLOWED_IPS=["127.0.0.1"],
+        OBSERVABILITY_REFERENCE_RATE_LIMIT=1,
+    )
+    def test_reference_lookup_rate_limits_trusted_callers(self):
+        factory = RequestFactory()
+
+        def request():
+            return factory.post(
+                "/internal/observability/references",
+                data='{"kind":"other","value":"opaque"}',
+                content_type="application/json",
+                HTTP_AUTHORIZATION="Bearer lookup-secret",
+                REMOTE_ADDR="127.0.0.1",
+            )
+
+        self.assertEqual(observability_reference_lookup(request()).status_code, 400)
+        self.assertEqual(observability_reference_lookup(request()).status_code, 429)
+
+    @override_settings(
+        OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
+        OBSERVABILITY_REFERENCE_ALLOWED_IPS=["127.0.0.1"],
+    )
+    def test_reference_lookup_audit_does_not_log_reported_value(self):
+        request = RequestFactory().post(
+            "/internal/observability/references",
+            data='{"kind":"actor","value":"person@example.com"}',
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer wrong-token",
+            REMOTE_ADDR="127.0.0.1",
+        )
+
+        with self.assertLogs("cms.observability.lookup", level="WARNING") as captured:
+            response = observability_reference_lookup(request)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertNotIn("person@example.com", " ".join(captured.output))
+        self.assertNotIn("wrong-token", " ".join(captured.output))
+
+    @override_settings(
+        OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
+        OBSERVABILITY_REFERENCE_ALLOWED_IPS=["127.0.0.1"],
+        OBSERVABILITY_REFERENCE_MAX_BODY_BYTES=128,
+    )
+    def test_reference_lookup_rejects_oversized_body(self):
+        request = RequestFactory().post(
+            "/internal/observability/references",
+            data=json.dumps({"kind": "media", "value": "x" * 256}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer lookup-secret",
+            REMOTE_ADDR="127.0.0.1",
+        )
+
+        self.assertEqual(observability_reference_lookup(request).status_code, 413)
 
     @override_settings(OBSERVABILITY_REFERENCE_HMAC_KEY="reference-secret")
     def test_media_reference_is_normalized_versioned_and_keyed(self):
