@@ -8,7 +8,6 @@ import os
 from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
-from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.http import HttpResponse, JsonResponse
@@ -17,12 +16,14 @@ from django.views.decorators.csrf import csrf_exempt
 from prometheus_client import CollectorRegistry, generate_latest
 from prometheus_client import multiprocess as prom_multiprocess
 
+from cms.cache_telemetry import owned_cache
 from cms.health import live as health_live
 from cms.health import ready as health_ready
 from cms.request_utils import get_client_ip
 from files.metrics import refresh_runtime_metrics
 
 lookup_logger = logging.getLogger("cms.observability.lookup")
+lookup_rate_cache = owned_cache.bind("incident_lookup_rate_limit")
 
 
 def _reference_lookup_source_allowed(request):
@@ -47,9 +48,9 @@ def _reference_lookup_rate_limited(request):
     limit = max(1, getattr(settings, "OBSERVABILITY_REFERENCE_RATE_LIMIT", 30))
     window = max(1, getattr(settings, "OBSERVABILITY_REFERENCE_RATE_WINDOW_SECONDS", 60))
     try:
-        if cache.add(key, 1, timeout=window):
+        if lookup_rate_cache.add(key, 1, timeout=window):
             return False
-        return cache.incr(key) > limit
+        return lookup_rate_cache.incr(key) > limit
     except Exception:
         lookup_logger.exception(
             "cinematacms.observability.reference_lookup.denied",

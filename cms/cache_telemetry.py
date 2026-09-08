@@ -48,6 +48,7 @@ CACHE_FAMILIES = frozenset(
         "scheduled_task_lock",
         "restricted_media_token",
         "restricted_media_rate_limit",
+        "incident_lookup_rate_limit",
         "cache_probe",
     }
 )
