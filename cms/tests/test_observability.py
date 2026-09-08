@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -14,13 +15,86 @@ from cms.observability import (
     _credentialed_endpoint_is_secure,
     current_actor_ref,
     inject_trace_headers,
+    media_reference,
     start_span,
 )
 from cms.observability_middleware import ObservabilityActorMiddleware, ObservabilityMetricsMiddleware
-from cms.urls import metrics_view
+from cms.urls import metrics_view, observability_reference_lookup
 
 
 class ObservabilityConfigTests(SimpleTestCase):
+    @override_settings(
+        OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
+        OBSERVABILITY_REFERENCE_HMAC_KEY="reference-secret",
+        EMAIL_RECIPIENT_HMAC_KEY="email-secret",
+    )
+    def test_reference_lookup_resolves_actor_and_media_without_returning_input(self):
+        factory = RequestFactory()
+        for kind, value in (("actor", "Person@Example.com"), ("media", "public-video-token")):
+            request = factory.post(
+                "/internal/observability/references",
+                data=json.dumps({"kind": kind, "value": value}),
+                content_type="application/json",
+                HTTP_AUTHORIZATION="Bearer lookup-secret",
+            )
+            response = observability_reference_lookup(request)
+            payload = json.loads(response.content)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(payload["kind"], kind)
+            self.assertTrue(payload["references"])
+            self.assertEqual(payload["references"][0]["log_field"], f"{kind}_ref")
+            self.assertEqual(payload["references"][0]["span_field"], f"cinematacms.{kind}_ref")
+            self.assertNotIn(value.lower(), response.content.decode().lower())
+
+    @override_settings(OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret")
+    def test_reference_lookup_rejects_missing_token_and_unknown_kind(self):
+        factory = RequestFactory()
+        unauthorized = observability_reference_lookup(
+            factory.post(
+                "/internal/observability/references",
+                data='{"kind":"actor","value":"person@example.com"}',
+                content_type="application/json",
+            )
+        )
+        unknown = observability_reference_lookup(
+            factory.post(
+                "/internal/observability/references",
+                data='{"kind":"other","value":"opaque"}',
+                content_type="application/json",
+                HTTP_AUTHORIZATION="Bearer lookup-secret",
+            )
+        )
+
+        self.assertEqual(unauthorized.status_code, 403)
+        self.assertEqual(unknown.status_code, 400)
+
+    @override_settings(OBSERVABILITY_REFERENCE_HMAC_KEY="reference-secret")
+    def test_media_reference_is_normalized_versioned_and_keyed(self):
+        self.assertEqual(media_reference(" Video-Token "), media_reference("video-token"))
+        self.assertTrue(media_reference("video-token").startswith("v1:"))
+        self.assertNotIn("video-token", media_reference("video-token"))
+
+    @override_settings(OBSERVABILITY_REFERENCE_HMAC_KEY="")
+    def test_missing_media_reference_key_does_not_break_application_work(self):
+        self.assertEqual(media_reference("video-token"), "")
+
+    @override_settings(OTEL_ENABLED=True)
+    def test_media_span_adds_reference_to_logs_within_the_operation(self):
+        record = logging.LogRecord("test", logging.INFO, __file__, 1, "msg", (), None)
+        span = Mock()
+        context = Mock()
+        context.__enter__ = Mock(return_value=span)
+        context.__exit__ = Mock(return_value=False)
+        tracer = Mock()
+        tracer.start_as_current_span.return_value = context
+
+        with patch("cms.observability.get_tracer", return_value=tracer):
+            with start_span("media.encode", {"cinematacms.media_ref": "v1:opaque"}):
+                OpenTelemetryLogFilter().filter(record)
+
+        self.assertEqual(record.media_ref, "v1:opaque")
+
     @override_settings(OTEL_ENABLED=True)
     def test_authenticated_request_adds_pseudonymous_actor_ref_to_logs_and_trace(self):
         record = logging.LogRecord("test", logging.INFO, __file__, 1, "msg", (), None)

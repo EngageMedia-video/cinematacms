@@ -1,15 +1,13 @@
 import logging
 import smtplib
 from datetime import timedelta
-from io import StringIO
 from unittest.mock import Mock, patch
 
 from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives
-from django.core.management import call_command
 from django.db import IntegrityError, transaction
-from django.test import SimpleTestCase, TestCase, override_settings
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from .backend import EmailBackend
@@ -141,27 +139,6 @@ class EnqueueTests(TestCase):
             list(EmailDeliveryReceipt.objects.order_by("pk").values_list("email_kind", flat=True)),
             [EmailKind.AUTHENTICATION, EmailKind.ACCOUNT],
         )
-
-
-@override_settings(
-    EMAIL_RECIPIENT_HMAC_KEY="test-key",
-    EMAIL_RECIPIENT_HMAC_VERSION="v7",
-    EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY="old-key",
-    EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION="v6",
-)
-class RecipientReferenceCommandTests(SimpleTestCase):
-    def test_operator_command_converts_an_address_to_searchable_references(self):
-        output = StringIO()
-        with patch(
-            "email_delivery.management.commands.email_recipient_ref.getpass",
-            return_value=" A@Example.com ",
-        ):
-            call_command("email_recipient_ref", stdout=output)
-
-        rendered = output.getvalue()
-        for candidate in recipient_reference_candidates("a@example.com"):
-            self.assertIn(candidate, rendered)
-        self.assertNotIn("a@example.com", rendered.lower())
 
 
 @override_settings(

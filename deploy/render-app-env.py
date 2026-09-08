@@ -33,6 +33,8 @@ DIRECT_SETTINGS = (
     "DJANGO_ADMIN_URL",
     "EMAIL_TRANSPORT_BACKEND",
     "EMAIL_RECIPIENT_HMAC_KEY",
+    "OBSERVABILITY_REFERENCE_HMAC_KEY",
+    "OBSERVABILITY_REFERENCE_LOOKUP_TOKEN",
     "HEALTH_READY_TOKEN",
     "MFA_REQUIRED_ROLES",
     "MAINTENANCE_MODE",
@@ -180,6 +182,8 @@ def main():
     values.setdefault("TELEMETRY_WORKER_ID", str(uuid.uuid4()))
     values.setdefault("TELEMETRY_WORKER_HMAC_KEY", secrets.token_urlsafe(48))
     values.setdefault("EMAIL_RECIPIENT_HMAC_KEY", secrets.token_urlsafe(48))
+    values.setdefault("OBSERVABILITY_REFERENCE_HMAC_KEY", secrets.token_urlsafe(48))
+    values.setdefault("OBSERVABILITY_REFERENCE_LOOKUP_TOKEN", secrets.token_urlsafe(48))
     values["OTEL_ENABLED"] = args.otel_enabled
     values.setdefault("OTEL_SERVICE_NAME", "cinematacms")
     values.setdefault("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:4318/v1/traces")

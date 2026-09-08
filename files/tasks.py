@@ -24,7 +24,7 @@ from django.utils import timezone
 
 from actions.models import USER_MEDIA_ACTIONS, MediaAction
 from cms.cache_telemetry import owned_cache
-from cms.observability import inject_trace_headers, start_span
+from cms.observability import inject_trace_headers, media_reference, start_span
 from users.models import User
 
 from .backends import FFmpegBackend
@@ -433,6 +433,7 @@ def encode_media(
                         "media.encode.ffmpeg.start",
                         {
                             "media.type": media.media_type,
+                            "cinematacms.media_ref": media_reference(friendly_token),
                             "encoding.profile_id": profile.id,
                             "encoding.resolution": profile.resolution,
                             "encoding.codec": profile.codec,
@@ -653,7 +654,13 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
             logger.info(f"Running ffmpeg command: {' '.join(ffmpeg_cmd)}")
 
             try:
-                with start_span("media.whisper.ffmpeg_extract", {"media.type": media.media_type}):
+                with start_span(
+                    "media.whisper.ffmpeg_extract",
+                    {
+                        "media.type": media.media_type,
+                        "cinematacms.media_ref": media_reference(media.friendly_token),
+                    },
+                ):
                     ret = subprocess.run(ffmpeg_cmd, capture_output=True, shell=False)
                 logger.info(f"ffmpeg return code: {ret.returncode}")
 
@@ -680,7 +687,14 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
             logger.info(f"Running whisper command: {cmd_str}")
 
             try:
-                with start_span("media.whisper.transcribe", {"media.type": media.media_type, "translate": translate}):
+                with start_span(
+                    "media.whisper.transcribe",
+                    {
+                        "media.type": media.media_type,
+                        "translate": translate,
+                        "cinematacms.media_ref": media_reference(media.friendly_token),
+                    },
+                ):
                     ret = subprocess.run(whisper_cmd, capture_output=True)
                 logger.info(f"Whisper return code: {ret.returncode}")
 
@@ -766,7 +780,13 @@ def produce_sprite_from_video(friendly_token):
         logger.info("failed to get media with friendly_token %s" % friendly_token)
         return {"ok": False, "reason": "media_not_found", "friendly_token": friendly_token}
 
-    with start_span("media.sprite.generate", {"media.type": media.media_type}):
+    with start_span(
+        "media.sprite.generate",
+        {
+            "media.type": media.media_type,
+            "cinematacms.media_ref": media_reference(media.friendly_token),
+        },
+    ):
         result = generate_sprite_for_media(media)
     if not result["ok"]:
         logger.error(

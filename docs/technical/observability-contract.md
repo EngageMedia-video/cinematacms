@@ -32,15 +32,11 @@ JSON logs add `trace_id`, `span_id`, `actor_ref`, `task_id`, `task_name`, and th
 normalized queue. For an authenticated request, `actor_ref` is the same
 versioned keyed reference used for an email recipient; the current request span
 also carries `cinematacms.actor_ref`. This permits restricted incident lookup
-without exporting an email address. Generate current and previous-key lookup
-values on the application host, where the HMAC secrets are available:
-
-```bash
-python manage.py email_recipient_ref
-```
-
-The command reads the address from a hidden prompt and never prints it. Search
-logs by `actor_ref` for general user activity or by `recipient_ref` for an email
+without exporting an email address. A deployment may expose the token-protected
+`POST /internal/observability/references` endpoint to its restricted monitoring
+system. It resolves an actor email or public media token into the versioned,
+keyed references used by telemetry without returning the input. Search logs by
+`actor_ref` for general user activity or by `recipient_ref` for an email
 delivery, then use the matching `trace_id` to follow downstream work. Span
 filtering removes attributes whose names identify message bodies, addresses,
 authorization data, secrets, passwords, filenames, or URLs. Restricted email

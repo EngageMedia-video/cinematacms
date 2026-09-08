@@ -78,6 +78,10 @@ Use `--observability managed` when another deployment system provides the
 Prometheus and OpenTelemetry Collector services. This mode enables application
 tracing to `http://127.0.0.1:4318/v1/traces`, stops the local observability
 services, and does not install a second Collector.
+The generated application environment also contains
+`OBSERVABILITY_REFERENCE_LOOKUP_TOKEN` and
+`OBSERVABILITY_REFERENCE_HMAC_KEY`. Give the lookup token only to the managed
+monitoring service that calls the internal incident-reference endpoint.
 
 Run a dry run to validate installer options without changing the server:
 
