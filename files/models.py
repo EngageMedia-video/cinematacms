@@ -534,21 +534,29 @@ class Media(models.Model):
         # this save, and the write would then still carry the stale blank. Take the
         # row lock and hold it across both, matching the lock that method already
         # uses, so the two orderings serialize instead of interleaving.
+        #
+        # is_encrypted is read from the locked row, not from memory, whenever this
+        # save is not itself persisting that column: an in-memory False that is
+        # never written leaves the row encrypted, so trusting it would clear the
+        # key of a still-encrypted media. An intentional disable writes both
+        # columns together, and is honoured by the persisted value below.
+        persists_encryption_state = update_fields is None or "is_encrypted" in update_fields
         if (
             self.pk
-            and self.is_encrypted
             and not self.encryption_key
             and (update_fields is None or "encryption_key" in update_fields)
+            and (self.is_encrypted or not persists_encryption_state)
         ):
             with transaction.atomic(using=self._state.db):
-                stored_key = (
+                stored = (
                     self.__class__.objects.select_for_update()
                     .filter(pk=self.pk)
-                    .values_list("encryption_key", flat=True)
+                    .values("encryption_key", "is_encrypted")
                     .first()
                 )
-                if stored_key:
-                    self.encryption_key = stored_key
+                stays_encrypted = self.is_encrypted if persists_encryption_state else (stored or {}).get("is_encrypted")
+                if stored and stays_encrypted and stored["encryption_key"]:
+                    self.encryption_key = stored["encryption_key"]
                 super(Media, self).save(*args, **kwargs)
         else:
             super(Media, self).save(*args, **kwargs)

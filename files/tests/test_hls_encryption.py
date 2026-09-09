@@ -786,6 +786,56 @@ class EncryptionKeyLostUpdateTests(TestCase):
         self.assertEqual(self._stored_key(media), key)
         self.assertEqual(media.encryption_key, key)
 
+    def test_encryption_state_comes_from_the_row_when_not_being_saved(self):
+        """A blank key is only honoured when the save itself disables encryption.
+
+        update_fields that omits is_encrypted leaves the stored column alone, so
+        an in-memory False is never persisted and the row stays encrypted. Taking
+        the in-memory value there would clear the key of a still-encrypted media
+        and produce exactly the is_encrypted=True / encryption_key="" state this
+        guard exists to prevent.
+        """
+
+        def stale_disable_key_only(media):
+            # is_encrypted is not persisted, so the row remains encrypted.
+            media.is_encrypted = False
+            media.encryption_key = ""
+            media.save(update_fields=["encryption_key"])
+
+        def intentional_disable(media):
+            # Both columns written together: a real disable, key may go.
+            media.is_encrypted = False
+            media.encryption_key = ""
+            media.save(update_fields=["is_encrypted", "encryption_key"])
+
+        def intentional_disable_full_save(media):
+            media.is_encrypted = False
+            media.encryption_key = ""
+            media.save()
+
+        # (name, write, key must survive)
+        cases = [
+            ("in-memory disable not persisted", stale_disable_key_only, True),
+            ("intentional disable via update_fields", intentional_disable, False),
+            ("intentional disable via full save", intentional_disable_full_save, False),
+        ]
+
+        for name, write, must_survive in cases:
+            with self.subTest(case=name):
+                media = create_test_media(self.user, is_encrypted=True, media_type="video")
+                key = media.ensure_encryption_key()
+
+                instance = Media.objects.get(pk=media.pk)
+                write(instance)
+
+                row = Media.objects.filter(pk=media.pk).values("is_encrypted", "encryption_key").first()
+                if must_survive:
+                    self.assertEqual(row["encryption_key"], key, f"{name}: cleared the key of an encrypted row")
+                    self.assertTrue(row["is_encrypted"], f"{name}: unexpectedly disabled encryption")
+                else:
+                    self.assertEqual(row["encryption_key"], "", f"{name}: intentional clear was blocked")
+                    self.assertFalse(row["is_encrypted"], f"{name}: encryption should be disabled")
+
     def test_ensure_encryption_key_stays_idempotent(self):
         media = create_test_media(self.user, is_encrypted=True)
         first = media.ensure_encryption_key()
