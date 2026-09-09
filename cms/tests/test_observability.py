@@ -1,8 +1,11 @@
+import json
 import logging
+import tempfile
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
 
+from django.core.cache import cache
 from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
@@ -12,14 +15,324 @@ from cms.observability import (
     OperationAwareSampler,
     SafeSpanExporter,
     _credentialed_endpoint_is_secure,
+    current_actor_ref,
     inject_trace_headers,
+    media_reference,
     start_span,
 )
-from cms.observability_middleware import ObservabilityMetricsMiddleware
-from cms.urls import metrics_view
+from cms.observability_middleware import ObservabilityActorMiddleware, ObservabilityMetricsMiddleware
+from cms.urls import _reference_lookup_rate_limited, metrics_view, observability_reference_lookup
 
 
 class ObservabilityConfigTests(SimpleTestCase):
+    def tearDown(self):
+        cache.clear()
+
+    @override_settings(
+        OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
+        OBSERVABILITY_REFERENCE_HMAC_KEY="reference-secret",
+        EMAIL_RECIPIENT_HMAC_KEY="email-secret",
+    )
+    def test_reference_lookup_resolves_actor_and_media_without_returning_input(self):
+        factory = RequestFactory()
+        for kind, value in (("actor", "Person@Example.com"), ("media", "public-video-token")):
+            request = factory.post(
+                "/internal/observability/references",
+                data=json.dumps({"kind": kind, "value": value}),
+                content_type="application/json",
+                HTTP_AUTHORIZATION="Bearer lookup-secret",
+            )
+            response = observability_reference_lookup(request)
+            payload = json.loads(response.content)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(payload["kind"], kind)
+            self.assertTrue(payload["references"])
+            self.assertEqual(payload["references"][0]["log_field"], f"{kind}_ref")
+            self.assertEqual(payload["references"][0]["span_field"], f"cinematacms.{kind}_ref")
+            self.assertNotIn(value.lower(), response.content.decode().lower())
+
+    @override_settings(OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret")
+    def test_reference_lookup_rejects_missing_token_and_unknown_kind(self):
+        factory = RequestFactory()
+        unauthorized = observability_reference_lookup(
+            factory.post(
+                "/internal/observability/references",
+                data='{"kind":"actor","value":"person@example.com"}',
+                content_type="application/json",
+            )
+        )
+        unknown = observability_reference_lookup(
+            factory.post(
+                "/internal/observability/references",
+                data='{"kind":"other","value":"opaque"}',
+                content_type="application/json",
+                HTTP_AUTHORIZATION="Bearer lookup-secret",
+            )
+        )
+
+        self.assertEqual(unauthorized.status_code, 403)
+        self.assertEqual(unknown.status_code, 400)
+
+    @override_settings(
+        OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
+        OBSERVABILITY_REFERENCE_ALLOWED_IPS=["127.0.0.1", "::1"],
+    )
+    def test_reference_lookup_rejects_public_and_forwarded_clients(self):
+        factory = RequestFactory()
+        body = '{"kind":"actor","value":"person@example.com"}'
+
+        public = factory.post(
+            "/internal/observability/references",
+            data=body,
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer lookup-secret",
+            REMOTE_ADDR="203.0.113.10",
+        )
+        forwarded = factory.post(
+            "/internal/observability/references",
+            data=body,
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer lookup-secret",
+            REMOTE_ADDR="127.0.0.1",
+            HTTP_X_FORWARDED_FOR="203.0.113.10",
+        )
+
+        self.assertEqual(observability_reference_lookup(public).status_code, 403)
+        self.assertEqual(observability_reference_lookup(forwarded).status_code, 403)
+
+    @override_settings(
+        OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
+        OBSERVABILITY_REFERENCE_ALLOWED_IPS=["127.0.0.1"],
+        OBSERVABILITY_REFERENCE_RATE_LIMIT=1,
+    )
+    def test_reference_lookup_rate_limits_trusted_callers(self):
+        factory = RequestFactory()
+
+        def request():
+            return factory.post(
+                "/internal/observability/references",
+                data='{"kind":"other","value":"opaque"}',
+                content_type="application/json",
+                HTTP_AUTHORIZATION="Bearer lookup-secret",
+                REMOTE_ADDR="127.0.0.1",
+            )
+
+        self.assertEqual(observability_reference_lookup(request()).status_code, 400)
+        self.assertEqual(observability_reference_lookup(request()).status_code, 429)
+
+    @override_settings(OBSERVABILITY_REFERENCE_RATE_LIMIT=1)
+    def test_reference_lookup_rate_limit_fails_closed_when_cache_is_unavailable(self):
+        request = RequestFactory().post(
+            "/internal/observability/references",
+            REMOTE_ADDR="127.0.0.1",
+        )
+
+        with patch("cms.urls.lookup_rate_cache.adapter._call", side_effect=RuntimeError("cache unavailable")):
+            self.assertTrue(_reference_lookup_rate_limited(request))
+
+        with (
+            patch("cms.urls.lookup_rate_cache.add", return_value=False),
+            patch("cms.urls.lookup_rate_cache.adapter._call", side_effect=RuntimeError("cache unavailable")),
+        ):
+            self.assertTrue(_reference_lookup_rate_limited(request))
+
+    @override_settings(
+        OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
+        OBSERVABILITY_REFERENCE_ALLOWED_IPS=["127.0.0.1"],
+    )
+    def test_reference_lookup_audit_does_not_log_reported_value(self):
+        request = RequestFactory().post(
+            "/internal/observability/references",
+            data='{"kind":"actor","value":"person@example.com"}',
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer wrong-token",
+            REMOTE_ADDR="127.0.0.1",
+        )
+
+        with self.assertLogs("cms.observability.lookup", level="WARNING") as captured:
+            response = observability_reference_lookup(request)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertNotIn("person@example.com", " ".join(captured.output))
+        self.assertNotIn("wrong-token", " ".join(captured.output))
+
+    @override_settings(
+        OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
+        OBSERVABILITY_REFERENCE_ALLOWED_IPS=["127.0.0.1"],
+        OBSERVABILITY_REFERENCE_MAX_BODY_BYTES=128,
+    )
+    def test_reference_lookup_rejects_oversized_body(self):
+        request = RequestFactory().post(
+            "/internal/observability/references",
+            data=json.dumps({"kind": "media", "value": "x" * 256}),
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer lookup-secret",
+            REMOTE_ADDR="127.0.0.1",
+        )
+
+        self.assertEqual(observability_reference_lookup(request).status_code, 413)
+
+    @override_settings(OBSERVABILITY_REFERENCE_HMAC_KEY="reference-secret")
+    def test_media_reference_is_normalized_versioned_and_keyed(self):
+        self.assertEqual(media_reference(" Video-Token "), media_reference("video-token"))
+        self.assertTrue(media_reference("video-token").startswith("v1:"))
+        self.assertNotIn("video-token", media_reference("video-token"))
+
+    @override_settings(OBSERVABILITY_REFERENCE_HMAC_KEY="")
+    def test_missing_media_reference_key_does_not_break_application_work(self):
+        self.assertEqual(media_reference("video-token"), "")
+
+    @override_settings(OTEL_ENABLED=True)
+    def test_media_span_adds_reference_to_logs_within_the_operation(self):
+        record = logging.LogRecord("test", logging.INFO, __file__, 1, "msg", (), None)
+        span = Mock()
+        context = Mock()
+        context.__enter__ = Mock(return_value=span)
+        context.__exit__ = Mock(return_value=False)
+        tracer = Mock()
+        tracer.start_as_current_span.return_value = context
+
+        with patch("cms.observability.get_tracer", return_value=tracer):
+            with start_span("media.encode", {"cinematacms.media_ref": "v1:opaque"}):
+                OpenTelemetryLogFilter().filter(record)
+
+        self.assertEqual(record.media_ref, "v1:opaque")
+
+    @override_settings(
+        FFMPEG_COMMAND="ffmpeg",
+        OBSERVABILITY_REFERENCE_HMAC_KEY="reference-secret",
+        TEMP_DIRECTORY=None,
+        WHISPER_CPP_COMMAND="whisper",
+        WHISPER_CPP_MODEL="model",
+    )
+    def test_whisper_failure_logs_run_before_the_media_span_closes(self):
+        from files import tasks
+
+        active_span = []
+        error_spans = []
+
+        class TrackedSpan:
+            def __init__(self, name):
+                self.name = name
+
+            def __enter__(self):
+                active_span.append(self.name)
+
+            def __exit__(self, *_args):
+                active_span.pop()
+
+        media = SimpleNamespace(
+            friendly_token="video-token",
+            media_type="video",
+            media_file=SimpleNamespace(path="/media/video.mp4", name="video.mp4"),
+        )
+        request = Mock()
+
+        def capture_error(*_args, **_kwargs):
+            error_spans.append(active_span[-1] if active_span else None)
+
+        common_patches = (
+            patch("files.tasks.time.sleep"),
+            patch("files.tasks.os.path.exists", return_value=True),
+            patch("files.tasks.Media.objects.get", return_value=media),
+            patch("files.tasks.Language.objects.filter", return_value=Mock(first=Mock(return_value=Mock()))),
+            patch(
+                "files.tasks.TranscriptionRequest.objects.filter",
+                return_value=Mock(exists=Mock(return_value=False)),
+            ),
+            patch("files.tasks.TranscriptionRequest.objects.create", return_value=request),
+            patch("files.tasks.tempfile.TemporaryDirectory", return_value=tempfile.TemporaryDirectory()),
+            patch("files.tasks.start_span", side_effect=lambda name, _attributes: TrackedSpan(name)),
+            patch("files.tasks.logger.error", side_effect=capture_error),
+        )
+
+        with (
+            common_patches[0],
+            common_patches[1],
+            common_patches[2],
+            common_patches[3],
+            common_patches[4],
+            common_patches[5],
+            common_patches[6],
+            common_patches[7],
+            common_patches[8],
+            patch(
+                "files.tasks.subprocess.run",
+                return_value=SimpleNamespace(returncode=1, stdout=b"", stderr=b"failed"),
+            ),
+        ):
+            self.assertFalse(tasks.whisper_transcribe.run("video-token"))
+
+        self.assertEqual(error_spans, ["media.whisper.ffmpeg_extract"])
+
+    @override_settings(OBSERVABILITY_REFERENCE_HMAC_KEY="reference-secret")
+    def test_sprite_failure_log_runs_before_the_media_span_closes(self):
+        from files import tasks
+
+        active = []
+
+        class TrackedSpan:
+            def __enter__(self):
+                active.append(True)
+
+            def __exit__(self, *_args):
+                active.pop()
+
+        media = SimpleNamespace(friendly_token="video-token", media_type="video")
+
+        with (
+            patch("files.tasks.Media.objects.get", return_value=media),
+            patch("files.tasks.start_span", return_value=TrackedSpan()),
+            patch("files.tasks.generate_sprite_for_media", return_value={"ok": False, "reason": "failed"}),
+            patch("files.tasks.logger.error", side_effect=lambda *_args, **_kwargs: self.assertTrue(active)),
+        ):
+            result = tasks.produce_sprite_from_video.run("video-token")
+
+        self.assertFalse(result["ok"])
+
+    @override_settings(OTEL_ENABLED=True)
+    def test_authenticated_request_adds_pseudonymous_actor_ref_to_logs_and_trace(self):
+        record = logging.LogRecord("test", logging.INFO, __file__, 1, "msg", (), None)
+        span = Mock()
+        request = RequestFactory().get("/upload")
+        request.user = SimpleNamespace(is_authenticated=True, email="person@example.com")
+
+        def response(_request):
+            OpenTelemetryLogFilter().filter(record)
+            return HttpResponse("ok")
+
+        with (
+            patch("cms.observability_middleware.recipient_reference", return_value="v7:opaque"),
+            patch("opentelemetry.trace.get_current_span", return_value=span),
+        ):
+            result = ObservabilityActorMiddleware(response)(request)
+
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(record.actor_ref, "v7:opaque")
+        self.assertEqual(current_actor_ref(), "")
+        span.set_attribute.assert_called_once_with("cinematacms.actor_ref", "v7:opaque")
+
+    @override_settings(OBSERVABILITY_SLOW_REQUEST_SECONDS=0)
+    def test_actor_context_is_active_when_request_diagnostic_is_logged(self):
+        request = RequestFactory().get("/health/ready")
+        request.user = SimpleNamespace(is_authenticated=True, email="person@example.com")
+        observed_actor_refs = []
+
+        def capture_warning(*_args, **_kwargs):
+            observed_actor_refs.append(current_actor_ref())
+
+        metrics = ObservabilityMetricsMiddleware(lambda _request: HttpResponse("ok"))
+        middleware = ObservabilityActorMiddleware(metrics)
+        with (
+            patch("cms.observability_middleware.recipient_reference", return_value="v7:opaque"),
+            patch("cms.observability_middleware.logger.warning", side_effect=capture_warning),
+        ):
+            response = middleware(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(observed_actor_refs, ["v7:opaque"])
+
     @override_settings(
         OBSERVABILITY_SLOW_REQUEST_SECONDS=0.3,
         OBSERVABILITY_SLOW_QUERY_SECONDS=1.0,

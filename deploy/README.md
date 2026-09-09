@@ -72,7 +72,22 @@ sudo journalctl -u cinematacms-otelcol
 ```
 
 Use `--observability none` when another deployment system manages Prometheus
-and trace collection.
+and application tracing is disabled.
+
+Use `--observability managed` when another deployment system provides the
+Prometheus and OpenTelemetry Collector services. This mode enables application
+tracing to `http://127.0.0.1:4318/v1/traces`, stops the local observability
+services, and does not install a second Collector.
+The generated application environment also contains
+`OBSERVABILITY_REFERENCE_LOOKUP_TOKEN` and
+`OBSERVABILITY_REFERENCE_HMAC_KEY`. Give the lookup token only to the managed
+monitoring service that calls the internal incident-reference endpoint. The
+endpoint allows loopback callers by default, resolves forwarded addresses only
+through `TRUSTED_PROXIES`, limits each caller to 30 requests per minute, rejects
+bodies larger than 1 KiB, and emits audit events without the submitted value.
+Configure `OBSERVABILITY_REFERENCE_ALLOWED_IPS` with explicit addresses or CIDR
+ranges only when the monitoring service runs on another host, and use HTTPS or
+mTLS for that connection.
 
 Run a dry run to validate installer options without changing the server:
 

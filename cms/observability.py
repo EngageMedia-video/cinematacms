@@ -1,5 +1,8 @@
+import hashlib
+import hmac
 import logging
 from contextlib import contextmanager
+from contextvars import ContextVar
 from ipaddress import ip_address
 from typing import Any
 from urllib.parse import urlparse
@@ -13,10 +16,13 @@ _django_instrumented = False
 _celery_instrumented = False
 _redis_instrumented = False
 _requests_instrumented = False
+_actor_ref: ContextVar[str] = ContextVar("cinematacms_actor_ref", default="")
+_media_ref: ContextVar[str] = ContextVar("cinematacms_media_ref", default="")
 
 ALLOWED_SERVICE_ROLES = frozenset({"web", "long-task", "short-task", "transcription", "email", "beat"})
 SENSITIVE_ATTRIBUTE_PARTS = ("email", "authorization", "secret", "password", "body", "filename", "url")
 RESTRICTED_EMAIL_ATTRIBUTES = frozenset({"email.delivery_id", "email.recipient_ref", "email.kind", "email.attempt"})
+RESTRICTED_REFERENCE_ATTRIBUTES = frozenset({"cinematacms.actor_ref", "cinematacms.media_ref"})
 
 
 class SafeSpanExporter:
@@ -230,6 +236,33 @@ def inject_trace_headers(headers: dict[str, Any] | None = None) -> dict[str, Any
     return merged
 
 
+@contextmanager
+def actor_reference_context(actor_ref: str):
+    token = _actor_ref.set(actor_ref)
+    try:
+        yield
+    finally:
+        _actor_ref.reset(token)
+
+
+def current_actor_ref() -> str:
+    return _actor_ref.get()
+
+
+def current_media_ref() -> str:
+    return _media_ref.get()
+
+
+def media_reference(value: str) -> str:
+    key = getattr(settings, "OBSERVABILITY_REFERENCE_HMAC_KEY", "")
+    if not key:
+        return ""
+    version = str(getattr(settings, "OBSERVABILITY_REFERENCE_HMAC_VERSION", "v1"))
+    normalized = value.strip().lower()
+    digest = hmac.new(key.encode(), normalized.encode(), hashlib.sha256).hexdigest()
+    return f"{version}:{digest}"
+
+
 def current_trace_ids() -> tuple[str, str]:
     if not observability_enabled():
         return "", ""
@@ -249,6 +282,8 @@ class OpenTelemetryLogFilter(logging.Filter):
         trace_id, span_id = current_trace_ids()
         record.trace_id = trace_id
         record.span_id = span_id
+        record.actor_ref = current_actor_ref()
+        record.media_ref = current_media_ref()
         try:
             from celery import current_task
 
@@ -300,11 +335,12 @@ def start_span(name: str, attributes: dict[str, Any] | None = None):
         _record_telemetry_failure("traces", "span", "start")
         yield None
         return
+    media_token = _media_ref.set(str((attributes or {}).get("cinematacms.media_ref", "")))
     try:
         if attributes:
             for key, value in attributes.items():
                 normalized_key = key.lower()
-                safe = normalized_key in RESTRICTED_EMAIL_ATTRIBUTES or not any(
+                safe = normalized_key in RESTRICTED_EMAIL_ATTRIBUTES | RESTRICTED_REFERENCE_ATTRIBUTES or not any(
                     part in normalized_key for part in SENSITIVE_ATTRIBUTE_PARTS
                 )
                 if value is not None and safe:
@@ -324,3 +360,5 @@ def start_span(name: str, attributes: dict[str, Any] | None = None):
             manager.__exit__(None, None, None)
         except Exception:
             _record_telemetry_failure("traces", "span", "finish")
+    finally:
+        _media_ref.reset(media_token)

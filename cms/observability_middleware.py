@@ -6,9 +6,35 @@ from django.urls import Resolver404, resolve
 
 from cms.db_backend.telemetry import database_context
 from cms.http_telemetry import classify_request, normalize_method, normalize_status_class, normalize_status_code
+from cms.observability import actor_reference_context
+from email_delivery.service import recipient_reference
 from files.metrics import HTTP_REQUEST_DURATION_SECONDS, HTTP_REQUESTS_TOTAL, record_telemetry_failure
 
 logger = logging.getLogger(__name__)
+
+
+class ObservabilityActorMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        actor_ref = ""
+        try:
+            user = getattr(request, "user", None)
+            if user is not None and user.is_authenticated and user.email:
+                actor_ref = recipient_reference(user.email)
+        except Exception:
+            record_telemetry_failure("context", "http", "prepare")
+
+        with actor_reference_context(actor_ref):
+            if actor_ref:
+                try:
+                    from opentelemetry import trace
+
+                    trace.get_current_span().set_attribute("cinematacms.actor_ref", actor_ref)
+                except Exception:
+                    record_telemetry_failure("traces", "http", "attribute")
+            return self.get_response(request)
 
 
 class ObservabilityMetricsMiddleware:

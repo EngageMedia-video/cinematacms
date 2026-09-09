@@ -11,7 +11,7 @@ Options:
   --domain HOST           Portal hostname without a scheme, path, or port.
   --portal-name NAME      Portal name. Defaults to CinemataCMS.
   --proxy MODE            Reverse proxy mode: none or cloudflare.
-  --observability MODE    Observability mode: none or local.
+  --observability MODE    Observability mode: none, local, or managed.
   --dry-run               Resolve and validate options without changing the system.
   -h, --help              Show this help text.
 EOF
@@ -275,7 +275,7 @@ else
         read -r -p "Enter the reverse proxy mode [none/cloudflare], or press Enter for none: " PROXY_MODE
     fi
     if [ -z "$OBSERVABILITY_MODE" ]; then
-        read -r -p "Enter the observability mode [none/local], or press Enter for none: " OBSERVABILITY_MODE
+        read -r -p "Enter the observability mode [none/local/managed], or press Enter for none: " OBSERVABILITY_MODE
     fi
 fi
 
@@ -297,8 +297,8 @@ case "$PROXY_MODE" in
     *) fail "--proxy must be none or cloudflare" ;;
 esac
 case "$OBSERVABILITY_MODE" in
-    none|local) ;;
-    *) fail "--observability must be none or local" ;;
+    none|local|managed) ;;
+    *) fail "--observability must be none, local, or managed" ;;
 esac
 
 echo "Resolved installation configuration:"

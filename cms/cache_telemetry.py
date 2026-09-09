@@ -48,6 +48,7 @@ CACHE_FAMILIES = frozenset(
         "scheduled_task_lock",
         "restricted_media_token",
         "restricted_media_rate_limit",
+        "incident_lookup_rate_limit",
         "cache_probe",
     }
 )
@@ -183,12 +184,14 @@ class OwnedCacheAdapter:
         fallback: Any,
         classify: Callable[[Any], str],
         item_counts: Callable[[Any], tuple[int, int]] | None = None,
+        raise_on_error: bool = False,
     ) -> Any:
         normalized_family = _normalize(family, CACHE_FAMILIES, field="family", fallback="cache_probe")
         normalized_operation = _normalize(operation, CACHE_OPERATIONS, field="operation", fallback="other")
         value = fallback
         result = "error"
         error = False
+        caught_error = None
         span = None
         try:
             started = self.clock()
@@ -201,8 +204,9 @@ class OwnedCacheAdapter:
                 value = callback(span)
                 result = _normalize(classify(value), CACHE_RESULTS, field="result", fallback="other")
                 _safe_span_attribute(span, "cinematacms.cache.result", result)
-        except Exception:
+        except Exception as exc:
             error = True
+            caught_error = exc
             result = "error"
 
         try:
@@ -223,6 +227,8 @@ class OwnedCacheAdapter:
                 _safe_items(normalized_family, "miss", misses)
         if error:
             _safe_event("cinematacms.cache.operation.failed", normalized_family, normalized_operation, result, duration)
+            if raise_on_error:
+                raise caught_error
         if duration >= _slow_threshold():
             _safe_event("cinematacms.cache.operation.slow", normalized_family, normalized_operation, result, duration)
         return value
@@ -296,19 +302,52 @@ class OwnedCacheAdapter:
 
         return bool(self._run(family, "write", callback, fallback=False, classify=lambda _value: "success"))
 
-    def add(self, family: str, key: str, value: Any, timeout: int | None = None, *, version: int | None = None) -> bool:
+    def add(
+        self,
+        family: str,
+        key: str,
+        value: Any,
+        timeout: int | None = None,
+        *,
+        version: int | None = None,
+        raise_on_error: bool = False,
+    ) -> bool:
         def callback(_span: Any) -> bool:
             return bool(self._call("add", key, value, timeout, version=version))
 
         return bool(
-            self._run(family, "lock", callback, fallback=False, classify=lambda added: "success" if added else "miss")
+            self._run(
+                family,
+                "lock",
+                callback,
+                fallback=False,
+                classify=lambda added: "success" if added else "miss",
+                raise_on_error=raise_on_error,
+            )
         )
 
-    def incr(self, family: str, key: str, delta: int = 1, *, version: int | None = None) -> int:
+    def incr(
+        self,
+        family: str,
+        key: str,
+        delta: int = 1,
+        *,
+        version: int | None = None,
+        raise_on_error: bool = False,
+    ) -> int:
         def callback(_span: Any) -> int:
             return int(self._call("incr", key, delta, version=version))
 
-        return int(self._run(family, "write", callback, fallback=0, classify=lambda _value: "success"))
+        return int(
+            self._run(
+                family,
+                "write",
+                callback,
+                fallback=0,
+                classify=lambda _value: "success",
+                raise_on_error=raise_on_error,
+            )
+        )
 
     def delete(self, family: str, key: str, *, version: int | None = None) -> bool:
         def callback(_span: Any) -> bool:
@@ -393,11 +432,39 @@ class BoundCacheAdapter:
     def set_many(self, data: dict, timeout: int | None = None, *, version: int | None = None) -> bool:
         return self.adapter.set_many(self.family, data, timeout, version=version)
 
-    def add(self, key: str, value: Any, timeout: int | None = None, *, version: int | None = None) -> bool:
-        return self.adapter.add(self.family, key, value, timeout, version=version)
+    def add(
+        self,
+        key: str,
+        value: Any,
+        timeout: int | None = None,
+        *,
+        version: int | None = None,
+        raise_on_error: bool = False,
+    ) -> bool:
+        return self.adapter.add(
+            self.family,
+            key,
+            value,
+            timeout,
+            version=version,
+            raise_on_error=raise_on_error,
+        )
 
-    def incr(self, key: str, delta: int = 1, *, version: int | None = None) -> int:
-        return self.adapter.incr(self.family, key, delta, version=version)
+    def incr(
+        self,
+        key: str,
+        delta: int = 1,
+        *,
+        version: int | None = None,
+        raise_on_error: bool = False,
+    ) -> int:
+        return self.adapter.incr(
+            self.family,
+            key,
+            delta,
+            version=version,
+            raise_on_error=raise_on_error,
+        )
 
     def delete(self, key: str, *, version: int | None = None) -> bool:
         return self.adapter.delete(self.family, key, version=version)

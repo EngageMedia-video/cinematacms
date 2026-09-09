@@ -1,11 +1,25 @@
 import os
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from cms.runtime_config import env_bool, env_csv, env_float, env_int, env_optional_bool
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 class RuntimeConfigTests(unittest.TestCase):
+    def test_actor_observability_runs_after_authentication(self):
+        settings = (ROOT / "cms/settings.py").read_text()
+        self.assertLess(
+            settings.index("django.contrib.auth.middleware.AuthenticationMiddleware"),
+            settings.index("cms.observability_middleware.ObservabilityActorMiddleware"),
+        )
+        self.assertLess(
+            settings.index("cms.observability_middleware.ObservabilityActorMiddleware"),
+            settings.index("cms.observability_middleware.ObservabilityMetricsMiddleware"),
+        )
+
     def test_environment_values_use_one_typed_parser(self):
         with patch.dict(
             os.environ,

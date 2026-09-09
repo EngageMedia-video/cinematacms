@@ -86,7 +86,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "cms.observability_middleware.ObservabilityMetricsMiddleware",
     "cms.authentication_telemetry.AuthenticationDependencyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
@@ -94,6 +93,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "cms.observability_middleware.ObservabilityActorMiddleware",
+    "cms.observability_middleware.ObservabilityMetricsMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
@@ -179,6 +180,13 @@ EMAIL_RECIPIENT_HMAC_VERSION = os.getenv("EMAIL_RECIPIENT_HMAC_VERSION", "v1")
 EMAIL_RECIPIENT_HMAC_KEY = os.getenv("EMAIL_RECIPIENT_HMAC_KEY", "")
 EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY = os.getenv("EMAIL_RECIPIENT_HMAC_PREVIOUS_KEY", "")
 EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION = os.getenv("EMAIL_RECIPIENT_HMAC_PREVIOUS_VERSION", "previous")
+OBSERVABILITY_REFERENCE_HMAC_VERSION = os.getenv("OBSERVABILITY_REFERENCE_HMAC_VERSION", "v1")
+OBSERVABILITY_REFERENCE_HMAC_KEY = os.getenv("OBSERVABILITY_REFERENCE_HMAC_KEY", "")
+OBSERVABILITY_REFERENCE_LOOKUP_TOKEN = os.getenv("OBSERVABILITY_REFERENCE_LOOKUP_TOKEN", "")
+OBSERVABILITY_REFERENCE_ALLOWED_IPS = env_csv("OBSERVABILITY_REFERENCE_ALLOWED_IPS", ["127.0.0.1", "::1"])
+OBSERVABILITY_REFERENCE_RATE_LIMIT = env_int("OBSERVABILITY_REFERENCE_RATE_LIMIT", 30)
+OBSERVABILITY_REFERENCE_RATE_WINDOW_SECONDS = env_int("OBSERVABILITY_REFERENCE_RATE_WINDOW_SECONDS", 60)
+OBSERVABILITY_REFERENCE_MAX_BODY_BYTES = env_int("OBSERVABILITY_REFERENCE_MAX_BODY_BYTES", 1024)
 OBSERVABILITY_SLOW_REQUEST_SECONDS = env_float("OBSERVABILITY_SLOW_REQUEST_SECONDS", 2.0)
 OBSERVABILITY_SLOW_QUERY_SECONDS = env_float("OBSERVABILITY_SLOW_QUERY_SECONDS", 1.0)
 OBSERVABILITY_SLOW_CACHE_SECONDS = env_float("OBSERVABILITY_SLOW_CACHE_SECONDS", 0.1)
@@ -194,7 +202,7 @@ LOGGING = {
     "formatters": {
         "json": {
             "()": "pythonjsonlogger.json.JsonFormatter",
-            "format": "%(asctime)s %(name)s %(levelname)s %(message)s %(trace_id)s %(span_id)s",
+            "format": "%(asctime)s %(name)s %(levelname)s %(message)s %(trace_id)s %(span_id)s %(actor_ref)s %(media_ref)s",
             "rename_fields": {
                 "asctime": "timestamp",
                 "levelname": "level",
