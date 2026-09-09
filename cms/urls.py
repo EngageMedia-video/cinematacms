@@ -48,9 +48,9 @@ def _reference_lookup_rate_limited(request):
     limit = max(1, getattr(settings, "OBSERVABILITY_REFERENCE_RATE_LIMIT", 30))
     window = max(1, getattr(settings, "OBSERVABILITY_REFERENCE_RATE_WINDOW_SECONDS", 60))
     try:
-        if lookup_rate_cache.add(key, 1, timeout=window):
+        if lookup_rate_cache.add(key, 1, timeout=window, raise_on_error=True):
             return False
-        return lookup_rate_cache.incr(key) > limit
+        return lookup_rate_cache.incr(key, raise_on_error=True) > limit
     except Exception:
         lookup_logger.exception(
             "cinematacms.observability.reference_lookup.denied",

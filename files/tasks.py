@@ -653,75 +653,75 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
             ]
             logger.info(f"Running ffmpeg command: {' '.join(ffmpeg_cmd)}")
 
-            try:
-                with start_span(
-                    "media.whisper.ffmpeg_extract",
-                    {
-                        "media.type": media.media_type,
-                        "cinematacms.media_ref": media_reference(media.friendly_token),
-                    },
-                ):
+            with start_span(
+                "media.whisper.ffmpeg_extract",
+                {
+                    "media.type": media.media_type,
+                    "cinematacms.media_ref": media_reference(media.friendly_token),
+                },
+            ):
+                try:
                     ret = subprocess.run(ffmpeg_cmd, capture_output=True, shell=False)
-                logger.info(f"ffmpeg return code: {ret.returncode}")
+                    logger.info(f"ffmpeg return code: {ret.returncode}")
 
-                if ret.returncode != 0:
-                    stderr = ret.stderr.decode("utf-8")
-                    logger.error(f"ffmpeg error: {stderr}")
+                    if ret.returncode != 0:
+                        stderr = ret.stderr.decode("utf-8")
+                        logger.error(f"ffmpeg error: {stderr}")
+                        transcription_request.delete()
+                        return False
+
+                    if not os.path.exists(wav_file):
+                        logger.error(f"WAV file not created at: {wav_file}")
+                        transcription_request.delete()
+                        return False
+
+                    logger.info(f"WAV file created successfully: {os.path.getsize(wav_file)} bytes")
+                except Exception as e:
+                    logger.error(f"Exception running ffmpeg: {str(e)}")
                     transcription_request.delete()
                     return False
-
-                if not os.path.exists(wav_file):
-                    logger.error(f"WAV file not created at: {wav_file}")
-                    transcription_request.delete()
-                    return False
-
-                logger.info(f"WAV file created successfully: {os.path.getsize(wav_file)} bytes")
-            except Exception as e:
-                logger.error(f"Exception running ffmpeg: {str(e)}")
-                transcription_request.delete()
-                return False
 
             whisper_cmd = get_whisper_command(wav_file, output_name, translate=translate)
 
             cmd_str = " ".join(whisper_cmd)
             logger.info(f"Running whisper command: {cmd_str}")
 
-            try:
-                with start_span(
-                    "media.whisper.transcribe",
-                    {
-                        "media.type": media.media_type,
-                        "translate": translate,
-                        "cinematacms.media_ref": media_reference(media.friendly_token),
-                    },
-                ):
+            with start_span(
+                "media.whisper.transcribe",
+                {
+                    "media.type": media.media_type,
+                    "translate": translate,
+                    "cinematacms.media_ref": media_reference(media.friendly_token),
+                },
+            ):
+                try:
                     ret = subprocess.run(whisper_cmd, capture_output=True)
-                logger.info(f"Whisper return code: {ret.returncode}")
+                    logger.info(f"Whisper return code: {ret.returncode}")
 
-                stdout = ret.stdout.decode("utf-8")
-                stderr = ret.stderr.decode("utf-8")
+                    stdout = ret.stdout.decode("utf-8")
+                    stderr = ret.stderr.decode("utf-8")
 
-                if stdout:
-                    logger.info(f"Whisper stdout: {stdout}")
+                    if stdout:
+                        logger.info(f"Whisper stdout: {stdout}")
 
-                if stderr:
-                    logger.error(f"Whisper stderr: {stderr}")
+                    if stderr:
+                        logger.error(f"Whisper stderr: {stderr}")
 
-                if ret.returncode != 0:
-                    logger.error(f"Whisper command failed with return code {ret.returncode}")
+                    if ret.returncode != 0:
+                        logger.error(f"Whisper command failed with return code {ret.returncode}")
+                        transcription_request.delete()
+                        return False
+
+                    if not os.path.exists(output_name_with_vtt_ending):
+                        logger.error(f"Output VTT file not created at: {output_name_with_vtt_ending}")
+                        transcription_request.delete()
+                        return False
+
+                    logger.info(f"VTT file created successfully: {os.path.getsize(output_name_with_vtt_ending)} bytes")
+                except Exception as e:
+                    logger.error(f"Exception running whisper: {str(e)}")
                     transcription_request.delete()
                     return False
-
-                if not os.path.exists(output_name_with_vtt_ending):
-                    logger.error(f"Output VTT file not created at: {output_name_with_vtt_ending}")
-                    transcription_request.delete()
-                    return False
-
-                logger.info(f"VTT file created successfully: {os.path.getsize(output_name_with_vtt_ending)} bytes")
-            except Exception as e:
-                logger.error(f"Exception running whisper: {str(e)}")
-                transcription_request.delete()
-                return False
 
             # Create the subtitle entry in the database
             subtitle = None
@@ -788,13 +788,13 @@ def produce_sprite_from_video(friendly_token):
         },
     ):
         result = generate_sprite_for_media(media)
-    if not result["ok"]:
-        logger.error(
-            "Failed to generate sprite for media %s: %s%s",
-            friendly_token,
-            result["reason"],
-            f" ({result['error']})" if result.get("error") else "",
-        )
+        if not result["ok"]:
+            logger.error(
+                "Failed to generate sprite for media %s: %s%s",
+                friendly_token,
+                result["reason"],
+                f" ({result['error']})" if result.get("error") else "",
+            )
     return result
 
 

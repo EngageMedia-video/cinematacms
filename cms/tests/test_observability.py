@@ -1,5 +1,6 @@
 import json
 import logging
+import tempfile
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
@@ -20,7 +21,7 @@ from cms.observability import (
     start_span,
 )
 from cms.observability_middleware import ObservabilityActorMiddleware, ObservabilityMetricsMiddleware
-from cms.urls import metrics_view, observability_reference_lookup
+from cms.urls import _reference_lookup_rate_limited, metrics_view, observability_reference_lookup
 
 
 class ObservabilityConfigTests(SimpleTestCase):
@@ -120,6 +121,22 @@ class ObservabilityConfigTests(SimpleTestCase):
         self.assertEqual(observability_reference_lookup(request()).status_code, 400)
         self.assertEqual(observability_reference_lookup(request()).status_code, 429)
 
+    @override_settings(OBSERVABILITY_REFERENCE_RATE_LIMIT=1)
+    def test_reference_lookup_rate_limit_fails_closed_when_cache_is_unavailable(self):
+        request = RequestFactory().post(
+            "/internal/observability/references",
+            REMOTE_ADDR="127.0.0.1",
+        )
+
+        with patch("cms.urls.lookup_rate_cache.adapter._call", side_effect=RuntimeError("cache unavailable")):
+            self.assertTrue(_reference_lookup_rate_limited(request))
+
+        with (
+            patch("cms.urls.lookup_rate_cache.add", return_value=False),
+            patch("cms.urls.lookup_rate_cache.adapter._call", side_effect=RuntimeError("cache unavailable")),
+        ):
+            self.assertTrue(_reference_lookup_rate_limited(request))
+
     @override_settings(
         OBSERVABILITY_REFERENCE_LOOKUP_TOKEN="lookup-secret",
         OBSERVABILITY_REFERENCE_ALLOWED_IPS=["127.0.0.1"],
@@ -181,6 +198,98 @@ class ObservabilityConfigTests(SimpleTestCase):
                 OpenTelemetryLogFilter().filter(record)
 
         self.assertEqual(record.media_ref, "v1:opaque")
+
+    @override_settings(
+        FFMPEG_COMMAND="ffmpeg",
+        OBSERVABILITY_REFERENCE_HMAC_KEY="reference-secret",
+        TEMP_DIRECTORY=None,
+        WHISPER_CPP_COMMAND="whisper",
+        WHISPER_CPP_MODEL="model",
+    )
+    def test_whisper_failure_logs_run_before_the_media_span_closes(self):
+        from files import tasks
+
+        active_span = []
+        error_spans = []
+
+        class TrackedSpan:
+            def __init__(self, name):
+                self.name = name
+
+            def __enter__(self):
+                active_span.append(self.name)
+
+            def __exit__(self, *_args):
+                active_span.pop()
+
+        media = SimpleNamespace(
+            friendly_token="video-token",
+            media_type="video",
+            media_file=SimpleNamespace(path="/media/video.mp4", name="video.mp4"),
+        )
+        request = Mock()
+
+        def capture_error(*_args, **_kwargs):
+            error_spans.append(active_span[-1] if active_span else None)
+
+        common_patches = (
+            patch("files.tasks.time.sleep"),
+            patch("files.tasks.os.path.exists", return_value=True),
+            patch("files.tasks.Media.objects.get", return_value=media),
+            patch("files.tasks.Language.objects.filter", return_value=Mock(first=Mock(return_value=Mock()))),
+            patch(
+                "files.tasks.TranscriptionRequest.objects.filter",
+                return_value=Mock(exists=Mock(return_value=False)),
+            ),
+            patch("files.tasks.TranscriptionRequest.objects.create", return_value=request),
+            patch("files.tasks.tempfile.TemporaryDirectory", return_value=tempfile.TemporaryDirectory()),
+            patch("files.tasks.start_span", side_effect=lambda name, _attributes: TrackedSpan(name)),
+            patch("files.tasks.logger.error", side_effect=capture_error),
+        )
+
+        with (
+            common_patches[0],
+            common_patches[1],
+            common_patches[2],
+            common_patches[3],
+            common_patches[4],
+            common_patches[5],
+            common_patches[6],
+            common_patches[7],
+            common_patches[8],
+            patch(
+                "files.tasks.subprocess.run",
+                return_value=SimpleNamespace(returncode=1, stdout=b"", stderr=b"failed"),
+            ),
+        ):
+            self.assertFalse(tasks.whisper_transcribe.run("video-token"))
+
+        self.assertEqual(error_spans, ["media.whisper.ffmpeg_extract"])
+
+    @override_settings(OBSERVABILITY_REFERENCE_HMAC_KEY="reference-secret")
+    def test_sprite_failure_log_runs_before_the_media_span_closes(self):
+        from files import tasks
+
+        active = []
+
+        class TrackedSpan:
+            def __enter__(self):
+                active.append(True)
+
+            def __exit__(self, *_args):
+                active.pop()
+
+        media = SimpleNamespace(friendly_token="video-token", media_type="video")
+
+        with (
+            patch("files.tasks.Media.objects.get", return_value=media),
+            patch("files.tasks.start_span", return_value=TrackedSpan()),
+            patch("files.tasks.generate_sprite_for_media", return_value={"ok": False, "reason": "failed"}),
+            patch("files.tasks.logger.error", side_effect=lambda *_args, **_kwargs: self.assertTrue(active)),
+        ):
+            result = tasks.produce_sprite_from_video.run("video-token")
+
+        self.assertFalse(result["ok"])
 
     @override_settings(OTEL_ENABLED=True)
     def test_authenticated_request_adds_pseudonymous_actor_ref_to_logs_and_trace(self):
