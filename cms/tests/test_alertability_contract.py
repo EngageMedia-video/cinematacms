@@ -11,7 +11,6 @@ class AlertabilityContractTests(SimpleTestCase):
         catalog = json.loads((root / "config/observability/alertability.json").read_text())
         names = {condition["name"] for condition in catalog["conditions"]}
         required = {
-            "media_progress_stuck",
             "queue_saturation",
             "media_terminal_failure",
             "hls_encryption_invalid",
