@@ -823,8 +823,9 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertNotIn("killall", unit)
         self.assertIn("TimeoutStopSec=30s", unit)
 
-        uwsgi = (PROJECT_ROOT / "deploy/uwsgi.ini").read_text()
-        self.assertIn("die-on-term     = true", uwsgi)
+        for path in (PROJECT_ROOT / "uwsgi.ini", PROJECT_ROOT / "deploy/uwsgi.ini"):
+            with self.subTest(path=path):
+                self.assertIn("die-on-term     = true", path.read_text())
 
     def test_second_apply_reuses_saved_config_without_duplicate_nginx_include(self):
         first = self.run_updater(
