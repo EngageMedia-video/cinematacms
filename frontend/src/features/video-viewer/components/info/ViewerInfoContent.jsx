@@ -42,6 +42,27 @@ function metafield(arr) {
 	return ret;
 }
 
+function linkedMetafield(arr) {
+	if (!arr || !arr.length) {
+		return [];
+	}
+
+	const separator = 1 < arr.length ? ', ' : '';
+
+	return arr.map((item, i) => (
+		<span key={item.title}>
+			{item.url ? (
+				<a href={item.url} className="decoration-none text-text-link no-underline hover:text-text-link-hover">
+					{item.title}
+				</a>
+			) : (
+				item.title
+			)}
+			{i < arr.length - 1 ? separator : ''}
+		</span>
+	));
+}
+
 function MediaButton(props) {
 	return (
 		<Link href={props.link} rel="nofollow" variant="primary">
@@ -60,6 +81,7 @@ export default function ViewerInfoContent(props) {
 	const languagesContent = metafield(MediaPageStore.get('media-languages'));
 	const topicsContent = metafield(MediaPageStore.get('media-topics'));
 	const contentSensitivityContent = metafield(MediaPageStore.get('media-content-sensitivity'));
+	const countriesContent = linkedMetafield(MediaPageStore.get('media-countries'));
 	const tagsContent = (() => {
 		if (
 			!PageStore.get('config-enabled').taxonomies.tags ||
@@ -248,6 +270,10 @@ export default function ViewerInfoContent(props) {
 		languagesContent.length && {
 			title: languagesContent.length > 1 ? 'Languages' : 'Language',
 			value: languagesContent,
+		},
+		countriesContent.length && {
+			title: 1 < countriesContent.length ? 'Countries of origin' : 'Country of origin',
+			value: countriesContent,
 		},
 		props.yearProduced && { title: 'Year produced', value: props.yearProduced },
 		null !== productionCompanyContent &&

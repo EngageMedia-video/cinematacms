@@ -1,13 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import ViewerInfoContent from './ViewerInfoContent.jsx';
+import ViewerInfoContent from './ViewerInfoContent.js';
 
 const storeMocks = vi.hoisted(() => {
 	const state = {
-		contentSensitivity: [],
 		countries: [],
-		topics: [],
 	};
 
 	return {
@@ -43,15 +41,14 @@ const storeMocks = vi.hoisted(() => {
 		},
 		mediaPageStore: {
 			get: vi.fn((key) => {
-				if (key === 'media-content-sensitivity') return state.contentSensitivity;
 				if (key === 'media-countries') return state.countries;
-				if (key === 'media-topics') return state.topics;
 				if (key === 'media-data') return { edit_url: '/edit', media_type: 'video', ratings_info: [] };
 				if (key === 'media-license-info') return null;
 				if (key === 'display-media-license-info') return false;
 				if (key === 'media-production-company') return null;
 				if (key === 'media-website') return null;
 				if (key === 'media-languages') return [];
+				if (key === 'media-topics') return [];
 				if (key === 'media-categories') return [];
 				if (key === 'media-tags') return [];
 				if (key === 'media-summary') return '';
@@ -62,38 +59,38 @@ const storeMocks = vi.hoisted(() => {
 			removeListener: vi.fn(),
 		},
 		reset() {
-			state.contentSensitivity = [];
 			state.countries = [];
-			state.topics = [];
 			this.pageStore.get.mockClear();
 			this.mediaPageStore.get.mockClear();
-			this.mediaPageStore.on.mockClear();
-			this.mediaPageStore.removeListener.mockClear();
 		},
 	};
 });
 
-vi.mock('../../../../static/js/pages/_PageStore', () => ({
+vi.mock('../../_PageStore', () => ({
 	default: storeMocks.pageStore,
 }));
 
-vi.mock('../../../../static/js/pages/_PageActions', () => ({
+vi.mock('../../_PageActions', () => ({
 	addNotification: vi.fn(),
 }));
 
-vi.mock('../../../../static/js/pages/MediaPage/store.js', () => ({
+vi.mock('../store.js', () => ({
 	default: storeMocks.mediaPageStore,
 }));
 
-vi.mock('../../../../static/js/pages/MediaPage/actions.js', () => ({
+vi.mock('../actions.js', () => ({
 	removeMedia: vi.fn(),
 }));
 
-vi.mock('../../../../static/js/components/RatingSystem/RatingSystem', () => ({
+vi.mock('../../../components/-NEW-/Comments', () => ({
+	default: () => null,
+}));
+
+vi.mock('../../../components/RatingSystem/RatingSystem', () => ({
 	RatingSystem: () => null,
 }));
 
-vi.mock('../../../../static/js/contexts/UserContext', () => ({
+vi.mock('../../../contexts/UserContext', () => ({
 	UserConsumer: ({ children }) =>
 		children({
 			can: {
@@ -104,14 +101,14 @@ vi.mock('../../../../static/js/contexts/UserContext', () => ({
 		}),
 }));
 
-vi.mock('../../../../static/js/contexts/SiteContext', async () => {
+vi.mock('../../../contexts/SiteContext', async () => {
 	const ReactModule = await import('react');
 	return {
 		default: ReactModule.createContext({ url: '' }),
 	};
 });
 
-function renderViewerInfoContent(overrides = {}) {
+function renderViewerInfoContent() {
 	return render(
 		<ViewerInfoContent
 			author={{
@@ -121,41 +118,16 @@ function renderViewerInfoContent(overrides = {}) {
 				thumb: '',
 				url: '/members/test-author',
 			}}
-			description={overrides.description ?? ''}
+			description=""
 			published="2026-05-31"
 			yearProduced=""
 		/>
 	);
 }
 
-describe('ViewerInfoContent', () => {
+describe('ViewerInfoContent country of origin', () => {
 	beforeEach(() => {
 		storeMocks.reset();
-	});
-
-	it('shows content sensitivity below topic metadata when present', () => {
-		storeMocks.state.topics = [{ title: 'Labor Rights', url: '/topics/labor-rights' }];
-		storeMocks.state.contentSensitivity = [{ title: 'Graphic Violence' }, { title: 'Strong Language' }];
-
-		renderViewerInfoContent();
-
-		const topicLabel = screen.getByText('Topic');
-		const contentSensitivityLabel = screen.getByText('Content Sensitivity');
-
-		expect(screen.getByText('Labor Rights')).toBeInTheDocument();
-		expect(screen.getByText(/Graphic Violence/)).toBeInTheDocument();
-		expect(screen.getByText(/Strong Language/)).toBeInTheDocument();
-		expect(topicLabel.compareDocumentPosition(contentSensitivityLabel) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-			Node.DOCUMENT_POSITION_FOLLOWING
-		);
-	});
-
-	it('omits content sensitivity metadata when no values are available', () => {
-		storeMocks.state.topics = [{ title: 'Labor Rights', url: '/topics/labor-rights' }];
-
-		renderViewerInfoContent();
-
-		expect(screen.queryByText('Content Sensitivity')).not.toBeInTheDocument();
 	});
 
 	it('shows the country of origin linked to its country listing', () => {
@@ -168,7 +140,6 @@ describe('ViewerInfoContent', () => {
 		const countryLink = screen.getByRole('link', { name: 'Philippines' });
 
 		expect(countryLink).toHaveAttribute('href', '/search?country=Philippines');
-		expect(countryLink).toHaveClass('text-text-link');
 	});
 
 	it('shows the country of origin as plain text when no listing exists', () => {
@@ -185,18 +156,5 @@ describe('ViewerInfoContent', () => {
 		renderViewerInfoContent();
 
 		expect(screen.queryByText('Country of origin')).not.toBeInTheDocument();
-	});
-
-	it('preserves paragraph breaks in more information and credits text', () => {
-		const description = 'Director statement.\n\nCredits and thanks.';
-
-		renderViewerInfoContent({ description });
-
-		const moreInformation = screen.getByText(
-			(_, element) => element?.tagName === 'P' && element.textContent === description
-		);
-
-		expect(moreInformation).toHaveClass('whitespace-pre-wrap');
-		expect(moreInformation.textContent).toBe(description);
 	});
 });

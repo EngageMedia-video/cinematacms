@@ -40,9 +40,13 @@ function metafield(arr) {
 			}
 			ret[i] = (
 				<div key={i}>
-					<a href={arr[i].url} title={arr[i].title}>
-						{arr[i].title}
-					</a>
+					{arr[i].url ? (
+						<a href={arr[i].url} title={arr[i].title}>
+							{arr[i].title}
+						</a>
+					) : (
+						<span title={arr[i].title}>{arr[i].title}</span>
+					)}
 					{separator}
 				</div>
 			);
@@ -110,6 +114,7 @@ export default function ViewerInfoContent(props) {
 	const websiteContent = MediaPageStore.get('media-website');
 	const licenseContent = MediaPageStore.get('media-license-info');
 	const languagesContent = metafield(MediaPageStore.get('media-languages'));
+	const countriesContent = metafield(MediaPageStore.get('media-countries'));
 	const topicsContent = metafield(MediaPageStore.get('media-topics'));
 	const tagsContent = (() => {
 		if (
@@ -323,6 +328,22 @@ export default function ViewerInfoContent(props) {
 										<MediaMetaField
 											value={languagesContent}
 											title={1 < languagesContent.length ? 'Languages' : 'Language'}
+										/>
+									);
+								}
+								return null;
+							})()}
+
+							{(() => {
+								if (countriesContent.length) {
+									return (
+										<MediaMetaField
+											value={countriesContent}
+											title={
+												1 < countriesContent.length
+													? 'Countries of origin'
+													: 'Country of origin'
+											}
 										/>
 									);
 								}
