@@ -294,6 +294,13 @@ SITE_ID = env_int("SITE_ID", 1)
 # Security improvements
 SESSION_COOKIE_AGE = 28800  # 8 hours in seconds
 CSRF_COOKIE_AGE = None  # Make CSRF token session-based
+SESSION_COOKIE_DOMAIN = os.getenv("SESSION_COOKIE_DOMAIN") or None
+SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
+SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", False)
+CSRF_COOKIE_DOMAIN = os.getenv("CSRF_COOKIE_DOMAIN") or None
+CSRF_COOKIE_SAMESITE = os.getenv("CSRF_COOKIE_SAMESITE", "Lax")
+CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", False)
+CSRF_TRUSTED_ORIGINS = env_csv("CSRF_TRUSTED_ORIGINS", [])
 
 STATIC_URL = "/static/"  #  where js/css files are stored on the filesystem
 MEDIA_ROOT = BASE_DIR + "/media_files/"  #  where uploaded + encoded media are stored
