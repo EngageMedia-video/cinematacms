@@ -821,6 +821,10 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         unit = (self.deploy_root / "etc/systemd/system/mediacms.service").read_text()
         self.assertNotIn("ExecStop=", unit)
         self.assertNotIn("killall", unit)
+        self.assertIn("TimeoutStopSec=30s", unit)
+
+        uwsgi = (PROJECT_ROOT / "deploy/uwsgi.ini").read_text()
+        self.assertIn("die-on-term     = true", uwsgi)
 
     def test_second_apply_reuses_saved_config_without_duplicate_nginx_include(self):
         first = self.run_updater(
