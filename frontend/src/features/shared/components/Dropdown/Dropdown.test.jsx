@@ -23,7 +23,29 @@ const MULTI_WORD_OPTIONS = [
 	{ label: 'Northern Mariana Islands', value: 'MP' },
 ];
 
+const SORT_OPTIONS = [
+	{ label: 'Relevance', value: 'relevance' },
+	{ label: 'Name A–Z', value: 'asc' },
+	{ label: 'Name Z–A', value: 'desc' },
+];
+
 describe('Dropdown', () => {
+	it('names a compact trigger with its label as context and shows only the value', () => {
+		render(<Dropdown appearance="compact" label="Sort by" value="relevance" options={SORT_OPTIONS} />);
+
+		expect(screen.getByRole('button', { name: 'Sort by: Relevance' })).toBeInTheDocument();
+		expect(screen.queryByText('Sort by')).not.toBeInTheDocument();
+	});
+
+	it('renders a compact trigger as an action-inverse pill with a leading icon', () => {
+		render(<Dropdown appearance="compact" icon="sortArrows" label="Sort by" value="asc" options={SORT_OPTIONS} />);
+
+		const trigger = screen.getByRole('button', { name: 'Sort by: Name A–Z' });
+
+		expect(trigger).toHaveClass('bg-bg-action-inverse', 'text-text-action-inverse');
+		expect(trigger.querySelector('svg[data-icon="sortArrows"]')).not.toBeNull();
+	});
+
 	it('renders placeholder, label, helper text, and chevron icon', () => {
 		render(
 			<Dropdown label="Category" placeholder="Choose category" helperText="Pick one option" options={OPTIONS} />
