@@ -30,6 +30,10 @@ DIRECT_SETTINGS = (
     "CELERY_RESULT_BACKEND",
     "CORS_ALLOW_ALL_ORIGINS",
     "CORS_ALLOWED_ORIGINS",
+    "CSRF_COOKIE_DOMAIN",
+    "CSRF_COOKIE_SAMESITE",
+    "CSRF_COOKIE_SECURE",
+    "CSRF_TRUSTED_ORIGINS",
     "DJANGO_ADMIN_URL",
     "EMAIL_TRANSPORT_BACKEND",
     "EMAIL_RECIPIENT_HMAC_KEY",
@@ -56,6 +60,9 @@ DIRECT_SETTINGS = (
     "SECURE_HSTS_SECONDS",
     "SECURE_SSL_REDIRECT",
     "SERVER_EMAIL",
+    "SESSION_COOKIE_DOMAIN",
+    "SESSION_COOKIE_SAMESITE",
+    "SESSION_COOKIE_SECURE",
     "SITE_ID",
     "UI_VARIANT_ALLOWED",
     "UI_VARIANT_DEFAULT",
@@ -69,6 +76,15 @@ DIRECT_SETTINGS = (
 )
 
 STRUCTURED_SETTINGS = {"CACHES", "DATABASES", "WHISPER_MODEL"}
+NULLABLE_SETTINGS = {
+    "CSRF_COOKIE_DOMAIN",
+    "CSRF_COOKIE_SAMESITE",
+    "CSRF_COOKIE_SECURE",
+    "CSRF_TRUSTED_ORIGINS",
+    "SESSION_COOKIE_DOMAIN",
+    "SESSION_COOKIE_SAMESITE",
+    "SESSION_COOKIE_SECURE",
+}
 IGNORED_LEGACY_SETTINGS = {
     "BASE_DIR",  # Derived from the checked-out application path.
     "SECURE_BROWSER_XSS_FILTER",  # Removed from supported Django settings.
@@ -103,6 +119,12 @@ def serialize(value):
     return shlex.quote(str(value))
 
 
+def serialize_setting(name, value):
+    if name in NULLABLE_SETTINGS and value is None:
+        return "__none__"
+    return serialize(value)
+
+
 def migrate_local_settings(path):
     if not path.is_file():
         return {}
@@ -123,7 +145,7 @@ def migrate_local_settings(path):
         raise RuntimeError("unsupported legacy settings: " + ", ".join(unknown))
 
     settings = runpy.run_path(str(path))
-    migrated = {key: serialize(settings[key]) for key in DIRECT_SETTINGS if key in settings}
+    migrated = {key: serialize_setting(key, settings[key]) for key in DIRECT_SETTINGS if key in settings}
     database = settings.get("DATABASES", {}).get("default", {})
     for setting_key, env_key in (
         ("NAME", "DATABASE_NAME"),

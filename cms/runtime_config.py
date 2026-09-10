@@ -27,6 +27,15 @@ def env_csv(name, default):
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def env_optional_csv(name, default=None):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    if value.strip().lower() == "__none__":
+        return None
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 def env_float(name, default):
     try:
         return float(os.getenv(name, str(default)))
@@ -44,4 +53,15 @@ def env_int(name, default):
 def env_optional_bool(name, default=None):
     if name not in os.environ:
         return default
+    if os.environ[name].strip().lower() == "__none__":
+        return None
     return env_bool(name, False)
+
+
+def env_optional_str(name, default=None):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    if value.strip().lower() == "__none__":
+        return None
+    return value
