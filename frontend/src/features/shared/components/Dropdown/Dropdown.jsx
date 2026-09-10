@@ -46,6 +46,13 @@ const MENU_VARIANT_CLASSES = {
 	disabled: 'border-border-input bg-bg-surface-muted',
 };
 
+// Toolbar-sized trigger, e.g. a results sort control. It keeps the menu,
+// keyboard and typeahead behaviour of the field appearance.
+const COMPACT_TRIGGER_CLASSES =
+	'inline-flex h-9 cursor-pointer appearance-none items-center justify-center gap-2 rounded-[4px] border-0 bg-bg-action-inverse px-3 py-2 font-sans text-[12px] leading-4 font-medium text-text-action-inverse uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:opacity-40 sm:px-4';
+// Legacy global button styles still apply on some pages; neutralise them inline.
+const COMPACT_TRIGGER_STYLE = { appearance: 'none', border: 0, boxShadow: 'none' };
+
 const TYPEAHEAD_RESET_DELAY = 500;
 
 function normalizeTypeaheadText(text) {
@@ -87,10 +94,12 @@ function clampIndex(index, total) {
 }
 
 export function Dropdown({
+	appearance = 'field',
 	className = '',
 	defaultValue,
 	disabled = false,
 	helperText = '',
+	icon,
 	id,
 	invalid = false,
 	label = '',
@@ -121,6 +130,11 @@ export function Dropdown({
 	const typeaheadTimerRef = useRef(null);
 	const selectedValue = controlled ? value : internalValue;
 	const selectedOption = getSelectedOption(normalizedOptions, selectedValue);
+	const compact = appearance === 'compact';
+	const valueText = selectedOption?.label ?? placeholder;
+	// A compact trigger has no visible label, so the label becomes the context
+	// in its accessible name ("Sort by: Relevance") instead of being dropped.
+	const triggerName = compact && label ? `${label}: ${valueText}` : valueText;
 	const activeState = variant === 'default' && (isFocused || open);
 	const filledState = variant === 'default' && !!selectedOption;
 	const borderClasses =
@@ -289,18 +303,22 @@ export function Dropdown({
 			{name ? <input type="hidden" name={name} value={selectedValue ?? ''} required={required} /> : null}
 
 			<div
-				className={cn(
-					'group w-full border-b px-0 py-[14px] transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
-					SHELL_VARIANT_CLASSES[variant],
-					borderClasses,
-					disabled ? 'cursor-not-allowed' : 'cursor-pointer'
-				)}
+				className={
+					compact
+						? undefined
+						: cn(
+								'group w-full border-b px-0 py-[14px] transition-[background-color,border-color,box-shadow] duration-200 focus-within:ring-2 focus-within:ring-ring-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface',
+								SHELL_VARIANT_CLASSES[variant],
+								borderClasses,
+								disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+							)
+				}
 			>
 				<button
 					id={buttonId}
 					type="button"
 					disabled={disabled}
-					aria-label={selectedOption?.label ?? placeholder}
+					aria-label={triggerName}
 					aria-describedby={describedBy}
 					aria-expanded={open}
 					aria-haspopup="menu"
@@ -344,47 +362,73 @@ export function Dropdown({
 					onBlur={() => {
 						setIsFocused(false);
 					}}
-					className="flex w-full items-center justify-between gap-4 border-none bg-transparent p-0 text-left outline-none focus:outline-none focus-visible:outline-none focus:ring-0 disabled:cursor-not-allowed"
+					className={
+						compact
+							? COMPACT_TRIGGER_CLASSES
+							: 'flex w-full items-center justify-between gap-4 border-none bg-transparent p-0 text-left outline-none focus:outline-none focus-visible:outline-none focus:ring-0 disabled:cursor-not-allowed'
+					}
+					style={compact ? COMPACT_TRIGGER_STYLE : undefined}
 				>
-					<span className="min-w-0 flex-1">
-						{label ? (
+					{compact ? (
+						<>
+							{icon ? <Icon name={icon} size={20} decorative /> : null}
+							<span className="truncate">{valueText}</span>
 							<span
+								aria-hidden="true"
 								className={cn(
-									'body-body-16-regular mb-2 block',
-									activeState || filledState
-										? LABEL_VARIANT_CLASSES.disabled
-										: LABEL_VARIANT_CLASSES.default
+									'inline-flex shrink-0 transition-transform duration-200',
+									open ? 'rotate-180' : ''
 								)}
 							>
-								{label}
-								{required ? (
-									<span aria-hidden="true" className="text-text-danger">
-										{' '}
-										*
+								<Icon name="chevronDown" decorative size={16} />
+							</span>
+						</>
+					) : (
+						<>
+							<span className="min-w-0 flex-1">
+								{label ? (
+									<span
+										className={cn(
+											'body-body-16-regular mb-2 block',
+											activeState || filledState
+												? LABEL_VARIANT_CLASSES.disabled
+												: LABEL_VARIANT_CLASSES.default
+										)}
+									>
+										{label}
+										{required ? (
+											<span aria-hidden="true" className="text-text-danger">
+												{' '}
+												*
+											</span>
+										) : null}
 									</span>
 								) : null}
+								<span
+									className={cn(
+										'body-body-16-regular block truncate',
+										selectedOption
+											? VALUE_VARIANT_CLASSES[variant]
+											: cn(
+													PLACEHOLDER_VARIANT_CLASSES[variant],
+													activeState ? 'text-text-strong' : ''
+												)
+									)}
+								>
+									{selectedOption?.label ?? placeholder}
+								</span>
 							</span>
-						) : null}
-						<span
-							className={cn(
-								'body-body-16-regular block truncate',
-								selectedOption
-									? VALUE_VARIANT_CLASSES[variant]
-									: cn(PLACEHOLDER_VARIANT_CLASSES[variant], activeState ? 'text-text-strong' : '')
-							)}
-						>
-							{selectedOption?.label ?? placeholder}
-						</span>
-					</span>
-					<span
-						aria-hidden="true"
-						className={cn(
-							'inline-flex h-6 w-6 shrink-0 items-center justify-center self-center text-text-strong transition-transform duration-200',
-							open ? 'rotate-180' : ''
-						)}
-					>
-						<Icon name="chevronDown" decorative size="md" />
-					</span>
+							<span
+								aria-hidden="true"
+								className={cn(
+									'inline-flex h-6 w-6 shrink-0 items-center justify-center self-center text-text-strong transition-transform duration-200',
+									open ? 'rotate-180' : ''
+								)}
+							>
+								<Icon name="chevronDown" decorative size="md" />
+							</span>
+						</>
+					)}
 				</button>
 			</div>
 

@@ -150,6 +150,35 @@ export const Disabled = {
 	},
 };
 
+export const Compact = {
+	args: {
+		appearance: 'compact',
+		icon: 'sortArrows',
+		label: 'Sort by',
+		defaultValue: 'relevance',
+		options: [
+			{ label: 'Relevance', value: 'relevance' },
+			{ label: 'Name A–Z', value: 'asc' },
+			{ label: 'Name Z–A', value: 'desc' },
+		],
+	},
+	parameters: {
+		docs: {
+			description: {
+				story: 'Toolbar-sized trigger for controls such as a results sort. The label is not shown; it prefixes the accessible name instead ("Sort by: Relevance").',
+			},
+		},
+	},
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		const trigger = canvas.getByRole('button', { name: 'Sort by: Relevance' });
+
+		await expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+		await userEvent.click(trigger);
+		await expect(canvas.getByRole('menuitemradio', { name: 'Name A–Z' })).toBeVisible();
+	},
+};
+
 export const WithHorizontalPadding = {
 	args: {
 		className: 'px-4',
