@@ -10,7 +10,7 @@ Usage:
     python manage.py reindex_media_search --batch-size=1000
 """
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from files.models import Media
 
@@ -28,6 +28,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         batch_size = options["batch_size"]
+        # Checked here rather than only in argparse: call_command(batch_size=...)
+        # skips argparse type validation for optional arguments.
+        if batch_size < 1:
+            raise CommandError("--batch-size must be at least 1.")
 
         queryset = Media.objects.select_related("user").prefetch_related("tags").order_by("pk")
         total = queryset.count()
@@ -38,10 +42,21 @@ class Command(BaseCommand):
         self.stdout.write(f"Reindexing {total} media rows...")
 
         done = 0
+        failed = 0
         for start in range(0, total, batch_size):
             for media in queryset[start : start + batch_size]:
-                media.update_search_vector()
-                done += 1
-            self.stdout.write(f"  {done}/{total}")
+                if media.update_search_vector():
+                    done += 1
+                else:
+                    failed += 1
+            self.stdout.write(f"  {done + failed}/{total}")
+
+        # Keep going past a failed row so one bad record does not block the rest,
+        # but never report a partial rebuild as a success.
+        if failed:
+            raise CommandError(
+                f"{failed} of {total} media rows could not be reindexed; see the log for details. "
+                "The command is safe to re-run."
+            )
 
         self.stdout.write(self.style.SUCCESS(f"Reindexed {done} media rows."))

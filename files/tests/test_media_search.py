@@ -1,8 +1,11 @@
 from datetime import date, datetime
 from datetime import timezone as dt_timezone
+from io import StringIO
+from unittest.mock import patch
 
 from django.core.management import call_command
-from django.db import connection
+from django.core.management.base import CommandError
+from django.db import DatabaseError, connection
 from django.test import Client, TestCase
 
 from files.models import Category, CommunityImpact, Language, MediaCountry, Tag, Topic
@@ -404,3 +407,22 @@ class ReindexMediaSearchCommandTests(TestCase):
 
         # Postgres renders a title lexeme carrying weight A as 'train':1A.
         self.assertIn("'train':1A", self._vector(media))
+
+    def test_reindex_rejects_a_batch_size_below_one(self):
+        create_test_media(self.user)
+
+        for value in ("0", "-5"):
+            with self.subTest(batch_size=value):
+                with self.assertRaisesMessage(CommandError, "--batch-size must be at least 1"):
+                    call_command("reindex_media_search", f"--batch-size={value}", stdout=StringIO())
+
+    def test_reindex_fails_loudly_when_a_vector_update_fails(self):
+        create_test_media(self.user)
+
+        # Simulate the database rejecting the UPDATE, e.g. a dropped connection.
+        with patch("files.models.connection") as broken_connection:
+            broken_connection.cursor.return_value.__enter__.return_value.execute.side_effect = DatabaseError(
+                "simulated outage"
+            )
+            with self.assertRaisesMessage(CommandError, "could not be reindexed"):
+                call_command("reindex_media_search", stdout=StringIO())

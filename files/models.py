@@ -689,6 +689,7 @@ class Media(models.Model):
                 cursor.execute(sql_code, params)
         except Exception:
             logger.warning("Failed to update search vector for media %s", self.id, exc_info=True)
+            return False
         return True
 
     @property
