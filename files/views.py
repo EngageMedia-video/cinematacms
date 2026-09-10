@@ -14,7 +14,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.postgres.search import SearchQuery
+from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.core.mail import EmailMessage
 from django.db import DatabaseError, models, transaction
 from django.db.models import Case, Exists, F, OuterRef, Q, Value, When
@@ -2086,7 +2086,8 @@ class MediaSearch(APIView):
         community_impact = self._getlist(params, "community_impact")
 
         sort_by_options = ["title", "add_date", "edit_date", "views", "likes", "comment_count", "featured_date"]
-        if sort_by not in sort_by_options:
+        sort_by_requested = sort_by in sort_by_options
+        if not sort_by_requested:
             sort_by = "add_date"
         ordering = "" if ordering == "asc" else "-"
 
@@ -2113,13 +2114,19 @@ class MediaSearch(APIView):
 
         media = Media.objects.filter(state="public", is_reviewed=True)
 
+        exact_query = None
         if query:
             query = clean_query(query)
             q_parts = [q_part.rstrip("y") for q_part in query.split() if q_part not in STOP_WORDS]
             if q_parts:
                 query = SearchQuery(q_parts[0] + ":*", search_type="raw")
+                # The same terms without the prefix wildcard. "train:*" also
+                # matches "training", "trainer" and "trained", so a whole-word
+                # hit needs to be separable from a prefix-only hit when ranking.
+                exact_query = SearchQuery(q_parts[0], search_type="raw")
                 for part in q_parts[1:]:
                     query &= SearchQuery(part + ":*", search_type="raw")
+                    exact_query &= SearchQuery(part, search_type="raw")
             else:
                 query = None
         if query:
@@ -2223,6 +2230,16 @@ class MediaSearch(APIView):
                 media = media.order_by(F("featured_date").asc(nulls_last=True))
             else:
                 media = media.order_by(F("featured_date").desc(nulls_last=True))
+        elif query and not sort_by_requested:
+            # A text query without an explicit sort order is a relevance
+            # question: the visitor has the title and wants that film, not the
+            # newest film that happens to mention the word. Whole-word hits
+            # come first, then weighted relevance, then recency as the
+            # tie-breaker so equally relevant results keep a stable order.
+            media = media.annotate(
+                exact_rank=SearchRank(F("search"), exact_query),
+                search_rank=SearchRank(F("search"), query),
+            ).order_by("-exact_rank", "-search_rank", "-add_date")
         else:
             media = media.order_by(f"{ordering}{sort_by}")
 
