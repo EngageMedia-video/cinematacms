@@ -308,7 +308,7 @@ SESSION_COOKIE_SECURE = env_optional_bool("SESSION_COOKIE_SECURE", False)
 CSRF_COOKIE_DOMAIN = env_optional_str("CSRF_COOKIE_DOMAIN")
 CSRF_COOKIE_SAMESITE = env_optional_str("CSRF_COOKIE_SAMESITE", "Lax")
 CSRF_COOKIE_SECURE = env_optional_bool("CSRF_COOKIE_SECURE", False)
-CSRF_TRUSTED_ORIGINS = env_optional_csv("CSRF_TRUSTED_ORIGINS", [])
+CSRF_TRUSTED_ORIGINS = env_optional_csv("CSRF_TRUSTED_ORIGINS", []) or []
 
 STATIC_URL = "/static/"  #  where js/css files are stored on the filesystem
 MEDIA_ROOT = BASE_DIR + "/media_files/"  #  where uploaded + encoded media are stored
