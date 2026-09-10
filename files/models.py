@@ -603,34 +603,45 @@ class Media(models.Model):
         else:
             a_tags = ""
             b_tags = ""
-        items = [
-            self.title,
-            self.user.username,
-            self.user.email,
-            self.user.name,
-            self.description,
-            self.summary,
-            a_tags,
-            self.media_language,
-            self.media_country,
-            self.website,
-            self.company,
-            b_tags,
+        # Weighted so relevance ranking can tell a title match apart from a
+        # passing mention. A visitor searching a title must get that film ahead
+        # of anything that merely names it in a description or a tag.
+        weighted_items = [
+            ("A", [self.title]),
+            ("B", [self.summary, a_tags, b_tags]),
+            ("C", [self.description]),
+            (
+                "D",
+                [
+                    self.user.username,
+                    self.user.email,
+                    self.user.name,
+                    self.media_language,
+                    self.media_country,
+                    self.website,
+                    self.company,
+                ],
+            ),
         ]
-        items = [item for item in items if item]
-        text = " ".join(items)
-        text = " ".join([token for token in text.lower().split(" ") if token not in STOP_WORDS])
-        text = helpers.clean_query(text)
-        sql_code = """
-            UPDATE {db_table} SET search = to_tsvector(
-                '{config}', '{text}'
-            ) WHERE {db_table}.id = {id}
-            """.format(db_table=db_table, config="simple", text=text, id=self.id)
+
+        expressions = []
+        params = []
+        for weight, group in weighted_items:
+            text = " ".join([item for item in group if item])
+            text = " ".join([token for token in text.lower().split(" ") if token not in STOP_WORDS])
+            text = helpers.clean_query(text)
+            expressions.append("setweight(to_tsvector(%s, %s), %s)")
+            params.extend(["simple", text, weight])
+
+        sql_code = "UPDATE {db_table} SET search = {vector} WHERE {db_table}.id = %s".format(
+            db_table=db_table, vector=" || ".join(expressions)
+        )
+        params.append(self.id)
         try:
             with connection.cursor() as cursor:
-                cursor.execute(sql_code)
-        except:
-            pass  # TODO:add log
+                cursor.execute(sql_code, params)
+        except Exception:
+            logger.warning("Failed to update search vector for media %s", self.id, exc_info=True)
         return True
 
     @property
