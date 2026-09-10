@@ -5,7 +5,15 @@ from celery.schedules import crontab
 from corsheaders.defaults import default_headers
 from django.core.exceptions import ImproperlyConfigured
 
-from .runtime_config import env_bool, env_csv, env_float, env_int, env_optional_bool
+from .runtime_config import (
+    env_bool,
+    env_csv,
+    env_float,
+    env_int,
+    env_optional_bool,
+    env_optional_csv,
+    env_optional_str,
+)
 from .settings_utils import get_whisper_cpp_paths
 
 # PORTAL SETTINGS
@@ -294,13 +302,13 @@ SITE_ID = env_int("SITE_ID", 1)
 # Security improvements
 SESSION_COOKIE_AGE = 28800  # 8 hours in seconds
 CSRF_COOKIE_AGE = None  # Make CSRF token session-based
-SESSION_COOKIE_DOMAIN = os.getenv("SESSION_COOKIE_DOMAIN") or None
-SESSION_COOKIE_SAMESITE = os.getenv("SESSION_COOKIE_SAMESITE", "Lax")
-SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", False)
-CSRF_COOKIE_DOMAIN = os.getenv("CSRF_COOKIE_DOMAIN") or None
-CSRF_COOKIE_SAMESITE = os.getenv("CSRF_COOKIE_SAMESITE", "Lax")
-CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", False)
-CSRF_TRUSTED_ORIGINS = env_csv("CSRF_TRUSTED_ORIGINS", [])
+SESSION_COOKIE_DOMAIN = env_optional_str("SESSION_COOKIE_DOMAIN")
+SESSION_COOKIE_SAMESITE = env_optional_str("SESSION_COOKIE_SAMESITE", "Lax")
+SESSION_COOKIE_SECURE = env_optional_bool("SESSION_COOKIE_SECURE", False)
+CSRF_COOKIE_DOMAIN = env_optional_str("CSRF_COOKIE_DOMAIN")
+CSRF_COOKIE_SAMESITE = env_optional_str("CSRF_COOKIE_SAMESITE", "Lax")
+CSRF_COOKIE_SECURE = env_optional_bool("CSRF_COOKIE_SECURE", False)
+CSRF_TRUSTED_ORIGINS = env_optional_csv("CSRF_TRUSTED_ORIGINS", [])
 
 STATIC_URL = "/static/"  #  where js/css files are stored on the filesystem
 MEDIA_ROOT = BASE_DIR + "/media_files/"  #  where uploaded + encoded media are stored

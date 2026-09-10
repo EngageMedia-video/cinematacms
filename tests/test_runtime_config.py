@@ -1,29 +1,62 @@
 import os
+import runpy
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from cms.runtime_config import env_bool, env_csv, env_float, env_int, env_optional_bool
+from cms.runtime_config import (
+    env_bool,
+    env_csv,
+    env_float,
+    env_int,
+    env_optional_bool,
+    env_optional_csv,
+    env_optional_str,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class RuntimeConfigTests(unittest.TestCase):
     def test_cookie_security_settings_are_runtime_configurable(self):
-        settings = (ROOT / "cms/settings.py").read_text()
-        renderer = (ROOT / "deploy/render-app-env.py").read_text()
+        migrate = runpy.run_path(ROOT / "deploy/render-app-env.py")["migrate_local_settings"]
+        with tempfile.TemporaryDirectory() as directory:
+            legacy = Path(directory) / "local_settings.py"
+            legacy.write_text(
+                "CSRF_COOKIE_DOMAIN = None\n"
+                "CSRF_COOKIE_SAMESITE = None\n"
+                "CSRF_COOKIE_SECURE = None\n"
+                "CSRF_TRUSTED_ORIGINS = None\n"
+                "SESSION_COOKIE_DOMAIN = '.example.org'\n"
+                "SESSION_COOKIE_SAMESITE = 'Strict'\n"
+                "SESSION_COOKIE_SECURE = True\n"
+            )
 
-        for name in (
-            "CSRF_COOKIE_DOMAIN",
-            "CSRF_COOKIE_SAMESITE",
-            "CSRF_COOKIE_SECURE",
-            "CSRF_TRUSTED_ORIGINS",
-            "SESSION_COOKIE_DOMAIN",
-            "SESSION_COOKIE_SAMESITE",
-            "SESSION_COOKIE_SECURE",
+            migrated = migrate(legacy)
+
+        self.assertEqual(migrated["CSRF_COOKIE_DOMAIN"], "__none__")
+        self.assertEqual(migrated["CSRF_COOKIE_SAMESITE"], "__none__")
+        self.assertEqual(migrated["CSRF_COOKIE_SECURE"], "__none__")
+        self.assertEqual(migrated["CSRF_TRUSTED_ORIGINS"], "__none__")
+        self.assertEqual(migrated["SESSION_COOKIE_DOMAIN"], ".example.org")
+        self.assertEqual(migrated["SESSION_COOKIE_SAMESITE"], "Strict")
+        self.assertEqual(migrated["SESSION_COOKIE_SECURE"], "true")
+
+        with patch.dict(
+            os.environ,
+            {
+                "CSRF_COOKIE_DOMAIN": migrated["CSRF_COOKIE_DOMAIN"],
+                "CSRF_COOKIE_SAMESITE": migrated["CSRF_COOKIE_SAMESITE"],
+                "CSRF_COOKIE_SECURE": migrated["CSRF_COOKIE_SECURE"],
+                "CSRF_TRUSTED_ORIGINS": migrated["CSRF_TRUSTED_ORIGINS"],
+            },
+            clear=False,
         ):
-            self.assertIn(name, settings)
-            self.assertIn(f'"{name}"', renderer)
+            self.assertIsNone(env_optional_str("CSRF_COOKIE_DOMAIN"))
+            self.assertIsNone(env_optional_str("CSRF_COOKIE_SAMESITE", "Lax"))
+            self.assertIsNone(env_optional_bool("CSRF_COOKIE_SECURE", False))
+            self.assertIsNone(env_optional_csv("CSRF_TRUSTED_ORIGINS", []))
 
     def test_actor_observability_runs_after_authentication(self):
         settings = (ROOT / "cms/settings.py").read_text()
