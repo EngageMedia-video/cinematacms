@@ -1,0 +1,13 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "panels": [
+    {"datasource":{"type":"prometheus","uid":"cinematacms-prometheus"},"fieldConfig":{"defaults":{"unit":"short"},"overrides":[]},"gridPos":{"h":5,"w":4,"x":0,"y":0},"id":1,"targets":[{"expr":"up{job=\"cinematacms\"}","refId":"A"}],"title":"Metrics target up","type":"stat"},
+    {"datasource":{"type":"prometheus","uid":"cinematacms-prometheus"},"fieldConfig":{"defaults":{"unit":"reqps"},"overrides":[]},"gridPos":{"h":5,"w":10,"x":4,"y":0},"id":2,"targets":[{"expr":"sum(rate(cinematacms_http_requests_total[5m]))","refId":"A"}],"title":"HTTP request rate","type":"timeseries"},
+    {"datasource":{"type":"prometheus","uid":"cinematacms-prometheus"},"fieldConfig":{"defaults":{"unit":"percentunit"},"overrides":[]},"gridPos":{"h":5,"w":10,"x":14,"y":0},"id":3,"targets":[{"expr":"sum(rate(cinematacms_http_requests_total{status_code=~\"5..\"}[5m])) / clamp_min(sum(rate(cinematacms_http_requests_total[5m])), 1e-9)","refId":"A"}],"title":"HTTP 5xx ratio","type":"timeseries"},
+    {"datasource":{"type":"prometheus","uid":"cinematacms-prometheus"},"fieldConfig":{"defaults":{"unit":"s"},"overrides":[]},"gridPos":{"h":7,"w":8,"x":0,"y":5},"id":4,"targets":[{"expr":"histogram_quantile(0.95, sum by (le) (rate(cinematacms_http_request_duration_seconds_bucket[5m])))","refId":"A"}],"title":"HTTP p95 latency","type":"timeseries"},
+    {"datasource":{"type":"prometheus","uid":"cinematacms-prometheus"},"fieldConfig":{"defaults":{"unit":"short"},"overrides":[]},"gridPos":{"h":7,"w":8,"x":8,"y":5},"id":5,"targets":[{"expr":"cinematacms_celery_queue_depth","legendFormat":"{{queue}}","refId":"A"}],"title":"Celery queue depth","type":"timeseries"},
+    {"datasource":{"type":"prometheus","uid":"cinematacms-prometheus"},"fieldConfig":{"defaults":{"unit":"s"},"overrides":[]},"gridPos":{"h":7,"w":8,"x":16,"y":5},"id":6,"targets":[{"expr":"time() - cinematacms_celery_beat_freshness_timestamp_seconds","refId":"A"}],"title":"Celery beat age","type":"stat"}
+  ],
+  "refresh":"30s","schemaVersion":41,"tags":["cinematacms","observability"],"templating":{"list":[]},"time":{"from":"now-6h","to":"now"},"timezone":"browser","title":"CinemataCMS overview","uid":"cinematacms-overview","version":1
+}

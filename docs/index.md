@@ -9,6 +9,7 @@ Welcome to the comprehensive documentation for CinemataCMS - a platform for show
 - [📋 Post-Installation Guide](setup/Post-installation-guide.md)
 - [👑 Creating Superuser](setup/creating_superuser.md)
 - [🧑‍💻 Developer Onboarding](setup/Developer-Onboarding.md)
+- [Self-hosted observability](setup/self-hosted-observability.md)
 
 ### Contributor Environment
 
