@@ -1,6 +1,11 @@
 server {
     listen 80;
     server_name grafana.video.example.org;
+
+    # Keep the loopback Prometheus scrape working if nginx selects this as the
+    # default HTTP server for requests to 127.0.0.1.
+    include /etc/nginx/snippets/cinematacms-metrics.conf;
+
     location / {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

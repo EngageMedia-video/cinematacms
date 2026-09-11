@@ -1189,6 +1189,14 @@ class LocalGrafanaInstallerTests(unittest.TestCase):
             self.assertIn(metric, coverage["metric_schemas"])
             self.assertIn(metric, queries)
 
+    def test_nginx_example_preserves_the_loopback_metrics_route(self):
+        nginx_config = (PROJECT_ROOT / "deploy/grafana/nginx.conf.example").read_text()
+
+        self.assertIn(
+            "include /etc/nginx/snippets/cinematacms-metrics.conf;",
+            nginx_config,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
