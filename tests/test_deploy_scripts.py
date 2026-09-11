@@ -1171,6 +1171,10 @@ class LocalGrafanaInstallerTests(unittest.TestCase):
         self.assertIn("--public-url URL", result.stdout)
         self.assertIn("127.0.0.1:3000", result.stdout)
 
+        installer = LOCAL_GRAFANA_INSTALLER.read_text()
+        self.assertIn("admin reset-admin-password", installer)
+        self.assertNotIn("GF_SECURITY_ADMIN_PASSWORD__FILE", installer)
+
     def test_dashboard_queries_use_documented_metrics(self):
         dashboard = json.loads((PROJECT_ROOT / "deploy/grafana/overview.json").read_text())
         coverage = json.loads((PROJECT_ROOT / "config/observability/coverage.json").read_text())

@@ -53,7 +53,6 @@ Environment="GF_SERVER_HTTP_PORT=3000"
 Environment="GF_SERVER_ROOT_URL=${PUBLIC_URL%/}/"
 Environment="GF_AUTH_ANONYMOUS_ENABLED=false"
 Environment="GF_USERS_ALLOW_SIGN_UP=false"
-Environment="GF_SECURITY_ADMIN_PASSWORD__FILE=${ADMIN_PASSWORD_FILE}"
 EOF
 
 install -d -m 0755 /etc/grafana/provisioning/datasources /etc/grafana/provisioning/dashboards
@@ -70,5 +69,14 @@ for _ in $(seq 1 30); do
     sleep 1
 done
 curl -fsS http://127.0.0.1:3000/api/health >/dev/null || fail "Grafana did not become healthy"
+systemctl stop grafana-server
+grafana cli --homepath /usr/share/grafana --config /etc/grafana/grafana.ini \
+    admin reset-admin-password "$(<"$ADMIN_PASSWORD_FILE")" >/dev/null
+systemctl start grafana-server
+for _ in $(seq 1 30); do
+    curl -fsS http://127.0.0.1:3000/api/health >/dev/null && break
+    sleep 1
+done
+curl -fsS http://127.0.0.1:3000/api/health >/dev/null || fail "Grafana did not recover after setting the administrator password"
 ss -lnt | grep -q '127.0.0.1:3000' || fail "Grafana is not bound to 127.0.0.1:3000"
 echo "Grafana is ready at ${PUBLIC_URL%/}/ after you configure the HTTPS reverse proxy."
