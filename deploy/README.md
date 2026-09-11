@@ -74,6 +74,9 @@ sudo journalctl -u cinematacms-otelcol
 Use `--observability none` when another deployment system manages Prometheus
 and application tracing is disabled.
 
+To add a local Grafana dashboard, follow the
+[self-hosted observability tutorial](https://github.com/EngageMedia-video/cinematacms/wiki/Self-hosted-Observability).
+
 Use `--observability managed` when another deployment system provides the
 Prometheus and OpenTelemetry Collector services. This mode enables application
 tracing to `http://127.0.0.1:4318/v1/traces`, stops the local observability

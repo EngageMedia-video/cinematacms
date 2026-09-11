@@ -1,3 +1,4 @@
+import json
 import os
 import stat
 import subprocess
@@ -11,6 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 INSTALLER = PROJECT_ROOT / "install.sh"
 UPDATER = PROJECT_ROOT / "deploy" / "apply-release-config.sh"
 LOCAL_OBSERVABILITY_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-observability.sh"
+LOCAL_GRAFANA_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-grafana.sh"
 RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
 CI_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
 APP_ENV_RENDERER = PROJECT_ROOT / "deploy" / "render-app-env.py"
@@ -1153,6 +1155,48 @@ class RestartScriptTests(unittest.TestCase):
         self.assertNotIn("sudo env", workflow)
         self.assertNotIn("local_settings_example.py", workflow)
         self.assertNotIn("Materialize CI local_settings", workflow)
+
+
+class LocalGrafanaInstallerTests(unittest.TestCase):
+    def test_installer_help_documents_the_public_url(self):
+        result = subprocess.run(
+            ["bash", str(LOCAL_GRAFANA_INSTALLER), "--help"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("--public-url URL", result.stdout)
+        self.assertIn("127.0.0.1:3000", result.stdout)
+
+        installer = LOCAL_GRAFANA_INSTALLER.read_text()
+        self.assertIn("admin reset-admin-password --password-from-stdin", installer)
+        self.assertIn("EnvironmentFile=-${bootstrap_env}", installer)
+        self.assertNotIn("GF_SECURITY_ADMIN_PASSWORD__FILE", installer)
+
+    def test_dashboard_queries_use_documented_metrics(self):
+        dashboard = json.loads((PROJECT_ROOT / "deploy/grafana/overview.json").read_text())
+        coverage = json.loads((PROJECT_ROOT / "config/observability/coverage.json").read_text())
+        queries = "\n".join(target["expr"] for panel in dashboard["panels"] for target in panel["targets"])
+
+        for metric in (
+            "cinematacms_http_requests_total",
+            "cinematacms_http_request_duration_seconds",
+            "cinematacms_celery_queue_depth",
+            "cinematacms_celery_beat_freshness_timestamp_seconds",
+        ):
+            self.assertIn(metric, coverage["metric_schemas"])
+            self.assertIn(metric, queries)
+
+    def test_nginx_example_preserves_the_loopback_metrics_route(self):
+        nginx_config = (PROJECT_ROOT / "deploy/grafana/nginx.conf.example").read_text()
+
+        self.assertIn(
+            "include /etc/nginx/snippets/cinematacms-metrics.conf;",
+            nginx_config,
+        )
 
 
 if __name__ == "__main__":
