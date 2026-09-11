@@ -1,9 +1,18 @@
 server {
     listen 80;
     server_name grafana.video.example.org;
+    include /etc/nginx/snippets/cinematacms-metrics.conf;
+    return 301 https://$host$request_uri;
+}
 
-    # Keep the loopback Prometheus scrape working if nginx selects this as the
-    # default HTTP server for requests to 127.0.0.1.
+server {
+    listen 443 ssl;
+    server_name grafana.video.example.org;
+
+    ssl_certificate /etc/letsencrypt/live/grafana.video.example.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/grafana.video.example.org/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
     include /etc/nginx/snippets/cinematacms-metrics.conf;
 
     location / {

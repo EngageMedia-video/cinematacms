@@ -55,6 +55,13 @@ Environment="GF_AUTH_ANONYMOUS_ENABLED=false"
 Environment="GF_USERS_ALLOW_SIGN_UP=false"
 EOF
 
+bootstrap_env="/run/cinematacms-grafana-admin.env"
+install -m 0600 /dev/null "$bootstrap_env"
+printf 'GF_SECURITY_ADMIN_PASSWORD=%s\n' "$(<"$ADMIN_PASSWORD_FILE")" > "$bootstrap_env"
+cat >> /etc/systemd/system/grafana-server.service.d/cinematacms.conf <<EOF
+EnvironmentFile=-${bootstrap_env}
+EOF
+
 install -d -m 0755 /etc/grafana/provisioning/datasources /etc/grafana/provisioning/dashboards
 install -d -m 0755 /var/lib/grafana/dashboards/cinematacms
 install -m 0644 "$SCRIPT_DIR/grafana/datasource.yml" /etc/grafana/provisioning/datasources/cinematacms.yml
@@ -71,7 +78,10 @@ done
 curl -fsS http://127.0.0.1:3000/api/health >/dev/null || fail "Grafana did not become healthy"
 systemctl stop grafana-server
 grafana cli --homepath /usr/share/grafana --config /etc/grafana/grafana.ini \
-    admin reset-admin-password "$(<"$ADMIN_PASSWORD_FILE")" >/dev/null
+    admin reset-admin-password --password-from-stdin < "$ADMIN_PASSWORD_FILE" >/dev/null
+rm -f "$bootstrap_env"
+sed -i "/EnvironmentFile=-${bootstrap_env}/d" /etc/systemd/system/grafana-server.service.d/cinematacms.conf
+systemctl daemon-reload
 systemctl start grafana-server
 for _ in $(seq 1 30); do
     curl -fsS http://127.0.0.1:3000/api/health >/dev/null && break

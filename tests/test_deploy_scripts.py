@@ -1172,7 +1172,8 @@ class LocalGrafanaInstallerTests(unittest.TestCase):
         self.assertIn("127.0.0.1:3000", result.stdout)
 
         installer = LOCAL_GRAFANA_INSTALLER.read_text()
-        self.assertIn("admin reset-admin-password", installer)
+        self.assertIn("admin reset-admin-password --password-from-stdin", installer)
+        self.assertIn("EnvironmentFile=-${bootstrap_env}", installer)
         self.assertNotIn("GF_SECURITY_ADMIN_PASSWORD__FILE", installer)
 
     def test_dashboard_queries_use_documented_metrics(self):
