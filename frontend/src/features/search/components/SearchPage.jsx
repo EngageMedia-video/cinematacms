@@ -14,6 +14,7 @@ import {
 	toggleFilterValue,
 } from '../searchState';
 import { Button } from '../../shared/components/Button';
+import { Dropdown } from '../../shared/components/Dropdown';
 import { Icon } from '../../shared/components/Icon';
 import { HorizontalMovieItem } from '../../shared/components/MovieItem/MovieItem';
 import { getMediaDurationLabel } from '../../home/utils/mediaList';
@@ -114,23 +115,26 @@ function SearchResultItem({ item }) {
 	);
 }
 
-function SearchSortButton({ sort, onToggle }) {
-	const isAsc = sort.ordering === 'asc';
-	const label = isAsc ? 'A–Z' : 'Z–A';
-	const disabled = Boolean(sort.popularity);
+const TITLE_SORT_OPTIONS = [
+	{ label: 'Name A–Z', value: 'asc' },
+	{ label: 'Name Z–A', value: 'desc' },
+];
+// Relevance only exists for a text query; filter-only browsing has nothing to rank.
+const QUERY_SORT_OPTIONS = [{ label: 'Relevance', value: 'relevance' }, ...TITLE_SORT_OPTIONS];
 
+function SearchSortDropdown({ sort, hasQuery, onChange }) {
 	return (
-		<button
-			type="button"
-			className="inline-flex h-9 cursor-pointer appearance-none items-center justify-center gap-2 rounded-[4px] border-0 bg-bg-action-inverse px-3 py-2 font-sans text-[12px] leading-4 font-medium text-text-action-inverse uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
-			style={{ appearance: 'none', border: 0, boxShadow: 'none' }}
-			onClick={onToggle}
-			disabled={disabled}
-			aria-label={disabled ? 'Sort by title (disabled while popularity sort is active)' : `Sort ${label}`}
-		>
-			<Icon name="sortArrows" size={20} decorative />
-			<span>{label}</span>
-		</button>
+		<Dropdown
+			appearance="compact"
+			icon="sortArrows"
+			label="Sort by"
+			options={hasQuery ? QUERY_SORT_OPTIONS : TITLE_SORT_OPTIONS}
+			// While a popularity sort is active no name order applies, so show that instead.
+			placeholder="Popularity"
+			value={sort.popularity ? null : (sort.ordering ?? (hasQuery ? 'relevance' : 'asc'))}
+			disabled={Boolean(sort.popularity)}
+			onChange={(value) => onChange(value === 'relevance' ? null : value)}
+		/>
 	);
 }
 
@@ -230,11 +234,8 @@ function SearchPageContent() {
 		setPage(1);
 	}
 
-	function handleSortToggle() {
-		setSort((currentSort) => ({
-			...currentSort,
-			ordering: currentSort.ordering === 'asc' ? 'desc' : 'asc',
-		}));
+	function handleSortChange(ordering) {
+		setSort((currentSort) => ({ ...currentSort, ordering }));
 		setPage(1);
 	}
 
@@ -290,7 +291,11 @@ function SearchPageContent() {
 					<section className="rounded-[8px] bg-bg-panel-primary px-4 py-6 sm:p-6">
 						<div className="mb-6 flex items-center justify-between gap-3">
 							<p className="m-0 font-sans text-[14px] leading-5 text-text-primary">{resultsLabel}</p>
-							<SearchSortButton sort={sort} onToggle={handleSortToggle} />
+							<SearchSortDropdown
+								sort={sort}
+								hasQuery={Boolean(trimmedQuery)}
+								onChange={handleSortChange}
+							/>
 						</div>
 
 						{filterOptions.isError ? (
