@@ -1,11 +1,12 @@
-import PageStore from '../../../pages/_PageStore.js';
-
 import SiteContext from '../../../contexts/SiteContext';
 
 import { formatInnerLink } from '../../../functions/formatInnerLink';
 
 // @note: Keep array items order.
 const validVideoFormats = ['hls', 'h265', 'vp9', 'h264', 'vp8', 'mp4', 'theora'];
+
+// Fallback start resolution for media without an HLS master playlist.
+export const DEFAULT_NUMERIC_RESOLUTION = 720;
 
 function browserSupports_videoCodec(what, debugLog) {
 	/*
@@ -258,29 +259,79 @@ export function videoAvailableCodecsAndResolutions(data, hlsData, supportedForma
 	return ret;
 }
 
+/**
+ * Choose the resolution the player starts on.
+ *
+ * A viewer with no stored preference gets 'Auto' (the HLS master playlist) so
+ * Video.js/VHS can adapt the bitrate and exclude a bad rendition, instead of
+ * being pinned to a single variant playlist with no fallback (#790). A stored
+ * preference is always honoured. Media whose `hls_info` carries no
+ * `master_file` keeps the previous numeric default.
+ *
+ * @param {string|number|null|undefined} storedQuality - Cached 'video-quality' preference.
+ * @param {Object} videoInfo - Available resolutions, as built by videoAvailableCodecsAndResolutions.
+ * @returns {string|number} The resolution to request.
+ */
+export function selectDefaultResolution(storedQuality, videoInfo) {
+	const info = videoInfo || {};
+	const hasAuto = void 0 !== info['Auto'];
+
+	if (null === storedQuality || void 0 === storedQuality) {
+		return hasAuto ? 'Auto' : DEFAULT_NUMERIC_RESOLUTION;
+	}
+
+	if ('Auto' === storedQuality && !hasAuto) {
+		return DEFAULT_NUMERIC_RESOLUTION;
+	}
+
+	return storedQuality;
+}
+
+/**
+ * Resolve a requested resolution to a key that actually exists in `data`.
+ *
+ * @note: `data` mixes numeric resolution keys ('240', '720', ...) with the
+ * non-numeric 'Auto' key that maps to the HLS master playlist. Only numeric
+ * keys take part in nearest-neighbour matching, so a non-numeric request that
+ * is absent never snaps to a numeric neighbour.
+ *
+ * @param {string|number} def - Requested resolution key.
+ * @param {Object} data - Available resolutions, keyed by resolution.
+ * @returns {string|undefined} An existing key of `data`, or undefined when `data` is empty.
+ */
 export function extractDefaultVideoResolution(def, data) {
-	let i,
-		keys = Object.keys(data);
+	const keys = Object.keys(data || {});
 
+	if (!keys.length) {
+		return void 0;
+	}
+
+	// Return the key as it appears in `data`. A numeric `def` matches a string
+	// key through coercion, so returning `def` unchanged would hand back a
+	// number where every other branch returns a string.
 	if (void 0 !== data[def]) {
-		return def;
+		return keys.find((key) => key === String(def));
 	}
 
-	// @note: Assuming that all keys are numeric values.
-	if (parseInt(def, 10) >= parseInt(keys[keys.length - 1], 10)) {
-		return keys[keys.length - 1];
-	}
+	const requested = parseInt(def, 10);
 
-	// @note: Assuming that all keys are numeric values.
-	if (parseInt(def, 10) <= parseInt(keys[0], 10)) {
+	// A non-numeric request ('Auto') that is absent has no numeric neighbour to
+	// snap to. Fall back to the highest available numeric resolution instead.
+	const numericKeys = keys.filter((key) => !isNaN(parseInt(key, 10)));
+
+	if (!numericKeys.length) {
 		return keys[0];
 	}
 
-	i = keys.length - 1;
-	while (i >= 0) {
-		if (parseInt(def, 10) >= parseInt(keys[i], 10)) {
-			return keys[i + 1];
-		}
-		i -= 1;
+	const ascending = numericKeys.slice().sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+
+	if (isNaN(requested)) {
+		return ascending[ascending.length - 1];
 	}
+
+	// Nearest numeric key that is greater than or equal to the request, so
+	// quality degrades upward rather than silently dropping below the request.
+	const atLeastRequested = ascending.find((key) => parseInt(key, 10) >= requested);
+
+	return void 0 !== atLeastRequested ? atLeastRequested : ascending[ascending.length - 1];
 }

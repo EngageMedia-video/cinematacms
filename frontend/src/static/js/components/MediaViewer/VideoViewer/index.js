@@ -13,6 +13,7 @@ import {
 	orderedSupportedVideoFormats,
 	videoAvailableCodecsAndResolutions,
 	extractDefaultVideoResolution,
+	selectDefaultResolution,
 } from './functions';
 import { addClassname, removeClassname } from '../../../functions/dom.js';
 
@@ -88,11 +89,7 @@ export default class VideoViewer extends React.PureComponent {
 		if (!resolutionsKeys.length) {
 			this.videoInfo = null;
 		} else {
-			let defaultResolution = VideoPlayerStore.get('video-quality');
-
-			if (null === defaultResolution || ('Auto' === defaultResolution && void 0 === this.videoInfo['Auto'])) {
-				defaultResolution = 720; // Default resolution.
-			}
+			const defaultResolution = selectDefaultResolution(VideoPlayerStore.get('video-quality'), this.videoInfo);
 
 			let defaultVideoResolution = extractDefaultVideoResolution(defaultResolution, this.videoInfo);
 
@@ -105,18 +102,17 @@ export default class VideoViewer extends React.PureComponent {
 
 			const supportedFormats = orderedSupportedVideoFormats();
 
+			const defaultResolutionInfo =
+				void 0 !== defaultVideoResolution ? this.videoInfo[defaultVideoResolution] : void 0;
+
 			let srcUrl, k;
 
 			k = 0;
-			while (k < this.videoInfo[defaultVideoResolution].format.length) {
-				if ('hls' === this.videoInfo[defaultVideoResolution].format[k]) {
+			while (void 0 !== defaultResolutionInfo && k < defaultResolutionInfo.format.length) {
+				if ('hls' === defaultResolutionInfo.format[k]) {
 					const accessToken =
 						typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
-					const srcUrl = formatMediaLink(
-						this.videoInfo[defaultVideoResolution].url[k],
-						this.props.siteUrl,
-						accessToken
-					);
+					const srcUrl = formatMediaLink(defaultResolutionInfo.url[k], this.props.siteUrl, accessToken);
 					this.videoSources.push({ src: srcUrl });
 					break;
 				}
