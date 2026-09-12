@@ -16,7 +16,7 @@ from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.core.files import File
 from django.core.validators import RegexValidator
-from django.db import DatabaseError, connection, models
+from django.db import DatabaseError, connection, models, transaction
 from django.db.models import Q
 from django.db.models.signals import (
     m2m_changed,
@@ -454,7 +454,7 @@ class Media(models.Model):
         else:
             self.password = ""
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, update_fields=None, **kwargs):
         if not self.title:
             self.title = self.media_file.path.split("/")[-1]
 
@@ -512,7 +512,54 @@ class Media(models.Model):
                 from django.contrib.auth.hashers import make_password
 
                 self.password = make_password(self.password)
-        super(Media, self).save(*args, **kwargs)
+
+        # Protect encryption_key from stale-instance lost updates (#840).
+        # create_hls generates the key mid-pipeline, so an instance loaded before
+        # that write still holds encryption_key="". A full-row save() writes every
+        # column from memory, so that blank would overwrite the stored key while
+        # is_encrypted stayed True. The key is the only copy, so the encrypted .ts
+        # segments become undecryptable and playback breaks silently.
+        # The stored value is re-read rather than trusted from memory because uWSGI
+        # and the Celery workers are separate processes sharing only the row.
+        # is_encrypted distinguishes an accidental blank from an intentional clear:
+        # disabling encryption sets it False, so that blank still persists.
+        # Django accepts any iterable for update_fields, and both the membership
+        # test below and Model.save() itself consume it, so materialize it once
+        # and hand the same collection on rather than an exhausted generator.
+        if update_fields is not None:
+            update_fields = frozenset(update_fields)
+            kwargs["update_fields"] = update_fields
+
+        # ensure_encryption_key() can commit a key between an unlocked re-read and
+        # this save, and the write would then still carry the stale blank. Take the
+        # row lock and hold it across both, matching the lock that method already
+        # uses, so the two orderings serialize instead of interleaving.
+        #
+        # is_encrypted is read from the locked row, not from memory, whenever this
+        # save is not itself persisting that column: an in-memory False that is
+        # never written leaves the row encrypted, so trusting it would clear the
+        # key of a still-encrypted media. An intentional disable writes both
+        # columns together, and is honoured by the persisted value below.
+        persists_encryption_state = update_fields is None or "is_encrypted" in update_fields
+        if (
+            self.pk
+            and not self.encryption_key
+            and (update_fields is None or "encryption_key" in update_fields)
+            and (self.is_encrypted or not persists_encryption_state)
+        ):
+            with transaction.atomic(using=self._state.db):
+                stored = (
+                    self.__class__.objects.select_for_update()
+                    .filter(pk=self.pk)
+                    .values("encryption_key", "is_encrypted")
+                    .first()
+                )
+                stays_encrypted = self.is_encrypted if persists_encryption_state else (stored or {}).get("is_encrypted")
+                if stored and stays_encrypted and stored["encryption_key"]:
+                    self.encryption_key = stored["encryption_key"]
+                super(Media, self).save(*args, **kwargs)
+        else:
+            super(Media, self).save(*args, **kwargs)
         # Notify user when video is published (state changed to public)
         if self.pk and self.__original_state and self.__original_state != "public" and self.state == "public":
             from .methods import notify_users
