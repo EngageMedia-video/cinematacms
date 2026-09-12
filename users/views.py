@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.mail import EmailMessage
-from django.db.models import Case, Count, Max, Q, Value, When
+from django.db.models import Case, Count, IntegerField, Max, Q, Value, When
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils import timezone
@@ -32,7 +32,12 @@ from files.serializers import CommunityImpactSerializer
 
 from .forms import ChannelForm, UserForm
 from .models import Channel, User
-from .serializers import ProfilePrivateJournalNoteSerializer, UserDetailSerializer, UserSerializer
+from .serializers import (
+    MentionSuggestionSerializer,
+    ProfilePrivateJournalNoteSerializer,
+    UserDetailSerializer,
+    UserSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -452,6 +457,42 @@ class UserList(APIView):
 
         serializer = UserSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
+
+
+class MentionSuggestionList(APIView):
+    """Autocomplete source for @mentions in the comment box.
+
+    Matches on display name and handle, and is limited to authenticated callers
+    so the user directory is not enumerable anonymously.
+    """
+
+    permission_classes = (permissions.IsAuthenticated,)
+
+    MAX_RESULTS = 10
+
+    def get(self, request, format=None):
+        users = User.objects.filter(is_active=True).exclude(pk=request.user.pk)
+
+        query = request.GET.get("q", "").strip().lstrip("@")
+        if query:
+            users = users.filter(Q(username__icontains=query) | Q(name__icontains=query))
+            # Handle prefix matches first, then name prefix matches, then the rest,
+            # so typing "@an" surfaces "andria" ahead of "deandra".
+            users = users.annotate(
+                match_rank=Case(
+                    When(username__istartswith=query, then=Value(0)),
+                    When(name__istartswith=query, then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField(),
+                )
+            ).order_by("match_rank", "username")
+        else:
+            # An empty query is the moment right after "@" was typed. Show the
+            # most active accounts so the list is never empty.
+            users = users.order_by("-media_count", "username")
+
+        serializer = MentionSuggestionSerializer(users[: self.MAX_RESULTS], many=True, context={"request": request})
+        return Response(serializer.data)
 
 
 class UserDetail(APIView):
