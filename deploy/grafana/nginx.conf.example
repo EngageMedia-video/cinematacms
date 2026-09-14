@@ -19,6 +19,7 @@ server {
     ssl_certificate /etc/letsencrypt/live/grafana.video.example.org/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/grafana.video.example.org/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_ecdh_curve X25519:P-256:P-384;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
     location / {

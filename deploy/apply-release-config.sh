@@ -279,6 +279,33 @@ elif ! grep -qE 'location = /metrics|cinematacms-metrics\.conf' "$NGINX_SITE"; t
     rm -f "$rendered_site"
 fi
 
+if grep -qE '^[[:space:]]*listen[[:space:]]+(\[::\]:)?443([[:space:]]|;).*ssl' "$NGINX_SITE" \
+    && ! grep -qF 'ssl_ecdh_curve X25519:P-256:P-384;' "$NGINX_SITE"; then
+    rendered_site="$(mktemp)"
+    if grep -qE '^[[:space:]]*ssl_ecdh_curve[[:space:]]+' "$NGINX_SITE"; then
+        sed -E \
+            's|^([[:space:]]*)ssl_ecdh_curve[[:space:]]+[^;]+;|\1ssl_ecdh_curve X25519:P-256:P-384;|' \
+            "$NGINX_SITE" > "$rendered_site"
+    else
+        awk '
+            /^[[:space:]]*listen[[:space:]]+(\[::\]:)?443([[:space:]]|;).*ssl/ && !added {
+                print
+                print "    ssl_ecdh_curve X25519:P-256:P-384;"
+                added = 1
+                next
+            }
+            { print }
+            END { if (!added) exit 42 }
+        ' "$NGINX_SITE" > "$rendered_site" || {
+            rm -f "$rendered_site"
+            rollback
+            fail "could not add the TLS curve configuration to $NGINX_SITE"
+        }
+    fi
+    install_managed_file "$rendered_site" "$NGINX_SITE"
+    rm -f "$rendered_site"
+fi
+
 if [ ! -e "$NGINX_ENABLED" ] && [ ! -L "$NGINX_ENABLED" ]; then
     backup_file "$NGINX_ENABLED"
     mkdir -p "$(dirname "$NGINX_ENABLED")"
