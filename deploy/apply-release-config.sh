@@ -279,6 +279,83 @@ elif ! grep -qE 'location = /metrics|cinematacms-metrics\.conf' "$NGINX_SITE"; t
     rm -f "$rendered_site"
 fi
 
+rendered_site="$(mktemp)"
+awk '
+    function brace_delta(line, copy, opens, closes) {
+        copy = line
+        opens = gsub(/\{/, "", copy)
+        closes = gsub(/\}/, "", copy)
+        return opens - closes
+    }
+    function reset_block() {
+        block_lines = 0
+        block_depth = 0
+        block_tls = 0
+        block_curve = 0
+        tls_listen_line = 0
+    }
+    function replace_curve(line, indent) {
+        match(line, /^[[:space:]]*/)
+        indent = substr(line, RSTART, RLENGTH)
+        return indent "ssl_ecdh_curve X25519:P-256:P-384;"
+    }
+    function emit_block(i) {
+        if (block_tls) {
+            for (i = 1; i <= block_lines; i++) {
+                if (block[i] ~ /^[[:space:]]*ssl_ecdh_curve[[:space:]]+/) {
+                    block[i] = replace_curve(block[i])
+                    block_curve = 1
+                }
+            }
+        }
+        for (i = 1; i <= block_lines; i++) {
+            print block[i]
+            if (block_tls && !block_curve && i == tls_listen_line) {
+                print "    ssl_ecdh_curve X25519:P-256:P-384;"
+            }
+        }
+        reset_block()
+    }
+    BEGIN { reset_block() }
+    !in_server {
+        if (/^[[:space:]]*server[[:space:]]*\{/) {
+            in_server = 1
+            block[++block_lines] = $0
+            block_depth = brace_delta($0)
+            next
+        }
+        print
+        next
+    }
+    {
+        block[++block_lines] = $0
+        if ($0 ~ /^[[:space:]]*listen[[:space:]]+(\[::\]:)?443([[:space:]]|;).*ssl/) {
+            block_tls = 1
+            if (!tls_listen_line) {
+                tls_listen_line = block_lines
+            }
+        }
+        block_depth += brace_delta($0)
+        if (block_depth <= 0) {
+            emit_block()
+            in_server = 0
+        }
+    }
+    END {
+        if (in_server) {
+            exit 42
+        }
+    }
+' "$NGINX_SITE" > "$rendered_site" || {
+    rm -f "$rendered_site"
+    rollback
+    fail "could not add the TLS curve configuration to $NGINX_SITE"
+}
+if ! cmp -s "$NGINX_SITE" "$rendered_site"; then
+    install_managed_file "$rendered_site" "$NGINX_SITE"
+fi
+rm -f "$rendered_site"
+
 if [ ! -e "$NGINX_ENABLED" ] && [ ! -L "$NGINX_ENABLED" ]; then
     backup_file "$NGINX_ENABLED"
     mkdir -p "$(dirname "$NGINX_ENABLED")"

@@ -717,6 +717,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         site = (self.deploy_root / "etc/nginx/sites-available/mediacms.io").read_text()
         self.assertIn("server_name video.example.org;", site)
         self.assertEqual(site.count("cinematacms-metrics.conf"), 2)
+        self.assertIn("ssl_ecdh_curve X25519:P-256:P-384;", site)
         self.assertIn("nginx -t", self.command_log.read_text())
         self.assertNotIn("systemctl enable --now", self.command_log.read_text())
 
@@ -858,6 +859,67 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             original_value = next(line for line in original_app_env.splitlines() if line.startswith(f"{key}="))
             self.assertIn(original_value, updated_app_env)
         self.assertFalse((self.deploy_root / "etc/nginx/conf.d/cloudflare_real_ip.conf").exists())
+
+    def test_second_apply_updates_legacy_tls_curves(self):
+        first = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+        self.assertEqual(first.returncode, 0, first.stderr)
+
+        site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
+        site_path.write_text(
+            site_path.read_text().replace(
+                "ssl_ecdh_curve X25519:P-256:P-384;",
+                "ssl_ecdh_curve secp521r1:secp384r1;",
+            )
+        )
+
+        second = self.run_updater("--no-restart")
+
+        self.assertEqual(second.returncode, 0, second.stderr)
+        site = site_path.read_text()
+        self.assertIn("ssl_ecdh_curve X25519:P-256:P-384;", site)
+        self.assertNotIn("ssl_ecdh_curve secp521r1:secp384r1;", site)
+
+    def test_apply_adds_tls_curves_to_each_https_server_block(self):
+        site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
+        site_path.parent.mkdir(parents=True)
+        site_path.write_text(
+            textwrap.dedent(
+                """\
+                server {
+                    listen 443 ssl;
+                    location / { return 200; }
+                }
+                server {
+                    listen 443 ssl;
+                    location / { return 200; }
+                }
+                """
+            )
+        )
+
+        result = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            site_path.read_text().count("ssl_ecdh_curve X25519:P-256:P-384;"),
+            2,
+        )
 
     def test_first_apply_migrates_and_removes_legacy_observability_environment(self):
         legacy_path = self.deploy_root / "etc/cinematacms/observability.env"
@@ -1201,6 +1263,7 @@ class LocalGrafanaInstallerTests(unittest.TestCase):
             "include /etc/nginx/snippets/cinematacms-metrics.conf;",
             nginx_config,
         )
+        self.assertIn("ssl_ecdh_curve X25519:P-256:P-384;", nginx_config)
 
 
 if __name__ == "__main__":
