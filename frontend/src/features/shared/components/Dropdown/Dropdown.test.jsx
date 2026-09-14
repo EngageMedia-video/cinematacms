@@ -37,6 +37,21 @@ describe('Dropdown', () => {
 		expect(screen.queryByText('Sort by')).not.toBeInTheDocument();
 	});
 
+	it('marks the selected option in a compact menu with a check icon', async () => {
+		const user = userEvent.setup();
+
+		render(<Dropdown appearance="compact" icon="sortArrows" label="Sort by" value="asc" options={SORT_OPTIONS} />);
+
+		await user.click(screen.getByRole('button', { name: 'Sort by: Name A–Z' }));
+
+		const selected = screen.getByRole('menuitemradio', { name: 'Name A–Z' });
+		expect(selected).toHaveAttribute('aria-checked', 'true');
+		expect(selected.querySelector('svg[data-icon="check"]')).not.toBeNull();
+		expect(
+			screen.getByRole('menuitemradio', { name: 'Relevance' }).querySelector('svg[data-icon="check"]')
+		).toBeNull();
+	});
+
 	it('renders a compact trigger as an action-inverse pill with a leading icon', () => {
 		render(<Dropdown appearance="compact" icon="sortArrows" label="Sort by" value="asc" options={SORT_OPTIONS} />);
 

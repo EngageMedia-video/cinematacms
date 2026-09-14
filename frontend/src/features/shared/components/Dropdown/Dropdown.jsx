@@ -487,13 +487,15 @@ export function Dropdown({
 										handleTypeaheadKey(event);
 									}}
 									className={cn(
-										'body-body-16-regular block w-full border-0 px-4 py-3 text-left outline-none transition-colors duration-150 hover:bg-bg-surface-hover focus:bg-bg-surface-hover',
+										'body-body-16-regular w-full border-0 px-4 py-3 text-left outline-none transition-colors duration-150 hover:bg-bg-surface-hover focus:bg-bg-surface-hover',
+										compact ? 'flex items-center justify-between gap-3' : 'block',
 										SHELL_VARIANT_CLASSES[variant],
 										VALUE_VARIANT_CLASSES[variant],
 										selected ? 'font-black' : 'font-normal'
 									)}
 								>
 									{option.label}
+									{compact && selected ? <Icon name="check" size={16} decorative /> : null}
 								</button>
 							</li>
 						);

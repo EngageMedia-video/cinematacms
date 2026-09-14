@@ -276,12 +276,10 @@ class SearchFilterOptionListTests(TestCase):
 
 
 class MediaSearchRelevanceRankingTests(TestCase):
-    """Issue #879: a film must be findable by its title.
+    """A film must be findable by its title.
 
-    The reported defect: "The Train" (uploaded 2011) was returned for the query
-    "The Train" but at result 96 of 154, because results were ordered by
-    -add_date with no relevance ranking, so newer media matching only in the
-    description outranked an exact title match.
+    A title match must outrank media that merely mention the word in a
+    description, however much newer that media is.
     """
 
     def setUp(self):
@@ -323,12 +321,12 @@ class MediaSearchRelevanceRankingTests(TestCase):
         )
 
     def test_exact_title_match_outranks_newer_prefix_matches(self):
-        """The reported case: 'The Train' (2011) buried under newer 'Training' media.
+        """A whole-word title match must outrank newer prefix-only matches.
 
-        'train:*' is a prefix query, so every 'Training ...' title matches it and
-        carries the same title weight. Without an exact-term boost the 2011 film
-        loses the recency tie-break to all of them and never reaches the
-        four-row global-search dropdown.
+        The query term is a prefix query, so every title that merely starts with
+        it matches and carries the same title weight. Without an exact-term
+        boost the older title loses the recency tie-break to all of them and
+        never reaches the four-row global-search dropdown.
         """
         the_train = self._media(
             "The Train",
@@ -344,7 +342,7 @@ class MediaSearchRelevanceRankingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         tokens = [item["friendly_token"] for item in response.json()["results"]]
 
-        self.assertIn(the_train.friendly_token, tokens)
+        self.assertEqual(tokens[0], the_train.friendly_token)
 
     def test_explicit_sort_by_still_overrides_relevance(self):
         """Relevance is the default for a text query, not an override.
