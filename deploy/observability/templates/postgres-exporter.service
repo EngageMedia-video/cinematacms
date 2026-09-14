@@ -6,7 +6,7 @@ After=network-online.target postgresql.service
 User=cinematacms-postgres-exporter
 Group=cinematacms-postgres-exporter
 EnvironmentFile=/etc/cinematacms-observability/postgres-exporter.env
-ExecStart=/opt/cinematacms-observability/bin/postgres_exporter --web.listen-address=127.0.0.1:9187
+ExecStart=/opt/cinematacms-observability/bin/postgres_exporter --config.file="" --web.listen-address=127.0.0.1:9187
 Restart=on-failure
 NoNewPrivileges=true
 PrivateTmp=true
