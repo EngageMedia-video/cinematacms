@@ -85,6 +85,7 @@ class FullStackContractTests(unittest.TestCase):
 
     def test_postgres_exporter_pins_the_stat_replication_bugfix_release(self):
         manifest = (OBSERVABILITY / "manifest.env").read_text()
+        unit = (OBSERVABILITY / "templates/postgres-exporter.service").read_text()
 
         self.assertIn('POSTGRES_EXPORTER_VERSION="v0.20.1"', manifest)
         self.assertIn(
@@ -95,6 +96,7 @@ class FullStackContractTests(unittest.TestCase):
             'POSTGRES_EXPORTER_ARM64_SHA256="d5d86fb98bb1f26b088d1a6fda07fd6b6f035cb5d40492f75ec3bfebb5ddfe9d"',
             manifest,
         )
+        self.assertIn('--config.file=""', unit)
 
     def test_trace_pipeline_keeps_public_incident_context(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
