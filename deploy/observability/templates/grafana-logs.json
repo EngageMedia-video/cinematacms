@@ -1,0 +1,163 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "links": [
+    {"title": "Application overview", "type": "link", "url": "/d/cinematacms-observability/cinematacms-observability?orgId=1&from=${__from}&to=${__to}"},
+    {"title": "Incident traces", "type": "link", "url": "/d/cinematacms-traces/cinematacms-incident-traces?orgId=1&from=${__from}&to=${__to}&var-trace_id=$trace_id"},
+    {"title": "Incident search", "type": "link", "url": "/d/cinematacms-incidents/cinematacms-incident-search?orgId=1&from=${__from}&to=${__to}"},
+    {"title": "Open in Explore", "type": "link", "url": "/explore?orgId=1&left=%7B%22datasource%22%3A%22victorialogs%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22${filter:percentencode}%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22${__from}%22%2C%22to%22%3A%22${__to}%22%7D%7D"}
+  ],
+  "panels": [
+    {
+      "type": "text",
+      "title": "How to search",
+      "gridPos": {"h": 4, "w": 24, "x": 0, "y": 0},
+      "options": {"mode": "markdown", "content": "Each running-log panel is locked to one service and refreshes every five seconds. Start in **Incident search** when the report begins with an email address, public media token, task ID, delivery UUID, route, operation, service, or time window. Return here for unrestricted LogsQL exploration, then open a matching `trace_id` in **Incident traces**. Raw addresses are redacted before storage."}
+    },
+    {
+      "type": "logs",
+      "title": "CinemataCMS application logs",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 4},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "service.name:\"cinematacms\" AND (${filter:raw})", "maxLines": 1000, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "type": "logs",
+      "title": "MediaCMS service logs",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 16},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "systemd.unit:\"mediacms.service\" AND (${filter:raw})", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "type": "logs",
+      "title": "Nginx service logs",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 10, "w": 12, "x": 12, "y": 16},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "systemd.unit:\"nginx.service\" AND (${filter:raw})", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "type": "logs",
+      "title": "Celery long worker logs",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 26},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "systemd.unit:\"celery_long.service\" AND (${filter:raw})", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "type": "logs",
+      "title": "Celery short worker logs",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 10, "w": 12, "x": 12, "y": 26},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "systemd.unit:\"celery_short.service\" AND (${filter:raw})", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "type": "logs",
+      "title": "Celery Whisper worker logs",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 36},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "systemd.unit:\"celery_whisper.service\" AND (${filter:raw})", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "type": "logs",
+      "title": "Celery email worker logs",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 10, "w": 12, "x": 12, "y": 36},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "systemd.unit:\"celery_email.service\" AND (${filter:raw})", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "type": "logs",
+      "title": "Celery beat logs",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 46},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "systemd.unit:\"celery_beat.service\" AND (${filter:raw})", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "type": "logs",
+      "title": "All services",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 10, "w": 12, "x": 12, "y": 46},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "${filter:raw}", "maxLines": 1000, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "type": "stat",
+      "title": "Matching logs",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 56},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "${filter:raw} | count()", "queryType": "stats"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "area", "justifyMode": "auto"}
+    },
+    {
+      "type": "stat",
+      "title": "Error and critical logs",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 56},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "(${filter:raw}) AND severity_text:~\"ERROR|CRITICAL|FATAL\" | count()", "queryType": "stats"}],
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "orientation": "auto", "textMode": "auto", "colorMode": "value", "graphMode": "area", "justifyMode": "auto"}
+    },
+    {
+      "type": "timeseries",
+      "title": "Log volume by severity",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 56},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "(${filter:raw}) AND severity_text:* | stats by (_time:$__interval, severity_text) count() logs", "legendFormat": "{{severity_text}}", "queryType": "statsRange"}],
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}
+    },
+    {
+      "type": "timeseries",
+      "title": "Log volume by service or unit",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 61},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "${filter:raw} | stats by (_time:$__interval, service_role, systemd.unit) count() logs", "legendFormat": "{{service_role}} {{systemd.unit}}", "queryType": "statsRange"}],
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}
+    },
+    {
+      "type": "bargauge",
+      "title": "Top log messages and events",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 64},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "${filter:raw} | stats by (_msg, event, outcome, reason_code) count() logs | sort by (logs desc) | limit 25", "legendFormat": "{{event}} {{_msg}} {{outcome}} {{reason_code}}", "queryType": "stats"}],
+      "options": {"displayMode": "gradient", "orientation": "horizontal", "showUnfilled": true, "minVizWidth": 8, "minVizHeight": 16}
+    },
+    {
+      "type": "logs",
+      "title": "Errors and critical logs",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 72},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "(${filter:raw}) AND severity_text:~\"ERROR|CRITICAL|FATAL\"", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    },
+    {
+      "type": "logs",
+      "title": "Correlation lookup",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 82},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "(${filter:raw}) AND (actor_ref:\"$actor_ref\" OR task_id:\"$task_id\" OR delivery_uuid:\"$delivery_uuid\" OR trace_id:\"$trace_id\" OR recipient_ref:\"$recipient_ref\")", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 41,
+  "tags": ["cinematacms", "logs", "observability"],
+  "templating": {"list": [
+    {"name": "filter", "type": "textbox", "label": "LogsQL filter", "query": "*", "current": {"text": "*", "value": "*"}},
+    {"name": "task_id", "type": "textbox", "label": "Task ID (staff only)", "query": "__enter_value__", "current": {"text": "__enter_value__", "value": "__enter_value__"}},
+    {"name": "delivery_uuid", "type": "textbox", "label": "Delivery UUID (staff only)", "query": "__enter_value__", "current": {"text": "__enter_value__", "value": "__enter_value__"}},
+    {"name": "trace_id", "type": "textbox", "label": "Trace ID (staff only)", "query": "__enter_value__", "current": {"text": "__enter_value__", "value": "__enter_value__"}},
+    {"name": "recipient_ref", "type": "textbox", "label": "Recipient ref (sensitive, staff only)", "query": "__enter_value__", "current": {"text": "__enter_value__", "value": "__enter_value__"}},
+    {"name": "actor_ref", "type": "textbox", "label": "Actor ref (sensitive, staff only)", "query": "__enter_value__", "current": {"text": "__enter_value__", "value": "__enter_value__"}}
+  ]},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Cinemata Running Logs",
+  "uid": "cinematacms-logs",
+  "version": 1
+}

@@ -1,0 +1,109 @@
+groups:
+  - name: cinematacms-contract
+    interval: 30s
+    rules:
+      - alert: CinemataQueueSaturation
+        expr: cinematacms_celery_queue_depth > 50
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "Celery queue exceeds the initial capacity threshold"}
+      - alert: CinemataMediaTerminalFailure
+        expr: increase(cinematacms_domain_outcomes_total{outcome="failed"}[10m]) > 0
+        labels: {severity: warning}
+        annotations: {summary: "A media operation reached a terminal failure"}
+      - alert: CinemataEncryptionInvalid
+        expr: increase(cinematacms_domain_outcomes_total{reason_code=~"encryption_bypass|invalid_encryption"}[10m]) > 0
+        labels: {severity: critical}
+        annotations: {summary: "An invalid HLS encryption outcome was recorded"}
+      - alert: CinemataEmailTerminalFailure
+        expr: increase(cinematacms_email_deliveries_total{outcome=~"failed|unknown"}[10m]) > 0
+        labels: {severity: warning}
+        annotations: {summary: "Email delivery failed or became unknown"}
+      - alert: CinemataEmailSendingStale
+        expr: increase(cinematacms_email_deliveries_total{outcome="unknown",reason_code="worker_lost"}[10m]) > 0
+        labels: {severity: critical}
+        annotations: {summary: "Email delivery state was lost with its worker"}
+      - alert: CinemataScheduledJobStale
+        expr: (time() - cinematacms_scheduled_job_last_success_timestamp_seconds > 900) or absent_over_time(cinematacms_scheduled_job_last_success_timestamp_seconds[15m])
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "A scheduled job has missed its success window"}
+      - alert: CinemataBeatStale
+        expr: (time() - cinematacms_celery_beat_freshness_timestamp_seconds > 180) or absent_over_time(cinematacms_celery_beat_freshness_timestamp_seconds[3m])
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: "Celery beat freshness is older than three minutes"}
+      - alert: CinemataWorkerStale
+        expr: (time() - cinematacms_celery_worker_heartbeat_timestamp_seconds > 120) or absent_over_time(cinematacms_celery_worker_heartbeat_timestamp_seconds[2m])
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: "A Celery worker heartbeat is stale"}
+      - alert: CinemataHttpFailureRate
+        expr: sum(rate(cinematacms_http_requests_total{status_code=~"5.."}[5m])) / clamp_min(sum(rate(cinematacms_http_requests_total[5m])), 0.001) > 0.01
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "HTTP 5xx rate exceeds one percent"}
+      - alert: CinemataHttpLatency
+        expr: histogram_quantile(0.95, sum by (le) (rate(cinematacms_http_request_duration_seconds_bucket[5m]))) > 2
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "HTTP p95 latency exceeds the initial objective"}
+      - alert: CinemataTelemetryLoss
+        expr: increase(cinematacms_telemetry_emission_failures_total[5m]) > 0
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: "Application telemetry emission failures persist"}
+
+  - name: observability-stack
+    interval: 30s
+    rules:
+      - alert: CinemataScrapeTargetDown
+        expr: up == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: "Observability scrape target is down"}
+      - alert: CinemataCollectorExportFailures
+        expr: (sum(increase(otelcol_exporter_send_failed_metric_points[5m])) or vector(0)) + (sum(increase(otelcol_exporter_send_failed_log_records[5m])) or vector(0)) + (sum(increase(otelcol_exporter_send_failed_spans[5m])) or vector(0)) > 0
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: "OpenTelemetry Collector cannot export telemetry"}
+      - alert: CinemataCollectorQueuePressure
+        expr: otelcol_exporter_queue_size / clamp_min(otelcol_exporter_queue_capacity, 1) > 0.8
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "Collector persistent queue is above 80 percent"}
+      - alert: CinemataPostgresConnectionsHigh
+        expr: sum(pg_stat_activity_count) / clamp_min(sum(pg_settings_max_connections), 1) > 0.8
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "PostgreSQL connection use is above 80 percent"}
+      - alert: CinemataRedisMemoryHigh
+        expr: redis_memory_max_bytes > 0 and redis_memory_used_bytes / redis_memory_max_bytes > 0.8
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "Redis memory use is above 80 percent"}
+      - alert: CinemataHostCpuHigh
+        expr: '1 - sum(rate({__name__="system.cpu.time",state="idle"}[5m])) / clamp_min(sum(rate({__name__="system.cpu.time"}[5m])), 0.001) > 0.9'
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "Host CPU use is above 90 percent"}
+      - alert: CinemataHostMemoryHigh
+        expr: 'sum({__name__="system.memory.usage",state="used"}) / clamp_min(sum({__name__="system.memory.usage"}), 1) > 0.9'
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "Host memory use is above 90 percent"}
+      - alert: CinemataHostFilesystemHigh
+        expr: '1 - node_filesystem_avail_bytes{mountpoint=~"/|/var|/home"} / clamp_min(node_filesystem_size_bytes{mountpoint=~"/|/var|/home"}, 1) > 0.9'
+        for: 10m
+        labels: {severity: critical}
+        annotations: {summary: "Host filesystem use is above 90 percent"}
+      - alert: CinemataExternalEndpointDown
+        expr: '{__name__="httpcheck.status",http.status_class="2xx"} == 0'
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: "Public Cinemata endpoint is unavailable"}
+      - alert: CinemataTlsCertificateExpiring
+        expr: '{__name__="httpcheck.tls.cert_remaining"} < 604800'
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "Public TLS certificate expires within seven days"}

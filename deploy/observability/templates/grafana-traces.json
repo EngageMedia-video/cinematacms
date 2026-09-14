@@ -1,0 +1,67 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "links": [
+    {"title": "Application overview", "type": "link", "url": "/d/cinematacms-observability/cinematacms-observability?orgId=1&from=${__from}&to=${__to}&var-trace_id=$trace_id"},
+    {"title": "Correlated logs", "type": "link", "url": "/d/cinematacms-logs/cinematacms-running-logs?orgId=1&from=${__from}&to=${__to}&var-filter=trace_id%3A%22$trace_id%22&var-trace_id=$trace_id"}
+  ],
+  "panels": [
+    {
+      "type": "text",
+      "title": "Incident tracing workflow",
+      "gridPos": {"h": 5, "w": 24, "x": 0, "y": 0},
+      "options": {
+        "mode": "markdown",
+        "content": "Start with **Recent traces by service** to find slow or failed work. Narrow with an operation name or privacy-safe span tags such as `error=true`, `domain.operation=email_delivery`, `domain.outcome=failed`, `service.role=email`, or `email.recipient_ref=<ref>`. Open a result for the span waterfall. If a log provides a trace ID, paste it into **Trace ID** and use **Correlated logs** to inspect the same incident window. A missing trace does not prove the request never ran: ordinary successful traces are sampled, while errors and incident operations are retained."
+      }
+    },
+    {
+      "type": "traces",
+      "title": "Recent traces by service",
+      "datasource": {"type": "jaeger", "uid": "victoriatraces"},
+      "gridPos": {"h": 15, "w": 24, "x": 0, "y": 5},
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "search",
+          "service": "$service",
+          "operation": "$operation",
+          "tags": "$tags",
+          "minDuration": "$min_duration",
+          "maxDuration": "$max_duration",
+          "limit": 50
+        }
+      ],
+      "options": {}
+    },
+    {
+      "type": "traces",
+      "title": "Trace ID lookup",
+      "datasource": {"type": "jaeger", "uid": "victoriatraces"},
+      "gridPos": {"h": 16, "w": 24, "x": 0, "y": 20},
+      "targets": [
+        {"refId": "A", "query": "$trace_id"}
+      ],
+      "options": {}
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": ["cinematacms", "traces", "observability"],
+  "templating": {
+    "list": [
+      {"name": "service", "type": "custom", "label": "Service name", "query": "CinemataCMS/web,CinemataCMS/long-task,CinemataCMS/short-task,CinemataCMS/transcription,CinemataCMS/email,CinemataCMS/beat", "options": [], "current": {"text": "CinemataCMS/web", "value": "CinemataCMS/web"}},
+      {"name": "operation", "type": "textbox", "label": "Operation name", "query": "", "current": {"text": "", "value": ""}},
+      {"name": "tags", "type": "textbox", "label": "Span tags (logfmt)", "query": "", "current": {"text": "", "value": ""}},
+      {"name": "min_duration", "type": "textbox", "label": "Minimum duration", "query": "", "current": {"text": "", "value": ""}},
+      {"name": "max_duration", "type": "textbox", "label": "Maximum duration", "query": "", "current": {"text": "", "value": ""}},
+      {"name": "trace_id", "type": "textbox", "label": "Trace ID (staff only)", "query": "__enter_value__", "current": {"text": "__enter_value__", "value": "__enter_value__"}}
+    ]
+  },
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Cinemata Incident Traces",
+  "uid": "cinematacms-traces",
+  "version": 1
+}

@@ -1,0 +1,18 @@
+[Unit]
+Description=Cinemata vmalert
+After=network-online.target victoriametrics.service alertmanager.service
+Requires=victoriametrics.service alertmanager.service
+
+[Service]
+User=cinematacms-observability
+Group=cinematacms-observability
+EnvironmentFile=/etc/cinematacms-observability/stack.env
+ExecStart=/opt/cinematacms-observability/bin/vmalert-prod -httpListenAddr=127.0.0.1:${VMALERT_PORT} -datasource.url=http://127.0.0.1:${VICTORIAMETRICS_PORT} -remoteWrite.url=http://127.0.0.1:${VICTORIAMETRICS_PORT} -notifier.url=http://127.0.0.1:${ALERTMANAGER_PORT} -rule=/etc/cinematacms-observability/rules/alerts.yml
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target

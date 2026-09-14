@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Cinemata observability
+    orgId: 1
+    folder: Cinemata
+    type: file
+    disableDeletion: true
+    editable: false
+    options:
+      path: /var/lib/grafana/dashboards/cinematacms

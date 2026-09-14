@@ -1,0 +1,20 @@
+rule_files:
+  - alerts.yml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'up{job="victorialogs"}'
+        values: '0+0x5'
+    alert_rule_test:
+      - eval_time: 3m
+        groupname: observability-stack
+        alertname: CinemataScrapeTargetDown
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              job: victorialogs
+            exp_annotations:
+              summary: "Observability scrape target is down"

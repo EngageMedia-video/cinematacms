@@ -1,0 +1,16 @@
+[Unit]
+Description=Cinemata Nginx exporter
+After=network-online.target nginx.service
+
+[Service]
+User=cinematacms-observability
+Group=cinematacms-observability
+ExecStart=/opt/cinematacms-observability/bin/nginx-prometheus-exporter --nginx.scrape-uri=http://127.0.0.1:8080/nginx_status --web.listen-address=127.0.0.1:9113
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target

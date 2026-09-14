@@ -1,0 +1,23 @@
+[Unit]
+Description=CinemataCMS OpenTelemetry Collector
+After=network-online.target victoriametrics.service victorialogs.service victoriatraces.service
+Wants=network-online.target
+Requires=victoriametrics.service victorialogs.service victoriatraces.service
+
+[Service]
+Type=simple
+User=otelcol-contrib
+Group=otelcol-contrib
+EnvironmentFile=/etc/cinematacms-observability/stack.env
+ExecStart=/usr/bin/otelcol-contrib --config=/etc/cinematacms-observability/otelcol.yml
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=read-only
+ProtectSystem=strict
+ReadWritePaths=/var/lib/otelcol-contrib/cinematacms
+SupplementaryGroups=systemd-journal
+
+[Install]
+WantedBy=multi-user.target

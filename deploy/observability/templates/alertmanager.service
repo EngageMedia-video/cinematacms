@@ -1,0 +1,18 @@
+[Unit]
+Description=Cinemata Alertmanager
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=cinematacms-alertmanager
+Group=cinematacms-alertmanager
+ExecStart=/opt/cinematacms-observability/bin/alertmanager --config.file=/etc/cinematacms-observability/alertmanager.yml --storage.path=/var/lib/alertmanager --web.listen-address=127.0.0.1:9093 --cluster.listen-address=127.0.0.1:9094
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/alertmanager
+
+[Install]
+WantedBy=multi-user.target

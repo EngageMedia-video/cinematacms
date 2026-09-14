@@ -1,0 +1,17 @@
+[Unit]
+Description=Cinemata Celery exporter
+After=network-online.target redis-server.service
+
+[Service]
+User=cinematacms-celery-exporter
+Group=cinematacms-celery-exporter
+EnvironmentFile=/etc/cinematacms-observability/celery-exporter.env
+ExecStart=/opt/cinematacms-observability/celery-exporter/bin/python /opt/cinematacms-observability/celery_exporter_runner.py --host=127.0.0.1 --port=9808 --retry-interval=5
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target

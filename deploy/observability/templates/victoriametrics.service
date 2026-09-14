@@ -1,0 +1,23 @@
+[Unit]
+Description=Cinemata VictoriaMetrics
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cinematacms-observability
+Group=cinematacms-observability
+ExecStart=/opt/cinematacms-observability/bin/victoria-metrics-prod \
+  -httpListenAddr=127.0.0.1:${VICTORIAMETRICS_PORT} \
+  -storageDataPath=/var/lib/victoriametrics \
+  -retentionPeriod=${METRICS_RETENTION}
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/victoriametrics
+
+[Install]
+WantedBy=multi-user.target

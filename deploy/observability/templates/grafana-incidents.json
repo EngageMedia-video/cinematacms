@@ -1,0 +1,97 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "graphTooltip": 1,
+  "links": [
+    {"title": "Running logs", "type": "link", "url": "/d/cinematacms-logs/cinematacms-running-logs?orgId=1&from=${__from}&to=${__to}&var-filter=${incident_filter:percentencode}"},
+    {"title": "Trace waterfall", "type": "link", "url": "/d/cinematacms-traces/cinematacms-incident-traces?orgId=1&from=${__from}&to=${__to}&var-trace_id=$trace_id"},
+    {"title": "Application overview", "type": "link", "url": "/d/cinematacms-observability/cinematacms-observability?orgId=1&from=${__from}&to=${__to}"}
+  ],
+  "panels": [
+    {
+      "type": "text",
+      "title": "Incident intake",
+      "gridPos": {"h": 5, "w": 24, "x": 0, "y": 0},
+      "options": {"mode": "markdown", "content": "Choose **actor** and enter the reported email, or choose **media** and enter its public token. Grafana resolves the value server-side to privacy-safe `actor_ref` or `media_ref`; the input is not synchronized into the dashboard URL. For jobs, delivery, API, or infrastructure incidents, paste the known ID or select operation, outcome, route, service, severity, and time. Start broad, then pivot from a matching log to `trace_id` or `task_id`."}
+    },
+    {
+      "type": "logs",
+      "title": "Resolved user, recipient, or media activity",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 12, "w": 12, "x": 0, "y": 5},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "${lookup_ref.log_field}:\"$lookup_ref\" OR recipient_ref:\"$recipient_ref\" OR media_ref:\"$media_ref\"", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
+    },
+    {
+      "type": "logs",
+      "title": "Known task, delivery, or trace",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 12, "w": 12, "x": 12, "y": 5},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "task_id:\"$task_id\" OR delivery_uuid:\"$delivery_uuid\" OR trace_id:\"$trace_id\"", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
+    },
+    {
+      "type": "traces",
+      "title": "Media and operation traces",
+      "datasource": {"type": "jaeger", "uid": "victoriatraces"},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 17},
+      "targets": [
+        {"refId": "A", "queryType": "search", "service": "$trace_service", "operation": "$operation", "tags": "${lookup_ref.span_field}=$lookup_ref", "minDuration": "", "maxDuration": "", "limit": 50},
+        {"refId": "B", "queryType": "search", "service": "$trace_service", "operation": "$operation", "tags": "$trace_tags", "minDuration": "", "maxDuration": "", "limit": 50}
+      ]
+    },
+    {
+      "type": "logs",
+      "title": "Operational context",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 29},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "operation:\"$operation\" OR outcome:\"$outcome\" OR reason_code:\"$reason_code\" OR route_group:\"$route_group\" OR method:\"$method\" OR status_code:\"$status_code\" OR service.name:\"$service\" OR systemd.unit:\"$service\" OR severity_text:\"$severity\"", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
+    },
+    {
+      "type": "logs",
+      "title": "Cross-service incident timeline",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 16, "w": 24, "x": 0, "y": 41},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "${incident_filter:raw}", "maxLines": 1000, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
+    },
+    {
+      "type": "logs",
+      "title": "Failures in selected window",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 57},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "(${incident_filter:raw}) AND (severity_text:~\"ERROR|CRITICAL\" OR outcome:\"failed\")", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["cinemata", "incident-response", "logs", "traces"],
+  "templating": {"list": [
+    {"name": "lookup_kind", "type": "custom", "label": "Reported object", "query": "actor,media", "current": {"text": "actor", "value": "actor"}},
+    {"name": "lookup_value", "type": "textbox", "label": "Email or public media token", "query": "nobody@example.invalid", "current": {"text": "nobody@example.invalid", "value": "nobody@example.invalid"}, "skipUrlSync": true},
+    {"name": "lookup_ref", "type": "query", "label": "Resolved reference", "hide": 2, "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "incident-reference-lookup"}, "refresh": 2, "definition": "Incident Reference Lookup - JSON", "query": {"queryType": "infinity", "meta": {"valueField": "reference", "textField": "reference"}, "infinityQuery": {"refId": "variable", "type": "json", "parser": "backend", "source": "url", "format": "table", "url": "", "url_options": {"method": "POST", "body_type": "raw", "body_content_type": "application/json", "data": "{\"kind\":\"${lookup_kind}\",\"value\":\"${lookup_value}\"}"}, "root_selector": "references", "columns": [{"selector": "reference", "text": "reference", "type": "string"}, {"selector": "log_field", "text": "log_field", "type": "string"}, {"selector": "span_field", "text": "span_field", "type": "string"}], "filters": []}}},
+    {"name": "media_ref", "type": "textbox", "label": "Media ref", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
+    {"name": "recipient_ref", "type": "textbox", "label": "Recipient ref", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
+    {"name": "task_id", "type": "textbox", "label": "Task ID", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
+    {"name": "delivery_uuid", "type": "textbox", "label": "Delivery UUID", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
+    {"name": "trace_id", "type": "textbox", "label": "Trace ID", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
+    {"name": "operation", "type": "textbox", "label": "Operation", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
+    {"name": "trace_service", "type": "custom", "label": "Trace service", "query": "CinemataCMS/web,CinemataCMS/long-task,CinemataCMS/short-task,CinemataCMS/transcription,CinemataCMS/email,CinemataCMS/beat", "current": {"text": "CinemataCMS/web", "value": "CinemataCMS/web"}},
+    {"name": "trace_tags", "type": "textbox", "label": "Trace tags", "query": "", "current": {"text": "", "value": ""}},
+    {"name": "outcome", "type": "custom", "label": "Outcome", "query": "Not selected : __none__,Failed : failed,Retried : retried,Cancelled : cancelled,Succeeded : succeeded", "current": {"text": "Not selected", "value": "__none__"}},
+    {"name": "reason_code", "type": "textbox", "label": "Reason", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
+    {"name": "route_group", "type": "textbox", "label": "Route", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
+    {"name": "method", "type": "custom", "label": "HTTP method", "query": "Not selected : __none__,GET,POST,PUT,PATCH,DELETE", "current": {"text": "Not selected", "value": "__none__"}},
+    {"name": "status_code", "type": "textbox", "label": "HTTP status", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
+    {"name": "service", "type": "textbox", "label": "Service or unit", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
+    {"name": "severity", "type": "custom", "label": "Severity", "query": "Not selected : __none__,Debug : DEBUG,Info : INFO,Warning : WARNING,Error : ERROR,Critical : CRITICAL", "current": {"text": "Not selected", "value": "__none__"}},
+    {"name": "incident_filter", "type": "textbox", "label": "Advanced LogsQL", "query": "_msg:\"__none__\"", "current": {"text": "_msg:\"__none__\"", "value": "_msg:\"__none__\""}}
+  ]},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Cinemata Incident Search",
+  "uid": "cinematacms-incidents",
+  "version": 1
+}

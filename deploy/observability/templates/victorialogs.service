@@ -1,0 +1,21 @@
+[Unit]
+Description=Cinemata VictoriaLogs
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cinematacms-observability
+Group=cinematacms-observability
+EnvironmentFile=/etc/cinematacms-observability/stack.env
+ExecStart=/opt/cinematacms-observability/bin/victoria-logs-prod -httpListenAddr=127.0.0.1:${VICTORIALOGS_PORT} -storageDataPath=/var/lib/victorialogs -retentionPeriod=${LOGS_RETENTION}
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/victorialogs
+
+[Install]
+WantedBy=multi-user.target

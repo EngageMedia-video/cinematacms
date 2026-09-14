@@ -1,0 +1,390 @@
+extensions:
+  file_storage:
+    directory: /var/lib/otelcol-contrib/cinematacms
+    create_directory: true
+    fsync: true
+  health_check:
+    endpoint: 127.0.0.1:13133
+
+receivers:
+  prometheus/cinematacms:
+    config:
+      global:
+        scrape_interval: 15s
+        scrape_timeout: 10s
+      scrape_configs:
+        - job_name: cinematacms
+          metrics_path: /metrics
+          static_configs:
+            - targets: ["127.0.0.1:${env:APP_METRICS_PORT}"]
+  prometheus/infrastructure:
+    config:
+      global:
+        scrape_interval: 15s
+      scrape_configs:
+        - job_name: otelcol
+          static_configs:
+            - targets: ["127.0.0.1:8888"]
+        - job_name: victoriametrics
+          static_configs:
+            - targets: ["127.0.0.1:${env:VICTORIAMETRICS_PORT}"]
+        - job_name: victorialogs
+          static_configs:
+            - targets: ["127.0.0.1:${env:VICTORIALOGS_PORT}"]
+        - job_name: victoriatraces
+          static_configs:
+            - targets: ["127.0.0.1:${env:VICTORIATRACES_PORT}"]
+        - job_name: postgres
+          static_configs:
+            - targets: ["127.0.0.1:9187"]
+        - job_name: redis
+          static_configs:
+            - targets: ["127.0.0.1:9121"]
+        - job_name: nginx
+          static_configs:
+            - targets: ["127.0.0.1:9113"]
+        - job_name: node
+          static_configs:
+            - targets: ["127.0.0.1:9100"]
+        - job_name: celery
+          static_configs:
+            - targets: ["127.0.0.1:9808"]
+        - job_name: alertmanager
+          static_configs:
+            - targets: ["127.0.0.1:${env:ALERTMANAGER_PORT}"]
+        - job_name: vmalert
+          static_configs:
+            - targets: ["127.0.0.1:${env:VMALERT_PORT}"]
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu: {}
+      disk: {}
+      filesystem:
+        metrics:
+          system.filesystem.utilization:
+            enabled: true
+      load: {}
+      memory: {}
+      network: {}
+      paging: {}
+      processes: {}
+      system: {}
+  httpcheck/external:
+    collection_interval: 30s
+    metrics:
+      httpcheck.tls.cert_remaining:
+        enabled: true
+    targets:
+      - endpoint: ${env:EXTERNAL_HEALTH_URL}
+  file_log/cinematacms:
+    include: ["${env:APP_LOG_PATH}"]
+    resource:
+      service.name: cinematacms
+    start_at: beginning
+    include_file_name: false
+    include_file_path: false
+    storage: file_storage
+    operators:
+      - type: json_parser
+        parse_from: body
+        parse_to: attributes
+        on_error: send
+      - type: severity_parser
+        id: parse_application_level
+        parse_from: attributes.level
+        overwrite_text: true
+        if: attributes.level != nil
+      - type: severity_parser
+        id: parse_application_severity
+        parse_from: attributes.severity
+        overwrite_text: true
+        if: attributes.level == nil and attributes.severity != nil
+  file_log/mediacms:
+    include: ["${env:APP_SERVICE_LOG_DIR}/errorlog.txt"]
+    resource:
+      service.name: mediacms
+    start_at: beginning
+    include_file_name: false
+    include_file_path: false
+    storage: file_storage
+    operators:
+      - type: add
+        field: attributes["systemd.unit"]
+        value: mediacms.service
+  file_log/nginx:
+    include: ["/var/log/nginx/*.log"]
+    resource:
+      service.name: nginx
+    start_at: beginning
+    include_file_name: false
+    include_file_path: false
+    storage: file_storage
+    operators:
+      - type: add
+        field: attributes["systemd.unit"]
+        value: nginx.service
+  file_log/celery_long:
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_long.log"]
+    resource:
+      service.name: celery_long
+    start_at: beginning
+    include_file_name: false
+    include_file_path: false
+    storage: file_storage
+    operators:
+      - type: add
+        field: attributes["systemd.unit"]
+        value: celery_long.service
+  file_log/celery_short:
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_short.log"]
+    resource:
+      service.name: celery_short
+    start_at: beginning
+    include_file_name: false
+    include_file_path: false
+    storage: file_storage
+    operators:
+      - type: add
+        field: attributes["systemd.unit"]
+        value: celery_short.service
+  file_log/celery_whisper:
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_whisper.log"]
+    resource:
+      service.name: celery_whisper
+    start_at: beginning
+    include_file_name: false
+    include_file_path: false
+    storage: file_storage
+    operators:
+      - type: add
+        field: attributes["systemd.unit"]
+        value: celery_whisper.service
+  file_log/celery_email:
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_email.log"]
+    resource:
+      service.name: celery_email
+    start_at: beginning
+    include_file_name: false
+    include_file_path: false
+    storage: file_storage
+    operators:
+      - type: add
+        field: attributes["systemd.unit"]
+        value: celery_email.service
+  file_log/celery_beat:
+    include: ["${env:APP_SERVICE_LOG_DIR}/beatcelery_beat.log"]
+    resource:
+      service.name: celery_beat
+    start_at: beginning
+    include_file_name: false
+    include_file_path: false
+    storage: file_storage
+    operators:
+      - type: add
+        field: attributes["systemd.unit"]
+        value: celery_beat.service
+  journald/services:
+    units:
+      - mediacms.service
+      - celery_long.service
+      - celery_short.service
+      - celery_whisper.service
+      - celery_email.service
+      - celery_beat.service
+      - nginx.service
+    priority: info
+    convert_message_bytes: true
+    storage: file_storage
+    operators:
+      - type: move
+        id: move_systemd_unit
+        from: body._SYSTEMD_UNIT
+        to: attributes["systemd.unit"]
+        if: body._SYSTEMD_UNIT != nil
+      - type: move
+        id: move_target_unit
+        from: body.UNIT
+        to: attributes["systemd.unit"]
+        if: body.UNIT != nil
+      - type: severity_parser
+        parse_from: body.PRIORITY
+        preset: none
+        overwrite_text: true
+        mapping:
+          fatal: "0"
+          error: ["1", "2", "3"]
+          warn: "4"
+          info: ["5", "6"]
+          debug: "7"
+      - type: move
+        id: move_journal_message
+        from: body.MESSAGE
+        to: body
+  otlp/private:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:4317
+      http:
+        endpoint: 127.0.0.1:4318
+
+processors:
+  delta_to_cumulative: {}
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 384
+    spike_limit_mib: 96
+  resource/production:
+    attributes:
+      - key: service.namespace
+        value: CinemataCMS
+        action: upsert
+      - key: deployment.environment.name
+        value: ${env:OBSERVABILITY_ENVIRONMENT}
+        action: upsert
+  attributes/privacy:
+    actions:
+      - key: email
+        action: delete
+      - key: recipient
+        action: delete
+      - key: message_body
+        action: delete
+      - key: authorization
+        action: delete
+      - key: cookie
+        action: delete
+      - key: token
+        action: delete
+      - key: password
+        action: delete
+  transform/privacy:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+          - set(log.attributes["logger.name"], log.attributes["name"]) where log.attributes["name"] != nil
+          - set(log.attributes["level"], log.severity_text) where log.severity_text != nil and log.severity_text != ""
+          - set(log.body, log.attributes["event"]) where log.attributes["event"] != nil
+          - set(log.body, log.attributes["event.name"]) where log.attributes["event"] == nil and log.attributes["event.name"] != nil
+          - set(log.body, log.attributes["message"]) where log.attributes["event"] == nil and log.attributes["event.name"] == nil and log.attributes["message"] != nil
+          - set(log.body, Concat([log.body, log.attributes["exc_info"]], "\n")) where IsString(log.body) and log.attributes["exc_info"] != nil
+          - replace_pattern(log.body, "(?i)authorization\\s*[:=]\\s*(bearer\\s+)?[^\\s,;]+", "authorization=<redacted>") where IsString(log.body)
+          - replace_pattern(log.body, "(?i)(cookie|set-cookie)\\s*[:=]\\s*[^\\s;]+", "$$1=<redacted>") where IsString(log.body)
+          - replace_pattern(log.body, "(?i)(password|passwd|token|secret|api[_-]?key)\\s*[:=]\\s*[^\\s,;]+", "$$1=<redacted>") where IsString(log.body)
+          - replace_pattern(log.body, "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}", "<redacted-email>") where IsString(log.body)
+          - replace_pattern(log.body, "(?i)(https?|postgres(?:ql)?|redis)://[^/@\\s]+:[^@/\\s]+@", "$$1://<redacted>@") where IsString(log.body)
+          - replace_pattern(log.body, "\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b", "<redacted-id>") where IsString(log.body)
+          - replace_pattern(log.body, "\\b[0-9a-fA-F]{24,}\\b", "<redacted-id>") where IsString(log.body)
+          - replace_pattern(log.body, "\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b", "<redacted-ip>") where IsString(log.body)
+          - replace_pattern(log.body, "(?:/[A-Za-z._-][A-Za-z0-9._-]*){2,}", "<redacted-path>") where IsString(log.body)
+          - set(log.body, Substring(log.body, 0, 2048, true)) where IsString(log.body) and Len(log.body) > 2048
+          - keep_keys(log.attributes, ["timestamp", "severity", "severity_text", "level", "event", "event.name", "logger.name", "service.name", "service_role", "service.instance.id", "trace_id", "span_id", "actor_ref", "media_ref", "task_id", "queue", "delivery_uuid", "recipient_ref", "operation", "outcome", "reason_code", "route_group", "method", "status_code", "systemd.unit"])
+      - context: resource
+        statements:
+          - keep_keys(resource.attributes, ["service.name", "service.namespace", "deployment.environment.name"])
+    trace_statements:
+      - context: span
+        statements:
+          - keep_keys(span.attributes, ["cinematacms.actor_ref", "cinematacms.media_ref", "domain.operation", "domain.outcome", "domain.reason_code", "email.delivery_id", "email.recipient_ref", "email.kind", "email.attempt", "media.type", "encoding.profile_id", "encoding.resolution", "encoding.codec", "encoding.extension", "cinematacms.db.workload", "cinematacms.db.context_group", "cinematacms.db.operation", "cinematacms.db.outcome", "db.query.fingerprint", "cinematacms.cache.family", "cinematacms.cache.operation", "cinematacms.cache.result", "service_role", "task_id", "celery.task_id", "celery.task_name", "queue", "messaging.destination.name", "delivery_uuid", "recipient_ref", "operation", "outcome", "reason_code", "route_group", "http.route", "http.request.method", "http.response.status_code"])
+      - context: spanevent
+        statements:
+          - keep_keys(spanevent.attributes, ["exception.type", "domain.operation", "domain.outcome", "domain.reason_code", "task_id", "delivery_uuid", "recipient_ref", "operation", "outcome", "reason_code"])
+      - context: resource
+        statements:
+          - keep_keys(resource.attributes, ["service.name", "service.namespace", "service.instance.id", "deployment.environment.name"])
+  tail_sampling:
+    decision_wait: 5s
+    num_traces: 50000
+    expected_new_traces_per_sec: 100
+    policies:
+      - name: errors
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: incident-operations
+        type: string_attribute
+        string_attribute:
+          key: domain.operation
+          values: ["encoding", "hls", "transcription", "sprites", "email_delivery", "chunking", "media_derivative", "media_lifecycle", "storage_maintenance", "diagnostic"]
+      - name: incident-outcomes
+        type: string_attribute
+        string_attribute:
+          key: domain.outcome
+          values: ["failed", "retried", "cancelled"]
+      - name: slow
+        type: latency
+        latency:
+          threshold_ms: 2000
+      - name: ordinary-success
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 10
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+
+exporters:
+  otlp_http/victoriametrics:
+    metrics_endpoint: http://127.0.0.1:${env:VICTORIAMETRICS_PORT}/opentelemetry/v1/metrics
+    compression: gzip
+    encoding: proto
+    sending_queue: &persistent_queue
+      enabled: true
+      num_consumers: 2
+      queue_size: 1000
+      storage: file_storage
+    retry_on_failure: &retry_forever
+      enabled: true
+      initial_interval: 1s
+      max_interval: 30s
+      max_elapsed_time: 0s
+  otlp_http/victorialogs:
+    logs_endpoint: http://127.0.0.1:${env:VICTORIALOGS_PORT}/insert/opentelemetry/v1/logs
+    headers:
+      VL-Stream-Fields: service.name,service.namespace,deployment.environment.name,severity_text
+      VL-Ignore-Fields: email,recipient,message_body,authorization,cookie,token,password
+    compression: gzip
+    encoding: proto
+    sending_queue: *persistent_queue
+    retry_on_failure: *retry_forever
+  otlp_http/victoriatraces:
+    traces_endpoint: http://127.0.0.1:${env:VICTORIATRACES_PORT}/insert/opentelemetry/v1/traces
+    compression: gzip
+    encoding: proto
+    sending_queue: *persistent_queue
+    retry_on_failure: *retry_forever
+
+service:
+  extensions: [file_storage, health_check]
+  telemetry:
+    metrics:
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 127.0.0.1
+                port: 8888
+  pipelines:
+    metrics:
+      receivers: [prometheus/cinematacms, prometheus/infrastructure, hostmetrics, httpcheck/external]
+      processors: [memory_limiter, delta_to_cumulative, resource/production, batch]
+      exporters: [otlp_http/victoriametrics]
+    logs:
+      receivers:
+        - file_log/cinematacms
+        - file_log/mediacms
+        - file_log/nginx
+        - file_log/celery_long
+        - file_log/celery_short
+        - file_log/celery_whisper
+        - file_log/celery_email
+        - file_log/celery_beat
+        - journald/services
+        - otlp/private
+      processors: [memory_limiter, attributes/privacy, transform/privacy, resource/production, batch]
+      exporters: [otlp_http/victorialogs]
+    traces:
+      receivers: [otlp/private]
+      processors: [memory_limiter, attributes/privacy, transform/privacy, resource/production, tail_sampling, batch]
+      exporters: [otlp_http/victoriatraces]
