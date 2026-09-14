@@ -134,6 +134,33 @@ class CommentMentionNotificationTest(TestCase):
         notified_for = {notification.metadata["comment_id"] for notification in self._mentions_for(self.mentioned)}
         self.assertEqual(notified_for, comment_ids)
 
+    def test_a_user_who_opted_out_is_not_notified(self, _):
+        self.mentioned.allow_mentions = False
+        self.mentioned.save(update_fields=["allow_mentions"])
+
+        response = self._post("@mentioned_user look at this")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(self._mentions_for(self.mentioned).exists())
+
+    def test_opting_out_leaves_earlier_mention_notifications_in_place(self, _):
+        """The opt-out is forward-looking: what was already delivered stays."""
+        first = self._post("@mentioned_user before the opt-out")
+        earlier = self._mentions_for(self.mentioned).get()
+
+        self.mentioned.allow_mentions = False
+        self.mentioned.save(update_fields=["allow_mentions"])
+        self._post("@mentioned_user after the opt-out")
+
+        self.assertEqual(
+            [notification.id for notification in self._mentions_for(self.mentioned)],
+            [earlier.id],
+        )
+        self.assertEqual(
+            earlier.metadata["comment_id"],
+            Comment.objects.get(uid=first.json()["uid"]).id,
+        )
+
     def _password_protected_media(self):
         """A film in the state the password gate actually keys on (issue #855)."""
         media = _create_media(

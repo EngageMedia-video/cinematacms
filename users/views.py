@@ -463,7 +463,9 @@ class MentionSuggestionList(APIView):
     """Autocomplete source for @mentions in the comment box.
 
     Matches on display name and handle, and is limited to authenticated callers
-    so the user directory is not enumerable anonymously.
+    so the user directory is not enumerable anonymously. Users who turned off
+    ``allow_mentions`` are never suggested; ``files.mentions`` drops them again
+    at resolution time, so a hand-typed handle does not reach them either.
     """
 
     permission_classes = (permissions.IsAuthenticated,)
@@ -471,7 +473,7 @@ class MentionSuggestionList(APIView):
     MAX_RESULTS = 10
 
     def get(self, request, format=None):
-        users = User.objects.filter(is_active=True).exclude(pk=request.user.pk)
+        users = User.objects.filter(is_active=True, allow_mentions=True).exclude(pk=request.user.pk)
 
         query = request.GET.get("q", "").strip().lstrip("@")
         if query:

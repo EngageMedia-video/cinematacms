@@ -364,3 +364,42 @@ class MentionSuggestionListTest(TestCase):
         self._login()
         entry = self.client.get(self.url, {"q": "ali"}).json()[0]
         self.assertEqual(set(entry.keys()), {"username", "name", "thumbnail_url"})
+
+    def test_excludes_users_who_opted_out_of_being_mentioned(self):
+        self._login()
+        self.alice.allow_mentions = False
+        self.alice.save(update_fields=["allow_mentions"])
+
+        response = self.client.get(self.url, {"q": "ali"})
+        self.assertEqual(response.json(), [])
+
+    def test_opted_out_users_are_absent_from_the_starting_list(self):
+        self._login()
+        self.alice.allow_mentions = False
+        self.alice.save(update_fields=["allow_mentions"])
+
+        usernames = [entry["username"] for entry in self.client.get(self.url).json()]
+        self.assertNotIn("alice", usernames)
+        self.assertIn("bobby", usernames)
+
+
+class EditProfileMentionOptOutTest(TestCase):
+    """The profile form is where a member turns @mentions off."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="editor_user",
+            email="editor_user@example.com",
+            password="securepassword123",
+        )
+        self.client.login(username="editor_user", password="securepassword123")
+
+    def test_new_users_are_mentionable(self):
+        self.assertTrue(self.user.allow_mentions)
+
+    def test_the_edit_page_offers_the_mentions_toggle(self):
+        response = self.client.get(reverse("edit_user", kwargs={"username": self.user.username}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="allow_mentions"')

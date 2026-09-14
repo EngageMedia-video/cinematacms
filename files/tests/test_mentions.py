@@ -81,3 +81,18 @@ class ResolveMentionedUsersTest(TestCase):
         alice = self._create_user("alice")
         bob = self._create_user("bob")
         self.assertEqual(resolve_mentioned_users("@bob then @alice"), [bob, alice])
+
+    def test_skips_users_who_opted_out_of_being_mentioned(self):
+        self._create_user("private_pat", allow_mentions=False)
+        self.assertEqual(resolve_mentioned_users("@private_pat"), [])
+
+    def test_resolves_the_rest_of_the_comment_around_an_opted_out_handle(self):
+        """One person's opt-out must not silence the other mentions."""
+        self._create_user("private_pat", allow_mentions=False)
+        alice = self._create_user("alice")
+
+        self.assertEqual(resolve_mentioned_users("@private_pat and @alice"), [alice])
+
+    def test_opting_out_applies_to_a_handle_typed_in_any_case(self):
+        self._create_user("private_pat", allow_mentions=False)
+        self.assertEqual(resolve_mentioned_users("@PRIVATE_PAT"), [])

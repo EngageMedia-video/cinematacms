@@ -51,17 +51,21 @@ def extract_mention_handles(text):
 
 
 def resolve_mentioned_users(text, exclude=None):
-    """Return the active users named by the ``@handles`` in ``text``.
+    """Return the active, mentionable users named by the ``@handles`` in ``text``.
 
-    Handles that match no active user are dropped. ``exclude`` removes one user
-    from the result, which the comment view uses to skip the comment author.
+    Handles that match no active user are dropped, as are users who turned off
+    ``allow_mentions`` on their profile. ``exclude`` removes one user from the
+    result, which the comment view uses to skip the comment author.
+
+    The opt-out is applied at resolution time, so it only affects mentions
+    resolved from here on; notifications already delivered are left alone.
     """
     handles = extract_mention_handles(text)
     if not handles:
         return []
 
     lookup = functools.reduce(operator.or_, (Q(username__iexact=handle) for handle in handles))
-    users = User.objects.filter(lookup, is_active=True)
+    users = User.objects.filter(lookup, is_active=True, allow_mentions=True)
     if exclude is not None and getattr(exclude, "pk", None) is not None:
         users = users.exclude(pk=exclude.pk)
 
