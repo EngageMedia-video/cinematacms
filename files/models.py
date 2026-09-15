@@ -629,7 +629,10 @@ class Media(models.Model):
     def save(self, *args, update_fields=None, **kwargs):
         # A FieldFile.save(save=True) reaches here with no update_fields. Scope it
         # to the field that triggered it instead of replaying the whole instance.
-        if update_fields is None and self._file_field_save_in_progress:
+        # Only for an existing row: update_fields on an insert makes Django force
+        # an UPDATE, which raises "Cannot force an update in save() with no
+        # primary key." A new instance has no stale snapshot to clobber anyway.
+        if update_fields is None and self._file_field_save_in_progress and not self._state.adding:
             update_fields = [self._file_field_save_in_progress]
 
         if not self.title:
@@ -680,10 +683,19 @@ class Media(models.Model):
                 # row here would be a nested full-row save from the same instance.
                 self.set_thumbnail(force=True, save=False)
                 # A scoped caller (save(update_fields=["thumbnail_time"])) would
-                # otherwise drop the files just generated, so widen its list to
-                # include them. Behaviour is unchanged for an unscoped save.
+                # otherwise drop what this branch just changed, so widen its list.
+                # uploaded_thumbnail/uploaded_poster are included because the
+                # delete(save=False) calls above cleared them in memory only: the
+                # files are gone from disk, so leaving the columns unwritten would
+                # point the row at files that no longer exist. Behaviour is
+                # unchanged for an unscoped save.
                 if update_fields is not None:
-                    update_fields = set(update_fields) | {"thumbnail", "poster"}
+                    update_fields = set(update_fields) | {
+                        "thumbnail",
+                        "poster",
+                        "uploaded_thumbnail",
+                        "uploaded_poster",
+                    }
             elif thumbnail_time_changed:
                 self.__original_thumbnail_time = self.thumbnail_time
         else:

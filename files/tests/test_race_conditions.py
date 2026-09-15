@@ -586,3 +586,47 @@ class StaleInstanceFileFieldSaveTest(TestCase):
                     getattr(Media.objects.get(pk=stale.pk), field.name).name,
                     f"{field.name} was not persisted",
                 )
+
+    def test_new_instance_filefield_save_inserts_instead_of_forcing_update(self):
+        """A FileField write on an unsaved Media must insert, not force an UPDATE.
+
+        The scoping in Media.save() derives update_fields from the marker set by
+        ScopedFieldFile. Applying it to an insert makes Django force an UPDATE,
+        which raises "Cannot force an update in save() with no primary key."
+        A new instance has no stale snapshot to protect, so it saves in full.
+        """
+        from django.core.files.base import ContentFile
+
+        media = Media(user=self.user, title="new instance")
+        media.media_file.save("new.jpg", ContentFile(_jpeg_bytes()))
+
+        self.assertIsNotNone(media.pk)
+        self.assertTrue(Media.objects.filter(pk=media.pk).exists())
+        self.assertTrue(Media.objects.get(pk=media.pk).media_file.name)
+
+    def test_scoped_save_persists_uploads_cleared_by_thumbnail_regeneration(self):
+        """Choosing a new frame clears the uploaded poster/thumbnail on the row too.
+
+        That branch in Media.save() deletes both files with delete(save=False),
+        which clears them in memory only. Under a scoped caller the columns must
+        still be written, or the row keeps pointing at files no longer on disk.
+        """
+        from django.core.files.base import ContentFile
+
+        media = create_test_media(self.user, title="original", duration=60)
+        media.uploaded_thumbnail.save("ut.jpg", ContentFile(_jpeg_bytes()), save=False)
+        media.uploaded_poster.save("up.jpg", ContentFile(_jpeg_bytes()), save=False)
+        Media.objects.filter(pk=media.pk).update(
+            uploaded_thumbnail=media.uploaded_thumbnail.name,
+            uploaded_poster=media.uploaded_poster.name,
+        )
+
+        fresh = Media.objects.get(pk=media.pk)
+        self.assertTrue(fresh.uploaded_thumbnail.name)
+        fresh.thumbnail_time = 5
+        with patch.object(Media, "set_thumbnail", return_value=True):
+            fresh.save(update_fields=["thumbnail_time"])
+
+        stored = Media.objects.get(pk=media.pk)
+        self.assertFalse(stored.uploaded_thumbnail.name, "cleared uploaded_thumbnail was not persisted")
+        self.assertFalse(stored.uploaded_poster.name, "cleared uploaded_poster was not persisted")
