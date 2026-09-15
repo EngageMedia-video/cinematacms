@@ -330,6 +330,7 @@ Each comment object contains:
 | `author_name`        | string   | Name of the comment author                                        |
 | `author_profile`     | string   | URL to the author's profile page                                  |
 | `author_thumbnail_url`| string | URL to the author's thumbnail image                               |
+| `can_delete`         | boolean  | Whether the requesting user may delete this comment               |
 | `media_url`          | string   | URL to the media item                                             |
 
 ---
@@ -346,10 +347,15 @@ Each comment object contains:
     "author_name": "",
     "author_profile": "/%2Fuser/admin/",
     "author_thumbnail_url": "/media/userlogos/user.jpg",
+    "can_delete": true,
     "media_url": "/view?m=jOtwPmb6f"
   }
 ]
 ```
+
+`text` is stored verbatim apart from HTML stripping, so a comment written on
+several lines keeps its newline characters. A client renders them; it must not
+collapse them.
 
 ## 🔹 ``POST /api/v1/media/{friendly_token}/comments``
 
@@ -401,10 +407,44 @@ Each comment object contains:
   "author_name": "",
   "author_profile": "/%2Fuser/admin/",
   "author_thumbnail_url": "/media/userlogos/user.jpg",
+  "can_delete": true,
   "media_url": "/view?m=jOtwPmb6f"
 }
 
 ```
+
+## 🔹 ``DELETE /api/v1/media/{friendly_token}/comments/{uid}``
+
+**Description:** Delete a single comment on a media item.
+
+**Authentication:** ✅ Required
+
+---
+
+### Path Parameters
+
+| Parameter        | Type   | Required | Description                           |
+|------------------|--------|----------|---------------------------------------|
+| `friendly_token` | string | yes      | The friendly token of the media item. |
+| `uid`            | string | yes      | The uid of the comment to delete.     |
+
+---
+
+### Permissions
+
+The comment's own author, the media owner, an editor, a manager, and a
+superuser may delete a comment. `can_delete` on each comment in the listing
+reports the same rule, so a client can show its control from that field.
+
+Delete is a hard delete. `Comment.parent` cascades, so deleting a comment that
+has replies removes those replies too.
+
+---
+
+### Status Codes
+
+- `204 No Content`: Comment deleted, or no `uid` was supplied
+- `400 Bad Request`: Comment does not exist, or the user may not delete it
 
 ## 🔹 ``POST /api/v1/media/{friendly_token}/actions``
 
