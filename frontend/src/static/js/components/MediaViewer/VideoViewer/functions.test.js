@@ -9,6 +9,7 @@ vi.mock('../../../contexts/SiteContext', () => ({
 
 import {
 	DEFAULT_NUMERIC_RESOLUTION,
+	buildHlsSourceUrls,
 	extractDefaultVideoResolution,
 	selectDefaultResolution,
 	videoAvailableCodecsAndResolutions,
@@ -226,5 +227,61 @@ describe('default source selection', () => {
 				expect(firstSourceFor(storedQuality, videoInfo)).toBeTruthy();
 			});
 		});
+	});
+});
+
+describe('buildHlsSourceUrls', () => {
+	// Regression: the master playlist was pushed twice when 'Auto' was the
+	// selected resolution — once by the Auto branch and again by the
+	// per-resolution loop, since extractDefaultVideoResolution also resolves
+	// 'Auto' to 'Auto' (#790 review).
+	function sourcesFor(storedQuality, videoInfo) {
+		const requested = selectDefaultResolution(storedQuality, videoInfo);
+		const resolved = extractDefaultVideoResolution(requested, videoInfo);
+		return buildHlsSourceUrls(requested, resolved, videoInfo);
+	}
+
+	it('emits the master playlist exactly once when Auto is selected', () => {
+		const urls = sourcesFor('Auto', withAuto);
+
+		expect(urls.filter((u) => u === '/hls/master.m3u8')).toHaveLength(1);
+		expect(urls).toEqual(['/hls/master.m3u8']);
+	});
+
+	it('emits the master playlist exactly once on a cold start', () => {
+		const urls = sourcesFor(null, withAuto);
+
+		expect(urls.filter((u) => u === '/hls/master.m3u8')).toHaveLength(1);
+	});
+
+	it('never repeats any URL, for any stored preference', () => {
+		const stored = [null, undefined, 'Auto', 144, 240, 360, 480, 720, 1080, 2160];
+
+		stored.forEach((storedQuality) => {
+			[withAuto, withoutAuto].forEach((videoInfo) => {
+				const urls = sourcesFor(storedQuality, videoInfo);
+				expect(new Set(urls).size).toBe(urls.length);
+			});
+		});
+	});
+
+	it('emits the variant playlist when a numeric resolution is selected', () => {
+		expect(sourcesFor(720, withAuto)).toEqual(['/hls/media-3/stream.m3u8']);
+		expect(sourcesFor(240, withAuto)).toEqual(['/hls/media-1/stream.m3u8']);
+	});
+
+	it('emits a variant when no master playlist exists', () => {
+		expect(sourcesFor(null, withoutAuto)).toEqual(['/hls/media-3/stream.m3u8']);
+	});
+
+	it('emits nothing when the resolution has no hls format', () => {
+		const mp4Only = { 720: { format: ['h264'], url: ['/media/video.mp4'] } };
+
+		expect(buildHlsSourceUrls(720, '720', mp4Only)).toEqual([]);
+	});
+
+	it('emits nothing for an empty or missing resolution map', () => {
+		expect(buildHlsSourceUrls('Auto', undefined, {})).toEqual([]);
+		expect(buildHlsSourceUrls('Auto', undefined, undefined)).toEqual([]);
 	});
 });

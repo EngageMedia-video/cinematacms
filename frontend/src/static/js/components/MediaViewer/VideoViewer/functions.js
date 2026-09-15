@@ -288,6 +288,38 @@ export function selectDefaultResolution(storedQuality, videoInfo) {
 }
 
 /**
+ * Build the ordered list of HLS source URLs the player is handed.
+ *
+ * When 'Auto' is selected, the master playlist is the only HLS source: it is
+ * pushed once, and the per-resolution loop must not add it again (#790).
+ *
+ * @param {string|number} defaultResolution - Resolution chosen by selectDefaultResolution.
+ * @param {string|undefined} resolvedResolution - Key returned by extractDefaultVideoResolution.
+ * @param {Object} videoInfo - Available resolutions.
+ * @returns {string[]} HLS URLs, in the order they should be offered.
+ */
+export function buildHlsSourceUrls(defaultResolution, resolvedResolution, videoInfo) {
+	const info = videoInfo || {};
+	const urls = [];
+
+	if ('Auto' === defaultResolution && void 0 !== info['Auto']) {
+		urls.push(info['Auto'].url[0]);
+	}
+
+	// 'Auto' is already covered above; re-reading it here would duplicate it.
+	const resolved = void 0 !== resolvedResolution && 'Auto' !== resolvedResolution ? info[resolvedResolution] : void 0;
+
+	if (void 0 !== resolved) {
+		const i = resolved.format.indexOf('hls');
+		if (-1 !== i) {
+			urls.push(resolved.url[i]);
+		}
+	}
+
+	return urls;
+}
+
+/**
  * Resolve a requested resolution to a key that actually exists in `data`.
  *
  * @note: `data` mixes numeric resolution keys ('240', '720', ...) with the
