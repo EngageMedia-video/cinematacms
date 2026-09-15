@@ -27,6 +27,7 @@ import { MaterialIcon } from './MaterialIcon';
 import { UserThumbnail } from './UserThumbnail';
 
 import { PopupMain } from './Popup';
+import { canDeleteComment } from './commentPermissions';
 import { UserRoleBadge } from '../../../../features/shared/components/UserRoleBadge';
 
 import '../styles/Comments.scss';
@@ -209,35 +210,33 @@ function CommentActions(props) {
 			{/*<div className="comment-action dislike-action"><CircleIconButton><MaterialIcon type="thumb_down" /></CircleIconButton><span className="dislikes-num">19</span></div>*/}
 			{/*<div className="comment-action replay-comment"><button>REPLY</button></div>*/}
 
-			{MEMBER.can.deleteComment ? (
-				<div className="comment-action remove-comment">
-					<PopupTrigger contentRef={popupContentRef}>
-						<button>
-							{'DELETE'} {commentsText.uppercaseSingle}
-						</button>
-					</PopupTrigger>
+			<div className="comment-action remove-comment">
+				<PopupTrigger contentRef={popupContentRef}>
+					<button>
+						{'DELETE'} {commentsText.uppercaseSingle}
+					</button>
+				</PopupTrigger>
 
-					<PopupContent contentRef={popupContentRef}>
-						<PopupMain>
-							<div className="popup-message">
-								<span className="popup-message-title">{commentsText.ucfirstSingle} removal</span>
-								<span className="popup-message-main">
-									You're willing to remove {commentsText.single} permanently?
-								</span>
-							</div>
-							<hr />
-							<span className="popup-message-bottom">
-								<button className="button-link cancel-comment-removal" onClick={cancelCommentRemoval}>
-									CANCEL
-								</button>
-								<button className="button-link proceed-comment-removal" onClick={proceedCommentRemoval}>
-									PROCEED
-								</button>
+				<PopupContent contentRef={popupContentRef}>
+					<PopupMain>
+						<div className="popup-message">
+							<span className="popup-message-title">{commentsText.ucfirstSingle} removal</span>
+							<span className="popup-message-main">
+								You're willing to remove {commentsText.single} permanently?
 							</span>
-						</PopupMain>
-					</PopupContent>
-				</div>
-			) : null}
+						</div>
+						<hr />
+						<span className="popup-message-bottom">
+							<button className="button-link cancel-comment-removal" onClick={cancelCommentRemoval}>
+								CANCEL
+							</button>
+							<button className="button-link proceed-comment-removal" onClick={proceedCommentRemoval}>
+								PROCEED
+							</button>
+						</span>
+					</PopupMain>
+				</PopupContent>
+			</div>
 		</div>
 	);
 }
@@ -321,7 +320,7 @@ function Comment(props) {
 							{viewMoreContent ? 'Show less' : 'Read more'}
 						</button>
 					) : null}
-					{MEMBER.can.deleteComment ? <CommentActions comment_id={props.comment_id} /> : null}
+					{canDeleteComment(MEMBER, props) ? <CommentActions comment_id={props.comment_id} /> : null}
 				</div>
 			</div>
 		</div>
@@ -337,6 +336,7 @@ Comment.propTypes = {
 	author_thumb: PropTypes.string,
 	author_is_trusted: PropTypes.bool,
 	author_is_manager: PropTypes.bool,
+	can_delete: PropTypes.bool,
 	publish_date: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 	likes: PropTypes.number,
 	dislikes: PropTypes.number,
@@ -560,6 +560,7 @@ export default function CommentsList(props) {
 									author_thumb={formatCommentAuthorThumbnail(c.author_thumbnail_url)}
 									author_is_trusted={c.author_is_trusted}
 									author_is_manager={c.author_is_manager}
+									can_delete={c.can_delete}
 									publish_date={c.add_date}
 									likes={0}
 									dislikes={0}

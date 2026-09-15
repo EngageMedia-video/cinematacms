@@ -10,8 +10,12 @@ function getUser() {
 	return window.MediaCMS?.user ?? null;
 }
 
-function canDelete(_comment, user) {
+function canDelete(comment, user) {
 	if (!user || user.is?.anonymous) return false;
+	// The API decides per comment, so a viewer can remove their own comment on
+	// someone else's video. The page-wide flag only covers a payload that
+	// predates the field.
+	if (typeof comment?.can_delete === 'boolean') return comment.can_delete;
 	return user.can?.deleteComment === true;
 }
 
