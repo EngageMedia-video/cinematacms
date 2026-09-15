@@ -21,7 +21,7 @@ function getSignInHref() {
 	return `/accounts/login/?next=${encodeURIComponent(next)}`;
 }
 
-export function CommentForm({ friendlyToken }) {
+export function CommentForm({ friendlyToken, onSubmitted }) {
 	const user = getUser();
 	const isAnonymous = !user || user.is?.anonymous;
 	const textareaRef = useRef(null);
@@ -72,6 +72,7 @@ export function CommentForm({ friendlyToken }) {
 				setValue('');
 				setTimestamp(null);
 				setCommittedHandles([]);
+				onSubmitted?.();
 			},
 			onError: (err) => setError(err?.message || 'Failed to submit comment.'),
 		});

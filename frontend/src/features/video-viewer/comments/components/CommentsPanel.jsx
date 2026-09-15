@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { cn } from '../../../shared/utils/classNames';
 import { useComments } from '../hooks/useComments';
 import { useHiddenBelowCount } from '../hooks/useHiddenBelowCount';
@@ -41,16 +41,27 @@ export function CommentsPanel({
 
 	const scrollRef = useRef(null);
 	const hiddenBelow = useHiddenBelowCount(scrollRef, loadedCount);
+	// Set when the viewer posts, cleared once the refreshed list has rendered.
+	const scrollAfterRefreshRef = useRef(false);
 
 	useEffect(() => {
 		onCommentsCountChange?.(totalCount);
 	}, [onCommentsCountChange, totalCount]);
 
-	const handleScrollToBottom = () => {
+	const scrollToBottom = useCallback(() => {
 		const el = scrollRef.current;
 		if (!el) return;
-		el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-	};
+		const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+		el.scrollTo({ top: el.scrollHeight, behavior: reduceMotion ? 'auto' : 'smooth' });
+	}, []);
+
+	// A posted comment is appended to the end of the listing, so the viewer only
+	// sees their own comment once the refreshed list is scrolled to the bottom.
+	useEffect(() => {
+		if (!scrollAfterRefreshRef.current) return;
+		scrollAfterRefreshRef.current = false;
+		scrollToBottom();
+	}, [data, scrollToBottom]);
 
 	if (isDisabled) {
 		return (
@@ -160,10 +171,15 @@ export function CommentsPanel({
 					)}
 				</div>
 
-				<ScrollMorePill count={hiddenBelow} onClick={handleScrollToBottom} />
+				<ScrollMorePill count={hiddenBelow} onClick={scrollToBottom} />
 			</div>
 
-			<CommentForm friendlyToken={friendlyToken} />
+			<CommentForm
+				friendlyToken={friendlyToken}
+				onSubmitted={() => {
+					scrollAfterRefreshRef.current = true;
+				}}
+			/>
 		</section>
 	);
 }

@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommentsPanel } from './CommentsPanel';
 import { useComments } from '../hooks/useComments';
 
@@ -12,7 +12,11 @@ vi.mock('../hooks/useHiddenBelowCount', () => ({
 }));
 
 vi.mock('./CommentForm', () => ({
-	CommentForm: () => <div data-testid="comment-form" />,
+	CommentForm: ({ onSubmitted }) => (
+		<button type="button" data-testid="comment-form" onClick={() => onSubmitted?.()}>
+			post
+		</button>
+	),
 }));
 
 vi.mock('./CommentItem', () => ({
@@ -56,5 +60,75 @@ describe('CommentsPanel', () => {
 
 		expect(screen.getByText('Comments are disabled for this video.')).toBeInTheDocument();
 		expect(screen.queryByTestId('comment-form')).not.toBeInTheDocument();
+	});
+});
+
+describe('CommentsPanel scroll to the posted comment', () => {
+	let scrollTo;
+
+	const withComments = (texts) => ({
+		count: texts.length,
+		results: texts.map((text, index) => ({ uid: `c${index}`, text })),
+		commentsDisabled: false,
+	});
+
+	beforeEach(() => {
+		scrollTo = vi.fn();
+		// jsdom has no scrollTo on an element, and no layout to scroll.
+		Element.prototype.scrollTo = scrollTo;
+		window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+		useComments.mockReturnValue(loaded({ data: withComments(['first']) }));
+	});
+
+	afterEach(() => {
+		delete Element.prototype.scrollTo;
+		delete window.matchMedia;
+	});
+
+	it('does not scroll while the viewer is only reading', () => {
+		const { rerender } = render(<CommentsPanel friendlyToken="media-token" />);
+
+		useComments.mockReturnValue(loaded({ data: withComments(['first', 'second']) }));
+		rerender(<CommentsPanel friendlyToken="media-token" />);
+
+		expect(scrollTo).not.toHaveBeenCalled();
+	});
+
+	it('scrolls to the end once the list has reloaded with the posted comment', () => {
+		const { rerender } = render(<CommentsPanel friendlyToken="media-token" />);
+
+		fireEvent.click(screen.getByTestId('comment-form'));
+		// The post itself must not scroll: the new comment is not rendered yet.
+		expect(scrollTo).not.toHaveBeenCalled();
+
+		useComments.mockReturnValue(loaded({ data: withComments(['first', 'mine']) }));
+		rerender(<CommentsPanel friendlyToken="media-token" />);
+
+		expect(scrollTo).toHaveBeenCalledTimes(1);
+		expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }));
+	});
+
+	it('scrolls only once per posted comment', () => {
+		const { rerender } = render(<CommentsPanel friendlyToken="media-token" />);
+
+		fireEvent.click(screen.getByTestId('comment-form'));
+		useComments.mockReturnValue(loaded({ data: withComments(['first', 'mine']) }));
+		rerender(<CommentsPanel friendlyToken="media-token" />);
+
+		useComments.mockReturnValue(loaded({ data: withComments(['first', 'mine', 'theirs']) }));
+		rerender(<CommentsPanel friendlyToken="media-token" />);
+
+		expect(scrollTo).toHaveBeenCalledTimes(1);
+	});
+
+	it('jumps without animation when the viewer asks for reduced motion', () => {
+		window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+		const { rerender } = render(<CommentsPanel friendlyToken="media-token" />);
+
+		fireEvent.click(screen.getByTestId('comment-form'));
+		useComments.mockReturnValue(loaded({ data: withComments(['first', 'mine']) }));
+		rerender(<CommentsPanel friendlyToken="media-token" />);
+
+		expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'auto' }));
 	});
 });
