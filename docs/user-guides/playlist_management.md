@@ -33,7 +33,7 @@ Follow these steps after uploading your video:
 - In the pop-up, click **"Create New"** (top right corner)
 - Fill in the playlist details:
   - **Title** – *Required.* Public name of your playlist
-  - **Description** – *Optional.* Short description of the playlist's theme
+  - **Description** – *Optional.* Short description of the playlist's theme. Any `http://` or `https://` address you type is shown as a clickable link on the playlist page; other markup stays plain text
 - Click **Save** to confirm creation
 - The current video is automatically added to the new playlist
 
