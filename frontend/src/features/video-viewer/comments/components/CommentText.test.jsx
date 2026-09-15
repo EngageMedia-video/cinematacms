@@ -45,3 +45,28 @@ describe('CommentText mentions', () => {
 		expect(screen.getByRole('link', { name: '@bob' })).toBeInTheDocument();
 	});
 });
+
+describe('CommentText line breaks', () => {
+	it('keeps the line breaks the writer typed', () => {
+		const { container } = render(<CommentText text={'first line\nsecond line'} />);
+
+		expect(container.textContent).toBe('first line\nsecond line');
+	});
+
+	it('renders those line breaks instead of collapsing them', () => {
+		const { container } = render(<CommentText text={'first line\nsecond line'} />);
+
+		// A collapsing container would show one run of text; pre-wrap is what
+		// makes the stored newline visible.
+		const lines = [...container.querySelectorAll('span')].filter((node) =>
+			node.classList.contains('whitespace-pre-wrap')
+		);
+		expect(lines).toHaveLength(2);
+	});
+
+	it('keeps a blank line between paragraphs', () => {
+		const { container } = render(<CommentText text={'one\n\nthree'} />);
+
+		expect(container.textContent).toBe('one\n\nthree');
+	});
+});

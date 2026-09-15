@@ -1,5 +1,5 @@
 /* The comment field paints its own text through a backdrop layer so an
-   @mention can be coloured, which a plain <input> cannot do for a substring.
+   @mention can be coloured, which a plain <textarea> cannot do for a substring.
 
    The input keeps the caret and the selection; only its glyphs are hidden. The
    backdrop sits above the input so the selection band it draws does not cover
@@ -16,9 +16,15 @@
 	position: relative;
 	z-index: 0;
 	width: 100%;
-	/* The backdrop only lines up with the field while both use the same metrics. */
+	display: block;
+	resize: none;
+	overflow-y: auto;
+	/* The backdrop only lines up with the field while both use the same metrics,
+	   wrapping included. */
 	font: inherit;
 	letter-spacing: inherit;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
 	color: transparent;
 	background-color: transparent;
 	caret-color: var(--text-strong);
@@ -30,7 +36,8 @@
 	z-index: 1;
 	overflow: hidden;
 	pointer-events: none;
-	white-space: pre;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
 	font: inherit;
 	letter-spacing: inherit;
 	color: var(--text-strong);

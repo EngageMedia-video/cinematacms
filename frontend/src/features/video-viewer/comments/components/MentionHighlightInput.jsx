@@ -2,13 +2,23 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { mentionRangeAtCaret, splitTextByMentions } from '../utils/mentions';
 import './MentionHighlightInput.css';
 
-const TYPOGRAPHY = 'h-6 p-0 text-sm leading-6';
+const TYPOGRAPHY = 'p-0 text-sm leading-6';
+
+// Six lines of comment before the field scrolls instead of growing further,
+// so a long comment cannot push the submit button off the panel.
+const MAX_VISIBLE_LINES = 6;
+// Must match the `leading-6` in TYPOGRAPHY; Tailwind's value is not readable
+// from here, and the cap is computed in pixels.
+const LINE_HEIGHT_PX = 24;
 
 /**
  * The comment field, with each @mention coloured in place and treated as one
  * unit by the delete keys.
  *
- * `inputRef` is the caller's ref on the real <input>, so Tribute.js and the
+ * It is a <textarea> so Shift+Enter can start a new line; it grows with the
+ * text up to MAX_VISIBLE_LINES and scrolls after that.
+ *
+ * `inputRef` is the caller's ref on the real <textarea>, so Tribute.js and the
  * timestamp button keep working against the same node.
  *
  * `committedHandles` lists the handles the user actually picked from the
@@ -42,8 +52,21 @@ export function MentionHighlightInput({
 	const syncScroll = useCallback(() => {
 		const input = inputRef.current;
 		const backdrop = backdropRef.current;
-		if (input && backdrop) backdrop.scrollLeft = input.scrollLeft;
+		if (!input || !backdrop) return;
+		backdrop.scrollLeft = input.scrollLeft;
+		backdrop.scrollTop = input.scrollTop;
 	}, [inputRef]);
+
+	// The field has no intrinsic height once it can hold several lines, so the
+	// rendered text has to set it.
+	const resize = useCallback(() => {
+		const input = inputRef.current;
+		if (!input) return;
+		input.style.height = 'auto';
+		input.style.height = `${Math.min(input.scrollHeight, MAX_VISIBLE_LINES * LINE_HEIGHT_PX)}px`;
+	}, [inputRef]);
+
+	useLayoutEffect(resize, [value, resize]);
 
 	useEffect(syncScroll, [value, syncScroll]);
 
@@ -90,10 +113,10 @@ export function MentionHighlightInput({
 					)
 				)}
 			</span>
-			<input
+			<textarea
 				{...inputProps}
 				ref={inputRef}
-				type="text"
+				rows={1}
 				value={value}
 				onChange={(event) => onChange(event.target.value)}
 				onKeyDown={handleKeyDown}
