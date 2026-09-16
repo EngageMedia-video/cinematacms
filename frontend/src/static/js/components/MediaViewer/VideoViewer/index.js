@@ -13,6 +13,8 @@ import {
 	orderedSupportedVideoFormats,
 	videoAvailableCodecsAndResolutions,
 	extractDefaultVideoResolution,
+	selectDefaultResolution,
+	buildHlsSourceUrls,
 } from './functions';
 import { addClassname, removeClassname } from '../../../functions/dom.js';
 
@@ -88,40 +90,19 @@ export default class VideoViewer extends React.PureComponent {
 		if (!resolutionsKeys.length) {
 			this.videoInfo = null;
 		} else {
-			let defaultResolution = VideoPlayerStore.get('video-quality');
-
-			if (null === defaultResolution || ('Auto' === defaultResolution && void 0 === this.videoInfo['Auto'])) {
-				defaultResolution = 720; // Default resolution.
-			}
+			const defaultResolution = selectDefaultResolution(VideoPlayerStore.get('video-quality'), this.videoInfo);
 
 			let defaultVideoResolution = extractDefaultVideoResolution(defaultResolution, this.videoInfo);
 
-			if ('Auto' === defaultResolution && void 0 !== this.videoInfo['Auto']) {
-				const accessToken =
-					typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
-				const srcUrl = formatMediaLink(this.videoInfo['Auto'].url[0], this.props.siteUrl, accessToken);
-				this.videoSources.push({ src: srcUrl });
-			}
+			const accessToken = typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
+
+			buildHlsSourceUrls(defaultResolution, defaultVideoResolution, this.videoInfo).forEach((url) => {
+				this.videoSources.push({ src: formatMediaLink(url, this.props.siteUrl, accessToken) });
+			});
 
 			const supportedFormats = orderedSupportedVideoFormats();
 
 			let srcUrl, k;
-
-			k = 0;
-			while (k < this.videoInfo[defaultVideoResolution].format.length) {
-				if ('hls' === this.videoInfo[defaultVideoResolution].format[k]) {
-					const accessToken =
-						typeof MediaCMS !== 'undefined' && MediaCMS.access_token ? MediaCMS.access_token : null;
-					const srcUrl = formatMediaLink(
-						this.videoInfo[defaultVideoResolution].url[k],
-						this.props.siteUrl,
-						accessToken
-					);
-					this.videoSources.push({ src: srcUrl });
-					break;
-				}
-				k += 1;
-			}
 
 			for (k in this.props.data.encodings_info[defaultVideoResolution]) {
 				if (this.props.data.encodings_info[defaultVideoResolution].hasOwnProperty(k)) {
