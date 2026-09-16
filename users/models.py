@@ -88,6 +88,11 @@ class User(AbstractUser):
         default=True,
         help_text="Display contact form on your public profile",
     )
+    allow_mentions = models.BooleanField(
+        "Mentions",
+        default=True,
+        help_text="Let other members @mention you in comments",
+    )
     last_published_video_datetime = models.DateTimeField(
         "datetime of the last video that was published",
         default="2008-1-1",

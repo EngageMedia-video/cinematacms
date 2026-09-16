@@ -2,10 +2,27 @@ from unittest.mock import Mock, patch
 
 from django.test import SimpleTestCase
 
-from cms.scheduled_jobs import SCHEDULED_JOBS, record_scheduled_outcome
+from cms.scheduled_jobs import (
+    SCHEDULED_JOB_ITEMS_TOTAL,
+    SCHEDULED_JOB_LAST_STARTED,
+    SCHEDULED_JOB_LAST_SUCCESS,
+    SCHEDULED_JOB_RUNS_TOTAL,
+    SCHEDULED_JOBS,
+    record_scheduled_outcome,
+)
 
 
 class ScheduledJobContractTests(SimpleTestCase):
+    def test_metrics_use_a_non_reserved_job_identity_label(self):
+        for metric in (
+            SCHEDULED_JOB_RUNS_TOTAL,
+            SCHEDULED_JOB_LAST_STARTED,
+            SCHEDULED_JOB_LAST_SUCCESS,
+            SCHEDULED_JOB_ITEMS_TOTAL,
+        ):
+            self.assertIn("scheduled_job", metric._labelnames)
+            self.assertNotIn("job", metric._labelnames)
+
     def test_beat_freshness_runs_on_a_consumed_queue(self):
         from cms.celery import record_beat_freshness
 
@@ -31,7 +48,7 @@ class ScheduledJobContractTests(SimpleTestCase):
             record_scheduled_outcome("clear_sessions", "skipped", "lock_held", timestamp=10)
             last_success.labels.return_value.set.assert_not_called()
             record_scheduled_outcome("clear_sessions", "succeeded", timestamp=20)
-        last_success.labels.assert_called_once_with(job="clear_sessions")
+        last_success.labels.assert_called_once_with(scheduled_job="clear_sessions")
         last_success.labels.return_value.set.assert_called_once_with(20)
         domain.assert_any_call("scheduled.clear_sessions", "skipped", "lock_held")
 
