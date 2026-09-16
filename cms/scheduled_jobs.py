@@ -31,31 +31,31 @@ SCHEDULED_JOBS = {
 SCHEDULED_JOB_RUNS_TOTAL = Counter(
     "cinematacms_scheduled_job_runs_total",
     "Scheduled job domain outcomes",
-    ["job", "outcome", "reason_code"],
+    ["scheduled_job", "outcome", "reason_code"],
 )
 SCHEDULED_JOB_LAST_STARTED = Gauge(
     "cinematacms_scheduled_job_last_started_timestamp_seconds",
     "Last scheduled job start time",
-    ["job"],
+    ["scheduled_job"],
     multiprocess_mode="mostrecent",
 )
 SCHEDULED_JOB_LAST_SUCCESS = Gauge(
     "cinematacms_scheduled_job_last_success_timestamp_seconds",
     "Last successful scheduled job completion time",
-    ["job"],
+    ["scheduled_job"],
     multiprocess_mode="mostrecent",
 )
 SCHEDULED_JOB_ITEMS_TOTAL = Counter(
     "cinematacms_scheduled_job_items_total",
     "Items handled by scheduled jobs",
-    ["job", "result"],
+    ["scheduled_job", "result"],
 )
 
 
 def record_scheduled_start(job: str, timestamp: float) -> None:
     if job not in SCHEDULED_JOBS:
         return
-    SCHEDULED_JOB_LAST_STARTED.labels(job=job).set(timestamp)
+    SCHEDULED_JOB_LAST_STARTED.labels(scheduled_job=job).set(timestamp)
 
 
 def record_scheduled_outcome(
@@ -70,10 +70,12 @@ def record_scheduled_outcome(
 ) -> None:
     if job not in SCHEDULED_JOBS:
         return
-    SCHEDULED_JOB_RUNS_TOTAL.labels(job=job, outcome=outcome, reason_code=reason_code).inc()
+    SCHEDULED_JOB_RUNS_TOTAL.labels(
+        scheduled_job=job, outcome=outcome, reason_code=reason_code
+    ).inc()
     record_domain_outcome(f"scheduled.{job}", outcome, reason_code)
     for result, count in (("processed", processed), ("changed", changed), ("failed", failed)):
         if count:
-            SCHEDULED_JOB_ITEMS_TOTAL.labels(job=job, result=result).inc(count)
+            SCHEDULED_JOB_ITEMS_TOTAL.labels(scheduled_job=job, result=result).inc(count)
     if outcome == "succeeded":
-        SCHEDULED_JOB_LAST_SUCCESS.labels(job=job).set(timestamp)
+        SCHEDULED_JOB_LAST_SUCCESS.labels(scheduled_job=job).set(timestamp)
