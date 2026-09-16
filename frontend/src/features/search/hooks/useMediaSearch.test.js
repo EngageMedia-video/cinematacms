@@ -28,6 +28,28 @@ describe('useMediaSearch helpers', () => {
 		expect(url).toContain('page=2');
 	});
 
+	it('omits sort params for a query with no chosen sort so the API ranks by relevance', () => {
+		const url = buildMediaSearchUrl({ query: 'the train' });
+
+		expect(url).toContain('q=the+train');
+		expect(url).not.toContain('sort_by=');
+		expect(url).not.toContain('ordering=');
+	});
+
+	it('keeps A-Z for filter-only browsing when no sort is chosen', () => {
+		const url = buildMediaSearchUrl({ filters: { country: ['Philippines'] } });
+
+		expect(url).toContain('sort_by=title');
+		expect(url).toContain('ordering=asc');
+	});
+
+	it('sends an explicitly chosen title order even with a query', () => {
+		const url = buildMediaSearchUrl({ query: 'the train', sort: { popularity: null, ordering: 'asc' } });
+
+		expect(url).toContain('sort_by=title');
+		expect(url).toContain('ordering=asc');
+	});
+
 	it('detects active searches from query text or filters', () => {
 		expect(hasActiveSearch({ query: '', filters: { country: [] } })).toBe(false);
 		expect(hasActiveSearch({ query: 'rights', filters: { country: [] } })).toBe(true);

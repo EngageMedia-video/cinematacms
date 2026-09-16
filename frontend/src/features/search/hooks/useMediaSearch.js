@@ -52,10 +52,14 @@ export function buildMediaSearchUrl({
 		}
 	}
 
-	const sortField = sort.popularity || 'title';
-	const sortOrdering = sort.popularity ? 'desc' : sort.ordering === 'asc' ? 'asc' : 'desc';
-	params.set('sort_by', sortField);
-	params.set('ordering', sortOrdering);
+	if (sort.popularity) {
+		params.set('sort_by', sort.popularity);
+		params.set('ordering', 'desc');
+	} else if (sort.ordering || !trimmedQuery) {
+		params.set('sort_by', 'title');
+		params.set('ordering', sort.ordering === 'desc' ? 'desc' : 'asc');
+	}
+	// Otherwise a text query with no chosen sort: send no sort so the API ranks by relevance.
 	params.set('page', String(page));
 	params.set('page_size', String(pageSize));
 

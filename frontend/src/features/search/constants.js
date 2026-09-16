@@ -53,8 +53,10 @@ export const MULTI_FILTER_KEYS = ['category', 'topic', 'country', 'subtitle_lang
 export const SINGLE_FILTER_KEYS = ['length', 'upload_date'];
 
 // `popularity` = one of the POPULARITY_OPTIONS values, or null for title sort.
-// `ordering` = direction for the title A-Z/Z-A toggle (only applies when popularity is null).
+// `ordering` = direction for the title A-Z/Z-A toggle (only applies when popularity is null),
+// or null when the visitor has not chosen one: a text query then ranks by relevance,
+// and browsing by filters alone falls back to A-Z.
 export const DEFAULT_SORT = {
 	popularity: null,
-	ordering: 'asc',
+	ordering: null,
 };

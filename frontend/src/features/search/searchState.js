@@ -47,7 +47,7 @@ export function parseSearchState(search = '') {
 		query: searchParams.get('q') || '',
 		sort: {
 			popularity: POPULARITY_FIELDS.includes(sortBy) ? sortBy : null,
-			ordering: searchParams.get('ordering') === 'desc' ? 'desc' : 'asc',
+			ordering: ['asc', 'desc'].includes(searchParams.get('ordering')) ? searchParams.get('ordering') : null,
 		},
 	};
 }
@@ -74,8 +74,10 @@ export function buildBrowserSearch({ filters, page, query, sort }) {
 	if (sort.popularity) {
 		params.set('sort_by', sort.popularity);
 	}
-	if (sort.ordering === 'desc') {
-		params.set('ordering', 'desc');
+	// Persist an explicit title order. With a query, "no ordering" means relevance,
+	// so an explicit A-Z has to be written or a reload would drop it.
+	if (sort.ordering) {
+		params.set('ordering', sort.ordering);
 	}
 	if (page > 1) {
 		params.set('page', String(page));

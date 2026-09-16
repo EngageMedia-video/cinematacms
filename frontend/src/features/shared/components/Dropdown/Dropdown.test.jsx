@@ -23,7 +23,44 @@ const MULTI_WORD_OPTIONS = [
 	{ label: 'Northern Mariana Islands', value: 'MP' },
 ];
 
+const SORT_OPTIONS = [
+	{ label: 'Relevance', value: 'relevance' },
+	{ label: 'Name A–Z', value: 'asc' },
+	{ label: 'Name Z–A', value: 'desc' },
+];
+
 describe('Dropdown', () => {
+	it('names a compact trigger with its label as context and shows only the value', () => {
+		render(<Dropdown appearance="compact" label="Sort by" value="relevance" options={SORT_OPTIONS} />);
+
+		expect(screen.getByRole('button', { name: 'Sort by: Relevance' })).toBeInTheDocument();
+		expect(screen.queryByText('Sort by')).not.toBeInTheDocument();
+	});
+
+	it('marks the selected option in a compact menu with a check icon', async () => {
+		const user = userEvent.setup();
+
+		render(<Dropdown appearance="compact" icon="sortArrows" label="Sort by" value="asc" options={SORT_OPTIONS} />);
+
+		await user.click(screen.getByRole('button', { name: 'Sort by: Name A–Z' }));
+
+		const selected = screen.getByRole('menuitemradio', { name: 'Name A–Z' });
+		expect(selected).toHaveAttribute('aria-checked', 'true');
+		expect(selected.querySelector('svg[data-icon="check"]')).not.toBeNull();
+		expect(
+			screen.getByRole('menuitemradio', { name: 'Relevance' }).querySelector('svg[data-icon="check"]')
+		).toBeNull();
+	});
+
+	it('renders a compact trigger as an action-inverse pill with a leading icon', () => {
+		render(<Dropdown appearance="compact" icon="sortArrows" label="Sort by" value="asc" options={SORT_OPTIONS} />);
+
+		const trigger = screen.getByRole('button', { name: 'Sort by: Name A–Z' });
+
+		expect(trigger).toHaveClass('bg-bg-action-inverse', 'text-text-action-inverse');
+		expect(trigger.querySelector('svg[data-icon="sortArrows"]')).not.toBeNull();
+	});
+
 	it('renders placeholder, label, helper text, and chevron icon', () => {
 		render(
 			<Dropdown label="Category" placeholder="Choose category" helperText="Pick one option" options={OPTIONS} />
