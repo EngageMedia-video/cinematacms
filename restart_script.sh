@@ -43,6 +43,14 @@ select_release() {
   fi
 }
 
+install_frontend_dependencies() {
+  echo "Installing frontend dependencies..."
+  (
+    cd frontend
+    npm ci --no-fund --no-audit
+  )
+}
+
 main() {
 parse_restart_args "$@"
 
@@ -89,6 +97,8 @@ set -a
 # shellcheck source=/etc/cinematacms/app.env
 source /etc/cinematacms/app.env
 set +a
+
+install_frontend_dependencies
 
 # Build frontend and collect static files
 echo "Building frontend and collecting static files..."
