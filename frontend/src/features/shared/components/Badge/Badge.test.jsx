@@ -22,7 +22,7 @@ describe('Badge', () => {
 		const badge = screen.getByText('Now Showing');
 
 		expect(badge).toHaveTextContent('Now Showing');
-		expect(badge).toHaveStyle({ letterSpacing: '0.12em' });
+		expect(badge.style.letterSpacing).toBe('0.12em');
 	});
 
 	it('resolves design token names into CSS variables', () => {
