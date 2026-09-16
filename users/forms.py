@@ -107,6 +107,7 @@ class UserForm(forms.ModelForm):
             "is_manager",
             "is_curator",
             "allow_contact",
+            "allow_mentions",
         )
 
     #        widgets = {

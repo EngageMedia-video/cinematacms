@@ -45,6 +45,36 @@ Retrieves a list of all users.
 
 ---
 
+## 🔹 `GET /api/v1/users/mention-suggestions`
+
+**Description:**
+
+Autocomplete source for `@mentions` in the comment box. Matches active users on
+display name and handle, ranks handle-prefix matches first, and returns at most
+10 entries. Requires an authenticated session, and never includes the caller.
+
+Members who cleared **Mentions** on their profile (`allow_mentions`) are never
+returned. A hand-typed handle does not reach them either: mention resolution
+drops them as well, so no new mention notification is created for them.
+
+**Query Parameters:**
+
+- `q` (string, optional): The text typed after `@`. When omitted or empty, the
+  most active accounts are returned so the menu is never blank.
+
+**Example Response:**
+```json
+[
+  {
+    "username": "alice",
+    "name": "Alice Anderson",
+    "thumbnail_url": "http://127.0.0.1:8000/media/userlogos/alice.jpg"
+  }
+]
+```
+
+---
+
 ## 🔹 `GET /api/v1/users/{username}`
 
 **Description:**  
