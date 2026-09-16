@@ -1166,6 +1166,33 @@ class RestartScriptTests(unittest.TestCase):
         commands = command_log.read_text().splitlines() if command_log.exists() else []
         return result, commands
 
+    def test_restart_installs_frontend_dependencies_from_lockfile(self):
+        fake_bin = self.test_root / "bin"
+        fake_bin.mkdir(exist_ok=True)
+        command_log = self.test_root / "commands.log"
+        npm = fake_bin / "npm"
+        npm.write_text('#!/bin/sh\nprintf \'%s\\n\' "npm $*" >> "$FAKE_COMMAND_LOG"\n')
+        npm.chmod(npm.stat().st_mode | stat.S_IXUSR)
+        env = os.environ.copy()
+        env.update(
+            {
+                "FAKE_COMMAND_LOG": str(command_log),
+                "PATH": f"{fake_bin}:{env['PATH']}",
+            }
+        )
+
+        result = subprocess.run(
+            ["bash", "-c", 'source "$1"; install_frontend_dependencies', "restart-test", str(RESTART_SCRIPT)],
+            cwd=PROJECT_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(command_log.read_text().splitlines(), ["npm ci --no-fund --no-audit"])
+
     def test_restart_installs_and_starts_every_application_unit(self):
         script = RESTART_SCRIPT.read_text()
         units = "mediacms celery_long celery_short celery_whisper celery_email celery_beat"
