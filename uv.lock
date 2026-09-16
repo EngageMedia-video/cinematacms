@@ -482,7 +482,7 @@ requires-dist = [
     { name = "celery", specifier = "==5.6.3" },
     { name = "crispy-forms-bootstrap2", specifier = "==2024.1" },
     { name = "django", specifier = "==5.2.17" },
-    { name = "django-allauth", specifier = "==65.19.2" },
+    { name = "django-allauth", specifier = "==65.19.3" },
     { name = "django-cors-headers", specifier = "==4.9.0" },
     { name = "django-crispy-forms", specifier = ">=2.3,<3.0" },
     { name = "django-debug-toolbar", specifier = "==8.0.0" },
@@ -493,7 +493,7 @@ requires-dist = [
     { name = "django-prometheus", specifier = ">=2.4.1" },
     { name = "django-recaptcha", specifier = "==4.1.0" },
     { name = "django-redis", specifier = "==7.0.0" },
-    { name = "django-silk", specifier = "==5.5.2" },
+    { name = "django-silk", specifier = "==5.6.0" },
     { name = "django-tinymce", git = "https://github.com/jazzband/django-tinymce.git?rev=6b413f4e9bdedb9268c8ef25886fdfc994780097" },
     { name = "django-vite", specifier = ">=3.1.0" },
     { name = "django-waffle", specifier = ">=4.2.0,<6.0" },
@@ -831,15 +831,15 @@ wheels = [
 
 [[package]]
 name = "django-allauth"
-version = "65.19.2"
+version = "65.19.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiref" },
     { name = "django" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3c/1f/b47535a4143d83782aa033fe137127cd6bba7ff2870a59065cf18ac77f6c/django_allauth-65.19.2.tar.gz", hash = "sha256:378a7050d27fb63bace5b75e79f2a8d9922a0c091b0d007a4b8b6090c7d3c7b7", size = 2287928, upload-time = "2026-09-01T18:53:12.94Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/62/d8/4ab919f8c8a0ac88251117e0edb09d033437d66b24e70c1f5bbfbbed9636/django_allauth-65.19.3.tar.gz", hash = "sha256:2267b66c3212645ef2f1b26bc46ca220abea6281cd78c7014a427a1f759137a3", size = 2291175, upload-time = "2026-09-11T16:58:54.948Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/42/4b/87d32bd76cf1896a8876b2ac581eb7021a8866465dbf80420b522a0dde25/django_allauth-65.19.2-py3-none-any.whl", hash = "sha256:60186543ad6ffb89ef9fc29d371fe0a1bf5abfc13cdbd0b1fa1e04583a624056", size = 2074509, upload-time = "2026-09-01T18:52:53.422Z" },
+    { url = "https://files.pythonhosted.org/packages/25/66/37dba4632615d8dc110279c5d179521c73e5da3f7f9825a264d271bbf5a5/django_allauth-65.19.3-py3-none-any.whl", hash = "sha256:5dc1936001bd33771d453032366af25fc16fcd35a93789f46206d5d2a7cc83e0", size = 2075304, upload-time = "2026-09-11T16:58:52.185Z" },
 ]
 
 [[package]]
@@ -995,16 +995,16 @@ wheels = [
 
 [[package]]
 name = "django-silk"
-version = "5.5.2"
+version = "5.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
     { name = "gprof2dot" },
     { name = "sqlparse" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/90/f4/e5f50497db9a3e59121237e3f74d6b2a2e5fc09ae0d242a659f3e0ca33c6/django_silk-5.5.2.tar.gz", hash = "sha256:c488ee1eab763a6f3d0db09a969e7a91b637743f04159cd8d10141386157ec0d", size = 4498731, upload-time = "2026-08-13T04:25:18.482Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/36/49ce4c5244dc3716b2c70919fb510eb4edc3fc0b36d2f4c096ca6f539949/django_silk-5.6.0.tar.gz", hash = "sha256:bb741fb8af45eba663e8ed832207d16ecd731496313311f6dfae5fe776bed38e", size = 4501978, upload-time = "2026-09-12T05:36:59.31Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ee/da/48607c4a756df4a3d37752006824004fe6ecb5e0a2b34864c97a9903ea08/django_silk-5.5.2-py3-none-any.whl", hash = "sha256:6f11ae724699192bdda247513aa40160fd5e7e3de3083ec307b7151d801d1d51", size = 1945106, upload-time = "2026-08-13T04:25:29.316Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/c4/3593fe23bad8bdaef7ad6360fa88cfa70618fd40b0b0935db9130b438429/django_silk-5.6.0-py3-none-any.whl", hash = "sha256:761300bde25b8ce3c381dc0710e82c792c099c0ee6558fad3165dc560a06dd48", size = 1946405, upload-time = "2026-09-12T05:37:10.558Z" },
 ]
 
 [[package]]
