@@ -71,6 +71,11 @@ urlpatterns = [
     # API VIEWS
     path("api/v1/users", views.UserList.as_view(), name="api_users"),
     path("api/v1/users/", views.UserList.as_view()),
+    path(
+        "api/v1/users/mention-suggestions",
+        views.MentionSuggestionList.as_view(),
+        name="api_mention_suggestions",
+    ),
     re_path(
         rf"^api/v1/users/(?P<username>{USERNAME_RE})$",
         views.UserDetail.as_view(),

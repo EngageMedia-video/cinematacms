@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import videojs from '../../videojsGlobal.js';
 import { formatInnerLink } from '../../functions/formatInnerLink';

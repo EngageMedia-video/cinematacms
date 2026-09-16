@@ -3,8 +3,11 @@ Tests for restricted media views — password entry, token issuance,
 rate limiting, embed auth, and manifest rewriting.
 """
 
+import json
+
 from django.test import Client, TestCase, override_settings
 
+from files.models import Comment
 from files.tests.helpers import create_test_media, create_test_user
 from files.token_utils import _get_brute_force_max_attempts, generate_token, reset_rate_limit
 
@@ -236,3 +239,122 @@ class PublicMediaRegressionTest(TestCase):
         media = create_test_media(self.user, state="public")
         resp = self.client.get(f"/api/v1/media/{media.friendly_token}")
         self.assertEqual(resp.status_code, 200)
+
+
+@override_settings(CAN_ADD_MEDIA="all")
+class CommentAccessControlTest(TestCase):
+    """The comment endpoint must gate on view access, not on state == private.
+
+    Issue #907. CAN_ADD_MEDIA is pinned so IsAuthorizedToAdd cannot mask the
+    access check under test.
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.owner = create_test_user()
+        self.outsider = create_test_user()
+
+    def _url(self, media):
+        return f"/api/v1/media/{media.friendly_token}/comments"
+
+    def _post(self, media, query=""):
+        return self.client.post(
+            f"{self._url(media)}{query}",
+            data=json.dumps({"text": "a comment"}),
+            content_type="application/json",
+        )
+
+    def _restricted(self):
+        media = create_test_media(self.owner, state="restricted")
+        media.set_password("secretpass")
+        media.save()
+        return media
+
+    def test_restricted_rejects_a_comment_without_a_token(self):
+        media = self._restricted()
+        self.client.force_login(self.outsider)
+
+        response = self._post(media)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Comment.objects.filter(media=media).count(), 0)
+
+    def test_restricted_accepts_a_comment_with_a_valid_token(self):
+        media = self._restricted()
+        self.client.force_login(self.outsider)
+        token = generate_token(media.uid.hex)
+
+        response = self._post(media, query=f"?token={token}")
+
+        self.assertEqual(response.status_code, 201)
+
+    def test_restricted_accepts_a_comment_from_the_owner(self):
+        media = self._restricted()
+        self.client.force_login(self.owner)
+
+        self.assertEqual(self._post(media).status_code, 201)
+
+    def test_restricted_accepts_a_comment_from_an_editor(self):
+        media = self._restricted()
+        self.client.force_login(create_test_user(is_editor=True))
+
+        self.assertEqual(self._post(media).status_code, 201)
+
+    def test_restricted_accepts_a_comment_from_a_manager(self):
+        media = self._restricted()
+        self.client.force_login(create_test_user(is_manager=True))
+
+        self.assertEqual(self._post(media).status_code, 201)
+
+    def test_restricted_accepts_a_comment_from_a_curator(self):
+        media = self._restricted()
+        self.client.force_login(create_test_user(is_curator=True))
+
+        self.assertEqual(self._post(media).status_code, 201)
+
+    def test_private_rejects_a_non_owner_with_403_not_400(self):
+        media = create_test_media(self.owner, state="private")
+        self.client.force_login(self.outsider)
+
+        response = self._post(media)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Comment.objects.filter(media=media).count(), 0)
+
+    def test_private_accepts_a_comment_from_the_owner(self):
+        media = create_test_media(self.owner, state="private")
+        self.client.force_login(self.owner)
+
+        self.assertEqual(self._post(media).status_code, 201)
+
+    def test_unlisted_accepts_a_comment_from_anyone_with_the_link(self):
+        """Recorded decision for #907: the link is the only gate on unlisted media,
+        so a viewer who can watch the film can also comment on it."""
+        media = create_test_media(self.owner, state="unlisted")
+        self.client.force_login(self.outsider)
+
+        self.assertEqual(self._post(media).status_code, 201)
+
+    def test_public_is_unaffected(self):
+        media = create_test_media(self.owner, state="public")
+        self.client.force_login(self.outsider)
+
+        self.assertEqual(self._post(media).status_code, 201)
+
+    def test_restricted_rejects_reading_the_thread_without_a_token(self):
+        """The thread itself discloses who is watching a locked film."""
+        media = self._restricted()
+        self.client.force_login(self.outsider)
+
+        self.assertEqual(self.client.get(self._url(media)).status_code, 403)
+
+    def test_disabled_comments_still_reject(self):
+        media = create_test_media(self.owner, state="public", enable_comments=False)
+        self.client.force_login(self.outsider)
+
+        self.assertEqual(self._post(media).status_code, 400)
+
+    def test_anonymous_is_rejected(self):
+        media = create_test_media(self.owner, state="public")
+
+        self.assertEqual(self._post(media).status_code, 403)
