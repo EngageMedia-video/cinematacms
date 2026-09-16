@@ -70,9 +70,7 @@ def record_scheduled_outcome(
 ) -> None:
     if job not in SCHEDULED_JOBS:
         return
-    SCHEDULED_JOB_RUNS_TOTAL.labels(
-        scheduled_job=job, outcome=outcome, reason_code=reason_code
-    ).inc()
+    SCHEDULED_JOB_RUNS_TOTAL.labels(scheduled_job=job, outcome=outcome, reason_code=reason_code).inc()
     record_domain_outcome(f"scheduled.{job}", outcome, reason_code)
     for result, count in (("processed", processed), ("changed", changed), ("failed", failed)):
         if count:
