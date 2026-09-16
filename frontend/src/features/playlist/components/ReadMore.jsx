@@ -19,7 +19,7 @@ function renderWithLinks(text, isTruncated) {
 				href={segment.href}
 				target="_blank"
 				rel="nofollow noopener"
-				className="rounded-ds-4 text-text-accent underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus"
+				className="rounded-ds-4 text-text-accent underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus duration-200 transition-all"
 			>
 				{segment.text}
 			</a>
