@@ -1,2 +1,4 @@
 # Django templates are not safe to auto-format.
 templates/
+# Vendored Django Debug Toolbar assets must match the installed package.
+static/debug_toolbar/
