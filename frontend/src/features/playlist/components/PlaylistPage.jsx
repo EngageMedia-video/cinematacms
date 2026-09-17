@@ -186,6 +186,7 @@ function CuratorNoteCard({ isOwner, playlist }) {
 					charBudget={500}
 					colorClassName="text-text-description"
 					className="mt-3"
+					linkify
 				/>
 			) : (
 				<p className="mt-4 mb-0 text-text-muted body-body-14-regular">

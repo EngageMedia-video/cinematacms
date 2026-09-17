@@ -1,5 +1,6 @@
-import { useId } from 'react';
+import { Fragment, useId } from 'react';
 import { cn } from '../../shared/utils/classNames';
+import { splitTextByLinks } from '../../shared/utils/linkify';
 import usePlaylistUiStore from '../store/usePlaylistUiStore';
 
 const TRUNCATION_SLACK = 60;
@@ -10,7 +11,32 @@ function truncateAtWord(text, budget) {
 	return lastSpace > budget * 0.6 ? slice.slice(0, lastSpace) : slice;
 }
 
-export function ReadMore({ id, text, charBudget = 300, colorClassName = 'text-text-primary', className = '' }) {
+function renderWithLinks(text, isTruncated) {
+	return splitTextByLinks(text, { allowTrailingLink: !isTruncated }).map((segment, index) =>
+		segment.type === 'link' ? (
+			<a
+				key={index}
+				href={segment.href}
+				target="_blank"
+				rel="nofollow noopener"
+				className="rounded-ds-4 text-text-accent underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus duration-200 transition-all"
+			>
+				{segment.text}
+			</a>
+		) : (
+			<Fragment key={index}>{segment.text}</Fragment>
+		)
+	);
+}
+
+export function ReadMore({
+	id,
+	text,
+	charBudget = 300,
+	colorClassName = 'text-text-primary',
+	className = '',
+	linkify = false,
+}) {
 	const generatedId = useId();
 	const textId = id || generatedId;
 	const expanded = usePlaylistUiStore((state) => Boolean(state.expandedTextIds[textId]));
@@ -21,14 +47,16 @@ export function ReadMore({ id, text, charBudget = 300, colorClassName = 'text-te
 	}
 
 	const shouldOfferToggle = text.length > charBudget + TRUNCATION_SLACK;
-	const visibleText = !shouldOfferToggle || expanded ? text : `${truncateAtWord(text, charBudget)}...`;
+	const isTruncated = shouldOfferToggle && !expanded;
+	const visibleText = isTruncated ? truncateAtWord(text, charBudget) : text;
 
 	return (
 		<p
 			id={textId}
 			className={cn('m-0 break-words whitespace-pre-line body-body-14-regular', colorClassName, className)}
 		>
-			{visibleText}{' '}
+			{linkify ? renderWithLinks(visibleText, isTruncated) : visibleText}
+			{isTruncated ? '...' : ''}{' '}
 			{shouldOfferToggle ? (
 				<button
 					type="button"
