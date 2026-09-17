@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MediaSaveButton } from './MediaSaveButton';
@@ -50,8 +51,14 @@ vi.mock('../../../../static/js/pages/MediaPage/store.js', () => ({
 }));
 
 vi.mock('./media-save/PlaylistsSelection', () => ({
-	PlaylistsSelection: () => null,
+	PlaylistsSelection: () => <div>Playlist picker</div>,
 }));
+
+const PRIVATE_NOTICE = "Private films can't be added to a playlist. Change this film's visibility to Public first.";
+
+async function openSaveDialog() {
+	await userEvent.click(screen.getAllByRole('button', { name: /playlist/i })[0]);
+}
 
 describe('MediaSaveButton', () => {
 	beforeEach(() => {
@@ -90,5 +97,48 @@ describe('MediaSaveButton', () => {
 		});
 
 		expect(screen.getAllByRole('button', { name: 'Added to playlist' })).toHaveLength(2);
+	});
+
+	it('opens the playlist picker for a public film', async () => {
+		storeMocks.state.mediaData = { friendly_token: 'loaded-token', state: 'public' };
+
+		render(<MediaSaveButton />);
+		await openSaveDialog();
+
+		expect(screen.getByText('Playlist picker')).toBeInTheDocument();
+		expect(screen.queryByText(PRIVATE_NOTICE)).not.toBeInTheDocument();
+	});
+
+	it('explains why a private film cannot be saved instead of opening the playlist picker', async () => {
+		storeMocks.state.mediaData = { friendly_token: 'loaded-token', state: 'private' };
+
+		render(<MediaSaveButton />);
+		await openSaveDialog();
+
+		expect(screen.getByText(PRIVATE_NOTICE)).toBeInTheDocument();
+		expect(screen.queryByText('Playlist picker')).not.toBeInTheDocument();
+	});
+
+	it('switches to the explanation once the media data reports a private film', async () => {
+		render(<MediaSaveButton />);
+
+		storeMocks.state.mediaData = { friendly_token: 'loaded-token', state: 'private' };
+		act(() => {
+			storeMocks.mediaPageStore.emit('loaded_media_data');
+		});
+		await openSaveDialog();
+
+		expect(screen.getByText(PRIVATE_NOTICE)).toBeInTheDocument();
+		expect(screen.queryByText('Playlist picker')).not.toBeInTheDocument();
+	});
+
+	it('closes the explanation dialog from its close button', async () => {
+		storeMocks.state.mediaData = { friendly_token: 'loaded-token', state: 'private' };
+
+		render(<MediaSaveButton />);
+		await openSaveDialog();
+		await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+		expect(screen.queryByText(PRIVATE_NOTICE)).not.toBeInTheDocument();
 	});
 });
