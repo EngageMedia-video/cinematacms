@@ -656,3 +656,49 @@ class StaleInstanceFileFieldSaveTest(TestCase):
             os.path.basename(stored.media_file.name),
             "filename was not updated alongside media_file",
         )
+
+    def test_filefield_delete_does_not_revert_unrelated_column(self):
+        """FieldFile.delete()'s default save=True must not replay a stale row.
+
+        delete() clears the column then calls the same bare instance.save() that
+        save() does, so it carries the identical lost-update risk.
+        """
+        from django.core.files.base import ContentFile
+
+        stale = self._stale_instance_with_concurrent_update()
+        stale.sprites.save("sprites.jpg", ContentFile(_jpeg_bytes()), save=False)
+        Media.objects.filter(pk=stale.pk).update(sprites=stale.sprites.name)
+
+        stale.sprites.delete()
+
+        self.assertEqual(self._stored_title(stale), "changed")
+        self.assertFalse(Media.objects.get(pk=stale.pk).sprites.name, "sprites column was not cleared")
+
+    def test_every_filefield_on_media_is_safe_under_the_default_delete(self):
+        """The delete() counterpart of the model-wide guard above.
+
+        Same introspection, so a FileField added later is covered without
+        updating a list.
+        """
+        from django.core.files.base import ContentFile
+        from django.db import models as django_models
+
+        file_fields = [f for f in Media._meta.get_fields() if isinstance(f, django_models.FileField)]
+        self.assertGreaterEqual(len(file_fields), 6, "expected Media to still carry its file fields")
+
+        for field in file_fields:
+            with self.subTest(field=field.name):
+                stale = self._stale_instance_with_concurrent_update()
+                getattr(stale, field.name).save(f"{field.name}.jpg", ContentFile(_jpeg_bytes()), save=False)
+                Media.objects.filter(pk=stale.pk).update(**{field.name: getattr(stale, field.name).name})
+
+                # Deliberately the default save=True.
+                getattr(stale, field.name).delete()
+
+                self.assertEqual(
+                    self._stored_title(stale),
+                    "changed",
+                    f"{field.name}.delete() with the default save=True reverted an unrelated "
+                    f"column. Its field must subclass ScopedFileField / "
+                    f"ScopedProcessedImageField (#841).",
+                )

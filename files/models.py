@@ -315,23 +315,31 @@ class Language(models.Model):
 
 
 class ScopedFieldFile(models.fields.files.FieldFile):
-    """A FieldFile whose save=True path writes only its own column.
+    """A FieldFile whose save=True paths write only their own column.
 
-    Django's FieldFile.save() ends in a bare ``self.instance.save()``: a full-row
-    write of every in-memory column. On Media that is a lost update, because the
-    encoding pipeline holds instances across long tasks (#841). Call sites here
-    pass save=False and persist explicitly, but this makes the safe behaviour the
-    default so a forgotten save=False degrades to a scoped write rather than a
-    silent revert.
+    Django's FieldFile.save() and .delete() both end in a bare
+    ``self.instance.save()``: a full-row write of every in-memory column. On
+    Media that is a lost update, because the encoding pipeline holds instances
+    across long tasks (#841). Call sites here pass save=False and persist
+    explicitly, but this makes the safe behaviour the default so a forgotten
+    save=False degrades to a scoped write rather than a silent revert.
     """
 
-    def save(self, name, content, save=True):
+    def _scoped(self, operation, *args, **kwargs):
         previous = self.instance._file_field_save_in_progress
         self.instance._file_field_save_in_progress = self.field.name
         try:
-            super().save(name, content, save=save)
+            operation(*args, **kwargs)
         finally:
             self.instance._file_field_save_in_progress = previous
+
+    def save(self, name, content, save=True):
+        self._scoped(super().save, name, content, save=save)
+
+    def delete(self, save=True):
+        # delete() clears the column and then saves exactly as save() does, so it
+        # needs the same scoping or it replays the whole stale instance.
+        self._scoped(super().delete, save=save)
 
 
 class ScopedFileField(models.FileField):
