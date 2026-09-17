@@ -634,6 +634,12 @@ class Media(models.Model):
         # primary key." A new instance has no stale snapshot to clobber anyway.
         if update_fields is None and self._file_field_save_in_progress and not self._state.adding:
             update_fields = [self._file_field_save_in_progress]
+            # filename is recomputed from media_file below, so a write of that
+            # field has to carry it too. Without this the row keeps the previous
+            # basename while media_file points at the new one, and filename is a
+            # lookup column.
+            if self._file_field_save_in_progress == "media_file":
+                update_fields.append("filename")
 
         if not self.title:
             self.title = self.media_file.path.split("/")[-1]

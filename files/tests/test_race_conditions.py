@@ -630,3 +630,29 @@ class StaleInstanceFileFieldSaveTest(TestCase):
         stored = Media.objects.get(pk=media.pk)
         self.assertFalse(stored.uploaded_thumbnail.name, "cleared uploaded_thumbnail was not persisted")
         self.assertFalse(stored.uploaded_poster.name, "cleared uploaded_poster was not persisted")
+
+    def test_media_file_write_persists_the_recalculated_filename(self):
+        """A scoped media_file write must carry the filename it recomputes.
+
+        Media.save() derives filename from media_file for faster lookups. Scoping
+        the write to media_file alone left the row holding the previous basename
+        while media_file pointed at the new file, desynchronising a lookup column.
+        """
+        import os
+
+        from django.core.files.base import ContentFile
+
+        media = create_test_media(self.user, title="original")
+        media.media_file.save("first.mp4", ContentFile(b"first"), save=False)
+        Media.objects.filter(pk=media.pk).update(media_file=media.media_file.name, filename="first.mp4")
+
+        fresh = Media.objects.get(pk=media.pk)
+        fresh.media_file.save("second.mp4", ContentFile(b"second"))
+
+        stored = Media.objects.get(pk=media.pk)
+        self.assertIn("second.mp4", stored.media_file.name)
+        self.assertEqual(
+            stored.filename,
+            os.path.basename(stored.media_file.name),
+            "filename was not updated alongside media_file",
+        )
