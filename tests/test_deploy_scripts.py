@@ -962,6 +962,25 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             "WHISPER_CPP_MODEL = '/opt/whisper/model.bin'\n"
         )
 
+        env = os.environ.copy()
+        for key in (
+            "CORS_ALLOW_ALL_ORIGINS",
+            "CORS_ALLOWED_ORIGINS",
+            "DJANGO_ADMIN_URL",
+            "MAINTENANCE_MODE",
+            "RECAPTCHA_PRIVATE_KEY",
+            "REDIS_LOCATION",
+            "SECURE_HSTS_SECONDS",
+            "UI_VARIANT_ALLOWED",
+            "UPLOAD_MAX_SIZE",
+            "WHISPER_CPP_COMMAND",
+            "WHISPER_CPP_DIR",
+            "WHISPER_CPP_MODEL",
+            "WHISPER_MODEL",
+            "WHISPER_MODEL_SIZE",
+        ):
+            env.pop(key, None)
+
         result = subprocess.run(
             [
                 sys.executable,
@@ -975,6 +994,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
                 "--legacy-local-settings",
                 str(legacy),
             ],
+            env=env,
             capture_output=True,
             text=True,
             check=False,

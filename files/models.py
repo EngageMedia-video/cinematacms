@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import time
 import uuid
+from contextvars import ContextVar
 
 import m3u8
 import waffle
@@ -68,6 +69,8 @@ def get_invalidate_media_path_cache():
 
 logger = logging.getLogger(__name__)
 RE_TIMECODE = re.compile(r"(\d+:\d+:\d+.\d+)")
+CHUNK_ACTIVE_STATUSES = {"pending", "running"}
+_suppress_chunk_cleanup_scheduling = ContextVar("suppress_chunk_cleanup_scheduling", default=False)
 # the final state of a media, and also encoded medias
 MEDIA_ENCODING_STATUS = (
     ("pending", "Pending"),
@@ -123,6 +126,138 @@ def original_media_file_path(instance, filename):
 def encoding_media_file_path(instance, filename):
     file_name = f"{instance.media.uid.hex}.{helpers.get_file_name(filename)}"
     return settings.MEDIA_ENCODING_DIR + f"{instance.profile.id}/{instance.media.user.username}/{file_name}"
+
+
+def _resolve_media_storage_path(path):
+    if not os.path.isabs(path):
+        path = os.path.join(settings.MEDIA_ROOT, path)
+    return os.path.realpath(path)
+
+
+def _chunk_path_is_within_media_root(chunk_file_path):
+    try:
+        return os.path.commonpath(
+            [_resolve_media_storage_path(chunk_file_path), _resolve_media_storage_path(settings.MEDIA_ROOT)]
+        ) == _resolve_media_storage_path(settings.MEDIA_ROOT)
+    except ValueError:
+        return False
+
+
+def _record_chunk_cleanup_outcome(outcome, reason_code="none"):
+    try:
+        from .metrics import record_domain_outcome
+
+        record_domain_outcome("storage_maintenance", outcome, reason_code)
+    except Exception:
+        logger.debug("Could not record chunk cleanup outcome", exc_info=True)
+
+
+def _storage_path_values(paths):
+    media_root = _resolve_media_storage_path(settings.MEDIA_ROOT)
+    values = set(paths)
+    for path in paths:
+        if _chunk_path_is_within_media_root(path):
+            values.add(os.path.relpath(path, media_root))
+    return values
+
+
+def _remove_unused_chunk_files(chunk_file_paths):
+    stored_paths = {chunk_file_path for chunk_file_path in chunk_file_paths if chunk_file_path}
+    requested_paths = {_resolve_media_storage_path(chunk_file_path) for chunk_file_path in stored_paths}
+    removable_paths = {path for path in requested_paths if _chunk_path_is_within_media_root(path)}
+    if not removable_paths:
+        _record_chunk_cleanup_outcome("skipped")
+        return False
+
+    storage_path_values = _storage_path_values(removable_paths) | stored_paths
+    with transaction.atomic():
+        active_paths = {
+            _resolve_media_storage_path(chunk_file_path)
+            for chunk_file_path, status in (
+                Encoding.objects.select_for_update()
+                .filter(
+                    chunk=True,
+                    chunk_file_path__in=storage_path_values,
+                )
+                .values_list("chunk_file_path", "status")
+            )
+            if status in CHUNK_ACTIVE_STATUSES
+        }
+        original_paths = {
+            _resolve_media_storage_path(media_file)
+            for media_file in (
+                Media.objects.select_for_update()
+                .filter(media_file__in=storage_path_values)
+                .values_list("media_file", flat=True)
+            )
+        }
+        removable_paths.difference_update(active_paths, original_paths)
+
+    if not removable_paths:
+        _record_chunk_cleanup_outcome("skipped")
+        return False
+
+    cleanup_failed = False
+    for chunk_file_path in removable_paths:
+        if not helpers.rm_file(chunk_file_path) and os.path.exists(chunk_file_path):
+            cleanup_failed = True
+            logger.error("Failed to remove unused chunk file")
+
+    if cleanup_failed:
+        _record_chunk_cleanup_outcome("failed", "cleanup_failed")
+        return False
+
+    _record_chunk_cleanup_outcome("succeeded")
+    return True
+
+
+def _pending_chunk_cleanup_callback(connection):
+    savepoint_ids = frozenset(connection.savepoint_ids)
+    for _callback_savepoint_ids, callback, _robust in connection.run_on_commit:
+        if getattr(callback, "chunk_cleanup_savepoint_ids", None) == savepoint_ids:
+            return callback
+    return None
+
+
+def _promote_nested_chunk_cleanup_callbacks(connection):
+    savepoint_ids = frozenset(connection.savepoint_ids)
+    nested_callbacks = [
+        callback
+        for callback_savepoint_ids, callback, _robust in connection.run_on_commit
+        if getattr(callback, "chunk_cleanup_savepoint_ids", frozenset()) > savepoint_ids
+    ]
+    if not nested_callbacks:
+        return None
+
+    callback = _pending_chunk_cleanup_callback(connection)
+    if callback is None:
+        return None
+
+    for nested_callback in nested_callbacks:
+        callback.chunk_file_paths.update(nested_callback.chunk_file_paths)
+    connection.run_on_commit[:] = [entry for entry in connection.run_on_commit if entry[1] not in nested_callbacks]
+    return callback
+
+
+def schedule_chunk_file_cleanup(chunk_file_paths):
+    paths = {chunk_file_path for chunk_file_path in chunk_file_paths if chunk_file_path}
+    if not paths:
+        return
+
+    connection = transaction.get_connection()
+    callback = _promote_nested_chunk_cleanup_callbacks(connection)
+    if callback is None:
+        callback = _pending_chunk_cleanup_callback(connection)
+    if callback is not None:
+        callback.chunk_file_paths.update(paths)
+        return
+
+    def cleanup_callback():
+        _remove_unused_chunk_files(cleanup_callback.chunk_file_paths)
+
+    cleanup_callback.chunk_cleanup_savepoint_ids = frozenset(connection.savepoint_ids)
+    cleanup_callback.chunk_file_paths = paths
+    transaction.on_commit(cleanup_callback)
 
 
 def original_thumbnail_file_path(instance, filename):
@@ -2349,6 +2484,9 @@ def media_file_pre_delete(sender, instance, **kwargs):
 
     # Revoke any active encoding tasks before CASCADE deletes Encoding records
     _revoke_encoding_tasks(instance)
+    instance._chunk_file_paths = list(
+        instance.encodings.filter(chunk=True).exclude(chunk_file_path="").values_list("chunk_file_path", flat=True)
+    )
 
     if instance.category.all():
         for category in instance.category.all():
@@ -2393,6 +2531,9 @@ def media_file_delete(sender, instance, **kwargs):
     if instance.hls_file:
         p = os.path.dirname(instance.hls_file_path)
         helpers.rm_dir(p)
+    schedule_chunk_file_cleanup(
+        getattr(instance, "_chunk_file_paths", ()),
+    )
     instance.user.update_user_media()
 
 
@@ -2443,8 +2584,74 @@ def media_content_sensitivity_m2m(sender, instance, action, pk_set, **kwargs):
                 del instance._cleared_cs_pks
 
 
+def _finalize_failed_chunk_group(instance):
+    if not instance.chunks_info:
+        return False
+
+    with transaction.atomic():
+        chunks = list(
+            Encoding.objects.select_for_update()
+            .filter(
+                media=instance.media,
+                profile=instance.profile,
+                chunks_info=instance.chunks_info,
+                chunk=True,
+            )
+            .order_by("add_date")
+        )
+        if not chunks or any(chunk.status in CHUNK_ACTIVE_STATUSES for chunk in chunks):
+            return False
+        if not any(chunk.status == "fail" for chunk in chunks):
+            return False
+
+        aggregate_exists = (
+            Encoding.objects.select_for_update()
+            .filter(
+                media=instance.media,
+                profile=instance.profile,
+                chunk=False,
+                status="fail",
+                chunks_info=instance.chunks_info,
+            )
+            .exists()
+        )
+        if not aggregate_exists:
+            chunks_paths = [chunk.media_file.path for chunk in chunks if chunk.media_file]
+            all_logs = "\n".join(chunk.logs for chunk in chunks)
+            aggregate = Encoding(
+                media=instance.media,
+                profile=instance.profile,
+                status="fail",
+                progress=100,
+                chunks_info=instance.chunks_info,
+            )
+            aggregate.logs = f"{chunks_paths}\n{all_logs}"
+            aggregate.worker = json.dumps({"workers": list({chunk.worker for chunk in chunks})})
+            aggregate.total_run_time = (
+                max(chunk.update_date for chunk in chunks) - min(chunk.add_date for chunk in chunks)
+            ).seconds
+            aggregate.save()
+
+        chunk_file_paths = [chunk.chunk_file_path for chunk in chunks if chunk.chunk_file_path]
+        cleanup_suppression = _suppress_chunk_cleanup_scheduling.set(True)
+        try:
+            Encoding.objects.filter(pk__in=[chunk.pk for chunk in chunks]).delete()
+        finally:
+            _suppress_chunk_cleanup_scheduling.reset(cleanup_suppression)
+    schedule_chunk_file_cleanup(chunk_file_paths)
+    return True
+
+
 @receiver(post_save, sender=Encoding)
 def encoding_file_save(sender, instance, created, **kwargs):
+    if instance.chunk and instance.status in {"fail", "success"}:
+        if instance.chunk_file_path:
+            schedule_chunk_file_cleanup([instance.chunk_file_path])
+        if _finalize_failed_chunk_group(instance):
+            return
+        if instance.status == "fail":
+            return
+
     if instance.chunk and instance.status == "success":
         # check if all chunks are OK
         # then concatenate to new Encoding - and remove chunks
@@ -2553,38 +2760,7 @@ def encoding_file_save(sender, instance, created, **kwargs):
                             encoding.id,
                         )
                         encoding.delete()
-                    if not Encoding.objects.filter(chunks_info=instance.chunks_info):
-                        print("these workers have worked in total: %s" % workers)
-                        # TODO: send to specific worker to delete file
-                        # for worker in workers:
-                        #    for chunk in json.loads(instance.chunks_info).keys():
-                        #        remove_media_file.delay(media_file=chunk)
-                        for chunk in json.loads(instance.chunks_info):
-                            print("deleting chunk: %s" % chunk)
-                            helpers.rm_file(chunk)
                     instance.media.post_encode_actions(encoding=instance, action="add")
-    elif instance.chunk and instance.status == "fail":
-        encoding = Encoding(media=instance.media, profile=instance.profile, status="fail", progress=100)
-        chunks = Encoding.objects.filter(media=instance.media, chunks_info=instance.chunks_info, chunk=True).order_by(
-            "add_date"
-        )
-        chunks_paths = [f.media_file.path for f in chunks]
-        all_logs = "\n".join([st.logs for st in chunks])
-        encoding.logs = f"{chunks_paths}\n{all_logs}"
-        workers = list({st.worker for st in chunks})
-        encoding.worker = json.dumps({"workers": workers})
-        start_date = min([st.add_date for st in chunks])
-        end_date = max([st.update_date for st in chunks])
-        encoding.total_run_time = (end_date - start_date).seconds
-        encoding.save()
-        who = Encoding.objects.filter(media=encoding.media, profile=encoding.profile).exclude(id=encoding.id)
-        print(
-            f"{encoding.media.friendly_token} deleting failed chunk",
-            [enco.id for enco in who],
-            encoding.id,
-        )
-        who.delete()
-        pass  # TODO: merge with above if, do not repeat code
     else:
         if instance.status in ["fail", "success"]:
             instance.media.post_encode_actions(encoding=instance, action="add")
@@ -2594,10 +2770,6 @@ def encoding_file_save(sender, instance, created, **kwargs):
         workers = list({encoding.worker for encoding in Encoding.objects.filter(media=instance.media)})
 
 
-# TODO: send to specific worker
-# for worker in workers:
-#     if worker != 'localhost':
-#          remove_media_file.delay(media_file=instance.media.media_file.path)
 @receiver(post_delete, sender=Encoding)
 def encoding_file_delete(sender, instance, **kwargs):
     """
@@ -2608,8 +2780,8 @@ def encoding_file_delete(sender, instance, **kwargs):
         helpers.rm_file(instance.media_file.path)
         if not instance.chunk:
             instance.media.post_encode_actions(encoding=instance, action="delete")
-    # delete local chunks, and remote chunks + media file. Only when the
-    # last encoding of a media is complete
+    if instance.chunk and instance.chunk_file_path and not _suppress_chunk_cleanup_scheduling.get():
+        schedule_chunk_file_cleanup([instance.chunk_file_path])
 
 
 @receiver(post_save, sender=Encoding)

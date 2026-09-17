@@ -867,15 +867,18 @@ See [Frontend Development Guide](../customization/frontend-development.md) for:
 ### Running Tests
 
 ```bash
+# Start the disposable PostgreSQL test fixture once
+make test-db-up
+
 # Run all tests
-uv run manage.py test
+make test
 
 # Run specific app tests
-uv run manage.py test files
-uv run manage.py test users
+make test TEST_ARGS="files"
+make test TEST_ARGS="users"
 
-# With options
-uv run manage.py test --keepdb --parallel
+# Reuse the isolated test database and run in parallel
+make test-ci
 ```
 
 ---
@@ -1480,17 +1483,33 @@ uv run <command>
 
 ```bash
 # All tests
-uv run manage.py test
+make test
 
 # Specific app
-uv run manage.py test files
+make test TEST_ARGS="files"
 
 # With options
-uv run manage.py test --keepdb --parallel -v 2
+make test-ci
 
 # Specific test
-uv run manage.py test files.tests.test_models.MediaTestCase
+make test TEST_ARGS="files.tests.test_models.MediaTestCase"
 ```
+
+`make test-db-up` starts the `test-db` Compose profile on port 5433, and the
+Make test targets route local tests to that port by default. Use the optional
+`TEST_DATABASE_*` variables shown in `.env.example` when other connection
+values need to differ. The service's PostgreSQL data directory is a disposable
+in-memory filesystem.
+
+`make test` loads `cms.test_settings`. Django creates a separate database in
+that service and destroys it after the run. `make test-ci` keeps that test
+database for faster repeated runs, but it never mirrors the development
+database.
+
+Tests create their own fixture data. Prefer the helpers in
+`files/tests/helpers.py`, such as `create_test_user` and `create_test_media`.
+Declare a Django fixture on the test class only when several tests need the
+same immutable baseline. Do not load production fixtures into every test.
 
 ### Test Organization
 
@@ -1724,7 +1743,7 @@ make celery-start-all
 
 # Django management commands
 uv run manage.py shell
-uv run manage.py test
+make test
 
 # Git operations
 git status
@@ -2211,10 +2230,10 @@ git checkout -b fix/bug-description
 
 ```bash
 # Run all tests
-uv run manage.py test
+make test
 
 # Run specific tests
-uv run manage.py test files
+make test TEST_ARGS="files"
 
 # Check code quality
 uv run python manage.py check

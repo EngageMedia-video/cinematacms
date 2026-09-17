@@ -132,7 +132,7 @@ Run the contract checks with the feature tests:
 
 ```bash
 uv run python scripts/validate_observability_coverage.py
-uv run python manage.py test cms.tests.test_observability_coverage
+make test TEST_ARGS="cms.tests.test_observability_coverage"
 make agent-check
 ```
 
