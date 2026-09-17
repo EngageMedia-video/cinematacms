@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from files.metrics import record_domain_outcome
-from files.models import Encoding, Media
+from files.models import CHUNK_ACTIVE_STATUSES, Encoding, Media
 
 CHUNK_FILE_NAME = re.compile(rf"^\d+_[A-Za-z0-9]{{{settings.FRIENDLY_TOKEN_LEN}}}_.+\.mkv$")
 
@@ -80,7 +80,9 @@ class Command(BaseCommand):
     def _referenced_paths(self, media_root):
         paths = Media.objects.exclude(media_file="").values_list("media_file", flat=True)
         paths = list(paths) + list(
-            Encoding.objects.exclude(chunk_file_path="").values_list("chunk_file_path", flat=True)
+            Encoding.objects.filter(chunk=True, status__in=CHUNK_ACTIVE_STATUSES)
+            .exclude(chunk_file_path="")
+            .values_list("chunk_file_path", flat=True)
         )
         return {self._within_media_root(path, media_root) for path in paths} - {None}
 

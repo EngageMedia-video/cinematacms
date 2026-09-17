@@ -569,6 +569,25 @@ class ChunkCleanupTests(TestCase):
 
         self.assertTrue(os.path.exists(chunk_path))
 
+    def test_orphan_cleanup_command_removes_chunks_referenced_only_by_terminal_encodings(self):
+        chunk_paths = []
+        for index, status in enumerate(("success", "fail")):
+            chunk_path = os.path.join(
+                self.tmpdir.name,
+                "original",
+                f"{index:02d}_123456789_{status}.mkv",
+            )
+            os.makedirs(os.path.dirname(chunk_path), exist_ok=True)
+            with open(chunk_path, "wb") as chunk_file:
+                chunk_file.write(b"terminal")
+            chunk_paths.append(chunk_path)
+            encoding = self._chunk_encoding(chunk_path)
+            Encoding.objects.filter(pk=encoding.pk).update(status=status)
+
+        call_command("cleanup_orphaned_encoding_chunks", "--min-age-hours=0", "--delete", stdout=StringIO())
+
+        self.assertFalse(any(os.path.exists(path) for path in chunk_paths))
+
     def test_orphan_cleanup_command_scans_only_old_unreferenced_original_segments(self):
         outside_path = os.path.join(self.tmpdir.name, "cache", "00_123456789_outside.mkv")
         live_path = os.path.join(self.tmpdir.name, "original", "00_123456789_live.mkv")

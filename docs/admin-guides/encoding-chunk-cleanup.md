@@ -3,7 +3,9 @@
 Use `cleanup_orphaned_encoding_chunks` to remove old segment files left by a
 previous chunked encoding failure or media deletion. The command scans only
 the configured `MEDIA_UPLOAD_DIR` tree under `MEDIA_ROOT`. It skips any path
-referenced by `Media.media_file` or `Encoding.chunk_file_path`.
+referenced by `Media.media_file`. It also preserves a segment while a chunk
+`Encoding` with `pending` or `running` status references its
+`chunk_file_path`. Terminal `success` and `fail` rows do not preserve segments.
 
 Run a dry run first. The command does not delete files unless you pass
 `--delete`.
