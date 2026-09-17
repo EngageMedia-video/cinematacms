@@ -76,10 +76,11 @@ export function splitTextByLinks(text, { allowTrailingLink = true } = {}) {
 	}
 
 	for (const match of text.matchAll(URL_PATTERN)) {
+		const rawEnd = match.index + match[0].length;
 		const candidate = trimBoundaryCharacters(match[0]);
 		const href = toSafeHref(candidate);
 		const end = match.index + candidate.length;
-		const isClippedTail = !allowTrailingLink && end === text.length;
+		const isClippedTail = !allowTrailingLink && rawEnd === text.length;
 
 		pushText(text.slice(cursor, match.index));
 
