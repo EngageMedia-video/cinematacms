@@ -124,7 +124,8 @@ def original_media_file_path(instance, filename):
 
 
 def encoding_media_file_path(instance, filename):
-    file_name = f"{instance.media.uid.hex}.{helpers.get_file_name(filename)}"
+    version = instance.pk or helpers.produce_friendly_token()
+    file_name = f"{instance.media.uid.hex}.{version}.{helpers.get_file_name(filename)}"
     return settings.MEDIA_ENCODING_DIR + f"{instance.profile.id}/{instance.media.user.username}/{file_name}"
 
 

@@ -1228,7 +1228,7 @@ def edit_media(request):
                             media.encoding_status = "pending"
                             media.hls_file = ""
                             media.preview_file_path = ""
-                            # Bump edit_date to invalidate caches/CDNs
+                            # Record the replacement time for metadata and legacy ?v= URLs.
                             media.edit_date = timezone.now()
                             media.save(
                                 update_fields=[
