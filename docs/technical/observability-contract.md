@@ -56,7 +56,7 @@ Validate the contract with:
 ```bash
 uv run python scripts/validate_observability_contract.py
 uv run python scripts/validate_observability_coverage.py
-uv run python manage.py test cms.tests.test_alertability_contract cms.tests.test_observability cms.tests.test_scheduled_jobs email_delivery
+make test TEST_ARGS="cms.tests.test_alertability_contract cms.tests.test_observability cms.tests.test_scheduled_jobs email_delivery"
 ```
 
 Before implementation, map each feature to this contract and

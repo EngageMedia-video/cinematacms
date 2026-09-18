@@ -201,7 +201,7 @@ jobs:
           --health-retries 5
 
     env:
-      DJANGO_SETTINGS_MODULE: cms.ci_settings
+      DJANGO_SETTINGS_MODULE: cms.test_settings
       SECRET_KEY: ci-test-key-not-for-production
 
     steps:

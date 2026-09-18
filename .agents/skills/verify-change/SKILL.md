@@ -14,10 +14,11 @@ unless the user requested those actions.
 Inspect the changed paths and select every applicable group:
 
 - For every change, run `make agent-check`.
-- For backend code or models, run the narrowest relevant Django tests. Run
+- For backend code or models, run the narrowest relevant Django tests through
+  `make test TEST_ARGS="<test labels>"`. Run
   `uv run python manage.py makemigrations --check` for model or migration work.
 - For broad backend changes, run
-  `uv run python manage.py test --noinput --verbosity=2 --exclude-tag=requires-whisper`.
+  `make test TEST_ARGS="--noinput --exclude-tag=requires-whisper"`.
 - For modern frontend code, run `npm run lint:modern` and `npm run test:run`
   from `frontend/`. Run `make frontend-build` when entries, packages, assets,
   templates, or build configuration change.

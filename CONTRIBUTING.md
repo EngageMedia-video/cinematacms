@@ -63,10 +63,17 @@ feature, extend the coverage matrix and contract tests first.
 ### Repository checks
 
 ```bash
+make test-db-up
 make agent-check
 uv run python manage.py makemigrations --check
-uv run python manage.py test --noinput --verbosity=2 --exclude-tag=requires-whisper
+make test TEST_ARGS="--noinput --exclude-tag=requires-whisper"
 ```
+
+`make test` uses `cms.test_settings` and creates a separate Django test
+database. For the Docker development workflow, `make test-db-up` starts its
+disposable PostgreSQL service on port 5433. Tests must create their own data
+with test helpers or explicitly declared fixtures. Do not depend on records
+from the development database or load production fixtures globally.
 
 `make agent-check` is the shared baseline for human and agent-authored changes.
 It checks staged and unstaged diffs. It runs pre-commit hooks on untracked files

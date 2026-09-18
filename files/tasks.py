@@ -55,6 +55,7 @@ from .models import (
     Tag,
     Topic,
     TranscriptionRequest,
+    schedule_chunk_file_cleanup,
 )
 from .query_cache import invalidate_media_cache
 from .sprites import generate_sprite_for_media
@@ -196,39 +197,66 @@ def chunkize_media(self, friendly_token, profiles, force=True):
     chunks = [os.path.join(cwd, ch) for ch in chunks]
     to_profiles = []
     chunks_dict = {}
-    # calculate once md5sums
-    for chunk in chunks:
-        cmd = ["md5sum", chunk]
-        stdout = run_command(cmd).get("out")
-        md5sum = stdout.strip().split()[0]
-        chunks_dict[chunk] = md5sum
-
-    for profile in profiles:
-        if media.video_height and media.video_height < profile.resolution:
-            if profile.resolution not in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
-                continue
-        to_profiles.append(profile)
-
+    try:
+        # calculate once md5sums
         for chunk in chunks:
-            encoding = Encoding(
-                media=media,
-                profile=profile,
-                chunk_file_path=chunk,
-                chunk=True,
-                chunks_info=json.dumps(chunks_dict),
-                md5sum=chunks_dict[chunk],
-                task_dispatched=False,
-            )
-            encoding.save()
-            priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
-            media._dispatch_encoding(
-                encoding,
-                profile,
-                force,
-                priority=priority,
-                chunk=True,
-                chunk_file_path=chunk,
-            )
+            cmd = ["md5sum", chunk]
+            stdout = run_command(cmd).get("out")
+            md5sum = stdout.strip().split()[0]
+            chunks_dict[chunk] = md5sum
+    except Exception:
+        logger.exception("Failed to prepare chunk encodings for %s", friendly_token)
+        schedule_chunk_file_cleanup(chunks)
+        raise
+
+    encodings_to_dispatch = []
+    try:
+        with transaction.atomic():
+            media = Media.objects.select_for_update().get(pk=media.pk)
+            for profile in profiles:
+                if media.video_height and media.video_height < profile.resolution:
+                    if profile.resolution not in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
+                        continue
+                to_profiles.append(profile)
+
+                for chunk in chunks:
+                    encoding = Encoding(
+                        media=media,
+                        profile=profile,
+                        chunk_file_path=chunk,
+                        chunk=True,
+                        chunks_info=json.dumps(chunks_dict),
+                        md5sum=chunks_dict[chunk],
+                        task_dispatched=False,
+                    )
+                    encoding.save()
+                    priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
+                    encodings_to_dispatch.append((encoding, profile, chunk, priority))
+
+            for encoding, profile, chunk, priority in encodings_to_dispatch:
+                transaction.on_commit(
+                    lambda encoding=encoding, profile=profile, chunk=chunk, priority=priority: media._dispatch_encoding(
+                        encoding,
+                        profile,
+                        force,
+                        priority=priority,
+                        chunk=True,
+                        chunk_file_path=chunk,
+                    )
+                )
+    except Media.DoesNotExist:
+        logger.info("Media %s was deleted while publishing chunk encodings", friendly_token)
+        schedule_chunk_file_cleanup(chunks)
+        return False
+    except django.db.DatabaseError:
+        logger.exception("Failed to publish chunk encodings for %s", friendly_token)
+        schedule_chunk_file_cleanup(chunks)
+        return False
+
+    if not encodings_to_dispatch:
+        logger.info("No eligible encoding profiles for chunked media %s", friendly_token)
+        schedule_chunk_file_cleanup(chunks)
+        return False
 
     logger.info(f"got {len(chunks)} chunks and will encode to {to_profiles} profiles")
     return True
@@ -329,13 +357,8 @@ def encode_media(
                     chunk_file_path=chunk_file_path,
                 ).exclude(id=encoding_id).delete()
             except Encoding.DoesNotExist:
-                encoding = Encoding(
-                    media=media,
-                    profile=profile,
-                    status="running",
-                    chunk=True,
-                    chunk_file_path=chunk_file_path,
-                )
+                logger.info("Chunk encoding %s no longer exists; skipping task", encoding_id)
+                return False
     else:
         if Encoding.objects.filter(media=media, profile=profile).count() > 1 and force is False:
             Encoding.objects.filter(id=encoding_id).delete()
@@ -524,18 +547,16 @@ def encode_media(
                 if isinstance(e, SoftTimeLimitExceeded):
                     kill_ffmpeg_process(encoding.temp_file)
                 encoding.logs = output
-                encoding.status = "fail"
-                encoding.save(update_fields=["status", "logs"])
-                raise_exception = True
                 # if this is an ffmpeg's valid error
                 # no need for the task to be re-run
                 # otherwise rerun task...
-                for error_msg in ERRORS_LIST:
-                    if error_msg.lower() in output.lower():
-                        raise_exception = False
-                if raise_exception:
-                    if self.request.retries >= 1:
-                        record_encoding_outcome(False)
+                retryable = not any(error_msg.lower() in output.lower() for error_msg in ERRORS_LIST)
+                if retryable:
+                    if self.request.retries < 1:
+                        raise self.retry(exc=e, countdown=5, max_retries=1)
+                    encoding.status = "fail"
+                    encoding.save(update_fields=["status", "logs"])
+                    record_encoding_outcome(False)
                     raise self.retry(exc=e, countdown=5, max_retries=1)
 
         encoding.logs = output

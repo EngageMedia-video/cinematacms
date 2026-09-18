@@ -63,7 +63,7 @@ From the project root:
 uv sync
 cd frontend && npm ci && cd ..
 ./scripts/build_frontend.sh
-uv run manage.py test tests.test_ui_variant
+make test TEST_ARGS="tests.test_ui_variant"
 ```
 
 Notes:
@@ -235,7 +235,7 @@ User.objects.filter(username="your-admin-user").values("username", "is_staff")
 Use the focused regression suite shipped with the gate:
 
 ```bash
-uv run manage.py test tests.test_ui_variant
+make test TEST_ARGS="tests.test_ui_variant"
 ```
 
 This covers:

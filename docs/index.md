@@ -41,6 +41,7 @@ rules. The wiki helps contributors find those sources.
 - [🔐 Permission System](admin-guides/permission_system.md)
 - [📊 User Roles Permission Matrix](admin-guides/cinematacms-roles-permission-matrix.md)
 - [🗣️ Language Setup and Configuration](admin-guides/languages.md)
+- [Encoding chunk cleanup](admin-guides/encoding-chunk-cleanup.md)
 - [🚩 Feature Flags Management](features/feature_flags.md)
 
 ## 🎨 Customization

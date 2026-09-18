@@ -1,4 +1,4 @@
-.PHONY: docker-up docker-down docker-restart docker-logs docker-ps docker-clean docker-build docker-shell-db docker-shell-redis sync help dev-server start-celery-beat stop-celery-beat start-celery-long stop-celery-long start-celery-short stop-celery-short start-celery-whisper stop-celery-whisper celery-beat-start celery-beat-stop celery-beat-restart celery-long-start celery-long-stop celery-long-restart celery-short-start celery-short-stop celery-short-restart celery-whisper-start celery-whisper-stop celery-whisper-restart celery-start-all celery-stop-all celery-restart-all celery-status frontend-build frontend-dev storybook storybook-build storybook-test frontend-clean quick-build test lint agent-check test-ci
+.PHONY: docker-up docker-down docker-restart docker-logs docker-ps docker-clean docker-build docker-shell-db docker-shell-redis test-db-up test-db-stop sync help dev-server start-celery-beat stop-celery-beat start-celery-long stop-celery-long start-celery-short stop-celery-short start-celery-whisper stop-celery-whisper celery-beat-start celery-beat-stop celery-beat-restart celery-long-start celery-long-stop celery-long-restart celery-short-start celery-short-stop celery-short-restart celery-whisper-start celery-whisper-stop celery-whisper-restart celery-start-all celery-stop-all celery-restart-all celery-status frontend-build frontend-dev storybook storybook-build storybook-test frontend-clean quick-build test lint agent-check test-ci
 
 # Docker compose file to use
 COMPOSE_FILE = docker-compose.dev.yml
@@ -12,6 +12,9 @@ CELERY_APP := cms
 CELERYD_LOG_LEVEL := INFO
 CELERYD_PID_DIR := $(APP_DIR)/pids
 CELERYD_LOG_DIR := $(APP_DIR)/logs
+TEST_SETTINGS ?= cms.test_settings
+TEST_ARGS ?=
+TEST_DATABASE_PORT ?= 5433
 
 # Ensure directories exist
 $(shell mkdir -p $(CELERYD_PID_DIR) $(CELERYD_LOG_DIR))
@@ -36,6 +39,8 @@ help:
 	@echo "  make docker-build     - Build or rebuild services"
 	@echo "  make docker-shell-db  - Open a shell in the database container"
 	@echo "  make docker-shell-redis - Open a shell in the redis container"
+	@echo "  make test-db-up       - Start the disposable PostgreSQL test fixture"
+	@echo "  make test-db-stop     - Stop the PostgreSQL test fixture"
 	@echo "  make sync          - Sync Python dependencies using uv"
 	@echo "  make dev-server    - Start the development server"
 	@echo ""
@@ -93,6 +98,12 @@ docker-shell-db:
 
 docker-shell-redis:
 	docker compose -f $(COMPOSE_FILE) exec redis sh
+
+test-db-up:
+	docker compose -f $(COMPOSE_FILE) --profile test up -d --wait test-db
+
+test-db-stop:
+	docker compose -f $(COMPOSE_FILE) --profile test stop test-db
 
 sync:
 	@echo "Syncing Python dependencies using uv..."
@@ -301,7 +312,7 @@ quick-build:
 ## Quality & Tests
 test:
 	@echo "Running Django test suite..."
-	uv run python manage.py test --verbosity=2
+	TEST_DATABASE_PORT=$(TEST_DATABASE_PORT) DJANGO_SETTINGS_MODULE=$(TEST_SETTINGS) uv run python manage.py test --verbosity=2 $(TEST_ARGS)
 
 lint:
 	@echo "Running pre-commit on all files..."
@@ -316,4 +327,4 @@ agent-check:
 
 test-ci:
 	@echo "Running tests with --keepdb --parallel..."
-	uv run python manage.py test --keepdb --parallel --verbosity=2
+	TEST_DATABASE_PORT=$(TEST_DATABASE_PORT) DJANGO_SETTINGS_MODULE=$(TEST_SETTINGS) uv run python manage.py test --keepdb --parallel --verbosity=2 $(TEST_ARGS)

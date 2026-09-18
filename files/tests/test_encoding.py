@@ -2,7 +2,7 @@ import unittest
 from contextlib import ExitStack, contextmanager
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import Mock, call, mock_open, patch
 
 from django.test import override_settings
 
@@ -430,7 +430,7 @@ class TestEncodingOutcomeObservation(unittest.TestCase):
         from files.tasks import encode_media
 
         with patch.object(encode_media, "retry", side_effect=RuntimeError("retry")) as retry:
-            result, _media, _profile, _encoding, observer = self._run_encode_media(
+            result, _media, _profile, encoding, observer = self._run_encode_media(
                 backend_exception=RuntimeError("unknown ffmpeg failure"),
                 capture_exception=True,
             )
@@ -438,6 +438,8 @@ class TestEncodingOutcomeObservation(unittest.TestCase):
         self.assertIsInstance(result, RuntimeError)
         retry.assert_called_once()
         observer.assert_not_called()
+        self.assertEqual(encoding.status, "running")
+        self.assertNotIn(call(update_fields=["status", "logs"]), encoding.save.call_args_list)
 
     def test_known_ffmpeg_error_defers_outcome_until_final_result(self):
         from files.exceptions import VideoEncodingError
