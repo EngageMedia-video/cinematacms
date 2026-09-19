@@ -21,7 +21,7 @@ function getSignInHref() {
 	return `/accounts/login/?next=${encodeURIComponent(next)}`;
 }
 
-export function CommentForm({ friendlyToken }) {
+export function CommentForm({ friendlyToken, onSubmitted }) {
 	const user = getUser();
 	const isAnonymous = !user || user.is?.anonymous;
 	const textareaRef = useRef(null);
@@ -72,6 +72,7 @@ export function CommentForm({ friendlyToken }) {
 				setValue('');
 				setTimestamp(null);
 				setCommittedHandles([]);
+				onSubmitted?.();
 			},
 			onError: (err) => setError(err?.message || 'Failed to submit comment.'),
 		});
@@ -93,7 +94,8 @@ export function CommentForm({ friendlyToken }) {
 		// While the @mention menu is open, Enter picks the highlighted person
 		// rather than posting a half-written comment.
 		if (mentions.isMenuOpen()) return;
-		if (event.key === 'Enter' && !event.isComposing && event.keyCode !== 229) {
+		// Shift+Enter falls through to the textarea so it starts a new line.
+		if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
 			event.preventDefault();
 			submit();
 		}
@@ -130,8 +132,11 @@ export function CommentForm({ friendlyToken }) {
 	}
 
 	return (
-		<div className="flex min-h-[101px] flex-col gap-1.5 rounded-lg bg-bg-surface px-4 py-3">
-			<div className="flex min-h-8 items-center gap-2">
+		// shrink-0 keeps the growing field's height inside a capped panel; without
+		// it the flex parent squeezes the box back and the text runs over the
+		// avatar and submit row.
+		<div className="flex min-h-[101px] shrink-0 flex-col gap-1.5 rounded-lg bg-bg-surface px-4 py-3">
+			<div className="flex min-h-8 items-start gap-2 py-1">
 				{timestamp ? (
 					<button
 						type="button"

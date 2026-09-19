@@ -613,6 +613,24 @@ def is_mediacms_manager(user):
     return manager
 
 
+def user_can_delete_comment(user, comment):
+    """Return whether ``user`` may delete ``comment``.
+
+    The comment's own author is included so a viewer can take back what they
+    wrote on someone else's video. Shared by the delete endpoint and the
+    serializer field the UI reads, so the control and the check cannot drift.
+    """
+    if user is None or not getattr(user, "is_authenticated", False):
+        return False
+    return bool(
+        comment.user_id == user.id
+        or user.is_superuser
+        or comment.media.user_id == user.id
+        or is_mediacms_editor(user)
+        or is_mediacms_manager(user)
+    )
+
+
 def can_manage_uploads(user):
     """Check if user can access Manage Uploads page.
     Trusted Users (advancedUser), Editors, Managers, and Superusers."""

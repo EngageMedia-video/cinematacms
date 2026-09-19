@@ -7,6 +7,7 @@ from rest_framework import serializers
 from actions.models import MediaAction
 
 from .community_impact_validators import validate_trusted_url
+from .methods import user_can_delete_comment
 from .models import (
     Category,
     Comment,
@@ -564,9 +565,16 @@ class CommentSerializer(serializers.ModelSerializer):
     author_thumbnail_url = serializers.ReadOnlyField(source="user.thumbnail_url")
     author_is_trusted = serializers.ReadOnlyField(source="user.advancedUser")
     author_is_manager = serializers.SerializerMethodField()
+    can_delete = serializers.SerializerMethodField()
 
     def get_author_is_manager(self, obj):
         return obj.user.is_superuser or obj.user.is_manager
+
+    def get_can_delete(self, obj):
+        # The UI shows its delete control from this flag, so it has to come from
+        # the same rule the delete endpoint enforces.
+        request = self.context.get("request")
+        return user_can_delete_comment(getattr(request, "user", None), obj)
 
     class Meta:
         model = Comment
@@ -580,6 +588,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "author_name",
             "author_is_trusted",
             "author_is_manager",
+            "can_delete",
             "media_url",
             "uid",
         )

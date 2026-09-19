@@ -78,6 +78,7 @@ from .methods import (
     pre_save_action,
     show_recommended_media,
     show_related_media,
+    user_can_delete_comment,
 )
 from .models import (
     Category,
@@ -2741,7 +2742,9 @@ class CommentDetail(APIView):
         media = self.get_object(friendly_token)
         if isinstance(media, Response):
             return media
-        comments = media.comments.select_related("user").all()
+        # media is select_related so the can_delete check on each comment does
+        # not fetch the same media row once per comment.
+        comments = media.comments.select_related("user", "media").all()
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
         paginator = pagination_class()
         page = paginator.paginate_queryset(comments, request)
@@ -2761,13 +2764,7 @@ class CommentDetail(APIView):
                     {"detail": "comment does not exist"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            if (
-                (comment.user == self.request.user)
-                or request.user.is_superuser
-                or comment.media.user == self.request.user
-                or is_mediacms_editor(self.request.user)
-                or is_mediacms_manager(self.request.user)
-            ):
+            if user_can_delete_comment(request.user, comment):
                 comment.delete()
             else:
                 return Response({"detail": "bad permissions"}, status=status.HTTP_400_BAD_REQUEST)
