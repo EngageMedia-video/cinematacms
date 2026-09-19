@@ -14,17 +14,9 @@ function popupTopNavItems() {
 	const items = [];
 
 	if (!user.is.anonymous) {
-		if (user.can.addMedia) {
-			items.push({
-				link: links.user.addMedia,
-				icon: 'video_call',
-				text: 'Upload media',
-				itemAttr: {
-					className: 'visible-only-in-small',
-				},
-			});
-		}
-
+		// No "Upload media" entry here: the topbar renders an UPLOAD MEDIA button at
+		// every breakpoint (desktop header, and the mobile bar's full-width/compact
+		// variants), so a popup duplicate sits redundantly beside it.
 		items.push({
 			link: links.signout,
 			icon: 'exit_to_app',
