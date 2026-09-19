@@ -191,14 +191,20 @@ def generate_sprite_for_media(media):
             return _failure(media, "invalid_sprite_output")
 
         # Persist the interval actually used so the serializer can report it per-media and
-        # the selector maps tiles to the correct timestamps. Set it before sprites.save()
-        # so the FileField save also writes the column in one round-trip.
+        # the selector maps tiles to the correct timestamps.
         media.sprite_num_secs = sprite_num_secs
         with open(output_name, "rb") as sprite_file:
+            # save=False, then an explicit scoped save (#841). This task holds the
+            # instance across a multi-minute encode, so a full-row write would push
+            # every stale in-memory column back over whatever another worker wrote
+            # in the meantime. Naming the two columns this task owns keeps the rest
+            # of the row untouched.
             media.sprites.save(
                 content=File(sprite_file),
                 name=get_file_name(media_file_path) + "sprites.jpg",
+                save=False,
             )
+            media.save(update_fields=["sprites", "sprite_num_secs"])
 
     if not media.sprites:
         return _failure(media, "sprite_not_saved")

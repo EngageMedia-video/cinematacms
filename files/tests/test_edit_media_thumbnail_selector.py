@@ -69,4 +69,6 @@ class EditMediaThumbnailSelectorTests(TestCase):
         media.refresh_from_db()
         self.assertFalse(media.uploaded_thumbnail)
         self.assertFalse(media.uploaded_poster)
-        set_thumbnail.assert_called_once_with(force=True)
+        # save=False: the enclosing Media.save() persists thumbnail/poster itself,
+        # so the FileField write no longer triggers a nested full-row save (#841).
+        set_thumbnail.assert_called_once_with(force=True, save=False)

@@ -426,3 +426,387 @@ class PreSaveActionVariableShadowingTest(TestCase):
             media=media, user=None, session_key=session.session_key, action="watch", remote_ip="10.0.0.3"
         )
         self.assertTrue(result)
+
+
+def _jpeg_bytes():
+    """Smallest real JPEG. thumbnail/poster/uploaded_thumbnail run bytes through PIL."""
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (2, 2)).save(buf, format="JPEG")
+    return buf.getvalue()
+
+
+class StaleInstanceFileFieldSaveTest(TestCase):
+    """FileField writes on Media must not replay a stale row (#841).
+
+    FieldFile.save() defaults to save=True, which calls Model.save() with no
+    update_fields: a full write of every concrete column from in-memory state.
+    The encoding pipeline holds an instance across a long task, so any column
+    another worker changed in the meantime was silently reverted.
+
+    #840 guarded encryption_key alone. These tests assert on an unrelated
+    column (title) on purpose, so they cover the general pattern rather than
+    re-testing that one guard.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="stale_filefield_user", email="stale@example.com", password="testpass123"
+        )
+
+    def _stale_instance_with_concurrent_update(self, **kwargs):
+        """Return an instance loaded before another worker changed title."""
+        from django.core.files.base import ContentFile
+
+        media = create_test_media(self.user, title="original", **kwargs)
+        # A real media_file, so the thumbnail paths can read it off disk.
+        media.media_file.save("source.jpg", ContentFile(_jpeg_bytes()), save=False)
+        Media.objects.filter(pk=media.pk).update(media_file=media.media_file.name)
+        stale = Media.objects.get(pk=media.pk)
+        # Another worker commits to the same row while `stale` is still held.
+        Media.objects.filter(pk=media.pk).update(title="changed")
+        self.assertEqual(stale.title, "original")
+        return stale
+
+    def _stored_title(self, media):
+        return Media.objects.filter(pk=media.pk).values_list("title", flat=True).first()
+
+    def test_sprites_save_does_not_revert_unrelated_column(self):
+        """files/sprites.py -- generate_sprite_for_media() writing media.sprites."""
+        from files.sprites import generate_sprite_for_media
+
+        stale = self._stale_instance_with_concurrent_update(duration=20)
+
+        # ffmpeg/imagemagick are not installed in CI. Both branches just need to
+        # leave a file at the output path the command was given.
+        def fake_run(command):
+            with open(command[-1], "wb") as out:
+                out.write(_jpeg_bytes())
+            return {"out": "", "error": ""}
+
+        with (
+            patch("files.sprites.run_command", side_effect=fake_run),
+            patch("files.sprites.get_file_type", return_value="image"),
+        ):
+            result = generate_sprite_for_media(stale)
+
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(self._stored_title(stale), "changed")
+        stored = Media.objects.get(pk=stale.pk)
+        self.assertTrue(stored.sprites.name)
+        self.assertEqual(stored.sprite_num_secs, result["sprite_num_secs"])
+
+    def test_set_thumbnail_does_not_revert_unrelated_column(self):
+        """files/models.py set_thumbnail() -- the image branch, thumbnail + poster."""
+        stale = self._stale_instance_with_concurrent_update(media_type="image")
+
+        stale.set_thumbnail(force=True)
+
+        self.assertEqual(self._stored_title(stale), "changed")
+        stored = Media.objects.get(pk=stale.pk)
+        self.assertTrue(stored.thumbnail.name)
+        self.assertTrue(stored.poster.name)
+
+    def test_produce_thumbnails_from_video_does_not_revert_unrelated_column(self):
+        """files/models.py produce_thumbnails_from_video() -- thumbnail + poster."""
+        stale = self._stale_instance_with_concurrent_update()
+
+        # ffmpeg is not installed in CI, so stand in for it by writing the frame
+        # the real command would have produced at the output path it was given.
+        def fake_run_command(command, **kwargs):
+            with open(command[-1], "wb") as out:
+                out.write(_jpeg_bytes())
+            return {}
+
+        with patch("files.helpers.run_command", side_effect=fake_run_command):
+            stale.produce_thumbnails_from_video()
+
+        self.assertEqual(self._stored_title(stale), "changed")
+        stored = Media.objects.get(pk=stale.pk)
+        self.assertTrue(stored.thumbnail.name)
+        self.assertTrue(stored.poster.name)
+
+    def test_uploaded_thumbnail_save_does_not_revert_unrelated_column(self):
+        """files/models.py Media.save() -- the uploaded_poster -> uploaded_thumbnail write."""
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        media = create_test_media(self.user, title="original")
+        stale = Media.objects.get(pk=media.pk)
+        Media.objects.filter(pk=media.pk).update(title="changed")
+
+        # Assigning the field (as the upload form does) is what makes
+        # Media.save() see uploaded_poster as changed and write
+        # uploaded_thumbnail from it. Calling uploaded_poster.save() instead
+        # would mutate the very FieldFile the change-tracker holds, so the
+        # branch would never fire.
+        stale.uploaded_poster = SimpleUploadedFile("poster.jpg", _jpeg_bytes(), content_type="image/jpeg")
+        stale.save(update_fields=["uploaded_poster"])
+
+        self.assertEqual(self._stored_title(stale), "changed")
+        stored = Media.objects.get(pk=media.pk)
+        self.assertTrue(stored.uploaded_thumbnail.name)
+
+    def test_every_filefield_on_media_is_safe_under_the_default_save(self):
+        """FieldFile.save()'s default save=True must not revert a stale row.
+
+        The four call sites in #841 each pass save=False and persist explicitly,
+        and are pinned by the tests above. This one enforces the rule for the
+        model as a whole: Media's file fields use ScopedFieldFile, so even a
+        caller who forgets save=False writes only its own column. A FileField
+        added later is picked up automatically, because the fields come from
+        _meta rather than a hand-maintained list.
+        """
+        from django.core.files.base import ContentFile
+        from django.db import models as django_models
+
+        file_fields = [f for f in Media._meta.get_fields() if isinstance(f, django_models.FileField)]
+        # Guard against the introspection silently matching nothing.
+        self.assertGreaterEqual(len(file_fields), 6, "expected Media to still carry its file fields")
+
+        for field in file_fields:
+            with self.subTest(field=field.name):
+                stale = self._stale_instance_with_concurrent_update()
+                # ProcessedImageField runs content through PIL, so only real
+                # image bytes survive; a plain FileField accepts either.
+                # Deliberately the default save=True: this is the call a future
+                # contributor writes by accident, and it must stay safe.
+                getattr(stale, field.name).save(f"{field.name}.jpg", ContentFile(_jpeg_bytes()))
+
+                self.assertEqual(
+                    self._stored_title(stale),
+                    "changed",
+                    f"{field.name}.save() with the default save=True reverted an unrelated "
+                    f"column. Its field must subclass ScopedFileField / "
+                    f"ScopedProcessedImageField (#841).",
+                )
+                self.assertTrue(
+                    getattr(Media.objects.get(pk=stale.pk), field.name).name,
+                    f"{field.name} was not persisted",
+                )
+
+    def test_new_instance_filefield_save_inserts_instead_of_forcing_update(self):
+        """A FileField write on an unsaved Media must insert, not force an UPDATE.
+
+        The scoping in Media.save() derives update_fields from the marker set by
+        ScopedFieldFile. Applying it to an insert makes Django force an UPDATE,
+        which raises "Cannot force an update in save() with no primary key."
+        A new instance has no stale snapshot to protect, so it saves in full.
+        """
+        from django.core.files.base import ContentFile
+
+        media = Media(user=self.user, title="new instance")
+        media.media_file.save("new.jpg", ContentFile(_jpeg_bytes()))
+
+        self.assertIsNotNone(media.pk)
+        self.assertTrue(Media.objects.filter(pk=media.pk).exists())
+        self.assertTrue(Media.objects.get(pk=media.pk).media_file.name)
+
+    def test_scoped_save_persists_uploads_cleared_by_thumbnail_regeneration(self):
+        """Choosing a new frame clears the uploaded poster/thumbnail on the row too.
+
+        That branch in Media.save() deletes both files with delete(save=False),
+        which clears them in memory only. Under a scoped caller the columns must
+        still be written, or the row keeps pointing at files no longer on disk.
+        """
+        from django.core.files.base import ContentFile
+
+        media = create_test_media(self.user, title="original", duration=60)
+        media.uploaded_thumbnail.save("ut.jpg", ContentFile(_jpeg_bytes()), save=False)
+        media.uploaded_poster.save("up.jpg", ContentFile(_jpeg_bytes()), save=False)
+        Media.objects.filter(pk=media.pk).update(
+            uploaded_thumbnail=media.uploaded_thumbnail.name,
+            uploaded_poster=media.uploaded_poster.name,
+        )
+
+        fresh = Media.objects.get(pk=media.pk)
+        self.assertTrue(fresh.uploaded_thumbnail.name)
+        fresh.thumbnail_time = 5
+        with patch.object(Media, "set_thumbnail", return_value=True):
+            fresh.save(update_fields=["thumbnail_time"])
+
+        stored = Media.objects.get(pk=media.pk)
+        self.assertFalse(stored.uploaded_thumbnail.name, "cleared uploaded_thumbnail was not persisted")
+        self.assertFalse(stored.uploaded_poster.name, "cleared uploaded_poster was not persisted")
+
+    def test_media_file_write_persists_the_recalculated_filename(self):
+        """A scoped media_file write must carry the filename it recomputes.
+
+        Media.save() derives filename from media_file for faster lookups. Scoping
+        the write to media_file alone left the row holding the previous basename
+        while media_file pointed at the new file, desynchronising a lookup column.
+        """
+        import os
+
+        from django.core.files.base import ContentFile
+
+        media = create_test_media(self.user, title="original")
+        media.media_file.save("first.mp4", ContentFile(b"first"), save=False)
+        Media.objects.filter(pk=media.pk).update(media_file=media.media_file.name, filename="first.mp4")
+
+        fresh = Media.objects.get(pk=media.pk)
+        fresh.media_file.save("second.mp4", ContentFile(b"second"))
+
+        stored = Media.objects.get(pk=media.pk)
+        self.assertIn("second.mp4", stored.media_file.name)
+        self.assertEqual(
+            stored.filename,
+            os.path.basename(stored.media_file.name),
+            "filename was not updated alongside media_file",
+        )
+
+        # Clearing the file must clear the lookup column too, or searches point
+        # at a file the row no longer has. Reachable from the edit form, which
+        # exposes media_file through a ClearableFileInput.
+        fresh = Media.objects.get(pk=media.pk)
+        fresh.media_file.delete()
+
+        cleared = Media.objects.get(pk=media.pk)
+        self.assertFalse(cleared.media_file.name)
+        self.assertEqual(cleared.filename, "", "filename survived the deletion of media_file")
+
+    def test_filefield_delete_does_not_revert_unrelated_column(self):
+        """FieldFile.delete()'s default save=True must not replay a stale row.
+
+        delete() clears the column then calls the same bare instance.save() that
+        save() does, so it carries the identical lost-update risk.
+        """
+        from django.core.files.base import ContentFile
+
+        stale = self._stale_instance_with_concurrent_update()
+        stale.sprites.save("sprites.jpg", ContentFile(_jpeg_bytes()), save=False)
+        Media.objects.filter(pk=stale.pk).update(sprites=stale.sprites.name)
+
+        stale.sprites.delete()
+
+        self.assertEqual(self._stored_title(stale), "changed")
+        self.assertFalse(Media.objects.get(pk=stale.pk).sprites.name, "sprites column was not cleared")
+
+    def test_every_filefield_on_media_is_safe_under_the_default_delete(self):
+        """The delete() counterpart of the model-wide guard above.
+
+        Same introspection, so a FileField added later is covered without
+        updating a list.
+        """
+        from django.core.files.base import ContentFile
+        from django.db import models as django_models
+
+        file_fields = [f for f in Media._meta.get_fields() if isinstance(f, django_models.FileField)]
+        self.assertGreaterEqual(len(file_fields), 6, "expected Media to still carry its file fields")
+
+        for field in file_fields:
+            with self.subTest(field=field.name):
+                stale = self._stale_instance_with_concurrent_update()
+                getattr(stale, field.name).save(f"{field.name}.jpg", ContentFile(_jpeg_bytes()), save=False)
+                Media.objects.filter(pk=stale.pk).update(**{field.name: getattr(stale, field.name).name})
+
+                # Deliberately the default save=True.
+                getattr(stale, field.name).delete()
+
+                self.assertEqual(
+                    self._stored_title(stale),
+                    "changed",
+                    f"{field.name}.delete() with the default save=True reverted an unrelated "
+                    f"column. Its field must subclass ScopedFileField / "
+                    f"ScopedProcessedImageField (#841).",
+                )
+
+    def test_processed_image_fields_still_process_their_uploads(self):
+        """Scoping must not cost imagekit's processing.
+
+        ProcessedImageField's own file class runs the processors, picks the
+        output format and fixes the extension in its save(). Replacing
+        attr_class with a plain scoped FieldFile silently stored raw uploads at
+        full size, so the scoping is a mixin over each field's own class.
+        """
+        import io
+
+        from django.core.files.base import ContentFile
+        from PIL import Image
+
+        def png_bytes(width, height):
+            buf = io.BytesIO()
+            Image.new("RGB", (width, height), "red").save(buf, format="PNG")
+            return buf.getvalue()
+
+        # (field, configured max width) from the model declarations.
+        cases = [("thumbnail", 344), ("poster", 1280), ("uploaded_thumbnail", 344)]
+
+        for field_name, max_width in cases:
+            with self.subTest(field=field_name):
+                media = create_test_media(self.user, title="original")
+                # Deliberately a PNG, wider than the target, via the save=False
+                # path the call sites use.
+                getattr(media, field_name).save("source.png", ContentFile(png_bytes(max_width + 400, 700)), save=False)
+                media.save(update_fields=[field_name])
+
+                stored = getattr(Media.objects.get(pk=media.pk), field_name)
+                self.assertTrue(stored.name.endswith(".jpg"), f"{field_name} kept the .png extension: {stored.name}")
+                stored.open()
+                try:
+                    image = Image.open(stored)
+                    self.assertEqual(image.format, "JPEG", f"{field_name} was not converted to JPEG")
+                    self.assertLessEqual(
+                        image.width, max_width, f"{field_name} was not resized to its configured width"
+                    )
+                finally:
+                    stored.close()
+
+    def test_scoped_save_does_not_fire_hooks_for_unpersisted_columns(self):
+        """Lifecycle hooks must not fire for a column this save does not write.
+
+        A ScopedFieldFile write scopes update_fields to the file column. An
+        unrelated in-memory edit (a state the caller never persisted) is not
+        written, so announcing it would report a change the row never took.
+        """
+        from django.core.files.base import ContentFile
+
+        media = create_test_media(self.user, title="original", state="private")
+        fresh = Media.objects.get(pk=media.pk)
+        # Dirty in memory only; this save is scoped to sprites.
+        fresh.state = "public"
+
+        with (
+            patch("files.methods.notify_users") as notify_users,
+            patch.object(Media, "_invalidate_permission_cache") as invalidate,
+        ):
+            fresh.sprites.save("sprites.jpg", ContentFile(b"sprite"))
+
+        self.assertFalse(notify_users.called, "published notification fired for an unwritten state")
+        self.assertFalse(invalidate.called, "permission cache invalidated for an unwritten state")
+        self.assertEqual(Media.objects.get(pk=media.pk).state, "private")
+        self.assertTrue(Media.objects.get(pk=media.pk).sprites.name)
+
+    def test_unscoped_save_still_fires_its_hooks(self):
+        """The guards must not suppress hooks on an ordinary full save."""
+        media = create_test_media(self.user, title="original", state="private")
+        fresh = Media.objects.get(pk=media.pk)
+        fresh.state = "public"
+
+        with (
+            patch("files.methods.notify_users") as notify_users,
+            patch.object(Media, "_invalidate_permission_cache") as invalidate,
+        ):
+            fresh.save()
+
+        self.assertTrue(notify_users.called, "published notification did not fire on a full save")
+        self.assertTrue(invalidate.called, "permission cache was not invalidated on a full save")
+        self.assertEqual(Media.objects.get(pk=media.pk).state, "public")
+
+    def test_explicitly_scoped_save_of_state_still_fires_its_hooks(self):
+        """A caller that does persist state must still get the notification."""
+        media = create_test_media(self.user, title="original", state="private")
+        fresh = Media.objects.get(pk=media.pk)
+        fresh.state = "public"
+
+        with (
+            patch("files.methods.notify_users") as notify_users,
+            patch.object(Media, "_invalidate_permission_cache") as invalidate,
+        ):
+            fresh.save(update_fields=["state"])
+
+        self.assertTrue(notify_users.called, "published notification did not fire for a persisted state")
+        self.assertTrue(invalidate.called, "permission cache was not invalidated for a persisted state")
+        self.assertEqual(Media.objects.get(pk=media.pk).state, "public")

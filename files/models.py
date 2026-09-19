@@ -33,6 +33,7 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.html import strip_tags
 from imagekit.models import ProcessedImageField
+from imagekit.models.fields.files import ProcessedImageFieldFile
 from imagekit.processors import ResizeToFit
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -314,6 +315,55 @@ class Language(models.Model):
         return self.title
 
 
+class ScopedFieldFileMixin:
+    """Scope a FieldFile's save=True paths to the column being written.
+
+    Django's FieldFile.save() and .delete() both end in a bare
+    ``self.instance.save()``: a full-row write of every in-memory column. On
+    Media that is a lost update, because the encoding pipeline holds instances
+    across long tasks (#841). Call sites here pass save=False and persist
+    explicitly, but this makes the safe behaviour the default so a forgotten
+    save=False degrades to a scoped write rather than a silent revert.
+
+    This is a mixin rather than a FieldFile subclass so each field keeps its own
+    attr_class behaviour: ProcessedImageField's file class runs the processors,
+    picks the output format and fixes the extension in its own save(), so
+    replacing it outright would silently store raw unprocessed uploads.
+    """
+
+    def _scoped(self, operation, *args, **kwargs):
+        previous = self.instance._file_field_save_in_progress
+        self.instance._file_field_save_in_progress = self.field.name
+        try:
+            return operation(*args, **kwargs)
+        finally:
+            self.instance._file_field_save_in_progress = previous
+
+    def save(self, name, content, save=True):
+        return self._scoped(super().save, name, content, save=save)
+
+    def delete(self, save=True):
+        # delete() clears the column and then saves exactly as save() does, so it
+        # needs the same scoping or it replays the whole stale instance.
+        return self._scoped(super().delete, save=save)
+
+
+class ScopedFieldFile(ScopedFieldFileMixin, models.fields.files.FieldFile):
+    pass
+
+
+class ScopedProcessedImageFieldFile(ScopedFieldFileMixin, ProcessedImageFieldFile):
+    """Keeps imagekit's processing, adds the scoping."""
+
+
+class ScopedFileField(models.FileField):
+    attr_class = ScopedFieldFile
+
+
+class ScopedProcessedImageField(ProcessedImageField):
+    attr_class = ScopedProcessedImageFieldFile
+
+
 class Media(models.Model):
     uid = models.UUIDField(unique=True, default=uuid.uuid4)
     friendly_token = models.CharField(blank=True, max_length=12, db_index=True)
@@ -344,11 +394,11 @@ class Media(models.Model):
     )
     add_date = models.DateTimeField("Published on", blank=True, null=True, db_index=True)
     edit_date = models.DateTimeField(auto_now=True)
-    media_file = models.FileField("media file", upload_to=original_media_file_path, max_length=500)
+    media_file = ScopedFileField("media file", upload_to=original_media_file_path, max_length=500)
     filename = models.CharField(
         max_length=255, blank=True, db_index=True, help_text="Extracted filename from media_file for faster lookups"
     )
-    thumbnail = ProcessedImageField(
+    thumbnail = ScopedProcessedImageField(
         upload_to=original_thumbnail_file_path,
         processors=[ResizeToFit(width=344, height=None)],
         format="JPEG",
@@ -356,7 +406,7 @@ class Media(models.Model):
         blank=True,
         max_length=500,
     )
-    poster = ProcessedImageField(
+    poster = ScopedProcessedImageField(
         upload_to=original_thumbnail_file_path,
         processors=[ResizeToFit(width=1280, height=None)],
         format="JPEG",
@@ -364,7 +414,7 @@ class Media(models.Model):
         blank=True,
         max_length=500,
     )
-    uploaded_thumbnail = ProcessedImageField(
+    uploaded_thumbnail = ScopedProcessedImageField(
         upload_to=original_thumbnail_file_path,
         processors=[ResizeToFit(width=344, height=None)],
         format="JPEG",
@@ -372,7 +422,7 @@ class Media(models.Model):
         blank=True,
         max_length=500,
     )
-    uploaded_poster = ProcessedImageField(
+    uploaded_poster = ScopedProcessedImageField(
         verbose_name="Upload image",
         help_text="Image will appear as poster",
         upload_to=original_thumbnail_file_path,
@@ -387,7 +437,7 @@ class Media(models.Model):
         null=True,
         help_text="Time on video file that a thumbnail will be taken",
     )
-    sprites = models.FileField(upload_to=original_thumbnail_file_path, blank=True, max_length=500)
+    sprites = ScopedFileField(upload_to=original_thumbnail_file_path, blank=True, max_length=500)
     sprite_num_secs = models.PositiveIntegerField(
         null=True,
         blank=True,
@@ -589,13 +639,39 @@ class Media(models.Model):
         else:
             self.password = ""
 
+    # FieldFile.save() calls instance.save() with no update_fields, which is a
+    # full-row write of every in-memory column (#841). It is Django's own code,
+    # so a call site cannot change it -- passing save=False at each call site
+    # avoids it, but nothing stops the next contributor from forgetting. This
+    # marker lets Media.save() recognise such a call and scope it to the file
+    # column being written, so the safe behaviour is the default rather than
+    # something every caller has to remember.
+    _file_field_save_in_progress = None
+
     def save(self, *args, update_fields=None, **kwargs):
+        # A FieldFile.save(save=True) reaches here with no update_fields. Scope it
+        # to the field that triggered it instead of replaying the whole instance.
+        # Only for an existing row: update_fields on an insert makes Django force
+        # an UPDATE, which raises "Cannot force an update in save() with no
+        # primary key." A new instance has no stale snapshot to clobber anyway.
+        if update_fields is None and self._file_field_save_in_progress and not self._state.adding:
+            update_fields = [self._file_field_save_in_progress]
+            # filename is recomputed from media_file below, so a write of that
+            # field has to carry it too. Without this the row keeps the previous
+            # basename while media_file points at the new one, and filename is a
+            # lookup column.
+            if self._file_field_save_in_progress == "media_file":
+                update_fields.append("filename")
+
         if not self.title:
             self.title = self.media_file.path.split("/")[-1]
 
-        # Auto-populate filename from media_file for faster lookups
-        if self.media_file:
-            self.filename = os.path.basename(self.media_file.name)
+        # Auto-populate filename from media_file for faster lookups. Cleared
+        # alongside it: filename is a lookup column, so leaving the old basename
+        # behind after media_file is cleared points searches at a file the row no
+        # longer has. The edit form exposes media_file through a ClearableFileInput
+        # for editors and advanced users, so this path is reachable.
+        self.filename = os.path.basename(self.media_file.name) if self.media_file else ""
 
         strip_text_items = ["title", "summary", "description"]
         for item in strip_text_items:
@@ -616,15 +692,30 @@ class Media(models.Model):
         # media_file path is not set correctly until mode is saved
         # post_save signal will take care of calling a few functions
         # once model is saved
+        # A hook may only act on a column this save actually persists. Under a
+        # scoped save (a ScopedFieldFile write, or any caller-supplied
+        # update_fields) an unrelated in-memory edit is never written, so firing
+        # its side effect would announce a change the row never took (#841).
+        # Materialize first: update_fields may be a one-shot generator, and the
+        # membership tests below would otherwise exhaust it before Model.save()
+        # ever sees it (#840).
+        if update_fields is not None:
+            update_fields = frozenset(update_fields)
+
+        def persists(field):
+            return update_fields is None or field in update_fields
+
         if self.pk:
-            if self.media_file != self.__original_media_file:
+            if persists("media_file") and self.media_file != self.__original_media_file:
                 self.__original_media_file = self.media_file
                 # let the file get saved through post_save signal, and then
                 # run media_init on it
                 from . import tasks
 
                 tasks.media_init.apply_async(args=[self.friendly_token], countdown=5)
-            thumbnail_time_changed = self.thumbnail_time != self.__original_thumbnail_time
+            thumbnail_time_changed = (
+                persists("thumbnail_time") and self.thumbnail_time != self.__original_thumbnail_time
+            )
             uploaded_poster_changed = self.uploaded_poster != self.__original_uploaded_poster
             if thumbnail_time_changed and self.thumbnail_time is not None and not uploaded_poster_changed:
                 if self.uploaded_thumbnail:
@@ -633,7 +724,24 @@ class Media(models.Model):
                     self.uploaded_poster.delete(save=False)
                 self.__original_uploaded_poster = self.uploaded_poster
                 self.__original_thumbnail_time = self.thumbnail_time
-                self.set_thumbnail(force=True)
+                # save=False: this runs inside save(), so the super().save() below
+                # already persists thumbnail/poster. Letting the FileField write the
+                # row here would be a nested full-row save from the same instance.
+                self.set_thumbnail(force=True, save=False)
+                # A scoped caller (save(update_fields=["thumbnail_time"])) would
+                # otherwise drop what this branch just changed, so widen its list.
+                # uploaded_thumbnail/uploaded_poster are included because the
+                # delete(save=False) calls above cleared them in memory only: the
+                # files are gone from disk, so leaving the columns unwritten would
+                # point the row at files that no longer exist. Behaviour is
+                # unchanged for an unscoped save.
+                if update_fields is not None:
+                    update_fields = set(update_fields) | {
+                        "thumbnail",
+                        "poster",
+                        "uploaded_thumbnail",
+                        "uploaded_poster",
+                    }
             elif thumbnail_time_changed:
                 self.__original_thumbnail_time = self.thumbnail_time
         else:
@@ -662,7 +770,6 @@ class Media(models.Model):
         # test below and Model.save() itself consume it, so materialize it once
         # and hand the same collection on rather than an exhausted generator.
         if update_fields is not None:
-            update_fields = frozenset(update_fields)
             kwargs["update_fields"] = update_fields
 
         # ensure_encryption_key() can commit a key between an unlocked re-read and
@@ -696,17 +803,32 @@ class Media(models.Model):
         else:
             super(Media, self).save(*args, **kwargs)
         # Notify user when video is published (state changed to public)
-        if self.pk and self.__original_state and self.__original_state != "public" and self.state == "public":
+        if (
+            self.pk
+            and persists("state")
+            and self.__original_state
+            and self.__original_state != "public"
+            and self.state == "public"
+        ):
             from .methods import notify_users
 
             notify_users(friendly_token=self.friendly_token, action="media_published")
         # Invalidate permission cache if state or password changed
-        if self.pk and (self.state != self.__original_state or self.password != self.__original_password):
+        state_changed = persists("state") and self.state != self.__original_state
+        password_changed = persists("password") and self.password != self.__original_password
+        if self.pk and (state_changed or password_changed):
             self._invalidate_permission_cache()
-            self.__original_state = self.state
-            self.__original_password = self.password
+            if state_changed:
+                self.__original_state = self.state
+            if password_changed:
+                self.__original_password = self.password
         # Re-generate HLS if encryption was toggled (guard against None on first save)
-        if self.pk and self.__original_is_encrypted is not None and self.is_encrypted != self.__original_is_encrypted:
+        if (
+            self.pk
+            and persists("is_encrypted")
+            and self.__original_is_encrypted is not None
+            and self.is_encrypted != self.__original_is_encrypted
+        ):
             self.__original_is_encrypted = self.is_encrypted
             if self.encodings.filter(
                 profile__extension="mp4", status="success", chunk=False, profile__codec="h264"
@@ -715,12 +837,21 @@ class Media(models.Model):
 
                 tasks.create_hls.delay(self.friendly_token)
         # has to save first for uploaded_poster path to exist
-        if self.uploaded_poster and self.uploaded_poster != self.__original_uploaded_poster:
+        if (
+            persists("uploaded_poster")
+            and self.uploaded_poster
+            and self.uploaded_poster != self.__original_uploaded_poster
+        ):
             with open(self.uploaded_poster.path, "rb") as f:
                 self.__original_uploaded_poster = self.uploaded_poster
                 myfile = File(f)
                 thumbnail_name = helpers.get_file_name(self.uploaded_poster.path)
-                self.uploaded_thumbnail.save(content=myfile, name=thumbnail_name)
+                # save=False, then a scoped save of just this column (#841). The
+                # super().save() above has already persisted the rest of the row;
+                # a second full-row write here would replay the whole in-memory
+                # snapshot, including anything another worker changed meanwhile.
+                self.uploaded_thumbnail.save(content=myfile, name=thumbnail_name, save=False)
+                super(Media, self).save(update_fields=["uploaded_thumbnail"])
 
     def ensure_encryption_key(self):
         """Generate an AES-128 key if one doesn't exist. Returns hex string.
@@ -928,19 +1059,27 @@ class Media(models.Model):
             )
         return True
 
-    def set_thumbnail(self, force=False):
+    def set_thumbnail(self, force=False, save=True):
+        """Produce thumbnail/poster. Pass save=False when an enclosing save() will persist them."""
         if force or (not self.thumbnail):
             if self.media_type == "video":
-                self.produce_thumbnails_from_video()
+                self.produce_thumbnails_from_video(save=save)
             if self.media_type == "image":
                 with open(self.media_file.path, "rb") as f:
                     myfile = File(f)
                     thumbnail_name = helpers.get_file_name(self.media_file.path) + ".jpg"
-                    self.thumbnail.save(content=myfile, name=thumbnail_name)
-                    self.poster.save(content=myfile, name=thumbnail_name)
+                    # save=False on both, then one scoped save (#841). A full-row
+                    # write here would carry every other in-memory column back to
+                    # the row, and this runs from media_init while other workers
+                    # are updating the same media.
+                    self.thumbnail.save(content=myfile, name=thumbnail_name, save=False)
+                    self.poster.save(content=myfile, name=thumbnail_name, save=False)
+                    if save:
+                        self.save(update_fields=["thumbnail", "poster"])
         return True
 
-    def produce_thumbnails_from_video(self):
+    def produce_thumbnails_from_video(self, save=True):
+        """Extract a frame as thumbnail/poster. Pass save=False to let the caller persist."""
         if self.media_type != "video":
             return False
         if self.thumbnail_time is not None and 0 <= self.thumbnail_time < self.duration:
@@ -965,8 +1104,13 @@ class Media(models.Model):
             with open(tf, "rb") as f:
                 myfile = File(f)
                 thumbnail_name = helpers.get_file_name(self.media_file.path) + ".jpg"
-                self.thumbnail.save(content=myfile, name=thumbnail_name)
-                self.poster.save(content=myfile, name=thumbnail_name)
+                # save=False on both, then one scoped save (#841). thumbnail_time is
+                # included because the random branch above assigns it here and it
+                # would otherwise never reach the row.
+                self.thumbnail.save(content=myfile, name=thumbnail_name, save=False)
+                self.poster.save(content=myfile, name=thumbnail_name, save=False)
+                if save:
+                    self.save(update_fields=["thumbnail", "poster", "thumbnail_time"])
         helpers.rm_file(tf)
         return True
 
