@@ -702,3 +702,44 @@ class StaleInstanceFileFieldSaveTest(TestCase):
                     f"column. Its field must subclass ScopedFileField / "
                     f"ScopedProcessedImageField (#841).",
                 )
+
+    def test_processed_image_fields_still_process_their_uploads(self):
+        """Scoping must not cost imagekit's processing.
+
+        ProcessedImageField's own file class runs the processors, picks the
+        output format and fixes the extension in its save(). Replacing
+        attr_class with a plain scoped FieldFile silently stored raw uploads at
+        full size, so the scoping is a mixin over each field's own class.
+        """
+        import io
+
+        from django.core.files.base import ContentFile
+        from PIL import Image
+
+        def png_bytes(width, height):
+            buf = io.BytesIO()
+            Image.new("RGB", (width, height), "red").save(buf, format="PNG")
+            return buf.getvalue()
+
+        # (field, configured max width) from the model declarations.
+        cases = [("thumbnail", 344), ("poster", 1280), ("uploaded_thumbnail", 344)]
+
+        for field_name, max_width in cases:
+            with self.subTest(field=field_name):
+                media = create_test_media(self.user, title="original")
+                # Deliberately a PNG, wider than the target, via the save=False
+                # path the call sites use.
+                getattr(media, field_name).save("source.png", ContentFile(png_bytes(max_width + 400, 700)), save=False)
+                media.save(update_fields=[field_name])
+
+                stored = getattr(Media.objects.get(pk=media.pk), field_name)
+                self.assertTrue(stored.name.endswith(".jpg"), f"{field_name} kept the .png extension: {stored.name}")
+                stored.open()
+                try:
+                    image = Image.open(stored)
+                    self.assertEqual(image.format, "JPEG", f"{field_name} was not converted to JPEG")
+                    self.assertLessEqual(
+                        image.width, max_width, f"{field_name} was not resized to its configured width"
+                    )
+                finally:
+                    stored.close()

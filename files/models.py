@@ -33,6 +33,7 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from django.utils.html import strip_tags
 from imagekit.models import ProcessedImageField
+from imagekit.models.fields.files import ProcessedImageFieldFile
 from imagekit.processors import ResizeToFit
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -314,8 +315,8 @@ class Language(models.Model):
         return self.title
 
 
-class ScopedFieldFile(models.fields.files.FieldFile):
-    """A FieldFile whose save=True paths write only their own column.
+class ScopedFieldFileMixin:
+    """Scope a FieldFile's save=True paths to the column being written.
 
     Django's FieldFile.save() and .delete() both end in a bare
     ``self.instance.save()``: a full-row write of every in-memory column. On
@@ -323,23 +324,36 @@ class ScopedFieldFile(models.fields.files.FieldFile):
     across long tasks (#841). Call sites here pass save=False and persist
     explicitly, but this makes the safe behaviour the default so a forgotten
     save=False degrades to a scoped write rather than a silent revert.
+
+    This is a mixin rather than a FieldFile subclass so each field keeps its own
+    attr_class behaviour: ProcessedImageField's file class runs the processors,
+    picks the output format and fixes the extension in its own save(), so
+    replacing it outright would silently store raw unprocessed uploads.
     """
 
     def _scoped(self, operation, *args, **kwargs):
         previous = self.instance._file_field_save_in_progress
         self.instance._file_field_save_in_progress = self.field.name
         try:
-            operation(*args, **kwargs)
+            return operation(*args, **kwargs)
         finally:
             self.instance._file_field_save_in_progress = previous
 
     def save(self, name, content, save=True):
-        self._scoped(super().save, name, content, save=save)
+        return self._scoped(super().save, name, content, save=save)
 
     def delete(self, save=True):
         # delete() clears the column and then saves exactly as save() does, so it
         # needs the same scoping or it replays the whole stale instance.
-        self._scoped(super().delete, save=save)
+        return self._scoped(super().delete, save=save)
+
+
+class ScopedFieldFile(ScopedFieldFileMixin, models.fields.files.FieldFile):
+    pass
+
+
+class ScopedProcessedImageFieldFile(ScopedFieldFileMixin, ProcessedImageFieldFile):
+    """Keeps imagekit's processing, adds the scoping."""
 
 
 class ScopedFileField(models.FileField):
@@ -347,7 +361,7 @@ class ScopedFileField(models.FileField):
 
 
 class ScopedProcessedImageField(ProcessedImageField):
-    attr_class = ScopedFieldFile
+    attr_class = ScopedProcessedImageFieldFile
 
 
 class Media(models.Model):
