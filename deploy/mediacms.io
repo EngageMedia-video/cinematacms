@@ -4,7 +4,7 @@ server {
     server_name localhost;
 
     gzip on;
-    access_log /var/log/nginx/mediacms.io.access.log;
+    access_log /var/log/nginx/mediacms.io.access.log cinematacms;
 
     error_log  /var/log/nginx/mediacms.io.error.log  warn;
 
@@ -60,6 +60,9 @@ server {
 
 
         include /etc/nginx/sites-enabled/uwsgi_params;
+        uwsgi_read_timeout 900s;
+        uwsgi_send_timeout 300s;
+        uwsgi_request_buffering on;
         uwsgi_pass 127.0.0.1:9000;
     }
 }
@@ -78,7 +81,7 @@ server {
     ssl_prefer_server_ciphers on;
 
     gzip on;
-    access_log /var/log/nginx/mediacms.io.access.log;
+    access_log /var/log/nginx/mediacms.io.access.log cinematacms;
 
     error_log  /var/log/nginx/mediacms.io.error.log  warn;
 
@@ -123,6 +126,9 @@ server {
     location / {
 
         include /etc/nginx/sites-enabled/uwsgi_params;
+        uwsgi_read_timeout 900s;
+        uwsgi_send_timeout 300s;
+        uwsgi_request_buffering on;
         uwsgi_pass 127.0.0.1:9000;
     }
 }

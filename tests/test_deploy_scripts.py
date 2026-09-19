@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import stat
 import subprocess
 import sys
@@ -16,6 +17,77 @@ LOCAL_GRAFANA_INSTALLER = PROJECT_ROOT / "deploy" / "install-local-grafana.sh"
 RESTART_SCRIPT = PROJECT_ROOT / "restart_script.sh"
 CI_WORKFLOW = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
 APP_ENV_RENDERER = PROJECT_ROOT / "deploy" / "render-app-env.py"
+
+
+class NginxConfigTests(unittest.TestCase):
+    def test_user_facing_uwsgi_locations_define_upload_policy(self):
+        config = (PROJECT_ROOT / "deploy/mediacms.io").read_text()
+        location_bodies = [
+            match.group("body")
+            for match in re.finditer(r"location\s+[^\s{]+\s*\{(?P<body>[^{}]*)\}", config)
+            if "uwsgi_pass" in match.group("body")
+        ]
+
+        self.assertEqual(len(location_bodies), 2)
+        for body in location_bodies:
+            with self.subTest(body=body):
+                self.assertIn("uwsgi_read_timeout 900s;", body)
+                self.assertIn("uwsgi_send_timeout 300s;", body)
+                self.assertIn("uwsgi_request_buffering on;", body)
+
+    def test_client_body_timeout_allows_slow_upload_chunks(self):
+        config = (PROJECT_ROOT / "deploy/nginx/cinematacms-http.conf").read_text()
+
+        self.assertIn("client_body_timeout 300s;", config)
+
+    def test_main_config_has_no_proxy_only_timeouts(self):
+        config = (PROJECT_ROOT / "deploy/nginx.conf").read_text()
+
+        self.assertNotRegex(config, r"\bproxy_(?:connect|read)_timeout\b")
+
+    def test_access_logs_use_request_timing_format(self):
+        main_config = (PROJECT_ROOT / "deploy/nginx.conf").read_text()
+        http_policy = (PROJECT_ROOT / "deploy/nginx/cinematacms-http.conf").read_text()
+        site_config = (PROJECT_ROOT / "deploy/mediacms.io").read_text()
+        access_logs = [
+            line.strip()
+            for config in (main_config, site_config)
+            for line in config.splitlines()
+            if line.strip().startswith("access_log ")
+        ]
+
+        self.assertEqual(len(access_logs), 3)
+        formats = {
+            match.group("name"): match.group("body")
+            for match in re.finditer(
+                r"log_format\s+(?P<name>\w+)\s+(?P<body>.*?);",
+                "\n".join((main_config, http_policy)),
+                re.DOTALL,
+            )
+        }
+        for directive in access_logs:
+            with self.subTest(directive=directive):
+                match = re.match(r"^access_log\s+\S+\s+(?P<format>\w+);$", directive)
+                self.assertIsNotNone(match)
+                log_format = formats[match.group("format")]
+                for variable in ("$request_time", "$upstream_response_time", "$request_length"):
+                    self.assertIn(variable, log_format)
+
+        self.assertLess(main_config.index("log_format compression"), main_config.index("access_log "))
+
+    def test_client_body_size_remains_5800_megabytes(self):
+        configs = [
+            (PROJECT_ROOT / path).read_text()
+            for path in (
+                "deploy/nginx.conf",
+                "deploy/nginx/cinematacms-http.conf",
+                "deploy/mediacms.io",
+                "deploy/nginx/cinematacms-metrics.conf",
+            )
+        ]
+        directives = re.findall(r"\bclient_max_body_size\s+\S+;", "\n".join(configs))
+
+        self.assertEqual(directives, ["client_max_body_size 5800M;"])
 
 
 class InstallScriptTests(unittest.TestCase):
@@ -700,6 +772,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertIn("CINEMATA_PROXY=cloudflare", config)
         self.assertIn("CINEMATA_OBSERVABILITY=local", config)
         self.assertTrue((self.deploy_root / "etc/nginx/snippets/cinematacms-metrics.conf").is_file())
+        self.assertTrue((self.deploy_root / "etc/nginx/conf.d/cinematacms-http.conf").is_file())
         self.assertTrue((self.deploy_root / "etc/nginx/conf.d/cloudflare_real_ip.conf").is_file())
         self.assertTrue((self.deploy_root / "etc/cinematacms/prometheus.yml").is_file())
         self.assertTrue((self.deploy_root / "etc/cinematacms/otelcol-contrib.yml").is_file())
@@ -859,6 +932,74 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             original_value = next(line for line in original_app_env.splitlines() if line.startswith(f"{key}="))
             self.assertIn(original_value, updated_app_env)
         self.assertFalse((self.deploy_root / "etc/nginx/conf.d/cloudflare_real_ip.conf").exists())
+
+    def test_second_apply_upgrades_legacy_nginx_upload_policy(self):
+        first = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+        self.assertEqual(first.returncode, 0, first.stderr)
+
+        site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
+        legacy_site = site_path.read_text()
+        for directive in (
+            "        uwsgi_read_timeout 900s;\n",
+            "        uwsgi_send_timeout 300s;\n",
+            "        uwsgi_request_buffering on;\n",
+        ):
+            legacy_site = legacy_site.replace(directive, "")
+        legacy_site = legacy_site.replace(" cinematacms;", ";")
+        site_path.write_text(legacy_site)
+
+        second = self.run_updater("--no-restart")
+
+        self.assertEqual(second.returncode, 0, second.stderr)
+        site = site_path.read_text()
+        self.assertEqual(site.count("uwsgi_read_timeout 900s;"), 2)
+        self.assertEqual(site.count("uwsgi_send_timeout 300s;"), 2)
+        self.assertEqual(site.count("uwsgi_request_buffering on;"), 2)
+        self.assertEqual(site.count("access_log /var/log/nginx/mediacms.io.access.log cinematacms;"), 2)
+        http_policy = (self.deploy_root / "etc/nginx/conf.d/cinematacms-http.conf").read_text()
+        self.assertIn("client_body_timeout 300s;", http_policy)
+        self.assertIn("log_format cinematacms", http_policy)
+
+    def test_second_apply_replaces_legacy_access_log_format_without_dropping_options(self):
+        first = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+        self.assertEqual(first.returncode, 0, first.stderr)
+
+        site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
+        legacy_directive = (
+            "access_log /var/log/nginx/mediacms.io.access.log combined buffer=32k gzip flush=5m if=$loggable;"
+        )
+        legacy_site = site_path.read_text().replace(
+            "access_log /var/log/nginx/mediacms.io.access.log cinematacms;",
+            legacy_directive,
+        )
+        self.assertEqual(legacy_site.count(legacy_directive), 2)
+        site_path.write_text(legacy_site)
+
+        second = self.run_updater("--no-restart")
+
+        self.assertEqual(second.returncode, 0, second.stderr)
+        migrated_directive = (
+            "access_log /var/log/nginx/mediacms.io.access.log cinematacms buffer=32k gzip flush=5m if=$loggable;"
+        )
+        site = site_path.read_text()
+        self.assertEqual(site.count(migrated_directive), 2)
+        self.assertNotIn(legacy_directive, site)
 
     def test_second_apply_updates_legacy_tls_curves(self):
         first = self.run_updater(
@@ -1092,6 +1233,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("nginx validation failed", result.stderr)
         self.assertEqual(site_path.read_text(), original)
+        self.assertFalse((self.deploy_root / "etc/nginx/conf.d/cinematacms-http.conf").exists())
 
     def test_managed_file_write_failure_restores_previous_config(self):
         config_path = self.deploy_root / "etc/cinematacms/deployment.env"

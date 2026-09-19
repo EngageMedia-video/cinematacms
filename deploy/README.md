@@ -92,6 +92,42 @@ Configure `OBSERVABILITY_REFERENCE_ALLOWED_IPS` with explicit addresses or CIDR
 ranges only when the monitoring service runs on another host, and use HTTPS or
 mTLS for that connection.
 
+## Nginx request handling
+
+The deployment files split nginx ownership as follows:
+
+- `deploy/nginx.conf` owns the complete nginx template, the `5800M` request-body
+  limit, and the default `compression` access log.
+- `deploy/nginx/cinematacms-http.conf` owns settings that the release updater
+  installs into `/etc/nginx/conf.d/` on both new and existing servers. It defines
+  the public-site log format and waits up to 300 seconds between reads from a
+  client request body. The five-minute idle window supports slow 2 MB
+  FineUploader chunks without leaving dead client connections open
+  indefinitely.
+- `deploy/mediacms.io` owns the public HTTP and HTTPS servers. Each user-facing
+  uWSGI location waits up to 300 seconds between writes to the local uWSGI
+  server and 900 seconds between reads from it. The longer read window covers
+  the synchronous final-chunk combine and media-file save for large uploads.
+- `deploy/nginx/cinematacms-metrics.conf` owns the loopback-only `/metrics`
+  location. It is not a user-request path, so it keeps the nginx uWSGI timeout
+  defaults.
+- `deploy/cloudflare_real_ip.conf` owns the trusted Cloudflare address ranges
+  installed when the deployment uses `--proxy cloudflare`.
+
+The public uWSGI locations explicitly keep `uwsgi_request_buffering on`.
+Nginx therefore receives each FineUploader chunk before assigning a uWSGI
+worker and can retry an upstream that has not received the request body. Turning
+buffering off would occupy an application worker for the duration of a slow
+client upload and would prevent retry after nginx starts sending the body.
+
+The default access log uses the `compression` format from `deploy/nginx.conf`.
+The public servers use the `cinematacms` format from
+`deploy/nginx/cinematacms-http.conf`. Both record `$request_time`,
+`$upstream_response_time`, and `$request_length` so an operator can distinguish
+a slow client transfer from slow application work. The timeout values are
+initial operational bounds. Tune them from production logs rather than copying
+proxy timeouts: the application locations use `uwsgi_pass`, not `proxy_pass`.
+
 Run a dry run to validate installer options without changing the server:
 
 ```bash
@@ -116,7 +152,8 @@ sudo ./deploy/apply-release-config.sh
 The updater performs these actions:
 
 1. Backs up every file that it changes under `/var/backups/cinematacms/`.
-2. Installs the nginx metrics restriction and the selected proxy config.
+2. Installs the nginx request policy, metrics restriction, and selected proxy
+   config.
 3. Installs the application and observability systemd units.
 4. Runs `nginx -t`.
 5. Restores the backup if nginx rejects the configuration.

@@ -234,6 +234,7 @@ if [ -f "$CONFIG_DIR/observability.env" ]; then
 fi
 
 NGINX_SNIPPET="$(root_path /etc/nginx/snippets/cinematacms-metrics.conf)"
+NGINX_HTTP_POLICY="$(root_path /etc/nginx/conf.d/cinematacms-http.conf)"
 NGINX_SITE="$(root_path /etc/nginx/sites-available/mediacms.io)"
 NGINX_ENABLED="$(root_path /etc/nginx/sites-enabled/mediacms.io)"
 NGINX_UWSGI_PARAMS="$(root_path /etc/nginx/sites-enabled/uwsgi_params)"
@@ -241,6 +242,7 @@ NGINX_MAIN="$(root_path /etc/nginx/nginx.conf)"
 NGINX_CLOUDFLARE="$(root_path /etc/nginx/conf.d/cloudflare_real_ip.conf)"
 
 install_managed_file "$SCRIPT_DIR/nginx/cinematacms-metrics.conf" "$NGINX_SNIPPET"
+install_managed_file "$SCRIPT_DIR/nginx/cinematacms-http.conf" "$NGINX_HTTP_POLICY"
 install_managed_file "$SCRIPT_DIR/uwsgi_params" "$NGINX_UWSGI_PARAMS"
 if [ ! -e "$NGINX_MAIN" ]; then
     install_managed_file "$SCRIPT_DIR/nginx.conf" "$NGINX_MAIN"
@@ -278,6 +280,31 @@ elif ! grep -qE 'location = /metrics|cinematacms-metrics\.conf' "$NGINX_SITE"; t
     install_managed_file "$rendered_site" "$NGINX_SITE"
     rm -f "$rendered_site"
 fi
+
+rendered_site="$(mktemp)"
+awk '
+    /^[[:space:]]*uwsgi_(read_timeout|send_timeout|request_buffering)[[:space:]]+/ {
+        next
+    }
+    {
+        if ($0 ~ /^[[:space:]]*access_log[[:space:]]+\/var\/log\/nginx\/mediacms\.io\.access\.log/) {
+            sub(/mediacms\.io\.access\.log[[:space:]]+[^[:space:];]+/, "mediacms.io.access.log cinematacms")
+            sub(/mediacms\.io\.access\.log;[[:space:]]*$/, "mediacms.io.access.log cinematacms;")
+        }
+        if ($0 ~ /^[[:space:]]*uwsgi_pass[[:space:]]+/) {
+            match($0, /^[[:space:]]*/)
+            indent = substr($0, RSTART, RLENGTH)
+            print indent "uwsgi_read_timeout 900s;"
+            print indent "uwsgi_send_timeout 300s;"
+            print indent "uwsgi_request_buffering on;"
+        }
+        print
+    }
+' "$NGINX_SITE" > "$rendered_site"
+if ! cmp -s "$NGINX_SITE" "$rendered_site"; then
+    install_managed_file "$rendered_site" "$NGINX_SITE"
+fi
+rm -f "$rendered_site"
 
 rendered_site="$(mktemp)"
 awk '
