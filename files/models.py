@@ -666,9 +666,12 @@ class Media(models.Model):
         if not self.title:
             self.title = self.media_file.path.split("/")[-1]
 
-        # Auto-populate filename from media_file for faster lookups
-        if self.media_file:
-            self.filename = os.path.basename(self.media_file.name)
+        # Auto-populate filename from media_file for faster lookups. Cleared
+        # alongside it: filename is a lookup column, so leaving the old basename
+        # behind after media_file is cleared points searches at a file the row no
+        # longer has. The edit form exposes media_file through a ClearableFileInput
+        # for editors and advanced users, so this path is reachable.
+        self.filename = os.path.basename(self.media_file.name) if self.media_file else ""
 
         strip_text_items = ["title", "summary", "description"]
         for item in strip_text_items:

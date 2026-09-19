@@ -657,6 +657,16 @@ class StaleInstanceFileFieldSaveTest(TestCase):
             "filename was not updated alongside media_file",
         )
 
+        # Clearing the file must clear the lookup column too, or searches point
+        # at a file the row no longer has. Reachable from the edit form, which
+        # exposes media_file through a ClearableFileInput.
+        fresh = Media.objects.get(pk=media.pk)
+        fresh.media_file.delete()
+
+        cleared = Media.objects.get(pk=media.pk)
+        self.assertFalse(cleared.media_file.name)
+        self.assertEqual(cleared.filename, "", "filename survived the deletion of media_file")
+
     def test_filefield_delete_does_not_revert_unrelated_column(self):
         """FieldFile.delete()'s default save=True must not replay a stale row.
 
