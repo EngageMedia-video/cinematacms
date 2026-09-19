@@ -968,6 +968,39 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertIn("client_body_timeout 300s;", http_policy)
         self.assertIn("log_format cinematacms", http_policy)
 
+    def test_second_apply_replaces_legacy_access_log_format_without_dropping_options(self):
+        first = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+        self.assertEqual(first.returncode, 0, first.stderr)
+
+        site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
+        legacy_directive = (
+            "access_log /var/log/nginx/mediacms.io.access.log combined buffer=32k gzip flush=5m if=$loggable;"
+        )
+        legacy_site = site_path.read_text().replace(
+            "access_log /var/log/nginx/mediacms.io.access.log cinematacms;",
+            legacy_directive,
+        )
+        self.assertEqual(legacy_site.count(legacy_directive), 2)
+        site_path.write_text(legacy_site)
+
+        second = self.run_updater("--no-restart")
+
+        self.assertEqual(second.returncode, 0, second.stderr)
+        migrated_directive = (
+            "access_log /var/log/nginx/mediacms.io.access.log cinematacms buffer=32k gzip flush=5m if=$loggable;"
+        )
+        site = site_path.read_text()
+        self.assertEqual(site.count(migrated_directive), 2)
+        self.assertNotIn(legacy_directive, site)
+
     def test_second_apply_updates_legacy_tls_curves(self):
         first = self.run_updater(
             "--domain",

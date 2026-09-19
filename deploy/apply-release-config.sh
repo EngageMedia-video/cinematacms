@@ -288,7 +288,7 @@ awk '
     }
     {
         if ($0 ~ /^[[:space:]]*access_log[[:space:]]+\/var\/log\/nginx\/mediacms\.io\.access\.log/) {
-            sub(/[[:space:]]+compression;[[:space:]]*$/, " cinematacms;")
+            sub(/mediacms\.io\.access\.log[[:space:]]+[^[:space:];]+/, "mediacms.io.access.log cinematacms")
             sub(/mediacms\.io\.access\.log;[[:space:]]*$/, "mediacms.io.access.log cinematacms;")
         }
         if ($0 ~ /^[[:space:]]*uwsgi_pass[[:space:]]+/) {
