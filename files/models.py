@@ -689,15 +689,30 @@ class Media(models.Model):
         # media_file path is not set correctly until mode is saved
         # post_save signal will take care of calling a few functions
         # once model is saved
+        # A hook may only act on a column this save actually persists. Under a
+        # scoped save (a ScopedFieldFile write, or any caller-supplied
+        # update_fields) an unrelated in-memory edit is never written, so firing
+        # its side effect would announce a change the row never took (#841).
+        # Materialize first: update_fields may be a one-shot generator, and the
+        # membership tests below would otherwise exhaust it before Model.save()
+        # ever sees it (#840).
+        if update_fields is not None:
+            update_fields = frozenset(update_fields)
+
+        def persists(field):
+            return update_fields is None or field in update_fields
+
         if self.pk:
-            if self.media_file != self.__original_media_file:
+            if persists("media_file") and self.media_file != self.__original_media_file:
                 self.__original_media_file = self.media_file
                 # let the file get saved through post_save signal, and then
                 # run media_init on it
                 from . import tasks
 
                 tasks.media_init.apply_async(args=[self.friendly_token], countdown=5)
-            thumbnail_time_changed = self.thumbnail_time != self.__original_thumbnail_time
+            thumbnail_time_changed = (
+                persists("thumbnail_time") and self.thumbnail_time != self.__original_thumbnail_time
+            )
             uploaded_poster_changed = self.uploaded_poster != self.__original_uploaded_poster
             if thumbnail_time_changed and self.thumbnail_time is not None and not uploaded_poster_changed:
                 if self.uploaded_thumbnail:
@@ -752,7 +767,6 @@ class Media(models.Model):
         # test below and Model.save() itself consume it, so materialize it once
         # and hand the same collection on rather than an exhausted generator.
         if update_fields is not None:
-            update_fields = frozenset(update_fields)
             kwargs["update_fields"] = update_fields
 
         # ensure_encryption_key() can commit a key between an unlocked re-read and
@@ -786,17 +800,32 @@ class Media(models.Model):
         else:
             super(Media, self).save(*args, **kwargs)
         # Notify user when video is published (state changed to public)
-        if self.pk and self.__original_state and self.__original_state != "public" and self.state == "public":
+        if (
+            self.pk
+            and persists("state")
+            and self.__original_state
+            and self.__original_state != "public"
+            and self.state == "public"
+        ):
             from .methods import notify_users
 
             notify_users(friendly_token=self.friendly_token, action="media_published")
         # Invalidate permission cache if state or password changed
-        if self.pk and (self.state != self.__original_state or self.password != self.__original_password):
+        state_changed = persists("state") and self.state != self.__original_state
+        password_changed = persists("password") and self.password != self.__original_password
+        if self.pk and (state_changed or password_changed):
             self._invalidate_permission_cache()
-            self.__original_state = self.state
-            self.__original_password = self.password
+            if state_changed:
+                self.__original_state = self.state
+            if password_changed:
+                self.__original_password = self.password
         # Re-generate HLS if encryption was toggled (guard against None on first save)
-        if self.pk and self.__original_is_encrypted is not None and self.is_encrypted != self.__original_is_encrypted:
+        if (
+            self.pk
+            and persists("is_encrypted")
+            and self.__original_is_encrypted is not None
+            and self.is_encrypted != self.__original_is_encrypted
+        ):
             self.__original_is_encrypted = self.is_encrypted
             if self.encodings.filter(
                 profile__extension="mp4", status="success", chunk=False, profile__codec="h264"
@@ -805,7 +834,11 @@ class Media(models.Model):
 
                 tasks.create_hls.delay(self.friendly_token)
         # has to save first for uploaded_poster path to exist
-        if self.uploaded_poster and self.uploaded_poster != self.__original_uploaded_poster:
+        if (
+            persists("uploaded_poster")
+            and self.uploaded_poster
+            and self.uploaded_poster != self.__original_uploaded_poster
+        ):
             with open(self.uploaded_poster.path, "rb") as f:
                 self.__original_uploaded_poster = self.uploaded_poster
                 myfile = File(f)

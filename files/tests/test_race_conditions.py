@@ -743,3 +743,60 @@ class StaleInstanceFileFieldSaveTest(TestCase):
                     )
                 finally:
                     stored.close()
+
+    def test_scoped_save_does_not_fire_hooks_for_unpersisted_columns(self):
+        """Lifecycle hooks must not fire for a column this save does not write.
+
+        A ScopedFieldFile write scopes update_fields to the file column. An
+        unrelated in-memory edit (a state the caller never persisted) is not
+        written, so announcing it would report a change the row never took.
+        """
+        from django.core.files.base import ContentFile
+
+        media = create_test_media(self.user, title="original", state="private")
+        fresh = Media.objects.get(pk=media.pk)
+        # Dirty in memory only; this save is scoped to sprites.
+        fresh.state = "public"
+
+        with (
+            patch("files.methods.notify_users") as notify_users,
+            patch.object(Media, "_invalidate_permission_cache") as invalidate,
+        ):
+            fresh.sprites.save("sprites.jpg", ContentFile(b"sprite"))
+
+        self.assertFalse(notify_users.called, "published notification fired for an unwritten state")
+        self.assertFalse(invalidate.called, "permission cache invalidated for an unwritten state")
+        self.assertEqual(Media.objects.get(pk=media.pk).state, "private")
+        self.assertTrue(Media.objects.get(pk=media.pk).sprites.name)
+
+    def test_unscoped_save_still_fires_its_hooks(self):
+        """The guards must not suppress hooks on an ordinary full save."""
+        media = create_test_media(self.user, title="original", state="private")
+        fresh = Media.objects.get(pk=media.pk)
+        fresh.state = "public"
+
+        with (
+            patch("files.methods.notify_users") as notify_users,
+            patch.object(Media, "_invalidate_permission_cache") as invalidate,
+        ):
+            fresh.save()
+
+        self.assertTrue(notify_users.called, "published notification did not fire on a full save")
+        self.assertTrue(invalidate.called, "permission cache was not invalidated on a full save")
+        self.assertEqual(Media.objects.get(pk=media.pk).state, "public")
+
+    def test_explicitly_scoped_save_of_state_still_fires_its_hooks(self):
+        """A caller that does persist state must still get the notification."""
+        media = create_test_media(self.user, title="original", state="private")
+        fresh = Media.objects.get(pk=media.pk)
+        fresh.state = "public"
+
+        with (
+            patch("files.methods.notify_users") as notify_users,
+            patch.object(Media, "_invalidate_permission_cache") as invalidate,
+        ):
+            fresh.save(update_fields=["state"])
+
+        self.assertTrue(notify_users.called, "published notification did not fire for a persisted state")
+        self.assertTrue(invalidate.called, "permission cache was not invalidated for a persisted state")
+        self.assertEqual(Media.objects.get(pk=media.pk).state, "public")
