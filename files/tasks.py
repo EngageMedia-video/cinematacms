@@ -2,6 +2,7 @@ import json
 import os
 import random
 import re
+import secrets
 import shutil
 import subprocess
 import tempfile
@@ -869,8 +870,15 @@ def create_hls(friendly_token):
 
         files = [f.media_file.path for f in encodings if f.media_file]
         encryption_flags = []
+        new_encryption_key = None
         if media.is_encrypted:
-            key_hex = media.ensure_encryption_key()
+            key_hex = media.encryption_key
+            if not key_hex:
+                # The encrypted HLS output must be usable before its new key is
+                # published. If this task is interrupted, leave the row eligible
+                # for a later regeneration instead of persisting an unusable key.
+                key_hex = secrets.token_hex(16)
+                new_encryption_key = key_hex
             # Root-relative URI so the key resolves against whatever origin
             # served the playlist (works in dev, prod, and copied artifacts).
             key_uri = reverse("api_get_media_key", kwargs={"friendly_token": media.friendly_token})
@@ -969,7 +977,11 @@ def create_hls(friendly_token):
         # post_save signal on Media always fires the storage usage refresh.
         # Stored MEDIA_ROOT-relative so the row survives a MEDIA_ROOT move (#789).
         media.hls_file = os.path.relpath(pp, settings.MEDIA_ROOT)
-        media.save(update_fields=["hls_file"])
+        update_fields = ["hls_file"]
+        if new_encryption_key:
+            media.encryption_key = new_encryption_key
+            update_fields.append("encryption_key")
+        media.save(update_fields=update_fields)
 
         # Remove stale output: never delete the directory hls_file currently
         # references (guards against a concurrently-committed newer run),
