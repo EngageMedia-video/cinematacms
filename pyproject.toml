@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "celery==5.6.3",
-    "django-allauth==65.19.3",
+    "django-allauth==65.19.4",
     "django-cors-headers==4.9.0",
     "django-crispy-forms>=2.3,<3.0",
     "crispy-forms-bootstrap2==2024.1",
