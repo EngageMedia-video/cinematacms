@@ -350,7 +350,14 @@ def _get_home_initial_data(request):
             home_initial_recommended = _home_recommended_envelope(recommended_results)
             set_cached_result(recommended_cache_key, home_initial_recommended, MEDIA_LIST_TIMEOUT)
 
-        home_initial_index_featured = _get_index_featured_payload(request)
+        # A playlist failure must not discard the media payloads above. None leaves
+        # the rows unseeded, so the client falls back to /api/v1/indexfeatured.
+        try:
+            home_initial_index_featured = _get_index_featured_payload(request)
+        except Exception as error:
+            logger.exception("Failed to build home index featured data")
+            capture_unexpected_exception(error)
+            home_initial_index_featured = None
 
         return home_initial_featured, home_initial_recommended, home_initial_index_featured
     except Exception as error:

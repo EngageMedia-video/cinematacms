@@ -29,7 +29,8 @@ The legacy homepage lets admins configure playlist rows through `IndexPageFeatur
 The modern homepage now uses the same source:
 
 1. `useIndexFeaturedPlaylists()` reads the server-seeded `/api/v1/indexfeatured` payload and refetches after the
-   query becomes stale.
+   query becomes stale. If the server cannot build that payload, the block contains `null`, the key stays unseeded,
+   and the hook fetches `/api/v1/indexfeatured` on load. The featured and recommended blocks still render.
 2. Each configured row fetches its returned `api_url` via `usePlaylistMedia(apiUrl)`.
 3. `normalizeMediaList()` accepts playlist detail envelopes via `playlist_media`, plus paginated `results`
    and bare arrays.
