@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "celery==5.6.3",
-    "django-allauth==65.19.3",
+    "django-allauth==65.19.4",
     "django-cors-headers==4.9.0",
     "django-crispy-forms>=2.3,<3.0",
     "crispy-forms-bootstrap2==2024.1",
@@ -21,7 +21,7 @@ dependencies = [
     "djangorestframework==3.18.1",
     "psycopg2-binary==2.9.13",
     "filetype==1.2.0",
-    "flake8==7.3.0",
+    "flake8==7.4.1",
     "ipython==8.39.0",
     "m3u8==6.0.0",
     "markdown==3.10.3",
@@ -51,7 +51,7 @@ dependencies = [
     "opentelemetry-instrumentation-redis>=0.65b0",
     "opentelemetry-instrumentation-requests>=0.65b0",
     "opentelemetry-instrumentation-psycopg2>=0.65b0",
-    "sentry-sdk==2.69.2",
+    "sentry-sdk==2.70.0",
 ]
 
 [dependency-groups]
