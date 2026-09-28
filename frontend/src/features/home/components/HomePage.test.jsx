@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import homeQueryClient, { HOME_QUERY_KEYS } from '../queryClient';
 import { HomePage } from './HomePage';
@@ -129,14 +129,16 @@ describe('HomePage', () => {
 		expect(screen.getByRole('heading', { level: 2, name: 'Featured Film' })).toBeInTheDocument();
 	});
 
-	it('renders the hero player from seeded hero_playback without fetching media detail', async () => {
+	it('loads the hero player from seeded hero_playback only after activation', async () => {
 		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => [] });
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_MEDIA]);
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, []);
 
 		render(<HomePage />);
 
-		const player = screen.getByTestId('hero-video-player');
+		expect(screen.queryByTestId('hero-video-player')).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole('button', { name: 'Play Featured Film' }));
+		const player = await screen.findByTestId('hero-video-player');
 		expect(fetchSpy).not.toHaveBeenCalled();
 		expect(JSON.parse(player.dataset.sources)).toEqual([
 			{ src: 'https://example.com/featured-720.mp4', type: 'video/mp4' },

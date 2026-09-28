@@ -6,7 +6,7 @@ import { useFeaturedMedia } from './useFeaturedMedia';
 import { useIndexFeaturedPlaylists } from './useIndexFeaturedPlaylists';
 import { usePlaylistMedia } from './usePlaylistMedia';
 import { useRecentMedia } from './useRecentMedia';
-import { readInitialDataFromDom } from '../initialData';
+import { readInitialDataFromDom, seedHomeInitialData } from '../initialData';
 
 // ── readInitialDataFromDom ──────────────────────────────────────────────────
 
@@ -14,6 +14,7 @@ describe('readInitialDataFromDom', () => {
 	afterEach(() => {
 		document.getElementById('home-initial-data-featured')?.remove();
 		document.getElementById('home-initial-data-recommended')?.remove();
+		document.getElementById('home-initial-data-index-featured')?.remove();
 	});
 
 	function injectScriptTag(id, content) {
@@ -30,23 +31,37 @@ describe('readInitialDataFromDom', () => {
 
 	it('returns the available block when only one script tag is present', () => {
 		injectScriptTag('home-initial-data-featured', '[]');
-		expect(readInitialDataFromDom()).toEqual({ featured: [], recommended: undefined });
+		expect(readInitialDataFromDom()).toEqual({ featured: [], recommended: undefined, indexFeatured: undefined });
 	});
 
 	it('keeps the valid block when the other JSON block is malformed', () => {
 		injectScriptTag('home-initial-data-featured', 'not json {{{');
 		injectScriptTag('home-initial-data-recommended', '[]');
-		expect(readInitialDataFromDom()).toEqual({ featured: undefined, recommended: [] });
+		expect(readInitialDataFromDom()).toEqual({ featured: undefined, recommended: [], indexFeatured: undefined });
 	});
 
-	it('returns { featured, recommended } when both tags contain valid JSON envelopes', () => {
+	it('returns all server-injected home payloads when their JSON blocks are valid', () => {
 		const featured = { results: [{ id: 1, title: 'Featured' }] };
 		const recommended = { results: [{ id: 2, title: 'Recommended' }] };
+		const indexFeatured = [{ title: 'Homepage playlist', api_url: '/api/v1/playlists/home' }];
 		injectScriptTag('home-initial-data-featured', JSON.stringify(featured));
 		injectScriptTag('home-initial-data-recommended', JSON.stringify(recommended));
+		injectScriptTag('home-initial-data-index-featured', JSON.stringify(indexFeatured));
 
 		const result = readInitialDataFromDom();
-		expect(result).toEqual({ featured, recommended });
+		expect(result).toEqual({ featured, recommended, indexFeatured });
+	});
+
+	it('seeds an empty homepage playlist list without issuing the loading request', () => {
+		const client = new QueryClient({ defaultOptions: { queries: { staleTime: 120_000 } } });
+		const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+		seedHomeInitialData(client, { featured: undefined, recommended: undefined, indexFeatured: [] });
+		const { result } = renderHook(() => useIndexFeaturedPlaylists(), { wrapper: makeWrapper(client) });
+
+		expect(result.current.data).toEqual([]);
+		expect(result.current.isLoading).toBe(false);
+		expect(fetchSpy).not.toHaveBeenCalled();
 	});
 });
 

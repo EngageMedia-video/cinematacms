@@ -33,6 +33,7 @@
 {% block modernpageimports %}
 {{ home_initial_featured|json_script:"home-initial-data-featured" }}
 {{ home_initial_recommended|json_script:"home-initial-data-recommended" }}
+{{ home_initial_index_featured|json_script:"home-initial-data-index-featured" }}
 {% vite_asset 'src/entries/index-revamp.js' %}
 {% endblock modernpageimports %}
 

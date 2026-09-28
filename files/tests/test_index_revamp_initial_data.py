@@ -13,11 +13,12 @@ from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
-from files.models import EncodeProfile, Encoding, Media
+from files.models import EncodeProfile, Encoding, IndexPageFeatured, Media
 from files.query_cache import get_cached_result, get_media_list_cache_key
 from files.tests.helpers import (
     create_test_media,
     create_test_user,
+    extract_json_script_body,
     extract_json_script_payload,
     make_vite_loader_mock,
 )
@@ -76,6 +77,44 @@ class IndexRevampInitialDataTest(TestCase):
     def test_recommended_script_tag_present(self):
         response = self._get_revamp_response()
         self.assertContains(response, 'id="home-initial-data-recommended"')
+
+    def test_index_featured_script_tag_contains_ordered_playlist_configuration(self):
+        IndexPageFeatured.objects.create(
+            title="Second playlist",
+            api_url="/api/v1/playlists/second",
+            url="/view?pl=second",
+            ordering=2,
+        )
+        IndexPageFeatured.objects.create(
+            title="First playlist",
+            api_url="/api/v1/playlists/first",
+            url="/view?pl=first",
+            ordering=1,
+        )
+
+        response = self._get_revamp_response()
+        parsed = extract_json_script_payload(response.content.decode(), "home-initial-data-index-featured")
+
+        self.assertIsNotNone(parsed, "home-initial-data-index-featured script tag not found")
+        self.assertEqual([item["title"] for item in parsed], ["First playlist", "Second playlist"])
+        self.assertEqual(parsed[0]["api_url"], "http://localhost/api/v1/playlists/first")
+
+    def test_index_featured_failure_keeps_media_payloads_and_leaves_playlists_unseeded(self):
+        with (
+            patch("files.views._get_index_featured_payload", side_effect=RuntimeError("playlist query failed")),
+            self.assertLogs("files.views", level="ERROR") as logs,
+        ):
+            response = self._get_revamp_response()
+
+        content = response.content.decode()
+        featured = extract_json_script_payload(content, "home-initial-data-featured")
+        recommended = extract_json_script_payload(content, "home-initial-data-recommended")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(self.media.friendly_token, [item["friendly_token"] for item in featured["results"]])
+        self.assertIsInstance(recommended["results"], list)
+        self.assertEqual(extract_json_script_body(content, "home-initial-data-index-featured"), "null")
+        self.assertIn("Failed to build home index featured data", logs.output[0])
 
     def test_featured_script_tag_has_correct_type(self):
         response = self._get_revamp_response()

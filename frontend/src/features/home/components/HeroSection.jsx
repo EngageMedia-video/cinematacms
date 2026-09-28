@@ -1,4 +1,15 @@
-import { Component, createContext, use, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+	Component,
+	Suspense,
+	createContext,
+	lazy,
+	use,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+} from 'react';
 import { preload } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useFeaturedMedia } from '../hooks/useFeaturedMedia';
@@ -7,8 +18,9 @@ import { getHeroDetailUrl, hasPlaybackPayload, mergeHeroDetail, getHeroPlayback 
 import { HOME_QUERY_KEYS } from '../queryClient';
 import { cn } from '../../shared/utils/classNames';
 import { HeroMediaCard, HeroMediaCardSkeleton } from './HeroMediaCard';
-import HeroVideoPlayer from './HeroVideoPlayer';
 import HeroPlayButtonIcon from '../../shared/icons/hero-play-button.svg?react';
+
+const HeroVideoPlayer = lazy(() => import('./HeroVideoPlayer'));
 
 const HeroContext = createContext(null);
 
@@ -194,8 +206,22 @@ function HeroPosterFallback({ src }) {
 	);
 }
 
+function HeroPosterButton({ src, title, onActivate }) {
+	return (
+		<button
+			type="button"
+			onClick={onActivate}
+			aria-label={`Play ${title}`}
+			className="h-full w-full border-0 bg-transparent p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring-focus"
+		>
+			<HeroPosterFallback src={src} />
+		</button>
+	);
+}
+
 function Player() {
 	const ctx = use(HeroContext);
+	const [activatedPlayerKey, setActivatedPlayerKey] = useState(null);
 	const media = ctx?.media;
 	const playableMedia = media ? (media.hero_playback ?? media) : null;
 	const duration = getMediaDurationLabel(playableMedia ?? media);
@@ -213,6 +239,7 @@ function Player() {
 	);
 	const subtitlesPayload = useMemo(() => ({ languages: subtitles }), [subtitles]);
 	const playerKey = playback.sources[0]?.src ?? poster ?? media?.friendly_token;
+	const isActivated = activatedPlayerKey === playerKey;
 
 	if (!ctx || !media) return null;
 	const { isDesktopLayout, desktopMetrics, isHeroDetailError, retryHeroDetail } = ctx;
@@ -223,18 +250,27 @@ function Player() {
 				className={cn(PLAYER_FRAME, isDesktopLayout ? PLAYER_FRAME_DESKTOP : '')}
 				style={heroPlayerFrameStyle(desktopMetrics)}
 			>
-				{playback.sources.length ? (
+				{playback.sources.length && isActivated ? (
 					<HeroPlayerErrorBoundary fallback={<HeroPosterFallback src={poster} />} key={playerKey}>
-						<HeroVideoPlayer
-							key={playerKey}
-							className={PLAYER_CLASS}
-							sources={playback.sources}
-							videoInfo={playback.videoInfo}
-							poster={poster}
-							preload="none"
-							subtitles={subtitlesPayload}
-						/>
+						<Suspense fallback={<HeroPosterFallback src={poster} />}>
+							<HeroVideoPlayer
+								key={playerKey}
+								className={PLAYER_CLASS}
+								sources={playback.sources}
+								videoInfo={playback.videoInfo}
+								poster={poster}
+								preload="none"
+								subtitles={subtitlesPayload}
+								enableAutoplay
+							/>
+						</Suspense>
 					</HeroPlayerErrorBoundary>
+				) : playback.sources.length ? (
+					<HeroPosterButton
+						src={poster}
+						title={media.title || 'featured video'}
+						onActivate={() => setActivatedPlayerKey(playerKey)}
+					/>
 				) : (
 					<>
 						<HeroPosterFallback src={poster} />

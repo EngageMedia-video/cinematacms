@@ -241,6 +241,11 @@ def _slim_home_media_results(items):
     return [_slim_home_media_item(item) for item in items]
 
 
+def _get_index_featured_payload(request):
+    index_featured = IndexPageFeatured.objects.filter(active=True).order_by("ordering")
+    return list(IndexPageFeaturedSerializer(index_featured, many=True, context={"request": request}).data)
+
+
 def _attach_hero_playback_to_first_featured_item(items, request=None):
     """
     Add detail-only playback fields to the first featured item.
@@ -345,20 +350,30 @@ def _get_home_initial_data(request):
             home_initial_recommended = _home_recommended_envelope(recommended_results)
             set_cached_result(recommended_cache_key, home_initial_recommended, MEDIA_LIST_TIMEOUT)
 
-        return home_initial_featured, home_initial_recommended
+        # A playlist failure must not discard the media payloads above. None leaves
+        # the rows unseeded, so the client falls back to /api/v1/indexfeatured.
+        try:
+            home_initial_index_featured = _get_index_featured_payload(request)
+        except Exception as error:
+            logger.exception("Failed to build home index featured data")
+            capture_unexpected_exception(error)
+            home_initial_index_featured = None
+
+        return home_initial_featured, home_initial_recommended, home_initial_index_featured
     except Exception as error:
         logger.exception("Failed to build home initial data")
         capture_unexpected_exception(error)
-        return _home_featured_envelope([]), _home_recommended_envelope([])
+        return _home_featured_envelope([]), _home_recommended_envelope([]), []
 
 
 def index(request):
     template = resolve_template(request, "home")
     context = {}
     if getattr(request, "ui_variant", None) == "revamp":
-        featured, recommended = _get_home_initial_data(request)
+        featured, recommended, index_featured = _get_home_initial_data(request)
         context["home_initial_featured"] = featured
         context["home_initial_recommended"] = recommended
+        context["home_initial_index_featured"] = index_featured
         first_featured = (featured.get("results") or [None])[0] if isinstance(featured, dict) else None
         if isinstance(first_featured, dict):
             hero_playback = first_featured.get("hero_playback") or {}
@@ -3107,9 +3122,7 @@ class HomepagePopupList(APIView):
 
 class IndexPageFeaturedList(APIView):
     def get(self, request, format=None):
-        indexfeatured = IndexPageFeatured.objects.filter(active=True).order_by("ordering")
-        serializer = IndexPageFeaturedSerializer(indexfeatured, many=True, context={"request": request})
-        return Response(serializer.data)
+        return Response(_get_index_featured_payload(request))
 
 
 class MediaKeyView(APIView):

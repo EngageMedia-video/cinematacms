@@ -3,7 +3,7 @@
  *
  * These tests fail if:
  * - forwardRef is introduced into any home component
- * - HeroVideoPlayer is hidden behind React.lazy, reintroducing the two-click hero activation bug
+ * - HeroVideoPlayer returns to the initial homepage dependency graph
  * - homepage playlist constants are defined inside the HomePage render function
  * - SectionRow or Carousel gain boolean-mode props (show*, hide*, is*Mode, as*)
  */
@@ -26,17 +26,17 @@ describe('Architecture contract — no forwardRef', () => {
 	});
 });
 
-describe('Architecture contract — eager hero player', () => {
-	it('HeroSection.jsx imports HeroVideoPlayer statically so the first click reaches VideoJS', () => {
+describe('Architecture contract — interaction-loaded hero player', () => {
+	it('HeroSection.jsx loads HeroVideoPlayer through a dynamic import', () => {
 		const { src } = findSource('HeroSection') ?? {};
 		expect(src).toBeDefined();
-		expect(src).toMatch(/import\s+HeroVideoPlayer\s+from\s+['"]\.\/HeroVideoPlayer['"]/);
+		expect(src).toMatch(/lazy\(\s*\(\)\s*=>\s*import\(['"]\.\/HeroVideoPlayer['"]\)\s*\)/);
 	});
 
-	it('HeroSection.jsx does not lazy-load HeroVideoPlayer behind a poster click', () => {
+	it('HeroSection.jsx has no static HeroVideoPlayer import', () => {
 		const { src } = findSource('HeroSection') ?? {};
 		expect(src).toBeDefined();
-		expect(src).not.toMatch(/lazy\(\s*\(\)\s*=>\s*import\(['"]\.\/HeroVideoPlayer['"]\)/);
+		expect(src).not.toMatch(/^import\s+HeroVideoPlayer\s+from\s+['"]\.\/HeroVideoPlayer['"]/m);
 	});
 });
 

@@ -86,6 +86,12 @@ describe('HeroVideoPlayer', () => {
 		expect(player).toHaveAttribute('data-site-url', 'https://cinemata.test');
 	});
 
+	it('forwards the activation autoplay request to the legacy player', () => {
+		render(<HeroVideoPlayer sources={[{ src: '/media/video.mp4', type: 'video/mp4' }]} enableAutoplay />);
+
+		expect(videoPlayerMock).toHaveBeenCalledWith(expect.objectContaining({ enableAutoplay: true }), undefined);
+	});
+
 	it('keeps the hero adapter on the legacy player import path', async () => {
 		const source = await import('./HeroVideoPlayer.jsx?raw');
 
