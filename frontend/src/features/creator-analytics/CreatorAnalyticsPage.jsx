@@ -4,7 +4,18 @@ import { Chart } from '@tanstack/charts/react/tooltip';
 import { scaleLinear } from '@tanstack/charts/scales/linear';
 import { scalePoint } from '@tanstack/charts/scales/point';
 import { tooltip } from '@tanstack/charts/tooltip';
-import { Badge, Card, Icon, Link, SegmentButton, TabContent, TabView, Text } from '../shared/components';
+import {
+	Badge,
+	Card,
+	Dropdown,
+	Icon,
+	Link,
+	SegmentButton,
+	SquareImage,
+	TabContent,
+	TabView,
+	Text,
+} from '../shared/components';
 import { formatDuration } from '../shared/utils/formatDuration';
 
 const number = new Intl.NumberFormat('en');
@@ -157,38 +168,53 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 				</div>
 			)}
 			<details className="mt-4">
-				<summary
-					className={`cursor-pointer py-3 body-body-14-medium text-text-secondary hover:text-text-link ${focus}`}
+				<Text
+					as="summary"
+					variant="body-14-medium"
+					className={`cursor-pointer py-3 text-text-secondary hover:text-text-link ${focus}`}
 				>
 					View daily figures
-				</summary>
+				</Text>
 				<div
 					className={`max-h-72 overflow-auto ${focus}`}
 					tabIndex={0}
 					role="region"
 					aria-label="Daily figures"
 				>
-					<table className="w-full border-collapse text-right body-body-14-regular">
-						<caption className="sr-only">Daily activity counts in UTC, newest first</caption>
-						<thead className="sticky top-0 border-b border-border-divider bg-bg-surface-muted body-body-12-medium text-text-secondary">
+					<table className="w-full border-collapse text-right">
+						<Text as="caption" variant="body-14" className="sr-only">
+							Daily activity counts in UTC, newest first
+						</Text>
+						<thead className="sticky top-0 border-b border-border-divider bg-bg-surface-muted">
 							<tr>
 								{['Date (UTC)', ...metricSet.map((item) => item.label)].map((label) => (
-									<th key={label} scope="col" className="px-3 py-3 font-medium">
+									<Text
+										as="th"
+										variant="body-12-medium"
+										key={label}
+										scope="col"
+										className="px-3 py-3 text-text-secondary"
+									>
 										{label}
-									</th>
+									</Text>
 								))}
 							</tr>
 						</thead>
 						<tbody>
 							{[...daily].reverse().map((day) => (
 								<tr key={day.date} className="hover:bg-bg-surface-muted">
-									<th scope="row" className="whitespace-nowrap px-3 py-3 font-normal">
+									<Text as="th" variant="body-14" scope="row" className="whitespace-nowrap px-3 py-3">
 										{day.date}
-									</th>
+									</Text>
 									{metricSet.map((item) => (
-										<td key={item.key} className="px-3 py-3 tabular-nums">
+										<Text
+											as="td"
+											variant="body-14"
+											key={item.key}
+											className="px-3 py-3 tabular-nums"
+										>
 											{number.format(day[item.key])}
-										</td>
+										</Text>
 									))}
 								</tr>
 							))}
@@ -210,11 +236,13 @@ function Engagement({ items }) {
 			{sorted.length ? (
 				<dl className="m-0 mt-2 grid gap-x-10 sm:grid-cols-2 lg:grid-cols-3">
 					{sorted.map(([label, count]) => (
-						<div key={label} className="flex justify-between gap-4 py-2 body-body-14-regular">
-							<dt className="text-text-secondary">{label}</dt>
-							<dd className="m-0 body-body-14-medium tabular-nums text-text-primary">
+						<div key={label} className="flex justify-between gap-4 py-2">
+							<Text as="dt" variant="body-14" className="text-text-secondary">
+								{label}
+							</Text>
+							<Text as="dd" variant="body-14-medium" className="m-0 tabular-nums">
 								{number.format(count)}
-							</dd>
+							</Text>
 						</div>
 					))}
 				</dl>
@@ -330,14 +358,18 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 						</Text>
 					)}
 					<details className="mt-3">
-						<summary className={`cursor-pointer py-3 body-body-14-medium text-text-secondary ${focus}`}>
+						<Text
+							as="summary"
+							variant="body-14-medium"
+							className={`cursor-pointer py-3 text-text-secondary ${focus}`}
+						>
 							View segment coverage figures
-						</summary>
+						</Text>
 						<ol className="m-0 grid list-none grid-cols-2 gap-2 p-0 sm:grid-cols-4">
 							{retention.map((part) => (
-								<li key={part.segment} className="body-body-12-regular">
+								<Text as="li" variant="body-12" key={part.segment}>
 									{part.segment}: {part.value}%
-								</li>
+								</Text>
 							))}
 						</ol>
 					</details>
@@ -356,9 +388,13 @@ function Breakdown({ title, items, empty = 'No data in this period.' }) {
 			{items?.length ? (
 				<dl className="m-0 mt-3 space-y-2">
 					{items.map(([label, value]) => (
-						<div key={label} className="flex justify-between gap-4 body-body-14-regular">
-							<dt className="min-w-0 break-words text-text-secondary">{label}</dt>
-							<dd className="m-0 shrink-0 tabular-nums text-text-primary">{number.format(value)}</dd>
+						<div key={label} className="flex justify-between gap-4">
+							<Text as="dt" variant="body-14" className="min-w-0 break-words text-text-secondary">
+								{label}
+							</Text>
+							<Text as="dd" variant="body-14" className="m-0 shrink-0 tabular-nums">
+								{number.format(value)}
+							</Text>
 						</div>
 					))}
 				</dl>
@@ -398,38 +434,64 @@ function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
 			{rows.length ? (
 				<>
 					<div className="hidden overflow-x-auto md:block">
-						<table className="w-full border-collapse text-right body-body-14-regular">
-							<caption className="sr-only">Media performance for the last {days} days</caption>
-							<thead className="border-b border-border-divider body-body-12-regular text-text-secondary">
+						<table className="w-full border-collapse text-right">
+							<Text as="caption" variant="body-14" className="sr-only">
+								Media performance for the last {days} days
+							</Text>
+							<thead className="border-b border-border-divider">
 								<tr>
-									<th scope="col" className="px-6 py-3 text-left font-medium">
+									<Text
+										as="th"
+										variant="body-12-medium"
+										scope="col"
+										className="px-6 py-3 text-left text-text-secondary"
+									>
 										Media
-									</th>
+									</Text>
 									{columns.map(([label]) => (
-										<th key={label} scope="col" className="whitespace-nowrap px-4 py-3 font-medium">
+										<Text
+											as="th"
+											variant="body-12-medium"
+											key={label}
+											scope="col"
+											className="whitespace-nowrap px-4 py-3 text-text-secondary"
+										>
 											{label}
-										</th>
+										</Text>
 									))}
 								</tr>
 							</thead>
 							<tbody>
 								{rows.map((row) => (
 									<tr key={row.url} className="hover:bg-bg-surface-muted">
-										<th scope="row" className="max-w-xs px-6 py-4 text-left font-normal">
-											<Link
+										<Text
+											as="th"
+											variant="body-14"
+											scope="row"
+											className="max-w-xs px-6 py-4 text-left"
+										>
+											<Text
+												as={Link}
+												action="text-link"
+												variant="body-14-medium"
 												href={row.analytics_url}
-												className={`block break-words body-body-14-medium text-text-link underline underline-offset-2 hover:text-text-link-hover ${focus}`}
+												className="block break-words text-text-link underline underline-offset-2 hover:text-text-link-hover"
 											>
 												{row.title}
-											</Link>
+											</Text>
 											<Badge color="bg/chip" className="mt-2 text-text-primary">
 												{row.state}
 											</Badge>
-										</th>
+										</Text>
 										{columns.map(([label, display]) => (
-											<td key={label} className="px-4 py-4 tabular-nums">
+											<Text
+												as="td"
+												variant="body-14"
+												key={label}
+												className="px-4 py-4 tabular-nums"
+											>
 												{display(row)}
-											</td>
+											</Text>
 										))}
 									</tr>
 								))}
@@ -440,12 +502,15 @@ function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
 						{rows.map((row) => (
 							<article key={row.url} className="py-4">
 								<div className="flex items-start justify-between gap-3">
-									<Link
+									<Text
+										as={Link}
+										action="text-link"
+										variant="body-14-medium"
 										href={row.analytics_url}
-										className={`min-w-0 break-words body-body-14-medium text-text-link underline underline-offset-2 hover:text-text-link-hover ${focus}`}
+										className="min-w-0 break-words text-text-link underline underline-offset-2 hover:text-text-link-hover"
 									>
 										{row.title}
-									</Link>
+									</Text>
 									<Badge color="bg/chip" className="shrink-0 text-text-primary">
 										{row.state}
 									</Badge>
@@ -453,10 +518,16 @@ function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
 								<dl className="m-0 mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
 									{columns.map(([label, display]) => (
 										<div key={label}>
-											<dt className="body-body-12-regular text-text-muted">{label}</dt>
-											<dd className="m-0 mt-1 body-body-14-medium tabular-nums text-text-strong">
+											<Text as="dt" variant="body-12" color="meta">
+												{label}
+											</Text>
+											<Text
+												as="dd"
+												variant="body-14-medium"
+												className="m-0 mt-1 tabular-nums text-text-strong"
+											>
 												{display(row)}
-											</dd>
+											</Text>
 										</div>
 									))}
 								</dl>
@@ -476,29 +547,32 @@ function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
 				</div>
 			)}
 			{pagination && pagination.count > 1 && rows.length > 0 && (
-				<nav
-					aria-label="Media pages"
-					className="flex items-center justify-between gap-3 pt-4 body-body-12-regular text-text-muted"
-				>
-					<span>
+				<nav aria-label="Media pages" className="flex items-center justify-between gap-3 pt-4">
+					<Text as="span" variant="body-12" color="meta">
 						Page {pagination.number} of {pagination.count}
-					</span>
+					</Text>
 					<div className="flex gap-4">
 						{pagination.previous && (
-							<Link
+							<Text
+								as={Link}
+								action="text-link"
+								variant="body-12-medium"
 								href={pageUrl(pagination.previous)}
-								className={`rounded-ds-4 px-2 py-2 text-text-secondary hover:text-text-link ${focus}`}
+								className="inline-flex min-h-11 items-center px-2 text-text-secondary hover:text-text-link"
 							>
 								Previous
-							</Link>
+							</Text>
 						)}
 						{pagination.next && (
-							<Link
+							<Text
+								as={Link}
+								action="text-link"
+								variant="body-12-medium"
 								href={pageUrl(pagination.next)}
-								className={`rounded-ds-4 px-2 py-2 text-text-secondary hover:text-text-link ${focus}`}
+								className="inline-flex min-h-11 items-center px-2 text-text-secondary hover:text-text-link"
 							>
 								Next
-							</Link>
+							</Text>
 						)}
 					</div>
 				</nav>
@@ -525,7 +599,7 @@ export function CreatorAnalyticsPage({ data }) {
 	return (
 		<div className="min-h-screen bg-bg-page px-4 py-6 text-text-primary sm:px-8 sm:py-8">
 			<div className="mx-auto max-w-7xl">
-				<nav aria-label="Breadcrumb" className="mb-4 body-body-14-medium">
+				<nav aria-label="Breadcrumb" className="mb-4">
 					<ol className="m-0 flex list-none flex-wrap items-center gap-x-2 p-0">
 						{breadcrumbs.map((item, index) => (
 							<li key={index} className="flex min-w-0 max-w-full items-center gap-2">
@@ -538,16 +612,25 @@ export function CreatorAnalyticsPage({ data }) {
 									/>
 								)}
 								{item.href ? (
-									<Link
+									<Text
+										as={Link}
+										action="text-link"
+										variant="body-14-medium"
 										href={item.href}
-										className={`inline-flex min-h-11 items-center text-text-secondary hover:underline ${focus}`}
+										className="inline-flex min-h-11 items-center text-text-secondary hover:underline"
 									>
 										{item.label}
-									</Link>
+									</Text>
 								) : (
-									<span aria-current="page" className="min-w-0 break-words py-3 text-text-muted">
+									<Text
+										as="span"
+										variant="body-14-medium"
+										color="meta"
+										aria-current="page"
+										className="min-w-0 break-words py-3"
+									>
 										{item.label}
-									</span>
+									</Text>
 								)}
 							</li>
 						))}
@@ -557,15 +640,13 @@ export function CreatorAnalyticsPage({ data }) {
 					<div className="flex w-full min-w-0 items-center gap-4 sm:gap-6 lg:w-auto lg:flex-1">
 						{selectedMedia && (
 							<div className="flex aspect-video w-24 shrink-0 items-center justify-center overflow-hidden rounded-ds-8 bg-bg-surface-muted sm:w-48">
-								{selectedMedia.thumbnail_url ? (
-									<img
-										src={selectedMedia.thumbnail_url}
-										alt=""
-										className="h-full w-full object-cover"
-									/>
-								) : (
-									<Icon name="myMedia" size={32} className="text-text-muted" />
-								)}
+								<SquareImage
+									src={selectedMedia.thumbnail_url}
+									alt=""
+									aria-hidden
+									iconName="myMedia"
+									style={{ width: '100%', height: '100%' }}
+								/>
 							</div>
 						)}
 						<div className="min-w-0">
@@ -583,9 +664,14 @@ export function CreatorAnalyticsPage({ data }) {
 											: selectedMedia.media_type?.replace(/^./, (letter) => letter.toUpperCase())}
 										{selectedMedia.duration > 0 && ` · ${formatDuration(selectedMedia.duration)}`}
 									</Text>
-									<Link href={selectedMedia.url} className={`body-body-12-medium ${focus}`}>
+									<Text
+										as={Link}
+										action="text-link"
+										variant="body-12-medium"
+										href={selectedMedia.url}
+									>
 										Open media
-									</Link>
+									</Text>
 								</div>
 							)}
 							{first && last && !data.unavailable && (
@@ -622,8 +708,8 @@ export function CreatorAnalyticsPage({ data }) {
 						</div>
 					}
 				</header>
-				<div className="mb-5 flex flex-wrap items-center gap-3 body-body-12-regular text-text-muted">
-					<span>
+				<div className="mb-5 flex flex-wrap items-center gap-3">
+					<Text as="span" variant="body-12" color="meta">
 						Updated{' '}
 						{new Date(data.updated_at).toLocaleString('en-GB', {
 							timeZone: 'UTC',
@@ -631,50 +717,50 @@ export function CreatorAnalyticsPage({ data }) {
 							timeStyle: 'short',
 						})}{' '}
 						UTC
-					</span>
-					<Link href={rangeUrl(data.days)} className={focus}>
+					</Text>
+					<Text as={Link} action="text-link" variant="body-12-medium" href={rangeUrl(data.days)}>
 						Refresh
-					</Link>
+					</Text>
 					{selectedMedia ? (
-						<details className="relative">
-							<summary className={`cursor-pointer ${focus}`}>Export CSV</summary>
-							<Card
-								as="div"
-								className="absolute left-0 z-20 mt-2 flex min-w-40 flex-col gap-3 p-4 shadow-lg"
-							>
-								{['summary', 'daily', 'retention', 'engagement'].map((dataset) => (
-									<Link
-										key={dataset}
-										href={`/analytics/export?days=${data.days}${mediaQuery}&dataset=${dataset}`}
-										className={focus}
-									>
-										{dataset.charAt(0).toUpperCase() + dataset.slice(1)}
-									</Link>
-								))}
-							</Card>
-						</details>
+						<Dropdown
+							appearance="compact"
+							placeholder="Export CSV"
+							value={null}
+							options={[
+								{ value: 'summary', label: 'Summary' },
+								{ value: 'daily', label: 'Daily' },
+								{ value: 'retention', label: 'Segment coverage' },
+								{ value: 'engagement', label: 'Engagement' },
+							]}
+							onChange={(dataset) => {
+								window.location.href = `/analytics/export?days=${data.days}${mediaQuery}&dataset=${dataset}`;
+							}}
+						/>
 					) : (
-						<Link href={`/analytics/export?days=${data.days}&dataset=portfolio`} className={focus}>
+						<Text
+							as={Link}
+							action="text-link"
+							variant="body-12-medium"
+							href={`/analytics/export?days=${data.days}&dataset=portfolio`}
+						>
 							Export CSV
-						</Link>
+						</Text>
 					)}
 					{selectedMedia && data.versions.length > 1 && (
-						<label className="flex items-center gap-2">
-							<span>Film cut</span>
-							<select
+						<div className="flex max-w-full items-center gap-2">
+							<Text as="span" variant="body-12" color="meta">
+								Film version
+							</Text>
+							<Dropdown
+								appearance="compact"
+								label="Film version"
 								value={data.version}
-								onChange={(event) => {
-									window.location.href = `?days=${data.days}&media=${encodeURIComponent(selectedMedia.uid)}&version=${encodeURIComponent(event.target.value)}`;
+								options={data.versions}
+								onChange={(version) => {
+									window.location.href = `?days=${data.days}&media=${encodeURIComponent(selectedMedia.uid)}&version=${encodeURIComponent(version)}`;
 								}}
-								className={`min-h-11 rounded-ds-8 bg-bg-surface px-3 text-text-primary ${focus}`}
-							>
-								{data.versions.map((version) => (
-									<option key={version.value} value={version.value}>
-										{version.label}
-									</option>
-								))}
-							</select>
-						</label>
+							/>
+						</div>
 					)}
 				</div>
 				{!data.unavailable && (
@@ -770,9 +856,14 @@ export function CreatorAnalyticsPage({ data }) {
 							)}
 						<Engagement items={data.engagement || []} />
 						<details className="px-5 py-6 text-text-muted sm:px-8">
-							<summary className={`w-fit cursor-pointer body-body-12-medium ${focus}`}>
+							<Text
+								as="summary"
+								variant="body-12-medium"
+								color="meta"
+								className={`w-fit cursor-pointer ${focus}`}
+							>
 								About these figures
-							</summary>
+							</Text>
 							<Text as="p" variant="body-12" color="meta" className="mt-3 mb-0 max-w-prose">
 								Media views count page and embed loads. Only you can see these figures, covering media
 								you currently own in every visibility state. Dates use UTC and data is retained for up
@@ -810,8 +901,8 @@ export function CreatorAnalyticsPage({ data }) {
 							Current media totals
 						</Text>
 						<Text as="p" variant="body-12" color="meta" className="mt-2 mb-0 max-w-prose">
-							From the CMS database, across all cuts. These totals do not follow the date range. Legacy
-							views use the existing media counter, not page views or playback starts.
+							From the CMS database, across all versions. These totals do not follow the date range.
+							Legacy views use the existing media counter, not page views or playback starts.
 						</Text>
 						<dl className="m-0 mt-4 grid grid-cols-2 gap-x-8 sm:grid-cols-3">
 							<CountCard

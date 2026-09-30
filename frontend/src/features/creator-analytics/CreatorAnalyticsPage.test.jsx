@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { CreatorAnalyticsPage } from './CreatorAnalyticsPage';
@@ -71,6 +71,38 @@ const data = {
 };
 
 describe('CreatorAnalyticsPage', () => {
+	it('uses keyboard-accessible menus for film versions and CSV exports', async () => {
+		const user = userEvent.setup();
+		render(
+			<CreatorAnalyticsPage
+				data={{
+					...data,
+					selected_media: { ...data.rows[0], uid: 'film-id', media_type: 'video' },
+					versions: [
+						{ value: data.version, label: 'Current version' },
+						{ value: 'previous-id', label: 'Previous version 1' },
+						{ value: 'unknown', label: 'Version unknown' },
+					],
+				}}
+			/>
+		);
+
+		const version = screen.getByRole('button', { name: 'Film version: Current version' });
+		version.focus();
+		await user.keyboard('{ArrowDown}');
+		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Current version' })).toHaveFocus());
+		await user.keyboard('{ArrowDown}');
+		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Previous version 1' })).toHaveFocus());
+		await user.keyboard('{Escape}');
+		await waitFor(() => expect(version).toHaveFocus());
+		expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+		await user.click(screen.getByRole('button', { name: 'Export CSV' }));
+		for (const name of ['Summary', 'Daily', 'Segment coverage', 'Engagement']) {
+			expect(screen.getByRole('menuitemradio', { name })).toBeInTheDocument();
+		}
+	});
+
 	it('shows owner counts, UTC trend, and media state', async () => {
 		const user = userEvent.setup();
 		render(<CreatorAnalyticsPage data={data} />);

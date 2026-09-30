@@ -144,9 +144,9 @@ def view_analytics(request):
     versions = []
     if selected_media:
         versions = [
-            {"value": str(selected_media.analytics_revision), "label": "Current cut"},
+            {"value": str(selected_media.analytics_revision), "label": "Current version"},
             *[
-                {"value": old, "label": f"Previous cut {index + 1}"}
+                {"value": old, "label": f"Previous version {index + 1}"}
                 for index, old in reversed(list(enumerate(selected_media.analytics_revisions)))
             ],
             {"value": "unknown", "label": "Version unknown"},
@@ -401,19 +401,19 @@ def export_analytics(request):
             (
                 "legacy_views_all_time",
                 current_totals["legacy_views"],
-                "Existing CMS view counter across all cuts, not date filtered",
+                "Existing CMS view counter across all versions, not date filtered",
                 "CMS current",
             ),
             (
                 "current_likes",
                 current_totals["likes"],
-                "Current CMS likes across all cuts, not date filtered",
+                "Current CMS likes across all versions, not date filtered",
                 "CMS current",
             ),
             (
                 "current_comments",
                 current_totals["comments"],
-                "Current comment count across all cuts, not date filtered",
+                "Current comment count across all versions, not date filtered",
                 "CMS current",
             ),
         )
