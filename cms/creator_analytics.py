@@ -182,9 +182,10 @@ def creator_analytics(owner, days, page, media_uid=None, revision=None, all_rows
             )
         return result
     days = days if days in RANGES else 30
-    media = list(Media.objects.filter(user=owner).order_by("-add_date", "-pk"))
+    queryset = Media.objects.filter(user=owner)
     if media_uid is not None:
-        media = [item for item in media if item.uid == media_uid]
+        queryset = queryset.filter(uid=media_uid)
+    media = list(queryset.order_by("-add_date", "-pk"))
     today = datetime.now(timezone.utc).date()
     start = datetime.combine(today - timedelta(days=days - 1), datetime.min.time(), tzinfo=timezone.utc)
     current_end = datetime.now(timezone.utc)

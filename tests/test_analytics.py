@@ -11,11 +11,13 @@ from django.apps import apps
 from django.contrib.auth.models import AnonymousUser
 from django.core import signing
 from django.core.management import call_command
+from django.db import connection
 from django.test import RequestFactory, TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from cms.analytics import allow_page_analytics, analytics_context
-from cms.creator_analytics import AnalyticsUnavailable
+from cms.creator_analytics import AnalyticsUnavailable, creator_analytics
 from cms.playback_analytics import measurement_token, playback_figures
 from files.management.commands.purge_playback_summaries import twelve_month_cutoff
 from files.models import Comment, ExistingURL, Media, Page, PlaybackSummary
@@ -329,6 +331,21 @@ class MediaAnalyticsTests(TestCase):
         self.assertContains(response, "cinemata-analytics-config")
         self.assertNotIn("segment_grant", response.context["ANALYTICS"])
 
+    def test_editor_and_manager_can_open_private_modern_and_legacy_pages_without_tracking(self):
+        owner = create_test_user()
+        media = create_test_media(owner, state="private")
+        media.existing_urls.add(ExistingURL.objects.create(url="/Members/owner/videos/old"))
+
+        for role in ("is_editor", "is_manager"):
+            self.client.force_login(create_test_user(**{role: True}))
+            for url in (f"/view?m={media.friendly_token}", "/Members/owner/videos/old"):
+                with self.subTest(role=role, url=url):
+                    response = self.client.get(url)
+                    self.assertEqual(response.status_code, 200)
+                    for permission in ("CAN_EDIT_MEDIA", "CAN_DELETE_MEDIA", "CAN_DELETE_COMMENTS"):
+                        self.assertTrue(response.context[permission])
+                    self.assertNotContains(response, "cinemata-analytics-config")
+
     def test_legacy_restricted_page_uses_current_access_check(self):
         owner = create_test_user()
         media = create_test_media(owner, state="restricted")
@@ -444,6 +461,26 @@ class CreatorAnalyticsTests(TestCase):
         self.assertEqual(previous_end_ms, current_start_ms - 1)
         self.assertLessEqual(abs((current_end_ms - current_start_ms) - (previous_end_ms - previous_start_ms)), 1)
         self.assertIsNone(full["comparison"])
+
+    def test_media_detail_and_export_load_only_selected_owned_media(self):
+        owner = create_test_user()
+        media = create_test_media(owner)
+        media.analytics_revisions = [str(uuid.uuid4())]
+        media.save(update_fields=["analytics_revisions"])
+        create_test_media(owner)
+        create_test_media(create_test_user())
+
+        for revision, all_rows in ((None, False), ("unknown", True)):
+            with self.subTest(revision=revision, all_rows=all_rows):
+                with (
+                    patch("cms.creator_analytics.umami_get", return_value=[]),
+                    CaptureQueriesContext(connection) as queries,
+                ):
+                    creator_analytics(owner, 7, 1, media_uid=media.uid, revision=revision, all_rows=all_rows)
+                media_reads = [query["sql"] for query in queries if 'FROM "files_media"' in query["sql"]]
+                self.assertTrue(media_reads)
+                for query in media_reads:
+                    self.assertIn(media.uid.hex, query.split(" WHERE ", 1)[1].replace("-", ""))
 
     def test_unknown_cut_excludes_events_with_known_revisions(self):
         owner = create_test_user()
@@ -708,6 +745,28 @@ class PlaybackSummaryTests(TestCase):
         self.assertEqual(figures["watch_seconds"], 50)
         self.assertEqual(figures["retention"][:10], [100.0] * 10)
         self.assertEqual(figures["retention"][10:], [0.0] * 10)
+
+    def test_accumulated_coverage_is_bounded_without_discarding_saved_data(self):
+        day = next(iter(self.payload["watch_days"]))
+        ranges = [[2 * index, 2 * index + 1] for index in range(1000)]
+        initial = {**self.payload, "coverage": ranges, "watch_days": {day: 1000}}
+        self.assertEqual(self.post(initial).status_code, 204)
+        summary = PlaybackSummary.objects.get(pk=self.play_id)
+        saved_at = summary.updated_at
+
+        overflow = {**initial, "coverage": [[2000, 2001]], "watch_days": {day: 2001}}
+        self.assertEqual(self.post(overflow).status_code, 400)
+        summary.refresh_from_db()
+        self.assertEqual(summary.coverage, ranges)
+        self.assertEqual(summary.watch_days, {day: 1000})
+        self.assertEqual(summary.updated_at, saved_at)
+        self.assertEqual(self.post(initial).status_code, 204)
+
+        joined = {**overflow, "coverage": [[0, 2001]]}
+        self.assertEqual(self.post(joined).status_code, 204)
+        summary.refresh_from_db()
+        self.assertEqual(summary.coverage, [[0, 2001]])
+        self.assertEqual(summary.watch_days, {day: 2001})
 
     def test_activity_logging_opt_out_rejects_playback_snapshot(self):
         self.owner.disable_activity_logging = True

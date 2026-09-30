@@ -886,7 +886,10 @@ def view_media(request):
         context["media"] = None
         return render(request, template, context)
         # return HttpResponseRedirect('/')
-    if media.state == "private" and media.user_id != request.user.id:
+    if media.state == "private" and not (
+        request.user.is_authenticated
+        and (media.user_id == request.user.id or is_mediacms_editor(request.user) or is_mediacms_manager(request.user))
+    ):
         return HttpResponse("Unauthorized", status=401)
     user_or_session = get_user_or_session(request)
     save_user_action.delay(user_or_session, friendly_token=friendly_token, action="watch")

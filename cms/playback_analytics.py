@@ -198,7 +198,10 @@ def record_playback(request):
             or summary.duration_ms != duration
         ):
             return HttpResponse(status=409)
-        summary.coverage = merge_ranges(summary.coverage + coverage)
+        merged_coverage = merge_ranges(summary.coverage + coverage)
+        if len(merged_coverage) > MAX_RANGES:
+            return HttpResponse(status=400)
+        summary.coverage = merged_coverage
         summary.watch_days = {
             day: max(summary.watch_days.get(day, 0), days.get(day, 0))
             for day in summary.watch_days.keys() | days.keys()
