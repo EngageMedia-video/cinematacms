@@ -363,6 +363,36 @@ class MediaAnalyticsTests(TestCase):
     ANALYTICS_API_KEY="test-key",
 )
 class CreatorAnalyticsTests(TestCase):
+    @override_settings(ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="", ANALYTICS_API_KEY="")
+    def test_film_version_labels_keep_chronological_numbers_after_replacement(self):
+        owner = create_test_user()
+        film = create_test_media(owner)
+        first, second = str(uuid.uuid4()), str(uuid.uuid4())
+        current = str(film.analytics_revision)
+        film.analytics_revisions = [first, second]
+        film.save(update_fields=["analytics_revisions"])
+        self.client.force_login(owner)
+
+        data = self.client.get(f"/analytics?media={film.uid}").context["ANALYTICS_DATA"]
+        self.assertEqual(
+            data["versions"],
+            [
+                {"value": "all", "label": "All versions"},
+                {"value": current, "label": "Version 3 - Current"},
+                {"value": second, "label": "Version 2"},
+                {"value": first, "label": "Version 1"},
+                {"value": "unknown", "label": "Version not recorded"},
+            ],
+        )
+        film.analytics_revisions.append(current)
+        film.analytics_revision = uuid.uuid4()
+        film.save(update_fields=["analytics_revision", "analytics_revisions"])
+
+        versions = self.client.get(f"/analytics?media={film.uid}").context["ANALYTICS_DATA"]["versions"]
+        self.assertEqual(versions[1]["label"], "Version 4 - Current")
+        self.assertEqual(versions[2], {"value": current, "label": "Version 3"})
+        self.assertEqual(versions[3:], data["versions"][2:])
+
     def test_all_versions_combines_owned_film_measurements_and_events(self):
         owner = create_test_user()
         film = create_test_media(owner)

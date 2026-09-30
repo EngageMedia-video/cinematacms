@@ -145,12 +145,15 @@ def view_analytics(request):
     if selected_media:
         versions = [
             {"value": "all", "label": "All versions"},
-            {"value": str(selected_media.analytics_revision), "label": "Current version"},
+            {
+                "value": str(selected_media.analytics_revision),
+                "label": f"Version {len(selected_media.analytics_revisions) + 1} - Current",
+            },
             *[
-                {"value": old, "label": f"Previous version {index + 1}"}
+                {"value": old, "label": f"Version {index + 1}"}
                 for index, old in reversed(list(enumerate(selected_media.analytics_revisions)))
             ],
-            {"value": "unknown", "label": "Version unknown"},
+            {"value": "unknown", "label": "Version not recorded"},
         ]
         requested = request.GET.get("version", str(selected_media.analytics_revision))
         if requested not in {version["value"] for version in versions}:

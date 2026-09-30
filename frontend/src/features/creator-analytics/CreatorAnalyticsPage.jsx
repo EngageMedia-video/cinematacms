@@ -747,12 +747,13 @@ export function CreatorAnalyticsPage({ data }) {
 						</Text>
 					)}
 					{selectedMedia && data.versions.length > 1 && (
-						<div className="flex max-w-full items-center gap-2">
+						<div className="flex max-w-full flex-wrap items-center gap-2">
 							<Text as="span" variant="body-12" color="meta">
 								Film version
 							</Text>
 							<Dropdown
 								appearance="compact"
+								className="min-w-60"
 								label="Film version"
 								value={data.version}
 								options={data.versions}

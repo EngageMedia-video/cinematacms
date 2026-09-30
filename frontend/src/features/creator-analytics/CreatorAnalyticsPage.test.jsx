@@ -80,21 +80,21 @@ describe('CreatorAnalyticsPage', () => {
 					selected_media: { ...data.rows[0], uid: 'film-id', media_type: 'video' },
 					versions: [
 						{ value: 'all', label: 'All versions' },
-						{ value: data.version, label: 'Current version' },
-						{ value: 'previous-id', label: 'Previous version 1' },
-						{ value: 'unknown', label: 'Version unknown' },
+						{ value: data.version, label: 'Version 2 - Current' },
+						{ value: 'previous-id', label: 'Version 1' },
+						{ value: 'unknown', label: 'Version not recorded' },
 					],
 				}}
 			/>
 		);
 
-		const version = screen.getByRole('button', { name: 'Film version: Current version' });
+		const version = screen.getByRole('button', { name: 'Film version: Version 2 - Current' });
 		version.focus();
 		await user.keyboard('{ArrowDown}');
-		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Current version' })).toHaveFocus());
+		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Version 2 - Current' })).toHaveFocus());
 		expect(screen.getByRole('menuitemradio', { name: 'All versions' })).toBeInTheDocument();
 		await user.keyboard('{ArrowDown}');
-		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Previous version 1' })).toHaveFocus());
+		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Version 1' })).toHaveFocus());
 		await user.keyboard('{Escape}');
 		await waitFor(() => expect(version).toHaveFocus());
 		expect(screen.queryByRole('menu')).not.toBeInTheDocument();
