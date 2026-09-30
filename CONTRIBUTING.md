@@ -46,6 +46,10 @@ requirements.
 For frontend build architecture, entry points, and revamp-gated shells, also
 read the [frontend workflow](docs/technical/FRONTEND_WORKFLOW.md).
 
+For a new visitor-facing feature, follow
+[Track new visitor features](CODING_STANDARDS.md#track-new-visitor-features)
+and record the event decision in the pull request.
+
 If you use a coding agent, follow the
 [shared agentic workflow](docs/technical/agentic-workflow.md). It defines the
 task paths, shared skills, verification sequence, and human decision points.
@@ -144,6 +148,8 @@ Complete the pull request template:
 - Explain what changed and why.
 - Link the issue when one exists.
 - List the test and manual verification results.
+- Complete the Analytics section. The `Analytics declaration` PR status
+  requires event names, triggers, and verification, or a reason it does not apply.
 - Select exactly one AI assistance declaration.
 - If you declare substantive AI assistance, name each tool and describe its
   contribution.

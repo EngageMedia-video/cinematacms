@@ -12,6 +12,11 @@ urlpatterns = [
     re_path(rf"^user/(?P<username>{USERNAME_RE})$", views.view_user, name="get_user"),
     re_path(rf"^user/(?P<username>{USERNAME_RE})/$", views.view_user, name="get_user"),
     re_path(
+        rf"^user/(?P<username>{USERNAME_RE})/analytics$",
+        views.view_user_analytics,
+        name="get_user_analytics",
+    ),
+    re_path(
         rf"^user/(?P<username>{USERNAME_RE})/media$",
         views.view_user_media,
         name="get_user_media",

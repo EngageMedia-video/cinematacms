@@ -23,6 +23,7 @@ SCHEDULED_JOBS = {
         ScheduledJob("update_listings_thumbnails", 1800, "files", 5400),
         ScheduledJob("cleanup_orphaned_uploads", 86400, "uploader", 129600),
         ScheduledJob("cleanup_orphaned_draft_media", 86400, "files", 129600),
+        ScheduledJob("purge_playback_summaries", 86400, "files", 129600),
         ScheduledJob("dispatch_deferred_encodings", 60, "files", 180),
         ScheduledJob("apply_visibility_schedules", 60, "files", 180),
     )

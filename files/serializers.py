@@ -170,6 +170,7 @@ class HeroPlaybackSerializer(serializers.ModelSerializer):
     class Meta:
         model = Media
         fields = (
+            "uid",
             "duration",
             "poster_url",
             "sprites_url",
@@ -306,6 +307,22 @@ class SingleMediaSerializer(serializers.ModelSerializer):
     user_has_disliked = serializers.SerializerMethodField()
     community_impacts = serializers.SerializerMethodField()
     sprite_num_secs = serializers.SerializerMethodField()
+    analytics_revision = serializers.SerializerMethodField()
+    hero_measurement_token = serializers.SerializerMethodField()
+
+    def get_analytics_revision(self, obj):
+        from django.conf import settings
+
+        return str(obj.analytics_revision) if settings.ANALYTICS_ENABLED else None
+
+    def get_hero_measurement_token(self, obj):
+        from django.conf import settings
+
+        if not settings.ANALYTICS_ENABLED:
+            return None
+        from cms.playback_analytics import measurement_token
+
+        return measurement_token(obj, "hero")
 
     def get_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
@@ -359,6 +376,7 @@ class SingleMediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Media
         read_only_fields = (
+            "uid",
             "friendly_token",
             "user",
             "add_date",
@@ -376,6 +394,9 @@ class SingleMediaSerializer(serializers.ModelSerializer):
             "is_reviewed",
         )
         fields = (
+            "uid",
+            "analytics_revision",
+            "hero_measurement_token",
             "url",
             "user",
             "title",

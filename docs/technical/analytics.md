@@ -1,0 +1,47 @@
+# Umami analytics integration
+
+The integration is off by default. Set `ANALYTICS_ENABLED=true`, an HTTPS `ANALYTICS_URL`, and the environment's `ANALYTICS_WEBSITE_ID` to load the tracker. Set `ANALYTICS_API_KEY` on the CMS server for owner dashboards. The key needs read access to that Umami website and must never reach a browser. Use separate website records for staging and production. Umami starts with new data; Matomo history is not imported.
+
+The owner dashboard remains available at `/analytics`, but its account-menu link is hidden while the feature is not promoted in the UI. The former profile URL redirects that owner there. Django session authorization limits dashboard queries to the media's current owner, including history before an ownership change. Umami's admin login is separate. The old `Media.views` counter remains for existing product behavior and is never an analytics fallback.
+
+## Collection and privacy
+
+Only eligible public pages and media pages or embeds after a successful access check load the tracker. Django staff, editors, managers, superusers, signed-in users who disable activity logging, and denied media pages do not. Curators are eligible viewers. The playback endpoint also rejects snapshots from opted-out users. Accessible public, unlisted, restricted, and private media are eligible. Media events carry the `media:<Media.uid>` tag plus an opaque media UUID, media type, page/embed/hero context, and content revision. Nonpublic media sends a generic path and title and no referrer. Public activity sends only the referring domain. Search strings, hashes, friendly tokens, titles, user IDs, access tokens, and raw progress ticks stay out of Umami. The browser honors Do Not Track. The collector route `/api/send` must have proxy access logs disabled.
+
+`media_view` counts eligible media page and embed loads. It does not count thumbnail impressions or hero playback. Playback starts and end events are separate counts. An end event includes seeking to the end; it is not evidence that a viewer watched the whole film. The player sends play, pause, finish, 25/50/75% unique-content-coverage milestones once per play, seek, mute/unmute, quality/subtitle/speed changes, fullscreen/theater changes, next/previous, and bounded error categories. Starts after a player action or on-site navigation are `deliberate`; autoplay and unknown starts remain separate. Confirmed likes, unlikes, playlist changes, copy actions, and comment submissions produce events. Download events represent click intent. Outbound links send the destination domain only.
+
+The legacy home hero receives a signed, media-scoped measurement grant from the access-checked media detail API. Its playback contributes watch time without generating a media page-view event.
+
+The browser also sends cumulative playback snapshots to same-origin `/analytics/playback` at start, every 60 seconds, pause, finish, and page exit. A signed page-load grant and random per-play UUID let the CMS merge retries without storing viewer identity. The endpoint checks origin, grant, media state and revision, duration, and bounded coverage ranges. The CMS records qualified elapsed viewing time by UTC day and unique content coverage per play. Pauses, buffering, seeking jumps, and hidden video below 50% visibility do not add watch time; picture-in-picture video and background audio can. Exit delivery is best effort, so recent plays may be incomplete. CMS summaries and Umami event counts are separate sources.
+
+## New feature events
+
+After a new action succeeds, call `window.CinemataAnalytics?.track('annotation_created')`. Use a fixed lowercase `snake_case` name of at most 50 characters. Never put a title, token, user ID, or other dynamic value in the name. The privacy boundary accepts new names without a tracker release but drops arbitrary event properties. A media-page action inherits its media UUID and appears in owner engagement counts. A general public-page action appears in Umami site reports only. For hero interactions pass media ID, type, context `hero`, and revision as the third argument. A hero player must also receive a signed measurement grant for CMS watch summaries.
+
+For a new server-rendered public page, call `allow_page_analytics(request)` from `cms.analytics` **after** the access check. It sends a generic `/page/<route-name>` path. Denied pages must not call it. For a later SPA route transition on an eligible public page, call `window.CinemataAnalytics?.pageview('route_name')` after access succeeds. Do not call it again on the first server-rendered load. The engineering SOP, PR template, and validation workflow require a tracker decision for new features.
+
+## Owner dashboard
+
+The dashboard joins owner-scoped Umami v3.4.0 events with CMS playback summaries. It offers 7, 30, 90, and 365 UTC calendar days, default 30. Current event counts include today so they may grow; the 7/30/90-day event comparisons use the immediately preceding window of equal elapsed time. A zero prior count may mean the tracker had not yet been activated. CMS watch time has daily buckets and is not compared with an intraday window. A preceding 365-day range falls outside retention. The portfolio leads with measured watch time and shows media views, starts after interaction and all starts, end events, daily trends, engagement, and all owned media ranked by views in pages of 20. It shows event counts, never unique visitor or demographic estimates.
+
+Select a media title for its detail page. The header shows title, thumbnail, duration, type, and visibility, with **Home → Analytics → media title** breadcrumbs. Detail adds starts per matching page/embed load, average qualified watch time, mean unique content coverage, and 20 five-percent film-segment coverage bins, playback milestones, context, public referral domains, and bounded error categories where available. Segment coverage is the average portion of each segment watched per measured play; it is not audience retention or a survival curve. Daily and total watch time follow the UTC day of consumption; average watch and coverage use plays started in the selected range. Select current cut, a previous source-file revision, or version-unknown events. Replacing `media_file` starts a new cut; editing the title or thumbnail does not. Invalid or unowned IDs return 404 before any Umami query.
+
+Choose a metric above the interactive TanStack daily chart to inspect its dates; **View daily figures** exposes a table. The owner dashboard does not load visitor tracking. If Umami is disabled or unavailable, event figures say unavailable while CMS measured viewing remains visible. No old view-counter value is substituted.
+
+**Export CSV** downloads the full owned portfolio, including rows beyond the visible page. A film has summary, daily, segment-coverage (`retention` dataset name), and engagement exports. The summary includes end events per start as a diagnostic ratio, not a play completion rate. An unavailable Umami value is blank and marked unavailable, not zero. CSV text is escaped against spreadsheet formulas.
+
+The [filmmaker analytics research](filmmaker-analytics-research.md) records the decision rationale and measurement limits. It predates this implementation.
+
+The [platform analytics privacy review](platform-analytics-privacy-review.md) records the data limits for site-wide admin reports and visitor segments.
+
+## Platform segments and text pages
+
+Public page views and events also increment CMS daily counts for anonymous, regular, trusted, and curator viewers. The browser sends a signed public-page scope and fixed event name to `/analytics/segment-event`; the CMS derives the role from the current account. No role, account ID, or session ID goes to Umami or into the daily count table. Nonpublic media has no segment grant. The endpoint rejects DNT, opted-out users, staff, bad origins, and forged or expired grants. `/analytics/segments` returns the last 30 UTC days as JSON to superusers only and omits any role, scope, and event count below 10. Public text-page scopes resolve to their current URL. The report is intentionally unlinked from the visitor menu.
+
+The role breakdown covers page and named-event counts. Visits, estimated visitors, country, browser, OS, device, and session journeys are not split by role because the daily counts have no session key.
+
+Every existing `Page` with its own public URL gets foreground-time milestones at 15, 30, 60, 120, and 300 seconds. The timer pauses when the tab is hidden or loses focus. Each threshold fires once per page load as `text_read_<seconds>s` in Umami and the CMS aggregate. These events show how many page loads reached each threshold. They do not prove that the visitor read the text, and a page containing several articles cannot identify which article was read.
+
+## Retention and rollout
+
+`purge_playback_summaries` removes CMS playback snapshots and daily segment counts after 12 months; Celery Beat schedules it daily. The private deployment's version-pinned Umami v3.4.0 SQL job removes old Umami data and refuses to run after an unreviewed Prisma migration. Review and test both jobs before upgrading Umami. Backups must honor the retention policy too. The disposable OrbStack VM is the current integration environment. Staging and production activation, including DNS for `analytics.cinemata.org`, are later operational steps.

@@ -1,0 +1,10 @@
+{% extends "base_modern.html" %}
+{% load django_vite %}
+
+{% block headtitle %}Analytics - {{ block.super }}{% endblock %}
+{% block headermeta %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block modernpageimports %}
+{{ ANALYTICS_DATA|json_script:"creator-analytics-data" }}
+{% vite_asset 'src/entries/creator-analytics.js' %}
+{% endblock modernpageimports %}

@@ -72,4 +72,14 @@ describe('HeaderContext popup nav items', () => {
 
 		expect(items.map((item) => item.text)).toContain(text);
 	});
+
+	it('keeps Analytics out of the signed-in account menu while tracking remains enabled', async () => {
+		const items = await loadPopupItems({ anonymous: false, canAddMedia: false });
+		expect(items.map((item) => item.text)).not.toContain('Analytics');
+	});
+
+	it('does not offer Analytics to anonymous visitors', async () => {
+		const items = await loadPopupItems({ anonymous: true });
+		expect(items.map((item) => item.text)).not.toContain('Analytics');
+	});
 });

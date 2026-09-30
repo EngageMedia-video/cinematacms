@@ -134,6 +134,7 @@ export default defineConfig({
 				'profile-playlists': 'src/entries/profile-playlists.js',
 				'profile-media': 'src/entries/profile-media.js',
 				'profile-revamp': 'src/entries/profile-revamp.js',
+				'creator-analytics': 'src/entries/creator-analytics.js',
 				history: 'src/entries/history.js',
 				liked: 'src/entries/liked.js',
 				'add-media': 'src/entries/add-media.js',

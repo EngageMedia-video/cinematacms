@@ -84,6 +84,8 @@
         "taxonomy_topics",
         "taxonomy_subtitle_languages",
         "task_control",
+        "analytics_segment_event",
+        "analytics_segment_report",
         "api_other",
         "other"
       ],
@@ -344,6 +346,7 @@
         "scheduled.update_listings_thumbnails",
         "scheduled.cleanup_orphaned_uploads",
         "scheduled.cleanup_orphaned_draft_media",
+        "scheduled.purge_playback_summaries",
         "scheduled.dispatch_deferred_encodings",
         "scheduled.apply_visibility_schedules",
         "other"
@@ -1072,6 +1075,24 @@
         "operation": "robots"
       },
       {
+        "id": "analytics.segment_event",
+        "route": "/analytics/segment-event",
+        "methods": [
+          "POST"
+        ],
+        "route_group": "api_other",
+        "operation": "analytics_segment_event"
+      },
+      {
+        "id": "analytics.segment_report",
+        "route": "/analytics/segments",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "pages",
+        "operation": "analytics_segment_report"
+      },
+      {
         "id": "web.search",
         "route": "/search",
         "methods": [
@@ -1497,6 +1518,8 @@
           "taxonomy_topics",
           "taxonomy_subtitle_languages",
           "task_control",
+          "analytics_segment_event",
+          "analytics_segment_report",
           "api_other",
           "other"
         ],
@@ -1955,6 +1978,7 @@
           "scheduled.update_listings_thumbnails",
           "scheduled.cleanup_orphaned_uploads",
           "scheduled.cleanup_orphaned_draft_media",
+          "scheduled.purge_playback_summaries",
           "scheduled.dispatch_deferred_encodings",
           "scheduled.apply_visibility_schedules",
           "other"

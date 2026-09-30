@@ -184,6 +184,10 @@ OTEL_EXPORTER_OTLP_HEADERS = os.getenv("OTEL_EXPORTER_OTLP_HEADERS", "")
 OTEL_TRACES_SAMPLER_ARG = env_float("OTEL_TRACES_SAMPLER_ARG", 1.0)
 OTEL_PRIORITY_TRACES_SAMPLER_ARG = env_float("OTEL_PRIORITY_TRACES_SAMPLER_ARG", 1.0)
 SENTRY_DSN = os.getenv("SENTRY_DSN", "")
+ANALYTICS_ENABLED = env_bool("ANALYTICS_ENABLED", False)
+ANALYTICS_URL = os.getenv("ANALYTICS_URL", "").rstrip("/")
+ANALYTICS_WEBSITE_ID = os.getenv("ANALYTICS_WEBSITE_ID", "")
+ANALYTICS_API_KEY = os.getenv("ANALYTICS_API_KEY", "")
 SENTRY_ENVIRONMENT = os.getenv("SENTRY_ENVIRONMENT", OTEL_ENVIRONMENT)
 SENTRY_RELEASE = os.getenv("SENTRY_RELEASE", "")
 SENTRY_SAMPLE_RATE = env_float("SENTRY_SAMPLE_RATE", 1.0)
@@ -419,6 +423,10 @@ CELERY_BEAT_SCHEDULE = {
     "cleanup_orphaned_draft_media": {
         "task": "cleanup_orphaned_draft_media",
         "schedule": crontab(hour="3", minute="0"),
+    },
+    "purge_playback_summaries": {
+        "task": "purge_playback_summaries",
+        "schedule": crontab(hour="3", minute="20"),
     },
     # Dispatch deferred encoding tasks when queue capacity is available
     "dispatch_deferred_encodings": {

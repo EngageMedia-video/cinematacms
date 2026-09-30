@@ -1,5 +1,7 @@
 import os
 
+from .runtime_config import env_bool
+
 # PORTAL SETTINGS
 PORTAL_NAME = "EngageMedia Video"  #  this is shown on several places, eg on contact email, or html title
 LANGUAGE_CODE = "en-us"
@@ -8,6 +10,10 @@ ALLOWED_HOSTS = ["*"]
 INTERNAL_IPS = ["127.0.0.1"]
 FRONTEND_HOST = "http://localhost:8000"
 SSL_FRONTEND_HOST = FRONTEND_HOST.replace("http", "https")
+ANALYTICS_ENABLED = env_bool("ANALYTICS_ENABLED", False)
+ANALYTICS_URL = os.getenv("ANALYTICS_URL", "").rstrip("/")
+ANALYTICS_WEBSITE_ID = os.getenv("ANALYTICS_WEBSITE_ID", "")
+ANALYTICS_API_KEY = os.getenv("ANALYTICS_API_KEY", "")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

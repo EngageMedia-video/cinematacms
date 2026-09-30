@@ -1,12 +1,17 @@
+import csv
 import logging
+from datetime import timedelta
+from io import StringIO
+from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.mail import EmailMessage
 from django.db.models import Case, Count, IntegerField, Max, Q, Value, When
-from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import permissions, status
@@ -22,12 +27,14 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
+from cms.creator_analytics import RANGES, AnalyticsUnavailable, creator_analytics
 from cms.custom_pagination import SmallPreviewPagination
 from cms.permissions import IsUserOrManager
+from cms.playback_analytics import playback_figures
 from cms.ui_variant import resolve_template
 from files.lists import video_countries
 from files.methods import is_curator, is_mediacms_editor, is_mediacms_manager
-from files.models import CommunityImpact, PrivateJournalNote
+from files.models import CommunityImpact, Media, PrivateJournalNote
 from files.serializers import CommunityImpactSerializer
 
 from .forms import ChannelForm, UserForm
@@ -115,6 +122,334 @@ def view_user(request, username):
     if redirect_response:
         return redirect_response
     return _render_profile(request, user, "about", "cms/user.html")
+
+
+@login_required
+def view_analytics(request):
+    selected_media = None
+    media_uid = request.GET.get("media")
+    if media_uid is not None:
+        try:
+            media_uid = UUID(media_uid)
+        except ValueError as exc:
+            raise Http404 from exc
+        selected_media = get_object_or_404(Media, user=request.user, uid=media_uid)
+    try:
+        days = int(request.GET.get("days", 30))
+    except ValueError:
+        days = 30
+    days = days if days in RANGES else 30
+    revision = None
+    versions = []
+    if selected_media:
+        versions = [
+            {"value": str(selected_media.analytics_revision), "label": "Current cut"},
+            *[
+                {"value": old, "label": f"Previous cut {index + 1}"}
+                for index, old in reversed(list(enumerate(selected_media.analytics_revisions)))
+            ],
+            {"value": "unknown", "label": "Version unknown"},
+        ]
+        requested = request.GET.get("version", str(selected_media.analytics_revision))
+        if requested not in {version["value"] for version in versions}:
+            raise Http404
+        revision = requested
+    context = {"days": days, "ranges": RANGES, "unavailable": True}
+    measured = playback_figures(
+        request.user,
+        days,
+        media_uid=media_uid,
+        revision=revision,
+    )
+    context["measurement"] = measured
+    context["umami_unavailable"] = True
+    if all(
+        (settings.ANALYTICS_ENABLED, settings.ANALYTICS_URL, settings.ANALYTICS_WEBSITE_ID, settings.ANALYTICS_API_KEY)
+    ):
+        try:
+            context.update(
+                creator_analytics(
+                    request.user,
+                    days,
+                    request.GET.get("page"),
+                    media_uid=media_uid,
+                    revision=revision,
+                )
+            )
+            context["umami_unavailable"] = False
+            context["unavailable"] = False
+        except (AnalyticsUnavailable, KeyError, TypeError, AttributeError):
+            pass
+
+    page = context.get("media_page")
+    context["ANALYTICS_DATA"] = {
+        "unavailable": context["unavailable"],
+        "umami_unavailable": context["umami_unavailable"],
+        "measurement": measured,
+        "comparison": context.get("comparison"),
+        "updated_at": timezone.now().isoformat(),
+        "days": days,
+        "ranges": RANGES,
+        "versions": versions,
+        "version": revision,
+        "selected_media": {
+            "uid": str(selected_media.uid),
+            "title": selected_media.title or "Untitled media",
+            "state": selected_media.get_state_display(),
+            "url": selected_media.get_absolute_url(),
+            "thumbnail_url": selected_media.thumbnail_url,
+            "media_type": selected_media.media_type,
+            "duration": selected_media.duration,
+        }
+        if selected_media
+        else None,
+        "media_views": context.get("media_views"),
+        "totals": context.get("totals"),
+        "completion_rate": context.get("completion_rate", 0),
+        "deliberate_starts": context.get("deliberate_starts"),
+        "start_per_load": context.get("start_per_load"),
+        "start_contexts": context.get("start_contexts"),
+        "daily": context.get("daily"),
+        "engagement": context.get("engagement"),
+        "contexts": context.get("contexts"),
+        "initiations": context.get("initiations"),
+        "referrers": context.get("referrers"),
+        "errors": context.get("errors"),
+        "rows": [
+            {
+                "title": row["media"].title or "Untitled media",
+                "state": row["media"].get_state_display(),
+                "url": row["media"].get_absolute_url(),
+                "analytics_url": f"?media={row['media'].uid}&days={days}",
+                "views": row["views"],
+                "starts": row["starts"],
+                "finishes": row["finishes"],
+                "completion_rate": row["completion_rate"],
+                "watch_seconds": measured["per_media_watch_seconds"].get(str(row["media"].uid), 0),
+            }
+            for row in context.get("rows", [])
+        ],
+        "pagination": {
+            "number": page.number,
+            "count": page.paginator.num_pages,
+            "previous": page.previous_page_number() if page.has_previous() else None,
+            "next": page.next_page_number() if page.has_next() else None,
+        }
+        if page
+        else None,
+    }
+    response = render(request, "cms/creator_analytics.html", context)
+    response["Cache-Control"] = "private, no-store"
+    response["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@login_required
+def export_analytics(request):
+    """Export the full owner-scoped range; blank cells mean a source is unavailable."""
+    try:
+        days = int(request.GET.get("days", 30))
+    except ValueError:
+        days = 30
+    days = days if days in RANGES else 30
+    media_uid = request.GET.get("media")
+    selected = None
+    if media_uid is not None:
+        try:
+            selected = get_object_or_404(Media, user=request.user, uid=UUID(media_uid))
+        except ValueError as exc:
+            raise Http404 from exc
+    dataset = request.GET.get("dataset", "portfolio")
+    if dataset not in (("summary", "daily", "retention", "engagement") if selected else ("portfolio",)):
+        raise Http404
+    revision = request.GET.get("version", str(selected.analytics_revision) if selected else None)
+    if selected and revision not in {str(selected.analytics_revision), *selected.analytics_revisions, "unknown"}:
+        raise Http404
+    measured = playback_figures(request.user, days, media_uid=selected.uid if selected else None, revision=revision)
+    umami = None
+    if all(
+        (settings.ANALYTICS_ENABLED, settings.ANALYTICS_URL, settings.ANALYTICS_WEBSITE_ID, settings.ANALYTICS_API_KEY)
+    ):
+        try:
+            umami = creator_analytics(
+                request.user,
+                days,
+                None,
+                media_uid=selected.uid if selected else None,
+                revision=revision,
+                all_rows=True,
+            )
+        except (AnalyticsUnavailable, KeyError, TypeError, AttributeError):
+            pass
+    output = StringIO()
+    writer = csv.writer(output)
+
+    def safe(value):
+        if value is None:
+            return ""
+        value = str(value)
+        return (
+            "'" + value
+            if value.lstrip().startswith(("=", "+", "-", "@")) or value.startswith(("\t", "\r", "\n"))
+            else value
+        )
+
+    today = timezone.now().date()
+    start = today - timedelta(days=days - 1)
+    if dataset == "portfolio":
+        writer.writerow(
+            (
+                "media_id",
+                "title",
+                "state",
+                "views",
+                "starts",
+                "end_events",
+                "watch_seconds",
+                "start_date_utc",
+                "end_date_utc",
+                "umami_status",
+            )
+        )
+        if umami:
+            rows = umami["rows"]
+        else:
+            rows = [{"media": item} for item in Media.objects.filter(user=request.user).order_by("-add_date", "-pk")]
+        for row in rows:
+            item = row["media"]
+            writer.writerow(
+                (
+                    item.uid,
+                    safe(item.title),
+                    item.state,
+                    row.get("views") if umami else "",
+                    row.get("starts") if umami else "",
+                    row.get("finishes") if umami else "",
+                    measured["per_media_watch_seconds"].get(str(item.uid), 0),
+                    start,
+                    today,
+                    "available" if umami else "unavailable",
+                )
+            )
+    elif dataset == "summary":
+        writer.writerow(
+            ("media_id", "cut", "metric", "value", "definition", "start_date_utc", "end_date_utc", "source_status")
+        )
+        summary = (
+            ("media_views", umami["media_views"] if umami else None, "Eligible media page and embed loads", "Umami"),
+            ("playback_starts", umami["totals"]["playback_start"] if umami else None, "All playback starts", "Umami"),
+            (
+                "starts_after_interaction",
+                umami["deliberate_starts"] if umami else None,
+                "Starts after a player action or on-site navigation",
+                "Umami",
+            ),
+            (
+                "end_events",
+                umami["totals"]["finish"] if umami else None,
+                "Playback finish events, including seeks to end",
+                "Umami",
+            ),
+            (
+                "end_events_per_start_percent",
+                umami["completion_rate"] if umami else None,
+                "Finish events divided by start events in this period; not a play completion rate",
+                "Umami",
+            ),
+            ("watch_seconds", measured["watch_seconds"], "Qualified real viewing seconds", "CMS"),
+            (
+                "average_watch_seconds",
+                measured["average_watch_seconds"],
+                "Qualified seconds from plays started in range divided by measured plays",
+                "CMS",
+            ),
+            (
+                "average_percent_watched",
+                measured["average_percent_watched"],
+                "Mean unique content coverage per measured play",
+                "CMS",
+            ),
+            ("measured_plays", measured["measured_plays"], "Plays with a CMS snapshot", "CMS"),
+        )
+        for name, value, definition, source in summary:
+            writer.writerow(
+                (
+                    selected.uid,
+                    revision,
+                    name,
+                    value if value is not None else "",
+                    definition,
+                    start,
+                    today,
+                    "available" if source == "CMS" or umami else "unavailable",
+                )
+            )
+    elif dataset == "daily":
+        writer.writerow(
+            ("media_id", "cut", "date_utc", "views", "starts", "end_events", "watch_seconds", "umami_status")
+        )
+        for index in range(days):
+            day = (start + timedelta(days=index)).isoformat()
+            events = umami["daily"][index] if umami else {}
+            writer.writerow(
+                (
+                    selected.uid,
+                    revision,
+                    day,
+                    events.get("media_views", ""),
+                    events.get("playback_start", ""),
+                    events.get("finish", ""),
+                    measured["daily_watch_seconds"][day],
+                    "available" if umami else "unavailable",
+                )
+            )
+    elif dataset == "retention":
+        writer.writerow(
+            (
+                "media_id",
+                "cut",
+                "segment_start_percent",
+                "segment_end_percent",
+                "average_segment_watched_percent",
+                "measured_plays",
+                "start_date_utc",
+                "end_date_utc",
+            )
+        )
+        for index, value in enumerate(measured["retention"]):
+            writer.writerow(
+                (selected.uid, revision, index * 5, (index + 1) * 5, value, measured["measured_plays"], start, today)
+            )
+    else:
+        writer.writerow(
+            ("media_id", "cut", "category", "name", "count", "start_date_utc", "end_date_utc", "umami_status")
+        )
+        if umami:
+            for category, entries in (
+                ("engagement", umami["engagement"]),
+                ("context", umami["contexts"]),
+                ("initiation", umami["initiations"]),
+                ("referrer_domain", umami["referrers"]),
+                ("player_error", umami["errors"]),
+            ):
+                for name, count in entries:
+                    writer.writerow((selected.uid, revision, category, safe(name), count, start, today, "available"))
+        else:
+            writer.writerow((selected.uid, revision, "", "", "", start, today, "unavailable"))
+    response = HttpResponse(output.getvalue(), content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="analytics-{dataset}.csv"'
+    response["Cache-Control"] = "private, no-store"
+    response["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@login_required
+def view_user_analytics(request, username):
+    if request.user.username != username:
+        raise Http404
+    query = request.META.get("QUERY_STRING", "")
+    destination = reverse("creator_analytics")
+    return HttpResponseRedirect(f"{destination}?{query}" if query else destination)
 
 
 def view_user_media(request, username):

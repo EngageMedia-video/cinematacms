@@ -13,6 +13,15 @@ Fixes #(issue)
 <!--- Include details of your testing environment, and the tests you ran to -->
 <!--- see how your change affects other areas of the code, etc. -->
 
+## Analytics
+<!-- Select exactly one for every PR. Follow CODING_STANDARDS.md#track-new-visitor-features. -->
+- [ ] Events added or updated.
+- [ ] Not applicable.
+Events: <!-- Fixed event names, comma separated. Use pageview for a new public page. -->
+Trigger: <!-- When each event fires. -->
+Verification: <!-- Test or manual check. -->
+Reason: <!-- Required when not applicable. -->
+
 ## Screenshots (if appropriate):
 
 ## AI assistance

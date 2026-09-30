@@ -367,6 +367,8 @@ class ScopedProcessedImageField(ProcessedImageField):
 
 class Media(models.Model):
     uid = models.UUIDField(unique=True, default=uuid.uuid4)
+    analytics_revision = models.UUIDField(default=uuid.uuid4, editable=False)
+    analytics_revisions = models.JSONField(default=list, editable=False)
     friendly_token = models.CharField(blank=True, max_length=12, db_index=True)
     title = models.CharField(max_length=100, blank=True, db_index=True)
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, db_index=True)
@@ -711,8 +713,22 @@ class Media(models.Model):
             return update_fields is None or field in update_fields
 
         if self.pk:
-            if persists("media_file") and self.media_file != self.__original_media_file:
+            stored_analytics = None
+            if persists("media_file") or update_fields is None:
+                stored_analytics = (
+                    Media.objects.filter(pk=self.pk)
+                    .values("media_file", "analytics_revision", "analytics_revisions")
+                    .first()
+                )
+                if stored_analytics:
+                    self.analytics_revision = stored_analytics["analytics_revision"]
+                    self.analytics_revisions = stored_analytics["analytics_revisions"]
+            if persists("media_file") and stored_analytics and self.media_file.name != stored_analytics["media_file"]:
                 self.__original_media_file = self.media_file
+                self.analytics_revisions = [*self.analytics_revisions, str(self.analytics_revision)]
+                self.analytics_revision = uuid.uuid4()
+                if update_fields is not None:
+                    update_fields = frozenset(update_fields) | {"analytics_revision", "analytics_revisions"}
                 # let the file get saved through post_save signal, and then
                 # run media_init on it
                 from . import tasks
@@ -1599,6 +1615,41 @@ class Media(models.Model):
                     }
                 )
         return ret
+
+
+class PlaybackSummary(models.Model):
+    """Anonymous, replaceable snapshot for one play. No visitor or account key."""
+
+    id = models.UUIDField(primary_key=True)
+    media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name="playback_summaries")
+    revision = models.UUIDField()
+    context = models.CharField(max_length=8)
+    initiation = models.CharField(max_length=12)
+    started_at = models.DateTimeField(db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    duration_ms = models.PositiveIntegerField()
+    # Union of observed content positions, in milliseconds; replays never enlarge it.
+    coverage = models.JSONField(default=list)
+    # Cumulative qualified viewing milliseconds by UTC day; repeat snapshots use max().
+    watch_days = models.JSONField(default=dict)
+
+    class Meta:
+        indexes = [models.Index(fields=["media", "started_at"])]
+
+
+class DailySegmentMetric(models.Model):
+    """Daily counts by broad visitor role, without a visitor or session key."""
+
+    day = models.DateField()
+    segment = models.CharField(max_length=12)
+    scope = models.CharField(max_length=32)
+    event = models.CharField(max_length=50)
+    count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["day", "segment", "scope", "event"], name="daily_segment_metric_unique")
+        ]
 
 
 class License(models.Model):
