@@ -357,22 +357,24 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 							No measured plays in this period.
 						</Text>
 					)}
-					<details className="mt-3">
-						<Text
-							as="summary"
-							variant="body-14-medium"
-							className={`cursor-pointer py-3 text-text-secondary ${focus}`}
-						>
-							View segment coverage figures
-						</Text>
-						<ol className="m-0 grid list-none grid-cols-2 gap-2 p-0 sm:grid-cols-4">
-							{retention.map((part) => (
-								<Text as="li" variant="body-12" key={part.segment}>
-									{part.segment}: {part.value}%
-								</Text>
-							))}
-						</ol>
-					</details>
+					{retention.length > 0 && (
+						<details className="mt-3">
+							<Text
+								as="summary"
+								variant="body-14-medium"
+								className={`cursor-pointer py-3 text-text-secondary ${focus}`}
+							>
+								View segment coverage figures
+							</Text>
+							<ol className="m-0 grid list-none grid-cols-2 gap-2 p-0 sm:grid-cols-4">
+								{retention.map((part) => (
+									<Text as="li" variant="body-12" key={part.segment}>
+										{part.segment}: {part.value}%
+									</Text>
+								))}
+							</ol>
+						</details>
+					)}
 				</>
 			)}
 		</Card>

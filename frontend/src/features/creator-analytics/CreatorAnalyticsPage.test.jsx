@@ -71,6 +71,21 @@ const data = {
 };
 
 describe('CreatorAnalyticsPage', () => {
+	it('offers segment figures only when there is coverage data', async () => {
+		const user = userEvent.setup();
+		const filmData = { ...data, selected_media: { ...data.rows[0], uid: 'film-id', media_type: 'video' } };
+		const { rerender } = render(
+			<CreatorAnalyticsPage
+				data={{ ...filmData, measurement: { ...data.measurement, measured_plays: 0, retention: [] } }}
+			/>
+		);
+		expect(screen.getByText('No measured plays in this period.')).toBeInTheDocument();
+		expect(screen.queryByText('View segment coverage figures')).not.toBeInTheDocument();
+		rerender(<CreatorAnalyticsPage data={filmData} />);
+		await user.click(screen.getByText('View segment coverage figures'));
+		expect(screen.getByText(`0–5%: ${data.measurement.retention[0]}%`)).toBeVisible();
+	});
+
 	it('explains data that cannot be matched to a film version when selected', () => {
 		const filmData = {
 			...data,
