@@ -8,8 +8,9 @@ from urllib.parse import urlsplit
 import requests
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.db.models import Sum
 
-from files.models import Media
+from files.models import Comment, Media
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,18 @@ RANGES = (7, 30, 90, 365)
 
 class AnalyticsUnavailable(Exception):
     pass
+
+
+def cms_media_totals(owner, media_uid=None):
+    """Current product counters, independent of reporting dates and Umami."""
+    media = Media.objects.filter(user=owner)
+    if media_uid:
+        media = media.filter(uid=media_uid)
+    totals = media.aggregate(legacy_views=Sum("views"), likes=Sum("likes"))
+    return {
+        **{name: value or 0 for name, value in totals.items()},
+        "comments": Comment.objects.filter(media__in=media).count(),
+    }
 
 
 def umami_get(endpoint, params):

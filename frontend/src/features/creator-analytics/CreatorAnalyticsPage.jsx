@@ -21,7 +21,7 @@ const metrics = [
 	{ key: 'playback_start', label: 'Playback starts', color: 'text-bg-secondary' },
 	{ key: 'finish', label: 'Reached end', color: 'text-bg-success' },
 ];
-const metricOptions = metrics.map((metric, index) => ({ value: index, label: metric.label }));
+const watchMetrics = [{ key: 'watch_seconds', label: 'Watch time (seconds)', color: 'text-bg-secondary' }];
 
 function comparisonLabel(current, previous) {
 	if (typeof previous !== 'number') return null;
@@ -50,9 +50,10 @@ function CountCard({ label, value, stacked = false, comparison = null }) {
 	);
 }
 
-function ActivityChart({ daily, height = 220 }) {
+function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 	const [metricIndex, setMetricIndex] = useState(0);
-	const metric = metrics[metricIndex];
+	const metric = metricSet[metricIndex] || metricSet[0];
+	const metricOptions = metricSet.map((item, index) => ({ value: index, label: item.label }));
 	const hasActivity = daily.some((day) => day[metric.key] > 0);
 	const definition = useMemo(() => {
 		const maximum = Math.max(1, ...daily.map((day) => day[metric.key]));
@@ -171,7 +172,7 @@ function ActivityChart({ daily, height = 220 }) {
 						<caption className="sr-only">Daily activity counts in UTC, newest first</caption>
 						<thead className="sticky top-0 border-b border-border-divider bg-bg-surface-muted body-body-12-medium text-text-secondary">
 							<tr>
-								{['Date (UTC)', 'Views', 'Starts', 'Reached end'].map((label) => (
+								{['Date (UTC)', ...metricSet.map((item) => item.label)].map((label) => (
 									<th key={label} scope="col" className="px-3 py-3 font-medium">
 										{label}
 									</th>
@@ -184,7 +185,7 @@ function ActivityChart({ daily, height = 220 }) {
 									<th scope="row" className="whitespace-nowrap px-3 py-3 font-normal">
 										{day.date}
 									</th>
-									{metrics.map((item) => (
+									{metricSet.map((item) => (
 										<td key={item.key} className="px-3 py-3 tabular-nums">
 											{number.format(day[item.key])}
 										</td>
@@ -370,8 +371,20 @@ function Breakdown({ title, items, empty = 'No data in this period.' }) {
 	);
 }
 
-function MediaPerformance({ rows, pagination, days }) {
+function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
 	const pageUrl = (page) => `?days=${days}&page=${page}`;
+	const columns = eventsAvailable
+		? [
+				['Views', (row) => number.format(row.views)],
+				['Starts', (row) => number.format(row.starts)],
+				['Reached end', (row) => number.format(row.finishes)],
+				['Watch time', (row) => formatDuration(row.watch_seconds)],
+			]
+		: [
+				['Measured plays', (row) => number.format(row.measured_plays)],
+				['Watch time', (row) => formatDuration(row.watch_seconds)],
+				['Legacy views (all time)', (row) => number.format(row.legacy_views)],
+			];
 	return (
 		<Card as="section" aria-labelledby="media-heading" className="mt-6 min-w-0 p-5 sm:p-8">
 			<div className="flex flex-wrap items-center justify-between gap-2 pb-4">
@@ -379,7 +392,7 @@ function MediaPerformance({ rows, pagination, days }) {
 					Your media
 				</Text>
 				<Text as="span" variant="body-12" color="meta" className="m-0">
-					Ranked by media views
+					{eventsAvailable ? 'Ranked by media views' : 'Newest media first'}
 				</Text>
 			</div>
 			{rows.length ? (
@@ -392,7 +405,7 @@ function MediaPerformance({ rows, pagination, days }) {
 									<th scope="col" className="px-6 py-3 text-left font-medium">
 										Media
 									</th>
-									{['Views', 'Starts', 'Reached end', 'Watch time'].map((label) => (
+									{columns.map(([label]) => (
 										<th key={label} scope="col" className="whitespace-nowrap px-4 py-3 font-medium">
 											{label}
 										</th>
@@ -413,12 +426,11 @@ function MediaPerformance({ rows, pagination, days }) {
 												{row.state}
 											</Badge>
 										</th>
-										{[row.views, row.starts, row.finishes].map((value, index) => (
-											<td key={index} className="px-4 py-4 tabular-nums">
-												{number.format(value)}
+										{columns.map(([label, display]) => (
+											<td key={label} className="px-4 py-4 tabular-nums">
+												{display(row)}
 											</td>
 										))}
-										<td className="px-4 py-4 tabular-nums">{formatDuration(row.watch_seconds)}</td>
 									</tr>
 								))}
 							</tbody>
@@ -439,16 +451,11 @@ function MediaPerformance({ rows, pagination, days }) {
 									</Badge>
 								</div>
 								<dl className="m-0 mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-									{[
-										['Views', number.format(row.views)],
-										['Starts', number.format(row.starts)],
-										['Reached end', number.format(row.finishes)],
-										['Watch', formatDuration(row.watch_seconds)],
-									].map(([label, value]) => (
+									{columns.map(([label, display]) => (
 										<div key={label}>
 											<dt className="body-body-12-regular text-text-muted">{label}</dt>
 											<dd className="m-0 mt-1 body-body-14-medium tabular-nums text-text-strong">
-												{value}
+												{display(row)}
 											</dd>
 										</div>
 									))}
@@ -671,15 +678,13 @@ export function CreatorAnalyticsPage({ data }) {
 					)}
 				</div>
 				{data.unavailable ? (
-					<Card as="section" role="status" className="flex flex-col items-center px-6 py-16 text-center">
-						<span className="mb-5 rounded-full bg-bg-surface-muted p-4">
-							<Icon name="infoCircle" size={32} className="text-text-muted" />
-						</span>
-						<Text as="h2" variant="h5-bold" className="m-0 text-text-primary">
-							Analytics unavailable
+					<Card as="section" role="status" className="p-5 sm:p-8">
+						<Text as="h2" variant="h6-bold" className="m-0 text-text-primary">
+							Umami event figures unavailable
 						</Text>
-						<Text as="p" variant="body-14" color="meta" className="mt-3 mb-6 max-w-sm">
-							Umami event figures are unavailable. Measured viewing time is shown below.
+						<Text as="p" variant="body-14" color="meta" className="mt-3 mb-4 max-w-prose">
+							CMS viewing metrics and current media totals remain available. Connect Umami for page views,
+							playback events, and engagement trends.
 						</Text>
 						<Link href={rangeUrl(data.days)} variant="secondary" className={focus}>
 							Try again
@@ -791,7 +796,51 @@ export function CreatorAnalyticsPage({ data }) {
 						</details>
 					</>
 				)}
-				{data.unavailable && <MeasuredViewing measurement={data.measurement} selectedMedia={selectedMedia} />}
+				{data.unavailable && (
+					<>
+						<MeasuredViewing measurement={data.measurement} selectedMedia={selectedMedia} />
+						<Card as="div" className="mt-6 p-5 sm:p-8">
+							<ActivityChart
+								daily={Object.entries(data.measurement.daily_watch_seconds || {}).map(
+									([date, watch_seconds]) => ({ date, watch_seconds })
+								)}
+								metricSet={watchMetrics}
+							/>
+						</Card>
+						{!selectedMedia && (
+							<MediaPerformance
+								rows={data.rows}
+								pagination={data.pagination}
+								days={data.days}
+								eventsAvailable={false}
+							/>
+						)}
+					</>
+				)}
+				{data.cms_totals && (
+					<Card as="section" aria-labelledby="cms-totals-heading" className="mt-6 p-5 sm:p-8">
+						<Text as="h2" id="cms-totals-heading" variant="h6-bold" className="m-0 text-text-primary">
+							Current media totals
+						</Text>
+						<Text as="p" variant="body-12" color="meta" className="mt-2 mb-0 max-w-prose">
+							From the CMS database, across all cuts. These totals do not follow the date range. Legacy
+							views use the existing media counter, not page views or playback starts.
+						</Text>
+						<dl className="m-0 mt-4 grid grid-cols-2 gap-x-8 sm:grid-cols-3">
+							<CountCard
+								label="Legacy views (all time)"
+								value={number.format(data.cms_totals.legacy_views)}
+								stacked
+							/>
+							<CountCard label="Current likes" value={number.format(data.cms_totals.likes)} stacked />
+							<CountCard
+								label="Current comments"
+								value={number.format(data.cms_totals.comments)}
+								stacked
+							/>
+						</dl>
+					</Card>
+				)}
 			</div>
 		</div>
 	);

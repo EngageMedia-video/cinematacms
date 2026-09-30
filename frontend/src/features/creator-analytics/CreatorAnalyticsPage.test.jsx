@@ -17,7 +17,9 @@ const data = {
 		average_watch_seconds: 150,
 		average_percent_watched: 40,
 		retention: Array(20).fill(40),
+		daily_watch_seconds: { '2026-09-28': 300 },
 	},
+	cms_totals: { legacy_views: 999, likes: 5, comments: 2 },
 	comparison: {
 		media_views: 6,
 		starts: 4,
@@ -60,6 +62,9 @@ const data = {
 			starts: 8,
 			finishes: 4,
 			completion_rate: 50,
+			legacy_views: 999,
+			measured_plays: 2,
+			watch_seconds: 300,
 		},
 	],
 	pagination: { number: 1, count: 1, previous: null, next: null },
@@ -177,10 +182,19 @@ describe('CreatorAnalyticsPage', () => {
 		);
 	});
 
-	it('shows the unavailable state without old media counts', () => {
+	it('keeps CMS metrics and owned media available without substituting Umami counts', () => {
 		render(<CreatorAnalyticsPage data={{ ...data, unavailable: true }} />);
 
-		expect(screen.getByRole('status')).toHaveTextContent('Analytics unavailable');
-		expect(screen.queryByText('My private film')).not.toBeInTheDocument();
+		expect(screen.getByRole('status')).toHaveTextContent('Umami event figures unavailable');
+		expect(screen.getByRole('heading', { name: 'Viewing time' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: 'Current media totals' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: 'Your media' })).toBeInTheDocument();
+		expect(screen.getAllByRole('link', { name: 'My private film' })[0]).toHaveAttribute(
+			'href',
+			data.rows[0].analytics_url
+		);
+		expect(screen.queryByRole('columnheader', { name: 'Views' })).not.toBeInTheDocument();
+		expect(screen.getByRole('columnheader', { name: 'Legacy views (all time)' })).toBeInTheDocument();
+		expect(screen.getByRole('group', { name: 'Daily watch time (seconds) chart' })).toBeInTheDocument();
 	});
 });

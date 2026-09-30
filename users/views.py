@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.mail import EmailMessage
+from django.core.paginator import Paginator
 from django.db.models import Case, Count, IntegerField, Max, Q, Value, When
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -27,14 +28,14 @@ from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
-from cms.creator_analytics import RANGES, AnalyticsUnavailable, creator_analytics
+from cms.creator_analytics import RANGES, AnalyticsUnavailable, cms_media_totals, creator_analytics
 from cms.custom_pagination import SmallPreviewPagination
 from cms.permissions import IsUserOrManager
 from cms.playback_analytics import playback_figures
 from cms.ui_variant import resolve_template
 from files.lists import video_countries
 from files.methods import is_curator, is_mediacms_editor, is_mediacms_manager
-from files.models import CommunityImpact, Media, PrivateJournalNote
+from files.models import Comment, CommunityImpact, Media, PrivateJournalNote
 from files.serializers import CommunityImpactSerializer
 
 from .forms import ChannelForm, UserForm
@@ -181,11 +182,20 @@ def view_analytics(request):
         except (AnalyticsUnavailable, KeyError, TypeError, AttributeError):
             pass
 
+    if context["unavailable"] and selected_media is None:
+        page = Paginator(Media.objects.filter(user=request.user).order_by("-add_date", "-pk"), 20).get_page(
+            request.GET.get("page")
+        )
+        context["media_page"] = page
+        context["rows"] = [
+            {"media": item, "views": None, "starts": None, "finishes": None, "completion_rate": None} for item in page
+        ]
     page = context.get("media_page")
     context["ANALYTICS_DATA"] = {
         "unavailable": context["unavailable"],
         "umami_unavailable": context["umami_unavailable"],
         "measurement": measured,
+        "cms_totals": cms_media_totals(request.user, media_uid),
         "comparison": context.get("comparison"),
         "updated_at": timezone.now().isoformat(),
         "days": days,
@@ -226,6 +236,8 @@ def view_analytics(request):
                 "finishes": row["finishes"],
                 "completion_rate": row["completion_rate"],
                 "watch_seconds": measured["per_media_watch_seconds"].get(str(row["media"].uid), 0),
+                "measured_plays": measured["per_media_measured_plays"].get(str(row["media"].uid), 0),
+                "legacy_views": row["media"].views,
             }
             for row in context.get("rows", [])
         ],
@@ -309,12 +321,23 @@ def export_analytics(request):
                 "start_date_utc",
                 "end_date_utc",
                 "umami_status",
+                "cms_measured_plays",
+                "legacy_views_all_time",
+                "current_likes",
+                "current_comments",
             )
         )
         if umami:
             rows = umami["rows"]
         else:
             rows = [{"media": item} for item in Media.objects.filter(user=request.user).order_by("-add_date", "-pk")]
+        comments = {
+            row["media_id"]: row["count"]
+            for row in Comment.objects.filter(media__user=request.user)
+            .order_by()
+            .values("media_id")
+            .annotate(count=Count("id"))
+        }
         for row in rows:
             item = row["media"]
             writer.writerow(
@@ -329,12 +352,17 @@ def export_analytics(request):
                     start,
                     today,
                     "available" if umami else "unavailable",
+                    measured["per_media_measured_plays"].get(str(item.uid), 0),
+                    item.views,
+                    item.likes,
+                    comments.get(item.pk, 0),
                 )
             )
     elif dataset == "summary":
         writer.writerow(
             ("media_id", "cut", "metric", "value", "definition", "start_date_utc", "end_date_utc", "source_status")
         )
+        current_totals = cms_media_totals(request.user, selected.uid)
         summary = (
             ("media_views", umami["media_views"] if umami else None, "Eligible media page and embed loads", "Umami"),
             ("playback_starts", umami["totals"]["playback_start"] if umami else None, "All playback starts", "Umami"),
@@ -370,18 +398,36 @@ def export_analytics(request):
                 "CMS",
             ),
             ("measured_plays", measured["measured_plays"], "Plays with a CMS snapshot", "CMS"),
+            (
+                "legacy_views_all_time",
+                current_totals["legacy_views"],
+                "Existing CMS view counter across all cuts, not date filtered",
+                "CMS current",
+            ),
+            (
+                "current_likes",
+                current_totals["likes"],
+                "Current CMS likes across all cuts, not date filtered",
+                "CMS current",
+            ),
+            (
+                "current_comments",
+                current_totals["comments"],
+                "Current comment count across all cuts, not date filtered",
+                "CMS current",
+            ),
         )
         for name, value, definition, source in summary:
             writer.writerow(
                 (
                     selected.uid,
-                    revision,
+                    "" if source == "CMS current" else revision,
                     name,
                     value if value is not None else "",
                     definition,
-                    start,
-                    today,
-                    "available" if source == "CMS" or umami else "unavailable",
+                    "" if source == "CMS current" else start,
+                    "" if source == "CMS current" else today,
+                    "available" if source.startswith("CMS") or umami else "unavailable",
                 )
             )
     elif dataset == "daily":

@@ -100,6 +100,7 @@ def playback_figures(owner, days, media_uid=None, revision=None, end_date=None):
         queryset = queryset.filter(revision=revision)
     daily = {str(first + timedelta(days=offset)): 0 for offset in range(days)}
     per_media = {}
+    per_media_plays = {}
     initiation = {"deliberate": 0, "autoplay": 0, "unknown": 0}
     retention = [0.0] * 20
     watched_fraction = 0.0
@@ -116,6 +117,7 @@ def playback_figures(owner, days, media_uid=None, revision=None, end_date=None):
         if row["started_at"] < cohort_start:
             continue
         measured_plays += 1
+        per_media_plays[media_id] = per_media_plays.get(media_id, 0) + 1
         cohort_ms += sum(millis for day, millis in row["watch_days"].items() if day in daily)
         initiation[row["initiation"]] += 1
         duration = row["duration_ms"]
@@ -137,6 +139,7 @@ def playback_figures(owner, days, media_uid=None, revision=None, end_date=None):
         "retention": [round(100 * value / measured_plays, 1) for value in retention] if measured_plays else [],
         "daily_watch_seconds": {day: round(millis / 1000) for day, millis in daily.items()},
         "per_media_watch_seconds": {uid: round(millis / 1000) for uid, millis in per_media.items()},
+        "per_media_measured_plays": per_media_plays,
     }
 
 

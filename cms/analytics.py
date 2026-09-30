@@ -64,7 +64,7 @@ def analytics_context(request):
     url = getattr(settings, "ANALYTICS_URL", "")
     website_id = getattr(settings, "ANALYTICS_WEBSITE_ID", "")
     parsed_url = urlsplit(url)
-    if not website_id or parsed_url.scheme != "https" or not parsed_url.hostname or parsed_url.username:
+    if url and (parsed_url.scheme != "https" or not parsed_url.hostname or parsed_url.username):
         return {}
 
     media = getattr(request, "analytics_media", None)

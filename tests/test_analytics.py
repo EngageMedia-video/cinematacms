@@ -18,12 +18,22 @@ from cms.analytics import allow_page_analytics, analytics_context
 from cms.creator_analytics import AnalyticsUnavailable
 from cms.playback_analytics import measurement_token, playback_figures
 from files.management.commands.purge_playback_summaries import twelve_month_cutoff
-from files.models import ExistingURL, Media, Page, PlaybackSummary
+from files.models import Comment, ExistingURL, Media, Page, PlaybackSummary
 from files.tests.helpers import create_test_media, create_test_user
 from files.views import _attach_hero_playback_to_first_featured_item
 
 
 class AnalyticsTemplateTests(TestCase):
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_cms_only_tracking_loads_without_umami_configuration(self):
+        media = create_test_media(create_test_user(), state="public")
+        response = self.client.get(media.get_absolute_url())
+
+        self.assertContains(response, "cinemata-analytics-config")
+        self.assertEqual(response.context["ANALYTICS"]["url"], "")
+        self.assertEqual(response.context["ANALYTICS"]["website_id"], "")
+        self.assertTrue(response.context["ANALYTICS"]["measurement_token"])
+
     def test_tracker_is_absent_by_default(self):
         response = self.client.get("/")
 
@@ -336,6 +346,69 @@ class MediaAnalyticsTests(TestCase):
     ANALYTICS_API_KEY="test-key",
 )
 class CreatorAnalyticsTests(TestCase):
+    @override_settings(ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="", ANALYTICS_API_KEY="")
+    def test_cms_only_dashboard_has_owned_media_and_separate_current_totals(self):
+        owner = create_test_user()
+        film = create_test_media(owner, state="private", views=999, likes=17)
+        create_test_media(owner, state="public", views=100, likes=3)
+        other = create_test_media(create_test_user(), views=9000, likes=50)
+        for media in (film, film, other):
+            Comment.objects.create(media=media, user=owner, text="Comment")
+        PlaybackSummary.objects.create(
+            id=uuid.uuid4(),
+            media=film,
+            revision=film.analytics_revision,
+            context="page",
+            initiation="deliberate",
+            started_at=timezone.now(),
+            duration_ms=100000,
+            coverage=[[0, 25000]],
+            watch_days={timezone.now().date().isoformat(): 25000},
+        )
+        self.client.force_login(owner)
+
+        with patch("cms.creator_analytics.umami_get") as collector:
+            data = self.client.get("/analytics?days=7").context["ANALYTICS_DATA"]
+            detail = self.client.get(f"/analytics?media={film.uid}").context["ANALYTICS_DATA"]
+            exported = self.client.get("/analytics/export?days=7")
+            summary = self.client.get(f"/analytics/export?media={film.uid}&dataset=summary")
+
+        collector.assert_not_called()
+        self.assertIsNone(data["media_views"])
+        self.assertIsNone(data["totals"])
+        self.assertEqual(data["cms_totals"], {"legacy_views": 1099, "likes": 20, "comments": 2})
+        self.assertEqual(detail["cms_totals"], {"legacy_views": 999, "likes": 17, "comments": 2})
+        self.assertEqual(len(data["rows"]), 2)
+        row = next(row for row in data["rows"] if row["analytics_url"].startswith(f"?media={film.uid}"))
+        self.assertEqual(row["watch_seconds"], 25)
+        self.assertEqual(row["measured_plays"], 1)
+        self.assertIsNone(row["views"])
+        self.assertEqual(data["pagination"]["count"], 1)
+        rows = list(csv.DictReader(StringIO(exported.content.decode())))
+        row = next(row for row in rows if row["media_id"] == str(film.uid))
+        self.assertEqual(row["legacy_views_all_time"], "999")
+        self.assertEqual(row["current_likes"], "17")
+        self.assertEqual(row["current_comments"], "2")
+        self.assertEqual(row["cms_measured_plays"], "1")
+        self.assertEqual(row["views"], "")
+        summary_rows = {row["metric"]: row for row in csv.DictReader(StringIO(summary.content.decode()))}
+        current = summary_rows["legacy_views_all_time"]
+        self.assertEqual(current["value"], "999")
+        self.assertEqual(current["start_date_utc"], "")
+        self.assertEqual(current["cut"], "")
+        self.assertEqual(current["source_status"], "available")
+
+    @override_settings(ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="", ANALYTICS_API_KEY="")
+    def test_cms_only_media_list_is_paginated(self):
+        owner = create_test_user()
+        for _ in range(21):
+            create_test_media(owner)
+        self.client.force_login(owner)
+        data = self.client.get("/analytics?page=2").context["ANALYTICS_DATA"]
+        self.assertEqual(len(data["rows"]), 1)
+        self.assertEqual(data["pagination"]["number"], 2)
+        self.assertEqual(data["pagination"]["count"], 2)
+
     def test_equal_previous_period_comparison_and_365_day_limit(self):
         owner = create_test_user()
         create_test_media(owner)
@@ -535,7 +608,8 @@ class CreatorAnalyticsTests(TestCase):
         response = self.client.get("/analytics")
 
         self.assertTrue(response.context["ANALYTICS_DATA"]["unavailable"])
-        self.assertNotContains(response, "999")
+        self.assertIsNone(response.context["ANALYTICS_DATA"]["media_views"])
+        self.assertIsNone(response.context["ANALYTICS_DATA"]["totals"])
 
     def test_api_failure_shows_unavailable_even_without_media(self):
         owner = create_test_user()

@@ -165,6 +165,17 @@ describe('Cinemata Umami privacy boundary', () => {
 		expect(fetch.mock.calls[0][1]).toMatchObject({ credentials: 'same-origin', keepalive: true });
 	});
 
+	it('collects CMS activity without loading or calling Umami when unconfigured', () => {
+		const fetch = vi.fn(() => Promise.resolve({ ok: true }));
+		vi.stubGlobal('fetch', fetch);
+		const track = loadTracker({ url: '', website_id: '', media_id: null, segment_grant: 'signed-grant' });
+		window.CinemataAnalytics.track('annotation_created');
+		window.CinemataAnalytics.pageview('future_feature');
+		expect(document.querySelector('script[data-website-id=""]')).toBeNull();
+		expect(track).not.toHaveBeenCalled();
+		expect(fetch).toHaveBeenCalledTimes(3);
+	});
+
 	it('honors a browser Do Not Track value of yes for CMS segment counts', () => {
 		const fetch = vi.fn(() => Promise.resolve({ ok: true }));
 		vi.stubGlobal('fetch', fetch);
@@ -178,7 +189,7 @@ describe('Cinemata Umami privacy boundary', () => {
 		}
 	});
 
-	it('records qualified elapsed viewing and coverage in cumulative snapshots', async () => {
+	it.each([true, false])('records qualified viewing with Umami configured: %s', async (configured) => {
 		const beacon = vi.fn();
 		Object.defineProperty(navigator, 'sendBeacon', { configurable: true, value: beacon });
 		Object.defineProperty(globalThis.crypto, 'randomUUID', {
@@ -188,7 +199,7 @@ describe('Cinemata Umami privacy boundary', () => {
 		const now = vi.spyOn(performance, 'now');
 		let clock = 0;
 		now.mockImplementation(() => clock);
-		loadTracker({ measurement_token: 'signed-grant' });
+		loadTracker({ measurement_token: 'signed-grant', ...(configured ? {} : { url: '', website_id: '' }) });
 		const listeners = {};
 		let currentTime = 0;
 		const player = {

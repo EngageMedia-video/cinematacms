@@ -65,6 +65,7 @@
     function send(name, data = {}, media = null) {
         if (!eventName.test(name)) return;
         sendSegment(name);
+        if (!config.url || !config.website_id) return;
         const track = () => {
             const mediaId = media?.id || config.media_id;
             window.umami.track((props) => ({
@@ -90,6 +91,7 @@
     function pageview(name) {
         if (config.media_id || !routeName.test(name)) return;
         sendSegment('page_view');
+        if (!config.url || !config.website_id) return;
         const track = () => window.umami.track({ website: config.website_id, url: `/page/${name}`, title: 'Page', referrer });
         if (!window.umami) {
             pending.push(track);
@@ -317,22 +319,24 @@
 
     sendSegment('page_view');
 
-    const script = document.createElement('script');
-    script.src = `${config.url}/script.js`;
-    script.async = true;
-    script.dataset.websiteId = config.website_id;
-    script.dataset.autoPageview = 'false';
-    script.dataset.doNotTrack = 'true';
-    script.dataset.excludeSearch = 'true';
-    script.dataset.excludeHash = 'true';
-    script.dataset.domains = window.location.hostname;
-    script.dataset.beforeSend = 'cinemataAnalyticsBeforeSend';
-    script.onload = () => {
-        window.umami.track({ website: config.website_id, url: config.path, title: config.media_id ? 'Media' : 'Page', referrer, tag, data: config.media_id ? { media_type: config.media_type, context: config.context, revision: config.revision } : undefined });
-        if (config.media_id) send('media_view', referrer ? { source_domain: new URL(referrer).hostname } : {});
-        while (pending.length) pending.shift()();
-    };
-    document.head.append(script);
+    if (config.url && config.website_id) {
+        const script = document.createElement('script');
+        script.src = `${config.url}/script.js`;
+        script.async = true;
+        script.dataset.websiteId = config.website_id;
+        script.dataset.autoPageview = 'false';
+        script.dataset.doNotTrack = 'true';
+        script.dataset.excludeSearch = 'true';
+        script.dataset.excludeHash = 'true';
+        script.dataset.domains = window.location.hostname;
+        script.dataset.beforeSend = 'cinemataAnalyticsBeforeSend';
+        script.onload = () => {
+            window.umami.track({ website: config.website_id, url: config.path, title: config.media_id ? 'Media' : 'Page', referrer, tag, data: config.media_id ? { media_type: config.media_type, context: config.context, revision: config.revision } : undefined });
+            if (config.media_id) send('media_view', referrer ? { source_domain: new URL(referrer).hostname } : {});
+            while (pending.length) pending.shift()();
+        };
+        document.head.append(script);
+    }
 
     document.addEventListener('click', (event) => {
         const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
