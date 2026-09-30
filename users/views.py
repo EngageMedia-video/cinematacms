@@ -144,6 +144,7 @@ def view_analytics(request):
     versions = []
     if selected_media:
         versions = [
+            {"value": "all", "label": "All versions"},
             {"value": str(selected_media.analytics_revision), "label": "Current version"},
             *[
                 {"value": old, "label": f"Previous version {index + 1}"}
@@ -154,7 +155,7 @@ def view_analytics(request):
         requested = request.GET.get("version", str(selected_media.analytics_revision))
         if requested not in {version["value"] for version in versions}:
             raise Http404
-        revision = requested
+        revision = None if requested == "all" else requested
     context = {"days": days, "ranges": RANGES, "unavailable": True}
     measured = playback_figures(
         request.user,
@@ -201,7 +202,7 @@ def view_analytics(request):
         "days": days,
         "ranges": RANGES,
         "versions": versions,
-        "version": revision,
+        "version": requested if selected_media else None,
         "selected_media": {
             "uid": str(selected_media.uid),
             "title": selected_media.title or "Untitled media",
@@ -275,9 +276,12 @@ def export_analytics(request):
     if dataset not in (("summary", "daily", "retention", "engagement") if selected else ("portfolio",)):
         raise Http404
     revision = request.GET.get("version", str(selected.analytics_revision) if selected else None)
-    if selected and revision not in {str(selected.analytics_revision), *selected.analytics_revisions, "unknown"}:
+    if selected and revision not in {"all", str(selected.analytics_revision), *selected.analytics_revisions, "unknown"}:
         raise Http404
-    measured = playback_figures(request.user, days, media_uid=selected.uid if selected else None, revision=revision)
+    revision_filter = None if revision == "all" else revision
+    measured = playback_figures(
+        request.user, days, media_uid=selected.uid if selected else None, revision=revision_filter
+    )
     umami = None
     if all(
         (settings.ANALYTICS_ENABLED, settings.ANALYTICS_URL, settings.ANALYTICS_WEBSITE_ID, settings.ANALYTICS_API_KEY)
@@ -288,7 +292,7 @@ def export_analytics(request):
                 days,
                 None,
                 media_uid=selected.uid if selected else None,
-                revision=revision,
+                revision=revision_filter,
                 all_rows=True,
             )
         except (AnalyticsUnavailable, KeyError, TypeError, AttributeError):

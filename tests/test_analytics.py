@@ -363,6 +363,72 @@ class MediaAnalyticsTests(TestCase):
     ANALYTICS_API_KEY="test-key",
 )
 class CreatorAnalyticsTests(TestCase):
+    def test_all_versions_combines_owned_film_measurements_and_events(self):
+        owner = create_test_user()
+        film = create_test_media(owner)
+        previous = str(uuid.uuid4())
+        film.analytics_revisions = [previous]
+        film.save(update_fields=["analytics_revisions"])
+        other = create_test_media(owner)
+        for media, revision, seconds in (
+            (film, film.analytics_revision, 10),
+            (film, previous, 20),
+            (other, other.analytics_revision, 90),
+        ):
+            PlaybackSummary.objects.create(
+                id=uuid.uuid4(),
+                media=media,
+                revision=revision,
+                context="page",
+                initiation="deliberate",
+                started_at=timezone.now(),
+                duration_ms=100000,
+                coverage=[[0, seconds * 1000]],
+                watch_days={timezone.now().date().isoformat(): seconds * 1000},
+            )
+        self.client.force_login(owner)
+
+        def reply(endpoint, params):
+            self.assertEqual(params["tag"], f"media:{film.uid}")
+            self.assertNotIn("epf0", params)
+            if endpoint == "metrics":
+                return [{"x": "media_view", "y": 6}, {"x": "playback_start", "y": 4}, {"x": "like", "y": 1}]
+            return []
+
+        with patch("cms.creator_analytics.umami_get", side_effect=reply):
+            response = self.client.get(f"/analytics?media={film.uid}&version=all&days=7")
+            self.assertEqual(response.status_code, 200)
+            data = response.context["ANALYTICS_DATA"]
+            self.assertEqual(data["version"], "all")
+            self.assertIn({"value": "all", "label": "All versions"}, data["versions"])
+            self.assertEqual(data["measurement"]["watch_seconds"], 30)
+            self.assertEqual(data["measurement"]["measured_plays"], 2)
+            self.assertEqual(data["measurement"]["average_watch_seconds"], 15)
+            self.assertEqual(data["media_views"], 6)
+            for dataset in ("summary", "daily", "retention", "engagement"):
+                with self.subTest(dataset=dataset):
+                    exported = self.client.get(
+                        f"/analytics/export?media={film.uid}&version=all&days=7&dataset={dataset}"
+                    )
+                    self.assertEqual(exported.status_code, 200)
+                    rows = list(csv.DictReader(StringIO(exported.content.decode())))
+                    self.assertTrue(rows)
+                    self.assertTrue(all(row["cut"] in ("all", "") for row in rows))
+                    if dataset == "summary":
+                        values = {row["metric"]: row["value"] for row in rows}
+                        self.assertEqual(values["watch_seconds"], "30")
+                        self.assertEqual(values["measured_plays"], "2")
+                        self.assertEqual(values["media_views"], "6")
+
+        with (
+            override_settings(ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="", ANALYTICS_API_KEY=""),
+            patch("cms.creator_analytics.umami_get") as collector,
+        ):
+            data = self.client.get(f"/analytics?media={film.uid}&version=all&days=7").context["ANALYTICS_DATA"]
+        collector.assert_not_called()
+        self.assertEqual(data["measurement"]["watch_seconds"], 30)
+        self.assertEqual(data["measurement"]["measured_plays"], 2)
+
     @override_settings(ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="", ANALYTICS_API_KEY="")
     def test_cms_only_dashboard_has_owned_media_and_separate_current_totals(self):
         owner = create_test_user()

@@ -79,6 +79,7 @@ describe('CreatorAnalyticsPage', () => {
 					...data,
 					selected_media: { ...data.rows[0], uid: 'film-id', media_type: 'video' },
 					versions: [
+						{ value: 'all', label: 'All versions' },
 						{ value: data.version, label: 'Current version' },
 						{ value: 'previous-id', label: 'Previous version 1' },
 						{ value: 'unknown', label: 'Version unknown' },
@@ -91,6 +92,7 @@ describe('CreatorAnalyticsPage', () => {
 		version.focus();
 		await user.keyboard('{ArrowDown}');
 		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Current version' })).toHaveFocus());
+		expect(screen.getByRole('menuitemradio', { name: 'All versions' })).toBeInTheDocument();
 		await user.keyboard('{ArrowDown}');
 		await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Previous version 1' })).toHaveFocus());
 		await user.keyboard('{Escape}');
