@@ -755,6 +755,7 @@ export function CreatorAnalyticsPage({ data }) {
 								appearance="compact"
 								className="min-w-60"
 								label="Film version"
+								aria-describedby={data.version === 'unknown' ? 'film-version-help' : undefined}
 								value={data.version}
 								options={data.versions}
 								onChange={(version) => {
@@ -764,6 +765,11 @@ export function CreatorAnalyticsPage({ data }) {
 						</div>
 					)}
 				</div>
+				{selectedMedia && data.version === 'unknown' && (
+					<Text as="p" id="film-version-help" variant="body-14" color="meta" className="m-0 mb-5 max-w-2xl">
+						We can’t tell which film version these views and plays belong to. All versions includes them.
+					</Text>
+				)}
 				{!data.unavailable && (
 					<>
 						<MeasuredViewing measurement={data.measurement} selectedMedia={selectedMedia} />

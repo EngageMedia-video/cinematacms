@@ -381,7 +381,7 @@ class CreatorAnalyticsTests(TestCase):
                 {"value": current, "label": "Version 3 - Current"},
                 {"value": second, "label": "Version 2"},
                 {"value": first, "label": "Version 1"},
-                {"value": "unknown", "label": "Version not recorded"},
+                {"value": "unknown", "label": "Data without a film version"},
             ],
         )
         film.analytics_revisions.append(current)

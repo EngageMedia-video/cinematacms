@@ -71,6 +71,26 @@ const data = {
 };
 
 describe('CreatorAnalyticsPage', () => {
+	it('explains data that cannot be matched to a film version when selected', () => {
+		const filmData = {
+			...data,
+			selected_media: { ...data.rows[0], uid: 'film-id', media_type: 'video' },
+			versions: [
+				{ value: 'all', label: 'All versions' },
+				{ value: 'unknown', label: 'Data without a film version' },
+			],
+			version: 'unknown',
+		};
+		const { rerender } = render(<CreatorAnalyticsPage data={filmData} />);
+		expect(
+			screen.getByRole('button', { name: 'Film version: Data without a film version' })
+		).toHaveAccessibleDescription(
+			'We can’t tell which film version these views and plays belong to. All versions includes them.'
+		);
+		rerender(<CreatorAnalyticsPage data={{ ...filmData, version: 'all' }} />);
+		expect(screen.queryByText(/We can’t tell which film version/)).not.toBeInTheDocument();
+	});
+
 	it('uses keyboard-accessible menus for film versions and CSV exports', async () => {
 		const user = userEvent.setup();
 		render(
@@ -82,7 +102,7 @@ describe('CreatorAnalyticsPage', () => {
 						{ value: 'all', label: 'All versions' },
 						{ value: data.version, label: 'Version 2 - Current' },
 						{ value: 'previous-id', label: 'Version 1' },
-						{ value: 'unknown', label: 'Version not recorded' },
+						{ value: 'unknown', label: 'Data without a film version' },
 					],
 				}}
 			/>
