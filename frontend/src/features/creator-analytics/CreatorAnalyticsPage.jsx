@@ -46,7 +46,7 @@ function CountCard({ label, value, stacked = false, comparison = null }) {
 		<div
 			className={`flex min-w-0 py-3 ${stacked || comparison ? 'flex-col gap-1' : 'items-baseline justify-between gap-4'}`}
 		>
-			<Text as="dt" variant="body-14" color="meta" className="m-0">
+			<Text as="dt" variant="body-14" color="body" className="m-0">
 				{label}
 			</Text>
 			<Text as="dd" variant={stacked ? 'h4-bold' : 'body-18-bold'} className="m-0 tabular-nums text-text-primary">
@@ -340,7 +340,7 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 					<Text as="h3" variant="body-14-bold" className="mt-8 mb-1 text-text-primary">
 						Coverage by film segment
 					</Text>
-					<Text as="p" variant="body-12" color="meta" className="m-0 max-w-prose">
+					<Text as="p" variant="body-12" color="body" className="m-0 max-w-prose">
 						Each point is the average share of that 5% part of the film actually watched per measured play.
 						Recent plays may still be in progress.
 					</Text>
@@ -353,7 +353,7 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 							/>
 						</div>
 					) : (
-						<Text as="p" variant="body-14" color="meta" className="mt-5 mb-0">
+						<Text as="p" variant="body-14" color="body" className="mt-5 mb-0">
 							No measured plays in this period.
 						</Text>
 					)}
@@ -766,7 +766,7 @@ export function CreatorAnalyticsPage({ data }) {
 					)}
 				</div>
 				{selectedMedia && data.version === 'unknown' && (
-					<Text as="p" id="film-version-help" variant="body-14" color="meta" className="m-0 mb-5 max-w-2xl">
+					<Text as="p" id="film-version-help" variant="body-14" color="body" className="m-0 mb-5 max-w-2xl">
 						We can’t tell which film version these views and plays belong to. All versions includes them.
 					</Text>
 				)}
