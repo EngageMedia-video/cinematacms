@@ -193,6 +193,12 @@ class FullStackContractTests(unittest.TestCase):
             for name in referenced
         }
         self.assertEqual(normalized, set(coverage["metric_schemas"]))
+        for metric in (
+            "cinematacms_encoding_input_duration_seconds",
+            "cinematacms_encoding_input_file_size_bytes",
+        ):
+            self.assertIn(metric, normalized)
+            self.assertIn(f'"{metric}"', (ROOT / "files/metrics.py").read_text())
         for stale_label in ("service_name", "job_kind", "reason=", "route,", "state)"):
             self.assertNotIn(stale_label, query_text)
 

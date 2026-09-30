@@ -860,7 +860,7 @@
       },
       "description": "cinematacms_media_encoding_profile_total application telemetry signal"
     },
-    "cinematacms_media_duration_seconds": {
+    "cinematacms_encoding_input_duration_seconds": {
       "type": "histogram",
       "labels": [
         "media_type"
@@ -868,7 +868,7 @@
       "dimension_registries": {
         "media_type": "media_types"
       },
-      "description": "cinematacms_media_duration_seconds application telemetry signal",
+      "description": "cinematacms_encoding_input_duration_seconds application telemetry signal",
       "buckets": [
         30,
         60,
@@ -881,7 +881,7 @@
         14400
       ]
     },
-    "cinematacms_media_file_size_bytes": {
+    "cinematacms_encoding_input_file_size_bytes": {
       "type": "histogram",
       "labels": [
         "media_type"
@@ -889,7 +889,7 @@
       "dimension_registries": {
         "media_type": "media_types"
       },
-      "description": "cinematacms_media_file_size_bytes application telemetry signal",
+      "description": "cinematacms_encoding_input_file_size_bytes application telemetry signal",
       "buckets": [
         1000000,
         10000000,
@@ -2014,8 +2014,8 @@
       ],
       "metric": [
         "cinematacms_media_encoding_profile_total",
-        "cinematacms_media_duration_seconds",
-        "cinematacms_media_file_size_bytes"
+        "cinematacms_encoding_input_duration_seconds",
+        "cinematacms_encoding_input_file_size_bytes"
       ],
       "dimensions": [
         "resolution",
