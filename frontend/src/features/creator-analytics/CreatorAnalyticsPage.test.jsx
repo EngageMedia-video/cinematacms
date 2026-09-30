@@ -176,7 +176,8 @@ describe('CreatorAnalyticsPage', () => {
 		expect(
 			within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('link', { name: 'Analytics' })
 		).toHaveAttribute('href', '/analytics?days=30');
-		expect(screen.getByRole('link', { name: 'Try again' })).toHaveAttribute(
+		expect(screen.queryByRole('link', { name: 'Try again' })).not.toBeInTheDocument();
+		expect(screen.getByRole('link', { name: 'Refresh' })).toHaveAttribute(
 			'href',
 			`?days=30&media=${selected_media.uid}&version=${data.version}`
 		);
@@ -185,7 +186,9 @@ describe('CreatorAnalyticsPage', () => {
 	it('keeps CMS metrics and owned media available without substituting Umami counts', () => {
 		render(<CreatorAnalyticsPage data={{ ...data, unavailable: true }} />);
 
-		expect(screen.getByRole('status')).toHaveTextContent('Umami event figures unavailable');
+		expect(screen.queryByRole('status')).not.toBeInTheDocument();
+		expect(screen.queryByText(/Umami event figures unavailable/)).not.toBeInTheDocument();
+		expect(screen.queryByRole('link', { name: 'Try again' })).not.toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: 'Viewing time' })).toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: 'Current media totals' })).toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: 'Your media' })).toBeInTheDocument();

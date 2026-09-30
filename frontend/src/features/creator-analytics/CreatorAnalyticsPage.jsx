@@ -677,20 +677,7 @@ export function CreatorAnalyticsPage({ data }) {
 						</label>
 					)}
 				</div>
-				{data.unavailable ? (
-					<Card as="section" role="status" className="p-5 sm:p-8">
-						<Text as="h2" variant="h6-bold" className="m-0 text-text-primary">
-							Umami event figures unavailable
-						</Text>
-						<Text as="p" variant="body-14" color="meta" className="mt-3 mb-4 max-w-prose">
-							CMS viewing metrics and current media totals remain available. Connect Umami for page views,
-							playback events, and engagement trends.
-						</Text>
-						<Link href={rangeUrl(data.days)} variant="secondary" className={focus}>
-							Try again
-						</Link>
-					</Card>
-				) : (
+				{!data.unavailable && (
 					<>
 						<MeasuredViewing measurement={data.measurement} selectedMedia={selectedMedia} />
 						<Card
