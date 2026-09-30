@@ -29,10 +29,10 @@ const shortDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'sho
 const focus = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus';
 const metrics = [
 	{ key: 'media_views', label: 'Media views', color: 'text-text-secondary' },
-	{ key: 'playback_start', label: 'Playback starts', color: 'text-bg-secondary' },
-	{ key: 'finish', label: 'Reached end', color: 'text-bg-success' },
+	{ key: 'playback_start', label: 'Playback starts', color: 'text-text-link' },
+	{ key: 'finish', label: 'Reached end', color: 'text-text-success' },
 ];
-const watchMetrics = [{ key: 'watch_seconds', label: 'Watch time (seconds)', color: 'text-bg-secondary' }];
+const watchMetrics = [{ key: 'watch_seconds', label: 'Watch time (seconds)', color: 'text-text-link' }];
 
 function comparisonLabel(current, previous) {
 	if (typeof previous !== 'number') return null;
@@ -78,7 +78,7 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 					x: 'date',
 					y: metric.key,
 					stroke: 'currentColor',
-					strokeWidth: 2,
+					strokeWidth: 3,
 				}),
 			],
 			scales: {
@@ -87,17 +87,17 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 					axis: {
 						line: false,
 						ticks: { values: tickDates, size: 0, format: (date) => shortDate.format(new Date(date)) },
-						tickLabels: { fontSize: 11, thin: true },
+						tickLabels: { fontSize: 14, opacity: 1, thin: true },
 					},
 				},
 				y: {
 					scale: scaleLinear().domain([0, maximum]),
 					nice: true,
-					grid: { strokeOpacity: 0.1 },
+					grid: { strokeOpacity: 0.5 },
 					axis: {
 						line: false,
 						ticks: { count: Math.min(4, maximum), size: 0, format: (value) => number.format(value) },
-						tickLabels: { fontSize: 12 },
+						tickLabels: { fontSize: 14, opacity: 1 },
 					},
 				},
 			},
@@ -131,7 +131,7 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 					<div
 						role="group"
 						aria-label={`Daily ${metric.label.toLowerCase()} chart`}
-						className={`mt-5 min-w-0 ${metric.color}`}
+						className={`mt-5 min-w-0 ${metric.color} [&_svg_text]:fill-text-primary [&_svg_line]:stroke-border-default`}
 					>
 						<Chart
 							definition={definition}
@@ -287,7 +287,7 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 		value,
 	}));
 	const definition = defineChart({
-		marks: [lineY(retention, { x: 'segment', y: 'value', stroke: 'currentColor', strokeWidth: 2 })],
+		marks: [lineY(retention, { x: 'segment', y: 'value', stroke: 'currentColor', strokeWidth: 3 })],
 		scales: {
 			x: {
 				scale: () => scalePoint().padding(0.2),
@@ -300,13 +300,17 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 						size: 0,
 						format: (segment) => (segment.startsWith('95') ? '100%' : `${segment.split('–')[0]}%`),
 					},
-					tickLabels: { fontSize: 10 },
+					tickLabels: { fontSize: 14, opacity: 1, thin: true },
 				},
 			},
 			y: {
 				scale: scaleLinear().domain([0, 100]),
-				axis: { line: false, ticks: { size: 0, format: (value) => `${value}%` } },
-				grid: { strokeOpacity: 0.1 },
+				axis: {
+					line: false,
+					ticks: { size: 0, format: (value) => `${value}%` },
+					tickLabels: { fontSize: 14, opacity: 1 },
+				},
+				grid: { strokeOpacity: 0.5 },
 			},
 		},
 		tooltip: { use: tooltip },
@@ -345,7 +349,11 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 						Recent plays may still be in progress.
 					</Text>
 					{hasPlays ? (
-						<div className="mt-4 text-bg-secondary" role="group" aria-label="Film segment coverage chart">
+						<div
+							className="mt-4 text-text-link [&_svg_text]:fill-text-primary [&_svg_line]:stroke-border-default"
+							role="group"
+							aria-label="Film segment coverage chart"
+						>
 							<Chart
 								definition={definition}
 								height={220}

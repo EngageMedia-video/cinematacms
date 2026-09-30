@@ -395,6 +395,14 @@ Key characteristics after migration:
 
 ## Usage by feature
 
+### creator-analytics
+
+Chart labels use `fill-text-primary` and grid lines use `stroke-border-default`.
+Series inherit `currentColor`: `text-text-secondary` for media views,
+`text-text-link` for playback starts, watch time and segment coverage, and
+`text-text-success` for reached-end events. Use foreground tokens for chart
+strokes so both themes retain readable contrast.
+
 ### home
 
 | File | Color class / token | Element |
