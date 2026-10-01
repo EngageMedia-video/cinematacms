@@ -852,7 +852,7 @@ export function CreatorAnalyticsPage({ data }) {
 							</Text>
 							<Dropdown
 								appearance="compact"
-								className="min-w-60 [&>div>button]:min-h-11"
+								className="[&>div>button]:min-h-11"
 								label="Film version"
 								aria-describedby={data.version === 'unknown' ? 'film-version-help' : undefined}
 								value={data.version}
