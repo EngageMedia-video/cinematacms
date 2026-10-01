@@ -523,6 +523,32 @@ class CreatorAnalyticsTests(TestCase):
         self.assertEqual(data["pagination"]["number"], 2)
         self.assertEqual(data["pagination"]["count"], 2)
 
+    @override_settings(ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="", ANALYTICS_API_KEY="")
+    def test_portfolio_export_ignores_film_version(self):
+        owner = create_test_user()
+        film = create_test_media(owner)
+        for revision in (film.analytics_revision, uuid.uuid4()):
+            PlaybackSummary.objects.create(
+                id=uuid.uuid4(),
+                media=film,
+                revision=revision,
+                context="page",
+                initiation="deliberate",
+                started_at=timezone.now(),
+                duration_ms=100000,
+                coverage=[[0, 2000]],
+                watch_days={timezone.now().date().isoformat(): 2000},
+            )
+        self.client.force_login(owner)
+        for version in ("not-a-uuid", str(film.analytics_revision), "unknown", "all"):
+            with self.subTest(version=version):
+                response = self.client.get("/analytics/export", {"days": 7, "version": version})
+                self.assertEqual(response.status_code, 200)
+                rows = list(csv.DictReader(StringIO(response.content.decode())))
+                self.assertEqual(len(rows), 1)
+                self.assertEqual(rows[0]["cms_measured_plays"], "2")
+                self.assertEqual(rows[0]["watch_seconds"], "4")
+
     def test_local_report_boundaries_and_equal_elapsed_comparison_across_dst(self):
         owner = create_test_user()
         film = create_test_media(owner)

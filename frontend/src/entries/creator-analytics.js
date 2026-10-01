@@ -8,8 +8,8 @@ function CreatorAnalyticsEntry() {
 }
 
 const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-if (browserTimezone && data.timezone !== browserTimezone) {
-	const url = new URL(window.location.href);
+const url = new URL(window.location.href);
+if (browserTimezone && data.timezone !== browserTimezone && url.searchParams.get('tz') !== browserTimezone) {
 	url.searchParams.set('tz', browserTimezone);
 	window.location.replace(url.href);
 } else {

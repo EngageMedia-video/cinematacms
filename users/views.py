@@ -296,7 +296,7 @@ def export_analytics(request):
     dataset = request.GET.get("dataset", "portfolio")
     if dataset not in (("summary", "daily", "retention", "engagement") if selected else ("portfolio",)):
         raise Http404
-    revision = request.GET.get("version", str(selected.analytics_revision) if selected else None)
+    revision = request.GET.get("version", str(selected.analytics_revision)) if selected else None
     if selected and revision not in {"all", str(selected.analytics_revision), *selected.analytics_revisions, "unknown"}:
         raise Http404
     revision_filter = None if revision == "all" else revision
