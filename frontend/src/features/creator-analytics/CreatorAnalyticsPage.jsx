@@ -835,14 +835,20 @@ export function CreatorAnalyticsPage({ data }) {
 								tabMode="wrap"
 								className="max-w-full"
 								listClassName="rounded-ds-8"
-								triggerClassName="px-2 py-3 no-underline sm:px-4"
+								triggerClassName="px-2 py-3 no-underline aria-[current=page]:bg-brand-primary sm:px-4"
 							>
 								{data.ranges.map((range) => (
 									<TabContent
 										key={range}
 										value={String(range)}
 										title={
-											<Text as="span" variant="body-12-bold" className="text-text-on-chrome">
+											<Text
+												as="span"
+												variant="body-12-bold"
+												className={
+													range === data.days ? 'text-text-on-accent' : 'text-text-on-chrome'
+												}
+											>
 												{range} days
 											</Text>
 										}
@@ -914,7 +920,7 @@ export function CreatorAnalyticsPage({ data }) {
 									</Text>
 									<dl
 										aria-label="Summary"
-										className="m-0 mt-3 grid grid-cols-2 gap-x-6 gap-y-2 lg:grid-cols-4"
+										className={`m-0 mt-3 grid grid-cols-2 gap-x-6 gap-y-2 lg:grid-cols-4 ${selectedMedia && canMeasureViewing ? 'xl:grid-cols-5' : ''}`}
 									>
 										<Statistic
 											label="Media views"
