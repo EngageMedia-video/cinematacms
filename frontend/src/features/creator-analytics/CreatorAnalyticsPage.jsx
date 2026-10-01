@@ -1041,44 +1041,42 @@ export function CreatorAnalyticsPage({ data }) {
 						</TabContent>
 					)}
 				</TabView>
-				{data.cms_totals && (
-					<Disclosure
-						title="Current media totals"
-						className="mt-6 px-1"
-						open={!canMeasureViewing && data.unavailable}
-					>
-						<Text as="p" variant="body-12" color="meta" className="mt-2 mb-0 max-w-prose">
-							From the CMS database, across all versions. These totals do not follow the date range.
-							Legacy views use the existing media counter, not page views or playback starts.
+				<Card as="footer" aria-label="Report information" className="mt-6 p-5 sm:p-8">
+					{data.cms_totals && (
+						<Disclosure title="Current media totals" open={!canMeasureViewing && data.unavailable}>
+							<Text as="p" variant="body-14" className="mt-2 mb-0 max-w-prose">
+								From the CMS database, across all versions. These totals do not follow the date range.
+								Legacy views use the existing media counter, not page views or playback starts.
+							</Text>
+							<dl className="m-0 mt-4 grid grid-cols-2 gap-x-8 sm:grid-cols-3">
+								<Statistic
+									label="Legacy views (all time)"
+									value={number.format(data.cms_totals.legacy_views)}
+								/>
+								<Statistic label="Current likes" value={number.format(data.cms_totals.likes)} />
+								<Statistic label="Current comments" value={number.format(data.cms_totals.comments)} />
+							</dl>
+						</Disclosure>
+					)}
+					<Disclosure title="About these figures" className="mt-2">
+						<Text as="p" variant="body-14" className="m-0 max-w-prose">
+							Only you can see these reports. They cover media you currently own in every visibility
+							state. Dates use UTC and recorded activity is retained for up to 12 months. A zero count may
+							mean tracking had not started or no eligible activity was recorded.
 						</Text>
-						<dl className="m-0 mt-4 grid grid-cols-2 gap-x-8 sm:grid-cols-3">
-							<Statistic
-								label="Legacy views (all time)"
-								value={number.format(data.cms_totals.legacy_views)}
-							/>
-							<Statistic label="Current likes" value={number.format(data.cms_totals.likes)} />
-							<Statistic label="Current comments" value={number.format(data.cms_totals.comments)} />
-						</dl>
 					</Disclosure>
-				)}
-				<Disclosure title="About these figures" className="mt-2 px-1">
-					<Text as="p" variant="body-14" className="m-0 max-w-prose">
-						Only you can see these reports. They cover media you currently own in every visibility state.
-						Dates use UTC and recorded activity is retained for up to 12 months. A zero count may mean
-						tracking had not started or no eligible activity was recorded.
-					</Text>
-				</Disclosure>
-				<footer className="mt-6">
-					<Text as="span" variant="body-12" color="meta">
-						Updated{' '}
-						{new Date(data.updated_at).toLocaleString('en-GB', {
-							timeZone: 'UTC',
-							dateStyle: 'medium',
-							timeStyle: 'short',
-						})}{' '}
-						UTC
-					</Text>
-				</footer>
+					<div className="mt-4">
+						<Text as="span" variant="body-12" color="meta">
+							Updated{' '}
+							{new Date(data.updated_at).toLocaleString('en-GB', {
+								timeZone: 'UTC',
+								dateStyle: 'medium',
+								timeStyle: 'short',
+							})}{' '}
+							UTC
+						</Text>
+					</div>
+				</Card>
 			</div>
 		</div>
 	);
