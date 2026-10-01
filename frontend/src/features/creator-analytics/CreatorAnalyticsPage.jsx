@@ -94,7 +94,12 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 					scale: () => scalePoint().padding(0.2),
 					axis: {
 						line: false,
-						ticks: { values: tickDates, size: 0, format: (date) => shortDate.format(new Date(date)) },
+						ticks: {
+							values: tickDates,
+							size: 0,
+							padding: 12,
+							format: (date) => shortDate.format(new Date(date)),
+						},
 						tickLabels: { fontSize: 14, opacity: 1, thin: true },
 					},
 				},
@@ -363,6 +368,7 @@ function FilmCoverage({ measurement }) {
 							.filter((_, index) => [0, 5, 10, 15, 19].includes(index))
 							.map((part) => part.segment),
 						size: 0,
+						padding: 12,
 						format: (segment) => (segment.startsWith('95') ? '100%' : `${segment.split('–')[0]}%`),
 					},
 					tickLabels: { fontSize: 14, opacity: 1, thin: true },
@@ -758,6 +764,7 @@ export function CreatorAnalyticsPage({ data }) {
 										action="text-link"
 										variant="body-12-medium"
 										href={selectedMedia.url}
+										className="inline-flex min-h-11 items-center underline underline-offset-2"
 									>
 										Open media
 									</Text>
@@ -785,6 +792,7 @@ export function CreatorAnalyticsPage({ data }) {
 							<Dropdown
 								appearance="compact"
 								className="[&>div>button]:min-h-11"
+								menuClassName="right-0 left-auto w-max max-w-[calc(100vw-2rem)]"
 								placeholder="Export CSV"
 								value={null}
 								options={[
@@ -846,13 +854,14 @@ export function CreatorAnalyticsPage({ data }) {
 					</div>
 
 					{selectedMedia && data.versions.length > 1 && (
-						<div className="flex max-w-full flex-wrap items-center gap-2">
+						<div className="flex w-full max-w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
 							<Text as="span" variant="body-12" color="meta">
 								Film version
 							</Text>
 							<Dropdown
 								appearance="compact"
 								className="[&>div>button]:min-h-11"
+								menuClassName="right-0 left-auto w-max max-w-[calc(100vw-2rem)]"
 								label="Film version"
 								aria-describedby={data.version === 'unknown' ? 'film-version-help' : undefined}
 								value={data.version}

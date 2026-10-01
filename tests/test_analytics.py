@@ -651,7 +651,7 @@ class CreatorAnalyticsTests(TestCase):
         self.assertNotContains(response, "test-key")
         self.assertEqual(response.context["media_views"], 3)
         self.assertEqual(response.context["completion_rate"], 50)
-        self.assertIn(("Annotation Created", 4), response.context["ANALYTICS_DATA"]["engagement"])
+        self.assertIn(("Annotation created", 4), response.context["ANALYTICS_DATA"]["engagement"])
 
     def test_media_detail_scopes_all_queries(self):
         owner = create_test_user()
@@ -674,6 +674,8 @@ class CreatorAnalyticsTests(TestCase):
                     {"x": "progress_75", "y": 5},
                     {"x": "finish", "y": 4},
                     {"x": "like", "y": 3},
+                    {"x": "comment_success", "y": 2},
+                    {"x": "download_click", "y": 1},
                 ]
             if endpoint == "events/series":
                 return [
@@ -703,7 +705,9 @@ class CreatorAnalyticsTests(TestCase):
         self.assertNotIn(("Progress 25", 7), data["engagement"])
         self.assertEqual(data["completion_rate"], 50)
         self.assertEqual(data["daily"][-1]["finish"], 4)
-        self.assertIn(("Like", 3), data["engagement"])
+        self.assertIn(("Likes added", 3), data["engagement"])
+        self.assertIn(("Comments posted", 2), data["engagement"])
+        self.assertIn(("Download clicks", 1), data["engagement"])
         self.assertEqual(data["rows"], [])
         self.assertNotContains(response, "cinemata-analytics-config")
 

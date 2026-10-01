@@ -14,17 +14,17 @@ from files.models import Comment, Media
 
 logger = logging.getLogger(__name__)
 
-ENGAGEMENT_EVENTS = (
-    "like",
-    "unlike",
-    "playlist_add",
-    "playlist_remove",
-    "link_copy",
-    "embed_copy",
-    "download_click",
-    "comment_success",
-    "outbound_click",
-)
+ENGAGEMENT_EVENTS = {
+    "like": "Likes added",
+    "unlike": "Likes removed",
+    "playlist_add": "Added to playlists",
+    "playlist_remove": "Removed from playlists",
+    "link_copy": "Links copied",
+    "embed_copy": "Embed codes copied",
+    "download_click": "Download clicks",
+    "comment_success": "Comments posted",
+    "outbound_click": "External link clicks",
+}
 NON_ENGAGEMENT_EVENTS = frozenset(
     (
         "play",
@@ -260,8 +260,8 @@ def creator_analytics(owner, days, page, media_uid=None, revision=None, all_rows
         for date in dates
     ]
     starts = totals["playback_start"]
-    engagement = [(name.replace("_", " ").title(), totals[name]) for name in ENGAGEMENT_EVENTS]
-    engagement.extend((name.replace("_", " ").title(), count) for name, count in sorted(new_engagement.items()))
+    engagement = [(label, totals[name]) for name, label in ENGAGEMENT_EVENTS.items()]
+    engagement.extend((name.replace("_", " ").capitalize(), count) for name, count in sorted(new_engagement.items()))
     detail = {}
     if media_uid and media:
         params = {**common, "tag": f"media:{media_uid}"}

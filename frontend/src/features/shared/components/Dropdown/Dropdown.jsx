@@ -96,6 +96,7 @@ function clampIndex(index, total) {
 export function Dropdown({
 	appearance = 'field',
 	className = '',
+	menuClassName = '',
 	defaultValue,
 	disabled = false,
 	helperText = '',
@@ -439,7 +440,8 @@ export function Dropdown({
 					aria-labelledby={label ? buttonId : undefined}
 					className={cn(
 						'thin-scrollbar absolute left-0 top-full z-20 mt-2 max-h-[calc(var(--size-96)*2+var(--size-48))] min-w-full list-none overflow-y-auto overscroll-contain rounded-ds-4 border p-0',
-						MENU_VARIANT_CLASSES[variant]
+						MENU_VARIANT_CLASSES[variant],
+						menuClassName
 					)}
 				>
 					{normalizedOptions.map((option, index) => {
