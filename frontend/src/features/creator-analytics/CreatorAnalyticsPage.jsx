@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
 	Badge,
-	Breadcrumbs,
 	DataTable,
 	LineChart,
 	Pagination,
@@ -490,15 +489,9 @@ export function CreatorAnalyticsPage({ data }) {
 			`${window.location.pathname}${window.location.search}${value === 'overview' ? '' : `#${value}`}`
 		);
 	};
-	const breadcrumbs = [
-		{ label: 'Home', href: '/' },
-		{ label: 'Analytics', href: selectedMedia ? `/analytics?days=${data.days}${timezoneQuery}#media` : null },
-		...(selectedMedia ? [{ label: selectedMedia.title }] : []),
-	];
 	return (
 		<div className="min-h-screen bg-bg-page px-4 py-6 text-text-primary sm:px-8 sm:py-8">
 			<div className="mx-auto max-w-7xl">
-				<Breadcrumbs items={breadcrumbs} className="mb-2" />
 				<header className="mb-6 flex flex-wrap items-center justify-between gap-4">
 					<div className="flex w-full min-w-0 items-center gap-4 sm:gap-6 lg:w-auto lg:flex-1">
 						{selectedMedia && (
