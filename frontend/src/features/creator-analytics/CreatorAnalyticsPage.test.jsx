@@ -113,7 +113,8 @@ describe('CreatorAnalyticsPage', () => {
 		expect(screen.getByText('Updated 3 minutes ago')).toBeVisible();
 	});
 
-	it('explains excluded older watch time and does not show an invented average', () => {
+	it('explains excluded older watch time in metric help and viewing details', async () => {
+		const user = userEvent.setup();
 		render(
 			<CreatorAnalyticsPage
 				data={{
@@ -128,10 +129,17 @@ describe('CreatorAnalyticsPage', () => {
 				}}
 			/>
 		);
-		expect(screen.getByText(/Watch time is incomplete/)).toBeVisible();
+		expect(screen.getByText(/Watch time is incomplete/)).not.toBeVisible();
 		expect(screen.getByRole('heading', { name: 'No local-day watch time yet' })).toBeVisible();
 		const label = screen.getByRole('button', { name: 'About average watch time' });
 		expect(label.closest('dt').nextElementSibling).toHaveTextContent('—');
+		await user.click(label);
+		expect(screen.getByRole('tooltip')).toHaveTextContent(
+			'Average watch time is unavailable because some older activity is excluded from this report.'
+		);
+		await user.keyboard('{Escape}');
+		await user.click(screen.getByText('How viewing is measured'));
+		expect(screen.getByText(/Watch time is incomplete/)).toBeVisible();
 	});
 
 	it('offers segment figures only when there is coverage data', async () => {

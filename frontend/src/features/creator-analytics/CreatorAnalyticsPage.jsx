@@ -256,7 +256,11 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 							? watchTimeLabel(measurement.average_watch_seconds)
 							: '—'
 					}
-					description="Average active watch time per measured play. Replays count."
+					description={
+						measurement.watch_time_incomplete
+							? 'Average watch time is unavailable because some older activity is excluded from this report.'
+							: 'Average active watch time per measured play. Replays count.'
+					}
 				/>
 				<Statistic
 					label="Average film coverage"
@@ -270,6 +274,11 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 					selected dates. Rewatching adds watch time but does not increase film coverage. Recent plays may
 					still be in progress.
 				</Text>
+				{measurement.watch_time_incomplete && (
+					<Text as="p" className="mt-3 mb-0 max-w-prose">
+						Watch time is incomplete for older activity. Average watch time is unavailable.
+					</Text>
+				)}
 			</Disclosure>
 		</Card>
 	);
@@ -649,11 +658,6 @@ export function CreatorAnalyticsPage({ data }) {
 				{selectedMedia && data.version === 'unknown' && (
 					<Text as="p" id="film-version-help" variant="body-14" color="body" className="m-0 mb-5 max-w-2xl">
 						We can’t tell which film version these views and plays belong to. All versions includes them.
-					</Text>
-				)}
-				{data.measurement.watch_time_incomplete && (
-					<Text as="p" variant="body-14" className="mb-5 max-w-prose">
-						Watch time is incomplete for older activity. Average watch time is unavailable.
 					</Text>
 				)}
 
