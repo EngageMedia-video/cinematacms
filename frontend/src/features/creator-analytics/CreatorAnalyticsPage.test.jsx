@@ -268,7 +268,7 @@ describe('CreatorAnalyticsPage', () => {
 		expect(screen.getByText('New Feature Action')).toBeVisible();
 	});
 
-	it('shows one media and keeps its selection when changing the range or retrying', async () => {
+	it('shows one media and keeps its selection when changing the range', async () => {
 		const user = userEvent.setup();
 		const selected_media = {
 			...data.rows[0],
@@ -314,10 +314,7 @@ describe('CreatorAnalyticsPage', () => {
 			'/analytics?days=30&tz=UTC#media'
 		);
 		expect(screen.queryByRole('link', { name: 'Try again' })).not.toBeInTheDocument();
-		expect(screen.getByRole('link', { name: 'Refresh figures' })).toHaveAttribute(
-			'href',
-			`?days=30&media=${selected_media.uid}&version=${data.version}&tz=UTC#details`
-		);
+		expect(screen.queryByRole('link', { name: 'Refresh figures' })).not.toBeInTheDocument();
 	});
 
 	it('keeps CMS metrics and owned media available without substituting Umami counts', async () => {
@@ -356,10 +353,7 @@ describe('CreatorAnalyticsPage', () => {
 		await user.keyboard('{End}');
 		expect(screen.getByRole('tabpanel', { name: 'Engagement' })).toBeVisible();
 		expect(screen.getByText('Like')).toBeVisible();
-		expect(screen.getByRole('link', { name: 'Refresh figures' })).toHaveAttribute(
-			'href',
-			'?days=30&tz=UTC#engagement'
-		);
+		expect(screen.queryByRole('link', { name: 'Refresh figures' })).not.toBeInTheDocument();
 	});
 
 	it('opens bookmarked film details and falls back when a section is unavailable', () => {

@@ -56,6 +56,7 @@ const meta = {
 			options: [
 				'primary',
 				'secondary',
+				'action-inverse',
 				'tertiary',
 				'special',
 				'primary-outline',
@@ -133,6 +134,13 @@ export const Secondary = {
 	args: {
 		children: 'LEARN MORE',
 		variant: 'secondary',
+	},
+};
+
+export const ActionInverse = {
+	args: {
+		children: 'EXPORT CSV',
+		variant: 'action-inverse',
 	},
 };
 

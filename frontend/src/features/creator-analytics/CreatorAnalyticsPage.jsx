@@ -555,15 +555,6 @@ export function CreatorAnalyticsPage({ data }) {
 						</div>
 					</div>
 					<div className="flex w-full shrink-0 items-center justify-end gap-4 sm:w-auto">
-						<Text
-							as={Link}
-							action="text-link"
-							variant="body-14-medium"
-							href={rangeUrl(data.days)}
-							className="inline-flex min-h-11 items-center"
-						>
-							Refresh figures
-						</Text>
 						{selectedMedia ? (
 							<Dropdown
 								appearance="compact"
@@ -582,15 +573,15 @@ export function CreatorAnalyticsPage({ data }) {
 								}}
 							/>
 						) : (
-							<Text
-								as={Link}
-								action="text-link"
-								variant="body-14-medium"
-								className="inline-flex min-h-11 items-center underline underline-offset-2"
+							<Link
+								variant="action-inverse"
+								className="min-h-11 uppercase"
 								href={`/analytics/export?days=${data.days}${timezoneQuery}&dataset=portfolio`}
 							>
-								Export CSV
-							</Text>
+								<Text as="span" variant="body-12-medium" className="text-inherit">
+									Export CSV
+								</Text>
+							</Link>
 						)}
 					</div>
 				</header>
