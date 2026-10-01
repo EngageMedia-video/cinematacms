@@ -127,8 +127,8 @@ export function Button({
 	const layoutClasses = isCompactIconLayout
 		? 'gap-0 p-0'
 		: cn(
-				hasLabel ? getSizeClasses(size) : getIconOnlySizeClasses(size),
-				hasLabel ? 'gap-space-xs rounded-ds-4' : 'gap-0'
+				hasLabel ? 'gap-space-xs rounded-ds-4' : 'gap-0',
+				hasLabel ? getSizeClasses(size) : getIconOnlySizeClasses(size)
 			);
 
 	return (

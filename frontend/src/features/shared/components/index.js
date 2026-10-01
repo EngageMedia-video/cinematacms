@@ -33,3 +33,7 @@ export { Tooltip } from './Tooltip';
 export { Text } from './Text';
 export { UserRoleBadge } from './UserRoleBadge';
 export { UploadMediaItem } from './UploadMediaItem';
+export { Breadcrumbs } from './Breadcrumbs/Breadcrumbs';
+export { DataTable } from './DataTable/DataTable';
+export { LineChart } from './LineChart/LineChart';
+export { Pagination } from './Pagination/Pagination';

@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { defineChart, lineY } from '@tanstack/charts';
-import { Chart } from '@tanstack/charts/react/tooltip';
-import { scaleLinear } from '@tanstack/charts/scales/linear';
-import { scalePoint } from '@tanstack/charts/scales/point';
-import { tooltip } from '@tanstack/charts/tooltip';
+import { useEffect, useState } from 'react';
 import {
 	Badge,
+	Breadcrumbs,
+	DataTable,
+	LineChart,
+	Pagination,
 	Button,
 	Card,
 	Disclosure,
@@ -32,13 +31,12 @@ const dateLabel = new Intl.DateTimeFormat('en-GB', {
 	timeZone: 'UTC',
 });
 const shortDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-const focus = 'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus';
 const metrics = [
-	{ key: 'media_views', label: 'Media views', color: 'text-text-secondary' },
-	{ key: 'playback_start', label: 'Playback starts', color: 'text-text-link' },
-	{ key: 'finish', label: 'Reached end', color: 'text-text-success' },
+	{ key: 'media_views', label: 'Media views', color: 'secondary' },
+	{ key: 'playback_start', label: 'Playback starts', color: 'primary' },
+	{ key: 'finish', label: 'Reached end', color: 'success' },
 ];
-const watchMetrics = [{ key: 'watch_seconds', label: 'Watch time', color: 'text-text-link' }];
+const watchMetrics = [{ key: 'watch_seconds', label: 'Watch time', color: 'primary' }];
 const activityMetrics = [...watchMetrics, ...metrics];
 const contextLabels = { page: 'Media page', embed: 'Embedded player', hero: 'Homepage player' };
 const initiationLabels = {
@@ -79,59 +77,10 @@ function ActivityChart({ daily, height = 220, metricSet = metrics, incompleteWat
 	const incomplete = incompleteWatchTime && metric.key === 'watch_seconds';
 	const metricOptions = metricSet.map((item, index) => ({ value: index, label: item.label }));
 	const hasActivity = daily.some((day) => day[metric.key] > 0);
-	const definition = useMemo(() => {
-		const maximum = Math.max(1, ...daily.map((day) => day[metric.key]));
-		const tickStep = Math.max(1, Math.ceil((daily.length - 1) / 6));
-		const tickDates = daily
-			.filter((_, index) => index % tickStep === 0 || index === daily.length - 1)
-			.map((day) => day.date);
-		return defineChart({
-			marks: [
-				lineY(daily, {
-					x: 'date',
-					y: metric.key,
-					stroke: 'currentColor',
-					strokeWidth: 3,
-				}),
-			],
-			scales: {
-				x: {
-					scale: () => scalePoint().padding(0.2),
-					axis: {
-						line: false,
-						ticks: {
-							values: tickDates,
-							size: 0,
-							padding: 12,
-							format: (date) => shortDate.format(new Date(date)),
-						},
-						tickLabels: { fontSize: 14, opacity: 1, thin: true },
-					},
-				},
-				y: {
-					scale: scaleLinear().domain([0, maximum]),
-					nice: true,
-					grid: { strokeOpacity: 0.5 },
-					axis: {
-						line: false,
-						ticks: {
-							count: Math.min(4, maximum),
-							size: 0,
-							format: (value) => `${number.format(value)}${metric.key === 'watch_seconds' ? 's' : ''}`,
-						},
-						tickLabels: { fontSize: 14, opacity: 1 },
-					},
-				},
-			},
-			tooltip: {
-				use: tooltip,
-				content: (points) => ({
-					title: dateLabel.format(new Date(points[0].xValue)),
-					rows: [{ label: metric.label, value: number.format(points[0].yValue) }],
-				}),
-			},
-		});
-	}, [daily, metric]);
+	const tickStep = Math.max(1, Math.ceil((daily.length - 1) / 6));
+	const tickDates = daily
+		.filter((_, index) => index % tickStep === 0 || index === daily.length - 1)
+		.map((day) => day.date);
 
 	return (
 		<section aria-labelledby="activity-heading" className="min-w-0">
@@ -156,37 +105,24 @@ function ActivityChart({ daily, height = 220, metricSet = metrics, incompleteWat
 				)}
 			</div>
 			{hasActivity ? (
-				<>
-					<div
-						role="group"
-						aria-label={`Daily ${metric.label.toLowerCase()} chart`}
-						className={`mt-5 min-w-0 ${metric.color} [&_svg_text]:fill-text-primary [&_svg_line]:stroke-border-default`}
-					>
-						<Chart
-							definition={definition}
-							height={height}
-							ariaLabel={`Daily ${metric.label.toLowerCase()} chart`}
-							renderTooltipBody={({ points }) =>
-								points.length ? (
-									<div>
-										<Text as="p" variant="body-12" color="meta" className="m-0">
-											{dateLabel.format(new Date(points[0].xValue))}
-										</Text>
-										<Text
-											as="p"
-											variant="body-14-medium"
-											className="m-0 tabular-nums text-text-primary"
-										>
-											{metric.key === 'watch_seconds'
-												? watchTimeLabel(points[0].yValue)
-												: `${number.format(points[0].yValue)} ${metric.label.toLowerCase()}`}
-										</Text>
-									</div>
-								) : null
-							}
-						/>
-					</div>
-				</>
+				<LineChart
+					className="mt-5"
+					data={daily}
+					xKey="date"
+					yKey={metric.key}
+					label={`Daily ${metric.label.toLowerCase()} chart`}
+					xTicks={tickDates}
+					height={height}
+					color={metric.color}
+					formatX={(date) => shortDate.format(new Date(date))}
+					formatY={(value) => `${number.format(value)}${metric.key === 'watch_seconds' ? 's' : ''}`}
+					formatTooltipTitle={(date) => dateLabel.format(new Date(date))}
+					formatTooltipValue={(value) =>
+						metric.key === 'watch_seconds'
+							? watchTimeLabel(value)
+							: `${number.format(value)} ${metric.label.toLowerCase()}`
+					}
+				/>
 			) : (
 				<div className="flex min-h-64 flex-col items-center justify-center gap-2 px-4 text-center">
 					<Icon name="playCircle" size={40} className="mb-2 text-text-muted" />
@@ -201,54 +137,25 @@ function ActivityChart({ daily, height = 220, metricSet = metrics, incompleteWat
 				</div>
 			)}
 			<Disclosure title="View daily figures" className="mt-4">
-				<div
-					className={`max-h-72 overflow-auto ${focus}`}
-					tabIndex={0}
-					role="region"
-					aria-label="Daily figures"
-				>
-					<table className="w-full border-collapse text-right">
-						<Text as="caption" variant="body-14" className="sr-only">
-							Daily activity counts in the report timezone, newest first
-						</Text>
-						<thead className="sticky top-0 border-b border-border-divider bg-bg-surface-muted">
-							<tr>
-								{['Date', ...metricSet.map((item) => item.label)].map((label) => (
-									<Text
-										as="th"
-										variant="body-12-medium"
-										key={label}
-										scope="col"
-										className="px-3 py-3 text-text-secondary"
-									>
-										{label}
-									</Text>
-								))}
-							</tr>
-						</thead>
-						<tbody>
-							{[...daily].reverse().map((day) => (
-								<tr key={day.date} className="hover:bg-bg-surface-muted">
-									<Text as="th" variant="body-14" scope="row" className="whitespace-nowrap px-3 py-3">
-										{day.date}
-									</Text>
-									{metricSet.map((item) => (
-										<Text
-											as="td"
-											variant="body-14"
-											key={item.key}
-											className="px-3 py-3 tabular-nums"
-										>
-											{item.key === 'watch_seconds'
-												? watchTimeLabel(day[item.key])
-												: number.format(day[item.key])}
-										</Text>
-									))}
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
+				<DataTable
+					caption="Daily activity counts in the report timezone, newest first"
+					stickyHeader
+					className="max-h-72"
+					rows={[...daily].reverse()}
+					rowKey={(day) => day.date}
+					columns={[
+						{ key: 'date', label: 'Date', rowHeader: true, render: (day) => day.date },
+						...metricSet.map((item) => ({
+							key: item.key,
+							label: item.label,
+							align: 'right',
+							render: (day) =>
+								item.key === 'watch_seconds'
+									? watchTimeLabel(day[item.key])
+									: number.format(day[item.key]),
+						})),
+					]}
+				/>
 			</Disclosure>
 		</section>
 	);
@@ -374,36 +281,7 @@ function FilmCoverage({ measurement }) {
 		segment: `${index * 5}–${(index + 1) * 5}%`,
 		value,
 	}));
-	const definition = defineChart({
-		marks: [lineY(retention, { x: 'segment', y: 'value', stroke: 'currentColor', strokeWidth: 3 })],
-		scales: {
-			x: {
-				scale: () => scalePoint().padding(0.2),
-				axis: {
-					line: false,
-					ticks: {
-						values: retention
-							.filter((_, index) => [0, 5, 10, 15, 19].includes(index))
-							.map((part) => part.segment),
-						size: 0,
-						padding: 12,
-						format: (segment) => (segment.startsWith('95') ? '100%' : `${segment.split('–')[0]}%`),
-					},
-					tickLabels: { fontSize: 14, opacity: 1, thin: true },
-				},
-			},
-			y: {
-				scale: scaleLinear().domain([0, 100]),
-				axis: {
-					line: false,
-					ticks: { size: 0, format: (value) => `${value}%` },
-					tickLabels: { fontSize: 14, opacity: 1 },
-				},
-				grid: { strokeOpacity: 0.5 },
-			},
-		},
-		tooltip: { use: tooltip },
-	});
+
 	return (
 		<Card as="section" aria-labelledby="coverage-heading" className="p-5 sm:p-8">
 			<Text as="h2" id="coverage-heading" variant="h6-bold" className="m-0 mb-2 text-text-primary">
@@ -414,29 +292,21 @@ function FilmCoverage({ measurement }) {
 				number of viewers still watching.
 			</Text>
 			{hasPlays ? (
-				<div
-					className="mt-4 text-text-link [&_svg_text]:fill-text-primary [&_svg_line]:stroke-border-default"
-					role="group"
-					aria-label="Film segment coverage chart"
-				>
-					<Chart
-						definition={definition}
-						height={220}
-						ariaLabel="Film segment coverage in 5 percent intervals"
-						renderTooltipBody={({ points }) =>
-							points.length ? (
-								<div>
-									<Text as="p" variant="body-14-medium" className="m-0">
-										Film segment {points[0].xValue}
-									</Text>
-									<Text as="p" variant="body-14" className="m-0">
-										{number.format(points[0].yValue)}% average coverage
-									</Text>
-								</div>
-							) : null
-						}
-					/>
-				</div>
+				<LineChart
+					className="mt-4"
+					data={retention}
+					xKey="segment"
+					yKey="value"
+					label="Film segment coverage chart"
+					yMax={100}
+					xTicks={retention
+						.filter((_, index) => [0, 5, 10, 15, 19].includes(index))
+						.map((part) => part.segment)}
+					formatX={(segment) => (segment.startsWith('95') ? '100%' : `${segment.split('–')[0]}%`)}
+					formatY={(value) => `${value}%`}
+					formatTooltipTitle={(segment) => `Film segment ${segment}`}
+					formatTooltipValue={(value) => `${number.format(value)}% average coverage`}
+				/>
 			) : (
 				<Text as="p" variant="body-14" color="body" className="mt-5 mb-0">
 					No measured plays in this period.
@@ -513,109 +383,36 @@ function MediaPerformance({ rows, pagination, days, timezoneQuery, eventsAvailab
 				Open a media title to explore its viewing patterns and engagement.
 			</Text>
 			{rows.length ? (
-				<>
-					<div className="hidden overflow-x-auto md:block">
-						<table className="w-full border-collapse text-right">
-							<Text as="caption" variant="body-14" className="sr-only">
-								Media performance for the last {days} days
-							</Text>
-							<thead className="border-b border-border-divider">
-								<tr>
-									<Text
-										as="th"
-										variant="body-12-medium"
-										scope="col"
-										className="px-6 py-3 text-left text-text-secondary"
-									>
-										Media
-									</Text>
-									{columns.map(([label]) => (
-										<Text
-											as="th"
-											variant="body-12-medium"
-											key={label}
-											scope="col"
-											className="whitespace-nowrap px-4 py-3 text-text-secondary"
-										>
-											{label}
-										</Text>
-									))}
-								</tr>
-							</thead>
-							<tbody>
-								{rows.map((row) => (
-									<tr key={row.url} className="hover:bg-bg-surface-muted">
-										<Text
-											as="th"
-											variant="body-14"
-											scope="row"
-											className="max-w-xs px-6 py-4 text-left"
-										>
-											<Text
-												as={Link}
-												action="text-link"
-												variant="body-14-medium"
-												href={row.analytics_url}
-												className="block break-words text-text-link underline underline-offset-2 hover:text-text-link-hover"
-											>
-												{row.title}
-											</Text>
-											<Badge color="bg/chip" className="mt-2 text-text-primary">
-												{row.state}
-											</Badge>
-										</Text>
-										{columns.map(([label, display]) => (
-											<Text
-												as="td"
-												variant="body-14"
-												key={label}
-												className="px-4 py-4 tabular-nums"
-											>
-												{display(row)}
-											</Text>
-										))}
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-					<div className="space-y-4 md:hidden">
-						{rows.map((row) => (
-							<article key={row.url} className="py-4">
-								<div className="flex items-start justify-between gap-3">
+				<DataTable
+					caption={`Media performance for the last ${days} days`}
+					responsive
+					rows={rows}
+					rowKey={(row) => row.url}
+					columns={[
+						{
+							key: 'media',
+							label: 'Media',
+							rowHeader: true,
+							render: (row) => (
+								<div className="max-w-xs">
 									<Text
 										as={Link}
 										action="text-link"
 										variant="body-14-medium"
 										href={row.analytics_url}
-										className="min-w-0 break-words text-text-link underline underline-offset-2 hover:text-text-link-hover"
+										className="flex min-h-11 items-center break-words text-text-link underline underline-offset-2 hover:text-text-link-hover"
 									>
 										{row.title}
 									</Text>
-									<Badge color="bg/chip" className="shrink-0 text-text-primary">
+									<Badge color="bg/chip" className="mt-2 text-text-primary">
 										{row.state}
 									</Badge>
 								</div>
-								<dl className="m-0 mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-									{columns.map(([label, display]) => (
-										<div key={label}>
-											<Text as="dt" variant="body-12" color="meta">
-												{label}
-											</Text>
-											<Text
-												as="dd"
-												variant="body-14-medium"
-												className="m-0 mt-1 tabular-nums text-text-strong"
-											>
-												{display(row)}
-											</Text>
-										</div>
-									))}
-								</dl>
-							</article>
-						))}
-					</div>
-				</>
+							),
+						},
+						...columns.map(([label, render]) => ({ key: label, label, render, align: 'right' })),
+					]}
+				/>
 			) : (
 				<div className="p-10 text-center">
 					<Icon name="myMedia" size={32} className="mx-auto mb-3 text-text-muted" />
@@ -627,36 +424,15 @@ function MediaPerformance({ rows, pagination, days, timezoneQuery, eventsAvailab
 					</Text>
 				</div>
 			)}
-			{pagination && pagination.count > 1 && rows.length > 0 && (
-				<nav aria-label="Media pages" className="flex items-center justify-between gap-3 pt-4">
-					<Text as="span" variant="body-12" color="meta">
-						Page {pagination.number} of {pagination.count}
-					</Text>
-					<div className="flex gap-4">
-						{pagination.previous && (
-							<Text
-								as={Link}
-								action="text-link"
-								variant="body-12-medium"
-								href={pageUrl(pagination.previous)}
-								className="inline-flex min-h-11 items-center px-2 text-text-secondary hover:text-text-link"
-							>
-								Previous
-							</Text>
-						)}
-						{pagination.next && (
-							<Text
-								as={Link}
-								action="text-link"
-								variant="body-12-medium"
-								href={pageUrl(pagination.next)}
-								className="inline-flex min-h-11 items-center px-2 text-text-secondary hover:text-text-link"
-							>
-								Next
-							</Text>
-						)}
-					</div>
-				</nav>
+			{pagination && rows.length > 0 && (
+				<Pagination
+					page={pagination.number}
+					totalPages={pagination.count}
+					label="Media pages"
+					className="pt-4"
+					previousHref={pagination.previous ? pageUrl(pagination.previous) : undefined}
+					nextHref={pagination.next ? pageUrl(pagination.next) : undefined}
+				/>
 			)}
 		</Card>
 	);
@@ -722,43 +498,7 @@ export function CreatorAnalyticsPage({ data }) {
 	return (
 		<div className="min-h-screen bg-bg-page px-4 py-6 text-text-primary sm:px-8 sm:py-8">
 			<div className="mx-auto max-w-7xl">
-				<nav aria-label="Breadcrumb" className="mb-2">
-					<ol className="m-0 flex list-none flex-wrap items-center gap-x-2 p-0">
-						{breadcrumbs.map((item, index) => (
-							<li key={index} className="flex min-w-0 max-w-full items-center gap-2">
-								{index > 0 && (
-									<Icon
-										name="chevronLeft"
-										size={14}
-										decorative
-										className="rotate-180 text-text-muted"
-									/>
-								)}
-								{item.href ? (
-									<Text
-										as={Link}
-										action="text-link"
-										variant="body-14-medium"
-										href={item.href}
-										className="inline-flex min-h-11 items-center text-text-secondary hover:underline"
-									>
-										{item.label}
-									</Text>
-								) : (
-									<Text
-										as="span"
-										variant="body-14-medium"
-										color="meta"
-										aria-current="page"
-										className="min-w-0 break-words py-3"
-									>
-										{item.label}
-									</Text>
-								)}
-							</li>
-						))}
-					</ol>
-				</nav>
+				<Breadcrumbs items={breadcrumbs} className="mb-2" />
 				<header className="mb-6 flex flex-wrap items-center justify-between gap-4">
 					<div className="flex w-full min-w-0 items-center gap-4 sm:gap-6 lg:w-auto lg:flex-1">
 						{selectedMedia && (
@@ -867,7 +607,7 @@ export function CreatorAnalyticsPage({ data }) {
 								selectedTab={String(data.days)}
 								tabMode="wrap"
 								className="max-w-full"
-								listClassName="rounded-[var(--radius-8)]"
+								listClassName="rounded-ds-8"
 								triggerClassName="px-2 py-3 no-underline aria-[current=page]:bg-brand-primary sm:px-4"
 							>
 								{data.ranges.map((range) => (
@@ -879,7 +619,7 @@ export function CreatorAnalyticsPage({ data }) {
 												as="span"
 												variant="body-12-bold"
 												className={
-													range === data.days ? 'text-text-on-accent' : 'text-text-on-chrome'
+													range === data.days ? 'text-btn-text' : 'text-text-on-chrome'
 												}
 											>
 												{range} days

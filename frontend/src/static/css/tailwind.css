@@ -1058,7 +1058,6 @@ body {
 	--text-avatar-fallback: var(--cinemata-neutral-600);
 	--text-inverse: var(--cinemata-white);
 	--text-on-primary: var(--cinemata-white);
-	--text-on-accent: var(--btn-color);
 	--text-on-chrome: var(--cinemata-strait-blue-50);
 	--text-on-chrome-muted: var(--cinemata-pacific-deep-300);
 	--text-profile-section-icon: var(--cinemata-pacific-deep-200);
@@ -1241,7 +1240,6 @@ body.dark_theme {
 	--color-text-strong: var(--text-strong);
 	--color-text-primary: var(--text-primary);
 	--color-text-secondary: var(--text-secondary);
-	--color-text-on-accent: var(--text-on-accent);
 	--color-text-muted: var(--text-muted);
 	--color-text-description: var(--text-description);
 	--color-text-subtle: var(--text-subtle);
