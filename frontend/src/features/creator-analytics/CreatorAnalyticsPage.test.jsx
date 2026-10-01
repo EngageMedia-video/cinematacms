@@ -1,6 +1,6 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreatorAnalyticsPage } from './CreatorAnalyticsPage';
 
 const data = {
@@ -72,6 +72,68 @@ const data = {
 
 describe('CreatorAnalyticsPage', () => {
 	beforeEach(() => window.history.replaceState(null, '', '/analytics'));
+	afterEach(() => vi.useRealTimers());
+
+	it('keeps the local calendar dates and timezone in filters, exports and pagination', async () => {
+		const user = userEvent.setup();
+		render(
+			<CreatorAnalyticsPage
+				data={{ ...data, timezone: 'Asia/Jakarta', pagination: { number: 1, count: 2, next: 2 } }}
+			/>
+		);
+		expect(screen.getByText('27 Sept – 28 Sept 2026 · Asia/Jakarta')).toBeVisible();
+		expect(screen.getByRole('link', { name: '7 days' })).toHaveAttribute('href', '?days=7&tz=Asia%2FJakarta');
+		expect(screen.getByRole('link', { name: 'Export CSV' })).toHaveAttribute(
+			'href',
+			'/analytics/export?days=30&tz=Asia%2FJakarta&dataset=portfolio'
+		);
+		await user.click(screen.getByRole('tab', { name: 'Your media' }));
+		expect(screen.getByRole('link', { name: 'Next' })).toHaveAttribute(
+			'href',
+			'?days=30&page=2&tz=Asia%2FJakarta#media'
+		);
+	});
+
+	it('updates relative time and reveals the exact local update time on tap', async () => {
+		vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+		vi.setSystemTime(new Date('2026-10-01T18:02:00Z'));
+		const user = userEvent.setup();
+		render(
+			<CreatorAnalyticsPage data={{ ...data, timezone: 'Asia/Jakarta', updated_at: '2026-10-01T18:00:00Z' }} />
+		);
+		expect(screen.getByText('Updated 2 minutes ago')).toBeVisible();
+		await user.click(screen.getByRole('button', { name: 'Report update time' }));
+		const expected = new Date('2026-10-01T18:00:00Z').toLocaleString(undefined, {
+			dateStyle: 'medium',
+			timeStyle: 'short',
+			timeZone: 'Asia/Jakarta',
+		});
+		expect(screen.getByRole('tooltip')).toHaveTextContent(`${expected} · Asia/Jakarta`);
+		await act(() => vi.advanceTimersByTimeAsync(60000));
+		expect(screen.getByText('Updated 3 minutes ago')).toBeVisible();
+	});
+
+	it('explains excluded older watch time and does not show an invented average', () => {
+		render(
+			<CreatorAnalyticsPage
+				data={{
+					...data,
+					measurement: {
+						...data.measurement,
+						watch_time_incomplete: true,
+						watch_seconds: 0,
+						daily_watch_seconds: {},
+						average_watch_seconds: null,
+					},
+				}}
+			/>
+		);
+		expect(screen.getByText(/Watch time is incomplete/)).toBeVisible();
+		expect(screen.getByRole('heading', { name: 'No local-day watch time yet' })).toBeVisible();
+		const label = screen.getByRole('button', { name: 'About average watch time' });
+		expect(label.closest('dt').nextElementSibling).toHaveTextContent('—');
+	});
+
 	it('offers segment figures only when there is coverage data', async () => {
 		const user = userEvent.setup();
 		const filmData = { ...data, selected_media: { ...data.rows[0], uid: 'film-id', media_type: 'video' } };
@@ -142,7 +204,7 @@ describe('CreatorAnalyticsPage', () => {
 		}
 	});
 
-	it('shows owner counts, UTC trend, and media state', async () => {
+	it('shows owner counts, daily trend, and media state', async () => {
 		const user = userEvent.setup();
 		render(<CreatorAnalyticsPage data={data} />);
 
@@ -182,8 +244,8 @@ describe('CreatorAnalyticsPage', () => {
 		expect(screen.getByRole('group', { name: 'Daily reached end chart' })).toBeInTheDocument();
 		expect(screen.queryByRole('slider')).not.toBeInTheDocument();
 		await user.click(screen.getByRole('tab', { name: 'Your media' }));
-		expect(screen.getByRole('link', { name: 'Next' })).toHaveAttribute('href', '?days=90&page=3#media');
-		expect(screen.getByRole('link', { name: 'Previous' })).toHaveAttribute('href', '?days=90&page=1#media');
+		expect(screen.getByRole('link', { name: 'Next' })).toHaveAttribute('href', '?days=90&page=3&tz=UTC#media');
+		expect(screen.getByRole('link', { name: 'Previous' })).toHaveAttribute('href', '?days=90&page=1&tz=UTC#media');
 	});
 
 	it('explains empty activity and keeps new engagement events visible', async () => {
@@ -224,14 +286,14 @@ describe('CreatorAnalyticsPage', () => {
 		expect(within(breadcrumb).getAllByRole('listitem')).toHaveLength(3);
 		expect(within(breadcrumb).getByRole('link', { name: 'Analytics' })).toHaveAttribute(
 			'href',
-			'/analytics?days=30#media'
+			'/analytics?days=30&tz=UTC#media'
 		);
 		expect(within(breadcrumb).getByText('My private film')).toHaveAttribute('aria-current', 'page');
 		expect(within(breadcrumb).queryByRole('link', { name: 'My private film' })).not.toBeInTheDocument();
 		expect(screen.getByRole('link', { name: 'Open media' })).toHaveAttribute('href', '/view?m=private');
 		expect(screen.getByRole('link', { name: '7 days' })).toHaveAttribute(
 			'href',
-			`?days=7&media=${selected_media.uid}&version=${data.version}`
+			`?days=7&media=${selected_media.uid}&version=${data.version}&tz=UTC`
 		);
 		expect(screen.queryByRole('heading', { name: 'Your media' })).not.toBeInTheDocument();
 		expect(screen.queryByText('No media yet')).not.toBeInTheDocument();
@@ -253,11 +315,11 @@ describe('CreatorAnalyticsPage', () => {
 		rerender(<CreatorAnalyticsPage data={{ ...data, rows: [], selected_media, unavailable: true }} />);
 		expect(
 			within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('link', { name: 'Analytics' })
-		).toHaveAttribute('href', '/analytics?days=30#media');
+		).toHaveAttribute('href', '/analytics?days=30&tz=UTC#media');
 		expect(screen.queryByRole('link', { name: 'Try again' })).not.toBeInTheDocument();
 		expect(screen.getByRole('link', { name: 'Refresh figures' })).toHaveAttribute(
 			'href',
-			`?days=30&media=${selected_media.uid}&version=${data.version}#details`
+			`?days=30&media=${selected_media.uid}&version=${data.version}&tz=UTC#details`
 		);
 	});
 
@@ -293,11 +355,14 @@ describe('CreatorAnalyticsPage', () => {
 		await waitFor(() => expect(screen.getByRole('tab', { name: 'Your media' })).toHaveFocus());
 		expect(screen.getByRole('tabpanel', { name: 'Your media' })).toBeVisible();
 		expect(window.location.hash).toBe('#media');
-		expect(screen.getByRole('link', { name: '90 days' })).toHaveAttribute('href', '?days=90#media');
+		expect(screen.getByRole('link', { name: '90 days' })).toHaveAttribute('href', '?days=90&tz=UTC#media');
 		await user.keyboard('{End}');
 		expect(screen.getByRole('tabpanel', { name: 'Engagement' })).toBeVisible();
 		expect(screen.getByText('Like')).toBeVisible();
-		expect(screen.getByRole('link', { name: 'Refresh figures' })).toHaveAttribute('href', '?days=30#engagement');
+		expect(screen.getByRole('link', { name: 'Refresh figures' })).toHaveAttribute(
+			'href',
+			'?days=30&tz=UTC#engagement'
+		);
 	});
 
 	it('opens bookmarked film details and falls back when a section is unavailable', () => {
@@ -311,7 +376,7 @@ describe('CreatorAnalyticsPage', () => {
 		expect(screen.getByRole('group', { name: 'Film segment coverage chart' })).toBeVisible();
 		expect(screen.getByRole('link', { name: '7 days' })).toHaveAttribute(
 			'href',
-			`?days=7&media=film-id&version=${data.version}#details`
+			`?days=7&media=film-id&version=${data.version}&tz=UTC#details`
 		);
 		unmount();
 		window.history.replaceState(null, '', '/analytics#engagement');
@@ -343,7 +408,7 @@ describe('CreatorAnalyticsPage', () => {
 		expect(screen.getByText(/Rewatching adds watch time/)).toBeVisible();
 		expect(screen.queryByRole('group', { name: 'Chart metric' })).not.toBeInTheDocument();
 		const filters = screen.getByRole('group', { name: 'Report filters' });
-		expect(within(filters).getByRole('link', { name: '90 days' })).toHaveAttribute('href', '?days=90');
+		expect(within(filters).getByRole('link', { name: '90 days' })).toHaveAttribute('href', '?days=90&tz=UTC');
 	});
 
 	it('does not present playback metrics for an image without event reports', () => {

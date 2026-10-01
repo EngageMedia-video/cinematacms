@@ -189,13 +189,14 @@ describe('Cinemata Umami privacy boundary', () => {
 		}
 	});
 
-	it.each([true, false])('records qualified viewing with Umami configured: %s', async (configured) => {
+	it.each([true, false])('splits watch time by minute with Umami: %s', async (configured) => {
 		const beacon = vi.fn();
 		Object.defineProperty(navigator, 'sendBeacon', { configurable: true, value: beacon });
 		Object.defineProperty(globalThis.crypto, 'randomUUID', {
 			configurable: true,
 			value: () => '12345678-1234-4234-8234-123456789abd',
 		});
+		const wallClock = vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-01T17:00:00.500Z'));
 		const now = vi.spyOn(performance, 'now');
 		let clock = 0;
 		now.mockImplementation(() => clock);
@@ -229,8 +230,9 @@ describe('Cinemata Umami privacy boundary', () => {
 			})
 		);
 		expect(body.coverage).toEqual([[0, 1000]]);
-		expect(Object.values(body.watch_days)).toEqual([1000]);
+		expect(body.watch_days).toEqual({ '2026-10-01T16:59Z': 500, '2026-10-01T17:00Z': 500 });
 		expect(body.play_id).toBe('12345678-1234-4234-8234-123456789abd');
 		now.mockRestore();
+		wallClock.mockRestore();
 	});
 });

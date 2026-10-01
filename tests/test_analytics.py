@@ -6,6 +6,7 @@ from datetime import timezone as utc_timezone
 from io import StringIO
 from types import SimpleNamespace
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from django.apps import apps
 from django.contrib.auth.models import AnonymousUser
@@ -507,7 +508,7 @@ class CreatorAnalyticsTests(TestCase):
         summary_rows = {row["metric"]: row for row in csv.DictReader(StringIO(summary.content.decode()))}
         current = summary_rows["legacy_views_all_time"]
         self.assertEqual(current["value"], "999")
-        self.assertEqual(current["start_date_utc"], "")
+        self.assertEqual(current["start_date"], "")
         self.assertEqual(current["cut"], "")
         self.assertEqual(current["source_status"], "available")
 
@@ -521,6 +522,78 @@ class CreatorAnalyticsTests(TestCase):
         self.assertEqual(len(data["rows"]), 1)
         self.assertEqual(data["pagination"]["number"], 2)
         self.assertEqual(data["pagination"]["count"], 2)
+
+    def test_local_report_boundaries_and_equal_elapsed_comparison_across_dst(self):
+        owner = create_test_user()
+        film = create_test_media(owner)
+        self.client.force_login(owner)
+        for instant, name in (
+            ("2026-03-10T18:00:00+00:00", "America/New_York"),
+            ("2026-11-03T18:00:00+00:00", "America/New_York"),
+            ("2026-10-01T18:00:00+00:00", "Asia/Jakarta"),
+        ):
+            now = datetime.fromisoformat(instant)
+            today = now.astimezone(ZoneInfo(name)).date()
+            start = datetime.combine(today - timedelta(days=6), datetime.min.time(), ZoneInfo(name))
+            with (
+                self.subTest(time=instant),
+                patch("cms.creator_analytics.datetime", wraps=datetime) as clock,
+                patch("cms.creator_analytics.umami_get", return_value=[]) as collector,
+            ):
+                clock.now.return_value = now
+                result = creator_analytics(owner, 7, None, film.uid, revision="unknown", report_timezone=name)
+            self.assertEqual(result["daily"][-1]["date"], today.isoformat())
+            params = [call.args[1] for call in collector.call_args_list]
+            self.assertTrue(all(item["timezone"] == name for item in params))
+            current = next(item for item in params if item["endAt"] == int(now.timestamp() * 1000))
+            previous = next(item for item in params if item["endAt"] == current["startAt"] - 1)
+            self.assertEqual(current["startAt"], int(start.timestamp() * 1000))
+            self.assertEqual(current["endAt"] - current["startAt"], previous["endAt"] + 1 - previous["startAt"])
+
+    @override_settings(ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="", ANALYTICS_API_KEY="")
+    def test_browser_timezone_is_preserved_in_dashboard_and_every_export(self):
+        owner = create_test_user()
+        film = create_test_media(owner)
+        self.client.force_login(owner)
+        now = datetime(2026, 10, 1, 18, tzinfo=utc_timezone.utc)
+        PlaybackSummary.objects.create(
+            id=uuid.uuid4(),
+            media=film,
+            revision=film.analytics_revision,
+            context="page",
+            initiation="deliberate",
+            started_at=now,
+            duration_ms=100000,
+            coverage=[[0, 2000]],
+            watch_days={"2026-10-01T18:00Z": 2000},
+        )
+        with (
+            patch("cms.playback_analytics.datetime", wraps=datetime) as clock,
+            patch("users.views.timezone.now", return_value=now),
+        ):
+            clock.now.return_value = now
+            data = self.client.get("/analytics?days=7&tz=Asia%2FJakarta").context["ANALYTICS_DATA"]
+            self.assertEqual(data["timezone"], "Asia/Jakarta")
+            self.assertEqual(data["measurement"]["daily_watch_seconds"]["2026-10-02"], 2)
+            self.assertIn("&tz=Asia%2FJakarta", data["rows"][0]["analytics_url"])
+            for dataset in ("portfolio", "summary", "daily", "retention", "engagement"):
+                query = {"days": 7, "tz": "Asia/Jakarta", "dataset": dataset}
+                if dataset != "portfolio":
+                    query["media"] = str(film.uid)
+                response = self.client.get("/analytics/export", query)
+                rows = list(csv.DictReader(StringIO(response.content.decode())))
+                self.assertTrue(rows)
+                self.assertTrue(all(row["timezone"] == "Asia/Jakarta" for row in rows))
+                self.assertTrue(all(row["watch_time_status"] == "complete" for row in rows))
+                self.assertFalse(any("_utc" in key for key in rows[0]))
+                if dataset == "daily":
+                    self.assertEqual(rows[-1]["date"], "2026-10-02")
+                    self.assertEqual(rows[-1]["watch_seconds"], "2")
+        with patch("cms.creator_analytics.umami_get") as collector:
+            for url in ("/analytics", "/analytics/export"):
+                self.assertEqual(self.client.get(url, {"tz": "../../etc/passwd"}).status_code, 404)
+                self.assertEqual(self.client.get(url, {"tz": "Not/A_Timezone"}).status_code, 404)
+            collector.assert_not_called()
 
     def test_equal_previous_period_comparison_and_365_day_limit(self):
         owner = create_test_user()
@@ -646,7 +719,7 @@ class CreatorAnalyticsTests(TestCase):
         self.assertEqual(response.context["ANALYTICS_DATA"]["rows"][0]["state"], "Private")
         self.assertEqual(
             response.context["ANALYTICS_DATA"]["rows"][0]["analytics_url"],
-            f"?media={owner.media_set.first().uid}&days=30",
+            f"?media={owner.media_set.first().uid}&days=30&tz=UTC",
         )
         self.assertNotContains(response, "test-key")
         self.assertEqual(response.context["media_views"], 3)
@@ -867,6 +940,58 @@ class PlaybackSummaryTests(TestCase):
         summary.refresh_from_db()
         self.assertEqual(summary.coverage, [[0, 2001]])
         self.assertEqual(summary.watch_days, {day: 2001})
+
+    def test_minute_snapshots_are_idempotent_and_split_at_local_midnight(self):
+        now = datetime(2026, 10, 1, 18, tzinfo=utc_timezone.utc)
+        buckets = {"2026-10-01T16:59Z": 1000, "2026-10-01T17:00Z": 2000}
+        with patch("cms.playback_analytics.datetime", wraps=datetime) as clock:
+            clock.now.return_value = now
+            payload = {**self.payload, "watch_days": buckets}
+            self.assertEqual(self.post(payload).status_code, 204)
+            self.assertEqual(self.post(payload).status_code, 204)
+        figures = playback_figures(
+            self.owner, 2, end_date=now.date() + timedelta(days=1), report_timezone="Asia/Jakarta"
+        )
+        self.assertEqual(figures["daily_watch_seconds"], {"2026-10-01": 1, "2026-10-02": 2})
+        self.assertEqual(figures["watch_seconds"], 3)
+        self.assertFalse(figures["watch_time_incomplete"])
+        # A quarter-hour offset must also use local, rather than UTC, midnight.
+        summary = PlaybackSummary.objects.get(pk=self.play_id)
+        summary.watch_days = {"2026-10-01T18:14Z": 1000, "2026-10-01T18:15Z": 2000}
+        summary.save(update_fields=["watch_days"])
+        figures = playback_figures(
+            self.owner, 2, end_date=now.date() + timedelta(days=1), report_timezone="Asia/Kathmandu"
+        )
+        self.assertEqual(figures["daily_watch_seconds"], {"2026-10-01": 1, "2026-10-02": 2})
+
+    def test_legacy_day_totals_are_flagged_instead_of_moved_to_a_local_day(self):
+        self.assertEqual(self.post().status_code, 204)
+        local = playback_figures(self.owner, 7, report_timezone="Asia/Jakarta")
+        self.assertTrue(local["watch_time_incomplete"])
+        self.assertEqual(local["watch_seconds"], 0)
+        self.assertIsNone(local["average_watch_seconds"])
+        self.assertEqual(local["measured_plays"], 1)
+        utc = playback_figures(self.owner, 7)
+        self.assertFalse(utc["watch_time_incomplete"])
+        self.assertEqual(utc["watch_seconds"], 25)
+        self.client.force_login(self.owner)
+        response = self.client.get(f"/analytics/export?media={self.media.uid}&dataset=summary&tz=Asia%2FJakarta")
+        rows = list(csv.DictReader(StringIO(response.content.decode())))
+        self.assertTrue(all(row["watch_time_status"] == "partial" for row in rows))
+
+    def test_watch_bucket_union_and_formats_are_bounded(self):
+        now = datetime.now(utc_timezone.utc).replace(second=0, microsecond=0)
+        buckets = {(now - timedelta(minutes=index)).strftime("%Y-%m-%dT%H:%MZ"): 1 for index in range(1441)}
+        with patch("cms.playback_analytics.datetime", wraps=datetime) as clock:
+            clock.now.return_value = now
+            self.assertEqual(self.post({**self.payload, "watch_days": buckets}).status_code, 204)
+            clock.now.return_value = now + timedelta(minutes=1)
+            overflow = {(now + timedelta(minutes=1)).strftime("%Y-%m-%dT%H:%MZ"): 1}
+            self.assertEqual(self.post({**self.payload, "watch_days": overflow}).status_code, 400)
+            self.assertEqual(self.post(self.payload).status_code, 400)  # Cannot mix legacy and minute buckets.
+            self.assertEqual(self.post({**self.payload, "watch_days": {next(iter(buckets)): 60001}}).status_code, 400)
+            self.assertEqual(self.post({**self.payload, "watch_days": {"2099-01-01T00:00Z": 1}}).status_code, 400)
+        self.assertEqual(PlaybackSummary.objects.get(pk=self.play_id).watch_days, buckets)
 
     def test_activity_logging_opt_out_rejects_playback_snapshot(self):
         self.owner.disable_activity_logging = True

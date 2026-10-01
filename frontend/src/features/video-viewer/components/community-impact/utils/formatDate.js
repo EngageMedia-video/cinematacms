@@ -1,3 +1,5 @@
+export { formatRelativeTime as formatRelativeImpactTime } from '../../../../shared/utils/formatRelativeTime';
+
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
 const FORMAT_OPTIONS = {
@@ -23,37 +25,6 @@ export function formatImpactDate(value) {
 	}
 
 	return new Intl.DateTimeFormat('en', FORMAT_OPTIONS).format(date);
-}
-
-const RELATIVE_TIME_UNITS = [
-	{ unit: 'year', seconds: 31536000 },
-	{ unit: 'month', seconds: 2592000 },
-	{ unit: 'day', seconds: 86400 },
-	{ unit: 'hour', seconds: 3600 },
-	{ unit: 'minute', seconds: 60 },
-	{ unit: 'second', seconds: 1 },
-];
-
-export function formatRelativeImpactTime(value, now = new Date()) {
-	if (!value) {
-		return '';
-	}
-
-	const date = new Date(value);
-	const referenceDate = now instanceof Date ? now : new Date(now);
-
-	if (Number.isNaN(date.getTime()) || Number.isNaN(referenceDate.getTime())) {
-		return '';
-	}
-
-	const diffInSeconds = (date.getTime() - referenceDate.getTime()) / 1000;
-	const absDiffInSeconds = Math.abs(diffInSeconds);
-	const formatter = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-	const { unit, seconds } =
-		RELATIVE_TIME_UNITS.find((candidate) => absDiffInSeconds >= candidate.seconds) ??
-		RELATIVE_TIME_UNITS[RELATIVE_TIME_UNITS.length - 1];
-
-	return formatter.format(Math.round(diffInSeconds / seconds), unit);
 }
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:']);

@@ -7,4 +7,11 @@ function CreatorAnalyticsEntry() {
 	return <CreatorAnalyticsPage data={data} />;
 }
 
-renderPage('page-creator-analytics', CreatorAnalyticsEntry);
+const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+if (browserTimezone && data.timezone !== browserTimezone) {
+	const url = new URL(window.location.href);
+	url.searchParams.set('tz', browserTimezone);
+	window.location.replace(url.href);
+} else {
+	renderPage('page-creator-analytics', CreatorAnalyticsEntry);
+}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { defineChart, lineY } from '@tanstack/charts';
 import { Chart } from '@tanstack/charts/react/tooltip';
 import { scaleLinear } from '@tanstack/charts/scales/linear';
@@ -6,6 +6,7 @@ import { scalePoint } from '@tanstack/charts/scales/point';
 import { tooltip } from '@tanstack/charts/tooltip';
 import {
 	Badge,
+	Button,
 	Card,
 	Disclosure,
 	Dropdown,
@@ -17,10 +18,13 @@ import {
 	TabContent,
 	TabView,
 	Text,
+	Tooltip,
 } from '../shared/components';
+import { formatRelativeTime } from '../shared/utils/formatRelativeTime';
 import { formatDuration } from '../shared/utils/formatDuration';
 
 const number = new Intl.NumberFormat('en');
+// These are local calendar-day keys, not instants; format without shifting the date again.
 const dateLabel = new Intl.DateTimeFormat('en-GB', {
 	day: 'numeric',
 	month: 'short',
@@ -69,9 +73,10 @@ function watchTimeLabel(seconds) {
 	);
 }
 
-function ActivityChart({ daily, height = 220, metricSet = metrics }) {
+function ActivityChart({ daily, height = 220, metricSet = metrics, incompleteWatchTime = false }) {
 	const [metricIndex, setMetricIndex] = useState(0);
 	const metric = metricSet[metricIndex] || metricSet[0];
+	const incomplete = incompleteWatchTime && metric.key === 'watch_seconds';
 	const metricOptions = metricSet.map((item, index) => ({ value: index, label: item.label }));
 	const hasActivity = daily.some((day) => day[metric.key] > 0);
 	const definition = useMemo(() => {
@@ -186,11 +191,12 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 				<div className="flex min-h-64 flex-col items-center justify-center gap-2 px-4 text-center">
 					<Icon name="playCircle" size={40} className="mb-2 text-text-muted" />
 					<Text as="h3" variant="h6" className="m-0 text-text-strong">
-						No activity in this period
+						{incomplete ? 'No local-day watch time yet' : 'No activity in this period'}
 					</Text>
 					<Text as="p" variant="body-14" className="m-0 max-w-xs text-text-muted">
-						Your {metric.label.toLowerCase()} will appear here as viewers engage with your media. Try a
-						longer date range to check for earlier activity.
+						{incomplete
+							? 'Older watch time cannot be dated locally. New viewing activity will appear here.'
+							: `Your ${metric.label.toLowerCase()} will appear here as viewers engage with your media. Try a longer date range to check for earlier activity.`}
 					</Text>
 				</div>
 			)}
@@ -203,11 +209,11 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 				>
 					<table className="w-full border-collapse text-right">
 						<Text as="caption" variant="body-14" className="sr-only">
-							Daily activity counts in UTC, newest first
+							Daily activity counts in the report timezone, newest first
 						</Text>
 						<thead className="sticky top-0 border-b border-border-divider bg-bg-surface-muted">
 							<tr>
-								{['Date (UTC)', ...metricSet.map((item) => item.label)].map((label) => (
+								{['Date', ...metricSet.map((item) => item.label)].map((label) => (
 									<Text
 										as="th"
 										variant="body-12-medium"
@@ -314,14 +320,22 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 					{selectedMedia ? 'How this film is watched' : 'Viewing time'}
 				</Text>
 				<Text as="span" variant="body-12" color="meta">
-					Measured plays · UTC
+					Measured plays
 				</Text>
 			</div>
 			<dl className="m-0 mt-4 grid grid-cols-2 gap-x-8 sm:grid-cols-4">
 				<Statistic
 					label="Watch time"
-					value={watchTimeLabel(measurement.watch_seconds)}
-					description="Time spent actively watching in this period."
+					value={
+						measurement.watch_time_incomplete && !measurement.watch_seconds
+							? '—'
+							: watchTimeLabel(measurement.watch_seconds)
+					}
+					description={
+						measurement.watch_time_incomplete
+							? 'Time spent actively watching in this period. Older records with only a UTC date cannot be grouped into local days and are excluded.'
+							: 'Time spent actively watching in this period.'
+					}
 				/>
 				<Statistic
 					label="Measured plays"
@@ -330,7 +344,11 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 				/>
 				<Statistic
 					label="Average watch time"
-					value={hasPlays ? watchTimeLabel(measurement.average_watch_seconds) : '—'}
+					value={
+						measurement.average_watch_seconds != null
+							? watchTimeLabel(measurement.average_watch_seconds)
+							: '—'
+					}
 					description="Average active watch time per measured play. Replays count."
 				/>
 				<Statistic
@@ -467,8 +485,8 @@ function Breakdown({ title, items, labels = {}, empty = 'No data in this period.
 	);
 }
 
-function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
-	const pageUrl = (page) => `?days=${days}&page=${page}#media`;
+function MediaPerformance({ rows, pagination, days, timezoneQuery, eventsAvailable = true }) {
+	const pageUrl = (page) => `?days=${days}&page=${page}${timezoneQuery}#media`;
 	const columns = eventsAvailable
 		? [
 				['Media views', (row) => number.format(row.views)],
@@ -645,6 +663,21 @@ function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
 }
 
 export function CreatorAnalyticsPage({ data }) {
+	const [now, setNow] = useState(() => new Date());
+	useEffect(() => {
+		const timer = window.setInterval(() => setNow(new Date()), 60000);
+		return () => window.clearInterval(timer);
+	}, []);
+	const reportTimezone = data.timezone || 'UTC';
+	const timezoneQuery = `&tz=${encodeURIComponent(reportTimezone)}`;
+	const updated = new Date(data.updated_at);
+	const updatedLabel = Number.isNaN(updated.getTime())
+		? ''
+		: updated.toLocaleString(undefined, {
+				dateStyle: 'medium',
+				timeStyle: 'short',
+				timeZone: reportTimezone,
+			});
 	const daily = data.daily || [];
 	const totals = data.totals || {};
 	const reportDates = data.unavailable
@@ -672,7 +705,7 @@ export function CreatorAnalyticsPage({ data }) {
 	const [requestedSection, setRequestedSection] = useState(() => window.location.hash.slice(1));
 	const section = sections.includes(requestedSection) ? requestedSection : 'overview';
 	const sectionHash = section === 'overview' ? '' : `#${section}`;
-	const rangeUrl = (days) => `?days=${days}${mediaQuery}${sectionHash}`;
+	const rangeUrl = (days) => `?days=${days}${mediaQuery}${timezoneQuery}${sectionHash}`;
 	const selectSection = (value) => {
 		setRequestedSection(value);
 		window.history.replaceState(
@@ -683,7 +716,7 @@ export function CreatorAnalyticsPage({ data }) {
 	};
 	const breadcrumbs = [
 		{ label: 'Home', href: '/' },
-		{ label: 'Analytics', href: selectedMedia ? `/analytics?days=${data.days}#media` : null },
+		{ label: 'Analytics', href: selectedMedia ? `/analytics?days=${data.days}${timezoneQuery}#media` : null },
 		...(selectedMedia ? [{ label: selectedMedia.title }] : []),
 	];
 	return (
@@ -772,8 +805,8 @@ export function CreatorAnalyticsPage({ data }) {
 							)}
 							{firstDate && lastDate && (
 								<Text as="p" variant="body-12" color="meta" className="mt-1 mb-0">
-									{shortDate.format(new Date(firstDate))} – {dateLabel.format(new Date(lastDate))} ·
-									UTC
+									{shortDate.format(new Date(firstDate))} – {dateLabel.format(new Date(lastDate))} ·{' '}
+									{reportTimezone.replaceAll('_', ' ')}
 								</Text>
 							)}
 						</div>
@@ -802,7 +835,7 @@ export function CreatorAnalyticsPage({ data }) {
 									{ value: 'engagement', label: 'Engagement' },
 								]}
 								onChange={(dataset) => {
-									window.location.href = `/analytics/export?days=${data.days}${mediaQuery}&dataset=${dataset}`;
+									window.location.href = `/analytics/export?days=${data.days}${mediaQuery}${timezoneQuery}&dataset=${dataset}`;
 								}}
 							/>
 						) : (
@@ -811,7 +844,7 @@ export function CreatorAnalyticsPage({ data }) {
 								action="text-link"
 								variant="body-14-medium"
 								className="inline-flex min-h-11 items-center underline underline-offset-2"
-								href={`/analytics/export?days=${data.days}&dataset=portfolio`}
+								href={`/analytics/export?days=${data.days}${timezoneQuery}&dataset=portfolio`}
 							>
 								Export CSV
 							</Text>
@@ -873,7 +906,7 @@ export function CreatorAnalyticsPage({ data }) {
 								value={data.version}
 								options={data.versions}
 								onChange={(version) => {
-									window.location.href = `?days=${data.days}&media=${encodeURIComponent(selectedMedia.uid)}&version=${encodeURIComponent(version)}${sectionHash}`;
+									window.location.href = `?days=${data.days}&media=${encodeURIComponent(selectedMedia.uid)}&version=${encodeURIComponent(version)}${timezoneQuery}${sectionHash}`;
 								}}
 							/>
 						</div>
@@ -884,6 +917,12 @@ export function CreatorAnalyticsPage({ data }) {
 						We can’t tell which film version these views and plays belong to. All versions includes them.
 					</Text>
 				)}
+				{data.measurement.watch_time_incomplete && (
+					<Text as="p" variant="body-14" className="mb-5 max-w-prose">
+						Watch time is incomplete for older activity. Average watch time is unavailable.
+					</Text>
+				)}
+
 				<TabView
 					aria-label="Analytics sections"
 					selectedTab={section}
@@ -900,6 +939,7 @@ export function CreatorAnalyticsPage({ data }) {
 						{(canMeasureViewing || !data.unavailable) && (
 							<Card as="div" className="mt-6 p-5 sm:p-8">
 								<ActivityChart
+									incompleteWatchTime={data.measurement.watch_time_incomplete}
 									daily={data.unavailable ? viewingDaily : chartDaily}
 									height={260}
 									metricSet={
@@ -979,8 +1019,8 @@ export function CreatorAnalyticsPage({ data }) {
 											<Text as="p" className="m-0 max-w-prose">
 												These counts come from Umami events. Viewing time comes from CMS
 												playback measurements, so playback starts and measured plays may differ.
-												Neither is a unique viewer count. Comparisons use the same elapsed UTC
-												time in the previous period.
+												Neither is a unique viewer count. Comparisons use the same elapsed time
+												in the previous period.
 											</Text>
 										</Disclosure>
 									)}
@@ -994,6 +1034,7 @@ export function CreatorAnalyticsPage({ data }) {
 								rows={data.rows}
 								pagination={data.pagination}
 								days={data.days}
+								timezoneQuery={timezoneQuery}
 								eventsAvailable={!data.unavailable}
 							/>
 						</TabContent>
@@ -1076,21 +1117,30 @@ export function CreatorAnalyticsPage({ data }) {
 					<Disclosure title="About these figures" className="mt-2">
 						<Text as="p" variant="body-14" className="m-0 max-w-prose">
 							Only you can see these reports. They cover media you currently own in every visibility
-							state. Dates use UTC and recorded activity is retained for up to 12 months. A zero count may
-							mean tracking had not started or no eligible activity was recorded.
+							state. Days follow {reportTimezone.replaceAll('_', ' ')}. Recorded activity is retained for
+							up to 12 months. A zero count may mean tracking had not started or no eligible activity was
+							recorded.
 						</Text>
 					</Disclosure>
-					<div className="mt-4">
-						<Text as="span" variant="body-12" color="meta">
-							Updated{' '}
-							{new Date(data.updated_at).toLocaleString('en-GB', {
-								timeZone: 'UTC',
-								dateStyle: 'medium',
-								timeStyle: 'short',
-							})}{' '}
-							UTC
-						</Text>
-					</div>
+					{updatedLabel && (
+						<div className="mt-4">
+							<Tooltip
+								trigger="click"
+								placement="top"
+								content={`${updatedLabel} · ${reportTimezone.replaceAll('_', ' ')}`}
+							>
+								<Button
+									variant="text"
+									className="min-h-11 p-0 normal-case text-text-muted"
+									aria-label="Report update time"
+								>
+									<Text as="time" dateTime={data.updated_at} variant="body-12" color="meta">
+										Updated {formatRelativeTime(data.updated_at, now)}
+									</Text>
+								</Button>
+							</Tooltip>
+						</div>
+					)}
 				</Card>
 			</div>
 		</div>

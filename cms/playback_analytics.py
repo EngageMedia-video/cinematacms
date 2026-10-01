@@ -3,6 +3,7 @@
 import json
 import uuid
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core import signing
@@ -17,6 +18,7 @@ from files.models import Media, PlaybackSummary
 SALT = "cinemata.playback.v1"
 MAX_DURATION_MS = 24 * 60 * 60 * 1000
 MAX_RANGES = 1000
+MAX_WATCH_BUCKETS = 1441  # At most 24 hours of UTC minutes, including partial endpoints.
 
 
 def measurement_token(media, context):
@@ -65,32 +67,43 @@ def validate_snapshot(body, media):
         ):
             raise ValueError
     days = body["watch_days"]
-    if not isinstance(days, dict) or len(days) > 2:
+    if not isinstance(days, dict) or len(days) > MAX_WATCH_BUCKETS:
         raise ValueError
-    now = datetime.now(timezone.utc).date()
+    now = datetime.now(timezone.utc)
+    formats = set()
     for day, millis in days.items():
         try:
-            parsed = datetime.fromisoformat(day).date()
+            legacy = len(day) == 10
+            parsed = datetime.strptime(day, "%Y-%m-%d" if legacy else "%Y-%m-%dT%H:%MZ").replace(tzinfo=timezone.utc)
         except (TypeError, ValueError) as exc:
             raise ValueError from exc
-        if day != parsed.isoformat() or not now - timedelta(days=1) <= parsed <= now:
+        formats.add(legacy)
+        expected = parsed.strftime("%Y-%m-%d" if legacy else "%Y-%m-%dT%H:%MZ")
+        earliest = (
+            (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            if legacy
+            else now - timedelta(days=1, minutes=1)
+        )
+        if day != expected or not earliest <= parsed <= now:
             raise ValueError
-        if type(millis) is not int or not 0 <= millis <= MAX_DURATION_MS:
+        if type(millis) is not int or not 0 <= millis <= (MAX_DURATION_MS if legacy else 60000):
             raise ValueError
-    if sum(days.values()) > MAX_DURATION_MS:
+    if len(formats) > 1 or sum(days.values()) > MAX_DURATION_MS:
         raise ValueError
     return play_id, duration, initiation, merge_ranges(ranges), days
 
 
-def playback_figures(owner, days, media_uid=None, revision=None, end_date=None):
+def playback_figures(owner, days, media_uid=None, revision=None, end_date=None, report_timezone="UTC"):
     """Aggregate measured plays without reading visitor identity or URL data."""
-    today = end_date or datetime.now(timezone.utc).date()
+    zone = ZoneInfo(report_timezone)
+    today = end_date or datetime.now(timezone.utc).astimezone(zone).date()
     first = today - timedelta(days=days - 1)
-    cohort_start = datetime.combine(first, datetime.min.time(), tzinfo=timezone.utc)
+    cohort_start = datetime.combine(first, datetime.min.time(), tzinfo=zone)
+    cohort_end = datetime.combine(today + timedelta(days=1), datetime.min.time(), tzinfo=zone)
     queryset = PlaybackSummary.objects.filter(
         media__user=owner,
-        started_at__gte=cohort_start - timedelta(days=1),
-        started_at__lt=datetime.combine(today + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc),
+        started_at__gte=cohort_start.astimezone(timezone.utc) - timedelta(days=1),
+        started_at__lt=cohort_end,
     )
     if media_uid:
         queryset = queryset.filter(media__uid=media_uid)
@@ -106,19 +119,32 @@ def playback_figures(owner, days, media_uid=None, revision=None, end_date=None):
     watched_fraction = 0.0
     measured_plays = 0
     cohort_ms = 0
+    watch_time_incomplete = False
     for row in queryset.values(
         "media__uid", "started_at", "duration_ms", "coverage", "watch_days", "initiation"
     ).iterator():
         media_id = str(row["media__uid"])
+        row_ms = 0
         for day, millis in row["watch_days"].items():
+            instant = datetime.fromisoformat(day.replace("Z", "+00:00")).replace(tzinfo=timezone.utc)
+            if len(day) == 10 and (
+                instant.astimezone(zone).utcoffset() != timedelta(0)
+                or (instant + timedelta(days=1)).astimezone(zone).utcoffset() != timedelta(0)
+            ):
+                # Legacy UTC-day totals cannot be divided across local midnight.
+                if millis and instant < cohort_end and instant + timedelta(days=1) > cohort_start:
+                    watch_time_incomplete = True
+                continue
+            day = instant.astimezone(zone).date().isoformat()
             if day in daily:
                 daily[day] += millis
+                row_ms += millis
                 per_media[media_id] = per_media.get(media_id, 0) + millis
         if row["started_at"] < cohort_start:
             continue
         measured_plays += 1
         per_media_plays[media_id] = per_media_plays.get(media_id, 0) + 1
-        cohort_ms += sum(millis for day, millis in row["watch_days"].items() if day in daily)
+        cohort_ms += row_ms
         initiation[row["initiation"]] += 1
         duration = row["duration_ms"]
         covered = sum(end - start for start, end in row["coverage"])
@@ -132,7 +158,10 @@ def playback_figures(owner, days, media_uid=None, revision=None, end_date=None):
     total_ms = sum(daily.values())
     return {
         "watch_seconds": round(total_ms / 1000),
-        "average_watch_seconds": round(cohort_ms / measured_plays / 1000) if measured_plays else None,
+        "average_watch_seconds": round(cohort_ms / measured_plays / 1000)
+        if measured_plays and not watch_time_incomplete
+        else None,
+        "watch_time_incomplete": watch_time_incomplete,
         "average_percent_watched": round(100 * watched_fraction / measured_plays, 1) if measured_plays else None,
         "measured_plays": measured_plays,
         "initiation": initiation,
@@ -202,9 +231,16 @@ def record_playback(request):
         if len(merged_coverage) > MAX_RANGES:
             return HttpResponse(status=400)
         summary.coverage = merged_coverage
-        summary.watch_days = {
+        merged_days = {
             day: max(summary.watch_days.get(day, 0), days.get(day, 0))
             for day in summary.watch_days.keys() | days.keys()
         }
+        if (
+            len(merged_days) > MAX_WATCH_BUCKETS
+            or sum(merged_days.values()) > MAX_DURATION_MS
+            or len({len(key) == 10 for key in merged_days}) > 1
+        ):
+            return HttpResponse(status=400)
+        summary.watch_days = merged_days
         summary.save(update_fields=["coverage", "watch_days", "updated_at"])
     return HttpResponse(status=204)

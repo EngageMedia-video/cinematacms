@@ -2,7 +2,9 @@ import csv
 import logging
 from datetime import timedelta
 from io import StringIO
+from urllib.parse import quote
 from uuid import UUID
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -125,8 +127,20 @@ def view_user(request, username):
     return _render_profile(request, user, "about", "cms/user.html")
 
 
+def analytics_timezone(request):
+    """Validate the browser's IANA timezone before using it in report queries."""
+    name = request.GET.get("tz", "UTC")
+    try:
+        ZoneInfo(name)
+    except (ValueError, ZoneInfoNotFoundError) as exc:
+        raise Http404("Unknown report timezone") from exc
+    return name
+
+
 @login_required
 def view_analytics(request):
+    report_timezone = analytics_timezone(request)
+    timezone_query = f"&tz={quote(report_timezone, safe='')}"
     selected_media = None
     media_uid = request.GET.get("media")
     if media_uid is not None:
@@ -165,6 +179,7 @@ def view_analytics(request):
         days,
         media_uid=media_uid,
         revision=revision,
+        report_timezone=report_timezone,
     )
     context["measurement"] = measured
     context["umami_unavailable"] = True
@@ -179,6 +194,7 @@ def view_analytics(request):
                     request.GET.get("page"),
                     media_uid=media_uid,
                     revision=revision,
+                    report_timezone=report_timezone,
                 )
             )
             context["umami_unavailable"] = False
@@ -202,6 +218,7 @@ def view_analytics(request):
         "cms_totals": cms_media_totals(request.user, media_uid),
         "comparison": context.get("comparison"),
         "updated_at": timezone.now().isoformat(),
+        "timezone": report_timezone,
         "days": days,
         "ranges": RANGES,
         "versions": versions,
@@ -234,7 +251,7 @@ def view_analytics(request):
                 "title": row["media"].title or "Untitled media",
                 "state": row["media"].get_state_display(),
                 "url": row["media"].get_absolute_url(),
-                "analytics_url": f"?media={row['media'].uid}&days={days}",
+                "analytics_url": f"?media={row['media'].uid}&days={days}{timezone_query}",
                 "views": row["views"],
                 "starts": row["starts"],
                 "finishes": row["finishes"],
@@ -263,6 +280,7 @@ def view_analytics(request):
 @login_required
 def export_analytics(request):
     """Export the full owner-scoped range; blank cells mean a source is unavailable."""
+    report_timezone = analytics_timezone(request)
     try:
         days = int(request.GET.get("days", 30))
     except ValueError:
@@ -283,7 +301,11 @@ def export_analytics(request):
         raise Http404
     revision_filter = None if revision == "all" else revision
     measured = playback_figures(
-        request.user, days, media_uid=selected.uid if selected else None, revision=revision_filter
+        request.user,
+        days,
+        media_uid=selected.uid if selected else None,
+        revision=revision_filter,
+        report_timezone=report_timezone,
     )
     umami = None
     if all(
@@ -297,11 +319,18 @@ def export_analytics(request):
                 media_uid=selected.uid if selected else None,
                 revision=revision_filter,
                 all_rows=True,
+                report_timezone=report_timezone,
             )
         except (AnalyticsUnavailable, KeyError, TypeError, AttributeError):
             pass
     output = StringIO()
     writer = csv.writer(output)
+
+    def write_row(values):
+        if values[0] == "media_id":
+            writer.writerow((*values, "timezone", "watch_time_status"))
+        else:
+            writer.writerow((*values, report_timezone, "partial" if measured["watch_time_incomplete"] else "complete"))
 
     def safe(value):
         if value is None:
@@ -313,10 +342,10 @@ def export_analytics(request):
             else value
         )
 
-    today = timezone.now().date()
+    today = timezone.now().astimezone(ZoneInfo(report_timezone)).date()
     start = today - timedelta(days=days - 1)
     if dataset == "portfolio":
-        writer.writerow(
+        write_row(
             (
                 "media_id",
                 "title",
@@ -325,8 +354,8 @@ def export_analytics(request):
                 "starts",
                 "end_events",
                 "watch_seconds",
-                "start_date_utc",
-                "end_date_utc",
+                "start_date",
+                "end_date",
                 "umami_status",
                 "cms_measured_plays",
                 "legacy_views_all_time",
@@ -347,7 +376,7 @@ def export_analytics(request):
         }
         for row in rows:
             item = row["media"]
-            writer.writerow(
+            write_row(
                 (
                     item.uid,
                     safe(item.title),
@@ -366,9 +395,7 @@ def export_analytics(request):
                 )
             )
     elif dataset == "summary":
-        writer.writerow(
-            ("media_id", "cut", "metric", "value", "definition", "start_date_utc", "end_date_utc", "source_status")
-        )
+        write_row(("media_id", "cut", "metric", "value", "definition", "start_date", "end_date", "source_status"))
         current_totals = cms_media_totals(request.user, selected.uid)
         summary = (
             ("media_views", umami["media_views"] if umami else None, "Eligible media page and embed loads", "Umami"),
@@ -425,7 +452,7 @@ def export_analytics(request):
             ),
         )
         for name, value, definition, source in summary:
-            writer.writerow(
+            write_row(
                 (
                     selected.uid,
                     "" if source == "CMS current" else revision,
@@ -438,13 +465,11 @@ def export_analytics(request):
                 )
             )
     elif dataset == "daily":
-        writer.writerow(
-            ("media_id", "cut", "date_utc", "views", "starts", "end_events", "watch_seconds", "umami_status")
-        )
+        write_row(("media_id", "cut", "date", "views", "starts", "end_events", "watch_seconds", "umami_status"))
         for index in range(days):
             day = (start + timedelta(days=index)).isoformat()
             events = umami["daily"][index] if umami else {}
-            writer.writerow(
+            write_row(
                 (
                     selected.uid,
                     revision,
@@ -457,7 +482,7 @@ def export_analytics(request):
                 )
             )
     elif dataset == "retention":
-        writer.writerow(
+        write_row(
             (
                 "media_id",
                 "cut",
@@ -465,18 +490,16 @@ def export_analytics(request):
                 "segment_end_percent",
                 "average_segment_watched_percent",
                 "measured_plays",
-                "start_date_utc",
-                "end_date_utc",
+                "start_date",
+                "end_date",
             )
         )
         for index, value in enumerate(measured["retention"]):
-            writer.writerow(
+            write_row(
                 (selected.uid, revision, index * 5, (index + 1) * 5, value, measured["measured_plays"], start, today)
             )
     else:
-        writer.writerow(
-            ("media_id", "cut", "category", "name", "count", "start_date_utc", "end_date_utc", "umami_status")
-        )
+        write_row(("media_id", "cut", "category", "name", "count", "start_date", "end_date", "umami_status"))
         if umami:
             for category, entries in (
                 ("engagement", umami["engagement"]),
@@ -486,9 +509,9 @@ def export_analytics(request):
                 ("player_error", umami["errors"]),
             ):
                 for name, count in entries:
-                    writer.writerow((selected.uid, revision, category, safe(name), count, start, today, "available"))
+                    write_row((selected.uid, revision, category, safe(name), count, start, today, "available"))
         else:
-            writer.writerow((selected.uid, revision, "", "", "", start, today, "unavailable"))
+            write_row((selected.uid, revision, "", "", "", start, today, "unavailable"))
     response = HttpResponse(output.getvalue(), content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="analytics-{dataset}.csv"'
     response["Cache-Control"] = "private, no-store"

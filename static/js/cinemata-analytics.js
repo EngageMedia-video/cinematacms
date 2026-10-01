@@ -235,9 +235,9 @@
                         let cursor = endEpoch - elapsed;
                         while (cursor < endEpoch) {
                             const date = new Date(cursor);
-                            const day = date.toISOString().slice(0, 10);
-                            const nextMidnight = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1);
-                            const next = Math.min(endEpoch, nextMidnight);
+                            const day = date.toISOString().slice(0, 16) + 'Z';
+                            const nextMinute = (Math.floor(cursor / 60000) + 1) * 60000;
+                            const next = Math.min(endEpoch, nextMinute);
                             play.days[day] = (play.days[day] || 0) + Math.round(next - cursor);
                             cursor = next;
                         }

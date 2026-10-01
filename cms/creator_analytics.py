@@ -4,6 +4,7 @@ import logging
 import re
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
 
 import requests
 from django.conf import settings
@@ -103,14 +104,15 @@ def _series(rows, key=None):
     return {row["x"][:10]: row["y"] for row in rows}
 
 
-def _previous_counts(media, days, current_start, current_end, revision):
+def _previous_counts(media, days, current_start, current_end, revision, report_timezone):
     if days == 365:
         return None  # A preceding 365-day window falls outside 12-month retention.
+    current_start = current_start.astimezone(timezone.utc)
     previous_start = current_start - (current_end - current_start)
     common = {
         "startAt": int(previous_start.timestamp() * 1000),
         "endAt": int(current_start.timestamp() * 1000) - 1,
-        "timezone": "UTC",
+        "timezone": report_timezone,
     }
 
     def counts_for(cut):
@@ -145,14 +147,16 @@ def _previous_counts(media, days, current_start, current_end, revision):
     return result
 
 
-def creator_analytics(owner, days, page, media_uid=None, revision=None, all_rows=False):
+def creator_analytics(owner, days, page, media_uid=None, revision=None, all_rows=False, report_timezone="UTC"):
     """Aggregate event counts by media tag, scoped to the current owner."""
     if revision == "unknown" and media_uid:
         media_item = Media.objects.get(user=owner, uid=media_uid)
-        result = creator_analytics(owner, days, page, media_uid=media_uid)
+        result = creator_analytics(owner, days, page, media_uid=media_uid, report_timezone=report_timezone)
         known = [str(media_item.analytics_revision), *media_item.analytics_revisions]
         for known_revision in known:
-            part = creator_analytics(owner, days, page, media_uid=media_uid, revision=known_revision)
+            part = creator_analytics(
+                owner, days, page, media_uid=media_uid, revision=known_revision, report_timezone=report_timezone
+            )
             for key in result["totals"]:
                 result["totals"][key] = max(0, result["totals"][key] - part["totals"][key])
             if result["comparison"]:
@@ -186,13 +190,14 @@ def creator_analytics(owner, days, page, media_uid=None, revision=None, all_rows
     if media_uid is not None:
         queryset = queryset.filter(uid=media_uid)
     media = list(queryset.order_by("-add_date", "-pk"))
-    today = datetime.now(timezone.utc).date()
-    start = datetime.combine(today - timedelta(days=days - 1), datetime.min.time(), tzinfo=timezone.utc)
     current_end = datetime.now(timezone.utc)
+    zone = ZoneInfo(report_timezone)
+    today = current_end.astimezone(zone).date()
+    start = datetime.combine(today - timedelta(days=days - 1), datetime.min.time(), tzinfo=zone)
     common = {
         "startAt": int(start.timestamp() * 1000),
         "endAt": int(current_end.timestamp() * 1000),
-        "timezone": "UTC",
+        "timezone": report_timezone,
     }
     if revision:
         common["epf0"] = f"1.eq.revision.{revision}"
@@ -303,6 +308,6 @@ def creator_analytics(owner, days, page, media_uid=None, revision=None, all_rows
         "completion_rate": round(100 * totals["finish"] / starts) if starts else 0,
         "rows": rows,
         "media_page": media_page,
-        "comparison": _previous_counts(media, days, start, current_end, revision),
+        "comparison": _previous_counts(media, days, start, current_end, revision, report_timezone),
         **detail,
     }
