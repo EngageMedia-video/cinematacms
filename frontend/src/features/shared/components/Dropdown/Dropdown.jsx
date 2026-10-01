@@ -48,8 +48,9 @@ const MENU_VARIANT_CLASSES = {
 
 // Toolbar-sized trigger, e.g. a results sort control. It keeps the menu,
 // keyboard and typeahead behaviour of the field appearance.
+// Use an outline so the legacy shadow reset cannot hide keyboard focus.
 const COMPACT_TRIGGER_CLASSES =
-	'inline-flex h-9 cursor-pointer appearance-none items-center justify-center gap-2 rounded-[4px] border-0 bg-bg-action-inverse px-3 py-2 font-sans text-[12px] leading-4 font-medium text-text-action-inverse uppercase shadow-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus disabled:cursor-not-allowed disabled:opacity-40 sm:px-4';
+	'inline-flex h-9 cursor-pointer appearance-none items-center justify-center gap-2 rounded-ds-4 border-0 bg-bg-action-inverse px-3 py-2 body-body-12-medium text-text-action-inverse uppercase shadow-none focus:outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring-focus disabled:cursor-not-allowed disabled:opacity-40 sm:px-4';
 // Legacy global button styles still apply on some pages; neutralise them inline.
 const COMPACT_TRIGGER_STYLE = { appearance: 'none', border: 0, boxShadow: 'none' };
 
@@ -96,6 +97,7 @@ function clampIndex(index, total) {
 export function Dropdown({
 	appearance = 'field',
 	className = '',
+	menuClassName = '',
 	defaultValue,
 	disabled = false,
 	helperText = '',
@@ -439,7 +441,8 @@ export function Dropdown({
 					aria-labelledby={label ? buttonId : undefined}
 					className={cn(
 						'thin-scrollbar absolute left-0 top-full z-20 mt-2 max-h-[calc(var(--size-96)*2+var(--size-48))] min-w-full list-none overflow-y-auto overscroll-contain rounded-ds-4 border p-0',
-						MENU_VARIANT_CLASSES[variant]
+						MENU_VARIANT_CLASSES[variant],
+						menuClassName
 					)}
 				>
 					{normalizedOptions.map((option, index) => {

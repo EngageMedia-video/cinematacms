@@ -16,12 +16,15 @@ from django.views.decorators.csrf import csrf_exempt
 from prometheus_client import CollectorRegistry, generate_latest
 from prometheus_client import multiprocess as prom_multiprocess
 
+from cms.analytics import record_segment_event, segment_report
 from cms.cache_telemetry import owned_cache
 from cms.error_tracking import ErrorTrackingDiagnosticError, capture_unexpected_exception
 from cms.health import live as health_live
 from cms.health import ready as health_ready
+from cms.playback_analytics import record_playback
 from cms.request_utils import get_client_ip
 from files.metrics import refresh_runtime_metrics
+from users import views as user_views
 
 lookup_logger = logging.getLogger("cms.observability.lookup")
 lookup_rate_cache = owned_cache.bind("incident_lookup_rate_limit")
@@ -237,6 +240,11 @@ def robots_txt(request):
 
 
 urlpatterns = [
+    path("analytics", user_views.view_analytics, name="creator_analytics"),
+    path("analytics/export", user_views.export_analytics, name="export_analytics"),
+    path("analytics/playback", record_playback, name="record_playback"),
+    path("analytics/segment-event", record_segment_event, name="record_segment_event"),
+    path("analytics/segments", segment_report, name="segment_report"),
     path("robots.txt", robots_txt),
     path("metrics", metrics_view),
     path("internal/observability/references", observability_reference_lookup),

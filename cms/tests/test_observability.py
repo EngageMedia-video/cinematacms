@@ -730,6 +730,7 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             "cleanup_email_delivery_receipts",
             "notify_followers_new_media",
             "record_beat_freshness",
+            "purge_playback_summaries",
             "cms.celery.debug_task",
         }
         self.assertEqual(set(TASK_FAMILY_BY_NAME), expected_tasks)

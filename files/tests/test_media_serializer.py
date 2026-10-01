@@ -31,6 +31,7 @@ class MediaSerializerTest(TestCase):
 
         data = SingleMediaSerializer(media, context={"request": request}).data
 
+        self.assertEqual(data["uid"], str(media.uid))
         self.assertEqual(data["content_sensitivity_info"], [{"title": "Graphic Violence"}])
 
     @override_settings(SPRITE_NUM_SECS=7)

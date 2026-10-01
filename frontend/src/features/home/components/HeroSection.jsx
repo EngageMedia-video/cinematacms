@@ -258,6 +258,17 @@ function Player() {
 								className={PLAYER_CLASS}
 								sources={playback.sources}
 								videoInfo={playback.videoInfo}
+								analyticsMedia={
+									media.hero_playback?.uid
+										? {
+												id: media.hero_playback.uid,
+												type: 'video',
+												context: 'hero',
+												revision: media.hero_playback.analytics_revision,
+												measurement_token: media.hero_playback.measurement_token,
+											}
+										: null
+								}
 								poster={poster}
 								preload="none"
 								subtitles={subtitlesPayload}
@@ -269,7 +280,10 @@ function Player() {
 					<HeroPosterButton
 						src={poster}
 						title={media.title || 'featured video'}
-						onActivate={() => setActivatedPlayerKey(playerKey)}
+						onActivate={() => {
+							window.CinemataAnalytics?.markNavigationIntent();
+							setActivatedPlayerKey(playerKey);
+						}}
 					/>
 				) : (
 					<>

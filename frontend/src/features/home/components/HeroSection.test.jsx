@@ -139,6 +139,20 @@ describe('HeroSection', () => {
 		expect(screen.queryByText('11:16')).not.toBeInTheDocument();
 	});
 
+	it('records deliberate playback intent before the lazy player mounts', async () => {
+		const originalAnalytics = window.CinemataAnalytics;
+		const markNavigationIntent = vi.fn();
+		window.CinemataAnalytics = { markNavigationIntent };
+		try {
+			renderHero([SAMPLE_MEDIA], <HeroSection.Player />);
+			expect(screen.queryByTestId('hero-video-player')).toBeNull();
+			await activateHeroPlayer();
+			expect(markNavigationIntent).toHaveBeenCalledOnce();
+		} finally {
+			window.CinemataAnalytics = originalAnalytics;
+		}
+	});
+
 	it('renders both Player and Card when composed together', async () => {
 		renderHero(
 			[SAMPLE_MEDIA],

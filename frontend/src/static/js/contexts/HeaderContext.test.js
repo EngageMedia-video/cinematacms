@@ -72,4 +72,14 @@ describe('HeaderContext popup nav items', () => {
 
 		expect(items.map((item) => item.text)).toContain(text);
 	});
+
+	it('offers the dedicated Analytics page to signed-in viewers who cannot upload', async () => {
+		const items = await loadPopupItems({ anonymous: false, canAddMedia: false });
+		expect(items.find((item) => item.text === 'Analytics')).toMatchObject({ link: '/analytics' });
+	});
+
+	it('does not offer Analytics to anonymous visitors', async () => {
+		const items = await loadPopupItems({ anonymous: true });
+		expect(items.map((item) => item.text)).not.toContain('Analytics');
+	});
 });

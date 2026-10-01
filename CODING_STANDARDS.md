@@ -106,6 +106,25 @@ for data migrations, non-atomic migrations, and migration ordering.
 
 Use the `tdd` repository skill when the work requires a test-first cycle.
 
+## Track new visitor features
+
+For every new visitor-facing feature, decide which eligible page visits and
+meaningful actions to count before implementation. Add Umami events for those
+actions as part of the feature. Send an action event after it succeeds. A
+download click records intent because the browser cannot confirm the download.
+Do not count menu toggles or raw playback ticks.
+
+Use the APIs and privacy rules in the [analytics integration guide](docs/technical/analytics.md#new-feature-events).
+Give each event a fixed name, and add a focused check that the event fires at the
+right time without sending personal data or access tokens. New public pages must
+opt in after their access check. Denied pages and staff-only screens must not
+load the tracker.
+
+In the pull request, list the event names, their triggers, and the verification.
+If the feature has no eligible visit or meaningful visitor action, state why in
+the Analytics section of the pull request. Backend-only and staff-only features
+can use that exception.
+
 ## Make new behavior observable
 
 Before implementation, map the feature to the existing

@@ -1580,6 +1580,17 @@ def remove_media_file(media_file=None):
 # 3 beat task, remove chunks
 
 
+@task(name="purge_playback_summaries", queue="short_tasks")
+def purge_playback_summaries():
+    from files.management.commands.purge_playback_summaries import twelve_month_cutoff
+    from files.models import DailySegmentMetric, PlaybackSummary
+
+    cutoff = twelve_month_cutoff(timezone.now())
+    snapshots, _ = PlaybackSummary.objects.filter(started_at__lt=cutoff).delete()
+    segments, _ = DailySegmentMetric.objects.filter(day__lt=cutoff.date()).delete()
+    return {"outcome": "succeeded", "processed": snapshots + segments, "changed": snapshots + segments}
+
+
 @task(name="cleanup_orphaned_uploads", queue="short_tasks")
 def cleanup_orphaned_uploads():
     """

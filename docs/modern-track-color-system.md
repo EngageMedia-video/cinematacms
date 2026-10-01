@@ -395,6 +395,19 @@ Key characteristics after migration:
 
 ## Usage by feature
 
+### creator-analytics
+
+The shared `LineChart` component owns chart styling and resolves axis label size
+from the shared body typography. Labels use `fill-text-primary` and grid lines
+use `stroke-border-default`.
+Series inherit `currentColor`: `text-text-secondary` for media views,
+`text-text-link` for playback starts, watch time and segment coverage, and
+`text-text-success` for reached-end events. Use foreground tokens for chart
+strokes so both themes retain readable contrast.
+
+Selected orange controls use the existing `text-btn-text` foreground, matching
+the primary Button in both themes. Do not introduce a second alias for it.
+
 ### home
 
 | File | Color class / token | Element |

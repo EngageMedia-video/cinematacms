@@ -280,10 +280,16 @@ def _attach_hero_playback_to_first_featured_item(items, request=None):
             return item_list
 
         serializer_context = {"request": request} if request else {}
+        hero_playback = dict(HeroPlaybackSerializer(media, context=serializer_context).data)
+        if settings.ANALYTICS_ENABLED:
+            from cms.playback_analytics import measurement_token
+
+            hero_playback["analytics_revision"] = str(media.analytics_revision)
+            hero_playback["measurement_token"] = measurement_token(media, "hero")
         return [
             {
                 **first,
-                "hero_playback": HeroPlaybackSerializer(media, context=serializer_context).data,
+                "hero_playback": hero_playback,
             },
             *item_list[1:],
         ]
@@ -410,6 +416,7 @@ def view_page(request, slug):
     page = Page.objects.filter(slug=slug).first()
     if page:
         context["page"] = page
+        request.analytics_text_page = page.pk
     else:
         return render(request, "404.html", context)
         # return HttpResponseRedirect('/')
@@ -879,6 +886,11 @@ def view_media(request):
         context["media"] = None
         return render(request, template, context)
         # return HttpResponseRedirect('/')
+    if media.state == "private" and not (
+        request.user.is_authenticated
+        and (media.user_id == request.user.id or is_mediacms_editor(request.user) or is_mediacms_manager(request.user))
+    ):
+        return HttpResponse("Unauthorized", status=401)
     user_or_session = get_user_or_session(request)
     save_user_action.delay(user_or_session, friendly_token=friendly_token, action="watch")
     context = {}
@@ -947,9 +959,14 @@ def view_media(request):
     context["media_access_token"] = media_access_token
     context["is_media_allowed_type"] = is_media_allowed_type(media)
 
+    if media.state in {"public", "unlisted"} or can_see_restricted_media:
+        from cms.analytics import allow_media_analytics
+
+        allow_media_analytics(request, media, "page")
+
     response = render(request, template, context)
-    if media.state == "restricted":
-        response["Referrer-Policy"] = "same-origin"
+    if media.state in {"private", "restricted", "unlisted"}:
+        response["Referrer-Policy"] = "no-referrer"
         response["Cache-Control"] = "no-store"
     return response
 
@@ -959,45 +976,24 @@ def view_media(request):
 
 
 def view_old_media(request, user, video):
-    template = resolve_template(request, "media")
     url = f"/Members/{user}/videos/{video}"
     media = Media.objects.filter(existing_urls__url__in=[url]).first()
-    if media:
-        friendly_token = media.friendly_token
-    else:
+    if not media:
         return HttpResponseRedirect("/")
-    user_or_session = get_user_or_session(request)
-    save_user_action.delay(user_or_session, friendly_token=friendly_token, action="watch")
-    context = {}
-    context["media"] = friendly_token
-    context["media_object"] = media
-
-    context["CAN_DELETE_MEDIA"] = False
-    context["CAN_EDIT_MEDIA"] = False
-    context["CAN_DELETE_COMMENTS"] = False
-
-    if request.user.is_authenticated:
-        if (media.user.id == request.user.id) or is_mediacms_editor(request.user) or is_mediacms_manager(request.user):
-            context["CAN_DELETE_MEDIA"] = True
-            context["CAN_EDIT_MEDIA"] = True
-            context["CAN_DELETE_COMMENTS"] = True
-    return render(request, template, context)
+    request.GET = request.GET.copy()
+    request.GET["m"] = media.friendly_token
+    return view_media(request)
 
 
 @xframe_options_exempt
 def embed_old_media(request, user, video):
     url = f"/Members/{user}/videos/{video}"
-    media = Media.objects.values("friendly_token").filter(existing_urls__url__in=[url]).first()
-    if media:
-        friendly_token = media["friendly_token"]
-    else:
+    media = Media.objects.filter(existing_urls__url__in=[url]).first()
+    if not media:
         return HttpResponseRedirect("/")
-    get_user_or_session(request)
-    # save_user_action.delay(
-    #     user_or_session, friendly_token=friendly_token, action='watch')
-    context = {}
-    context["media"] = friendly_token
-    return render(request, "cms/embed.html", context)
+    request.GET = request.GET.copy()
+    request.GET["m"] = media.friendly_token
+    return embed_media(request)
 
 
 #########################
@@ -1452,6 +1448,12 @@ def embed_media(request):
     context["media"] = friendly_token
     context["media_access_token"] = None
 
+    if media.state == "private" and not (
+        request.user.is_authenticated
+        and (media.user_id == request.user.id or is_mediacms_editor(request.user) or is_mediacms_manager(request.user))
+    ):
+        return HttpResponse("Unauthorized", status=401)
+
     # Validate token for restricted media
     if media.state == "restricted":
         from files.token_utils import validate_token
@@ -1465,9 +1467,12 @@ def embed_media(request):
             response["Cache-Control"] = "no-store"
             return response
 
+    from cms.analytics import allow_media_analytics
+
+    allow_media_analytics(request, media, "embed")
     response = render(request, "cms/embed.html", context)
-    if media.state == "restricted":
-        response["Referrer-Policy"] = "same-origin"
+    if media.state in {"private", "restricted", "unlisted"}:
+        response["Referrer-Policy"] = "no-referrer"
         response["Cache-Control"] = "no-store"
     return response
 

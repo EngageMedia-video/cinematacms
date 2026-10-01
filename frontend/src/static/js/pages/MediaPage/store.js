@@ -1210,15 +1210,13 @@ class MediaPageStore extends EventEmitter {
 			case 'COPY_SHARE_LINK':
 				if (action.inputElement instanceof HTMLElement) {
 					action.inputElement.select();
-					document.execCommand('copy');
-					this.emit('copied_media_link');
+					if (document.execCommand('copy')) this.emit('copied_media_link');
 				}
 				break;
 			case 'COPY_EMBED_MEDIA_CODE':
 				if (action.inputElement instanceof HTMLElement) {
 					action.inputElement.select();
-					document.execCommand('copy');
-					this.emit('copied_embed_media_code');
+					if (document.execCommand('copy')) this.emit('copied_embed_media_code');
 				}
 				break;
 			case 'REMOVE_MEDIA':
@@ -1508,4 +1506,18 @@ class MediaPageStore extends EventEmitter {
 	}
 }
 
-export default exportStore(new MediaPageStore(), 'actions_handler');
+const mediaPageStore = exportStore(new MediaPageStore(), 'actions_handler');
+
+Object.entries({
+	liked_media: 'like',
+	unliked_media: 'unlike',
+	media_playlist_addition_completed: 'playlist_add',
+	media_playlist_removal_completed: 'playlist_remove',
+	copied_media_link: 'link_copy',
+	copied_embed_media_code: 'embed_copy',
+	comment_submit: 'comment_success',
+}).forEach(([event, name]) => {
+	mediaPageStore.on(event, () => window.CinemataAnalytics?.track(name));
+});
+
+export default mediaPageStore;

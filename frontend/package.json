@@ -72,7 +72,7 @@
 		"flux": {
 			"react": "^19.2.4"
 		},
-		"ip-address": "10.4.0",
+		"ip-address": "10.7.2",
 		"mpd-parser": {
 			"@xmldom/xmldom": "0.8.13"
 		},
@@ -89,6 +89,7 @@
 	},
 	"dependencies": {
 		"@mediacms/media-player": "file:packages/media-player",
+		"@tanstack/charts": "0.18.0",
 		"@tanstack/react-query": "^5.103.1",
 		"axios": "^1.20.0",
 		"clsx": "^2.1.1",

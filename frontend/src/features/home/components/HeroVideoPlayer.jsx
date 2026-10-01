@@ -21,6 +21,7 @@ function getSubtitlesInfo(subtitles) {
 export default function HeroVideoPlayer({
 	sources = [],
 	videoInfo = {},
+	analyticsMedia = null,
 	poster = '',
 	subtitles = {},
 	className = DEFAULT_PLAYER_CLASS,
@@ -40,6 +41,7 @@ export default function HeroVideoPlayer({
 					siteId={site.id}
 					siteUrl={site.url}
 					info={videoInfo}
+					analyticsMedia={analyticsMedia}
 					cornerLayers={{}}
 					sources={sources}
 					poster={poster}

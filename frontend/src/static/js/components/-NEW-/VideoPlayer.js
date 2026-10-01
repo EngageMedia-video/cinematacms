@@ -367,7 +367,8 @@ export function VideoPlayer(props) {
 			[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
 			onPlayerStateUpdate,
 			onClickNext,
-			onClickPrevious
+			onClickPrevious,
+			props.analyticsMedia
 		);
 
 		if (void 0 !== props.onPlayerInitCallback) {
@@ -456,6 +457,7 @@ VideoPlayer.propTypes = {
 	onClickPreviousCallback: PropTypes.func,
 	onClickNextCallback: PropTypes.func,
 	onPlayerInitCallback: PropTypes.func,
+	analyticsMedia: PropTypes.object,
 	onStateUpdateCallback: PropTypes.func,
 	onUnmountCallback: PropTypes.func,
 	// New props for device tier detection, debugging, and anti-buffering

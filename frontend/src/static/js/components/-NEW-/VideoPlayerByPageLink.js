@@ -34,6 +34,7 @@ export function VideoPlayerByPageLink(props) {
 	const [videoResolutions, setVideoResolutions] = useState({});
 	const [subtitlesInfo, setSubtitlesInfo] = useState([]);
 	const [previewSprite, setPreviewSprite] = useState({});
+	const [analyticsMedia, setAnalyticsMedia] = useState(null);
 	const [loading, setLoading] = useState(false);
 
 	// Keep cache data "fresh" for one day.
@@ -209,6 +210,17 @@ export function VideoPlayerByPageLink(props) {
 								}
 							: null
 					);
+					setAnalyticsMedia(
+						data.uid
+							? {
+									id: data.uid,
+									type: data.media_type,
+									context: 'hero',
+									revision: data.analytics_revision,
+									measurement_token: data.hero_measurement_token,
+								}
+							: null
+					);
 
 					const featuredItemDescrContent = document.querySelector(
 						'.feat-first-item .item .item-description > div'
@@ -236,6 +248,7 @@ export function VideoPlayerByPageLink(props) {
 				siteId={site.id}
 				siteUrl={site.url}
 				info={videoResolutions}
+				analyticsMedia={analyticsMedia}
 				sources={videoSources}
 				poster={videoPoster}
 				previewSprite={previewSprite}

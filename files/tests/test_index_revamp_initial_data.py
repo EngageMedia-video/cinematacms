@@ -183,6 +183,7 @@ class IndexRevampInitialDataTest(TestCase):
 
         self.assertEqual(payload[0]["friendly_token"], hero.friendly_token)
         self.assertIn("hero_playback", payload[0])
+        self.assertEqual(payload[0]["hero_playback"]["uid"], str(hero.uid))
         self.assertIn("encodings_info", payload[0]["hero_playback"])
         self.assertIn("hls_info", payload[0]["hero_playback"])
         self.assertIn("subtitles_info", payload[0]["hero_playback"])

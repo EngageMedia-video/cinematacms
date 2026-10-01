@@ -5,6 +5,8 @@ from django.apps import apps
 from django.conf import settings
 from django.db import DatabaseError
 
+from cms.analytics import analytics_context
+
 from .lists import UNUSUAL_COUNTRIES
 from .methods import (
     can_manage_film_impact,
@@ -36,6 +38,7 @@ def _switch(name, fallback_setting):
 
 def stuff(request):
     ret = {}
+    ret.update(analytics_context(request))
     if request.is_secure():
         ret["FRONTEND_HOST"] = settings.SSL_FRONTEND_HOST
     else:

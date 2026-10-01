@@ -51,6 +51,7 @@ describe('getProfileTabs', () => {
 			'liked',
 		]);
 		expect(tabs.find((tab) => tab.id === 'media').label).toBe("Jen's Media");
+		expect(tabs.find((tab) => tab.id === 'analytics')).toBeUndefined();
 	});
 
 	it('shows the contact tab to visitors when contact is allowed', () => {

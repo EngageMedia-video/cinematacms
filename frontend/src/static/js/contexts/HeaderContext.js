@@ -71,6 +71,12 @@ function popupMiddleNavItems() {
 		}
 	} else {
 		items.push({
+			link: '/analytics',
+			icon: 'bar_chart',
+			text: 'Analytics',
+		});
+
+		items.push({
 			link: links.user.editProfile,
 			icon: 'brush',
 			text: 'Edit profile',

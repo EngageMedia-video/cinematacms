@@ -375,7 +375,8 @@ export function MediaPlayer(
 	videoPlaybackSpeeds,
 	pluginStateUpdateCallback,
 	onNextButtonClick,
-	onPrevButtonClick
+	onPrevButtonClick,
+	analyticsMedia
 ) {
 	if (!Node.prototype.isPrototypeOf(domPlayer)) {
 		console.error('Invalid player DOM element', domPlayer); // TODO: Validate that element is <video> or <audio>.
@@ -489,6 +490,23 @@ export function MediaPlayer(
 	});
 
 	this.player = videojs(domPlayer, passOptions);
+	window.CinemataAnalytics?.attachPlayer(this.player, analyticsMedia);
+	let previousAnalyticsState;
+	const onStateUpdate = (state) => {
+		if (previousAnalyticsState && (analyticsMedia?.id || window.CinemataAnalytics?.mediaId)) {
+			for (const [key, event] of Object.entries({
+				quality: 'quality_change',
+				subtitle: 'subtitle_change',
+				playbackSpeed: 'speed_change',
+				theaterMode: 'theater_change',
+			})) {
+				if (previousAnalyticsState[key] !== state[key])
+					window.CinemataAnalytics.track(event, {}, analyticsMedia);
+			}
+		}
+		previousAnalyticsState = { ...state };
+		pluginStateUpdateCallback?.(state);
+	};
 
 	/*
 	 * Call plugin.
@@ -500,9 +518,19 @@ export function MediaPlayer(
 		pluginState,
 		pluginVideoResolutions,
 		pluginVideoPlaybackSpeeds,
-		pluginStateUpdateCallback,
-		onNextButtonClick,
-		onPrevButtonClick
+		onStateUpdate,
+		() => {
+			if (analyticsMedia?.id || window.CinemataAnalytics?.mediaId)
+				window.CinemataAnalytics.track('next', {}, analyticsMedia);
+			window.CinemataAnalytics?.markNavigationIntent();
+			onNextButtonClick?.();
+		},
+		() => {
+			if (analyticsMedia?.id || window.CinemataAnalytics?.mediaId)
+				window.CinemataAnalytics.track('previous', {}, analyticsMedia);
+			window.CinemataAnalytics?.markNavigationIntent();
+			onPrevButtonClick?.();
+		}
 	);
 
 	/*
