@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { CreatorAnalyticsPage } from './CreatorAnalyticsPage';
 
 const data = {
@@ -71,6 +71,7 @@ const data = {
 };
 
 describe('CreatorAnalyticsPage', () => {
+	beforeEach(() => window.history.replaceState(null, '', '/analytics'));
 	it('offers segment figures only when there is coverage data', async () => {
 		const user = userEvent.setup();
 		const filmData = { ...data, selected_media: { ...data.rows[0], uid: 'film-id', media_type: 'video' } };
@@ -79,6 +80,7 @@ describe('CreatorAnalyticsPage', () => {
 				data={{ ...filmData, measurement: { ...data.measurement, measured_plays: 0, retention: [] } }}
 			/>
 		);
+		await user.click(screen.getByRole('tab', { name: 'Viewing details' }));
 		expect(screen.getByText('No measured plays in this period.')).toBeInTheDocument();
 		expect(screen.queryByText('View segment coverage figures')).not.toBeInTheDocument();
 		rerender(<CreatorAnalyticsPage data={filmData} />);
@@ -153,13 +155,14 @@ describe('CreatorAnalyticsPage', () => {
 		expect(screen.getByRole('link', { name: '30 days' })).toHaveAttribute('aria-current', 'page');
 		expect(screen.getByRole('group', { name: 'Daily watch time chart' })).toBeInTheDocument();
 		expect(screen.queryByRole('slider')).not.toBeInTheDocument();
-		expect(screen.getByRole('heading', { name: 'Your media' })).toBeInTheDocument();
+		expect(screen.getByRole('tab', { name: 'Your media' })).toBeInTheDocument();
 		expect(screen.getByText('Average film coverage')).toBeInTheDocument();
 		expect(screen.getByText('Starts after interaction')).toBeInTheDocument();
 		expect(screen.queryByText('Completion rate')).not.toBeInTheDocument();
 		await user.click(screen.getByText('View daily figures'));
 		expect(screen.getByText('2026-09-28')).toBeInTheDocument();
 		expect(screen.getAllByRole('row')[1]).toHaveTextContent('2026-09-28');
+		await user.click(screen.getByRole('tab', { name: 'Your media' }));
 		expect(screen.getAllByRole('link', { name: 'My private film' })[0]).toHaveAttribute(
 			'href',
 			data.rows[0].analytics_url
@@ -178,11 +181,13 @@ describe('CreatorAnalyticsPage', () => {
 		expect(screen.getByRole('button', { name: 'Reached end' })).toHaveAttribute('aria-pressed', 'true');
 		expect(screen.getByRole('group', { name: 'Daily reached end chart' })).toBeInTheDocument();
 		expect(screen.queryByRole('slider')).not.toBeInTheDocument();
-		expect(screen.getByRole('link', { name: 'Next' })).toHaveAttribute('href', '?days=90&page=3');
-		expect(screen.getByRole('link', { name: 'Previous' })).toHaveAttribute('href', '?days=90&page=1');
+		await user.click(screen.getByRole('tab', { name: 'Your media' }));
+		expect(screen.getByRole('link', { name: 'Next' })).toHaveAttribute('href', '?days=90&page=3#media');
+		expect(screen.getByRole('link', { name: 'Previous' })).toHaveAttribute('href', '?days=90&page=1#media');
 	});
 
-	it('explains empty activity and keeps new engagement events visible', () => {
+	it('explains empty activity and keeps new engagement events visible', async () => {
+		const user = userEvent.setup();
 		render(
 			<CreatorAnalyticsPage
 				data={{
@@ -197,12 +202,15 @@ describe('CreatorAnalyticsPage', () => {
 			/>
 		);
 		expect(screen.getByText('No activity in this period')).toBeInTheDocument();
-		expect(screen.getByText('No media yet')).toBeInTheDocument();
-		expect(screen.getByText('New Feature Action')).toBeInTheDocument();
 		expect(screen.queryByRole('group', { name: 'Daily watch time chart' })).not.toBeInTheDocument();
+		await user.click(screen.getByRole('tab', { name: 'Your media' }));
+		expect(screen.getByText('No media yet')).toBeVisible();
+		await user.click(screen.getByRole('tab', { name: 'Engagement' }));
+		expect(screen.getByText('New Feature Action')).toBeVisible();
 	});
 
-	it('shows one media and keeps its selection when changing the range or retrying', () => {
+	it('shows one media and keeps its selection when changing the range or retrying', async () => {
+		const user = userEvent.setup();
 		const selected_media = {
 			...data.rows[0],
 			uid: '00000000-0000-4000-8000-000000000001',
@@ -216,7 +224,7 @@ describe('CreatorAnalyticsPage', () => {
 		expect(within(breadcrumb).getAllByRole('listitem')).toHaveLength(3);
 		expect(within(breadcrumb).getByRole('link', { name: 'Analytics' })).toHaveAttribute(
 			'href',
-			'/analytics?days=30'
+			'/analytics?days=30#media'
 		);
 		expect(within(breadcrumb).getByText('My private film')).toHaveAttribute('aria-current', 'page');
 		expect(within(breadcrumb).queryByRole('link', { name: 'My private film' })).not.toBeInTheDocument();
@@ -227,7 +235,8 @@ describe('CreatorAnalyticsPage', () => {
 		);
 		expect(screen.queryByRole('heading', { name: 'Your media' })).not.toBeInTheDocument();
 		expect(screen.queryByText('No media yet')).not.toBeInTheDocument();
-		expect(screen.getByRole('heading', { name: 'Engagement' })).toBeInTheDocument();
+		expect(screen.getByRole('tab', { name: 'Engagement' })).toBeInTheDocument();
+		await user.click(screen.getByRole('tab', { name: 'Viewing details' }));
 		expect(screen.getByRole('heading', { name: 'Coverage by film segment' })).toBeInTheDocument();
 		expect(screen.getByRole('group', { name: 'Film segment coverage chart' })).toBeInTheDocument();
 		expect(screen.getByText('Video · 2:05')).toBeInTheDocument();
@@ -244,22 +253,28 @@ describe('CreatorAnalyticsPage', () => {
 		rerender(<CreatorAnalyticsPage data={{ ...data, rows: [], selected_media, unavailable: true }} />);
 		expect(
 			within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('link', { name: 'Analytics' })
-		).toHaveAttribute('href', '/analytics?days=30');
+		).toHaveAttribute('href', '/analytics?days=30#media');
 		expect(screen.queryByRole('link', { name: 'Try again' })).not.toBeInTheDocument();
 		expect(screen.getByRole('link', { name: 'Refresh figures' })).toHaveAttribute(
 			'href',
-			`?days=30&media=${selected_media.uid}&version=${data.version}`
+			`?days=30&media=${selected_media.uid}&version=${data.version}#details`
 		);
 	});
 
-	it('keeps CMS metrics and owned media available without substituting Umami counts', () => {
+	it('keeps CMS metrics and owned media available without substituting Umami counts', async () => {
+		const user = userEvent.setup();
 		render(<CreatorAnalyticsPage data={{ ...data, unavailable: true }} />);
 
 		expect(screen.queryByRole('status')).not.toBeInTheDocument();
 		expect(screen.queryByText(/Umami event figures unavailable/)).not.toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: 'Try again' })).not.toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: 'Viewing time' })).toBeInTheDocument();
-		expect(screen.getByRole('heading', { name: 'Current media totals' })).toBeInTheDocument();
+		expect(screen.getByRole('group', { name: 'Daily watch time chart' })).toBeInTheDocument();
+		expect(screen.getByText('Current media totals')).toBeVisible();
+		expect(screen.queryByRole('tab', { name: 'Engagement' })).not.toBeInTheDocument();
+		await user.click(screen.getByText('Current media totals'));
+		expect(screen.getByText('999')).toBeVisible();
+		await user.click(screen.getByRole('tab', { name: 'Your media' }));
 		expect(screen.getByRole('heading', { name: 'Your media' })).toBeInTheDocument();
 		expect(screen.getAllByRole('link', { name: 'My private film' })[0]).toHaveAttribute(
 			'href',
@@ -267,7 +282,54 @@ describe('CreatorAnalyticsPage', () => {
 		);
 		expect(screen.queryByRole('columnheader', { name: 'Media views' })).not.toBeInTheDocument();
 		expect(screen.getByRole('columnheader', { name: 'Legacy views (all time)' })).toBeInTheDocument();
-		expect(screen.getByRole('group', { name: 'Daily watch time chart' })).toBeInTheDocument();
+	});
+
+	it('navigates report sections by keyboard and retains the section in date links', async () => {
+		const user = userEvent.setup();
+		render(<CreatorAnalyticsPage data={data} />);
+		expect(screen.queryByRole('heading', { name: 'Your media' })).not.toBeInTheDocument();
+		screen.getByRole('tab', { name: 'Overview' }).focus();
+		await user.keyboard('{ArrowRight}');
+		await waitFor(() => expect(screen.getByRole('tab', { name: 'Your media' })).toHaveFocus());
+		expect(screen.getByRole('tabpanel', { name: 'Your media' })).toBeVisible();
+		expect(window.location.hash).toBe('#media');
+		expect(screen.getByRole('link', { name: '90 days' })).toHaveAttribute('href', '?days=90#media');
+		await user.keyboard('{End}');
+		expect(screen.getByRole('tabpanel', { name: 'Engagement' })).toBeVisible();
+		expect(screen.getByText('Like')).toBeVisible();
+		expect(screen.getByRole('link', { name: 'Refresh figures' })).toHaveAttribute('href', '?days=30#engagement');
+	});
+
+	it('opens bookmarked film details and falls back when a section is unavailable', () => {
+		window.history.replaceState(null, '', '/analytics#details');
+		const { unmount } = render(
+			<CreatorAnalyticsPage
+				data={{ ...data, selected_media: { ...data.rows[0], uid: 'film-id', media_type: 'video' } }}
+			/>
+		);
+		expect(screen.getByRole('tabpanel', { name: 'Viewing details' })).toBeVisible();
+		expect(screen.getByRole('group', { name: 'Film segment coverage chart' })).toBeVisible();
+		expect(screen.getByRole('link', { name: '7 days' })).toHaveAttribute(
+			'href',
+			`?days=7&media=film-id&version=${data.version}#details`
+		);
+		unmount();
+		window.history.replaceState(null, '', '/analytics#engagement');
+		render(<CreatorAnalyticsPage data={{ ...data, unavailable: true }} />);
+		expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
+		expect(screen.getByRole('group', { name: 'Daily watch time chart' })).toBeVisible();
+	});
+
+	it('explains missing traffic details for nonplayable media', async () => {
+		const user = userEvent.setup();
+		render(
+			<CreatorAnalyticsPage
+				data={{ ...data, selected_media: { ...data.rows[0], uid: 'image-id', media_type: 'image' } }}
+			/>
+		);
+		await user.click(screen.getByRole('tab', { name: 'Traffic details' }));
+		expect(screen.getByRole('heading', { name: 'No traffic details yet' })).toBeVisible();
+		expect(screen.queryByRole('tab', { name: 'Viewing details' })).not.toBeInTheDocument();
 	});
 
 	it('explains viewing units and keeps dates visible in CMS-only reports', async () => {
@@ -296,7 +358,7 @@ describe('CreatorAnalyticsPage', () => {
 		);
 		expect(screen.queryByText('Measured plays')).not.toBeInTheDocument();
 		expect(screen.queryByRole('group', { name: /chart/ })).not.toBeInTheDocument();
-		expect(screen.getByRole('heading', { name: 'Current media totals' })).toBeInTheDocument();
+		expect(screen.getByText('Current media totals')).toBeVisible();
 		rerender(
 			<CreatorAnalyticsPage
 				data={{ ...data, selected_media: { ...data.rows[0], uid: 'image-id', media_type: 'image' } }}
@@ -307,7 +369,8 @@ describe('CreatorAnalyticsPage', () => {
 		expect(screen.queryByText('Measured plays')).not.toBeInTheDocument();
 	});
 
-	it('uses understandable labels for player context and errors', () => {
+	it('uses understandable labels for player context and errors', async () => {
+		const user = userEvent.setup();
 		render(
 			<CreatorAnalyticsPage
 				data={{
@@ -319,6 +382,7 @@ describe('CreatorAnalyticsPage', () => {
 				}}
 			/>
 		);
+		await user.click(screen.getByRole('tab', { name: 'Viewing details' }));
 		expect(screen.getByText('Embedded player')).toBeInTheDocument();
 		expect(screen.getByText('Playback source not captured')).toBeInTheDocument();
 		expect(screen.getByText('Media decoding error')).toBeInTheDocument();

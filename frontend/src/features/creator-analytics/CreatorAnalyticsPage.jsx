@@ -246,9 +246,12 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 function Engagement({ items }) {
 	const sorted = items.filter(([, count]) => count > 0).sort((a, b) => b[1] - a[1]);
 	return (
-		<Card as="section" aria-labelledby="engagement-heading" className="mt-6 min-w-0 p-5 sm:p-8">
+		<Card as="section" aria-labelledby="engagement-heading" className="min-w-0 p-5 sm:p-8">
 			<Text as="h2" id="engagement-heading" variant="h6-bold" className="m-0 text-text-primary">
 				Engagement
+			</Text>
+			<Text as="p" variant="body-14" className="mt-2 mb-4 max-w-prose">
+				Recorded likes, shares, downloads, comments, and other actions in this period. Repeat actions count.
 			</Text>
 			{sorted.length ? (
 				<dl className="m-0 mt-2 grid gap-x-10 sm:grid-cols-2 lg:grid-cols-3">
@@ -265,7 +268,7 @@ function Engagement({ items }) {
 				</dl>
 			) : (
 				<Text as="p" variant="body-14" color="meta" className="mt-4 mb-0">
-					No engagement in this period.
+					No engagement recorded in this period. Try a longer date range to see earlier activity.
 				</Text>
 			)}
 		</Card>
@@ -299,41 +302,8 @@ function PlaybackMilestones({ totals }) {
 
 function MeasuredViewing({ measurement, selectedMedia }) {
 	const hasPlays = measurement.measured_plays > 0;
-	const retention = measurement.retention.map((value, index) => ({
-		segment: `${index * 5}–${(index + 1) * 5}%`,
-		value,
-	}));
-	const definition = defineChart({
-		marks: [lineY(retention, { x: 'segment', y: 'value', stroke: 'currentColor', strokeWidth: 3 })],
-		scales: {
-			x: {
-				scale: () => scalePoint().padding(0.2),
-				axis: {
-					line: false,
-					ticks: {
-						values: retention
-							.filter((_, index) => [0, 5, 10, 15, 19].includes(index))
-							.map((part) => part.segment),
-						size: 0,
-						format: (segment) => (segment.startsWith('95') ? '100%' : `${segment.split('–')[0]}%`),
-					},
-					tickLabels: { fontSize: 14, opacity: 1, thin: true },
-				},
-			},
-			y: {
-				scale: scaleLinear().domain([0, 100]),
-				axis: {
-					line: false,
-					ticks: { size: 0, format: (value) => `${value}%` },
-					tickLabels: { fontSize: 14, opacity: 1 },
-				},
-				grid: { strokeOpacity: 0.5 },
-			},
-		},
-		tooltip: { use: tooltip },
-	});
 	return (
-		<Card as="section" aria-labelledby="viewing-heading" className="mt-6 p-5 sm:p-8">
+		<Card as="section" aria-labelledby="viewing-heading" className="p-5 sm:p-8">
 			<div className="flex flex-wrap items-baseline justify-between gap-2">
 				<Text as="h2" id="viewing-heading" variant="h6-bold" className="m-0 text-text-primary">
 					{selectedMedia ? 'How this film is watched' : 'Viewing time'}
@@ -371,56 +341,93 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 					still be in progress.
 				</Text>
 			</Disclosure>
-			{selectedMedia && (
-				<>
-					<Text as="h3" variant="body-14-bold" className="mt-8 mb-1 text-text-primary">
-						Coverage by film segment
-					</Text>
-					<Text as="p" variant="body-14" color="body" className="m-0 max-w-prose">
-						See which parts of the film are watched. Each point shows average coverage of a 5% segment, not
-						the number of viewers still watching.
-					</Text>
-					{hasPlays ? (
-						<div
-							className="mt-4 text-text-link [&_svg_text]:fill-text-primary [&_svg_line]:stroke-border-default"
-							role="group"
-							aria-label="Film segment coverage chart"
-						>
-							<Chart
-								definition={definition}
-								height={220}
-								ariaLabel="Film segment coverage in 5 percent intervals"
-								renderTooltipBody={({ points }) =>
-									points.length ? (
-										<div>
-											<Text as="p" variant="body-14-medium" className="m-0">
-												Film segment {points[0].xValue}
-											</Text>
-											<Text as="p" variant="body-14" className="m-0">
-												{number.format(points[0].yValue)}% average coverage
-											</Text>
-										</div>
-									) : null
-								}
-							/>
-						</div>
-					) : (
-						<Text as="p" variant="body-14" color="body" className="mt-5 mb-0">
-							No measured plays in this period.
-						</Text>
-					)}
-					{retention.length > 0 && (
-						<Disclosure title="View segment coverage figures" className="mt-3">
-							<ol className="m-0 grid list-none grid-cols-2 gap-2 p-0 sm:grid-cols-4">
-								{retention.map((part) => (
-									<Text as="li" variant="body-12" key={part.segment}>
-										{part.segment}: {part.value}%
+		</Card>
+	);
+}
+
+function FilmCoverage({ measurement }) {
+	const hasPlays = measurement.measured_plays > 0;
+	const retention = measurement.retention.map((value, index) => ({
+		segment: `${index * 5}–${(index + 1) * 5}%`,
+		value,
+	}));
+	const definition = defineChart({
+		marks: [lineY(retention, { x: 'segment', y: 'value', stroke: 'currentColor', strokeWidth: 3 })],
+		scales: {
+			x: {
+				scale: () => scalePoint().padding(0.2),
+				axis: {
+					line: false,
+					ticks: {
+						values: retention
+							.filter((_, index) => [0, 5, 10, 15, 19].includes(index))
+							.map((part) => part.segment),
+						size: 0,
+						format: (segment) => (segment.startsWith('95') ? '100%' : `${segment.split('–')[0]}%`),
+					},
+					tickLabels: { fontSize: 14, opacity: 1, thin: true },
+				},
+			},
+			y: {
+				scale: scaleLinear().domain([0, 100]),
+				axis: {
+					line: false,
+					ticks: { size: 0, format: (value) => `${value}%` },
+					tickLabels: { fontSize: 14, opacity: 1 },
+				},
+				grid: { strokeOpacity: 0.5 },
+			},
+		},
+		tooltip: { use: tooltip },
+	});
+	return (
+		<Card as="section" aria-labelledby="coverage-heading" className="p-5 sm:p-8">
+			<Text as="h2" id="coverage-heading" variant="h6-bold" className="m-0 mb-2 text-text-primary">
+				Coverage by film segment
+			</Text>
+			<Text as="p" variant="body-14" color="body" className="m-0 max-w-prose">
+				See which parts of the film are watched. Each point shows average coverage of a 5% segment, not the
+				number of viewers still watching.
+			</Text>
+			{hasPlays ? (
+				<div
+					className="mt-4 text-text-link [&_svg_text]:fill-text-primary [&_svg_line]:stroke-border-default"
+					role="group"
+					aria-label="Film segment coverage chart"
+				>
+					<Chart
+						definition={definition}
+						height={220}
+						ariaLabel="Film segment coverage in 5 percent intervals"
+						renderTooltipBody={({ points }) =>
+							points.length ? (
+								<div>
+									<Text as="p" variant="body-14-medium" className="m-0">
+										Film segment {points[0].xValue}
 									</Text>
-								))}
-							</ol>
-						</Disclosure>
-					)}
-				</>
+									<Text as="p" variant="body-14" className="m-0">
+										{number.format(points[0].yValue)}% average coverage
+									</Text>
+								</div>
+							) : null
+						}
+					/>
+				</div>
+			) : (
+				<Text as="p" variant="body-14" color="body" className="mt-5 mb-0">
+					No measured plays in this period.
+				</Text>
+			)}
+			{retention.length > 0 && (
+				<Disclosure title="View segment coverage figures" className="mt-3">
+					<ol className="m-0 grid list-none grid-cols-2 gap-2 p-0 sm:grid-cols-4">
+						{retention.map((part) => (
+							<Text as="li" variant="body-12" key={part.segment}>
+								{part.segment}: {part.value}%
+							</Text>
+						))}
+					</ol>
+				</Disclosure>
 			)}
 		</Card>
 	);
@@ -455,7 +462,7 @@ function Breakdown({ title, items, labels = {}, empty = 'No data in this period.
 }
 
 function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
-	const pageUrl = (page) => `?days=${days}&page=${page}`;
+	const pageUrl = (page) => `?days=${days}&page=${page}#media`;
 	const columns = eventsAvailable
 		? [
 				['Media views', (row) => number.format(row.views)],
@@ -469,7 +476,7 @@ function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
 				['Legacy views (all time)', (row) => number.format(row.legacy_views)],
 			];
 	return (
-		<Card as="section" aria-labelledby="media-heading" className="mt-6 min-w-0 p-5 sm:p-8">
+		<Card as="section" aria-labelledby="media-heading" className="min-w-0 p-5 sm:p-8">
 			<div className="flex flex-wrap items-center justify-between gap-2 pb-4">
 				<Text as="h2" id="media-heading" variant="h6-bold" className="m-0 text-text-primary">
 					Your media
@@ -478,6 +485,9 @@ function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
 					{eventsAvailable ? 'Ranked by media views' : 'Newest media first'}
 				</Text>
 			</div>
+			<Text as="p" variant="body-14" className="m-0 mb-4 max-w-prose">
+				Open a media title to explore its viewing patterns and engagement.
+			</Text>
 			{rows.length ? (
 				<>
 					<div className="hidden overflow-x-auto md:block">
@@ -648,10 +658,26 @@ export function CreatorAnalyticsPage({ data }) {
 	const mediaQuery = selectedMedia
 		? `&media=${encodeURIComponent(selectedMedia.uid)}&version=${encodeURIComponent(data.version)}`
 		: '';
-	const rangeUrl = (days) => `?days=${days}${mediaQuery}`;
+	const sections = [
+		'overview',
+		...(!selectedMedia ? ['media'] : canMeasureViewing || !data.unavailable ? ['details'] : []),
+		...(!data.unavailable ? ['engagement'] : []),
+	];
+	const [requestedSection, setRequestedSection] = useState(() => window.location.hash.slice(1));
+	const section = sections.includes(requestedSection) ? requestedSection : 'overview';
+	const sectionHash = section === 'overview' ? '' : `#${section}`;
+	const rangeUrl = (days) => `?days=${days}${mediaQuery}${sectionHash}`;
+	const selectSection = (value) => {
+		setRequestedSection(value);
+		window.history.replaceState(
+			window.history.state,
+			'',
+			`${window.location.pathname}${window.location.search}${value === 'overview' ? '' : `#${value}`}`
+		);
+	};
 	const breadcrumbs = [
 		{ label: 'Home', href: '/' },
-		{ label: 'Analytics', href: selectedMedia ? `/analytics?days=${data.days}` : null },
+		{ label: 'Analytics', href: selectedMedia ? `/analytics?days=${data.days}#media` : null },
 		...(selectedMedia ? [{ label: selectedMedia.title }] : []),
 	];
 	return (
@@ -697,7 +723,7 @@ export function CreatorAnalyticsPage({ data }) {
 				<header className="mb-6 flex flex-wrap items-center justify-between gap-4">
 					<div className="flex w-full min-w-0 items-center gap-4 sm:gap-6 lg:w-auto lg:flex-1">
 						{selectedMedia && (
-							<div className="flex aspect-video w-24 shrink-0 items-center justify-center overflow-hidden rounded-ds-8 bg-bg-surface-muted sm:w-32">
+							<div className="flex aspect-video w-16 shrink-0 items-center justify-center overflow-hidden rounded-ds-8 bg-bg-surface-muted sm:w-32">
 								<SquareImage
 									src={selectedMedia.thumbnail_url}
 									alt=""
@@ -713,8 +739,7 @@ export function CreatorAnalyticsPage({ data }) {
 							</Text>
 							{!selectedMedia && (
 								<Text as="p" variant="body-14" className="m-0 mt-2">
-									Viewing and engagement across the media you own. Open a title for its detailed
-									report.
+									Viewing and engagement across all media you own.
 								</Text>
 							)}
 							{selectedMedia && (
@@ -833,7 +858,7 @@ export function CreatorAnalyticsPage({ data }) {
 								value={data.version}
 								options={data.versions}
 								onChange={(version) => {
-									window.location.href = `?days=${data.days}&media=${encodeURIComponent(selectedMedia.uid)}&version=${encodeURIComponent(version)}`;
+									window.location.href = `?days=${data.days}&media=${encodeURIComponent(selectedMedia.uid)}&version=${encodeURIComponent(version)}${sectionHash}`;
 								}}
 							/>
 						</div>
@@ -844,153 +869,184 @@ export function CreatorAnalyticsPage({ data }) {
 						We can’t tell which film version these views and plays belong to. All versions includes them.
 					</Text>
 				)}
-				{!data.unavailable && (
-					<>
+				<TabView
+					aria-label="Analytics sections"
+					selectedTab={section}
+					onSelectedTabChange={selectSection}
+					hideTabList={sections.length === 1}
+					listClassName="rounded-none bg-transparent border-b border-border-divider"
+					triggerClassName="min-w-0 min-h-11 whitespace-normal px-2 py-3 normal-case tracking-normal bg-transparent text-text-secondary border-b-2 border-transparent aria-selected:border-text-link aria-selected:text-text-link focus-visible:ring-offset-bg-page"
+					panelClassName="mt-6 focus:outline-none"
+				>
+					<TabContent value="overview" title="Overview">
 						{canMeasureViewing && (
 							<MeasuredViewing measurement={data.measurement} selectedMedia={selectedMedia} />
 						)}
-						<Card as="div" className="mt-6 p-5 sm:p-8">
-							<section aria-labelledby="summary-heading">
-								<Text as="h2" id="summary-heading" variant="h6-bold" className="m-0">
-									{canMeasureViewing ? 'Views and playback events' : 'Media views'}
-								</Text>
-								<dl
-									aria-label="Summary"
-									className="m-0 mt-3 grid grid-cols-2 gap-x-6 gap-y-2 lg:grid-cols-4"
-								>
-									<Statistic
-										label="Media views"
-										description="Media page and embed loads. Repeat loads count."
-										value={number.format(data.media_views)}
-										comparison={comparisonLabel(data.media_views, data.comparison?.media_views)}
-									/>
-									{canMeasureViewing && (
-										<>
-											<Statistic
-												label="Starts after interaction"
-												description="Playback started after a player action or on-site navigation."
-												value={number.format(data.deliberate_starts)}
-												comparison={comparisonLabel(
-													data.deliberate_starts,
-													data.comparison?.deliberate_starts
-												)}
-											/>
-											<Statistic
-												label="Playback starts"
-												description="Start events, including autoplay and repeat plays."
-												value={number.format(totals.playback_start)}
-												comparison={comparisonLabel(
-													totals.playback_start,
-													data.comparison?.starts
-												)}
-											/>
-											<Statistic
-												label="Reached end"
-												description="End events. A seek to the end also counts."
-												value={number.format(totals.finish)}
-												comparison={comparisonLabel(totals.finish, data.comparison?.finishes)}
-											/>
-											{selectedMedia && (
-												<Statistic
-													label="Starts per page/embed load"
-													description="Start events divided by loads. Repeat starts can put this above 100%."
-													value={
-														data.start_per_load == null ? '—' : `${data.start_per_load}%`
-													}
-												/>
-											)}
-										</>
-									)}
-								</dl>
-								{canMeasureViewing && (
-									<Disclosure title="How playback events differ from measured plays" className="mt-3">
-										<Text as="p" className="m-0 max-w-prose">
-											These counts come from Umami events. Viewing time comes from CMS playback
-											measurements, so playback starts and measured plays may differ. Neither is a
-											unique viewer count. Comparisons use the same elapsed UTC time in the
-											previous period.
-										</Text>
-									</Disclosure>
-								)}
-							</section>
-						</Card>
-						<Card as="div" className="mt-6 p-5 sm:p-8">
-							<ActivityChart
-								daily={chartDaily}
-								height={260}
-								metricSet={canMeasureViewing ? activityMetrics : [metrics[0]]}
-							/>
-						</Card>
-						{selectedMedia && ['video', 'audio'].includes(selectedMedia.media_type) && (
-							<PlaybackMilestones totals={totals} />
-						)}
-						{!selectedMedia && (
-							<MediaPerformance rows={data.rows} pagination={data.pagination} days={data.days} />
-						)}
-						{selectedMedia &&
-							[data.contexts, data.initiations, data.referrers, data.errors].some(
-								(items) => items?.length
-							) && (
-								<div className="mt-6 grid gap-5 md:grid-cols-2">
-									{!!data.contexts?.length && (
-										<Breakdown
-											title="Where viewing happened"
-											items={data.contexts}
-											labels={contextLabels}
-										/>
-									)}
-									{!!data.initiations?.length && (
-										<Breakdown
-											title="How playback began"
-											items={data.initiations}
-											labels={initiationLabels}
-										/>
-									)}
-									{!!data.referrers?.length && (
-										<Breakdown title="Referral domains" items={data.referrers} />
-									)}
-									{!!data.errors?.length && (
-										<Breakdown title="Player errors" items={data.errors} labels={errorLabels} />
-									)}
-								</div>
-							)}
-						<Engagement items={data.engagement || []} />
-						<Disclosure title="About these figures" className="mt-6 px-5 sm:px-8">
-							<Text as="p" variant="body-12" color="meta" className="mt-3 mb-0 max-w-prose">
-								Media views count page and embed loads. Only you can see these figures, covering media
-								you currently own in every visibility state. Dates use UTC and data is retained for up
-								to 12 months. Starts after interaction include player actions and on-site navigation. A
-								zero count in the earlier window may mean tracking had not started. CMS measured plays
-								and Umami start events use different sources and may differ.
-							</Text>
-						</Disclosure>
-					</>
-				)}
-				{data.unavailable && (
-					<>
-						{canMeasureViewing && (
-							<MeasuredViewing measurement={data.measurement} selectedMedia={selectedMedia} />
-						)}
-						{canMeasureViewing && (
+						{(canMeasureViewing || !data.unavailable) && (
 							<Card as="div" className="mt-6 p-5 sm:p-8">
-								<ActivityChart daily={viewingDaily} height={260} metricSet={watchMetrics} />
+								<ActivityChart
+									daily={data.unavailable ? viewingDaily : chartDaily}
+									height={260}
+									metricSet={
+										data.unavailable
+											? watchMetrics
+											: canMeasureViewing
+												? activityMetrics
+												: [metrics[0]]
+									}
+								/>
 							</Card>
 						)}
-						{!selectedMedia && (
+						{!data.unavailable && (
+							<Card as="div" className="mt-6 p-5 sm:p-8">
+								<section aria-labelledby="summary-heading">
+									<Text as="h2" id="summary-heading" variant="h6-bold" className="m-0">
+										{canMeasureViewing ? 'Views and playback events' : 'Media views'}
+									</Text>
+									<dl
+										aria-label="Summary"
+										className="m-0 mt-3 grid grid-cols-2 gap-x-6 gap-y-2 lg:grid-cols-4"
+									>
+										<Statistic
+											label="Media views"
+											description="Media page and embed loads. Repeat loads count."
+											value={number.format(data.media_views)}
+											comparison={comparisonLabel(data.media_views, data.comparison?.media_views)}
+										/>
+										{canMeasureViewing && (
+											<>
+												<Statistic
+													label="Starts after interaction"
+													description="Playback started after a player action or on-site navigation."
+													value={number.format(data.deliberate_starts)}
+													comparison={comparisonLabel(
+														data.deliberate_starts,
+														data.comparison?.deliberate_starts
+													)}
+												/>
+												<Statistic
+													label="Playback starts"
+													description="Start events, including autoplay and repeat plays."
+													value={number.format(totals.playback_start)}
+													comparison={comparisonLabel(
+														totals.playback_start,
+														data.comparison?.starts
+													)}
+												/>
+												<Statistic
+													label="Reached end"
+													description="End events. A seek to the end also counts."
+													value={number.format(totals.finish)}
+													comparison={comparisonLabel(
+														totals.finish,
+														data.comparison?.finishes
+													)}
+												/>
+												{selectedMedia && (
+													<Statistic
+														label="Starts per page/embed load"
+														description="Start events divided by loads. Repeat starts can put this above 100%."
+														value={
+															data.start_per_load == null
+																? '—'
+																: `${data.start_per_load}%`
+														}
+													/>
+												)}
+											</>
+										)}
+									</dl>
+									{canMeasureViewing && (
+										<Disclosure
+											title="How playback events differ from measured plays"
+											className="mt-3"
+										>
+											<Text as="p" className="m-0 max-w-prose">
+												These counts come from Umami events. Viewing time comes from CMS
+												playback measurements, so playback starts and measured plays may differ.
+												Neither is a unique viewer count. Comparisons use the same elapsed UTC
+												time in the previous period.
+											</Text>
+										</Disclosure>
+									)}
+								</section>
+							</Card>
+						)}
+					</TabContent>
+					{!selectedMedia && (
+						<TabContent value="media" title="Your media">
 							<MediaPerformance
 								rows={data.rows}
 								pagination={data.pagination}
 								days={data.days}
-								eventsAvailable={false}
+								eventsAvailable={!data.unavailable}
 							/>
-						)}
-					</>
-				)}
+						</TabContent>
+					)}
+					{selectedMedia && (canMeasureViewing || !data.unavailable) && (
+						<TabContent value="details" title={canMeasureViewing ? 'Viewing details' : 'Traffic details'}>
+							{canMeasureViewing && <FilmCoverage measurement={data.measurement} />}
+							{!canMeasureViewing && ![data.contexts, data.referrers].some((items) => items?.length) && (
+								<Card className="p-5 sm:p-8">
+									<Text as="h2" variant="h6-bold" className="m-0">
+										No traffic details yet
+									</Text>
+									<Text as="p" className="mt-2 mb-0">
+										Traffic sources will appear here when recorded. Try a longer date range for
+										earlier activity.
+									</Text>
+								</Card>
+							)}
+							{!data.unavailable && (
+								<>
+									{canMeasureViewing && <PlaybackMilestones totals={totals} />}
+									{selectedMedia &&
+										[data.contexts, data.initiations, data.referrers, data.errors].some(
+											(items) => items?.length
+										) && (
+											<div className="mt-6 grid gap-5 md:grid-cols-2">
+												{!!data.contexts?.length && (
+													<Breakdown
+														title="Where viewing happened"
+														items={data.contexts}
+														labels={contextLabels}
+													/>
+												)}
+												{!!data.initiations?.length && (
+													<Breakdown
+														title="How playback began"
+														items={data.initiations}
+														labels={initiationLabels}
+													/>
+												)}
+												{!!data.referrers?.length && (
+													<Breakdown title="Referral domains" items={data.referrers} />
+												)}
+												{!!data.errors?.length && (
+													<Breakdown
+														title="Player errors"
+														items={data.errors}
+														labels={errorLabels}
+													/>
+												)}
+											</div>
+										)}
+								</>
+							)}
+						</TabContent>
+					)}
+					{!data.unavailable && (
+						<TabContent value="engagement" title="Engagement">
+							<Engagement items={data.engagement || []} />
+						</TabContent>
+					)}
+				</TabView>
 				{data.cms_totals && (
-					<Card as="section" aria-labelledby="cms-totals-heading" className="mt-6 p-5 sm:p-8">
-						<Text as="h2" id="cms-totals-heading" variant="h6-bold" className="m-0 text-text-primary">
-							Current media totals
-						</Text>
+					<Disclosure
+						title="Current media totals"
+						className="mt-6 px-1"
+						open={!canMeasureViewing && data.unavailable}
+					>
 						<Text as="p" variant="body-12" color="meta" className="mt-2 mb-0 max-w-prose">
 							From the CMS database, across all versions. These totals do not follow the date range.
 							Legacy views use the existing media counter, not page views or playback starts.
@@ -1003,8 +1059,15 @@ export function CreatorAnalyticsPage({ data }) {
 							<Statistic label="Current likes" value={number.format(data.cms_totals.likes)} />
 							<Statistic label="Current comments" value={number.format(data.cms_totals.comments)} />
 						</dl>
-					</Card>
+					</Disclosure>
 				)}
+				<Disclosure title="About these figures" className="mt-2 px-1">
+					<Text as="p" variant="body-14" className="m-0 max-w-prose">
+						Only you can see these reports. They cover media you currently own in every visibility state.
+						Dates use UTC and recorded activity is retained for up to 12 months. A zero count may mean
+						tracking had not started or no eligible activity was recorded.
+					</Text>
+				</Disclosure>
 				<footer className="mt-6">
 					<Text as="span" variant="body-12" color="meta">
 						Updated{' '}
