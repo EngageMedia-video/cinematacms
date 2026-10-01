@@ -867,7 +867,7 @@ export function CreatorAnalyticsPage({ data }) {
 								selectedTab={String(data.days)}
 								tabMode="wrap"
 								className="max-w-full"
-								listClassName="rounded-ds-8"
+								listClassName="rounded-[var(--radius-8)]"
 								triggerClassName="px-2 py-3 no-underline aria-[current=page]:bg-brand-primary sm:px-4"
 							>
 								{data.ranges.map((range) => (
