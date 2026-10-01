@@ -151,7 +151,7 @@ describe('CreatorAnalyticsPage', () => {
 		expect(within(breadcrumb).queryByRole('link', { name: 'Analytics' })).not.toBeInTheDocument();
 		expect(screen.queryByRole('link', { name: /Back to profile/ })).not.toBeInTheDocument();
 		expect(screen.getByRole('link', { name: '30 days' })).toHaveAttribute('aria-current', 'page');
-		expect(screen.getByRole('group', { name: 'Daily media views chart' })).toBeInTheDocument();
+		expect(screen.getByRole('group', { name: 'Daily watch time chart' })).toBeInTheDocument();
 		expect(screen.queryByRole('slider')).not.toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: 'Your media' })).toBeInTheDocument();
 		expect(screen.getByText('Average film coverage')).toBeInTheDocument();
@@ -199,7 +199,7 @@ describe('CreatorAnalyticsPage', () => {
 		expect(screen.getByText('No activity in this period')).toBeInTheDocument();
 		expect(screen.getByText('No media yet')).toBeInTheDocument();
 		expect(screen.getByText('New Feature Action')).toBeInTheDocument();
-		expect(screen.queryByRole('group', { name: 'Daily media views chart' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('group', { name: 'Daily watch time chart' })).not.toBeInTheDocument();
 	});
 
 	it('shows one media and keeps its selection when changing the range or retrying', () => {
@@ -246,7 +246,7 @@ describe('CreatorAnalyticsPage', () => {
 			within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByRole('link', { name: 'Analytics' })
 		).toHaveAttribute('href', '/analytics?days=30');
 		expect(screen.queryByRole('link', { name: 'Try again' })).not.toBeInTheDocument();
-		expect(screen.getByRole('link', { name: 'Refresh' })).toHaveAttribute(
+		expect(screen.getByRole('link', { name: 'Refresh figures' })).toHaveAttribute(
 			'href',
 			`?days=30&media=${selected_media.uid}&version=${data.version}`
 		);
@@ -265,8 +265,75 @@ describe('CreatorAnalyticsPage', () => {
 			'href',
 			data.rows[0].analytics_url
 		);
-		expect(screen.queryByRole('columnheader', { name: 'Views' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('columnheader', { name: 'Media views' })).not.toBeInTheDocument();
 		expect(screen.getByRole('columnheader', { name: 'Legacy views (all time)' })).toBeInTheDocument();
-		expect(screen.getByRole('group', { name: 'Daily watch time (seconds) chart' })).toBeInTheDocument();
+		expect(screen.getByRole('group', { name: 'Daily watch time chart' })).toBeInTheDocument();
+	});
+
+	it('explains viewing units and keeps dates visible in CMS-only reports', async () => {
+		const user = userEvent.setup();
+		render(<CreatorAnalyticsPage data={{ ...data, unavailable: true }} />);
+		expect(screen.getByText('28 Sept – 28 Sept 2026 · UTC')).toBeInTheDocument();
+		const viewing = screen.getByRole('region', { name: 'Viewing time' });
+		expect(within(viewing).getByText('5 min')).toBeInTheDocument();
+		expect(within(viewing).getByText('2 min 30 sec')).toBeInTheDocument();
+		await user.click(screen.getByText('How viewing is measured'));
+		expect(screen.getByText(/Rewatching adds watch time/)).toBeVisible();
+		expect(screen.queryByRole('group', { name: 'Chart metric' })).not.toBeInTheDocument();
+		const filters = screen.getByRole('group', { name: 'Report filters' });
+		expect(within(filters).getByRole('link', { name: '90 days' })).toHaveAttribute('href', '?days=90');
+	});
+
+	it('does not present playback metrics for an image without event reports', () => {
+		const { rerender } = render(
+			<CreatorAnalyticsPage
+				data={{
+					...data,
+					unavailable: true,
+					selected_media: { ...data.rows[0], uid: 'image-id', media_type: 'image' },
+				}}
+			/>
+		);
+		expect(screen.queryByText('Measured plays')).not.toBeInTheDocument();
+		expect(screen.queryByRole('group', { name: /chart/ })).not.toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: 'Current media totals' })).toBeInTheDocument();
+		rerender(
+			<CreatorAnalyticsPage
+				data={{ ...data, selected_media: { ...data.rows[0], uid: 'image-id', media_type: 'image' } }}
+			/>
+		);
+		expect(screen.getByRole('heading', { name: 'Media views' })).toBeInTheDocument();
+		expect(screen.queryByText('Playback starts')).not.toBeInTheDocument();
+		expect(screen.queryByText('Measured plays')).not.toBeInTheDocument();
+	});
+
+	it('uses understandable labels for player context and errors', () => {
+		render(
+			<CreatorAnalyticsPage
+				data={{
+					...data,
+					selected_media: { ...data.rows[0], uid: 'film-id', media_type: 'video' },
+					contexts: [['embed', 3]],
+					initiations: [['unknown', 2]],
+					errors: [['media_3', 1]],
+				}}
+			/>
+		);
+		expect(screen.getByText('Embedded player')).toBeInTheDocument();
+		expect(screen.getByText('Playback source not captured')).toBeInTheDocument();
+		expect(screen.getByText('Media decoding error')).toBeInTheDocument();
+		expect(screen.queryByText('media_3')).not.toBeInTheDocument();
+	});
+
+	it.each([
+		[0, '0 sec'],
+		[3661, '1 hr 1 min 1 sec'],
+	])('shows explicit watch-time units for %s seconds', (seconds, label) => {
+		render(
+			<CreatorAnalyticsPage
+				data={{ ...data, unavailable: true, measurement: { ...data.measurement, watch_seconds: seconds } }}
+			/>
+		);
+		expect(within(screen.getByRole('region', { name: 'Viewing time' })).getByText(label)).toBeInTheDocument();
 	});
 });

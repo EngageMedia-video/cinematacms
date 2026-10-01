@@ -4,6 +4,8 @@ export { Avatar } from './Avatar';
 export { Badge } from './Badge';
 export { Button } from './Button';
 export { Card } from './Card';
+export { Disclosure } from './Disclosure';
+export { Statistic } from './Statistic';
 export { FollowButton } from './FollowButton';
 export { GetNotifiedButton } from './GetNotifiedButton';
 export { TextField } from './TextField';

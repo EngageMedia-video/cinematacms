@@ -7,11 +7,13 @@ import { tooltip } from '@tanstack/charts/tooltip';
 import {
 	Badge,
 	Card,
+	Disclosure,
 	Dropdown,
 	Icon,
 	Link,
 	SegmentButton,
 	SquareImage,
+	Statistic,
 	TabContent,
 	TabView,
 	Text,
@@ -32,7 +34,21 @@ const metrics = [
 	{ key: 'playback_start', label: 'Playback starts', color: 'text-text-link' },
 	{ key: 'finish', label: 'Reached end', color: 'text-text-success' },
 ];
-const watchMetrics = [{ key: 'watch_seconds', label: 'Watch time (seconds)', color: 'text-text-link' }];
+const watchMetrics = [{ key: 'watch_seconds', label: 'Watch time', color: 'text-text-link' }];
+const activityMetrics = [...watchMetrics, ...metrics];
+const contextLabels = { page: 'Media page', embed: 'Embedded player', hero: 'Homepage player' };
+const initiationLabels = {
+	deliberate: 'After viewer interaction',
+	autoplay: 'Autoplay',
+	unknown: 'Playback source not captured',
+};
+const errorLabels = {
+	media_1: 'Playback aborted',
+	media_2: 'Network error',
+	media_3: 'Media decoding error',
+	media_4: 'Unsupported media',
+	other: 'Other player errors',
+};
 
 function comparisonLabel(current, previous) {
 	if (typeof previous !== 'number') return null;
@@ -41,23 +57,15 @@ function comparisonLabel(current, previous) {
 	return `${change > 0 ? '+' : ''}${change}% vs equal-length period`;
 }
 
-function CountCard({ label, value, stacked = false, comparison = null }) {
+function watchTimeLabel(seconds) {
+	const total = Math.floor(seconds);
+	const hours = Math.floor(total / 3600);
+	const minutes = Math.floor((total % 3600) / 60);
+	const remainder = total % 60;
 	return (
-		<div
-			className={`flex min-w-0 py-3 ${stacked || comparison ? 'flex-col gap-1' : 'items-baseline justify-between gap-4'}`}
-		>
-			<Text as="dt" variant="body-14" color="body" className="m-0">
-				{label}
-			</Text>
-			<Text as="dd" variant={stacked ? 'h4-bold' : 'body-18-bold'} className="m-0 tabular-nums text-text-primary">
-				{value}
-			</Text>
-			{comparison && (
-				<Text as="span" variant="body-12" color="meta" className="tabular-nums">
-					{comparison}
-				</Text>
-			)}
-		</div>
+		[hours && `${hours} hr`, minutes && `${minutes} min`, remainder && `${remainder} sec`]
+			.filter(Boolean)
+			.join(' ') || '0 sec'
 	);
 }
 
@@ -96,7 +104,11 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 					grid: { strokeOpacity: 0.5 },
 					axis: {
 						line: false,
-						ticks: { count: Math.min(4, maximum), size: 0, format: (value) => number.format(value) },
+						ticks: {
+							count: Math.min(4, maximum),
+							size: 0,
+							format: (value) => `${number.format(value)}${metric.key === 'watch_seconds' ? 's' : ''}`,
+						},
 						tickLabels: { fontSize: 14, opacity: 1 },
 					},
 				},
@@ -117,14 +129,21 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 				<Text as="h2" id="activity-heading" variant="h6-bold" className="m-0 text-text-primary">
 					Daily activity
 				</Text>
-				<SegmentButton
-					aria-label="Chart metric"
-					layout="fill"
-					className="sm:w-auto [&>button]:min-h-11 [&>button]:px-1 sm:[&>button]:px-4 [&>button>span]:whitespace-normal"
-					options={metricOptions}
-					value={metricIndex}
-					onValueChange={setMetricIndex}
-				/>
+				{metricOptions.length > 1 && (
+					<SegmentButton
+						aria-label="Chart metric"
+						layout="fill"
+						className="sm:w-auto [&>button]:min-h-11 [&>button]:px-1 sm:[&>button]:px-4 [&>button>span]:whitespace-normal"
+						options={metricOptions}
+						value={metricIndex}
+						onValueChange={setMetricIndex}
+					/>
+				)}
+				{metricOptions.length === 1 && (
+					<Text as="span" variant="body-14" className="m-0">
+						{metric.label}
+					</Text>
+				)}
 			</div>
 			{hasActivity ? (
 				<>
@@ -148,7 +167,9 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 											variant="body-14-medium"
 											className="m-0 tabular-nums text-text-primary"
 										>
-											{number.format(points[0].yValue)} {metric.label.toLowerCase()}
+											{metric.key === 'watch_seconds'
+												? watchTimeLabel(points[0].yValue)
+												: `${number.format(points[0].yValue)} ${metric.label.toLowerCase()}`}
 										</Text>
 									</div>
 								) : null
@@ -163,18 +184,12 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 						No activity in this period
 					</Text>
 					<Text as="p" variant="body-14" className="m-0 max-w-xs text-text-muted">
-						Your {metric.label.toLowerCase()} will appear here as viewers engage with your media.
+						Your {metric.label.toLowerCase()} will appear here as viewers engage with your media. Try a
+						longer date range to check for earlier activity.
 					</Text>
 				</div>
 			)}
-			<details className="mt-4">
-				<Text
-					as="summary"
-					variant="body-14-medium"
-					className={`cursor-pointer py-3 text-text-secondary hover:text-text-link ${focus}`}
-				>
-					View daily figures
-				</Text>
+			<Disclosure title="View daily figures" className="mt-4">
 				<div
 					className={`max-h-72 overflow-auto ${focus}`}
 					tabIndex={0}
@@ -213,7 +228,9 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 											key={item.key}
 											className="px-3 py-3 tabular-nums"
 										>
-											{number.format(day[item.key])}
+											{item.key === 'watch_seconds'
+												? watchTimeLabel(day[item.key])
+												: number.format(day[item.key])}
 										</Text>
 									))}
 								</tr>
@@ -221,7 +238,7 @@ function ActivityChart({ daily, height = 220, metricSet = metrics }) {
 						</tbody>
 					</table>
 				</div>
-			</details>
+			</Disclosure>
 		</section>
 	);
 }
@@ -269,7 +286,7 @@ function PlaybackMilestones({ totals }) {
 					['Reached 75%', 'progress_75'],
 					['Reached end', 'finish'],
 				].map(([label, key]) => (
-					<CountCard key={key} label={label} value={number.format(totals[key] ?? 0)} stacked />
+					<Statistic key={key} label={label} value={number.format(totals[key] ?? 0)} />
 				))}
 			</dl>
 			<Text as="p" variant="body-12" color="meta" className="mt-2 mb-0 max-w-prose">
@@ -326,27 +343,42 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 				</Text>
 			</div>
 			<dl className="m-0 mt-4 grid grid-cols-2 gap-x-8 sm:grid-cols-4">
-				<CountCard label="Watch time" value={formatDuration(measurement.watch_seconds)} stacked />
-				<CountCard label="Measured plays" value={number.format(measurement.measured_plays)} stacked />
-				<CountCard
-					label="Avg. watch"
-					value={hasPlays ? formatDuration(measurement.average_watch_seconds) : '—'}
-					stacked
+				<Statistic
+					label="Watch time"
+					value={watchTimeLabel(measurement.watch_seconds)}
+					description="Time spent actively watching in this period."
 				/>
-				<CountCard
+				<Statistic
+					label="Measured plays"
+					value={number.format(measurement.measured_plays)}
+					description="Plays with recorded viewing time, not unique viewers."
+				/>
+				<Statistic
+					label="Average watch time"
+					value={hasPlays ? watchTimeLabel(measurement.average_watch_seconds) : '—'}
+					description="Average active watch time per measured play. Replays count."
+				/>
+				<Statistic
 					label="Average film coverage"
 					value={hasPlays ? `${measurement.average_percent_watched}%` : '—'}
-					stacked
+					description="Average share of a film watched, counting each part once per play."
 				/>
 			</dl>
+			<Disclosure title="How viewing is measured" className="mt-3">
+				<Text as="p" className="m-0 max-w-prose">
+					Watch time follows when viewing happened. Measured plays and averages use plays started in the
+					selected dates. Rewatching adds watch time but does not increase film coverage. Recent plays may
+					still be in progress.
+				</Text>
+			</Disclosure>
 			{selectedMedia && (
 				<>
 					<Text as="h3" variant="body-14-bold" className="mt-8 mb-1 text-text-primary">
 						Coverage by film segment
 					</Text>
-					<Text as="p" variant="body-12" color="body" className="m-0 max-w-prose">
-						Each point is the average share of that 5% part of the film actually watched per measured play.
-						Recent plays may still be in progress.
+					<Text as="p" variant="body-14" color="body" className="m-0 max-w-prose">
+						See which parts of the film are watched. Each point shows average coverage of a 5% segment, not
+						the number of viewers still watching.
 					</Text>
 					{hasPlays ? (
 						<div
@@ -358,6 +390,18 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 								definition={definition}
 								height={220}
 								ariaLabel="Film segment coverage in 5 percent intervals"
+								renderTooltipBody={({ points }) =>
+									points.length ? (
+										<div>
+											<Text as="p" variant="body-14-medium" className="m-0">
+												Film segment {points[0].xValue}
+											</Text>
+											<Text as="p" variant="body-14" className="m-0">
+												{number.format(points[0].yValue)}% average coverage
+											</Text>
+										</div>
+									) : null
+								}
 							/>
 						</div>
 					) : (
@@ -366,14 +410,7 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 						</Text>
 					)}
 					{retention.length > 0 && (
-						<details className="mt-3">
-							<Text
-								as="summary"
-								variant="body-14-medium"
-								className={`cursor-pointer py-3 text-text-secondary ${focus}`}
-							>
-								View segment coverage figures
-							</Text>
+						<Disclosure title="View segment coverage figures" className="mt-3">
 							<ol className="m-0 grid list-none grid-cols-2 gap-2 p-0 sm:grid-cols-4">
 								{retention.map((part) => (
 									<Text as="li" variant="body-12" key={part.segment}>
@@ -381,7 +418,7 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 									</Text>
 								))}
 							</ol>
-						</details>
+						</Disclosure>
 					)}
 				</>
 			)}
@@ -389,7 +426,7 @@ function MeasuredViewing({ measurement, selectedMedia }) {
 	);
 }
 
-function Breakdown({ title, items, empty = 'No data in this period.' }) {
+function Breakdown({ title, items, labels = {}, empty = 'No data in this period.' }) {
 	return (
 		<Card as="section" className="min-w-0 p-5 sm:p-8">
 			<Text as="h2" variant="h6-bold" className="m-0 text-text-primary">
@@ -400,7 +437,7 @@ function Breakdown({ title, items, empty = 'No data in this period.' }) {
 					{items.map(([label, value]) => (
 						<div key={label} className="flex justify-between gap-4">
 							<Text as="dt" variant="body-14" className="min-w-0 break-words text-text-secondary">
-								{label}
+								{labels[label] || label}
 							</Text>
 							<Text as="dd" variant="body-14" className="m-0 shrink-0 tabular-nums">
 								{number.format(value)}
@@ -421,14 +458,14 @@ function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
 	const pageUrl = (page) => `?days=${days}&page=${page}`;
 	const columns = eventsAvailable
 		? [
-				['Views', (row) => number.format(row.views)],
-				['Starts', (row) => number.format(row.starts)],
+				['Media views', (row) => number.format(row.views)],
+				['Playback starts', (row) => number.format(row.starts)],
 				['Reached end', (row) => number.format(row.finishes)],
-				['Watch time', (row) => formatDuration(row.watch_seconds)],
+				['Watch time', (row) => watchTimeLabel(row.watch_seconds)],
 			]
 		: [
 				['Measured plays', (row) => number.format(row.measured_plays)],
-				['Watch time', (row) => formatDuration(row.watch_seconds)],
+				['Watch time', (row) => watchTimeLabel(row.watch_seconds)],
 				['Legacy views (all time)', (row) => number.format(row.legacy_views)],
 			];
 	return (
@@ -594,9 +631,20 @@ function MediaPerformance({ rows, pagination, days, eventsAvailable = true }) {
 export function CreatorAnalyticsPage({ data }) {
 	const daily = data.daily || [];
 	const totals = data.totals || {};
-	const first = daily[0];
-	const last = daily[daily.length - 1];
+	const reportDates = data.unavailable
+		? Object.keys(data.measurement.daily_watch_seconds || {}).sort()
+		: daily.map((day) => day.date);
+	const firstDate = reportDates[0];
+	const lastDate = reportDates[reportDates.length - 1];
 	const selectedMedia = data.selected_media;
+	const canMeasureViewing = !selectedMedia || ['video', 'audio'].includes(selectedMedia.media_type);
+	const viewingDaily = Object.entries(data.measurement.daily_watch_seconds || {})
+		.sort(([a], [b]) => a.localeCompare(b))
+		.map(([date, watch_seconds]) => ({ date, watch_seconds }));
+	const chartDaily = daily.map((day) => ({
+		...day,
+		watch_seconds: data.measurement.daily_watch_seconds?.[day.date] || 0,
+	}));
 	const mediaQuery = selectedMedia
 		? `&media=${encodeURIComponent(selectedMedia.uid)}&version=${encodeURIComponent(data.version)}`
 		: '';
@@ -609,7 +657,7 @@ export function CreatorAnalyticsPage({ data }) {
 	return (
 		<div className="min-h-screen bg-bg-page px-4 py-6 text-text-primary sm:px-8 sm:py-8">
 			<div className="mx-auto max-w-7xl">
-				<nav aria-label="Breadcrumb" className="mb-4">
+				<nav aria-label="Breadcrumb" className="mb-2">
 					<ol className="m-0 flex list-none flex-wrap items-center gap-x-2 p-0">
 						{breadcrumbs.map((item, index) => (
 							<li key={index} className="flex min-w-0 max-w-full items-center gap-2">
@@ -646,10 +694,10 @@ export function CreatorAnalyticsPage({ data }) {
 						))}
 					</ol>
 				</nav>
-				<header className="mb-6 flex flex-wrap items-center justify-between gap-6">
+				<header className="mb-6 flex flex-wrap items-center justify-between gap-4">
 					<div className="flex w-full min-w-0 items-center gap-4 sm:gap-6 lg:w-auto lg:flex-1">
 						{selectedMedia && (
-							<div className="flex aspect-video w-24 shrink-0 items-center justify-center overflow-hidden rounded-ds-8 bg-bg-surface-muted sm:w-48">
+							<div className="flex aspect-video w-24 shrink-0 items-center justify-center overflow-hidden rounded-ds-8 bg-bg-surface-muted sm:w-32">
 								<SquareImage
 									src={selectedMedia.thumbnail_url}
 									alt=""
@@ -663,6 +711,12 @@ export function CreatorAnalyticsPage({ data }) {
 							<Text as="h1" variant="h4-bold" className="m-0 break-words text-text-primary">
 								{selectedMedia ? selectedMedia.title : 'Analytics'}
 							</Text>
+							{!selectedMedia && (
+								<Text as="p" variant="body-14" className="m-0 mt-2">
+									Viewing and engagement across the media you own. Open a title for its detailed
+									report.
+								</Text>
+							)}
 							{selectedMedia && (
 								<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
 									<Badge color="bg/chip" className="text-text-primary">
@@ -684,15 +738,63 @@ export function CreatorAnalyticsPage({ data }) {
 									</Text>
 								</div>
 							)}
-							{first && last && !data.unavailable && (
+							{firstDate && lastDate && (
 								<Text as="p" variant="body-12" color="meta" className="mt-1 mb-0">
-									{shortDate.format(new Date(first.date))} – {dateLabel.format(new Date(last.date))} ·
+									{shortDate.format(new Date(firstDate))} – {dateLabel.format(new Date(lastDate))} ·
 									UTC
 								</Text>
 							)}
 						</div>
 					</div>
-					{
+					<div className="flex w-full shrink-0 items-center justify-end gap-4 sm:w-auto">
+						<Text
+							as={Link}
+							action="text-link"
+							variant="body-14-medium"
+							href={rangeUrl(data.days)}
+							className="inline-flex min-h-11 items-center"
+						>
+							Refresh figures
+						</Text>
+						{selectedMedia ? (
+							<Dropdown
+								appearance="compact"
+								className="[&>div>button]:min-h-11"
+								placeholder="Export CSV"
+								value={null}
+								options={[
+									{ value: 'summary', label: 'Summary' },
+									{ value: 'daily', label: 'Daily' },
+									{ value: 'retention', label: 'Segment coverage' },
+									{ value: 'engagement', label: 'Engagement' },
+								]}
+								onChange={(dataset) => {
+									window.location.href = `/analytics/export?days=${data.days}${mediaQuery}&dataset=${dataset}`;
+								}}
+							/>
+						) : (
+							<Text
+								as={Link}
+								action="text-link"
+								variant="body-14-medium"
+								className="inline-flex min-h-11 items-center underline underline-offset-2"
+								href={`/analytics/export?days=${data.days}&dataset=portfolio`}
+							>
+								Export CSV
+							</Text>
+						)}
+					</div>
+				</header>
+				<div
+					className="mb-6 flex flex-wrap items-end justify-between gap-3"
+					role="group"
+					aria-label="Report filters"
+				>
+					<div className="min-w-0">
+						<Text as="p" variant="body-14-medium" className="m-0 mb-2">
+							Date range
+						</Text>
+
 						<div className="min-w-0">
 							<TabView
 								aria-label="Date range"
@@ -716,46 +818,8 @@ export function CreatorAnalyticsPage({ data }) {
 								))}
 							</TabView>
 						</div>
-					}
-				</header>
-				<div className="mb-5 flex flex-wrap items-center gap-3">
-					<Text as="span" variant="body-12" color="meta">
-						Updated{' '}
-						{new Date(data.updated_at).toLocaleString('en-GB', {
-							timeZone: 'UTC',
-							dateStyle: 'medium',
-							timeStyle: 'short',
-						})}{' '}
-						UTC
-					</Text>
-					<Text as={Link} action="text-link" variant="body-12-medium" href={rangeUrl(data.days)}>
-						Refresh
-					</Text>
-					{selectedMedia ? (
-						<Dropdown
-							appearance="compact"
-							placeholder="Export CSV"
-							value={null}
-							options={[
-								{ value: 'summary', label: 'Summary' },
-								{ value: 'daily', label: 'Daily' },
-								{ value: 'retention', label: 'Segment coverage' },
-								{ value: 'engagement', label: 'Engagement' },
-							]}
-							onChange={(dataset) => {
-								window.location.href = `/analytics/export?days=${data.days}${mediaQuery}&dataset=${dataset}`;
-							}}
-						/>
-					) : (
-						<Text
-							as={Link}
-							action="text-link"
-							variant="body-12-medium"
-							href={`/analytics/export?days=${data.days}&dataset=portfolio`}
-						>
-							Export CSV
-						</Text>
-					)}
+					</div>
+
 					{selectedMedia && data.versions.length > 1 && (
 						<div className="flex max-w-full flex-wrap items-center gap-2">
 							<Text as="span" variant="body-12" color="meta">
@@ -763,7 +827,7 @@ export function CreatorAnalyticsPage({ data }) {
 							</Text>
 							<Dropdown
 								appearance="compact"
-								className="min-w-60"
+								className="min-w-60 [&>div>button]:min-h-11"
 								label="Film version"
 								aria-describedby={data.version === 'unknown' ? 'film-version-help' : undefined}
 								value={data.version}
@@ -782,71 +846,80 @@ export function CreatorAnalyticsPage({ data }) {
 				)}
 				{!data.unavailable && (
 					<>
-						<MeasuredViewing measurement={data.measurement} selectedMedia={selectedMedia} />
-						<Card
-							as="div"
-							className={`mt-6 grid gap-6 p-5 sm:p-8 ${selectedMedia ? 'sm:gap-8' : 'lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10'}`}
-						>
+						{canMeasureViewing && (
+							<MeasuredViewing measurement={data.measurement} selectedMedia={selectedMedia} />
+						)}
+						<Card as="div" className="mt-6 p-5 sm:p-8">
 							<section aria-labelledby="summary-heading">
-								<Text
-									as="h2"
-									id="summary-heading"
-									variant="h6-bold"
-									className={selectedMedia ? 'sr-only' : 'm-0'}
-								>
-									Last {data.days} days
+								<Text as="h2" id="summary-heading" variant="h6-bold" className="m-0">
+									{canMeasureViewing ? 'Views and playback events' : 'Media views'}
 								</Text>
 								<dl
 									aria-label="Summary"
-									className={
-										selectedMedia
-											? 'm-0 grid grid-cols-2 gap-x-6 sm:grid-cols-3 xl:grid-cols-5'
-											: 'm-0 mt-3'
-									}
+									className="m-0 mt-3 grid grid-cols-2 gap-x-6 gap-y-2 lg:grid-cols-4"
 								>
-									<CountCard
+									<Statistic
 										label="Media views"
+										description="Media page and embed loads. Repeat loads count."
 										value={number.format(data.media_views)}
 										comparison={comparisonLabel(data.media_views, data.comparison?.media_views)}
-										stacked={!!selectedMedia}
 									/>
-									<CountCard
-										label="Starts after interaction"
-										value={number.format(data.deliberate_starts)}
-										comparison={comparisonLabel(
-											data.deliberate_starts,
-											data.comparison?.deliberate_starts
-										)}
-										stacked={!!selectedMedia}
-									/>
-									<CountCard
-										label="Playback starts"
-										value={number.format(totals.playback_start)}
-										comparison={comparisonLabel(totals.playback_start, data.comparison?.starts)}
-										stacked={!!selectedMedia}
-									/>
-									<CountCard
-										label="Reached end"
-										value={number.format(totals.finish)}
-										comparison={comparisonLabel(totals.finish, data.comparison?.finishes)}
-										stacked={!!selectedMedia}
-									/>
-									{selectedMedia && (
-										<CountCard
-											label="Starts per page/embed load"
-											value={data.start_per_load == null ? '—' : `${data.start_per_load}%`}
-											stacked
-										/>
+									{canMeasureViewing && (
+										<>
+											<Statistic
+												label="Starts after interaction"
+												description="Playback started after a player action or on-site navigation."
+												value={number.format(data.deliberate_starts)}
+												comparison={comparisonLabel(
+													data.deliberate_starts,
+													data.comparison?.deliberate_starts
+												)}
+											/>
+											<Statistic
+												label="Playback starts"
+												description="Start events, including autoplay and repeat plays."
+												value={number.format(totals.playback_start)}
+												comparison={comparisonLabel(
+													totals.playback_start,
+													data.comparison?.starts
+												)}
+											/>
+											<Statistic
+												label="Reached end"
+												description="End events. A seek to the end also counts."
+												value={number.format(totals.finish)}
+												comparison={comparisonLabel(totals.finish, data.comparison?.finishes)}
+											/>
+											{selectedMedia && (
+												<Statistic
+													label="Starts per page/embed load"
+													description="Start events divided by loads. Repeat starts can put this above 100%."
+													value={
+														data.start_per_load == null ? '—' : `${data.start_per_load}%`
+													}
+												/>
+											)}
+										</>
 									)}
 								</dl>
-								<Text as="p" variant="body-12" color="meta" className="m-0">
-									Reached end includes seeks to the end. Earlier comparisons use the same elapsed UTC
-									time.
-									{selectedMedia &&
-										' Starts per page/embed load compares event counts and can exceed 100%.'}
-								</Text>
+								{canMeasureViewing && (
+									<Disclosure title="How playback events differ from measured plays" className="mt-3">
+										<Text as="p" className="m-0 max-w-prose">
+											These counts come from Umami events. Viewing time comes from CMS playback
+											measurements, so playback starts and measured plays may differ. Neither is a
+											unique viewer count. Comparisons use the same elapsed UTC time in the
+											previous period.
+										</Text>
+									</Disclosure>
+								)}
 							</section>
-							<ActivityChart daily={daily} height={selectedMedia ? 300 : 220} />
+						</Card>
+						<Card as="div" className="mt-6 p-5 sm:p-8">
+							<ActivityChart
+								daily={chartDaily}
+								height={260}
+								metricSet={canMeasureViewing ? activityMetrics : [metrics[0]]}
+							/>
 						</Card>
 						{selectedMedia && ['video', 'audio'].includes(selectedMedia.media_type) && (
 							<PlaybackMilestones totals={totals} />
@@ -860,27 +933,29 @@ export function CreatorAnalyticsPage({ data }) {
 							) && (
 								<div className="mt-6 grid gap-5 md:grid-cols-2">
 									{!!data.contexts?.length && (
-										<Breakdown title="Where viewing happened" items={data.contexts} />
+										<Breakdown
+											title="Where viewing happened"
+											items={data.contexts}
+											labels={contextLabels}
+										/>
 									)}
 									{!!data.initiations?.length && (
-										<Breakdown title="How playback began" items={data.initiations} />
+										<Breakdown
+											title="How playback began"
+											items={data.initiations}
+											labels={initiationLabels}
+										/>
 									)}
 									{!!data.referrers?.length && (
 										<Breakdown title="Referral domains" items={data.referrers} />
 									)}
-									{!!data.errors?.length && <Breakdown title="Player errors" items={data.errors} />}
+									{!!data.errors?.length && (
+										<Breakdown title="Player errors" items={data.errors} labels={errorLabels} />
+									)}
 								</div>
 							)}
 						<Engagement items={data.engagement || []} />
-						<details className="px-5 py-6 text-text-muted sm:px-8">
-							<Text
-								as="summary"
-								variant="body-12-medium"
-								color="meta"
-								className={`w-fit cursor-pointer ${focus}`}
-							>
-								About these figures
-							</Text>
+						<Disclosure title="About these figures" className="mt-6 px-5 sm:px-8">
 							<Text as="p" variant="body-12" color="meta" className="mt-3 mb-0 max-w-prose">
 								Media views count page and embed loads. Only you can see these figures, covering media
 								you currently own in every visibility state. Dates use UTC and data is retained for up
@@ -888,20 +963,19 @@ export function CreatorAnalyticsPage({ data }) {
 								zero count in the earlier window may mean tracking had not started. CMS measured plays
 								and Umami start events use different sources and may differ.
 							</Text>
-						</details>
+						</Disclosure>
 					</>
 				)}
 				{data.unavailable && (
 					<>
-						<MeasuredViewing measurement={data.measurement} selectedMedia={selectedMedia} />
-						<Card as="div" className="mt-6 p-5 sm:p-8">
-							<ActivityChart
-								daily={Object.entries(data.measurement.daily_watch_seconds || {}).map(
-									([date, watch_seconds]) => ({ date, watch_seconds })
-								)}
-								metricSet={watchMetrics}
-							/>
-						</Card>
+						{canMeasureViewing && (
+							<MeasuredViewing measurement={data.measurement} selectedMedia={selectedMedia} />
+						)}
+						{canMeasureViewing && (
+							<Card as="div" className="mt-6 p-5 sm:p-8">
+								<ActivityChart daily={viewingDaily} height={260} metricSet={watchMetrics} />
+							</Card>
+						)}
 						{!selectedMedia && (
 							<MediaPerformance
 								rows={data.rows}
@@ -922,20 +996,26 @@ export function CreatorAnalyticsPage({ data }) {
 							Legacy views use the existing media counter, not page views or playback starts.
 						</Text>
 						<dl className="m-0 mt-4 grid grid-cols-2 gap-x-8 sm:grid-cols-3">
-							<CountCard
+							<Statistic
 								label="Legacy views (all time)"
 								value={number.format(data.cms_totals.legacy_views)}
-								stacked
 							/>
-							<CountCard label="Current likes" value={number.format(data.cms_totals.likes)} stacked />
-							<CountCard
-								label="Current comments"
-								value={number.format(data.cms_totals.comments)}
-								stacked
-							/>
+							<Statistic label="Current likes" value={number.format(data.cms_totals.likes)} />
+							<Statistic label="Current comments" value={number.format(data.cms_totals.comments)} />
 						</dl>
 					</Card>
 				)}
+				<footer className="mt-6">
+					<Text as="span" variant="body-12" color="meta">
+						Updated{' '}
+						{new Date(data.updated_at).toLocaleString('en-GB', {
+							timeZone: 'UTC',
+							dateStyle: 'medium',
+							timeStyle: 'short',
+						})}{' '}
+						UTC
+					</Text>
+				</footer>
 			</div>
 		</div>
 	);
