@@ -279,7 +279,13 @@ describe('CreatorAnalyticsPage', () => {
 		};
 		const { rerender } = render(<CreatorAnalyticsPage data={{ ...data, rows: [], selected_media }} />);
 		expect(screen.getByRole('heading', { name: 'My private film' })).toBeInTheDocument();
-		expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument();
+		const breadcrumb = within(screen.getByRole('navigation', { name: 'Breadcrumb' }));
+		expect(breadcrumb.getAllByRole('listitem')).toHaveLength(2);
+		expect(breadcrumb.getByRole('link', { name: 'Analytics' })).toHaveAttribute(
+			'href',
+			'/analytics?days=30&tz=UTC#media'
+		);
+		expect(breadcrumb.getByText('My private film')).toHaveAttribute('aria-current', 'page');
 		expect(screen.getByRole('link', { name: 'Open media' })).toHaveAttribute('href', '/view?m=private');
 		expect(screen.getByRole('link', { name: '7 days' })).toHaveAttribute(
 			'href',
@@ -303,7 +309,10 @@ describe('CreatorAnalyticsPage', () => {
 		);
 		expect(screen.queryByRole('region', { name: 'Playback milestones' })).not.toBeInTheDocument();
 		rerender(<CreatorAnalyticsPage data={{ ...data, rows: [], selected_media, unavailable: true }} />);
-		expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).not.toBeInTheDocument();
+		expect(screen.getByRole('link', { name: 'Analytics' })).toHaveAttribute(
+			'href',
+			'/analytics?days=30&tz=UTC#media'
+		);
 		expect(screen.queryByRole('link', { name: 'Try again' })).not.toBeInTheDocument();
 		expect(screen.getByRole('link', { name: 'Refresh figures' })).toHaveAttribute(
 			'href',
