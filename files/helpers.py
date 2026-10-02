@@ -16,6 +16,31 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+# Text subtitle descriptors in FFmpeg's libavcodec/codec_desc.c. WebM's
+# default subtitle encoder accepts text, not bitmap subtitles.
+TEXT_SUBTITLE_CODECS = {
+    "text",
+    "ssa",
+    "mov_text",
+    "srt",
+    "microdvd",
+    "eia_608",
+    "jacosub",
+    "sami",
+    "realtext",
+    "stl",
+    "subviewer1",
+    "subviewer",
+    "subrip",
+    "webvtt",
+    "mpl2",
+    "vplayer",
+    "pjs",
+    "ass",
+    "hdmv_text_subtitle",
+    "ttml",
+}
+
 CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 CRF_ENCODING_NUM_SECONDS = 2  # 0 * 60 # videos with greater duration will get
@@ -298,7 +323,9 @@ def media_file_info(input_file):
     - `audio_codec`: Audio codec name (`aac`)
     - `audio_bitrate`: Bitrate of the video stream in kBit/s
 
-    Also returns the video and audio info raw from ffprobe.
+    Also returns the selected video, audio, and text subtitle info from ffprobe. Encoding
+    maps these streams explicitly. Incomplete stream metadata returns `fail`
+    and a bounded `error` reason, and logs that reason without the filename.
     """
     ret = {}
 
@@ -307,7 +334,9 @@ def media_file_info(input_file):
         return ret
 
     video_info = {}
+    video_streams = []
     audio_info = {}
+    subtitle_info = {}
     cmd = ["stat", "-c", "%s", input_file]
 
     stdout = run_command(cmd).get("out")
@@ -341,8 +370,9 @@ def media_file_info(input_file):
     has_video = False
     has_audio = False
     for stream_info in info["streams"]:
-        if stream_info["codec_type"] == "video":
-            video_info = stream_info
+        if stream_info.get("codec_type") == "video":
+            if not stream_info.get("disposition", {}).get("attached_pic"):
+                video_streams.append(stream_info)
             has_video = True
             if info.get("format") and info["format"].get("format_name", "") in [
                 "tty",
@@ -354,9 +384,39 @@ def media_file_info(input_file):
             ]:
                 ret["fail"] = True
                 return ret
-        elif stream_info["codec_type"] == "audio":
-            audio_info = stream_info
+        elif stream_info.get("codec_type") == "audio":
+            if not audio_info and all(stream_info.get(key) for key in ("codec_name", "sample_rate", "channels")):
+                audio_info = stream_info
             has_audio = True
+        elif stream_info.get("codec_type") == "subtitle":
+            if not subtitle_info and stream_info.get("codec_name") in TEXT_SUBTITLE_CODECS:
+                subtitle_info = stream_info
+
+    video_info = max(
+        video_streams,
+        key=lambda stream: (
+            (stream.get("width") or 0) * (stream.get("height") or 0),
+            -stream.get("index", 0),
+        ),
+        default={},
+    )
+
+    if has_audio and not audio_info:
+        logger.warning("Media inspection failed: incomplete_audio_metadata")
+        return {"fail": True, "error": "incomplete_audio_metadata"}
+
+    if has_video and not all(video_info.get(key) for key in ("codec_name", "width", "height", "r_frame_rate")):
+        logger.warning("Media inspection failed: incomplete_video_metadata")
+        return {"fail": True, "error": "incomplete_video_metadata"}
+
+    if has_video:
+        try:
+            video_frame_rate = float(Fraction(video_info["r_frame_rate"]))
+        except (TypeError, ValueError, ZeroDivisionError, OverflowError):
+            video_frame_rate = 0
+        if video_frame_rate <= 0:
+            logger.warning("Media inspection failed: incomplete_video_metadata")
+            return {"fail": True, "error": "incomplete_video_metadata"}
 
     if not has_video:
         ret["is_video"] = False
@@ -402,7 +462,7 @@ def media_file_info(input_file):
             "-loglevel",
             "error",
             "-select_streams",
-            "v",
+            str(video_info["index"]) if "index" in video_info else "v:0",
             "-show_entries",
             "packet=size",
             "-of",
@@ -417,7 +477,7 @@ def media_file_info(input_file):
         "filename": input_file,
         "file_size": file_size,
         "video_duration": video_duration,
-        "video_frame_rate": float(Fraction(video_info["r_frame_rate"])),
+        "video_frame_rate": video_frame_rate,
         "video_bitrate": video_bitrate,
         "video_width": video_info["width"],
         "video_height": video_info["height"],
@@ -462,7 +522,7 @@ def media_file_info(input_file):
                 "-loglevel",
                 "error",
                 "-select_streams",
-                "a",
+                str(audio_info["index"]) if "index" in audio_info else "a:0",
                 "-show_entries",
                 "packet=size",
                 "-of",
@@ -499,6 +559,7 @@ def media_file_info(input_file):
 
     ret["video_info"] = video_info
     ret["audio_info"] = audio_info
+    ret["subtitle_info"] = subtitle_info
     ret["is_video"] = True
     ret["md5sum"] = md5sum
     return ret
@@ -583,6 +644,7 @@ def get_base_ffmpeg_command(
     pass_number,
     enc_type,
     chunk,
+    stream_maps=(),
 ):
     """Get the base command for a specific codec, height/rate, and pass
 
@@ -600,6 +662,7 @@ def get_base_ffmpeg_command(
         pass_file {str} -- path to temp pass file
         pass_number {int} -- number of passes
         enc_type {str} -- encoding type (twopass or crf)
+        stream_maps {sequence} -- explicit input stream mapping arguments
     """
 
     target_fps = int(target_fps)
@@ -629,6 +692,8 @@ def get_base_ffmpeg_command(
         "-pix_fmt",
         "yuv420p",
     ]
+
+    base_cmd.extend(stream_maps)
 
     if enc_type == "twopass":
         base_cmd.extend(["-b:v", str(target_rate) + "k"])
@@ -761,6 +826,26 @@ def get_base_ffmpeg_command(
     return cmd
 
 
+def get_media_stream_maps(media_info, *, chunk=False, include_audio=True, include_subtitles=True):
+    """Map inspected streams, or retain automatic selection for legacy metadata.
+
+    Segmentation writes the selected video, audio, and text subtitle streams,
+    so chunk stream indices differ from the original file. The first encoding
+    pass intentionally excludes audio and subtitles.
+    """
+    video_index = media_info.get("video_info", {}).get("index")
+    if video_index is None:
+        return []
+    maps = ["-map", "0:v:0" if chunk else f"0:{video_index}"]
+    if include_audio and media_info.get("has_audio"):
+        audio_index = media_info.get("audio_info", {}).get("index")
+        maps.extend(["-map", "0:a:0" if chunk or audio_index is None else f"0:{audio_index}"])
+    subtitle_index = media_info.get("subtitle_info", {}).get("index")
+    if include_subtitles and subtitle_index is not None:
+        maps.extend(["-map", "0:s:0" if chunk else f"0:{subtitle_index}"])
+    return maps
+
+
 def produce_ffmpeg_commands(media_file, media_info, resolution, codec, output_filename, pass_file, chunk=False):
     try:
         media_info = json.loads(media_info)
@@ -822,6 +907,12 @@ def produce_ffmpeg_commands(media_file, media_info, resolution, codec, output_fi
                 pass_number=pass_number,
                 enc_type=enc_type,
                 chunk=chunk,
+                stream_maps=get_media_stream_maps(
+                    media_info,
+                    chunk=chunk,
+                    include_audio=pass_number != 1,
+                    include_subtitles=pass_number != 1 and output_filename.endswith(".webm"),
+                ),
             )
         )
     return cmds
