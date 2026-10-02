@@ -372,6 +372,95 @@ class MediaSearchRelevanceRankingTests(TestCase):
         self.assertEqual(tokens[0], tagged.friendly_token)
 
 
+class MediaSearchBackslashTests(TestCase):
+    def setUp(self):
+        self.user = create_test_user(username="backslash_user")
+        self.exact = create_test_media(self.user, media_country="PH")
+        self.exact.title = "Aeta"
+        self.exact.add_date = datetime(2011, 3, 23, tzinfo=dt_timezone.utc)
+        self.exact.save(update_fields=["title", "add_date"])
+        self.prefix = create_test_media(self.user, media_country="PH")
+        self.prefix.title = "Aetaland"
+        self.prefix.add_date = datetime(2026, 3, 23, tzinfo=dt_timezone.utc)
+        self.prefix.save(update_fields=["title", "add_date"])
+
+    def test_backslashes_preserve_prefix_matching_and_exact_ranking(self):
+        for query in ("aeta", "aeta\\", "aeta\\\\", "aeta\\\\\\", "\\aeta", "ae\\ta"):
+            with self.subTest(query=query):
+                response = self.client.get("/api/v1/search", {"q": query})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    [item["friendly_token"] for item in response.json()["results"]],
+                    [self.exact.friendly_token, self.prefix.friendly_token],
+                )
+
+    def test_backslash_only_query_uses_existing_empty_term_behavior(self):
+        for query in ("\\", "\\\\", "\\ \\"):
+            with self.subTest(query=query):
+                response = self.client.get("/api/v1/search", {"q": query})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["count"], 2)
+                self.assertCountEqual(
+                    [item["friendly_token"] for item in response.json()["results"]],
+                    [self.exact.friendly_token, self.prefix.friendly_token],
+                )
+
+    def test_backslashes_in_multiple_terms_preserve_and_matching(self):
+        response = self.client.get("/api/v1/search", {"q": "ae\\ta aetaland\\"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [item["friendly_token"] for item in response.json()["results"]],
+            [self.prefix.friendly_token],
+        )
+
+    def test_backslash_search_preserves_country_filtering_and_pagination(self):
+        other_country = create_test_media(self.user, media_country="ID")
+        other_country.title = "Aeta Other Country"
+        other_country.save(update_fields=["title"])
+
+        response = self.client.get("/api/v1/search", {"q": "aeta\\", "country": "Philippines", "page_size": 1})
+
+        self.assertEqual(response.status_code, 200)
+        page = response.json()
+        self.assertEqual(page["count"], 2)
+        self.assertEqual([item["friendly_token"] for item in page["results"]], [self.exact.friendly_token])
+        self.assertIsNone(page["previous"])
+        self.assertIsNotNone(page["next"])
+
+        response = self.client.get(page["next"])
+
+        self.assertEqual(response.status_code, 200)
+        page = response.json()
+        self.assertEqual(page["count"], 2)
+        self.assertEqual([item["friendly_token"] for item in page["results"]], [self.prefix.friendly_token])
+        self.assertIsNotNone(page["previous"])
+        self.assertIsNone(page["next"])
+
+    def test_rss_search_handles_backslashes(self):
+        for query in ("aeta\\", "aeta\\\\", "\\", "ae\\ta"):
+            with self.subTest(query=query):
+                response = self.client.get("/rss/search/", {"q": query})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, "<title>Aeta</title>")
+                self.assertContains(response, "<title>Aetaland</title>")
+
+    def test_backslashes_in_media_title_are_normalized_for_search(self):
+        self.exact.title = "Ae\\ta"
+        self.exact.save(update_fields=["title"])
+
+        response = self.client.get("/api/v1/search", {"q": "aeta"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [item["friendly_token"] for item in response.json()["results"]],
+            [self.exact.friendly_token, self.prefix.friendly_token],
+        )
+
+
 class ReindexMediaSearchCommandTests(TestCase):
     """Issue #879: weighting only reaches a row when that row is saved.
 
