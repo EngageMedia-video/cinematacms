@@ -280,6 +280,44 @@ Add the job to the branch rule only after the workflow is on `main` and has
 reported a result on a pull request. GitHub blocks a merge indefinitely when a
 required check never starts.
 
+### Allow declaration workflow events
+
+GitHub will enforce its default policy blocking `pull_request_target` in
+affected public repositories on November 2, 2026. The AI and Analytics
+declaration workflows need this event to write commit statuses for pull
+requests from forks. Only the AI declaration workflow also needs it to maintain
+labels. Both workflows execute validators from the base repository and treat
+the pull request body as data.
+
+[`.github/actions-policies/declarations.json`](../../.github/actions-policies/declarations.json)
+allows `pull_request_target` only for these declaration workflows. It does not
+target other workflow paths or restrict actors. Existing organization and
+enterprise policies still apply. See
+[GitHub's event security guidance](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target#default-policy-for-pull_request_target).
+
+A repository administrator must apply the policy through GitHub's API or
+Settings > Actions > Policies. Committing the JSON does not activate it.
+Before creating a policy, inspect the existing policies, including inherited
+policies:
+
+```bash
+gh api repos/EngageMedia-video/cinematacms/actions/policies
+```
+
+If no matching policy exists, create it from the repository root:
+
+```bash
+gh api --method POST repos/EngageMedia-video/cinematacms/actions/policies \
+  --input .github/actions-policies/declarations.json
+```
+
+If the policy already exists, update it with `--method PUT` at
+`repos/EngageMedia-video/cinematacms/actions/policies/POLICY_ID` using the same
+input file. Read that endpoint back and verify `enforcement`, `conditions`, and
+`rules` against the JSON. To roll back this exception, delete that policy with
+`gh api --method DELETE` at the same endpoint. The default event restriction
+then applies again unless another applicable event policy allows the event.
+
 ### Add the declaration label
 
 When the substantive-assistance field is selected, the workflow adds an
