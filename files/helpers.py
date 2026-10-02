@@ -837,7 +837,7 @@ def clean_query(query):
     if not query:
         return ""
 
-    chars = ["^", "{", "}", "&", "|", "<", ">", '"', ")", "(", "!", ":", ";", "'", "#"]
+    chars = ["^", "{", "}", "&", "|", "<", ">", '"', ")", "(", "!", ":", ";", "'", "#", "\\"]
     for char in chars:
         query = query.replace(char, "")
     return query.lower()
