@@ -284,9 +284,10 @@ required check never starts.
 
 GitHub will enforce its default policy blocking `pull_request_target` in
 affected public repositories on November 2, 2026. The AI and Analytics
-declaration workflows need this event to write commit statuses and maintain
-labels for pull requests from forks. Both workflows execute validators from
-the base repository and treat the pull request body as data.
+declaration workflows need this event to write commit statuses for pull
+requests from forks. Only the AI declaration workflow also needs it to maintain
+labels. Both workflows execute validators from the base repository and treat
+the pull request body as data.
 
 [`.github/actions-policies/declarations.json`](../../.github/actions-policies/declarations.json)
 allows `pull_request_target` only for these declaration workflows. It does not
