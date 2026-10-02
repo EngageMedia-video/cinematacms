@@ -206,6 +206,18 @@ class ChunkCleanupTests(TestCase):
         self.assertFalse(os.path.exists(second_chunk))
         self.assertTrue(os.path.exists(self.original_path))
 
+    def test_segmentation_maps_the_inspected_streams(self):
+        from files.tasks import chunkize_media
+
+        Media.objects.filter(pk=self.media.pk).update(
+            media_info=json.dumps({"video_info": {"index": 2}, "audio_info": {"index": 5}, "has_audio": True})
+        )
+        with patch("files.tasks.run_command", return_value={"out": "", "error": ""}) as subprocess:
+            self.assertFalse(chunkize_media.run(self.media.friendly_token, []))
+        command = subprocess.call_args.args[0]
+        maps = [command[i + 1] for i, arg in enumerate(command) if arg == "-map"]
+        self.assertEqual(maps, ["0:2", "0:5"])
+
     def test_chunk_rows_are_all_published_before_the_first_task_dispatch(self):
         Media.objects.filter(pk=self.media.pk).update(video_height=1080)
         self.media.refresh_from_db()

@@ -298,7 +298,9 @@ def media_file_info(input_file):
     - `audio_codec`: Audio codec name (`aac`)
     - `audio_bitrate`: Bitrate of the video stream in kBit/s
 
-    Also returns the video and audio info raw from ffprobe.
+    Also returns the selected video and audio info raw from ffprobe. Encoding
+    maps these streams explicitly. Incomplete stream metadata returns `fail`
+    and a bounded `error` reason, and logs that reason without the filename.
     """
     ret = {}
 
@@ -341,7 +343,7 @@ def media_file_info(input_file):
     has_video = False
     has_audio = False
     for stream_info in info["streams"]:
-        if stream_info["codec_type"] == "video":
+        if stream_info.get("codec_type") == "video":
             video_info = stream_info
             has_video = True
             if info.get("format") and info["format"].get("format_name", "") in [
@@ -354,9 +356,18 @@ def media_file_info(input_file):
             ]:
                 ret["fail"] = True
                 return ret
-        elif stream_info["codec_type"] == "audio":
-            audio_info = stream_info
+        elif stream_info.get("codec_type") == "audio":
+            if not audio_info and all(stream_info.get(key) for key in ("codec_name", "sample_rate", "channels")):
+                audio_info = stream_info
             has_audio = True
+
+    if has_audio and not audio_info:
+        logger.warning("Media inspection failed: incomplete_audio_metadata")
+        return {"fail": True, "error": "incomplete_audio_metadata"}
+
+    if has_video and not all(video_info.get(key) for key in ("codec_name", "width", "height", "r_frame_rate")):
+        logger.warning("Media inspection failed: incomplete_video_metadata")
+        return {"fail": True, "error": "incomplete_video_metadata"}
 
     if not has_video:
         ret["is_video"] = False
@@ -402,7 +413,7 @@ def media_file_info(input_file):
             "-loglevel",
             "error",
             "-select_streams",
-            "v",
+            str(video_info["index"]) if "index" in video_info else "v:0",
             "-show_entries",
             "packet=size",
             "-of",
@@ -462,7 +473,7 @@ def media_file_info(input_file):
                 "-loglevel",
                 "error",
                 "-select_streams",
-                "a",
+                str(audio_info["index"]) if "index" in audio_info else "a:0",
                 "-show_entries",
                 "packet=size",
                 "-of",
@@ -583,6 +594,7 @@ def get_base_ffmpeg_command(
     pass_number,
     enc_type,
     chunk,
+    stream_maps=(),
 ):
     """Get the base command for a specific codec, height/rate, and pass
 
@@ -600,6 +612,7 @@ def get_base_ffmpeg_command(
         pass_file {str} -- path to temp pass file
         pass_number {int} -- number of passes
         enc_type {str} -- encoding type (twopass or crf)
+        stream_maps {sequence} -- explicit input stream mapping arguments
     """
 
     target_fps = int(target_fps)
@@ -629,6 +642,8 @@ def get_base_ffmpeg_command(
         "-pix_fmt",
         "yuv420p",
     ]
+
+    base_cmd.extend(stream_maps)
 
     if enc_type == "twopass":
         base_cmd.extend(["-b:v", str(target_rate) + "k"])
@@ -761,6 +776,22 @@ def get_base_ffmpeg_command(
     return cmd
 
 
+def get_media_stream_maps(media_info, *, chunk=False, include_audio=True):
+    """Map inspected streams, or retain automatic selection for legacy metadata.
+
+    Segmentation writes video then audio, so chunk stream indices differ from
+    the original file. The first encoding pass intentionally excludes audio.
+    """
+    video_index = media_info.get("video_info", {}).get("index")
+    if video_index is None:
+        return []
+    maps = ["-map", "0:v:0" if chunk else f"0:{video_index}"]
+    if include_audio and media_info.get("has_audio"):
+        audio_index = media_info.get("audio_info", {}).get("index")
+        maps.extend(["-map", "0:a:0" if chunk or audio_index is None else f"0:{audio_index}"])
+    return maps
+
+
 def produce_ffmpeg_commands(media_file, media_info, resolution, codec, output_filename, pass_file, chunk=False):
     try:
         media_info = json.loads(media_info)
@@ -822,6 +853,7 @@ def produce_ffmpeg_commands(media_file, media_info, resolution, codec, output_fi
                 pass_number=pass_number,
                 enc_type=enc_type,
                 chunk=chunk,
+                stream_maps=get_media_stream_maps(media_info, chunk=chunk, include_audio=pass_number != 1),
             )
         )
     return cmds

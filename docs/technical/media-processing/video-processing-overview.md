@@ -13,6 +13,24 @@ The encoding pipeline is composed of two main Celery tasks:
 
 These functions run asynchronously in the background to offload heavy processing operations from the main application, as explained below.
 
+### Stream metadata and selection
+
+Before encoding, `Media.set_media_type()` calls `media_file_info()` to inspect
+the upload with ffprobe. The parser selects the first audio stream with a
+codec name, sample rate, and channel count. A later unidentified audio track
+does not replace that selection. Files without audio remain video-only.
+
+If audio exists but no track has those fields, inspection returns `fail` with
+`incomplete_audio_metadata` and logs that reason. Missing required video fields
+return `incomplete_video_metadata`. The existing caller marks processing as
+failed rather than continuing with incomplete metadata or discarding all audio.
+
+FFmpeg explicitly maps the inspected video and audio streams during encoding
+and segmentation. Chunk encoding maps the resulting first video and first audio
+streams because segmentation renumbers them. The first pass of a two-pass
+encode excludes audio. Older stored metadata without stream indices retains
+automatic stream selection.
+
 ---
 
 ### 🛠️ Tasks
