@@ -25,7 +25,15 @@ const PAGE_CONFIG = {
 		topics: [{ value: '2', label: 'Environment' }],
 		mediaLanguages: [{ value: 'en', label: 'English' }],
 		mediaCountries: [{ value: 'ID', label: 'Indonesia' }],
-		licenses: [{ id: '1', title: 'CC BY 4.0 - Attribution', allowCommercial: 'yes', allowModifications: 'yes' }],
+		licenses: [
+			{ id: '1', title: 'CC BY 4.0 - Attribution', allowCommercial: 'yes', allowModifications: 'yes' },
+			{
+				id: '2',
+				title: 'CC BY-NC 4.0 - Attribution-NonCommercial',
+				allowCommercial: 'no',
+				allowModifications: 'yes',
+			},
+		],
 	},
 };
 
@@ -114,6 +122,21 @@ describe('EditMediaPage unsaved changes warning', () => {
 
 		fireEvent.click(documentary);
 		await waitFor(() => expect(documentary).toBeChecked());
+		expect(leaveWarningShown()).toBe(false);
+	});
+
+	it('stops warning when a license choice is replaced by All Rights Reserved again', async () => {
+		render(<EditMediaPage />);
+		const allRightsReserved = screen.getByRole('checkbox', { name: /All Rights Reserved/ });
+
+		fireEvent.click(screen.getByRole('button', { name: 'Choose License' }));
+		fireEvent.click(screen.getByLabelText('Allow commercial uses of your work? No'));
+		fireEvent.click(screen.getByRole('button', { name: 'Update License' }));
+		await waitFor(() => expect(allRightsReserved).not.toBeChecked());
+		expect(leaveWarningShown()).toBe(true);
+
+		fireEvent.click(allRightsReserved);
+		await waitFor(() => expect(allRightsReserved).toBeChecked());
 		expect(leaveWarningShown()).toBe(false);
 	});
 
