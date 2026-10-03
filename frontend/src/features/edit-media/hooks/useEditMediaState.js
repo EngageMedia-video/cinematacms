@@ -66,10 +66,15 @@ function isSameValue(a, b) {
 	return Object.is(a, b);
 }
 
+// With All Rights Reserved checked the form submits "None", so the selected license is not saved.
+function withSubmittedLicense(state) {
+	return state.noLicense ? { ...state, selectedLicenseId: null } : state;
+}
+
 function hasUnsavedChanges(state, initialState) {
-	return Object.keys(initialState).some(
-		(key) => !UI_ONLY_KEYS.has(key) && !isSameValue(state[key], initialState[key])
-	);
+	const current = withSubmittedLicense(state);
+	const initial = withSubmittedLicense(initialState);
+	return Object.keys(initial).some((key) => !UI_ONLY_KEYS.has(key) && !isSameValue(current[key], initial[key]));
 }
 
 function withoutError(errors, field) {
