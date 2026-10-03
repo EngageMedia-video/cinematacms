@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useRef, useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MentionHighlightInput } from './MentionHighlightInput';
 
 function Harness({ initialValue = '', committedHandles = ['alice'], onKeyDown }) {
@@ -22,6 +22,10 @@ const caretAt = (input, position) => input.setSelectionRange(position, position)
 const backspace = (input) => fireEvent.keyDown(input, { key: 'Backspace' });
 
 describe('MentionHighlightInput', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	it('colours the mention and leaves the rest of the text plain', () => {
 		const { container } = render(<Harness initialValue="hi @alice there" />);
 		const backdrop = container.querySelector('.mention-input-backdrop');
@@ -36,6 +40,27 @@ describe('MentionHighlightInput', () => {
 		render(<Harness initialValue="hi @alice" />);
 
 		expect(screen.getByLabelText('comment')).toHaveValue('hi @alice');
+	});
+
+	// The field paints the caret and the backdrop paints the text, so the two
+	// must wrap onto the same lines or typing appears a row away from the caret.
+	it('keeps the empty last line a trailing newline leaves in the field', () => {
+		const { container } = render(<Harness initialValue={'first line\n'} />);
+		const backdrop = container.querySelector('.mention-input-backdrop');
+
+		expect(backdrop.textContent).toBe('first line\n\u200b');
+	});
+
+	it('gives up the width a field scrollbar takes from the text', () => {
+		vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function () {
+			return this.tagName === 'TEXTAREA' ? 231 : 0;
+		});
+		vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function () {
+			return this.tagName === 'TEXTAREA' ? 216 : 0;
+		});
+		const { container } = render(<Harness initialValue="hello" />);
+
+		expect(container.querySelector('.mention-input-backdrop').style.right).toBe('15px');
 	});
 
 	it('Backspace just after a mention removes the whole mention', () => {
