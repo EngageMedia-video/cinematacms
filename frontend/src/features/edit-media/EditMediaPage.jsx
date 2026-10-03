@@ -7,6 +7,7 @@ import { BasicDetailsForm } from '../add-media/single-upload/components/BasicDet
 import { OtherDetailsForm } from '../add-media/single-upload/components/OtherDetailsForm';
 import { ThumbnailImageUpload } from '../add-media/single-upload/components/ThumbnailImageUpload';
 import { TextAlert } from '../shared/components/TextAlert';
+import { useUnsavedChangesGuard } from '../shared/hooks/useUnsavedChangesGuard';
 import { getCSRFToken } from '../add-media/utils/helpers';
 import { maxWords, required, runValidators } from '../shared/utils/validators';
 import editMediaQueryClient from './queryClient';
@@ -72,7 +73,8 @@ function EditMediaPageContent() {
 	const formRef = useRef(null);
 	const editState = useEditMediaState(config);
 	const submitMutation = useSubmitEditMedia();
-	const { uploadBusy } = useReplacementUploadState();
+	const { uploadBusy, hasUnsavedUpload } = useReplacementUploadState();
+	const unsavedChangesGuard = useUnsavedChangesGuard(editState.isDirty || hasUnsavedUpload);
 	const { categories, contentSensitivities, licenses, mediaCountries, mediaLanguages, topics } = config.options;
 
 	function validateForm() {
@@ -150,6 +152,7 @@ function EditMediaPageContent() {
 			},
 			{
 				onSuccess: (data) => {
+					unsavedChangesGuard.disarm();
 					window.location.assign(data.url);
 				},
 				onError: (error) => {

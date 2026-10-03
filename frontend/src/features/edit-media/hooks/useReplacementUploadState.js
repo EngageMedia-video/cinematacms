@@ -31,10 +31,13 @@ export function useReplacementUploadState() {
 		setStatus(EMPTY_REPLACEMENT_UPLOAD_STATE);
 	}
 
+	const uploadBusy = ['uploading', 'paused'].includes(status.phase);
+
 	return {
 		status,
 		setStatus,
 		resetStatus,
-		uploadBusy: ['uploading', 'paused'].includes(status.phase),
+		uploadBusy,
+		hasUnsavedUpload: uploadBusy || status.phase === 'complete',
 	};
 }
