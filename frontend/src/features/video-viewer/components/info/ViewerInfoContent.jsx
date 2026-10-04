@@ -1,5 +1,4 @@
 import React, { useContext, useState, useEffect, useId, useLayoutEffect, useRef } from 'react';
-import DOMPurify from 'dompurify';
 import { UserConsumer } from '../../../../static/js/contexts/UserContext';
 import SiteContext from '../../../../static/js/contexts/SiteContext';
 import PageStore from '../../../../static/js/pages/_PageStore';
@@ -7,6 +6,7 @@ import * as PageActions from '../../../../static/js/pages/_PageActions';
 import MediaPageStore from '../../../../static/js/pages/MediaPage/store.js';
 import * as MediaPageActions from '../../../../static/js/pages/MediaPage/actions.js';
 import { formatInnerLink } from '../../../../static/js/functions/formatInnerLink';
+import { LinkifiedText } from '../../../shared/components/LinkifiedText';
 import { TabContent, TabView } from '../../../shared/components/TabView/TabView.jsx';
 import { Text } from '../../../shared/components/Text/Text.jsx';
 import { CommunityImpactSection } from '../community-impact';
@@ -63,6 +63,35 @@ function linkedMetafield(arr) {
 	));
 }
 
+// Minutes may exceed 59 so a feature-length "75:30" still links.
+const TIMESTAMP_PATTERN = /((\d)?\d:)?(\d)?\d:\d\d/g;
+
+function timestampHref(timestamp) {
+	const seconds = timestamp.split(':').reduce((total, part) => total * 60 + parseInt(part, 10), 0);
+	const searchParameters = new URLSearchParams(window.location.search);
+	searchParameters.set('t', seconds);
+	return MediaPageStore.get('media-url').split('?')[0] + '?' + searchParameters;
+}
+
+function renderTimestampLinks(text) {
+	const nodes = [];
+	let cursor = 0;
+
+	for (const match of text.matchAll(TIMESTAMP_PATTERN)) {
+		nodes.push(text.slice(cursor, match.index));
+		nodes.push(
+			<a key={match.index} className="text-text-accent" href={timestampHref(match[0])}>
+				{match[0]}
+			</a>
+		);
+		cursor = match.index + match[0].length;
+	}
+
+	nodes.push(text.slice(cursor));
+
+	return nodes;
+}
+
 function MediaButton(props) {
 	return (
 		<Link href={props.link} rel="nofollow" variant="primary">
@@ -73,7 +102,6 @@ function MediaButton(props) {
 
 export default function ViewerInfoContent(props) {
 	const description = props.description.trim();
-	const hasHtmlDescription = PageStore.get('config-options').pages.media.htmlInDescription;
 	const site = useContext(SiteContext);
 	const productionCompanyContent = MediaPageStore.get('media-production-company');
 	const websiteContent = MediaPageStore.get('media-website');
@@ -216,37 +244,6 @@ export default function ViewerInfoContent(props) {
 	const authorLink = formatInnerLink(props.author.url, site.url);
 	const authorThumb = formatInnerLink(props.author.thumb, site.url);
 
-	function setTimestampAnchors(text) {
-		function wrapTimestampWithAnchor(match) {
-			let split = match.split(':'),
-				s = 0,
-				m = 1;
-
-			let searchParameters = new URLSearchParams(window.location.search);
-
-			while (split.length > 0) {
-				s += m * parseInt(split.pop(), 10);
-				m *= 60;
-			}
-
-			searchParameters.set('t', s);
-
-			const wrapped =
-				'<a class="text-text-accent" href="' +
-				MediaPageStore.get('media-url').split('?')[0] +
-				'?' +
-				searchParameters +
-				'">' +
-				match +
-				'</a>';
-			return wrapped;
-		}
-
-		const timeRegex = new RegExp('((\\d)?\\d:)?(\\d)?\\d:\\d\\d', 'g');
-
-		return text.replace(timeRegex, wrapTimestampWithAnchor);
-	}
-
 	let licenseValue;
 	if (null !== licenseContent && '' !== licenseContent) {
 		licenseValue = (
@@ -358,15 +355,7 @@ export default function ViewerInfoContent(props) {
 
 										<div className="relative">
 											<Text variant="body-16" className="m-0 wrap-break-word">
-												{hasHtmlDescription ? (
-													<span
-														dangerouslySetInnerHTML={{
-															__html: DOMPurify.sanitize(setTimestampAnchors(summary)),
-														}}
-													/>
-												) : (
-													setTimestampAnchors(summary)
-												)}
+												<LinkifiedText text={summary} renderText={renderTimestampLinks} />
 											</Text>
 										</div>
 									</div>
@@ -389,17 +378,10 @@ export default function ViewerInfoContent(props) {
 														!isInfoExpanded && 'line-clamp-4'
 													)}
 												>
-													{hasHtmlDescription ? (
-														<span
-															dangerouslySetInnerHTML={{
-																__html: DOMPurify.sanitize(
-																	setTimestampAnchors(description)
-																),
-															}}
-														/>
-													) : (
-														setTimestampAnchors(description)
-													)}
+													<LinkifiedText
+														text={description}
+														renderText={renderTimestampLinks}
+													/>
 												</Text>
 
 												{!isInfoExpanded && isInfoClamped && (
