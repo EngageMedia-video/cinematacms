@@ -37,6 +37,9 @@ const EMPTY_SINGLE_PREVIEW = {
 	thumbnailFrame: null,
 };
 
+// Mobile + tablet: below Tailwind's `lg` (1024px) viewport breakpoint.
+const NARROW_VIEWPORT_QUERY = '(max-width: 1023px)';
+
 export class AddMediaPage extends Page {
 	static contextType = UserContext;
 
@@ -44,9 +47,6 @@ export class AddMediaPage extends Page {
 		super(props, 'add-media');
 		this.config = getAddMediaConfig();
 		this.uploaderRef = React.createRef();
-		// The @container/page element; its width drives the bulk layout, so we watch
-		// it to gate bulk availability on the same threshold as the grid (@4xl/page).
-		this.pageRef = React.createRef();
 		this.uploader = null;
 		this.pendingReplaceId = null;
 		this.completedTokens = {};
@@ -89,19 +89,17 @@ export class AddMediaPage extends Page {
 			},
 		});
 
-		// Bulk needs the desktop grid, so gate it on the same threshold the layout
-		// uses (@4xl/page = 56rem container). Watch the @container/page width — not
-		// the viewport — so it stays in sync with the grid even when the app sidebar
-		// changes the available width. Guarded for non-browser/test environments.
-		if (typeof ResizeObserver !== 'undefined' && this.pageRef.current) {
-			// Keep in sync with Tailwind's @4xl/page container breakpoint.
-			const FOUR_XL_PX = 56 * 16;
-			this.pageObserver = new ResizeObserver((entries) => {
-				const width = entries[0]?.contentRect?.width ?? 0;
-				const narrow = width > 0 && width < FOUR_XL_PX;
+		// Bulk is desktop-only, so gate it on the viewport (below Tailwind's `lg`),
+		// not the @container/page width — the app sidebar can shrink the container
+		// below @5xl/page on a desktop screen. Guarded for non-browser/test environments.
+		if (typeof window.matchMedia === 'function') {
+			this.narrowQuery = window.matchMedia(NARROW_VIEWPORT_QUERY);
+			this.handleNarrowChange = (event) => {
+				const narrow = event.matches;
 				this.setState((state) => (state.isNarrow === narrow ? null : { isNarrow: narrow }));
-			});
-			this.pageObserver.observe(this.pageRef.current);
+			};
+			this.handleNarrowChange(this.narrowQuery);
+			this.narrowQuery.addEventListener('change', this.handleNarrowChange);
 		}
 
 		this.lastBulkStep = 1;
@@ -211,7 +209,7 @@ export class AddMediaPage extends Page {
 			this.uploaderRef.current.removeEventListener('click', this.handleUploaderClick);
 		}
 		this.unsubscribeBulkStep?.();
-		this.pageObserver?.disconnect();
+		this.narrowQuery?.removeEventListener('change', this.handleNarrowChange);
 	}
 
 	getAbandonableTokens() {
@@ -659,11 +657,10 @@ export class AddMediaPage extends Page {
 		return (
 			<div className="media-uploader-wrap add-media-page-wrap">
 				<main
-					ref={this.pageRef}
 					className="add-media-feature @container/page mx-4 py-8 text-text-primary sm:mx-6 lg:mx-10"
 				>
-					<div className="grid grid-cols-1 gap-8 @4xl/page:grid-cols-[220px_minmax(0,1fr)_340px] @4xl/page:items-start">
-						<header className="flex items-start justify-between gap-4 @4xl/page:col-start-2 @4xl/page:row-start-1">
+					<div className="grid grid-cols-1 gap-8 @5xl/page:grid-cols-[220px_minmax(0,1fr)_340px] @5xl/page:items-start">
+						<header className="flex items-start justify-between gap-4 @5xl/page:col-start-2 @5xl/page:row-start-1">
 							<div className="w-full">
 								<div className="flex flex-row items-center">
 									<Text variant="h4" as="h1" className="m-0 text-text-strong flex-1">
@@ -675,7 +672,7 @@ export class AddMediaPage extends Page {
 									</span>
 								</div>
 
-								<Text variant="body-16" color="description" className="m-0 mt-4 max-w-[720px]">
+								<Text variant="body-16" color="description" className="m-0 mt-4 max-w-180">
 									Please check our&nbsp;
 									<a
 										href="/editorial-policy"
@@ -690,14 +687,14 @@ export class AddMediaPage extends Page {
 							</div>
 						</header>
 
-						<aside className="hidden min-w-0 @4xl/page:block @4xl/page:col-start-1 @4xl/page:row-start-1 @4xl/page:row-span-2 @4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start">
+						<aside className="hidden min-w-0 @5xl/page:block @5xl/page:col-start-1 @5xl/page:row-start-1 @5xl/page:row-span-2 @5xl/page:sticky @5xl/page:top-[calc(var(--header-height)+1rem)] @5xl/page:self-start">
 							{isBulk ? <BulkStepperSlot /> : null}
 						</aside>
 
 						<section
 							className={cn(
-								'min-w-0 @4xl/page:col-start-2 @4xl/page:row-start-2',
-								isBulk && '@4xl/page:col-end-4'
+								'min-w-0 @5xl/page:col-start-2 @5xl/page:row-start-2',
+								isBulk && '@5xl/page:col-end-4'
 							)}
 						>
 							<AddMediaUploadTemplate />
@@ -740,6 +737,7 @@ export class AddMediaPage extends Page {
 										/>
 									}
 								/>
+
 								<TabContent
 									title="Bulk Upload"
 									value="bulk-upload"
@@ -750,9 +748,9 @@ export class AddMediaPage extends Page {
 
 						<aside
 							className={cn(
-								'hidden min-w-0 @4xl/page:block @4xl/page:col-start-3 @4xl/page:row-start-2 @4xl/page:sticky @4xl/page:top-[calc(var(--header-height)+1rem)] @4xl/page:self-start',
-								'@4xl/page:mt-[76px]',
-								isBulk && '@4xl/page:hidden'
+								'hidden min-w-0 @5xl/page:block @5xl/page:col-start-3 @5xl/page:row-start-2 @5xl/page:sticky @5xl/page:top-[calc(var(--header-height)+1rem)] @5xl/page:self-start',
+								'@5xl/page:mt-19',
+								isBulk && '@5xl/page:hidden'
 							)}
 						>
 							{!isBulk && uploadedMedia ? (
