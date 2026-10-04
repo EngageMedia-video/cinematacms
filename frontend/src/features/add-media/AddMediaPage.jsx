@@ -704,7 +704,7 @@ export class AddMediaPage extends Page {
 
 							<TabView
 								tabMode="wrap"
-								triggerClassName="rounded-none py-3 px-size-22 text-text-tab-trigger"
+								triggerClassName="rounded-none py-3 px-size-24 text-text-tab-trigger"
 								triggerSelectedColor="bg-bg-section-header"
 								panelClassName={tabsHidden ? 'mt-0' : 'mt-8'}
 								hideTabList={tabsHidden}
