@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 from django.contrib.auth.models import AnonymousUser
 from django.test import Client, RequestFactory, TestCase, override_settings
-from django.utils import timezone
 
 from files.community_impact_validators import GENERIC_TRUSTED_URL_ERROR
 from files.methods import can_manage_film_impact
@@ -74,18 +73,6 @@ class CommunityImpactSerializerTests(TestCase):
             )
             self.assertFalse(serializer.is_valid(), msg=f"Expected {category!r} to be rejected")
             self.assertIn("category", serializer.errors)
-
-    def test_defaults_event_date_to_submission_date(self):
-        serializer = CommunityImpactSerializer(
-            data={
-                "category": CommunityImpact.SCREENING,
-                "title": "Community screening",
-                "url": "",
-            }
-        )
-
-        self.assertTrue(serializer.is_valid(), msg=serializer.errors)
-        self.assertEqual(serializer.validated_data["event_date"], timezone.localdate())
 
     def test_accepts_https_urls(self):
         for good_url in ("https://drive.google.com/file/d/abc/view", "https://example.com/path"):
@@ -258,6 +245,7 @@ class CommunityImpactEndpointTests(TestCase):
                     "category": CommunityImpact.SCREENING,
                     "title": "Community screening",
                     "details": "Screened with a youth media collective.",
+                    "event_date": "2025-06-10",
                     "url": "https://drive.google.com/file/d/screening/view",
                 },
                 content_type="application/json",
@@ -267,7 +255,8 @@ class CommunityImpactEndpointTests(TestCase):
         impact = CommunityImpact.objects.get(media=self.media)
         self.assertEqual(impact.status, CommunityImpact.WAITING_APPROVAL)
         self.assertEqual(response.json()["status"], CommunityImpact.WAITING_APPROVAL)
-        self.assertEqual(impact.event_date, timezone.localdate())
+        self.assertEqual(impact.event_date, date(2025, 6, 10))
+        self.assertEqual(response.json()["event_date"], "2025-06-10")
         invalidate_media_cache.assert_called_once_with(self.media.friendly_token)
 
     def test_submission_defaults_to_waiting_approval(self):
@@ -278,6 +267,7 @@ class CommunityImpactEndpointTests(TestCase):
             data={
                 "category": CommunityImpact.SCREENING,
                 "title": "Community screening",
+                "event_date": "2026-05-29",
                 "url": "",
             },
             content_type="application/json",
@@ -298,6 +288,7 @@ class CommunityImpactEndpointTests(TestCase):
             data={
                 "category": CommunityImpact.SCREENING,
                 "title": "Community screening by owner",
+                "event_date": "2026-05-29",
                 "url": "",
             },
             content_type="application/json",
@@ -317,6 +308,7 @@ class CommunityImpactEndpointTests(TestCase):
             data={
                 "category": CommunityImpact.SCREENING,
                 "title": "Community screening by trusted user",
+                "event_date": "2026-05-29",
                 "url": "",
             },
             content_type="application/json",
@@ -344,6 +336,7 @@ class CommunityImpactEndpointTests(TestCase):
                     data={
                         "category": CommunityImpact.SCREENING,
                         "title": f"Community screening by {role_user.username}",
+                        "event_date": "2026-05-29",
                         "url": "",
                     },
                     content_type="application/json",
@@ -370,6 +363,62 @@ class CommunityImpactEndpointTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()["url"][0], GENERIC_TRUSTED_URL_ERROR)
         self.assertFalse(CommunityImpact.objects.filter(media=self.media, title="Unsafe screening").exists())
+
+    def test_rejects_submission_without_event_date(self):
+        self.client.login(username="impactuser", password="testpass123")
+
+        response = self.client.post(
+            self.url,
+            data={
+                "category": CommunityImpact.SCREENING,
+                "title": "Screening without a date",
+                "details": "Screened last year.",
+                "url": "",
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("event_date", response.json())
+        self.assertFalse(CommunityImpact.objects.filter(media=self.media).exists())
+
+    @patch("django.utils.timezone.localdate", return_value=date(2026, 10, 5))
+    def test_rejects_event_date_after_server_tomorrow(self, _localdate):
+        self.client.login(username="impactuser", password="testpass123")
+
+        response = self.client.post(
+            self.url,
+            data={
+                "category": CommunityImpact.SCREENING,
+                "title": "Future screening",
+                "event_date": "2026-10-07",
+                "url": "",
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("event_date", response.json())
+        self.assertFalse(CommunityImpact.objects.filter(media=self.media).exists())
+
+    @patch("django.utils.timezone.localdate", return_value=date(2026, 10, 5))
+    def test_accepts_event_date_one_day_ahead_of_server_date(self, _localdate):
+        # A viewer in Jakarta at 02:00 on 6 Oct is still on 5 Oct in Europe/London.
+        self.client.login(username="impactuser", password="testpass123")
+
+        response = self.client.post(
+            self.url,
+            data={
+                "category": CommunityImpact.SCREENING,
+                "title": "Screening earlier today in Jakarta",
+                "event_date": "2026-10-06",
+                "url": "",
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(CommunityImpact.objects.get(media=self.media).event_date, date(2026, 10, 6))
 
     def test_authenticated_user_cannot_create_saves_impact(self):
         self.client.login(username="impactuser", password="testpass123")
@@ -610,6 +659,21 @@ class ManageCommunityImpactTests(TestCase):
         self.assertEqual(self.impact.category, CommunityImpact.ACADEMIC)
         self.assertEqual(self.impact.status, CommunityImpact.APPROVED)
         self.assertEqual(self.impact.event_date, date(2026, 6, 2))
+
+    @patch("django.utils.timezone.localdate", return_value=date(2026, 10, 5))
+    def test_api_manager_cannot_set_event_date_after_server_tomorrow(self, _localdate):
+        self.client.login(username="managerimpactmanager", password="testpass123")
+
+        response = self.client.patch(
+            f"/api/v1/manage_film_impact/{self.impact.uid}",
+            data=json.dumps({"event_date": "2026-10-07"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("event_date", response.json())
+        self.impact.refresh_from_db()
+        self.assertEqual(self.impact.event_date, date(2026, 5, 29))
 
     def test_api_manager_can_reject_impact(self):
         self.client.login(username="managerimpactmanager", password="testpass123")

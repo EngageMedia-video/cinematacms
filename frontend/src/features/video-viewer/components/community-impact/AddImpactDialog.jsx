@@ -1,6 +1,16 @@
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Dialog, DialogContent, Dropdown, EditorField, Icon, TextField } from '../../../shared/components';
+import {
+	Button,
+	DateChooserField,
+	Dialog,
+	DialogContent,
+	Dropdown,
+	EditorField,
+	Icon,
+	TextField,
+} from '../../../shared/components';
+import { todayIso } from '../../../add-media/utils/helpers';
 import { COMMUNITY_IMPACT_CATEGORIES, getImpactIconConfig } from './impactIcons';
 import './AddImpactDialog.css';
 
@@ -10,6 +20,7 @@ function createEmptyValues() {
 	return {
 		category: '',
 		details: '',
+		eventDate: '',
 		link: '',
 		location: '',
 	};
@@ -62,7 +73,8 @@ export function AddImpactDialog({
 	const [linkError, setLinkError] = useState('');
 	const wordCount = countWords(values.details);
 	const wordLimitExceeded = wordCount > 80;
-	const canSubmit = values.location.trim() && values.category && !wordLimitExceeded && !submitting;
+	const canSubmit =
+		values.location.trim() && values.eventDate && values.category && !wordLimitExceeded && !submitting;
 	const formError = submitError && submitError.field !== 'url' ? submitError.message : '';
 	const heartConfig = getImpactIconConfig('heart');
 	const categoryOptions = useMemo(
@@ -112,6 +124,7 @@ export function AddImpactDialog({
 		onSubmit?.({
 			category: values.category,
 			details: values.details.trim(),
+			event_date: values.eventDate,
 			link: normalizedLink,
 			location: values.location.trim(),
 			title: values.location.trim(),
@@ -170,6 +183,14 @@ export function AddImpactDialog({
 							value={values.location}
 							onChange={(event) => updateValue('location', event.target.value)}
 							required
+						/>
+						<DateChooserField
+							className="impact-add-field w-full"
+							label="When did you see this film"
+							name="event_date"
+							max={todayIso()}
+							value={values.eventDate}
+							onChange={(value) => updateValue('eventDate', value)}
 						/>
 						<EditorField
 							className="impact-add-field impact-details-field w-full"
