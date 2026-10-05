@@ -59,6 +59,8 @@ class MediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Media
         read_only_fields = (
+            "uid",
+            "analytics_revision",
             "friendly_token",
             "user",
             "add_date",
@@ -78,6 +80,8 @@ class MediaSerializer(serializers.ModelSerializer):
             "featured_date",
         )
         fields = (
+            "uid",
+            "analytics_revision",
             "friendly_token",
             "url",
             "api_url",
@@ -537,8 +541,9 @@ class PlaylistSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Playlist
-        read_only_fields = ("add_date", "user")
+        read_only_fields = ("add_date", "user", "uid")
         fields = (
+            "uid",
             "add_date",
             "title",
             "description",
@@ -562,8 +567,9 @@ class PlaylistDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Playlist
-        read_only_fields = ("add_date", "user")
+        read_only_fields = ("add_date", "user", "uid")
         fields = (
+            "uid",
             "title",
             "add_date",
             "user_thumbnail_url",

@@ -48,6 +48,7 @@ export function MediaLikeIcon(props) {
 		if (UserContext._currentValue.is.anonymous) {
 			const currentPath = window.location.href.replace(SiteContext._currentValue.url, '').replace(/^\//g, '');
 			const loginUrl = LinksContext._currentValue.signin + '?next=/' + currentPath;
+			window.CinemataAnalytics?.track('signin_click');
 			window.location.href = loginUrl;
 			return;
 		}

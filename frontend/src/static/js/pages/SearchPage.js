@@ -253,6 +253,10 @@ export class SearchPage extends Page {
 	}
 
 	getCountFunc(resultsCount) {
+		if (this.lastSettledRequest !== this.state.requestUrl && this.state.validQuery) {
+			this.lastSettledRequest = this.state.requestUrl;
+			if (resultsCount === 0) window.CinemataAnalytics?.track('search_no_results');
+		}
 		this.setState(
 			{
 				resultsCount: resultsCount,

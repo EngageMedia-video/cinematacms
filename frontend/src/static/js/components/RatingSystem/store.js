@@ -43,6 +43,7 @@ class RatingSystemStore extends EventEmitter {
 	}
 
 	succeedRateResponse(id, score, response) {
+		if (response?.status >= 200 && response.status < 300) window.CinemataAnalytics?.track('media_rating_success');
 		this.emit('succeed_rate_submit[' + id + ']', score);
 	}
 

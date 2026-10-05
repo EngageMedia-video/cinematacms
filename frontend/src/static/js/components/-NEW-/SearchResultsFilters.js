@@ -103,7 +103,18 @@ export function SearchResultsFilters(props) {
 			award: awardFilter,
 		};
 
-		switch (ev.currentTarget.getAttribute('filter')) {
+		const key = ev.currentTarget.getAttribute('filter');
+		const value = ev.currentTarget.getAttribute('value');
+		if (Object.hasOwn(args, key) && args[key] !== value) {
+			window.CinemataAnalytics?.track(
+				key === 'sort_by'
+					? 'search_sort_change'
+					: value === 'all'
+						? 'search_filter_reset'
+						: 'search_filter_apply'
+			);
+		}
+		switch (key) {
 			case 'media_type':
 				args.media_type = ev.currentTarget.getAttribute('value');
 				props.onFiltersUpdate(args);

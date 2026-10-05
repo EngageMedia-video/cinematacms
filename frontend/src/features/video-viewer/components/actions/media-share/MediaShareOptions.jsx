@@ -146,6 +146,7 @@ function ShareTile({ icon, label, bgColor, iconColor, href, target, dataPageId, 
 		return (
 			<a
 				href={href}
+				data-analytics-action="media_share_click"
 				target={target}
 				rel={target === '_blank' ? 'noopener noreferrer' : undefined}
 				className={cn(SHARE_TILE_CLASSES, 'no-underline', className)}

@@ -1093,6 +1093,15 @@
         "operation": "analytics_segment_report"
       },
       {
+        "id": "analytics.platform_admin",
+        "route": "/admin/analytics/",
+        "methods": [
+          "GET"
+        ],
+        "route_group": "pages",
+        "operation": "analytics_segment_report"
+      },
+      {
         "id": "web.search",
         "route": "/search",
         "methods": [

@@ -514,6 +514,9 @@ def manage_uploads(request):
     if not can_manage_uploads(request.user):
         return HttpResponseRedirect("/")
 
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "uploads")
     context = {}
     return render(request, "cms/manage_uploads.html", context)
 
@@ -595,6 +598,9 @@ Sender email: %s\n
                 headers={"X-Cinemata-Email-Kind": "contact_form"},
             )
             email.send(fail_silently=True)
+            from cms.analytics import queue_action
+
+            queue_action(request, "contact_form_accepted")
             success_msg = "Message was queued. Thanks for contacting us."
             context["success_msg"] = success_msg
 
@@ -627,17 +633,26 @@ def topics(request):
 
 
 def history(request):
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "history")
     context = {}
     return render(request, "cms/history.html", context)
 
 
 @login_required
 def notifications_page(request):
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "notifications")
     context = {}
     return render(request, "cms/notifications.html", context)
 
 
 def liked_media(request):
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "liked")
     context = {}
     return render(request, "cms/liked_media.html", context)
 
@@ -688,6 +703,10 @@ def upload_media(request):
     else:
         upload_allowed = getattr(settings, "UPLOAD_MEDIA_ALLOWED", True)
     context["can_add"] = upload_allowed and can_upload_media(request.user)
+    if context["can_add"]:
+        from cms.analytics import allow_workflow_analytics
+
+        allow_workflow_analytics(request, "upload")
     # Trusted users (advancedUser/editor/manager/superuser) publish without admin
     # review; regular users get the "Submit For Review?" confirmation instead.
     context["can_publish_directly"] = can_manage_uploads(request.user)
@@ -1073,6 +1092,9 @@ def edit_media(request):
     if not is_media_allowed_type(media):
         return HttpResponseRedirect(media.get_absolute_url())
 
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "media_edit")
     if request.method == "POST":
         action = request.POST.get("action", "submit").strip().lower()
         if action == "draft":
@@ -1087,12 +1109,24 @@ def edit_media(request):
             messages.add_message(request, messages.INFO, "Media draft was saved!")
             draft_url = reverse("get_user_media", kwargs={"username": request.user.username})
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
-                return JsonResponse({"success": True, "url": draft_url})
+                from cms.analytics import action_events
+
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "url": draft_url,
+                        "analytics_events": action_events(request, "media_draft_save", media=media),
+                    }
+                )
+            from cms.analytics import queue_action
+
+            queue_action(request, "media_draft_save", media=media)
             return HttpResponseRedirect(draft_url)
 
         form = MediaForm(request.user, request.POST, request.FILES, instance=media)
         if form.is_valid():
             # Set current user for FeaturedVideo signal tracking
+            was_draft = media.is_draft
             media._current_user = request.user
             media = form.save()
             apply_tags(media, form.cleaned_data.get("new_tags"), request.user)
@@ -1298,7 +1332,24 @@ def edit_media(request):
                 messages.add_message(request, messages.INFO, "Media was edited!")
 
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
-                return JsonResponse({"success": True, "url": media.get_absolute_url()})
+                from cms.analytics import action_events
+
+                names = ["media_submit" if was_draft else "media_update"]
+                if media_update_info.get("updated"):
+                    names.append("media_file_replace")
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "url": media.get_absolute_url(),
+                        "analytics_events": action_events(request, *names, media=media),
+                    }
+                )
+
+            from cms.analytics import queue_action
+
+            queue_action(request, "media_submit" if was_draft else "media_update", media=media)
+            if media_update_info.get("updated"):
+                queue_action(request, "media_file_replace", media=media)
 
             return HttpResponseRedirect(media.get_absolute_url())
         elif request.headers.get("x-requested-with") == "XMLHttpRequest":
@@ -1342,6 +1393,9 @@ def add_subtitle(request):
     if not (request.user == media.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user)):
         return HttpResponseRedirect("/")
 
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "subtitles")
     if request.method == "POST":
         form = SubtitleForm(media, request.POST, request.FILES)
         if form.is_valid():
@@ -1355,6 +1409,9 @@ def add_subtitle(request):
                 media.save(update_fields=["edit_date"])
 
                 messages.add_message(request, messages.INFO, "Subtitle was added!")
+                from cms.analytics import queue_action
+
+                queue_action(request, "subtitle_add", media=media)
                 return HttpResponseRedirect(subtitle.media.get_absolute_url())
             except Exception:
                 new_subtitle.delete()
@@ -1381,6 +1438,9 @@ def edit_subtitle(request):
     if not (request.user == subtitle.user or is_mediacms_editor(request.user) or is_mediacms_manager(request.user)):
         return HttpResponseRedirect("/")
 
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "subtitles")
     context = {"subtitle": subtitle, "action": action}
 
     if action == "download":
@@ -1408,6 +1468,9 @@ def edit_subtitle(request):
             subtitle.media.edit_date = timezone.now()
             subtitle.media.save(update_fields=["edit_date"])
             subtitle.delete()
+            from cms.analytics import queue_action
+
+            queue_action(request, "subtitle_delete", media=subtitle.media)
 
             return HttpResponseRedirect(redirect_url)
         form = EditSubtitleForm(subtitle, request.POST)
@@ -1424,6 +1487,9 @@ def edit_subtitle(request):
                 schedule_refresh_media_storage_usage(subtitle.media_id)
 
                 messages.add_message(request, messages.INFO, "Subtitle was edited")
+                from cms.analytics import queue_action
+
+                queue_action(request, "subtitle_update", media=subtitle.media)
                 return HttpResponseRedirect(subtitle.media.get_absolute_url())
             except Exception as e:
                 logger.error(f"Failed to save subtitle edit for {subtitle.subtitle_file.path}: {str(e)}")
@@ -1485,6 +1551,8 @@ def view_playlist(request, friendly_token):
 
     context = {}
     context["playlist"] = playlist
+    if playlist:
+        request.analytics_playlist = str(playlist.uid)
     return render(request, "cms/playlist.html", context)
 
 

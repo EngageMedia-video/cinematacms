@@ -76,6 +76,13 @@ jobs:
         working-directory: frontend
         run: npm run lint:modern
 
+      - name: Validate analytics coverage contract
+        env:
+          PR_BODY: ${{ github.event.pull_request.body || '' }}
+        run: |
+          node .github/scripts/analytics-coverage.mjs
+          node --test .github/scripts/analytics-coverage.test.mjs .github/scripts/analytics-declaration.test.mjs
+
       - name: Lint frontend (legacy track)
         working-directory: frontend
         run: npm run lint:legacy

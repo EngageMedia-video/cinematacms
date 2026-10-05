@@ -9,6 +9,8 @@ the application actually selected.
 from collections.abc import Iterable
 from dataclasses import dataclass
 
+from django.conf import settings
+
 from files.metrics import record_contract_violation
 
 HTTP_METHODS = frozenset({"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"})
@@ -299,6 +301,7 @@ _OWNED_ROUTE_RULES = (
     _rule("analytics/playback", "api_other", "analytics_playback", url_name="record_playback"),
     _rule("analytics/segment-event", "api_other", "analytics_segment_event", url_name="record_segment_event"),
     _rule("analytics/segments", "pages", "analytics_segment_report", url_name="segment_report"),
+    _rule(f"{settings.DJANGO_ADMIN_URL}analytics/", "pages", "analytics_segment_report", url_name="platform_analytics"),
     _rule("^(?P<slug>[\\w.-]*)$", "pages", "other", url_name="get_page"),
     _rule("tinymce/upload/", "third_party", "third_party", url_name="tinymce_upload_image"),
     # users.urls

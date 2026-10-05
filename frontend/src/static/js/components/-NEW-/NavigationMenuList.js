@@ -94,7 +94,11 @@ export function NavigationMenuList(props) {
 	props = { removeVerticalPadding: false, ...props };
 	const menuItems = props.items.map((item, index) => <NavigationMenuListItem key={index} {...item} />);
 	return menuItems.length ? (
-		<div className={'nav-menu' + (props.removeVerticalPadding ? ' pv0' : '')}>
+		<div
+			className={'nav-menu' + (props.removeVerticalPadding ? ' pv0' : '')}
+			data-analytics-placement={props.analyticsPlacement}
+			data-analytics-action={props.analyticsPlacement ? 'navigation_click' : undefined}
+		>
 			<nav>
 				<ul>{menuItems}</ul>
 			</nav>
@@ -103,6 +107,7 @@ export function NavigationMenuList(props) {
 }
 
 NavigationMenuList.propTypes = {
+	analyticsPlacement: PropTypes.oneOf(['sidebar']),
 	removeVerticalPadding: PropTypes.bool,
 	items: PropTypes.arrayOf(PropTypes.shape(NavigationMenuListItem.propTypes)).isRequired,
 };

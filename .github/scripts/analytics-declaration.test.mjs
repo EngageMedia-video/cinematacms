@@ -13,12 +13,16 @@ const events = `## Analytics
 - [ ] Not applicable.
 Events: pageview, annotation_created
 Trigger: public page loads and annotation save succeeds
-Verification: tracker unit test and local Umami collection`;
+Verification: tracker unit test and local Umami collection
+Coverage: media-loads`;
 
 test('requires an analytics section and one selection', () => {
 	assert.equal(parseAnalyticsDeclaration('## Description').valid, false);
 	assert.equal(parseAnalyticsDeclaration(events.replace('[x]', '[ ]')).valid, false);
-	assert.equal(parseAnalyticsDeclaration(events.replace('- [ ] Not applicable.', '- [X] Not applicable.')).valid, false);
+	assert.equal(
+		parseAnalyticsDeclaration(events.replace('- [ ] Not applicable.', '- [X] Not applicable.')).valid,
+		false
+	);
 });
 
 test('accepts documented events, including edited whitespace and unrelated checkboxes', () => {
@@ -28,8 +32,18 @@ test('accepts documented events, including edited whitespace and unrelated check
 
 test('requires valid event names, a trigger, and verification', () => {
 	assert.equal(parseAnalyticsDeclaration(events.replace('annotation_created', 'annotation:secret')).valid, false);
-	assert.equal(parseAnalyticsDeclaration(events.replace('Trigger: public page loads and annotation save succeeds', 'Trigger:')).valid, false);
-	assert.equal(parseAnalyticsDeclaration(events.replace('Verification: tracker unit test and local Umami collection', 'Verification:')).valid, false);
+	assert.equal(
+		parseAnalyticsDeclaration(events.replace('Trigger: public page loads and annotation save succeeds', 'Trigger:'))
+			.valid,
+		false
+	);
+	assert.equal(
+		parseAnalyticsDeclaration(
+			events.replace('Verification: tracker unit test and local Umami collection', 'Verification:')
+		).valid,
+		false
+	);
+	assert.equal(parseAnalyticsDeclaration(events.replace('Coverage: media-loads', 'Coverage:')).valid, false);
 });
 
 test('accepts an explained exception and rejects a blank one', () => {
@@ -38,7 +52,10 @@ test('accepts an explained exception and rejects a blank one', () => {
 - [x] Not applicable.
 Reason: Staff-only maintenance view.`;
 	assert.equal(parseAnalyticsDeclaration(body).valid, true);
-	assert.equal(parseAnalyticsDeclaration(body.replace('Staff-only maintenance view.', '<!-- explain -->')).valid, false);
+	assert.equal(
+		parseAnalyticsDeclaration(body.replace('Staff-only maintenance view.', '<!-- explain -->')).valid,
+		false
+	);
 });
 
 test('ignores declarations outside the analytics section', () => {
@@ -60,7 +77,8 @@ test('accepts a completed pull request template', () => {
 		.replace('- [ ] Events added or updated.', '- [x] Events added or updated.')
 		.replace(/^Events:.*$/m, 'Events: pageview')
 		.replace(/^Trigger:.*$/m, 'Trigger: public page loads')
-		.replace(/^Verification:.*$/m, 'Verification: browser check');
+		.replace(/^Verification:.*$/m, 'Verification: browser check')
+		.replace(/^Coverage:.*$/m, 'Coverage: media-loads');
 
 	assert.equal(parseAnalyticsDeclaration(template).valid, false);
 	assert.equal(parseAnalyticsDeclaration(body).valid, true);
@@ -74,10 +92,14 @@ test('writes status outputs for valid and invalid PR bodies', () => {
 			['## Description', 1, 'valid=false'],
 		]) {
 			const output = join(directory, `output-${expectedCode}`);
-			const result = spawnSync(process.execPath, [fileURLToPath(new URL('./analytics-declaration.mjs', import.meta.url))], {
-				env: { ...process.env, PR_BODY: body, GITHUB_OUTPUT: output },
-				encoding: 'utf8',
-			});
+			const result = spawnSync(
+				process.execPath,
+				[fileURLToPath(new URL('./analytics-declaration.mjs', import.meta.url))],
+				{
+					env: { ...process.env, PR_BODY: body, GITHUB_OUTPUT: output },
+					encoding: 'utf8',
+				}
+			);
 			assert.equal(result.status, expectedCode);
 			assert.match(readFileSync(output, 'utf8'), new RegExp(expectedOutput));
 		}

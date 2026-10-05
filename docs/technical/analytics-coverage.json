@@ -1,0 +1,618 @@
+{
+  "version": 1,
+  "features": [
+    {
+      "id": "media-loads",
+      "events": [
+        "page_view",
+        "media_view"
+      ],
+      "trigger": "An eligible page or embed loads after access succeeds; CMS counting does not depend on Umami.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "static/js/cinemata-analytics.js",
+          "contains": "send('media_view'"
+        },
+        {
+          "path": "cms/analytics.py",
+          "contains": "def allow_media_analytics"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "player",
+      "events": [
+        "play",
+        "pause",
+        "playback_start",
+        "finish",
+        "progress_25",
+        "progress_50",
+        "progress_75",
+        "seek",
+        "mute",
+        "unmute",
+        "fullscreen_on",
+        "fullscreen_off",
+        "player_error",
+        "quality_change",
+        "subtitle_change",
+        "speed_change",
+        "theater_change",
+        "next",
+        "previous"
+      ],
+      "trigger": "A player state changes; coverage milestones occur once per play. Seeking is not watched coverage.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "static/js/cinemata-analytics.js",
+          "contains": "function attachPlayer"
+        },
+        {
+          "path": "frontend/packages/media-player/src/MediaPlayer.js",
+          "contains": "quality: 'quality_change'"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "media-success-bridge",
+      "events": [
+        "like",
+        "unlike",
+        "playlist_add",
+        "playlist_remove",
+        "link_copy",
+        "embed_copy",
+        "comment_success",
+        "comment_delete",
+        "community_impact_submit",
+        "media_delete",
+        "playlist_create",
+        "media_report_success",
+        "dislike",
+        "undislike"
+      ],
+      "trigger": "A confirmed store action succeeds; conditional dislike controls remain conditional.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "frontend/src/static/js/pages/MediaPage/store.js",
+          "contains": "reported_media: 'media_report_success'"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js",
+        "frontend/src/features/video-viewer/analytics-actions.test.jsx"
+      ]
+    },
+    {
+      "id": "modern-comments-journal",
+      "events": [
+        "comment_success",
+        "comment_delete",
+        "journal_create",
+        "journal_update",
+        "journal_delete"
+      ],
+      "trigger": "A successful mutation response, once per action. Private journal events carry no film ID.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "frontend/src/features/video-viewer/comments/hooks/useSubmitComment.js",
+          "contains": "track('comment_success')"
+        },
+        {
+          "path": "frontend/src/features/video-viewer/comments/hooks/useDeleteComment.js",
+          "contains": "track('comment_delete')"
+        },
+        {
+          "path": "frontend/src/features/video-viewer/private-journal/hooks/useSubmitPrivateJournalNote.js",
+          "contains": "track('journal_create')"
+        },
+        {
+          "path": "frontend/src/features/video-viewer/private-journal/hooks/useUpdatePrivateJournalNote.js",
+          "contains": "track('journal_update')"
+        },
+        {
+          "path": "frontend/src/features/video-viewer/private-journal/hooks/useDeletePrivateJournalNote.js",
+          "contains": "track('journal_delete')"
+        }
+      ],
+      "tests": [
+        "frontend/src/features/video-viewer/analytics-actions.test.jsx",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "playlist-management",
+      "events": [
+        "playlist_remove",
+        "playlist_reorder",
+        "playlist_update",
+        "playlist_delete",
+        "playlist_link_copy",
+        "playlist_share"
+      ],
+      "trigger": "After confirmed removal, final successful reorder, metadata save, deletion, clipboard copy or native share handoff.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "frontend/src/features/playlist/hooks/usePlaylistMediaMutations.js",
+          "contains": "track('playlist_reorder')"
+        },
+        {
+          "path": "frontend/src/features/playlist/hooks/usePlaylistDescriptionMutation.js",
+          "contains": "track('playlist_update')"
+        },
+        {
+          "path": "frontend/src/features/playlist/hooks/useDeletePlaylistMutation.js",
+          "contains": "track('playlist_delete')"
+        },
+        {
+          "path": "frontend/src/features/playlist/components/PlaylistPage.jsx",
+          "contains": "track('playlist_share')"
+        },
+        {
+          "path": "frontend/src/static/js/pages/PlaylistPage/store.js",
+          "contains": "track('playlist_update')"
+        },
+        {
+          "path": "frontend/src/static/js/components/-NEW-/PlaylistShareOptions.js",
+          "contains": "track('playlist_link_copy')"
+        }
+      ],
+      "tests": [
+        "frontend/src/features/playlist/hooks/analytics.test.jsx",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "conditional-rating",
+      "events": [
+        "media_rating_success"
+      ],
+      "trigger": "A rating API response succeeds; no rating value is sent.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "frontend/src/static/js/components/RatingSystem/store.js",
+          "contains": "track('media_rating_success')"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "downloads-sharing",
+      "events": [
+        "download_click",
+        "subtitle_download_click",
+        "media_share_click",
+        "outbound_click"
+      ],
+      "trigger": "Click intent; outbound properties contain destination domain only, native share handoff is not delivery.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "static/js/cinemata-analytics.js",
+          "contains": "send('download_click')"
+        },
+        {
+          "path": "templates/cms/edit_subtitle.html",
+          "contains": "subtitle_download_click"
+        },
+        {
+          "path": "frontend/src/features/video-viewer/components/actions/media-share/MediaShareOptions.jsx",
+          "contains": "media_share_click"
+        },
+        {
+          "path": "frontend/src/static/js/components/-NEW-/MediaShareOptions.js",
+          "contains": "media_share_click"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "navigation",
+      "events": [
+        "home_media_click",
+        "home_section_click",
+        "home_campaign_click",
+        "media_related_click",
+        "media_author_click",
+        "media_taxonomy_click",
+        "navigation_click",
+        "article_link_click",
+        "profile_tab_click",
+        "signup_click",
+        "signin_click",
+        "search_result_click",
+        "search_results_all"
+      ],
+      "trigger": "A real destination link is activated; labels, query strings and destination paths are not transmitted.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "static/js/cinemata-analytics.js",
+          "contains": "'home_media_click'"
+        },
+        {
+          "path": "frontend/src/static/js/components/-NEW-/HomepagePopup.js",
+          "contains": "home_campaign_click"
+        },
+        {
+          "path": "frontend/src/features/global-search/components/SearchResultSection.jsx",
+          "contains": "search_result_click"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "search",
+      "events": [
+        "search_submit",
+        "search_filter_apply",
+        "search_filter_reset",
+        "search_sort_change",
+        "search_results_page",
+        "search_no_results"
+      ],
+      "trigger": "Submission, committed filter/sort/page changes and a settled empty result. No typing or raw query events.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "frontend/src/features/global-search/GlobalSearchDropdown.jsx",
+          "contains": "track('search_submit')"
+        },
+        {
+          "path": "frontend/src/features/global-search/GlobalSearchMobileOverlay.jsx",
+          "contains": "track('search_submit')"
+        },
+        {
+          "path": "frontend/src/features/search/components/SearchPage.jsx",
+          "contains": "search_filter_apply"
+        },
+        {
+          "path": "frontend/src/features/search/hooks/useMediaSearch.js",
+          "contains": "search_no_results"
+        },
+        {
+          "path": "frontend/src/features/global-search/hooks/useGlobalSearch.js",
+          "contains": "search_no_results"
+        },
+        {
+          "path": "frontend/src/static/js/components/-NEW-/SearchField/index.js",
+          "contains": "search_submit"
+        },
+        {
+          "path": "frontend/src/static/js/pages/SearchPage.js",
+          "contains": "search_no_results"
+        },
+        {
+          "path": "frontend/src/static/js/components/-NEW-/SearchMediaFiltersRow.js",
+          "contains": "search_sort_change"
+        },
+        {
+          "path": "frontend/src/static/js/components/-NEW-/SearchResultsFilters.js",
+          "contains": "search_filter_reset"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js",
+        "frontend/src/features/search/hooks/useMediaSearch.test.js",
+        "frontend/src/features/search/analytics-search.test.jsx",
+        "frontend/src/static/js/components/-NEW-/analytics-search-controls.test.jsx"
+      ]
+    },
+    {
+      "id": "upload-lifecycle",
+      "events": [
+        "upload_start",
+        "upload_complete",
+        "upload_cancel",
+        "upload_error",
+        "upload_pause",
+        "upload_resume",
+        "upload_retry",
+        "upload_discard",
+        "upload_abandon"
+      ],
+      "trigger": "Accepted file, confirmed transport completion, abort, deduplicated failure, state change or accepted abandonment. No byte ticks or file names.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "static/js/cinemata-analytics.js",
+          "contains": "function uploadEvent"
+        },
+        {
+          "path": "frontend/src/features/add-media/AddMediaPage.jsx",
+          "contains": "uploadEvent('start'"
+        },
+        {
+          "path": "frontend/src/features/add-media/bulk-upload/hooks/useBulkUpload.js",
+          "contains": "uploadEvent('start'"
+        },
+        {
+          "path": "frontend/src/static/js/pages/AddMediaPage/index.js",
+          "contains": "uploadEvent('start'"
+        },
+        {
+          "path": "frontend/src/features/edit-media/components/MediaUploadSection.jsx",
+          "contains": "uploadEvent('start'"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js",
+        "frontend/src/features/add-media/bulk-upload/hooks/analytics-upload.test.jsx"
+      ]
+    },
+    {
+      "id": "metadata-subtitles",
+      "events": [
+        "media_draft_save",
+        "media_submit",
+        "media_update",
+        "media_file_replace",
+        "subtitle_add",
+        "subtitle_update",
+        "subtitle_delete"
+      ],
+      "trigger": "After successful server save/conversion/write/delete. Bulk submissions forward successful items only.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "files/views.py",
+          "contains": "\"media_draft_save\""
+        },
+        {
+          "path": "frontend/src/features/add-media/single-upload/hooks/useSubmitSingle.js",
+          "contains": "trackEvents(data.analytics_events)"
+        },
+        {
+          "path": "frontend/src/features/add-media/bulk-upload/hooks/useSubmitBulk.js",
+          "contains": "trackEvents(data.analytics_events)"
+        },
+        {
+          "path": "frontend/src/features/edit-media/hooks/useSubmitEditMedia.js",
+          "contains": "trackEvents(data.analytics_events)"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js",
+        "files/tests/test_single_upload_draft.py",
+        "frontend/src/features/add-media/analytics-submissions.test.jsx"
+      ]
+    },
+    {
+      "id": "own-uploads",
+      "events": [
+        "media_delete",
+        "media_visibility_change",
+        "uploads_page_change",
+        "uploads_filter_change",
+        "uploads_sort_change"
+      ],
+      "trigger": "Successful deletion/visibility change, or committed owner list controls. Bulk changes count one batch action.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "frontend/src/static/js/pages/ManageUploadsPage/index.jsx",
+          "contains": "media_visibility_change"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "notifications",
+      "events": [
+        "notification_click",
+        "notification_read",
+        "notifications_read_all",
+        "notification_preferences_save"
+      ],
+      "trigger": "Destination click or successful read/preferences mutation; no notification identity or preferences.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "frontend/src/features/notifications/components/NotificationItem.jsx",
+          "contains": "notification_click"
+        },
+        {
+          "path": "frontend/src/features/notifications/hooks/useMarkAsRead.js",
+          "contains": "notification_read"
+        },
+        {
+          "path": "frontend/src/features/notifications/hooks/useMarkAllAsRead.js",
+          "contains": "notifications_read_all"
+        },
+        {
+          "path": "frontend/src/features/user-settings/hooks/useUpdateNotificationPreferences.js",
+          "contains": "notification_preferences_save"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js",
+        "frontend/src/features/video-viewer/analytics-actions.test.jsx"
+      ]
+    },
+    {
+      "id": "contact-account",
+      "events": [
+        "contact_form_accepted",
+        "contact_user_accepted",
+        "profile_update",
+        "channel_update",
+        "account_delete",
+        "signup_success",
+        "signin_success",
+        "signout_success",
+        "newsletter_optin"
+      ],
+      "trigger": "Accepted contact request, confirmed profile/channel/deletion change, or completed Allauth authentication including MFA. Newsletter is opt-in intent.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "files/views.py",
+          "contains": "\"contact_form_accepted\""
+        },
+        {
+          "path": "users/views.py",
+          "contains": "\"profile_update\""
+        },
+        {
+          "path": "users/analytics_signals.py",
+          "contains": "\"signup_success\""
+        },
+        {
+          "path": "frontend/src/features/profile/components/sections/ContactSection.jsx",
+          "contains": "contact_user_accepted"
+        },
+        {
+          "path": "frontend/src/features/profile/components/ProfileHeader.jsx",
+          "contains": "account_delete"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "theme",
+      "events": [
+        "theme_change"
+      ],
+      "trigger": "Persisted theme toggle, without the selected preference value.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "frontend/src/features/layout/Sidebar/theme/hooks/useThemeSwitcher.js",
+          "contains": "theme_change"
+        },
+        {
+          "path": "frontend/src/static/js/components/-NEW-/hooks/useThemeSwitcher.js",
+          "contains": "theme_change"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "text-reading",
+      "events": [
+        "text_read_15s",
+        "text_read_30s",
+        "text_read_60s",
+        "text_read_120s",
+        "text_read_300s"
+      ],
+      "trigger": "Cumulative foreground focused attention reaches a milestone, once per page. Article aliases use one canonical path.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "static/js/cinemata-analytics.js",
+          "contains": "function attachTextReading"
+        },
+        {
+          "path": "cms/analytics.py",
+          "contains": "request.path.startswith(\"/p/\")"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
+      ]
+    },
+    {
+      "id": "platform-segments",
+      "events": [
+        "page_view"
+      ],
+      "trigger": "Superuser Django Admin and JSON reports show actual role counts, including small counts; public roles never go to Umami.",
+      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "sources": [
+        {
+          "path": "cms/analytics.py",
+          "contains": "def platform_analytics"
+        },
+        {
+          "path": "templates/admin/platform_analytics.html",
+          "contains": "Public activity by audience group"
+        },
+        {
+          "path": "templates/admin/index.html",
+          "contains": "admin/analytics_reports.html"
+        },
+        {
+          "path": "templates/admin/nav_sidebar.html",
+          "contains": "admin/analytics_reports.html"
+        },
+        {
+          "path": "templates/admin/analytics_reports.html",
+          "contains": "platform_analytics"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py"
+      ]
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "security-forms",
+      "reason": "Password, MFA, email verification and sensitive authentication errors are not tracked."
+    },
+    {
+      "id": "staff-operations",
+      "reason": "Staff, editors, managers and superusers are excluded. A curator is eligible unless also staff."
+    },
+    {
+      "id": "denied-access",
+      "reason": "No configuration or event is emitted before access succeeds."
+    },
+    {
+      "id": "raw-ticks",
+      "reason": "Playback/upload ticks, raw volume values and menu open/close are omitted."
+    },
+    {
+      "id": "owner-reports",
+      "reason": "Report filters, CSV exports and analytics navigation do not inflate audience figures."
+    },
+    {
+      "id": "tool-preview",
+      "reason": "Upload preview/demo playback is not audience viewing."
+    },
+    {
+      "id": "role-session-joins",
+      "reason": "Do not join audience roles with Umami sessions or demographics."
+    }
+  ]
+}

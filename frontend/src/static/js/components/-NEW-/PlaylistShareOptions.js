@@ -210,6 +210,7 @@ export function PlaylistShareOptions(props) {
 		}
 
 		function notifySuccess() {
+			window.CinemataAnalytics?.track('playlist_link_copy');
 			PageActions.addNotification('Link copied to clipboard', 'clipboardLinkCopy');
 		}
 

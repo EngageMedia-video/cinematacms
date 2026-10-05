@@ -210,6 +210,7 @@ function SearchPageContent() {
 	);
 
 	function handleSectionChange(key, value, checked) {
+		window.CinemataAnalytics?.track(key === 'sort' ? 'search_sort_change' : 'search_filter_apply');
 		if (key === 'sort') {
 			setSort((currentSort) => ({
 				...currentSort,
@@ -224,17 +225,20 @@ function SearchPageContent() {
 	}
 
 	function handleClearAll() {
+		window.CinemataAnalytics?.track('search_filter_reset');
 		setFilters(createEmptyFilters());
 		setSort(DEFAULT_SORT);
 		setPage(1);
 	}
 
 	function handleDismiss(filter) {
+		window.CinemataAnalytics?.track('search_filter_reset');
 		setFilters((currentFilters) => clearFilterValue(currentFilters, filter.key, filter.value));
 		setPage(1);
 	}
 
 	function handleSortChange(ordering) {
+		window.CinemataAnalytics?.track('search_sort_change');
 		setSort((currentSort) => ({ ...currentSort, ordering }));
 		setPage(1);
 	}
@@ -279,6 +283,7 @@ function SearchPageContent() {
 								filterOptionSections={filterOptions.sections}
 								onReset={handleClearAll}
 								onSave={(pendingFilters, pendingSort) => {
+									window.CinemataAnalytics?.track('search_filter_apply');
 									setFilters(pendingFilters);
 									setSort(pendingSort);
 									setPage(1);
@@ -335,7 +340,10 @@ function SearchPageContent() {
 									count={count}
 									page={page}
 									pageSize={SEARCH_PAGE_SIZE}
-									onPageChange={setPage}
+									onPageChange={(nextPage) => {
+										window.CinemataAnalytics?.track('search_results_page');
+										setPage(nextPage);
+									}}
 								/>
 							</>
 						) : null}

@@ -31,6 +31,7 @@ export function useUpdateNotificationPreferences() {
 			return r.json();
 		},
 		onSuccess: (data) => {
+			window.CinemataAnalytics?.track('notification_preferences_save');
 			queryClient.setQueryData(['notification-preferences'], data);
 		},
 	});

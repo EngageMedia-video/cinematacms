@@ -1,0 +1,16 @@
+{% load i18n %}
+{% if user.is_superuser %}
+{% url 'platform_analytics' as platform_analytics_url %}
+<div class="app-reports module{% if request.path == platform_analytics_url %} current-app{% endif %}">
+    <table>
+        <caption>{% translate "Reports" %}</caption>
+        <tbody>
+            <tr class="model-platform-analytics{% if request.path == platform_analytics_url %} current-model{% endif %}">
+                <th scope="row">
+                    <a href="{{ platform_analytics_url }}"{% if request.path == platform_analytics_url %} aria-current="page"{% endif %}>{% translate "Platform analytics" %}</a>
+                </th>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}

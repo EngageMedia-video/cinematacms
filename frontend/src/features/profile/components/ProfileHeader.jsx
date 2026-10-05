@@ -23,6 +23,7 @@ export function ProfileHeader({ author }) {
 				method: 'DELETE',
 			});
 			if (response.ok) {
+				window.CinemataAnalytics?.track('account_delete');
 				window.location.assign('/');
 				return;
 			}

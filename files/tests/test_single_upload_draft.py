@@ -1,9 +1,10 @@
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 
 from files.models import Category, Language, Media
 from files.tests.helpers import create_test_media, create_test_user
 
 
+@override_settings(ANALYTICS_ENABLED=True)
 class SingleUploadDraftTests(TestCase):
     def setUp(self):
         self.client = Client()
@@ -28,6 +29,9 @@ class SingleUploadDraftTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["url"], f"/user/{self.user.username}/media")
+        self.assertEqual(response.json()["analytics_events"][0]["name"], "media_draft_save")
+        self.assertEqual(response.json()["analytics_events"][0]["media"]["id"], str(self.media.uid))
+        self.assertNotIn("Partial draft", str(response.json()["analytics_events"]))
 
         self.media.refresh_from_db()
         self.assertTrue(self.media.is_draft)
@@ -78,6 +82,7 @@ class SingleUploadDraftTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["analytics_events"][0]["name"], "media_submit")
 
         self.media.refresh_from_db()
         self.assertFalse(self.media.is_draft)

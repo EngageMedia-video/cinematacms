@@ -342,7 +342,7 @@ export function HeroSection({ children }) {
 
 	if (isError && !media) {
 		return (
-			<div ref={rootRef} className="w-full">
+			<div ref={rootRef} data-analytics-placement="hero" className="w-full">
 				<section
 					className={cn(HERO_LAYOUT, isDesktopLayout ? HERO_LAYOUT_DESKTOP : '')}
 					aria-label="Featured media"
@@ -378,7 +378,7 @@ export function HeroSection({ children }) {
 
 	if (isLoading && !media) {
 		return (
-			<div ref={rootRef} className="w-full">
+			<div ref={rootRef} data-analytics-placement="hero" className="w-full">
 				<div
 					className={cn(HERO_LAYOUT, isDesktopLayout ? HERO_LAYOUT_DESKTOP : '')}
 					aria-busy="true"
@@ -404,7 +404,7 @@ export function HeroSection({ children }) {
 
 	return (
 		<HeroContext value={value}>
-			<div ref={rootRef} className="w-full">
+			<div ref={rootRef} data-analytics-placement="hero" className="w-full">
 				<section
 					className={cn(HERO_LAYOUT, isDesktopLayout ? HERO_LAYOUT_DESKTOP : '')}
 					aria-label="Featured media"

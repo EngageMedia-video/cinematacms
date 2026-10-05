@@ -141,7 +141,7 @@ function ShareOptions() {
 			} else if (k === 'email') {
 				compList.push(
 					<div key="share-email" className="sh-option share-email">
-						<a href={shareOptions[k].shareUrl} title="">
+						<a data-analytics-action="media_share_click" href={shareOptions[k].shareUrl} title="">
 							<span>
 								<i className="material-icons">email</i>
 							</span>
@@ -152,7 +152,12 @@ function ShareOptions() {
 			} else {
 				compList.push(
 					<div key={'share-' + k} className={'sh-option share-' + k}>
-						<a href={shareOptions[k].shareUrl} title="" target="_blank">
+						<a
+							data-analytics-action="media_share_click"
+							href={shareOptions[k].shareUrl}
+							title=""
+							target="_blank"
+						>
 							<span></span>
 							<span>{shareOptions[k].title}</span>
 						</a>

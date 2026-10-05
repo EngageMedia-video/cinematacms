@@ -13,6 +13,7 @@ export function useMarkAllAsRead() {
 			return r.json();
 		},
 		onSuccess: () => {
+			window.CinemataAnalytics?.track('notifications_read_all');
 			queryClient.invalidateQueries({ queryKey: ['notifications'] });
 		},
 	});

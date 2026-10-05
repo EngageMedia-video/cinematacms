@@ -6,7 +6,7 @@ Signed-in viewers open the dedicated owner dashboard at `/analytics` from **Anal
 
 ## Collection and privacy
 
-Only eligible public pages and media pages or embeds after a successful access check load the tracker. Django staff, editors, managers, superusers, signed-in users who disable activity logging, and denied media pages do not. Curators are eligible viewers. The playback endpoint also rejects snapshots from opted-out users. Accessible public, unlisted, restricted, and private media are eligible. Media events carry the `media:<Media.uid>` tag plus an opaque media UUID, media type, page/embed/hero context, and content revision. Nonpublic media sends a generic path and title and no referrer. Public activity sends only the referring domain. Search strings, hashes, friendly tokens, titles, user IDs, access tokens, and raw progress ticks stay out of Umami. The browser honors Do Not Track. The collector route `/api/send` must have proxy access logs disabled.
+Eligible public pages, accessible media pages and embeds, and authorized owner workflows load the tracker. Owner workflows use generic paths and no referrer or public role grant. Django staff, editors, managers, superusers, signed-in users who disable activity logging, and denied media pages do not. Curators are eligible viewers. The playback endpoint also rejects snapshots from opted-out users. Accessible public, unlisted, restricted, and private media are eligible. Audience media events carry the `media:<Media.uid>` tag plus an opaque media UUID, media type, page/embed/hero/playlist context, and content revision. Creator edit events use `workflow:<Media.uid>` and `/media/workflow` so they do not enter audience engagement queries. Playlist pages use `playlist:<Playlist.uid>` and a generic path. Nonpublic media sends a generic path and title and no referrer. Public activity sends only the referring domain. Search strings, hashes, friendly tokens, titles, user IDs, access tokens, and raw progress ticks stay out of Umami. The browser honors Do Not Track. The collector route `/api/send` must have proxy access logs disabled.
 
 `media_view` counts eligible media page and embed loads. It does not count thumbnail impressions or hero playback. Playback starts and end events are separate counts. An end event includes seeking to the end; it is not evidence that a viewer watched the whole film. The player sends play, pause, finish, 25/50/75% unique-content-coverage milestones once per play, seek, mute/unmute, quality/subtitle/speed changes, fullscreen/theater changes, next/previous, and bounded error categories. Starts after a player action or on-site navigation are `deliberate`; autoplay and unknown starts remain separate. Confirmed likes, unlikes, playlist changes, copy actions, and comment submissions produce events. Download events represent click intent. Outbound links send the destination domain only.
 
@@ -19,6 +19,53 @@ The browser also sends cumulative playback snapshots to same-origin `/analytics/
 After a new action succeeds, call `window.CinemataAnalytics?.track('annotation_created')`. Use a fixed lowercase `snake_case` name of at most 50 characters. Never put a title, token, user ID, or other dynamic value in the name. The privacy boundary accepts new names without a tracker release but drops arbitrary event properties. A media-page action inherits its media UUID and appears in owner engagement counts. A general public-page action appears in Umami site reports only. For hero interactions pass media ID, type, context `hero`, and revision as the third argument. A hero player must also receive a signed measurement grant for CMS watch summaries.
 
 For a new server-rendered public page, call `allow_page_analytics(request)` from `cms.analytics` **after** the access check. It sends a generic `/page/<route-name>` path. Denied pages must not call it. For a later SPA route transition on an eligible public page, call `window.CinemataAnalytics?.pageview('route_name')` after access succeeds. Do not call it again on the first server-rendered load. The engineering SOP, PR template, and validation workflow require a tracker decision for new features.
+
+For authorized upload, edit, subtitle, notification, contact and profile workflows,
+call `allow_workflow_analytics(request, 'fixed_workflow_name')` after authorization.
+Use `action_events(request, 'fixed_event', media=media)` in a successful JSON
+response and forward it with `CinemataAnalytics.trackEvents`. For template forms,
+`queue_action` carries a successful event to the next eligible rendered page and
+consumes it once. Partial bulk submissions forward successful items only.
+Authentication completion uses Allauth signals after login, signup and logout,
+including MFA completion. Security forms remain untracked. Newsletter opt-in
+counts consent intent, not successful delivery by the mailing service.
+
+Private journal, account, profile, notification and private-contact actions are
+count-only events with generic paths. They carry no media UUID, notification ID,
+recipient or form contents and do not enter public role aggregates. Upload
+events count transitions without filenames, byte progress or raw errors. A
+transport completion is separate from saving a draft or submitting metadata.
+Bulk visibility changes and removals count one successful batch action.
+
+Navigation events use bounded destination categories and homepage placements.
+Search submission and result selection contain no query text. Empty results
+count once per settled search, not each render or failed request. Article aliases
+`/p/slug` and `/slug` share `/slug`; public profile sections have distinct paths
+without usernames. Collection failures must not interrupt the application action.
+
+Register new events and emitter/test references in
+[`analytics-coverage.json`](analytics-coverage.json). CI runs
+`node .github/scripts/analytics-coverage.mjs` and rejects unregistered fixed event
+names, missing emitters and missing test files. Add tests for confirmed success,
+failure, retry duplication and partial bulk results where relevant. A source
+contract cannot prove event semantics by itself. The PR Analytics declaration
+must name its Coverage entry IDs as well as Events, Trigger and Verification.
+
+## Platform audience groups
+
+Superusers open **Reports → Platform analytics** on the Django Admin dashboard
+or sidebar. The sidebar marks the active report and supports the usual navigation filter.
+The report uses Django Admin's templates, navigation, styles and access checks.
+Its URL follows `DJANGO_ADMIN_URL`, for example `/admin/analytics/` with the
+default admin prefix. `/analytics/segments` remains the superuser-only JSON API.
+The report shows 30-day public
+action counts for anonymous, regular, trusted and curator groups. Since both
+reports are superuser-only, they include counts below ten. A group with no
+recorded events for an action shows zero in the dashboard.
+These coarse CMS daily aggregates
+use UTC. They contain no visitor key and cannot be joined with Umami sessions,
+countries or devices. Umami's separate dashboard supplies platform traffic,
+estimated visitors, visits, referrer domains and environment breakdowns.
 
 ## Owner dashboard
 

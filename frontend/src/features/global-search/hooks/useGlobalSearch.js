@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 
 export const GLOBAL_SEARCH_LIMIT = 4;
 const MIN_QUERY_LENGTH = 2;
@@ -85,6 +86,32 @@ export function useGlobalSearch(query) {
 	const totalResults = videoSection.items.length + playlistSection.items.length + memberSection.items.length;
 	const anySectionErrored = videos.isError || playlists.isError || members.isError;
 	const isEmpty = enabled && !isLoading && !anySectionErrored && totalResults === 0;
+	const lastEmptySearch = useRef(null);
+	useEffect(() => {
+		if (
+			enabled &&
+			videos.isSuccess &&
+			playlists.isSuccess &&
+			members.isSuccess &&
+			!videos.isFetching &&
+			!playlists.isFetching &&
+			!members.isFetching &&
+			lastEmptySearch.current !== trimmed
+		) {
+			lastEmptySearch.current = trimmed;
+			if (isEmpty) window.CinemataAnalytics?.track('search_no_results');
+		}
+	}, [
+		enabled,
+		isEmpty,
+		trimmed,
+		videos.isSuccess,
+		playlists.isSuccess,
+		members.isSuccess,
+		videos.isFetching,
+		playlists.isFetching,
+		members.isFetching,
+	]);
 
 	return {
 		enabled,

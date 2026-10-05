@@ -13,11 +13,12 @@ from django.contrib.auth.models import AnonymousUser
 from django.core import signing
 from django.core.management import call_command
 from django.db import connection
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
+from django.urls import resolve, reverse
 from django.utils import timezone
 
-from cms.analytics import allow_page_analytics, analytics_context
+from cms.analytics import action_events, allow_page_analytics, analytics_context, queue_action
 from cms.creator_analytics import AnalyticsUnavailable, creator_analytics
 from cms.playback_analytics import measurement_token, playback_figures
 from files.management.commands.purge_playback_summaries import twelve_month_cutoff
@@ -26,7 +27,97 @@ from files.tests.helpers import create_test_media, create_test_user
 from files.views import _attach_hero_playback_to_first_featured_item
 
 
+@override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+class WorkflowAnalyticsContextTests(SimpleTestCase):
+    def test_redirect_events_are_consumed_once_without_form_values(self):
+        request = RequestFactory().post("/accounts/login?next=secret", {"password": "secret"})
+        request.user = AnonymousUser()
+        request.session = {}
+        request.resolver_match = SimpleNamespace(url_name="home")
+        request.path = "/"
+        queue_action(request, "signin_success")
+        self.assertEqual(analytics_context(request)["ANALYTICS"]["events"], [{"name": "signin_success"}])
+        self.assertEqual(analytics_context(request)["ANALYTICS"]["events"], [])
+        self.assertNotIn("secret", json.dumps(request.session))
+
+    def test_server_action_events_respect_staff_opt_out_dnt_and_disabled_collection(self):
+        request = RequestFactory().post("/edit?m=secret")
+        for fields in (
+            {"is_staff": True},
+            {"is_editor": True},
+            {"is_manager": True},
+            {"disable_activity_logging": True},
+        ):
+            request.user = SimpleNamespace(is_anonymous=False, **fields)
+            self.assertEqual(action_events(request, "media_update"), [])
+        request.user = AnonymousUser()
+        request.META["HTTP_DNT"] = "1"
+        self.assertEqual(action_events(request, "media_update"), [])
+        request.META.pop("HTTP_DNT")
+        with override_settings(ANALYTICS_ENABLED=False):
+            self.assertEqual(action_events(request, "media_update"), [])
+
+    def test_authentication_signal_counts_only_completed_eligible_authentication(self):
+        from allauth.account.signals import user_logged_in, user_logged_out, user_signed_up
+
+        request = RequestFactory().post("/accounts/signup", {"email": "private@example.org", "subscribe": "on"})
+        request.user = AnonymousUser()
+        request.session = {}
+        user = SimpleNamespace(is_anonymous=False)
+        user_signed_up.send(sender=type(user), request=request, user=user)
+        user_logged_in.send(sender=type(user), request=request, user=user)
+        user_logged_out.send(sender=type(user), request=request, user=user)
+        self.assertEqual(
+            [event["name"] for event in request.session["analytics_events"]],
+            ["signup_success", "newsletter_optin", "signin_success", "signout_success"],
+        )
+        self.assertNotIn("private@example.org", json.dumps(request.session))
+        request.session.clear()
+        user.is_staff = True
+        user_logged_out.send(sender=type(user), request=request, user=user)
+        self.assertEqual(request.session, {})
+
+    def test_access_checked_workflow_uses_generic_path_without_public_role_grant(self):
+        request = RequestFactory().get("/edit?m=private-token")
+        request.user = SimpleNamespace(is_anonymous=False)
+        request.resolver_match = SimpleNamespace(url_name="edit_media")
+        request.analytics_workflow = "media_edit"
+        config = analytics_context(request)["ANALYTICS"]
+        self.assertEqual(config["path"], "/page/media_edit")
+        self.assertTrue(config["nonpublic"])
+        self.assertNotIn("segment_grant", config)
+        self.assertNotIn("private-token", json.dumps(config))
+
+    def test_public_profile_sections_remain_distinct_without_username(self):
+        request = RequestFactory().get("/user/somebody/about")
+        request.user = AnonymousUser()
+        request.resolver_match = SimpleNamespace(url_name="get_user_about")
+        self.assertEqual(analytics_context(request)["ANALYTICS"]["path"], "/user/profile/about")
+
+
 class AnalyticsTemplateTests(TestCase):
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_authorized_edit_page_is_generic_and_denied_edit_page_has_no_tracker(self):
+        owner = create_test_user()
+        media = create_test_media(owner, state="private")
+        self.client.force_login(create_test_user())
+        denied = self.client.get(f"/edit?m={media.friendly_token}")
+        self.assertEqual(denied.status_code, 302)
+        self.assertNotIn("ANALYTICS", denied.context or {})
+        self.client.force_login(owner)
+        response = self.client.get(f"/edit?m={media.friendly_token}")
+        config = response.context["ANALYTICS"]
+        self.assertEqual(config["path"], "/page/media_edit")
+        self.assertNotIn(media.friendly_token, json.dumps(config))
+        self.assertNotIn("segment_grant", config)
+        self.assertContains(response, '<meta name="referrer" content="no-referrer">')
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_article_aliases_share_a_canonical_analytics_path(self):
+        Page.objects.create(slug="canonical-story", title="Story", description="Text")
+        for url in ("/canonical-story", "/p/canonical-story"):
+            self.assertEqual(self.client.get(url).context["ANALYTICS"]["path"], "/canonical-story")
+
     @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
     def test_cms_only_tracking_loads_without_umami_configuration(self):
         media = create_test_media(create_test_user(), state="public")
@@ -91,6 +182,83 @@ class AnalyticsTemplateTests(TestCase):
     ANALYTICS_WEBSITE_ID="00000000-0000-4000-8000-000000000001",
 )
 class SegmentAggregateTests(TestCase):
+    @override_settings(MFA_REQUIRED_ROLES=[])
+    def test_django_admin_platform_report_keeps_authorization_and_shows_small_counts(self):
+        metric_model = apps.get_model("files", "DailySegmentMetric")
+        metric_model.objects.create(
+            day=timezone.now().date(), segment="regular", scope="home", event="page_view", count=9
+        )
+        metric_model.objects.create(
+            day=timezone.now().date(), segment="anonymous", scope="home", event="page_view", count=15
+        )
+        owner = create_test_user()
+        self.client.force_login(owner)
+        report_url = reverse("platform_analytics")
+        self.assertEqual(self.client.get(report_url).status_code, 302)
+        owner.is_staff = True
+        owner.save(update_fields=["is_staff"])
+        self.assertEqual(self.client.get(report_url).status_code, 404)
+        owner.is_superuser = True
+        owner.save(update_fields=["is_superuser"])
+        response = self.client.get(report_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin/platform_analytics.html")
+        self.assertEqual(response.context["analytics_rows"][0]["counts"], [15, 9, 0, 0])
+        self.assertNotContains(response, "cinemata-analytics-config")
+        self.assertNotContains(response, "Hidden")
+        self.assertContains(response, reverse("admin:index"))
+        self.assertIn("private", response["Cache-Control"])
+        self.assertIn("no-store", response["Cache-Control"])
+
+    @override_settings(MFA_REQUIRED_ROLES=[])
+    def test_platform_report_is_linked_only_from_superuser_admin_dashboard(self):
+        from django.contrib.auth.models import Permission
+
+        report_url = reverse("platform_analytics")
+        self.client.force_login(create_test_user(is_superuser=True, is_staff=True))
+        response = self.client.get(reverse("admin:index"))
+        self.assertContains(response, f'href="{report_url}"')
+        response = self.client.get(reverse("admin:users_user_changelist"))
+        self.assertTemplateUsed(response, "admin/nav_sidebar.html")
+        sidebar = response.content.decode().split('id="nav-sidebar"', 1)[1].split("</nav>", 1)[0]
+        self.assertIn(f'href="{report_url}"', sidebar)
+        self.assertIn("Users", sidebar)
+        response = self.client.get(report_url)
+        self.assertContains(response, f'href="{report_url}" aria-current="page"')
+
+        staff = create_test_user(is_staff=True)
+        staff.user_permissions.add(Permission.objects.get(content_type__app_label="users", codename="view_user"))
+        self.client.force_login(staff)
+        response = self.client.get(reverse("admin:index"))
+        self.assertNotContains(response, f'href="{report_url}"')
+        response = self.client.get(reverse("admin:users_user_changelist"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "admin/nav_sidebar.html")
+        self.assertNotContains(response, f'href="{report_url}"')
+
+    @override_settings(MFA_REQUIRED_ROLES=[])
+    def test_admin_platform_report_has_an_explicit_empty_state(self):
+        self.client.force_login(create_test_user(is_superuser=True, is_staff=True))
+        response = self.client.get(reverse("platform_analytics"))
+        self.assertContains(response, "No activity recorded in this period.")
+
+    def test_existing_segment_endpoint_stays_json_even_for_html_accept(self):
+        self.client.force_login(create_test_user(is_superuser=True, is_staff=True))
+        response = self.client.get("/analytics/segments", headers={"accept": "text/html"})
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertEqual(response.json()["rows"], [])
+
+    @override_settings(MFA_REQUIRED_ROLES=[])
+    def test_admin_platform_report_is_read_only_and_has_bounded_telemetry(self):
+        from cms.http_telemetry import classify_request
+
+        report_url = reverse("platform_analytics")
+        request = RequestFactory().get(report_url)
+        request.resolver_match = resolve(report_url)
+        self.assertEqual(classify_request(request), ("pages", "analytics_segment_report"))
+        self.client.force_login(create_test_user(is_superuser=True, is_staff=True))
+        self.assertEqual(self.client.post(report_url).status_code, 405)
+
     def post_event(self, grant, event="page_view", **headers):
         return self.client.post(
             "/analytics/segment-event",
@@ -158,7 +326,7 @@ class SegmentAggregateTests(TestCase):
         self.assertEqual(self.post_event(grant).status_code, 404)
         self.assertFalse(apps.get_model("files", "DailySegmentMetric").objects.exists())
 
-    def test_admin_report_suppresses_small_segment_counts(self):
+    def test_superuser_json_report_includes_small_segment_counts(self):
         metric_model = apps.get_model("files", "DailySegmentMetric")
         today = timezone.now().date()
         page = Page.objects.create(slug="story", title="Story", description="Text")
@@ -178,6 +346,7 @@ class SegmentAggregateTests(TestCase):
         self.assertEqual(
             response.json()["rows"],
             [
+                {"segment": "anonymous", "scope": "home", "event": "page_view", "count": 9},
                 {"segment": "trusted", "scope": "home", "event": "page_view", "count": 10},
                 {
                     "segment": "curator",
