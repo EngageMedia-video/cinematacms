@@ -228,7 +228,7 @@ export function AddImpactDialog({
 					) : null}
 
 					<Button
-						className="mt-[16px] h-[40px] w-[316px] max-w-full justify-center whitespace-nowrap bg-bg-secondary px-0 py-0 text-[14px] font-bold leading-none text-text-on-primary hover:bg-bg-secondary-hover focus-visible:ring-2 focus-visible:ring-ring-focus"
+						className="mt-[16px] h-[40px] w-[316px] max-w-full shrink-0 justify-center whitespace-nowrap bg-bg-secondary px-0 py-0 text-[14px] font-bold leading-none text-text-on-primary hover:bg-bg-secondary-hover focus-visible:ring-2 focus-visible:ring-ring-focus"
 						disabled={!canSubmit}
 						type="submit"
 					>

@@ -80,6 +80,13 @@ describe('AddImpactDialog', () => {
 		}
 	});
 
+	it('keeps the submit button from shrinking when the form scrolls', () => {
+		// jsdom has no layout; in a browser the scrolling flex form squeezed the button to its text height.
+		render(<AddImpactDialog open />);
+
+		expect(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' })).toHaveClass('shrink-0');
+	});
+
 	it('disables submit when details exceed the word limit', async () => {
 		const user = userEvent.setup();
 		const tooManyWords = Array.from({ length: 81 }, (_, index) => `word${index}`).join(' ');
