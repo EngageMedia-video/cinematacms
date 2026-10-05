@@ -15,7 +15,7 @@ from django.core.management import call_command
 from django.db import connection
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
-from django.urls import resolve, reverse
+from django.urls import reverse
 from django.utils import timezone
 
 from cms.analytics import action_events, allow_page_analytics, analytics_context, queue_action
@@ -29,6 +29,31 @@ from files.views import _attach_hero_playback_to_first_featured_item
 
 @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
 class WorkflowAnalyticsContextTests(SimpleTestCase):
+    def test_public_pages_and_media_expose_only_the_coarse_audience_group(self):
+        request = RequestFactory().get("/")
+        request.resolver_match = SimpleNamespace(url_name="home")
+        for group, user in (
+            ("anonymous", AnonymousUser()),
+            ("regular", SimpleNamespace(is_anonymous=False)),
+            ("trusted", SimpleNamespace(is_anonymous=False, advancedUser=True)),
+            ("curator", SimpleNamespace(is_anonymous=False, is_curator=True)),
+        ):
+            request.user = user
+            self.assertEqual(analytics_context(request)["ANALYTICS"]["audience_group"], group)
+            request.analytics_media = {
+                "id": str(uuid.uuid4()),
+                "type": "image",
+                "state": "public",
+                "context": "page",
+                "revision": str(uuid.uuid4()),
+                "instance": None,
+            }
+            self.assertEqual(analytics_context(request)["ANALYTICS"]["audience_group"], group)
+            for state in ("private", "restricted", "unlisted"):
+                request.analytics_media["state"] = state
+                self.assertNotIn("audience_group", analytics_context(request)["ANALYTICS"])
+            del request.analytics_media
+
     def test_redirect_events_are_consumed_once_without_form_values(self):
         request = RequestFactory().post("/accounts/login?next=secret", {"password": "secret"})
         request.user = AnonymousUser()
@@ -86,6 +111,7 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
         self.assertEqual(config["path"], "/page/media_edit")
         self.assertTrue(config["nonpublic"])
         self.assertNotIn("segment_grant", config)
+        self.assertNotIn("audience_group", config)
         self.assertNotIn("private-token", json.dumps(config))
 
     def test_public_profile_sections_remain_distinct_without_username(self):
@@ -183,48 +209,20 @@ class AnalyticsTemplateTests(TestCase):
 )
 class SegmentAggregateTests(TestCase):
     @override_settings(MFA_REQUIRED_ROLES=[])
-    def test_django_admin_platform_report_keeps_authorization_and_shows_small_counts(self):
-        metric_model = apps.get_model("files", "DailySegmentMetric")
-        metric_model.objects.create(
-            day=timezone.now().date(), segment="regular", scope="home", event="page_view", count=9
-        )
-        metric_model.objects.create(
-            day=timezone.now().date(), segment="anonymous", scope="home", event="page_view", count=15
-        )
-        owner = create_test_user()
-        self.client.force_login(owner)
-        report_url = reverse("platform_analytics")
-        self.assertEqual(self.client.get(report_url).status_code, 302)
-        owner.is_staff = True
-        owner.save(update_fields=["is_staff"])
-        self.assertEqual(self.client.get(report_url).status_code, 404)
-        owner.is_superuser = True
-        owner.save(update_fields=["is_superuser"])
-        response = self.client.get(report_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "admin/platform_analytics.html")
-        self.assertEqual(response.context["analytics_rows"][0]["counts"], [15, 9, 0, 0])
-        self.assertNotContains(response, "cinemata-analytics-config")
-        self.assertNotContains(response, "Hidden")
-        self.assertContains(response, reverse("admin:index"))
-        self.assertIn("private", response["Cache-Control"])
-        self.assertIn("no-store", response["Cache-Control"])
-
-    @override_settings(MFA_REQUIRED_ROLES=[])
     def test_platform_report_is_linked_only_from_superuser_admin_dashboard(self):
         from django.contrib.auth.models import Permission
 
-        report_url = reverse("platform_analytics")
+        report_url = "https://analytics.cinemata.org/websites/00000000-0000-4000-8000-000000000001"
         self.client.force_login(create_test_user(is_superuser=True, is_staff=True))
         response = self.client.get(reverse("admin:index"))
         self.assertContains(response, f'href="{report_url}"')
+        self.assertContains(response, 'target="_blank" rel="noopener noreferrer"')
+        self.assertNotContains(response, "cinemata-analytics-config")
         response = self.client.get(reverse("admin:users_user_changelist"))
         self.assertTemplateUsed(response, "admin/nav_sidebar.html")
         sidebar = response.content.decode().split('id="nav-sidebar"', 1)[1].split("</nav>", 1)[0]
         self.assertIn(f'href="{report_url}"', sidebar)
         self.assertIn("Users", sidebar)
-        response = self.client.get(report_url)
-        self.assertContains(response, f'href="{report_url}" aria-current="page"')
 
         staff = create_test_user(is_staff=True)
         staff.user_permissions.add(Permission.objects.get(content_type__app_label="users", codename="view_user"))
@@ -237,27 +235,30 @@ class SegmentAggregateTests(TestCase):
         self.assertNotContains(response, f'href="{report_url}"')
 
     @override_settings(MFA_REQUIRED_ROLES=[])
-    def test_admin_platform_report_has_an_explicit_empty_state(self):
+    def test_admin_hides_the_umami_shortcut_when_unconfigured_or_invalid(self):
         self.client.force_login(create_test_user(is_superuser=True, is_staff=True))
-        response = self.client.get(reverse("platform_analytics"))
-        self.assertContains(response, "No activity recorded in this period.")
+        for url, website_id in (
+            ("", ""),
+            ("http://analytics.example.org", str(uuid.uuid4())),
+            ("https://admin:password@analytics.example.org", str(uuid.uuid4())),
+            ("https://:password@analytics.example.org", str(uuid.uuid4())),
+            ("https://analytics.example.org?secret=token", str(uuid.uuid4())),
+            ("https://analytics.example.org", "not-a-uuid"),
+            ("https://[invalid", str(uuid.uuid4())),
+        ):
+            with self.subTest(url=url), override_settings(ANALYTICS_URL=url, ANALYTICS_WEBSITE_ID=website_id):
+                self.assertNotContains(self.client.get(reverse("admin:index")), "Platform analytics")
+
+    @override_settings(MFA_REQUIRED_ROLES=[], ANALYTICS_ENABLED=False)
+    def test_umami_shortcut_remains_available_when_collection_is_disabled(self):
+        self.client.force_login(create_test_user(is_superuser=True, is_staff=True))
+        self.assertContains(self.client.get(reverse("admin:index")), "Platform analytics")
 
     def test_existing_segment_endpoint_stays_json_even_for_html_accept(self):
         self.client.force_login(create_test_user(is_superuser=True, is_staff=True))
         response = self.client.get("/analytics/segments", headers={"accept": "text/html"})
         self.assertEqual(response["Content-Type"], "application/json")
         self.assertEqual(response.json()["rows"], [])
-
-    @override_settings(MFA_REQUIRED_ROLES=[])
-    def test_admin_platform_report_is_read_only_and_has_bounded_telemetry(self):
-        from cms.http_telemetry import classify_request
-
-        report_url = reverse("platform_analytics")
-        request = RequestFactory().get(report_url)
-        request.resolver_match = resolve(report_url)
-        self.assertEqual(classify_request(request), ("pages", "analytics_segment_report"))
-        self.client.force_login(create_test_user(is_superuser=True, is_staff=True))
-        self.assertEqual(self.client.post(report_url).status_code, 405)
 
     def post_event(self, grant, event="page_view", **headers):
         return self.client.post(
@@ -936,6 +937,7 @@ class CreatorAnalyticsTests(TestCase):
             if endpoint == "metrics":
                 return [
                     {"x": "media_view", "y": 12},
+                    {"x": "page_view", "y": 12},
                     {"x": "playback_start", "y": 8},
                     {"x": "progress_25", "y": 7},
                     {"x": "progress_50", "y": 6},
@@ -971,6 +973,7 @@ class CreatorAnalyticsTests(TestCase):
         self.assertEqual(data["totals"]["progress_50"], 6)
         self.assertEqual(data["totals"]["progress_75"], 5)
         self.assertNotIn(("Progress 25", 7), data["engagement"])
+        self.assertNotIn(("Page view", 12), data["engagement"])
         self.assertEqual(data["completion_rate"], 50)
         self.assertEqual(data["daily"][-1]["finish"], 4)
         self.assertIn(("Likes added", 3), data["engagement"])

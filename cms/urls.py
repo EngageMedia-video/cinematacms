@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from prometheus_client import CollectorRegistry, generate_latest
 from prometheus_client import multiprocess as prom_multiprocess
 
-from cms.analytics import platform_analytics, record_segment_event, segment_report
+from cms.analytics import record_segment_event, segment_report
 from cms.cache_telemetry import owned_cache
 from cms.error_tracking import ErrorTrackingDiagnosticError, capture_unexpected_exception
 from cms.health import live as health_live
@@ -251,9 +251,6 @@ urlpatterns = [
     path("internal/observability/error-probe", error_tracking_diagnostic),
     path("health/live", health_live),
     path("health/ready", health_ready),
-    path(
-        f"{settings.DJANGO_ADMIN_URL}analytics/", admin.site.admin_view(platform_analytics), name="platform_analytics"
-    ),
     path(settings.DJANGO_ADMIN_URL, admin.site.urls),
     path("", include("files.urls")),
     path("", include("users.urls")),

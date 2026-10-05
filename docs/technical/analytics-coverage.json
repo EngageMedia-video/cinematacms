@@ -7,7 +7,7 @@
         "page_view",
         "media_view"
       ],
-      "trigger": "An eligible page or embed loads after access succeeds; CMS counting does not depend on Umami.",
+      "trigger": "An eligible page or embed loads after access succeeds; CMS playback measurement does not depend on Umami. Umami page views and media_view events retain separate meanings.",
       "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
       "sources": [
         {
@@ -556,16 +556,16 @@
       "events": [
         "page_view"
       ],
-      "trigger": "Superuser Django Admin and JSON reports show actual role counts, including small counts; public roles never go to Umami.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
+      "trigger": "Public page views and events carry a server-derived audience_group property for Umami Event data; a superuser-only Django Admin shortcut opens that website.",
+      "privacy": "Only anonymous, regular, trusted or curator; no account identifiers or identify calls. Nonpublic media, account actions, journals and creator workflows omit the property. Labels can be linked to Umami anonymous sessions.",
       "sources": [
         {
           "path": "cms/analytics.py",
-          "contains": "def platform_analytics"
+          "contains": "def umami_report_url"
         },
         {
-          "path": "templates/admin/platform_analytics.html",
-          "contains": "Public activity by audience group"
+          "path": "static/js/cinemata-analytics.js",
+          "contains": "data.audience_group = audienceGroup"
         },
         {
           "path": "templates/admin/index.html",
@@ -577,11 +577,12 @@
         },
         {
           "path": "templates/admin/analytics_reports.html",
-          "contains": "platform_analytics"
+          "contains": "PLATFORM_ANALYTICS_URL"
         }
       ],
       "tests": [
-        "tests/test_analytics.py"
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js"
       ]
     }
   ],

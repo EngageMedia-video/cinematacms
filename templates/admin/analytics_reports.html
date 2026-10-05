@@ -1,13 +1,12 @@
 {% load i18n %}
-{% if user.is_superuser %}
-{% url 'platform_analytics' as platform_analytics_url %}
-<div class="app-reports module{% if request.path == platform_analytics_url %} current-app{% endif %}">
+{% if user.is_superuser and PLATFORM_ANALYTICS_URL %}
+<div class="app-reports module">
     <table>
         <caption>{% translate "Reports" %}</caption>
         <tbody>
-            <tr class="model-platform-analytics{% if request.path == platform_analytics_url %} current-model{% endif %}">
+            <tr class="model-platform-analytics">
                 <th scope="row">
-                    <a href="{{ platform_analytics_url }}"{% if request.path == platform_analytics_url %} aria-current="page"{% endif %}>{% translate "Platform analytics" %}</a>
+                    <a href="{{ PLATFORM_ANALYTICS_URL }}" target="_blank" rel="noopener noreferrer">{% translate "Platform analytics" %} (Umami)</a>
                 </th>
             </tr>
         </tbody>

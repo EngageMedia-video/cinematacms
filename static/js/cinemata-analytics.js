@@ -17,6 +17,8 @@
     }
     const eventName = /^[a-z][a-z0-9_]{0,49}$/;
     const routeName = /^[a-zA-Z0-9_-]{1,64}$/;
+    const audienceGroup = !config.nonpublic && ['anonymous', 'regular', 'trusted', 'curator'].includes(config.audience_group)
+        ? config.audience_group : null;
     const privateActions = {
         journal_create: 'journal', journal_update: 'journal', journal_delete: 'journal',
         notification_click: 'notifications', notification_read: 'notifications', notifications_read_all: 'notifications',
@@ -56,6 +58,7 @@
         }
         const playlistId = !privatePath && !mediaId && /^[0-9a-f-]{36}$/.test(config.playlist_id || '') ? config.playlist_id : null;
         if (playlistId) data.playlist_id = playlistId;
+        if (audienceGroup && !privatePath && data.context !== 'workflow') data.audience_group = audienceGroup;
         const virtualPath = !config.media_id && /^\/page\/[a-zA-Z0-9_-]{1,64}$/.test(payload.url || '') ? payload.url : null;
         const interactionPath = mediaId && ['/media/hero', '/media/playlist', '/media/workflow'].includes(payload.url) ? payload.url : null;
         return {
@@ -66,7 +69,7 @@
             referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : referrer,
             ...(mediaId ? { tag: `${data.context === 'workflow' ? 'workflow' : 'media'}:${mediaId}` } : {}),
             ...(playlistId ? { tag: `playlist:${playlistId}` } : {}),
-            ...(payload.name ? { name: payload.name, data } : mediaId || playlistId ? { data } : {}),
+            ...(payload.name ? { name: payload.name, data } : Object.keys(data).length ? { data } : {}),
         };
     };
 
@@ -75,18 +78,8 @@
             .some((value) => value === 1 || value === '1' || value === 'yes');
     }
 
-    function sendSegment(event) {
-        if (!config.segment_grant || !window.fetch || hasDoNotTrack()) return;
-        window.fetch('/analytics/segment-event', {
-            method: 'POST', credentials: 'same-origin', keepalive: true,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ grant: config.segment_grant, event }),
-        }).catch(() => {});
-    }
-
     function send(name, data = {}, media = null) {
         if (!eventName.test(name) || hasDoNotTrack()) return;
-        if (!Object.hasOwn(privateActions, name) && media?.context !== 'workflow') sendSegment(name);
         if (!config.url || !config.website_id) return;
         const track = () => {
             const mediaId = media?.id || config.media_id;
@@ -112,9 +105,12 @@
 
     function pageview(name) {
         if (config.media_id || !routeName.test(name) || hasDoNotTrack()) return;
-        sendSegment('page_view');
         if (!config.url || !config.website_id) return;
-        const track = () => emitUmami({ website: config.website_id, url: `/page/${name}`, title: 'Page', referrer });
+        const track = () => {
+            const payload = { website: config.website_id, url: `/page/${name}`, title: 'Page', referrer };
+            emitUmami(payload);
+            if (audienceGroup) emitUmami({ ...payload, name: 'page_view' });
+        };
         if (!window.umami) {
             pending.push(track);
             return;
@@ -356,7 +352,7 @@
         },
     };
 
-    sendSegment('page_view');
+    if (audienceGroup) send('page_view');
     if (config.media_id) send('media_view', referrer ? { source_domain: new URL(referrer).hostname } : {});
     trackEvents(config.events);
 

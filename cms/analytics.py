@@ -4,17 +4,16 @@ import json
 import re
 from datetime import timedelta
 from urllib.parse import urlsplit
+from uuid import UUID
 
 from django.conf import settings
-from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.core import signing
 from django.db.models import F, Sum
 from django.http import Http404, HttpResponse, JsonResponse
-from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_POST
 
 SEGMENT_SALT = "cinemata.segment.v1"
 
@@ -60,7 +59,8 @@ def visitor_segment(user):
 
 
 def analytics_context(request):
-    if not getattr(settings, "ANALYTICS_ENABLED", False) or visitor_segment(request.user) is None:
+    audience_group = visitor_segment(request.user)
+    if not getattr(settings, "ANALYTICS_ENABLED", False) or audience_group is None:
         return {}
 
     url = getattr(settings, "ANALYTICS_URL", "")
@@ -99,6 +99,7 @@ def analytics_context(request):
             else None,
         }
         if media["state"] == "public":
+            config["audience_group"] = audience_group
             config["segment_grant"] = signing.dumps({"scope": "media"}, salt=SEGMENT_SALT)
         config["events"] = request.session.pop("analytics_events", []) if hasattr(request, "session") else []
         return {"ANALYTICS": config}
@@ -138,6 +139,7 @@ def analytics_context(request):
             "path": path,
             "text_page": name == "get_page",
             "playlist_id": getattr(request, "analytics_playlist", None),
+            "audience_group": audience_group,
             "segment_grant": signing.dumps({"scope": scope}, salt=SEGMENT_SALT),
             "events": request.session.pop("analytics_events", []) if hasattr(request, "session") else [],
         }
@@ -270,30 +272,20 @@ def segment_report(request):
     return response
 
 
-@require_GET
-def platform_analytics(request):
-    """Django Admin report; the URL also enforces the admin access boundary."""
-    if not request.user.is_superuser:
-        raise Http404
-    data = segment_report_data()
-    segments = ("anonymous", "regular", "trusted", "curator")
-    groups = {}
-    for row in data["rows"]:
-        key = (row["scope"], row["event"])
-        if key not in groups:
-            groups[key] = {"scope": row.get("path") or row["scope"], "event": row["event"].replace("_", " ")}
-        groups[key][row["segment"]] = row["count"]
-    rows = [
-        {"scope": group["scope"], "event": group["event"], "counts": [group.get(segment, 0) for segment in segments]}
-        for group in groups.values()
-    ]
-    context = {
-        **admin.site.each_context(request),
-        "title": "Platform analytics",
-        "start_date_utc": data["start_date_utc"],
-        "end_date_utc": data["end_date_utc"],
-        "analytics_rows": rows,
-    }
-    response = TemplateResponse(request, "admin/platform_analytics.html", context)
-    response["Cache-Control"] = "private, no-store"
-    return response
+def umami_report_url():
+    """Link to the configured website without exposing credentials or API keys."""
+    url = getattr(settings, "ANALYTICS_URL", "")
+    try:
+        parsed = urlsplit(url)
+        website_id = UUID(getattr(settings, "ANALYTICS_WEBSITE_ID", ""))
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            return None
+    except (ValueError, TypeError, AttributeError):
+        return None
+    return f"{parsed.geturl().rstrip('/')}/websites/{website_id}"

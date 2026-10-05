@@ -48,6 +48,7 @@ NON_ENGAGEMENT_EVENTS = frozenset(
         "previous",
         "player_error",
         "media_view",
+        "page_view",
     )
 )
 EVENT_NAME = re.compile(r"[a-z][a-z0-9_]{0,49}")

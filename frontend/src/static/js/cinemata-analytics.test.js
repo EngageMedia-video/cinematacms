@@ -14,7 +14,10 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
-function loadTracker(overrides = {}) {
+function loadTracker(overrides = {}, clearCalls = true) {
+	document.head
+		.querySelectorAll('script[data-before-send="cinemataAnalyticsBeforeSend"]')
+		.forEach((script) => script.remove());
 	for (const target of [document, window]) {
 		const add = target.addEventListener.bind(target);
 		vi.spyOn(target, 'addEventListener').mockImplementation((name, callback, options) => {
@@ -35,21 +38,72 @@ function loadTracker(overrides = {}) {
 	const track = vi.fn();
 	window.umami = { track };
 	new Function('window', 'document', 'Element', source)(window, document, Element);
-	track.mockClear();
+	if (clearCalls) track.mockClear();
 	return track;
 }
 
 describe('Cinemata Umami privacy boundary', () => {
+	it.each([null, mediaId])('counts a public load once in native Views and once as the audience event: %s', (id) => {
+		const track = loadTracker({ media_id: id, nonpublic: false, audience_group: 'regular' }, false);
+		document.querySelector('script[data-website-id="site-id"]').onload();
+		const payloads = track.mock.calls.map(([build]) =>
+			window.cinemataAnalyticsBeforeSend('event', typeof build === 'function' ? build({}) : build)
+		);
+		expect(payloads.filter((payload) => !payload.name)).toHaveLength(1);
+		expect(payloads.filter((payload) => payload.name === 'page_view')).toHaveLength(1);
+		expect(payloads.filter((payload) => payload.name === 'media_view')).toHaveLength(id ? 1 : 0);
+		for (const payload of payloads) expect(payload.data.audience_group).toBe('regular');
+	});
+	it.each(['anonymous', 'regular', 'trusted', 'curator'])(
+		'reports public activity as %s without an account identifier',
+		(group) => {
+			const track = loadTracker({ nonpublic: false, audience_group: group });
+			window.CinemataAnalytics.track('like', { audience_group: 'forged', user_id: 'private-user' });
+			const event = window.cinemataAnalyticsBeforeSend('event', track.mock.lastCall[0]({}));
+			expect(event.data.audience_group).toBe(group);
+			expect(JSON.stringify(event)).not.toMatch(/private-user|forged|user_id/);
+			expect(window.cinemataAnalyticsBeforeSend('event', {}).data).toEqual({ audience_group: group });
+		}
+	);
+	it.each([
+		{ nonpublic: true, audience_group: 'regular' },
+		{ nonpublic: false, audience_group: 'administrator' },
+	])('omits audience labels for nonpublic or invalid configurations: %j', (config) => {
+		loadTracker(config);
+		expect(
+			window.cinemataAnalyticsBeforeSend('event', { name: 'like', data: { audience_group: 'regular' } }).data
+		).not.toHaveProperty('audience_group');
+	});
+	it('keeps public page and SPA views in Umami without posting duplicate CMS audience counts', () => {
+		const fetch = vi.fn().mockResolvedValue({});
+		vi.stubGlobal('fetch', fetch);
+		const track = loadTracker({
+			media_id: null,
+			nonpublic: false,
+			audience_group: 'trusted',
+			segment_grant: 'legacy-grant',
+		});
+		window.CinemataAnalytics.pageview('future_feature');
+		expect(track).toHaveBeenCalledTimes(2);
+		expect(track.mock.calls.map(([payload]) => payload.name)).toEqual([undefined, 'page_view']);
+		expect(window.cinemataAnalyticsBeforeSend('event', track.mock.lastCall[0])).toMatchObject({
+			url: '/page/future_feature',
+			data: { audience_group: 'trusted' },
+		});
+		expect(fetch).not.toHaveBeenCalled();
+	});
 	it('does not count queued owner edits as public audience activity after redirect', () => {
 		const fetch = vi.fn().mockResolvedValue({});
 		vi.stubGlobal('fetch', fetch);
-		loadTracker({ segment_grant: 'public-media-grant', nonpublic: false });
+		loadTracker({ segment_grant: 'public-media-grant', nonpublic: false, audience_group: 'regular' });
 		fetch.mockClear();
 		window.CinemataAnalytics.trackEvents([
 			{ name: 'media_update', media: { id: mediaId, type: 'video', context: 'workflow' } },
 			{ name: 'subtitle_add', media: { id: mediaId, type: 'video', context: 'workflow' } },
 		]);
 		expect(fetch).not.toHaveBeenCalled();
+		for (const [build] of window.umami.track.mock.calls)
+			expect(window.cinemataAnalyticsBeforeSend('event', build({})).data).not.toHaveProperty('audience_group');
 	});
 	it('keeps creator editing events separate from audience engagement queries', () => {
 		const track = loadTracker({ path: '/page/media_edit', media_id: null });
@@ -129,14 +183,11 @@ describe('Cinemata Umami privacy boundary', () => {
 			data: { playlist_id: mediaId },
 		});
 	});
-	it('counts a media load for CMS when Umami is not configured or has not loaded', () => {
+	it('does not substitute CMS audience counts when Umami is unconfigured', () => {
 		const fetch = vi.fn(() => Promise.resolve({ ok: true }));
 		vi.stubGlobal('fetch', fetch);
 		loadTracker({ url: '', website_id: '', nonpublic: false, segment_grant: 'signed-grant' });
-		expect(fetch.mock.calls.map(([, options]) => JSON.parse(options.body).event)).toEqual([
-			'page_view',
-			'media_view',
-		]);
+		expect(fetch).not.toHaveBeenCalled();
 	});
 	it('strips private URLs, titles, referrers, identifiers, and arbitrary event data', () => {
 		loadTracker();
@@ -177,7 +228,7 @@ describe('Cinemata Umami privacy boundary', () => {
 	it('keeps private activity out of film reports, referrers and public role aggregates', () => {
 		const fetch = vi.fn(() => Promise.resolve({ ok: true }));
 		vi.stubGlobal('fetch', fetch);
-		const track = loadTracker({ nonpublic: false, segment_grant: 'signed-grant' });
+		const track = loadTracker({ nonpublic: false, segment_grant: 'signed-grant', audience_group: 'regular' });
 		fetch.mockClear();
 		window.CinemataAnalytics.track('journal_create', { text: 'Secret note', timestamp: 12 });
 		expect(window.cinemataAnalyticsBeforeSend('event', track.mock.lastCall[0]({}))).toMatchObject({
@@ -292,19 +343,27 @@ describe('Cinemata Umami privacy boundary', () => {
 		vi.useRealTimers();
 	});
 
-	it('sends role-free public event counts to the CMS even before Umami loads', () => {
+	it('queues public reading events until Umami loads, preserving only the coarse group', () => {
 		const fetch = vi.fn(() => Promise.resolve({ ok: true }));
 		vi.stubGlobal('fetch', fetch);
-		loadTracker({ media_id: null, path: '/story', segment_grant: 'signed-grant' });
+		const track = loadTracker({ media_id: null, path: '/story', nonpublic: false, audience_group: 'regular' });
+		delete window.umami;
 		window.CinemataAnalytics.track('text_read_15s', { email: 'private@example.org' });
-
-		expect(fetch).toHaveBeenCalledTimes(2);
-		expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ grant: 'signed-grant', event: 'page_view' });
-		expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({ grant: 'signed-grant', event: 'text_read_15s' });
-		expect(fetch.mock.calls[0][1]).toMatchObject({ credentials: 'same-origin', keepalive: true });
+		expect(track).not.toHaveBeenCalled();
+		window.umami = { track };
+		document.querySelector('script[data-website-id="site-id"]').onload();
+		expect(track).toHaveBeenCalledTimes(2);
+		expect(window.cinemataAnalyticsBeforeSend('event', track.mock.calls[0][0]).data).toEqual({
+			audience_group: 'regular',
+		});
+		expect(window.cinemataAnalyticsBeforeSend('event', track.mock.calls[1][0]({}))).toMatchObject({
+			name: 'text_read_15s',
+			data: { audience_group: 'regular' },
+		});
+		expect(fetch).not.toHaveBeenCalled();
 	});
 
-	it('collects CMS activity without loading or calling Umami when unconfigured', () => {
+	it('does not load or call an unconfigured Umami collector', () => {
 		const fetch = vi.fn(() => Promise.resolve({ ok: true }));
 		vi.stubGlobal('fetch', fetch);
 		const track = loadTracker({ url: '', website_id: '', media_id: null, segment_grant: 'signed-grant' });
@@ -312,17 +371,18 @@ describe('Cinemata Umami privacy boundary', () => {
 		window.CinemataAnalytics.pageview('future_feature');
 		expect(document.querySelector('script[data-website-id=""]')).toBeNull();
 		expect(track).not.toHaveBeenCalled();
-		expect(fetch).toHaveBeenCalledTimes(3);
+		expect(fetch).not.toHaveBeenCalled();
 	});
 
-	it('honors a browser Do Not Track value of yes for CMS segment counts', () => {
+	it('honors a browser Do Not Track value of yes for Umami activity', () => {
 		const fetch = vi.fn(() => Promise.resolve({ ok: true }));
 		vi.stubGlobal('fetch', fetch);
 		Object.defineProperty(navigator, 'doNotTrack', { configurable: true, value: 'yes' });
 		try {
-			loadTracker({ media_id: null, path: '/story', segment_grant: 'signed-grant' });
+			const track = loadTracker({ media_id: null, path: '/story', nonpublic: false, audience_group: 'regular' });
 			window.CinemataAnalytics.track('text_read_15s');
 			expect(fetch).not.toHaveBeenCalled();
+			expect(track).not.toHaveBeenCalled();
 		} finally {
 			delete navigator.doNotTrack;
 		}
