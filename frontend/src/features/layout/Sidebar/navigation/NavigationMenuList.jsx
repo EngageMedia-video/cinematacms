@@ -219,7 +219,11 @@ export function NavigationMenuList({ removeVerticalPadding = false, title = null
 	}
 
 	return (
-		<div className={joinClasses(removeVerticalPadding ? 'py-0' : 'py-3')}>
+		<div
+			data-analytics-placement="sidebar"
+			data-analytics-action="navigation_click"
+			className={joinClasses(removeVerticalPadding ? 'py-0' : 'py-3')}
+		>
 			{title ? (
 				<h2
 					id={headingId}

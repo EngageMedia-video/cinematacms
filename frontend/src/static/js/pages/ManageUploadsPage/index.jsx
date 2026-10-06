@@ -52,6 +52,7 @@ export class ManageUploadsPage extends Page {
 	}
 
 	onTablePageChange(newPageUrl, updatedPage) {
+		window.CinemataAnalytics?.track('uploads_page_change');
 		this.setState({
 			currentPage: updatedPage,
 			requestUrl: genReqUrl(
@@ -76,6 +77,7 @@ export class ManageUploadsPage extends Page {
 	}
 
 	onFiltersUpdate(updatedArgs) {
+		window.CinemataAnalytics?.track('uploads_filter_change');
 		const newArgs = [];
 
 		for (let arg in updatedArgs) {
@@ -97,6 +99,7 @@ export class ManageUploadsPage extends Page {
 	}
 
 	onColumnSortClick(sort, order) {
+		window.CinemataAnalytics?.track('uploads_sort_change');
 		const newArgs = 'sort_by=' + sort + '&ordering=' + order;
 		this.setState({
 			sortBy: sort,
@@ -112,6 +115,7 @@ export class ManageUploadsPage extends Page {
 	}
 
 	onItemsRemoval() {
+		window.CinemataAnalytics?.track('media_delete');
 		this.setState(
 			{
 				resultsCount: null,
@@ -159,6 +163,7 @@ export class ManageUploadsPage extends Page {
 			false,
 			function (response) {
 				if (response && response.data && response.data.updated) {
+					window.CinemataAnalytics?.track('media_visibility_change');
 					self.setState(
 						{
 							resultsCount: null,

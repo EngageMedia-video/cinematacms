@@ -56,6 +56,7 @@ export function useReorderPlaylistMediaMutation(token, config) {
 			}
 		},
 		onSuccess: (media) => {
+			window.CinemataAnalytics?.track('playlist_reorder');
 			queryClient.setQueryData(playlistQueryKey(token), (current) =>
 				current ? { ...current, playlist_media: media } : current
 			);
@@ -124,6 +125,21 @@ export function useRemovePlaylistMediaMutation(token, config) {
 			if (context?.previous) {
 				queryClient.setQueryData(playlistQueryKey(token), context.previous);
 			}
+		},
+		onSuccess: (_result, { mediaToken }, context) => {
+			const item = context?.previous?.playlist_media?.find((media) => media.friendly_token === mediaToken);
+			window.CinemataAnalytics?.track(
+				'playlist_remove',
+				{},
+				item?.uid
+					? {
+							id: item.uid,
+							type: item.media_type,
+							context: 'playlist',
+							revision: item.analytics_revision,
+						}
+					: null
+			);
 		},
 		onSettled: () => {
 			queryClient.invalidateQueries({ queryKey: playlistQueryKey(token) });

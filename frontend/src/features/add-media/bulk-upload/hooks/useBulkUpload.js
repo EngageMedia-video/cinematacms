@@ -28,6 +28,7 @@ export function useBulkUpload() {
 		}
 
 		let uploader;
+		let disposing = false;
 		uploader = new qq.FineUploaderBasic({
 			autoUpload: true,
 			request: {
@@ -51,6 +52,7 @@ export function useBulkUpload() {
 			},
 			callbacks: {
 				onSubmitted(id, name) {
+					window.CinemataAnalytics?.uploadEvent('start', id);
 					filesByIdRef.current.set(id, uploader.getFile(id));
 					addFile({ id, name, sizeBytes: uploader.getSize(id) });
 					setLastError(null);
@@ -67,6 +69,7 @@ export function useBulkUpload() {
 				},
 				onComplete(id, name, response) {
 					if (response && response.success && response.media_url) {
+						window.CinemataAnalytics?.uploadEvent('complete', id);
 						const friendlyToken = parseFriendlyToken(response.media_url);
 						updateFile(id, {
 							uploadStatus: UPLOAD_STATUS.COMPLETE,
@@ -92,6 +95,7 @@ export function useBulkUpload() {
 								});
 						}
 					} else {
+						window.CinemataAnalytics?.uploadEvent('error', id);
 						updateFile(id, {
 							uploadStatus: UPLOAD_STATUS.FAILED,
 							error: (response && response.error) || 'Upload failed.',
@@ -99,6 +103,7 @@ export function useBulkUpload() {
 					}
 				},
 				onError(id, name, errorReason) {
+					window.CinemataAnalytics?.uploadEvent('error', id);
 					if (id === null || id === undefined) {
 						setLastError(errorReason || 'Upload error.');
 						return;
@@ -106,12 +111,14 @@ export function useBulkUpload() {
 					updateFile(id, { uploadStatus: UPLOAD_STATUS.FAILED, error: errorReason || 'Upload failed.' });
 				},
 				onCancel(id) {
+					if (!disposing) window.CinemataAnalytics?.uploadEvent('cancel', id);
 					removeFile(id);
 					filesByIdRef.current.delete(id);
 					return true;
 				},
 				onStatusChange(id, oldStatus, newStatus) {
 					if (newStatus === 'paused') {
+						window.CinemataAnalytics?.uploadEvent('pause', id);
 						updateFile(id, { uploadStatus: UPLOAD_STATUS.PAUSED });
 					}
 				},
@@ -120,6 +127,7 @@ export function useBulkUpload() {
 
 		uploaderRef.current = uploader;
 		return () => {
+			disposing = true;
 			uploaderRef.current?.cancelAll();
 			uploaderRef.current = null;
 			filesByIdRef.current.clear();
@@ -139,6 +147,7 @@ export function useBulkUpload() {
 	const resume = useCallback(
 		(id) => {
 			if (uploaderRef.current?.continueUpload(id)) {
+				window.CinemataAnalytics?.uploadEvent('resume', id);
 				updateFile(id, { uploadStatus: UPLOAD_STATUS.UPLOADING });
 			}
 		},
@@ -165,7 +174,7 @@ export function useBulkUpload() {
 	const retry = useCallback(
 		(id) => {
 			updateFile(id, { uploadStatus: UPLOAD_STATUS.UPLOADING, progress: 0, error: null });
-			uploaderRef.current?.retry(id);
+			if (uploaderRef.current?.retry(id)) window.CinemataAnalytics?.uploadEvent('retry', id);
 		},
 		[updateFile]
 	);

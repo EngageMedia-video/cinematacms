@@ -55,6 +55,7 @@ export class HomePage extends Page {
 								(this.state.loadedFeatured && !this.state.visibleFeatured) ? null : (
 									<MediaListRow
 										title={this.props.featured_title}
+										analyticsPlacement="featured"
 										style={!this.state.visibleFeatured ? { display: 'none' } : null}
 										viewAllLink={this.props.featured_view_all_link ? links.featured : null}
 									>
@@ -87,6 +88,7 @@ export class HomePage extends Page {
 								(this.state.loadedRecommended && !this.state.visibleRecommended) ? null : (
 									<MediaListRow
 										title={this.props.recommended_title}
+										analyticsPlacement="recommended"
 										style={!this.state.visibleRecommended ? { display: 'none' } : null}
 										viewAllLink={this.props.recommended_view_all_link ? links.recommended : null}
 									>
@@ -103,6 +105,7 @@ export class HomePage extends Page {
 								{this.state.loadedLatest && !this.state.visibleLatest ? null : (
 									<MediaListRow
 										title={this.props.latest_title}
+										analyticsPlacement="recent"
 										style={!this.state.visibleLatest ? { display: 'none' } : null}
 										viewAllLink={this.props.latest_view_all_link ? links.latest : null}
 									>

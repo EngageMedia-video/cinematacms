@@ -176,6 +176,7 @@ export function SearchField(props) {
 	}
 
 	function onPredictionSelect(val) {
+		window.CinemataAnalytics?.track('search_submit');
 		setPredictionItems([]);
 		setQueryVal(val);
 
@@ -265,6 +266,8 @@ export function SearchField(props) {
 		if ('' === searchInputRef.current.value.trim()) {
 			ev.preventDefault();
 			ev.stopPropagation();
+		} else {
+			window.CinemataAnalytics?.track('search_submit');
 		}
 	}
 

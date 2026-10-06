@@ -54,6 +54,8 @@ export function NotificationItem({ notification, theme = 'dark' }) {
 			});
 		}
 		if (url && url.startsWith('/') && !url.startsWith('//')) {
+			window.CinemataAnalytics?.track('notification_click');
+			window.CinemataAnalytics?.markNavigationIntent();
 			window.location.href = url;
 		}
 	}

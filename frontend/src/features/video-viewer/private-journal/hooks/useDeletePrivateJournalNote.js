@@ -23,6 +23,7 @@ export function useDeletePrivateJournalNote(friendlyToken) {
 			return uid;
 		},
 		onSuccess: () => {
+			window.CinemataAnalytics?.track('journal_delete');
 			queryClient.invalidateQueries({ queryKey: privateJournalQueryKey(friendlyToken) });
 		},
 	});

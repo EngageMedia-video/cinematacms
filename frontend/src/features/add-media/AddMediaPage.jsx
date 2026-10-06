@@ -161,23 +161,31 @@ export class AddMediaPage extends Page {
 			},
 			callbacks: {
 				onStatusChange: function (id, _oldStatus, newStatus) {
+					if (newStatus === 'paused') window.CinemataAnalytics?.uploadEvent('pause', id);
+					if (_oldStatus === 'paused' && newStatus === 'uploading')
+						window.CinemataAnalytics?.uploadEvent('resume', id);
+					if (newStatus === 'retrying upload') window.CinemataAnalytics?.uploadEvent('retry', id);
 					const status = getUploadStatus(newStatus);
 					updateUploadItemStatus(id, status, getStatusLabel(status));
 				},
-				onSubmitted: () => {
+				onSubmitted: (id) => {
+					window.CinemataAnalytics?.uploadEvent('start', id);
 					this.setState({ hasSelectedMedia: true, uploadedMedia: null, externalMedia: null });
 				},
 				onError: function (id, name, errorReason) {
+					window.CinemataAnalytics?.uploadEvent('error', id);
 					updateUploadItemStatus(id, 'failed', 'Upload failed');
 					console.warn(window.qq.format('Error on file number {} - {}.  Reason: {}', id, name, errorReason));
 				},
-				onCancel: () => {
+				onCancel: (id) => {
+					window.CinemataAnalytics?.uploadEvent('cancel', id);
 					// FineUploader's built-in cancel button removes the item element after
 					// this callback returns, so defer the state sync to the next tick. When
 					// the list empties, reset hasSelectedMedia so the dropzone reappears.
 					window.setTimeout(() => this.syncUploaderState(), 0);
 				},
 				onComplete: (id, _name, response) => {
+					window.CinemataAnalytics?.uploadEvent(response.success ? 'complete' : 'error', id);
 					if (!response.success) {
 						updateUploadItemStatus(id, 'failed', 'Upload failed');
 						return;
@@ -241,7 +249,11 @@ export class AddMediaPage extends Page {
 			credentials: 'same-origin',
 			keepalive: true,
 			headers: { 'X-CSRFToken': getCSRFToken() },
-		}).catch((error) => console.warn('Unable to abandon uploaded media ' + friendlyToken, error));
+		})
+			.then((response) => {
+				if (response.ok) window.CinemataAnalytics?.track('upload_abandon');
+			})
+			.catch((error) => console.warn('Unable to abandon uploaded media ' + friendlyToken, error));
 	}
 
 	handlePageUnload = (event) => {
@@ -335,7 +347,9 @@ export class AddMediaPage extends Page {
 			mediaApiUrl + '/' + friendlyToken,
 			{ headers: { 'X-CSRFToken': getCSRFToken() } },
 			false,
-			null,
+			(response) => {
+				if (response.status === 204) window.CinemataAnalytics?.track('media_delete');
+			},
 			(error) => console.warn('Unable to delete uploaded media ' + friendlyToken, error)
 		);
 	}

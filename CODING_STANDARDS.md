@@ -120,7 +120,15 @@ right time without sending personal data or access tokens. New public pages must
 opt in after their access check. Denied pages and staff-only screens must not
 load the tracker.
 
-In the pull request, list the event names, their triggers, and the verification.
+Register each feature's events, emitters, trigger, privacy boundary and tests in
+`docs/technical/analytics-coverage.json`. Run
+`node .github/scripts/analytics-coverage.mjs` and the focused success/failure tests.
+The CI contract check rejects missing emitters, missing tests and unregistered
+fixed event names. It does not prove that a new handler emits at the right time;
+tests must exercise that behavior, including failures and partial bulk success.
+
+In the pull request, list the event names, their triggers, the verification and
+the coverage catalogue entry IDs.
 If the feature has no eligible visit or meaningful visitor action, state why in
 the Analytics section of the pull request. Backend-only and staff-only features
 can use that exception.

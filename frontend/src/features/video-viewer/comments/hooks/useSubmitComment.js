@@ -30,6 +30,7 @@ export function useSubmitComment(friendlyToken) {
 			return r.json();
 		},
 		onSuccess: () => {
+			window.CinemataAnalytics?.track('comment_success');
 			queryClient.invalidateQueries({ queryKey: commentsQueryKey(friendlyToken) });
 		},
 	});

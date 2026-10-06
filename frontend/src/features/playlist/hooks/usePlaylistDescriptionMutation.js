@@ -37,6 +37,7 @@ export function usePlaylistDescriptionMutation(token, config) {
 			}
 		},
 		onSuccess: (data) => {
+			window.CinemataAnalytics?.track('playlist_update');
 			queryClient.setQueryData(playlistQueryKey(token), (current) => ({ ...current, ...data }));
 		},
 	});
