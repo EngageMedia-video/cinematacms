@@ -94,6 +94,16 @@ class MediaFileInfoTests(SimpleTestCase):
             result = self.probe([dict(self.audio, codec_name="")])
         self.assertEqual(result, {"fail": True, "error": "incomplete_audio_metadata"})
 
+    def test_audio_with_cover_art_remains_audio_only(self):
+        picture = dict(self.video, codec_name="mjpeg", r_frame_rate="0/0", disposition={"attached_pic": 1})
+        for streams in ([self.audio, picture], [picture, self.audio]):
+            with self.subTest(streams=streams):
+                result = self.probe(streams)
+                self.assertNotIn("fail", result)
+                self.assertFalse(result["is_video"])
+                self.assertTrue(result["is_audio"])
+                self.assertEqual(result["audio_info"], self.audio)
+
     def test_incomplete_video_metadata_fails(self):
         for key in ("codec_name", "width", "height", "r_frame_rate"):
             with self.subTest(key=key), self.assertLogs("files.helpers", level="WARNING"):

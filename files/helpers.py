@@ -373,7 +373,7 @@ def media_file_info(input_file):
         if stream_info.get("codec_type") == "video":
             if not stream_info.get("disposition", {}).get("attached_pic"):
                 video_streams.append(stream_info)
-            has_video = True
+                has_video = True
             if info.get("format") and info["format"].get("format_name", "") in [
                 "tty",
                 "image2",
