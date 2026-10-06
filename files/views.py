@@ -10,6 +10,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 import waffle
+from csp.decorators import csp_replace
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
@@ -1005,6 +1006,8 @@ def view_old_media(request, user, video):
 
 
 @xframe_options_exempt
+@csp_replace({"frame-ancestors": None})
+@csp_replace({"frame-ancestors": None}, REPORT_ONLY=True)
 def embed_old_media(request, user, video):
     url = f"/Members/{user}/videos/{video}"
     media = Media.objects.filter(existing_urls__url__in=[url]).first()
@@ -1501,6 +1504,8 @@ def edit_subtitle(request):
 
 
 @xframe_options_exempt
+@csp_replace({"frame-ancestors": None})
+@csp_replace({"frame-ancestors": None}, REPORT_ONLY=True)
 def embed_media(request):
     friendly_token = request.GET.get("m", "").strip()
     if not friendly_token:
