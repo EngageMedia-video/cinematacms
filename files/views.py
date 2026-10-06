@@ -3043,8 +3043,17 @@ class CommunityImpactList(APIView):
                 if community_impact_auto_approves(request.user, media)
                 else CommunityImpact.WAITING_APPROVAL
             )
-            serializer.save(user=request.user, media=media, status=new_status)
+            impact = serializer.save(user=request.user, media=media, status=new_status)
             invalidate_media_cache(media.friendly_token)
+
+            try:
+                from notifications.services import NotificationService
+
+                NotificationService.on_community_impact(actor=request.user, impact=impact)
+            except Exception as error:
+                logger.exception("Notification failed for community impact on %s", media.friendly_token)
+                capture_unexpected_exception(error)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
