@@ -57,11 +57,13 @@ export function MediaUploadSection({ config, disabled }) {
 				onSubmit: (id, name) => {
 					setStatus({ phase: 'uploading', name, progress: 0, error: '', size: null, id });
 				},
+				onSubmitted: (id) => window.CinemataAnalytics?.uploadEvent('start', id),
 				onProgress: (id, name, uploadedBytes, totalBytes) => {
 					const progress = totalBytes > 0 ? Math.round((uploadedBytes / totalBytes) * 100) : 0;
 					setStatus((current) => ({ ...current, id, name, progress }));
 				},
 				onComplete: (id, name, response) => {
+					window.CinemataAnalytics?.uploadEvent(response?.success ? 'complete' : 'error', id);
 					if (response?.success) {
 						let size = null;
 						try {
@@ -82,6 +84,7 @@ export function MediaUploadSection({ config, disabled }) {
 					}
 				},
 				onError: (id, name, errorReason) => {
+					window.CinemataAnalytics?.uploadEvent('error', id);
 					setStatus({
 						phase: 'error',
 						name,
@@ -91,7 +94,8 @@ export function MediaUploadSection({ config, disabled }) {
 						id,
 					});
 				},
-				onCancel: () => {
+				onCancel: (id) => {
+					window.CinemataAnalytics?.uploadEvent('cancel', id);
 					setStatus({ phase: 'cancelled', name: '', progress: 0, error: '', size: null });
 				},
 			},
@@ -132,6 +136,7 @@ export function MediaUploadSection({ config, disabled }) {
 		}
 
 		resetStatus();
+		window.CinemataAnalytics?.uploadEvent('discard', status.id);
 	}
 
 	function retryUpload() {
@@ -141,7 +146,7 @@ export function MediaUploadSection({ config, disabled }) {
 		}
 
 		setStatus((current) => ({ ...current, phase: 'uploading', error: '' }));
-		uploaderRef.current.retry(status.id);
+		if (uploaderRef.current.retry(status.id)) window.CinemataAnalytics?.uploadEvent('retry', status.id);
 	}
 
 	function pauseUpload() {
@@ -151,6 +156,7 @@ export function MediaUploadSection({ config, disabled }) {
 
 		const paused = uploaderRef.current.pauseUpload(status.id);
 		if (paused) {
+			window.CinemataAnalytics?.uploadEvent('pause', status.id);
 			setStatus((current) => ({ ...current, phase: 'paused', error: '' }));
 		}
 	}
@@ -162,6 +168,7 @@ export function MediaUploadSection({ config, disabled }) {
 
 		const continued = uploaderRef.current.continueUpload(status.id);
 		if (continued) {
+			window.CinemataAnalytics?.uploadEvent('resume', status.id);
 			setStatus((current) => ({ ...current, phase: 'uploading', error: '' }));
 		}
 	}

@@ -35,7 +35,7 @@
 				{% csrf_token %}
 				{{ form|crispy }}
 				<button class="primaryAction" style="margin-right: 10px" type="submit">SAVE</button>
-				<button class="primaryAction" style="margin-right: 10px" type="button" onclick="window.location.href='{{subtitle.url}}&action=download';">DOWNLOAD</button>
+				<button class="primaryAction" data-analytics-action="subtitle_download_click" style="margin-right: 10px" type="button" onclick="window.location.href='{{subtitle.url}}&action=download';">DOWNLOAD</button>
 				<button class="primaryAction" type="button" onclick="window.location.href='{{subtitle.url}}&action=delete';">DELETE</button>
 
 			</form>

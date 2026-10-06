@@ -15,6 +15,7 @@ export function SearchResultSection({
 
 	return (
 		<section
+			data-analytics-action="search_result_click"
 			className={'px-3 py-3 ' + (withDivider ? 'border-t border-border-chrome/60 first:border-t-0' : '')}
 			aria-label={title}
 		>
@@ -40,6 +41,7 @@ export function SearchResultSection({
 			)}
 			{!isError && hasMore && showMoreHref ? (
 				<a
+					data-analytics-action="search_results_all"
 					href={showMoreHref}
 					onClick={(event) => {
 						if (isPlainLeftClick(event)) onSelect?.(event);

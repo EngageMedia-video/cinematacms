@@ -29,14 +29,21 @@ export function parseAnalyticsDeclaration(body = '') {
 			: { valid: false, message: 'Explain why Analytics is not applicable.' };
 	}
 
-	const names = field(content, 'Events').split(',').map((name) => name.trim());
+	const names = field(content, 'Events')
+		.split(',')
+		.map((name) => name.trim());
 	if (!names.length || names.some((name) => !EVENT_NAME.test(name))) {
 		return { valid: false, message: 'List fixed snake_case event names in Events, separated by commas.' };
 	}
-	if (!field(content, 'Trigger') || !field(content, 'Verification')) {
-		return { valid: false, message: 'Describe the event Trigger and Verification.' };
+	if (!field(content, 'Trigger') || !field(content, 'Verification') || !field(content, 'Coverage')) {
+		return { valid: false, message: 'Describe the event Trigger, Verification and coverage catalogue entry IDs.' };
 	}
-	return { valid: true, message: 'Analytics events documented.' };
+	const coverage = field(content, 'Coverage')
+		.split(',')
+		.map((id) => id.trim());
+	if (coverage.some((id) => !/^[a-z][a-z0-9-]*$/.test(id)))
+		return { valid: false, message: 'List coverage entry IDs separated by commas.' };
+	return { valid: true, message: 'Analytics events documented.', coverage };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

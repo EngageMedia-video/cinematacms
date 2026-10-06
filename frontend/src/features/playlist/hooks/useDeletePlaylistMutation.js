@@ -14,6 +14,7 @@ export function useDeletePlaylistMutation(token, config) {
 			}
 		},
 		onSuccess: () => {
+			window.CinemataAnalytics?.track('playlist_delete');
 			window.location.assign(config?.url?.profile?.playlists || config?.site?.url || '/');
 		},
 	});

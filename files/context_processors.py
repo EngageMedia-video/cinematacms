@@ -5,7 +5,7 @@ from django.apps import apps
 from django.conf import settings
 from django.db import DatabaseError
 
-from cms.analytics import analytics_context
+from cms.analytics import analytics_context, umami_report_url
 
 from .lists import UNUSUAL_COUNTRIES
 from .methods import (
@@ -39,6 +39,8 @@ def _switch(name, fallback_setting):
 def stuff(request):
     ret = {}
     ret.update(analytics_context(request))
+    if request.user.is_superuser:
+        ret["PLATFORM_ANALYTICS_URL"] = umami_report_url()
     if request.is_secure():
         ret["FRONTEND_HOST"] = settings.SSL_FRONTEND_HOST
     else:

@@ -6,6 +6,7 @@ import { MediaListHeader } from './MediaListHeader';
 export function MediaListRow(props) {
 	return (
 		<div
+			data-analytics-placement={props.analyticsPlacement}
 			className={
 				(void 0 === props.className || null === props.className ? '' : props.className + ' ') + 'media-list-row'
 			}
@@ -25,6 +26,7 @@ export function MediaListRow(props) {
 }
 
 MediaListRow.propTypes = {
+	analyticsPlacement: PropTypes.string,
 	style: PropTypes.object,
 	className: PropTypes.string,
 	title: PropTypes.string,

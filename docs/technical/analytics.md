@@ -6,7 +6,7 @@ Signed-in viewers open the dedicated owner dashboard at `/analytics` from **Anal
 
 ## Collection and privacy
 
-Only eligible public pages and media pages or embeds after a successful access check load the tracker. Django staff, editors, managers, superusers, signed-in users who disable activity logging, and denied media pages do not. Curators are eligible viewers. The playback endpoint also rejects snapshots from opted-out users. Accessible public, unlisted, restricted, and private media are eligible. Media events carry the `media:<Media.uid>` tag plus an opaque media UUID, media type, page/embed/hero context, and content revision. Nonpublic media sends a generic path and title and no referrer. Public activity sends only the referring domain. Search strings, hashes, friendly tokens, titles, user IDs, access tokens, and raw progress ticks stay out of Umami. The browser honors Do Not Track. The collector route `/api/send` must have proxy access logs disabled.
+Eligible public pages, accessible media pages and embeds, and authorized owner workflows load the tracker. Owner workflows use generic paths and no referrer or public role grant. Django staff, editors, managers, superusers, signed-in users who disable activity logging, and denied media pages do not. Curators are eligible viewers. The playback endpoint also rejects snapshots from opted-out users. Accessible public, unlisted, restricted, and private media are eligible. Audience media events carry the `media:<Media.uid>` tag plus an opaque media UUID, media type, page/embed/hero/playlist context, and content revision. Creator edit events use `workflow:<Media.uid>` and `/media/workflow` so they do not enter audience engagement queries. Playlist pages use `playlist:<Playlist.uid>` and a generic path. Nonpublic media sends a generic path and title and no referrer. Public activity sends only the referring domain. Search strings, hashes, friendly tokens, titles, user IDs, access tokens, and raw progress ticks stay out of Umami. The browser honors Do Not Track. The collector route `/api/send` must have proxy access logs disabled.
 
 `media_view` counts eligible media page and embed loads. It does not count thumbnail impressions or hero playback. Playback starts and end events are separate counts. An end event includes seeking to the end; it is not evidence that a viewer watched the whole film. The player sends play, pause, finish, 25/50/75% unique-content-coverage milestones once per play, seek, mute/unmute, quality/subtitle/speed changes, fullscreen/theater changes, next/previous, and bounded error categories. Starts after a player action or on-site navigation are `deliberate`; autoplay and unknown starts remain separate. Confirmed likes, unlikes, playlist changes, copy actions, and comment submissions produce events. Download events represent click intent. Outbound links send the destination domain only.
 
@@ -19,6 +19,65 @@ The browser also sends cumulative playback snapshots to same-origin `/analytics/
 After a new action succeeds, call `window.CinemataAnalytics?.track('annotation_created')`. Use a fixed lowercase `snake_case` name of at most 50 characters. Never put a title, token, user ID, or other dynamic value in the name. The privacy boundary accepts new names without a tracker release but drops arbitrary event properties. A media-page action inherits its media UUID and appears in owner engagement counts. A general public-page action appears in Umami site reports only. For hero interactions pass media ID, type, context `hero`, and revision as the third argument. A hero player must also receive a signed measurement grant for CMS watch summaries.
 
 For a new server-rendered public page, call `allow_page_analytics(request)` from `cms.analytics` **after** the access check. It sends a generic `/page/<route-name>` path. Denied pages must not call it. For a later SPA route transition on an eligible public page, call `window.CinemataAnalytics?.pageview('route_name')` after access succeeds. Do not call it again on the first server-rendered load. The engineering SOP, PR template, and validation workflow require a tracker decision for new features.
+
+For authorized upload, edit, subtitle, notification, contact and profile workflows,
+call `allow_workflow_analytics(request, 'fixed_workflow_name')` after authorization.
+Use `action_events(request, 'fixed_event', media=media)` in a successful JSON
+response and forward it with `CinemataAnalytics.trackEvents`. For template forms,
+`queue_action` carries a successful event to the next eligible rendered page and
+consumes it once. Partial bulk submissions forward successful items only.
+Authentication completion uses Allauth signals after login, signup and logout,
+including MFA completion. Security forms remain untracked. Newsletter opt-in
+counts consent intent, not successful delivery by the mailing service.
+
+Private journal, account, profile, notification and private-contact actions are
+count-only events with generic paths. They carry no media UUID, notification ID,
+recipient or form contents and do not enter public role aggregates. Upload
+events count transitions without filenames, byte progress or raw errors. A
+transport completion is separate from saving a draft or submitting metadata.
+Bulk visibility changes and removals count one successful batch action.
+
+Navigation events use bounded destination categories and homepage placements.
+Search submission and result selection contain no query text. Empty results
+count once per settled search, not each render or failed request. Article aliases
+`/p/slug` and `/slug` share `/slug`; public profile sections have distinct paths
+without usernames. Collection failures must not interrupt the application action.
+
+Register new events and emitter/test references in
+[`analytics-coverage.json`](analytics-coverage.json). CI runs
+`node .github/scripts/analytics-coverage.mjs` and rejects unregistered fixed event
+names, missing emitters and missing test files. Add tests for confirmed success,
+failure, retry duplication and partial bulk results where relevant. A source
+contract cannot prove event semantics by itself. The PR Analytics declaration
+must name its Coverage entry IDs as well as Events, Trigger and Verification.
+
+## Platform audience groups
+
+Superusers open **Reports → Platform analytics** on the Django Admin dashboard
+or sidebar. This shortcut opens the configured Umami website in a new tab.
+It uses `ANALYTICS_URL` and `ANALYTICS_WEBSITE_ID` and is hidden when either is
+missing or invalid. Umami requires its own login and website permissions; the
+shortcut does not forward CMS credentials or API keys. Disabling new collection
+does not hide a valid shortcut to existing reports.
+
+In Umami, open **Event data** and select the `audience_group` property to compare
+`anonymous`, `regular`, `trusted`, and `curator` activity. The server supplies the
+group for public page views and public events. Trusted corresponds to the
+existing `advancedUser` role. Curators count unless they also have an excluded
+staff role. Nonpublic media, account actions, journals, and creator workflows
+omit the property. Reading milestones, public navigation and playback events
+use the same boundary. Labels start with this tracker release; earlier events
+are not backfilled.
+
+Property totals count events, not people or visits. Select `page_view` for
+public page loads, `media_view` for public media loads, or a specific action and
+date range. The named `page_view` is a custom event for audience comparisons;
+it does not add another native page view to Umami's Views total. Do not treat
+the sum of views and actions as an audience size. These event properties do not
+provide a role filter for every
+Umami report; no session property or `identify()` call is added. Umami supplies
+its own reporting controls, while the CMS has no duplicate audience table.
+See [Umami's Event data guide](https://docs.umami.is/docs/event-data).
 
 ## Owner dashboard
 
@@ -44,11 +103,20 @@ The [platform analytics privacy review](platform-analytics-privacy-review.md) re
 
 ## Platform segments and text pages
 
-Public page views and events also increment CMS daily counts for anonymous, regular, trusted, and curator viewers. The browser sends a signed public-page scope and fixed event name to `/analytics/segment-event`; the CMS derives the role from the current account. No role, account ID, or session ID goes to Umami or into the daily count table. Nonpublic media has no segment grant. The endpoint rejects DNT, opted-out users, staff, bad origins, and forged or expired grants. `/analytics/segments` returns the last 30 UTC days as JSON to superusers only and omits any role, scope, and event count below 10. Public text-page scopes resolve to their current URL. The report is intentionally unlinked from the visitor menu.
+Audience reporting uses the Umami event property described above. The current
+browser tracker no longer posts daily role counts to the CMS. The older
+`/analytics/segment-event` endpoint and signed grants remain compatible with
+cached older trackers, and `/analytics/segments` remains a superuser-only JSON
+API for those historical CMS aggregates, including small counts. Its records
+have no visitor key and are not migrated to Umami. CMS playback measurements
+and the existing media counter continue independently.
 
-The role breakdown covers page and named-event counts. Visits, estimated visitors, country, browser, OS, device, and session journeys are not split by role because the daily counts have no session key.
+The role breakdown covers public page and named-event counts in Event data.
+No session role property is sent, so the ordinary Visits, estimated visitors,
+country, browser, OS, device, and Journey reports do not gain a global role
+filter. Historical CMS daily counts have no session key.
 
-Every existing `Page` with its own public URL gets foreground-time milestones at 15, 30, 60, 120, and 300 seconds. The timer pauses when the tab is hidden or loses focus. Each threshold fires once per page load as `text_read_<seconds>s` in Umami and the CMS aggregate. These events show how many page loads reached each threshold. They do not prove that the visitor read the text, and a page containing several articles cannot identify which article was read.
+Every existing `Page` with its own public URL gets foreground-time milestones at 15, 30, 60, 120, and 300 seconds. The timer pauses when the tab is hidden or loses focus. Each threshold fires once per page load as `text_read_<seconds>s` in Umami. These events show how many page loads reached each threshold. They do not prove that the visitor read the text, and a page containing several articles cannot identify which article was read.
 
 ## Retention and rollout
 

@@ -559,6 +559,9 @@ def _owner_profile_tab(request, username, active_tab, legacy_redirect=None):
     template = resolve_template(request, "profile")
     if request.ui_variant == "legacy":
         return HttpResponseRedirect(legacy_redirect or user.get_absolute_url())
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "profile_activity")
     return render(request, template, _profile_context(request, user, active_tab))
 
 
@@ -603,6 +606,9 @@ def view_user_contact(request, username):
         return redirect_to_login(request.get_full_path())
     if not can_contact_user(request.user, user):
         return HttpResponseRedirect(user.get_absolute_url())
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "contact")
     return render(request, template, _profile_context(request, user, "contact"))
 
 
@@ -612,11 +618,17 @@ def edit_user(request, username):
     if not user or (user != request.user and not is_mediacms_manager(request.user)):
         return HttpResponseRedirect("/")
 
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "profile_edit")
     if request.method == "POST":
         form = UserForm(request.user, request.POST, request.FILES, instance=user)
         if form.is_valid():
             user = form.save(commit=False)
             user.save()
+            from cms.analytics import queue_action
+
+            queue_action(request, "profile_update")
             return HttpResponseRedirect(user.get_absolute_url())
     else:
         form = UserForm(request.user, instance=user)
@@ -660,11 +672,17 @@ def edit_channel(request, friendly_token):
     if not (channel and request.user.is_authenticated and (request.user == channel.user)):
         return HttpResponseRedirect("/")
 
+    from cms.analytics import allow_workflow_analytics
+
+    allow_workflow_analytics(request, "channel_edit")
     if request.method == "POST":
         form = ChannelForm(request.POST, request.FILES, instance=channel)
         if form.is_valid():
             channel = form.save(commit=False)
             channel.save()
+            from cms.analytics import queue_action
+
+            queue_action(request, "channel_update")
             return HttpResponseRedirect(request.user.get_absolute_url())
     else:
         form = ChannelForm(instance=channel)

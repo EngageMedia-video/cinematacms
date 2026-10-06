@@ -277,10 +277,12 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 		try {
 			if (navigator.share && shareUrl === playlistUrl) {
 				await navigator.share({ title: playlist.title, url: shareUrl });
+				window.CinemataAnalytics?.track('playlist_share');
 				setStatusMessage('Share sheet opened.');
 				return;
 			}
 			await navigator.clipboard.writeText(shareUrl);
+			window.CinemataAnalytics?.track('playlist_link_copy');
 			setStatusMessage('Link copied.');
 		} catch (error) {
 			// Dismissing the native share sheet rejects with AbortError; that is

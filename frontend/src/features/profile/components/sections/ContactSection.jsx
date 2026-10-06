@@ -36,6 +36,7 @@ export function ContactSection({ author }) {
 				return;
 			}
 			setSubject('');
+			window.CinemataAnalytics?.track('contact_user_accepted');
 			setBody('');
 			setStatus(SUCCESS);
 		} catch {

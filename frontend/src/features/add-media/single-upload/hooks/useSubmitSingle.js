@@ -27,6 +27,7 @@ export function useSubmitSingle() {
 			const data = await response.json().catch(() => null);
 
 			if (response.ok && data?.success) {
+				window.CinemataAnalytics?.trackEvents(data.analytics_events);
 				return data;
 			}
 

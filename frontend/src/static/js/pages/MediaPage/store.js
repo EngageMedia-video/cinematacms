@@ -810,7 +810,7 @@ class MediaPageStore extends EventEmitter {
 		if (response) {
 			if (response instanceof Error) {
 				// console.error( response );
-			} else if (response.data) {
+			} else if (response.status >= 200 && response.status < 300 && response.data) {
 				MediaPageStoreData[this.id].reported_times += 1;
 				this.emit('reported_media');
 			} else {
@@ -1516,6 +1516,13 @@ Object.entries({
 	copied_media_link: 'link_copy',
 	copied_embed_media_code: 'embed_copy',
 	comment_submit: 'comment_success',
+	comment_delete: 'comment_delete',
+	community_impact_submit: 'community_impact_submit',
+	media_delete: 'media_delete',
+	playlist_creation_completed: 'playlist_create',
+	reported_media: 'media_report_success',
+	disliked_media: 'dislike',
+	undisliked_media: 'undislike',
 }).forEach(([event, name]) => {
 	mediaPageStore.on(event, () => window.CinemataAnalytics?.track(name));
 });
