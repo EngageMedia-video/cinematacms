@@ -116,7 +116,7 @@ No session role property is sent, so the ordinary Visits, estimated visitors,
 country, browser, OS, device, and Journey reports do not gain a global role
 filter. Historical CMS daily counts have no session key.
 
-Every existing `Page` with its own public URL gets foreground-time milestones at 15, 30, 60, 120, and 300 seconds. The timer pauses when the tab is hidden or loses focus. Each threshold fires once per page load as `text_read_<seconds>s` in Umami and the CMS aggregate. These events show how many page loads reached each threshold. They do not prove that the visitor read the text, and a page containing several articles cannot identify which article was read.
+Every existing `Page` with its own public URL gets foreground-time milestones at 15, 30, 60, 120, and 300 seconds. The timer pauses when the tab is hidden or loses focus. Each threshold fires once per page load as `text_read_<seconds>s` in Umami. These events show how many page loads reached each threshold. They do not prove that the visitor read the text, and a page containing several articles cannot identify which article was read.
 
 ## Retention and rollout
 
