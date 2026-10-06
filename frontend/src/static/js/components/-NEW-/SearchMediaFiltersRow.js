@@ -264,9 +264,13 @@ export function SearchMediaFiltersRow(props) {
 	}
 
 	function onSelectFilterTypeOption(newFilterTypeId) {
+		if (newFilterTypeId !== selectedFilterTypeId) {
+			window.CinemataAnalytics?.track(newFilterTypeId === 'all' ? 'search_filter_reset' : 'search_filter_apply');
+		}
 		setSelectedFilterTypeId(newFilterTypeId);
 	}
 	function onSelectSortOption(newSortId) {
+		if (newSortId !== selectedSortId) window.CinemataAnalytics?.track('search_sort_change');
 		setSelectedSortId(newSortId);
 	}
 

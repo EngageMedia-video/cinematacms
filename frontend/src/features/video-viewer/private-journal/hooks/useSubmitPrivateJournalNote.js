@@ -20,6 +20,7 @@ export function useSubmitPrivateJournalNote(friendlyToken) {
 			return response.json();
 		},
 		onSuccess: () => {
+			window.CinemataAnalytics?.track('journal_create');
 			queryClient.invalidateQueries({ queryKey: privateJournalQueryKey(friendlyToken) });
 		},
 	});

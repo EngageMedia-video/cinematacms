@@ -190,10 +190,11 @@ class PlaylistPageStore extends EventEmitter {
 	}
 
 	onPlaylistUpdateCompleted(response) {
-		if (response && response.data) {
+		if (response && response.status >= 200 && response.status < 300 && response.data) {
 			PlaylistPageStoreData[this.id].data.title = response.data.title;
 			PlaylistPageStoreData[this.id].data.description = response.data.description;
 			this.emit('playlist_update_completed', response.data);
+			window.CinemataAnalytics?.track('playlist_update');
 		} else {
 			// @todo
 		}
@@ -204,8 +205,9 @@ class PlaylistPageStore extends EventEmitter {
 	}
 
 	onPlaylistRemovalCompleted(response) {
-		if (response && void 0 !== response.status && 403 !== response.status) {
+		if (response && response.status === 204) {
 			this.emit('playlist_removal_completed', response);
+			window.CinemataAnalytics?.track('playlist_delete');
 		} else {
 			this.onPlaylistRemovalFailed();
 		}
@@ -264,9 +266,25 @@ class PlaylistPageStore extends EventEmitter {
 				break;
 			case 'PLAYLIST_MEDIA_REORDERED':
 				PlaylistPageStoreData[this.id].data.playlist_media = action.playlist_media;
+				window.CinemataAnalytics?.track('playlist_reorder');
 				this.emit('reordered_media_in_playlist');
 				break;
 			case 'MEDIA_REMOVED_FROM_PLAYLIST':
+				const removedMedia = PlaylistPageStoreData[this.id].data.playlist_media.find(
+					(item) => item.friendly_token === action.media_id || item.url.split('=')[1] === action.media_id
+				);
+				window.CinemataAnalytics?.track(
+					'playlist_remove',
+					{},
+					removedMedia?.uid
+						? {
+								id: removedMedia.uid,
+								type: removedMedia.media_type,
+								context: 'playlist',
+								revision: removedMedia.analytics_revision,
+							}
+						: null
+				);
 				// console.log( PlaylistPageStoreData[this.id].data.playlist_media.length );
 
 				const new_playlist_media = [];

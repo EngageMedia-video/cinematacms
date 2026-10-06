@@ -14,6 +14,7 @@ import globalSearchQueryClient from './queryClient';
 function navigateToSearch(query) {
 	const trimmed = (query || '').trim();
 	if (!trimmed) return;
+	window.CinemataAnalytics?.track('search_submit');
 	window.location.href = `/search?q=${encodeURIComponent(trimmed)}`;
 }
 

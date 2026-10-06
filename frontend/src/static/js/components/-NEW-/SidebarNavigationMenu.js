@@ -163,7 +163,9 @@ export function SidebarNavigationMenu() {
 			});
 		});
 
-		return items.length ? <NavigationMenuList key="main-first" items={formatItems(items)} /> : null;
+		return items.length ? (
+			<NavigationMenuList analyticsPlacement="sidebar" key="main-first" items={formatItems(items)} />
+		) : null;
 	}
 
 	function MainMenuSecondSection() {
@@ -198,7 +200,9 @@ export function SidebarNavigationMenu() {
 			}
 		}
 
-		return items.length ? <NavigationMenuList key="main-second" items={formatItems(items)} /> : null;
+		return items.length ? (
+			<NavigationMenuList analyticsPlacement="sidebar" key="main-second" items={formatItems(items)} />
+		) : null;
 	}
 
 	function UserMenuSection() {
@@ -226,13 +230,17 @@ export function SidebarNavigationMenu() {
 			});
 		}
 
-		return items.length ? <NavigationMenuList key="user" items={formatItems(items)} /> : null;
+		return items.length ? (
+			<NavigationMenuList analyticsPlacement="sidebar" key="user" items={formatItems(items)} />
+		) : null;
 	}
 
 	function CustomMenuSection() {
 		const items = PageStore.get('config-contents').sidebar.navMenu.items;
 
-		return items.length ? <NavigationMenuList key="custom" items={formatItems(items)} /> : null;
+		return items.length ? (
+			<NavigationMenuList analyticsPlacement="sidebar" key="custom" items={formatItems(items)} />
+		) : null;
 	}
 
 	function ExtraMenuSection() {
@@ -251,7 +259,7 @@ export function SidebarNavigationMenu() {
 			className: 'nav-item-resources',
 		});
 
-		return <NavigationMenuList key="extra" items={formatItems(items)} />;
+		return <NavigationMenuList analyticsPlacement="sidebar" key="extra" items={formatItems(items)} />;
 	}
 
 	function AdminMenuSection() {
@@ -293,7 +301,9 @@ export function SidebarNavigationMenu() {
 			});
 		}
 
-		return items.length ? <NavigationMenuList key="admin" items={formatItems(items)} /> : null;
+		return items.length ? (
+			<NavigationMenuList analyticsPlacement="sidebar" key="admin" items={formatItems(items)} />
+		) : null;
 	}
 
 	return [

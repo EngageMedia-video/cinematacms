@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 import { DEFAULT_SORT, MULTI_FILTER_KEYS, SEARCH_PAGE_SIZE, SINGLE_FILTER_KEYS } from '../constants';
 
 async function fetchJson(url, signal) {
@@ -70,9 +71,17 @@ export function useMediaSearch({ filters, page, query, sort }) {
 	const enabled = hasActiveSearch({ filters, query });
 	const url = buildMediaSearchUrl({ filters, page, query, sort });
 
-	return useQuery({
+	const result = useQuery({
 		queryKey: ['search', 'media', { filters, page, query, sort }],
 		enabled,
 		queryFn: ({ signal }) => fetchJson(url, signal),
 	});
+	const lastEmptySearch = useRef(null);
+	useEffect(() => {
+		if (enabled && result.isSuccess && !result.isFetching && lastEmptySearch.current !== url) {
+			lastEmptySearch.current = url;
+			if (result.data?.count === 0) window.CinemataAnalytics?.track('search_no_results');
+		}
+	}, [enabled, url, result.isSuccess, result.isFetching, result.data]);
+	return result;
 }

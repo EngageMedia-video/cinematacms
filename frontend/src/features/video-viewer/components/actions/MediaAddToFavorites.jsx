@@ -55,6 +55,7 @@ export function MediaAddToFavorites({ user, onFavoriteChange }) {
 		if (user.is.anonymous) {
 			const currentPath = window.location.href.replace(site.url, '').replace(/^\//g, '');
 			const loginUrl = links.signin + '?next=' + encodeURIComponent('/' + currentPath);
+			window.CinemataAnalytics?.track('signin_click');
 			window.location.href = loginUrl;
 			return;
 		}

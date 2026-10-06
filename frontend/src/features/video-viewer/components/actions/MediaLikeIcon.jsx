@@ -51,6 +51,7 @@ export function MediaLikeIcon() {
 		if (user.is.anonymous) {
 			const currentPath = window.location.href.replace(site.url, '').replace(/^\//g, '');
 			const loginUrl = links.signin + '?next=/' + currentPath;
+			window.CinemataAnalytics?.track('signin_click');
 			window.location.href = loginUrl;
 			return;
 		}

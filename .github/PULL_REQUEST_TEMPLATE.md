@@ -20,6 +20,7 @@ Fixes #(issue)
 Events: <!-- Fixed event names, comma separated. Use pageview for a new public page. -->
 Trigger: <!-- When each event fires. -->
 Verification: <!-- Test or manual check. -->
+Coverage: <!-- Feature IDs in docs/technical/analytics-coverage.json. Add/update the contract and success/failure tests. -->
 Reason: <!-- Required when not applicable. -->
 
 ## Screenshots (if appropriate):

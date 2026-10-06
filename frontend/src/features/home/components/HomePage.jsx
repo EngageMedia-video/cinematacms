@@ -32,7 +32,7 @@ function FeaturedByCuratorsRow() {
 	const items = normalizeMediaList(data).slice(1);
 
 	return (
-		<SectionRow items={items} isLoading={isLoading} isError={isError}>
+		<SectionRow items={items} isLoading={isLoading} isError={isError} analyticsPlacement="featured">
 			<div className="flex flex-col gap-2">
 				<SectionRow.Title viewAllHref="/featured">Featured by Curators</SectionRow.Title>
 				<SectionRow.Description text="Selected by Cinemata's community curators" />
@@ -47,7 +47,13 @@ function HomepagePlaylistRow({ playlist, variant }) {
 	const items = normalizeMediaList(data).slice(0, HOME_PLAYLIST_ITEM_LIMIT);
 
 	return (
-		<SectionRow items={items} isLoading={isLoading} isError={isError} variant={variant}>
+		<SectionRow
+			items={items}
+			isLoading={isLoading}
+			isError={isError}
+			variant={variant}
+			analyticsPlacement="playlist"
+		>
 			<SectionRow.Title viewAllHref={playlist.url}>{playlist.title}</SectionRow.Title>
 			{playlist.text ? <SectionRow.HtmlDescription html={playlist.text} /> : null}
 			<SectionRow.Carousel />
@@ -82,7 +88,7 @@ function RecentVideosRow() {
 	const items = normalizeMediaList(data).slice(0, HOME_RECENT_ITEM_LIMIT);
 
 	return (
-		<SectionRow items={items} isLoading={isLoading} isError={isError}>
+		<SectionRow items={items} isLoading={isLoading} isError={isError} analyticsPlacement="recent">
 			<SectionRow.Title viewAllHref="/latest">Recent videos</SectionRow.Title>
 			<SectionRow.Grid />
 		</SectionRow>

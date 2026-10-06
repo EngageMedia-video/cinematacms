@@ -276,21 +276,29 @@ export class AddMediaPage extends Page {
 			},
 			callbacks: {
 				onStatusChange: function (id, _oldStatus, newStatus) {
+					if (newStatus === 'paused') window.CinemataAnalytics?.uploadEvent('pause', id);
+					if (_oldStatus === 'paused' && newStatus === 'uploading')
+						window.CinemataAnalytics?.uploadEvent('resume', id);
+					if (newStatus === 'retrying upload') window.CinemataAnalytics?.uploadEvent('retry', id);
 					const status = getUploadStatus(newStatus);
 					updateUploadItemStatus(id, status, getStatusLabel(status));
 				},
 				onSubmitted: (id) => {
+					window.CinemataAnalytics?.uploadEvent('start', id);
 					// A reupload only replaces the original once the new file is in.
 					if (this.pendingReplaceId != null && this.pendingReplaceId !== id) {
 						this.removeUploadItem(this.pendingReplaceId);
 						this.pendingReplaceId = null;
 					}
 				},
+				onCancel: (id) => window.CinemataAnalytics?.uploadEvent('cancel', id),
 				onError: function (id, name, errorReason) {
+					window.CinemataAnalytics?.uploadEvent('error', id);
 					updateUploadItemStatus(id, 'failed', 'Upload failed');
 					console.warn(window.qq.format('Error on file number {} - {}.  Reason: {}', id, name, errorReason));
 				},
 				onComplete: (id, _name, response) => {
+					window.CinemataAnalytics?.uploadEvent(response.success ? 'complete' : 'error', id);
 					if (!response.success) {
 						updateUploadItemStatus(id, 'failed', 'Upload failed');
 						return;
@@ -419,6 +427,7 @@ export class AddMediaPage extends Page {
 		const id = this.state.pendingDeleteId;
 		this.closeDeleteDialog();
 		this.removeUploadItem(id);
+		window.CinemataAnalytics?.uploadEvent('discard', id);
 	};
 
 	pageContent() {

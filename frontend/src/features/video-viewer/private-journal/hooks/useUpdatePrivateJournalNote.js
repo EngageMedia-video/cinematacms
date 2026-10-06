@@ -23,6 +23,7 @@ export function useUpdatePrivateJournalNote(friendlyToken) {
 			return response.json();
 		},
 		onSuccess: () => {
+			window.CinemataAnalytics?.track('journal_update');
 			queryClient.invalidateQueries({ queryKey: privateJournalQueryKey(friendlyToken) });
 		},
 	});

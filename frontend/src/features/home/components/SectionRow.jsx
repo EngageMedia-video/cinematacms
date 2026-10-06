@@ -107,7 +107,14 @@ function SkeletonGrid() {
 	);
 }
 
-export function SectionRow({ items = [], isLoading = false, isError = false, variant = 'default', children }) {
+export function SectionRow({
+	items = [],
+	isLoading = false,
+	isError = false,
+	variant = 'default',
+	analyticsPlacement,
+	children,
+}) {
 	const isEmpty = !isLoading && items.length === 0;
 	const value = useMemo(() => ({ items, variant }), [items, variant]);
 
@@ -119,7 +126,7 @@ export function SectionRow({ items = [], isLoading = false, isError = false, var
 
 	if (isLoading) {
 		return (
-			<section className={sectionClass}>
+			<section data-analytics-placement={analyticsPlacement} className={sectionClass}>
 				{variant === 'card' ? <div aria-hidden="true" className={BACKGROUND_LAYER_CLASS} /> : null}
 				<div className="h-5 rounded bg-bg-skeleton animate-pulse w-32" />
 				<SkeletonGrid />
@@ -129,7 +136,7 @@ export function SectionRow({ items = [], isLoading = false, isError = false, var
 
 	return (
 		<SectionRowContext value={value}>
-			<section className={sectionClass}>
+			<section data-analytics-placement={analyticsPlacement} className={sectionClass}>
 				{variant === 'card' ? <div aria-hidden="true" className={BACKGROUND_LAYER_CLASS} /> : null}
 				{children}
 			</section>

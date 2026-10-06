@@ -4,6 +4,7 @@ import json
 import re
 from datetime import timedelta
 from urllib.parse import urlsplit
+from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -58,7 +59,8 @@ def visitor_segment(user):
 
 
 def analytics_context(request):
-    if not getattr(settings, "ANALYTICS_ENABLED", False) or visitor_segment(request.user) is None:
+    audience_group = visitor_segment(request.user)
+    if not getattr(settings, "ANALYTICS_ENABLED", False) or audience_group is None:
         return {}
 
     url = getattr(settings, "ANALYTICS_URL", "")
@@ -66,6 +68,18 @@ def analytics_context(request):
     parsed_url = urlsplit(url)
     if url and (parsed_url.scheme != "https" or not parsed_url.hostname or parsed_url.username):
         return {}
+
+    workflow = getattr(request, "analytics_workflow", None)
+    if workflow:
+        return {
+            "ANALYTICS": {
+                "url": url,
+                "website_id": website_id,
+                "path": f"/page/{workflow}",
+                "nonpublic": True,
+                "events": request.session.pop("analytics_events", []) if hasattr(request, "session") else [],
+            }
+        }
 
     media = getattr(request, "analytics_media", None)
     if media:
@@ -85,12 +99,16 @@ def analytics_context(request):
             else None,
         }
         if media["state"] == "public":
+            config["audience_group"] = audience_group
             config["segment_grant"] = signing.dumps({"scope": "media"}, salt=SEGMENT_SALT)
+        config["events"] = request.session.pop("analytics_events", []) if hasattr(request, "session") else []
         return {"ANALYTICS": config}
 
     match = request.resolver_match
     name = match.url_name if match else None
     if name == "get_page" and not getattr(request, "analytics_text_page", False):
+        return {}
+    if name == "get_playlist" and not getattr(request, "analytics_playlist", None):
         return {}
     opted_in = getattr(request, "analytics_public_page", False)
     if name not in PUBLIC_ROUTES and request.path not in PUBLIC_PATHS and not opted_in:
@@ -101,11 +119,17 @@ def analytics_context(request):
             return {}
         path = f"/page/{name}"
     elif name and name.startswith("get_user"):
-        path = "/user/profile"
+        section = {
+            "get_user_media": "media",
+            "get_user_playlists": "playlists",
+            "get_user_about": "about",
+            "get_user_impact": "impact",
+        }.get(name, "home")
+        path = f"/user/profile/{section}"
     elif name in {"view_channel", "get_playlist"}:
         path = f"/{name}"
     else:
-        path = request.path
+        path = request.path[2:] if name == "get_page" and request.path.startswith("/p/") else request.path
 
     scope = f"page:{request.analytics_text_page}" if name == "get_page" else "home" if path == "/" else "other"
     return {
@@ -114,7 +138,10 @@ def analytics_context(request):
             "website_id": website_id,
             "path": path,
             "text_page": name == "get_page",
+            "playlist_id": getattr(request, "analytics_playlist", None),
+            "audience_group": audience_group,
             "segment_grant": signing.dumps({"scope": scope}, salt=SEGMENT_SALT),
+            "events": request.session.pop("analytics_events", []) if hasattr(request, "session") else [],
         }
     }
 
@@ -122,6 +149,40 @@ def analytics_context(request):
 def allow_page_analytics(request):
     """Opt a new public view in after its access check has succeeded."""
     request.analytics_public_page = True
+
+
+def allow_workflow_analytics(request, name):
+    """Admit an authorized owner workflow without a URL or public role grant."""
+    if (request.user.is_authenticated or name in {"history", "liked"}) and re.fullmatch(r"[a-z][a-z0-9_]{0,49}", name):
+        request.analytics_workflow = name
+
+
+def action_events(request, *names, media=None):
+    """Build count-only browser events after a successful server operation."""
+    if not settings.ANALYTICS_ENABLED or visitor_segment(request.user) is None or request.headers.get("DNT") == "1":
+        return []
+    context = (
+        {
+            "id": str(media.uid),
+            "type": media.media_type,
+            "revision": str(media.analytics_revision),
+            "context": "workflow",
+        }
+        if media
+        else None
+    )
+    return [
+        {"name": name, **({"media": context} if context else {})}
+        for name in names
+        if re.fullmatch(r"[a-z][a-z0-9_]{0,49}", name)
+    ]
+
+
+def queue_action(request, name, media=None):
+    """Carry successful template-form events across a same-origin redirect."""
+    events = action_events(request, name, media=media)
+    if events:
+        request.session["analytics_events"] = (request.session.get("analytics_events", []) + events)[-20:]
 
 
 def allow_media_analytics(request, media, context):
@@ -179,11 +240,8 @@ def record_segment_event(request):
     return HttpResponse(status=204)
 
 
-@login_required
-def segment_report(request):
-    """Admin-only 30-day counts; omit cells with fewer than ten events."""
-    if not request.user.is_superuser:
-        raise Http404
+def segment_report_data():
+    """Recorded public activity by role during the last 30 days."""
     from files.models import DailySegmentMetric, Page
 
     end = timezone.now().date()
@@ -192,7 +250,6 @@ def segment_report(request):
         DailySegmentMetric.objects.filter(day__range=(start, end))
         .values("segment", "scope", "event")
         .annotate(count=Sum("count"))
-        .filter(count__gte=10)
         .order_by("scope", "event", "segment")
     )
     page_ids = {
@@ -202,6 +259,33 @@ def segment_report(request):
     for row in rows:
         if row["scope"].startswith("page:"):
             row["path"] = f"/{pages[int(row['scope'][5:])]}" if int(row["scope"][5:]) in pages else None
-    response = JsonResponse({"start_date_utc": start.isoformat(), "end_date_utc": end.isoformat(), "rows": rows})
+    return {"start_date_utc": start.isoformat(), "end_date_utc": end.isoformat(), "rows": rows}
+
+
+@login_required
+def segment_report(request):
+    """Superuser JSON report, independent of the requested content type."""
+    if not request.user.is_superuser:
+        raise Http404
+    response = JsonResponse(segment_report_data())
     response["Cache-Control"] = "private, no-store"
     return response
+
+
+def umami_report_url():
+    """Link to the configured website without exposing credentials or API keys."""
+    url = getattr(settings, "ANALYTICS_URL", "")
+    try:
+        parsed = urlsplit(url)
+        website_id = UUID(getattr(settings, "ANALYTICS_WEBSITE_ID", ""))
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            return None
+    except (ValueError, TypeError, AttributeError):
+        return None
+    return f"{parsed.geturl().rstrip('/')}/websites/{website_id}"

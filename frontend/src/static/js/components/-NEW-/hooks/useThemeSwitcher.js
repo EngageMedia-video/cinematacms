@@ -12,6 +12,7 @@ export function useThemeSwitcher() {
 
 	function toggleMode() {
 		ThemeActions.toggleMode();
+		window.CinemataAnalytics?.track('theme_change');
 	}
 
 	useEffect(() => {

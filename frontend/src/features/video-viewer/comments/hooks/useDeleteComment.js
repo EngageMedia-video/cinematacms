@@ -26,6 +26,7 @@ export function useDeleteComment(friendlyToken) {
 			return uid;
 		},
 		onSuccess: () => {
+			window.CinemataAnalytics?.track('comment_delete');
 			queryClient.invalidateQueries({ queryKey: commentsQueryKey(friendlyToken) });
 		},
 	});
