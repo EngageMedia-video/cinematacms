@@ -7,7 +7,7 @@ from rest_framework import serializers
 from actions.models import MediaAction
 
 from .community_impact_validators import validate_trusted_url
-from .methods import user_can_delete_comment
+from .methods import user_can_delete_comment, user_can_manage_media
 from .models import (
     Category,
     Comment,
@@ -313,6 +313,9 @@ class SingleMediaSerializer(serializers.ModelSerializer):
     sprite_num_secs = serializers.SerializerMethodField()
     analytics_revision = serializers.SerializerMethodField()
     hero_measurement_token = serializers.SerializerMethodField()
+    page_measurement_token = serializers.SerializerMethodField()
+    audience_group = serializers.SerializerMethodField()
+    user_can_manage_media = serializers.SerializerMethodField()
 
     def get_analytics_revision(self, obj):
         from django.conf import settings
@@ -327,6 +330,31 @@ class SingleMediaSerializer(serializers.ModelSerializer):
         from cms.playback_analytics import measurement_token
 
         return measurement_token(obj, "hero")
+
+    def get_page_measurement_token(self, obj):
+        # Same grant view_media renders, for playlist items played in place.
+        from django.conf import settings
+
+        if not settings.ANALYTICS_ENABLED or obj.state == "private" or obj.media_type not in ("video", "audio"):
+            return None
+        from cms.playback_analytics import measurement_token
+
+        return measurement_token(obj, "page")
+
+    def get_audience_group(self, obj):
+        # Same coarse audience group a public media page renders.
+        from django.conf import settings
+
+        if not settings.ANALYTICS_ENABLED or obj.state != "public":
+            return None
+        from cms.analytics import visitor_segment
+
+        request = self.context.get("request")
+        return visitor_segment(request.user) if request else None
+
+    def get_user_can_manage_media(self, obj):
+        request = self.context.get("request")
+        return user_can_manage_media(getattr(request, "user", None), obj)
 
     def get_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
@@ -401,6 +429,9 @@ class SingleMediaSerializer(serializers.ModelSerializer):
             "uid",
             "analytics_revision",
             "hero_measurement_token",
+            "page_measurement_token",
+            "audience_group",
+            "user_can_manage_media",
             "url",
             "user",
             "title",

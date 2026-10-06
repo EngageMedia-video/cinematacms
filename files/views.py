@@ -80,6 +80,7 @@ from .methods import (
     show_recommended_media,
     show_related_media,
     user_can_delete_comment,
+    user_can_manage_media,
 )
 from .models import (
     Category,
@@ -927,7 +928,7 @@ def view_media(request):
 
     # Owner/editor bypass FIRST — unaffected by Redis outages
     if request.user.is_authenticated:
-        if (media.user.id == request.user.id) or is_mediacms_editor(request.user) or is_mediacms_manager(request.user):
+        if user_can_manage_media(request.user, media):
             context["CAN_DELETE_MEDIA"] = True
             context["CAN_EDIT_MEDIA"] = True
             context["CAN_DELETE_COMMENTS"] = True

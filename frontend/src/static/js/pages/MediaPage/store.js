@@ -107,6 +107,25 @@ function normalizeCommunityImpactSubmitError(error) {
 
 const MediaPageStoreData = {};
 
+function initialMediaState() {
+	return {
+		likedMedia: false,
+		dislikedMedia: false,
+		// Track likes/dislikes performed in this page session so the
+		// getter can apply an optimistic +1 only for fresh actions
+		// (not for prior actions already counted in data.likes).
+		likedInSession: false,
+		dislikedInSession: false,
+		reported_times: 0,
+		while: {
+			deleteMedia: false,
+			submitComment: false,
+			submitCommunityImpact: false,
+			deleteCommentId: null,
+		},
+	};
+}
+
 class MediaPageStore extends EventEmitter {
 	constructor() {
 		super();
@@ -122,22 +141,7 @@ class MediaPageStore extends EventEmitter {
 			Object.defineProperty(this, 'id', {
 				value: 'MediaPageStoreData_' + Object.keys(MediaPageStoreData).length,
 			}).id
-		] = {
-			likedMedia: false,
-			dislikedMedia: false,
-			// Track likes/dislikes performed in this page session so the
-			// getter can apply an optimistic +1 only for fresh actions
-			// (not for prior actions already counted in data.likes).
-			likedInSession: false,
-			dislikedInSession: false,
-			reported_times: 0,
-			while: {
-				deleteMedia: false,
-				submitComment: false,
-				submitCommunityImpact: false,
-				deleteCommentId: null,
-			},
-		};
+		] = initialMediaState();
 
 		this.removeMediaResponse = this.removeMediaResponse.bind(this);
 		this.removeMediaFail = this.removeMediaFail.bind(this);
@@ -202,6 +206,91 @@ class MediaPageStore extends EventEmitter {
 		this.dataResponse = this.dataResponse.bind(this);
 		this.dataErrorResponse = this.dataErrorResponse.bind(this);
 		getRequest(this.mediaAPIUrl, !1, this.dataResponse, this.dataErrorResponse);
+	}
+
+	// Fetch first, so an item this page cannot play in place keeps the normal
+	// navigation: private media is never measured by the media page.
+	switchMedia(friendlyToken, url, onFallback) {
+		const fallback = () => onFallback?.();
+
+		getRequest(
+			this.mediacms_config.api.media + '/' + friendlyToken,
+			!1,
+			(response) => {
+				if (!response?.data || 'private' === response.data.state) {
+					fallback();
+					return;
+				}
+
+				this.applySwitchedMedia(friendlyToken, url, response.data);
+			},
+			fallback
+		);
+	}
+
+	// Replaces what the server rendered for the previous item. The page then
+	// remounts and runs the normal media load for the new item.
+	applySwitchedMedia(friendlyToken, url, data) {
+		const previousTitle = MediaPageStoreData[this.id].data?.title;
+		const canManage = true === data.user_can_manage_media;
+
+		// The API builds absolute links, possibly with another scheme behind a proxy.
+		const target = new URL(url, window.location.href);
+		window.history.pushState(null, '', target.pathname + target.search);
+		this.reloadOnHistoryChange();
+
+		window.MediaCMS.mediaId = friendlyToken;
+		delete window.MediaCMS.access_token;
+		delete window.MediaCMS.media_restricted;
+
+		MediaPageStoreData[this.id] = initialMediaState();
+		MediaPageStoreData[this.id].mediaId = friendlyToken;
+
+		Object.assign(this.mediacms_config.member.can, {
+			editMedia: canManage,
+			deleteMedia: canManage,
+			editSubtitle: canManage,
+			deleteComment: canManage,
+		});
+
+		if (previousTitle && document.title.startsWith(previousTitle)) {
+			document.title = data.title + document.title.slice(previousTitle.length);
+		}
+
+		window.CinemataAnalytics?.switchMedia({
+			id: data.uid,
+			type: data.media_type,
+			state: data.state,
+			revision: data.analytics_revision,
+			measurement_token: data.page_measurement_token,
+			audience_group: data.audience_group,
+		});
+
+		postRequest(
+			this.mediacms_config.api.media + '/' + friendlyToken + '/actions',
+			{ type: 'watch' },
+			{ headers: { 'X-CSRFToken': getCSRFToken() } },
+			false,
+			() => {},
+			() => {}
+		);
+
+		this.emit('switched_media');
+	}
+
+	// Back and Forward only change the URL after an in-place switch.
+	reloadOnHistoryChange() {
+		if (this.reloadsOnHistoryChange) {
+			return;
+		}
+
+		this.reloadsOnHistoryChange = true;
+
+		window.addEventListener('popstate', () => {
+			if (new URLSearchParams(window.location.search).get('m') !== MediaPageStoreData[this.id].mediaId) {
+				window.location.reload();
+			}
+		});
 	}
 
 	loadPlaylistData() {
@@ -1169,6 +1258,9 @@ class MediaPageStore extends EventEmitter {
 					this.loadData();
 				}
 
+				break;
+			case 'SWITCH_MEDIA':
+				this.switchMedia(action.friendlyToken, action.url, action.onFallback);
 				break;
 			case 'UNLIKE_MEDIA':
 				if (MediaPageStoreData[this.id].likedMedia) {
