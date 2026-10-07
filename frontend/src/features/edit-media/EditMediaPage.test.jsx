@@ -249,20 +249,19 @@ describe('EditMediaPage leave confirmation', () => {
 		expect(followedLinks).toEqual(['/about']);
 	});
 
-	it('follows the link without the browser warning after choosing to leave', async () => {
-		const navigations = [];
-		vi.stubGlobal('location', {
-			...window.location,
-			assign: vi.fn((url) => navigations.push({ url, warned: leaveWarningShown() })),
-		});
+	it('follows the link itself after choosing to leave, so its referrer policy still applies', async () => {
 		render(<EditMediaPage />);
-		const aboutLink = addPageLink('/about', 'About the Site');
+		const aboutLink = addPageLink('/about', 'About the Site', { rel: 'noreferrer', referrerpolicy: 'no-referrer' });
 		await editField('More Information and Credits', 'A long description the user has not saved yet.');
 		fireEvent.click(aboutLink);
+		expect(followedLinks).toEqual([]);
 
+		const warnedWhileFollowing = [];
+		aboutLink.addEventListener('click', () => warnedWhileFollowing.push(leaveWarningShown()));
 		fireEvent.click(await screen.findByRole('button', { name: 'Leave' }));
 
-		expect(navigations).toEqual([{ url: aboutLink.href, warned: false }]);
+		expect(followedLinks).toEqual(['/about']);
+		expect(warnedWhileFollowing).toEqual([false]);
 	});
 
 	it('keeps the edits and the guard after choosing to stay', async () => {
@@ -297,6 +296,19 @@ describe('EditMediaPage leave confirmation', () => {
 
 		fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
 		expect(backNavigations).toEqual([{ warned: false }, { warned: false }]);
+	});
+
+	it('guards again when Cancel cannot go back and the page stays open', async () => {
+		vi.spyOn(window.history, 'back').mockImplementation(() => {});
+		render(<EditMediaPage />);
+		await editField('More Information and Credits', 'A long description the user has not saved yet.');
+		fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		fireEvent.click(await screen.findByRole('button', { name: 'Leave' }));
+
+		await waitFor(() => expect(leaveWarningShown()).toBe(true), { timeout: 3000 });
+		fireEvent.click(addPageLink('/about', 'About the Site'));
+		expect(await screen.findByRole('dialog', { name: 'Leave this page?' })).toBeInTheDocument();
+		expect(followedLinks).toEqual([]);
 	});
 
 	it('lets links that keep this page open through without asking', async () => {

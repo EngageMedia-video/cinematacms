@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+// A started navigation runs beforeunload well within this delay, so re-arming after it does not prompt twice.
+const REARM_AFTER_LEAVE_MS = 1000;
+
 // Only a plain click that replaces this document unloads the page and its edits.
 function unloadsThisPage(event, link) {
 	if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
@@ -40,7 +43,8 @@ export function useUnsavedChangesGuard(hasUnsavedChanges) {
 			if (!link || event.defaultPrevented || disarmedRef.current || !unloadsThisPage(event, link)) return;
 
 			event.preventDefault();
-			setPendingLeave(() => () => window.location.assign(link.href));
+			// Clicking the link again keeps its native behaviour, such as rel and referrerpolicy.
+			setPendingLeave(() => () => link.click());
 		}
 
 		document.addEventListener('click', confirmLinkNavigation);
@@ -65,6 +69,10 @@ export function useUnsavedChangesGuard(hasUnsavedChanges) {
 		disarm();
 		setPendingLeave(null);
 		pendingLeave?.();
+		// The page can stay open, for example after history.back() with no earlier entry.
+		window.setTimeout(() => {
+			disarmedRef.current = false;
+		}, REARM_AFTER_LEAVE_MS);
 	}
 
 	return {
