@@ -52,6 +52,7 @@ dependencies = [
     "opentelemetry-instrumentation-requests>=0.65b0",
     "opentelemetry-instrumentation-psycopg2>=0.65b0",
     "sentry-sdk==2.69.2",
+    "django-csp==4.0",
 ]
 
 [dependency-groups]

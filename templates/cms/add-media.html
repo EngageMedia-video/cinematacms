@@ -19,7 +19,7 @@
 {% block topimports %}{% vite_asset 'src/entries/add-media.js' %}{%endblock topimports %}
 
 {% block content %}
-<script>
+<script nonce="{{ request.csp_nonce }}">
 	window.MediaCMS = window.MediaCMS || {};
 	window.MediaCMS.addMediaPage = {
 		canAdd: {% if can_add %}true{% else %}false{% endif %},

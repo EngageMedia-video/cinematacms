@@ -30,7 +30,7 @@
 	</div>
 
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 	// increase titles
 	const field_labels = document.querySelectorAll('label');
 	field_labels.forEach((label) => {
