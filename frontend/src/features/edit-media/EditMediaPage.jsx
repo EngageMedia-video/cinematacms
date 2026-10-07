@@ -7,6 +7,7 @@ import { BasicDetailsForm } from '../add-media/single-upload/components/BasicDet
 import { OtherDetailsForm } from '../add-media/single-upload/components/OtherDetailsForm';
 import { ThumbnailImageUpload } from '../add-media/single-upload/components/ThumbnailImageUpload';
 import { TextAlert } from '../shared/components/TextAlert';
+import { UnsavedChangesDialog } from '../shared/components/UnsavedChangesDialog';
 import { useUnsavedChangesGuard } from '../shared/hooks/useUnsavedChangesGuard';
 import { getCSRFToken } from '../add-media/utils/helpers';
 import { maxWords, required, runValidators } from '../shared/utils/validators';
@@ -230,7 +231,11 @@ function EditMediaPageContent() {
 								</TextAlert>
 							) : null}
 
-							<SubmitActions isSubmitting={submitMutation.isPending} uploadBusy={uploadBusy} />
+							<SubmitActions
+								isSubmitting={submitMutation.isPending}
+								uploadBusy={uploadBusy}
+								onCancel={() => unsavedChangesGuard.requestLeave(() => window.history.back())}
+							/>
 						</form>
 					</div>
 				</div>
@@ -239,6 +244,12 @@ function EditMediaPageContent() {
 					<EditMediaQuickPreview config={config} editState={editState} className="min-w-0" />
 				</aside>
 			</div>
+
+			<UnsavedChangesDialog
+				open={unsavedChangesGuard.isConfirmingLeave}
+				onStay={unsavedChangesGuard.cancelLeave}
+				onLeave={unsavedChangesGuard.confirmLeave}
+			/>
 		</div>
 	);
 }

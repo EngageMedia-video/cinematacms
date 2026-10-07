@@ -90,6 +90,15 @@ async function editField(label, value) {
 	await screen.findByDisplayValue(value);
 }
 
+function addPageLink(href, text, attributes = {}) {
+	const link = document.createElement('a');
+	link.setAttribute('href', href);
+	link.textContent = text;
+	Object.entries(attributes).forEach(([name, value]) => link.setAttribute(name, value));
+	document.body.append(link);
+	return link;
+}
+
 describe('EditMediaPage unsaved changes warning', () => {
 	beforeEach(() => {
 		editMediaQueryClient.clear();
@@ -195,5 +204,117 @@ describe('EditMediaPage unsaved changes warning', () => {
 
 		expect(await screen.findByText('Paused')).toBeInTheDocument();
 		expect(leaveWarningShown()).toBe(true);
+	});
+});
+
+describe('EditMediaPage leave confirmation', () => {
+	let followedLinks;
+
+	// Records the links the browser would follow. jsdom cannot navigate, so every click stops here.
+	function recordFollowedLink(event) {
+		const link = event.target.closest?.('a[href]');
+		if (!link) return;
+		if (!event.defaultPrevented) followedLinks.push(link.getAttribute('href'));
+		event.preventDefault();
+	}
+
+	beforeEach(() => {
+		editMediaQueryClient.clear();
+		window.MediaCMS = { editMediaPage: PAGE_CONFIG };
+		followedLinks = [];
+		window.addEventListener('click', recordFollowedLink);
+	});
+
+	afterEach(() => {
+		window.removeEventListener('click', recordFollowedLink);
+		document.querySelectorAll('body > a').forEach((link) => link.remove());
+		delete window.MediaCMS;
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+	});
+
+	it('asks in a dialog before following an in-app link with unsaved changes', async () => {
+		render(<EditMediaPage />);
+		const aboutLink = addPageLink('/about', 'About the Site');
+
+		fireEvent.click(aboutLink);
+		expect(followedLinks).toEqual(['/about']);
+		expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+		await editField('More Information and Credits', 'A long description the user has not saved yet.');
+		fireEvent.click(aboutLink);
+
+		expect(await screen.findByRole('dialog', { name: 'Leave this page?' })).toBeInTheDocument();
+		expect(screen.getByText('You have unsaved changes. If you leave now, they will be lost.')).toBeInTheDocument();
+		expect(followedLinks).toEqual(['/about']);
+	});
+
+	it('follows the link without the browser warning after choosing to leave', async () => {
+		const navigations = [];
+		vi.stubGlobal('location', {
+			...window.location,
+			assign: vi.fn((url) => navigations.push({ url, warned: leaveWarningShown() })),
+		});
+		render(<EditMediaPage />);
+		const aboutLink = addPageLink('/about', 'About the Site');
+		await editField('More Information and Credits', 'A long description the user has not saved yet.');
+		fireEvent.click(aboutLink);
+
+		fireEvent.click(await screen.findByRole('button', { name: 'Leave' }));
+
+		expect(navigations).toEqual([{ url: aboutLink.href, warned: false }]);
+	});
+
+	it('keeps the edits and the guard after choosing to stay', async () => {
+		render(<EditMediaPage />);
+		const aboutLink = addPageLink('/about', 'About the Site');
+		await editField('More Information and Credits', 'A long description the user has not saved yet.');
+		fireEvent.click(aboutLink);
+
+		fireEvent.click(await screen.findByRole('button', { name: 'Stay' }));
+
+		await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+		expect(screen.getByDisplayValue('A long description the user has not saved yet.')).toBeInTheDocument();
+		expect(followedLinks).toEqual([]);
+		expect(leaveWarningShown()).toBe(true);
+	});
+
+	it('asks before the Cancel button discards unsaved changes', async () => {
+		const backNavigations = [];
+		vi.spyOn(window.history, 'back').mockImplementation(() =>
+			backNavigations.push({ warned: leaveWarningShown() })
+		);
+		render(<EditMediaPage />);
+
+		fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		expect(backNavigations).toEqual([{ warned: false }]);
+
+		await editField('More Information and Credits', 'A long description the user has not saved yet.');
+		fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+		expect(await screen.findByRole('dialog', { name: 'Leave this page?' })).toBeInTheDocument();
+		expect(backNavigations).toHaveLength(1);
+
+		fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
+		expect(backNavigations).toEqual([{ warned: false }, { warned: false }]);
+	});
+
+	it('lets links that keep this page open through without asking', async () => {
+		render(<EditMediaPage />);
+		await editField('More Information and Credits', 'A long description the user has not saved yet.');
+
+		fireEvent.click(addPageLink('/about', 'About in a new tab', { target: '_blank' }));
+		fireEvent.click(addPageLink('#thumbnail', 'Jump to thumbnail'));
+		fireEvent.click(addPageLink('mailto:team@example.org', 'Email the team'));
+		fireEvent.click(addPageLink('/media/poster.png', 'Download poster', { download: '' }));
+		fireEvent.click(addPageLink('/about', 'About the Site'), { ctrlKey: true });
+
+		expect(followedLinks).toEqual([
+			'/about',
+			'#thumbnail',
+			'mailto:team@example.org',
+			'/media/poster.png',
+			'/about',
+		]);
 	});
 });
