@@ -70,3 +70,51 @@ describe('CommentText line breaks', () => {
 		expect(container.textContent).toBe('one\n\nthree');
 	});
 });
+
+describe('CommentText links', () => {
+	it('renders a bare URL as a nofollow link that opens in the same tab', () => {
+		render(<CommentText text="trailer at https://cinemata.org/watch?v=abc." />);
+
+		const link = screen.getByRole('link', { name: 'https://cinemata.org/watch?v=abc' });
+		expect(link).toHaveAttribute('href', 'https://cinemata.org/watch?v=abc');
+		expect(link).toHaveAttribute('rel', 'nofollow noopener');
+		expect(link).not.toHaveAttribute('target');
+	});
+
+	it('keeps a timestamp inside a URL as part of the link', () => {
+		render(<CommentText text="compare https://example.org/clip?t=1:30" />);
+
+		expect(screen.getByRole('link', { name: 'https://example.org/clip?t=1:30' })).toHaveAttribute(
+			'href',
+			'https://example.org/clip?t=1:30'
+		);
+		expect(screen.queryByRole('link', { name: '1:30' })).not.toBeInTheDocument();
+	});
+
+	it('links URLs, timestamps and mentions in one comment', () => {
+		const { container } = render(<CommentText text={'@alice see 2:05\nmore at www.engagemedia.org'} />);
+
+		expect(screen.getByRole('link', { name: '@alice' })).toHaveAttribute('href', '/user/alice');
+		expect(screen.getByRole('link', { name: '2:05' })).toBeInTheDocument();
+		expect(screen.getByRole('link', { name: 'www.engagemedia.org' })).toHaveAttribute(
+			'href',
+			'https://www.engagemedia.org/'
+		);
+		expect(container.textContent).toBe('@alice see 2:05\nmore at www.engagemedia.org');
+	});
+
+	it('keeps a handle that contains www. as one mention', () => {
+		render(<CommentText text="thanks @www.studio and @ana-www.films" />);
+
+		expect(screen.getByRole('link', { name: '@www.studio' })).toHaveAttribute('href', '/user/www.studio');
+		expect(screen.getByRole('link', { name: '@ana-www.films' })).toHaveAttribute('href', '/user/ana-www.films');
+		expect(screen.getAllByRole('link')).toHaveLength(2);
+	});
+
+	it('escapes markup typed into a comment', () => {
+		const { container } = render(<CommentText text={'<b>bold</b> https://cinemata.org'} />);
+
+		expect(container.querySelector('b')).toBeNull();
+		expect(container.textContent).toBe('<b>bold</b> https://cinemata.org');
+	});
+});

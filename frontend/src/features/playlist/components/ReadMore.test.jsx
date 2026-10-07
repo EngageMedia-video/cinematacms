@@ -28,7 +28,7 @@ describe('ReadMore', () => {
 		const link = screen.getByRole('link', { name: 'https://cinemata.org/watch' });
 		expect(link).toHaveAttribute('href', 'https://cinemata.org/watch');
 		expect(link).toHaveAttribute('rel', 'nofollow noopener');
-		expect(link).toHaveAttribute('target', '_blank');
+		expect(link).not.toHaveAttribute('target');
 		expect(document.getElementById('note')).toHaveTextContent('Screening at https://cinemata.org/watch.');
 	});
 

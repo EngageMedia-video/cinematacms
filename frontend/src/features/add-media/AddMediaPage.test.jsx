@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('../../static/js/contexts/UserContext', async () => {
@@ -114,5 +114,93 @@ describe('AddMediaPage multi-file single upload guard', () => {
 		expect(addFiles).not.toHaveBeenCalled();
 		expect(screen.getByRole('tab', { name: 'Bulk Upload' })).toHaveAttribute('aria-selected', 'true');
 		expect(screen.getByText('Bulk upload workflow')).toBeInTheDocument();
+	});
+});
+
+describe('AddMediaPage bulk upload viewport gate', () => {
+	let mediaQuery;
+
+	function stubViewport(isNarrow) {
+		mediaQuery = {
+			matches: isNarrow,
+			media: '',
+			addEventListener: vi.fn((type, listener) => {
+				mediaQuery.listener = listener;
+			}),
+			removeEventListener: vi.fn(),
+		};
+		window.matchMedia = vi.fn((query) => {
+			mediaQuery.media = query;
+			return mediaQuery;
+		});
+	}
+
+	function resizeViewport(isNarrow) {
+		act(() => mediaQuery.listener({ matches: isNarrow }));
+	}
+
+	beforeEach(() => {
+		window.MediaCMS = {
+			addMediaPage: {
+				allowedExtensions: ['mp4'],
+				canAdd: true,
+				uploadEndpoint: '/fu/upload/',
+				uploadMaxFilesNumber: 1,
+				uploadMaxSize: 1000000,
+			},
+		};
+		window.qq = {
+			FineUploader: vi.fn(function FineUploaderMock() {
+				this.addFiles = vi.fn();
+				this.cancel = vi.fn();
+				this.reset = vi.fn();
+			}),
+			status: {},
+		};
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+		delete window.matchMedia;
+		delete window.MediaCMS;
+		delete window.qq;
+	});
+
+	it('watches the viewport below the 1024px desktop breakpoint', () => {
+		stubViewport(false);
+		render(<AddMediaPage />);
+
+		expect(mediaQuery.media).toBe('(max-width: 1023px)');
+	});
+
+	it('hides bulk upload on a mobile or tablet viewport', () => {
+		stubViewport(true);
+		render(<AddMediaPage />);
+
+		expect(screen.queryByRole('tab', { name: 'Bulk Upload' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('tab', { name: 'Single Film Upload' })).not.toBeInTheDocument();
+	});
+
+	it('offers bulk upload on a desktop viewport and follows viewport changes', () => {
+		stubViewport(false);
+		render(<AddMediaPage />);
+
+		expect(screen.getByRole('tab', { name: 'Bulk Upload' })).toBeInTheDocument();
+
+		resizeViewport(true);
+		expect(screen.queryByRole('tab', { name: 'Bulk Upload' })).not.toBeInTheDocument();
+
+		resizeViewport(false);
+		expect(screen.getByRole('tab', { name: 'Bulk Upload' })).toBeInTheDocument();
+	});
+
+	it('stops watching the viewport after unmount', () => {
+		stubViewport(false);
+		const { unmount } = render(<AddMediaPage />);
+		const { listener } = mediaQuery;
+
+		unmount();
+
+		expect(mediaQuery.removeEventListener).toHaveBeenCalledWith('change', listener);
 	});
 });
