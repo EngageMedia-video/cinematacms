@@ -17,6 +17,7 @@ import { Button } from '../../shared/components/Button';
 import { Dropdown } from '../../shared/components/Dropdown';
 import { Icon } from '../../shared/components/Icon';
 import { HorizontalMovieItem } from '../../shared/components/MovieItem/MovieItem';
+import { cn } from '../../shared/utils/classNames';
 import { getMediaDurationLabel } from '../../home/utils/mediaList';
 import { buildSections } from '../filterSections';
 import { FilterPanel } from './FilterPanel';
@@ -252,7 +253,9 @@ function SearchPageContent() {
 	return (
 		<div
 			data-modern-track
-			className="mx-auto min-h-screen w-full max-w-[1515px] overflow-x-hidden px-4 py-6 text-text-primary sm:px-[27px]"
+			// overflow-x-clip, not hidden: hidden makes this div a scroll container, so the filter
+			// rail's sticky would resolve against it instead of the viewport and never stick.
+			className="mx-auto min-h-screen w-full max-w-378.75 overflow-x-clip px-4 py-6 text-text-primary sm:px-6.75"
 		>
 			<header className="mb-6 flex max-w-[760px] flex-col gap-2">
 				<h1 className="m-0 font-['Barlow_Semi_Condensed',Arial,sans-serif] text-[24px] leading-[30px] font-medium text-text-primary">
@@ -263,9 +266,11 @@ function SearchPageContent() {
 				</p>
 			</header>
 
-			<div className="grid gap-8 sm:grid-cols-[317px_minmax(0,1fr)]">
+			<div className="grid gap-8 sm:grid-cols-[--spacing(79.25)_minmax(0,1fr)]">
 				<div className="max-sm:hidden">
-					<div className="sticky top-[calc(var(--header-height,90px)+16px)]">
+					{/* Sticks below the fixed header (and the top message bar, which offsets that header the
+					    same way), capped to the viewport so a tall panel scrolls instead of hiding filters. */}
+					<div className="sticky top-(--filter-rail-top) max-h-[calc(100vh-var(--filter-rail-top)-(--spacing(4)))] overflow-y-auto rounded-lg [--filter-rail-top:calc(var(--header-height,90px)+--spacing(4))] [.top-message-body_&]:[--filter-rail-top:calc(var(--header-height,90px)+var(--top-message-height,43px)+--spacing(4))]">
 						<FilterPanel
 							sections={sections}
 							onReset={handleClearAll}
@@ -275,7 +280,8 @@ function SearchPageContent() {
 				</div>
 
 				<main className="flex min-w-0 flex-col gap-4 sm:gap-8">
-					<div className="flex flex-col gap-2 sm:gap-4">
+					{/* Hidden on desktop when empty so the main column's gap does not push results below the filter rail. */}
+					<div className={cn('flex flex-col gap-2 sm:gap-4', !selectedFilters.length && 'sm:hidden')}>
 						<div className="sm:hidden">
 							<MobileFilterSheet
 								filters={filters}
