@@ -11,7 +11,7 @@
 <meta property="og:image" content="{{FRONTEND_HOST}}/media/userlogos/cinemata_share_banner-01.png">
 <meta name="twitter:card" content="summary_large_image">
 
-<script type="application/ld+json">
+<script nonce="{{ request.csp_nonce }}" type="application/ld+json">
 {
 	"@context": "https://schema.org",
 	"@type": "BreadcrumbList",

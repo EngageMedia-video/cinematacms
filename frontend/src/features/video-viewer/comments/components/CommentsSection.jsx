@@ -10,7 +10,7 @@ import '../../../../static/css/tailwind.css';
 
 function CommentsStyleTag() {
 	return (
-		<style>{`
+		<style nonce={document.querySelector('meta[property="csp-nonce"]')?.content}>{`
 			.comments-scrollbar {
 				scrollbar-color: var(--border-strong) transparent;
 				scrollbar-width: thin;
