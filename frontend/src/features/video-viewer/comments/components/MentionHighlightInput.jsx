@@ -64,6 +64,10 @@ export function MentionHighlightInput({
 		if (!input) return;
 		input.style.height = 'auto';
 		input.style.height = `${Math.min(input.scrollHeight, MAX_VISIBLE_LINES * LINE_HEIGHT_PX)}px`;
+		// A scrollbar that takes layout space narrows only the field; without the
+		// same inset the backdrop wraps the text onto different lines.
+		const backdrop = backdropRef.current;
+		if (backdrop) backdrop.style.right = `${input.offsetWidth - input.clientWidth}px`;
 	}, [inputRef]);
 
 	useLayoutEffect(resize, [value, resize]);
@@ -112,6 +116,9 @@ export function MentionHighlightInput({
 						<span key={index}>{segment.value}</span>
 					)
 				)}
+				{/* The field keeps an empty last line after a trailing newline but
+				    inline text does not, so hold that line open. */}
+				{value.endsWith('\n') ? '\u200b' : null}
 			</span>
 			<textarea
 				{...inputProps}
