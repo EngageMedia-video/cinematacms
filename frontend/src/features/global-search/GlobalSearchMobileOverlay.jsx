@@ -100,7 +100,7 @@ function GlobalSearchMobileOverlayInner({ isOpen, onClose }) {
 			<div className="gs-scrollbar flex-1 overflow-y-auto">
 				<SearchResultsPanel state={state} query={debouncedQuery} onSelect={handleSelect} />
 			</div>
-			<style>{`
+			<style nonce={document.querySelector('meta[property="csp-nonce"]')?.content}>{`
 				.gs-scrollbar {
 					scrollbar-color: var(--border-scrollbar) transparent;
 					scrollbar-width: thin;

@@ -241,12 +241,10 @@ export default class VideoViewer extends React.PureComponent {
 					);
 					userThumbLink.setAttribute('title', this.props.data.author_name);
 					userThumbLink.setAttribute('target', '_blank');
-					userThumbLink.setAttribute(
-						'style',
-						'background-image:url(' +
-							formatInnerLink(MediaPageStore.get('media-author-thumbnail-url'), this.props.siteUrl) +
-							')'
-					);
+					userThumbLink.style.backgroundImage =
+						'url(' +
+						formatInnerLink(MediaPageStore.get('media-author-thumbnail-url'), this.props.siteUrl) +
+						')';
 				}
 
 				topLeftHtml.appendChild(userThumbLink);

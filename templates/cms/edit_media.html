@@ -66,7 +66,7 @@
 							<p><strong>Upload a new media file (optional):</strong></p>
 
 							<!-- Fine Uploader Template -->
-							<script type="text/template" id="qq-template">
+							<script nonce="{{ request.csp_nonce }}" type="text/template" id="qq-template">
 								<div class="media-uploader-bottom-wrap qq-uploader-selector">
 									<div class="media-uploader-bottom-left-wrap">
 										<div class="media-drag-drop-wrap">
@@ -211,21 +211,21 @@
 
 																	<div class="license-form-content">
 
-																		<p>Creative Commons licenses help you share your work while keeping your copyright. Other people can copy and distribute your work provided they <a href="https://creativecommons.org/characteristic/by?lang=en" target="_blank" onclick="window.open('http://creativecommons.org/characteristic/by?lang=en', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;">give you credit</a> -- and only on the conditions you specify here. This page helps you choose those conditions.</p>
-																		<p>If you want to share a work you created with no conditions, choose <a href="https://creativecommons.org/choose/zero/partner?partner_icon_url=https://mediacms.engagemedia.org/static/images/em_cc_logo.jpeg" target="_blank" onclick="window.open('https://creativecommons.org/choose/zero/partner?partner_icon_url=https://mediacms.engagemedia.org/static/images/em_cc_logo.jpeg', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;">CC0</a>. If you're sharing a work that isn't covered by copyright or on which the copyright has expired, choose the <a href="https://creativecommons.org/choose/mark/partner?partner_icon_url=https://mediacms.engagemedia.org/static/images/em_cc_logo.jpeg" target="_blank" onclick="window.open('https://creativecommons.org/choose/mark/partner?partner_icon_url=https://mediacms.engagemedia.org/static/images/em_cc_logo.jpeg', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;">Public Domain Mark</a>.</p>
+																		<p>Creative Commons licenses help you share your work while keeping your copyright. Other people can copy and distribute your work provided they <a href="https://creativecommons.org/characteristic/by?lang=en" target="_blank">give you credit</a> -- and only on the conditions you specify here. This page helps you choose those conditions.</p>
+																		<p>If you want to share a work you created with no conditions, choose <a href="https://creativecommons.org/choose/zero/partner?partner_icon_url=https://mediacms.engagemedia.org/static/images/em_cc_logo.jpeg" target="_blank">CC0</a>. If you're sharing a work that isn't covered by copyright or on which the copyright has expired, choose the <a href="https://creativecommons.org/choose/mark/partner?partner_icon_url=https://mediacms.engagemedia.org/static/images/em_cc_logo.jpeg" target="_blank">Public Domain Mark</a>.</p>
 
 																		<div class="license-radio-options">
 
 																			<p>
-																				<span><strong>Allow commercial uses of your work?</strong> (<a href="https://creativecommons.org/characteristic/nc?lang=en_US" target="_blank" onclick="window.open('https://creativecommons.org/characteristic/nc?lang=en_US', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;">more info</a>)</span>
+																				<span><strong>Allow commercial uses of your work?</strong> (<a href="https://creativecommons.org/characteristic/nc?lang=en_US" target="_blank">more info</a>)</span>
 																				<label><input type="radio" name="field_commercial" value="yes"/>Yes</label>
 																				<label><input type="radio" name="field_commercial" value="no"/>No</label>
 																			</p>
 
 																			<p>
-																				<span><strong>Allow modifications of your work?</strong> (<a href="https://creativecommons.org/characteristic/nd?lang=en_US" target="_blank" onclick="window.open('https://creativecommons.org/characteristic/nd?lang=en_US', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;">more info</a>)</span>
+																				<span><strong>Allow modifications of your work?</strong> (<a href="https://creativecommons.org/characteristic/nd?lang=en_US" target="_blank">more info</a>)</span>
 																				<label><input type="radio" name="field_derivatives" value="yes"/>Yes</label>
-																				<label><input type="radio" name="field_derivatives" value="sharealike"/>Yes, as long as others share alike (<a href="https://creativecommons.org/characteristic/sa?lang=en_US" target="_blank" onclick="window.open('https://creativecommons.org/characteristic/sa?lang=en_US', 'characteristic_help', 'width=375,height=300,scrollbars=yes,resizable=yes,toolbar=no,directories=no,location=yes,menubar=no,status=yes'); return false;">more info</a>)</label>
+																				<label><input type="radio" name="field_derivatives" value="sharealike"/>Yes, as long as others share alike (<a href="https://creativecommons.org/characteristic/sa?lang=en_US" target="_blank">more info</a>)</label>
 																				<label><input type="radio" name="field_derivatives" value="no"/>No</label>
 																			</p>
 																		</div>
@@ -276,7 +276,7 @@
                 </div>
         </div>
 
-        <style>
+        <style nonce="{{ request.csp_nonce }}">
 
 			#div_id_content_sensitivity .controls {
 				display: flex;
@@ -458,7 +458,7 @@
         </style>
                 {{ licenses|json_script:"licenses-data" }}
 
-        <script type="text/javascript">
+        <script nonce="{{ request.csp_nonce }}" type="text/javascript">
 
 			// add eventlistener on document.querySelector('#div_id_state select')
 			// when value is 'restricted', show div with id div_id_password. Otherwise hide it
@@ -826,7 +826,7 @@
 
         </script>
 
-		<style>
+		<style nonce="{{ request.csp_nonce }}">
 			/* Animations for upload progress */
 			@keyframes spin {
 				0% { transform: rotate(0deg); }
@@ -1334,7 +1334,15 @@
 			}
 		</style>
 
-		<script>
+		<script nonce="{{ request.csp_nonce }}">
+		document.addEventListener('click', function(event) {
+			var button = event.target.closest('[data-upload-action]');
+			if (!button) return;
+			event.preventDefault();
+			if (button.dataset.uploadAction === 'retry') location.reload();
+			if (button.dataset.uploadAction === 'cancel') cancelUpload();
+		});
+
 		// Initialize shared upload state on window object for cross-scope access
 		window._uploadState = {
 			inProgress: false,
@@ -1555,7 +1563,7 @@
 								'</div>' +
 								'<h3 class="upload-progress-title error">Upload Failed</h3>' +
 								'<p class="upload-progress-message">' + escapeHtml(errorReason || '') + '</p>' +
-								'<button onclick="location.reload()" class="button primaryAction">Try Again</button>';
+								'<button data-upload-action="retry" class="button primaryAction">Try Again</button>';
 						}
 
 						console.warn(qq.format("Error on file number {} - {}.  Reason: {}", id, name, errorReason));
@@ -1596,7 +1604,7 @@
 											'<span>File uploaded. Click "Update Media" below to save.</span>' +
 										'</div>' +
 										'<div style="text-align: right; margin-top: 15px;">' +
-											'<button type="button" class="secondaryAction" onclick="cancelUpload()">Cancel</button>' +
+											'<button type="button" class="secondaryAction" data-upload-action="cancel">Cancel</button>' +
 										'</div>' +
 									'</div>';
 							}
@@ -1617,7 +1625,7 @@
 									'</div>' +
 									'<h3 class="upload-progress-title error">Upload Failed</h3>' +
 									'<p class="upload-progress-message">Please try again.</p>' +
-									'<button onclick="location.reload()" class="button primaryAction">Try Again</button>';
+									'<button data-upload-action="retry" class="button primaryAction">Try Again</button>';
 							}
 						}
 					},
@@ -1656,7 +1664,7 @@
 								'<h3 class="upload-progress-title" style="text-align: center;">Upload Cancelled</h3>' +
 								'<p class="upload-progress-message" style="text-align: center;">Your upload has been cancelled. You can upload a different file or keep the current media file.</p>' +
 								'<div style="text-align: center; margin-top: 15px;">' +
-									'<button onclick="cancelUpload()" class="button primaryAction">Upload a Different File</button>' +
+									'<button data-upload-action="cancel" class="button primaryAction">Upload a Different File</button>' +
 								'</div>';
 						}
 					}
@@ -1676,7 +1684,7 @@
 			}
 		});
 		</script>
-		<script>
+		<script nonce="{{ request.csp_nonce }}">
 		document.addEventListener('DOMContentLoaded', function() {
 			const yearSelect = document.querySelector('#id_year_produced');
 			const customInput = document.querySelector('#id_year_produced_custom');

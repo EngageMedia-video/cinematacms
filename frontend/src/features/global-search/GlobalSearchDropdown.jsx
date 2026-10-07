@@ -111,7 +111,7 @@ function GlobalSearchDropdownInner() {
 				</div>
 			) : null}
 
-			<style>{`
+			<style nonce={document.querySelector('meta[property="csp-nonce"]')?.content}>{`
 				@keyframes global-search-fade-in {
 					from { opacity: 0; transform: translateY(-4px); }
 					to { opacity: 1; transform: translateY(0); }

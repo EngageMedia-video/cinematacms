@@ -195,7 +195,7 @@ export class VideoViewerPage extends Page {
 					tabMode="wrap"
 					defaultSelectedTab={requestedTab()}
 					listClassName="rounded-none rounded-tl-ds-8 rounded-tr-ds-8"
-					triggerClassName="rounded-none py-3 px-size-22 text-text-tab-trigger aria-selected:text-text-primary"
+					triggerClassName="rounded-none py-3 px-size-24 text-text-tab-trigger aria-selected:text-text-primary"
 					triggerSelectedColor="bg-bg-surface"
 					panelClassName="mt-0 p-0 bg-bg-surface rounded-b-ds-8"
 					aria-label="Video comments and notes"
