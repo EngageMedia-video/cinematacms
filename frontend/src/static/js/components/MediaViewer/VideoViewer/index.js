@@ -5,6 +5,7 @@ import PropTypes from 'prop-types';
 import PageStore from '../../../pages/_PageStore.js';
 
 import MediaPageStore from '../../../pages/MediaPage/store.js';
+import * as MediaPageActions from '../../../pages/MediaPage/actions.js';
 
 import VideoPlayerStore from './store.js';
 import * as VideoPlayerActions from './actions.js';
@@ -175,7 +176,8 @@ export default class VideoViewer extends React.PureComponent {
 			}
 		}
 
-		PageStore.on('switched_media_auto_play', this.onUpdateMediaAutoPlay.bind(this));
+		this.onUpdateMediaAutoPlay = this.onUpdateMediaAutoPlay.bind(this);
+		PageStore.on('switched_media_auto_play', this.onUpdateMediaAutoPlay);
 
 		this.browserCache = new BrowserCache(SiteContext._currentValue.id, 86400); // Keep cache data "fresh" for one day.
 
@@ -358,6 +360,8 @@ export default class VideoViewer extends React.PureComponent {
 	}
 
 	componentWillUnmount() {
+		clearTimeout(this.transitionTimer);
+		PageStore.removeListener('switched_media_auto_play', this.onUpdateMediaAutoPlay);
 		this.unsetRecommendedMedia();
 	}
 
@@ -621,7 +625,7 @@ export default class VideoViewer extends React.PureComponent {
 				// NORMAL CASE → Has next video
 				const separator = nextMedia.url.includes('?') ? '&' : '?';
 				const nextUrl = `${nextMedia.url}${playlistId ? `${separator}pl=${playlistId}` : ''}`;
-				this.showTransitionCard(nextUrl);
+				this.showTransitionCard(nextUrl, nextMedia.friendly_token);
 			} else {
 				const playlistUrl = `/playlists/${playlistId}`;
 
@@ -646,7 +650,7 @@ export default class VideoViewer extends React.PureComponent {
 		}
 	};
 
-	showTransitionCard(nextMediaUrl) {
+	showTransitionCard(nextMediaUrl, nextFriendlyToken) {
 		const nextVideoData = this.getNextVideoMetadata();
 		if (!nextVideoData) {
 			console.warn('⚠ No next video metadata found, aborting transition card.');
@@ -669,10 +673,27 @@ export default class VideoViewer extends React.PureComponent {
 			console.warn('⚠ No video element found to hide.');
 		}
 
-		// Navigate to next video after 3s
-		setTimeout(() => {
-			this.navigateWithFullscreenRestore(nextMediaUrl);
+		// Play next video after 3s
+		this.transitionTimer = setTimeout(() => {
+			this.playNextPlaylistMedia(nextMediaUrl, nextFriendlyToken);
 		}, 3000);
+	}
+
+	// Leaving the page always exits fullscreen (#758), so a fullscreen playlist
+	// keeps playing in this page. The page container is the fullscreen element.
+	playNextPlaylistMedia(nextMediaUrl, nextFriendlyToken) {
+		const container = this.props.fullscreenContainerRef?.current;
+
+		if (container && document.fullscreenElement === container) {
+			MediaPageActions.switchMedia({
+				friendlyToken: nextFriendlyToken,
+				url: nextMediaUrl,
+				onFallback: () => this.navigateWithFullscreenRestore(nextMediaUrl),
+			});
+			return;
+		}
+
+		this.navigateWithFullscreenRestore(nextMediaUrl);
 	}
 
 	// --------------------------------------------
@@ -818,6 +839,7 @@ export default class VideoViewer extends React.PureComponent {
 										enableAutoplay={!this.props.inEmbed}
 										inEmbed={this.props.inEmbed}
 										hasTheaterMode={!this.props.inEmbed}
+										fullscreenContainerRef={this.props.fullscreenContainerRef}
 										hasNextLink={!!nextLink}
 										hasPreviousLink={!!previousLink}
 										errorMessage={MediaPageStore.get('media-load-error-message')}
@@ -844,6 +866,7 @@ VideoViewer.defaultProps = {
 VideoViewer.propTypes = {
 	inEmbed: PropTypes.bool,
 	siteUrl: PropTypes.string.isRequired,
+	fullscreenContainerRef: PropTypes.shape({ current: PropTypes.object }),
 };
 
 function findGetParameter(parameterName) {

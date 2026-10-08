@@ -407,6 +407,38 @@ class MediaAnalyticsTests(TestCase):
         self.assertEqual(denied.status_code, 401)
         self.assertNotIn("hero_measurement_token", denied.data)
 
+    def test_detail_grants_page_measurement_only_where_the_media_page_measures(self):
+        # Playlist playback that stays in fullscreen loads the next item from this
+        # API instead of the media page, so it needs the page's playback grant.
+        owner = create_test_user()
+        public = create_test_media(owner, state="public")
+        response = self.client.get(f"/api/v1/media/{public.friendly_token}")
+        grant = signing.loads(response.data["page_measurement_token"], salt="cinemata.playback.v1")
+        self.assertEqual(grant["media"], str(public.uid))
+        self.assertEqual(grant["context"], "page")
+
+        image = create_test_media(owner, state="public", media_type="image")
+        self.assertIsNone(self.client.get(f"/api/v1/media/{image.friendly_token}").data["page_measurement_token"])
+
+        self.client.force_login(owner)
+        private = create_test_media(owner, state="private")
+        owned_private = self.client.get(f"/api/v1/media/{private.friendly_token}")
+        self.assertEqual(owned_private.status_code, 200)
+        self.assertIsNone(owned_private.data["page_measurement_token"])
+
+    def test_detail_reports_the_audience_group_only_where_the_media_page_does(self):
+        # An item played in place carries the group a page load of it would,
+        # even after a non-public first item that rendered none.
+        owner = create_test_user()
+        public = create_test_media(owner, state="public")
+        self.assertEqual(self.client.get(f"/api/v1/media/{public.friendly_token}").data["audience_group"], "anonymous")
+
+        unlisted = create_test_media(owner, state="unlisted")
+        self.assertIsNone(self.client.get(f"/api/v1/media/{unlisted.friendly_token}").data["audience_group"])
+
+        self.client.force_login(create_test_user())
+        self.assertEqual(self.client.get(f"/api/v1/media/{public.friendly_token}").data["audience_group"], "regular")
+
     def test_media_cut_rotates_only_when_source_file_changes(self):
         media = create_test_media(create_test_user())
         original = media.analytics_revision
