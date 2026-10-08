@@ -68,6 +68,20 @@ function extractPlaylistId() {
 	return playlistId;
 }
 
+// Category-specific fields accepted by CommunityImpactSerializer.
+const COMMUNITY_IMPACT_DETAIL_FIELDS = [
+	'year',
+	'is_online',
+	'city',
+	'country',
+	'organiser',
+	'organiser_private',
+	'creator',
+	'publication',
+	'medium',
+	'award_result',
+];
+
 function firstCommunityImpactErrorMessage(value) {
 	if (Array.isArray(value)) {
 		return value.length ? firstCommunityImpactErrorMessage(value[0]) : '';
@@ -1532,6 +1546,11 @@ class MediaPageStore extends EventEmitter {
 		if (communityImpactData.event_date) {
 			payload.event_date = communityImpactData.event_date;
 		}
+		COMMUNITY_IMPACT_DETAIL_FIELDS.forEach((field) => {
+			if (void 0 !== communityImpactData[field]) {
+				payload[field] = communityImpactData[field];
+			}
+		});
 
 		postRequest(
 			this.communityImpactAPIUrl,

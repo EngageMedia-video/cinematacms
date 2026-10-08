@@ -5,6 +5,7 @@ import { AddImpactDialog } from './AddImpactDialog';
 import { ImpactCard } from './ImpactCard';
 import { ImpactEmptyState } from './ImpactEmptyState';
 import { COMMUNITY_IMPACT_CATEGORIES } from './impactIcons';
+import { describeImpactEntry } from './utils/describeImpactEntry';
 
 function hasListEntries(category) {
 	return Array.isArray(category)
@@ -36,6 +37,7 @@ function normalizeEntry(entry) {
 	return {
 		...entry,
 		date: entry.date || entry.event_date,
+		summary: entry.summary ?? describeImpactEntry(entry),
 		title: entry.title || entry.location || '',
 		url: entry.url || entry.link || '',
 	};
@@ -74,6 +76,31 @@ function buildCardProps(variant, data = {}) {
 
 	if (variant === 'screening') {
 		return { title: 'Screened In', subtitle: `This film has been screened ${total}x` };
+	}
+
+	if (variant === 'article') {
+		return { title: 'Written About In', subtitle: `This film has been written about ${total}x` };
+	}
+
+	if (variant === 'referenced') {
+		return {
+			title: 'Referenced In',
+			subtitle: `This film has been referenced in ${total} ${total === 1 ? 'work' : 'works'}`,
+		};
+	}
+
+	if (variant === 'award') {
+		return {
+			title: 'Awards & Recognition',
+			subtitle: `This film has ${total} ${total === 1 ? 'award or nomination' : 'awards and nominations'}`,
+		};
+	}
+
+	if (variant === 'teaching') {
+		return {
+			title: 'Taught & Researched In',
+			subtitle: `Used in ${total} ${total === 1 ? 'class or study' : 'classes and studies'}`,
+		};
 	}
 
 	if (variant === 'featured') {
@@ -183,7 +210,12 @@ export function CommunityImpactSection({
 
 			<AddImpactDialog
 				open={dialogOpen}
-				onClose={() => setDialogOpen(false)}
+				onClose={() => {
+					setDialogOpen(false);
+					if (submitError) {
+						onSubmitErrorClear?.();
+					}
+				}}
 				onSubmit={handleSubmit}
 				onSubmitErrorClear={onSubmitErrorClear}
 				submitError={submitError}
@@ -194,9 +226,12 @@ export function CommunityImpactSection({
 }
 
 const listEntryShape = PropTypes.shape({
+	category: PropTypes.string,
 	date: PropTypes.string,
+	summary: PropTypes.string,
 	title: PropTypes.string.isRequired,
 	url: PropTypes.string,
+	year: PropTypes.number,
 });
 
 const entryCategoryShape = PropTypes.oneOfType([
@@ -220,8 +255,11 @@ CommunityImpactSection.propTypes = {
 				totalCount: PropTypes.number,
 			}),
 		]),
+		article: entryCategoryShape,
+		award: entryCategoryShape,
 		featured: entryCategoryShape,
 		curated: entryCategoryShape,
+		referenced: entryCategoryShape,
 		saves: PropTypes.oneOfType([
 			PropTypes.arrayOf(listEntryShape),
 			PropTypes.shape({
@@ -233,6 +271,7 @@ CommunityImpactSection.propTypes = {
 			}),
 		]),
 		screening: entryCategoryShape,
+		teaching: entryCategoryShape,
 	}),
 	onAddImpact: PropTypes.func,
 	onSubmitErrorClear: PropTypes.func,
