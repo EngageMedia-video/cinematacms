@@ -2303,6 +2303,7 @@ class MediaSearch(APIView):
                     community_impacts__category__in=[
                         CommunityImpact.SCREENING,
                         CommunityImpact.FEATURED,
+                        CommunityImpact.AWARD,
                     ],
                 ).distinct()
 
