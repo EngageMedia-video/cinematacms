@@ -49,11 +49,11 @@ describe('ImpactTimelineItem', () => {
 		const connector = rail?.querySelector('.bg-border-default');
 		const dot = rail?.querySelector('.bg-bg-timeline-dot');
 
-		expect(item).toHaveClass('min-h-[99px]');
-		expect(rail).toHaveClass('min-h-[99px]');
-		expect(rail).not.toHaveClass('h-[99px]');
+		expect(item).toHaveClass('min-h-24.75');
+		expect(rail).toHaveClass('min-h-24.75');
+		expect(rail).not.toHaveClass('h-24.75');
 		expect(connector).toHaveClass('top-0', 'bottom-0');
 		expect(connector).not.toHaveClass('h-[34px]', 'h-[42px]');
-		expect(dot).toHaveClass('top-[29px]', 'translate-y-1/2');
+		expect(dot).toHaveClass('top-7.25', 'translate-y-1/2');
 	});
 });
