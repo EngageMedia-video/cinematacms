@@ -2,8 +2,9 @@ import PropTypes from 'prop-types';
 import { Icon } from '../../../shared/components';
 import { formatImpactDate, getSafeHref } from './utils/formatDate';
 
-export function ImpactTimelineItem({ date = '', title, url }) {
-	const formattedDate = formatImpactDate(date);
+export function ImpactTimelineItem({ date = '', summary = '', title, url, year }) {
+	const formattedDate = year ? String(year) : formatImpactDate(date);
+	const dateTime = year ? String(year) : date;
 	const safeHref = getSafeHref(url);
 
 	return (
@@ -15,9 +16,12 @@ export function ImpactTimelineItem({ date = '', title, url }) {
 
 			<div className="min-w-0 pt-[29px]">
 				<p className="body-body-14-bold m-0 break-words text-text-primary">{title}</p>
+				{summary ? (
+					<p className="body-body-12-regular m-0 mt-space-xs break-words text-text-muted">{summary}</p>
+				) : null}
 				<div className="mt-space-xs flex min-w-0 flex-wrap items-center gap-space-xs text-text-muted">
 					{formattedDate ? (
-						<time className="body-body-12-regular" dateTime={date}>
+						<time className="body-body-12-regular" dateTime={dateTime}>
 							{formattedDate}
 						</time>
 					) : null}
@@ -45,6 +49,8 @@ export function ImpactTimelineItem({ date = '', title, url }) {
 
 ImpactTimelineItem.propTypes = {
 	date: PropTypes.string,
+	summary: PropTypes.string,
 	title: PropTypes.string.isRequired,
 	url: PropTypes.string,
+	year: PropTypes.number,
 };
