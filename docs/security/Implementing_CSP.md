@@ -1,147 +1,122 @@
-# Implementing Content Security Policy (CSP) in CinemataCMS
+# Configure Content Security Policy
 
-## Understanding the Risk
+CinemataCMS uses `django-csp==4.0` with a strict policy in **report-only mode**
+by default. Browsers show violations without blocking resources. Enforcement
+is an operator decision after testing the deployment's required flows.
 
-Without a Content Security Policy, browsers assume all content is safe and will execute it without question. This creates a critical vulnerability: if an attacker injects malicious code—through a compromised comment section, third-party library, or other vector—the browser executes it immediately, potentially compromising user data and platform security.
+## Configure deployment sources
 
-A CSP acts as an allowlist that explicitly defines which sources the browser should trust. For example: "Only load scripts from cinemata.org and analytics.google.com. Block everything else." This dramatically reduces the attack surface for cross-site scripting (XSS) and other injection attacks.
+Install the locked dependencies with `uv sync --frozen`. Configure the policy
+through the application's environment before restarting web workers:
 
-## Implementation Guide Using django-csp
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `CSP_REPORT_ONLY` | `true` | Set to `false` to enforce the policy |
+| `CSP_REPORT_URI` | Empty | Optional CSP report collector URL |
+| `CSP_SCRIPT_SRC` | Empty | Additional script sources |
+| `CSP_STYLE_SRC` | Empty | Additional stylesheet sources |
+| `CSP_IMG_SRC` | Empty | Additional image sources |
+| `CSP_FONT_SRC` | Empty | Additional font sources |
+| `CSP_MEDIA_SRC` | Empty | Additional audio/video sources |
+| `CSP_CONNECT_SRC` | Empty | Additional fetch, upload, and WebSocket sources |
+| `CSP_FRAME_SRC` | Empty | Additional iframe sources |
+| `CSP_WORKER_SRC` | Empty | Additional worker sources |
 
-This guide uses the `django-csp` package to implement CSP following the Principle of Least Privilege, with nonce-based script authorization for enhanced security.
+Each source variable accepts a comma-separated list and **extends** the
+built-in sources. Add only the origins or paths the deployment needs. For
+example, an installation with external images and a separate upload service:
 
-### 1. Installation
-
-Install the django-csp package in your development environment:
-
-```bash
-pip install django-csp
+```dotenv
+CSP_IMG_SRC=https://images.example.org
+CSP_CONNECT_SRC=https://uploads.example.org
 ```
 
-### 2. Middleware Configuration
+`cms/csp.py` builds the policy from `STATIC_URL`, `MEDIA_URL`, `UPLOAD_HOST`,
+the enabled `ANALYTICS_URL`, and the configured Vite development server.
+`UPLOAD_HOST` defaults to `FRONTEND_HOST` for policy construction. Vite HTTP
+and WebSocket sources appear only when Vite development mode is enabled.
 
-Add the CSP middleware to your `settings.py`. Position matters: place it near the top of the `MIDDLEWARE` list to ensure headers are applied early in the response cycle, but after `SessionMiddleware` if using nonces.
+The policy permits the CMS's existing optional integrations: the pinned
+Video.js and FineUploader CDN files, Material Icons fonts, and Google
+reCAPTCHA. The configured analytics script path and connection origin are
+allowed only when analytics is enabled. No installation-specific analytics,
+media, upload, or production hostname is included in the CSP defaults.
 
-```python
-MIDDLEWARE = [
-    # ... existing middleware ...
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'csp.middleware.CSPMiddleware',  # Add CSP middleware here
-    # ... remaining middleware ...
-]
-```
+The application converts these environment variables into django-csp 4's
+`CONTENT_SECURITY_POLICY` and `CONTENT_SECURITY_POLICY_REPORT_ONLY` dictionaries.
+The similarly named legacy django-csp 3.x settings do not configure version 4.
 
-### 3. Define the Security Policy
+## Check report-only behavior
 
-Add the following configuration to `settings.py`. This implements a strict, deny-by-default policy that only permits explicitly authorized sources:
+1. Keep `CSP_REPORT_ONLY=true` and restart web workers.
+2. Inspect a page response. Expect `Content-Security-Policy-Report-Only` and
+   no enforced CSP header.
+3. Check home, search, profiles, playlists, login, signup, MFA, contact CAPTCHA,
+   uploads, replacement uploads, metadata/subtitle editing, MP4/HLS playback,
+   captions, embeds, maintenance pages, and the admin editor. Check both themes
+   and both states of the `load_from_cdn` Waffle switch.
+4. Inspect browser console and network logs for violations and failed resources.
+   Correct required resources before enabling enforcement.
 
-```python
-# Default: Deny everything unless explicitly allowed
-CSP_DEFAULT_SRC = ("'none'",)
+Report collection is optional. Without `CSP_REPORT_URI`, use browser developer
+tools. The CMS does not add a public report-ingestion endpoint. Operators own
+the collector, rate limits, retention, and rollout observation period. Browser
+reports can contain private page URLs, media tokens, and script content; use a
+collector that redacts these fields. Do not enable `report-sample`.
 
-# Images: Allow from own domain and data URIs (for base64-encoded images)
-CSP_IMG_SRC = ("'self'", "data:")
+Some legacy HTML style attributes, rich text, and third-party editors may still
+report violations. Nonces authorize `<style>` elements, not style attributes.
+Move required static styles into stylesheets. For trusted dynamic DOM styling,
+assign individual CSSOM properties rather than a complete `style` attribute.
+Do not add `unsafe-inline` or `unsafe-eval` to bypass failures.
 
-# Stylesheets: Allow from own domain only
-CSP_STYLE_SRC = ("'self'",)
+## Maintain trusted inline code
 
-# Scripts: Allow from own domain only
-CSP_SCRIPT_SRC = ("'self'",)
-
-# Enable nonces for inline scripts (random tokens per request)
-CSP_INCLUDE_NONCE_IN = ['script-src']
-```
-
-### 4. Using Nonces in Templates
-
-Nonces (numbers used once) are cryptographically random tokens generated for each page load. They prevent attackers from injecting unauthorized `<script>` tags because they cannot predict the current request's nonce value.
-
-To use nonces in your Django templates, load the CSP template tags and add the nonce attribute to any inline scripts:
+The policy denies unknown sources, objects, and base URLs. Trusted inline
+scripts and styles use a fresh request nonce:
 
 ```django
-{% load csp %}
-
 <script nonce="{{ request.csp_nonce }}">
-    console.log("This is a safe, authorized script.");
-    // Your inline JavaScript here
+    // Trusted application code.
 </script>
+<style nonce="{{ request.csp_nonce }}">
+    /* Trusted application CSS. */
+</style>
 ```
 
-## Additional Configuration Options
+Never add nonces to user-authored content or rewrite arbitrary response HTML
+to grant it trust. Use native links or `addEventListener` instead of inline
+event handlers. The CAPTCHA callback uses an external same-origin file.
 
-As you develop CinemataCMS features, you may need to expand the CSP policy. Here are common additions:
+The root template publishes a `csp-nonce` meta tag before React starts.
+styled-jsx and trusted React style elements use that nonce. Vite's React
+refresh script receives it through the template tag. Video.js runs in its
+supported `VIDEOJS_NO_DYNAMIC_STYLE` mode; application CSS supplies the player
+dimensions. Embedded Video.js icons require `data:` fonts; upload previews and
+playback use the scoped `data:` and `blob:` sources.
 
-```python
-# External fonts (if using Google Fonts or similar)
-CSP_FONT_SRC = ("'self'", "fonts.gstatic.com")
+Responses that generate a nonce receive `Cache-Control: private, no-store`.
+Configure reverse proxies and CDNs to bypass HTML caching. Never reuse a
+rendered nonce or cache the body independently of its CSP header. Responses
+that do not generate a nonce retain their existing cache policy.
 
-# External analytics or CDN scripts
-CSP_SCRIPT_SRC = ("'self'", "analytics.google.com", "cdn.jsdelivr.net")
+Normal pages permit same-origin framing. Both embed views remove only
+`frame-ancestors` and retain their existing X-Frame-Options exemptions and
+authorization checks.
 
-# Media files (video/audio)
-CSP_MEDIA_SRC = ("'self'", "*.cinemata.org")
+## Enable enforcement
 
-# Frames (if embedding content)
-CSP_FRAME_SRC = ("'self'",)
+After required flows pass with no critical violations, set
+`CSP_REPORT_ONLY=false` and restart web workers. The same policy now appears
+in `Content-Security-Policy`. Repeat the deployment checks. Roll back blocking
+by setting `CSP_REPORT_ONLY=true` and restarting workers.
 
-# Connect sources (for AJAX/fetch requests)
-CSP_CONNECT_SRC = ("'self'", "api.cinemata.org")
+## Verify changes
+
+```bash
+make test TEST_ARGS="cms.tests.test_csp --noinput"
+make agent-check
 ```
 
-## Testing and Monitoring
-
-### Report-Only Mode
-
-Before enforcing the policy, test it in report-only mode to identify violations without blocking content:
-
-```python
-CSP_REPORT_ONLY = True
-CSP_REPORT_URI = '/csp-report/'  # Endpoint to receive violation reports
-```
-
-### Monitoring Violations
-
-Create a view to log CSP violations and monitor them during development:
-
-```python
-import json
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
-
-@csrf_exempt
-def csp_report(request):
-    if request.method == 'POST':
-        report = json.loads(request.body.decode('utf-8'))
-        # Log the violation for review
-        logger.warning(f"CSP Violation: {report}")
-    return HttpResponse(status=204)
-```
-
-## Best Practices for CinemataCMS
-
-1. **Start strict**: Begin with `CSP_DEFAULT_SRC = ("'none'",)` and add permissions only as needed
-2. **Avoid `'unsafe-inline'` and `'unsafe-eval'`**: These bypass CSP protections; use nonces instead
-3. **Use nonces for all inline scripts**: Never hardcode scripts without nonces
-4. **Test thoroughly**: Use report-only mode before enforcement
-5. **Document exceptions**: When adding sources to the allowlist, document why they're needed
-6. **Regular audits**: Periodically review and tighten the CSP as the codebase evolves
-
-## Troubleshooting Common Issues
-
-**Scripts not loading**: Check browser console for CSP violations and add legitimate sources to `CSP_SCRIPT_SRC`
-
-**Styles broken**: Ensure external stylesheets are listed in `CSP_STYLE_SRC`, or use nonces for inline styles
-
-**Images not displaying**: Verify image sources are included in `CSP_IMG_SRC` (including `data:` for base64 images)
-
-**Third-party integrations failing**: Add their domains to the appropriate CSP directive (scripts, styles, frames, etc.)
-
-## Resources
-
-- [MDN CSP Documentation](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP)
-- [django-csp Documentation](https://django-csp.readthedocs.io/)
-- [CSP Evaluator Tool](https://csp-evaluator.withgoogle.com/)
-
----
-
-*This documentation is part of the CinemataCMS security implementation guide. For questions or issues, consult the development team or open an issue on GitHub.*
+See [django-csp 4 configuration](https://django-csp.readthedocs.io/en/latest/configuration.html)
+and [nonce behavior](https://django-csp.readthedocs.io/en/latest/nonce.html).

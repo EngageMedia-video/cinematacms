@@ -24,7 +24,7 @@
       </button>
     </form>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
   document.addEventListener("DOMContentLoaded", function() {
     // OTP-specific
     const originalInput = document.querySelector('.otp-hidden-input');

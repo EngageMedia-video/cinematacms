@@ -23,7 +23,7 @@
 {% block content %}
 {{ allowed_extensions|json_script:"add-media-allowed-extensions" }}
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 	window.MediaCMS = window.MediaCMS || {};
 	window.MediaCMS.addMediaPage = {
 		canAdd: {% if can_add %}true{% else %}false{% endif %},
