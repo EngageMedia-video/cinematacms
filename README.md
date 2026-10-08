@@ -50,7 +50,7 @@ Cinemata-specific features built on top of the platform's MediaCMS origins:
 - **SRT subtitle management**: upload, edit, and download subtitle and caption files
 - **Granular media privacy**: public, private, and password-protected content with enforced file-level access controls
 - **Scheduled visibility control**: set a film private during a festival window, with automatic public release after a chosen date
-- **Community Impact recording**: impact measured as screenings, academic use, curation, and playlist inclusion, not view counts or viral metrics
+- **Community Impact recording**: impact measured as screenings, articles and reviews, references in other works, awards, teaching and research, curation, and playlist inclusion, not view counts or viral metrics
 - **Content sensitivity tagging**: films can be marked with sensitivity labels and context notes
 - **Expanded user roles**: Trusted User role with elevated publishing and ASR access; Curator role; role badges on media pages and comments
 - **Notification system**: bell icon, in-app and email notifications
@@ -193,7 +193,7 @@ Shipped over five months and launched at the first Cinemata Community Convening 
 
 - Scheduled visibility control (festival-window privacy)
 - Bulk upload for institutional partners
-- Community Impact recording (screenings, academic use, curation, playlist inclusion)
+- Community Impact recording (screenings, articles, references, awards, teaching, curation, playlist inclusion)
 - Content sensitivity tagging with context notes
 - Upload progress and encoding status
 - Profile and media management redesign
