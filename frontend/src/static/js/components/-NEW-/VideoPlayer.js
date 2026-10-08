@@ -137,6 +137,45 @@ export function setupFullscreenOrientation(playerInstance, videoElement) {
 	player.on('dispose', unlock);
 }
 
+// Fullscreen a stable container instead of the video.js element, so the player
+// inside it can be replaced (playlist items played in place) without leaving
+// fullscreen. Browsers allow only one fullscreen change without a user gesture,
+// so the fullscreen element itself must never change between items.
+//
+// video.js 7 hard-codes its own element in two private hooks: the request and
+// the document fullscreenchange check. Both are replaced on this instance only.
+export function bindFullscreenToContainer(playerInstance, container) {
+	const player = playerInstance?.player;
+
+	if (!player || !container || 'function' !== typeof container.requestFullscreen) {
+		return;
+	}
+
+	const sync = () => {
+		const isFullscreen = document.fullscreenElement === container;
+
+		if (isFullscreen !== player.isFullscreen()) {
+			player.isFullscreen(isFullscreen);
+			// The DOM event fires on the container, not on the player element.
+			player.trigger('fullscreenchange');
+		}
+	};
+
+	player.requestFullscreenHelper_ = (fullscreenOptions) => {
+		const promise = container.requestFullscreen(fullscreenOptions);
+
+		if (promise && 'function' === typeof promise.then) {
+			promise.then(sync, sync);
+		}
+
+		return promise;
+	};
+
+	player.documentFullscreenChange_ = sync;
+
+	sync();
+}
+
 export function VideoPlayerError(props) {
 	return (
 		<div className="error-container">
@@ -371,6 +410,8 @@ export function VideoPlayer(props) {
 			props.analyticsMedia
 		);
 
+		bindFullscreenToContainer(playerRef.current, props.fullscreenContainerRef?.current);
+
 		if (void 0 !== props.onPlayerInitCallback) {
 			props.onPlayerInitCallback(playerRef.current, videoElement);
 		}
@@ -460,6 +501,8 @@ VideoPlayer.propTypes = {
 	analyticsMedia: PropTypes.object,
 	onStateUpdateCallback: PropTypes.func,
 	onUnmountCallback: PropTypes.func,
+	// Element that goes fullscreen instead of the player, so it survives a player swap.
+	fullscreenContainerRef: PropTypes.shape({ current: PropTypes.object }),
 	// New props for device tier detection, debugging, and anti-buffering
 	debug: PropTypes.bool,
 	forceTier: PropTypes.oneOf(['low', 'mid', 'high']),

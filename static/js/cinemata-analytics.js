@@ -4,7 +4,7 @@
 
     const config = JSON.parse(element.textContent);
     const tag = config.media_id ? `media:${config.media_id}` : config.playlist_id ? `playlist:${config.playlist_id}` : undefined;
-    const referrer = config.nonpublic || !document.referrer ? '' : (() => {
+    let referrer = config.nonpublic || !document.referrer ? '' : (() => {
         try {
             const url = new URL(document.referrer);
             return ['http:', 'https:'].includes(url.protocol) ? `${url.protocol}//${url.hostname}/` : '';
@@ -17,8 +17,16 @@
     }
     const eventName = /^[a-z][a-z0-9_]{0,49}$/;
     const routeName = /^[a-zA-Z0-9_-]{1,64}$/;
-    const audienceGroup = !config.nonpublic && ['anonymous', 'regular', 'trusted', 'curator'].includes(config.audience_group)
-        ? config.audience_group : null;
+    const audienceFor = (group) => !config.nonpublic && ['anonymous', 'regular', 'trusted', 'curator'].includes(group)
+        ? group : null;
+    let audienceGroup = audienceFor(config.audience_group);
+    // Each media item keeps the privacy context it was viewed with, for events
+    // that wait for Umami to load while a playlist moves on in place.
+    const mediaPrivacy = new Map();
+    function rememberMediaPrivacy() {
+        if (config.media_id) mediaPrivacy.set(config.media_id, { audienceGroup, referrer, nonpublic: !!config.nonpublic });
+    }
+    rememberMediaPrivacy();
     const privateActions = {
         journal_create: 'journal', journal_update: 'journal', journal_delete: 'journal',
         notification_click: 'notifications', notification_read: 'notifications', notifications_read_all: 'notifications',
@@ -31,6 +39,7 @@
         if (payload.name && !eventName.test(payload.name)) return false;
         const privatePath = Object.hasOwn(privateActions, payload.name) ? privateActions[payload.name] : null;
         const mediaId = privatePath ? null : /^media:([0-9a-f-]{36})$/.exec(payload.tag || '')?.[1];
+        const privacy = (mediaId && mediaPrivacy.get(mediaId)) || { audienceGroup, referrer, nonpublic: config.nonpublic };
         const data = mediaId ? {
             media_id: mediaId,
             media_type: ['video', 'audio', 'image', 'pdf', 'document'].includes(payload.data?.media_type) ? payload.data.media_type : 'other',
@@ -46,7 +55,7 @@
         if (payload.name === 'outbound_click' && /^[a-z0-9.-]{1,253}$/i.test(payload.data?.destination || '')) {
             data.destination = payload.data.destination;
         }
-        if (payload.name === 'media_view' && !config.nonpublic &&
+        if (payload.name === 'media_view' && !privacy.nonpublic &&
             /^[a-z0-9.-]{1,253}$/i.test(payload.data?.source_domain || '')) {
             data.source_domain = payload.data.source_domain;
         }
@@ -58,7 +67,7 @@
         }
         const playlistId = !privatePath && !mediaId && /^[0-9a-f-]{36}$/.test(config.playlist_id || '') ? config.playlist_id : null;
         if (playlistId) data.playlist_id = playlistId;
-        if (audienceGroup && !privatePath && data.context !== 'workflow') data.audience_group = audienceGroup;
+        if (privacy.audienceGroup && !privatePath && data.context !== 'workflow') data.audience_group = privacy.audienceGroup;
         const virtualPath = !config.media_id && /^\/page\/[a-zA-Z0-9_-]{1,64}$/.test(payload.url || '') ? payload.url : null;
         const interactionPath = mediaId && ['/media/hero', '/media/playlist', '/media/workflow'].includes(payload.url) ? payload.url : null;
         return {
@@ -66,7 +75,7 @@
             hostname: window.location.hostname,
             url: privatePath ? `/page/${privatePath}` : interactionPath || virtualPath || config.path,
             title: mediaId ? 'Media' : 'Page',
-            referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : referrer,
+            referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : privacy.referrer,
             ...(mediaId ? { tag: `${data.context === 'workflow' ? 'workflow' : 'media'}:${mediaId}` } : {}),
             ...(playlistId ? { tag: `playlist:${playlistId}` } : {}),
             ...(payload.name ? { name: payload.name, data } : Object.keys(data).length ? { data } : {}),
@@ -81,21 +90,21 @@
     function send(name, data = {}, media = null) {
         if (!eventName.test(name) || hasDoNotTrack()) return;
         if (!config.url || !config.website_id) return;
-        const track = () => {
-            const mediaId = media?.id || config.media_id;
-            emitUmami((props) => ({
-                ...props,
-                name,
-                tag: mediaId ? `media:${mediaId}` : tag,
-                url: media ? ({ hero: '/media/hero', playlist: '/media/playlist', workflow: '/media/workflow' }[media.context] || config.path) : config.path,
-                title: mediaId ? 'Media' : 'Page',
-                referrer,
-                data: {
-                    ...(mediaId ? { media_id: mediaId, media_type: media?.type || config.media_type, context: media?.context || config.context, revision: media?.revision || config.revision } : {}),
-                    ...data,
-                },
-            }));
+        // Fixed now: events wait for Umami to load, and a playlist can move to
+        // its next item in place before then.
+        const mediaId = media?.id || config.media_id;
+        const event = {
+            name,
+            tag: mediaId ? `media:${mediaId}` : tag,
+            url: media ? ({ hero: '/media/hero', playlist: '/media/playlist', workflow: '/media/workflow' }[media.context] || config.path) : config.path,
+            title: mediaId ? 'Media' : 'Page',
+            referrer,
+            data: {
+                ...(mediaId ? { media_id: mediaId, media_type: media?.type || config.media_type, context: media?.context || config.context, revision: media?.revision || config.revision } : {}),
+                ...data,
+            },
         };
+        const track = () => emitUmami((props) => ({ ...props, ...event }));
         if (!window.umami) {
             pending.push(track);
             return;
@@ -116,6 +125,31 @@
             return;
         }
         track();
+    }
+
+    function currentPageview() {
+        return { website: config.website_id, url: config.path, title: config.media_id ? 'Media' : 'Page', referrer, tag: config.media_id ? `media:${config.media_id}` : tag, data: config.media_id ? { media_type: config.media_type, context: config.context, revision: config.revision } : undefined };
+    }
+
+    // A playlist item played in place counts like a navigation to its page.
+    function switchMedia(media) {
+        if (!config.media_id || !media?.id) return;
+        config.media_id = media.id;
+        config.media_type = media.type;
+        config.nonpublic = media.state !== 'public';
+        config.revision = media.revision;
+        config.measurement_token = media.measurement_token || null;
+        audienceGroup = audienceFor(media.audience_group);
+        referrer = config.nonpublic ? '' : `${window.location.protocol}//${window.location.hostname}/`;
+        rememberMediaPrivacy();
+        window.CinemataAnalytics.mediaId = media.id;
+        if (config.url && config.website_id && !hasDoNotTrack()) {
+            const view = currentPageview();
+            if (window.umami) emitUmami(view);
+            else pending.push(() => emitUmami(view));
+        }
+        if (audienceGroup) send('page_view');
+        send('media_view', referrer ? { source_domain: new URL(referrer).hostname } : {});
     }
 
     function trackEvents(events) {
@@ -345,7 +379,7 @@
     }
 
     window.CinemataAnalytics = {
-        track: send, trackEvents, uploadEvent, pageview, attachPlayer, mediaId: config.media_id || null,
+        track: send, trackEvents, uploadEvent, pageview, attachPlayer, switchMedia, mediaId: config.media_id || null,
         markNavigationIntent: () => {
             try { sessionStorage.setItem('cinemata-media-intent', JSON.stringify({ url: 'next', time: Date.now() })); }
             catch { /* Storage may be unavailable. */ }
@@ -355,6 +389,8 @@
     if (audienceGroup) send('page_view');
     if (config.media_id) send('media_view', referrer ? { source_domain: new URL(referrer).hostname } : {});
     trackEvents(config.events);
+
+    const firstPageview = currentPageview();
 
     if (config.url && config.website_id) {
         const script = document.createElement('script');
@@ -369,7 +405,7 @@
         script.dataset.beforeSend = 'cinemataAnalyticsBeforeSend';
         script.onload = () => {
             if (hasDoNotTrack()) return;
-            emitUmami({ website: config.website_id, url: config.path, title: config.media_id ? 'Media' : 'Page', referrer, tag, data: config.media_id ? { media_type: config.media_type, context: config.context, revision: config.revision } : undefined });
+            emitUmami(firstPageview);
             while (pending.length) pending.shift()();
         };
         document.head.append(script);

@@ -3,6 +3,7 @@ import { Button } from '../../../shared/components/Button';
 import { ConfirmationDialogContent } from '../../../shared/components/ConfirmationDialog';
 import { Dialog } from '../../../shared/components/Dialog';
 import { Icon } from '../../../shared/components/Icon';
+import { LinkifiedText } from '../../../shared/components/LinkifiedText';
 import { Text } from '../../../shared/components';
 
 export function JournalEntry({ note, onUpdate, onDelete, isUpdating = false, isDeleting = false }) {
@@ -127,7 +128,7 @@ export function JournalEntry({ note, onUpdate, onDelete, isUpdating = false, isD
 						</div>
 					) : (
 						<Text as="p" variant="body-16" className="m-0 mt-2 whitespace-pre-wrap break-words">
-							{note.text}
+							<LinkifiedText text={note.text} />
 						</Text>
 					)}
 

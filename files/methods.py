@@ -613,6 +613,17 @@ def is_mediacms_manager(user):
     return manager
 
 
+def user_can_manage_media(user, media):
+    """Return whether ``user`` gets the media page's edit and delete controls.
+
+    Shared by ``view_media`` and the detail API field that in-place playlist
+    playback reads, so the two answers cannot drift.
+    """
+    if user is None or not getattr(user, "is_authenticated", False):
+        return False
+    return bool(media.user_id == user.id or is_mediacms_editor(user) or is_mediacms_manager(user))
+
+
 def user_can_delete_comment(user, comment):
     """Return whether ``user`` may delete ``comment``.
 

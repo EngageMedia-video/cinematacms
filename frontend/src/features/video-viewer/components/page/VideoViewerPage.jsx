@@ -51,7 +51,13 @@ export class VideoViewerPage extends Page {
 			pagePlaylistData: MediaPageStore.get('playlist-data'),
 			needsPassword: false,
 			commentsCount: 0,
+			// Bumped when a playlist item replaces this one in place, so every media
+			// section remounts as on a page load. The viewer container is kept: it
+			// is the fullscreen element and must not change.
+			mediaGeneration: 0,
 		};
+
+		this.viewerContainerRef = React.createRef();
 
 		this.onWindowResize = this.onWindowResize.bind(this);
 		this.onMediaLoad = this.onMediaLoad.bind(this);
@@ -60,8 +66,11 @@ export class VideoViewerPage extends Page {
 		this.onNeedsPassword = this.onNeedsPassword.bind(this);
 		this.onPasswordSuccess = this.onPasswordSuccess.bind(this);
 		this.onCommentsCountChange = this.onCommentsCountChange.bind(this);
+		this.onMediaSwitch = this.onMediaSwitch.bind(this);
+		this.onViewerModeChange = this.onViewerModeChange.bind(this);
 
 		MediaPageStore.on('loaded_media_data', this.onMediaLoad);
+		MediaPageStore.on('switched_media', this.onMediaSwitch);
 		MediaPageStore.on('loaded_media_error', this.onMediaLoadError);
 		MediaPageStore.on('loaded_page_playlist_data', this.onPagePlaylistLoad);
 		MediaPageStore.on('media_needs_password', this.onNeedsPassword);
@@ -77,10 +86,22 @@ export class VideoViewerPage extends Page {
 		MediaPageStore.removeListener('loaded_media_error', this.onMediaLoadError);
 		MediaPageStore.removeListener('loaded_page_playlist_data', this.onPagePlaylistLoad);
 		MediaPageStore.removeListener('media_needs_password', this.onNeedsPassword);
+		MediaPageStore.removeListener('switched_media', this.onMediaSwitch);
 		PageStore.removeListener('window_resize', this.onWindowResize);
-		if (this.onViewerModeChange) {
-			VideoViewerStore.removeListener('changed_viewer_mode', this.onViewerModeChange);
-		}
+		VideoViewerStore.removeListener('changed_viewer_mode', this.onViewerModeChange);
+	}
+
+	onMediaSwitch() {
+		this.setState(
+			(state) => ({
+				mediaGeneration: state.mediaGeneration + 1,
+				mediaLoaded: false,
+				mediaLoadFailed: false,
+				needsPassword: false,
+				commentsCount: 0,
+			}),
+			() => MediaPageActions.loadMediaData()
+		);
 	}
 
 	onWindowResize() {
@@ -100,8 +121,7 @@ export class VideoViewerPage extends Page {
 		const isVideoMedia = 'video' === MediaPageStore.get('media-type');
 
 		if (isVideoMedia) {
-			this.onViewerModeChange = this.onViewerModeChange.bind(this);
-
+			VideoViewerStore.removeListener('changed_viewer_mode', this.onViewerModeChange);
 			VideoViewerStore.on('changed_viewer_mode', this.onViewerModeChange);
 
 			this.setState({
@@ -146,7 +166,17 @@ export class VideoViewerPage extends Page {
 
 	viewerContainerContent(mediaData) {
 		return (
-			<SiteConsumer>{(site) => <VideoViewer data={mediaData} siteUrl={site.url} inEmbed={!1} />}</SiteConsumer>
+			<SiteConsumer>
+				{(site) => (
+					<VideoViewer
+						key={this.state.mediaGeneration}
+						data={mediaData}
+						siteUrl={site.url}
+						inEmbed={!1}
+						fullscreenContainerRef={this.viewerContainerRef}
+					/>
+				)}
+			</SiteConsumer>
 		);
 	}
 
@@ -158,13 +188,14 @@ export class VideoViewerPage extends Page {
 		const viewerClassname = 'cf viewer-section' + (this.state.theaterMode ? ' theater-mode' : ' viewer-wide');
 		const viewerNestedClassname = 'viewer-section-nested' + (this.state.theaterMode ? ' viewer-section' : '');
 		const showPrivateJournal = isLoggedInUser();
+		const generation = this.state.mediaGeneration;
 		const commentsPanel = this.state.mediaLoaded ? (
-			<div className="viewer-sidebar-comments mb-6 box-border w-full" key="viewer-comments">
+			<div className="viewer-sidebar-comments mb-6 box-border w-full" key={'viewer-comments-' + generation}>
 				<TabView
 					tabMode="wrap"
 					defaultSelectedTab={requestedTab()}
 					listClassName="rounded-none rounded-tl-ds-8 rounded-tr-ds-8"
-					triggerClassName="rounded-none py-3 px-size-22 text-text-tab-trigger aria-selected:text-text-primary"
+					triggerClassName="rounded-none py-3 px-size-24 text-text-tab-trigger aria-selected:text-text-primary"
 					triggerSelectedColor="bg-bg-surface"
 					panelClassName="mt-0 p-0 bg-bg-surface rounded-b-ds-8"
 					aria-label="Video comments and notes"
@@ -198,7 +229,7 @@ export class VideoViewerPage extends Page {
 		) : (
 			<div className={viewerClassname}>
 				{[
-					<div className="viewer-container" key="viewer-container">
+					<div className="viewer-container" key="viewer-container" ref={this.viewerContainerRef}>
 						{this.state.mediaLoaded && this.state.pagePlaylistLoaded
 							? this.viewerContainerContent(MediaPageStore.get('media-data'))
 							: null}
@@ -206,12 +237,12 @@ export class VideoViewerPage extends Page {
 					<div key="viewer-section-nested" className={viewerNestedClassname}>
 						{!this.state.wideLayout || (this.state.isVideoMedia && this.state.theaterMode)
 							? [
-									<ViewerInfoVideo key="viewer-info" />,
+									<ViewerInfoVideo key={'viewer-info-' + generation} />,
 									<div className="viewer-sidebar" key="viewer-sidebar-panel">
 										{commentsPanel}
 										{this.state.pagePlaylistLoaded ? (
 											<ViewerSidebar
-												key="viewer-sidebar"
+												key={'viewer-sidebar-' + generation}
 												mediaId={MediaPageStore.get('media-id')}
 												playlistData={MediaPageStore.get('playlist-data')}
 											/>
@@ -223,13 +254,13 @@ export class VideoViewerPage extends Page {
 										{commentsPanel}
 										{this.state.pagePlaylistLoaded ? (
 											<ViewerSidebar
-												key="viewer-sidebar"
+												key={'viewer-sidebar-' + generation}
 												mediaId={MediaPageStore.get('media-id')}
 												playlistData={MediaPageStore.get('playlist-data')}
 											/>
 										) : null}
 									</div>,
-									<ViewerInfoVideo key="viewer-info" />,
+									<ViewerInfoVideo key={'viewer-info-' + generation} />,
 								]}
 					</div>,
 				]}
