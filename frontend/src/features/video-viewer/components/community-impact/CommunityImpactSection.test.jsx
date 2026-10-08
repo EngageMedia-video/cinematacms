@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { CommunityImpactSection } from './CommunityImpactSection';
@@ -71,19 +71,108 @@ describe('CommunityImpactSection', () => {
 		render(<CommunityImpactSection entries={{}} onAddImpact={onAddImpact} />);
 
 		await user.click(screen.getAllByRole('button', { name: 'ADD IMPACT' })[0]);
-		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta community hall');
-		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
-		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
-		await user.click(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));
+		await user.click(screen.getByRole('radio', { name: /^Article or Review/ }));
+		await user.type(screen.getByLabelText('Title'), 'Films that changed the conversation');
+		await user.type(screen.getByLabelText('Year'), '2023');
+		await user.type(screen.getByLabelText('Written by'), 'Dewi Lestari');
+		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
 
 		expect(onAddImpact).toHaveBeenCalledWith({
-			category: 'screening',
+			category: 'article',
+			title: 'Films that changed the conversation',
+			year: 2023,
+			creator: 'Dewi Lestari',
+			publication: '',
 			details: '',
-			link: '',
-			location: 'Jakarta community hall',
-			title: 'Jakarta community hall',
 			url: '',
 		});
+	});
+
+	it('lists new impact categories with their context and year', () => {
+		render(
+			<CommunityImpactSection
+				entries={{
+					screening: [
+						{
+							uid: 'screening-1',
+							category: 'screening',
+							title: 'Hanoi Doc Week',
+							year: 2024,
+							event_date: '2026-10-01',
+							city: 'Hanoi',
+							country_label: 'Viet Nam',
+							organiser: 'Youth Media Collective',
+						},
+					],
+					article: [
+						{
+							uid: 'article-1',
+							category: 'article',
+							title: 'Films that changed the conversation',
+							year: 2023,
+							event_date: '2026-10-02',
+							creator: 'Dewi Lestari',
+							publication: 'Jakarta Post',
+						},
+					],
+					award: [
+						{
+							uid: 'award-1',
+							category: 'award',
+							title: 'Best Documentary',
+							year: 2021,
+							event_date: '2026-10-03',
+							award_result_label: 'Won',
+							organiser: 'Jogja-NETPAC',
+						},
+						{
+							uid: 'award-2',
+							category: 'award',
+							title: 'Audience Choice',
+							year: 2020,
+							event_date: '2026-10-03',
+							award_result_label: 'Nominated',
+							organiser: 'Busan IFF',
+						},
+					],
+				}}
+			/>
+		);
+
+		const screening = screen.getByLabelText('Screened In');
+		expect(within(screening).getByText('Hanoi, Viet Nam · Organised by Youth Media Collective')).toBeVisible();
+		expect(within(screening).getByText('2024')).toBeVisible();
+		expect(within(screening).queryByText('Oct 1, 2026')).not.toBeInTheDocument();
+
+		const article = screen.getByLabelText('Written About In');
+		expect(within(article).getByText('By Dewi Lestari · Jakarta Post')).toBeVisible();
+
+		const award = screen.getByLabelText('Awards & Recognition');
+		expect(within(award).getByText('Won · Given by Jogja-NETPAC')).toBeVisible();
+		expect(within(award).getByText('Nominated · Given by Busan IFF')).toBeVisible();
+		expect(within(award).getByText('2020')).toBeVisible();
+
+		expect(screen.queryByLabelText('Referenced In')).not.toBeInTheDocument();
+		expect(screen.queryByLabelText('Taught & Researched In')).not.toBeInTheDocument();
+	});
+
+	it('clears a submit error when the add dialog is cancelled', async () => {
+		const user = userEvent.setup();
+		const onSubmitErrorClear = vi.fn();
+
+		render(
+			<CommunityImpactSection
+				entries={{}}
+				onSubmitErrorClear={onSubmitErrorClear}
+				submitStatus="error"
+				submitError={{ field: 'year', message: 'Enter a year between 1900 and 2026.' }}
+			/>
+		);
+
+		await user.click(screen.getAllByRole('button', { name: 'ADD IMPACT' })[0]);
+		await user.click(screen.getByRole('button', { name: 'CANCEL' }));
+
+		expect(onSubmitErrorClear).toHaveBeenCalledTimes(1);
 	});
 
 	it('forwards submit errors into the add dialog', async () => {

@@ -63,10 +63,16 @@ export function ImpactDetailDialog({ entries = [], onClose, open = false, subtit
 									<p className="body-body-14-bold m-0 mt-space-xs break-words text-text-primary">
 										{entries[0].title}
 									</p>
+									{entries[0].summary ? (
+										<p className="body-body-12-regular m-0 mt-space-xs break-words text-text-muted">
+											{entries[0].summary}
+										</p>
+									) : null}
 									<TimelineMeta
 										date={entries[0].date}
 										title={entries[0].title}
 										url={entries[0].url}
+										year={entries[0].year}
 									/>
 								</>
 							) : null}
@@ -74,10 +80,12 @@ export function ImpactDetailDialog({ entries = [], onClose, open = false, subtit
 					</li>
 					{entries.slice(1).map((entry, index) => (
 						<ImpactTimelineItem
-							key={`${entry.title}-${entry.date}-${index}`}
+							key={entry.uid ?? `${entry.title}-${entry.date}-${index}`}
 							date={entry.date}
+							summary={entry.summary}
 							title={entry.title}
 							url={entry.url}
+							year={entry.year}
 						/>
 					))}
 				</ul>
@@ -86,8 +94,8 @@ export function ImpactDetailDialog({ entries = [], onClose, open = false, subtit
 	);
 }
 
-function TimelineMeta({ date, title, url }) {
-	const formattedDate = formatImpactDate(date);
+function TimelineMeta({ date, title, url, year }) {
+	const formattedDate = year ? String(year) : formatImpactDate(date);
 	const safeHref = getSafeHref(url);
 
 	if (!formattedDate && !safeHref) {
@@ -97,7 +105,7 @@ function TimelineMeta({ date, title, url }) {
 	return (
 		<div className="mt-space-xs flex min-w-0 flex-wrap items-center gap-space-xs text-text-muted">
 			{formattedDate ? (
-				<time className="body-body-12-regular" dateTime={date}>
+				<time className="body-body-12-regular" dateTime={year ? String(year) : date}>
 					{formattedDate}
 				</time>
 			) : null}
@@ -125,19 +133,33 @@ TimelineMeta.propTypes = {
 	date: PropTypes.string,
 	title: PropTypes.string,
 	url: PropTypes.string,
+	year: PropTypes.number,
 };
 
 ImpactDetailDialog.propTypes = {
 	entries: PropTypes.arrayOf(
 		PropTypes.shape({
 			date: PropTypes.string,
+			summary: PropTypes.string,
 			title: PropTypes.string,
+			uid: PropTypes.string,
 			url: PropTypes.string,
+			year: PropTypes.number,
 		})
 	),
 	onClose: PropTypes.func,
 	open: PropTypes.bool,
 	subtitle: PropTypes.string,
 	title: PropTypes.string.isRequired,
-	variant: PropTypes.oneOf(['screening', 'featured', 'saves', 'academic', 'curated']),
+	variant: PropTypes.oneOf([
+		'screening',
+		'article',
+		'referenced',
+		'award',
+		'teaching',
+		'featured',
+		'saves',
+		'academic',
+		'curated',
+	]),
 };
