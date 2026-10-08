@@ -1065,13 +1065,12 @@ class UserCommunityImpactList(APIView):
             # its user); it builds a minimal dict, so there is no per-film m2m or
             # encoding lookup to prefetch.
             .select_related("media", "media__user", "user")
-            .order_by("-event_date", "-add_date")
         )
 
         # Group entries under the film they belong to so the profile Impact tab
         # can attribute each entry to its media (issue #810). Films keep the
-        # order in which their most recent impact entry appears (entries are
-        # already ordered by -event_date, -add_date above). Films beyond
+        # order in which their most recent impact entry appears (entries keep
+        # CommunityImpact's default newest-impact-first ordering). Films beyond
         # film_limit are dropped and flagged via has_more.
         films = {}
         has_more = False

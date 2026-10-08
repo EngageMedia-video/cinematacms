@@ -662,6 +662,14 @@ def can_manage_film_impact(user):
         return False
 
 
+def can_view_private_impact_organiser(user, impact):
+    """Whether ``user`` may see a community-impact organiser marked private:
+    the film owner and the film impact managers."""
+    if user is None or not user.is_authenticated:
+        return False
+    return impact.media.user_id == user.id or can_manage_film_impact(user)
+
+
 def community_impact_auto_approves(user, media):
     """Whether a new community-impact entry skips the approval queue."""
     try:
