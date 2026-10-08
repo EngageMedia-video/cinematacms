@@ -8,16 +8,16 @@ export function ImpactTimelineItem({ date = '', summary = '', title, url, year }
 	const safeHref = getSafeHref(url);
 
 	return (
-		<li className="relative grid min-h-[99px] grid-cols-[var(--size-32)_1fr] gap-space-sm">
-			<span className="relative flex min-h-[99px] justify-center" aria-hidden="true">
+		<li className="relative grid min-h-24.75 grid-cols-[var(--size-32)_1fr] gap-space-sm">
+			<span className="relative flex min-h-24.75 justify-center" aria-hidden="true">
 				<span className="absolute top-0 bottom-0 w-px bg-border-default" />
-				<span className="absolute top-[29px] z-10 h-size-6 w-size-6 translate-y-1/2 rounded-full bg-bg-timeline-dot" />
+				<span className="absolute top-7.25 z-10 h-size-6 w-size-6 translate-y-1/2 rounded-full bg-bg-timeline-dot" />
 			</span>
 
-			<div className="min-w-0 pt-[29px]">
-				<p className="body-body-14-bold m-0 break-words text-text-primary">{title}</p>
+			<div className="min-w-0 pt-7.25">
+				<p className="body-body-14-bold m-0 wrap-break-word text-text-primary">{title}</p>
 				{summary ? (
-					<p className="body-body-12-regular m-0 mt-space-xs break-words text-text-muted">{summary}</p>
+					<p className="body-body-12-regular m-0 mt-space-xs wrap-break-word text-text-muted">{summary}</p>
 				) : null}
 				<div className="mt-space-xs flex min-w-0 flex-wrap items-center gap-space-xs text-text-muted">
 					{formattedDate ? (
