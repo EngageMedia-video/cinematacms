@@ -4,6 +4,7 @@ export const NOTIFICATION_BADGES = {
 	mention: { icon: 'commentBlue', bgClass: 'bg-bg-badge-info' },
 	like: { icon: 'thumbsUpRed', bgClass: 'bg-bg-badge-danger' },
 	added_to_playlist: { icon: 'addedFavorite', bgClass: 'bg-bg-badge-accent' },
+	community_impact: { icon: 'filmReel', bgClass: 'bg-bg-badge-accent' },
 	follow: { icon: 'followUser', bgClass: 'bg-bg-badge-info' },
 	new_media: { icon: 'recentlyUpload', bgClass: 'bg-bg-badge-muted' },
 	system_announcement: { icon: 'notificationBell', bgClass: 'bg-bg-badge-muted' },

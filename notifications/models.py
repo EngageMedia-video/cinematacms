@@ -10,6 +10,7 @@ class NotificationType(models.TextChoices):
     MENTION = "mention", "You were mentioned in a comment"
     NEW_MEDIA = "new_media", "New upload from someone you follow"
     ADDED_TO_PLAYLIST = "added_to_playlist", "Your media was added to a playlist"
+    COMMUNITY_IMPACT = "community_impact", "A Community Impact record was added to your media"
     MEDIA_REPORT = "media_report", "Media was reported"
     SYSTEM_ANNOUNCEMENT = "system_announcement", "System announcement"
 
@@ -114,6 +115,11 @@ class NotificationPreference(models.Model):
         choices=NotificationChannel,
         default=NotificationChannel.IN_APP,
     )
+    on_community_impact = models.CharField(
+        max_length=10,
+        choices=NotificationChannel,
+        default=NotificationChannel.EMAIL,
+    )
     filter_topics = models.JSONField(
         default=list,
         blank=True,
@@ -149,5 +155,6 @@ class NotificationPreference(models.Model):
             NotificationType.MENTION: self.on_mention,
             NotificationType.NEW_MEDIA: self.on_new_media_from_following,
             NotificationType.ADDED_TO_PLAYLIST: self.on_added_to_playlist,
+            NotificationType.COMMUNITY_IMPACT: self.on_community_impact,
         }
         return channel_map.get(notification_type, NotificationChannel.IN_APP)

@@ -21,9 +21,9 @@ def _create_user(username, email=None):
 
 
 class NotificationTypeEnumTest(TestCase):
-    """Test NotificationType enum has all 9 types."""
+    """Test NotificationType enum has all 10 types."""
 
-    def test_enum_has_all_nine_types(self):
+    def test_enum_has_all_ten_types(self):
         expected = {
             "comment",
             "reply",
@@ -32,6 +32,7 @@ class NotificationTypeEnumTest(TestCase):
             "mention",
             "new_media",
             "added_to_playlist",
+            "community_impact",
             "media_report",
             "system_announcement",
         }
@@ -39,7 +40,7 @@ class NotificationTypeEnumTest(TestCase):
         self.assertEqual(actual, expected)
 
     def test_enum_count(self):
-        self.assertEqual(len(NotificationType.choices), 9)
+        self.assertEqual(len(NotificationType.choices), 10)
 
 
 class NotificationModelTest(TestCase):
@@ -197,6 +198,7 @@ class NotificationPreferenceModelTest(TestCase):
         self.assertEqual(pref.on_mention, NotificationChannel.EMAIL)
         self.assertEqual(pref.on_new_media_from_following, NotificationChannel.IN_APP)
         self.assertEqual(pref.on_added_to_playlist, NotificationChannel.IN_APP)
+        self.assertEqual(pref.on_community_impact, NotificationChannel.EMAIL)
 
     def test_default_filter_topics_empty(self):
         pref = NotificationPreference.objects.create(user=self.user)
