@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AddImpactDialog, normalizeImpactLink } from './AddImpactDialog';
 
 function fieldsPanel() {
@@ -323,6 +323,98 @@ describe('AddImpactDialog', () => {
 
 		expect(screen.getByRole('radio', { name: /^Award/ })).not.toBeChecked();
 		expect(screen.queryByTestId('impact-category-fields')).not.toBeInTheDocument();
+	});
+});
+
+describe('AddImpactDialog error reveal', () => {
+	let scrollIntoView;
+	const originalMatchMedia = window.matchMedia;
+
+	beforeEach(() => {
+		scrollIntoView = vi.fn();
+		Element.prototype.scrollIntoView = scrollIntoView;
+	});
+
+	afterEach(() => {
+		delete Element.prototype.scrollIntoView;
+		window.matchMedia = originalMatchMedia;
+	});
+
+	function lastScrolledElement() {
+		return scrollIntoView.mock.contexts.at(-1);
+	}
+
+	it('scrolls to and focuses the first field with an error', async () => {
+		const user = userEvent.setup();
+
+		render(<AddImpactDialog open />);
+
+		await chooseCategory(user, 'Screening');
+		await user.type(screen.getByLabelText('Event or Festival Name'), 'Hanoi Doc Week');
+		await user.type(screen.getByLabelText('City'), 'Hanoi');
+		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
+
+		const year = screen.getByLabelText('Year');
+		expect(year).toHaveFocus();
+		expect(lastScrolledElement()).toContainElement(year);
+		expect(lastScrolledElement()).not.toContainElement(screen.getByLabelText('Event or Festival Name'));
+		expect(scrollIntoView).toHaveBeenLastCalledWith({ behavior: 'smooth', block: 'center' });
+	});
+
+	it('focuses the dropdown trigger when it is the first error', async () => {
+		const user = userEvent.setup();
+
+		render(<AddImpactDialog open />);
+
+		await chooseCategory(user, 'Award');
+		await user.type(screen.getByLabelText('Award Name'), 'Best Documentary');
+		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
+
+		const result = screen.getByRole('button', { name: 'Choose one' });
+		expect(result).toHaveFocus();
+		expect(lastScrolledElement()).toContainElement(result);
+	});
+
+	it('scrolls back to the impact kinds when none is chosen', async () => {
+		const user = userEvent.setup();
+
+		render(<AddImpactDialog open />);
+
+		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
+
+		const group = screen.getByRole('radiogroup', { name: 'What kind of impact?' });
+		expect(within(group).getByRole('radio', { name: /^Screening/ })).toHaveFocus();
+		expect(lastScrolledElement()).toContainElement(group);
+	});
+
+	it('reveals the field a server error points at', async () => {
+		const user = userEvent.setup();
+		const { rerender } = render(<AddImpactDialog open />);
+
+		await chooseCategory(user, 'Award');
+		rerender(
+			<AddImpactDialog
+				open
+				submitError={{ field: 'url', message: 'Link is not trustworthy. Please use a secure HTTPS link.' }}
+			/>
+		);
+
+		const link = screen.getByLabelText('Link (optional)');
+		expect(link).toHaveFocus();
+		expect(lastScrolledElement()).toContainElement(link);
+	});
+
+	it('jumps without animation when the viewer prefers reduced motion', async () => {
+		const user = userEvent.setup();
+		window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+
+		render(<AddImpactDialog open />);
+
+		await chooseCategory(user, 'Article or Review');
+		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
+
+		expect(screen.getByLabelText('Title')).toHaveFocus();
+		expect(scrollIntoView).toHaveBeenLastCalledWith({ behavior: 'auto', block: 'center' });
 	});
 });
 
