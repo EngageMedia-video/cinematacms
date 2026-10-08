@@ -98,6 +98,19 @@ export const Populated = {
 		await expect(canvas.getByText('Awards & Recognition')).toBeVisible();
 		await expect(canvas.getByText('Saves & Playlists')).toBeVisible();
 		await expect(canvas.queryByText('Curated Into')).toBeNull();
+
+		// The first entry's summary makes it taller than the others; its timeline
+		// line must still reach the next entry (needs real layout, so not in jsdom).
+		const [firstEntry, secondEntry] = within(canvas.getByLabelText('Screened In')).getAllByRole('listitem');
+		const connector = firstEntry.querySelector('[aria-hidden="true"] > .w-px');
+		await expect(connector.getBoundingClientRect().bottom).toBeGreaterThanOrEqual(
+			secondEntry.getBoundingClientRect().top
+		);
+
+		// Each later entry's dot sits at the vertical middle of that entry's text.
+		const dot = secondEntry.querySelector('.bg-bg-timeline-dot').getBoundingClientRect();
+		const text = within(secondEntry).getByText('Manila Community Film Night').parentElement.getBoundingClientRect();
+		await expect(Math.abs(dot.top + dot.height / 2 - (text.top + text.height / 2))).toBeLessThanOrEqual(1);
 	},
 };
 

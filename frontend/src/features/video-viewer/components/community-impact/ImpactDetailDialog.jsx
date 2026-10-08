@@ -45,7 +45,7 @@ export function ImpactDetailDialog({ entries = [], onClose, open = false, subtit
 					<li className="relative grid min-h-[80px] grid-cols-[var(--size-32)_1fr] gap-space-sm">
 						<span className="relative flex justify-center" aria-hidden="true">
 							{entries.length > 1 ? (
-								<span className="absolute top-[38px] h-[42px] w-px bg-border-default" />
+								<span className="absolute top-9.5 bottom-0 w-px bg-border-default" />
 							) : null}
 							<span
 								className={cn(
