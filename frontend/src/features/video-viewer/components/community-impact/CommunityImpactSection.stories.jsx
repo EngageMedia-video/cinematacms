@@ -25,8 +25,42 @@ const communityImpactEntries = {
 		lastEventAt: '2026-05-28T08:00:00Z',
 		totalCount: { saves: 181, playlists: 90 },
 	},
+	article: [
+		{
+			uid: 'article-1',
+			category: 'article',
+			title: 'Films that changed the conversation',
+			year: 2023,
+			event_date: '2026-05-02',
+			creator: 'Dewi Lestari',
+			publication: 'Jakarta Post',
+			url: 'https://example.com/article',
+		},
+	],
+	award: [
+		{
+			uid: 'award-1',
+			category: 'award',
+			title: 'Best Documentary',
+			year: 2021,
+			event_date: '2026-05-03',
+			award_result_label: 'Won',
+			organiser: 'Jogja-NETPAC Asian Film Festival',
+		},
+	],
 	screening: {
 		entries: [
+			{
+				uid: 'screening-new',
+				category: 'screening',
+				title: 'Hanoi Doc Week',
+				year: 2024,
+				event_date: '2026-05-01',
+				city: 'Hanoi',
+				country_label: 'Viet Nam',
+				organiser: 'Youth Media Collective',
+				url: 'https://example.com/hanoi',
+			},
 			{ title: 'Manila Community Film Night', date: '2025-02-01', url: 'https://example.com/manila' },
 			{ title: '2026 Film Festival, Dakar', date: '2025-02-15', url: 'https://example.com/dakar' },
 			{ title: 'Jakarta Mutual Aid Screening', date: '2025-03-08', url: 'https://example.com/jakarta' },
@@ -59,6 +93,9 @@ export const Populated = {
 
 		await expect(canvas.getByRole('heading', { name: "Film's Impact" })).toBeVisible();
 		await expect(canvas.getByText('Screened In')).toBeVisible();
+		await expect(canvas.getByText('Hanoi, Viet Nam · Organised by Youth Media Collective')).toBeVisible();
+		await expect(canvas.getByText('Written About In')).toBeVisible();
+		await expect(canvas.getByText('Awards & Recognition')).toBeVisible();
 		await expect(canvas.getByText('Saves & Playlists')).toBeVisible();
 		await expect(canvas.queryByText('Curated Into')).toBeNull();
 	},

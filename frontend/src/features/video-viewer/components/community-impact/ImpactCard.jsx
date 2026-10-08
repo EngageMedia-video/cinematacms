@@ -59,9 +59,17 @@ function renderTitle(entry) {
 	return entry.title;
 }
 
-function ImpactMetaRow({ date, dateLabel = '', title, url }) {
+function formatEntryDate(date, dateLabel, year) {
+	if (year) {
+		return String(year);
+	}
+
+	return dateLabel ? formatRelativeImpactTime(date) || formatImpactDate(date) : formatImpactDate(date);
+}
+
+function ImpactMetaRow({ date, dateLabel = '', title, url, year }) {
 	const safeHref = getSafeHref(url);
-	const formattedDate = dateLabel ? formatRelativeImpactTime(date) || formatImpactDate(date) : formatImpactDate(date);
+	const formattedDate = formatEntryDate(date, dateLabel, year);
 	const hasDateMeta = Boolean(dateLabel || formattedDate);
 
 	return (
@@ -73,7 +81,7 @@ function ImpactMetaRow({ date, dateLabel = '', title, url }) {
 				</span>
 			) : null}
 			{formattedDate ? (
-				<time className="body-body-12-regular" dateTime={date}>
+				<time className="body-body-12-regular" dateTime={year ? String(year) : date}>
 					{formattedDate}
 				</time>
 			) : null}
@@ -166,20 +174,28 @@ export function ImpactCard({
 								>
 									{renderTitle(firstEntry)}
 								</p>
+								{firstEntry.summary ? (
+									<p className="body-body-12-regular m-0 mt-space-xs break-words text-text-muted">
+										{firstEntry.summary}
+									</p>
+								) : null}
 								<ImpactMetaRow
 									date={firstEntry.date}
 									dateLabel={firstEntry.dateLabel}
 									title={firstTitleText}
 									url={firstEntry.url}
+									year={firstEntry.year}
 								/>
 							</div>
 						</li>
 						{remainingEntries.map((entry, index) => (
 							<ImpactTimelineItem
-								key={`${entry.title}-${entry.date}-${index}`}
+								key={entry.uid ?? `${entry.title}-${entry.date}-${index}`}
 								date={entry.date}
+								summary={entry.summary}
 								title={entry.title}
 								url={entry.url}
+								year={entry.year}
 							/>
 						))}
 					</ul>
@@ -203,14 +219,18 @@ ImpactMetaRow.propTypes = {
 	dateLabel: PropTypes.string,
 	title: PropTypes.string,
 	url: PropTypes.string,
+	year: PropTypes.number,
 };
 
 const entryShape = PropTypes.shape({
 	date: PropTypes.string,
 	meta: PropTypes.string,
+	summary: PropTypes.string,
 	title: PropTypes.string.isRequired,
+	uid: PropTypes.string,
 	url: PropTypes.string,
 	value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+	year: PropTypes.number,
 });
 
 ImpactCard.propTypes = {
@@ -228,5 +248,15 @@ ImpactCard.propTypes = {
 			saves: PropTypes.number,
 		}),
 	]),
-	variant: PropTypes.oneOf(['screening', 'featured', 'saves', 'academic', 'curated']),
+	variant: PropTypes.oneOf([
+		'screening',
+		'article',
+		'referenced',
+		'award',
+		'teaching',
+		'featured',
+		'saves',
+		'academic',
+		'curated',
+	]),
 };

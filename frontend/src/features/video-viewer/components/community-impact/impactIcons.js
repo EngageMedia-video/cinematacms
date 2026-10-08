@@ -4,6 +4,22 @@ export const COMMUNITY_IMPACT_CATEGORIES = [
 		label: 'Screened In',
 	},
 	{
+		value: 'article',
+		label: 'Written About In',
+	},
+	{
+		value: 'referenced',
+		label: 'Referenced In',
+	},
+	{
+		value: 'award',
+		label: 'Awards & Recognition',
+	},
+	{
+		value: 'teaching',
+		label: 'Taught & Researched In',
+	},
+	{
 		value: 'featured',
 		label: 'Featured In',
 	},
@@ -27,6 +43,30 @@ export const IMPACT_ICON_CONFIG = {
 		label: 'Screened In',
 		accentClassName: 'text-text-accent',
 		iconShellClassName: 'bg-bg-emblem-blue-deep text-text-secondary',
+	},
+	article: {
+		iconName: 'blogs',
+		label: 'Written About In',
+		accentClassName: 'text-text-secondary',
+		iconShellClassName: 'bg-bg-emblem-blue text-text-secondary',
+	},
+	referenced: {
+		iconName: 'link',
+		label: 'Referenced In',
+		accentClassName: 'text-text-muted',
+		iconShellClassName: 'bg-bg-emblem-gray text-text-muted',
+	},
+	award: {
+		iconName: 'featured',
+		label: 'Awards & Recognition',
+		accentClassName: 'text-text-accent',
+		iconShellClassName: 'bg-bg-emblem-orange text-text-accent',
+	},
+	teaching: {
+		iconName: 'bookOpen',
+		label: 'Taught & Researched In',
+		accentClassName: 'text-text-link',
+		iconShellClassName: 'bg-bg-emblem-green text-text-on-emblem-green',
 	},
 	featured: {
 		iconName: 'eye',
