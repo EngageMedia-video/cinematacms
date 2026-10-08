@@ -191,6 +191,7 @@ class SearchRSSFeed(Feed):
                 community_impacts__category__in=[
                     CommunityImpact.SCREENING,
                     CommunityImpact.FEATURED,
+                    CommunityImpact.AWARD,
                 ],
             ).distinct()
 
