@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import {
 	Button,
 	CheckboxButton,
@@ -21,6 +21,7 @@ import {
 import './AddImpactDialog.css';
 
 const REQUIRED_MESSAGE = 'This field is required.';
+const FOCUSABLE_CONTROL = 'input:not([type="hidden"]), textarea, button';
 const INVALID_LINK_MESSAGE = 'Enter a valid https link, e.g. https://drive.google.com/file/d/abc/view';
 
 export function normalizeImpactLink(raw) {
@@ -112,6 +113,22 @@ function buildSubmission(category, values) {
 	}
 
 	return { errors, payload };
+}
+
+function findFieldContainer(form, name) {
+	return form?.querySelector(`[data-impact-field="${name}"]`) ?? null;
+}
+
+// Errors can sit far above the submit button, so bring the control into view
+// and focus it; focus also makes screen readers read its error text.
+function revealInvalidControl(container) {
+	if (!container) {
+		return;
+	}
+
+	const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+	container.scrollIntoView?.({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+	container.querySelector(FOCUSABLE_CONTROL)?.focus({ preventScroll: true });
 }
 
 function CategoryOption({ category, checked, name, onSelect }) {
@@ -250,10 +267,26 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 	const categoryLabelId = useId();
 	const categoryErrorId = useId();
 	const categoryGroupName = useId();
+	const formRef = useRef(null);
+	const categoryGroupRef = useRef(null);
+	const formErrorRef = useRef(null);
 	const fields = getVisibleImpactFields(category, values);
 	const fieldNames = new Set(fields.map((field) => field.name));
 	const serverFieldError = submitError?.field && fieldNames.has(submitError.field) ? submitError : null;
 	const formError = submitError && !serverFieldError ? submitError.message : '';
+
+	useEffect(() => {
+		if (!submitError) {
+			return;
+		}
+
+		const field = submitError.field ? findFieldContainer(formRef.current, submitError.field) : null;
+		if (field) {
+			revealInvalidControl(field);
+		} else {
+			formErrorRef.current?.scrollIntoView?.({ block: 'nearest' });
+		}
+	}, [submitError]);
 
 	function clearSubmitError() {
 		if (submitError) {
@@ -292,19 +325,25 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 
 		if (!category) {
 			setErrors({ category: 'Choose what kind of impact this is.' });
+			revealInvalidControl(categoryGroupRef.current);
 			return;
 		}
 
 		const submission = buildSubmission(category, values);
 		setErrors(submission.errors);
 
-		if (Object.keys(submission.errors).length === 0) {
-			onSubmit?.(submission.payload);
+		const firstInvalidField = fields.find((field) => submission.errors[field.name]);
+		if (firstInvalidField) {
+			revealInvalidControl(findFieldContainer(formRef.current, firstInvalidField.name));
+			return;
 		}
+
+		onSubmit?.(submission.payload);
 	}
 
 	return (
 		<form
+			ref={formRef}
 			onSubmit={handleSubmit}
 			noValidate
 			className="impact-add-form relative flex max-h-[calc(100vh-var(--size-64))] flex-col items-center gap-8 overflow-y-auto p-6"
@@ -324,6 +363,7 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 						What kind of impact?<span aria-hidden="true"> *</span>
 					</p>
 					<div
+						ref={categoryGroupRef}
 						role="radiogroup"
 						aria-labelledby={categoryLabelId}
 						aria-required="true"
@@ -354,22 +394,27 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 						data-testid="impact-category-fields"
 					>
 						{fields.map((field) => (
-							<ImpactField
-								key={`${category}-${field.name}`}
-								field={field}
-								value={values[field.name]}
-								error={
-									errors[field.name] ||
-									(serverFieldError?.field === field.name ? serverFieldError.message : '')
-								}
-								onChange={handleValueChange}
-							/>
+							<div key={`${category}-${field.name}`} data-impact-field={field.name}>
+								<ImpactField
+									field={field}
+									value={values[field.name]}
+									error={
+										errors[field.name] ||
+										(serverFieldError?.field === field.name ? serverFieldError.message : '')
+									}
+									onChange={handleValueChange}
+								/>
+							</div>
 						))}
 					</div>
 				) : null}
 
 				{formError ? (
-					<p className="body-body-14-regular m-0 w-full text-center text-text-danger" role="alert">
+					<p
+						ref={formErrorRef}
+						className="body-body-14-regular m-0 w-full text-center text-text-danger"
+						role="alert"
+					>
 						{formError}
 					</p>
 				) : null}
