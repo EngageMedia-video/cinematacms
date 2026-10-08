@@ -360,6 +360,7 @@ export default class VideoViewer extends React.PureComponent {
 	}
 
 	componentWillUnmount() {
+		clearTimeout(this.transitionTimer);
 		PageStore.removeListener('switched_media_auto_play', this.onUpdateMediaAutoPlay);
 		this.unsetRecommendedMedia();
 	}
@@ -673,7 +674,7 @@ export default class VideoViewer extends React.PureComponent {
 		}
 
 		// Play next video after 3s
-		setTimeout(() => {
+		this.transitionTimer = setTimeout(() => {
 			this.playNextPlaylistMedia(nextMediaUrl, nextFriendlyToken);
 		}, 3000);
 	}

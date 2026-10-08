@@ -155,6 +155,19 @@ describe('VideoViewer at the end of a playlist item', () => {
 		expect(PageStore.listenerCount('switched_media_auto_play')).toBe(before);
 	});
 
+	it('does not move on after the viewer is gone', () => {
+		const containerRef = { current: document.body.appendChild(document.createElement('div')) };
+		fullscreenElement = containerRef.current;
+		const { unmount } = renderViewer(containerRef);
+
+		act(() => fakePlayer.current.trigger('ended'));
+		unmount();
+		act(() => vi.advanceTimersByTime(3000));
+
+		expect(MediaPageActions.switchMedia).not.toHaveBeenCalled();
+		expect(navigations).toEqual([]);
+	});
+
 	it('still opens the next item page when not fullscreen', () => {
 		const containerRef = { current: document.body.appendChild(document.createElement('div')) };
 		renderViewer(containerRef);
