@@ -21,6 +21,7 @@ class MediaSearchAwardFilterTests(TestCase):
         self.featured = self._media("Featured Film", duration=900)
         self.waiting = self._media("Waiting Film", duration=500)
         self.academic = self._media("Academic Film", duration=500)
+        self.awarded = self._media("Awarded Film", duration=500)
         self.plain = self._media("Plain Film", duration=500)
 
         self._impact(self.screened, CommunityImpact.SCREENING, CommunityImpact.APPROVED)
@@ -28,6 +29,7 @@ class MediaSearchAwardFilterTests(TestCase):
         self._impact(self.featured, CommunityImpact.SCREENING, CommunityImpact.APPROVED)
         self._impact(self.waiting, CommunityImpact.SCREENING, CommunityImpact.WAITING_APPROVAL)
         self._impact(self.academic, CommunityImpact.ACADEMIC, CommunityImpact.APPROVED)
+        self._impact(self.awarded, CommunityImpact.AWARD, CommunityImpact.APPROVED)
 
     def _media(self, title, **kwargs):
         media = create_test_media(self.user, **kwargs)
@@ -45,13 +47,14 @@ class MediaSearchAwardFilterTests(TestCase):
             event_date=date(2025, 1, 1),
         )
 
-    def test_award_filter_returns_approved_screening_and_featured_impacts(self):
+    def test_award_filter_returns_approved_screening_featured_and_award_impacts(self):
         response = self.client.get("/api/v1/search?award=yes")
 
         self.assertEqual(response.status_code, 200)
         tokens = [item["friendly_token"] for item in response.json()["results"]]
         self.assertIn(self.screened.friendly_token, tokens)
         self.assertIn(self.featured.friendly_token, tokens)
+        self.assertIn(self.awarded.friendly_token, tokens)
         self.assertNotIn(self.waiting.friendly_token, tokens)
         self.assertNotIn(self.academic.friendly_token, tokens)
         self.assertNotIn(self.plain.friendly_token, tokens)
@@ -68,13 +71,14 @@ class MediaSearchAwardFilterTests(TestCase):
         self.assertNotIn(self.academic.friendly_token, tokens)
         self.assertNotIn(self.plain.friendly_token, tokens)
 
-    def test_rss_award_filter_returns_approved_screening_and_featured_impacts(self):
+    def test_rss_award_filter_returns_approved_screening_featured_and_award_impacts(self):
         response = self.client.get("/rss/search/?award=yes")
 
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
         self.assertIn("Screened Film", content)
         self.assertIn("Featured Film", content)
+        self.assertIn("Awarded Film", content)
         self.assertNotIn("Waiting Film", content)
         self.assertNotIn("Academic Film", content)
         self.assertNotIn("Plain Film", content)
