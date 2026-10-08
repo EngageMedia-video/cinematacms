@@ -154,9 +154,9 @@ export function ImpactCard({
 							shouldScroll && 'max-h-[calc(var(--size-96)*3+var(--size-80))] overflow-y-auto'
 						)}
 					>
-						<li className="relative grid min-h-[80px] grid-cols-[var(--size-32)_1fr] gap-space-sm">
+						<li className="relative grid min-h-20 grid-cols-[var(--size-32)_1fr] gap-space-sm">
 							<span className="relative flex justify-center" aria-hidden="true">
-								<span className="absolute top-[38px] h-[42px] w-px bg-border-default" />
+								<span className="absolute top-9.5 h-10.5 w-px bg-border-default" />
 								<span
 									className={cn(
 										'relative z-10 inline-flex h-size-32 w-size-32 shrink-0 items-center justify-center rounded-full',
@@ -170,12 +170,12 @@ export function ImpactCard({
 								<p className="body-body-12-regular m-0 text-text-muted">{categoryLabel}</p>
 								<p
 									id={`${contentId}-title`}
-									className="body-body-14-bold m-0 mt-space-xs break-words text-text-primary"
+									className="body-body-14-bold m-0 mt-space-xs wrap-break-word text-text-primary"
 								>
 									{renderTitle(firstEntry)}
 								</p>
 								{firstEntry.summary ? (
-									<p className="body-body-12-regular m-0 mt-space-xs break-words text-text-muted">
+									<p className="body-body-12-regular m-0 mt-space-xs wrap-break-word text-text-muted">
 										{firstEntry.summary}
 									</p>
 								) : null}
