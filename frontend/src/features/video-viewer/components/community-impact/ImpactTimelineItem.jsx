@@ -8,13 +8,17 @@ export function ImpactTimelineItem({ date = '', summary = '', title, url, year }
 	const safeHref = getSafeHref(url);
 
 	return (
-		<li className="relative grid min-h-24.75 grid-cols-[var(--size-32)_1fr] gap-space-sm">
-			<span className="relative flex min-h-24.75 justify-center" aria-hidden="true">
+		<li className="relative grid min-h-24.75 grid-cols-[var(--size-32)_1fr] grid-rows-[29px_auto_1fr] gap-x-space-sm">
+			<span className="relative col-start-1 row-span-3 row-start-1 flex justify-center" aria-hidden="true">
 				<span className="absolute top-0 bottom-0 w-px bg-border-default" />
-				<span className="absolute top-7.25 z-10 h-size-6 w-size-6 translate-y-1/2 rounded-full bg-bg-timeline-dot" />
 			</span>
+			{/* Shares the text's row, so it stays centred on the entry however many lines it wraps to. */}
+			<span
+				className="z-10 col-start-1 row-start-2 h-size-6 w-size-6 self-center justify-self-center rounded-full bg-bg-timeline-dot"
+				aria-hidden="true"
+			/>
 
-			<div className="min-w-0 pt-7.25">
+			<div className="col-start-2 row-start-2 min-w-0">
 				<p className="body-body-14-bold m-0 wrap-break-word text-text-primary">{title}</p>
 				{summary ? (
 					<p className="body-body-12-regular m-0 mt-space-xs wrap-break-word text-text-muted">{summary}</p>

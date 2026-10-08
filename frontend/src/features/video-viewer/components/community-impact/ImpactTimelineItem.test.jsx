@@ -47,13 +47,27 @@ describe('ImpactTimelineItem', () => {
 		const item = container.querySelector('li');
 		const rail = item?.querySelector('span[aria-hidden="true"]');
 		const connector = rail?.querySelector('.bg-border-default');
-		const dot = rail?.querySelector('.bg-bg-timeline-dot');
 
 		expect(item).toHaveClass('min-h-24.75');
-		expect(rail).toHaveClass('min-h-24.75');
-		expect(rail).not.toHaveClass('h-24.75');
+		expect(rail).toHaveClass('row-span-3');
 		expect(connector).toHaveClass('top-0', 'bottom-0');
 		expect(connector).not.toHaveClass('h-[34px]', 'h-[42px]');
-		expect(dot).toHaveClass('top-7.25', 'translate-y-1/2');
+	});
+
+	it('centres the dot on the entry text instead of pinning it to the top', () => {
+		const { container } = render(
+			<ul>
+				<ImpactTimelineItem date="2025-02-01" summary="Hanoi, Viet Nam" title="Hanoi Doc Week" year={2024} />
+			</ul>
+		);
+
+		const item = container.querySelector('li');
+		const dot = item?.querySelector('.bg-bg-timeline-dot');
+		const text = screen.getByText('Hanoi Doc Week').parentElement;
+
+		expect(item).toHaveClass('grid-rows-[29px_auto_1fr]');
+		expect(text).toHaveClass('row-start-2');
+		expect(dot).toHaveClass('row-start-2', 'self-center');
+		expect(dot).not.toHaveClass('absolute');
 	});
 });

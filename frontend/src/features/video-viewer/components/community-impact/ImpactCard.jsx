@@ -156,7 +156,13 @@ export function ImpactCard({
 					>
 						<li className="relative grid min-h-20 grid-cols-[var(--size-32)_1fr] gap-space-sm">
 							<span className="relative flex justify-center" aria-hidden="true">
-								<span className="absolute top-9.5 h-10.5 w-px bg-border-default" />
+								{/* Reach the next entry whatever this entry's height; a lone entry keeps its short tail. */}
+								<span
+									className={cn(
+										'absolute top-9.5 w-px bg-border-default',
+										remainingEntries.length > 0 ? 'bottom-0' : 'h-10.5'
+									)}
+								/>
 								<span
 									className={cn(
 										'relative z-10 inline-flex h-size-32 w-size-32 shrink-0 items-center justify-center rounded-full',
