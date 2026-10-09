@@ -31,7 +31,7 @@ export default class MediaItemPreviewer {
 			return null;
 		}
 
-		this.extensions = {};
+		this.extensions = { anim: [], fallback: {} };
 
 		function onImageLoad(ins, evt) {
 			requestAnimationFrameID = requestAnimationFrame(function () {
@@ -84,7 +84,7 @@ export default class MediaItemPreviewer {
 
 		if (!this.extensions.fallback.elem) {
 			i = 0;
-			while (i < fallback_extensions.length) {
+			while (i < fallback_ext.length) {
 				if (-1 < extensions.indexOf(fallback_ext[i])) {
 					this.extensions.fallback = { elem: document.createElement('img'), type: fallback_ext[i] };
 					break;
