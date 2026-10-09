@@ -6,6 +6,7 @@ from .settings import *  # noqa: F401,F403
 
 SECRET_KEY = "test-key-not-for-production"
 EMAIL_RECIPIENT_HMAC_KEY = "test-email-hmac-key-not-for-production"
+MEDIA_ACTION_IP_HMAC_KEY = "test-action-ip-hmac-key-not-for-production"
 DEBUG = False
 CELERY_TASK_ALWAYS_EAGER = True
 SENTRY_DSN = ""

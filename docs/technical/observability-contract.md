@@ -85,6 +85,10 @@ disabled after the check. A deployment should retain error events for 30 days.
 
 `cms.scheduled_jobs.SCHEDULED_JOBS` defines each job name, cadence, owner, and absence window. Scheduled-job metrics keep last-started and last-success timestamps separate. A skip does not update last success.
 
+`cleanup_media_action_ips` uses this contract for hourly 7-day IP retention.
+The [operator guide](../security/media-action-ip-privacy.md#retention-and-monitoring)
+defines its cleanup checks and absence handling.
+
 ## Alert validation
 
 `config/observability/alertability.json` maps each portable condition to its signal, semantic owner, bounded dimensions, data states, recovery condition, and initial guidance. `config/observability/fixtures.json` records healthy, degraded, unknown, and recovered inputs for representative condition families.

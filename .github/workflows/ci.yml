@@ -140,6 +140,7 @@ jobs:
       - name: Check for missing migrations
         env:
           SECRET_KEY: ci-not-a-real-secret-key-do-not-use-in-prod
+          MEDIA_ACTION_IP_HMAC_KEY: ci-action-ip-hmac-key-not-for-production
         run: uv run python manage.py makemigrations --check
 
   pre-commit:

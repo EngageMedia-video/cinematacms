@@ -3,6 +3,8 @@ from django.db import models
 from files.models import Media
 from users.models import User
 
+from .fields import MaskedIPField
+
 USER_MEDIA_ACTIONS = (
     ("like", "Like"),
     ("dislike", "Dislike"),
@@ -28,7 +30,7 @@ class MediaAction(models.Model):
 
     media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name="mediaactions")
     action_date = models.DateTimeField(auto_now_add=True)
-    remote_ip = models.CharField(max_length=64, blank=True, null=True)
+    remote_ip = MaskedIPField(max_length=64, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         super(MediaAction, self).save(*args, **kwargs)
