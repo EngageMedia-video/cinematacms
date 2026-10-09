@@ -13,8 +13,9 @@ Modern-track home page: hero section + Featured by Curators row + admin-configur
    `homeQueryClient` before first render. The hero and curators row paint from seeded list data, and the page knows
    the exact number of configured playlist rows before rendering, avoiding placeholder rows that later collapse.
 
-3. `useFeaturedMedia` and `useRecommendedMedia` hooks observe keys `['home','featured']` and
-   `['home','recommended']`. On `staleTime` expiry or focus, they refetch from the API.
+3. `useFeaturedMedia` observes `['home','featured']` for the hero and curators row.
+   On `staleTime` expiry or focus, it refetches from the API. The recommended
+   payload is still seeded for compatibility but has no mounted consumer.
 
 4. `HeroSection.Player` uses list playback data when present. When the featured list item has no playback payload,
    it fetches the legacy media detail endpoint derived from `url`, `friendly_token`, `uid`, or `id` before mounting
@@ -46,7 +47,7 @@ HomePage (QueryClientProvider)
     ├── HeroSection (compound, reads useFeaturedMedia)
     │   ├── HeroSection.Player  (HeroVideoPlayer → @mediacms/media-player)
     │   └── HeroSection.Card   (title, meta, ExpandableText)
-    ├── FeaturedByCuratorsRow  (thin wrapper → SectionRow + useRecommendedMedia)
+    ├── FeaturedByCuratorsRow  (thin wrapper → SectionRow + useFeaturedMedia, excluding the hero item)
     ├── HomepagePlaylistRow × N (thin wrapper → SectionRow + usePlaylistMedia)
     └── RecentVideosRow        (thin wrapper → SectionRow.Grid + useRecentMedia)
         └── SectionRow (compound)

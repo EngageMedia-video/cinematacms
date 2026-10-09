@@ -18,12 +18,10 @@ Cache Invalidation:
 """
 
 import hashlib
-import json
 import logging
 from typing import Any
 
 from django.conf import settings
-from django.core.serializers.json import DjangoJSONEncoder
 
 from cms.cache_telemetry import owned_cache
 from cms.error_tracking import capture_unexpected_exception
@@ -137,31 +135,6 @@ def _bump_cache_version(scope: str, identifier: str) -> int:
         return 1
 
 
-def _generate_cache_key(*args, **kwargs) -> str:
-    """
-    Generate a cache key from arguments.
-
-    Args:
-        *args: Positional arguments to include in key
-        **kwargs: Keyword arguments to include in key
-
-    Returns:
-        str: MD5 hash-based cache key
-    """
-    # Create a stable representation of arguments
-    key_parts = [str(arg) for arg in args]
-
-    # Sort kwargs for consistent hashing
-    if kwargs:
-        sorted_kwargs = sorted(kwargs.items())
-        key_parts.extend([f"{k}={v}" for k, v in sorted_kwargs])
-
-    key_string = ":".join(key_parts)
-    key_hash = hashlib.md5(key_string.encode("utf-8")).hexdigest()[:16]
-
-    return f"{CACHE_KEY_PREFIX}:{key_hash}"
-
-
 def get_request_cache_origin(request) -> str:
     """
     Return the request origin used by serializers when building absolute URLs.
@@ -251,44 +224,6 @@ def get_media_list_cache_key(
         f"v{version}",
     ]
     return ":".join(parts)
-
-
-def get_media_search_cache_key(query_params: dict[str, Any], page: int = 1) -> str:
-    """
-    Generate cache key for media search endpoint with versioning.
-
-    Args:
-        query_params: Search query parameters dict
-        page: Page number
-
-    Returns:
-        str: Cache key with version token
-    """
-    # Create stable hash of query params
-    sorted_params = sorted(query_params.items())
-    params_str = json.dumps(sorted_params, cls=DjangoJSONEncoder)
-    params_hash = hashlib.md5(params_str.encode("utf-8")).hexdigest()[:16]
-
-    # Use same version as media_list (search results affected by media changes)
-    version = _get_cache_version("media_list", "all")
-    return f"{CACHE_KEY_PREFIX}:media_search:{params_hash}:p{page}:v{version}"
-
-
-def get_related_media_cache_key(friendly_token: str, limit: int = 100) -> str:
-    """
-    Generate cache key for related media with versioning.
-
-    Args:
-        friendly_token: Media friendly token
-        limit: Number of related items
-
-    Returns:
-        str: Cache key with version token
-    """
-    # Related media depends both on this specific media and the overall media list
-    media_version = _get_cache_version("media", friendly_token)
-    list_version = _get_cache_version("media_list", "all")
-    return f"{CACHE_KEY_PREFIX}:related_media:{friendly_token}:{limit}:v{media_version}_{list_version}"
 
 
 def get_cached_result(cache_key: str) -> Any | None:
@@ -410,30 +345,6 @@ def invalidate_media_list_cache() -> int:
 
     except Exception as e:
         logger.error(f"Media list cache invalidation failed: {e}")
-        return 0
-
-
-def invalidate_category_cache(category_title: str | None = None) -> int:
-    """
-    Invalidate category-related cache entries using version bumping.
-
-    Args:
-        category_title: Optional specific category title (currently unused,
-                       all category changes invalidate the entire media_list)
-
-    Returns:
-        int: Always returns 1 (version was bumped)
-    """
-    try:
-        # Bump the global media_list version
-        # Category changes affect media lists and searches
-        _bump_cache_version("media_list", "all")
-
-        logger.info(f"Invalidated cache for category {category_title} via version bump")
-        return 1
-
-    except Exception as e:
-        logger.error(f"Category cache invalidation failed: {e}")
         return 0
 
 

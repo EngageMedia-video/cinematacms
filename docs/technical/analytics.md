@@ -12,6 +12,8 @@ Eligible public pages, accessible media pages and embeds, and authorized owner w
 
 The legacy home hero receives a signed, media-scoped measurement grant from the access-checked media detail API. Its playback contributes watch time without generating a media page-view event.
 
+The legacy demo page and its rating UI have been retired. The `media_rating_success` event no longer has a built-in UI emitter; the rating API remains available to integrations.
+
 The browser also sends cumulative playback snapshots to same-origin `/analytics/playback` at start, every 60 seconds, pause, finish, and page exit. A signed page-load grant and random per-play UUID let the CMS merge retries without storing viewer identity. The endpoint checks origin, grant, media state and revision, and duration. Each snapshot and the accumulated coverage for a play are limited to 1,000 ranges. A snapshot whose merged coverage exceeds that limit returns HTTP 400 without changing the stored summary. The CMS records qualified elapsed viewing time in UTC minute buckets and unique content coverage per play. The existing `watch_days` JSON field and payload key are retained; new keys use `YYYY-MM-DDTHH:MMZ`. Both each request and the merged record are capped at 1,441 buckets and 24 hours of watch time, with at most 60 seconds per minute bucket. Retries merge each bucket by maximum. Legacy date-only snapshots remain accepted, but a play cannot mix date-only and minute keys. Pauses, buffering, seeking jumps, and hidden video below 50% visibility do not add watch time; picture-in-picture video and background audio can. Exit delivery is best effort, so recent plays may be incomplete. CMS summaries and Umami event counts are separate sources.
 
 ## New feature events

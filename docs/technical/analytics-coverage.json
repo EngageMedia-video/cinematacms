@@ -186,36 +186,10 @@
         {
           "path": "frontend/src/features/playlist/components/PlaylistPage.jsx",
           "contains": "track('playlist_share')"
-        },
-        {
-          "path": "frontend/src/static/js/pages/PlaylistPage/store.js",
-          "contains": "track('playlist_update')"
-        },
-        {
-          "path": "frontend/src/static/js/components/-NEW-/PlaylistShareOptions.js",
-          "contains": "track('playlist_link_copy')"
         }
       ],
       "tests": [
         "frontend/src/features/playlist/hooks/analytics.test.jsx",
-        "frontend/src/static/js/cinemata-analytics.test.js"
-      ]
-    },
-    {
-      "id": "conditional-rating",
-      "events": [
-        "media_rating_success"
-      ],
-      "trigger": "A rating API response succeeds; no rating value is sent.",
-      "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
-      "sources": [
-        {
-          "path": "frontend/src/static/js/components/RatingSystem/store.js",
-          "contains": "track('media_rating_success')"
-        }
-      ],
-      "tests": [
-        "tests/test_analytics.py",
         "frontend/src/static/js/cinemata-analytics.test.js"
       ]
     },
@@ -240,10 +214,6 @@
         },
         {
           "path": "frontend/src/features/video-viewer/components/actions/media-share/MediaShareOptions.jsx",
-          "contains": "media_share_click"
-        },
-        {
-          "path": "frontend/src/static/js/components/-NEW-/MediaShareOptions.js",
           "contains": "media_share_click"
         }
       ],
@@ -322,30 +292,13 @@
         {
           "path": "frontend/src/features/global-search/hooks/useGlobalSearch.js",
           "contains": "search_no_results"
-        },
-        {
-          "path": "frontend/src/static/js/components/-NEW-/SearchField/index.js",
-          "contains": "search_submit"
-        },
-        {
-          "path": "frontend/src/static/js/pages/SearchPage.js",
-          "contains": "search_no_results"
-        },
-        {
-          "path": "frontend/src/static/js/components/-NEW-/SearchMediaFiltersRow.js",
-          "contains": "search_sort_change"
-        },
-        {
-          "path": "frontend/src/static/js/components/-NEW-/SearchResultsFilters.js",
-          "contains": "search_filter_reset"
         }
       ],
       "tests": [
         "tests/test_analytics.py",
         "frontend/src/static/js/cinemata-analytics.test.js",
         "frontend/src/features/search/hooks/useMediaSearch.test.js",
-        "frontend/src/features/search/analytics-search.test.jsx",
-        "frontend/src/static/js/components/-NEW-/analytics-search-controls.test.jsx"
+        "frontend/src/features/search/analytics-search.test.jsx"
       ]
     },
     {
@@ -374,10 +327,6 @@
         },
         {
           "path": "frontend/src/features/add-media/bulk-upload/hooks/useBulkUpload.js",
-          "contains": "uploadEvent('start'"
-        },
-        {
-          "path": "frontend/src/static/js/pages/AddMediaPage/index.js",
           "contains": "uploadEvent('start'"
         },
         {

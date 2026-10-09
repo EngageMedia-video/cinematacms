@@ -1417,7 +1417,7 @@ For comprehensive frontend development documentation, see:
 Covers:
 - Detailed component patterns
 - Page creation walkthrough
-- DemoComponent and DemoPage examples
+- The staff-only modern demo page as a working frontend example
 - Flux integration
 - Advanced patterns
 - Troubleshooting
@@ -1532,6 +1532,7 @@ Essential extensions for CinemataCMS development:
 # Install via command line
 code --install-extension ms-python.python
 code --install-extension ms-python.vscode-pylance
+code --install-extension charliermarsh.ruff
 code --install-extension batisteo.vscode-django
 code --install-extension dbaeumer.vscode-eslint
 code --install-extension esbenp.prettier-vscode
@@ -1541,6 +1542,7 @@ code --install-extension bradlc.vscode-tailwindcss
 **Or install via VS Code:**
 - **Python** (ms-python.python) - Python language support
 - **Pylance** (ms-python.vscode-pylance) - Fast Python language server
+- **Ruff** (charliermarsh.ruff) - Python linting, formatting, and import sorting
 - **Django** (batisteo.vscode-django) - Django template support
 - **ESLint** (dbaeumer.vscode-eslint) - JavaScript linting
 - **Prettier** (esbenp.prettier-vscode) - Code formatting
@@ -1553,19 +1555,15 @@ Create `.vscode/settings.json` in the project root:
 ```json
 {
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
-  "python.linting.enabled": true,
-  "python.linting.pylintEnabled": false,
-  "python.linting.flake8Enabled": true,
-  "python.formatting.provider": "black",
   "python.languageServer": "Pylance",
 
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.organizeImports": true
+    "source.organizeImports": "explicit"
   },
 
   "[python]": {
-    "editor.defaultFormatter": "ms-python.python",
+    "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.tabSize": 4
   },
   "[javascript]": {

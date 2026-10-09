@@ -41,7 +41,6 @@ colorama==0.4.6 ; sys_platform == 'win32'
     # via
     #   ipython
     #   qrcode
-    #   tqdm
 crispy-forms-bootstrap2==2024.1
     # via cinemata
 cryptography==50.0.1
@@ -57,13 +56,11 @@ django==5.2.17
     #   django-crispy-forms
     #   django-csp
     #   django-debug-toolbar
-    #   django-filter
     #   django-js-asset
     #   django-maintenance-mode
     #   django-prometheus
     #   django-recaptcha
     #   django-redis
-    #   django-silk
     #   django-tinymce
     #   django-vite
     #   django-waffle
@@ -82,8 +79,6 @@ django-csp==4.0
     # via cinemata
 django-debug-toolbar==8.0.0
     # via cinemata
-django-filter==26.1
-    # via cinemata
 django-imagekit==6.1.1
     # via cinemata
 django-js-asset==4.1.0
@@ -97,8 +92,6 @@ django-prometheus==2.5.0
 django-recaptcha==4.1.0
     # via cinemata
 django-redis==7.0.0
-    # via cinemata
-django-silk==5.6.0
     # via cinemata
 django-tinymce @ git+https://github.com/jazzband/django-tinymce.git@6b413f4e9bdedb9268c8ef25886fdfc994780097
     # via cinemata
@@ -118,12 +111,8 @@ fido2==2.2.1
     # via cinemata
 filetype==1.2.0
     # via cinemata
-flake8==7.3.0
-    # via cinemata
 googleapis-common-protos==1.75.3
     # via opentelemetry-exporter-otlp-proto-http
-gprof2dot==2025.4.14
-    # via django-silk
 idna==3.19
     # via requests
 ipython==8.39.0
@@ -138,8 +127,6 @@ markdown==3.10.3
     # via cinemata
 matplotlib-inline==0.2.2
     # via ipython
-mccabe==0.7.0
-    # via flake8
 opentelemetry-api==1.44.0
     # via
     #   cinemata
@@ -211,8 +198,6 @@ packaging==26.3
     #   opentelemetry-instrumentation
 parso==0.8.7
     # via jedi
-pep8==1.7.1
-    # via cinemata
 pexpect==4.9.0 ; sys_platform != 'emscripten' and sys_platform != 'win32'
     # via ipython
 pilkit==3.0
@@ -239,12 +224,8 @@ ptyprocess==0.7.0 ; sys_platform != 'emscripten' and sys_platform != 'win32'
     # via pexpect
 pure-eval==0.2.4
     # via stack-data
-pycodestyle==2.14.0
-    # via flake8
 pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
-pyflakes==3.4.0
-    # via flake8
 pygments==2.21.0
     # via ipython
 python-dateutil==2.9.0.post0
@@ -263,8 +244,6 @@ requests==2.34.2
     # via
     #   cinemata
     #   opentelemetry-exporter-otlp-proto-http
-rpdb==0.2.0
-    # via cinemata
 sentry-sdk==2.69.2
     # via cinemata
 six==1.17.0
@@ -273,11 +252,8 @@ sqlparse==0.6.0
     # via
     #   django
     #   django-debug-toolbar
-    #   django-silk
 stack-data==0.6.3
     # via ipython
-tqdm==4.70.1
-    # via cinemata
 traitlets==5.16.1
     # via
     #   ipython

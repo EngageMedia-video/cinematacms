@@ -420,59 +420,6 @@ def show_related_media_calculated(media, request, limit):
     return []
 
 
-def update_user_ratings(user, media, user_ratings):
-    # helper function used to populate user ratings for a media
-    # on what the serializer responds as the default response
-    # of the rating object
-    for category in user_ratings:
-        ratings = category.get("ratings", [])
-        for rating in ratings:
-            user_rating = (
-                models.Rating.objects.filter(
-                    user=user,
-                    media_id=media,
-                    rating_category_id=rating.get("rating_category_id"),
-                )
-                .only("score")
-                .first()
-            )
-            if user_rating:
-                rating["score"] = user_rating.score
-    return user_ratings
-
-
-# DEPRECATED: notify_user_on_comment() is no longer called.
-# Comment email notifications are now handled by NotificationService.on_comment()
-# in notifications/services.py. Remove this function in a future cleanup.
-def notify_user_on_comment(friendly_token):
-    media = None
-    media = models.Media.objects.filter(friendly_token=friendly_token).first()
-    if not media:
-        return False
-
-    user = media.user
-    media_url = settings.SSL_FRONTEND_HOST + media.get_absolute_url()
-
-    if user.notification_on_comments:
-        title = f"[{settings.PORTAL_NAME}] - A comment was added"
-        msg = """
-A comment has been added to your media %s .
-View it on %s
-        """ % (
-            media.title,
-            media_url,
-        )
-        email = EmailMessage(
-            title,
-            msg,
-            settings.DEFAULT_FROM_EMAIL,
-            [media.user.email],
-            headers={"X-Cinemata-Email-Kind": "activity_notification"},
-        )
-        email.send(fail_silently=True)
-    return True
-
-
 # Define role mappings for display name and capability description
 ROLE_MAP = {
     "advancedUser": {
