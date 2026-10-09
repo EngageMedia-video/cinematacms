@@ -93,10 +93,6 @@ vi.mock('../../../../static/js/pages/MediaPage/actions.js', () => ({
 	removeMedia: vi.fn(),
 }));
 
-vi.mock('../../../../static/js/components/RatingSystem/RatingSystem', () => ({
-	RatingSystem: () => null,
-}));
-
 vi.mock('../../../../static/js/contexts/UserContext', () => ({
 	UserConsumer: ({ children }) =>
 		children({

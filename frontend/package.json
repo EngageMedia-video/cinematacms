@@ -93,7 +93,6 @@
 		"dompurify": "^3.4.15",
 		"events": "^3.3.0",
 		"flux": "4.0.4",
-		"material-design-icons": "^3.0.1",
 		"normalize.css": "^8.0.1",
 		"react": "^19.3.0",
 		"react-dom": "^19.3.0",
