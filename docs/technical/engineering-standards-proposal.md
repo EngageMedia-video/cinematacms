@@ -342,11 +342,8 @@ files from the report.
 
 The frontend job uses the Vitest V8 provider and runs
 `npm run test:coverage`. It includes JavaScript and JSX under
-`frontend/src/features/` and `frontend/src/static/js/`. It excludes tests, test
-setup, and
-`frontend/src/static/js/components/-NEW-/InlineSliderItemListAsync.js`. That
-legacy file contains JSX under a `.js` extension, which the V8 provider cannot
-remap when the file is uncovered.
+`frontend/src/features/` and `frontend/src/static/js/`. It excludes tests and
+test setup.
 
 Each job publishes its values in the workflow run summary and uploads JSON
 coverage data with 30-day retention. These reports and artifacts form the

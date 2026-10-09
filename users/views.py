@@ -106,10 +106,8 @@ def _profile_context(request, user, active_tab):
     }
 
 
-def _render_profile(request, user, active_tab, legacy_template):
+def _render_profile(request, user, active_tab):
     template = resolve_template(request, "profile")
-    if request.ui_variant == "legacy":
-        template = legacy_template
     return render(request, template, _profile_context(request, user, active_tab))
 
 
@@ -124,7 +122,7 @@ def view_user(request, username):
     user, redirect_response = _get_profile_user_or_redirect(username)
     if redirect_response:
         return redirect_response
-    return _render_profile(request, user, "about", "cms/user.html")
+    return _render_profile(request, user, "about")
 
 
 def analytics_timezone(request):
@@ -532,24 +530,24 @@ def view_user_media(request, username):
     user, redirect_response = _get_profile_user_or_redirect(username)
     if redirect_response:
         return redirect_response
-    return _render_profile(request, user, "media", "cms/user_media.html")
+    return _render_profile(request, user, "media")
 
 
 def view_user_playlists(request, username):
     user, redirect_response = _get_profile_user_or_redirect(username)
     if redirect_response:
         return redirect_response
-    return _render_profile(request, user, "playlists", "cms/user_playlists.html")
+    return _render_profile(request, user, "playlists")
 
 
 def view_user_about(request, username):
     user, redirect_response = _get_profile_user_or_redirect(username)
     if redirect_response:
         return redirect_response
-    return _render_profile(request, user, "about", "cms/user_about.html")
+    return _render_profile(request, user, "about")
 
 
-def _owner_profile_tab(request, username, active_tab, legacy_redirect=None):
+def _owner_profile_tab(request, username, active_tab):
     user, redirect_response = _get_profile_user_or_redirect(username)
     if redirect_response:
         return redirect_response
@@ -557,8 +555,6 @@ def _owner_profile_tab(request, username, active_tab, legacy_redirect=None):
         return HttpResponseRedirect(user.get_absolute_url())
 
     template = resolve_template(request, "profile")
-    if request.ui_variant == "legacy":
-        return HttpResponseRedirect(legacy_redirect or user.get_absolute_url())
     from cms.analytics import allow_workflow_analytics
 
     allow_workflow_analytics(request, "profile_activity")
@@ -566,7 +562,7 @@ def _owner_profile_tab(request, username, active_tab, legacy_redirect=None):
 
 
 def view_user_manage_uploads(request, username):
-    return _owner_profile_tab(request, username, "manage-uploads", "/manage/uploads")
+    return _owner_profile_tab(request, username, "manage-uploads")
 
 
 def view_user_notes(request, username):
@@ -574,11 +570,11 @@ def view_user_notes(request, username):
 
 
 def view_user_history(request, username):
-    return _owner_profile_tab(request, username, "history", "/history")
+    return _owner_profile_tab(request, username, "history")
 
 
 def view_user_liked(request, username):
-    return _owner_profile_tab(request, username, "liked", "/liked")
+    return _owner_profile_tab(request, username, "liked")
 
 
 def view_user_impact(request, username):
@@ -586,8 +582,6 @@ def view_user_impact(request, username):
     if redirect_response:
         return redirect_response
     template = resolve_template(request, "profile")
-    if request.ui_variant == "legacy":
-        return HttpResponseRedirect(user.get_absolute_url())
     return render(request, template, _profile_context(request, user, "impact"))
 
 
@@ -596,8 +590,6 @@ def view_user_contact(request, username):
     if redirect_response:
         return redirect_response
     template = resolve_template(request, "profile")
-    if request.ui_variant == "legacy":
-        return HttpResponseRedirect(user.get_absolute_url())
     # Contact requires an authenticated non-owner on a profile that accepts
     # contact (mirrors the contact_user POST gate). Send anonymous visitors who
     # follow a shared /contact link to login with a next back to the tab, like

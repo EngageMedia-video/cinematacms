@@ -7,7 +7,6 @@ import PropTypes from 'prop-types';
 import { usePopup } from './hooks/usePopup';
 import '../videojs-marker/videojs-markers.js';
 import '../videojs-marker/videojs.markers.css';
-import { enableMarkers, addMarker } from '../videojs-marker/videojs-markers_config.js';
 
 import LinksContext from '../../contexts/LinksContext';
 import SiteContext from '../../contexts/SiteContext';
@@ -457,40 +456,6 @@ export default function CommentsList(props) {
 			let mediaUrl = MediaPageStore.get('media-url').split('?')[0] + '?' + searchParameters;
 
 			const wrapped = '<a href="' + mediaUrl + '">' + match + '</a>';
-			return wrapped;
-		}
-
-		const timeRegex = new RegExp('((\\d)?\\d:)?(\\d)?\\d:\\d\\d', 'g');
-		return text.replace(timeRegex, wrapTimestampWithAnchor);
-	}
-
-	function setTimestampAnchorsAndMarkers(text, videoPlayer) {
-		if (!text) return '';
-
-		function wrapTimestampWithAnchor(match, string) {
-			let split = match.split(':'),
-				s = 0,
-				m = 1;
-			let searchParameters = new URLSearchParams(window.location.search);
-
-			while (split.length > 0) {
-				s += m * parseInt(split.pop(), 10);
-				m *= 60;
-			}
-
-			if (videoPlayer && window.MediaCMS?.features?.media?.actions?.timestampTimebar) {
-				addMarker(videoPlayer, s, text);
-			}
-
-			searchParameters.set('t', s);
-			const wrapped =
-				'<a href="' +
-				MediaPageStore.get('media-url').split('?')[0] +
-				'?' +
-				searchParameters +
-				'">' +
-				match +
-				'</a>';
 			return wrapped;
 		}
 
