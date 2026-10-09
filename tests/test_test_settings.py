@@ -66,7 +66,16 @@ class TestSettingsContractTests(unittest.TestCase):
         env = {
             key: value
             for key, value in os.environ.items()
-            if key not in {"MAKEFLAGS", "MFLAGS", "MAKEOVERRIDES", "TEST_DATABASE_PORT", "TEST_SETTINGS", "TEST_ARGS"}
+            if key
+            not in {
+                "MAKEFILES",
+                "MAKEFLAGS",
+                "MFLAGS",
+                "MAKEOVERRIDES",
+                "TEST_DATABASE_PORT",
+                "TEST_SETTINGS",
+                "TEST_ARGS",
+            }
         }
         for target in ("test", "test-ci"):
             with self.subTest(target=target):
