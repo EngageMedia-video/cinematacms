@@ -36,16 +36,23 @@ describe('AddImpactDialog', () => {
 		expect(screen.queryByTestId('impact-category-fields')).not.toBeInTheDocument();
 	});
 
-	it('asks for a category before submitting', async () => {
+	it('keeps ADD IMPACT disabled until an impact kind is chosen', async () => {
 		const user = userEvent.setup();
 		const onSubmit = vi.fn();
 
 		render(<AddImpactDialog onSubmit={onSubmit} open />);
 
-		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
+		const submit = screen.getByRole('button', { name: 'ADD IMPACT' });
+		expect(submit).toBeDisabled();
+
+		await user.click(submit);
 
 		expect(onSubmit).not.toHaveBeenCalled();
-		expect(screen.getByRole('alert')).toHaveTextContent('Choose what kind of impact this is.');
+		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+		await chooseCategory(user, 'Award');
+
+		expect(submit).toBeEnabled();
 	});
 
 	it('swaps the form fields when the impact category changes', async () => {
@@ -373,18 +380,6 @@ describe('AddImpactDialog error reveal', () => {
 		const result = screen.getByRole('button', { name: 'Choose one' });
 		expect(result).toHaveFocus();
 		expect(lastScrolledElement()).toContainElement(result);
-	});
-
-	it('scrolls back to the impact kinds when none is chosen', async () => {
-		const user = userEvent.setup();
-
-		render(<AddImpactDialog open />);
-
-		await user.click(screen.getByRole('button', { name: 'ADD IMPACT' }));
-
-		const group = screen.getByRole('radiogroup', { name: 'What kind of impact?' });
-		expect(within(group).getByRole('radio', { name: /^Screening/ })).toHaveFocus();
-		expect(lastScrolledElement()).toContainElement(group);
 	});
 
 	it('reveals the field a server error points at', async () => {
