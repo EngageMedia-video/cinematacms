@@ -31,18 +31,28 @@ const entries = {
 };
 
 describe('CommunityImpactSection', () => {
-	it('renders populated category cards from grouped entries', () => {
+	it('renders the new header and the cards in two rows', () => {
 		render(<CommunityImpactSection entries={entries} />);
 
-		expect(screen.getByRole('heading', { name: "Film's Impact" })).toBeVisible();
+		expect(screen.getByRole('heading', { name: "Film's Impact" })).toBeInTheDocument();
 		expect(
 			screen.getByText(
-				'For filmmakers & viewers. Add screenings, playlists, or discussions to show how this film is reaching people.'
+				'For filmmakers & viewers. A list of where the film has been screened, written about, taught, or recognised'
 			)
 		).toBeVisible();
-		expect(screen.getByText('Screened In')).toBeVisible();
-		expect(screen.queryByText('Curated Into')).not.toBeInTheDocument();
-		expect(screen.getByText('Academic Usage')).toBeVisible();
+		expect(screen.getAllByRole('article').map((card) => card.getAttribute('aria-label'))).toEqual([
+			'User Playlists',
+			'Academic Usage',
+			'Screenings',
+			'Reviews and Features',
+		]);
+		expect(
+			within(screen.getByRole('article', { name: 'User Playlists' })).getByText('In 90 playlists')
+		).toBeVisible();
+		expect(
+			within(screen.getByRole('article', { name: 'Academic Usage' })).getByText('Used in 14 classes')
+		).toBeVisible();
+		expect(screen.queryByRole('article', { name: 'Cinemata Curated Playlists' })).not.toBeInTheDocument();
 		expect(screen.queryByText('Where has this film made an impact?')).not.toBeInTheDocument();
 	});
 
@@ -88,72 +98,39 @@ describe('CommunityImpactSection', () => {
 		});
 	});
 
-	it('lists new impact categories with their context and year', () => {
+	it('groups the stored categories into the design cards', () => {
 		render(
 			<CommunityImpactSection
 				entries={{
-					screening: [
-						{
-							uid: 'screening-1',
-							category: 'screening',
-							title: 'Hanoi Doc Week',
-							year: 2024,
-							event_date: '2026-10-01',
-							city: 'Hanoi',
-							country_label: 'Viet Nam',
-							organiser: 'Youth Media Collective',
-						},
-					],
-					article: [
-						{
-							uid: 'article-1',
-							category: 'article',
-							title: 'Films that changed the conversation',
-							year: 2023,
-							event_date: '2026-10-02',
-							creator: 'Dewi Lestari',
-							publication: 'Jakarta Post',
-						},
-					],
+					screening: [{ uid: 's1', title: 'Hanoi Doc Week', year: 2024, url: 'https://example.com/hanoi' }],
+					article: [{ uid: 'a1', title: 'Films that changed the conversation', year: 2023 }],
+					featured: [{ uid: 'f1', title: 'Regional documentary roundup', event_date: '2025-04-20' }],
+					referenced: [{ uid: 'r1', title: 'Tide Lines', year: 2022 }],
 					award: [
-						{
-							uid: 'award-1',
-							category: 'award',
-							title: 'Best Documentary',
-							year: 2021,
-							event_date: '2026-10-03',
-							award_result_label: 'Won',
-							organiser: 'Jogja-NETPAC',
-						},
-						{
-							uid: 'award-2',
-							category: 'award',
-							title: 'Audience Choice',
-							year: 2020,
-							event_date: '2026-10-03',
-							award_result_label: 'Nominated',
-							organiser: 'Busan IFF',
-						},
+						{ uid: 'w1', title: 'Best Documentary', year: 2021 },
+						{ uid: 'w2', title: 'Audience Choice', year: 2020 },
 					],
+					teaching: [{ uid: 't1', title: 'Media and Climate Justice', year: 2025 }],
 				}}
 			/>
 		);
 
-		const screening = screen.getByLabelText('Screened In');
-		expect(within(screening).getByText('Hanoi, Viet Nam · Organised by Youth Media Collective')).toBeVisible();
-		expect(within(screening).getByText('2024')).toBeVisible();
-		expect(within(screening).queryByText('Oct 1, 2026')).not.toBeInTheDocument();
-
-		const article = screen.getByLabelText('Written About In');
-		expect(within(article).getByText('By Dewi Lestari · Jakarta Post')).toBeVisible();
-
-		const award = screen.getByLabelText('Awards & Recognition');
-		expect(within(award).getByText('Won · Given by Jogja-NETPAC')).toBeVisible();
-		expect(within(award).getByText('Nominated · Given by Busan IFF')).toBeVisible();
-		expect(within(award).getByText('2020')).toBeVisible();
-
-		expect(screen.queryByLabelText('Referenced In')).not.toBeInTheDocument();
-		expect(screen.queryByLabelText('Taught & Researched In')).not.toBeInTheDocument();
+		const reviews = screen.getByRole('article', { name: 'Reviews and Features' });
+		expect(
+			within(reviews)
+				.getAllByRole('listitem')
+				.map((item) => item.querySelector('p').textContent)
+		).toEqual(['Regional documentary roundup', 'Films that changed the conversation']);
+		expect(within(reviews).getByText('April 2025')).toBeVisible();
+		expect(within(screen.getByRole('article', { name: 'Awards' })).getByText('2 recognitions')).toBeVisible();
+		expect(
+			within(screen.getByRole('article', { name: 'Academic Usage' })).getByText('Used in 1 class')
+		).toBeVisible();
+		expect(
+			within(screen.getByRole('article', { name: 'Referenced in Works' })).getByText('Tide Lines')
+		).toBeVisible();
+		expect(screen.queryByRole('article', { name: 'Featured In' })).not.toBeInTheDocument();
+		expect(screen.queryByRole('article', { name: 'Teaching or Research' })).not.toBeInTheDocument();
 	});
 
 	it('clears a submit error when the add dialog is cancelled', async () => {

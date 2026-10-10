@@ -41,11 +41,11 @@ describe('ImpactFilmGroup', () => {
 			/>
 		);
 
-		expect(screen.getByRole('heading', { name: 'Awards & Recognition' })).toBeVisible();
+		expect(screen.getByRole('heading', { name: 'Awards' })).toBeVisible();
 		expect(screen.getByText('Best Documentary')).toBeVisible();
 		expect(screen.getByText('Won · Given by Jogja-NETPAC')).toBeVisible();
 		expect(screen.getByText('2021')).toBeVisible();
-		expect(screen.getByRole('heading', { name: 'Taught & Researched In' })).toBeVisible();
+		expect(screen.getByRole('heading', { name: 'Teaching or Research' })).toBeVisible();
 		expect(screen.getByText('Led by Dr. Maria Santos')).toBeVisible();
 		expect(screen.queryByText('Oct 3, 2026')).not.toBeInTheDocument();
 	});
