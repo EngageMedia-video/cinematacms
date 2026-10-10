@@ -347,6 +347,7 @@
         "scheduled.cleanup_orphaned_uploads",
         "scheduled.cleanup_orphaned_draft_media",
         "scheduled.purge_playback_summaries",
+        "scheduled.cleanup_media_action_ips",
         "scheduled.dispatch_deferred_encodings",
         "scheduled.apply_visibility_schedules",
         "other"
@@ -499,7 +500,8 @@
         "cleanup_orphaned_uploads",
         "cleanup_orphaned_draft_media",
         "dispatch_deferred_encodings",
-        "apply_visibility_schedules"
+        "apply_visibility_schedules",
+        "cleanup_media_action_ips"
       ],
       "description": "Registered scheduled jobs."
     },
@@ -1981,7 +1983,8 @@
           "scheduled.purge_playback_summaries",
           "scheduled.dispatch_deferred_encodings",
           "scheduled.apply_visibility_schedules",
-          "other"
+          "other",
+          "scheduled.cleanup_media_action_ips"
         ],
         "domain_outcomes": [
           "succeeded",
@@ -2238,7 +2241,8 @@
       ],
       "tests": [
         "cms.tests.test_observability_coverage.ObservabilityCoverageContractTests",
-        "cms.tests.test_scheduled_jobs"
+        "cms.tests.test_scheduled_jobs",
+        "actions.tests.IPCleanupTests"
       ],
       "operator_query": "Alert on a registered job whose last success exceeds its absence window; inspect the run outcome and reason code.",
       "registry_coverage": {
@@ -2254,7 +2258,8 @@
           "cleanup_orphaned_uploads",
           "cleanup_orphaned_draft_media",
           "dispatch_deferred_encodings",
-          "apply_visibility_schedules"
+          "apply_visibility_schedules",
+          "cleanup_media_action_ips"
         ],
         "scheduled_outcomes": [
           "succeeded",

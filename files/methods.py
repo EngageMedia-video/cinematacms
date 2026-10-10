@@ -153,9 +153,7 @@ def pre_save_action(media, user, session_key, action, remote_ip):
 
             max_per_5sec = getattr(settings, "MAX_ANONYMOUS_VIEWS_PER_5SEC", 30)
             if recent_views >= max_per_5sec:
-                logger.warning(
-                    f"Rate limit: IP {remote_ip} exceeded {max_per_5sec} views/5sec for media {media.friendly_token}"
-                )
+                logger.warning("Anonymous view rate limit exceeded")
                 return False
 
         # Only allow if no previous session record (first-time anonymous user)
