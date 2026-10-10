@@ -265,10 +265,8 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 	const [values, setValues] = useState({});
 	const [errors, setErrors] = useState({});
 	const categoryLabelId = useId();
-	const categoryErrorId = useId();
 	const categoryGroupName = useId();
 	const formRef = useRef(null);
-	const categoryGroupRef = useRef(null);
 	const formErrorRef = useRef(null);
 	const fields = getVisibleImpactFields(category, values);
 	const fieldNames = new Set(fields.map((field) => field.name));
@@ -319,13 +317,7 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 	function handleSubmit(event) {
 		event.preventDefault();
 
-		if (submitting) {
-			return;
-		}
-
-		if (!category) {
-			setErrors({ category: 'Choose what kind of impact this is.' });
-			revealInvalidControl(categoryGroupRef.current);
+		if (submitting || !category) {
 			return;
 		}
 
@@ -363,12 +355,9 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 						What kind of impact?<span aria-hidden="true"> *</span>
 					</p>
 					<div
-						ref={categoryGroupRef}
 						role="radiogroup"
 						aria-labelledby={categoryLabelId}
 						aria-required="true"
-						aria-invalid={errors.category ? 'true' : undefined}
-						aria-describedby={errors.category ? categoryErrorId : undefined}
 						className="grid grid-cols-1 gap-2 sm:grid-cols-2"
 					>
 						{IMPACT_FORM_CATEGORIES.map((option) => (
@@ -381,11 +370,6 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 							/>
 						))}
 					</div>
-					{errors.category ? (
-						<p id={categoryErrorId} className="body-body-14-regular m-0 text-text-danger" role="alert">
-							{errors.category}
-						</p>
-					) : null}
 				</div>
 
 				{category ? (
@@ -430,7 +414,7 @@ function AddImpactForm({ onClose, onSubmit, onSubmitErrorClear, submitError, sub
 					<Button
 						type="submit"
 						className="h-10 bg-bg-secondary px-4 py-0 text-text-on-primary hover:bg-bg-secondary-hover focus-visible:ring-2 focus-visible:ring-ring-focus"
-						disabled={submitting}
+						disabled={submitting || !category}
 					>
 						{submitting ? 'SUBMITTING...' : 'ADD IMPACT'}
 					</Button>
