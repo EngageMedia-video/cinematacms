@@ -27,6 +27,33 @@ export function formatImpactDate(value) {
 	return new Intl.DateTimeFormat('en', FORMAT_OPTIONS).format(date);
 }
 
+const MONTH_YEAR_OPTIONS = {
+	month: 'long',
+	year: 'numeric',
+};
+
+// "February 2025", the date style of the impact cards.
+export function formatImpactMonthYear(value) {
+	if (!value) {
+		return '';
+	}
+
+	if (DATE_ONLY.test(value)) {
+		const [year, month, day] = value.split('-').map(Number);
+		return new Intl.DateTimeFormat('en', { ...MONTH_YEAR_OPTIONS, timeZone: 'UTC' }).format(
+			new Date(Date.UTC(year, month - 1, day))
+		);
+	}
+
+	const date = new Date(value);
+
+	if (Number.isNaN(date.getTime())) {
+		return value;
+	}
+
+	return new Intl.DateTimeFormat('en', MONTH_YEAR_OPTIONS).format(date);
+}
+
 const SAFE_PROTOCOLS = new Set(['http:', 'https:']);
 
 export function getSafeHref(value) {
