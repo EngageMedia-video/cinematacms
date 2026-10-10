@@ -6,8 +6,14 @@ from rest_framework import serializers
 
 from actions.models import MediaAction
 
-from .community_impact_validators import validate_trusted_url
-from .methods import user_can_delete_comment, user_can_manage_media
+from .community_impact_validators import (
+    IMPACT_CATEGORY_FIELDS,
+    IMPACT_DETAIL_FIELD_DEFAULTS,
+    validate_impact_category_fields,
+    validate_impact_year,
+    validate_trusted_url,
+)
+from .methods import can_view_private_impact_organiser, user_can_delete_comment, user_can_manage_media
 from .models import (
     Category,
     Comment,
@@ -217,12 +223,20 @@ class ManageUploadSerializer(serializers.ModelSerializer):
 class ManageCommunityImpactSerializer(serializers.ModelSerializer):
     WRITABLE_CATEGORIES = {
         CommunityImpact.SCREENING,
+        CommunityImpact.ARTICLE,
+        CommunityImpact.REFERENCED,
+        CommunityImpact.AWARD,
+        CommunityImpact.TEACHING,
         CommunityImpact.FEATURED,
         CommunityImpact.ACADEMIC,
     }
 
     category_label = serializers.CharField(source="get_category_display", read_only=True)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
+    country_label = serializers.CharField(source="get_country_display", read_only=True)
+    medium_label = serializers.CharField(source="get_medium_display", read_only=True)
+    award_result_label = serializers.CharField(source="get_award_result_display", read_only=True)
+    year = serializers.IntegerField(required=False, allow_null=True, validators=[validate_impact_year])
     edit_url = serializers.SerializerMethodField()
     media = serializers.SerializerMethodField()
     user = serializers.SerializerMethodField()
@@ -268,12 +282,25 @@ class ManageCommunityImpactSerializer(serializers.ModelSerializer):
     def validate_url(self, value):
         return validate_trusted_url(value)
 
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        category = attrs.get("category")
+        changing_category = self.instance is not None and category and category != self.instance.category
+        if changing_category and category in IMPACT_CATEGORY_FIELDS:
+            current = {field: getattr(self.instance, field) for field in IMPACT_DETAIL_FIELD_DEFAULTS}
+            cleaned = validate_impact_category_fields({**current, **attrs})
+            attrs.update({field: cleaned[field] for field in IMPACT_DETAIL_FIELD_DEFAULTS})
+        return attrs
+
     class Meta:
         model = CommunityImpact
         read_only_fields = (
             "uid",
             "category_label",
             "status_label",
+            "country_label",
+            "medium_label",
+            "award_result_label",
             "media",
             "user",
             "add_date",
@@ -291,6 +318,19 @@ class ManageCommunityImpactSerializer(serializers.ModelSerializer):
             "media",
             "user",
             "event_date",
+            "year",
+            "is_online",
+            "city",
+            "country",
+            "country_label",
+            "organiser",
+            "organiser_private",
+            "creator",
+            "publication",
+            "medium",
+            "medium_label",
+            "award_result",
+            "award_result_label",
             "add_date",
             "edit_date",
             "url",
@@ -678,11 +718,18 @@ class CommunityImpactSerializer(serializers.ModelSerializer):
     author_username = serializers.ReadOnlyField(source="user.username")
     event_date = serializers.DateField(required=False, default=timezone.localdate)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
+    category_label = serializers.CharField(source="get_category_display", read_only=True)
+    country_label = serializers.CharField(source="get_country_display", read_only=True)
+    medium_label = serializers.CharField(source="get_medium_display", read_only=True)
+    award_result_label = serializers.CharField(source="get_award_result_display", read_only=True)
+    year = serializers.IntegerField(required=False, allow_null=True, validators=[validate_impact_year])
 
     WRITABLE_CATEGORIES = {
         CommunityImpact.SCREENING,
-        CommunityImpact.FEATURED,
-        CommunityImpact.ACADEMIC,
+        CommunityImpact.ARTICLE,
+        CommunityImpact.REFERENCED,
+        CommunityImpact.AWARD,
+        CommunityImpact.TEACHING,
     }
 
     class Meta:
@@ -695,15 +742,33 @@ class CommunityImpactSerializer(serializers.ModelSerializer):
             "author_username",
             "status",
             "status_label",
+            "category_label",
+            "country_label",
+            "medium_label",
+            "award_result_label",
         )
         fields = (
             "uid",
             "category",
+            "category_label",
             "status",
             "status_label",
             "title",
             "details",
             "event_date",
+            "year",
+            "is_online",
+            "city",
+            "country",
+            "country_label",
+            "organiser",
+            "organiser_private",
+            "creator",
+            "publication",
+            "medium",
+            "medium_label",
+            "award_result",
+            "award_result_label",
             "url",
             "add_date",
             "edit_date",
@@ -723,6 +788,17 @@ class CommunityImpactSerializer(serializers.ModelSerializer):
 
     def validate_url(self, value):
         return validate_trusted_url(value)
+
+    def validate(self, attrs):
+        return validate_impact_category_fields(super().validate(attrs))
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        viewer = getattr(request, "user", None)
+        if instance.organiser_private and not can_view_private_impact_organiser(viewer, instance):
+            data["organiser"] = ""
+        return data
 
 
 class TopMessageSerializer(serializers.ModelSerializer):

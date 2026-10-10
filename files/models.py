@@ -19,6 +19,7 @@ from django.core.files import File
 from django.core.validators import RegexValidator
 from django.db import DatabaseError, connection, models, transaction
 from django.db.models import Q
+from django.db.models.functions import Coalesce, ExtractYear
 from django.db.models.signals import (
     m2m_changed,
     post_delete,
@@ -2372,6 +2373,10 @@ class PrivateJournalNote(models.Model):
 
 class CommunityImpact(models.Model):
     SCREENING = "screening"
+    ARTICLE = "article"
+    REFERENCED = "referenced"
+    AWARD = "award"
+    TEACHING = "teaching"
     FEATURED = "featured"
     SAVES = "saves"
     ACADEMIC = "academic"
@@ -2382,6 +2387,11 @@ class CommunityImpact(models.Model):
 
     CATEGORY_CHOICES = [
         (SCREENING, "Screened In"),
+        (ARTICLE, "Article or Review"),
+        (REFERENCED, "Referenced in Another Work"),
+        (AWARD, "Award"),
+        (TEACHING, "Teaching or Research"),
+        # Legacy categories: kept for existing entries, no longer offered by the submission form.
         (FEATURED, "Featured In"),
         (SAVES, "Saves & Playlists"),
         (ACADEMIC, "Academic Usage"),
@@ -2392,6 +2402,19 @@ class CommunityImpact(models.Model):
         (APPROVED, "Approved"),
         (REJECTED, "Rejected"),
     ]
+    MEDIUM_CHOICES = [
+        ("film", "Film"),
+        ("artwork", "Artwork"),
+        ("music", "Song or Music"),
+        ("performance", "Performance"),
+        ("writing", "Writing"),
+        ("other", "Other"),
+    ]
+    AWARD_RESULT_CHOICES = [
+        ("won", "Won"),
+        ("nominated", "Nominated"),
+        ("special_mention", "Special Mention"),
+    ]
 
     uid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name="community_impacts")
@@ -2400,13 +2423,31 @@ class CommunityImpact(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=WAITING_APPROVAL, db_index=True)
     title = models.CharField(max_length=200)
     details = models.TextField(blank=True, default="")
+    # Date the entry was reported; ``year`` is when the impact itself happened.
     event_date = models.DateField()
+    year = models.PositiveSmallIntegerField(null=True, blank=True)
+    is_online = models.BooleanField(default=False)
+    city = models.CharField(max_length=100, blank=True, default="")
+    country = models.CharField(max_length=5, blank=True, default="", choices=lists.video_countries)
+    # Screening organiser, award giver, or teaching institution.
+    organiser = models.CharField(max_length=200, blank=True, default="")
+    organiser_private = models.BooleanField(default=False)
+    # Article author, maker of a referencing work, or teaching lead.
+    creator = models.CharField(max_length=200, blank=True, default="")
+    publication = models.CharField(max_length=200, blank=True, default="")
+    medium = models.CharField(max_length=20, blank=True, default="", choices=MEDIUM_CHOICES)
+    award_result = models.CharField(max_length=20, blank=True, default="", choices=AWARD_RESULT_CHOICES)
     url = models.URLField(blank=True, default="")
     add_date = models.DateTimeField(auto_now_add=True)
     edit_date = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-event_date", "-add_date"]
+        # Legacy entries have no year, so they sort by the year they were reported.
+        ordering = [
+            Coalesce("year", ExtractYear("event_date")).desc(),
+            "-event_date",
+            "-add_date",
+        ]
         indexes = [
             models.Index(fields=["media", "category"]),
             models.Index(fields=["status", "category"]),
@@ -2418,6 +2459,10 @@ class CommunityImpact(models.Model):
     def save(self, *args, **kwargs):
         self.title = strip_tags(self.title)
         self.details = strip_tags(self.details)
+        self.city = strip_tags(self.city)
+        self.organiser = strip_tags(self.organiser)
+        self.creator = strip_tags(self.creator)
+        self.publication = strip_tags(self.publication)
         words = self.details.split()
         if len(words) > 80:
             self.details = " ".join(words[:80])

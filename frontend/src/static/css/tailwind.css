@@ -1023,6 +1023,10 @@ body {
 	--bg-emblem-green: var(--cinemata-coral-reef-800);
 	--bg-emblem-orange: var(--cinemata-sunset-horizon-700);
 	--bg-emblem-gray: var(--cinemata-neutral-800);
+	--bg-emblem-amber: var(--cinemata-amber-700);
+	--bg-emblem-strait-deep: var(--cinemata-strait-blue-700);
+	--bg-emblem-strait: var(--cinemata-strait-blue-600p);
+	--bg-emblem-strait-light: var(--cinemata-strait-blue-400);
 	--bg-dialog-close: var(--cinemata-strait-blue-400);
 	--bg-timeline-dot: var(--cinemata-strait-blue-200);
 	--bg-danger: var(--cinemata-red-500);
@@ -1065,6 +1069,10 @@ body {
 	--text-link-hover: var(--cinemata-sunset-horizon-800);
 	--text-accent: var(--cinemata-sunset-horizon-400p);
 	--text-on-emblem-green: var(--cinemata-coral-reef-600);
+	--text-on-emblem-amber: var(--cinemata-amber-500);
+	--text-on-emblem-blue-deep: var(--cinemata-strait-blue-200);
+	--text-on-emblem-strait-deep: var(--cinemata-strait-blue-300);
+	--text-on-emblem-strait: var(--cinemata-strait-blue-100);
 	--text-on-dialog-close: var(--cinemata-pacific-deep-900);
 	--text-dialog-accent: var(--cinemata-strait-blue-400);
 	--text-danger: var(--cinemata-red-500);
@@ -1126,6 +1134,9 @@ body.dark_theme {
 	--bg-emblem-green: var(--cinemata-coral-reef-900);
 	--bg-emblem-orange: var(--cinemata-sunset-horizon-800);
 	--bg-emblem-gray: var(--cinemata-neutral-900);
+	--bg-emblem-amber: var(--cinemata-amber-800);
+	--bg-emblem-strait-deep: var(--cinemata-strait-blue-800);
+	--text-on-emblem-green: var(--cinemata-coral-reef-500);
 	--bg-danger-subtle: var(--cinemata-red-950);
 	--bg-danger-strong: var(--cinemata-red-950);
 	--bg-danger-strong-hover: var(--cinemata-red-900);
@@ -1212,6 +1223,10 @@ body.dark_theme {
 	--color-bg-emblem-green: var(--bg-emblem-green);
 	--color-bg-emblem-orange: var(--bg-emblem-orange);
 	--color-bg-emblem-gray: var(--bg-emblem-gray);
+	--color-bg-emblem-amber: var(--bg-emblem-amber);
+	--color-bg-emblem-strait-deep: var(--bg-emblem-strait-deep);
+	--color-bg-emblem-strait: var(--bg-emblem-strait);
+	--color-bg-emblem-strait-light: var(--bg-emblem-strait-light);
 	--color-bg-dialog-close: var(--bg-dialog-close);
 	--color-bg-timeline-dot: var(--bg-timeline-dot);
 	--color-bg-danger: var(--bg-danger);
@@ -1255,6 +1270,10 @@ body.dark_theme {
 	--color-text-link-hover: var(--text-link-hover);
 	--color-text-accent: var(--text-accent);
 	--color-text-on-emblem-green: var(--text-on-emblem-green);
+	--color-text-on-emblem-amber: var(--text-on-emblem-amber);
+	--color-text-on-emblem-blue-deep: var(--text-on-emblem-blue-deep);
+	--color-text-on-emblem-strait-deep: var(--text-on-emblem-strait-deep);
+	--color-text-on-emblem-strait: var(--text-on-emblem-strait);
 	--color-text-on-dialog-close: var(--text-on-dialog-close);
 	--color-text-dialog-accent: var(--text-dialog-accent);
 	--color-text-danger: var(--text-danger);

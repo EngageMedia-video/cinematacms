@@ -1,5 +1,6 @@
 import { Icon, Text } from '../../../shared/components';
 import { getImpactIconConfig } from '../../../video-viewer/components/community-impact/impactIcons';
+import { describeImpactEntry } from '../../../video-viewer/components/community-impact/utils/describeImpactEntry';
 import { formatImpactDate, getSafeHref } from '../../../video-viewer/components/community-impact/utils/formatDate';
 import { ImpactFilmRow } from './ImpactFilmRow';
 
@@ -7,7 +8,7 @@ import { ImpactFilmRow } from './ImpactFilmRow';
 // wireframe specifies. "saves" is a summary-only category and "curated" is
 // excluded server-side, so neither appears here. Icons/labels reuse the media
 // page's impact config so the two surfaces stay visually consistent.
-const CATEGORY_KEYS = ['screening', 'featured', 'academic'];
+const CATEGORY_KEYS = ['screening', 'article', 'referenced', 'award', 'teaching', 'featured', 'academic'];
 
 function entryList(bucket) {
 	if (Array.isArray(bucket)) return bucket;
@@ -16,8 +17,10 @@ function entryList(bucket) {
 
 function ImpactEntry({ entry }) {
 	const href = getSafeHref(entry?.url);
-	const date = formatImpactDate(entry?.event_date || entry?.add_date);
+	const dateTime = entry?.year ? String(entry.year) : entry?.event_date || entry?.add_date;
+	const date = entry?.year ? String(entry.year) : formatImpactDate(dateTime);
 	const title = entry?.title || '';
+	const summary = describeImpactEntry(entry);
 
 	return (
 		<li className="flex min-w-0 flex-col gap-1 border-b border-border-divider py-3 last:border-b-0">
@@ -33,11 +36,12 @@ function ImpactEntry({ entry }) {
 			) : (
 				<span className="text-text-primary body-body-14-medium">{title}</span>
 			)}
+			{summary ? <p className="m-0 break-words text-text-muted body-body-12-regular">{summary}</p> : null}
 			{entry?.details ? (
 				<p className="m-0 break-words text-text-muted body-body-12-regular">{entry.details}</p>
 			) : null}
 			{date ? (
-				<time className="text-text-muted body-body-12-regular" dateTime={entry?.event_date || entry?.add_date}>
+				<time className="text-text-muted body-body-12-regular" dateTime={dateTime}>
 					{date}
 				</time>
 			) : null}

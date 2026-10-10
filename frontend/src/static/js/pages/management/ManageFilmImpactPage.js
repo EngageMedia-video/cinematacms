@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 
 import ApiUrlContext from '../../contexts/ApiUrlContext';
@@ -12,6 +11,10 @@ import '../styles/ManageFilmImpactPage.scss';
 const CATEGORY_OPTIONS = [
 	{ value: '', label: 'All categories' },
 	{ value: 'screening', label: 'Screened In' },
+	{ value: 'article', label: 'Article or Review' },
+	{ value: 'referenced', label: 'Referenced in Another Work' },
+	{ value: 'award', label: 'Award' },
+	{ value: 'teaching', label: 'Teaching or Research' },
 	{ value: 'featured', label: 'Featured In' },
 	{ value: 'saves', label: 'Saves & Playlists' },
 	{ value: 'academic', label: 'Academic Usage' },
@@ -19,7 +22,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 const EDIT_CATEGORY_OPTIONS = CATEGORY_OPTIONS.filter((option) =>
-	['screening', 'featured', 'academic'].includes(option.value)
+	['screening', 'article', 'referenced', 'award', 'teaching', 'featured', 'academic'].includes(option.value)
 );
 
 const STATUS_OPTIONS = [
