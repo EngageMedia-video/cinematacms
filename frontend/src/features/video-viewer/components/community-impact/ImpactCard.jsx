@@ -1,268 +1,139 @@
 import PropTypes from 'prop-types';
-import { useId, useMemo, useState } from 'react';
-import { Button, Card, Icon } from '../../../shared/components';
+import { useState } from 'react';
+import { Card, Icon } from '../../../shared/components';
 import { cn } from '../../../shared/utils/classNames';
 import { ImpactDetailDialog } from './ImpactDetailDialog';
-import { getImpactIconConfig } from './impactIcons';
-import { ImpactTimelineItem } from './ImpactTimelineItem';
-import { formatImpactDate, formatRelativeImpactTime, getSafeHref } from './utils/formatDate';
+import { LIST_CARD_PREVIEW_COUNT } from './utils/buildImpactCards';
+import { formatImpactMonthYear, getSafeHref } from './utils/formatDate';
 
-function getSummaryEntry({ label, lastEventAt, lastReportedAt, totalCount, variant }) {
-	if (variant === 'saves') {
-		const saves = typeof totalCount === 'object' ? Number(totalCount?.saves) || 0 : Number(totalCount) || 0;
-		const playlists = typeof totalCount === 'object' ? Number(totalCount?.playlists) || 0 : 0;
-
-		return {
-			date: lastEventAt,
-			dateLabel: 'Last Saved',
-			title: playlists
-				? `${saves.toLocaleString()} saves in ${playlists.toLocaleString()} playlists`
-				: `${saves.toLocaleString()} community saves and playlists`,
-			titleParts: playlists
-				? [
-						{ text: saves.toLocaleString(), accent: true },
-						' saves in ',
-						{ text: playlists.toLocaleString(), accent: true },
-						' playlists',
-					]
-				: [{ text: saves.toLocaleString(), accent: true }, ' community saves and playlists'],
-			url: '',
-		};
-	}
-
-	const count = Number(totalCount) || 0;
-
-	return {
-		date: lastReportedAt,
-		dateLabel: 'Last Reported',
-		title: `Used in ${count.toLocaleString()} ${label || 'academic contexts'}`,
-		titleParts: ['Used in ', { text: count.toLocaleString(), accent: true }, ` ${label || 'academic contexts'}`],
-		url: '',
-	};
-}
-
-function renderTitle(entry) {
-	if (Array.isArray(entry.titleParts)) {
-		return entry.titleParts.map((part, index) => {
-			if (typeof part === 'string') {
-				return part;
-			}
-
-			return (
-				<span key={`${part.text}-${index}`} className={part.accent ? 'text-text-accent' : undefined}>
-					{part.text}
-				</span>
-			);
-		});
-	}
-
-	return entry.title;
-}
-
-function formatEntryDate(date, dateLabel, year) {
-	if (year) {
-		return String(year);
-	}
-
-	return dateLabel ? formatRelativeImpactTime(date) || formatImpactDate(date) : formatImpactDate(date);
-}
-
-function ImpactMetaRow({ date, dateLabel = '', title, url, year }) {
-	const safeHref = getSafeHref(url);
-	const formattedDate = formatEntryDate(date, dateLabel, year);
-	const hasDateMeta = Boolean(dateLabel || formattedDate);
+function ImpactCardEntry({ entry }) {
+	const safeHref = getSafeHref(entry.url);
+	const when = entry.year ? String(entry.year) : formatImpactMonthYear(entry.date);
+	const dateTime = entry.year ? String(entry.year) : entry.date;
 
 	return (
-		<div className="mt-space-xs flex min-w-0 flex-wrap items-center gap-space-xs text-text-muted">
-			{dateLabel ? <span className="body-body-12-regular text-text-muted">{dateLabel}</span> : null}
-			{dateLabel && formattedDate ? (
-				<span className="body-body-12-regular text-text-muted" aria-hidden="true">
-					•
-				</span>
+		<li className="flex min-w-0 flex-col gap-2">
+			<p className="body-body-16-regular m-0 wrap-break-word text-text-strong">{entry.title}</p>
+			{when || safeHref ? (
+				<div className="flex min-w-0 flex-wrap items-center gap-2 text-text-description">
+					{when ? (
+						<time className="body-body-14-regular" dateTime={dateTime}>
+							{when}
+						</time>
+					) : null}
+					{when && safeHref ? (
+						<span className="body-body-14-regular" aria-hidden="true">
+							•
+						</span>
+					) : null}
+					{safeHref ? (
+						<a
+							className="pointer-events-auto relative inline-flex shrink-0 items-center justify-center text-text-accent outline-none hover:text-text-link-hover focus-visible:ring-2 focus-visible:ring-ring-focus"
+							href={safeHref}
+							aria-label={`Open impact link for ${entry.title}`}
+							target="_blank"
+							rel="noreferrer"
+						>
+							<Icon name="impactUrlLogo" size={20} decorative />
+						</a>
+					) : null}
+				</div>
 			) : null}
-			{formattedDate ? (
-				<time className="body-body-12-regular" dateTime={year ? String(year) : date}>
-					{formattedDate}
-				</time>
-			) : null}
-			{safeHref && hasDateMeta ? (
-				<span className="body-body-12-regular text-text-muted" aria-hidden="true">
-					•
-				</span>
-			) : null}
-			{safeHref ? (
-				<a
-					className="inline-flex shrink-0 items-center justify-center text-text-link outline-none hover:text-text-link-hover focus-visible:ring-2 focus-visible:ring-ring-focus"
-					href={safeHref}
-					aria-label={`Open impact link for ${title}`}
-					target="_blank"
-					rel="noreferrer"
-				>
-					<Icon name="impactUrlLogo" size={20} decorative />
-				</a>
-			) : null}
-		</div>
+		</li>
 	);
 }
 
+const entryShape = PropTypes.shape({
+	date: PropTypes.string,
+	summary: PropTypes.string,
+	title: PropTypes.string.isRequired,
+	uid: PropTypes.string,
+	url: PropTypes.string,
+	year: PropTypes.number,
+});
+
+ImpactCardEntry.propTypes = {
+	entry: entryShape.isRequired,
+};
+
 export function ImpactCard({
-	collapsedCount = 3,
 	entries = [],
-	label = '',
-	lastEventAt = '',
-	lastReportedAt = '',
+	iconName,
+	iconShellClassName = '',
+	label,
+	layout = 'list',
 	subtitle = '',
-	title,
-	totalCount,
-	variant = 'screening',
+	value = '',
+	variant,
 }) {
-	const [modalOpen, setModalOpen] = useState(false);
-	const contentId = useId();
-	const config = getImpactIconConfig(variant);
-	const isSummary = variant === 'saves' || variant === 'academic';
-	const categoryLabel = title || config.label;
-	const previewEntries = useMemo(
-		() => (isSummary ? [getSummaryEntry({ label, lastEventAt, lastReportedAt, totalCount, variant })] : entries),
-		[entries, isSummary, label, lastEventAt, lastReportedAt, totalCount, variant]
-	);
-	const detailEntries = isSummary ? previewEntries : entries;
-	const shouldScroll = previewEntries.length > collapsedCount;
-	const visibleEntries = previewEntries;
-	const [firstEntry, ...remainingEntries] = visibleEntries;
-	const firstTitleText = firstEntry?.title || firstEntry?.titleParts?.map((part) => part.text || part).join('') || '';
+	const [dialogOpen, setDialogOpen] = useState(false);
+	const isSummary = layout === 'summary';
+	const previewEntries = isSummary ? [] : entries.slice(0, LIST_CARD_PREVIEW_COUNT);
 
 	return (
 		<Card
-			variant="outlined"
-			className="relative flex flex-col rounded-ds-8 border-border-default p-space-base"
-			aria-label={categoryLabel}
+			aria-label={label}
+			className={cn(
+				'relative flex gap-4 rounded-ds-8 border border-border-divider p-4',
+				isSummary ? 'self-start' : ''
+			)}
 		>
-			<Button
-				variant="icon"
-				className="absolute top-space-base right-space-base z-10 h-size-32 w-size-32 shrink-0 text-text-muted outline-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-ring-focus"
+			{/* Covers the card so a click anywhere opens the details; content sits above it. */}
+			<button
+				type="button"
 				aria-haspopup="dialog"
-				aria-label={`Open ${categoryLabel} details`}
-				onClick={() => setModalOpen(true)}
-				icon={<Icon name="arrowsOutSimple" size="sm" decorative />}
+				aria-label={`Open ${label} details`}
+				onClick={() => setDialogOpen(true)}
+				className="absolute inset-0 cursor-pointer rounded-ds-8 border-0 bg-transparent p-0 outline-none transition-colors duration-200 hover:bg-bg-surface-hover focus-visible:ring-2 focus-visible:ring-ring-focus"
 			/>
 
-			<div id={contentId} className="min-h-0 flex-1">
-				{firstEntry ? (
-					<ul
-						className={cn(
-							'm-0 list-none p-0 pr-space-xs',
-							shouldScroll && 'max-h-[calc(var(--size-96)*3+var(--size-80))] overflow-y-auto'
-						)}
-					>
-						<li className="relative grid min-h-20 grid-cols-[var(--size-32)_1fr] gap-space-sm">
-							<span className="relative flex justify-center" aria-hidden="true">
-								{/* Reach the next entry whatever this entry's height; a lone entry keeps its short tail. */}
-								<span
-									className={cn(
-										'absolute top-9.5 w-px bg-border-default',
-										remainingEntries.length > 0 ? 'bottom-0' : 'h-10.5'
-									)}
-								/>
-								<span
-									className={cn(
-										'relative z-10 inline-flex h-size-32 w-size-32 shrink-0 items-center justify-center rounded-full',
-										config.iconShellClassName
-									)}
-								>
-									<Icon name={config.iconName} size="sm" decorative />
-								</span>
-							</span>
-							<div className="min-w-0 pr-size-40">
-								<p className="body-body-12-regular m-0 text-text-muted">{categoryLabel}</p>
-								<p
-									id={`${contentId}-title`}
-									className="body-body-14-bold m-0 mt-space-xs wrap-break-word text-text-primary"
-								>
-									{renderTitle(firstEntry)}
-								</p>
-								{firstEntry.summary ? (
-									<p className="body-body-12-regular m-0 mt-space-xs wrap-break-word text-text-muted">
-										{firstEntry.summary}
-									</p>
-								) : null}
-								<ImpactMetaRow
-									date={firstEntry.date}
-									dateLabel={firstEntry.dateLabel}
-									title={firstTitleText}
-									url={firstEntry.url}
-									year={firstEntry.year}
-								/>
-							</div>
-						</li>
-						{remainingEntries.map((entry, index) => (
-							<ImpactTimelineItem
-								key={entry.uid ?? `${entry.title}-${entry.date}-${index}`}
-								date={entry.date}
-								summary={entry.summary}
-								title={entry.title}
-								url={entry.url}
-								year={entry.year}
-							/>
+			<span
+				className={cn(
+					'pointer-events-none relative inline-flex size-8 shrink-0 items-center justify-center rounded-full',
+					iconShellClassName
+				)}
+				aria-hidden="true"
+			>
+				<Icon name={iconName} size={18} decorative />
+			</span>
+
+			<div
+				className={cn(
+					'pointer-events-none relative flex min-w-0 flex-1 flex-col',
+					isSummary ? 'gap-2' : 'gap-3'
+				)}
+			>
+				<p className="body-body-14-regular m-0 text-text-description">{label}</p>
+				{isSummary ? (
+					<p className="body-body-16-regular m-0 wrap-break-word text-text-strong">{value}</p>
+				) : (
+					<ul className="m-0 flex list-none flex-col gap-4.5 p-0">
+						{previewEntries.map((entry, index) => (
+							<ImpactCardEntry key={entry.uid ?? `${entry.title}-${index}`} entry={entry} />
 						))}
 					</ul>
-				) : null}
+				)}
 			</div>
 
 			<ImpactDetailDialog
-				entries={detailEntries}
-				onClose={() => setModalOpen(false)}
-				open={modalOpen}
+				entries={entries}
+				onClose={() => setDialogOpen(false)}
+				open={dialogOpen}
 				subtitle={subtitle}
-				title={categoryLabel}
+				title={label}
 				variant={variant}
 			/>
 		</Card>
 	);
 }
 
-ImpactMetaRow.propTypes = {
-	date: PropTypes.string,
-	dateLabel: PropTypes.string,
-	title: PropTypes.string,
-	url: PropTypes.string,
-	year: PropTypes.number,
-};
-
-const entryShape = PropTypes.shape({
-	date: PropTypes.string,
-	meta: PropTypes.string,
-	summary: PropTypes.string,
-	title: PropTypes.string.isRequired,
-	uid: PropTypes.string,
-	url: PropTypes.string,
-	value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-	year: PropTypes.number,
-});
-
 ImpactCard.propTypes = {
-	collapsedCount: PropTypes.number,
 	entries: PropTypes.arrayOf(entryShape),
-	label: PropTypes.string,
-	lastEventAt: PropTypes.string,
-	lastReportedAt: PropTypes.string,
+	iconName: PropTypes.string.isRequired,
+	iconShellClassName: PropTypes.string,
+	label: PropTypes.string.isRequired,
+	layout: PropTypes.oneOf(['summary', 'list']),
 	subtitle: PropTypes.string,
-	title: PropTypes.string,
-	totalCount: PropTypes.oneOfType([
-		PropTypes.number,
-		PropTypes.shape({
-			playlists: PropTypes.number,
-			saves: PropTypes.number,
-		}),
-	]),
-	variant: PropTypes.oneOf([
-		'screening',
-		'article',
-		'referenced',
-		'award',
-		'teaching',
-		'featured',
-		'saves',
-		'academic',
-		'curated',
-	]),
+	value: PropTypes.string,
+	variant: PropTypes.oneOf(['saves', 'academic', 'award', 'screening', 'article', 'referenced']).isRequired,
 };

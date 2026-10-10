@@ -37,6 +37,15 @@ const communityImpactEntries = {
 			url: 'https://example.com/article',
 		},
 	],
+	teaching: [
+		{
+			uid: 'teaching-1',
+			category: 'teaching',
+			title: 'Media and Climate Justice',
+			year: 2025,
+			creator: 'Dr. Maria Santos',
+		},
+	],
 	award: [
 		{
 			uid: 'award-1',
@@ -91,25 +100,26 @@ export const Populated = {
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 
-		await expect(canvas.getByRole('heading', { name: "Film's Impact" })).toBeVisible();
-		await expect(canvas.getByText('Screened In')).toBeVisible();
-		await expect(canvas.getByText('Hanoi, Viet Nam · Organised by Youth Media Collective')).toBeVisible();
-		await expect(canvas.getByText('Written About In')).toBeVisible();
-		await expect(canvas.getByText('Awards & Recognition')).toBeVisible();
-		await expect(canvas.getByText('Saves & Playlists')).toBeVisible();
-		await expect(canvas.queryByText('Curated Into')).toBeNull();
+		await expect(canvas.getByRole('heading', { name: "Film's Impact" })).toBeInTheDocument();
+		await expect(canvas.getAllByRole('article').map((card) => card.getAttribute('aria-label'))).toEqual([
+			'User Playlists',
+			'Academic Usage',
+			'Awards',
+			'Screenings',
+			'Reviews and Features',
+		]);
 
-		// The first entry's summary makes it taller than the others; its timeline
-		// line must still reach the next entry (needs real layout, so not in jsdom).
-		const [firstEntry, secondEntry] = within(canvas.getByLabelText('Screened In')).getAllByRole('listitem');
+		// The dialog keeps the timeline: the first entry's line must reach the next
+		// entry and each later dot must sit mid-text (needs real layout, not jsdom).
+		await userEvent.click(canvas.getByRole('button', { name: 'Open Screenings details' }));
+		const dialog = await within(document.body).findByRole('dialog', { name: 'Screenings' });
+		const [firstEntry, secondEntry] = within(dialog).getAllByRole('listitem');
 		const connector = firstEntry.querySelector('[aria-hidden="true"] > .w-px');
 		await expect(connector.getBoundingClientRect().bottom).toBeGreaterThanOrEqual(
 			secondEntry.getBoundingClientRect().top
 		);
-
-		// Each later entry's dot sits at the vertical middle of that entry's text.
 		const dot = secondEntry.querySelector('.bg-bg-timeline-dot').getBoundingClientRect();
-		const text = within(secondEntry).getByText('Manila Community Film Night').parentElement.getBoundingClientRect();
+		const text = secondEntry.querySelector('p').parentElement.getBoundingClientRect();
 		await expect(Math.abs(dot.top + dot.height / 2 - (text.top + text.height / 2))).toBeLessThanOrEqual(1);
 	},
 };

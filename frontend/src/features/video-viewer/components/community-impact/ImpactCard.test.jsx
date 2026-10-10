@@ -3,102 +3,109 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { ImpactCard } from './ImpactCard';
 
-const entries = [
-	{ title: 'Manila Community Film Night', date: '2025-02-01', url: 'https://example.com/manila' },
-	{ title: '2026 Film Festival, Dakar', date: '2025-02-15', url: 'https://example.com/dakar' },
-	{ title: 'Jakarta Mutual Aid Screening', date: '2025-03-08', url: 'https://example.com/jakarta' },
-	{ title: 'Berlin Solidarity Cinema', date: '2025-04-12', url: 'https://example.com/berlin' },
+const screenings = [
+	{ uid: 'hanoi', title: 'Hanoi Doc Week', year: 2024, url: 'https://example.com/hanoi' },
+	{ uid: 'manila', title: 'Manila Community Film Night', date: '2025-02-01', url: 'https://example.com/manila' },
+	{ uid: 'dakar', title: '2026 Film Festival, Dakar', date: '2025-02-15' },
 ];
 
+function renderListCard(props = {}) {
+	return render(
+		<ImpactCard
+			entries={screenings}
+			iconName="impactFilmReel"
+			label="Screenings"
+			layout="list"
+			subtitle="This film has been screened 3x"
+			variant="screening"
+			{...props}
+		/>
+	);
+}
+
 describe('ImpactCard', () => {
-	it('renders the preview list and opens a modal with the full list', async () => {
+	it('previews the latest two entries of a list card with their date and link', () => {
+		renderListCard();
+
+		const card = screen.getByRole('article', { name: 'Screenings' });
+		expect(within(card).getByText('Screenings')).toBeVisible();
+		expect(within(card).getByText('Hanoi Doc Week')).toBeVisible();
+		expect(within(card).getByText('2024')).toBeVisible();
+		expect(within(card).getByText('Manila Community Film Night')).toBeVisible();
+		expect(within(card).getByText('February 2025')).toBeVisible();
+		expect(within(card).getByRole('link', { name: 'Open impact link for Hanoi Doc Week' })).toHaveAttribute(
+			'href',
+			'https://example.com/hanoi'
+		);
+		expect(within(card).queryByText('2026 Film Festival, Dakar')).not.toBeInTheDocument();
+	});
+
+	it('opens the details dialog with every entry from anywhere on the card, without a zoom icon', async () => {
 		const user = userEvent.setup();
 
-		render(<ImpactCard entries={entries} subtitle="This film has been screened 8x" title="Screened In" />);
+		renderListCard();
 
-		expect(screen.getByLabelText('Screened In')).toBeVisible();
-		expect(screen.getByText('Manila Community Film Night')).toBeVisible();
+		const opener = screen.getByRole('button', { name: 'Open Screenings details' });
+		expect(opener).toHaveAttribute('aria-haspopup', 'dialog');
+		expect(opener.querySelector('svg')).toBeNull();
 
-		const toggle = screen.getByRole('button', { name: 'Open Screened In details' });
-		expect(toggle).toHaveAttribute('aria-haspopup', 'dialog');
-		expect(toggle.querySelector('svg')).toHaveAttribute('data-icon', 'arrowsOutSimple');
+		await user.click(opener);
 
-		await user.click(toggle);
-
-		const dialog = screen.getByRole('dialog');
-		expect(dialog).toBeVisible();
-		expect(screen.getByRole('heading', { name: 'Screened In' })).toBeVisible();
-		expect(screen.getAllByText('Berlin Solidarity Cinema').length).toBeGreaterThan(0);
+		const dialog = screen.getByRole('dialog', { name: 'Screenings' });
+		expect(within(dialog).getByText('This film has been screened 3x')).toBeVisible();
+		expect(within(dialog).getByText('2026 Film Festival, Dakar')).toBeVisible();
 	});
 
-	it('applies a max-height and scroll when more than three entries', () => {
-		render(<ImpactCard entries={entries} subtitle="This film has been screened 8x" title="Screened In" />);
+	it('keeps entry links working without opening the dialog', async () => {
+		const user = userEvent.setup();
 
-		const list = screen.getByLabelText('Screened In').querySelector('ul');
-		expect(list?.className).toMatch(/overflow-y-auto/);
-		expect(list?.className).toMatch(/max-h-/);
+		renderListCard();
+
+		const link = screen.getByRole('link', { name: 'Open impact link for Hanoi Doc Week' });
+		link.addEventListener('click', (event) => event.preventDefault());
+		await user.click(link);
+
+		expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 	});
 
-	it('does not scroll when there are three or fewer entries', () => {
-		render(
-			<ImpactCard entries={entries.slice(0, 2)} subtitle="This film has been screened 2x" title="Screened In" />
-		);
-
-		const list = screen.getByLabelText('Screened In').querySelector('ul');
-		expect(list?.className).not.toMatch(/overflow-y-auto/);
-	});
-
-	it('shows summary entry as the preview for saves cards', () => {
-		render(
-			<ImpactCard
-				lastEventAt="2026-05-28T08:00:00Z"
-				subtitle="181 saves and 90 playlists"
-				title="Saves & Playlists"
-				totalCount={{ saves: 181, playlists: 90 }}
-				variant="saves"
-			/>
-		);
-
-		expect(screen.getByText('181')).toBeVisible();
-		expect(screen.getByText('90')).toBeVisible();
-		expect(screen.getByText('Last Saved')).toBeVisible();
-		expect(screen.getByRole('button', { name: 'Open Saves & Playlists details' })).toBeVisible();
-	});
-
-	it('opens summary card dialogs with the generated preview entry', async () => {
+	it('shows a summary card as a label and a count', async () => {
 		const user = userEvent.setup();
 
 		render(
 			<ImpactCard
-				lastEventAt="2026-05-28T08:00:00Z"
-				subtitle="181 saves and 90 playlists"
-				title="Saves & Playlists"
-				totalCount={{ saves: 181, playlists: 90 }}
-				variant="saves"
+				entries={[{ uid: 'award-1', title: 'Best Documentary', year: 2021 }]}
+				iconName="impactTrophy"
+				label="Awards"
+				layout="summary"
+				subtitle="1 recognition"
+				value="1 recognition"
+				variant="award"
 			/>
 		);
 
-		await user.click(screen.getByRole('button', { name: 'Open Saves & Playlists details' }));
+		const card = screen.getByRole('article', { name: 'Awards' });
+		expect(within(card).getByText('1 recognition')).toBeVisible();
+		expect(within(card).queryByText('Best Documentary')).not.toBeInTheDocument();
 
-		const dialog = screen.getByRole('dialog');
-		expect(within(dialog).getByText('181 saves in 90 playlists')).toBeVisible();
-		expect(within(dialog).getByText('May 28, 2026')).toBeVisible();
+		await user.click(screen.getByRole('button', { name: 'Open Awards details' }));
+
+		expect(within(screen.getByRole('dialog', { name: 'Awards' })).getByText('Best Documentary')).toBeVisible();
 	});
 
-	it('renders academic summary cards as the same timeline structure', () => {
+	it('colours the icon by category', () => {
 		render(
 			<ImpactCard
-				label="University Courses"
-				lastReportedAt="2026-02-14"
-				subtitle="Used in 14 university courses"
-				title="Academic Usage"
-				totalCount={14}
-				variant="academic"
+				entries={[]}
+				iconName="impactTrophy"
+				iconShellClassName="bg-bg-emblem-amber text-text-on-emblem-amber"
+				label="Awards"
+				layout="summary"
+				value="0 recognitions"
+				variant="award"
 			/>
 		);
 
-		expect(screen.getByText('Academic Usage')).toBeVisible();
-		expect(screen.getByText('14')).toHaveClass('text-text-accent');
-		expect(screen.getByText('Last Reported')).toBeVisible();
+		const icon = screen.getByRole('article', { name: 'Awards' }).querySelector('[data-icon="impactTrophy"]');
+		expect(icon.parentElement).toHaveClass('bg-bg-emblem-amber', 'text-text-on-emblem-amber');
 	});
 });
