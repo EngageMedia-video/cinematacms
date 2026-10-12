@@ -284,11 +284,18 @@ class ManageCommunityImpactSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
-        category = attrs.get("category")
-        changing_category = self.instance is not None and category and category != self.instance.category
-        if changing_category and category in IMPACT_CATEGORY_FIELDS:
+        if self.instance is None:
+            return attrs
+
+        category = attrs.get("category", self.instance.category)
+        # The manage page resends the unchanged category on every save, so only a new
+        # category or a submitted detail field means the category fields need checking.
+        changes_details = category != self.instance.category or any(
+            field in attrs for field in IMPACT_DETAIL_FIELD_DEFAULTS
+        )
+        if changes_details and category in IMPACT_CATEGORY_FIELDS:
             current = {field: getattr(self.instance, field) for field in IMPACT_DETAIL_FIELD_DEFAULTS}
-            cleaned = validate_impact_category_fields({**current, **attrs})
+            cleaned = validate_impact_category_fields({**current, **attrs, "category": category})
             attrs.update({field: cleaned[field] for field in IMPACT_DETAIL_FIELD_DEFAULTS})
         return attrs
 
