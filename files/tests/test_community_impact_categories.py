@@ -442,3 +442,41 @@ class ManageCommunityImpactCategoryTests(TestCase):
         self.assertEqual(impact.year, 2024)
         self.assertEqual(impact.city, "")
         self.assertEqual(impact.country, "")
+
+    def complete_screening(self):
+        return self.create_impact(year=2024, city="Hanoi", country="VN", organiser="Youth Collective")
+
+    def assert_rejected(self, impact, data, field):
+        serializer = ManageCommunityImpactSerializer(impact, data=data, partial=True)
+        self.assertFalse(serializer.is_valid(), msg=f"Expected {data!r} to be rejected")
+        self.assertIn(field, serializer.errors)
+
+    def test_blanking_a_required_field_without_changing_category_is_rejected(self):
+        self.assert_rejected(self.complete_screening(), {"organiser": ""}, "organiser")
+
+        award = self.create_impact(category=CommunityImpact.AWARD, year=2021, organiser="Busan IFF", award_result="won")
+        self.assert_rejected(award, {"category": "award", "award_result": ""}, "award_result")
+
+    def test_moving_an_online_screening_in_person_needs_a_place(self):
+        impact = self.create_impact(year=2024, is_online=True, organiser="Youth Collective")
+
+        self.assert_rejected(impact, {"is_online": False}, "city")
+
+    def test_manage_page_save_keeps_working_for_older_entries(self):
+        legacy = self.create_impact()
+
+        # The manage page sends these fields, including the unchanged category, on every save.
+        serializer = ManageCommunityImpactSerializer(
+            legacy,
+            data={
+                "title": "Screening",
+                "category": "screening",
+                "details": "",
+                "status": "approved",
+                "event_date": "2026-05-29",
+                "url": "",
+            },
+            partial=True,
+        )
+
+        self.assertTrue(serializer.is_valid(), msg=serializer.errors)
