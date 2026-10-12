@@ -2257,6 +2257,10 @@ class MediaSearch(APIView):
         if community_impact:
             community_impact_options = {
                 CommunityImpact.SCREENING,
+                CommunityImpact.ARTICLE,
+                CommunityImpact.REFERENCED,
+                CommunityImpact.AWARD,
+                CommunityImpact.TEACHING,
                 CommunityImpact.FEATURED,
                 CommunityImpact.SAVES,
                 CommunityImpact.ACADEMIC,

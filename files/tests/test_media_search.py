@@ -103,6 +103,37 @@ class MediaSearchAwardFilterTests(TestCase):
         self.assertNotIn(self.plain.friendly_token, tokens)
         self.assertEqual(tokens.count(self.featured.friendly_token), 1)
 
+    def test_community_impact_filter_restricts_to_each_new_category(self):
+        written = self._media("Written Film", duration=500)
+        referenced = self._media("Referenced Film", duration=500)
+        taught = self._media("Taught Film", duration=500)
+        self._impact(written, CommunityImpact.ARTICLE, CommunityImpact.APPROVED)
+        self._impact(referenced, CommunityImpact.REFERENCED, CommunityImpact.APPROVED)
+        self._impact(taught, CommunityImpact.TEACHING, CommunityImpact.APPROVED)
+        expected = {
+            CommunityImpact.ARTICLE: written,
+            CommunityImpact.REFERENCED: referenced,
+            CommunityImpact.AWARD: self.awarded,
+            CommunityImpact.TEACHING: taught,
+        }
+
+        for category, media in expected.items():
+            with self.subTest(category=category):
+                response = self.client.get("/api/v1/search", {"community_impact": [category]})
+
+                self.assertEqual(response.status_code, 200)
+                tokens = [item["friendly_token"] for item in response.json()["results"]]
+                self.assertEqual(tokens, [media.friendly_token])
+
+    def test_rss_community_impact_filter_restricts_to_a_new_category(self):
+        response = self.client.get("/rss/search/", {"community_impact": [CommunityImpact.AWARD]})
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("Awarded Film", content)
+        self.assertNotIn("Screened Film", content)
+        self.assertNotIn("Plain Film", content)
+
     def test_community_impact_filter_combines_with_country_filter(self):
         self.screened.media_country = "PH"
         self.screened.save(update_fields=["media_country"])
