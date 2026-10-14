@@ -87,7 +87,7 @@ cd ../whisper.cpp && sh ./models/download-ggml-model.sh base && make && cd ../ci
 make docker-up
 
 # 3. Configure environment (follow Step 5 for details)
-cp .env.example .env  # Set SECRET_KEY and any local overrides
+cp .env.example .env  # Set SECRET_KEY, MEDIA_ACTION_IP_HMAC_KEY, and local overrides
 
 # Create required directories
 mkdir -p logs pids media_files/hls
@@ -445,7 +445,13 @@ SECRET_KEY='YOUR_GENERATED_SECRET_KEY_HERE'
 cp .env.example .env
 # Generate SECRET_KEY, then edit .env and replace its empty value.
 uv run python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+# Generate a separate MEDIA_ACTION_IP_HMAC_KEY and replace its empty value.
+uv run python -c "import secrets; print(secrets.token_hex(32))"
 ```
+
+Use independent keys for Django and media activity IP masking. The
+[IP operations guide](../security/media-action-ip-privacy.md) covers historical
+cleanup, retention, and rotation. Test settings provide a dedicated test key.
 
 **Additional Configuration - MP4HLS (if using HLS streaming):**
 

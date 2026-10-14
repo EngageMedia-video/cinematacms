@@ -431,6 +431,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "purge_playback_summaries",
         "schedule": crontab(hour="3", minute="20"),
     },
+    "cleanup_media_action_ips": {
+        "task": "cleanup_media_action_ips",
+        "schedule": crontab(minute="0"),
+    },
     # Dispatch deferred encoding tasks when queue capacity is available
     "dispatch_deferred_encodings": {
         "task": "dispatch_deferred_encodings",
@@ -544,6 +548,7 @@ SPRITE_MAX_TILES = 100
 
 ALLOW_ANONYMOUS_ACTIONS = ["watch"]  # need be a list - only watching allowed for anonymous users
 MASK_IPS_FOR_ACTIONS = True
+MEDIA_ACTION_IP_HMAC_KEY = os.getenv("MEDIA_ACTION_IP_HMAC_KEY", "")
 # how many seconds a process in running state without reporting progress is
 # considered as stale...unfortunately v9 seems to not include time
 # some times so raising this high

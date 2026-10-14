@@ -731,6 +731,7 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             "notify_followers_new_media",
             "record_beat_freshness",
             "purge_playback_summaries",
+            "cleanup_media_action_ips",
             "cms.celery.debug_task",
         }
         self.assertEqual(set(TASK_FAMILY_BY_NAME), expected_tasks)
