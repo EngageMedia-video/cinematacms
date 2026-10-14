@@ -53,10 +53,6 @@ class CustomReauthenticateTOTPForm(CustomAuthenticateForm):
     pass
 
 
-class Date_Input(forms.DateInput):
-    input_type = "date"
-
-
 class MultipleSelect(forms.CheckboxSelectMultiple):
     input_type = "checkbox"
 

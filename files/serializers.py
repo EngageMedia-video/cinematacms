@@ -17,7 +17,6 @@ from .models import (
     HomepagePopup,
     IndexPageFeatured,
     Media,
-    MediaCountry,
     MediaLanguage,
     Playlist,
     PlaylistMedia,
@@ -552,12 +551,6 @@ class ContentSensitivitySerializer(serializers.ModelSerializer):
 class MediaLanguageSerializer(serializers.ModelSerializer):
     class Meta:
         model = MediaLanguage
-        fields = ("title", "thumbnail_url", "media_count")
-
-
-class MediaCountrySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MediaCountry
         fields = ("title", "thumbnail_url", "media_count")
 
 

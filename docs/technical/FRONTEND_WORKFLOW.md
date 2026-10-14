@@ -103,41 +103,44 @@ Each page type has a corresponding entry file in `frontend/src/entries/`:
 ```
 src/entries/
 ├── base.js           # Base layout (header + sidebar)
-├── index.js          # Home page
-├── media.js          # Media viewing page
+├── index-revamp.js   # Home page
+├── media-revamp.js   # Media viewing page
 ├── search.js         # Search page
 ├── embed.js          # Embedded player
 ├── playlist.js       # Playlist page
 ├── add-media.js      # Upload page
 ├── manage-media.js   # Media management
-├── profile-home.js   # User profile
-└── ...               # 27 entries total
+├── profile-revamp.js # User profile
+├── profile-home.js   # Channel page
+└── ...
 ```
 
 Each entry imports the page component and calls `renderPage()`:
 
 ```javascript
 import { renderPage } from "../static/js/_helpers";
-import HomePage from "../static/js/pages/HomePage";
+import { HomePage } from "../features/home";
 
 renderPage("page-home", HomePage);
 ```
 
-### Revamp-Gated Shell Path
+### Page Shells
 
 Legacy pages still use `templates/base.html`, which keeps Django-owned header/sidebar slots and lets `renderPage()` mount into `#app-header`, `#app-sidebar`, and the page-specific `#page-*` node.
 
-Revamp-gated pages can use `templates/base_modern.html` instead. That template exposes a single `#app-root`, and `renderPage()` detects `data-ui-variant="revamp"` before mounting the React-owned app shell from `frontend/src/features/layout/`.
+Home, Media, Upload, Edit Media, and Profile always use `templates/base_modern.html`. That template exposes a single `#app-root`, and `renderPage()` detects `data-ui-variant="revamp"` before mounting the React-owned app shell from `frontend/src/features/layout/`.
 
-Current rollout contract:
+Shell selection:
 
-- `templates/cms/index.html` stays on the legacy shell
-- `templates/cms/index_revamp.html` uses `base_modern.html`
+- The migrated pages use their `*_revamp.html` templates.
+- Channel, History, Liked, and other unmigrated pages retain the legacy shell.
 - the helper only activates the modern shell when both conditions are true:
   - `<body data-ui-variant="revamp">`
   - `#app-root` exists in the template
 
-This keeps the migration reversible and prevents legacy pages from accidentally booting into the new shell.
+The mount-node check prevents legacy pages from booting into the modern shell.
+The old `UI_VARIANT_*` settings and preview parameter no longer select a UI.
+See [deployment and rollback](ui-variant-gate-deployment.md) before upgrading.
 
 ### Django Integration (django-vite)
 
@@ -151,7 +154,7 @@ Django templates use `django-vite` template tags to load Vite assets:
 {% vite_hmr_client %}
 
 {# In page templates: #}
-{% vite_asset 'src/entries/index.js' %}
+{% vite_asset 'src/entries/index-revamp.js' %}
 ```
 
 `{% vite_asset %}` automatically:

@@ -28,11 +28,11 @@ During production builds, Vite generates `.vite/manifest.json`:
 
 ```json
 {
-  "src/entries/index.js": {
-    "file": "assets/index-D_w1zyLc.js",
+  "src/entries/index-revamp.js": {
+    "file": "assets/index-revamp-D_w1zyLc.js",
     "isEntry": true,
     "imports": ["assets/_helpers-B6jnsgqM.js", "assets/vendor-B0kd87Rs.js"],
-    "css": ["assets/_helpers-xk_PGhMb.css", "assets/index-9tOe_Y_r.css"]
+    "css": ["assets/_helpers-xk_PGhMb.css", "assets/index-revamp-9tOe_Y_r.css"]
   }
 }
 ```
@@ -47,14 +47,14 @@ Django templates use `django-vite` template tags to load Vite-built assets:
 
 ```django
 {% load django_vite %}
-{% vite_asset 'src/entries/index.js' %}
+{% vite_asset 'src/entries/index-revamp.js' %}
 ```
 
 This automatically outputs:
 ```html
-<script type="module" src="/static/assets/index-D_w1zyLc.js"></script>
+<script type="module" src="/static/assets/index-revamp-D_w1zyLc.js"></script>
 <link rel="stylesheet" href="/static/assets/_helpers-xk_PGhMb.css">
-<link rel="stylesheet" href="/static/assets/index-9tOe_Y_r.css">
+<link rel="stylesheet" href="/static/assets/index-revamp-9tOe_Y_r.css">
 <link rel="modulepreload" href="/static/assets/_helpers-B6jnsgqM.js">
 <link rel="modulepreload" href="/static/assets/vendor-B0kd87Rs.js">
 ```
@@ -72,7 +72,7 @@ STORAGES = {
 
 We use plain `StaticFilesStorage` (not `ManifestStaticFilesStorage`) because:
 - Vite already adds content hashes to filenames
-- `ManifestStaticFilesStorage` would double-hash them (e.g., `index-D_w1zyLc.abc123.js`)
+- `ManifestStaticFilesStorage` would double-hash them (e.g., `index-revamp-D_w1zyLc.abc123.js`)
 - It would also break font URL rewriting in CSS files
 
 ## Usage in Templates
@@ -81,7 +81,7 @@ We use plain `StaticFilesStorage` (not `ManifestStaticFilesStorage`) because:
 {% load django_vite %}
 
 {# Load a page entry (includes all JS + CSS dependencies): #}
-{% vite_asset 'src/entries/media.js' %}
+{% vite_asset 'src/entries/media-revamp.js' %}
 
 {# _extra.css is now part of the Vite build pipeline — no separate link needed #}
 ```
@@ -120,14 +120,14 @@ frontend/
 │       ├── .vite/
 │       │   └── manifest.json         # Vite-generated manifest
 │       └── assets/
-│           ├── index-D_w1zyLc.js     # Hashed JS files
+│           ├── index-revamp-D_w1zyLc.js     # Hashed JS files
 │           ├── vendor-B0kd87Rs.js    # Vendor chunk
 │           ├── _helpers-xk_PGhMb.css # Hashed CSS files
-│           └── media-DlFZhN3M.css
+│           └── media-revamp-DlFZhN3M.css
 
 static_collected/                      # Django's collected static files
 ├── assets/                            # Copied from frontend build
-│   ├── index-D_w1zyLc.js
+│   ├── index-revamp-D_w1zyLc.js
 │   └── _helpers-xk_PGhMb.css
 ├── admin/                             # Django admin files
 └── lib/                               # Third-party libraries

@@ -16,7 +16,9 @@ HERMETIC_DJANGO_VITE["default"]["dev_mode"] = True
 
 @override_settings(
     DJANGO_VITE=HERMETIC_DJANGO_VITE,
-    UI_VARIANT_REVAMP_PAGES=["profile"],
+    UI_VARIANT_ALLOWED=["legacy"],
+    UI_VARIANT_DEFAULT="legacy",
+    UI_VARIANT_REVAMP_PAGES=[],
 )
 class ProfileRevampViewTests(TestCase):
     def setUp(self):

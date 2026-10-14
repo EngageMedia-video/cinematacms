@@ -10,9 +10,7 @@ import { Page } from '../_Page';
 import PageStore from '../_PageStore';
 import * as PageActions from '../_PageActions';
 
-import { MediaMultiListWrapper } from '../components/MediaMultiListWrapper';
 import { MediaListWrapper } from '../components/MediaListWrapper';
-import { MediaListRow } from '../components/MediaListRow';
 
 import ProfilePageStore from './store.js';
 import * as ProfilePageActions from './actions.js';
@@ -21,7 +19,6 @@ import ProfilePagesHeader from './includes/ProfilePagesHeader';
 import ProfilePagesContent from './includes/ProfilePagesContent';
 
 import { LazyLoadItemListAsync } from '../../components/-NEW-/LazyLoadItemListAsync';
-// import { InlineSliderItemListAsync } from '../../components/-NEW-/InlineSliderItemListAsync';
 
 import { LinksConsumer } from '../../contexts/LinksContext';
 // import { UserConsumer } from '../../contexts/UserContext';
@@ -148,23 +145,6 @@ export class ProfilePage extends Page {
 			title: title,
 		});
 	}
-
-	/*pageContent(){
-		return [ this.state.author ? <ProfilePagesHeader key="ProfilePagesHeader" author={ this.state.author } /> : null,
-			 	 this.state.author ?
-					<ProfilePagesContent key="ProfilePagesContent" >
-						<MediaMultiListWrapper className="items-list-ver">
-							<MediaListRow title={ this.props.uploads_title } viewAllLink={ this.props.uploads_view_all_link }>
-								<InlineSliderItemListAsync itemsCountCallback={ this.props.onAuthorPreviewItemsCountCallback } pageItems={ 3 } maxItems={ 12 } requestUrl={ ApiUrlContext._currentValue.media + '?author=' + this.state.author.id } hideAuthor={ true } hideViews={ ! PageStore.get('config-media-item').displayViews } hideDate={ ! PageStore.get('config-media-item').displayPublishDate } canEdit={ this.props.canEdit } />
-							</MediaListRow>
-							<MediaListRow title={ 'Playlists' } viewAllLink='#TODO'>
-								<i>@todo</i>
-							</MediaListRow>
-						</MediaMultiListWrapper>
-					</ProfilePagesContent>
-				: null
-			];
-	}*/
 
 	pageContent() {
 		const authorData = ProfilePageStore.get('author-data');

@@ -123,36 +123,6 @@ def set_cached_permission(cache_key: str, permission_result: bool, timeout: int 
     return permission_cache.set(cache_key, permission_result, timeout, version=CACHE_VERSION)
 
 
-def batch_get_cached_permissions(cache_keys: list) -> dict[str, bool | None]:
-    """
-    Get multiple cached permission results in a single operation.
-
-    Args:
-        cache_keys: List of cache keys to retrieve
-
-    Returns:
-        dict: Mapping of cache_key -> permission_result (or None if not found)
-    """
-    return permission_cache.get_many(cache_keys, version=CACHE_VERSION)
-
-
-def batch_set_cached_permissions(cache_data: dict[str, bool], timeout: int | None = None) -> bool:
-    """
-    Set multiple cached permission results in a single operation.
-
-    Args:
-        cache_data: Dictionary mapping cache_key -> permission_result
-        timeout: Cache timeout in seconds (uses default if None)
-
-    Returns:
-        bool: True if all cache entries were set successfully, False otherwise
-    """
-    if timeout is None:
-        timeout = PERMISSION_CACHE_TIMEOUT
-
-    return permission_cache.set_many(cache_data, timeout, version=CACHE_VERSION)
-
-
 def clear_media_permission_cache(media_uid: str | Any, user_id: int | None = None) -> bool:
     """
     Clear permission cache for a specific media.

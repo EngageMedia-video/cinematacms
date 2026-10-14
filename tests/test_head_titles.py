@@ -29,10 +29,7 @@ PORTAL_NAME = "Test Portal"
 # complete document, so it holds the only other legitimate ``<title>``.
 TEMPLATES_OWNING_A_TITLE_TAG = {"root.html", "503.html"}
 
-# ``cms/edit_media.html`` reverses an upload URL from a media object in its
-# body, so it cannot render from a bare context. Its ``headtitle`` block is
-# still covered by the source-level test below.
-TEMPLATES_NEEDING_VIEW_CONTEXT = {"cms/edit_media.html"}
+TEMPLATES_NEEDING_VIEW_CONTEXT = set()
 
 
 def _template_names():
