@@ -55,6 +55,28 @@ function createEditMediaState(config) {
 	};
 }
 
+// Dialog and validation state never reaches the saved media.
+const UI_ONLY_KEYS = new Set(['licenseDialogOpen', 'selectedLicenseFields', 'errors', 'submitError']);
+
+function isSameValue(a, b) {
+	// Multi-select values are sets; re-checking an option appends it at the end.
+	if (Array.isArray(a) && Array.isArray(b)) {
+		return a.length === b.length && a.every((item) => b.includes(item));
+	}
+	return Object.is(a, b);
+}
+
+// With All Rights Reserved checked the form submits "None", so the selected license is not saved.
+function withSubmittedLicense(state) {
+	return state.noLicense ? { ...state, selectedLicenseId: null } : state;
+}
+
+function hasUnsavedChanges(state, initialState) {
+	const current = withSubmittedLicense(state);
+	const initial = withSubmittedLicense(initialState);
+	return Object.keys(initial).some((key) => !UI_ONLY_KEYS.has(key) && !isSameValue(current[key], initial[key]));
+}
+
 function withoutError(errors, field) {
 	if (!(field in errors)) return errors;
 	const nextErrors = { ...errors };
@@ -96,6 +118,7 @@ export function useEditMediaState(config) {
 
 	return {
 		...state,
+		isDirty: hasUnsavedChanges(state, initialState()),
 		setTitle: (title) => patchAndClear({ title }, 'title'),
 		setSummary: (summary) => patchAndClear({ summary }, 'summary'),
 		setDescription: (description) => patch({ description }),
