@@ -2,22 +2,30 @@ import PropTypes from 'prop-types';
 import { Icon } from '../../../shared/components';
 import { formatImpactDate, getSafeHref } from './utils/formatDate';
 
-export function ImpactTimelineItem({ date = '', title, url }) {
-	const formattedDate = formatImpactDate(date);
+export function ImpactTimelineItem({ date = '', summary = '', title, url, year }) {
+	const formattedDate = year ? String(year) : formatImpactDate(date);
+	const dateTime = year ? String(year) : date;
 	const safeHref = getSafeHref(url);
 
 	return (
-		<li className="relative grid min-h-[99px] grid-cols-[var(--size-32)_1fr] gap-space-sm">
-			<span className="relative flex min-h-[99px] justify-center" aria-hidden="true">
+		<li className="relative grid min-h-24.75 grid-cols-[var(--size-32)_1fr] grid-rows-[29px_auto_1fr] gap-x-space-sm">
+			<span className="relative col-start-1 row-span-3 row-start-1 flex justify-center" aria-hidden="true">
 				<span className="absolute top-0 bottom-0 w-px bg-border-default" />
-				<span className="absolute top-[29px] z-10 h-size-6 w-size-6 translate-y-1/2 rounded-full bg-bg-timeline-dot" />
 			</span>
+			{/* Shares the text's row, so it stays centred on the entry however many lines it wraps to. */}
+			<span
+				className="z-10 col-start-1 row-start-2 h-size-6 w-size-6 self-center justify-self-center rounded-full bg-bg-timeline-dot"
+				aria-hidden="true"
+			/>
 
-			<div className="min-w-0 pt-[29px]">
-				<p className="body-body-14-bold m-0 break-words text-text-primary">{title}</p>
+			<div className="col-start-2 row-start-2 min-w-0">
+				<p className="body-body-14-bold m-0 wrap-break-word text-text-primary">{title}</p>
+				{summary ? (
+					<p className="body-body-12-regular m-0 mt-space-xs wrap-break-word text-text-muted">{summary}</p>
+				) : null}
 				<div className="mt-space-xs flex min-w-0 flex-wrap items-center gap-space-xs text-text-muted">
 					{formattedDate ? (
-						<time className="body-body-12-regular" dateTime={date}>
+						<time className="body-body-12-regular" dateTime={dateTime}>
 							{formattedDate}
 						</time>
 					) : null}
@@ -45,6 +53,8 @@ export function ImpactTimelineItem({ date = '', title, url }) {
 
 ImpactTimelineItem.propTypes = {
 	date: PropTypes.string,
+	summary: PropTypes.string,
 	title: PropTypes.string.isRequired,
 	url: PropTypes.string,
+	year: PropTypes.number,
 };

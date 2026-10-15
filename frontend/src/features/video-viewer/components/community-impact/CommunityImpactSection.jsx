@@ -4,99 +4,11 @@ import { Button, Text } from '../../../shared/components';
 import { AddImpactDialog } from './AddImpactDialog';
 import { ImpactCard } from './ImpactCard';
 import { ImpactEmptyState } from './ImpactEmptyState';
-import { COMMUNITY_IMPACT_CATEGORIES } from './impactIcons';
-
-function hasListEntries(category) {
-	return Array.isArray(category)
-		? category.length > 0
-		: Array.isArray(category?.entries) && category.entries.length > 0;
-}
-
-function hasSummaryEntries(category) {
-	if (!category) {
-		return false;
-	}
-
-	if (Array.isArray(category)) {
-		return category.length > 0;
-	}
-
-	if (typeof category.totalCount === 'number') {
-		return category.totalCount > 0;
-	}
-
-	if (category.totalCount && typeof category.totalCount === 'object') {
-		return Object.values(category.totalCount).some((value) => Number(value) > 0);
-	}
-
-	return hasListEntries(category);
-}
-
-function normalizeEntry(entry) {
-	return {
-		...entry,
-		date: entry.date || entry.event_date,
-		title: entry.title || entry.location || '',
-		url: entry.url || entry.link || '',
-	};
-}
-
-function normalizeCategoryData(data = {}) {
-	if (Array.isArray(data)) {
-		return {
-			entries: data.map(normalizeEntry),
-			totalCount: data.length,
-		};
-	}
-
-	const entries = Array.isArray(data.entries) ? data.entries.map(normalizeEntry) : [];
-	return {
-		...data,
-		entries,
-		totalCount: data.totalCount ?? entries.length,
-	};
-}
-
-function getTotalCountNumber(totalCount) {
-	if (typeof totalCount === 'number') {
-		return totalCount;
-	}
-
-	if (totalCount && typeof totalCount === 'object') {
-		return Object.values(totalCount).reduce((sum, value) => sum + (Number(value) || 0), 0);
-	}
-
-	return 0;
-}
-
-function buildCardProps(variant, data = {}) {
-	const total = getTotalCountNumber(data.totalCount ?? data.entries?.length);
-
-	if (variant === 'screening') {
-		return { title: 'Screened In', subtitle: `This film has been screened ${total}x` };
-	}
-
-	if (variant === 'featured') {
-		return { title: 'Featured In', subtitle: `This film has been featured ${total}x` };
-	}
-
-	if (variant === 'curated') {
-		return {
-			title: 'Curated Into',
-			subtitle: `This film has been curated into ${total} ${total === 1 ? 'collection' : 'collections'}`,
-		};
-	}
-
-	if (variant === 'saves') {
-		return { title: 'Saves & Playlists', subtitle: `${total.toLocaleString()} reported community uses` };
-	}
-
-	return { title: 'Academic Usage', subtitle: `Used in ${total.toLocaleString()} academic contexts` };
-}
+import { buildImpactCards } from './utils/buildImpactCards';
 
 export function CommunityImpactSection({
 	canAdd = true,
-	description = 'For filmmakers & viewers. Add screenings, playlists, or discussions to show how this film is reaching people.',
+	description = 'For filmmakers & viewers. A list of where the film has been screened, written about, taught, or recognised',
 	entries = {},
 	onAddImpact,
 	onSubmitErrorClear,
@@ -107,25 +19,9 @@ export function CommunityImpactSection({
 }) {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const headingId = useId();
-	const cards = useMemo(
-		() =>
-			COMMUNITY_IMPACT_CATEGORIES.map(({ value }) => {
-				const data = normalizeCategoryData(entries[value] ?? {});
-				return {
-					...buildCardProps(value, data),
-					...data,
-					variant: value,
-				};
-			})
-				.filter((card) => card.variant !== 'curated')
-				.filter((card) =>
-					card.variant === 'saves' || card.variant === 'academic'
-						? hasSummaryEntries(card)
-						: hasListEntries(card)
-				),
-		[entries]
-	);
-	const populated = cards.length > 0;
+	const cards = useMemo(() => buildImpactCards(entries), [entries]);
+	const summaryCards = cards.filter((card) => card.layout === 'summary');
+	const listCards = cards.filter((card) => card.layout === 'list');
 
 	useEffect(() => {
 		if (submitStatus === 'success') {
@@ -141,21 +37,34 @@ export function CommunityImpactSection({
 		onAddImpact?.(values);
 	}
 
+	function renderCard(card) {
+		return (
+			<ImpactCard
+				key={card.key}
+				entries={card.entries}
+				iconName={card.iconName}
+				iconShellClassName={card.iconShellClassName}
+				label={card.label}
+				layout={card.layout}
+				subtitle={card.subtitle}
+				value={card.value}
+				variant={card.key}
+			/>
+		);
+	}
+
 	return (
-		<section aria-labelledby={headingId} className="w-full text-text-primary">
-			<div className="flex flex-col gap-space-base lg:flex-row lg:items-center lg:justify-between">
-				<div className="max-w-[calc(var(--size-96)*6+var(--size-64))]">
-					<Text id={headingId} variant="h5-bold" as="h2" className="m-0 text-text-primary">
-						{title}
-					</Text>
-					<Text variant="body-14" color="meta" className="m-0 mt-space-xs">
-						{description}
-					</Text>
-				</div>
+		<section aria-labelledby={headingId} className="@container flex w-full flex-col gap-4 text-text-primary">
+			<h2 id={headingId} className="sr-only">
+				{title}
+			</h2>
+
+			<div className="flex flex-col gap-4 @lg:flex-row @lg:items-center @lg:justify-between">
+				<p className="body-body-14-regular m-0 max-w-[461px] text-text-description">{description}</p>
 
 				{canAdd ? (
 					<Button
-						className="w-full justify-center focus-visible:ring-2 focus-visible:ring-ring-focus sm:w-fit"
+						className="h-10 w-full shrink-0 justify-center bg-bg-secondary px-4 py-0 text-text-on-primary hover:bg-bg-secondary-hover focus-visible:ring-2 focus-visible:ring-ring-focus @lg:w-fit"
 						onClick={handleAddClick}
 					>
 						ADD IMPACT
@@ -164,26 +73,38 @@ export function CommunityImpactSection({
 			</div>
 
 			{submitMessage ? (
-				<Text as="p" variant="body-14-bold" color="accent" className="m-0 mt-space-sm" aria-live="polite">
+				<Text as="p" variant="body-14-bold" color="accent" className="m-0" aria-live="polite">
 					{submitMessage}
 				</Text>
 			) : null}
 
-			<div className="mt-space-lg">
-				{populated ? (
-					<div className="grid grid-cols-1 gap-space-base lg:grid-cols-2">
-						{cards.map((card) => (
-							<ImpactCard key={card.variant} {...card} />
-						))}
-					</div>
-				) : (
-					<ImpactEmptyState canAdd={canAdd} onAddImpact={handleAddClick} />
-				)}
-			</div>
+			<hr className="m-0 border-0 border-t border-border-divider" />
+
+			{cards.length ? (
+				<div className="flex flex-col gap-4">
+					{summaryCards.length ? (
+						<div className="grid grid-cols-1 items-start gap-4 @lg:grid-cols-2 @4xl:grid-cols-4">
+							{summaryCards.map(renderCard)}
+						</div>
+					) : null}
+					{listCards.length ? (
+						<div className="grid grid-cols-1 gap-4 @2xl:grid-cols-2 @5xl:grid-cols-3">
+							{listCards.map(renderCard)}
+						</div>
+					) : null}
+				</div>
+			) : (
+				<ImpactEmptyState canAdd={canAdd} onAddImpact={handleAddClick} />
+			)}
 
 			<AddImpactDialog
 				open={dialogOpen}
-				onClose={() => setDialogOpen(false)}
+				onClose={() => {
+					setDialogOpen(false);
+					if (submitError) {
+						onSubmitErrorClear?.();
+					}
+				}}
 				onSubmit={handleSubmit}
 				onSubmitErrorClear={onSubmitErrorClear}
 				submitError={submitError}
@@ -194,9 +115,12 @@ export function CommunityImpactSection({
 }
 
 const listEntryShape = PropTypes.shape({
+	category: PropTypes.string,
 	date: PropTypes.string,
+	summary: PropTypes.string,
 	title: PropTypes.string.isRequired,
 	url: PropTypes.string,
+	year: PropTypes.number,
 });
 
 const entryCategoryShape = PropTypes.oneOfType([
@@ -220,8 +144,11 @@ CommunityImpactSection.propTypes = {
 				totalCount: PropTypes.number,
 			}),
 		]),
+		article: entryCategoryShape,
+		award: entryCategoryShape,
 		featured: entryCategoryShape,
 		curated: entryCategoryShape,
+		referenced: entryCategoryShape,
 		saves: PropTypes.oneOfType([
 			PropTypes.arrayOf(listEntryShape),
 			PropTypes.shape({
@@ -233,6 +160,7 @@ CommunityImpactSection.propTypes = {
 			}),
 		]),
 		screening: entryCategoryShape,
+		teaching: entryCategoryShape,
 	}),
 	onAddImpact: PropTypes.func,
 	onSubmitErrorClear: PropTypes.func,
