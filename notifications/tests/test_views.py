@@ -341,6 +341,7 @@ class NotificationPreferenceDetailTest(TestCase):
         "on_mention",
         "on_new_media_from_following",
         "on_added_to_playlist",
+        "on_community_impact",
     )
 
     def setUp(self):
@@ -362,6 +363,7 @@ class NotificationPreferenceDetailTest(TestCase):
         self.assertEqual(data["on_reply"], NotificationChannel.EMAIL)
         self.assertEqual(data["on_follow"], NotificationChannel.EMAIL)
         self.assertEqual(data["on_mention"], NotificationChannel.EMAIL)
+        self.assertEqual(data["on_community_impact"], NotificationChannel.EMAIL)
         self.assertTrue(NotificationPreference.objects.filter(user=self.user).exists())
 
     def test_patch_updates_single_field_and_persists(self):

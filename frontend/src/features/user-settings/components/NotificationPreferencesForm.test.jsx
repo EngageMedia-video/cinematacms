@@ -9,6 +9,7 @@ const hookMocks = vi.hoisted(() => {
 		on_comment: 'email',
 		on_like: 'in_app',
 		on_added_to_playlist: 'in_app',
+		on_community_impact: 'email',
 		on_follow: 'email',
 		on_mention: 'email',
 		on_new_media_from_following: 'email',
@@ -90,13 +91,14 @@ describe('NotificationPreferencesForm', () => {
 		expect(screen.queryByText('Account login from new device')).not.toBeInTheDocument();
 	});
 
-	it('only exposes Comments, Likes, and Added to playlist as editable rows', () => {
+	it('only exposes Comments, Likes, Added to playlist, and Community Impact as editable rows', () => {
 		renderForm();
 
-		expect(screen.getAllByRole('group', { name: /notification channel/i })).toHaveLength(3);
+		expect(screen.getAllByRole('group', { name: /notification channel/i })).toHaveLength(4);
 		expect(channelGroup('New comment on your film')).toBeInTheDocument();
 		expect(channelGroup('New reactions to your film')).toBeInTheDocument();
 		expect(channelGroup('Film added to a curated collection')).toBeInTheDocument();
+		expect(channelGroup('Community Impact record added to your film')).toBeInTheDocument();
 		expect(screen.queryByRole('switch')).not.toBeInTheDocument();
 		expect(screen.queryByText('Push notification')).not.toBeInTheDocument();
 		expect(screen.queryByText('Email Notification')).not.toBeInTheDocument();
@@ -109,6 +111,7 @@ describe('NotificationPreferencesForm', () => {
 			'New comment on your film',
 			'New reactions to your film',
 			'Film added to a curated collection',
+			'Community Impact record added to your film',
 		]) {
 			const group = within(channelGroup(label));
 
@@ -153,5 +156,18 @@ describe('NotificationPreferencesForm', () => {
 			on_comment: 'none',
 			on_added_to_playlist: 'email',
 		});
+	});
+
+	it('lets the filmmaker turn off Community Impact record notifications', async () => {
+		const user = userEvent.setup();
+		renderForm();
+
+		const communityImpact = within(channelGroup('Community Impact record added to your film'));
+		expect(communityImpact.getByRole('button', { name: 'In-App + Email' })).toHaveAttribute('aria-pressed', 'true');
+
+		await user.click(communityImpact.getByRole('button', { name: 'Off' }));
+		await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+		expect(hookMocks.mutate).toHaveBeenCalledWith({ on_community_impact: 'none' });
 	});
 });
