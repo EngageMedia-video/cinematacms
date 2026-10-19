@@ -4,6 +4,7 @@
 <html lang="en">
 <head>
     {% block head %}
+        <meta property="csp-nonce" content="{{ request.csp_nonce }}" nonce="{{ request.csp_nonce }}">
 
         <title>{% block headtitle %}{{PORTAL_NAME}}{% endblock headtitle %}</title>
         {% if ANALYTICS %}<meta name="referrer" content="{% if ANALYTICS.nonpublic %}no-referrer{% else %}origin{% endif %}">{% endif %}
@@ -34,12 +35,12 @@
 
         {# Import map — must appear before any <script type="module"> so the browser #}
         {# can resolve the bare "video.js" specifier used in Vite's externalized chunks. #}
-        <script type="importmap">
+        <script nonce="{{ request.csp_nonce }}" type="importmap">
         { "imports": { "video.js": "{% static 'lib/videojs-esm-shim.js' %}" } }
         </script>
 
         {% if VITE_DEV_MODE %}
-        {% vite_react_refresh %}
+        {% vite_react_refresh nonce=request.csp_nonce %}
         {% vite_hmr_client %}
         {% endif %}
 
@@ -47,9 +48,15 @@
 
         {% include "config/index.html" %}
 
+        <style nonce="{{ request.csp_nonce }}">
+            /* Video.js runs with its dynamic stylesheet feature disabled. */
+            .video-js { width: 300px; height: 150px; }
+            .vjs-fluid:not(.vjs-audio-only-mode) { padding-top: 56.25%; }
+        </style>
+
          <!-- Rounded corners CSS (inline approach) -->
         {% if USE_ROUNDED_CORNERS %}
-        <style>
+        <style nonce="{{ request.csp_nonce }}">
             /* Rounded Corners for Videos - CinematCMS */
             .item-thumb,
             a.item-thumb,

@@ -388,6 +388,158 @@ describe('Cinemata Umami privacy boundary', () => {
 		}
 	});
 
+	describe('switching to the next playlist item without a page load', () => {
+		const nextId = '87654321-4321-4321-8321-cba987654321';
+		const nextRevision = '11111111-2222-4333-8444-555555555555';
+		const site = () => `${window.location.protocol}//${window.location.hostname}/`;
+		const sent = (track) =>
+			track.mock.calls.map(([value]) =>
+				window.cinemataAnalyticsBeforeSend('event', 'function' === typeof value ? value({}) : value)
+			);
+
+		function readBeacon(beacon) {
+			return new Promise((resolve) => {
+				const reader = new FileReader();
+				reader.onload = () => resolve(JSON.parse(reader.result));
+				reader.readAsText(beacon.mock.lastCall[1]);
+			});
+		}
+
+		it('counts the next item as a media view and attributes later playback to it', async () => {
+			const fetch = vi.fn().mockResolvedValue({});
+			vi.stubGlobal('fetch', fetch);
+			const beacon = vi.fn();
+			Object.defineProperty(navigator, 'sendBeacon', { configurable: true, value: beacon });
+			Object.defineProperty(globalThis.crypto, 'randomUUID', {
+				configurable: true,
+				value: () => '12345678-1234-4234-8234-123456789abd',
+			});
+			const track = loadTracker({ nonpublic: false, audience_group: 'regular', measurement_token: 'first' });
+
+			window.CinemataAnalytics.switchMedia({
+				id: nextId,
+				type: 'video',
+				state: 'public',
+				revision: nextRevision,
+				measurement_token: 'next',
+				audience_group: 'regular',
+			});
+
+			expect(window.CinemataAnalytics.mediaId).toBe(nextId);
+			const [pageview, ...events] = sent(track);
+			expect(pageview).toMatchObject({
+				url: '/media/view',
+				title: 'Media',
+				tag: `media:${nextId}`,
+				data: { media_id: nextId, media_type: 'video', context: 'page', revision: nextRevision },
+			});
+			expect(events.map((event) => [event.name, event.tag, event.data.audience_group])).toEqual([
+				['page_view', `media:${nextId}`, 'regular'],
+				['media_view', `media:${nextId}`, 'regular'],
+			]);
+			expect(events[1].data.source_domain).toBe(window.location.hostname);
+
+			const listeners = {};
+			window.CinemataAnalytics.attachPlayer({
+				on: (event, callback) => {
+					listeners[event] = callback;
+				},
+				muted: () => false,
+				isFullscreen: () => false,
+				duration: () => 100,
+				currentTime: () => 1,
+				paused: () => false,
+				seeking: () => false,
+				readyState: () => 4,
+				ended: () => false,
+			});
+			listeners.play();
+			listeners.pause();
+			expect((await readBeacon(beacon)).token).toBe('next');
+			expect(sent(track).pop().tag).toBe(`media:${nextId}`);
+			expect(fetch).not.toHaveBeenCalled();
+		});
+
+		it('carries the audience group of a public item reached from a non-public page', () => {
+			const track = loadTracker({ nonpublic: true });
+
+			window.CinemataAnalytics.switchMedia({
+				id: nextId,
+				type: 'video',
+				state: 'public',
+				revision: nextRevision,
+				audience_group: 'regular',
+			});
+			window.CinemataAnalytics.track('play');
+
+			expect(
+				sent(track)
+					.filter((event) => event.name)
+					.map((event) => [event.name, event.data.audience_group])
+			).toEqual([
+				['page_view', 'regular'],
+				['media_view', 'regular'],
+				['play', 'regular'],
+			]);
+		});
+
+		it('keeps what happened before Umami loaded on the item it happened on', () => {
+			const track = loadTracker({ nonpublic: true });
+			delete window.umami;
+
+			window.CinemataAnalytics.track('play');
+			window.CinemataAnalytics.switchMedia({
+				id: nextId,
+				type: 'video',
+				state: 'public',
+				revision: nextRevision,
+				audience_group: 'regular',
+			});
+			window.CinemataAnalytics.track('play');
+			window.umami = { track };
+			[...document.head.querySelectorAll('script[data-before-send="cinemataAnalyticsBeforeSend"]')]
+				.pop()
+				.onload();
+
+			expect(
+				sent(track).map((event) => [
+					event.name || 'pageview',
+					event.tag,
+					event.data.audience_group,
+					event.referrer,
+				])
+			).toEqual([
+				['pageview', `media:${mediaId}`, undefined, ''],
+				['play', `media:${mediaId}`, undefined, ''],
+				['pageview', `media:${nextId}`, 'regular', site()],
+				['page_view', `media:${nextId}`, 'regular', site()],
+				['media_view', `media:${nextId}`, 'regular', site()],
+				['play', `media:${nextId}`, 'regular', site()],
+			]);
+		});
+
+		it('drops the audience group and the referrer for a non-public next item', () => {
+			const track = loadTracker({ nonpublic: false, audience_group: 'regular' });
+
+			window.CinemataAnalytics.switchMedia({
+				id: nextId,
+				type: 'video',
+				state: 'unlisted',
+				revision: nextRevision,
+				audience_group: 'regular',
+			});
+			window.CinemataAnalytics.track('play');
+
+			const events = sent(track);
+			expect(events.map((event) => event.name || 'pageview')).toEqual(['pageview', 'media_view', 'play']);
+			for (const event of events) {
+				expect(event.data).not.toHaveProperty('audience_group');
+				expect(event.referrer).toBe('');
+			}
+			expect(events[1].data.source_domain).toBeUndefined();
+		});
+	});
+
 	it.each([true, false])('splits watch time by minute with Umami: %s', async (configured) => {
 		const beacon = vi.fn();
 		Object.defineProperty(navigator, 'sendBeacon', { configurable: true, value: beacon });

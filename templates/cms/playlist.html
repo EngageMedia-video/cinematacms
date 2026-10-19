@@ -33,7 +33,7 @@
 <meta name="twitter:title" content="{{ playlist.title }}">
 <meta name="twitter:description" content="{{ playlist.description|striptags|truncatewords:30 }}">
 
-<script type="application/ld+json">
+<script nonce="{{ request.csp_nonce }}" type="application/ld+json">
 {
     "@context": "https://schema.org",
     "@type": "ItemList",

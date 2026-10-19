@@ -5,7 +5,8 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
 from django_recaptcha.fields import ReCaptchaField
-from django_recaptcha.widgets import ReCaptchaV2Checkbox
+
+from cms.widgets import CSPReCaptchaV2Checkbox
 
 from .methods import is_mediacms_editor
 from .models import Language, Media, Subtitle, get_language_choices
@@ -443,7 +444,7 @@ class ContactForm(forms.Form):
 
         # Only add reCAPTCHA field if keys are configured
         if getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") and getattr(settings, "RECAPTCHA_PRIVATE_KEY", ""):
-            self.fields["captcha"] = ReCaptchaField(widget=ReCaptchaV2Checkbox)
+            self.fields["captcha"] = ReCaptchaField(widget=CSPReCaptchaV2Checkbox)
 
         if user.is_authenticated:
             self.fields.pop("name")

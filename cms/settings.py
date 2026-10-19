@@ -5,6 +5,7 @@ from celery.schedules import crontab
 from corsheaders.defaults import default_headers
 from django.core.exceptions import ImproperlyConfigured
 
+from .csp import build_policy
 from .runtime_config import (
     env_bool,
     env_csv,
@@ -98,6 +99,8 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "csp.middleware.CSPMiddleware",
+    "cms.csp.NonceCacheControlMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -680,8 +683,32 @@ ALLOW_RATINGS_CONFIRMED_EMAIL_ONLY = False
 
 # SAMEORIGIN by default; embed view uses @xframe_options_exempt decorator.
 X_FRAME_OPTIONS = "SAMEORIGIN"
-# TODO: Configure Content-Security-Policy via django-csp middleware.
-# See todos/006-pending-p2-no-csp-configured.md for implementation details.
+CSP_REPORT_ONLY = env_bool("CSP_REPORT_ONLY", True)
+CSP_REPORT_URI = os.getenv("CSP_REPORT_URI", "")
+CSP_EXTRA_SOURCES = {
+    directive: env_csv(f"CSP_{directive.upper().replace('-', '_')}", [])
+    for directive in (
+        "script-src",
+        "style-src",
+        "img-src",
+        "font-src",
+        "media-src",
+        "connect-src",
+        "frame-src",
+        "worker-src",
+    )
+}
+_csp_policy = build_policy(
+    static_url=STATIC_URL,
+    media_url=MEDIA_URL,
+    upload_url=os.getenv("UPLOAD_HOST", FRONTEND_HOST),
+    vite=DJANGO_VITE.get("default", {}),
+    analytics_url=ANALYTICS_URL if ANALYTICS_ENABLED else "",
+    extra_sources=CSP_EXTRA_SOURCES,
+    report_uri=CSP_REPORT_URI,
+)
+CONTENT_SECURITY_POLICY = None if CSP_REPORT_ONLY else _csp_policy
+CONTENT_SECURITY_POLICY_REPORT_ONLY = _csp_policy if CSP_REPORT_ONLY else None
 EMAIL_BACKEND = "email_delivery.backend.EmailBackend"
 EMAIL_TRANSPORT_BACKEND = os.getenv("EMAIL_TRANSPORT_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 

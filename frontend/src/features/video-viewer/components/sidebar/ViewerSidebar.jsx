@@ -37,6 +37,10 @@ export default class ViewerSidebar extends React.PureComponent {
 		MediaPageStore.on('loaded_media_data', this.onMediaLoad);
 	}
 
+	componentWillUnmount() {
+		MediaPageStore.removeListener('loaded_media_data', this.onMediaLoad);
+	}
+
 	onMediaLoad() {
 		this.setState({
 			mediaType: MediaPageStore.get('media-type'),

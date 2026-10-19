@@ -21,7 +21,7 @@
 {% block content %}
 {{ edit_media_page_config|json_script:"edit-media-page-config" }}
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 	window.MediaCMS = window.MediaCMS || {};
 	window.MediaCMS.editMediaPage = JSON.parse(document.getElementById('edit-media-page-config').textContent);
 </script>

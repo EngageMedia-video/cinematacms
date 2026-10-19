@@ -50,7 +50,7 @@
 	</div>
 </form>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
 // Country validation - warn about unusual selections
 document.addEventListener('DOMContentLoaded', function() {
     const countrySelect = document.querySelector('select[name="location_country"]');

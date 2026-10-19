@@ -10,7 +10,7 @@
 <div id="page-embed"></div>
 {% if media_access_token %}
 {{ media_access_token|json_script:"media-access-token" }}
-<script>
+<script nonce="{{ request.csp_nonce }}">
     MediaCMS.access_token = JSON.parse(
         document.getElementById('media-access-token').textContent
     );

@@ -1,6 +1,6 @@
-import { Fragment, useId } from 'react';
+import { useId } from 'react';
+import { LinkifiedText } from '../../shared/components/LinkifiedText';
 import { cn } from '../../shared/utils/classNames';
-import { splitTextByLinks } from '../../shared/utils/linkify';
 import usePlaylistUiStore from '../store/usePlaylistUiStore';
 
 const TRUNCATION_SLACK = 60;
@@ -9,24 +9,6 @@ function truncateAtWord(text, budget) {
 	const slice = text.slice(0, budget);
 	const lastSpace = slice.lastIndexOf(' ');
 	return lastSpace > budget * 0.6 ? slice.slice(0, lastSpace) : slice;
-}
-
-function renderWithLinks(text, isTruncated) {
-	return splitTextByLinks(text, { allowTrailingLink: !isTruncated }).map((segment, index) =>
-		segment.type === 'link' ? (
-			<a
-				key={index}
-				href={segment.href}
-				target="_blank"
-				rel="nofollow noopener"
-				className="rounded-ds-4 text-text-accent underline hover:text-text-link-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-ring-focus duration-200 transition-all"
-			>
-				{segment.text}
-			</a>
-		) : (
-			<Fragment key={index}>{segment.text}</Fragment>
-		)
-	);
 }
 
 export function ReadMore({
@@ -55,7 +37,7 @@ export function ReadMore({
 			id={textId}
 			className={cn('m-0 break-words whitespace-pre-line body-body-14-regular', colorClassName, className)}
 		>
-			{linkify ? renderWithLinks(visibleText, isTruncated) : visibleText}
+			{linkify ? <LinkifiedText text={visibleText} allowTrailingLink={!isTruncated} /> : visibleText}
 			{isTruncated ? '...' : ''}{' '}
 			{shouldOfferToggle ? (
 				<button

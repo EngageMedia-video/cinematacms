@@ -1,0 +1,4 @@
+{% load static %}
+<script src="{% static 'js/recaptcha-callback.js' %}"></script>
+<script src="https://{{ recaptcha_domain }}/recaptcha/api.js{% if api_params %}?{{ api_params }}{% endif %}"></script>
+<div {% for name, value in widget.attrs.items %}{% if value is not False %}{{ name }}{% if value is not True %}="{{ value|stringformat:'s' }}"{% endif %} {% endif %}{% endfor %}></div>

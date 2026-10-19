@@ -1,4 +1,4 @@
-<script type="text/javascript">
+<script nonce="{{ request.csp_nonce }}" type="text/javascript">
 
 	var MediaCMS = {
 		ui: { variant: "{{ UI_VARIANT|escapejs }}" },
@@ -17,5 +17,6 @@
 	{% include "config/installation/pages.html" %}
 	{% include "config/installation/site.html" %}
 
+	window.VIDEOJS_NO_DYNAMIC_STYLE = true;
 	window.MediaCMS = MediaCMS;
 </script>

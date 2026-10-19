@@ -25,6 +25,30 @@
       ]
     },
     {
+      "id": "playlist-in-place",
+      "events": [
+        "page_view",
+        "media_view"
+      ],
+      "trigger": "The next playlist item starts in place while the media page is fullscreen, after the media detail API access check. It counts like a page load of that item.",
+      "privacy": "Fixed event names and sanitized context only. Private items keep the page navigation; a non-public item sends no audience group or referrer.",
+      "sources": [
+        {
+          "path": "static/js/cinemata-analytics.js",
+          "contains": "function switchMedia"
+        },
+        {
+          "path": "frontend/src/static/js/pages/MediaPage/store.js",
+          "contains": "CinemataAnalytics?.switchMedia"
+        }
+      ],
+      "tests": [
+        "tests/test_analytics.py",
+        "frontend/src/static/js/cinemata-analytics.test.js",
+        "frontend/src/static/js/pages/MediaPage/switchMedia.test.js"
+      ]
+    },
+    {
       "id": "player",
       "events": [
         "play",
@@ -565,7 +589,7 @@
         },
         {
           "path": "static/js/cinemata-analytics.js",
-          "contains": "data.audience_group = audienceGroup"
+          "contains": "data.audience_group = privacy.audienceGroup"
         },
         {
           "path": "templates/admin/index.html",

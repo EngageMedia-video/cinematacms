@@ -10,6 +10,7 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 import waffle
+from csp.decorators import csp_replace
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
@@ -80,6 +81,7 @@ from .methods import (
     show_recommended_media,
     show_related_media,
     user_can_delete_comment,
+    user_can_manage_media,
 )
 from .models import (
     Category,
@@ -927,7 +929,7 @@ def view_media(request):
 
     # Owner/editor bypass FIRST — unaffected by Redis outages
     if request.user.is_authenticated:
-        if (media.user.id == request.user.id) or is_mediacms_editor(request.user) or is_mediacms_manager(request.user):
+        if user_can_manage_media(request.user, media):
             context["CAN_DELETE_MEDIA"] = True
             context["CAN_EDIT_MEDIA"] = True
             context["CAN_DELETE_COMMENTS"] = True
@@ -1005,6 +1007,8 @@ def view_old_media(request, user, video):
 
 
 @xframe_options_exempt
+@csp_replace({"frame-ancestors": None})
+@csp_replace({"frame-ancestors": None}, REPORT_ONLY=True)
 def embed_old_media(request, user, video):
     url = f"/Members/{user}/videos/{video}"
     media = Media.objects.filter(existing_urls__url__in=[url]).first()
@@ -1501,6 +1505,8 @@ def edit_subtitle(request):
 
 
 @xframe_options_exempt
+@csp_replace({"frame-ancestors": None})
+@csp_replace({"frame-ancestors": None}, REPORT_ONLY=True)
 def embed_media(request):
     friendly_token = request.GET.get("m", "").strip()
     if not friendly_token:

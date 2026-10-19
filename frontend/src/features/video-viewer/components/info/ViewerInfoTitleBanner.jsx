@@ -46,6 +46,13 @@ export default class ViewerInfoTitleBanner extends React.PureComponent {
 		MediaPageStore.on('undisliked_media', this.updateStateValues);
 	}
 
+	componentWillUnmount() {
+		MediaPageStore.removeListener('liked_media', this.updateStateValues);
+		MediaPageStore.removeListener('unliked_media', this.updateStateValues);
+		MediaPageStore.removeListener('disliked_media', this.updateStateValues);
+		MediaPageStore.removeListener('undisliked_media', this.updateStateValues);
+	}
+
 	updateStateValues() {
 		this.setState({
 			likedMedia: MediaPageStore.get('user-liked-media'),

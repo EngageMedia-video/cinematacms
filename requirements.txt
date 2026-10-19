@@ -55,6 +55,7 @@ django==5.2.17
     #   django-appconf
     #   django-cors-headers
     #   django-crispy-forms
+    #   django-csp
     #   django-debug-toolbar
     #   django-filter
     #   django-js-asset
@@ -77,6 +78,8 @@ django-crispy-forms==2.7
     # via
     #   cinemata
     #   crispy-forms-bootstrap2
+django-csp==4.0
+    # via cinemata
 django-debug-toolbar==8.0.0
     # via cinemata
 django-filter==26.1
@@ -203,6 +206,7 @@ opentelemetry-util-http==0.65b0
     #   opentelemetry-instrumentation-wsgi
 packaging==26.3
     # via
+    #   django-csp
     #   kombu
     #   opentelemetry-instrumentation
 parso==0.8.7

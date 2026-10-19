@@ -29,7 +29,7 @@
 
     <meta name="twitter:card" content="summary_large_image">
 
-    <script type="application/ld+json">
+    <script nonce="{{ request.csp_nonce }}" type="application/ld+json">
     {
         "@context": "http://schema.org",
         "@type": "VideoObject",
@@ -56,7 +56,7 @@
 
     <meta name="twitter:card" content="summary_large_image">
 
-    <script type="application/ld+json">
+    <script nonce="{{ request.csp_nonce }}" type="application/ld+json">
     {
         "@context": "http://schema.org",
         "@type": "AudioObject",
@@ -79,7 +79,7 @@
 
     <meta name="twitter:card" content="summary_large_image">
 
-    <script type="application/ld+json">
+    <script nonce="{{ request.csp_nonce }}" type="application/ld+json">
     {
         "@context": "http://schema.org",
         "@type": "ImageObject",
@@ -99,7 +99,7 @@
 
     <meta name="twitter:card" content="summary">
 
-    <script type="application/ld+json">
+    <script nonce="{{ request.csp_nonce }}" type="application/ld+json">
     {
         "@context": "http://schema.org",
         "@type": "MediaObject",
@@ -130,14 +130,14 @@
         <div id="page-media"></div>
         {% if can_see_restricted_media and media_access_token %}
             {{ media_access_token|json_script:"media-access-token" }}
-            <script>
+            <script nonce="{{ request.csp_nonce }}">
                 MediaCMS.access_token = JSON.parse(
                     document.getElementById('media-access-token').textContent
                 );
             </script>
         {% endif %}
         {% if not can_see_restricted_media %}
-            <script>
+            <script nonce="{{ request.csp_nonce }}">
                 MediaCMS.media_restricted = true;
                 MediaCMS.media_friendly_token = "{{ media_object.friendly_token|escapejs }}";
                 MediaCMS.media_owner_name = "{{ media_object.user.name|default:media_object.user.username|escapejs }}";

@@ -45,7 +45,7 @@ export function ThumbnailUploadField({
 			<TabView
 				className="min-w-0 max-w-full overflow-hidden"
 				tabMode="wrap"
-				triggerClassName="rounded-none py-3 px-size-22 text-text-tab-trigger"
+				triggerClassName="rounded-none py-3 px-size-24 text-text-tab-trigger"
 				triggerSelectedColor="bg-bg-tab-trigger-selected"
 				panelClassName="mt-4 min-w-0 max-w-full overflow-hidden"
 				aria-label="Upload media type"

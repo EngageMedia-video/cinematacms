@@ -1,3 +1,4 @@
+import { LinkifiedText } from '../../../shared/components/LinkifiedText';
 import { formatDuration } from '../../../shared/utils/formatDuration';
 import { formatClock, formatTimestamp } from '../../../video-viewer/private-journal/utils/journalMedia';
 
@@ -91,7 +92,7 @@ export function NoteEntry({ note, noteCount = 1 }) {
 						<span>Last Note</span>
 					</div>
 					<p className="m-0 mt-[12px] line-clamp-2 break-words whitespace-pre-line text-text-primary body-body-16-regular">
-						{note?.text || ''}
+						<LinkifiedText text={note?.text || ''} />
 					</p>
 					{dayLabel || clockLabel ? (
 						<p className="m-0 mt-[28px] flex items-center gap-[18px] text-text-muted body-body-14-regular">

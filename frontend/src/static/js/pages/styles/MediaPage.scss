@@ -528,6 +528,19 @@ $widerLayoutVersion: true; // @todo: Choose dynamically the layout version, base
 	}
 }
 
+// The viewer container, not the player, is the fullscreen element, so the next
+// playlist item can replace the player without leaving fullscreen (#758).
+.viewer-container:fullscreen {
+	padding: 0;
+	background: #000;
+
+	.player-container {
+		height: 100%;
+		// Overrides the 16:9 and theater-mode aspect-ratio padding.
+		padding-top: 0 !important;
+	}
+}
+
 .viewer-image-container {
 	position: relative;
 	display: block;

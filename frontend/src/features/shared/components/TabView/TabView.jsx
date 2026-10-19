@@ -97,7 +97,7 @@ function TabViewList({ items, className = '', triggerClassName = '', triggerColo
 	const ListElement = isNavigation ? 'nav' : 'div';
 
 	return (
-		<div className="w-full overflow-x-auto overscroll-x-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+		<div className="w-full overflow-x-auto overscroll-x-none scrollbar-none [&::-webkit-scrollbar]:hidden">
 			<ListElement
 				role={isNavigation ? undefined : 'tablist'}
 				aria-label={ariaLabel}

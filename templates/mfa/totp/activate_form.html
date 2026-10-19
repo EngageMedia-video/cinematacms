@@ -91,7 +91,7 @@
     </form>
   </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
   document.addEventListener('DOMContentLoaded', function () {
     const step1 = document.getElementById('step-1-container');
     const step2 = document.getElementById('step-2-container');

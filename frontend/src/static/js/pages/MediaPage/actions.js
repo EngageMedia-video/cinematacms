@@ -6,6 +6,16 @@ export function loadMediaData() {
 	});
 }
 
+// Plays another playlist item in this page; onFallback runs when it cannot.
+export function switchMedia({ friendlyToken, url, onFallback }) {
+	Dispatcher.dispatch({
+		type: 'SWITCH_MEDIA',
+		friendlyToken,
+		url,
+		onFallback,
+	});
+}
+
 export function likeMedia() {
 	Dispatcher.dispatch({
 		type: 'LIKE_MEDIA',

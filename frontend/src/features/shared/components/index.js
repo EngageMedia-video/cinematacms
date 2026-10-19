@@ -1,5 +1,6 @@
 export { Icon } from './Icon';
 export { Link } from './Link/Link';
+export { LinkifiedText } from './LinkifiedText';
 export { Avatar } from './Avatar';
 export { Badge } from './Badge';
 export { Button } from './Button';
@@ -14,6 +15,7 @@ export { DateChooserField, formatDMY } from './DateChooserField';
 export { YearChooserField } from './YearChooserField';
 export { Dialog, DialogClose, DialogContent, DialogTrigger } from './Dialog';
 export { ConfirmationDialogContent } from './ConfirmationDialog';
+export { UnsavedChangesDialog } from './UnsavedChangesDialog';
 export { Dropdown } from './Dropdown';
 export { MediaDropzone } from './MediaDropzone';
 export { SearchBar } from './SearchBar';

@@ -7,6 +7,8 @@ const storeMocks = vi.hoisted(() => {
 	const state = {
 		contentSensitivity: [],
 		countries: [],
+		htmlInDescription: false,
+		summary: '',
 		topics: [],
 	};
 
@@ -19,7 +21,7 @@ const storeMocks = vi.hoisted(() => {
 						pages: {
 							media: {
 								categoriesWithTitle: false,
-								htmlInDescription: false,
+								htmlInDescription: state.htmlInDescription,
 							},
 						},
 					};
@@ -54,7 +56,7 @@ const storeMocks = vi.hoisted(() => {
 				if (key === 'media-languages') return [];
 				if (key === 'media-categories') return [];
 				if (key === 'media-tags') return [];
-				if (key === 'media-summary') return '';
+				if (key === 'media-summary') return state.summary;
 				if (key === 'media-url') return '/media/test';
 				return null;
 			}),
@@ -64,6 +66,8 @@ const storeMocks = vi.hoisted(() => {
 		reset() {
 			state.contentSensitivity = [];
 			state.countries = [];
+			state.htmlInDescription = false;
+			state.summary = '';
 			state.topics = [];
 			this.pageStore.get.mockClear();
 			this.mediaPageStore.get.mockClear();
@@ -198,5 +202,60 @@ describe('ViewerInfoContent', () => {
 
 		expect(moreInformation).toHaveClass('whitespace-pre-wrap');
 		expect(moreInformation.textContent).toBe(description);
+	});
+
+	describe('links in user-supplied text', () => {
+		it('links a bare URL in more information and credits', () => {
+			renderViewerInfoContent({ description: 'Full credits at https://cinemata.org/credits.' });
+
+			const link = screen.getByRole('link', { name: 'https://cinemata.org/credits' });
+			expect(link).toHaveAttribute('href', 'https://cinemata.org/credits');
+			expect(link).toHaveAttribute('rel', 'nofollow noopener');
+			expect(link).not.toHaveAttribute('target');
+		});
+
+		it('links a bare URL in the synopsis', () => {
+			storeMocks.state.summary = 'Made with www.engagemedia.org';
+
+			renderViewerInfoContent();
+
+			expect(screen.getByRole('link', { name: 'www.engagemedia.org' })).toHaveAttribute(
+				'href',
+				'https://www.engagemedia.org/'
+			);
+		});
+
+		it('escapes markup before linking, even when HTML descriptions are enabled', () => {
+			storeMocks.state.htmlInDescription = true;
+			storeMocks.state.summary = '<b>Bold</b> synopsis';
+			const description = '<img src="x" onerror="alert(1)"> See https://cinemata.org';
+
+			const { container } = renderViewerInfoContent({ description });
+
+			expect(container.querySelector('img')).toBeNull();
+			expect(container.querySelector('b')).toBeNull();
+			expect(screen.getByText(/<b>Bold<\/b> synopsis/)).toBeInTheDocument();
+			expect(screen.getByRole('link', { name: 'https://cinemata.org' })).toBeInTheDocument();
+		});
+
+		it('links a timestamp in the description to that moment of the media', () => {
+			renderViewerInfoContent({ description: 'The river scene starts at 1:05.' });
+
+			expect(screen.getByRole('link', { name: '1:05' })).toHaveAttribute('href', '/media/test?t=65');
+		});
+
+		it('links feature-length and hour timestamps in the description', () => {
+			renderViewerInfoContent({ description: 'Part two starts at 75:30, the epilogue at 1:42:05.' });
+
+			expect(screen.getByRole('link', { name: '75:30' })).toHaveAttribute('href', '/media/test?t=4530');
+			expect(screen.getByRole('link', { name: '1:42:05' })).toHaveAttribute('href', '/media/test?t=6125');
+		});
+
+		it('keeps a timestamp inside a URL as part of the link', () => {
+			renderViewerInfoContent({ description: 'Excerpt: https://example.org/clip?t=1:30' });
+
+			expect(screen.getByRole('link', { name: 'https://example.org/clip?t=1:30' })).toBeInTheDocument();
+			expect(screen.queryByRole('link', { name: '1:30' })).not.toBeInTheDocument();
+		});
 	});
 });
