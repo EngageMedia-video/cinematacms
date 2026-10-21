@@ -156,7 +156,7 @@ opentelemetry-api==1.45.1
     #   opentelemetry-semantic-conventions
 opentelemetry-exporter-otlp-proto-common==1.45.1
     # via opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-http==1.44.0
+opentelemetry-exporter-otlp-proto-http==1.45.1
     # via cinemata
 opentelemetry-instrumentation==0.66b1
     # via
@@ -167,17 +167,17 @@ opentelemetry-instrumentation==0.66b1
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-instrumentation-wsgi
-opentelemetry-instrumentation-celery==0.65b0
+opentelemetry-instrumentation-celery==0.66b1
     # via cinemata
 opentelemetry-instrumentation-dbapi==0.66b1
     # via opentelemetry-instrumentation-psycopg2
-opentelemetry-instrumentation-django==0.65b0
+opentelemetry-instrumentation-django==0.66b1
     # via cinemata
-opentelemetry-instrumentation-psycopg2==0.65b0
+opentelemetry-instrumentation-psycopg2==0.66b1
     # via cinemata
-opentelemetry-instrumentation-redis==0.65b0
+opentelemetry-instrumentation-redis==0.66b1
     # via cinemata
-opentelemetry-instrumentation-requests==0.65b0
+opentelemetry-instrumentation-requests==0.66b1
     # via cinemata
 opentelemetry-instrumentation-wsgi==0.66b1
     # via opentelemetry-instrumentation-django
@@ -185,7 +185,7 @@ opentelemetry-proto==1.45.1
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.44.0
+opentelemetry-sdk==1.45.1
     # via
     #   cinemata
     #   opentelemetry-exporter-otlp-proto-http
