@@ -4,9 +4,8 @@ Modern-track home page: hero section + Featured by Curators row + admin-configur
 
 ## Data flow
 
-1. Django renders `templates/cms/index_revamp.html` and injects three `json_script` blocks:
+1. Django renders `templates/cms/index_revamp.html` and injects two `json_script` blocks:
    - `#home-initial-data-featured` — `/api/v1/media?show=featured` payload (first 20 items)
-   - `#home-initial-data-recommended` — `/api/v1/media?show=recommended` payload
    - `#home-initial-data-index-featured` — ordered homepage playlist configuration
 
 2. `src/entries/index-revamp.js` reads the blocks via `readInitialDataFromDom()` and seeds
@@ -14,8 +13,7 @@ Modern-track home page: hero section + Featured by Curators row + admin-configur
    the exact number of configured playlist rows before rendering, avoiding placeholder rows that later collapse.
 
 3. `useFeaturedMedia` observes `['home','featured']` for the hero and curators row.
-   On `staleTime` expiry or focus, it refetches from the API. The recommended
-   payload is still seeded for compatibility but has no mounted consumer.
+   On `staleTime` expiry or focus, it refetches from the API.
 
 4. `HeroSection.Player` uses list playback data when present. When the featured list item has no playback payload,
    it fetches the legacy media detail endpoint derived from `url`, `friendly_token`, `uid`, or `id` before mounting
