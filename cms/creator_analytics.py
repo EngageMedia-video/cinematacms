@@ -99,12 +99,6 @@ def _event_counts(rows):
     return {row["x"]: row["y"] for row in rows if row.get("x") and isinstance(row.get("y"), (int, float))}
 
 
-def _series(rows, key=None):
-    if key:
-        rows = rows[key]
-    return {row["x"][:10]: row["y"] for row in rows}
-
-
 def _previous_counts(media, days, current_start, current_end, revision, report_timezone):
     if days == 365:
         return None  # A preceding 365-day window falls outside 12-month retention.
