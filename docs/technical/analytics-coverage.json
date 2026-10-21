@@ -186,6 +186,10 @@
         {
           "path": "frontend/src/features/playlist/components/PlaylistPage.jsx",
           "contains": "track('playlist_share')"
+        },
+        {
+          "path": "frontend/src/features/playlist/components/PlaylistPage.jsx",
+          "contains": "track('playlist_link_copy')"
         }
       ],
       "tests": [
@@ -286,6 +290,14 @@
           "contains": "search_filter_apply"
         },
         {
+          "path": "frontend/src/features/search/components/SearchPage.jsx",
+          "contains": "track('search_sort_change')"
+        },
+        {
+          "path": "frontend/src/features/search/components/SearchPage.jsx",
+          "contains": "track('search_filter_reset')"
+        },
+        {
           "path": "frontend/src/features/search/hooks/useMediaSearch.js",
           "contains": "search_no_results"
         },
@@ -298,7 +310,8 @@
         "tests/test_analytics.py",
         "frontend/src/static/js/cinemata-analytics.test.js",
         "frontend/src/features/search/hooks/useMediaSearch.test.js",
-        "frontend/src/features/search/analytics-search.test.jsx"
+        "frontend/src/features/search/analytics-search.test.jsx",
+        "frontend/src/features/search/components/SearchPage.test.jsx"
       ]
     },
     {
