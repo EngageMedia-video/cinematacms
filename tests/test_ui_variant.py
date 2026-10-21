@@ -1,4 +1,5 @@
 from copy import deepcopy
+from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -6,7 +7,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
-from cms.ui_variant import resolve_template, ui_variant_context_processor
+from cms.ui_variant import resolve_template
 from files.tests.helpers import create_test_media
 
 User = get_user_model()
@@ -33,19 +34,10 @@ class ResolveTemplateTests(SimpleTestCase):
                     if user is not None:
                         request.user = user
                     self.assertEqual(resolve_template(request, page), template)
-                    self.assertEqual(request.ui_variant, "revamp")
 
     def test_unknown_page_key_raises(self):
         with self.assertRaisesMessage(KeyError, "Unknown UI variant page: missing"):
             resolve_template(self.factory.get("/"), "missing")
-
-    def test_context_processor_exposes_variant(self):
-        request = self.factory.get("/")
-        resolve_template(request, "home")
-        self.assertEqual(ui_variant_context_processor(request), {"UI_VARIANT": "revamp"})
-
-    def test_context_processor_defaults_to_revamp(self):
-        self.assertEqual(ui_variant_context_processor(self.factory.get("/")), {"UI_VARIANT": "revamp"})
 
 
 @override_settings(
@@ -70,45 +62,35 @@ class UIVariantViewTests(TestCase):
     def test_revamp_default(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context)
-        self.assertEqual(response.context["UI_VARIANT"], "revamp")
+        self.assertContains(response, 'data-ui-variant="revamp"')
         self.assertIn(b"index-revamp", response.content)
 
     def test_revamp_page_has_data_ui_variant_attribute(self):
         response = self.client.get("/")
         self.assertIn(b'data-ui-variant="revamp"', response.content)
 
-    def test_bootstrap_contains_default_revamp_ui_variant(self):
-        response = self.client.get("/")
-        self.assertIn(b"ui: { variant:", response.content)
-        self.assertIn(b'"revamp"', response.content)
-
     def test_staff_preview_param_returns_revamp(self):
         self.client.login(username="staffuser", password="testpass")
         response = self.client.get("/?ui=revamp")
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context)
-        self.assertEqual(response.context["UI_VARIANT"], "revamp")
+        self.assertContains(response, 'data-ui-variant="revamp"')
 
     def test_non_staff_preview_param_returns_revamp(self):
         self.client.login(username="regularuser", password="testpass")
         response = self.client.get("/?ui=revamp")
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context)
-        self.assertEqual(response.context["UI_VARIANT"], "revamp")
+        self.assertContains(response, 'data-ui-variant="revamp"')
 
     def test_revamp_default_logged_in(self):
         self.client.login(username="regularuser", password="testpass")
         response = self.client.get("/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context["UI_VARIANT"], "revamp")
+        self.assertContains(response, 'data-ui-variant="revamp"')
 
     def test_upload_uses_revamp(self):
         self.client.login(username="regularuser", password="testpass")
         response = self.client.get("/upload")
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context)
-        self.assertEqual(response.context["UI_VARIANT"], "revamp")
+        self.assertContains(response, 'data-ui-variant="revamp"')
         self.assertIn(b'id="app-root"', response.content)
         self.assertIn(b"src/entries/add-media.js", response.content)
 
@@ -131,3 +113,18 @@ class UIVariantViewTests(TestCase):
         response = self.client.get("/upload")
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], f"{reverse('account_login')}?next=%2Fupload")
+
+    def test_unmigrated_page_declares_the_legacy_shell(self):
+        self.client.login(username="regularuser", password="testpass")
+        response = self.client.get("/history")
+        self.assertTemplateUsed(response, "base.html")
+        self.assertContains(response, 'data-ui-variant="legacy"')
+        self.assertNotContains(response, 'id="app-root"')
+
+    def test_modern_page_without_a_variant_lookup_declares_the_revamp_shell(self):
+        self.client.login(username="regularuser", password="testpass")
+        with patch("cms.creator_analytics.umami_get"):
+            response = self.client.get("/analytics?days=7")
+        self.assertTemplateUsed(response, "cms/creator_analytics.html")
+        self.assertContains(response, 'data-ui-variant="revamp"')
+        self.assertContains(response, 'id="app-root"')

@@ -132,7 +132,6 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "files.context_processors.stuff",
                 "cms.context_processors.ui_settings",
-                "cms.ui_variant.ui_variant_context_processor",
                 "maintenance_mode.context_processors.maintenance_mode",
             ],
         },

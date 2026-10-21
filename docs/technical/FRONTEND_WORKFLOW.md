@@ -134,6 +134,9 @@ Shell selection:
 
 - The migrated pages use their `*_revamp.html` templates.
 - Channel, History, Liked, and other unmigrated pages retain the legacy shell.
+- The base template declares the shell in its `ui_variant` block:
+  `root.html` renders `<body data-ui-variant="legacy">`, and
+  `base_modern.html` overrides it with `revamp`.
 - the helper only activates the modern shell when both conditions are true:
   - `<body data-ui-variant="revamp">`
   - `#app-root` exists in the template
