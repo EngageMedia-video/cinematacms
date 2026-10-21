@@ -1110,6 +1110,8 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             "ERROR_TRACKING_DIAGNOSTICS_RATE_WINDOW_SECONDS = 3600\n"
             "SECURE_HSTS_SECONDS = 31536000\n"
             "UI_VARIANT_ALLOWED = ['legacy', 'revamp']\n"
+            "UI_VARIANT_DEFAULT = 'legacy'\n"
+            "UI_VARIANT_REVAMP_PAGES = []\n"
             "UPLOAD_MAX_SIZE = 123456\n"
             "WHISPER_MODEL = 'large-v3'\n"
             "WHISPER_CPP_DIR = '/opt/whisper'\n"
@@ -1172,7 +1174,9 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertIn("ERROR_TRACKING_DIAGNOSTICS_RATE_LIMIT=50", migrated)
         self.assertIn("ERROR_TRACKING_DIAGNOSTICS_RATE_WINDOW_SECONDS=3600", migrated)
         self.assertIn("SECURE_HSTS_SECONDS=31536000", migrated)
-        self.assertIn("UI_VARIANT_ALLOWED=legacy,revamp", migrated)
+        self.assertNotIn("UI_VARIANT_ALLOWED=", migrated)
+        self.assertNotIn("UI_VARIANT_DEFAULT=", migrated)
+        self.assertNotIn("UI_VARIANT_REVAMP_PAGES=", migrated)
         self.assertIn("UPLOAD_MAX_SIZE=123456", migrated)
         self.assertIn("WHISPER_MODEL_SIZE=large-v3", migrated)
         self.assertIn("WHISPER_CPP_DIR=/opt/whisper", migrated)

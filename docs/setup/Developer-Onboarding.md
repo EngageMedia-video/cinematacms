@@ -1417,7 +1417,7 @@ For comprehensive frontend development documentation, see:
 Covers:
 - Detailed component patterns
 - Page creation walkthrough
-- DemoComponent and DemoPage examples
+- The staff-only modern demo page as a working frontend example
 - Flux integration
 - Advanced patterns
 - Troubleshooting

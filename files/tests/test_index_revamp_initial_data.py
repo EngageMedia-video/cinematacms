@@ -10,7 +10,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from django.core.cache import cache
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.utils import timezone
 
 from files.models import EncodeProfile, Encoding, IndexPageFeatured, Media
@@ -24,11 +24,6 @@ from files.tests.helpers import (
 )
 
 
-@override_settings(
-    UI_VARIANT_REVAMP_PAGES=["home"],
-    UI_VARIANT_DEFAULT="legacy",
-    UI_VARIANT_ALLOWED=["legacy", "revamp"],
-)
 class IndexRevampInitialDataTest(TestCase):
     """Home page must emit two json_script blocks with media payloads."""
 

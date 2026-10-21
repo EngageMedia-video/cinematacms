@@ -377,15 +377,14 @@ def _get_home_initial_data(request):
 def index(request):
     template = resolve_template(request, "home")
     context = {}
-    if getattr(request, "ui_variant", None) == "revamp":
-        featured, recommended, index_featured = _get_home_initial_data(request)
-        context["home_initial_featured"] = featured
-        context["home_initial_recommended"] = recommended
-        context["home_initial_index_featured"] = index_featured
-        first_featured = (featured.get("results") or [None])[0] if isinstance(featured, dict) else None
-        if isinstance(first_featured, dict):
-            hero_playback = first_featured.get("hero_playback") or {}
-            context["home_hero_preload_image"] = hero_playback.get("poster_url") or first_featured.get("thumbnail_url")
+    featured, recommended, index_featured = _get_home_initial_data(request)
+    context["home_initial_featured"] = featured
+    context["home_initial_recommended"] = recommended
+    context["home_initial_index_featured"] = index_featured
+    first_featured = (featured.get("results") or [None])[0] if isinstance(featured, dict) else None
+    if isinstance(first_featured, dict):
+        hero_playback = first_featured.get("hero_playback") or {}
+        context["home_hero_preload_image"] = hero_playback.get("poster_url") or first_featured.get("thumbnail_url")
     return render(request, template, context)
 
 

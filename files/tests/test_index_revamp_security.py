@@ -9,7 +9,7 @@ introduces raw script interpolation must cause these tests to fail.
 from unittest.mock import patch
 
 from django.core.cache import cache
-from django.test import TestCase, override_settings
+from django.test import TestCase
 
 from files.models import Media
 from files.tests.helpers import (
@@ -21,11 +21,6 @@ from files.tests.helpers import (
 )
 
 
-@override_settings(
-    UI_VARIANT_REVAMP_PAGES=["home"],
-    UI_VARIANT_DEFAULT="legacy",
-    UI_VARIANT_ALLOWED=["legacy", "revamp"],
-)
 class IndexRevampSecurityTest(TestCase):
     """XSS escaping contract: json_script must escape dangerous characters."""
 

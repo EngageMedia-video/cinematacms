@@ -72,9 +72,6 @@ DIRECT_SETTINGS = (
     "SESSION_COOKIE_SAMESITE",
     "SESSION_COOKIE_SECURE",
     "SITE_ID",
-    "UI_VARIANT_ALLOWED",
-    "UI_VARIANT_DEFAULT",
-    "UI_VARIANT_REVAMP_PAGES",
     "UPLOAD_MAX_FILES_NUMBER",
     "UPLOAD_MAX_SIZE",
     "USE_X_ACCEL_REDIRECT",
@@ -104,6 +101,9 @@ IGNORED_LEGACY_SETTINGS = {
     "SILKY_PYTHON_PROFILER",
     "SILKY_PYTHON_PROFILER_BINARY",  # django-silk is not installed.
     "SSL_FRONTEND_HOST",  # Derived from FRONTEND_HOST.
+    "UI_VARIANT_ALLOWED",  # Migrated pages always use the revamp UI.
+    "UI_VARIANT_DEFAULT",
+    "UI_VARIANT_REVAMP_PAGES",
     "UPLOAD_SUBDOMAIN",  # No application consumer exists.
 }
 

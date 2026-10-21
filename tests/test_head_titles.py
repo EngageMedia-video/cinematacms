@@ -29,11 +29,6 @@ PORTAL_NAME = "Test Portal"
 # complete document, so it holds the only other legitimate ``<title>``.
 TEMPLATES_OWNING_A_TITLE_TAG = {"root.html", "503.html"}
 
-# ``cms/edit_media.html`` reverses an upload URL from a media object in its
-# body, so it cannot render from a bare context. Its ``headtitle`` block is
-# still covered by the source-level test below.
-TEMPLATES_NEEDING_VIEW_CONTEXT = {"cms/edit_media.html"}
-
 
 def _template_names():
     for path in sorted(TEMPLATE_ROOT.rglob("*.html")):
@@ -105,8 +100,6 @@ class HeadTitleRenderTests(SimpleTestCase):
 
     def test_each_page_renders_one_title_ending_in_the_portal_name(self):
         for name, block in _overriding_templates():
-            if name in TEMPLATES_NEEDING_VIEW_CONTEXT:
-                continue
             # Profile and playlist titles name the page only when the object is
             # in context; from a bare context they correctly fall back to the
             # portal name alone.
@@ -122,20 +115,6 @@ class HeadTitleRenderTests(SimpleTestCase):
                 )
                 if names_a_page:
                     self.assertNotEqual(title, PORTAL_NAME, f"{name} title names no page: {title!r}")
-
-    def test_exempt_templates_are_still_exempt(self):
-        """Fail if an exempt template becomes renderable, or a new one is added."""
-        still_failing = set()
-        for name in TEMPLATES_NEEDING_VIEW_CONTEXT:
-            try:
-                self._render_titles(name)
-            except Exception:
-                still_failing.add(name)
-        self.assertEqual(
-            still_failing,
-            TEMPLATES_NEEDING_VIEW_CONTEXT,
-            "TEMPLATES_NEEDING_VIEW_CONTEXT is stale; drop any template that now renders from a bare context",
-        )
 
     def test_root_template_defaults_to_the_portal_name(self):
         self.assertEqual(self._render_titles("root.html"), [PORTAL_NAME])

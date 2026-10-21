@@ -208,78 +208,6 @@ MyComponent.propTypes = {
 
 3. If your component needs styling, add a corresponding CSS/SCSS file in `src/static/js/components/styles/` or within your component's directory.
 
-#### Example: DemoComponent
-
-The project includes a `DemoComponent` as an example of a reusable component:
-
-```jsx
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-
-// Import styles if needed
-import './styles/DemoComponent.scss';
-
-const DemoComponent = ({ initialValue, title, onCountChange }) => {
-  const [count, setCount] = useState(initialValue || 0);
-
-  const handleIncrement = () => {
-    const newCount = count + 1;
-    setCount(newCount);
-    if (onCountChange) {
-      onCountChange(newCount);
-    }
-  };
-
-  const handleDecrement = () => {
-    const newCount = count - 1;
-    setCount(newCount);
-    if (onCountChange) {
-      onCountChange(newCount);
-    }
-  };
-
-  return (
-    <div className="demo-component">
-      <h3 className="demo-component__title">{title}</h3>
-      <div className="demo-component__counter">
-        <button
-          className="demo-component__btn demo-component__btn--decrement"
-          onClick={handleDecrement}
-        >
-          -
-        </button>
-        <span className="demo-component__count">{count}</span>
-        <button
-          className="demo-component__btn demo-component__btn--increment"
-          onClick={handleIncrement}
-        >
-          +
-        </button>
-      </div>
-    </div>
-  );
-};
-
-DemoComponent.propTypes = {
-  initialValue: PropTypes.number,
-  title: PropTypes.string.isRequired,
-  onCountChange: PropTypes.func
-};
-
-DemoComponent.defaultProps = {
-  initialValue: 0,
-  title: 'Counter'
-};
-
-export default DemoComponent;
-```
-
-This component demonstrates:
-- Using function components with hooks
-- Handling props with PropTypes
-- Using callback functions to communicate with parent components
-- Simple state management with useState
-
 ### Creating a New Page
 
 Pages are special components that represent entire views. While existing pages use class components extending `Page`, for new pages you can use a functional approach with React hooks:
@@ -320,95 +248,7 @@ MyNewPage.propTypes = {
 export default MyNewPage;
 ```
 
-#### Example: DemoPage
-
-The project includes a `DemoPage` component that uses the hooks approach:
-
-```jsx
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-
-import PageStore from './_PageStore';
-import { usePage, PageLayout } from './page';
-import DemoComponent from '../components/DemoComponent';
-
-// Import styles
-import './styles/DemoPage.scss';
-
-/**
- * DemoPage component using hook pattern
- */
-export const DemoPage = ({ pageTitle = 'Demo Page' }) => {
-  // Initialize the page
-  usePage('demo');
-
-  // Get config values if available
-  const { defaultCounterValue = 0, maxCounters = 5 } =
-    PageStore.get('window-MediaCMS')?.demoOptions || {};
-
-  const [lastCountValue, setLastCountValue] = useState(defaultCounterValue);
-  const [componentInstances, setComponentInstances] = useState(1);
-
-  const handleCountChange = value => setLastCountValue(value);
-
-  const addComponent = () =>
-    setComponentInstances(prev => prev < maxCounters ? prev + 1 : prev);
-
-  return (
-    <PageLayout>
-      <div className="demo-page">
-        <h1 className="demo-page__title">{pageTitle}</h1>
-
-        <div className="demo-page__info">
-          <p>This is a demo page showcasing a simple counter component.</p>
-          <p>Current count from first component: <strong>{lastCountValue}</strong></p>
-
-          <button
-            className="demo-page__add-button"
-            onClick={addComponent}
-            disabled={componentInstances >= maxCounters}
-          >
-            Add Another Counter ({componentInstances}/{maxCounters})
-          </button>
-        </div>
-
-        <div className="demo-page__components">
-          {[...Array(componentInstances)].map((_, i) => (
-            <div key={i} className="demo-page__component-wrapper">
-              <DemoComponent
-                initialValue={i}
-                title={`Demo Counter ${i + 1}`}
-                onCountChange={i === 0 ? handleCountChange : undefined}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </PageLayout>
-  );
-};
-
-DemoPage.propTypes = {
-  pageTitle: PropTypes.string
-};
-
-export default DemoPage;
-```
-
-This example demonstrates:
-- Using the hooks pattern for page initialization
-- Using composition with the PageLayout component
-- Using hooks for state management (useState)
-- Creating multiple instances of a component dynamically
-- Proper structure to match the Page component rendering pattern
-- Communication between parent and child components via callbacks
-
-> **Note about implementation approach:** The hooks approach has several advantages:
-> 1. Follows modern React patterns (hooks over HOCs)
-> 2. Provides clear separation of concerns
-> 3. Avoids the wrapper hell problem that can occur with HOCs
-> 4. Makes component reuse and testing simpler
-> 5. Improves readability and maintainability
+For a working page example, see the staff-only modern demo at `/modern-demo` and its implementation in [`ModernDemoPage.js`](../../frontend/src/features/modern-demo/ModernDemoPage.js).
 
 ### The Page Utilities
 
@@ -473,26 +313,6 @@ pages['my-new-page'] = mediacmsDefaultPages(
   {
     // Additional configuration options, if needed
     // window: { MediaCMS: { /* page-specific data */ } }
-  }
-);
-```
-
-For the DemoPage example, the configuration might look like:
-
-```javascript
-pages['demo'] = mediacmsDefaultPages(
-  'demo',                 // Page ID
-  'Demo Page',            // Page title
-  'DemoPage',             // Component name
-  {
-    window: {
-      MediaCMS: {
-        demoOptions: {
-          defaultCounterValue: 0,
-          maxCounters: 5
-        }
-      }
-    }
   }
 );
 ```
