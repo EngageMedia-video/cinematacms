@@ -257,11 +257,14 @@ def clean_friendly_token(token):
     return token
 
 
+MASKED_IP_PATTERN = r"[0-9a-f]{64}"
+
+
 def mask_ip(ip_address):
     """Pseudonymize IP addresses with a dedicated HMAC key, preserving existing masks."""
-    if not ip_address or re.fullmatch(r"[0-9a-f]{64}", ip_address):
+    if not ip_address or re.fullmatch(MASKED_IP_PATTERN, ip_address):
         return ip_address
-    key = getattr(settings, "MEDIA_ACTION_IP_HMAC_KEY", "")
+    key = settings.MEDIA_ACTION_IP_HMAC_KEY
     if not key:
         raise ImproperlyConfigured("MEDIA_ACTION_IP_HMAC_KEY is required when masking action IPs")
     try:
