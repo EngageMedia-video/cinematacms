@@ -63,11 +63,26 @@ class TestSettingsContractTests(unittest.TestCase):
         self.assertTrue(contract["celery_eager"])
 
     def test_make_test_targets_pin_the_shared_test_settings(self):
+        env = {
+            key: value
+            for key, value in os.environ.items()
+            if key
+            not in {
+                "MAKEFILES",
+                "MAKEFLAGS",
+                "MFLAGS",
+                "MAKEOVERRIDES",
+                "TEST_DATABASE_PORT",
+                "TEST_SETTINGS",
+                "TEST_ARGS",
+            }
+        }
         for target in ("test", "test-ci"):
             with self.subTest(target=target):
                 result = subprocess.run(
                     ["make", "--dry-run", target],
                     cwd=PROJECT_ROOT,
+                    env=env,
                     capture_output=True,
                     text=True,
                     check=False,
