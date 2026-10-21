@@ -17,7 +17,7 @@ billiard==4.2.4
     # via celery
 celery==5.6.3
     # via cinemata
-certifi==2026.7.22
+certifi==2026.10.19
     # via
     #   requests
     #   sentry-sdk
