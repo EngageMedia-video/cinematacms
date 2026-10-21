@@ -20,14 +20,13 @@ function parseJsonScript(id) {
 
 export function readInitialDataFromDom() {
 	const featured = parseJsonScript('home-initial-data-featured');
-	const recommended = parseJsonScript('home-initial-data-recommended');
 	const indexFeatured = parseJsonScript('home-initial-data-index-featured');
 
-	if (featured === undefined && recommended === undefined && indexFeatured === undefined) {
+	if (featured === undefined && indexFeatured === undefined) {
 		return null;
 	}
 
-	return { featured, recommended, indexFeatured };
+	return { featured, indexFeatured };
 }
 
 function isMediaListPayload(value) {
@@ -37,9 +36,6 @@ function isMediaListPayload(value) {
 export function seedHomeInitialData(queryClient, initialData) {
 	if (isMediaListPayload(initialData?.featured)) {
 		queryClient.setQueryData(HOME_QUERY_KEYS.featured, initialData.featured);
-	}
-	if (isMediaListPayload(initialData?.recommended)) {
-		queryClient.setQueryData(HOME_QUERY_KEYS.recommended, initialData.recommended);
 	}
 	if (Array.isArray(initialData?.indexFeatured)) {
 		queryClient.setQueryData(HOME_QUERY_KEYS.indexFeatured, initialData.indexFeatured);

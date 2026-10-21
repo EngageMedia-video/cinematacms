@@ -10,7 +10,6 @@ const homeQueryClient = new QueryClient({
 
 export const HOME_QUERY_KEYS = {
 	featured: ['home', 'featured'],
-	recommended: ['home', 'recommended'],
 	recent: ['home', 'recent'],
 	heroDetail: (apiUrl) => ['home', 'hero-detail', apiUrl],
 	indexFeatured: ['home', 'index-featured'],

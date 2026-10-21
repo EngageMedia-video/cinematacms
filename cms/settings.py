@@ -132,7 +132,6 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "files.context_processors.stuff",
                 "cms.context_processors.ui_settings",
-                "cms.ui_variant.ui_variant_context_processor",
                 "maintenance_mode.context_processors.maintenance_mode",
             ],
         },
@@ -799,11 +798,6 @@ VIDEO_PLAYER_FEATURED_VIDEO_ON_INDEX_PAGE = False
 
 # Video UI/UX settings
 USE_ROUNDED_CORNERS = True  # Default: rounded corners enabled
-
-# UI variant gate
-UI_VARIANT_DEFAULT = os.getenv("UI_VARIANT_DEFAULT", "revamp")
-UI_VARIANT_ALLOWED = env_csv("UI_VARIANT_ALLOWED", ["revamp"])
-UI_VARIANT_REVAMP_PAGES = env_csv("UI_VARIANT_REVAMP_PAGES", [])
 
 # django-waffle feature flag settings
 WAFFLE_CREATE_MISSING_SWITCHES = True

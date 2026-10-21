@@ -220,15 +220,6 @@ def _home_featured_envelope(results, source_envelope=None):
     return envelope
 
 
-def _home_recommended_envelope(results):
-    return {
-        "count": len(results),
-        "next": None,
-        "previous": None,
-        "results": results,
-    }
-
-
 def _slim_home_media_item(item):
     if not isinstance(item, dict):
         return item
@@ -303,7 +294,7 @@ def _attach_hero_playback_to_first_featured_item(items, request=None):
 
 def _get_home_initial_data(request):
     """
-    Fetch featured and recommended payloads for SSR hydration.
+    Fetch featured media and homepage playlist payloads for SSR hydration.
 
     Uses home-specific cache keys so SSR can cache the hero-enriched payload
     without changing the generic media-list API cache contract.
@@ -341,23 +332,6 @@ def _get_home_initial_data(request):
             home_initial_featured = _home_featured_envelope(featured_results, source_envelope=source_envelope)
             set_cached_result(home_featured_cache_key, home_initial_featured, MEDIA_LIST_TIMEOUT)
 
-        # --- Recommended ---
-        # MediaList.get skips caching for show=recommended; this warms SSR hydration only.
-        recommended_cache_key = get_media_list_cache_key(
-            show="recommended_home", page=1, user_id=user_id, origin=request_origin
-        )
-        cached_recommended = get_cached_result(recommended_cache_key)
-        if cached_recommended is not None:
-            home_initial_recommended = cached_recommended
-        else:
-            recommended_media = show_recommended_media(request, limit=HOME_INITIAL_LIMIT)
-            recommended_results = list(
-                MediaSerializer(list(recommended_media), many=True, context={"request": request}).data
-            )
-            recommended_results = _slim_home_media_results(recommended_results)
-            home_initial_recommended = _home_recommended_envelope(recommended_results)
-            set_cached_result(recommended_cache_key, home_initial_recommended, MEDIA_LIST_TIMEOUT)
-
         # A playlist failure must not discard the media payloads above. None leaves
         # the rows unseeded, so the client falls back to /api/v1/indexfeatured.
         try:
@@ -367,25 +341,23 @@ def _get_home_initial_data(request):
             capture_unexpected_exception(error)
             home_initial_index_featured = None
 
-        return home_initial_featured, home_initial_recommended, home_initial_index_featured
+        return home_initial_featured, home_initial_index_featured
     except Exception as error:
         logger.exception("Failed to build home initial data")
         capture_unexpected_exception(error)
-        return _home_featured_envelope([]), _home_recommended_envelope([]), []
+        return _home_featured_envelope([]), []
 
 
 def index(request):
     template = resolve_template(request, "home")
     context = {}
-    if getattr(request, "ui_variant", None) == "revamp":
-        featured, recommended, index_featured = _get_home_initial_data(request)
-        context["home_initial_featured"] = featured
-        context["home_initial_recommended"] = recommended
-        context["home_initial_index_featured"] = index_featured
-        first_featured = (featured.get("results") or [None])[0] if isinstance(featured, dict) else None
-        if isinstance(first_featured, dict):
-            hero_playback = first_featured.get("hero_playback") or {}
-            context["home_hero_preload_image"] = hero_playback.get("poster_url") or first_featured.get("thumbnail_url")
+    featured, index_featured = _get_home_initial_data(request)
+    context["home_initial_featured"] = featured
+    context["home_initial_index_featured"] = index_featured
+    first_featured = (featured.get("results") or [None])[0] if isinstance(featured, dict) else None
+    if isinstance(first_featured, dict):
+        hero_playback = first_featured.get("hero_playback") or {}
+        context["home_hero_preload_image"] = hero_playback.get("poster_url") or first_featured.get("thumbnail_url")
     return render(request, template, context)
 
 

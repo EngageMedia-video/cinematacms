@@ -6,7 +6,6 @@ query data, while a ``ResolverMatch`` contains the stable URLconf identity that
 the application actually selected.
 """
 
-from collections.abc import Iterable
 from dataclasses import dataclass
 
 from files.metrics import record_contract_violation
@@ -464,30 +463,3 @@ def classify_request(request, method: str | None = None) -> tuple[str, str]:
 
     _runtime_contract_violation("route")
     return CONTRACT_FALLBACK_OPERATION.route_group, CONTRACT_FALLBACK_OPERATION.operation
-
-
-def iter_owned_route_identities(patterns: Iterable) -> Iterable[tuple[str, str, str]]:
-    """Yield route identities for first-party URLconf patterns.
-
-    This helper is only an inventory reader. The registry is the static
-    contract above; callers can compare the two sets in CI to catch a URLconf
-    change that forgot to add telemetry coverage.
-    """
-
-    from django.urls import URLResolver
-
-    def walk(current, prefix="", namespace=""):
-        for pattern in current:
-            route = getattr(pattern.pattern, "_route", None)
-            if route is None:
-                route = pattern.pattern.regex.pattern
-            if isinstance(pattern, URLResolver):
-                child_namespace = namespace + (":" if namespace else "") + (pattern.namespace or "")
-                yield from walk(pattern.url_patterns, prefix + route, child_namespace)
-                continue
-            callback = pattern.callback
-            module = getattr(callback, "__module__", "") or ""
-            if module.startswith(("cms.", "files.", "notifications.", "uploader.", "users.")):
-                yield namespace, pattern.name or "", prefix + route
-
-    yield from walk(patterns)

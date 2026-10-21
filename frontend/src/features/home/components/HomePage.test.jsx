@@ -83,7 +83,6 @@ const RECENT_MEDIA_WITH_USER_AUTHOR = {
 beforeEach(() => {
 	homeQueryClient.clear();
 	homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, []);
-	homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, []);
 	homeQueryClient.setQueryData(HOME_QUERY_KEYS.recent, []);
 	homeQueryClient.setQueryData(HOME_QUERY_KEYS.indexFeatured, []);
 });
@@ -132,7 +131,6 @@ describe('HomePage', () => {
 	it('loads the hero player from seeded hero_playback only after activation', async () => {
 		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => [] });
 		homeQueryClient.setQueryData(HOME_QUERY_KEYS.featured, [FEATURED_MEDIA]);
-		homeQueryClient.setQueryData(HOME_QUERY_KEYS.recommended, []);
 
 		render(<HomePage />);
 
