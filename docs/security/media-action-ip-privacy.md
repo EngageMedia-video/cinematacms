@@ -14,7 +14,9 @@ operators and maintenance scripts must use the owned cleanup command.
 
 ## Configure the key before deployment
 
-Generate a separate random key with at least 32 bytes and store it as
+Systemd deployments get the key from `deploy/apply-release-config.sh`. It writes
+a random `MEDIA_ACTION_IP_HMAC_KEY` to `/etc/cinematacms/app.env` when the value is
+absent and preserves an existing value. For other deployments, generate a separate random key with at least 32 bytes and store it as
 `MEDIA_ACTION_IP_HMAC_KEY` in the deployment's secret configuration. For example,
 generate 32 random bytes encoded as hexadecimal:
 
@@ -33,15 +35,18 @@ uv run python manage.py check
 
 Checks `actions.E001`, `actions.E002`, and `actions.E003` reject a missing, short,
 or reused key. Masking never falls back to `SECRET_KEY`. With masking disabled,
-the key is not required and raw addresses can be stored, subject to the same
-7-day IP retention policy.
+the key is not required and raw addresses can be stored. The hourly job still
+clears them after 7 days; the retention policy applies whether or not masking
+is enabled.
 
 ## Roll out and sanitize existing records
 
 1. Install the key in the web and worker environments before starting the new
    code. Pause old action writers during the cutover so they cannot store new
    raw IPs while cleanup runs.
-2. Apply migrations, then inspect the count-only dry run:
+2. Apply migrations, then inspect the count-only dry run. Migration
+   `actions.0006` builds the retention index concurrently, so it does not block
+   action writes but runs outside a transaction:
 
    ```bash
    uv run python manage.py migrate
@@ -63,9 +68,9 @@ Cleanup clears IP fields on actions at least 7 days old, masks recent legacy
 raw addresses, and clears invalid legacy values. It never deletes action rows
 or changes media counters, user/session links, or action timestamps. Output
 contains counts only. Each batch commits separately; interrupted runs can be
-repeated. The command scans a fixed upper primary key, so new traffic cannot
-extend a cleanup run indefinitely. The field migration alone does not clean
-historical rows.
+repeated. Batches advance by primary key, and the field masks new writes, so new
+traffic cannot extend a cleanup run indefinitely. The field migration alone does
+not clean historical rows.
 
 Existing legacy hashes cannot be converted to HMAC without the original IP.
 They remain unchanged until their action reaches the 7-day cutoff. During
@@ -77,7 +82,11 @@ key fallback is maintained for IP correlation.
 
 ## Retention and monitoring
 
-Celery Beat runs cleanup hourly. With a healthy scheduler and worker, an expired
+Celery Beat runs the expiry step hourly. It reads a partial `action_date` index
+that holds only rows with an IP, so its cost follows newly expired rows rather
+than table size. It does not scan for legacy raw addresses; that is the rollout
+command's job. If the command is skipped, legacy raw addresses remain until
+they expire, at most 7 days. With a healthy scheduler and worker, an expired
 IP field is cleared on the next successful run, normally within an hour of the
 7-day cutoff plus execution time. This policy limits retained rows; a stable key
 can still link repeat activity across the retained window. User and session

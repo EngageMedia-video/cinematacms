@@ -1,48 +1,55 @@
 from datetime import timedelta
+from typing import NamedTuple
 
-from django.conf import settings
-from django.db import transaction
-from django.db.models import Q
 from django.utils import timezone
 
-from files.helpers import mask_ip
+from files.helpers import MASKED_IP_PATTERN, mask_ip
 
 from .models import MediaAction
 
+IP_RETENTION = timedelta(days=7)
 
-def cleanup_action_ips(*, batch_size=1000, dry_run=False):
-    if batch_size < 1:
-        raise ValueError("batch_size must be positive")
-    cutoff = timezone.now() - timedelta(days=7)
-    upper_pk = MediaAction.objects.order_by("-pk").values_list("pk", flat=True).first()
-    counts = {"expired": 0, "masked": 0, "invalid": 0}
-    if upper_pk is None:
-        return counts
-    predicate = Q(action_date__lte=cutoff)
-    if settings.MASK_IPS_FOR_ACTIONS:
-        predicate |= ~Q(remote_ip__regex=r"^[0-9a-f]{64}$")
-    candidates = MediaAction.objects.filter(predicate, pk__lte=upper_pk, remote_ip__isnull=False).exclude(remote_ip="")
+
+class LegacyIPCleanup(NamedTuple):
+    masked: int
+    invalid: int
+
+
+def expire_action_ips(*, batch_size=1000, dry_run=False):
+    """Clear IP fields older than the retention window; served by the partial action_date index."""
+    expired = MediaAction.objects.filter(action_date__lte=timezone.now() - IP_RETENTION, remote_ip__isnull=False)
+    if dry_run:
+        return expired.count()
+    count = 0
+    # Unordered batches: ordering by pk would let the planner walk the primary key instead of the index.
+    while expired_pks := list(expired.values_list("pk", flat=True)[:batch_size]):
+        count += MediaAction.objects.filter(pk__in=expired_pks).update(remote_ip=None)
+    return count
+
+
+def mask_legacy_action_ips(*, batch_size=1000, dry_run=False):
+    """Mask raw IPs written before field-level masking; a full scan meant for rollout, not the hourly job."""
+    legacy = (
+        MediaAction.objects.filter(remote_ip__isnull=False)
+        .exclude(remote_ip="")
+        .exclude(remote_ip__regex=rf"^{MASKED_IP_PATTERN}$")
+    )
+    masked = invalid = 0
+    for rows in _batches(legacy, batch_size):
+        for row in rows:
+            try:
+                row.remote_ip = mask_ip(row.remote_ip)
+                masked += 1
+            except ValueError:
+                row.remote_ip = None
+                invalid += 1
+        if not dry_run:
+            MediaAction.objects.bulk_update(rows, ["remote_ip"])
+    return LegacyIPCleanup(masked, invalid)
+
+
+def _batches(queryset, batch_size):
     last_pk = 0
-    while True:
-        with transaction.atomic():
-            batch = candidates.filter(pk__gt=last_pk).order_by("pk")
-            if not dry_run:
-                batch = batch.select_for_update()
-            rows = list(batch[:batch_size])
-            if not rows:
-                break
-            for row in rows:
-                if row.action_date <= cutoff:
-                    row.remote_ip = None
-                    counts["expired"] += 1
-                else:
-                    try:
-                        row.remote_ip = mask_ip(row.remote_ip)
-                        counts["masked"] += 1
-                    except ValueError:
-                        row.remote_ip = None
-                        counts["invalid"] += 1
-            if not dry_run:
-                MediaAction.objects.bulk_update(rows, ["remote_ip"], batch_size=batch_size)
-            last_pk = rows[-1].pk
-    return counts
+    while rows := list(queryset.filter(pk__gt=last_pk).order_by("pk")[:batch_size]):
+        yield rows
+        last_pk = rows[-1].pk

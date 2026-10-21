@@ -1,6 +1,7 @@
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from actions.ip_cleanup import cleanup_action_ips
+from actions.ip_cleanup import LegacyIPCleanup, expire_action_ips, mask_legacy_action_ips
 
 
 class Command(BaseCommand):
@@ -13,9 +14,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if options["batch_size"] < 1:
             raise CommandError("--batch-size must be positive")
-        result = cleanup_action_ips(batch_size=options["batch_size"], dry_run=options["dry_run"])
+        batch_options = {"batch_size": options["batch_size"], "dry_run": options["dry_run"]}
+        expired = expire_action_ips(**batch_options)
+        if settings.MASK_IPS_FOR_ACTIONS:
+            legacy = mask_legacy_action_ips(**batch_options)
+        else:
+            legacy = LegacyIPCleanup(masked=0, invalid=0)
         verb = "would change" if options["dry_run"] else "changed"
         self.stdout.write(
-            f"{sum(result.values())} IP fields {verb}: "
-            f"{result['expired']} expired, {result['masked']} masked, {result['invalid']} invalid cleared"
+            f"{expired + legacy.masked + legacy.invalid} IP fields {verb}: "
+            f"{expired} expired, {legacy.masked} masked, {legacy.invalid} invalid cleared"
         )

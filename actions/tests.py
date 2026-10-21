@@ -281,6 +281,54 @@ class IPCleanupTests(TestCase):
         self.assertIsNone(boundary.remote_ip)
         self.assertEqual(recent.remote_ip, MASKED_IP)
 
+    def test_interrupted_cleanup_keeps_committed_batches_and_resumes(self):
+        with override_settings(MASK_IPS_FOR_ACTIONS=False):
+            first = MediaAction.objects.create(media=self.media, remote_ip="203.0.113.42")
+            second = MediaAction.objects.create(media=self.media, remote_ip="203.0.113.43")
+        with (
+            patch("actions.ip_cleanup.mask_ip", side_effect=[MASKED_IP, RuntimeError("worker stopped")]),
+            self.assertRaisesMessage(RuntimeError, "worker stopped"),
+        ):
+            call_command("cleanup_media_action_ips", batch_size=1, stdout=StringIO())
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertEqual(first.remote_ip, MASKED_IP)
+        self.assertEqual(second.remote_ip, "203.0.113.43")
+
+        output = StringIO()
+        call_command("cleanup_media_action_ips", batch_size=1, stdout=output)
+
+        second.refresh_from_db()
+        self.assertEqual(second.remote_ip, mask_ip("203.0.113.43"))
+        self.assertIn("1 masked", output.getvalue())
+
+    def test_scheduled_cleanup_cost_grows_per_batch_not_per_row(self):
+        expired_date = timezone.now() - timedelta(days=8)
+        actions = MediaAction.objects.bulk_create(
+            [MediaAction(media=self.media, remote_ip=MASKED_IP) for _ in range(3)]
+        )
+        MediaAction.objects.filter(pk__in=[action.pk for action in actions]).update(action_date=expired_date)
+        from actions.tasks import cleanup_media_action_ips
+
+        # One batch: select, update, then the empty select that ends the loop.
+        with self.assertNumQueries(3):
+            result = cleanup_media_action_ips()
+
+        self.assertEqual(result["changed"], 3)
+
+    @override_settings(MASK_IPS_FOR_ACTIONS=True)
+    def test_scheduled_cleanup_leaves_recent_legacy_ips_to_the_rollout_command(self):
+        from actions.tasks import cleanup_media_action_ips
+
+        with override_settings(MASK_IPS_FOR_ACTIONS=False):
+            action = MediaAction.objects.create(media=self.media, remote_ip="203.0.113.42")
+
+        result = cleanup_media_action_ips()
+
+        action.refresh_from_db()
+        self.assertEqual(action.remote_ip, "203.0.113.42")
+        self.assertEqual(result["changed"], 0)
+
     def test_cleanup_handles_invalid_legacy_values_without_printing_them(self):
         with override_settings(MASK_IPS_FOR_ACTIONS=False):
             action = MediaAction.objects.create(media=self.media, remote_ip="invalid-private-value")
