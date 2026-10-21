@@ -540,20 +540,6 @@ def connect_signal_handlers() -> None:
     user_login_failed.connect(_on_user_login_failed, dispatch_uid="cinematacms_metrics_login_failed", weak=False)
 
 
-def record_cache_operation(cache_name: str, operation: str, hit: bool | None = None, ok: bool = True) -> None:
-    if not ok:
-        result = "error"
-    elif hit is None:
-        result = "success"
-    else:
-        result = "hit" if hit else "miss"
-    _safe_metric(
-        "cache operation",
-        lambda: CACHE_OPERATIONS_TOTAL.labels(family=cache_name, operation=operation, result=result).inc(),
-        component="cache",
-    )
-
-
 def _profile_labels(profile) -> dict[str, str]:
     return {
         "resolution": str(getattr(profile, "resolution", None) or "unknown"),

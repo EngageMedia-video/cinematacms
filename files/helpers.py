@@ -194,13 +194,6 @@ def rm_file(filename):
     return False
 
 
-def rm_files(filenames):
-    if isinstance(filenames, list):
-        for filename in filenames:
-            rm_file(filename)
-    return True
-
-
 def rm_dir(directory):
     if os.path.isdir(directory):
         # refuse to delete a dir inside project BASE_DIR
@@ -244,11 +237,6 @@ def build_versioned_url(base_url, version):
 def create_temp_file(suffix=None, dir=settings.TEMP_DIRECTORY):
     tf = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir=dir)
     return tf.name
-
-
-def create_temp_dir(suffix=None, dir=settings.TEMP_DIRECTORY):
-    td = tempfile.mkdtemp(dir=dir)
-    return td
 
 
 def produce_friendly_token(token_len=settings.FRIENDLY_TOKEN_LEN):
