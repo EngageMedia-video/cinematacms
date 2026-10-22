@@ -1,0 +1,15 @@
+# Managed by CinemataCMS deployment tooling.
+# Site access and error logs hold raw client IPs; keep them for 14 days.
+/var/log/cinematacms/nginx/*.log {
+    daily
+    rotate 14
+    maxage 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    sharedscripts
+    postrotate
+        invoke-rc.d nginx rotate >/dev/null 2>&1
+    endscript
+}

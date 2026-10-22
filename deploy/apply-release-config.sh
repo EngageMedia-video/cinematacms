@@ -234,7 +234,10 @@ if [ -f "$CONFIG_DIR/observability.env" ]; then
 fi
 
 NGINX_SNIPPET="$(root_path /etc/nginx/snippets/cinematacms-metrics.conf)"
+NGINX_RATE_LIMITS="$(root_path /etc/nginx/snippets/cinematacms-rate-limits.conf)"
 NGINX_HTTP_POLICY="$(root_path /etc/nginx/conf.d/cinematacms-http.conf)"
+NGINX_LOG_DIR="$(root_path /var/log/cinematacms/nginx)"
+NGINX_LOGROTATE="$(root_path /etc/logrotate.d/cinematacms-nginx)"
 NGINX_SITE="$(root_path /etc/nginx/sites-available/mediacms.io)"
 NGINX_ENABLED="$(root_path /etc/nginx/sites-enabled/mediacms.io)"
 NGINX_UWSGI_PARAMS="$(root_path /etc/nginx/sites-enabled/uwsgi_params)"
@@ -242,7 +245,13 @@ NGINX_MAIN="$(root_path /etc/nginx/nginx.conf)"
 NGINX_CLOUDFLARE="$(root_path /etc/nginx/conf.d/cloudflare_real_ip.conf)"
 
 install_managed_file "$SCRIPT_DIR/nginx/cinematacms-metrics.conf" "$NGINX_SNIPPET"
+install_managed_file "$SCRIPT_DIR/nginx/cinematacms-rate-limits.conf" "$NGINX_RATE_LIMITS"
 install_managed_file "$SCRIPT_DIR/nginx/cinematacms-http.conf" "$NGINX_HTTP_POLICY"
+install_managed_file "$SCRIPT_DIR/logrotate-cinematacms-nginx" "$NGINX_LOGROTATE"
+# Site logs hold raw client IPs. Only root and the nginx workers, which must
+# reopen the logs after rotation, may enter the directory.
+install -d -m 0750 "$NGINX_LOG_DIR"
+chgrp www-data "$NGINX_LOG_DIR"
 install_managed_file "$SCRIPT_DIR/uwsgi_params" "$NGINX_UWSGI_PARAMS"
 if [ ! -e "$NGINX_MAIN" ]; then
     install_managed_file "$SCRIPT_DIR/nginx.conf" "$NGINX_MAIN"
@@ -255,6 +264,26 @@ elif [ -e "$NGINX_CLOUDFLARE" ]; then
     rm -f "$NGINX_CLOUDFLARE"
 fi
 
+include_before_root_locations() {
+    local snippet="$1"
+    local rendered
+    rendered="$(mktemp)"
+    awk -v snippet="$snippet" '
+        /^[[:space:]]*location \/ \{/ {
+            print "    include " snippet ";"
+            found = 1
+        }
+        { print }
+        END { if (!found) exit 42 }
+    ' "$NGINX_SITE" > "$rendered" || {
+        rm -f "$rendered"
+        rollback
+        fail "could not find a root location in $NGINX_SITE"
+    }
+    install_managed_file "$rendered" "$NGINX_SITE"
+    rm -f "$rendered"
+}
+
 if [ ! -e "$NGINX_SITE" ]; then
     rendered_site="$(mktemp)"
     sed \
@@ -264,21 +293,10 @@ if [ ! -e "$NGINX_SITE" ]; then
     install_managed_file "$rendered_site" "$NGINX_SITE"
     rm -f "$rendered_site"
 elif ! grep -qE 'location = /metrics|cinematacms-metrics\.conf' "$NGINX_SITE"; then
-    rendered_site="$(mktemp)"
-    awk '
-        /^[[:space:]]*location \/ \{/ {
-            print "    include /etc/nginx/snippets/cinematacms-metrics.conf;"
-            found = 1
-        }
-        { print }
-        END { if (!found) exit 42 }
-    ' "$NGINX_SITE" > "$rendered_site" || {
-        rm -f "$rendered_site"
-        rollback
-        fail "could not find a root location in $NGINX_SITE"
-    }
-    install_managed_file "$rendered_site" "$NGINX_SITE"
-    rm -f "$rendered_site"
+    include_before_root_locations "/etc/nginx/snippets/cinematacms-metrics.conf"
+fi
+if ! grep -q 'cinematacms-rate-limits\.conf' "$NGINX_SITE"; then
+    include_before_root_locations "/etc/nginx/snippets/cinematacms-rate-limits.conf"
 fi
 
 rendered_site="$(mktemp)"
@@ -287,7 +305,10 @@ awk '
         next
     }
     {
-        if ($0 ~ /^[[:space:]]*access_log[[:space:]]+\/var\/log\/nginx\/mediacms\.io\.access\.log/) {
+        if ($0 ~ /^[[:space:]]*(access|error)_log[[:space:]]+\/var\/log\/nginx\/mediacms\.io\./) {
+            sub(/\/var\/log\/nginx\/mediacms\.io\./, "/var/log/cinematacms/nginx/mediacms.io.")
+        }
+        if ($0 ~ /^[[:space:]]*access_log[[:space:]]+\/var\/log\/cinematacms\/nginx\/mediacms\.io\.access\.log/) {
             sub(/mediacms\.io\.access\.log[[:space:]]+[^[:space:];]+/, "mediacms.io.access.log cinematacms")
             sub(/mediacms\.io\.access\.log;[[:space:]]*$/, "mediacms.io.access.log cinematacms;")
         }

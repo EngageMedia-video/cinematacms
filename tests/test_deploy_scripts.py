@@ -75,6 +75,34 @@ class NginxConfigTests(unittest.TestCase):
 
         self.assertLess(main_config.index("log_format compression"), main_config.index("access_log "))
 
+    def test_site_logs_with_client_ips_rotate_out_after_14_days(self):
+        site_config = (PROJECT_ROOT / "deploy/mediacms.io").read_text()
+        logrotate = (PROJECT_ROOT / "deploy/logrotate-cinematacms-nginx").read_text()
+        log_paths = re.findall(r"^\s*(?:access|error)_log\s+(\S+)", site_config, re.MULTILINE)
+
+        self.assertEqual(len(log_paths), 4)
+        for path in log_paths:
+            with self.subTest(path=path):
+                self.assertTrue(path.startswith("/var/log/cinematacms/nginx/"))
+        self.assertIn("/var/log/cinematacms/nginx/*.log {", logrotate)
+        self.assertRegex(logrotate, r"\n\s+daily\n")
+        self.assertRegex(logrotate, r"\n\s+rotate 14\n")
+        self.assertRegex(logrotate, r"\n\s+maxage 14\n")
+
+    def test_rate_limited_locations_use_zones_keyed_by_client_network(self):
+        http_policy = (PROJECT_ROOT / "deploy/nginx/cinematacms-http.conf").read_text()
+        rate_limits = (PROJECT_ROOT / "deploy/nginx/cinematacms-rate-limits.conf").read_text()
+        site_config = (PROJECT_ROOT / "deploy/mediacms.io").read_text()
+        zones = set(re.findall(r"limit_req_zone\s+\$cinematacms_client_network\s+zone=(\w+):", http_policy))
+        used_zones = re.findall(r"limit_req\s+zone=(\w+)", rate_limits)
+
+        self.assertEqual(set(used_zones), zones)
+        self.assertEqual(len(used_zones), 3)
+        self.assertIn("limit_req_status 429;", http_policy)
+        self.assertEqual(site_config.count("include /etc/nginx/snippets/cinematacms-rate-limits.conf;"), 2)
+        for location in ("location = /view", "/actions$", "/password$"):
+            self.assertIn(location, rate_limits)
+
     def test_client_body_size_remains_5800_megabytes(self):
         configs = [
             (PROJECT_ROOT / path).read_text()
@@ -700,6 +728,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.fake_bin.mkdir()
         self.deploy_root.mkdir()
         self._write_fake_command("systemctl")
+        self._write_fake_command("chgrp")
         self._write_fake_command("nginx", 'exit "${FAKE_NGINX_EXIT:-0}"')
         self._write_fake_command("prometheus")
         self._write_fake_command("otelcol-contrib")
@@ -797,6 +826,14 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         site = (self.deploy_root / "etc/nginx/sites-available/mediacms.io").read_text()
         self.assertIn("server_name video.example.org;", site)
         self.assertEqual(site.count("cinematacms-metrics.conf"), 2)
+        self.assertEqual(site.count("cinematacms-rate-limits.conf"), 2)
+        self.assertTrue((self.deploy_root / "etc/nginx/snippets/cinematacms-rate-limits.conf").is_file())
+        logrotate = (self.deploy_root / "etc/logrotate.d/cinematacms-nginx").read_text()
+        self.assertIn("/var/log/cinematacms/nginx/*.log", logrotate)
+        log_dir = self.deploy_root / "var/log/cinematacms/nginx"
+        self.assertEqual(stat.S_IMODE(log_dir.stat().st_mode), 0o750)
+        # nginx workers run as www-data and must reopen the logs after rotation.
+        self.assertIn(f"chgrp www-data {log_dir}", self.command_log.read_text())
         self.assertIn("ssl_ecdh_curve X25519:P-256:P-384;", site)
         self.assertIn("nginx -t", self.command_log.read_text())
         self.assertNotIn("systemctl enable --now", self.command_log.read_text())
@@ -932,6 +969,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertEqual(second.returncode, 0, second.stderr)
         site = site_path.read_text()
         self.assertEqual(site.count("cinematacms-metrics.conf"), 2)
+        self.assertEqual(site.count("cinematacms-rate-limits.conf"), 2)
         self.assertIn("# retained Certbot configuration", site)
         updated_app_env = app_env_path.read_text()
         self.assertIn("EMAIL_HOST=smtp.example.org", updated_app_env)
@@ -975,7 +1013,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertEqual(site.count("uwsgi_read_timeout 900s;"), 2)
         self.assertEqual(site.count("uwsgi_send_timeout 300s;"), 2)
         self.assertEqual(site.count("uwsgi_request_buffering on;"), 2)
-        self.assertEqual(site.count("access_log /var/log/nginx/mediacms.io.access.log cinematacms;"), 2)
+        self.assertEqual(site.count("access_log /var/log/cinematacms/nginx/mediacms.io.access.log cinematacms;"), 2)
         http_policy = (self.deploy_root / "etc/nginx/conf.d/cinematacms-http.conf").read_text()
         self.assertIn("client_body_timeout 300s;", http_policy)
         self.assertIn("log_format cinematacms", http_policy)
@@ -997,7 +1035,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             "access_log /var/log/nginx/mediacms.io.access.log combined buffer=32k gzip flush=5m if=$loggable;"
         )
         legacy_site = site_path.read_text().replace(
-            "access_log /var/log/nginx/mediacms.io.access.log cinematacms;",
+            "access_log /var/log/cinematacms/nginx/mediacms.io.access.log cinematacms;",
             legacy_directive,
         )
         self.assertEqual(legacy_site.count(legacy_directive), 2)
@@ -1007,11 +1045,41 @@ class ApplyReleaseConfigTests(unittest.TestCase):
 
         self.assertEqual(second.returncode, 0, second.stderr)
         migrated_directive = (
-            "access_log /var/log/nginx/mediacms.io.access.log cinematacms buffer=32k gzip flush=5m if=$loggable;"
+            "access_log /var/log/cinematacms/nginx/mediacms.io.access.log cinematacms "
+            "buffer=32k gzip flush=5m if=$loggable;"
         )
         site = site_path.read_text()
         self.assertEqual(site.count(migrated_directive), 2)
         self.assertNotIn(legacy_directive, site)
+
+    def test_second_apply_moves_legacy_site_logs_under_the_retention_policy(self):
+        site_path = self.deploy_root / "etc/nginx/sites-available/mediacms.io"
+        site_path.parent.mkdir(parents=True)
+        site_path.write_text(
+            "server {\n"
+            "    access_log /var/log/nginx/mediacms.io.access.log;\n"
+            "    error_log  /var/log/nginx/mediacms.io.error.log  warn;\n"
+            "    location / { return 200; }\n"
+            "}\n"
+        )
+
+        result = self.run_updater(
+            "--domain",
+            "video.example.org",
+            "--proxy",
+            "none",
+            "--observability",
+            "none",
+            "--no-restart",
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        site = site_path.read_text()
+        self.assertIn("access_log /var/log/cinematacms/nginx/mediacms.io.access.log cinematacms;", site)
+        self.assertIn("error_log  /var/log/cinematacms/nginx/mediacms.io.error.log  warn;", site)
+        self.assertNotIn("/var/log/nginx/mediacms.io.", site)
+        self.assertEqual(site.count("include /etc/nginx/snippets/cinematacms-rate-limits.conf;"), 1)
+        self.assertLess(site.index("cinematacms-rate-limits.conf"), site.index("location / {"))
 
     def test_second_apply_updates_legacy_tls_curves(self):
         first = self.run_updater(
