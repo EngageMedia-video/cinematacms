@@ -479,16 +479,17 @@ fi
 
 chown -R www-data. /home/cinemata/
 CURRENT_STEP="nginx and service configuration"
-mkdir -p /etc/letsencrypt/live/mediacms.io/
-mkdir -p "/etc/letsencrypt/live/$FRONTEND_DOMAIN"
+mkdir -p /etc/cinematacms/tls
 mkdir -p /etc/nginx/sites-enabled
 mkdir -p /etc/nginx/sites-available
 mkdir -p /etc/nginx/dhparams/
 rm -rf /etc/nginx/conf.d/default.conf
 rm -rf /etc/nginx/sites-enabled/default
-cp deploy/mediacms.io_fullchain.pem "/etc/letsencrypt/live/$FRONTEND_DOMAIN/fullchain.pem"
-# this is just a self signed key, will be replaced by certbot
-cp deploy/mediacms.io_privkey.pem "/etc/letsencrypt/live/$FRONTEND_DOMAIN/privkey.pem"
+# Self-signed placeholders until Certbot issues a certificate. Certbot owns
+# /etc/letsencrypt and refuses to create a lineage over an existing directory.
+cp deploy/mediacms.io_fullchain.pem /etc/cinematacms/tls/placeholder-fullchain.pem
+cp deploy/mediacms.io_privkey.pem /etc/cinematacms/tls/placeholder-privkey.pem
+chmod 0600 /etc/cinematacms/tls/placeholder-privkey.pem
 cp deploy/dhparams.pem /etc/nginx/dhparams/dhparams.pem
 mkdir -p /etc/nginx/conf.d
 
@@ -504,9 +505,6 @@ CURRENT_STEP="TLS certificate configuration"
 if [ "$FRONTEND_DOMAIN" != "localhost" ]; then
     echo "Attempting to get a certificate for $FRONTEND_DOMAIN"
     certbot --nginx -n --agree-tos --register-unsafely-without-email -d "$FRONTEND_DOMAIN"
-    certbot --nginx -n --agree-tos --register-unsafely-without-email -d "$FRONTEND_DOMAIN"
-    # unfortunately for some reason it needs to be run two times in order to create the entries
-    # and directory structure!!!
     systemctl restart nginx
 else
     echo "will not call certbot utility to update ssl certificate for url 'localhost', using default ssl certificate"
