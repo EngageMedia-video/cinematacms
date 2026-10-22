@@ -49,3 +49,11 @@ def get_client_ip(request):
             return candidate
 
     return remote_addr
+
+
+def get_remote_ip(request):
+    """Return REMOTE_ADDR as a canonical IP address, or None when it is missing or not an IP."""
+    try:
+        return str(ip_address(request.META.get("REMOTE_ADDR", "").strip()))
+    except ValueError:
+        return None

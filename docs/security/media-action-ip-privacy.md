@@ -86,9 +86,10 @@ Celery Beat runs the expiry step hourly. It reads a partial `action_date` index
 that holds only rows with an IP, so its cost follows newly expired rows rather
 than table size. It does not scan for legacy raw addresses; that is the rollout
 command's job. If the command is skipped, legacy raw addresses remain until
-they expire, at most 7 days. With a healthy scheduler and worker, an expired
-IP field is cleared on the next successful run, normally within an hour of the
-7-day cutoff plus execution time. This policy limits retained rows; a stable key
+the expiry step clears them. An IP field is kept for 7 days plus the delay until
+the next successful run: with a healthy scheduler and worker, up to one hour
+plus execution time. A stopped scheduler or worker extends that delay until it
+recovers. This policy limits retained rows; a stable key
 can still link repeat activity across the retained window. User and session
 identifiers have their own lifecycle and are not anonymized by IP cleanup.
 

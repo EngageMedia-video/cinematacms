@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from cms import celery_app
 from cms.cache_telemetry import owned_cache
+from cms.request_utils import get_remote_ip
 
 from . import models
 from .helpers import mask_ip
@@ -101,10 +102,8 @@ def get_user_or_session(request):
         if not request.session.session_key:
             request.session.save()
         ret["user_session"] = request.session.session_key
-    if settings.MASK_IPS_FOR_ACTIONS:
-        ret["remote_ip_addr"] = mask_ip(request.META.get("REMOTE_ADDR"))
-    else:
-        ret["remote_ip_addr"] = request.META.get("REMOTE_ADDR")
+    remote_ip = get_remote_ip(request)
+    ret["remote_ip_addr"] = mask_ip(remote_ip) if settings.MASK_IPS_FOR_ACTIONS else remote_ip
     return ret
 
 

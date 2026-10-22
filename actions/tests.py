@@ -112,6 +112,21 @@ class MediaActionIPTests(TestCase):
                 self.assertEqual(response.status_code, 201)
                 self.assertEqual(MediaAction.objects.get(action=action).remote_ip, MASKED_IP)
 
+    def test_malformed_remote_addr_records_actions_without_an_ip(self):
+        response = self.client.get("/view", {"m": self.media.friendly_token}, REMOTE_ADDR="not-an-ip")
+        self.assertEqual(response.status_code, 200)
+
+        self.client.force_login(self.media.user)
+        response = self.client.post(
+            f"/api/v1/media/{self.media.friendly_token}/actions",
+            data=json.dumps({"type": "like"}),
+            content_type="application/json",
+            REMOTE_ADDR="not-an-ip",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(MediaAction.objects.filter(action__in=("watch", "like"), remote_ip=None).count(), 2)
+
     @override_settings(MAX_ANONYMOUS_VIEWS_PER_5SEC=1)
     def test_task_masks_raw_ip_and_preserves_rate_limiting(self):
         for session in ("first-visitor", "second-visitor"):
@@ -267,6 +282,18 @@ class IPCleanupTests(TestCase):
         output = StringIO()
         call_command("cleanup_media_action_ips", stdout=output)
         self.assertIn("0 IP fields changed", output.getvalue())
+
+    def test_dry_run_counts_an_expired_raw_ip_once(self):
+        with override_settings(MASK_IPS_FOR_ACTIONS=False):
+            action = MediaAction.objects.create(media=self.media, remote_ip="203.0.113.42")
+        MediaAction.objects.filter(pk=action.pk).update(action_date=timezone.now() - timedelta(days=8))
+        dry_run = StringIO()
+        call_command("cleanup_media_action_ips", dry_run=True, stdout=dry_run)
+        run = StringIO()
+        call_command("cleanup_media_action_ips", stdout=run)
+
+        self.assertIn("1 IP fields would change: 1 expired, 0 masked", dry_run.getvalue())
+        self.assertIn("1 IP fields changed: 1 expired, 0 masked", run.getvalue())
 
     def test_seven_day_boundary_and_existing_masks(self):
         now = timezone.now()

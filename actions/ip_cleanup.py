@@ -29,8 +29,9 @@ def expire_action_ips(*, batch_size=1000, dry_run=False):
 
 def mask_legacy_action_ips(*, batch_size=1000, dry_run=False):
     """Mask raw IPs written before field-level masking; a full scan meant for rollout, not the hourly job."""
+    # Expired rows belong to expire_action_ips, so a dry run does not count them twice.
     legacy = (
-        MediaAction.objects.filter(remote_ip__isnull=False)
+        MediaAction.objects.filter(action_date__gt=timezone.now() - IP_RETENTION, remote_ip__isnull=False)
         .exclude(remote_ip="")
         .exclude(remote_ip__regex=rf"^{MASKED_IP_PATTERN}$")
     )
