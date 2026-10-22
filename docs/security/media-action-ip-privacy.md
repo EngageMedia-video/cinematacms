@@ -1,10 +1,13 @@
 # Media activity IP privacy and operations
 
 `MASK_IPS_FOR_ACTIONS=True` protects `MediaAction.remote_ip` with HMAC-SHA256.
-`MEDIA_ACTION_IP_HMAC_KEY` is independent of Django's `SECRET_KEY`. IPv6 addresses
-are normalized before hashing. Stored masks are pseudonymous identifiers: rows
-still contain the action, media, user or session, and time. An IP hash identifies
-a network address, which may be shared by many visitors.
+`MEDIA_ACTION_IP_HMAC_KEY` is independent of Django's `SECRET_KEY`. An IPv4
+address is hashed as is. An IPv6 address is reduced to its /64 network first,
+because one subscriber usually controls a whole /64 and could otherwise rotate
+addresses past the anonymous view limit. Stored masks are pseudonymous
+identifiers: rows still contain the action, media, user or session, and time. An
+IP hash identifies a network, which may be shared by many visitors. A lookup by
+an IPv6 address matches every action from its /64.
 
 The model field masks literal ORM writes, including bulk writes, and normalizes
 exact IP lookups. Literal `Value`, `Case`, and `Cast` expressions are supported.

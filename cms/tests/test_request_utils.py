@@ -1,6 +1,6 @@
 from django.test import RequestFactory, SimpleTestCase, override_settings
 
-from cms.request_utils import get_client_ip
+from cms.request_utils import client_network, get_client_ip
 
 CLOUDFLARE_EDGE = "162.158.1.1"
 CLOUDFLARE_RANGE = "162.158.0.0/15"
@@ -59,3 +59,20 @@ class GetClientIPTests(SimpleTestCase):
         request = self.factory.get("/")
         del request.META["REMOTE_ADDR"]
         self.assertEqual(get_client_ip(request), "")
+
+
+class ClientNetworkTests(SimpleTestCase):
+    def test_ipv4_is_its_own_network(self):
+        self.assertEqual(client_network("203.0.113.10"), "203.0.113.10")
+
+    def test_ipv6_groups_by_64(self):
+        self.assertEqual(client_network("2001:db8:1:2:aaaa:bbbb:cccc:dddd"), "2001:db8:1:2::/64")
+        self.assertEqual(client_network("2001:0DB8:0001:0002::1"), "2001:db8:1:2::/64")
+
+    def test_ipv4_mapped_ipv6_is_ipv4(self):
+        self.assertEqual(client_network("::ffff:203.0.113.10"), "203.0.113.10")
+
+    def test_non_ip_value_is_rejected(self):
+        for value in ("", "unix:/run/app.sock", None):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                client_network(value)
