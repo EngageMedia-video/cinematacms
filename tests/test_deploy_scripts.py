@@ -789,6 +789,7 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertRegex(app_env, r"TELEMETRY_WORKER_ID=[0-9a-f-]{36}")
         self.assertRegex(app_env, r"TELEMETRY_WORKER_HMAC_KEY=[A-Za-z0-9_-]{40,}")
         self.assertRegex(app_env, r"EMAIL_RECIPIENT_HMAC_KEY=[A-Za-z0-9_-]{40,}")
+        self.assertRegex(app_env, r"MEDIA_ACTION_IP_HMAC_KEY=[A-Za-z0-9_-]{40,}")
         self.assertFalse((self.deploy_root / "etc/cinematacms/observability.env").exists())
         for unit in ("mediacms", "celery_long", "celery_short", "celery_whisper", "celery_email", "celery_beat"):
             unit_text = (self.deploy_root / f"etc/systemd/system/{unit}.service").read_text()
@@ -934,7 +935,12 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertIn("# retained Certbot configuration", site)
         updated_app_env = app_env_path.read_text()
         self.assertIn("EMAIL_HOST=smtp.example.org", updated_app_env)
-        for key in ("TELEMETRY_WORKER_ID", "TELEMETRY_WORKER_HMAC_KEY", "EMAIL_RECIPIENT_HMAC_KEY"):
+        for key in (
+            "TELEMETRY_WORKER_ID",
+            "TELEMETRY_WORKER_HMAC_KEY",
+            "EMAIL_RECIPIENT_HMAC_KEY",
+            "MEDIA_ACTION_IP_HMAC_KEY",
+        ):
             original_value = next(line for line in original_app_env.splitlines() if line.startswith(f"{key}="))
             self.assertIn(original_value, updated_app_env)
         self.assertFalse((self.deploy_root / "etc/nginx/conf.d/cloudflare_real_ip.conf").exists())

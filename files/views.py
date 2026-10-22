@@ -49,7 +49,7 @@ from cms.permissions import (
     max_bulk_upload_files,
     user_requires_mfa,
 )
-from cms.request_utils import get_client_ip
+from cms.request_utils import get_client_ip, get_remote_ip
 from cms.ui_variant import resolve_template
 from users.models import User
 
@@ -1930,7 +1930,7 @@ class MediaActions(APIView):
         if not user and not session_key:
             return Response({"detail": "action not allowed"}, status=status.HTTP_400_BAD_REQUEST)
 
-        remote_ip = request.META.get("REMOTE_ADDR")
+        remote_ip = get_remote_ip(request)
         if not pre_save_action(media=media, user=user, session_key=session_key, action=action, remote_ip=remote_ip):
             # Already performed this action — return current count without error
             media.refresh_from_db()

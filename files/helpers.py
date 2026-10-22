@@ -1,5 +1,7 @@
 # Kudos to Werner Robitza, AVEQ GmbH
 import hashlib
+import hmac
+import ipaddress
 import json
 import logging
 import math
@@ -13,6 +15,7 @@ from fractions import Fraction
 
 import filetype
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 
 logger = logging.getLogger(__name__)
 
@@ -254,13 +257,21 @@ def clean_friendly_token(token):
     return token
 
 
-def mask_ip(ip_address):
-    """Mask IP address using SHA256 with server secret as salt.
+MASKED_IP_PATTERN = r"[0-9a-f]{64}"
 
-    This prevents rainbow table attacks by incorporating a server-side secret.
-    """
-    salted = f"{ip_address}{settings.SECRET_KEY}"
-    return hashlib.sha256(salted.encode("utf-8")).hexdigest()
+
+def mask_ip(ip_address):
+    """Pseudonymize IP addresses with a dedicated HMAC key, preserving existing masks."""
+    if not ip_address or re.fullmatch(MASKED_IP_PATTERN, ip_address):
+        return ip_address
+    key = settings.MEDIA_ACTION_IP_HMAC_KEY
+    if not key:
+        raise ImproperlyConfigured("MEDIA_ACTION_IP_HMAC_KEY is required when masking action IPs")
+    try:
+        canonical_ip = str(ipaddress.ip_address(ip_address))
+    except ValueError:
+        raise ValueError("remote_ip must be an IPv4 or IPv6 address or an existing mask") from None
+    return hmac.new(key.encode("utf-8"), canonical_ip.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 def run_command(cmd, cwd=None):

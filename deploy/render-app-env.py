@@ -37,6 +37,7 @@ DIRECT_SETTINGS = (
     "DJANGO_ADMIN_URL",
     "EMAIL_TRANSPORT_BACKEND",
     "EMAIL_RECIPIENT_HMAC_KEY",
+    "MEDIA_ACTION_IP_HMAC_KEY",
     "OBSERVABILITY_REFERENCE_HMAC_KEY",
     "OBSERVABILITY_REFERENCE_LOOKUP_TOKEN",
     "OBSERVABILITY_REFERENCE_ALLOWED_IPS",
@@ -216,6 +217,7 @@ def main():
     values.setdefault("TELEMETRY_WORKER_ID", str(uuid.uuid4()))
     values.setdefault("TELEMETRY_WORKER_HMAC_KEY", secrets.token_urlsafe(48))
     values.setdefault("EMAIL_RECIPIENT_HMAC_KEY", secrets.token_urlsafe(48))
+    values.setdefault("MEDIA_ACTION_IP_HMAC_KEY", secrets.token_urlsafe(48))
     values.setdefault("OBSERVABILITY_REFERENCE_HMAC_KEY", secrets.token_urlsafe(48))
     values.setdefault("OBSERVABILITY_REFERENCE_LOOKUP_TOKEN", secrets.token_urlsafe(48))
     values.setdefault("OBSERVABILITY_REFERENCE_ALLOWED_IPS", "127.0.0.1,::1")
