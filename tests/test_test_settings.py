@@ -70,6 +70,7 @@ class TestSettingsContractTests(unittest.TestCase):
             not in {
                 "MAKEFILES",
                 "MAKEFLAGS",
+                "GNUMAKEFLAGS",
                 "MFLAGS",
                 "MAKEOVERRIDES",
                 "TEST_DATABASE_PORT",
