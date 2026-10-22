@@ -71,8 +71,8 @@ server {
     listen 443 ssl;
     server_name localhost;
 
-    ssl_certificate_key  /etc/letsencrypt/live/localhost/privkey.pem;
-    ssl_certificate  /etc/letsencrypt/live/localhost/fullchain.pem;
+    ssl_certificate_key  /etc/cinematacms/tls/placeholder-privkey.pem;
+    ssl_certificate  /etc/cinematacms/tls/placeholder-fullchain.pem;
     ssl_dhparam /etc/nginx/dhparams/dhparams.pem;
 
     ssl_protocols TLSv1.2 TLSv1.3; # Dropping SSLv3, ref: POODLE

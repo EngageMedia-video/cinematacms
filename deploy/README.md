@@ -184,6 +184,8 @@ Use `--no-restart` to install and validate files without restarting services.
 ## Placeholder certificates
 
 The `.pem` files in this directory are placeholder self-signed certificates
-for initial installation. The installer replaces them with Let's Encrypt
-certificates for a real domain. Do not use the placeholder certificates in
-production.
+for initial installation. The installer copies them to `/etc/cinematacms/tls/`,
+outside the Certbot-owned `/etc/letsencrypt`, and a new nginx site points at
+them. For a real domain, the installer runs Certbot once, and Certbot replaces
+the site's certificate paths with its own. Do not use the placeholder
+certificates in production.

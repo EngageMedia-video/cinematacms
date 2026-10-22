@@ -259,7 +259,6 @@ if [ ! -e "$NGINX_SITE" ]; then
     rendered_site="$(mktemp)"
     sed \
         -e "s/server_name localhost;/server_name $DOMAIN;/g" \
-        -e "s#/live/localhost/#/live/$DOMAIN/#g" \
         "$SCRIPT_DIR/mediacms.io" > "$rendered_site"
     install_managed_file "$rendered_site" "$NGINX_SITE"
     rm -f "$rendered_site"
