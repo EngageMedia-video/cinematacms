@@ -7,7 +7,9 @@ because one subscriber usually controls a whole /64 and could otherwise rotate
 addresses past the anonymous view limit. Stored masks are pseudonymous
 identifiers: rows still contain the action, media, user or session, and time. An
 IP hash identifies a network, which may be shared by many visitors. A lookup by
-an IPv6 address matches every action from its /64.
+an IPv6 address matches every action from its /64 that was stored after this
+rule shipped. IPv6 actions stored earlier hold a per-address hash, which a /64
+lookup cannot match, until the seven-day expiry clears them.
 
 The model field masks literal ORM writes, including bulk writes, and normalizes
 exact IP lookups. Literal `Value`, `Case`, and `Cast` expressions are supported.

@@ -171,7 +171,7 @@ def record_failed_attempt(ip: str, friendly_token: str) -> int:
 
 
 def reset_rate_limit(ip: str, friendly_token: str) -> None:
-    """Reset rate limit counter after successful authentication."""
+    """Clear the rate limit counter for a client network and media item."""
     key = _rate_limit_key(ip, friendly_token)
 
     restricted_media_redis.reset_rate_limit(key)
@@ -217,7 +217,8 @@ def authenticate_restricted_media(media, password, ip):
                 "detail": "Authentication service is temporarily unavailable.",
                 "status_code": 503,
             }
-        reset_rate_limit(ip, media.friendly_token)
+        # Failures stay until the window expires: the counter is shared by a whole
+        # network, so one client's success must not reset another client's guesses.
         return token, None
     else:
         record_authentication_failure("restricted_media", "media_password", "invalid_credentials")

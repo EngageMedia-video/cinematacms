@@ -198,16 +198,16 @@ Server-side manifest rewriting is the sole mechanism for HLS segment authenticat
 
 ### 5.4. Rate Limiting
 
-Brute-force protection is implemented using a Redis-based counter, scoped to the combination of the viewer's IP address and the specific media item. Each failed password attempt increments the counter.
+Brute-force protection is implemented using a Redis-based counter, scoped to the combination of the viewer's client network and the specific media item. The client network is an IPv4 address or an IPv6 /64, so all IPv6 clients in one /64 share a counter and a lockout. Each failed password attempt increments the counter. A successful password does not reset it, because one client's success must not clear guesses from another client on the same network.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `PASSWORD_BRUTE_FORCE_MAX_ATTEMPTS` | 5 | Maximum failed attempts before lockout |
 | `PASSWORD_BRUTE_FORCE_WINDOW` | 900 (15 min) | Lockout duration in seconds |
 
-When the counter reaches the maximum, all further attempts from that IP for that media item are rejected with an HTTP 429 (Too Many Requests) response until the window expires. Failed attempts are logged for auditing.
+When the counter reaches the maximum, all further attempts from that client network for that media item are rejected with an HTTP 429 (Too Many Requests) response until the window expires. Failed attempts are logged for auditing.
 
-The rate limiter checks happen before password verification, so a locked-out IP does not trigger any hashing computation.
+The rate limiter checks happen before password verification, so a locked-out network does not trigger any hashing computation.
 
 ```mermaid
 flowchart TD
