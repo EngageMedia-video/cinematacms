@@ -111,7 +111,9 @@ database, then run the manual dry run and cleanup. Do not log IPs or fingerprint
 to diagnose it. Size batches against the deployment's database load; each batch
 locks only the selected action rows.
 
-Apply the retention policy to database exports, backups, and infrastructure
-access logs separately. This command does not modify those systems. Restored
+The deployment keeps the public-site nginx access and error logs, which hold
+raw client IPs for abuse investigation, for 14 days (see `deploy/README.md`).
+Apply the retention policy to database exports, backups, and other
+infrastructure logs separately. This command does not modify those systems. Restored
 backups must be sanitized before public traffic resumes. Run the deployment's
 checks before rolling back code; never restore raw IPs as a rollback step.
