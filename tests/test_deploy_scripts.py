@@ -446,6 +446,14 @@ class InstallScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("observability=managed", result.stdout)
 
+    def test_installer_leaves_certbot_storage_to_a_single_certbot_run(self):
+        script = INSTALLER.read_text()
+
+        self.assertNotRegex(script, r"(?m)^\s*(mkdir|cp|install)\b[^\n]*/etc/letsencrypt")
+        self.assertIn("cp deploy/mediacms.io_fullchain.pem /etc/cinematacms/tls/placeholder-fullchain.pem", script)
+        self.assertIn("cp deploy/mediacms.io_privkey.pem /etc/cinematacms/tls/placeholder-privkey.pem", script)
+        self.assertEqual(script.count("certbot --nginx"), 1)
+
     def test_installer_preserves_url_separately_from_certificate_domain(self):
         script = INSTALLER.read_text()
 
@@ -795,6 +803,10 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             self.assertIn("EnvironmentFile=/etc/cinematacms/app.env", unit_text)
         site = (self.deploy_root / "etc/nginx/sites-available/mediacms.io").read_text()
         self.assertIn("server_name video.example.org;", site)
+        # Certbot refuses to create a lineage over an existing live directory.
+        self.assertNotIn("/etc/letsencrypt/", site)
+        self.assertIn("ssl_certificate  /etc/cinematacms/tls/placeholder-fullchain.pem;", site)
+        self.assertIn("ssl_certificate_key  /etc/cinematacms/tls/placeholder-privkey.pem;", site)
         self.assertEqual(site.count("cinematacms-metrics.conf"), 2)
         self.assertIn("ssl_ecdh_curve X25519:P-256:P-384;", site)
         self.assertIn("nginx -t", self.command_log.read_text())
