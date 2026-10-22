@@ -1214,7 +1214,8 @@ class ApplyReleaseConfigTests(unittest.TestCase):
             capture_output=True,
             text=True,
             check=False,
-            env={**os.environ, "CINEMATACMS_APP_PORTAL_NAME": "Example Video"},
+            # A fresh install has no runtime settings in its environment; the renderer would copy them.
+            env={"PATH": os.environ["PATH"], "CINEMATACMS_APP_PORTAL_NAME": "Example Video"},
         )
         self.assertEqual(render.returncode, 0, render.stderr)
 
