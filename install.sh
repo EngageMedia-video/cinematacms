@@ -420,11 +420,16 @@ bash ./models/download-ggml-model.sh base
 make
 cd ../cinematacms || exit 1
 
-SECRET_KEY=$(python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
-export SECRET_KEY PORTAL_NAME FRONTEND_HOST
-export CINEMATACMS_APP_SECRET_KEY="$SECRET_KEY"
+CURRENT_STEP="runtime environment creation"
 export CINEMATACMS_APP_PORTAL_NAME="$PORTAL_NAME"
 export CINEMATACMS_APP_FRONTEND_HOST="$FRONTEND_DOMAIN"
+# Management commands below run with the same settings and keys as the services.
+# apply-release-config.sh later sets OTEL_ENABLED from the observability mode.
+python3 deploy/render-app-env.py --output /etc/cinematacms/app.env --domain "$FRONTEND_DOMAIN" --otel-enabled false
+set -a
+# shellcheck source=/dev/null
+. /etc/cinematacms/app.env
+set +a
 
 mkdir -p logs
 mkdir -p pids

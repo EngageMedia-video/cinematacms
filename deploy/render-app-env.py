@@ -196,8 +196,6 @@ def main():
             if key == "FRONTEND_HOST" and "://" not in value:
                 value = f"https://{value}"
             values[key] = serialize(value)
-    if "CINEMATACMS_APP_SECRET_KEY" in os.environ:
-        values["SECRET_KEY"] = serialize(os.environ["CINEMATACMS_APP_SECRET_KEY"])
     if "CINEMATACMS_APP_PORTAL_NAME" in os.environ:
         values["PORTAL_NAME"] = serialize(os.environ["CINEMATACMS_APP_PORTAL_NAME"])
     if "CINEMATACMS_APP_FRONTEND_HOST" in os.environ:

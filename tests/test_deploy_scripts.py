@@ -450,9 +450,18 @@ class InstallScriptTests(unittest.TestCase):
         script = INSTALLER.read_text()
 
         self.assertIn('FRONTEND_DOMAIN="${FRONTEND_HOST#http://}"', script)
-        self.assertIn("export SECRET_KEY PORTAL_NAME FRONTEND_HOST", script)
         self.assertIn('export CINEMATACMS_APP_FRONTEND_HOST="$FRONTEND_DOMAIN"', script)
         self.assertIn('--domain "$FRONTEND_DOMAIN"', script)
+
+    def test_installer_loads_runtime_environment_before_django_commands(self):
+        # Management commands need the same settings and keys as the services.
+        script = INSTALLER.read_text()
+
+        render = script.index("deploy/render-app-env.py --output /etc/cinematacms/app.env")
+        load = script.index(". /etc/cinematacms/app.env")
+        self.assertLess(render, load)
+        self.assertLess(load, script.index("./scripts/build_frontend.sh"))
+        self.assertLess(load, script.index("manage.py"))
 
     def test_non_interactive_dry_run_rejects_portal_name_with_backslash(self):
         result = self.run_installer(
@@ -1188,6 +1197,47 @@ class ApplyReleaseConfigTests(unittest.TestCase):
         self.assertIn("WHISPER_CPP_DIR=/opt/whisper", migrated)
         self.assertIn("WHISPER_CPP_COMMAND=/opt/whisper/whisper-cli", migrated)
         self.assertIn("WHISPER_CPP_MODEL=/opt/whisper/model.bin", migrated)
+
+    def test_rendered_environment_loads_in_the_installer_shell(self):
+        output = Path(self.temp_dir.name) / "app.env"
+        render = subprocess.run(
+            [
+                sys.executable,
+                str(APP_ENV_RENDERER),
+                "--output",
+                str(output),
+                "--domain",
+                "video.example.org",
+                "--otel-enabled",
+                "false",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            # A fresh install has no runtime settings in its environment; the renderer would copy them.
+            env={"PATH": os.environ["PATH"], "CINEMATACMS_APP_PORTAL_NAME": "Example Video"},
+        )
+        self.assertEqual(render.returncode, 0, render.stderr)
+
+        loaded = subprocess.run(
+            [
+                "bash",
+                "-c",
+                'set -a; . "$1"; set +a; printf "%s\\n" "$PORTAL_NAME" "$SECRET_KEY" "$EMAIL_RECIPIENT_HMAC_KEY"',
+                "load",
+                str(output),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env={"PATH": os.environ["PATH"]},
+        )
+
+        self.assertEqual(loaded.returncode, 0, loaded.stderr)
+        portal_name, secret_key, email_key = loaded.stdout.splitlines()
+        self.assertEqual(portal_name, "Example Video")
+        self.assertGreaterEqual(len(secret_key), 40)
+        self.assertGreaterEqual(len(email_key), 40)
 
     def test_unknown_legacy_setting_stops_migration_without_printing_its_value(self):
         legacy = Path(self.temp_dir.name) / "local_settings.py"
