@@ -10,7 +10,9 @@ CinemataCMS reads deployment-varying application settings only from environment
 variables. Local development loads the repository `.env` file. Systemd services
 load `/etc/cinematacms/app.env`; `deploy/apply-release-config.sh` creates it with
 mode `0640`, preserves operator-managed values, and supplies stable telemetry
-worker identity values.
+worker identity values. `install.sh` creates it before its first management
+command and loads it, so installation runs with the same settings and keys as
+the services.
 
 `/etc/cinematacms/deployment.env` contains only inputs owned by the release tool,
 such as domain, proxy, and observability mode. It is not loaded by Django.
