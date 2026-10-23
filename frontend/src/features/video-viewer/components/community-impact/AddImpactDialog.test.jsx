@@ -3,6 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { AddImpactDialog, normalizeImpactLink } from './AddImpactDialog';
 
+// The native date picker cannot open in jsdom, so set the hidden date input it writes to.
+function chooseEventDate(isoDate) {
+	fireEvent.change(document.querySelector('input[type="date"][name="event_date"]'), { target: { value: isoDate } });
+}
+
 describe('AddImpactDialog', () => {
 	it('renders the Figma content labels in the modal form', () => {
 		render(<AddImpactDialog open />);
@@ -24,18 +29,62 @@ describe('AddImpactDialog', () => {
 		await user.type(screen.getByLabelText('Add more details'), 'Screened with a youth media collective.');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
+		chooseEventDate('2025-06-10');
 		await user.type(screen.getByLabelText('Add a link'), 'https://drive.google.com/file/d/impact/view');
+
+		expect(screen.getByLabelText('When did you see this film')).toHaveValue('10/06/2025');
+
 		await user.click(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));
 
 		expect(onSubmit).toHaveBeenCalledWith({
 			category: 'screening',
 			details: 'Screened with a youth media collective.',
+			event_date: '2025-06-10',
 			link: 'https://drive.google.com/file/d/impact/view',
 			location: 'Jakarta community hall',
 			title: 'Jakarta community hall',
 			url: 'https://drive.google.com/file/d/impact/view',
 		});
 		expect(onClose).not.toHaveBeenCalled();
+	});
+
+	it('keeps submit disabled until an event date is chosen', async () => {
+		const user = userEvent.setup();
+
+		render(<AddImpactDialog open />);
+
+		fireEvent.change(screen.getByLabelText('Where did you see this film'), { target: { value: 'Jakarta' } });
+		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
+		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
+
+		expect(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' })).toBeDisabled();
+
+		chooseEventDate('2025-06-10');
+
+		expect(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' })).toBeEnabled();
+	});
+
+	it("limits the event date picker to the viewer's local today", () => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(new Date(2026, 9, 5, 0, 30));
+
+		try {
+			render(<AddImpactDialog open />);
+
+			expect(document.querySelector('input[type="date"][name="event_date"]')).toHaveAttribute(
+				'max',
+				'2026-10-05'
+			);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('keeps the submit button from shrinking when the form scrolls', () => {
+		// jsdom has no layout; in a browser the scrolling flex form squeezed the button to its text height.
+		render(<AddImpactDialog open />);
+
+		expect(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' })).toHaveClass('shrink-0');
 	});
 
 	it('disables submit when details exceed the word limit', async () => {
@@ -74,6 +123,7 @@ describe('AddImpactDialog', () => {
 		fireEvent.change(screen.getByLabelText('Where did you see this film'), { target: { value: 'Jakarta' } });
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
+		chooseEventDate('2025-06-10');
 		fireEvent.change(screen.getByLabelText('Add a link'), { target: { value: 'javascript:alert(1)' } });
 		await user.click(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));
 
@@ -91,6 +141,7 @@ describe('AddImpactDialog', () => {
 		fireEvent.change(screen.getByLabelText('Where did you see this film'), { target: { value: 'Jakarta' } });
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
+		chooseEventDate('2025-06-10');
 		fireEvent.change(screen.getByLabelText('Add a link'), { target: { value: 'example.com/path' } });
 		await user.click(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));
 

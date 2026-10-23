@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { CommunityImpactSection } from './CommunityImpactSection';
@@ -74,11 +74,15 @@ describe('CommunityImpactSection', () => {
 		await user.type(screen.getByLabelText('Where did you see this film'), 'Jakarta community hall');
 		await user.click(screen.getByRole('button', { name: 'Select community impact category' }));
 		await user.click(screen.getByRole('menuitemradio', { name: 'Screened In' }));
+		fireEvent.change(document.querySelector('input[type="date"][name="event_date"]'), {
+			target: { value: '2025-06-10' },
+		});
 		await user.click(screen.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));
 
 		expect(onAddImpact).toHaveBeenCalledWith({
 			category: 'screening',
 			details: '',
+			event_date: '2025-06-10',
 			link: '',
 			location: 'Jakarta community hall',
 			title: 'Jakarta community hall',

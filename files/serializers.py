@@ -1,12 +1,11 @@
 from django.db.models import Max
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.html import strip_tags
 from rest_framework import serializers
 
 from actions.models import MediaAction
 
-from .community_impact_validators import validate_trusted_url
+from .community_impact_validators import validate_past_event_date, validate_trusted_url
 from .methods import user_can_delete_comment, user_can_manage_media
 from .models import (
     Category,
@@ -263,6 +262,9 @@ class ManageCommunityImpactSerializer(serializers.ModelSerializer):
         if value not in status_options:
             raise serializers.ValidationError(f"Status must be one of: {sorted(status_options)}.")
         return value
+
+    def validate_event_date(self, value):
+        return validate_past_event_date(value)
 
     def validate_url(self, value):
         return validate_trusted_url(value)
@@ -669,7 +671,6 @@ class PrivateJournalNoteSerializer(serializers.ModelSerializer):
 class CommunityImpactSerializer(serializers.ModelSerializer):
     author_name = serializers.ReadOnlyField(source="user.name")
     author_username = serializers.ReadOnlyField(source="user.username")
-    event_date = serializers.DateField(required=False, default=timezone.localdate)
     status_label = serializers.CharField(source="get_status_display", read_only=True)
 
     WRITABLE_CATEGORIES = {
@@ -713,6 +714,9 @@ class CommunityImpactSerializer(serializers.ModelSerializer):
         if value not in self.WRITABLE_CATEGORIES:
             raise serializers.ValidationError(f"Category must be one of: {sorted(self.WRITABLE_CATEGORIES)}.")
         return value
+
+    def validate_event_date(self, value):
+        return validate_past_event_date(value)
 
     def validate_url(self, value):
         return validate_trusted_url(value)
