@@ -42,12 +42,13 @@ class MediaActionIPTests(TestCase):
 
         self.assertEqual(action.remote_ip, MASKED_IP)
 
-    def test_save_masks_ipv6(self):
+    def test_save_masks_the_ipv6_64(self):
         action = MediaAction(media=self.media, remote_ip="2001:db8::42")
         action.save()
         action.refresh_from_db()
 
-        self.assertEqual(action.remote_ip, "cc377c98e0db3be6cb8d119e707e3a3bf859c1efb4bfc4d2c6ff615a8cabf42e")
+        # HMAC-SHA256("action-ip-test-key", "2001:db8::/64")
+        self.assertEqual(action.remote_ip, "edf4dfb8288c426b4b4be48e2a941e65c8f08b537e996f9c99e5427bb1678464")
 
     def test_bulk_create_masks_the_stored_ip(self):
         MediaAction.objects.bulk_create([MediaAction(media=self.media, remote_ip="203.0.113.42")])
@@ -142,6 +143,14 @@ class MediaActionIPTests(TestCase):
         self.assertEqual(self.media.views, 1)
 
     @override_settings(MAX_ANONYMOUS_VIEWS_PER_5SEC=1)
+    def test_rotating_addresses_within_an_ipv6_64_share_the_view_limit(self):
+        for session, ip in (("first-visitor", "2001:db8:1:2::1"), ("second-visitor", "2001:db8:1:2::2")):
+            save_user_action({"user_session": session, "remote_ip_addr": ip}, friendly_token=self.media.friendly_token)
+
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.views, 1)
+
+    @override_settings(MAX_ANONYMOUS_VIEWS_PER_5SEC=1)
     def test_rate_limit_log_does_not_expose_raw_ips(self):
         save_user_action(
             {"user_session": "first-visitor", "remote_ip_addr": "203.0.113.42"},
@@ -215,6 +224,15 @@ class IPMaskKeyTests(SimpleTestCase):
     @override_settings(MEDIA_ACTION_IP_HMAC_KEY="action-ip-test-key")
     def test_equivalent_ipv6_addresses_share_a_mask(self):
         self.assertEqual(mask_ip("2001:0db8:0000:0000:0000:0000:0000:0042"), mask_ip("2001:db8::42"))
+
+    @override_settings(MEDIA_ACTION_IP_HMAC_KEY="action-ip-test-key")
+    def test_ipv6_addresses_share_a_mask_per_64(self):
+        self.assertEqual(mask_ip("2001:db8:1:2::1"), mask_ip("2001:db8:1:2:ffff:ffff:ffff:ffff"))
+        self.assertNotEqual(mask_ip("2001:db8:1:2::1"), mask_ip("2001:db8:1:3::1"))
+
+    @override_settings(MEDIA_ACTION_IP_HMAC_KEY="action-ip-test-key")
+    def test_ipv4_mapped_ipv6_masks_as_ipv4(self):
+        self.assertEqual(mask_ip("::ffff:203.0.113.42"), mask_ip("203.0.113.42"))
 
     def test_short_key_and_reused_django_key_fail_configuration_checks(self):
         for key, error_id in (("short-key", "actions.E002"), ("x" * 40, "actions.E003")):

@@ -1,7 +1,6 @@
 # Kudos to Werner Robitza, AVEQ GmbH
 import hashlib
 import hmac
-import ipaddress
 import json
 import logging
 import math
@@ -16,6 +15,8 @@ from fractions import Fraction
 import filetype
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+
+from cms.request_utils import client_network
 
 logger = logging.getLogger(__name__)
 
@@ -261,17 +262,20 @@ MASKED_IP_PATTERN = r"[0-9a-f]{64}"
 
 
 def mask_ip(ip_address):
-    """Pseudonymize IP addresses with a dedicated HMAC key, preserving existing masks."""
+    """Pseudonymize a client's network (IPv4 address or IPv6 /64) with a dedicated HMAC key.
+
+    Existing masks pass through unchanged.
+    """
     if not ip_address or re.fullmatch(MASKED_IP_PATTERN, ip_address):
         return ip_address
     key = settings.MEDIA_ACTION_IP_HMAC_KEY
     if not key:
         raise ImproperlyConfigured("MEDIA_ACTION_IP_HMAC_KEY is required when masking action IPs")
     try:
-        canonical_ip = str(ipaddress.ip_address(ip_address))
+        network = client_network(ip_address)
     except ValueError:
         raise ValueError("remote_ip must be an IPv4 or IPv6 address or an existing mask") from None
-    return hmac.new(key.encode("utf-8"), canonical_ip.encode("utf-8"), hashlib.sha256).hexdigest()
+    return hmac.new(key.encode("utf-8"), network.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
 def run_command(cmd, cwd=None):

@@ -2,6 +2,19 @@ from ipaddress import ip_address, ip_network
 
 from django.conf import settings
 
+# One subscriber usually controls a whole /64 and can rotate through it (RIPE-690).
+IPV6_SUBSCRIBER_PREFIX_LENGTH = 64
+
+
+def client_network(ip):
+    """Return the address block one client controls: an IPv4 address, or an IPv6 /64."""
+    address = ip_address(ip)
+    if address.version == 6 and address.ipv4_mapped:
+        return str(address.ipv4_mapped)
+    if address.version == 6:
+        return str(ip_network(f"{address}/{IPV6_SUBSCRIBER_PREFIX_LENGTH}", strict=False))
+    return str(address)
+
 
 def _is_trusted_proxy(remote_addr, trusted_proxies):
     if not remote_addr:

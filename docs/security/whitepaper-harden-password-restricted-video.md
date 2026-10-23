@@ -99,7 +99,7 @@ The solution replaces the plaintext password mechanism with a three-part approac
 
 2. **Issue short-lived access tokens.** When a viewer enters the correct password, the server generates a random, opaque token and stores it in Redis with a configurable time-to-live (default: 4 hours). All subsequent requests use this token instead of the password. The token proves that the viewer has already been authenticated without revealing the password itself.
 
-3. **Add brute-force rate limiting.** Track failed password attempts per IP address and media item using a Redis counter. After a configurable number of failures (default: 5 within 15 minutes), further attempts are temporarily blocked.
+3. **Add brute-force rate limiting.** Track failed password attempts per client network (an IPv4 address or an IPv6 /64) and media item using a Redis counter. After a configurable number of failures (default: 5 within 15 minutes), further attempts are temporarily blocked.
 
 These changes are complemented by fixes to embed authentication, removal of all plaintext password references from the frontend, and server-side HLS manifest rewriting to ensure token-based auth works across all browsers and devices, including Safari and iOS.
 
@@ -198,16 +198,16 @@ Server-side manifest rewriting is the sole mechanism for HLS segment authenticat
 
 ### 5.4. Rate Limiting
 
-Brute-force protection is implemented using a Redis-based counter, scoped to the combination of the viewer's IP address and the specific media item. Each failed password attempt increments the counter.
+Brute-force protection is implemented using a Redis-based counter, scoped to the combination of the viewer's client network and the specific media item. The client network is an IPv4 address or an IPv6 /64, so all IPv6 clients in one /64 share a counter and a lockout. Each failed password attempt increments the counter. A successful password does not reset it, because one client's success must not clear guesses from another client on the same network.
 
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `PASSWORD_BRUTE_FORCE_MAX_ATTEMPTS` | 5 | Maximum failed attempts before lockout |
 | `PASSWORD_BRUTE_FORCE_WINDOW` | 900 (15 min) | Lockout duration in seconds |
 
-When the counter reaches the maximum, all further attempts from that IP for that media item are rejected with an HTTP 429 (Too Many Requests) response until the window expires. Failed attempts are logged for auditing.
+When the counter reaches the maximum, all further attempts from that client network for that media item are rejected with an HTTP 429 (Too Many Requests) response until the window expires. Failed attempts are logged for auditing.
 
-The rate limiter checks happen before password verification, so a locked-out IP does not trigger any hashing computation.
+The rate limiter checks happen before password verification, so a locked-out network does not trigger any hashing computation.
 
 ```mermaid
 flowchart TD
