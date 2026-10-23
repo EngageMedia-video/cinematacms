@@ -66,6 +66,9 @@ jobs:
 
       - name: Install system dependencies
         run: |
+          # A stalled mirror download otherwise hangs until the job timeout; a
+          # timeout lets apt retry and move to the next runner mirror.
+          printf 'Acquire::http::Timeout "30";\nAcquire::Retries "3";\n' | sudo tee /etc/apt/apt.conf.d/99ci-network
           sudo apt-get update
           sudo apt-get install -y \
             ffmpeg \
