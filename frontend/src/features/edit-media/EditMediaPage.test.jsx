@@ -371,6 +371,20 @@ describe('EditMediaPage leave confirmation', () => {
 		expect(followedLinks).toEqual([]);
 	});
 
+	// Assistive technology and scripts can activate a link with a click alone.
+	it('guards a link activated by a click alone right after Cancel could not go back', async () => {
+		vi.spyOn(window.history, 'back').mockImplementation(() => {});
+		render(<EditMediaPage />);
+		await editField('More Information and Credits', 'A long description the user has not saved yet.');
+		fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		fireEvent.click(await screen.findByRole('button', { name: 'Leave' }));
+
+		fireEvent.click(addPageLink('/about', 'About the Site'));
+
+		expect(await screen.findByRole('dialog', { name: 'Leave this page?' })).toBeInTheDocument();
+		expect(followedLinks).toEqual([]);
+	});
+
 	it('lets links that keep this page open through without asking', async () => {
 		render(<EditMediaPage />);
 		await editField('More Information and Credits', 'A long description the user has not saved yet.');

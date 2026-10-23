@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // A started navigation runs beforeunload well within this delay, so re-arming after it does not prompt twice.
 const REARM_AFTER_LEAVE_MS = 1000;
-// A click or key press on the page starts a new exit, never the one already confirmed.
-const REARM_ON_INPUT_EVENTS = ['pointerdown', 'keydown'];
+// Input on the page starts a new exit, never the one already confirmed. A click alone
+// covers activation without a pointer or key, such as from assistive technology.
+const REARM_ON_INPUT_EVENTS = ['pointerdown', 'keydown', 'click'];
 
 // Only a plain click that replaces this document unloads the page and its edits.
 function unloadsThisPage(event, link) {
