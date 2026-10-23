@@ -72,6 +72,7 @@ function normalizeErrors(fieldErrors) {
 function EditMediaPageContent() {
 	const { data: config } = useEditMediaConfig();
 	const formRef = useRef(null);
+	const mediaUploadRef = useRef(null);
 	const editState = useEditMediaState(config);
 	const submitMutation = useSubmitEditMedia();
 	const { uploadBusy, hasUnsavedUpload } = useReplacementUploadState();
@@ -195,7 +196,7 @@ function EditMediaPageContent() {
 							<BasicDetailsForm singleUpload={editState} />
 
 							{config.permissions?.canReplaceMedia ? (
-								<MediaUploadSection config={config} disabled={uploadBusy} />
+								<MediaUploadSection ref={mediaUploadRef} config={config} disabled={uploadBusy} />
 							) : null}
 
 							<ThumbnailImageUpload
@@ -248,7 +249,10 @@ function EditMediaPageContent() {
 			<UnsavedChangesDialog
 				open={unsavedChangesGuard.isConfirmingLeave}
 				onStay={unsavedChangesGuard.cancelLeave}
-				onLeave={unsavedChangesGuard.confirmLeave}
+				onLeave={() => {
+					mediaUploadRef.current?.pauseBeforeLeave();
+					unsavedChangesGuard.confirmLeave();
+				}}
 			/>
 		</div>
 	);

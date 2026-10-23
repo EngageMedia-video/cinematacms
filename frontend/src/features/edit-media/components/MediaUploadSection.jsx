@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useImperativeHandle, useRef } from 'react';
 import { FieldGroup } from '../../add-media/single-upload/components/FieldGroup';
 import { Text } from '../../shared/components';
 import { MediaDropzone } from '../../shared/components/MediaDropzone';
@@ -18,9 +18,18 @@ function CurrentFileLink({ file }) {
 	);
 }
 
-export function MediaUploadSection({ config, disabled }) {
+export function MediaUploadSection({ config, disabled, ref }) {
 	const uploaderRef = useRef(null);
 	const { status, setStatus, resetStatus } = useReplacementUploadState();
+
+	// Leaving stops the transfer anyway. Pausing it first keeps Fine Uploader's own
+	// beforeunload prompt from asking again, and the upload can continue if the page stays.
+	useImperativeHandle(ref, () => ({
+		pauseBeforeLeave() {
+			if (status.phase !== 'uploading' || !uploaderRef.current?.pauseUpload?.(status.id)) return;
+			setStatus((current) => ({ ...current, phase: 'paused', error: '' }));
+		},
+	}));
 
 	function ensureUploader() {
 		if (uploaderRef.current) {
