@@ -5,6 +5,7 @@ import { usePopup } from '../hooks/usePopup';
 import { PopupMain } from '../Popup';
 import { formatManagementTableDate } from '../../../functions/formatManagementTableDate.js';
 import PageStore from '../../../pages/_PageStore.js';
+import { Badge } from '../../../../../features/shared/components/Badge';
 
 function ManageItemTitle(props) {
 	if (props.title && props.url) {
@@ -175,6 +176,12 @@ export function ManageUploadItem(props) {
 			</div>
 			<div className="mi-title">
 				<ManageItemTitle title={props.title} url={props.url} />
+				{props.details_needed ? (
+					// Saving the details on the edit page clears this and keeps the upload.
+					<a href={'/edit?m=' + encodeURIComponent(props.token)} className="ml-2 inline-flex no-underline">
+						<Badge color="bg/danger-strong">Details needed</Badge>
+					</a>
+				) : null}
 				{props.hideDeleteAction ? null : (
 					<ManageUploadItemActions
 						containerRef={actionsContainerRef}
@@ -216,6 +223,7 @@ ManageUploadItem.propTypes = {
 	state: PropTypes.string,
 	views: PropTypes.number,
 	likes: PropTypes.number,
+	details_needed: PropTypes.bool,
 	onCheckRow: PropTypes.func,
 	selectedRow: PropTypes.bool.isRequired,
 	hideDeleteAction: PropTypes.bool.isRequired,

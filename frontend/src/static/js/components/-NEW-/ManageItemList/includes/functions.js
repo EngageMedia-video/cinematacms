@@ -98,6 +98,7 @@ function ListManageUploadItem(props) {
 		views: itemData.views,
 		likes: itemData.likes,
 		token: itemData.friendly_token,
+		details_needed: itemData.details_needed,
 	};
 
 	return <ManageUploadItem {...args} />;
