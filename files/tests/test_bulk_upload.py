@@ -192,12 +192,9 @@ class AutoDraftUploadTests(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"detail": "media is private"})
 
-    @patch.object(Media, "media_init", return_value=None)
-    def test_saving_the_details_gives_a_single_upload_its_chosen_state(self, _mock_init):
+    def _save_details(self, user, media, state):
         from files.forms import MediaForm
 
-        self._upload()
-        media = Media.objects.filter(user=self.trusted).latest("add_date")
         category, _ = Category.objects.get_or_create(title="Documentary")
         Language.objects.get_or_create(code="en", defaults={"title": "English"})
         data = {
@@ -210,16 +207,35 @@ class AutoDraftUploadTests(TestCase):
             "category": [category.id],
             "topics": [],
             "new_tags": "",
-            "state": "unlisted",
+            "state": state,
             "enable_comments": True,
             "allow_download": True,
         }
-
-        form = MediaForm(self.trusted, data=data, instance=media)
+        form = MediaForm(user, data=data, instance=media)
         self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
         form.save()
-
         media.refresh_from_db()
+
+    @patch.object(Media, "media_init", return_value=None)
+    def test_saving_the_details_gives_a_single_upload_its_chosen_state(self, _mock_init):
+        self._upload()
+        media = Media.objects.filter(user=self.trusted).latest("add_date")
+
+        self._save_details(self.trusted, media, "unlisted")
+
+        self.assertEqual(media.state, "unlisted")
+
+    # The unlisted workflow does not let a regular user publish. Before uploads started
+    # private, that choice fell back to the upload's unlisted default, not to private.
+    @patch.object(Media, "media_init", return_value=None)
+    @override_settings(PORTAL_WORKFLOW="unlisted")
+    def test_first_save_falls_back_to_the_workflow_default_when_public_is_not_allowed(self, _mock_init):
+        self.client.force_login(self.regular)
+        self._upload()
+        media = Media.objects.filter(user=self.regular).latest("add_date")
+
+        self._save_details(self.regular, media, "public")
+
         self.assertEqual(media.state, "unlisted")
 
     @patch.object(Media, "media_init", return_value=None)
