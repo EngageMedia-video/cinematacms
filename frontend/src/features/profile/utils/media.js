@@ -15,6 +15,17 @@ export function getVisibilityIndicator(state) {
 	return VISIBILITY_INDICATORS[state] || {};
 }
 
+// The API sets details_needed only for the owner of an upload whose details were never
+// saved. The card leads to the edit page, where saving the details clears it.
+export function getDetailsNeededProps(item) {
+	if (!item.details_needed) return {};
+	return {
+		badge: 'Details needed',
+		badgeColor: 'bg/danger-strong',
+		link: `/edit?m=${encodeURIComponent(item.friendly_token)}`,
+	};
+}
+
 export function getMovieItemProps(item, { hideAuthor = false } = {}) {
 	return {
 		...getCategoryBadge(item),
@@ -26,5 +37,6 @@ export function getMovieItemProps(item, { hideAuthor = false } = {}) {
 		subtitle: hideAuthor ? '' : item.author_name || item.user || '',
 		subtitleLink: hideAuthor ? '' : item.author_profile || '',
 		metadata: buildMetadata(item, false),
+		...getDetailsNeededProps(item),
 	};
 }

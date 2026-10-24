@@ -8,6 +8,7 @@ from django_recaptcha.fields import ReCaptchaField
 
 from cms.widgets import CSPReCaptchaV2Checkbox
 
+from .helpers import get_default_state
 from .methods import is_mediacms_editor
 from .models import Language, Media, Subtitle, get_language_choices
 
@@ -324,13 +325,18 @@ class MediaForm(forms.ModelForm):
         data = self.cleaned_data
         # take care of state changes, only interested if a transition private to public is not allowed
         state = data.get("state")
-        if state != self.initial["state"]:
+        stored_state = self.initial["state"]
+        if self.instance.pk and self.instance.metadata_saved_at is None:
+            # An upload stays private only until its details are first saved, so
+            # judge the first choice against the state the upload would default to.
+            stored_state = get_default_state(user=self.instance.user)
+        if state != stored_state:
             if not is_mediacms_editor(self.user):
                 if settings.PORTAL_WORKFLOW == "private":
                     self.instance.state = "private"
                 if settings.PORTAL_WORKFLOW == "unlisted":
                     if state == "public":
-                        self.instance.state = self.initial["state"]
+                        self.instance.state = stored_state
                 if settings.PORTAL_WORKFLOW == "private_verified":
                     # only for advanced users, allow from public/private to unlisted but not
                     # from private/unlisted to public

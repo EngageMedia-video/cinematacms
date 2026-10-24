@@ -655,7 +655,7 @@ class Media(models.Model):
     # is a CharField with its own version (hls_version), so it is not listed.
     FILE_FIELDS = frozenset({"media_file", "thumbnail", "poster", "uploaded_thumbnail", "uploaded_poster", "sprites"})
 
-    def save(self, *args, update_fields=None, **kwargs):
+    def save(self, *args, update_fields=None, initial_state=None, **kwargs):
         # A FieldFile.save(save=True) reaches here with no update_fields. Scope it
         # to the field that triggered it instead of replaying the whole instance.
         # Only for an existing row: update_fields on an insert makes Django force
@@ -766,7 +766,9 @@ class Media(models.Model):
             elif thumbnail_time_changed:
                 self.__original_thumbnail_time = self.thumbnail_time
         else:
-            self.state = helpers.get_default_state(user=self.user)
+            # A caller may insert a new row in a stricter state, as uploads do, so it
+            # is never stored in the role default first. Others get the default.
+            self.state = initial_state or helpers.get_default_state(user=self.user)
             self.license = License.objects.filter(id=10).first()
         # Defense-in-depth: hash plaintext passwords that bypassed set_password()
         if self.password:

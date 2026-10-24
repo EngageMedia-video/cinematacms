@@ -430,3 +430,83 @@ describe('SingleUploadPage', () => {
 		expect(fetchMock.mock.calls[0][1].body.get('is_reviewed')).toBeNull();
 	});
 });
+
+describe('SingleUploadPage leave warning', () => {
+	beforeEach(() => {
+		useSingleUploadStore.getState().reset();
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
+	});
+
+	function leaveWarningShown() {
+		const event = new Event('beforeunload', { cancelable: true });
+		window.dispatchEvent(event);
+		return event.defaultPrevented;
+	}
+
+	it('warns before leaving only while an uploaded video still needs its details', () => {
+		const { rerender } = render(<SingleUploadPage />);
+		expect(leaveWarningShown()).toBe(false);
+
+		rerender(<SingleUploadPage hasUploadedMedia uploadedMedia={{ editUrl: '/media/test/edit' }} />);
+
+		expect(leaveWarningShown()).toBe(true);
+	});
+
+	it('asks in the leave dialog before an in-page link discards the details', async () => {
+		const followedLinks = [];
+		// jsdom cannot navigate, so this records the links a browser would follow.
+		const recordFollowedLink = (event) => {
+			const link = event.target.closest?.('a[href]');
+			if (!link) return;
+			if (!event.defaultPrevented) followedLinks.push(link.getAttribute('href'));
+			event.preventDefault();
+		};
+		window.addEventListener('click', recordFollowedLink);
+		const aboutLink = document.createElement('a');
+		aboutLink.setAttribute('href', '/about');
+		aboutLink.textContent = 'About the Site';
+		document.body.append(aboutLink);
+
+		try {
+			render(<SingleUploadPage hasUploadedMedia uploadedMedia={{ editUrl: '/media/test/edit' }} />);
+			fireEvent.click(aboutLink);
+
+			expect(await screen.findByRole('dialog', { name: 'Leave this page?' })).toBeInTheDocument();
+			expect(followedLinks).toEqual([]);
+		} finally {
+			window.removeEventListener('click', recordFollowedLink);
+			aboutLink.remove();
+		}
+	});
+
+	it('leaves without a warning once the details are saved', async () => {
+		const user = userEvent.setup();
+		const navigations = [];
+		vi.stubGlobal('location', {
+			...window.location,
+			assign: vi.fn((url) => navigations.push({ url, warned: leaveWarningShown() })),
+		});
+		vi.stubGlobal(
+			'fetch',
+			vi.fn().mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: async () => ({ success: true, url: '/user/me/media' }),
+			})
+		);
+		render(
+			<SingleUploadPage
+				hasUploadedMedia
+				uploadedMedia={{ editUrl: '/media/test/edit', friendlyToken: 'saved-token' }}
+			/>
+		);
+
+		await user.click(screen.getByRole('button', { name: 'Save as Draft' }));
+
+		await waitFor(() => expect(navigations).toEqual([{ url: '/user/me/media', warned: false }]));
+	});
+});

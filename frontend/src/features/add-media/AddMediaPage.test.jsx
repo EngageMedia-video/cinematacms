@@ -36,7 +36,12 @@ vi.mock('./bulk-upload/components/BulkUploadPage.jsx', async () => {
 	};
 });
 
+vi.mock('../../static/js/mediacms/config.js', () => ({
+	config: () => ({ api: { media: '/api/v1/media' } }),
+}));
+
 import { AddMediaPage } from './AddMediaPage';
+import useBulkUploadStore from './bulk-upload/useBulkUploadStore';
 
 describe('AddMediaPage multi-file single upload guard', () => {
 	let addFiles;
@@ -202,5 +207,57 @@ describe('AddMediaPage bulk upload viewport gate', () => {
 		unmount();
 
 		expect(mediaQuery.removeEventListener).toHaveBeenCalledWith('change', listener);
+	});
+});
+
+describe('AddMediaPage leaving the page', () => {
+	let uploaderOptions;
+
+	beforeEach(() => {
+		window.MediaCMS = {
+			addMediaPage: {
+				allowedExtensions: ['mp4'],
+				canAdd: true,
+				uploadEndpoint: '/fu/upload/',
+				uploadMaxFilesNumber: 1,
+				uploadMaxSize: 1000000,
+			},
+		};
+		window.qq = {
+			FineUploader: vi.fn(function FineUploaderMock(options) {
+				uploaderOptions = options;
+				this.addFiles = vi.fn();
+				this.cancel = vi.fn();
+				this.reset = vi.fn();
+			}),
+			status: {},
+		};
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => ({ ok: true, json: async () => ({}) }))
+		);
+	});
+
+	afterEach(() => {
+		useBulkUploadStore.getState().reset();
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+		delete window.MediaCMS;
+		delete window.qq;
+	});
+
+	// Hiding the page also happens on reload, on closing an old tab and on a tab discard,
+	// so it never means the user discarded the upload.
+	it('keeps completed single and bulk uploads when the page is hidden', () => {
+		render(<AddMediaPage />);
+		act(() =>
+			uploaderOptions.callbacks.onComplete(0, 'river.mp4', { success: true, media_url: '/view?m=single123' })
+		);
+		act(() => useBulkUploadStore.setState({ files: [{ id: 'bulk-1', friendlyToken: 'bulk456' }] }));
+
+		window.dispatchEvent(new Event('pagehide'));
+
+		const requestedUrls = fetch.mock.calls.map(([url]) => url);
+		expect(requestedUrls.filter((url) => url.includes('/abandon'))).toEqual([]);
 	});
 });

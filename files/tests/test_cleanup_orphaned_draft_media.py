@@ -140,35 +140,21 @@ class MetadataSavedMarkerTests(TestCase):
         self.assertIsNotNone(self.media.metadata_saved_at)
 
 
-class MediaAbandonTests(TestCase):
+class LeavingTheUploadPageTests(TestCase):
+    """Leaving the add-media page never deletes an upload (#1009). A never-saved
+    upload stays until cleanup_orphaned_draft_media removes it after the grace period."""
+
     def setUp(self):
         self.client = Client()
         self.user = create_test_user()
-        self.other_user = create_test_user()
         self.client.force_login(self.user)
 
-    def test_abandon_deletes_owned_unsubmitted_media(self):
+    def test_old_abandon_url_does_not_delete_a_never_saved_upload(self):
         media = create_test_media(self.user, metadata_saved_at=None)
 
         response = self.client.post(f"/api/v1/media/{media.friendly_token}/abandon")
 
-        self.assertEqual(response.status_code, 204)
-        self.assertFalse(Media.objects.filter(pk=media.pk).exists())
-
-    def test_abandon_noops_when_metadata_was_saved(self):
-        media = create_test_media(self.user, metadata_saved_at=timezone.now())
-
-        response = self.client.post(f"/api/v1/media/{media.friendly_token}/abandon")
-
-        self.assertEqual(response.status_code, 204)
-        self.assertTrue(Media.objects.filter(pk=media.pk).exists())
-
-    def test_abandon_refuses_media_owned_by_another_user(self):
-        media = create_test_media(self.other_user, metadata_saved_at=None)
-
-        response = self.client.post(f"/api/v1/media/{media.friendly_token}/abandon")
-
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
         self.assertTrue(Media.objects.filter(pk=media.pk).exists())
 
 
@@ -199,3 +185,86 @@ class MediaCreationContractTests(TestCase):
         self.assertEqual(response.status_code, 201)
         media = Media.objects.get(friendly_token=response.json()["friendly_token"])
         self.assertIsNotNone(media.metadata_saved_at)
+
+    @override_settings(PORTAL_WORKFLOW="private_verified")
+    def test_media_list_post_keeps_the_role_default_state(self):
+        # Only the uploader asks Media.save() for a private first insert (#1009).
+        self.user.advancedUser = True
+        self.user.save()
+        client = Client()
+        client.force_login(self.user)
+        upload = SimpleUploadedFile("clip.mp4", b"fake video bytes", content_type="video/mp4")
+
+        with patch.object(Media, "media_init", return_value=None):
+            response = client.post("/api/v1/media", {"media_file": upload})
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Media.objects.get(friendly_token=response.json()["friendly_token"]).state, "unlisted")
+
+
+class DetailsNeededFlagTests(TestCase):
+    """My Media and Manage Uploads mark a never-saved upload as needing details,
+    for its owner only (#1010)."""
+
+    def setUp(self):
+        self.client = Client()
+        self.owner = create_test_user()
+        self.other_user = create_test_user()
+
+    def _my_media_item(self, viewer, media):
+        self.client.force_login(viewer)
+        response = self.client.get(f"/api/v1/media?author={self.owner.username}")
+        self.assertEqual(response.status_code, 200)
+        return next(item for item in response.json()["results"] if item["friendly_token"] == media.friendly_token)
+
+    def test_owner_sees_that_a_never_saved_upload_needs_details(self):
+        media = create_test_media(self.owner, metadata_saved_at=None, state="private")
+
+        self.assertIs(self._my_media_item(self.owner, media)["details_needed"], True)
+
+    def test_other_users_are_not_told_that_an_upload_needs_details(self):
+        # An upload left public before #1009 is still listed for everyone.
+        media = create_test_media(self.owner, metadata_saved_at=None, state="public")
+
+        self.assertIs(self._my_media_item(self.other_user, media)["details_needed"], False)
+
+    def test_manage_uploads_marks_a_never_saved_upload_as_needing_details(self):
+        self.owner.advancedUser = True
+        self.owner.save()
+        media = create_test_media(self.owner, metadata_saved_at=None, state="private")
+        self.client.force_login(self.owner)
+
+        response = self.client.get("/api/v1/my_uploads")
+
+        self.assertEqual(response.status_code, 200)
+        item = next(item for item in response.json()["results"] if item["friendly_token"] == media.friendly_token)
+        self.assertIs(item["details_needed"], True)
+
+    def test_saving_the_details_clears_the_flag(self):
+        media = create_test_media(self.owner, metadata_saved_at=None, state="private")
+        category, _ = Category.objects.get_or_create(
+            title="Documentary", defaults={"user": self.owner, "is_global": True}
+        )
+        Language.objects.get_or_create(code="en", defaults={"title": "English"})
+        form = MediaForm(
+            self.owner,
+            data={
+                "title": "Submitted",
+                "summary": "A complete synopsis.",
+                "description": "",
+                "year_produced": "2025",
+                "media_language": "en",
+                "media_country": lists.video_countries[0][0],
+                "category": [category.id],
+                "topics": [],
+                "new_tags": "",
+                "state": "private",
+                "enable_comments": True,
+                "allow_download": True,
+            },
+            instance=media,
+        )
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        form.save()
+
+        self.assertIs(self._my_media_item(self.owner, media)["details_needed"], False)

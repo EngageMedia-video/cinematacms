@@ -29,6 +29,12 @@ from .models import (
 # TODO: put them in a more DRY way
 
 
+def details_needed_for_viewer(media, request):
+    """Only the owner is asked to finish an upload whose details were never saved (#1010)."""
+    viewer = getattr(request, "user", None)
+    return media.metadata_saved_at is None and viewer is not None and viewer == media.user
+
+
 class MediaSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
     summary = serializers.ReadOnlyField()
@@ -37,6 +43,7 @@ class MediaSerializer(serializers.ModelSerializer):
     thumbnail_url = serializers.SerializerMethodField()
     author_profile = serializers.SerializerMethodField()
     author_thumbnail = serializers.SerializerMethodField()
+    details_needed = serializers.SerializerMethodField()
 
     def get_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
@@ -54,6 +61,9 @@ class MediaSerializer(serializers.ModelSerializer):
 
     def get_author_thumbnail(self, obj):
         return self.context["request"].build_absolute_uri(obj.author_thumbnail())
+
+    def get_details_needed(self, obj):
+        return details_needed_for_viewer(obj, self.context.get("request"))
 
     class Meta:
         model = Media
@@ -115,6 +125,7 @@ class MediaSerializer(serializers.ModelSerializer):
             "media_country_info",
             "categories_info",
             "year_produced",
+            "details_needed",
         )
 
 
@@ -188,6 +199,7 @@ class HeroPlaybackSerializer(serializers.ModelSerializer):
 class ManageUploadSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
+    details_needed = serializers.SerializerMethodField()
 
     def get_url(self, obj):
         return self.context["request"].build_absolute_uri(obj.get_absolute_url())
@@ -196,6 +208,9 @@ class ManageUploadSerializer(serializers.ModelSerializer):
         if not obj.thumbnail_url:
             return None
         return self.context["request"].build_absolute_uri(obj.thumbnail_url)
+
+    def get_details_needed(self, obj):
+        return details_needed_for_viewer(obj, self.context.get("request"))
 
     class Meta:
         model = Media
@@ -210,6 +225,7 @@ class ManageUploadSerializer(serializers.ModelSerializer):
             "state",
             "views",
             "likes",
+            "details_needed",
         )
 
 
