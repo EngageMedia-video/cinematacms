@@ -216,6 +216,20 @@ class AutoDraftUploadTests(TestCase):
         form.save()
         media.refresh_from_db()
 
+    def test_single_upload_is_private_while_it_initializes(self):
+        stored_states = []
+
+        def record_stored_state(media):
+            stored_states.append(Media.objects.get(pk=media.pk).state)
+
+        # media_init runs in post_save right after the insert commits, so this is the
+        # state other requests can read while the upload initializes.
+        with patch.object(Media, "media_init", autospec=True, side_effect=record_stored_state):
+            response = self._upload()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(stored_states, ["private"])
+
     @patch.object(Media, "media_init", return_value=None)
     def test_saving_the_details_gives_a_single_upload_its_chosen_state(self, _mock_init):
         self._upload()
