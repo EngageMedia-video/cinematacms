@@ -324,10 +324,9 @@
         "upload_pause",
         "upload_resume",
         "upload_retry",
-        "upload_discard",
-        "upload_abandon"
+        "upload_discard"
       ],
-      "trigger": "Accepted file, confirmed transport completion, abort, deduplicated failure, state change or accepted abandonment. No byte ticks or file names.",
+      "trigger": "Accepted file, confirmed transport completion, abort, deduplicated failure or state change. No byte ticks or file names.",
       "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
       "sources": [
         {

@@ -85,7 +85,7 @@ class FineUploaderView(generic.FormView):
         # is created as a private draft so it stays out of the admin review
         # queue (and the public site) until the user explicitly submits/shares
         # — at which point bulk_submit clears the flag. The single-upload flow
-        # does not send the param, so its behaviour is unchanged.
+        # does not send the param, so it is not a draft.
         is_draft = str(self.request.POST.get("is_draft", "")).lower() in ("1", "true", "yes")
         media_file = os.path.join(settings.MEDIA_ROOT, self.upload.real_path)
         with open(media_file, "rb") as f:
@@ -96,9 +96,11 @@ class FineUploaderView(generic.FormView):
                 is_draft=is_draft,
                 is_reviewed=is_trusted_uploader(self.request.user),
             )
-        if is_draft and new.state != "private":
+        if new.state != "private":
             # save() set the role-based default state (unlisted for advanced
-            # users); normalise drafts to private to match the draft convention.
+            # users). Every upload stays private until its details are saved:
+            # the details form or bulk submit sets the chosen state, and an
+            # upload whose form is never saved waits for orphan cleanup unseen.
             new.state = "private"
             new.save(update_fields=["state"])
         rm_file(media_file)

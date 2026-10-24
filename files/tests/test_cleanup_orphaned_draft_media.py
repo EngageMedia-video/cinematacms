@@ -140,35 +140,21 @@ class MetadataSavedMarkerTests(TestCase):
         self.assertIsNotNone(self.media.metadata_saved_at)
 
 
-class MediaAbandonTests(TestCase):
+class LeavingTheUploadPageTests(TestCase):
+    """Leaving the add-media page never deletes an upload (#1009). A never-saved
+    upload stays until cleanup_orphaned_draft_media removes it after the grace period."""
+
     def setUp(self):
         self.client = Client()
         self.user = create_test_user()
-        self.other_user = create_test_user()
         self.client.force_login(self.user)
 
-    def test_abandon_deletes_owned_unsubmitted_media(self):
+    def test_old_abandon_url_does_not_delete_a_never_saved_upload(self):
         media = create_test_media(self.user, metadata_saved_at=None)
 
         response = self.client.post(f"/api/v1/media/{media.friendly_token}/abandon")
 
-        self.assertEqual(response.status_code, 204)
-        self.assertFalse(Media.objects.filter(pk=media.pk).exists())
-
-    def test_abandon_noops_when_metadata_was_saved(self):
-        media = create_test_media(self.user, metadata_saved_at=timezone.now())
-
-        response = self.client.post(f"/api/v1/media/{media.friendly_token}/abandon")
-
-        self.assertEqual(response.status_code, 204)
-        self.assertTrue(Media.objects.filter(pk=media.pk).exists())
-
-    def test_abandon_refuses_media_owned_by_another_user(self):
-        media = create_test_media(self.other_user, metadata_saved_at=None)
-
-        response = self.client.post(f"/api/v1/media/{media.friendly_token}/abandon")
-
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
         self.assertTrue(Media.objects.filter(pk=media.pk).exists())
 
 

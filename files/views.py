@@ -1806,28 +1806,6 @@ class MediaDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class MediaAbandon(APIView):
-    """Delete an owned upload only if its metadata form was never saved."""
-
-    permission_classes = (permissions.IsAuthenticated,)
-
-    def post(self, request, friendly_token, format=None):
-        friendly_token = clean_friendly_token(friendly_token)
-        try:
-            media = Media.objects.select_related("user").get(friendly_token=friendly_token)
-        except Media.DoesNotExist:
-            return Response({"detail": "media file does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
-        if media.user_id != request.user.id:
-            return Response({"detail": "not allowed"}, status=status.HTTP_403_FORBIDDEN)
-
-        if media.metadata_saved_at is not None:
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-        media.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 class MediaActions(APIView):
     """
     Retrieve, update or delete a snippet instance.

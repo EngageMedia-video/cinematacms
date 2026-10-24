@@ -138,7 +138,8 @@ class BulkDraftReviewExclusionTests(TestCase):
 class AutoDraftUploadTests(TestCase):
     """The bulk flow sends is_draft=1, so each uploaded file is created as a
     private draft (kept out of the admin review queue) until the user submits.
-    The single-upload flow does not send the param and is unaffected.
+    The single-upload flow does not send the param, so it is not a draft, but it
+    also starts private until its details are saved.
     """
 
     def setUp(self):
@@ -176,6 +177,50 @@ class AutoDraftUploadTests(TestCase):
         self.assertEqual(response.status_code, 200)
         media = Media.objects.filter(user=self.trusted).latest("add_date")
         self.assertFalse(media.is_draft)
+
+    # Leaving the page no longer deletes a never-saved upload (#1009), so it must not
+    # be link-reachable while it waits for its details or for orphan cleanup.
+    @patch.object(Media, "media_init", return_value=None)
+    def test_single_upload_is_hidden_from_other_users_until_its_details_are_saved(self, _mock_init):
+        response = self._upload()
+        self.assertEqual(response.status_code, 200)
+        media = Media.objects.filter(user=self.trusted).latest("add_date")
+
+        self.client.force_login(self.regular)
+        response = self.client.get(f"/api/v1/media/{media.friendly_token}")
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "media is private"})
+
+    @patch.object(Media, "media_init", return_value=None)
+    def test_saving_the_details_gives_a_single_upload_its_chosen_state(self, _mock_init):
+        from files.forms import MediaForm
+
+        self._upload()
+        media = Media.objects.filter(user=self.trusted).latest("add_date")
+        category, _ = Category.objects.get_or_create(title="Documentary")
+        Language.objects.get_or_create(code="en", defaults={"title": "English"})
+        data = {
+            "title": "River Stories",
+            "summary": "A finished synopsis.",
+            "description": "",
+            "year_produced": "2021",
+            "media_language": "en",
+            "media_country": lists.video_countries[0][0],
+            "category": [category.id],
+            "topics": [],
+            "new_tags": "",
+            "state": "unlisted",
+            "enable_comments": True,
+            "allow_download": True,
+        }
+
+        form = MediaForm(self.trusted, data=data, instance=media)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        form.save()
+
+        media.refresh_from_db()
+        self.assertEqual(media.state, "unlisted")
 
     @patch.object(Media, "media_init", return_value=None)
     @override_settings(MEDIA_IS_REVIEWED=False)
