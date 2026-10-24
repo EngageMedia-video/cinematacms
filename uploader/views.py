@@ -90,19 +90,17 @@ class FineUploaderView(generic.FormView):
         media_file = os.path.join(settings.MEDIA_ROOT, self.upload.real_path)
         with open(media_file, "rb") as f:
             myfile = File(f)
-            new = Media.objects.create(
+            new = Media(
                 media_file=myfile,
                 user=self.request.user,
                 is_draft=is_draft,
                 is_reviewed=is_trusted_uploader(self.request.user),
             )
-        if new.state != "private":
-            # save() set the role-based default state (unlisted for advanced
-            # users). Every upload stays private until its details are saved:
-            # the details form or bulk submit sets the chosen state, and an
-            # upload whose form is never saved waits for orphan cleanup unseen.
-            new.state = "private"
-            new.save(update_fields=["state"])
+            # Every upload stays private until its details are saved: the details
+            # form or bulk submit sets the chosen state, and an upload whose form
+            # is never saved waits for orphan cleanup unseen. Inserting it private
+            # also covers media_init, which runs in post_save right after the insert.
+            new.save(force_insert=True, initial_state="private")
         rm_file(media_file)
         shutil.rmtree(os.path.join(settings.MEDIA_ROOT, self.upload.file_path))
         return self.make_response({"success": True, "media_url": new.get_absolute_url()})

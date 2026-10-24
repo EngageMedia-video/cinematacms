@@ -186,6 +186,21 @@ class MediaCreationContractTests(TestCase):
         media = Media.objects.get(friendly_token=response.json()["friendly_token"])
         self.assertIsNotNone(media.metadata_saved_at)
 
+    @override_settings(PORTAL_WORKFLOW="private_verified")
+    def test_media_list_post_keeps_the_role_default_state(self):
+        # Only the uploader asks Media.save() for a private first insert (#1009).
+        self.user.advancedUser = True
+        self.user.save()
+        client = Client()
+        client.force_login(self.user)
+        upload = SimpleUploadedFile("clip.mp4", b"fake video bytes", content_type="video/mp4")
+
+        with patch.object(Media, "media_init", return_value=None):
+            response = client.post("/api/v1/media", {"media_file": upload})
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Media.objects.get(friendly_token=response.json()["friendly_token"]).state, "unlisted")
+
 
 class DetailsNeededFlagTests(TestCase):
     """My Media and Manage Uploads mark a never-saved upload as needing details,
