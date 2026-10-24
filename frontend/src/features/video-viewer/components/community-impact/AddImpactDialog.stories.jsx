@@ -29,8 +29,30 @@ export default meta;
 
 export const Open = {
 	play: async () => {
-		await expect(await within(document.body).findByRole('dialog', { name: 'Add community impact' })).toBeVisible();
-		await expect(within(document.body).getByText('Maximum 80 Words')).toBeVisible();
+		const body = within(document.body);
+
+		await expect(await body.findByRole('dialog', { name: 'Add community impact' })).toBeVisible();
+		await expect(body.getByRole('radiogroup', { name: 'What kind of impact?' })).toBeVisible();
+	},
+};
+
+export const Screening = {
+	play: async () => {
+		const body = within(document.body);
+
+		await userEvent.click(await body.findByRole('radio', { name: /^Screening/ }));
+		await expect(body.getByLabelText('Event or Festival Name')).toBeVisible();
+		await expect(body.getByText('Keep organiser private')).toBeVisible();
+	},
+};
+
+export const Award = {
+	play: async () => {
+		const body = within(document.body);
+
+		await userEvent.click(await body.findByRole('radio', { name: /^Award/ }));
+		await expect(body.getByLabelText('Award Name')).toBeVisible();
+		await expect(body.getByLabelText('Citation (optional)')).toBeVisible();
 	},
 };
 
@@ -38,17 +60,19 @@ export const SubmitReady = {
 	play: async ({ args }) => {
 		const body = within(document.body);
 
-		await userEvent.type(body.getByLabelText('Where did you see this film'), 'Jakarta community hall');
-		await userEvent.click(body.getByRole('button', { name: 'Select community impact category' }));
-		await userEvent.click(body.getByRole('menuitemradio', { name: 'Screened In' }));
-		await userEvent.click(body.getByRole('button', { name: 'SUBMIT COMMUNITY IMPACT' }));
+		await userEvent.click(await body.findByRole('radio', { name: /^Article or Review/ }));
+		await userEvent.type(body.getByLabelText('Title'), 'Films that changed the conversation');
+		await userEvent.type(body.getByLabelText('Year'), '2023');
+		await userEvent.type(body.getByLabelText('Written by'), 'Dewi Lestari');
+		await userEvent.click(body.getByRole('button', { name: 'ADD IMPACT' }));
 
 		await expect(args.onSubmit).toHaveBeenCalledWith({
-			category: 'screening',
+			category: 'article',
+			title: 'Films that changed the conversation',
+			year: 2023,
+			creator: 'Dewi Lestari',
+			publication: '',
 			details: '',
-			link: '',
-			location: 'Jakarta community hall',
-			title: 'Jakarta community hall',
 			url: '',
 		});
 	},

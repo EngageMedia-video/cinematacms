@@ -56,7 +56,8 @@ export function Dialog({ children, open, defaultOpen = false, onOpenChange }) {
 		}
 
 		function handleKeyDown(event) {
-			if (event.key === 'Escape') {
+			// An inner widget (e.g. an open Dropdown menu) marks the Escape it consumed.
+			if (event.key === 'Escape' && !event.defaultPrevented) {
 				setOpen(false);
 			}
 		}

@@ -25,8 +25,51 @@ const communityImpactEntries = {
 		lastEventAt: '2026-05-28T08:00:00Z',
 		totalCount: { saves: 181, playlists: 90 },
 	},
+	article: [
+		{
+			uid: 'article-1',
+			category: 'article',
+			title: 'Films that changed the conversation',
+			year: 2023,
+			event_date: '2026-05-02',
+			creator: 'Dewi Lestari',
+			publication: 'Jakarta Post',
+			url: 'https://example.com/article',
+		},
+	],
+	teaching: [
+		{
+			uid: 'teaching-1',
+			category: 'teaching',
+			title: 'Media and Climate Justice',
+			year: 2025,
+			creator: 'Dr. Maria Santos',
+		},
+	],
+	award: [
+		{
+			uid: 'award-1',
+			category: 'award',
+			title: 'Best Documentary',
+			year: 2021,
+			event_date: '2026-05-03',
+			award_result_label: 'Won',
+			organiser: 'Jogja-NETPAC Asian Film Festival',
+		},
+	],
 	screening: {
 		entries: [
+			{
+				uid: 'screening-new',
+				category: 'screening',
+				title: 'Hanoi Doc Week',
+				year: 2024,
+				event_date: '2026-05-01',
+				city: 'Hanoi',
+				country_label: 'Viet Nam',
+				organiser: 'Youth Media Collective',
+				url: 'https://example.com/hanoi',
+			},
 			{ title: 'Manila Community Film Night', date: '2025-02-01', url: 'https://example.com/manila' },
 			{ title: '2026 Film Festival, Dakar', date: '2025-02-15', url: 'https://example.com/dakar' },
 			{ title: 'Jakarta Mutual Aid Screening', date: '2025-03-08', url: 'https://example.com/jakarta' },
@@ -57,10 +100,27 @@ export const Populated = {
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 
-		await expect(canvas.getByRole('heading', { name: "Film's Impact" })).toBeVisible();
-		await expect(canvas.getByText('Screened In')).toBeVisible();
-		await expect(canvas.getByText('Saves & Playlists')).toBeVisible();
-		await expect(canvas.queryByText('Curated Into')).toBeNull();
+		await expect(canvas.getByRole('heading', { name: "Film's Impact" })).toBeInTheDocument();
+		await expect(canvas.getAllByRole('article').map((card) => card.getAttribute('aria-label'))).toEqual([
+			'User Playlists',
+			'Academic Usage',
+			'Awards',
+			'Screenings',
+			'Reviews and Features',
+		]);
+
+		// The dialog keeps the timeline: the first entry's line must reach the next
+		// entry and each later dot must sit mid-text (needs real layout, not jsdom).
+		await userEvent.click(canvas.getByRole('button', { name: 'Open Screenings details' }));
+		const dialog = await within(document.body).findByRole('dialog', { name: 'Screenings' });
+		const [firstEntry, secondEntry] = within(dialog).getAllByRole('listitem');
+		const connector = firstEntry.querySelector('[aria-hidden="true"] > .w-px');
+		await expect(connector.getBoundingClientRect().bottom).toBeGreaterThanOrEqual(
+			secondEntry.getBoundingClientRect().top
+		);
+		const dot = secondEntry.querySelector('.bg-bg-timeline-dot').getBoundingClientRect();
+		const text = secondEntry.querySelector('p').parentElement.getBoundingClientRect();
+		await expect(Math.abs(dot.top + dot.height / 2 - (text.top + text.height / 2))).toBeLessThanOrEqual(1);
 	},
 };
 
