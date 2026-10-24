@@ -59,16 +59,30 @@ class InstantUploader {
 	}
 }
 
+let uploaderListeners = new AbortController();
+
+afterEach(() => {
+	uploaderListeners.abort();
+	uploaderListeners = new AbortController();
+});
+
+// Like Fine Uploader 5.13.0, it adds its own beforeunload prompt while bytes are moving.
 class StalledUploader {
 	constructor({ callbacks }) {
 		this.callbacks = callbacks;
+		this.uploading = false;
+		window.addEventListener('beforeunload', (event) => this.uploading && event.preventDefault(), {
+			signal: uploaderListeners.signal,
+		});
 	}
 
 	addFiles([file]) {
+		this.uploading = true;
 		this.callbacks.onSubmit(0, file.name);
 	}
 
 	pauseUpload() {
+		this.uploading = false;
 		return true;
 	}
 }
@@ -229,6 +243,7 @@ describe('EditMediaPage leave confirmation', () => {
 		window.removeEventListener('click', recordFollowedLink);
 		document.querySelectorAll('body > a').forEach((link) => link.remove());
 		delete window.MediaCMS;
+		delete window.qq;
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
 	});
@@ -253,6 +268,21 @@ describe('EditMediaPage leave confirmation', () => {
 		render(<EditMediaPage />);
 		const aboutLink = addPageLink('/about', 'About the Site', { rel: 'noreferrer', referrerpolicy: 'no-referrer' });
 		await editField('More Information and Credits', 'A long description the user has not saved yet.');
+		fireEvent.click(aboutLink);
+		expect(followedLinks).toEqual([]);
+
+		const warnedWhileFollowing = [];
+		aboutLink.addEventListener('click', () => warnedWhileFollowing.push(leaveWarningShown()));
+		fireEvent.click(await screen.findByRole('button', { name: 'Leave' }));
+
+		expect(followedLinks).toEqual(['/about']);
+		expect(warnedWhileFollowing).toEqual([false]);
+	});
+
+	it('does not ask a second time when leaving during a replacement upload', async () => {
+		renderWithReplacementUploader(StalledUploader);
+		await screen.findByRole('button', { name: 'Pause' });
+		const aboutLink = addPageLink('/about', 'About the Site');
 		fireEvent.click(aboutLink);
 		expect(followedLinks).toEqual([]);
 
@@ -307,6 +337,50 @@ describe('EditMediaPage leave confirmation', () => {
 
 		await waitFor(() => expect(leaveWarningShown()).toBe(true), { timeout: 3000 });
 		fireEvent.click(addPageLink('/about', 'About the Site'));
+		expect(await screen.findByRole('dialog', { name: 'Leave this page?' })).toBeInTheDocument();
+		expect(followedLinks).toEqual([]);
+	});
+
+	it('guards a link clicked right after Cancel could not go back', async () => {
+		vi.spyOn(window.history, 'back').mockImplementation(() => {});
+		render(<EditMediaPage />);
+		await editField('More Information and Credits', 'A long description the user has not saved yet.');
+		fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		fireEvent.click(await screen.findByRole('button', { name: 'Leave' }));
+
+		const aboutLink = addPageLink('/about', 'About the Site');
+		fireEvent.pointerDown(aboutLink);
+		fireEvent.click(aboutLink);
+
+		expect(await screen.findByRole('dialog', { name: 'Leave this page?' })).toBeInTheDocument();
+		expect(followedLinks).toEqual([]);
+	});
+
+	it('guards a link opened from the keyboard right after Cancel could not go back', async () => {
+		vi.spyOn(window.history, 'back').mockImplementation(() => {});
+		render(<EditMediaPage />);
+		await editField('More Information and Credits', 'A long description the user has not saved yet.');
+		fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		fireEvent.click(await screen.findByRole('button', { name: 'Leave' }));
+
+		const aboutLink = addPageLink('/about', 'About the Site');
+		fireEvent.keyDown(aboutLink, { key: 'Enter' });
+		fireEvent.click(aboutLink);
+
+		expect(await screen.findByRole('dialog', { name: 'Leave this page?' })).toBeInTheDocument();
+		expect(followedLinks).toEqual([]);
+	});
+
+	// Assistive technology and scripts can activate a link with a click alone.
+	it('guards a link activated by a click alone right after Cancel could not go back', async () => {
+		vi.spyOn(window.history, 'back').mockImplementation(() => {});
+		render(<EditMediaPage />);
+		await editField('More Information and Credits', 'A long description the user has not saved yet.');
+		fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		fireEvent.click(await screen.findByRole('button', { name: 'Leave' }));
+
+		fireEvent.click(addPageLink('/about', 'About the Site'));
+
 		expect(await screen.findByRole('dialog', { name: 'Leave this page?' })).toBeInTheDocument();
 		expect(followedLinks).toEqual([]);
 	});
