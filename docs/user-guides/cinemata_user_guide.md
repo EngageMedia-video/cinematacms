@@ -33,7 +33,7 @@
 
 4. **Fill in video details:**  
    - **Title:** Enter the film’s title.  
-   - **Synopsis:** Write a short description (max 60 characters).  
+   - **Synopsis:** Write a short description (max 80 words).  
    - **Category:** Choose the appropriate category (e.g., Human Rights, Environment).  
    - **Status:** Set to “Public” if you want the video accessible to everyone.
 
