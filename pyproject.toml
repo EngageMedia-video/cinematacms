@@ -12,7 +12,7 @@ dependencies = [
     "crispy-forms-bootstrap2==2024.1",
     "django-debug-toolbar==8.0.0",
     "django-imagekit==6.1.1",
-    "django-mptt==0.19.1",
+    "django-mptt==0.20.0",
     "django-recaptcha==4.1.0",
     "django-redis==7.0.0",
     "django==5.2.18",
@@ -45,7 +45,7 @@ dependencies = [
     "opentelemetry-instrumentation-redis>=0.65b0",
     "opentelemetry-instrumentation-requests>=0.65b0",
     "opentelemetry-instrumentation-psycopg2>=0.65b0",
-    "sentry-sdk==2.72.0",
+    "sentry-sdk==2.73.0",
     "django-csp==4.0",
 ]
 
