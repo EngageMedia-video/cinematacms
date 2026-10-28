@@ -1,5 +1,0 @@
-interface:
-  display_name: "Improve Codebase Architecture"
-  short_description: "Assess module interfaces and caller impact"
-policy:
-  allow_implicit_invocation: false

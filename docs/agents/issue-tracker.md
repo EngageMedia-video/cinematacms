@@ -12,9 +12,9 @@ the work contract. Inspect existing labels before changing them; see
 
 ## Drafts and publication
 
-Specifications, ticket breakdowns, triage findings, and decision maps are local
-drafts unless the requested operation includes publication. Keep temporary notes
-in the conversation or ignored `docs/plans/`. Reuse an existing project issue or
+Specifications and ticket breakdowns are local drafts unless the requested
+operation includes publication. Keep temporary notes in the conversation or
+ignored `docs/plans/`. Reuse an existing project issue or
 maintained document when the task requires a durable shared artifact.
 
 For authorized multiline issue or PR text, write a temporary file and pass

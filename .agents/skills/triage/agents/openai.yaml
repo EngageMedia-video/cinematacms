@@ -1,5 +1,0 @@
-interface:
-  display_name: "Triage"
-  short_description: "Assess issues and draft evidence-backed briefs"
-policy:
-  allow_implicit_invocation: false

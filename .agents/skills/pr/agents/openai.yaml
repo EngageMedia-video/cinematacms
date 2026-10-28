@@ -1,3 +1,0 @@
-interface:
-  display_name: "PR"
-  short_description: "Draft PR text using the repository template"

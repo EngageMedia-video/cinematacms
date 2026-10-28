@@ -14,7 +14,7 @@ flowchart TD
 	context --> path{Select a task path}
 	path -->|Small edit| direct[Edit directly]
 	path -->|Feature or specification| implement[implement and tdd]
-	path -->|Plan or open question| plan[grilling, prototype, to-spec, or to-tickets]
+	path -->|Plan or open question| plan[grilling, to-spec, or to-tickets]
 	path -->|Ticket graph| tickets[implement-spec]
 	path -->|Bug| diagnose[diagnosing-bugs, then tdd if fixing]
 	path -->|Design or terminology| design[codebase-design or domain-modeling]
@@ -74,7 +74,7 @@ The contributor can invoke a skill by name. Supported agents may also select a
 skill when the request matches its frontmatter description. When a contributor
 names a skill, the agent must follow it.
 
-### Shape larger work and prepare delivery
+### Shape larger work
 
 Use these skills when the task needs their output. Keep the existing direct-edit,
 implementation, diagnosis, review, and verification paths for scoped work.
@@ -82,17 +82,9 @@ implementation, diagnosis, review, and verification paths for scoped work.
 | Task | Skill | Completion point |
 |---|---|---|
 | Resolve unclear requirements or trade-offs | [`grilling`](../../.agents/skills/grilling/SKILL.md) | Decisions that affect scope are resolved |
-| Resolve requirements and record domain decisions | [`grill-with-docs`](../../.agents/skills/grill-with-docs/SKILL.md) | Accepted terms and decisions use the repository domain layout |
-| Compare module-deepening opportunities | [`improve-codebase-architecture`](../../.agents/skills/improve-codebase-architecture/SKILL.md) | Alternatives and caller/test effects are concrete |
-| Test an uncertain interaction or state model | [`prototype`](../../.agents/skills/prototype/SKILL.md) | A runnable local prototype answers the stated question |
 | Turn an agreed conversation into a specification | [`to-spec`](../../.agents/skills/to-spec/SKILL.md) | Scope, behavior, and test seams are documented |
 | Break a specification into dependent vertical slices | [`to-tickets`](../../.agents/skills/to-tickets/SKILL.md) | Each slice is verifiable and its blockers are explicit |
 | Implement a specification's ticket graph | [`implement-spec`](../../.agents/skills/implement-spec/SKILL.md) | Every requirement has verification evidence and delivery state is reported |
-| Evaluate or clarify tracker requests | [`triage`](../../.agents/skills/triage/SKILL.md) | Each requested issue has an evidence-backed disposition |
-| Coordinate research, prototypes, and decisions | [`wayfinder`](../../.agents/skills/wayfinder/SKILL.md) | The map records resolved decisions and remaining blockers |
-| Review session lessons | [`retro`](../../.agents/skills/retro/SKILL.md) | Reusable environment or workflow improvements are reported |
-| Draft a pull request body | [`pr`](../../.agents/skills/pr/SKILL.md) | The repository PR template contains evidence and required declarations |
-| Change the tracker or domain configuration | [`setup-matt-pocock-skills`](../../.agents/skills/setup-matt-pocock-skills/SKILL.md) | Local configuration reflects the contributor's accepted choices |
 
 For tracker-backed skills, load [the issue tracker configuration](../agents/issue-tracker.md)
 and [existing triage conventions](../agents/triage-labels.md). For domain work, load
@@ -110,8 +102,6 @@ sequentially by default; use isolated worktrees or authorized delegation when
 they help the accepted task. Preserve existing work
 and follow the delivery authorization in `AGENTS.md`.
 
-`retro` reports improvements for the requested session. `pr` fills
-`.github/PULL_REQUEST_TEMPLATE.md`, including Analytics and AI assistance.
 Publishing tracker updates, committing, pushing, opening a PR, and merging
 remain separate actions governed by the user's request and repository rules.
 
@@ -213,13 +203,12 @@ repository authorization rules, portable fallbacks, and CinemataCMS completion
 criteria. They retain the upstream
 [MIT license](../../.agents/skills/LICENSE.mattpocock).
 
-The added planning, ticket coordination, retrospective, and PR skills are
-adapted from upstream commit `4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d`.
-Their source paths, upstream hashes, retained-file hashes, and omitted upstream
-templates are recorded in
+The added planning and ticket coordination skills are adapted from upstream
+commit `4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d`. Their source paths, upstream
+hashes, and retained-file hashes are recorded in
 [the import manifest](../../.agents/skills/SOURCES.mattpocock.json).
 The adaptations use the existing `CONTEXT.md` domain convention, preserve the
-repository PR template and delivery boundaries, and keep optional-tool fallbacks.
+repository delivery boundaries, and keep optional-tool fallbacks.
 Planning outputs stay local unless publication is requested. Tracker skills use
 existing CinemataCMS labels rather than installing the upstream state machine.
 Existing repository skills retain their adaptations and original source pin.

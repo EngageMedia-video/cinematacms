@@ -1,5 +1,0 @@
-interface:
-  display_name: "Wayfinder"
-  short_description: "Map open questions, evidence, and dependencies"
-policy:
-  allow_implicit_invocation: false

@@ -19,7 +19,7 @@ readiness. Preserve unrelated labels and maintainer decisions.
 
 The upstream skill roles `needs-triage`, `needs-info`, `ready-for-agent`, and
 `ready-for-human` are descriptive concepts, not installed CinemataCMS labels.
-Report them in prose when useful; do not create those labels or `wayfinder:*`
-labels as a prerequisite. Change labels only within an authorized tracker action.
+Report them in prose when useful; do not create those labels as a prerequisite.
+Change labels only within an authorized tracker action.
 The AI contribution workflow maintains `ai-assisted`; follow the engineering
 standards and PR declaration rather than treating it as a triage state.
