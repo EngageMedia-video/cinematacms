@@ -1,0 +1,5 @@
+interface:
+  display_name: "Retro"
+  short_description: "Review session evidence and recommend improvements"
+policy:
+  allow_implicit_invocation: false

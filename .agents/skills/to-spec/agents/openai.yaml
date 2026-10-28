@@ -1,0 +1,5 @@
+interface:
+  display_name: "To Spec"
+  short_description: "Synthesize agreed behavior into a scoped spec"
+policy:
+  allow_implicit_invocation: false

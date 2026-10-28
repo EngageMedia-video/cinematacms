@@ -1,0 +1,5 @@
+interface:
+  display_name: "Grill with Docs"
+  short_description: "Resolve and record accepted design decisions"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Implement Spec"
+  short_description: "Implement accepted specs through repo workflows"
+policy:
+  allow_implicit_invocation: false
