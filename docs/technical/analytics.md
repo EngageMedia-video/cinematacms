@@ -91,8 +91,8 @@ public page loads, `media_view` for public media loads, or a specific action and
 date range. The named `page_view` is a custom event for audience comparisons;
 it does not add another native page view to Umami's Views total. Do not treat
 the sum of views and actions as an audience size. Signed-in visitors also carry `audience_group` as
-Umami session data, which Segments and Cohorts can filter on; anonymous
-sessions have no session data. Umami supplies
+Umami session data, which Segments can filter on; Cohorts filter by an
+event or path instead. Anonymous sessions have no session data. Umami supplies
 its own reporting controls, while the CMS has no duplicate audience table.
 See [Umami's Event data guide](https://docs.umami.is/docs/event-data).
 
