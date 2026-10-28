@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useTaxonomies } from '../../shared/components/UploadMedia';
-import { Card, Icon } from '../../shared/components';
+import { Card, Icon, UnsavedChangesDialog } from '../../shared/components';
 import { MediaDropzone } from '../../shared/components/MediaDropzone';
 import { Text } from '../../shared/components/Text';
+import { useUnsavedChangesGuard } from '../../shared/hooks/useUnsavedChangesGuard';
 import { MediaDetailsForm } from './components/MediaDetailsForm';
 import singleUploadQueryClient from './queryClient';
 import { AlertOwnershipMedia } from './components/AlertOwnershipMedia';
@@ -25,6 +26,8 @@ function SingleUploadContent({
 	uploader,
 }) {
 	const { options } = useTaxonomies();
+	// The upload already exists, so leaving loses only the details typed for it (#1010).
+	const leaveGuard = useUnsavedChangesGuard(hasUploadedMedia);
 
 	// Form Options
 	const mediaLanguages = useMemo(() => toCodeOptions(options.languages), [options.languages]);
@@ -128,9 +131,19 @@ function SingleUploadContent({
 					topics={topics}
 					uploadedMedia={uploadedMedia}
 					onPreviewChange={handleFormPreviewChange}
-					onSubmitSuccess={onSubmitSuccess}
+					onSubmitSuccess={(friendlyToken) => {
+						// Saving redirects right away, so stop guarding before the page unloads.
+						leaveGuard.disarm();
+						onSubmitSuccess?.(friendlyToken);
+					}}
 				/>
 			) : null}
+
+			<UnsavedChangesDialog
+				open={leaveGuard.isConfirmingLeave}
+				onStay={leaveGuard.cancelLeave}
+				onLeave={leaveGuard.confirmLeave}
+			/>
 		</div>
 	);
 }

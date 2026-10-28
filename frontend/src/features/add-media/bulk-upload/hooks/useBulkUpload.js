@@ -14,6 +14,7 @@ export function useBulkUpload() {
 	const config = useBulkUploadConfig();
 	const uploaderRef = useRef(null);
 	const filesByIdRef = useRef(new Map());
+	const pausingBeforeLeaveRef = useRef(false);
 
 	const addFile = useBulkUploadStore((state) => state.addFile);
 	const updateFile = useBulkUploadStore((state) => state.updateFile);
@@ -118,7 +119,7 @@ export function useBulkUpload() {
 				},
 				onStatusChange(id, oldStatus, newStatus) {
 					if (newStatus === 'paused') {
-						window.CinemataAnalytics?.uploadEvent('pause', id);
+						if (!pausingBeforeLeaveRef.current) window.CinemataAnalytics?.uploadEvent('pause', id);
 						updateFile(id, { uploadStatus: UPLOAD_STATUS.PAUSED });
 					}
 				},
@@ -142,6 +143,18 @@ export function useBulkUpload() {
 
 	const pause = useCallback((id) => {
 		uploaderRef.current?.pauseUpload(id);
+	}, []);
+
+	// Leaving stops the transfers anyway. Pausing them first keeps Fine Uploader's own
+	// beforeunload prompt from asking again, and they can continue if the page stays.
+	// The user did not pause them, so no pause event is tracked.
+	const pauseBeforeLeave = useCallback(() => {
+		pausingBeforeLeaveRef.current = true;
+		useBulkUploadStore
+			.getState()
+			.files.filter((file) => [UPLOAD_STATUS.UPLOADING, UPLOAD_STATUS.PROCESSING].includes(file.uploadStatus))
+			.forEach((file) => uploaderRef.current?.pauseUpload(file.id));
+		pausingBeforeLeaveRef.current = false;
 	}, []);
 
 	const resume = useCallback(
@@ -194,7 +207,7 @@ export function useBulkUpload() {
 	// Stable action bag so consumers — and the context provider value built from
 	// it — don't get a brand-new reference on every render.
 	return useMemo(
-		() => ({ addFiles, pause, resume, cancel, retry, reupload }),
-		[addFiles, pause, resume, cancel, retry, reupload]
+		() => ({ addFiles, pause, pauseBeforeLeave, resume, cancel, retry, reupload }),
+		[addFiles, pause, pauseBeforeLeave, resume, cancel, retry, reupload]
 	);
 }
