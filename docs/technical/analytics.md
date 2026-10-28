@@ -52,6 +52,8 @@ count-only events with generic paths. They carry no media UUID, notification ID,
 recipient or form contents and do not enter public role aggregates. Upload
 events count transitions without filenames, byte progress or raw errors. A
 transport completion is separate from saving a draft or submitting metadata.
+The first complete details save of an upload, or of a draft, is
+`media_submit`; later saves are `media_update`.
 Bulk visibility changes and removals count one successful batch action.
 
 Navigation events use bounded destination categories and homepage placements.
