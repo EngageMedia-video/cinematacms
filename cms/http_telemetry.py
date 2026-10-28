@@ -157,12 +157,6 @@ _OWNED_ROUTE_RULES = (
         url_name="api_get_media",
     ),
     _rule(
-        "^api/v1/media/(?P<friendly_token>[\\w]+(-[\\w]+)*)/abandon$",
-        "media_api",
-        "other",
-        url_name="api_abandon_media",
-    ),
-    _rule(
         "^api/v1/media/encoding/(?P<encoding_id>[\\w]*)$",
         "media_api",
         "other",
