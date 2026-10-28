@@ -533,6 +533,8 @@ export function MediaPlayer(
 		}
 	);
 
+	previousAnalyticsState = this.player.mediaCmsVjsPlugin().publicState();
+
 	/*
 	 * Public methods.
 	 */

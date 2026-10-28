@@ -62,7 +62,15 @@ def analytics_context(request):
     audience_group = visitor_segment(request.user)
     if not getattr(settings, "ANALYTICS_ENABLED", False) or audience_group is None:
         return {}
+    context = _tracked_page_context(request, audience_group)
+    # Umami hashes the distinct ID into its session ID, so a signed-in visitor
+    # carries it on every tracked page or their session splits.
+    if context and getattr(request.user, "is_authenticated", False):
+        context["ANALYTICS"]["identity"] = {"id": request.user.username, "audience_group": audience_group}
+    return context
 
+
+def _tracked_page_context(request, audience_group):
     url = getattr(settings, "ANALYTICS_URL", "")
     website_id = getattr(settings, "ANALYTICS_WEBSITE_ID", "")
     parsed_url = urlsplit(url)

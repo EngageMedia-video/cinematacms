@@ -60,7 +60,8 @@ def build_policy(
                 if origin not in directives[name]:
                     directives[name].append(origin)
     if analytics_url:
-        directives["script-src"].append(f"{analytics_url.rstrip('/')}/script.js")
+        for script in ("script.js", "recorder.js"):
+            directives["script-src"].append(f"{analytics_url.rstrip('/')}/{script}")
     if vite.get("dev_mode"):
         protocol = vite.get("dev_server_protocol", "http")
         host = vite.get("dev_server_host", "localhost")

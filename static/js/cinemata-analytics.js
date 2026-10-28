@@ -11,14 +11,40 @@
         } catch { return ''; }
     })();
     const pending = [];
+    // The function form lets Umami add the screen, language and distinct ID it collects.
     function emitUmami(payload) {
-        try { window.umami.track(payload)?.catch?.(() => {}); }
+        try { window.umami.track((browser) => ({ ...browser, ...payload }))?.catch?.(() => {}); }
         catch { /* Collection must not interrupt the user's action. */ }
     }
     const eventName = /^[a-z][a-z0-9_]{0,49}$/;
     const routeName = /^[a-zA-Z0-9_-]{1,64}$/;
-    const audienceFor = (group) => !config.nonpublic && ['anonymous', 'regular', 'trusted', 'curator'].includes(group)
-        ? group : null;
+    // Umami reads campaign attribution from the query string of the landing view's URL.
+    const campaignValue = /^[\w .~+-]{1,100}$/;
+    const campaignQuery = config.nonpublic ? '' : (() => {
+        const landing = new URLSearchParams(window.location.search);
+        const campaign = new URLSearchParams();
+        for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']) {
+            const value = landing.get(key);
+            if (value && campaignValue.test(value)) campaign.set(key, value);
+        }
+        const query = campaign.toString();
+        return query ? `?${query}` : '';
+    })();
+    const audienceGroups = ['anonymous', 'regular', 'trusted', 'curator'];
+    const audienceFor = (group) => !config.nonpublic && audienceGroups.includes(group) ? group : null;
+    const identity = /^[\w.@+-]{1,150}$/.test(config.identity?.id || '') &&
+        audienceGroups.includes(config.identity.audience_group) ? config.identity : null;
+    const screenSize = /^\d{1,5}x\d{1,5}$/;
+    const languageTag = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8}){0,2}$/;
+    const webVitals = ['lcp', 'inp', 'cls', 'fcp', 'ttfb'];
+    const shareNetworks = ['email', 'fb', 'tw', 'reddit', 'tumblr', 'pinterest', 'vk', 'linkedin', 'mix', 'whatsapp', 'telegram'];
+    function browserFields(payload) {
+        return {
+            ...(screenSize.test(payload.screen || '') ? { screen: payload.screen } : {}),
+            ...(languageTag.test(payload.language || '') ? { language: payload.language } : {}),
+            ...(identity ? { id: identity.id } : {}),
+        };
+    }
     let audienceGroup = audienceFor(config.audience_group);
     // Each media item keeps the privacy context it was viewed with, for events
     // that wait for Umami to load while a playlist moves on in place.
@@ -35,7 +61,18 @@
         signup_success: 'account', signin_success: 'account', signout_success: 'account', newsletter_optin: 'account',
     };
 
-    window.cinemataAnalyticsBeforeSend = (_type, payload) => {
+    window.cinemataAnalyticsBeforeSend = (type, payload) => {
+        const page = {
+            website: config.website_id,
+            hostname: window.location.hostname,
+            url: config.path,
+            title: config.media_id ? 'Media' : 'Page',
+            ...browserFields(payload),
+        };
+        if (type === 'identify') return identity ? { ...page, data: { audience_group: identity.audience_group } } : false;
+        if (type === 'performance') {
+            return { ...page, ...Object.fromEntries(webVitals.filter((key) => Number.isFinite(payload[key])).map((key) => [key, payload[key]])) };
+        }
         if (payload.name && !eventName.test(payload.name)) return false;
         const privatePath = Object.hasOwn(privateActions, payload.name) ? privateActions[payload.name] : null;
         const mediaId = privatePath ? null : /^media:([0-9a-f-]{36})$/.exec(payload.tag || '')?.[1];
@@ -55,6 +92,9 @@
         if (payload.name === 'outbound_click' && /^[a-z0-9.-]{1,253}$/i.test(payload.data?.destination || '')) {
             data.destination = payload.data.destination;
         }
+        if (payload.name === 'media_share_click' && shareNetworks.includes(payload.data?.network)) {
+            data.network = payload.data.network;
+        }
         if (payload.name === 'media_view' && !privacy.nonpublic &&
             /^[a-z0-9.-]{1,253}$/i.test(payload.data?.source_domain || '')) {
             data.source_domain = payload.data.source_domain;
@@ -69,11 +109,11 @@
         if (playlistId) data.playlist_id = playlistId;
         if (privacy.audienceGroup && !privatePath && data.context !== 'workflow') data.audience_group = privacy.audienceGroup;
         const virtualPath = !config.media_id && /^\/page\/[a-zA-Z0-9_-]{1,64}$/.test(payload.url || '') ? payload.url : null;
-        const interactionPath = mediaId && ['/media/hero', '/media/playlist', '/media/workflow'].includes(payload.url) ? payload.url : null;
+        const isLandingView = !payload.name && !privacy.nonpublic && campaignQuery && payload.url === config.path + campaignQuery;
+        const interactionPath = mediaId &&['/media/hero', '/media/playlist', '/media/workflow'].includes(payload.url) ? payload.url : null;
         return {
-            website: config.website_id,
-            hostname: window.location.hostname,
-            url: privatePath ? `/page/${privatePath}` : interactionPath || virtualPath || config.path,
+            ...page,
+            url: privatePath ? `/page/${privatePath}` : interactionPath || virtualPath || (isLandingView ? payload.url : config.path),
             title: mediaId ? 'Media' : 'Page',
             referrer: privatePath || ['playlist', 'workflow'].includes(data.context) ? '' : privacy.referrer,
             ...(mediaId ? { tag: `${data.context === 'workflow' ? 'workflow' : 'media'}:${mediaId}` } : {}),
@@ -104,7 +144,7 @@
                 ...data,
             },
         };
-        const track = () => emitUmami((props) => ({ ...props, ...event }));
+        const track = () => emitUmami(event);
         if (!window.umami) {
             pending.push(track);
             return;
@@ -331,7 +371,14 @@
             window.removeEventListener('pagehide', snapshot);
         });
 
+        // The player reloads its source for a quality change; its own pause,
+        // seek and resume between these events are not viewer actions.
+        let switchingSource = false;
+        player.on('sourceswitchstart', () => { switchingSource = true; lastSample = null; });
+        player.on('sourceswitchend', () => { switchingSource = false; lastSample = null; });
+
         player.on('play', () => {
+            if (switchingSource) return;
             track('play');
             if (!started) {
                 playInitiation = initiation();
@@ -341,6 +388,7 @@
             }
         });
         player.on('pause', () => {
+            if (switchingSource) return;
             sample(true);
             lastSample = null;
             snapshot();
@@ -355,8 +403,11 @@
             play = null;
             lastSample = null;
         });
-        player.on('timeupdate', () => sample());
-        player.on('seeking', () => { lastSample = null; track('seek'); });
+        player.on('timeupdate', () => { if (!switchingSource) sample(); });
+        player.on('seeking', () => {
+            lastSample = null;
+            if (!switchingSource) track('seek');
+        });
         player.on('waiting', () => { lastSample = null; });
         player.on('stalled', () => { lastSample = null; });
         player.on('playing', () => { lastSample = null; });
@@ -390,7 +441,7 @@
     if (config.media_id) send('media_view', referrer ? { source_domain: new URL(referrer).hostname } : {});
     trackEvents(config.events);
 
-    const firstPageview = currentPageview();
+    const firstPageview = { ...currentPageview(), url: config.path + campaignQuery };
 
     if (config.url && config.website_id) {
         const script = document.createElement('script');
@@ -403,10 +454,19 @@
         script.dataset.excludeHash = 'true';
         script.dataset.domains = window.location.hostname;
         script.dataset.beforeSend = 'cinemataAnalyticsBeforeSend';
+        script.dataset.performance = 'true';
+        if (identity) script.dataset.distinctId = identity.id;
         script.onload = () => {
             if (hasDoNotTrack()) return;
             emitUmami(firstPageview);
             while (pending.length) pending.shift()();
+            // Heatmaps and replays; the recorder waits for the session Umami opens above.
+            const recorder = document.createElement('script');
+            recorder.src = `${config.url}/recorder.js`;
+            recorder.async = true;
+            recorder.dataset.websiteId = config.website_id;
+            recorder.dataset.hostUrl = config.url;
+            document.head.append(recorder);
         };
         document.head.append(script);
     }
@@ -420,13 +480,15 @@
         if (link.getAttribute('href')?.startsWith('#') && !action) return;
         let destination;
         try { destination = new URL(link.href, window.location.href); } catch { return; }
+        const actionData = action?.dataset.analyticsNetwork ? { network: action.dataset.analyticsNetwork } : {};
         if (link.hasAttribute('download')) send('download_click');
-        if (action && !destination.protocol.startsWith('http')) send(action.dataset.analyticsAction);
+        if (action && !destination.protocol.startsWith('http')) send(action.dataset.analyticsAction, actionData);
         if (destination.origin === window.location.origin) {
             const path = destination.pathname;
             const target = path === '/' ? 'home' : /^\/(view|embed|media)(\/|$)/.test(path) ? 'media' : /^\/playlists?\//.test(path) ? 'playlist' : /^\/user\//.test(path) ? 'profile' : path === '/search' ? 'search' : /^\/(latest|featured|recommended|popular|categories|tags|topics|countries|languages|members)(\/|$)/.test(path) ? 'catalogue' : path === '/contact' ? 'contact' : path.startsWith('/p/') ? 'article' : 'other';
-            const name = /^\/accounts\/signup\/?$/.test(path) ? 'signup_click' : /^\/accounts\/login\/?$/.test(path) ? 'signin_click' : action?.dataset.analyticsAction || (config.path === '/' ? target === 'media' ? 'home_media_click' : 'home_section_click' : config.media_id ? target === 'media' ? 'media_related_click' : target === 'profile' ? 'media_author_click' : ['search', 'catalogue'].includes(target) ? 'media_taxonomy_click' : 'navigation_click' : config.path?.startsWith('/user/profile') && target === 'profile' ? 'profile_tab_click' : config.path === '/search' ? 'search_result_click' : config.text_page ? 'article_link_click' : 'navigation_click');
             const placement = link.closest('.feat-first-item') ? 'hero' : link.closest('[data-analytics-placement]')?.dataset.analyticsPlacement;
+            // On the home page only links inside a content section are section clicks; the menus are navigation.
+            const name = /^\/accounts\/signup\/?$/.test(path) ? 'signup_click' : /^\/accounts\/login\/?$/.test(path) ? 'signin_click' : action?.dataset.analyticsAction || (config.path === '/' ? target === 'media' ? 'home_media_click' : placement ? 'home_section_click' : 'navigation_click' : config.media_id ? target === 'media' ? 'media_related_click' : target === 'profile' ? 'media_author_click' : ['search', 'catalogue'].includes(target) ? 'media_taxonomy_click' : 'navigation_click' : config.path?.startsWith('/user/profile') && target === 'profile' ? 'profile_tab_click' : config.path === '/search' ? 'search_result_click' : config.text_page ? 'article_link_click' : 'navigation_click');
             if (!link.hasAttribute('download')) send(name, { target, placement, ...(name === 'search_result_click' ? { result_type: target } : {}) });
             try {
                 sessionStorage.setItem('cinemata-media-intent', JSON.stringify({
@@ -435,7 +497,7 @@
             } catch { /* Storage may be unavailable. */ }
         }
         if (destination.protocol.startsWith('http') && destination.hostname !== window.location.hostname) {
-            if (action) send(action.dataset.analyticsAction);
+            if (action) send(action.dataset.analyticsAction, actionData);
             send('outbound_click', { destination: destination.hostname });
         }
     });

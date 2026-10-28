@@ -475,6 +475,10 @@
           "contains": "\"signup_success\""
         },
         {
+          "path": "users/adapter.py",
+          "contains": "\"signout_success\""
+        },
+        {
           "path": "frontend/src/features/profile/components/sections/ContactSection.jsx",
           "contains": "contact_user_accepted"
         },

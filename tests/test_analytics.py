@@ -83,7 +83,7 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
             self.assertEqual(action_events(request, "media_update"), [])
 
     def test_authentication_signal_counts_only_completed_eligible_authentication(self):
-        from allauth.account.signals import user_logged_in, user_logged_out, user_signed_up
+        from allauth.account.signals import user_logged_in, user_signed_up
 
         request = RequestFactory().post("/accounts/signup", {"email": "private@example.org", "subscribe": "on"})
         request.user = AnonymousUser()
@@ -91,15 +91,14 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
         user = SimpleNamespace(is_anonymous=False)
         user_signed_up.send(sender=type(user), request=request, user=user)
         user_logged_in.send(sender=type(user), request=request, user=user)
-        user_logged_out.send(sender=type(user), request=request, user=user)
         self.assertEqual(
             [event["name"] for event in request.session["analytics_events"]],
-            ["signup_success", "newsletter_optin", "signin_success", "signout_success"],
+            ["signup_success", "newsletter_optin", "signin_success"],
         )
         self.assertNotIn("private@example.org", json.dumps(request.session))
         request.session.clear()
         user.is_staff = True
-        user_logged_out.send(sender=type(user), request=request, user=user)
+        user_logged_in.send(sender=type(user), request=request, user=user)
         self.assertEqual(request.session, {})
 
     def test_access_checked_workflow_uses_generic_path_without_public_role_grant(self):
@@ -113,6 +112,33 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
         self.assertNotIn("segment_grant", config)
         self.assertNotIn("audience_group", config)
         self.assertNotIn("private-token", json.dumps(config))
+
+    def test_signed_in_visitor_is_identified_on_every_tracked_page(self):
+        member = SimpleNamespace(is_anonymous=False, is_authenticated=True, username="maker", advancedUser=True)
+        media = {
+            "id": str(uuid.uuid4()),
+            "type": "image",
+            "context": "page",
+            "revision": str(uuid.uuid4()),
+            "instance": None,
+        }
+        for setup in (
+            lambda request: setattr(request, "analytics_workflow", "media_edit"),
+            lambda request: setattr(request, "analytics_media", {**media, "state": "private"}),
+            lambda request: setattr(request, "analytics_media", {**media, "state": "public"}),
+            lambda request: None,
+        ):
+            request = RequestFactory().get("/")
+            request.resolver_match = SimpleNamespace(url_name="home")
+            request.user = member
+            setup(request)
+            identity = analytics_context(request)["ANALYTICS"]["identity"]
+            self.assertEqual(identity, {"id": "maker", "audience_group": "trusted"})
+
+        request = RequestFactory().get("/")
+        request.resolver_match = SimpleNamespace(url_name="home")
+        request.user = AnonymousUser()
+        self.assertNotIn("identity", analytics_context(request)["ANALYTICS"])
 
     def test_public_profile_sections_remain_distinct_without_username(self):
         request = RequestFactory().get("/user/somebody/about")
@@ -136,7 +162,21 @@ class AnalyticsTemplateTests(TestCase):
         self.assertEqual(config["path"], "/page/media_edit")
         self.assertNotIn(media.friendly_token, json.dumps(config))
         self.assertNotIn("segment_grant", config)
-        self.assertContains(response, '<meta name="referrer" content="no-referrer">')
+        # no-referrer makes browsers send Origin: null on form POSTs, which the CSRF origin check rejects.
+        self.assertContains(response, '<meta name="referrer" content="same-origin">')
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_signout_event_reaches_the_page_after_logout(self):
+        self.client.force_login(create_test_user())
+        response = self.client.post("/accounts/logout/", follow=True)
+        self.assertEqual(
+            [event["name"] for event in response.context["ANALYTICS"]["events"]],
+            ["signout_success"],
+        )
+        self.assertEqual(self.client.get("/").context["ANALYTICS"]["events"], [])
+        self.client.force_login(create_test_user(is_staff=True))
+        response = self.client.post("/accounts/logout/", follow=True)
+        self.assertEqual(response.context["ANALYTICS"]["events"], [])
 
     @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
     def test_article_aliases_share_a_canonical_analytics_path(self):

@@ -2622,11 +2622,18 @@ function generatePlugin(/*videojs*/) {
 					this.hadStartedOnResolutionChange = false;
 				}
 
+				const endSourceSwitch = () => this.player.trigger('sourceswitchend');
 				if (this.wasPlayingOnResolutionChange) {
-					this.player.play();
+					const resumed = this.player.play();
 					this.wasPlayingOnResolutionChange = false;
+					if (resumed && typeof resumed.then === 'function') {
+						resumed.then(endSourceSwitch, endSourceSwitch);
+					} else {
+						this.player.one('playing', endSourceSwitch);
+					}
 				} else {
 					this.player.pause();
+					endSourceSwitch();
 				}
 
 				this.isChangingResolution = false;
@@ -2765,6 +2772,8 @@ function generatePlugin(/*videojs*/) {
 
 		changeVideoResolution() {
 			this.isChangingResolution = true;
+			// Listeners such as analytics ignore the pause, seek and resume this reload causes.
+			this.player.trigger('sourceswitchstart');
 
 			const sources = [];
 			const currentTime = this.player.currentTime();
@@ -3246,15 +3255,19 @@ function generatePlugin(/*videojs*/) {
 		 */
 		onPublicStateUpdate() {
 			if (this.stateUpdateCallback) {
-				this.stateUpdateCallback({
-					volume: this.state.volume,
-					theaterMode: this.state.theaterMode,
-					soundMuted: this.state.soundMuted,
-					quality: this.state.theSelectedQuality,
-					playbackSpeed: this.state.theSelectedPlaybackSpeed,
-					subtitle: this.state.theSelectedSubtitleOption,
-				});
+				this.stateUpdateCallback(this.publicState());
 			}
+		}
+
+		publicState() {
+			return {
+				volume: this.state.volume,
+				theaterMode: this.state.theaterMode,
+				soundMuted: this.state.soundMuted,
+				quality: this.state.theSelectedQuality,
+				playbackSpeed: this.state.theSelectedPlaybackSpeed,
+				subtitle: this.state.theSelectedSubtitleOption,
+			};
 		}
 
 		onWindowResize() {

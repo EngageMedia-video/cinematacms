@@ -15,9 +15,7 @@ afterEach(() => {
 });
 
 function loadTracker(overrides = {}, clearCalls = true) {
-	document.head
-		.querySelectorAll('script[data-before-send="cinemataAnalyticsBeforeSend"]')
-		.forEach((script) => script.remove());
+	document.head.querySelectorAll('script[data-website-id]').forEach((script) => script.remove());
 	for (const target of [document, window]) {
 		const add = target.addEventListener.bind(target);
 		vi.spyOn(target, 'addEventListener').mockImplementation((name, callback, options) => {
@@ -85,8 +83,8 @@ describe('Cinemata Umami privacy boundary', () => {
 		});
 		window.CinemataAnalytics.pageview('future_feature');
 		expect(track).toHaveBeenCalledTimes(2);
-		expect(track.mock.calls.map(([payload]) => payload.name)).toEqual([undefined, 'page_view']);
-		expect(window.cinemataAnalyticsBeforeSend('event', track.mock.lastCall[0])).toMatchObject({
+		expect(track.mock.calls.map(([build]) => build({}).name)).toEqual([undefined, 'page_view']);
+		expect(window.cinemataAnalyticsBeforeSend('event', track.mock.lastCall[0]({}))).toMatchObject({
 			url: '/page/future_feature',
 			data: { audience_group: 'trusted' },
 		});
@@ -304,13 +302,40 @@ describe('Cinemata Umami privacy boundary', () => {
 		expect(JSON.stringify(payload)).not.toContain('/secret/film');
 	});
 
+	it.each([
+		[false, '/media/view?utm_source=newsletter&utm_medium=email&utm_campaign=spring+2026'],
+		[true, '/media/view'],
+	])('passes only valid campaign parameters on the landing view (nonpublic: %s)', (nonpublic, url) => {
+		window.history.replaceState(
+			null,
+			'',
+			'/view?m=friendly&utm_source=newsletter&utm_medium=email&utm_campaign=spring%202026&utm_term=%3Cx%3E&token=private'
+		);
+		try {
+			const track = loadTracker({ nonpublic }, false);
+			document.querySelector('script[data-website-id="site-id"]').onload();
+			const views = track.mock.calls
+				.map(([build]) =>
+					window.cinemataAnalyticsBeforeSend('pageview', typeof build === 'function' ? build({}) : build)
+				)
+				.filter((payload) => !payload.name);
+			expect(views.map((payload) => payload.url)).toEqual([url]);
+			expect(window.cinemataAnalyticsBeforeSend('event', { name: 'like', url }).url).toBe('/media/view');
+			expect(window.cinemataAnalyticsBeforeSend('pageview', { url: '/media/view?utm_source=forged' }).url).toBe(
+				'/media/view'
+			);
+		} finally {
+			window.history.replaceState(null, '', '/');
+		}
+	});
+
 	it('counts an explicitly approved SPA page without sending its browser URL', () => {
 		const track = loadTracker({ media_id: null, path: '/future' });
 		window.CinemataAnalytics.pageview('future_feature');
 		window.CinemataAnalytics.pageview('private/token');
 
 		expect(track).toHaveBeenCalledTimes(1);
-		expect(window.cinemataAnalyticsBeforeSend('pageview', track.mock.lastCall[0])).toMatchObject({
+		expect(window.cinemataAnalyticsBeforeSend('pageview', track.mock.lastCall[0]({}))).toMatchObject({
 			url: '/page/future_feature',
 			title: 'Page',
 			referrer: '',
@@ -353,7 +378,7 @@ describe('Cinemata Umami privacy boundary', () => {
 		window.umami = { track };
 		document.querySelector('script[data-website-id="site-id"]').onload();
 		expect(track).toHaveBeenCalledTimes(2);
-		expect(window.cinemataAnalyticsBeforeSend('event', track.mock.calls[0][0]).data).toEqual({
+		expect(window.cinemataAnalyticsBeforeSend('event', track.mock.calls[0][0]({})).data).toEqual({
 			audience_group: 'regular',
 		});
 		expect(window.cinemataAnalyticsBeforeSend('event', track.mock.calls[1][0]({}))).toMatchObject({
@@ -585,5 +610,167 @@ describe('Cinemata Umami privacy boundary', () => {
 		expect(body.play_id).toBe('12345678-1234-4234-8234-123456789abd');
 		now.mockRestore();
 		wallClock.mockRestore();
+	});
+});
+
+describe('Umami session, device and page-speed reports', () => {
+	const identity = { id: 'maker', audience_group: 'trusted' };
+	const browserFields = { screen: '1440x900', language: 'en-US', id: 'maker' };
+	const tracker = () => document.querySelector('script[data-before-send="cinemataAnalyticsBeforeSend"]');
+
+	it('identifies a signed-in visitor with the username on every payload type', () => {
+		const track = loadTracker({ identity });
+		expect(tracker().dataset.distinctId).toBe('maker');
+		window.CinemataAnalytics.track('like');
+		window.CinemataAnalytics.pageview('later_route');
+		for (const [build] of track.mock.calls) {
+			expect(build).toBeTypeOf('function');
+			expect(window.cinemataAnalyticsBeforeSend('event', build(browserFields)).id).toBe('maker');
+		}
+		expect(
+			window.cinemataAnalyticsBeforeSend('identify', {
+				...browserFields,
+				website: 'site-id',
+				url: 'https://cinemata.example/edit?m=private-token',
+				title: 'Private film',
+			})
+		).toEqual({
+			website: 'site-id',
+			hostname: window.location.hostname,
+			url: '/media/view',
+			title: 'Media',
+			screen: '1440x900',
+			language: 'en-US',
+			id: 'maker',
+			data: { audience_group: 'trusted' },
+		});
+	});
+
+	it('sends no distinct ID for an anonymous visitor, even a forged one', () => {
+		loadTracker({ nonpublic: false, audience_group: 'anonymous' });
+		expect(tracker().dataset.distinctId).toBeUndefined();
+		expect(window.cinemataAnalyticsBeforeSend('event', { name: 'like', id: 'forged' })).not.toHaveProperty('id');
+		expect(window.cinemataAnalyticsBeforeSend('identify', { id: 'forged' })).toBe(false);
+	});
+
+	it('keeps a well-formed screen size and browser language and drops anything else', () => {
+		loadTracker();
+		expect(window.cinemataAnalyticsBeforeSend('event', { screen: '390x844', language: 'pt-BR' })).toMatchObject({
+			screen: '390x844',
+			language: 'pt-BR',
+		});
+		const forged = window.cinemataAnalyticsBeforeSend('event', {
+			screen: '1440x900<script>',
+			language: 'en-US; private-token',
+		});
+		expect(forged).not.toHaveProperty('screen');
+		expect(forged).not.toHaveProperty('language');
+	});
+
+	it('reports Web Vitals on the generic page path without the page title or URL', () => {
+		loadTracker();
+		expect(tracker().dataset.performance).toBe('true');
+		expect(
+			window.cinemataAnalyticsBeforeSend('performance', {
+				website: 'site-id',
+				url: 'https://cinemata.example/view?m=private-token',
+				title: 'Private film',
+				lcp: 1200.5,
+				inp: 40,
+				cls: 0.01,
+				fcp: 800,
+				ttfb: Number.NaN,
+				duration: 5000,
+				name: 'like',
+				data: { user_id: 'private' },
+			})
+		).toEqual({
+			website: 'site-id',
+			hostname: window.location.hostname,
+			url: '/media/view',
+			title: 'Media',
+			lcp: 1200.5,
+			inp: 40,
+			cls: 0.01,
+			fcp: 800,
+		});
+	});
+
+	it('loads the heatmap and replay recorder after the tracker', () => {
+		loadTracker();
+		tracker().onload();
+		const recorder = document.querySelector('script[src="https://analytics.example.org/recorder.js"]');
+		expect(recorder.dataset.websiteId).toBe('site-id');
+		expect(recorder.dataset.hostUrl).toBe('https://analytics.example.org');
+	});
+
+	it('does not load the recorder under Do Not Track', () => {
+		Object.defineProperty(navigator, 'doNotTrack', { configurable: true, value: '1' });
+		try {
+			loadTracker();
+			tracker().onload();
+			expect(document.querySelector('script[src="https://analytics.example.org/recorder.js"]')).toBeNull();
+		} finally {
+			delete navigator.doNotTrack;
+		}
+	});
+
+	it.each([
+		['https://www.facebook.com/sharer.php?u=x', 'fb', 'fb'],
+		['mailto:?body=x', 'email', 'email'],
+		['https://www.facebook.com/sharer.php?u=x', 'myspace', undefined],
+	])('records which share network %s was chosen', (href, network, recorded) => {
+		const track = loadTracker({ nonpublic: false });
+		const link = document.createElement('a');
+		link.href = href;
+		link.dataset.analyticsAction = 'media_share_click';
+		link.dataset.analyticsNetwork = network;
+		link.addEventListener('click', (event) => event.preventDefault());
+		document.body.append(link);
+		link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+		const share = track.mock.calls
+			.map(([build]) => window.cinemataAnalyticsBeforeSend('event', build({})))
+			.find((payload) => payload.name === 'media_share_click');
+		expect(share.data.network).toBe(recorded);
+	});
+
+	it.each([
+		['featured', 'home_section_click'],
+		[null, 'navigation_click'],
+	])('counts a home link in placement %s as %s', (placement, name) => {
+		const track = loadTracker({ path: '/', media_id: null, nonpublic: false });
+		const container = document.createElement('div');
+		if (placement) container.dataset.analyticsPlacement = placement;
+		container.innerHTML = '<a href="/latest">Latest</a>';
+		document.body.append(container);
+		container.firstChild.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		expect(window.cinemataAnalyticsBeforeSend('event', track.mock.lastCall[0]({})).name).toBe(name);
+	});
+
+	it('does not count the player reloading its source for a quality change as viewer actions', () => {
+		const track = loadTracker();
+		const listeners = {};
+		let currentTime = 30;
+		const player = {
+			on: (event, callback) => {
+				listeners[event] = callback;
+			},
+			muted: () => false,
+			isFullscreen: () => false,
+			duration: () => 100,
+			currentTime: () => currentTime,
+			ended: () => false,
+		};
+		window.CinemataAnalytics.attachPlayer(player);
+		listeners.play();
+		track.mockClear();
+		listeners.sourceswitchstart();
+		listeners.pause();
+		listeners.seeking();
+		listeners.play();
+		listeners.sourceswitchend();
+		expect(track).not.toHaveBeenCalled();
+		listeners.pause();
+		expect(track.mock.calls.map(([build]) => build({}).name)).toEqual(['pause']);
 	});
 });

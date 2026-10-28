@@ -13,9 +13,17 @@ through hourly cleanup; action rows and counters remain. See the
 [media activity IP operations guide](../security/media-action-ip-privacy.md)
 for key setup, historical cleanup, cutover limits, and retention monitoring.
 
-Eligible public pages, accessible media pages and embeds, and authorized owner workflows load the tracker. Owner workflows use generic paths and no referrer or public role grant. Django staff, editors, managers, superusers, signed-in users who disable activity logging, and denied media pages do not. Curators are eligible viewers. The playback endpoint also rejects snapshots from opted-out users. Accessible public, unlisted, restricted, and private media are eligible. Audience media events carry the `media:<Media.uid>` tag plus an opaque media UUID, media type, page/embed/hero/playlist context, and content revision. Creator edit events use `workflow:<Media.uid>` and `/media/workflow` so they do not enter audience engagement queries. Playlist pages use `playlist:<Playlist.uid>` and a generic path. Nonpublic media sends a generic path and title and no referrer. Public activity sends only the referring domain. Search strings, hashes, friendly tokens, titles, user IDs, access tokens, and raw progress ticks stay out of Umami. The browser honors Do Not Track. The collector route `/api/send` must have proxy access logs disabled.
+Eligible public pages, accessible media pages and embeds, and authorized owner workflows load the tracker. Owner workflows use generic paths and no referrer or public role grant. Django staff, editors, managers, superusers, signed-in users who disable activity logging, and denied media pages do not. Curators are eligible viewers. The playback endpoint also rejects snapshots from opted-out users. Accessible public, unlisted, restricted, and private media are eligible. Audience media events carry the `media:<Media.uid>` tag plus an opaque media UUID, media type, page/embed/hero/playlist context, and content revision. Creator edit events use `workflow:<Media.uid>` and `/media/workflow` so they do not enter audience engagement queries. Playlist pages use `playlist:<Playlist.uid>` and a generic path. Nonpublic media sends a generic path and title and no referrer. Public activity sends only the referring domain. Tracked pages set `<meta name="referrer">` to `origin` on public pages and `same-origin` on nonpublic ones. Django's CSRF check needs the same-origin `Origin` header that `no-referrer` would replace with `null`. The landing view of a public page keeps `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, and `utm_term` for Umami's UTM and Attribution reports. A value outside letters, digits, spaces, and `_.~+-`, or longer than 100 characters, is dropped. Other query parameters, click identifiers, and campaign values on nonpublic pages and events are not sent. Other search strings, hashes, friendly tokens, titles, access tokens, and raw progress ticks stay out of Umami. The browser honors Do Not Track. The collector route `/api/send` must have proxy access logs disabled.
 
-`media_view` counts eligible media page and embed loads. It does not count thumbnail impressions or hero playback. Playback starts and end events are separate counts. An end event includes seeking to the end; it is not evidence that a viewer watched the whole film. The player sends play, pause, finish, 25/50/75% unique-content-coverage milestones once per play, seek, mute/unmute, quality/subtitle/speed changes, fullscreen/theater changes, next/previous, and bounded error categories. Starts after a player action or on-site navigation are `deliberate`; autoplay and unknown starts remain separate. Confirmed likes, unlikes, playlist changes, copy actions, and comment submissions produce events. Download events represent click intent. Outbound links send the destination domain only.
+A signed-in visitor is identified in Umami by username on every tracked page, including nonpublic media and owner workflows. Umami hashes this distinct ID into the session ID, so a page without it would start a new session. The `identify` call stores the visitor's `audience_group` as session data; anonymous visitors send no distinct ID. Every payload also carries the screen size and browser language, so Umami's Devices and Languages reports work. The tracker enables Umami's web-vitals report, which sends LCP, INP, CLS, FCP, and TTFB once per page load. After Umami loads, the tracker also loads Umami's `recorder.js` for session replays and heatmaps on every tracked page. Sampling, masking level, and maximum replay length come from the website's recorder settings in Umami. Do Not Track blocks both scripts. The page Content Security Policy allows `script.js` and `recorder.js` from `ANALYTICS_URL`.
+
+The collector proxy must also:
+
+- disable access logs on `/api/record`, the recorder upload route, and cap its request body at 1 MB;
+- restore the visitor IP from Cloudflare's `CF-Connecting-IP` header, as `deploy/cloudflare_real_ip.conf` does, and blank the CDN location headers, so Umami derives country, region, and city from its GeoLite2 City database;
+- set `GEOLITE_DB_PATH` for Umami and refresh that database on a schedule.
+
+`media_view` counts eligible media page and embed loads. It does not count thumbnail impressions or hero playback. Playback starts and end events are separate counts. An end event includes seeking to the end; it is not evidence that a viewer watched the whole film. The player sends play, pause, finish, 25/50/75% unique-content-coverage milestones once per play, seek, mute/unmute, quality/subtitle/speed changes, fullscreen/theater changes, next/previous, and bounded error categories. Starts after a player action or on-site navigation are `deliberate`; autoplay and unknown starts remain separate. Confirmed likes, unlikes, playlist changes, copy actions, and comment submissions produce events. `media_share_click` carries a `network` property from a fixed list of share targets. Download events represent click intent. A quality change reloads the video source; the player ignores the pause, play, and seek it causes. On the home page, a media link is `home_media_click`, another link inside a home section is `home_section_click`, and any other link is `navigation_click`. Outbound links send the destination domain only.
 
 The legacy home hero receives a signed, media-scoped measurement grant from the access-checked media detail API. Its playback contributes watch time without generating a media page-view event.
 
@@ -82,9 +90,9 @@ Property totals count events, not people or visits. Select `page_view` for
 public page loads, `media_view` for public media loads, or a specific action and
 date range. The named `page_view` is a custom event for audience comparisons;
 it does not add another native page view to Umami's Views total. Do not treat
-the sum of views and actions as an audience size. These event properties do not
-provide a role filter for every
-Umami report; no session property or `identify()` call is added. Umami supplies
+the sum of views and actions as an audience size. Signed-in visitors also carry `audience_group` as
+Umami session data, which Segments and Cohorts can filter on; anonymous
+sessions have no session data. Umami supplies
 its own reporting controls, while the CMS has no duplicate audience table.
 See [Umami's Event data guide](https://docs.umami.is/docs/event-data).
 
@@ -121,9 +129,9 @@ have no visitor key and are not migrated to Umami. CMS playback measurements
 and the existing media counter continue independently.
 
 The role breakdown covers public page and named-event counts in Event data.
-No session role property is sent, so the ordinary Visits, estimated visitors,
-country, browser, OS, device, and Journey reports do not gain a global role
-filter. Historical CMS daily counts have no session key.
+The `audience_group` session data of signed-in visitors filters session
+reports; the anonymous group is the sessions without it. Historical CMS daily
+counts have no session key.
 
 Every existing `Page` with its own public URL gets foreground-time milestones at 15, 30, 60, 120, and 300 seconds. The timer pauses when the tab is hidden or loses focus. Each threshold fires once per page load as `text_read_<seconds>s` in Umami. These events show how many page loads reached each threshold. They do not prove that the visitor read the text, and a page containing several articles cannot identify which article was read.
 
