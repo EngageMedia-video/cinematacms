@@ -41,6 +41,7 @@ vi.mock('../../-NEW-/VideoPlayer.js', async () => {
 		VideoPlayerError: () => null,
 		VideoPlayer: function VideoPlayer(props) {
 			const wrapper = useRef(null);
+			fakePlayer.props = props;
 			useEffect(() => {
 				const events = new EventEmitter();
 				const el = document.createElement('div');
@@ -177,5 +178,20 @@ describe('VideoViewer at the end of a playlist item', () => {
 
 		expect(MediaPageActions.switchMedia).not.toHaveBeenCalled();
 		expect(navigations).toEqual(['/view?m=b&pl=pl1']);
+	});
+
+	it('offers the previous and next playlist items in the player controls', () => {
+		MediaPageStore.values['playlist-previous-media'] = { friendly_token: 'z', url: '/view?m=z' };
+		const containerRef = { current: document.body.appendChild(document.createElement('div')) };
+		renderViewer(containerRef);
+
+		expect(fakePlayer.props.hasPreviousLink).toBe(true);
+		expect(fakePlayer.props.hasNextLink).toBe(true);
+
+		fakePlayer.props.onClickPreviousCallback();
+		fakePlayer.props.onClickNextCallback();
+
+		expect(navigations).toEqual(['/view?m=z&pl=pl1', '/view?m=b&pl=pl1']);
+		delete MediaPageStore.values['playlist-previous-media'];
 	});
 });
