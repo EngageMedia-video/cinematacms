@@ -1,0 +1,50 @@
+{
+  "source": "mattpocock/skills",
+  "ref": "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d",
+  "skills": {
+    "grilling": {
+      "path": "skills/productivity/grilling",
+      "upstreamFiles": {
+        "SKILL.md": "10ff989e7498b23b5acb49d5048f11dcd906757d2f79c5cdf8a00001381296f2",
+        "agents/openai.yaml": "1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b"
+      },
+      "files": {
+        "SKILL.md": "548dc571f8859540e3a9a43d118033b56dacbeffd5331d3e9c590a7233cdf486",
+        "agents/openai.yaml": "ff672c0540e44f5ce4b906877fbfc3bf19f8bb621131517b56b9a32704630a01"
+      }
+    },
+    "implement-spec": {
+      "path": "skills/engineering/implement-spec",
+      "upstreamFiles": {
+        "SKILL.md": "7a22dd2e60b8fcece478ced9d2533582adf3520d695acd3ab715341535c9e56d",
+        "agents/openai.yaml": "fd41efb42c60c96320d6531be7e4bf15cbf5518cd652d57dff27ccffa46988e9"
+      },
+      "files": {
+        "SKILL.md": "10f66f31acb787e1a4865b27dabd353c087ddcfa3c225f2026da132dac4e3859",
+        "agents/openai.yaml": "3ebbe78ae1e94770820b25e2ca6145518c19f495e53b5cd4dd95d598c57fcec3"
+      }
+    },
+    "to-spec": {
+      "path": "skills/engineering/to-spec",
+      "upstreamFiles": {
+        "SKILL.md": "43ad9cf318e5e7d3d1fa360253a37021796dc87a0c2e595ad262661a10f85088",
+        "agents/openai.yaml": "1c5b4d1e3d8e52287ef19cc2742fdbbfae1914ac75d33af3e4c8174f08cc55bb"
+      },
+      "files": {
+        "SKILL.md": "5ad1c2fc6f1fe839b09736d698c54c6599de301602a0f98f0279d1bf6af87b92",
+        "agents/openai.yaml": "b76c37cd94ec21611755b2eab70d668b94b0afe92878704c8dbdc6e2d68f3dad"
+      }
+    },
+    "to-tickets": {
+      "path": "skills/engineering/to-tickets",
+      "upstreamFiles": {
+        "SKILL.md": "5c9fba69845c2519b9b35b9af42ae5142c21f8ca15ac2123dc2722002c8058ae",
+        "agents/openai.yaml": "21bc6215fffcd7614e9f772bb1760e87cc5fc7dcc707e7d282bc9414267a6090"
+      },
+      "files": {
+        "SKILL.md": "859464d569eedfa83d7e6a676a4ee97532512e82ee21319fce98e0cc18b53aa1",
+        "agents/openai.yaml": "90148a872ebc77c5c278d492dc54177a2c899f84d1fd3c1db144953237624f65"
+      }
+    }
+  }
+}
