@@ -3,11 +3,12 @@ import csv
 import json
 import logging
 import os
+import re
 import shutil
 from copy import deepcopy
 from datetime import datetime, timedelta
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 import waffle
 from csp.decorators import csp_replace
@@ -149,6 +150,7 @@ VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 logger = logging.getLogger(__name__)
 
 HOME_INITIAL_LIMIT = 20
+FEATURED_PLAYLIST_API_PATH = re.compile(r"/api/v1/playlists/([\w-]+)/?")
 HOME_INITIAL_MEDIA_FIELDS = (
     "friendly_token",
     "url",
@@ -234,9 +236,18 @@ def _slim_home_media_results(items):
     return [_slim_home_media_item(item) for item in items]
 
 
+def _featured_playlist_token(row):
+    match = FEATURED_PLAYLIST_API_PATH.fullmatch(urlsplit(row.api_url).path)
+    return match.group(1) if match else None
+
+
 def _get_index_featured_payload(request):
-    index_featured = IndexPageFeatured.objects.filter(active=True).order_by("ordering")
-    return list(IndexPageFeaturedSerializer(index_featured, many=True, context={"request": request}).data)
+    # api_url is free text, so deleting a playlist leaves its row pointing at a 400.
+    rows = list(IndexPageFeatured.objects.filter(active=True).order_by("ordering"))
+    tokens = {token for row in rows if (token := _featured_playlist_token(row))}
+    existing = set(Playlist.objects.filter(friendly_token__in=tokens).values_list("friendly_token", flat=True))
+    shown = [row for row in rows if _featured_playlist_token(row) in existing | {None}]
+    return list(IndexPageFeaturedSerializer(shown, many=True, context={"request": request}).data)
 
 
 def _attach_hero_playback_to_first_featured_item(items, request=None):

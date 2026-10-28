@@ -13,7 +13,7 @@ from django.core.cache import cache
 from django.test import TestCase
 from django.utils import timezone
 
-from files.models import EncodeProfile, Encoding, IndexPageFeatured, Media
+from files.models import EncodeProfile, Encoding, IndexPageFeatured, Media, Playlist
 from files.query_cache import get_cached_result, get_media_list_cache_key
 from files.tests.helpers import (
     create_test_media,
@@ -70,6 +70,8 @@ class IndexRevampInitialDataTest(TestCase):
         self.assertContains(response, 'id="home-initial-data-featured"')
 
     def test_index_featured_script_tag_contains_ordered_playlist_configuration(self):
+        Playlist.objects.create(user=self.user, title="Second", friendly_token="second")
+        Playlist.objects.create(user=self.user, title="First", friendly_token="first")
         IndexPageFeatured.objects.create(
             title="Second playlist",
             api_url="/api/v1/playlists/second",
@@ -89,6 +91,19 @@ class IndexRevampInitialDataTest(TestCase):
         self.assertIsNotNone(parsed, "home-initial-data-index-featured script tag not found")
         self.assertEqual([item["title"] for item in parsed], ["First playlist", "Second playlist"])
         self.assertEqual(parsed[0]["api_url"], "http://localhost/api/v1/playlists/first")
+
+    def test_index_featured_omits_rows_whose_playlist_was_deleted(self):
+        Playlist.objects.create(user=self.user, title="Kept", friendly_token="kept")
+        IndexPageFeatured.objects.create(title="Kept row", api_url="/api/v1/playlists/kept", url="/view?pl=kept")
+        IndexPageFeatured.objects.create(title="Gone row", api_url="/api/v1/playlists/gone", url="/view?pl=gone")
+        IndexPageFeatured.objects.create(title="Other listing", api_url="/api/v1/media?show=featured", url="/featured")
+
+        response = self._get_revamp_response()
+        parsed = extract_json_script_payload(response.content.decode(), "home-initial-data-index-featured")
+        listed = self.client.get("/api/v1/indexfeatured", SERVER_NAME="localhost").json()
+
+        self.assertEqual([item["title"] for item in parsed], ["Kept row", "Other listing"])
+        self.assertEqual([item["title"] for item in listed], ["Kept row", "Other listing"])
 
     def test_index_featured_failure_keeps_media_payloads_and_leaves_playlists_unseeded(self):
         with (
