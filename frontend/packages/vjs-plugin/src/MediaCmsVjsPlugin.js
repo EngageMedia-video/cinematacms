@@ -2622,19 +2622,20 @@ function generatePlugin(/*videojs*/) {
 					this.hadStartedOnResolutionChange = false;
 				}
 
-				const endSourceSwitch = () => this.player.trigger('sourceswitchend');
+				let resumed = Promise.resolve();
 				if (this.wasPlayingOnResolutionChange) {
-					const resumed = this.player.play();
+					const played = this.player.play();
 					this.wasPlayingOnResolutionChange = false;
-					if (resumed && typeof resumed.then === 'function') {
-						resumed.then(endSourceSwitch, endSourceSwitch);
-					} else {
-						this.player.one('playing', endSourceSwitch);
-					}
+					resumed =
+						played && typeof played.then === 'function'
+							? played.catch(() => {})
+							: new Promise((resolve) => this.player.one('playing', resolve));
 				} else {
 					this.player.pause();
-					endSourceSwitch();
 				}
+				Promise.all([resumed, this.sourceSwitchPositionRestored]).then(() =>
+					this.player.trigger('sourceswitchend')
+				);
 
 				this.isChangingResolution = false;
 
@@ -2800,6 +2801,8 @@ function generatePlugin(/*videojs*/) {
 
 			this.player.src(sources); // @note: Load all sources (with provided order).
 			this.player.techCall_('reset');
+			// video.js applies this position on the new source's `canplay`, possibly after playback resumes.
+			this.sourceSwitchPositionRestored = new Promise((resolve) => this.player.one('seeked', resolve));
 			this.player.currentTime(currentTime);
 			this.player.duration(duration);
 			this.player.playbackRate(this.state.theSelectedPlaybackSpeed);

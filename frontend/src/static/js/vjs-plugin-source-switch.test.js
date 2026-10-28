@@ -6,6 +6,8 @@ vi.stubGlobal('videojs', videojs);
 
 const { MediaCmsVjsPlugin } = await import('../../../packages/vjs-plugin/src/MediaCmsVjsPlugin.js');
 
+const settle = () => new Promise((resolve) => setTimeout(resolve));
+
 function changingPlugin({ playing, play }) {
 	const events = [];
 	const handlers = {};
@@ -40,34 +42,46 @@ function changingPlugin({ playing, play }) {
 		player_: player,
 	});
 	plugin.changeVideoResolution();
-	return { plugin, events, handlers };
+	// video.js restores the saved position on `canplay`, which can come after the resume.
+	const restorePosition = async () => {
+		events.push('seeked');
+		handlers.seeked();
+		await settle();
+	};
+	return { plugin, events, handlers, restorePosition };
 }
 
 describe('quality change source reload', () => {
-	it('ends the source switch only after a playing video has resumed', async () => {
+	it('ends the source switch only after a playing video has resumed at its restored position', async () => {
 		let resume;
-		const { plugin, events } = changingPlugin({
+		const { plugin, events, restorePosition } = changingPlugin({
 			playing: true,
 			play: new Promise((resolve) => (resume = resolve)),
 		});
 		plugin.onVideoDataLoad();
-		expect(events).toEqual(['sourceswitchstart', 'play()']);
 		resume();
-		await Promise.resolve();
-		expect(events).toEqual(['sourceswitchstart', 'play()', 'sourceswitchend']);
-	});
-
-	it('ends the source switch when a paused video has reloaded', () => {
-		const { plugin, events } = changingPlugin({ playing: false });
-		plugin.onVideoDataLoad();
-		expect(events).toEqual(['sourceswitchstart', 'pause()', 'sourceswitchend']);
-	});
-
-	it('ends the source switch on playing when the player returns no play promise', () => {
-		const { plugin, events, handlers } = changingPlugin({ playing: true, play: undefined });
-		plugin.onVideoDataLoad();
+		await settle();
 		expect(events).toEqual(['sourceswitchstart', 'play()']);
+		await restorePosition();
+		expect(events).toEqual(['sourceswitchstart', 'play()', 'seeked', 'sourceswitchend']);
+	});
+
+	it('ends the source switch after a paused video has reloaded at its restored position', async () => {
+		const { plugin, events, restorePosition } = changingPlugin({ playing: false });
+		plugin.onVideoDataLoad();
+		await settle();
+		expect(events).toEqual(['sourceswitchstart', 'pause()']);
+		await restorePosition();
+		expect(events).toEqual(['sourceswitchstart', 'pause()', 'seeked', 'sourceswitchend']);
+	});
+
+	it('ends the source switch on playing when the player returns no play promise', async () => {
+		const { plugin, events, handlers, restorePosition } = changingPlugin({ playing: true, play: undefined });
+		plugin.onVideoDataLoad();
+		await restorePosition();
+		expect(events).not.toContain('sourceswitchend');
 		handlers.playing();
+		await settle();
 		expect(events.at(-1)).toBe('sourceswitchend');
 	});
 });
