@@ -138,7 +138,8 @@ class BulkDraftReviewExclusionTests(TestCase):
 class AutoDraftUploadTests(TestCase):
     """The bulk flow sends is_draft=1, so each uploaded file is created as a
     private draft (kept out of the admin review queue) until the user submits.
-    The single-upload flow does not send the param and is unaffected.
+    The single-upload flow does not send the param, so it is not a draft, but it
+    also starts private until its details are saved.
     """
 
     def setUp(self):
@@ -176,6 +177,80 @@ class AutoDraftUploadTests(TestCase):
         self.assertEqual(response.status_code, 200)
         media = Media.objects.filter(user=self.trusted).latest("add_date")
         self.assertFalse(media.is_draft)
+
+    # Leaving the page no longer deletes a never-saved upload (#1009), so it must not
+    # be link-reachable while it waits for its details or for orphan cleanup.
+    @patch.object(Media, "media_init", return_value=None)
+    def test_single_upload_is_hidden_from_other_users_until_its_details_are_saved(self, _mock_init):
+        response = self._upload()
+        self.assertEqual(response.status_code, 200)
+        media = Media.objects.filter(user=self.trusted).latest("add_date")
+
+        self.client.force_login(self.regular)
+        response = self.client.get(f"/api/v1/media/{media.friendly_token}")
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json(), {"detail": "media is private"})
+
+    def _save_details(self, user, media, state):
+        from files.forms import MediaForm
+
+        category, _ = Category.objects.get_or_create(title="Documentary")
+        Language.objects.get_or_create(code="en", defaults={"title": "English"})
+        data = {
+            "title": "River Stories",
+            "summary": "A finished synopsis.",
+            "description": "",
+            "year_produced": "2021",
+            "media_language": "en",
+            "media_country": lists.video_countries[0][0],
+            "category": [category.id],
+            "topics": [],
+            "new_tags": "",
+            "state": state,
+            "enable_comments": True,
+            "allow_download": True,
+        }
+        form = MediaForm(user, data=data, instance=media)
+        self.assertTrue(form.is_valid(), f"Form errors: {form.errors}")
+        form.save()
+        media.refresh_from_db()
+
+    def test_single_upload_is_private_while_it_initializes(self):
+        stored_states = []
+
+        def record_stored_state(media):
+            stored_states.append(Media.objects.get(pk=media.pk).state)
+
+        # media_init runs in post_save right after the insert commits, so this is the
+        # state other requests can read while the upload initializes.
+        with patch.object(Media, "media_init", autospec=True, side_effect=record_stored_state):
+            response = self._upload()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(stored_states, ["private"])
+
+    @patch.object(Media, "media_init", return_value=None)
+    def test_saving_the_details_gives_a_single_upload_its_chosen_state(self, _mock_init):
+        self._upload()
+        media = Media.objects.filter(user=self.trusted).latest("add_date")
+
+        self._save_details(self.trusted, media, "unlisted")
+
+        self.assertEqual(media.state, "unlisted")
+
+    # The unlisted workflow does not let a regular user publish. Before uploads started
+    # private, that choice fell back to the upload's unlisted default, not to private.
+    @patch.object(Media, "media_init", return_value=None)
+    @override_settings(PORTAL_WORKFLOW="unlisted")
+    def test_first_save_falls_back_to_the_workflow_default_when_public_is_not_allowed(self, _mock_init):
+        self.client.force_login(self.regular)
+        self._upload()
+        media = Media.objects.filter(user=self.regular).latest("add_date")
+
+        self._save_details(self.regular, media, "public")
+
+        self.assertEqual(media.state, "unlisted")
 
     @patch.object(Media, "media_init", return_value=None)
     @override_settings(MEDIA_IS_REVIEWED=False)

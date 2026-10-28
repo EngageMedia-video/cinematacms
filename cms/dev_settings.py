@@ -254,6 +254,7 @@ MP4HLS = "mp4hls"
 
 ALLOW_ANONYMOUS_ACTIONS = ["report", "like", "dislike", "watch"]  # need be a list
 MASK_IPS_FOR_ACTIONS = True
+MEDIA_ACTION_IP_HMAC_KEY = "dev-action-ip-hmac-key-not-for-production"
 # how many seconds a process in running state without reporting progress is
 # considered as stale...unfortunately v9 seems to not include time
 # some times so raising this high

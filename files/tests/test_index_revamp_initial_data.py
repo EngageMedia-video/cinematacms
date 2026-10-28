@@ -1,8 +1,8 @@
 """
 Tests for the home page initial-data injection (U2).
 
-Verifies that the index_revamp view injects featured and recommended media
-payloads into the page via Django's json_script template tag, with correct
+Verifies that the index_revamp view injects featured media and homepage
+playlist payloads into the page via Django's json_script template tag, with correct
 JSON shape and XSS-safe escaping.
 """
 
@@ -10,7 +10,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from django.core.cache import cache
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.utils import timezone
 
 from files.models import EncodeProfile, Encoding, IndexPageFeatured, Media
@@ -24,11 +24,6 @@ from files.tests.helpers import (
 )
 
 
-@override_settings(
-    UI_VARIANT_REVAMP_PAGES=["home"],
-    UI_VARIANT_DEFAULT="legacy",
-    UI_VARIANT_ALLOWED=["legacy", "revamp"],
-)
 class IndexRevampInitialDataTest(TestCase):
     """Home page must emit two json_script blocks with media payloads."""
 
@@ -74,10 +69,6 @@ class IndexRevampInitialDataTest(TestCase):
         response = self._get_revamp_response()
         self.assertContains(response, 'id="home-initial-data-featured"')
 
-    def test_recommended_script_tag_present(self):
-        response = self._get_revamp_response()
-        self.assertContains(response, 'id="home-initial-data-recommended"')
-
     def test_index_featured_script_tag_contains_ordered_playlist_configuration(self):
         IndexPageFeatured.objects.create(
             title="Second playlist",
@@ -108,11 +99,9 @@ class IndexRevampInitialDataTest(TestCase):
 
         content = response.content.decode()
         featured = extract_json_script_payload(content, "home-initial-data-featured")
-        recommended = extract_json_script_payload(content, "home-initial-data-recommended")
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(self.media.friendly_token, [item["friendly_token"] for item in featured["results"]])
-        self.assertIsInstance(recommended["results"], list)
         self.assertEqual(extract_json_script_body(content, "home-initial-data-index-featured"), "null")
         self.assertIn("Failed to build home index featured data", logs.output[0])
 
@@ -154,22 +143,6 @@ class IndexRevampInitialDataTest(TestCase):
         self.assertContains(response, '<link rel="preload" as="image"', html=False)
         self.assertContains(response, f'href="{expected_href}"', html=False)
         self.assertContains(response, 'fetchpriority="high"', html=False)
-
-    def test_recommended_payload_uses_slim_home_media_shape(self):
-        response = self._get_revamp_response()
-        content = response.content.decode()
-        parsed = extract_json_script_payload(content, "home-initial-data-recommended")
-        if not parsed["results"]:
-            self.skipTest("Recommended payload is empty for this fixture")
-        item = parsed["results"][0]
-
-        self.assertIn("title", item)
-        self.assertIn("thumbnail_url", item)
-        self.assertIn("categories_info", item)
-        self.assertNotIn("author_thumbnail", item)
-        self.assertNotIn("likes", item)
-        self.assertNotIn("reported_times", item)
-        self.assertNotIn("size", item)
 
     def test_first_featured_item_includes_hero_playback(self):
         hero = create_test_media(
@@ -280,14 +253,6 @@ class IndexRevampInitialDataTest(TestCase):
 
         self.assertEqual(updated_payload["results"][0]["friendly_token"], self.media.friendly_token)
         self.assertEqual(updated_payload["results"][0]["summary"], "Updated homepage synopsis")
-
-    def test_recommended_payload_is_valid_json(self):
-        response = self._get_revamp_response()
-        content = response.content.decode()
-        parsed = extract_json_script_payload(content, "home-initial-data-recommended")
-        self.assertIsNotNone(parsed, "home-initial-data-recommended script tag not found")
-        self.assertIsInstance(parsed, dict)
-        self.assertIsInstance(parsed["results"], list)
 
     def test_xss_in_title_is_escaped_in_featured_payload(self):
         """A title with </script> must not appear unescaped in the response."""

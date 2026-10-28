@@ -161,6 +161,8 @@ class RateLimitTest(TestCase):
             redis = _redis()
             key = token_utils.RATE_LIMIT_KEY_TEMPLATE.format(ip="1.2.3.4", friendly_token="ft123")
             redis.delete(key)
+            for network in ("2001:db8:1:2::/64", "2001:db8:1:3::/64"):
+                redis.delete(token_utils.RATE_LIMIT_KEY_TEMPLATE.format(ip=network, friendly_token="ft123"))
         except Exception:
             pass
 
@@ -204,6 +206,35 @@ class RateLimitTest(TestCase):
         self.assertTrue(token_utils.check_rate_limit("1.2.3.4", "ft123"))
         token_utils.record_failed_attempt("1.2.3.4", "ft123")
         self.assertFalse(token_utils.check_rate_limit("1.2.3.4", "ft123"))
+
+    def test_rotating_addresses_within_an_ipv6_64_share_one_limit(self):
+        for host in range(1, token_utils._get_brute_force_max_attempts() + 1):
+            token_utils.record_failed_attempt(f"2001:db8:1:2::{host:x}", "ft123")
+
+        self.assertFalse(token_utils.check_rate_limit("2001:db8:1:2:ffff::1", "ft123"))
+        self.assertTrue(token_utils.check_rate_limit("2001:db8:1:3::1", "ft123"))
+
+    def test_a_success_does_not_clear_failures_shared_by_the_network(self):
+        media = type("Media", (), {"friendly_token": "ft123", "uid_hex": "uid", "password": "hash"})()
+        for _ in range(token_utils._get_brute_force_max_attempts() - 1):
+            token_utils.record_failed_attempt("2001:db8:1:2::1", "ft123")
+
+        with (
+            patch("django.contrib.auth.hashers.check_password", return_value=True),
+            patch.object(token_utils, "generate_token", return_value="token"),
+        ):
+            token, _ = token_utils.authenticate_restricted_media(media, "correct", "2001:db8:1:2::2")
+        token_utils.record_failed_attempt("2001:db8:1:2::1", "ft123")
+
+        self.assertEqual(token, "token")
+        self.assertFalse(token_utils.check_rate_limit("2001:db8:1:2::1", "ft123"))
+
+    def test_non_ip_client_value_is_still_limited(self):
+        for _ in range(token_utils._get_brute_force_max_attempts()):
+            token_utils.record_failed_attempt("proxy-supplied-value", "ft123")
+
+        self.assertFalse(token_utils.check_rate_limit("proxy-supplied-value", "ft123"))
+        token_utils.reset_rate_limit("proxy-supplied-value", "ft123")
 
 
 class ManifestRewriteTest(SimpleTestCase):

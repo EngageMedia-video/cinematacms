@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from cms import celery_app
 from cms.cache_telemetry import owned_cache
+from cms.request_utils import get_remote_ip
 
 from . import models
 from .helpers import mask_ip
@@ -101,10 +102,8 @@ def get_user_or_session(request):
         if not request.session.session_key:
             request.session.save()
         ret["user_session"] = request.session.session_key
-    if settings.MASK_IPS_FOR_ACTIONS:
-        ret["remote_ip_addr"] = mask_ip(request.META.get("REMOTE_ADDR"))
-    else:
-        ret["remote_ip_addr"] = request.META.get("REMOTE_ADDR")
+    remote_ip = get_remote_ip(request)
+    ret["remote_ip_addr"] = mask_ip(remote_ip) if settings.MASK_IPS_FOR_ACTIONS else remote_ip
     return ret
 
 
@@ -153,9 +152,7 @@ def pre_save_action(media, user, session_key, action, remote_ip):
 
             max_per_5sec = getattr(settings, "MAX_ANONYMOUS_VIEWS_PER_5SEC", 30)
             if recent_views >= max_per_5sec:
-                logger.warning(
-                    f"Rate limit: IP {remote_ip} exceeded {max_per_5sec} views/5sec for media {media.friendly_token}"
-                )
+                logger.warning("Anonymous view rate limit exceeded for media %s", media.friendly_token)
                 return False
 
         # Only allow if no previous session record (first-time anonymous user)
@@ -418,59 +415,6 @@ def show_related_media_author(media, request, limit):
 
 def show_related_media_calculated(media, request, limit):
     return []
-
-
-def update_user_ratings(user, media, user_ratings):
-    # helper function used to populate user ratings for a media
-    # on what the serializer responds as the default response
-    # of the rating object
-    for category in user_ratings:
-        ratings = category.get("ratings", [])
-        for rating in ratings:
-            user_rating = (
-                models.Rating.objects.filter(
-                    user=user,
-                    media_id=media,
-                    rating_category_id=rating.get("rating_category_id"),
-                )
-                .only("score")
-                .first()
-            )
-            if user_rating:
-                rating["score"] = user_rating.score
-    return user_ratings
-
-
-# DEPRECATED: notify_user_on_comment() is no longer called.
-# Comment email notifications are now handled by NotificationService.on_comment()
-# in notifications/services.py. Remove this function in a future cleanup.
-def notify_user_on_comment(friendly_token):
-    media = None
-    media = models.Media.objects.filter(friendly_token=friendly_token).first()
-    if not media:
-        return False
-
-    user = media.user
-    media_url = settings.SSL_FRONTEND_HOST + media.get_absolute_url()
-
-    if user.notification_on_comments:
-        title = f"[{settings.PORTAL_NAME}] - A comment was added"
-        msg = """
-A comment has been added to your media %s .
-View it on %s
-        """ % (
-            media.title,
-            media_url,
-        )
-        email = EmailMessage(
-            title,
-            msg,
-            settings.DEFAULT_FROM_EMAIL,
-            [media.user.email],
-            headers={"X-Cinemata-Email-Kind": "activity_notification"},
-        )
-        email.send(fail_silently=True)
-    return True
 
 
 # Define role mappings for display name and capability description

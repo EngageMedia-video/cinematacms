@@ -6,11 +6,20 @@ Signed-in viewers open the dedicated owner dashboard at `/analytics` from **Anal
 
 ## Collection and privacy
 
+Legacy media activity uses `MediaAction.remote_ip`. With
+`MASK_IPS_FOR_ACTIONS=True`, the model field stores HMAC-SHA256 fingerprints
+using the independent `MEDIA_ACTION_IP_HMAC_KEY`. IP fields expire after 7 days
+through hourly cleanup; action rows and counters remain. See the
+[media activity IP operations guide](../security/media-action-ip-privacy.md)
+for key setup, historical cleanup, cutover limits, and retention monitoring.
+
 Eligible public pages, accessible media pages and embeds, and authorized owner workflows load the tracker. Owner workflows use generic paths and no referrer or public role grant. Django staff, editors, managers, superusers, signed-in users who disable activity logging, and denied media pages do not. Curators are eligible viewers. The playback endpoint also rejects snapshots from opted-out users. Accessible public, unlisted, restricted, and private media are eligible. Audience media events carry the `media:<Media.uid>` tag plus an opaque media UUID, media type, page/embed/hero/playlist context, and content revision. Creator edit events use `workflow:<Media.uid>` and `/media/workflow` so they do not enter audience engagement queries. Playlist pages use `playlist:<Playlist.uid>` and a generic path. Nonpublic media sends a generic path and title and no referrer. Public activity sends only the referring domain. Search strings, hashes, friendly tokens, titles, user IDs, access tokens, and raw progress ticks stay out of Umami. The browser honors Do Not Track. The collector route `/api/send` must have proxy access logs disabled.
 
 `media_view` counts eligible media page and embed loads. It does not count thumbnail impressions or hero playback. Playback starts and end events are separate counts. An end event includes seeking to the end; it is not evidence that a viewer watched the whole film. The player sends play, pause, finish, 25/50/75% unique-content-coverage milestones once per play, seek, mute/unmute, quality/subtitle/speed changes, fullscreen/theater changes, next/previous, and bounded error categories. Starts after a player action or on-site navigation are `deliberate`; autoplay and unknown starts remain separate. Confirmed likes, unlikes, playlist changes, copy actions, and comment submissions produce events. Download events represent click intent. Outbound links send the destination domain only.
 
 The legacy home hero receives a signed, media-scoped measurement grant from the access-checked media detail API. Its playback contributes watch time without generating a media page-view event.
+
+The legacy demo page and its rating UI have been retired. The `media_rating_success` event no longer has a built-in UI emitter; the rating API remains available to integrations.
 
 The browser also sends cumulative playback snapshots to same-origin `/analytics/playback` at start, every 60 seconds, pause, finish, and page exit. A signed page-load grant and random per-play UUID let the CMS merge retries without storing viewer identity. The endpoint checks origin, grant, media state and revision, and duration. Each snapshot and the accumulated coverage for a play are limited to 1,000 ranges. A snapshot whose merged coverage exceeds that limit returns HTTP 400 without changing the stored summary. The CMS records qualified elapsed viewing time in UTC minute buckets and unique content coverage per play. The existing `watch_days` JSON field and payload key are retained; new keys use `YYYY-MM-DDTHH:MMZ`. Both each request and the merged record are capped at 1,441 buckets and 24 hours of watch time, with at most 60 seconds per minute bucket. Retries merge each bucket by maximum. Legacy date-only snapshots remain accepted, but a play cannot mix date-only and minute keys. Pauses, buffering, seeking jumps, and hidden video below 50% visibility do not add watch time; picture-in-picture video and background audio can. Exit delivery is best effort, so recent plays may be incomplete. CMS summaries and Umami event counts are separate sources.
 

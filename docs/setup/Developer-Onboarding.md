@@ -87,7 +87,7 @@ cd ../whisper.cpp && sh ./models/download-ggml-model.sh base && make && cd ../ci
 make docker-up
 
 # 3. Configure environment (follow Step 5 for details)
-cp .env.example .env  # Set SECRET_KEY and any local overrides
+cp .env.example .env  # Set SECRET_KEY, MEDIA_ACTION_IP_HMAC_KEY, and local overrides
 
 # Create required directories
 mkdir -p logs pids media_files/hls
@@ -445,7 +445,13 @@ SECRET_KEY='YOUR_GENERATED_SECRET_KEY_HERE'
 cp .env.example .env
 # Generate SECRET_KEY, then edit .env and replace its empty value.
 uv run python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+# Generate a separate MEDIA_ACTION_IP_HMAC_KEY and replace its empty value.
+uv run python -c "import secrets; print(secrets.token_hex(32))"
 ```
+
+Use independent keys for Django and media activity IP masking. The
+[IP operations guide](../security/media-action-ip-privacy.md) covers historical
+cleanup, retention, and rotation. Test settings provide a dedicated test key.
 
 **Additional Configuration - MP4HLS (if using HLS streaming):**
 
@@ -1417,7 +1423,7 @@ For comprehensive frontend development documentation, see:
 Covers:
 - Detailed component patterns
 - Page creation walkthrough
-- DemoComponent and DemoPage examples
+- The staff-only modern demo page as a working frontend example
 - Flux integration
 - Advanced patterns
 - Troubleshooting
@@ -1532,6 +1538,7 @@ Essential extensions for CinemataCMS development:
 # Install via command line
 code --install-extension ms-python.python
 code --install-extension ms-python.vscode-pylance
+code --install-extension charliermarsh.ruff
 code --install-extension batisteo.vscode-django
 code --install-extension dbaeumer.vscode-eslint
 code --install-extension esbenp.prettier-vscode
@@ -1541,6 +1548,7 @@ code --install-extension bradlc.vscode-tailwindcss
 **Or install via VS Code:**
 - **Python** (ms-python.python) - Python language support
 - **Pylance** (ms-python.vscode-pylance) - Fast Python language server
+- **Ruff** (charliermarsh.ruff) - Python linting, formatting, and import sorting
 - **Django** (batisteo.vscode-django) - Django template support
 - **ESLint** (dbaeumer.vscode-eslint) - JavaScript linting
 - **Prettier** (esbenp.prettier-vscode) - Code formatting
@@ -1553,19 +1561,15 @@ Create `.vscode/settings.json` in the project root:
 ```json
 {
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
-  "python.linting.enabled": true,
-  "python.linting.pylintEnabled": false,
-  "python.linting.flake8Enabled": true,
-  "python.formatting.provider": "black",
   "python.languageServer": "Pylance",
 
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.organizeImports": true
+    "source.organizeImports": "explicit"
   },
 
   "[python]": {
-    "editor.defaultFormatter": "ms-python.python",
+    "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.tabSize": 4
   },
   "[javascript]": {

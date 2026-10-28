@@ -10,7 +10,9 @@ CinemataCMS reads deployment-varying application settings only from environment
 variables. Local development loads the repository `.env` file. Systemd services
 load `/etc/cinematacms/app.env`; `deploy/apply-release-config.sh` creates it with
 mode `0640`, preserves operator-managed values, and supplies stable telemetry
-worker identity values.
+worker identity values. `install.sh` creates it before its first management
+command and loads it, so installation runs with the same settings and keys as
+the services.
 
 `/etc/cinematacms/deployment.env` contains only inputs owned by the release tool,
 such as domain, proxy, and observability mode. It is not loaded by Django.
@@ -111,6 +113,19 @@ The deployment files split nginx ownership as follows:
 - `deploy/nginx/cinematacms-metrics.conf` owns the loopback-only `/metrics`
   location. It is not a user-request path, so it keeps the nginx uWSGI timeout
   defaults.
+- `deploy/nginx/cinematacms-rate-limits.conf` owns per-client-network request
+  limits for `/view` (10 r/s, burst 40), media reactions (5 r/s, burst 20), and
+  restricted-media passwords (1 r/s, burst 10). Rejected requests get `429`. The
+  zones in `cinematacms-http.conf` key an IPv4 address, or the /64 of an IPv6
+  address, matching the application limiters. The application's own limits still
+  apply behind these edge limits.
+- `deploy/logrotate-cinematacms-nginx` rotates the public-site access and error
+  logs in `/var/log/cinematacms/nginx/` daily and deletes them after 14 days.
+  These logs hold raw client IPs, so the directory (`root:www-data`, `0750`)
+  admits only root and the nginx workers, which reopen the logs after rotation.
+  The release updater points an existing site's logs there; files already
+  written under `/var/log/nginx/` age out under the distribution's nginx
+  rotation.
 - `deploy/cloudflare_real_ip.conf` owns the trusted Cloudflare address ranges
   installed when the deployment uses `--proxy cloudflare`.
 
@@ -182,6 +197,8 @@ Use `--no-restart` to install and validate files without restarting services.
 ## Placeholder certificates
 
 The `.pem` files in this directory are placeholder self-signed certificates
-for initial installation. The installer replaces them with Let's Encrypt
-certificates for a real domain. Do not use the placeholder certificates in
-production.
+for initial installation. The installer copies them to `/etc/cinematacms/tls/`,
+outside the Certbot-owned `/etc/letsencrypt`, and a new nginx site points at
+them. For a real domain, the installer runs Certbot once, and Certbot replaces
+the site's certificate paths with its own. Do not use the placeholder
+certificates in production.

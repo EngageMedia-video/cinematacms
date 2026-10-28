@@ -4,9 +4,9 @@ server {
     server_name localhost;
 
     gzip on;
-    access_log /var/log/nginx/mediacms.io.access.log cinematacms;
+    access_log /var/log/cinematacms/nginx/mediacms.io.access.log cinematacms;
 
-    error_log  /var/log/nginx/mediacms.io.error.log  warn;
+    error_log  /var/log/cinematacms/nginx/mediacms.io.error.log  warn;
 
 #    # redirect to https if logged in
 #    if ($http_cookie ~* "sessionid") {
@@ -55,6 +55,7 @@ server {
     # Django will use X-Accel-Redirect to serve files efficiently
 
     include /etc/nginx/snippets/cinematacms-metrics.conf;
+    include /etc/nginx/snippets/cinematacms-rate-limits.conf;
 
     location / {
 
@@ -71,8 +72,8 @@ server {
     listen 443 ssl;
     server_name localhost;
 
-    ssl_certificate_key  /etc/letsencrypt/live/localhost/privkey.pem;
-    ssl_certificate  /etc/letsencrypt/live/localhost/fullchain.pem;
+    ssl_certificate_key  /etc/cinematacms/tls/placeholder-privkey.pem;
+    ssl_certificate  /etc/cinematacms/tls/placeholder-fullchain.pem;
     ssl_dhparam /etc/nginx/dhparams/dhparams.pem;
 
     ssl_protocols TLSv1.2 TLSv1.3; # Dropping SSLv3, ref: POODLE
@@ -81,9 +82,9 @@ server {
     ssl_prefer_server_ciphers on;
 
     gzip on;
-    access_log /var/log/nginx/mediacms.io.access.log cinematacms;
+    access_log /var/log/cinematacms/nginx/mediacms.io.access.log cinematacms;
 
-    error_log  /var/log/nginx/mediacms.io.error.log  warn;
+    error_log  /var/log/cinematacms/nginx/mediacms.io.error.log  warn;
 
     location /static/ {
         alias /home/cinemata/cinematacms/static_collected/;
@@ -122,6 +123,7 @@ server {
     # Django will use X-Accel-Redirect to serve files efficiently
 
     include /etc/nginx/snippets/cinematacms-metrics.conf;
+    include /etc/nginx/snippets/cinematacms-rate-limits.conf;
 
     location / {
 

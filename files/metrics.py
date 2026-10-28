@@ -240,6 +240,7 @@ DOMAIN_OPERATIONS = frozenset(
         "scheduled.cleanup_orphaned_uploads",
         "scheduled.cleanup_orphaned_draft_media",
         "scheduled.purge_playback_summaries",
+        "scheduled.cleanup_media_action_ips",
         "scheduled.dispatch_deferred_encodings",
         "scheduled.apply_visibility_schedules",
         "other",
@@ -328,6 +329,7 @@ TASK_FAMILY_BY_NAME = {
     "cleanup_orphaned_uploads": "storage_maintenance",
     "cleanup_orphaned_draft_media": "media_lifecycle",
     "purge_playback_summaries": "platform_maintenance",
+    "cleanup_media_action_ips": "platform_maintenance",
     "subscribe_user": "user_activity",
     "dispatch_deferred_encodings": "encoding",
     "apply_visibility_schedules": "media_lifecycle",
@@ -538,20 +540,6 @@ def connect_signal_handlers() -> None:
     heartbeat_sent.connect(_on_heartbeat, dispatch_uid="cinematacms_metrics_worker_heartbeat", weak=False)
     beat_init.connect(_on_beat_init, dispatch_uid="cinematacms_metrics_beat_init", weak=False)
     user_login_failed.connect(_on_user_login_failed, dispatch_uid="cinematacms_metrics_login_failed", weak=False)
-
-
-def record_cache_operation(cache_name: str, operation: str, hit: bool | None = None, ok: bool = True) -> None:
-    if not ok:
-        result = "error"
-    elif hit is None:
-        result = "success"
-    else:
-        result = "hit" if hit else "miss"
-    _safe_metric(
-        "cache operation",
-        lambda: CACHE_OPERATIONS_TOTAL.labels(family=cache_name, operation=operation, result=result).inc(),
-        component="cache",
-    )
 
 
 def _profile_labels(profile) -> dict[str, str]:

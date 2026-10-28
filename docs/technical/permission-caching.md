@@ -147,9 +147,6 @@ The `files/cache_utils.py` module provides centralized cache management function
 #### `get_cached_permission(...)` / `set_cached_permission(...)`
 - Perform safe, individual cache get/set operations with centralized error handling and logging.
 
-#### `batch_get_cached_permissions(...)` / `batch_set_cached_permissions(...)`
-- Perform efficient bulk get/set operations on multiple cache keys at once, reducing network overhead.
-
 #### `clear_media_permission_cache(media_uid, user_id=None)`
 - Clears permission cache for a specific media.
 - If `user_id` is specified, it attempts to clear all related entries for that user/media pair. It uses pattern deletion if available (`django-redis`), otherwise it clears only non-restricted keys.

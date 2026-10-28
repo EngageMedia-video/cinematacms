@@ -53,6 +53,7 @@ describe('SearchPage', () => {
 	afterEach(() => {
 		vi.unstubAllGlobals();
 		searchQueryClient.clear();
+		delete window.CinemataAnalytics;
 	});
 
 	it('renders selected filters from the URL and fetches matching results', async () => {
@@ -162,5 +163,20 @@ describe('SearchPage', () => {
 		await waitFor(() =>
 			expect(screen.queryByRole('button', { name: 'Remove Philippines' })).not.toBeInTheDocument()
 		);
+	});
+
+	it('tracks a sort change and a filter reset without sending their values', async () => {
+		const user = userEvent.setup();
+		const track = vi.fn();
+		window.CinemataAnalytics = { track };
+
+		render(<SearchPage />);
+		await screen.findByText('Philippines Film');
+
+		await user.click(screen.getByRole('button', { name: 'Sort by: Name A–Z' }));
+		await user.click(screen.getByRole('menuitemradio', { name: 'Name Z–A' }));
+		await user.click(screen.getByRole('button', { name: 'Remove Philippines' }));
+
+		expect(track.mock.calls).toEqual([['search_sort_change'], ['search_filter_reset']]);
 	});
 });

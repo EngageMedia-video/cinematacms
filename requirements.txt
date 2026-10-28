@@ -41,14 +41,13 @@ colorama==0.4.6 ; sys_platform == 'win32'
     # via
     #   ipython
     #   qrcode
-    #   tqdm
 crispy-forms-bootstrap2==2024.1
     # via cinemata
 cryptography==50.0.1
     # via fido2
 decorator==5.3.1
     # via ipython
-django==5.2.17
+django==5.2.18
     # via
     #   cinemata
     #   django-allauth
@@ -57,18 +56,16 @@ django==5.2.17
     #   django-crispy-forms
     #   django-csp
     #   django-debug-toolbar
-    #   django-filter
     #   django-js-asset
     #   django-maintenance-mode
     #   django-prometheus
     #   django-recaptcha
     #   django-redis
-    #   django-silk
     #   django-tinymce
     #   django-vite
     #   django-waffle
     #   djangorestframework
-django-allauth==65.19.3
+django-allauth==65.19.7
     # via cinemata
 django-appconf==1.2.0
     # via django-imagekit
@@ -82,15 +79,13 @@ django-csp==4.0
     # via cinemata
 django-debug-toolbar==8.0.0
     # via cinemata
-django-filter==26.1
-    # via cinemata
 django-imagekit==6.1.1
     # via cinemata
 django-js-asset==4.1.0
     # via django-mptt
 django-maintenance-mode==0.23.0
     # via cinemata
-django-mptt==0.18.0
+django-mptt==0.19.1
     # via cinemata
 django-prometheus==2.5.0
     # via cinemata
@@ -98,15 +93,13 @@ django-recaptcha==4.1.0
     # via cinemata
 django-redis==7.0.0
     # via cinemata
-django-silk==5.6.0
-    # via cinemata
 django-tinymce @ git+https://github.com/jazzband/django-tinymce.git@6b413f4e9bdedb9268c8ef25886fdfc994780097
     # via cinemata
 django-vite==3.2.0
     # via cinemata
 django-waffle==5.0.0
     # via cinemata
-djangorestframework==3.18.1
+djangorestframework==3.18.3
     # via cinemata
 exceptiongroup==1.3.1 ; python_full_version < '3.11'
     # via
@@ -118,12 +111,8 @@ fido2==2.2.1
     # via cinemata
 filetype==1.2.0
     # via cinemata
-flake8==7.3.0
-    # via cinemata
 googleapis-common-protos==1.75.3
     # via opentelemetry-exporter-otlp-proto-http
-gprof2dot==2025.4.14
-    # via django-silk
 idna==3.19
     # via requests
 ipython==8.39.0
@@ -138,11 +127,10 @@ markdown==3.10.3
     # via cinemata
 matplotlib-inline==0.2.2
     # via ipython
-mccabe==0.7.0
-    # via flake8
-opentelemetry-api==1.44.0
+opentelemetry-api==1.45.1
     # via
     #   cinemata
+    #   opentelemetry-exporter-http-transport
     #   opentelemetry-exporter-otlp-proto-http
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-celery
@@ -154,11 +142,15 @@ opentelemetry-api==1.44.0
     #   opentelemetry-instrumentation-wsgi
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-opentelemetry-exporter-otlp-proto-common==1.44.0
+opentelemetry-exporter-http-transport==0.66b1
     # via opentelemetry-exporter-otlp-proto-http
-opentelemetry-exporter-otlp-proto-http==1.44.0
+opentelemetry-exporter-otlp-common==0.66b1
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-common==1.45.1
+    # via opentelemetry-exporter-otlp-proto-http
+opentelemetry-exporter-otlp-proto-http==1.45.1
     # via cinemata
-opentelemetry-instrumentation==0.65b0
+opentelemetry-instrumentation==0.66b1
     # via
     #   opentelemetry-instrumentation-celery
     #   opentelemetry-instrumentation-dbapi
@@ -167,29 +159,30 @@ opentelemetry-instrumentation==0.65b0
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-instrumentation-wsgi
-opentelemetry-instrumentation-celery==0.65b0
+opentelemetry-instrumentation-celery==0.66b1
     # via cinemata
-opentelemetry-instrumentation-dbapi==0.65b0
+opentelemetry-instrumentation-dbapi==0.66b1
     # via opentelemetry-instrumentation-psycopg2
-opentelemetry-instrumentation-django==0.65b0
+opentelemetry-instrumentation-django==0.66b1
     # via cinemata
-opentelemetry-instrumentation-psycopg2==0.65b0
+opentelemetry-instrumentation-psycopg2==0.66b1
     # via cinemata
-opentelemetry-instrumentation-redis==0.65b0
+opentelemetry-instrumentation-redis==0.66b1
     # via cinemata
-opentelemetry-instrumentation-requests==0.65b0
+opentelemetry-instrumentation-requests==0.66b1
     # via cinemata
-opentelemetry-instrumentation-wsgi==0.65b0
+opentelemetry-instrumentation-wsgi==0.66b1
     # via opentelemetry-instrumentation-django
-opentelemetry-proto==1.44.0
+opentelemetry-proto==1.45.1
     # via
     #   opentelemetry-exporter-otlp-proto-common
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-sdk==1.44.0
+opentelemetry-sdk==1.45.1
     # via
     #   cinemata
+    #   opentelemetry-exporter-otlp-common
     #   opentelemetry-exporter-otlp-proto-http
-opentelemetry-semantic-conventions==0.65b0
+opentelemetry-semantic-conventions==0.66b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-instrumentation-celery
@@ -199,7 +192,7 @@ opentelemetry-semantic-conventions==0.65b0
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-instrumentation-wsgi
     #   opentelemetry-sdk
-opentelemetry-util-http==0.65b0
+opentelemetry-util-http==0.66b1
     # via
     #   opentelemetry-instrumentation-django
     #   opentelemetry-instrumentation-requests
@@ -211,8 +204,6 @@ packaging==26.3
     #   opentelemetry-instrumentation
 parso==0.8.7
     # via jedi
-pep8==1.7.1
-    # via cinemata
 pexpect==4.9.0 ; sys_platform != 'emscripten' and sys_platform != 'win32'
     # via ipython
 pilkit==3.0
@@ -239,17 +230,13 @@ ptyprocess==0.7.0 ; sys_platform != 'emscripten' and sys_platform != 'win32'
     # via pexpect
 pure-eval==0.2.4
     # via stack-data
-pycodestyle==2.14.0
-    # via flake8
 pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
-pyflakes==3.4.0
-    # via flake8
 pygments==2.21.0
     # via ipython
 python-dateutil==2.9.0.post0
     # via celery
-python-dotenv==1.2.3
+python-dotenv==1.2.4
     # via cinemata
 python-fsutil==0.17.0
     # via django-maintenance-mode
@@ -262,10 +249,9 @@ redis==8.1.0
 requests==2.34.2
     # via
     #   cinemata
+    #   opentelemetry-exporter-http-transport
     #   opentelemetry-exporter-otlp-proto-http
-rpdb==0.2.0
-    # via cinemata
-sentry-sdk==2.69.2
+sentry-sdk==2.72.0
     # via cinemata
 six==1.17.0
     # via python-dateutil
@@ -273,11 +259,8 @@ sqlparse==0.6.0
     # via
     #   django
     #   django-debug-toolbar
-    #   django-silk
 stack-data==0.6.3
     # via ipython
-tqdm==4.70.1
-    # via cinemata
 traitlets==5.16.1
     # via
     #   ipython

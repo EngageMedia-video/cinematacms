@@ -37,6 +37,7 @@ DIRECT_SETTINGS = (
     "DJANGO_ADMIN_URL",
     "EMAIL_TRANSPORT_BACKEND",
     "EMAIL_RECIPIENT_HMAC_KEY",
+    "MEDIA_ACTION_IP_HMAC_KEY",
     "OBSERVABILITY_REFERENCE_HMAC_KEY",
     "OBSERVABILITY_REFERENCE_LOOKUP_TOKEN",
     "OBSERVABILITY_REFERENCE_ALLOWED_IPS",
@@ -72,9 +73,6 @@ DIRECT_SETTINGS = (
     "SESSION_COOKIE_SAMESITE",
     "SESSION_COOKIE_SECURE",
     "SITE_ID",
-    "UI_VARIANT_ALLOWED",
-    "UI_VARIANT_DEFAULT",
-    "UI_VARIANT_REVAMP_PAGES",
     "UPLOAD_MAX_FILES_NUMBER",
     "UPLOAD_MAX_SIZE",
     "USE_X_ACCEL_REDIRECT",
@@ -104,6 +102,9 @@ IGNORED_LEGACY_SETTINGS = {
     "SILKY_PYTHON_PROFILER",
     "SILKY_PYTHON_PROFILER_BINARY",  # django-silk is not installed.
     "SSL_FRONTEND_HOST",  # Derived from FRONTEND_HOST.
+    "UI_VARIANT_ALLOWED",  # Migrated pages always use the revamp UI.
+    "UI_VARIANT_DEFAULT",
+    "UI_VARIANT_REVAMP_PAGES",
     "UPLOAD_SUBDOMAIN",  # No application consumer exists.
 }
 
@@ -195,8 +196,6 @@ def main():
             if key == "FRONTEND_HOST" and "://" not in value:
                 value = f"https://{value}"
             values[key] = serialize(value)
-    if "CINEMATACMS_APP_SECRET_KEY" in os.environ:
-        values["SECRET_KEY"] = serialize(os.environ["CINEMATACMS_APP_SECRET_KEY"])
     if "CINEMATACMS_APP_PORTAL_NAME" in os.environ:
         values["PORTAL_NAME"] = serialize(os.environ["CINEMATACMS_APP_PORTAL_NAME"])
     if "CINEMATACMS_APP_FRONTEND_HOST" in os.environ:
@@ -216,6 +215,7 @@ def main():
     values.setdefault("TELEMETRY_WORKER_ID", str(uuid.uuid4()))
     values.setdefault("TELEMETRY_WORKER_HMAC_KEY", secrets.token_urlsafe(48))
     values.setdefault("EMAIL_RECIPIENT_HMAC_KEY", secrets.token_urlsafe(48))
+    values.setdefault("MEDIA_ACTION_IP_HMAC_KEY", secrets.token_urlsafe(48))
     values.setdefault("OBSERVABILITY_REFERENCE_HMAC_KEY", secrets.token_urlsafe(48))
     values.setdefault("OBSERVABILITY_REFERENCE_LOOKUP_TOKEN", secrets.token_urlsafe(48))
     values.setdefault("OBSERVABILITY_REFERENCE_ALLOWED_IPS", "127.0.0.1,::1")
