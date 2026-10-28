@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // A started navigation runs beforeunload well within this delay, so re-arming after it does not prompt twice.
 const REARM_AFTER_LEAVE_MS = 1000;
+// Input on the page starts a new exit, never the one already confirmed. A click alone
+// covers activation without a pointer or key, such as from assistive technology.
+const REARM_ON_INPUT_EVENTS = ['pointerdown', 'keydown', 'click'];
 
 // Only a plain click that replaces this document unloads the page and its edits.
 function unloadsThisPage(event, link) {
@@ -65,14 +68,23 @@ export function useUnsavedChangesGuard(hasUnsavedChanges) {
 		}
 	}
 
+	// The page can stay open, for example after history.back() with no earlier entry.
+	// The next input on the page re-arms at once; the delay covers the browser's own buttons.
+	function rearmIfPageStays() {
+		const timer = window.setTimeout(rearm, REARM_AFTER_LEAVE_MS);
+		function rearm() {
+			disarmedRef.current = false;
+			window.clearTimeout(timer);
+			REARM_ON_INPUT_EVENTS.forEach((type) => window.removeEventListener(type, rearm, true));
+		}
+		REARM_ON_INPUT_EVENTS.forEach((type) => window.addEventListener(type, rearm, true));
+	}
+
 	function confirmLeave() {
 		disarm();
 		setPendingLeave(null);
 		pendingLeave?.();
-		// The page can stay open, for example after history.back() with no earlier entry.
-		window.setTimeout(() => {
-			disarmedRef.current = false;
-		}, REARM_AFTER_LEAVE_MS);
+		rearmIfPageStays();
 	}
 
 	return {
