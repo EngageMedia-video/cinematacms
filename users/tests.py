@@ -1,4 +1,5 @@
 # from allauth.mfa.utils import encrypt, decrypt
+import tempfile
 import time
 
 from allauth.mfa.totp.internal.auth import (
@@ -403,3 +404,23 @@ class EditProfileMentionOptOutTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="allow_mentions"')
+
+
+class EditChannelTest(TestCase):
+    """Saving the channel form keeps the current banner when no new one is uploaded."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username="channel_owner",
+            email="channel_owner@example.com",
+            password="securepassword123",
+        )
+        self.client.login(username="channel_owner", password="securepassword123")
+
+    def test_saving_without_an_upload_tolerates_a_missing_banner_file(self):
+        channel = self.user.channels.get()
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            response = self.client.post(reverse("edit_channel", kwargs={"friendly_token": channel.friendly_token}))
+
+        self.assertRedirects(response, self.user.get_absolute_url(), fetch_redirect_response=False)
