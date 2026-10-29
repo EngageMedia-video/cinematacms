@@ -120,7 +120,8 @@ export function MediaUploadSection({ config, disabled, ref }) {
 	}
 
 	async function clearReplacementUpload() {
-		if (status.id !== undefined) {
+		const transferInFlight = ['uploading', 'paused'].includes(status.phase);
+		if (transferInFlight && status.id !== undefined) {
 			uploaderRef.current?.cancel(status.id);
 		}
 
