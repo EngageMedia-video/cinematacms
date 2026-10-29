@@ -145,6 +145,8 @@ export function MediaUploadSection({ config, disabled, ref }) {
 			}
 		}
 
+		// Fine Uploader still counts a finished file against itemLimit until reset.
+		uploaderRef.current?.reset();
 		resetStatus();
 		window.CinemataAnalytics?.uploadEvent('discard', status.id);
 	}

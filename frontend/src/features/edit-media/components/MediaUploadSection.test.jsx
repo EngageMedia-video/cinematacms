@@ -74,11 +74,23 @@ describe('MediaUploadSection', () => {
 				FineUploaderBasic: function FineUploaderBasic(options) {
 					uploader = this;
 					this.callbacks = options.callbacks;
+					// Mirrors Fine Uploader's itemLimit: 1 bookkeeping.
+					this.itemCount = 0;
+					this.nextId = 0;
 					this.addFiles = ([file]) => {
-						this.callbacks.onSubmit(0, file.name);
-						this.callbacks.onSubmitted(0);
+						if (this.itemCount >= 1) return;
+						const id = this.nextId++;
+						this.itemCount += 1;
+						this.callbacks.onSubmit(id, file.name);
+						this.callbacks.onSubmitted(id);
 					};
-					this.cancel = vi.fn((id) => this.callbacks.onCancel(id));
+					this.cancel = vi.fn((id) => {
+						this.itemCount -= 1;
+						this.callbacks.onCancel(id);
+					});
+					this.reset = vi.fn(() => {
+						this.itemCount = 0;
+					});
 					this.getFile = () => ({ size: 512 });
 				},
 			};
@@ -111,6 +123,20 @@ describe('MediaUploadSection', () => {
 			await waitFor(() => expect(trackedActions()).toContain('discard'));
 			expect(uploader.cancel).not.toHaveBeenCalled();
 			expect(trackedActions()).toEqual(['start', 'complete', 'discard']);
+		});
+
+		it('accepts a new file after a finished upload is deleted', async () => {
+			const user = userEvent.setup();
+			await startReplacement(user);
+			act(() => uploader.callbacks.onComplete(0, 'replacement.mp4', { success: true }));
+
+			await user.click(await screen.findByRole('button', { name: 'Delete' }));
+			await user.upload(
+				await screen.findByLabelText('Choose media files'),
+				new File(['video'], 'second.mp4', { type: 'video/mp4' })
+			);
+
+			expect(await screen.findByText('second.mp4')).toBeInTheDocument();
 		});
 
 		it('stops a transfer that is still running', async () => {
