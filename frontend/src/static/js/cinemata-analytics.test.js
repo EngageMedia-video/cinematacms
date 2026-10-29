@@ -707,12 +707,40 @@ describe('Umami session, device and page-speed reports', () => {
 		});
 	});
 
-	it('loads the heatmap and replay recorder after the tracker', () => {
+	const recorderScript = () => document.querySelector('script[src="https://analytics.example.org/recorder.js"]');
+	function loadPublicPageAt(url, overrides = {}) {
+		window.history.replaceState(null, '', url);
+		loadTracker({ nonpublic: false, audience_group: 'regular', ...overrides });
+		tracker().onload();
+	}
+
+	afterEach(() => window.history.replaceState(null, '', '/'));
+
+	it.each(['/view?m=public-token', '/featured', '/view?m=public-token&utm_source=newsletter'])(
+		'loads the heatmap and replay recorder after the tracker on a public page: %s',
+		(url) => {
+			loadPublicPageAt(url);
+			expect(recorderScript().dataset.websiteId).toBe('site-id');
+			expect(recorderScript().dataset.hostUrl).toBe('https://analytics.example.org');
+		}
+	);
+
+	// The recorder sends location.href unfiltered with heatmap and replay data.
+	it.each([
+		'/search?q=private+words',
+		'/view?m=public-token&pl=playlist-token',
+		'/view?m=public-token&utm_source=me%40example.org',
+		'/view?m=public-token#comments',
+	])('does not load the recorder where the browser URL would leak: %s', (url) => {
+		loadPublicPageAt(url);
+		expect(recorderScript()).toBeNull();
+	});
+
+	it('does not load the recorder on nonpublic media or workflow pages', () => {
+		window.history.replaceState(null, '', '/view?m=unlisted-token');
 		loadTracker();
 		tracker().onload();
-		const recorder = document.querySelector('script[src="https://analytics.example.org/recorder.js"]');
-		expect(recorder.dataset.websiteId).toBe('site-id');
-		expect(recorder.dataset.hostUrl).toBe('https://analytics.example.org');
+		expect(recorderScript()).toBeNull();
 	});
 
 	it('does not load the recorder under Do Not Track', () => {

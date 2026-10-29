@@ -13,7 +13,7 @@ On 29 October 2026 the maintainer widened collection to use Umami's session repo
 - A signed-in visitor's **username** is the Umami distinct ID on every tracked page, including nonpublic media and creator workflows. `identify()` stores their `audience_group` as session data. Umami sessions of signed-in visitors are therefore personal data tied to a named account.
 - Location is stored as **country, region, and city**.
 - Screen size, browser language, and page-speed metrics are sent.
-- Umami's recorder captures **session replays and heatmaps on every tracked page**, nonpublic media and creator workflows included.
+- Umami's recorder captures **session replays and heatmaps on public pages**. The recorder sends the unfiltered browser URL, which would carry unlisted media tokens and search terms, so it is not loaded on nonpublic media, creator workflows, or pages whose URL holds anything besides `m` and valid `utm_*` values.
 
 These decisions supersede the "no Distinct ID", "country only", and "no screen size" recommendations below.
 
@@ -37,7 +37,7 @@ The in-progress [CMS privacy boundary](../../cms/analytics.py) suppresses the br
 
 The stable media UUID in an event can be mapped back to a film by an operator. For a film with few authorized viewers, a session timeline may reveal viewing behavior. This is an inference from the current payload and Umami's session model. Restrict Umami account access, avoid share links that expose Sessions or Journeys, and keep nonpublic media out of platform reports. The owner dashboard remains current-owner scoped in the CMS. [Umami's sharing guide](https://docs.umami.is/docs/enable-share-url) shows that share links can expose report sections.
 
-The 12-month Umami purge job and CMS purge of playback summaries and daily role counts are prepared for the local OrbStack setup; [the integration guide](analytics.md#retention-and-rollout) does not claim production activation. Before any staging or production activation, verify the version-pinned purge against the deployed schema, the backup expiry, collector access-log exception, Umami admin permissions and share links, and a captured payload from each public and nonpublic path. The deployed collector uses a GeoLite2 City database and stores region and city, as decided on 29 October 2026. Replays can show what a signed-in creator typed or viewed on a workflow page, subject to the recorder's masking level. Restrict replay access to the same Umami accounts that may see named sessions.
+The 12-month Umami purge job and CMS purge of playback summaries and daily role counts are prepared for the local OrbStack setup; [the integration guide](analytics.md#retention-and-rollout) does not claim production activation. Before any staging or production activation, verify the version-pinned purge against the deployed schema, the backup expiry, collector access-log exception, Umami admin permissions and share links, and a captured payload from each public and nonpublic path. The deployed collector uses a GeoLite2 City database and stores region and city, as decided on 29 October 2026. Replays of public pages can show what a signed-in visitor typed, such as a comment draft, subject to the recorder's masking level. Restrict replay access to the same Umami accounts that may see named sessions.
 
 ## Legal and future-product questions
 

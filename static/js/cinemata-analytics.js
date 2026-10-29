@@ -444,6 +444,14 @@
 
     const firstPageview = { ...currentPageview(), url: config.path + campaignQuery };
 
+    // Umami's recorder sends location.href with heatmap and replay data and has no
+    // beforeSend hook, so it runs only where the browser URL holds nothing private.
+    function recorderUrlIsSafe() {
+        if (config.nonpublic || window.location.hash) return false;
+        return [...new URLSearchParams(window.location.search)].every(([key, value]) =>
+            key === 'm' || (/^utm_(source|medium|campaign|content|term)$/.test(key) && campaignValue.test(value)));
+    }
+
     if (config.url && config.website_id) {
         const script = document.createElement('script');
         script.src = `${config.url}/script.js`;
@@ -462,6 +470,7 @@
             emitUmami(firstPageview);
             while (pending.length) pending.shift()();
             // Heatmaps and replays; the recorder waits for the session Umami opens above.
+            if (!recorderUrlIsSafe()) return;
             const recorder = document.createElement('script');
             recorder.src = `${config.url}/recorder.js`;
             recorder.async = true;
