@@ -14,7 +14,7 @@ This documents all playlist-related endpoints. All endpoints prefixed with /api/
 Retrieve a list of all playlists.
 
 **Response:**  
-Returns a paginated list of playlist objects.
+Returns a paginated list of playlist objects. Each playlist's `media_count` and `thumbnail_url` follow the same viewer rules as the playlist detail endpoint below.
 
 ### Status Codes
 
@@ -65,6 +65,8 @@ Retrieve detailed information about a specific playlist.
 - **Anonymous users**: See only public videos
 - **Authenticated users**: See public, unlisted, and restricted video thumbnails
 - **Advanced users viewing their own playlists**: See all non-private videos
+
+`media_count` counts only the videos this viewer sees. `thumbnail_url` is the thumbnail of the first public or unlisted video this viewer sees, or `null` when there is none. Restricted videos never supply it, because their thumbnails require a per-video token. Membership and order are kept when a video becomes private, so making it public again restores it.
 
 **Path Parameters:**
 

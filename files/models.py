@@ -2161,7 +2161,24 @@ class Playlist(models.Model):
 
     @property
     def media_count(self):
-        return self.media.count()
+        """Number of items an anonymous viewer sees; see `visible_media_count`."""
+        return self.visible_media_count(None)
+
+    def visible_playlist_media(self, user):
+        """Return the PlaylistMedia rows `user` may see, in playlist order.
+
+        Mirrors `helpers.can_user_see_video_in_playlist`: anonymous viewers see
+        public media, signed-in viewers also see unlisted and restricted media,
+        and private media is hidden from everyone. Rows are kept when media
+        turns non-public, so publishing it again restores it in place.
+        """
+        playlist_media = self.playlistmedia_set.all()
+        if user is not None and user.is_authenticated:
+            return playlist_media.exclude(media__state="private")
+        return playlist_media.filter(media__state="public")
+
+    def visible_media_count(self, user):
+        return self.visible_playlist_media(user).count()
 
     def get_absolute_url(self, api=False):
         if api:
@@ -2208,22 +2225,25 @@ class Playlist(models.Model):
 
     @property
     def thumbnail_url(self):
-        pm = self.playlistmedia_set.first()
-        if pm:
-            # return helpers.url_from_path(pm.media.thumbnail.path)
-            return pm.media.thumbnail_url
-        return None
+        """Cover for an anonymous viewer, such as the Open Graph fallback image.
 
-    @property
-    def public_thumbnail_url(self):
-        """Return the thumbnail URL of the first public media in the playlist.
-
-        Unlike ``thumbnail_url`` (which returns the first media regardless of
-        state), this property filters to ``state="public"`` so it is safe to
-        expose to anonymous viewers — e.g., as the OG image fallback when no
-        composite grid is available.
+        Viewer-facing APIs use `visible_thumbnail_url` instead.
         """
-        pm = self.playlistmedia_set.filter(media__state="public").first()
+        return self.visible_thumbnail_url(None)
+
+    def visible_thumbnail_url(self, user):
+        """Return the cover thumbnail from the first media `user` can load.
+
+        Restricted media appears in a signed-in viewer's list, but its
+        thumbnail is served only with a per-media token, so it never supplies
+        the cover. Returns None when no candidate remains.
+        """
+        pm = (
+            self.visible_playlist_media(user)
+            .filter(media__state__in=("public", "unlisted"))
+            .select_related("media")
+            .first()
+        )
         if pm:
             return pm.media.thumbnail_url
         return None
@@ -2260,7 +2280,7 @@ class Playlist(models.Model):
             except OSError:
                 version = 0
             return helpers.build_versioned_url(base_url, version)
-        return self.public_thumbnail_url
+        return self.thumbnail_url
 
     @cached_property
     def has_composite_thumbnail(self):
@@ -3126,14 +3146,14 @@ def playlist_media_delete(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Media)
 def invalidate_playlist_composites_on_state_change(sender, instance, created, update_fields=None, **kwargs):
-    """Invalidate composite thumbnails of playlists that contain this media
-    when its visibility state changes.
+    """Invalidate cached playlists that contain this media when its
+    visibility state changes.
 
-    The composite is filtered to `state="public"` media only (see
-    `generate_composite_thumbnail` in files/helpers.py), so when a media
-    transitions into or out of the public state, every playlist that contains
-    it needs its cached composite deleted so the next access regenerates with
-    the updated visibility.
+    Playlist payloads (visible items, count, and cover) depend on every state,
+    so any transition invalidates them. The composite is filtered to
+    `state="public"` media only (see `generate_composite_thumbnail` in
+    files/helpers.py), so it is deleted only when the media transitions into
+    or out of the public state.
     """
     if created:
         return
@@ -3144,11 +3164,11 @@ def invalidate_playlist_composites_on_state_change(sender, instance, created, up
     original_state = getattr(instance, "_Media__original_state", None)
     if original_state is None or original_state == instance.state:
         return
-    if original_state != "public" and instance.state != "public":
-        return
+    composite_changed = "public" in (original_state, instance.state)
     friendly_tokens = Playlist.objects.filter(media=instance).values_list("friendly_token", flat=True)
     for friendly_token in friendly_tokens:
-        delete_composite_thumbnail(friendly_token)
+        if composite_changed:
+            delete_composite_thumbnail(friendly_token)
         invalidate_playlist_cache(friendly_token)
 
 
