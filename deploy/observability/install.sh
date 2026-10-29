@@ -68,6 +68,12 @@ load_config() {
   METRICS_RETENTION="${METRICS_RETENTION:-90d}"
   LOGS_RETENTION="${LOGS_RETENTION:-30d}"
   TRACES_RETENTION="${TRACES_RETENTION:-14d}"
+  STORAGE_MIN_FREE_DISK="${STORAGE_MIN_FREE_DISK:-1GiB}"
+  LOGS_MAX_DISK="${LOGS_MAX_DISK:-5GiB}"
+  TRACES_MAX_DISK="${TRACES_MAX_DISK:-5GiB}"
+  JOURNAL_MAX_USE="${JOURNAL_MAX_USE:-4G}"
+  JOURNAL_MAX_FILE="${JOURNAL_MAX_FILE:-128M}"
+  JOURNAL_MAX_RETENTION="${JOURNAL_MAX_RETENTION:-30day}"
   VICTORIAMETRICS_PORT="${VICTORIAMETRICS_PORT:-8428}"
   VICTORIALOGS_PORT="${VICTORIALOGS_PORT:-9428}"
   VICTORIATRACES_PORT="${VICTORIATRACES_PORT:-10428}"
@@ -278,6 +284,9 @@ write_environment_files() {
     printf 'VMALERT_PORT=%q\n' "$VMALERT_PORT"
     printf 'LOGS_RETENTION=%q\n' "$LOGS_RETENTION"
     printf 'TRACES_RETENTION=%q\n' "$TRACES_RETENTION"
+    printf 'STORAGE_MIN_FREE_DISK=%q\n' "$STORAGE_MIN_FREE_DISK"
+    printf 'LOGS_MAX_DISK=%q\n' "$LOGS_MAX_DISK"
+    printf 'TRACES_MAX_DISK=%q\n' "$TRACES_MAX_DISK"
   } > "${ETC_DIR}/stack.env"
   printf 'DATA_SOURCE_NAME=%q\n' "$POSTGRES_DSN" > "${ETC_DIR}/postgres-exporter.env"
   printf 'REDIS_ADDR=%q\n' "$REDIS_URL" > "${ETC_DIR}/redis-exporter.env"
@@ -328,6 +337,7 @@ install_configuration() {
     install -m 0644 "${TEMPLATE_DIR}/${template}.service" "/etc/systemd/system/${template}.service"
   done
   render_victoriametrics_unit
+  install_disk_policy
   install_grafana_provisioning
   if command -v nginx >/dev/null 2>&1; then
     install -m 0644 "${TEMPLATE_DIR}/nginx-stub-status.conf" /etc/nginx/conf.d/cinematacms-observability.conf
@@ -340,7 +350,7 @@ install_configuration() {
 prepare_application_log() {
   local log_directory
   log_directory="$(dirname "$APP_LOG_PATH")"
-  install -d -m 0750 -o www-data -g cinematacms-observability "$log_directory"
+  install -d -m 2750 -o www-data -g cinematacms-observability "$log_directory"
   touch "$APP_LOG_PATH"
   chown www-data:cinematacms-observability "$APP_LOG_PATH"
   chmod 0640 "$APP_LOG_PATH"
@@ -348,7 +358,8 @@ prepare_application_log() {
 
 prepare_service_logs() {
   local filename path
-  install -d -m 0750 -o www-data -g cinematacms-observability "$APP_SERVICE_LOG_DIR"
+  # setgid keeps files created later (celery, uwsgi, logrotate) in the collector's group.
+  install -d -m 2750 -o www-data -g cinematacms-observability "$APP_SERVICE_LOG_DIR"
   for filename in errorlog.txt celery_long.log celery_short.log celery_whisper.log celery_email.log beatcelery_beat.log; do
     path="${APP_SERVICE_LOG_DIR}/${filename}"
     touch "$path"
@@ -372,11 +383,30 @@ configure_postgres_monitor_role() {
     --file="${TEMPLATE_DIR}/postgres-monitor-role.sql" postgres
 }
 
+install_disk_policy() {
+  local content
+  content="$(<"${TEMPLATE_DIR}/app-logs.logrotate")"
+  content="${content//\$\{APP_SERVICE_LOG_DIR\}/$APP_SERVICE_LOG_DIR}"
+  printf '%s\n' "$content" > /etc/logrotate.d/cinematacms-app-logs
+  chmod 0644 /etc/logrotate.d/cinematacms-app-logs
+  logrotate --debug /etc/logrotate.d/cinematacms-app-logs >/dev/null
+
+  content="$(<"${TEMPLATE_DIR}/journald-cinematacms.conf")"
+  content="${content//\$\{JOURNAL_MAX_USE\}/$JOURNAL_MAX_USE}"
+  content="${content//\$\{JOURNAL_MAX_FILE\}/$JOURNAL_MAX_FILE}"
+  content="${content//\$\{JOURNAL_MAX_RETENTION\}/$JOURNAL_MAX_RETENTION}"
+  install -d -m 0755 /etc/systemd/journald.conf.d
+  printf '%s\n' "$content" > /etc/systemd/journald.conf.d/cinematacms.conf
+  printf 'Journal usage before applying the %s cap: %s\n' "$JOURNAL_MAX_USE" "$(journalctl --disk-usage)"
+  systemctl restart systemd-journald
+}
+
 render_victoriametrics_unit() {
   local content
   content="$(<"${TEMPLATE_DIR}/victoriametrics.service")"
   content="${content//\$\{VICTORIAMETRICS_PORT\}/$VICTORIAMETRICS_PORT}"
   content="${content//\$\{METRICS_RETENTION\}/$METRICS_RETENTION}"
+  content="${content//\$\{STORAGE_MIN_FREE_DISK\}/$STORAGE_MIN_FREE_DISK}"
   printf '%s\n' "$content" > /etc/systemd/system/victoriametrics.service
 }
 

@@ -8,7 +8,7 @@ Type=simple
 User=cinematacms-observability
 Group=cinematacms-observability
 EnvironmentFile=/etc/cinematacms-observability/stack.env
-ExecStart=/opt/cinematacms-observability/bin/victoria-traces-prod -httpListenAddr=127.0.0.1:${VICTORIATRACES_PORT} -storageDataPath=/var/lib/victoriatraces -retentionPeriod=${TRACES_RETENTION}
+ExecStart=/opt/cinematacms-observability/bin/victoria-traces-prod -httpListenAddr=127.0.0.1:${VICTORIATRACES_PORT} -storageDataPath=/var/lib/victoriatraces -retentionPeriod=${TRACES_RETENTION} -retention.maxDiskSpaceUsageBytes=${TRACES_MAX_DISK} -storage.minFreeDiskSpaceBytes=${STORAGE_MIN_FREE_DISK}
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

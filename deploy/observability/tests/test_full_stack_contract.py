@@ -1,6 +1,8 @@
 import json
 import re
+import shutil
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -60,12 +62,99 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("printf 'APP_SERVICE_LOG_DIR=%q\\n'", installer)
         self.assertIn("prepare_service_logs", installer)
         self.assertIn("errorlog.txt celery_long.log celery_short.log", installer)
-        self.assertIn('install -d -m 0750 -o www-data -g cinematacms-observability "$APP_SERVICE_LOG_DIR"', installer)
+        self.assertIn('install -d -m 2750 -o www-data -g cinematacms-observability "$APP_SERVICE_LOG_DIR"', installer)
         self.assertIn("--connect-timeout 5 --max-time 15", installer)
         self.assertIn("GRAFANA_URL must use loopback HTTP or HTTPS", installer)
         self.assertIn("postgres-exporter.env", installer)
         self.assertIn("redis-exporter.env", installer)
         self.assertIn("celery-exporter.env", installer)
+
+    def test_collector_group_is_inherited_by_new_and_rotated_log_files(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
+        setgid_directory = "install -d -m 2750 -o www-data -g cinematacms-observability"
+
+        self.assertIn(f'{setgid_directory} "$log_directory"', installer)
+        self.assertIn(f'{setgid_directory} "$APP_SERVICE_LOG_DIR"', installer)
+        self.assertIn("copytruncate", rotation)
+        self.assertNotIn("create ", rotation)
+
+    @unittest.skipUnless(shutil.which("logrotate"), "logrotate is not installed")
+    def test_rotation_keeps_the_live_log_file_and_its_group(self):
+        template = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
+        with tempfile.TemporaryDirectory() as directory:
+            logs = Path(directory) / "logs"
+            logs.mkdir()
+            live = logs / "celery_long.log"
+            live.write_text("x" * 200)
+            live.chmod(0o640)
+            before = live.stat()
+            config = Path(directory) / "rotate.conf"
+            config.write_text(template.replace("${APP_SERVICE_LOG_DIR}", str(logs)).replace("maxsize 100M", "size 1"))
+            config.chmod(0o644)
+
+            subprocess.run(
+                ["logrotate", "--force", "--state", str(Path(directory) / "state"), str(config)],
+                check=True,
+            )
+
+            after = live.stat()
+            self.assertEqual(after.st_size, 0, "the live file is truncated in place")
+            self.assertEqual(
+                (after.st_ino, after.st_gid, after.st_mode), (before.st_ino, before.st_gid, before.st_mode)
+            )
+            self.assertEqual((logs / "celery_long.log.1").read_text(), "x" * 200)
+
+    def test_disk_usage_is_capped_by_journald_logrotate_and_storage_flags(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        environment = (OBSERVABILITY / "observability.env.example").read_text()
+        templates = OBSERVABILITY / "templates"
+        journald = (templates / "journald-cinematacms.conf").read_text()
+        app_logs = (templates / "app-logs.logrotate").read_text()
+
+        self.assertFalse((ROOT / "deploy/mediacms_logrorate").exists())
+        for setting in (
+            "SystemMaxUse=${JOURNAL_MAX_USE}",
+            "SystemMaxFileSize=${JOURNAL_MAX_FILE}",
+            "MaxRetentionSec=${JOURNAL_MAX_RETENTION}",
+        ):
+            self.assertIn(setting, journald)
+        for variable in ("JOURNAL_MAX_USE", "JOURNAL_MAX_FILE", "JOURNAL_MAX_RETENTION"):
+            self.assertIn(f"{variable}=", environment)
+            self.assertIn(f'"${{{variable}:-', installer)
+        self.assertIn("journalctl --disk-usage", installer)
+        for directive in ("maxsize 100M", "copytruncate", "errorlog.txt"):
+            self.assertIn(directive, app_logs)
+        for target in ("journald.conf.d/cinematacms.conf", "logrotate.d/cinematacms-app-logs"):
+            self.assertIn(target, installer)
+
+        policy = installer[installer.index("install_disk_policy() {") :]
+        policy = policy[: policy.index("\n}\n")]
+        self.assertIn("logrotate --debug /etc/logrotate.d/cinematacms-app-logs", policy)
+        self.assertLess(policy.index("logrotate --debug"), policy.index("systemctl restart systemd-journald"))
+
+        for unit, flags in {
+            "victoriametrics.service": ("-storage.minFreeDiskSpaceBytes=${STORAGE_MIN_FREE_DISK}",),
+            "victorialogs.service": (
+                "-retention.maxDiskSpaceUsageBytes=${LOGS_MAX_DISK}",
+                "-storage.minFreeDiskSpaceBytes=${STORAGE_MIN_FREE_DISK}",
+            ),
+            "victoriatraces.service": (
+                "-retention.maxDiskSpaceUsageBytes=${TRACES_MAX_DISK}",
+                "-storage.minFreeDiskSpaceBytes=${STORAGE_MIN_FREE_DISK}",
+            ),
+        }.items():
+            text = (templates / unit).read_text()
+            for flag in flags:
+                self.assertIn(flag, text, unit)
+
+        rules = (templates / "alerts.yml").read_text()
+        for alert in (
+            "CinemataHostFilesystemWarning",
+            "CinemataHostFilesystemFreeLow",
+            "CinemataVictoriaMetricsReadOnly",
+        ):
+            self.assertIn(f"alert: {alert}", rules)
 
     def test_application_metrics_listener_is_loopback_only(self):
         nginx = (OBSERVABILITY / "templates/nginx-app-metrics.conf").read_text()

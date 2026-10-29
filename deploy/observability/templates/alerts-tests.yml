@@ -18,3 +18,44 @@ tests:
               job: victorialogs
             exp_annotations:
               summary: "Observability scrape target is down"
+
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4"}'
+        values: '500000000+0x30'
+      - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4"}'
+        values: '100000000000+0x30'
+      - series: 'vm_storage_is_read_only{path="/var/lib/victoriametrics"}'
+        values: '1+0x30'
+    alert_rule_test:
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataHostFilesystemWarning
+        exp_alerts:
+          - exp_labels: {severity: warning, mountpoint: /, fstype: ext4}
+            exp_annotations: {summary: "Host filesystem has less than 20 percent free"}
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataHostFilesystemFreeLow
+        exp_alerts:
+          - exp_labels: {severity: critical, mountpoint: /, fstype: ext4}
+            exp_annotations: {summary: "Host filesystem has less than 1 GiB free"}
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataVictoriaMetricsReadOnly
+        exp_alerts:
+          - exp_labels: {severity: critical, path: /var/lib/victoriametrics}
+            exp_annotations: {summary: "VictoriaMetrics rejects writes because the disk is nearly full"}
+
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4"}'
+        values: '50000000000+0x30'
+      - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4"}'
+        values: '100000000000+0x30'
+      - series: 'vm_storage_is_read_only{path="/var/lib/victoriametrics"}'
+        values: '0+0x30'
+    alert_rule_test:
+      - {eval_time: 20m, groupname: observability-stack, alertname: CinemataHostFilesystemWarning, exp_alerts: []}
+      - {eval_time: 20m, groupname: observability-stack, alertname: CinemataHostFilesystemFreeLow, exp_alerts: []}
+      - {eval_time: 20m, groupname: observability-stack, alertname: CinemataVictoriaMetricsReadOnly, exp_alerts: []}

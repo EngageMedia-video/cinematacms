@@ -107,3 +107,18 @@ groups:
         for: 10m
         labels: {severity: warning}
         annotations: {summary: "Public TLS certificate expires within seven days"}
+      - alert: CinemataHostFilesystemWarning
+        expr: 'node_filesystem_avail_bytes{mountpoint=~"/|/var|/home",fstype!~"tmpfs|overlay"} / clamp_min(node_filesystem_size_bytes{mountpoint=~"/|/var|/home",fstype!~"tmpfs|overlay"}, 1) < 0.2'
+        for: 15m
+        labels: {severity: warning}
+        annotations: {summary: "Host filesystem has less than 20 percent free"}
+      - alert: CinemataHostFilesystemFreeLow
+        expr: 'node_filesystem_avail_bytes{mountpoint=~"/|/var|/home",fstype!~"tmpfs|overlay"} < 1073741824'
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: "Host filesystem has less than 1 GiB free"}
+      - alert: CinemataVictoriaMetricsReadOnly
+        expr: vm_storage_is_read_only == 1
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "VictoriaMetrics rejects writes because the disk is nearly full"}
