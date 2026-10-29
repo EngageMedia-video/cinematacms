@@ -236,17 +236,29 @@ def _slim_home_media_results(items):
     return [_slim_home_media_item(item) for item in items]
 
 
-def _featured_playlist_token(row):
-    match = FEATURED_PLAYLIST_API_PATH.fullmatch(urlsplit(row.api_url).path)
-    return match.group(1) if match else None
+def _featured_api_path(row):
+    try:
+        return urlsplit(row.api_url).path
+    except ValueError:
+        logger.warning("Omitting featured row %s: unparsable api_url", row.pk)
+        return None
 
 
 def _get_index_featured_payload(request):
-    # api_url is free text, so deleting a playlist leaves its row pointing at a 400.
+    # api_url is free text, so a deleted playlist or a malformed URL leaves a row the home page cannot load.
     rows = list(IndexPageFeatured.objects.filter(active=True).order_by("ordering"))
-    tokens = {token for row in rows if (token := _featured_playlist_token(row))}
-    existing = set(Playlist.objects.filter(friendly_token__in=tokens).values_list("friendly_token", flat=True))
-    shown = [row for row in rows if _featured_playlist_token(row) in existing | {None}]
+    paths = {row.pk: path for row in rows if (path := _featured_api_path(row)) is not None}
+    playlist_tokens = {
+        pk: match.group(1) for pk, path in paths.items() if (match := FEATURED_PLAYLIST_API_PATH.fullmatch(path))
+    }
+    existing = set(
+        Playlist.objects.filter(friendly_token__in=playlist_tokens.values()).values_list("friendly_token", flat=True)
+    )
+    shown = [
+        row
+        for row in rows
+        if row.pk in paths and (row.pk not in playlist_tokens or playlist_tokens[row.pk] in existing)
+    ]
     return list(IndexPageFeaturedSerializer(shown, many=True, context={"request": request}).data)
 
 

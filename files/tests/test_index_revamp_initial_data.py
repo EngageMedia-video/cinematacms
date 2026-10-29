@@ -105,6 +105,16 @@ class IndexRevampInitialDataTest(TestCase):
         self.assertEqual([item["title"] for item in parsed], ["Kept row", "Other listing"])
         self.assertEqual([item["title"] for item in listed], ["Kept row", "Other listing"])
 
+    def test_index_featured_omits_rows_whose_api_url_cannot_be_parsed(self):
+        IndexPageFeatured.objects.create(title="Broken row", api_url="http://[", url="/broken")
+        IndexPageFeatured.objects.create(title="Other listing", api_url="/api/v1/media?show=featured", url="/featured")
+
+        with self.assertLogs("files.views", level="WARNING") as logs:
+            listed = self.client.get("/api/v1/indexfeatured", SERVER_NAME="localhost").json()
+
+        self.assertEqual([item["title"] for item in listed], ["Other listing"])
+        self.assertIn("unparsable api_url", logs.output[0])
+
     def test_index_featured_failure_keeps_media_payloads_and_leaves_playlists_unseeded(self):
         with (
             patch("files.views._get_index_featured_payload", side_effect=RuntimeError("playlist query failed")),
