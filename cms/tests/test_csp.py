@@ -144,6 +144,7 @@ class ContentSecurityPolicyTests(SimpleTestCase):
             report_uri="https://reports.example.test/csp",
         )["DIRECTIVES"]
         self.assertIn("https://analytics.example.test/umami/script.js", policy["script-src"])
+        self.assertIn("https://analytics.example.test/umami/recorder.js", policy["script-src"])
         self.assertIn("https://analytics.example.test", policy["connect-src"])
         self.assertNotIn("https://analytics.example.test", policy["img-src"])
         self.assertIn("https://images.example.test", policy["img-src"])

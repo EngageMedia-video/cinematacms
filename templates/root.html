@@ -7,7 +7,7 @@
         <meta property="csp-nonce" content="{{ request.csp_nonce }}" nonce="{{ request.csp_nonce }}">
 
         <title>{% block headtitle %}{{PORTAL_NAME}}{% endblock headtitle %}</title>
-        {% if ANALYTICS %}<meta name="referrer" content="{% if ANALYTICS.nonpublic %}no-referrer{% else %}origin{% endif %}">{% endif %}
+        {% if ANALYTICS %}<meta name="referrer" content="{% if ANALYTICS.nonpublic %}same-origin{% else %}origin{% endif %}">{% endif %}
         {% if ANALYTICS %}
         {{ ANALYTICS|json_script:"cinemata-analytics-config" }}
         <script src="{% static 'js/cinemata-analytics.js' %}" defer></script>

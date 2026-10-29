@@ -1613,8 +1613,6 @@ Object.entries({
 	media_delete: 'media_delete',
 	playlist_creation_completed: 'playlist_create',
 	reported_media: 'media_report_success',
-	disliked_media: 'dislike',
-	undisliked_media: 'undislike',
 }).forEach(([event, name]) => {
 	mediaPageStore.on(event, () => window.CinemataAnalytics?.track(name));
 });

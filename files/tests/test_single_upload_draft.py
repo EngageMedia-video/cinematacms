@@ -87,3 +87,33 @@ class SingleUploadDraftTests(TestCase):
         self.media.refresh_from_db()
         self.assertFalse(self.media.is_draft)
         self.assertEqual(self.media.title, "Submitted")
+
+    def _submit_details(self):
+        return self.client.post(
+            f"/edit?m={self.media.friendly_token}",
+            {
+                "title": "Submitted",
+                "summary": "A complete synopsis.",
+                "year_produced": "2025",
+                "media_language": "en",
+                "media_country": "AU",
+                "category": [self.category.id],
+                "state": "private",
+            },
+            headers={"x-requested-with": "XMLHttpRequest"},
+        )
+
+    def test_first_details_save_of_a_single_upload_counts_as_a_submission(self):
+        Media.objects.filter(pk=self.media.pk).update(is_draft=False, metadata_saved_at=None)
+
+        response = self._submit_details()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["analytics_events"][0]["name"], "media_submit")
+
+    def test_later_details_save_counts_as_an_update(self):
+        self._submit_details()
+
+        response = self._submit_details()
+
+        self.assertEqual(response.json()["analytics_events"][0]["name"], "media_update")

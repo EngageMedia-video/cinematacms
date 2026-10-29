@@ -5,6 +5,7 @@ from django.shortcuts import resolve_url
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 
+from cms.analytics import queue_action, visitor_segment
 from cms.permissions import is_mfa_enabled_for_user, user_requires_mfa
 from utils.security import generate_cipher, generate_key
 
@@ -12,6 +13,13 @@ from .models import BlackListedEmail
 
 
 class MyAccountAdapter(DefaultAccountAdapter):
+    def logout(self, request):
+        # Queued after logout: Django flushes the session after sending user_logged_out.
+        user = request.user
+        super().logout(request)
+        if visitor_segment(user) is not None:
+            queue_action(request, "signout_success")
+
     def encrypt(self, text: str):
         encrypted_bytes = self.cipher_suite.encrypt(text.encode("utf-8"))
         return encrypted_bytes.decode("utf-8")

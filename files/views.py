@@ -1125,7 +1125,7 @@ def edit_media(request):
         form = MediaForm(request.user, request.POST, request.FILES, instance=media)
         if form.is_valid():
             # Set current user for FeaturedVideo signal tracking
-            was_draft = media.is_draft
+            is_first_submission = media.is_draft or media.metadata_saved_at is None
             media._current_user = request.user
             media = form.save()
             apply_tags(media, form.cleaned_data.get("new_tags"), request.user)
@@ -1333,7 +1333,7 @@ def edit_media(request):
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 from cms.analytics import action_events
 
-                names = ["media_submit" if was_draft else "media_update"]
+                names = ["media_submit" if is_first_submission else "media_update"]
                 if media_update_info.get("updated"):
                     names.append("media_file_replace")
                 return JsonResponse(
@@ -1346,7 +1346,7 @@ def edit_media(request):
 
             from cms.analytics import queue_action
 
-            queue_action(request, "media_submit" if was_draft else "media_update", media=media)
+            queue_action(request, "media_submit" if is_first_submission else "media_update", media=media)
             if media_update_info.get("updated"):
                 queue_action(request, "media_file_replace", media=media)
 

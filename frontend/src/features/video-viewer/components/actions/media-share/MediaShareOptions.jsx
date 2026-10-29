@@ -126,7 +126,7 @@ function toHHMMSS(timeInt) {
 const SHARE_TILE_CLASSES =
 	'group inline-flex shrink-0 cursor-pointer flex-col items-center gap-size-8 border-none bg-transparent p-0 outline-none transition-opacity hover:opacity-80 focus:outline-none focus-visible:outline-none';
 
-function ShareTile({ icon, label, bgColor, iconColor, href, target, dataPageId, className = '' }) {
+function ShareTile({ icon, label, bgColor, iconColor, href, target, dataPageId, network, className = '' }) {
 	const inner = (
 		<>
 			<span
@@ -147,6 +147,7 @@ function ShareTile({ icon, label, bgColor, iconColor, href, target, dataPageId, 
 			<a
 				href={href}
 				data-analytics-action="media_share_click"
+				data-analytics-network={network}
 				target={target}
 				rel={target === '_blank' ? 'noopener noreferrer' : undefined}
 				className={cn(SHARE_TILE_CLASSES, 'no-underline', className)}
@@ -220,6 +221,7 @@ export function MediaShareOptions({ timestamp = 0, startAtSelected = false, onTo
 								bgColor={opt.bgColor}
 								iconColor={opt.iconColor}
 								href={opt.shareUrl}
+								network={opt.key}
 								target="_blank"
 							/>
 						)

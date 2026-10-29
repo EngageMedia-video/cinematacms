@@ -2622,12 +2622,20 @@ function generatePlugin(/*videojs*/) {
 					this.hadStartedOnResolutionChange = false;
 				}
 
+				let resumed = Promise.resolve();
 				if (this.wasPlayingOnResolutionChange) {
-					this.player.play();
+					const played = this.player.play();
 					this.wasPlayingOnResolutionChange = false;
+					resumed =
+						played && typeof played.then === 'function'
+							? played.catch(() => {})
+							: new Promise((resolve) => this.player.one('playing', resolve));
 				} else {
 					this.player.pause();
 				}
+				Promise.all([resumed, this.sourceSwitchPositionRestored]).then(() =>
+					this.player.trigger('sourceswitchend')
+				);
 
 				this.isChangingResolution = false;
 
@@ -2765,6 +2773,8 @@ function generatePlugin(/*videojs*/) {
 
 		changeVideoResolution() {
 			this.isChangingResolution = true;
+			// Listeners such as analytics ignore the pause, seek and resume this reload causes.
+			this.player.trigger('sourceswitchstart');
 
 			const sources = [];
 			const currentTime = this.player.currentTime();
@@ -2791,6 +2801,8 @@ function generatePlugin(/*videojs*/) {
 
 			this.player.src(sources); // @note: Load all sources (with provided order).
 			this.player.techCall_('reset');
+			// video.js applies this position on the new source's `canplay`, possibly after playback resumes.
+			this.sourceSwitchPositionRestored = new Promise((resolve) => this.player.one('seeked', resolve));
 			this.player.currentTime(currentTime);
 			this.player.duration(duration);
 			this.player.playbackRate(this.state.theSelectedPlaybackSpeed);
@@ -3246,15 +3258,19 @@ function generatePlugin(/*videojs*/) {
 		 */
 		onPublicStateUpdate() {
 			if (this.stateUpdateCallback) {
-				this.stateUpdateCallback({
-					volume: this.state.volume,
-					theaterMode: this.state.theaterMode,
-					soundMuted: this.state.soundMuted,
-					quality: this.state.theSelectedQuality,
-					playbackSpeed: this.state.theSelectedPlaybackSpeed,
-					subtitle: this.state.theSelectedSubtitleOption,
-				});
+				this.stateUpdateCallback(this.publicState());
 			}
+		}
+
+		publicState() {
+			return {
+				volume: this.state.volume,
+				theaterMode: this.state.theaterMode,
+				soundMuted: this.state.soundMuted,
+				quality: this.state.theSelectedQuality,
+				playbackSpeed: this.state.theSelectedPlaybackSpeed,
+				subtitle: this.state.theSelectedSubtitleOption,
+			};
 		}
 
 		onWindowResize() {
