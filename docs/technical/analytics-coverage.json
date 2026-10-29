@@ -102,11 +102,9 @@
         "community_impact_submit",
         "media_delete",
         "playlist_create",
-        "media_report_success",
-        "dislike",
-        "undislike"
+        "media_report_success"
       ],
-      "trigger": "A confirmed store action succeeds; conditional dislike controls remain conditional.",
+      "trigger": "A confirmed store action succeeds.",
       "privacy": "Fixed event names and sanitized context only; no form contents, titles, identities or access tokens.",
       "sources": [
         {
