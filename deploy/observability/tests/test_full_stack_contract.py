@@ -156,6 +156,18 @@ class FullStackContractTests(unittest.TestCase):
         ):
             self.assertIn(f"alert: {alert}", rules)
 
+    def test_overview_shows_in_flight_work_and_unconsumed_queues(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in dashboard["panels"]}
+
+        active_work = " ".join(target["expr"] for target in panels["Celery active work and latency"]["targets"])
+        self.assertIn("sum by (hostname) (celery_worker_tasks_active)", active_work)
+        self.assertNotIn("by (worker)", active_work)
+        exporter_queues = " ".join(target["expr"] for target in panels["Celery exporter queues"]["targets"])
+        self.assertIn("celery_active_worker_count", exporter_queues)
+        self.assertIn('redis_key_size{key="celery"}', exporter_queues)
+        self.assertIn('redis_key_size{key="unacked"}', exporter_queues)
+
     def test_redis_exporter_checks_queue_keys_in_the_broker_database(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
         start = installer.index("redis_database_number() {")
