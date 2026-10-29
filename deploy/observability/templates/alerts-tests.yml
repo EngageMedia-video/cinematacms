@@ -59,3 +59,25 @@ tests:
       - {eval_time: 20m, groupname: observability-stack, alertname: CinemataHostFilesystemWarning, exp_alerts: []}
       - {eval_time: 20m, groupname: observability-stack, alertname: CinemataHostFilesystemFreeLow, exp_alerts: []}
       - {eval_time: 20m, groupname: observability-stack, alertname: CinemataVictoriaMetricsReadOnly, exp_alerts: []}
+
+  - interval: 1m
+    input_series:
+      - series: 'redis_key_size{db="db1",key="celery"}'
+        values: '2+0x30'
+      - series: 'redis_key_size{db="db1",key="long_tasks"}'
+        values: '3+0x30'
+      - series: 'celery_active_worker_count{queue_name="long_tasks"}'
+        values: '0+0x30'
+      - series: 'redis_key_size{db="db1",key="short_tasks"}'
+        values: '5+0x30'
+      - series: 'celery_active_worker_count{queue_name="short_tasks"}'
+        values: '1+0x30'
+    alert_rule_test:
+      - eval_time: 15m
+        groupname: observability-stack
+        alertname: CinemataCeleryQueueWithoutConsumer
+        exp_alerts:
+          - exp_labels: {severity: warning, queue_name: celery}
+            exp_annotations: {summary: "A Celery queue holds tasks and no worker consumes it"}
+          - exp_labels: {severity: warning, queue_name: long_tasks}
+            exp_annotations: {summary: "A Celery queue holds tasks and no worker consumes it"}

@@ -122,3 +122,8 @@ groups:
         for: 1m
         labels: {severity: critical}
         annotations: {summary: "VictoriaMetrics rejects writes because the disk is nearly full"}
+      - alert: CinemataCeleryQueueWithoutConsumer
+        expr: sum by (queue_name) (label_replace(redis_key_size{key!="unacked"}, "queue_name", "$1", "key", "(.+)")) > 0 unless on(queue_name) (celery_active_worker_count > 0)
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "A Celery queue holds tasks and no worker consumes it"}

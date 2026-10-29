@@ -156,6 +156,33 @@ class FullStackContractTests(unittest.TestCase):
         ):
             self.assertIn(f"alert: {alert}", rules)
 
+    def test_redis_exporter_checks_queue_keys_in_the_broker_database(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        start = installer.index("redis_database_number() {")
+        functions = installer[start : installer.index("prepare_application_log() {")]
+        coverage = json.loads((ROOT / "config/observability/coverage.json").read_text())
+        contract_queues = coverage["registries"]["celery_queues"]["values"]
+        # "default" is the metric label for unrecognised routing keys, not a broker queue.
+        expected_keys = ["celery", *(queue for queue in contract_queues if queue != "default"), "unacked"]
+
+        self.assertIn("printf 'REDIS_EXPORTER_CHECK_SINGLE_KEYS=%q\\n' \"$(celery_queue_keys)\"", installer)
+        for url, database in {
+            "redis://127.0.0.1:6379/1": "db1",
+            "redis://127.0.0.1:6379": "db0",
+            "redis://127.0.0.1:6379/": "db0",
+            "redis://127.0.0.1:6379/3/": "db3",
+            "redis://:secret@127.0.0.1:6379/2?timeout=5": "db2",
+            "redis://127.0.0.1:6379?timeout=5": "db0",
+            "redis://127.0.0.1:6379/notanumber": "db0",
+        }.items():
+            result = subprocess.run(
+                ["bash", "-c", f'{functions}\nREDIS_URL="$1"; celery_queue_keys', "bash", url],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.stdout, ",".join(f"{database}={key}" for key in expected_keys), url)
+
     def test_application_metrics_listener_is_loopback_only(self):
         nginx = (OBSERVABILITY / "templates/nginx-app-metrics.conf").read_text()
         installer = (OBSERVABILITY / "install.sh").read_text()

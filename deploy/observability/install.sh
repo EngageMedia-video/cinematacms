@@ -289,7 +289,10 @@ write_environment_files() {
     printf 'TRACES_MAX_DISK=%q\n' "$TRACES_MAX_DISK"
   } > "${ETC_DIR}/stack.env"
   printf 'DATA_SOURCE_NAME=%q\n' "$POSTGRES_DSN" > "${ETC_DIR}/postgres-exporter.env"
-  printf 'REDIS_ADDR=%q\n' "$REDIS_URL" > "${ETC_DIR}/redis-exporter.env"
+  {
+    printf 'REDIS_ADDR=%q\n' "$REDIS_URL"
+    printf 'REDIS_EXPORTER_CHECK_SINGLE_KEYS=%q\n' "$(celery_queue_keys)"
+  } > "${ETC_DIR}/redis-exporter.env"
   printf 'CE_BROKER_URL=%q\n' "$REDIS_URL" > "${ETC_DIR}/celery-exporter.env"
   rm -f "${ETC_DIR}/exporters.env"
   chown root:otelcol-contrib "${ETC_DIR}/stack.env"
@@ -345,6 +348,32 @@ install_configuration() {
     nginx -t
   fi
   configure_postgres_monitor_role
+}
+
+# Database number of a redis:// URL: the first path segment, db 0 when absent or not numeric.
+redis_database_number() {
+  local url="${1%%\?*}" authority_and_path path
+  authority_and_path="${url#*://}"
+  [[ "$authority_and_path" == */* ]] || { printf '0'; return; }
+  path="${authority_and_path#*/}"
+  path="${path%%/*}"
+  [[ "$path" =~ ^[0-9]+$ ]] && printf '%s' "$path" || printf '0'
+}
+
+# Queues the worker units consume. cms/tests/test_celery_queues.py checks this list against
+# OBSERVABILITY_CELERY_QUEUES, and the deploy contract tests check it against coverage.json.
+CELERY_CONSUMED_QUEUES=(long_tasks short_tasks whisper_tasks email_tasks)
+
+# Celery queue lists sit in the broker database under the queue name. "celery" is Celery's built-in
+# default queue, which no worker consumes: a key there means a task was sent without a route. The
+# "unacked" hash holds messages already delivered to workers but not yet acknowledged.
+celery_queue_keys() {
+  local database key keys=()
+  database="db$(redis_database_number "$REDIS_URL")"
+  for key in celery "${CELERY_CONSUMED_QUEUES[@]}" unacked; do
+    keys+=("${database}=${key}")
+  done
+  (IFS=,; printf '%s' "${keys[*]}")
 }
 
 prepare_application_log() {
