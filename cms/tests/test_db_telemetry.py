@@ -39,6 +39,37 @@ class DatabaseContextTests(SimpleTestCase):
         violation.assert_any_call("database", "context_group")
 
 
+class CeleryDatabaseContextTests(SimpleTestCase):
+    def test_every_registered_task_maps_to_its_family_without_a_contract_violation(self):
+        from files.metrics import TASK_FAMILY_BY_NAME
+
+        for task_name, family in TASK_FAMILY_BY_NAME.items():
+            with self.subTest(task=task_name):
+                task = SimpleNamespace(name=task_name, request=SimpleNamespace())
+                with (
+                    patch("celery.current_task", task),
+                    patch("cms.db_backend.telemetry.record_contract_violation") as violation,
+                ):
+                    self.assertEqual(current_database_context(), ("celery", family))
+                violation.assert_not_called()
+
+    def test_task_families_are_valid_database_context_groups(self):
+        from cms.db_backend.telemetry import CONTEXT_GROUPS
+        from files.metrics import TASK_FAMILY_BY_NAME
+
+        self.assertLessEqual(set(TASK_FAMILY_BY_NAME.values()), CONTEXT_GROUPS)
+
+    def test_unregistered_task_uses_other_and_reports_a_contract_violation(self):
+        task = SimpleNamespace(name="tenant.dynamic.task", request=SimpleNamespace())
+        with (
+            patch("celery.current_task", task),
+            patch("cms.db_backend.telemetry.record_contract_violation") as violation,
+        ):
+            self.assertEqual(current_database_context(), ("celery", "other"))
+
+        violation.assert_called_once_with("database", "context_group")
+
+
 class DatabaseTelemetryCursorTests(SimpleTestCase):
     def setUp(self):
         self.raw_cursor = Mock()

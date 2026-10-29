@@ -113,19 +113,6 @@ _SQL_NUMBER = re.compile(r"(?<![A-Za-z_])(?:0x[0-9A-Fa-f]+|\d+(?:\.\d+)?)(?![A-Z
 _SQL_PARAMETER = re.compile(r"(?:%\([^)]+\)s|%s|\$\d+|\?)")
 _SQL_WORD = re.compile(r"[A-Za-z_]+")
 
-_TASK_FAMILY_PREFIXES = {
-    "encoding": ("encode_media", "files.tasks.encode", "chunkize_media"),
-    "transcription": ("whisper_", "files.tasks.whisper"),
-    "media_derivative": ("produce_sprite", "produce_thumbnail"),
-    "media_lifecycle": ("files.tasks.media", "files.tasks.delete"),
-    "storage_maintenance": ("files.tasks.storage",),
-    "discovery": ("files.tasks.index", "files.tasks.discover"),
-    "user_activity": ("users.tasks.", "notifications.tasks."),
-    "email_delivery": ("email_delivery.tasks.", "deliver_email"),
-    "platform_maintenance": ("cms.tasks.", "recover_stale"),
-    "diagnostic": ("cms.celery.debug_task",),
-}
-
 
 @dataclass(frozen=True)
 class DatabaseContext:
@@ -190,9 +177,11 @@ def _normalize_database(database: str) -> str:
 
 
 def _task_family(task_name: str) -> str:
-    for family, prefixes in _TASK_FAMILY_PREFIXES.items():
-        if task_name.startswith(prefixes) or any(prefix in task_name for prefix in prefixes):
-            return family
+    from files.metrics import registered_task_family
+
+    family = registered_task_family(task_name)
+    if family in TASK_FAMILIES:
+        return family
     record_contract_violation("database", "context_group")
     return "other"
 

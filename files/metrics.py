@@ -342,9 +342,13 @@ TASK_FAMILY_BY_NAME = {
 }
 
 
-def normalize_task_family(task_name: str) -> str:
+def registered_task_family(task_name: str) -> str | None:
     short_name = task_name.rsplit(".", 1)[-1]
-    family = TASK_FAMILY_BY_NAME.get(task_name) or TASK_FAMILY_BY_NAME.get(short_name)
+    return TASK_FAMILY_BY_NAME.get(task_name) or TASK_FAMILY_BY_NAME.get(short_name)
+
+
+def normalize_task_family(task_name: str) -> str:
+    family = registered_task_family(task_name)
     if family:
         return family
     record_contract_violation("celery", "task_family")
