@@ -32,7 +32,8 @@
     })();
     const audienceGroups = ['anonymous', 'regular', 'trusted', 'curator'];
     const audienceFor = (group) => !config.nonpublic && audienceGroups.includes(group) ? group : null;
-    const identity = /^[\w.@+-]{1,150}$/.test(config.identity?.id || '') &&
+    // The server shortens long usernames to fit Umami's 50-character distinct ID.
+    const identity = /^[\w.@+~-]{1,50}$/.test(config.identity?.id || '') &&
         audienceGroups.includes(config.identity.audience_group) ? config.identity : null;
     const screenSize = /^\d{1,5}x\d{1,5}$/;
     const languageTag = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8}){0,2}$/;

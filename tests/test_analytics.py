@@ -140,6 +140,19 @@ class WorkflowAnalyticsContextTests(SimpleTestCase):
         request.user = AnonymousUser()
         self.assertNotIn("identity", analytics_context(request)["ANALYTICS"])
 
+    def test_usernames_sharing_umamis_50_character_prefix_keep_distinct_ids(self):
+        ids = []
+        for username in ("a" * 60 + "first", "a" * 60 + "second", "b" * 50):
+            request = RequestFactory().get("/")
+            request.resolver_match = SimpleNamespace(url_name="home")
+            request.user = SimpleNamespace(is_anonymous=False, is_authenticated=True, username=username)
+            ids.append(analytics_context(request)["ANALYTICS"]["identity"]["id"])
+
+        self.assertEqual(ids[2], "b" * 50)
+        self.assertTrue(all(len(distinct_id) <= 50 for distinct_id in ids))
+        self.assertEqual(len(set(ids)), 3)
+        self.assertTrue(ids[0].startswith("a" * 41))
+
     def test_public_profile_sections_remain_distinct_without_username(self):
         request = RequestFactory().get("/user/somebody/about")
         request.user = AnonymousUser()

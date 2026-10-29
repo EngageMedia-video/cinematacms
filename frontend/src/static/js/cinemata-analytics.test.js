@@ -646,6 +646,17 @@ describe('Umami session, device and page-speed reports', () => {
 		});
 	});
 
+	it("accepts the server's shortened ID for a long username", () => {
+		const shortened = `${'a'.repeat(41)}~0123abcd`;
+		loadTracker({ identity: { id: shortened, audience_group: 'regular' } });
+		expect(tracker().dataset.distinctId).toBe(shortened);
+	});
+
+	it('rejects an ID longer than Umami stores', () => {
+		loadTracker({ identity: { id: 'a'.repeat(51), audience_group: 'regular' } });
+		expect(tracker().dataset.distinctId).toBeUndefined();
+	});
+
 	it('sends no distinct ID for an anonymous visitor, even a forged one', () => {
 		loadTracker({ nonpublic: false, audience_group: 'anonymous' });
 		expect(tracker().dataset.distinctId).toBeUndefined();

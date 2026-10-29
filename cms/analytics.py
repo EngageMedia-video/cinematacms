@@ -1,5 +1,6 @@
 """Privacy boundary for browser analytics."""
 
+import hashlib
 import json
 import re
 from datetime import timedelta
@@ -17,6 +18,8 @@ from django.views.decorators.http import require_POST
 
 SEGMENT_SALT = "cinemata.segment.v1"
 
+# Umami stores session.distinct_id as varchar(50) and truncates longer IDs.
+UMAMI_DISTINCT_ID_LENGTH = 50
 PUBLIC_ROUTES = {
     "get_page",
     "get_user",
@@ -66,8 +69,20 @@ def analytics_context(request):
     # Umami hashes the distinct ID into its session ID, so a signed-in visitor
     # carries it on every tracked page or their session splits.
     if context and getattr(request.user, "is_authenticated", False):
-        context["ANALYTICS"]["identity"] = {"id": request.user.username, "audience_group": audience_group}
+        context["ANALYTICS"]["identity"] = {
+            "id": umami_distinct_id(request.user.username),
+            "audience_group": audience_group,
+        }
     return context
+
+
+def umami_distinct_id(username):
+    """Return the username, or for a long one a readable prefix and a hash, within Umami's limit."""
+    if len(username) <= UMAMI_DISTINCT_ID_LENGTH:
+        return username
+    digest = hashlib.sha256(username.encode()).hexdigest()[:8]
+    # "~" cannot occur in a username, so the result cannot equal a real one.
+    return f"{username[: UMAMI_DISTINCT_ID_LENGTH - len(digest) - 1]}~{digest}"
 
 
 def _tracked_page_context(request, audience_group):
