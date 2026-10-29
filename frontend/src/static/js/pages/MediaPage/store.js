@@ -1121,7 +1121,7 @@ class MediaPageStore extends EventEmitter {
 			case 'playlist-next-media':
 				if (!this.pagePlaylistData) break;
 
-				let activeItem = 0;
+				activeItem = 0;
 				for (let i = 0; i < this.pagePlaylistData.playlist_media.length; i++) {
 					if (
 						MediaPageStoreData[this.id].mediaId === this.pagePlaylistData.playlist_media[i].friendly_token

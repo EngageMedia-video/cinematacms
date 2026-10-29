@@ -110,6 +110,11 @@ describe('MediaPageStore switchMedia', () => {
 		MediaPageStore.removeListener('switched_media', switched);
 	});
 
+	it('names the items before and after the current playlist item', () => {
+		expect(MediaPageStore.get('playlist-previous-media').friendly_token).toBe('a');
+		expect(MediaPageStore.get('playlist-next-media').friendly_token).toBe('c');
+	});
+
 	it('reloads the next item through the normal media load', () => {
 		const loaded = vi.fn();
 		MediaPageStore.on('loaded_media_data', loaded);

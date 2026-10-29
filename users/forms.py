@@ -2,6 +2,7 @@ import logging
 
 from django import forms
 from django.apps import apps
+from django.core.files.uploadedfile import UploadedFile
 from django.utils.translation import gettext_lazy as _
 from kombu.exceptions import OperationalError
 
@@ -137,7 +138,7 @@ class ChannelForm(forms.ModelForm):
     def clean_banner_logo(self):
         image = self.cleaned_data.get("banner_logo", False)
         if image:
-            if image.size > 2 * 1024 * 1024:
+            if isinstance(image, UploadedFile) and image.size > 2 * 1024 * 1024:
                 raise forms.ValidationError("Image file too large ( > 2mb )")
             return image
         else:
