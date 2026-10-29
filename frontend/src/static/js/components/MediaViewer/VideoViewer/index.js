@@ -35,6 +35,13 @@ import { VideoPlayer, VideoPlayerError } from '../../-NEW-/VideoPlayer.js';
 
 import '../../styles/VideoViewer.scss';
 
+function playlistMediaUrl(storeKey, playlistId) {
+	const media = MediaPageStore.get(storeKey);
+	if (!media) return null;
+	const separator = media.url.includes('?') ? '&' : '?';
+	return `${media.url}${separator}pl=${playlistId}`;
+}
+
 function filterVideoEncoding(encoding_status) {
 	switch (encoding_status) {
 		case 'running':
@@ -397,7 +404,7 @@ export default class VideoViewer extends React.PureComponent {
 		let nextLink;
 
 		if (playlistId) {
-			nextLink = MediaPageStore.get('playlist-next-media-url');
+			nextLink = playlistMediaUrl('playlist-next-media', playlistId);
 
 			if (null === nextLink) {
 				nextLink = this.props.data.related_media[0].url;
@@ -415,7 +422,7 @@ export default class VideoViewer extends React.PureComponent {
 		let previousLink;
 
 		if (playlistId) {
-			previousLink = MediaPageStore.get('playlist-previous-media-url');
+			previousLink = playlistMediaUrl('playlist-previous-media', playlistId);
 
 			if (null === previousLink) {
 				previousLink = this.props.data.related_media[0].url;
@@ -623,8 +630,7 @@ export default class VideoViewer extends React.PureComponent {
 
 			if (nextMedia) {
 				// NORMAL CASE → Has next video
-				const separator = nextMedia.url.includes('?') ? '&' : '?';
-				const nextUrl = `${nextMedia.url}${playlistId ? `${separator}pl=${playlistId}` : ''}`;
+				const nextUrl = playlistMediaUrl('playlist-next-media', playlistId);
 				this.showTransitionCard(nextUrl, nextMedia.friendly_token);
 			} else {
 				const playlistUrl = `/playlists/${playlistId}`;
@@ -788,8 +794,8 @@ export default class VideoViewer extends React.PureComponent {
 		const playlistId = this.props.inEmbed ? null : MediaPageStore.get('playlist-id');
 
 		if (playlistId) {
-			nextLink = MediaPageStore.get('playlist-next-media-url');
-			previousLink = MediaPageStore.get('playlist-previous-media-url');
+			nextLink = playlistMediaUrl('playlist-next-media', playlistId);
+			previousLink = playlistMediaUrl('playlist-previous-media', playlistId);
 		} else {
 			nextLink =
 				this.props.data.related_media.length && !this.props.inEmbed
