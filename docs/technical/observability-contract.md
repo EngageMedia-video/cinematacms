@@ -14,7 +14,7 @@ Set `EMAIL_RECIPIENT_HMAC_KEY` to an external secret. Set `EMAIL_RECIPIENT_HMAC_
 
 ## Celery and domain outcomes
 
-Celery execution states are `started`, `succeeded`, `failed`, `retried`, and `revoked`. Queue labels are `long_tasks`, `short_tasks`, `whisper_tasks`, `email_tasks`, or `default`. Unknown routing keys become `default`.
+Celery execution states are `started`, `succeeded`, `failed`, `retried`, and `revoked`. Queue labels are `long_tasks`, `short_tasks`, `whisper_tasks`, and `email_tasks`. A task from any other queue is counted as a contract violation and labelled `default`.
 
 Domain outcomes are `succeeded`, `failed`, `skipped`, `retried`, and `cancelled`. A successful Celery execution does not imply a successful domain operation. Code records domain results with `files.metrics.record_domain_outcome()`.
 
