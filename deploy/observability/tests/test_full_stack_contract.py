@@ -3,8 +3,12 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
+import threading
 import unittest
+import urllib.parse
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -40,6 +44,27 @@ def nginx_error_redactor():
         return line
 
     return redact
+
+
+class FakeVictoriaMetricsHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)["query"][0]
+        self.server.queries.append(query)
+        is_promql = "$" not in query and "_msg:" not in query and "| stats" not in query
+        self.send_response(200 if is_promql else 422)
+        self.end_headers()
+        self.wfile.write(json.dumps({"status": "success" if is_promql else "error"}).encode())
+
+    def log_message(self, *args):
+        pass
+
+
+class FakeVictoriaMetrics(ThreadingHTTPServer):
+    """Answers /api/v1/query like VictoriaMetrics: PromQL parses; LogsQL and Grafana macros do not."""
+
+    def __init__(self):
+        super().__init__(("127.0.0.1", 0), FakeVictoriaMetricsHandler)
+        self.queries = []
 
 
 class FullStackContractTests(unittest.TestCase):
@@ -1062,6 +1087,32 @@ class FullStackContractTests(unittest.TestCase):
         alertmanager = (OBSERVABILITY / "templates/alertmanager.yml").read_text()
 
         self.assertIn("equal: [alertname, service_name]", alertmanager)
+
+    def test_installer_sends_only_metric_panels_of_the_overview_to_victoriametrics(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        verifier = re.search(r"verify_dashboard_queries\(\) \{.*?<<'PY'\n(.*?)\nPY\n", installer, re.S).group(1)
+        overview_path = OBSERVABILITY / "templates/grafana-overview.json"
+        overview = json.loads(overview_path.read_text())
+        metric_query_count = sum(
+            "expr" in target
+            for panel in overview["panels"]
+            if panel.get("datasource", {}).get("uid") != "victorialogs"
+            for target in panel.get("targets", [])
+        )
+        server = FakeVictoriaMetrics()
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+
+        result = subprocess.run(
+            [sys.executable, "-", str(overview_path), str(server.server_port)],
+            input=verifier,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(server.queries), metric_query_count)
 
     def test_installer_verifies_the_provisioned_grafana_dashboard(self):
         installer = (OBSERVABILITY / "install.sh").read_text()

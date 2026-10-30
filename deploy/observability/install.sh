@@ -627,8 +627,9 @@ with open(dashboard_path) as dashboard_file:
     dashboard = json.load(dashboard_file)
 
 queries = (
-    target["expr"].replace("$__rate_interval", "5m")
+    target["expr"].replace("$__rate_interval", "5m").replace("$__range", "5m")
     for panel in dashboard["panels"]
+    if panel.get("datasource", {}).get("uid") != "victorialogs"
     for target in panel.get("targets", [])
     if "expr" in target
 )
