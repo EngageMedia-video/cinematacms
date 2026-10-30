@@ -1516,6 +1516,21 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn('CELERY_EXPORTER_COMMIT="041ccf66d337852626acf6310b6b81c6d6165b74"', manifest)
         self.assertIn("sed -n 's/^Version: //p' || true", installer)
 
+    def test_celery_exporter_runtime_buckets_cover_tasks_that_run_for_hours(self):
+        unit = (OBSERVABILITY / "templates/celery-exporter.service").read_text()
+        metrics_source = (ROOT / "files/metrics.py").read_text()
+        application_buckets = re.search(
+            r'"cinematacms_celery_task_duration_seconds",.*?buckets=\(([^)]*)\)', metrics_source, re.DOTALL
+        ).group(1)
+        # The exporter's default buckets stop at 10 seconds, which saturates every percentile of an encode.
+        longest_task_bucket = 14400.0
+        expected = [float(bound) for bound in application_buckets.split(",")] + [longest_task_bucket]
+
+        configured = re.search(r"^ExecStart=.* --buckets=(\S+)", unit, re.MULTILINE)
+
+        self.assertIsNotNone(configured, "the exporter must not run on its 10 second default buckets")
+        self.assertEqual([float(bound) for bound in configured.group(1).split(",")], expected)
+
     def test_fixture_exposes_every_contracted_metric(self):
         result = subprocess.run(
             ["python3", str(OBSERVABILITY / "tests/serve_metrics_fixture.py"), "--dump"],
