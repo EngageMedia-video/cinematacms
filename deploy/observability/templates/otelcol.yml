@@ -294,6 +294,10 @@ processors:
           - set(log.body, log.attributes["event.name"]) where log.attributes["event"] == nil and log.attributes["event.name"] != nil
           - set(log.body, log.attributes["message"]) where log.attributes["event"] == nil and log.attributes["event.name"] == nil and log.attributes["message"] != nil
           - set(log.body, Concat([log.body, log.attributes["exc_info"]], "\n")) where IsString(log.body) and log.attributes["exc_info"] != nil
+          - 'replace_pattern(log.body, "client: [^,\\s]+", "client: <redacted-ip>") where IsString(log.body) and resource.attributes["service.name"] == "nginx"'
+          - 'replace_pattern(log.body, "request: \"[^\"]*\"", "request: \"<redacted-request>\"") where IsString(log.body) and resource.attributes["service.name"] == "nginx"'
+          - 'replace_pattern(log.body, "referrer: \"[^\"]*\"", "referrer: \"<redacted-referrer>\"") where IsString(log.body) and resource.attributes["service.name"] == "nginx"'
+          - 'replace_pattern(log.body, "upstream: \"([a-z][a-z0-9+.-]*://[^/\"]*)[^\"]*\"", "upstream: \"$$1\"") where IsString(log.body) and resource.attributes["service.name"] == "nginx"'
           - replace_pattern(log.body, "(?i)authorization\\s*[:=]\\s*(bearer\\s+)?[^\\s,;]+", "authorization=<redacted>") where IsString(log.body)
           - replace_pattern(log.body, "(?i)(cookie|set-cookie)\\s*[:=]\\s*[^\\s;]+", "$$1=<redacted>") where IsString(log.body)
           - replace_pattern(log.body, "(?i)(password|passwd|token|secret|api[_-]?key)\\s*[:=]\\s*[^\\s,;]+", "$$1=<redacted>") where IsString(log.body)

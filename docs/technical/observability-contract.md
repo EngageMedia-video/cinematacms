@@ -77,6 +77,11 @@ Reading `/var/log/nginx/` needs the `adm` group, which the installer grants to
 installer adds an ACL entry (`setfacl -m u:otelcol-contrib:rx`) for the
 Collector only, so the `acl` package must be present.
 
+An nginx error line keeps its message, `server`, and `host`. Its `request` and
+`referrer` fields become `<redacted-request>` and `<redacted-referrer>`, its
+`client` becomes `<redacted-ip>` for IPv4 and IPv6, and an `upstream` URL keeps
+only its scheme and host.
+
 ## Error tracking
 
 CinemataCMS uses the Sentry protocol for exception events. The application

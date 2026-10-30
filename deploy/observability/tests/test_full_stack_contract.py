@@ -546,6 +546,60 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn('set(log.attributes["route_group"], "nginx_upload")', collector)
         self.assertIn('set(log.body, Concat([log.attributes["method"]', collector)
 
+    def test_nginx_error_lines_drop_the_request_target_referrer_and_client_address(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        statement = re.compile(
+            r"""^\s+- 'replace_pattern\(log\.body, "(?P<pattern>(?:[^"\\]|\\.)*)", "(?P<replacement>(?:[^"\\]|\\.)*)"\)"""
+            r""" where IsString\(log\.body\) and resource\.attributes\["service\.name"\] == "nginx"'$""",
+            re.M,
+        )
+
+        def ottl_string(literal):
+            return json.loads(f'"{literal}"')
+
+        redactions = [
+            (re.compile(ottl_string(m["pattern"])), re.sub(r"\$\$(\d)", r"\\\1", ottl_string(m["replacement"])))
+            for m in statement.finditer(collector)
+        ]
+        self.assertTrue(redactions, "nginx error lines need field redactions in transform/privacy")
+
+        def redact(line):
+            for pattern, replacement in redactions:
+                line = pattern.sub(replacement, line)
+            return line
+
+        prefix = "2026/10/30 10:00:00 [error] 12#12: *3 "
+        fields = (
+            'server: cinemata.example, request: "POST /secret-admin?token=abc123 HTTP/1.1", '
+            'upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example", '
+            'referrer: "https://other.example/page?user=jane"'
+        )
+        for client in ("203.0.113.9", "2001:db8::17"):
+            redacted = redact(
+                f"{prefix}upstream timed out (110: Connection timed out) while reading response header from upstream, client: {client}, {fields}"
+            )
+            for private in (client, "secret-admin", "abc123", "other.example", "jane"):
+                self.assertNotIn(private, redacted)
+            self.assertEqual(
+                redacted,
+                f"{prefix}upstream timed out (110: Connection timed out) while reading response header from upstream, "
+                'client: <redacted-ip>, server: cinemata.example, request: "<redacted-request>", '
+                'upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example", referrer: "<redacted-referrer>"',
+            )
+
+        proxied = redact(
+            f"{prefix}connect() failed (111: Connection refused) while connecting to upstream, client: 203.0.113.9, "
+            'server: tools.example, request: "GET /dashboard?key=abc123 HTTP/1.1", '
+            'upstream: "http://127.0.0.1:3000/dashboard?key=abc123", host: "tools.example"'
+        )
+        self.assertNotIn("abc123", proxied)
+        self.assertIn('upstream: "http://127.0.0.1:3000"', proxied)
+
+        self.assertEqual(
+            redact(f'{prefix}open() "/var/www/html/missing" failed (2: No such file or directory)'),
+            f'{prefix}open() "/var/www/html/missing" failed (2: No such file or directory)',
+        )
+
     def test_nginx_http_route_comes_from_a_fixed_set_of_templates(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
         route_statements = re.findall(r'- (set\(log\.attributes\["http\.route"\].*)', collector)
