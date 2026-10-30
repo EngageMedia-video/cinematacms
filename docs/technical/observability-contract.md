@@ -79,8 +79,15 @@ Collector only, so the `acl` package must be present.
 
 An nginx error line keeps its message, `server`, and `host`. Its `request` and
 `referrer` fields become `<redacted-request>` and `<redacted-referrer>`, its
-`client` becomes `<redacted-ip>` for IPv4 and IPv6, and an `upstream` URL keeps
-only its scheme and host.
+`subrequest` becomes `<redacted-subrequest>`, its `client` becomes
+`<redacted-ip>` for IPv4 and IPv6, and an `upstream` URL keeps only its scheme
+and host. nginx writes the request line, referrer, and upstream URI without
+escaping them, so each field is redacted up to the next field, and `referrer`
+to the end of the line. A line that repeats a field, lists the fields out of
+their `client`, `server`, `request`, `subrequest`, `upstream`, `host`,
+`referrer` order, or keeps an `upstream` or `host` that is not a plain scheme
+and host name, cannot be told from text the client wrote. Its whole body
+becomes `<redacted-nginx-error>`.
 
 ## Error tracking
 

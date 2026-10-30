@@ -9,6 +9,53 @@ from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[3]
 OBSERVABILITY = ROOT / "deploy" / "observability"
+FAIL_CLOSED_NGINX_ERROR_BODY = "<redacted-nginx-error>"
+
+
+def nginx_error_redactor():
+    """Apply the nginx-only body statements of transform/privacy, in file order, to one line."""
+    collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+    literal = r'"((?:[^"\\]|\\.)*)"'
+    nginx_only = r' where IsString\(log\.body\) and resource\.attributes\["service\.name"\] == "nginx"'
+    replace_statement = re.compile(rf"""^\s+- 'replace_pattern\(log\.body, {literal}, {literal}\){nginx_only}'$""")
+    fail_closed_statement = re.compile(
+        rf"""^\s+- 'set\(log\.body, {literal}\){nginx_only} and IsMatch\(log\.body, {literal}\)"""
+        rf"""(?: and not IsMatch\(log\.body, {literal}\))?'$"""
+    )
+
+    def ottl_string(escaped):
+        return json.loads(f'"{escaped}"')
+
+    steps = []
+    for statement in collector.splitlines():
+        replace = replace_statement.match(statement)
+        fail_closed = fail_closed_statement.match(statement)
+        if replace:
+            pattern = re.compile(ottl_string(replace[1]))
+            replacement = re.sub(r"\$\$(\d)", r"\\\1", ottl_string(replace[2]))
+            steps.append(lambda line, pattern=pattern, replacement=replacement: pattern.sub(replacement, line))
+        elif fail_closed:
+            marker = ottl_string(fail_closed[1])
+            suspect = re.compile(ottl_string(fail_closed[2]))
+            expected = re.compile(ottl_string(fail_closed[3])) if fail_closed[3] else None
+
+            def fail_closed_step(line, marker=marker, suspect=suspect, expected=expected):
+                well_formed = expected is not None and expected.search(line)
+                return marker if suspect.search(line) and not well_formed else line
+
+            steps.append(fail_closed_step)
+        elif 'resource.attributes["service.name"] == "nginx"' in statement and re.search(
+            r"- '(?:replace_pattern|set)\(log\.body, \"", statement
+        ):
+            raise AssertionError(f"this helper cannot apply an nginx body statement: {statement}")
+    assert steps, "nginx error lines need field redactions in transform/privacy"
+
+    def redact(line):
+        for step in steps:
+            line = step(line)
+        return line
+
+    return redact
 
 
 class FullStackContractTests(unittest.TestCase):
@@ -547,26 +594,7 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn('set(log.body, Concat([log.attributes["method"]', collector)
 
     def test_nginx_error_lines_drop_the_request_target_referrer_and_client_address(self):
-        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
-        statement = re.compile(
-            r"""^\s+- 'replace_pattern\(log\.body, "(?P<pattern>(?:[^"\\]|\\.)*)", "(?P<replacement>(?:[^"\\]|\\.)*)"\)"""
-            r""" where IsString\(log\.body\) and resource\.attributes\["service\.name"\] == "nginx"'$""",
-            re.M,
-        )
-
-        def ottl_string(literal):
-            return json.loads(f'"{literal}"')
-
-        redactions = [
-            (re.compile(ottl_string(m["pattern"])), re.sub(r"\$\$(\d)", r"\\\1", ottl_string(m["replacement"])))
-            for m in statement.finditer(collector)
-        ]
-        self.assertTrue(redactions, "nginx error lines need field redactions in transform/privacy")
-
-        def redact(line):
-            for pattern, replacement in redactions:
-                line = pattern.sub(replacement, line)
-            return line
+        redact = nginx_error_redactor()
 
         prefix = "2026/10/30 10:00:00 [error] 12#12: *3 "
         fields = (
@@ -599,6 +627,96 @@ class FullStackContractTests(unittest.TestCase):
             redact(f'{prefix}open() "/var/www/html/missing" failed (2: No such file or directory)'),
             f'{prefix}open() "/var/www/html/missing" failed (2: No such file or directory)',
         )
+
+    def test_nginx_error_lines_hold_when_the_client_writes_quotes_and_fake_fields(self):
+        redact = nginx_error_redactor()
+        head = (
+            "2026/10/30 10:00:00 [error] 12#12: *3 upstream timed out (110: Connection timed out) "
+            "while reading response header from upstream, client: 203.0.113.9, server: cinemata.example, "
+        )
+        real_tail = 'upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example", referrer: "https://r.example/p"'
+        kept_tail = 'upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example", referrer: "<redacted-referrer>"'
+        redacted_request = 'request: "<redacted-request>", '
+
+        # Each value is kept (rewritten) when the line stays parseable.
+        rewritten = {
+            "quote_in_request": (
+                f'request: "GET /a?t=1" SENT_QUOTE_IN_REQUEST HTTP/1.1", {real_tail}',
+                f"{redacted_request}{kept_tail}",
+            ),
+            "quote_in_referrer": (
+                'request: "GET /a HTTP/1.1", upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example", '
+                'referrer: "https://r.example/p" SENT_QUOTE_IN_REFERRER x"',
+                f"{redacted_request}{kept_tail}",
+            ),
+            "fake_referrer_without_real_one": (
+                'request: "GET /a", referrer: "SENT_FAKE_REFERRER HTTP/1.1"',
+                'request: "<redacted-request>", referrer: "<redacted-referrer>"',
+            ),
+            "quote_in_upstream_uri": (
+                'request: "GET /d HTTP/1.1", upstream: "http://127.0.0.1:3000/d" SENT_QUOTE_IN_UPSTREAM?x", '
+                'host: "tools.example"',
+                f'{redacted_request}upstream: "http://127.0.0.1:3000", host: "tools.example"',
+            ),
+            "request_without_following_fields": (
+                'request: "GET /a" SENT_NO_FIELDS HTTP/1.1"',
+                'request: "<redacted-request>"',
+            ),
+            "request_cut_off_by_the_error_line_limit": (
+                'request: "GET /a?t=SENT_CUT_OFF',
+                'request: "<redacted-request>"',
+            ),
+            "subrequest": (
+                'request: "GET /a HTTP/1.1", subrequest: "/auth/SENT_SUBREQUEST", '
+                'upstream: "http://127.0.0.1:3000/auth/SENT_SUBREQUEST_URI", host: "cinemata.example"',
+                f'{redacted_request}subrequest: "<redacted-subrequest>", '
+                'upstream: "http://127.0.0.1:3000", host: "cinemata.example"',
+            ),
+        }
+        for name, (fields, expected) in rewritten.items():
+            with self.subTest(name):
+                redacted = redact(f"{head}{fields}")
+                self.assertNotIn("SENT_", redacted)
+                self.assertEqual(redacted, f"{head.replace('203.0.113.9', '<redacted-ip>')}{expected}")
+
+        # A repeated or reordered field, or a kept value that is not a plain host, cannot be told from
+        # client text: the whole body goes.
+        refused = {
+            "fake_host_in_request": f'request: "GET /a", host: "SENT_FAKE_HOST", {real_tail}',
+            "fake_referrer_in_request": f'request: "GET /a", referrer: "SENT_FAKE_REFERRER", {real_tail}',
+            "fake_host_in_upstream_uri": (
+                'request: "GET /d", upstream: "http://127.0.0.1:3000/", host: "SENT_FAKE_HOST", '
+                'host: "cinemata.example"'
+            ),
+            "fake_server_in_request": f'request: "GET /a", server: "SENT_FAKE_SERVER", {real_tail}',
+            "fake_field_before_the_real_one": (
+                'request: "GET /a", host: "SENT_FAKE_HOST", upstream: "uwsgi://127.0.0.1:9000"'
+            ),
+            "fake_upstream_beside_the_real_one": (
+                'request: "GET /a", upstream: "http://SENT_FAKE_UPSTREAM/x HTTP/1.1", '
+                'upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example"'
+            ),
+            "lone_fake_upstream_with_client_text_as_host": (
+                'request: "GET /x", upstream: "http://SENT_LONE_UPSTREAM-token=abc HTTP/1.1", host: "cinemata.example"'
+            ),
+            "lone_fake_host_with_client_text": 'request: "GET /a", host: "SENT_LONE_HOST HTTP/1.1"',
+            "quote_in_host": 'request: "GET /a HTTP/1.1", host: "cinemata.example" SENT_QUOTE_IN_HOST x"',
+            "upstream_without_scheme": (
+                'request: "GET /a HTTP/1.1", upstream: "SENT_NO_SCHEME", host: "cinemata.example"'
+            ),
+        }
+        for name, fields in refused.items():
+            with self.subTest(name):
+                self.assertEqual(redact(f"{head}{fields}"), FAIL_CLOSED_NGINX_ERROR_BODY)
+
+        normal = redact(f'{head}request: "GET /p?k=v HTTP/1.1", {real_tail}')
+        for survivor in (
+            "upstream timed out (110: Connection timed out) while reading response header from upstream",
+            "server: cinemata.example",
+            'host: "cinemata.example"',
+            'upstream: "uwsgi://127.0.0.1:9000"',
+        ):
+            self.assertIn(survivor, normal)
 
     def test_nginx_http_route_comes_from_a_fixed_set_of_templates(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
