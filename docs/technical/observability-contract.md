@@ -65,9 +65,12 @@ and in `/var/log/nginx/`, which holds the distribution's logs and any vhost an
 operator adds. A site must use the `cinematacms` or `compression`
 `log_format`; both end with `rt=`, `urt=`, and `rl=`. An nginx access line keeps
 only `method`, `status_code`, `bytes_sent`, `request_time`, `upstream_time`,
-`request_length`, `http.route` (the first path segment plus `:resource`, such as
-`/fu/:resource`), and `route_group` (`nginx_upload` for `/fu/` and `/upload/`).
-The path tail, query string, address, referrer, and user agent are dropped.
+`request_length`, `http.route`, and `route_group` (`nginx_upload` for `/fu/` and
+`/upload/`). `http.route` is one of a fixed set of templates, never the request
+path: `/api/:resource`, `/media/:resource`, `/static/:resource`, `/fu/:resource`,
+`/upload/:resource`, `/metrics`, `/nginx_status`, and `/:other` for every other
+path, including the configurable admin URL and scanner probes. The path, query
+string, address, referrer, and user agent are dropped.
 `upstream_time` is `-` when the request never reached Django, as for a 408.
 Reading `/var/log/nginx/` needs the `adm` group, which the installer grants to
 `otelcol-contrib`. The site log directory is `root:www-data`, `0750`; the

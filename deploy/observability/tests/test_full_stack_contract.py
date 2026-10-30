@@ -543,9 +543,51 @@ class FullStackContractTests(unittest.TestCase):
             self.assertIn(f'"{field}"', kept)
         for raw_field in ("request_path", "http_method", "remote_addr", "http_user_agent"):
             self.assertNotIn(f'"{raw_field}"', kept)
-        self.assertIn('"/$$1/:resource"', collector)
         self.assertIn('set(log.attributes["route_group"], "nginx_upload")', collector)
         self.assertIn('set(log.body, Concat([log.attributes["method"]', collector)
+
+    def test_nginx_http_route_comes_from_a_fixed_set_of_templates(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        route_statements = re.findall(r'- (set\(log\.attributes\["http\.route"\].*)', collector)
+        assignment = re.compile(
+            r'set\(log\.attributes\["http\.route"\], "(?P<template>[^"$]+)"\)'
+            r' where log\.attributes\["request_path"\] != nil'
+            r'(?: and IsMatch\(log\.attributes\["request_path"\], "(?P<pattern>[^"]+)"\))?$'
+        )
+        rules = []
+        for statement in route_statements:
+            match = assignment.match(statement)
+            self.assertIsNotNone(match, f"http.route must be a fixed template, not derived from the path: {statement}")
+            rules.append((match.group("template"), match.group("pattern")))
+        self.assertNotIn('replace_pattern(log.attributes["http.route"]', collector)
+
+        def route_for(request_path):
+            route = None
+            for template, pattern in rules:
+                if pattern is None or re.search(pattern, request_path):
+                    route = template
+            return route
+
+        expected = {
+            "/fu/upload/": "/fu/:resource",
+            "/fu": "/fu/:resource",
+            "/upload/": "/upload/:resource",
+            "/api/v1/media/8f2c": "/api/:resource",
+            "/media/original/user/x/video.mp4": "/media/:resource",
+            "/static/js/app.js": "/static/:resource",
+            "/metrics": "/metrics",
+            "/nginx_status": "/nginx_status",
+            "/": "/:other",
+            "/wp-login.php": "/:other",
+            "/s3cr3t-admin/": "/:other",
+            "/s3cr3t-admin/auth/user/42/change/": "/:other",
+            "/apiary": "/:other",
+            "/fusion/x": "/:other",
+            "/metrics/extra": "/:other",
+        }
+        for request_path, route in expected.items():
+            with self.subTest(request_path=request_path):
+                self.assertEqual(route_for(request_path), route)
 
     def test_collector_ingests_every_log_path_the_stock_site_config_writes(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()

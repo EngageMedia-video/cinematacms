@@ -304,8 +304,14 @@ processors:
           - replace_pattern(log.body, "\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b", "<redacted-ip>") where IsString(log.body)
           - replace_pattern(log.body, "(?:/[A-Za-z._-][A-Za-z0-9._-]*){2,}", "<redacted-path>") where IsString(log.body)
           - set(log.attributes["method"], log.attributes["http_method"]) where log.attributes["http_method"] != nil
-          - set(log.attributes["http.route"], log.attributes["request_path"]) where log.attributes["request_path"] != nil
-          - replace_pattern(log.attributes["http.route"], "^/([^/?]+)/.*$", "/$$1/:resource") where log.attributes["http.route"] != nil
+          - set(log.attributes["http.route"], "/:other") where log.attributes["request_path"] != nil
+          - set(log.attributes["http.route"], "/metrics") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/metrics$")
+          - set(log.attributes["http.route"], "/nginx_status") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/nginx_status$")
+          - set(log.attributes["http.route"], "/api/:resource") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/api(?:/|$)")
+          - set(log.attributes["http.route"], "/media/:resource") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/media(?:/|$)")
+          - set(log.attributes["http.route"], "/static/:resource") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/static(?:/|$)")
+          - set(log.attributes["http.route"], "/fu/:resource") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/fu(?:/|$)")
+          - set(log.attributes["http.route"], "/upload/:resource") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/upload(?:/|$)")
           - set(log.attributes["route_group"], "nginx_other") where log.attributes["request_path"] != nil
           - set(log.attributes["route_group"], "nginx_system") where log.attributes["request_path"] == "/metrics" or log.attributes["request_path"] == "/nginx_status"
           - set(log.attributes["route_group"], "nginx_api") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/api(?:/|$)")
