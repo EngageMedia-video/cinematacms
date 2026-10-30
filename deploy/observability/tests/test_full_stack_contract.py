@@ -261,6 +261,16 @@ class FullStackContractTests(unittest.TestCase):
         )
         self.assertEqual(includes("file_log/nginx"), ["/var/log/nginx/*.log"])
 
+        # copytruncate restarts the live file with the same first bytes, which the default fingerprint
+        # check reads as an untouched file, so its new lines would be skipped.
+        def reads_whole_file_on_truncate(receiver):
+            block = re.search(rf"(?ms)^  {re.escape(receiver)}:\n(.*?)(?=^  \S)", collector).group(1)
+            return re.search(r"(?m)^    on_truncate: read_whole_file$", block) is not None
+
+        for receiver in [*service_logs, "file_log/cinematacms"]:
+            self.assertTrue(reads_whole_file_on_truncate(receiver), receiver)
+        self.assertFalse(reads_whole_file_on_truncate("file_log/nginx"))
+
     def test_maxsize_is_checked_hourly_by_a_timer_the_installer_runs_and_verifies(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
         templates = OBSERVABILITY / "templates"
