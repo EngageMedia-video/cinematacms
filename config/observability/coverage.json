@@ -606,6 +606,8 @@
     "cinematacms.http.request.failed",
     "cinematacms.http.request.denied",
     "cinematacms.http.request.trace",
+    "cinematacms.upload.started",
+    "cinematacms.upload.finished",
     "cinematacms.db.query.slow",
     "cinematacms.db.query.failed",
     "cinematacms.db.query.trace",
@@ -623,6 +625,28 @@
     "cinematacms.telemetry.emission_failed",
     "cinematacms.telemetry.contract_violation"
   ],
+  "log_correlation": {
+    "upload_ref": {
+      "description": "Random per-file id that joins an nginx upload access line to the application events of the same upload. Never a metric label.",
+      "source": "Fine Uploader qquuid",
+      "header": "X-Upload-Id",
+      "pattern": "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
+      "max_length": 36,
+      "nginx_field": "uid",
+      "log_field": "upload_ref",
+      "joins": [
+        "actor_ref",
+        "trace_id"
+      ],
+      "events": [
+        "cinematacms.http.request.denied",
+        "cinematacms.http.request.failed",
+        "cinematacms.http.request.slow",
+        "cinematacms.upload.started",
+        "cinematacms.upload.finished"
+      ]
+    }
+  },
   "metric_schemas": {
     "cinematacms_http_requests_total": {
       "type": "counter",
@@ -1445,7 +1469,9 @@
         "cinematacms.http.request.slow",
         "cinematacms.http.request.failed",
         "cinematacms.http.request.denied",
-        "cinematacms.http.request.trace"
+        "cinematacms.http.request.trace",
+        "cinematacms.upload.started",
+        "cinematacms.upload.finished"
       ],
       "instrumentation_seam": "cms.observability_middleware.ObservabilityMetricsMiddleware",
       "privacy_constraints": [
