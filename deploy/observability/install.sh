@@ -823,7 +823,7 @@ main() {
   require_managed_application_mode
   if [[ "$VERIFY_ONLY" -eq 0 ]]; then
     DEBIAN_FRONTEND=noninteractive apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl prometheus-node-exporter python3 python3-venv
+    DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl logrotate prometheus-node-exporter python3 python3-venv
     install -d -m 0755 "$BIN_DIR"
     getent group cinematacms-observability >/dev/null 2>&1 || groupadd --system cinematacms-observability
     id -u cinematacms-observability >/dev/null 2>&1 \

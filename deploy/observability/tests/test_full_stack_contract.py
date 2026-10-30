@@ -105,6 +105,13 @@ class FullStackContractTests(unittest.TestCase):
             )
             self.assertEqual((logs / "celery_long.log.1").read_text(), "x" * 200)
 
+    def test_installer_installs_logrotate_before_validating_its_config(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        packages = re.search(r"apt-get install -y (ca-certificates [^\n]+)\n", installer).group(1).split()
+
+        self.assertIn("logrotate --debug", installer)
+        self.assertIn("logrotate", packages)
+
     def test_disk_usage_is_capped_by_journald_logrotate_and_storage_flags(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
         environment = (OBSERVABILITY / "observability.env.example").read_text()
