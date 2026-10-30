@@ -18,3 +18,171 @@ tests:
               job: victorialogs
             exp_annotations:
               summary: "Observability scrape target is down"
+
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4"}'
+        values: '500000000+0x30'
+      - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4"}'
+        values: '100000000000+0x30'
+    alert_rule_test:
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataHostFilesystemWarning
+        exp_alerts:
+          - exp_labels: {severity: warning, mountpoint: /, fstype: ext4}
+            exp_annotations: {summary: "Host filesystem has less than 20 percent free"}
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataHostFilesystemFreeLow
+        exp_alerts:
+          - exp_labels: {severity: critical, mountpoint: /, fstype: ext4}
+            exp_annotations: {summary: "Host filesystem is within 4 GiB of the metrics write floor"}
+
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4"}'
+        values: '50000000000+0x30'
+      - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4"}'
+        values: '100000000000+0x30'
+    alert_rule_test:
+      - {eval_time: 20m, groupname: observability-stack, alertname: CinemataHostFilesystemWarning, exp_alerts: []}
+      - {eval_time: 20m, groupname: observability-stack, alertname: CinemataHostFilesystemFreeLow, exp_alerts: []}
+
+  # The threshold is the VictoriaMetrics write floor plus 4 GiB. At the 1 GiB default floor, 4 GiB free is above the
+  # floor, so the stores still accept writes and the alert is the warning.
+  - interval: 1m
+    input_series:
+      - series: 'vm_free_disk_space_limit_bytes{path="/var/lib/victoriametrics"}'
+        values: '1073741824+0x30'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4"}'
+        values: '4294967296+0x30'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/var",fstype="ext4"}'
+        values: '10737418240+0x30'
+    alert_rule_test:
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataHostFilesystemFreeLow
+        exp_alerts:
+          - exp_labels: {severity: critical, mountpoint: /, fstype: ext4}
+            exp_annotations: {summary: "Host filesystem is within 4 GiB of the metrics write floor"}
+
+  # A store on a dedicated mount is the filesystem its write floor applies to, so that mount is watched too.
+  - interval: 1m
+    input_series:
+      - series: 'vm_free_disk_space_limit_bytes{path="/var/lib/victoriametrics"}'
+        values: '1073741824+0x30'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/var/lib/victoriametrics",fstype="ext4"}'
+        values: '4294967296+0x30'
+    alert_rule_test:
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataHostFilesystemFreeLow
+        exp_alerts:
+          - exp_labels: {severity: critical, mountpoint: /var/lib/victoriametrics, fstype: ext4}
+            exp_annotations: {summary: "Host filesystem is within 4 GiB of the metrics write floor"}
+
+  # The stores can sit on a mount at any ancestor of their data path, such as /var/lib.
+  - interval: 1m
+    input_series:
+      - series: 'vm_free_disk_space_limit_bytes{path="/var/lib/victoriametrics"}'
+        values: '1073741824+0x30'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/var/lib",fstype="ext4"}'
+        values: '4294967296+0x30'
+    alert_rule_test:
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataHostFilesystemFreeLow
+        exp_alerts:
+          - exp_labels: {severity: critical, mountpoint: /var/lib, fstype: ext4}
+            exp_annotations: {summary: "Host filesystem is within 4 GiB of the metrics write floor"}
+
+  - interval: 1m
+    input_series:
+      - series: 'vm_free_disk_space_limit_bytes{path="/var/lib/victoriametrics"}'
+        values: '1073741824+0x30'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4"}'
+        values: '6442450944+0x30'
+    alert_rule_test:
+      - {eval_time: 20m, groupname: observability-stack, alertname: CinemataHostFilesystemFreeLow, exp_alerts: []}
+
+  # An operator-raised floor of 10 GiB moves the threshold to 14 GiB.
+  - interval: 1m
+    input_series:
+      - series: 'vm_free_disk_space_limit_bytes{path="/var/lib/victoriametrics"}'
+        values: '10737418240+0x30'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4"}'
+        values: '12884901888+0x30'
+    alert_rule_test:
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataHostFilesystemFreeLow
+        exp_alerts:
+          - exp_labels: {severity: critical, mountpoint: /, fstype: ext4}
+            exp_annotations: {summary: "Host filesystem is within 4 GiB of the metrics write floor"}
+
+  - interval: 1m
+    input_series:
+      - series: 'vm_free_disk_space_limit_bytes{path="/var/lib/victoriametrics"}'
+        values: '10737418240+0x30'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4"}'
+        values: '16106127360+0x30'
+    alert_rule_test:
+      - {eval_time: 20m, groupname: observability-stack, alertname: CinemataHostFilesystemFreeLow, exp_alerts: []}
+
+  # Without the floor series the threshold falls back to 5 GiB, which is the default floor plus the margin.
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4"}'
+        values: '4294967296+0x30'
+    alert_rule_test:
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataHostFilesystemFreeLow
+        exp_alerts:
+          - exp_labels: {severity: critical, mountpoint: /, fstype: ext4}
+            exp_annotations: {summary: "Host filesystem is within 4 GiB of the metrics write floor"}
+
+  # Below the floor VictoriaMetrics rejects the Collector's writes, so its own series stop and nothing can report the
+  # cause from inside the store: the alert has to fire on the absence of fresh samples.
+  - interval: 1m
+    input_series:
+      - series: 'up{service.name="victoriametrics"}'
+        values: '1+0x5 _x30'
+    alert_rule_test:
+      - {eval_time: 6m, groupname: observability-stack, alertname: CinemataMetricsIngestionStalled, exp_alerts: []}
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataMetricsIngestionStalled
+        exp_alerts:
+          - exp_labels: {severity: critical, service.name: victoriametrics}
+            exp_annotations: {summary: "VictoriaMetrics receives no fresh samples"}
+
+  - interval: 1m
+    input_series:
+      - series: 'up{service.name="victoriametrics"}'
+        values: '1+0x30'
+    alert_rule_test:
+      - {eval_time: 20m, groupname: observability-stack, alertname: CinemataMetricsIngestionStalled, exp_alerts: []}
+
+  - interval: 1m
+    input_series:
+      - series: 'redis_key_size{db="db1",key="celery"}'
+        values: '2+0x30'
+      - series: 'redis_key_size{db="db1",key="long_tasks"}'
+        values: '3+0x30'
+      - series: 'celery_active_worker_count{queue_name="long_tasks"}'
+        values: '0+0x30'
+      - series: 'redis_key_size{db="db1",key="short_tasks"}'
+        values: '5+0x30'
+      - series: 'celery_active_worker_count{queue_name="short_tasks"}'
+        values: '1+0x30'
+    alert_rule_test:
+      - eval_time: 15m
+        groupname: observability-stack
+        alertname: CinemataCeleryQueueWithoutConsumer
+        exp_alerts:
+          - exp_labels: {severity: warning, queue_name: celery}
+            exp_annotations: {summary: "A Celery queue holds tasks and no worker consumes it"}
+          - exp_labels: {severity: warning, queue_name: long_tasks}
+            exp_annotations: {summary: "A Celery queue holds tasks and no worker consumes it"}

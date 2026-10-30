@@ -43,6 +43,89 @@ authorization data, secrets, passwords, filenames, or URLs. Restricted email
 spans may contain only the delivery UUID, the recipient reference, the email
 kind, and the attempt number.
 
+The Collector reads each rotated application log together with its `.1` copy.
+After a Collector outage that spans one rotation, it recovers the unread lines
+from the `.1` copy. After an outage that spans two or more rotations, the lines
+that moved into `.gz` backups are not backfilled; they stay in those backups for
+14 rotations. Ingesting the `.gz` backups was rejected because switching to them
+re-ingested every retained backup. Collector 0.159.0 was the version tested.
+
+A 4xx response on the `upload_transfer` route group logs
+`cinematacms.http.request.denied` with `route_group`, `operation`, `method`,
+`status_code`, a bounded `reason_code`, `trace_id`, and `actor_ref` when the
+session is authenticated. `reason_code` is `missing_credentials` or `forbidden`
+for 401 and 403, `bad_request` for 400, `payload_too_large` for 413,
+`rate_limited` for 429, and `other` otherwise. The event never carries the
+path, query string, address, cookie, or email. nginx answers some upload errors
+(408, 413, 499) before Django runs; those appear only in the nginx access log.
+
+### Upload correlation: `upload_ref`
+
+`upload_ref` joins an nginx upload line to the application events of the same
+upload, and through them to `actor_ref` and `trace_id`. It is Fine Uploader's
+per-file `qquuid`, a random version-4 UUID that the browser already sends in the
+chunk body. The upload pages also send it as the `X-Upload-Id` header on every
+chunk and on the chunks-done request, because nginx does not parse the body and
+can log a header. It carries no personal data and grants no access; it only
+attributes log lines. `config/observability/coverage.json` (`log_correlation`)
+holds the one definition: header, pattern, maximum length (36), and the events
+that carry it. `scripts/validate_observability_coverage.py` checks it, and it is
+never a metric label.
+
+- nginx (`deploy/nginx/cinematacms-http.conf`): the `cinematacms` `log_format`
+  ends with `uid=$cinematacms_upload_id`. A `map` logs the header only when it
+  matches the version-4 UUID pattern (lowercase, 36 characters) and logs `-`
+  otherwise. A site must use this format to carry `upload_ref`. The
+  `compression` format has no `uid`; its lines still parse but carry no
+  `upload_ref`.
+- Collector: the regex reads `uid=` into `upload_ref` only when the value is a
+  well-formed id that ends the line. `-`, oversize, or any other value leaves
+  the attribute unset. The attribute is kept on nginx and application lines.
+- Django: `cms.http_telemetry.upload_reference` applies the same pattern to
+  `X-Upload-Id` and returns an empty string for anything else. On the
+  `upload_transfer` route group, `cinematacms.http.request.denied`, `.failed`,
+  and `.slow` carry `upload_ref`, and `uploader.views` logs
+  `cinematacms.upload.started` (first chunk, part 0) and
+  `cinematacms.upload.finished` (media created), both with `upload_ref` and
+  `actor_ref`. A client can send any well-formed id, so treat `upload_ref` as an
+  attribution key and not as proof of ownership.
+- CORS: `x-upload-id` is in `CORS_ALLOW_HEADERS`. It matters only when
+  `UPLOAD_HOST` is a different origin from the site: without it the browser
+  refuses the chunk after the preflight.
+- Grafana, Incident Search: resolve the user, copy an `upload_ref` from "Upload
+  sessions of the resolved user", paste it into "Upload ref". "One upload" shows
+  the application and nginx lines for that id. "nginx upload lines ... of the
+  resolved user's uploads" goes straight from the actor to the nginx lines.
+
+The Collector reads every `*access.log` and `*error.log` file in
+`/var/log/cinematacms/nginx/`, where the stock site writes `/fu/` chunk requests,
+and in `/var/log/nginx/`, which holds the distribution's logs and any vhost an
+operator adds. A site must use the `cinematacms` `log_format` to carry `upload_ref`
+(`compression` also carries `rt=`, `urt=`, and `rl=` but no `uid=`). An nginx access line keeps
+only `method`, `status_code`, `bytes_sent`, `request_time`, `upstream_time`,
+`request_length`, `upload_ref`, `http.route`, and `route_group` (`nginx_upload` for
+`/fu/` and `/upload/`). `http.route` is one of a fixed set of templates, never the
+request path: `/api/:resource`, `/media/:resource`, `/static/:resource`,
+`/fu/:resource`, `/upload/:resource`, `/metrics`, `/nginx_status`, and `/:other`
+for every other path, including the configurable admin URL and scanner probes. The
+path, query string, address, referrer, and user agent are dropped. A line the parser
+cannot read, such as a request of `"-"` on a 400, keeps its `status_code`, `bytes_sent`,
+and timings as fields and exports only `<unparsed-nginx-access>` as its body.
+`upstream_time` is `-` when the request never reached Django, as for a 408.
+Reading `/var/log/nginx/` needs the `adm` group, which the installer grants to
+`otelcol-contrib`. The site log directory is `root:www-data`, `0750`; the
+installer adds an ACL entry for the Collector only, so the `acl` package must
+be present. The entry is read access (`setfacl -R -m u:otelcol-contrib:rX`) on
+the directory and the logs in it, plus a default entry (`setfacl -d`) so logs
+created later are readable too.
+
+An nginx error line keeps its message and `server`. Its `client` becomes
+`<redacted-ip>` for IPv4 and IPv6. Everything from the first `request`,
+`subrequest`, `upstream`, `host`, or `referrer` field to the end of the line
+becomes `request: "<redacted-request>"`. nginx writes these fields without
+escaping them, so client text can imitate any of them, and no field shape tells
+a real one from a fake one.
+
 ## Error tracking
 
 CinemataCMS uses the Sentry protocol for exception events. The application
