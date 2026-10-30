@@ -66,7 +66,7 @@ Retrieve detailed information about a specific playlist.
 - **Authenticated users**: See public, unlisted, and restricted video thumbnails
 - **Advanced users viewing their own playlists**: See all non-private videos
 
-`media_count` counts only the videos this viewer sees. `thumbnail_url` is the thumbnail of the first public or unlisted video this viewer sees, or `null` when there is none. Restricted videos never supply it, because their thumbnails require a per-video token. Membership and order are kept when a video becomes private, so making it public again restores it.
+`media_count` counts only the videos this viewer sees. `thumbnail_url` is the thumbnail of the first public or unlisted video this viewer sees that has a thumbnail, or `null` when there is none. A video still waiting for its thumbnail is skipped. Restricted videos never supply it, because their thumbnails require a per-video token. Membership and order are kept when a video becomes private, so making it public again restores it.
 
 **Path Parameters:**
 
