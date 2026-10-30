@@ -11,6 +11,7 @@ from cms.http_telemetry import (
     normalize_method,
     normalize_status_class,
     normalize_status_code,
+    upload_reference,
 )
 from cms.observability import actor_reference_context
 from email_delivery.service import recipient_reference
@@ -88,6 +89,8 @@ class ObservabilityMetricsMiddleware:
 
         event_name = None
         extra = {**labels, "status_code": normalize_status_code(status_code)}
+        if route_group == "upload_transfer":
+            extra["upload_ref"] = upload_reference(request)
         if route_group == "upload_transfer" and 400 <= status_code <= 499:
             authenticated = bool(getattr(getattr(request, "user", None), "is_authenticated", False))
             event_name = "cinematacms.http.request.denied"

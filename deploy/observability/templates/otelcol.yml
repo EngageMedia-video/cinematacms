@@ -127,7 +127,7 @@ receivers:
         id: parse_nginx_access_request
         parse_from: body
         parse_to: attributes
-        regex: '^[^ ]+ [^ ]+ [^ ]+ \[[^\]]+\] "(?P<http_method>[A-Z]+) (?P<request_path>[^ ?]+)(?:\?[^ ]*)? HTTP/[^"]+" (?P<status_code>[0-9]{3}) (?P<bytes_sent>[0-9]+)(?: "[^"]*" "[^"]*" "[^"]*" rt=(?P<request_time>[0-9.]+) urt=(?P<upstream_time>.+?) rl=(?P<request_length>[0-9]+))?'
+        regex: '^[^ ]+ [^ ]+ [^ ]+ \[[^\]]+\] "(?P<http_method>[A-Z]+) (?P<request_path>[^ ?]+)(?:\?[^ ]*)? HTTP/[^"]+" (?P<status_code>[0-9]{3}) (?P<bytes_sent>[0-9]+)(?: "[^"]*" "[^"]*" "[^"]*" rt=(?P<request_time>[0-9.]+) urt=(?P<upstream_time>.+?) rl=(?P<request_length>[0-9]+)(?: uid=(?P<upload_ref>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$)?)?'
         on_error: send_quiet
       - type: regex_parser
         id: parse_unparsed_nginx_access_status
@@ -334,7 +334,7 @@ processors:
           - set(log.attributes["route_group"], "nginx_upload") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/(?:fu|upload)(?:/|$)")
           - set(log.body, Concat([log.attributes["method"], log.attributes["http.route"], log.attributes["status_code"]], " ")) where resource.attributes["service.name"] == "nginx" and log.attributes["method"] != nil and log.attributes["http.route"] != nil
           - set(log.body, Substring(log.body, 0, 2048, true)) where IsString(log.body) and Len(log.body) > 2048
-          - keep_keys(log.attributes, ["timestamp", "severity", "severity_text", "level", "event", "event.name", "logger.name", "service.name", "service_role", "service.instance.id", "trace_id", "span_id", "actor_ref", "media_ref", "task_id", "queue", "delivery_uuid", "recipient_ref", "operation", "outcome", "reason_code", "route_group", "http.route", "method", "status_code", "request_time", "upstream_time", "request_length", "bytes_sent", "systemd.unit"])
+          - keep_keys(log.attributes, ["timestamp", "severity", "severity_text", "level", "event", "event.name", "logger.name", "service.name", "service_role", "service.instance.id", "trace_id", "span_id", "actor_ref", "media_ref", "task_id", "queue", "delivery_uuid", "recipient_ref", "operation", "outcome", "reason_code", "route_group", "http.route", "method", "status_code", "request_time", "upstream_time", "request_length", "bytes_sent", "upload_ref", "systemd.unit"])
       - context: resource
         statements:
           - keep_keys(resource.attributes, ["service.name", "service.namespace", "deployment.environment.name"])

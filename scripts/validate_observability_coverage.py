@@ -13,6 +13,7 @@ from pathlib import Path
 NAMESPACE = "cinematacms_"
 GENERIC_UNKNOWN_VALUES = {"generic", "tbd", "todo", "unclassified", "unknown", "unspecified"}
 REGISTRY_COVERAGE_ALL = "all"
+MAX_CORRELATION_ID_LENGTH = 64
 VALID_STATUSES = {"covered", "not_applicable"}
 VALID_METRIC_TYPES = {"counter", "gauge", "histogram", "info", "summary"}
 PYTHON_ALLOWLISTS = {
@@ -353,6 +354,38 @@ def _validate_events(matrix, errors):
     return event_names
 
 
+def _validate_log_correlation(matrix, event_names, errors):
+    correlation = matrix.get("log_correlation")
+    if not isinstance(correlation, Mapping) or not isinstance(correlation.get("upload_ref"), Mapping):
+        errors.append("log_correlation: missing upload_ref")
+        return
+    spec = correlation["upload_ref"]
+    prefix = "log_correlation.upload_ref"
+    for field in ("header", "pattern", "nginx_field", "log_field"):
+        if _is_blank(spec.get(field)):
+            errors.append(f"{prefix}.{field}: blank")
+    max_length = spec.get("max_length")
+    if (
+        not isinstance(max_length, int)
+        or isinstance(max_length, bool)
+        or not 0 < max_length <= MAX_CORRELATION_ID_LENGTH
+    ):
+        errors.append(f"{prefix}.max_length: must be an integer from 1 to {MAX_CORRELATION_ID_LENGTH}")
+    try:
+        re.compile(spec.get("pattern") or "")
+    except re.error:
+        errors.append(f"{prefix}.pattern: not a valid regular expression")
+    events = spec.get("events")
+    if not isinstance(events, list) or not events:
+        errors.append(f"{prefix}.events: missing or empty")
+    else:
+        errors.extend(f"{prefix}.events: unknown event {event!r}" for event in events if event not in event_names)
+    log_field = spec.get("log_field")
+    for name, schema in (matrix.get("metric_schemas") or {}).items():
+        if log_field in schema.get("labels", []):
+            errors.append(f"metric_schemas.{name}.labels: {log_field} is unbounded and must not be a metric label")
+
+
 def _validate_inventory(matrix, registries, errors):
     inventory = matrix.get("inventory")
     if not isinstance(inventory, Mapping):
@@ -584,6 +617,7 @@ def validate_matrix(matrix):
     _validate_python_allowlists(registries, errors)
     schemas = _validate_metric_schemas(matrix, registries, errors)
     event_names = _validate_events(matrix, errors)
+    _validate_log_correlation(matrix, event_names, errors)
     inventory = _validate_inventory(matrix, registries, errors)
     _validate_rows(matrix, registries, schemas, event_names, inventory, errors)
     _validate_thresholds(matrix, schemas, errors)

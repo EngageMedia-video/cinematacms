@@ -818,6 +818,17 @@ class FullStackContractTests(unittest.TestCase):
         retried_upstream = timed_out.replace("408 0", "200 31").replace("urt=-", "urt=0.010, 0.120")
         self.assertEqual(regex.match(retried_upstream).group("upstream_time"), "0.010, 0.120")
 
+        with_upload_id = timed_out + " uid=3f2b8c1e-9d4a-4e6b-8a57-1c0d2e3f4a5b"
+        fields = regex.match(with_upload_id).groupdict()
+        self.assertEqual(fields["upload_ref"], "3f2b8c1e-9d4a-4e6b-8a57-1c0d2e3f4a5b")
+        self.assertEqual(fields["request_length"], "1048576")
+        self.assertIsNone(regex.match(timed_out).group("upload_ref"))
+        for unusable in ("-", "x" * 5000, "deadbeef", with_upload_id[-36:] + "0", with_upload_id[-36:].upper()):
+            with self.subTest(uid=unusable[:40]):
+                fields = regex.match(f"{timed_out} uid={unusable}").groupdict()
+                self.assertIsNone(fields["upload_ref"])
+                self.assertEqual(fields["request_length"], "1048576")
+
         combined_only = (
             '203.0.113.9 - - [30/Oct/2026:10:00:00 +0800] "POST /fu/upload/ HTTP/1.1" 403 146 "-" "Mozilla/5.0"'
         )
@@ -971,6 +982,24 @@ class FullStackContractTests(unittest.TestCase):
         captured = "".join(value or "" for value in regex.match(compression("-", 408, 0)).groupdict().values())
         for private in (client, "SENT_REF", "SENT_UA", "referrer.example", "agent/"):
             self.assertNotIn(private, captured)
+
+    def test_nginx_upload_ref_is_kept_and_bounded_by_the_contract_pattern(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        kept = re.search(r"keep_keys\(log\.attributes, \[(.*?)\]\)", collector).group(1)
+        contract = json.loads((ROOT / "config/observability/coverage.json").read_text())
+        pattern = contract["log_correlation"]["upload_ref"]["pattern"]
+
+        self.assertIn('"upload_ref"', kept)
+        self.assertIn(f"(?P<upload_ref>{pattern})$", collector)
+
+    def test_dashboards_search_logs_by_upload_ref(self):
+        incidents = json.loads((OBSERVABILITY / "templates/grafana-incidents.json").read_text())
+        logs = json.loads((OBSERVABILITY / "templates/grafana-logs.json").read_text())
+
+        incident_text = json.dumps(incidents)
+        self.assertIn("upload_ref", incident_text)
+        self.assertIn("service.name:nginx", incident_text)
+        self.assertIn("upload_ref", json.dumps(logs))
 
     def test_alert_inhibition_cannot_cross_alert_names(self):
         alertmanager = (OBSERVABILITY / "templates/alertmanager.yml").read_text()

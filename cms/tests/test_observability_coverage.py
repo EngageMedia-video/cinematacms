@@ -4,6 +4,7 @@ from pathlib import Path
 
 from django.test import SimpleTestCase
 
+from cms.http_telemetry import UPLOAD_ID_PATTERN
 from scripts.validate_observability_coverage import validate_matrix
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -181,3 +182,44 @@ class ObservabilityCoverageContractTests(SimpleTestCase):
         errors = validate_matrix(candidate)
 
         self.assertTrue(any("files.metrics.DOMAIN_OPERATIONS" in error for error in errors), errors)
+
+
+class UploadCorrelationContractTests(SimpleTestCase):
+    def test_upload_ref_contract_is_declared_and_valid(self):
+        upload_ref = matrix()["log_correlation"]["upload_ref"]
+
+        self.assertEqual(upload_ref["header"], "X-Upload-Id")
+        self.assertEqual(upload_ref["nginx_field"], "uid")
+        self.assertEqual(upload_ref["max_length"], 36)
+        for event in (
+            "cinematacms.http.request.denied",
+            "cinematacms.http.request.failed",
+            "cinematacms.upload.started",
+            "cinematacms.upload.finished",
+        ):
+            self.assertIn(event, upload_ref["events"])
+
+    def test_every_tier_uses_the_contract_pattern(self):
+        pattern = matrix()["log_correlation"]["upload_ref"]["pattern"]
+
+        self.assertEqual(UPLOAD_ID_PATTERN.pattern, pattern)
+        nginx = (ROOT / "deploy/nginx/cinematacms-http.conf").read_text()
+        self.assertIn(f'"~^{pattern}$" $http_x_upload_id;', nginx)
+        self.assertIn("uid=$cinematacms_upload_id", nginx)
+
+    def test_validator_rejects_a_missing_or_unbounded_contract(self):
+        cases = {
+            "log_correlation: missing": lambda m: m.pop("log_correlation"),
+            "pattern": lambda m: m["log_correlation"]["upload_ref"].update(pattern="("),
+            "max_length": lambda m: m["log_correlation"]["upload_ref"].update(max_length=0),
+            "unknown event": lambda m: m["log_correlation"]["upload_ref"]["events"].append("cinematacms.nope"),
+            "metric label": lambda m: m["metric_schemas"]["cinematacms_http_requests_total"]["labels"].append(
+                "upload_ref"
+            ),
+        }
+        for expected, mutate in cases.items():
+            with self.subTest(expected=expected):
+                candidate = matrix()
+                mutate(candidate)
+                errors = validate_matrix(candidate)
+                self.assertTrue(any(expected in error for error in errors), errors)

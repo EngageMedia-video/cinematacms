@@ -12,7 +12,7 @@
       "type": "text",
       "title": "Incident intake",
       "gridPos": {"h": 5, "w": 24, "x": 0, "y": 0},
-      "options": {"mode": "markdown", "content": "Choose **actor** and enter the reported email, or choose **media** and enter its public token. Grafana resolves the value server-side to privacy-safe `actor_ref` or `media_ref`; the input is not synchronized into the dashboard URL. For jobs, delivery, API, or infrastructure incidents, paste the known ID or select operation, outcome, route, service, severity, and time. Start broad, then pivot from a matching log to `trace_id` or `task_id`."}
+      "options": {"mode": "markdown", "content": "Choose **actor** and enter the reported email, or choose **media** and enter its public token. Grafana resolves the value server-side to privacy-safe `actor_ref` or `media_ref`; the input is not synchronized into the dashboard URL. For jobs, delivery, API, or infrastructure incidents, paste the known ID or select operation, outcome, route, service, severity, and time. For an upload problem, resolve the user, copy an `upload_ref` from the upload sessions table, and paste it into **Upload ref**: the same id is on the nginx line (status, request_time, upstream_time `-` when Django never saw it) and on the application events of that upload. Start broad, then pivot from a matching log to `trace_id` or `task_id`."}
     },
     {
       "type": "logs",
@@ -31,10 +31,33 @@
       "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
     },
     {
+      "type": "table",
+      "title": "Upload sessions of the resolved user (copy upload_ref)",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 12, "w": 12, "x": 0, "y": 17},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "${lookup_ref.log_field}:\"$lookup_ref\" AND upload_ref:* | stats by (upload_ref) count() events, min(_time) first_seen, max(_time) last_seen | sort by (last_seen desc) | limit 50", "queryType": "stats"}]
+    },
+    {
+      "type": "logs",
+      "title": "One upload: application and nginx lines by upload_ref",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 12, "w": 12, "x": 12, "y": 17},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "upload_ref:\"$upload_ref\"", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
+    },
+    {
+      "type": "logs",
+      "title": "nginx upload lines (408, 499, 413, 403 with timings) of the resolved user's uploads",
+      "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 29},
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "service.name:nginx AND upload_ref:in(${lookup_ref.log_field}:\"$lookup_ref\" AND upload_ref:* | fields upload_ref)", "maxLines": 500, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
+    },
+    {
       "type": "traces",
       "title": "Media and operation traces",
       "datasource": {"type": "jaeger", "uid": "victoriatraces"},
-      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 17},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 41},
       "targets": [
         {"refId": "A", "queryType": "search", "service": "$trace_service", "operation": "$operation", "tags": "${lookup_ref.span_field}=$lookup_ref", "minDuration": "", "maxDuration": "", "limit": 50},
         {"refId": "B", "queryType": "search", "service": "$trace_service", "operation": "$operation", "tags": "$trace_tags", "minDuration": "", "maxDuration": "", "limit": 50}
@@ -44,7 +67,7 @@
       "type": "logs",
       "title": "Operational context",
       "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
-      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 29},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 53},
       "targets": [{"refId": "A", "editorMode": "code", "expr": "operation:\"$operation\" OR outcome:\"$outcome\" OR reason_code:\"$reason_code\" OR route_group:\"$route_group\" OR method:\"$method\" OR status_code:\"$status_code\" OR service.name:\"$service\" OR systemd.unit:\"$service\" OR severity_text:\"$severity\"", "maxLines": 500, "queryType": "instant"}],
       "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
     },
@@ -52,7 +75,7 @@
       "type": "logs",
       "title": "Cross-service incident timeline",
       "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
-      "gridPos": {"h": 16, "w": 24, "x": 0, "y": 41},
+      "gridPos": {"h": 16, "w": 24, "x": 0, "y": 65},
       "targets": [{"refId": "A", "editorMode": "code", "expr": "${incident_filter:raw}", "maxLines": 1000, "queryType": "instant"}],
       "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
     },
@@ -60,7 +83,7 @@
       "type": "logs",
       "title": "Failures in selected window",
       "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
-      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 57},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 81},
       "targets": [{"refId": "A", "editorMode": "code", "expr": "(${incident_filter:raw}) AND (severity_text:~\"ERROR|CRITICAL\" OR outcome:\"failed\")", "maxLines": 500, "queryType": "instant"}],
       "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
     }
@@ -74,6 +97,7 @@
     {"name": "lookup_ref", "type": "query", "label": "Resolved reference", "hide": 2, "datasource": {"type": "yesoreyeram-infinity-datasource", "uid": "incident-reference-lookup"}, "refresh": 2, "definition": "Incident Reference Lookup - JSON", "query": {"queryType": "infinity", "meta": {"valueField": "reference", "textField": "reference"}, "infinityQuery": {"refId": "variable", "type": "json", "parser": "backend", "source": "url", "format": "table", "url": "", "url_options": {"method": "POST", "body_type": "raw", "body_content_type": "application/json", "data": "{\"kind\":\"${lookup_kind}\",\"value\":\"${lookup_value}\"}"}, "root_selector": "references", "columns": [{"selector": "reference", "text": "reference", "type": "string"}, {"selector": "log_field", "text": "log_field", "type": "string"}, {"selector": "span_field", "text": "span_field", "type": "string"}], "filters": []}}},
     {"name": "media_ref", "type": "textbox", "label": "Media ref", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
     {"name": "recipient_ref", "type": "textbox", "label": "Recipient ref", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
+    {"name": "upload_ref", "type": "textbox", "label": "Upload ref", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
     {"name": "task_id", "type": "textbox", "label": "Task ID", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
     {"name": "delivery_uuid", "type": "textbox", "label": "Delivery UUID", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
     {"name": "trace_id", "type": "textbox", "label": "Trace ID", "query": "__none__", "current": {"text": "__none__", "value": "__none__"}},
