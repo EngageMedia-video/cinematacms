@@ -992,6 +992,28 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn('"upload_ref"', kept)
         self.assertIn(f"(?P<upload_ref>{pattern})$", collector)
 
+    def test_log_stats_queries_do_not_aggregate_timestamps(self):
+        timestamp_aggregation = re.compile(r"\b\w+\(\s*_time\s*\)")
+
+        for template in sorted((OBSERVABILITY / "templates").glob("grafana-*.json")):
+            for panel in json.loads(template.read_text())["panels"]:
+                if panel.get("datasource", {}).get("uid") != "victorialogs":
+                    continue
+                for target in panel.get("targets", []):
+                    if target.get("queryType") in ("stats", "statsRange"):
+                        with self.subTest(dashboard=template.name, panel=panel["title"]):
+                            self.assertIsNone(timestamp_aggregation.search(target["expr"]), target["expr"])
+
+    def test_upload_sessions_panel_lists_upload_started_events_of_the_resolved_user(self):
+        incidents = json.loads((OBSERVABILITY / "templates/grafana-incidents.json").read_text())
+        panel = next(p for p in incidents["panels"] if p["title"].startswith("Upload sessions of the resolved user"))
+        target = panel["targets"][0]
+
+        self.assertEqual(panel["type"], "logs")
+        self.assertEqual(target["queryType"], "instant")
+        self.assertIn('${lookup_ref.log_field}:"$lookup_ref"', target["expr"])
+        self.assertIn('"cinematacms.upload.started"', target["expr"])
+
     def test_dashboards_search_logs_by_upload_ref(self):
         incidents = json.loads((OBSERVABILITY / "templates/grafana-incidents.json").read_text())
         logs = json.loads((OBSERVABILITY / "templates/grafana-logs.json").read_text())
