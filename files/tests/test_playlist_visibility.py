@@ -1,7 +1,9 @@
 """Playlist covers and counts follow the media each viewer can see (#876)."""
 
+import json
 from unittest.mock import patch
 
+from django.conf import settings
 from django.test import TestCase
 
 from files.models import Media, Playlist, PlaylistMedia
@@ -14,12 +16,9 @@ class PlaylistViewerVisibilityTests(TestCase):
         self.viewer = create_test_user(username="pl_vis_viewer")
         self.playlist = Playlist.objects.create(title="Visibility", user=self.owner)
 
-    def _media(self, name, state):
-        return create_test_media(
-            self.owner,
-            state=state,
-            thumbnail=f"original/thumbnails/user/{self.owner.username}/{name}.jpg",
-        )
+    def _media(self, name, state, with_thumbnail=True):
+        thumbnail = f"original/thumbnails/user/{self.owner.username}/{name}.jpg" if with_thumbnail else ""
+        return create_test_media(self.owner, state=state, thumbnail=thumbnail)
 
     def _add(self, *media):
         for ordering, item in enumerate(media, start=1):
@@ -91,6 +90,15 @@ class PlaylistViewerVisibilityTests(TestCase):
 
         self._assert_viewer_sees(self.viewer, None, [restricted.friendly_token])
 
+    def test_cover_skips_items_without_a_thumbnail(self):
+        pending = self._media("pending", "public", with_thumbnail=False)
+        ready = self._media("ready", "public")
+        self._add(pending, ready)
+
+        for viewer in (None, self.viewer):
+            with self.subTest(viewer=viewer):
+                self._assert_viewer_sees(viewer, ready, [pending.friendly_token, ready.friendly_token])
+
     def test_cover_and_count_follow_visibility_changes(self):
         cases = [
             ("only video turns private", False),
@@ -137,7 +145,9 @@ class PlaylistViewerVisibilityTests(TestCase):
         response = self.client.get(self.playlist.get_absolute_url())
 
         content = response.content.decode()
-        self.assertIn(public.thumbnail_url, content)
+        image = f"{settings.FRONTEND_HOST}{public.thumbnail_url}"
+        self.assertIn(f'<meta property="og:image" content="{image}">', content)
+        self.assertIn(f'<meta name="twitter:image" content="{image}">', content)
         self.assertNotIn(unlisted.thumbnail_url, content)
 
     def test_any_state_change_invalidates_cached_playlists(self):
@@ -162,3 +172,25 @@ class PlaylistViewerVisibilityTests(TestCase):
 
                 invalidate_playlist.assert_called_with(self.playlist.friendly_token)
                 self.assertEqual(delete_composite.called, composite_changes)
+
+    def test_bulk_state_change_invalidates_cached_playlists(self):
+        self.owner.advancedUser = True
+        self.owner.save(update_fields=["advancedUser"])
+        only = self._media("bulk-only", "public")
+        self._add(only)
+        self._assert_viewer_sees(None, only, [only.friendly_token])
+
+        self.client.force_login(self.owner)
+        with (
+            patch("files.models.delete_composite_thumbnail") as delete_composite,
+            self.captureOnCommitCallbacks(execute=True),
+        ):
+            response = self.client.post(
+                "/api/v1/my_uploads/bulk_state",
+                data=json.dumps({"tokens": [only.friendly_token], "state": "private"}),
+                content_type="application/json",
+            )
+        self.assertEqual(response.status_code, 200)
+
+        delete_composite.assert_called_once_with(self.playlist.friendly_token)
+        self._assert_viewer_sees(None, None, [])

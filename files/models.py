@@ -2236,11 +2236,16 @@ class Playlist(models.Model):
 
         Restricted media appears in a signed-in viewer's list, but its
         thumbnail is served only with a per-media token, so it never supplies
-        the cover. Returns None when no candidate remains.
+        the cover. Items without a thumbnail yet (still encoding) are skipped.
+        Returns None when no candidate remains.
         """
         pm = (
             self.visible_playlist_media(user)
             .filter(media__state__in=("public", "unlisted"))
+            .exclude(
+                Q(media__uploaded_thumbnail="") | Q(media__uploaded_thumbnail__isnull=True),
+                Q(media__thumbnail="") | Q(media__thumbnail__isnull=True),
+            )
             .select_related("media")
             .first()
         )
@@ -3162,12 +3167,30 @@ def invalidate_playlist_composites_on_state_change(sender, instance, created, up
     if update_fields is not None and "state" not in update_fields:
         return
     original_state = getattr(instance, "_Media__original_state", None)
-    if original_state is None or original_state == instance.state:
+    if original_state is None:
         return
-    composite_changed = "public" in (original_state, instance.state)
-    friendly_tokens = Playlist.objects.filter(media=instance).values_list("friendly_token", flat=True)
-    for friendly_token in friendly_tokens:
-        if composite_changed:
+    invalidate_playlists_after_state_change({instance.pk: original_state}, instance.state)
+
+
+def invalidate_playlists_after_state_change(original_states, new_state):
+    """Invalidate cached playlists that contain media whose state changed.
+
+    `original_states` maps a Media pk to its state before the change. Paths
+    that bypass `post_save`, such as a bulk `QuerySet.update()`, call this
+    directly. See `invalidate_playlist_composites_on_state_change`.
+    """
+    changed = {pk for pk, state in original_states.items() if state != new_state}
+    if not changed:
+        return
+    # The composite holds public media only, so it changes only when public is involved.
+    composite_changed = {pk for pk in changed if "public" in (original_states[pk], new_state)}
+    tokens = {}
+    for friendly_token, media_id in PlaylistMedia.objects.filter(media_id__in=changed).values_list(
+        "playlist__friendly_token", "media_id"
+    ):
+        tokens[friendly_token] = tokens.get(friendly_token, False) or media_id in composite_changed
+    for friendly_token, delete_composite in tokens.items():
+        if delete_composite:
             delete_composite_thumbnail(friendly_token)
         invalidate_playlist_cache(friendly_token)
 
