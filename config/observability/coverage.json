@@ -398,6 +398,9 @@
         "missing_credentials",
         "invalid_token",
         "internal_error",
+        "bad_request",
+        "forbidden",
+        "payload_too_large",
         "other"
       ],
       "description": "Bounded domain reason codes."
@@ -601,6 +604,7 @@
   "events": [
     "cinematacms.http.request.slow",
     "cinematacms.http.request.failed",
+    "cinematacms.http.request.denied",
     "cinematacms.http.request.trace",
     "cinematacms.db.query.slow",
     "cinematacms.db.query.failed",
@@ -1440,6 +1444,7 @@
       "events": [
         "cinematacms.http.request.slow",
         "cinematacms.http.request.failed",
+        "cinematacms.http.request.denied",
         "cinematacms.http.request.trace"
       ],
       "instrumentation_seam": "cms.observability_middleware.ObservabilityMetricsMiddleware",
@@ -1545,6 +1550,14 @@
           "3xx",
           "4xx",
           "5xx",
+          "other"
+        ],
+        "domain_reason_codes": [
+          "bad_request",
+          "forbidden",
+          "missing_credentials",
+          "payload_too_large",
+          "rate_limited",
           "other"
         ]
       },
