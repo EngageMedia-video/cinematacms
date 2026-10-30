@@ -66,6 +66,15 @@ when you install this rotation. The script after each rotation runs as root, so 
 writes to the log directory through `runuser -u www-data`: `www-data` owns that
 directory and could replace any name in it with a link to a root file.
 
+A 4xx response on the `upload_transfer` route group logs
+`cinematacms.http.request.denied` with `route_group`, `operation`, `method`,
+`status_code`, a bounded `reason_code`, `trace_id`, and `actor_ref` when the
+session is authenticated. `reason_code` is `missing_credentials` or `forbidden`
+for 401 and 403, `bad_request` for 400, `payload_too_large` for 413,
+`rate_limited` for 429, and `other` otherwise. The event never carries the
+path, query string, address, cookie, or email. nginx answers some upload errors
+(408, 413, 499) before Django runs; those appear only in the nginx access log.
+
 ## Error tracking
 
 CinemataCMS uses the Sentry protocol for exception events. The application

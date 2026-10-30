@@ -280,6 +280,9 @@ DOMAIN_REASON_CODES = frozenset(
         "missing_credentials",
         "invalid_token",
         "internal_error",
+        "bad_request",
+        "forbidden",
+        "payload_too_large",
         "other",
     }
 )

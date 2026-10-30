@@ -5,7 +5,13 @@ from django.conf import settings
 from django.urls import Resolver404, resolve
 
 from cms.db_backend.telemetry import database_context
-from cms.http_telemetry import classify_request, normalize_method, normalize_status_class, normalize_status_code
+from cms.http_telemetry import (
+    classify_request,
+    denial_reason_code,
+    normalize_method,
+    normalize_status_class,
+    normalize_status_code,
+)
 from cms.observability import actor_reference_context
 from email_delivery.service import recipient_reference
 from files.metrics import HTTP_REQUEST_DURATION_SECONDS, HTTP_REQUESTS_TOTAL, record_telemetry_failure
@@ -81,12 +87,17 @@ class ObservabilityMetricsMiddleware:
             return
 
         event_name = None
-        if 500 <= status_code <= 599:
+        extra = {**labels, "status_code": normalize_status_code(status_code)}
+        if route_group == "upload_transfer" and 400 <= status_code <= 499:
+            authenticated = bool(getattr(getattr(request, "user", None), "is_authenticated", False))
+            event_name = "cinematacms.http.request.denied"
+            extra["reason_code"] = denial_reason_code(status_code, authenticated)
+        elif 500 <= status_code <= 599:
             event_name = "cinematacms.http.request.failed"
         elif duration >= getattr(settings, "OBSERVABILITY_SLOW_REQUEST_SECONDS", 2.0):
             event_name = "cinematacms.http.request.slow"
         if event_name:
             try:
-                logger.warning(event_name, extra={**labels, "status_code": normalize_status_code(status_code)})
+                logger.warning(event_name, extra=extra)
             except Exception:
                 pass
