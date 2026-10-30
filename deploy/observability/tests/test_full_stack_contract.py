@@ -126,6 +126,17 @@ class FullStackContractTests(unittest.TestCase):
             "MaxRetentionSec=${JOURNAL_MAX_RETENTION}",
         ):
             self.assertIn(setting, journald)
+        for persistent_cap, volatile_cap in (
+            ("SystemMaxUse", "RuntimeMaxUse"),
+            ("SystemMaxFileSize", "RuntimeMaxFileSize"),
+        ):
+            cap_value = re.search(rf"^{persistent_cap}=(.+)$", journald, re.MULTILINE).group(1)
+            self.assertRegex(
+                journald,
+                rf"(?m)^{volatile_cap}={re.escape(cap_value)}$",
+                f"{volatile_cap} must mirror {persistent_cap} so the cap holds when journald runs volatile",
+            )
+        self.assertNotIn("Storage=", journald)
         for variable in ("JOURNAL_MAX_USE", "JOURNAL_MAX_FILE", "JOURNAL_MAX_RETENTION"):
             self.assertIn(f"{variable}=", environment)
             self.assertIn(f'"${{{variable}:-', installer)
