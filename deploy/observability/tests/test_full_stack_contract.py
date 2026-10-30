@@ -401,6 +401,52 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn('redis_key_size{key="celery"}', exporter_queues)
         self.assertIn('redis_key_size{key="unacked"}', exporter_queues)
 
+    def test_overview_summarises_waiting_and_in_flight_queue_work(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in dashboard["panels"]}
+
+        waiting = " ".join(target["expr"] for target in panels["Queue depth now"]["targets"])
+        self.assertIn("cinematacms_celery_queue_depth", waiting)
+        self.assertIn('redis_key_size{key="celery"}', waiting)
+        in_flight = " ".join(target["expr"] for target in panels["Queue in flight (reserved + running)"]["targets"])
+        self.assertIn('redis_key_size{key="unacked"}', in_flight)
+        self.assertIn("celery_worker_tasks_active", in_flight)
+        self.assertNotIn("celery_task_received_total", in_flight)
+
+    def test_firing_alerts_table_converts_label_fields_to_columns(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panel = next(panel for panel in dashboard["panels"] if panel["title"] == "Firing alerts by rule")
+        transformations = [transformation["id"] for transformation in panel["transformations"]]
+
+        self.assertEqual(panel["type"], "table")
+        self.assertEqual(transformations, ["labelsToFields", "organize"])
+        self.assertEqual(panel["targets"][0]["format"], "table")
+        self.assertTrue(panel["targets"][0]["instant"])
+        self.assertTrue(
+            panel["targets"][0]["expr"].startswith('sum by (alertname, severity) (ALERTS{alertstate="firing"})')
+        )
+
+    def test_healthy_but_silent_overview_panels_render_zero(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        expressions = [
+            target["expr"]
+            for panel in dashboard["panels"]
+            if panel.get("title") in {"Firing alerts by rule", "Cache health", "Telemetry contract health"}
+            for target in panel.get("targets", [])
+            if "cache_operations" not in target["expr"] and "cache_operation_duration" not in target["expr"]
+        ]
+
+        self.assertEqual(len(expressions), 4)
+        for expression in expressions:
+            self.assertIn(" or on() ", expression)
+
+    def test_quantile_panels_do_not_turn_missing_data_into_zero_latency(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        for panel in dashboard["panels"]:
+            for target in panel.get("targets", []):
+                if "histogram_quantile" in target.get("expr", ""):
+                    self.assertNotIn("vector(0)", target["expr"], panel["title"])
+
     def test_redis_exporter_checks_queue_keys_in_the_broker_database(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
         start = installer.index("redis_database_number() {")
