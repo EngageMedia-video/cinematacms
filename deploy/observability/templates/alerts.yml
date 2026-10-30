@@ -113,12 +113,13 @@ groups:
         labels: {severity: warning}
         annotations: {summary: "Host filesystem has less than 20 percent free"}
       # The Victoria stores stop accepting writes at STORAGE_MIN_FREE_DISK (1 GiB by default), and this alert's own
-      # series stop with them. The threshold sits above that floor so the alert fires while it can still be delivered.
+      # series stop with them. The threshold is the floor VictoriaMetrics reports plus a 4 GiB margin, so the alert fires
+      # while it can still be delivered. Without that series it falls back to 5 GiB, the default floor plus the margin.
       - alert: CinemataHostFilesystemFreeLow
-        expr: 'node_filesystem_avail_bytes{mountpoint=~"/|/var|/home",fstype!~"tmpfs|overlay"} < 5368709120'
+        expr: 'node_filesystem_avail_bytes{mountpoint=~"/|/var|/home",fstype!~"tmpfs|overlay"} < on() group_left() (max(vm_free_disk_space_limit_bytes) + 4294967296 or on() vector(5368709120))'
         for: 5m
         labels: {severity: critical}
-        annotations: {summary: "Host filesystem has less than 5 GiB free"}
+        annotations: {summary: "Host filesystem is within 4 GiB of the metrics write floor"}
       # A read-only VictoriaMetrics rejects the Collector's writes, including vm_storage_is_read_only, so that metric
       # never reaches the store. Reads still work, so vmalert sees the absence of fresh samples.
       - alert: CinemataMetricsIngestionStalled

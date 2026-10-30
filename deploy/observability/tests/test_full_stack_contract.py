@@ -244,8 +244,16 @@ class FullStackContractTests(unittest.TestCase):
         self.assertRegex(stalled, r'^absent_over_time\(up\{service\.name="victoriametrics"\}\[\d+m\]\)$')
 
         floor_gib = int(re.search(r'(?m)^STORAGE_MIN_FREE_DISK="(\d+)GiB"$', environment).group(1))
-        free_low = re.search(r"alert: CinemataHostFilesystemFreeLow\n\s+expr: '.*< (\d+)'\n", rules).group(1)
-        self.assertGreater(int(free_low), floor_gib * 2**30, "the free-space alert must fire before writes stop")
+        free_low = re.search(r"alert: CinemataHostFilesystemFreeLow\n\s+expr: '(.*)'\n", rules).group(1)
+        # The threshold follows the floor VictoriaMetrics enforces, so a raised STORAGE_MIN_FREE_DISK moves it.
+        threshold = re.search(
+            r"< on\(\) group_left\(\) \(max\(vm_free_disk_space_limit_bytes\) \+ (\d+) or on\(\) vector\((\d+)\)\)$",
+            free_low,
+        )
+        self.assertIsNotNone(threshold, free_low)
+        margin, fallback = (int(value) for value in threshold.groups())
+        self.assertEqual(margin, 4 * 2**30)
+        self.assertGreater(fallback, floor_gib * 2**30, "without the series the alert must fire before writes stop")
 
     def test_collector_reads_the_rotated_copy_so_a_restart_across_rotation_loses_no_lines(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
