@@ -97,6 +97,7 @@ class ObservabilityCoverageContractTests(SimpleTestCase):
                 "maintenance_timing",
                 "hls_coordination",
                 "scheduled_task_lock",
+                "chunk_finalisation",
                 "restricted_media_token",
                 "restricted_media_rate_limit",
                 "cache_probe",
