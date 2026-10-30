@@ -912,6 +912,32 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
 
         domain.assert_called_once_with("hls", "failed", "task_exception")
 
+    def test_whisper_failures_are_recorded_as_transcription_outcomes(self):
+        from files import metrics
+
+        sender = SimpleNamespace(
+            name="whisper_transcribe", request=SimpleNamespace(delivery_info={"routing_key": "whisper_tasks"})
+        )
+        with (
+            patch("files.metrics.CELERY_TASKS_TOTAL"),
+            patch("files.metrics.CELERY_TASK_ACTIVE"),
+            patch("files.metrics.record_domain_outcome") as domain,
+        ):
+            # whisper_transcribe returns False for a missing binary, a failed subprocess and an exception.
+            metrics._on_task_postrun(sender=sender, task_id="whisper-false", state="SUCCESS", retval=False)
+            metrics._on_task_postrun(sender=sender, task_id="whisper-true", state="SUCCESS", retval=True)
+            # A lost worker or a hard time limit never reaches postrun and arrives as a task failure.
+            metrics._on_task_failure(sender=sender, task_id="whisper-lost")
+
+        self.assertEqual(
+            domain.call_args_list,
+            [
+                call("transcription", "failed", "returned_false"),
+                call("transcription", "succeeded", "none"),
+                call("transcription", "failed", "task_exception"),
+            ],
+        )
+
     def test_media_pipeline_observation_uses_low_cardinality_profile_labels(self):
         from files.metrics import observe_media_pipeline
 
