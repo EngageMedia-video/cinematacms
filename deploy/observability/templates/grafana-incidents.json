@@ -12,7 +12,7 @@
       "type": "text",
       "title": "Incident intake",
       "gridPos": {"h": 5, "w": 24, "x": 0, "y": 0},
-      "options": {"mode": "markdown", "content": "Choose **actor** and enter the reported email, or choose **media** and enter its public token. Grafana resolves the value server-side to privacy-safe `actor_ref` or `media_ref`; the input is not synchronized into the dashboard URL. For jobs, delivery, API, or infrastructure incidents, paste the known ID or select operation, outcome, route, service, severity, and time. For an upload problem, resolve the user, copy an `upload_ref` from the upload sessions table, and paste it into **Upload ref**: the same id is on the nginx line (status, request_time, upstream_time `-` when Django never saw it) and on the application events of that upload. Start broad, then pivot from a matching log to `trace_id` or `task_id`."}
+      "options": {"mode": "markdown", "content": "Choose **actor** and enter the reported email, or choose **media** and enter its public token. Grafana resolves the value server-side to privacy-safe `actor_ref` or `media_ref`; the input is not synchronized into the dashboard URL. For jobs, delivery, API, or infrastructure incidents, paste the known ID or select operation, outcome, route, service, severity, and time. For an upload problem, resolve the user, copy an `upload_ref` from a line of the upload sessions panel, and paste it into **Upload ref**: the same id is on the nginx line (status, request_time, upstream_time `-` when Django never saw it) and on the application events of that upload. Start broad, then pivot from a matching log to `trace_id` or `task_id`."}
     },
     {
       "type": "logs",
@@ -31,11 +31,12 @@
       "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
     },
     {
-      "type": "table",
+      "type": "logs",
       "title": "Upload sessions of the resolved user (copy upload_ref)",
       "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
       "gridPos": {"h": 12, "w": 12, "x": 0, "y": 17},
-      "targets": [{"refId": "A", "editorMode": "code", "expr": "${lookup_ref.log_field}:\"$lookup_ref\" AND upload_ref:* | stats by (upload_ref) count() events, min(_time) first_seen, max(_time) last_seen | sort by (last_seen desc) | limit 50", "queryType": "stats"}]
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "${lookup_ref.log_field}:\"$lookup_ref\" AND \"cinematacms.upload.started\"", "maxLines": 100, "queryType": "instant"}],
+      "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
     },
     {
       "type": "logs",
