@@ -27,7 +27,8 @@ class PlaylistViewerVisibilityTests(TestCase):
     def _set_state(self, media, state):
         fresh = Media.objects.get(pk=media.pk)
         fresh.state = state
-        fresh.save(update_fields=["state"])
+        with self.captureOnCommitCallbacks(execute=True):
+            fresh.save(update_fields=["state"])
         return fresh
 
     def _detail(self):
@@ -168,7 +169,11 @@ class PlaylistViewerVisibilityTests(TestCase):
                     patch("files.models.delete_composite_thumbnail") as delete_composite,
                     patch("files.models.invalidate_playlist_cache") as invalidate_playlist,
                 ):
-                    media.save(update_fields=["state"])
+                    with self.captureOnCommitCallbacks(execute=True):
+                        media.save(update_fields=["state"])
+                        # Nothing is invalidated until the new state is committed.
+                        invalidate_playlist.assert_not_called()
+                        delete_composite.assert_not_called()
 
                 invalidate_playlist.assert_called_with(self.playlist.friendly_token)
                 self.assertEqual(delete_composite.called, composite_changes)

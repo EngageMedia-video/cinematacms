@@ -3169,7 +3169,14 @@ def invalidate_playlist_composites_on_state_change(sender, instance, created, up
     original_state = getattr(instance, "_Media__original_state", None)
     if original_state is None:
         return
-    invalidate_playlists_after_state_change({instance.pk: original_state}, instance.state)
+    # Invalidate after commit so a concurrent read cannot re-cache the old
+    # state. Capture the saved values now; the instance may change before then.
+    original_states = {instance.pk: original_state}
+    new_state = instance.state
+    transaction.on_commit(
+        lambda: invalidate_playlists_after_state_change(original_states, new_state),
+        using=instance._state.db,
+    )
 
 
 def invalidate_playlists_after_state_change(original_states, new_state):
