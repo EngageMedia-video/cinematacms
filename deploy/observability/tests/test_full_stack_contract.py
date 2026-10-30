@@ -513,6 +513,41 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("absent_over_time(cinematacms_scheduled_job_last_success_timestamp_seconds[15m])", alerts)
         self.assertIn("clamp_min(sum(pg_settings_max_connections), 1)", alerts)
 
+    def test_overview_shows_chunk_finalisation_outcomes_from_metrics_and_logs(self):
+        overview = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in overview["panels"]}
+        media_pipeline_row = panels["Media pipeline"]["gridPos"]["y"]
+        next_row = min(
+            panel["gridPos"]["y"]
+            for panel in overview["panels"]
+            if panel["type"] == "row" and panel["gridPos"]["y"] > media_pipeline_row
+        )
+
+        lost_race_expr = panels["Chunk finalisation lost races"]["targets"][0]["expr"]
+        for selector in ('operation="chunking"', 'outcome="skipped"', 'reason_code="lock_held"'):
+            self.assertIn(selector, lost_race_expr)
+        self.assertIn("or vector(0)", lost_race_expr)
+
+        outcomes = panels["Chunk finalisation outcomes"]
+        events = panels["Chunk finalisation events"]
+        for panel in (outcomes, events):
+            self.assertEqual(panel["datasource"]["uid"], "victorialogs")
+            self.assertIn('_msg:"cinematacms.media.pipeline"', panel["targets"][0]["expr"])
+        self.assertIn("stats by (stage, outcome, reason_code)", outcomes["targets"][0]["expr"])
+        self.assertEqual(events["type"], "logs")
+
+        for title in ("Chunk finalisation lost races", "Chunk finalisation outcomes", "Chunk finalisation events"):
+            position = panels[title]["gridPos"]
+            self.assertGreater(position["y"], media_pipeline_row)
+            self.assertLessEqual(position["y"] + position["h"], next_row)
+
+    def test_collector_keeps_the_log_fields_the_chunk_finalisation_panels_group_by(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        kept_log_fields = re.search(r"keep_keys\(log\.attributes, \[(.*?)\]\)", collector).group(1)
+
+        for field in ("stage", "profile_id", "outcome", "reason_code"):
+            self.assertIn(f'"{field}"', kept_log_fields)
+
     def test_dashboard_and_alert_queries_use_contracted_metric_names(self):
         coverage = json.loads((ROOT / "config/observability/coverage.json").read_text())
         query_files = (

@@ -334,7 +334,7 @@ processors:
           - set(log.attributes["route_group"], "nginx_upload") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/(?:fu|upload)(?:/|$)")
           - set(log.body, Concat([log.attributes["method"], log.attributes["http.route"], log.attributes["status_code"]], " ")) where resource.attributes["service.name"] == "nginx" and log.attributes["method"] != nil and log.attributes["http.route"] != nil
           - set(log.body, Substring(log.body, 0, 2048, true)) where IsString(log.body) and Len(log.body) > 2048
-          - keep_keys(log.attributes, ["timestamp", "severity", "severity_text", "level", "event", "event.name", "logger.name", "service.name", "service_role", "service.instance.id", "trace_id", "span_id", "actor_ref", "media_ref", "task_id", "queue", "delivery_uuid", "recipient_ref", "operation", "outcome", "reason_code", "route_group", "http.route", "method", "status_code", "request_time", "upstream_time", "request_length", "bytes_sent", "upload_ref", "systemd.unit"])
+          - keep_keys(log.attributes, ["timestamp", "severity", "severity_text", "level", "event", "event.name", "logger.name", "service.name", "service_role", "service.instance.id", "trace_id", "span_id", "actor_ref", "media_ref", "task_id", "queue", "delivery_uuid", "recipient_ref", "operation", "outcome", "reason_code", "route_group", "http.route", "method", "status_code", "request_time", "upstream_time", "request_length", "bytes_sent", "upload_ref", "stage", "profile_id", "systemd.unit"])
       - context: resource
         statements:
           - keep_keys(resource.attributes, ["service.name", "service.namespace", "deployment.environment.name"])
