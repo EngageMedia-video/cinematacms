@@ -1009,6 +1009,9 @@ def create_hls(friendly_token):
         # that once timed out (e.g. transient load) starts fresh next time.
         hls_coordination_cache.delete(timeout_retry_key)
         record_domain_outcome("hls", "succeeded", "none")
+    except Exception:
+        record_domain_outcome("hls", "failed", "task_exception")
+        raise
     finally:
         released_lock = False
         if hls_coordination_cache.get(lock_key) == lock_token:

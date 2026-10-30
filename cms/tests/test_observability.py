@@ -887,6 +887,31 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
         )
         domain.assert_called_once_with("chunking", "failed", "returned_false")
 
+    def test_hls_command_that_cannot_run_is_recorded_as_a_failed_outcome(self):
+        import tempfile
+
+        from files import tasks
+
+        media = SimpleNamespace(
+            uid=SimpleNamespace(hex="a" * 32),
+            is_encrypted=False,
+            encodings=Mock(filter=Mock(return_value=[SimpleNamespace(media_file=SimpleNamespace(path="/in.mp4"))])),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            with (
+                override_settings(MP4HLS_COMMAND=__file__, HLS_DIR=directory),
+                patch("files.tasks.Media.objects.get", return_value=media),
+                patch("files.tasks.hls_coordination_cache") as coordination_cache,
+                patch("files.tasks.subprocess.run", side_effect=PermissionError("not executable")),
+                patch("files.tasks.record_domain_outcome") as domain,
+            ):
+                coordination_cache.add.return_value = True
+                coordination_cache.get.return_value = None
+                with self.assertRaises(PermissionError):
+                    tasks.create_hls.run("video-token")
+
+        domain.assert_called_once_with("hls", "failed", "task_exception")
+
     def test_media_pipeline_observation_uses_low_cardinality_profile_labels(self):
         from files.metrics import observe_media_pipeline
 
