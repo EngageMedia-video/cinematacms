@@ -116,7 +116,7 @@ groups:
       # series stop with them. The threshold is the floor VictoriaMetrics reports plus a 4 GiB margin, so the alert fires
       # while it can still be delivered. Without that series it falls back to 5 GiB, the default floor plus the margin.
       - alert: CinemataHostFilesystemFreeLow
-        expr: 'node_filesystem_avail_bytes{mountpoint=~"/|/var|/home",fstype!~"tmpfs|overlay"} < on() group_left() (max(vm_free_disk_space_limit_bytes) + 4294967296 or on() vector(5368709120))'
+        expr: 'node_filesystem_avail_bytes{mountpoint=~"/|/var|/home|/var/lib/victoria(metrics|logs|traces)",fstype!~"tmpfs|overlay"} < on() group_left() (max(vm_free_disk_space_limit_bytes) + 4294967296 or on() vector(5368709120))'
         for: 5m
         labels: {severity: critical}
         annotations: {summary: "Host filesystem is within 4 GiB of the metrics write floor"}

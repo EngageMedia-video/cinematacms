@@ -255,6 +255,14 @@ class FullStackContractTests(unittest.TestCase):
         self.assertEqual(margin, 4 * 2**30)
         self.assertGreater(fallback, floor_gib * 2**30, "without the series the alert must fire before writes stop")
 
+        # A store on a dedicated mount reaches its write floor on that mount, so the alert has to watch it.
+        selector = re.search(r'mountpoint=~"([^"]*)"', free_low).group(1)
+        units = sorted((OBSERVABILITY / "templates").glob("victoria*.service"))
+        self.assertEqual(len(units), 3, units)
+        for unit in units:
+            data_path = re.search(r"-storageDataPath=(\S+)", unit.read_text()).group(1)
+            self.assertIsNotNone(re.fullmatch(selector, data_path), f"{unit.name}: {data_path} is not in {selector}")
+
     def test_collector_reads_the_rotated_copy_so_a_restart_across_rotation_loses_no_lines(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
         rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
