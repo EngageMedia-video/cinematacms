@@ -24,6 +24,12 @@ class FakeUploader {
 		return 5;
 	}
 
+	getUuid(id) {
+		return `00000000-0000-4000-8000-00000000000${id}`;
+	}
+
+	setCustomHeaders() {}
+
 	cancelAll() {}
 
 	pauseUpload(id) {

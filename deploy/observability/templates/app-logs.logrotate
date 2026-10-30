@@ -1,0 +1,12 @@
+${APP_SERVICE_LOG_DIR}/*.log ${APP_SERVICE_LOG_DIR}/errorlog.txt ${UNCOVERED_APP_LOG} {
+  daily
+  maxsize 100M
+  rotate 14
+  missingok
+  notifempty
+  compress
+  delaycompress
+  # celery, uwsgi and the Django FileHandler keep the file open; truncating in place avoids a restart
+  # and leaves the live file's owner, group and mode untouched.
+  copytruncate
+}
