@@ -337,9 +337,10 @@ install_configuration() {
   chmod 0640 "${ETC_DIR}/alertmanager.yml"
 
   local template
-  for template in victoriametrics victorialogs victoriatraces cinematacms-otelcol postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter alertmanager vmalert; do
+  for template in victoriametrics victorialogs victoriatraces cinematacms-otelcol postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter alertmanager vmalert cinematacms-app-logs-rotate; do
     install -m 0644 "${TEMPLATE_DIR}/${template}.service" "/etc/systemd/system/${template}.service"
   done
+  install -m 0644 "${TEMPLATE_DIR}/cinematacms-app-logs-rotate.timer" /etc/systemd/system/cinematacms-app-logs-rotate.timer
   render_victoriametrics_unit
   install_disk_policy
   install_grafana_provisioning
@@ -509,7 +510,9 @@ validate_configuration() {
     /etc/systemd/system/nginx-prometheus-exporter.service \
     /etc/systemd/system/celery-exporter.service \
     /etc/systemd/system/alertmanager.service \
-    /etc/systemd/system/vmalert.service
+    /etc/systemd/system/vmalert.service \
+    /etc/systemd/system/cinematacms-app-logs-rotate.service \
+    /etc/systemd/system/cinematacms-app-logs-rotate.timer
 }
 
 start_services() {
@@ -519,6 +522,7 @@ start_services() {
   command -v nginx >/dev/null 2>&1 && systemctl reload nginx
   systemctl enable --now postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter
   systemctl enable --now alertmanager vmalert cinematacms-otelcol
+  systemctl enable --now cinematacms-app-logs-rotate.timer
   systemctl restart victoriametrics victorialogs victoriatraces
   systemctl restart postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter
   systemctl restart alertmanager vmalert cinematacms-otelcol
@@ -796,7 +800,7 @@ verify_trace_ingestion() {
 verify_installation() {
   printf 'Verifying service and endpoint health...\n'
   local service endpoint
-  for service in victoriametrics victorialogs victoriatraces cinematacms-otelcol postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter alertmanager vmalert grafana-server; do
+  for service in victoriametrics victorialogs victoriatraces cinematacms-otelcol postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter alertmanager vmalert grafana-server cinematacms-app-logs-rotate.timer; do
     systemctl is-active --quiet "$service" || fail "service is not active: $service"
   done
   for endpoint in \

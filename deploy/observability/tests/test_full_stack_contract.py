@@ -233,6 +233,32 @@ class FullStackContractTests(unittest.TestCase):
         ):
             self.assertIn(f"alert: {alert}", rules)
 
+    def test_maxsize_is_checked_hourly_by_a_timer_the_installer_runs_and_verifies(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        templates = OBSERVABILITY / "templates"
+        unit = "cinematacms-app-logs-rotate"
+        service = (templates / f"{unit}.service").read_text()
+        timer = (templates / f"{unit}.timer").read_text()
+
+        self.assertIn("Type=oneshot", service)
+        self.assertIn("ExecStart=/usr/sbin/logrotate /etc/logrotate.d/cinematacms-app-logs\n", service)
+        self.assertNotIn("--state", service, "the default state file keeps the stock daily run from rotating twice")
+        self.assertNotIn("ProtectHome", service, "the application logs live under /home")
+        self.assertIn("OnCalendar=hourly", timer)
+        self.assertRegex(timer, r"(?m)^RandomizedDelaySec=\d+(min|s)$")
+        self.assertIn("WantedBy=timers.target", timer)
+
+        for step, expected in {
+            "install_configuration() {": (f"{unit}; do", f"{unit}.timer"),
+            "validate_configuration() {": (f"{unit}.service", f"{unit}.timer"),
+            "start_services() {": (f"enable --now {unit}.timer",),
+            "verify_installation() {": (f"{unit}.timer",),
+        }.items():
+            body = installer[installer.index(step) :]
+            body = body[: body.index("\n}\n")]
+            for fragment in expected:
+                self.assertIn(fragment, body, step)
+
     def test_overview_shows_in_flight_work_and_unconsumed_queues(self):
         dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
         panels = {panel["title"]: panel for panel in dashboard["panels"]}
@@ -337,6 +363,8 @@ class FullStackContractTests(unittest.TestCase):
             "celery-exporter.service",
             "alertmanager.service",
             "vmalert.service",
+            "cinematacms-app-logs-rotate.service",
+            "cinematacms-app-logs-rotate.timer",
             "grafana-datasources.yml",
             "grafana-logs.json",
             "grafana-overview.json",
