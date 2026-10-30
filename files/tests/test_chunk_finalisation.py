@@ -9,7 +9,9 @@ from django.db import connection
 from django.db.models.signals import post_save
 from django.test import TransactionTestCase, override_settings
 
+from files import models
 from files.models import EncodeProfile, Encoding, Media, encoding_file_save
+from files.tasks import EncodingTask
 from files.tests.helpers import create_test_media, create_test_user
 
 CHUNK_COUNT = 2
@@ -96,3 +98,37 @@ class ChunkFinalisationRaceTests(TransactionTestCase):
         self.assertEqual(merged[0].status, "success")
         self.assertTrue(os.path.exists(merged[0].media_file.path))
         self.assertFalse(Encoding.objects.filter(media=self.media, chunk=True).exists())
+
+    def test_cache_outage_on_the_claim_fails_the_group_through_the_task_failure_path(self):
+        last_chunk = Encoding.objects.filter(chunk=True).first()
+
+        with (
+            patch.object(models.chunk_finalisation_cache, "add", side_effect=ConnectionError("cache down")),
+            patch("files.models._merge_chunks") as merge_chunks,
+            patch("files.metrics.record_domain_outcome") as record_domain_outcome,
+            self.assertLogs("files.models", level="ERROR") as logs,
+            self.assertRaises(ConnectionError),
+        ):
+            encoding_file_save(sender=Encoding, instance=last_chunk, created=False)
+
+        merge_chunks.assert_not_called()
+        (record,) = logs.records
+        self.assertEqual(record.getMessage(), "cinematacms.media.pipeline")
+        self.assertEqual(
+            (record.stage, record.outcome, record.reason_code, record.profile_id, record.chunk_count),
+            ("chunk_finalize", "failed", "dependency_unavailable", self.profile.id, CHUNK_COUNT),
+        )
+        self.assertIsNotNone(record.exc_info)
+        record_domain_outcome.assert_any_call("chunking", "failed", "dependency_unavailable")
+
+        # the exception left encoding.save() in encode_media, so Celery runs on_failure
+        task = EncodingTask()
+        task.encoding = last_chunk
+        with patch("files.tasks.kill_ffmpeg_process"):
+            task.on_failure(ConnectionError("cache down"), "task-id", (), {}, None)
+
+        failed_aggregates = Encoding.objects.filter(media=self.media, profile=self.profile, chunk=False, status="fail")
+        self.assertEqual(failed_aggregates.count(), 1)
+        self.assertFalse(Encoding.objects.filter(media=self.media, chunk=True).exists())
+        self.media.refresh_from_db()
+        self.assertEqual(self.media.encoding_status, "fail")
