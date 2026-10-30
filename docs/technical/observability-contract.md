@@ -18,6 +18,18 @@ Celery execution states are `started`, `succeeded`, `failed`, `retried`, and `re
 
 Domain outcomes are `succeeded`, `failed`, `skipped`, `retried`, and `cancelled`. A successful Celery execution does not imply a successful domain operation. Code records domain results with `files.metrics.record_domain_outcome()`.
 
+### FFmpeg, Bento4 and Whisper
+
+The overview row "FFmpeg, Bento4 and Whisper" reads three domain operations: FFmpeg is `encoding`, Bento4 is `hls` (the `mp4hls` command in `create_hls`), and Whisper is `transcription`. Where each is recorded:
+
+- `encoding`: `observe_media_pipeline()` once per `encode_media` run that reaches an outcome. A first failure is retried by Celery without an outcome, so FFmpeg `retried` stays zero and a media shows `failed/encoding_failed` only when the retry also fails.
+- `hls`: `create_hls` records every branch it returns from, and records `failed/task_exception` when `mp4hls` raises. `retried/lock_held` is another run already holding the media lock, not a failure.
+- `transcription`: the Celery signal handlers. `whisper_transcribe` logs and returns `False` on every failure, which becomes `failed/returned_false`; a lost worker or hard time limit becomes `failed/task_exception`. A request that already exists also returns `False` and counts as failed.
+
+`encode_media` records no outcome when the media, profile or chunk row is gone, when an exception escapes outside the encoding loop, when the worker is lost, or when the task is revoked. The row's "task errors" tile counts `celery_task_failed_total` from the Celery exporter, so an exception or a lost worker still shows even without an outcome. A revoked encode shows in neither.
+
+The row's runtime tiles read `celery_task_runtime_bucket` from the exporter, which observes only successful runs. The exporter unit sets `--buckets` to the application's task duration buckets plus 14400, so percentiles hold for tasks that run for hours. A range that starts before a deploy of that change mixes the old 10 second buckets with the new ones.
+
 ## Traces and logs
 
 The web process configures Django tracing during WSGI startup. A Celery child configures tracing from `worker_process_init`, after the fork. Set `OTEL_SERVICE_ROLE` to `web`, `long-task`, `short-task`, `transcription`, `email`, or `beat`. All roles use the `CinemataCMS` service namespace by default.

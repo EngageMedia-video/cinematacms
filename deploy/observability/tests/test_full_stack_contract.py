@@ -739,6 +739,123 @@ class FullStackContractTests(unittest.TestCase):
             self.assertGreater(position["y"], media_pipeline_row)
             self.assertLessEqual(position["y"] + position["h"], next_row)
 
+    def test_overview_row_for_media_tools_follows_the_media_pipeline_and_stays_in_its_bounds(self):
+        overview = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in overview["panels"]}
+        media_pipeline_row = panels["Media pipeline"]["gridPos"]["y"]
+        rows = sorted((panel["gridPos"]["y"], panel["title"]) for panel in overview["panels"] if panel["type"] == "row")
+        row_after_media_pipeline = rows[[title for _, title in rows].index("Media pipeline") + 1]
+        self.assertEqual(row_after_media_pipeline[1], "FFmpeg, Bento4 and Whisper")
+        tools_row = row_after_media_pipeline[0]
+        next_row = rows[[title for _, title in rows].index("FFmpeg, Bento4 and Whisper") + 1][0]
+
+        chunk_panels_end = max(
+            panel["gridPos"]["y"] + panel["gridPos"]["h"]
+            for title, panel in panels.items()
+            if media_pipeline_row < panel["gridPos"]["y"] < tools_row
+        )
+        self.assertEqual(tools_row, chunk_panels_end)
+        in_row = {title for title, panel in panels.items() if tools_row < panel["gridPos"]["y"] < next_row}
+        self.assertEqual(
+            in_row,
+            {
+                "Tool outcomes in range",
+                "Tool runtime in range",
+                "Tool outcomes over time",
+                "Recent tool failures",
+            },
+        )
+        for title in in_row:
+            position = panels[title]["gridPos"]
+            self.assertLessEqual(position["y"] + position["h"], next_row)
+
+    def test_overview_names_the_tools_and_zero_fills_their_outcome_tiles(self):
+        overview = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in overview["panels"]}
+        operations = {"FFmpeg": "encoding", "Bento4": "hls", "Whisper": "transcription"}
+        tasks = {"FFmpeg": "encode_media", "Bento4": "create_hls", "Whisper": "whisper_transcribe"}
+
+        outcomes = panels["Tool outcomes in range"]["targets"]
+        self.assertEqual(
+            [target["legendFormat"] for target in outcomes],
+            [f"{tool} {event}" for tool in operations for event in ("succeeded", "failed", "retried", "task errors")],
+        )
+        for target in outcomes:
+            tool, event = target["legendFormat"].split(" ", 1)
+            self.assertTrue(target["instant"])
+            self.assertIn("[$__range]", target["expr"])
+            self.assertTrue(target["expr"].endswith(" or on() vector(0)"), target["expr"])
+            if event == "task errors":
+                self.assertIn(f'celery_task_failed_total{{name="{tasks[tool]}"}}', target["expr"])
+            else:
+                self.assertIn(
+                    f'cinematacms_domain_outcomes_total{{operation="{operations[tool]}",outcome="{event}"}}',
+                    target["expr"],
+                )
+
+        over_time = panels["Tool outcomes over time"]["targets"]
+        self.assertEqual(
+            [target["legendFormat"] for target in over_time],
+            [f"{tool} {{{{outcome}}}} {{{{reason_code}}}}" for tool in operations],
+        )
+        for target, operation in zip(over_time, operations.values(), strict=True):
+            self.assertIn(f'cinematacms_domain_outcomes_total{{operation="{operation}"}}', target["expr"])
+            self.assertIn("by (outcome, reason_code)", target["expr"])
+            self.assertTrue(target["expr"].endswith(" or on() vector(0)"), target["expr"])
+
+    def test_overview_runtime_percentiles_use_the_exporter_buckets_per_task(self):
+        overview = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        runtime = next(panel for panel in overview["panels"] if panel["title"] == "Tool runtime in range")
+        tasks = {"FFmpeg": "encode_media", "Bento4": "create_hls", "Whisper": "whisper_transcribe"}
+
+        self.assertEqual(
+            [target["legendFormat"] for target in runtime["targets"]],
+            [f"{tool} {quantile}" for tool in tasks for quantile in ("p50", "p95")],
+        )
+        for target in runtime["targets"]:
+            tool, quantile = target["legendFormat"].split(" ")
+            self.assertTrue(target["instant"])
+            self.assertTrue(
+                target["expr"].startswith(f"histogram_quantile({int(quantile[1:]) / 100}, sum by (le) (increase(")
+            )
+            self.assertIn(f'celery_task_runtime_bucket{{name="{tasks[tool]}"}}[$__range]', target["expr"])
+        self.assertEqual(runtime["fieldConfig"]["defaults"]["unit"], "s")
+
+    def test_overview_lists_recent_tool_failures_from_the_media_worker_logs(self):
+        overview = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        failures = next(panel for panel in overview["panels"] if panel["title"] == "Recent tool failures")
+        expression = failures["targets"][0]["expr"]
+
+        self.assertEqual(failures["type"], "logs")
+        self.assertEqual(failures["datasource"]["uid"], "victorialogs")
+        self.assertLessEqual(failures["targets"][0]["maxLines"], 200)
+        for unit in ("celery_long.service", "celery_whisper.service"):
+            self.assertIn(f'systemd.unit:"{unit}"', expression)
+        # The worker units log plain text, so the failures are told apart by the messages files/tasks.py writes.
+        message_pattern = re.search(r'_msg:~"(.*)"$', expression).group(1)
+        tasks_source = (ROOT / "files/tasks.py").read_text()
+        for emitted in ("mp4hls failed", "ffmpeg error", "Whisper command failed", "No progress for"):
+            self.assertIn(emitted, tasks_source)
+            self.assertRegex(emitted, message_pattern)
+        self.assertRegex("Task create_hls[1f2e] raised unexpected: OSError()", message_pattern)
+        # Every Whisper run logs these, so matching them would list successful runs as failures.
+        for routine in ("Whisper command path: /bin/whisper-cli", "Whisper stderr: whisper_init_from_file"):
+            self.assertNotRegex(routine, message_pattern)
+
+    def test_overview_panels_have_unique_titles_and_do_not_overlap(self):
+        overview = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        titles = [panel["title"] for panel in overview["panels"]]
+        self.assertEqual(len(titles), len(set(titles)))
+
+        occupied = {}
+        for panel in overview["panels"]:
+            position = panel["gridPos"]
+            self.assertLessEqual(position["x"] + position["w"], 24, panel["title"])
+            for x in range(position["x"], position["x"] + position["w"]):
+                for y in range(position["y"], position["y"] + position["h"]):
+                    self.assertNotIn((x, y), occupied, f"{panel['title']} overlaps {occupied.get((x, y))}")
+                    occupied[(x, y)] = panel["title"]
+
     def test_collector_keeps_the_log_fields_the_chunk_finalisation_panels_group_by(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
         kept_log_fields = re.search(r"keep_keys\(log\.attributes, \[(.*?)\]\)", collector).group(1)
