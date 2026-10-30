@@ -427,6 +427,20 @@ def normalize_status_class(status_code: int) -> str:
     return "other"
 
 
+_DENIAL_REASON_BY_STATUS = {
+    400: "bad_request",
+    413: "payload_too_large",
+    429: "rate_limited",
+}
+
+
+def denial_reason_code(status_code: int, authenticated: bool) -> str:
+    """Bounded reason for a 4xx response, derived from the status and session."""
+    if status_code in (401, 403):
+        return "forbidden" if authenticated else "missing_credentials"
+    return _DENIAL_REASON_BY_STATUS.get(status_code, "other")
+
+
 def _is_third_party(match) -> bool:
     namespace = getattr(match, "namespace", "") or ""
     if namespace in THIRD_PARTY_NAMESPACES:
