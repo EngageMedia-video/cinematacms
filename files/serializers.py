@@ -576,7 +576,24 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ("title", "media_count", "thumbnail_url")
 
 
-class PlaylistSerializer(serializers.ModelSerializer):
+class PlaylistViewerFieldsMixin(serializers.Serializer):
+    """Count and cover limited to the media the requesting viewer can see."""
+
+    media_count = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
+
+    def _viewer(self):
+        request = self.context.get("request")
+        return request.user if request else None
+
+    def get_media_count(self, obj):
+        return obj.visible_media_count(self._viewer())
+
+    def get_thumbnail_url(self, obj):
+        return obj.visible_thumbnail_url(self._viewer())
+
+
+class PlaylistSerializer(PlaylistViewerFieldsMixin, serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
 
     class Meta:
@@ -595,7 +612,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
         )
 
 
-class PlaylistDetailSerializer(serializers.ModelSerializer):
+class PlaylistDetailSerializer(PlaylistViewerFieldsMixin, serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
     user_display_name = serializers.ReadOnlyField(source="user.name")
     user_bionote = serializers.ReadOnlyField(source="user.description")
