@@ -2931,11 +2931,25 @@ def _finalize_chunk_group(instance, expected_chunk_paths):
             "encoding.profile_id": instance.profile_id,
         },
     ):
-        if not chunk_finalisation_cache.add(
-            lock_key, lock_token, timeout=settings.CELERY_SOFT_TIME_LIMIT, raise_on_error=True
-        ):
+        try:
+            claimed = chunk_finalisation_cache.add(
+                lock_key, lock_token, timeout=settings.CELERY_SOFT_TIME_LIMIT, raise_on_error=True
+            )
+        except Exception:
+            logger.exception(
+                "cinematacms.media.pipeline",
+                extra={
+                    "stage": "chunk_finalize",
+                    "outcome": "failed",
+                    "reason_code": "dependency_unavailable",
+                    **log_fields,
+                },
+            )
+            _record_chunk_finalisation_outcome("failed", "dependency_unavailable")
+            raise
+        if not claimed:
             _log_chunk_finalisation("skipped", "lock_held", **log_fields)
-            _record_chunk_finalisation_lost_race()
+            _record_chunk_finalisation_outcome("skipped", "lock_held")
             return
         try:
             chunks = _encoded_chunks_when_complete(instance, expected_chunk_paths)
@@ -2956,11 +2970,11 @@ def _finalize_chunk_group(instance, expected_chunk_paths):
                 chunk_finalisation_cache.delete(lock_key)
 
 
-def _record_chunk_finalisation_lost_race():
+def _record_chunk_finalisation_outcome(outcome, reason_code):
     try:
         from .metrics import record_domain_outcome
 
-        record_domain_outcome("chunking", "skipped", "lock_held")
+        record_domain_outcome("chunking", outcome, reason_code)
     except Exception:
         logger.debug("Could not record chunk finalisation outcome", exc_info=True)
 
