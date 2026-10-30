@@ -887,6 +887,7 @@ class StaleInstanceFileFieldSaveTest(TestCase):
                 with (
                     patch("files.models.delete_composite_thumbnail") as delete_composite,
                     patch("files.models.invalidate_playlist_cache") as invalidate_playlist,
+                    self.captureOnCommitCallbacks(execute=True),
                 ):
                     write(fresh)
 

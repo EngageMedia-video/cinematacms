@@ -2445,51 +2445,18 @@ class PlaylistDetail(APIView):
 
         serializer = PlaylistDetailSerializer(playlist, context={"request": request})
 
-        # Import helper functions
-        from .helpers import can_user_see_video_in_playlist, is_advanced_user
-
-        # Determine which videos to show based on user permissions
-        if is_advanced_user(request.user) and playlist.user == request.user:
-            # Advanced users viewing their own playlists can see all non-private videos
-            playlist_media_queryset = (
-                PlaylistMedia.objects.filter(playlist=playlist)
-                .exclude(media__state="private")
-                .select_related("media__user", "media__license")
-                .prefetch_related(
-                    "media__category",
-                    "media__topics",
-                    "media__tags",
-                )
+        # The same visibility rule drives the serializer's count and cover,
+        # so the list, count, and cover always agree for this viewer.
+        playlist_media_queryset = (
+            playlist.visible_playlist_media(request.user)
+            .select_related("media__user", "media__license")
+            .prefetch_related(
+                "media__category",
+                "media__topics",
+                "media__tags",
             )
-        elif request.user.is_authenticated:
-            # Authenticated users can see public, unlisted, and restricted videos
-            playlist_media_queryset = (
-                PlaylistMedia.objects.filter(playlist=playlist)
-                .exclude(media__state="private")
-                .select_related("media__user", "media__license")
-                .prefetch_related(
-                    "media__category",
-                    "media__topics",
-                    "media__tags",
-                )
-            )
-        else:
-            # Anonymous users see only public videos
-            playlist_media_queryset = (
-                PlaylistMedia.objects.filter(playlist=playlist, media__state="public")
-                .select_related("media__user", "media__license")
-                .prefetch_related(
-                    "media__category",
-                    "media__topics",
-                    "media__tags",
-                )
-            )
-
-        # Filter videos based on what the current viewer can see
-        accessible_media = []
-        for playlist_media in playlist_media_queryset:
-            if can_user_see_video_in_playlist(request.user, playlist_media.media):
-                accessible_media.append(playlist_media.media)
+        )
+        accessible_media = [playlist_media.media for playlist_media in playlist_media_queryset]
 
         playlist_media_serializer = MediaSerializer(accessible_media, many=True, context={"request": request})
 

@@ -45,7 +45,8 @@ function ErrorState() {
 function CoverCard({ mobileActions = null, onShare, playlist, playlistToken }) {
 	const media = playlist.playlist_media || [];
 	const firstMedia = media[0];
-	const imageUrl = playlist.composite_thumbnail_url || playlist.thumbnail_url || firstMedia?.thumbnail_url;
+	// The API picks a cover this viewer can load; a listed item can be restricted.
+	const imageUrl = playlist.composite_thumbnail_url || playlist.thumbnail_url;
 	const playAllUrl = addPlaylistParam(firstMedia?.url, playlistToken);
 	const views = getPlaylistViews(media);
 

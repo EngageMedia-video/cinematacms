@@ -22,6 +22,7 @@ from .models import (
     Media,
     Topic,
     get_language_choices,
+    invalidate_playlists_after_state_change,
 )
 from .permissions import (
     IsFilmImpactManager,
@@ -217,7 +218,11 @@ class MyUploadsBulkState(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            original_states = dict(qs.values_list("pk", "state"))
             updated = qs.update(state=new_state)
+            # update() skips the Media post_save receiver, so refresh the
+            # affected playlists once the new state is committed.
+            transaction.on_commit(lambda: invalidate_playlists_after_state_change(original_states, new_state))
         return Response({"updated": updated}, status=status.HTTP_200_OK)
 
 
