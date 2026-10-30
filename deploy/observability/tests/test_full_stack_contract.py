@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[3]
 OBSERVABILITY = ROOT / "deploy" / "observability"
@@ -255,13 +255,16 @@ class FullStackContractTests(unittest.TestCase):
         self.assertEqual(margin, 4 * 2**30)
         self.assertGreater(fallback, floor_gib * 2**30, "without the series the alert must fire before writes stop")
 
-        # A store on a dedicated mount reaches its write floor on that mount, so the alert has to watch it.
+        # A store reaches its write floor on the mount that holds it, and that mount can be the data path or any
+        # ancestor of it, so the alert has to watch the path and every ancestor.
         selector = re.search(r'mountpoint=~"([^"]*)"', free_low).group(1)
         units = sorted((OBSERVABILITY / "templates").glob("victoria*.service"))
         self.assertEqual(len(units), 3, units)
         for unit in units:
             data_path = re.search(r"-storageDataPath=(\S+)", unit.read_text()).group(1)
-            self.assertIsNotNone(re.fullmatch(selector, data_path), f"{unit.name}: {data_path} is not in {selector}")
+            candidate_mounts = [data_path, *(str(parent) for parent in PurePosixPath(data_path).parents)]
+            for mount in candidate_mounts:
+                self.assertIsNotNone(re.fullmatch(selector, mount), f"{unit.name}: {mount} is not in {selector}")
 
     def test_collector_reads_the_rotated_copy_so_a_restart_across_rotation_loses_no_lines(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()

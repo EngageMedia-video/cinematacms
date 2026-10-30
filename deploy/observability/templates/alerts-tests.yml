@@ -82,6 +82,21 @@ tests:
           - exp_labels: {severity: critical, mountpoint: /var/lib/victoriametrics, fstype: ext4}
             exp_annotations: {summary: "Host filesystem is within 4 GiB of the metrics write floor"}
 
+  # The stores can sit on a mount at any ancestor of their data path, such as /var/lib.
+  - interval: 1m
+    input_series:
+      - series: 'vm_free_disk_space_limit_bytes{path="/var/lib/victoriametrics"}'
+        values: '1073741824+0x30'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/var/lib",fstype="ext4"}'
+        values: '4294967296+0x30'
+    alert_rule_test:
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataHostFilesystemFreeLow
+        exp_alerts:
+          - exp_labels: {severity: critical, mountpoint: /var/lib, fstype: ext4}
+            exp_annotations: {summary: "Host filesystem is within 4 GiB of the metrics write floor"}
+
   - interval: 1m
     input_series:
       - series: 'vm_free_disk_space_limit_bytes{path="/var/lib/victoriametrics"}'
