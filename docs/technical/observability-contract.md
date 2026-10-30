@@ -76,8 +76,10 @@ and timings as fields and exports only `<unparsed-nginx-access>` as its body.
 `upstream_time` is `-` when the request never reached Django, as for a 408.
 Reading `/var/log/nginx/` needs the `adm` group, which the installer grants to
 `otelcol-contrib`. The site log directory is `root:www-data`, `0750`; the
-installer adds an ACL entry (`setfacl -m u:otelcol-contrib:rx`) for the
-Collector only, so the `acl` package must be present.
+installer adds an ACL entry for the Collector only, so the `acl` package must
+be present. The entry is read access (`setfacl -R -m u:otelcol-contrib:rX`) on
+the directory and the logs in it, plus a default entry (`setfacl -d`) so logs
+created later are readable too.
 
 An nginx error line keeps its message and `server`. Its `client` becomes
 `<redacted-ip>` for IPv4 and IPv6. Everything from the first `request`,

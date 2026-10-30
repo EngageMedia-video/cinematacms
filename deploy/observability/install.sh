@@ -404,9 +404,11 @@ prepare_service_logs() {
 prepare_nginx_site_logs() {
   # apply-release-config.sh owns this directory as root:www-data 0750 because
   # nginx workers run as www-data. Grant only the collector; membership in
-  # www-data would also expose the application tree.
+  # www-data would also expose the application tree. The recursive ACL covers
+  # logs that exist; the default ACL covers logs nginx or logrotate create later.
   install -d -m 0750 -g www-data "$NGINX_SITE_LOG_DIR"
-  setfacl -m u:otelcol-contrib:rx "$NGINX_SITE_LOG_DIR"
+  setfacl -R -m u:otelcol-contrib:rX "$NGINX_SITE_LOG_DIR"
+  setfacl -d -m u:otelcol-contrib:rX "$NGINX_SITE_LOG_DIR"
 }
 
 render_nginx_app_metrics() {

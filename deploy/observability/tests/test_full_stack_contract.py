@@ -787,7 +787,8 @@ class FullStackContractTests(unittest.TestCase):
 
         self.assertIn(f'NGINX_LOG_DIR="$(root_path {site_log_dir})"', updater)
         self.assertIn('install -d -m 0750 -g www-data "$NGINX_SITE_LOG_DIR"', function)
-        self.assertIn('setfacl -m u:otelcol-contrib:rx "$NGINX_SITE_LOG_DIR"', function)
+        self.assertIn('setfacl -R -m u:otelcol-contrib:rX "$NGINX_SITE_LOG_DIR"', function)
+        self.assertIn('setfacl -d -m u:otelcol-contrib:rX "$NGINX_SITE_LOG_DIR"', function)
         self.assertNotIn("usermod -a -G www-data", installer)
         self.assertRegex(installer, r"prepare_service_logs\n\s+prepare_nginx_site_logs\n")
         self.assertRegex(installer, r"apt-get install -y acl ")
