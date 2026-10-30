@@ -122,7 +122,9 @@ The deployment files split nginx ownership as follows:
 - `deploy/logrotate-cinematacms-nginx` rotates the public-site access and error
   logs in `/var/log/cinematacms/nginx/` daily and deletes them after 14 days.
   These logs hold raw client IPs, so the directory (`root:www-data`, `0750`)
-  admits only root and the nginx workers, which reopen the logs after rotation.
+  admits only root and the nginx workers, which reopen the logs after rotation,
+  plus the full-stack observability collector, which the installer grants an
+  ACL entry so it can ingest them.
   The release updater points an existing site's logs there; files already
   written under `/var/log/nginx/` age out under the distribution's nginx
   rotation.
