@@ -78,7 +78,7 @@ receivers:
     targets:
       - endpoint: ${env:EXTERNAL_HEALTH_URL}
   file_log/cinematacms:
-    include: ["${env:APP_LOG_PATH}"]
+    include: ["${env:APP_LOG_PATH}", "${env:APP_LOG_PATH}.1"]
     resource:
       service.name: cinematacms
     start_at: beginning
@@ -101,7 +101,7 @@ receivers:
         overwrite_text: true
         if: attributes.level == nil and attributes.severity != nil
   file_log/mediacms:
-    include: ["${env:APP_SERVICE_LOG_DIR}/errorlog.txt"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/errorlog.txt", "${env:APP_SERVICE_LOG_DIR}/errorlog.txt.1"]
     resource:
       service.name: mediacms
     start_at: beginning
@@ -125,7 +125,7 @@ receivers:
         field: attributes["systemd.unit"]
         value: nginx.service
   file_log/celery_long:
-    include: ["${env:APP_SERVICE_LOG_DIR}/celery_long.log"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_long.log", "${env:APP_SERVICE_LOG_DIR}/celery_long.log.1"]
     resource:
       service.name: celery_long
     start_at: beginning
@@ -137,7 +137,7 @@ receivers:
         field: attributes["systemd.unit"]
         value: celery_long.service
   file_log/celery_short:
-    include: ["${env:APP_SERVICE_LOG_DIR}/celery_short.log"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_short.log", "${env:APP_SERVICE_LOG_DIR}/celery_short.log.1"]
     resource:
       service.name: celery_short
     start_at: beginning
@@ -149,7 +149,7 @@ receivers:
         field: attributes["systemd.unit"]
         value: celery_short.service
   file_log/celery_whisper:
-    include: ["${env:APP_SERVICE_LOG_DIR}/celery_whisper.log"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_whisper.log", "${env:APP_SERVICE_LOG_DIR}/celery_whisper.log.1"]
     resource:
       service.name: celery_whisper
     start_at: beginning
@@ -161,7 +161,7 @@ receivers:
         field: attributes["systemd.unit"]
         value: celery_whisper.service
   file_log/celery_email:
-    include: ["${env:APP_SERVICE_LOG_DIR}/celery_email.log"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_email.log", "${env:APP_SERVICE_LOG_DIR}/celery_email.log.1"]
     resource:
       service.name: celery_email
     start_at: beginning
@@ -173,7 +173,7 @@ receivers:
         field: attributes["systemd.unit"]
         value: celery_email.service
   file_log/celery_beat:
-    include: ["${env:APP_SERVICE_LOG_DIR}/beatcelery_beat.log"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/beatcelery_beat.log", "${env:APP_SERVICE_LOG_DIR}/beatcelery_beat.log.1"]
     resource:
       service.name: celery_beat
     start_at: beginning

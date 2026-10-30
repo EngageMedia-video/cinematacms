@@ -233,6 +233,34 @@ class FullStackContractTests(unittest.TestCase):
         ):
             self.assertIn(f"alert: {alert}", rules)
 
+    def test_collector_reads_the_rotated_copy_so_a_restart_across_rotation_loses_no_lines(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
+
+        # delaycompress keeps the .1 copy uncompressed, which the collector can only read as plain text.
+        for directive in ("copytruncate", "compress", "delaycompress"):
+            self.assertRegex(rotation, rf"(?m)^\s+{directive}$")
+
+        def includes(receiver):
+            declaration = re.search(rf'(?m)^  {re.escape(receiver)}:\n    include: (\[".*"\])$', collector)
+            return json.loads(declaration.group(1))
+
+        service_logs = {
+            "file_log/mediacms": "errorlog.txt",
+            "file_log/celery_long": "celery_long.log",
+            "file_log/celery_short": "celery_short.log",
+            "file_log/celery_whisper": "celery_whisper.log",
+            "file_log/celery_email": "celery_email.log",
+            "file_log/celery_beat": "beatcelery_beat.log",
+        }
+        for receiver, filename in service_logs.items():
+            live = "${env:APP_SERVICE_LOG_DIR}/" + filename
+            self.assertEqual(includes(receiver), [live, live + ".1"], receiver)
+        self.assertEqual(
+            includes("file_log/cinematacms"), ["${env:APP_LOG_PATH}", "${env:APP_LOG_PATH}.1"], "file_log/cinematacms"
+        )
+        self.assertEqual(includes("file_log/nginx"), ["/var/log/nginx/*.log"])
+
     def test_maxsize_is_checked_hourly_by_a_timer_the_installer_runs_and_verifies(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
         templates = OBSERVABILITY / "templates"
