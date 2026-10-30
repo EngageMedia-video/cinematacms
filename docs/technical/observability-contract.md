@@ -77,17 +77,12 @@ Reading `/var/log/nginx/` needs the `adm` group, which the installer grants to
 installer adds an ACL entry (`setfacl -m u:otelcol-contrib:rx`) for the
 Collector only, so the `acl` package must be present.
 
-An nginx error line keeps its message, `server`, and `host`. Its `request` and
-`referrer` fields become `<redacted-request>` and `<redacted-referrer>`, its
-`subrequest` becomes `<redacted-subrequest>`, its `client` becomes
-`<redacted-ip>` for IPv4 and IPv6, and an `upstream` URL keeps only its scheme
-and host. nginx writes the request line, referrer, and upstream URI without
-escaping them, so each field is redacted up to the next field, and `referrer`
-to the end of the line. A line that repeats a field, lists the fields out of
-their `client`, `server`, `request`, `subrequest`, `upstream`, `host`,
-`referrer` order, or keeps an `upstream` or `host` that is not a plain scheme
-and host name, cannot be told from text the client wrote. Its whole body
-becomes `<redacted-nginx-error>`.
+An nginx error line keeps its message and `server`. Its `client` becomes
+`<redacted-ip>` for IPv4 and IPv6. Everything from the first `request`,
+`subrequest`, `upstream`, `host`, or `referrer` field to the end of the line
+becomes `request: "<redacted-request>"`. nginx writes these fields without
+escaping them, so client text can imitate any of them, and no field shape tells
+a real one from a fake one.
 
 ## Error tracking
 
