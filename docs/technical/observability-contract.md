@@ -71,7 +71,8 @@ path: `/api/:resource`, `/media/:resource`, `/static/:resource`, `/fu/:resource`
 `/upload/:resource`, `/metrics`, `/nginx_status`, and `/:other` for every other
 path, including the configurable admin URL and scanner probes. The path, query
 string, address, referrer, and user agent are dropped. A line the parser cannot
-read, such as a request of `"-"` on a 400, exports only `<unparsed-nginx-access>`.
+read, such as a request of `"-"` on a 400, keeps its `status_code`, `bytes_sent`,
+and timings as fields and exports only `<unparsed-nginx-access>` as its body.
 `upstream_time` is `-` when the request never reached Django, as for a 408.
 Reading `/var/log/nginx/` needs the `adm` group, which the installer grants to
 `otelcol-contrib`. The site log directory is `root:www-data`, `0750`; the

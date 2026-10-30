@@ -845,7 +845,6 @@ class FullStackContractTests(unittest.TestCase):
         ).groups()
         self.assertRegex(
             access_receiver,
-            r"id: parse_nginx_access_request\n(?:        \S.*\n)+"
             r"      - type: add\n"
             r"        id: replace_unparsed_nginx_access\n"
             r"        field: body\n"
@@ -853,6 +852,124 @@ class FullStackContractTests(unittest.TestCase):
             r"        if: attributes\.http_method == nil\n",
         )
         self.assertNotIn("field: body", error_receiver)
+
+    def test_nginx_access_line_the_parser_cannot_read_keeps_its_status_and_timings(self):
+        collector_text = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        access_receiver = re.search(
+            r"  file_log/nginx_access:\n(.*?)\n  file_log/nginx_error:", collector_text, re.S
+        ).group(1)
+        self.assertEqual(
+            re.findall(r"^        id: (\w+)$", access_receiver, re.MULTILINE),
+            ["parse_nginx_access_request", "parse_unparsed_nginx_access_status", "replace_unparsed_nginx_access"],
+        )
+        status_operator = re.search(
+            r"      - type: regex_parser\n        id: parse_unparsed_nginx_access_status\n(?:        \S.*\n)+",
+            access_receiver,
+        ).group(0)
+        self.assertIn("        parse_from: body\n", status_operator)
+        self.assertIn("        parse_to: attributes\n", status_operator)
+        self.assertIn("        on_error: send_quiet\n", status_operator)
+        self.assertIn("        if: attributes.http_method == nil\n", status_operator)
+        pattern = re.search(r"        regex: '(.*?)'\n", status_operator).group(1)
+        self.assertNotIn(".*", pattern)
+        regex = re.compile(pattern)
+        self.assertEqual(
+            set(regex.groupindex), {"status_code", "bytes_sent", "request_time", "upstream_time", "request_length"}
+        )
+
+        client = "2001:db8::SENT_IPV6"
+        prefix = f"{client} - - [30/Oct/2026:10:00:00 +0800]"
+
+        def compression(
+            request,
+            status,
+            sent,
+            referrer="https://referrer.example/SENT_REF",
+            agent="agent/SENT_UA",
+            timings="rt=0.000 urt=- rl=0",
+        ):
+            return f'{prefix} "{request}" {status} {sent} "{referrer}" "{agent}" "-" {timings}'
+
+        unreadable_requests = {
+            "no request line, 400": (
+                compression("-", 400, 150, timings="rt=0.000 urt=- rl=0"),
+                "400",
+                "150",
+                "0.000",
+                "-",
+                "0",
+            ),
+            "no request line, client timed out": (
+                compression("-", 408, 0, timings="rt=60.001 urt=- rl=1048576"),
+                "408",
+                "0",
+                "60.001",
+                "-",
+                "1048576",
+            ),
+            "escaped tls bytes": (
+                compression("\\x16\\x03\\x01\\x02\\x00\\x01\\x00", 400, 150, timings="rt=0.001 urt=- rl=7"),
+                "400",
+                "150",
+                "0.001",
+                "-",
+                "7",
+            ),
+            "space in target": (
+                compression("GET /a b HTTP/1.1", 400, 150, timings="rt=0.002 urt=0.010, 0.120 rl=40"),
+                "400",
+                "150",
+                "0.002",
+                "0.010, 0.120",
+                "40",
+            ),
+        }
+        for shape, (line, status, sent, request_time, upstream_time, request_length) in unreadable_requests.items():
+            with self.subTest(shape=shape):
+                fields = regex.match(line).groupdict()
+                self.assertEqual(
+                    fields,
+                    {
+                        "status_code": status,
+                        "bytes_sent": sent,
+                        "request_time": request_time,
+                        "upstream_time": upstream_time,
+                        "request_length": request_length,
+                    },
+                )
+
+        combined = f'{prefix} "-" 400 150 "https://referrer.example/SENT_REF" "agent/SENT_UA"'
+        self.assertEqual(
+            regex.match(combined).groupdict(),
+            {
+                "status_code": "400",
+                "bytes_sent": "150",
+                "request_time": None,
+                "upstream_time": None,
+                "request_length": None,
+            },
+        )
+
+        forged_timings = " rt=9 urt=SECRET rl=9"
+        for field in ("referrer", "agent"):
+            with self.subTest(forged_in=field, format="combined"):
+                forged = {"referrer": "https://referrer.example/SENT_REF", "agent": "agent/SENT_UA"}
+                forged[field] += forged_timings
+                line = f'{prefix} "-" 400 150 "{forged["referrer"]}" "{forged["agent"]}"'
+                fields = regex.match(line).groupdict()
+                self.assertEqual(
+                    (fields["request_time"], fields["upstream_time"], fields["request_length"]), (None, None, None)
+                )
+            with self.subTest(forged_in=field, format="compression"):
+                line = compression("-", 408, 0, timings="rt=3.000 urt=- rl=5", **{field: "client" + forged_timings})
+                fields = regex.match(line).groupdict()
+                self.assertEqual(
+                    (fields["request_time"], fields["upstream_time"], fields["request_length"]), ("3.000", "-", "5")
+                )
+
+        captured = "".join(value or "" for value in regex.match(compression("-", 408, 0)).groupdict().values())
+        for private in (client, "SENT_REF", "SENT_UA", "referrer.example", "agent/"):
+            self.assertNotIn(private, captured)
 
     def test_alert_inhibition_cannot_cross_alert_names(self):
         alertmanager = (OBSERVABILITY / "templates/alertmanager.yml").read_text()
