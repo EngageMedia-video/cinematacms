@@ -25,8 +25,6 @@ tests:
         values: '500000000+0x30'
       - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4"}'
         values: '100000000000+0x30'
-      - series: 'vm_storage_is_read_only{path="/var/lib/victoriametrics"}'
-        values: '1+0x30'
     alert_rule_test:
       - eval_time: 20m
         groupname: observability-stack
@@ -39,13 +37,7 @@ tests:
         alertname: CinemataHostFilesystemFreeLow
         exp_alerts:
           - exp_labels: {severity: critical, mountpoint: /, fstype: ext4}
-            exp_annotations: {summary: "Host filesystem has less than 1 GiB free"}
-      - eval_time: 20m
-        groupname: observability-stack
-        alertname: CinemataVictoriaMetricsReadOnly
-        exp_alerts:
-          - exp_labels: {severity: critical, path: /var/lib/victoriametrics}
-            exp_annotations: {summary: "VictoriaMetrics rejects writes because the disk is nearly full"}
+            exp_annotations: {summary: "Host filesystem has less than 5 GiB free"}
 
   - interval: 1m
     input_series:
@@ -53,12 +45,46 @@ tests:
         values: '50000000000+0x30'
       - series: 'node_filesystem_size_bytes{mountpoint="/",fstype="ext4"}'
         values: '100000000000+0x30'
-      - series: 'vm_storage_is_read_only{path="/var/lib/victoriametrics"}'
-        values: '0+0x30'
     alert_rule_test:
       - {eval_time: 20m, groupname: observability-stack, alertname: CinemataHostFilesystemWarning, exp_alerts: []}
       - {eval_time: 20m, groupname: observability-stack, alertname: CinemataHostFilesystemFreeLow, exp_alerts: []}
-      - {eval_time: 20m, groupname: observability-stack, alertname: CinemataVictoriaMetricsReadOnly, exp_alerts: []}
+
+  # 3 GiB free is above the 1 GiB default floor, so the Victoria stores still accept writes and the alert is the warning.
+  - interval: 1m
+    input_series:
+      - series: 'node_filesystem_avail_bytes{mountpoint="/",fstype="ext4"}'
+        values: '3221225472+0x30'
+      - series: 'node_filesystem_avail_bytes{mountpoint="/var",fstype="ext4"}'
+        values: '10737418240+0x30'
+    alert_rule_test:
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataHostFilesystemFreeLow
+        exp_alerts:
+          - exp_labels: {severity: critical, mountpoint: /, fstype: ext4}
+            exp_annotations: {summary: "Host filesystem has less than 5 GiB free"}
+
+  # Below the floor VictoriaMetrics rejects the Collector's writes, so its own series stop and nothing can report the
+  # cause from inside the store: the alert has to fire on the absence of fresh samples.
+  - interval: 1m
+    input_series:
+      - series: 'up{service.name="victoriametrics"}'
+        values: '1+0x5 _x30'
+    alert_rule_test:
+      - {eval_time: 6m, groupname: observability-stack, alertname: CinemataMetricsIngestionStalled, exp_alerts: []}
+      - eval_time: 20m
+        groupname: observability-stack
+        alertname: CinemataMetricsIngestionStalled
+        exp_alerts:
+          - exp_labels: {severity: critical, service.name: victoriametrics}
+            exp_annotations: {summary: "VictoriaMetrics receives no fresh samples"}
+
+  - interval: 1m
+    input_series:
+      - series: 'up{service.name="victoriametrics"}'
+        values: '1+0x30'
+    alert_rule_test:
+      - {eval_time: 20m, groupname: observability-stack, alertname: CinemataMetricsIngestionStalled, exp_alerts: []}
 
   - interval: 1m
     input_series:

@@ -229,9 +229,23 @@ class FullStackContractTests(unittest.TestCase):
         for alert in (
             "CinemataHostFilesystemWarning",
             "CinemataHostFilesystemFreeLow",
-            "CinemataVictoriaMetricsReadOnly",
+            "CinemataMetricsIngestionStalled",
         ):
             self.assertIn(f"alert: {alert}", rules)
+
+    def test_storage_floor_alerts_do_not_depend_on_samples_the_floor_stops(self):
+        rules = (OBSERVABILITY / "templates/alerts.yml").read_text()
+        environment = (OBSERVABILITY / "observability.env.example").read_text()
+
+        # Below the floor VictoriaMetrics rejects the Collector's writes, so vm_storage_is_read_only never arrives.
+        expressions = re.findall(r"(?m)^\s+expr: (.*)$", rules)
+        self.assertFalse([expr for expr in expressions if "vm_storage_is_read_only" in expr])
+        stalled = re.search(r"alert: CinemataMetricsIngestionStalled\n\s+expr: (.*)\n", rules).group(1)
+        self.assertRegex(stalled, r'^absent_over_time\(up\{service\.name="victoriametrics"\}\[\d+m\]\)$')
+
+        floor_gib = int(re.search(r'(?m)^STORAGE_MIN_FREE_DISK="(\d+)GiB"$', environment).group(1))
+        free_low = re.search(r"alert: CinemataHostFilesystemFreeLow\n\s+expr: '.*< (\d+)'\n", rules).group(1)
+        self.assertGreater(int(free_low), floor_gib * 2**30, "the free-space alert must fire before writes stop")
 
     def test_collector_reads_the_rotated_copy_so_a_restart_across_rotation_loses_no_lines(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
