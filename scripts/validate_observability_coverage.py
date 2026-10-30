@@ -354,7 +354,7 @@ def _validate_events(matrix, errors):
     return event_names
 
 
-def _validate_log_correlation(matrix, event_names, errors):
+def _validate_log_correlation(matrix, schemas, event_names, errors):
     correlation = matrix.get("log_correlation")
     if not isinstance(correlation, Mapping) or not isinstance(correlation.get("upload_ref"), Mapping):
         errors.append("log_correlation: missing upload_ref")
@@ -373,16 +373,21 @@ def _validate_log_correlation(matrix, event_names, errors):
         errors.append(f"{prefix}.max_length: must be an integer from 1 to {MAX_CORRELATION_ID_LENGTH}")
     try:
         re.compile(spec.get("pattern") or "")
-    except re.error:
+    except (re.error, TypeError):
         errors.append(f"{prefix}.pattern: not a valid regular expression")
     events = spec.get("events")
     if not isinstance(events, list) or not events:
         errors.append(f"{prefix}.events: missing or empty")
     else:
-        errors.extend(f"{prefix}.events: unknown event {event!r}" for event in events if event not in event_names)
+        errors.extend(
+            f"{prefix}.events: unknown event {event!r}"
+            for event in events
+            if not isinstance(event, str) or event not in event_names
+        )
     log_field = spec.get("log_field")
-    for name, schema in (matrix.get("metric_schemas") or {}).items():
-        if log_field in schema.get("labels", []):
+    for name, schema in schemas.items():
+        labels = schema.get("labels") if isinstance(schema, Mapping) else None
+        if isinstance(labels, list) and log_field in labels:
             errors.append(f"metric_schemas.{name}.labels: {log_field} is unbounded and must not be a metric label")
 
 
@@ -617,7 +622,7 @@ def validate_matrix(matrix):
     _validate_python_allowlists(registries, errors)
     schemas = _validate_metric_schemas(matrix, registries, errors)
     event_names = _validate_events(matrix, errors)
-    _validate_log_correlation(matrix, event_names, errors)
+    _validate_log_correlation(matrix, schemas, event_names, errors)
     inventory = _validate_inventory(matrix, registries, errors)
     _validate_rows(matrix, registries, schemas, event_names, inventory, errors)
     _validate_thresholds(matrix, schemas, errors)

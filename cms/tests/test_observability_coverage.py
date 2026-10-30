@@ -223,3 +223,49 @@ class UploadCorrelationContractTests(SimpleTestCase):
                 mutate(candidate)
                 errors = validate_matrix(candidate)
                 self.assertTrue(any(expected in error for error in errors), errors)
+
+    def test_validator_reports_a_malformed_matrix_instead_of_raising(self):
+        def as_schema_list(candidate):
+            candidate["metric_schemas"] = [
+                {"name": name, **schema} for name, schema in candidate["metric_schemas"].items()
+            ]
+
+        def as_schema_list_with_upload_ref_label(candidate):
+            as_schema_list(candidate)
+            candidate["metric_schemas"][0]["labels"].append("upload_ref")
+
+        def extra_schema_labels_not_a_list(candidate):
+            candidate["metric_schemas"]["cinematacms_extra_total"] = {"labels": None}
+
+        def extra_schema_not_an_object(candidate):
+            candidate["metric_schemas"]["cinematacms_extra_total"] = "oops"
+
+        cases = {
+            "a schema list": (as_schema_list, None),
+            "a schema list with the correlation id as a label": (
+                as_schema_list_with_upload_ref_label,
+                "unbounded and must not be a metric label",
+            ),
+            "a non-string pattern": (
+                lambda m: m["log_correlation"]["upload_ref"].update(pattern=5),
+                "log_correlation.upload_ref.pattern",
+            ),
+            "an unhashable event": (
+                lambda m: m["log_correlation"]["upload_ref"]["events"].append(["cinematacms.nope"]),
+                "log_correlation.upload_ref.events: unknown event",
+            ),
+            "an extra schema whose labels are not a list": (extra_schema_labels_not_a_list, None),
+            "an extra schema that is not an object": (
+                extra_schema_not_an_object,
+                "metric_schemas.cinematacms_extra_total: must be an object",
+            ),
+        }
+        for name, (mutate, expected) in cases.items():
+            with self.subTest(malformed=name):
+                candidate = matrix()
+                mutate(candidate)
+                errors = validate_matrix(candidate)
+                if expected is None:
+                    self.assertEqual(errors, [])
+                else:
+                    self.assertTrue(any(expected in error for error in errors), errors)
