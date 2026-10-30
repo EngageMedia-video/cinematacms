@@ -78,10 +78,11 @@ receivers:
     targets:
       - endpoint: ${env:EXTERNAL_HEALTH_URL}
   file_log/cinematacms:
-    include: ["${env:APP_LOG_PATH}"]
+    include: ["${env:APP_LOG_PATH}", "${env:APP_LOG_PATH}.1"]
     resource:
       service.name: cinematacms
     start_at: beginning
+    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -101,10 +102,11 @@ receivers:
         overwrite_text: true
         if: attributes.level == nil and attributes.severity != nil
   file_log/mediacms:
-    include: ["${env:APP_SERVICE_LOG_DIR}/errorlog.txt"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/errorlog.txt", "${env:APP_SERVICE_LOG_DIR}/errorlog.txt.1"]
     resource:
       service.name: mediacms
     start_at: beginning
+    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -112,8 +114,38 @@ receivers:
       - type: add
         field: attributes["systemd.unit"]
         value: mediacms.service
-  file_log/nginx:
-    include: ["/var/log/nginx/*.log"]
+  file_log/nginx_access:
+    include: ["/var/log/nginx/*access.log", "/var/log/cinematacms/nginx/*access.log"]
+    resource:
+      service.name: nginx
+    start_at: beginning
+    include_file_name: false
+    include_file_path: false
+    storage: file_storage
+    operators:
+      - type: regex_parser
+        id: parse_nginx_access_request
+        parse_from: body
+        parse_to: attributes
+        regex: '^[^ ]+ [^ ]+ [^ ]+ \[[^\]]+\] "(?P<http_method>[A-Z]+) (?P<request_path>[^ ?]+)(?:\?[^ ]*)? HTTP/[^"]+" (?P<status_code>[0-9]{3}) (?P<bytes_sent>[0-9]+)(?: "[^"]*" "[^"]*" "[^"]*" rt=(?P<request_time>[0-9.]+) urt=(?P<upstream_time>.+?) rl=(?P<request_length>[0-9]+)(?: uid=(?P<upload_ref>[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$)?)?'
+        on_error: send_quiet
+      - type: regex_parser
+        id: parse_unparsed_nginx_access_status
+        parse_from: body
+        parse_to: attributes
+        regex: '^[^ ]+ [^ ]+ [^ ]+ \[[^\]]+\] "[^"]*" (?P<status_code>[0-9]{3}) (?P<bytes_sent>[0-9]+)(?: "[^"]*" "[^"]*" "[^"]*" rt=(?P<request_time>[0-9.]+) urt=(?P<upstream_time>.+?) rl=(?P<request_length>[0-9]+))?'
+        on_error: send_quiet
+        if: attributes.http_method == nil
+      - type: add
+        id: replace_unparsed_nginx_access
+        field: body
+        value: <unparsed-nginx-access>
+        if: attributes.http_method == nil
+      - type: add
+        field: attributes["systemd.unit"]
+        value: nginx.service
+  file_log/nginx_error:
+    include: ["/var/log/nginx/*error.log", "/var/log/cinematacms/nginx/*error.log"]
     resource:
       service.name: nginx
     start_at: beginning
@@ -125,10 +157,11 @@ receivers:
         field: attributes["systemd.unit"]
         value: nginx.service
   file_log/celery_long:
-    include: ["${env:APP_SERVICE_LOG_DIR}/celery_long.log"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_long.log", "${env:APP_SERVICE_LOG_DIR}/celery_long.log.1"]
     resource:
       service.name: celery_long
     start_at: beginning
+    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -137,10 +170,11 @@ receivers:
         field: attributes["systemd.unit"]
         value: celery_long.service
   file_log/celery_short:
-    include: ["${env:APP_SERVICE_LOG_DIR}/celery_short.log"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_short.log", "${env:APP_SERVICE_LOG_DIR}/celery_short.log.1"]
     resource:
       service.name: celery_short
     start_at: beginning
+    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -149,10 +183,11 @@ receivers:
         field: attributes["systemd.unit"]
         value: celery_short.service
   file_log/celery_whisper:
-    include: ["${env:APP_SERVICE_LOG_DIR}/celery_whisper.log"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_whisper.log", "${env:APP_SERVICE_LOG_DIR}/celery_whisper.log.1"]
     resource:
       service.name: celery_whisper
     start_at: beginning
+    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -161,10 +196,11 @@ receivers:
         field: attributes["systemd.unit"]
         value: celery_whisper.service
   file_log/celery_email:
-    include: ["${env:APP_SERVICE_LOG_DIR}/celery_email.log"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/celery_email.log", "${env:APP_SERVICE_LOG_DIR}/celery_email.log.1"]
     resource:
       service.name: celery_email
     start_at: beginning
+    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -173,10 +209,11 @@ receivers:
         field: attributes["systemd.unit"]
         value: celery_email.service
   file_log/celery_beat:
-    include: ["${env:APP_SERVICE_LOG_DIR}/beatcelery_beat.log"]
+    include: ["${env:APP_SERVICE_LOG_DIR}/beatcelery_beat.log", "${env:APP_SERVICE_LOG_DIR}/beatcelery_beat.log.1"]
     resource:
       service.name: celery_beat
     start_at: beginning
+    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -269,6 +306,8 @@ processors:
           - set(log.body, log.attributes["event.name"]) where log.attributes["event"] == nil and log.attributes["event.name"] != nil
           - set(log.body, log.attributes["message"]) where log.attributes["event"] == nil and log.attributes["event.name"] == nil and log.attributes["message"] != nil
           - set(log.body, Concat([log.body, log.attributes["exc_info"]], "\n")) where IsString(log.body) and log.attributes["exc_info"] != nil
+          - 'replace_pattern(log.body, "client: [^,\\s]+", "client: <redacted-ip>") where IsString(log.body) and resource.attributes["service.name"] == "nginx"'
+          - 'replace_pattern(log.body, "(?s), (?:request|subrequest|upstream|host|referrer): \".*$", ", request: \"<redacted-request>\"") where IsString(log.body) and resource.attributes["service.name"] == "nginx"'
           - replace_pattern(log.body, "(?i)authorization\\s*[:=]\\s*(bearer\\s+)?[^\\s,;]+", "authorization=<redacted>") where IsString(log.body)
           - replace_pattern(log.body, "(?i)(cookie|set-cookie)\\s*[:=]\\s*[^\\s;]+", "$$1=<redacted>") where IsString(log.body)
           - replace_pattern(log.body, "(?i)(password|passwd|token|secret|api[_-]?key)\\s*[:=]\\s*[^\\s,;]+", "$$1=<redacted>") where IsString(log.body)
@@ -278,8 +317,24 @@ processors:
           - replace_pattern(log.body, "\\b[0-9a-fA-F]{24,}\\b", "<redacted-id>") where IsString(log.body)
           - replace_pattern(log.body, "\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b", "<redacted-ip>") where IsString(log.body)
           - replace_pattern(log.body, "(?:/[A-Za-z._-][A-Za-z0-9._-]*){2,}", "<redacted-path>") where IsString(log.body)
+          - set(log.attributes["method"], log.attributes["http_method"]) where log.attributes["http_method"] != nil
+          - set(log.attributes["http.route"], "/:other") where log.attributes["request_path"] != nil
+          - set(log.attributes["http.route"], "/metrics") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/metrics$")
+          - set(log.attributes["http.route"], "/nginx_status") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/nginx_status$")
+          - set(log.attributes["http.route"], "/api/:resource") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/api(?:/|$)")
+          - set(log.attributes["http.route"], "/media/:resource") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/media(?:/|$)")
+          - set(log.attributes["http.route"], "/static/:resource") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/static(?:/|$)")
+          - set(log.attributes["http.route"], "/fu/:resource") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/fu(?:/|$)")
+          - set(log.attributes["http.route"], "/upload/:resource") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/upload(?:/|$)")
+          - set(log.attributes["route_group"], "nginx_other") where log.attributes["request_path"] != nil
+          - set(log.attributes["route_group"], "nginx_system") where log.attributes["request_path"] == "/metrics" or log.attributes["request_path"] == "/nginx_status"
+          - set(log.attributes["route_group"], "nginx_api") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/api(?:/|$)")
+          - set(log.attributes["route_group"], "nginx_media") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/media(?:/|$)")
+          - set(log.attributes["route_group"], "nginx_static") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/static(?:/|$)")
+          - set(log.attributes["route_group"], "nginx_upload") where log.attributes["request_path"] != nil and IsMatch(log.attributes["request_path"], "^/(?:fu|upload)(?:/|$)")
+          - set(log.body, Concat([log.attributes["method"], log.attributes["http.route"], log.attributes["status_code"]], " ")) where resource.attributes["service.name"] == "nginx" and log.attributes["method"] != nil and log.attributes["http.route"] != nil
           - set(log.body, Substring(log.body, 0, 2048, true)) where IsString(log.body) and Len(log.body) > 2048
-          - keep_keys(log.attributes, ["timestamp", "severity", "severity_text", "level", "event", "event.name", "logger.name", "service.name", "service_role", "service.instance.id", "trace_id", "span_id", "actor_ref", "media_ref", "task_id", "queue", "delivery_uuid", "recipient_ref", "operation", "outcome", "reason_code", "route_group", "method", "status_code", "systemd.unit"])
+          - keep_keys(log.attributes, ["timestamp", "severity", "severity_text", "level", "event", "event.name", "logger.name", "service.name", "service_role", "service.instance.id", "trace_id", "span_id", "actor_ref", "media_ref", "task_id", "queue", "delivery_uuid", "recipient_ref", "operation", "outcome", "reason_code", "route_group", "http.route", "method", "status_code", "request_time", "upstream_time", "request_length", "bytes_sent", "upload_ref", "systemd.unit"])
       - context: resource
         statements:
           - keep_keys(resource.attributes, ["service.name", "service.namespace", "deployment.environment.name"])
@@ -374,7 +429,8 @@ service:
       receivers:
         - file_log/cinematacms
         - file_log/mediacms
-        - file_log/nginx
+        - file_log/nginx_access
+        - file_log/nginx_error
         - file_log/celery_long
         - file_log/celery_short
         - file_log/celery_whisper

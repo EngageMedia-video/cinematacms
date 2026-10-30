@@ -21,6 +21,11 @@ class CeleryQueueContractTests(SimpleTestCase):
     def test_worker_units_consume_the_queues_the_contract_lists(self):
         self.assertEqual(consumed_queues(), set(settings.OBSERVABILITY_CELERY_QUEUES))
 
+    def test_observability_installer_watches_the_queues_the_contract_lists(self):
+        installer = (DEPLOY_DIR / "observability/install.sh").read_text()
+        watched = re.search(r"^CELERY_CONSUMED_QUEUES=\(([^)]*)\)", installer, re.MULTILINE).group(1).split()
+        self.assertEqual(set(watched), set(settings.OBSERVABILITY_CELERY_QUEUES))
+
     def test_unrouted_tasks_land_in_a_consumed_queue(self):
         self.assertIn(app.conf.task_default_queue, consumed_queues())
 

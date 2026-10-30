@@ -107,3 +107,28 @@ groups:
         for: 10m
         labels: {severity: warning}
         annotations: {summary: "Public TLS certificate expires within seven days"}
+      - alert: CinemataHostFilesystemWarning
+        expr: 'node_filesystem_avail_bytes{mountpoint=~"/|/var|/home",fstype!~"tmpfs|overlay"} / clamp_min(node_filesystem_size_bytes{mountpoint=~"/|/var|/home",fstype!~"tmpfs|overlay"}, 1) < 0.2'
+        for: 15m
+        labels: {severity: warning}
+        annotations: {summary: "Host filesystem has less than 20 percent free"}
+      # The Victoria stores stop accepting writes at STORAGE_MIN_FREE_DISK (1 GiB by default), and this alert's own
+      # series stop with them. The threshold is the floor VictoriaMetrics reports plus a 4 GiB margin, so the alert fires
+      # while it can still be delivered. Without that series it falls back to 5 GiB, the default floor plus the margin.
+      - alert: CinemataHostFilesystemFreeLow
+        expr: 'node_filesystem_avail_bytes{mountpoint=~"/|/var|/var/lib|/home|/var/lib/victoria(metrics|logs|traces)",fstype!~"tmpfs|overlay"} < on() group_left() (max(vm_free_disk_space_limit_bytes) + 4294967296 or on() vector(5368709120))'
+        for: 5m
+        labels: {severity: critical}
+        annotations: {summary: "Host filesystem is within 4 GiB of the metrics write floor"}
+      # A read-only VictoriaMetrics rejects the Collector's writes, including vm_storage_is_read_only, so that metric
+      # never reaches the store. Reads still work, so vmalert sees the absence of fresh samples.
+      - alert: CinemataMetricsIngestionStalled
+        expr: absent_over_time(up{service.name="victoriametrics"}[3m])
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: "VictoriaMetrics receives no fresh samples"}
+      - alert: CinemataCeleryQueueWithoutConsumer
+        expr: sum by (queue_name) (label_replace(redis_key_size{key!="unacked"}, "queue_name", "$1", "key", "(.+)")) > 0 unless on(queue_name) (celery_active_worker_count > 0)
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "A Celery queue holds tasks and no worker consumes it"}

@@ -1,3 +1,6 @@
+import logging
+import shutil
+import tempfile
 import uuid
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -6,14 +9,18 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import HttpResponse
-from django.test import Client, RequestFactory, TestCase
+from django.test import Client, RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 
+from cms.observability import OpenTelemetryLogFilter, actor_reference_context
 from cms.permissions import user_allowed_to_upload
 from files.views import upload_media
 from uploader.fineuploader import ChunkedFineUploader, is_valid_uuid_format, strip_delimiters
 from uploader.forms import FineUploaderUploadForm
+from uploader.views import FineUploaderView
 from users.models import User
+
+FILE_UUID = "3f2b8c1e-9d4a-4e6b-8a57-1c0d2e3f4a5b"
 
 
 class UploadMediaCsrfCookieTests(TestCase):
@@ -437,3 +444,101 @@ class UploaderTestSuite(TestCase):
 
         uploader_middle = ChunkedFineUploader(middle_chunk_data)
         self.assertFalse(uploader_middle.is_time_to_combine_chunks)
+
+
+class _LogCollector(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.records = []
+        self.addFilter(OpenTelemetryLogFilter())
+
+    def emit(self, record):
+        self.records.append(record)
+
+
+class UploadLifecycleLogTests(SimpleTestCase):
+    """Start and finish events carry the same upload_ref as the nginx line and the denial events."""
+
+    def setUp(self):
+        self.media_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.media_root, ignore_errors=True)
+        media_root = override_settings(MEDIA_ROOT=self.media_root)
+        media_root.enable()
+        self.addCleanup(media_root.disable)
+        self.collector = _LogCollector()
+        view_logger = logging.getLogger("uploader.views")
+        view_logger.addHandler(self.collector)
+        self.addCleanup(view_logger.removeHandler, self.collector)
+        # Production configures the uploader logger at INFO; the test settings do not.
+        self.addCleanup(view_logger.setLevel, view_logger.level)
+        view_logger.setLevel(logging.INFO)
+        self.actor_ref = "v1:" + "d" * 64
+
+    def _post(self, *, part, total, upload_id=None, chunks_done=False):
+        data = {"qquuid": FILE_UUID, "qqfilename": "clip.mp4", "qqtotalparts": total}
+        if not chunks_done:
+            data.update(qqfile=SimpleUploadedFile("blob", b"x" * 16), qqpartindex=part)
+        headers = {} if upload_id is None else {"HTTP_X_UPLOAD_ID": upload_id}
+        path = "/fu/upload/?done" if chunks_done else "/fu/upload/"
+        request = RequestFactory().post(path, data, **headers)
+        request.user = SimpleNamespace(is_authenticated=True, email="person@example.org")
+        with (
+            patch("uploader.views.user_allowed_to_upload", return_value=True),
+            patch("uploader.views.is_trusted_uploader", return_value=False),
+            patch("uploader.views.Media") as media,
+            actor_reference_context(self.actor_ref),
+        ):
+            media.return_value.get_absolute_url.return_value = "/view?m=abc"
+            return FineUploaderView.as_view()(request)
+
+    def _events(self, name):
+        return [r for r in self.collector.records if r.getMessage() == name]
+
+    def test_first_chunk_logs_started_with_upload_ref_and_actor_ref(self):
+        response = self._post(part=0, total=3, upload_id=FILE_UUID)
+
+        self.assertEqual(response.status_code, 200)
+        (record,) = self._events("cinematacms.upload.started")
+        self.assertEqual(record.upload_ref, FILE_UUID)
+        self.assertEqual(record.actor_ref, self.actor_ref)
+        self.assertTrue(hasattr(record, "trace_id"))
+        self.assertEqual(record.route_group, "upload_transfer")
+        self.assertEqual(self._events("cinematacms.upload.finished"), [])
+
+    def test_later_chunks_do_not_log_started(self):
+        self._post(part=1, total=3, upload_id=FILE_UUID)
+
+        self.assertEqual(self._events("cinematacms.upload.started"), [])
+
+    def test_completed_upload_logs_finished_with_upload_ref(self):
+        response = self._post(part=0, total=1, upload_id=FILE_UUID)
+
+        self.assertEqual(response.status_code, 200)
+        (record,) = self._events("cinematacms.upload.finished")
+        self.assertEqual(record.upload_ref, FILE_UUID)
+        self.assertEqual(record.actor_ref, self.actor_ref)
+
+    def test_chunks_done_request_that_cannot_combine_logs_no_finish(self):
+        response = self._post(part=0, total=3, upload_id=FILE_UUID, chunks_done=True)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self._events("cinematacms.upload.finished"), [])
+
+    def test_malformed_upload_id_is_logged_as_empty(self):
+        self._post(part=0, total=3, upload_id="not-an-id\r\nforged=1")
+
+        (record,) = self._events("cinematacms.upload.started")
+        self.assertEqual(record.upload_ref, "")
+
+
+class UploadIdCorsTests(SimpleTestCase):
+    def test_preflight_allows_the_upload_id_header(self):
+        response = Client().options(
+            "/fu/upload/",
+            HTTP_ORIGIN="https://cinemata.org",
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST",
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS="x-csrftoken,x-upload-id",
+        )
+
+        allowed = response.headers.get("Access-Control-Allow-Headers", "").split(", ")
+        self.assertIn("x-upload-id", allowed)

@@ -40,6 +40,16 @@ class NginxConfigTests(unittest.TestCase):
 
         self.assertIn("client_body_timeout 300s;", config)
 
+    def test_access_log_format_records_only_a_well_formed_upload_id(self):
+        config = (PROJECT_ROOT / "deploy/nginx/cinematacms-http.conf").read_text()
+        log_format = re.search(r"log_format\s+cinematacms\s+(.*?);", config, re.DOTALL).group(1)
+        upload_id_map = re.search(r"map\s+\$http_x_upload_id\s+\$cinematacms_upload_id\s*\{(.*?)\}", config, re.DOTALL)
+
+        self.assertIsNotNone(upload_id_map)
+        self.assertRegex(upload_id_map.group(1), r'default\s+"-";')
+        self.assertTrue(log_format.rstrip().endswith("uid=$cinematacms_upload_id'"), log_format)
+        self.assertNotIn("$http_x_upload_id", log_format)
+
     def test_main_config_has_no_proxy_only_timeouts(self):
         config = (PROJECT_ROOT / "deploy/nginx.conf").read_text()
 

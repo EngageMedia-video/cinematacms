@@ -4,6 +4,7 @@ from pathlib import Path
 
 from django.test import SimpleTestCase
 
+from cms.http_telemetry import UPLOAD_ID_PATTERN
 from scripts.validate_observability_coverage import validate_matrix
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -181,3 +182,90 @@ class ObservabilityCoverageContractTests(SimpleTestCase):
         errors = validate_matrix(candidate)
 
         self.assertTrue(any("files.metrics.DOMAIN_OPERATIONS" in error for error in errors), errors)
+
+
+class UploadCorrelationContractTests(SimpleTestCase):
+    def test_upload_ref_contract_is_declared_and_valid(self):
+        upload_ref = matrix()["log_correlation"]["upload_ref"]
+
+        self.assertEqual(upload_ref["header"], "X-Upload-Id")
+        self.assertEqual(upload_ref["nginx_field"], "uid")
+        self.assertEqual(upload_ref["max_length"], 36)
+        for event in (
+            "cinematacms.http.request.denied",
+            "cinematacms.http.request.failed",
+            "cinematacms.upload.started",
+            "cinematacms.upload.finished",
+        ):
+            self.assertIn(event, upload_ref["events"])
+
+    def test_every_tier_uses_the_contract_pattern(self):
+        pattern = matrix()["log_correlation"]["upload_ref"]["pattern"]
+
+        self.assertEqual(UPLOAD_ID_PATTERN.pattern, pattern)
+        nginx = (ROOT / "deploy/nginx/cinematacms-http.conf").read_text()
+        self.assertIn(f'"~^{pattern}$" $http_x_upload_id;', nginx)
+        self.assertIn("uid=$cinematacms_upload_id", nginx)
+
+    def test_validator_rejects_a_missing_or_unbounded_contract(self):
+        cases = {
+            "log_correlation: missing": lambda m: m.pop("log_correlation"),
+            "pattern": lambda m: m["log_correlation"]["upload_ref"].update(pattern="("),
+            "max_length": lambda m: m["log_correlation"]["upload_ref"].update(max_length=0),
+            "unknown event": lambda m: m["log_correlation"]["upload_ref"]["events"].append("cinematacms.nope"),
+            "metric label": lambda m: m["metric_schemas"]["cinematacms_http_requests_total"]["labels"].append(
+                "upload_ref"
+            ),
+        }
+        for expected, mutate in cases.items():
+            with self.subTest(expected=expected):
+                candidate = matrix()
+                mutate(candidate)
+                errors = validate_matrix(candidate)
+                self.assertTrue(any(expected in error for error in errors), errors)
+
+    def test_validator_reports_a_malformed_matrix_instead_of_raising(self):
+        def as_schema_list(candidate):
+            candidate["metric_schemas"] = [
+                {"name": name, **schema} for name, schema in candidate["metric_schemas"].items()
+            ]
+
+        def as_schema_list_with_upload_ref_label(candidate):
+            as_schema_list(candidate)
+            candidate["metric_schemas"][0]["labels"].append("upload_ref")
+
+        def extra_schema_labels_not_a_list(candidate):
+            candidate["metric_schemas"]["cinematacms_extra_total"] = {"labels": None}
+
+        def extra_schema_not_an_object(candidate):
+            candidate["metric_schemas"]["cinematacms_extra_total"] = "oops"
+
+        cases = {
+            "a schema list": (as_schema_list, None),
+            "a schema list with the correlation id as a label": (
+                as_schema_list_with_upload_ref_label,
+                "unbounded and must not be a metric label",
+            ),
+            "a non-string pattern": (
+                lambda m: m["log_correlation"]["upload_ref"].update(pattern=5),
+                "log_correlation.upload_ref.pattern",
+            ),
+            "an unhashable event": (
+                lambda m: m["log_correlation"]["upload_ref"]["events"].append(["cinematacms.nope"]),
+                "log_correlation.upload_ref.events: unknown event",
+            ),
+            "an extra schema whose labels are not a list": (extra_schema_labels_not_a_list, None),
+            "an extra schema that is not an object": (
+                extra_schema_not_an_object,
+                "metric_schemas.cinematacms_extra_total: must be an object",
+            ),
+        }
+        for name, (mutate, expected) in cases.items():
+            with self.subTest(malformed=name):
+                candidate = matrix()
+                mutate(candidate)
+                errors = validate_matrix(candidate)
+                if expected is None:
+                    self.assertEqual(errors, [])
+                else:
+                    self.assertTrue(any(expected in error for error in errors), errors)
