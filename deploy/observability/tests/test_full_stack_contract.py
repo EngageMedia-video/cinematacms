@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -79,9 +80,66 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("copytruncate", rotation)
         self.assertNotIn("create ", rotation)
 
+    def render_app_log_rotation(self, app_log_path, service_log_dir):
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                'source "$1"; load_config; render_app_log_rotation',
+                "bash",
+                str(OBSERVABILITY / "install.sh"),
+            ],
+            env={
+                **os.environ,
+                "APP_LOG_PATH": app_log_path,
+                "APP_SERVICE_LOG_DIR": service_log_dir,
+                "INCIDENT_REFERENCE_LOOKUP_TOKEN": "token",
+                "GRAFANA_API_TOKEN": "token",
+            },
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout
+
+    def test_rotation_lists_the_collector_log_once_and_only_when_the_patterns_miss_it(self):
+        service_patterns = ["/srv/logs/*.log", "/srv/logs/errorlog.txt"]
+        for app_log_path, service_log_dir, extra_patterns in (
+            ("/srv/logs/app.json.log", "/srv/logs", []),
+            ("/srv/logs/app.json.log", "/srv/logs/", []),
+            ("/srv/logs/errorlog.txt", "/srv/logs", []),
+            ("/var/app/app.json.log", "/srv/logs", ["/var/app/app.json.log"]),
+            ("/srv/logs/app.json", "/srv/logs", ["/srv/logs/app.json"]),
+            ("/srv/logs/sub/app.json.log", "/srv/logs", ["/srv/logs/sub/app.json.log"]),
+            ("/srv/logs/.app.log", "/srv/logs", ["/srv/logs/.app.log"]),
+        ):
+            with self.subTest(app_log_path=app_log_path, service_log_dir=service_log_dir):
+                rendered = self.render_app_log_rotation(app_log_path, service_log_dir)
+
+                self.assertEqual(rendered.split("{")[0].split(), service_patterns + extra_patterns)
+
+    @unittest.skipUnless(shutil.which("logrotate"), "logrotate is not installed")
+    def test_rotation_accepts_a_collector_log_outside_the_service_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            service_logs = Path(directory) / "logs"
+            collector_logs = Path(directory) / "collector"
+            for logs in (service_logs, collector_logs):
+                logs.mkdir()
+            live = collector_logs / "app.json.log"
+            live.write_text("x" * 200)
+            config = Path(directory) / "rotate.conf"
+            config.write_text(self.render_app_log_rotation(str(live), str(service_logs)))
+            config.chmod(0o644)
+
+            subprocess.run(
+                ["logrotate", "--force", "--state", str(Path(directory) / "state"), str(config)],
+                check=True,
+            )
+
+            self.assertEqual((collector_logs / "app.json.log.1").read_text(), "x" * 200)
+
     @unittest.skipUnless(shutil.which("logrotate"), "logrotate is not installed")
     def test_rotation_keeps_the_live_log_file_and_its_group(self):
-        template = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
         with tempfile.TemporaryDirectory() as directory:
             logs = Path(directory) / "logs"
             logs.mkdir()
@@ -90,7 +148,8 @@ class FullStackContractTests(unittest.TestCase):
             live.chmod(0o640)
             before = live.stat()
             config = Path(directory) / "rotate.conf"
-            config.write_text(template.replace("${APP_SERVICE_LOG_DIR}", str(logs)).replace("maxsize 100M", "size 1"))
+            rendered = self.render_app_log_rotation(str(logs / "app.json.log"), str(logs))
+            config.write_text(rendered.replace("maxsize 100M", "size 1"))
             config.chmod(0o644)
 
             subprocess.run(

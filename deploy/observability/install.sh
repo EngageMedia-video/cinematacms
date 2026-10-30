@@ -63,6 +63,7 @@ load_config() {
     || fail "APP_METRICS_PORT must be between 1 and 65535"
   APP_LOG_PATH="${APP_LOG_PATH:-/home/cinemata/cinematacms/logs/app.json.log}"
   APP_SERVICE_LOG_DIR="${APP_SERVICE_LOG_DIR:-$(dirname "$APP_LOG_PATH")}"
+  APP_SERVICE_LOG_DIR="${APP_SERVICE_LOG_DIR%/}"
   EXTERNAL_HEALTH_URL="${EXTERNAL_HEALTH_URL:-http://127.0.0.1:${APP_METRICS_PORT}/metrics}"
   OBSERVABILITY_ENVIRONMENT="${OBSERVABILITY_ENVIRONMENT:-production}"
   METRICS_RETENTION="${METRICS_RETENTION:-90d}"
@@ -412,11 +413,28 @@ configure_postgres_monitor_role() {
     --file="${TEMPLATE_DIR}/postgres-monitor-role.sql" postgres
 }
 
-install_disk_policy() {
-  local content
+# True when the patterns in app-logs.logrotate already match the path. A logrotate "*" stays
+# within one directory and skips a leading dot, which a bash pattern would not.
+app_log_rotation_matches() {
+  local path="$1" directory name
+  directory="${path%/*}"
+  name="${path##*/}"
+  [[ "$directory" == "$APP_SERVICE_LOG_DIR" && "$name" != .* && ( "$name" == *.log || "$name" == errorlog.txt ) ]]
+}
+
+# logrotate rejects a file matched by two patterns, so the collector's log is added only when missed.
+render_app_log_rotation() {
+  local content uncovered_app_log=""
+  app_log_rotation_matches "$APP_LOG_PATH" || uncovered_app_log="$APP_LOG_PATH"
   content="$(<"${TEMPLATE_DIR}/app-logs.logrotate")"
   content="${content//\$\{APP_SERVICE_LOG_DIR\}/$APP_SERVICE_LOG_DIR}"
-  printf '%s\n' "$content" > /etc/logrotate.d/cinematacms-app-logs
+  content="${content//\$\{UNCOVERED_APP_LOG\}/$uncovered_app_log}"
+  printf '%s\n' "$content"
+}
+
+install_disk_policy() {
+  local content
+  render_app_log_rotation > /etc/logrotate.d/cinematacms-app-logs
   chmod 0644 /etc/logrotate.d/cinematacms-app-logs
   logrotate --debug /etc/logrotate.d/cinematacms-app-logs >/dev/null
 

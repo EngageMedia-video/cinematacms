@@ -1,4 +1,4 @@
-${APP_SERVICE_LOG_DIR}/*.log ${APP_SERVICE_LOG_DIR}/errorlog.txt {
+${APP_SERVICE_LOG_DIR}/*.log ${APP_SERVICE_LOG_DIR}/errorlog.txt ${UNCOVERED_APP_LOG} {
   daily
   maxsize 100M
   rotate 14
