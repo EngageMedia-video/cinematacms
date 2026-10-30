@@ -63,11 +63,18 @@ load_config() {
     || fail "APP_METRICS_PORT must be between 1 and 65535"
   APP_LOG_PATH="${APP_LOG_PATH:-/home/cinemata/cinematacms/logs/app.json.log}"
   APP_SERVICE_LOG_DIR="${APP_SERVICE_LOG_DIR:-$(dirname "$APP_LOG_PATH")}"
+  APP_SERVICE_LOG_DIR="${APP_SERVICE_LOG_DIR%/}"
   EXTERNAL_HEALTH_URL="${EXTERNAL_HEALTH_URL:-http://127.0.0.1:${APP_METRICS_PORT}/metrics}"
   OBSERVABILITY_ENVIRONMENT="${OBSERVABILITY_ENVIRONMENT:-production}"
   METRICS_RETENTION="${METRICS_RETENTION:-90d}"
   LOGS_RETENTION="${LOGS_RETENTION:-30d}"
   TRACES_RETENTION="${TRACES_RETENTION:-14d}"
+  STORAGE_MIN_FREE_DISK="${STORAGE_MIN_FREE_DISK:-1GiB}"
+  LOGS_MAX_DISK="${LOGS_MAX_DISK:-5GiB}"
+  TRACES_MAX_DISK="${TRACES_MAX_DISK:-5GiB}"
+  JOURNAL_MAX_USE="${JOURNAL_MAX_USE:-4G}"
+  JOURNAL_MAX_FILE="${JOURNAL_MAX_FILE:-128M}"
+  JOURNAL_MAX_RETENTION="${JOURNAL_MAX_RETENTION:-30day}"
   VICTORIAMETRICS_PORT="${VICTORIAMETRICS_PORT:-8428}"
   VICTORIALOGS_PORT="${VICTORIALOGS_PORT:-9428}"
   VICTORIATRACES_PORT="${VICTORIATRACES_PORT:-10428}"
@@ -278,9 +285,15 @@ write_environment_files() {
     printf 'VMALERT_PORT=%q\n' "$VMALERT_PORT"
     printf 'LOGS_RETENTION=%q\n' "$LOGS_RETENTION"
     printf 'TRACES_RETENTION=%q\n' "$TRACES_RETENTION"
+    printf 'STORAGE_MIN_FREE_DISK=%q\n' "$STORAGE_MIN_FREE_DISK"
+    printf 'LOGS_MAX_DISK=%q\n' "$LOGS_MAX_DISK"
+    printf 'TRACES_MAX_DISK=%q\n' "$TRACES_MAX_DISK"
   } > "${ETC_DIR}/stack.env"
   printf 'DATA_SOURCE_NAME=%q\n' "$POSTGRES_DSN" > "${ETC_DIR}/postgres-exporter.env"
-  printf 'REDIS_ADDR=%q\n' "$REDIS_URL" > "${ETC_DIR}/redis-exporter.env"
+  {
+    printf 'REDIS_ADDR=%q\n' "$REDIS_URL"
+    printf 'REDIS_EXPORTER_CHECK_SINGLE_KEYS=%q\n' "$(celery_queue_keys)"
+  } > "${ETC_DIR}/redis-exporter.env"
   printf 'CE_BROKER_URL=%q\n' "$REDIS_URL" > "${ETC_DIR}/celery-exporter.env"
   rm -f "${ETC_DIR}/exporters.env"
   chown root:otelcol-contrib "${ETC_DIR}/stack.env"
@@ -324,10 +337,12 @@ install_configuration() {
   chmod 0640 "${ETC_DIR}/alertmanager.yml"
 
   local template
-  for template in victoriametrics victorialogs victoriatraces cinematacms-otelcol postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter alertmanager vmalert; do
+  for template in victoriametrics victorialogs victoriatraces cinematacms-otelcol postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter alertmanager vmalert cinematacms-app-logs-rotate; do
     install -m 0644 "${TEMPLATE_DIR}/${template}.service" "/etc/systemd/system/${template}.service"
   done
+  install -m 0644 "${TEMPLATE_DIR}/cinematacms-app-logs-rotate.timer" /etc/systemd/system/cinematacms-app-logs-rotate.timer
   render_victoriametrics_unit
+  install_disk_policy
   install_grafana_provisioning
   if command -v nginx >/dev/null 2>&1; then
     install -m 0644 "${TEMPLATE_DIR}/nginx-stub-status.conf" /etc/nginx/conf.d/cinematacms-observability.conf
@@ -337,10 +352,36 @@ install_configuration() {
   configure_postgres_monitor_role
 }
 
+# Database number of a redis:// URL: the first path segment, db 0 when absent or not numeric.
+redis_database_number() {
+  local url="${1%%\?*}" authority_and_path path
+  authority_and_path="${url#*://}"
+  [[ "$authority_and_path" == */* ]] || { printf '0'; return; }
+  path="${authority_and_path#*/}"
+  path="${path%%/*}"
+  [[ "$path" =~ ^[0-9]+$ ]] && printf '%s' "$path" || printf '0'
+}
+
+# Queues the worker units consume. cms/tests/test_celery_queues.py checks this list against
+# OBSERVABILITY_CELERY_QUEUES, and the deploy contract tests check it against coverage.json.
+CELERY_CONSUMED_QUEUES=(long_tasks short_tasks whisper_tasks email_tasks)
+
+# Celery queue lists sit in the broker database under the queue name. "celery" is Celery's built-in
+# default queue, which no worker consumes: a key there means a task was sent without a route. The
+# "unacked" hash holds messages already delivered to workers but not yet acknowledged.
+celery_queue_keys() {
+  local database key keys=()
+  database="db$(redis_database_number "$REDIS_URL")"
+  for key in celery "${CELERY_CONSUMED_QUEUES[@]}" unacked; do
+    keys+=("${database}=${key}")
+  done
+  (IFS=,; printf '%s' "${keys[*]}")
+}
+
 prepare_application_log() {
   local log_directory
   log_directory="$(dirname "$APP_LOG_PATH")"
-  install -d -m 0750 -o www-data -g cinematacms-observability "$log_directory"
+  install -d -m 2750 -o www-data -g cinematacms-observability "$log_directory"
   touch "$APP_LOG_PATH"
   chown www-data:cinematacms-observability "$APP_LOG_PATH"
   chmod 0640 "$APP_LOG_PATH"
@@ -348,7 +389,8 @@ prepare_application_log() {
 
 prepare_service_logs() {
   local filename path
-  install -d -m 0750 -o www-data -g cinematacms-observability "$APP_SERVICE_LOG_DIR"
+  # setgid keeps files created later (celery, uwsgi, logrotate) in the collector's group.
+  install -d -m 2750 -o www-data -g cinematacms-observability "$APP_SERVICE_LOG_DIR"
   for filename in errorlog.txt celery_long.log celery_short.log celery_whisper.log celery_email.log beatcelery_beat.log; do
     path="${APP_SERVICE_LOG_DIR}/${filename}"
     touch "$path"
@@ -372,11 +414,47 @@ configure_postgres_monitor_role() {
     --file="${TEMPLATE_DIR}/postgres-monitor-role.sql" postgres
 }
 
+# True when the patterns in app-logs.logrotate already match the path. A logrotate "*" stays
+# within one directory and skips a leading dot, which a bash pattern would not.
+app_log_rotation_matches() {
+  local path="$1" directory name
+  directory="${path%/*}"
+  name="${path##*/}"
+  [[ "$directory" == "$APP_SERVICE_LOG_DIR" && "$name" != .* && ( "$name" == *.log || "$name" == errorlog.txt ) ]]
+}
+
+# logrotate rejects a file matched by two patterns, so the collector's log is added only when missed.
+render_app_log_rotation() {
+  local content uncovered_app_log=""
+  app_log_rotation_matches "$APP_LOG_PATH" || uncovered_app_log="$APP_LOG_PATH"
+  content="$(<"${TEMPLATE_DIR}/app-logs.logrotate")"
+  content="${content//\$\{APP_SERVICE_LOG_DIR\}/$APP_SERVICE_LOG_DIR}"
+  content="${content//\$\{UNCOVERED_APP_LOG\}/$uncovered_app_log}"
+  printf '%s\n' "$content"
+}
+
+install_disk_policy() {
+  local content
+  render_app_log_rotation > /etc/logrotate.d/cinematacms-app-logs
+  chmod 0644 /etc/logrotate.d/cinematacms-app-logs
+  logrotate --debug /etc/logrotate.d/cinematacms-app-logs >/dev/null
+
+  content="$(<"${TEMPLATE_DIR}/journald-cinematacms.conf")"
+  content="${content//\$\{JOURNAL_MAX_USE\}/$JOURNAL_MAX_USE}"
+  content="${content//\$\{JOURNAL_MAX_FILE\}/$JOURNAL_MAX_FILE}"
+  content="${content//\$\{JOURNAL_MAX_RETENTION\}/$JOURNAL_MAX_RETENTION}"
+  install -d -m 0755 /etc/systemd/journald.conf.d
+  printf '%s\n' "$content" > /etc/systemd/journald.conf.d/cinematacms.conf
+  printf 'Journal usage before applying the %s cap: %s\n' "$JOURNAL_MAX_USE" "$(journalctl --disk-usage)"
+  systemctl restart systemd-journald
+}
+
 render_victoriametrics_unit() {
   local content
   content="$(<"${TEMPLATE_DIR}/victoriametrics.service")"
   content="${content//\$\{VICTORIAMETRICS_PORT\}/$VICTORIAMETRICS_PORT}"
   content="${content//\$\{METRICS_RETENTION\}/$METRICS_RETENTION}"
+  content="${content//\$\{STORAGE_MIN_FREE_DISK\}/$STORAGE_MIN_FREE_DISK}"
   printf '%s\n' "$content" > /etc/systemd/system/victoriametrics.service
 }
 
@@ -432,7 +510,9 @@ validate_configuration() {
     /etc/systemd/system/nginx-prometheus-exporter.service \
     /etc/systemd/system/celery-exporter.service \
     /etc/systemd/system/alertmanager.service \
-    /etc/systemd/system/vmalert.service
+    /etc/systemd/system/vmalert.service \
+    /etc/systemd/system/cinematacms-app-logs-rotate.service \
+    /etc/systemd/system/cinematacms-app-logs-rotate.timer
 }
 
 start_services() {
@@ -442,6 +522,7 @@ start_services() {
   command -v nginx >/dev/null 2>&1 && systemctl reload nginx
   systemctl enable --now postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter
   systemctl enable --now alertmanager vmalert cinematacms-otelcol
+  systemctl enable --now cinematacms-app-logs-rotate.timer
   systemctl restart victoriametrics victorialogs victoriatraces
   systemctl restart postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter
   systemctl restart alertmanager vmalert cinematacms-otelcol
@@ -719,7 +800,7 @@ verify_trace_ingestion() {
 verify_installation() {
   printf 'Verifying service and endpoint health...\n'
   local service endpoint
-  for service in victoriametrics victorialogs victoriatraces cinematacms-otelcol postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter alertmanager vmalert grafana-server; do
+  for service in victoriametrics victorialogs victoriatraces cinematacms-otelcol postgres-exporter redis-exporter nginx-prometheus-exporter celery-exporter alertmanager vmalert grafana-server cinematacms-app-logs-rotate.timer; do
     systemctl is-active --quiet "$service" || fail "service is not active: $service"
   done
   for endpoint in \
@@ -764,7 +845,7 @@ main() {
   require_managed_application_mode
   if [[ "$VERIFY_ONLY" -eq 0 ]]; then
     DEBIAN_FRONTEND=noninteractive apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl prometheus-node-exporter python3 python3-venv
+    DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl logrotate prometheus-node-exporter python3 python3-venv
     install -d -m 0755 "$BIN_DIR"
     getent group cinematacms-observability >/dev/null 2>&1 || groupadd --system cinematacms-observability
     id -u cinematacms-observability >/dev/null 2>&1 \
