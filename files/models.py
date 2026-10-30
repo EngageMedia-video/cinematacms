@@ -37,8 +37,9 @@ from imagekit.models.fields.files import ProcessedImageFieldFile
 from imagekit.processors import ResizeToFit
 from mptt.models import MPTTModel, TreeForeignKey
 
+from cms.cache_telemetry import owned_cache
 from cms.error_tracking import capture_unexpected_exception
-from cms.observability import inject_trace_headers
+from cms.observability import inject_trace_headers, media_reference, start_span
 from users.validators import validate_internal_html
 
 from . import helpers, lists
@@ -70,6 +71,8 @@ def get_invalidate_media_path_cache():
 
 
 logger = logging.getLogger(__name__)
+
+chunk_finalisation_cache = owned_cache.bind("chunk_finalisation")
 RE_TIMECODE = re.compile(r"(\d+:\d+:\d+.\d+)")
 CHUNK_ACTIVE_STATUSES = {"pending", "running"}
 _suppress_chunk_cleanup_scheduling = ContextVar("suppress_chunk_cleanup_scheduling", default=False)
@@ -2886,6 +2889,138 @@ def _finalize_failed_chunk_group(instance):
     return True
 
 
+def _encoded_chunks_when_complete(instance, expected_chunk_paths):
+    """Return the encoded chunks of the group once every expected chunk has its file, else None."""
+    chunks = list(
+        Encoding.objects.filter(
+            media=instance.media,
+            profile=instance.profile,
+            chunks_info=instance.chunks_info,
+            chunk=True,
+        ).order_by("add_date")
+    )
+    present_paths = {chunk.chunk_file_path for chunk in chunks}
+    if not all(path in present_paths for path in expected_chunk_paths):
+        return None
+    if not all(chunk.media_file and chunk.media_file.path for chunk in chunks):
+        return None
+    return chunks
+
+
+def _log_chunk_finalisation(outcome, reason_code="none", **fields):
+    logger.info(
+        "cinematacms.media.pipeline",
+        extra={"stage": "chunk_finalize", "outcome": outcome, "reason_code": reason_code, **fields},
+    )
+
+
+def _finalize_chunk_group(instance, expected_chunk_paths):
+    """Merge a complete group of encoded chunks into one Encoding, exactly once per media and profile.
+
+    Every chunk completion reaches this point, and the last chunks can complete at the same
+    time. The first caller claims the group; a concurrent caller backs off, and a caller that
+    claims after the merge finished finds the chunks gone and backs off too.
+    """
+    lock_key = f"chunk_finalize_lock_{instance.media_id}_{instance.profile_id}"
+    lock_token = uuid.uuid4().hex
+    log_fields = {"profile_id": instance.profile_id, "chunk_count": len(expected_chunk_paths)}
+    with start_span(
+        "media.encode.finalize",
+        {
+            "cinematacms.media_ref": media_reference(instance.media.friendly_token),
+            "encoding.profile_id": instance.profile_id,
+        },
+    ):
+        if not chunk_finalisation_cache.add(
+            lock_key, lock_token, timeout=settings.CELERY_SOFT_TIME_LIMIT, raise_on_error=True
+        ):
+            _log_chunk_finalisation("skipped", "lock_held", **log_fields)
+            _record_chunk_finalisation_lost_race()
+            return
+        try:
+            chunks = _encoded_chunks_when_complete(instance, expected_chunk_paths)
+            if chunks is None:
+                _log_chunk_finalisation("skipped", "already_finalised", **log_fields)
+                return
+            _log_chunk_finalisation("claimed", **log_fields)
+            _merge_chunks(instance, chunks)
+            _log_chunk_finalisation("succeeded", **log_fields)
+        except Exception:
+            logger.exception(
+                "cinematacms.media.pipeline",
+                extra={"stage": "chunk_finalize", "outcome": "failed", **log_fields},
+            )
+            raise
+        finally:
+            if chunk_finalisation_cache.get(lock_key) == lock_token:
+                chunk_finalisation_cache.delete(lock_key)
+
+
+def _record_chunk_finalisation_lost_race():
+    try:
+        from .metrics import record_domain_outcome
+
+        record_domain_outcome("chunking", "skipped", "lock_held")
+    except Exception:
+        logger.debug("Could not record chunk finalisation outcome", exc_info=True)
+
+
+def _merge_chunks(instance, chunks):
+    chunks_paths = [f.media_file.path for f in chunks]
+    with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as temp_dir:
+        seg_file = helpers.create_temp_file(suffix=".txt", dir=temp_dir)
+        tf = helpers.create_temp_file(suffix=f".{instance.profile.extension}", dir=temp_dir)
+        with open(seg_file, "w") as ff:
+            for f in chunks_paths:
+                ff.write(f"file {f}\n")
+        cmd = [
+            settings.FFMPEG_COMMAND,
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            seg_file,
+            "-c",
+            "copy",
+            "-pix_fmt",
+            "yuv420p",
+            "-movflags",
+            "faststart",
+            tf,
+        ]
+        stdout = helpers.run_command(cmd)
+        encoding = Encoding(
+            media=instance.media,
+            profile=instance.profile,
+            status="success",
+            progress=100,
+        )
+        all_logs = "\n".join([st.logs for st in chunks])
+        encoding.logs = f"{chunks_paths}\n{stdout}\n{all_logs}"
+        workers = list({st.worker for st in chunks})
+        encoding.worker = json.dumps({"workers": workers})
+        start_date = min([st.add_date for st in chunks])
+        end_date = max([st.update_date for st in chunks])
+        encoding.total_run_time = (end_date - start_date).seconds
+        encoding.save()
+        with open(tf, "rb") as f:
+            myfile = File(f)
+            output_name = f"{helpers.get_file_name(instance.media.media_file.path)}.{instance.profile.extension}"
+            encoding.media_file.save(content=myfile, name=output_name)
+        # The merged encoding is saved: delete the chunks and any older encoding of this profile.
+        # The caller holds the finalisation claim, so no other merge can have produced one of them.
+        replaced = Encoding.objects.filter(media=encoding.media, profile=encoding.profile).exclude(id=encoding.id)
+        print(
+            f"{encoding.media.friendly_token} Deleting",
+            [enco.id for enco in replaced],
+            encoding.id,
+        )
+        replaced.delete()
+        instance.media.post_encode_actions(encoding=instance, action="add")
+
+
 @receiver(post_save, sender=Encoding)
 def encoding_file_save(sender, instance, created, **kwargs):
     if instance.chunk and instance.status in {"fail", "success"}:
@@ -2903,115 +3038,18 @@ def encoding_file_save(sender, instance, created, **kwargs):
         # in this case means a encoded chunk is complete
         if instance.media_file:
             try:
-                orig_chunks = json.loads(instance.chunks_info).keys()
+                expected_chunk_paths = list(json.loads(instance.chunks_info).keys())
             except:
                 instance.delete()
                 return False
-            chunks = Encoding.objects.filter(
-                media=instance.media,
-                profile=instance.profile,
-                chunks_info=instance.chunks_info,
-                chunk=True,
-            ).order_by("add_date")
-            complete = True
-            # perform validation, make sure everything is there
-            for chunk in orig_chunks:
-                if not chunks.filter(chunk_file_path=chunk):
-                    complete = False
-                    break
-            for chunk in chunks:
-                if not (chunk.media_file and chunk.media_file.path):
-                    complete = False
-                    break
-            if complete:
-                # this should run only once!
-                chunks_paths = [f.media_file.path for f in chunks]
-                with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as temp_dir:
-                    seg_file = helpers.create_temp_file(suffix=".txt", dir=temp_dir)
-                    tf = helpers.create_temp_file(suffix=f".{instance.profile.extension}", dir=temp_dir)
-                    with open(seg_file, "w") as ff:
-                        for f in chunks_paths:
-                            ff.write(f"file {f}\n")
-                    cmd = [
-                        settings.FFMPEG_COMMAND,
-                        "-y",
-                        "-f",
-                        "concat",
-                        "-safe",
-                        "0",
-                        "-i",
-                        seg_file,
-                        "-c",
-                        "copy",
-                        "-pix_fmt",
-                        "yuv420p",
-                        "-movflags",
-                        "faststart",
-                        tf,
-                    ]
-                    stdout = helpers.run_command(cmd)
-                    encoding = Encoding(
-                        media=instance.media,
-                        profile=instance.profile,
-                        status="success",
-                        progress=100,
-                    )
-                    all_logs = "\n".join([st.logs for st in chunks])
-                    encoding.logs = f"{chunks_paths}\n{stdout}\n{all_logs}"
-                    workers = list({st.worker for st in chunks})
-                    encoding.worker = json.dumps({"workers": workers})
-                    start_date = min([st.add_date for st in chunks])
-                    end_date = max([st.update_date for st in chunks])
-                    encoding.total_run_time = (end_date - start_date).seconds
-                    encoding.save()
-                    with open(tf, "rb") as f:
-                        myfile = File(f)
-                        output_name = (
-                            f"{helpers.get_file_name(instance.media.media_file.path)}.{instance.profile.extension}"
-                        )
-                        encoding.media_file.save(content=myfile, name=output_name)
-                    # encoding is saved, deleting chunks
-                    # and any other encoding that might exist
-                    # first perform one last validation
-                    # to avoid that this is run twice
-                    if (
-                        len(orig_chunks)
-                        == Encoding.objects.filter(
-                            media=instance.media,
-                            profile=instance.profile,
-                            chunks_info=instance.chunks_info,
-                        ).count()
-                    ):
-                        # if two chunks are finished at the same time, this will be changed
-                        who = Encoding.objects.filter(media=encoding.media, profile=encoding.profile).exclude(
-                            id=encoding.id
-                        )
-                        print(
-                            f"{encoding.media.friendly_token} Deleting",
-                            [enco.id for enco in who],
-                            encoding.id,
-                        )
-                        who.delete()
-                    else:
-                        print(
-                            "Deleting myself",
-                            chunks,
-                            Encoding.objects.filter(
-                                media=instance.media,
-                                profile=instance.profile,
-                                chunk=True,
-                            ),
-                            encoding.id,
-                        )
-                        encoding.delete()
-                    instance.media.post_encode_actions(encoding=instance, action="add")
+            if _encoded_chunks_when_complete(instance, expected_chunk_paths) is not None:
+                _finalize_chunk_group(instance, expected_chunk_paths)
     else:
         if instance.status in ["fail", "success"]:
             instance.media.post_encode_actions(encoding=instance, action="add")
         encodings = {encoding.status for encoding in Encoding.objects.filter(media=instance.media)}
         if ("running" in encodings) or ("pending" in encodings):
             return
-        workers = list({encoding.worker for encoding in Encoding.objects.filter(media=instance.media)})
 
 
 @receiver(post_delete, sender=Encoding)
