@@ -4,6 +4,7 @@ import { Text } from '../../shared/components';
 import { MediaDropzone } from '../../shared/components/MediaDropzone';
 import { UploadMediaItem } from '../../shared/components/UploadMediaItem';
 import { getCSRFToken } from '../../add-media/utils/helpers';
+import { sendUploadIdHeader } from '../../shared/utils/uploadId';
 import { useReplacementUploadState } from '../hooks/useReplacementUploadState';
 
 function CurrentFileLink({ file }) {
@@ -41,11 +42,12 @@ export function MediaUploadSection({ config, disabled, ref }) {
 			return null;
 		}
 
+		const uploadHeaders = { 'X-CSRFToken': getCSRFToken() || config.csrfToken || '' };
 		uploaderRef.current = new window.qq.FineUploaderBasic({
 			debug: false,
 			request: {
 				endpoint: config.uploadEndpoint,
-				customHeaders: { 'X-CSRFToken': getCSRFToken() || config.csrfToken || '' },
+				customHeaders: uploadHeaders,
 			},
 			retry: {
 				enableAuto: true,
@@ -66,7 +68,10 @@ export function MediaUploadSection({ config, disabled, ref }) {
 				onSubmit: (id, name) => {
 					setStatus({ phase: 'uploading', name, progress: 0, error: '', size: null, id });
 				},
-				onSubmitted: (id) => window.CinemataAnalytics?.uploadEvent('start', id),
+				onSubmitted: (id) => {
+					sendUploadIdHeader(uploaderRef.current, id, uploadHeaders);
+					window.CinemataAnalytics?.uploadEvent('start', id);
+				},
 				onProgress: (id, name, uploadedBytes, totalBytes) => {
 					const progress = totalBytes > 0 ? Math.round((uploadedBytes / totalBytes) * 100) : 0;
 					setStatus((current) => ({ ...current, id, name, progress }));

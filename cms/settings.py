@@ -33,6 +33,7 @@ CORS_ALLOW_HEADERS = default_headers + (
     "cache-control",  # Add Cache-Control
     "content-type",  # Add Content-Type (important for application/json etc.)
     "range",  # Add Range
+    "x-upload-id",  # Fine Uploader's per-file id, logged by nginx and the app
     "dnt",  # Generally not needed as DNT is safelisted
     "user-agent",  # Generally not needed as User-Agent is safelisted
 )

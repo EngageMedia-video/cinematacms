@@ -9,6 +9,7 @@ import { TabContent, TabView } from '../shared/components/TabView';
 import { Text } from '../shared/components/Text';
 import { QuickPreview } from '../upload-quick-preview';
 import { cn } from '../shared/utils/classNames';
+import { sendUploadIdHeader } from '../shared/utils/uploadId';
 import UserContext from '../../static/js/contexts/UserContext';
 import { deleteRequest } from '../../static/js/functions';
 import { config as mediacmsConfig } from '../../static/js/mediacms/config.js';
@@ -113,6 +114,7 @@ export class AddMediaPage extends Page {
 		}
 
 		this.uploaderRef.current.addEventListener('click', this.handleUploaderClick);
+		const uploadHeaders = { 'X-CSRFToken': getCSRFToken() };
 		this.uploader = new window.qq.FineUploader({
 			debug: false,
 			element: this.uploaderRef.current,
@@ -121,9 +123,7 @@ export class AddMediaPage extends Page {
 			},
 			request: {
 				endpoint: this.config.uploadEndpoint,
-				customHeaders: {
-					'X-CSRFToken': getCSRFToken(),
-				},
+				customHeaders: uploadHeaders,
 			},
 			retry: {
 				enableAuto: true,
@@ -164,6 +164,7 @@ export class AddMediaPage extends Page {
 					updateUploadItemStatus(id, status, getStatusLabel(status));
 				},
 				onSubmitted: (id) => {
+					sendUploadIdHeader(this.uploader, id, uploadHeaders);
 					window.CinemataAnalytics?.uploadEvent('start', id);
 					this.setState({ hasSelectedMedia: true, uploadedMedia: null, externalMedia: null });
 				},

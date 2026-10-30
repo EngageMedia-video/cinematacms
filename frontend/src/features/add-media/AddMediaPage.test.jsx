@@ -212,6 +212,7 @@ describe('AddMediaPage bulk upload viewport gate', () => {
 
 describe('AddMediaPage leaving the page', () => {
 	let uploaderOptions;
+	let uploaderInstance;
 
 	beforeEach(() => {
 		window.MediaCMS = {
@@ -226,9 +227,12 @@ describe('AddMediaPage leaving the page', () => {
 		window.qq = {
 			FineUploader: vi.fn(function FineUploaderMock(options) {
 				uploaderOptions = options;
+				uploaderInstance = this;
 				this.addFiles = vi.fn();
 				this.cancel = vi.fn();
 				this.reset = vi.fn();
+				this.getUuid = (id) => `00000000-0000-4000-8000-00000000000${id}`;
+				this.setCustomHeaders = vi.fn();
 			}),
 			status: {},
 		};
@@ -244,6 +248,18 @@ describe('AddMediaPage leaving the page', () => {
 		vi.restoreAllMocks();
 		delete window.MediaCMS;
 		delete window.qq;
+	});
+
+	it('sends the file uuid as X-Upload-Id, with the CSRF header, on every request of that upload', () => {
+		render(<AddMediaPage />);
+
+		act(() => uploaderOptions.callbacks.onSubmitted(0));
+
+		expect(uploaderInstance.setCustomHeaders).toHaveBeenCalledExactlyOnceWith(
+			{ ...uploaderOptions.request.customHeaders, 'X-Upload-Id': '00000000-0000-4000-8000-000000000000' },
+			0
+		);
+		expect(uploaderOptions.request.customHeaders).toHaveProperty('X-CSRFToken');
 	});
 
 	// Hiding the page also happens on reload, on closing an old tab and on a tab discard,
