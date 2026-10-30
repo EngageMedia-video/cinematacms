@@ -130,6 +130,11 @@ receivers:
         regex: '^[^ ]+ [^ ]+ [^ ]+ \[[^\]]+\] "(?P<http_method>[A-Z]+) (?P<request_path>[^ ?]+)(?:\?[^ ]*)? HTTP/[^"]+" (?P<status_code>[0-9]{3}) (?P<bytes_sent>[0-9]+)(?: "[^"]*" "[^"]*" "[^"]*" rt=(?P<request_time>[0-9.]+) urt=(?P<upstream_time>.+?) rl=(?P<request_length>[0-9]+))?'
         on_error: send_quiet
       - type: add
+        id: replace_unparsed_nginx_access
+        field: body
+        value: <unparsed-nginx-access>
+        if: attributes.http_method == nil
+      - type: add
         field: attributes["systemd.unit"]
         value: nginx.service
   file_log/nginx_error:

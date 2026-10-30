@@ -824,6 +824,36 @@ class FullStackContractTests(unittest.TestCase):
         self.assertEqual(fields["status_code"], "403")
         self.assertFalse(fields["request_time"])
 
+    def test_nginx_access_line_the_parser_cannot_read_exports_only_a_fixed_body(self):
+        collector_text = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        pattern = re.search(r"id: parse_nginx_access_request\n.*?regex: '(.*?)'\n", collector_text, re.S).group(1)
+        regex = re.compile(pattern)
+        prefix = "2001:db8::7 - - [30/Oct/2026:10:00:00 +0800]"
+        suffix = '400 150 "https://referrer.example/p" "agent/1.0" "-" rt=0.000 urt=- rl=0'
+        malformed = {
+            "no request": f'{prefix} "-" {suffix}',
+            "tls handshake bytes": f'{prefix} "\\x16\\x03\\x01\\x02\\x00\\x01\\x00" {suffix}',
+            "space in target": f'{prefix} "GET /a b HTTP/1.1" {suffix}',
+        }
+        for shape, line in malformed.items():
+            with self.subTest(shape=shape):
+                self.assertIsNone(regex.match(line))
+        self.assertIsNotNone(regex.match(f'{prefix} "GET /a HTTP/1.1" {suffix}'))
+
+        access_receiver, error_receiver = re.search(
+            r"  file_log/nginx_access:\n(.*?)\n  file_log/nginx_error:\n(.*?)\n  file_log/", collector_text, re.S
+        ).groups()
+        self.assertRegex(
+            access_receiver,
+            r"id: parse_nginx_access_request\n(?:        \S.*\n)+"
+            r"      - type: add\n"
+            r"        id: replace_unparsed_nginx_access\n"
+            r"        field: body\n"
+            r"        value: <unparsed-nginx-access>\n"
+            r"        if: attributes\.http_method == nil\n",
+        )
+        self.assertNotIn("field: body", error_receiver)
+
     def test_alert_inhibition_cannot_cross_alert_names(self):
         alertmanager = (OBSERVABILITY / "templates/alertmanager.yml").read_text()
 
