@@ -292,7 +292,8 @@ class FullStackContractTests(unittest.TestCase):
         self.assertEqual(
             includes("file_log/cinematacms"), ["${env:APP_LOG_PATH}", "${env:APP_LOG_PATH}.1"], "file_log/cinematacms"
         )
-        self.assertEqual(includes("file_log/nginx"), ["/var/log/nginx/*.log"])
+        self.assertEqual(includes("file_log/nginx_access"), ["/var/log/nginx/*access.log"])
+        self.assertEqual(includes("file_log/nginx_error"), ["/var/log/nginx/*error.log"])
 
         # copytruncate restarts the live file with the same first bytes, which the default fingerprint
         # check reads as an untouched file, so its new lines would be skipped.
@@ -302,7 +303,8 @@ class FullStackContractTests(unittest.TestCase):
 
         for receiver in [*service_logs, "file_log/cinematacms"]:
             self.assertTrue(reads_whole_file_on_truncate(receiver), receiver)
-        self.assertFalse(reads_whole_file_on_truncate("file_log/nginx"))
+        for receiver in ("file_log/nginx_access", "file_log/nginx_error"):
+            self.assertFalse(reads_whole_file_on_truncate(receiver), receiver)
 
     def test_maxsize_is_checked_hourly_by_a_timer_the_installer_runs_and_verifies(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
@@ -526,6 +528,52 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("to: body", collector)
         self.assertNotIn('"task_name"', collector)
         self.assertNotIn('"message"', re.search(r"keep_keys\(log\.attributes, \[(.*?)\]\)", collector).group(1))
+
+    def test_nginx_access_logs_cover_every_vhost_and_keep_upload_timings(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        kept = re.search(r"keep_keys\(log\.attributes, \[(.*?)\]\)", collector).group(1)
+
+        self.assertIn('include: ["/var/log/nginx/*access.log"]', collector)
+        self.assertIn('include: ["/var/log/nginx/*error.log"]', collector)
+        self.assertNotIn('include: ["/var/log/nginx/*.log"]', collector)
+        self.assertIn("file_log/nginx_access", collector)
+        self.assertIn("file_log/nginx_error", collector)
+        for field in ("request_time", "upstream_time", "request_length", "bytes_sent", "http.route"):
+            self.assertIn(f'"{field}"', kept)
+        for raw_field in ("request_path", "http_method", "remote_addr", "http_user_agent"):
+            self.assertNotIn(f'"{raw_field}"', kept)
+        self.assertIn('"/$$1/:resource"', collector)
+        self.assertIn('set(log.attributes["route_group"], "nginx_upload")', collector)
+        self.assertIn('set(log.body, Concat([log.attributes["method"]', collector)
+
+    def test_nginx_access_regex_extracts_timings_from_the_cinematacms_format(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        pattern = re.search(r"id: parse_nginx_access_request\n.*?regex: '(.*?)'\n", collector, re.S).group(1)
+        regex = re.compile(pattern)
+
+        timed_out = (
+            '203.0.113.9 - - [30/Oct/2026:10:00:00 +0800] "POST /fu/upload/?qquuid=private-id HTTP/1.1" '
+            '408 0 "https://cinemata.org/upload" "Mozilla/5.0 (X11)" "-" rt=300.001 urt=- rl=1048576'
+        )
+        fields = regex.match(timed_out).groupdict()
+        self.assertEqual(fields["http_method"], "POST")
+        self.assertEqual(fields["request_path"], "/fu/upload/")
+        self.assertEqual(fields["status_code"], "408")
+        self.assertEqual(fields["bytes_sent"], "0")
+        self.assertEqual(fields["request_time"], "300.001")
+        self.assertEqual(fields["upstream_time"], "-")
+        self.assertEqual(fields["request_length"], "1048576")
+        self.assertNotIn("private-id", "".join(v or "" for v in fields.values()))
+
+        retried_upstream = timed_out.replace("408 0", "200 31").replace("urt=-", "urt=0.010, 0.120")
+        self.assertEqual(regex.match(retried_upstream).group("upstream_time"), "0.010, 0.120")
+
+        combined_only = (
+            '203.0.113.9 - - [30/Oct/2026:10:00:00 +0800] "POST /fu/upload/ HTTP/1.1" 403 146 "-" "Mozilla/5.0"'
+        )
+        fields = regex.match(combined_only).groupdict()
+        self.assertEqual(fields["status_code"], "403")
+        self.assertFalse(fields["request_time"])
 
     def test_alert_inhibition_cannot_cross_alert_names(self):
         alertmanager = (OBSERVABILITY / "templates/alertmanager.yml").read_text()

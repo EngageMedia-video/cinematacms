@@ -59,6 +59,19 @@ for 401 and 403, `bad_request` for 400, `payload_too_large` for 413,
 path, query string, address, cookie, or email. nginx answers some upload errors
 (408, 413, 499) before Django runs; those appear only in the nginx access log.
 
+The Collector reads every `/var/log/nginx/*access.log` file, which includes the
+upload vhost (for example `upload.cinemata.org.access.log`), and every
+`*error.log`. The upload vhost must use the `cinematacms` or `compression`
+`log_format`; both end with `rt=`, `urt=`, and `rl=`. An nginx access line keeps
+only `method`, `status_code`, `bytes_sent`, `request_time`, `upstream_time`,
+`request_length`, `http.route` (the first path segment plus `:resource`, such as
+`/fu/:resource`), and `route_group` (`nginx_upload` for `/fu/` and `/upload/`).
+The path tail, query string, address, referrer, and user agent are dropped.
+`upstream_time` is `-` when the request never reached Django, as for a 408.
+Reading the files needs the `adm` group, which the installer grants to
+`otelcol-contrib`. A vhost log directory with another group, such as
+`/var/log/cinematacms/nginx/`, needs the same grant before it can be ingested.
+
 ## Error tracking
 
 CinemataCMS uses the Sentry protocol for exception events. The application
