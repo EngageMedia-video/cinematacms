@@ -115,7 +115,7 @@ receivers:
         field: attributes["systemd.unit"]
         value: mediacms.service
   file_log/nginx_access:
-    include: ["/var/log/nginx/*access.log"]
+    include: ["/var/log/nginx/*access.log", "/var/log/cinematacms/nginx/*access.log"]
     resource:
       service.name: nginx
     start_at: beginning
@@ -133,7 +133,7 @@ receivers:
         field: attributes["systemd.unit"]
         value: nginx.service
   file_log/nginx_error:
-    include: ["/var/log/nginx/*error.log"]
+    include: ["/var/log/nginx/*error.log", "/var/log/cinematacms/nginx/*error.log"]
     resource:
       service.name: nginx
     start_at: beginning

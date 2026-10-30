@@ -15,6 +15,7 @@ TEMPLATE_DIR="${SCRIPT_DIR}/templates"
 INSTALL_ROOT="/opt/cinematacms-observability"
 BIN_DIR="${INSTALL_ROOT}/bin"
 ETC_DIR="/etc/cinematacms-observability"
+NGINX_SITE_LOG_DIR="/var/log/cinematacms/nginx"
 ENV_FILE=""
 VERIFY_ONLY=0
 
@@ -318,6 +319,7 @@ install_configuration() {
   getent group adm >/dev/null 2>&1 && usermod -a -G adm otelcol-contrib
   prepare_application_log
   prepare_service_logs
+  prepare_nginx_site_logs
   install -d -m 0755 "$BIN_DIR"
   install -d -m 0755 -o root -g root "$ETC_DIR"
   install -d -m 0750 -o otelcol-contrib -g otelcol-contrib /var/lib/otelcol-contrib/cinematacms
@@ -397,6 +399,14 @@ prepare_service_logs() {
     chown www-data:cinematacms-observability "$path"
     chmod 0640 "$path"
   done
+}
+
+prepare_nginx_site_logs() {
+  # apply-release-config.sh owns this directory as root:www-data 0750 because
+  # nginx workers run as www-data. Grant only the collector; membership in
+  # www-data would also expose the application tree.
+  install -d -m 0750 -g www-data "$NGINX_SITE_LOG_DIR"
+  setfacl -m u:otelcol-contrib:rx "$NGINX_SITE_LOG_DIR"
 }
 
 render_nginx_app_metrics() {
@@ -680,6 +690,8 @@ verify_log_ingestion() {
   [[ -f "$APP_LOG_PATH" ]] || fail "application log does not exist: $APP_LOG_PATH"
   runuser -u otelcol-contrib -- test -r "$APP_LOG_PATH" \
     || fail "Collector cannot read application log: $APP_LOG_PATH"
+  runuser -u otelcol-contrib -- test -r "$NGINX_SITE_LOG_DIR" -a -x "$NGINX_SITE_LOG_DIR" \
+    || fail "Collector cannot list nginx site log directory: $NGINX_SITE_LOG_DIR"
   printf '{"event":"%s","message":"%s","severity":"INFO","recipient_ref":"fixture-ref","email":"%s","context":{"token":"%s"}}\n' \
     "$token" "$forbidden_body" "$forbidden" "$forbidden_nested" >> "$APP_LOG_PATH"
   printf '{"message":"%s token=%s recipient=%s","name":"installer.fixture","level":"WARNING","task_id":"%s","operation":"installer_verification","outcome":"succeeded"}\n' \
@@ -845,7 +857,7 @@ main() {
   require_managed_application_mode
   if [[ "$VERIFY_ONLY" -eq 0 ]]; then
     DEBIAN_FRONTEND=noninteractive apt-get update
-    DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates curl logrotate prometheus-node-exporter python3 python3-venv
+    DEBIAN_FRONTEND=noninteractive apt-get install -y acl ca-certificates curl logrotate prometheus-node-exporter python3 python3-venv
     install -d -m 0755 "$BIN_DIR"
     getent group cinematacms-observability >/dev/null 2>&1 || groupadd --system cinematacms-observability
     id -u cinematacms-observability >/dev/null 2>&1 \

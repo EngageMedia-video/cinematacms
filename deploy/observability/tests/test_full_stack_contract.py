@@ -166,7 +166,7 @@ class FullStackContractTests(unittest.TestCase):
 
     def test_installer_installs_logrotate_before_validating_its_config(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
-        packages = re.search(r"apt-get install -y (ca-certificates [^\n]+)\n", installer).group(1).split()
+        packages = re.search(r"apt-get install -y (acl ca-certificates [^\n]+)\n", installer).group(1).split()
 
         self.assertIn("logrotate --debug", installer)
         self.assertIn("logrotate", packages)
@@ -292,8 +292,9 @@ class FullStackContractTests(unittest.TestCase):
         self.assertEqual(
             includes("file_log/cinematacms"), ["${env:APP_LOG_PATH}", "${env:APP_LOG_PATH}.1"], "file_log/cinematacms"
         )
-        self.assertEqual(includes("file_log/nginx_access"), ["/var/log/nginx/*access.log"])
-        self.assertEqual(includes("file_log/nginx_error"), ["/var/log/nginx/*error.log"])
+        nginx_directories = ["/var/log/nginx", "/var/log/cinematacms/nginx"]
+        self.assertEqual(includes("file_log/nginx_access"), [f"{d}/*access.log" for d in nginx_directories])
+        self.assertEqual(includes("file_log/nginx_error"), [f"{d}/*error.log" for d in nginx_directories])
 
         # copytruncate restarts the live file with the same first bytes, which the default fingerprint
         # check reads as an untouched file, so its new lines would be skipped.
@@ -529,13 +530,13 @@ class FullStackContractTests(unittest.TestCase):
         self.assertNotIn('"task_name"', collector)
         self.assertNotIn('"message"', re.search(r"keep_keys\(log\.attributes, \[(.*?)\]\)", collector).group(1))
 
-    def test_nginx_access_logs_cover_every_vhost_and_keep_upload_timings(self):
+    def test_nginx_access_logs_keep_upload_timings_without_raw_fields(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
         kept = re.search(r"keep_keys\(log\.attributes, \[(.*?)\]\)", collector).group(1)
 
-        self.assertIn('include: ["/var/log/nginx/*access.log"]', collector)
-        self.assertIn('include: ["/var/log/nginx/*error.log"]', collector)
-        self.assertNotIn('include: ["/var/log/nginx/*.log"]', collector)
+        self.assertIn('"/var/log/nginx/*access.log"', collector)
+        self.assertIn('"/var/log/nginx/*error.log"', collector)
+        self.assertNotIn("/*.log", collector)
         self.assertIn("file_log/nginx_access", collector)
         self.assertIn("file_log/nginx_error", collector)
         for field in ("request_time", "upstream_time", "request_length", "bytes_sent", "http.route"):
@@ -545,6 +546,50 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn('"/$$1/:resource"', collector)
         self.assertIn('set(log.attributes["route_group"], "nginx_upload")', collector)
         self.assertIn('set(log.body, Concat([log.attributes["method"]', collector)
+
+    def test_collector_ingests_every_log_path_the_stock_site_config_writes(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        site = (ROOT / "deploy/mediacms.io").read_text()
+        updater = (ROOT / "deploy/apply-release-config.sh").read_text()
+
+        def includes(receiver):
+            block = re.search(rf"  {receiver}:\n    include: \[(.*?)\]\n", collector, re.S).group(1)
+            return re.findall(r'"([^"]+)"', block)
+
+        rewritten_prefix = re.search(r'sub\([^,\n]+,\s*"(/var/log/cinematacms/nginx/mediacms\.io\.)"\)', updater).group(
+            1
+        )
+        written = {"access": set(), "error": set()}
+        for kind, path in re.findall(r"^\s*(access|error)_log\s+(\S+)", site, re.MULTILINE):
+            written[kind].add(path)
+        for kind in written:
+            written[kind].add(f"{rewritten_prefix}{kind}.log")
+        receivers = {"access": "file_log/nginx_access", "error": "file_log/nginx_error"}
+
+        for kind, paths in written.items():
+            other_receiver = receivers["error" if kind == "access" else "access"]
+            for path in sorted(paths):
+                with self.subTest(kind=kind, path=path):
+                    own = [glob for glob in includes(receivers[kind]) if PurePosixPath(path).match(glob)]
+                    self.assertTrue(own, f"{path} is not matched by any {receivers[kind]} include glob")
+                    foreign = [glob for glob in includes(other_receiver) if PurePosixPath(path).match(glob)]
+                    self.assertFalse(foreign, f"{path} must not be read by {other_receiver}")
+
+    def test_installer_lets_only_the_collector_into_the_site_log_directory(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        updater = (ROOT / "deploy/apply-release-config.sh").read_text()
+        function = re.search(r"\nprepare_nginx_site_logs\(\) \{\n(.*?)\n\}\n", installer, re.S).group(1)
+        site_log_dir = re.search(r'^NGINX_SITE_LOG_DIR="(.+)"$', installer, re.MULTILINE).group(1)
+
+        self.assertIn(f'NGINX_LOG_DIR="$(root_path {site_log_dir})"', updater)
+        self.assertIn('install -d -m 0750 -g www-data "$NGINX_SITE_LOG_DIR"', function)
+        self.assertIn('setfacl -m u:otelcol-contrib:rx "$NGINX_SITE_LOG_DIR"', function)
+        self.assertNotIn("usermod -a -G www-data", installer)
+        self.assertRegex(installer, r"prepare_service_logs\n\s+prepare_nginx_site_logs\n")
+        self.assertRegex(installer, r"apt-get install -y acl ")
+        self.assertIn(
+            'runuser -u otelcol-contrib -- test -r "$NGINX_SITE_LOG_DIR" -a -x "$NGINX_SITE_LOG_DIR"', installer
+        )
 
     def test_nginx_access_regex_extracts_timings_from_the_cinematacms_format(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
