@@ -43,6 +43,13 @@ authorization data, secrets, passwords, filenames, or URLs. Restricted email
 spans may contain only the delivery UUID, the recipient reference, the email
 kind, and the attempt number.
 
+The Collector reads each rotated application log together with its `.1` copy.
+After a Collector outage that spans one rotation, it recovers the unread lines
+from the `.1` copy. After an outage that spans two or more rotations, the lines
+that moved into `.gz` backups are not backfilled; they stay in those backups for
+14 rotations. Ingesting the `.gz` backups was rejected because switching to them
+re-ingested every retained backup. Collector 0.159.0 was the version tested.
+
 ## Error tracking
 
 CinemataCMS uses the Sentry protocol for exception events. The application
