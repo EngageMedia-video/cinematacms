@@ -41,7 +41,7 @@
 		"jsdom": "^30.0.1",
 		"prop-types": "^15.8.1",
 		"sass": "^1.104.1",
-		"storybook": "^10.5.10",
+		"storybook": "^10.6.5",
 		"styled-jsx": "^5.1.7",
 		"tailwindcss": "^4.3.3",
 		"vite": "^8.3.0",
