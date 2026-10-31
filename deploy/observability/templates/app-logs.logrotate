@@ -8,6 +8,8 @@ ${APP_SERVICE_LOG_DIR}/*.log ${APP_SERVICE_LOG_DIR}/errorlog.txt ${UNCOVERED_APP
   minsize 1k
   compress
   delaycompress
+  # the Collector reads the .1 name, so a host-wide dateext must not rename it
+  nodateext
   # celery, uwsgi and the Django FileHandler keep the file open; truncating in place avoids a restart
   # and leaves the live file's owner, group and mode untouched.
   copytruncate

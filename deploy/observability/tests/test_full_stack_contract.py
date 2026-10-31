@@ -271,7 +271,8 @@ class FullStackContractTests(unittest.TestCase):
         rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
 
         # delaycompress keeps the .1 copy uncompressed, which the collector can only read as plain text.
-        for directive in ("copytruncate", "compress", "delaycompress"):
+        # nodateext keeps its .1 name when a host enables dateext globally.
+        for directive in ("copytruncate", "compress", "delaycompress", "nodateext"):
             self.assertRegex(rotation, rf"(?m)^\s+{directive}$")
 
         def includes(receiver):
