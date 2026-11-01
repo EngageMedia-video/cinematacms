@@ -470,7 +470,7 @@ class FullStackContractTests(unittest.TestCase):
             'POSTGRES_EXPORTER_ARM64_SHA256="d5d86fb98bb1f26b088d1a6fda07fd6b6f035cb5d40492f75ec3bfebb5ddfe9d"',
             manifest,
         )
-        self.assertIn('--config.file=""', unit)
+        self.assertIn("--config.file=/etc/cinematacms-observability/postgres-exporter.yml", unit)
 
     def test_log_redaction_covers_numeric_path_segments_and_keeps_dates(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()

@@ -329,6 +329,7 @@ install_configuration() {
   write_environment_files
   install -m 0640 -o root -g otelcol-contrib "${TEMPLATE_DIR}/otelcol.yml" "${ETC_DIR}/otelcol.yml"
   install -d -m 0755 "${ETC_DIR}/rules"
+  install -m 0644 "${TEMPLATE_DIR}/postgres-exporter.yml" "${ETC_DIR}/postgres-exporter.yml"
   install -m 0644 "${TEMPLATE_DIR}/alerts.yml" "${ETC_DIR}/rules/alerts.yml"
   install -m 0644 "${TEMPLATE_DIR}/alerts-tests.yml" "${ETC_DIR}/rules/alerts-tests.yml"
   install -m 0644 "${SCRIPT_DIR}/celery_exporter_runner.py" "${INSTALL_ROOT}/celery_exporter_runner.py"
