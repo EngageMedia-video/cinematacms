@@ -472,6 +472,23 @@ class FullStackContractTests(unittest.TestCase):
         )
         self.assertIn('--config.file=""', unit)
 
+    def test_log_redaction_covers_numeric_path_segments_and_keeps_dates(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        pattern = re.search(r'replace_pattern\(log\.body, "(.*)", "<redacted-path>"\)', collector).group(1)
+
+        for body, redacted in (
+            ("GET /media/123/original.mp4", "GET <redacted-path>"),
+            ("open /home/cinemata/app/settings.py", "open <redacted-path>"),
+            ("saved media_files/2026/11/01/clip.mp4", "saved media_files<redacted-path>"),
+            ("2026/11/01 12:00:00 [error] 7#7", "2026/11/01 12:00:00 [error] 7#7"),
+            ("[01/Nov/2026:12:00:00 +0000]", "[01/Nov/2026:12:00:00 +0000]"),
+            ("HTTP/1.1 200", "HTTP/1.1 200"),
+        ):
+            with self.subTest(body=body):
+                self.assertEqual(re.sub(pattern, "<redacted-path>", body), redacted)
+
+        self.assertLess(collector.index("<redacted-path>"), collector.index("<redacted-id>"))
+
     def test_trace_pipeline_keeps_public_incident_context(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
         installer = (OBSERVABILITY / "install.sh").read_text()

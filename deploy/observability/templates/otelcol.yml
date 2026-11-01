@@ -274,10 +274,10 @@ processors:
           - replace_pattern(log.body, "(?i)(password|passwd|token|secret|api[_-]?key)\\s*[:=]\\s*[^\\s,;]+", "$$1=<redacted>") where IsString(log.body)
           - replace_pattern(log.body, "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}", "<redacted-email>") where IsString(log.body)
           - replace_pattern(log.body, "(?i)(https?|postgres(?:ql)?|redis)://[^/@\\s]+:[^@/\\s]+@", "$$1://<redacted>@") where IsString(log.body)
+          - replace_pattern(log.body, "(?:/[A-Za-z0-9._-]+)+/[0-9]*[A-Za-z._-][A-Za-z0-9._-]*", "<redacted-path>") where IsString(log.body)
           - replace_pattern(log.body, "\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b", "<redacted-id>") where IsString(log.body)
           - replace_pattern(log.body, "\\b[0-9a-fA-F]{24,}\\b", "<redacted-id>") where IsString(log.body)
           - replace_pattern(log.body, "\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b", "<redacted-ip>") where IsString(log.body)
-          - replace_pattern(log.body, "(?:/[A-Za-z._-][A-Za-z0-9._-]*){2,}", "<redacted-path>") where IsString(log.body)
           - set(log.body, Substring(log.body, 0, 2048, true)) where IsString(log.body) and Len(log.body) > 2048
           - keep_keys(log.attributes, ["timestamp", "severity", "severity_text", "level", "event", "event.name", "logger.name", "service.name", "service_role", "service.instance.id", "trace_id", "span_id", "actor_ref", "media_ref", "task_id", "queue", "delivery_uuid", "recipient_ref", "operation", "outcome", "reason_code", "route_group", "method", "status_code", "systemd.unit"])
       - context: resource
