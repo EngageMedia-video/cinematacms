@@ -1104,13 +1104,25 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn('"cinematacms.upload.started"', target["expr"])
 
     def test_dashboards_search_logs_by_upload_ref(self):
-        incidents = json.loads((OBSERVABILITY / "templates/grafana-incidents.json").read_text())
-        logs = json.loads((OBSERVABILITY / "templates/grafana-logs.json").read_text())
+        def variables_and_expressions(template):
+            dashboard = json.loads((OBSERVABILITY / "templates" / template).read_text())
+            variables = {variable["name"] for variable in dashboard["templating"]["list"]}
+            expressions = [
+                target["expr"]
+                for panel in dashboard["panels"]
+                for target in panel.get("targets", [])
+                if "expr" in target
+            ]
+            return variables, expressions
 
-        incident_text = json.dumps(incidents)
-        self.assertIn("upload_ref", incident_text)
-        self.assertIn("service.name:nginx", incident_text)
-        self.assertIn("upload_ref", json.dumps(logs))
+        incident_variables, incident_expressions = variables_and_expressions("grafana-incidents.json")
+        log_variables, log_expressions = variables_and_expressions("grafana-logs.json")
+
+        self.assertIn("upload_ref", incident_variables)
+        self.assertIn('upload_ref:"$upload_ref"', incident_expressions)
+        self.assertTrue(any("service.name:nginx AND upload_ref:in(" in expr for expr in incident_expressions))
+        self.assertIn("upload_ref", log_variables)
+        self.assertTrue(any('upload_ref:"$upload_ref"' in expr for expr in log_expressions))
 
     def test_alert_inhibition_cannot_cross_alert_names(self):
         alertmanager = (OBSERVABILITY / "templates/alertmanager.yml").read_text()
