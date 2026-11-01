@@ -49,12 +49,22 @@ from the `.1` copy. After an outage that spans two or more rotations, the lines
 that moved into `.gz` backups are not backfilled; they stay in those backups for
 14 rotations. Ingesting the `.gz` backups was rejected because switching to them
 re-ingested every retained backup. Collector 0.159.0 was the version tested.
-A log under 1 KiB is not rotated (`minsize 1k`) because the Collector identifies
-a file by its first 1000 bytes. If it has read fewer bytes than that and more
-arrive before the copy, a poll between the copy and the truncate treats `.1` as
-a new file and ingests it again. A log that crosses 1 KiB within one poll
-interval (200 ms) of rotation can still be ingested twice. The result is
-duplicate lines, not lost ones.
+
+Rotation renames each application log and creates a new one, owned by `www-data`
+with mode `0640`. It then writes a `log_rotated` line to the new log, because the
+Collector identifies a file by its first 1000 bytes and Celery lines carry no
+timestamp, so a quiet log could otherwise start exactly like its `.1` copy and
+never be read. Django and Celery reopen the log by name through
+`WatchedFileHandler`. uWSGI reopens `errorlog.txt` after logrotate touches
+`logs/.uwsgi-logreopen`. A line written before its process reopens the log lands
+in the `.1` copy, which the Collector still reads, so a rotation neither drops
+nor repeats lines. The `log_rotated` line can land after other lines, so a writer
+that emits more than 1000 bytes of the same text as the `.1` copy before that line
+arrives still leaves the new log unread. A process started before this change
+keeps writing to the renamed file, so restart the application and Celery services
+when you install this rotation. The script after each rotation runs as root, so it
+writes to the log directory through `runuser -u www-data`: `www-data` owns that
+directory and could replace any name in it with a link to a root file.
 
 ## Error tracking
 

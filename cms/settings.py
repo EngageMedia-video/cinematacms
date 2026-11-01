@@ -240,14 +240,14 @@ LOGGING = {
     "handlers": {
         "json_file": {
             "level": "INFO",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.WatchedFileHandler",
             "filename": os.path.join(LOGS_DIR, "app.json.log"),
             "formatter": "json",
             "filters": ["otel_trace"],
         },
         "legacy_file": {
             "level": "INFO",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.WatchedFileHandler",
             "filename": os.path.join(LOGS_DIR, "debug.log"),
             "formatter": "plain",
             "filters": ["otel_trace"],

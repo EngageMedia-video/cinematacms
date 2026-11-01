@@ -82,7 +82,6 @@ receivers:
     resource:
       service.name: cinematacms
     start_at: beginning
-    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -106,7 +105,6 @@ receivers:
     resource:
       service.name: mediacms
     start_at: beginning
-    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -131,7 +129,6 @@ receivers:
     resource:
       service.name: celery_long
     start_at: beginning
-    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -144,7 +141,6 @@ receivers:
     resource:
       service.name: celery_short
     start_at: beginning
-    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -157,7 +153,6 @@ receivers:
     resource:
       service.name: celery_whisper
     start_at: beginning
-    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -170,7 +165,6 @@ receivers:
     resource:
       service.name: celery_email
     start_at: beginning
-    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage
@@ -183,7 +177,6 @@ receivers:
     resource:
       service.name: celery_beat
     start_at: beginning
-    on_truncate: read_whole_file
     include_file_name: false
     include_file_path: false
     storage: file_storage

@@ -58,7 +58,9 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("Reloaded A high performance", installer)
         self.assertIn("trap on_error ERR", installer)
         self.assertIn("prepare_application_log", installer)
-        self.assertIn('chown www-data:cinematacms-observability "$APP_LOG_PATH"', installer)
+        self.assertIn('own_app_log "$APP_LOG_PATH"', installer)
+        self.assertIn('chown -h www-data:cinematacms-observability "$path"', installer)
+        self.assertNotRegex(installer, r'(?m)^\s+(touch|chmod \d+) "\$path"$', "root would follow a swapped link")
         self.assertIn("usermod -a -G adm otelcol-contrib", installer)
         self.assertIn("printf 'APP_SERVICE_LOG_DIR=%q\\n'", installer)
         self.assertIn("prepare_service_logs", installer)
@@ -77,8 +79,14 @@ class FullStackContractTests(unittest.TestCase):
 
         self.assertIn(f'{setgid_directory} "$log_directory"', installer)
         self.assertIn(f'{setgid_directory} "$APP_SERVICE_LOG_DIR"', installer)
-        self.assertIn("copytruncate", rotation)
-        self.assertNotIn("create ", rotation)
+        self.assertRegex(rotation, r"(?m)^\s+su www-data cinematacms-observability$")
+        self.assertRegex(rotation, r"(?m)^\s+create 0640 www-data cinematacms-observability$")
+
+    def render_unprivileged_app_log_rotation(self, app_log_path, service_log_dir):
+        rendered = self.render_app_log_rotation(app_log_path, service_log_dir)
+        rendered = rendered.replace("  su www-data cinematacms-observability\n", "")
+        rendered = rendered.replace("runuser -u www-data -- ", "")
+        return rendered.replace("create 0640 www-data cinematacms-observability", "create 0640")
 
     def render_app_log_rotation(self, app_log_path, service_log_dir):
         result = subprocess.run(
@@ -128,7 +136,7 @@ class FullStackContractTests(unittest.TestCase):
             live = collector_logs / "app.json.log"
             live.write_text("x" * 200)
             config = Path(directory) / "rotate.conf"
-            config.write_text(self.render_app_log_rotation(str(live), str(service_logs)))
+            config.write_text(self.render_unprivileged_app_log_rotation(str(live), str(service_logs)))
             config.chmod(0o644)
 
             subprocess.run(
@@ -137,32 +145,6 @@ class FullStackContractTests(unittest.TestCase):
             )
 
             self.assertEqual((collector_logs / "app.json.log.1").read_text(), "x" * 200)
-
-    @unittest.skipUnless(shutil.which("logrotate"), "logrotate is not installed")
-    def test_rotation_keeps_the_live_log_file_and_its_group(self):
-        with tempfile.TemporaryDirectory() as directory:
-            logs = Path(directory) / "logs"
-            logs.mkdir()
-            live = logs / "celery_long.log"
-            live.write_text("x" * 200)
-            live.chmod(0o640)
-            before = live.stat()
-            config = Path(directory) / "rotate.conf"
-            rendered = self.render_app_log_rotation(str(logs / "app.json.log"), str(logs))
-            config.write_text(rendered.replace("maxsize 100M", "size 1"))
-            config.chmod(0o644)
-
-            subprocess.run(
-                ["logrotate", "--force", "--state", str(Path(directory) / "state"), str(config)],
-                check=True,
-            )
-
-            after = live.stat()
-            self.assertEqual(after.st_size, 0, "the live file is truncated in place")
-            self.assertEqual(
-                (after.st_ino, after.st_gid, after.st_mode), (before.st_ino, before.st_gid, before.st_mode)
-            )
-            self.assertEqual((logs / "celery_long.log.1").read_text(), "x" * 200)
 
     def test_installer_installs_logrotate_before_validating_its_config(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
@@ -215,7 +197,7 @@ class FullStackContractTests(unittest.TestCase):
             self.assertIn(f"{variable}=", environment)
             self.assertIn(f'"${{{variable}:-', installer)
         self.assertIn("journalctl --disk-usage", installer)
-        for directive in ("maxsize 100M", "copytruncate", "errorlog.txt"):
+        for directive in ("maxsize 100M", "errorlog.txt"):
             self.assertIn(directive, app_logs)
         for target in ("journald.conf.d/cinematacms.conf", "${ETC_DIR}/app-logs.logrotate"):
             self.assertIn(target, installer)
@@ -287,7 +269,7 @@ class FullStackContractTests(unittest.TestCase):
 
         # delaycompress keeps the .1 copy uncompressed, which the collector can only read as plain text.
         # nodateext keeps its .1 name when a host enables dateext globally.
-        for directive in ("copytruncate", "compress", "delaycompress", "nodateext"):
+        for directive in ("compress", "delaycompress", "nodateext"):
             self.assertRegex(rotation, rf"(?m)^\s+{directive}$")
 
         def includes(receiver):
@@ -310,33 +292,86 @@ class FullStackContractTests(unittest.TestCase):
         )
         self.assertEqual(includes("file_log/nginx"), ["/var/log/nginx/*.log"])
 
-        # copytruncate restarts the live file with the same first bytes, which the default fingerprint
-        # check reads as an untouched file, so its new lines would be skipped.
-        def reads_whole_file_on_truncate(receiver):
-            block = re.search(rf"(?ms)^  {re.escape(receiver)}:\n(.*?)(?=^  \S)", collector).group(1)
-            return re.search(r"(?m)^    on_truncate: read_whole_file$", block) is not None
-
-        for receiver in [*service_logs, "file_log/cinematacms"]:
-            self.assertTrue(reads_whole_file_on_truncate(receiver), receiver)
-        self.assertFalse(reads_whole_file_on_truncate("file_log/nginx"))
-
-    def test_logs_shorter_than_the_collector_fingerprint_are_not_rotated(self):
+    def test_every_app_log_writer_follows_the_rename_of_a_rotation(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
         rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
-        # The file_log receiver fingerprints this many leading bytes unless a receiver sets fingerprint_size.
-        collector_default_fingerprint_bytes = 1000
-        bytes_per_logrotate_unit = {"": 1, "k": 1024, "M": 1024**2, "G": 1024**3}
+        uwsgi = (ROOT / "uwsgi.ini").read_text()
+        settings = (ROOT / "cms/settings.py").read_text()
 
-        configured = re.findall(r"(?m)^\s+fingerprint_size:\s*(\S+)\s*$", collector)
-        self.assertTrue(
-            all(size.isdigit() for size in configured), f"fingerprint_size must be plain bytes: {configured}"
-        )
-        fingerprint_bytes = max([collector_default_fingerprint_bytes, *map(int, configured)])
+        # A log truncated in place drops the lines written after the last read, and a Collector that
+        # reads past the size of the finished .1 copy ingests the whole copy again.
+        self.assertNotIn("copytruncate", rotation)
+        self.assertNotIn("on_truncate", collector)
 
-        minsize = re.search(r"(?m)^\s+minsize\s+(\d+)([kMG]?)$", rotation)
-        self.assertIsNotNone(minsize, "a log shorter than the fingerprint is read again from its .1 copy")
-        minsize_bytes = int(minsize.group(1)) * bytes_per_logrotate_unit[minsize.group(2)]
-        self.assertGreaterEqual(minsize_bytes, fingerprint_bytes)
+        self.assertEqual(settings.count('"class": "logging.handlers.WatchedFileHandler"'), 2)
+        self.assertNotIn('"class": "logging.FileHandler"', settings)
+
+        reopen_marker = re.search(
+            r'(?m)^\s+runuser -u www-data -- touch "\$\{APP_SERVICE_LOG_DIR\}/(\.\S+)"$', rotation
+        ).group(1)
+        uwsgi_log_directory = re.search(r"(?m)^logto = (\S+)/errorlog\.txt$", uwsgi).group(1)
+        self.assertIn(f"touch-logreopen = {uwsgi_log_directory}/{reopen_marker}\n", uwsgi)
+
+    @unittest.skipUnless(shutil.which("logrotate"), "logrotate is not installed")
+    def test_rotation_keeps_the_open_file_as_the_rotated_copy_and_signals_uwsgi(self):
+        with tempfile.TemporaryDirectory() as directory:
+            logs = Path(directory) / "logs"
+            logs.mkdir()
+            live = logs / "app.json.log"
+            live.write_text("x" * 2000)
+            open_inode = live.stat().st_ino
+            config = Path(directory) / "rotate.conf"
+            config.write_text(self.render_unprivileged_app_log_rotation(str(live), str(logs)))
+            config.chmod(0o644)
+
+            def rotate():
+                subprocess.run(
+                    ["logrotate", "--force", "--state", str(Path(directory) / "state"), str(config)],
+                    check=True,
+                    capture_output=True,
+                )
+
+            rotate()
+
+            rotated = logs / "app.json.log.1"
+            self.assertEqual(rotated.stat().st_ino, open_inode)
+            self.assertEqual(rotated.stat().st_size, 2000)
+            self.assertEqual(live.stat().st_mode & 0o777, 0o640)
+            self.assertTrue((logs / ".uwsgi-logreopen").exists())
+
+            # Two logs that start alike would share a Collector fingerprint.
+            first_marker = live.read_text()
+            self.assertEqual(json.loads(first_marker)["event"], "log_rotated")
+            rotate()
+            self.assertNotEqual(live.read_text(), first_marker)
+
+    def test_rotation_scripts_touch_the_www_data_directory_only_as_www_data(self):
+        rotation = (OBSERVABILITY / "templates" / "app-logs.logrotate").read_text()
+        script = rotation[rotation.index("postrotate\n") : rotation.index("endscript")]
+        commands = [line for line in map(str.strip, script.splitlines()[1:]) if line and not line.startswith("#")]
+
+        self.assertTrue(commands)
+        for command in commands:
+            self.assertIn("runuser -u www-data -- ", command)
+            self.assertNotIn(">>", command, "a root shell opens the target of a redirect")
+
+    def test_installer_refuses_a_linked_app_log_instead_of_taking_ownership_of_its_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "root-owned.conf"
+            target.write_text("untouched")
+            target.chmod(0o600)
+            link = Path(directory) / "app.json.log"
+            link.symlink_to(target)
+
+            result = subprocess.run(
+                ["bash", "-c", 'source "$1"; own_app_log "$2"', "bash", str(OBSERVABILITY / "install.sh"), str(link)],
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("symlink", result.stderr)
+            self.assertEqual(target.stat().st_mode & 0o777, 0o600)
 
     def test_maxsize_is_checked_hourly_by_a_timer_the_installer_runs_and_verifies(self):
         installer = (OBSERVABILITY / "install.sh").read_text()

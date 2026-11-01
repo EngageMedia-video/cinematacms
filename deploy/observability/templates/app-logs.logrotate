@@ -4,13 +4,21 @@ ${APP_SERVICE_LOG_DIR}/*.log ${APP_SERVICE_LOG_DIR}/errorlog.txt ${UNCOVERED_APP
   rotate 14
   missingok
   notifempty
-  # the Collector's default fingerprint covers the first 1000 bytes, so a shorter log and its .1 copy can be read twice
-  minsize 1k
   compress
   delaycompress
   # the Collector reads the .1 name, so a host-wide dateext must not rename it
   nodateext
-  # celery, uwsgi and the Django FileHandler keep the file open; truncating in place avoids a restart
-  # and leaves the live file's owner, group and mode untouched.
-  copytruncate
+  # Rotation renames the log. Django and Celery follow the name through WatchedFileHandler, and uWSGI
+  # through the touch below. Until then their lines land in the .1 copy, which the Collector still reads.
+  # Rotating as www-data leaves no moment when the new log is a root file those writers cannot open.
+  su www-data cinematacms-observability
+  create 0640 www-data cinematacms-observability
+  postrotate
+    # This script runs as root despite su. www-data can swap any name in this directory for a link, so
+    # every write here goes through runuser and a root shell never opens one of these paths.
+    # The Collector identifies a file by its first 1000 bytes, and Celery lines carry no timestamp, so a
+    # quiet log can start exactly like its .1 copy and never be read. This line makes every log start apart.
+    date -u '+{"timestamp":"%FT%T.%NZ","level":"INFO","event":"log_rotated"}' | runuser -u www-data -- tee -a "$1" > /dev/null
+    runuser -u www-data -- touch "${APP_SERVICE_LOG_DIR}/.uwsgi-logreopen"
+  endscript
 }

@@ -382,20 +382,25 @@ prepare_application_log() {
   local log_directory
   log_directory="$(dirname "$APP_LOG_PATH")"
   install -d -m 2750 -o www-data -g cinematacms-observability "$log_directory"
-  touch "$APP_LOG_PATH"
-  chown www-data:cinematacms-observability "$APP_LOG_PATH"
-  chmod 0640 "$APP_LOG_PATH"
+  own_app_log "$APP_LOG_PATH"
+}
+
+own_app_log() {
+  local path="$1"
+  [[ ! -L "$path" ]] || fail "app log is a symlink: $path"
+  # www-data owns this directory and can swap a name for a link at any moment. Root therefore changes
+  # only the name itself, and everything that follows a link runs with the rights of www-data.
+  [[ ! -e "$path" ]] || chown -h www-data:cinematacms-observability "$path"
+  runuser -u www-data -- touch "$path"
+  runuser -u www-data -- chmod 0640 "$path"
 }
 
 prepare_service_logs() {
-  local filename path
+  local filename
   # setgid keeps files created later (celery, uwsgi, logrotate) in the collector's group.
   install -d -m 2750 -o www-data -g cinematacms-observability "$APP_SERVICE_LOG_DIR"
   for filename in errorlog.txt celery_long.log celery_short.log celery_whisper.log celery_email.log beatcelery_beat.log; do
-    path="${APP_SERVICE_LOG_DIR}/${filename}"
-    touch "$path"
-    chown www-data:cinematacms-observability "$path"
-    chmod 0640 "$path"
+    own_app_log "${APP_SERVICE_LOG_DIR}/${filename}"
   done
 }
 
