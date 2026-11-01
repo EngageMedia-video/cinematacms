@@ -313,7 +313,9 @@ class FullStackContractTests(unittest.TestCase):
         bytes_per_logrotate_unit = {"": 1, "k": 1024, "M": 1024**2, "G": 1024**3}
 
         configured = re.findall(r"(?m)^\s+fingerprint_size:\s*(\S+)\s*$", collector)
-        self.assertTrue(all(size.isdigit() for size in configured), f"fingerprint_size must be plain bytes: {configured}")
+        self.assertTrue(
+            all(size.isdigit() for size in configured), f"fingerprint_size must be plain bytes: {configured}"
+        )
         fingerprint_bytes = max([collector_default_fingerprint_bytes, *map(int, configured)])
 
         minsize = re.search(r"(?m)^\s+minsize\s+(\d+)([kMG]?)$", rotation)
