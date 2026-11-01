@@ -322,8 +322,9 @@ class FullStackContractTests(unittest.TestCase):
             includes("file_log/cinematacms"), ["${env:APP_LOG_PATH}", "${env:APP_LOG_PATH}.1"], "file_log/cinematacms"
         )
         nginx_directories = ["/var/log/nginx", "/var/log/cinematacms/nginx"]
-        self.assertEqual(includes("file_log/nginx_access"), [f"{d}/*access.log" for d in nginx_directories])
-        self.assertEqual(includes("file_log/nginx_error"), [f"{d}/*error.log" for d in nginx_directories])
+        for receiver, pattern in (("file_log/nginx_access", "*access.log"), ("file_log/nginx_error", "*error.log")):
+            live = [f"{d}/{pattern}" for d in nginx_directories]
+            self.assertEqual(includes(receiver), [*live, *[f"{path}.1" for path in live]], receiver)
 
     def test_every_app_log_writer_follows_the_rename_of_a_rotation(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()

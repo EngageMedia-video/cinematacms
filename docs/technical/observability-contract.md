@@ -78,7 +78,9 @@ path, query string, address, cookie, or email. nginx answers some upload errors
 The Collector reads every `*access.log` and `*error.log` file in
 `/var/log/cinematacms/nginx/`, where the stock site writes `/fu/` chunk requests,
 and in `/var/log/nginx/`, which holds the distribution's logs and any vhost an
-operator adds. A site must use the `cinematacms` or `compression`
+operator adds. It also reads each log's uncompressed `.1` copy, because nginx
+keeps writing to the renamed file until it reopens its logs, and lines written
+in that gap would otherwise be lost. A site must use the `cinematacms` or `compression`
 `log_format`; both end with `rt=`, `urt=`, and `rl=`. An nginx access line keeps
 only `method`, `status_code`, `bytes_sent`, `request_time`, `upstream_time`,
 `request_length`, `http.route`, and `route_group` (`nginx_upload` for `/fu/` and
