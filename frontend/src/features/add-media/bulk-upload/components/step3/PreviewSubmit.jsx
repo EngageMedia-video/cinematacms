@@ -6,7 +6,7 @@ import { formatFileSize } from '../../utils/formatSize';
 
 const FIELD_LABELS = {
 	title: 'Title',
-	summary: 'Synopsis',
+	summary: 'Short Description',
 	description: 'More Information',
 	year_produced: 'Year Produced',
 	company: 'Production Company',
@@ -170,7 +170,7 @@ export function PreviewSubmit({ files = [], options = {}, validationErrors = {} 
 								) : null}
 
 								<dl className="mt-5 grid gap-4 sm:grid-cols-2">
-									<SummaryRow label="Synopsis" value={meta.summary} />
+									<SummaryRow label="Short Description" value={meta.summary} />
 									<SummaryRow label="Year Produced" value={meta.year_produced} />
 									<SummaryRow
 										label="Language"
