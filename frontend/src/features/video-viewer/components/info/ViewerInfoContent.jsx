@@ -350,7 +350,7 @@ export default function ViewerInfoContent(props) {
 								{hasSynopsis && (
 									<div className="media-content-summary mt-6 flex flex-col gap-3">
 										<Text variant="h6-medium" className="m-0">
-											Log Line / Synopsis
+											Short Description
 										</Text>
 
 										<div className="relative">

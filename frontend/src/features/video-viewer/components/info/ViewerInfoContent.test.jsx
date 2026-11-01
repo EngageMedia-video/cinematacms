@@ -187,6 +187,25 @@ describe('ViewerInfoContent', () => {
 		expect(screen.queryByText('Country of origin')).not.toBeInTheDocument();
 	});
 
+	describe('short description', () => {
+		it('labels a non-empty summary as a short description', () => {
+			storeMocks.state.summary = 'A fishing village resists a coal plant.';
+
+			const { container } = renderViewerInfoContent();
+
+			expect(screen.getByRole('heading', { name: 'Short Description' })).toBeInTheDocument();
+			expect(screen.getByText('A fishing village resists a coal plant.')).toBeInTheDocument();
+			expect(container).not.toHaveTextContent(/log\s*line/i);
+		});
+
+		it('omits the heading and helper text when the summary is empty', () => {
+			renderViewerInfoContent();
+
+			expect(screen.queryByRole('heading', { name: 'Short Description' })).not.toBeInTheDocument();
+			expect(screen.queryByText(/80 words or fewer/)).not.toBeInTheDocument();
+		});
+	});
+
 	it('preserves paragraph breaks in more information and credits text', () => {
 		const description = 'Director statement.\n\nCredits and thanks.';
 
