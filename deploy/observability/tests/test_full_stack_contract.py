@@ -171,6 +171,21 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("logrotate --debug", installer)
         self.assertIn("logrotate", packages)
 
+    def test_only_the_hourly_unit_rotates_the_app_logs_with_a_state_file_of_its_own(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        service = (OBSERVABILITY / "templates/cinematacms-app-logs-rotate.service").read_text()
+        policy = installer[installer.index("install_disk_policy() {") :]
+        policy = policy[: policy.index("\n}\n")]
+        legacy_config = "/etc/logrotate.d/cinematacms-app-logs"
+
+        # The system logrotate.service reads /etc/logrotate.d with the default state file. Sharing that
+        # file with the hourly unit makes the loser of a simultaneous start exit 3 and rotate nothing.
+        self.assertNotIn(f"> {legacy_config}", installer)
+        self.assertIn(f'rm -f "{legacy_config}"', policy)
+        self.assertNotIn("/etc/logrotate.d", service)
+        state_file = re.search(r"(?m)^ExecStart=/usr/sbin/logrotate -s (\S+) ", service).group(1)
+        self.assertNotEqual(state_file, "/var/lib/logrotate/status")
+
     def test_disk_usage_is_capped_by_journald_logrotate_and_storage_flags(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
         environment = (OBSERVABILITY / "observability.env.example").read_text()
@@ -202,12 +217,12 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("journalctl --disk-usage", installer)
         for directive in ("maxsize 100M", "copytruncate", "errorlog.txt"):
             self.assertIn(directive, app_logs)
-        for target in ("journald.conf.d/cinematacms.conf", "logrotate.d/cinematacms-app-logs"):
+        for target in ("journald.conf.d/cinematacms.conf", "${ETC_DIR}/app-logs.logrotate"):
             self.assertIn(target, installer)
 
         policy = installer[installer.index("install_disk_policy() {") :]
         policy = policy[: policy.index("\n}\n")]
-        self.assertIn("logrotate --debug /etc/logrotate.d/cinematacms-app-logs", policy)
+        self.assertIn('logrotate --debug "${ETC_DIR}/app-logs.logrotate"', policy)
         self.assertLess(policy.index("logrotate --debug"), policy.index("systemctl restart systemd-journald"))
 
         for unit, flags in {
@@ -331,8 +346,11 @@ class FullStackContractTests(unittest.TestCase):
         timer = (templates / f"{unit}.timer").read_text()
 
         self.assertIn("Type=oneshot", service)
-        self.assertIn("ExecStart=/usr/sbin/logrotate /etc/logrotate.d/cinematacms-app-logs\n", service)
-        self.assertNotIn("--state", service, "the default state file keeps the stock daily run from rotating twice")
+        self.assertIn(
+            "ExecStart=/usr/sbin/logrotate -s /var/lib/logrotate/cinematacms-app-logs.status"
+            " /etc/cinematacms-observability/app-logs.logrotate\n",
+            service,
+        )
         self.assertNotIn("ProtectHome", service, "the application logs live under /home")
         self.assertIn("OnCalendar=hourly", timer)
         self.assertRegex(timer, r"(?m)^RandomizedDelaySec=\d+(min|s)$")

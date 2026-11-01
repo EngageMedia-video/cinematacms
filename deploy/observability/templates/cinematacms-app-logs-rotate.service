@@ -3,4 +3,4 @@ Description=Rotate CinemataCMS application logs that passed maxsize
 
 [Service]
 Type=oneshot
-ExecStart=/usr/sbin/logrotate /etc/logrotate.d/cinematacms-app-logs
+ExecStart=/usr/sbin/logrotate -s /var/lib/logrotate/cinematacms-app-logs.status /etc/cinematacms-observability/app-logs.logrotate

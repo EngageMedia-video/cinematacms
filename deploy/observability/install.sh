@@ -435,9 +435,12 @@ render_app_log_rotation() {
 
 install_disk_policy() {
   local content
-  render_app_log_rotation > /etc/logrotate.d/cinematacms-app-logs
-  chmod 0644 /etc/logrotate.d/cinematacms-app-logs
-  logrotate --debug /etc/logrotate.d/cinematacms-app-logs >/dev/null
+  # The hourly unit is the only rotator of these logs. A copy in /etc/logrotate.d would also run from the
+  # system logrotate.service, which shares the default state file with it.
+  rm -f "/etc/logrotate.d/cinematacms-app-logs"
+  render_app_log_rotation > "${ETC_DIR}/app-logs.logrotate"
+  chmod 0644 "${ETC_DIR}/app-logs.logrotate"
+  logrotate --debug "${ETC_DIR}/app-logs.logrotate" >/dev/null
 
   content="$(<"${TEMPLATE_DIR}/journald-cinematacms.conf")"
   content="${content//\$\{JOURNAL_MAX_USE\}/$JOURNAL_MAX_USE}"
