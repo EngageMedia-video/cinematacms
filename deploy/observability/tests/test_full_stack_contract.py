@@ -793,6 +793,9 @@ class FullStackContractTests(unittest.TestCase):
                     target["expr"],
                 )
 
+        # Grafana scales the tile names down to 8 px at 1366 pixels unless the sizes are fixed.
+        self.assertEqual(panels["Tool outcomes in range"]["options"]["text"], {"titleSize": 14, "valueSize": 44})
+
         over_time = panels["Tool outcomes over time"]["targets"]
         self.assertEqual(
             [target["legendFormat"] for target in over_time],
