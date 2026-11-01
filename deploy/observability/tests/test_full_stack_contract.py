@@ -480,10 +480,34 @@ class FullStackContractTests(unittest.TestCase):
         waiting = " ".join(target["expr"] for target in panels["Queue depth now"]["targets"])
         self.assertIn("cinematacms_celery_queue_depth", waiting)
         self.assertIn('redis_key_size{key="celery"}', waiting)
-        in_flight = " ".join(target["expr"] for target in panels["Queue in flight (reserved + running)"]["targets"])
+        in_flight = " ".join(target["expr"] for target in panels["Queue in flight"]["targets"])
         self.assertIn('redis_key_size{key="unacked"}', in_flight)
         self.assertIn("celery_worker_tasks_active", in_flight)
         self.assertNotIn("celery_task_received_total", in_flight)
+
+    def test_alert_and_queue_panels_fill_the_row_and_stay_readable_at_1366_pixels(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in dashboard["panels"]}
+        alerts = panels["Firing alerts by rule"]
+        depth = panels["Queue depth now"]
+        in_flight = panels["Queue in flight"]
+
+        row = [(panel["gridPos"]["x"], panel["gridPos"]["w"]) for panel in (alerts, depth, in_flight)]
+        self.assertEqual(row, [(0, 10), (10, 7), (17, 7)])
+        self.assertEqual(len({panel["gridPos"]["y"] for panel in (alerts, depth, in_flight)}), 1)
+
+        self.assertEqual(in_flight["options"]["text"], {"titleSize": 14})
+        self.assertEqual(in_flight["targets"][0]["legendFormat"], "reserved (unacked)")
+        column_properties = {
+            override["matcher"]["options"]: {prop["id"]: prop["value"] for prop in override["properties"]}
+            for override in alerts["fieldConfig"]["overrides"]
+        }
+        self.assertEqual(column_properties["Firing"]["custom.width"], 50)
+        self.assertEqual(column_properties["severity"]["custom.width"], 70)
+        self.assertEqual(
+            column_properties["alertname"]["mappings"],
+            [{"type": "regex", "options": {"pattern": "^Cinemata(.*)$", "result": {"text": "$1"}}}],
+        )
 
     def test_firing_alerts_table_converts_label_fields_to_columns(self):
         dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
