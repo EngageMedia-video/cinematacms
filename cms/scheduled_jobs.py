@@ -61,6 +61,11 @@ SCHEDULED_JOB_ITEMS_TOTAL = Counter(
 )
 
 
+def publish_absence_thresholds() -> None:
+    for job in SCHEDULED_JOBS.values():
+        SCHEDULED_JOB_ABSENCE_THRESHOLD.labels(scheduled_job=job.name).set(job.absence_seconds)
+
+
 def record_scheduled_start(job: str, timestamp: float) -> None:
     if job not in SCHEDULED_JOBS:
         return
@@ -86,4 +91,3 @@ def record_scheduled_outcome(
             SCHEDULED_JOB_ITEMS_TOTAL.labels(scheduled_job=job, result=result).inc(count)
     if outcome == "succeeded":
         SCHEDULED_JOB_LAST_SUCCESS.labels(scheduled_job=job).set(timestamp)
-        SCHEDULED_JOB_ABSENCE_THRESHOLD.labels(scheduled_job=job).set(SCHEDULED_JOBS[job].absence_seconds)
