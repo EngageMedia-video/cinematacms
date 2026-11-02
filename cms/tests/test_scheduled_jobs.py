@@ -52,16 +52,22 @@ class ScheduledJobContractTests(SimpleTestCase):
         last_success.labels.return_value.set.assert_called_once_with(20)
         domain.assert_any_call("scheduled.clear_sessions", "skipped", "lock_held")
 
-    def test_success_publishes_the_job_absence_threshold(self):
+    def test_a_metrics_refresh_publishes_every_job_window_before_any_job_has_run(self):
+        from files import metrics
+
         with (
             patch("cms.scheduled_jobs.SCHEDULED_JOB_ABSENCE_THRESHOLD") as threshold,
-            patch("cms.scheduled_jobs.record_domain_outcome"),
+            patch("files.metrics._refresh_queue_depths"),
+            patch("files.metrics._refresh_transcription_requests"),
+            patch("files.metrics._refresh_stalled_encodings"),
         ):
-            record_scheduled_outcome("clear_sessions", "skipped", "lock_held", timestamp=10)
-            threshold.labels.return_value.set.assert_not_called()
-            record_scheduled_outcome("clear_sessions", "succeeded", timestamp=20)
-        threshold.labels.assert_called_once_with(scheduled_job="clear_sessions")
-        threshold.labels.return_value.set.assert_called_once_with(SCHEDULED_JOBS["clear_sessions"].absence_seconds)
+            metrics.refresh_runtime_metrics()
+
+        self.assertEqual(
+            {call.kwargs["scheduled_job"] for call in threshold.labels.call_args_list},
+            set(SCHEDULED_JOBS),
+        )
+        threshold.labels.return_value.set.assert_any_call(SCHEDULED_JOBS["clear_sessions"].absence_seconds)
 
     def test_celery_signal_records_structured_job_result(self):
         from files import metrics
