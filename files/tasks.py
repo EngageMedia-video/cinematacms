@@ -1,6 +1,5 @@
 import json
 import os
-import random
 import re
 import secrets
 import shutil
@@ -61,6 +60,7 @@ from .models import (
     chunk_groups_awaiting_merge,
     finalize_chunk_group,
     schedule_chunk_file_cleanup,
+    transcription_dispatch_cache,
 )
 from .query_cache import invalidate_media_cache
 from .sprites import generate_sprite_for_media
@@ -598,16 +598,32 @@ def encode_media(
         return success
 
 
+def _claim_transcription_request(media, translate):
+    """Record the request for this media and flag, or return None when one is already in place.
+
+    Concurrent tasks queue up on the media row, so the second one sees the first one's request.
+    """
+    with transaction.atomic():
+        if not Media.objects.select_for_update().filter(pk=media.pk).exists():
+            return None
+        if TranscriptionRequest.objects.filter(media=media, translate_to_english=translate).exists():
+            return None
+        return TranscriptionRequest.objects.create(media=media, translate_to_english=translate)
+
+
 @task(name="whisper_transcribe", queue="whisper_tasks")
 def whisper_transcribe(friendly_token, translate=False, notify=True):
     """
     Transcribe media using Whisper.cpp
     """
-    logger.info(f"Starting whisper_transcribe for {friendly_token}, translate={translate}")
+    try:
+        return _transcribe_with_whisper(friendly_token, translate, notify)
+    finally:
+        transcription_dispatch_cache.delete(Media.transcription_dispatch_key(friendly_token, translate))
 
-    # in case multiple requests arrive at the same time, avoid having them create
-    # a Request for the same media...
-    time.sleep(random.uniform(0, 20))
+
+def _transcribe_with_whisper(friendly_token, translate, notify):
+    logger.info(f"Starting whisper_transcribe for {friendly_token}, translate={translate}")
 
     logger.info(f"Whisper command path: {settings.WHISPER_CPP_COMMAND}")
     logger.info(f"Whisper model path: {settings.WHISPER_CPP_MODEL}")
@@ -637,17 +653,11 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
         logger.error(f"Language '{language_code}' not found in database")
         return False
 
-    if translate:
-        if TranscriptionRequest.objects.filter(media=media, translate_to_english=True).exists():
-            logger.info(f"Translation request already exists for {friendly_token}")
-            return False
-    else:
-        if TranscriptionRequest.objects.filter(media=media, translate_to_english=False).exists():
-            logger.info(f"Transcription request already exists for {friendly_token}")
-            return False
-
-    # Create transcription request and capture it for cleanup on failure
-    transcription_request = TranscriptionRequest.objects.create(media=media, translate_to_english=translate)
+    # Keep the request for cleanup on failure
+    transcription_request = _claim_transcription_request(media, translate)
+    if transcription_request is None:
+        logger.info(f"Transcription request (translate={translate}) already exists or media is gone: {friendly_token}")
+        return False
     logger.info(f"Created transcription request for {friendly_token}")
 
     try:

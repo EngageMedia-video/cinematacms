@@ -234,15 +234,10 @@ class ObservabilityConfigTests(SimpleTestCase):
             error_spans.append(active_span[-1] if active_span else None)
 
         common_patches = (
-            patch("files.tasks.time.sleep"),
             patch("files.tasks.os.path.exists", return_value=True),
             patch("files.tasks.Media.objects.get", return_value=media),
             patch("files.tasks.Language.objects.filter", return_value=Mock(first=Mock(return_value=Mock()))),
-            patch(
-                "files.tasks.TranscriptionRequest.objects.filter",
-                return_value=Mock(exists=Mock(return_value=False)),
-            ),
-            patch("files.tasks.TranscriptionRequest.objects.create", return_value=request),
+            patch("files.tasks._claim_transcription_request", return_value=request),
             patch("files.tasks.tempfile.TemporaryDirectory", return_value=tempfile.TemporaryDirectory()),
             patch("files.tasks.start_span", side_effect=lambda name, _attributes: TrackedSpan(name)),
             patch("files.tasks.logger.error", side_effect=capture_error),
@@ -256,8 +251,6 @@ class ObservabilityConfigTests(SimpleTestCase):
             common_patches[4],
             common_patches[5],
             common_patches[6],
-            common_patches[7],
-            common_patches[8],
             patch(
                 "files.tasks.subprocess.run",
                 return_value=SimpleNamespace(returncode=1, stdout=b"", stderr=b"failed"),

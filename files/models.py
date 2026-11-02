@@ -74,6 +74,8 @@ def get_invalidate_media_path_cache():
 logger = logging.getLogger(__name__)
 
 chunk_finalisation_cache = owned_cache.bind("chunk_finalisation")
+transcription_dispatch_cache = owned_cache.bind("whisper_dispatch")
+WHISPER_FLAG_FIELDS = frozenset({"allow_whisper_transcribe", "allow_whisper_transcribe_and_translate"})
 RE_TIMECODE = re.compile(r"(\d+:\d+:\d+.\d+)")
 CHUNK_ACTIVE_STATUSES = {"pending", "running"}
 # A group that keeps failing to merge stops being retried after this long. A claim must expire well inside it.
@@ -916,28 +918,38 @@ class Media(models.Model):
         return self.encryption_key
 
     def transcribe_function(self):
-        can_transcribe = False
-        can_transcribe_and_translate = False
-        if self.allow_whisper_transcribe or self.allow_whisper_transcribe_and_translate:
-            if self.allow_whisper_transcribe_and_translate:
-                if not TranscriptionRequest.objects.filter(media=self, translate_to_english=True).exists():
-                    can_transcribe_and_translate = True
-            if self.allow_whisper_transcribe:
-                if not TranscriptionRequest.objects.filter(media=self, translate_to_english=False).exists():
-                    can_transcribe = True
-            from . import tasks
+        if self.allow_whisper_transcribe:
+            self._dispatch_transcription(translate=False)
+        if self.allow_whisper_transcribe_and_translate:
+            self._dispatch_transcription(translate=True)
 
-            if can_transcribe:
-                tasks.whisper_transcribe.apply_async(
-                    args=[self.friendly_token],
-                    headers=inject_trace_headers(),
-                )
-            if can_transcribe_and_translate:
-                tasks.whisper_transcribe.apply_async(
-                    args=[self.friendly_token],
-                    kwargs={"translate": True},
-                    headers=inject_trace_headers(),
-                )
+    @staticmethod
+    def transcription_dispatch_key(friendly_token, translate):
+        return f"whisper_dispatch_{friendly_token}_{translate}"
+
+    def _dispatch_transcription(self, translate):
+        """Queue one Whisper task for this media and flag, unless one is done or already queued.
+
+        The dispatch claim covers the time until the task finishes: the task releases it when it
+        ends, and it expires on its own if the worker dies, so a failed request can be made again.
+        """
+        if TranscriptionRequest.objects.filter(media=self, translate_to_english=translate).exists():
+            return
+        claim_key = self.transcription_dispatch_key(self.friendly_token, translate)
+        if not transcription_dispatch_cache.add(claim_key, "queued", settings.CELERY_SOFT_TIME_LIMIT):
+            return
+
+        from . import tasks
+
+        try:
+            tasks.whisper_transcribe.apply_async(
+                args=[self.friendly_token],
+                kwargs={"translate": True} if translate else {},
+                headers=inject_trace_headers(),
+            )
+        except Exception:
+            transcription_dispatch_cache.delete(claim_key)
+            raise
 
     def update_search_vector(self):
         """
@@ -2642,7 +2654,10 @@ def media_save(sender, instance, created, update_fields=None, **kwargs):
     if update_fields is not None:
         indexed = Media.objects.select_related("user").filter(pk=instance.pk).first() or instance
     indexed.update_search_vector()
-    instance.transcribe_function()
+    # A save that leaves the Whisper flags unwritten requests nothing: the encoding pipeline
+    # saves a media many times, and Media.delete() saves one that is about to disappear.
+    if update_fields is None or WHISPER_FLAG_FIELDS & set(update_fields):
+        instance.transcribe_function()
 
 
 def _schedule_storage_usage_refresh_for_media(media_id):
