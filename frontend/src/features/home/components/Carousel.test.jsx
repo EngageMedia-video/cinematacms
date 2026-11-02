@@ -85,7 +85,7 @@ describe('Carousel — default shape', () => {
 
 		const firstItemShell = screen.getByRole('link', { name: 'Open Item 0' }).closest('article').parentElement;
 
-		expect(firstItemShell).toHaveStyle({ width: 'calc(25% - 0.75rem)' });
+		expect(firstItemShell).toHaveStyle({ width: 'calc(25% - 12px)' });
 	});
 
 	it('advances to page 1 after clicking right arrow', async () => {
@@ -192,7 +192,7 @@ describe('Carousel — default shape', () => {
 
 		const firstItemShell = screen.getByRole('link', { name: 'Open Item 0' }).closest('article').parentElement;
 
-		expect(firstItemShell).toHaveStyle({ width: 'calc(100% - 0rem)' });
+		expect(firstItemShell).toHaveStyle({ width: 'calc(100% - 0px)' });
 		expect(screen.getByRole('button', { name: 'Go to page 4' })).toBeInTheDocument();
 	});
 
@@ -202,7 +202,7 @@ describe('Carousel — default shape', () => {
 
 		const firstItemShell = screen.getByRole('link', { name: 'Open Item 0' }).closest('article').parentElement;
 
-		expect(firstItemShell).toHaveStyle({ width: 'calc(50% - 0.5rem)' });
+		expect(firstItemShell).toHaveStyle({ width: 'calc(50% - 8px)' });
 		expect(screen.getByRole('button', { name: 'Go to page 2' })).toBeInTheDocument();
 	});
 
@@ -215,7 +215,7 @@ describe('Carousel — default shape', () => {
 
 		await waitFor(() => expect(screen.getByRole('button', { name: 'Go to page 3' })).toBeInTheDocument());
 		expect(screen.queryByRole('button', { name: 'Go to page 4' })).toBeNull();
-		expect(firstItemShell).toHaveStyle({ width: 'calc(33.333333333333336% - 0.6666666666666666rem)' });
+		expect(firstItemShell).toHaveStyle({ width: 'calc(33.3333% - 10.6667px)' });
 	});
 
 	it('swipes left to the next page on touch devices', () => {
