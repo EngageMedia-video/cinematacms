@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import useBulkUploadStore, { UPLOAD_STATUS } from '../useBulkUploadStore';
 import { useBulkUploadConfig } from '../bulkUploadConfig';
 import { apiFetch, getCSRFToken, parseFriendlyToken } from '../../../shared/utils/api';
+import { sendUploadIdHeader } from '../../../shared/utils/uploadId';
 
 /**
  * Drives N concurrent chunked uploads through the bundled FineUploader engine
@@ -30,11 +31,12 @@ export function useBulkUpload() {
 
 		let uploader;
 		let disposing = false;
+		const uploadHeaders = { 'X-CSRFToken': getCSRFToken() ?? '' };
 		uploader = new qq.FineUploaderBasic({
 			autoUpload: true,
 			request: {
 				endpoint: config.uploadEndpoint,
-				customHeaders: { 'X-CSRFToken': getCSRFToken() ?? '' },
+				customHeaders: uploadHeaders,
 				// Mark every bulk upload as a private draft on creation; the server
 				// keeps it out of the admin review queue until the user submits.
 				params: { is_draft: 1 },
@@ -53,6 +55,7 @@ export function useBulkUpload() {
 			},
 			callbacks: {
 				onSubmitted(id, name) {
+					sendUploadIdHeader(uploader, id, uploadHeaders);
 					window.CinemataAnalytics?.uploadEvent('start', id);
 					filesByIdRef.current.set(id, uploader.getFile(id));
 					addFile({ id, name, sizeBytes: uploader.getSize(id) });

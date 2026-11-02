@@ -725,6 +725,7 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             "subscribe_user",
             "dispatch_deferred_encodings",
             "apply_visibility_schedules",
+            "recover_stalled_chunk_groups",
             "deliver_email",
             "recover_stale_email_deliveries",
             "cleanup_email_delivery_receipts",

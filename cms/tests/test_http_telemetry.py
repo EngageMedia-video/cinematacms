@@ -238,3 +238,73 @@ class UploadDenialLogTests(SimpleTestCase):
         ObservabilityMetricsMiddleware(lambda _request: HttpResponse(status=403))(other)
 
         self.assertEqual(self._denied(), [])
+
+
+UPLOAD_ID = "3f2b8c1e-9d4a-4e6b-8a57-1c0d2e3f4a5b"
+ACTOR_REF = "v1:" + "c" * 64
+
+
+class UploadCorrelationLogTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.collector = _RecordCollector()
+        middleware_logger = logging.getLogger("cms.observability_middleware")
+        middleware_logger.addHandler(self.collector)
+        self.addCleanup(middleware_logger.removeHandler, self.collector)
+
+    def _upload_request(self, upload_id=UPLOAD_ID, *, route="fu/upload/", namespace="uploader", url_name="upload"):
+        extra = {} if upload_id is None else {"HTTP_X_UPLOAD_ID": upload_id}
+        request = self.factory.post("/fu/upload/", **extra)
+        request.resolver_match = SimpleNamespace(namespace=namespace, url_name=url_name, route=route)
+        request.user = SimpleNamespace(is_authenticated=True, email="person@example.org")
+        return request
+
+    def _events(self, name):
+        return [r for r in self.collector.records if r.getMessage() == name]
+
+    def _run(self, request, status_code):
+        with actor_reference_context(ACTOR_REF):
+            ObservabilityMetricsMiddleware(lambda _request: HttpResponse(status=status_code))(request)
+
+    def test_denied_upload_carries_upload_ref_with_actor_ref_and_trace_id(self):
+        self._run(self._upload_request(), 403)
+
+        (record,) = self._events("cinematacms.http.request.denied")
+        self.assertEqual(record.upload_ref, UPLOAD_ID)
+        self.assertEqual(record.actor_ref, ACTOR_REF)
+        self.assertTrue(hasattr(record, "trace_id"))
+
+    def test_failed_and_slow_uploads_carry_upload_ref(self):
+        self._run(self._upload_request(), 502)
+        (failed,) = self._events("cinematacms.http.request.failed")
+        self.assertEqual(failed.upload_ref, UPLOAD_ID)
+
+        with override_settings(OBSERVABILITY_SLOW_REQUEST_SECONDS=0):
+            self._run(self._upload_request(), 200)
+        (slow,) = self._events("cinematacms.http.request.slow")
+        self.assertEqual(slow.upload_ref, UPLOAD_ID)
+
+    def test_missing_or_malformed_upload_id_is_dropped(self):
+        malformed = [
+            None,
+            "",
+            UPLOAD_ID.upper(),
+            UPLOAD_ID + "x",
+            "x" * 5000,
+            f"{UPLOAD_ID}, {UPLOAD_ID}",
+            "person@example.org",
+            "3f2b8c1e-9d4a-1e6b-8a57-1c0d2e3f4a5b",
+        ]
+        for value in malformed:
+            with self.subTest(value=None if value is None else value[:40]):
+                self.collector.records.clear()
+                self._run(self._upload_request(value), 403)
+                (record,) = self._events("cinematacms.http.request.denied")
+                self.assertEqual(record.upload_ref, "")
+
+    def test_upload_id_is_ignored_outside_the_upload_route(self):
+        request = self._upload_request(route="api/v1/search", namespace="", url_name="api_search")
+        self._run(request, 502)
+
+        (record,) = self._events("cinematacms.http.request.failed")
+        self.assertFalse(hasattr(record, "upload_ref"))

@@ -6,6 +6,7 @@ query data, while a ``ResolverMatch`` contains the stable URLconf identity that
 the application actually selected.
 """
 
+import re
 from dataclasses import dataclass
 
 from files.metrics import record_contract_violation
@@ -439,6 +440,18 @@ def denial_reason_code(status_code: int, authenticated: bool) -> str:
     if status_code in (401, 403):
         return "forbidden" if authenticated else "missing_credentials"
     return _DENIAL_REASON_BY_STATUS.get(status_code, "other")
+
+
+# Fine Uploader sends its per-file qquuid (a random version-4 UUID) in this
+# header on every chunk. nginx applies the same pattern before it logs the header.
+UPLOAD_ID_META_KEY = "HTTP_X_UPLOAD_ID"
+UPLOAD_ID_PATTERN = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")
+
+
+def upload_reference(request) -> str:
+    """The client's upload id when it is a well-formed UUID, else an empty string."""
+    value = request.META.get(UPLOAD_ID_META_KEY, "")
+    return value if UPLOAD_ID_PATTERN.fullmatch(value) else ""
 
 
 def _is_third_party(match) -> bool:

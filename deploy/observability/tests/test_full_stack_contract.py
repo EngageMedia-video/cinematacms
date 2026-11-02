@@ -3,8 +3,12 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
+import threading
 import unittest
+import urllib.parse
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -40,6 +44,27 @@ def nginx_error_redactor():
         return line
 
     return redact
+
+
+class FakeVictoriaMetricsHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)["query"][0]
+        self.server.queries.append(query)
+        is_promql = "$" not in query and "_msg:" not in query and "| stats" not in query
+        self.send_response(200 if is_promql else 422)
+        self.end_headers()
+        self.wfile.write(json.dumps({"status": "success" if is_promql else "error"}).encode())
+
+    def log_message(self, *args):
+        pass
+
+
+class FakeVictoriaMetrics(ThreadingHTTPServer):
+    """Answers /api/v1/query like VictoriaMetrics: PromQL parses; LogsQL and Grafana macros do not."""
+
+    def __init__(self):
+        super().__init__(("127.0.0.1", 0), FakeVictoriaMetricsHandler)
+        self.queries = []
 
 
 class FullStackContractTests(unittest.TestCase):
@@ -602,6 +627,41 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("absent_over_time(cinematacms_scheduled_job_last_success_timestamp_seconds[15m])", alerts)
         self.assertIn("clamp_min(sum(pg_settings_max_connections), 1)", alerts)
 
+    def test_overview_shows_chunk_finalisation_outcomes_from_metrics_and_logs(self):
+        overview = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in overview["panels"]}
+        media_pipeline_row = panels["Media pipeline"]["gridPos"]["y"]
+        next_row = min(
+            panel["gridPos"]["y"]
+            for panel in overview["panels"]
+            if panel["type"] == "row" and panel["gridPos"]["y"] > media_pipeline_row
+        )
+
+        lost_race_expr = panels["Chunk finalisation lost races"]["targets"][0]["expr"]
+        for selector in ('operation="chunking"', 'outcome="skipped"', 'reason_code="lock_held"'):
+            self.assertIn(selector, lost_race_expr)
+        self.assertIn("or vector(0)", lost_race_expr)
+
+        outcomes = panels["Chunk finalisation outcomes"]
+        events = panels["Chunk finalisation events"]
+        for panel in (outcomes, events):
+            self.assertEqual(panel["datasource"]["uid"], "victorialogs")
+            self.assertIn('_msg:"cinematacms.media.pipeline"', panel["targets"][0]["expr"])
+        self.assertIn("stats by (stage, outcome, reason_code)", outcomes["targets"][0]["expr"])
+        self.assertEqual(events["type"], "logs")
+
+        for title in ("Chunk finalisation lost races", "Chunk finalisation outcomes", "Chunk finalisation events"):
+            position = panels[title]["gridPos"]
+            self.assertGreater(position["y"], media_pipeline_row)
+            self.assertLessEqual(position["y"] + position["h"], next_row)
+
+    def test_collector_keeps_the_log_fields_the_chunk_finalisation_panels_group_by(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        kept_log_fields = re.search(r"keep_keys\(log\.attributes, \[(.*?)\]\)", collector).group(1)
+
+        for field in ("stage", "profile_id", "outcome", "reason_code"):
+            self.assertIn(f'"{field}"', kept_log_fields)
+
     def test_dashboard_and_alert_queries_use_contracted_metric_names(self):
         coverage = json.loads((ROOT / "config/observability/coverage.json").read_text())
         query_files = (
@@ -907,6 +967,17 @@ class FullStackContractTests(unittest.TestCase):
         retried_upstream = timed_out.replace("408 0", "200 31").replace("urt=-", "urt=0.010, 0.120")
         self.assertEqual(regex.match(retried_upstream).group("upstream_time"), "0.010, 0.120")
 
+        with_upload_id = timed_out + " uid=3f2b8c1e-9d4a-4e6b-8a57-1c0d2e3f4a5b"
+        fields = regex.match(with_upload_id).groupdict()
+        self.assertEqual(fields["upload_ref"], "3f2b8c1e-9d4a-4e6b-8a57-1c0d2e3f4a5b")
+        self.assertEqual(fields["request_length"], "1048576")
+        self.assertIsNone(regex.match(timed_out).group("upload_ref"))
+        for unusable in ("-", "x" * 5000, "deadbeef", with_upload_id[-36:] + "0", with_upload_id[-36:].upper()):
+            with self.subTest(uid=unusable[:40]):
+                fields = regex.match(f"{timed_out} uid={unusable}").groupdict()
+                self.assertIsNone(fields["upload_ref"])
+                self.assertEqual(fields["request_length"], "1048576")
+
         combined_only = (
             '203.0.113.9 - - [30/Oct/2026:10:00:00 +0800] "POST /fu/upload/ HTTP/1.1" 403 146 "-" "Mozilla/5.0"'
         )
@@ -1061,10 +1132,88 @@ class FullStackContractTests(unittest.TestCase):
         for private in (client, "SENT_REF", "SENT_UA", "referrer.example", "agent/"):
             self.assertNotIn(private, captured)
 
+    def test_nginx_upload_ref_is_kept_and_bounded_by_the_contract_pattern(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        kept = re.search(r"keep_keys\(log\.attributes, \[(.*?)\]\)", collector).group(1)
+        contract = json.loads((ROOT / "config/observability/coverage.json").read_text())
+        pattern = contract["log_correlation"]["upload_ref"]["pattern"]
+
+        self.assertIn('"upload_ref"', kept)
+        self.assertIn(f"(?P<upload_ref>{pattern})$", collector)
+
+    def test_log_stats_queries_do_not_aggregate_timestamps(self):
+        timestamp_aggregation = re.compile(r"\b\w+\(\s*_time\s*\)")
+
+        for template in sorted((OBSERVABILITY / "templates").glob("grafana-*.json")):
+            for panel in json.loads(template.read_text())["panels"]:
+                if panel.get("datasource", {}).get("uid") != "victorialogs":
+                    continue
+                for target in panel.get("targets", []):
+                    if target.get("queryType") in ("stats", "statsRange"):
+                        with self.subTest(dashboard=template.name, panel=panel["title"]):
+                            self.assertIsNone(timestamp_aggregation.search(target["expr"]), target["expr"])
+
+    def test_upload_sessions_panel_lists_upload_started_events_of_the_resolved_user(self):
+        incidents = json.loads((OBSERVABILITY / "templates/grafana-incidents.json").read_text())
+        panel = next(p for p in incidents["panels"] if p["title"].startswith("Upload sessions of the resolved user"))
+        target = panel["targets"][0]
+
+        self.assertEqual(panel["type"], "logs")
+        self.assertEqual(target["queryType"], "instant")
+        self.assertIn('${lookup_ref.log_field}:"$lookup_ref"', target["expr"])
+        self.assertIn('"cinematacms.upload.started"', target["expr"])
+
+    def test_dashboards_search_logs_by_upload_ref(self):
+        def variables_and_expressions(template):
+            dashboard = json.loads((OBSERVABILITY / "templates" / template).read_text())
+            variables = {variable["name"] for variable in dashboard["templating"]["list"]}
+            expressions = [
+                target["expr"]
+                for panel in dashboard["panels"]
+                for target in panel.get("targets", [])
+                if "expr" in target
+            ]
+            return variables, expressions
+
+        incident_variables, incident_expressions = variables_and_expressions("grafana-incidents.json")
+        log_variables, log_expressions = variables_and_expressions("grafana-logs.json")
+
+        self.assertIn("upload_ref", incident_variables)
+        self.assertIn('upload_ref:"$upload_ref"', incident_expressions)
+        self.assertTrue(any("service.name:nginx AND upload_ref:in(" in expr for expr in incident_expressions))
+        self.assertIn("upload_ref", log_variables)
+        self.assertTrue(any('upload_ref:"$upload_ref"' in expr for expr in log_expressions))
+
     def test_alert_inhibition_cannot_cross_alert_names(self):
         alertmanager = (OBSERVABILITY / "templates/alertmanager.yml").read_text()
 
         self.assertIn("equal: [alertname, service_name]", alertmanager)
+
+    def test_installer_sends_only_metric_panels_of_the_overview_to_victoriametrics(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        verifier = re.search(r"verify_dashboard_queries\(\) \{.*?<<'PY'\n(.*?)\nPY\n", installer, re.S).group(1)
+        overview_path = OBSERVABILITY / "templates/grafana-overview.json"
+        overview = json.loads(overview_path.read_text())
+        metric_query_count = sum(
+            "expr" in target
+            for panel in overview["panels"]
+            if panel.get("datasource", {}).get("uid") != "victorialogs"
+            for target in panel.get("targets", [])
+        )
+        server = FakeVictoriaMetrics()
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+
+        result = subprocess.run(
+            [sys.executable, "-", str(overview_path), str(server.server_port)],
+            input=verifier,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(server.queries), metric_query_count)
 
     def test_installer_verifies_the_provisioned_grafana_dashboard(self):
         installer = (OBSERVABILITY / "install.sh").read_text()

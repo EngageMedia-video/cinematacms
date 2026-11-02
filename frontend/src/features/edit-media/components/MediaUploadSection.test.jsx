@@ -92,6 +92,8 @@ describe('MediaUploadSection', () => {
 						this.itemCount = 0;
 					});
 					this.getFile = () => ({ size: 512 });
+					this.getUuid = (id) => `00000000-0000-4000-8000-00000000000${id}`;
+					this.setCustomHeaders = vi.fn();
 				},
 			};
 		});
@@ -112,6 +114,19 @@ describe('MediaUploadSection', () => {
 		function trackedActions() {
 			return window.CinemataAnalytics.uploadEvent.mock.calls.map(([action]) => action);
 		}
+
+		it('sends the file uuid with the CSRF token as the headers of that upload', async () => {
+			const user = userEvent.setup();
+			await startReplacement(user);
+
+			expect(uploader.setCustomHeaders).toHaveBeenCalledExactlyOnceWith(
+				expect.objectContaining({
+					'X-CSRFToken': expect.any(String),
+					'X-Upload-Id': '00000000-0000-4000-8000-000000000000',
+				}),
+				0
+			);
+		});
 
 		it('does not count a finished upload as cancelled', async () => {
 			const user = userEvent.setup();

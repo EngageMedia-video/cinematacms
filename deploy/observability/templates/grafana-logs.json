@@ -140,7 +140,7 @@
       "title": "Correlation lookup",
       "datasource": {"type": "victoriametrics-logs-datasource", "uid": "victorialogs"},
       "gridPos": {"h": 10, "w": 24, "x": 0, "y": 82},
-      "targets": [{"refId": "A", "editorMode": "code", "expr": "(${filter:raw}) AND (actor_ref:\"$actor_ref\" OR task_id:\"$task_id\" OR delivery_uuid:\"$delivery_uuid\" OR trace_id:\"$trace_id\" OR recipient_ref:\"$recipient_ref\")", "maxLines": 500, "queryType": "instant"}],
+      "targets": [{"refId": "A", "editorMode": "code", "expr": "(${filter:raw}) AND (actor_ref:\"$actor_ref\" OR task_id:\"$task_id\" OR delivery_uuid:\"$delivery_uuid\" OR trace_id:\"$trace_id\" OR recipient_ref:\"$recipient_ref\" OR upload_ref:\"$upload_ref\")", "maxLines": 500, "queryType": "instant"}],
       "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Descending"}
     }
   ],
@@ -153,6 +153,7 @@
     {"name": "delivery_uuid", "type": "textbox", "label": "Delivery UUID (staff only)", "query": "__enter_value__", "current": {"text": "__enter_value__", "value": "__enter_value__"}},
     {"name": "trace_id", "type": "textbox", "label": "Trace ID (staff only)", "query": "__enter_value__", "current": {"text": "__enter_value__", "value": "__enter_value__"}},
     {"name": "recipient_ref", "type": "textbox", "label": "Recipient ref (sensitive, staff only)", "query": "__enter_value__", "current": {"text": "__enter_value__", "value": "__enter_value__"}},
+    {"name": "upload_ref", "type": "textbox", "label": "Upload ref", "query": "__enter_value__", "current": {"text": "__enter_value__", "value": "__enter_value__"}},
     {"name": "actor_ref", "type": "textbox", "label": "Actor ref (sensitive, staff only)", "query": "__enter_value__", "current": {"text": "__enter_value__", "value": "__enter_value__"}}
   ]},
   "time": {"from": "now-6h", "to": "now"},
