@@ -11,6 +11,8 @@ import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path, PurePosixPath
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[3]
 OBSERVABILITY = ROOT / "deploy" / "observability"
 
@@ -1689,6 +1691,19 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("secureJsonData:", datasource)
         self.assertIn("allowedHosts:", datasource)
         self.assertIn("chmod 0640 /etc/grafana/provisioning/datasources", installer)
+
+    def test_structured_logs_link_their_trace_id_field_to_the_trace(self):
+        datasources = yaml.safe_load((OBSERVABILITY / "templates/grafana-datasources.yml").read_text())["datasources"]
+        logs = next(source for source in datasources if source["uid"] == "victorialogs")
+        (trace_link,) = logs["jsonData"]["derivedFields"]
+
+        # The VictoriaLogs plugin applies a regex matcher to the log message only. Cinemata logs carry the trace ID
+        # in the trace_id field, so the link must read that field.
+        self.assertEqual(trace_link["matcherType"], "label")
+        self.assertEqual(trace_link["matcherRegex"], "trace_id")
+        self.assertEqual(trace_link["datasourceUid"], "victoriatraces")
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        self.assertRegex(collector, r'keep_keys\(log\.attributes, \[[^\]]*"trace_id"')
 
 
 if __name__ == "__main__":
