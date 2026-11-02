@@ -208,20 +208,21 @@ tests:
           - exp_labels: {severity: critical, exporter: otlp_http/victorialogs}
             exp_annotations: {summary: "OpenTelemetry Collector cannot export telemetry"}
 
+  # time() is not the test clock, so a recent heartbeat is written as a far future one, and a window as a huge one.
   # The newest heartbeat of a role decides: a series left by an older worker reference does not raise the alert.
   - interval: 1m
     input_series:
       - series: 'cinematacms_celery_worker_heartbeat_timestamp_seconds{service_role="long",worker_ref="old"}'
         values: '0+0x20'
       - series: 'cinematacms_celery_worker_heartbeat_timestamp_seconds{service_role="long",worker_ref="new"}'
-        values: '0+60x20'
+        values: '99999999999+0x20'
     alert_rule_test:
       - {eval_time: 15m, groupname: cinematacms-contract, alertname: CinemataWorkerStale, exp_alerts: []}
 
   - interval: 1m
     input_series:
-      - series: 'cinematacms_celery_worker_heartbeat_timestamp_seconds{service_role="long",worker_ref="new"}'
-        values: '0+60x5 300+0x20'
+      - series: 'cinematacms_celery_worker_heartbeat_timestamp_seconds{service_role="long",worker_ref="old"}'
+        values: '0+0x20'
     alert_rule_test:
       - eval_time: 15m
         groupname: cinematacms-contract
@@ -230,13 +231,13 @@ tests:
           - exp_labels: {severity: critical, service_role: long}
             exp_annotations: {summary: "A Celery worker heartbeat is stale"}
 
-  # Each job is judged by its own window: the same age is inside the weekly window and past the hourly one.
+  # Each job is judged by its own window: the same age is inside one window and past the other.
   - interval: 1m
     input_series:
       - series: 'cinematacms_scheduled_job_last_success_timestamp_seconds{scheduled_job="clear_sessions"}'
         values: '0+0x20'
       - series: 'cinematacms_scheduled_job_absence_threshold_seconds{scheduled_job="clear_sessions"}'
-        values: '691200+0x20'
+        values: '99999999999+0x20'
       - series: 'cinematacms_scheduled_job_last_success_timestamp_seconds{scheduled_job="cleanup_media_action_ips"}'
         values: '0+0x20'
       - series: 'cinematacms_scheduled_job_absence_threshold_seconds{scheduled_job="cleanup_media_action_ips"}'
