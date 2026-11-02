@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 import re
@@ -44,6 +45,31 @@ def nginx_error_redactor():
         return line
 
     return redact
+
+
+def logged_error_messages(source, function_names):
+    """Text of every logger.error call in the named functions, with each interpolated value as X."""
+    messages = []
+    for function in ast.parse(source).body:
+        if not (isinstance(function, ast.FunctionDef) and function.name in function_names):
+            continue
+        for call in ast.walk(function):
+            if not (
+                isinstance(call, ast.Call)
+                and isinstance(call.func, ast.Attribute)
+                and call.func.attr == "error"
+                and isinstance(call.func.value, ast.Name)
+                and call.func.value.id == "logger"
+            ):
+                continue
+            template = call.args[0]
+            if isinstance(template, ast.JoinedStr):
+                messages.append(
+                    "".join(part.value if isinstance(part, ast.Constant) else "X" for part in template.values)
+                )
+            else:
+                messages.append(re.sub(r"%[sd]", "X", template.value))
+    return messages
 
 
 class FakeVictoriaMetricsHandler(BaseHTTPRequestHandler):
@@ -845,10 +871,26 @@ class FullStackContractTests(unittest.TestCase):
         # The worker units log plain text, so the failures are told apart by the messages files/tasks.py writes.
         message_pattern = re.search(r'_msg:~"(.*)"$', expression).group(1)
         tasks_source = (ROOT / "files/tasks.py").read_text()
-        for emitted in ("mp4hls failed", "ffmpeg error", "Whisper command failed", "No progress for"):
-            self.assertIn(emitted, tasks_source)
-            self.assertRegex(emitted, message_pattern)
-        self.assertRegex("Task create_hls[1f2e] raised unexpected: OSError()", message_pattern)
+        # whisper.cpp writes its progress to stderr on every run, and the subtitle cleanup error only
+        # follows "Exception saving subtitle", which already lists the run.
+        routine_error_prefixes = ("Whisper stderr:", "Error cleaning up subtitle")
+        error_messages = logged_error_messages(tasks_source, ("encode_media", "create_hls", "whisper_transcribe"))
+        for prefix in routine_error_prefixes:
+            self.assertTrue(any(message.startswith(prefix) for message in error_messages), prefix)
+        for message in error_messages:
+            if message.startswith(routine_error_prefixes):
+                self.assertNotRegex(message, message_pattern)
+            else:
+                self.assertRegex(message, message_pattern)
+        # create_hls logs a missing media at info level and counts it as a failed outcome.
+        self.assertIn('logger.info("failed to get media with friendly_token %s" % friendly_token)', tasks_source)
+        for celery_line in (
+            "Task create_hls[1f2e] raised unexpected: OSError()",
+            "Task handler raised error: WorkerLostError('Worker exited prematurely: signal 9 (SIGKILL) Job: 3.')",
+            "failed to get media with friendly_token abc123: Media matching query does not exist.",
+            "failed to get media with friendly_token abc123",
+        ):
+            self.assertRegex(celery_line, message_pattern)
         # Every Whisper run logs these, so matching them would list successful runs as failures.
         for routine in ("Whisper command path: /bin/whisper-cli", "Whisper stderr: whisper_init_from_file"):
             self.assertNotRegex(routine, message_pattern)
