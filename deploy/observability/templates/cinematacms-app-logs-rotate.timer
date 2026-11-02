@@ -1,0 +1,10 @@
+[Unit]
+Description=Check CinemataCMS application log sizes hourly
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

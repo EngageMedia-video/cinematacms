@@ -43,6 +43,29 @@ authorization data, secrets, passwords, filenames, or URLs. Restricted email
 spans may contain only the delivery UUID, the recipient reference, the email
 kind, and the attempt number.
 
+The Collector reads each rotated application log together with its `.1` copy.
+After a Collector outage that spans one rotation, it recovers the unread lines
+from the `.1` copy. After an outage that spans two or more rotations, the lines
+that moved into `.gz` backups are not backfilled; they stay in those backups for
+14 rotations. Ingesting the `.gz` backups was rejected because switching to them
+re-ingested every retained backup. Collector 0.159.0 was the version tested.
+
+Rotation renames each application log and creates a new one, owned by `www-data`
+with mode `0640`. It then writes a `log_rotated` line to the new log, because the
+Collector identifies a file by its first 1000 bytes and Celery lines carry no
+timestamp, so a quiet log could otherwise start exactly like its `.1` copy and
+never be read. Django and Celery reopen the log by name through
+`WatchedFileHandler`. uWSGI reopens `errorlog.txt` after logrotate touches
+`logs/.uwsgi-logreopen`. A line written before its process reopens the log lands
+in the `.1` copy, which the Collector still reads, so a rotation neither drops
+nor repeats lines. The `log_rotated` line can land after other lines, so a writer
+that emits more than 1000 bytes of the same text as the `.1` copy before that line
+arrives still leaves the new log unread. A process started before this change
+keeps writing to the renamed file, so restart the application and Celery services
+when you install this rotation. The script after each rotation runs as root, so it
+writes to the log directory through `runuser -u www-data`: `www-data` owns that
+directory and could replace any name in it with a link to a root file.
+
 ## Error tracking
 
 CinemataCMS uses the Sentry protocol for exception events. The application

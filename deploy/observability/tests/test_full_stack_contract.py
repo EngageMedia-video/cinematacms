@@ -1,8 +1,11 @@
 import json
+import os
 import re
+import shutil
 import subprocess
+import tempfile
 import unittest
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[3]
 OBSERVABILITY = ROOT / "deploy" / "observability"
@@ -55,17 +58,388 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("Reloaded A high performance", installer)
         self.assertIn("trap on_error ERR", installer)
         self.assertIn("prepare_application_log", installer)
-        self.assertIn('chown www-data:cinematacms-observability "$APP_LOG_PATH"', installer)
+        self.assertIn('own_app_log "$APP_LOG_PATH"', installer)
+        self.assertIn('chown -h www-data:cinematacms-observability "$path"', installer)
+        self.assertNotRegex(installer, r'(?m)^\s+(touch|chmod \d+) "\$path"$', "root would follow a swapped link")
         self.assertIn("usermod -a -G adm otelcol-contrib", installer)
         self.assertIn("printf 'APP_SERVICE_LOG_DIR=%q\\n'", installer)
         self.assertIn("prepare_service_logs", installer)
         self.assertIn("errorlog.txt celery_long.log celery_short.log", installer)
-        self.assertIn('install -d -m 0750 -o www-data -g cinematacms-observability "$APP_SERVICE_LOG_DIR"', installer)
+        self.assertIn('install -d -m 2750 -o www-data -g cinematacms-observability "$APP_SERVICE_LOG_DIR"', installer)
         self.assertIn("--connect-timeout 5 --max-time 15", installer)
         self.assertIn("GRAFANA_URL must use loopback HTTP or HTTPS", installer)
         self.assertIn("postgres-exporter.env", installer)
         self.assertIn("redis-exporter.env", installer)
         self.assertIn("celery-exporter.env", installer)
+
+    def test_collector_group_is_inherited_by_new_and_rotated_log_files(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
+        setgid_directory = "install -d -m 2750 -o www-data -g cinematacms-observability"
+
+        self.assertIn(f'{setgid_directory} "$log_directory"', installer)
+        self.assertIn(f'{setgid_directory} "$APP_SERVICE_LOG_DIR"', installer)
+        self.assertRegex(rotation, r"(?m)^\s+su www-data cinematacms-observability$")
+        self.assertRegex(rotation, r"(?m)^\s+create 0640 www-data cinematacms-observability$")
+
+    def render_unprivileged_app_log_rotation(self, app_log_path, service_log_dir):
+        rendered = self.render_app_log_rotation(app_log_path, service_log_dir)
+        rendered = rendered.replace("  su www-data cinematacms-observability\n", "")
+        rendered = rendered.replace("runuser -u www-data -- ", "")
+        return rendered.replace("create 0640 www-data cinematacms-observability", "create 0640")
+
+    def render_app_log_rotation(self, app_log_path, service_log_dir):
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                'source "$1"; load_config; render_app_log_rotation',
+                "bash",
+                str(OBSERVABILITY / "install.sh"),
+            ],
+            env={
+                **os.environ,
+                "APP_LOG_PATH": app_log_path,
+                "APP_SERVICE_LOG_DIR": service_log_dir,
+                "INCIDENT_REFERENCE_LOOKUP_TOKEN": "token",
+                "GRAFANA_API_TOKEN": "token",
+            },
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout
+
+    def test_rotation_lists_the_collector_log_once_and_only_when_the_patterns_miss_it(self):
+        service_patterns = ["/srv/logs/*.log", "/srv/logs/errorlog.txt"]
+        for app_log_path, service_log_dir, extra_patterns in (
+            ("/srv/logs/app.json.log", "/srv/logs", []),
+            ("/srv/logs/app.json.log", "/srv/logs/", []),
+            ("/srv/logs/errorlog.txt", "/srv/logs", []),
+            ("/var/app/app.json.log", "/srv/logs", ["/var/app/app.json.log"]),
+            ("/srv/logs/app.json", "/srv/logs", ["/srv/logs/app.json"]),
+            ("/srv/logs/sub/app.json.log", "/srv/logs", ["/srv/logs/sub/app.json.log"]),
+            ("/srv/logs/.app.log", "/srv/logs", ["/srv/logs/.app.log"]),
+        ):
+            with self.subTest(app_log_path=app_log_path, service_log_dir=service_log_dir):
+                rendered = self.render_app_log_rotation(app_log_path, service_log_dir)
+
+                self.assertEqual(rendered.split("{")[0].split(), service_patterns + extra_patterns)
+
+    @unittest.skipUnless(shutil.which("logrotate"), "logrotate is not installed")
+    def test_rotation_accepts_a_collector_log_outside_the_service_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            service_logs = Path(directory) / "logs"
+            collector_logs = Path(directory) / "collector"
+            for logs in (service_logs, collector_logs):
+                logs.mkdir()
+            live = collector_logs / "app.json.log"
+            live.write_text("x" * 200)
+            config = Path(directory) / "rotate.conf"
+            config.write_text(self.render_unprivileged_app_log_rotation(str(live), str(service_logs)))
+            config.chmod(0o644)
+
+            subprocess.run(
+                ["logrotate", "--force", "--state", str(Path(directory) / "state"), str(config)],
+                check=True,
+            )
+
+            self.assertEqual((collector_logs / "app.json.log.1").read_text(), "x" * 200)
+
+    def test_installer_installs_logrotate_before_validating_its_config(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        packages = re.search(r"apt-get install -y (ca-certificates [^\n]+)\n", installer).group(1).split()
+
+        self.assertIn("logrotate --debug", installer)
+        self.assertIn("logrotate", packages)
+
+    def test_only_the_hourly_unit_rotates_the_app_logs_with_a_state_file_of_its_own(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        service = (OBSERVABILITY / "templates/cinematacms-app-logs-rotate.service").read_text()
+        policy = installer[installer.index("install_disk_policy() {") :]
+        policy = policy[: policy.index("\n}\n")]
+        legacy_config = "/etc/logrotate.d/cinematacms-app-logs"
+
+        # The system logrotate.service reads /etc/logrotate.d with the default state file. Sharing that
+        # file with the hourly unit makes the loser of a simultaneous start exit 3 and rotate nothing.
+        self.assertNotIn(f"> {legacy_config}", installer)
+        self.assertIn(f'rm -f "{legacy_config}"', policy)
+        self.assertNotIn("/etc/logrotate.d", service)
+        state_file = re.search(r"(?m)^ExecStart=/usr/sbin/logrotate -s (\S+) ", service).group(1)
+        self.assertNotEqual(state_file, "/var/lib/logrotate/status")
+
+    def test_disk_usage_is_capped_by_journald_logrotate_and_storage_flags(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        environment = (OBSERVABILITY / "observability.env.example").read_text()
+        templates = OBSERVABILITY / "templates"
+        journald = (templates / "journald-cinematacms.conf").read_text()
+        app_logs = (templates / "app-logs.logrotate").read_text()
+
+        self.assertFalse((ROOT / "deploy/mediacms_logrorate").exists())
+        for setting in (
+            "SystemMaxUse=${JOURNAL_MAX_USE}",
+            "SystemMaxFileSize=${JOURNAL_MAX_FILE}",
+            "MaxRetentionSec=${JOURNAL_MAX_RETENTION}",
+        ):
+            self.assertIn(setting, journald)
+        for persistent_cap, volatile_cap in (
+            ("SystemMaxUse", "RuntimeMaxUse"),
+            ("SystemMaxFileSize", "RuntimeMaxFileSize"),
+        ):
+            cap_value = re.search(rf"^{persistent_cap}=(.+)$", journald, re.MULTILINE).group(1)
+            self.assertRegex(
+                journald,
+                rf"(?m)^{volatile_cap}={re.escape(cap_value)}$",
+                f"{volatile_cap} must mirror {persistent_cap} so the cap holds when journald runs volatile",
+            )
+        self.assertNotIn("Storage=", journald)
+        for variable in ("JOURNAL_MAX_USE", "JOURNAL_MAX_FILE", "JOURNAL_MAX_RETENTION"):
+            self.assertIn(f"{variable}=", environment)
+            self.assertIn(f'"${{{variable}:-', installer)
+        self.assertIn("journalctl --disk-usage", installer)
+        for directive in ("maxsize 100M", "errorlog.txt"):
+            self.assertIn(directive, app_logs)
+        for target in ("journald.conf.d/cinematacms.conf", "${ETC_DIR}/app-logs.logrotate"):
+            self.assertIn(target, installer)
+
+        policy = installer[installer.index("install_disk_policy() {") :]
+        policy = policy[: policy.index("\n}\n")]
+        self.assertIn('logrotate --debug "${ETC_DIR}/app-logs.logrotate"', policy)
+        self.assertLess(policy.index("logrotate --debug"), policy.index("systemctl restart systemd-journald"))
+
+        for unit, flags in {
+            "victoriametrics.service": ("-storage.minFreeDiskSpaceBytes=${STORAGE_MIN_FREE_DISK}",),
+            "victorialogs.service": (
+                "-retention.maxDiskSpaceUsageBytes=${LOGS_MAX_DISK}",
+                "-storage.minFreeDiskSpaceBytes=${STORAGE_MIN_FREE_DISK}",
+            ),
+            "victoriatraces.service": (
+                "-retention.maxDiskSpaceUsageBytes=${TRACES_MAX_DISK}",
+                "-storage.minFreeDiskSpaceBytes=${STORAGE_MIN_FREE_DISK}",
+            ),
+        }.items():
+            text = (templates / unit).read_text()
+            for flag in flags:
+                self.assertIn(flag, text, unit)
+
+        rules = (templates / "alerts.yml").read_text()
+        for alert in (
+            "CinemataHostFilesystemWarning",
+            "CinemataHostFilesystemFreeLow",
+            "CinemataMetricsIngestionStalled",
+        ):
+            self.assertIn(f"alert: {alert}", rules)
+
+    def test_storage_floor_alerts_do_not_depend_on_samples_the_floor_stops(self):
+        rules = (OBSERVABILITY / "templates/alerts.yml").read_text()
+        environment = (OBSERVABILITY / "observability.env.example").read_text()
+
+        # Below the floor VictoriaMetrics rejects the Collector's writes, so vm_storage_is_read_only never arrives.
+        expressions = re.findall(r"(?m)^\s+expr: (.*)$", rules)
+        self.assertFalse([expr for expr in expressions if "vm_storage_is_read_only" in expr])
+        stalled = re.search(r"alert: CinemataMetricsIngestionStalled\n\s+expr: (.*)\n", rules).group(1)
+        self.assertRegex(stalled, r'^absent_over_time\(up\{service\.name="victoriametrics"\}\[\d+m\]\)$')
+
+        floor_gib = int(re.search(r'(?m)^STORAGE_MIN_FREE_DISK="(\d+)GiB"$', environment).group(1))
+        free_low = re.search(r"alert: CinemataHostFilesystemFreeLow\n\s+expr: '(.*)'\n", rules).group(1)
+        # The threshold follows the floor VictoriaMetrics enforces, so a raised STORAGE_MIN_FREE_DISK moves it.
+        threshold = re.search(
+            r"< on\(\) group_left\(\) \(max\(vm_free_disk_space_limit_bytes\) \+ (\d+) or on\(\) vector\((\d+)\)\)$",
+            free_low,
+        )
+        self.assertIsNotNone(threshold, free_low)
+        margin, fallback = (int(value) for value in threshold.groups())
+        self.assertEqual(margin, 4 * 2**30)
+        self.assertGreater(fallback, floor_gib * 2**30, "without the series the alert must fire before writes stop")
+
+        # A store reaches its write floor on the mount that holds it, and that mount can be the data path or any
+        # ancestor of it, so the alert has to watch the path and every ancestor.
+        selector = re.search(r'mountpoint=~"([^"]*)"', free_low).group(1)
+        units = sorted((OBSERVABILITY / "templates").glob("victoria*.service"))
+        self.assertEqual(len(units), 3, units)
+        for unit in units:
+            data_path = re.search(r"-storageDataPath=(\S+)", unit.read_text()).group(1)
+            candidate_mounts = [data_path, *(str(parent) for parent in PurePosixPath(data_path).parents)]
+            for mount in candidate_mounts:
+                self.assertIsNotNone(re.fullmatch(selector, mount), f"{unit.name}: {mount} is not in {selector}")
+
+    def test_collector_reads_the_rotated_copy_so_a_restart_across_rotation_loses_no_lines(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
+
+        # delaycompress keeps the .1 copy uncompressed, which the collector can only read as plain text.
+        # nodateext keeps its .1 name when a host enables dateext globally.
+        for directive in ("compress", "delaycompress", "nodateext"):
+            self.assertRegex(rotation, rf"(?m)^\s+{directive}$")
+
+        def includes(receiver):
+            declaration = re.search(rf'(?m)^  {re.escape(receiver)}:\n    include: (\[".*"\])$', collector)
+            return json.loads(declaration.group(1))
+
+        service_logs = {
+            "file_log/mediacms": "errorlog.txt",
+            "file_log/celery_long": "celery_long.log",
+            "file_log/celery_short": "celery_short.log",
+            "file_log/celery_whisper": "celery_whisper.log",
+            "file_log/celery_email": "celery_email.log",
+            "file_log/celery_beat": "beatcelery_beat.log",
+        }
+        for receiver, filename in service_logs.items():
+            live = "${env:APP_SERVICE_LOG_DIR}/" + filename
+            self.assertEqual(includes(receiver), [live, live + ".1"], receiver)
+        self.assertEqual(
+            includes("file_log/cinematacms"), ["${env:APP_LOG_PATH}", "${env:APP_LOG_PATH}.1"], "file_log/cinematacms"
+        )
+        self.assertEqual(includes("file_log/nginx"), ["/var/log/nginx/*.log"])
+
+    def test_every_app_log_writer_follows_the_rename_of_a_rotation(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
+        uwsgi = (ROOT / "uwsgi.ini").read_text()
+        settings = (ROOT / "cms/settings.py").read_text()
+
+        # A log truncated in place drops the lines written after the last read, and a Collector that
+        # reads past the size of the finished .1 copy ingests the whole copy again.
+        self.assertNotIn("copytruncate", rotation)
+        self.assertNotIn("on_truncate", collector)
+
+        self.assertEqual(settings.count('"class": "logging.handlers.WatchedFileHandler"'), 2)
+        self.assertNotIn('"class": "logging.FileHandler"', settings)
+
+        reopen_marker = re.search(
+            r'(?m)^\s+runuser -u www-data -- touch "\$\{APP_SERVICE_LOG_DIR\}/(\.\S+)"$', rotation
+        ).group(1)
+        uwsgi_log_directory = re.search(r"(?m)^logto = (\S+)/errorlog\.txt$", uwsgi).group(1)
+        self.assertIn(f"touch-logreopen = {uwsgi_log_directory}/{reopen_marker}\n", uwsgi)
+
+    @unittest.skipUnless(shutil.which("logrotate"), "logrotate is not installed")
+    def test_rotation_keeps_the_open_file_as_the_rotated_copy_and_signals_uwsgi(self):
+        with tempfile.TemporaryDirectory() as directory:
+            logs = Path(directory) / "logs"
+            logs.mkdir()
+            live = logs / "app.json.log"
+            live.write_text("x" * 2000)
+            open_inode = live.stat().st_ino
+            config = Path(directory) / "rotate.conf"
+            config.write_text(self.render_unprivileged_app_log_rotation(str(live), str(logs)))
+            config.chmod(0o644)
+
+            def rotate():
+                subprocess.run(
+                    ["logrotate", "--force", "--state", str(Path(directory) / "state"), str(config)],
+                    check=True,
+                    capture_output=True,
+                )
+
+            rotate()
+
+            rotated = logs / "app.json.log.1"
+            self.assertEqual(rotated.stat().st_ino, open_inode)
+            self.assertEqual(rotated.stat().st_size, 2000)
+            self.assertEqual(live.stat().st_mode & 0o777, 0o640)
+            self.assertTrue((logs / ".uwsgi-logreopen").exists())
+
+            # Two logs that start alike would share a Collector fingerprint.
+            first_marker = live.read_text()
+            self.assertEqual(json.loads(first_marker)["event"], "log_rotated")
+            rotate()
+            self.assertNotEqual(live.read_text(), first_marker)
+
+    def test_rotation_scripts_touch_the_www_data_directory_only_as_www_data(self):
+        rotation = (OBSERVABILITY / "templates" / "app-logs.logrotate").read_text()
+        script = rotation[rotation.index("postrotate\n") : rotation.index("endscript")]
+        commands = [line for line in map(str.strip, script.splitlines()[1:]) if line and not line.startswith("#")]
+
+        self.assertTrue(commands)
+        for command in commands:
+            self.assertIn("runuser -u www-data -- ", command)
+            self.assertNotIn(">>", command, "a root shell opens the target of a redirect")
+
+    def test_installer_refuses_a_linked_app_log_instead_of_taking_ownership_of_its_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "root-owned.conf"
+            target.write_text("untouched")
+            target.chmod(0o600)
+            link = Path(directory) / "app.json.log"
+            link.symlink_to(target)
+
+            result = subprocess.run(
+                ["bash", "-c", 'source "$1"; own_app_log "$2"', "bash", str(OBSERVABILITY / "install.sh"), str(link)],
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("symlink", result.stderr)
+            self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+
+    def test_maxsize_is_checked_hourly_by_a_timer_the_installer_runs_and_verifies(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        templates = OBSERVABILITY / "templates"
+        unit = "cinematacms-app-logs-rotate"
+        service = (templates / f"{unit}.service").read_text()
+        timer = (templates / f"{unit}.timer").read_text()
+
+        self.assertIn("Type=oneshot", service)
+        self.assertIn(
+            "ExecStart=/usr/sbin/logrotate -s /var/lib/logrotate/cinematacms-app-logs.status"
+            " /etc/cinematacms-observability/app-logs.logrotate\n",
+            service,
+        )
+        self.assertNotIn("ProtectHome", service, "the application logs live under /home")
+        self.assertIn("OnCalendar=hourly", timer)
+        self.assertRegex(timer, r"(?m)^RandomizedDelaySec=\d+(min|s)$")
+        self.assertIn("WantedBy=timers.target", timer)
+
+        for step, expected in {
+            "install_configuration() {": (f"{unit}; do", f"{unit}.timer"),
+            "validate_configuration() {": (f"{unit}.service", f"{unit}.timer"),
+            "start_services() {": (f"enable --now {unit}.timer",),
+            "verify_installation() {": (f"{unit}.timer",),
+        }.items():
+            body = installer[installer.index(step) :]
+            body = body[: body.index("\n}\n")]
+            for fragment in expected:
+                self.assertIn(fragment, body, step)
+
+    def test_overview_shows_in_flight_work_and_unconsumed_queues(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in dashboard["panels"]}
+
+        active_work = " ".join(target["expr"] for target in panels["Celery active work and latency"]["targets"])
+        self.assertIn("sum by (hostname) (celery_worker_tasks_active)", active_work)
+        self.assertNotIn("by (worker)", active_work)
+        exporter_queues = " ".join(target["expr"] for target in panels["Celery exporter queues"]["targets"])
+        self.assertIn("celery_active_worker_count", exporter_queues)
+        self.assertIn('redis_key_size{key="celery"}', exporter_queues)
+        self.assertIn('redis_key_size{key="unacked"}', exporter_queues)
+
+    def test_redis_exporter_checks_queue_keys_in_the_broker_database(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        start = installer.index("redis_database_number() {")
+        functions = installer[start : installer.index("prepare_application_log() {")]
+        coverage = json.loads((ROOT / "config/observability/coverage.json").read_text())
+        contract_queues = coverage["registries"]["celery_queues"]["values"]
+        # "default" is the metric label for unrecognised routing keys, not a broker queue.
+        expected_keys = ["celery", *(queue for queue in contract_queues if queue != "default"), "unacked"]
+
+        self.assertIn("printf 'REDIS_EXPORTER_CHECK_SINGLE_KEYS=%q\\n' \"$(celery_queue_keys)\"", installer)
+        for url, database in {
+            "redis://127.0.0.1:6379/1": "db1",
+            "redis://127.0.0.1:6379": "db0",
+            "redis://127.0.0.1:6379/": "db0",
+            "redis://127.0.0.1:6379/3/": "db3",
+            "redis://:secret@127.0.0.1:6379/2?timeout=5": "db2",
+            "redis://127.0.0.1:6379?timeout=5": "db0",
+            "redis://127.0.0.1:6379/notanumber": "db0",
+        }.items():
+            result = subprocess.run(
+                ["bash", "-c", f'{functions}\nREDIS_URL="$1"; celery_queue_keys', "bash", url],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.stdout, ",".join(f"{database}={key}" for key in expected_keys), url)
 
     def test_application_metrics_listener_is_loopback_only(self):
         nginx = (OBSERVABILITY / "templates/nginx-app-metrics.conf").read_text()
@@ -96,7 +470,24 @@ class FullStackContractTests(unittest.TestCase):
             'POSTGRES_EXPORTER_ARM64_SHA256="d5d86fb98bb1f26b088d1a6fda07fd6b6f035cb5d40492f75ec3bfebb5ddfe9d"',
             manifest,
         )
-        self.assertIn('--config.file=""', unit)
+        self.assertIn("--config.file=/etc/cinematacms-observability/postgres-exporter.yml", unit)
+
+    def test_log_redaction_covers_numeric_path_segments_and_keeps_dates(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        pattern = re.search(r'replace_pattern\(log\.body, "(.*)", "<redacted-path>"\)', collector).group(1)
+
+        for body, redacted in (
+            ("GET /media/123/original.mp4", "GET <redacted-path>"),
+            ("open /home/cinemata/app/settings.py", "open <redacted-path>"),
+            ("saved media_files/2026/11/01/clip.mp4", "saved media_files<redacted-path>"),
+            ("2026/11/01 12:00:00 [error] 7#7", "2026/11/01 12:00:00 [error] 7#7"),
+            ("[01/Nov/2026:12:00:00 +0000]", "[01/Nov/2026:12:00:00 +0000]"),
+            ("HTTP/1.1 200", "HTTP/1.1 200"),
+        ):
+            with self.subTest(body=body):
+                self.assertEqual(re.sub(pattern, "<redacted-path>", body), redacted)
+
+        self.assertLess(collector.index("<redacted-path>"), collector.index("<redacted-id>"))
 
     def test_trace_pipeline_keeps_public_incident_context(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
@@ -132,6 +523,8 @@ class FullStackContractTests(unittest.TestCase):
             "celery-exporter.service",
             "alertmanager.service",
             "vmalert.service",
+            "cinematacms-app-logs-rotate.service",
+            "cinematacms-app-logs-rotate.timer",
             "grafana-datasources.yml",
             "grafana-logs.json",
             "grafana-overview.json",
