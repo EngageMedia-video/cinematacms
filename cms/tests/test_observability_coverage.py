@@ -185,6 +185,63 @@ class ObservabilityCoverageContractTests(SimpleTestCase):
         self.assertTrue(any("files.metrics.DOMAIN_OPERATIONS" in error for error in errors), errors)
 
 
+class SignalPanelCoverageTests(SimpleTestCase):
+    def test_validator_rejects_a_metric_and_an_event_that_no_template_shows(self):
+        candidate = matrix()
+        candidate["metric_schemas"]["cinematacms_unwatched_total"] = copy.deepcopy(
+            candidate["metric_schemas"]["cinematacms_telemetry_emission_failures_total"]
+        )
+        candidate["events"].append("cinematacms.unwatched.event")
+
+        errors = validate_matrix(candidate)
+
+        self.assertTrue(
+            any("cinematacms_unwatched_total" in error and "no dashboard or alert" in error for error in errors),
+            errors,
+        )
+        self.assertTrue(
+            any("cinematacms.unwatched.event" in error and "no dashboard log query" in error for error in errors),
+            errors,
+        )
+
+    def test_validator_rejects_an_event_whose_log_query_was_removed(self):
+        candidate = matrix()
+        candidate["panel_exceptions"].pop("cinematacms.http.request.trace")
+
+        errors = validate_matrix(candidate)
+
+        self.assertTrue(any("cinematacms.http.request.trace" in error for error in errors), errors)
+
+    def test_declared_exception_accepts_a_signal_without_a_panel(self):
+        candidate = matrix()
+        candidate["events"].append("cinematacms.unwatched.event")
+        candidate["panel_exceptions"]["cinematacms.unwatched.event"] = "Written to a file that no dashboard reads."
+
+        self.assertEqual(validate_matrix(candidate), [])
+
+    def test_declared_exception_needs_a_reason_and_a_signal_without_a_panel(self):
+        cases = {
+            "a blank reason": (
+                lambda m: m["panel_exceptions"].update({"cinematacms.http.request.trace": "  "}),
+                "panel_exceptions.cinematacms.http.request.trace: blank reason",
+            ),
+            "a signal that has a panel": (
+                lambda m: m["panel_exceptions"].update({"cinematacms.media.pipeline": "Not needed."}),
+                "panel_exceptions.cinematacms.media.pipeline: signal has a panel",
+            ),
+            "an undeclared signal": (
+                lambda m: m["panel_exceptions"].update({"cinematacms.nope": "Not needed."}),
+                "panel_exceptions.cinematacms.nope: not a declared metric or event",
+            ),
+        }
+        for name, (mutate, expected) in cases.items():
+            with self.subTest(exception=name):
+                candidate = matrix()
+                mutate(candidate)
+                errors = validate_matrix(candidate)
+                self.assertTrue(any(expected in error for error in errors), errors)
+
+
 class UploadCorrelationContractTests(SimpleTestCase):
     def test_upload_ref_contract_is_declared_and_valid(self):
         upload_ref = matrix()["log_correlation"]["upload_ref"]
@@ -237,6 +294,7 @@ class UploadCorrelationContractTests(SimpleTestCase):
 
         def extra_schema_labels_not_a_list(candidate):
             candidate["metric_schemas"]["cinematacms_extra_total"] = {"labels": None}
+            candidate["panel_exceptions"]["cinematacms_extra_total"] = "No template shows the extra metric."
 
         def extra_schema_not_an_object(candidate):
             candidate["metric_schemas"]["cinematacms_extra_total"] = "oops"

@@ -11,6 +11,9 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 NAMESPACE = "cinematacms_"
+TEMPLATES_DIR = Path(__file__).resolve().parents[1] / "deploy" / "observability" / "templates"
+LOGS_DATASOURCE_UID = "victorialogs"
+HISTOGRAM_SERIES_SUFFIXES = ("_bucket", "_count", "_sum")
 GENERIC_UNKNOWN_VALUES = {"generic", "tbd", "todo", "unclassified", "unknown", "unspecified"}
 REGISTRY_COVERAGE_ALL = "all"
 MAX_CORRELATION_ID_LENGTH = 64
@@ -582,6 +585,58 @@ def _reference_module_exists(reference):
     return False
 
 
+def _dashboard_panels(panels):
+    for panel in panels:
+        yield panel
+        yield from _dashboard_panels(panel.get("panels", []))
+
+
+def _template_queries():
+    """Return the alert rule and dashboard query texts, and the dashboard log query texts."""
+
+    alert_rules = (TEMPLATES_DIR / "alerts.yml").read_text()
+    queries = re.findall(r"(?m)^\s*expr:\s*(.*)$", alert_rules)
+    log_queries = []
+    for path in sorted(TEMPLATES_DIR.glob("grafana-*.json")):
+        for panel in _dashboard_panels(json.loads(path.read_text()).get("panels", [])):
+            expressions = [target["expr"] for target in panel.get("targets", []) if "expr" in target]
+            queries.extend(expressions)
+            if panel.get("datasource", {}).get("uid") == LOGS_DATASOURCE_UID:
+                log_queries.extend(expressions)
+    return queries, log_queries
+
+
+def _validate_signal_panels(matrix, schemas, event_names, errors):
+    """Every metric needs a dashboard or alert query and every event a dashboard log query, or a declared exception."""
+
+    exceptions = matrix.get("panel_exceptions", {})
+    if not isinstance(exceptions, Mapping):
+        errors.append("panel_exceptions: must be an object")
+        exceptions = {}
+    queries, log_queries = _template_queries()
+    query_text = "\n".join(queries)
+    log_query_text = "\n".join(log_queries)
+    referenced_metrics = set(re.findall(r"cinematacms_[a-z0-9_]+", query_text))
+    referenced_metrics |= {
+        name.removesuffix(suffix) for name in referenced_metrics for suffix in HISTOGRAM_SERIES_SUFFIXES
+    }
+
+    declared = set(schemas) | event_names
+    for name, reason in exceptions.items():
+        if name not in declared:
+            errors.append(f"panel_exceptions.{name}: not a declared metric or event")
+        elif _is_blank(reason):
+            errors.append(f"panel_exceptions.{name}: blank reason")
+
+    signals = [(name, name in referenced_metrics, "dashboard or alert query") for name in schemas]
+    signals += [(name, f'"{name}"' in log_query_text, "dashboard log query") for name in sorted(event_names)]
+    for name, has_panel, kind in signals:
+        if has_panel and name in exceptions:
+            errors.append(f"panel_exceptions.{name}: signal has a panel, remove the exception")
+        elif not has_panel and name not in exceptions:
+            errors.append(f"{name}: no {kind} shows it; add one or declare a panel_exceptions entry with a reason")
+
+
 def _python_allowlists():
     source = Path(__file__).resolve().parents[1] / "files" / "metrics.py"
     tree = ast.parse(source.read_text(), filename=str(source))
@@ -627,6 +682,7 @@ def validate_matrix(matrix):
     inventory = _validate_inventory(matrix, registries, errors)
     _validate_rows(matrix, registries, schemas, event_names, inventory, errors)
     _validate_thresholds(matrix, schemas, errors)
+    _validate_signal_panels(matrix, schemas, event_names, errors)
     return errors
 
 

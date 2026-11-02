@@ -212,6 +212,8 @@ defines its cleanup checks and absence handling.
 
 `config/observability/alertability.json` maps each portable condition to its signal, semantic owner, bounded dimensions, data states, recovery condition, and initial guidance. `config/observability/fixtures.json` records healthy, degraded, unknown, and recovered inputs for representative condition families.
 
+The coverage validator also requires every declared metric to appear in a dashboard or alert query, and every declared event to appear by name in a dashboard log query. A signal that has no panel on purpose is listed in `panel_exceptions` in `config/observability/coverage.json` with its reason.
+
 Validate the contract with:
 
 ```bash
