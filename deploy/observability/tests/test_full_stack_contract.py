@@ -129,6 +129,31 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("redis-exporter.env", installer)
         self.assertIn("celery-exporter.env", installer)
 
+    def test_collector_keeps_running_and_buffering_while_storage_is_down(self):
+        unit = (OBSERVABILITY / "templates/cinematacms-otelcol.service").read_text()
+        directives = {}
+        for line in unit.splitlines():
+            key, separator, value = line.partition("=")
+            if separator:
+                directives.setdefault(key, []).extend(value.split())
+        storage_units = {"victoriametrics.service", "victorialogs.service", "victoriatraces.service"}
+
+        # Requires, BindsTo and PartOf stop the collector with a storage unit, and Restart=on-failure does not
+        # start it again because a dependency stop is not a failure.
+        for stopping_dependency in ("Requires", "BindsTo", "PartOf"):
+            self.assertFalse(storage_units & set(directives.get(stopping_dependency, [])), stopping_dependency)
+        self.assertLessEqual(storage_units, set(directives["Wants"]))
+        self.assertLessEqual(storage_units, set(directives["After"]))
+
+        # While storage is down the collector holds every signal in its disk queue and retries without a deadline.
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        self.assertIn("storage: file_storage", collector)
+        self.assertIn("max_elapsed_time: 0s", collector)
+        for exporter in ("otlp_http/victorialogs", "otlp_http/victoriatraces"):
+            exporter_config = collector.split(f"  {exporter}:\n", 1)[1].split("\n  otlp_http/", 1)[0]
+            self.assertIn("sending_queue: *persistent_queue", exporter_config)
+            self.assertIn("retry_on_failure: *retry_forever", exporter_config)
+
     def test_collector_group_is_inherited_by_new_and_rotated_log_files(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
         rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
