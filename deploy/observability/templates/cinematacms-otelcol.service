@@ -2,7 +2,7 @@
 Description=CinemataCMS OpenTelemetry Collector
 After=network-online.target victoriametrics.service victorialogs.service victoriatraces.service
 Wants=network-online.target
-Requires=victoriametrics.service victorialogs.service victoriatraces.service
+Wants=victoriametrics.service victorialogs.service victoriatraces.service
 
 [Service]
 Type=simple

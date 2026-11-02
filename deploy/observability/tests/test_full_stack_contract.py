@@ -5,11 +5,14 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import textwrap
 import threading
 import unittest
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path, PurePosixPath
+
+import yaml
 
 ROOT = Path(__file__).resolve().parents[3]
 OBSERVABILITY = ROOT / "deploy" / "observability"
@@ -127,6 +130,31 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("postgres-exporter.env", installer)
         self.assertIn("redis-exporter.env", installer)
         self.assertIn("celery-exporter.env", installer)
+
+    def test_collector_keeps_running_and_buffering_while_storage_is_down(self):
+        unit = (OBSERVABILITY / "templates/cinematacms-otelcol.service").read_text()
+        directives = {}
+        for line in unit.splitlines():
+            key, separator, value = line.partition("=")
+            if separator:
+                directives.setdefault(key, []).extend(value.split())
+        storage_units = {"victoriametrics.service", "victorialogs.service", "victoriatraces.service"}
+
+        # Requires, BindsTo and PartOf stop the collector with a storage unit, and Restart=on-failure does not
+        # start it again because a dependency stop is not a failure.
+        for stopping_dependency in ("Requires", "BindsTo", "PartOf"):
+            self.assertFalse(storage_units & set(directives.get(stopping_dependency, [])), stopping_dependency)
+        self.assertLessEqual(storage_units, set(directives["Wants"]))
+        self.assertLessEqual(storage_units, set(directives["After"]))
+
+        # While storage is down the collector holds every signal in its disk queue and retries without a deadline.
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        self.assertIn("storage: file_storage", collector)
+        self.assertIn("max_elapsed_time: 0s", collector)
+        for exporter in ("otlp_http/victorialogs", "otlp_http/victoriatraces"):
+            exporter_config = collector.split(f"  {exporter}:\n", 1)[1].split("\n  otlp_http/", 1)[0]
+            self.assertIn("sending_queue: *persistent_queue", exporter_config)
+            self.assertIn("retry_on_failure: *retry_forever", exporter_config)
 
     def test_collector_group_is_inherited_by_new_and_rotated_log_files(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
@@ -1401,6 +1429,38 @@ class FullStackContractTests(unittest.TestCase):
 
         self.assertIn("equal: [alertname, service_name]", alertmanager)
 
+    def test_alertmanager_verification_resolves_its_synthetic_alert(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        verify_alerting = re.search(r"^verify_alerting\(\) \{\n.*?^\}\n", installer, re.S | re.M).group(0)
+        with tempfile.TemporaryDirectory() as directory:
+            posted_alerts = Path(directory) / "posted"
+            # Each POST appends its payload. A GET returns every alert posted so far.
+            script = textwrap.dedent(
+                f"""
+                fail() {{ echo "$*" >&2; exit 1; }}
+                curl() {{
+                  local payload=""
+                  while [ "$#" -gt 0 ]; do
+                    [ "$1" = "--data-binary" ] && payload="$2"
+                    shift
+                  done
+                  if [ -n "$payload" ]; then printf '%s\\n' "$payload" >>'{posted_alerts}'; else cat '{posted_alerts}'; fi
+                }}
+                ALERTMANAGER_PORT=9093
+                {verify_alerting}
+                verify_alerting
+                """
+            )
+            result = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+            posts = [json.loads(line)[0] for line in posted_alerts.read_text().splitlines()]
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(posts), 2)
+        created, resolved = posts
+        self.assertNotIn("endsAt", created)
+        self.assertEqual(resolved["labels"], created["labels"])
+        self.assertRegex(resolved["endsAt"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
+
     def test_installer_sends_only_metric_panels_of_the_overview_to_victoriametrics(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
         verifier = re.search(r"verify_dashboard_queries\(\) \{.*?<<'PY'\n(.*?)\nPY\n", installer, re.S).group(1)
@@ -1556,6 +1616,33 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("__enter_value__", dashboard)
         self.assertNotIn("@", dashboard)
 
+    def test_every_trace_search_renders_as_a_table(self):
+        # A search returns a list of traces. The traces panel draws one trace and reports "No data found in response".
+        searches = [
+            (dashboard_path.name, panel["title"], panel["type"])
+            for dashboard_path in sorted((OBSERVABILITY / "templates").glob("grafana-*.json"))
+            for panel in json.loads(dashboard_path.read_text())["panels"]
+            if any(target.get("queryType") == "search" for target in panel.get("targets", []))
+        ]
+
+        self.assertTrue(searches)
+        for dashboard_name, title, panel_type in searches:
+            with self.subTest(dashboard=dashboard_name, panel=title):
+                self.assertEqual(panel_type, "table")
+
+    def test_incident_reference_trace_search_does_not_require_an_operation(self):
+        incidents = json.loads((OBSERVABILITY / "templates/grafana-incidents.json").read_text())
+        operation = next(variable for variable in incidents["templating"]["list"] if variable["name"] == "operation")
+        panel = next(panel for panel in incidents["panels"] if panel["title"] == "Media and operation traces")
+        reference_search, operation_search = panel["targets"]
+
+        # The operation box defaults to a placeholder no span carries, so filtering on it hides every trace.
+        self.assertEqual(operation["current"]["value"], "__none__")
+        self.assertEqual(reference_search["tags"], "${lookup_ref.span_field}=$lookup_ref")
+        self.assertEqual(reference_search["operation"], "")
+        self.assertEqual(operation_search["tags"], "$trace_tags")
+        self.assertEqual(operation_search["operation"], "$operation")
+
     def test_logs_dashboard_supports_filtering_and_safe_correlation(self):
         dashboard = (OBSERVABILITY / "templates/grafana-logs.json").read_text()
         parsed = json.loads(dashboard)
@@ -1689,6 +1776,19 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("secureJsonData:", datasource)
         self.assertIn("allowedHosts:", datasource)
         self.assertIn("chmod 0640 /etc/grafana/provisioning/datasources", installer)
+
+    def test_structured_logs_link_their_trace_id_field_to_the_trace(self):
+        datasources = yaml.safe_load((OBSERVABILITY / "templates/grafana-datasources.yml").read_text())["datasources"]
+        logs = next(source for source in datasources if source["uid"] == "victorialogs")
+        (trace_link,) = logs["jsonData"]["derivedFields"]
+
+        # The VictoriaLogs plugin applies a regex matcher to the log message only. Cinemata logs carry the trace ID
+        # in the trace_id field, so the link must read that field.
+        self.assertEqual(trace_link["matcherType"], "label")
+        self.assertEqual(trace_link["matcherRegex"], "trace_id")
+        self.assertEqual(trace_link["datasourceUid"], "victoriatraces")
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        self.assertRegex(collector, r'keep_keys\(log\.attributes, \[[^\]]*"trace_id"')
 
 
 if __name__ == "__main__":

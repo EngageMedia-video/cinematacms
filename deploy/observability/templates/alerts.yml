@@ -98,7 +98,7 @@ groups:
         labels: {severity: critical}
         annotations: {summary: "Host filesystem use is above 90 percent"}
       - alert: CinemataExternalEndpointDown
-        expr: '{__name__="httpcheck.status",http.status_class="2xx"} == 0'
+        expr: '(sum({__name__="httpcheck.status",http.status_class="2xx",http.status_code=~"2.."}) or vector(0)) == 0'
         for: 2m
         labels: {severity: critical}
         annotations: {summary: "Public Cinemata endpoint is unavailable"}

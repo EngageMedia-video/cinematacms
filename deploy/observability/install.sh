@@ -765,12 +765,16 @@ verify_journal_ingestion() {
 
 verify_alerting() {
   printf 'Verifying Alertmanager routing...\n'
-  local token="CinemataInstallerSynthetic$RANDOM" response
+  local token="CinemataInstallerSynthetic$RANDOM" response ends_at
   curl -fsS -X POST -H 'Content-Type: application/json' \
     --data-binary "[{\"labels\":{\"alertname\":\"${token}\",\"severity\":\"info\"},\"annotations\":{\"summary\":\"Installer routing verification\"}}]" \
     "http://127.0.0.1:${ALERTMANAGER_PORT}/api/v2/alerts" >/dev/null
   response="$(curl -fsS "http://127.0.0.1:${ALERTMANAGER_PORT}/api/v2/alerts")"
   grep -q "$token" <<<"$response" || fail "Alertmanager did not return the synthetic alert"
+  ends_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  curl -fsS -X POST -H 'Content-Type: application/json' \
+    --data-binary "[{\"labels\":{\"alertname\":\"${token}\",\"severity\":\"info\"},\"annotations\":{\"summary\":\"Installer routing verification\"},\"endsAt\":\"${ends_at}\"}]" \
+    "http://127.0.0.1:${ALERTMANAGER_PORT}/api/v2/alerts" >/dev/null
 }
 
 verify_loopback_listeners() {

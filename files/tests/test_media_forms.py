@@ -106,6 +106,12 @@ class MediaFormPasswordValidationTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("year_produced_custom", form.errors)
 
+    def test_summary_over_80_words_names_the_short_description(self):
+        data = self._get_form_data(summary=" ".join(["word"] * 81))
+        form = MediaForm(self.user, data=data, instance=self.media)
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors["summary"], ["Short description should have 80 words maximum"])
+
     @override_settings(MEDIA_PASSWORD_MIN_LENGTH=12)
     def test_respects_configurable_min_length(self):
         data = self._get_form_data(password="short1234")  # 9 chars, less than 12
