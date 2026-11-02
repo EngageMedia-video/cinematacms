@@ -173,11 +173,7 @@ echo -e "${YELLOW}Reloading systemd daemon...${NC}"
 systemctl daemon-reload
 
 echo -e "${YELLOW}Restarting services...${NC}"
-systemctl restart celery_long
-systemctl restart celery_short
-systemctl restart celery_beat
-systemctl restart mediacms.service
-systemctl restart celery_whisper.service
+systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
 systemctl restart nginx
 
 # Audit entry so a subsequent rollback (or the next forward deploy) can
