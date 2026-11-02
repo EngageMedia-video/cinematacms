@@ -513,17 +513,28 @@ class FullStackContractTests(unittest.TestCase):
 
     def test_overview_fallbacks_need_a_live_producer(self):
         dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
-        panels = {panel["title"]: panel for panel in dashboard["panels"]}
-        producer_by_target = {
-            ("Firing alerts by rule", "A"): "vmalert",
-            ("Queue in flight", "A"): "redis",
-            ("Queue in flight", "B"): "celery",
-        }
+        fallback_targets = [
+            (panel["title"], target)
+            for panel in dashboard["panels"]
+            for target in panel.get("targets", [])
+            if "vector(0)" in target.get("expr", "")
+        ]
 
-        for (title, ref_id), producer in producer_by_target.items():
-            with self.subTest(panel=title, target=ref_id):
-                (target,) = (target for target in panels[title]["targets"] if target["refId"] == ref_id)
-                self.assertTrue(target["expr"].endswith(f' and on() up{{service.name="{producer}"}} == 1)'))
+        self.assertGreater(len(fallback_targets), 20)
+        for title, target in fallback_targets:
+            with self.subTest(panel=title, expr=target["expr"]):
+                self.assertRegex(target["expr"], r'and on\(\) up\{service\.name="[a-z-]+"\} == 1\)?$')
+        producers_by_panel = {
+            "Firing alerts by rule": "vmalert",
+            "Queue in flight": "(redis|celery)",
+            "Collector queue and export failures": "otelcol-contrib",
+            "Cache health": "cinematacms",
+        }
+        for title, producer in producers_by_panel.items():
+            with self.subTest(panel=title):
+                for fallback_title, target in fallback_targets:
+                    if fallback_title == title:
+                        self.assertRegex(target["expr"], rf'up\{{service\.name="{producer}"\}}')
 
     def test_alert_and_queue_panels_fill_the_row_and_stay_readable_at_1366_pixels(self):
         dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
@@ -758,7 +769,7 @@ class FullStackContractTests(unittest.TestCase):
         lost_race_expr = panels["Chunk finalisation lost races"]["targets"][0]["expr"]
         for selector in ('operation="chunking"', 'outcome="skipped"', 'reason_code="lock_held"'):
             self.assertIn(selector, lost_race_expr)
-        self.assertIn("or vector(0)", lost_race_expr)
+        self.assertIn("vector(0)", lost_race_expr)
 
         outcomes = panels["Chunk finalisation outcomes"]
         events = panels["Chunk finalisation events"]
@@ -889,6 +900,7 @@ class FullStackContractTests(unittest.TestCase):
             "Task handler raised error: WorkerLostError('Worker exited prematurely: signal 9 (SIGKILL) Job: 3.')",
             "failed to get media with friendly_token abc123: Media matching query does not exist.",
             "failed to get media with friendly_token abc123",
+            "Encoding 42 failed: media has no duration",
         ):
             self.assertRegex(celery_line, message_pattern)
         # Every Whisper run logs these, so matching them would list successful runs as failures.

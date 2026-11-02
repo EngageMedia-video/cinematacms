@@ -340,6 +340,10 @@ def encode_media(
         outcome_recorded = True
         observe_media_pipeline(media, profile, "success" if success else "fail")
 
+    def record_encoding_failure(reason):
+        logger.error(f"Encoding {encoding_id} failed: {reason}")
+        record_encoding_outcome(False)
+
     # break logic with chunk True/False
     if chunk:
         # TODO: in case a video is chunkized and this enters here many times
@@ -350,7 +354,7 @@ def encode_media(
             and not force
         ):
             Encoding.objects.filter(id=encoding_id).delete()
-            record_encoding_outcome(False)
+            record_encoding_failure("duplicate chunk encoding")
             return False
         else:
             try:
@@ -368,7 +372,7 @@ def encode_media(
     else:
         if Encoding.objects.filter(media=media, profile=profile).count() > 1 and force is False:
             Encoding.objects.filter(id=encoding_id).delete()
-            record_encoding_outcome(False)
+            record_encoding_failure("duplicate encoding")
             return False
         else:
             try:
@@ -415,14 +419,14 @@ def encode_media(
                 record_encoding_outcome(True)
                 return True
         else:
-            record_encoding_outcome(False)
+            record_encoding_failure("preview did not produce an image")
             return False
     original_media_path = chunk_file_path if chunk else media.media_file.path
 
     if not media.duration:
         encoding.status = "fail"
         encoding.save(update_fields=["status"])
-        record_encoding_outcome(False)
+        record_encoding_failure("media has no duration")
         return False
 
     with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as temp_dir:
@@ -440,7 +444,7 @@ def encode_media(
         if not ffmpeg_commands:
             encoding.status = "fail"
             encoding.save(update_fields=["status"])
-            record_encoding_outcome(False)
+            record_encoding_failure("no FFmpeg commands for this profile")
             return False
 
         encoding.temp_file = tf
@@ -498,7 +502,7 @@ def encode_media(
                                     if n_times % 20 == 0:
                                         if not _check_media_exists_or_cleanup(media.pk, encoding.id, "progress_save"):
                                             encoding_backend.terminate_process()
-                                            record_encoding_outcome(False)
+                                            record_encoding_failure("media deleted during encoding")
                                             return False
                                         encoding.progress = percent
                                         try:
@@ -514,7 +518,7 @@ def encode_media(
                             if n_times % 100 == 0:
                                 if not _check_media_exists_or_cleanup(media.pk, encoding.id, "heartbeat_save"):
                                     encoding_backend.terminate_process()
-                                    record_encoding_outcome(False)
+                                    record_encoding_failure("media deleted during encoding")
                                     return False
                                 try:
                                     encoding.save(update_fields=["update_date"])
@@ -562,7 +566,7 @@ def encode_media(
                         raise self.retry(exc=e, countdown=5, max_retries=1)
                     encoding.status = "fail"
                     encoding.save(update_fields=["status", "logs"])
-                    record_encoding_outcome(False)
+                    record_encoding_failure("FFmpeg did not finish after its retry")
                     raise self.retry(exc=e, countdown=5, max_retries=1)
 
         encoding.logs = output
@@ -570,7 +574,7 @@ def encode_media(
 
         # Check media still exists before final save
         if not _check_media_exists_or_cleanup(media.pk, encoding.id, "final_save"):
-            record_encoding_outcome(False)
+            record_encoding_failure("media deleted during encoding")
             return False
 
         success = False
