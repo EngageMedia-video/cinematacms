@@ -1556,6 +1556,33 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("__enter_value__", dashboard)
         self.assertNotIn("@", dashboard)
 
+    def test_every_trace_search_renders_as_a_table(self):
+        # A search returns a list of traces. The traces panel draws one trace and reports "No data found in response".
+        searches = [
+            (dashboard_path.name, panel["title"], panel["type"])
+            for dashboard_path in sorted((OBSERVABILITY / "templates").glob("grafana-*.json"))
+            for panel in json.loads(dashboard_path.read_text())["panels"]
+            if any(target.get("queryType") == "search" for target in panel.get("targets", []))
+        ]
+
+        self.assertTrue(searches)
+        for dashboard_name, title, panel_type in searches:
+            with self.subTest(dashboard=dashboard_name, panel=title):
+                self.assertEqual(panel_type, "table")
+
+    def test_incident_reference_trace_search_does_not_require_an_operation(self):
+        incidents = json.loads((OBSERVABILITY / "templates/grafana-incidents.json").read_text())
+        operation = next(variable for variable in incidents["templating"]["list"] if variable["name"] == "operation")
+        panel = next(panel for panel in incidents["panels"] if panel["title"] == "Media and operation traces")
+        reference_search, operation_search = panel["targets"]
+
+        # The operation box defaults to a placeholder no span carries, so filtering on it hides every trace.
+        self.assertEqual(operation["current"]["value"], "__none__")
+        self.assertEqual(reference_search["tags"], "${lookup_ref.span_field}=$lookup_ref")
+        self.assertEqual(reference_search["operation"], "")
+        self.assertEqual(operation_search["tags"], "$trace_tags")
+        self.assertEqual(operation_search["operation"], "$operation")
+
     def test_logs_dashboard_supports_filtering_and_safe_correlation(self):
         dashboard = (OBSERVABILITY / "templates/grafana-logs.json").read_text()
         parsed = json.loads(dashboard)
