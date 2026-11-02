@@ -938,6 +938,15 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             ],
         )
 
+    def test_whisper_skips_keep_their_reason_codes(self):
+        from files import metrics, tasks
+
+        for skipped in (tasks.WHISPER_SKIPPED_MEDIA_GONE, tasks.WHISPER_SKIPPED_ALREADY_REQUESTED):
+            with self.subTest(**skipped), patch("files.metrics.DOMAIN_OUTCOMES_TOTAL") as outcomes:
+                metrics.record_domain_outcome("transcription", skipped["outcome"], skipped["reason_code"])
+
+                outcomes.labels.assert_called_once_with(operation="transcription", **skipped)
+
     def test_media_pipeline_observation_uses_low_cardinality_profile_labels(self):
         from files.metrics import observe_media_pipeline
 

@@ -4,7 +4,8 @@ from unittest.mock import patch
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files.base import ContentFile
-from django.test import SimpleTestCase, TestCase, override_settings
+from django.db import transaction
+from django.test import SimpleTestCase, TestCase, TransactionTestCase, override_settings
 
 from files import tasks
 from files.helpers import get_whisper_command
@@ -52,7 +53,7 @@ class TestWhisperCommand(SimpleTestCase):
         self.assertEqual(cmd[cmd.index("--language") + 1], "auto")
 
 
-class WhisperDispatchTests(TestCase):
+class WhisperDispatchTests(TransactionTestCase):
     """A media gets one Whisper task per translate flag, and only when a flag is requested."""
 
     def setUp(self):
@@ -157,6 +158,29 @@ class WhisperDispatchTests(TestCase):
         media.save()
 
         self.assertEqual(self.apply_async.call_count, 2)
+
+    def test_a_request_saved_in_a_transaction_is_dispatched_after_the_commit(self):
+        media = self._flagged_media()
+        media.allow_whisper_transcribe = True
+
+        with transaction.atomic():
+            media.save()
+            self.apply_async.assert_not_called()
+
+        self.assertEqual(self._dispatched_translate_flags(), [False])
+
+    def test_a_rolled_back_request_leaves_room_for_a_later_one(self):
+        media = self._flagged_media()
+        media.allow_whisper_transcribe = True
+
+        with self.assertRaises(RuntimeError), transaction.atomic():
+            media.save()
+            raise RuntimeError("rolled back")
+        self.apply_async.assert_not_called()
+
+        media.save()
+
+        self.assertEqual(self._dispatched_translate_flags(), [False])
 
     def test_the_claim_of_a_dead_worker_expires(self):
         media = self._flagged_media()

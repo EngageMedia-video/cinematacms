@@ -1,5 +1,6 @@
 import json
 import os
+import stat
 import tempfile
 import threading
 from datetime import timedelta
@@ -139,8 +140,8 @@ class ChunkFinalisationRaceTests(TransactionTestCase):
         abandoned = []
 
         class AbandonedDirectory:
-            def __init__(self, dir):
-                self.name = tempfile.mkdtemp(dir=dir)
+            def __init__(self, prefix, dir):
+                self.name = tempfile.mkdtemp(prefix=prefix, dir=dir)
                 abandoned.append(self.name)
 
             def __enter__(self):
@@ -171,6 +172,47 @@ class ChunkFinalisationRaceTests(TransactionTestCase):
         self._recover_stalled_groups()
 
         self.assertFalse(any(os.path.exists(path) for path in abandoned))
+
+    def test_each_merge_works_in_a_private_directory_of_its_own(self):
+        first, second = self._abandon_a_merge() + self._abandon_a_merge()
+
+        self.assertNotEqual(first, second)
+        for path in (first, second):
+            self.assertEqual(os.path.dirname(path), self.tmpdir.name)
+            self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o700)
+
+    def test_recovery_leaves_everything_else_in_the_temp_directory(self):
+        unrelated = tempfile.mkdtemp(dir=self.tmpdir.name)
+        self._age(unrelated, timedelta(seconds=settings.CELERY_SOFT_TIME_LIMIT + 60))
+
+        self._recover_stalled_groups()
+
+        self.assertTrue(os.path.isdir(unrelated))
+
+    def test_recovery_does_not_follow_a_planted_link(self):
+        with tempfile.TemporaryDirectory() as elsewhere:
+            target = os.path.join(elsewhere, "target")
+            os.mkdir(target)
+            self._age(target, timedelta(seconds=settings.CELERY_SOFT_TIME_LIMIT + 60))
+            os.symlink(target, os.path.join(self.tmpdir.name, f"{models.CHUNK_MERGE_DIRECTORY_PREFIX}planted"))
+
+            self._recover_stalled_groups()
+
+            self.assertTrue(os.path.isdir(target))
+
+    def test_recovery_still_merges_when_the_temp_directory_cannot_be_listed(self):
+        list_directory = os.scandir
+
+        def refuse_temp_directory(path):
+            if path == self.tmpdir.name:
+                raise PermissionError(path)
+            return list_directory(path)
+
+        with patch("files.models.os.scandir", side_effect=refuse_temp_directory):
+            result = self._recover_stalled_groups()
+
+        self.assertEqual(result["changed"], 1)
+        self.assertEqual(result["failed"], 0)
 
     def test_recovery_has_nothing_left_to_remove_on_a_second_run(self):
         for path in self._abandon_a_merge():
