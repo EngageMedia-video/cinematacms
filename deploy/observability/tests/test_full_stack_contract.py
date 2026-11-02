@@ -485,6 +485,20 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("celery_worker_tasks_active", in_flight)
         self.assertNotIn("celery_task_received_total", in_flight)
 
+    def test_overview_fallbacks_need_a_live_producer(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in dashboard["panels"]}
+        producer_by_target = {
+            ("Firing alerts by rule", "A"): "vmalert",
+            ("Queue in flight", "A"): "redis",
+            ("Queue in flight", "B"): "celery",
+        }
+
+        for (title, ref_id), producer in producer_by_target.items():
+            with self.subTest(panel=title, target=ref_id):
+                (target,) = (target for target in panels[title]["targets"] if target["refId"] == ref_id)
+                self.assertTrue(target["expr"].endswith(f' and on() up{{service.name="{producer}"}} == 1)'))
+
     def test_alert_and_queue_panels_fill_the_row_and_stay_readable_at_1366_pixels(self):
         dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
         panels = {panel["title"]: panel for panel in dashboard["panels"]}
