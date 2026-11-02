@@ -2,16 +2,18 @@ import json
 import os
 import tempfile
 import threading
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.core.files.base import ContentFile
 from django.db import connection
 from django.db.models.signals import post_save
 from django.test import TransactionTestCase, override_settings
+from django.utils import timezone
 
 from files import models
 from files.models import EncodeProfile, Encoding, Media, encoding_file_save
-from files.tasks import EncodingTask
+from files.tasks import EncodingTask, recover_stalled_chunk_groups
 from files.tests.helpers import create_test_media, create_test_user
 
 CHUNK_COUNT = 2
@@ -47,6 +49,89 @@ class ChunkFinalisationRaceTests(TransactionTestCase):
             chunk.media_file.save(os.path.basename(path), ContentFile(b"encoded chunk"), save=False)
             # update() skips the post_save receiver, which would finalise on the last chunk
             Encoding.objects.filter(pk=chunk.pk).update(status="success", media_file=chunk.media_file.name)
+
+    def _recover_stalled_groups(self):
+        with (
+            patch("files.models.helpers.run_command", return_value="concat ok"),
+            patch.object(Media, "post_encode_actions"),
+            patch("files.models._schedule_storage_usage_refresh_for_media"),
+        ):
+            return recover_stalled_chunk_groups()
+
+    def test_recovery_merges_a_group_whose_finaliser_died(self):
+        result = self._recover_stalled_groups()
+
+        self.assertEqual(
+            result, {"outcome": "succeeded", "reason_code": "none", "processed": 1, "changed": 1, "failed": 0}
+        )
+        merged = Encoding.objects.get(media=self.media, profile=self.profile)
+        self.assertFalse(merged.chunk)
+        self.assertEqual(merged.status, "success")
+
+    def test_recovery_leaves_a_group_alone_while_its_claim_is_alive(self):
+        lock_key = f"chunk_finalize_lock_{self.media.id}_{self.profile.id}"
+        models.chunk_finalisation_cache.add(lock_key, "live worker", timeout=60)
+        self.addCleanup(models.chunk_finalisation_cache.delete, lock_key)
+
+        result = self._recover_stalled_groups()
+
+        self.assertEqual(result["changed"], 0)
+        self.assertEqual(Encoding.objects.filter(media=self.media, chunk=True).count(), CHUNK_COUNT)
+
+    def test_recovery_waits_for_a_newer_encoding_of_the_same_profile(self):
+        Encoding.objects.create(media=self.media, profile=self.profile, status="running")
+
+        result = self._recover_stalled_groups()
+
+        self.assertEqual(result["processed"], 0)
+        self.assertEqual(Encoding.objects.filter(media=self.media, chunk=True).count(), CHUNK_COUNT)
+
+    def test_recovery_skips_a_group_with_a_failed_chunk(self):
+        Encoding.objects.filter(pk=Encoding.objects.filter(chunk=True).first().pk).update(status="fail")
+
+        result = self._recover_stalled_groups()
+
+        self.assertEqual(result["processed"], 0)
+        self.assertEqual(Encoding.objects.filter(media=self.media, chunk=True).count(), CHUNK_COUNT)
+
+    def test_recovery_stops_retrying_a_group_older_than_its_window(self):
+        expired = timezone.now() - models.CHUNK_RECOVERY_WINDOW - timedelta(minutes=1)
+        Encoding.objects.filter(chunk=True).update(update_date=expired)
+
+        result = self._recover_stalled_groups()
+
+        self.assertEqual(result["processed"], 0)
+
+    def test_recovery_continues_past_a_merge_that_fails_and_reports_it(self):
+        other_media = create_test_media(create_test_user(username="other_owner"))
+        stored_name = Media._meta.get_field("media_file").storage.save("other.mp4", ContentFile(b"original"))
+        Media.objects.filter(pk=other_media.pk).update(media_file=stored_name)
+        path = os.path.join(self.tmpdir.name, "99_segment.mkv")
+        chunk = Encoding.objects.create(
+            media=other_media,
+            profile=self.profile,
+            status="pending",
+            chunk=True,
+            chunk_file_path=path,
+            chunks_info=json.dumps({path: "checksum"}),
+        )
+        chunk.media_file.save(os.path.basename(path), ContentFile(b"encoded chunk"), save=False)
+        Encoding.objects.filter(pk=chunk.pk).update(status="success", media_file=chunk.media_file.name)
+        merge = models._merge_chunks
+
+        def fail_for_other_media(instance, chunks):
+            if instance.media_id == other_media.id:
+                raise OSError("concat failed")
+            merge(instance, chunks)
+
+        with patch("files.models._merge_chunks", side_effect=fail_for_other_media):
+            result = self._recover_stalled_groups()
+
+        self.assertEqual(
+            result, {"outcome": "failed", "reason_code": "item_errors", "processed": 2, "changed": 1, "failed": 1}
+        )
+        self.assertFalse(Encoding.objects.filter(media=self.media, chunk=True).exists())
+        self.assertTrue(Encoding.objects.filter(media=other_media, chunk=True).exists())
 
     def _hold_aggregates_until_both_exist(self):
         """Force the failing interleave: both workers save their merged file before either cleans up."""

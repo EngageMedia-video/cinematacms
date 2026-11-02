@@ -351,6 +351,7 @@
         "scheduled.cleanup_media_action_ips",
         "scheduled.dispatch_deferred_encodings",
         "scheduled.apply_visibility_schedules",
+        "scheduled.recover_stalled_chunk_groups",
         "other"
       ],
       "description": "Application-owned domain operations."
@@ -505,6 +506,7 @@
         "cleanup_orphaned_draft_media",
         "dispatch_deferred_encodings",
         "apply_visibility_schedules",
+        "recover_stalled_chunk_groups",
         "cleanup_media_action_ips"
       ],
       "description": "Registered scheduled jobs."
@@ -2024,6 +2026,7 @@
           "scheduled.purge_playback_summaries",
           "scheduled.dispatch_deferred_encodings",
           "scheduled.apply_visibility_schedules",
+          "scheduled.recover_stalled_chunk_groups",
           "other",
           "scheduled.cleanup_media_action_ips"
         ],
@@ -2300,6 +2303,7 @@
           "cleanup_orphaned_draft_media",
           "dispatch_deferred_encodings",
           "apply_visibility_schedules",
+          "recover_stalled_chunk_groups",
           "cleanup_media_action_ips"
         ],
         "scheduled_outcomes": [

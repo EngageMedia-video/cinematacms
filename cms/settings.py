@@ -447,6 +447,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apply_visibility_schedules",
         "schedule": timedelta(seconds=60),
     },
+    # Merge chunk groups whose finaliser died
+    "recover_stalled_chunk_groups": {
+        "task": "recover_stalled_chunk_groups",
+        "schedule": crontab(minute="*/30"),
+    },
     #     "schedule": timedelta(seconds=5),
     #     "args": (16, 16)
 }

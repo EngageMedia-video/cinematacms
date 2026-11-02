@@ -8,6 +8,7 @@ import tempfile
 import time
 import uuid
 from contextvars import ContextVar
+from datetime import timedelta
 
 import m3u8
 import waffle
@@ -75,6 +76,8 @@ logger = logging.getLogger(__name__)
 chunk_finalisation_cache = owned_cache.bind("chunk_finalisation")
 RE_TIMECODE = re.compile(r"(\d+:\d+:\d+.\d+)")
 CHUNK_ACTIVE_STATUSES = {"pending", "running"}
+# A group that keeps failing to merge stops being retried after this long. A claim must expire well inside it.
+CHUNK_RECOVERY_WINDOW = timedelta(days=1)
 _suppress_chunk_cleanup_scheduling = ContextVar("suppress_chunk_cleanup_scheduling", default=False)
 # the final state of a media, and also encoded medias
 MEDIA_ENCODING_STATUS = (
@@ -2907,6 +2910,28 @@ def _encoded_chunks_when_complete(instance, expected_chunk_paths):
     return chunks
 
 
+def _chunk_group_awaits_merge(chunk):
+    chunks = _encoded_chunks_when_complete(chunk, json.loads(chunk.chunks_info))
+    if chunks is None or any(member.status != "success" for member in chunks):
+        return False
+    # A merge deletes every other encoding of its profile, and that would include a newer group in progress.
+    return not Encoding.objects.filter(
+        media=chunk.media, profile=chunk.profile, status__in=CHUNK_ACTIVE_STATUSES
+    ).exists()
+
+
+def chunk_groups_awaiting_merge():
+    """Return one chunk of each group that finished encoding and was never merged."""
+    recent_chunks = (
+        Encoding.objects.filter(chunk=True, status="success", update_date__gte=timezone.now() - CHUNK_RECOVERY_WINDOW)
+        .exclude(media_file="")
+        .exclude(chunks_info="")
+        .select_related("media", "profile")
+    )
+    groups = {(chunk.media_id, chunk.profile_id, chunk.chunks_info): chunk for chunk in recent_chunks}
+    return [chunk for chunk in groups.values() if _chunk_group_awaits_merge(chunk)]
+
+
 def _log_chunk_finalisation(outcome, reason_code="none", **fields):
     logger.info(
         "cinematacms.media.pipeline",
@@ -2914,12 +2939,14 @@ def _log_chunk_finalisation(outcome, reason_code="none", **fields):
     )
 
 
-def _finalize_chunk_group(instance, expected_chunk_paths):
+def finalize_chunk_group(instance, expected_chunk_paths):
     """Merge a complete group of encoded chunks into one Encoding, exactly once per media and profile.
 
     Every chunk completion reaches this point, and the last chunks can complete at the same
     time. The first caller claims the group; a concurrent caller backs off, and a caller that
     claims after the merge finished finds the chunks gone and backs off too.
+
+    Return whether this caller merged the group.
     """
     lock_key = f"chunk_finalize_lock_{instance.media_id}_{instance.profile_id}"
     lock_token = uuid.uuid4().hex
@@ -2950,15 +2977,16 @@ def _finalize_chunk_group(instance, expected_chunk_paths):
         if not claimed:
             _log_chunk_finalisation("skipped", "lock_held", **log_fields)
             _record_chunk_finalisation_outcome("skipped", "lock_held")
-            return
+            return False
         try:
             chunks = _encoded_chunks_when_complete(instance, expected_chunk_paths)
             if chunks is None:
                 _log_chunk_finalisation("skipped", "already_finalised", **log_fields)
-                return
+                return False
             _log_chunk_finalisation("claimed", **log_fields)
             _merge_chunks(instance, chunks)
             _log_chunk_finalisation("succeeded", **log_fields)
+            return True
         except Exception:
             logger.exception(
                 "cinematacms.media.pipeline",
@@ -3057,7 +3085,7 @@ def encoding_file_save(sender, instance, created, **kwargs):
                 instance.delete()
                 return False
             if _encoded_chunks_when_complete(instance, expected_chunk_paths) is not None:
-                _finalize_chunk_group(instance, expected_chunk_paths)
+                finalize_chunk_group(instance, expected_chunk_paths)
     else:
         if instance.status in ["fail", "success"]:
             instance.media.post_encode_actions(encoding=instance, action="add")
