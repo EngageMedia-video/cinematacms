@@ -48,10 +48,10 @@ def nginx_error_redactor():
 
 
 def logged_error_messages(source, function_names):
-    """Text of every logger.error call in the named functions, with each interpolated value as X."""
+    """Text of every logger.error call in the named functions and their _named helpers, each value as X."""
     messages = []
     for function in ast.parse(source).body:
-        if not (isinstance(function, ast.FunctionDef) and function.name in function_names):
+        if not (isinstance(function, ast.FunctionDef) and function.name.lstrip("_") in function_names):
             continue
         for call in ast.walk(function):
             if not (
