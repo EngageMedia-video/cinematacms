@@ -879,6 +879,10 @@ class FullStackContractTests(unittest.TestCase):
         self.assertLessEqual(failures["targets"][0]["maxLines"], 200)
         for unit in ("celery_long.service", "celery_whisper.service"):
             self.assertIn(f'systemd.unit:"{unit}"', expression)
+        # The main worker process logs a lost worker through the application log, which has no unit.
+        self.assertTrue(
+            expression.startswith('(logger.name:"celery.worker.request" AND _msg:"Task handler raised error") OR (')
+        )
         # The worker units log plain text, so the failures are told apart by the messages files/tasks.py writes.
         message_pattern = re.search(r'_msg:~"(.*)"$', expression).group(1)
         tasks_source = (ROOT / "files/tasks.py").read_text()
@@ -897,7 +901,6 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn('logger.info("failed to get media with friendly_token %s" % friendly_token)', tasks_source)
         for celery_line in (
             "Task create_hls[1f2e] raised unexpected: OSError()",
-            "Task handler raised error: WorkerLostError('Worker exited prematurely: signal 9 (SIGKILL) Job: 3.')",
             "failed to get media with friendly_token abc123: Media matching query does not exist.",
             "failed to get media with friendly_token abc123",
             "Encoding 42 failed: media has no duration",
