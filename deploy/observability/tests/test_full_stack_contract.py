@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import textwrap
 import threading
 import unittest
 import urllib.parse
@@ -1400,6 +1401,38 @@ class FullStackContractTests(unittest.TestCase):
         alertmanager = (OBSERVABILITY / "templates/alertmanager.yml").read_text()
 
         self.assertIn("equal: [alertname, service_name]", alertmanager)
+
+    def test_alertmanager_verification_resolves_its_synthetic_alert(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        verify_alerting = re.search(r"^verify_alerting\(\) \{\n.*?^\}\n", installer, re.S | re.M).group(0)
+        with tempfile.TemporaryDirectory() as directory:
+            posted_alerts = Path(directory) / "posted"
+            # Each POST appends its payload. A GET returns every alert posted so far.
+            script = textwrap.dedent(
+                f"""
+                fail() {{ echo "$*" >&2; exit 1; }}
+                curl() {{
+                  local payload=""
+                  while [ "$#" -gt 0 ]; do
+                    [ "$1" = "--data-binary" ] && payload="$2"
+                    shift
+                  done
+                  if [ -n "$payload" ]; then printf '%s\\n' "$payload" >>'{posted_alerts}'; else cat '{posted_alerts}'; fi
+                }}
+                ALERTMANAGER_PORT=9093
+                {verify_alerting}
+                verify_alerting
+                """
+            )
+            result = subprocess.run(["bash", "-c", script], capture_output=True, text=True)
+            posts = [json.loads(line)[0] for line in posted_alerts.read_text().splitlines()]
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(posts), 2)
+        created, resolved = posts
+        self.assertNotIn("endsAt", created)
+        self.assertEqual(resolved["labels"], created["labels"])
+        self.assertRegex(resolved["endsAt"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
 
     def test_installer_sends_only_metric_panels_of_the_overview_to_victoriametrics(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
