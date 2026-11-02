@@ -356,6 +356,17 @@ class ScopedFieldFileMixin:
         # needs the same scoping or it replays the whole stale instance.
         return self._scoped(super().delete, save=save)
 
+    def replace(self, name, content):
+        """Store new content without saving the row, and remove the file it replaces.
+
+        FieldFile.save() never deletes the file the field pointed at, and storage gives the
+        new file a fresh name, so the old one would stay on disk with nothing to reach it.
+        """
+        previous_name = self.name
+        self.save(name, content, save=False)
+        if previous_name and previous_name != self.name:
+            self.storage.delete(previous_name)
+
 
 class ScopedFieldFile(ScopedFieldFileMixin, models.fields.files.FieldFile):
     pass
@@ -889,7 +900,7 @@ class Media(models.Model):
                 # snapshot, including anything another worker changed meanwhile.
                 # edit_date for the same reason as the scoped saves above; this
                 # write bypasses Media.save(), so it names the column itself.
-                self.uploaded_thumbnail.save(content=myfile, name=thumbnail_name, save=False)
+                self.uploaded_thumbnail.replace(thumbnail_name, myfile)
                 super(Media, self).save(update_fields=["uploaded_thumbnail", "edit_date"])
 
     def ensure_encryption_key(self):
@@ -1121,8 +1132,8 @@ class Media(models.Model):
                     # write here would carry every other in-memory column back to
                     # the row, and this runs from media_init while other workers
                     # are updating the same media.
-                    self.thumbnail.save(content=myfile, name=thumbnail_name, save=False)
-                    self.poster.save(content=myfile, name=thumbnail_name, save=False)
+                    self.thumbnail.replace(thumbnail_name, myfile)
+                    self.poster.replace(thumbnail_name, myfile)
                     if save:
                         self.save(update_fields=["thumbnail", "poster"])
         return True
@@ -1156,8 +1167,8 @@ class Media(models.Model):
                 # save=False on both, then one scoped save (#841). thumbnail_time is
                 # included because the random branch above assigns it here and it
                 # would otherwise never reach the row.
-                self.thumbnail.save(content=myfile, name=thumbnail_name, save=False)
-                self.poster.save(content=myfile, name=thumbnail_name, save=False)
+                self.thumbnail.replace(thumbnail_name, myfile)
+                self.poster.replace(thumbnail_name, myfile)
                 if save:
                     self.save(update_fields=["thumbnail", "poster", "thumbnail_time"])
         helpers.rm_file(tf)
@@ -2785,17 +2796,15 @@ def media_file_delete(sender, instance, **kwargs):
         helpers.rm_file(instance.uploaded_thumbnail.path)
     if instance.uploaded_poster:
         helpers.rm_file(instance.uploaded_poster.path)
-    if instance.uploaded_thumbnail:
-        helpers.rm_file(instance.uploaded_thumbnail.path)
-    if instance.uploaded_poster:
-        helpers.rm_file(instance.uploaded_poster.path)
     if instance.poster:
         helpers.rm_file(instance.poster.path)
     if instance.sprites:
         helpers.rm_file(instance.sprites.path)
     if instance.hls_file:
-        p = os.path.dirname(instance.hls_file_path)
-        helpers.rm_dir(p)
+        helpers.rm_dir(os.path.dirname(instance.hls_file_path))
+    # create_hls writes to HLS_DIR/<uid>/<version>/: the version directory above leaves
+    # <uid>/ behind, and a failed run leaves output that hls_file never pointed at.
+    helpers.rm_dir(os.path.join(settings.HLS_DIR, instance.uid.hex))
     schedule_chunk_file_cleanup(
         getattr(instance, "_chunk_file_paths", ()),
     )
@@ -3141,6 +3150,12 @@ def subtitle_storage_usage_save(sender, instance, update_fields=None, **kwargs):
     if update_fields is not None and "subtitle_file" not in set(update_fields):
         return
     _schedule_storage_usage_refresh_for_media(instance.media_id)
+
+
+@receiver(post_delete, sender=Subtitle)
+def subtitle_file_delete(sender, instance, **kwargs):
+    if instance.subtitle_file:
+        helpers.rm_file(instance.subtitle_file.path)
 
 
 @receiver(post_delete, sender=Subtitle)
