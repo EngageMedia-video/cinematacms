@@ -30,7 +30,7 @@ export function SynopsisField({ value = '', onChange, error = '', validate, id, 
 			className="w-full"
 			id={id}
 			name={name}
-			label="Synopsis"
+			label="Short Description"
 			required
 			placeholder="Write here..."
 			rows={5}

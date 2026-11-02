@@ -48,10 +48,10 @@ describe('validateMetadata', () => {
 		expect(errors.media_language).toBeTruthy();
 	});
 
-	it('rejects a synopsis over the word cap', () => {
+	it('rejects a short description over the word cap', () => {
 		const longSummary = Array.from({ length: SYNOPSIS_MAX_WORDS + 1 }, () => 'word').join(' ');
-		expect(validateMetadata({ ...validMetadata, summary: longSummary }).summary).toContain(
-			String(SYNOPSIS_MAX_WORDS)
+		expect(validateMetadata({ ...validMetadata, summary: longSummary }).summary).toBe(
+			'Short description should have 80 words maximum.'
 		);
 	});
 
