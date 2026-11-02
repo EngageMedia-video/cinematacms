@@ -892,6 +892,7 @@ class Media(models.Model):
             and self.uploaded_poster
             and self.uploaded_poster != self.__original_uploaded_poster
         ):
+            replaced_poster = self.__original_uploaded_poster
             with open(self.uploaded_poster.path, "rb") as f:
                 self.__original_uploaded_poster = self.uploaded_poster
                 myfile = File(f)
@@ -904,6 +905,8 @@ class Media(models.Model):
                 # write bypasses Media.save(), so it names the column itself.
                 self.uploaded_thumbnail.replace(thumbnail_name, myfile)
                 super(Media, self).save(update_fields=["uploaded_thumbnail", "edit_date"])
+            if replaced_poster:
+                replaced_poster.storage.delete(replaced_poster.name)
 
     def ensure_encryption_key(self):
         """Generate an AES-128 key if one doesn't exist. Returns hex string.

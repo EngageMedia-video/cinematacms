@@ -599,6 +599,10 @@ def encode_media(
         return success
 
 
+WHISPER_SKIPPED_MEDIA_GONE = {"outcome": "skipped", "reason_code": "media_not_found"}
+WHISPER_SKIPPED_ALREADY_REQUESTED = {"outcome": "skipped", "reason_code": "lock_held"}
+
+
 def _claim_transcription_request(media, translate):
     """Record the request for this media and flag, or return None when one is already in place.
 
@@ -639,9 +643,9 @@ def _transcribe_with_whisper(friendly_token, translate, notify):
 
     try:
         media = Media.objects.get(friendly_token=friendly_token)
-    except Media.DoesNotExist as e:
-        logger.error(f"failed to get media with friendly_token {friendly_token}: {e}")
-        return False
+    except Media.DoesNotExist:
+        logger.info(f"Skipping whisper_transcribe, media is gone: {friendly_token}")
+        return WHISPER_SKIPPED_MEDIA_GONE
 
     if not os.path.exists(media.media_file.path):
         logger.error(f"Media file not found at: {media.media_file.path}")
@@ -658,7 +662,7 @@ def _transcribe_with_whisper(friendly_token, translate, notify):
     transcription_request = _claim_transcription_request(media, translate)
     if transcription_request is None:
         logger.info(f"Transcription request (translate={translate}) already exists or media is gone: {friendly_token}")
-        return False
+        return WHISPER_SKIPPED_ALREADY_REQUESTED
     logger.info(f"Created transcription request for {friendly_token}")
 
     try:

@@ -919,6 +919,12 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             # whisper_transcribe returns False for a missing binary, a failed subprocess and an exception.
             metrics._on_task_postrun(sender=sender, task_id="whisper-false", state="SUCCESS", retval=False)
             metrics._on_task_postrun(sender=sender, task_id="whisper-true", state="SUCCESS", retval=True)
+            metrics._on_task_postrun(
+                sender=sender,
+                task_id="whisper-gone",
+                state="SUCCESS",
+                retval={"outcome": "skipped", "reason_code": "media_not_found"},
+            )
             # A lost worker or a hard time limit never reaches postrun and arrives as a task failure.
             metrics._on_task_failure(sender=sender, task_id="whisper-lost")
 
@@ -927,6 +933,7 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             [
                 call("transcription", "failed", "returned_false"),
                 call("transcription", "succeeded", "none"),
+                call("transcription", "skipped", "media_not_found"),
                 call("transcription", "failed", "task_exception"),
             ],
         )

@@ -185,3 +185,14 @@ class RegeneratedThumbnailTests(StoredFilesTestCase):
 
         self.assertFalse(os.path.exists(first_uploaded_thumbnail))
         self.assertTrue(os.path.exists(self.media.uploaded_thumbnail.path))
+
+    def test_a_new_uploaded_poster_removes_the_poster_it_replaces(self):
+        self.media.uploaded_poster = SimpleUploadedFile("first.jpg", jpeg_bytes())
+        self.media.save()
+        first_poster = self.media.uploaded_poster.path
+
+        self.media.uploaded_poster = SimpleUploadedFile("second.jpg", jpeg_bytes())
+        self.media.save()
+
+        self.assertFalse(os.path.exists(first_poster))
+        self.assertTrue(os.path.exists(self.media.uploaded_poster.path))

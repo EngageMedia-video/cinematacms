@@ -184,6 +184,12 @@ class WhisperTaskTests(TestCase):
 
         sleep.assert_not_called()
 
+    def test_a_task_for_a_media_deleted_while_queued_is_a_skip(self):
+        with override_settings(WHISPER_CPP_COMMAND=__file__, WHISPER_CPP_MODEL=__file__):
+            result = tasks.whisper_transcribe.run("no-such-media")
+
+        self.assertEqual(result, tasks.WHISPER_SKIPPED_MEDIA_GONE)
+
     def test_concurrent_tasks_register_one_request_per_flag(self):
         first = tasks._claim_transcription_request(self.media, translate=False)
         second = tasks._claim_transcription_request(self.media, translate=False)
