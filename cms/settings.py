@@ -33,6 +33,7 @@ CORS_ALLOW_HEADERS = default_headers + (
     "cache-control",  # Add Cache-Control
     "content-type",  # Add Content-Type (important for application/json etc.)
     "range",  # Add Range
+    "x-upload-id",  # Fine Uploader's per-file id, logged by nginx and the app
     "dnt",  # Generally not needed as DNT is safelisted
     "user-agent",  # Generally not needed as User-Agent is safelisted
 )
@@ -240,14 +241,14 @@ LOGGING = {
     "handlers": {
         "json_file": {
             "level": "INFO",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.WatchedFileHandler",
             "filename": os.path.join(LOGS_DIR, "app.json.log"),
             "formatter": "json",
             "filters": ["otel_trace"],
         },
         "legacy_file": {
             "level": "INFO",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.WatchedFileHandler",
             "filename": os.path.join(LOGS_DIR, "debug.log"),
             "formatter": "plain",
             "filters": ["otel_trace"],
@@ -445,6 +446,11 @@ CELERY_BEAT_SCHEDULE = {
     "apply_visibility_schedules": {
         "task": "apply_visibility_schedules",
         "schedule": timedelta(seconds=60),
+    },
+    # Merge chunk groups whose finaliser died
+    "recover_stalled_chunk_groups": {
+        "task": "recover_stalled_chunk_groups",
+        "schedule": crontab(minute="*/30"),
     },
     #     "schedule": timedelta(seconds=5),
     #     "args": (16, 16)

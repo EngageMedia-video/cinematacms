@@ -58,6 +58,8 @@ from .models import (
     Tag,
     Topic,
     TranscriptionRequest,
+    chunk_groups_awaiting_merge,
+    finalize_chunk_group,
     schedule_chunk_file_cleanup,
 )
 from .query_cache import invalidate_media_cache
@@ -1007,6 +1009,9 @@ def create_hls(friendly_token):
         # that once timed out (e.g. transient load) starts fresh next time.
         hls_coordination_cache.delete(timeout_retry_key)
         record_domain_outcome("hls", "succeeded", "none")
+    except Exception:
+        record_domain_outcome("hls", "failed", "task_exception")
+        raise
     finally:
         released_lock = False
         if hls_coordination_cache.get(lock_key) == lock_token:
@@ -1815,6 +1820,32 @@ def dispatch_deferred_encodings():
         return {"outcome": "succeeded", "processed": dispatched, "changed": dispatched}
     finally:
         scheduled_task_lock_cache.delete(lock_key)
+
+
+@task(name="recover_stalled_chunk_groups", queue="long_tasks", soft_time_limit=settings.CELERY_SOFT_TIME_LIMIT)
+def recover_stalled_chunk_groups():
+    """Merge chunk groups whose finaliser died mid-merge.
+
+    A killed worker's task is not redelivered, so nothing else would call the merge again.
+    The dead worker's claim blocks this until it expires, and a live merge keeps its group.
+    """
+    groups = chunk_groups_awaiting_merge()
+    merged = failed = 0
+    for chunk in groups:
+        try:
+            merged += finalize_chunk_group(chunk, list(json.loads(chunk.chunks_info)))
+        except SoftTimeLimitExceeded:
+            raise
+        except Exception:
+            # finalize_chunk_group logged the cause, and the next run retries inside the recovery window.
+            failed += 1
+    return {
+        "outcome": "failed" if failed else "succeeded",
+        "reason_code": "item_errors" if failed else "none",
+        "processed": len(groups),
+        "changed": merged,
+        "failed": failed,
+    }
 
 
 @task(name="apply_visibility_schedules", queue="short_tasks")

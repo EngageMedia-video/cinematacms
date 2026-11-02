@@ -8,7 +8,7 @@ Type=simple
 User=cinematacms-observability
 Group=cinematacms-observability
 EnvironmentFile=/etc/cinematacms-observability/stack.env
-ExecStart=/opt/cinematacms-observability/bin/victoria-logs-prod -httpListenAddr=127.0.0.1:${VICTORIALOGS_PORT} -storageDataPath=/var/lib/victorialogs -retentionPeriod=${LOGS_RETENTION}
+ExecStart=/opt/cinematacms-observability/bin/victoria-logs-prod -httpListenAddr=127.0.0.1:${VICTORIALOGS_PORT} -storageDataPath=/var/lib/victorialogs -retentionPeriod=${LOGS_RETENTION} -retention.maxDiskSpaceUsageBytes=${LOGS_MAX_DISK} -storage.minFreeDiskSpaceBytes=${STORAGE_MIN_FREE_DISK}
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

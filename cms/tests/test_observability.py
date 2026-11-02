@@ -21,6 +21,7 @@ from cms.observability import (
     start_span,
 )
 from cms.observability_middleware import ObservabilityActorMiddleware, ObservabilityMetricsMiddleware
+from cms.redis_telemetry import BROKER_SOCKET_TIMEOUT_SECONDS, ObservabilityRedisAdapter
 from cms.urls import _reference_lookup_rate_limited, metrics_view, observability_reference_lookup
 
 
@@ -688,6 +689,29 @@ class RuntimeGaugeTests(SimpleTestCase):
                 self.assertEqual(gauge._multiprocess_mode, "mostrecent")
 
 
+class QueueDepthTests(SimpleTestCase):
+    @override_settings(CELERY_BROKER_URL="redis://broker.test:6379/3")
+    def test_queue_depth_reads_the_broker_over_one_connection_and_not_the_cache(self):
+        broker = Mock()
+        broker.llen.side_effect = [7, 2]
+        adapter = ObservabilityRedisAdapter()
+
+        with (
+            patch("cms.redis_telemetry.Redis.from_url", return_value=broker) as connect,
+            patch("django_redis.get_redis_connection") as cache_connection,
+        ):
+            depths = [adapter.queue_depth("short_tasks"), adapter.queue_depth("long_tasks")]
+
+        self.assertEqual(depths, [7, 2])
+        self.assertEqual(broker.llen.call_args_list, [call("short_tasks"), call("long_tasks")])
+        connect.assert_called_once_with(
+            "redis://broker.test:6379/3",
+            socket_connect_timeout=BROKER_SOCKET_TIMEOUT_SECONDS,
+            socket_timeout=BROKER_SOCKET_TIMEOUT_SECONDS,
+        )
+        cache_connection.assert_not_called()
+
+
 class CeleryAndMediaMetricTests(SimpleTestCase):
     def test_task_names_are_normalized_to_bounded_families(self):
         from files.metrics import normalize_task_family
@@ -725,6 +749,7 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             "subscribe_user",
             "dispatch_deferred_encodings",
             "apply_visibility_schedules",
+            "recover_stalled_chunk_groups",
             "deliver_email",
             "recover_stale_email_deliveries",
             "cleanup_email_delivery_receipts",
@@ -861,6 +886,57 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             task_family="encoding", queue="short_tasks", event="completed", outcome="succeeded"
         )
         domain.assert_called_once_with("chunking", "failed", "returned_false")
+
+    def test_hls_command_that_cannot_run_is_recorded_as_a_failed_outcome(self):
+        import tempfile
+
+        from files import tasks
+
+        media = SimpleNamespace(
+            uid=SimpleNamespace(hex="a" * 32),
+            is_encrypted=False,
+            encodings=Mock(filter=Mock(return_value=[SimpleNamespace(media_file=SimpleNamespace(path="/in.mp4"))])),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            with (
+                override_settings(MP4HLS_COMMAND=__file__, HLS_DIR=directory),
+                patch("files.tasks.Media.objects.get", return_value=media),
+                patch("files.tasks.hls_coordination_cache") as coordination_cache,
+                patch("files.tasks.subprocess.run", side_effect=PermissionError("not executable")),
+                patch("files.tasks.record_domain_outcome") as domain,
+            ):
+                coordination_cache.add.return_value = True
+                coordination_cache.get.return_value = None
+                with self.assertRaises(PermissionError):
+                    tasks.create_hls.run("video-token")
+
+        domain.assert_called_once_with("hls", "failed", "task_exception")
+
+    def test_whisper_failures_are_recorded_as_transcription_outcomes(self):
+        from files import metrics
+
+        sender = SimpleNamespace(
+            name="whisper_transcribe", request=SimpleNamespace(delivery_info={"routing_key": "whisper_tasks"})
+        )
+        with (
+            patch("files.metrics.CELERY_TASKS_TOTAL"),
+            patch("files.metrics.CELERY_TASK_ACTIVE"),
+            patch("files.metrics.record_domain_outcome") as domain,
+        ):
+            # whisper_transcribe returns False for a missing binary, a failed subprocess and an exception.
+            metrics._on_task_postrun(sender=sender, task_id="whisper-false", state="SUCCESS", retval=False)
+            metrics._on_task_postrun(sender=sender, task_id="whisper-true", state="SUCCESS", retval=True)
+            # A lost worker or a hard time limit never reaches postrun and arrives as a task failure.
+            metrics._on_task_failure(sender=sender, task_id="whisper-lost")
+
+        self.assertEqual(
+            domain.call_args_list,
+            [
+                call("transcription", "failed", "returned_false"),
+                call("transcription", "succeeded", "none"),
+                call("transcription", "failed", "task_exception"),
+            ],
+        )
 
     def test_media_pipeline_observation_uses_low_cardinality_profile_labels(self):
         from files.metrics import observe_media_pipeline

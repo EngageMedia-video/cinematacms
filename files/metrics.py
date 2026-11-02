@@ -243,6 +243,7 @@ DOMAIN_OPERATIONS = frozenset(
         "scheduled.cleanup_media_action_ips",
         "scheduled.dispatch_deferred_encodings",
         "scheduled.apply_visibility_schedules",
+        "scheduled.recover_stalled_chunk_groups",
         "other",
     }
 )
@@ -280,6 +281,9 @@ DOMAIN_REASON_CODES = frozenset(
         "missing_credentials",
         "invalid_token",
         "internal_error",
+        "bad_request",
+        "forbidden",
+        "payload_too_large",
         "other",
     }
 )
@@ -333,6 +337,7 @@ TASK_FAMILY_BY_NAME = {
     "subscribe_user": "user_activity",
     "dispatch_deferred_encodings": "encoding",
     "apply_visibility_schedules": "media_lifecycle",
+    "recover_stalled_chunk_groups": "encoding",
     "deliver_email": "email_delivery",
     "recover_stale_email_deliveries": "email_delivery",
     "cleanup_email_delivery_receipts": "email_delivery",

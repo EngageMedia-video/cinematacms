@@ -27,6 +27,7 @@ SCHEDULED_JOBS = {
         ScheduledJob("cleanup_media_action_ips", 3600, "actions", 7200),
         ScheduledJob("dispatch_deferred_encodings", 60, "files", 180),
         ScheduledJob("apply_visibility_schedules", 60, "files", 180),
+        ScheduledJob("recover_stalled_chunk_groups", 1800, "files", 5400),
     )
 }
 

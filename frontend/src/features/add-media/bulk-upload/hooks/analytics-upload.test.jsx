@@ -10,6 +10,7 @@ afterEach(() => {
 it('tracks accepted transfers and completion, omitting byte progress and disposal cancellation', async () => {
 	let callbacks;
 	const uploadEvent = vi.fn();
+	const setCustomHeaders = vi.fn();
 	window.CinemataAnalytics = { uploadEvent };
 	window.qq = {
 		FineUploaderBasic: function (config) {
@@ -17,6 +18,8 @@ it('tracks accepted transfers and completion, omitting byte progress and disposa
 			return {
 				getFile: () => new File(['contents'], 'secret-film.mp4'),
 				getSize: () => 8,
+				getUuid: () => '00000000-0000-4000-8000-000000000001',
+				setCustomHeaders,
 				cancelAll: () => callbacks.onCancel(1),
 			};
 		},
@@ -29,6 +32,10 @@ it('tracks accepted transfers and completion, omitting byte progress and disposa
 	act(() => callbacks.onSubmitted(1, 'secret-film.mp4'));
 	act(() => callbacks.onProgress(1, 'secret-film.mp4', 4, 8));
 	expect(uploadEvent).toHaveBeenCalledExactlyOnceWith('start', 1);
+	expect(setCustomHeaders).toHaveBeenCalledExactlyOnceWith(
+		expect.objectContaining({ 'X-Upload-Id': '00000000-0000-4000-8000-000000000001' }),
+		1
+	);
 	await act(async () =>
 		callbacks.onComplete(1, 'secret-film.mp4', { success: true, media_url: '/view?m=secret-token' })
 	);

@@ -18,6 +18,18 @@ Celery execution states are `started`, `succeeded`, `failed`, `retried`, and `re
 
 Domain outcomes are `succeeded`, `failed`, `skipped`, `retried`, and `cancelled`. A successful Celery execution does not imply a successful domain operation. Code records domain results with `files.metrics.record_domain_outcome()`.
 
+### FFmpeg, Bento4 and Whisper
+
+The overview row "FFmpeg, Bento4 and Whisper" reads three domain operations: FFmpeg is `encoding`, Bento4 is `hls` (the `mp4hls` command in `create_hls`), and Whisper is `transcription`. Where each is recorded:
+
+- `encoding`: `observe_media_pipeline()` once per `encode_media` run that reaches an outcome. A first failure is retried by Celery without an outcome, so FFmpeg `retried` stays zero and a media shows `failed/encoding_failed` only when the retry also fails.
+- `hls`: `create_hls` records every branch it returns from, and records `failed/task_exception` when `mp4hls` raises. `retried/lock_held` is another run already holding the media lock, not a failure.
+- `transcription`: the Celery signal handlers. `whisper_transcribe` logs and returns `False` on every failure, which becomes `failed/returned_false`; a lost worker or hard time limit becomes `failed/task_exception`. A request that already exists also returns `False` and counts as failed.
+
+`encode_media` records no outcome when the media, profile or chunk row is gone, when an exception escapes outside the encoding loop, when the worker is lost, or when the task is revoked. The row's "task errors" tile counts `celery_task_failed_total` from the Celery exporter, so an exception or a lost worker still shows even without an outcome. A revoked encode shows in neither.
+
+The row's runtime tiles read `celery_task_runtime_bucket` from the exporter, which observes only successful runs. The exporter unit sets `--buckets` to the application's task duration buckets plus 14400, so percentiles hold for tasks that run for hours. A range that starts before a deploy of that change mixes the old 10 second buckets with the new ones.
+
 ## Traces and logs
 
 The web process configures Django tracing during WSGI startup. A Celery child configures tracing from `worker_process_init`, after the fork. Set `OTEL_SERVICE_ROLE` to `web`, `long-task`, `short-task`, `transcription`, `email`, or `beat`. All roles use the `CinemataCMS` service namespace by default.
@@ -42,6 +54,111 @@ filtering removes attributes whose names identify message bodies, addresses,
 authorization data, secrets, passwords, filenames, or URLs. Restricted email
 spans may contain only the delivery UUID, the recipient reference, the email
 kind, and the attempt number.
+
+The Collector reads each rotated application log together with its `.1` copy.
+After a Collector outage that spans one rotation, it recovers the unread lines
+from the `.1` copy. After an outage that spans two or more rotations, the lines
+that moved into `.gz` backups are not backfilled; they stay in those backups for
+14 rotations. Ingesting the `.gz` backups was rejected because switching to them
+re-ingested every retained backup. Collector 0.159.0 was the version tested.
+
+Rotation renames each application log and creates a new one, owned by `www-data`
+with mode `0640`. It then writes a `log_rotated` line to the new log, because the
+Collector identifies a file by its first 1000 bytes and Celery lines carry no
+timestamp, so a quiet log could otherwise start exactly like its `.1` copy and
+never be read. Django and Celery reopen the log by name through
+`WatchedFileHandler`. uWSGI reopens `errorlog.txt` after logrotate touches
+`logs/.uwsgi-logreopen`. A line written before its process reopens the log lands
+in the `.1` copy, which the Collector still reads, so a rotation neither drops
+nor repeats lines. The `log_rotated` line can land after other lines, so a writer
+that emits more than 1000 bytes of the same text as the `.1` copy before that line
+arrives still leaves the new log unread. A process started before this change
+keeps writing to the renamed file, so restart the application and Celery services
+when you install this rotation. The script after each rotation runs as root, so it
+writes to the log directory through `runuser -u www-data`: `www-data` owns that
+directory and could replace any name in it with a link to a root file.
+
+A 4xx response on the `upload_transfer` route group logs
+`cinematacms.http.request.denied` with `route_group`, `operation`, `method`,
+`status_code`, a bounded `reason_code`, `trace_id`, and `actor_ref` when the
+session is authenticated. `reason_code` is `missing_credentials` or `forbidden`
+for 401 and 403, `bad_request` for 400, `payload_too_large` for 413,
+`rate_limited` for 429, and `other` otherwise. The event never carries the
+path, query string, address, cookie, or email. nginx answers some upload errors
+(408, 413, 499) before Django runs; those appear only in the nginx access log.
+
+### Upload correlation: `upload_ref`
+
+`upload_ref` joins an nginx upload line to the application events of the same
+upload, and through them to `actor_ref` and `trace_id`. It is Fine Uploader's
+per-file `qquuid`, a random version-4 UUID that the browser already sends in the
+chunk body. The upload pages also send it as the `X-Upload-Id` header on every
+chunk and on the chunks-done request, because nginx does not parse the body and
+can log a header. It carries no personal data and grants no access; it only
+attributes log lines. `config/observability/coverage.json` (`log_correlation`)
+holds the one definition: header, pattern, maximum length (36), and the events
+that carry it. `scripts/validate_observability_coverage.py` checks it, and it is
+never a metric label.
+
+- nginx (`deploy/nginx/cinematacms-http.conf`): the `cinematacms` `log_format`
+  ends with `uid=$cinematacms_upload_id`. A `map` logs the header only when it
+  matches the version-4 UUID pattern (lowercase, 36 characters) and logs `-`
+  otherwise. A site must use this format to carry `upload_ref`. The
+  `compression` format has no `uid`; its lines still parse but carry no
+  `upload_ref`.
+- Collector: the regex reads `uid=` into `upload_ref` only when the value is a
+  well-formed id that ends the line. `-`, oversize, or any other value leaves
+  the attribute unset. The attribute is kept on nginx and application lines.
+- Django: `cms.http_telemetry.upload_reference` applies the same pattern to
+  `X-Upload-Id` and returns an empty string for anything else. On the
+  `upload_transfer` route group, `cinematacms.http.request.denied`, `.failed`,
+  and `.slow` carry `upload_ref`, and `uploader.views` logs
+  `cinematacms.upload.started` (first chunk, part 0) and
+  `cinematacms.upload.finished` (media created), both with `upload_ref` and
+  `actor_ref`. A client can send any well-formed id, so treat `upload_ref` as an
+  attribution key and not as proof of ownership.
+- CORS: `x-upload-id` is in `CORS_ALLOW_HEADERS`. It matters only when
+  `UPLOAD_HOST` is a different origin from the site: without it the browser
+  refuses the chunk after the preflight.
+- Grafana, Incident Search: resolve the user, copy an `upload_ref` from "Upload
+  sessions of the resolved user", paste it into "Upload ref". "One upload" shows
+  the application and nginx lines for that id. "nginx upload lines ... of the
+  resolved user's uploads" goes straight from the actor to the nginx lines.
+  Both panels start from a Django event, so when nginx rejects every chunk before
+  Django receives one, neither can link the upload to the user. Ask the user for
+  the `X-Upload-Id` value of a failed chunk request from the browser's network
+  tools, and paste it into "Upload ref" to find the nginx lines.
+
+The Collector reads every `*access.log` and `*error.log` file in
+`/var/log/cinematacms/nginx/`, where the stock site writes `/fu/` chunk requests,
+and in `/var/log/nginx/`, which holds the distribution's logs and any vhost an
+operator adds. It also reads each log's uncompressed `.1` copy, because nginx
+keeps writing to the renamed file until it reopens its logs, and lines written
+in that gap would otherwise be lost. A site must use the `cinematacms` `log_format` to carry `upload_ref`
+(`compression` also carries `rt=`, `urt=`, and `rl=` but no `uid=`). An nginx access line keeps
+only `method`, `status_code`, `bytes_sent`, `request_time`, `upstream_time`,
+`request_length`, `upload_ref`, `http.route`, and `route_group` (`nginx_upload` for
+`/fu/` and `/upload/`). `http.route` is one of a fixed set of templates, never the
+request path: `/api/:resource`, `/media/:resource`, `/static/:resource`,
+`/fu/:resource`, `/upload/:resource`, `/metrics`, `/nginx_status`, and `/:other`
+for every other path, including the configurable admin URL and scanner probes. The
+path, query string, address, referrer, and user agent are dropped. A line the parser
+cannot read, such as a request of `"-"` on a 400, keeps its `status_code`, `bytes_sent`,
+and timings as fields and exports only `<unparsed-nginx-access>` as its body.
+`upstream_time` is `-` when the request never reached Django, as for a 408.
+Reading `/var/log/nginx/` needs the `adm` group, which the installer grants to
+`otelcol-contrib`. The site log directory is `root:www-data`, `0750`; the
+installer adds an ACL entry for the Collector only, so the `acl` package must
+be present. The entry is read access (`setfacl -R -m u:otelcol-contrib:rX`) on
+the directory and the logs in it, plus a default entry (`setfacl -d`) so logs
+created later are readable too.
+
+An nginx error line keeps its message and `server`. Its `client` becomes
+`<redacted-ip>` for IPv4 and IPv6. Everything from the first `request`,
+`subrequest`, `upstream`, `host`, or `referrer` field to the end of the line
+becomes `request: "<redacted-request>"`. nginx writes these fields without
+escaping them, so client text can imitate any of them, and no field shape tells
+a real one from a fake one.
 
 ## Error tracking
 

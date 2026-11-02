@@ -6,7 +6,7 @@ After=network-online.target redis-server.service
 User=cinematacms-celery-exporter
 Group=cinematacms-celery-exporter
 EnvironmentFile=/etc/cinematacms-observability/celery-exporter.env
-ExecStart=/opt/cinematacms-observability/celery-exporter/bin/python /opt/cinematacms-observability/celery_exporter_runner.py --host=127.0.0.1 --port=9808 --retry-interval=5
+ExecStart=/opt/cinematacms-observability/celery-exporter/bin/python /opt/cinematacms-observability/celery_exporter_runner.py --host=127.0.0.1 --port=9808 --retry-interval=5 --buckets=0.1,0.5,1,5,15,30,60,120,300,600,1800,3600,7200,14400
 Restart=on-failure
 NoNewPrivileges=true
 PrivateTmp=true

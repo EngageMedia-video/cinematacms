@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django.views import generic
 
 from cms.error_tracking import capture_unexpected_exception
+from cms.http_telemetry import upload_reference
 from cms.permissions import is_trusted_uploader, user_allowed_to_upload
 from files.helpers import cleanup_temp_upload_files, rm_file
 from files.models import Media
@@ -18,6 +19,8 @@ from .fineuploader import ChunkedFineUploader
 from .forms import FineUploaderUploadForm, FineUploaderUploadSuccessForm
 
 logger = logging.getLogger(__name__)
+
+UPLOAD_ROUTE_GROUP = "upload_transfer"
 
 
 class FineUploaderView(generic.FormView):
@@ -69,6 +72,9 @@ class FineUploaderView(generic.FormView):
                 }
                 return self.make_response(data, status=400)
 
+        if self.upload.part_index == 0 and not self.chunks_done:
+            self.log_upload_event("cinematacms.upload.started")
+
         if self.upload.concurrent and self.chunks_done:
             try:
                 self.upload.combine_chunks()
@@ -103,7 +109,18 @@ class FineUploaderView(generic.FormView):
             new.save(force_insert=True, initial_state="private")
         rm_file(media_file)
         shutil.rmtree(os.path.join(settings.MEDIA_ROOT, self.upload.file_path))
+        self.log_upload_event("cinematacms.upload.finished")
         return self.make_response({"success": True, "media_url": new.get_absolute_url()})
+
+    def log_upload_event(self, event_name):
+        logger.info(
+            event_name,
+            extra={
+                "route_group": UPLOAD_ROUTE_GROUP,
+                "operation": UPLOAD_ROUTE_GROUP,
+                "upload_ref": upload_reference(self.request),
+            },
+        )
 
     def form_invalid(self, form):
         data = {"success": False, "error": "%s" % repr(form.errors)}
