@@ -1592,9 +1592,22 @@ class FullStackContractTests(unittest.TestCase):
         self.assertEqual(search_target["operation"], "$operation")
         self.assertEqual(search_target["tags"], "$tags")
 
-        lookup_target = panels_by_title["Trace ID lookup"]["targets"][0]
-        self.assertNotIn("queryType", lookup_target)
-        self.assertEqual(lookup_target["query"], "$trace_id")
+        # A trace-by-ID query runs when the dashboard opens and the placeholder ID is answered with a 404,
+        # so only search queries may query the trace datasource.
+        for panel in parsed["panels"]:
+            for target in panel.get("targets", []):
+                self.assertEqual(target.get("queryType"), "search", panel["title"])
+        lookup = panels_by_title["Trace ID lookup"]
+        self.assertEqual(lookup["type"], "text")
+        self.assertEqual(lookup["options"]["mode"], "markdown")
+        explore_link = re.search(r"\]\((/explore\?[^)]+)\)", lookup["options"]["content"]).group(1)
+        explore_query = urllib.parse.parse_qs(urllib.parse.urlparse(explore_link).query)
+        self.assertEqual(explore_query["schemaVersion"], ["1"])
+        pane = json.loads(explore_query["panes"][0].replace("${trace_id:percentencode}", "abc123"))["a"]
+        self.assertEqual(pane["datasource"], "victoriatraces")
+        self.assertEqual(pane["queries"][0]["query"], "abc123")
+        self.assertEqual(pane["queries"][0]["datasource"], {"type": "jaeger", "uid": "victoriatraces"})
+        self.assertNotIn("queryType", pane["queries"][0])
         self.assertIn("__enter_value__", dashboard)
         self.assertNotIn("@", dashboard)
 
