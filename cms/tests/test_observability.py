@@ -887,6 +887,57 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
         )
         domain.assert_called_once_with("chunking", "failed", "returned_false")
 
+    def test_hls_command_that_cannot_run_is_recorded_as_a_failed_outcome(self):
+        import tempfile
+
+        from files import tasks
+
+        media = SimpleNamespace(
+            uid=SimpleNamespace(hex="a" * 32),
+            is_encrypted=False,
+            encodings=Mock(filter=Mock(return_value=[SimpleNamespace(media_file=SimpleNamespace(path="/in.mp4"))])),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            with (
+                override_settings(MP4HLS_COMMAND=__file__, HLS_DIR=directory),
+                patch("files.tasks.Media.objects.get", return_value=media),
+                patch("files.tasks.hls_coordination_cache") as coordination_cache,
+                patch("files.tasks.subprocess.run", side_effect=PermissionError("not executable")),
+                patch("files.tasks.record_domain_outcome") as domain,
+            ):
+                coordination_cache.add.return_value = True
+                coordination_cache.get.return_value = None
+                with self.assertRaises(PermissionError):
+                    tasks.create_hls.run("video-token")
+
+        domain.assert_called_once_with("hls", "failed", "task_exception")
+
+    def test_whisper_failures_are_recorded_as_transcription_outcomes(self):
+        from files import metrics
+
+        sender = SimpleNamespace(
+            name="whisper_transcribe", request=SimpleNamespace(delivery_info={"routing_key": "whisper_tasks"})
+        )
+        with (
+            patch("files.metrics.CELERY_TASKS_TOTAL"),
+            patch("files.metrics.CELERY_TASK_ACTIVE"),
+            patch("files.metrics.record_domain_outcome") as domain,
+        ):
+            # whisper_transcribe returns False for a missing binary, a failed subprocess and an exception.
+            metrics._on_task_postrun(sender=sender, task_id="whisper-false", state="SUCCESS", retval=False)
+            metrics._on_task_postrun(sender=sender, task_id="whisper-true", state="SUCCESS", retval=True)
+            # A lost worker or a hard time limit never reaches postrun and arrives as a task failure.
+            metrics._on_task_failure(sender=sender, task_id="whisper-lost")
+
+        self.assertEqual(
+            domain.call_args_list,
+            [
+                call("transcription", "failed", "returned_false"),
+                call("transcription", "succeeded", "none"),
+                call("transcription", "failed", "task_exception"),
+            ],
+        )
+
     def test_media_pipeline_observation_uses_low_cardinality_profile_labels(self):
         from files.metrics import observe_media_pipeline
 
