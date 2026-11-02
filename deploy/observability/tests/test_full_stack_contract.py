@@ -829,7 +829,7 @@ class FullStackContractTests(unittest.TestCase):
             tool, event = target["legendFormat"].split(" ", 1)
             self.assertTrue(target["instant"])
             self.assertIn("[$__range]", target["expr"])
-            self.assertTrue(target["expr"].endswith(" or on() vector(0)"), target["expr"])
+            self.assertIn(" or on() (vector(0) and on() up{", target["expr"])
             if event == "task errors":
                 self.assertIn(f'celery_task_failed_total{{name="{tasks[tool]}"}}', target["expr"])
             else:
@@ -849,7 +849,7 @@ class FullStackContractTests(unittest.TestCase):
         for target, operation in zip(over_time, operations.values(), strict=True):
             self.assertIn(f'cinematacms_domain_outcomes_total{{operation="{operation}"}}', target["expr"])
             self.assertIn("by (outcome, reason_code)", target["expr"])
-            self.assertTrue(target["expr"].endswith(" or on() vector(0)"), target["expr"])
+            self.assertIn(" or on() (vector(0) and on() up{", target["expr"])
 
     def test_overview_runtime_percentiles_use_the_exporter_buckets_per_task(self):
         overview = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
