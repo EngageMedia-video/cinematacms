@@ -1,3 +1,4 @@
+import logging
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -11,6 +12,7 @@ from cms.http_telemetry import (
     classify_request,
     route_identity,
 )
+from cms.observability import OpenTelemetryLogFilter, actor_reference_context
 from cms.observability_middleware import ObservabilityMetricsMiddleware
 
 OWNED_MODULE_PREFIXES = ("cms.", "files.", "notifications.", "uploader.", "users.")
@@ -145,3 +147,94 @@ class HttpMiddlewareTelemetryTests(SimpleTestCase):
                 ObservabilityMetricsMiddleware(lambda _request: (_ for _ in ()).throw(original))(request)
 
         failure.assert_called_once_with("metrics", "http", "emit")
+
+
+class _RecordCollector(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.records = []
+        self.addFilter(OpenTelemetryLogFilter())
+
+    def emit(self, record):
+        self.records.append(record)
+
+
+class UploadDenialLogTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.collector = _RecordCollector()
+        middleware_logger = logging.getLogger("cms.observability_middleware")
+        middleware_logger.addHandler(self.collector)
+        self.addCleanup(middleware_logger.removeHandler, self.collector)
+
+    def _upload_request(self, *, authenticated):
+        request = self.factory.post(
+            "/fu/upload/?qquuid=private-upload-id",
+            HTTP_COOKIE="sessionid=private-session-cookie",
+            REMOTE_ADDR="203.0.113.9",
+        )
+        request.resolver_match = SimpleNamespace(namespace="uploader", url_name="upload", route="fu/upload/")
+        request.user = SimpleNamespace(is_authenticated=authenticated, email="person@example.org")
+        return request
+
+    def _denied(self):
+        return [r for r in self.collector.records if r.getMessage() == "cinematacms.http.request.denied"]
+
+    def _run(self, status_code, *, authenticated, actor_ref=""):
+        request = self._upload_request(authenticated=authenticated)
+        with actor_reference_context(actor_ref):
+            ObservabilityMetricsMiddleware(lambda _request: HttpResponse(status=status_code))(request)
+
+    def test_anonymous_403_logs_missing_credentials_without_actor(self):
+        self._run(403, authenticated=False)
+
+        (record,) = self._denied()
+        self.assertEqual(record.reason_code, "missing_credentials")
+        self.assertEqual(record.status_code, "403")
+        self.assertEqual(record.route_group, "upload_transfer")
+        self.assertEqual(record.operation, "upload_transfer")
+        self.assertEqual(record.method, "POST")
+        self.assertEqual(record.actor_ref, "")
+        self.assertTrue(hasattr(record, "trace_id"))
+
+    def test_authenticated_403_carries_actor_ref_and_forbidden_reason(self):
+        self._run(403, authenticated=True, actor_ref="v1:" + "a" * 64)
+
+        (record,) = self._denied()
+        self.assertEqual(record.reason_code, "forbidden")
+        self.assertEqual(record.actor_ref, "v1:" + "a" * 64)
+
+    def test_other_upload_client_errors_use_bounded_reason_codes(self):
+        expected = {400: "bad_request", 413: "payload_too_large", 429: "rate_limited", 418: "other"}
+        for status_code, reason_code in expected.items():
+            with self.subTest(status_code=status_code):
+                self.collector.records.clear()
+                self._run(status_code, authenticated=True)
+                (record,) = self._denied()
+                self.assertEqual(record.reason_code, reason_code)
+                self.assertEqual(record.status_code, str(status_code))
+
+    def test_denial_log_never_contains_request_secrets(self):
+        self._run(403, authenticated=True, actor_ref="v1:" + "b" * 64)
+
+        (record,) = self._denied()
+        serialized = repr(vars(record))
+        for secret in (
+            "person@example.org",
+            "203.0.113.9",
+            "private-session-cookie",
+            "private-upload-id",
+            "/fu/upload",
+        ):
+            self.assertNotIn(secret, serialized)
+
+    def test_successful_chunks_and_other_routes_are_not_logged_as_denied(self):
+        self._run(200, authenticated=True)
+        other = self.factory.get("/api/v1/media/private-secret-token")
+        other.resolver_match = SimpleNamespace(
+            namespace="", url_name="api_get_media", route="^api/v1/media/(?P<friendly_token>[\\w]+(-[\\w]+)*)$"
+        )
+        other.user = SimpleNamespace(is_authenticated=False, email="")
+        ObservabilityMetricsMiddleware(lambda _request: HttpResponse(status=403))(other)
+
+        self.assertEqual(self._denied(), [])

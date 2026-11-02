@@ -11,6 +11,37 @@ ROOT = Path(__file__).resolve().parents[3]
 OBSERVABILITY = ROOT / "deploy" / "observability"
 
 
+def nginx_error_redactor():
+    """Apply the nginx-only body statements of transform/privacy, in file order, to one line."""
+    collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+    literal = r'"((?:[^"\\]|\\.)*)"'
+    nginx_only = r' where IsString\(log\.body\) and resource\.attributes\["service\.name"\] == "nginx"'
+    replace_statement = re.compile(rf"""^\s+- 'replace_pattern\(log\.body, {literal}, {literal}\){nginx_only}'$""")
+
+    def ottl_string(escaped):
+        return json.loads(f'"{escaped}"')
+
+    steps = []
+    for statement in collector.splitlines():
+        replace = replace_statement.match(statement)
+        if replace:
+            pattern = re.compile(ottl_string(replace[1]))
+            replacement = re.sub(r"\$\$(\d)", r"\\\1", ottl_string(replace[2]))
+            steps.append(lambda line, pattern=pattern, replacement=replacement: pattern.sub(replacement, line))
+        elif 'resource.attributes["service.name"] == "nginx"' in statement and re.search(
+            r"- '(?:replace_pattern|set)\(log\.body, \"", statement
+        ):
+            raise AssertionError(f"this helper cannot apply an nginx body statement: {statement}")
+    assert steps, "nginx error lines need field redactions in transform/privacy"
+
+    def redact(line):
+        for step in steps:
+            line = step(line)
+        return line
+
+    return redact
+
+
 class FullStackContractTests(unittest.TestCase):
     def test_application_contract_is_the_metric_source_of_truth(self):
         alertability = json.loads((ROOT / "config/observability/alertability.json").read_text())
@@ -148,7 +179,7 @@ class FullStackContractTests(unittest.TestCase):
 
     def test_installer_installs_logrotate_before_validating_its_config(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
-        packages = re.search(r"apt-get install -y (ca-certificates [^\n]+)\n", installer).group(1).split()
+        packages = re.search(r"apt-get install -y (acl ca-certificates [^\n]+)\n", installer).group(1).split()
 
         self.assertIn("logrotate --debug", installer)
         self.assertIn("logrotate", packages)
@@ -290,7 +321,10 @@ class FullStackContractTests(unittest.TestCase):
         self.assertEqual(
             includes("file_log/cinematacms"), ["${env:APP_LOG_PATH}", "${env:APP_LOG_PATH}.1"], "file_log/cinematacms"
         )
-        self.assertEqual(includes("file_log/nginx"), ["/var/log/nginx/*.log"])
+        nginx_directories = ["/var/log/nginx", "/var/log/cinematacms/nginx"]
+        for receiver, pattern in (("file_log/nginx_access", "*access.log"), ("file_log/nginx_error", "*error.log")):
+            live = [f"{d}/{pattern}" for d in nginx_directories]
+            self.assertEqual(includes(receiver), [*live, *[f"{path}.1" for path in live]], receiver)
 
     def test_every_app_log_writer_follows_the_rename_of_a_rotation(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
@@ -615,6 +649,417 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("to: body", collector)
         self.assertNotIn('"task_name"', collector)
         self.assertNotIn('"message"', re.search(r"keep_keys\(log\.attributes, \[(.*?)\]\)", collector).group(1))
+
+    def test_nginx_access_logs_keep_upload_timings_without_raw_fields(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        kept = re.search(r"keep_keys\(log\.attributes, \[(.*?)\]\)", collector).group(1)
+
+        self.assertIn('"/var/log/nginx/*access.log"', collector)
+        self.assertIn('"/var/log/nginx/*error.log"', collector)
+        self.assertNotIn("/*.log", collector)
+        self.assertIn("file_log/nginx_access", collector)
+        self.assertIn("file_log/nginx_error", collector)
+        for field in ("request_time", "upstream_time", "request_length", "bytes_sent", "http.route"):
+            self.assertIn(f'"{field}"', kept)
+        for raw_field in ("request_path", "http_method", "remote_addr", "http_user_agent"):
+            self.assertNotIn(f'"{raw_field}"', kept)
+        self.assertIn('set(log.attributes["route_group"], "nginx_upload")', collector)
+        self.assertIn('set(log.body, Concat([log.attributes["method"]', collector)
+
+    def test_nginx_error_lines_drop_the_request_target_referrer_and_client_address(self):
+        redact = nginx_error_redactor()
+
+        prefix = "2026/10/30 10:00:00 [error] 12#12: *3 "
+        fields = (
+            'server: cinemata.example, request: "POST /secret-admin?token=abc123 HTTP/1.1", '
+            'upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example", '
+            'referrer: "https://other.example/page?user=jane"'
+        )
+        for client in ("203.0.113.9", "2001:db8::17"):
+            redacted = redact(
+                f"{prefix}upstream timed out (110: Connection timed out) while reading response header from upstream, client: {client}, {fields}"
+            )
+            for private in (client, "secret-admin", "abc123", "other.example", "jane"):
+                self.assertNotIn(private, redacted)
+            self.assertEqual(
+                redacted,
+                f"{prefix}upstream timed out (110: Connection timed out) while reading response header from upstream, "
+                'client: <redacted-ip>, server: cinemata.example, request: "<redacted-request>"',
+            )
+
+        proxied = redact(
+            f"{prefix}connect() failed (111: Connection refused) while connecting to upstream, client: 203.0.113.9, "
+            'server: tools.example, request: "GET /dashboard?key=abc123 HTTP/1.1", '
+            'upstream: "http://backend.internal:3000/dashboard?key=abc123", host: "tools.example"'
+        )
+        self.assertEqual(
+            proxied,
+            f"{prefix}connect() failed (111: Connection refused) while connecting to upstream, "
+            'client: <redacted-ip>, server: tools.example, request: "<redacted-request>"',
+        )
+
+        no_tail_field = redact(
+            f"{prefix}upstream timed out (110: Connection timed out) while reading response header from upstream, "
+            "client: 203.0.113.9, server: cinemata.example"
+        )
+        self.assertEqual(
+            no_tail_field,
+            f"{prefix}upstream timed out (110: Connection timed out) while reading response header from upstream, "
+            "client: <redacted-ip>, server: cinemata.example",
+        )
+
+        self.assertEqual(
+            redact(f'{prefix}open() "/var/www/html/missing" failed (2: No such file or directory)'),
+            f'{prefix}open() "/var/www/html/missing" failed (2: No such file or directory)',
+        )
+
+    def test_nginx_error_lines_hold_when_the_client_writes_quotes_and_fake_fields(self):
+        redact = nginx_error_redactor()
+        head = (
+            "2026/10/30 10:00:00 [error] 12#12: *3 upstream timed out (110: Connection timed out) "
+            "while reading response header from upstream, client: 203.0.113.9, server: cinemata.example, "
+        )
+        real_tail = 'upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example", referrer: "https://r.example/p"'
+        redacted_head = head.replace("203.0.113.9", "<redacted-ip>")
+        redacted_tail = 'request: "<redacted-request>"'
+
+        # Everything from the first tail field to the end of the line is client-controlled text, so the
+        # whole tail becomes one placeholder whatever the client wrote in it.
+        hostile = {
+            "quote_in_request": f'request: "GET /a?t=1" SENT_QUOTE_IN_REQUEST HTTP/1.1", {real_tail}',
+            "quote_in_referrer": (
+                'request: "GET /a HTTP/1.1", upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example", '
+                'referrer: "https://r.example/p" SENT_QUOTE_IN_REFERRER x"'
+            ),
+            "fake_referrer_without_real_one": 'request: "GET /a", referrer: "SENT_FAKE_REFERRER HTTP/1.1"',
+            "quote_in_upstream_uri": (
+                'request: "GET /d HTTP/1.1", upstream: "http://127.0.0.1:3000/d" SENT_QUOTE_IN_UPSTREAM?x", '
+                'host: "tools.example"'
+            ),
+            "request_without_following_fields": 'request: "GET /a" SENT_NO_FIELDS HTTP/1.1"',
+            "request_cut_off_by_the_error_line_limit": 'request: "GET /a?t=SENT_CUT_OFF',
+            "subrequest": (
+                'request: "GET /a HTTP/1.1", subrequest: "/auth/SENT_SUBREQUEST", '
+                'upstream: "http://127.0.0.1:3000/auth/SENT_SUBREQUEST_URI", host: "cinemata.example"'
+            ),
+            "fake_host_in_request": f'request: "GET /a", host: "SENT_FAKE_HOST", {real_tail}',
+            "fake_referrer_in_request": f'request: "GET /a", referrer: "SENT_FAKE_REFERRER", {real_tail}',
+            "fake_host_in_upstream_uri": (
+                'request: "GET /d", upstream: "http://127.0.0.1:3000/", host: "SENT_FAKE_HOST", '
+                'host: "cinemata.example"'
+            ),
+            "fake_server_in_request": f'request: "GET /a", server: "SENT_FAKE_SERVER", {real_tail}',
+            "fake_client_in_request": f'request: "GET /a, client: SENT_FAKE_CLIENT", {real_tail}',
+            "fake_field_before_the_real_one": (
+                'request: "GET /a", host: "SENT_FAKE_HOST", upstream: "uwsgi://127.0.0.1:9000"'
+            ),
+            "fake_upstream_beside_the_real_one": (
+                'request: "GET /a", upstream: "http://SENT_FAKE_UPSTREAM/x HTTP/1.1", '
+                'upstream: "uwsgi://127.0.0.1:9000", host: "cinemata.example"'
+            ),
+            "lone_fake_upstream_with_client_text_as_host": (
+                'request: "GET /x", upstream: "http://SENT_LONE_UPSTREAM-token=abc HTTP/1.1", host: "cinemata.example"'
+            ),
+            "lone_fake_host_with_client_text": 'request: "GET /a", host: "SENT_LONE_HOST HTTP/1.1"',
+            "quote_in_host": 'request: "GET /a HTTP/1.1", host: "cinemata.example" SENT_QUOTE_IN_HOST x"',
+            "upstream_without_scheme": (
+                'request: "GET /a HTTP/1.1", upstream: "SENT_NO_SCHEME", host: "cinemata.example"'
+            ),
+            "tail_field_without_a_request_field": 'host: "SENT_HOST_ONLY.example"',
+            "referrer_without_a_request_field": 'referrer: "https://SENT_REFERRER_ONLY.example/p"',
+        }
+        for name, fields in hostile.items():
+            with self.subTest(name):
+                redacted = redact(f"{head}{fields}")
+                self.assertNotIn("SENT_", redacted)
+                self.assertEqual(redacted, f"{redacted_head}{redacted_tail}")
+
+        for survivor in (
+            "upstream timed out (110: Connection timed out) while reading response header from upstream",
+            "server: cinemata.example",
+        ):
+            self.assertIn(survivor, redact(f'{head}request: "GET /p?k=v HTTP/1.1", {real_tail}'))
+
+    def test_nginx_error_lines_drop_a_fake_host_or_upstream_when_the_real_one_is_absent(self):
+        redact = nginx_error_redactor()
+        head = (
+            "2026/10/30 10:00:00 [error] 12#12: *3 upstream timed out (110: Connection timed out) "
+            "while reading response header from upstream, client: 203.0.113.9, server: cinemata.example, "
+        )
+        # nginx writes the request line unescaped, so a client can end it and add a field that looks
+        # canonical. With no real field of that kind on the line, field shape cannot expose the fake.
+        fakes = {
+            "fake_host": 'request: "GET /a HTTP/1.1", host: "fakehostsentinel.example"',
+            "fake_upstream": 'request: "GET /a HTTP/1.1", upstream: "http://fakeupstreamsentinel.example"',
+        }
+        for name, fields in fakes.items():
+            with self.subTest(name):
+                redacted = redact(f"{head}{fields}")
+                self.assertNotIn("sentinel", redacted)
+
+    def test_nginx_http_route_comes_from_a_fixed_set_of_templates(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        route_statements = re.findall(r'- (set\(log\.attributes\["http\.route"\].*)', collector)
+        assignment = re.compile(
+            r'set\(log\.attributes\["http\.route"\], "(?P<template>[^"$]+)"\)'
+            r' where log\.attributes\["request_path"\] != nil'
+            r'(?: and IsMatch\(log\.attributes\["request_path"\], "(?P<pattern>[^"]+)"\))?$'
+        )
+        rules = []
+        for statement in route_statements:
+            match = assignment.match(statement)
+            self.assertIsNotNone(match, f"http.route must be a fixed template, not derived from the path: {statement}")
+            rules.append((match.group("template"), match.group("pattern")))
+        self.assertNotIn('replace_pattern(log.attributes["http.route"]', collector)
+
+        def route_for(request_path):
+            route = None
+            for template, pattern in rules:
+                if pattern is None or re.search(pattern, request_path):
+                    route = template
+            return route
+
+        expected = {
+            "/fu/upload/": "/fu/:resource",
+            "/fu": "/fu/:resource",
+            "/upload/": "/upload/:resource",
+            "/api/v1/media/8f2c": "/api/:resource",
+            "/media/original/user/x/video.mp4": "/media/:resource",
+            "/static/js/app.js": "/static/:resource",
+            "/metrics": "/metrics",
+            "/nginx_status": "/nginx_status",
+            "/": "/:other",
+            "/wp-login.php": "/:other",
+            "/s3cr3t-admin/": "/:other",
+            "/s3cr3t-admin/auth/user/42/change/": "/:other",
+            "/apiary": "/:other",
+            "/fusion/x": "/:other",
+            "/metrics/extra": "/:other",
+        }
+        for request_path, route in expected.items():
+            with self.subTest(request_path=request_path):
+                self.assertEqual(route_for(request_path), route)
+
+    def test_collector_ingests_every_log_path_the_stock_site_config_writes(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        site = (ROOT / "deploy/mediacms.io").read_text()
+        updater = (ROOT / "deploy/apply-release-config.sh").read_text()
+
+        def includes(receiver):
+            block = re.search(rf"  {receiver}:\n    include: \[(.*?)\]\n", collector, re.S).group(1)
+            return re.findall(r'"([^"]+)"', block)
+
+        rewritten_prefix = re.search(r'sub\([^,\n]+,\s*"(/var/log/cinematacms/nginx/mediacms\.io\.)"\)', updater).group(
+            1
+        )
+        written = {"access": set(), "error": set()}
+        for kind, path in re.findall(r"^\s*(access|error)_log\s+(\S+)", site, re.MULTILINE):
+            written[kind].add(path)
+        for kind in written:
+            written[kind].add(f"{rewritten_prefix}{kind}.log")
+        receivers = {"access": "file_log/nginx_access", "error": "file_log/nginx_error"}
+
+        for kind, paths in written.items():
+            other_receiver = receivers["error" if kind == "access" else "access"]
+            for path in sorted(paths):
+                with self.subTest(kind=kind, path=path):
+                    own = [glob for glob in includes(receivers[kind]) if PurePosixPath(path).match(glob)]
+                    self.assertTrue(own, f"{path} is not matched by any {receivers[kind]} include glob")
+                    foreign = [glob for glob in includes(other_receiver) if PurePosixPath(path).match(glob)]
+                    self.assertFalse(foreign, f"{path} must not be read by {other_receiver}")
+
+    def test_installer_lets_only_the_collector_into_the_site_log_directory(self):
+        installer = (OBSERVABILITY / "install.sh").read_text()
+        updater = (ROOT / "deploy/apply-release-config.sh").read_text()
+        function = re.search(r"\nprepare_nginx_site_logs\(\) \{\n(.*?)\n\}\n", installer, re.S).group(1)
+        site_log_dir = re.search(r'^NGINX_SITE_LOG_DIR="(.+)"$', installer, re.MULTILINE).group(1)
+
+        self.assertIn(f'NGINX_LOG_DIR="$(root_path {site_log_dir})"', updater)
+        self.assertIn('install -d -m 0750 -g www-data "$NGINX_SITE_LOG_DIR"', function)
+        self.assertIn('setfacl -R -m u:otelcol-contrib:rX "$NGINX_SITE_LOG_DIR"', function)
+        self.assertIn('setfacl -d -m u:otelcol-contrib:rX "$NGINX_SITE_LOG_DIR"', function)
+        self.assertNotIn("usermod -a -G www-data", installer)
+        self.assertRegex(installer, r"prepare_service_logs\n\s+prepare_nginx_site_logs\n")
+        self.assertRegex(installer, r"apt-get install -y acl ")
+        self.assertIn(
+            'runuser -u otelcol-contrib -- test -r "$NGINX_SITE_LOG_DIR" -a -x "$NGINX_SITE_LOG_DIR"', installer
+        )
+
+    def test_nginx_access_regex_extracts_timings_from_the_cinematacms_format(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        pattern = re.search(r"id: parse_nginx_access_request\n.*?regex: '(.*?)'\n", collector, re.S).group(1)
+        regex = re.compile(pattern)
+
+        timed_out = (
+            '203.0.113.9 - - [30/Oct/2026:10:00:00 +0800] "POST /fu/upload/?qquuid=private-id HTTP/1.1" '
+            '408 0 "https://cinemata.org/upload" "Mozilla/5.0 (X11)" "-" rt=300.001 urt=- rl=1048576'
+        )
+        fields = regex.match(timed_out).groupdict()
+        self.assertEqual(fields["http_method"], "POST")
+        self.assertEqual(fields["request_path"], "/fu/upload/")
+        self.assertEqual(fields["status_code"], "408")
+        self.assertEqual(fields["bytes_sent"], "0")
+        self.assertEqual(fields["request_time"], "300.001")
+        self.assertEqual(fields["upstream_time"], "-")
+        self.assertEqual(fields["request_length"], "1048576")
+        self.assertNotIn("private-id", "".join(v or "" for v in fields.values()))
+
+        retried_upstream = timed_out.replace("408 0", "200 31").replace("urt=-", "urt=0.010, 0.120")
+        self.assertEqual(regex.match(retried_upstream).group("upstream_time"), "0.010, 0.120")
+
+        combined_only = (
+            '203.0.113.9 - - [30/Oct/2026:10:00:00 +0800] "POST /fu/upload/ HTTP/1.1" 403 146 "-" "Mozilla/5.0"'
+        )
+        fields = regex.match(combined_only).groupdict()
+        self.assertEqual(fields["status_code"], "403")
+        self.assertFalse(fields["request_time"])
+
+    def test_nginx_access_line_the_parser_cannot_read_exports_only_a_fixed_body(self):
+        collector_text = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        pattern = re.search(r"id: parse_nginx_access_request\n.*?regex: '(.*?)'\n", collector_text, re.S).group(1)
+        regex = re.compile(pattern)
+        prefix = "2001:db8::7 - - [30/Oct/2026:10:00:00 +0800]"
+        suffix = '400 150 "https://referrer.example/p" "agent/1.0" "-" rt=0.000 urt=- rl=0'
+        malformed = {
+            "no request": f'{prefix} "-" {suffix}',
+            "tls handshake bytes": f'{prefix} "\\x16\\x03\\x01\\x02\\x00\\x01\\x00" {suffix}',
+            "space in target": f'{prefix} "GET /a b HTTP/1.1" {suffix}',
+        }
+        for shape, line in malformed.items():
+            with self.subTest(shape=shape):
+                self.assertIsNone(regex.match(line))
+        self.assertIsNotNone(regex.match(f'{prefix} "GET /a HTTP/1.1" {suffix}'))
+
+        access_receiver, error_receiver = re.search(
+            r"  file_log/nginx_access:\n(.*?)\n  file_log/nginx_error:\n(.*?)\n  file_log/", collector_text, re.S
+        ).groups()
+        self.assertRegex(
+            access_receiver,
+            r"      - type: add\n"
+            r"        id: replace_unparsed_nginx_access\n"
+            r"        field: body\n"
+            r"        value: <unparsed-nginx-access>\n"
+            r"        if: attributes\.http_method == nil\n",
+        )
+        self.assertNotIn("field: body", error_receiver)
+
+    def test_nginx_access_line_the_parser_cannot_read_keeps_its_status_and_timings(self):
+        collector_text = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        access_receiver = re.search(
+            r"  file_log/nginx_access:\n(.*?)\n  file_log/nginx_error:", collector_text, re.S
+        ).group(1)
+        self.assertEqual(
+            re.findall(r"^        id: (\w+)$", access_receiver, re.MULTILINE),
+            ["parse_nginx_access_request", "parse_unparsed_nginx_access_status", "replace_unparsed_nginx_access"],
+        )
+        status_operator = re.search(
+            r"      - type: regex_parser\n        id: parse_unparsed_nginx_access_status\n(?:        \S.*\n)+",
+            access_receiver,
+        ).group(0)
+        self.assertIn("        parse_from: body\n", status_operator)
+        self.assertIn("        parse_to: attributes\n", status_operator)
+        self.assertIn("        on_error: send_quiet\n", status_operator)
+        self.assertIn("        if: attributes.http_method == nil\n", status_operator)
+        pattern = re.search(r"        regex: '(.*?)'\n", status_operator).group(1)
+        self.assertNotIn(".*", pattern)
+        regex = re.compile(pattern)
+        self.assertEqual(
+            set(regex.groupindex), {"status_code", "bytes_sent", "request_time", "upstream_time", "request_length"}
+        )
+
+        client = "2001:db8::SENT_IPV6"
+        prefix = f"{client} - - [30/Oct/2026:10:00:00 +0800]"
+
+        def compression(
+            request,
+            status,
+            sent,
+            referrer="https://referrer.example/SENT_REF",
+            agent="agent/SENT_UA",
+            timings="rt=0.000 urt=- rl=0",
+        ):
+            return f'{prefix} "{request}" {status} {sent} "{referrer}" "{agent}" "-" {timings}'
+
+        unreadable_requests = {
+            "no request line, 400": (
+                compression("-", 400, 150, timings="rt=0.000 urt=- rl=0"),
+                "400",
+                "150",
+                "0.000",
+                "-",
+                "0",
+            ),
+            "no request line, client timed out": (
+                compression("-", 408, 0, timings="rt=60.001 urt=- rl=1048576"),
+                "408",
+                "0",
+                "60.001",
+                "-",
+                "1048576",
+            ),
+            "escaped tls bytes": (
+                compression("\\x16\\x03\\x01\\x02\\x00\\x01\\x00", 400, 150, timings="rt=0.001 urt=- rl=7"),
+                "400",
+                "150",
+                "0.001",
+                "-",
+                "7",
+            ),
+            "space in target": (
+                compression("GET /a b HTTP/1.1", 400, 150, timings="rt=0.002 urt=0.010, 0.120 rl=40"),
+                "400",
+                "150",
+                "0.002",
+                "0.010, 0.120",
+                "40",
+            ),
+        }
+        for shape, (line, status, sent, request_time, upstream_time, request_length) in unreadable_requests.items():
+            with self.subTest(shape=shape):
+                fields = regex.match(line).groupdict()
+                self.assertEqual(
+                    fields,
+                    {
+                        "status_code": status,
+                        "bytes_sent": sent,
+                        "request_time": request_time,
+                        "upstream_time": upstream_time,
+                        "request_length": request_length,
+                    },
+                )
+
+        combined = f'{prefix} "-" 400 150 "https://referrer.example/SENT_REF" "agent/SENT_UA"'
+        self.assertEqual(
+            regex.match(combined).groupdict(),
+            {
+                "status_code": "400",
+                "bytes_sent": "150",
+                "request_time": None,
+                "upstream_time": None,
+                "request_length": None,
+            },
+        )
+
+        forged_timings = " rt=9 urt=SECRET rl=9"
+        for field in ("referrer", "agent"):
+            with self.subTest(forged_in=field, format="combined"):
+                forged = {"referrer": "https://referrer.example/SENT_REF", "agent": "agent/SENT_UA"}
+                forged[field] += forged_timings
+                line = f'{prefix} "-" 400 150 "{forged["referrer"]}" "{forged["agent"]}"'
+                fields = regex.match(line).groupdict()
+                self.assertEqual(
+                    (fields["request_time"], fields["upstream_time"], fields["request_length"]), (None, None, None)
+                )
+            with self.subTest(forged_in=field, format="compression"):
+                line = compression("-", 408, 0, timings="rt=3.000 urt=- rl=5", **{field: "client" + forged_timings})
+                fields = regex.match(line).groupdict()
+                self.assertEqual(
+                    (fields["request_time"], fields["upstream_time"], fields["request_length"]), ("3.000", "-", "5")
+                )
+
+        captured = "".join(value or "" for value in regex.match(compression("-", 408, 0)).groupdict().values())
+        for private in (client, "SENT_REF", "SENT_UA", "referrer.example", "agent/"):
+            self.assertNotIn(private, captured)
 
     def test_alert_inhibition_cannot_cross_alert_names(self):
         alertmanager = (OBSERVABILITY / "templates/alertmanager.yml").read_text()
