@@ -200,7 +200,7 @@ disabled after the check. A deployment should retain error events for 30 days.
 
 ## Scheduled jobs
 
-`cms.scheduled_jobs.SCHEDULED_JOBS` defines each job name, cadence, owner, and absence window. Scheduled-job metrics keep last-started and last-success timestamps separate. A skip does not update last success.
+`cms.scheduled_jobs.SCHEDULED_JOBS` defines each job name, cadence, owner, and absence window. Scheduled-job metrics keep last-started and last-success timestamps separate. A skip does not update last success. Each success also publishes the job's absence window, and `CinemataScheduledJobStale` compares last-success age with that window.
 
 `cleanup_media_action_ips` uses this contract for hourly 7-day IP retention.
 The [operator guide](../security/media-action-ip-privacy.md#retention-and-monitoring)

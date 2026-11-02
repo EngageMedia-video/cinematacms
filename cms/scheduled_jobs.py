@@ -48,6 +48,12 @@ SCHEDULED_JOB_LAST_SUCCESS = Gauge(
     ["scheduled_job"],
     multiprocess_mode="mostrecent",
 )
+SCHEDULED_JOB_ABSENCE_THRESHOLD = Gauge(
+    "cinematacms_scheduled_job_absence_threshold_seconds",
+    "Age of the last success after which a scheduled job counts as stale",
+    ["scheduled_job"],
+    multiprocess_mode="mostrecent",
+)
 SCHEDULED_JOB_ITEMS_TOTAL = Counter(
     "cinematacms_scheduled_job_items_total",
     "Items handled by scheduled jobs",
@@ -80,3 +86,4 @@ def record_scheduled_outcome(
             SCHEDULED_JOB_ITEMS_TOTAL.labels(scheduled_job=job, result=result).inc(count)
     if outcome == "succeeded":
         SCHEDULED_JOB_LAST_SUCCESS.labels(scheduled_job=job).set(timestamp)
+        SCHEDULED_JOB_ABSENCE_THRESHOLD.labels(scheduled_job=job).set(SCHEDULED_JOBS[job].absence_seconds)

@@ -117,6 +117,7 @@ REQUIRED_METRIC_LABELS = {
     "cinematacms_scheduled_job_runs_total": ("job", "outcome", "reason_code"),
     "cinematacms_scheduled_job_last_started_timestamp_seconds": ("job",),
     "cinematacms_scheduled_job_last_success_timestamp_seconds": ("job",),
+    "cinematacms_scheduled_job_absence_threshold_seconds": ("job",),
     "cinematacms_celery_beat_freshness_timestamp_seconds": (),
     "cinematacms_telemetry_emission_failures_total": ("signal", "component", "stage"),
     "cinematacms_telemetry_contract_violations_total": ("component", "field"),

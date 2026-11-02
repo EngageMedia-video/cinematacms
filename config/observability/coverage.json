@@ -1012,6 +1012,16 @@
       },
       "description": "cinematacms_scheduled_job_last_success_timestamp_seconds application telemetry signal"
     },
+    "cinematacms_scheduled_job_absence_threshold_seconds": {
+      "type": "gauge",
+      "labels": [
+        "job"
+      ],
+      "dimension_registries": {
+        "job": "scheduled_jobs"
+      },
+      "description": "cinematacms_scheduled_job_absence_threshold_seconds application telemetry signal"
+    },
     "cinematacms_celery_beat_freshness_timestamp_seconds": {
       "type": "gauge",
       "labels": [],
