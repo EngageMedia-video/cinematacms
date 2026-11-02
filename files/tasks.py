@@ -59,6 +59,7 @@ from .models import (
     TranscriptionRequest,
     chunk_groups_awaiting_merge,
     finalize_chunk_group,
+    remove_stale_chunk_merge_dirs,
     schedule_chunk_file_cleanup,
     transcription_dispatch_cache,
 )
@@ -1838,7 +1839,11 @@ def recover_stalled_chunk_groups():
 
     A killed worker's task is not redelivered, so nothing else would call the merge again.
     The dead worker's claim blocks this until it expires, and a live merge keeps its group.
+    It also removes the work directories that killed merges left behind.
     """
+    removed_work_dirs = remove_stale_chunk_merge_dirs()
+    if removed_work_dirs:
+        logger.info("Removed %s stale chunk merge directories", removed_work_dirs)
     groups = chunk_groups_awaiting_merge()
     merged = failed = 0
     for chunk in groups:

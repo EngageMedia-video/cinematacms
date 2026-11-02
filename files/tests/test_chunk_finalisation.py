@@ -5,6 +5,7 @@ import threading
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import connection
 from django.db.models.signals import post_save
@@ -132,6 +133,88 @@ class ChunkFinalisationRaceTests(TransactionTestCase):
         )
         self.assertFalse(Encoding.objects.filter(media=self.media, chunk=True).exists())
         self.assertTrue(Encoding.objects.filter(media=other_media, chunk=True).exists())
+
+    def _abandon_a_merge(self):
+        """Run a merge that dies before it can clean up, as a SIGKILL does, and return what it left behind."""
+        abandoned = []
+
+        class AbandonedDirectory:
+            def __init__(self, dir):
+                self.name = tempfile.mkdtemp(dir=dir)
+                abandoned.append(self.name)
+
+            def __enter__(self):
+                return self.name
+
+            def __exit__(self, *exc_info):
+                return False
+
+        chunk = Encoding.objects.filter(chunk=True).first()
+        with (
+            patch("files.models.tempfile.TemporaryDirectory", AbandonedDirectory),
+            patch("files.models.helpers.run_command", side_effect=OSError("killed")),
+            self.assertRaises(OSError),
+        ):
+            models.finalize_chunk_group(chunk, self.chunk_paths)
+        return abandoned
+
+    def _age(self, path, age):
+        aged = (timezone.now() - age).timestamp()
+        os.utime(path, (aged, aged))
+
+    def test_recovery_removes_what_a_killed_merge_left_behind(self):
+        abandoned = self._abandon_a_merge()
+        self.assertTrue(all(os.path.isdir(path) for path in abandoned))
+        for path in abandoned:
+            self._age(path, timedelta(seconds=settings.CELERY_SOFT_TIME_LIMIT + 60))
+
+        self._recover_stalled_groups()
+
+        self.assertFalse(any(os.path.exists(path) for path in abandoned))
+
+    def test_recovery_has_nothing_left_to_remove_on_a_second_run(self):
+        for path in self._abandon_a_merge():
+            self._age(path, timedelta(seconds=settings.CELERY_SOFT_TIME_LIMIT + 60))
+        self._recover_stalled_groups()
+
+        with patch("files.models.shutil.rmtree") as rmtree:
+            result = self._recover_stalled_groups()
+
+        rmtree.assert_not_called()
+        self.assertEqual(result["failed"], 0)
+
+    def test_recovery_leaves_a_merge_that_is_still_within_its_time_limit(self):
+        abandoned = self._abandon_a_merge()
+
+        self._recover_stalled_groups()
+
+        self.assertTrue(all(os.path.isdir(path) for path in abandoned))
+
+    def test_recovery_running_during_a_merge_keeps_its_directory(self):
+        directories_with_files_before_merge = self._directories_with_files()
+        merge_directories = []
+
+        def recover_while_merging(*args, **kwargs):
+            merge_directories.append(self._directories_with_files() - directories_with_files_before_merge)
+            recover_stalled_chunk_groups()
+            merge_directories.append(self._directories_with_files() - directories_with_files_before_merge)
+            return "concat ok"
+
+        with (
+            patch("files.models.helpers.run_command", side_effect=recover_while_merging),
+            patch.object(Media, "post_encode_actions"),
+            patch("files.models._schedule_storage_usage_refresh_for_media"),
+        ):
+            merged = models.finalize_chunk_group(Encoding.objects.filter(chunk=True).first(), self.chunk_paths)
+
+        before_recovery, after_recovery = merge_directories
+        self.assertTrue(merged)
+        self.assertEqual(len(before_recovery), 1)
+        self.assertEqual(after_recovery, before_recovery)
+        self.assertEqual(self._directories_with_files() - directories_with_files_before_merge, set())
+
+    def _directories_with_files(self):
+        return {directory for directory, _, names in os.walk(self.tmpdir.name) if names}
 
     def _hold_aggregates_until_both_exist(self):
         """Force the failing interleave: both workers save their merged file before either cleans up."""

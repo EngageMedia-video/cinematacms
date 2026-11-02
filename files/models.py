@@ -80,6 +80,8 @@ RE_TIMECODE = re.compile(r"(\d+:\d+:\d+.\d+)")
 CHUNK_ACTIVE_STATUSES = {"pending", "running"}
 # A group that keeps failing to merge stops being retried after this long. A claim must expire well inside it.
 CHUNK_RECOVERY_WINDOW = timedelta(days=1)
+# Under TEMP_DIRECTORY, so recovery can tell a merge's work directories from everything else there.
+CHUNK_MERGE_WORK_DIRECTORY = "cinematacms-chunk-merge"
 _suppress_chunk_cleanup_scheduling = ContextVar("suppress_chunk_cleanup_scheduling", default=False)
 # the final state of a media, and also encoded medias
 MEDIA_ENCODING_STATUS = (
@@ -3031,9 +3033,42 @@ def _record_chunk_finalisation_outcome(outcome, reason_code):
         logger.debug("Could not record chunk finalisation outcome", exc_info=True)
 
 
+def _chunk_merge_work_root():
+    return os.path.join(settings.TEMP_DIRECTORY, CHUNK_MERGE_WORK_DIRECTORY)
+
+
+def remove_stale_chunk_merge_dirs():
+    """Remove the work directories of merges that were killed before they could clean up.
+
+    A merge runs inside a task bound by CELERY_SOFT_TIME_LIMIT, and its claim expires after the
+    same time, so a directory untouched for longer than that belongs to no live merge.
+    """
+    work_root = _chunk_merge_work_root()
+    if not os.path.isdir(work_root):
+        return 0
+    stale_before = time.time() - settings.CELERY_SOFT_TIME_LIMIT
+    removed = 0
+    for entry in os.scandir(work_root):
+        if entry.is_symlink() or not entry.is_dir():
+            continue
+        try:
+            if entry.stat().st_mtime > stale_before:
+                continue
+            shutil.rmtree(entry.path)
+        except FileNotFoundError:
+            continue  # the merge finished and removed its own directory
+        except OSError:
+            logger.warning("Could not remove stale chunk merge directory %s", entry.path, exc_info=True)
+            continue
+        removed += 1
+    return removed
+
+
 def _merge_chunks(instance, chunks):
     chunks_paths = [f.media_file.path for f in chunks]
-    with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as temp_dir:
+    work_root = _chunk_merge_work_root()
+    os.makedirs(work_root, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=work_root) as temp_dir:
         seg_file = helpers.create_temp_file(suffix=".txt", dir=temp_dir)
         tf = helpers.create_temp_file(suffix=f".{instance.profile.extension}", dir=temp_dir)
         with open(seg_file, "w") as ff:
