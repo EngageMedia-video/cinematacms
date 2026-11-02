@@ -1583,6 +1583,21 @@ class RestartScriptTests(unittest.TestCase):
             script.index('chgrp -R cinematacms-observability "$REPO_DIR/logs"'),
         )
 
+    def test_rollback_restarts_every_unit_a_deploy_restarts(self):
+        def restarted_application_units(script_path):
+            script = script_path.read_text()
+            return {
+                unit
+                for line in re.findall(r"^systemctl restart (.+)$", script, re.MULTILINE)
+                for unit in line.split()
+                if unit != "nginx"
+            }
+
+        deployed_units = restarted_application_units(RESTART_SCRIPT)
+
+        self.assertIn("celery_email", deployed_units)
+        self.assertEqual(restarted_application_units(PROJECT_ROOT / "rollback.sh"), deployed_units)
+
     def test_restart_can_deploy_an_exact_revision(self):
         revision = "a" * 40
 

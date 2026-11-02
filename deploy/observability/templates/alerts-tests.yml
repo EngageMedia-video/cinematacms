@@ -249,3 +249,46 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, scheduled_job: cleanup_media_action_ips}
             exp_annotations: {summary: "A scheduled job has missed its success window"}
+
+  # The httpcheck receiver records a healthy check as the 2xx class with the response code, and a failed check, a
+  # non-2xx response or a connection error, as the 2xx class with status code 0. Each is a separate series.
+  - interval: 30s
+    input_series:
+      - series: '{__name__="httpcheck.status",http.status_class="2xx",http.status_code="200",http.url="https://video.example.org/"}'
+        values: '1x9 _x30'
+      - series: '{__name__="httpcheck.status",http.status_class="2xx",http.status_code="0",http.url="https://video.example.org/"}'
+        values: '_x10 0x30'
+    alert_rule_test:
+      - eval_time: 15m
+        groupname: observability-stack
+        alertname: CinemataExternalEndpointDown
+        exp_alerts:
+          - exp_labels: {severity: critical}
+            exp_annotations: {summary: "Public Cinemata endpoint is unavailable"}
+
+  - interval: 30s
+    input_series:
+      - series: '{__name__="httpcheck.status",http.status_class="2xx",http.status_code="200",http.url="https://video.example.org/"}'
+        values: '_x10 1x30'
+      - series: '{__name__="httpcheck.status",http.status_class="2xx",http.status_code="0",http.url="https://video.example.org/"}'
+        values: '0x9 _x30'
+    alert_rule_test:
+      - {eval_time: 15m, groupname: observability-stack, alertname: CinemataExternalEndpointDown, exp_alerts: []}
+
+  # One failed check, as during an nginx reload, leaves a single status code 0 sample. VictoriaMetrics keeps returning
+  # it for minutes after the next healthy check.
+  - interval: 30s
+    input_series:
+      - series: '{__name__="httpcheck.status",http.status_class="2xx",http.status_code="200",http.url="https://video.example.org/"}'
+        values: '1x9 _ 1x30'
+      - series: '{__name__="httpcheck.status",http.status_class="2xx",http.status_code="0",http.url="https://video.example.org/"}'
+        values: '_x10 0'
+    alert_rule_test:
+      - {eval_time: 8m, groupname: observability-stack, alertname: CinemataExternalEndpointDown, exp_alerts: []}
+
+  - interval: 30s
+    input_series:
+      - series: '{__name__="httpcheck.status",http.status_class="2xx",http.status_code="200",http.url="https://video.example.org/"}'
+        values: '1x40'
+    alert_rule_test:
+      - {eval_time: 15m, groupname: observability-stack, alertname: CinemataExternalEndpointDown, exp_alerts: []}
