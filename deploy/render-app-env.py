@@ -125,7 +125,11 @@ def parse_env(path):
 
 def serialize(value):
     if isinstance(value, (list, tuple)):
-        value = ",".join(str(item) for item in value)
+        items = [str(item) for item in value]
+        with_comma = [item for item in items if "," in item]
+        if with_comma:
+            raise RuntimeError("list items cannot hold a comma, env_csv would split them: " + ", ".join(with_comma))
+        value = ",".join(items)
     elif isinstance(value, bool):
         value = "true" if value else "false"
     return shlex.quote(str(value))

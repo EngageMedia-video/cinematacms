@@ -84,6 +84,15 @@ class RuntimeConfigTests(unittest.TestCase):
             )
             self.assertEqual(env_csv("MAINTENANCE_MODE_IGNORE_URLS", []), ["^/static/.*$", "^/metrics$"])
 
+    def test_legacy_list_item_with_a_comma_stops_the_render(self):
+        migrate = runpy.run_path(ROOT / "deploy/render-app-env.py")["migrate_local_settings"]
+        with tempfile.TemporaryDirectory() as directory:
+            legacy = Path(directory) / "local_settings.py"
+            legacy.write_text("MAINTENANCE_MODE_IGNORE_URLS = ('^/static/.*$', '^/a{1,3}$')\n")
+
+            with self.assertRaisesRegex(RuntimeError, r"\^/a\{1,3\}\$"):
+                migrate(legacy)
+
     def test_actor_observability_runs_after_authentication(self):
         settings = (ROOT / "cms/settings.py").read_text()
         self.assertLess(
