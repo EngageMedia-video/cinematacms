@@ -622,12 +622,12 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
     Transcribe media using Whisper.cpp
     """
     try:
-        return _transcribe_with_whisper(friendly_token, translate, notify)
+        return _whisper_transcribe(friendly_token, translate, notify)
     finally:
         transcription_dispatch_cache.delete(Media.transcription_dispatch_key(friendly_token, translate))
 
 
-def _transcribe_with_whisper(friendly_token, translate, notify):
+def _whisper_transcribe(friendly_token, translate, notify):
     logger.info(f"Starting whisper_transcribe for {friendly_token}, translate={translate}")
 
     logger.info(f"Whisper command path: {settings.WHISPER_CPP_COMMAND}")
