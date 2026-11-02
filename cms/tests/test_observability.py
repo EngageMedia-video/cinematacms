@@ -21,6 +21,7 @@ from cms.observability import (
     start_span,
 )
 from cms.observability_middleware import ObservabilityActorMiddleware, ObservabilityMetricsMiddleware
+from cms.redis_telemetry import BROKER_SOCKET_TIMEOUT_SECONDS, ObservabilityRedisAdapter
 from cms.urls import _reference_lookup_rate_limited, metrics_view, observability_reference_lookup
 
 
@@ -686,6 +687,29 @@ class RuntimeGaugeTests(SimpleTestCase):
         for name, gauge in snapshot_gauges.items():
             with self.subTest(metric=name):
                 self.assertEqual(gauge._multiprocess_mode, "mostrecent")
+
+
+class QueueDepthTests(SimpleTestCase):
+    @override_settings(CELERY_BROKER_URL="redis://broker.test:6379/3")
+    def test_queue_depth_reads_the_broker_over_one_connection_and_not_the_cache(self):
+        broker = Mock()
+        broker.llen.side_effect = [7, 2]
+        adapter = ObservabilityRedisAdapter()
+
+        with (
+            patch("cms.redis_telemetry.Redis.from_url", return_value=broker) as connect,
+            patch("django_redis.get_redis_connection") as cache_connection,
+        ):
+            depths = [adapter.queue_depth("short_tasks"), adapter.queue_depth("long_tasks")]
+
+        self.assertEqual(depths, [7, 2])
+        self.assertEqual(broker.llen.call_args_list, [call("short_tasks"), call("long_tasks")])
+        connect.assert_called_once_with(
+            "redis://broker.test:6379/3",
+            socket_connect_timeout=BROKER_SOCKET_TIMEOUT_SECONDS,
+            socket_timeout=BROKER_SOCKET_TIMEOUT_SECONDS,
+        )
+        cache_connection.assert_not_called()
 
 
 class CeleryAndMediaMetricTests(SimpleTestCase):
