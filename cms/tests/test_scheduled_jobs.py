@@ -52,6 +52,17 @@ class ScheduledJobContractTests(SimpleTestCase):
         last_success.labels.return_value.set.assert_called_once_with(20)
         domain.assert_any_call("scheduled.clear_sessions", "skipped", "lock_held")
 
+    def test_success_publishes_the_job_absence_threshold(self):
+        with (
+            patch("cms.scheduled_jobs.SCHEDULED_JOB_ABSENCE_THRESHOLD") as threshold,
+            patch("cms.scheduled_jobs.record_domain_outcome"),
+        ):
+            record_scheduled_outcome("clear_sessions", "skipped", "lock_held", timestamp=10)
+            threshold.labels.return_value.set.assert_not_called()
+            record_scheduled_outcome("clear_sessions", "succeeded", timestamp=20)
+        threshold.labels.assert_called_once_with(scheduled_job="clear_sessions")
+        threshold.labels.return_value.set.assert_called_once_with(SCHEDULED_JOBS["clear_sessions"].absence_seconds)
+
     def test_celery_signal_records_structured_job_result(self):
         from files import metrics
 

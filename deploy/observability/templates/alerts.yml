@@ -24,7 +24,7 @@ groups:
         labels: {severity: critical}
         annotations: {summary: "Email delivery state was lost with its worker"}
       - alert: CinemataScheduledJobStale
-        expr: (time() - cinematacms_scheduled_job_last_success_timestamp_seconds > 900) or absent_over_time(cinematacms_scheduled_job_last_success_timestamp_seconds[15m])
+        expr: (time() - cinematacms_scheduled_job_last_success_timestamp_seconds > on(scheduled_job) cinematacms_scheduled_job_absence_threshold_seconds) or absent_over_time(cinematacms_scheduled_job_last_success_timestamp_seconds[15m])
         for: 5m
         labels: {severity: warning}
         annotations: {summary: "A scheduled job has missed its success window"}
@@ -34,7 +34,7 @@ groups:
         labels: {severity: critical}
         annotations: {summary: "Celery beat freshness is older than three minutes"}
       - alert: CinemataWorkerStale
-        expr: (time() - cinematacms_celery_worker_heartbeat_timestamp_seconds > 120) or absent_over_time(cinematacms_celery_worker_heartbeat_timestamp_seconds[2m])
+        expr: (time() - max by (service_role) (cinematacms_celery_worker_heartbeat_timestamp_seconds) > 120) or absent_over_time(cinematacms_celery_worker_heartbeat_timestamp_seconds[2m])
         for: 2m
         labels: {severity: critical}
         annotations: {summary: "A Celery worker heartbeat is stale"}

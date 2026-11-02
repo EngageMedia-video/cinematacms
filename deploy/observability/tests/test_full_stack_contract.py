@@ -709,6 +709,14 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("or vector(0)", dashboard)
         alerts = (OBSERVABILITY / "templates/alerts.yml").read_text()
         self.assertIn("absent_over_time(cinematacms_scheduled_job_last_success_timestamp_seconds[15m])", alerts)
+        self.assertIn("> on(scheduled_job) cinematacms_scheduled_job_absence_threshold_seconds", alerts)
+        self.assertIn("max by (service_role) (cinematacms_celery_worker_heartbeat_timestamp_seconds) > 120", alerts)
+        self.assertTrue(
+            any(
+                "max by (service_role) (cinematacms_celery_worker_heartbeat_timestamp_seconds)" in expr
+                for expr in expressions
+            )
+        )
         self.assertIn("clamp_min(sum(pg_settings_max_connections), 1)", alerts)
 
     def test_overview_shows_chunk_finalisation_outcomes_from_metrics_and_logs(self):
@@ -1535,6 +1543,7 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn("Correlated logs", dashboard)
         self.assertIn("/d/cinematacms-logs/", dashboard)
 
+        self.assertEqual(panels_by_title["Recent traces by service"]["type"], "table")
         search_target = panels_by_title["Recent traces by service"]["targets"][0]
         self.assertEqual(search_target["queryType"], "search")
         self.assertEqual(search_target["service"], "$service")

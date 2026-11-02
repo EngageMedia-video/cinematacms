@@ -318,6 +318,7 @@ SITE_ID = env_int("SITE_ID", 1)
 SESSION_COOKIE_AGE = 28800  # 8 hours in seconds
 CSRF_COOKIE_AGE = None  # Make CSRF token session-based
 SESSION_COOKIE_DOMAIN = env_optional_str("SESSION_COOKIE_DOMAIN")
+SESSION_COOKIE_NAME = os.getenv("SESSION_COOKIE_NAME", "sessionid")
 SESSION_COOKIE_SAMESITE = env_optional_str("SESSION_COOKIE_SAMESITE", "Lax")
 SESSION_COOKIE_SECURE = env_optional_bool("SESSION_COOKIE_SECURE", False)
 CSRF_COOKIE_DOMAIN = env_optional_str("CSRF_COOKIE_DOMAIN")
@@ -843,14 +844,17 @@ MAINTENANCE_MODE_IGNORE_ADMIN_SITE = env_bool("MAINTENANCE_MODE_IGNORE_ADMIN_SIT
 # the value in seconds of the Retry-After header during maintenance-mode
 MAINTENANCE_MODE_RETRY_AFTER = env_int("MAINTENANCE_MODE_RETRY_AFTER", 3600)
 # URLs that should be accessible during maintenance mode
-MAINTENANCE_MODE_IGNORE_URLS = (
-    r"^/static/.*$",  # Allow static files
-    r"^/media/.*$",  # Allow media files if needed
-    r"^/favicon\.ico$",  # Allow favicon
-    r"^/robots\.txt$",  # Allow robots.txt if present
-    r"^/apple-touch-icon.*\.png$",  # Allow Apple touch icons
-    r"^/manifest\.json$",  # Allow web app manifest
-    r"^/browserconfig\.xml$",  # Allow Windows tile config
+MAINTENANCE_MODE_IGNORE_URLS = env_csv(
+    "MAINTENANCE_MODE_IGNORE_URLS",
+    [
+        r"^/static/.*$",  # Allow static files
+        r"^/media/.*$",  # Allow media files if needed
+        r"^/favicon\.ico$",  # Allow favicon
+        r"^/robots\.txt$",  # Allow robots.txt if present
+        r"^/apple-touch-icon.*\.png$",  # Allow Apple touch icons
+        r"^/manifest\.json$",  # Allow web app manifest
+        r"^/browserconfig\.xml$",  # Allow Windows tile config
+    ],
 )
 
 
@@ -866,6 +870,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = env_bool("SECURE_CONTENT_TYPE_NOSNIFF", True)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
 SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)
 SECURE_HSTS_SECONDS = env_int("SECURE_HSTS_SECONDS", 0)
+SECURE_REDIRECT_EXEMPT = env_csv("SECURE_REDIRECT_EXEMPT", [])
 SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)
 
 CRISPY_TEMPLATE_PACK = "bootstrap"
