@@ -63,7 +63,7 @@ groups:
         labels: {severity: critical}
         annotations: {summary: "Observability scrape target is down"}
       - alert: CinemataCollectorExportFailures
-        expr: (sum(increase(otelcol_exporter_send_failed_metric_points[5m])) or vector(0)) + (sum(increase(otelcol_exporter_send_failed_log_records[5m])) or vector(0)) + (sum(increase(otelcol_exporter_send_failed_spans[5m])) or vector(0)) > 0
+        expr: (sum(increase(otelcol_exporter_send_failed_metric_points[5m])) or vector(0)) + (sum(increase(otelcol_exporter_send_failed_log_records[5m])) or vector(0)) + (sum(increase(otelcol_exporter_send_failed_spans[5m])) or vector(0)) > 0 or min_over_time(otelcol_exporter_queue_size[5m]) > 0
         for: 5m
         labels: {severity: critical}
         annotations: {summary: "OpenTelemetry Collector cannot export telemetry"}

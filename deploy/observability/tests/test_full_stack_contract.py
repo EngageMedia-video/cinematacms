@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 import re
@@ -47,6 +48,31 @@ def nginx_error_redactor():
         return line
 
     return redact
+
+
+def logged_error_messages(source, function_names):
+    """Text of every logger.error call in the named functions and their _named helpers, each value as X."""
+    messages = []
+    for function in ast.parse(source).body:
+        if not (isinstance(function, ast.FunctionDef) and function.name.lstrip("_") in function_names):
+            continue
+        for call in ast.walk(function):
+            if not (
+                isinstance(call, ast.Call)
+                and isinstance(call.func, ast.Attribute)
+                and call.func.attr == "error"
+                and isinstance(call.func.value, ast.Name)
+                and call.func.value.id == "logger"
+            ):
+                continue
+            template = call.args[0]
+            if isinstance(template, ast.JoinedStr):
+                messages.append(
+                    "".join(part.value if isinstance(part, ast.Constant) else "X" for part in template.values)
+                )
+            else:
+                messages.append(re.sub(r"%[sd]", "X", template.value))
+    return messages
 
 
 class FakeVictoriaMetricsHandler(BaseHTTPRequestHandler):
@@ -515,17 +541,28 @@ class FullStackContractTests(unittest.TestCase):
 
     def test_overview_fallbacks_need_a_live_producer(self):
         dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
-        panels = {panel["title"]: panel for panel in dashboard["panels"]}
-        producer_by_target = {
-            ("Firing alerts by rule", "A"): "vmalert",
-            ("Queue in flight", "A"): "redis",
-            ("Queue in flight", "B"): "celery",
-        }
+        fallback_targets = [
+            (panel["title"], target)
+            for panel in dashboard["panels"]
+            for target in panel.get("targets", [])
+            if "vector(0)" in target.get("expr", "")
+        ]
 
-        for (title, ref_id), producer in producer_by_target.items():
-            with self.subTest(panel=title, target=ref_id):
-                (target,) = (target for target in panels[title]["targets"] if target["refId"] == ref_id)
-                self.assertTrue(target["expr"].endswith(f' and on() up{{service.name="{producer}"}} == 1)'))
+        self.assertGreater(len(fallback_targets), 20)
+        for title, target in fallback_targets:
+            with self.subTest(panel=title, expr=target["expr"]):
+                self.assertRegex(target["expr"], r'and on\(\) up\{service\.name="[a-z-]+"\} == 1\)?$')
+        producers_by_panel = {
+            "Firing alerts by rule": "vmalert",
+            "Queue in flight": "(redis|celery)",
+            "Collector queue and export failures": "otelcol-contrib",
+            "Cache health": "cinematacms",
+        }
+        for title, producer in producers_by_panel.items():
+            with self.subTest(panel=title):
+                for fallback_title, target in fallback_targets:
+                    if fallback_title == title:
+                        self.assertRegex(target["expr"], rf'up\{{service\.name="{producer}"\}}')
 
     def test_alert_and_queue_panels_fill_the_row_and_stay_readable_at_1366_pixels(self):
         dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
@@ -760,7 +797,7 @@ class FullStackContractTests(unittest.TestCase):
         lost_race_expr = panels["Chunk finalisation lost races"]["targets"][0]["expr"]
         for selector in ('operation="chunking"', 'outcome="skipped"', 'reason_code="lock_held"'):
             self.assertIn(selector, lost_race_expr)
-        self.assertIn("or vector(0)", lost_race_expr)
+        self.assertIn("vector(0)", lost_race_expr)
 
         outcomes = panels["Chunk finalisation outcomes"]
         events = panels["Chunk finalisation events"]
@@ -820,7 +857,7 @@ class FullStackContractTests(unittest.TestCase):
             tool, event = target["legendFormat"].split(" ", 1)
             self.assertTrue(target["instant"])
             self.assertIn("[$__range]", target["expr"])
-            self.assertTrue(target["expr"].endswith(" or on() vector(0)"), target["expr"])
+            self.assertIn(" or on() (vector(0) and on() up{", target["expr"])
             if event == "task errors":
                 self.assertIn(f'celery_task_failed_total{{name="{tasks[tool]}"}}', target["expr"])
             else:
@@ -840,7 +877,7 @@ class FullStackContractTests(unittest.TestCase):
         for target, operation in zip(over_time, operations.values(), strict=True):
             self.assertIn(f'cinematacms_domain_outcomes_total{{operation="{operation}"}}', target["expr"])
             self.assertIn("by (outcome, reason_code)", target["expr"])
-            self.assertTrue(target["expr"].endswith(" or on() vector(0)"), target["expr"])
+            self.assertIn(" or on() (vector(0) and on() up{", target["expr"])
 
     def test_overview_runtime_percentiles_use_the_exporter_buckets_per_task(self):
         overview = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
@@ -870,13 +907,33 @@ class FullStackContractTests(unittest.TestCase):
         self.assertLessEqual(failures["targets"][0]["maxLines"], 200)
         for unit in ("celery_long.service", "celery_whisper.service"):
             self.assertIn(f'systemd.unit:"{unit}"', expression)
+        # The main worker process logs a lost worker through the application log, which has no unit.
+        self.assertTrue(
+            expression.startswith('(logger.name:"celery.worker.request" AND _msg:"Task handler raised error") OR (')
+        )
         # The worker units log plain text, so the failures are told apart by the messages files/tasks.py writes.
         message_pattern = re.search(r'_msg:~"(.*)"$', expression).group(1)
         tasks_source = (ROOT / "files/tasks.py").read_text()
-        for emitted in ("mp4hls failed", "ffmpeg error", "Whisper command failed", "No progress for"):
-            self.assertIn(emitted, tasks_source)
-            self.assertRegex(emitted, message_pattern)
-        self.assertRegex("Task create_hls[1f2e] raised unexpected: OSError()", message_pattern)
+        # whisper.cpp writes its progress to stderr on every run, and the subtitle cleanup error only
+        # follows "Exception saving subtitle", which already lists the run.
+        routine_error_prefixes = ("Whisper stderr:", "Error cleaning up subtitle")
+        error_messages = logged_error_messages(tasks_source, ("encode_media", "create_hls", "whisper_transcribe"))
+        for prefix in routine_error_prefixes:
+            self.assertTrue(any(message.startswith(prefix) for message in error_messages), prefix)
+        for message in error_messages:
+            if message.startswith(routine_error_prefixes):
+                self.assertNotRegex(message, message_pattern)
+            else:
+                self.assertRegex(message, message_pattern)
+        # create_hls logs a missing media at info level and counts it as a failed outcome.
+        self.assertIn('logger.info("failed to get media with friendly_token %s" % friendly_token)', tasks_source)
+        for celery_line in (
+            "Task create_hls[1f2e] raised unexpected: OSError()",
+            "failed to get media with friendly_token abc123: Media matching query does not exist.",
+            "failed to get media with friendly_token abc123",
+            "Encoding 42 failed: media has no duration",
+        ):
+            self.assertRegex(celery_line, message_pattern)
         # Every Whisper run logs these, so matching them would list successful runs as failures.
         for routine in ("Whisper command path: /bin/whisper-cli", "Whisper stderr: whisper_init_from_file"):
             self.assertNotRegex(routine, message_pattern)
@@ -1610,9 +1667,22 @@ class FullStackContractTests(unittest.TestCase):
         self.assertEqual(search_target["operation"], "$operation")
         self.assertEqual(search_target["tags"], "$tags")
 
-        lookup_target = panels_by_title["Trace ID lookup"]["targets"][0]
-        self.assertNotIn("queryType", lookup_target)
-        self.assertEqual(lookup_target["query"], "$trace_id")
+        # A trace-by-ID query runs when the dashboard opens and the placeholder ID is answered with a 404,
+        # so only search queries may query the trace datasource.
+        for panel in parsed["panels"]:
+            for target in panel.get("targets", []):
+                self.assertEqual(target.get("queryType"), "search", panel["title"])
+        lookup = panels_by_title["Trace ID lookup"]
+        self.assertEqual(lookup["type"], "text")
+        self.assertEqual(lookup["options"]["mode"], "markdown")
+        explore_link = re.search(r"\]\((/explore\?[^)]+)\)", lookup["options"]["content"]).group(1)
+        explore_query = urllib.parse.parse_qs(urllib.parse.urlparse(explore_link).query)
+        self.assertEqual(explore_query["schemaVersion"], ["1"])
+        pane = json.loads(explore_query["panes"][0].replace("${trace_id:percentencode}", "abc123"))["a"]
+        self.assertEqual(pane["datasource"], "victoriatraces")
+        self.assertEqual(pane["queries"][0]["query"], "abc123")
+        self.assertEqual(pane["queries"][0]["datasource"], {"type": "jaeger", "uid": "victoriatraces"})
+        self.assertNotIn("queryType", pane["queries"][0])
         self.assertIn("__enter_value__", dashboard)
         self.assertNotIn("@", dashboard)
 
@@ -1707,6 +1777,40 @@ class FullStackContractTests(unittest.TestCase):
         alertability = json.loads((ROOT / "config/observability/alertability.json").read_text())
         for condition in alertability["conditions"]:
             self.assertIn(condition["signal"], rules)
+
+    def test_a_stopped_backend_leaves_the_collector_and_vmalert_running(self):
+        # Requires= stops the unit with its dependency, and starting the dependency does not bring it back.
+        for unit in ("cinematacms-otelcol.service", "vmalert.service"):
+            with self.subTest(unit=unit):
+                template = (OBSERVABILITY / f"templates/{unit}").read_text()
+                self.assertNotIn("Requires=", template)
+                self.assertNotIn("BindsTo=", template)
+                self.assertRegex(template, r"(?m)^Wants=.*victoriametrics\.service")
+
+    def test_collector_export_alert_fires_on_a_backlog_that_never_drains(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        rules = (OBSERVABILITY / "templates/alerts.yml").read_text()
+        rule_tests = (OBSERVABILITY / "templates/alerts-tests.yml").read_text()
+        expression = re.search(r"alert: CinemataCollectorExportFailures\n\s+expr: (.*)\n", rules).group(1)
+
+        # The exporters retry forever, so during an outage no send fails: the data waits in the queue.
+        self.assertIn("max_elapsed_time: 0s", collector)
+        for failed_counter in (
+            "otelcol_exporter_send_failed_metric_points",
+            "otelcol_exporter_send_failed_log_records",
+            "otelcol_exporter_send_failed_spans",
+        ):
+            self.assertIn(failed_counter, expression)
+        # Between two batches the queue holds an item for a moment, so only a queue that stays non-empty counts.
+        backlog = re.search(r"min_over_time\(otelcol_exporter_queue_size\[(\d+)m\]\) > 0", expression)
+        self.assertIsNotNone(backlog, expression)
+        self.assertGreaterEqual(int(backlog.group(1)), 5)
+        self.assertIn("otelcol_exporter_queue_size", (OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        # vmalert-tool runs these when the stack is installed.
+        self.assertRegex(rule_tests, r"series: 'otelcol_exporter_queue_size\{exporter=\"[^\"]+\"\}'\n\s+values: '0 1 0")
+        self.assertRegex(
+            rule_tests, r"series: 'otelcol_exporter_queue_size\{exporter=\"[^\"]+\"\}'\n\s+values: '0\+0x5 2\+1x"
+        )
 
     def test_all_downloaded_archives_have_two_pinned_checksums(self):
         manifest = (OBSERVABILITY / "manifest.env").read_text()

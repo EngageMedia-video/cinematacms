@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import tempfile
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -705,6 +706,39 @@ class QueueDepthTests(SimpleTestCase):
         cache_connection.assert_not_called()
 
 
+class QueueDepthRefreshTests(SimpleTestCase):
+    @override_settings(OBSERVABILITY_CELERY_QUEUES=["short_tasks", "long_tasks"])
+    def test_an_unreadable_broker_blanks_every_queue_and_records_the_failure(self):
+        from files import metrics
+
+        with (
+            patch("cms.redis_telemetry.observability_redis.queue_depth", side_effect=[7, ConnectionError()]),
+            patch("files.metrics.CELERY_QUEUE_DEPTH") as depth,
+            patch("files.metrics.record_telemetry_failure") as failure,
+        ):
+            metrics._refresh_queue_depths()
+
+        self.assertEqual(
+            depth.labels.call_args_list,
+            [call(queue="short_tasks"), call(queue="long_tasks")],
+        )
+        written = [args.args[0] for args in depth.labels.return_value.set.call_args_list]
+        self.assertTrue(all(math.isnan(value) for value in written), written)
+        failure.assert_called_once_with("metrics", "celery", "record")
+
+    @override_settings(OBSERVABILITY_CELERY_QUEUES=["short_tasks"])
+    def test_a_readable_broker_writes_the_depth(self):
+        from files import metrics
+
+        with (
+            patch("cms.redis_telemetry.observability_redis.queue_depth", return_value=7),
+            patch("files.metrics.CELERY_QUEUE_DEPTH") as depth,
+        ):
+            metrics._refresh_queue_depths()
+
+        depth.labels.return_value.set.assert_called_once_with(7)
+
+
 class CeleryAndMediaMetricTests(SimpleTestCase):
     def test_task_names_are_normalized_to_bounded_families(self):
         from files.metrics import normalize_task_family
@@ -879,6 +913,49 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             task_family="encoding", queue="short_tasks", event="completed", outcome="succeeded"
         )
         domain.assert_called_once_with("chunking", "failed", "returned_false")
+
+    def test_lost_worker_is_recorded_as_a_failed_outcome_of_the_tool_operation(self):
+        from celery.exceptions import WorkerLostError
+
+        from files import metrics
+
+        lost = WorkerLostError("Worker exited prematurely: signal 9 (SIGKILL) Job: 3.")
+        for task_name, operation in (
+            ("encode_media", "encoding"),
+            ("create_hls", "hls"),
+            ("whisper_transcribe", "transcription"),
+            ("chunkize_media", "chunking"),
+        ):
+            with self.subTest(task_name=task_name):
+                with (
+                    patch("files.metrics.CELERY_TASKS_TOTAL"),
+                    patch("files.metrics.record_domain_outcome") as domain,
+                ):
+                    metrics._on_task_failure(sender=SimpleNamespace(name=task_name), task_id="lost-1", exception=lost)
+                domain.assert_called_once_with(operation, "failed", "worker_lost")
+
+    def test_task_that_already_recorded_its_failed_outcome_is_not_counted_again(self):
+        from files import metrics
+
+        for task_name in ("encode_media", "create_hls"):
+            with self.subTest(task_name=task_name):
+                with (
+                    patch("files.metrics.CELERY_TASKS_TOTAL"),
+                    patch("files.metrics.record_domain_outcome") as domain,
+                ):
+                    metrics._on_task_failure(
+                        sender=SimpleNamespace(name=task_name), task_id="raised-1", exception=OSError("disk")
+                    )
+                domain.assert_not_called()
+
+    def test_raised_error_of_a_signal_recorded_task_keeps_its_task_exception_reason(self):
+        from files import metrics
+
+        with patch("files.metrics.CELERY_TASKS_TOTAL"), patch("files.metrics.record_domain_outcome") as domain:
+            metrics._on_task_failure(
+                sender=SimpleNamespace(name="whisper_transcribe"), task_id="raised-2", exception=OSError("disk")
+            )
+        domain.assert_called_once_with("transcription", "failed", "task_exception")
 
     def test_hls_command_that_cannot_run_is_recorded_as_a_failed_outcome(self):
         import tempfile

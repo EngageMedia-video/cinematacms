@@ -187,6 +187,69 @@ tests:
           - exp_labels: {severity: warning, queue_name: long_tasks}
             exp_annotations: {summary: "A Celery queue holds tasks and no worker consumes it"}
 
+  # The exporters retry forever, so an outage fills the queue and no send ever fails. One item that waits between two
+  # batches is normal, and only a queue that is never empty for the whole window is a backlog.
+  - interval: 1m
+    input_series:
+      - series: 'otelcol_exporter_queue_size{exporter="otlp_http/victorialogs"}'
+        values: '0 1 0 0 1 0 0 0 1 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 0'
+    alert_rule_test:
+      - {eval_time: 29m, groupname: observability-stack, alertname: CinemataCollectorExportFailures, exp_alerts: []}
+
+  - interval: 1m
+    input_series:
+      - series: 'otelcol_exporter_queue_size{exporter="otlp_http/victorialogs"}'
+        values: '0+0x5 2+1x40'
+    alert_rule_test:
+      - eval_time: 30m
+        groupname: observability-stack
+        alertname: CinemataCollectorExportFailures
+        exp_alerts:
+          - exp_labels: {severity: critical, exporter: otlp_http/victorialogs}
+            exp_annotations: {summary: "OpenTelemetry Collector cannot export telemetry"}
+
+  # time() is not the test clock, so a recent heartbeat is written as a far future one, and a window as a huge one.
+  # The newest heartbeat of a role decides: a series left by an older worker reference does not raise the alert.
+  - interval: 1m
+    input_series:
+      - series: 'cinematacms_celery_worker_heartbeat_timestamp_seconds{service_role="long",worker_ref="old"}'
+        values: '0+0x20'
+      - series: 'cinematacms_celery_worker_heartbeat_timestamp_seconds{service_role="long",worker_ref="new"}'
+        values: '99999999999+0x20'
+    alert_rule_test:
+      - {eval_time: 15m, groupname: cinematacms-contract, alertname: CinemataWorkerStale, exp_alerts: []}
+
+  - interval: 1m
+    input_series:
+      - series: 'cinematacms_celery_worker_heartbeat_timestamp_seconds{service_role="long",worker_ref="old"}'
+        values: '0+0x20'
+    alert_rule_test:
+      - eval_time: 15m
+        groupname: cinematacms-contract
+        alertname: CinemataWorkerStale
+        exp_alerts:
+          - exp_labels: {severity: critical, service_role: long}
+            exp_annotations: {summary: "A Celery worker heartbeat is stale"}
+
+  # Each job is judged by its own window: the same age is inside one window and past the other.
+  - interval: 1m
+    input_series:
+      - series: 'cinematacms_scheduled_job_last_success_timestamp_seconds{scheduled_job="clear_sessions"}'
+        values: '0+0x20'
+      - series: 'cinematacms_scheduled_job_absence_threshold_seconds{scheduled_job="clear_sessions"}'
+        values: '99999999999+0x20'
+      - series: 'cinematacms_scheduled_job_last_success_timestamp_seconds{scheduled_job="cleanup_media_action_ips"}'
+        values: '0+0x20'
+      - series: 'cinematacms_scheduled_job_absence_threshold_seconds{scheduled_job="cleanup_media_action_ips"}'
+        values: '300+0x20'
+    alert_rule_test:
+      - eval_time: 15m
+        groupname: cinematacms-contract
+        alertname: CinemataScheduledJobStale
+        exp_alerts:
+          - exp_labels: {severity: warning, scheduled_job: cleanup_media_action_ips}
+            exp_annotations: {summary: "A scheduled job has missed its success window"}
+
   # The httpcheck receiver records a healthy check as the 2xx class with the response code, and a failed check, a
   # non-2xx response or a connection error, as the 2xx class with status code 0. Each is a separate series.
   - interval: 30s
