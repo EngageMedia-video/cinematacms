@@ -305,6 +305,8 @@ TELEMETRY_COMPONENTS = frozenset(
     }
 )
 TELEMETRY_STAGES = frozenset({"emit", "export", "start", "attribute", "finish", "reset", "prepare", "record"})
+# The multiprocess gauge keeps its last write, so an unreadable broker would otherwise freeze the old depth.
+UNKNOWN_QUEUE_DEPTH = float("nan")
 MEDIA_TASK_OPERATIONS = {
     "chunkize_media": "chunking",
     "whisper_transcribe": "transcription",
@@ -609,16 +611,27 @@ def refresh_runtime_metrics() -> None:
     _refresh_queue_depths()
     _refresh_transcription_requests()
     _refresh_stalled_encodings()
+    _refresh_scheduled_job_thresholds()
+
+
+def _refresh_scheduled_job_thresholds() -> None:
+    from cms.scheduled_jobs import publish_absence_thresholds
+
+    _safe_metric("scheduled job thresholds", publish_absence_thresholds)
 
 
 def _refresh_queue_depths() -> None:
+    queues = getattr(settings, "OBSERVABILITY_CELERY_QUEUES", [])
     try:
         from cms.redis_telemetry import observability_redis
 
-        for queue in getattr(settings, "OBSERVABILITY_CELERY_QUEUES", []):
-            CELERY_QUEUE_DEPTH.labels(queue=queue).set(observability_redis.queue_depth(queue))
+        depths = {queue: observability_redis.queue_depth(queue) for queue in queues}
     except Exception:
+        record_telemetry_failure("metrics", "celery", "record")
         logger.debug("Could not refresh Celery queue depth metrics", exc_info=True)
+        depths = dict.fromkeys(queues, UNKNOWN_QUEUE_DEPTH)
+    for queue, depth in depths.items():
+        CELERY_QUEUE_DEPTH.labels(queue=queue).set(depth)
 
 
 def _refresh_transcription_requests() -> None:

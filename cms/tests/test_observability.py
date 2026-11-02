@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import tempfile
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -710,6 +711,39 @@ class QueueDepthTests(SimpleTestCase):
             socket_timeout=BROKER_SOCKET_TIMEOUT_SECONDS,
         )
         cache_connection.assert_not_called()
+
+
+class QueueDepthRefreshTests(SimpleTestCase):
+    @override_settings(OBSERVABILITY_CELERY_QUEUES=["short_tasks", "long_tasks"])
+    def test_an_unreadable_broker_blanks_every_queue_and_records_the_failure(self):
+        from files import metrics
+
+        with (
+            patch("cms.redis_telemetry.observability_redis.queue_depth", side_effect=[7, ConnectionError()]),
+            patch("files.metrics.CELERY_QUEUE_DEPTH") as depth,
+            patch("files.metrics.record_telemetry_failure") as failure,
+        ):
+            metrics._refresh_queue_depths()
+
+        self.assertEqual(
+            depth.labels.call_args_list,
+            [call(queue="short_tasks"), call(queue="long_tasks")],
+        )
+        written = [args.args[0] for args in depth.labels.return_value.set.call_args_list]
+        self.assertTrue(all(math.isnan(value) for value in written), written)
+        failure.assert_called_once_with("metrics", "celery", "record")
+
+    @override_settings(OBSERVABILITY_CELERY_QUEUES=["short_tasks"])
+    def test_a_readable_broker_writes_the_depth(self):
+        from files import metrics
+
+        with (
+            patch("cms.redis_telemetry.observability_redis.queue_depth", return_value=7),
+            patch("files.metrics.CELERY_QUEUE_DEPTH") as depth,
+        ):
+            metrics._refresh_queue_depths()
+
+        depth.labels.return_value.set.assert_called_once_with(7)
 
 
 class CeleryAndMediaMetricTests(SimpleTestCase):
