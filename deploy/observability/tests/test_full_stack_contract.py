@@ -1676,6 +1676,31 @@ class FullStackContractTests(unittest.TestCase):
         for condition in alertability["conditions"]:
             self.assertIn(condition["signal"], rules)
 
+    def test_collector_export_alert_fires_on_a_backlog_that_never_drains(self):
+        collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
+        rules = (OBSERVABILITY / "templates/alerts.yml").read_text()
+        rule_tests = (OBSERVABILITY / "templates/alerts-tests.yml").read_text()
+        expression = re.search(r"alert: CinemataCollectorExportFailures\n\s+expr: (.*)\n", rules).group(1)
+
+        # The exporters retry forever, so during an outage no send fails: the data waits in the queue.
+        self.assertIn("max_elapsed_time: 0s", collector)
+        for failed_counter in (
+            "otelcol_exporter_send_failed_metric_points",
+            "otelcol_exporter_send_failed_log_records",
+            "otelcol_exporter_send_failed_spans",
+        ):
+            self.assertIn(failed_counter, expression)
+        # Between two batches the queue holds an item for a moment, so only a queue that stays non-empty counts.
+        backlog = re.search(r"min_over_time\(otelcol_exporter_queue_size\[(\d+)m\]\) > 0", expression)
+        self.assertIsNotNone(backlog, expression)
+        self.assertGreaterEqual(int(backlog.group(1)), 5)
+        self.assertIn("otelcol_exporter_queue_size", (OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        # vmalert-tool runs these when the stack is installed.
+        self.assertRegex(rule_tests, r"series: 'otelcol_exporter_queue_size\{exporter=\"[^\"]+\"\}'\n\s+values: '0 1 0")
+        self.assertRegex(
+            rule_tests, r"series: 'otelcol_exporter_queue_size\{exporter=\"[^\"]+\"\}'\n\s+values: '0\+0x5 2\+1x"
+        )
+
     def test_all_downloaded_archives_have_two_pinned_checksums(self):
         manifest = (OBSERVABILITY / "manifest.env").read_text()
         for component in (
