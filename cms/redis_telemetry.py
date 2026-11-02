@@ -11,6 +11,9 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+from django.conf import settings
+from redis import Redis
+
 from files.metrics import record_telemetry_failure
 
 from .authentication_telemetry import AuthenticationDependencyUnavailable
@@ -25,6 +28,8 @@ from .cache_telemetry import (
     _safe_event,
     _slow_threshold,
 )
+
+BROKER_SOCKET_TIMEOUT_SECONDS = 2
 
 
 class RestrictedMediaRedisAdapter:
@@ -186,10 +191,20 @@ restricted_media_redis = RestrictedMediaRedisAdapter()
 class ObservabilityRedisAdapter:
     """Read Redis-backed operational state without exposing queue names as telemetry values."""
 
-    def queue_depth(self, queue: str) -> int:
-        from django_redis import get_redis_connection
+    def __init__(self) -> None:
+        self.broker: Redis | None = None
 
-        return int(get_redis_connection("default").llen(queue))
+    def _broker(self) -> Redis:
+        if self.broker is None:
+            self.broker = Redis.from_url(
+                settings.CELERY_BROKER_URL,
+                socket_connect_timeout=BROKER_SOCKET_TIMEOUT_SECONDS,
+                socket_timeout=BROKER_SOCKET_TIMEOUT_SECONDS,
+            )
+        return self.broker
+
+    def queue_depth(self, queue: str) -> int:
+        return int(self._broker().llen(queue))
 
 
 observability_redis = ObservabilityRedisAdapter()

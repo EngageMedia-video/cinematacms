@@ -473,6 +473,90 @@ class FullStackContractTests(unittest.TestCase):
         self.assertIn('redis_key_size{key="celery"}', exporter_queues)
         self.assertIn('redis_key_size{key="unacked"}', exporter_queues)
 
+    def test_overview_summarises_waiting_and_in_flight_queue_work(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in dashboard["panels"]}
+
+        waiting = " ".join(target["expr"] for target in panels["Queue depth now"]["targets"])
+        self.assertIn("cinematacms_celery_queue_depth", waiting)
+        self.assertIn('redis_key_size{key="celery"}', waiting)
+        in_flight = " ".join(target["expr"] for target in panels["Queue in flight"]["targets"])
+        self.assertIn('redis_key_size{key="unacked"}', in_flight)
+        self.assertIn("celery_worker_tasks_active", in_flight)
+        self.assertNotIn("celery_task_received_total", in_flight)
+
+    def test_overview_fallbacks_need_a_live_producer(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in dashboard["panels"]}
+        producer_by_target = {
+            ("Firing alerts by rule", "A"): "vmalert",
+            ("Queue in flight", "A"): "redis",
+            ("Queue in flight", "B"): "celery",
+        }
+
+        for (title, ref_id), producer in producer_by_target.items():
+            with self.subTest(panel=title, target=ref_id):
+                (target,) = (target for target in panels[title]["targets"] if target["refId"] == ref_id)
+                self.assertTrue(target["expr"].endswith(f' and on() up{{service.name="{producer}"}} == 1)'))
+
+    def test_alert_and_queue_panels_fill_the_row_and_stay_readable_at_1366_pixels(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panels = {panel["title"]: panel for panel in dashboard["panels"]}
+        alerts = panels["Firing alerts by rule"]
+        depth = panels["Queue depth now"]
+        in_flight = panels["Queue in flight"]
+
+        row = [(panel["gridPos"]["x"], panel["gridPos"]["w"]) for panel in (alerts, depth, in_flight)]
+        self.assertEqual(row, [(0, 10), (10, 7), (17, 7)])
+        self.assertEqual(len({panel["gridPos"]["y"] for panel in (alerts, depth, in_flight)}), 1)
+
+        self.assertEqual(in_flight["options"]["text"], {"titleSize": 14})
+        self.assertEqual(in_flight["targets"][0]["legendFormat"], "reserved (unacked)")
+        column_properties = {
+            override["matcher"]["options"]: {prop["id"]: prop["value"] for prop in override["properties"]}
+            for override in alerts["fieldConfig"]["overrides"]
+        }
+        self.assertEqual(column_properties["Firing"]["custom.width"], 50)
+        self.assertEqual(column_properties["severity"]["custom.width"], 70)
+        self.assertEqual(
+            column_properties["alertname"]["mappings"],
+            [{"type": "regex", "options": {"pattern": "^Cinemata(.*)$", "result": {"text": "$1"}}}],
+        )
+
+    def test_firing_alerts_table_converts_label_fields_to_columns(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        panel = next(panel for panel in dashboard["panels"] if panel["title"] == "Firing alerts by rule")
+        transformations = [transformation["id"] for transformation in panel["transformations"]]
+
+        self.assertEqual(panel["type"], "table")
+        self.assertEqual(transformations, ["labelsToFields", "organize"])
+        self.assertEqual(panel["targets"][0]["format"], "table")
+        self.assertTrue(panel["targets"][0]["instant"])
+        self.assertTrue(
+            panel["targets"][0]["expr"].startswith('sum by (alertname, severity) (ALERTS{alertstate="firing"})')
+        )
+
+    def test_healthy_but_silent_overview_panels_render_zero(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        expressions = [
+            target["expr"]
+            for panel in dashboard["panels"]
+            if panel.get("title") in {"Firing alerts by rule", "Cache health", "Telemetry contract health"}
+            for target in panel.get("targets", [])
+            if "cache_operations" not in target["expr"] and "cache_operation_duration" not in target["expr"]
+        ]
+
+        self.assertEqual(len(expressions), 4)
+        for expression in expressions:
+            self.assertIn(" or on() ", expression)
+
+    def test_quantile_panels_do_not_turn_missing_data_into_zero_latency(self):
+        dashboard = json.loads((OBSERVABILITY / "templates/grafana-overview.json").read_text())
+        for panel in dashboard["panels"]:
+            for target in panel.get("targets", []):
+                if "histogram_quantile" in target.get("expr", ""):
+                    self.assertNotIn("vector(0)", target["expr"], panel["title"])
+
     def test_redis_exporter_checks_queue_keys_in_the_broker_database(self):
         installer = (OBSERVABILITY / "install.sh").read_text()
         start = installer.index("redis_database_number() {")
