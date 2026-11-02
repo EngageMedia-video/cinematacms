@@ -24,9 +24,11 @@ The overview row "FFmpeg, Bento4 and Whisper" reads three domain operations: FFm
 
 - `encoding`: `observe_media_pipeline()` once per `encode_media` run that reaches an outcome. A first failure is retried by Celery without an outcome, so FFmpeg `retried` stays zero and a media shows `failed/encoding_failed` only when the retry also fails.
 - `hls`: `create_hls` records every branch it returns from, and records `failed/task_exception` when `mp4hls` raises. `retried/lock_held` is another run already holding the media lock, not a failure.
-- `transcription`: the Celery signal handlers. `whisper_transcribe` logs and returns `False` on every failure, which becomes `failed/returned_false`; a lost worker or hard time limit becomes `failed/task_exception`. A request that already exists also returns `False` and counts as failed.
+- `transcription`: the Celery signal handlers. `whisper_transcribe` logs and returns `False` on every failure, which becomes `failed/returned_false`; an exception it raises becomes `failed/task_exception`. A request that already exists also returns `False` and counts as failed.
 
-`encode_media` records no outcome when the media, profile or chunk row is gone, when an exception escapes outside the encoding loop, when the worker is lost, or when the task is revoked. The row's "task errors" tile counts `celery_task_failed_total` from the Celery exporter, so an exception or a lost worker still shows even without an outcome. A revoked encode shows in neither.
+A worker lost while running `encode_media`, `create_hls`, `whisper_transcribe`, `chunkize_media` or `produce_sprite_from_video` (for example killed by SIGKILL) becomes `failed/worker_lost` of that task's operation, recorded by the Celery failure signal in the worker's main process. The two tasks that record their own outcomes get no second outcome from an exception they raise.
+
+`encode_media` records no outcome when the media, profile or chunk row is gone, when an exception escapes outside the encoding loop, or when the task is revoked. The row's "task errors" tile counts `celery_task_failed_total` from the Celery exporter, so an exception still shows even without an outcome. A revoked encode shows in neither.
 
 The row's runtime tiles read `celery_task_runtime_bucket` from the exporter, which observes only successful runs. The exporter unit sets `--buckets` to the application's task duration buckets plus 14400, so percentiles hold for tasks that run for hours. A range that starts before a deploy of that change mixes the old 10 second buckets with the new ones.
 

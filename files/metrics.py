@@ -3,6 +3,7 @@ import hmac
 import logging
 import time
 
+from celery.exceptions import WorkerLostError
 from celery.signals import (
     beat_init,
     heartbeat_sent,
@@ -309,6 +310,9 @@ MEDIA_TASK_OPERATIONS = {
     "whisper_transcribe": "transcription",
     "produce_sprite_from_video": "sprites",
 }
+# encode_media and create_hls record their own outcomes inside the task. A lost worker dies before
+# it can, so the failure signal records theirs.
+WORKER_LOST_OPERATIONS = {**MEDIA_TASK_OPERATIONS, "encode_media": "encoding", "create_hls": "hls"}
 TASK_FAMILY_BY_NAME = {
     "chunkize_media": "encoding",
     "encode_media": "encoding",
@@ -497,9 +501,15 @@ def _terminal_task_event(state, sender=None, task_id=None, **kwargs):
     )
 
 
-def _on_task_failure(sender=None, task_id=None, **kwargs):
+def _on_task_failure(sender=None, task_id=None, exception=None, **kwargs):
     _terminal_task_event("failed", sender=sender, task_id=task_id, **kwargs)
     name = _task_name(sender=sender, **kwargs)
+    if isinstance(exception, WorkerLostError):
+        operation = WORKER_LOST_OPERATIONS.get(name)
+        if operation:
+            record_domain_outcome(operation, "failed", "worker_lost")
+        _record_scheduled_result(name, "failed", "worker_lost")
+        return
     _record_task_domain_result(name, "failed", "task_exception")
     _record_scheduled_result(name, "failed", "task_exception")
 
