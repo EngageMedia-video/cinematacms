@@ -1691,6 +1691,15 @@ class FullStackContractTests(unittest.TestCase):
         for condition in alertability["conditions"]:
             self.assertIn(condition["signal"], rules)
 
+    def test_a_stopped_backend_leaves_the_collector_and_vmalert_running(self):
+        # Requires= stops the unit with its dependency, and starting the dependency does not bring it back.
+        for unit in ("cinematacms-otelcol.service", "vmalert.service"):
+            with self.subTest(unit=unit):
+                template = (OBSERVABILITY / f"templates/{unit}").read_text()
+                self.assertNotIn("Requires=", template)
+                self.assertNotIn("BindsTo=", template)
+                self.assertRegex(template, r"(?m)^Wants=.*victoriametrics\.service")
+
     def test_collector_export_alert_fires_on_a_backlog_that_never_drains(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
         rules = (OBSERVABILITY / "templates/alerts.yml").read_text()
