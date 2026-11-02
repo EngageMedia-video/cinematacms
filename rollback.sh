@@ -165,6 +165,9 @@ fi
 
 echo -e "${YELLOW}Updating ownership...${NC}"
 chown -R www-data. "$CINEMATA_HOME/"
+if [ -d "$REPO_DIR/logs" ] && getent group cinematacms-observability >/dev/null; then
+  chgrp -R cinematacms-observability "$REPO_DIR/logs"
+fi
 
 echo -e "${YELLOW}Reloading systemd daemon...${NC}"
 systemctl daemon-reload

@@ -1,5 +1,6 @@
 import os
 import runpy
+import shlex
 import tempfile
 import unittest
 from pathlib import Path
@@ -57,6 +58,31 @@ class RuntimeConfigTests(unittest.TestCase):
             self.assertIsNone(env_optional_str("CSRF_COOKIE_SAMESITE", "Lax"))
             self.assertIsNone(env_optional_bool("CSRF_COOKIE_SECURE", False))
             self.assertIsNone(env_optional_csv("CSRF_TRUSTED_ORIGINS", []))
+
+    def test_legacy_cookie_name_and_exempt_paths_carry_over(self):
+        migrate = runpy.run_path(ROOT / "deploy/render-app-env.py")["migrate_local_settings"]
+        with tempfile.TemporaryDirectory() as directory:
+            legacy = Path(directory) / "local_settings.py"
+            legacy.write_text(
+                "SESSION_COOKIE_NAME = 'stage_sessionid'\n"
+                "SECURE_REDIRECT_EXEMPT = [r'^metrics$', r'^internal/observability/references$']\n"
+                "MAINTENANCE_MODE_IGNORE_URLS = ('^/static/.*$', '^/metrics$')\n"
+            )
+            migrated = migrate(legacy)
+
+        self.assertEqual(migrated["SESSION_COOKIE_NAME"], "stage_sessionid")
+        with patch.dict(
+            os.environ,
+            {
+                "SECURE_REDIRECT_EXEMPT": shlex.split(migrated["SECURE_REDIRECT_EXEMPT"])[0],
+                "MAINTENANCE_MODE_IGNORE_URLS": shlex.split(migrated["MAINTENANCE_MODE_IGNORE_URLS"])[0],
+            },
+            clear=False,
+        ):
+            self.assertEqual(
+                env_csv("SECURE_REDIRECT_EXEMPT", []), ["^metrics$", "^internal/observability/references$"]
+            )
+            self.assertEqual(env_csv("MAINTENANCE_MODE_IGNORE_URLS", []), ["^/static/.*$", "^/metrics$"])
 
     def test_actor_observability_runs_after_authentication(self):
         settings = (ROOT / "cms/settings.py").read_text()

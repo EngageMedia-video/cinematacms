@@ -1543,6 +1543,46 @@ class RestartScriptTests(unittest.TestCase):
         self.assertIn(f"systemctl enable {units}", script)
         self.assertIn(f"systemctl restart {units}", script)
 
+    def _reset_app_ownership(self, *, group_exists):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "logs").mkdir()
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            command_log = root / "commands.log"
+            for name in ("chown", "chgrp"):
+                fake = fake_bin / name
+                fake.write_text(f'#!/bin/sh\necho "{name} $*" >> "{command_log}"\n')
+                fake.chmod(0o755)
+            getent = fake_bin / "getent"
+            getent.write_text(f"#!/bin/sh\nexit {0 if group_exists else 2}\n")
+            getent.chmod(0o755)
+            env = os.environ.copy()
+            env["PATH"] = f"{fake_bin}:{env['PATH']}"
+            subprocess.run(
+                ["bash", "-c", 'source "$1"; reset_app_ownership', "restart-test", str(RESTART_SCRIPT)],
+                cwd=root,
+                env=env,
+                check=True,
+            )
+            return command_log.read_text().splitlines()
+
+    def test_ownership_reset_keeps_collector_read_access_to_logs(self):
+        self.assertEqual(
+            self._reset_app_ownership(group_exists=True),
+            ["chown -R www-data. /home/cinemata/", "chgrp -R cinematacms-observability logs"],
+        )
+
+    def test_ownership_reset_without_the_observability_stack(self):
+        self.assertEqual(self._reset_app_ownership(group_exists=False), ["chown -R www-data. /home/cinemata/"])
+
+    def test_rollback_keeps_collector_read_access_to_logs(self):
+        script = (PROJECT_ROOT / "rollback.sh").read_text()
+        self.assertLess(
+            script.index('chown -R www-data. "$CINEMATA_HOME/"'),
+            script.index('chgrp -R cinematacms-observability "$REPO_DIR/logs"'),
+        )
+
     def test_restart_can_deploy_an_exact_revision(self):
         revision = "a" * 40
 

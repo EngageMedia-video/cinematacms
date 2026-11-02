@@ -51,6 +51,13 @@ install_frontend_dependencies() {
   )
 }
 
+reset_app_ownership() {
+  chown -R www-data. /home/cinemata/
+  if [ -d logs ] && getent group cinematacms-observability >/dev/null; then
+    chgrp -R cinematacms-observability logs
+  fi
+}
+
 main() {
 parse_restart_args "$@"
 
@@ -116,7 +123,7 @@ python manage.py backfill_media_storage_usage || echo "Warning: storage usage ba
 
 # Update ownership
 echo "Updating ownership..."
-chown -R www-data. /home/cinemata/
+reset_app_ownership
 
 # Reload systemd unit files in case service definitions changed
 echo "Reloading systemd daemon..."

@@ -17,7 +17,7 @@
       }
     },
     {
-      "type": "traces",
+      "type": "table",
       "title": "Recent traces by service",
       "datasource": {"type": "jaeger", "uid": "victoriatraces"},
       "gridPos": {"h": 15, "w": 24, "x": 0, "y": 5},
