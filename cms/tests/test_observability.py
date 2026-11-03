@@ -235,15 +235,10 @@ class ObservabilityConfigTests(SimpleTestCase):
             error_spans.append(active_span[-1] if active_span else None)
 
         common_patches = (
-            patch("files.tasks.time.sleep"),
             patch("files.tasks.os.path.exists", return_value=True),
             patch("files.tasks.Media.objects.get", return_value=media),
             patch("files.tasks.Language.objects.filter", return_value=Mock(first=Mock(return_value=Mock()))),
-            patch(
-                "files.tasks.TranscriptionRequest.objects.filter",
-                return_value=Mock(exists=Mock(return_value=False)),
-            ),
-            patch("files.tasks.TranscriptionRequest.objects.create", return_value=request),
+            patch("files.tasks._claim_transcription_request", return_value=request),
             patch("files.tasks.tempfile.TemporaryDirectory", return_value=tempfile.TemporaryDirectory()),
             patch("files.tasks.start_span", side_effect=lambda name, _attributes: TrackedSpan(name)),
             patch("files.tasks.logger.error", side_effect=capture_error),
@@ -257,8 +252,6 @@ class ObservabilityConfigTests(SimpleTestCase):
             common_patches[4],
             common_patches[5],
             common_patches[6],
-            common_patches[7],
-            common_patches[8],
             patch(
                 "files.tasks.subprocess.run",
                 return_value=SimpleNamespace(returncode=1, stdout=b"", stderr=b"failed"),
@@ -1003,6 +996,12 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             # whisper_transcribe returns False for a missing binary, a failed subprocess and an exception.
             metrics._on_task_postrun(sender=sender, task_id="whisper-false", state="SUCCESS", retval=False)
             metrics._on_task_postrun(sender=sender, task_id="whisper-true", state="SUCCESS", retval=True)
+            metrics._on_task_postrun(
+                sender=sender,
+                task_id="whisper-gone",
+                state="SUCCESS",
+                retval={"outcome": "skipped", "reason_code": "media_not_found"},
+            )
             # A lost worker or a hard time limit never reaches postrun and arrives as a task failure.
             metrics._on_task_failure(sender=sender, task_id="whisper-lost")
 
@@ -1011,9 +1010,19 @@ class CeleryAndMediaMetricTests(SimpleTestCase):
             [
                 call("transcription", "failed", "returned_false"),
                 call("transcription", "succeeded", "none"),
+                call("transcription", "skipped", "media_not_found"),
                 call("transcription", "failed", "task_exception"),
             ],
         )
+
+    def test_whisper_skips_keep_their_reason_codes(self):
+        from files import metrics, tasks
+
+        for skipped in (tasks.WHISPER_SKIPPED_MEDIA_GONE, tasks.WHISPER_SKIPPED_ALREADY_REQUESTED):
+            with self.subTest(**skipped), patch("files.metrics.DOMAIN_OUTCOMES_TOTAL") as outcomes:
+                metrics.record_domain_outcome("transcription", skipped["outcome"], skipped["reason_code"])
+
+                outcomes.labels.assert_called_once_with(operation="transcription", **skipped)
 
     def test_media_pipeline_observation_uses_low_cardinality_profile_labels(self):
         from files.metrics import observe_media_pipeline

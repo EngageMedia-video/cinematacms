@@ -1,10 +1,12 @@
 import json
 import os
+import stat
 import tempfile
 import threading
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import connection
 from django.db.models.signals import post_save
@@ -132,6 +134,129 @@ class ChunkFinalisationRaceTests(TransactionTestCase):
         )
         self.assertFalse(Encoding.objects.filter(media=self.media, chunk=True).exists())
         self.assertTrue(Encoding.objects.filter(media=other_media, chunk=True).exists())
+
+    def _abandon_a_merge(self):
+        """Run a merge that dies before it can clean up, as a SIGKILL does, and return what it left behind."""
+        abandoned = []
+
+        class AbandonedDirectory:
+            def __init__(self, prefix, dir):
+                self.name = tempfile.mkdtemp(prefix=prefix, dir=dir)
+                abandoned.append(self.name)
+
+            def __enter__(self):
+                return self.name
+
+            def __exit__(self, *exc_info):
+                return False
+
+        chunk = Encoding.objects.filter(chunk=True).first()
+        with (
+            patch("files.models.tempfile.TemporaryDirectory", AbandonedDirectory),
+            patch("files.models.helpers.run_command", side_effect=OSError("killed")),
+            self.assertRaises(OSError),
+        ):
+            models.finalize_chunk_group(chunk, self.chunk_paths)
+        return abandoned
+
+    def _age(self, path, age):
+        aged = (timezone.now() - age).timestamp()
+        os.utime(path, (aged, aged))
+
+    def test_recovery_removes_what_a_killed_merge_left_behind(self):
+        abandoned = self._abandon_a_merge()
+        self.assertTrue(all(os.path.isdir(path) for path in abandoned))
+        for path in abandoned:
+            self._age(path, timedelta(seconds=settings.CELERY_SOFT_TIME_LIMIT + 60))
+
+        self._recover_stalled_groups()
+
+        self.assertFalse(any(os.path.exists(path) for path in abandoned))
+
+    def test_each_merge_works_in_a_private_directory_of_its_own(self):
+        first, second = self._abandon_a_merge() + self._abandon_a_merge()
+
+        self.assertNotEqual(first, second)
+        for path in (first, second):
+            self.assertEqual(os.path.dirname(path), self.tmpdir.name)
+            self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o700)
+
+    def test_recovery_leaves_everything_else_in_the_temp_directory(self):
+        unrelated = tempfile.mkdtemp(dir=self.tmpdir.name)
+        self._age(unrelated, timedelta(seconds=settings.CELERY_SOFT_TIME_LIMIT + 60))
+
+        self._recover_stalled_groups()
+
+        self.assertTrue(os.path.isdir(unrelated))
+
+    def test_recovery_does_not_follow_a_planted_link(self):
+        with tempfile.TemporaryDirectory() as elsewhere:
+            target = os.path.join(elsewhere, "target")
+            os.mkdir(target)
+            self._age(target, timedelta(seconds=settings.CELERY_SOFT_TIME_LIMIT + 60))
+            os.symlink(target, os.path.join(self.tmpdir.name, f"{models.CHUNK_MERGE_DIRECTORY_PREFIX}planted"))
+
+            self._recover_stalled_groups()
+
+            self.assertTrue(os.path.isdir(target))
+
+    def test_recovery_still_merges_when_the_temp_directory_cannot_be_listed(self):
+        list_directory = os.scandir
+
+        def refuse_temp_directory(path):
+            if path == self.tmpdir.name:
+                raise PermissionError(path)
+            return list_directory(path)
+
+        with patch("files.models.os.scandir", side_effect=refuse_temp_directory):
+            result = self._recover_stalled_groups()
+
+        self.assertEqual(result["changed"], 1)
+        self.assertEqual(result["failed"], 0)
+
+    def test_recovery_has_nothing_left_to_remove_on_a_second_run(self):
+        for path in self._abandon_a_merge():
+            self._age(path, timedelta(seconds=settings.CELERY_SOFT_TIME_LIMIT + 60))
+        self._recover_stalled_groups()
+
+        with patch("files.models.shutil.rmtree") as rmtree:
+            result = self._recover_stalled_groups()
+
+        rmtree.assert_not_called()
+        self.assertEqual(result["failed"], 0)
+
+    def test_recovery_leaves_a_merge_that_is_still_within_its_time_limit(self):
+        abandoned = self._abandon_a_merge()
+
+        self._recover_stalled_groups()
+
+        self.assertTrue(all(os.path.isdir(path) for path in abandoned))
+
+    def test_recovery_running_during_a_merge_keeps_its_directory(self):
+        directories_with_files_before_merge = self._directories_with_files()
+        merge_directories = []
+
+        def recover_while_merging(*args, **kwargs):
+            merge_directories.append(self._directories_with_files() - directories_with_files_before_merge)
+            recover_stalled_chunk_groups()
+            merge_directories.append(self._directories_with_files() - directories_with_files_before_merge)
+            return "concat ok"
+
+        with (
+            patch("files.models.helpers.run_command", side_effect=recover_while_merging),
+            patch.object(Media, "post_encode_actions"),
+            patch("files.models._schedule_storage_usage_refresh_for_media"),
+        ):
+            merged = models.finalize_chunk_group(Encoding.objects.filter(chunk=True).first(), self.chunk_paths)
+
+        before_recovery, after_recovery = merge_directories
+        self.assertTrue(merged)
+        self.assertEqual(len(before_recovery), 1)
+        self.assertEqual(after_recovery, before_recovery)
+        self.assertEqual(self._directories_with_files() - directories_with_files_before_merge, set())
+
+    def _directories_with_files(self):
+        return {directory for directory, _, names in os.walk(self.tmpdir.name) if names}
 
     def _hold_aggregates_until_both_exist(self):
         """Force the failing interleave: both workers save their merged file before either cleans up."""

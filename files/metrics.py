@@ -484,8 +484,9 @@ def _on_task_postrun(sender=None, task_id=None, state=None, retval=None, **kwarg
                 task_family=family, queue=queue, event="completed", outcome="succeeded"
             ).inc(),
         )
-        domain_outcome = "failed" if retval is False else "succeeded"
-        reason = "returned_false" if retval is False else "none"
+        result = retval if isinstance(retval, dict) else {}
+        domain_outcome = result.get("outcome", "failed" if retval is False else "succeeded")
+        reason = result.get("reason_code", "returned_false" if retval is False else "none")
         _record_task_domain_result(name, domain_outcome, reason)
         _record_scheduled_result(name, domain_outcome, reason, retval)
     _safe_metric("Celery active", lambda: CELERY_TASK_ACTIVE.labels(task_family=family, queue=queue).dec())
