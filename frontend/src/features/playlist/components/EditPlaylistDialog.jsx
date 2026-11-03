@@ -48,7 +48,9 @@ function EditPlaylistForm({ config, playlist, token, onDone }) {
 	const [description, setDescription] = useState(playlist?.description || '');
 	const [titleError, setTitleError] = useState('');
 	const mutation = usePlaylistUpdateMutation(token, config);
+	const hintId = 'playlist-curator-note-hint';
 	const errorId = 'playlist-edit-error';
+	const curatorNoteDescribedBy = mutation.isError ? `${hintId} ${errorId}` : hintId;
 
 	function handleSubmit(event) {
 		event.preventDefault();
@@ -96,15 +98,21 @@ function EditPlaylistForm({ config, playlist, token, onDone }) {
 			{/* No word limit: Playlist.description and the Create New Playlist
 					    form are unbounded, and EditorField's limiter truncates an
 					    over-limit value on render — silently dropping existing text. */}
-			<EditorField
-				label="Curator's Note"
-				value={description}
-				rows={8}
-				helperText="Explain why these films belong together. Links you paste here become clickable automatically."
-				aria-describedby={mutation.isError ? errorId : undefined}
-				onChange={(event) => setDescription(event.target.value)}
-				className="w-full"
-			/>
+			{/* The hint sits outside EditorField's helperText, which renders in
+				    the accent colour and reads as a warning. */}
+			<div className="flex flex-col gap-2">
+				<EditorField
+					label="Curator's Note"
+					value={description}
+					rows={8}
+					aria-describedby={curatorNoteDescribedBy}
+					onChange={(event) => setDescription(event.target.value)}
+					className="w-full"
+				/>
+				<p id={hintId} className="m-0 text-text-muted body-body-12-regular">
+					Explain why these films belong together. Links you paste here become clickable automatically.
+				</p>
+			</div>
 
 			{mutation.isError ? (
 				<p id={errorId} className="m-0 text-text-danger body-body-14-regular">

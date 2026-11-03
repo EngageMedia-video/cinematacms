@@ -11,6 +11,9 @@ vi.mock('../../shared/utils/api', () => ({
 }));
 
 const LONG_DESCRIPTION = Array.from({ length: 500 }, (_, index) => `word${index}`).join(' ');
+const CURATOR_NOTE_HINT =
+	'Explain why these films belong together. Links you paste here become clickable automatically.';
+const SAVE_ERROR = 'Your changes could not be saved. Try again.';
 const TOKEN = 'pltest01';
 
 function renderDialog(playlist) {
@@ -56,11 +59,14 @@ describe('EditPlaylistDialog', () => {
 		expect(screen.getByLabelText('Title')).toHaveValue('Trusted Playlist');
 		expect(screen.getByText('16/90')).toBeInTheDocument();
 		expect(screen.getByLabelText("Curator's Note")).toHaveValue('Why these films');
-		expect(
-			screen.getByText(
-				'Explain why these films belong together. Links you paste here become clickable automatically.'
-			)
-		).toBeInTheDocument();
+	});
+
+	it('describes the Curator’s Note with a muted hint rather than the accent helper text', () => {
+		renderDialog({ title: 'Trusted Playlist', description: '' });
+
+		expect(screen.getByLabelText("Curator's Note")).toHaveAccessibleDescription(CURATOR_NOTE_HINT);
+		expect(screen.getByText(CURATOR_NOTE_HINT)).toHaveClass('text-text-muted');
+		expect(screen.getByText(CURATOR_NOTE_HINT)).not.toHaveClass('text-text-accent');
 	});
 
 	it('caps the title at 90 characters', () => {
@@ -164,7 +170,10 @@ describe('EditPlaylistDialog', () => {
 		await user.type(screen.getByLabelText('Title'), 'Coastal Futures');
 		await user.click(screen.getByRole('button', { name: 'Save' }));
 
-		expect(await screen.findByText('Your changes could not be saved. Try again.')).toBeInTheDocument();
+		expect(await screen.findByText(SAVE_ERROR)).toBeInTheDocument();
 		expect(queryClient.getQueryData(playlistQueryKey(TOKEN)).title).toBe('Trusted Playlist');
+		expect(screen.getByLabelText("Curator's Note")).toHaveAccessibleDescription(
+			`${CURATOR_NOTE_HINT} ${SAVE_ERROR}`
+		);
 	});
 });
