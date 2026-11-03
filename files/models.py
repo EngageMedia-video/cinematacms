@@ -84,6 +84,19 @@ CHUNK_RECOVERY_WINDOW = timedelta(days=1)
 # Tells a merge's work directories from everything else in TEMP_DIRECTORY, which other users can write to.
 CHUNK_MERGE_DIRECTORY_PREFIX = "cinematacms-chunk-merge-"
 _suppress_chunk_cleanup_scheduling = ContextVar("suppress_chunk_cleanup_scheduling", default=False)
+# Celery's Redis transport consumes priority 0 first and 9 last, the reverse of RabbitMQ.
+# Unprioritised tasks such as create_hls also land in 0, so later encodes yield to them.
+ENCODE_PRIORITY_FIRST = 0
+ENCODE_PRIORITY_LATER = 6
+
+
+def encode_priority(profile):
+    """Queue the resolutions every media needs before the larger ones."""
+    if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
+        return ENCODE_PRIORITY_FIRST
+    return ENCODE_PRIORITY_LATER
+
+
 # the final state of a media, and also encoded medias
 MEDIA_ENCODING_STATUS = (
     ("pending", "Pending"),
@@ -1314,7 +1327,7 @@ class Media(models.Model):
                 if profile.extension == "gif":
                     encoding = Encoding(media=self, profile=profile, task_dispatched=False)
                     encoding.save()
-                    self._dispatch_encoding(encoding, profile, force, priority=0)
+                    self._dispatch_encoding(encoding, profile, force, priority=ENCODE_PRIORITY_FIRST)
             chunked_profile_ids = [p.id for p in profiles if p.extension != "gif"]
             if chunked_profile_ids:
                 tasks.chunkize_media.delay(self.friendly_token, chunked_profile_ids, force=force)
@@ -1326,8 +1339,7 @@ class Media(models.Model):
                             continue
                 encoding = Encoding(media=self, profile=profile, task_dispatched=False)
                 encoding.save()
-                priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
-                self._dispatch_encoding(encoding, profile, force, priority=priority)
+                self._dispatch_encoding(encoding, profile, force, priority=encode_priority(profile))
         return True
 
     def post_encode_actions(self, encoding=None, action=None):
