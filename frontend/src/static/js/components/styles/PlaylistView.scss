@@ -262,6 +262,19 @@
 			// min-height:56px !important;
 		}
 
+		.item-category-badge {
+			padding: 4px;
+			font-size: 10px;
+			font-weight: 400;
+			line-height: 10px;
+
+			.badge-label {
+				line-height: 10px;
+				text-transform: none;
+				letter-spacing: 0;
+			}
+		}
+
 		.item-main {
 			width: auto;
 			display: block;
