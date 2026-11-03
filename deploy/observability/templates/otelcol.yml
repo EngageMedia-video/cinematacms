@@ -100,6 +100,22 @@ receivers:
         parse_from: attributes.severity
         overwrite_text: true
         if: attributes.level == nil and attributes.severity != nil
+      - type: time_parser
+        id: parse_application_time
+        parse_from: attributes.timestamp
+        layout_type: strptime
+        layout: "%Y-%m-%d %H:%M:%S,%L"
+        location: Europe/London
+        on_error: send
+        if: attributes.timestamp != nil and attributes.timestamp matches "^[0-9]{4}-[0-9]{2}-[0-9]{2} "
+      - type: time_parser
+        id: parse_rotation_marker_time
+        parse_from: attributes.timestamp
+        layout_type: gotime
+        layout: "2006-01-02T15:04:05.999999999Z07:00"
+        location: UTC
+        on_error: send
+        if: attributes.timestamp != nil and attributes.timestamp matches "^[0-9]{4}-[0-9]{2}-[0-9]{2}T"
   file_log/mediacms:
     include: ["${env:APP_SERVICE_LOG_DIR}/errorlog.txt", "${env:APP_SERVICE_LOG_DIR}/errorlog.txt.1"]
     resource:
@@ -121,6 +137,19 @@ receivers:
     include_file_path: false
     storage: file_storage
     operators:
+      - type: regex_parser
+        id: extract_nginx_access_time
+        parse_from: body
+        parse_to: attributes
+        regex: '^[^ ]+ [^ ]+ [^ ]+ \[(?P<time_local>[^\]]+)\]'
+        on_error: send_quiet
+      - type: time_parser
+        id: parse_nginx_access_time
+        parse_from: attributes.time_local
+        layout_type: strptime
+        layout: "%d/%b/%Y:%H:%M:%S %z"
+        on_error: send_quiet
+        if: attributes.time_local != nil
       - type: regex_parser
         id: parse_nginx_access_request
         parse_from: body
@@ -151,6 +180,20 @@ receivers:
     include_file_path: false
     storage: file_storage
     operators:
+      - type: regex_parser
+        id: extract_nginx_error_time
+        parse_from: body
+        parse_to: attributes
+        regex: '^(?P<log_time>[0-9]{4}/[0-9]{2}/[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}) \['
+        on_error: send_quiet
+      - type: time_parser
+        id: parse_nginx_error_time
+        parse_from: attributes.log_time
+        layout_type: strptime
+        layout: "%Y/%m/%d %H:%M:%S"
+        location: Local
+        on_error: send_quiet
+        if: attributes.log_time != nil
       - type: add
         field: attributes["systemd.unit"]
         value: nginx.service
@@ -163,6 +206,22 @@ receivers:
     include_file_path: false
     storage: file_storage
     operators:
+      - &extract_celery_time
+        type: regex_parser
+        id: extract_celery_time
+        parse_from: body
+        parse_to: attributes
+        regex: '^\[(?P<log_time>[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]{3}): '
+        on_error: send_quiet
+      - &parse_celery_time
+        type: time_parser
+        id: parse_celery_time
+        parse_from: attributes.log_time
+        layout_type: strptime
+        layout: "%Y-%m-%d %H:%M:%S,%L"
+        location: Europe/London
+        on_error: send_quiet
+        if: attributes.log_time != nil
       - type: add
         field: attributes["systemd.unit"]
         value: celery_long.service
@@ -175,6 +234,8 @@ receivers:
     include_file_path: false
     storage: file_storage
     operators:
+      - *extract_celery_time
+      - *parse_celery_time
       - type: add
         field: attributes["systemd.unit"]
         value: celery_short.service
@@ -187,6 +248,8 @@ receivers:
     include_file_path: false
     storage: file_storage
     operators:
+      - *extract_celery_time
+      - *parse_celery_time
       - type: add
         field: attributes["systemd.unit"]
         value: celery_whisper.service
@@ -199,6 +262,8 @@ receivers:
     include_file_path: false
     storage: file_storage
     operators:
+      - *extract_celery_time
+      - *parse_celery_time
       - type: add
         field: attributes["systemd.unit"]
         value: celery_email.service
@@ -211,6 +276,8 @@ receivers:
     include_file_path: false
     storage: file_storage
     operators:
+      - *extract_celery_time
+      - *parse_celery_time
       - type: add
         field: attributes["systemd.unit"]
         value: celery_beat.service
