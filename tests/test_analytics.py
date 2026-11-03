@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import json
 import uuid
 from datetime import datetime, timedelta
@@ -190,6 +191,14 @@ class AnalyticsTemplateTests(TestCase):
         self.assertNotIn("segment_grant", config)
         # no-referrer makes browsers send Origin: null on form POSTs, which the CSRF origin check rejects.
         self.assertContains(response, '<meta name="referrer" content="same-origin">')
+
+    @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
+    def test_tracker_url_changes_with_its_content_so_browsers_drop_a_cached_copy(self):
+        from django.contrib.staticfiles import finders
+
+        with open(finders.find("js/cinemata-analytics.js"), "rb") as tracker:
+            version = hashlib.sha256(tracker.read()).hexdigest()[:12]
+        self.assertContains(self.client.get("/"), f'src="/static/js/cinemata-analytics.js?v={version}"')
 
     @override_settings(ANALYTICS_ENABLED=True, ANALYTICS_URL="", ANALYTICS_WEBSITE_ID="")
     def test_signout_event_reaches_the_page_after_logout(self):

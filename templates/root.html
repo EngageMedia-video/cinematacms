@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_tags %}
 {% load django_vite %}
 <!DOCTYPE html>
 <html lang="en">
@@ -10,7 +11,7 @@
         {% if ANALYTICS %}<meta name="referrer" content="{% if ANALYTICS.nonpublic %}same-origin{% else %}origin{% endif %}">{% endif %}
         {% if ANALYTICS %}
         {{ ANALYTICS|json_script:"cinemata-analytics-config" }}
-        <script src="{% static 'js/cinemata-analytics.js' %}" defer></script>
+        <script src="{% versioned_static 'js/cinemata-analytics.js' %}" defer></script>
         {% endif %}
 
         {% include "common/head-meta.html" %}
