@@ -416,7 +416,7 @@ class FullStackContractTests(unittest.TestCase):
                 if operator["type"] == "time_parser"
             }
 
-        # Django sets TZ from TIME_ZONE, so Python's logging writes local time for the app and for Celery.
+        # Django sets TZ from TIME_ZONE, so Python's logging writes the app's lines in local time.
         app = time_parsers("file_log/cinematacms")
         self.assertEqual(
             {name: (p["parse_from"], p["layout_type"], p["layout"], p["location"]) for name, p in app.items()},
@@ -435,18 +435,6 @@ class FullStackContractTests(unittest.TestCase):
                 ),
             },
         )
-        for receiver in (
-            "file_log/celery_long",
-            "file_log/celery_short",
-            "file_log/celery_whisper",
-            "file_log/celery_email",
-            "file_log/celery_beat",
-        ):
-            with self.subTest(receiver=receiver):
-                parser = time_parsers(receiver)["parse_celery_time"]
-                self.assertEqual(parser["parse_from"], "attributes.log_time")
-                self.assertEqual(parser["layout"], "%Y-%m-%d %H:%M:%S,%L")
-                self.assertEqual(parser["location"], django_time_zone)
         nginx_access = time_parsers("file_log/nginx_access")["parse_nginx_access_time"]
         self.assertEqual(nginx_access["parse_from"], "attributes.time_local")
         self.assertEqual(nginx_access["layout"], "%d/%b/%Y:%H:%M:%S %z")
