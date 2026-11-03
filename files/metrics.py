@@ -245,6 +245,7 @@ DOMAIN_OPERATIONS = frozenset(
         "scheduled.dispatch_deferred_encodings",
         "scheduled.apply_visibility_schedules",
         "scheduled.recover_stalled_chunk_groups",
+        "scheduled.check_running_states",
         "other",
     }
 )

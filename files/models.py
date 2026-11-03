@@ -1312,12 +1312,12 @@ class Media(models.Model):
         if self.duration > settings.CHUNKIZE_VIDEO_DURATION and chunkize:
             for profile in profiles:
                 if profile.extension == "gif":
-                    profiles.remove(profile)
                     encoding = Encoding(media=self, profile=profile, task_dispatched=False)
                     encoding.save()
                     self._dispatch_encoding(encoding, profile, force, priority=0)
-            profiles = [p.id for p in profiles]
-            tasks.chunkize_media.delay(self.friendly_token, profiles, force=force)
+            chunked_profile_ids = [p.id for p in profiles if p.extension != "gif"]
+            if chunked_profile_ids:
+                tasks.chunkize_media.delay(self.friendly_token, chunked_profile_ids, force=force)
         else:
             for profile in profiles:
                 if profile.extension != "gif":
@@ -3005,6 +3005,11 @@ def _log_chunk_finalisation(outcome, reason_code="none", **fields):
     )
 
 
+def chunk_finalize_lock_key(media_id, profile_id):
+    """Cache key that whoever merges or rebuilds a media's chunk group for one profile must hold."""
+    return f"chunk_finalize_lock_{media_id}_{profile_id}"
+
+
 def finalize_chunk_group(instance, expected_chunk_paths):
     """Merge a complete group of encoded chunks into one Encoding, exactly once per media and profile.
 
@@ -3014,7 +3019,7 @@ def finalize_chunk_group(instance, expected_chunk_paths):
 
     Return whether this caller merged the group.
     """
-    lock_key = f"chunk_finalize_lock_{instance.media_id}_{instance.profile_id}"
+    lock_key = chunk_finalize_lock_key(instance.media_id, instance.profile_id)
     lock_token = uuid.uuid4().hex
     log_fields = {"profile_id": instance.profile_id, "chunk_count": len(expected_chunk_paths)}
     with start_span(

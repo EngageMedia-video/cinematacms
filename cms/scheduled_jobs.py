@@ -28,6 +28,7 @@ SCHEDULED_JOBS = {
         ScheduledJob("dispatch_deferred_encodings", 60, "files", 180),
         ScheduledJob("apply_visibility_schedules", 60, "files", 180),
         ScheduledJob("recover_stalled_chunk_groups", 1800, "files", 5400),
+        ScheduledJob("check_running_states", 600, "files", 1800),
     )
 }
 

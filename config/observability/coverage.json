@@ -353,6 +353,7 @@
         "scheduled.dispatch_deferred_encodings",
         "scheduled.apply_visibility_schedules",
         "scheduled.recover_stalled_chunk_groups",
+        "scheduled.check_running_states",
         "other"
       ],
       "description": "Application-owned domain operations."
@@ -508,6 +509,7 @@
         "dispatch_deferred_encodings",
         "apply_visibility_schedules",
         "recover_stalled_chunk_groups",
+        "check_running_states",
         "cleanup_media_action_ips"
       ],
       "description": "Registered scheduled jobs."
@@ -2051,6 +2053,7 @@
           "scheduled.dispatch_deferred_encodings",
           "scheduled.apply_visibility_schedules",
           "scheduled.recover_stalled_chunk_groups",
+          "scheduled.check_running_states",
           "other",
           "scheduled.cleanup_media_action_ips"
         ],
@@ -2328,6 +2331,7 @@
           "dispatch_deferred_encodings",
           "apply_visibility_schedules",
           "recover_stalled_chunk_groups",
+          "check_running_states",
           "cleanup_media_action_ips"
         ],
         "scheduled_outcomes": [
