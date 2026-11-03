@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import uuid
 from datetime import datetime, timedelta
 
 import django.db
@@ -58,6 +59,8 @@ from .models import (
     Tag,
     Topic,
     TranscriptionRequest,
+    chunk_finalisation_cache,
+    chunk_finalize_lock_key,
     chunk_groups_awaiting_merge,
     finalize_chunk_group,
     schedule_chunk_file_cleanup,
@@ -70,6 +73,12 @@ popular_media_cache = owned_cache.bind("popular_media")
 scheduled_task_lock_cache = owned_cache.bind("scheduled_task_lock")
 
 logger = get_task_logger(__name__)
+
+# Each re-encoded media may start a full split of its source, so one run of
+# check_running_states replaces at most this many and leaves the rest for later runs.
+STALE_ENCODING_MEDIA_PER_RUN = 10
+# Outlives one media's recovery so a merge cannot start on a group being rebuilt.
+STALE_ENCODING_LOCK_SECONDS = 300
 
 # How long mp4hls may remux before the worker discards the partial output.
 MP4HLS_SUBPROCESS_TIMEOUT = 600
@@ -1058,23 +1067,84 @@ def check_running_states():
     its owner's MAX_USER_CONCURRENT_ENCODES slots for good.
     """
     stale_cutoff = timezone.now() - timedelta(seconds=settings.RUNNING_STATE_STALE)
-    stale_encodings = Encoding.objects.filter(status="running", update_date__lt=stale_cutoff).select_related(
-        "media", "profile"
+    stale_pairs = (
+        Encoding.objects.filter(status="running", update_date__lt=stale_cutoff)
+        .order_by("update_date")
+        .values_list("media_id", "profile_id")
     )
+    stale_profile_ids_by_media = {}
+    for media_id, profile_id in stale_pairs:
+        if media_id not in stale_profile_ids_by_media:
+            if len(stale_profile_ids_by_media) == STALE_ENCODING_MEDIA_PER_RUN:
+                continue
+            stale_profile_ids_by_media[media_id] = set()
+        stale_profile_ids_by_media[media_id].add(profile_id)
 
-    dead_encodes = {}
-    for encoding in stale_encodings:
-        record_stale_encoding(encoding)
-        dead_encodes[(encoding.media_id, encoding.profile_id)] = (encoding.media, encoding.profile)
+    changed = failed = 0
+    for media_id, profile_ids in stale_profile_ids_by_media.items():
+        try:
+            changed += _reencode_dead_profiles(media_id, profile_ids, stale_cutoff)
+        except Exception as error:
+            logger.exception("Could not re-encode stale profiles of media %s", media_id)
+            capture_unexpected_exception(error)
+            failed += 1
 
-    for media, profile in dead_encodes.values():
-        # A chunk group cannot finish once one chunk is lost, so rebuild the whole profile
-        stale_encodings.filter(media=media, profile=profile).delete()
-        Encoding.objects.filter(media=media, profile=profile, chunk=True).delete()
-        media.encode(profiles=[profile])
-        logger.info("Re-encoding stale profile %s for media %s", profile.name, media.friendly_token)
+    return {
+        "outcome": "failed" if failed else "succeeded",
+        "reason_code": "item_errors" if failed else "none",
+        "processed": len(stale_profile_ids_by_media),
+        "changed": changed,
+        "failed": failed,
+    }
 
-    return {"outcome": "succeeded", "reason_code": "none", "processed": len(dead_encodes), "changed": len(dead_encodes)}
+
+def _reencode_dead_profiles(media_id, profile_ids, stale_cutoff):
+    """Replace the dead encodes of one media, and return whether any were replaced.
+
+    A profile is skipped while its chunk group is being merged, or while any of its
+    encodes still has a heartbeat. The replacement is queued before the dead rows are
+    deleted, so a failure to queue leaves them for the next run.
+    """
+    media = Media.objects.get(pk=media_id)
+    held_locks = []
+    try:
+        dead_profiles = []
+        dead_encoding_ids = []
+        for profile in EncodeProfile.objects.filter(id__in=profile_ids):
+            lock_key = chunk_finalize_lock_key(media.id, profile.id)
+            lock_token = uuid.uuid4().hex
+            if not chunk_finalisation_cache.add(lock_key, lock_token, timeout=STALE_ENCODING_LOCK_SECONDS):
+                continue
+            held_locks.append((lock_key, lock_token))
+
+            profile_encodings = Encoding.objects.filter(media=media, profile=profile)
+            running = profile_encodings.filter(status="running")
+            if running.filter(update_date__gte=stale_cutoff).exists():
+                continue
+            stale_encodings = list(running.filter(update_date__lt=stale_cutoff).select_related("profile"))
+            if not stale_encodings:
+                continue
+            for encoding in stale_encodings:
+                record_stale_encoding(encoding)
+            # A chunk group cannot finish once one chunk is lost, so the whole profile is rebuilt
+            chunk_ids = profile_encodings.filter(chunk=True).values_list("id", flat=True)
+            dead_encoding_ids.extend({encoding.id for encoding in stale_encodings}.union(chunk_ids))
+            dead_profiles.append(profile)
+
+        if not dead_profiles:
+            return False
+        media.encode(profiles=dead_profiles)
+        Encoding.objects.filter(id__in=dead_encoding_ids).delete()
+        logger.info(
+            "Re-encoding stale profiles %s for media %s",
+            ", ".join(profile.name for profile in dead_profiles),
+            media.friendly_token,
+        )
+        return True
+    finally:
+        for lock_key, lock_token in held_locks:
+            if chunk_finalisation_cache.get(lock_key) == lock_token:
+                chunk_finalisation_cache.delete(lock_key)
 
 
 @task(name="check_media_states", queue="short_tasks")
