@@ -43,6 +43,45 @@ describe('TextField', () => {
 		expect(input).toHaveValue('1234');
 	});
 
+	it('counts characters against maxLength as the user types', async () => {
+		const user = userEvent.setup();
+		render(<TextField label="Counted field" maxLength={90} showCharacterCount defaultValue="Trusted" />);
+
+		expect(screen.getByText('7/90')).toBeInTheDocument();
+
+		await user.type(screen.getByLabelText('Counted field'), ' Playlist');
+
+		expect(screen.getByText('16/90')).toBeInTheDocument();
+	});
+
+	it('counts a controlled value', () => {
+		render(<TextField label="Controlled count" maxLength={90} showCharacterCount value="" onChange={() => {}} />);
+
+		expect(screen.getByText('0/90')).toBeInTheDocument();
+	});
+
+	it('shows the counter beside a validation error', () => {
+		render(
+			<TextField
+				label="Errored count"
+				maxLength={90}
+				showCharacterCount
+				value=""
+				invalid
+				helperText="Title is required."
+			/>
+		);
+
+		expect(screen.getByText('Title is required.')).toBeInTheDocument();
+		expect(screen.getByText('0/90')).toBeInTheDocument();
+	});
+
+	it('shows no counter for a maxLength alone', () => {
+		render(<TextField label="Year" maxLength={4} defaultValue="2024" />);
+
+		expect(screen.queryByText('4/4')).not.toBeInTheDocument();
+	});
+
 	it('keeps focus while typing and updates the value', async () => {
 		const user = userEvent.setup();
 		render(<TextField label="Focused field" placeholder="Type title" />);

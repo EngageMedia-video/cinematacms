@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditPlaylistDialog } from './EditPlaylistDialog';
 import usePlaylistUiStore from '../store/usePlaylistUiStore';
+import { playlistQueryKey } from '../hooks/usePlaylistQuery';
 import { apiFetch } from '../../shared/utils/api';
 
 vi.mock('../../shared/utils/api', () => ({
@@ -10,14 +11,25 @@ vi.mock('../../shared/utils/api', () => ({
 }));
 
 const LONG_DESCRIPTION = Array.from({ length: 500 }, (_, index) => `word${index}`).join(' ');
+const TOKEN = 'pltest01';
 
 function renderDialog(playlist) {
 	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	return render(
+	queryClient.setQueryData(playlistQueryKey(TOKEN), playlist);
+	render(
 		<QueryClientProvider client={queryClient}>
-			<EditPlaylistDialog config={{}} playlist={playlist} token="pltest01" />
+			<EditPlaylistDialog config={{}} playlist={playlist} token={TOKEN} />
 		</QueryClientProvider>
 	);
+	return queryClient;
+}
+
+function succeedWith(data) {
+	apiFetch.mockResolvedValue({ ok: true, json: async () => data });
+}
+
+function sentBody() {
+	return apiFetch.mock.calls[0][1].body;
 }
 
 describe('EditPlaylistDialog', () => {
@@ -30,32 +42,129 @@ describe('EditPlaylistDialog', () => {
 		vi.clearAllMocks();
 	});
 
-	it('shows a description longer than 450 words without truncating it', () => {
-		renderDialog({ description: LONG_DESCRIPTION });
+	it('is labelled as a playlist editor', () => {
+		renderDialog({ title: 'Trusted Playlist', description: '' });
 
-		expect(screen.getByLabelText('Description')).toHaveValue(LONG_DESCRIPTION);
+		expect(screen.getByRole('dialog', { name: 'Edit playlist' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: 'Edit Playlist' })).toBeInTheDocument();
+		expect(screen.getByText("Update your playlist title and Curator's Note.")).toBeInTheDocument();
 	});
 
-	it('submits the full description text', async () => {
-		const user = userEvent.setup();
-		apiFetch.mockResolvedValue({ ok: true, json: async () => ({ description: LONG_DESCRIPTION }) });
+	it('prefills the title with a character count and the Curator’s Note', () => {
+		renderDialog({ title: 'Trusted Playlist', description: 'Why these films' });
 
-		renderDialog({ description: LONG_DESCRIPTION });
+		expect(screen.getByLabelText('Title')).toHaveValue('Trusted Playlist');
+		expect(screen.getByText('16/90')).toBeInTheDocument();
+		expect(screen.getByLabelText("Curator's Note")).toHaveValue('Why these films');
+		expect(
+			screen.getByText(
+				'Explain why these films belong together. Links you paste here become clickable automatically.'
+			)
+		).toBeInTheDocument();
+	});
+
+	it('caps the title at 90 characters', () => {
+		renderDialog({ title: 'Trusted Playlist', description: '' });
+
+		expect(screen.getByLabelText('Title')).toHaveAttribute('maxlength', '90');
+	});
+
+	it('shows a description longer than 450 words without truncating it', () => {
+		renderDialog({ title: 'Trusted Playlist', description: LONG_DESCRIPTION });
+
+		expect(screen.getByLabelText("Curator's Note")).toHaveValue(LONG_DESCRIPTION);
+	});
+
+	it('sends only the trimmed title when only the title changed', async () => {
+		const user = userEvent.setup();
+		succeedWith({ title: 'Coastal Futures', description: 'Why these films' });
+
+		renderDialog({ title: 'Trusted Playlist', description: 'Why these films' });
+		await user.clear(screen.getByLabelText('Title'));
+		await user.type(screen.getByLabelText('Title'), '  Coastal Futures  ');
 		await user.click(screen.getByRole('button', { name: 'Save' }));
 
 		expect(apiFetch).toHaveBeenCalledWith(
-			expect.stringContaining('pltest01'),
-			expect.objectContaining({ method: 'POST', body: { description: LONG_DESCRIPTION } })
+			expect.stringContaining(TOKEN),
+			expect.objectContaining({ method: 'POST' })
 		);
+		expect(sentBody()).toEqual({ title: 'Coastal Futures' });
 	});
 
-	it('shows an error banner when the save fails', async () => {
+	it('sends only the description when only the description changed', async () => {
+		const user = userEvent.setup();
+		succeedWith({ title: 'Trusted Playlist', description: LONG_DESCRIPTION });
+
+		renderDialog({ title: 'Trusted Playlist', description: 'Original' });
+		await user.clear(screen.getByLabelText("Curator's Note"));
+		await user.click(screen.getByLabelText("Curator's Note"));
+		await user.paste(LONG_DESCRIPTION);
+		await user.click(screen.getByRole('button', { name: 'Save' }));
+
+		expect(sentBody()).toEqual({ description: LONG_DESCRIPTION });
+	});
+
+	it('closes without a request when nothing changed', async () => {
+		const user = userEvent.setup();
+
+		renderDialog({ title: 'Trusted Playlist', description: 'Original' });
+		await user.type(screen.getByLabelText('Title'), '   ');
+		await user.click(screen.getByRole('button', { name: 'Save' }));
+
+		expect(apiFetch).not.toHaveBeenCalled();
+		expect(usePlaylistUiStore.getState().editDialogOpen).toBe(false);
+	});
+
+	it('requires a title and does not save an empty one', async () => {
+		const user = userEvent.setup();
+
+		renderDialog({ title: 'Trusted Playlist', description: 'Original' });
+		await user.clear(screen.getByLabelText('Title'));
+
+		expect(screen.getByText('Title is required.')).toBeInTheDocument();
+		expect(screen.getByText('0/90')).toBeInTheDocument();
+
+		await user.click(screen.getByRole('button', { name: 'Save' }));
+
+		expect(apiFetch).not.toHaveBeenCalled();
+		expect(usePlaylistUiStore.getState().editDialogOpen).toBe(true);
+	});
+
+	it('rejects a whitespace-only title on save', async () => {
+		const user = userEvent.setup();
+
+		renderDialog({ title: 'Trusted Playlist', description: 'Original' });
+		await user.clear(screen.getByLabelText('Title'));
+		await user.type(screen.getByLabelText('Title'), '   ');
+		await user.click(screen.getByRole('button', { name: 'Save' }));
+
+		expect(screen.getByText('Title is required.')).toBeInTheDocument();
+		expect(apiFetch).not.toHaveBeenCalled();
+	});
+
+	it('updates the cached title once the save succeeds', async () => {
+		const user = userEvent.setup();
+		succeedWith({ title: 'Coastal Futures', description: 'Original' });
+
+		const queryClient = renderDialog({ title: 'Trusted Playlist', description: 'Original' });
+		await user.clear(screen.getByLabelText('Title'));
+		await user.type(screen.getByLabelText('Title'), 'Coastal Futures');
+		await user.click(screen.getByRole('button', { name: 'Save' }));
+
+		expect(queryClient.getQueryData(playlistQueryKey(TOKEN)).title).toBe('Coastal Futures');
+		expect(usePlaylistUiStore.getState().editDialogOpen).toBe(false);
+	});
+
+	it('restores the cached title and shows an error when the save fails', async () => {
 		const user = userEvent.setup();
 		apiFetch.mockResolvedValue({ ok: false, status: 500, json: async () => ({}) });
 
-		renderDialog({ description: 'Original' });
+		const queryClient = renderDialog({ title: 'Trusted Playlist', description: 'Original' });
+		await user.clear(screen.getByLabelText('Title'));
+		await user.type(screen.getByLabelText('Title'), 'Coastal Futures');
 		await user.click(screen.getByRole('button', { name: 'Save' }));
 
-		expect(await screen.findByText('The description could not be saved. Try again.')).toBeInTheDocument();
+		expect(await screen.findByText('Your changes could not be saved. Try again.')).toBeInTheDocument();
+		expect(queryClient.getQueryData(playlistQueryKey(TOKEN)).title).toBe('Trusted Playlist');
 	});
 });
