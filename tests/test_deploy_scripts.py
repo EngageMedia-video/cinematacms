@@ -1573,7 +1573,9 @@ class RestartScriptTests(unittest.TestCase):
         commands = self._reset_app_ownership(group_exists=True)
 
         self.assertEqual(len(commands), 2)
-        self.assertRegex(commands[0], r"^find /home/cinemata -path \S+/logs -prune -o -exec chown -h www-data: \{\} \+$")
+        self.assertRegex(
+            commands[0], r"^find /home/cinemata -path \S+/logs -prune -o -exec chown -h www-data: \{\} \+$"
+        )
         self.assertEqual(commands[1], "chown -R www-data:cinematacms-observability logs")
 
     def test_ownership_reset_without_the_observability_stack(self):
