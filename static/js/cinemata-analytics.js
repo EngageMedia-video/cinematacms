@@ -447,7 +447,9 @@
     // Umami's recorder sends location.href with heatmap and replay data and has no
     // beforeSend hook, so it runs only where the browser URL holds nothing private.
     function recorderUrlIsSafe() {
-        if (config.nonpublic || window.location.hash) return false;
+        // Profile URLs carry the username, which page views replace with /user/profile.
+        const isProfileUrl = /^\/user\//.test(window.location.pathname);
+        if (config.nonpublic || window.location.hash || isProfileUrl) return false;
         return [...new URLSearchParams(window.location.search)].every(([key, value]) =>
             key === 'm' || (/^utm_(source|medium|campaign|content|term)$/.test(key) && campaignValue.test(value)));
     }
