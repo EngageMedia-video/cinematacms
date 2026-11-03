@@ -61,6 +61,7 @@ from .models import (
     chunk_finalisation_cache,
     chunk_finalize_lock_key,
     chunk_groups_awaiting_merge,
+    encode_priority,
     finalize_chunk_group,
     remove_stale_chunk_merge_dirs,
     schedule_chunk_file_cleanup,
@@ -206,8 +207,7 @@ def chunkize_media(self, friendly_token, profiles, force=True):
                     continue
             encoding = Encoding(media=media, profile=profile, task_dispatched=False)
             encoding.save()
-            priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
-            media._dispatch_encoding(encoding, profile, force, priority=priority)
+            media._dispatch_encoding(encoding, profile, force, priority=encode_priority(profile))
         return False
 
     chunks = [os.path.join(cwd, ch) for ch in chunks]
@@ -246,8 +246,7 @@ def chunkize_media(self, friendly_token, profiles, force=True):
                         task_dispatched=False,
                     )
                     encoding.save()
-                    priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
-                    encodings_to_dispatch.append((encoding, profile, chunk, priority))
+                    encodings_to_dispatch.append((encoding, profile, chunk, encode_priority(profile)))
 
             for encoding, profile, chunk, priority in encodings_to_dispatch:
                 transaction.on_commit(
@@ -2116,7 +2115,6 @@ def _dispatch_deferred_encodings_inner():
             continue
 
         enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
-        priority = 9 if encoding.profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
         task_kwargs = {"force": True}
         if encoding.chunk and encoding.chunk_file_path:
             task_kwargs["chunk"] = True
@@ -2125,7 +2123,7 @@ def _dispatch_deferred_encodings_inner():
             encode_media.apply_async(
                 args=[encoding.media.friendly_token, encoding.profile.id, encoding.id, enc_url],
                 kwargs=task_kwargs,
-                priority=priority,
+                priority=encode_priority(encoding.profile),
                 headers=inject_trace_headers({"enqueued_at": time.time()}),
             )
         except Exception as error:
