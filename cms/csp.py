@@ -51,7 +51,8 @@ def build_policy(
         (static_url, ("script-src", "style-src", "font-src", "img-src")),
         (media_url, ("img-src", "media-src", "connect-src")),
         (upload_url, ("connect-src",)),
-        (analytics_url, ("connect-src",)),
+        # Umami's heatmap draws over the live page in an iframe on its own origin.
+        (analytics_url, ("connect-src", "frame-ancestors")),
     ):
         parsed = urlsplit(url)
         if parsed.scheme and parsed.netloc:

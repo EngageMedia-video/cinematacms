@@ -147,6 +147,8 @@ class ContentSecurityPolicyTests(SimpleTestCase):
         self.assertIn("https://analytics.example.test/umami/recorder.js", policy["script-src"])
         self.assertIn("https://analytics.example.test", policy["connect-src"])
         self.assertNotIn("https://analytics.example.test", policy["img-src"])
+        # Umami's heatmap draws over the live page in an iframe on its own origin.
+        self.assertEqual(policy["frame-ancestors"], ["'self'", "https://analytics.example.test"])
         self.assertIn("https://images.example.test", policy["img-src"])
         self.assertNotIn("https://images.example.test", policy["script-src"])
         self.assertEqual(policy["report-uri"], ["https://reports.example.test/csp"])

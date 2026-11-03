@@ -100,7 +100,7 @@ Configure reverse proxies and CDNs to bypass HTML caching. Never reuse a
 rendered nonce or cache the body independently of its CSP header. Responses
 that do not generate a nonce retain their existing cache policy.
 
-Normal pages permit same-origin framing. Both embed views remove only
+Normal pages permit same-origin framing. When `ANALYTICS_URL` is set, they also permit framing by its origin, which Umami's heatmap view needs. This takes effect only once the policy is enforced, because a report-only policy does not override `X-Frame-Options: SAMEORIGIN`. Both embed views remove only
 `frame-ancestors` and retain their existing X-Frame-Options exemptions and
 authorization checks.
 

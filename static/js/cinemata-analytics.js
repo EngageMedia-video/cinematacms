@@ -3,6 +3,13 @@
     if (!element) return;
 
     const config = JSON.parse(element.textContent);
+    // Umami's heatmap loads the live page in an iframe on its own origin; tracking
+    // there would count the analyst's preview as a visit. Firefox has no
+    // ancestorOrigins, so a heatmap viewed in Firefox still counts.
+    const analyticsOrigin = (() => { try { return new URL(config.url).origin; } catch { return null; } })();
+    const isUmamiPreview = window.top !== window.self &&
+        Array.from(window.location.ancestorOrigins || []).includes(analyticsOrigin);
+    if (isUmamiPreview) return;
     const tag = config.media_id ? `media:${config.media_id}` : config.playlist_id ? `playlist:${config.playlist_id}` : undefined;
     let referrer = config.nonpublic || !document.referrer ? '' : (() => {
         try {
