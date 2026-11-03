@@ -134,6 +134,49 @@ class CheckRunningStatesTests(TestCase):
 
         self.assertFalse(Encoding.objects.filter(pk=dead.pk).exists())
 
+    def test_releases_the_merge_lock_after_rebuilding(self):
+        self._make_chunked()
+        self._chunk(STALE, 0)
+
+        tasks.check_running_states()
+
+        self.assertIsNone(chunk_finalisation_cache.get(chunk_finalize_lock_key(self.media.id, self.profile.id)))
+
+    def test_does_not_split_a_long_media_to_replace_only_its_gif(self):
+        self._make_chunked()
+        gif = EncodeProfile.objects.create(name="preview", extension="gif", codec="gif", resolution=0)
+        self._encoding(STALE, profile=gif)
+
+        tasks.check_running_states()
+
+        self.encode_queue.assert_called_once()
+        self.chunk_queue.assert_not_called()
+
+    def test_defers_a_plain_replacement_that_cannot_be_queued(self):
+        stale = self._encoding(STALE)
+        self.encode_queue.side_effect = ConnectionError("broker unavailable")
+
+        tasks.check_running_states()
+
+        self.assertFalse(Encoding.objects.filter(pk=stale.pk).exists())
+        replacement = Encoding.objects.get(media=self.media, profile=self.profile)
+        self.assertEqual((replacement.status, replacement.task_dispatched), ("pending", False))
+
+    def test_a_media_that_must_wait_does_not_use_up_the_run(self):
+        self._make_chunked()
+        self._chunk(STALE + timedelta(hours=1), 0)
+        lock_key = chunk_finalize_lock_key(self.media.id, self.profile.id)
+        chunk_finalisation_cache.add(lock_key, "merging worker", timeout=60)
+        self.addCleanup(chunk_finalisation_cache.delete, lock_key)
+        newer_media = create_test_media(self.user, video_height=1080)
+        newer = self._encoding(silent_for=STALE, media=newer_media)
+
+        with patch.object(tasks, "STALE_ENCODING_MEDIA_PER_RUN", 1):
+            result = tasks.check_running_states()
+
+        self.assertFalse(Encoding.objects.filter(pk=newer.pk).exists())
+        self.assertEqual((result["processed"], result["changed"]), (2, 1))
+
     def test_replaces_the_longest_dead_media_first_and_leaves_the_rest_for_later_runs(self):
         newer_media = create_test_media(self.user, video_height=1080)
         self._encoding(silent_for=STALE, media=newer_media)

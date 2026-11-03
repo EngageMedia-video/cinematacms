@@ -1074,14 +1074,13 @@ def check_running_states():
     )
     stale_profile_ids_by_media = {}
     for media_id, profile_id in stale_pairs:
-        if media_id not in stale_profile_ids_by_media:
-            if len(stale_profile_ids_by_media) == STALE_ENCODING_MEDIA_PER_RUN:
-                continue
-            stale_profile_ids_by_media[media_id] = set()
-        stale_profile_ids_by_media[media_id].add(profile_id)
+        stale_profile_ids_by_media.setdefault(media_id, set()).add(profile_id)
 
-    changed = failed = 0
+    processed = changed = failed = 0
     for media_id, profile_ids in stale_profile_ids_by_media.items():
+        if changed + failed == STALE_ENCODING_MEDIA_PER_RUN:
+            break
+        processed += 1
         try:
             changed += _reencode_dead_profiles(media_id, profile_ids, stale_cutoff)
         except Exception as error:
@@ -1092,7 +1091,7 @@ def check_running_states():
     return {
         "outcome": "failed" if failed else "succeeded",
         "reason_code": "item_errors" if failed else "none",
-        "processed": len(stale_profile_ids_by_media),
+        "processed": processed,
         "changed": changed,
         "failed": failed,
     }
@@ -1102,13 +1101,15 @@ def _reencode_dead_profiles(media_id, profile_ids, stale_cutoff):
     """Replace the dead encodes of one media, and return whether any were replaced.
 
     A profile is skipped while its chunk group is being merged, or while any of its
-    encodes still has a heartbeat. The replacement is queued before the dead rows are
-    deleted, so a failure to queue leaves them for the next run.
+    encodes still has a heartbeat. Media.encode runs before the dead rows are deleted:
+    if splitting a long media cannot be queued it raises and the rows stay for the next
+    run; an unqueued plain encode is kept as a deferred row that the drain task sends.
     """
     media = Media.objects.get(pk=media_id)
     held_locks = []
     try:
         dead_profiles = []
+        dead_encodings = []
         dead_encoding_ids = []
         for profile in EncodeProfile.objects.filter(id__in=profile_ids):
             lock_key = chunk_finalize_lock_key(media.id, profile.id)
@@ -1124,8 +1125,7 @@ def _reencode_dead_profiles(media_id, profile_ids, stale_cutoff):
             stale_encodings = list(running.filter(update_date__lt=stale_cutoff).select_related("profile"))
             if not stale_encodings:
                 continue
-            for encoding in stale_encodings:
-                record_stale_encoding(encoding)
+            dead_encodings.extend(stale_encodings)
             # A chunk group cannot finish once one chunk is lost, so the whole profile is rebuilt
             chunk_ids = profile_encodings.filter(chunk=True).values_list("id", flat=True)
             dead_encoding_ids.extend({encoding.id for encoding in stale_encodings}.union(chunk_ids))
@@ -1135,6 +1135,8 @@ def _reencode_dead_profiles(media_id, profile_ids, stale_cutoff):
             return False
         media.encode(profiles=dead_profiles)
         Encoding.objects.filter(id__in=dead_encoding_ids).delete()
+        for encoding in dead_encodings:
+            record_stale_encoding(encoding)
         logger.info(
             "Re-encoding stale profiles %s for media %s",
             ", ".join(profile.name for profile in dead_profiles),

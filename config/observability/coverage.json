@@ -2317,6 +2317,7 @@
           "dispatch_deferred_encodings",
           "apply_visibility_schedules",
           "recover_stalled_chunk_groups",
+          "check_running_states",
           "cleanup_media_action_ips"
         ],
         "scheduled_outcomes": [

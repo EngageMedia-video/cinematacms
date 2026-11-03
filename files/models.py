@@ -1247,12 +1247,12 @@ class Media(models.Model):
         if self.duration > settings.CHUNKIZE_VIDEO_DURATION and chunkize:
             for profile in profiles:
                 if profile.extension == "gif":
-                    profiles.remove(profile)
                     encoding = Encoding(media=self, profile=profile, task_dispatched=False)
                     encoding.save()
                     self._dispatch_encoding(encoding, profile, force, priority=0)
-            profiles = [p.id for p in profiles]
-            tasks.chunkize_media.delay(self.friendly_token, profiles, force=force)
+            chunked_profile_ids = [p.id for p in profiles if p.extension != "gif"]
+            if chunked_profile_ids:
+                tasks.chunkize_media.delay(self.friendly_token, chunked_profile_ids, force=force)
         else:
             for profile in profiles:
                 if profile.extension != "gif":
