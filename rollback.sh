@@ -164,9 +164,13 @@ if ! make quick-build; then
 fi
 
 echo -e "${YELLOW}Updating ownership...${NC}"
-chown -R www-data. "$CINEMATA_HOME/"
+# The Collector rereads a log from its first line after losing read access to it,
+# so the logs keep the Collector's group for the whole reset.
 if [ -d "$REPO_DIR/logs" ] && getent group cinematacms-observability >/dev/null; then
-  chgrp -R cinematacms-observability "$REPO_DIR/logs"
+  find "$CINEMATA_HOME" -path "$REPO_DIR/logs" -prune -o -exec chown -h www-data: {} +
+  chown -R www-data:cinematacms-observability "$REPO_DIR/logs"
+else
+  chown -R www-data. "$CINEMATA_HOME/"
 fi
 
 echo -e "${YELLOW}Reloading systemd daemon...${NC}"
