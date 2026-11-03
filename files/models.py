@@ -763,10 +763,15 @@ class Media(models.Model):
             )
             uploaded_poster_changed = self.uploaded_poster != self.__original_uploaded_poster
             if thumbnail_time_changed and self.thumbnail_time is not None and not uploaded_poster_changed:
-                if self.uploaded_thumbnail:
-                    self.uploaded_thumbnail.delete(save=False)
-                if self.uploaded_poster:
-                    self.uploaded_poster.delete(save=False)
+                # A chosen video frame takes over from an uploaded poster. The columns are
+                # cleared here and the files removed after the save, as for the thumbnail.
+                replaced_uploaded_files = {
+                    field_name: getattr(self, field_name).name
+                    for field_name in ("uploaded_thumbnail", "uploaded_poster")
+                    if getattr(self, field_name)
+                }
+                for field_name in replaced_uploaded_files:
+                    setattr(self, field_name, None)
                 self.__original_uploaded_poster = self.uploaded_poster
                 self.__original_thumbnail_time = self.thumbnail_time
                 # save=False: this runs inside save(), so the super().save() below
@@ -774,18 +779,17 @@ class Media(models.Model):
                 # row here would be a nested full-row save from the same instance.
                 names_before = {"thumbnail": self.thumbnail.name, "poster": self.poster.name}
                 self.set_thumbnail(force=True, save=False)
-                replaced_thumbnail_files = {
+                replaced_thumbnail_files = replaced_uploaded_files | {
                     field_name: name
                     for field_name, name in names_before.items()
                     if getattr(self, field_name).name != name
                 }
                 # A scoped caller (save(update_fields=["thumbnail_time"])) would
                 # otherwise drop what this branch just changed, so widen its list.
-                # uploaded_thumbnail/uploaded_poster are included because the
-                # delete(save=False) calls above cleared them in memory only: the
-                # files are gone from disk, so leaving the columns unwritten would
-                # point the row at files that no longer exist. Behaviour is
-                # unchanged for an unscoped save.
+                # uploaded_thumbnail/uploaded_poster are included because they were
+                # cleared in memory above and their files are removed once this save
+                # commits, so leaving the columns unwritten would point the row at
+                # files that no longer exist. Behaviour is unchanged for an unscoped save.
                 if update_fields is not None:
                     update_fields = set(update_fields) | {
                         "thumbnail",

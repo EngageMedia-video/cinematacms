@@ -270,6 +270,30 @@ class RegeneratedThumbnailTests(StoredFilesMixin, TransactionTestCase):
         self.assertTrue(all(os.path.exists(path) for path in first))
         self.assertEqual(self._stored_names("thumbnail", "poster", "thumbnail_time"), stored)
 
+    def test_a_rolled_back_thumbnail_time_keeps_the_uploaded_poster_the_row_points_at(self):
+        self._upload_poster("first.jpg")
+        uploaded = self._paths("uploaded_thumbnail", "uploaded_poster")
+        stored = self._stored_names("uploaded_thumbnail", "uploaded_poster", "thumbnail_time")
+
+        def pick_a_video_frame():
+            self.media.thumbnail_time = 1.0
+            self.media.save()
+
+        self._roll_back(pick_a_video_frame)
+
+        self.assertTrue(all(os.path.exists(path) for path in uploaded))
+        self.assertEqual(self._stored_names("uploaded_thumbnail", "uploaded_poster", "thumbnail_time"), stored)
+
+    def test_a_new_thumbnail_time_removes_the_uploaded_poster_once_saved(self):
+        self._upload_poster("first.jpg")
+        uploaded = self._paths("uploaded_thumbnail", "uploaded_poster")
+
+        self.media.thumbnail_time = 1.0
+        self.media.save()
+
+        self.assertFalse(any(os.path.exists(path) for path in uploaded))
+        self.assertEqual(self._stored_names("uploaded_thumbnail", "uploaded_poster"), ("", ""))
+
     def test_a_rolled_back_uploaded_poster_keeps_the_files_the_row_points_at(self):
         self._upload_poster("first.jpg")
         first = self._paths("uploaded_thumbnail", "uploaded_poster")
