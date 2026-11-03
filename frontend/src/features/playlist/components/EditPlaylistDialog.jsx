@@ -80,8 +80,6 @@ function EditPlaylistContent({ config, playlist, token, onDone }) {
 			aria-label="Edit playlist"
 			title="Edit Playlist"
 			subtitle="Update your playlist title and Curator's Note."
-			// The corner ripple sits under the fields and draws lines through the hint.
-			decorationSrc={null}
 			actions={
 				<>
 					<DialogClose>
