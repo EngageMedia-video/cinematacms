@@ -405,6 +405,76 @@ class FullStackContractTests(unittest.TestCase):
             live = [f"{d}/{pattern}" for d in nginx_directories]
             self.assertEqual(includes(receiver), [*live, *[f"{path}.1" for path in live]], receiver)
 
+    def test_log_records_carry_the_time_the_line_was_written_not_the_time_it_was_read(self):
+        receivers = yaml.safe_load((OBSERVABILITY / "templates/otelcol.yml").read_text())["receivers"]
+        django_time_zone = re.search(r'(?m)^TIME_ZONE = "(.+)"$', (ROOT / "cms/settings.py").read_text()).group(1)
+
+        def time_parsers(receiver):
+            return {
+                operator["id"]: operator
+                for operator in receivers[receiver]["operators"]
+                if operator["type"] == "time_parser"
+            }
+
+        # Django sets TZ from TIME_ZONE, so Python's logging writes the app's lines in local time.
+        app = time_parsers("file_log/cinematacms")
+        self.assertEqual(
+            {name: (p["parse_from"], p["layout_type"], p["layout"], p["location"]) for name, p in app.items()},
+            {
+                "parse_application_time": (
+                    "attributes.timestamp",
+                    "strptime",
+                    "%Y-%m-%d %H:%M:%S,%L",
+                    django_time_zone,
+                ),
+                "parse_rotation_marker_time": (
+                    "attributes.timestamp",
+                    "gotime",
+                    "2006-01-02T15:04:05.999999999Z07:00",
+                    "UTC",
+                ),
+            },
+        )
+        nginx_access = time_parsers("file_log/nginx_access")["parse_nginx_access_time"]
+        self.assertEqual(nginx_access["parse_from"], "attributes.time_local")
+        self.assertEqual(nginx_access["layout"], "%d/%b/%Y:%H:%M:%S %z")
+        self.assertNotIn("location", nginx_access, "the line carries its own offset")
+        # nginx writes its error log in the host's local time and runs on the host the Collector reads from.
+        nginx_error = time_parsers("file_log/nginx_error")["parse_nginx_error_time"]
+        self.assertEqual(nginx_error["parse_from"], "attributes.log_time")
+        self.assertEqual(nginx_error["layout"], "%Y/%m/%d %H:%M:%S")
+        self.assertEqual(nginx_error["location"], "Local")
+
+    def test_a_line_whose_time_cannot_be_read_is_still_delivered(self):
+        receivers = yaml.safe_load((OBSERVABILITY / "templates/otelcol.yml").read_text())["receivers"]
+
+        for name, receiver in receivers.items():
+            if not name.startswith("file_log/"):
+                continue
+            for operator in receiver["operators"]:
+                with self.subTest(receiver=name, operator=operator.get("id", operator["type"])):
+                    self.assertIn(operator.get("on_error", "send"), ("send", "send_quiet"))
+                    self.assertNotIn(operator["type"], ("filter", "router"))
+
+    def test_the_rotation_marker_and_application_lines_each_reach_the_parser_that_reads_their_format(self):
+        receivers = yaml.safe_load((OBSERVABILITY / "templates/otelcol.yml").read_text())["receivers"]
+        rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
+        operators = {operator.get("id"): operator for operator in receivers["file_log/cinematacms"]["operators"]}
+
+        def selects(operator_id, timestamp):
+            guard = re.fullmatch(
+                r'attributes\.timestamp != nil and attributes\.timestamp matches "(.+)"', operators[operator_id]["if"]
+            ).group(1)
+            return re.search(guard, timestamp) is not None
+
+        self.assertIn("""'+{"timestamp":"%FT%T.%NZ","level":"INFO","event":"log_rotated"}'""", rotation)
+        marker = "2026-11-02T21:53:13.476397453Z"
+        application = "2026-11-02 21:53:13,969"
+        self.assertTrue(selects("parse_rotation_marker_time", marker))
+        self.assertFalse(selects("parse_rotation_marker_time", application))
+        self.assertTrue(selects("parse_application_time", application))
+        self.assertFalse(selects("parse_application_time", marker))
+
     def test_every_app_log_writer_follows_the_rename_of_a_rotation(self):
         collector = (OBSERVABILITY / "templates/otelcol.yml").read_text()
         rotation = (OBSERVABILITY / "templates/app-logs.logrotate").read_text()
@@ -1318,7 +1388,13 @@ class FullStackContractTests(unittest.TestCase):
         ).group(1)
         self.assertEqual(
             re.findall(r"^        id: (\w+)$", access_receiver, re.MULTILINE),
-            ["parse_nginx_access_request", "parse_unparsed_nginx_access_status", "replace_unparsed_nginx_access"],
+            [
+                "extract_nginx_access_time",
+                "parse_nginx_access_time",
+                "parse_nginx_access_request",
+                "parse_unparsed_nginx_access_status",
+                "replace_unparsed_nginx_access",
+            ],
         )
         status_operator = re.search(
             r"      - type: regex_parser\n        id: parse_unparsed_nginx_access_status\n(?:        \S.*\n)+",
