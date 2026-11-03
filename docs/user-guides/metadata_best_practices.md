@@ -19,7 +19,7 @@ Metadata provides essential information about your content. It helps:
 | Field           | Description                                                                 |
 |----------------|-----------------------------------------------------------------------------|
 | **Title**       | Use a clear, concise, and descriptive title. Avoid generic names.           |
-| **Description** | Write a compelling summary (under 60 words) of what the video is about. Often using film logline format is more compelling
+| **Short Description** | Write a compelling summary (80 words or fewer) of what the video is about. One or two sentences on the story and what is at stake often work best.
 | **More Information and Credits** | Use this to provide additional context about the video and/or include the cast and crew involved in the production
 | **Tags**        | Add relevant keywords (e.g., "climate change", "indigenous rights").        |
 | **Language**    | Specify the spoken and/or subtitle language(s) in the video.                |

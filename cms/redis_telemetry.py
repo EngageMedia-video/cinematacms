@@ -12,6 +12,8 @@ from collections.abc import Callable
 from typing import Any
 
 from django.conf import settings
+from kombu.transport.redis import PRIORITY_STEPS
+from kombu.transport.redis import Channel as RedisChannel
 from redis import Redis
 
 from files.metrics import record_telemetry_failure
@@ -204,7 +206,17 @@ class ObservabilityRedisAdapter:
         return self.broker
 
     def queue_depth(self, queue: str) -> int:
-        return int(self._broker().llen(queue))
+        broker = self._broker()
+        return sum(int(broker.llen(name)) for name in _priority_list_names(queue))
+
+
+def _priority_list_names(queue: str) -> list[str]:
+    """Name every Redis list that holds messages of one Celery queue.
+
+    The transport keeps the highest priority step under the queue's own name and
+    each lower step under the name plus its separator and step number.
+    """
+    return [queue] + [f"{queue}{RedisChannel.sep}{step}" for step in PRIORITY_STEPS if step]
 
 
 observability_redis = ObservabilityRedisAdapter()

@@ -17,9 +17,11 @@ datasources:
     jsonData:
       derivedFields:
         - name: TraceID
-          matcherRegex: 'trace_id[=:]"?([a-f0-9]{32})'
+          matcherType: label
+          matcherRegex: trace_id
           datasourceUid: victoriatraces
           url: '$${__value.raw}'
+          urlDisplayLabel: View trace
   - name: VictoriaTraces
     uid: victoriatraces
     type: jaeger

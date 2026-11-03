@@ -1,5 +1,14 @@
 import { cn } from '../../utils/classNames';
-import { cloneElement, createContext, isValidElement, useContext, useEffect, useRef, useState } from 'react';
+import {
+	cloneElement,
+	createContext,
+	isValidElement,
+	useContext,
+	useEffect,
+	useEffectEvent,
+	useRef,
+	useState,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 const DialogContext = createContext(null);
@@ -50,15 +59,17 @@ export function Dialog({ children, open, defaultOpen = false, onOpenChange }) {
 		onOpenChange?.(nextOpen);
 	}
 
+	// An effect event reads the latest onOpenChange, so a close rule that
+	// depends on state set after the dialog opened still applies on Escape.
+	const handleKeyDown = useEffectEvent((event) => {
+		if (event.key === 'Escape') {
+			setOpen(false);
+		}
+	});
+
 	useEffect(() => {
 		if (!isOpen) {
 			return undefined;
-		}
-
-		function handleKeyDown(event) {
-			if (event.key === 'Escape') {
-				setOpen(false);
-			}
 		}
 
 		document.addEventListener('keydown', handleKeyDown);

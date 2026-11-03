@@ -9,6 +9,7 @@ import time
 import uuid
 from contextvars import ContextVar
 from datetime import timedelta
+from functools import partial
 
 import m3u8
 import waffle
@@ -74,11 +75,28 @@ def get_invalidate_media_path_cache():
 logger = logging.getLogger(__name__)
 
 chunk_finalisation_cache = owned_cache.bind("chunk_finalisation")
+transcription_dispatch_cache = owned_cache.bind("whisper_dispatch")
+WHISPER_FLAG_FIELDS = frozenset({"allow_whisper_transcribe", "allow_whisper_transcribe_and_translate"})
 RE_TIMECODE = re.compile(r"(\d+:\d+:\d+.\d+)")
 CHUNK_ACTIVE_STATUSES = {"pending", "running"}
 # A group that keeps failing to merge stops being retried after this long. A claim must expire well inside it.
 CHUNK_RECOVERY_WINDOW = timedelta(days=1)
+# Tells a merge's work directories from everything else in TEMP_DIRECTORY, which other users can write to.
+CHUNK_MERGE_DIRECTORY_PREFIX = "cinematacms-chunk-merge-"
 _suppress_chunk_cleanup_scheduling = ContextVar("suppress_chunk_cleanup_scheduling", default=False)
+# Celery's Redis transport consumes priority 0 first and 9 last, the reverse of RabbitMQ.
+# Unprioritised tasks such as create_hls also land in 0, so later encodes yield to them.
+ENCODE_PRIORITY_FIRST = 0
+ENCODE_PRIORITY_LATER = 6
+
+
+def encode_priority(profile):
+    """Queue the resolutions every media needs before the larger ones."""
+    if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE:
+        return ENCODE_PRIORITY_FIRST
+    return ENCODE_PRIORITY_LATER
+
+
 # the final state of a media, and also encoded medias
 MEDIA_ENCODING_STATUS = (
     ("pending", "Pending"),
@@ -353,6 +371,18 @@ class ScopedFieldFileMixin:
         # delete() clears the column and then saves exactly as save() does, so it
         # needs the same scoping or it replays the whole stale instance.
         return self._scoped(super().delete, save=save)
+
+    def replace(self, name, content):
+        """Store new content without saving the row. Return the name of the file it replaces.
+
+        FieldFile.save() never deletes the file the field pointed at, and storage gives the
+        new file a fresh name, so the old one would stay on disk with nothing to reach it.
+        The caller removes it with Media._remove_replaced_files() once the row holds the new
+        name: until then the row still points at the old file.
+        """
+        previous_name = self.name
+        self.save(name, content, save=False)
+        return previous_name if previous_name and previous_name != self.name else None
 
 
 class ScopedFieldFile(ScopedFieldFileMixin, models.fields.files.FieldFile):
@@ -718,6 +748,7 @@ class Media(models.Model):
         def persists(field):
             return update_fields is None or field in update_fields
 
+        replaced_thumbnail_files = {}
         if self.pk:
             stored_analytics = None
             if persists("media_file") or update_fields is None:
@@ -745,23 +776,33 @@ class Media(models.Model):
             )
             uploaded_poster_changed = self.uploaded_poster != self.__original_uploaded_poster
             if thumbnail_time_changed and self.thumbnail_time is not None and not uploaded_poster_changed:
-                if self.uploaded_thumbnail:
-                    self.uploaded_thumbnail.delete(save=False)
-                if self.uploaded_poster:
-                    self.uploaded_poster.delete(save=False)
+                # A chosen video frame takes over from an uploaded poster. The columns are
+                # cleared here and the files removed after the save, as for the thumbnail.
+                replaced_uploaded_files = {
+                    field_name: getattr(self, field_name).name
+                    for field_name in ("uploaded_thumbnail", "uploaded_poster")
+                    if getattr(self, field_name)
+                }
+                for field_name in replaced_uploaded_files:
+                    setattr(self, field_name, None)
                 self.__original_uploaded_poster = self.uploaded_poster
                 self.__original_thumbnail_time = self.thumbnail_time
                 # save=False: this runs inside save(), so the super().save() below
                 # already persists thumbnail/poster. Letting the FileField write the
                 # row here would be a nested full-row save from the same instance.
+                names_before = {"thumbnail": self.thumbnail.name, "poster": self.poster.name}
                 self.set_thumbnail(force=True, save=False)
+                replaced_thumbnail_files = replaced_uploaded_files | {
+                    field_name: name
+                    for field_name, name in names_before.items()
+                    if getattr(self, field_name).name != name
+                }
                 # A scoped caller (save(update_fields=["thumbnail_time"])) would
                 # otherwise drop what this branch just changed, so widen its list.
-                # uploaded_thumbnail/uploaded_poster are included because the
-                # delete(save=False) calls above cleared them in memory only: the
-                # files are gone from disk, so leaving the columns unwritten would
-                # point the row at files that no longer exist. Behaviour is
-                # unchanged for an unscoped save.
+                # uploaded_thumbnail/uploaded_poster are included because they were
+                # cleared in memory above and their files are removed once this save
+                # commits, so leaving the columns unwritten would point the row at
+                # files that no longer exist. Behaviour is unchanged for an unscoped save.
                 if update_fields is not None:
                     update_fields = set(update_fields) | {
                         "thumbnail",
@@ -837,6 +878,7 @@ class Media(models.Model):
                 super(Media, self).save(*args, **kwargs)
         else:
             super(Media, self).save(*args, **kwargs)
+        self._remove_replaced_files(replaced_thumbnail_files)
         # Notify user when video is published (state changed to public)
         if (
             self.pk
@@ -877,6 +919,7 @@ class Media(models.Model):
             and self.uploaded_poster
             and self.uploaded_poster != self.__original_uploaded_poster
         ):
+            replaced_poster = self.__original_uploaded_poster
             with open(self.uploaded_poster.path, "rb") as f:
                 self.__original_uploaded_poster = self.uploaded_poster
                 myfile = File(f)
@@ -887,8 +930,14 @@ class Media(models.Model):
                 # snapshot, including anything another worker changed meanwhile.
                 # edit_date for the same reason as the scoped saves above; this
                 # write bypasses Media.save(), so it names the column itself.
-                self.uploaded_thumbnail.save(content=myfile, name=thumbnail_name, save=False)
+                replaced_uploaded_thumbnail = self.uploaded_thumbnail.replace(thumbnail_name, myfile)
                 super(Media, self).save(update_fields=["uploaded_thumbnail", "edit_date"])
+            self._remove_replaced_files(
+                {
+                    "uploaded_thumbnail": replaced_uploaded_thumbnail,
+                    "uploaded_poster": replaced_poster.name if replaced_poster else None,
+                }
+            )
 
     def ensure_encryption_key(self):
         """Generate an AES-128 key if one doesn't exist. Returns hex string.
@@ -916,28 +965,39 @@ class Media(models.Model):
         return self.encryption_key
 
     def transcribe_function(self):
-        can_transcribe = False
-        can_transcribe_and_translate = False
-        if self.allow_whisper_transcribe or self.allow_whisper_transcribe_and_translate:
-            if self.allow_whisper_transcribe_and_translate:
-                if not TranscriptionRequest.objects.filter(media=self, translate_to_english=True).exists():
-                    can_transcribe_and_translate = True
-            if self.allow_whisper_transcribe:
-                if not TranscriptionRequest.objects.filter(media=self, translate_to_english=False).exists():
-                    can_transcribe = True
-            from . import tasks
+        # After the commit, so the worker can read the row and a rollback requests nothing.
+        if self.allow_whisper_transcribe:
+            transaction.on_commit(lambda: self._dispatch_transcription(translate=False), using=self._state.db)
+        if self.allow_whisper_transcribe_and_translate:
+            transaction.on_commit(lambda: self._dispatch_transcription(translate=True), using=self._state.db)
 
-            if can_transcribe:
-                tasks.whisper_transcribe.apply_async(
-                    args=[self.friendly_token],
-                    headers=inject_trace_headers(),
-                )
-            if can_transcribe_and_translate:
-                tasks.whisper_transcribe.apply_async(
-                    args=[self.friendly_token],
-                    kwargs={"translate": True},
-                    headers=inject_trace_headers(),
-                )
+    @staticmethod
+    def transcription_dispatch_key(friendly_token, translate):
+        return f"whisper_dispatch_{friendly_token}_{translate}"
+
+    def _dispatch_transcription(self, translate):
+        """Queue one Whisper task for this media and flag, unless one is done or already queued.
+
+        The dispatch claim covers the time until the task finishes: the task releases it when it
+        ends, and it expires on its own if the worker dies, so a failed request can be made again.
+        """
+        if TranscriptionRequest.objects.filter(media=self, translate_to_english=translate).exists():
+            return
+        claim_key = self.transcription_dispatch_key(self.friendly_token, translate)
+        if not transcription_dispatch_cache.add(claim_key, "queued", settings.CELERY_SOFT_TIME_LIMIT):
+            return
+
+        from . import tasks
+
+        try:
+            tasks.whisper_transcribe.apply_async(
+                args=[self.friendly_token],
+                kwargs={"translate": True} if translate else {},
+                headers=inject_trace_headers(),
+            )
+        except Exception:
+            transcription_dispatch_cache.delete(claim_key)
+            raise
 
     def update_search_vector(self):
         """
@@ -1109,10 +1169,13 @@ class Media(models.Model):
                     # write here would carry every other in-memory column back to
                     # the row, and this runs from media_init while other workers
                     # are updating the same media.
-                    self.thumbnail.save(content=myfile, name=thumbnail_name, save=False)
-                    self.poster.save(content=myfile, name=thumbnail_name, save=False)
+                    replaced = {
+                        "thumbnail": self.thumbnail.replace(thumbnail_name, myfile),
+                        "poster": self.poster.replace(thumbnail_name, myfile),
+                    }
                     if save:
                         self.save(update_fields=["thumbnail", "poster"])
+                        self._remove_replaced_files(replaced)
         return True
 
     def produce_thumbnails_from_video(self, save=True):
@@ -1144,12 +1207,27 @@ class Media(models.Model):
                 # save=False on both, then one scoped save (#841). thumbnail_time is
                 # included because the random branch above assigns it here and it
                 # would otherwise never reach the row.
-                self.thumbnail.save(content=myfile, name=thumbnail_name, save=False)
-                self.poster.save(content=myfile, name=thumbnail_name, save=False)
+                replaced = {
+                    "thumbnail": self.thumbnail.replace(thumbnail_name, myfile),
+                    "poster": self.poster.replace(thumbnail_name, myfile),
+                }
                 if save:
                     self.save(update_fields=["thumbnail", "poster", "thumbnail_time"])
+                    self._remove_replaced_files(replaced)
         helpers.rm_file(tf)
         return True
+
+    def _remove_replaced_files(self, replaced):
+        """Delete files whose columns a save just moved to new names, once that save commits.
+
+        ``replaced`` maps a file field to the name it held before. Call this only after the
+        save that persisted those columns: a failed save or a rolled-back transaction then
+        leaves the row pointing at a file that still exists.
+        """
+        for field_name, stored_name in replaced.items():
+            if stored_name:
+                storage = self._meta.get_field(field_name).storage
+                transaction.on_commit(partial(storage.delete, stored_name), using=self._state.db)
 
     def produce_sprite_from_video(self):
         from . import tasks
@@ -1247,12 +1325,12 @@ class Media(models.Model):
         if self.duration > settings.CHUNKIZE_VIDEO_DURATION and chunkize:
             for profile in profiles:
                 if profile.extension == "gif":
-                    profiles.remove(profile)
                     encoding = Encoding(media=self, profile=profile, task_dispatched=False)
                     encoding.save()
-                    self._dispatch_encoding(encoding, profile, force, priority=0)
-            profiles = [p.id for p in profiles]
-            tasks.chunkize_media.delay(self.friendly_token, profiles, force=force)
+                    self._dispatch_encoding(encoding, profile, force, priority=ENCODE_PRIORITY_FIRST)
+            chunked_profile_ids = [p.id for p in profiles if p.extension != "gif"]
+            if chunked_profile_ids:
+                tasks.chunkize_media.delay(self.friendly_token, chunked_profile_ids, force=force)
         else:
             for profile in profiles:
                 if profile.extension != "gif":
@@ -1261,8 +1339,7 @@ class Media(models.Model):
                             continue
                 encoding = Encoding(media=self, profile=profile, task_dispatched=False)
                 encoding.save()
-                priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
-                self._dispatch_encoding(encoding, profile, force, priority=priority)
+                self._dispatch_encoding(encoding, profile, force, priority=encode_priority(profile))
         return True
 
     def post_encode_actions(self, encoding=None, action=None):
@@ -2642,7 +2719,10 @@ def media_save(sender, instance, created, update_fields=None, **kwargs):
     if update_fields is not None:
         indexed = Media.objects.select_related("user").filter(pk=instance.pk).first() or instance
     indexed.update_search_vector()
-    instance.transcribe_function()
+    # A save that leaves the Whisper flags unwritten requests nothing: the encoding pipeline
+    # saves a media many times, and Media.delete() saves one that is about to disappear.
+    if update_fields is None or WHISPER_FLAG_FIELDS & set(update_fields):
+        instance.transcribe_function()
 
 
 def _schedule_storage_usage_refresh_for_media(media_id):
@@ -2770,17 +2850,15 @@ def media_file_delete(sender, instance, **kwargs):
         helpers.rm_file(instance.uploaded_thumbnail.path)
     if instance.uploaded_poster:
         helpers.rm_file(instance.uploaded_poster.path)
-    if instance.uploaded_thumbnail:
-        helpers.rm_file(instance.uploaded_thumbnail.path)
-    if instance.uploaded_poster:
-        helpers.rm_file(instance.uploaded_poster.path)
     if instance.poster:
         helpers.rm_file(instance.poster.path)
     if instance.sprites:
         helpers.rm_file(instance.sprites.path)
     if instance.hls_file:
-        p = os.path.dirname(instance.hls_file_path)
-        helpers.rm_dir(p)
+        helpers.rm_dir(os.path.dirname(instance.hls_file_path))
+    # create_hls writes to HLS_DIR/<uid>/<version>/: the version directory above leaves
+    # <uid>/ behind, and a failed run leaves output that hls_file never pointed at.
+    helpers.rm_dir(os.path.join(settings.HLS_DIR, instance.uid.hex))
     schedule_chunk_file_cleanup(
         getattr(instance, "_chunk_file_paths", ()),
     )
@@ -2939,6 +3017,11 @@ def _log_chunk_finalisation(outcome, reason_code="none", **fields):
     )
 
 
+def chunk_finalize_lock_key(media_id, profile_id):
+    """Cache key that whoever merges or rebuilds a media's chunk group for one profile must hold."""
+    return f"chunk_finalize_lock_{media_id}_{profile_id}"
+
+
 def finalize_chunk_group(instance, expected_chunk_paths):
     """Merge a complete group of encoded chunks into one Encoding, exactly once per media and profile.
 
@@ -2948,7 +3031,7 @@ def finalize_chunk_group(instance, expected_chunk_paths):
 
     Return whether this caller merged the group.
     """
-    lock_key = f"chunk_finalize_lock_{instance.media_id}_{instance.profile_id}"
+    lock_key = chunk_finalize_lock_key(instance.media_id, instance.profile_id)
     lock_token = uuid.uuid4().hex
     log_fields = {"profile_id": instance.profile_id, "chunk_count": len(expected_chunk_paths)}
     with start_span(
@@ -3007,9 +3090,38 @@ def _record_chunk_finalisation_outcome(outcome, reason_code):
         logger.debug("Could not record chunk finalisation outcome", exc_info=True)
 
 
+def remove_stale_chunk_merge_dirs():
+    """Remove the work directories of merges that were killed before they could clean up.
+
+    A merge runs inside a task bound by CELERY_SOFT_TIME_LIMIT, and its claim expires after the
+    same time, so a directory untouched for longer than that belongs to no live merge.
+    """
+    try:
+        entries = list(os.scandir(settings.TEMP_DIRECTORY))
+    except OSError:
+        logger.warning("Could not list %s for stale chunk merge directories", settings.TEMP_DIRECTORY, exc_info=True)
+        return 0
+    stale_before = time.time() - settings.CELERY_SOFT_TIME_LIMIT
+    removed = 0
+    for entry in entries:
+        if not entry.name.startswith(CHUNK_MERGE_DIRECTORY_PREFIX) or entry.is_symlink() or not entry.is_dir():
+            continue
+        try:
+            if entry.stat().st_mtime > stale_before:
+                continue
+            shutil.rmtree(entry.path)
+        except FileNotFoundError:
+            continue  # the merge finished and removed its own directory
+        except OSError:
+            logger.warning("Could not remove stale chunk merge directory %s", entry.path, exc_info=True)
+            continue
+        removed += 1
+    return removed
+
+
 def _merge_chunks(instance, chunks):
     chunks_paths = [f.media_file.path for f in chunks]
-    with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as temp_dir:
+    with tempfile.TemporaryDirectory(prefix=CHUNK_MERGE_DIRECTORY_PREFIX, dir=settings.TEMP_DIRECTORY) as temp_dir:
         seg_file = helpers.create_temp_file(suffix=".txt", dir=temp_dir)
         tf = helpers.create_temp_file(suffix=f".{instance.profile.extension}", dir=temp_dir)
         with open(seg_file, "w") as ff:
@@ -3126,6 +3238,12 @@ def subtitle_storage_usage_save(sender, instance, update_fields=None, **kwargs):
     if update_fields is not None and "subtitle_file" not in set(update_fields):
         return
     _schedule_storage_usage_refresh_for_media(instance.media_id)
+
+
+@receiver(post_delete, sender=Subtitle)
+def subtitle_file_delete(sender, instance, **kwargs):
+    if instance.subtitle_file:
+        helpers.rm_file(instance.subtitle_file.path)
 
 
 @receiver(post_delete, sender=Subtitle)

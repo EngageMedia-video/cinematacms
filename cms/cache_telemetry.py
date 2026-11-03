@@ -47,6 +47,7 @@ CACHE_FAMILIES = frozenset(
         "hls_coordination",
         "scheduled_task_lock",
         "chunk_finalisation",
+        "whisper_dispatch",
         "restricted_media_token",
         "restricted_media_rate_limit",
         "incident_lookup_rate_limit",

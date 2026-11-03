@@ -702,6 +702,10 @@ a.item-edit-link {
 	font-size: 11px;
 	font-weight: 500;
 	display: inline-block;
+	max-width: calc(100% - 8px);
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
 	z-index: 1;
 	pointer-events: none;
 	color: var(--text-on-primary);

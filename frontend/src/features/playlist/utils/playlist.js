@@ -1,3 +1,6 @@
+// Matches Playlist.title max_length in files/models.py.
+export const PLAYLIST_TITLE_MAX_LENGTH = 90;
+
 export function getPlaylistTokenFromLocation(locationObject = window.location) {
 	const configuredToken = window.MediaCMS?.playlistId;
 	if (configuredToken) {

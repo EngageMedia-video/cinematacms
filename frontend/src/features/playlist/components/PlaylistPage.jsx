@@ -15,7 +15,7 @@ import {
 	htmlToPlainText,
 	isOwnerPlaylist,
 } from '../utils/playlist';
-import { EditDescriptionDialog } from './EditDescriptionDialog';
+import { EditPlaylistDialog } from './EditPlaylistDialog';
 import { FilmList } from './FilmList';
 import { ReadMore } from './ReadMore';
 
@@ -156,9 +156,8 @@ function AboutCuratorCard({ playlist }) {
 
 // "Description / Curator's Note": renders the playlist description entered in
 // the Create New Playlist flow — the single source for this section (#805).
-// Owners edit that same description through EditDescriptionDialog.
+// Owners edit that same description, and the title, through EditPlaylistDialog.
 function CuratorNoteCard({ isOwner, playlist }) {
-	const setOpen = usePlaylistUiStore((state) => state.setDescriptionDialogOpen);
 	const hasDescription = Boolean(playlist.description);
 
 	if (!hasDescription && !isOwner) {
@@ -168,17 +167,8 @@ function CuratorNoteCard({ isOwner, playlist }) {
 	return (
 		<Card className="rounded-ds-8 p-5 sm:p-[22px]">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<h2 className="m-0 text-text-strong heading-h6-20-medium">Curator's Notes</h2>
-				{isOwner ? (
-					<Button
-						variant="text"
-						size="sm"
-						onClick={() => setOpen(true)}
-						className="w-fit focus-visible:ring-2 focus-visible:ring-ring-focus"
-					>
-						{hasDescription ? 'Edit' : 'Add description'}
-					</Button>
-				) : null}
+				<h2 className="m-0 text-text-strong heading-h6-20-medium">Curator's Note</h2>
+				{isOwner ? <EditPlaylistButton /> : null}
 			</div>
 			{hasDescription ? (
 				<ReadMore
@@ -195,6 +185,21 @@ function CuratorNoteCard({ isOwner, playlist }) {
 				</p>
 			)}
 		</Card>
+	);
+}
+
+function EditPlaylistButton() {
+	const setOpen = usePlaylistUiStore((state) => state.setEditDialogOpen);
+
+	return (
+		<Button
+			variant="text"
+			size="sm"
+			onClick={() => setOpen(true)}
+			className="w-fit focus-visible:ring-2 focus-visible:ring-ring-focus"
+		>
+			Edit Playlist
+		</Button>
 	);
 }
 
@@ -321,7 +326,10 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 						<CoverCard
 							mobileActions={
 								isOwner ? (
-									<DeletePlaylistButton onDelete={handleDelete} playlistTitle={playlist.title} />
+									<>
+										<EditPlaylistButton />
+										<DeletePlaylistButton onDelete={handleDelete} playlistTitle={playlist.title} />
+									</>
 								) : null
 							}
 							onShare={handleShare}
@@ -343,7 +351,7 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 					</div>
 				</div>
 			</div>
-			{isOwner ? <EditDescriptionDialog config={config} playlist={playlist} token={playlistToken} /> : null}
+			{isOwner ? <EditPlaylistDialog config={config} playlist={playlist} token={playlistToken} /> : null}
 			<ShareStatusToast message={statusMessage} />
 		</div>
 	);

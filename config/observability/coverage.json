@@ -197,6 +197,7 @@
         "hls_coordination",
         "scheduled_task_lock",
         "chunk_finalisation",
+        "whisper_dispatch",
         "restricted_media_token",
         "restricted_media_rate_limit",
         "cache_probe"
@@ -352,6 +353,7 @@
         "scheduled.dispatch_deferred_encodings",
         "scheduled.apply_visibility_schedules",
         "scheduled.recover_stalled_chunk_groups",
+        "scheduled.check_running_states",
         "other"
       ],
       "description": "Application-owned domain operations."
@@ -507,6 +509,7 @@
         "dispatch_deferred_encodings",
         "apply_visibility_schedules",
         "recover_stalled_chunk_groups",
+        "check_running_states",
         "cleanup_media_action_ips"
       ],
       "description": "Registered scheduled jobs."
@@ -628,6 +631,18 @@
     "cinematacms.telemetry.emission_failed",
     "cinematacms.telemetry.contract_violation"
   ],
+  "panel_exceptions": {
+    "cinematacms.http.request.trace": "No code logs this name.",
+    "cinematacms.db.query.trace": "No code logs this name. The query span is named cinematacms.db.query.",
+    "cinematacms.cache.operation.trace": "No code logs this name. The cache span is named cinematacms.cache.operation.",
+    "cinematacms.celery.task.trace": "No code logs this name.",
+    "cinematacms.celery.worker.heartbeat": "No code logs this name. The heartbeat is the metric cinematacms_celery_worker_heartbeat_timestamp_seconds.",
+    "cinematacms.domain.outcome": "No code logs this name. An outcome is the metric cinematacms_domain_outcomes_total and the domain.* span attributes.",
+    "cinematacms.email.delivery": "No code logs this name. The delivery is logged as the message email_delivery and traced as the span email.delivery.",
+    "cinematacms.scheduled_job.outcome": "No code logs this name. An outcome is the metric cinematacms_scheduled_job_runs_total.",
+    "cinematacms.error_tracking.exception": "No code logs this name. The exception goes to the error tracking service.",
+    "cinematacms.telemetry.contract_violation": "No code logs this name. A violation is the metric cinematacms_telemetry_contract_violations_total."
+  },
   "log_correlation": {
     "upload_ref": {
       "description": "Random per-file id that joins an nginx upload access line to the application events of the same upload. Never a metric label.",
@@ -1764,6 +1779,7 @@
           "hls_coordination",
           "scheduled_task_lock",
           "chunk_finalisation",
+          "whisper_dispatch",
           "restricted_media_token",
           "restricted_media_rate_limit",
           "cache_probe"
@@ -2037,6 +2053,7 @@
           "scheduled.dispatch_deferred_encodings",
           "scheduled.apply_visibility_schedules",
           "scheduled.recover_stalled_chunk_groups",
+          "scheduled.check_running_states",
           "other",
           "scheduled.cleanup_media_action_ips"
         ],
@@ -2314,6 +2331,7 @@
           "dispatch_deferred_encodings",
           "apply_visibility_schedules",
           "recover_stalled_chunk_groups",
+          "check_running_states",
           "cleanup_media_action_ips"
         ],
         "scheduled_outcomes": [

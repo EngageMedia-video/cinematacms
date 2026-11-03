@@ -147,3 +147,74 @@ class PlaylistDetailDescriptionTests(TestCase):
         self.assertIn(response.status_code, (401, 403))
         self.playlist.refresh_from_db()
         self.assertEqual(self.playlist.description, "A program note")
+
+
+class PlaylistDetailTitleTests(TestCase):
+    def setUp(self):
+        self.user = create_test_user(username="title_owner")
+        self.playlist = Playlist.objects.create(
+            title="Curated Shorts",
+            description="A program note",
+            user=self.user,
+            friendly_token="pltitle1",
+        )
+        self.url = f"/api/v1/playlists/{self.playlist.friendly_token}"
+
+    def update_title(self, title):
+        return self.client.post(self.url, {"title": title}, content_type="application/json")
+
+    def test_owner_can_update_title_without_touching_description(self):
+        self.client.force_login(self.user)
+
+        response = self.update_title("Coastal Futures")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["title"], "Coastal Futures")
+        self.playlist.refresh_from_db()
+        self.assertEqual(self.playlist.title, "Coastal Futures")
+        self.assertEqual(self.playlist.description, "A program note")
+
+    def test_title_is_trimmed(self):
+        self.client.force_login(self.user)
+
+        response = self.update_title("  Coastal Futures  ")
+
+        self.assertEqual(response.status_code, 201)
+        self.playlist.refresh_from_db()
+        self.assertEqual(self.playlist.title, "Coastal Futures")
+
+    def test_title_of_90_characters_is_accepted(self):
+        self.client.force_login(self.user)
+
+        response = self.update_title("a" * 90)
+
+        self.assertEqual(response.status_code, 201)
+
+    def test_title_longer_than_90_characters_is_rejected(self):
+        self.client.force_login(self.user)
+
+        response = self.update_title("a" * 91)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("title", response.json())
+        self.playlist.refresh_from_db()
+        self.assertEqual(self.playlist.title, "Curated Shorts")
+
+    def test_whitespace_only_title_is_rejected(self):
+        self.client.force_login(self.user)
+
+        response = self.update_title("   ")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("title", response.json())
+        self.playlist.refresh_from_db()
+        self.assertEqual(self.playlist.title, "Curated Shorts")
+
+    def test_non_owner_cannot_update_title(self):
+        self.client.force_login(create_test_user(username="title_visitor"))
+
+        response = self.update_title("Hijacked")
+
+        self.assertEqual(response.status_code, 400)
+        self.playlist.refresh_from_db()
+        self.assertEqual(self.playlist.title, "Curated Shorts")

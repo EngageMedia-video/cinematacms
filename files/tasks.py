@@ -1,12 +1,12 @@
 import json
 import os
-import random
 import re
 import secrets
 import shutil
 import subprocess
 import tempfile
 import time
+import uuid
 from datetime import datetime, timedelta
 
 import django.db
@@ -58,9 +58,14 @@ from .models import (
     Tag,
     Topic,
     TranscriptionRequest,
+    chunk_finalisation_cache,
+    chunk_finalize_lock_key,
     chunk_groups_awaiting_merge,
+    encode_priority,
     finalize_chunk_group,
+    remove_stale_chunk_merge_dirs,
     schedule_chunk_file_cleanup,
+    transcription_dispatch_cache,
 )
 from .query_cache import invalidate_media_cache
 from .sprites import generate_sprite_for_media
@@ -70,6 +75,12 @@ popular_media_cache = owned_cache.bind("popular_media")
 scheduled_task_lock_cache = owned_cache.bind("scheduled_task_lock")
 
 logger = get_task_logger(__name__)
+
+# Each re-encoded media may start a full split of its source, so one run of
+# check_running_states replaces at most this many and leaves the rest for later runs.
+STALE_ENCODING_MEDIA_PER_RUN = 10
+# Outlives one media's recovery so a merge cannot start on a group being rebuilt.
+STALE_ENCODING_LOCK_SECONDS = 300
 
 # How long mp4hls may remux before the worker discards the partial output.
 MP4HLS_SUBPROCESS_TIMEOUT = 600
@@ -196,8 +207,7 @@ def chunkize_media(self, friendly_token, profiles, force=True):
                     continue
             encoding = Encoding(media=media, profile=profile, task_dispatched=False)
             encoding.save()
-            priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
-            media._dispatch_encoding(encoding, profile, force, priority=priority)
+            media._dispatch_encoding(encoding, profile, force, priority=encode_priority(profile))
         return False
 
     chunks = [os.path.join(cwd, ch) for ch in chunks]
@@ -236,8 +246,7 @@ def chunkize_media(self, friendly_token, profiles, force=True):
                         task_dispatched=False,
                     )
                     encoding.save()
-                    priority = 9 if profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
-                    encodings_to_dispatch.append((encoding, profile, chunk, priority))
+                    encodings_to_dispatch.append((encoding, profile, chunk, encode_priority(profile)))
 
             for encoding, profile, chunk, priority in encodings_to_dispatch:
                 transaction.on_commit(
@@ -340,6 +349,10 @@ def encode_media(
         outcome_recorded = True
         observe_media_pipeline(media, profile, "success" if success else "fail")
 
+    def record_encoding_failure(reason):
+        logger.error(f"Encoding {encoding_id} failed: {reason}")
+        record_encoding_outcome(False)
+
     # break logic with chunk True/False
     if chunk:
         # TODO: in case a video is chunkized and this enters here many times
@@ -350,7 +363,7 @@ def encode_media(
             and not force
         ):
             Encoding.objects.filter(id=encoding_id).delete()
-            record_encoding_outcome(False)
+            record_encoding_failure("duplicate chunk encoding")
             return False
         else:
             try:
@@ -368,7 +381,7 @@ def encode_media(
     else:
         if Encoding.objects.filter(media=media, profile=profile).count() > 1 and force is False:
             Encoding.objects.filter(id=encoding_id).delete()
-            record_encoding_outcome(False)
+            record_encoding_failure("duplicate encoding")
             return False
         else:
             try:
@@ -415,14 +428,14 @@ def encode_media(
                 record_encoding_outcome(True)
                 return True
         else:
-            record_encoding_outcome(False)
+            record_encoding_failure("preview did not produce an image")
             return False
     original_media_path = chunk_file_path if chunk else media.media_file.path
 
     if not media.duration:
         encoding.status = "fail"
         encoding.save(update_fields=["status"])
-        record_encoding_outcome(False)
+        record_encoding_failure("media has no duration")
         return False
 
     with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as temp_dir:
@@ -440,7 +453,7 @@ def encode_media(
         if not ffmpeg_commands:
             encoding.status = "fail"
             encoding.save(update_fields=["status"])
-            record_encoding_outcome(False)
+            record_encoding_failure("no FFmpeg commands for this profile")
             return False
 
         encoding.temp_file = tf
@@ -498,7 +511,7 @@ def encode_media(
                                     if n_times % 20 == 0:
                                         if not _check_media_exists_or_cleanup(media.pk, encoding.id, "progress_save"):
                                             encoding_backend.terminate_process()
-                                            record_encoding_outcome(False)
+                                            record_encoding_failure("media deleted during encoding")
                                             return False
                                         encoding.progress = percent
                                         try:
@@ -514,7 +527,7 @@ def encode_media(
                             if n_times % 100 == 0:
                                 if not _check_media_exists_or_cleanup(media.pk, encoding.id, "heartbeat_save"):
                                     encoding_backend.terminate_process()
-                                    record_encoding_outcome(False)
+                                    record_encoding_failure("media deleted during encoding")
                                     return False
                                 try:
                                     encoding.save(update_fields=["update_date"])
@@ -562,7 +575,7 @@ def encode_media(
                         raise self.retry(exc=e, countdown=5, max_retries=1)
                     encoding.status = "fail"
                     encoding.save(update_fields=["status", "logs"])
-                    record_encoding_outcome(False)
+                    record_encoding_failure("FFmpeg did not finish after its retry")
                     raise self.retry(exc=e, countdown=5, max_retries=1)
 
         encoding.logs = output
@@ -570,7 +583,7 @@ def encode_media(
 
         # Check media still exists before final save
         if not _check_media_exists_or_cleanup(media.pk, encoding.id, "final_save"):
-            record_encoding_outcome(False)
+            record_encoding_failure("media deleted during encoding")
             return False
 
         success = False
@@ -598,16 +611,36 @@ def encode_media(
         return success
 
 
+WHISPER_SKIPPED_MEDIA_GONE = {"outcome": "skipped", "reason_code": "media_not_found"}
+WHISPER_SKIPPED_ALREADY_REQUESTED = {"outcome": "skipped", "reason_code": "lock_held"}
+
+
+def _claim_transcription_request(media, translate):
+    """Record the request for this media and flag, or return None when one is already in place.
+
+    Concurrent tasks queue up on the media row, so the second one sees the first one's request.
+    """
+    with transaction.atomic():
+        if not Media.objects.select_for_update().filter(pk=media.pk).exists():
+            return None
+        if TranscriptionRequest.objects.filter(media=media, translate_to_english=translate).exists():
+            return None
+        return TranscriptionRequest.objects.create(media=media, translate_to_english=translate)
+
+
 @task(name="whisper_transcribe", queue="whisper_tasks")
 def whisper_transcribe(friendly_token, translate=False, notify=True):
     """
     Transcribe media using Whisper.cpp
     """
-    logger.info(f"Starting whisper_transcribe for {friendly_token}, translate={translate}")
+    try:
+        return _whisper_transcribe(friendly_token, translate, notify)
+    finally:
+        transcription_dispatch_cache.delete(Media.transcription_dispatch_key(friendly_token, translate))
 
-    # in case multiple requests arrive at the same time, avoid having them create
-    # a Request for the same media...
-    time.sleep(random.uniform(0, 20))
+
+def _whisper_transcribe(friendly_token, translate, notify):
+    logger.info(f"Starting whisper_transcribe for {friendly_token}, translate={translate}")
 
     logger.info(f"Whisper command path: {settings.WHISPER_CPP_COMMAND}")
     logger.info(f"Whisper model path: {settings.WHISPER_CPP_MODEL}")
@@ -622,9 +655,9 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
 
     try:
         media = Media.objects.get(friendly_token=friendly_token)
-    except Media.DoesNotExist as e:
-        logger.error(f"failed to get media with friendly_token {friendly_token}: {e}")
-        return False
+    except Media.DoesNotExist:
+        logger.info(f"Skipping whisper_transcribe, media is gone: {friendly_token}")
+        return WHISPER_SKIPPED_MEDIA_GONE
 
     if not os.path.exists(media.media_file.path):
         logger.error(f"Media file not found at: {media.media_file.path}")
@@ -637,17 +670,11 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
         logger.error(f"Language '{language_code}' not found in database")
         return False
 
-    if translate:
-        if TranscriptionRequest.objects.filter(media=media, translate_to_english=True).exists():
-            logger.info(f"Translation request already exists for {friendly_token}")
-            return False
-    else:
-        if TranscriptionRequest.objects.filter(media=media, translate_to_english=False).exists():
-            logger.info(f"Transcription request already exists for {friendly_token}")
-            return False
-
-    # Create transcription request and capture it for cleanup on failure
-    transcription_request = TranscriptionRequest.objects.create(media=media, translate_to_english=translate)
+    # Keep the request for cleanup on failure
+    transcription_request = _claim_transcription_request(media, translate)
+    if transcription_request is None:
+        logger.info(f"Transcription request (translate={translate}) already exists or media is gone: {friendly_token}")
+        return WHISPER_SKIPPED_ALREADY_REQUESTED
     logger.info(f"Created transcription request for {friendly_token}")
 
     try:
@@ -1050,34 +1077,96 @@ def refresh_media_storage_usage_task(media_id):
 
 @task(name="check_running_states", queue="short_tasks")
 def check_running_states():
-    encodings = Encoding.objects.filter(status="running")
+    """Re-encode profiles whose worker died mid-encode.
 
-    logger.info(f"got {encodings.count()} encodings that are in state running")
-    changed = 0
-    for encoding in encodings:
-        now = datetime.now(encoding.update_date.tzinfo)
-        if (now - encoding.update_date).seconds > settings.RUNNING_STATE_STALE:
-            media = encoding.media
-            profile = encoding.profile
-            encoding_id = encoding.id
-            # task_id = encoding.task_id
-            # terminate task
-            # if task_id:
-            # revoke(task_id, terminate=True)
+    A running encode saves update_date as a heartbeat, so a row silent for
+    RUNNING_STATE_STALE belongs to a dead worker. Celery acks early and does not
+    redeliver the task, so without this the row stays 'running' and holds one of
+    its owner's MAX_USER_CONCURRENT_ENCODES slots for good.
+    """
+    stale_cutoff = timezone.now() - timedelta(seconds=settings.RUNNING_STATE_STALE)
+    stale_pairs = (
+        Encoding.objects.filter(status="running", update_date__lt=stale_cutoff)
+        .order_by("update_date")
+        .values_list("media_id", "profile_id")
+    )
+    stale_profile_ids_by_media = {}
+    for media_id, profile_id in stale_pairs:
+        stale_profile_ids_by_media.setdefault(media_id, set()).add(profile_id)
+
+    processed = changed = failed = 0
+    for media_id, profile_ids in stale_profile_ids_by_media.items():
+        if changed + failed == STALE_ENCODING_MEDIA_PER_RUN:
+            break
+        processed += 1
+        try:
+            changed += _reencode_dead_profiles(media_id, profile_ids, stale_cutoff)
+        except Exception as error:
+            logger.exception("Could not re-encode stale profiles of media %s", media_id)
+            capture_unexpected_exception(error)
+            failed += 1
+
+    return {
+        "outcome": "failed" if failed else "succeeded",
+        "reason_code": "item_errors" if failed else "none",
+        "processed": processed,
+        "changed": changed,
+        "failed": failed,
+    }
+
+
+def _reencode_dead_profiles(media_id, profile_ids, stale_cutoff):
+    """Replace the dead encodes of one media, and return whether any were replaced.
+
+    A profile is skipped while its chunk group is being merged, or while any of its
+    encodes still has a heartbeat. Media.encode runs before the dead rows are deleted:
+    if splitting a long media cannot be queued it raises and the rows stay for the next
+    run; an unqueued plain encode is kept as a deferred row that the drain task sends.
+    """
+    media = Media.objects.get(pk=media_id)
+    held_locks = []
+    try:
+        dead_profiles = []
+        dead_encodings = []
+        dead_encoding_ids = []
+        for profile in EncodeProfile.objects.filter(id__in=profile_ids):
+            lock_key = chunk_finalize_lock_key(media.id, profile.id)
+            lock_token = uuid.uuid4().hex
+            if not chunk_finalisation_cache.add(
+                lock_key, lock_token, timeout=STALE_ENCODING_LOCK_SECONDS, raise_on_error=True
+            ):
+                continue
+            held_locks.append((lock_key, lock_token))
+
+            profile_encodings = Encoding.objects.filter(media=media, profile=profile)
+            running = profile_encodings.filter(status="running")
+            if running.filter(update_date__gte=stale_cutoff).exists():
+                continue
+            stale_encodings = list(running.filter(update_date__lt=stale_cutoff).select_related("profile"))
+            if not stale_encodings:
+                continue
+            dead_encodings.extend(stale_encodings)
+            # A chunk group cannot finish once one chunk is lost, so the whole profile is rebuilt
+            chunk_ids = profile_encodings.filter(chunk=True).values_list("id", flat=True)
+            dead_encoding_ids.extend({encoding.id for encoding in stale_encodings}.union(chunk_ids))
+            dead_profiles.append(profile)
+
+        if not dead_profiles:
+            return False
+        media.encode(profiles=dead_profiles)
+        Encoding.objects.filter(id__in=dead_encoding_ids).delete()
+        for encoding in dead_encodings:
             record_stale_encoding(encoding)
-            encoding.delete()
-            media.encode(profiles=[profile])
-            logger.info(
-                "Requeued stale running encoding %s for media %s profile %s",
-                encoding_id,
-                media.friendly_token,
-                profile.name,
-            )
-            # TODO: allign with new code + chunksize...
-            changed += 1
-    if changed:
-        logger.info(f"changed from running to pending on {changed} items")
-    return True
+        logger.info(
+            "Re-encoding stale profiles %s for media %s",
+            ", ".join(profile.name for profile in dead_profiles),
+            media.friendly_token,
+        )
+        return True
+    finally:
+        for lock_key, lock_token in held_locks:
+            if chunk_finalisation_cache.get(lock_key) == lock_token:
+                chunk_finalisation_cache.delete(lock_key)
 
 
 @task(name="check_media_states", queue="short_tasks")
@@ -1828,7 +1917,11 @@ def recover_stalled_chunk_groups():
 
     A killed worker's task is not redelivered, so nothing else would call the merge again.
     The dead worker's claim blocks this until it expires, and a live merge keeps its group.
+    It also removes the work directories that killed merges left behind.
     """
+    removed_work_dirs = remove_stale_chunk_merge_dirs()
+    if removed_work_dirs:
+        logger.info("Removed %s stale chunk merge directories", removed_work_dirs)
     groups = chunk_groups_awaiting_merge()
     merged = failed = 0
     for chunk in groups:
@@ -2022,7 +2115,6 @@ def _dispatch_deferred_encodings_inner():
             continue
 
         enc_url = settings.SSL_FRONTEND_HOST + encoding.get_absolute_url()
-        priority = 9 if encoding.profile.resolution in settings.MINIMUM_RESOLUTIONS_TO_ENCODE else 0
         task_kwargs = {"force": True}
         if encoding.chunk and encoding.chunk_file_path:
             task_kwargs["chunk"] = True
@@ -2031,7 +2123,7 @@ def _dispatch_deferred_encodings_inner():
             encode_media.apply_async(
                 args=[encoding.media.friendly_token, encoding.profile.id, encoding.id, enc_url],
                 kwargs=task_kwargs,
-                priority=priority,
+                priority=encode_priority(encoding.profile),
                 headers=inject_trace_headers({"enqueued_at": time.time()}),
             )
         except Exception as error:

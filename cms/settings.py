@@ -399,10 +399,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "cleanup_email_delivery_receipts",
         "schedule": crontab(hour="2", minute="30"),
     },
-    #    'check_running_states': {
-    #        'task': 'check_running_states',
-    #        'schedule': crontab(minute='*/10'),
-    #    },
+    # Re-encode profiles whose worker died mid-encode
+    "check_running_states": {
+        "task": "check_running_states",
+        "schedule": crontab(minute="*/10"),
+    },
     #    'check_pending_states': {
     #        'task': 'check_pending_states',
     #        'schedule': crontab(minute='*/120'),

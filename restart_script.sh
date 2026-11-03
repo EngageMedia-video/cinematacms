@@ -51,10 +51,14 @@ install_frontend_dependencies() {
   )
 }
 
+# The Collector rereads a log from its first line after losing read access to it,
+# so the logs keep the Collector's group for the whole reset.
 reset_app_ownership() {
-  chown -R www-data. /home/cinemata/
   if [ -d logs ] && getent group cinematacms-observability >/dev/null; then
-    chgrp -R cinematacms-observability logs
+    find /home/cinemata/ -path "$PWD/logs" -prune -o -exec chown -h www-data: {} +
+    chown -R www-data:cinematacms-observability logs
+  else
+    chown -R www-data. /home/cinemata/
   fi
 }
 

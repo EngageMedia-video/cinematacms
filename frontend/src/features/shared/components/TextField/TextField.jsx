@@ -47,12 +47,12 @@ const BORDER_VARIANT_CLASSES = {
 	disabled: 'border-border-input',
 };
 
-function hasTextValue(value) {
+function textLength(value) {
 	if (value === null || value === undefined) {
-		return false;
+		return 0;
 	}
 
-	return String(value).length > 0;
+	return String(value).length;
 }
 
 function assignRef(ref, value) {
@@ -82,6 +82,7 @@ export function TextField({
 	onRightButtonClick,
 	required = false,
 	rightButtonLabel = '',
+	showCharacterCount = false,
 	transparent = false,
 	type = 'text',
 	validate,
@@ -95,14 +96,16 @@ export function TextField({
 	const generatedId = useId();
 	const inputId = id ?? generatedId;
 	const [isFocused, setIsFocused] = useState(false);
-	const [hasValue, setHasValue] = useState(hasTextValue(value ?? defaultValue));
+	const [characterCount, setCharacterCount] = useState(textLength(value ?? defaultValue));
+	const hasValue = characterCount > 0;
+	const showCounter = showCharacterCount && maxLength !== null;
 	const [validationError, setValidationError] = useState('');
 	const editedRef = useRef(false);
 	const inputRef = useRef(null);
 	const showError = invalid || !!validationError;
 	const variant = disabled ? 'disabled' : showError ? 'error' : 'default';
 	const resolvedHelperText = validationError || helperText;
-	const helperTextId = resolvedHelperText ? `${inputId}-helper-text` : undefined;
+	const helperTextId = resolvedHelperText || showCounter ? `${inputId}-helper-text` : undefined;
 	const describedBy = [ariaDescribedBy, helperTextId].filter(Boolean).join(' ') || undefined;
 	const activeState = variant === 'default' && isFocused;
 	const filledState = variant === 'default' && hasValue;
@@ -112,7 +115,7 @@ export function TextField({
 
 	useEffect(() => {
 		if (value !== undefined) {
-			setHasValue(hasTextValue(value));
+			setCharacterCount(textLength(value));
 		}
 	}, [value]);
 
@@ -186,7 +189,7 @@ export function TextField({
 						onChange={(event) => {
 							editedRef.current = true;
 							if (value === undefined) {
-								setHasValue(hasTextValue(event.target.value));
+								setCharacterCount(textLength(event.target.value));
 							}
 							// Validate live on every keystroke, but only after the user
 							// has started typing in this field.
@@ -215,10 +218,15 @@ export function TextField({
 				<div className={cn('my-4 border-b', borderClasses)} />
 			</div>
 
-			{resolvedHelperText ? (
-				<p id={helperTextId} className={cn('body-body-12-regular mt-2 mb-0', HELPER_VARIANT_CLASSES[variant])}>
-					{resolvedHelperText}
-				</p>
+			{resolvedHelperText || showCounter ? (
+				<div id={helperTextId} className="body-body-12-regular mt-2 flex items-start justify-between gap-4">
+					{resolvedHelperText ? (
+						<p className={cn('m-0 min-w-0', HELPER_VARIANT_CLASSES[variant])}>{resolvedHelperText}</p>
+					) : null}
+					{showCounter ? (
+						<span className="ml-auto shrink-0 text-text-muted">{`${characterCount}/${maxLength}`}</span>
+					) : null}
+				</div>
 			) : null}
 		</div>
 	);

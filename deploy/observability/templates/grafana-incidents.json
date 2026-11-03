@@ -55,12 +55,13 @@
       "options": {"showTime": true, "showLabels": true, "showCommonLabels": false, "wrapLogMessage": true, "prettifyLogMessage": false, "enableLogDetails": true, "dedupStrategy": "none", "sortOrder": "Ascending"}
     },
     {
-      "type": "traces",
+      "type": "table",
       "title": "Media and operation traces",
       "datasource": {"type": "jaeger", "uid": "victoriatraces"},
       "gridPos": {"h": 12, "w": 24, "x": 0, "y": 41},
+      "options": {},
       "targets": [
-        {"refId": "A", "queryType": "search", "service": "$trace_service", "operation": "$operation", "tags": "${lookup_ref.span_field}=$lookup_ref", "minDuration": "", "maxDuration": "", "limit": 50},
+        {"refId": "A", "queryType": "search", "service": "$trace_service", "operation": "", "tags": "${lookup_ref.span_field}=$lookup_ref", "minDuration": "", "maxDuration": "", "limit": 50},
         {"refId": "B", "queryType": "search", "service": "$trace_service", "operation": "$operation", "tags": "$trace_tags", "minDuration": "", "maxDuration": "", "limit": 50}
       ]
     },

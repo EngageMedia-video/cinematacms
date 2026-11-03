@@ -86,6 +86,28 @@ describe('Dialog', () => {
 		expect(screen.queryByRole('dialog', { name: 'Escape dialog' })).toBeNull();
 	});
 
+	it('calls the onOpenChange from the latest render when escape is pressed', async () => {
+		const user = userEvent.setup();
+		const firstHandler = vi.fn();
+		const latestHandler = vi.fn();
+
+		const { rerender } = render(
+			<Dialog open={true} onOpenChange={firstHandler}>
+				<DialogContent aria-label="Escape dialog">Dialog body</DialogContent>
+			</Dialog>
+		);
+		rerender(
+			<Dialog open={true} onOpenChange={latestHandler}>
+				<DialogContent aria-label="Escape dialog">Dialog body</DialogContent>
+			</Dialog>
+		);
+
+		await user.keyboard('{Escape}');
+
+		expect(firstHandler).not.toHaveBeenCalled();
+		expect(latestHandler).toHaveBeenCalledWith(false);
+	});
+
 	it('traps focus inside the dialog and restores focus to the trigger on close', async () => {
 		const user = userEvent.setup();
 		const { container } = render(

@@ -165,6 +165,28 @@ export const Error = {
 	},
 };
 
+export const WithCharacterCounter = {
+	args: {
+		maxLength: 90,
+		showCharacterCount: true,
+		defaultValue: 'Trusted Playlist',
+	},
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+
+		await expect(canvas.getByText('16/90')).toBeVisible();
+	},
+};
+
+export const ErrorWithCharacterCounter = {
+	args: {
+		invalid: true,
+		maxLength: 90,
+		showCharacterCount: true,
+		helperText: 'Title is required.',
+	},
+};
+
 export const Disabled = {
 	args: {
 		disabled: true,
