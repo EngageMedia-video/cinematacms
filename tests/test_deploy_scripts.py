@@ -1574,7 +1574,7 @@ class RestartScriptTests(unittest.TestCase):
 
         self.assertEqual(len(commands), 2)
         self.assertRegex(
-            commands[0], r"^find /home/cinemata -path \S+/logs -prune -o -exec chown -h www-data: \{\} \+$"
+            commands[0], r"^find /home/cinemata/ -path \S+/logs -prune -o -exec chown -h www-data: \{\} \+$"
         )
         self.assertEqual(commands[1], "chown -R www-data:cinematacms-observability logs")
 
@@ -1585,7 +1585,7 @@ class RestartScriptTests(unittest.TestCase):
         script = (PROJECT_ROOT / "rollback.sh").read_text()
 
         self.assertIn(
-            'find "$CINEMATA_HOME" -path "$REPO_DIR/logs" -prune -o -exec chown -h www-data: {} +',
+            'find "$CINEMATA_HOME/" -path "$REPO_DIR/logs" -prune -o -exec chown -h www-data: {} +',
             script,
         )
         self.assertIn('chown -R www-data:cinematacms-observability "$REPO_DIR/logs"', script)

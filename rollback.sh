@@ -167,7 +167,7 @@ echo -e "${YELLOW}Updating ownership...${NC}"
 # The Collector rereads a log from its first line after losing read access to it,
 # so the logs keep the Collector's group for the whole reset.
 if [ -d "$REPO_DIR/logs" ] && getent group cinematacms-observability >/dev/null; then
-  find "$CINEMATA_HOME" -path "$REPO_DIR/logs" -prune -o -exec chown -h www-data: {} +
+  find "$CINEMATA_HOME/" -path "$REPO_DIR/logs" -prune -o -exec chown -h www-data: {} +
   chown -R www-data:cinematacms-observability "$REPO_DIR/logs"
 else
   chown -R www-data. "$CINEMATA_HOME/"
