@@ -3,30 +3,31 @@ import { apiFetch } from '../../shared/utils/api';
 import { playlistQueryKey } from './usePlaylistQuery';
 import { getPlaylistApiUrl } from '../utils/playlist';
 
-export function usePlaylistDescriptionMutation(token, config) {
+// Takes only the fields that changed ({ title?, description? }). A partial
+// update leaves the other field as stored, so a concurrent edit of it is
+// never overwritten with this dialog's stale copy.
+export function usePlaylistUpdateMutation(token, config) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async ({ description }) => {
-			// Partial update: only the description travels, so concurrent title
-			// edits elsewhere are never stomped.
+		mutationFn: async (changes) => {
 			const response = await apiFetch(getPlaylistApiUrl(config, token), {
 				method: 'POST',
-				body: { description },
+				body: changes,
 			});
 
 			if (!response.ok) {
-				throw new Error(`Failed to save description: ${response.status}`);
+				throw new Error(`Failed to save playlist: ${response.status}`);
 			}
 
 			return response.json();
 		},
-		onMutate: async ({ description }) => {
+		onMutate: async (changes) => {
 			await queryClient.cancelQueries({ queryKey: playlistQueryKey(token) });
 			const previous = queryClient.getQueryData(playlistQueryKey(token));
 
 			queryClient.setQueryData(playlistQueryKey(token), (current) =>
-				current ? { ...current, description } : current
+				current ? { ...current, ...changes } : current
 			);
 
 			return { previous };
