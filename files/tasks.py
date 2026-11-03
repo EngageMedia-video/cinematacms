@@ -1050,34 +1050,31 @@ def refresh_media_storage_usage_task(media_id):
 
 @task(name="check_running_states", queue="short_tasks")
 def check_running_states():
-    encodings = Encoding.objects.filter(status="running")
+    """Re-encode profiles whose worker died mid-encode.
 
-    logger.info(f"got {encodings.count()} encodings that are in state running")
-    changed = 0
-    for encoding in encodings:
-        now = datetime.now(encoding.update_date.tzinfo)
-        if (now - encoding.update_date).seconds > settings.RUNNING_STATE_STALE:
-            media = encoding.media
-            profile = encoding.profile
-            encoding_id = encoding.id
-            # task_id = encoding.task_id
-            # terminate task
-            # if task_id:
-            # revoke(task_id, terminate=True)
-            record_stale_encoding(encoding)
-            encoding.delete()
-            media.encode(profiles=[profile])
-            logger.info(
-                "Requeued stale running encoding %s for media %s profile %s",
-                encoding_id,
-                media.friendly_token,
-                profile.name,
-            )
-            # TODO: allign with new code + chunksize...
-            changed += 1
-    if changed:
-        logger.info(f"changed from running to pending on {changed} items")
-    return True
+    A running encode saves update_date as a heartbeat, so a row silent for
+    RUNNING_STATE_STALE belongs to a dead worker. Celery acks early and does not
+    redeliver the task, so without this the row stays 'running' and holds one of
+    its owner's MAX_USER_CONCURRENT_ENCODES slots for good.
+    """
+    stale_cutoff = timezone.now() - timedelta(seconds=settings.RUNNING_STATE_STALE)
+    stale_encodings = Encoding.objects.filter(status="running", update_date__lt=stale_cutoff).select_related(
+        "media", "profile"
+    )
+
+    dead_encodes = {}
+    for encoding in stale_encodings:
+        record_stale_encoding(encoding)
+        dead_encodes[(encoding.media_id, encoding.profile_id)] = (encoding.media, encoding.profile)
+
+    for media, profile in dead_encodes.values():
+        # A chunk group cannot finish once one chunk is lost, so rebuild the whole profile
+        stale_encodings.filter(media=media, profile=profile).delete()
+        Encoding.objects.filter(media=media, profile=profile, chunk=True).delete()
+        media.encode(profiles=[profile])
+        logger.info("Re-encoding stale profile %s for media %s", profile.name, media.friendly_token)
+
+    return {"outcome": "succeeded", "reason_code": "none", "processed": len(dead_encodes), "changed": len(dead_encodes)}
 
 
 @task(name="check_media_states", queue="short_tasks")
