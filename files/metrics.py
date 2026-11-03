@@ -3,6 +3,7 @@ import hmac
 import logging
 import time
 
+from celery.exceptions import WorkerLostError
 from celery.signals import (
     beat_init,
     heartbeat_sent,
@@ -304,11 +305,16 @@ TELEMETRY_COMPONENTS = frozenset(
     }
 )
 TELEMETRY_STAGES = frozenset({"emit", "export", "start", "attribute", "finish", "reset", "prepare", "record"})
+# The multiprocess gauge keeps its last write, so an unreadable broker would otherwise freeze the old depth.
+UNKNOWN_QUEUE_DEPTH = float("nan")
 MEDIA_TASK_OPERATIONS = {
     "chunkize_media": "chunking",
     "whisper_transcribe": "transcription",
     "produce_sprite_from_video": "sprites",
 }
+# encode_media and create_hls record their own outcomes inside the task. A lost worker dies before
+# it can, so the failure signal records theirs.
+WORKER_LOST_OPERATIONS = {**MEDIA_TASK_OPERATIONS, "encode_media": "encoding", "create_hls": "hls"}
 TASK_FAMILY_BY_NAME = {
     "chunkize_media": "encoding",
     "encode_media": "encoding",
@@ -478,8 +484,9 @@ def _on_task_postrun(sender=None, task_id=None, state=None, retval=None, **kwarg
                 task_family=family, queue=queue, event="completed", outcome="succeeded"
             ).inc(),
         )
-        domain_outcome = "failed" if retval is False else "succeeded"
-        reason = "returned_false" if retval is False else "none"
+        result = retval if isinstance(retval, dict) else {}
+        domain_outcome = result.get("outcome", "failed" if retval is False else "succeeded")
+        reason = result.get("reason_code", "returned_false" if retval is False else "none")
         _record_task_domain_result(name, domain_outcome, reason)
         _record_scheduled_result(name, domain_outcome, reason, retval)
     _safe_metric("Celery active", lambda: CELERY_TASK_ACTIVE.labels(task_family=family, queue=queue).dec())
@@ -497,9 +504,15 @@ def _terminal_task_event(state, sender=None, task_id=None, **kwargs):
     )
 
 
-def _on_task_failure(sender=None, task_id=None, **kwargs):
+def _on_task_failure(sender=None, task_id=None, exception=None, **kwargs):
     _terminal_task_event("failed", sender=sender, task_id=task_id, **kwargs)
     name = _task_name(sender=sender, **kwargs)
+    if isinstance(exception, WorkerLostError):
+        operation = WORKER_LOST_OPERATIONS.get(name)
+        if operation:
+            record_domain_outcome(operation, "failed", "worker_lost")
+        _record_scheduled_result(name, "failed", "worker_lost")
+        return
     _record_task_domain_result(name, "failed", "task_exception")
     _record_scheduled_result(name, "failed", "task_exception")
 
@@ -599,16 +612,27 @@ def refresh_runtime_metrics() -> None:
     _refresh_queue_depths()
     _refresh_transcription_requests()
     _refresh_stalled_encodings()
+    _refresh_scheduled_job_thresholds()
+
+
+def _refresh_scheduled_job_thresholds() -> None:
+    from cms.scheduled_jobs import publish_absence_thresholds
+
+    _safe_metric("scheduled job thresholds", publish_absence_thresholds)
 
 
 def _refresh_queue_depths() -> None:
+    queues = getattr(settings, "OBSERVABILITY_CELERY_QUEUES", [])
     try:
         from cms.redis_telemetry import observability_redis
 
-        for queue in getattr(settings, "OBSERVABILITY_CELERY_QUEUES", []):
-            CELERY_QUEUE_DEPTH.labels(queue=queue).set(observability_redis.queue_depth(queue))
+        depths = {queue: observability_redis.queue_depth(queue) for queue in queues}
     except Exception:
+        record_telemetry_failure("metrics", "celery", "record")
         logger.debug("Could not refresh Celery queue depth metrics", exc_info=True)
+        depths = dict.fromkeys(queues, UNKNOWN_QUEUE_DEPTH)
+    for queue, depth in depths.items():
+        CELERY_QUEUE_DEPTH.labels(queue=queue).set(depth)
 
 
 def _refresh_transcription_requests() -> None:

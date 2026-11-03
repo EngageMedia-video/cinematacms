@@ -49,7 +49,7 @@ export function validateMetadata(metadata = {}) {
 	if (isBlank(metadata.summary)) {
 		errors.summary = 'This field is required';
 	} else if (countSynopsisWords(metadata.summary) > SYNOPSIS_MAX_WORDS) {
-		errors.summary = `Synopsis should have ${SYNOPSIS_MAX_WORDS} words maximum.`;
+		errors.summary = `Short description should have ${SYNOPSIS_MAX_WORDS} words maximum.`;
 	}
 
 	// Year is chosen from a year picker spanning 1..current. MediaForm accepts
