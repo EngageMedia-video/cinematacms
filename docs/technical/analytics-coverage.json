@@ -174,7 +174,7 @@
           "contains": "track('playlist_reorder')"
         },
         {
-          "path": "frontend/src/features/playlist/hooks/usePlaylistDescriptionMutation.js",
+          "path": "frontend/src/features/playlist/hooks/usePlaylistUpdateMutation.js",
           "contains": "track('playlist_update')"
         },
         {

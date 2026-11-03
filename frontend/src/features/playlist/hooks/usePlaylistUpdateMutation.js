@@ -3,7 +3,7 @@ import { apiFetch } from '../../shared/utils/api';
 import { playlistQueryKey } from './usePlaylistQuery';
 import { getPlaylistApiUrl } from '../utils/playlist';
 
-export function usePlaylistDescriptionMutation(token, config) {
+export function usePlaylistUpdateMutation(token, config) {
 	const queryClient = useQueryClient();
 
 	return useMutation({

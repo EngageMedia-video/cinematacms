@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EditDescriptionDialog } from './EditDescriptionDialog';
+import { EditPlaylistDialog } from './EditPlaylistDialog';
 import usePlaylistUiStore from '../store/usePlaylistUiStore';
 import { apiFetch } from '../../shared/utils/api';
 
@@ -15,15 +15,15 @@ function renderDialog(playlist) {
 	const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	return render(
 		<QueryClientProvider client={queryClient}>
-			<EditDescriptionDialog config={{}} playlist={playlist} token="pltest01" />
+			<EditPlaylistDialog config={{}} playlist={playlist} token="pltest01" />
 		</QueryClientProvider>
 	);
 }
 
-describe('EditDescriptionDialog', () => {
+describe('EditPlaylistDialog', () => {
 	beforeEach(() => {
 		usePlaylistUiStore.getState().resetPlaylistUi();
-		usePlaylistUiStore.getState().setDescriptionDialogOpen(true);
+		usePlaylistUiStore.getState().setEditDialogOpen(true);
 	});
 
 	afterEach(() => {

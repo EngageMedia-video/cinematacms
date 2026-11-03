@@ -15,7 +15,7 @@ import {
 	htmlToPlainText,
 	isOwnerPlaylist,
 } from '../utils/playlist';
-import { EditDescriptionDialog } from './EditDescriptionDialog';
+import { EditPlaylistDialog } from './EditPlaylistDialog';
 import { FilmList } from './FilmList';
 import { ReadMore } from './ReadMore';
 
@@ -156,9 +156,9 @@ function AboutCuratorCard({ playlist }) {
 
 // "Description / Curator's Note": renders the playlist description entered in
 // the Create New Playlist flow — the single source for this section (#805).
-// Owners edit that same description through EditDescriptionDialog.
+// Owners edit that same description through EditPlaylistDialog.
 function CuratorNoteCard({ isOwner, playlist }) {
-	const setOpen = usePlaylistUiStore((state) => state.setDescriptionDialogOpen);
+	const setOpen = usePlaylistUiStore((state) => state.setEditDialogOpen);
 	const hasDescription = Boolean(playlist.description);
 
 	if (!hasDescription && !isOwner) {
@@ -343,7 +343,7 @@ function PlaylistContent({ config, playlist, playlistToken }) {
 					</div>
 				</div>
 			</div>
-			{isOwner ? <EditDescriptionDialog config={config} playlist={playlist} token={playlistToken} /> : null}
+			{isOwner ? <EditPlaylistDialog config={config} playlist={playlist} token={playlistToken} /> : null}
 			<ShareStatusToast message={statusMessage} />
 		</div>
 	);

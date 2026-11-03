@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Button, Dialog, DialogClose, DialogContent, EditorField } from '../../shared/components';
-import { usePlaylistDescriptionMutation } from '../hooks/usePlaylistDescriptionMutation';
+import { usePlaylistUpdateMutation } from '../hooks/usePlaylistUpdateMutation';
 import usePlaylistUiStore from '../store/usePlaylistUiStore';
 
 // Edits the playlist description — the single source for the Curator's Notes
 // section (#805). Same dialog pattern the create flow's description started in.
-export function EditDescriptionDialog({ config, playlist, token }) {
-	const open = usePlaylistUiStore((state) => state.descriptionDialogOpen);
-	const setOpen = usePlaylistUiStore((state) => state.setDescriptionDialogOpen);
+export function EditPlaylistDialog({ config, playlist, token }) {
+	const open = usePlaylistUiStore((state) => state.editDialogOpen);
+	const setOpen = usePlaylistUiStore((state) => state.setEditDialogOpen);
 	const [description, setDescription] = useState(playlist?.description || '');
-	const mutation = usePlaylistDescriptionMutation(token, config);
+	const mutation = usePlaylistUpdateMutation(token, config);
 	const resetMutation = mutation.reset;
 	const errorId = 'playlist-description-error';
 
