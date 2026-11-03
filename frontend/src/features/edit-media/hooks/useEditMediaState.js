@@ -1,6 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-
-export const EDIT_MEDIA_STATE_QUERY_KEY = ['edit-media', 'state'];
+import { useState } from 'react';
 
 function firstLicenseFields(licenses, selectedLicenseId) {
 	const selected =
@@ -85,23 +83,12 @@ function withoutError(errors, field) {
 }
 
 export function useEditMediaState(config) {
-	const queryClient = useQueryClient();
 	const licenses = config.options.licenses;
-	const queryKey = [...EDIT_MEDIA_STATE_QUERY_KEY, config.media?.friendlyToken || 'new'];
 	const initialState = () => createEditMediaState(config);
-	const { data: state = initialState() } = useQuery({
-		queryKey,
-		queryFn: initialState,
-		initialData: initialState,
-		staleTime: Infinity,
-		gcTime: Infinity,
-	});
+	const [state, setState] = useState(initialState);
 
 	function updateState(updater) {
-		queryClient.setQueryData(queryKey, (current) => {
-			const base = current || initialState();
-			return typeof updater === 'function' ? updater(base) : { ...base, ...updater };
-		});
+		setState((current) => (typeof updater === 'function' ? updater(current) : { ...current, ...updater }));
 	}
 
 	function patch(next) {

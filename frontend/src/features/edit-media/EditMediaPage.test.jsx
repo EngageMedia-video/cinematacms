@@ -404,3 +404,24 @@ describe('EditMediaPage leave confirmation', () => {
 		]);
 	});
 });
+
+describe('EditMediaPage short description field', () => {
+	beforeEach(() => {
+		editMediaQueryClient.clear();
+		window.MediaCMS = { editMediaPage: PAGE_CONFIG };
+	});
+
+	afterEach(() => {
+		delete window.MediaCMS;
+	});
+
+	it('labels the summary as a short description and states its 80-word limit', () => {
+		render(<EditMediaPage />);
+
+		const shortDescription = screen.getByLabelText('Short Description');
+
+		expect(shortDescription).toHaveValue('A short film about a river.');
+		expect(shortDescription).toHaveAccessibleDescription(/Maximum 80 Words/);
+		expect(screen.queryByLabelText('Synopsis')).not.toBeInTheDocument();
+	});
+});

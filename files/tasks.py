@@ -1,6 +1,5 @@
 import json
 import os
-import random
 import re
 import secrets
 import shutil
@@ -63,7 +62,9 @@ from .models import (
     chunk_finalize_lock_key,
     chunk_groups_awaiting_merge,
     finalize_chunk_group,
+    remove_stale_chunk_merge_dirs,
     schedule_chunk_file_cleanup,
+    transcription_dispatch_cache,
 )
 from .query_cache import invalidate_media_cache
 from .sprites import generate_sprite_for_media
@@ -349,6 +350,10 @@ def encode_media(
         outcome_recorded = True
         observe_media_pipeline(media, profile, "success" if success else "fail")
 
+    def record_encoding_failure(reason):
+        logger.error(f"Encoding {encoding_id} failed: {reason}")
+        record_encoding_outcome(False)
+
     # break logic with chunk True/False
     if chunk:
         # TODO: in case a video is chunkized and this enters here many times
@@ -359,7 +364,7 @@ def encode_media(
             and not force
         ):
             Encoding.objects.filter(id=encoding_id).delete()
-            record_encoding_outcome(False)
+            record_encoding_failure("duplicate chunk encoding")
             return False
         else:
             try:
@@ -377,7 +382,7 @@ def encode_media(
     else:
         if Encoding.objects.filter(media=media, profile=profile).count() > 1 and force is False:
             Encoding.objects.filter(id=encoding_id).delete()
-            record_encoding_outcome(False)
+            record_encoding_failure("duplicate encoding")
             return False
         else:
             try:
@@ -424,14 +429,14 @@ def encode_media(
                 record_encoding_outcome(True)
                 return True
         else:
-            record_encoding_outcome(False)
+            record_encoding_failure("preview did not produce an image")
             return False
     original_media_path = chunk_file_path if chunk else media.media_file.path
 
     if not media.duration:
         encoding.status = "fail"
         encoding.save(update_fields=["status"])
-        record_encoding_outcome(False)
+        record_encoding_failure("media has no duration")
         return False
 
     with tempfile.TemporaryDirectory(dir=settings.TEMP_DIRECTORY) as temp_dir:
@@ -449,7 +454,7 @@ def encode_media(
         if not ffmpeg_commands:
             encoding.status = "fail"
             encoding.save(update_fields=["status"])
-            record_encoding_outcome(False)
+            record_encoding_failure("no FFmpeg commands for this profile")
             return False
 
         encoding.temp_file = tf
@@ -507,7 +512,7 @@ def encode_media(
                                     if n_times % 20 == 0:
                                         if not _check_media_exists_or_cleanup(media.pk, encoding.id, "progress_save"):
                                             encoding_backend.terminate_process()
-                                            record_encoding_outcome(False)
+                                            record_encoding_failure("media deleted during encoding")
                                             return False
                                         encoding.progress = percent
                                         try:
@@ -523,7 +528,7 @@ def encode_media(
                             if n_times % 100 == 0:
                                 if not _check_media_exists_or_cleanup(media.pk, encoding.id, "heartbeat_save"):
                                     encoding_backend.terminate_process()
-                                    record_encoding_outcome(False)
+                                    record_encoding_failure("media deleted during encoding")
                                     return False
                                 try:
                                     encoding.save(update_fields=["update_date"])
@@ -571,7 +576,7 @@ def encode_media(
                         raise self.retry(exc=e, countdown=5, max_retries=1)
                     encoding.status = "fail"
                     encoding.save(update_fields=["status", "logs"])
-                    record_encoding_outcome(False)
+                    record_encoding_failure("FFmpeg did not finish after its retry")
                     raise self.retry(exc=e, countdown=5, max_retries=1)
 
         encoding.logs = output
@@ -579,7 +584,7 @@ def encode_media(
 
         # Check media still exists before final save
         if not _check_media_exists_or_cleanup(media.pk, encoding.id, "final_save"):
-            record_encoding_outcome(False)
+            record_encoding_failure("media deleted during encoding")
             return False
 
         success = False
@@ -607,16 +612,36 @@ def encode_media(
         return success
 
 
+WHISPER_SKIPPED_MEDIA_GONE = {"outcome": "skipped", "reason_code": "media_not_found"}
+WHISPER_SKIPPED_ALREADY_REQUESTED = {"outcome": "skipped", "reason_code": "lock_held"}
+
+
+def _claim_transcription_request(media, translate):
+    """Record the request for this media and flag, or return None when one is already in place.
+
+    Concurrent tasks queue up on the media row, so the second one sees the first one's request.
+    """
+    with transaction.atomic():
+        if not Media.objects.select_for_update().filter(pk=media.pk).exists():
+            return None
+        if TranscriptionRequest.objects.filter(media=media, translate_to_english=translate).exists():
+            return None
+        return TranscriptionRequest.objects.create(media=media, translate_to_english=translate)
+
+
 @task(name="whisper_transcribe", queue="whisper_tasks")
 def whisper_transcribe(friendly_token, translate=False, notify=True):
     """
     Transcribe media using Whisper.cpp
     """
-    logger.info(f"Starting whisper_transcribe for {friendly_token}, translate={translate}")
+    try:
+        return _whisper_transcribe(friendly_token, translate, notify)
+    finally:
+        transcription_dispatch_cache.delete(Media.transcription_dispatch_key(friendly_token, translate))
 
-    # in case multiple requests arrive at the same time, avoid having them create
-    # a Request for the same media...
-    time.sleep(random.uniform(0, 20))
+
+def _whisper_transcribe(friendly_token, translate, notify):
+    logger.info(f"Starting whisper_transcribe for {friendly_token}, translate={translate}")
 
     logger.info(f"Whisper command path: {settings.WHISPER_CPP_COMMAND}")
     logger.info(f"Whisper model path: {settings.WHISPER_CPP_MODEL}")
@@ -631,9 +656,9 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
 
     try:
         media = Media.objects.get(friendly_token=friendly_token)
-    except Media.DoesNotExist as e:
-        logger.error(f"failed to get media with friendly_token {friendly_token}: {e}")
-        return False
+    except Media.DoesNotExist:
+        logger.info(f"Skipping whisper_transcribe, media is gone: {friendly_token}")
+        return WHISPER_SKIPPED_MEDIA_GONE
 
     if not os.path.exists(media.media_file.path):
         logger.error(f"Media file not found at: {media.media_file.path}")
@@ -646,17 +671,11 @@ def whisper_transcribe(friendly_token, translate=False, notify=True):
         logger.error(f"Language '{language_code}' not found in database")
         return False
 
-    if translate:
-        if TranscriptionRequest.objects.filter(media=media, translate_to_english=True).exists():
-            logger.info(f"Translation request already exists for {friendly_token}")
-            return False
-    else:
-        if TranscriptionRequest.objects.filter(media=media, translate_to_english=False).exists():
-            logger.info(f"Transcription request already exists for {friendly_token}")
-            return False
-
-    # Create transcription request and capture it for cleanup on failure
-    transcription_request = TranscriptionRequest.objects.create(media=media, translate_to_english=translate)
+    # Keep the request for cleanup on failure
+    transcription_request = _claim_transcription_request(media, translate)
+    if transcription_request is None:
+        logger.info(f"Transcription request (translate={translate}) already exists or media is gone: {friendly_token}")
+        return WHISPER_SKIPPED_ALREADY_REQUESTED
     logger.info(f"Created transcription request for {friendly_token}")
 
     try:
@@ -1897,7 +1916,11 @@ def recover_stalled_chunk_groups():
 
     A killed worker's task is not redelivered, so nothing else would call the merge again.
     The dead worker's claim blocks this until it expires, and a live merge keeps its group.
+    It also removes the work directories that killed merges left behind.
     """
+    removed_work_dirs = remove_stale_chunk_merge_dirs()
+    if removed_work_dirs:
+        logger.info("Removed %s stale chunk merge directories", removed_work_dirs)
     groups = chunk_groups_awaiting_merge()
     merged = failed = 0
     for chunk in groups:

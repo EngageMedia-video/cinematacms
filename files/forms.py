@@ -233,7 +233,7 @@ class MediaForm(forms.ModelForm):
         summary = self.cleaned_data.get("summary", "")
         num_words = len(summary.split())
         if num_words > 80:
-            raise forms.ValidationError("Synopsis should have 80 words maximum")
+            raise forms.ValidationError("Short description should have 80 words maximum")
         return summary
 
     def clean_uploaded_poster(self):

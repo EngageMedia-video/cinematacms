@@ -47,6 +47,8 @@ describe('PreviewSubmit', () => {
 		expect(screen.getByText(/Check each item for missing required details/i)).toBeInTheDocument();
 		expect(screen.getByText('1 of 1')).toBeInTheDocument();
 		expect(screen.getByText('Ready to submit')).toBeInTheDocument();
+		expect(screen.getByText('Short Description')).toBeInTheDocument();
+		expect(screen.queryByText('Synopsis')).not.toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: /quick preview/i })).toBeInTheDocument();
 		expect(screen.getAllByText('Indonesia')).toHaveLength(2);
 		expect(screen.getAllByText('Arts & Culture')).toHaveLength(2);
@@ -69,7 +71,8 @@ describe('PreviewSubmit', () => {
 
 		expect(screen.getByText('0 of 1')).toBeInTheDocument();
 		expect(screen.getByText('Needs attention')).toBeInTheDocument();
-		expect(screen.getByRole('alert')).toHaveTextContent('Synopsis');
+		expect(screen.getByRole('alert')).toHaveTextContent('Short Description');
+		expect(screen.getByRole('alert')).not.toHaveTextContent('Synopsis');
 		expect(screen.getByRole('alert')).toHaveTextContent('Category');
 	});
 

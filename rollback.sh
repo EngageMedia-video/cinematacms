@@ -164,20 +164,20 @@ if ! make quick-build; then
 fi
 
 echo -e "${YELLOW}Updating ownership...${NC}"
-chown -R www-data. "$CINEMATA_HOME/"
+# The Collector rereads a log from its first line after losing read access to it,
+# so the logs keep the Collector's group for the whole reset.
 if [ -d "$REPO_DIR/logs" ] && getent group cinematacms-observability >/dev/null; then
-  chgrp -R cinematacms-observability "$REPO_DIR/logs"
+  find "$CINEMATA_HOME/" -path "$REPO_DIR/logs" -prune -o -exec chown -h www-data: {} +
+  chown -R www-data:cinematacms-observability "$REPO_DIR/logs"
+else
+  chown -R www-data. "$CINEMATA_HOME/"
 fi
 
 echo -e "${YELLOW}Reloading systemd daemon...${NC}"
 systemctl daemon-reload
 
 echo -e "${YELLOW}Restarting services...${NC}"
-systemctl restart celery_long
-systemctl restart celery_short
-systemctl restart celery_beat
-systemctl restart mediacms.service
-systemctl restart celery_whisper.service
+systemctl restart mediacms celery_long celery_short celery_whisper celery_email celery_beat
 systemctl restart nginx
 
 # Audit entry so a subsequent rollback (or the next forward deploy) can
