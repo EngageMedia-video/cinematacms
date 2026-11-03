@@ -117,6 +117,7 @@ function EditPlaylistContent({ playlist, mutation, onDone }) {
 				<TextField
 					label="Title"
 					value={title}
+					readOnly={mutation.isPending}
 					maxLength={PLAYLIST_TITLE_MAX_LENGTH}
 					showCharacterCount
 					validate={validateTitle}
@@ -138,6 +139,7 @@ function EditPlaylistContent({ playlist, mutation, onDone }) {
 					<EditorField
 						label="Curator's Note"
 						value={description}
+						readOnly={mutation.isPending}
 						rows={8}
 						aria-describedby={curatorNoteDescribedBy}
 						onChange={(event) => setDescription(event.target.value)}

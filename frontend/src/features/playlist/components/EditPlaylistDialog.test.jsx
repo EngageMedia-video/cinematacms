@@ -142,6 +142,21 @@ describe('EditPlaylistDialog', () => {
 		expect(screen.getByLabelText('Title')).toHaveValue('Coastal Futures');
 	});
 
+	it('locks both fields while a save is pending so no later edit is dropped', async () => {
+		const user = userEvent.setup();
+		apiFetch.mockReturnValue(new Promise(() => {}));
+
+		renderDialog({ title: 'Trusted Playlist', description: 'Original' });
+		await user.clear(screen.getByLabelText('Title'));
+		await user.type(screen.getByLabelText('Title'), 'Coastal Futures');
+		await user.click(screen.getByRole('button', { name: 'Save' }));
+		await user.type(screen.getByLabelText('Title'), ' later');
+		await user.type(screen.getByLabelText("Curator's Note"), ' later');
+
+		expect(screen.getByLabelText('Title')).toHaveValue('Coastal Futures');
+		expect(screen.getByLabelText("Curator's Note")).toHaveValue('Original');
+	});
+
 	it('starts from the current playlist each time it reopens', async () => {
 		const user = userEvent.setup();
 
