@@ -7,7 +7,8 @@ from unittest.mock import patch
 
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, override_settings
+from django.db import DatabaseError, transaction
+from django.test import TestCase, TransactionTestCase, override_settings
 from PIL import Image
 
 from files.models import EncodeProfile, Encoding, Language, Media, Subtitle
@@ -20,7 +21,11 @@ def jpeg_bytes():
     return buffer.getvalue()
 
 
-class StoredFilesTestCase(TestCase):
+class RolledBack(Exception):
+    pass
+
+
+class StoredFilesMixin:
     """Runs against a MEDIA_ROOT that is also the BASE_DIR, so rm_dir may remove what is under it."""
 
     def setUp(self):
@@ -42,6 +47,10 @@ class StoredFilesTestCase(TestCase):
             for directory, _, names in os.walk(self.root)
             for name in names
         )
+
+
+class StoredFilesTestCase(StoredFilesMixin, TestCase):
+    pass
 
 
 class MediaDeleteCleanupTests(StoredFilesTestCase):
@@ -140,8 +149,11 @@ class MediaDeleteCleanupTests(StoredFilesTestCase):
         self.assertEqual(self._files_on_disk(), [])
 
 
-class RegeneratedThumbnailTests(StoredFilesTestCase):
-    """Producing a thumbnail again used to leave the previous thumbnail and poster behind."""
+class RegeneratedThumbnailTests(StoredFilesMixin, TransactionTestCase):
+    """Producing a thumbnail again replaces its predecessor, but only once the row holds the new one.
+
+    A TransactionTestCase, because the old file is removed on commit.
+    """
 
     def setUp(self):
         super().setUp()
@@ -152,6 +164,21 @@ class RegeneratedThumbnailTests(StoredFilesTestCase):
 
     def _thumbnail_files(self):
         return [name for name in self._files_on_disk() if "thumbnails" in name]
+
+    def _stored_names(self, *fields):
+        return Media.objects.filter(pk=self.media.pk).values_list(*fields).get()
+
+    def _paths(self, *fields):
+        return [getattr(self.media, field).path for field in fields]
+
+    def _roll_back(self, change):
+        with self.assertRaises(RolledBack), transaction.atomic():
+            change()
+            raise RolledBack
+
+    def _upload_poster(self, name):
+        self.media.uploaded_poster = SimpleUploadedFile(name, jpeg_bytes())
+        self.media.save()
 
     def test_a_second_thumbnail_replaces_the_first(self):
         self.media.set_thumbnail(force=True)
@@ -196,3 +223,82 @@ class RegeneratedThumbnailTests(StoredFilesTestCase):
 
         self.assertFalse(os.path.exists(first_poster))
         self.assertTrue(os.path.exists(self.media.uploaded_poster.path))
+
+    def test_a_successful_save_removes_the_replaced_thumbnail_and_poster(self):
+        self.media.set_thumbnail(force=True)
+
+        self.media.set_thumbnail(force=True)
+
+        stored = self._stored_names("thumbnail", "poster")
+        self.assertEqual(stored, (self.media.thumbnail.name, self.media.poster.name))
+        self.assertEqual(self._thumbnail_files(), sorted(stored))
+
+    def test_a_thumbnail_whose_row_save_fails_keeps_the_files_the_row_points_at(self):
+        self.media.set_thumbnail(force=True)
+        first = self._paths("thumbnail", "poster")
+        stored = self._stored_names("thumbnail", "poster")
+
+        with patch("django.db.models.Model.save", side_effect=DatabaseError), self.assertRaises(DatabaseError):
+            self.media.set_thumbnail(force=True)
+
+        self.assertTrue(all(os.path.exists(path) for path in first))
+        self.assertEqual(self._stored_names("thumbnail", "poster"), stored)
+
+    def test_a_rolled_back_thumbnail_keeps_the_files_the_row_points_at(self):
+        self.media.set_thumbnail(force=True)
+        first = self._paths("thumbnail", "poster")
+        stored = self._stored_names("thumbnail", "poster")
+
+        self._roll_back(lambda: self.media.set_thumbnail(force=True))
+
+        self.assertTrue(all(os.path.exists(path) for path in first))
+        self.assertEqual(self._stored_names("thumbnail", "poster"), stored)
+
+    def test_a_rolled_back_thumbnail_time_keeps_the_files_the_row_points_at(self):
+        self.media.set_thumbnail(force=True)
+        self.media.thumbnail_time = 1.0
+        self.media.save()
+        first = self._paths("thumbnail", "poster")
+        stored = self._stored_names("thumbnail", "poster", "thumbnail_time")
+
+        def change_thumbnail_time():
+            self.media.thumbnail_time = 2.0
+            self.media.save()
+
+        self._roll_back(change_thumbnail_time)
+
+        self.assertTrue(all(os.path.exists(path) for path in first))
+        self.assertEqual(self._stored_names("thumbnail", "poster", "thumbnail_time"), stored)
+
+    def test_a_rolled_back_uploaded_poster_keeps_the_files_the_row_points_at(self):
+        self._upload_poster("first.jpg")
+        first = self._paths("uploaded_thumbnail", "uploaded_poster")
+        stored = self._stored_names("uploaded_thumbnail", "uploaded_poster")
+
+        self._roll_back(lambda: self._upload_poster("second.jpg"))
+
+        self.assertTrue(all(os.path.exists(path) for path in first))
+        self.assertEqual(self._stored_names("uploaded_thumbnail", "uploaded_poster"), stored)
+
+    def test_a_save_that_changes_no_file_deletes_nothing(self):
+        self.media.set_thumbnail(force=True)
+        before = self._files_on_disk()
+
+        self.media.title = "A new title"
+        self.media.save()
+
+        self.assertEqual(self._files_on_disk(), before)
+
+    def test_a_replacement_that_keeps_the_name_does_not_delete_the_file(self):
+        self.media.set_thumbnail(force=True)
+        kept = self.media.thumbnail.name
+
+        with patch.object(self.media.thumbnail.storage, "save", return_value=kept):
+            previous_name = self.media.thumbnail.replace("again.jpg", ContentFile(jpeg_bytes()))
+        self.media._remove_replaced_files({"thumbnail": previous_name})
+
+        self.assertIsNone(previous_name)
+        self.assertTrue(os.path.exists(self.media.thumbnail.path))
+
+    def test_replacing_a_field_that_was_empty_has_nothing_to_delete(self):
+        self.assertIsNone(self.media.thumbnail.replace("first.jpg", ContentFile(jpeg_bytes())))

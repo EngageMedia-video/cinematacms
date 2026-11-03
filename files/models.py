@@ -9,6 +9,7 @@ import time
 import uuid
 from contextvars import ContextVar
 from datetime import timedelta
+from functools import partial
 
 import m3u8
 import waffle
@@ -359,15 +360,16 @@ class ScopedFieldFileMixin:
         return self._scoped(super().delete, save=save)
 
     def replace(self, name, content):
-        """Store new content without saving the row, and remove the file it replaces.
+        """Store new content without saving the row. Return the name of the file it replaces.
 
         FieldFile.save() never deletes the file the field pointed at, and storage gives the
         new file a fresh name, so the old one would stay on disk with nothing to reach it.
+        The caller removes it with Media._remove_replaced_files() once the row holds the new
+        name: until then the row still points at the old file.
         """
         previous_name = self.name
         self.save(name, content, save=False)
-        if previous_name and previous_name != self.name:
-            self.storage.delete(previous_name)
+        return previous_name if previous_name and previous_name != self.name else None
 
 
 class ScopedFieldFile(ScopedFieldFileMixin, models.fields.files.FieldFile):
@@ -733,6 +735,7 @@ class Media(models.Model):
         def persists(field):
             return update_fields is None or field in update_fields
 
+        replaced_thumbnail_files = {}
         if self.pk:
             stored_analytics = None
             if persists("media_file") or update_fields is None:
@@ -769,7 +772,13 @@ class Media(models.Model):
                 # save=False: this runs inside save(), so the super().save() below
                 # already persists thumbnail/poster. Letting the FileField write the
                 # row here would be a nested full-row save from the same instance.
+                names_before = {"thumbnail": self.thumbnail.name, "poster": self.poster.name}
                 self.set_thumbnail(force=True, save=False)
+                replaced_thumbnail_files = {
+                    field_name: name
+                    for field_name, name in names_before.items()
+                    if getattr(self, field_name).name != name
+                }
                 # A scoped caller (save(update_fields=["thumbnail_time"])) would
                 # otherwise drop what this branch just changed, so widen its list.
                 # uploaded_thumbnail/uploaded_poster are included because the
@@ -852,6 +861,7 @@ class Media(models.Model):
                 super(Media, self).save(*args, **kwargs)
         else:
             super(Media, self).save(*args, **kwargs)
+        self._remove_replaced_files(replaced_thumbnail_files)
         # Notify user when video is published (state changed to public)
         if (
             self.pk
@@ -903,10 +913,14 @@ class Media(models.Model):
                 # snapshot, including anything another worker changed meanwhile.
                 # edit_date for the same reason as the scoped saves above; this
                 # write bypasses Media.save(), so it names the column itself.
-                self.uploaded_thumbnail.replace(thumbnail_name, myfile)
+                replaced_uploaded_thumbnail = self.uploaded_thumbnail.replace(thumbnail_name, myfile)
                 super(Media, self).save(update_fields=["uploaded_thumbnail", "edit_date"])
-            if replaced_poster:
-                replaced_poster.storage.delete(replaced_poster.name)
+            self._remove_replaced_files(
+                {
+                    "uploaded_thumbnail": replaced_uploaded_thumbnail,
+                    "uploaded_poster": replaced_poster.name if replaced_poster else None,
+                }
+            )
 
     def ensure_encryption_key(self):
         """Generate an AES-128 key if one doesn't exist. Returns hex string.
@@ -1138,10 +1152,13 @@ class Media(models.Model):
                     # write here would carry every other in-memory column back to
                     # the row, and this runs from media_init while other workers
                     # are updating the same media.
-                    self.thumbnail.replace(thumbnail_name, myfile)
-                    self.poster.replace(thumbnail_name, myfile)
+                    replaced = {
+                        "thumbnail": self.thumbnail.replace(thumbnail_name, myfile),
+                        "poster": self.poster.replace(thumbnail_name, myfile),
+                    }
                     if save:
                         self.save(update_fields=["thumbnail", "poster"])
+                        self._remove_replaced_files(replaced)
         return True
 
     def produce_thumbnails_from_video(self, save=True):
@@ -1173,12 +1190,27 @@ class Media(models.Model):
                 # save=False on both, then one scoped save (#841). thumbnail_time is
                 # included because the random branch above assigns it here and it
                 # would otherwise never reach the row.
-                self.thumbnail.replace(thumbnail_name, myfile)
-                self.poster.replace(thumbnail_name, myfile)
+                replaced = {
+                    "thumbnail": self.thumbnail.replace(thumbnail_name, myfile),
+                    "poster": self.poster.replace(thumbnail_name, myfile),
+                }
                 if save:
                     self.save(update_fields=["thumbnail", "poster", "thumbnail_time"])
+                    self._remove_replaced_files(replaced)
         helpers.rm_file(tf)
         return True
+
+    def _remove_replaced_files(self, replaced):
+        """Delete files whose columns a save just moved to new names, once that save commits.
+
+        ``replaced`` maps a file field to the name it held before. Call this only after the
+        save that persisted those columns: a failed save or a rolled-back transaction then
+        leaves the row pointing at a file that still exists.
+        """
+        for field_name, stored_name in replaced.items():
+            if stored_name:
+                storage = self._meta.get_field(field_name).storage
+                transaction.on_commit(partial(storage.delete, stored_name), using=self._state.db)
 
     def produce_sprite_from_video(self):
         from . import tasks
