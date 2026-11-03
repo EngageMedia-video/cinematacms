@@ -687,7 +687,7 @@ class QueueDepthTests(SimpleTestCase):
     @override_settings(CELERY_BROKER_URL="redis://broker.test:6379/3")
     def test_queue_depth_reads_the_broker_over_one_connection_and_not_the_cache(self):
         broker = Mock()
-        broker.llen.side_effect = [7, 2]
+        broker.llen.side_effect = lambda name: {"short_tasks": 7, "long_tasks": 2}.get(name, 0)
         adapter = ObservabilityRedisAdapter()
 
         with (
@@ -697,13 +697,23 @@ class QueueDepthTests(SimpleTestCase):
             depths = [adapter.queue_depth("short_tasks"), adapter.queue_depth("long_tasks")]
 
         self.assertEqual(depths, [7, 2])
-        self.assertEqual(broker.llen.call_args_list, [call("short_tasks"), call("long_tasks")])
         connect.assert_called_once_with(
             "redis://broker.test:6379/3",
             socket_connect_timeout=BROKER_SOCKET_TIMEOUT_SECONDS,
             socket_timeout=BROKER_SOCKET_TIMEOUT_SECONDS,
         )
         cache_connection.assert_not_called()
+
+    def test_queue_depth_counts_messages_sent_with_a_priority(self):
+        # Celery's Redis transport keeps each priority step of a queue in its own list
+        lists = {"long_tasks": 2, "long_tasks\x06\x166": 5, "long_tasks\x06\x169": 1}
+        broker = Mock()
+        broker.llen.side_effect = lambda name: lists.get(name, 0)
+
+        with patch("cms.redis_telemetry.Redis.from_url", return_value=broker):
+            depth = ObservabilityRedisAdapter().queue_depth("long_tasks")
+
+        self.assertEqual(depth, 8)
 
 
 class QueueDepthRefreshTests(SimpleTestCase):
